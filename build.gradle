@@ -1,0 +1,57 @@
+plugins {
+    id 'java'
+    id 'application'
+    id 'org.jetbrains.kotlin.jvm' version '1.6.21'
+    id 'org.jetbrains.kotlin.kapt' version '1.6.21'
+    id 'org.openjfx.javafxplugin' version '0.1.0'
+    id 'org.jetbrains.kotlin.plugin.serialization' version '1.6.21'
+}
+
+group 'com.github.nkb03'
+version '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+    mavenLocal()
+}
+
+ext {
+    junitVersion = '5.10.0'
+}
+
+kotlin {
+    jvmToolchain {
+        languageVersion.set(JavaLanguageVersion.of(17))
+    }
+}
+
+compileKotlin.kotlinOptions.jvmTarget = 17
+
+javafx {
+    version = '17.0.6'
+    modules = ['javafx.controls', 'javafx.fxml']
+}
+
+dependencies {
+    implementation('org.controlsfx:controlsfx:11.1.2')
+
+    implementation 'org.jetbrains.kotlinx:kotlinx-serialization-core:1.3.3'
+    implementation 'org.jetbrains.kotlinx:kotlinx-serialization-json:1.3.3'
+
+    implementation 'com.github.nkb03:hextant-core:1.1-SNAPSHOT'
+    implementation 'com.github.nkb03:hextant-codegen:1.0-SNAPSHOT'
+    kapt 'com.github.nkb03:hextant-codegen:1.0-SNAPSHOT'
+
+    testImplementation("org.junit.jupiter:junit-jupiter-api:${junitVersion}")
+    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:${junitVersion}")
+}
+
+kapt {
+    annotationProcessors("hextant.codegen.MainProcessor")
+    useBuildCache = true
+    correctErrorTypes = true
+}
+
+test {
+    useJUnitPlatform()
+}

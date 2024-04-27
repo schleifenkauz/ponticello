@@ -1,0 +1,123 @@
+.root {
+    -fx-accent: #18528a;
+    -fx-focus-color: -fx-accent;
+    -fx-base: #2e2f33;
+    -fx-control-inner-background: derive(-fx-base, 35%);
+    -fx-control-inner-background-alt: -fx-control-inner-background ;
+}
+
+Label.editable-text {
+    -fx-background-color: transparent;
+}
+
+TextField.editable-text {
+    -fx-background-color: transparent;
+    -fx-border-color: rgba(128, 128, 128, 0.4);
+    -fx-border-radius: 3px;
+    -fx-border-width: 1px;
+}
+
+.control-assignment-editor {
+    -fx-border-width: 1;
+    -fx-border-radius: 3px;
+    -fx-border-color: black;
+    -fx-padding: 5px;
+}
+
+Slider.control-detail-editor {
+    -fx-padding: 6px;
+}
+
+.control-label {
+    -fx-pref-width: 75px;
+    -fx-padding: 5px;
+}
+
+.command-history-label:focused {
+    -fx-background-color: gray;
+}
+
+.score-view {
+    -fx-background-color: #2e2f33;
+}
+
+.grid-line {
+    -fx-stroke: gray;
+}
+
+.play-head {
+    -fx-stroke: #4bfd01;
+}
+
+.grid-time-code {
+    -fx-stroke: #4bfd01;
+}
+
+.synth-object {
+    -fx-background-color: #232328;
+}
+
+.score-object-header {
+    /*-fx-background-color: rgba(0, 0, 0, 0.1);*/
+    -fx-border-width: 0px 0px 1px 0px;
+    -fx-border-color: black;
+    -fx-padding: 5px;
+}
+
+.score-object-name {
+    -fx-text-fill: #4bfd01;
+    -fx-font-size: 18px;
+    -fx-padding: 5px 10px 5px 10px;
+    -fx-border-width: 2px;
+    -fx-border-color: black;
+}
+
+.toolbar {
+    -fx-background-color: #2e2f33;
+    -fx-padding: 5px;
+}
+
+.icon-button {
+    -fx-background-color: #312c2c;
+    -fx-border-width: 1px;
+    -fx-border-color: black;
+}
+
+.icon-button:hover {
+    -fx-border-color: gray;
+    -fx-background-color: #332525;
+}
+
+.icon-button:selected {
+    -fx-background-color: #4b3333 !important;
+}
+
+.audio-flow-graph {
+    -fx-background-color: #2e2f33;
+}
+
+.bus-object {
+    -fx-background-color: #232328;
+    -fx-background-radius: 5px;
+    -fx-border-color: black;
+    -fx-border-width: 2px;
+    -fx-border-radius: 6px;
+    -fx-padding: 3px;
+    -fx-font-size: 16px;
+}
+
+.bus-object:hover {
+    -fx-border-color: white;
+}
+
+.bus-object:focused {
+    -fx-background-color: #4b3333;
+}
+
+.flow-arrow {
+    -fx-stroke-width: 2.5;
+}
+
+.flow-arrow:hover {
+    -fx-stroke-width: 4;
+}
