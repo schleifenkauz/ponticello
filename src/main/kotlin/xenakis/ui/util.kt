@@ -15,6 +15,7 @@ import javafx.scene.control.ButtonType
 import javafx.scene.control.DialogPane
 import javafx.scene.control.MenuItem
 import javafx.scene.control.RadioButton
+import javafx.scene.control.TextField
 import javafx.scene.control.ToggleGroup
 import javafx.scene.layout.Region
 import javafx.stage.Popup
@@ -51,6 +52,8 @@ fun button(text: String, onAction: (ev: ActionEvent) -> Unit) = Button(text).als
 
 fun button(glyph: FontAwesome.Glyph, onAction: (ev: ActionEvent) -> Unit) =
     Button(null, Glyph("FontAwesome", glyph)).also { btn -> btn.setOnAction(onAction) }
+
+fun textField(text: String = "", config: TextField.() -> Unit) = TextField(text).apply(config)
 
 fun showPopup(owner: Region, node: Node) = with(Popup()) {
     content.add(node)

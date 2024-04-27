@@ -31,7 +31,9 @@ enum class Icon {
     RecordActive,
     Restart,
     Graph,
-    ExtraWindow;
+    ExtraWindow,
+    Find,
+    Close;
 
     private val file = name.lowercase() + "_green.png"
     private val url = javaClass.getResource("icons/$file") ?: error("icon $file not found")

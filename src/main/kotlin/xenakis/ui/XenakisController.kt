@@ -14,7 +14,6 @@ import xenakis.model.XenakisProject
 import xenakis.sc.SynthDef
 import java.io.File
 import java.util.prefs.Preferences
-import kotlin.system.exitProcess
 
 class XenakisController(private val primaryStage: Stage) {
     private val listeners = mutableListOf<XenakisListener>()
@@ -28,6 +27,8 @@ class XenakisController(private val primaryStage: Stage) {
     }
 
     private val prefs = Preferences.userNodeForPackage(XenakisApp::class.java)
+
+    private val recentProjects = loadRecentProjects()
 
     lateinit var context: Context
         private set
@@ -73,22 +74,16 @@ class XenakisController(private val primaryStage: Stage) {
         client.post("s.makeWindow;")
     }
 
-    fun loadOrCreateProject() {
+    fun startXenakis() {
         val file = lastFile()
-        val project = if (file != null) {
-            if (!file.exists()) {
-                alertError("Recent project file $file was either moved or deleted.")
+        if (file != null) {
+            if (!file.exists() || !openProject(file)) {
                 clearLastFile()
-                makeNewProject() ?: exitProcess(0)
+                goToStartupScreen()
             }
-            val fromFile = tryWithAlert("Opening project") { XenakisProject.loadFrom(file, context) }
-            if (fromFile == null) {
-                clearLastFile()
-                makeNewProject() ?: exitProcess(0)
-            } else fromFile
-        } else makeNewProject() ?: exitProcess(0)
-        project.context = context
-        setCurrentProject(project)
+        } else {
+            goToStartupScreen()
+        }
     }
 
     private fun makeNewProject(): XenakisProject? {
@@ -97,14 +92,31 @@ class XenakisController(private val primaryStage: Stage) {
             range = 1.0..1000.0,
             initialValue = 60.0
         ) ?: return null
-        return XenakisProject(
+        val project = XenakisProject(
             globalVariables = mutableMapOf(),
             synthDefs = mutableListOf(SynthDef.default),
             flowGraph = AudioFlowGraph.createDefault(),
             buffers = mutableListOf(),
             score = Score(totalDuration)
         )
+        project.context = context
+        return project
     }
+
+    private fun loadRecentProjects(): MutableList<File> {
+        val str = prefs.get("recentProjects", "")
+        val paths = str.split(File.pathSeparator).filter { it.isNotEmpty() }
+        return paths.mapTo(mutableListOf(), ::File)
+    }
+
+    private fun addRecentProject(path: File) {
+        recentProjects.remove(path)
+        recentProjects.add(0, path)
+        val str = recentProjects.joinToString(File.pathSeparator)
+        prefs.put("recentProjects", str)
+    }
+
+    fun recentProjects(): List<File> = recentProjects
 
     private fun lastFile(): File? = prefs.get("lastFile", null)?.let(::File)?.takeIf { it.exists() }
 
@@ -120,11 +132,18 @@ class XenakisController(private val primaryStage: Stage) {
     fun openProject() {
         setExtensionFilter("*.json")
         val file = fc.showOpenDialog(primaryStage) ?: return
-        tryWithAlert("Opening score") {
+        prefs.put("lastFile", file.absolutePath)
+        if (openProject(file)) {
+            addRecentProject(file)
+        }
+    }
+
+    fun openProject(file: File): Boolean {
+        val success = tryWithAlert("Opening project") {
             val project = XenakisProject.loadFrom(file, context)
             setCurrentProject(project)
-            prefs.put("lastFile", file.absolutePath)
         }
+        return success != null
     }
 
     private fun setExtensionFilter(ext: String) {
@@ -148,6 +167,15 @@ class XenakisController(private val primaryStage: Stage) {
             val writer = file.writer()
             currentProject.exportAsScript(writer)
         }
+    }
+
+    fun closeProject() {
+        clearLastFile()
+        goToStartupScreen()
+    }
+
+    private fun goToStartupScreen() {
+        listeners { displayStartupScreen() }
     }
 
     fun addTime() {

@@ -85,11 +85,11 @@ Slider.control-detail-editor {
 
 .icon-button:hover {
     -fx-border-color: gray;
-    -fx-background-color: #332525;
+    -fx-background-color: #501717;
 }
 
 .icon-button:selected {
-    -fx-background-color: #4b3333 !important;
+    -fx-background-color: #4e0303 !important;
 }
 
 .audio-flow-graph {
@@ -111,7 +111,7 @@ Slider.control-detail-editor {
 }
 
 .bus-object:focused {
-    -fx-background-color: #4b3333;
+    -fx-background-color: #4e0303;
 }
 
 .flow-arrow {
@@ -120,4 +120,42 @@ Slider.control-detail-editor {
 
 .flow-arrow:hover {
     -fx-stroke-width: 4;
+}
+
+/*.search-field {
+    -fx-background-image: url('./icons/find.png');
+    -fx-background-repeat: no-repeat;
+    -fx-background-position: left center;
+    -fx-background-size: 32px;
+}*/
+
+.recent-projects-list {
+    -fx-padding: 5px;
+}
+
+.project-box {
+    -fx-padding: 5px;
+}
+
+.project-box:hover {
+    -fx-background-color: #501717;
+}
+
+.project-name {
+    -fx-text-fill: white;
+    -fx-font-size: 14px;
+}
+
+.project-path {
+    -fx-text-fill: gray;
+    -fx-font-size: 12px;
+}
+
+.startup-screen-top-bar {
+    -fx-padding: 10px;
+    -fx-spacing: 10px;
+}
+
+.startup-screen {
+    -fx-padding: 5px;
 }

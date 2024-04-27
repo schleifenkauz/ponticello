@@ -1,6 +1,7 @@
 package xenakis.ui
 
 import hextant.fx.Stylesheets
+import hextant.fx.label
 import javafx.geometry.Pos
 import javafx.scene.Scene
 import javafx.scene.control.Tooltip
@@ -14,6 +15,7 @@ import javafx.scene.layout.Priority
 import javafx.scene.layout.VBox
 import javafx.stage.Stage
 import javafx.stage.StageStyle
+import org.controlsfx.control.textfield.TextFields
 import xenakis.impl.ZoomableScrollPane
 import xenakis.model.XenakisProject
 
@@ -45,6 +47,31 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
         player = ScorePlayer(scoreView, controller.client)
         shellWindow = SuperColliderShellController.createShellWindow(controller.client)
         stage.scene.root = createLayout()
+        stage.sizeToScene()
+    }
+
+    override fun displayStartupScreen() {
+        val searchField = TextFields.createClearableTextField().apply {
+            styleClass("search-field")
+            promptText = "Search for project..."
+        }
+        val searchIcon = Icon.Find.getView()
+        val btnOpen = button("Open") { controller.openProject() }
+        val createNew = button("Create new") { controller.createNewProject() }
+        val recentProjects = VBox().styleClass("recent-projects-list")
+        for (proj in controller.recentProjects()) {
+            val name = label(proj.nameWithoutExtension).styleClass("project-name")
+            val path = label(proj.absolutePath).styleClass("project-path")
+            val box = VBox(name, path).styleClass("project-box")
+            box.setOnMouseClicked {
+                controller.openProject(proj)
+            }
+            recentProjects.children.add(box)
+        }
+        val top = HBox(searchIcon, searchField, btnOpen, createNew).styleClass("startup-screen-top-bar")
+        val layout = VBox(top, recentProjects).styleClass("startup-screen")
+        stage.scene.root = layout
+        stage.sizeToScene()
     }
 
     private fun createLayout(): VBox {
@@ -111,7 +138,8 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
         Icon.Save.button(action = "Save Project") { controller.saveProject() },
         Icon.Open.button(action = "Open Project") { controller.openProject() },
         Icon.Create.button(action = "Create new Project") { controller.createNewProject() },
-        Icon.Export.button(action = "Export as SuperCollider script") { controller.exportAsScript() }
+        Icon.Export.button(action = "Export as SuperCollider script") { controller.exportAsScript() },
+        Icon.Close.button(action = "Close project and open startup screen") { controller.closeProject() }
     )
 
     private fun addShortcuts(layout: VBox) {

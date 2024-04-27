@@ -10,7 +10,7 @@ class XenakisApp : Application() {
         controller.startSuperCollider()
         val ui = XenakisUI(stage, controller)
         controller.addListener(ui)
-        controller.loadOrCreateProject()
+        controller.startXenakis()
         stage.show()
     }
 
