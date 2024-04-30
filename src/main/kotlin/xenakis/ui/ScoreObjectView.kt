@@ -179,9 +179,7 @@ abstract class ScoreObjectView(open val obj: ScoreObject, val project: XenakisPr
     }
 
     private fun relocateObject(x: Double, y: Double) {
-        relocate(x, y)
-        obj.start = x / PIXELS_PER_SECOND
-        obj.y = y
+        scoreView.score.moveObject(obj, x / PIXELS_PER_SECOND, y)
     }
 
     private fun updateCursor(x: Double, y: Double) {

@@ -31,7 +31,7 @@ class SynthObject(
     }
 
     override fun clone(newName: String): ScoreObject = SynthObject(
-        name, group, synthDefName,
+        newName, group, synthDefName,
         start, duration, y, height,
         controls.mapTo(mutableListOf()) { c -> c.clone() }
     )

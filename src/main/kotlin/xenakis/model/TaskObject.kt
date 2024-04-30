@@ -26,7 +26,7 @@ class TaskObject(
     }
 
     override fun clone(newName: String): ScoreObject =
-        TaskObject(name, code.copy(), start, duration, y, height, controls.toMutableList())
+        TaskObject(newName, code.copy(), start, duration, y, height, controls.toMutableList())
 
     override fun writeStartCode(writer: ScWriter, offset: Double) {
         writer.appendBlock("Task") {

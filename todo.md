@@ -3,8 +3,8 @@
 - layout groups, horizontal, vertical and both
 - SynthDef creation inside the UI
 - ability to load external SynthDef banks 
-- task one-liners
-- 
+- SuperCollider code layout
+- global variables/initialization
 
 ## Bug fixes
 

@@ -26,6 +26,8 @@ class ScoreView(
 
     val score get() = project.score
 
+    val selectedObjects get() = selectedViews.map { view -> view.obj }
+
     init {
         addTimeGrid()
         scaleXProperty().addListener { _ -> addTimeGrid() }
@@ -99,6 +101,11 @@ class ScoreView(
         val view = getObjectView(obj)
         view.onRemove()
         children.remove(view)
+    }
+
+    override fun movedObject(obj: ScoreObject) {
+        val view = getObjectView(obj)
+        view.relocate(obj.start * PIXELS_PER_SECOND, obj.y)
     }
 
     override fun setTotalDuration(duration: Double) {

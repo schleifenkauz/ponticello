@@ -91,9 +91,10 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
     private fun createToolbar(): HBox {
         val playerBar = createPlayerBar()
         val fileBar = createFileBar()
+        val layoutBar = createLayoutBar()
         val miscBar = createMiscBar()
         miscBar.alignment = Pos.CENTER_RIGHT
-        return HBox(20.0, fileBar, toolSelector, playerBar, miscBar).styleClass("toolbar")
+        return HBox(20.0, fileBar, toolSelector, playerBar, layoutBar, miscBar).styleClass("toolbar")
     }
 
     private fun createMiscBar() = HBox(5.0,
@@ -101,6 +102,15 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
         Icon.Restart.button(action = "Restart server") { controller.restartScSynth() },
         Icon.AddTime.button(action = "Add time") { controller.addTime() },
         Icon.Graph.button(action = "Edit audio flow graph") { flowGraphWindow.show() }
+    )
+
+    private fun createLayoutBar() = HBox(5.0,
+        Icon.Horizontal.button(action = "Create horizontal group") {
+            scoreView.score.addHorizontalGroup(scoreView.selectedObjects)
+        },
+        Icon.Vertical.button(action = "Create vertical group") {
+            scoreView.score.addVerticalGroup(scoreView.selectedObjects)
+        }
     )
 
     private fun createPlayerBar(): HBox {
