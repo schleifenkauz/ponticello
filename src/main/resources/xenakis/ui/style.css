@@ -46,30 +46,39 @@ Slider.control-detail-editor {
 }
 
 .play-head {
-    -fx-stroke: #4bfd01;
+    -fx-stroke: black;
 }
 
 .grid-time-code {
     -fx-stroke: #4bfd01;
 }
 
-.synth-object {
-    -fx-background-color: #232328;
+.score-object {
+    -fx-background-color: black;
+}
+
+.score-object:hover {
+    -fx-background-color: #0f0f0f;
+}
+
+.score-object:selected {
+    -fx-background-color: #191212 !important;
+}
+
+.task-object {
+    -fx-border-width: 2px;
+    -fx-border-radius: 3px;
+    -fx-border-color: gray;
 }
 
 .score-object-header {
-    /*-fx-background-color: rgba(0, 0, 0, 0.1);*/
-    -fx-border-width: 0px 0px 1px 0px;
-    -fx-border-color: black;
-    -fx-padding: 5px;
+    -fx-padding: 2px;
 }
 
 .score-object-name {
-    -fx-text-fill: #4bfd01;
-    -fx-font-size: 18px;
-    -fx-padding: 5px 10px 5px 10px;
-    -fx-border-width: 2px;
-    -fx-border-color: black;
+    -fx-text-fill: white;
+    -fx-font-size: 15px;
+    -fx-padding: 2px;
 }
 
 .toolbar {
@@ -158,4 +167,37 @@ Slider.control-detail-editor {
 
 .startup-screen {
     -fx-padding: 5px;
+}
+
+.code-area {
+    -fx-background-color: transparent;
+}
+
+.code-area > .viewport {
+    -fx-background-color: transparent;
+}
+
+.number {
+    -fx-text-fill: #7d00ff !important;
+}
+
+.variable-ref {
+    -fx-text-fill: white !important;
+}
+
+.class-ref {
+    -fx-text-fill: turquoise !important;
+}
+
+.env-ref {
+    -fx-text-fill: #ff7300;
+}
+
+.keyword {
+    -fx-text-fill: orange !important;
+}
+
+.unrecognized {
+    -fx-text-fill: #810000 !important;
+    -fx-underline: true;
 }

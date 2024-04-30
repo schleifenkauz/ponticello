@@ -15,7 +15,7 @@ class TaskObject(
     override var y: Double, override var height: Double,
     override val controls: List<ParameterControl>
 ) : ScoreObject() {
-    override val color get() = Color.BLACK
+    override val color: Color? get() = null
 
     init {
         code.makeRoot()
@@ -28,10 +28,13 @@ class TaskObject(
     override fun clone(newName: String): ScoreObject =
         TaskObject(name, code.copy(), start, duration, y, height, controls.toMutableList())
 
-    override fun ScWriter.writeStartCode(offset: Double) = appendBlock("fork") {
-        val function = code.result.now
-        function.code(this)
-        appendLine(".value()")
+    override fun writeStartCode(writer: ScWriter, offset: Double) {
+        writer.appendBlock("Task") {
+            val function = code.result.now
+            function.code(this)
+            this.appendLine(".value()")
+        }
+        writer.appendLine(".play;")
     }
 
     override fun writeStopCode(writer: ScWriter) {}

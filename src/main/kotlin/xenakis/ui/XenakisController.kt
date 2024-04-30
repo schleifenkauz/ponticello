@@ -4,6 +4,7 @@ import bundles.set
 import hextant.context.Context
 import hextant.core.HextantCore
 import hextant.plugins.PluginBuilder
+import javafx.application.Platform
 import javafx.stage.FileChooser
 import javafx.stage.Stage
 import xenakis.impl.UDPSuperColliderClient
@@ -13,7 +14,10 @@ import xenakis.model.Score
 import xenakis.model.XenakisProject
 import xenakis.sc.SynthDef
 import java.io.File
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.Future
 import java.util.prefs.Preferences
+import kotlin.concurrent.thread
 
 class XenakisController(private val primaryStage: Stage) {
     private val listeners = mutableListOf<XenakisListener>()
@@ -55,10 +59,19 @@ class XenakisController(private val primaryStage: Stage) {
     }
 
     fun startSuperCollider() {
-        client = UDPSuperColliderClient.create()
-        client.post("s.options.numWireBufs = 512;")
-        client.post("s.boot;")
-        context[UDPSuperColliderClient] = client
+        thread(name = "SuperCollider startup thread", isDaemon = true) {
+            client = UDPSuperColliderClient.create()
+            client.addStatusListener { status ->
+                if (status == UDPSuperColliderClient.Status.Listening) {
+                    client.postAsync("s.options.numWireBufs = 512;")
+                    client.postAsync("s.boot;")
+                    context[UDPSuperColliderClient] = client
+                    Platform.runLater {
+                        listeners { superColliderListening() }
+                    }
+                }
+            }
+        }
     }
 
     private fun setCurrentProject(project: XenakisProject) {
@@ -66,12 +79,12 @@ class XenakisController(private val primaryStage: Stage) {
         listeners { displayProject(currentProject) }
     }
 
-    fun restartSuperCollider() {
-        client.post("s.reboot;")
+    fun restartScSynth() {
+        client.postAsync("s.reboot;")
     }
 
     fun showServerWindow() {
-        client.post("s.makeWindow;")
+        client.postAsync("s.makeWindow;")
     }
 
     fun startXenakis() {
@@ -139,11 +152,12 @@ class XenakisController(private val primaryStage: Stage) {
     }
 
     fun openProject(file: File): Boolean {
-        val success = tryWithAlert("Opening project") {
+        tryWithAlert("Opening project") {
             val project = XenakisProject.loadFrom(file, context)
             setCurrentProject(project)
-        }
-        return success != null
+        } ?: return false
+        prefs.put("lastFile", file.absolutePath)
+        return true
     }
 
     private fun setExtensionFilter(ext: String) {
@@ -182,5 +196,9 @@ class XenakisController(private val primaryStage: Stage) {
         val amount = showDoubleInputDialog("How much time to add", context, 0.0..1000.0, 10.0) ?: return
         val score = currentProject.score
         score.addTime(score.totalDuration, amount)
+    }
+
+    fun quitApplication() {
+        client.quit()
     }
 }

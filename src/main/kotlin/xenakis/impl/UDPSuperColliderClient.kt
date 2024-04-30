@@ -8,7 +8,7 @@ import java.net.InetAddress
 import java.util.*
 import kotlin.concurrent.thread
 
-class UDPSuperColliderClient(
+class UDPSuperColliderClient private constructor(
     private val sclang: Process,
     private val socket: DatagramSocket,
     private val sclangAdr: InetAddress,
@@ -16,6 +16,12 @@ class UDPSuperColliderClient(
 ) : SuperColliderClient {
     private val buffer = ByteArray(BUFFER_SIZE)
     private var consoleMonitors = mutableListOf<(String) -> Unit>()
+    var status: Status = Status.Starting
+        private set(value) {
+            field = value
+            statusListeners.forEach { handler -> handler.invoke(value) }
+        }
+    private var statusListeners = mutableListOf<(Status) -> Unit>()
     private val consoleUntilNow = StringBuilder()
     private var consoleMonitorThread: Thread
 
@@ -26,9 +32,17 @@ class UDPSuperColliderClient(
     override fun post(command: String): String {
         println("shell> $command")
         val msg = createMessage(command)
-        val answer = send(msg)
+        send(msg)
+        val answer = receiveMessage()
         val value = parseAnswer(answer)
         return value
+    }
+
+    fun postAsync(command: String) {
+        println("shell> $command")
+        val msg = createMessage(command)
+        send(msg)
+        thread(isDaemon = true, name = "Command Thread") { receiveMessage() }
     }
 
     private fun createMessage(command: String): ByteArray {
@@ -40,10 +54,9 @@ class UDPSuperColliderClient(
     private fun parseAnswer(answer: ByteArray): String =
         answer.toString(Charsets.UTF_8).removePrefix("$RESULT$STR_TYPE").dropLastWhile { c -> c == '\u0000' }
 
-    private fun send(msg: ByteArray): ByteArray {
+    private fun send(msg: ByteArray) {
         val packet = DatagramPacket(msg, msg.size, sclangAdr, sclangPort)
         socket.send(packet)
-        return receiveMessage()
     }
 
     private fun receiveMessage(): ByteArray {
@@ -57,22 +70,17 @@ class UDPSuperColliderClient(
     private fun monitorConsole(): Thread {
         val stream = sclang.inputStream.reader(Charsets.UTF_8)
         return thread(isDaemon = true, name = "SuperCollider Console Monitor") {
-            while (true) {
-                Thread.sleep(50)
-                while (stream.ready()) {
-                    val c = stream.read().toChar()
-                    print(c)
-                    consoleMonitors.forEach { m -> m.invoke("$c") }
-                    consoleUntilNow.append(c)
+            stream.useLines { lines ->
+                for (line in lines) {
+                    if (Thread.interrupted()) break
+                    consoleMonitors.forEach { m -> m.invoke(line + "\n") }
+                    consoleUntilNow.appendLine(line)
+                    println(line)
+                    if (line == "-> OSCFunc(/eval, nil, nil, nil)") {
+                        status = Status.Listening
+                    }
                 }
             }
-/*
-            stream.forEachLine { line ->
-                consoleMonitors.forEach { m -> m.invoke(line + "\n") }
-                consoleUntilNow.appendLine(line)
-                println(line)
-            }
-*/
         }
     }
 
@@ -85,18 +93,25 @@ class UDPSuperColliderClient(
         consoleMonitors.remove(handler)
     }
 
+    fun addStatusListener(handler: (Status) -> Unit) {
+        statusListeners.add(handler)
+    }
+
     override fun waitForExit() {
         sclang.waitFor()
     }
 
     override fun quit() {
-        consoleMonitorThread.stop()
-        post("s.quit;")
-        post("0.exit;")
+        consoleMonitorThread.interrupt()
+        postAsync("s.quit;")
+        postAsync("0.exit;")
         socket.disconnect()
+        status = Status.Quit
     }
 
-    companion object: PublicProperty<UDPSuperColliderClient> by publicProperty("SuperColliderClient") {
+    enum class Status { Starting, Listening, Quit }
+
+    companion object : PublicProperty<UDPSuperColliderClient> by publicProperty("SuperColliderClient") {
         @JvmStatic
         fun main(args: Array<String>) {
             val client = create(57120)

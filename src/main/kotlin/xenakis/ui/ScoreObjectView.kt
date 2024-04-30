@@ -21,24 +21,38 @@ abstract class ScoreObjectView(open val obj: ScoreObject, val project: XenakisPr
     private var oldBounds: Bounds? = null
     private var draggedObject: ScoreObjectView = this
 
-    lateinit var scoreView: ScoreView
-        private set
+    private lateinit var scoreView: ScoreView
 
+    private val nameLabel = Label().styleClass("score-object-name")
     private val header = HBox(10.0)
+    protected val contents = VBox().styleClass("score-object-content")
     private val envelopesPane = Pane()
 
     private val envelopeEditors = mutableListOf<EnvelopeEditor>()
 
+    protected open val canUserChangeHeight: Boolean get() = true
+    protected open val canUserChangeWidth: Boolean get() = true
+
     init {
-        styleClass.add("score-object")
+        styleClass("score-object")
         alwaysUpdateCursor()
         setupDragging()
         envelopesPane.widthProperty().addListener { _ -> rescaleEnvelopes() }
         envelopesPane.heightProperty().addListener { _ -> rescaleEnvelopes() }
     }
 
-    protected fun addFunction(icon: Icon, action: String?, onAction: () -> Unit) {
-        val button = icon.button(24.0, action)
+    fun init(parent: ScoreView) {
+        this.scoreView = parent
+        setupHeader()
+        children.setAll(header, contents)
+        header.prefWidthProperty().bind(this.widthProperty())
+        contents.prefWidthProperty().bind(this.widthProperty())
+        contents.prefHeightProperty().bind(this.heightProperty())
+        repaint()
+    }
+
+    protected fun addAction(icon: Icon, action: String?, onAction: () -> Unit) {
+        val button = icon.button(action = action)
         button.styleClass("score-object-btn")
         button.setOnAction { onAction() }
         header.children.add(2, button)
@@ -46,14 +60,15 @@ abstract class ScoreObjectView(open val obj: ScoreObject, val project: XenakisPr
     }
 
     open fun repaint() {
-        children.clear()
         layoutX = obj.start * PIXELS_PER_SECOND
         layoutY = obj.y
         prefWidth = obj.duration * PIXELS_PER_SECOND
         prefHeight = obj.height
         padding = Insets(2.0)
-        border = Border(BorderStroke(obj.color, BorderStrokeStyle.SOLID, CornerRadii.EMPTY, BorderWidths(2.0)))
-        setupHeader()
+        nameLabel.text = obj.name
+        if (obj.color != null) {
+            border = Border(BorderStroke(obj.color, BorderStrokeStyle.SOLID, CornerRadii(3.0), BorderWidths(2.0)))
+        }
         paintEnvelopes()
     }
 
@@ -61,7 +76,7 @@ abstract class ScoreObjectView(open val obj: ScoreObject, val project: XenakisPr
         envelopeEditors.clear()
         envelopesPane.children.clear()
         if (obj.associatedEnvelopes.isEmpty()) return
-        children.add(envelopesPane)
+        contents.children.add(envelopesPane)
         setVgrow(envelopesPane, Priority.ALWAYS)
         for (control in obj.associatedEnvelopes) {
             if (!control.display) continue
@@ -81,16 +96,14 @@ abstract class ScoreObjectView(open val obj: ScoreObject, val project: XenakisPr
 
     private fun setupHeader() {
         header.styleClass("score-object-header")
-        val label = Label(obj.name).styleClass("score-object-name")
-        label.textFill = WHITE
+        nameLabel.textFill = WHITE
         val space = Region()
         HBox.setHgrow(space, Priority.ALWAYS);
-        header.children.setAll(label, space)
-        addFunction(Icon.Delete, "Delete this object", ::delete)
-        addFunction(Icon.Play, "Play this object") {
+        header.children.setAll(nameLabel, space)
+        addAction(Icon.Delete, "Delete this object", ::delete)
+        addAction(Icon.Play, "Play this object") {
             obj.play(project.context[UDPSuperColliderClient])
         }
-        children.add(header)
     }
 
     private fun delete() {
@@ -177,14 +190,14 @@ abstract class ScoreObjectView(open val obj: ScoreObject, val project: XenakisPr
         val dx = (x - prefWidth).absoluteValue
         val dy = (y - prefHeight).absoluteValue
         cursor = when {
-            x.absoluteValue < tx && y.absoluteValue < ty -> Cursor.NW_RESIZE
-            x.absoluteValue < tx && dy.absoluteValue < ty -> Cursor.SW_RESIZE
-            dx < tx && y.absoluteValue < ty -> Cursor.NE_RESIZE
-            dx < tx && dy < ty -> Cursor.SE_RESIZE
-            x.absoluteValue < tx -> Cursor.W_RESIZE
-            dx < tx -> Cursor.E_RESIZE
-            y.absoluteValue < ty -> Cursor.N_RESIZE
-            dy < ty -> Cursor.S_RESIZE
+            x.absoluteValue < tx && y.absoluteValue < ty && canUserChangeHeight && canUserChangeWidth -> Cursor.NW_RESIZE
+            x.absoluteValue < tx && dy.absoluteValue < ty && canUserChangeHeight && canUserChangeWidth -> Cursor.SW_RESIZE
+            dx < tx && y.absoluteValue < ty && canUserChangeHeight && canUserChangeWidth -> Cursor.NE_RESIZE
+            dx < tx && dy < ty && canUserChangeHeight && canUserChangeWidth -> Cursor.SE_RESIZE
+            x.absoluteValue < tx && canUserChangeWidth -> Cursor.W_RESIZE
+            dx < tx && canUserChangeWidth -> Cursor.E_RESIZE
+            y.absoluteValue < ty && canUserChangeHeight -> Cursor.N_RESIZE
+            dy < ty && canUserChangeHeight -> Cursor.S_RESIZE
             else -> Cursor.DEFAULT
         }
     }
@@ -225,11 +238,6 @@ abstract class ScoreObjectView(open val obj: ScoreObject, val project: XenakisPr
 
     fun setSelected(value: Boolean) {
         pseudoClassStateChanged(PseudoClass.getPseudoClass("selected"), value)
-    }
-
-    open fun onAddToScoreView(scoreView: ScoreView) {
-        this.scoreView = scoreView
-        repaint()
     }
 
     open fun onRemove() {

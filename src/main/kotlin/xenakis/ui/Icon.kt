@@ -37,18 +37,19 @@ enum class Icon {
 
     private val file = name.lowercase() + "_green.png"
     private val url = javaClass.getResource("icons/$file") ?: error("icon $file not found")
-    private val image = Image(url.toExternalForm())
+    private val image = Image(url.toExternalForm(), 20.0, 20.0, true, false)
 
-    fun getView(size: Double = 24.0): ImageView {
+    fun getView(size: Double = 20.0): ImageView {
         val view = ImageView(image)
         view.isPreserveRatio = true
         view.fitWidth = size
+        view.isSmooth = true
         return view
     }
 
-    fun button(radius: Double = 24.0, action: String? = null, onAction: (Button) -> Unit = {}): Button =
+    fun button(radius: Double = 16.0, action: String? = null, onAction: (Button) -> Unit = {}): Button =
         Button().apply {
-            graphic = getView(size = radius)
+            graphic = getView(size = radius * 1.25)
             shape = Circle(radius)
             tooltip = action?.let(::Tooltip)
             setMinSize(radius * 2, radius * 2)

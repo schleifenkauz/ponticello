@@ -4,11 +4,11 @@ import javafx.application.Platform
 import javafx.beans.binding.Bindings
 import javafx.scene.shape.Line
 import xenakis.impl.ScWriter
-import xenakis.impl.SuperColliderClient
+import xenakis.impl.UDPSuperColliderClient
 import xenakis.ui.ScoreView.Companion.PIXELS_PER_SECOND
 import java.io.StringWriter
 
-class ScorePlayer(private val scoreView: ScoreView, private val client: SuperColliderClient) : Thread() {
+class ScorePlayer(private val scoreView: ScoreView, private val client: UDPSuperColliderClient) : Thread() {
     var isRecording = false
 
     private val indicator = Line(
@@ -66,22 +66,15 @@ class ScorePlayer(private val scoreView: ScoreView, private val client: SuperCol
         if (isPlaying) return
         val startTime = (indicator.layoutX - PLAY_HEAD_WIDTH) / PIXELS_PER_SECOND
         val writer = StringWriter()
-        ScWriter(writer).appendGroup {
-            for (obj in scoreView.score.objects) {
-                obj.start(this, startTime)
-                appendLine(";")
-                obj.stop(this, startTime)
-                appendLine(";")
-            }
-        }
-        client.post(writer.toString())
+        scoreView.score.writePlayerTask(ScWriter(writer), startTime)
+        client.postAsync(writer.toString())
         isPlaying = true
     }
 
     fun pause() {
-        if (!isPlaying) return
         isPlaying = false
-        client.post("s.freeAll")
+        client.postAsync("s.freeAll;")
+        client.postAsync("~player_task.stop;")
     }
 
     fun reset() {
@@ -90,14 +83,14 @@ class ScorePlayer(private val scoreView: ScoreView, private val client: SuperCol
 
     fun toggleRecording() {
         if (isRecording) {
-            client.post("s.record")
+            client.postAsync("s.record")
         } else {
-            client.post("s.stopRecording")
+            client.postAsync("s.stopRecording")
         }
         isRecording = !isRecording
     }
 
     companion object {
-        private val PLAY_HEAD_WIDTH = 2.0
+        private const val PLAY_HEAD_WIDTH = 2.0
     }
 }

@@ -21,8 +21,8 @@ data class Envelope(val points: MutableList<Point>, val curve: Warp) {
                 ps = listOf(Point(offset, interpolatedY)) + withoutIrrelevant
             }
         }
-        val levels = ps.map { it.y.format(1) }
-        val times = ps.zipWithNext { a, b -> (b.x - a.x).format(1) }
+        val levels = ps.map { it.y.format(2) }
+        val times = ps.zipWithNext { a, b -> (b.x - a.x).format(2) }
         return "EnvGen.kr(Env.new(levels: $levels, times: $times, curve: $curve), doneAction: Done.freeSelf)"
     }
 

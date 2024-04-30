@@ -2,13 +2,11 @@ package xenakis.ui
 
 import hextant.fx.Stylesheets
 import hextant.fx.label
+import hextant.fx.registerShortcuts
 import javafx.geometry.Pos
 import javafx.scene.Scene
+import javafx.scene.control.Button
 import javafx.scene.control.Tooltip
-import javafx.scene.input.KeyCode
-import javafx.scene.input.KeyCodeCombination
-import javafx.scene.input.KeyCombination.CONTROL_DOWN
-import javafx.scene.input.KeyCombination.SHIFT_DOWN
 import javafx.scene.layout.HBox
 import javafx.scene.layout.Pane
 import javafx.scene.layout.Priority
@@ -29,6 +27,10 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
     lateinit var flowGraphEditor: AudioFlowGraphEditor
     lateinit var flowGraphWindow: Stage
 
+    private lateinit var playBtn: Button
+    private lateinit var stopBtn: Button
+    private lateinit var recordBtn: Button
+
     lateinit var player: ScorePlayer
     lateinit var shellWindow: Stage
 
@@ -48,6 +50,7 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
         shellWindow = SuperColliderShellController.createShellWindow(controller.client)
         stage.scene.root = createLayout()
         stage.sizeToScene()
+        stage.isResizable = true
     }
 
     override fun displayStartupScreen() {
@@ -72,6 +75,7 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
         val layout = VBox(top, recentProjects).styleClass("startup-screen")
         stage.scene.root = layout
         stage.sizeToScene()
+        stage.isResizable = false
     }
 
     private fun createLayout(): VBox {
@@ -89,49 +93,54 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
         val fileBar = createFileBar()
         val miscBar = createMiscBar()
         miscBar.alignment = Pos.CENTER_RIGHT
-        return HBox(20.0, fileBar, toolSelector, playerBar, miscBar)
-            .styleClass("toolbar")
+        return HBox(20.0, fileBar, toolSelector, playerBar, miscBar).styleClass("toolbar")
     }
 
     private fun createMiscBar() = HBox(5.0,
         Icon.Console.button(action = "Open console") { shellWindow.show() },
-        Icon.Restart.button(action = "Restart server") { controller.restartSuperCollider() },
+        Icon.Restart.button(action = "Restart server") { controller.restartScSynth() },
         Icon.AddTime.button(action = "Add time") { controller.addTime() },
         Icon.Graph.button(action = "Edit audio flow graph") { flowGraphWindow.show() }
     )
 
     private fun createPlayerBar(): HBox {
-        val playBtn = Icon.Play.button(action = "Start playback") { btn ->
-            if (!player.isPlaying) {
-                btn.graphic = Icon.Pause.getView()
-                btn.tooltip = Tooltip("Pause playback")
-                player.play()
-            } else {
-                btn.graphic = Icon.Play.getView()
-                btn.tooltip = Tooltip("Start playback")
-                player.pause()
-            }
+        playBtn = Icon.Play.button(action = "Start playback") { _ -> togglePlay() }
+        stopBtn = Icon.Stop.button(action = "Pause and free all nodes") { stop() }
+        recordBtn = Icon.RecordInactive.button(action = "Start recording") { toggleRecord() }
+        playBtn.isDisable = true
+        stopBtn.isDisable = true
+        recordBtn.isDisable = true
+        return HBox(5.0, playBtn, stopBtn, recordBtn)
+    }
+
+    private fun toggleRecord() {
+        player.toggleRecording()
+        if (player.isRecording) {
+            recordBtn.graphic = Icon.RecordActive.getView()
+            recordBtn.tooltip = Tooltip("Finish recording")
+        } else {
+            recordBtn.graphic = Icon.RecordInactive.getView()
+            recordBtn.tooltip = Tooltip("Start recording")
         }
-        return HBox(
-            5.0,
-            playBtn,
-            Icon.Stop.button(action = "Pause and free all nodes") {
-                player.pause()
-                player.reset()
-                playBtn.graphic = Icon.Play.getView()
-                playBtn.tooltip = Tooltip("Start playback")
-            },
-            Icon.RecordInactive.button(action = "Start recording") { btn ->
-                player.toggleRecording()
-                if (player.isRecording) {
-                    btn.graphic = Icon.RecordActive.getView()
-                    btn.tooltip = Tooltip("Finish recording")
-                } else {
-                    btn.graphic = Icon.RecordInactive.getView()
-                    btn.tooltip = Tooltip("Start recording")
-                }
-            }
-        )
+    }
+
+    private fun togglePlay() {
+        if (!player.isPlaying) {
+            playBtn.graphic = Icon.Pause.getView()
+            playBtn.tooltip = Tooltip("Pause playback")
+            player.play()
+        } else {
+            playBtn.graphic = Icon.Play.getView()
+            playBtn.tooltip = Tooltip("Start playback")
+            player.pause()
+        }
+    }
+
+    private fun stop() {
+        player.pause()
+        player.reset()
+        playBtn.graphic = Icon.Play.getView()
+        playBtn.tooltip = Tooltip("Start playback")
     }
 
     private fun createFileBar() = HBox(5.0,
@@ -143,27 +152,23 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
     )
 
     private fun addShortcuts(layout: VBox) {
-        layout.setOnKeyReleased { ev ->
-            when {
-                KeyCodeCombination(KeyCode.SPACE, CONTROL_DOWN).match(ev) -> player.play()
-                KeyCodeCombination(KeyCode.PERIOD, CONTROL_DOWN).match(ev) -> player.pause()
-                KeyCodeCombination(KeyCode.DELETE).match(ev) -> scoreView.removeSelected()
-                KeyCodeCombination(KeyCode.ESCAPE).match(ev) -> scoreView.clearNewShape()
-                KeyCodeCombination(KeyCode.S, CONTROL_DOWN).match(ev) -> controller.saveProject()
-                KeyCodeCombination(KeyCode.O, CONTROL_DOWN).match(ev) -> controller.openProject()
-                KeyCodeCombination(KeyCode.N, CONTROL_DOWN).match(ev) -> controller.createNewProject()
-                KeyCodeCombination(KeyCode.P).match(ev) -> toolSelector.select(ToolSelector.Tool.Pointer)
-                KeyCodeCombination(KeyCode.F5).match(ev) -> controller.restartSuperCollider()
-                KeyCodeCombination(KeyCode.V, CONTROL_DOWN).match(ev) -> controller.showServerWindow()
-                KeyCodeCombination(KeyCode.R, CONTROL_DOWN).match(ev) -> {
-                    controller.client.post("s.record")
-                }
-
-                KeyCodeCombination(KeyCode.R, CONTROL_DOWN, SHIFT_DOWN).match(ev) -> {
-                    controller.client.post("s.stopRecording;")
-                }
-            }
-            ev.consume()
+        layout.registerShortcuts {
+            on("Ctrl+SPACE") { togglePlay() }
+            on("Ctrl+PERIOD") { stop() }
+            on("DELETE") { scoreView.removeSelected() }
+            on("ESCAPE") { scoreView.clearNewShape() }
+            on("Ctrl+S") { controller.saveProject() }
+            on("Ctrl+O") { controller.openProject() }
+            on("Ctrl+N") { controller.createNewProject() }
+            on("P") { toolSelector.select(ToolSelector.Tool.Pointer) }
+            on("F1") { controller.showServerWindow() }
+            on("F5") { controller.restartScSynth() }
         }
+    }
+
+    override fun superColliderListening() {
+        playBtn.isDisable = false
+        stopBtn.isDisable = false
+        recordBtn.isDisable = false
     }
 }

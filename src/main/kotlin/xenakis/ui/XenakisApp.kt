@@ -4,8 +4,10 @@ import javafx.application.Application
 import javafx.stage.Stage
 
 class XenakisApp : Application() {
+    private lateinit var controller: XenakisController
+
     override fun start(stage: Stage) {
-        val controller = XenakisController(stage)
+        controller = XenakisController(stage)
         controller.setupHextant()
         controller.startSuperCollider()
         val ui = XenakisUI(stage, controller)
@@ -14,6 +16,9 @@ class XenakisApp : Application() {
         stage.show()
     }
 
+    override fun stop() {
+        controller.quitApplication()
+    }
 
     companion object {
         @JvmStatic

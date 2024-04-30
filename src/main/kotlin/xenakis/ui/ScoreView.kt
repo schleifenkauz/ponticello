@@ -91,7 +91,7 @@ class ScoreView(
         children.add(view)
         select(view, addToSelection = false)
         Platform.runLater {
-            view.onAddToScoreView(this)
+            view.init(this)
         }
     }
 

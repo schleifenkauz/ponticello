@@ -1,6 +1,8 @@
 package xenakis.sc
 
 import hextant.codegen.*
+import hextant.completion.CompletionStrategy
+import hextant.completion.ConfiguredCompleter
 import hextant.core.editor.TokenType
 import kotlinx.serialization.Serializable
 import xenakis.sc.editor.LiteralEditor
@@ -129,8 +131,16 @@ data class LiteralArray(val elements: List<Literal>) : Literal {
 }
 
 @Serializable
-@Token(serializable = true)
-data class Identifier(val text: String) : SimpleScElement(text)
+@Token(nodeType = ScExpr::class, serializable = true)
+data class Identifier(val text: String) : SimpleScElement(text), ScExpr {
+    companion object {
+        fun isValid(token: String): Boolean {
+            if (token.isEmpty()) return false
+            if (!token.first().isLetterOrDigit() && token.first() != '~') return false
+            return token.drop(1).all { c -> c.isLetterOrDigit() }
+        }
+    }
+}
 
 @Serializable
 @Compound(nodeType = ScExpr::class, serializable = true)
@@ -144,7 +154,44 @@ data class RawScExpr(val code: String) : ScExpr {
 @Serializable
 @Compound(serializable = true)
 @EditableList(serializable = true)
-data class Variable(val name: Identifier, val defaultValue: ScExpr) : ScElement {
+data class Variable(val name: Identifier, val defaultValue: ScExpr = EmptyExpr) : ScElement {
+    override fun code(writer: ScWriter) {
+        name.code(writer)
+        if (defaultValue != EmptyExpr) {
+            writer.append(" = ")
+            defaultValue.code(writer)
+        }
+    }
+}
+
+@Serializable
+@Compound(serializable = true)
+data class CodeBlock(val variables: List<Variable> = emptyList(), val statements: List<ScExpr>) {
+    fun code(writer: ScWriter) = with(writer) {
+        if (variables.isNotEmpty()) {
+            this.append("var ")
+            this.appendList(variables, separator = ", ")
+            this.appendLine(";")
+        }
+        for (expr in statements) {
+            expr.code(this)
+            this.appendLine(";")
+        }
+    }
+}
+
+@Serializable
+@Compound(nodeType = ScExpr::class, serializable = true)
+data class CodeGroup(val block: CodeBlock) : ScExpr {
+    override fun code(writer: ScWriter) {
+        block.code(writer)
+    }
+}
+
+@Serializable
+@Compound
+@EditableList
+data class Parameter(val name: Identifier, val defaultValue: ScExpr = EmptyExpr) : ScElement {
     override fun code(writer: ScWriter) {
         name.code(writer)
         if (defaultValue != EmptyExpr) {
@@ -156,34 +203,14 @@ data class Variable(val name: Identifier, val defaultValue: ScExpr) : ScElement 
 
 @Serializable
 @Compound(nodeType = ScExpr::class, serializable = true)
-data class CodeBlock(val variables: List<Variable>, val statements: List<ScExpr>) : ScExpr {
-    override fun code(writer: ScWriter) = writer.appendBlock {
-        appendVariablesAndStatements(this)
-    }
-
-    fun appendVariablesAndStatements(writer: ScWriter) {
-        if (variables.isNotEmpty()) {
-            writer.append("var ")
-            writer.appendList(this.variables, separator = ", ")
-            writer.appendLine(";")
-        }
-        for (expr in statements) {
-            expr.code(writer)
-            writer.appendLine(";")
-        }
-    }
-}
-
-@Serializable
-@Compound(nodeType = ScExpr::class, serializable = true)
-data class ScFunction(val parameters: List<Variable>, val body: CodeBlock) : ScExpr {
+data class ScFunction(val parameters: List<Parameter> = emptyList(), val body: CodeBlock) : ScExpr {
     override fun code(writer: ScWriter) = writer.appendBlock("") {
         if (parameters.isNotEmpty()) {
             append("arg ")
             appendList(parameters, separator = ", ")
             appendLine(";")
         }
-        body.appendVariablesAndStatements(writer)
+        body.code(writer)
     }
 }
 
@@ -191,7 +218,7 @@ data class ScFunction(val parameters: List<Variable>, val body: CodeBlock) : ScE
 @Compound(nodeType = ScExpr::class, serializable = true)
 data class Assignment(val variable: Identifier, val expression: ScExpr) : ScExpr {
     override fun code(writer: ScWriter) {
-        writer.append("$variable = ")
+        writer.append("${variable.text} = ")
         expression.code(writer)
     }
 }
@@ -208,10 +235,14 @@ enum class Operator(val code: String) : Selector {
     PlusPlus("++"),
     Unrecognized("<???>");
 
-    companion object : TokenType<Operator> {
+    override fun toString(): String = code
+
+    companion object : TokenType<Operator>, ConfiguredCompleter<Any?, Operator>(CompletionStrategy.simple) {
         val map = Operator.values().associateBy { op -> op.code }
 
         override fun compile(token: String): Operator = map[token] ?: Unrecognized
+
+        override fun completionPool(context: Any?): Collection<Operator> = values().asList()
     }
 }
 
@@ -220,7 +251,7 @@ enum class Operator(val code: String) : Selector {
 @EditableList(serializable = true)
 data class Argument(val name: Identifier = Identifier(""), val value: ScExpr) : ScElement {
     override fun code(writer: ScWriter) {
-        if (name.text != " ") writer.append("$name: ")
+        if (name.text != "") writer.append("${name.text}: ")
         value.code(writer)
     }
 }
@@ -230,6 +261,7 @@ data class Argument(val name: Identifier = Identifier(""), val value: ScExpr) : 
 data class MessageSend(val receiver: ScExpr, val method: Identifier, val arguments: List<Argument>) : ScExpr {
     override fun code(writer: ScWriter) = with(writer) {
         receiver.code(writer)
+        writer.append(".")
         method.code(writer)
         if (arguments.isNotEmpty()) {
             append("(")
@@ -238,6 +270,9 @@ data class MessageSend(val receiver: ScExpr, val method: Identifier, val argumen
         }
     }
 }
+
+fun ScExpr.send(message: String, vararg arguments: ScExpr) =
+    MessageSend(this, Identifier(message), arguments.map { arg -> Argument(value = arg) })
 
 @Serializable
 @Compound(nodeType = ScExpr::class, serializable = true)

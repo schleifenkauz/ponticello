@@ -10,7 +10,7 @@ class SynthObjectView(override val obj: SynthObject, project: XenakisProject) : 
 
     override fun repaint() {
         super.repaint()
-        addFunction(Icon.Details, "Open control assignment view") {
+        addAction(Icon.Details, "Open control assignment view") {
             val confirmed = ControlAssignmentView.show(obj, project)
             if (confirmed) {
                 repaint()

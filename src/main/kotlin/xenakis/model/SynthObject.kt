@@ -6,6 +6,7 @@ import kotlinx.serialization.Transient
 import xenakis.impl.ScWriter
 import xenakis.sc.Group
 import xenakis.sc.SynthDef
+import xenakis.ui.format
 
 @Serializable
 class SynthObject(
@@ -35,48 +36,51 @@ class SynthObject(
         controls.mapTo(mutableListOf()) { c -> c.clone() }
     )
 
-    override fun ScWriter.writeStartCode(offset: Double) {
-        val synthVar = "~synth_$name"
-        +"$synthVar = Synth(\\$synthDefName)"
-        for (control in controls) {
-            val param = control.parameter
-            when (control) {
-                is EnvelopeControl -> {
-                    val env = control.envelope.code(offset, duration)
-                    val busName = "~auxil_${name}_${param}"
-                    +"$busName = Bus.control(s, 1)"
-                    +"{ $env }.play(s, $busName)"
-                    +"${synthVar}.map(\\$param, $busName)"
-                }
+    override fun writeStartCode(writer: ScWriter, offset: Double) {
+        writer.appendBlock("s.bind") {
+            val synthVar = "~synth_${name}"
+            +"$synthVar = Synth(\\${synthDefName})"
+            for (control in controls) {
+                val param = control.parameter
+                when (control) {
+                    is EnvelopeControl -> {
+                        val env = control.envelope.code(offset, duration)
+                        val busName = "~auxil_${name}_${param}"
+                        +"$busName = Bus.control(s, 1)"
+                        +"{ $env }.play(s, $busName)"
+                        +"${synthVar}.map(\\$param, $busName)"
+                    }
 
-                is KnobControl -> {
-                    val value = control.value
-                    +"${synthVar}.set(\\$param, $value)"
-                }
+                    is KnobControl -> {
+                        val value = control.value.format(2)
+                        +"${synthVar}.set(\\$param, $value)"
+                    }
 
-                is BusControl -> {
-                    val bus = control.bus.code
-                    +"${synthVar}.map(\\$param, $bus)"
-                }
+                    is BusControl -> {
+                        val bus = control.bus.code
+                        +"${synthVar}.map(\\$param, $bus)"
+                    }
 
-                is CustomControl -> {
-                    val expr = control.expr
-                    val busName = "~auxil_${name}_${param}"
-                    +"$busName = Bus.control(s, 1)"
-                    append("{ ")
-                    expr.code(this)
-                    +" }.play(s, $busName)"
-                    +"${synthVar}.map(\\$param, $busName)"
-                }
+                    is CustomControl -> {
+                        val expr = control.expr
+                        val busName = "~auxil_${name}_${param}"
+                        +"$busName = Bus.control(s, 1)"
+                        this.append("{ ")
+                        expr.code(this)
+                        +" }.play(s, $busName)"
+                        +"${synthVar}.map(\\$param, $busName)"
+                    }
 
-                is BufferControl -> {
-                    val buf = control.buffer.code
-                    +"${synthVar}.set(\\$param, $buf)"
-                }
+                    is BufferControl -> {
+                        val buf = control.buffer.code
+                        +"${synthVar}.set(\\$param, $buf)"
+                    }
 
-                is ConstantControl -> +"${synthVar}.set(\\$param, ${control.value})"
+                    is ConstantControl -> +"${synthVar}.set(\\$param, ${control.value})"
+                }
             }
         }
+        writer.appendLine(";")
     }
 
     override fun writeStopCode(writer: ScWriter) = with(writer) {

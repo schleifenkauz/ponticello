@@ -30,9 +30,9 @@ class EnvelopeObject(
     override fun clone(newName: String): ScoreObject =
         EnvelopeObject(name, color, bus, envelope.clone(), spec, start, duration, y, height)
 
-    override fun ScWriter.writeStartCode(offset: Double) {
+    override fun writeStartCode(writer: ScWriter, offset: Double) {
         val env = envelope.code(offset, duration)
-        append("{ $env }.play(s, ${bus.code});")
+        writer.append("{ $env }.play(s, ${this.bus.code});")
     }
 
     override fun writeStopCode(writer: ScWriter) {
