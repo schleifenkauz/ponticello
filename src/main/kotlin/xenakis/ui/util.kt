@@ -9,6 +9,7 @@ import javafx.beans.property.SimpleDoubleProperty
 import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.value.ObservableValue
 import javafx.event.ActionEvent
+import javafx.geometry.Pos
 import javafx.scene.Node
 import javafx.scene.control.Button
 import javafx.scene.control.ButtonType
@@ -17,15 +18,18 @@ import javafx.scene.control.MenuItem
 import javafx.scene.control.RadioButton
 import javafx.scene.control.TextField
 import javafx.scene.control.ToggleGroup
+import javafx.scene.layout.HBox
+import javafx.scene.layout.Priority
 import javafx.scene.layout.Region
+import javafx.scene.layout.VBox
 import javafx.stage.Popup
 import org.controlsfx.glyphfont.FontAwesome
 import org.controlsfx.glyphfont.Glyph
 import reaktive.Reactive
-import java.time.Duration
 import java.util.Optional
+import kotlin.math.ceil
+import kotlin.math.log10
 import kotlin.math.pow
-import kotlin.math.roundToInt
 
 fun <T> Optional<T>.getOrNull(): T? = orElse(null)
 
@@ -46,19 +50,27 @@ fun DialogPane.setDefaultButton(type: ButtonType, disable: ObservableValue<Boole
     btn.isDefaultButton = true
 }
 
-fun <N: Node> N.styleClass(vararg classes: String) = also { it.styleClass.addAll(classes) }
+fun <N : Node> N.styleClass(vararg classes: String) = also { it.styleClass.addAll(classes) }
 
-fun button(text: String, onAction: (ev: ActionEvent) -> Unit) = Button(text).also { btn -> btn.setOnAction(onAction) }
+fun button(text: String = "", onAction: (ev: ActionEvent) -> Unit) =
+    Button(text).also { btn -> btn.setOnAction(onAction) }
 
 fun button(glyph: FontAwesome.Glyph, onAction: (ev: ActionEvent) -> Unit) =
     Button(null, Glyph("FontAwesome", glyph)).also { btn -> btn.setOnAction(onAction) }
 
 fun textField(text: String = "", config: TextField.() -> Unit) = TextField(text).apply(config)
 
-fun showPopup(owner: Region, node: Node) = with(Popup()) {
-    content.add(node)
-    val coords = owner.localToScreen(0.0, owner.height)
+fun showPopup(owner: Node, node: Node) = popup(node).show(owner)
+
+fun Popup.show(owner: Node) {
+    val coords = owner.localToScreen(0.0, 0.0)
     show(owner, coords.x, coords.y)
+}
+
+inline fun popup(node: Node, block: Popup.() -> Unit = {}) = Popup().apply {
+    content.add(node)
+    isAutoHide = true
+    block()
 }
 
 fun ToggleGroup.dontDeselectAll() {
@@ -87,17 +99,32 @@ fun menuItem(text: String, action: () -> Unit) = MenuItem(text).also { item ->
     }
 }
 
+fun <N : Node> N.alwaysHGrow() = also { HBox.setHgrow(it, Priority.ALWAYS) }
+fun <N : Node> N.alwaysVGrow() = also { VBox.setVgrow(it, Priority.ALWAYS) }
+
+fun infiniteSpace() = Region().alwaysHGrow()
+
+fun <N : Node> N.centerChildrenVertically() = also {
+    when (it) {
+        is HBox -> it.alignment = Pos.CENTER_LEFT
+        is VBox -> it.alignment = Pos.CENTER_LEFT
+        else -> {}
+    }
+}
+
 fun ClosedFloatingPointRange<Double>.reverseIfEmpty() = if (start > endInclusive) endInclusive..start else this
 
 fun Double.format(accuracy: Int) = toString().let { s -> s.take(s.indexOf('.') + 1 + accuracy) }
 
-fun <N: Node> N.antiScale(container: Node) = apply {
+fun <N : Node> N.antiScale(container: Node) = apply {
     val one = SimpleDoubleProperty(1.0)
     scaleXProperty().bind(one.divide(container.scaleXProperty()))
     scaleYProperty().bind(one.divide(container.scaleYProperty()))
 }
 
 fun Double.snap(grid: Double) = (this / grid).toInt() * grid
+
+fun accuracy(delta: Double) = ceil(-log10(delta).coerceAtMost(0.0)).toInt()
 
 fun timeCode(t: Double, accuracy: Int): String {
     var seconds = t.toInt()
@@ -112,24 +139,3 @@ fun timeCode(t: Double, accuracy: Int): String {
     }
 }
 
-private class ReactiveCompoundEditorControl(
-    editor: Editor<*>,
-    arguments: Bundle,
-    vararg repaintTriggers: Reactive,
-    build: Vertical.(Bundle) -> Unit
-) : CompoundEditorControl(editor, arguments, build) {
-    init {
-        repaintTriggers.forEach { trig ->
-            trig.observe {
-                root = createDefaultRoot()
-            }
-        }
-    }
-}
-
-fun compoundControl(
-    editor: Editor<*>,
-    arguments: Bundle,
-    vararg repaintTriggers: Reactive,
-    build: CompoundEditorControl.Vertical.(Bundle) -> Unit
-): CompoundEditorControl = ReactiveCompoundEditorControl(editor, arguments, *repaintTriggers, build = build)

@@ -1,16 +1,20 @@
 package xenakis.model
 
+import hextant.serial.EditorRoot
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
+import reaktive.value.now
+import xenakis.impl.SuperColliderContext
 import xenakis.sc.Bus
-import xenakis.sc.ScExpr
-import java.util.LinkedList
-import java.util.Queue
+import xenakis.sc.Group
+import xenakis.sc.editor.CodeBlockEditor
+import xenakis.ui.CodePane
+import java.util.*
 
 @Serializable
 class AudioFlowGraph(
     private val _busses: MutableSet<BusObject>,
-    private val _flows: MutableSet<AudioFlow>
+    private val _flows: MutableSet<AudioFlow>,
 ) {
     @Transient
     private val edges = mutableMapOf<BusObject, MutableSet<AudioFlow>>()
@@ -47,8 +51,9 @@ class AudioFlowGraph(
         edges(flow.source).remove(flow)
     }
 
-    fun addBus(bus: BusObject) {
+    fun addBus(bus: BusObject, context: SuperColliderContext) {
         _busses.add(bus)
+        context.postAsync(bus.bus.allocationCode)
     }
 
     fun removeBus(bus: BusObject) {
@@ -74,11 +79,32 @@ class AudioFlowGraph(
         return if (order.size == flows.size) order else null
     }
 
-    @Serializable
-    class BusObject(val bus: Bus, var x: Double, var y: Double)
+    fun allocateBusses(context: SuperColliderContext) = context.postAsync {
+        for ((bus) in busses) {
+            if (bus.name != "output") +bus.allocationCode
+        }
+    }
+
+    fun setupAudioFlow(context: SuperColliderContext) = context.postAsync {
+        var prev = Group.default.variableName
+        for (flow in order) {
+            val source = flow.source.bus
+            val target = flow.target.bus
+            val ugenGraph = flow.ugenGraph.editor.result.now
+            val synthName = "~flow_${source.name}_${target.name}"
+            appendLine("{")
+            +"var sig = In.${source.rate}(${source.variableName})"
+            ugenGraph.code(this)
+            +"}.play($prev, ${target.variableName}, addAction: 'addAfter')"
+            prev = synthName
+        }
+    }
 
     @Serializable
-    class AudioFlow(val source: BusObject, val target: BusObject, var effects: ScExpr?)
+    data class BusObject(val bus: Bus, var x: Double, var y: Double)
+
+    @Serializable
+    class AudioFlow(val source: BusObject, val target: BusObject, val ugenGraph: EditorRoot<CodeBlockEditor>)
 
     companion object {
         fun createDefault(): AudioFlowGraph {

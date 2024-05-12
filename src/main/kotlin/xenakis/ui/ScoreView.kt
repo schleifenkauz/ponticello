@@ -1,7 +1,9 @@
 package xenakis.ui
 
+import hextant.fx.registerShortcuts
+import hextant.serial.EditorRoot
 import javafx.application.Platform
-import javafx.scene.Node
+import javafx.scene.input.KeyEvent
 import javafx.scene.input.MouseEvent
 import javafx.scene.layout.Pane
 import javafx.scene.paint.Color
@@ -13,6 +15,8 @@ import xenakis.model.*
 import xenakis.sc.Group
 import xenakis.sc.editor.ScFunctionEditor
 import xenakis.ui.ToolSelector.Tool.*
+import kotlin.math.exp
+import kotlin.math.max
 
 class ScoreView(
     private val project: XenakisProject,
@@ -21,65 +25,128 @@ class ScoreView(
     private var newObjectArea: Rectangle? = null
     private val views = mutableMapOf<ScoreObject, ScoreObjectView>()
     private val selectedViews = mutableSetOf<ScoreObjectView>()
-    private val orientationNodes = mutableListOf<Node>()
     var timeSnap: Double = 0.1
+    private var displayStart: Double = 0.0
+    private var displayEnd: Double = 0.0
+
+    val pixelsPerSecond get() = width / (displayEnd - displayStart)
 
     val score get() = project.score
 
     val selectedObjects get() = selectedViews.map { view -> view.obj }
 
     init {
-        addTimeGrid()
-        scaleXProperty().addListener { _ -> addTimeGrid() }
-        listenForMouseEvents()
-        displayScore()
+        listenForEvents()
+        score.addListener(this)
         styleClass.add("score-view")
+        widthProperty().addListener { _, old, new -> onResize(old.toDouble(), new.toDouble()) }
     }
 
-    private fun addTimeGrid() {
-        children.removeAll(orientationNodes)
-        orientationNodes.clear()
-        val steps = listOf(0.1, 0.2, 0.5, 1.0, 2.0, 5.0, 10.0)
-        var idx = steps.binarySearchBy(1 / scaleX) { s -> s }
-        if (idx < 0) idx = (-(idx + 1)).coerceAtMost(steps.size - 1)
-        val gridDist = steps[idx]
-        timeSnap = PIXELS_PER_SECOND * gridDist / 10.0
-        val accuracy = if (gridDist - gridDist.toInt() == 0.0) 0 else gridDist.toString().substringAfter(".").length
-        for (t in gridDist..(score.totalDuration - gridDist) step gridDist) {
-            val x = t * PIXELS_PER_SECOND
-            val l = Line(x, 20.0, x, height - 40.0).styleClass("grid-line").antiScale(this)
-            orientationNodes.add(l)
+    private fun onResize(old: Double, new: Double) {
+        val delta = new - old
+        displayEnd += getDuration(delta)
+        repaint()
+    }
+
+    fun displayWholeScore() {
+        displayStart = 0.0
+        displayEnd = score.objects.maxOfOrNull { obj -> obj.start + obj.duration } ?: 60.0
+        repaint()
+    }
+
+    private fun repaint() {
+        children.clear()
+        displayTimeGrid()
+        displayObjects()
+        ui.player.repaint()
+    }
+
+    private fun displayTimeGrid() {
+        var idx = QUANTIZED_PIXELS_PER_SECOND.binarySearchBy(pixelsPerSecond) { s -> s }
+        if (idx < 0) idx = (-(idx + 1)).coerceAtMost(QUANTIZED_PIXELS_PER_SECOND.size - 1)
+        val quantizedPixelsPerSecond = QUANTIZED_PIXELS_PER_SECOND[idx]
+        val gridDist = (1 / quantizedPixelsPerSecond) * 50.0
+        timeSnap = getWidth(gridDist) / 10.0
+        val accuracy = accuracy(gridDist)
+        for (t in displayStart..displayEnd step gridDist) {
+            val x = getX(t)
+            val l = Line(x, 20.0, x, height - 40.0).styleClass("grid-line")
+            l.endYProperty().bind(heightProperty().subtract(40))
+            children.add(l)
             val timeCode = timeCode(t, accuracy)
             val txt = Text(timeCode).styleClass("grid-time-code")
             txt.relocate(x - 8, height - 20)
-            txt.antiScale(this)
-            orientationNodes.add(txt)
+            txt.layoutYProperty().bind(heightProperty().subtract(20))
+            children.add(txt)
         }
-        children.addAll(0, orientationNodes)
     }
 
-    private fun displayScore() {
-        score.addListener(this)
-        for (obj in score.objects) {
-            addedObject(obj)
+    private fun displayObjects() {
+        for ((obj, view) in views) {
+            if (obj.start > displayEnd) continue
+            if (obj.start + obj.duration < displayStart) continue
+            view.prefWidth = obj.computeWidth(pixelsPerSecond)
+            view.rescale()
+            view.relocate(getX(obj.start), obj.y)
+            children.add(view)
         }
-        prefHeight = 1000.0
-        setTotalDuration(score.totalDuration)
     }
 
-    private fun listenForMouseEvents() {
+    private fun listenForEvents() {
         setOnMousePressed(this::mousePressed)
         setOnMouseClicked(this::mouseClicked)
         setOnMouseDragged(this::mouseDragged)
         setOnMouseReleased(this::mouseReleased)
+        setOnScroll { ev ->
+            if (ev.isControlDown) {
+                val factor = exp(-ev.textDeltaY * 0.02)
+                zoom(factor, ev.x)
+            } else {
+                scroll(max(ev.deltaX, ev.textDeltaY) * 5)
+            }
+        }
+        registerShortcuts {
+            on("Ctrl?+PLUS") {
+                zoom(0.8, 0.0)
+            }
+            on("Ctrl?+MINUS") {
+                zoom(1.2, 0.0)
+            }
+            on("HOME") {
+                displayWholeScore()
+            }
+        }
+    }
+
+    private fun zoom(amount: Double, evX: Double) {
+        val newIntervalSize = (displayEnd - displayStart) * amount
+        val oldIntervalCenter = (displayEnd + displayStart) / 2
+        val newIntervalCenter = (getTime(evX) + oldIntervalCenter * 3) / 4
+        displayStart = newIntervalCenter - (newIntervalSize / 2)
+        displayEnd = newIntervalCenter + (newIntervalSize / 2)
+        noNegativeTimes()
+        repaint()
+    }
+
+    private fun scroll(amount: Double) {
+        displayStart += amount
+        displayEnd += amount
+        noNegativeTimes()
+        repaint()
+    }
+
+    private fun noNegativeTimes() {
+        if (displayStart < 0) {
+            displayEnd -= displayStart
+            displayStart -= displayStart
+        }
     }
 
     fun getObjectView(obj: ScoreObject) = views.getOrPut(obj) {
         when (obj) {
             is SynthObject -> SynthObjectView(obj, project)
             is TaskObject -> TaskObjectView(obj, project)
-            is EnvelopeObject -> TODO()
-            else -> TODO()
+            is EnvelopeObject -> EnvelopeObjectView(obj, project)
         }
     }
 
@@ -105,13 +172,16 @@ class ScoreView(
 
     override fun movedObject(obj: ScoreObject) {
         val view = getObjectView(obj)
-        view.relocate(obj.start * PIXELS_PER_SECOND, obj.y)
+        view.relocate(getX(obj.start), obj.y)
     }
 
-    override fun setTotalDuration(duration: Double) {
-        prefWidth = duration * PIXELS_PER_SECOND
-        addTimeGrid()
-    }
+    fun getX(time: Double) = (time - displayStart) * pixelsPerSecond
+
+    fun getTime(x: Double) = (x / pixelsPerSecond) + displayStart
+
+    fun getDuration(width: Double) = width / pixelsPerSecond
+
+    fun getWidth(duration: Double) = duration * pixelsPerSecond
 
     fun select(view: ScoreObjectView, addToSelection: Boolean): Boolean {
         if (!addToSelection) deselectAll()
@@ -134,13 +204,19 @@ class ScoreView(
         val rect = Rectangle(x, y, 0.0, 0.0)
         when (ui.toolSelector.selected.value) {
             ToolSelector.Tool.Synth -> {
-                rect.stroke = ui.synthDefsEditor.selectedSynthDef.associatedColor
+                val synthDef = project.context[SynthDefs].selectedSynthDef
+                rect.stroke = synthDef.associatedColor
                 rect.fill = Color.TRANSPARENT
                 setNewShape(rect)
             }
 
             ToolSelector.Tool.Task -> {
                 rect.fill = Color.GRAY
+                setNewShape(rect)
+            }
+
+            ToolSelector.Tool.Envelope -> {
+                rect.fill = Color.WHITE
                 setNewShape(rect)
             }
 
@@ -180,14 +256,14 @@ class ScoreView(
     }
 
     private fun createNewObject(tool: ToolSelector.Tool, rect: Rectangle) {
-        val start = rect.x / PIXELS_PER_SECOND
-        val duration = rect.width / PIXELS_PER_SECOND
+        val start = getTime(rect.x)
+        val duration = getDuration(rect.width)
         when (tool) {
             Synth -> {
-                val def = ui.synthDefsEditor.selectedSynthDef
+                val def = project.context[SynthDefs].selectedSynthDef
                 val name = showTextInputDialog("Synth name", project.context) ?: return
                 val obj = SynthObject(
-                    name, Group.default, def.name,
+                    name, Group.default, def.name.text,
                     start, duration,
                     rect.y, rect.height,
                     def.defaultControls()
@@ -201,14 +277,18 @@ class ScoreView(
 
             Task -> {
                 val name = showTextInputDialog("Task name", project.context) ?: return
-                val editor = ScFunctionEditor(project.context)
-                val obj = TaskObject(name, editor, start, duration, rect.y, rect.height, emptyList())
+                val editor = EditorRoot.create(ScFunctionEditor(project.context))
+                val obj = TaskObject(name, editor, start, rect.width, rect.y, rect.height, emptyList())
                 obj.initialize(project)
                 score.addObject(obj)
             }
 
             Envelope -> {
-
+                EnvelopeObjectView.showEnvelopeConfig(project.context, rect) { name, spec, outputBus ->
+                    val envelope = xenakis.sc.Envelope.constant(spec.defaultValue.value, spec.warp)
+                    val obj = EnvelopeObject(name, spec, outputBus, envelope, start, duration, rect.y, rect.height)
+                    score.addObject(obj)
+                }
             }
 
             Pattern -> {}
@@ -236,7 +316,11 @@ class ScoreView(
         }
     }
 
+    override fun recolor(obj: SynthObject) {
+        getObjectView(obj).recolor()
+    }
+
     companion object {
-        const val PIXELS_PER_SECOND = 50.0
+        private val QUANTIZED_PIXELS_PER_SECOND = listOf(1.0, 2.0, 5.0, 10.0, 20.0, 50.0, 100.0, 200.0, 500.0)
     }
 }

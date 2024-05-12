@@ -4,6 +4,7 @@ import javafx.scene.paint.Color
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import xenakis.impl.ScWriter
+import xenakis.sc.ControlSpec
 import xenakis.sc.Group
 import xenakis.sc.SynthDef
 import xenakis.ui.format
@@ -14,20 +15,19 @@ class SynthObject(
     override var start: Double, override var duration: Double,
     override var y: Double, override var height: Double,
     override val controls: MutableList<ParameterControl>,
+    override var muted: Boolean = false
 ) : ScoreObject() {
     @Transient
     lateinit var context: XenakisProject
         private set
 
-    @Transient
-    lateinit var synthDef: SynthDef
-        private set
+    val synthDef: SynthDef
+        get() = context.synthDefs.get(synthDefName)
 
     override val color: Color get() = synthDef.associatedColor
 
     override fun initialize(project: XenakisProject) {
         this.context = project
-        synthDef = project.getSynthDef(synthDefName)
     }
 
     override fun clone(newName: String): ScoreObject = SynthObject(
@@ -35,6 +35,8 @@ class SynthObject(
         start, duration, y, height,
         controls.mapTo(mutableListOf()) { c -> c.clone() }
     )
+
+    override fun getSpec(parameter: String): ControlSpec = synthDef.getParameter(parameter).spec
 
     override fun writeStartCode(writer: ScWriter, offset: Double) {
         writer.appendBlock("s.bind") {
@@ -57,7 +59,12 @@ class SynthObject(
                     }
 
                     is BusControl -> {
-                        val bus = control.bus.code
+                        val bus = control.bus.variableName
+                        +"${synthVar}.set(\\$param, $bus)"
+                    }
+
+                    is BusValueControl -> {
+                        val bus = control.bus.variableName
                         +"${synthVar}.map(\\$param, $bus)"
                     }
 
@@ -72,7 +79,7 @@ class SynthObject(
                     }
 
                     is BufferControl -> {
-                        val buf = control.buffer.code
+                        val buf = control.buffer.variableName
                         +"${synthVar}.set(\\$param, $buf)"
                     }
 

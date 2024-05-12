@@ -32,7 +32,10 @@ class ControlAssignmentView(
     companion object {
         fun show(obj: SynthObject, project: XenakisProject): Boolean {
             val view = ControlAssignmentView(obj.synthDef, project, obj.controls)
-            return showDialog(view, project.context) { view.updateFromUserInput() } != null
+            return view.showDialog("Configure controls",
+                applyStylesheets = { scene -> scene.stylesheets.add("xenakis/ui/style.css") },
+                resultConverter = { view.updateFromUserInput() }
+            ) != null
         }
 
     }

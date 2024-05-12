@@ -45,7 +45,7 @@ class ScWriter(private val output: Appendable) {
         indent = indent.dropLast(2)
     }
 
-    fun indented(block: ScWriter.() -> Unit) {
+    inline fun indented(block: ScWriter.() -> Unit) {
         increaseIndent()
         appendLine()
         block()
@@ -53,7 +53,7 @@ class ScWriter(private val output: Appendable) {
         decreaseIndent()
     }
 
-    fun appendBlock(s: String = "", block: ScWriter.() -> Unit) {
+    inline fun appendBlock(s: String = "", block: ScWriter.() -> Unit) {
         if (s.isNotEmpty()) {
             append(s)
             append(" ")
@@ -63,7 +63,7 @@ class ScWriter(private val output: Appendable) {
         append("}")
     }
 
-    fun appendGroup(block: ScWriter.() -> Unit) {
+    inline fun appendGroup(block: ScWriter.() -> Unit) {
         append("(")
         indented(block)
         appendLine(")")

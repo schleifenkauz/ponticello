@@ -1,17 +1,14 @@
 package xenakis.ui
 
-import hextant.context.createControl
 import javafx.scene.control.ScrollPane
 import javafx.scene.layout.Priority
-import javafx.scene.layout.VBox
 import javafx.stage.StageStyle
 import xenakis.model.TaskObject
 import xenakis.model.XenakisProject
 
 class TaskObjectView(obj: TaskObject, project: XenakisProject) : ScoreObjectView(obj, project) {
-    private val codeEditor = project.context.createControl(obj.code) {
-        set(DISPLAY_BRACES, false)
-    }
+    private val codeEditor = obj.code.control
+
     private val codeArea = ScrollPane(codeEditor)
     private val codeWindow = codeArea.makeWindow(
         "Code: ${obj.name}", project.context,

@@ -2,12 +2,14 @@ package xenakis.ui
 
 import hextant.context.Context
 import hextant.fx.Stylesheets
+import hextant.fx.setDefaultButton
 import javafx.collections.FXCollections
 import javafx.scene.Node
 import javafx.scene.Parent
 import javafx.scene.Scene
 import javafx.scene.control.*
 import javafx.scene.layout.Pane
+import javafx.scene.layout.Region
 import javafx.stage.Stage
 import javafx.stage.StageStyle
 import javafx.util.StringConverter
@@ -29,9 +31,20 @@ fun <T : Any> showSelectorDialog(
         override fun fromString(p0: String?): T? = null
     }
     selector.value = initialValue
-    return showDialog(selector, context, confirmButton, StageStyle.TRANSPARENT) {
+    return selector.showDialog(
+        title, context,
+        confirmButton, buttonTypes = listOf(confirmButton, ButtonType.CANCEL),
+        StageStyle.TRANSPARENT
+    ) {
         selector.value.takeIf { btn -> btn == confirmButton }
     }
+}
+
+fun showYesNoDialog(question: String, default: Boolean = false): Boolean {
+    val alert = Alert(Alert.AlertType.CONFIRMATION, question, ButtonType.YES, ButtonType.NO)
+    val defaultBtn = if (default) ButtonType.YES else ButtonType.NO
+    alert.setDefaultButton(defaultBtn)
+    return alert.showAndWait().getOrNull() == ButtonType.YES
 }
 
 fun showDoubleInputDialog(
@@ -83,21 +96,35 @@ fun <T : Any> tryWithAlert(actionDescription: String, action: () -> T): T? = try
     null
 }
 
-
-fun <T : Any> showDialog(
-    view: Node,
-    context: Context,
+fun <T : Any> Node.showDialog(
+    title: String,
+    buttonTypes: List<ButtonType> = listOf(ButtonType.OK, ButtonType.CANCEL),
     confirmButton: ButtonType = ButtonType.OK,
     style: StageStyle = StageStyle.UNDECORATED,
-    resultConverter: () -> T?
+    applyStylesheets: (scene: Scene) -> Unit,
+    resultConverter: (btn: ButtonType) -> T? = { null }
 ) = Dialog<T>().run {
     initStyle(style)
-    context[Stylesheets].manage(dialogPane.scene)
-    dialogPane.content = view
-    dialogPane.buttonTypes.setAll(ButtonType.CANCEL, confirmButton)
-    setResultConverter { btn -> if (btn == confirmButton) resultConverter() else null }
+    this.title = title
+    applyStylesheets(dialogPane.scene)
+    dialogPane.content = this@showDialog
+    dialogPane.buttonTypes.setAll(buttonTypes)
+    setDefaultButton(confirmButton)
+    setResultConverter { btn -> if (btn != null && btn != ButtonType.CANCEL) resultConverter(btn) else null }
     showAndWait().getOrNull()
 }
+
+fun <T : Any> Node.showDialog(
+    title: String,
+    context: Context,
+    confirmButton: ButtonType = ButtonType.OK,
+    buttonTypes: List<ButtonType> = listOf(confirmButton, ButtonType.CANCEL),
+    style: StageStyle = StageStyle.UNDECORATED,
+    resultConverter: (btn: ButtonType) -> T? = { null }
+) = this.showDialog(
+    title, buttonTypes, confirmButton,
+    style, { scene -> context[Stylesheets].manage(scene) }, resultConverter
+)
 
 fun Parent.makeWindow(
     title: String,
@@ -120,9 +147,16 @@ fun Parent.makeWindow(
         stage.scene.root = this
         stage.sizeToScene()
     }
-    stage.setOnHidden {
-        stage.scene = null
+    stage.setOnCloseRequest {
+        stage.scene.root = Region()
         parent?.children?.add(idx, this)
+        stage.hide()
     }
     return stage
+}
+
+fun Parent.showWindow(title: String, context: Context): Stage {
+    val window = makeWindow(title, context)
+    window.show()
+    return window
 }

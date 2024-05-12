@@ -11,21 +11,24 @@ import javafx.scene.shape.Polyline
 import javafx.scene.text.Font
 import xenakis.impl.Point
 import xenakis.impl.dist
+import xenakis.model.ScoreObject
 import xenakis.sc.LinearTransformation
 import xenakis.sc.NumericalControlSpec
 import xenakis.sc.mapOnto
 
 class EnvelopeEditor(
     val parameterName: String,
-    val spec: NumericalControlSpec,
     private val points: MutableList<Point>,
     private val pane: Pane, private val scoreView: ScoreView,
-    color: Color, contrastColor: Color = Color.BLACK,
-    var valueGrid: Double,
+    private val associatedObject: ScoreObject,
+    contrastColor: Color,
     private val fixEdgePoints: Boolean
 ) {
+    private val spec get() = associatedObject.getSpec(parameterName) as NumericalControlSpec
     private val yTransform get() = spec.mapOnto(pane.height..0.0)
     private val xTransform get() = LinearTransformation(0.0..1.0, 0.0..pane.width)
+
+    private val valueGrid get() = spec.step.value
 
     private val mouseInfo = Label().apply {
         font = Font(14.0)
@@ -33,14 +36,9 @@ class EnvelopeEditor(
         textFill = contrastColor
     }
     private val handles = mutableListOf<Circle>()
-    val line = Polyline()
+    private val line = Polyline()
 
-    var color: Color = color
-        set(value) {
-            field = value
-            for (h in handles) h.fill = value
-            line.stroke = value
-        }
+    private val color get() = spec.associatedColor
 
     init {
         line.stroke = color
@@ -86,14 +84,13 @@ class EnvelopeEditor(
 
     private fun transformYToValue(y: Double) = yTransform.unmap(y).snap(valueGrid).coerceIn(yTransform.sourceRange)
 
-    private fun createHandle(color: Color, x: Double, y: Double): Circle {
-        val container = scoreView
-        return Circle(x, y, HANDLE_RADIUS, color).antiScale(container)
-    }
+    private fun createHandle(color: Color, x: Double, y: Double): Circle = Circle(x, y, HANDLE_RADIUS, color)
 
-    private fun displayPosition(x: Double, y: Double) {
-        val t = x * pane.width / ScoreView.PIXELS_PER_SECOND
-        mouseInfo.text = "t: ${t.format(3)}, $parameterName: ${y.format(3)}"
+    private fun displayPosition(t: Double, v: Double) {
+        val scoreTime = associatedObject.start + t * associatedObject.duration
+        val timeAccuracy = accuracy(scoreView.timeSnap)
+        val valueAccuracy = accuracy(spec.step.value)
+        mouseInfo.text = "t: ${scoreTime.format(timeAccuracy)}, $parameterName: ${v.format(valueAccuracy)}"
     }
 
     fun setContrastColor(color: Color) {
@@ -106,7 +103,6 @@ class EnvelopeEditor(
         handles.clear()
         line.points.clear()
         pane.children.add(line)
-        if (!mouseInfo.scaleYProperty().isBound) mouseInfo.antiScale(scoreView)
 
         for (p in points) {
             val x = xTransform.map(p.x)

@@ -6,6 +6,8 @@ import hextant.plugins.Aspects
 import hextant.plugins.Implementation
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
+import java.io.File
+import java.io.StringWriter
 
 typealias DoubleRange = ClosedFloatingPointRange<Double>
 
@@ -26,3 +28,12 @@ fun Context.registerImplementationsFromClasspath() {
         }
     }
 }
+
+inline fun code(writeCode: ScWriter.() -> Unit): String {
+    val writer = StringWriter()
+    ScWriter(writer).appendGroup(writeCode)
+    val code = writer.toString()
+    return code
+}
+
+val File.superColliderPath get() = "\"" + absolutePath.replace('\\', '/') + "\""

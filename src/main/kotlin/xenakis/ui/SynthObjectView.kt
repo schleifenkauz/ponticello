@@ -8,8 +8,8 @@ class SynthObjectView(override val obj: SynthObject, project: XenakisProject) : 
         styleClass("synth-object")
     }
 
-    override fun repaint() {
-        super.repaint()
+    override fun setupHeader() {
+        super.setupHeader()
         addAction(Icon.Details, "Open control assignment view") {
             val confirmed = ControlAssignmentView.show(obj, project)
             if (confirmed) {

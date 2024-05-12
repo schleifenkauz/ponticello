@@ -2,18 +2,19 @@ package xenakis.model
 
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
-import xenakis.impl.Point
 import xenakis.impl.ScWriter
 import xenakis.ui.format
 
 @Serializable
 data class Score(
-    private var _totalDuration: Double,
     private val _objects: MutableSet<ScoreObject> = mutableSetOf(),
     private val _horizontalGroups: MutableList<MutableSet<String>> = mutableListOf(),
     private val _verticalGroups: MutableList<MutableSet<String>> = mutableListOf(),
 ) {
     val objects: Set<ScoreObject> get() = _objects
+
+    val totalDuration: Double
+        get() = objects.maxOf { obj -> obj.start + obj.duration }
 
     @Transient
     private val objectsByName = objects.associateByTo(mutableMapOf()) { obj -> obj.name }
@@ -26,13 +27,6 @@ data class Score(
 
     @Transient
     private val listeners = mutableListOf<ScoreListener>()
-
-    var totalDuration: Double
-        get() = _totalDuration
-        set(value) {
-            _totalDuration = value
-            listeners.forEach { l -> l.setTotalDuration(value) }
-        }
 
     init {
         for (group in _horizontalGroups) {
@@ -57,6 +51,9 @@ data class Score(
 
     fun addListener(listener: ScoreListener) {
         listeners.add(listener)
+        for (obj in objects) {
+            listener.addedObject(obj)
+        }
     }
 
     private inline fun listeners(update: ScoreListener.() -> Unit) {
@@ -137,9 +134,17 @@ data class Score(
         TODO("Not yet implemented")
     }
 
+    fun recoloredSynthDef(name: String) {
+        for (obj in objects) {
+            if (obj is SynthObject && obj.synthDefName == name) {
+                listeners { recolor(obj) }
+            }
+        }
+    }
+
     fun writePlayerTask(writer: ScWriter, startTime: Double) {
         writer.appendLine("(~player_task = Task {")
-        val relevantObjects = objects.filter { it.start + it.duration > startTime }
+        val relevantObjects = objects.filter { obj -> !obj.muted && obj.start + obj.duration > startTime }
         val starts = relevantObjects.map { obj ->
             val start = obj.start.coerceAtLeast(startTime)
             val offset = (startTime - obj.start).coerceAtLeast(0.0)
@@ -147,14 +152,16 @@ data class Score(
         }
         val stops = relevantObjects.map { obj -> obj.start + obj.duration to { obj.writeStopCode(writer) } }
         val timedActions = (starts + stops).sortedBy { (t, _) -> t }
-        val (t0, action0) = timedActions.first()
-        val d = t0 - startTime
-        writer.appendLine("${d.format(2)}.wait;")
-        action0.invoke()
-        timedActions.zipWithNext { (t1, _), (t2, action) ->
-            val d = t2 - t1
-            writer.appendLine("${d.format(2)}.wait;")
-            action.invoke()
+        if (timedActions.isNotEmpty()) {
+            val (t0, action0) = timedActions.first()
+            val startDiff = t0 - startTime
+            writer.appendLine("${startDiff.format(2)}.wait;")
+            action0.invoke()
+            timedActions.zipWithNext { (t1, _), (t2, action) ->
+                val d = t2 - t1
+                writer.appendLine("${d.format(2)}.wait;")
+                action.invoke()
+            }
         }
         writer.appendLine("}.play)")
     }

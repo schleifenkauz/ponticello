@@ -1,5 +1,6 @@
 package xenakis.ui
 
+import bundles.publicProperty
 import javafx.application.Application
 import javafx.stage.Stage
 
@@ -21,6 +22,8 @@ class XenakisApp : Application() {
     }
 
     companion object {
+        val primaryStage = publicProperty<Stage>("primary-stage")
+
         @JvmStatic
         fun main(args: Array<String>) {
             launch(XenakisApp::class.java)

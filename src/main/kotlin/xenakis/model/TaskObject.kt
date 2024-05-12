@@ -1,7 +1,6 @@
 package xenakis.model
 
-import hextant.core.editor.copy
-import hextant.serial.makeRoot
+import hextant.serial.EditorRoot
 import javafx.scene.paint.Color
 import kotlinx.serialization.Serializable
 import reaktive.value.now
@@ -10,32 +9,35 @@ import xenakis.sc.editor.ScFunctionEditor
 
 @Serializable
 class TaskObject(
-    override var name: String, val code: ScFunctionEditor,
-    override var start: Double, override var duration: Double,
+    override var name: String, val code: EditorRoot<ScFunctionEditor>,
+    override var start: Double, private var width: Double,
     override var y: Double, override var height: Double,
-    override val controls: List<ParameterControl>
+    override val controls: List<ParameterControl>,
+    override var muted: Boolean = false
 ) : ScoreObject() {
     override val color: Color? get() = null
 
-    init {
-        code.makeRoot()
-    }
+    override var duration: Double
+        get() = 0.0
+        set(value) {
+            throw UnsupportedOperationException("Cannot set duration of TaskObject $name")
+        }
 
-    override fun initialize(project: XenakisProject) {
+    override fun computeWidth(pixelsPerSecond: Double): Double = width
 
+    override fun setWidth(w: Double, pixelsPerSecond: Double) {
+        width = w
     }
 
     override fun clone(newName: String): ScoreObject =
-        TaskObject(newName, code.copy(), start, duration, y, height, controls.toMutableList())
+        TaskObject(newName, code.clone(), start, duration, y, height, controls.toMutableList())
 
     override fun writeStartCode(writer: ScWriter, offset: Double) {
         writer.appendBlock("Task") {
-            val function = code.result.now
+            val function = code.editor.result.now
             function.code(this)
             this.appendLine(".value()")
         }
         writer.appendLine(".play;")
     }
-
-    override fun writeStopCode(writer: ScWriter) {}
 }

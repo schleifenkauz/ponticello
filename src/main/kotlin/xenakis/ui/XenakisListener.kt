@@ -3,7 +3,7 @@ package xenakis.ui
 import xenakis.model.XenakisProject
 
 interface XenakisListener {
-    fun superColliderListening()
+    fun superColliderReady()
     fun displayProject(project: XenakisProject)
     fun displayStartupScreen()
 }

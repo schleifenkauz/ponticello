@@ -1,5 +1,6 @@
 package xenakis.sc
 
+import hextant.codegen.Choice
 import kotlinx.serialization.Serializable
 import xenakis.impl.DoubleRange
 import kotlin.math.exp
@@ -7,6 +8,7 @@ import kotlin.math.ln
 import kotlin.math.pow
 
 @Serializable
+@Choice(defaultValue = "Warp.Linear")
 sealed class Warp {
     @Serializable
     object Linear : Warp() {
@@ -20,7 +22,11 @@ sealed class Warp {
 
     @Serializable
     data class Monomial(val exponent: Double) : Warp() {
-        override fun toString(): String = exponent.toString()
+        override fun toString(): String = "x^$exponent"
+    }
+
+    companion object {
+        fun values() = arrayOf(Linear, Exponential, Monomial(2.0), Monomial(3.0))
     }
 }
 
@@ -72,13 +78,13 @@ data class LinearTransformation(
 
 data class SpecTransformation(val spec: NumericalControlSpec, override val targetRange: DoubleRange) : Transformation {
     override val sourceRange: DoubleRange
-        get() = spec.min..spec.max
+        get() = spec.min.value..spec.max.value
 
     private val tdiff = targetRange.endInclusive - targetRange.start
     private val wmap = spec.warp.map
     private val wunmap = spec.warp.unmap
-    private val fmin = wmap(spec.min)
-    private val fmax = wmap(spec.max)
+    private val fmin = wmap(spec.min.value)
+    private val fmax = wmap(spec.max.value)
     private val fdiff = fmax - fmin
 
     override fun map(value: Double) = targetRange.start + (wmap(value) - fmin) * tdiff / fdiff

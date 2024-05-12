@@ -13,7 +13,7 @@ class UDPSuperColliderClient private constructor(
     private val socket: DatagramSocket,
     private val sclangAdr: InetAddress,
     private val sclangPort: Int
-) : SuperColliderClient {
+) : SuperColliderContext {
     private val buffer = ByteArray(BUFFER_SIZE)
     private var consoleMonitors = mutableListOf<(String) -> Unit>()
     var status: Status = Status.Starting
@@ -29,7 +29,7 @@ class UDPSuperColliderClient private constructor(
         consoleMonitorThread = monitorConsole()
     }
 
-    override fun post(command: String): String {
+    fun post(command: String): String {
         println("shell> $command")
         val msg = createMessage(command)
         send(msg)
@@ -38,7 +38,7 @@ class UDPSuperColliderClient private constructor(
         return value
     }
 
-    fun postAsync(command: String) {
+    override fun postAsync(command: String) {
         println("shell> $command")
         val msg = createMessage(command)
         send(msg)
@@ -76,7 +76,7 @@ class UDPSuperColliderClient private constructor(
                     consoleMonitors.forEach { m -> m.invoke(line + "\n") }
                     consoleUntilNow.appendLine(line)
                     println(line)
-                    if (line == "-> OSCFunc(/eval, nil, nil, nil)") {
+                    if ("SuperCollider 3 server ready." in line) {
                         status = Status.Listening
                     }
                 }
@@ -97,11 +97,11 @@ class UDPSuperColliderClient private constructor(
         statusListeners.add(handler)
     }
 
-    override fun waitForExit() {
+    fun waitForExit() {
         sclang.waitFor()
     }
 
-    override fun quit() {
+    fun quit() {
         consoleMonitorThread.interrupt()
         postAsync("s.quit;")
         postAsync("0.exit;")
@@ -130,6 +130,7 @@ class UDPSuperColliderClient private constructor(
                 .start()
             sclang.outputStream.write(SETUP_OSC.toByteArray())
             sclang.outputStream.write("\n".toByteArray())
+            sclang.outputStream.write("s.boot;\n".toByteArray())
             sclang.outputStream.flush()
             val socket = DatagramSocket()
             val localhost = InetAddress.getLocalHost()

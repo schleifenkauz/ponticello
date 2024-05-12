@@ -35,7 +35,15 @@ enum class Icon {
     Find,
     Close,
     Horizontal,
-    Vertical;
+    Vertical,
+    Edit,
+    Check,
+    Expand,
+    Collapse,
+    Add,
+    View,
+    Mute,
+    Unmute;
 
     private val file = name.lowercase() + "_green.png"
     private val url = javaClass.getResource("icons/$file") ?: error("icon $file not found")
@@ -52,7 +60,7 @@ enum class Icon {
     fun button(radius: Double = 16.0, action: String? = null, onAction: (Button) -> Unit = {}): Button =
         Button().apply {
             graphic = getView(size = radius * 1.25)
-            shape = Circle(radius)
+            /*shape = Circle(radius)*/
             tooltip = action?.let(::Tooltip)
             setMinSize(radius * 2, radius * 2)
             setMaxSize(radius * 2, radius * 2)

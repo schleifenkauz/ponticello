@@ -1,5 +1,6 @@
 package xenakis.ui
 
+import bundles.publicProperty
 import bundles.set
 import hextant.context.Context
 import hextant.core.HextantCore
@@ -9,13 +10,8 @@ import javafx.stage.FileChooser
 import javafx.stage.Stage
 import xenakis.impl.UDPSuperColliderClient
 import xenakis.impl.registerImplementationsFromClasspath
-import xenakis.model.AudioFlowGraph
-import xenakis.model.Score
 import xenakis.model.XenakisProject
-import xenakis.sc.SynthDef
 import java.io.File
-import java.util.concurrent.CompletableFuture
-import java.util.concurrent.Future
 import java.util.prefs.Preferences
 import kotlin.concurrent.thread
 
@@ -40,19 +36,35 @@ class XenakisController(private val primaryStage: Stage) {
     lateinit var client: UDPSuperColliderClient
         private set
 
-    lateinit var currentProject: XenakisProject
+    private var _currentProject: XenakisProject? = null
+
+    var currentProject: XenakisProject
+        get() = _currentProject ?: error("no project opened")
+        private set(project) {
+            _currentProject = project
+            context[XenakisController.currentProject] = project
+            prefs.put("lastFile", project.projectFile.absolutePath)
+            addRecentProject(project.projectFile)
+            listeners { displayProject(currentProject) }
+        }
+
+    val isProjectOpened get() = _currentProject != null
+
+    var isSuperColliderReady: Boolean = false
         private set
 
     private val fc = FileChooser().apply {
         extensionFilters.setAll(
             FileChooser.ExtensionFilter("JSON Files", "*.json"),
-            FileChooser.ExtensionFilter("SuperCollider Scripts", "*.scd")
+            FileChooser.ExtensionFilter("SuperCollider Scripts", "*.scd"),
+            FileChooser.ExtensionFilter("Sound Files", listOf("*.wav", "*.mp3"))
         )
-        initialDirectory = File("C:\\Users\\nikok\\Music\\frost")
+        initialDirectory = File("C:\\Users\\nikok\\Music\\xenakis")
     }
 
     fun setupHextant() {
         context = HextantCore.defaultContext()
+        context[XenakisApp.primaryStage] = primaryStage
         context.registerImplementationsFromClasspath()
         HextantCore.apply(context, PluginBuilder.Phase.Initialize, null)
         XenakisHextantPlugin.apply(context, PluginBuilder.Phase.Initialize, null)
@@ -61,22 +73,16 @@ class XenakisController(private val primaryStage: Stage) {
     fun startSuperCollider() {
         thread(name = "SuperCollider startup thread", isDaemon = true) {
             client = UDPSuperColliderClient.create()
+            context[UDPSuperColliderClient] = client
             client.addStatusListener { status ->
                 if (status == UDPSuperColliderClient.Status.Listening) {
-                    client.postAsync("s.options.numWireBufs = 512;")
-                    client.postAsync("s.boot;")
-                    context[UDPSuperColliderClient] = client
+                    isSuperColliderReady = true
                     Platform.runLater {
-                        listeners { superColliderListening() }
+                        listeners { superColliderReady() }
                     }
                 }
             }
         }
-    }
-
-    private fun setCurrentProject(project: XenakisProject) {
-        currentProject = project
-        listeners { displayProject(currentProject) }
     }
 
     fun restartScSynth() {
@@ -99,32 +105,23 @@ class XenakisController(private val primaryStage: Stage) {
         }
     }
 
-    private fun makeNewProject(): XenakisProject? {
-        val totalDuration = showDoubleInputDialog(
-            title = "Total duration (seconds)", context,
-            range = 1.0..1000.0,
-            initialValue = 60.0
-        ) ?: return null
-        val project = XenakisProject(
-            globalVariables = mutableMapOf(),
-            synthDefs = mutableListOf(SynthDef.default),
-            flowGraph = AudioFlowGraph.createDefault(),
-            buffers = mutableListOf(),
-            score = Score(totalDuration)
-        )
-        project.context = context
-        return project
-    }
-
     private fun loadRecentProjects(): MutableList<File> {
         val str = prefs.get("recentProjects", "")
         val paths = str.split(File.pathSeparator).filter { it.isNotEmpty() }
         return paths.mapTo(mutableListOf(), ::File)
     }
 
-    private fun addRecentProject(path: File) {
+    private fun addRecentProject(path: File) = updateRecentProjects {
         recentProjects.remove(path)
         recentProjects.add(0, path)
+    }
+
+    fun removeFromRecentProjects(proj: File) = updateRecentProjects {
+        recentProjects.remove(proj)
+    }
+
+    private inline fun updateRecentProjects(action: MutableList<File>.() -> Unit) {
+        recentProjects.action()
         val str = recentProjects.joinToString(File.pathSeparator)
         prefs.put("recentProjects", str)
     }
@@ -137,26 +134,27 @@ class XenakisController(private val primaryStage: Stage) {
         setExtensionFilter("*.json")
         val file = lastFile() ?: fc.showSaveDialog(primaryStage) ?: return
         tryWithAlert("Saving score") {
-            currentProject.saveTo(file)
-            prefs.put("lastFile", file.absolutePath)
+            saveAs(file)
         }
+    }
+
+    private fun saveAs(file: File) {
+        currentProject.saveTo(file)
+        prefs.put("lastFile", file.absolutePath)
+        addRecentProject(file)
     }
 
     fun openProject() {
         setExtensionFilter("*.json")
         val file = fc.showOpenDialog(primaryStage) ?: return
-        prefs.put("lastFile", file.absolutePath)
-        if (openProject(file)) {
-            addRecentProject(file)
-        }
+        openProject(file)
     }
 
     fun openProject(file: File): Boolean {
         tryWithAlert("Opening project") {
             val project = XenakisProject.loadFrom(file, context)
-            setCurrentProject(project)
+            currentProject = project
         } ?: return false
-        prefs.put("lastFile", file.absolutePath)
         return true
     }
 
@@ -165,9 +163,18 @@ class XenakisController(private val primaryStage: Stage) {
     }
 
     fun createNewProject() {
-        val project = makeNewProject() ?: return
-        setCurrentProject(project)
-        clearLastFile()
+        val location = showSaveDialog("*.json") ?: return
+        currentProject = XenakisProject.create(location, context)
+        saveAs(location)
+    }
+
+    fun showOpenDialog(extension: String): File? {
+        setExtensionFilter(extension)
+        return fc.showOpenDialog(primaryStage)
+    }
+    fun showSaveDialog(extension: String): File? {
+        setExtensionFilter(extension)
+        return fc.showSaveDialog(primaryStage)
     }
 
     private fun clearLastFile() {
@@ -180,6 +187,7 @@ class XenakisController(private val primaryStage: Stage) {
         tryWithAlert("Exporting score as SuperCollider script") {
             val writer = file.writer()
             currentProject.exportAsScript(writer)
+            writer.close()
         }
     }
 
@@ -200,5 +208,9 @@ class XenakisController(private val primaryStage: Stage) {
 
     fun quitApplication() {
         client.quit()
+    }
+
+    companion object {
+        val currentProject = publicProperty<XenakisProject>("currentProject", null)
     }
 }

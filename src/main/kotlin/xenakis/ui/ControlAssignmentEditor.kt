@@ -1,5 +1,7 @@
 package xenakis.ui
 
+import bundles.createBundle
+import hextant.core.view.SimpleChoiceEditorControl
 import javafx.collections.FXCollections.observableList
 import javafx.geometry.Pos
 import javafx.scene.Node
@@ -7,12 +9,17 @@ import javafx.scene.control.*
 import javafx.scene.layout.HBox
 import javafx.scene.layout.Priority
 import javafx.scene.layout.Region
+import javafx.scene.paint.Color
 import org.controlsfx.control.ToggleSwitch
+import reaktive.value.now
 import xenakis.model.*
 import xenakis.sc.*
+import xenakis.sc.editor.BufferRefEditor
+import xenakis.sc.editor.BusRefEditor
+import xenakis.sc.view.BusRefEditorControl
 
 class ControlAssignmentEditor(private val parameter: ParameterDef, val project: XenakisProject) : HBox(5.0) {
-    private val nameLabel = Label(parameter.name).also { l -> l.styleClass.add("control-label") }
+    private val nameLabel = Label(parameter.name.text).also { l -> l.styleClass.add("control-label") }
     private val comboBox = ComboBox(observableList(ControlType.all))
     private val detailEditors = mutableMapOf<ControlType<*, *>, Node>()
     private var detailEditor: Node? = null
@@ -62,11 +69,11 @@ class ControlAssignmentEditor(private val parameter: ParameterDef, val project: 
                 project: XenakisProject,
             ): Spinner<Double> {
                 val spec = parameter.spec as NumericalControlSpec
-                return Spinner(spec.min, spec.max, control?.value ?: spec.default)
+                return Spinner(spec.min.value, spec.max.value, control?.value ?: spec.defaultValue.value)
             }
 
             override fun createControl(detailInput: Spinner<Double>, parameter: ParameterDef) =
-                ConstantControl(parameter.name, detailInput.value)
+                ConstantControl(parameter.name.text, detailInput.value)
         }
 
         object Knob : ControlType<KnobControl, Slider>() {
@@ -76,11 +83,11 @@ class ControlAssignmentEditor(private val parameter: ParameterDef, val project: 
                 project: XenakisProject,
             ): Slider {
                 val spec = parameter.spec as NumericalControlSpec
-                return Slider(spec.min, parameter.spec.max, control?.value ?: spec.default)
+                return Slider(spec.min.value, parameter.spec.max.value, control?.value ?: spec.defaultValue.value)
             }
 
             override fun createControl(detailInput: Slider, parameter: ParameterDef): KnobControl =
-                KnobControl(parameter.name, detailInput.value)
+                KnobControl(parameter.name.text, detailInput.value)
         }
 
         object Envelope : ControlType<EnvelopeControl, HBox>() {
@@ -89,7 +96,8 @@ class ControlAssignmentEditor(private val parameter: ParameterDef, val project: 
                 control: EnvelopeControl?,
                 project: XenakisProject,
             ): HBox {
-                val colorPicker = ColorPicker(control?.displayColor ?: parameter.associatedColor)
+                val defaultColor = (parameter.spec as? NumericalControlSpec)?.associatedColor
+                val colorPicker = ColorPicker(control?.displayColor ?: defaultColor ?: Color.BLACK)
                 val toggle = ToggleSwitch()
                 toggle.isSelected = control?.display ?: true
                 val space = Region()
@@ -105,9 +113,9 @@ class ControlAssignmentEditor(private val parameter: ParameterDef, val project: 
                 val toggleButton = detailInput.children[2] as ToggleSwitch
                 val spec = parameter.spec as NumericalControlSpec
                 val oldEnvelope = detailInput.userData as? xenakis.sc.Envelope
-                val env = oldEnvelope ?: xenakis.sc.Envelope.constant(spec.default, spec.warp)
+                val env = oldEnvelope ?: xenakis.sc.Envelope.constant(spec.defaultValue.value, spec.warp)
                 return EnvelopeControl(
-                    parameter.name, env, parameter.spec,
+                    parameter.name.text, env,
                     colorPicker.value, toggleButton.isSelected,
                 )
             }
@@ -121,37 +129,49 @@ class ControlAssignmentEditor(private val parameter: ParameterDef, val project: 
             ): TextField = TextField(control?.expr?.code.orEmpty())
 
             override fun createControl(detailInput: TextField, parameter: ParameterDef): CustomControl =
-                CustomControl(parameter.name, RawScExpr(detailInput.text))
+                CustomControl(parameter.name.text, RawScExpr(detailInput.text))
         }
 
-        object Bus : ControlType<BusControl, ComboBox<xenakis.sc.Bus>>() {
+        object Bus : ControlType<BusControl, BusRefEditorControl>() {
             override fun createDetailInput(
                 parameter: ParameterDef,
                 control: BusControl?,
                 project: XenakisProject
-            ): ComboBox<xenakis.sc.Bus> = ComboBox(observableList(project.flowGraph.busses.map { it.bus }))
+            ): BusRefEditorControl = busSelector(project, control?.bus)
 
-            override fun createControl(
-                detailInput: ComboBox<xenakis.sc.Bus>,
-                parameter: ParameterDef
-            ): BusControl = BusControl(parameter.name, detailInput.value)
+            override fun createControl(detailInput: BusRefEditorControl, parameter: ParameterDef): BusControl =
+                BusControl(parameter.name.text, detailInput.editor.result.now)
         }
 
-        object Buffer : ControlType<BufferControl, ComboBox<xenakis.sc.Buffer>>() {
+        object BusValue : ControlType<BusValueControl, BusRefEditorControl>() {
+            override fun createDetailInput(
+                parameter: ParameterDef,
+                control: BusValueControl?,
+                project: XenakisProject
+            ): BusRefEditorControl = busSelector(project, control?.bus)
+
+            override fun createControl(detailInput: BusRefEditorControl, parameter: ParameterDef): BusValueControl =
+                BusValueControl(parameter.name.text, detailInput.editor.result.now)
+        }
+
+        object Buffer : ControlType<BufferControl, SimpleChoiceEditorControl<xenakis.sc.Buffer>>() {
             override fun createDetailInput(
                 parameter: ParameterDef,
                 control: BufferControl?,
                 project: XenakisProject
-            ): ComboBox<xenakis.sc.Buffer> = ComboBox(observableList(project.buffers))
+            ): SimpleChoiceEditorControl<xenakis.sc.Buffer> {
+                val editor = BufferRefEditor(project.context, control?.buffer ?: NoBuffer)
+                return SimpleChoiceEditorControl(editor, createBundle())
+            }
 
             override fun createControl(
-                detailInput: ComboBox<xenakis.sc.Buffer>,
+                detailInput: SimpleChoiceEditorControl<xenakis.sc.Buffer>,
                 parameter: ParameterDef
-            ): BufferControl = BufferControl(parameter.name, detailInput.value)
+            ): BufferControl = BufferControl(parameter.name.text, detailInput.editor.result.now)
         }
 
         companion object {
-            val all: List<ControlType<*, *>> = listOf(Constant, Knob, Custom, Envelope)
+            val all: List<ControlType<*, *>> = listOf(Constant, Knob, Custom, Envelope, BusValue)
 
             @Suppress("UNCHECKED_CAST")
             fun <O : ParameterControl> getType(option: O) = when (option) {
@@ -159,8 +179,17 @@ class ControlAssignmentEditor(private val parameter: ParameterDef, val project: 
                 is ConstantControl -> Constant
                 is CustomControl -> Custom
                 is EnvelopeControl -> Envelope
+                is BusControl -> Bus
+                is BusValueControl -> BusValue
+                is BufferControl -> Buffer
                 else -> throw AssertionError()
             } as ControlType<O, *>
+
+            private fun busSelector(project: XenakisProject, bus: xenakis.sc.Bus?): BusRefEditorControl {
+                val editor = BusRefEditor(project.context, xenakis.sc.Bus.output)
+                if (bus != null) editor.select(bus)
+                return BusRefEditorControl(editor, createBundle())
+            }
         }
     }
 }

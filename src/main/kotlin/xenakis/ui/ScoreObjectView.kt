@@ -5,15 +5,15 @@ import javafx.geometry.BoundingBox
 import javafx.geometry.Bounds
 import javafx.geometry.Insets
 import javafx.scene.Cursor
+import javafx.scene.control.Button
 import javafx.scene.control.Label
 import javafx.scene.input.MouseEvent
 import javafx.scene.layout.*
-import javafx.scene.paint.Color.*
+import javafx.scene.paint.Color.WHITE
 import xenakis.impl.Point
 import xenakis.impl.UDPSuperColliderClient
 import xenakis.model.ScoreObject
 import xenakis.model.XenakisProject
-import xenakis.ui.ScoreView.Companion.PIXELS_PER_SECOND
 import kotlin.math.absoluteValue
 
 abstract class ScoreObjectView(open val obj: ScoreObject, val project: XenakisProject) : VBox() {
@@ -21,10 +21,12 @@ abstract class ScoreObjectView(open val obj: ScoreObject, val project: XenakisPr
     private var oldBounds: Bounds? = null
     private var draggedObject: ScoreObjectView = this
 
-    private lateinit var scoreView: ScoreView
+    protected lateinit var scoreView: ScoreView
 
     private val nameLabel = Label().styleClass("score-object-name")
-    private val header = HBox(10.0)
+    private lateinit var muteUnmuteBtn: Button
+    protected val header = HBox(10.0)
+    private val actions = HBox(10.0)
     protected val contents = VBox().styleClass("score-object-content")
     private val envelopesPane = Pane()
 
@@ -51,59 +53,68 @@ abstract class ScoreObjectView(open val obj: ScoreObject, val project: XenakisPr
         repaint()
     }
 
-    protected fun addAction(icon: Icon, action: String?, onAction: () -> Unit) {
+    protected fun addAction(icon: Icon, action: String?, onAction: () -> Unit): Button {
         val button = icon.button(action = action)
         button.styleClass("score-object-btn")
         button.setOnAction { onAction() }
-        header.children.add(2, button)
-        button.antiScale(scoreView)
+        actions.children.add(0, button)
+        return button
     }
 
     open fun repaint() {
-        layoutX = obj.start * PIXELS_PER_SECOND
+        layoutX = scoreView.getX(obj.start)
         layoutY = obj.y
-        prefWidth = obj.duration * PIXELS_PER_SECOND
+        prefWidth = obj.computeWidth(scoreView.pixelsPerSecond)
         prefHeight = obj.height
         padding = Insets(2.0)
         nameLabel.text = obj.name
+        recolor()
+        paintEnvelopes()
+    }
+
+    fun recolor() {
         if (obj.color != null) {
             border = Border(BorderStroke(obj.color, BorderStrokeStyle.SOLID, CornerRadii(3.0), BorderWidths(2.0)))
         }
-        paintEnvelopes()
     }
 
     private fun paintEnvelopes() {
         envelopeEditors.clear()
         envelopesPane.children.clear()
         if (obj.associatedEnvelopes.isEmpty()) return
-        contents.children.add(envelopesPane)
+        if (envelopesPane !in contents.children) contents.children.add(envelopesPane)
         setVgrow(envelopesPane, Priority.ALWAYS)
         for (control in obj.associatedEnvelopes) {
             if (!control.display) continue
             val parameter = control.parameter
             val envelope = control.envelope
             val e = EnvelopeEditor(
-                parameterName = parameter, spec = control.spec,
+                parameterName = parameter, associatedObject = obj,
                 points = envelope.points,
                 pane = envelopesPane, scoreView = scoreView,
-                color = control.displayColor, contrastColor = WHITE,
-                valueGrid = control.spec.step, fixEdgePoints = true
+                contrastColor = WHITE, fixEdgePoints = true
             )
             e.repaint()
             envelopeEditors.add(e)
         }
     }
 
-    private fun setupHeader() {
+    protected open fun setupHeader() {
         header.styleClass("score-object-header")
         nameLabel.textFill = WHITE
-        val space = Region()
-        HBox.setHgrow(space, Priority.ALWAYS);
-        header.children.setAll(nameLabel, space)
+        header.children.setAll(nameLabel, infiniteSpace(), actions)
         addAction(Icon.Delete, "Delete this object", ::delete)
         addAction(Icon.Play, "Play this object") {
-            obj.play(project.context[UDPSuperColliderClient])
+            val client = project.context[UDPSuperColliderClient]
+            project.prepareForPlay(client)
+            obj.play(client)
         }
+        muteUnmuteBtn = addAction(if (obj.muted) Icon.Mute else Icon.Unmute, "Toggle mute", ::toggleMute)
+    }
+
+    private fun toggleMute() {
+        obj.muted = !obj.muted
+        muteUnmuteBtn.graphic = if (obj.muted) Icon.Mute.getView() else Icon.Unmute.getView()
     }
 
     private fun delete() {
@@ -169,17 +180,17 @@ abstract class ScoreObjectView(open val obj: ScoreObject, val project: XenakisPr
     private fun isResizeCursor(cursor: Cursor) = cursor.toString().endsWith("RESIZE")
 
     private fun isInParentBounds(x: Double, y: Double, width: Double, height: Double) =
-        x >= 0.0 && y >= 0.0 && x + width <= scoreView.prefWidth && y + height <= scoreView.prefHeight
+        x >= 0.0 && y >= 0.0 && x + width <= scoreView.width && y + height <= scoreView.height
 
     private fun relocateBy(old: Bounds, dx: Double, dy: Double) {
         val x = (old.minX + dx).snap(scoreView.timeSnap)
-        val y = (old.minY + dy).snap(scoreView.timeSnap)
+        val y = (old.minY + dy)
         if (!isInParentBounds(x, y, prefWidth, prefHeight)) return
         relocateObject(x, y)
     }
 
     private fun relocateObject(x: Double, y: Double) {
-        scoreView.score.moveObject(obj, x / PIXELS_PER_SECOND, y)
+        scoreView.score.moveObject(obj, scoreView.getTime(x), y)
     }
 
     private fun updateCursor(x: Double, y: Double) {
@@ -211,8 +222,12 @@ abstract class ScoreObjectView(open val obj: ScoreObject, val project: XenakisPr
 
     private fun resizeObject(width: Double, height: Double) {
         setPrefSize(width, height)
-        obj.duration = width / PIXELS_PER_SECOND
+        obj.setWidth(width, scoreView.pixelsPerSecond)
         obj.height = height
+    }
+
+    open fun rescale() {
+        rescaleEnvelopes()
     }
 
     private fun rescaleEnvelopes() {

@@ -1,9 +1,10 @@
 package xenakis.ui
 
+import bundles.PublicProperty
+import bundles.publicProperty
+import bundles.set
 import hextant.context.Context
-import hextant.context.createControl
-import hextant.fx.Stylesheets
-import hextant.serial.makeRoot
+import hextant.serial.EditorRoot
 import javafx.collections.FXCollections
 import javafx.geometry.Bounds
 import javafx.scene.control.Label
@@ -12,17 +13,18 @@ import javafx.scene.input.KeyEvent
 import javafx.scene.input.MouseEvent
 import javafx.scene.layout.Pane
 import javafx.scene.paint.Color
-import javafx.stage.StageStyle
 import org.controlsfx.control.PropertySheet
 import org.controlsfx.property.BeanProperty
 import xenakis.impl.Arrow
 import xenakis.impl.Point
+import xenakis.impl.UDPSuperColliderClient
 import xenakis.model.AudioFlowGraph
 import xenakis.sc.Bus
 import xenakis.sc.Rate
-import xenakis.sc.editor.ScExprExpander
+import xenakis.sc.editor.CodeBlockEditor
 import java.beans.PropertyDescriptor
 import kotlin.math.sign
+import kotlin.random.Random
 
 class AudioFlowGraphEditor(private val graph: AudioFlowGraph, private val context: Context) : Pane() {
     private var sourceBus: AudioFlowGraph.BusObject? = null
@@ -33,6 +35,7 @@ class AudioFlowGraphEditor(private val graph: AudioFlowGraph, private val contex
     private val flowArrows = mutableMapOf<AudioFlowGraph.AudioFlow, Arrow>()
 
     init {
+        context[AudioFlowGraphEditor] = this
         styleClass("audio-flow-graph")
         for (obj in graph.busses) {
             paintBusObject(obj)
@@ -50,13 +53,7 @@ class AudioFlowGraphEditor(private val graph: AudioFlowGraph, private val contex
         }
         addEventHandler(MouseEvent.MOUSE_CLICKED) { ev ->
             if (ev.isShiftDown) {
-                val bus = Bus("new_bus", Rate.Audio, 2, Color.WHITE)
-                val confirmed = showDetailEditor(bus)
-                if (confirmed) {
-                    val obj = AudioFlowGraph.BusObject(bus, ev.x, ev.y)
-                    graph.addBus(obj)
-                    paintBusObject(obj)
-                }
+                createNewBus(ev.x, ev.y)
                 ev.consume()
             }
         }
@@ -68,6 +65,17 @@ class AudioFlowGraphEditor(private val graph: AudioFlowGraph, private val contex
                 ev.consume()
             }
         }
+    }
+
+    fun createNewBus(x: Double = Random.nextDouble(prefWidth), y: Double = Random.nextDouble(prefHeight)): Bus? {
+        val bus = Bus("new_bus", Rate.Audio, 2, Color.WHITE)
+        val confirmed = showDetailEditor(bus)
+        if (confirmed) {
+            val obj = AudioFlowGraph.BusObject(bus, x, y)
+            graph.addBus(obj, context[UDPSuperColliderClient])
+            paintBusObject(obj)
+            return obj.bus
+        } else return null
     }
 
     private fun paintBusObject(obj: AudioFlowGraph.BusObject) {
@@ -105,12 +113,16 @@ class AudioFlowGraphEditor(private val graph: AudioFlowGraph, private val contex
         busLabels[obj] = label
     }
 
-    private fun finishFlowTo(obj: AudioFlowGraph.BusObject, ev: MouseEvent) {
+    private fun finishFlowTo(target: AudioFlowGraph.BusObject, ev: MouseEvent) {
         val source = sourceBus!!
         val arrow = flowArrow!!
-        val flow = AudioFlowGraph.AudioFlow(source, obj, null)
-        graph.addFlow(flow)
+        val flow = AudioFlowGraph.AudioFlow(source, target, EditorRoot.create(CodeBlockEditor(context)))
+        if (!graph.addFlow(flow)) {
+            alertError("Cannot add flow from ${source.bus.name} to ${target.bus.name}")
+            return
+        }
         setupFlowArrow(arrow, flow)
+        editFlowDetails(flow)
         sourceBus = null
         flowArrow = null
         ev.consume()
@@ -180,12 +192,14 @@ class AudioFlowGraphEditor(private val graph: AudioFlowGraph, private val contex
     }
 
     private fun editFlowDetails(flow: AudioFlowGraph.AudioFlow) {
-        val expr = ScExprExpander(context)
-        expr.makeRoot()
-        val view = context.createControl(expr)
-        val window = view.makeWindow("Flow configuration", context, StageStyle.DECORATED)
-        context[Stylesheets].manage(window.scene)
-        window.showAndWait()
+        val source = flow.source.bus.name
+        val target = flow.target.bus.name
+        val codePane = CodePane("Audio flow from $source to $target", flow.ugenGraph.control)
+        codePane.addToHeader(Icon.Delete.button {
+            removeFlow(flow)
+        })
+        val arrow = flowArrows[flow]!!
+        showPopup(arrow, codePane)
     }
 
     private fun editBusDetails(obj: AudioFlowGraph.BusObject) {
@@ -207,14 +221,16 @@ class AudioFlowGraphEditor(private val graph: AudioFlowGraph, private val contex
         sheet.isModeSwitcherVisible = false
         sheet.isSearchBoxVisible = false
         sheet.setPrefSize(300.0, 145.0)
-        return showDialog(sheet, context) { true } ?: false
+        return sheet.showDialog("Bus details", context) { true } ?: false
     }
 
     private fun paintFlow(flow: AudioFlowGraph.AudioFlow) {
-
+        val arrow = Arrow(flow.source.x, flow.source.y, flow.target.x, flow.target.y)
+        setupFlowArrow(arrow, flow)
+        children.add(arrow)
     }
 
-    companion object {
+    companion object : PublicProperty<AudioFlowGraphEditor> by publicProperty("audio-flow-graph-editor") {
         private const val DIST_MOUSE_TO_HEAD = 10.0
     }
 }

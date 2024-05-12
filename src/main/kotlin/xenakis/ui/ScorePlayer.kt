@@ -3,19 +3,23 @@ package xenakis.ui
 import javafx.application.Platform
 import javafx.beans.binding.Bindings
 import javafx.scene.shape.Line
-import xenakis.impl.ScWriter
 import xenakis.impl.UDPSuperColliderClient
-import xenakis.ui.ScoreView.Companion.PIXELS_PER_SECOND
-import java.io.StringWriter
+import xenakis.model.XenakisProject
 
-class ScorePlayer(private val scoreView: ScoreView, private val client: UDPSuperColliderClient) : Thread() {
+class ScorePlayer(
+    private val scoreView: ScoreView,
+    private val project: XenakisProject,
+    private val client: UDPSuperColliderClient
+) : Thread() {
     var isRecording = false
 
-    private val indicator = Line(
+    private var playHeadTime = 0.0
+
+    val playHead = Line(
         /* startX = */ PLAY_HEAD_WIDTH,
-        /* startY = */ 1.0,
+        /* startY = */ 20.0,
         /* endX = */ PLAY_HEAD_WIDTH,
-        /* endY = */ scoreView.prefHeight - PLAY_HEAD_WIDTH
+        /* endY = */ scoreView.height - 20.0
     ).styleClass("play-head")
 
     init {
@@ -25,17 +29,16 @@ class ScorePlayer(private val scoreView: ScoreView, private val client: UDPSuper
     }
 
     private fun setupIndicator() {
-        scoreView.children.add(indicator)
-        indicator.strokeWidthProperty().bind(Bindings.divide(PLAY_HEAD_WIDTH, scoreView.scaleXProperty()))
-        indicator.setupDragging { _, old, dx, _ ->
+        playHead.strokeWidthProperty().bind(Bindings.divide(PLAY_HEAD_WIDTH, scoreView.scaleXProperty()))
+        playHead.setupDragging { _, old, dx, _ ->
             if (!isPlaying) {
-                val sdx = dx / scoreView.scaleX
-                indicator.layoutX = (old.minX + sdx).coerceIn(PLAY_HEAD_WIDTH, scoreView.score.totalDuration * PIXELS_PER_SECOND)
+                playHead.layoutX = (old.minX + dx).coerceIn(PLAY_HEAD_WIDTH, scoreView.width - PLAY_HEAD_WIDTH)
             }
         }
-        indicator.setOnMouseClicked {
-            indicator.toFront()
+        playHead.setOnMouseClicked {
+            playHead.toFront()
         }
+        playHead.endYProperty().bind(scoreView.heightProperty().subtract(20.0))
     }
 
     var isPlaying = false
@@ -47,9 +50,10 @@ class ScorePlayer(private val scoreView: ScoreView, private val client: UDPSuper
             val now = System.currentTimeMillis()
             if (isPlaying) {
                 val dt = now - lastTime
-                val dx = PIXELS_PER_SECOND * dt / 1000
+                playHeadTime += dt / 1000.0
+                val x = scoreView.getX(playHeadTime)
                 Platform.runLater {
-                    indicator.layoutX += dx
+                    if (isPlaying) playHead.layoutX = x
                 }
             }
             lastTime = now
@@ -64,10 +68,8 @@ class ScorePlayer(private val scoreView: ScoreView, private val client: UDPSuper
 
     fun play() {
         if (isPlaying) return
-        val startTime = (indicator.layoutX - PLAY_HEAD_WIDTH) / PIXELS_PER_SECOND
-        val writer = StringWriter()
-        scoreView.score.writePlayerTask(ScWriter(writer), startTime)
-        client.postAsync(writer.toString())
+        val startTime = scoreView.getTime(playHead.layoutX - PLAY_HEAD_WIDTH)
+        project.playScore(startTime)
         isPlaying = true
     }
 
@@ -78,7 +80,8 @@ class ScorePlayer(private val scoreView: ScoreView, private val client: UDPSuper
     }
 
     fun reset() {
-        indicator.layoutX = PLAY_HEAD_WIDTH
+        Platform.runLater { playHead.layoutX = PLAY_HEAD_WIDTH }
+        playHeadTime = 0.0
     }
 
     fun toggleRecording() {
@@ -88,6 +91,11 @@ class ScorePlayer(private val scoreView: ScoreView, private val client: UDPSuper
             client.postAsync("s.stopRecording")
         }
         isRecording = !isRecording
+    }
+
+    fun repaint() {
+        scoreView.children.add(playHead)
+        playHead.layoutX = scoreView.getX(playHeadTime)
     }
 
     companion object {

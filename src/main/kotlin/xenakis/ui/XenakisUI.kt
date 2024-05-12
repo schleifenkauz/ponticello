@@ -1,56 +1,66 @@
 package xenakis.ui
 
 import hextant.fx.Stylesheets
+import hextant.fx.initHextantScene
 import hextant.fx.label
 import hextant.fx.registerShortcuts
+import javafx.application.Platform
+import javafx.geometry.Orientation
 import javafx.geometry.Pos
 import javafx.scene.Scene
 import javafx.scene.control.Button
+import javafx.scene.control.SplitPane
 import javafx.scene.control.Tooltip
-import javafx.scene.layout.HBox
-import javafx.scene.layout.Pane
-import javafx.scene.layout.Priority
-import javafx.scene.layout.VBox
+import javafx.scene.layout.*
+import javafx.scene.paint.Color
 import javafx.stage.Stage
 import javafx.stage.StageStyle
 import org.controlsfx.control.textfield.TextFields
 import xenakis.impl.ZoomableScrollPane
 import xenakis.model.XenakisProject
+import xenakis.sc.view.SynthDefsEditorControl
 
 class XenakisUI(private val stage: Stage, private val controller: XenakisController) : XenakisListener {
     val project get() = controller.currentProject
 
     val toolSelector = ToolSelector()
 
-    lateinit var synthDefsEditor: SynthDefsEditor
-    lateinit var scoreView: ScoreView
-    lateinit var flowGraphEditor: AudioFlowGraphEditor
-    lateinit var flowGraphWindow: Stage
+    private lateinit var serverSetupCodePane: CodePane
+    private lateinit var beforePlayCodePane: CodePane
+    private lateinit var synthDefsEditor: SynthDefsEditorControl
+    private lateinit var buffersEditor: BuffersEditor
+    private lateinit var scoreView: ScoreView
+    private lateinit var flowGraphEditor: AudioFlowGraphEditor
+    private lateinit var flowGraphWindow: Stage
 
     private lateinit var playBtn: Button
     private lateinit var stopBtn: Button
     private lateinit var recordBtn: Button
 
     lateinit var player: ScorePlayer
-    lateinit var shellWindow: Stage
+    private lateinit var shellWindow: Stage
 
     init {
         stage.scene = Scene(Pane())
-        controller.context[Stylesheets].manage(stage.scene)
+        stage.scene.initHextantScene(controller.context)
     }
 
     override fun displayProject(project: XenakisProject) {
-        synthDefsEditor = SynthDefsEditor(project)
+        serverSetupCodePane = CodePane("Server setup", project.serverSetup.control)
+        beforePlayCodePane = CodePane("Play setup", project.beforePlay.control)
+        synthDefsEditor = project.synthDefs.editor.control as SynthDefsEditorControl
+        buffersEditor = BuffersEditor(project.buffers, project, controller)
         scoreView = ScoreView(project, this)
         flowGraphEditor = AudioFlowGraphEditor(project.flowGraph, project.context)
         flowGraphEditor.setPrefSize(800.0, 800.0)
         flowGraphWindow = flowGraphEditor.makeWindow("Audio flow graph", project.context, StageStyle.DECORATED)
 
-        player = ScorePlayer(scoreView, controller.client)
+        player = ScorePlayer(scoreView, project, controller.client)
         shellWindow = SuperColliderShellController.createShellWindow(controller.client)
         stage.scene.root = createLayout()
-        stage.sizeToScene()
-        stage.isResizable = true
+        stage.isMaximized = true
+        /*stage.isResizable = true*/
+        Platform.runLater { scoreView.displayWholeScore() }
     }
 
     override fun displayStartupScreen() {
@@ -65,10 +75,32 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
         for (proj in controller.recentProjects()) {
             val name = label(proj.nameWithoutExtension).styleClass("project-name")
             val path = label(proj.absolutePath).styleClass("project-path")
-            val box = VBox(name, path).styleClass("project-box")
-            box.setOnMouseClicked {
-                controller.openProject(proj)
+            val vertical = VBox(name, path)
+            if (!proj.isFile) {
+                path.textFill = Color.RED
             }
+            val box = HBox(vertical).styleClass("project-box")
+            vertical.setOnMouseClicked {
+                if (proj.isFile) {
+                    controller.openProject(proj)
+                } else {
+                    val remove = showYesNoDialog("Project file does not exist. Remove from list?", default = true)
+                    if (remove) {
+                        controller.removeFromRecentProjects(proj)
+                        recentProjects.children.remove(box)
+                    }
+                }
+            }
+            val removeBtn = Icon.Close.button(action = "Remove from list of recent projects") {
+                val reallyRemove = showYesNoDialog("Remove project from list of recent projects?", default = true)
+                if (reallyRemove) {
+                    controller.removeFromRecentProjects(proj)
+                    recentProjects.children.remove(box)
+                }
+            }
+            val space = infiniteSpace()
+            box.children.addAll(space, removeBtn)
+            box.alignment = Pos.CENTER_LEFT
             recentProjects.children.add(box)
         }
         val top = HBox(searchIcon, searchField, btnOpen, createNew).styleClass("startup-screen-top-bar")
@@ -79,12 +111,18 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
     }
 
     private fun createLayout(): VBox {
-        val scrollPane = ZoomableScrollPane(scoreView)
+        val leftSplitter = SplitPane(synthDefsEditor, buffersEditor)
+        val rightSplitter = SplitPane(serverSetupCodePane, beforePlayCodePane)
+        leftSplitter.orientation = Orientation.VERTICAL
+        rightSplitter.orientation = Orientation.VERTICAL
+        val horizontalSplitter = SplitPane(leftSplitter, scoreView, rightSplitter)
+        horizontalSplitter.setDividerPositions(0.3, 0.8)
         val toolbar = createToolbar()
         for (box in toolbar.children) HBox.setHgrow(box, Priority.ALWAYS)
-        VBox.setVgrow(scrollPane, Priority.ALWAYS)
-        val layout = VBox(toolbar, scrollPane)
+        VBox.setVgrow(horizontalSplitter, Priority.ALWAYS)
+        val layout = VBox(toolbar, horizontalSplitter)
         addShortcuts(layout)
+        /*layout.setPrefSize(3000.0, 1200.0)*/
         return layout
     }
 
@@ -117,9 +155,11 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
         playBtn = Icon.Play.button(action = "Start playback") { _ -> togglePlay() }
         stopBtn = Icon.Stop.button(action = "Pause and free all nodes") { stop() }
         recordBtn = Icon.RecordInactive.button(action = "Start recording") { toggleRecord() }
-        playBtn.isDisable = true
-        stopBtn.isDisable = true
-        recordBtn.isDisable = true
+        if (!controller.isSuperColliderReady) {
+            playBtn.isDisable = true
+            stopBtn.isDisable = true
+            recordBtn.isDisable = true
+        }
         return HBox(5.0, playBtn, stopBtn, recordBtn)
     }
 
@@ -176,9 +216,11 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
         }
     }
 
-    override fun superColliderListening() {
-        playBtn.isDisable = false
-        stopBtn.isDisable = false
-        recordBtn.isDisable = false
+    override fun superColliderReady() {
+        if (controller.isProjectOpened) {
+            playBtn.isDisable = false
+            stopBtn.isDisable = false
+            recordBtn.isDisable = false
+        }
     }
 }

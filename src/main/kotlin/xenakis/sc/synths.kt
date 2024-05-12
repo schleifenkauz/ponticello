@@ -1,57 +1,56 @@
 package xenakis.sc
 
+import hextant.codegen.Component
+import hextant.codegen.Compound
+import hextant.codegen.ListEditor
+import hextant.codegen.UseEditor
+import hextant.core.editor.ColorEditor
 import javafx.scene.paint.Color
 import kotlinx.serialization.Serializable
 import xenakis.impl.ColorSerializer
 import xenakis.impl.ScWriter
+import xenakis.sc.editor.ParameterDefExpander
 
 interface ParameterizedObject {
     val parameters: List<ParameterDef>
 
     fun getParameter(name: String): ParameterDef =
-        parameters.find { p -> p.name == name } ?: error("no parameter named $name found in $this")
+        parameters.find { p -> p.name.text == name } ?: error("no parameter named $name found in $this")
 }
 
 @Serializable
-data class ParameterDef(
-    var name: String,
-    val spec: ControlSpec,
-    @Serializable(with = ColorSerializer::class) var associatedColor: Color = Color.BLACK
-) : ScElement {
-    override fun code(writer: ScWriter) {
-        writer.append(name)
-        writer.append(" = ")
-        "\\$name.${spec.code}"
-    }
-
+@Compound(serializable = true)
+@ListEditor(serializable = true, editorCls = ParameterDefExpander::class)
+data class ParameterDef(val name: Identifier, val spec: ControlSpec) {
     companion object {
-        val freq = ParameterDef("freq", NumericalControlSpec(440.0, 20.0, 20000.0, Warp.Exponential, 1.0))
-        val amp = ParameterDef("amp", NumericalControlSpec(0.1, 0.0, 1.0, Warp.Linear, 0.001))
-        val pan = ParameterDef("pan", NumericalControlSpec(0.0, -1.0, 1.0, Warp.Linear, 0.01))
+        val freq = ParameterDef(Identifier("freq"), NumericalControlSpec(440.0, 20.0, 20000.0, Warp.Exponential, 1.0))
+        val amp = ParameterDef(Identifier("amp"), NumericalControlSpec(0.1, 0.0, 1.0, Warp.Linear, 0.001))
+        val pan = ParameterDef(Identifier("pan"), NumericalControlSpec(0.0, -1.0, 1.0, Warp.Linear, 0.01))
     }
 }
 
 @Serializable
-data class SynthDef(
-    var name: String,
-    var rate: Rate,
-    override var parameters: MutableList<ParameterDef> = mutableListOf(),
-    val variables: MutableList<Variable> = mutableListOf(),
-    val body: MutableList<ScExpr> = mutableListOf(),
-    @Serializable(with = ColorSerializer::class) var associatedColor: Color
+@Compound(serializable = true)
+@ListEditor(serializable = true)
+class SynthDef(
+    val name: Identifier, val rate: Rate,
+    override val parameters: List<ParameterDef>, val ugenGraph: CodeBlock,
+    @Component(ColorEditor::class) @Serializable(with = ColorSerializer::class) val associatedColor: Color
 ) : ScElement, ParameterizedObject {
     override fun code(writer: ScWriter) {
-        writer.append("SynthDef(\\$name, ")
-        val statements = parameters.map { RawScExpr(it.code) } + body
-        val graphFunc = ScFunction(emptyList(), CodeBlock(variables, statements))
+        writer.append("SynthDef(\\${name.text}, ")
+        val extraVariables = parameters.map { p -> Variable(p.name, RawScExpr("\\${p.name.text}.${p.spec.code}")) }
+        val block = ugenGraph.copy(variables = ugenGraph.variables + extraVariables)
+        val graphFunc = ScFunction(emptyList(), block)
         graphFunc.code(writer)
         writer.append(")")
     }
 
     companion object {
         val default = SynthDef(
-            "default", Rate.Audio,
-            mutableListOf(ParameterDef.freq, ParameterDef.amp, ParameterDef.pan),
+            Identifier("default"), Rate.Audio,
+            parameters = listOf(ParameterDef.freq, ParameterDef.amp, ParameterDef.pan),
+            ugenGraph = CodeBlock(emptyList(), emptyList()),
             associatedColor = Color.WHITE
         )
     }
