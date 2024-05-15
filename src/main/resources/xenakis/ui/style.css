@@ -56,6 +56,7 @@ Slider.control-detail-editor {
 
 .grid-time-code {
     -fx-stroke: #4bfd01;
+    -fx-font-size: 10;
 }
 
 .score-object {
