@@ -3,6 +3,8 @@ package xenakis.model
 import bundles.PublicProperty
 import bundles.publicProperty
 import bundles.set
+import hextant.context.Context
+import hextant.context.createControl
 import hextant.serial.EditorRoot
 import kotlinx.serialization.Serializable
 import reaktive.value.now
@@ -12,18 +14,29 @@ import xenakis.sc.editor.SynthDefListEditor
 import xenakis.sc.view.SynthDefsEditorControl
 
 @Serializable
-class SynthDefs(
+class SynthDefs private constructor(
     val editor: EditorRoot<SynthDefListEditor>,
-    var selectedSynthDefName: String = SynthDef.default.name.text
+    private var selectedSynthDefName: String = SynthDef.default.name.text
 ) {
     val list: List<SynthDef>
         get() = editor.editor.result.now
 
-    val selectedSynthDef: SynthDef get() = get(selectedSynthDefName)
+    var selectedSynthDef: SynthDef
+        get() = get(selectedSynthDefName)
+        set(value) {
+            if (value == selectedSynthDef) return
+            selectedSynthDefName = value.name.text
+            updateSelection(value)
+        }
+
+    private fun updateSelection(value: SynthDef) {
+        val control = editor.control as SynthDefsEditorControl
+        control.onSelected(value.name.text)
+    }
 
     init {
         editor.editor.context[SynthDefs] = this
-        editor.editor.addView(editor.control as SynthDefsEditorControl)
+        updateSelection(selectedSynthDef)
     }
 
     fun get(name: String): SynthDef =
@@ -37,5 +50,17 @@ class SynthDefs(
         }
     }
 
-    companion object : PublicProperty<SynthDefs> by publicProperty("SynthDefs")
+    fun renamedSynthDef(oldName: String, newName: String) {
+        if (selectedSynthDefName == oldName) {
+            selectedSynthDefName = newName
+        }
+    }
+
+    companion object : PublicProperty<SynthDefs> by publicProperty("SynthDefs") {
+        fun newInstance(context: Context): SynthDefs {
+            val editor = SynthDefListEditor(context)
+            val control = context.createControl(editor)
+            return SynthDefs(EditorRoot(editor, control))
+        }
+    }
 }

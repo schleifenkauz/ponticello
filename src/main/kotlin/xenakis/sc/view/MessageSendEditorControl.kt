@@ -28,7 +28,7 @@ class MessageSendEditorControl @ProvideImplementation(ControlFactory::class) con
             if (!arguments[MULTILINE] || !hasArguments.now) {
                 styleClass("compound-expr", "message-send")
                 space()
-                view(editor.arguments) {
+                view(editor.arguments, cached = false) {
                     set(ORIENTATION, Orientation.Horizontal)
                     set(CELL_FACTORY) { SeparatorCell(" ").also { it.root.centerChildrenVertically() } }
                 }.root.centerChildrenVertically().styleClass("compound-expr", "arguments")
@@ -37,11 +37,11 @@ class MessageSendEditorControl @ProvideImplementation(ControlFactory::class) con
         if (arguments[MULTILINE] && hasArguments.now) {
             styleClass("compound-expr", "message-send")
             indented {
-                view(editor.arguments) {
+                view(editor.arguments, cached = false) {
                     set(ORIENTATION, Orientation.Vertical)
+                    set(CELL_FACTORY) { ListEditorControl.DefaultCell() }
                 }
             }
         }
-
     }
 }

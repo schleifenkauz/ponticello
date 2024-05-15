@@ -124,7 +124,7 @@ class UDPSuperColliderClient private constructor(
         }
 
         fun create(port: Int = 57120): UDPSuperColliderClient {
-            val sclang = ProcessBuilder(mutableListOf("sclang.exe", "-u", "$port"))
+            val sclang = ProcessBuilder(mutableListOf("sclang", "-u", "$port"))
                 .redirectInput(ProcessBuilder.Redirect.PIPE)
                 .redirectOutput(ProcessBuilder.Redirect.PIPE)
                 .start()

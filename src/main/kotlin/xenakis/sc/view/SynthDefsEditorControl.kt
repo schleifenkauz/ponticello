@@ -26,14 +26,20 @@ import xenakis.sc.editor.SynthDefEditor
 import xenakis.ui.*
 
 class SynthDefsEditorControl @ProvideImplementation(ControlFactory::class) constructor(
-    val editors: xenakis.sc.editor.SynthDefListEditor,
+    val editor: xenakis.sc.editor.SynthDefListEditor,
     arguments: Bundle
-) : EditorControl<VBox>(editors, arguments), ListEditorView {
-    constructor(editors: xenakis.sc.editor.SynthDefListEditor): this(editors, createBundle())
+) : EditorControl<VBox>(editor, arguments), ListEditorView {
+    constructor(editors: xenakis.sc.editor.SynthDefListEditor) : this(editors, createBundle())
 
     private var selectedBtn: Button? = null
 
+    private val selectorButtons = mutableMapOf<SynthDefEditor, Button>()
+
     private val defs = VBox().styleClass("synth-def-list")
+
+    init {
+        editor.addView(this)
+    }
 
     override fun createDefaultRoot(): VBox {
         val label = Label("Synth Definitions").styleClass("synth-defs-heading")
@@ -52,30 +58,35 @@ class SynthDefsEditorControl @ProvideImplementation(ControlFactory::class) const
     private fun addSynthDefEditor() {
         val name = showTextInputDialog("SynthDef name", context) { txt -> Identifier.isValid(txt) } ?: return
         val editor = SynthDefEditor(context, name = IdentifierEditor(context, name))
-        editors.addLast(editor)
+        this.editor.addLast(editor)
+        if (this.editor.editors.now.size == 1) {
+            val selector = selectorButtons[editor]!!
+            select(selector, editor)
+        }
+    }
+
+    fun onSelected(synthDefName: String) {
+        val editor = editor.editors.now.find { it.name.text.now == synthDefName }
+            ?: error("SynthDef $synthDefName not found")
+        val selector = selectorButtons[editor] ?: error("selector button for SynthDef $synthDefName not found")
+        select(selector, editor)
     }
 
     override fun added(editor: Editor<*>, idx: Int) {
         editor as SynthDefEditor
         val control = context.createControl(editor)
         val selector = Button().styleClass("synth-def-selector")
-        if (editor.name.result.now.text == context[SynthDefs].selectedSynthDefName) {
-            selector.pseudoClassStateChanged(PseudoClasses.SELECTED, true)
-            selectedBtn = selector
-        }
+        selectorButtons[editor] = selector
         selector.setOnAction {
             if (selector == selectedBtn) return@setOnAction
-            selectedBtn?.pseudoClassStateChanged(PseudoClasses.SELECTED, false)
-            selector.pseudoClassStateChanged(PseudoClasses.SELECTED, true)
-            selectedBtn = selector
-            context[SynthDefs].selectedSynthDefName = editor.name.result.now.text
+            select(selector, editor)
         }
         val name = IdentifierEditorControl(editor.name)
         name.userData = name.onChangeCommited.observe { oldName: String, newName: String ->
             showYesNoDialog("Rename references", default = true)
             context[XenakisController.currentProject].renamedSynthDef(oldName, newName)
         }
-        val remove = Icon.Delete.button(action = "Remove this SynthDef") { editors.remove(editor) }
+        val remove = Icon.Delete.button(action = "Remove this SynthDef") { this.editor.remove(editor) }
         val expand = Icon.Expand.button(action = "Show SynthDef details")
         val collapse = Icon.Collapse.button(action = "Hide SynthDef details")
         val space = Region()
@@ -92,6 +103,13 @@ class SynthDefsEditorControl @ProvideImplementation(ControlFactory::class) const
         }
         addChild(control, idx)
         defs.children.add(idx, box)
+    }
+
+    private fun select(selector: Button, editor: SynthDefEditor) {
+        selectedBtn?.pseudoClassStateChanged(PseudoClasses.SELECTED, false)
+        selector.pseudoClassStateChanged(PseudoClasses.SELECTED, true)
+        selectedBtn = selector
+        context[SynthDefs].selectedSynthDef = editor.result.now
     }
 
     override fun removed(idx: Int) {
