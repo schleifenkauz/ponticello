@@ -2,6 +2,7 @@ package xenakis.ui
 
 import bundles.set
 import hextant.context.ControlFactory
+import hextant.context.SelectionDistributor
 import hextant.core.view.EditorControl
 import hextant.plugins.*
 import reaktive.value.now
@@ -46,7 +47,9 @@ object XenakisHextantPlugin : PluginInitializer({
             name = "Put $itemType on multiple lines"
             defaultShortcut("Alt?+V")
             executing { ctrl, _ ->
+                val selectedBefore = ctrl.context[SelectionDistributor].focusedView.now
                 ctrl.arguments[MULTILINE] = true
+                selectedBefore?.select()
             }
         }
 
@@ -56,7 +59,9 @@ object XenakisHextantPlugin : PluginInitializer({
             name = "Put $itemType on single lines"
             defaultShortcut("Alt?+H")
             executing { ctrl, _ ->
+                val selectedBefore = ctrl.context[SelectionDistributor].focusedView.now
                 ctrl.arguments[MULTILINE] = false
+                selectedBefore?.select()
             }
         }
 }

@@ -59,7 +59,7 @@ class XenakisController(private val primaryStage: Stage) {
             FileChooser.ExtensionFilter("SuperCollider Scripts", "*.scd"),
             FileChooser.ExtensionFilter("Sound Files", listOf("*.wav", "*.mp3"))
         )
-        initialDirectory = File("C:\\Users\\nikok\\Music\\xenakis")
+        initialDirectory = File(System.getProperty("user.home")).resolve(".xenakis")
     }
 
     fun setupHextant() {
@@ -174,6 +174,7 @@ class XenakisController(private val primaryStage: Stage) {
     }
     fun showSaveDialog(extension: String): File? {
         setExtensionFilter(extension)
+        check(fc.initialDirectory.isDirectory)
         return fc.showSaveDialog(primaryStage)
     }
 

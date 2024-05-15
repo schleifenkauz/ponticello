@@ -112,9 +112,7 @@ class XenakisProject private constructor(
                 obj.synthDefName = newName
             }
         }
-        if (synthDefs.selectedSynthDefName == oldName) {
-            synthDefs.selectedSynthDefName = newName
-        }
+        synthDefs.renamedSynthDef(oldName, newName)
     }
 
     companion object {
@@ -130,7 +128,7 @@ class XenakisProject private constructor(
         fun create(location: File, context: Context) = XenakisProject(
             serverSetup = EditorRoot.create(CodeBlockEditor(context)),
             beforePlay = EditorRoot.create(CodeBlockEditor(context)),
-            synthDefs = SynthDefs(EditorRoot.create(SynthDefListEditor(context))),
+            synthDefs = SynthDefs.newInstance(context),
             flowGraph = AudioFlowGraph.createDefault(),
             buffers = Buffers(mutableListOf()),
             score = Score(),

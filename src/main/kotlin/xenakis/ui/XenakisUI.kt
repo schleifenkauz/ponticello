@@ -1,9 +1,12 @@
 package xenakis.ui
 
-import hextant.fx.Stylesheets
-import hextant.fx.initHextantScene
-import hextant.fx.label
-import hextant.fx.registerShortcuts
+import bundles.createBundle
+import hextant.command.line.CommandLineControl
+import hextant.command.line.CommandLinePopup
+import hextant.context.Properties
+import hextant.context.SelectionDistributor
+import hextant.core.view.EditorControl
+import hextant.fx.*
 import javafx.application.Platform
 import javafx.geometry.Orientation
 import javafx.geometry.Pos
@@ -16,7 +19,7 @@ import javafx.scene.paint.Color
 import javafx.stage.Stage
 import javafx.stage.StageStyle
 import org.controlsfx.control.textfield.TextFields
-import xenakis.impl.ZoomableScrollPane
+import reaktive.value.now
 import xenakis.model.XenakisProject
 import xenakis.sc.view.SynthDefsEditorControl
 
@@ -58,8 +61,8 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
         player = ScorePlayer(scoreView, project, controller.client)
         shellWindow = SuperColliderShellController.createShellWindow(controller.client)
         stage.scene.root = createLayout()
-        stage.isMaximized = true
-        /*stage.isResizable = true*/
+        stage.sizeToScene()
+        stage.isResizable = true
         Platform.runLater { scoreView.displayWholeScore() }
     }
 
@@ -122,7 +125,22 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
         VBox.setVgrow(horizontalSplitter, Priority.ALWAYS)
         val layout = VBox(toolbar, horizontalSplitter)
         addShortcuts(layout)
-        /*layout.setPrefSize(3000.0, 1200.0)*/
+        layout.setPrefSize(3000.0, 1200.0)
+        val context = project.context
+        val commandLinePopup = CommandLinePopup(
+            context, context[Properties.localCommandLine],
+            arguments = createBundle { set(CommandLineControl.HISTORY_ITEMS, 0) }
+        )
+        layout.registerShortcuts {
+            handleCommands(project, context, context[Properties.globalCommandLine])
+            on("Alt+SPACE") {
+                val focusedView = context[SelectionDistributor].focusedView.now
+                if (focusedView is EditorControl<*>) {
+                    val point = focusedView.localToScreen(0.0, 0.0)
+                    commandLinePopup.show(stage, point.x, point.y)
+                }
+            }
+        }
         return layout
     }
 
