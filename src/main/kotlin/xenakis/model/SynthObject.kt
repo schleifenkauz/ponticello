@@ -7,6 +7,7 @@ import xenakis.impl.ScWriter
 import xenakis.sc.ControlSpec
 import xenakis.sc.Group
 import xenakis.sc.SynthDef
+import xenakis.ui.XenakisController.Companion.currentProject
 import xenakis.ui.format
 
 @Serializable
@@ -17,18 +18,10 @@ class SynthObject(
     override val controls: MutableList<ParameterControl>,
     override var muted: Boolean = false
 ) : ScoreObject() {
-    @Transient
-    lateinit var context: XenakisProject
-        private set
-
     val synthDef: SynthDef
-        get() = context.synthDefs.get(synthDefName)
+        get() = context[currentProject].synthDefs.get(synthDefName)
 
     override val color: Color get() = synthDef.associatedColor
-
-    override fun initialize(project: XenakisProject) {
-        this.context = project
-    }
 
     override fun clone(newName: String): ScoreObject = SynthObject(
         newName, group, synthDefName,

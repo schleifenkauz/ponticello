@@ -10,7 +10,7 @@ import xenakis.sc.editor.ScFunctionEditor
 @Serializable
 class TaskObject(
     override var name: String, val code: EditorRoot<ScFunctionEditor>,
-    override var start: Double, private var width: Double,
+    override var start: Double, var width: Double,
     override var y: Double, override var height: Double,
     override val controls: List<ParameterControl>,
     override var muted: Boolean = false
@@ -22,12 +22,6 @@ class TaskObject(
         set(value) {
             throw UnsupportedOperationException("Cannot set duration of TaskObject $name")
         }
-
-    override fun computeWidth(pixelsPerSecond: Double): Double = width
-
-    override fun setWidth(w: Double, pixelsPerSecond: Double) {
-        width = w
-    }
 
     override fun clone(newName: String): ScoreObject =
         TaskObject(newName, code.clone(), start, duration, y, height, controls.toMutableList())

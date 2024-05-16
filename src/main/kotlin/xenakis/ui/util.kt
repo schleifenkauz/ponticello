@@ -1,13 +1,11 @@
 package xenakis.ui
 
-import bundles.Bundle
-import hextant.core.Editor
-import hextant.core.view.CompoundEditorControl
 import javafx.beans.Observable
 import javafx.beans.property.Property
 import javafx.beans.property.SimpleDoubleProperty
 import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.value.ObservableValue
+import javafx.css.PseudoClass
 import javafx.event.ActionEvent
 import javafx.geometry.Pos
 import javafx.scene.Node
@@ -18,6 +16,8 @@ import javafx.scene.control.MenuItem
 import javafx.scene.control.RadioButton
 import javafx.scene.control.TextField
 import javafx.scene.control.ToggleGroup
+import javafx.scene.input.DragEvent
+import javafx.scene.input.TransferMode
 import javafx.scene.layout.HBox
 import javafx.scene.layout.Priority
 import javafx.scene.layout.Region
@@ -25,7 +25,7 @@ import javafx.scene.layout.VBox
 import javafx.stage.Popup
 import org.controlsfx.glyphfont.FontAwesome
 import org.controlsfx.glyphfont.Glyph
-import reaktive.Reactive
+import java.io.File
 import java.util.Optional
 import kotlin.math.ceil
 import kotlin.math.log10
@@ -139,3 +139,35 @@ fun timeCode(t: Double, accuracy: Int): String {
     }
 }
 
+fun Node.setupFileDropArea(exactlyOne: Boolean, extension: String, onDrop: (file: File, ev: DragEvent) -> Unit) {
+    setOnDragOver { ev ->
+        if (hasFile(ev, exactlyOne, extension)) {
+            ev.acceptTransferModes(*TransferMode.COPY_OR_MOVE)
+            ev.consume()
+        }
+    }
+    setOnDragEntered { ev ->
+        if (hasFile(ev, exactlyOne, extension)) pseudoClassStateChanged(PseudoClass.getPseudoClass("drop-possible"), true)
+        ev.consume()
+    }
+    setOnDragExited { ev ->
+        pseudoClassStateChanged(PseudoClass.getPseudoClass("drop-possible"), false)
+        ev.consume()
+    }
+    setOnDragDropped { ev ->
+        val db = ev.dragboard
+        if (db.hasFiles()) {
+            for (file in db.files) {
+                onDrop(file, ev)
+            }
+            ev.isDropCompleted = true
+            ev.consume()
+        }
+    }
+
+}
+
+private fun hasFile(ev: DragEvent, exactlyOne: Boolean, extension: String): Boolean {
+    val hasSoundFiles = ev.dragboard.hasFiles() && ev.dragboard.files.any { it.extension == extension }
+    return hasSoundFiles && (!exactlyOne || ev.dragboard.files.size == 1)
+}

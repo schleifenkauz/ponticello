@@ -3,20 +3,22 @@ package xenakis.ui
 import hextant.fx.registerShortcuts
 import hextant.serial.EditorRoot
 import javafx.application.Platform
-import javafx.scene.input.KeyEvent
 import javafx.scene.input.MouseEvent
 import javafx.scene.layout.Pane
 import javafx.scene.paint.Color
 import javafx.scene.shape.Line
 import javafx.scene.shape.Rectangle
 import javafx.scene.text.Text
+import xenakis.impl.Point
 import xenakis.impl.step
 import xenakis.model.*
+import xenakis.sc.Bus
 import xenakis.sc.Group
+import xenakis.sc.Identifier
+import xenakis.sc.Warp
 import xenakis.sc.editor.ScFunctionEditor
 import xenakis.ui.ToolSelector.Tool.*
 import kotlin.math.exp
-import kotlin.math.max
 
 class ScoreView(
     private val project: XenakisProject,
@@ -25,6 +27,7 @@ class ScoreView(
     private var newObjectArea: Rectangle? = null
     private val views = mutableMapOf<ScoreObject, ScoreObjectView>()
     private val selectedViews = mutableSetOf<ScoreObjectView>()
+    private var dragFrom: Point? = null
     var timeSnap: Double = 0.1
     private var displayStart: Double = 0.0
     private var displayEnd: Double = 0.0
@@ -85,8 +88,7 @@ class ScoreView(
         for ((obj, view) in views) {
             if (obj.start > displayEnd) continue
             if (obj.start + obj.duration < displayStart) continue
-            view.prefWidth = obj.computeWidth(pixelsPerSecond)
-            view.rescale()
+            view.prefWidth = view.getDisplayWidth()
             view.relocate(getX(obj.start), obj.y)
             children.add(view)
         }
@@ -97,12 +99,33 @@ class ScoreView(
         setOnMouseClicked(this::mouseClicked)
         setOnMouseDragged(this::mouseDragged)
         setOnMouseReleased(this::mouseReleased)
+        setupNavigation()
+        setupDropArea()
+    }
+
+    private fun setupDropArea() {
+        setupFileDropArea(exactlyOne = true, "wav") { file, ev ->
+            val defaultName = Identifier.truncate(file.nameWithoutExtension)
+            val obj = SoundFileObject(
+                defaultName, file,
+                outBus = Bus.output, startPos = 0.0, rate = 1.0,
+                envelope = xenakis.sc.Envelope.constant(1.0, Warp.Linear),
+                start = getTime(ev.x), y = ev.y,
+                duration = SoundFileObject.getDuration(file),
+                height = 150.0, muted = false
+            )
+            obj.context = project.context
+            score.addObject(obj)
+        }
+    }
+
+    private fun setupNavigation() {
         setOnScroll { ev ->
             if (ev.isControlDown) {
-                val factor = exp(-ev.textDeltaY * 0.02)
+                val factor = exp(-ev.deltaY * 0.002)
                 zoom(factor, ev.x)
             } else {
-                scroll(max(ev.deltaX, ev.textDeltaY) * 5)
+                scroll(-ev.deltaX / pixelsPerSecond)
             }
         }
         registerShortcuts {
@@ -147,10 +170,12 @@ class ScoreView(
             is SynthObject -> SynthObjectView(obj, project)
             is TaskObject -> TaskObjectView(obj, project)
             is EnvelopeObject -> EnvelopeObjectView(obj, project)
+            is SoundFileObject -> SoundFileObjectView(obj, project)
         }
     }
 
     override fun addedObject(obj: ScoreObject) {
+        obj.initialize(project)
         val view = getObjectView(obj)
         view.addEventHandler(MouseEvent.MOUSE_CLICKED) { ev ->
             view.toFront()
@@ -165,7 +190,7 @@ class ScoreView(
     }
 
     override fun removedObject(obj: ScoreObject) {
-        val view = getObjectView(obj)
+        val view = views.remove(obj) ?: return
         view.onRemove()
         children.remove(view)
     }
@@ -202,41 +227,53 @@ class ScoreView(
         val x = ev.x.snap(timeSnap)
         val y = ev.y
         val rect = Rectangle(x, y, 0.0, 0.0)
-        when (ui.toolSelector.selected.value) {
-            ToolSelector.Tool.Synth -> {
+        when (ui.toolSelector.selected.value!!) {
+            Synth -> {
                 val synthDef = project.context[SynthDefs].selectedSynthDef
                 rect.stroke = synthDef.associatedColor
                 rect.fill = Color.TRANSPARENT
                 setNewShape(rect)
             }
 
-            ToolSelector.Tool.Task -> {
+            Task -> {
                 rect.fill = Color.GRAY
                 setNewShape(rect)
             }
 
-            ToolSelector.Tool.Envelope -> {
+            Envelope -> {
                 rect.fill = Color.WHITE
                 setNewShape(rect)
             }
 
-            else -> {
-
+            Pointer -> {
+                dragFrom = Point(ev.screenX, ev.screenY)
             }
+
+            Pattern -> TODO()
         }
         ev.consume()
     }
 
     private fun mouseDragged(ev: MouseEvent) {
-        val x = ev.x.snap(timeSnap)
-        when (val s = newObjectArea) {
-            is Rectangle -> {
+        val s = newObjectArea
+        when {
+            s is Rectangle -> {
+                val x = ev.x.snap(timeSnap)
                 s.width = x - s.x
                 s.height = ev.y - s.y
                 ev.consume()
             }
 
-            else -> {}
+            ui.toolSelector.selected.value == Pointer -> {
+                val (sx, _) = dragFrom ?: return
+                val dx = ev.screenX - sx
+                val dt = getDuration(dx)
+                displayStart -= dt
+                displayEnd -= dt
+                noNegativeTimes()
+                repaint()
+                dragFrom = Point(ev.screenX, ev.screenY)
+            }
         }
     }
 
@@ -268,7 +305,7 @@ class ScoreView(
                     rect.y, rect.height,
                     def.defaultControls()
                 )
-                obj.initialize(project)
+                obj.context = project.context
                 val confirmed = ControlAssignmentView.show(obj, project)
                 if (confirmed) {
                     score.addObject(obj)
@@ -279,7 +316,7 @@ class ScoreView(
                 val name = showTextInputDialog("Task name", project.context) ?: return
                 val editor = EditorRoot.create(ScFunctionEditor(project.context))
                 val obj = TaskObject(name, editor, start, rect.width, rect.y, rect.height, emptyList())
-                obj.initialize(project)
+                obj.context = project.context
                 score.addObject(obj)
             }
 
@@ -287,6 +324,7 @@ class ScoreView(
                 EnvelopeObjectView.showEnvelopeConfig(project.context, rect) { name, spec, outputBus ->
                     val envelope = xenakis.sc.Envelope.constant(spec.defaultValue.value, spec.warp)
                     val obj = EnvelopeObject(name, spec, outputBus, envelope, start, duration, rect.y, rect.height)
+                    obj.context = project.context
                     score.addObject(obj)
                 }
             }

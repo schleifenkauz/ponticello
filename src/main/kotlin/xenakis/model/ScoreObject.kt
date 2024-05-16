@@ -1,7 +1,9 @@
 package xenakis.model
 
+import hextant.context.Context
 import javafx.scene.paint.Color
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 import xenakis.impl.ScWriter
 import xenakis.impl.UDPSuperColliderClient
 import xenakis.sc.ControlSpec
@@ -12,23 +14,21 @@ sealed class ScoreObject {
     abstract var name: String
     abstract var start: Double
     abstract var duration: Double
-        protected set
     abstract var y: Double
     abstract var height: Double
     abstract val color: Color?
     abstract var muted: Boolean
 
-    open fun computeWidth(pixelsPerSecond: Double) = duration * pixelsPerSecond
-
-    open fun setWidth(w: Double, pixelsPerSecond: Double) {
-        duration = w / pixelsPerSecond
-    }
+    @Transient
+    lateinit var context: Context
 
     abstract val controls: List<ParameterControl>
 
     open val associatedEnvelopes: List<EnvelopeControl> get() = controls.filterIsInstance<EnvelopeControl>()
 
     open fun initialize(project: XenakisProject) {}
+
+    open fun onRemove() {}
 
     open fun writeStartCode(writer: ScWriter, offset: Double) {}
 

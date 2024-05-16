@@ -1,13 +1,14 @@
 package xenakis.ui
 
+import hextant.fx.add
 import hextant.serial.makeRoot
-import javafx.css.PseudoClass
+import javafx.scene.control.Button
 import javafx.scene.control.Label
-import javafx.scene.input.DragEvent
-import javafx.scene.input.TransferMode
+import javafx.scene.control.Spinner
 import javafx.scene.layout.HBox
 import javafx.scene.layout.VBox
 import reaktive.Observer
+import reaktive.event.observe
 import xenakis.impl.UDPSuperColliderClient
 import xenakis.model.Buffers
 import xenakis.model.XenakisProject
@@ -27,39 +28,15 @@ class BuffersEditor(
         styleClass("buffers")
         children.add(createHeader())
         for (buffer in buffers.buffers) displayBuffer(buffer)
-        setupFileDropArea()
-    }
-
-    private fun setupFileDropArea() {
-        setOnDragOver { ev ->
-            if (accepts(ev)) {
-                ev.acceptTransferModes(*TransferMode.COPY_OR_MOVE)
-                ev.consume()
-            }
-        }
-        setOnDragEntered { ev ->
-            if (accepts(ev)) pseudoClassStateChanged(PseudoClass.getPseudoClass("drop-possible"), true)
-            ev.consume()
-        }
-        setOnDragExited { ev ->
-            pseudoClassStateChanged(PseudoClass.getPseudoClass("drop-possible"), false)
-            ev.consume()
-        }
-        setOnDragDropped { ev ->
-            val db = ev.dragboard
-            if (db.hasFiles()) {
-                for (file in db.files) {
-                    val provisionalName = file.nameWithoutExtension
-                    addBuffer(provisionalName, file)
-                }
-                ev.isDropCompleted = true
-                ev.consume()
-            }
+        setupFileDropArea(exactlyOne = false, "wav") { file, _ ->
+            val defaultName = file.nameWithoutExtension
+            val name = showTextInputDialog(
+                "Buffer name", project.context, defaultName,
+                checkText = Identifier::isValid
+            ) ?: return@setupFileDropArea
+            addBuffer(name, file)
         }
     }
-
-    private fun accepts(ev: DragEvent) =
-        ev.dragboard.hasFiles() && ev.dragboard.files.any { it.extension == "wav" }
 
     private fun createHeader(): HBox {
         val label = Label("Buffers").styleClass("buffers-heading")
@@ -79,38 +56,54 @@ class BuffersEditor(
     }
 
     private fun addBuffer(name: String, file: File) {
-        val buffer = FileBuffer(name, file)
+        val buffer = FileBuffer(Identifier(name), file)
         buffers.addBuffer(buffer, context = controller.client)
         displayBuffer(buffer)
     }
 
     private fun displayBuffer(buffer: Buffer) {
-        val box = when (buffer) {
+        val name = IdentifierEditor(project.context, buffer.name.text)
+        name.makeRoot()
+        val obs = name.result.observe { _, _, new -> buffers.renameBuffer(buffer, new.text, controller.client) }
+        val nameControl = IdentifierEditorControl(name)
+        nameControl.userData = nameControl.onChangeCommited.observe { oldName: String, newName: String ->
+            showYesNoDialog("Rename references", default = true)
+            project.renamedSynthDef(oldName, newName)
+        }
+
+        observers.add(obs)
+        val box = HBox(nameControl)
+        when (buffer) {
             is FileBuffer -> {
-                val name = IdentifierEditor(project.context, buffer.name)
-                name.makeRoot()
-                val obs = name.result.observe { _, _, new -> buffers.renameBuffer(buffer, new.text, controller.client) }
-                val nameControl = IdentifierEditorControl(name)
-                observers.add(obs)
                 val file = buffer.referencedFile.relativeTo(project.projectFile).toString()
                 val fileLabel = Label(file)
                 val space = infiniteSpace()
                 val replace = Icon.Open.button(action = "Replace buffer contents") {
-                    buffer.referencedFile = (controller.showOpenDialog("*.wav") ?: return@button)
+                    buffer.referencedFile = controller.showOpenDialog("*.wav") ?: return@button
+                    fileLabel.text = buffer.referencedFile.relativeTo(project.projectFile).toString()
                     buffers.reloadBuffer(buffer, context = controller.client)
                 }
-                val view = Icon.View.button(action = "View buffer contents") {
-                    controller.client.postAsync("${buffer.variableName}.plot('${buffer.name}')")
-                }
-                val delete = Icon.Delete.button(action = "Remove this buffer") {
-                    buffers.removeBuffer(buffer, context = controller.client)
-                }
-                HBox(nameControl, fileLabel, space, replace, view, delete)
+                box.children.addAll(fileLabel, space, replace)
             }
-            is AllocatedBuffer -> TODO()
+
+            is AllocatedBuffer -> {
+                val channelsSpinner = Spinner<Int>(1, 10, 2)
+                TODO()
+            }
+
             NoBuffer -> throw AssertionError()
         }
+        box.add(Icon.View.button(action = "View buffer contents") {
+            controller.client.postAsync("${buffer.variableName}.plot('${buffer.name.text}')")
+        })
+        box.add(Icon.Delete.button(action = "Remove this buffer") {
+            buffers.removeBuffer(buffer, context = controller.client)
+        })
         box.styleClass("buffer-box")
         children.add(box)
+    }
+
+    private fun select(selector: Button, text: String) {
+
     }
 }

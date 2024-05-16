@@ -23,6 +23,8 @@
 - maybe have a configurable playbuf-synth (additional parameters, filters, etc.)
   - defaults to simple PlayBuf
 - ability to cut into two separate objects
+- simple effects (time-stretch, pitch-shift, reverse, repeat)
+- spectral view
 
 ### select time intervals
 
@@ -41,10 +43,11 @@
 - SynthDefs
 - common parameter definitions
 
-### Compound pattern objects
+### Compound objects
 
 - creates a sub-canvas in which score objects can be created
-- repetition period is defined by the width of the sub-canvas
+
+### Integrate Buffers and SynthDefs views into startup script?
 
 ## Bug fixes
 

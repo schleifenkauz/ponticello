@@ -75,7 +75,7 @@ class SynthDefsEditorControl @ProvideImplementation(ControlFactory::class) const
     override fun added(editor: Editor<*>, idx: Int) {
         editor as SynthDefEditor
         val control = context.createControl(editor)
-        val selector = Button().styleClass("synth-def-selector")
+        val selector = Button().styleClass("selector-button")
         selectorButtons[editor] = selector
         selector.setOnAction {
             if (selector == selectedBtn) return@setOnAction

@@ -6,6 +6,7 @@ import javafx.scene.paint.Color
 import kotlinx.serialization.Serializable
 import xenakis.impl.ColorSerializer
 import xenakis.impl.FileSerializer
+import xenakis.impl.ScWriter
 import xenakis.impl.superColliderPath
 import xenakis.sc.editor.BufferRefEditor
 import xenakis.sc.editor.BusRefEditor
@@ -62,40 +63,62 @@ data class Bus(
 @Serializable
 @UseEditor(BufferRefEditor::class)
 sealed interface Buffer {
-    val name: String
+    var name: Identifier
 
-    val variableName get() = "~buf_$name"
+    val variableName get() = "~buf_${name.text}"
 
     val initializationCode: String
 }
 
 @Serializable
-object NoBuffer: Buffer {
-    override val name: String
-        get() = "<none>"
+object NoBuffer : Buffer {
+    override var name: Identifier
+        get() = Identifier("<none>")
+        set(value) {
+            throw UnsupportedOperationException("NoBuffer cannot be renamed")
+        }
 
     override val variableName: String
         get() = "0"
 
     override val initializationCode: String
-        get() = throw UnsupportedOperationException()
+        get() = throw UnsupportedOperationException("NoBuffer cannot be initialized")
 }
 
+
+
 @Serializable
+/*@Compound(nodeType = ScExpr::class, serializable = true)*/
 data class FileBuffer(
-    override var name: String,
+    override var name: Identifier,
     @Serializable(with = FileSerializer::class) var referencedFile: File,
-    var startFrame: Int = 0, var numFrames: Int = -1,
-) : Buffer {
+    var startFrame: ScExpr = IntegerLiteral(0), var numFrames: ScExpr = IntegerLiteral(-1),
+) : Buffer, ScExpr {
+    override fun code(writer: ScWriter) = with(writer) {
+        append(variableName)
+        append(" = Buffer.read(s, ${referencedFile.superColliderPath}, ")
+        startFrame.code(writer)
+        append(", ")
+        numFrames.code(writer)
+        append(")")
+    }
+
     override val initializationCode: String
-        get() = "$variableName = Buffer.read(s, ${referencedFile.superColliderPath}, $startFrame, $numFrames)"
+        get() = code
 }
 
 @Serializable
+/*@Compound(nodeType = ScExpr::class, serializable = true)*/
 data class AllocatedBuffer(
-    override var name: String,
-    var numFrames: Int, var numChannels: Int = 1
-) : Buffer {
-    override val initializationCode: String
-        get() = "$variableName = Buffer.alloc(s, $numFrames, $numChannels)"
+    override var name: Identifier,
+    var numFrames: ScExpr = IntegerLiteral(0), var numChannels: ScExpr = IntegerLiteral(1),
+) : Buffer, ScExpr {
+    override val initializationCode: String = code
+
+    override fun code(writer: ScWriter) {
+        writer.append(variableName)
+        writer.append(" = Buffer.alloc(s, ")
+        numFrames.code(writer)
+        numChannels.code(writer)
+    }
 }

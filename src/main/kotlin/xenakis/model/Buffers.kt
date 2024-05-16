@@ -3,7 +3,8 @@ package xenakis.model
 import kotlinx.serialization.Serializable
 import xenakis.impl.SuperColliderContext
 import xenakis.sc.Buffer
-import xenakis.sc.FileBuffer
+import xenakis.sc.NoBuffer
+import xenakis.sc.Identifier
 
 @Serializable
 class Buffers(private val _buffers: MutableList<Buffer> = mutableListOf()) {
@@ -36,11 +37,11 @@ class Buffers(private val _buffers: MutableList<Buffer> = mutableListOf()) {
         }
     }
 
-    fun renameBuffer(buffer: FileBuffer, new: String, context: SuperColliderContext) {
+    fun renameBuffer(buffer: Buffer, new: String, context: SuperColliderContext) {
         context.postAsync {
             +"~buf_$new = ${buffer.variableName}"
             +"${buffer.variableName} = nil"
         }
-        buffer.name = new
+        buffer.name = Identifier(new)
     }
 }

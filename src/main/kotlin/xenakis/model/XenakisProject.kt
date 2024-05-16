@@ -18,7 +18,6 @@ import xenakis.impl.SuperColliderWriterContext
 import xenakis.impl.UDPSuperColliderClient
 import xenakis.sc.code
 import xenakis.sc.editor.CodeBlockEditor
-import xenakis.sc.editor.SynthDefListEditor
 import java.io.File
 import java.io.Writer
 
@@ -48,9 +47,9 @@ class XenakisProject private constructor(
 
     fun initialize(context: Context) {
         this.context = context
+        for (obj in score.objects) obj.context = context
         context[SynthDefs] = synthDefs
         client = context[UDPSuperColliderClient]
-        for (obj in score.objects) obj.initialize(this)
         colorObserver = synthDefs.editor.editor.editors.observeEach { _, def ->
             def.associatedColor.result.observe { _ ->
                 score.recoloredSynthDef(def.name.text.now)
@@ -58,6 +57,7 @@ class XenakisProject private constructor(
         }
         if (client.status == UDPSuperColliderClient.Status.Listening) {
             setupServer(client)
+            for (obj in score.objects) obj.initialize(this)
         }
         client.addStatusListener { status ->
             if (status == UDPSuperColliderClient.Status.Listening) {

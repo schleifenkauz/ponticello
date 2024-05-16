@@ -27,12 +27,8 @@ class EnvelopeObject(
 
     override fun getSpec(parameter: String): ControlSpec = if (parameter == name) spec else super.getSpec(parameter)
 
-    override fun initialize(project: XenakisProject) {
-
-    }
-
     override fun clone(newName: String): ScoreObject =
-        EnvelopeObject(name, spec, bus, envelope.clone(), start, duration, y, height)
+        EnvelopeObject(newName, spec, bus, envelope.clone(), start, duration, y, height)
 
     override fun writeStartCode(writer: ScWriter, offset: Double) {
         val env = envelope.code(offset, duration)

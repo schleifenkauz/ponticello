@@ -130,7 +130,7 @@ class UDPSuperColliderClient private constructor(
                 .start()
             sclang.outputStream.write(SETUP_OSC.toByteArray())
             sclang.outputStream.write("\n".toByteArray())
-            sclang.outputStream.write("s.boot;\n".toByteArray())
+            /*sclang.outputStream.write("s.boot;\n".toByteArray())*/
             sclang.outputStream.flush()
             val socket = DatagramSocket()
             val localhost = InetAddress.getLocalHost()

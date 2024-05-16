@@ -6,7 +6,6 @@ import hextant.completion.ConfiguredCompleter
 import hextant.core.editor.TokenType
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.Serializer
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.serialDescriptor
 import kotlinx.serialization.encoding.Decoder
@@ -83,9 +82,20 @@ data class BooleanLiteral(val value: Boolean) : Literal, SimpleScElement("$value
 object Nil : Literal, SimpleScElement("nil")
 
 @Serializable
-data class IntegerLiteral(val value: Int) : Literal, SimpleScElement("$value")
+data class IntegerLiteral(val text: String, val valueOrNull: Int?) : Literal, SimpleScElement(text) {
+    constructor(value: Int) : this(value.toString(), value)
 
-@Token
+    override val isValid: Boolean
+        get() = valueOrNull != null
+
+    val value: Int = valueOrNull ?: 0
+
+    companion object : TokenType<IntegerLiteral> {
+        override fun compile(token: String): IntegerLiteral = IntegerLiteral(token, token.toIntOrNull())
+    }
+}
+
+@Token(serializable = true)
 @Serializable
 data class DoubleLiteral(val text: String, val valueOrNull: Double?) : Literal, SimpleScElement(text) {
     constructor(value: Double) : this(value.toString(), value)
@@ -95,7 +105,7 @@ data class DoubleLiteral(val text: String, val valueOrNull: Double?) : Literal, 
 
     val value: Double = valueOrNull ?: 0.0
 
-    companion object : TokenType<DoubleLiteral?> {
+    companion object : TokenType<DoubleLiteral> {
         override fun compile(token: String): DoubleLiteral = DoubleLiteral(token, token.toDoubleOrNull())
     }
 }
@@ -173,14 +183,9 @@ data class Identifier(val text: String) : SimpleScElement(text), ScExpr {
             if (!token.first().isLetterOrDigit() && token.first() != '~') return false
             return token.drop(1).all { c -> c.isLetterOrDigit() }
         }
-    }
-}
 
-@Serializable
-@Compound(nodeType = ScExpr::class, serializable = true)
-data class VariableAccess(val name: Identifier) : ScExpr, SimpleScElement(name.text) {
-    override val isValid: Boolean
-        get() = name.isValid
+        fun truncate(token: String) = token.filter { it.isLetterOrDigit() }
+    }
 }
 
 @Serializable
@@ -313,7 +318,7 @@ sealed class Operator(val code: String) : Selector, ScElement {
     object Neq : Operator("!=")
     object PlusPlus : Operator("++")
     object Expansion : Operator("!")
-    object At: Operator("@")
+    object At : Operator("@")
     class Unrecognized(val text: String) : Operator(text)
 
     object Ser : KSerializer<Operator> {

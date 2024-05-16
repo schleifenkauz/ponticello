@@ -1,5 +1,6 @@
 package xenakis.ui
 
+import javafx.beans.property.SimpleBooleanProperty
 import javafx.css.PseudoClass
 import javafx.geometry.BoundingBox
 import javafx.geometry.Bounds
@@ -28,9 +29,11 @@ abstract class ScoreObjectView(open val obj: ScoreObject, val project: XenakisPr
     protected val header = HBox(10.0)
     private val actions = HBox(10.0)
     protected val contents = VBox().styleClass("score-object-content")
-    private val envelopesPane = Pane()
+    protected val envelopesPane = Pane()
 
     private val envelopeEditors = mutableListOf<EnvelopeEditor>()
+
+    private val selectedProperty = SimpleBooleanProperty(false)
 
     protected open val canUserChangeHeight: Boolean get() = true
     protected open val canUserChangeWidth: Boolean get() = true
@@ -39,8 +42,8 @@ abstract class ScoreObjectView(open val obj: ScoreObject, val project: XenakisPr
         styleClass("score-object")
         alwaysUpdateCursor()
         setupDragging()
-        envelopesPane.widthProperty().addListener { _ -> rescaleEnvelopes() }
-        envelopesPane.heightProperty().addListener { _ -> rescaleEnvelopes() }
+        envelopesPane.widthProperty().addListener { _ -> rescale() }
+        envelopesPane.heightProperty().addListener { _ -> rescale() }
     }
 
     fun init(parent: ScoreView) {
@@ -64,7 +67,7 @@ abstract class ScoreObjectView(open val obj: ScoreObject, val project: XenakisPr
     open fun repaint() {
         layoutX = scoreView.getX(obj.start)
         layoutY = obj.y
-        prefWidth = obj.computeWidth(scoreView.pixelsPerSecond)
+        prefWidth = getDisplayWidth()
         prefHeight = obj.height
         padding = Insets(2.0)
         nameLabel.text = obj.name
@@ -74,13 +77,15 @@ abstract class ScoreObjectView(open val obj: ScoreObject, val project: XenakisPr
 
     fun recolor() {
         if (obj.color != null) {
-            border = Border(BorderStroke(obj.color, BorderStrokeStyle.SOLID, CornerRadii(3.0), BorderWidths(2.0)))
+            contents.border =
+                Border(BorderStroke(obj.color, BorderStrokeStyle.SOLID, CornerRadii(3.0), BorderWidths(2.0)))
         }
     }
 
     private fun paintEnvelopes() {
-        envelopeEditors.clear()
-        envelopesPane.children.clear()
+        for (editors in envelopeEditors) {
+            editors.removeChildren()
+        }
         if (obj.associatedEnvelopes.isEmpty()) return
         if (envelopesPane !in contents.children) contents.children.add(envelopesPane)
         setVgrow(envelopesPane, Priority.ALWAYS)
@@ -110,6 +115,7 @@ abstract class ScoreObjectView(open val obj: ScoreObject, val project: XenakisPr
             obj.play(client)
         }
         muteUnmuteBtn = addAction(if (obj.muted) Icon.Mute else Icon.Unmute, "Toggle mute", ::toggleMute)
+        header.visibleProperty().bind(hoverProperty().or(selectedProperty))
     }
 
     private fun toggleMute() {
@@ -160,7 +166,7 @@ abstract class ScoreObjectView(open val obj: ScoreObject, val project: XenakisPr
             val dx = ((ev.screenX - start.x) / scoreView.scaleX)
             val dy = ((ev.screenY - start.y) / scoreView.scaleY)
             if (isResizeCursor(cursor)) {
-                resize(oldBounds!!, dx, dy, cursor)
+                resize(oldBounds!!, dx, dy, cursor, ev)
             } else {
                 draggedObject.relocateBy(oldBounds!!, dx, dy)
             }
@@ -211,22 +217,28 @@ abstract class ScoreObjectView(open val obj: ScoreObject, val project: XenakisPr
         }
     }
 
-    private fun resize(x: Double, y: Double, width: Double, height: Double) {
+    private fun resize(
+        x: Double, y: Double,
+        width: Double, height: Double,
+        ev: MouseEvent, resizeFromLeft: Boolean = false
+    ) {
         val snappedX = x.snap(scoreView.timeSnap)
         val snappedWidth = width.snap(scoreView.timeSnap)
         if (snappedWidth < 10.0 || height < 10.0) return
         if (!isInParentBounds(snappedX, y, snappedWidth, height)) return
-        relocateObject(snappedX, y)
-        resizeObject(snappedWidth, height)
-    }
-
-    private fun resizeObject(width: Double, height: Double) {
-        setPrefSize(width, height)
-        obj.setWidth(width, scoreView.pixelsPerSecond)
+        setObjectWidth(snappedWidth, ev, resizeFromLeft)
+        setPrefSize(scoreView.getWidth(obj.duration), height)
         obj.height = height
+        relocateObject(snappedX, y)
     }
 
-    open fun rescale() {
+    protected open fun setObjectWidth(width: Double, ev: MouseEvent, resizeFromLeft: Boolean) {
+        obj.duration = scoreView.getDuration(width)
+    }
+
+    open fun getDisplayWidth(): Double = scoreView.getWidth(obj.duration)
+
+    protected open fun rescale() {
         rescaleEnvelopes()
     }
 
@@ -236,21 +248,22 @@ abstract class ScoreObjectView(open val obj: ScoreObject, val project: XenakisPr
         }
     }
 
-    private fun resize(old: Bounds, dx: Double, dy: Double, cursor: Cursor) {
+    private fun resize(old: Bounds, dx: Double, dy: Double, cursor: Cursor, ev: MouseEvent) {
         when (cursor) {
-            Cursor.NW_RESIZE -> resize(old.minX + dx, old.minY + dy, old.width - dx, old.height - dy)
-            Cursor.N_RESIZE -> resize(old.minX, old.minY + dy, old.width, old.height - dy)
-            Cursor.NE_RESIZE -> resize(old.minX, old.minY + dy, old.width + dx, old.height - dy)
-            Cursor.E_RESIZE -> resize(old.minX, old.minY, old.width + dx, old.height)
-            Cursor.SE_RESIZE -> resize(old.minX, old.minY, old.width + dx, old.height + dy)
-            Cursor.S_RESIZE -> resize(old.minX, old.minY, old.width, old.height + dy)
-            Cursor.SW_RESIZE -> resize(old.minX + dx, old.minY + dy, old.width - dx, old.height + dy)
-            Cursor.W_RESIZE -> resize(old.minX + dx, old.minY, old.width - dx, old.height)
+            Cursor.NW_RESIZE -> resize(old.minX + dx, old.minY + dy, old.width - dx, old.height - dy, ev, true)
+            Cursor.N_RESIZE -> resize(old.minX, old.minY + dy, old.width, old.height - dy, ev)
+            Cursor.NE_RESIZE -> resize(old.minX, old.minY + dy, old.width + dx, old.height - dy, ev)
+            Cursor.E_RESIZE -> resize(old.minX, old.minY, old.width + dx, old.height, ev)
+            Cursor.SE_RESIZE -> resize(old.minX, old.minY, old.width + dx, old.height + dy, ev)
+            Cursor.S_RESIZE -> resize(old.minX, old.minY, old.width, old.height + dy, ev)
+            Cursor.SW_RESIZE -> resize(old.minX + dx, old.minY + dy, old.width - dx, old.height + dy, ev, true)
+            Cursor.W_RESIZE -> resize(old.minX + dx, old.minY, old.width - dx, old.height, ev, true)
         }
     }
 
     fun setSelected(value: Boolean) {
         pseudoClassStateChanged(PseudoClass.getPseudoClass("selected"), value)
+        selectedProperty.set(value)
     }
 
     open fun onRemove() {

@@ -43,12 +43,6 @@ data class Score(
         }
     }
 
-    fun initialize(project: XenakisProject) {
-        for (obj in objects) {
-            obj.initialize(project)
-        }
-    }
-
     fun addListener(listener: ScoreListener) {
         listeners.add(listener)
         for (obj in objects) {
@@ -70,6 +64,7 @@ data class Score(
         _objects.remove(obj)
         listeners.forEach { l -> l.removedObject(obj) }
         objectsByName.remove(obj.name)
+        obj.onRemove()
     }
 
     fun isNameAvailable(name: String) = name !in objectsByName

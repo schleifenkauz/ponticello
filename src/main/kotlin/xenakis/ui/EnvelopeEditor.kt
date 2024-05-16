@@ -24,6 +24,9 @@ class EnvelopeEditor(
     contrastColor: Color,
     private val fixEdgePoints: Boolean
 ) {
+    private val control
+        get() = associatedObject.associatedEnvelopes.find { it.parameter == parameterName }
+            ?: error("control $parameterName not found")
     private val spec get() = associatedObject.getSpec(parameterName) as NumericalControlSpec
     private val yTransform get() = spec.mapOnto(pane.height..0.0)
     private val xTransform get() = LinearTransformation(0.0..1.0, 0.0..pane.width)
@@ -38,7 +41,7 @@ class EnvelopeEditor(
     private val handles = mutableListOf<Circle>()
     private val line = Polyline()
 
-    private val color get() = spec.associatedColor
+    private val color get() = control.displayColor
 
     init {
         line.stroke = color

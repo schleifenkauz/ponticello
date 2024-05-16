@@ -60,18 +60,22 @@ Slider.control-detail-editor {
 }
 
 .score-object {
+    -fx-background-color: transparent;
+}
+
+.score-object-content {
     -fx-background-color: black;
 }
 
-.score-object:hover {
+.score-object-content:hover {
     -fx-background-color: #0f0f0f;
 }
 
-.score-object:selected {
+.score-object-content:selected {
     -fx-background-color: #191212 !important;
 }
 
-.task-object {
+.task-object-content {
     -fx-border-width: 2px;
     -fx-border-radius: 3px;
     -fx-border-color: gray;
@@ -79,6 +83,7 @@ Slider.control-detail-editor {
 
 .score-object-header {
     -fx-padding: 2px;
+    -fx-background-color: black;
 }
 
 .score-object-name {
@@ -243,7 +248,7 @@ Slider.control-detail-editor {
     -fx-background-color: rgba(100, 0, 0, 0.1);
 }
 
-.synth-def-selector {
+.selector-button {
     -fx-border-color: black;
     -fx-border-width: 2px;
     -fx-border-radius: 5px;
@@ -253,11 +258,11 @@ Slider.control-detail-editor {
     -fx-pref-height: 32px;
 }
 
-.synth-def-selector:hover {
+.selector-button:hover {
     -fx-background-color: #351919;
 }
 
-.synth-def-selector:selected {
+.selector-button:selected {
     -fx-background-color: #501717 !important;
 }
 
