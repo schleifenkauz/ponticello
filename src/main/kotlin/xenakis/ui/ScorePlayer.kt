@@ -13,7 +13,8 @@ class ScorePlayer(
 ) : Thread() {
     var isRecording = false
 
-    private var playHeadTime = 0.0
+    var playHeadPosition = 0.0
+        private set
 
     val playHead = Line(
         /* startX = */ PLAY_HEAD_WIDTH,
@@ -33,6 +34,7 @@ class ScorePlayer(
         playHead.setupDragging { _, old, dx, _ ->
             if (!isPlaying) {
                 playHead.layoutX = (old.minX + dx).coerceIn(PLAY_HEAD_WIDTH, scoreView.width - PLAY_HEAD_WIDTH)
+                playHeadPosition = scoreView.getTime(playHead.layoutX)
             }
         }
         playHead.setOnMouseClicked {
@@ -50,8 +52,8 @@ class ScorePlayer(
             val now = System.currentTimeMillis()
             if (isPlaying) {
                 val dt = now - lastTime
-                playHeadTime += dt / 1000.0
-                val x = scoreView.getX(playHeadTime)
+                playHeadPosition += dt / 1000.0
+                val x = scoreView.getX(playHeadPosition)
                 Platform.runLater {
                     if (isPlaying) playHead.layoutX = x
                 }
@@ -81,7 +83,7 @@ class ScorePlayer(
 
     fun reset() {
         Platform.runLater { playHead.layoutX = PLAY_HEAD_WIDTH }
-        playHeadTime = 0.0
+        playHeadPosition = 0.0
     }
 
     fun toggleRecording() {
@@ -95,7 +97,7 @@ class ScorePlayer(
 
     fun repaint() {
         scoreView.children.add(playHead)
-        playHead.layoutX = scoreView.getX(playHeadTime)
+        playHead.layoutX = scoreView.getX(playHeadPosition)
     }
 
     companion object {

@@ -156,7 +156,7 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
     private fun createMiscBar() = HBox(5.0,
         Icon.Console.button(action = "Open console") { shellWindow.show() },
         Icon.Restart.button(action = "Restart server") { controller.restartScSynth() },
-        Icon.AddTime.button(action = "Add time") { controller.addTime() },
+        Icon.AddTime.button(action = "Add time") { controller.addTime(player.playHeadPosition) },
         Icon.Graph.button(action = "Edit audio flow graph") { flowGraphWindow.show() }
     )
 

@@ -126,7 +126,12 @@ data class Score(
     }
 
     fun addTime(location: Double, amount: Double) {
-        TODO("Not yet implemented")
+        for (obj in objects) {
+            if (obj.start > location) {
+                val newStart = obj.start + amount
+                moveObject(obj, newStart, obj.y)
+            }
+        }
     }
 
     fun recoloredSynthDef(name: String) {

@@ -172,6 +172,7 @@ class XenakisController(private val primaryStage: Stage) {
         setExtensionFilter(extension)
         return fc.showOpenDialog(primaryStage)
     }
+
     fun showSaveDialog(extension: String): File? {
         setExtensionFilter(extension)
         check(fc.initialDirectory.isDirectory)
@@ -201,10 +202,10 @@ class XenakisController(private val primaryStage: Stage) {
         listeners { displayStartupScreen() }
     }
 
-    fun addTime() {
+    fun addTime(location: Double) {
         val amount = showDoubleInputDialog("How much time to add", context, 0.0..1000.0, 10.0) ?: return
         val score = currentProject.score
-        score.addTime(score.totalDuration, amount)
+        score.addTime(location, amount)
     }
 
     fun quitApplication() {

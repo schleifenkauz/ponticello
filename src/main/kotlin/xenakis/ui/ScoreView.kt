@@ -44,15 +44,7 @@ class ScoreView(
         listenForEvents()
         score.addListener(this)
         styleClass.add("score-view")
-        setupRangeRect()
         widthProperty().addListener { _, old, new -> onResize(old.toDouble(), new.toDouble()) }
-    }
-
-    private fun setupRangeRect() {
-        selectedArea.isFocusTraversable = true
-        selectedArea.setOnMouseDragged { ev ->
-
-        }
     }
 
     private fun onResize(old: Double, new: Double) {
