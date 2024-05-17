@@ -251,19 +251,16 @@ class ScoreView(
 
             Pointer -> {
                 selectedArea.x = x
-                selectedArea.y = y
                 selectedArea.width = 0.0
-                selectedArea.heightProperty().unbind()
-                selectedArea.height = 0.0
-                children.add(selectedArea)
-            }
-
-            SelectTime -> {
-                selectedArea.x = x
-                selectedArea.y = 0.0
-                selectedArea.width = 0.0
-                if (!selectedArea.heightProperty().isBound)
-                    selectedArea.heightProperty().bind(this.heightProperty())
+                if (ev.isShiftDown) {
+                    selectedArea.y = 0.0
+                    if (!selectedArea.heightProperty().isBound)
+                        selectedArea.heightProperty().bind(this.heightProperty())
+                } else {
+                    selectedArea.heightProperty().unbind()
+                    selectedArea.y = y
+                    selectedArea.height = 0.0
+                }
                 children.add(selectedArea)
             }
 
@@ -283,14 +280,14 @@ class ScoreView(
                 ev.consume()
             }
 
-            selectedArea in children && selectedTool in setOf(Pointer, SelectTime) -> {
+            selectedArea in children && selectedTool == Pointer -> {
                 if (x > selectedArea.x) {
                     selectedArea.width = x - selectedArea.x
                 } else {
                     selectedArea.width += selectedArea.x - x
                     selectedArea.x = x
                 }
-                if (selectedTool == Pointer) {
+                if (!selectedArea.heightProperty().isBound) {
                     if (y > selectedArea.y) {
                         selectedArea.height = y - selectedArea.y
                     } else {
@@ -317,7 +314,7 @@ class ScoreView(
         } else if (selectedArea in children) {
             if (selectedArea.width == 0.0 || selectedArea.height == 0.0) {
                 children.remove(selectedArea)
-            } else if (selectedTool == Pointer) {
+            } else if (!selectedArea.heightProperty().isBound) {
                 if (!ev.isControlDown) deselectAll()
                 for ((_, view) in views) {
                     if (selectedArea.boundsInParent.contains(view.boundsInParent)) {
@@ -325,7 +322,7 @@ class ScoreView(
                     }
                 }
                 children.remove(selectedArea)
-            } else if (selectedTool == SelectTime) {
+            } else {
                 selectedArea.requestFocus()
             }
         }
@@ -385,10 +382,11 @@ class ScoreView(
     }
 
     fun removeSelected() {
-        if (selectedTool == SelectTime && selectedArea in children) {
+        if (selectedArea in children && selectedArea.heightProperty().isBound) {
             val start = getTime(selectedArea.x)
             val end = getTime(selectedArea.x + selectedArea.width)
             score.deleteTimeRange(start, end)
+            children.remove(selectedArea)
         } else {
             project.context[UndoManager].beginCompoundEdit()
             for (view in selectedViews) {

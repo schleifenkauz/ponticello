@@ -20,11 +20,6 @@
 - simple effects (e.g. reverse)
 - spectral view
 
-### select time intervals
-
-- ability to delete them
-- ability to add time intervals
-
 ### how to react to changes of synth definitions?
 
 ### completion

@@ -2,7 +2,6 @@ package xenakis.model
 
 import hextant.context.Context
 import hextant.undo.UndoManager
-import hextant.undo.withoutUndo
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import xenakis.impl.Point
@@ -178,12 +177,13 @@ data class Score(
     }
 
     fun deleteTimeRange(start: Double, end: Double) {
+        undo.beginCompoundEdit()
         val removedDuration = end - start
         val removedObjects = mutableListOf<ScoreObject>()
         for (obj in objects.toSet()) {
             if (obj.start > start) {
                 if (obj.start + obj.duration < end) {
-                    undo.withoutUndo { removeObject(obj) }
+                    removeObject(obj)
                     removedObjects.add(obj)
                 } else {
                     val newStart = (obj.start - removedDuration).coerceAtLeast(0.0)
@@ -191,6 +191,6 @@ data class Score(
                 }
             }
         }
-        undo.record(ScoreAction.DeleteTimeRange(start, end, removedObjects, this))
+        undo.finishCompoundEdit("Delete time range")
     }
 }

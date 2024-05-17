@@ -20,8 +20,7 @@ class ToolSelector : SelectorBar<ToolSelector.Tool>(Tool.values().toList()) {
         Pattern(Icon.Repeat),
         Synth(Icon.Synth),
         Task(Icon.Code),
-        Envelope(Icon.Envelope),
-        SelectTime(Icon.SelectRange);
+        Envelope(Icon.Envelope);
     }
 
     companion object {

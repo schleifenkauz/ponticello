@@ -44,28 +44,6 @@ abstract class ScoreAction(val score: Score) : AbstractEdit() {
         }
     }
 
-    class DeleteTimeRange(
-        private val start: Double,
-        private val end: Double,
-        private val objects: Collection<ScoreObject>,
-        score: Score
-    ) : ScoreAction(score) {
-        override val actionDescription: String
-            get() = "Delete time range"
-
-        override fun doRedo() {
-            score.deleteTimeRange(start, end)
-        }
-
-        override fun doUndo() {
-            val amount = end - start
-            score.addTime(start, amount)
-            for (obj in objects) {
-                score.addObject(obj)
-            }
-        }
-    }
-
     class MoveObject(
         private val obj: ScoreObject,
         private val before: Point,
