@@ -6,7 +6,12 @@ import hextant.command.line.CommandLinePopup
 import hextant.context.Properties
 import hextant.context.SelectionDistributor
 import hextant.core.view.EditorControl
-import hextant.fx.*
+import hextant.fx.handleCommands
+import hextant.fx.initHextantScene
+import hextant.fx.label
+import hextant.fx.registerShortcuts
+import hextant.undo.UndoManager
+import hextant.undo.historyShortcuts
 import javafx.application.Platform
 import javafx.geometry.Orientation
 import javafx.geometry.Pos
@@ -14,11 +19,17 @@ import javafx.scene.Scene
 import javafx.scene.control.Button
 import javafx.scene.control.SplitPane
 import javafx.scene.control.Tooltip
-import javafx.scene.layout.*
+import javafx.scene.layout.HBox
+import javafx.scene.layout.Pane
+import javafx.scene.layout.Priority
+import javafx.scene.layout.VBox
 import javafx.scene.paint.Color
 import javafx.stage.Stage
 import javafx.stage.StageStyle
 import org.controlsfx.control.textfield.TextFields
+import reaktive.value.binding.map
+import reaktive.value.binding.not
+import reaktive.value.fx.asObservableValue
 import reaktive.value.now
 import xenakis.model.XenakisProject
 import xenakis.sc.view.SynthDefsEditorControl
@@ -140,17 +151,32 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
                     commandLinePopup.show(stage, point.x, point.y)
                 }
             }
+            historyShortcuts(context[UndoManager])
         }
         return layout
     }
 
     private fun createToolbar(): HBox {
-        val playerBar = createPlayerBar()
         val fileBar = createFileBar()
+        val undoRedoBar = createUndoRedoBar()
+        val playerBar = createPlayerBar()
         val layoutBar = createLayoutBar()
         val miscBar = createMiscBar()
         miscBar.alignment = Pos.CENTER_RIGHT
-        return HBox(20.0, fileBar, toolSelector, playerBar, layoutBar, miscBar).styleClass("toolbar")
+        return HBox(20.0, fileBar, undoRedoBar, toolSelector, playerBar, layoutBar, miscBar).styleClass("toolbar")
+    }
+
+    private fun createUndoRedoBar(): HBox {
+        val manager = project.context[UndoManager]
+        val undo = Icon.Undo.button { manager.undo() }
+        undo.tooltipProperty().bind(manager.undoText.map(::Tooltip).asObservableValue())
+        undo.disableProperty().bind(manager.canUndo.not().asObservableValue())
+
+        val redo = Icon.Redo.button { manager.redo() }
+        redo.tooltipProperty().bind(manager.redoText.map(::Tooltip).asObservableValue())
+        redo.disableProperty().bind(manager.canRedo.not().asObservableValue())
+
+        return HBox(5.0, undo, redo)
     }
 
     private fun createMiscBar() = HBox(5.0,

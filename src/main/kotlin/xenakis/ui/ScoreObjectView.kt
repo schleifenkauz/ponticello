@@ -1,5 +1,7 @@
 package xenakis.ui
 
+import hextant.context.Context
+import hextant.undo.UndoManager
 import javafx.beans.property.SimpleBooleanProperty
 import javafx.css.PseudoClass
 import javafx.geometry.BoundingBox
@@ -23,6 +25,7 @@ abstract class ScoreObjectView(open val obj: ScoreObject, val project: XenakisPr
     private var draggedObject: ScoreObjectView = this
 
     protected lateinit var scoreView: ScoreView
+    protected lateinit var context: Context
 
     private val nameLabel = Label().styleClass("score-object-name")
     private lateinit var muteUnmuteBtn: Button
@@ -48,6 +51,7 @@ abstract class ScoreObjectView(open val obj: ScoreObject, val project: XenakisPr
 
     fun init(parent: ScoreView) {
         this.scoreView = parent
+        this.context = parent.score.context
         setupHeader()
         children.setAll(header, contents)
         header.prefWidthProperty().bind(this.widthProperty())
@@ -154,13 +158,14 @@ abstract class ScoreObjectView(open val obj: ScoreObject, val project: XenakisPr
             dragStart = Point(ev.screenX, ev.screenY)
             draggedObject = if (ev.isShiftDown) {
                 val clone = obj.clone(scoreView.score.nameForClone(obj))
-                clone.context = project.context
                 scoreView.score.addObject(clone)
                 scoreView.getObjectView(clone)
             } else this
+            context[UndoManager].beginCompoundEdit()
             ev.consume()
         }
         addEventHandler(MouseEvent.MOUSE_PRESSED) { ev ->
+            context[UndoManager].beginCompoundEdit()
             dragStart = Point(ev.screenX, ev.screenY)
             oldBounds = BoundingBox(layoutX, layoutY, prefWidth, prefHeight)
             ev.consume()
@@ -183,6 +188,7 @@ abstract class ScoreObjectView(open val obj: ScoreObject, val project: XenakisPr
             dragStart = null
             oldBounds = null
             draggedObject = this
+            context[UndoManager].finishCompoundEdit("Move object")
             ev.consume()
         }
     }

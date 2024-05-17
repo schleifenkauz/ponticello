@@ -47,6 +47,7 @@ class XenakisProject private constructor(
 
     fun initialize(context: Context) {
         this.context = context
+        score.context = context
         for (obj in score.objects) obj.context = context
         context[SynthDefs] = synthDefs
         client = context[UDPSuperColliderClient]

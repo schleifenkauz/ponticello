@@ -1,7 +1,11 @@
 package xenakis.model
 
+import hextant.context.Context
+import hextant.undo.UndoManager
+import hextant.undo.withoutUndo
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
+import xenakis.impl.Point
 import xenakis.impl.ScWriter
 import xenakis.ui.format
 
@@ -13,8 +17,8 @@ data class Score(
 ) {
     val objects: Set<ScoreObject> get() = _objects
 
-    val totalDuration: Double
-        get() = objects.maxOf { obj -> obj.start + obj.duration }
+    @Transient
+    lateinit var context: Context
 
     @Transient
     private val objectsByName = objects.associateByTo(mutableMapOf()) { obj -> obj.name }
@@ -27,6 +31,8 @@ data class Score(
 
     @Transient
     private val listeners = mutableListOf<ScoreListener>()
+
+    private val undo get() = context[UndoManager]
 
     init {
         for (group in _horizontalGroups) {
@@ -55,9 +61,11 @@ data class Score(
     }
 
     fun addObject(obj: ScoreObject) {
+        obj.context = context
         _objects.add(obj)
         listeners.forEach { l -> l.addedObject(obj) }
         objectsByName[obj.name] = obj
+        undo.record(ScoreAction.AddObject(obj, this))
     }
 
     fun removeObject(obj: ScoreObject) {
@@ -65,6 +73,7 @@ data class Score(
         listeners.forEach { l -> l.removedObject(obj) }
         objectsByName.remove(obj.name)
         obj.onRemove()
+        undo.record(ScoreAction.RemoveObjects(listOf(obj), this))
     }
 
     fun isNameAvailable(name: String) = name !in objectsByName
@@ -91,6 +100,7 @@ data class Score(
     }
 
     fun moveObject(obj: ScoreObject, newStart: Double, newY: Double) {
+        undo.record(ScoreAction.MoveObject(obj, Point(obj.start, obj.y), Point(newStart, newY), this))
         val dx = newStart - obj.start
         val dy = newY - obj.y
         for (o in verticalGroups[obj] ?: setOf(obj)) {
@@ -126,6 +136,7 @@ data class Score(
     }
 
     fun addTime(location: Double, amount: Double) {
+        undo.record(ScoreAction.AddTime(location, amount, this))
         for (obj in objects) {
             if (obj.start > location) {
                 val newStart = obj.start + amount
@@ -168,15 +179,18 @@ data class Score(
 
     fun deleteTimeRange(start: Double, end: Double) {
         val removedDuration = end - start
+        val removedObjects = mutableListOf<ScoreObject>()
         for (obj in objects.toSet()) {
             if (obj.start > start) {
                 if (obj.start + obj.duration < end) {
-                    removeObject(obj)
+                    undo.withoutUndo { removeObject(obj) }
+                    removedObjects.add(obj)
                 } else {
                     val newStart = (obj.start - removedDuration).coerceAtLeast(0.0)
                     moveObject(obj, newStart, obj.y)
                 }
             }
         }
+        undo.record(ScoreAction.DeleteTimeRange(start, end, removedObjects, this))
     }
 }

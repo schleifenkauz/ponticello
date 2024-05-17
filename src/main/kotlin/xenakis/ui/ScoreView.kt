@@ -2,6 +2,7 @@ package xenakis.ui
 
 import hextant.fx.registerShortcuts
 import hextant.serial.EditorRoot
+import hextant.undo.UndoManager
 import javafx.application.Platform
 import javafx.scene.input.MouseEvent
 import javafx.scene.layout.Pane
@@ -116,7 +117,6 @@ class ScoreView(
                 duration = SoundFileObject.getDuration(file),
                 height = 150.0, muted = false
             )
-            obj.context = project.context
             score.addObject(obj)
         }
     }
@@ -344,7 +344,6 @@ class ScoreView(
                     rect.y, rect.height,
                     def.defaultControls()
                 )
-                obj.context = project.context
                 val confirmed = ControlAssignmentView.show(obj, project)
                 if (confirmed) {
                     score.addObject(obj)
@@ -355,7 +354,6 @@ class ScoreView(
                 val name = showTextInputDialog("Task name", project.context) ?: return
                 val editor = EditorRoot.create(ScFunctionEditor(project.context))
                 val obj = TaskObject(name, editor, start, rect.width, rect.y, rect.height, emptyList())
-                obj.context = project.context
                 score.addObject(obj)
             }
 
@@ -363,7 +361,6 @@ class ScoreView(
                 EnvelopeObjectView.showEnvelopeConfig(project.context, rect) { name, spec, outputBus ->
                     val envelope = xenakis.sc.Envelope.constant(spec.defaultValue.value, spec.warp)
                     val obj = EnvelopeObject(name, spec, outputBus, envelope, start, duration, rect.y, rect.height)
-                    obj.context = project.context
                     score.addObject(obj)
                 }
             }
@@ -393,10 +390,13 @@ class ScoreView(
             val end = getTime(selectedArea.x + selectedArea.width)
             score.deleteTimeRange(start, end)
         } else {
+            project.context[UndoManager].beginCompoundEdit()
             for (view in selectedViews) {
                 score.removeObject(view.obj)
             }
+            project.context[UndoManager].finishCompoundEdit("Remove objects")
         }
+        deselectAll()
     }
 
     override fun recolor(obj: SynthObject) {

@@ -52,13 +52,6 @@
 
 ### Integrate Buffers and SynthDefs views into startup script?
 
-### Undo and redo for score actions
-
-- adding objects
-- deleting them
-- deleting time ranges
-- adding time
-
 ### Copying and pasting score objects
 
 - ability to copy and paste whole time ranges

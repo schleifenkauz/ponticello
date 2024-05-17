@@ -4,7 +4,6 @@ import javafx.scene.control.Button
 import javafx.scene.control.Tooltip
 import javafx.scene.image.Image
 import javafx.scene.image.ImageView
-import javafx.scene.shape.Circle
 
 enum class Icon {
     Envelope,
@@ -44,7 +43,8 @@ enum class Icon {
     View,
     Mute,
     Unmute,
-    SelectRange;
+    SelectRange,
+    Undo, Redo;
 
     private val file = name.lowercase() + "_green.png"
     private val url = javaClass.getResource("icons/$file") ?: error("icon $file not found")
