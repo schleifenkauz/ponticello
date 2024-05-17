@@ -29,8 +29,8 @@ abstract class ScoreObjectView(open val obj: ScoreObject, val project: XenakisPr
 
     private val nameLabel = Label().styleClass("score-object-name")
     private lateinit var muteUnmuteBtn: Button
-    protected val header = HBox(10.0)
-    private val actions = HBox(10.0)
+    protected val header = HBox(10.0).centerChildrenVertically()
+    protected val actions = HBox(10.0).centerChildrenVertically()
     protected val contents = VBox().styleClass("score-object-content")
     protected val envelopesPane = Pane()
 
@@ -112,18 +112,23 @@ abstract class ScoreObjectView(open val obj: ScoreObject, val project: XenakisPr
         }
     }
 
-    protected open fun setupHeader() {
+    protected fun setupHeader(vararg supportedActions: Icon) {
         header.styleClass("score-object-header")
         nameLabel.textFill = WHITE
         header.children.setAll(nameLabel, infiniteSpace(), actions)
-        addAction(Icon.Delete, "Delete this object", ::delete)
-        addAction(Icon.Play, "Play this object") {
+        if (Icon.Delete in supportedActions) addAction(Icon.Delete, "Delete this object", ::delete)
+        if (Icon.Play in supportedActions) addAction(Icon.Play, "Play this object") {
             val client = project.context[UDPSuperColliderClient]
             project.prepareForPlay(client)
             obj.play(client)
         }
-        muteUnmuteBtn = addAction(if (obj.muted) Icon.Mute else Icon.Unmute, "Toggle mute", ::toggleMute)
+        if (Icon.Mute in supportedActions)
+            muteUnmuteBtn = addAction(if (obj.muted) Icon.Mute else Icon.Unmute, "Toggle mute", ::toggleMute)
         header.visibleProperty().bind(hoverProperty().or(selectedProperty))
+    }
+
+    protected open fun setupHeader() {
+        setupHeader(Icon.Delete, Icon.Play, Icon.Mute)
     }
 
     private fun toggleMute() {
@@ -185,10 +190,12 @@ abstract class ScoreObjectView(open val obj: ScoreObject, val project: XenakisPr
             if (draggedObject != this && draggedObject.boundsInParent == this.boundsInParent) {
                 scoreView.score.removeObject(draggedObject.obj)
             }
-            dragStart = null
-            oldBounds = null
-            draggedObject = this
-            context[UndoManager].finishCompoundEdit("Move object")
+            if (dragStart != null) {
+                dragStart = null
+                oldBounds = null
+                draggedObject = this
+                context[UndoManager].finishCompoundEdit("Move object")
+            }
             ev.consume()
         }
     }
@@ -237,7 +244,7 @@ abstract class ScoreObjectView(open val obj: ScoreObject, val project: XenakisPr
         if (snappedWidth < 10.0 || height < 10.0) return
         if (!isInParentBounds(snappedX, y, snappedWidth, height)) return
         setObjectWidth(snappedWidth, ev, resizeFromLeft)
-        setPrefSize(scoreView.getWidth(obj.duration), height)
+        setPrefSize(getDisplayWidth(), height)
         obj.height = height
         relocateObject(snappedX, y)
     }

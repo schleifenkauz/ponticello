@@ -7,6 +7,7 @@ import javafx.application.Platform
 import javafx.scene.input.MouseEvent
 import javafx.scene.layout.Pane
 import javafx.scene.paint.Color
+import javafx.scene.paint.Color.BLACK
 import javafx.scene.shape.Line
 import javafx.scene.shape.Rectangle
 import javafx.scene.text.Text
@@ -173,6 +174,7 @@ class ScoreView(
             is TaskObject -> TaskObjectView(obj, project)
             is EnvelopeObject -> EnvelopeObjectView(obj, project)
             is SoundFileObject -> SoundFileObjectView(obj, project)
+            is MemoObject -> MemoObjectView(obj, project)
         }
     }
 
@@ -249,6 +251,11 @@ class ScoreView(
                 setNewShape(rect)
             }
 
+            Memo -> {
+                rect.fill = BLACK
+                setNewShape(rect)
+            }
+
             Pointer -> {
                 selectedArea.x = x
                 selectedArea.width = 0.0
@@ -264,7 +271,7 @@ class ScoreView(
                 children.add(selectedArea)
             }
 
-            Pattern -> TODO()
+            Repeat -> TODO()
         }
         ev.consume()
     }
@@ -348,7 +355,7 @@ class ScoreView(
             }
 
             Task -> {
-                val name = showTextInputDialog("Task name", project.context) ?: return
+                val name = "task"
                 val editor = EditorRoot.create(ScFunctionEditor(project.context))
                 val obj = TaskObject(name, editor, start, rect.width, rect.y, rect.height, emptyList())
                 score.addObject(obj)
@@ -362,7 +369,12 @@ class ScoreView(
                 }
             }
 
-            Pattern -> {}
+            Memo -> {
+                val obj = MemoObject("memo", "", start, rect.width, rect.y, rect.height)
+                score.addObject(obj)
+            }
+
+            Repeat -> {}
             else -> {
                 System.err.println("Unrecognized tool $tool")
             }

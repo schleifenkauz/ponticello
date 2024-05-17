@@ -422,3 +422,20 @@ Slider.control-detail-editor {
 .channel-separator-line {
     -fx-stroke: white;
 }
+
+.memo-area {
+    -fx-background-color: transparent;
+    -fx-text-fill: white;
+}
+
+.memo-area .scroll-pane {
+    -fx-background-color: transparent;
+}
+
+.memo-area .scroll-pane .viewport {
+    -fx-background-color: transparent;
+}
+
+.memo-area .scroll-pane .content {
+    -fx-background-color: transparent;
+}

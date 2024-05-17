@@ -18,10 +18,8 @@ import javafx.scene.control.TextField
 import javafx.scene.control.ToggleGroup
 import javafx.scene.input.DragEvent
 import javafx.scene.input.TransferMode
-import javafx.scene.layout.HBox
-import javafx.scene.layout.Priority
-import javafx.scene.layout.Region
-import javafx.scene.layout.VBox
+import javafx.scene.layout.*
+import javafx.scene.paint.Color
 import javafx.stage.Popup
 import org.controlsfx.glyphfont.FontAwesome
 import org.controlsfx.glyphfont.Glyph
@@ -52,7 +50,7 @@ fun DialogPane.setDefaultButton(type: ButtonType, disable: ObservableValue<Boole
 
 fun <N : Node> N.styleClass(vararg classes: String) = also { it.styleClass.addAll(classes) }
 
-infix fun <N: Node> N.styleClass(name: String) = also { it.styleClass.add(name) }
+infix fun <N : Node> N.styleClass(name: String) = also { it.styleClass.add(name) }
 
 fun button(text: String = "", onAction: (ev: ActionEvent) -> Unit) =
     Button(text).also { btn -> btn.setOnAction(onAction) }
@@ -149,7 +147,10 @@ fun Node.setupFileDropArea(exactlyOne: Boolean, extension: String, onDrop: (file
         }
     }
     setOnDragEntered { ev ->
-        if (hasFile(ev, exactlyOne, extension)) pseudoClassStateChanged(PseudoClass.getPseudoClass("drop-possible"), true)
+        if (hasFile(ev, exactlyOne, extension)) pseudoClassStateChanged(
+            PseudoClass.getPseudoClass("drop-possible"),
+            true
+        )
         ev.consume()
     }
     setOnDragExited { ev ->
@@ -173,3 +174,6 @@ private fun hasFile(ev: DragEvent, exactlyOne: Boolean, extension: String): Bool
     val hasSoundFiles = ev.dragboard.hasFiles() && ev.dragboard.files.any { it.extension == extension }
     return hasSoundFiles && (!exactlyOne || ev.dragboard.files.size == 1)
 }
+
+fun solidBorder(fill: Color, width: Double = 1.0, radius: Double = 0.0) =
+    Border(BorderStroke(fill, BorderStrokeStyle.SOLID, CornerRadii(radius), BorderWidths(width)))
