@@ -16,7 +16,12 @@ class ToolSelector : SelectorBar<ToolSelector.Tool>(Tool.values().toList()) {
     }
 
     enum class Tool(val icon: Icon) {
-        Pointer(Icon.Pointer), Pattern(Icon.Repeat), Synth(Icon.Synth), Task(Icon.Code), Envelope(Icon.Envelope)
+        Pointer(Icon.Pointer),
+        Pattern(Icon.Repeat),
+        Synth(Icon.Synth),
+        Task(Icon.Code),
+        Envelope(Icon.Envelope),
+        SelectTime(Icon.SelectRange);
     }
 
     companion object {

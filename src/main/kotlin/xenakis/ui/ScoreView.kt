@@ -9,7 +9,6 @@ import javafx.scene.paint.Color
 import javafx.scene.shape.Line
 import javafx.scene.shape.Rectangle
 import javafx.scene.text.Text
-import xenakis.impl.Point
 import xenakis.impl.step
 import xenakis.model.*
 import xenakis.sc.Bus
@@ -25,9 +24,9 @@ class ScoreView(
     private val ui: XenakisUI
 ) : Pane(), ScoreListener {
     private var newObjectArea: Rectangle? = null
+    private var selectedArea: Rectangle = Rectangle() styleClass "time-range-rect"
     private val views = mutableMapOf<ScoreObject, ScoreObjectView>()
     private val selectedViews = mutableSetOf<ScoreObjectView>()
-    private var dragFrom: Point? = null
     var timeSnap: Double = 0.1
     private var displayStart: Double = 0.0
     private var displayEnd: Double = 0.0
@@ -36,13 +35,24 @@ class ScoreView(
 
     val score get() = project.score
 
-    val selectedObjects get() = selectedViews.map { view -> view.obj }
+    private val selectedTool get() = ui.toolSelector.selected.value!!
+
+    val selectedObjects
+        get() = selectedViews.map { view -> view.obj }
 
     init {
         listenForEvents()
         score.addListener(this)
         styleClass.add("score-view")
+        setupRangeRect()
         widthProperty().addListener { _, old, new -> onResize(old.toDouble(), new.toDouble()) }
+    }
+
+    private fun setupRangeRect() {
+        selectedArea.isFocusTraversable = true
+        selectedArea.setOnMouseDragged { ev ->
+
+        }
     }
 
     private fun onResize(old: Double, new: Double) {
@@ -223,11 +233,13 @@ class ScoreView(
     }
 
     private fun mousePressed(ev: MouseEvent) {
+        val selectedTool = ui.toolSelector.selected.value!!
         if (newObjectArea != null) return
+        children.remove(selectedArea)
         val x = ev.x.snap(timeSnap)
         val y = ev.y
         val rect = Rectangle(x, y, 0.0, 0.0)
-        when (ui.toolSelector.selected.value!!) {
+        when (selectedTool) {
             Synth -> {
                 val synthDef = project.context[SynthDefs].selectedSynthDef
                 rect.stroke = synthDef.associatedColor
@@ -246,7 +258,21 @@ class ScoreView(
             }
 
             Pointer -> {
-                dragFrom = Point(ev.screenX, ev.screenY)
+                selectedArea.x = x
+                selectedArea.y = y
+                selectedArea.width = 0.0
+                selectedArea.heightProperty().unbind()
+                selectedArea.height = 0.0
+                children.add(selectedArea)
+            }
+
+            SelectTime -> {
+                selectedArea.x = x
+                selectedArea.y = 0.0
+                selectedArea.width = 0.0
+                if (!selectedArea.heightProperty().isBound)
+                    selectedArea.heightProperty().bind(this.heightProperty())
+                children.add(selectedArea)
             }
 
             Pattern -> TODO()
@@ -255,41 +281,62 @@ class ScoreView(
     }
 
     private fun mouseDragged(ev: MouseEvent) {
-        val s = newObjectArea
+        val newObj = newObjectArea
+        val x = ev.x.snap(timeSnap)
+        val y = ev.y
         when {
-            s is Rectangle -> {
-                val x = ev.x.snap(timeSnap)
-                s.width = x - s.x
-                s.height = ev.y - s.y
+            newObj != null -> {
+                newObj.width = x - newObj.x
+                newObj.height = ev.y - newObj.y
                 ev.consume()
             }
 
-            ui.toolSelector.selected.value == Pointer -> {
-                val (sx, _) = dragFrom ?: return
-                val dx = ev.screenX - sx
-                val dt = getDuration(dx)
-                displayStart -= dt
-                displayEnd -= dt
-                noNegativeTimes()
-                repaint()
-                dragFrom = Point(ev.screenX, ev.screenY)
+            selectedArea in children && selectedTool in setOf(Pointer, SelectTime) -> {
+                if (x > selectedArea.x) {
+                    selectedArea.width = x - selectedArea.x
+                } else {
+                    selectedArea.width += selectedArea.x - x
+                    selectedArea.x = x
+                }
+                if (selectedTool == Pointer) {
+                    if (y > selectedArea.y) {
+                        selectedArea.height = y - selectedArea.y
+                    } else {
+                        selectedArea.height += selectedArea.y - y
+                        selectedArea.y = y
+                    }
+                }
             }
         }
     }
 
     private fun mouseClicked(ev: MouseEvent) {
-        deselectAll()
-        ev.consume()
+
     }
 
     private fun mouseReleased(ev: MouseEvent) {
         ev.consume()
-        val s = newObjectArea
+        if (!ev.isControlDown) deselectAll()
+        val newObj = newObjectArea
         val tool = ui.toolSelector.selected.value
-        if (s is Rectangle && tool != Pointer) {
-            if (s.width != 0.0 && s.height != 0.0) createNewObject(tool, s)
+        if (newObj != null && tool != Pointer) {
+            if (newObj.width != 0.0 && newObj.height != 0.0) createNewObject(tool, newObj)
+            clearNewShape()
+        } else if (selectedArea in children) {
+            if (selectedArea.width == 0.0 || selectedArea.height == 0.0) {
+                children.remove(selectedArea)
+            } else if (selectedTool == Pointer) {
+                if (!ev.isControlDown) deselectAll()
+                for ((_, view) in views) {
+                    if (selectedArea.boundsInParent.contains(view.boundsInParent)) {
+                        select(view, addToSelection = true)
+                    }
+                }
+                children.remove(selectedArea)
+            } else if (selectedTool == SelectTime) {
+                selectedArea.requestFocus()
+            }
         }
-        clearNewShape()
     }
 
     private fun createNewObject(tool: ToolSelector.Tool, rect: Rectangle) {
@@ -349,8 +396,14 @@ class ScoreView(
     }
 
     fun removeSelected() {
-        for (view in selectedViews) {
-            score.removeObject(view.obj)
+        if (selectedTool == SelectTime && selectedArea in children) {
+            val start = getTime(selectedArea.x)
+            val end = getTime(selectedArea.x + selectedArea.width)
+            score.deleteTimeRange(start, end)
+        } else {
+            for (view in selectedViews) {
+                score.removeObject(view.obj)
+            }
         }
     }
 

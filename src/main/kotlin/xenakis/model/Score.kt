@@ -160,4 +160,18 @@ data class Score(
         }
         writer.appendLine("}.play)")
     }
+
+    fun deleteTimeRange(start: Double, end: Double) {
+        val removedDuration = end - start
+        for (obj in objects.toSet()) {
+            if (obj.start > start) {
+                if (obj.start + obj.duration < end) {
+                    removeObject(obj)
+                } else {
+                    val newStart = (obj.start - removedDuration).coerceAtLeast(0.0)
+                    moveObject(obj, newStart, obj.y)
+                }
+            }
+        }
+    }
 }

@@ -43,7 +43,8 @@ enum class Icon {
     Add,
     View,
     Mute,
-    Unmute;
+    Unmute,
+    SelectRange;
 
     private val file = name.lowercase() + "_green.png"
     private val url = javaClass.getResource("icons/$file") ?: error("icon $file not found")

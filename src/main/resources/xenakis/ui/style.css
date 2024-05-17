@@ -68,11 +68,11 @@ Slider.control-detail-editor {
 }
 
 .score-object-content:hover {
-    -fx-background-color: #0f0f0f;
+    -fx-background-color: #130000;
 }
 
 .score-object-content:selected {
-    -fx-background-color: #191212 !important;
+    -fx-background-color: #220000 !important;
 }
 
 .task-object-content {
@@ -403,4 +403,22 @@ Slider.control-detail-editor {
 
 .code-pane-title {
     -fx-font-size: 16px;
+}
+
+.time-range-rect {
+    -fx-stroke: gray;
+    -fx-fill: rgba(0, 0, 0, 0.2);
+}
+
+.time-range-rect:focused {
+    -fx-fill: rgba(0, 0, 0, 0.3);
+    -fx-stroke: green;
+}
+
+.waveform-line {
+    -fx-stroke: green;
+}
+
+.channel-separator-line {
+    -fx-stroke: white;
 }

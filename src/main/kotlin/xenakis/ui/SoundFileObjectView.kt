@@ -1,8 +1,6 @@
 package xenakis.ui
 
 import javafx.scene.input.MouseEvent
-import javafx.scene.paint.Color.GREEN
-import javafx.scene.paint.Color.WHITE
 import javafx.scene.shape.Line
 import javafx.scene.shape.Polyline
 import xenakis.impl.readChannels
@@ -16,17 +14,13 @@ class SoundFileObjectView(override val obj: SoundFileObject, project: XenakisPro
     private val frameRate = stream.format.frameRate
     private val fileDuration = (stream.frameLength / frameRate).toDouble()
     private val channels = stream.readChannels()
-    private val waveForms = Array(channels.size) { Polyline().styleClass("wave-form-line") }
+    private val waveForms = Array(channels.size) { Polyline().styleClass("waveform-line") }
     private val separatorLines = Array(channels.size) { Line().styleClass("channel-separator-line") }
 
     init {
-        for (ch in channels.indices) {
-            if (ch != 0) envelopesPane.children.addAll(separatorLines[ch])
-            envelopesPane.children.add(waveForms[ch])
-            waveForms[ch].stroke = GREEN
-            separatorLines[ch].stroke = WHITE
-        }
+        envelopesPane.children.addAll(*waveForms, *separatorLines)
         waveForms.forEach { l -> l.toBack() }
+        separatorLines.forEach { l -> l.toBack() }
     }
 
     private fun displayWaveForm() {

@@ -52,6 +52,8 @@ fun DialogPane.setDefaultButton(type: ButtonType, disable: ObservableValue<Boole
 
 fun <N : Node> N.styleClass(vararg classes: String) = also { it.styleClass.addAll(classes) }
 
+infix fun <N: Node> N.styleClass(name: String) = also { it.styleClass.add(name) }
+
 fun button(text: String = "", onAction: (ev: ActionEvent) -> Unit) =
     Button(text).also { btn -> btn.setOnAction(onAction) }
 

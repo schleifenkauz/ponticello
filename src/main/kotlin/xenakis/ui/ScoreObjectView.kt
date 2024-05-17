@@ -77,8 +77,12 @@ abstract class ScoreObjectView(open val obj: ScoreObject, val project: XenakisPr
 
     fun recolor() {
         if (obj.color != null) {
-            contents.border =
-                Border(BorderStroke(obj.color, BorderStrokeStyle.SOLID, CornerRadii(3.0), BorderWidths(2.0)))
+            contents.border = Border(
+                BorderStroke(
+                    obj.color, BorderStrokeStyle.SOLID,
+                    CornerRadii(3.0), BorderWidths(2.0)
+                )
+            )
         }
     }
 
@@ -150,7 +154,7 @@ abstract class ScoreObjectView(open val obj: ScoreObject, val project: XenakisPr
             dragStart = Point(ev.screenX, ev.screenY)
             draggedObject = if (ev.isShiftDown) {
                 val clone = obj.clone(scoreView.score.nameForClone(obj))
-                clone.initialize(project)
+                clone.context = project.context
                 scoreView.score.addObject(clone)
                 scoreView.getObjectView(clone)
             } else this
@@ -262,7 +266,7 @@ abstract class ScoreObjectView(open val obj: ScoreObject, val project: XenakisPr
     }
 
     fun setSelected(value: Boolean) {
-        pseudoClassStateChanged(PseudoClass.getPseudoClass("selected"), value)
+        contents.pseudoClassStateChanged(PseudoClass.getPseudoClass("selected"), value)
         selectedProperty.set(value)
     }
 
