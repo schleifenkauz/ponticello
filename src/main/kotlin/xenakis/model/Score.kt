@@ -1,6 +1,7 @@
 package xenakis.model
 
 import hextant.context.Context
+import hextant.core.editor.ViewManager
 import hextant.undo.UndoManager
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
@@ -29,7 +30,7 @@ data class Score(
     private val verticalGroups = mutableMapOf<ScoreObject, MutableSet<ScoreObject>>()
 
     @Transient
-    private val listeners = mutableListOf<ScoreListener>()
+    private val views = ViewManager.createWeakViewManager<ScoreListener>()
 
     private val undo get() = context[UndoManager]
 
@@ -49,28 +50,35 @@ data class Score(
     }
 
     fun addListener(listener: ScoreListener) {
-        listeners.add(listener)
+        views.addView(listener)
         for (obj in objects) {
             listener.addedObject(obj)
         }
     }
 
-    private inline fun listeners(update: ScoreListener.() -> Unit) {
-        listeners.forEach(update)
-    }
-
     fun addObject(obj: ScoreObject) {
         obj.addToContainer(this, context)
         _objects.add(obj)
-        listeners.forEach { l -> l.addedObject(obj) }
+        views.notifyViews { addedObject(obj) }
         objectsByName[obj.name] = obj
         undo.record(ScoreEdit.AddObject(obj, this))
     }
 
     override fun removeObject(obj: ScoreObject) {
         _objects.remove(obj)
-        listeners.forEach { l -> l.removedObject(obj) }
+        views.notifyViews { removedObject(obj) }
         objectsByName.remove(obj.name)
+        _verticalGroups.all { g -> g.remove(obj.name) }
+        _horizontalGroups.all { g -> g.remove(obj.name) }
+        horizontalGroups.remove(obj)
+        verticalGroups.remove(obj)
+        horizontalGroups.values.all { it.remove(obj) }
+        verticalGroups.values.all { it.remove(obj) }
+        for (o in _objects.toSet()) {
+            if (o is ClonedObject && o.original == obj) {
+                removeObject(o)
+            }
+        }
         obj.onRemove()
         undo.record(ScoreEdit.RemoveObjects(listOf(obj), this))
     }
