@@ -38,6 +38,11 @@ data class BusValueControl(override val parameter: String, val bus: Bus): Parame
 }
 
 @Serializable
+data class SingleBusValueControl(override val parameter: String, val bus: Bus): ParameterControl() {
+    override fun clone(): ParameterControl = copy()
+}
+
+@Serializable
 data class BufferControl(override val parameter: String, val buffer: Buffer) : ParameterControl() {
     override fun clone(): ParameterControl = copy()
 }

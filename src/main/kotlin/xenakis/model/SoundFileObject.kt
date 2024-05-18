@@ -3,9 +3,10 @@ package xenakis.model
 import hextant.context.Context
 import hextant.core.editor.ViewManager
 import javafx.scene.paint.Color
-import xenakis.impl.ScWriter
-import xenakis.impl.UDPSuperColliderClient
-import xenakis.impl.superColliderPath
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonObjectBuilder
+import kotlinx.serialization.json.put
+import xenakis.impl.*
 import xenakis.sc.Bus
 import xenakis.sc.ControlSpec
 import xenakis.sc.ParameterDef
@@ -21,6 +22,9 @@ class SoundFileObject(
     var startPos: Double, var rate: Double,
     var envelope: Envelope
 ) : ScoreObject(name) {
+    override val type: String
+        get() = "sample"
+
     override val viewManager = ViewManager.createWeakViewManager<SoundFileObjectView>()
 
     private val bufferName = "~sample_${file.nameWithoutExtension}"
@@ -75,11 +79,37 @@ class SoundFileObject(
 
     override fun clone(): SoundFileObject = SoundFileObject(name, file, outBus, startPos, rate, envelope.clone())
 
+    override fun JsonObjectBuilder.saveToJson() {
+        put("file", file.absolutePath)
+        putSerializableValue("outBus", outBus)
+        if (startPos != 0.0) {
+            put("startPos", startPos)
+        }
+        if (rate != 1.0) {
+            put("rate", rate)
+        }
+        if (envelope != Envelope.default) putSerializableValue("envelope", envelope)
+    }
+
     companion object {
         fun getDuration(file: File): Double {
             val stream = AudioSystem.getAudioInputStream(file)
             val format = stream.format
             return (stream.frameLength / format.frameRate).toDouble()
+        }
+    }
+
+    object Serializer : ScoreObject.Serializer {
+        override val type: String
+            get() = "sample"
+
+        override fun JsonObject.createFromJson(name: String): ScoreObject {
+            val file = getFile("file")
+            val outBus = getSerializableValue<Bus>("outBus")!!
+            val startPos = getDouble("startPos") ?: 0.0
+            val rate = getDouble("rate") ?: 1.0
+            val envelope = getSerializableValue<Envelope>("envelope") ?: Envelope.default
+            return SoundFileObject(name, file, outBus, startPos, rate, envelope)
         }
     }
 }

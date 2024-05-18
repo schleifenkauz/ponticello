@@ -68,7 +68,8 @@ class EnvelopeObjectView(override val obj: EnvelopeObject, project: XenakisProje
                 spacing = 5.0
                 centerChildrenVertically()
             }
-            popup(layout).show(parent)
+            val popup = popup(layout) { isAutoHide = false }
+            popup.show(parent)
             Platform.runLater { nameControl.requestFocus() }
         }
     }

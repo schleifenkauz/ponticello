@@ -1,7 +1,11 @@
 package xenakis.model
 
 import hextant.core.editor.ViewManager
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonObjectBuilder
+import kotlinx.serialization.json.put
 import xenakis.impl.ScWriter
+import xenakis.impl.getString
 import xenakis.sc.ControlSpec
 import xenakis.sc.SynthDef
 import xenakis.ui.SynthObjectView
@@ -9,6 +13,9 @@ import xenakis.ui.XenakisController.Companion.currentProject
 import xenakis.ui.format
 
 class SynthObject(name: String, var synthDefName: String) : ScoreObject(name) {
+    override val type: String
+        get() = "synth"
+
     override val viewManager: ViewManager<SynthObjectView> = ViewManager.createWeakViewManager()
 
     val synthDef: SynthDef
@@ -48,6 +55,11 @@ class SynthObject(name: String, var synthDefName: String) : ScoreObject(name) {
                         +"${synthVar}.map(\\$param, $bus)"
                     }
 
+                    is SingleBusValueControl -> {
+                        val bus = control.bus.variableName
+                        +"${synthVar}.set(\\$param, $bus.getSynchronized)"
+                    }
+
                     is CustomControl -> {
                         val expr = control.expr
                         val busName = "~auxil_${name}_${param}"
@@ -75,4 +87,17 @@ class SynthObject(name: String, var synthDefName: String) : ScoreObject(name) {
         +"$synthVar.free"
     }
 
+    override fun JsonObjectBuilder.saveToJson() {
+        put("synthDef", synthDefName)
+    }
+
+    object Serializer : ScoreObject.Serializer {
+        override val type: String
+            get() = "synth"
+
+        override fun JsonObject.createFromJson(name: String): ScoreObject {
+            val synthDefName = getString("synthDef")!!
+            return SynthObject(name, synthDefName)
+        }
+    }
 }

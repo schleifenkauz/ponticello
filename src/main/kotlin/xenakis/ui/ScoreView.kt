@@ -164,6 +164,7 @@ class ScoreView(
             is EnvelopeObject -> EnvelopeObjectView(obj, project)
             is SoundFileObject -> SoundFileObjectView(obj)
             is MemoObject -> MemoObjectView(obj)
+            else -> throw AssertionError()
         }
     }
 

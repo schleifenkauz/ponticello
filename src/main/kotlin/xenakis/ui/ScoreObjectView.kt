@@ -108,7 +108,7 @@ abstract class ScoreObjectView : VBox() {
     protected open val defaultBorderColor: Color
         get() = BLACK
 
-    fun recoloredObject() {
+    open fun recoloredObject() {
         val borderColor = obj.associatedColor ?: defaultBorderColor
         contents.border = solidBorder(borderColor, width = 2.0, radius = 3.0)
     }
@@ -121,7 +121,7 @@ abstract class ScoreObjectView : VBox() {
         muteUnmuteBtn.graphic = if (obj.muted) Icon.Mute.getView() else Icon.Unmute.getView()
     }
 
-    fun reassignedControls() {
+    open fun reassignedControls() {
         for (editors in envelopeEditors) {
             editors.removeChildren()
             editors.dispose()

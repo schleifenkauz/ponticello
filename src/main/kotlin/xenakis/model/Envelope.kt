@@ -2,6 +2,7 @@ package xenakis.model
 
 import hextant.core.editor.ViewManager
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 import xenakis.impl.Point
 import xenakis.sc.Warp
 import xenakis.ui.EnvelopeView
@@ -9,6 +10,7 @@ import xenakis.ui.format
 
 @Serializable
 data class Envelope(private val _points: MutableList<Point>, val curve: Warp) {
+    @Transient
     private val viewManager = ViewManager.createWeakViewManager<EnvelopeView>()
 
     val points: List<Point> get() = _points
@@ -60,5 +62,7 @@ data class Envelope(private val _points: MutableList<Point>, val curve: Warp) {
 
     companion object {
         fun constant(value: Double, curve: Warp) = Envelope(mutableListOf(Point(0.0, value), Point(1.0, value)), curve)
+
+        val default = constant(1.0, Warp.Linear)
     }
 }

@@ -154,6 +154,19 @@ class ControlAssignmentEditor(private val parameter: ParameterDef, val project: 
                 BusValueControl(parameter.name.text, detailInput.editor.result.now)
         }
 
+        object SingleBusValue : ControlType<SingleBusValueControl, BusRefEditorControl>() {
+            override fun createDetailInput(
+                parameter: ParameterDef,
+                control: SingleBusValueControl?,
+                project: XenakisProject
+            ): BusRefEditorControl = busSelector(project, control?.bus)
+
+            override fun createControl(
+                detailInput: BusRefEditorControl,
+                parameter: ParameterDef
+            ): SingleBusValueControl = SingleBusValueControl(parameter.name.text, detailInput.editor.result.now)
+        }
+
         object Buffer : ControlType<BufferControl, SimpleChoiceEditorControl<xenakis.sc.Buffer>>() {
             override fun createDetailInput(
                 parameter: ParameterDef,
