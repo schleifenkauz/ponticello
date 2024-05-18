@@ -4,6 +4,7 @@ import hextant.serial.EditorRoot
 import hextant.undo.UndoManager
 import javafx.application.Platform
 import javafx.scene.input.Clipboard
+import javafx.scene.input.ClipboardContent
 import javafx.scene.input.MouseButton
 import javafx.scene.input.MouseEvent
 import javafx.scene.layout.Pane
@@ -12,7 +13,9 @@ import javafx.scene.paint.Color.BLACK
 import javafx.scene.shape.Line
 import javafx.scene.shape.Rectangle
 import javafx.scene.text.Text
+import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import xenakis.impl.step
 import xenakis.model.*
@@ -215,7 +218,7 @@ class ScoreView(
         return selected
     }
 
-    private fun deselectAll() {
+    fun deselectAll() {
         for (v in selectedViews) v.setSelected(false)
         selectedViews.clear()
     }
@@ -305,11 +308,13 @@ class ScoreView(
             val clipboard = Clipboard.getSystemClipboard()
             if (clipboard.hasContent(ScoreObject.DATA_FORMAT)) {
                 val content = clipboard.getContent(ScoreObject.DATA_FORMAT) as String
-                val objects: List<ScoreObject> = Json.decodeFromString(content)
+                val objects = Json.decodeFromString(ListSerializer(ScoreObject.Ser), content)
                 val leftTop = objects.minOf { it.position }
                 for (obj in objects) {
                     obj.position.start += getTime(ev.x) - leftTop.start
+                    obj.position.start = obj.start.coerceAtLeast(0.0)
                     obj.position.y += ev.y - leftTop.y
+                    obj.position.y = obj.y.coerceIn(0.0, height - obj.height)
                     score.addObject(obj)
                 }
             }
@@ -415,6 +420,13 @@ class ScoreView(
             context[UndoManager].finishCompoundEdit("Remove objects")
         }
         deselectAll()
+    }
+
+    fun copySelected() {
+        if (selectedObjects.isEmpty()) return
+        val json = Json.encodeToString(ListSerializer(ScoreObject.Ser), selectedObjects)
+        val clipboard = Clipboard.getSystemClipboard()
+        clipboard.setContent(mapOf(ScoreObject.DATA_FORMAT to json))
     }
 
     companion object {

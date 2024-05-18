@@ -249,14 +249,23 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
         layout.registerShortcuts {
             on("Ctrl+SPACE") { togglePlay() }
             on("Ctrl+PERIOD") { stop() }
+
             on("DELETE") { scoreView.removeSelected() }
-            on("ESCAPE") { scoreView.clearNewShape() }
+            on("ESCAPE") {
+                scoreView.clearNewShape()
+                scoreView.deselectAll()
+            }
             on("Ctrl+S") { controller.saveProject() }
             on("Ctrl+O") { controller.openProject() }
             on("Ctrl+N") { controller.createNewProject() }
+
             on("P") { toolSelector.select(ToolSelector.Tool.Pointer) }
             on("F1") { controller.showServerWindow() }
             on("F5") { controller.restartScSynth() }
+
+            on("Ctrl?+C") {
+                scoreView.copySelected()
+            }
         }
     }
 

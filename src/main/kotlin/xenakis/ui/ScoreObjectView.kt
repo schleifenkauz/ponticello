@@ -186,7 +186,6 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
 
     private fun setupDragging() {
         addEventHandler(MouseEvent.MOUSE_PRESSED) { ev ->
-            if (isResizeCursor(cursor)) return@addEventHandler
             if (dragStart == null) {
                 oldBounds = BoundingBox(layoutX, layoutY, prefWidth, prefHeight)
                 dragStart = Point(ev.screenX, ev.screenY)
