@@ -19,6 +19,7 @@ import javafx.scene.paint.Color.BLACK
 import javafx.scene.paint.Color.WHITE
 import xenakis.impl.Point
 import xenakis.impl.UDPSuperColliderClient
+import xenakis.model.ClonedObject
 import xenakis.model.ScoreObject
 import xenakis.ui.XenakisController.Companion.currentProject
 import kotlin.math.absoluteValue
@@ -158,6 +159,22 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
     fun setSelected(value: Boolean) {
         contents.pseudoClassStateChanged(PseudoClass.getPseudoClass("selected"), value)
         selectedProperty.set(value)
+        for (obj in scoreView.score.objects) {
+            if (obj is ClonedObject && obj.original == myObject) {
+                scoreView.getObjectView(obj).setCloneOfSelected(value)
+            }
+            if (myObject is ClonedObject && (myObject as ClonedObject).original == obj) {
+                scoreView.getObjectView(obj).setOriginalOfSelected(value)
+            }
+        }
+    }
+
+    fun setCloneOfSelected(value: Boolean) {
+        contents.pseudoClassStateChanged(PseudoClass.getPseudoClass("clone-of-selected"), value)
+    }
+
+    fun setOriginalOfSelected(value: Boolean) {
+        contents.pseudoClassStateChanged(PseudoClass.getPseudoClass("original-of-selected"), value)
     }
 
     private fun delete() {

@@ -453,3 +453,13 @@ Slider.control-detail-editor {
 .envelope-line:hover {
     -fx-stroke-width: 7px;
 }
+
+/*noinspection CssInvalidPseudoSelector*/
+.score-object-content:clone-of-selected {
+    -fx-background-color: #120012 !important;
+}
+
+/*noinspection CssInvalidPseudoSelector*/
+.score-object-content:original-of-selected {
+    -fx-background-color: #001200 !important;
+}

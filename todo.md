@@ -59,4 +59,6 @@
 
 ## Nice to have
 
+- maybe get rid of object header and move it to toolbar?
+    - where to grab memo objects?
 - integrate close, maximize, minimize into top toolbar and remove window decoration

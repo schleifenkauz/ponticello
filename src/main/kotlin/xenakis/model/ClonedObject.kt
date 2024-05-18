@@ -16,9 +16,13 @@ class ClonedObject(
 ) : ScoreObject {
     constructor(name: String, original: ScoreObject, position: ObjectPosition) : this(name, original.name, position) {
         this.original = original
+        resolved = true
     }
 
     lateinit var original: ScoreObject
+        private set
+
+    private var resolved = false
 
     override val type: String
         get() = "clone"
@@ -34,7 +38,10 @@ class ClonedObject(
         get() = original.container
 
     override fun addToContainer(container: ScoreObjectContainer, context: Context) {
-        original = container.getObject(originalName)
+        if (!resolved) {
+            original = container.getObject(originalName)
+            resolved = true
+        }
     }
 
     override var duration: Double by { original::duration }

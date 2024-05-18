@@ -65,22 +65,20 @@ data class Score(
     }
 
     override fun removeObject(obj: ScoreObject) {
-        _objects.remove(obj)
-        views.notifyViews { removedObject(obj) }
-        objectsByName.remove(obj.name)
-        _verticalGroups.all { g -> g.remove(obj.name) }
-        _horizontalGroups.all { g -> g.remove(obj.name) }
-        horizontalGroups.remove(obj)
-        verticalGroups.remove(obj)
-        horizontalGroups.values.all { it.remove(obj) }
-        verticalGroups.values.all { it.remove(obj) }
-        for (o in _objects.toSet()) {
-            if (o is ClonedObject && o.original == obj) {
-                removeObject(o)
-            }
+        val objects = objects.filterIsInstance<ClonedObject>().filter { it.original == obj } + obj
+        for (o in objects) {
+            _objects.remove(o)
+            views.notifyViews { removedObject(o) }
+            objectsByName.remove(o.name)
+            _verticalGroups.all { g -> g.remove(o.name) }
+            _horizontalGroups.all { g -> g.remove(o.name) }
+            horizontalGroups.remove(o)
+            verticalGroups.remove(o)
+            horizontalGroups.values.all { it.remove(o) }
+            verticalGroups.values.all { it.remove(o) }
+            o.onRemove()
         }
-        obj.onRemove()
-        undo.record(ScoreEdit.RemoveObjects(listOf(obj), this))
+        undo.record(ScoreEdit.RemoveObjects(objects, this))
     }
 
     fun isNameAvailable(name: String) = name !in objectsByName

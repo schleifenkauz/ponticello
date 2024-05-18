@@ -186,11 +186,10 @@ class ScoreView(
         val view = getObjectView(obj)
         view.addEventHandler(MouseEvent.MOUSE_CLICKED) { ev ->
             view.toFront()
-            select(view, addToSelection = ev.isControlDown)
+            select(view, addToSelection = ev.isAltDown)
             ev.consume()
         }
         children.add(view)
-        select(view, addToSelection = false)
         Platform.runLater {
             view.init(this)
         }
@@ -324,7 +323,7 @@ class ScoreView(
 
     private fun mouseReleased(ev: MouseEvent) {
         ev.consume()
-        if (!ev.isControlDown) deselectAll()
+        if (!ev.isAltDown) deselectAll()
         val newObj = newObjectArea
         val tool = ui.toolSelector.selected.value
         if (newObj != null && tool != Pointer) {
@@ -334,7 +333,6 @@ class ScoreView(
             if (selectedArea.width == 0.0 || selectedArea.height == 0.0) {
                 children.remove(selectedArea)
             } else if (!selectedArea.heightProperty().isBound) {
-                if (!ev.isControlDown) deselectAll()
                 for ((_, view) in views) {
                     if (selectedArea.boundsInParent.contains(view.boundsInParent)) {
                         select(view, addToSelection = true)
