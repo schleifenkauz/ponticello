@@ -52,7 +52,7 @@ data class ConstantControl(override val parameter: String, val value: Double) : 
     override fun clone(): ParameterControl = copy()
 }
 
-fun SynthDef.defaultControls() = parameters.mapTo(mutableListOf()) { p ->
+fun SynthDef.defaultControls() = parameters.map{ p ->
     when (val spec = p.spec) {
         is BufferControlSpec -> BufferControl(p.name.text, spec.defaultValue)
         is BusControlSpec -> BusControl(p.name.text, spec.defaultValue)

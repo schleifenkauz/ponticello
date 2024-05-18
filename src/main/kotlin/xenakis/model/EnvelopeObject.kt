@@ -1,37 +1,35 @@
 package xenakis.model
 
-import javafx.scene.paint.Color
-import kotlinx.serialization.Serializable
+import hextant.core.editor.ViewManager
 import xenakis.impl.ScWriter
 import xenakis.sc.Bus
 import xenakis.sc.ControlSpec
-import xenakis.sc.Envelope
 import xenakis.sc.NumericalControlSpec
+import xenakis.ui.EnvelopeObjectView
 
-@Serializable
 class EnvelopeObject(
-    override var name: String, var spec: NumericalControlSpec, var bus: Bus,
-    val envelope: Envelope,
-    override var start: Double, override var duration: Double,
-    override var y: Double, override var height: Double,
-    override var muted: Boolean = false
-) : ScoreObject() {
-    override val color: Color
-        get() = spec.associatedColor
+    name: String, spec: NumericalControlSpec,
+    var bus: Bus, val envelope: Envelope
+) : ScoreObject(name) {
+    override val viewManager = ViewManager.createWeakViewManager<EnvelopeObjectView>()
 
-    override val controls: List<ParameterControl>
-        get() = emptyList()
+    var spec: NumericalControlSpec = spec
+        set(value) {
+            if (value == field) return
+            field = value
+            viewManager.notifyViews { updatedSpec() }
+        }
 
     override val associatedEnvelopes: List<EnvelopeControl>
-        get() = listOf(EnvelopeControl(name, envelope, color, display = true))
+        get() = listOf(EnvelopeControl(name, envelope, spec.associatedColor, display = true))
 
     override fun getSpec(parameter: String): ControlSpec = if (parameter == name) spec else super.getSpec(parameter)
 
-    override fun clone(newName: String): ScoreObject =
-        EnvelopeObject(newName, spec, bus, envelope.clone(), start, duration, y, height)
+    override fun clone(): ScoreObject =
+        EnvelopeObject(name, spec, bus, envelope.clone())
 
     override fun writeStartCode(writer: ScWriter, offset: Double) {
         val env = envelope.code(offset, duration)
-        writer.append("{ $env }.play(s, ${this.bus.variableName});")
+        writer.append("{ $env }.play(s, ${bus.variableName});")
     }
 }

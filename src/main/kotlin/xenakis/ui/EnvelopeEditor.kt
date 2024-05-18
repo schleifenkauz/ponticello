@@ -1,29 +1,24 @@
 package xenakis.ui
 
-import javafx.beans.binding.Bindings
+import hextant.undo.UndoManager
 import javafx.scene.control.Label
 import javafx.scene.input.MouseButton
 import javafx.scene.input.MouseEvent
 import javafx.scene.layout.Pane
-import javafx.scene.paint.Color
 import javafx.scene.shape.Circle
 import javafx.scene.shape.Polyline
-import javafx.scene.text.Font
 import xenakis.impl.Point
 import xenakis.impl.dist
+import xenakis.model.Envelope
+import xenakis.model.EnvelopeEdit
 import xenakis.model.ScoreObject
-import xenakis.sc.LinearTransformation
-import xenakis.sc.NumericalControlSpec
-import xenakis.sc.mapOnto
+import xenakis.sc.*
 
 class EnvelopeEditor(
-    val parameterName: String,
-    private val points: MutableList<Point>,
+    private val parameterName: String, private val envelope: Envelope,
     private val pane: Pane, private val scoreView: ScoreView,
     private val associatedObject: ScoreObject,
-    contrastColor: Color,
-    private val fixEdgePoints: Boolean
-) {
+) : EnvelopeView {
     private val control
         get() = associatedObject.associatedEnvelopes.find { it.parameter == parameterName }
             ?: error("control $parameterName not found")
@@ -33,47 +28,23 @@ class EnvelopeEditor(
 
     private val valueGrid get() = spec.step.value
 
-    private val mouseInfo = Label().apply {
-        font = Font(14.0)
-        isVisible = false
-        textFill = contrastColor
-    }
+    private val mouseInfo = Label() styleClass "coordinate-info"
     private val handles = mutableListOf<Circle>()
-    private val line = Polyline()
+    private val line = Polyline() styleClass "envelope-line"
 
     private val color get() = control.displayColor
 
     init {
+        mouseInfo.isVisible = false
         line.stroke = color
-        line.setOnMouseClicked { ev ->
-            if (ev.isShiftDown) {
-                val t = transformXToTime(ev.x)
-                val v = transformYToValue(ev.y)
-                val newPoint = Point(t, v)
-                var i = points.binarySearch(newPoint, compareBy(Point::x))
-                i = -(i + 1)
-                points.add(i, newPoint)
-                val x = xTransform.map(t)
-                val y = yTransform.map(v)
-                line.points.addAll(i * 2, listOf(x, y))
-                val handle = createHandle(color, x, y)
-                addHandle(newPoint, handle)
-                ev.consume()
-            } else {
-                bringToFront()
-            }
-        }
-        line.strokeWidthProperty().bind(
-            Bindings.`when`(line.hoverProperty())
-                .then(6.0).otherwise(3.0)
-                .divide(scoreView.scaleYProperty())
-        )
-        line.setOnMouseEntered {
-            mouseInfo.isVisible = true
-        }
-        line.setOnMouseExited {
-            mouseInfo.isVisible = false
-        }
+        createNewPointsOnClick()
+        setupPositionInfo()
+        envelope.addView(this)
+    }
+
+    private fun setupPositionInfo() {
+        line.setOnMouseEntered { mouseInfo.isVisible = true }
+        line.setOnMouseExited { mouseInfo.isVisible = false }
         line.setOnMouseMoved { ev ->
             val t = transformXToTime(ev.x)
             val v = transformYToValue(ev.y)
@@ -82,22 +53,60 @@ class EnvelopeEditor(
         }
     }
 
+    private fun createNewPointsOnClick() {
+        line.setOnMouseClicked { ev ->
+            if (ev.isShiftDown) {
+                val t = transformXToTime(ev.x)
+                val v = transformYToValue(ev.y)
+                val newPoint = Point(t, v)
+                var idx = envelope.points.binarySearch(newPoint, compareBy(Point::x))
+                idx = -(idx + 1)
+                scoreView.context[UndoManager].record(EnvelopeEdit.AddPoint(newPoint, idx, envelope))
+                envelope.addPoint(idx, newPoint)
+                ev.consume()
+            } else {
+                bringToFront()
+            }
+        }
+    }
+
+    override fun addedPoint(idx: Int, point: Point) {
+        val x = xTransform.map(point.x)
+        val y = yTransform.map(point.y)
+        line.points.addAll(idx * 2, listOf(x, y))
+        addHandle(idx, x, y)
+    }
+
+    override fun removedPoint(idx: Int, point: Point) {
+        val handle = handles.removeAt(idx)
+        pane.children.remove(handle)
+        line.points.remove(idx * 2, (idx + 1) * 2)
+    }
+
+    override fun changedPoint(idx: Int, newPoint: Point) {
+        val (px, py) = newPoint
+        displayPosition(px, py)
+
+        val tx = xTransform.map(px)
+        val ty = yTransform.map(py)
+
+        handles[idx].centerX = tx
+        handles[idx].centerY = ty
+
+        line.points[idx * 2] = tx
+        line.points[idx * 2 + 1] = ty
+    }
+
     private fun transformXToTime(x: Double): Double =
         xTransform.unmap(x.snap(scoreView.timeSnap)).coerceIn(xTransform.sourceRange)
 
     private fun transformYToValue(y: Double) = yTransform.unmap(y).snap(valueGrid).coerceIn(yTransform.sourceRange)
-
-    private fun createHandle(color: Color, x: Double, y: Double): Circle = Circle(x, y, HANDLE_RADIUS, color)
 
     private fun displayPosition(t: Double, v: Double) {
         val scoreTime = associatedObject.start + t * associatedObject.duration
         val timeAccuracy = accuracy(scoreView.timeSnap)
         val valueAccuracy = accuracy(spec.step.value)
         mouseInfo.text = "t: ${scoreTime.format(timeAccuracy)}, $parameterName: ${v.format(valueAccuracy)}"
-    }
-
-    fun setContrastColor(color: Color) {
-        mouseInfo.textFill = color
     }
 
     fun repaint() {
@@ -107,11 +116,11 @@ class EnvelopeEditor(
         line.points.clear()
         pane.children.add(line)
 
-        for (p in points) {
+        for ((idx, p) in envelope.points.withIndex()) {
             val x = xTransform.map(p.x)
             val y = yTransform.map(p.y)
             line.points.addAll(x, y)
-            addHandle(p, createHandle(color, x, y))
+            addHandle(idx, x, y)
         }
     }
 
@@ -121,15 +130,25 @@ class EnvelopeEditor(
         pane.children.remove(mouseInfo)
     }
 
-    private fun addHandle(p: Point, handle: Circle) {
+    private fun addHandle(idx: Int, x: Double, y: Double) {
+        val handle = Circle(x, y, HANDLE_RADIUS, color)
+        setupHandle(handle)
+        pane.children.add(handle)
+        handles.add(idx, handle)
+    }
+
+    private fun setupHandle(handle: Circle) {
         var dragging = false
         handle.stroke = color.darker()
         handle.strokeWidthProperty().bind(handle.hoverProperty().map { hover -> if (hover) 2.0 else 0.0 })
-        handle.setupDragging { ev, old, dx, dy ->
-            val idx = points.indexOf(p)
-            val newX = when {
-                fixEdgePoints && idx == 0 -> xTransform.map(0.0)
-                fixEdgePoints && idx == points.size - 1 -> xTransform.map(1.0)
+        handle.setupDragging(
+            onPressed = { scoreView.context[UndoManager].beginCompoundEdit() },
+            onReleased = { scoreView.context[UndoManager].finishCompoundEdit("Move envelope point") }
+        ) { ev, old, dx, dy ->
+            val idx = handles.indexOf(handle)
+            val newX = when (idx) {
+                0 -> xTransform.map(0.0)
+                envelope.points.size - 1 -> xTransform.map(1.0)
                 else -> (old.minX + dx / pane.parent.scaleX).coerceIn(xTransform.targetRange.reverseIfEmpty())
             }
             val newY = (old.minY + dy / pane.parent.scaleY).coerceIn(yTransform.targetRange.reverseIfEmpty())
@@ -137,17 +156,13 @@ class EnvelopeEditor(
             val px = transformXToTime(newX)
             val py = transformYToValue(newY)
 
-            if (idx > 0 && px < points[idx - 1].x) return@setupDragging
-            if (idx + 1 < points.size && px > points[idx + 1].x) return@setupDragging
-            p.x = px
-            p.y = py
+            if (idx > 0 && px < envelope.points[idx - 1].x) return@setupDragging
+            if (idx + 1 < envelope.points.size && px > envelope.points[idx + 1].x) return@setupDragging
             relocateInfoToMouse(ev)
-            displayPosition(p.x, p.y)
-
-            handle.centerX = xTransform.map(px)
-            handle.centerY = yTransform.map(py)
-            line.points[idx * 2] = handle.centerX
-            line.points[idx * 2 + 1] = handle.centerY
+            val oldPoint = envelope.points[idx]
+            val newPoint = Point(px, py)
+            scoreView.context[UndoManager].record(EnvelopeEdit.EditPoint(idx, oldPoint, newPoint, envelope))
+            envelope.editPoint(idx, Point(px, py))
         }
         handle.addEventHandler(MouseEvent.MOUSE_PRESSED) {
             dragging = true
@@ -159,13 +174,12 @@ class EnvelopeEditor(
             mouseInfo.isVisible = mousePos.dist(Point(center.x, center.y)) <= handle.radius
         }
         handle.setOnMouseClicked { ev ->
-            val idx = points.indexOf(p)
+            val idx = handles.indexOf(handle)
             if (ev.button == MouseButton.SECONDARY) {
-                if (idx != 0 && idx != points.size - 1) {
-                    points.remove(p)
-                    pane.children.remove(handle)
-                    line.points.remove(idx * 2, (idx + 1) * 2)
-                    handles.remove(handle)
+                if (idx != 0 && idx != envelope.points.size - 1) {
+                    val point = envelope.points[idx]
+                    scoreView.context[UndoManager].record(EnvelopeEdit.RemovePoint(point, idx, envelope))
+                    envelope.removePoint(idx)
                 }
             } else if (!ev.isShiftDown) {
                 bringToFront()
@@ -175,6 +189,8 @@ class EnvelopeEditor(
         handle.setOnMouseEntered { ev ->
             mouseInfo.isVisible = true
             relocateInfoToMouse(ev)
+            val idx = handles.indexOf(handle)
+            val p = envelope.points[idx]
             displayPosition(p.x, p.y)
             ev.consume()
         }
@@ -182,19 +198,21 @@ class EnvelopeEditor(
             mouseInfo.isVisible = dragging
             ev.consume()
         }
-        pane.children.add(handle)
-        handles.add(handle)
     }
 
     private fun relocateInfoToMouse(ev: MouseEvent) {
         val infoPos = pane.screenToLocal(ev.screenX, ev.screenY)
-        mouseInfo.relocate(infoPos.x, infoPos.y - 50 / scoreView.scaleY)
+        mouseInfo.relocate(infoPos.x, infoPos.y - 50)
         mouseInfo.toFront()
     }
 
     private fun bringToFront() {
         line.toFront()
         handles.forEach { h -> h.toFront() }
+    }
+
+    fun dispose() {
+        envelope.removeView(this)
     }
 
     companion object {

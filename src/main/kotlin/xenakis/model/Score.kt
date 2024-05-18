@@ -13,7 +13,7 @@ data class Score(
     private val _objects: MutableSet<ScoreObject> = mutableSetOf(),
     private val _horizontalGroups: MutableList<MutableSet<String>> = mutableListOf(),
     private val _verticalGroups: MutableList<MutableSet<String>> = mutableListOf(),
-) {
+): ScoreObjectContainer() {
     val objects: Set<ScoreObject> get() = _objects
 
     @Transient
@@ -60,34 +60,32 @@ data class Score(
     }
 
     fun addObject(obj: ScoreObject) {
-        obj.context = context
+        obj.addToContainer(this, context)
         _objects.add(obj)
         listeners.forEach { l -> l.addedObject(obj) }
         objectsByName[obj.name] = obj
-        undo.record(ScoreAction.AddObject(obj, this))
+        undo.record(ScoreEdit.AddObject(obj, this))
     }
 
-    fun removeObject(obj: ScoreObject) {
+    override fun removeObject(obj: ScoreObject) {
         _objects.remove(obj)
         listeners.forEach { l -> l.removedObject(obj) }
         objectsByName.remove(obj.name)
         obj.onRemove()
-        undo.record(ScoreAction.RemoveObjects(listOf(obj), this))
+        undo.record(ScoreEdit.RemoveObjects(listOf(obj), this))
     }
 
     fun isNameAvailable(name: String) = name !in objectsByName
 
     fun getObject(name: String): ScoreObject = objectsByName[name] ?: error("no object '$name'")
 
-    fun renameObject(obj: ScoreObject, newName: String) {
-        check(isNameAvailable(newName))
-        objectsByName.remove(obj.name)
+    override fun renamedObject(obj: ScoreObject, oldName: String, newName: String) {
+        objectsByName.remove(oldName)
         objectsByName[newName] = obj
         for (group in _verticalGroups + _horizontalGroups) {
             group.remove(obj.name)
             group.add(newName)
         }
-        obj.name = newName
     }
 
     fun nameForClone(obj: ScoreObject): String {
@@ -99,7 +97,7 @@ data class Score(
     }
 
     fun moveObject(obj: ScoreObject, newStart: Double, newY: Double) {
-        undo.record(ScoreAction.MoveObject(obj, Point(obj.start, obj.y), Point(newStart, newY), this))
+        undo.record(ScoreEdit.MoveObject(obj, Point(obj.start, obj.y), Point(newStart, newY), this))
         val dx = newStart - obj.start
         val dy = newY - obj.y
         for (o in verticalGroups[obj] ?: setOf(obj)) {
@@ -135,7 +133,7 @@ data class Score(
     }
 
     fun addTime(location: Double, amount: Double) {
-        undo.record(ScoreAction.AddTime(location, amount, this))
+        undo.record(ScoreEdit.AddTime(location, amount, this))
         for (obj in objects) {
             if (obj.start > location) {
                 val newStart = obj.start + amount
@@ -147,7 +145,7 @@ data class Score(
     fun recoloredSynthDef(name: String) {
         for (obj in objects) {
             if (obj is SynthObject && obj.synthDefName == name) {
-                listeners { recolor(obj) }
+                obj.associatedColor = obj.synthDef.associatedColor
             }
         }
     }

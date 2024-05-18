@@ -66,6 +66,7 @@ class SynthDefsEditorControl @ProvideImplementation(ControlFactory::class) const
     }
 
     fun onSelected(synthDefName: String) {
+        if (synthDefName == "default") return
         val editor = editor.editors.now.find { it.name.text.now == synthDefName }
             ?: error("SynthDef $synthDefName not found")
         val selector = selectorButtons[editor] ?: error("selector button for SynthDef $synthDefName not found")

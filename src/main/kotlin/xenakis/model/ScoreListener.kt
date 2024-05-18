@@ -6,6 +6,4 @@ interface ScoreListener {
     fun removedObject(obj: ScoreObject)
 
     fun movedObject(obj: ScoreObject)
-
-    fun recolor(obj: SynthObject)
 }

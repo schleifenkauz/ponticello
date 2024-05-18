@@ -1,6 +1,5 @@
 package xenakis.ui
 
-import hextant.fx.registerShortcuts
 import hextant.serial.EditorRoot
 import hextant.undo.UndoManager
 import javafx.application.Platform
@@ -14,11 +13,11 @@ import javafx.scene.text.Text
 import xenakis.impl.step
 import xenakis.model.*
 import xenakis.sc.Bus
-import xenakis.sc.Group
 import xenakis.sc.Identifier
 import xenakis.sc.Warp
 import xenakis.sc.editor.ScFunctionEditor
 import xenakis.ui.ToolSelector.Tool.*
+import xenakis.ui.ToolSelector.Tool.Envelope
 import kotlin.math.exp
 
 class ScoreView(
@@ -36,6 +35,8 @@ class ScoreView(
     val pixelsPerSecond get() = width / (displayEnd - displayStart)
 
     val score get() = project.score
+
+    val context get() = project.context
 
     private val selectedTool get() = ui.toolSelector.selected.value!!
 
@@ -113,11 +114,10 @@ class ScoreView(
             val obj = SoundFileObject(
                 defaultName, file,
                 outBus = Bus.output, startPos = 0.0, rate = 1.0,
-                envelope = xenakis.sc.Envelope.constant(1.0, Warp.Linear),
-                start = getTime(ev.x), y = ev.y,
-                duration = SoundFileObject.getDuration(file),
-                height = 150.0, muted = false
+                envelope = xenakis.model.Envelope.constant(1.0, Warp.Linear),
             )
+            obj.moveTo(getTime(ev.x), ev.y)
+            obj.height = 150.0
             score.addObject(obj)
         }
     }
@@ -129,17 +129,6 @@ class ScoreView(
                 zoom(factor, ev.x)
             } else {
                 scroll(-ev.deltaX / pixelsPerSecond)
-            }
-        }
-        registerShortcuts {
-            on("Ctrl?+PLUS") {
-                zoom(0.8, 0.0)
-            }
-            on("Ctrl?+MINUS") {
-                zoom(1.2, 0.0)
-            }
-            on("HOME") {
-                displayWholeScore()
             }
         }
     }
@@ -173,13 +162,13 @@ class ScoreView(
             is SynthObject -> SynthObjectView(obj, project)
             is TaskObject -> TaskObjectView(obj, project)
             is EnvelopeObject -> EnvelopeObjectView(obj, project)
-            is SoundFileObject -> SoundFileObjectView(obj, project)
-            is MemoObject -> MemoObjectView(obj, project)
+            is SoundFileObject -> SoundFileObjectView(obj)
+            is MemoObject -> MemoObjectView(obj)
         }
     }
 
     override fun addedObject(obj: ScoreObject) {
-        obj.initialize(project)
+        obj.addToContainer(score, context)
         val view = getObjectView(obj)
         view.addEventHandler(MouseEvent.MOUSE_CLICKED) { ev ->
             view.toFront()
@@ -195,7 +184,6 @@ class ScoreView(
 
     override fun removedObject(obj: ScoreObject) {
         val view = views.remove(obj) ?: return
-        view.onRemove()
         children.remove(view)
     }
 
@@ -235,7 +223,7 @@ class ScoreView(
         val rect = Rectangle(x, y, 0.0, 0.0)
         when (selectedTool) {
             Synth -> {
-                val synthDef = project.context[SynthDefs].selectedSynthDef
+                val synthDef = context[SynthDefs].selectedSynthDef
                 rect.stroke = synthDef.associatedColor
                 rect.fill = Color.TRANSPARENT
                 setNewShape(rect)
@@ -307,7 +295,7 @@ class ScoreView(
     }
 
     private fun mouseClicked(ev: MouseEvent) {
-
+        ev.consume()
     }
 
     private fun mouseReleased(ev: MouseEvent) {
@@ -336,49 +324,51 @@ class ScoreView(
     }
 
     private fun createNewObject(tool: ToolSelector.Tool, rect: Rectangle) {
-        val start = getTime(rect.x)
-        val duration = getDuration(rect.width)
-        when (tool) {
+        val obj = when (tool) {
             Synth -> {
-                val def = project.context[SynthDefs].selectedSynthDef
-                val name = showTextInputDialog("Synth name", project.context) ?: return
-                val obj = SynthObject(
-                    name, Group.default, def.name.text,
-                    start, duration,
-                    rect.y, rect.height,
-                    def.defaultControls()
-                )
-                val confirmed = ControlAssignmentView.show(obj, project)
-                if (confirmed) {
-                    score.addObject(obj)
-                }
+                val def = context[SynthDefs].selectedSynthDef
+                val name = showTextInputDialog("Synth name", context) ?: return
+                val obj = SynthObject(name, def.name.text)
+                obj.controls = def.defaultControls()
+                obj.context = context
+                obj
             }
 
             Task -> {
-                val name = "task"
-                val editor = EditorRoot.create(ScFunctionEditor(project.context))
-                val obj = TaskObject(name, editor, start, rect.width, rect.y, rect.height, emptyList())
-                score.addObject(obj)
+                val editor = EditorRoot.create(ScFunctionEditor(context))
+                TaskObject("task", editor, rect.width)
             }
 
             Envelope -> {
-                EnvelopeObjectView.showEnvelopeConfig(project.context, rect) { name, spec, outputBus ->
-                    val envelope = xenakis.sc.Envelope.constant(spec.defaultValue.value, spec.warp)
-                    val obj = EnvelopeObject(name, spec, outputBus, envelope, start, duration, rect.y, rect.height)
+                EnvelopeObjectView.showEnvelopeConfig(context, rect) { name, spec, outputBus ->
+                    val envelope = xenakis.model.Envelope.constant(spec.defaultValue.value, spec.warp)
+                    val obj = EnvelopeObject(name, spec, outputBus, envelope)
+                    obj.assignBoundsFromRect(rect)
                     score.addObject(obj)
                 }
+                return
             }
 
-            Memo -> {
-                val obj = MemoObject("memo", "", start, rect.width, rect.y, rect.height)
-                score.addObject(obj)
+            Memo -> MemoObject("memo", "", rect.width)
+
+            Repeat -> {
+                TODO()
             }
 
-            Repeat -> {}
             else -> {
                 System.err.println("Unrecognized tool $tool")
+                return
             }
         }
+        obj.assignBoundsFromRect(rect)
+        score.addObject(obj)
+    }
+
+    private fun ScoreObject.assignBoundsFromRect(r: Rectangle) {
+        start = getTime(r.x)
+        y = r.y
+        duration = getDuration(r.width)
+        height = r.height
     }
 
     private fun setNewShape(s: Rectangle) {
@@ -400,17 +390,13 @@ class ScoreView(
             score.deleteTimeRange(start, end)
             children.remove(selectedArea)
         } else {
-            project.context[UndoManager].beginCompoundEdit()
+            context[UndoManager].beginCompoundEdit()
             for (view in selectedViews) {
                 score.removeObject(view.obj)
             }
-            project.context[UndoManager].finishCompoundEdit("Remove objects")
+            context[UndoManager].finishCompoundEdit("Remove objects")
         }
         deselectAll()
-    }
-
-    override fun recolor(obj: SynthObject) {
-        getObjectView(obj).recolor()
     }
 
     companion object {

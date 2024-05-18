@@ -48,7 +48,7 @@ class XenakisProject private constructor(
     fun initialize(context: Context) {
         this.context = context
         score.context = context
-        for (obj in score.objects) obj.context = context
+        for (obj in score.objects) obj.addToContainer(score, context)
         context[SynthDefs] = synthDefs
         client = context[UDPSuperColliderClient]
         colorObserver = synthDefs.editor.editor.editors.observeEach { _, def ->
@@ -58,7 +58,7 @@ class XenakisProject private constructor(
         }
         if (client.status == UDPSuperColliderClient.Status.Listening) {
             setupServer(client)
-            for (obj in score.objects) obj.initialize(this)
+            for (obj in score.objects) obj.addToContainer(score, context)
         }
         client.addStatusListener { status ->
             if (status == UDPSuperColliderClient.Status.Listening) {

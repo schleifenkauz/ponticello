@@ -39,7 +39,7 @@ data class NumericalControlSpec(
     val step: DoubleLiteral,
     @Serializable(with = ColorSerializer::class)
     @Component(ColorEditor::class)
-    val associatedColor: Color = Color.BLACK
+    val associatedColor: Color = Color.WHITE
 ) : ControlSpec {
     constructor(default: Double, min: Double, max: Double, warp: Warp, step: Double): this(
         DoubleLiteral(default), DoubleLiteral(min), DoubleLiteral(max), warp, DoubleLiteral(step)

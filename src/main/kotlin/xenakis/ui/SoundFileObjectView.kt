@@ -5,11 +5,10 @@ import javafx.scene.shape.Line
 import javafx.scene.shape.Polyline
 import xenakis.impl.readChannels
 import xenakis.model.SoundFileObject
-import xenakis.model.XenakisProject
 import javax.sound.sampled.AudioInputStream
 import javax.sound.sampled.AudioSystem
 
-class SoundFileObjectView(override val obj: SoundFileObject, project: XenakisProject) : ScoreObjectView(obj, project) {
+class SoundFileObjectView(override val obj: SoundFileObject) : ScoreObjectView() {
     private val stream: AudioInputStream = AudioSystem.getAudioInputStream(obj.file)
     private val frameRate = stream.format.frameRate
     private val fileDuration = (stream.frameLength / frameRate).toDouble()
@@ -58,7 +57,7 @@ class SoundFileObjectView(override val obj: SoundFileObject, project: XenakisPro
         obj.duration = newDuration
     }
 
-    override fun repaint() {
+    override fun init(parent: ScoreView) {
         super.repaint()
         displayWaveForm()
     }

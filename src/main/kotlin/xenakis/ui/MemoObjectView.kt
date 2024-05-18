@@ -4,21 +4,21 @@ import javafx.scene.control.ColorPicker
 import javafx.scene.control.TextArea
 import javafx.scene.input.MouseEvent
 import xenakis.model.MemoObject
-import xenakis.model.XenakisProject
 
-class MemoObjectView(override val obj: MemoObject, project: XenakisProject) : ScoreObjectView(obj, project) {
+class MemoObjectView(override val obj: MemoObject) : ScoreObjectView() {
     private val textArea = TextArea(obj.text) styleClass "memo-area"
-    private val colorPicker = ColorPicker(obj.color) styleClass "button"
+    private val colorPicker = ColorPicker(obj.associatedColor) styleClass "button"
 
     init {
         textArea.textProperty().addListener { _, _, newText ->
             obj.text = newText
         }
         colorPicker.valueProperty().addListener { _, _, color ->
-            obj.color = color
+            obj.associatedColor = color
             contents.border = solidBorder(color, 2.0, 3.0)
         }
         contents.children.add(textArea)
+        actions.children.add(0, colorPicker)
     }
 
     override fun setObjectWidth(width: Double, ev: MouseEvent, resizeFromLeft: Boolean) {
@@ -27,8 +27,10 @@ class MemoObjectView(override val obj: MemoObject, project: XenakisProject) : Sc
 
     override fun getDisplayWidth(): Double = obj.width
 
-    override fun setupHeader() {
-        setupHeader(Icon.Delete)
-        actions.children.add(0, colorPicker)
+    override val supportedActions: List<Icon>
+        get() = listOf(Icon.Delete)
+
+    fun textChanged(value: String) {
+        if (value != textArea.text) textArea.text = value
     }
 }

@@ -6,20 +6,24 @@ import javafx.beans.property.SimpleBooleanProperty
 import javafx.css.PseudoClass
 import javafx.geometry.BoundingBox
 import javafx.geometry.Bounds
-import javafx.geometry.Insets
 import javafx.scene.Cursor
 import javafx.scene.control.Button
 import javafx.scene.control.Label
 import javafx.scene.input.MouseEvent
-import javafx.scene.layout.*
+import javafx.scene.layout.HBox
+import javafx.scene.layout.Pane
+import javafx.scene.layout.Priority
+import javafx.scene.layout.VBox
+import javafx.scene.paint.Color
+import javafx.scene.paint.Color.BLACK
 import javafx.scene.paint.Color.WHITE
 import xenakis.impl.Point
 import xenakis.impl.UDPSuperColliderClient
 import xenakis.model.ScoreObject
-import xenakis.model.XenakisProject
+import xenakis.ui.XenakisController.Companion.currentProject
 import kotlin.math.absoluteValue
 
-abstract class ScoreObjectView(open val obj: ScoreObject, val project: XenakisProject) : VBox() {
+abstract class ScoreObjectView : VBox() {
     private var dragStart: Point? = null
     private var oldBounds: Bounds? = null
     private var draggedObject: ScoreObjectView = this
@@ -47,53 +51,82 @@ abstract class ScoreObjectView(open val obj: ScoreObject, val project: XenakisPr
         setupDragging()
         envelopesPane.widthProperty().addListener { _ -> rescale() }
         envelopesPane.heightProperty().addListener { _ -> rescale() }
+        children.setAll(header, contents)
+        contents.alwaysVGrow()
     }
 
-    fun init(parent: ScoreView) {
+    abstract val obj: ScoreObject
+
+    protected open val supportedActions get() = listOf(Icon.Delete, Icon.Play, Icon.Mute)
+
+    private fun setupHeader() {
+        header.styleClass("score-object-header")
+        nameLabel.textFill = WHITE
+        header.children.setAll(nameLabel, infiniteSpace(), actions)
+        if (Icon.Mute in supportedActions) {
+            val icon = if (obj.muted) Icon.Mute else Icon.Unmute
+            muteUnmuteBtn = addAction(icon, "Toggle mute") {
+                obj.muted = !obj.muted
+            }
+        }
+        if (Icon.Play in supportedActions) addAction(Icon.Play, "Play this object") {
+            val project = context[currentProject]
+            val client = context[UDPSuperColliderClient]
+            project.prepareForPlay(client)
+            obj.play(client)
+        }
+        if (Icon.Delete in supportedActions) addAction(Icon.Delete, "Delete this object", ::delete)
+        header.visibleProperty().bind(hoverProperty().or(selectedProperty))
+    }
+
+    open fun init(parent: ScoreView) {
         this.scoreView = parent
         this.context = parent.score.context
+        layoutX = scoreView.getX(obj.start)
+        layoutY = obj.y
+        prefWidth = getDisplayWidth()
+        prefHeight = obj.height
+        renamedObject()
+        recoloredObject()
         setupHeader()
-        children.setAll(header, contents)
-        header.prefWidthProperty().bind(this.widthProperty())
-        contents.prefWidthProperty().bind(this.widthProperty())
-        contents.prefHeightProperty().bind(this.heightProperty())
-        repaint()
+        reassignedControls()
+        obj.addView(this)
     }
 
     protected fun addAction(icon: Icon, action: String?, onAction: () -> Unit): Button {
         val button = icon.button(action = action)
         button.styleClass("score-object-btn")
         button.setOnAction { onAction() }
-        actions.children.add(0, button)
+        actions.children.add(button)
         return button
     }
 
     open fun repaint() {
-        layoutX = scoreView.getX(obj.start)
-        layoutY = obj.y
-        prefWidth = getDisplayWidth()
-        prefHeight = obj.height
-        padding = Insets(2.0)
+        reassignedControls()
+    }
+
+    protected open val defaultBorderColor: Color
+        get() = BLACK
+
+    fun recoloredObject() {
+        val borderColor = obj.associatedColor ?: defaultBorderColor
+        contents.border = solidBorder(borderColor, width = 2.0, radius = 3.0)
+    }
+
+    fun renamedObject() {
         nameLabel.text = obj.name
-        recolor()
-        paintEnvelopes()
     }
 
-    fun recolor() {
-        if (obj.color != null) {
-            contents.border = Border(
-                BorderStroke(
-                    obj.color, BorderStrokeStyle.SOLID,
-                    CornerRadii(3.0), BorderWidths(2.0)
-                )
-            )
-        }
+    fun muteToggled() {
+        muteUnmuteBtn.graphic = if (obj.muted) Icon.Mute.getView() else Icon.Unmute.getView()
     }
 
-    private fun paintEnvelopes() {
+    fun reassignedControls() {
         for (editors in envelopeEditors) {
             editors.removeChildren()
+            editors.dispose()
         }
+        envelopeEditors.clear()
         if (obj.associatedEnvelopes.isEmpty()) return
         if (envelopesPane !in contents.children) contents.children.add(envelopesPane)
         setVgrow(envelopesPane, Priority.ALWAYS)
@@ -101,44 +134,40 @@ abstract class ScoreObjectView(open val obj: ScoreObject, val project: XenakisPr
             if (!control.display) continue
             val parameter = control.parameter
             val envelope = control.envelope
-            val e = EnvelopeEditor(
-                parameterName = parameter, associatedObject = obj,
-                points = envelope.points,
-                pane = envelopesPane, scoreView = scoreView,
-                contrastColor = WHITE, fixEdgePoints = true
-            )
+            val e = EnvelopeEditor(parameter, envelope, envelopesPane, scoreView, obj)
             e.repaint()
             envelopeEditors.add(e)
         }
     }
 
-    protected fun setupHeader(vararg supportedActions: Icon) {
-        header.styleClass("score-object-header")
-        nameLabel.textFill = WHITE
-        header.children.setAll(nameLabel, infiniteSpace(), actions)
-        if (Icon.Delete in supportedActions) addAction(Icon.Delete, "Delete this object", ::delete)
-        if (Icon.Play in supportedActions) addAction(Icon.Play, "Play this object") {
-            val client = project.context[UDPSuperColliderClient]
-            project.prepareForPlay(client)
-            obj.play(client)
+    protected open fun setObjectWidth(width: Double, ev: MouseEvent, resizeFromLeft: Boolean) {
+        obj.duration = scoreView.getDuration(width)
+    }
+
+    open fun getDisplayWidth(): Double = scoreView.getWidth(obj.duration)
+
+    protected open fun rescale() {
+        rescaleEnvelopes()
+    }
+
+    private fun rescaleEnvelopes() {
+        for (e in envelopeEditors) {
+            e.repaint()
         }
-        if (Icon.Mute in supportedActions)
-            muteUnmuteBtn = addAction(if (obj.muted) Icon.Mute else Icon.Unmute, "Toggle mute", ::toggleMute)
-        header.visibleProperty().bind(hoverProperty().or(selectedProperty))
     }
 
-    protected open fun setupHeader() {
-        setupHeader(Icon.Delete, Icon.Play, Icon.Mute)
-    }
-
-    private fun toggleMute() {
-        obj.muted = !obj.muted
-        muteUnmuteBtn.graphic = if (obj.muted) Icon.Mute.getView() else Icon.Unmute.getView()
+    fun setSelected(value: Boolean) {
+        contents.pseudoClassStateChanged(PseudoClass.getPseudoClass("selected"), value)
+        selectedProperty.set(value)
     }
 
     private fun delete() {
         scoreView.score.removeObject(obj)
     }
+
+    /*
+    * Dragging and resizing
+    * */
 
     private fun alwaysUpdateCursor() {
         setOnMouseEntered { ev ->
@@ -170,15 +199,17 @@ abstract class ScoreObjectView(open val obj: ScoreObject, val project: XenakisPr
             ev.consume()
         }
         addEventHandler(MouseEvent.MOUSE_PRESSED) { ev ->
-            context[UndoManager].beginCompoundEdit()
-            dragStart = Point(ev.screenX, ev.screenY)
-            oldBounds = BoundingBox(layoutX, layoutY, prefWidth, prefHeight)
+            if (dragStart == null) {
+                context[UndoManager].beginCompoundEdit()
+                dragStart = Point(ev.screenX, ev.screenY)
+                oldBounds = BoundingBox(layoutX, layoutY, prefWidth, prefHeight)
+            }
             ev.consume()
         }
         addEventHandler(MouseEvent.MOUSE_DRAGGED) { ev ->
             val start = dragStart ?: return@addEventHandler
-            val dx = ((ev.screenX - start.x) / scoreView.scaleX)
-            val dy = ((ev.screenY - start.y) / scoreView.scaleY)
+            val dx = ev.screenX - start.x
+            val dy = ev.screenY - start.y
             if (isResizeCursor(cursor)) {
                 resize(oldBounds!!, dx, dy, cursor, ev)
             } else {
@@ -188,7 +219,7 @@ abstract class ScoreObjectView(open val obj: ScoreObject, val project: XenakisPr
         }
         addEventHandler(MouseEvent.MOUSE_RELEASED) { ev ->
             if (draggedObject != this && draggedObject.boundsInParent == this.boundsInParent) {
-                scoreView.score.removeObject(draggedObject.obj)
+                obj.container.removeObject(draggedObject.obj)
             }
             if (dragStart != null) {
                 dragStart = null
@@ -249,22 +280,6 @@ abstract class ScoreObjectView(open val obj: ScoreObject, val project: XenakisPr
         relocateObject(snappedX, y)
     }
 
-    protected open fun setObjectWidth(width: Double, ev: MouseEvent, resizeFromLeft: Boolean) {
-        obj.duration = scoreView.getDuration(width)
-    }
-
-    open fun getDisplayWidth(): Double = scoreView.getWidth(obj.duration)
-
-    protected open fun rescale() {
-        rescaleEnvelopes()
-    }
-
-    private fun rescaleEnvelopes() {
-        for (e in envelopeEditors) {
-            e.repaint()
-        }
-    }
-
     private fun resize(old: Bounds, dx: Double, dy: Double, cursor: Cursor, ev: MouseEvent) {
         when (cursor) {
             Cursor.NW_RESIZE -> resize(old.minX + dx, old.minY + dy, old.width - dx, old.height - dy, ev, true)
@@ -276,14 +291,5 @@ abstract class ScoreObjectView(open val obj: ScoreObject, val project: XenakisPr
             Cursor.SW_RESIZE -> resize(old.minX + dx, old.minY + dy, old.width - dx, old.height + dy, ev, true)
             Cursor.W_RESIZE -> resize(old.minX + dx, old.minY, old.width - dx, old.height, ev, true)
         }
-    }
-
-    fun setSelected(value: Boolean) {
-        contents.pseudoClassStateChanged(PseudoClass.getPseudoClass("selected"), value)
-        selectedProperty.set(value)
-    }
-
-    open fun onRemove() {
-
     }
 }

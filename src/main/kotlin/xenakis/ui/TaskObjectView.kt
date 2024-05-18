@@ -7,7 +7,7 @@ import javafx.stage.StageStyle
 import xenakis.model.TaskObject
 import xenakis.model.XenakisProject
 
-class TaskObjectView(override val obj: TaskObject, project: XenakisProject) : ScoreObjectView(obj, project) {
+class TaskObjectView(override val obj: TaskObject, project: XenakisProject) : ScoreObjectView() {
     private val codeEditor = obj.code.control
 
     private val codeArea = ScrollPane(codeEditor)
@@ -24,10 +24,6 @@ class TaskObjectView(override val obj: TaskObject, project: XenakisProject) : Sc
         setVgrow(codeArea, Priority.SOMETIMES)
         codeArea.prefWidthProperty().bind(codeEditor.prefWidthProperty())
         codeArea.prefHeightProperty().bind(codeEditor.prefHeightProperty())
-    }
-
-    override fun repaint() {
-        super.repaint()
         contents.children.add(0, codeArea)
         addAction(Icon.ExtraWindow, "Open in separate window") { codeWindow.show() }
     }

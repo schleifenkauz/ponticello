@@ -4,8 +4,8 @@ import hextant.undo.AbstractEdit
 import hextant.undo.Edit
 import xenakis.impl.Point
 
-abstract class ScoreAction(val score: Score) : AbstractEdit() {
-    class AddObject(val obj: ScoreObject, score: Score) : ScoreAction(score) {
+abstract class ScoreEdit(val score: Score) : AbstractEdit() {
+    class AddObject(val obj: ScoreObject, score: Score) : ScoreEdit(score) {
         override val actionDescription: String
             get() = "Add object to score"
 
@@ -18,7 +18,7 @@ abstract class ScoreAction(val score: Score) : AbstractEdit() {
         }
     }
 
-    class RemoveObjects(private val objects: Collection<ScoreObject>, score: Score) : ScoreAction(score) {
+    class RemoveObjects(private val objects: Collection<ScoreObject>, score: Score) : ScoreEdit(score) {
         override val actionDescription: String
             get() = "Remove objects from score"
 
@@ -31,7 +31,7 @@ abstract class ScoreAction(val score: Score) : AbstractEdit() {
         }
     }
 
-    class AddTime(private val location: Double, private val amount: Double, score: Score) : ScoreAction(score) {
+    class AddTime(private val location: Double, private val amount: Double, score: Score) : ScoreEdit(score) {
         override val actionDescription: String
             get() = "Add $amount seconds at $location"
 
@@ -49,7 +49,7 @@ abstract class ScoreAction(val score: Score) : AbstractEdit() {
         private val before: Point,
         private val after: Point,
         score: Score
-    ) : ScoreAction(score) {
+    ) : ScoreEdit(score) {
         override val actionDescription: String
             get() = "Move object"
 

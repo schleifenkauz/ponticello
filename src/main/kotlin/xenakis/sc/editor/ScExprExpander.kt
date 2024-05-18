@@ -50,10 +50,10 @@ class ScExprExpander(context: Context) : ConfiguredExpander<ScExpr, ScExprEditor
 
     override fun onExpansion(editor: ScExprEditor<*>) {
         when {
-            editor is AssignmentEditor && editor.variable.text.now.isNotEmpty() -> editor.expression.views { focus() }
-            editor is MessageSendEditor && editor.receiver.result.now != EmptyExpr -> editor.method.views { focus() }
-            editor is NamedExprEditor && editor.name.text.now != "" -> editor.value.views { focus() }
-            editor is NewObjectEditor && editor.className.text.now != "" -> editor.arguments.views { focus() }
+            editor is AssignmentEditor && editor.variable.text.now.isNotEmpty() -> editor.expression.notifyViews { focus() }
+            editor is MessageSendEditor && editor.receiver.result.now != EmptyExpr -> editor.method.notifyViews { focus() }
+            editor is NamedExprEditor && editor.name.text.now != "" -> editor.value.notifyViews { focus() }
+            editor is NewObjectEditor && editor.className.text.now != "" -> editor.arguments.notifyViews { focus() }
         }
     }
 
@@ -72,7 +72,7 @@ class ScExprExpander(context: Context) : ConfiguredExpander<ScExpr, ScExprEditor
         val variable = IdentifierEditor(context)
         val assignment = AssignmentEditor(context, variable, value)
         expand(assignment)
-        variable.views { focus() }
+        variable.notifyViews { focus() }
     }
 
     @ProvideCommand(shortName = "name", type = Command.Type.SingleReceiver)
@@ -81,7 +81,7 @@ class ScExprExpander(context: Context) : ConfiguredExpander<ScExpr, ScExprEditor
         val variable = IdentifierEditor(context)
         val named = NamedExprEditor(context, variable, value)
         expand(named)
-        variable.views { focus() }
+        variable.notifyViews { focus() }
     }
 
     @ProvideCommand(shortName = "send", type = Command.Type.SingleReceiver)
@@ -89,7 +89,7 @@ class ScExprExpander(context: Context) : ConfiguredExpander<ScExpr, ScExprEditor
         val receiver = withoutUndo { copy() }
         val send = MessageSendEditor(context, receiver)
         expand(send)
-        send.method.views { focus() }
+        send.method.notifyViews { focus() }
     }
 
     companion object {

@@ -338,6 +338,7 @@ Slider.control-detail-editor {
     -fx-background-color: #1e1f22;
 }
 
+/*noinspection ALL*/
 .buffers:drop-possible {
     -fx-background-color: #082301;
 }
@@ -438,4 +439,17 @@ Slider.control-detail-editor {
 
 .memo-area .scroll-pane .content {
     -fx-background-color: transparent;
+}
+
+.coordinate-info {
+    -fx-text-fill: white;
+    -fx-font-size: 14;
+}
+
+.envelope-line {
+    -fx-stroke-width: 5px;
+}
+
+.envelope-line:hover {
+    -fx-stroke-width: 7px;
 }

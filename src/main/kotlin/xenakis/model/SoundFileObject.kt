@@ -1,45 +1,45 @@
 package xenakis.model
 
+import hextant.context.Context
+import hextant.core.editor.ViewManager
 import javafx.scene.paint.Color
-import kotlinx.serialization.Serializable
-import xenakis.impl.FileSerializer
 import xenakis.impl.ScWriter
 import xenakis.impl.UDPSuperColliderClient
 import xenakis.impl.superColliderPath
 import xenakis.sc.Bus
 import xenakis.sc.ControlSpec
-import xenakis.sc.Envelope
 import xenakis.sc.ParameterDef
+import xenakis.ui.SoundFileObjectView
 import xenakis.ui.format
 import java.io.File
 import javax.sound.sampled.AudioSystem
 
-@Serializable
 class SoundFileObject(
-    override var name: String,
-    @Serializable(with = FileSerializer::class) val file: File, var outBus: Bus,
+    name: String,
+    val file: File,
+    var outBus: Bus,
     var startPos: Double, var rate: Double,
-    var envelope: Envelope,
-    override var start: Double, override var y: Double,
-    override var duration: Double, override var height: Double,
-    override var muted: Boolean
-) : ScoreObject() {
-    override val color: Color?
-        get() = null
+    var envelope: Envelope
+) : ScoreObject(name) {
+    override val viewManager = ViewManager.createWeakViewManager<SoundFileObjectView>()
 
     private val bufferName = "~sample_${file.nameWithoutExtension}"
 
     private val synthName = "~playbuf_${name}_${hashCode()}"
 
-    override val controls: List<ParameterControl>
+    init {
+        duration = getDuration(file)
+    }
+
+    override val associatedEnvelopes: List<EnvelopeControl>
         get() = listOf(EnvelopeControl("amp", envelope, Color.WHITE, display = true))
 
     override fun getSpec(parameter: String): ControlSpec =
         if (parameter == "amp") ParameterDef.amp.spec else super.getSpec(parameter)
 
-    override fun initialize(project: XenakisProject) {
-        super.initialize(project)
-        loadBuffer(project.client)
+    override fun addToContainer(container: ScoreObjectContainer, context: Context) {
+        super.addToContainer(container, context)
+        loadBuffer(context[UDPSuperColliderClient])
     }
 
     private fun loadBuffer(client: UDPSuperColliderClient) {
@@ -73,11 +73,7 @@ class SoundFileObject(
         writer.appendLine("$synthName.release;")
     }
 
-    override fun clone(newName: String): SoundFileObject = SoundFileObject(
-        newName, file, outBus, startPos, rate, envelope.clone(),
-        start, y, duration, height,
-        muted
-    )
+    override fun clone(): SoundFileObject = SoundFileObject(name, file, outBus, startPos, rate, envelope.clone())
 
     companion object {
         fun getDuration(file: File): Double {

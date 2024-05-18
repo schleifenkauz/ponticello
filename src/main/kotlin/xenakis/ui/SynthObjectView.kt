@@ -1,15 +1,12 @@
 package xenakis.ui
 
+import javafx.scene.paint.Color
 import xenakis.model.SynthObject
 import xenakis.model.XenakisProject
 
-class SynthObjectView(override val obj: SynthObject, project: XenakisProject) : ScoreObjectView(obj, project) {
+class SynthObjectView(override val obj: SynthObject, project: XenakisProject) : ScoreObjectView() {
     init {
         styleClass("synth-object")
-    }
-
-    override fun setupHeader() {
-        super.setupHeader()
         addAction(Icon.Details, "Open control assignment view") {
             val confirmed = ControlAssignmentView.show(obj, project)
             if (confirmed) {
@@ -17,4 +14,7 @@ class SynthObjectView(override val obj: SynthObject, project: XenakisProject) : 
             }
         }
     }
+
+    override val defaultBorderColor: Color
+        get() = obj.synthDef.associatedColor
 }

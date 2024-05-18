@@ -1,30 +1,17 @@
 package xenakis.model
 
-import javafx.scene.paint.Color
-import kotlinx.serialization.Serializable
-import xenakis.impl.ColorSerializer
+import hextant.core.editor.ViewManager
+import xenakis.ui.MemoObjectView
 
-@Serializable
-class MemoObject(
-    override var name: String,
-    var text: String,
-    override var start: Double, var width: Double,
-    override var y: Double, override var height: Double,
-    @Serializable(with = ColorSerializer::class) override var color: Color = Color.BLACK,
-) : ScoreObject() {
-    override var duration: Double
-        get() = 0.0
+class MemoObject(name: String, text: String, var width: Double) : ScoreObject(name) {
+    override val viewManager = ViewManager.createWeakViewManager<MemoObjectView>()
+
+    var text = text
         set(value) {
-            throw UnsupportedOperationException("Cannot set duration of MemoObject")
-        }
-    override var muted: Boolean
-        get() = false
-        set(value) {
-            throw UnsupportedOperationException("Cannot mute MemoObject")
+            if (value == field) return
+            field = value
+            viewManager.notifyViews { textChanged(value) }
         }
 
-    override val controls: List<ParameterControl>
-        get() = emptyList()
-
-    override fun clone(newName: String): ScoreObject = MemoObject(newName, text, start, duration, y, height, color)
+    override fun clone(): ScoreObject = MemoObject(name, text, width)
 }

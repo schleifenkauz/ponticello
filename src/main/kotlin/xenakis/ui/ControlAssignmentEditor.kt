@@ -97,7 +97,7 @@ class ControlAssignmentEditor(private val parameter: ParameterDef, val project: 
                 project: XenakisProject,
             ): HBox {
                 val defaultColor = (parameter.spec as? NumericalControlSpec)?.associatedColor
-                val colorPicker = ColorPicker(control?.displayColor ?: defaultColor ?: Color.BLACK)
+                val colorPicker = ColorPicker(control?.displayColor ?: defaultColor ?: Color.WHITE)
                 val toggle = ToggleSwitch()
                 toggle.isSelected = control?.display ?: true
                 val space = Region()
@@ -112,8 +112,8 @@ class ControlAssignmentEditor(private val parameter: ParameterDef, val project: 
                 val colorPicker = detailInput.children[0] as ColorPicker
                 val toggleButton = detailInput.children[2] as ToggleSwitch
                 val spec = parameter.spec as NumericalControlSpec
-                val oldEnvelope = detailInput.userData as? xenakis.sc.Envelope
-                val env = oldEnvelope ?: xenakis.sc.Envelope.constant(spec.defaultValue.value, spec.warp)
+                val oldEnvelope = detailInput.userData as? xenakis.model.Envelope
+                val env = oldEnvelope ?: xenakis.model.Envelope.constant(spec.defaultValue.value, spec.warp)
                 return EnvelopeControl(
                     parameter.name.text, env,
                     colorPicker.value, toggleButton.isSelected,

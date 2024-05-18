@@ -1,33 +1,20 @@
 package xenakis.model
 
-import javafx.scene.paint.Color
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.Transient
+import hextant.core.editor.ViewManager
 import xenakis.impl.ScWriter
 import xenakis.sc.ControlSpec
-import xenakis.sc.Group
 import xenakis.sc.SynthDef
+import xenakis.ui.SynthObjectView
 import xenakis.ui.XenakisController.Companion.currentProject
 import xenakis.ui.format
 
-@Serializable
-class SynthObject(
-    override var name: String, var group: Group, var synthDefName: String,
-    override var start: Double, override var duration: Double,
-    override var y: Double, override var height: Double,
-    override val controls: MutableList<ParameterControl>,
-    override var muted: Boolean = false
-) : ScoreObject() {
+class SynthObject(name: String, var synthDefName: String) : ScoreObject(name) {
+    override val viewManager: ViewManager<SynthObjectView> = ViewManager.createWeakViewManager()
+
     val synthDef: SynthDef
         get() = context[currentProject].synthDefs.get(synthDefName)
 
-    override val color: Color get() = synthDef.associatedColor
-
-    override fun clone(newName: String): ScoreObject = SynthObject(
-        newName, group, synthDefName,
-        start, duration, y, height,
-        controls.mapTo(mutableListOf()) { c -> c.clone() }
-    )
+    override fun clone(): ScoreObject = SynthObject(name, synthDefName)
 
     override fun getSpec(parameter: String): ControlSpec = synthDef.getParameter(parameter).spec
 

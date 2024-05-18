@@ -1,11 +1,18 @@
-package xenakis.sc
+package xenakis.model
 
+import hextant.core.editor.ViewManager
 import kotlinx.serialization.Serializable
 import xenakis.impl.Point
+import xenakis.sc.Warp
+import xenakis.ui.EnvelopeView
 import xenakis.ui.format
 
 @Serializable
-data class Envelope(val points: MutableList<Point>, val curve: Warp) {
+data class Envelope(private val _points: MutableList<Point>, val curve: Warp) {
+    private val viewManager = ViewManager.createWeakViewManager<EnvelopeView>()
+
+    val points: List<Point> get() = _points
+
     fun code(offset: Double, dur: Double): String {
         require(offset <= dur)
         var ps = points.map { (x, y) -> Point(x * dur, y) }
@@ -27,6 +34,29 @@ data class Envelope(val points: MutableList<Point>, val curve: Warp) {
     }
 
     fun clone() = copy()
+
+    fun addPoint(idx: Int, point: Point) {
+        _points.add(idx, point)
+        viewManager.notifyViews { addedPoint(idx, point) }
+    }
+
+    fun editPoint(idx: Int, newPoint: Point) {
+        _points[idx] = newPoint
+        viewManager.notifyViews { changedPoint(idx, newPoint) }
+    }
+
+    fun removePoint(idx: Int) {
+        val p = _points.removeAt(idx)
+        viewManager.notifyViews { removedPoint(idx, p) }
+    }
+
+    fun addView(view: EnvelopeView) {
+        viewManager.addView(view)
+    }
+
+    fun removeView(view: EnvelopeView) {
+        viewManager.removeView(view)
+    }
 
     companion object {
         fun constant(value: Double, curve: Warp) = Envelope(mutableListOf(Point(0.0, value), Point(1.0, value)), curve)

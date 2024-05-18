@@ -19,9 +19,11 @@ import xenakis.sc.editor.IdentifierEditor
 import xenakis.sc.editor.createEditor
 import xenakis.sc.view.IdentifierEditorControl
 
-class EnvelopeObjectView(override val obj: EnvelopeObject, project: XenakisProject) : ScoreObjectView(obj, project) {
-    override fun setupHeader() {
-        super.setupHeader()
+class EnvelopeObjectView(override val obj: EnvelopeObject, project: XenakisProject) : ScoreObjectView() {
+    override val supportedActions: List<Icon>
+        get() = listOf(Icon.Delete)
+
+    init {
         addAction(Icon.Details, action = "Edit Envelope configuration") {
             showEnvelopeConfig(project.context, header, obj.name, obj.spec, obj.bus) { name, spec, output ->
                 obj.name = name
@@ -29,6 +31,10 @@ class EnvelopeObjectView(override val obj: EnvelopeObject, project: XenakisProje
                 obj.bus = output
             }
         }
+    }
+
+    fun updatedSpec() {
+        reassignedControls()
     }
 
     companion object {

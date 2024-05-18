@@ -6,9 +6,7 @@ import kotlinx.serialization.Transient
 import reaktive.value.now
 import xenakis.impl.SuperColliderContext
 import xenakis.sc.Bus
-import xenakis.sc.Group
 import xenakis.sc.editor.CodeBlockEditor
-import xenakis.ui.CodePane
 import java.util.*
 
 @Serializable
@@ -86,7 +84,7 @@ class AudioFlowGraph(
     }
 
     fun setupAudioFlow(context: SuperColliderContext) = context.postAsync {
-        var prev = Group.default.variableName
+        var prev = "s.defaultGroup"
         for (flow in order) {
             val source = flow.source.bus
             val target = flow.target.bus

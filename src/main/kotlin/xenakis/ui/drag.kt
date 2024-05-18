@@ -5,9 +5,17 @@ import javafx.scene.Node
 import javafx.scene.input.MouseEvent
 import xenakis.impl.Point
 
-fun Node.setupDragging(relocateBy: (ev: MouseEvent, old: Bounds, dx: Double, dy: Double) -> Unit) {
+fun Node.setupDragging(
+    onPressed: () -> Unit = {},
+    onReleased: () -> Unit = {},
+    relocateBy: (ev: MouseEvent, old: Bounds, dx: Double, dy: Double) -> Unit
+) {
     var dragStart: Point? = null
     var oldBounds: Bounds? = null
+    setOnMousePressed { ev ->
+        onPressed()
+        ev.consume()
+    }
     setOnMouseDragged { ev ->
         val start = dragStart
         if (start == null) {
@@ -21,6 +29,7 @@ fun Node.setupDragging(relocateBy: (ev: MouseEvent, old: Bounds, dx: Double, dy:
         ev.consume()
     }
     setOnMouseReleased { ev ->
+        onReleased()
         dragStart = null
         oldBounds = null
         ev.consume()
