@@ -8,7 +8,7 @@ import xenakis.impl.getDouble
 import xenakis.impl.getString
 import xenakis.ui.MemoObjectView
 
-class MemoObject(name: String, text: String, var width: Double) : ScoreObject(name) {
+class MemoObject(name: String, text: String, var width: Double) : AbstractScoreObject(name) {
     override val type: String
         get() = "memo"
 
@@ -21,7 +21,7 @@ class MemoObject(name: String, text: String, var width: Double) : ScoreObject(na
             viewManager.notifyViews { textChanged(value) }
         }
 
-    override fun clone(): ScoreObject = MemoObject(name, text, width)
+    override fun copy(): ScoreObject = MemoObject(name, text, width)
 
     override fun JsonObjectBuilder.saveToJson() {
         put("text", text)

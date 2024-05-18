@@ -23,7 +23,7 @@ import xenakis.model.ScoreObject
 import xenakis.ui.XenakisController.Companion.currentProject
 import kotlin.math.absoluteValue
 
-abstract class ScoreObjectView : VBox() {
+abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionListener {
     private var dragStart: Point? = null
     private var oldBounds: Bounds? = null
     private var draggedObject: ScoreObjectView = this
@@ -55,8 +55,6 @@ abstract class ScoreObjectView : VBox() {
         contents.alwaysVGrow()
     }
 
-    abstract val obj: ScoreObject
-
     protected open val supportedActions get() = listOf(Icon.Delete, Icon.Play, Icon.Mute)
 
     private fun setupHeader() {
@@ -64,16 +62,16 @@ abstract class ScoreObjectView : VBox() {
         nameLabel.textFill = WHITE
         header.children.setAll(nameLabel, infiniteSpace(), actions)
         if (Icon.Mute in supportedActions) {
-            val icon = if (obj.muted) Icon.Mute else Icon.Unmute
+            val icon = if (myObject.muted) Icon.Mute else Icon.Unmute
             muteUnmuteBtn = addAction(icon, "Toggle mute") {
-                obj.muted = !obj.muted
+                myObject.muted = !myObject.muted
             }
         }
         if (Icon.Play in supportedActions) addAction(Icon.Play, "Play this object") {
             val project = context[currentProject]
             val client = context[UDPSuperColliderClient]
             project.prepareForPlay(client)
-            obj.play(client)
+            myObject.play(client)
         }
         if (Icon.Delete in supportedActions) addAction(Icon.Delete, "Delete this object", ::delete)
         header.visibleProperty().bind(hoverProperty().or(selectedProperty))
@@ -82,15 +80,16 @@ abstract class ScoreObjectView : VBox() {
     open fun init(parent: ScoreView) {
         this.scoreView = parent
         this.context = parent.score.context
-        layoutX = scoreView.getX(obj.start)
-        layoutY = obj.y
+        layoutX = scoreView.getX(myObject.position.start)
+        layoutY = myObject.position.y
         prefWidth = getDisplayWidth()
-        prefHeight = obj.height
+        prefHeight = myObject.height
         renamedObject()
         recoloredObject()
         setupHeader()
         reassignedControls()
-        obj.addView(this)
+        myObject.addView(this)
+        myObject.position.addListener(this)
     }
 
     protected fun addAction(icon: Icon, action: String?, onAction: () -> Unit): Button {
@@ -109,16 +108,16 @@ abstract class ScoreObjectView : VBox() {
         get() = BLACK
 
     open fun recoloredObject() {
-        val borderColor = obj.associatedColor ?: defaultBorderColor
+        val borderColor = myObject.associatedColor ?: defaultBorderColor
         contents.border = solidBorder(borderColor, width = 2.0, radius = 3.0)
     }
 
     fun renamedObject() {
-        nameLabel.text = obj.name
+        nameLabel.text = myObject.name
     }
 
     fun muteToggled() {
-        muteUnmuteBtn.graphic = if (obj.muted) Icon.Mute.getView() else Icon.Unmute.getView()
+        muteUnmuteBtn.graphic = if (myObject.muted) Icon.Mute.getView() else Icon.Unmute.getView()
     }
 
     open fun reassignedControls() {
@@ -127,24 +126,24 @@ abstract class ScoreObjectView : VBox() {
             editors.dispose()
         }
         envelopeEditors.clear()
-        if (obj.associatedEnvelopes.isEmpty()) return
+        if (myObject.associatedEnvelopes.isEmpty()) return
         if (envelopesPane !in contents.children) contents.children.add(envelopesPane)
         setVgrow(envelopesPane, Priority.ALWAYS)
-        for (control in obj.associatedEnvelopes) {
+        for (control in myObject.associatedEnvelopes) {
             if (!control.display) continue
             val parameter = control.parameter
             val envelope = control.envelope
-            val e = EnvelopeEditor(parameter, envelope, envelopesPane, scoreView, obj)
+            val e = EnvelopeEditor(parameter, envelope, envelopesPane, scoreView, myObject)
             e.repaint()
             envelopeEditors.add(e)
         }
     }
 
     protected open fun setObjectWidth(width: Double, ev: MouseEvent, resizeFromLeft: Boolean) {
-        obj.duration = scoreView.getDuration(width)
+        myObject.duration = scoreView.getDuration(width)
     }
 
-    open fun getDisplayWidth(): Double = scoreView.getWidth(obj.duration)
+    open fun getDisplayWidth(): Double = scoreView.getWidth(myObject.duration)
 
     protected open fun rescale() {
         rescaleEnvelopes()
@@ -162,7 +161,7 @@ abstract class ScoreObjectView : VBox() {
     }
 
     private fun delete() {
-        scoreView.score.removeObject(obj)
+        scoreView.score.removeObject(myObject)
     }
 
     /*
@@ -186,23 +185,28 @@ abstract class ScoreObjectView : VBox() {
     }
 
     private fun setupDragging() {
-        header.addEventHandler(MouseEvent.MOUSE_PRESSED) { ev ->
-            if (isResizeCursor(cursor)) return@addEventHandler
-            oldBounds = BoundingBox(layoutX, layoutY, prefWidth, prefHeight)
-            dragStart = Point(ev.screenX, ev.screenY)
-            draggedObject = if (ev.isShiftDown) {
-                val clone = obj.clone(scoreView.score.nameForClone(obj))
-                scoreView.score.addObject(clone)
-                scoreView.getObjectView(clone)
-            } else this
-            context[UndoManager].beginCompoundEdit()
-            ev.consume()
-        }
         addEventHandler(MouseEvent.MOUSE_PRESSED) { ev ->
+            if (isResizeCursor(cursor)) return@addEventHandler
             if (dragStart == null) {
-                context[UndoManager].beginCompoundEdit()
-                dragStart = Point(ev.screenX, ev.screenY)
                 oldBounds = BoundingBox(layoutX, layoutY, prefWidth, prefHeight)
+                dragStart = Point(ev.screenX, ev.screenY)
+                draggedObject = if (ev.isShiftDown) {
+                    val copy = myObject.copy(newName = scoreView.score.nameForCopy(myObject))
+                    context[UndoManager].beginCompoundEdit("Copy object")
+                    scoreView.score.addObject(copy)
+                    scoreView.getObjectView(copy)
+                } else if (ev.isControlDown) {
+                    val clone = myObject.clone(
+                        name = scoreView.score.nameForClone(myObject),
+                        myObject.position.copy()
+                    )
+                    context[UndoManager].beginCompoundEdit("Clone object")
+                    scoreView.score.addObject(clone)
+                    scoreView.getObjectView(clone)
+                } else {
+                    context[UndoManager].beginCompoundEdit("Move object")
+                    this
+                }
             }
             ev.consume()
         }
@@ -219,13 +223,13 @@ abstract class ScoreObjectView : VBox() {
         }
         addEventHandler(MouseEvent.MOUSE_RELEASED) { ev ->
             if (draggedObject != this && draggedObject.boundsInParent == this.boundsInParent) {
-                obj.container.removeObject(draggedObject.obj)
+                myObject.container.removeObject(draggedObject.myObject)
             }
             if (dragStart != null) {
                 dragStart = null
                 oldBounds = null
                 draggedObject = this
-                context[UndoManager].finishCompoundEdit("Move object")
+                context[UndoManager].finishCompoundEdit()
             }
             ev.consume()
         }
@@ -244,7 +248,11 @@ abstract class ScoreObjectView : VBox() {
     }
 
     private fun relocateObject(x: Double, y: Double) {
-        scoreView.score.moveObject(obj, scoreView.getTime(x), y)
+        scoreView.score.moveObject(myObject, scoreView.getTime(x), y)
+    }
+
+    override fun moved(start: Double, y: Double) {
+        relocate(scoreView.getX(myObject.start), myObject.y)
     }
 
     private fun updateCursor(x: Double, y: Double) {
@@ -275,9 +283,12 @@ abstract class ScoreObjectView : VBox() {
         if (snappedWidth < 10.0 || height < 10.0) return
         if (!isInParentBounds(snappedX, y, snappedWidth, height)) return
         setObjectWidth(snappedWidth, ev, resizeFromLeft)
-        setPrefSize(getDisplayWidth(), height)
-        obj.height = height
+        myObject.height = height
         relocateObject(snappedX, y)
+    }
+
+    fun resized() {
+        setPrefSize(getDisplayWidth(), myObject.height)
     }
 
     private fun resize(old: Bounds, dx: Double, dy: Double, cursor: Cursor, ev: MouseEvent) {

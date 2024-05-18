@@ -11,6 +11,7 @@ import xenakis.impl.Point
 import xenakis.impl.dist
 import xenakis.model.Envelope
 import xenakis.model.EnvelopeEdit
+import xenakis.model.AbstractScoreObject
 import xenakis.model.ScoreObject
 import xenakis.sc.*
 
@@ -55,7 +56,7 @@ class EnvelopeEditor(
 
     private fun createNewPointsOnClick() {
         line.setOnMouseClicked { ev ->
-            if (ev.isShiftDown) {
+            if (ev.isAltDown) {
                 val t = transformXToTime(ev.x)
                 val v = transformYToValue(ev.y)
                 val newPoint = Point(t, v)

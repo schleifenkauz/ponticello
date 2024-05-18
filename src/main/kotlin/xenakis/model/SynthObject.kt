@@ -12,7 +12,7 @@ import xenakis.ui.SynthObjectView
 import xenakis.ui.XenakisController.Companion.currentProject
 import xenakis.ui.format
 
-class SynthObject(name: String, var synthDefName: String) : ScoreObject(name) {
+class SynthObject(name: String, var synthDefName: String) : AbstractScoreObject(name) {
     override val type: String
         get() = "synth"
 
@@ -21,7 +21,7 @@ class SynthObject(name: String, var synthDefName: String) : ScoreObject(name) {
     val synthDef: SynthDef
         get() = context[currentProject].synthDefs.get(synthDefName)
 
-    override fun clone(): ScoreObject = SynthObject(name, synthDefName)
+    override fun copy(): ScoreObject = SynthObject(name, synthDefName)
 
     override fun getSpec(parameter: String): ControlSpec = synthDef.getParameter(parameter).spec
 

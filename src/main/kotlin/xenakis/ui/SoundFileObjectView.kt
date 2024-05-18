@@ -8,7 +8,7 @@ import xenakis.model.SoundFileObject
 import javax.sound.sampled.AudioInputStream
 import javax.sound.sampled.AudioSystem
 
-class SoundFileObjectView(override val obj: SoundFileObject) : ScoreObjectView() {
+class SoundFileObjectView(val obj: SoundFileObject) : ScoreObjectView(obj) {
     private val stream: AudioInputStream = AudioSystem.getAudioInputStream(obj.file)
     private val frameRate = stream.format.frameRate
     private val fileDuration = (stream.frameLength / frameRate).toDouble()

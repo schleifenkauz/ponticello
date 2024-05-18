@@ -13,16 +13,13 @@ import xenakis.impl.putSerializableValue
 import xenakis.sc.editor.ScFunctionEditor
 import xenakis.ui.TaskObjectView
 
-class TaskObject(
-    name: String, val code: EditorRoot<ScFunctionEditor>,
-    var width: Double
-) : ScoreObject(name) {
+class TaskObject(name: String, val code: EditorRoot<ScFunctionEditor>, var width: Double) : AbstractScoreObject(name) {
     override val type: String
         get() = "task"
 
     override val viewManager = ViewManager.createWeakViewManager<TaskObjectView>()
 
-    override fun clone(): ScoreObject = TaskObject(name, code.clone(), width)
+    override fun copy(): ScoreObject = TaskObject(name, code.clone(), width)
 
     override fun writeStartCode(writer: ScWriter, offset: Double) {
         writer.appendBlock("Task") {

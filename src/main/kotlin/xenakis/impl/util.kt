@@ -9,6 +9,10 @@ import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.*
 import java.io.File
 import java.io.StringWriter
+import kotlin.properties.ReadWriteProperty
+import kotlin.reflect.KMutableProperty0
+import kotlin.reflect.KProperty
+import kotlin.reflect.KProperty0
 
 typealias DoubleRange = ClosedFloatingPointRange<Double>
 
@@ -55,3 +59,18 @@ inline fun <reified T> JsonObject.getSerializableValue(name: String) =
 inline fun <reified T> JsonObjectBuilder.putSerializableValue(name: String, value: T) {
     put(name, Json.encodeToJsonElement(value))
 }
+
+fun <T> unsupported(): ReadWriteProperty<Any?, T> = object : ReadWriteProperty<Any?, T> {
+    override fun getValue(thisRef: Any?, property: KProperty<*>): T =
+        throw UnsupportedOperationException("$property is unsupported")
+
+    override fun setValue(thisRef: Any?, property: KProperty<*>, value: T) {
+        throw UnsupportedOperationException("$property is unsupported")
+    }
+}
+
+operator fun <R> (() -> KMutableProperty0<R>).setValue(thisRef: Any, property: KProperty<*>, value: R) {
+    invoke().set(value)
+}
+
+operator fun <R> (() -> KProperty0<R>).getValue(thisRef: Any, property: KProperty<*>): R = invoke().get()

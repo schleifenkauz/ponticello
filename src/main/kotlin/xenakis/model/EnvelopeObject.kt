@@ -14,7 +14,7 @@ import xenakis.ui.EnvelopeObjectView
 class EnvelopeObject(
     name: String, spec: NumericalControlSpec,
     var bus: Bus, val envelope: Envelope
-) : ScoreObject(name) {
+) : AbstractScoreObject(name) {
     override val type: String
         get() = "envelope"
 
@@ -32,7 +32,7 @@ class EnvelopeObject(
 
     override fun getSpec(parameter: String): ControlSpec = if (parameter == name) spec else super.getSpec(parameter)
 
-    override fun clone(): ScoreObject =
+    override fun copy(): ScoreObject =
         EnvelopeObject(name, spec, bus, envelope.clone())
 
     override fun writeStartCode(writer: ScWriter, offset: Double) {

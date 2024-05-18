@@ -3,6 +3,8 @@ package xenakis.ui
 import hextant.serial.EditorRoot
 import hextant.undo.UndoManager
 import javafx.application.Platform
+import javafx.scene.input.Clipboard
+import javafx.scene.input.MouseButton
 import javafx.scene.input.MouseEvent
 import javafx.scene.layout.Pane
 import javafx.scene.paint.Color
@@ -10,6 +12,8 @@ import javafx.scene.paint.Color.BLACK
 import javafx.scene.shape.Line
 import javafx.scene.shape.Rectangle
 import javafx.scene.text.Text
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.json.Json
 import xenakis.impl.step
 import xenakis.model.*
 import xenakis.sc.Bus
@@ -41,7 +45,7 @@ class ScoreView(
     private val selectedTool get() = ui.toolSelector.selected.value!!
 
     val selectedObjects
-        get() = selectedViews.map { view -> view.obj }
+        get() = selectedViews.map { view -> view.myObject }
 
     init {
         listenForEvents()
@@ -116,7 +120,7 @@ class ScoreView(
                 outBus = Bus.output, startPos = 0.0, rate = 1.0,
                 envelope = xenakis.model.Envelope.constant(1.0, Warp.Linear),
             )
-            obj.moveTo(getTime(ev.x), ev.y)
+            obj.position.set(getTime(ev.x), ev.y)
             obj.height = 150.0
             score.addObject(obj)
         }
@@ -157,15 +161,21 @@ class ScoreView(
         }
     }
 
-    fun getObjectView(obj: ScoreObject) = views.getOrPut(obj) {
-        when (obj) {
-            is SynthObject -> SynthObjectView(obj, project)
-            is TaskObject -> TaskObjectView(obj, project)
-            is EnvelopeObject -> EnvelopeObjectView(obj, project)
-            is SoundFileObject -> SoundFileObjectView(obj)
-            is MemoObject -> MemoObjectView(obj)
-            else -> throw AssertionError()
+    fun getObjectView(obj: ScoreObject) = views.getOrPut(obj) { createObjectView(obj) }
+
+    private fun createObjectView(obj: ScoreObject): ScoreObjectView = when (obj) {
+        is SynthObject -> SynthObjectView(obj)
+        is TaskObject -> TaskObjectView(obj)
+        is EnvelopeObject -> EnvelopeObjectView(obj)
+        is SoundFileObject -> SoundFileObjectView(obj)
+        is MemoObject -> MemoObjectView(obj)
+        is ClonedObject -> {
+            val view = createObjectView(obj.original)
+            view.myObject = obj
+            view
         }
+
+        else -> throw AssertionError()
     }
 
     override fun addedObject(obj: ScoreObject) {
@@ -186,11 +196,6 @@ class ScoreView(
     override fun removedObject(obj: ScoreObject) {
         val view = views.remove(obj) ?: return
         children.remove(view)
-    }
-
-    override fun movedObject(obj: ScoreObject) {
-        val view = getObjectView(obj)
-        view.relocate(getX(obj.start), obj.y)
     }
 
     fun getX(time: Double) = (time - displayStart) * pixelsPerSecond
@@ -296,6 +301,19 @@ class ScoreView(
     }
 
     private fun mouseClicked(ev: MouseEvent) {
+        if (ev.button == MouseButton.SECONDARY) {
+            val clipboard = Clipboard.getSystemClipboard()
+            if (clipboard.hasContent(ScoreObject.DATA_FORMAT)) {
+                val content = clipboard.getContent(ScoreObject.DATA_FORMAT) as String
+                val objects: List<ScoreObject> = Json.decodeFromString(content)
+                val leftTop = objects.minOf { it.position }
+                for (obj in objects) {
+                    obj.position.start += getTime(ev.x) - leftTop.start
+                    obj.position.y += ev.y - leftTop.y
+                    score.addObject(obj)
+                }
+            }
+        }
         ev.consume()
     }
 
@@ -366,8 +384,7 @@ class ScoreView(
     }
 
     private fun ScoreObject.assignBoundsFromRect(r: Rectangle) {
-        start = getTime(r.x)
-        y = r.y
+        position.set(getTime(r.x), r.y)
         duration = getDuration(r.width)
         height = r.height
     }
@@ -393,7 +410,7 @@ class ScoreView(
         } else {
             context[UndoManager].beginCompoundEdit()
             for (view in selectedViews) {
-                score.removeObject(view.obj)
+                score.removeObject(view.myObject)
             }
             context[UndoManager].finishCompoundEdit("Remove objects")
         }

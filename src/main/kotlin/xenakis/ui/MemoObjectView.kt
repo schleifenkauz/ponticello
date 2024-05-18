@@ -6,7 +6,7 @@ import javafx.scene.input.MouseEvent
 import javafx.scene.paint.Color
 import xenakis.model.MemoObject
 
-class MemoObjectView(override val obj: MemoObject) : ScoreObjectView() {
+class MemoObjectView(val obj: MemoObject) : ScoreObjectView(obj) {
     private val textArea = TextArea(obj.text) styleClass "memo-area"
     private val colorPicker = ColorPicker(obj.associatedColor ?: Color.BLACK) styleClass "button"
 

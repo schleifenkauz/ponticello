@@ -95,7 +95,7 @@ class XenakisController(private val primaryStage: Stage) {
 
     fun startXenakis() {
         val file = lastFile()
-        if (file != null && false) {
+        if (file != null) {
             if (!file.exists() || !openProject(file)) {
                 clearLastFile()
                 goToStartupScreen()
@@ -165,7 +165,7 @@ class XenakisController(private val primaryStage: Stage) {
     fun createNewProject() {
         val location = showSaveDialog("*.json") ?: return
         currentProject = XenakisProject.create(location, context)
-        /*saveAs(location)*/
+        saveAs(location)
     }
 
     fun showOpenDialog(extension: String): File? {

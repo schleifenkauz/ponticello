@@ -10,11 +10,11 @@ import xenakis.ui.format
 
 @Serializable
 data class Score(
-    private val _objects: MutableSet<ScoreObject> = mutableSetOf(),
+    private val _objects: MutableList<ScoreObject> = mutableListOf(),
     private val _horizontalGroups: MutableList<MutableSet<String>> = mutableListOf(),
     private val _verticalGroups: MutableList<MutableSet<String>> = mutableListOf(),
-): ScoreObjectContainer() {
-    val objects: Set<ScoreObject> get() = _objects
+) : ScoreObjectContainer() {
+    val objects: MutableList<ScoreObject> get() = _objects
 
     @Transient
     lateinit var context: Context
@@ -77,7 +77,7 @@ data class Score(
 
     fun isNameAvailable(name: String) = name !in objectsByName
 
-    fun getObject(name: String): ScoreObject = objectsByName[name] ?: error("no object '$name'")
+    override fun getObject(name: String): ScoreObject = objectsByName[name] ?: error("no object '$name'")
 
     override fun renamedObject(obj: ScoreObject, oldName: String, newName: String) {
         objectsByName.remove(oldName)
@@ -88,25 +88,31 @@ data class Score(
         }
     }
 
-    fun nameForClone(obj: ScoreObject): String {
-        var name = obj.name
-        while (true) {
-            name += "_copy"
+    fun nameForCopy(obj: ScoreObject): String {
+        for (n in 1..Int.MAX_VALUE) {
+            val name = "${obj.name}_copy$n"
             if (isNameAvailable(name)) return name
         }
+        throw AssertionError()
+    }
+
+    fun nameForClone(obj: ScoreObject): String {
+        for (n in 1..Int.MAX_VALUE) {
+            val name = "${obj.name}_clone$n"
+            if (isNameAvailable(name)) return name
+        }
+        throw AssertionError()
     }
 
     fun moveObject(obj: ScoreObject, newStart: Double, newY: Double) {
         undo.record(ScoreEdit.MoveObject(obj, Point(obj.start, obj.y), Point(newStart, newY), this))
-        val dx = newStart - obj.start
+        val dt = newStart - obj.start
         val dy = newY - obj.y
         for (o in verticalGroups[obj] ?: setOf(obj)) {
-            o.y += dy
-            listeners { movedObject(o) }
+            o.position.y += dy
         }
         for (o in horizontalGroups[obj] ?: setOf(obj)) {
-            o.start += dx
-            listeners { movedObject(o) }
+            o.position.start += dt
         }
     }
 

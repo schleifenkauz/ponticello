@@ -51,6 +51,8 @@
 
 - ability to copy and paste whole time ranges
 
+### Logging
+
 ## Bug fixes
 
 - why can't we have shortcuts in the ScoreView?

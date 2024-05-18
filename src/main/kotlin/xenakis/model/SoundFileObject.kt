@@ -21,7 +21,7 @@ class SoundFileObject(
     var outBus: Bus,
     var startPos: Double, var rate: Double,
     var envelope: Envelope
-) : ScoreObject(name) {
+) : AbstractScoreObject(name) {
     override val type: String
         get() = "sample"
 
@@ -77,7 +77,7 @@ class SoundFileObject(
         writer.appendLine("$synthName.release;")
     }
 
-    override fun clone(): SoundFileObject = SoundFileObject(name, file, outBus, startPos, rate, envelope.clone())
+    override fun copy(): SoundFileObject = SoundFileObject(name, file, outBus, startPos, rate, envelope.clone())
 
     override fun JsonObjectBuilder.saveToJson() {
         put("file", file.absolutePath)

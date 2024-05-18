@@ -10,7 +10,6 @@ import reaktive.value.binding.map
 import reaktive.value.fx.asObservableValue
 import reaktive.value.now
 import xenakis.model.EnvelopeObject
-import xenakis.model.XenakisProject
 import xenakis.sc.Bus
 import xenakis.sc.NumericalControlSpec
 import xenakis.sc.Warp
@@ -19,18 +18,20 @@ import xenakis.sc.editor.IdentifierEditor
 import xenakis.sc.editor.createEditor
 import xenakis.sc.view.IdentifierEditorControl
 
-class EnvelopeObjectView(override val obj: EnvelopeObject, project: XenakisProject) : ScoreObjectView() {
+class EnvelopeObjectView(val obj: EnvelopeObject) : ScoreObjectView(obj) {
     override val supportedActions: List<Icon>
         get() = listOf(Icon.Delete)
 
-    init {
-        addAction(Icon.Details, action = "Edit Envelope configuration") {
-            showEnvelopeConfig(project.context, header, obj.name, obj.spec, obj.bus) { name, spec, output ->
+    override fun init(parent: ScoreView) {
+        super.init(parent)
+        val btn = Icon.Details.button(action = "Edit Envelope configuration") {
+            showEnvelopeConfig(context, header, obj.name, obj.spec, obj.bus) { name, spec, output ->
                 obj.name = name
                 obj.spec = spec
                 obj.bus = output
             }
         }
+        actions.children.add(0, btn)
     }
 
     fun updatedSpec() {

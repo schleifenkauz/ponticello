@@ -3,18 +3,16 @@ package xenakis.ui
 import javafx.scene.control.ScrollPane
 import javafx.scene.input.MouseEvent
 import javafx.scene.layout.Priority
+import javafx.stage.Stage
 import javafx.stage.StageStyle
 import xenakis.model.TaskObject
-import xenakis.model.XenakisProject
 
-class TaskObjectView(override val obj: TaskObject, project: XenakisProject) : ScoreObjectView() {
+class TaskObjectView(val obj: TaskObject) : ScoreObjectView(obj) {
     private val codeEditor = obj.code.control
 
     private val codeArea = ScrollPane(codeEditor)
-    private val codeWindow = codeArea.makeWindow(
-        "Code: ${obj.name}", project.context,
-        style = StageStyle.DECORATED, parent = contents
-    )
+
+    private lateinit var codeWindow: Stage
 
     init {
         styleClass("task-object")
@@ -26,6 +24,14 @@ class TaskObjectView(override val obj: TaskObject, project: XenakisProject) : Sc
         codeArea.prefHeightProperty().bind(codeEditor.prefHeightProperty())
         contents.children.add(0, codeArea)
         addAction(Icon.ExtraWindow, "Open in separate window") { codeWindow.show() }
+    }
+
+    override fun init(parent: ScoreView) {
+        super.init(parent)
+        codeArea.makeWindow(
+            "Code: ${obj.name}", context,
+            style = StageStyle.DECORATED, parent = contents
+        )
     }
 
     override fun setObjectWidth(width: Double, ev: MouseEvent, resizeFromLeft: Boolean) {

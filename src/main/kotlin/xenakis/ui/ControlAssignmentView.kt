@@ -1,6 +1,7 @@
 package xenakis.ui
 
 import javafx.scene.layout.VBox
+import xenakis.model.AbstractScoreObject
 import xenakis.model.ScoreObject
 import xenakis.model.SynthObject
 import xenakis.model.XenakisProject
