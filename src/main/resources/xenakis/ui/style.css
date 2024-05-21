@@ -63,33 +63,48 @@ Slider.control-detail-editor {
     -fx-background-color: transparent;
 }
 
-.score-object-content {
+.score-object {
     -fx-background-color: black;
 }
 
-.score-object-content:hover {
+.score-object:hover {
     -fx-background-color: #130000;
 }
 
-.score-object-content:selected {
+.score-object:selected {
     -fx-background-color: #220000 !important;
 }
 
-.task-object-content {
+/*noinspection CssInvalidPseudoSelector*/
+.score-object:muted {
+    -fx-background-color: rgba(0, 0, 0, 0.5);
+}
+
+/*noinspection CssInvalidPseudoSelector*/
+.score-object:hover:muted {
+    -fx-background-color: rgba(19, 0, 0, 0.5);
+}
+
+/*noinspection CssInvalidPseudoSelector*/
+.score-object:selected:muted {
+    -fx-background-color: rgba(34, 0, 0, 0.5) !important;
+}
+
+/*noinspection CssInvalidPseudoSelector*/
+.score-object:muted .waveform-line {
+    -fx-stroke: gray !important;
+}
+
+.task-object {
     -fx-border-width: 2px;
     -fx-border-radius: 3px;
     -fx-border-color: gray;
 }
 
-.score-object-header {
-    -fx-padding: 2px;
-    -fx-background-color: black;
-}
-
 .score-object-name {
     -fx-text-fill: white;
     -fx-font-size: 15px;
-    -fx-padding: 2px;
+    -fx-padding: 5px;
 }
 
 .toolbar {
@@ -110,6 +125,7 @@ Slider.control-detail-editor {
 }
 
 .icon-button:selected {
+    -fx-border-width: 2px;
     -fx-border-color: black;
 }
 
@@ -416,6 +432,11 @@ Slider.control-detail-editor {
     -fx-stroke: green;
 }
 
+.mouse-tracker-line {
+    -fx-stroke-width: 1px !important;
+    -fx-stroke: rgba(255, 255, 255, 0.2) !important;
+}
+
 .waveform-line {
     -fx-stroke: green;
 }
@@ -441,6 +462,10 @@ Slider.control-detail-editor {
     -fx-background-color: transparent;
 }
 
+.memo-label {
+    -fx-padding: 3px 6px 3px 6px;
+}
+
 .coordinate-info {
     -fx-text-fill: white;
     -fx-font-size: 14;
@@ -455,11 +480,23 @@ Slider.control-detail-editor {
 }
 
 /*noinspection CssInvalidPseudoSelector*/
-.score-object-content:clone-of-selected {
+.score-object:clone-of-selected {
     -fx-background-color: #120012 !important;
 }
 
 /*noinspection CssInvalidPseudoSelector*/
-.score-object-content:original-of-selected {
+.score-object:original-of-selected {
     -fx-background-color: #001200 !important;
+}
+
+.toolbar-part {
+    /*-fx-border-color: gray;
+    -fx-border-width: 1px;*/
+    -fx-padding: 5px;
+    -fx-background-color: rgba(0, 0, 0, 0.15);
+    -fx-background-radius: 5px;
+}
+
+.toolbar-part:hover {
+    -fx-background-color: rgba(0, 0, 0, 0.25);
 }

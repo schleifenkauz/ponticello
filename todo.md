@@ -35,21 +35,27 @@
 ### Compound objects
 
 - creates a sub-canvas in which score objects can be created
-- main use is in combination with repeater objects
+- main use is in combination with loops
 - only synth-objects and sound-file-objects can be children? (also task objects?)
     - also compound-objects???
 
-### Repeater objects
+### Loops
 
-- dock to a regular ScoreObject
-- configurable repetition period
-- highlights the times when the object is repeated => sub-grid
+- put original and clones in their own layout group
+- connect objects with arrows?
+  - removing arrows means disconnecting the references, so that incremental changes to the loop can be made
 
 ### Integrate Buffers and SynthDefs views into startup script?
 
 ### Copying and pasting score objects
 
 - ability to copy and paste whole time ranges
+
+### Naming in Score and in SuperCollider
+
+- separate name for synthesizer of each clone (or even hash-code suffix for every created synthesizer)
+- what about renaming buses and buffers?
+- naming checks to avoid duplicates
 
 ### Logging
 
@@ -59,8 +65,4 @@
 
 ## Nice to have
 
-- maybe get rid of object header and move it to toolbar?
-    - where to grab memo objects?
 - integrate close, maximize, minimize into top toolbar and remove window decoration
-- move play-head on (double-)click
-- have second semi-transparent vertical line follow the cursor position

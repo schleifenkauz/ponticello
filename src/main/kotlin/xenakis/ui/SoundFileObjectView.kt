@@ -1,10 +1,12 @@
 package xenakis.ui
 
+import bundles.createBundle
 import javafx.scene.input.MouseEvent
 import javafx.scene.shape.Line
 import javafx.scene.shape.Polyline
 import xenakis.impl.readChannels
 import xenakis.model.SoundFileObject
+import xenakis.sc.view.BusRefEditorControl
 import javax.sound.sampled.AudioInputStream
 import javax.sound.sampled.AudioSystem
 
@@ -15,6 +17,7 @@ class SoundFileObjectView(val obj: SoundFileObject) : ScoreObjectView(obj) {
     private val channels = stream.readChannels()
     private val waveForms = Array(channels.size) { Polyline().styleClass("waveform-line") }
     private val separatorLines = Array(channels.size) { Line().styleClass("channel-separator-line") }
+    private val outBusSelector = BusRefEditorControl(obj.outBus, createBundle())
 
     init {
         envelopesPane.children.addAll(*waveForms, *separatorLines)
@@ -43,6 +46,10 @@ class SoundFileObjectView(val obj: SoundFileObject) : ScoreObjectView(obj) {
         }
     }
 
+    override fun muteToggled() {
+        super.muteToggled()
+    }
+
     override fun setObjectWidth(width: Double, ev: MouseEvent, resizeFromLeft: Boolean) {
         var newDuration = scoreView.getDuration(width)
         if (ev.isShiftDown) {
@@ -60,6 +67,7 @@ class SoundFileObjectView(val obj: SoundFileObject) : ScoreObjectView(obj) {
     override fun init(parent: ScoreView) {
         super.init(parent)
         displayWaveForm()
+        header.children.add(1, outBusSelector)
     }
 
     override fun rescale() {

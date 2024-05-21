@@ -4,7 +4,6 @@ import hextant.serial.EditorRoot
 import hextant.undo.UndoManager
 import javafx.application.Platform
 import javafx.scene.input.Clipboard
-import javafx.scene.input.ClipboardContent
 import javafx.scene.input.MouseButton
 import javafx.scene.input.MouseEvent
 import javafx.scene.layout.Pane
@@ -14,14 +13,14 @@ import javafx.scene.shape.Line
 import javafx.scene.shape.Rectangle
 import javafx.scene.text.Text
 import kotlinx.serialization.builtins.ListSerializer
-import kotlinx.serialization.decodeFromString
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import reaktive.value.ReactiveValue
+import reaktive.value.reactiveVariable
 import xenakis.impl.step
 import xenakis.model.*
-import xenakis.sc.Bus
 import xenakis.sc.Identifier
 import xenakis.sc.Warp
+import xenakis.sc.editor.BusRefEditor
 import xenakis.sc.editor.ScFunctionEditor
 import xenakis.ui.ToolSelector.Tool.*
 import xenakis.ui.ToolSelector.Tool.Envelope
@@ -33,6 +32,7 @@ class ScoreView(
 ) : Pane(), ScoreListener {
     private var newObjectArea: Rectangle? = null
     private var selectedArea: Rectangle = Rectangle() styleClass "time-range-rect"
+    private val positionTracker = Line() styleClass "mouse-tracker-line"
     private val views = mutableMapOf<ScoreObject, ScoreObjectView>()
     private val selectedViews = mutableSetOf<ScoreObjectView>()
     var timeSnap: Double = 0.1
@@ -49,6 +49,9 @@ class ScoreView(
 
     val selectedObjects
         get() = selectedViews.map { view -> view.myObject }
+
+    private val _singleSelected = reactiveVariable<ScoreObjectView?>(null)
+    val singleSelected: ReactiveValue<ScoreObjectView?> get() = _singleSelected
 
     init {
         listenForEvents()
@@ -113,6 +116,26 @@ class ScoreView(
         setOnMouseReleased(this::mouseReleased)
         setupNavigation()
         setupDropArea()
+        setupPositionTracker()
+    }
+
+    private fun setupPositionTracker() {
+        positionTracker.startY = 10.0
+        positionTracker.endYProperty().bind(heightProperty().subtract(10))
+        positionTracker.viewOrder = 1.0
+        setOnMouseEntered { ev ->
+            positionTracker.layoutX = ev.x.snap(timeSnap)
+            children.add(positionTracker)
+            ev.consume()
+        }
+        setOnMouseMoved { ev ->
+            positionTracker.layoutX = ev.x.snap(timeSnap)
+            ev.consume()
+        }
+        setOnMouseExited { ev ->
+            children.remove(positionTracker)
+            ev.consume()
+        }
     }
 
     private fun setupDropArea() {
@@ -120,7 +143,7 @@ class ScoreView(
             val defaultName = Identifier.truncate(file.nameWithoutExtension)
             val obj = SoundFileObject(
                 defaultName, file,
-                outBus = Bus.output, startPos = 0.0, rate = 1.0,
+                outBus = BusRefEditor(context), startPos = 0.0, rate = 1.0,
                 envelope = xenakis.model.Envelope.constant(1.0, Warp.Linear),
             )
             obj.position.set(getTime(ev.x), ev.y)
@@ -191,6 +214,7 @@ class ScoreView(
         children.add(view)
         Platform.runLater {
             view.init(this)
+            view.requestFocus()
         }
     }
 
@@ -211,6 +235,7 @@ class ScoreView(
         if (!addToSelection) deselectAll()
         if (view !in selectedViews) selectedViews.add(view)
         else selectedViews.remove(view)
+        _singleSelected.set(selectedViews.singleOrNull())
         val selected = view in selectedViews
         view.setSelected(selected)
         return selected
@@ -266,7 +291,7 @@ class ScoreView(
                 children.add(selectedArea)
             }
 
-            Repeat -> TODO()
+            AddTime -> {}
         }
         ev.consume()
     }
@@ -316,6 +341,8 @@ class ScoreView(
                     score.addObject(obj)
                 }
             }
+        } else {
+            ui.player.setPlayHeadX(ev.x)
         }
         ev.consume()
     }
@@ -325,7 +352,9 @@ class ScoreView(
         if (!ev.isAltDown) deselectAll()
         val newObj = newObjectArea
         val tool = ui.toolSelector.selected.value
-        if (newObj != null && tool != Pointer) {
+        if (tool == AddTime) {
+            project.addTime(getTime(ev.x))
+        } else if (newObj != null && tool != Pointer) {
             if (newObj.width != 0.0 && newObj.height != 0.0) createNewObject(tool, newObj)
             clearNewShape()
         } else if (selectedArea in children) {
@@ -361,7 +390,7 @@ class ScoreView(
             }
 
             Envelope -> {
-                EnvelopeObjectView.showEnvelopeConfig(context, rect) { name, spec, outputBus ->
+                EnvelopeObjectView.showEnvelopeConfig(context) { name, spec, outputBus ->
                     val envelope = xenakis.model.Envelope.constant(spec.defaultValue.value, spec.warp)
                     val obj = EnvelopeObject(name, spec, outputBus, envelope)
                     obj.assignBoundsFromRect(rect)
@@ -371,10 +400,6 @@ class ScoreView(
             }
 
             Memo -> MemoObject("memo", "", rect.width)
-
-            Repeat -> {
-                TODO()
-            }
 
             else -> {
                 System.err.println("Unrecognized tool $tool")
@@ -417,6 +442,7 @@ class ScoreView(
             context[UndoManager].finishCompoundEdit("Remove objects")
         }
         deselectAll()
+        _singleSelected.set(null)
     }
 
     fun copySelected() {
@@ -424,6 +450,14 @@ class ScoreView(
         val json = Json.encodeToString(ListSerializer(ScoreObject.Ser), selectedObjects)
         val clipboard = Clipboard.getSystemClipboard()
         clipboard.setContent(mapOf(ScoreObject.DATA_FORMAT to json))
+    }
+
+    fun toggleMuteSelected() {
+        context[UndoManager].beginCompoundEdit("Toggle mute")
+        for (obj in selectedObjects) {
+            obj.muted = !obj.muted
+        }
+        context[UndoManager].finishCompoundEdit()
     }
 
     companion object {

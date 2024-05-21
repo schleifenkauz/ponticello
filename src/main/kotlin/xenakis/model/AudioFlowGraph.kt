@@ -91,12 +91,15 @@ class AudioFlowGraph(
             val ugenGraph = flow.ugenGraph.editor.result.now
             val synthName = "~flow_${source.name}_${target.name}"
             appendLine("{")
-            +"var sig = In.${source.rate}(${source.variableName})"
-            ugenGraph.code(this)
+            +"var sig = In.${source.rate}(${source.variableName}, ${source.channels})"
+            ugenGraph.writeCode(this)
             +"}.play($prev, ${target.variableName}, addAction: 'addAfter')"
             prev = synthName
         }
     }
+
+    fun getBus(busName: String): Bus = busses.find { b -> b.bus.name == busName }?.bus
+        ?: error("no bus with name '$busName' found in audio flow graph")
 
     @Serializable
     data class BusObject(val bus: Bus, var x: Double, var y: Double)
@@ -107,7 +110,7 @@ class AudioFlowGraph(
     companion object {
         fun createDefault(): AudioFlowGraph {
             val defaultGroup = Bus.output
-            val defaultBusObject = BusObject(defaultGroup, 0.0, 0.0)
+            val defaultBusObject = BusObject(defaultGroup, 0.5, 1.0)
             return AudioFlowGraph(mutableSetOf(defaultBusObject), mutableSetOf())
         }
     }

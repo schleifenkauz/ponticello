@@ -1,8 +1,6 @@
 package xenakis.ui
 
 import hextant.context.Context
-import hextant.fx.add
-import hextant.fx.children
 import hextant.fx.label
 import hextant.undo.UndoManager
 import javafx.beans.property.SimpleBooleanProperty
@@ -10,16 +8,12 @@ import javafx.css.PseudoClass
 import javafx.geometry.BoundingBox
 import javafx.geometry.Bounds
 import javafx.scene.Cursor
+import javafx.scene.Node
 import javafx.scene.control.*
 import javafx.scene.input.MouseEvent
-import javafx.scene.layout.GridPane
-import javafx.scene.layout.HBox
-import javafx.scene.layout.Pane
-import javafx.scene.layout.Priority
-import javafx.scene.layout.VBox
+import javafx.scene.layout.*
 import javafx.scene.paint.Color
 import javafx.scene.paint.Color.BLACK
-import javafx.scene.paint.Color.WHITE
 import xenakis.impl.Point
 import xenakis.impl.UDPSuperColliderClient
 import xenakis.model.ClonedObject
@@ -37,9 +31,8 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
 
     private val nameLabel = Label().styleClass("score-object-name")
     private lateinit var muteUnmuteBtn: Button
-    protected val header = HBox(10.0).centerChildrenVertically()
-    protected val actions = HBox(10.0).centerChildrenVertically()
-    protected val contents = VBox().styleClass("score-object-content")
+    val header = HBox(20.0).centerChildrenVertically()
+    private val actions = HBox(10.0).centerChildrenVertically()
     protected val envelopesPane = Pane()
 
     private val envelopeEditors = mutableListOf<EnvelopeEditor>()
@@ -51,60 +44,57 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
 
     init {
         styleClass("score-object")
-        alwaysUpdateCursor()
-        setupDragging()
         envelopesPane.widthProperty().addListener { _ -> rescale() }
         envelopesPane.heightProperty().addListener { _ -> rescale() }
-        children.setAll(header, contents)
-        contents.alwaysVGrow()
     }
 
     protected open val supportedActions get() = listOf(Icon.Delete, Icon.Play, Icon.Mute, Icon.Repeat)
 
-    private fun setupHeader() {
-        header.styleClass("score-object-header")
-        nameLabel.textFill = WHITE
-        header.children.setAll(nameLabel, infiniteSpace(), actions)
-        if (Icon.Repeat in supportedActions) addAction(Icon.Repeat, "Loop this object") {
-            val periodInput = TextField(myObject.duration.format(2))
-            val numberOfRepeats = Spinner<Int>(1, 1000, 1, 1)
-            val box = GridPane().apply {
-                add(label("Loop period (s): "), 0, 0)
-                add(periodInput, 0, 1)
-                add(label("Number of repetitions"), 1, 0)
-                add(numberOfRepeats, 1, 1)
-            }
-            box.showDialog(
-                "Loop configuration", context,
-                extraConfig = {
-                    val btnOk = dialogPane.lookupButton(ButtonType.OK)
-                    btnOk.disableProperty().bind(periodInput.textProperty().map { txt ->
-                        val v = txt.toDoubleOrNull()
-                        v == null || v == 0.0
-                    })
-                }
-            ) { btn ->
-                if (btn == ButtonType.OK) {
-                    val period = periodInput.text.toDouble()
-                    val repetitions = numberOfRepeats.value
-                    scoreView.score.loop(myObject, period, repetitions)
-                }
-            }
-        }
+    private fun setupActions() {
+        header.children.add(actions)
+        if (Icon.Repeat in supportedActions) addAction(Icon.Repeat, "Loop this object", ::createLoop)
         if (Icon.Mute in supportedActions) {
             val icon = if (myObject.muted) Icon.Mute else Icon.Unmute
             muteUnmuteBtn = addAction(icon, "Toggle mute") {
                 myObject.muted = !myObject.muted
             }
         }
-        if (Icon.Play in supportedActions) addAction(Icon.Play, "Play this object") {
-            val project = context[currentProject]
-            val client = context[UDPSuperColliderClient]
-            project.prepareForPlay(client)
-            myObject.play(client)
-        }
+        if (Icon.Play in supportedActions) addAction(Icon.Play, "Play this object", ::playMyObject)
         if (Icon.Delete in supportedActions) addAction(Icon.Delete, "Delete this object", ::delete)
-        header.visibleProperty().bind(hoverProperty().or(selectedProperty))
+    }
+
+    fun playMyObject() {
+        val project = context[currentProject]
+        val client = context[UDPSuperColliderClient]
+        project.prepareForPlay(client)
+        myObject.play(client)
+    }
+
+    fun createLoop() {
+        val periodInput = TextField(myObject.duration.format(2))
+        val numberOfRepeats = Spinner<Int>(1, 1000, 1, 1)
+        val box = GridPane().apply {
+            add(label("Loop period (s): "), 0, 0)
+            add(periodInput, 0, 1)
+            add(label("Number of repetitions"), 1, 0)
+            add(numberOfRepeats, 1, 1)
+        }
+        box.showDialog(
+            "Loop configuration", context,
+            extraConfig = {
+                val btnOk = dialogPane.lookupButton(ButtonType.OK)
+                btnOk.disableProperty().bind(periodInput.textProperty().map { txt ->
+                    val v = txt.toDoubleOrNull()
+                    v == null || v == 0.0
+                })
+            }
+        ) { btn ->
+            if (btn == ButtonType.OK) {
+                val period = periodInput.text.toDouble()
+                val repetitions = numberOfRepeats.value
+                scoreView.score.loop(myObject, period, repetitions)
+            }
+        }
     }
 
     open fun init(parent: ScoreView) {
@@ -114,9 +104,12 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
         layoutY = myObject.position.y
         prefWidth = getDisplayWidth()
         prefHeight = myObject.height
+        alwaysUpdateCursor()
+        setupDragging(this)
         renamedObject()
         recoloredObject()
-        setupHeader()
+        header.children.add(nameLabel)
+        setupActions()
         reassignedControls()
         myObject.addView(this)
         myObject.position.addListener(this)
@@ -139,15 +132,16 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
 
     open fun recoloredObject() {
         val borderColor = myObject.associatedColor ?: defaultBorderColor
-        contents.border = solidBorder(borderColor, width = 2.0, radius = 3.0)
+        border = solidBorder(borderColor, width = 2.0, radius = 3.0)
     }
 
     fun renamedObject() {
         nameLabel.text = myObject.name
     }
 
-    fun muteToggled() {
+    open fun muteToggled() {
         muteUnmuteBtn.graphic = if (myObject.muted) Icon.Mute.getView() else Icon.Unmute.getView()
+        pseudoClassStateChanged(PseudoClass.getPseudoClass("muted"), myObject.muted)
     }
 
     open fun reassignedControls() {
@@ -157,7 +151,7 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
         }
         envelopeEditors.clear()
         if (myObject.associatedEnvelopes.isEmpty()) return
-        if (envelopesPane !in contents.children) contents.children.add(envelopesPane)
+        if (envelopesPane !in children) children.add(envelopesPane)
         setVgrow(envelopesPane, Priority.ALWAYS)
         for (control in myObject.associatedEnvelopes) {
             if (!control.display) continue
@@ -186,7 +180,7 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
     }
 
     fun setSelected(value: Boolean) {
-        contents.pseudoClassStateChanged(PseudoClass.getPseudoClass("selected"), value)
+        pseudoClassStateChanged(PseudoClass.getPseudoClass("selected"), value)
         selectedProperty.set(value)
         for (obj in scoreView.score.objects) {
             if (obj is ClonedObject && obj.original == myObject) {
@@ -199,11 +193,11 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
     }
 
     private fun setCloneOfSelected(value: Boolean) {
-        contents.pseudoClassStateChanged(PseudoClass.getPseudoClass("clone-of-selected"), value)
+        pseudoClassStateChanged(PseudoClass.getPseudoClass("clone-of-selected"), value)
     }
 
     private fun setOriginalOfSelected(value: Boolean) {
-        contents.pseudoClassStateChanged(PseudoClass.getPseudoClass("original-of-selected"), value)
+        pseudoClassStateChanged(PseudoClass.getPseudoClass("original-of-selected"), value)
     }
 
     private fun delete() {
@@ -230,8 +224,8 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
         }
     }
 
-    private fun setupDragging() {
-        addEventHandler(MouseEvent.MOUSE_PRESSED) { ev ->
+    private fun setupDragging(target: Node) {
+        target.addEventHandler(MouseEvent.MOUSE_PRESSED) { ev ->
             if (dragStart == null) {
                 oldBounds = BoundingBox(layoutX, layoutY, prefWidth, prefHeight)
                 dragStart = Point(ev.screenX, ev.screenY)
@@ -255,7 +249,7 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
             }
             ev.consume()
         }
-        addEventHandler(MouseEvent.MOUSE_DRAGGED) { ev ->
+        target.addEventHandler(MouseEvent.MOUSE_DRAGGED) { ev ->
             val start = dragStart ?: return@addEventHandler
             val dx = ev.screenX - start.x
             val dy = ev.screenY - start.y
@@ -266,8 +260,8 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
             }
             ev.consume()
         }
-        addEventHandler(MouseEvent.MOUSE_RELEASED) { ev ->
-            if (draggedObject != this && draggedObject.boundsInParent == this.boundsInParent) {
+        target.addEventHandler(MouseEvent.MOUSE_RELEASED) { ev ->
+            if (draggedObject != target && draggedObject.boundsInParent == target.boundsInParent) {
                 myObject.container.removeObject(draggedObject.myObject)
             }
             if (dragStart != null) {
@@ -301,8 +295,8 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
     }
 
     private fun updateCursor(x: Double, y: Double) {
-        val tx = scaleX * 5
-        val ty = scaleY * 5
+        val tx = 5
+        val ty = 5
         val dx = (x - prefWidth).absoluteValue
         val dy = (y - prefHeight).absoluteValue
         cursor = when {
@@ -344,7 +338,7 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
             Cursor.E_RESIZE -> resize(old.minX, old.minY, old.width + dx, old.height, ev)
             Cursor.SE_RESIZE -> resize(old.minX, old.minY, old.width + dx, old.height + dy, ev)
             Cursor.S_RESIZE -> resize(old.minX, old.minY, old.width, old.height + dy, ev)
-            Cursor.SW_RESIZE -> resize(old.minX + dx, old.minY + dy, old.width - dx, old.height + dy, ev, true)
+            Cursor.SW_RESIZE -> resize(old.minX + dx, old.minY, old.width - dx, old.height + dy, ev, true)
             Cursor.W_RESIZE -> resize(old.minX + dx, old.minY, old.width - dx, old.height, ev, true)
         }
     }

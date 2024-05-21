@@ -18,6 +18,7 @@ import xenakis.impl.SuperColliderWriterContext
 import xenakis.impl.UDPSuperColliderClient
 import xenakis.sc.code
 import xenakis.sc.editor.CodeBlockEditor
+import xenakis.ui.showDoubleInputDialog
 import java.io.File
 import java.io.Writer
 
@@ -49,22 +50,14 @@ class XenakisProject private constructor(
         this.context = context
         score.context = context
         for (obj in score.objects) obj.addToContainer(score, context)
-        context[SynthDefs] = synthDefs
-        client = context[UDPSuperColliderClient]
         colorObserver = synthDefs.editor.editor.editors.observeEach { _, def ->
             def.associatedColor.result.observe { _ ->
                 score.recoloredSynthDef(def.name.text.now)
             }
         }
-        if (client.status == UDPSuperColliderClient.Status.Listening) {
-            setupServer(client)
-            for (obj in score.objects) obj.addToContainer(score, context)
-        }
-        client.addStatusListener { status ->
-            if (status == UDPSuperColliderClient.Status.Listening) {
-                setupServer(client)
-            }
-        }
+        context[SynthDefs] = synthDefs
+        client = context[UDPSuperColliderClient]
+        bootServer(client)
     }
 
     fun saveTo(file: File) {
@@ -74,7 +67,7 @@ class XenakisProject private constructor(
 
     fun exportAsScript(writer: Writer) {
         val context = SuperColliderWriterContext(writer)
-        setupServer(context)
+        bootServer(context)
         prepareForPlay(context)
         context.postAsync { score.writePlayerTask(this, startTime = 0.0) }
     }
@@ -84,16 +77,21 @@ class XenakisProject private constructor(
         postAsync { score.writePlayerTask(this, fromTime) }
     }
 
-    fun setupServer(context: SuperColliderContext) {
+    fun rebootServer() {
+        client.post("s.quit")
+        bootServer(client)
+    }
+
+    fun bootServer(context: SuperColliderContext) {
         SuperColliderWriterContext.wrap(context) {
             postAsync {
                 appendBlock("Task") {
-                    +"s.sync"
+                    +"s.bootSync"
                     flowGraph.allocateBusses(this@wrap)
-                    synthDefs.reload(this@wrap)
                     buffers.loadBuffers(this@wrap)
-                    score.loadSoundFiles(this@wrap)
+                    for (obj in score.objects) obj.serverBooted(this@wrap)
                     postAsync(serverSetup.editor.result.now.code)
+                    postAsync("\"Server is setup\".postln;")
                 }
                 appendLine(".play;")
             }
@@ -102,7 +100,7 @@ class XenakisProject private constructor(
 
     fun prepareForPlay(context: SuperColliderContext) {
         SuperColliderWriterContext.wrap(context) {
-            postAsync(beforePlay.editor.result.now.code + ";")
+            postAsync(beforePlay.editor.result.now.code)
             flowGraph.setupAudioFlow(this)
             synthDefs.reload(this)
         }
@@ -115,6 +113,11 @@ class XenakisProject private constructor(
             }
         }
         synthDefs.renamedSynthDef(oldName, newName)
+    }
+
+    fun addTime(location: Double) {
+        val amount = showDoubleInputDialog("How much time to add", context, 0.0..1000.0, 10.0) ?: return
+        score.addTime(location, amount)
     }
 
     companion object {

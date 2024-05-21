@@ -2,6 +2,7 @@ package xenakis.impl
 
 import bundles.PublicProperty
 import bundles.publicProperty
+import reaktive.event.event
 import java.net.DatagramPacket
 import java.net.DatagramSocket
 import java.net.InetAddress
@@ -16,12 +17,15 @@ class UDPSuperColliderClient private constructor(
 ) : SuperColliderContext {
     private val buffer = ByteArray(BUFFER_SIZE)
     private var consoleMonitors = mutableListOf<(String) -> Unit>()
-    var status: Status = Status.Starting
+    var status: StatusUpdate = StatusUpdate.Starting
         private set(value) {
             field = value
-            statusListeners.forEach { handler -> handler.invoke(value) }
+            statusUpdate.fire(value)
         }
-    private var statusListeners = mutableListOf<(Status) -> Unit>()
+
+    private val statusUpdate = event<StatusUpdate>()
+    val statusUpdates get() = statusUpdate.stream
+
     private val consoleUntilNow = StringBuilder()
     private var consoleMonitorThread: Thread
 
@@ -76,8 +80,12 @@ class UDPSuperColliderClient private constructor(
                     consoleMonitors.forEach { m -> m.invoke(line + "\n") }
                     consoleUntilNow.appendLine(line)
                     println(line)
-                    if ("SuperCollider 3 server ready." in line) {
-                        status = Status.Listening
+                    if ("*** Welcome to SuperCollider 3.13.0. *** " in line) {
+                        status = StatusUpdate.ReadyToBoot
+                    } else if ("SuperCollider 3 server ready." in line) {
+                        status = StatusUpdate.ServerBooted
+                    } else if ("Server 'localhost' exited" in line) {
+                        status = StatusUpdate.ReadyToBoot
                     }
                 }
             }
@@ -93,10 +101,6 @@ class UDPSuperColliderClient private constructor(
         consoleMonitors.remove(handler)
     }
 
-    fun addStatusListener(handler: (Status) -> Unit) {
-        statusListeners.add(handler)
-    }
-
     fun waitForExit() {
         sclang.waitFor()
     }
@@ -106,10 +110,15 @@ class UDPSuperColliderClient private constructor(
         postAsync("s.quit;")
         postAsync("0.exit;")
         socket.disconnect()
-        status = Status.Quit
+        statusUpdate.fire(StatusUpdate.Exited)
     }
 
-    enum class Status { Starting, Listening, Quit }
+    enum class StatusUpdate {
+        Starting,
+        ReadyToBoot,
+        ServerBooted,
+        Exited
+    }
 
     companion object : PublicProperty<UDPSuperColliderClient> by publicProperty("SuperColliderClient") {
         @JvmStatic
@@ -130,7 +139,6 @@ class UDPSuperColliderClient private constructor(
                 .start()
             sclang.outputStream.write(SETUP_OSC.toByteArray())
             sclang.outputStream.write("\n".toByteArray())
-            /*sclang.outputStream.write("s.boot;\n".toByteArray())*/
             sclang.outputStream.flush()
             val socket = DatagramSocket()
             val localhost = InetAddress.getLocalHost()

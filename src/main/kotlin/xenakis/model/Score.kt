@@ -7,7 +7,6 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import xenakis.impl.Point
 import xenakis.impl.ScWriter
-import xenakis.impl.SuperColliderContext
 import xenakis.ui.format
 import kotlin.math.ceil
 
@@ -223,13 +222,5 @@ data class Score(
         context[UndoManager].finishCompoundEdit()
         addHorizontalGroup(loopObjects)
         addVerticalGroup(loopObjects)
-    }
-
-    fun loadSoundFiles(context: SuperColliderContext) {
-        for (obj in objects) {
-            if (obj is SoundFileObject) {
-                obj.loadBuffer(context)
-            }
-        }
     }
 }

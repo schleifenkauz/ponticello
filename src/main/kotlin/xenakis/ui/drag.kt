@@ -12,11 +12,11 @@ fun Node.setupDragging(
 ) {
     var dragStart: Point? = null
     var oldBounds: Bounds? = null
-    setOnMousePressed { ev ->
+    addEventHandler(MouseEvent.MOUSE_PRESSED) { ev ->
         onPressed()
         ev.consume()
     }
-    setOnMouseDragged { ev ->
+    addEventHandler(MouseEvent.MOUSE_DRAGGED) { ev ->
         val start = dragStart
         if (start == null) {
             dragStart = Point(ev.screenX, ev.screenY)
@@ -28,7 +28,7 @@ fun Node.setupDragging(
         }
         ev.consume()
     }
-    setOnMouseReleased { ev ->
+    addEventHandler(MouseEvent.MOUSE_RELEASED) { ev ->
         onReleased()
         dragStart = null
         oldBounds = null

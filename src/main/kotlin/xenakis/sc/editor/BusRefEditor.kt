@@ -2,12 +2,17 @@ package xenakis.sc.editor
 
 import hextant.context.Context
 import hextant.core.editor.SimpleChoiceEditor
+import hextant.serial.SnapshotAware
+import kotlinx.serialization.Serializable
 import xenakis.sc.Bus
+import xenakis.sc.view.BusRefEditorControl
 import xenakis.ui.XenakisController
 
+@Suppress("SERIALIZER_TYPE_INCOMPATIBLE")
+@Serializable(with = SnapshotAware.Serializer::class)
 class BusRefEditor(context: Context, bus: Bus = Bus.output) : SimpleChoiceEditor<Bus>(context, bus) {
     override fun choices(): List<Bus> =
-        context[XenakisController.currentProject].flowGraph.busses.map { obj -> obj.bus }
+        context[XenakisController.currentProject].flowGraph.busses.map { obj -> obj.bus } + BusRefEditorControl.createNew
 
     override fun toString(choice: Bus): String = when {
         choice.name == "<create-new>" -> "Create new"

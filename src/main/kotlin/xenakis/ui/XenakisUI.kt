@@ -27,12 +27,15 @@ import javafx.scene.paint.Color
 import javafx.stage.Stage
 import javafx.stage.StageStyle
 import org.controlsfx.control.textfield.TextFields
+import reaktive.Observer
 import reaktive.value.binding.map
 import reaktive.value.binding.not
+import reaktive.value.forEach
 import reaktive.value.fx.asObservableValue
 import reaktive.value.now
 import xenakis.model.XenakisProject
 import xenakis.sc.view.SynthDefsEditorControl
+import xenakis.ui.ToolSelector.Tool
 
 class XenakisUI(private val stage: Stage, private val controller: XenakisController) : XenakisListener {
     val project get() = controller.currentProject
@@ -54,7 +57,14 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
     lateinit var player: ScorePlayer
     private lateinit var shellWindow: Stage
 
+    private val objectActionsBar = HBox(5.0)
+    private lateinit var selectedObjectObserver: Observer
+
+    private var displaysProject = false
+
     init {
+        objectActionsBar.alwaysHGrow()
+        objectActionsBar.centerChildrenVertically()
         stage.scene = Scene(Pane())
         stage.scene.initHextantScene(controller.context)
     }
@@ -71,13 +81,21 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
 
         player = ScorePlayer(scoreView, project, controller.client)
         shellWindow = SuperColliderShellController.createShellWindow(controller.client)
+
+        selectedObjectObserver = scoreView.singleSelected.forEach { view ->
+            if (view == null) objectActionsBar.children.clear()
+            else objectActionsBar.children.setAll(view.header)
+        }
+
         stage.scene.root = createLayout()
         stage.sizeToScene()
         stage.isResizable = true
         Platform.runLater { scoreView.displayWholeScore() }
+        displaysProject = true
     }
 
     override fun displayStartupScreen() {
+        displaysProject = false
         val searchField = TextFields.createClearableTextField().apply {
             styleClass("search-field")
             promptText = "Search for project..."
@@ -132,6 +150,7 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
         val horizontalSplitter = SplitPane(leftSplitter, scoreView, rightSplitter)
         horizontalSplitter.setDividerPositions(0.3, 0.8)
         val toolbar = createToolbar()
+        objectActionsBar.prefWidthProperty().bind(toolbar.widthProperty().multiply(0.33))
         for (box in toolbar.children) HBox.setHgrow(box, Priority.ALWAYS)
         VBox.setVgrow(horizontalSplitter, Priority.ALWAYS)
         val layout = VBox(toolbar, horizontalSplitter)
@@ -157,13 +176,22 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
     }
 
     private fun createToolbar(): HBox {
-        val fileBar = createFileBar()
-        val undoRedoBar = createUndoRedoBar()
-        val playerBar = createPlayerBar()
-        val layoutBar = createLayoutBar()
-        val miscBar = createMiscBar()
-        miscBar.alignment = Pos.CENTER_RIGHT
-        return HBox(20.0, fileBar, undoRedoBar, toolSelector, playerBar, layoutBar, miscBar).styleClass("toolbar")
+        val fileBar = createFileBar() styleClass "toolbar-part"
+        val undoRedoBar = createUndoRedoBar() styleClass "toolbar-part"
+        val playerBar = createPlayerBar() styleClass "toolbar-part"
+        val layoutBar = createLayoutBar() styleClass "toolbar-part"
+        val miscBar = createMiscBar() styleClass "toolbar-part"
+        return HBox(
+            35.0,
+            HBox(
+                35.0,
+                fileBar, undoRedoBar, playerBar,
+                toolSelector styleClass "toolbar-part", layoutBar
+            ), HBox(
+                objectActionsBar styleClass "toolbar-part",
+                miscBar
+            )
+        ).styleClass("toolbar")
     }
 
     private fun createUndoRedoBar(): HBox {
@@ -181,8 +209,7 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
 
     private fun createMiscBar() = HBox(5.0,
         Icon.Console.button(action = "Open console") { shellWindow.show() },
-        Icon.Restart.button(action = "Restart server") { controller.restartScSynth() },
-        Icon.AddTime.button(action = "Add time") { controller.addTime(player.playHeadPosition) },
+        Icon.Restart.button(action = "Restart server") { project.rebootServer() },
         Icon.Graph.button(action = "Edit audio flow graph") { flowGraphWindow.show() }
     )
 
@@ -247,20 +274,47 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
 
     private fun addShortcuts(layout: VBox) {
         layout.registerShortcuts {
+            on("Ctrl+S") { controller.saveProject() }
+            on("Ctrl+O") { controller.openProject() }
+            on("Ctrl+N") { controller.createNewProject() }
+            on("Ctrl+E") { controller.exportAsScript() }
+
             on("Ctrl+SPACE") { togglePlay() }
             on("Ctrl+PERIOD") { stop() }
+
+            on("Alt?+P") { toolSelector.select(Tool.Pointer) }
+            on("Alt?+S") { toolSelector.select(Tool.Synth) }
+            on("Alt?+T") { toolSelector.select(Tool.Task) }
+            on("Alt?+E") { toolSelector.select(Tool.Envelope) }
+            on("Alt?+M") { toolSelector.select(Tool.Memo) }
+            on("Alt?+A") { toolSelector.select(Tool.AddTime) }
 
             on("DELETE") { scoreView.removeSelected() }
             on("ESCAPE") {
                 scoreView.clearNewShape()
                 scoreView.deselectAll()
             }
-            on("Ctrl+S") { controller.saveProject() }
-            on("Ctrl+O") { controller.openProject() }
-            on("Ctrl+N") { controller.createNewProject() }
+            on("Ctrl+D") {
+                val view = scoreView.singleSelected.now
+                if (view is SynthObjectView) {
+                    view.openControlAssignment()
+                }
+            }
+            on("Ctrl+M") {
+                scoreView.toggleMuteSelected()
+            }
+            on("Alt+L") {
+                val view = scoreView.singleSelected.now ?: return@on
+                view.createLoop()
+            }
+            on("Alt+SPACE") {
+                val view = scoreView.singleSelected.now ?: return@on
+                view.playMyObject()
+            }
 
-            on("P") { toolSelector.select(ToolSelector.Tool.Pointer) }
             on("F1") { controller.showServerWindow() }
+            on("Alt+C") { shellWindow.show() }
+            on("Alt+G") { flowGraphWindow.show() }
             on("F5") { controller.restartScSynth() }
 
             on("Ctrl?+C") {
@@ -269,11 +323,19 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
         }
     }
 
-    override fun superColliderReady() {
-        if (controller.isProjectOpened) {
+    override fun readyToPlay() {
+        if (displaysProject) {
             playBtn.isDisable = false
             stopBtn.isDisable = false
             recordBtn.isDisable = false
+        }
+    }
+
+    override fun waitingForBoot() {
+        if (displaysProject) {
+            playBtn.isDisable = true
+            stopBtn.isDisable = true
+            recordBtn.isDisable = true
         }
     }
 }

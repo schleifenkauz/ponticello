@@ -1,17 +1,18 @@
 package xenakis.model
 
-import hextant.context.Context
 import hextant.core.editor.ViewManager
+import hextant.serial.SnapshotAware
 import javafx.scene.paint.Color
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonObjectBuilder
 import kotlinx.serialization.json.put
+import reaktive.value.now
 import xenakis.impl.*
 import xenakis.sc.Bus
 import xenakis.sc.ControlSpec
 import xenakis.sc.ParameterDef
+import xenakis.sc.editor.BusRefEditor
 import xenakis.ui.SoundFileObjectView
-import xenakis.ui.XenakisController.Companion.currentProject
 import xenakis.ui.format
 import java.io.File
 import javax.sound.sampled.AudioSystem
@@ -19,7 +20,7 @@ import javax.sound.sampled.AudioSystem
 class SoundFileObject(
     name: String,
     val file: File,
-    var outBus: Bus,
+    var outBus: BusRefEditor,
     var startPos: Double, var rate: Double,
     var envelope: Envelope
 ) : AbstractScoreObject(name) {
@@ -28,7 +29,7 @@ class SoundFileObject(
 
     override val viewManager = ViewManager.createWeakViewManager<SoundFileObjectView>()
 
-    private val bufferName = "~sample_${file.nameWithoutExtension}"
+    private val bufferName = "~sample_${file.nameWithoutExtension}_${hashCode()}"
 
     private val synthName = "~playbuf_${name}_${hashCode()}"
 
@@ -42,15 +43,12 @@ class SoundFileObject(
     override fun getSpec(parameter: String): ControlSpec =
         if (parameter == "amp") ParameterDef.amp.spec else super.getSpec(parameter)
 
-    override fun addToContainer(container: ScoreObjectContainer, context: Context) {
-        super.addToContainer(container, context)
-        if (context[UDPSuperColliderClient].status == UDPSuperColliderClient.Status.Listening) {
-            loadBuffer(context[UDPSuperColliderClient])
-        }
+    override fun serverBooted(context: SuperColliderContext) {
+        loadBuffer(context)
     }
 
-    fun loadBuffer(client: SuperColliderContext) {
-        client.postAsync("if ($bufferName == nil) { $bufferName = Buffer.read(s, ${file.superColliderPath}); };")
+    private fun loadBuffer(context: SuperColliderContext) {
+        context.postAsync("$bufferName = Buffer.read(s, ${file.superColliderPath});")
     }
 
     override fun onRemove() {
@@ -73,7 +71,7 @@ class SoundFileObject(
         append("PlayBuf.ar($bufferName.numChannels, $bufferName, ")
         append("rate: ${rate.format(2)}, ")
         append("startPos: $startPos)")
-        appendLine(" }.play(s, ${outBus.variableName});")
+        appendLine(" }.play(s, ${outBus.result.now.variableName});")
     }
 
     override fun writeStopCode(writer: ScWriter) {
@@ -84,7 +82,7 @@ class SoundFileObject(
 
     override fun JsonObjectBuilder.saveToJson() {
         put("file", file.absolutePath)
-        putSerializableValue("outBus", outBus)
+        putSerializableValue("outBus", outBus.result.now)
         if (startPos != 0.0) {
             put("startPos", startPos)
         }
@@ -109,10 +107,11 @@ class SoundFileObject(
         override fun JsonObject.createFromJson(name: String): ScoreObject {
             val file = getFile("file")
             val outBus = getSerializableValue<Bus>("outBus")!!
+            val busEditor = BusRefEditor(SnapshotAware.Serializer.reconstructionContext, outBus)
             val startPos = getDouble("startPos") ?: 0.0
             val rate = getDouble("rate") ?: 1.0
             val envelope = getSerializableValue<Envelope>("envelope") ?: Envelope.default
-            return SoundFileObject(name, file, outBus, startPos, rate, envelope)
+            return SoundFileObject(name, file, busEditor, startPos, rate, envelope)
         }
     }
 }

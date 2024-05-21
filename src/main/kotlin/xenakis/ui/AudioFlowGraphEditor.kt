@@ -26,7 +26,7 @@ import java.beans.PropertyDescriptor
 import kotlin.math.sign
 import kotlin.random.Random
 
-class AudioFlowGraphEditor(private val graph: AudioFlowGraph, private val context: Context) : Pane() {
+class AudioFlowGraphEditor(val graph: AudioFlowGraph, private val context: Context) : Pane() {
     private var sourceBus: AudioFlowGraph.BusObject? = null
     private var flowArrow: Arrow? = null
     private var dragStart: Point? = null

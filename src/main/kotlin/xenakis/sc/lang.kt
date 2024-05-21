@@ -218,7 +218,11 @@ data class CodeBlock(val variables: List<Variable> = emptyList(), val statements
     override val isValid: Boolean
         get() = variables.all { it.isValid } && statements.all { it.isValid }
 
-    override fun code(writer: ScWriter) = writer.appendGroup { writeCode(this) }
+    override fun code(writer: ScWriter) {
+        if (variables.isNotEmpty() || statements.isNotEmpty()) {
+            writer.appendGroup { writeCode(this) }
+        }
+    }
 
     fun writeCode(writer: ScWriter) = with(writer) {
         if (variables.isNotEmpty()) {

@@ -41,6 +41,8 @@ interface ScoreObject {
 
     fun addToContainer(container: ScoreObjectContainer, context: Context)
 
+    fun serverBooted(context: SuperColliderContext) {}
+
     fun copy(newName: String): ScoreObject
 
     fun clone(name: String, position: ObjectPosition): ScoreObject

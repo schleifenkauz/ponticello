@@ -156,6 +156,7 @@ fun Parent.makeWindow(
         parent?.children?.add(idx, this)
         stage.hide()
     }
+    stage.sizeToScene()
     return stage
 }
 

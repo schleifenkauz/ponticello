@@ -14,7 +14,7 @@ class BusRefEditorControl @ProvideImplementation(ControlFactory::class) construc
     arguments: Bundle
 ) : SimpleChoiceEditorControl<Bus>(editor, arguments) {
     init {
-        root.items.add(createNew)
+        minWidth = 150.0
         root.valueProperty().addListener { _, _, selected ->
             if (selected == createNew) {
                 val flowGraphEditor = editor.context[AudioFlowGraphEditor]
@@ -26,6 +26,6 @@ class BusRefEditorControl @ProvideImplementation(ControlFactory::class) construc
     }
 
     companion object {
-        private val createNew = Bus("<create-new>", Rate.Audio, 0, null)
+        val createNew = Bus("<create-new>", Rate.Audio, 0, null)
     }
 }

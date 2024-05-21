@@ -43,7 +43,6 @@ enum class Icon {
     View,
     Mute,
     Unmute,
-    SelectRange,
     Undo, Redo,
     Memo,
     Color;
@@ -68,6 +67,7 @@ enum class Icon {
             setMinSize(radius * 2, radius * 2)
             setMaxSize(radius * 2, radius * 2)
             setOnAction { onAction(this) }
+            neverHGrow()
             styleClass("icon-button")
         }
 

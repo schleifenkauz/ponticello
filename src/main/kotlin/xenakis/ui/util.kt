@@ -100,7 +100,10 @@ fun menuItem(text: String, action: () -> Unit) = MenuItem(text).also { item ->
 }
 
 fun <N : Node> N.alwaysHGrow() = also { HBox.setHgrow(it, Priority.ALWAYS) }
+fun <N : Node> N.neverHGrow() = also { HBox.setHgrow(it, Priority.NEVER) }
 fun <N : Node> N.alwaysVGrow() = also { VBox.setVgrow(it, Priority.ALWAYS) }
+
+fun hspace(width: Double) = Region().apply { prefWidth = width }
 
 fun infiniteSpace() = Region().alwaysHGrow()
 

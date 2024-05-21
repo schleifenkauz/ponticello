@@ -3,9 +3,9 @@ package xenakis.ui
 import hextant.context.Context
 import hextant.context.createControl
 import hextant.fx.hbox
+import hextant.fx.registerShortcuts
 import hextant.serial.makeRoot
 import javafx.application.Platform
-import javafx.scene.Node
 import reaktive.value.binding.map
 import reaktive.value.fx.asObservableValue
 import reaktive.value.now
@@ -25,13 +25,13 @@ class EnvelopeObjectView(val obj: EnvelopeObject) : ScoreObjectView(obj) {
     override fun init(parent: ScoreView) {
         super.init(parent)
         val btn = Icon.Details.button(action = "Edit Envelope configuration") {
-            showEnvelopeConfig(context, header, obj.name, obj.spec, obj.bus) { name, spec, output ->
+            showEnvelopeConfig(context, obj.name, obj.spec, obj.bus) { name, spec, output ->
                 obj.name = name
                 obj.spec = spec
                 obj.bus = output
             }
         }
-        actions.children.add(0, btn)
+        header.children.add(1, btn)
     }
 
     fun updatedSpec() {
@@ -41,7 +41,6 @@ class EnvelopeObjectView(val obj: EnvelopeObject) : ScoreObjectView(obj) {
     companion object {
         fun showEnvelopeConfig(
             context: Context,
-            parent: Node,
             initialName: String = "",
             initialSpec: NumericalControlSpec = NumericalControlSpec(0.0, 0.0, 1.0, Warp.Linear, 0.1),
             initialBus: Bus = Bus.output,
@@ -69,8 +68,14 @@ class EnvelopeObjectView(val obj: EnvelopeObject) : ScoreObjectView(obj) {
                 spacing = 5.0
                 centerChildrenVertically()
             }
-            val popup = popup(layout) { isAutoHide = false }
-            popup.show(parent)
+            layout.minWidth = 600.0
+            val window = layout.makeWindow(title = "Envelope config", context)
+            layout.registerShortcuts {
+                on("ESCAPE") {
+                    window.hide()
+                }
+            }
+            window.show()
             Platform.runLater { nameControl.requestFocus() }
         }
     }

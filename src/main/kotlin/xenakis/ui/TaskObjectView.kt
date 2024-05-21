@@ -16,13 +16,12 @@ class TaskObjectView(val obj: TaskObject) : ScoreObjectView(obj) {
 
     init {
         styleClass("task-object")
-        contents.styleClass.add("task-object-content")
         codeEditor.styleClass("code-box")
         codeArea.styleClass("code-area")
         setVgrow(codeArea, Priority.SOMETIMES)
         codeArea.prefWidthProperty().bind(codeEditor.prefWidthProperty())
         codeArea.prefHeightProperty().bind(codeEditor.prefHeightProperty())
-        contents.children.add(0, codeArea)
+        children.add(0, codeArea)
         addAction(Icon.ExtraWindow, "Open in separate window") { codeWindow.show() }
     }
 
@@ -30,7 +29,7 @@ class TaskObjectView(val obj: TaskObject) : ScoreObjectView(obj) {
         super.init(parent)
         codeArea.makeWindow(
             "Code: ${obj.name}", context,
-            style = StageStyle.DECORATED, parent = contents
+            style = StageStyle.DECORATED, parent = this
         )
     }
 

@@ -40,6 +40,7 @@ class ControlAssignmentEditor(private val parameter: ParameterDef, val project: 
         comboBox.valueProperty().addListener { _, _, t ->
             detailEditor = detailEditors.getOrPut(t) { t.createDetailInput(parameter, null, project) }
         }
+        comboBox.minWidth = 200.0
     }
 
     fun setControl(control: ParameterControl) {
@@ -184,7 +185,7 @@ class ControlAssignmentEditor(private val parameter: ParameterDef, val project: 
         }
 
         companion object {
-            val all: List<ControlType<*, *>> = listOf(Constant, Knob, Custom, Envelope, BusValue)
+            val all: List<ControlType<*, *>> = listOf(Constant, Knob, Custom, Envelope, BusValue, SingleBusValue)
 
             @Suppress("UNCHECKED_CAST")
             fun <O : ParameterControl> getType(option: O) = when (option) {
@@ -194,6 +195,7 @@ class ControlAssignmentEditor(private val parameter: ParameterDef, val project: 
                 is EnvelopeControl -> Envelope
                 is BusControl -> Bus
                 is BusValueControl -> BusValue
+                is SingleBusValueControl -> SingleBusValue
                 is BufferControl -> Buffer
                 else -> throw AssertionError()
             } as ControlType<O, *>

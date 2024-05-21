@@ -9,6 +9,7 @@ import hextant.undo.UndoManager
 import javafx.application.Platform
 import javafx.stage.FileChooser
 import javafx.stage.Stage
+import reaktive.Observer
 import xenakis.impl.UDPSuperColliderClient
 import xenakis.impl.registerImplementationsFromClasspath
 import xenakis.model.XenakisProject
@@ -38,6 +39,8 @@ class XenakisController(private val primaryStage: Stage) {
         private set
 
     private var _currentProject: XenakisProject? = null
+
+    private lateinit var statusListener: Observer
 
     var currentProject: XenakisProject
         get() = _currentProject ?: error("no project opened")
@@ -76,11 +79,16 @@ class XenakisController(private val primaryStage: Stage) {
         thread(name = "SuperCollider startup thread", isDaemon = true) {
             client = UDPSuperColliderClient.create()
             context[UDPSuperColliderClient] = client
-            client.addStatusListener { status ->
-                if (status == UDPSuperColliderClient.Status.Listening) {
+            statusListener = client.statusUpdates.observe { _, status ->
+                if (status == UDPSuperColliderClient.StatusUpdate.ServerBooted) {
                     isSuperColliderReady = true
                     Platform.runLater {
-                        listeners { superColliderReady() }
+                        listeners { readyToPlay() }
+                    }
+                } else if (status == UDPSuperColliderClient.StatusUpdate.ReadyToBoot) {
+                    isSuperColliderReady = false
+                    Platform.runLater {
+                        listeners { waitingForBoot() }
                     }
                 }
             }
@@ -202,12 +210,6 @@ class XenakisController(private val primaryStage: Stage) {
 
     private fun goToStartupScreen() {
         listeners { displayStartupScreen() }
-    }
-
-    fun addTime(location: Double) {
-        val amount = showDoubleInputDialog("How much time to add", context, 0.0..1000.0, 10.0) ?: return
-        val score = currentProject.score
-        score.addTime(location, amount)
     }
 
     fun quitApplication() {

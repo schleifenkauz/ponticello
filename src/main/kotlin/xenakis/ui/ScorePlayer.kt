@@ -16,6 +16,7 @@ class ScorePlayer(
     var playHeadPosition = 0.0
         private set
 
+    @Suppress("InconsistentCommentForJavaParameter")
     val playHead = Line(
         /* startX = */ PLAY_HEAD_WIDTH,
         /* startY = */ 20.0,
@@ -31,16 +32,16 @@ class ScorePlayer(
 
     private fun setupIndicator() {
         playHead.strokeWidthProperty().bind(Bindings.divide(PLAY_HEAD_WIDTH, scoreView.scaleXProperty()))
-        playHead.setupDragging { _, old, dx, _ ->
-            if (!isPlaying) {
-                playHead.layoutX = (old.minX + dx).coerceIn(PLAY_HEAD_WIDTH, scoreView.width - PLAY_HEAD_WIDTH)
-                playHeadPosition = scoreView.getTime(playHead.layoutX)
-            }
-        }
         playHead.setOnMouseClicked {
             playHead.toFront()
         }
         playHead.endYProperty().bind(scoreView.heightProperty().subtract(20.0))
+    }
+
+    fun setPlayHeadX(x: Double) {
+        if (isPlaying) return
+        playHead.layoutX = x
+        playHeadPosition = scoreView.getTime(playHead.layoutX)
     }
 
     var isPlaying = false

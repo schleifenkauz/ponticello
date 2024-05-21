@@ -11,9 +11,10 @@ import xenakis.impl.Point
 import xenakis.impl.dist
 import xenakis.model.Envelope
 import xenakis.model.EnvelopeEdit
-import xenakis.model.AbstractScoreObject
 import xenakis.model.ScoreObject
-import xenakis.sc.*
+import xenakis.sc.LinearTransformation
+import xenakis.sc.NumericalControlSpec
+import xenakis.sc.mapOnto
 
 class EnvelopeEditor(
     private val parameterName: String, private val envelope: Envelope,
@@ -143,7 +144,7 @@ class EnvelopeEditor(
         handle.stroke = color.darker()
         handle.strokeWidthProperty().bind(handle.hoverProperty().map { hover -> if (hover) 2.0 else 0.0 })
         handle.setupDragging(
-            onPressed = { scoreView.context[UndoManager].beginCompoundEdit() },
+            onPressed = { scoreView.context[UndoManager].beginCompoundEdit("Move envelope point") },
             onReleased = { scoreView.context[UndoManager].finishCompoundEdit("Move envelope point") }
         ) { ev, old, dx, dy ->
             val idx = handles.indexOf(handle)

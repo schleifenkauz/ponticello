@@ -8,11 +8,18 @@ import xenakis.impl.getDouble
 import xenakis.impl.getString
 import xenakis.ui.MemoObjectView
 
-class MemoObject(name: String, text: String, var width: Double) : AbstractScoreObject(name) {
+class MemoObject(name: String, text: String, width: Double) : AbstractScoreObject(name) {
     override val type: String
         get() = "memo"
 
     override val viewManager = ViewManager.createWeakViewManager<MemoObjectView>()
+
+    var width = width
+        set(value) {
+            if (field == value) return
+            field = value
+            viewManager.notifyViews { resized() }
+        }
 
     var text = text
         set(value) {
