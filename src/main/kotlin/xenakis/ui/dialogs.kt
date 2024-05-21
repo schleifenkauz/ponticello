@@ -101,7 +101,8 @@ fun <T : Any> Node.showDialog(
     buttonTypes: List<ButtonType> = listOf(ButtonType.OK, ButtonType.CANCEL),
     confirmButton: ButtonType = ButtonType.OK,
     style: StageStyle = StageStyle.UNDECORATED,
-    applyStylesheets: (scene: Scene) -> Unit,
+    applyStylesheets: (scene: Scene) -> Unit = {},
+    extraConfig: Dialog<T>.() -> Unit = {},
     resultConverter: (btn: ButtonType) -> T? = { null }
 ) = Dialog<T>().run {
     initStyle(style)
@@ -110,6 +111,7 @@ fun <T : Any> Node.showDialog(
     dialogPane.content = this@showDialog
     dialogPane.buttonTypes.setAll(buttonTypes)
     setDefaultButton(confirmButton)
+    extraConfig()
     setResultConverter { btn -> if (btn != null && btn != ButtonType.CANCEL) resultConverter(btn) else null }
     showAndWait().getOrNull()
 }
@@ -120,10 +122,12 @@ fun <T : Any> Node.showDialog(
     confirmButton: ButtonType = ButtonType.OK,
     buttonTypes: List<ButtonType> = listOf(confirmButton, ButtonType.CANCEL),
     style: StageStyle = StageStyle.UNDECORATED,
+    extraConfig: Dialog<T>.() -> Unit = {},
     resultConverter: (btn: ButtonType) -> T? = { null }
 ) = this.showDialog(
     title, buttonTypes, confirmButton,
-    style, { scene -> context[Stylesheets].manage(scene) }, resultConverter
+    style, { scene -> context[Stylesheets].manage(scene) },
+    extraConfig, resultConverter
 )
 
 fun Parent.makeWindow(

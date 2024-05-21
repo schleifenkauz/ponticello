@@ -7,7 +7,9 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import xenakis.impl.Point
 import xenakis.impl.ScWriter
+import xenakis.impl.SuperColliderContext
 import xenakis.ui.format
+import kotlin.math.ceil
 
 @Serializable
 data class Score(
@@ -202,5 +204,32 @@ data class Score(
             }
         }
         undo.finishCompoundEdit("Delete time range")
+    }
+
+    fun loop(obj: ScoreObject, period: Double, repetitions: Int) {
+        context[UndoManager].beginCompoundEdit("Loop object")
+        var t = obj.start
+        val layers = ceil(obj.duration / period).toInt()
+        val loopObjects = mutableSetOf(obj)
+        for (n in 1..repetitions) {
+            t += period
+            val layer = n % layers
+            val y = obj.y + (layer * obj.height)
+            val pos = ObjectPosition(t, y)
+            val clone = obj.clone("${obj.name}-loop$n", pos)
+            addObject(clone)
+            loopObjects.add(clone)
+        }
+        context[UndoManager].finishCompoundEdit()
+        addHorizontalGroup(loopObjects)
+        addVerticalGroup(loopObjects)
+    }
+
+    fun loadSoundFiles(context: SuperColliderContext) {
+        for (obj in objects) {
+            if (obj is SoundFileObject) {
+                obj.loadBuffer(context)
+            }
+        }
     }
 }

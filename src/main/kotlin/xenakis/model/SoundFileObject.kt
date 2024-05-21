@@ -11,6 +11,7 @@ import xenakis.sc.Bus
 import xenakis.sc.ControlSpec
 import xenakis.sc.ParameterDef
 import xenakis.ui.SoundFileObjectView
+import xenakis.ui.XenakisController.Companion.currentProject
 import xenakis.ui.format
 import java.io.File
 import javax.sound.sampled.AudioSystem
@@ -43,11 +44,13 @@ class SoundFileObject(
 
     override fun addToContainer(container: ScoreObjectContainer, context: Context) {
         super.addToContainer(container, context)
-        loadBuffer(context[UDPSuperColliderClient])
+        if (context[UDPSuperColliderClient].status == UDPSuperColliderClient.Status.Listening) {
+            loadBuffer(context[UDPSuperColliderClient])
+        }
     }
 
-    private fun loadBuffer(client: UDPSuperColliderClient) {
-        client.postAsync("if ($bufferName == nil) { $bufferName = Buffer.read(s, ${file.superColliderPath}); }")
+    fun loadBuffer(client: SuperColliderContext) {
+        client.postAsync("if ($bufferName == nil) { $bufferName = Buffer.read(s, ${file.superColliderPath}); };")
     }
 
     override fun onRemove() {
@@ -55,13 +58,13 @@ class SoundFileObject(
         freeBuffer(client)
     }
 
-    fun reloadFile() {
-        val client = context[UDPSuperColliderClient]
+    fun reloadFile(context: SuperColliderContext) {
+        val client = context
         freeBuffer(client)
         loadBuffer(client)
     }
 
-    private fun freeBuffer(client: UDPSuperColliderClient) {
+    private fun freeBuffer(client: SuperColliderContext) {
         client.postAsync("$bufferName.free; $bufferName = nil;")
     }
 

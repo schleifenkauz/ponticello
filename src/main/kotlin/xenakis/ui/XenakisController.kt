@@ -5,6 +5,7 @@ import bundles.set
 import hextant.context.Context
 import hextant.core.HextantCore
 import hextant.plugins.PluginBuilder
+import hextant.undo.UndoManager
 import javafx.application.Platform
 import javafx.stage.FileChooser
 import javafx.stage.Stage
@@ -42,6 +43,7 @@ class XenakisController(private val primaryStage: Stage) {
         get() = _currentProject ?: error("no project opened")
         private set(project) {
             _currentProject = project
+            context[UndoManager] = UndoManager.newInstance()
             context[XenakisController.currentProject] = project
             prefs.put("lastFile", project.projectFile.absolutePath)
             addRecentProject(project.projectFile)

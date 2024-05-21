@@ -182,7 +182,6 @@ class ScoreView(
     }
 
     override fun addedObject(obj: ScoreObject) {
-        obj.addToContainer(score, context)
         val view = getObjectView(obj)
         view.addEventHandler(MouseEvent.MOUSE_CLICKED) { ev ->
             view.toFront()

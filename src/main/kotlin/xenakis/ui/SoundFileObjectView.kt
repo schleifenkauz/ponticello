@@ -58,7 +58,7 @@ class SoundFileObjectView(val obj: SoundFileObject) : ScoreObjectView(obj) {
     }
 
     override fun init(parent: ScoreView) {
-        super.repaint()
+        super.init(parent)
         displayWaveForm()
     }
 

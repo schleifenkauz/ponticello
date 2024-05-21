@@ -1,15 +1,18 @@
 package xenakis.ui
 
 import hextant.context.Context
+import hextant.fx.add
+import hextant.fx.children
+import hextant.fx.label
 import hextant.undo.UndoManager
 import javafx.beans.property.SimpleBooleanProperty
 import javafx.css.PseudoClass
 import javafx.geometry.BoundingBox
 import javafx.geometry.Bounds
 import javafx.scene.Cursor
-import javafx.scene.control.Button
-import javafx.scene.control.Label
+import javafx.scene.control.*
 import javafx.scene.input.MouseEvent
+import javafx.scene.layout.GridPane
 import javafx.scene.layout.HBox
 import javafx.scene.layout.Pane
 import javafx.scene.layout.Priority
@@ -56,12 +59,38 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
         contents.alwaysVGrow()
     }
 
-    protected open val supportedActions get() = listOf(Icon.Delete, Icon.Play, Icon.Mute)
+    protected open val supportedActions get() = listOf(Icon.Delete, Icon.Play, Icon.Mute, Icon.Repeat)
 
     private fun setupHeader() {
         header.styleClass("score-object-header")
         nameLabel.textFill = WHITE
         header.children.setAll(nameLabel, infiniteSpace(), actions)
+        if (Icon.Repeat in supportedActions) addAction(Icon.Repeat, "Loop this object") {
+            val periodInput = TextField(myObject.duration.format(2))
+            val numberOfRepeats = Spinner<Int>(1, 1000, 1, 1)
+            val box = GridPane().apply {
+                add(label("Loop period (s): "), 0, 0)
+                add(periodInput, 0, 1)
+                add(label("Number of repetitions"), 1, 0)
+                add(numberOfRepeats, 1, 1)
+            }
+            box.showDialog(
+                "Loop configuration", context,
+                extraConfig = {
+                    val btnOk = dialogPane.lookupButton(ButtonType.OK)
+                    btnOk.disableProperty().bind(periodInput.textProperty().map { txt ->
+                        val v = txt.toDoubleOrNull()
+                        v == null || v == 0.0
+                    })
+                }
+            ) { btn ->
+                if (btn == ButtonType.OK) {
+                    val period = periodInput.text.toDouble()
+                    val repetitions = numberOfRepeats.value
+                    scoreView.score.loop(myObject, period, repetitions)
+                }
+            }
+        }
         if (Icon.Mute in supportedActions) {
             val icon = if (myObject.muted) Icon.Mute else Icon.Unmute
             muteUnmuteBtn = addAction(icon, "Toggle mute") {
@@ -169,11 +198,11 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
         }
     }
 
-    fun setCloneOfSelected(value: Boolean) {
+    private fun setCloneOfSelected(value: Boolean) {
         contents.pseudoClassStateChanged(PseudoClass.getPseudoClass("clone-of-selected"), value)
     }
 
-    fun setOriginalOfSelected(value: Boolean) {
+    private fun setOriginalOfSelected(value: Boolean) {
         contents.pseudoClassStateChanged(PseudoClass.getPseudoClass("original-of-selected"), value)
     }
 

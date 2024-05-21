@@ -62,3 +62,5 @@
 - maybe get rid of object header and move it to toolbar?
     - where to grab memo objects?
 - integrate close, maximize, minimize into top toolbar and remove window decoration
+- move play-head on (double-)click
+- have second semi-transparent vertical line follow the cursor position

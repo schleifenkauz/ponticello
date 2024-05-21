@@ -92,6 +92,7 @@ class XenakisProject private constructor(
                     flowGraph.allocateBusses(this@wrap)
                     synthDefs.reload(this@wrap)
                     buffers.loadBuffers(this@wrap)
+                    score.loadSoundFiles(this@wrap)
                     postAsync(serverSetup.editor.result.now.code)
                 }
                 appendLine(".play;")
