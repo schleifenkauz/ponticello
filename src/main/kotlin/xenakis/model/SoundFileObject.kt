@@ -71,7 +71,8 @@ class SoundFileObject(
         append("PlayBuf.ar($bufferName.numChannels, $bufferName, ")
         append("rate: ${rate.format(2)}, ")
         append("startPos: $startPos)")
-        appendLine(" }.play(s, ${outBus.result.now.variableName});")
+        append(" * ${envelope.code(offset, duration, doneAction = "Done.none")} }")
+        appendLine(".play(s, ${outBus.result.now.variableName});")
     }
 
     override fun writeStopCode(writer: ScWriter) {

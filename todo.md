@@ -47,6 +47,10 @@
 
 ### Integrate Buffers and SynthDefs views into startup script?
 
+### Documentation window
+
+- `Ctrl+D` on a class name should open a documentation browser popup
+
 ### Copying and pasting score objects
 
 - ability to copy and paste whole time ranges
@@ -65,4 +69,5 @@
 
 ## Nice to have
 
+- better layout for synth def parameters
 - integrate close, maximize, minimize into top toolbar and remove window decoration

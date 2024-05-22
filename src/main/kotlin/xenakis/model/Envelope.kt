@@ -15,7 +15,7 @@ data class Envelope(private val _points: MutableList<Point>, val curve: Warp) {
 
     val points: List<Point> get() = _points
 
-    fun code(offset: Double, dur: Double): String {
+    fun code(offset: Double, dur: Double, doneAction: String = "Done.freeSelf"): String {
         require(offset <= dur)
         var ps = points.map { (x, y) -> Point(x * dur, y) }
         if (offset > 0.0) {
@@ -32,7 +32,7 @@ data class Envelope(private val _points: MutableList<Point>, val curve: Warp) {
         }
         val levels = ps.map { it.y.format(2) }
         val times = ps.zipWithNext { a, b -> (b.x - a.x).format(2) }
-        return "EnvGen.kr(Env.new(levels: $levels, times: $times, curve: $curve), doneAction: Done.freeSelf)"
+        return "EnvGen.kr(Env.new(levels: $levels, times: $times, curve: $curve), doneAction: $doneAction)"
     }
 
     fun clone() = copy()
