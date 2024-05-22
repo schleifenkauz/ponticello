@@ -481,12 +481,12 @@ Slider.control-detail-editor {
 
 /*noinspection CssInvalidPseudoSelector*/
 .score-object:clone-of-selected {
-    -fx-background-color: #120012 !important;
+    -fx-background-color: #220022 !important;
 }
 
 /*noinspection CssInvalidPseudoSelector*/
 .score-object:original-of-selected {
-    -fx-background-color: #001200 !important;
+    -fx-background-color: #002200 !important;
 }
 
 .toolbar-part {
@@ -499,4 +499,13 @@ Slider.control-detail-editor {
 
 .toolbar-part:hover {
     -fx-background-color: rgba(0, 0, 0, 0.25);
+}
+
+.chain-arrow {
+    -fx-stroke-width: 3px;
+    -fx-stroke: gray;
+}
+
+.chain-arrow:hover {
+    -fx-stroke-width: 7px;
 }

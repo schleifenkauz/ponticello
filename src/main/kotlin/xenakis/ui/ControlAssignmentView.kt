@@ -1,7 +1,6 @@
 package xenakis.ui
 
 import javafx.scene.layout.VBox
-import xenakis.model.AbstractScoreObject
 import xenakis.model.ScoreObject
 import xenakis.model.SynthObject
 import xenakis.model.XenakisProject
@@ -15,7 +14,7 @@ class ControlAssignmentView(
     private val editors = mutableListOf<ControlAssignmentEditor>()
 
     init {
-        prefWidth = 420.0
+        prefWidth = 500.0
         for (control in obj.controls) {
             val param = parameterizedObject.getParameter(control.parameter)
             val editor = ControlAssignmentEditor(param, project)

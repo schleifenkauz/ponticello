@@ -26,7 +26,7 @@ sealed class AbstractScoreObject(name: String) : ScoreObject {
             viewManager.notifyViews { renamedObject() }
         }
 
-    final override val position: ObjectPosition = ObjectPosition()
+    final override val position: ObjectPosition = ObjectPosition(this)
     final override var duration: Double = 0.0
         set(value) {
             if (value == field) return
@@ -67,6 +67,9 @@ sealed class AbstractScoreObject(name: String) : ScoreObject {
             viewManager.notifyViews { reassignedControls() }
         }
 
+    final override var nameOfNextInChain: String? = null
+    final override var nextInChain: ClonedObject? = null
+
     override val associatedEnvelopes: List<EnvelopeControl> get() = controls.filterIsInstance<EnvelopeControl>()
 
     lateinit var context: Context
@@ -81,6 +84,7 @@ sealed class AbstractScoreObject(name: String) : ScoreObject {
     }
 
     override fun addToContainer(container: ScoreObjectContainer, context: Context) {
+        super.addToContainer(container, context)
         this.context = context
         this.container = container
         initialized = true
@@ -90,7 +94,7 @@ sealed class AbstractScoreObject(name: String) : ScoreObject {
 
     override fun writeStopCode(writer: ScWriter) {}
 
-    override fun clone(name: String, position: ObjectPosition): ScoreObject = ClonedObject(name, this, position)
+    override fun clone(name: String): ClonedObject = ClonedObject(name, this)
 
     protected abstract fun copy(): ScoreObject
 

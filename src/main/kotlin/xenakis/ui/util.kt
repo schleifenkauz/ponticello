@@ -7,15 +7,10 @@ import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.value.ObservableValue
 import javafx.css.PseudoClass
 import javafx.event.ActionEvent
+import javafx.geometry.Bounds
 import javafx.geometry.Pos
 import javafx.scene.Node
-import javafx.scene.control.Button
-import javafx.scene.control.ButtonType
-import javafx.scene.control.DialogPane
-import javafx.scene.control.MenuItem
-import javafx.scene.control.RadioButton
-import javafx.scene.control.TextField
-import javafx.scene.control.ToggleGroup
+import javafx.scene.control.*
 import javafx.scene.input.DragEvent
 import javafx.scene.input.TransferMode
 import javafx.scene.layout.*
@@ -24,7 +19,7 @@ import javafx.stage.Popup
 import org.controlsfx.glyphfont.FontAwesome
 import org.controlsfx.glyphfont.Glyph
 import java.io.File
-import java.util.Optional
+import java.util.*
 import kotlin.math.ceil
 import kotlin.math.log10
 import kotlin.math.pow
@@ -53,10 +48,10 @@ fun <N : Node> N.styleClass(vararg classes: String) = also { it.styleClass.addAl
 infix fun <N : Node> N.styleClass(name: String) = also { it.styleClass.add(name) }
 
 fun button(text: String = "", onAction: (ev: ActionEvent) -> Unit) =
-    Button(text).also { btn -> btn.setOnAction(onAction) }
+    Button(text).also { btn -> btn.onAction = onAction }
 
 fun button(glyph: FontAwesome.Glyph, onAction: (ev: ActionEvent) -> Unit) =
-    Button(null, Glyph("FontAwesome", glyph)).also { btn -> btn.setOnAction(onAction) }
+    Button(null, Glyph("FontAwesome", glyph)).also { btn -> btn.onAction = onAction }
 
 fun textField(text: String = "", config: TextField.() -> Unit) = TextField(text).apply(config)
 
@@ -180,3 +175,5 @@ private fun hasFile(ev: DragEvent, exactlyOne: Boolean, extension: String): Bool
 
 fun solidBorder(fill: Color, width: Double = 1.0, radius: Double = 0.0) =
     Border(BorderStroke(fill, BorderStrokeStyle.SOLID, CornerRadii(radius), BorderWidths(width)))
+
+val Bounds.middleY get() = (minY + maxY) / 2

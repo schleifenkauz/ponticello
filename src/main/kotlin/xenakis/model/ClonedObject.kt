@@ -12,13 +12,13 @@ import xenakis.ui.ScoreObjectView
 class ClonedObject(
     override var name: String,
     private val originalName: String,
-    override val position: ObjectPosition = ObjectPosition()
 ) : ScoreObject {
-    constructor(name: String, original: ScoreObject, position: ObjectPosition) : this(name, original.name, position) {
+    constructor(name: String, original: ScoreObject) : this(name, original.name) {
         this.original = original
         resolved = true
     }
 
+    override val position: ObjectPosition = ObjectPosition(this)
     lateinit var original: ScoreObject
         private set
 
@@ -30,6 +30,9 @@ class ClonedObject(
     override var start: Double by position::start
     override var y: Double by position::y
 
+    override var nameOfNextInChain: String? = null
+    override var nextInChain: ClonedObject? = null
+
     override fun JsonObjectBuilder.saveToJson() {
         put("original", original.name)
     }
@@ -38,6 +41,7 @@ class ClonedObject(
         get() = original.container
 
     override fun addToContainer(container: ScoreObjectContainer, context: Context) {
+        super.addToContainer(container, context)
         if (!resolved) {
             original = container.getObject(originalName)
             resolved = true
@@ -59,9 +63,9 @@ class ClonedObject(
 
     override fun play(client: UDPSuperColliderClient) = original.play(client)
 
-    override fun copy(newName: String): ScoreObject = ClonedObject(newName, original, position.copy())
+    override fun copy(newName: String): ScoreObject = original.copy(newName)
 
-    override fun clone(name: String, position: ObjectPosition): ScoreObject = ClonedObject(name, original, position)
+    override fun clone(name: String): ClonedObject = ClonedObject(name, original)
 
     override fun addView(view: ScoreObjectView) {
         original.addView(view)

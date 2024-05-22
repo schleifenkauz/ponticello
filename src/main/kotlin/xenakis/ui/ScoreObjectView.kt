@@ -236,8 +236,7 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
                     scoreView.getObjectView(copy)
                 } else if (ev.isControlDown) {
                     val clone = myObject.clone(
-                        name = scoreView.score.nameForClone(myObject),
-                        myObject.position.copy()
+                        name = scoreView.score.nameForClone(myObject)
                     )
                     context[UndoManager].beginCompoundEdit("Clone object")
                     scoreView.score.addObject(clone)
@@ -290,7 +289,7 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
         scoreView.score.moveObject(myObject, scoreView.getTime(x), y)
     }
 
-    override fun moved(start: Double, y: Double) {
+    override fun moved(obj: ScoreObject, start: Double, y: Double) {
         relocate(scoreView.getX(myObject.start), myObject.y)
     }
 

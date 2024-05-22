@@ -20,7 +20,7 @@ import xenakis.sc.view.IdentifierEditorControl
 
 class EnvelopeObjectView(val obj: EnvelopeObject) : ScoreObjectView(obj) {
     override val supportedActions: List<Icon>
-        get() = listOf(Icon.Delete)
+        get() = listOf(Icon.Delete, Icon.Repeat)
 
     override fun init(parent: ScoreView) {
         super.init(parent)

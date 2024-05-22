@@ -18,6 +18,8 @@ class Arrow(
     private var endX: Double, private var endY: Double,
     private val arrowHeadSize: Double = DEFAULT_ARROW_HEAD_SIZE
 ) : Path() {
+    constructor() : this(0.0, 0.0, 0.0, 0.0)
+
     init {
         strokeProperty().bind(fillProperty())
         fill = Color.BLACK

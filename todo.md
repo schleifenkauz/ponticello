@@ -16,11 +16,12 @@
 
 - maybe have a configurable playbuf-synth (additional parameters, filters, etc.)
     - defaults to simple PlayBuf
-- ability to cut into two separate objects
 - simple effects (e.g. reverse)
 - spectral view
 
 ### how to react to changes of synth definitions?
+
+### object cutting tool
 
 ### completion
 
@@ -38,12 +39,6 @@
 - main use is in combination with loops
 - only synth-objects and sound-file-objects can be children? (also task objects?)
     - also compound-objects???
-
-### Loops
-
-- put original and clones in their own layout group
-- connect objects with arrows?
-  - removing arrows means disconnecting the references, so that incremental changes to the loop can be made
 
 ### Integrate Buffers and SynthDefs views into startup script?
 

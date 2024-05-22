@@ -16,6 +16,7 @@ import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
 import reaktive.value.ReactiveValue
 import reaktive.value.reactiveVariable
+import xenakis.impl.Arrow
 import xenakis.impl.step
 import xenakis.model.*
 import xenakis.sc.Identifier
@@ -38,6 +39,8 @@ class ScoreView(
     var timeSnap: Double = 0.1
     private var displayStart: Double = 0.0
     private var displayEnd: Double = 0.0
+    private val outgoingArrows = mutableMapOf<ScoreObjectView, Pair<Arrow, ScoreObjectView>>()
+    private val ingoingArrows = mutableMapOf<ScoreObjectView, Pair<Arrow, ScoreObjectView>>()
 
     val pixelsPerSecond get() = width / (displayEnd - displayStart)
 
@@ -57,7 +60,6 @@ class ScoreView(
         listenForEvents()
         score.addListener(this)
         styleClass.add("score-view")
-        widthProperty().addListener { _, old, new -> onResize(old.toDouble(), new.toDouble()) }
     }
 
     private fun onResize(old: Double, new: Double) {
@@ -69,6 +71,7 @@ class ScoreView(
     fun displayWholeScore() {
         displayStart = 0.0
         displayEnd = score.objects.maxOfOrNull { obj -> obj.start + obj.duration } ?: 60.0
+        widthProperty().addListener { _, old, new -> onResize(old.toDouble(), new.toDouble()) }
         repaint()
     }
 
@@ -106,6 +109,10 @@ class ScoreView(
             view.prefWidth = view.getDisplayWidth()
             view.relocate(getX(obj.start), obj.y)
             children.add(view)
+        }
+        for ((_, v) in outgoingArrows) {
+            val (arr, _) = v
+            children.add(arr)
         }
     }
 
@@ -221,6 +228,40 @@ class ScoreView(
     override fun removedObject(obj: ScoreObject) {
         val view = views.remove(obj) ?: return
         children.remove(view)
+        ingoingArrows.remove(view)?.let { (arr, _) -> children.remove(arr) }
+        outgoingArrows.remove(view)?.let { (arr, _) -> children.remove(arr) }
+    }
+
+    override fun chained(previous: ScoreObject, next: ScoreObject) {
+        val prevView = getObjectView(previous)
+        val nextView = getObjectView(next)
+        val arrow = Arrow() styleClass "chain-arrow"
+        arrow.setOnMouseClicked { ev ->
+            if (ev.button == MouseButton.SECONDARY) {
+                score.unchain(previous)
+            }
+        }
+        paintArrow(arrow, prevView, nextView)
+        outgoingArrows[prevView] = arrow to nextView
+        ingoingArrows[nextView] = arrow to prevView
+        children.add(arrow)
+    }
+
+    override fun unchained(previous: ScoreObject, next: ScoreObject) {
+        val prevView = getObjectView(previous)
+        val (_, arrow) = outgoingArrows.remove(prevView) ?: error("$previous was not chained to $next")
+        children.remove(arrow)
+    }
+
+    private fun paintArrow(arr: Arrow, prev: ScoreObjectView, nxt: ScoreObjectView) {
+        arr.setStart(prev.boundsInParent.maxX, prev.boundsInParent.middleY)
+        arr.setEnd(nxt.boundsInParent.minX, nxt.boundsInParent.middleY)
+        prev.boundsInParentProperty().addListener { _, _, bounds ->
+            arr.setStart(bounds.maxX, bounds.middleY)
+        }
+        nxt.boundsInParentProperty().addListener { _, _, bounds ->
+            arr.setEnd(bounds.minX, bounds.middleY)
+        }
     }
 
     fun getX(time: Double) = (time - displayStart) * pixelsPerSecond
@@ -426,6 +467,11 @@ class ScoreView(
             children.remove(newObjectArea!!)
             newObjectArea = null
         }
+    }
+
+    fun selectAll() {
+        deselectAll()
+        for ((_, v) in views) select(v, addToSelection = true)
     }
 
     fun removeSelected() {

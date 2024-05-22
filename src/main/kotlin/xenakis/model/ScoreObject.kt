@@ -32,6 +32,9 @@ interface ScoreObject {
 
     var controls: List<ParameterControl>
 
+    var nameOfNextInChain: String?
+    var nextInChain: ClonedObject?
+
     val associatedEnvelopes: List<EnvelopeControl>
     fun getSpec(parameter: String): ControlSpec
 
@@ -39,13 +42,18 @@ interface ScoreObject {
     fun writeStopCode(writer: ScWriter)
     fun play(client: UDPSuperColliderClient)
 
-    fun addToContainer(container: ScoreObjectContainer, context: Context)
+    fun addToContainer(container: ScoreObjectContainer, context: Context) {
+        if (nameOfNextInChain != null) {
+            nextInChain = container.getObject(nameOfNextInChain!!) as ClonedObject
+            nameOfNextInChain = null
+        }
+    }
 
     fun serverBooted(context: SuperColliderContext) {}
 
     fun copy(newName: String): ScoreObject
 
-    fun clone(name: String, position: ObjectPosition): ScoreObject
+    fun clone(name: String): ClonedObject
 
     fun addView(view: ScoreObjectView)
 
@@ -81,6 +89,8 @@ interface ScoreObject {
             val obj = ser.run { json.createFromJson(name) }
             obj.position.start = json.getDouble("start") ?: 0.0
             obj.position.y = json.getDouble("y") ?: 0.0
+            obj.nameOfNextInChain = json.getString("next")
+
             if (type != "clone") {
                 obj.duration = json.getDouble("duration") ?: 0.0
                 obj.height = json.getDouble("height") ?: 0.0
@@ -99,6 +109,7 @@ interface ScoreObject {
                 value.run { saveToJson() }
                 if (value.start != 0.0) put("start", value.start)
                 if (value.y != 0.0) put("y", value.y)
+                if (value.nextInChain != null) put("next", value.nextInChain!!.name)
                 if (type != "clone") {
                     if (value.duration != 0.0) put("duration", value.duration)
                     if (value.height != 0.0) put("height", value.height)

@@ -1,5 +1,7 @@
 package xenakis.ui
 
+import xenakis.model.ScoreObject
+
 interface PositionListener {
-    fun moved(start: Double, y: Double)
+    fun moved(obj: ScoreObject, start: Double, y: Double)
 }

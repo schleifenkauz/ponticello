@@ -54,6 +54,8 @@ data class Score(
         views.addView(listener)
         for (obj in objects) {
             listener.addedObject(obj)
+            val nxt = obj.nextInChain
+            if (nxt != null) listener.chained(obj, nxt)
         }
     }
 
@@ -115,12 +117,39 @@ data class Score(
         undo.record(ScoreEdit.MoveObject(obj, Point(obj.start, obj.y), Point(newStart, newY), this))
         val dt = newStart - obj.start
         val dy = newY - obj.y
-        for (o in verticalGroups[obj] ?: setOf(obj)) {
-            o.position.y += dy
+        val vert = verticalGroups[obj] ?: setOf(obj)
+        val hor = horizontalGroups[obj] ?: setOf(obj)
+        for (o in vert) o.position.y += dy
+        for (o in hor) o.position.start += dt
+    }
+
+    private fun chain(previous: ScoreObject, next: ClonedObject) {
+        previous.nextInChain = next
+        views.notifyViews { chained(previous, next) }
+    }
+
+    fun unchain(previous: ScoreObject) {
+        val nxt = previous.nextInChain ?: return
+        previous.nextInChain = null
+        views.notifyViews { unchained(previous, nxt) }
+        val copy = nxt.original.copy(nxt.name)
+        copy.position.set(nxt.position)
+        replace(nxt, copy)
+        var prev = copy
+        var obj = nxt
+        while (true) {
+            obj = obj.nextInChain ?: break
+            val new = ClonedObject(obj.name, original = copy)
+            new.position.set(obj.position)
+            replace(obj, new)
+            chain(prev, new)
+            prev = new
         }
-        for (o in horizontalGroups[obj] ?: setOf(obj)) {
-            o.position.start += dt
-        }
+    }
+
+    private fun replace(old: ScoreObject, new: ScoreObject) {
+        removeObject(old)
+        addObject(new)
     }
 
     fun addVerticalGroup(objects: Collection<ScoreObject>) {
@@ -209,18 +238,17 @@ data class Score(
         context[UndoManager].beginCompoundEdit("Loop object")
         var t = obj.start
         val layers = ceil(obj.duration / period).toInt()
-        val loopObjects = mutableSetOf(obj)
+        var prev = obj
         for (n in 1..repetitions) {
             t += period
             val layer = n % layers
             val y = obj.y + (layer * obj.height)
-            val pos = ObjectPosition(t, y)
-            val clone = obj.clone("${obj.name}-loop$n", pos)
+            val clone = obj.clone("${obj.name}_loop$n")
+            clone.position.set(t, y)
             addObject(clone)
-            loopObjects.add(clone)
+            chain(prev, clone)
+            prev = clone
         }
         context[UndoManager].finishCompoundEdit()
-        addHorizontalGroup(loopObjects)
-        addVerticalGroup(loopObjects)
     }
 }

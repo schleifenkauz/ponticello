@@ -24,7 +24,7 @@ data class EnvelopeControl(
     @Serializable(with = ColorSerializer::class) val displayColor: Color,
     val display: Boolean
 ) : ParameterControl() {
-    override fun clone(): ParameterControl = copy()
+    override fun clone(): ParameterControl = copy(envelope = envelope.clone())
 }
 
 @Serializable
@@ -33,12 +33,12 @@ data class BusControl(override val parameter: String, val bus: Bus) : ParameterC
 }
 
 @Serializable
-data class BusValueControl(override val parameter: String, val bus: Bus): ParameterControl() {
+data class BusValueControl(override val parameter: String, val bus: Bus) : ParameterControl() {
     override fun clone(): ParameterControl = copy()
 }
 
 @Serializable
-data class SingleBusValueControl(override val parameter: String, val bus: Bus): ParameterControl() {
+data class SingleBusValueControl(override val parameter: String, val bus: Bus) : ParameterControl() {
     override fun clone(): ParameterControl = copy()
 }
 
@@ -57,7 +57,7 @@ data class ConstantControl(override val parameter: String, val value: Double) : 
     override fun clone(): ParameterControl = copy()
 }
 
-fun SynthDef.defaultControls() = parameters.map{ p ->
+fun SynthDef.defaultControls() = parameters.map { p ->
     when (val spec = p.spec) {
         is BufferControlSpec -> BufferControl(p.name.text, spec.defaultValue)
         is BusControlSpec -> BusControl(p.name.text, spec.defaultValue)
