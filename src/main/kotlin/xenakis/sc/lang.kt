@@ -177,6 +177,9 @@ data class Identifier(val text: String) : SimpleScElement(text), ScExpr {
     override val isValid: Boolean
         get() = isValid(text)
 
+    val isValidClassName: Boolean
+        get() = isValid && text[0].isUpperCase()
+
     companion object {
         fun isValid(token: String): Boolean {
             if (token.isEmpty()) return false

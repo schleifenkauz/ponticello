@@ -8,8 +8,6 @@ import javafx.scene.Node
 import javafx.scene.Parent
 import javafx.scene.Scene
 import javafx.scene.control.*
-import javafx.scene.layout.Pane
-import javafx.scene.layout.Region
 import javafx.stage.Stage
 import javafx.stage.StageStyle
 import javafx.util.StringConverter
@@ -130,38 +128,8 @@ fun <T : Any> Node.showDialog(
     extraConfig, resultConverter
 )
 
-fun Parent.makeWindow(
-    title: String,
-    context: Context,
-    style: StageStyle = StageStyle.UNDECORATED,
-    parent: Pane? = null,
-    onShowing: () -> Unit = {}
-): Stage {
-    val stage = Stage(style)
-    var idx = -1
-    stage.title = title
-    stage.scene = Scene(Pane())
-    context[Stylesheets].manage(stage.scene)
-    stage.setOnShowing {
-        onShowing()
-        if (parent != null) {
-            idx = parent.children.indexOf(this)
-            parent.children.removeAt(idx)
-        }
-        stage.scene.root = this
-        stage.sizeToScene()
-    }
-    stage.setOnCloseRequest {
-        stage.scene.root = Region()
-        parent?.children?.add(idx, this)
-        stage.hide()
-    }
-    stage.sizeToScene()
-    return stage
-}
-
 fun Parent.showWindow(title: String, context: Context): Stage {
-    val window = makeWindow(title, context)
+    val window = SubWindow(this, title, context)
     window.show()
     return window
 }

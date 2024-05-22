@@ -41,6 +41,9 @@ class SynthDefEditorControl @ProvideImplementation(ControlFactory::class) constr
                 }.also { it.root.centerChildrenVertically() }
             }
         }
+        add(button("Add parameter") {
+            editor.parameters.addLast()
+        })
         horizontal {
             view(editor.ugenGraph).padding = Insets(5.0)
         }

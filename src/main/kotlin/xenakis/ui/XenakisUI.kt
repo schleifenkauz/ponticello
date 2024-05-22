@@ -1,6 +1,7 @@
 package xenakis.ui
 
 import bundles.createBundle
+import bundles.set
 import hextant.command.line.CommandLineControl
 import hextant.command.line.CommandLinePopup
 import hextant.context.Properties
@@ -65,6 +66,7 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
     init {
         objectActionsBar.alwaysHGrow()
         objectActionsBar.centerChildrenVertically()
+        controller.context[HelpBrowser] = HelpBrowser(controller.context)
         stage.scene = Scene(Pane())
         stage.scene.initHextantScene(controller.context)
     }
@@ -77,7 +79,7 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
         scoreView = ScoreView(project, this)
         flowGraphEditor = AudioFlowGraphEditor(project.flowGraph, project.context)
         flowGraphEditor.setPrefSize(800.0, 800.0)
-        flowGraphWindow = flowGraphEditor.makeWindow("Audio flow graph", project.context, StageStyle.DECORATED)
+        flowGraphWindow = SubWindow(flowGraphEditor, "Audio flow graph", project.context, style = StageStyle.DECORATED)
 
         player = ScorePlayer(scoreView, project, controller.client)
         shellWindow = SuperColliderShellController.createShellWindow(controller.client)
@@ -210,6 +212,7 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
     private fun createMiscBar() = HBox(5.0,
         Icon.Console.button(action = "Open console") { shellWindow.show() },
         Icon.Restart.button(action = "Restart server") { project.rebootServer() },
+        Icon.Browser.button(action = "Open help browser") { project.context[HelpBrowser].show() },
         Icon.Graph.button(action = "Edit audio flow graph") { flowGraphWindow.show() }
     )
 
@@ -312,7 +315,12 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
                 view.playMyObject()
             }
 
-            on("F1") { controller.showServerWindow() }
+            on("Ctrl+Alt+T") { controller.client.postAsync("s.plotTree;") }
+            on("F1") { controller.context[HelpBrowser].show() }
+            on("Ctrl+Shift+D") {
+                val searchText = showTextInputDialog("Look up documentation", controller.context) ?: return@on
+                controller.context[HelpBrowser].searchDocumentation(searchText)
+            }
             on("Alt+C") { shellWindow.show() }
             on("Alt+G") { flowGraphWindow.show() }
             on("F5") { controller.restartScSynth() }

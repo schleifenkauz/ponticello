@@ -69,7 +69,7 @@ class EnvelopeObjectView(val obj: EnvelopeObject) : ScoreObjectView(obj) {
                 centerChildrenVertically()
             }
             layout.minWidth = 600.0
-            val window = layout.makeWindow(title = "Envelope config", context)
+            val window = SubWindow(layout, title = "Envelope config", context)
             layout.registerShortcuts {
                 on("ESCAPE") {
                     window.hide()

@@ -10,9 +10,11 @@ import hextant.core.view.ListEditorControl.Companion.CELL_FACTORY
 import hextant.core.view.ListEditorControl.Companion.ORIENTATION
 import hextant.core.view.ListEditorControl.Orientation
 import hextant.core.view.ListEditorControl.SeparatorCell
+import hextant.fx.registerShortcuts
 import hextant.fx.view
 import reaktive.collection.binding.isNotEmpty
 import reaktive.value.now
+import xenakis.ui.HelpBrowser
 import xenakis.ui.centerChildrenVertically
 import xenakis.ui.styleClass
 
@@ -24,7 +26,16 @@ class MessageSendEditorControl @ProvideImplementation(ControlFactory::class) con
 
     override fun build(): Layout = vertical {
         horizontal {
-            view(editor.receiver); operator("."); view(editor.method)
+            view(editor.receiver)
+            operator(".")
+            view(editor.method) {
+                registerShortcuts {
+                    on("Ctrl+D") {
+                        val bounds = localToScreen(boundsInLocal)
+                        editor.context[HelpBrowser].showMethodDocumentation(editor.method, bounds)
+                    }
+                }
+            }
             if (!arguments[MULTILINE] || !hasArguments.now) {
                 styleClass("compound-expr", "message-send")
                 space()

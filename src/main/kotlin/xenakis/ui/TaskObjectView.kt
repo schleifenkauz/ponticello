@@ -27,8 +27,8 @@ class TaskObjectView(val obj: TaskObject) : ScoreObjectView(obj) {
 
     override fun init(parent: ScoreView) {
         super.init(parent)
-        codeArea.makeWindow(
-            "Code: ${obj.name}", context,
+        SubWindow(
+            codeArea, "Code: ${obj.name}", context,
             style = StageStyle.DECORATED, parent = this
         )
     }

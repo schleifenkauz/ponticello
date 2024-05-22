@@ -11,6 +11,7 @@ import hextant.fx.registerShortcuts
 import reaktive.value.forEach
 import xenakis.sc.*
 import xenakis.sc.editor.ReferenceCompleter
+import xenakis.ui.HelpBrowser
 
 @ProvideImplementation(ControlFactory::class)
 object ScExprExpanderControlFactory : ControlFactory<xenakis.sc.editor.ScExprExpander> {
@@ -42,6 +43,11 @@ object ScExprExpanderControlFactory : ControlFactory<xenakis.sc.editor.ScExprExp
             on("Ctrl+Shift+DIGIT0") { editor.assignToVariable() }
             on("Ctrl+PERIOD") { editor.callMethod() }
             on("Ctrl+Shift+PERIOD") { editor.nameValue() }
+            on("Ctrl+D") {
+                val browser = editor.context[HelpBrowser]
+                val bounds = control.localToScreen(control.boundsInLocal)
+                browser.showClassDocumentation(editor, bounds)
+            }
         }
         return control
     }
