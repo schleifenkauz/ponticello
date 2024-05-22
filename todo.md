@@ -23,6 +23,8 @@
 
 ### object cutting tool
 
+### Mixing interface in AudioFlowGraph
+
 ### completion
 
 - buffer refs

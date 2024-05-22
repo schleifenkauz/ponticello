@@ -70,7 +70,10 @@ class ControlAssignmentEditor(private val parameter: ParameterDef, val project: 
                 project: XenakisProject,
             ): Spinner<Double> {
                 val spec = parameter.spec as NumericalControlSpec
-                return Spinner(spec.min.value, spec.max.value, control?.value ?: spec.defaultValue.value)
+                return Spinner(
+                    spec.min.value, spec.max.value,
+                    control?.value ?: spec.defaultValue.value, spec.step.value
+                )
             }
 
             override fun createControl(detailInput: Spinner<Double>, parameter: ParameterDef) =
@@ -84,7 +87,7 @@ class ControlAssignmentEditor(private val parameter: ParameterDef, val project: 
                 project: XenakisProject,
             ): Slider {
                 val spec = parameter.spec as NumericalControlSpec
-                return Slider(spec.min.value, parameter.spec.max.value, control?.value ?: spec.defaultValue.value)
+                return Slider(spec.min.value, parameter.spec.max.value, control?.get() ?: spec.defaultValue.value)
             }
 
             override fun createControl(detailInput: Slider, parameter: ParameterDef): KnobControl =
@@ -122,7 +125,7 @@ class ControlAssignmentEditor(private val parameter: ParameterDef, val project: 
             }
         }
 
-        object Custom : ControlType<CustomControl, TextField>() {
+        object LFO : ControlType<CustomControl, TextField>() {
             override fun createDetailInput(
                 parameter: ParameterDef,
                 control: CustomControl?,
@@ -185,13 +188,13 @@ class ControlAssignmentEditor(private val parameter: ParameterDef, val project: 
         }
 
         companion object {
-            val all: List<ControlType<*, *>> = listOf(Constant, Knob, Custom, Envelope, BusValue, SingleBusValue)
+            val all: List<ControlType<*, *>> = listOf(Constant, Knob, LFO, Envelope, BusValue, SingleBusValue)
 
             @Suppress("UNCHECKED_CAST")
             fun <O : ParameterControl> getType(option: O) = when (option) {
                 is KnobControl -> Knob
                 is ConstantControl -> Constant
-                is CustomControl -> Custom
+                is CustomControl -> LFO
                 is EnvelopeControl -> Envelope
                 is BusControl -> Bus
                 is BusValueControl -> BusValue

@@ -1,5 +1,6 @@
 package xenakis.model
 
+import hextant.core.editor.ViewManager
 import javafx.scene.paint.Color
 import kotlinx.serialization.Serializable
 import xenakis.impl.ColorSerializer
@@ -13,8 +14,18 @@ sealed class ParameterControl {
 }
 
 @Serializable
-data class KnobControl(override val parameter: String, var value: Double) : ParameterControl() {
+data class KnobControl(override val parameter: String, private var value: Double) : ParameterControl() {
+    val views = ViewManager.createWeakViewManager<(Double) -> Unit>()
+
     override fun clone(): ParameterControl = copy()
+
+    fun set(value: Double) {
+        if (value == this.value) return
+        this.value = value
+        views.notifyViews { invoke(value) }
+    }
+
+    fun get() = value
 }
 
 @Serializable

@@ -41,7 +41,7 @@ class SynthObject(name: String, var synthDefName: String) : AbstractScoreObject(
                     }
 
                     is KnobControl -> {
-                        val value = control.value.format(2)
+                        val value = control.get().format(2)
                         +"${synthVar}.set(\\$param, $value)"
                     }
 
