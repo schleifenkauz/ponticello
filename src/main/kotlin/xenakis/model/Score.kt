@@ -130,8 +130,8 @@ data class Score(
         }
     }
 
-    fun writePlayerTask(writer: ScWriter, startTime: Double) {
-        writer.appendLine("(~player_task = Task {")
+    fun writePlayerTask(writer: ScWriter, startTime: Double, taskName: String) {
+        writer.appendLine("(~$taskName = Task {")
         val relevantObjects = objects.filter { obj -> !obj.muted && obj.start + obj.duration > startTime }
         val starts = relevantObjects.map { obj ->
             val start = obj.start.coerceAtLeast(startTime)

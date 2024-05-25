@@ -95,8 +95,8 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
         }
 
         stage.scene.root = createLayout()
-        stage.sizeToScene()
-        stage.isResizable = true
+        stage.isMaximized = true
+        //stage.isResizable = true
         Platform.runLater { scoreView.displayWholeScore() }
         displaysProject = true
     }
@@ -162,7 +162,7 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
         VBox.setVgrow(horizontalSplitter, Priority.ALWAYS)
         val layout = VBox(toolbar, horizontalSplitter)
         addShortcuts(layout)
-        layout.setPrefSize(3000.0, 1200.0)
+        //layout.setPrefSize(3000.0, 1200.0)
         val context = project.context
         val commandLinePopup = CommandLinePopup(
             context, context[Properties.localCommandLine],
@@ -183,11 +183,11 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
     }
 
     private fun createToolbar(): HBox {
-        val fileBar = createFileBar() styleClass "toolbar-part"
-        val undoRedoBar = createUndoRedoBar() styleClass "toolbar-part"
-        val playerBar = createPlayerBar() styleClass "toolbar-part"
-        val layoutBar = createLayoutBar() styleClass "toolbar-part"
-        val miscBar = createMiscBar() styleClass "toolbar-part"
+        val fileBar = createFileBar().centerChildrenVertically() styleClass "toolbar-part"
+        val undoRedoBar = createUndoRedoBar().centerChildrenVertically() styleClass "toolbar-part"
+        val playerBar = createPlayerBar().centerChildrenVertically() styleClass "toolbar-part"
+        val layoutBar = createLayoutBar().centerChildrenVertically() styleClass "toolbar-part"
+        val miscBar = createMiscBar().centerChildrenVertically() styleClass "toolbar-part"
         return HBox(
             35.0,
             HBox(

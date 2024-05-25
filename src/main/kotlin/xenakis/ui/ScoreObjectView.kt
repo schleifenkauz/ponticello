@@ -40,7 +40,7 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
     protected val envelopesPane = Pane()
 
     private val envelopeEditors = mutableListOf<EnvelopeEditor>()
-    private val knobControls = mutableListOf<Knob>()
+    private val knobControls = HBox(10.0)
 
     private val selectedProperty = SimpleBooleanProperty(false)
 
@@ -151,15 +151,18 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
     }
 
     private fun displayKnobs() {
-        header.children.removeAll(knobControls)
-        knobControls.clear()
+        knobControls.children.clear()
         for (control in myObject.controls) {
             if (control !is KnobControl) continue
             val spec = myObject.getSpec(control.parameter) as NumericalControlSpec
             val knob = Knob(control, spec)
-            knobControls.add(knob)
+            knobControls.children.add(knob)
         }
-        header.children.addAll(1, knobControls)
+        if (knobControls.children.any()) {
+            if (knobControls !in header.children) {
+                header.children.add(1, knobControls)
+            }
+        } else header.children.remove(knobControls)
     }
 
     private fun displayEnvelopes() {

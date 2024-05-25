@@ -512,7 +512,52 @@ Slider.control-detail-editor {
     -fx-stroke-width: 7px;
 }
 
-.knob-dots {
-    -fx-stroke-dash-array: 3;
+.knob-indicator {
+    -fx-stroke: white;
+    -fx-stroke-width: 2px;
 }
 
+.knob-mass {
+    -fx-fill: black;
+}
+
+.knob-mass:hover {
+    -fx-border-width: 2px;
+    -fx-border-color: green;
+}
+
+.knob-dot {
+    -fx-fill: black;
+}
+
+.knob-dot:hover {
+    -fx-border-width: 2px;
+    -fx-border-color: green;
+}
+
+.control-knob {
+    -fx-border-width: 2px;
+    -fx-border-color: black;
+    -fx-background-color: transparent;
+}
+
+.knob-arc {
+    -fx-stroke: black;
+    -fx-fill: transparent;
+    -fx-stroke-width: 3px;
+}
+
+.control-knob:hover {
+    -fx-background-color: rgba(20, 0, 0, 0.5);
+}
+
+.knob-value {
+    -fx-font-size: 10px;
+    -fx-text-fill: white;
+}
+
+.knob-parameter-name {
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+    -fx-text-fill: green;
+}

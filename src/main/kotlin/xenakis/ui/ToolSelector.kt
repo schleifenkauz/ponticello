@@ -6,13 +6,14 @@ import xenakis.impl.SelectorBar
 
 class ToolSelector : SelectorBar<ToolSelector.Tool>(Tool.values().toList()) {
     override fun extractGraphic(option: Tool): Node {
-        return option.icon.getView(ICON_SIZE / 1.5)
+        return option.icon.getView()
     }
 
     override fun ToggleButton.extraConfig(option: Tool) {
-        setMinSize(ICON_SIZE, ICON_SIZE)
-        setMaxSize(ICON_SIZE, ICON_SIZE)
+        setMinSize(Icon.DEFAULT_RADIUS * 2, Icon.DEFAULT_RADIUS * 2)
+        setMaxSize(Icon.DEFAULT_RADIUS * 2, Icon.DEFAULT_RADIUS * 2)
         styleClass("icon-button")
+        centerChildrenVertically()
     }
 
     enum class Tool(val icon: Icon) {

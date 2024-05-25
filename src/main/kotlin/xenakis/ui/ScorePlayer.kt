@@ -79,7 +79,7 @@ class ScorePlayer(
     fun pause() {
         isPlaying = false
         client.postAsync("s.freeAll;")
-        client.postAsync("~player_task.stop;")
+        client.postAsync("~play_score.stop;")
     }
 
     fun reset() {

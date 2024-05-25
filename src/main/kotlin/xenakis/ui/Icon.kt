@@ -45,7 +45,8 @@ enum class Icon {
     Unmute,
     Undo, Redo,
     Memo,
-    Color,
+
+    /*Color,*/
     FileReload,
     Browser,
     Compound;
@@ -54,7 +55,7 @@ enum class Icon {
     private val url = javaClass.getResource("icons/$file") ?: error("icon $file not found")
     private val image = Image(url.toExternalForm(), 20.0, 20.0, true, false)
 
-    fun getView(size: Double = 20.0): ImageView {
+    fun getView(size: Double = DEFAULT_RADIUS * 1.25): ImageView {
         val view = ImageView(image)
         view.isPreserveRatio = true
         view.fitWidth = size
@@ -62,7 +63,7 @@ enum class Icon {
         return view
     }
 
-    fun button(radius: Double = 16.0, action: String? = null, onAction: (Button) -> Unit = {}): Button =
+    fun button(radius: Double = DEFAULT_RADIUS, action: String? = null, onAction: (Button) -> Unit = {}): Button =
         Button().apply {
             graphic = getView(size = radius * 1.25)
             /*shape = Circle(radius)*/
@@ -74,4 +75,7 @@ enum class Icon {
             styleClass("icon-button")
         }
 
+    companion object {
+        const val DEFAULT_RADIUS: Double = 24.0
+    }
 }

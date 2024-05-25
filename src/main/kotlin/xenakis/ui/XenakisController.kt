@@ -12,6 +12,7 @@ import javafx.stage.Stage
 import reaktive.Observer
 import xenakis.impl.UDPSuperColliderClient
 import xenakis.impl.registerImplementationsFromClasspath
+import xenakis.model.NamingManager
 import xenakis.model.XenakisProject
 import java.io.File
 import java.util.prefs.Preferences
@@ -162,6 +163,7 @@ class XenakisController(private val primaryStage: Stage) {
 
     fun openProject(file: File): Boolean {
         tryWithAlert("Opening project") {
+            context[NamingManager] = NamingManager()
             val project = XenakisProject.loadFrom(file, context)
             currentProject = project
         } ?: return false
@@ -174,6 +176,7 @@ class XenakisController(private val primaryStage: Stage) {
 
     fun createNewProject() {
         val location = showSaveDialog("*.json") ?: return
+        context[NamingManager] = NamingManager()
         currentProject = XenakisProject.create(location, context)
         saveAs(location)
     }
@@ -185,7 +188,7 @@ class XenakisController(private val primaryStage: Stage) {
 
     fun showSaveDialog(extension: String): File? {
         setExtensionFilter(extension)
-        check(fc.initialDirectory.isDirectory)
+        if (!fc.initialDirectory.exists()) fc.initialDirectory.mkdir()
         return fc.showSaveDialog(primaryStage)
     }
 

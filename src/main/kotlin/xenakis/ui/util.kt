@@ -23,6 +23,7 @@ import java.util.*
 import kotlin.math.ceil
 import kotlin.math.log10
 import kotlin.math.pow
+import kotlin.math.roundToInt
 
 fun <T> Optional<T>.getOrNull(): T? = orElse(null)
 
@@ -48,10 +49,10 @@ fun <N : Node> N.styleClass(vararg classes: String) = also { it.styleClass.addAl
 infix fun <N : Node> N.styleClass(name: String) = also { it.styleClass.add(name) }
 
 fun button(text: String = "", onAction: (ev: ActionEvent) -> Unit) =
-    Button(text).also { btn -> btn.onAction = onAction }
+    Button(text).also { btn -> btn.setOnAction(onAction) }
 
 fun button(glyph: FontAwesome.Glyph, onAction: (ev: ActionEvent) -> Unit) =
-    Button(null, Glyph("FontAwesome", glyph)).also { btn -> btn.onAction = onAction }
+    Button(null, Glyph("FontAwesome", glyph)).also { btn -> btn.setOnAction(onAction) }
 
 fun textField(text: String = "", config: TextField.() -> Unit) = TextField(text).apply(config)
 
@@ -112,7 +113,14 @@ fun <N : Node> N.centerChildrenVertically() = also {
 
 fun ClosedFloatingPointRange<Double>.reverseIfEmpty() = if (start > endInclusive) endInclusive..start else this
 
+fun accuracy(delta: Double) = ceil(-log10(delta).coerceAtMost(0.0)).toInt()
+
 fun Double.format(accuracy: Int) = toString().let { s -> s.take(s.indexOf('.') + 1 + accuracy) }
+
+fun Double.round(accuracy: Int): Double {
+    val factor = 10.0.pow(accuracy)
+    return (this * factor).roundToInt() / factor
+}
 
 fun <N : Node> N.antiScale(container: Node) = apply {
     val one = SimpleDoubleProperty(1.0)
@@ -120,9 +128,11 @@ fun <N : Node> N.antiScale(container: Node) = apply {
     scaleYProperty().bind(one.divide(container.scaleYProperty()))
 }
 
-fun Double.snap(grid: Double) = (this / grid).toInt() * grid
+fun Region.centerHorizontally(parent: Region) {
+    layoutXProperty().bind(parent.widthProperty().subtract(widthProperty()).divide(2))
+}
 
-fun accuracy(delta: Double) = ceil(-log10(delta).coerceAtMost(0.0)).toInt()
+fun Double.snap(grid: Double) = (this / grid).roundToInt() * grid
 
 fun timeCode(t: Double, accuracy: Int): String {
     var seconds = t.toInt()

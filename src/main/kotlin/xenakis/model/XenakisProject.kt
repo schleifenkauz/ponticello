@@ -67,12 +67,12 @@ class XenakisProject private constructor(
         val context = SuperColliderWriterContext(writer)
         bootServer(context)
         prepareForPlay(context)
-        context.postAsync { score.writePlayerTask(this, startTime = 0.0) }
+        context.postAsync { score.writePlayerTask(this, startTime = 0.0, taskName = "play_score") }
     }
 
     fun playScore(fromTime: Double) = SuperColliderWriterContext.wrap(client) {
         prepareForPlay(this)
-        postAsync { score.writePlayerTask(this, fromTime) }
+        postAsync { score.writePlayerTask(this, fromTime, taskName = "play_score") }
     }
 
     fun rebootServer() {
@@ -115,7 +115,6 @@ class XenakisProject private constructor(
 
     companion object {
         fun loadFrom(file: File, context: Context): XenakisProject {
-            context[NamingManager] = NamingManager()
             val str = file.readText()
             SnapshotAware.Serializer.reconstructionContext = context
             val project = context.withoutUndo { Json.decodeFromString<XenakisProject>(str) }
