@@ -18,7 +18,6 @@ import xenakis.impl.SuperColliderWriterContext
 import xenakis.impl.UDPSuperColliderClient
 import xenakis.sc.code
 import xenakis.sc.editor.CodeBlockEditor
-import xenakis.ui.showDoubleInputDialog
 import java.io.File
 import java.io.Writer
 
@@ -48,8 +47,7 @@ class XenakisProject private constructor(
 
     fun initialize(context: Context) {
         this.context = context
-        score.context = context
-        for (obj in score.objects) obj.addToContainer(score, context)
+        score.initialize(context)
         colorObserver = synthDefs.editor.editor.editors.observeEach { _, def ->
             def.associatedColor.result.observe { _ ->
                 score.recoloredSynthDef(def.name.text.now)
@@ -115,13 +113,9 @@ class XenakisProject private constructor(
         synthDefs.renamedSynthDef(oldName, newName)
     }
 
-    fun addTime(location: Double) {
-        val amount = showDoubleInputDialog("How much time to add", context, 0.0..1000.0, 10.0) ?: return
-        score.addTime(location, amount)
-    }
-
     companion object {
         fun loadFrom(file: File, context: Context): XenakisProject {
+            context[NamingManager] = NamingManager()
             val str = file.readText()
             SnapshotAware.Serializer.reconstructionContext = context
             val project = context.withoutUndo { Json.decodeFromString<XenakisProject>(str) }

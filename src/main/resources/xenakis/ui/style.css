@@ -60,10 +60,6 @@ Slider.control-detail-editor {
 }
 
 .score-object {
-    -fx-background-color: transparent;
-}
-
-.score-object {
     -fx-background-color: black;
 }
 
@@ -95,7 +91,13 @@ Slider.control-detail-editor {
     -fx-stroke: gray !important;
 }
 
-.task-object {
+.score-object .sub-score {
+    -fx-border-width: 3px;
+    -fx-border-radius: 3px;
+    -fx-border-color: black;
+}
+
+.score-object .task-object {
     -fx-border-width: 2px;
     -fx-border-radius: 3px;
     -fx-border-color: gray;
@@ -509,3 +511,8 @@ Slider.control-detail-editor {
 .chain-arrow:hover {
     -fx-stroke-width: 7px;
 }
+
+.knob-dots {
+    -fx-stroke-dash-array: 3;
+}
+

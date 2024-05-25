@@ -20,7 +20,7 @@ interface ScoreObject {
     val type: String
     var name: String
 
-    val container: ScoreObjectContainer
+    val parent: Score
     val position: ObjectPosition
     var duration: Double
     var height: Double
@@ -42,9 +42,9 @@ interface ScoreObject {
     fun writeStopCode(writer: ScWriter)
     fun play(client: UDPSuperColliderClient)
 
-    fun addToContainer(container: ScoreObjectContainer, context: Context) {
+    fun addToScore(score: Score, context: Context) {
         if (nameOfNextInChain != null) {
-            nextInChain = container.getObject(nameOfNextInChain!!) as ClonedObject
+            nextInChain = score.getObject(nameOfNextInChain!!) as ClonedObject
             nameOfNextInChain = null
         }
     }
@@ -73,6 +73,7 @@ interface ScoreObject {
                 SoundFileObject.Serializer,
                 TaskObject.Serializer,
                 EnvelopeObject.Serializer,
+                CompoundScoreObject.Serializer,
                 ClonedObject.Serializer
             ).associateBy { it.type }
         }

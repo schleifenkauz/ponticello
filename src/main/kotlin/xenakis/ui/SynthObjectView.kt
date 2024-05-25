@@ -10,8 +10,8 @@ class SynthObjectView(val obj: SynthObject) : ScoreObjectView(obj) {
         styleClass("synth-object")
     }
 
-    override fun init(parent: ScoreView) {
-        super.init(parent)
+    override fun initialize(parent: ScorePane) {
+        super.initialize(parent)
         val btn = Icon.Details.button(action = "Open control assignment view") { openControlAssignment() }
         header.children.add(1, btn)
     }
@@ -25,10 +25,7 @@ class SynthObjectView(val obj: SynthObject) : ScoreObjectView(obj) {
                 updatedControls.add(control)
             }
         }
-        val confirmed = ControlAssignmentView.show(obj, updatedControls, context[currentProject])
-        if (confirmed) {
-            repaint()
-        }
+        ControlAssignmentView.show(obj, updatedControls, context[currentProject])
     }
 
     override val defaultBorderColor: Color

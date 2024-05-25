@@ -37,13 +37,13 @@ class ClonedObject(
         put("original", original.name)
     }
 
-    override val container: ScoreObjectContainer
-        get() = original.container
+    override val parent: Score
+        get() = original.parent
 
-    override fun addToContainer(container: ScoreObjectContainer, context: Context) {
-        super.addToContainer(container, context)
+    override fun addToScore(score: Score, context: Context) {
+        super.addToScore(score, context)
         if (!resolved) {
-            original = container.getObject(originalName)
+            original = score.getObject(originalName)
             resolved = true
         }
     }

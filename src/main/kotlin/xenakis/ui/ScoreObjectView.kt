@@ -8,16 +8,19 @@ import javafx.css.PseudoClass
 import javafx.geometry.BoundingBox
 import javafx.geometry.Bounds
 import javafx.scene.Cursor
-import javafx.scene.Node
 import javafx.scene.control.*
 import javafx.scene.input.MouseEvent
 import javafx.scene.layout.*
 import javafx.scene.paint.Color
 import javafx.scene.paint.Color.BLACK
+import xenakis.impl.Knob
 import xenakis.impl.Point
 import xenakis.impl.UDPSuperColliderClient
 import xenakis.model.ClonedObject
+import xenakis.model.KnobControl
+import xenakis.model.NamingManager
 import xenakis.model.ScoreObject
+import xenakis.sc.NumericalControlSpec
 import xenakis.ui.XenakisController.Companion.currentProject
 import kotlin.math.absoluteValue
 
@@ -26,7 +29,8 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
     private var oldBounds: Bounds? = null
     private var draggedObject: ScoreObjectView = this
 
-    protected lateinit var scoreView: ScoreView
+    lateinit var pane: ScorePane
+        private set
     protected lateinit var context: Context
 
     private val nameLabel = Label().styleClass("score-object-name")
@@ -36,6 +40,7 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
     protected val envelopesPane = Pane()
 
     private val envelopeEditors = mutableListOf<EnvelopeEditor>()
+    private val knobControls = mutableListOf<Knob>()
 
     private val selectedProperty = SimpleBooleanProperty(false)
 
@@ -92,20 +97,20 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
             if (btn == ButtonType.OK) {
                 val period = periodInput.text.toDouble()
                 val repetitions = numberOfRepeats.value
-                scoreView.score.loop(myObject, period, repetitions)
+                pane.score.loop(myObject, period, repetitions)
             }
         }
     }
 
-    open fun init(parent: ScoreView) {
-        this.scoreView = parent
+    open fun initialize(parent: ScorePane) {
+        this.pane = parent
         this.context = parent.score.context
-        layoutX = scoreView.getX(myObject.position.start)
+        layoutX = pane.getX(myObject.position.start)
         layoutY = myObject.position.y
         prefWidth = getDisplayWidth()
         prefHeight = myObject.height
         alwaysUpdateCursor()
-        setupDragging(this)
+        setupDragging()
         renamedObject()
         recoloredObject()
         header.children.add(nameLabel)
@@ -121,10 +126,6 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
         button.setOnAction { onAction() }
         actions.children.add(button)
         return button
-    }
-
-    open fun repaint() {
-        reassignedControls()
     }
 
     protected open val defaultBorderColor: Color
@@ -145,6 +146,23 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
     }
 
     open fun reassignedControls() {
+        displayEnvelopes()
+        displayKnobs()
+    }
+
+    private fun displayKnobs() {
+        header.children.removeAll(knobControls)
+        knobControls.clear()
+        for (control in myObject.controls) {
+            if (control !is KnobControl) continue
+            val spec = myObject.getSpec(control.parameter) as NumericalControlSpec
+            val knob = Knob(control, spec)
+            knobControls.add(knob)
+        }
+        header.children.addAll(1, knobControls)
+    }
+
+    private fun displayEnvelopes() {
         for (editors in envelopeEditors) {
             editors.removeChildren()
             editors.dispose()
@@ -157,19 +175,22 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
             if (!control.display) continue
             val parameter = control.parameter
             val envelope = control.envelope
-            val e = EnvelopeEditor(parameter, envelope, envelopesPane, scoreView, myObject)
+            val e = EnvelopeEditor(parameter, envelope, envelopesPane, pane, myObject)
             e.repaint()
             envelopeEditors.add(e)
         }
+        return
     }
 
-    protected open fun setObjectWidth(width: Double, ev: MouseEvent, resizeFromLeft: Boolean) {
-        myObject.duration = scoreView.getDuration(width)
+    protected open fun resizeObject(width: Double, height: Double, ev: MouseEvent, cursor: Cursor): Boolean {
+        myObject.duration = pane.getDuration(width)
+        myObject.height = height
+        return true
     }
 
-    open fun getDisplayWidth(): Double = scoreView.getWidth(myObject.duration)
+    open fun getDisplayWidth(): Double = pane.getWidth(myObject.duration)
 
-    protected open fun rescale() {
+    open fun rescale() {
         rescaleEnvelopes()
     }
 
@@ -182,12 +203,12 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
     fun setSelected(value: Boolean) {
         pseudoClassStateChanged(PseudoClass.getPseudoClass("selected"), value)
         selectedProperty.set(value)
-        for (obj in scoreView.score.objects) {
+        for (obj in pane.score.objects) {
             if (obj is ClonedObject && obj.original == myObject) {
-                scoreView.getObjectView(obj).setCloneOfSelected(value)
+                pane.getObjectView(obj).setCloneOfSelected(value)
             }
             if (myObject is ClonedObject && (myObject as ClonedObject).original == obj) {
-                scoreView.getObjectView(obj).setOriginalOfSelected(value)
+                pane.getObjectView(obj).setOriginalOfSelected(value)
             }
         }
     }
@@ -201,7 +222,7 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
     }
 
     private fun delete() {
-        scoreView.score.removeObject(myObject)
+        pane.score.removeObject(myObject)
     }
 
     /*
@@ -224,23 +245,24 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
         }
     }
 
-    private fun setupDragging(target: Node) {
-        target.addEventHandler(MouseEvent.MOUSE_PRESSED) { ev ->
+    private fun setupDragging() {
+        addEventHandler(MouseEvent.MOUSE_PRESSED) { ev ->
+            if (context[XenakisUI].toolSelector.selected.value != ToolSelector.Tool.Pointer) return@addEventHandler
             if (dragStart == null) {
                 oldBounds = BoundingBox(layoutX, layoutY, prefWidth, prefHeight)
                 dragStart = Point(ev.screenX, ev.screenY)
                 draggedObject = if (ev.isShiftDown) {
-                    val copy = myObject.copy(newName = scoreView.score.nameForCopy(myObject))
+                    val copy = myObject.copy(newName = context[NamingManager].nameForCopy(myObject))
                     context[UndoManager].beginCompoundEdit("Copy object")
-                    scoreView.score.addObject(copy)
-                    scoreView.getObjectView(copy)
+                    pane.score.addObject(copy)
+                    pane.getObjectView(copy)
                 } else if (ev.isControlDown) {
                     val clone = myObject.clone(
-                        name = scoreView.score.nameForClone(myObject)
+                        name = context[NamingManager].nameForClone(myObject)
                     )
                     context[UndoManager].beginCompoundEdit("Clone object")
-                    scoreView.score.addObject(clone)
-                    scoreView.getObjectView(clone)
+                    pane.score.addObject(clone)
+                    pane.getObjectView(clone)
                 } else {
                     context[UndoManager].beginCompoundEdit("Move object")
                     this
@@ -248,7 +270,8 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
             }
             ev.consume()
         }
-        target.addEventHandler(MouseEvent.MOUSE_DRAGGED) { ev ->
+        addEventHandler(MouseEvent.MOUSE_DRAGGED) { ev ->
+            if (context[XenakisUI].toolSelector.selected.value != ToolSelector.Tool.Pointer) return@addEventHandler
             val start = dragStart ?: return@addEventHandler
             val dx = ev.screenX - start.x
             val dy = ev.screenY - start.y
@@ -259,9 +282,10 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
             }
             ev.consume()
         }
-        target.addEventHandler(MouseEvent.MOUSE_RELEASED) { ev ->
-            if (draggedObject != target && draggedObject.boundsInParent == target.boundsInParent) {
-                myObject.container.removeObject(draggedObject.myObject)
+        addEventHandler(MouseEvent.MOUSE_RELEASED) { ev ->
+            if (context[XenakisUI].toolSelector.selected.value != ToolSelector.Tool.Pointer) return@addEventHandler
+            if (draggedObject != this && draggedObject.boundsInParent == this.boundsInParent) {
+                myObject.parent.removeObject(draggedObject.myObject)
             }
             if (dragStart != null) {
                 dragStart = null
@@ -276,21 +300,21 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
     private fun isResizeCursor(cursor: Cursor) = cursor.toString().endsWith("RESIZE")
 
     private fun isInParentBounds(x: Double, y: Double, width: Double, height: Double) =
-        x >= 0.0 && y >= 0.0 && x + width <= scoreView.width && y + height <= scoreView.height
+        x >= 0.0 && y >= 0.0 && x + width <= pane.width && y + height <= pane.height
 
     private fun relocateBy(old: Bounds, dx: Double, dy: Double) {
-        val x = (old.minX + dx).snap(scoreView.timeSnap)
+        val x = (old.minX + dx).snap(pane.timeSnap)
         val y = (old.minY + dy)
         if (!isInParentBounds(x, y, prefWidth, prefHeight)) return
         relocateObject(x, y)
     }
 
     private fun relocateObject(x: Double, y: Double) {
-        scoreView.score.moveObject(myObject, scoreView.getTime(x), y)
+        pane.score.moveObject(myObject, pane.getTime(x), y)
     }
 
     override fun moved(obj: ScoreObject, start: Double, y: Double) {
-        relocate(scoreView.getX(myObject.start), myObject.y)
+        relocate(pane.getX(myObject.start), myObject.y)
     }
 
     private fun updateCursor(x: Double, y: Double) {
@@ -311,18 +335,13 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
         }
     }
 
-    private fun resize(
-        x: Double, y: Double,
-        width: Double, height: Double,
-        ev: MouseEvent, resizeFromLeft: Boolean = false
-    ) {
-        val snappedX = x.snap(scoreView.timeSnap)
-        val snappedWidth = width.snap(scoreView.timeSnap)
+    private fun resize(x: Double, y: Double, width: Double, height: Double, ev: MouseEvent, cursor: Cursor) {
+        val snappedX = x.snap(pane.timeSnap)
+        val snappedWidth = width.snap(pane.timeSnap)
         if (snappedWidth < 10.0 || height < 10.0) return
         if (!isInParentBounds(snappedX, y, snappedWidth, height)) return
-        setObjectWidth(snappedWidth, ev, resizeFromLeft)
-        myObject.height = height
-        relocateObject(snappedX, y)
+        if (resizeObject(snappedWidth, height, ev, cursor))
+            relocateObject(snappedX, y)
     }
 
     fun resized() {
@@ -331,14 +350,14 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
 
     private fun resize(old: Bounds, dx: Double, dy: Double, cursor: Cursor, ev: MouseEvent) {
         when (cursor) {
-            Cursor.NW_RESIZE -> resize(old.minX + dx, old.minY + dy, old.width - dx, old.height - dy, ev, true)
-            Cursor.N_RESIZE -> resize(old.minX, old.minY + dy, old.width, old.height - dy, ev)
-            Cursor.NE_RESIZE -> resize(old.minX, old.minY + dy, old.width + dx, old.height - dy, ev)
-            Cursor.E_RESIZE -> resize(old.minX, old.minY, old.width + dx, old.height, ev)
-            Cursor.SE_RESIZE -> resize(old.minX, old.minY, old.width + dx, old.height + dy, ev)
-            Cursor.S_RESIZE -> resize(old.minX, old.minY, old.width, old.height + dy, ev)
-            Cursor.SW_RESIZE -> resize(old.minX + dx, old.minY, old.width - dx, old.height + dy, ev, true)
-            Cursor.W_RESIZE -> resize(old.minX + dx, old.minY, old.width - dx, old.height, ev, true)
+            Cursor.NW_RESIZE -> resize(old.minX + dx, old.minY + dy, old.width - dx, old.height - dy, ev, cursor)
+            Cursor.N_RESIZE -> resize(old.minX, old.minY + dy, old.width, old.height - dy, ev, cursor)
+            Cursor.NE_RESIZE -> resize(old.minX, old.minY + dy, old.width + dx, old.height - dy, ev, cursor)
+            Cursor.E_RESIZE -> resize(old.minX, old.minY, old.width + dx, old.height, ev, cursor)
+            Cursor.SE_RESIZE -> resize(old.minX, old.minY, old.width + dx, old.height + dy, ev, cursor)
+            Cursor.S_RESIZE -> resize(old.minX, old.minY, old.width, old.height + dy, ev, cursor)
+            Cursor.SW_RESIZE -> resize(old.minX + dx, old.minY, old.width - dx, old.height + dy, ev, cursor)
+            Cursor.W_RESIZE -> resize(old.minX + dx, old.minY, old.width - dx, old.height, ev, cursor)
         }
     }
 }

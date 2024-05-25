@@ -1,6 +1,8 @@
 package xenakis.ui
 
+import bundles.PublicProperty
 import bundles.createBundle
+import bundles.publicProperty
 import bundles.set
 import hextant.command.line.CommandLineControl
 import hextant.command.line.CommandLinePopup
@@ -34,6 +36,7 @@ import reaktive.value.binding.not
 import reaktive.value.forEach
 import reaktive.value.fx.asObservableValue
 import reaktive.value.now
+import xenakis.model.LayoutManager.LayoutAspect
 import xenakis.model.XenakisProject
 import xenakis.sc.view.SynthDefsEditorControl
 import xenakis.ui.ToolSelector.Tool
@@ -64,6 +67,7 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
     private var displaysProject = false
 
     init {
+        controller.context[XenakisUI] = this
         objectActionsBar.alwaysHGrow()
         objectActionsBar.centerChildrenVertically()
         controller.context[HelpBrowser] = HelpBrowser(controller.context)
@@ -76,7 +80,7 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
         beforePlayCodePane = CodePane("Play setup", project.beforePlay.control)
         synthDefsEditor = project.synthDefs.editor.control as SynthDefsEditorControl
         buffersEditor = BuffersEditor(project.buffers, project, controller)
-        scoreView = ScoreView(project, this)
+        scoreView = ScoreView(project.score, project.context)
         flowGraphEditor = AudioFlowGraphEditor(project.flowGraph, project.context)
         flowGraphEditor.setPrefSize(800.0, 800.0)
         flowGraphWindow = SubWindow(flowGraphEditor, "Audio flow graph", project.context, style = StageStyle.DECORATED)
@@ -84,7 +88,8 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
         player = ScorePlayer(scoreView, project, controller.client)
         shellWindow = SuperColliderShellController.createShellWindow(controller.client)
 
-        selectedObjectObserver = scoreView.singleSelected.forEach { view ->
+        project.context[ObjectSelector] = ObjectSelector(project.context, scoreView)
+        selectedObjectObserver = scoreView.selector.singleSelected.forEach { view ->
             if (view == null) objectActionsBar.children.clear()
             else objectActionsBar.children.setAll(view.header)
         }
@@ -218,10 +223,10 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
 
     private fun createLayoutBar() = HBox(5.0,
         Icon.Horizontal.button(action = "Create horizontal group") {
-            scoreView.score.addHorizontalGroup(scoreView.selectedObjects)
+            project.context[ObjectSelector].addLayoutGroup(LayoutAspect.Horizontal)
         },
         Icon.Vertical.button(action = "Create vertical group") {
-            scoreView.score.addVerticalGroup(scoreView.selectedObjects)
+            project.context[ObjectSelector].addLayoutGroup(LayoutAspect.Vertical)
         }
     )
 
@@ -295,23 +300,23 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
             on("DELETE") { scoreView.removeSelected() }
             on("ESCAPE") {
                 scoreView.clearNewShape()
-                scoreView.deselectAll()
+                scoreView.selector.deselectAll()
             }
             on("Ctrl+D") {
-                val view = scoreView.singleSelected.now
+                val view = scoreView.selector.singleSelected.now
                 if (view is SynthObjectView) {
                     view.openControlAssignment()
                 }
             }
             on("Ctrl+M") {
-                scoreView.toggleMuteSelected()
+                scoreView.selector.toggleMuteSelected()
             }
             on("Alt+L") {
-                val view = scoreView.singleSelected.now ?: return@on
+                val view = scoreView.selector.singleSelected.now ?: return@on
                 view.createLoop()
             }
             on("Alt+SPACE") {
-                val view = scoreView.singleSelected.now ?: return@on
+                val view = scoreView.selector.singleSelected.now ?: return@on
                 view.playMyObject()
             }
 
@@ -326,7 +331,7 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
             on("F5") { controller.restartScSynth() }
 
             on("Ctrl?+C") {
-                scoreView.copySelected()
+                scoreView.selector.copySelected()
             }
         }
     }
@@ -346,4 +351,6 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
             recordBtn.isDisable = true
         }
     }
+
+    companion object : PublicProperty<XenakisUI> by publicProperty("XenakisUI")
 }

@@ -18,7 +18,7 @@ import xenakis.sc.mapOnto
 
 class EnvelopeEditor(
     private val parameterName: String, private val envelope: Envelope,
-    private val pane: Pane, private val scoreView: ScoreView,
+    private val pane: Pane, private val scoreView: ScorePane,
     private val associatedObject: ScoreObject,
 ) : EnvelopeView {
     private val control

@@ -40,7 +40,9 @@ class ControlAssignmentEditor(private val parameter: ParameterDef, val project: 
         comboBox.valueProperty().addListener { _, _, t ->
             detailEditor = detailEditors.getOrPut(t) { t.createDetailInput(parameter, null, project) }
         }
-        comboBox.prefWidth = 200.0
+        comboBox.prefWidth = COMBO_BOX_WIDTH
+        comboBox.maxWidth = COMBO_BOX_WIDTH
+        comboBox.minWidth = COMBO_BOX_WIDTH
     }
 
     fun setControl(control: ParameterControl) {
@@ -209,5 +211,9 @@ class ControlAssignmentEditor(private val parameter: ParameterDef, val project: 
                 return BusRefEditorControl(editor, createBundle())
             }
         }
+    }
+
+    companion object {
+        private const val COMBO_BOX_WIDTH = 200.0
     }
 }

@@ -15,40 +15,32 @@ data class Score(
     private val _objects: MutableList<ScoreObject> = mutableListOf(),
     private val _horizontalGroups: MutableList<MutableSet<String>> = mutableListOf(),
     private val _verticalGroups: MutableList<MutableSet<String>> = mutableListOf(),
-) : ScoreObjectContainer() {
+) {
     val objects: MutableList<ScoreObject> get() = _objects
 
     @Transient
     lateinit var context: Context
+        private set
 
     @Transient
-    private val objectsByName = objects.associateByTo(mutableMapOf()) { obj -> obj.name }
-
-    @Transient
-    private val horizontalGroups = mutableMapOf<ScoreObject, MutableSet<ScoreObject>>()
-
-    @Transient
-    private val verticalGroups = mutableMapOf<ScoreObject, MutableSet<ScoreObject>>()
+    val layoutManager = LayoutManager(_horizontalGroups, _verticalGroups)
 
     @Transient
     private val views = ViewManager.createWeakViewManager<ScoreListener>()
 
-    private val undo get() = context[UndoManager]
+    private val namingManger by lazy { context[NamingManager] }
 
-    init {
-        for (group in _horizontalGroups) {
-            val objects = group.mapTo(mutableSetOf()) { name -> getObject(name) }
-            for (obj in objects) {
-                horizontalGroups[obj] = objects
-            }
-        }
-        for (group in _verticalGroups) {
-            val objects = group.mapTo(mutableSetOf()) { name -> getObject(name) }
-            for (obj in objects) {
-                verticalGroups[obj] = objects
-            }
+    private val undo by lazy { context[UndoManager] }
+
+    fun initialize(context: Context) {
+        this.context = context
+        for (obj in objects) {
+            obj.addToScore(this, context)
+            namingManger.addedObject(obj)
         }
     }
+
+    fun getObject(name: String) = namingManger.getObject(name)
 
     fun addListener(listener: ScoreListener) {
         views.addView(listener)
@@ -60,67 +52,35 @@ data class Score(
     }
 
     fun addObject(obj: ScoreObject) {
-        obj.addToContainer(this, context)
+        obj.addToScore(this, context)
         _objects.add(obj)
         views.notifyViews { addedObject(obj) }
-        objectsByName[obj.name] = obj
+        namingManger.addedObject(obj)
         undo.record(ScoreEdit.AddObject(obj, this))
     }
 
-    override fun removeObject(obj: ScoreObject) {
-        val objects = objects.filterIsInstance<ClonedObject>().filter { it.original == obj } + obj
-        for (o in objects) {
+    fun removeObject(obj: ScoreObject) {
+        val objAndItsClones = objects.filterIsInstance<ClonedObject>().filter { it.original == obj } + obj
+        for (o in objAndItsClones) {
             _objects.remove(o)
             views.notifyViews { removedObject(o) }
-            objectsByName.remove(o.name)
-            _verticalGroups.all { g -> g.remove(o.name) }
-            _horizontalGroups.all { g -> g.remove(o.name) }
-            horizontalGroups.remove(o)
-            verticalGroups.remove(o)
-            horizontalGroups.values.all { it.remove(o) }
-            verticalGroups.values.all { it.remove(o) }
+            namingManger.removedObject(o)
+            layoutManager.removedObject(o)
             o.onRemove()
         }
-        undo.record(ScoreEdit.RemoveObjects(objects, this))
-    }
-
-    fun isNameAvailable(name: String) = name !in objectsByName
-
-    override fun getObject(name: String): ScoreObject = objectsByName[name] ?: error("no object '$name'")
-
-    override fun renamedObject(obj: ScoreObject, oldName: String, newName: String) {
-        objectsByName.remove(oldName)
-        objectsByName[newName] = obj
-        for (group in _verticalGroups + _horizontalGroups) {
-            group.remove(obj.name)
-            group.add(newName)
-        }
-    }
-
-    fun nameForCopy(obj: ScoreObject): String {
-        for (n in 1..Int.MAX_VALUE) {
-            val name = "${obj.name}_copy$n"
-            if (isNameAvailable(name)) return name
-        }
-        throw AssertionError()
-    }
-
-    fun nameForClone(obj: ScoreObject): String {
-        for (n in 1..Int.MAX_VALUE) {
-            val name = "${obj.name}_clone$n"
-            if (isNameAvailable(name)) return name
-        }
-        throw AssertionError()
+        undo.record(ScoreEdit.RemoveObjects(objAndItsClones, this))
     }
 
     fun moveObject(obj: ScoreObject, newStart: Double, newY: Double) {
         undo.record(ScoreEdit.MoveObject(obj, Point(obj.start, obj.y), Point(newStart, newY), this))
         val dt = newStart - obj.start
         val dy = newY - obj.y
-        val vert = verticalGroups[obj] ?: setOf(obj)
-        val hor = horizontalGroups[obj] ?: setOf(obj)
-        for (o in vert) o.position.y += dy
-        for (o in hor) o.position.start += dt
+        layoutManager.moveObject(obj, dt, dy)
+    }
+
+    fun renamedObject(obj: ScoreObject, oldName: String, newName: String) {
+        layoutManager.renamedObject(oldName, newName)
+        namingManger.renamedObject(obj, oldName, newName)
     }
 
     private fun chain(previous: ScoreObject, next: ClonedObject) {
@@ -150,28 +110,6 @@ data class Score(
     private fun replace(old: ScoreObject, new: ScoreObject) {
         removeObject(old)
         addObject(new)
-    }
-
-    fun addVerticalGroup(objects: Collection<ScoreObject>) {
-        addGroup(objects.toMutableSet(), verticalGroups, _verticalGroups)
-    }
-
-    fun addHorizontalGroup(objects: Collection<ScoreObject>) {
-        addGroup(objects.toMutableSet(), horizontalGroups, _horizontalGroups)
-    }
-
-    private fun addGroup(
-        objects: MutableSet<ScoreObject>,
-        groups: MutableMap<ScoreObject, MutableSet<ScoreObject>>,
-        _groups: MutableList<MutableSet<String>>
-    ) {
-        for (obj in objects) groups[obj]?.let { group -> objects.addAll(group) }
-        for (obj in objects) groups[obj] = objects
-        val itr = _groups.iterator()
-        for (group in itr) {
-            if (objects.any { obj -> obj.name in group }) itr.remove()
-        }
-        _groups.add(objects.mapTo(mutableSetOf()) { obj -> obj.name })
     }
 
     fun addTime(location: Double, amount: Double) {

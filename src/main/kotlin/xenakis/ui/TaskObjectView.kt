@@ -1,5 +1,6 @@
 package xenakis.ui
 
+import javafx.scene.Cursor
 import javafx.scene.control.ScrollPane
 import javafx.scene.input.MouseEvent
 import javafx.scene.layout.Priority
@@ -25,16 +26,18 @@ class TaskObjectView(val obj: TaskObject) : ScoreObjectView(obj) {
         addAction(Icon.ExtraWindow, "Open in separate window") { codeWindow.show() }
     }
 
-    override fun init(parent: ScoreView) {
-        super.init(parent)
-        SubWindow(
+    override fun initialize(parent: ScorePane) {
+        super.initialize(parent)
+        codeWindow = SubWindow(
             codeArea, "Code: ${obj.name}", context,
             style = StageStyle.DECORATED, parent = this
         )
     }
 
-    override fun setObjectWidth(width: Double, ev: MouseEvent, resizeFromLeft: Boolean) {
-        obj.width = width.coerceAtLeast(100.0)
+    override fun resizeObject(width: Double, height: Double, ev: MouseEvent, cursor: Cursor): Boolean {
+        if (width < 100.0) return false
+        obj.width = width
+        return true
     }
 
     override fun getDisplayWidth(): Double = obj.width

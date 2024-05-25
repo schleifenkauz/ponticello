@@ -47,7 +47,8 @@ enum class Icon {
     Memo,
     Color,
     FileReload,
-    Browser;
+    Browser,
+    Compound;
 
     private val file = name.lowercase() + "_green.png"
     private val url = javaClass.getResource("icons/$file") ?: error("icon $file not found")

@@ -1,6 +1,7 @@
 package xenakis.ui
 
 import bundles.createBundle
+import javafx.scene.Cursor
 import javafx.scene.input.MouseEvent
 import javafx.scene.shape.Line
 import javafx.scene.shape.Polyline
@@ -38,7 +39,7 @@ class SoundFileObjectView(val obj: SoundFileObject) : ScoreObjectView(obj) {
             }
             waveForms[ch].points.clear()
             for (x in 0 until envelopesPane.width.toInt()) {
-                val t = obj.startPos + x / scoreView.pixelsPerSecond
+                val t = obj.startPos + x / pane.pixelsPerSecond
                 val sampleIndex = (t * obj.rate * frameRate).toInt()
                 val value = channels[ch][sampleIndex.coerceIn(channels[ch].indices)]
                 val y = baseY + heightPerChannel * (-value / 2 + 1)
@@ -47,22 +48,23 @@ class SoundFileObjectView(val obj: SoundFileObject) : ScoreObjectView(obj) {
         }
     }
 
-    override fun setObjectWidth(width: Double, ev: MouseEvent, resizeFromLeft: Boolean) {
-        var newDuration = scoreView.getDuration(width)
+    override fun resizeObject(width: Double, height: Double, ev: MouseEvent, cursor: Cursor): Boolean {
+        var newDuration = pane.getDuration(width)
         if (ev.isShiftDown) {
             obj.rate *= obj.duration / newDuration
         } else {
-            newDuration = scoreView.getDuration(width).coerceAtMost(fileDuration / obj.rate)
-            if (resizeFromLeft) {
+            newDuration = pane.getDuration(width).coerceAtMost(fileDuration / obj.rate)
+            if (cursor in setOf(Cursor.W_RESIZE, Cursor.SW_RESIZE, Cursor.NW_RESIZE)) {
                 val deltaStart = obj.duration - newDuration
                 obj.startPos = (obj.startPos + deltaStart * obj.rate).coerceIn(0.0, fileDuration)
             }
         }
         obj.duration = newDuration
+        return true
     }
 
-    override fun init(parent: ScoreView) {
-        super.init(parent)
+    override fun initialize(parent: ScorePane) {
+        super.initialize(parent)
         displayWaveForm()
         header.children.add(1, outBusSelector)
         addAction(Icon.FileReload, "Reload sound file from disk") {

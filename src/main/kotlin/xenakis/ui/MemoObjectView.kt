@@ -1,6 +1,7 @@
 package xenakis.ui
 
 import hextant.fx.registerShortcuts
+import javafx.scene.Cursor
 import javafx.scene.control.ColorPicker
 import javafx.scene.control.Label
 import javafx.scene.control.TextArea
@@ -41,14 +42,16 @@ class MemoObjectView(val obj: MemoObject) : ScoreObjectView(obj) {
         }
     }
 
-    override fun init(parent: ScoreView) {
-        super.init(parent)
+    override fun initialize(parent: ScorePane) {
+        super.initialize(parent)
         children.add(label)
         header.children.add(1, colorPicker)
     }
 
-    override fun setObjectWidth(width: Double, ev: MouseEvent, resizeFromLeft: Boolean) {
-        obj.width = width.coerceAtLeast(50.0)
+    override fun resizeObject(width: Double, height: Double, ev: MouseEvent, cursor: Cursor): Boolean {
+        if (width < 50.0) return false
+        obj.width = width
+        return true
     }
 
     override fun getDisplayWidth(): Double = obj.width

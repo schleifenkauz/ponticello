@@ -1,0 +1,34 @@
+package xenakis.ui
+
+import hextant.context.Context
+import xenakis.model.CompoundScoreObject
+
+class SubScorePane(
+    private val obj: CompoundScoreObject,
+    context: Context,
+    val parent: ScorePane
+) : ScorePane(obj.score, context) {
+    override val displayStart: Double
+        get() = 0.0
+    override val displayEnd: Double
+        get() = obj.duration
+    override val timeSnap: Double
+        get() = parent.timeSnap
+    override val pixelsPerSecond: Double
+        get() = parent.pixelsPerSecond
+
+    init {
+        obj.score.addListener(this)
+    }
+
+    override fun addTime(location: Double, amount: Double) {
+        super.addTime(location, amount)
+        obj.duration += amount
+    }
+
+    override fun deleteTimeRange(start: Double, end: Double) {
+        super.deleteTimeRange(start, end)
+        val amount = end - start
+        obj.duration -= amount
+    }
+}

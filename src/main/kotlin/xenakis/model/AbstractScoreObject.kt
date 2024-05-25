@@ -20,7 +20,7 @@ sealed class AbstractScoreObject(name: String) : ScoreObject {
             if (field == value) return
             recordEdit(ScoreObjectEdit.Rename(oldName = field, newName = value, this))
             if (initialized) {
-                container.renamedObject(this, oldName = field, newName = value)
+                parent.renamedObject(this, oldName = field, newName = value)
             }
             field = value
             viewManager.notifyViews { renamedObject() }
@@ -73,8 +73,9 @@ sealed class AbstractScoreObject(name: String) : ScoreObject {
     override val associatedEnvelopes: List<EnvelopeControl> get() = controls.filterIsInstance<EnvelopeControl>()
 
     lateinit var context: Context
+        private set
 
-    final override lateinit var container: ScoreObjectContainer
+    final override lateinit var parent: Score
         private set
 
     private fun recordEdit(edit: ScoreObjectEdit) {
@@ -83,10 +84,10 @@ sealed class AbstractScoreObject(name: String) : ScoreObject {
         }
     }
 
-    override fun addToContainer(container: ScoreObjectContainer, context: Context) {
-        super.addToContainer(container, context)
+    override fun addToScore(score: Score, context: Context) {
+        super.addToScore(score, context)
         this.context = context
-        this.container = container
+        this.parent = score
         initialized = true
     }
 

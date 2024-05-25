@@ -22,8 +22,8 @@ class EnvelopeObjectView(val obj: EnvelopeObject) : ScoreObjectView(obj) {
     override val supportedActions: List<Icon>
         get() = listOf(Icon.Delete, Icon.Repeat)
 
-    override fun init(parent: ScoreView) {
-        super.init(parent)
+    override fun initialize(parent: ScorePane) {
+        super.initialize(parent)
         val btn = Icon.Details.button(action = "Edit Envelope configuration") {
             showEnvelopeConfig(context, obj.name, obj.spec, obj.bus) { name, spec, output ->
                 obj.name = name
