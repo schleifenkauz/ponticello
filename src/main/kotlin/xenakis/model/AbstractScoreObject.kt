@@ -3,6 +3,7 @@ package xenakis.model
 import hextant.context.Context
 import hextant.core.editor.ViewManager
 import hextant.undo.UndoManager
+import javafx.geometry.HorizontalDirection
 import javafx.scene.paint.Color
 import xenakis.impl.ScWriter
 import xenakis.impl.UDPSuperColliderClient
@@ -87,7 +88,7 @@ sealed class AbstractScoreObject(name: String) : ScoreObject {
     override fun addToScore(score: Score, context: Context) {
         super.addToScore(score, context)
         this.context = context
-        this.parent = score
+        parent = score
         initialized = true
     }
 
@@ -102,12 +103,31 @@ sealed class AbstractScoreObject(name: String) : ScoreObject {
     override fun copy(newName: String): ScoreObject {
         val obj = copy()
         obj.name = newName
-        obj.position.set(this.position)
-        obj.duration = this.duration
-        obj.height = this.height
-        obj.associatedColor = this.associatedColor
-        obj.muted = this.muted
+        obj.position.set(position)
+        obj.duration = duration
+        obj.height = height
+        obj.associatedColor = associatedColor
+        obj.muted = muted
         obj.controls = controls.mapTo(mutableListOf()) { c -> c.clone() }
+        return obj
+    }
+
+    protected open fun cut(position: Double, whichHalf: HorizontalDirection): ScoreObject? = null
+
+    final override fun cut(position: Double, whichHalf: HorizontalDirection, newName: String): ScoreObject? {
+        val obj = cut(position, whichHalf) ?: return null
+        obj.name = newName
+        obj.height = height
+        obj.associatedColor = associatedColor
+        obj.muted = muted
+        if (whichHalf == HorizontalDirection.LEFT) {
+            obj.position.set(start, y)
+            obj.duration = position
+        } else {
+            obj.position.set(start + position, y)
+            obj.duration = duration - position
+        }
+        obj.controls = controls.mapTo(mutableListOf()) { c -> c.cut(position / duration, whichHalf) }
         return obj
     }
 

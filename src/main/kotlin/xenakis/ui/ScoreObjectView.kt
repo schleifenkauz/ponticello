@@ -7,6 +7,7 @@ import javafx.beans.property.SimpleBooleanProperty
 import javafx.css.PseudoClass
 import javafx.geometry.BoundingBox
 import javafx.geometry.Bounds
+import javafx.geometry.HorizontalDirection
 import javafx.scene.Cursor
 import javafx.scene.control.*
 import javafx.scene.input.MouseEvent
@@ -21,6 +22,7 @@ import xenakis.model.KnobControl
 import xenakis.model.NamingManager
 import xenakis.model.ScoreObject
 import xenakis.sc.NumericalControlSpec
+import xenakis.ui.ToolSelector.Tool
 import xenakis.ui.XenakisController.Companion.currentProject
 import kotlin.math.absoluteValue
 
@@ -113,6 +115,7 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
         setupDragging()
         renamedObject()
         recoloredObject()
+        setupCutting()
         header.children.add(nameLabel)
         setupActions()
         reassignedControls()
@@ -185,21 +188,20 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
         return
     }
 
-    protected open fun resizeObject(width: Double, height: Double, ev: MouseEvent, cursor: Cursor): Boolean {
-        myObject.duration = pane.getDuration(width)
-        myObject.height = height
-        return true
-    }
-
-    open fun getDisplayWidth(): Double = pane.getWidth(myObject.duration)
-
-    open fun rescale() {
-        rescaleEnvelopes()
-    }
-
-    private fun rescaleEnvelopes() {
-        for (e in envelopeEditors) {
-            e.repaint()
+    private fun setupCutting() {
+        addEventHandler(MouseEvent.MOUSE_CLICKED) { ev ->
+            if (context[XenakisUI].toolSelector.selected.value == Tool.Cut) {
+                val cutPosition = pane.getDuration(ev.x - 0.0)
+                val leftHalf = myObject.cut(cutPosition, HorizontalDirection.LEFT, "${myObject.name}_left")
+                val rightHalf = myObject.cut(cutPosition, HorizontalDirection.RIGHT, "${myObject.name}_right")
+                if (leftHalf == null || rightHalf == null) return@addEventHandler
+                context[UndoManager].beginCompoundEdit("Cut object")
+                pane.score.removeObject(myObject)
+                pane.score.addObject(leftHalf)
+                pane.score.addObject(rightHalf)
+                context[UndoManager].finishCompoundEdit("Cut object")
+                ev.consume()
+            }
         }
     }
 
@@ -250,7 +252,7 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
 
     private fun setupDragging() {
         addEventHandler(MouseEvent.MOUSE_PRESSED) { ev ->
-            if (context[XenakisUI].toolSelector.selected.value != ToolSelector.Tool.Pointer) return@addEventHandler
+            if (context[XenakisUI].toolSelector.selected.value != Tool.Pointer) return@addEventHandler
             if (dragStart == null) {
                 oldBounds = BoundingBox(layoutX, layoutY, prefWidth, prefHeight)
                 dragStart = Point(ev.screenX, ev.screenY)
@@ -274,7 +276,7 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
             ev.consume()
         }
         addEventHandler(MouseEvent.MOUSE_DRAGGED) { ev ->
-            if (context[XenakisUI].toolSelector.selected.value != ToolSelector.Tool.Pointer) return@addEventHandler
+            if (context[XenakisUI].toolSelector.selected.value != Tool.Pointer) return@addEventHandler
             val start = dragStart ?: return@addEventHandler
             val dx = ev.screenX - start.x
             val dy = ev.screenY - start.y
@@ -286,7 +288,7 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
             ev.consume()
         }
         addEventHandler(MouseEvent.MOUSE_RELEASED) { ev ->
-            if (context[XenakisUI].toolSelector.selected.value != ToolSelector.Tool.Pointer) return@addEventHandler
+            if (context[XenakisUI].toolSelector.selected.value != Tool.Pointer) return@addEventHandler
             if (draggedObject != this && draggedObject.boundsInParent == this.boundsInParent) {
                 myObject.parent.removeObject(draggedObject.myObject)
             }
@@ -310,6 +312,24 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
         val y = (old.minY + dy)
         if (!isInParentBounds(x, y, prefWidth, prefHeight)) return
         relocateObject(x, y)
+    }
+
+    protected open fun resizeObject(width: Double, height: Double, ev: MouseEvent, cursor: Cursor): Boolean {
+        myObject.duration = pane.getDuration(width)
+        myObject.height = height
+        return true
+    }
+
+    open fun getDisplayWidth(): Double = pane.getWidth(myObject.duration)
+
+    open fun rescale() {
+        rescaleEnvelopes()
+    }
+
+    private fun rescaleEnvelopes() {
+        for (e in envelopeEditors) {
+            e.repaint()
+        }
     }
 
     private fun relocateObject(x: Double, y: Double) {

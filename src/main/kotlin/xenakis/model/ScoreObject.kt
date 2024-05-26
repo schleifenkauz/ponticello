@@ -1,6 +1,7 @@
 package xenakis.model
 
 import hextant.context.Context
+import javafx.geometry.HorizontalDirection
 import javafx.scene.input.DataFormat
 import javafx.scene.paint.Color
 import kotlinx.serialization.KSerializer
@@ -50,6 +51,8 @@ interface ScoreObject {
     }
 
     fun serverBooted(context: SuperColliderContext) {}
+
+    fun cut(position: Double, whichHalf: HorizontalDirection, newName: String): ScoreObject? = null
 
     fun copy(newName: String): ScoreObject
 

@@ -1,6 +1,7 @@
 package xenakis.model
 
 import hextant.core.editor.ViewManager
+import javafx.geometry.HorizontalDirection
 import javafx.scene.paint.Color
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
@@ -13,6 +14,8 @@ sealed class ParameterControl {
     abstract val parameter: String
 
     abstract fun clone(): ParameterControl
+
+    open fun cut(cutPos: Double, whichHalve: HorizontalDirection) = this
 }
 
 @Serializable
@@ -39,6 +42,9 @@ data class EnvelopeControl(
     val display: Boolean
 ) : ParameterControl() {
     override fun clone(): ParameterControl = copy(envelope = envelope.clone())
+
+    override fun cut(cutPos: Double, whichHalve: HorizontalDirection): ParameterControl =
+        EnvelopeControl(parameter, envelope.cut(cutPos, whichHalve), displayColor, display)
 }
 
 @Serializable

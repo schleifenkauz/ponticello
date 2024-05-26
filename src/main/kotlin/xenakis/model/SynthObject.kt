@@ -1,6 +1,7 @@
 package xenakis.model
 
 import hextant.core.editor.ViewManager
+import javafx.geometry.HorizontalDirection
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonObjectBuilder
 import kotlinx.serialization.json.put
@@ -22,6 +23,8 @@ class SynthObject(name: String, var synthDefName: String) : AbstractScoreObject(
         get() = context[currentProject].synthDefs.get(synthDefName)
 
     override fun copy(): ScoreObject = SynthObject(name, synthDefName)
+
+    override fun cut(position: Double, whichHalf: HorizontalDirection): ScoreObject = SynthObject(name, synthDefName)
 
     override fun getSpec(parameter: String): ControlSpec = synthDef.getParameter(parameter).spec
 

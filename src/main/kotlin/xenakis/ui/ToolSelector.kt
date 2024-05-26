@@ -23,10 +23,7 @@ class ToolSelector : SelectorBar<ToolSelector.Tool>(Tool.values().toList()) {
         Envelope(Icon.Envelope),
         Memo(Icon.Memo),
         Compound(Icon.Compound),
+        Cut(Icon.Cut),
         AddTime(Icon.AddTime);
-    }
-
-    companion object {
-        private const val ICON_SIZE = 32.0
     }
 }

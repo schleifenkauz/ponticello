@@ -54,7 +54,7 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
     private lateinit var scoreView: ScoreView
     private lateinit var flowGraphEditor: AudioFlowGraphEditor
     private lateinit var flowGraphWindow: Stage
-    private lateinit var settingsWindow: Stage
+    private var settingsWindow: Stage
 
     private lateinit var playBtn: Button
     private lateinit var stopBtn: Button
@@ -302,6 +302,7 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
             on("Alt?+E") { toolSelector.select(Tool.Envelope) }
             on("Alt?+M") { toolSelector.select(Tool.Memo) }
             on("Alt?+A") { toolSelector.select(Tool.AddTime) }
+            on("Alt?+C") { toolSelector.select(Tool.AddTime) }
 
             on("DELETE") { scoreView.removeSelected() }
             on("ESCAPE") {
@@ -332,7 +333,7 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
                 val searchText = showTextInputDialog("Look up documentation") ?: return@on
                 context[HelpBrowser].searchDocumentation(searchText)
             }
-            on("Alt+C") { shellWindow.show() }
+            on("Ctrl+T") { shellWindow.show() }
             on("Alt+G") { flowGraphWindow.show() }
             on("Alt+S") { settingsWindow.show() }
             on("F5") { controller.restartScSynth() }

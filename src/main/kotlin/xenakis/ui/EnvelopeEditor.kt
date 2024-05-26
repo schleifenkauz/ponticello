@@ -8,7 +8,6 @@ import javafx.scene.layout.Pane
 import javafx.scene.shape.Circle
 import javafx.scene.shape.Polyline
 import xenakis.impl.Point
-import xenakis.impl.dist
 import xenakis.model.Envelope
 import xenakis.model.EnvelopeEdit
 import xenakis.model.ScoreObject

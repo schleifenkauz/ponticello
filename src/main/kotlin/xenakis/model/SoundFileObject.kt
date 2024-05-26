@@ -2,6 +2,7 @@ package xenakis.model
 
 import hextant.core.editor.ViewManager
 import hextant.serial.SnapshotAware
+import javafx.geometry.HorizontalDirection
 import javafx.scene.paint.Color
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonObjectBuilder
@@ -80,6 +81,12 @@ class SoundFileObject(
     }
 
     override fun copy(): SoundFileObject = SoundFileObject(name, file, outBus, startPos, rate, envelope.clone())
+
+    override fun cut(position: Double, whichHalf: HorizontalDirection): ScoreObject {
+        val startPos = if (whichHalf == HorizontalDirection.LEFT) startPos else start + position
+        val env = envelope.cut(position / duration, whichHalf)
+        return SoundFileObject(name, file, outBus, startPos, rate, env)
+    }
 
     override fun JsonObjectBuilder.saveToJson() {
         put("file", file.absolutePath)

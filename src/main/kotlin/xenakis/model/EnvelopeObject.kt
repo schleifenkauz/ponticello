@@ -1,6 +1,7 @@
 package xenakis.model
 
 import hextant.core.editor.ViewManager
+import javafx.geometry.HorizontalDirection
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonObjectBuilder
 import xenakis.impl.ScWriter
@@ -32,8 +33,10 @@ class EnvelopeObject(
 
     override fun getSpec(parameter: String): ControlSpec = if (parameter == name) spec else super.getSpec(parameter)
 
-    override fun copy(): ScoreObject =
-        EnvelopeObject(name, spec, bus, envelope.clone())
+    override fun copy(): ScoreObject = EnvelopeObject(name, spec, bus, envelope.clone())
+
+    override fun cut(position: Double, whichHalf: HorizontalDirection): ScoreObject =
+        EnvelopeObject(name, spec, bus, envelope.cut(position / duration, whichHalf))
 
     override fun writeStartCode(writer: ScWriter, offset: Double) {
         val env = envelope.code(offset, duration)
@@ -50,7 +53,7 @@ class EnvelopeObject(
         override val type: String
             get() = "envelope"
 
-        override fun JsonObject.createFromJson(name: String): ScoreObject  {
+        override fun JsonObject.createFromJson(name: String): ScoreObject {
             val spec = getSerializableValue<NumericalControlSpec>("spec")!!
             val bus = getSerializableValue<Bus>("bus")!!
             val envelope = getSerializableValue<Envelope>("envelope")!!

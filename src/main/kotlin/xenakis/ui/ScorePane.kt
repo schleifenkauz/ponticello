@@ -227,6 +227,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
                 return
             }
 
+            Cut -> return
             AddTime -> return
         }
         setNewShape(rect)
