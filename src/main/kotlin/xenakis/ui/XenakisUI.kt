@@ -37,6 +37,7 @@ import reaktive.value.forEach
 import reaktive.value.fx.asObservableValue
 import reaktive.value.now
 import xenakis.model.LayoutManager.LayoutAspect
+import xenakis.model.Settings
 import xenakis.model.XenakisProject
 import xenakis.sc.view.SynthDefsEditorControl
 import xenakis.ui.ToolSelector.Tool
@@ -53,6 +54,7 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
     private lateinit var scoreView: ScoreView
     private lateinit var flowGraphEditor: AudioFlowGraphEditor
     private lateinit var flowGraphWindow: Stage
+    private lateinit var settingsWindow: Stage
 
     private lateinit var playBtn: Button
     private lateinit var stopBtn: Button
@@ -66,13 +68,16 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
 
     private var displaysProject = false
 
+    private val context get() = controller.context
+
     init {
-        controller.context[XenakisUI] = this
+        context[XenakisUI] = this
         objectActionsBar.alwaysHGrow()
         objectActionsBar.centerChildrenVertically()
-        controller.context[HelpBrowser] = HelpBrowser(controller.context)
+        context[HelpBrowser] = HelpBrowser(context)
+        settingsWindow = SubWindow(SettingsPane(context[Settings], context), "Settings", context)
         stage.scene = Scene(Pane())
-        stage.scene.initHextantScene(controller.context)
+        stage.scene.initHextantScene(context)
     }
 
     override fun displayProject(project: XenakisProject) {
@@ -183,15 +188,15 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
     }
 
     private fun createToolbar(): HBox {
-        val fileBar = createFileBar().centerChildrenVertically() styleClass "toolbar-part"
-        val undoRedoBar = createUndoRedoBar().centerChildrenVertically() styleClass "toolbar-part"
-        val playerBar = createPlayerBar().centerChildrenVertically() styleClass "toolbar-part"
-        val layoutBar = createLayoutBar().centerChildrenVertically() styleClass "toolbar-part"
-        val miscBar = createMiscBar().centerChildrenVertically() styleClass "toolbar-part"
+        val fileBar = createFileBar() styleClass "toolbar-part"
+        val undoRedoBar = createUndoRedoBar() styleClass "toolbar-part"
+        val playerBar = createPlayerBar() styleClass "toolbar-part"
+        val layoutBar = createLayoutBar() styleClass "toolbar-part"
+        val miscBar = createMiscBar() styleClass "toolbar-part"
         return HBox(
-            35.0,
+            10.0,
             HBox(
-                35.0,
+                10.0,
                 fileBar, undoRedoBar, playerBar,
                 toolSelector styleClass "toolbar-part", layoutBar
             ), HBox(
@@ -211,17 +216,18 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
         redo.tooltipProperty().bind(manager.redoText.map(::Tooltip).asObservableValue())
         redo.disableProperty().bind(manager.canRedo.not().asObservableValue())
 
-        return HBox(5.0, undo, redo)
+        return HBox(undo, redo)
     }
 
-    private fun createMiscBar() = HBox(5.0,
+    private fun createMiscBar() = HBox(
         Icon.Console.button(action = "Open console") { shellWindow.show() },
         Icon.Restart.button(action = "Restart server") { project.rebootServer() },
         Icon.Browser.button(action = "Open help browser") { project.context[HelpBrowser].show() },
-        Icon.Graph.button(action = "Edit audio flow graph") { flowGraphWindow.show() }
+        Icon.Graph.button(action = "Edit audio flow graph") { flowGraphWindow.show() },
+        Icon.Settings.button(action = "Edit settings") { settingsWindow.show() }
     )
 
-    private fun createLayoutBar() = HBox(5.0,
+    private fun createLayoutBar() = HBox(
         Icon.Horizontal.button(action = "Create horizontal group") {
             project.context[ObjectSelector].addLayoutGroup(LayoutAspect.Horizontal)
         },
@@ -239,7 +245,7 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
             stopBtn.isDisable = true
             recordBtn.isDisable = true
         }
-        return HBox(5.0, playBtn, stopBtn, recordBtn)
+        return HBox(playBtn, stopBtn, recordBtn)
     }
 
     private fun toggleRecord() {
@@ -272,7 +278,7 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
         playBtn.tooltip = Tooltip("Start playback")
     }
 
-    private fun createFileBar() = HBox(5.0,
+    private fun createFileBar() = HBox(
         Icon.Save.button(action = "Save Project") { controller.saveProject() },
         Icon.Open.button(action = "Open Project") { controller.openProject() },
         Icon.Create.button(action = "Create new Project") { controller.createNewProject() },
@@ -321,13 +327,14 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
             }
 
             on("Ctrl+Alt+T") { controller.client.postAsync("s.plotTree;") }
-            on("F1") { controller.context[HelpBrowser].show() }
+            on("F1") { context[HelpBrowser].show() }
             on("Ctrl+Shift+D") {
-                val searchText = showTextInputDialog("Look up documentation", controller.context) ?: return@on
-                controller.context[HelpBrowser].searchDocumentation(searchText)
+                val searchText = showTextInputDialog("Look up documentation") ?: return@on
+                context[HelpBrowser].searchDocumentation(searchText)
             }
             on("Alt+C") { shellWindow.show() }
             on("Alt+G") { flowGraphWindow.show() }
+            on("Alt+S") { settingsWindow.show() }
             on("F5") { controller.restartScSynth() }
 
             on("Ctrl?+C") {

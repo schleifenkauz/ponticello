@@ -80,12 +80,12 @@ class UDPSuperColliderClient private constructor(
                     consoleMonitors.forEach { m -> m.invoke(line + "\n") }
                     consoleUntilNow.appendLine(line)
                     println(line)
-                    if ("*** Welcome to SuperCollider 3.13.0. *** " in line) {
+                    if ("-> OSCFunc(/eval, nil, nil, nil)" in line) {
                         status = StatusUpdate.ReadyToBoot
                     } else if ("SuperCollider 3 server ready." in line) {
                         status = StatusUpdate.ServerBooted
                     } else if ("Server 'localhost' exited" in line) {
-                        status = StatusUpdate.ReadyToBoot
+                        status = StatusUpdate.ExitedServer
                     }
                 }
             }
@@ -117,6 +117,7 @@ class UDPSuperColliderClient private constructor(
         Starting,
         ReadyToBoot,
         ServerBooted,
+        ExitedServer,
         Exited
     }
 

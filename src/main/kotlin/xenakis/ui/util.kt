@@ -132,7 +132,7 @@ fun Region.centerHorizontally(parent: Region) {
     layoutXProperty().bind(parent.widthProperty().subtract(widthProperty()).divide(2))
 }
 
-fun Double.snap(grid: Double) = (this / grid).roundToInt() * grid
+fun Double.snap(grid: Double): Double = if (grid == 0.0 || grid.isNaN()) this else (this / grid).roundToInt() * grid
 
 fun timeCode(t: Double, accuracy: Int): String {
     var seconds = t.toInt()

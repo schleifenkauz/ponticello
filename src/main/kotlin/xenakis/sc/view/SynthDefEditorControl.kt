@@ -12,7 +12,6 @@ import hextant.core.view.ListEditorControl.Companion.ORIENTATION
 import hextant.core.view.ListEditorControl.Orientation.Vertical
 import hextant.fx.view
 import javafx.geometry.Insets
-import javafx.scene.control.Button
 import javafx.scene.layout.HBox
 import xenakis.sc.editor.ParameterDefExpander
 import xenakis.ui.*
@@ -22,13 +21,9 @@ class SynthDefEditorControl @ProvideImplementation(ControlFactory::class) constr
 ) : CompoundEditorControl(editor, arguments) {
 
     override fun build(): Layout = vertical {
-        horizontal {
-            keyword("color: ")
-            view(editor.associatedColor)
-        }
         view(editor.parameters) {
             set(ORIENTATION, Vertical)
-            set(EMPTY_DISPLAY) { Button("Add parameter") }
+            set(EMPTY_DISPLAY) { null }
             set(CELL_FACTORY) {
                 ListEditorControl.NumberedCell { control ->
                     val space = infiniteSpace()
@@ -44,8 +39,6 @@ class SynthDefEditorControl @ProvideImplementation(ControlFactory::class) constr
         add(button("Add parameter") {
             editor.parameters.addLast()
         })
-        horizontal {
-            view(editor.ugenGraph).padding = Insets(5.0)
-        }
+        view(editor.ugenGraph).padding = Insets(5.0)
     }
 }

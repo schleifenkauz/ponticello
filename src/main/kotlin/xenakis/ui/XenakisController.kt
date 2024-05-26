@@ -3,8 +3,12 @@ package xenakis.ui
 import bundles.publicProperty
 import bundles.set
 import hextant.context.Context
+import hextant.context.withoutUndo
 import hextant.core.HextantCore
 import hextant.plugins.PluginBuilder
+import hextant.serial.SnapshotAware
+import hextant.serial.readJson
+import hextant.serial.writeJson
 import hextant.undo.UndoManager
 import javafx.application.Platform
 import javafx.stage.FileChooser
@@ -13,6 +17,7 @@ import reaktive.Observer
 import xenakis.impl.UDPSuperColliderClient
 import xenakis.impl.registerImplementationsFromClasspath
 import xenakis.model.NamingManager
+import xenakis.model.Settings
 import xenakis.model.XenakisProject
 import java.io.File
 import java.util.prefs.Preferences
@@ -59,21 +64,32 @@ class XenakisController(private val primaryStage: Stage) {
     var isSuperColliderReady: Boolean = false
         private set
 
+    private val xenakisDir = File(System.getProperty("user.home")).resolve(".xenakis")
+        .also { if (!it.exists()) it.mkdir() }
+
     private val fc = FileChooser().apply {
         extensionFilters.setAll(
             FileChooser.ExtensionFilter("JSON Files", "*.json"),
             FileChooser.ExtensionFilter("SuperCollider Scripts", "*.scd"),
             FileChooser.ExtensionFilter("Sound Files", listOf("*.wav", "*.mp3"))
         )
-        initialDirectory = File(System.getProperty("user.home")).resolve(".xenakis")
+        initialDirectory = xenakisDir
     }
 
     fun setupHextant() {
         context = HextantCore.defaultContext()
+        SnapshotAware.Serializer.reconstructionContext = context
         context[XenakisApp.primaryStage] = primaryStage
+        context[Settings] = loadSettings()
         context.registerImplementationsFromClasspath()
         HextantCore.apply(context, PluginBuilder.Phase.Initialize, null)
         XenakisHextantPlugin.apply(context, PluginBuilder.Phase.Initialize, null)
+    }
+
+    private fun loadSettings(): Settings {
+        val file = xenakisDir.resolve("settings.json")
+        return if (file.exists()) context.withoutUndo { file.readJson<Settings>() }
+        else Settings.createDefault(context)
     }
 
     fun startSuperCollider() {
@@ -188,7 +204,6 @@ class XenakisController(private val primaryStage: Stage) {
 
     fun showSaveDialog(extension: String): File? {
         setExtensionFilter(extension)
-        if (!fc.initialDirectory.exists()) fc.initialDirectory.mkdir()
         return fc.showSaveDialog(primaryStage)
     }
 
@@ -216,6 +231,7 @@ class XenakisController(private val primaryStage: Stage) {
     }
 
     fun quitApplication() {
+        xenakisDir.resolve("settings.json").writeJson(context[Settings])
         client.quit()
     }
 

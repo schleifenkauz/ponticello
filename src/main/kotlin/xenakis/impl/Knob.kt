@@ -1,41 +1,42 @@
 package xenakis.impl
 
-import hextant.fx.registerShortcuts
-import javafx.application.Application
-import javafx.scene.Scene
+import hextant.fx.setRoot
+import javafx.scene.control.Control
 import javafx.scene.control.Label
+import javafx.scene.control.Tooltip
+import javafx.scene.input.KeyEvent
 import javafx.scene.input.MouseEvent
 import javafx.scene.layout.Pane
 import javafx.scene.shape.Arc
 import javafx.scene.shape.Circle
 import javafx.scene.shape.Line
-import javafx.stage.Stage
 import xenakis.model.KnobControl
 import xenakis.sc.NumericalControlSpec
 import xenakis.sc.SpecTransformation
-import xenakis.sc.Warp
 import xenakis.ui.*
 import kotlin.math.*
 
-class Knob(private val control: KnobControl, private val spec: NumericalControlSpec) : Pane(), KnobControlView {
+class Knob(private val control: KnobControl, private val spec: NumericalControlSpec) : Control(), KnobControlView {
     private val knobDots = mutableListOf<Circle>()
-    private val knob = Circle(RADIUS, RADIUS, RADIUS - 5) styleClass "knob-mass"
+    private val knob = Circle(RADIUS, RADIUS, RADIUS - 10) styleClass "knob-mass"
     private val indicator = Line(RADIUS, RADIUS, 0.0, 0.0) styleClass "knob-indicator"
     private val accuracy = accuracy(spec.step.value)
     private val valueLabel = Label() styleClass "knob-value"
-    private val nameLabel = Label(control.parameter) styleClass "knob-parameter-name"
     private val transform = SpecTransformation(spec, MIN_ANGLE..MAX_ANGLE)
+    private val root = Pane(knob, indicator, valueLabel)
 
     private val discreteValues = ((spec.max.value - spec.min.value) / spec.step.value).roundToInt()
 
     init {
-        styleClass("control-kob")
+        styleClass("control-knob")
+        setRoot(root)
         isFocusTraversable = true
         setPrefSize(RADIUS * 2, RADIUS * 2)
         setMinSize(RADIUS * 2, RADIUS * 2)
         connectToControl()
-        children.addAll(knob, indicator, valueLabel, nameLabel)
-        layoutLabels()
+        indicator.stroke = spec.associatedColor
+        valueLabel.centerHorizontally(this)
+        valueLabel.layoutY = RADIUS * 1.4
         addDotsOrArc()
         listenForMouseEvents()
         addShortcuts()
@@ -54,28 +55,39 @@ class Knob(private val control: KnobControl, private val spec: NumericalControlS
             ev.consume()
         }
         addEventHandler(MouseEvent.MOUSE_CLICKED) { ev ->
-            if (ev.clickCount > 2) {
-                control.set(spec.defaultValue.value)
+            if (ev.clickCount >= 2) {
+                showValueInput()
             } else {
                 requestFocus()
             }
             ev.consume()
         }
+        tooltip = Tooltip(control.parameter)
     }
 
-    private fun addShortcuts() = registerShortcuts {
-        on("UP") { increase() }
-        on("DOWN") { decrease() }
-        on("PLUS") { increase() }
-        on("MINUS") { decrease() }
+    private fun showValueInput() {
+        val range = spec.min.value..spec.max.value
+        val v = showDoubleInputDialog(control.parameter, range, control.get()) ?: return
+        control.set(v)
+    }
+
+    private fun addShortcuts() = addEventHandler(KeyEvent.KEY_PRESSED) { ev ->
+        if (ev.isShiftDown || ev.isAltDown || ev.isControlDown) return@addEventHandler
+        ev.consume()
+        when (ev.code.toString()) {
+            "UP", "PLUS" -> increase()
+            "DOWN", "MINUS" -> decrease()
+        }
     }
 
     private fun increase() {
-        control.set(control.get() + spec.step.value)
+        val newValue = control.get() + spec.step.value
+        control.set(newValue.coerceIn(spec.range))
     }
 
     private fun decrease() {
-        control.set(control.get() - spec.step.value)
+        val newValue = (control.get() - spec.step.value)
+        control.set(newValue.coerceIn(spec.range))
     }
 
     private fun setValueFromMouse(x: Double, y: Double) {
@@ -101,9 +113,7 @@ class Knob(private val control: KnobControl, private val spec: NumericalControlS
 
     private fun layoutLabels() {
         valueLabel.centerHorizontally(this)
-        nameLabel.centerHorizontally(this)
-        valueLabel.layoutY = RADIUS * 1.3
-        nameLabel.layoutY = RADIUS * 1.7
+        valueLabel.layoutY = RADIUS * 1.5
     }
 
     private fun addDotsOrArc() {
@@ -111,14 +121,14 @@ class Knob(private val control: KnobControl, private val spec: NumericalControlS
             for (i in 0..discreteValues) {
                 val v = (spec.min.value + i * spec.step.value).round(accuracy)
                 val dot = Circle(DOT_RADIUS) styleClass "knob-dot"
-                val p = getPoint(v, RADIUS)
+                val p = getPoint(v, RADIUS - 5)
                 dot.centerX = p.x
                 dot.centerY = p.y
                 knobDots.add(dot)
             }
             children.addAll(knobDots)
         } else {
-            val arc = Arc(RADIUS, RADIUS, RADIUS, RADIUS, 210.0, -240.0) styleClass "knob-arc"
+            val arc = Arc(RADIUS, RADIUS, RADIUS - 5, RADIUS - 5, 210.0, -240.0) styleClass "knob-arc"
             children.add(arc)
         }
     }
@@ -126,7 +136,7 @@ class Knob(private val control: KnobControl, private val spec: NumericalControlS
     override fun updatedValue(value: Double) {
         valueLabel.text = value.format(accuracy)
         val start = getPoint(value, RADIUS / 3)
-        val end = getPoint(value, RADIUS - 5.0)
+        val end = getPoint(value, RADIUS - 10.0)
         indicator.startX = start.x
         indicator.startY = start.y
         indicator.endX = end.x
@@ -134,24 +144,10 @@ class Knob(private val control: KnobControl, private val spec: NumericalControlS
     }
 
     companion object {
-        private const val RADIUS = 32.0
+        private const val RADIUS = 24.0
         private const val MIN_ANGLE = 6.5 / 3 * PI
         private const val MAX_ANGLE = 2.5 / 3 * PI
         private const val DOT_RADIUS = 3.0
         private const val MAX_DOTS = 20
-    }
-}
-
-class KnobTest : Application() {
-    override fun start(stage: Stage) {
-        val ctrl = KnobControl("x", 0.1)
-        val spec = NumericalControlSpec(0.1, 0.0, 1.0, Warp.Linear, 0.01)
-        val knob = Knob(ctrl, spec)
-        val container = Pane(knob)
-        container.setPrefSize(500.0, 500.0)
-        knob.relocate(250 - 32.0, 250 - 32.0)
-        stage.scene = Scene(container)
-        stage.scene.stylesheets.add("xenakis/ui/style.css")
-        stage.show()
     }
 }

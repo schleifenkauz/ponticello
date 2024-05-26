@@ -41,8 +41,8 @@ data class NumericalControlSpec(
     @Component(ColorEditor::class)
     val associatedColor: Color = Color.WHITE
 ) : ControlSpec {
-    constructor(default: Double, min: Double, max: Double, warp: Warp, step: Double): this(
-        DoubleLiteral(default), DoubleLiteral(min), DoubleLiteral(max), warp, DoubleLiteral(step)
+    constructor(default: Double, min: Double, max: Double, warp: Warp, step: Double, associatedColor: Color) : this(
+        DoubleLiteral(default), DoubleLiteral(min), DoubleLiteral(max), warp, DoubleLiteral(step), associatedColor
     )
 
     override val type: ParameterType
@@ -50,6 +50,12 @@ data class NumericalControlSpec(
 
     override val code: String
         get() = "kr(${defaultValue.text}, spec: [${min.text}, ${max.text}, $warp, ${step.text}])"
+
+    val range: DoubleRange get() = min.value .. max.value
+
+    companion object {
+        val DEFAULT = NumericalControlSpec(0.0, 1.0, 0.0, Warp.Linear, 0.1, Color.WHITE)
+    }
 }
 
 @Compound(serializable = true)
@@ -72,7 +78,7 @@ data class BufferControlSpec(val defaultValue: Buffer) : ControlSpec {
         get() = "kr(${defaultValue.variableName})"
 }
 
-object ControlSpecUnspecified: ControlSpec {
+object ControlSpecUnspecified : ControlSpec {
     override val type: ParameterType
         get() = ParameterType.Unknown
     override val code: String

@@ -289,7 +289,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
         val newObj = newObjectArea
         val tool = ui.toolSelector.selected.value
         if (tool == AddTime) {
-            val amount = showDoubleInputDialog("How much time to add", context, 0.0..1000.0, 10.0) ?: return
+            val amount = showDoubleInputDialog("How much time to add", 0.0..1000.0, 10.0) ?: return
             addTime(getTime(ev.x), amount)
         } else if (newObj != null && tool != Pointer) {
             if (newObj.width != 0.0 && newObj.height != 0.0) createNewObject(tool, newObj)
@@ -318,7 +318,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
         val obj = when (tool) {
             Synth -> {
                 val def = context[SynthDefs].selectedSynthDef
-                val name = showTextInputDialog("Synth name", context) ?: return
+                val name = showTextInputDialog("Synth name") ?: return
                 val obj = SynthObject(name, def.name.text)
                 obj.controls = def.defaultControls()
                 obj

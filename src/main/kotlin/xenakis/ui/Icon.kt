@@ -76,6 +76,6 @@ enum class Icon {
         }
 
     companion object {
-        const val DEFAULT_RADIUS: Double = 24.0
+        const val DEFAULT_RADIUS: Double = 16.0
     }
 }

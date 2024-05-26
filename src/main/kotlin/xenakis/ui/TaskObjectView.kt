@@ -5,7 +5,6 @@ import javafx.scene.control.ScrollPane
 import javafx.scene.input.MouseEvent
 import javafx.scene.layout.Priority
 import javafx.stage.Stage
-import javafx.stage.StageStyle
 import xenakis.model.TaskObject
 
 class TaskObjectView(val obj: TaskObject) : ScoreObjectView(obj) {
@@ -28,10 +27,7 @@ class TaskObjectView(val obj: TaskObject) : ScoreObjectView(obj) {
 
     override fun initialize(parent: ScorePane) {
         super.initialize(parent)
-        codeWindow = SubWindow(
-            codeArea, "Code: ${obj.name}", context,
-            style = StageStyle.DECORATED, parent = this
-        )
+        codeWindow = SubWindow(codeArea, "Code: ${obj.name}", context, parent = this)
     }
 
     override fun resizeObject(width: Double, height: Double, ev: MouseEvent, cursor: Cursor): Boolean {

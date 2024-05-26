@@ -13,8 +13,6 @@ import javafx.geometry.Pos
 import javafx.scene.control.Button
 import javafx.scene.control.Label
 import javafx.scene.layout.HBox
-import javafx.scene.layout.Priority
-import javafx.scene.layout.Region
 import javafx.scene.layout.VBox
 import reaktive.event.observe
 import reaktive.value.now
@@ -56,7 +54,7 @@ class SynthDefsEditorControl @ProvideImplementation(ControlFactory::class) const
     }
 
     private fun addSynthDefEditor() {
-        val name = showTextInputDialog("SynthDef name", context) { txt -> Identifier.isValid(txt) } ?: return
+        val name = showTextInputDialog("SynthDef name") { txt -> Identifier.isValid(txt) } ?: return
         val editor = SynthDefEditor(context, name = IdentifierEditor(context, name))
         this.editor.addLast(editor)
         if (this.editor.editors.now.size == 1) {
@@ -87,12 +85,15 @@ class SynthDefsEditorControl @ProvideImplementation(ControlFactory::class) const
             showYesNoDialog("Rename references", default = true)
             context[XenakisController.currentProject].renamedSynthDef(oldName, newName)
         }
+        val colorLabel = Label("color: ")
+        val colorControl = context.createControl(editor.associatedColor)
         val remove = Icon.Delete.button(action = "Remove this SynthDef") { this.editor.remove(editor) }
         val expand = Icon.Expand.button(action = "Show SynthDef details")
         val collapse = Icon.Collapse.button(action = "Hide SynthDef details")
-        val space = Region()
-        val header = HBox(selector, name, space, remove, collapse).styleClass("synth-def-header")
-        HBox.setHgrow(space, Priority.ALWAYS)
+        val header = HBox(
+            selector, name, colorLabel, colorControl,
+            infiniteSpace(), remove, collapse
+        ).styleClass("synth-def-header")
         val box = VBox(header, control).styleClass("synth-def-box")
         expand.setOnAction {
             box.children.add(control)

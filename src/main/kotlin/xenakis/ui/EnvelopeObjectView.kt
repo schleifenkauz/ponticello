@@ -12,7 +12,6 @@ import reaktive.value.now
 import xenakis.model.EnvelopeObject
 import xenakis.sc.Bus
 import xenakis.sc.NumericalControlSpec
-import xenakis.sc.Warp
 import xenakis.sc.editor.BusRefEditor
 import xenakis.sc.editor.IdentifierEditor
 import xenakis.sc.editor.createEditor
@@ -42,7 +41,7 @@ class EnvelopeObjectView(val obj: EnvelopeObject) : ScoreObjectView(obj) {
         fun showEnvelopeConfig(
             context: Context,
             initialName: String = "",
-            initialSpec: NumericalControlSpec = NumericalControlSpec(0.0, 0.0, 1.0, Warp.Linear, 0.1),
+            initialSpec: NumericalControlSpec = NumericalControlSpec.DEFAULT,
             initialBus: Bus = Bus.output,
             onConfirm: (name: String, spec: NumericalControlSpec, outputBus: Bus) -> Unit
         ) {

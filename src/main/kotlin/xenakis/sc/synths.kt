@@ -3,7 +3,6 @@ package xenakis.sc
 import hextant.codegen.Component
 import hextant.codegen.Compound
 import hextant.codegen.ListEditor
-import hextant.codegen.UseEditor
 import hextant.core.editor.ColorEditor
 import javafx.scene.paint.Color
 import kotlinx.serialization.Serializable
@@ -23,9 +22,20 @@ interface ParameterizedObject {
 @ListEditor(serializable = true, editorCls = ParameterDefExpander::class)
 data class ParameterDef(val name: Identifier, val spec: ControlSpec) {
     companion object {
-        val freq = ParameterDef(Identifier("freq"), NumericalControlSpec(440.0, 20.0, 20000.0, Warp.Exponential, 1.0))
-        val amp = ParameterDef(Identifier("amp"), NumericalControlSpec(0.1, 0.0, 1.0, Warp.Linear, 0.001))
-        val pan = ParameterDef(Identifier("pan"), NumericalControlSpec(0.0, -1.0, 1.0, Warp.Linear, 0.01))
+        val freq = ParameterDef(
+            Identifier("freq"),
+            NumericalControlSpec(440.0, 20.0, 20000.0, Warp.Exponential, 1.0, Color.WHITE)
+        )
+        val amp = ParameterDef(
+            Identifier("amp"),
+            NumericalControlSpec(0.1, 0.0, 1.0, Warp.Linear, 0.01, Color.ORANGE)
+        )
+        val pan = ParameterDef(
+            Identifier("pan"),
+            NumericalControlSpec(0.0, -1.0, 1.0, Warp.Linear, 0.1, Color.BLUE)
+        )
+
+        val defaults = listOf(freq, amp, pan)
     }
 }
 

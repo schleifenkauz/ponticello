@@ -38,6 +38,7 @@ data class Score(
             obj.addToScore(this, context)
             namingManger.addedObject(obj)
         }
+        layoutManager.initialize(context)
     }
 
     fun getObject(name: String) = namingManger.getObject(name)

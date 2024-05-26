@@ -61,13 +61,15 @@ class IdentifierEditorControl(private val editor: IdentifierEditor, arguments: B
 
     private fun commitEdit() {
         val txt = field.text
-        if (!field.isEditable || txt == editor.text.now) return
+        if (!field.isEditable) return
         if (Identifier.isValid(txt)) {
             field.isEditable = false
             val old = editor.text.now
-            editor.setText(txt)
-            textChange.fire(old, txt)
             root.children[1] = btnEdit
+            if (txt != editor.text.now) {
+                editor.setText(txt)
+                textChange.fire(old, txt)
+            }
         }
     }
 

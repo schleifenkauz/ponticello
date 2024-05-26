@@ -115,7 +115,7 @@ Slider.control-detail-editor {
 }
 
 .icon-button {
-    -fx-background-color: transparent;;
+    -fx-background-color: transparent;
     -fx-background-radius: 6px;
     -fx-border-radius: 6px;
     -fx-border-color: transparent;
@@ -492,9 +492,13 @@ Slider.control-detail-editor {
 }
 
 .toolbar-part {
-    /*-fx-border-color: gray;
-    -fx-border-width: 1px;*/
-    -fx-padding: 5px;
+    -fx-border-color: gray;
+    -fx-border-width: 1px;
+    -fx-border-radius: 5px;
+    -fx-spacing: 3px;
+    -fx-padding: 0 10px 0 10px;
+    -fx-pref-height: 50px;
+    -fx-alignment: center-left;
     -fx-background-color: rgba(0, 0, 0, 0.15);
     -fx-background-radius: 5px;
 }
@@ -513,7 +517,6 @@ Slider.control-detail-editor {
 }
 
 .knob-indicator {
-    -fx-stroke: white;
     -fx-stroke-width: 2px;
 }
 
@@ -536,9 +539,18 @@ Slider.control-detail-editor {
 }
 
 .control-knob {
+    -fx-background-radius: 6px;
+    -fx-border-radius: 6px;
+    -fx-background-color: transparent;
+}
+
+.control-knob:hover {
+    -fx-background-color: #351919;
+}
+
+.control-knob:focused {
     -fx-border-width: 2px;
     -fx-border-color: black;
-    -fx-background-color: transparent;
 }
 
 .knob-arc {
@@ -547,17 +559,7 @@ Slider.control-detail-editor {
     -fx-stroke-width: 3px;
 }
 
-.control-knob:hover {
-    -fx-background-color: rgba(20, 0, 0, 0.5);
-}
-
 .knob-value {
     -fx-font-size: 10px;
     -fx-text-fill: white;
-}
-
-.knob-parameter-name {
-    -fx-font-size: 12px;
-    -fx-font-weight: bold;
-    -fx-text-fill: green;
 }

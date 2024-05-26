@@ -11,7 +11,6 @@ import javafx.scene.control.TextArea
 import javafx.scene.control.TextField
 import javafx.scene.layout.VBox
 import javafx.stage.Stage
-import javafx.stage.Window
 import xenakis.impl.UDPSuperColliderClient
 import kotlin.concurrent.thread
 
@@ -31,6 +30,7 @@ class SuperColliderShellController(private val client: UDPSuperColliderClient) {
     @FXML
     private lateinit var replScroll: ScrollPane
 
+    @Suppress("unused") //called from xenakis/ui/shell.fxml
     fun submitCommand() {
         val command = commandField.text.ifEmpty { return }
         thread {

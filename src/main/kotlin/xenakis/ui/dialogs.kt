@@ -46,24 +46,22 @@ fun showYesNoDialog(question: String, default: Boolean = false): Boolean {
 }
 
 fun showDoubleInputDialog(
-    title: String, context: Context,
+    title: String,
     range: DoubleRange, initialValue: Double = 1.0,
     confirmButton: ButtonType = ButtonType.OK
-) = showTextInputDialog(title, context, initialValue, confirmButton) { txt ->
+) = showTextInputDialog(title, initialValue, confirmButton) { txt ->
     txt.toDoubleOrNull()?.takeIf { v -> v in range }
 }
 
 fun showTextInputDialog(
     title: String,
-    context: Context,
     initialText: String = "",
     confirmButton: ButtonType = ButtonType.OK,
     checkText: (String) -> Boolean = { true }
-): String? = showTextInputDialog<String>(title, context, initialText, confirmButton) { txt -> txt.takeIf(checkText) }
+): String? = showTextInputDialog<String>(title, initialText, confirmButton) { txt -> txt.takeIf(checkText) }
 
 private fun <T : Any> showTextInputDialog(
     title: String,
-    context: Context,
     initialValue: T,
     confirmButton: ButtonType = ButtonType.OK,
     convert: (String) -> T?
@@ -71,7 +69,6 @@ private fun <T : Any> showTextInputDialog(
     initStyle(StageStyle.TRANSPARENT)
     headerText = ""
     contentText = title
-    context[Stylesheets].manage(dialogPane.scene)
     val value = editor.textProperty().map(convert)
     dialogPane.buttonTypes.setAll(confirmButton, ButtonType.CANCEL)
     dialogPane.setDefaultButton(confirmButton, disable = value.map { it == null })

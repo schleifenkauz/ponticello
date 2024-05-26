@@ -35,13 +35,6 @@
 - SynthDefs
 - common parameter definitions
 
-### Compound objects
-
-- creates a sub-canvas in which score objects can be created
-- main use is in combination with loops
-- only synth-objects and sound-file-objects can be children? (also task objects?)
-    - also compound-objects???
-
 ### Integrate Buffers and SynthDefs views into startup script?
 
 ### Copying and pasting score objects

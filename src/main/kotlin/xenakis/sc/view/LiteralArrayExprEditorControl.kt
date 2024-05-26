@@ -5,14 +5,12 @@ import bundles.set
 import hextant.codegen.ProvideImplementation
 import hextant.context.ControlFactory
 import hextant.core.view.CompoundEditorControl
-import hextant.core.view.ListEditorControl
 import hextant.core.view.ListEditorControl.Companion.CELL_FACTORY
 import hextant.core.view.ListEditorControl.Companion.ORIENTATION
 import hextant.core.view.ListEditorControl.Orientation
 import hextant.core.view.ListEditorControl.SeparatorCell
 import hextant.fx.view
 import javafx.scene.control.Label
-import javafx.scene.layout.HBox
 import xenakis.ui.centerChildrenVertically
 import xenakis.ui.styleClass
 

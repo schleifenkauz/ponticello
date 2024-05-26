@@ -3,7 +3,6 @@ package xenakis.model
 import kotlinx.serialization.Serializable
 import xenakis.impl.SuperColliderContext
 import xenakis.sc.Buffer
-import xenakis.sc.NoBuffer
 import xenakis.sc.Identifier
 
 @Serializable

@@ -5,7 +5,6 @@ import bundles.publicProperty
 import hextant.context.Context
 import javafx.geometry.Bounds
 import javafx.scene.web.WebView
-import javafx.stage.StageStyle
 import reaktive.value.now
 import xenakis.sc.Identifier
 import xenakis.sc.MessageSend
@@ -17,7 +16,7 @@ class HelpBrowser(context: Context) {
 
     private val window = SubWindow(
         webView, "Help Browser", context,
-        applyStylesheets = false, style = StageStyle.UNIFIED
+        applyStylesheets = false
     )
 
     init {

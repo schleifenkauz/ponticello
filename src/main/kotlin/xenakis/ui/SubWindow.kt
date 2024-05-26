@@ -18,7 +18,7 @@ class SubWindow(
     private val context: Context,
     applyStylesheets: Boolean = true,
     autoHide: Boolean = true,
-    style: StageStyle = StageStyle.UNDECORATED,
+    style: StageStyle = StageStyle.DECORATED,
     private val parent: Pane? = null,
     private val onShowing: () -> Unit = {}
 ) : Stage() {

@@ -89,7 +89,17 @@ class ControlAssignmentEditor(private val parameter: ParameterDef, val project: 
                 project: XenakisProject,
             ): Slider {
                 val spec = parameter.spec as NumericalControlSpec
-                return Slider(spec.min.value, parameter.spec.max.value, control?.get() ?: spec.defaultValue.value)
+                val slider = Slider(spec.min.value, parameter.spec.max.value, control?.get() ?: spec.defaultValue.value)
+                slider.blockIncrement = spec.step.value
+                slider.majorTickUnit = spec.step.value
+                slider.minorTickCount = 0
+                slider.isSnapToTicks = true
+                val accuracy = accuracy(spec.step.value)
+                slider.tooltipProperty().bind(slider.valueProperty().map { value ->
+                    val v = value.toDouble().format(accuracy)
+                    Tooltip("${parameter.name.text}: $v")
+                })
+                return slider
             }
 
             override fun createControl(detailInput: Slider, parameter: ParameterDef): KnobControl =

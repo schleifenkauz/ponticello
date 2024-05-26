@@ -4,7 +4,6 @@ import bundles.set
 import hextant.context.Context
 import hextant.context.withoutUndo
 import hextant.serial.EditorRoot
-import hextant.serial.SnapshotAware
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import kotlinx.serialization.decodeFromString
@@ -39,6 +38,9 @@ class XenakisProject private constructor(
         private set
 
     @Transient
+    private lateinit var statusObserver: Observer
+
+    @Transient
     private lateinit var colorObserver: Observer
 
     @Transient
@@ -55,7 +57,11 @@ class XenakisProject private constructor(
         }
         context[SynthDefs] = synthDefs
         client = context[UDPSuperColliderClient]
-        bootServer(client)
+        statusObserver = client.statusUpdates.observe { _, status ->
+            if (status == UDPSuperColliderClient.StatusUpdate.ReadyToBoot) {
+                bootServer(client)
+            }
+        }
     }
 
     fun saveTo(file: File) {
@@ -76,7 +82,7 @@ class XenakisProject private constructor(
     }
 
     fun rebootServer() {
-        client.post("s.quit")
+        client.postAsync("s.quit")
         bootServer(client)
     }
 
@@ -116,7 +122,6 @@ class XenakisProject private constructor(
     companion object {
         fun loadFrom(file: File, context: Context): XenakisProject {
             val str = file.readText()
-            SnapshotAware.Serializer.reconstructionContext = context
             val project = context.withoutUndo { Json.decodeFromString<XenakisProject>(str) }
             project.projectFile = file
             project.initialize(context)
