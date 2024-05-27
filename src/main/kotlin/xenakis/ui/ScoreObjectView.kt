@@ -161,7 +161,7 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
         for (control in myObject.controls) {
             if (control !is KnobControl) continue
             val spec = myObject.getSpec(control.parameter) as NumericalControlSpec
-            val knob = Knob(control, spec, context)
+            val knob = Knob(control, spec, radius = 24.0, context)
             knobControls.children.add(knob)
         }
         if (knobControls.children.any()) {

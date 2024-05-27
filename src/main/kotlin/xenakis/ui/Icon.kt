@@ -7,10 +7,8 @@ import javafx.scene.image.ImageView
 
 enum class Icon {
     Envelope,
-    Move,
     Synth,
     Code,
-    Midi,
     Repeat,
     Delete,
     Settings,
@@ -25,7 +23,6 @@ enum class Icon {
     Console,
     Save,
     Open,
-    Record,
     RecordInactive,
     RecordActive,
     Restart,
@@ -45,6 +42,7 @@ enum class Icon {
     Unmute,
     Undo, Redo,
     Memo,
+    Knob,
 
     /*Color,*/
     FileReload,

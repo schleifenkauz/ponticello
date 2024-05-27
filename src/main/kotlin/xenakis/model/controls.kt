@@ -28,10 +28,15 @@ data class KnobControl(override val parameter: String, private var value: Double
     fun set(value: Double) {
         if (value == this.value) return
         this.value = value
-        views.notifyViews { updatedValue(value) }
+        views.notifyViews { updatedValue(this@KnobControl, value) }
     }
 
     fun get() = value
+
+    fun addView(view: KnobControlView) {
+        views.addView(view)
+        view.updatedValue(this, value)
+    }
 }
 
 @Serializable

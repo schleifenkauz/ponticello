@@ -14,6 +14,7 @@ import javafx.stage.StageStyle
 import javafx.util.StringConverter
 import xenakis.impl.DoubleRange
 
+@Suppress("unused")
 fun <T : Any> showSelectorDialog(
     title: String,
     context: Context,
@@ -66,6 +67,7 @@ fun showTextPrompt(title: String, initialText: String, context: Context, onEnter
     field.text = initialText
     field.selectAll()
     val window = SubWindow(field, title, context, type = SubWindow.Type.Prompt)
+    window.sizeToScene()
     field.registerShortcuts {
         on("ENTER") {
             if (onEnter(field.text)) {
@@ -126,8 +128,10 @@ fun <T : Any> Node.showDialog(
     extraConfig, resultConverter
 )
 
+@Suppress("unused")
 fun Parent.showWindow(title: String, context: Context, type: SubWindow.Type): Stage {
     val window = SubWindow(this, title, context, type = type, applyStylesheets = true)
+    window.sizeToScene()
     window.show()
     return window
 }

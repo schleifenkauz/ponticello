@@ -9,6 +9,7 @@ import kotlinx.serialization.Serializable
 import xenakis.impl.ColorSerializer
 import xenakis.impl.DoubleRange
 import xenakis.sc.editor.ControlSpecEditor
+import xenakis.ui.accuracy
 
 enum class ParameterType {
     Bus, Buffer, Numerical, Unknown;
@@ -41,6 +42,8 @@ data class NumericalControlSpec(
     @Component(ColorEditor::class)
     val associatedColor: Color = Color.WHITE
 ) : ControlSpec {
+    val accuracy get() = accuracy(step.value)
+
     constructor(default: Double, min: Double, max: Double, warp: Warp, step: Double, associatedColor: Color) : this(
         DoubleLiteral(default), DoubleLiteral(min), DoubleLiteral(max), warp, DoubleLiteral(step), associatedColor
     )
@@ -51,7 +54,7 @@ data class NumericalControlSpec(
     override val code: String
         get() = "kr(${defaultValue.text}, spec: [${min.text}, ${max.text}, $warp, ${step.text}])"
 
-    val range: DoubleRange get() = min.value .. max.value
+    val range: DoubleRange get() = min.value..max.value
 
     companion object {
         val DEFAULT = NumericalControlSpec(0.0, 1.0, 0.0, Warp.Linear, 0.1, Color.WHITE)

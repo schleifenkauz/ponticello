@@ -27,6 +27,7 @@ class XenakisProject private constructor(
     val synthDefs: SynthDefs,
     val flowGraph: AudioFlowGraph,
     val buffers: Buffers,
+    val globalControls: GlobalControls = GlobalControls(mutableListOf()),
     val score: Score
 ) {
     @Transient
@@ -50,6 +51,7 @@ class XenakisProject private constructor(
     fun initialize(context: Context) {
         this.context = context
         score.initialize(context)
+        globalControls.initialize(context)
         colorObserver = synthDefs.editor.editor.editors.observeEach { _, def ->
             def.associatedColor.result.observe { _ ->
                 score.recoloredSynthDef(def.name.text.now)
@@ -93,6 +95,7 @@ class XenakisProject private constructor(
                     +"s.bootSync"
                     flowGraph.allocateBusses(this@wrap)
                     buffers.loadBuffers(this@wrap)
+                    globalControls.setupBusses(this@wrap)
                     for (obj in score.objects) obj.serverBooted(this@wrap)
                     postAsync(serverSetup.editor.result.now.code)
                     postAsync("\"Server is setup\".postln;")

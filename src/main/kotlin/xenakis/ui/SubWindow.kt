@@ -30,7 +30,6 @@ class SubWindow(
         if (applyStylesheets) applyStylesheets()
         initWindowType()
         removeRootFromParentOnShowing()
-        sizeToScene()
     }
 
     private fun applyStylesheets() {
@@ -53,6 +52,14 @@ class SubWindow(
         }
     }
 
+    @Suppress("unused")
+    fun autoResize() {
+        require(root is Region)
+        root.widthProperty().addListener { _, _, _ -> sizeToScene() }
+        root.widthProperty().addListener { _, _, _ -> sizeToScene() }
+        isResizable = false
+    }
+
     private fun removeRootFromParentOnShowing() {
         setOnShowing {
             onShowing()
@@ -62,7 +69,6 @@ class SubWindow(
             }
             scene.root = root
             root.requestFocus()
-            sizeToScene()
         }
     }
 

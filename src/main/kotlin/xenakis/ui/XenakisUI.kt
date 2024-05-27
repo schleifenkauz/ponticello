@@ -28,7 +28,6 @@ import javafx.scene.layout.Priority
 import javafx.scene.layout.VBox
 import javafx.scene.paint.Color
 import javafx.stage.Stage
-import javafx.stage.StageStyle
 import org.controlsfx.control.textfield.TextFields
 import reaktive.Observer
 import reaktive.value.binding.map
@@ -52,9 +51,9 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
     private lateinit var synthDefsEditor: SynthDefsEditorControl
     private lateinit var buffersEditor: BuffersEditor
     private lateinit var scoreView: ScoreView
-    private lateinit var flowGraphEditor: AudioFlowGraphEditor
-    private lateinit var flowGraphWindow: Stage
-    private var settingsWindow: Stage
+    private lateinit var flowGraphWindow: SubWindow
+    private lateinit var globalControlsWindow: SubWindow
+    private val settingsWindow: Stage
 
     private lateinit var playBtn: Button
     private lateinit var stopBtn: Button
@@ -76,6 +75,7 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
         objectActionsBar.centerChildrenVertically()
         context[HelpBrowser] = HelpBrowser(context)
         settingsWindow = SubWindow(SettingsPane(context[Settings], context), "Settings", context)
+        settingsWindow.sizeToScene()
         stage.scene = Scene(Pane())
         stage.scene.initHextantScene(context)
     }
@@ -86,9 +86,14 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
         synthDefsEditor = project.synthDefs.editor.control as SynthDefsEditorControl
         buffersEditor = BuffersEditor(project.buffers, project, controller)
         scoreView = ScoreView(project.score, project.context)
-        flowGraphEditor = AudioFlowGraphEditor(project.flowGraph, project.context)
+
+        val flowGraphEditor = AudioFlowGraphEditor(project.flowGraph, context)
         flowGraphEditor.setPrefSize(800.0, 800.0)
-        flowGraphWindow = SubWindow(flowGraphEditor, "Audio flow graph", project.context)
+        flowGraphWindow = SubWindow(flowGraphEditor, "Audio flow graph", context)
+
+        val globalControlsPane = GlobalControlsPane(project.globalControls, context)
+        globalControlsWindow = SubWindow(globalControlsPane, "Global controls", context)
+        globalControlsWindow.width = 500.0
 
         player = ScorePlayer(scoreView, project, controller.client)
         shellWindow = SuperColliderShellController.createShellWindow(controller.client)
@@ -224,7 +229,8 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
         Icon.Restart.button(action = "Restart server") { project.rebootServer() },
         Icon.Browser.button(action = "Open help browser") { project.context[HelpBrowser].show() },
         Icon.Graph.button(action = "Edit audio flow graph") { flowGraphWindow.show() },
-        Icon.Settings.button(action = "Edit settings") { settingsWindow.show() }
+        Icon.Settings.button(action = "Edit settings") { settingsWindow.show() },
+        Icon.Knob.button(action = "Open global controls") { globalControlsWindow.show() }
     )
 
     private fun createLayoutBar() = HBox(
@@ -336,8 +342,9 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
                 }
             }
             on("Ctrl+T") { shellWindow.show() }
-            on("Alt+G") { flowGraphWindow.show() }
-            on("Alt+S") { settingsWindow.show() }
+            on("Ctrl+Shift+F") { flowGraphWindow.show() }
+            on("Ctrl+Alt+S") { settingsWindow.show() }
+            on("Ctrl+G") { globalControlsWindow.show() }
             on("F5") { controller.restartScSynth() }
 
             on("Ctrl?+C") {

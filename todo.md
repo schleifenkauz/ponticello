@@ -7,11 +7,6 @@
 
 ### external vst plugins
 
-### global controls
-
-- definitions of global parameters in side window (or even in initialization code, but how to extract then?)
-- Global control window with knobs/sliders that can be moved to a touch screen
-
 ### sound file objects
 
 - maybe have a configurable playbuf-synth (additional parameters, filters, etc.)
@@ -61,3 +56,4 @@
 ## Nice to have
 
 - integrate close, maximize, minimize into top toolbar and remove window decoration
+- auto resize prompt windows (e.g. parameter definition prompts)

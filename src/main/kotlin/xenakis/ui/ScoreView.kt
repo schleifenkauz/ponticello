@@ -72,9 +72,11 @@ class ScoreView(score: Score, context: Context) : ScorePane(score, context) {
         positionTracker.endYProperty().bind(heightProperty().subtract(10))
         positionTracker.viewOrder = 1.0
         setOnMouseEntered { ev ->
-            positionTracker.layoutX = ev.x.snap(timeSnap)
-            children.add(positionTracker)
-            ev.consume()
+            if (!ev.x.isNaN()) {
+                positionTracker.layoutX = ev.x.snap(timeSnap)
+                children.add(positionTracker)
+                ev.consume()
+            }
         }
         setOnMouseMoved { ev ->
             if (!ev.x.isNaN()) {

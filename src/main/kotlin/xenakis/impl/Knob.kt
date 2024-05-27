@@ -18,15 +18,16 @@ import xenakis.ui.*
 import kotlin.math.*
 
 class Knob(
-    private val control: KnobControl,
+    val control: KnobControl,
     private val spec: NumericalControlSpec,
+    private val radius: Double = DEFAULT_RADIUS,
     private val context: Context
 ) : Control(), KnobControlView {
     private val knobDots = mutableListOf<Circle>()
-    private val knob = Circle(RADIUS, RADIUS, RADIUS - 10) styleClass "knob-mass"
-    private val indicator = Line(RADIUS, RADIUS, 0.0, 0.0) styleClass "knob-indicator"
-    private val accuracy = accuracy(spec.step.value)
+    private val knob = Circle(radius, radius, radius - 10) styleClass "knob-mass"
+    private val indicator = Line(radius, radius, 0.0, 0.0) styleClass "knob-indicator"
     private val valueLabel = Label() styleClass "knob-value"
+    @Suppress("EmptyRange")
     private val transform = SpecTransformation(spec, MIN_ANGLE..MAX_ANGLE)
     private val root = Pane(knob, indicator, valueLabel)
 
@@ -36,12 +37,12 @@ class Knob(
         styleClass("control-knob")
         setRoot(root)
         isFocusTraversable = true
-        setPrefSize(RADIUS * 2, RADIUS * 2)
-        setMinSize(RADIUS * 2, RADIUS * 2)
-        connectToControl()
+        setPrefSize(radius * 2, radius * 2)
+        setMinSize(radius * 2, radius * 2)
+        control.addView(this)
         indicator.stroke = spec.associatedColor
         valueLabel.centerHorizontally(this)
-        valueLabel.layoutY = RADIUS * 1.4
+        valueLabel.layoutY = radius * 1.4
         addDotsOrArc()
         listenForMouseEvents()
         addShortcuts()
@@ -49,14 +50,14 @@ class Knob(
 
     private fun listenForMouseEvents() {
         addEventHandler(MouseEvent.MOUSE_PRESSED) { ev ->
-            val x = ev.x - RADIUS
-            val y = ev.y - RADIUS
-            if (sqrt(x * x + y * y) < RADIUS / 2) return@addEventHandler
+            val x = ev.x - radius
+            val y = ev.y - radius
+            if (sqrt(x * x + y * y) < radius / 2) return@addEventHandler
             setValueFromMouse(x, y)
             ev.consume()
         }
         addEventHandler(MouseEvent.MOUSE_DRAGGED) { ev ->
-            setValueFromMouse((ev.x - RADIUS), (ev.y - RADIUS))
+            setValueFromMouse((ev.x - radius), (ev.y - radius))
             ev.consume()
         }
         addEventHandler(MouseEvent.MOUSE_CLICKED) { ev ->
@@ -108,41 +109,31 @@ class Knob(
 
     private fun getPoint(value: Double, r: Double): Point {
         val phi = transform.map(value) - PI / 2
-        val p = Point(RADIUS + r * sin(phi), RADIUS + r * cos(phi))
+        val p = Point(radius + r * sin(phi), radius + r * cos(phi))
         return p
-    }
-
-    private fun connectToControl() {
-        control.views.addView(this)
-        updatedValue(control.get())
-    }
-
-    private fun layoutLabels() {
-        valueLabel.centerHorizontally(this)
-        valueLabel.layoutY = RADIUS * 1.5
     }
 
     private fun addDotsOrArc() {
         if (discreteValues <= MAX_DOTS) {
             for (i in 0..discreteValues) {
-                val v = (spec.min.value + i * spec.step.value).round(accuracy)
+                val v = (spec.min.value + i * spec.step.value).round(spec.accuracy)
                 val dot = Circle(DOT_RADIUS) styleClass "knob-dot"
-                val p = getPoint(v, RADIUS - 5)
+                val p = getPoint(v, radius - 5)
                 dot.centerX = p.x
                 dot.centerY = p.y
                 knobDots.add(dot)
             }
             children.addAll(knobDots)
         } else {
-            val arc = Arc(RADIUS, RADIUS, RADIUS - 5, RADIUS - 5, 210.0, -240.0) styleClass "knob-arc"
+            val arc = Arc(radius, radius, radius - 5, radius - 5, 210.0, -240.0) styleClass "knob-arc"
             children.add(arc)
         }
     }
 
-    override fun updatedValue(value: Double) {
-        valueLabel.text = value.format(accuracy)
-        val start = getPoint(value, RADIUS / 3)
-        val end = getPoint(value, RADIUS - 10.0)
+    override fun updatedValue(control: KnobControl, value: Double) {
+        valueLabel.text = value.format(spec.accuracy)
+        val start = getPoint(value, radius / 3)
+        val end = getPoint(value, radius - 10.0)
         indicator.startX = start.x
         indicator.startY = start.y
         indicator.endX = end.x
@@ -150,7 +141,7 @@ class Knob(
     }
 
     companion object {
-        private const val RADIUS = 24.0
+        private const val DEFAULT_RADIUS = 24.0
         private const val MIN_ANGLE = 6.5 / 3 * PI
         private const val MAX_ANGLE = 2.5 / 3 * PI
         private const val DOT_RADIUS = 3.0

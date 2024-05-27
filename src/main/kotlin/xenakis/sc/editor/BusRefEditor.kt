@@ -11,8 +11,12 @@ import xenakis.ui.XenakisController
 @Suppress("SERIALIZER_TYPE_INCOMPATIBLE")
 @Serializable(with = SnapshotAware.Serializer::class)
 class BusRefEditor(context: Context, bus: Bus = Bus.output) : SimpleChoiceEditor<Bus>(context, bus) {
-    override fun choices(): List<Bus> =
-        context[XenakisController.currentProject].flowGraph.busses.map { obj -> obj.bus } + BusRefEditorControl.createNew
+    override fun choices(): List<Bus> {
+        val project = context[XenakisController.currentProject]
+        val bussesFromFlowGraph = project.flowGraph.busses.map { obj -> obj.bus }
+        val globalControlBusses = project.globalControls.busses
+        return globalControlBusses + bussesFromFlowGraph + BusRefEditorControl.createNew
+    }
 
     override fun toString(choice: Bus): String = when {
         choice.name == "<create-new>" -> "Create new"

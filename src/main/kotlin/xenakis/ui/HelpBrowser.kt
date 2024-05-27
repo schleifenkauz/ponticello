@@ -19,6 +19,7 @@ class HelpBrowser(context: Context) {
     init {
         webView.setPrefSize(600.0, 800.0)
         webView.engine.load("$URL_ROOT/Help.html")
+        window.sizeToScene()
     }
 
     fun show() {

@@ -12,18 +12,6 @@ import xenakis.sc.editor.BufferRefEditor
 import xenakis.sc.editor.BusRefEditor
 import java.io.File
 
-@Serializable
-data class Group(
-    var name: String,
-    @Serializable(with = ColorSerializer::class) var associatedColor: Color,
-) {
-    val variableName = "~grp_$name"
-
-    companion object {
-        val default = Group("default", Color.BLUE)
-    }
-}
-
 @Choice(defaultValue = "Rate.Audio")
 enum class Rate {
     Audio, Control;
@@ -40,7 +28,7 @@ data class Bus(
     var name: String,
     var rate: Rate,
     var channels: Int,
-    @Serializable(with = ColorSerializer::class) var associatedColor: Color?
+    @Serializable(with = ColorSerializer::class) var associatedColor: Color? = null
 ) {
     fun copyFrom(obj: Bus) {
         name = obj.name
@@ -74,7 +62,7 @@ sealed interface Buffer {
 object NoBuffer : Buffer {
     override var name: Identifier
         get() = Identifier("<none>")
-        set(value) {
+        set(@Suppress("UNUSED_PARAMETER") value) {
             throw UnsupportedOperationException("NoBuffer cannot be renamed")
         }
 
@@ -84,8 +72,6 @@ object NoBuffer : Buffer {
     override val initializationCode: String
         get() = throw UnsupportedOperationException("NoBuffer cannot be initialized")
 }
-
-
 
 @Serializable
 /*@Compound(nodeType = ScExpr::class, serializable = true)*/
