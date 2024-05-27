@@ -25,12 +25,6 @@
 
 ### Mixing interface in AudioFlowGraph
 
-### Better input dialogs
-
-- autofocus first input control
-- less cluttered
-- confirm on enter, abort on escape
-
 ### Two resize modes for objects with associated envelopes
 
 - when shift is pressed, resize by scaling the envelopes (which is easier given the current implementation)

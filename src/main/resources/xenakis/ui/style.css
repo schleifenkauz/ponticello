@@ -563,3 +563,15 @@ Slider.control-detail-editor {
     -fx-font-size: 10px;
     -fx-text-fill: white;
 }
+
+.prompt-text-field {
+    -fx-font-size: 13.0;
+    -fx-padding: 3px;
+    -fx-border-radius: 3px;
+    -fx-border-color: gray;
+    -fx-background-radius: 3px;
+    -fx-background-color: black;
+    -fx-border-width: 2px;
+    -fx-prompt-text-fill: gray;
+    -fx-text-fill: white;
+}

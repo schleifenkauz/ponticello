@@ -2,6 +2,7 @@ package xenakis.ui
 
 import hextant.context.Context
 import hextant.fx.Stylesheets
+import hextant.fx.registerShortcuts
 import hextant.fx.setDefaultButton
 import javafx.collections.FXCollections
 import javafx.scene.Node
@@ -45,34 +46,34 @@ fun showYesNoDialog(question: String, default: Boolean = false): Boolean {
     return alert.showAndWait().getOrNull() == ButtonType.YES
 }
 
-fun showDoubleInputDialog(
+fun showNumberPrompt(
     title: String,
-    range: DoubleRange, initialValue: Double = 1.0,
-    confirmButton: ButtonType = ButtonType.OK
-) = showTextInputDialog(title, initialValue, confirmButton) { txt ->
-    txt.toDoubleOrNull()?.takeIf { v -> v in range }
+    range: DoubleRange,
+    initialValue: Double = range.start,
+    context: Context,
+    onEnter: (Double) -> Unit
+) = showTextPrompt(title, initialValue.toString(), context) { txt ->
+    val value = txt.toDoubleOrNull()
+    if (value != null && value in range) {
+        onEnter(value)
+        true
+    } else false
 }
 
-fun showTextInputDialog(
-    title: String,
-    initialText: String = "",
-    confirmButton: ButtonType = ButtonType.OK,
-    checkText: (String) -> Boolean = { true }
-): String? = showTextInputDialog<String>(title, initialText, confirmButton) { txt -> txt.takeIf(checkText) }
-
-private fun <T : Any> showTextInputDialog(
-    title: String,
-    initialValue: T,
-    confirmButton: ButtonType = ButtonType.OK,
-    convert: (String) -> T?
-): T? = TextInputDialog(initialValue.toString()).run {
-    initStyle(StageStyle.TRANSPARENT)
-    headerText = ""
-    contentText = title
-    val value = editor.textProperty().map(convert)
-    dialogPane.buttonTypes.setAll(confirmButton, ButtonType.CANCEL)
-    dialogPane.setDefaultButton(confirmButton, disable = value.map { it == null })
-    showAndWait().getOrNull()?.let(convert)
+fun showTextPrompt(title: String, initialText: String, context: Context, onEnter: (String) -> Boolean) {
+    val field = TextField() styleClass "prompt-text-field"
+    field.promptText = title
+    field.text = initialText
+    field.selectAll()
+    val window = SubWindow(field, title, context, type = SubWindow.Type.Prompt)
+    field.registerShortcuts {
+        on("ENTER") {
+            if (onEnter(field.text)) {
+                window.hide()
+            }
+        }
+    }
+    window.show()
 }
 
 fun alertException(action: String, exc: Exception) = Alert(Alert.AlertType.ERROR).run {
@@ -125,8 +126,8 @@ fun <T : Any> Node.showDialog(
     extraConfig, resultConverter
 )
 
-fun Parent.showWindow(title: String, context: Context): Stage {
-    val window = SubWindow(this, title, context)
+fun Parent.showWindow(title: String, context: Context, type: SubWindow.Type): Stage {
+    val window = SubWindow(this, title, context, type = type, applyStylesheets = true)
     window.show()
     return window
 }

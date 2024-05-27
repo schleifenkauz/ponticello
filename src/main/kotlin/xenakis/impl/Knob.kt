@@ -1,5 +1,6 @@
 package xenakis.impl
 
+import hextant.context.Context
 import hextant.fx.setRoot
 import javafx.scene.control.Control
 import javafx.scene.control.Label
@@ -16,7 +17,11 @@ import xenakis.sc.SpecTransformation
 import xenakis.ui.*
 import kotlin.math.*
 
-class Knob(private val control: KnobControl, private val spec: NumericalControlSpec) : Control(), KnobControlView {
+class Knob(
+    private val control: KnobControl,
+    private val spec: NumericalControlSpec,
+    private val context: Context
+) : Control(), KnobControlView {
     private val knobDots = mutableListOf<Circle>()
     private val knob = Circle(RADIUS, RADIUS, RADIUS - 10) styleClass "knob-mass"
     private val indicator = Line(RADIUS, RADIUS, 0.0, 0.0) styleClass "knob-indicator"
@@ -67,8 +72,9 @@ class Knob(private val control: KnobControl, private val spec: NumericalControlS
 
     private fun showValueInput() {
         val range = spec.min.value..spec.max.value
-        val v = showDoubleInputDialog(control.parameter, range, control.get()) ?: return
-        control.set(v)
+        showNumberPrompt("${control.parameter} ($range)", range, control.get(), context) { v ->
+            control.set(v)
+        }
     }
 
     private fun addShortcuts() = addEventHandler(KeyEvent.KEY_PRESSED) { ev ->

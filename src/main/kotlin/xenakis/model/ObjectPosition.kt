@@ -1,7 +1,6 @@
 package xenakis.model
 
 import hextant.core.editor.ViewManager
-import xenakis.ui.PositionListener
 
 class ObjectPosition(
     private val obj: ScoreObject,

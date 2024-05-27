@@ -290,8 +290,9 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
         val newObj = newObjectArea
         val tool = ui.toolSelector.selected.value
         if (tool == AddTime) {
-            val amount = showDoubleInputDialog("How much time to add", 0.0..1000.0, 10.0) ?: return
-            addTime(getTime(ev.x), amount)
+            showNumberPrompt("How much time to add", 0.0..1000.0, 10.0, context) { amount ->
+                addTime(getTime(ev.x), amount)
+            }
         } else if (newObj != null && tool != Pointer) {
             if (newObj.width != 0.0 && newObj.height != 0.0) createNewObject(tool, newObj)
             clearNewShape()
@@ -316,39 +317,47 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
     * */
 
     private fun createNewObject(tool: Tool, rect: Rectangle) {
-        val obj = when (tool) {
+        when (tool) {
             Synth -> {
                 val def = context[SynthDefs].selectedSynthDef
-                val name = showTextInputDialog("Synth name") ?: return
-                val obj = SynthObject(name, def.name.text)
-                obj.controls = def.defaultControls()
-                obj
+                showTextPrompt("Synth name", "", context) { name ->
+                    if (!Identifier.isValid(name) || context[NamingManager].isNameTaken(name)) {
+                        return@showTextPrompt false
+                    }
+                    val obj = SynthObject(name, def.name.text)
+                    obj.controls = def.defaultControls()
+                    addObject(obj, rect)
+                    true
+                }
             }
 
             Task -> {
                 val editor = EditorRoot.create(ScFunctionEditor(context))
-                TaskObject("task", editor, rect.width)
+                addObject(TaskObject("task", editor, rect.width), rect)
             }
 
             Tool.Envelope -> {
                 EnvelopeObjectView.showEnvelopeConfig(context) { name, spec, outputBus ->
                     val envelope = Envelope.constant(spec.defaultValue.value, spec.warp)
                     val obj = EnvelopeObject(name, spec, outputBus, envelope)
-                    obj.assignBoundsFromRect(rect)
-                    score.addObject(obj)
+                    addObject(obj, rect)
                 }
                 return
             }
 
-            Memo -> MemoObject("memo", "", rect.width)
+            Memo -> addObject(MemoObject("memo", "", rect.width), rect)
 
-            Compound -> CompoundScoreObject("sub_score", Score())
+            Compound -> addObject(CompoundScoreObject("sub_score", Score()), rect)
 
             else -> {
                 System.err.println("Unrecognized tool $tool")
                 return
             }
         }
+
+    }
+
+    private fun addObject(obj: ScoreObject, rect: Rectangle) {
         obj.assignBoundsFromRect(rect)
         score.addObject(obj)
     }

@@ -30,10 +30,12 @@ class BuffersEditor(
         for (buffer in buffers.buffers) displayBuffer(buffer)
         setupFileDropArea(exactlyOne = false, "wav") { file, _ ->
             val defaultName = file.nameWithoutExtension
-            val name = showTextInputDialog(
-                "Buffer name", defaultName, checkText = Identifier::isValid
-            ) ?: return@setupFileDropArea
-            addBuffer(name, file)
+            showTextPrompt("Buffer name", defaultName, project.context) { name ->
+                if (Identifier.isValid(name)) {
+                    addBuffer(name, file)
+                    true
+                } else false
+            }
         }
     }
 
@@ -49,9 +51,13 @@ class BuffersEditor(
     }
 
     private fun addBuffer() {
-        val name = showTextInputDialog("Buffer name: ") { Identifier.isValid(it) } ?: return
-        val file = controller.showOpenDialog("*.wav") ?: return
-        addBuffer(name, file)
+        showTextPrompt("Buffer name: ", "", project.context) { name ->
+            if (Identifier.isValid(name)) {
+                val file = controller.showOpenDialog("*.wav") ?: return@showTextPrompt false
+                addBuffer(name, file)
+                true
+            } else false
+        }
     }
 
     private fun addBuffer(name: String, file: File) {

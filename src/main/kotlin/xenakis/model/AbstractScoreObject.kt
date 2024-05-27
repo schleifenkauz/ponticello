@@ -96,7 +96,11 @@ sealed class AbstractScoreObject(name: String) : ScoreObject {
 
     override fun writeStopCode(writer: ScWriter) {}
 
-    override fun clone(name: String): ClonedObject = ClonedObject(name, this)
+    override fun clone(name: String): ClonedObject {
+        val clone = ClonedObject(name, this)
+        clone.position.set(this.position)
+        return clone
+    }
 
     protected abstract fun copy(): ScoreObject
 

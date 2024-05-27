@@ -17,10 +17,7 @@ import javafx.scene.paint.Color.BLACK
 import xenakis.impl.Knob
 import xenakis.impl.Point
 import xenakis.impl.UDPSuperColliderClient
-import xenakis.model.ClonedObject
-import xenakis.model.KnobControl
-import xenakis.model.NamingManager
-import xenakis.model.ScoreObject
+import xenakis.model.*
 import xenakis.sc.NumericalControlSpec
 import xenakis.ui.ToolSelector.Tool
 import xenakis.ui.XenakisController.Companion.currentProject
@@ -44,6 +41,8 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
     private val envelopeEditors = mutableListOf<EnvelopeEditor>()
     private val knobControls = HBox(10.0)
 
+    private lateinit var window: SubWindow
+
     private val selectedProperty = SimpleBooleanProperty(false)
 
     protected open val canUserChangeHeight: Boolean get() = true
@@ -55,7 +54,7 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
         envelopesPane.heightProperty().addListener { _ -> rescale() }
     }
 
-    protected open val supportedActions get() = listOf(Icon.Delete, Icon.Play, Icon.Mute, Icon.Repeat)
+    protected open val supportedActions get() = listOf(Icon.Delete, Icon.Play, Icon.Mute, Icon.Repeat, Icon.ExtraWindow)
 
     private fun setupActions() {
         header.children.add(actions)
@@ -68,6 +67,7 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
         }
         if (Icon.Play in supportedActions) addAction(Icon.Play, "Play this object", ::playMyObject)
         if (Icon.Delete in supportedActions) addAction(Icon.Delete, "Delete this object", ::delete)
+        if (Icon.ExtraWindow in supportedActions) addAction(Icon.ExtraWindow, "Open in extra window") { window.show() }
     }
 
     fun playMyObject() {
@@ -121,6 +121,9 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
         reassignedControls()
         myObject.addView(this)
         myObject.position.addListener(this)
+        window = SubWindow(this, myObject.name, context, SubWindow.Type.Modal, parent = pane) {
+            title = myObject.name
+        }
     }
 
     protected fun addAction(icon: Icon, action: String?, onAction: () -> Unit): Button {
@@ -158,7 +161,7 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
         for (control in myObject.controls) {
             if (control !is KnobControl) continue
             val spec = myObject.getSpec(control.parameter) as NumericalControlSpec
-            val knob = Knob(control, spec)
+            val knob = Knob(control, spec, context)
             knobControls.children.add(knob)
         }
         if (knobControls.children.any()) {
@@ -262,9 +265,7 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
                     pane.score.addObject(copy)
                     pane.getObjectView(copy)
                 } else if (ev.isControlDown) {
-                    val clone = myObject.clone(
-                        name = context[NamingManager].nameForClone(myObject)
-                    )
+                    val clone = myObject.clone(name = context[NamingManager].nameForClone(myObject))
                     context[UndoManager].beginCompoundEdit("Clone object")
                     pane.score.addObject(clone)
                     pane.getObjectView(clone)

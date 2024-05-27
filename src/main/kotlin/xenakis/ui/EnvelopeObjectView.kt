@@ -3,7 +3,6 @@ package xenakis.ui
 import hextant.context.Context
 import hextant.context.createControl
 import hextant.fx.hbox
-import hextant.fx.registerShortcuts
 import hextant.serial.makeRoot
 import javafx.application.Platform
 import reaktive.value.binding.map
@@ -19,7 +18,7 @@ import xenakis.sc.view.IdentifierEditorControl
 
 class EnvelopeObjectView(val obj: EnvelopeObject) : ScoreObjectView(obj) {
     override val supportedActions: List<Icon>
-        get() = listOf(Icon.Delete, Icon.Repeat)
+        get() = listOf(Icon.Delete, Icon.Repeat, Icon.ExtraWindow)
 
     override fun initialize(parent: ScorePane) {
         super.initialize(parent)
@@ -68,12 +67,7 @@ class EnvelopeObjectView(val obj: EnvelopeObject) : ScoreObjectView(obj) {
                 centerChildrenVertically()
             }
             layout.minWidth = 600.0
-            val window = SubWindow(layout, title = "Envelope config", context)
-            layout.registerShortcuts {
-                on("ESCAPE") {
-                    window.hide()
-                }
-            }
+            val window = SubWindow(layout, title = "Envelope config", context, type = SubWindow.Type.Prompt)
             window.show()
             Platform.runLater { nameControl.requestFocus() }
         }

@@ -12,8 +12,6 @@ class TaskObjectView(val obj: TaskObject) : ScoreObjectView(obj) {
 
     private val codeArea = ScrollPane(codeEditor)
 
-    private lateinit var codeWindow: Stage
-
     init {
         styleClass("task-object")
         codeEditor.styleClass("code-box")
@@ -22,12 +20,6 @@ class TaskObjectView(val obj: TaskObject) : ScoreObjectView(obj) {
         codeArea.prefWidthProperty().bind(codeEditor.prefWidthProperty())
         codeArea.prefHeightProperty().bind(codeEditor.prefHeightProperty())
         children.add(0, codeArea)
-        addAction(Icon.ExtraWindow, "Open in separate window") { codeWindow.show() }
-    }
-
-    override fun initialize(parent: ScorePane) {
-        super.initialize(parent)
-        codeWindow = SubWindow(codeArea, "Code: ${obj.name}", context, parent = this)
     }
 
     override fun resizeObject(width: Double, height: Double, ev: MouseEvent, cursor: Cursor): Boolean {

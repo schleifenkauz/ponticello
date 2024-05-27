@@ -77,8 +77,10 @@ class ScoreView(score: Score, context: Context) : ScorePane(score, context) {
             ev.consume()
         }
         setOnMouseMoved { ev ->
-            positionTracker.layoutX = ev.x.snap(timeSnap)
-            ev.consume()
+            if (!ev.x.isNaN()) {
+                positionTracker.layoutX = ev.x.snap(timeSnap)
+                ev.consume()
+            }
         }
         setOnMouseExited { ev ->
             children.remove(positionTracker)

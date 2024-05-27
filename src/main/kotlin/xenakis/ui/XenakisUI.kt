@@ -88,7 +88,7 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
         scoreView = ScoreView(project.score, project.context)
         flowGraphEditor = AudioFlowGraphEditor(project.flowGraph, project.context)
         flowGraphEditor.setPrefSize(800.0, 800.0)
-        flowGraphWindow = SubWindow(flowGraphEditor, "Audio flow graph", project.context, style = StageStyle.DECORATED)
+        flowGraphWindow = SubWindow(flowGraphEditor, "Audio flow graph", project.context)
 
         player = ScorePlayer(scoreView, project, controller.client)
         shellWindow = SuperColliderShellController.createShellWindow(controller.client)
@@ -330,8 +330,10 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
             on("Ctrl+Alt+T") { controller.client.postAsync("s.plotTree;") }
             on("F1") { context[HelpBrowser].show() }
             on("Ctrl+Shift+D") {
-                val searchText = showTextInputDialog("Look up documentation") ?: return@on
-                context[HelpBrowser].searchDocumentation(searchText)
+                showTextPrompt("Look up documentation", "", context) { searchText ->
+                    context[HelpBrowser].searchDocumentation(searchText)
+                    true
+                }
             }
             on("Ctrl+T") { shellWindow.show() }
             on("Alt+G") { flowGraphWindow.show() }

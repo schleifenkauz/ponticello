@@ -21,6 +21,9 @@ class SoundFileObjectView(val obj: SoundFileObject) : ScoreObjectView(obj) {
     private val separatorLines = Array(channels.size) { Line().styleClass("channel-separator-line") }
     private val outBusSelector = BusRefEditorControl(obj.outBus, createBundle())
 
+    override val supportedActions: List<Icon>
+        get() = super.supportedActions - Icon.ExtraWindow
+
     init {
         envelopesPane.children.addAll(*waveForms, *separatorLines)
         waveForms.forEach { l -> l.toBack() }

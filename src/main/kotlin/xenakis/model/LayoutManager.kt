@@ -39,7 +39,8 @@ class LayoutManager(
     }
 
     fun removedObject(obj: ScoreObject) = eachAspect {
-        groupByObject.remove(obj)?.remove(obj)
+        groupByObject[obj]?.remove(obj)
+        groups.forEach { it.remove(obj.name) }
     }
 
     fun moveObject(obj: ScoreObject, dt: Double, dy: Double) {

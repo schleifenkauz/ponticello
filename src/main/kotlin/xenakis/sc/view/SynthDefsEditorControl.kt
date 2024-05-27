@@ -54,12 +54,17 @@ class SynthDefsEditorControl @ProvideImplementation(ControlFactory::class) const
     }
 
     private fun addSynthDefEditor() {
-        val name = showTextInputDialog("SynthDef name") { txt -> Identifier.isValid(txt) } ?: return
-        val editor = SynthDefEditor(context, name = IdentifierEditor(context, name))
-        this.editor.addLast(editor)
-        if (this.editor.editors.now.size == 1) {
-            val selector = selectorButtons[editor]!!
-            select(selector, editor)
+        showTextPrompt("SynthDef name", "", context) { name ->
+            if (!Identifier.isValid(name) || editor.result.now.any { def -> def.name.text == name }) {
+                return@showTextPrompt false
+            }
+            val newEditor = SynthDefEditor(context, name = IdentifierEditor(context, name))
+            editor.addLast(newEditor)
+            if (editor.editors.now.size == 1) {
+                val selector = selectorButtons[newEditor]!!
+                select(selector, newEditor)
+            }
+            true
         }
     }
 

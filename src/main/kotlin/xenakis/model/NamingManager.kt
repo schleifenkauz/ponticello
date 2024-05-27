@@ -39,5 +39,7 @@ class NamingManager {
         throw AssertionError()
     }
 
+    fun isNameTaken(name: String): Boolean = name in objectsByName
+
     companion object : PublicProperty<NamingManager> by publicProperty("NamingManager")
 }

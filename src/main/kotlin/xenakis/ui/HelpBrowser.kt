@@ -14,10 +14,7 @@ import xenakis.sc.editor.ScExprEditor
 class HelpBrowser(context: Context) {
     private val webView: WebView = WebView()
 
-    private val window = SubWindow(
-        webView, "Help Browser", context,
-        applyStylesheets = false
-    )
+    private val window = SubWindow(webView, "Help Browser", context, type = SubWindow.Type.Popup)
 
     init {
         webView.setPrefSize(600.0, 800.0)

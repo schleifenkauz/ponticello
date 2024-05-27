@@ -16,22 +16,19 @@ class SubWindow(
     private val root: Parent,
     title: String,
     private val context: Context,
+    private val type: Type = Type.Modal,
     applyStylesheets: Boolean = true,
-    autoHide: Boolean = true,
-    style: StageStyle = StageStyle.DECORATED,
     private val parent: Pane? = null,
-    private val onShowing: () -> Unit = {}
+    private val onShowing: SubWindow.() -> Unit = {}
 ) : Stage() {
     private var idxInParent = -1
 
     init {
-        initStyle(style)
-        initModality(Modality.WINDOW_MODAL)
         initOwner(context[primaryStage])
         this.title = title
         scene = Scene(Pane())
         if (applyStylesheets) applyStylesheets()
-        if (autoHide) autoHide()
+        initWindowType()
         removeRootFromParentOnShowing()
         sizeToScene()
     }
@@ -40,9 +37,19 @@ class SubWindow(
         context[Stylesheets].manage(scene)
     }
 
-    private fun autoHide() {
-        scene.registerShortcuts {
-            on("ESCAPE") { hide() }
+    private fun initWindowType() {
+        if (type in setOf(Type.Prompt, Type.Popup)) {
+            scene.registerShortcuts {
+                on("ESCAPE") { hide() }
+            }
+            focusedProperty().addListener { _, _, hasFocus ->
+                if (!hasFocus) hide()
+            }
+            initStyle(StageStyle.UNDECORATED)
+            initModality(Modality.NONE)
+        } else {
+            initStyle(StageStyle.DECORATED)
+            initModality(Modality.WINDOW_MODAL)
         }
     }
 
@@ -54,6 +61,7 @@ class SubWindow(
                 parent.children.removeAt(idxInParent)
             }
             scene.root = root
+            root.requestFocus()
             sizeToScene()
         }
     }
@@ -62,5 +70,9 @@ class SubWindow(
         scene.root = Region()
         parent?.children?.add(idxInParent, root)
         super.hide()
+    }
+
+    enum class Type {
+        Popup, Prompt, Modal
     }
 }
