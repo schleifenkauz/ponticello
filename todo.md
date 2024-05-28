@@ -22,11 +22,6 @@
 
 ### Mixing interface in AudioFlowGraph
 
-### Two resize modes for objects with associated envelopes
-
-- when shift is pressed, resize by scaling the envelopes (which is easier given the current implementation)
-- when shift is not pressed, resize by removing/adding segments to the envelopes
-
 ### completion
 
 - buffer refs
@@ -55,7 +50,7 @@
 
 - why can't we have shortcuts in the ScoreView?
 - make the interaction with sclang less hacky (maybe use Java OSC library?)
-- the mouse position tracker line sometimes interferes with clicks
+- the mouse position tracker line sometimes interferes with clicks (disabled for now)
 - do not throw Exception when undo is not possible on Ctrl+Z
 
 ## Nice to have
