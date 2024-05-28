@@ -2,15 +2,22 @@ package xenakis.sc
 
 import hextant.codegen.Choice
 import hextant.codegen.UseEditor
-import javafx.scene.paint.Color
 import kotlinx.serialization.Serializable
-import xenakis.impl.ColorSerializer
 import xenakis.impl.FileSerializer
 import xenakis.impl.ScWriter
 import xenakis.impl.superColliderPath
-import xenakis.sc.editor.BufferRefEditor
-import xenakis.sc.editor.BusRefEditor
+import xenakis.sc.editor.BufferSelector
+import xenakis.sc.editor.BusSelector
 import java.io.File
+
+@Serializable
+data class Group(var name: String) {
+    val variableName: String get() = if (name == "default") "s.defaultGroup" else "~grp_$name"
+
+    companion object {
+        val DEFAULT = Group("default")
+    }
+}
 
 @Choice(defaultValue = "Rate.Audio")
 enum class Rate {
@@ -23,18 +30,16 @@ enum class Rate {
 }
 
 @Serializable
-@UseEditor(BusRefEditor::class)
+@UseEditor(BusSelector::class)
 data class Bus(
     var name: String,
     var rate: Rate,
     var channels: Int,
-    @Serializable(with = ColorSerializer::class) var associatedColor: Color? = null
 ) {
     fun copyFrom(obj: Bus) {
         name = obj.name
         rate = obj.rate
         channels = obj.channels
-        associatedColor = obj.associatedColor
     }
 
     val variableName get() = if (name != "output") "~bus_$name" else "0"
@@ -42,14 +47,14 @@ data class Bus(
     val allocationCode get() = "$variableName = Bus.${rate.name.lowercase()}(s, $channels)"
 
     companion object {
-        val output = Bus("output", Rate.Audio, 2, Color.WHITE)
+        val output = Bus("output", Rate.Audio, 2)
 
-        val PROPERTY_NAMES = listOf("name", "rate", "channels", "associatedColor")
+        val PROPERTY_NAMES = listOf("name", "rate", "channels")
     }
 }
 
 @Serializable
-@UseEditor(BufferRefEditor::class)
+@UseEditor(BufferSelector::class)
 sealed interface Buffer {
     var name: Identifier
 

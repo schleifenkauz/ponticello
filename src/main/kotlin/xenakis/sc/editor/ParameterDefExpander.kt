@@ -31,16 +31,16 @@ class ParameterDefExpander(context: Context) : Expander<ParameterDef, ParameterD
         editor.name.setText(def.name.text)
         when (val spec = def.spec) {
             is BufferControlSpec -> {
-                val bufferRefEditor = BufferRefEditor(context)
-                bufferRefEditor.select(spec.defaultValue)
-                val specEditor = BufferControlSpecEditor(context, bufferRefEditor)
+                val bufferSelector = BufferSelector(context)
+                bufferSelector.select(spec.defaultValue)
+                val specEditor = BufferControlSpecEditor(context, bufferSelector)
                 editor.spec.select(ParameterType.Buffer, specEditor)
             }
 
             is BusControlSpec -> {
-                val busRefEditor = BusRefEditor(context, Bus.output)
-                busRefEditor.select(spec.defaultValue)
-                val specEditor = BusControlSpecEditor(context, busRefEditor)
+                val busSelector = BusSelector(context, Bus.output)
+                busSelector.select(spec.defaultValue)
+                val specEditor = BusControlSpecEditor(context, busSelector)
                 editor.spec.select(ParameterType.Buffer, specEditor)
             }
 

@@ -18,7 +18,7 @@ class Envelope(private val _points: MutableList<Point>, val curve: Warp) {
 
     fun code(offset: Double, dur: Double, doneAction: String = "Done.freeSelf"): String {
         require(offset <= dur)
-        val afterOffset = cut(offset / dur, whichHalf = HorizontalDirection.RIGHT)
+        val afterOffset = if (offset == 0.0) this else cut(offset / dur, whichHalf = HorizontalDirection.RIGHT)
         val points = afterOffset.points.map { (x, y) -> Point(x * dur, y) }
         val levels = points.map { (_, y) -> y.format(2) }
         val times = points.zipWithNext { a, b -> (b.x - a.x).format(2) }

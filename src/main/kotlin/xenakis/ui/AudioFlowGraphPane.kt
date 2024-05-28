@@ -12,7 +12,6 @@ import javafx.scene.input.KeyCode
 import javafx.scene.input.KeyEvent
 import javafx.scene.input.MouseEvent
 import javafx.scene.layout.Pane
-import javafx.scene.paint.Color
 import org.controlsfx.control.PropertySheet
 import org.controlsfx.property.BeanProperty
 import xenakis.impl.Arrow
@@ -26,7 +25,7 @@ import java.beans.PropertyDescriptor
 import kotlin.math.sign
 import kotlin.random.Random
 
-class AudioFlowGraphEditor(val graph: AudioFlowGraph, private val context: Context) : Pane() {
+class AudioFlowGraphPane(val graph: AudioFlowGraph, private val context: Context) : Pane() {
     private var sourceBus: AudioFlowGraph.BusObject? = null
     private var flowArrow: Arrow? = null
     private var dragStart: Point? = null
@@ -35,7 +34,7 @@ class AudioFlowGraphEditor(val graph: AudioFlowGraph, private val context: Conte
     private val flowArrows = mutableMapOf<AudioFlowGraph.AudioFlow, Arrow>()
 
     init {
-        context[AudioFlowGraphEditor] = this
+        context[AudioFlowGraphPane] = this
         styleClass("audio-flow-graph")
         for (obj in graph.busses) {
             paintBusObject(obj)
@@ -68,7 +67,7 @@ class AudioFlowGraphEditor(val graph: AudioFlowGraph, private val context: Conte
     }
 
     fun createNewBus(x: Double = Random.nextDouble(prefWidth), y: Double = Random.nextDouble(prefHeight)): Bus? {
-        val bus = Bus("new_bus", Rate.Audio, 2, Color.WHITE)
+        val bus = Bus("new_bus", Rate.Audio, 2)
         val confirmed = showDetailEditor(bus)
         if (confirmed) {
             val obj = AudioFlowGraph.BusObject(bus, x, y)
@@ -80,7 +79,6 @@ class AudioFlowGraphEditor(val graph: AudioFlowGraph, private val context: Conte
 
     private fun paintBusObject(obj: AudioFlowGraph.BusObject) {
         val label = Label(obj.bus.name).styleClass("bus-object")
-        label.textFill = obj.bus.associatedColor
         label.isFocusTraversable = true
         label.relocate(obj.x, obj.y)
         label.addEventHandler(MouseEvent.ANY) { ev ->
@@ -208,7 +206,6 @@ class AudioFlowGraphEditor(val graph: AudioFlowGraph, private val context: Conte
         if (confirmed) {
             obj.bus.copyFrom(copy)
             val label = busLabels[obj]!!
-            label.textFill = obj.bus.associatedColor
             label.text = obj.bus.name
         }
     }
@@ -230,7 +227,7 @@ class AudioFlowGraphEditor(val graph: AudioFlowGraph, private val context: Conte
         children.add(arrow)
     }
 
-    companion object : PublicProperty<AudioFlowGraphEditor> by publicProperty("audio-flow-graph-editor") {
+    companion object : PublicProperty<AudioFlowGraphPane> by publicProperty("audio-flow-graph-editor") {
         private const val DIST_MOUSE_TO_HEAD = 10.0
     }
 }

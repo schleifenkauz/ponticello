@@ -6,6 +6,8 @@ class ScWriter(private val output: Appendable) {
     private var indent = ""
     private var newLine = true
 
+    val context = SuperColliderWriterContext(output)
+
     fun append(str: String) {
         if (newLine) {
             output.append(indent)

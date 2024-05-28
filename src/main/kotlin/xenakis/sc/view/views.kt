@@ -135,6 +135,7 @@ fun createControl(editor: xenakis.sc.editor.OperatorEditor, arguments: Bundle): 
 fun createControl(editor: xenakis.sc.editor.ParameterDefEditor, arguments: Bundle) =
     CompoundEditorControl(editor, arguments) {
         vertical {
+            styleClass("parameter-def")
             horizontal(alignment = Pos.CENTER_LEFT, spacing = 5.0) {
                 val nameControl = IdentifierEditorControl(editor.name)
                 add(nameControl)

@@ -11,7 +11,7 @@ import reaktive.value.now
 import xenakis.model.EnvelopeObject
 import xenakis.sc.Bus
 import xenakis.sc.NumericalControlSpec
-import xenakis.sc.editor.BusRefEditor
+import xenakis.sc.editor.BusSelector
 import xenakis.sc.editor.IdentifierEditor
 import xenakis.sc.editor.createEditor
 import xenakis.sc.view.IdentifierEditorControl
@@ -48,7 +48,7 @@ class EnvelopeObjectView(val obj: EnvelopeObject) : ScoreObjectView(obj) {
             nameEditor.makeRoot()
             val specEditor = initialSpec.createEditor(context)
             specEditor.makeRoot()
-            val outputBusEditor = BusRefEditor(context, initialBus)
+            val outputBusEditor = BusSelector(context, initialBus)
             outputBusEditor.makeRoot()
             val nameControl = IdentifierEditorControl(nameEditor)
             val specControl = context.createControl(specEditor)

@@ -49,7 +49,8 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
     private lateinit var serverSetupCodePane: CodePane
     private lateinit var beforePlayCodePane: CodePane
     private lateinit var synthDefsEditor: SynthDefsEditorControl
-    private lateinit var buffersEditor: BuffersEditor
+    private lateinit var buffersPane: BuffersPane
+    private lateinit var groupsPane: GroupRegistryPane
     private lateinit var scoreView: ScoreView
     private lateinit var flowGraphWindow: SubWindow
     private lateinit var globalControlsWindow: SubWindow
@@ -84,10 +85,11 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
         serverSetupCodePane = CodePane("Server setup", project.serverSetup.control)
         beforePlayCodePane = CodePane("Play setup", project.beforePlay.control)
         synthDefsEditor = project.synthDefs.editor.control as SynthDefsEditorControl
-        buffersEditor = BuffersEditor(project.buffers, project, controller)
+        buffersPane = BuffersPane(project.buffers, project, controller)
+        groupsPane = GroupRegistryPane(context, project.groups)
         scoreView = ScoreView(project.score, project.context)
 
-        val flowGraphEditor = AudioFlowGraphEditor(project.flowGraph, context)
+        val flowGraphEditor = AudioFlowGraphPane(project.flowGraph, context)
         flowGraphEditor.setPrefSize(800.0, 800.0)
         flowGraphWindow = SubWindow(flowGraphEditor, "Audio flow graph", context)
 
@@ -106,7 +108,7 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
 
         stage.scene.root = createLayout()
         stage.isMaximized = true
-        //stage.isResizable = true
+        stage.isResizable = true
         Platform.runLater { scoreView.displayWholeScore() }
         displaysProject = true
     }
@@ -155,24 +157,27 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
         val top = HBox(searchIcon, searchField, btnOpen, createNew).styleClass("startup-screen-top-bar")
         val layout = VBox(top, recentProjects).styleClass("startup-screen")
         stage.scene.root = layout
+        stage.isMaximized = false
         stage.sizeToScene()
         stage.isResizable = false
     }
 
     private fun createLayout(): VBox {
-        val leftSplitter = SplitPane(synthDefsEditor, buffersEditor)
+        val leftSplitter = SplitPane(synthDefsEditor, buffersPane, groupsPane)
         val rightSplitter = SplitPane(serverSetupCodePane, beforePlayCodePane)
         leftSplitter.orientation = Orientation.VERTICAL
         rightSplitter.orientation = Orientation.VERTICAL
         val horizontalSplitter = SplitPane(leftSplitter, scoreView, rightSplitter)
-        horizontalSplitter.setDividerPositions(0.3, 0.8)
+        Platform.runLater {
+            horizontalSplitter.setDividerPosition(0, 0.1)
+            horizontalSplitter.setDividerPosition(1, 0.9)
+        }
         val toolbar = createToolbar()
         objectActionsBar.prefWidthProperty().bind(toolbar.widthProperty().multiply(0.33))
         for (box in toolbar.children) HBox.setHgrow(box, Priority.ALWAYS)
         VBox.setVgrow(horizontalSplitter, Priority.ALWAYS)
         val layout = VBox(toolbar, horizontalSplitter)
         addShortcuts(layout)
-        //layout.setPrefSize(3000.0, 1200.0)
         val context = project.context
         val commandLinePopup = CommandLinePopup(
             context, context[Properties.localCommandLine],

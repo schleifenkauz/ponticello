@@ -17,7 +17,7 @@ import xenakis.model.*
 import xenakis.model.Envelope
 import xenakis.sc.Identifier
 import xenakis.sc.Warp
-import xenakis.sc.editor.BusRefEditor
+import xenakis.sc.editor.BusSelector
 import xenakis.sc.editor.ScFunctionEditor
 import xenakis.ui.ToolSelector.Tool
 import xenakis.ui.ToolSelector.Tool.*
@@ -97,7 +97,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
             val defaultName = Identifier.truncate(file.nameWithoutExtension)
             val obj = SoundFileObject(
                 defaultName, file,
-                outBus = BusRefEditor(context), startPos = 0.0, rate = 1.0,
+                outBus = BusSelector(context), startPos = 0.0, rate = 1.0,
                 envelope = Envelope.constant(1.0, Warp.Linear),
             )
             obj.position.set(getTime(ev.x), ev.y)

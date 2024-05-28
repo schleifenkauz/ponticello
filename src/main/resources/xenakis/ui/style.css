@@ -232,12 +232,12 @@ Slider.control-detail-editor {
     -fx-underline: true;
 }
 
-.synth-defs-header {
+.tool-pane-header {
     -fx-padding: 5px;
     -fx-alignment: center-left;
 }
 
-.synth-defs-heading {
+.tool-pane-heading {
     -fx-font-size: 16px;
 }
 
@@ -343,22 +343,8 @@ Slider.control-detail-editor {
     -fx-background-color: rgba(100, 0, 0, 0.1);
 }
 
-.buffers-heading {
-    -fx-font-size: 16px;
-}
-
-.buffers-header {
-    -fx-padding: 5px;
-    -fx-alignment: center-left;
-}
-
-.buffers {
+.tool-pane {
     -fx-background-color: #1e1f22;
-}
-
-/*noinspection ALL*/
-.buffers:drop-possible {
-    -fx-background-color: #082301;
 }
 
 .compound-expr {
@@ -585,4 +571,25 @@ Slider.control-detail-editor {
     -fx-border-radius: 5px;
     -fx-background-radius: 5px;
     -fx-pref-height: 64px;
+}
+
+.group-box {
+    -fx-border-radius: 5px;
+    -fx-background-radius: 5px;
+    -fx-padding: 5px;
+    -fx-background-color: transparent;
+    -fx-border-color: black;
+    -fx-border-width: 2px;
+}
+
+.group-box:hover {
+    -fx-background-color: rgba(100, 0, 0, 0.1);
+}
+
+.group-box:focused {
+    -fx-background-color: rgba(100, 0, 0, 0.25);
+}
+
+.parameter-def .hextant-text {
+    -fx-font-size: 9px;
 }

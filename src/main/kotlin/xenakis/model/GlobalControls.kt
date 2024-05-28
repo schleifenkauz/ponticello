@@ -22,6 +22,9 @@ class GlobalControls(private val controls: MutableList<GlobalControl>) : KnobCon
 
     fun initialize(context: Context) {
         this.context = context
+        for (ctrl in controls) {
+            ctrl.knobControl.addView(this)
+        }
     }
 
     val busses get() = controls.map { ctrl -> ctrl.bus }
@@ -34,8 +37,9 @@ class GlobalControls(private val controls: MutableList<GlobalControl>) : KnobCon
 
     private fun setupBus(control: GlobalControl, context: SuperColliderContext) {
         val bus = control.bus
-        context.postAsync("${bus.variableName} = ${bus.allocationCode};")
-        control.knobControl.addView(this)
+        val varName = bus.variableName
+        val value = control.knobControl.get()
+        context.postAsync("${bus.allocationCode}; $varName.set($value);")
     }
 
     private fun removeBus(control: GlobalControl) {
@@ -70,7 +74,7 @@ class GlobalControls(private val controls: MutableList<GlobalControl>) : KnobCon
             ?: error("${control.parameter} not found in global controls")
         val bus = ctrl.bus
         val formatted = value.format(ctrl.spec.accuracy)
-        context[UDPSuperColliderClient].postAsync("${bus.variableName}.setSynchronous($formatted);")
+        context[UDPSuperColliderClient].postAsync("if (${bus.variableName} != nil) { ${bus.variableName}.setSynchronous($formatted) };")
     }
 
     fun updateControlFromServer(control: GlobalControl) {

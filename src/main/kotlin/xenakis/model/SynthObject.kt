@@ -1,5 +1,6 @@
 package xenakis.model
 
+import hextant.context.Context
 import hextant.core.editor.ViewManager
 import javafx.geometry.HorizontalDirection
 import kotlinx.serialization.json.JsonObject
@@ -8,30 +9,53 @@ import kotlinx.serialization.json.put
 import xenakis.impl.ScWriter
 import xenakis.impl.getString
 import xenakis.sc.ControlSpec
+import xenakis.sc.Group
 import xenakis.sc.SynthDef
 import xenakis.ui.SynthObjectView
 import xenakis.ui.XenakisController.Companion.currentProject
 import xenakis.ui.format
 
-class SynthObject(name: String, var synthDefName: String) : AbstractScoreObject(name) {
+class SynthObject(
+    name: String,
+    var synthDefName: String,
+    group: Group = Group.DEFAULT
+) : AbstractScoreObject(name), GroupReference {
     override val type: String
         get() = "synth"
 
     override val viewManager: ViewManager<SynthObjectView> = ViewManager.createWeakViewManager()
 
+    override var group: Group = group
+        set(value) {
+            if (field == value) return
+            viewManager.notifyViews { changedGroup() }
+            field = value
+        }
+
     val synthDef: SynthDef
         get() = context[currentProject].synthDefs.get(synthDefName)
 
-    override fun copy(): ScoreObject = SynthObject(name, synthDefName)
+    override fun copy(): ScoreObject = SynthObject(name, synthDefName, group)
 
-    override fun cut(position: Double, whichHalf: HorizontalDirection): ScoreObject = SynthObject(name, synthDefName)
+    override fun cut(position: Double, whichHalf: HorizontalDirection): ScoreObject =
+        SynthObject(name, synthDefName, group)
 
     override fun getSpec(parameter: String): ControlSpec = synthDef.getParameter(parameter).spec
+
+    override fun addToScore(score: Score, context: Context) {
+        super.addToScore(score, context)
+        context[GroupRegistry].groupReferences.addView(this)
+    }
+
+    override fun onRemove() {
+        super.onRemove()
+        context[GroupRegistry].groupReferences.removeView(this)
+    }
 
     override fun writeStartCode(writer: ScWriter, offset: Double) {
         writer.appendBlock("s.bind") {
             val synthVar = "~synth_${name}"
-            +"$synthVar = Synth(\\${synthDefName})"
+            +"$synthVar = Synth(\\${synthDefName}, target: ${group.variableName})"
             for (control in controls) {
                 val param = control.parameter
                 when (control) {
@@ -92,6 +116,7 @@ class SynthObject(name: String, var synthDefName: String) : AbstractScoreObject(
 
     override fun JsonObjectBuilder.saveToJson() {
         put("synthDef", synthDefName)
+        if (group != Group.DEFAULT) put("group", group.name)
     }
 
     object Serializer : ScoreObject.Serializer {
@@ -100,7 +125,8 @@ class SynthObject(name: String, var synthDefName: String) : AbstractScoreObject(
 
         override fun JsonObject.createFromJson(name: String): ScoreObject {
             val synthDefName = getString("synthDef")!!
-            return SynthObject(name, synthDefName)
+            val groupName = getString("group") ?: "default"
+            return SynthObject(name, synthDefName, Group(groupName))
         }
     }
 }

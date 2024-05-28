@@ -20,10 +20,9 @@ fun <T : Any> showSelectorDialog(
     context: Context,
     items: List<T>,
     initialValue: T?,
-    confirmButton: ButtonType = ButtonType.OK,
     stringConverter: (T) -> String = { it.toString() },
-): T? = Dialog<T>().run {
-    this.title = title
+    onConfirmed: (T) -> Unit
+) {
     val selector = ComboBox(FXCollections.observableList(items))
     selector.converter = object : StringConverter<T?>() {
         override fun toString(item: T?): String = stringConverter(item!!)
@@ -31,13 +30,12 @@ fun <T : Any> showSelectorDialog(
         override fun fromString(p0: String?): T? = null
     }
     selector.value = initialValue
-    return selector.showDialog(
-        title, context,
-        confirmButton, buttonTypes = listOf(confirmButton, ButtonType.CANCEL),
-        StageStyle.TRANSPARENT
-    ) {
-        selector.value.takeIf { btn -> btn == confirmButton }
+    val window = SubWindow(selector, title, context, SubWindow.Type.Prompt)
+    selector.setOnAction {
+        window.hide()
+        onConfirmed(selector.value)
     }
+    window.show()
 }
 
 fun showYesNoDialog(question: String, default: Boolean = false): Boolean {

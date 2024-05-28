@@ -1,13 +1,12 @@
 package xenakis.impl
 
 import java.io.StringWriter
-import java.io.Writer
 
-class SuperColliderWriterContext(private val writer: Writer) : SuperColliderContext {
-    private val scWriter = ScWriter(writer)
+class SuperColliderWriterContext(private val output: Appendable) : SuperColliderContext {
+    private val scWriter get() = ScWriter(output)
 
     override fun postAsync(command: String) {
-        writer.appendLine(command)
+        output.appendLine(command)
     }
 
     override fun postAsync(writeCode: ScWriter.() -> Unit) {

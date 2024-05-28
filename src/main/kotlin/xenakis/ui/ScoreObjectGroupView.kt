@@ -14,7 +14,6 @@ class ScoreObjectGroupView(private val obj: ScoreObjectGroup) : ScoreObjectView(
 
     override fun initialize(parent: ScorePane) {
         super.initialize(parent)
-        obj.score.initialize(context)
         scorePane = SubScorePane(obj, context, pane)
         children.add(scorePane)
         scorePane.prefWidthProperty().bind(widthProperty())

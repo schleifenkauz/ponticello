@@ -10,7 +10,7 @@ import xenakis.ui.XenakisController
 
 @Suppress("SERIALIZER_TYPE_INCOMPATIBLE")
 @Serializable(with = SnapshotAware.Serializer::class)
-class BufferRefEditor(context: Context, value: Buffer = NoBuffer) : SimpleChoiceEditor<Buffer>(context, value) {
+class BufferSelector(context: Context, value: Buffer = NoBuffer) : SimpleChoiceEditor<Buffer>(context, value) {
     override fun choices(): List<Buffer> = context[XenakisController.currentProject].buffers.buffers + NoBuffer
 
     override fun toString(choice: Buffer): String = choice.name.text

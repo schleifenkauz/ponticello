@@ -12,7 +12,7 @@ import xenakis.impl.*
 import xenakis.sc.Bus
 import xenakis.sc.ControlSpec
 import xenakis.sc.ParameterDef
-import xenakis.sc.editor.BusRefEditor
+import xenakis.sc.editor.BusSelector
 import xenakis.ui.SoundFileObjectView
 import xenakis.ui.format
 import java.io.File
@@ -21,7 +21,7 @@ import javax.sound.sampled.AudioSystem
 class SoundFileObject(
     name: String,
     val file: File,
-    var outBus: BusRefEditor,
+    var outBus: BusSelector,
     var startPos: Double, var rate: Double,
     var envelope: Envelope
 ) : AbstractScoreObject(name) {
@@ -115,7 +115,7 @@ class SoundFileObject(
         override fun JsonObject.createFromJson(name: String): ScoreObject {
             val file = getFile("file")
             val outBus = getSerializableValue<Bus>("outBus")!!
-            val busEditor = BusRefEditor(SnapshotAware.Serializer.reconstructionContext, outBus)
+            val busEditor = BusSelector(SnapshotAware.Serializer.reconstructionContext, outBus)
             val startPos = getDouble("startPos") ?: 0.0
             val rate = getDouble("rate") ?: 1.0
             val envelope = getSerializableValue<Envelope>("envelope") ?: Envelope.default

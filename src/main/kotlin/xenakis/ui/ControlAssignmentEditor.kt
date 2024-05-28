@@ -14,9 +14,9 @@ import org.controlsfx.control.ToggleSwitch
 import reaktive.value.now
 import xenakis.model.*
 import xenakis.sc.*
-import xenakis.sc.editor.BufferRefEditor
-import xenakis.sc.editor.BusRefEditor
-import xenakis.sc.view.BusRefEditorControl
+import xenakis.sc.editor.BufferSelector
+import xenakis.sc.editor.BusSelector
+import xenakis.sc.view.BusSelectorControl
 
 class ControlAssignmentEditor(private val parameter: ParameterDef, val project: XenakisProject) : HBox(5.0) {
     private val nameLabel = Label(parameter.name.text).also { l -> l.styleClass.add("control-label") }
@@ -148,37 +148,37 @@ class ControlAssignmentEditor(private val parameter: ParameterDef, val project: 
                 CustomControl(parameter.name.text, RawScExpr(detailInput.text))
         }
 
-        object Bus : ControlType<BusControl, BusRefEditorControl>() {
+        object Bus : ControlType<BusControl, BusSelectorControl>() {
             override fun createDetailInput(
                 parameter: ParameterDef,
                 control: BusControl?,
                 project: XenakisProject
-            ): BusRefEditorControl = busSelector(project, control?.bus)
+            ): BusSelectorControl = busSelector(project, control?.bus)
 
-            override fun createControl(detailInput: BusRefEditorControl, parameter: ParameterDef): BusControl =
+            override fun createControl(detailInput: BusSelectorControl, parameter: ParameterDef): BusControl =
                 BusControl(parameter.name.text, detailInput.editor.result.now)
         }
 
-        object BusValue : ControlType<BusValueControl, BusRefEditorControl>() {
+        object BusValue : ControlType<BusValueControl, BusSelectorControl>() {
             override fun createDetailInput(
                 parameter: ParameterDef,
                 control: BusValueControl?,
                 project: XenakisProject
-            ): BusRefEditorControl = busSelector(project, control?.bus)
+            ): BusSelectorControl = busSelector(project, control?.bus)
 
-            override fun createControl(detailInput: BusRefEditorControl, parameter: ParameterDef): BusValueControl =
+            override fun createControl(detailInput: BusSelectorControl, parameter: ParameterDef): BusValueControl =
                 BusValueControl(parameter.name.text, detailInput.editor.result.now)
         }
 
-        object SingleBusValue : ControlType<SingleBusValueControl, BusRefEditorControl>() {
+        object SingleBusValue : ControlType<SingleBusValueControl, BusSelectorControl>() {
             override fun createDetailInput(
                 parameter: ParameterDef,
                 control: SingleBusValueControl?,
                 project: XenakisProject
-            ): BusRefEditorControl = busSelector(project, control?.bus)
+            ): BusSelectorControl = busSelector(project, control?.bus)
 
             override fun createControl(
-                detailInput: BusRefEditorControl,
+                detailInput: BusSelectorControl,
                 parameter: ParameterDef
             ): SingleBusValueControl = SingleBusValueControl(parameter.name.text, detailInput.editor.result.now)
         }
@@ -189,7 +189,7 @@ class ControlAssignmentEditor(private val parameter: ParameterDef, val project: 
                 control: BufferControl?,
                 project: XenakisProject
             ): SimpleChoiceEditorControl<xenakis.sc.Buffer> {
-                val editor = BufferRefEditor(project.context, control?.buffer ?: NoBuffer)
+                val editor = BufferSelector(project.context, control?.buffer ?: NoBuffer)
                 return SimpleChoiceEditorControl(editor, createBundle())
             }
 
@@ -215,10 +215,10 @@ class ControlAssignmentEditor(private val parameter: ParameterDef, val project: 
                 else -> throw AssertionError()
             } as ControlType<O, *>
 
-            private fun busSelector(project: XenakisProject, bus: xenakis.sc.Bus?): BusRefEditorControl {
-                val editor = BusRefEditor(project.context, xenakis.sc.Bus.output)
+            private fun busSelector(project: XenakisProject, bus: xenakis.sc.Bus?): BusSelectorControl {
+                val editor = BusSelector(project.context, xenakis.sc.Bus.output)
                 if (bus != null) editor.select(bus)
-                return BusRefEditorControl(editor, createBundle())
+                return BusSelectorControl(editor, createBundle())
             }
         }
     }

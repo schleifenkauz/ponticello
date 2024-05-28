@@ -30,9 +30,9 @@ class GlobalControlsPane(
         val editor = ParameterDefExpander(context)
         editor.makeRoot()
         val control = context.createControl(editor)
-        val window = SubWindow(control, "Configure global control", context, SubWindow.Type.Modal)
+        val window = SubWindow(control, "Configure global control", context, SubWindow.Type.Prompt)
         window.scene.fill = BLACK
-        window.width = 1000.0
+        window.sizeToScene()
         control.registerShortcuts {
             on("Ctrl+ENTER") {
                 val (name, spec) = editor.result.now

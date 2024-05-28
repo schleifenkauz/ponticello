@@ -40,17 +40,17 @@ class SynthDefsEditorControl @ProvideImplementation(ControlFactory::class) const
     }
 
     override fun createDefaultRoot(): VBox {
-        val label = Label("Synth Definitions").styleClass("synth-defs-heading")
+        val label = Label("Synth Definitions").styleClass("tool-pane-heading")
         val space = infiniteSpace()
         val addBtn = Icon.Add.button(action = "Add SynthDef") { addSynthDefEditor() }
         val reloadBtn = Icon.Repeat.button(action = "Reload SynthDefs") {
             val client = context[UDPSuperColliderClient]
             context[SynthDefs].reload(client)
         }
-        val header = HBox(label, space, addBtn, reloadBtn).styleClass("synth-defs-header")
+        val header = HBox(label, space, addBtn, reloadBtn).styleClass("tool-pane-header")
         header.alignment = Pos.CENTER_LEFT
         header.spacing = 5.0
-        return VBox(header, defs).styleClass("synth-defs")
+        return VBox(header, defs).styleClass("tool-pane")
     }
 
     private fun addSynthDefEditor() {

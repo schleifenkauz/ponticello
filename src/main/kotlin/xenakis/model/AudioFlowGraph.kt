@@ -93,7 +93,8 @@ class AudioFlowGraph(
             appendLine("{")
             +"var sig = In.${source.rate}(${source.variableName}, ${source.channels})"
             ugenGraph.writeCode(this)
-            +"}.play($prev, ${target.variableName}, addAction: 'addAfter')"
+            val addAction = if (prev == "s.defaultGroup") "addToTail" else "addAfter"
+            +"}.play($prev, ${target.variableName}, addAction: '$addAction')"
             prev = synthName
         }
     }

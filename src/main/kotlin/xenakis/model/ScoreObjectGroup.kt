@@ -17,9 +17,7 @@ class ScoreObjectGroup(name: String, val score: Score) : AbstractScoreObject(nam
 
     override fun addToScore(score: Score, context: Context) {
         super.addToScore(score, context)
-        for (obj in this.score.objects) {
-            obj.addToScore(score, context)
-        }
+        this.score.initialize(context)
     }
 
     override fun writeStartCode(writer: ScWriter, offset: Double) {

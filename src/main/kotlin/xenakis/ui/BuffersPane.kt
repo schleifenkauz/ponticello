@@ -17,7 +17,7 @@ import xenakis.sc.editor.IdentifierEditor
 import xenakis.sc.view.IdentifierEditorControl
 import java.io.File
 
-class BuffersEditor(
+class BuffersPane(
     private val buffers: Buffers,
     private val project: XenakisProject,
     private val controller: XenakisController
@@ -25,7 +25,7 @@ class BuffersEditor(
     private val observers = mutableListOf<Observer>()
 
     init {
-        styleClass("buffers")
+        styleClass("tool-pane")
         children.add(createHeader())
         for (buffer in buffers.buffers) displayBuffer(buffer)
         setupFileDropArea(exactlyOne = false, "wav") { file, _ ->
@@ -40,14 +40,14 @@ class BuffersEditor(
     }
 
     private fun createHeader(): HBox {
-        val label = Label("Buffers").styleClass("buffers-heading")
+        val label = Label("Buffers").styleClass("tool-pane-heading")
         val space = infiniteSpace()
         val addBtn = Icon.Add.button(action = "Load new buffer") { addBuffer() }
         val reloadBtn = Icon.Repeat.button(action = "Reload SynthDefs") {
             val client = project.context[UDPSuperColliderClient]
             project.buffers.loadBuffers(client)
         }
-        return HBox(label, space, addBtn, reloadBtn).styleClass("buffers-header")
+        return HBox(label, space, addBtn, reloadBtn).styleClass("tool-pane-header")
     }
 
     private fun addBuffer() {

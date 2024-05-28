@@ -6,26 +6,27 @@ import hextant.context.ControlFactory
 import hextant.core.view.SimpleChoiceEditorControl
 import xenakis.sc.Bus
 import xenakis.sc.Rate
-import xenakis.sc.editor.BusRefEditor
-import xenakis.ui.AudioFlowGraphEditor
+import xenakis.sc.editor.BusSelector
+import xenakis.ui.AudioFlowGraphPane
 
-class BusRefEditorControl @ProvideImplementation(ControlFactory::class) constructor(
-    editor: BusRefEditor,
-    arguments: Bundle
+class BusSelectorControl @ProvideImplementation(ControlFactory::class) constructor(
+    editor: BusSelector, arguments: Bundle
 ) : SimpleChoiceEditorControl<Bus>(editor, arguments) {
     init {
         minWidth = 150.0
         root.valueProperty().addListener { _, _, selected ->
             if (selected == createNew) {
-                val flowGraphEditor = editor.context[AudioFlowGraphEditor]
+                val flowGraphEditor = editor.context[AudioFlowGraphPane]
                 val new = flowGraphEditor.createNewBus()
-                root.items.add(new)
-                if (new != null) root.selectionModel.select(new)
+                if (new != null) {
+                    root.items.add(new)
+                    root.selectionModel.select(new)
+                }
             }
         }
     }
 
     companion object {
-        val createNew = Bus("<create-new>", Rate.Audio, 0, null)
+        val createNew = Bus("<create-new>", Rate.Audio, 0)
     }
 }
