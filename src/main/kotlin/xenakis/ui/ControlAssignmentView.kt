@@ -19,7 +19,7 @@ class ControlAssignmentView(
         prefWidth = 500.0
         for (control in controls) {
             val param = parameterizedObject.getParameter(control.parameter)
-            val editor = ControlAssignmentEditor(param, project)
+            val editor = ControlAssignmentEditor(obj, param, project)
             editor.setControl(control)
             editors.add(editor)
             children.add(editor)

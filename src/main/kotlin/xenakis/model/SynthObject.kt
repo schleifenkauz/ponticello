@@ -60,7 +60,7 @@ class SynthObject(
                 val param = control.parameter
                 when (control) {
                     is EnvelopeControl -> {
-                        val env = control.envelope.code(offset, duration)
+                        val env = control.envelope.code(offset)
                         val busName = "~auxil_${name}_${param}"
                         +"$busName = Bus.control(s, 1)"
                         +"{ $env }.play(s, $busName)"

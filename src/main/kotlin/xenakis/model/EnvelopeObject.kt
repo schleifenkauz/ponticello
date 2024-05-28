@@ -39,7 +39,7 @@ class EnvelopeObject(
         EnvelopeObject(name, spec, bus, envelope.cut(position / duration, whichHalf))
 
     override fun writeStartCode(writer: ScWriter, offset: Double) {
-        val env = envelope.code(offset, duration)
+        val env = envelope.code(offset)
         writer.append("{ $env }.play(s, ${bus.variableName});")
     }
 

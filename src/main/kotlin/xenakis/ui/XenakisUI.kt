@@ -107,9 +107,11 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
         }
 
         stage.scene.root = createLayout()
-        stage.isMaximized = true
-        stage.isResizable = true
-        Platform.runLater { scoreView.displayWholeScore() }
+        Platform.runLater {
+            stage.isResizable = true
+            stage.isMaximized = true
+            scoreView.displayWholeScore()
+        }
         displaysProject = true
     }
 

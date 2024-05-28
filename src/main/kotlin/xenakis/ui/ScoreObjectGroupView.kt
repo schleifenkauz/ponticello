@@ -26,20 +26,28 @@ class ScoreObjectGroupView(private val obj: ScoreObjectGroup) : ScoreObjectView(
     override fun rescale() {
         super.rescale()
         scorePane.repaint()
+        for (view in scorePane.allViews) {
+            view.rescale()
+        }
     }
 
-    override fun resizeObject(width: Double, height: Double, ev: MouseEvent, cursor: Cursor): Boolean {
+    override fun resizeObject(width: Double, height: Double, ev: MouseEvent, cursor: Cursor) {
         val dur = pane.getDuration(width)
-        val deltaDur = obj.duration - dur
-        val deltaHeight = obj.height - height
+        var minDur = 0.0
+        var minHeight = 0.0
         val resizeFromLeft = cursor in setOf(Cursor.W_RESIZE, Cursor.NW_RESIZE, Cursor.SW_RESIZE)
         val resizeFromTop = cursor in setOf(Cursor.S_RESIZE, Cursor.SE_RESIZE, Cursor.SW_RESIZE)
-        if (resizeFromLeft && obj.score.objects.any { o -> o.start < deltaDur }) return false
-        if (resizeFromTop && obj.score.objects.any { o -> o.y < deltaHeight }) return false
-        if (!resizeFromLeft && obj.score.objects.any { o -> o.start + o.duration > dur }) return false
-        if (!resizeFromTop && obj.score.objects.any { o -> o.y + o.height > height }) return false
-        obj.duration = dur
-        obj.height = height
-        return true
+        val objects = obj.score.objects
+        if (objects.isNotEmpty()) {
+            minDur =
+                if (resizeFromLeft) objects.minOf { o -> obj.duration - o.start }
+                else objects.maxOf { o -> o.start + o.duration }
+
+            minHeight =
+                if (resizeFromTop) objects.minOf { o -> obj.height - o.y }
+                else objects.maxOf { o -> o.y + o.height }
+        }
+        obj.duration = dur.coerceAtLeast(minDur)
+        obj.height = height.coerceAtLeast(minHeight)
     }
 }

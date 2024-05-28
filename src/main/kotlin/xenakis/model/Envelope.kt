@@ -2,12 +2,16 @@ package xenakis.model
 
 import hextant.core.editor.ViewManager
 import javafx.geometry.HorizontalDirection
+import javafx.geometry.HorizontalDirection.LEFT
+import javafx.geometry.HorizontalDirection.RIGHT
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import xenakis.impl.Point
+import xenakis.sc.NumericalControlSpec
 import xenakis.sc.Warp
 import xenakis.ui.EnvelopeView
 import xenakis.ui.format
+import kotlin.math.absoluteValue
 
 @Serializable
 class Envelope(private val _points: MutableList<Point>, val curve: Warp) {
@@ -16,12 +20,13 @@ class Envelope(private val _points: MutableList<Point>, val curve: Warp) {
 
     val points: List<Point> get() = _points
 
-    fun code(offset: Double, dur: Double, doneAction: String = "Done.freeSelf"): String {
-        require(offset <= dur)
-        val afterOffset = if (offset == 0.0) this else cut(offset / dur, whichHalf = HorizontalDirection.RIGHT)
-        val points = afterOffset.points.map { (x, y) -> Point(x * dur, y) }
-        val levels = points.map { (_, y) -> y.format(2) }
-        val times = points.zipWithNext { a, b -> (b.x - a.x).format(2) }
+    val duration get() = points.last().x
+
+    fun code(offset: Double, doneAction: String = "Done.freeSelf"): String {
+        require(offset <= points.last().x)
+        val afterOffset = if (offset == 0.0) this else cut(offset, whichHalf = RIGHT)
+        val levels = afterOffset.points.map { (_, y) -> y.format(2) }
+        val times = afterOffset.points.zipWithNext { a, b -> (b.x - a.x).format(2) }
         return "EnvGen.kr(Env.new(levels: $levels, times: $times, curve: $curve), doneAction: $doneAction)"
     }
 
@@ -29,9 +34,8 @@ class Envelope(private val _points: MutableList<Point>, val curve: Warp) {
         var i = points.binarySearch(Point(t, 0.0))
         if (i >= 0) return points[i].y
         i = -(i + 1)
-        if (i == 0 || i == points.size) error("time $t outside of envelope range $points")
-        val (x1, y1) = points[i - 1]
-        val (x2, y2) = points[i]
+        val (x1, y1) = if (i == 0) points[1] else points[i - 1]
+        val (x2, y2) = if (i == points.size) points[i - 2] else points[i]
         val slope = (y2 - y1) / (x2 - x1)
         val dx = t - x1
         return y1 + slope * dx
@@ -68,21 +72,76 @@ class Envelope(private val _points: MutableList<Point>, val curve: Warp) {
         val valueAtPos = interpolateValueAt(position)
         val pivot = Point(position, valueAtPos)
         return when (whichHalf) {
-            HorizontalDirection.LEFT -> {
+            LEFT -> {
                 val left = points.take(i) + pivot
                 Envelope(left.mapTo(mutableListOf()) { (x, y) -> Point(x / position, y) }, curve)
             }
 
-            HorizontalDirection.RIGHT -> {
+            RIGHT -> {
                 val right = listOf(pivot) + points.drop(i)
                 Envelope(right.mapTo(mutableListOf()) { (x, y) -> Point((x - position) / (1 - position), y) }, curve)
             }
         }
     }
 
-    companion object {
-        fun constant(value: Double, curve: Warp) = Envelope(mutableListOf(Point(0.0, value), Point(1.0, value)), curve)
+    private fun shiftAll(points: Iterable<IndexedValue<Point>>, delta: Double) {
+        for ((i, p) in points) editPoint(i, p.copy(x = p.x + delta))
+    }
 
-        val default = constant(1.0, Warp.Linear)
+    fun resize(newDur: Double, dir: HorizontalDirection, spec: NumericalControlSpec) {
+        val deltaDur = newDur - duration
+        when {
+            newDur == duration -> return
+            dir == LEFT && newDur > duration -> {
+                val y = interpolateValueAt(duration - newDur).coerceIn(spec.range)
+                shiftAll(points.withIndex().drop(1), deltaDur)
+                editPoint(0, Point(x = 0.0, y = y))
+            }
+
+            dir == LEFT && newDur < duration -> {
+                val y = interpolateValueAt(0.0).coerceIn(spec.range)
+                for ((i, p) in points.toList().withIndex()) {
+                    if (p.x < (duration - newDur)) removePoint(i)
+                }
+                shiftAll(points.withIndex(), deltaDur)
+                if (points[0].x.absoluteValue > 0.01) {
+                    addPoint(0, Point(x = 0.0, y = y))
+                } else {
+                    editPoint(0, points[0].copy(x = 0.0))
+                }
+            }
+
+            dir == RIGHT && newDur > duration -> {
+                val y = interpolateValueAt(newDur).coerceIn(spec.range)
+                editPoint(points.size - 1, Point(newDur, y))
+            }
+
+            dir == RIGHT && newDur < duration -> {
+                val y = interpolateValueAt(newDur).coerceIn(spec.range).coerceIn(spec.range)
+                for ((i, p) in points.withIndex().reversed()) {
+                    if (p.x > newDur) removePoint(i)
+                }
+                if ((duration - newDur).absoluteValue > 0.01) {
+                    addPoint(points.size, Point(x = newDur, y = y))
+                } else {
+                    editPoint(points.size - 1, points.last().copy(x = newDur))
+                }
+            }
+        }
+    }
+
+    fun rescale(newDur: Double) {
+        val oldDur = points.last().x
+        val factor = newDur / oldDur
+        for ((i, p) in points.withIndex()) {
+            editPoint(i, p.copy(x = p.x * factor))
+        }
+    }
+
+    companion object {
+        fun constant(value: Double, duration: Double, curve: Warp) =
+            Envelope(mutableListOf(Point(0.0, value), Point(duration, value)), curve)
+
+        val default = constant(1.0, 1.0, Warp.Linear)
     }
 }

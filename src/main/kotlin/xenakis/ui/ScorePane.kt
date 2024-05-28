@@ -95,10 +95,11 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
     private fun setupDropArea() {
         setupFileDropArea(exactlyOne = true, "wav") { file, ev ->
             val defaultName = Identifier.truncate(file.nameWithoutExtension)
+            val duration = SoundFileObject.getDuration(file)
             val obj = SoundFileObject(
                 defaultName, file,
                 outBus = BusSelector(context), startPos = 0.0, rate = 1.0,
-                envelope = Envelope.constant(1.0, Warp.Linear),
+                envelope = Envelope.constant(1.0, duration, Warp.Linear),
             )
             obj.position.set(getTime(ev.x), ev.y)
             obj.height = 150.0
@@ -334,13 +335,15 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
 
             Task -> {
                 val editor = EditorRoot.create(ScFunctionEditor(context))
-                val name = context[NamingManager].availableName(prefix = "name")
-                addObject(TaskObject("name", editor, rect.width), rect)
+                val name = context[NamingManager].availableName(prefix = "task")
+                addObject(TaskObject(name, editor, rect.width), rect)
             }
 
             Tool.Envelope -> {
                 EnvelopeObjectView.showEnvelopeConfig(context) { name, spec, outputBus ->
-                    val envelope = Envelope.constant(spec.defaultValue.value, spec.warp)
+                    val value = spec.defaultValue.value
+                    val duration = getDuration(rect.width)
+                    val envelope = Envelope.constant(value, duration, spec.warp)
                     val obj = EnvelopeObject(name, spec, outputBus, envelope)
                     addObject(obj, rect)
                 }

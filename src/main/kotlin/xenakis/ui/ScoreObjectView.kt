@@ -269,6 +269,9 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
                     context[UndoManager].beginCompoundEdit("Clone object")
                     pane.score.addObject(clone)
                     pane.getObjectView(clone)
+                } else if (isResizeCursor(cursor)) {
+                    context[UndoManager].beginCompoundEdit("Resize object")
+                    this
                 } else {
                     context[UndoManager].beginCompoundEdit("Move object")
                     this
@@ -309,16 +312,30 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
         x >= 0.0 && y >= 0.0 && x + width <= pane.width && y + height <= pane.height
 
     private fun relocateBy(old: Bounds, dx: Double, dy: Double) {
-        val x = (old.minX + dx).snap(pane.timeSnap)
-        val y = (old.minY + dy)
-        if (!isInParentBounds(x, y, prefWidth, prefHeight)) return
+        var x = (old.minX + dx).snap(pane.timeSnap)
+        var y = (old.minY + dy)
+        x = x.coerceIn(0.0, pane.width - width)
+        y = y.coerceIn(0.0, pane.height - height)
         relocateObject(x, y)
     }
 
-    protected open fun resizeObject(width: Double, height: Double, ev: MouseEvent, cursor: Cursor): Boolean {
-        myObject.duration = pane.getDuration(width)
+    protected open fun resizeObject(width: Double, height: Double, ev: MouseEvent, cursor: Cursor) {
+        val newDur = pane.getDuration(width)
+        if (!ev.isAltDown) {
+            val resizeFromLeft = cursor in setOf(Cursor.W_RESIZE, Cursor.NW_RESIZE, Cursor.SW_RESIZE)
+            val resizeFromRight = cursor in setOf(Cursor.E_RESIZE, Cursor.NE_RESIZE, Cursor.SE_RESIZE)
+            for (ctrl in myObject.associatedEnvelopes) {
+                val spec = myObject.getSpec(ctrl.parameter) as NumericalControlSpec
+                if (resizeFromLeft) ctrl.envelope.resize(newDur, HorizontalDirection.LEFT, spec)
+                if (resizeFromRight) ctrl.envelope.resize(newDur, HorizontalDirection.RIGHT, spec)
+            }
+        } else {
+            for (ctrl in myObject.associatedEnvelopes) {
+                ctrl.envelope.rescale(newDur)
+            }
+        }
+        myObject.duration = newDur
         myObject.height = height
-        return true
     }
 
     open fun getDisplayWidth(): Double = pane.getWidth(myObject.duration)
@@ -337,7 +354,7 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
         pane.score.moveObject(myObject, pane.getTime(x), y)
     }
 
-    override fun moved(obj: ScoreObject, start: Double, y: Double) {
+    final override fun moved(obj: ScoreObject, start: Double, y: Double) {
         relocate(pane.getX(myObject.start), myObject.y)
     }
 
@@ -364,8 +381,11 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
         val snappedWidth = width.snap(pane.timeSnap)
         if (snappedWidth < 10.0 || height < 10.0) return
         if (!isInParentBounds(snappedX, y, snappedWidth, height)) return
-        if (resizeObject(snappedWidth, height, ev, cursor))
-            relocateObject(snappedX, y)
+        val oldWidth = getDisplayWidth()
+        val oldHeight = myObject.height
+        resizeObject(snappedWidth, height, ev, cursor)
+        if (cursor.resizeFromLeft) myObject.position.start += pane.getDuration(oldWidth - getDisplayWidth())
+        if (cursor.resizeFromTop) myObject.position.y += oldHeight - myObject.height
     }
 
     fun resized() {

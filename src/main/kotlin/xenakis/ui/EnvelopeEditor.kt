@@ -25,7 +25,7 @@ class EnvelopeEditor(
             ?: error("control $parameterName not found")
     private val spec get() = associatedObject.getSpec(parameterName) as NumericalControlSpec
     private val yTransform get() = spec.mapOnto(pane.height..0.0)
-    private val xTransform get() = LinearTransformation(0.0..1.0, 0.0..pane.width)
+    private val xTransform get() = LinearTransformation(0.0..associatedObject.duration, 0.0..pane.width)
 
     private val valueGrid get() = spec.step.value
 
@@ -149,7 +149,7 @@ class EnvelopeEditor(
             val idx = handles.indexOf(handle)
             val newX = when (idx) {
                 0 -> xTransform.map(0.0)
-                envelope.points.size - 1 -> xTransform.map(1.0)
+                envelope.points.size - 1 -> xTransform.map(associatedObject.duration)
                 else -> (old.minX + dx / pane.parent.scaleX).coerceIn(xTransform.targetRange.reverseIfEmpty())
             }
             val newY = (old.minY + dy / pane.parent.scaleY).coerceIn(yTransform.targetRange.reverseIfEmpty())

@@ -18,7 +18,11 @@ import xenakis.sc.editor.BufferSelector
 import xenakis.sc.editor.BusSelector
 import xenakis.sc.view.BusSelectorControl
 
-class ControlAssignmentEditor(private val parameter: ParameterDef, val project: XenakisProject) : HBox(5.0) {
+class ControlAssignmentEditor(
+    private val obj: ScoreObject,
+    private val parameter: ParameterDef,
+    val project: XenakisProject
+) : HBox(5.0) {
     private val nameLabel = Label(parameter.name.text).also { l -> l.styleClass.add("control-label") }
     private val comboBox = ComboBox(observableList(ControlType.all))
     private val detailEditors = mutableMapOf<ControlType<*, *>, Node>()
@@ -55,13 +59,13 @@ class ControlAssignmentEditor(private val parameter: ParameterDef, val project: 
     fun createControl(): ParameterControl {
         @Suppress("UNCHECKED_CAST")
         val type = comboBox.value!! as ControlType<ParameterControl, Node>
-        return type.createControl(detailEditor!!, parameter)
+        return type.createControl(obj, detailEditor!!, parameter)
     }
 
     sealed class ControlType<C : ParameterControl, I : Node> {
         abstract fun createDetailInput(parameter: ParameterDef, control: C?, project: XenakisProject): I
 
-        abstract fun createControl(detailInput: I, parameter: ParameterDef): C
+        abstract fun createControl(obj: ScoreObject, detailInput: I, parameter: ParameterDef): C
 
         override fun toString(): String = this::class.simpleName!!
 
@@ -78,7 +82,7 @@ class ControlAssignmentEditor(private val parameter: ParameterDef, val project: 
                 )
             }
 
-            override fun createControl(detailInput: Spinner<Double>, parameter: ParameterDef) =
+            override fun createControl(obj: ScoreObject, detailInput: Spinner<Double>, parameter: ParameterDef) =
                 ConstantControl(parameter.name.text, detailInput.value)
         }
 
@@ -102,7 +106,7 @@ class ControlAssignmentEditor(private val parameter: ParameterDef, val project: 
                 return slider
             }
 
-            override fun createControl(detailInput: Slider, parameter: ParameterDef): KnobControl =
+            override fun createControl(obj: ScoreObject, detailInput: Slider, parameter: ParameterDef): KnobControl =
                 KnobControl(parameter.name.text, detailInput.value)
         }
 
@@ -124,12 +128,13 @@ class ControlAssignmentEditor(private val parameter: ParameterDef, val project: 
                 return box
             }
 
-            override fun createControl(detailInput: HBox, parameter: ParameterDef): EnvelopeControl {
+            override fun createControl(obj: ScoreObject, detailInput: HBox, parameter: ParameterDef): EnvelopeControl {
                 val colorPicker = detailInput.children[0] as ColorPicker
                 val toggleButton = detailInput.children[2] as ToggleSwitch
                 val spec = parameter.spec as NumericalControlSpec
                 val oldEnvelope = detailInput.userData as? xenakis.model.Envelope
-                val env = oldEnvelope ?: xenakis.model.Envelope.constant(spec.defaultValue.value, spec.warp)
+                val env = oldEnvelope
+                    ?: xenakis.model.Envelope.constant(spec.defaultValue.value, obj.duration, spec.warp)
                 return EnvelopeControl(
                     parameter.name.text, env,
                     colorPicker.value, toggleButton.isSelected,
@@ -144,7 +149,11 @@ class ControlAssignmentEditor(private val parameter: ParameterDef, val project: 
                 project: XenakisProject,
             ): TextField = TextField(control?.expr?.code.orEmpty())
 
-            override fun createControl(detailInput: TextField, parameter: ParameterDef): CustomControl =
+            override fun createControl(
+                obj: ScoreObject,
+                detailInput: TextField,
+                parameter: ParameterDef
+            ): CustomControl =
                 CustomControl(parameter.name.text, RawScExpr(detailInput.text))
         }
 
@@ -155,7 +164,11 @@ class ControlAssignmentEditor(private val parameter: ParameterDef, val project: 
                 project: XenakisProject
             ): BusSelectorControl = busSelector(project, control?.bus)
 
-            override fun createControl(detailInput: BusSelectorControl, parameter: ParameterDef): BusControl =
+            override fun createControl(
+                obj: ScoreObject,
+                detailInput: BusSelectorControl,
+                parameter: ParameterDef
+            ): BusControl =
                 BusControl(parameter.name.text, detailInput.editor.result.now)
         }
 
@@ -166,7 +179,11 @@ class ControlAssignmentEditor(private val parameter: ParameterDef, val project: 
                 project: XenakisProject
             ): BusSelectorControl = busSelector(project, control?.bus)
 
-            override fun createControl(detailInput: BusSelectorControl, parameter: ParameterDef): BusValueControl =
+            override fun createControl(
+                obj: ScoreObject,
+                detailInput: BusSelectorControl,
+                parameter: ParameterDef
+            ): BusValueControl =
                 BusValueControl(parameter.name.text, detailInput.editor.result.now)
         }
 
@@ -178,6 +195,7 @@ class ControlAssignmentEditor(private val parameter: ParameterDef, val project: 
             ): BusSelectorControl = busSelector(project, control?.bus)
 
             override fun createControl(
+                obj: ScoreObject,
                 detailInput: BusSelectorControl,
                 parameter: ParameterDef
             ): SingleBusValueControl = SingleBusValueControl(parameter.name.text, detailInput.editor.result.now)
@@ -194,6 +212,7 @@ class ControlAssignmentEditor(private val parameter: ParameterDef, val project: 
             }
 
             override fun createControl(
+                obj: ScoreObject,
                 detailInput: SimpleChoiceEditorControl<xenakis.sc.Buffer>,
                 parameter: ParameterDef
             ): BufferControl = BufferControl(parameter.name.text, detailInput.editor.result.now)

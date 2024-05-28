@@ -72,7 +72,7 @@ class SoundFileObject(
         append("PlayBuf.ar($bufferName.numChannels, $bufferName, ")
         append("rate: ${rate.format(2)}, ")
         append("startPos: $startPos)")
-        append(" * ${envelope.code(offset, duration, doneAction = "Done.none")} }")
+        append(" * ${envelope.code(offset, doneAction = "Done.none")} }")
         appendLine(".play(s, ${outBus.result.now.variableName});")
     }
 
