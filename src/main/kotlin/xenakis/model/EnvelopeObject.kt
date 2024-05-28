@@ -33,7 +33,7 @@ class EnvelopeObject(
 
     override fun getSpec(parameter: String): ControlSpec = if (parameter == name) spec else super.getSpec(parameter)
 
-    override fun copy(): ScoreObject = EnvelopeObject(name, spec, bus, envelope.clone())
+    override fun copy(): ScoreObject = EnvelopeObject(name, spec, bus, envelope.copy())
 
     override fun cut(position: Double, whichHalf: HorizontalDirection): ScoreObject =
         EnvelopeObject(name, spec, bus, envelope.cut(position / duration, whichHalf))

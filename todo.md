@@ -7,6 +7,13 @@
 
 ### external vst plugins
 
+- piano roll tool
+
+### server node order rules
+
+- only applicable on Synth objects!
+- drawing dependency arrows
+
 ### sound file objects
 
 - maybe have a configurable playbuf-synth (additional parameters, filters, etc.)
@@ -15,8 +22,6 @@
 - spectral view
 
 ### how to react to changes of synth definitions?
-
-### Piano roll tool
 
 ### Mixing interface in AudioFlowGraph
 
@@ -57,3 +62,4 @@
 
 - integrate close, maximize, minimize into top toolbar and remove window decoration
 - auto resize prompt windows (e.g. parameter definition prompts)
+- maybe show object toolbar on context click instead of top bar

@@ -65,7 +65,7 @@ class ClonedObject(
 
     override fun copy(newName: String): ScoreObject = original.copy(newName)
 
-    override fun clone(name: String): ClonedObject = ClonedObject(name, original)
+    override fun clone(name: String): ClonedObject = original.clone(name)
 
     override fun addView(view: ScoreObjectView) {
         original.addView(view)

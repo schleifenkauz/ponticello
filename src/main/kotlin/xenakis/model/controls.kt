@@ -46,7 +46,7 @@ data class EnvelopeControl(
     @Serializable(with = ColorSerializer::class) val displayColor: Color,
     val display: Boolean
 ) : ParameterControl() {
-    override fun clone(): ParameterControl = copy(envelope = envelope.clone())
+    override fun clone(): ParameterControl = copy(envelope = envelope.copy())
 
     override fun cut(cutPos: Double, whichHalve: HorizontalDirection): ParameterControl =
         EnvelopeControl(parameter, envelope.cut(cutPos, whichHalve), displayColor, display)

@@ -14,6 +14,7 @@ class XenakisApp : Application() {
         val ui = XenakisUI(stage, controller)
         controller.addListener(ui)
         controller.startXenakis()
+        stage.title = "Xenakis"
         stage.show()
     }
 

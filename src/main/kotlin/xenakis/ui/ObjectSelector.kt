@@ -11,6 +11,7 @@ import reaktive.value.ReactiveValue
 import reaktive.value.now
 import reaktive.value.reactiveVariable
 import xenakis.model.LayoutManager
+import xenakis.model.NamingManager
 import xenakis.model.ScoreObject
 
 class ObjectSelector(private val context: Context, private val rootPane: ScorePane) {
@@ -61,7 +62,24 @@ class ObjectSelector(private val context: Context, private val rootPane: ScorePa
 
     fun copySelected() {
         if (selectedObjects.isEmpty()) return
-        val json = Json.encodeToString(ListSerializer(ScoreObject.Ser), selectedObjects)
+        val copies = selectedObjects.map { obj ->
+            val name = context[NamingManager].nameForCopy(obj)
+            obj.copy(name)
+        }
+        setClipboard(copies)
+    }
+
+    fun cloneSelected() {
+        if (selectedObjects.isEmpty()) return
+        val clones = selectedObjects.map { obj ->
+            val name = context[NamingManager].nameForClone(obj)
+            obj.clone(name)
+        }
+        setClipboard(clones)
+    }
+
+    private fun setClipboard(objects: List<ScoreObject>) {
+        val json = Json.encodeToString(ListSerializer(ScoreObject.Ser), objects)
         val clipboard = Clipboard.getSystemClipboard()
         clipboard.setContent(mapOf(ScoreObject.DATA_FORMAT to json))
     }

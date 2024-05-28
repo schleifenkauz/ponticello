@@ -3,6 +3,7 @@ package xenakis.ui
 import hextant.context.Context
 import hextant.serial.EditorRoot
 import javafx.application.Platform
+import javafx.geometry.Bounds
 import javafx.scene.input.Clipboard
 import javafx.scene.input.MouseButton
 import javafx.scene.input.MouseEvent
@@ -77,7 +78,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
         addEventHandler(MouseEvent.ANY) { ev ->
             val pane = when (val target = ev.target) {
                 is ScorePane -> target
-                is CompoundScoreObjectView -> target.scorePane
+                is ScoreObjectGroupView -> target.scorePane
                 else -> return@addEventHandler
             }
             val e = ev.copyFor(pane, pane)
@@ -117,7 +118,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
         is EnvelopeObject -> EnvelopeObjectView(obj)
         is SoundFileObject -> SoundFileObjectView(obj)
         is MemoObject -> MemoObjectView(obj)
-        is CompoundScoreObject -> CompoundScoreObjectView(obj)
+        is ScoreObjectGroup -> ScoreObjectGroupView(obj)
         is ClonedObject -> {
             val view = createObjectView(obj.original)
             view.myObject = obj
@@ -300,10 +301,8 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
             if (selectedArea.width == 0.0 || selectedArea.height == 0.0) {
                 children.remove(selectedArea)
             } else if (!selectedArea.heightProperty().isBound) {
-                for ((_, view) in views) {
-                    if (selectedArea.boundsInParent.contains(view.boundsInParent)) {
-                        selector.select(view, addToSelection = true)
-                    }
+                for (view in viewsInside(selectedArea.boundsInParent)) {
+                    selector.select(view, addToSelection = true)
                 }
                 children.remove(selectedArea)
             } else {
@@ -311,6 +310,8 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
             }
         }
     }
+
+    private fun viewsInside(bounds: Bounds) = views.values.filter { v -> bounds.contains(v.boundsInParent) }
 
     /*
     * Object creation
@@ -333,7 +334,8 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
 
             Task -> {
                 val editor = EditorRoot.create(ScFunctionEditor(context))
-                addObject(TaskObject("task", editor, rect.width), rect)
+                val name = context[NamingManager].availableName(prefix = "name")
+                addObject(TaskObject("name", editor, rect.width), rect)
             }
 
             Tool.Envelope -> {
@@ -345,9 +347,23 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
                 return
             }
 
-            Memo -> addObject(MemoObject("memo", "", rect.width), rect)
+            Memo -> {
+                val name = context[NamingManager].availableName("memo")
+                addObject(MemoObject(name, "", rect.width), rect)
+            }
 
-            Compound -> addObject(CompoundScoreObject("sub_score", Score()), rect)
+            Compound -> {
+                val name = context[NamingManager].availableName(prefix = "sub_score")
+                val objects = viewsInside(rect.boundsInParent).map { it.myObject }
+                println(objects)
+                for (obj in objects) {
+                    score.removeObject(obj)
+                    obj.position.start -= getTime(rect.x)
+                    obj.position.y -= rect.y
+                }
+                val subScore = Score(objects.toMutableList())
+                addObject(ScoreObjectGroup(name, subScore), rect)
+            }
 
             else -> {
                 System.err.println("Unrecognized tool $tool")

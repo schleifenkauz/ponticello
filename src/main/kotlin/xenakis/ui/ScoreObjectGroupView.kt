@@ -2,9 +2,9 @@ package xenakis.ui
 
 import javafx.scene.Cursor
 import javafx.scene.input.MouseEvent
-import xenakis.model.CompoundScoreObject
+import xenakis.model.ScoreObjectGroup
 
-class CompoundScoreObjectView(private val obj: CompoundScoreObject) : ScoreObjectView(obj) {
+class ScoreObjectGroupView(private val obj: ScoreObjectGroup) : ScoreObjectView(obj) {
     lateinit var scorePane: ScorePane
         private set
 

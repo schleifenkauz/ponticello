@@ -1,10 +1,10 @@
 package xenakis.ui
 
 import hextant.context.Context
-import xenakis.model.CompoundScoreObject
+import xenakis.model.ScoreObjectGroup
 
 class SubScorePane(
-    private val obj: CompoundScoreObject,
+    private val obj: ScoreObjectGroup,
     context: Context,
     val parent: ScorePane
 ) : ScorePane(obj.score, context) {

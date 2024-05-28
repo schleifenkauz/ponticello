@@ -80,7 +80,7 @@ class SoundFileObject(
         writer.appendLine("$synthName.release;")
     }
 
-    override fun copy(): SoundFileObject = SoundFileObject(name, file, outBus, startPos, rate, envelope.clone())
+    override fun copy(): SoundFileObject = SoundFileObject(name, file, outBus, startPos, rate, envelope.copy())
 
     override fun cut(position: Double, whichHalf: HorizontalDirection): ScoreObject {
         val startPos = if (whichHalf == HorizontalDirection.LEFT) startPos else start + position

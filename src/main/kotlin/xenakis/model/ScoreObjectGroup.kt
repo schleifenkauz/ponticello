@@ -9,7 +9,7 @@ import xenakis.impl.getSerializableValue
 import xenakis.impl.putSerializableValue
 import xenakis.ui.ScoreObjectView
 
-class CompoundScoreObject(name: String, val score: Score) : AbstractScoreObject(name) {
+class ScoreObjectGroup(name: String, val score: Score) : AbstractScoreObject(name) {
     override val type: String
         get() = "compound"
 
@@ -17,7 +17,7 @@ class CompoundScoreObject(name: String, val score: Score) : AbstractScoreObject(
 
     override fun addToScore(score: Score, context: Context) {
         super.addToScore(score, context)
-        for (obj in score.objects) {
+        for (obj in this.score.objects) {
             obj.addToScore(score, context)
         }
     }
@@ -30,7 +30,7 @@ class CompoundScoreObject(name: String, val score: Score) : AbstractScoreObject(
         writer.appendLine("play_$name.stop;")
     }
 
-    override fun copy(): ScoreObject = CompoundScoreObject(name, score)
+    override fun copy(): ScoreObject = ScoreObjectGroup(name, score)
 
     override fun JsonObjectBuilder.saveToJson() {
         putSerializableValue("score", score)
@@ -41,7 +41,7 @@ class CompoundScoreObject(name: String, val score: Score) : AbstractScoreObject(
 
         override fun JsonObject.createFromJson(name: String): ScoreObject {
             val score = getSerializableValue<Score>("score")!!
-            return CompoundScoreObject(name, score)
+            return ScoreObjectGroup(name, score)
         }
     }
 }

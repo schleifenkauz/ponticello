@@ -23,21 +23,17 @@ class NamingManager {
         objectsByName[newName] = obj
     }
 
-    fun nameForCopy(obj: ScoreObject): String {
+    fun availableName(prefix: String): String {
         for (n in 1..Int.MAX_VALUE) {
-            val name = "${obj.name}_copy$n"
+            val name = "${prefix}_$n"
             if (isNameAvailable(name)) return name
         }
         throw AssertionError()
     }
 
-    fun nameForClone(obj: ScoreObject): String {
-        for (n in 1..Int.MAX_VALUE) {
-            val name = "${obj.name}_clone$n"
-            if (isNameAvailable(name)) return name
-        }
-        throw AssertionError()
-    }
+    fun nameForCopy(obj: ScoreObject): String = availableName("${obj.name}_copy")
+
+    fun nameForClone(obj: ScoreObject): String = availableName("${obj.name}_clone")
 
     fun isNameTaken(name: String): Boolean = name in objectsByName
 

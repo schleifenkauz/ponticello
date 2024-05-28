@@ -222,7 +222,7 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
     }
 
     private fun setCloneOfSelected(value: Boolean) {
-        pseudoClassStateChanged(PseudoClass.getPseudoClass("clone-of-selected"), value)
+        pseudoClassStateChanged(PseudoClass.getPseudoClass("copy-of-selected"), value)
     }
 
     private fun setOriginalOfSelected(value: Boolean) {

@@ -76,7 +76,7 @@ interface ScoreObject {
                 SoundFileObject.Serializer,
                 TaskObject.Serializer,
                 EnvelopeObject.Serializer,
-                CompoundScoreObject.Serializer,
+                ScoreObjectGroup.Serializer,
                 ClonedObject.Serializer
             ).associateBy { it.type }
         }
@@ -95,7 +95,7 @@ interface ScoreObject {
             obj.position.y = json.getDouble("y") ?: 0.0
             obj.nameOfNextInChain = json.getString("next")
 
-            if (type != "clone") {
+            if (type != ClonedObject.Serializer.type) {
                 obj.duration = json.getDouble("duration") ?: 0.0
                 obj.height = json.getDouble("height") ?: 0.0
                 obj.associatedColor = json.getColor("color")
@@ -114,7 +114,7 @@ interface ScoreObject {
                 if (value.start != 0.0) put("start", value.start)
                 if (value.y != 0.0) put("y", value.y)
                 if (value.nextInChain != null) put("next", value.nextInChain!!.name)
-                if (type != "clone") {
+                if (type != ClonedObject.Serializer.type) {
                     if (value.duration != 0.0) put("duration", value.duration)
                     if (value.height != 0.0) put("height", value.height)
                     val color = value.associatedColor
