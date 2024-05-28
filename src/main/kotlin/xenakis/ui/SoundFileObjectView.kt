@@ -51,9 +51,9 @@ class SoundFileObjectView(val obj: SoundFileObject) : ScoreObjectView(obj) {
         }
     }
 
-    override fun resizeObject(width: Double, height: Double, ev: MouseEvent, cursor: Cursor): Boolean {
+    override fun resizeObject(width: Double, height: Double, ev: MouseEvent, cursor: Cursor) {
         var newDuration = pane.getDuration(width)
-        if (ev.isShiftDown) {
+        if (ev.isAltDown) {
             obj.rate *= obj.duration / newDuration
         } else {
             newDuration = pane.getDuration(width).coerceAtMost(fileDuration / obj.rate)
@@ -63,7 +63,6 @@ class SoundFileObjectView(val obj: SoundFileObject) : ScoreObjectView(obj) {
             }
         }
         obj.duration = newDuration
-        return true
     }
 
     override fun initialize(parent: ScorePane) {

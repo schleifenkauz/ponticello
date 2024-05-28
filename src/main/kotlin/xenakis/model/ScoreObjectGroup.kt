@@ -2,9 +2,13 @@ package xenakis.model
 
 import hextant.context.Context
 import hextant.core.editor.ViewManager
+import javafx.geometry.HorizontalDirection
+import javafx.geometry.HorizontalDirection.LEFT
+import javafx.geometry.HorizontalDirection.RIGHT
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonObjectBuilder
 import xenakis.impl.ScWriter
+import xenakis.impl.SuperColliderContext
 import xenakis.impl.getSerializableValue
 import xenakis.impl.putSerializableValue
 import xenakis.ui.ScoreObjectView
@@ -28,7 +32,52 @@ class ScoreObjectGroup(name: String, val score: Score) : AbstractScoreObject(nam
         writer.appendLine("play_$name.stop;")
     }
 
-    override fun copy(): ScoreObject = ScoreObjectGroup(name, score)
+    override fun cut(position: Double, whichHalf: HorizontalDirection): ScoreObject {
+        val cutScore = Score()
+        for (obj in score.objects) {
+            when {
+                whichHalf == LEFT && obj.start + obj.duration <= position -> {
+                    cutScore.addObject(obj)
+                }
+
+                whichHalf == LEFT && obj.start < position -> {
+                    obj.duration = position - obj.start
+                    val leftHalf = obj.cut(position - obj.start, LEFT, obj.name)
+                        ?: obj.also { it.duration = position - obj.start }
+                    cutScore.addObject(leftHalf)
+                }
+
+                whichHalf == RIGHT && obj.start >= position -> {
+                    obj.position.start -= position
+                    cutScore.addObject(obj)
+                }
+
+                whichHalf == RIGHT && obj.start + obj.duration > position -> {
+                    obj.position.start -= position
+                    val rightHalf = obj.cut(position - obj.start, RIGHT, obj.name)
+                        ?: obj.also { it.duration -= position - obj.start }
+                    cutScore.addObject(rightHalf)
+                }
+            }
+        }
+        return ScoreObjectGroup(name, cutScore)
+    }
+
+    override fun serverBooted(context: SuperColliderContext) {
+        super.serverBooted(context)
+        for (obj in score.objects) {
+            obj.serverBooted(context)
+        }
+    }
+
+    override fun copy(): ScoreObject = ScoreObjectGroup(name, score.copy())
+
+    override fun onRemove() {
+        super.onRemove()
+        for (obj in score.objects) {
+            obj.onRemove()
+        }
+    }
 
     override fun JsonObjectBuilder.saveToJson() {
         putSerializableValue("score", score)

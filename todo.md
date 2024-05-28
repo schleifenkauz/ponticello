@@ -9,11 +9,6 @@
 
 - piano roll tool
 
-### server node order rules
-
-- only applicable on Synth objects!
-- drawing dependency arrows
-
 ### sound file objects
 
 - maybe have a configurable playbuf-synth (additional parameters, filters, etc.)
@@ -22,6 +17,8 @@
 - spectral view
 
 ### how to react to changes of synth definitions?
+
+- parameter renaming!
 
 ### Mixing interface in AudioFlowGraph
 
@@ -57,6 +54,9 @@
 ## Bug fixes
 
 - why can't we have shortcuts in the ScoreView?
+- make the interaction with sclang less hacky (maybe use Java OSC library?)
+- the mouse position tracker line sometimes interferes with clicks
+- do not throw Exception when undo is not possible on Ctrl+Z
 
 ## Nice to have
 

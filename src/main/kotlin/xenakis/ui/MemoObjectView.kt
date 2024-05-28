@@ -48,10 +48,9 @@ class MemoObjectView(val obj: MemoObject) : ScoreObjectView(obj) {
         header.children.add(1, colorPicker)
     }
 
-    override fun resizeObject(width: Double, height: Double, ev: MouseEvent, cursor: Cursor): Boolean {
-        if (width < 50.0) return false
-        obj.width = width
-        return true
+    override fun resizeObject(width: Double, height: Double, ev: MouseEvent, cursor: Cursor) {
+        obj.width = width.coerceAtLeast(50.0)
+        obj.height = height.coerceAtLeast(50.0)
     }
 
     override fun getDisplayWidth(): Double = obj.width

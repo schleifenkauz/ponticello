@@ -13,17 +13,17 @@ import xenakis.ui.KnobControlView
 sealed class ParameterControl {
     abstract val parameter: String
 
-    abstract fun clone(): ParameterControl
+    open fun copy(): ParameterControl = this
 
     open fun cut(cutPos: Double, whichHalve: HorizontalDirection) = this
 }
 
 @Serializable
-data class KnobControl(override val parameter: String, private var value: Double) : ParameterControl() {
+class KnobControl(override val parameter: String, private var value: Double) : ParameterControl() {
     @Transient
     val views = ViewManager.createWeakViewManager<KnobControlView>()
 
-    override fun clone(): ParameterControl = copy()
+    override fun copy(): ParameterControl = KnobControl(parameter, value)
 
     fun set(value: Double) {
         if (value == this.value) return
@@ -40,47 +40,36 @@ data class KnobControl(override val parameter: String, private var value: Double
 }
 
 @Serializable
-data class EnvelopeControl(
+class EnvelopeControl(
     override val parameter: String,
     val envelope: Envelope,
     @Serializable(with = ColorSerializer::class) val displayColor: Color,
     val display: Boolean
 ) : ParameterControl() {
-    override fun clone(): ParameterControl = copy(envelope = envelope.copy())
+    override fun copy(): ParameterControl =
+        EnvelopeControl(parameter, envelope = envelope.copy(), displayColor, display)
 
     override fun cut(cutPos: Double, whichHalve: HorizontalDirection): ParameterControl =
         EnvelopeControl(parameter, envelope.cut(cutPos, whichHalve), displayColor, display)
 }
 
 @Serializable
-data class BusControl(override val parameter: String, val bus: Bus) : ParameterControl() {
-    override fun clone(): ParameterControl = copy()
-}
+class BusControl(override val parameter: String, val bus: Bus) : ParameterControl()
 
 @Serializable
-data class BusValueControl(override val parameter: String, val bus: Bus) : ParameterControl() {
-    override fun clone(): ParameterControl = copy()
-}
+class BusValueControl(override val parameter: String, val bus: Bus) : ParameterControl()
 
 @Serializable
-data class SingleBusValueControl(override val parameter: String, val bus: Bus) : ParameterControl() {
-    override fun clone(): ParameterControl = copy()
-}
+data class SingleBusValueControl(override val parameter: String, val bus: Bus) : ParameterControl()
 
 @Serializable
-data class BufferControl(override val parameter: String, val buffer: Buffer) : ParameterControl() {
-    override fun clone(): ParameterControl = copy()
-}
+data class BufferControl(override val parameter: String, val buffer: Buffer) : ParameterControl()
 
 @Serializable
-data class CustomControl(override val parameter: String, val expr: ScExpr) : ParameterControl() {
-    override fun clone(): ParameterControl = copy()
-}
+data class CustomControl(override val parameter: String, val expr: ScExpr) : ParameterControl()
 
 @Serializable
-data class ConstantControl(override val parameter: String, val value: Double) : ParameterControl() {
-    override fun clone(): ParameterControl = copy()
-}
+data class ConstantControl(override val parameter: String, val value: Double) : ParameterControl()
 
 fun SynthDef.defaultControls() = parameters.map { p ->
     when (val spec = p.spec) {

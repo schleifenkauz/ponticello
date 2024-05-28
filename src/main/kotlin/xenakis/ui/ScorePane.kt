@@ -24,7 +24,7 @@ import xenakis.ui.ToolSelector.Tool.*
 
 abstract class ScorePane(val score: Score, val context: Context) : Pane(), ScoreListener {
     private var newObjectArea: Rectangle? = null
-    private var selectedArea: Rectangle = Rectangle() styleClass "time-range-rect"
+    protected val selectedArea: Rectangle = Rectangle() styleClass "time-range-rect"
 
     private val outgoingArrows = mutableMapOf<ScoreObjectView, Pair<Arrow, ScoreObjectView>>()
     private val ingoingArrows = mutableMapOf<ScoreObjectView, Pair<Arrow, ScoreObjectView>>()
@@ -272,11 +272,11 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
                 val objects = Json.decodeFromString(ListSerializer(ScoreObject.Ser), content)
                 val leftTop = objects.minOf { it.position }
                 for (obj in objects) {
+                    score.addObject(obj)
                     obj.position.start += getTime(ev.x) - leftTop.start
                     obj.position.start = obj.start.coerceAtLeast(0.0)
                     obj.position.y += ev.y - leftTop.y
                     obj.position.y = obj.y.coerceIn(0.0, height - obj.height)
-                    score.addObject(obj)
                 }
             }
         } else {
@@ -355,7 +355,6 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
             Compound -> {
                 val name = context[NamingManager].availableName(prefix = "sub_score")
                 val objects = viewsInside(rect.boundsInParent).map { it.myObject }
-                println(objects)
                 for (obj in objects) {
                     score.removeObject(obj)
                     obj.position.start -= getTime(rect.x)

@@ -11,7 +11,7 @@ import xenakis.ui.format
 import kotlin.math.ceil
 
 @Serializable
-data class Score(
+class Score(
     private val _objects: MutableList<ScoreObject> = mutableListOf(),
     private val _horizontalGroups: MutableList<MutableSet<String>> = mutableListOf(),
     private val _verticalGroups: MutableList<MutableSet<String>> = mutableListOf(),
@@ -189,5 +189,32 @@ data class Score(
             prev = clone
         }
         context[UndoManager].finishCompoundEdit()
+    }
+
+    fun copy(): Score {
+        val copies = mutableMapOf<ScoreObject, ScoreObject>()
+        for (obj in objects) {
+            val copy =
+                if (obj is ClonedObject) {
+                    val original = copies[obj.original] ?: error("original for clone $obj not found!")
+                    original.clone(namingManger.nameForClone(original))
+                } else obj.copy(namingManger.nameForCopy(obj))
+            copies[obj] = copy
+        }
+        for (obj in copies.values) {
+            val nxtInChain = obj.nextInChain ?: continue
+            obj.nextInChain = (copies.getValue(nxtInChain)) as ClonedObject?
+        }
+        val horizontalGroups = _horizontalGroups.mapTo(mutableListOf()) { g ->
+            g.mapTo(mutableSetOf()) { name ->
+                copies.getValue(namingManger.getObject(name)).name
+            }
+        }
+        val verticalGroups = _verticalGroups.mapTo(mutableListOf()) { g ->
+            g.mapTo(mutableSetOf()) { name ->
+                copies.getValue(namingManger.getObject(name)).name
+            }
+        }
+        return Score(copies.values.toMutableList(), horizontalGroups, verticalGroups)
     }
 }

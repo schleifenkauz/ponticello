@@ -9,6 +9,7 @@ import javafx.css.PseudoClass
 import javafx.event.ActionEvent
 import javafx.geometry.Bounds
 import javafx.geometry.Pos
+import javafx.scene.Cursor
 import javafx.scene.Node
 import javafx.scene.control.*
 import javafx.scene.input.DragEvent
@@ -49,10 +50,10 @@ fun <N : Node> N.styleClass(vararg classes: String) = also { it.styleClass.addAl
 infix fun <N : Node> N.styleClass(name: String) = also { it.styleClass.add(name) }
 
 fun button(text: String = "", onAction: (ev: ActionEvent) -> Unit) =
-    Button(text).also { btn -> btn.setOnAction(onAction) }
+    Button(text).also { btn -> btn.onAction = onAction }
 
 fun button(glyph: FontAwesome.Glyph, onAction: (ev: ActionEvent) -> Unit) =
-    Button(null, Glyph("FontAwesome", glyph)).also { btn -> btn.setOnAction(onAction) }
+    Button(null, Glyph("FontAwesome", glyph)).also { btn -> btn.onAction = onAction }
 
 fun textField(text: String = "", config: TextField.() -> Unit) = TextField(text).apply(config)
 
@@ -187,3 +188,6 @@ fun solidBorder(fill: Color, width: Double = 1.0, radius: Double = 0.0) =
     Border(BorderStroke(fill, BorderStrokeStyle.SOLID, CornerRadii(radius), BorderWidths(width)))
 
 val Bounds.middleY get() = (minY + maxY) / 2
+
+val Cursor.resizeFromLeft get() = this in setOf(Cursor.W_RESIZE, Cursor.NW_RESIZE, Cursor.SW_RESIZE)
+val Cursor.resizeFromTop get() = this in setOf(Cursor.S_RESIZE, Cursor.SE_RESIZE, Cursor.SW_RESIZE)

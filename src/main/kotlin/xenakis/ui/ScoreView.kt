@@ -1,6 +1,7 @@
 package xenakis.ui
 
 import hextant.context.Context
+import hextant.fx.registerShortcuts
 import javafx.scene.shape.Line
 import javafx.scene.text.Text
 import xenakis.impl.step
@@ -20,6 +21,13 @@ class ScoreView(score: Score, context: Context) : ScorePane(score, context) {
         listenForEvents()
         score.addListener(this)
         styleClass.add("score-view")
+        selectedArea.registerShortcuts {
+            on("Alt+S") {
+                displayStart = getTime(selectedArea.x)
+                displayEnd = getTime(selectedArea.x + selectedArea.width)
+                repaint()
+            }
+        }
     }
 
     private fun onResize(old: Double, new: Double) {
@@ -74,7 +82,7 @@ class ScoreView(score: Score, context: Context) : ScorePane(score, context) {
         setOnMouseEntered { ev ->
             if (!ev.x.isNaN()) {
                 positionTracker.layoutX = ev.x.snap(timeSnap)
-                children.add(positionTracker)
+                //children.add(positionTracker)
                 ev.consume()
             }
         }
@@ -85,7 +93,7 @@ class ScoreView(score: Score, context: Context) : ScorePane(score, context) {
             }
         }
         setOnMouseExited { ev ->
-            children.remove(positionTracker)
+            //children.remove(positionTracker)
             ev.consume()
         }
     }

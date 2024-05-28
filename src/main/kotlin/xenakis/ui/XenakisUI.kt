@@ -355,7 +355,7 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
             on("Ctrl?+C") {
                 scoreView.selector.copySelected()
             }
-            on("Ctrl?+Shift+C") {
+            on("Ctrl+Shift+C") {
                 scoreView.selector.cloneSelected()
             }
         }

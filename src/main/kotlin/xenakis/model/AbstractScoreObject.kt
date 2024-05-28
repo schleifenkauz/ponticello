@@ -104,7 +104,7 @@ sealed class AbstractScoreObject(name: String) : ScoreObject {
 
     protected abstract fun copy(): ScoreObject
 
-    override fun copy(newName: String): ScoreObject {
+    final override fun copy(newName: String): ScoreObject {
         val obj = copy()
         obj.name = newName
         obj.position.set(position)
@@ -112,7 +112,7 @@ sealed class AbstractScoreObject(name: String) : ScoreObject {
         obj.height = height
         obj.associatedColor = associatedColor
         obj.muted = muted
-        obj.controls = controls.mapTo(mutableListOf()) { c -> c.clone() }
+        obj.controls = controls.mapTo(mutableListOf()) { c -> c.copy() }
         return obj
     }
 

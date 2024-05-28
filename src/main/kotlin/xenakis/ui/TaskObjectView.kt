@@ -4,7 +4,6 @@ import javafx.scene.Cursor
 import javafx.scene.control.ScrollPane
 import javafx.scene.input.MouseEvent
 import javafx.scene.layout.Priority
-import javafx.stage.Stage
 import xenakis.model.TaskObject
 
 class TaskObjectView(val obj: TaskObject) : ScoreObjectView(obj) {
@@ -22,10 +21,9 @@ class TaskObjectView(val obj: TaskObject) : ScoreObjectView(obj) {
         children.add(0, codeArea)
     }
 
-    override fun resizeObject(width: Double, height: Double, ev: MouseEvent, cursor: Cursor): Boolean {
-        if (width < 100.0) return false
-        obj.width = width
-        return true
+    override fun resizeObject(width: Double, height: Double, ev: MouseEvent, cursor: Cursor) {
+        obj.width = width.coerceAtLeast(100.0)
+        obj.height = height.coerceAtLeast(100.0)
     }
 
     override fun getDisplayWidth(): Double = obj.width

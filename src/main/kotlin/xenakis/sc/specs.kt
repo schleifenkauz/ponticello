@@ -57,7 +57,7 @@ data class NumericalControlSpec(
     val range: DoubleRange get() = min.value..max.value
 
     companion object {
-        val DEFAULT = NumericalControlSpec(0.0, 1.0, 0.0, Warp.Linear, 0.1, Color.WHITE)
+        val DEFAULT = NumericalControlSpec(0.0, 0.0, 1.0, Warp.Linear, 0.1, Color.WHITE)
     }
 }
 
