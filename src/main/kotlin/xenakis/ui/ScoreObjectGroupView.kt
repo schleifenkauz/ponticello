@@ -35,19 +35,29 @@ class ScoreObjectGroupView(private val obj: ScoreObjectGroup) : ScoreObjectView(
         val dur = pane.getDuration(width)
         var minDur = 0.0
         var minHeight = 0.0
-        val resizeFromLeft = cursor in setOf(Cursor.W_RESIZE, Cursor.NW_RESIZE, Cursor.SW_RESIZE)
-        val resizeFromTop = cursor in setOf(Cursor.S_RESIZE, Cursor.SE_RESIZE, Cursor.SW_RESIZE)
         val objects = obj.score.objects
         if (objects.isNotEmpty()) {
             minDur =
-                if (resizeFromLeft) objects.minOf { o -> obj.duration - o.start }
+                if (cursor.resizeFromLeft) obj.duration - objects.minOf { o -> o.start }
                 else objects.maxOf { o -> o.start + o.duration }
 
             minHeight =
-                if (resizeFromTop) objects.minOf { o -> obj.height - o.y }
+                if (cursor.resizeFromTop) obj.height - objects.minOf { o -> o.y }
                 else objects.maxOf { o -> o.y + o.height }
         }
-        obj.duration = dur.coerceAtLeast(minDur)
-        obj.height = height.coerceAtLeast(minHeight)
+        val deltaDur = dur.coerceAtLeast(minDur) - obj.duration
+        val deltaHeight = height.coerceAtLeast(minHeight) - obj.height
+        obj.duration += deltaDur
+        obj.height += deltaHeight
+        if (cursor.resizeFromLeft) {
+            for (obj in obj.score.objects) {
+                obj.position.start += deltaDur
+            }
+        }
+        if (cursor.resizeFromTop) {
+            for (obj in obj.score.objects) {
+                obj.position.y += deltaHeight
+            }
+        }
     }
 }

@@ -192,4 +192,4 @@ fun solidBorder(fill: Color, width: Double = 1.0, radius: Double = 0.0) =
 val Bounds.middleY get() = (minY + maxY) / 2
 
 val Cursor.resizeFromLeft get() = this in setOf(Cursor.W_RESIZE, Cursor.NW_RESIZE, Cursor.SW_RESIZE)
-val Cursor.resizeFromTop get() = this in setOf(Cursor.S_RESIZE, Cursor.SE_RESIZE, Cursor.SW_RESIZE)
+val Cursor.resizeFromTop get() = this in setOf(Cursor.N_RESIZE, Cursor.NE_RESIZE, Cursor.NW_RESIZE)

@@ -59,3 +59,4 @@
 - auto resize prompt windows (e.g. parameter definition prompts)
 - maybe show object toolbar on context click instead of top bar
 - ability to hide tool panes
+- or even better: have all tool-panes as extra windows!
