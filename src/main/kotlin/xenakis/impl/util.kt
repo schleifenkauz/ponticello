@@ -74,3 +74,7 @@ operator fun <R> (() -> KMutableProperty0<R>).setValue(thisRef: Any, property: K
 }
 
 operator fun <R> (() -> KProperty0<R>).getValue(thisRef: Any, property: KProperty<*>): R = invoke().get()
+
+private val defaultColors = listOf("red", "green", "blue", "white", "orange", "purple", "cyan")
+
+fun randomColor() = defaultColors.random()

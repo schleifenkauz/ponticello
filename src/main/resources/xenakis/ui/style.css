@@ -241,13 +241,6 @@ Slider.control-detail-editor {
     -fx-font-size: 16px;
 }
 
-.synth-def-header {
-    -fx-padding: 2px;
-    -fx-background-color: rgba(0, 0, 0, 0.33);
-    -fx-spacing: 5px;
-    -fx-alignment: center-left;
-}
-
 .synth-defs {
     -fx-background-color: #1e1f22;
 }
@@ -260,6 +253,11 @@ Slider.control-detail-editor {
     -fx-border-color: black;
     -fx-border-width: 2px;
     -fx-border-radius: 5px;
+    -fx-background-radius: 5px;
+    -fx-padding: 2px;
+    -fx-background-color: rgba(0, 0, 0, 0.33);
+    -fx-spacing: 5px;
+    -fx-alignment: center-left;
 }
 
 .synth-def-box:hover {
@@ -402,11 +400,7 @@ Slider.control-detail-editor {
     -fx-background-radius: 5px;
 }
 
-.code-pane-header {
-    -fx-background-color: rgba(0, 0, 0, 0.3);
-}
-
-.code-pane-title {
+.tool-pane-heading {
     -fx-font-size: 16px;
 }
 

@@ -13,9 +13,7 @@ class ParameterDefExpander(context: Context) : Expander<ParameterDef, ParameterD
     }
 
     override fun expand(text: String): ParameterDefEditor {
-        val spec = context[Settings].getDefaultControlSpec(text)
-        return if (spec != null) createEditor(ParameterDef(Identifier(text), spec))
-        else ParameterDefEditor(context, IdentifierEditor(context, text))
+        return Companion.expand(text, context)
     }
 
     override fun defaultResult(): ParameterDef = ParameterDef(Identifier(text.now!!), NumericalControlSpec.DEFAULT)
@@ -27,30 +25,46 @@ class ParameterDefExpander(context: Context) : Expander<ParameterDef, ParameterD
     }
 
     private fun createEditor(def: ParameterDef): ParameterDefEditor = context.withoutUndo {
-        val editor = ParameterDefEditor(context)
-        editor.name.setText(def.name.text)
-        when (val spec = def.spec) {
-            is BufferControlSpec -> {
-                val bufferSelector = BufferSelector(context)
-                bufferSelector.select(spec.defaultValue)
-                val specEditor = BufferControlSpecEditor(context, bufferSelector)
-                editor.spec.select(ParameterType.Buffer, specEditor)
-            }
+        return Companion.createEditor(def, context)
+    }
 
-            is BusControlSpec -> {
-                val busSelector = BusSelector(context, Bus.output)
-                busSelector.select(spec.defaultValue)
-                val specEditor = BusControlSpecEditor(context, busSelector)
-                editor.spec.select(ParameterType.Buffer, specEditor)
+    companion object {
+        fun expand(name: String, context: Context): ParameterDefEditor {
+            val spec = context[Settings].getDefaultControlSpec(name)
+            return if (spec != null) createEditor(ParameterDef(Identifier(name), spec), context)
+            else {
+                val editor = ParameterDefEditor(context, IdentifierEditor(context, name))
+                editor.spec.select(ParameterType.Numerical)
+                editor
             }
-
-            is NumericalControlSpec -> {
-                val specEditor = spec.createEditor(context)
-                editor.spec.select(ParameterType.Numerical, specEditor)
-            }
-
-            ControlSpecUnspecified -> {}
         }
-        return editor
+
+        private fun createEditor(def: ParameterDef, context: Context): ParameterDefEditor {
+            val editor = ParameterDefEditor(context)
+            editor.name.setText(def.name.text)
+            when (val spec = def.spec) {
+                is BufferControlSpec -> {
+                    val bufferSelector = BufferSelector(context)
+                    bufferSelector.select(spec.defaultValue)
+                    val specEditor = BufferControlSpecEditor(context, bufferSelector)
+                    editor.spec.select(ParameterType.Buffer, specEditor)
+                }
+
+                is BusControlSpec -> {
+                    val busSelector = BusSelector(context, Bus.output)
+                    busSelector.select(spec.defaultValue)
+                    val specEditor = BusControlSpecEditor(context, busSelector)
+                    editor.spec.select(ParameterType.Buffer, specEditor)
+                }
+
+                is NumericalControlSpec -> {
+                    val specEditor = spec.createEditor(context)
+                    editor.spec.select(ParameterType.Numerical, specEditor)
+                }
+
+                ControlSpecUnspecified -> {}
+            }
+            return editor
+        }
     }
 }

@@ -28,11 +28,9 @@ class CodePane(title: String, val control: EditorControl<*>) : VBox() {
     }
 
     private fun createHeader(): HBox {
-        val restartButton = Icon.Restart.button(action = "Reevaluate code") {
-            evaluate()
-        }
-        return hbox(titleLabel, infiniteSpace(), restartButton) {
-            styleClass("code-pane-header")
+        val reevaluateBtn = Icon.Repeat.button(action = "Reevaluate code") { evaluate() }
+        return hbox(titleLabel, infiniteSpace(), reevaluateBtn) {
+            styleClass("tool-pane-header")
             centerChildrenVertically()
         }
     }

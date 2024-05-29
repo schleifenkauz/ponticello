@@ -54,12 +54,14 @@ class GlobalControls(private val controls: MutableList<GlobalControl>) : KnobCon
         controls.add(control)
         setupBus(control, context[UDPSuperColliderClient])
         views.notifyViews { addedControl(control) }
+        knobControl.addView(this)
     }
 
     fun removeControl(control: GlobalControl) {
         controls.remove(control)
         views.notifyViews { removedControl(control) }
         removeBus(control)
+        control.knobControl.views.removeView(this)
     }
 
     fun addView(view: GlobalControlsView) {

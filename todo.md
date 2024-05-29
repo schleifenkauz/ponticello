@@ -53,6 +53,11 @@
 
 ### Logging
 
+### Minor
+
+- lag values for bus value controls (adjust with spinner in control assignment)
+- use SynthDefs imported from SuperCollider code
+
 ### Support for patterns
 
 - as synth arguments (must be delta-patterns)
@@ -71,8 +76,6 @@
 - integrate close, maximize, minimize into top toolbar and remove window decoration
 - auto resize prompt windows (e.g. parameter definition prompts)
 - maybe show object toolbar on context click instead of top bar
-- ability to hide tool panes
-- or even better: have all tool-panes as extra windows!
 - ad hoc synths
 - display all non-envelope controls of a synth in its header?
   - easy access but might end up cluttering the interface

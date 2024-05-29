@@ -76,7 +76,8 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
         objectActionsBar.centerChildrenVertically()
         context[HelpBrowser] = HelpBrowser(context)
         settingsWindow = SubWindow(SettingsPane(context[Settings], context), "Settings", context)
-        settingsWindow.sizeToScene()
+        settingsWindow.width = 1000.0
+        settingsWindow.height = 1000.0
         stage.scene = Scene(Pane())
         stage.scene.initHextantScene(context)
     }
@@ -90,7 +91,7 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
         scoreView = ScoreView(project.score, project.context)
 
         val flowGraphEditor = AudioFlowGraphPane(project.flowGraph, context)
-        flowGraphEditor.setPrefSize(800.0, 800.0)
+        flowGraphEditor.setPrefSize(1000.0, 1000.0)
         flowGraphWindow = SubWindow(flowGraphEditor, "Audio flow graph", context)
 
         val globalControlsPane = GlobalControlsPane(project.globalControls, context)
@@ -107,10 +108,10 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
         }
 
         stage.scene.root = createLayout()
+        stage.isResizable = true
         Platform.runLater {
-            stage.isResizable = true
-            stage.isMaximized = true
             scoreView.displayWholeScore()
+            stage.isMaximized = true
         }
         displaysProject = true
     }
@@ -167,13 +168,13 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
     private fun createLayout(): VBox {
         val leftSplitter = SplitPane(synthDefsEditor, buffersPane, groupsPane)
         val rightSplitter = SplitPane(serverSetupCodePane, beforePlayCodePane)
+        leftSplitter.prefWidth = 400.0
+        rightSplitter.prefWidth = 400.0
         leftSplitter.orientation = Orientation.VERTICAL
         rightSplitter.orientation = Orientation.VERTICAL
         val horizontalSplitter = SplitPane(leftSplitter, scoreView, rightSplitter)
-        Platform.runLater {
-            horizontalSplitter.setDividerPosition(0, 0.1)
-            horizontalSplitter.setDividerPosition(1, 0.9)
-        }
+        SplitPane.setResizableWithParent(leftSplitter, false)
+        SplitPane.setResizableWithParent(rightSplitter, false)
         val toolbar = createToolbar()
         objectActionsBar.prefWidthProperty().bind(toolbar.widthProperty().multiply(0.33))
         for (box in toolbar.children) HBox.setHgrow(box, Priority.ALWAYS)

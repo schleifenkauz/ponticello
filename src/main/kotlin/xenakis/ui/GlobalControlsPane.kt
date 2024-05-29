@@ -10,6 +10,7 @@ import reaktive.value.now
 import xenakis.impl.Knob
 import xenakis.model.GlobalControls
 import xenakis.model.GlobalControlsView
+import xenakis.sc.Identifier
 import xenakis.sc.NumericalControlSpec
 import xenakis.sc.editor.ParameterDefExpander
 
@@ -27,24 +28,28 @@ class GlobalControlsPane(
     }
 
     private fun addControl() {
-        val editor = ParameterDefExpander(context)
-        editor.makeRoot()
-        val control = context.createControl(editor)
-        val window = SubWindow(control, "Configure global control", context, SubWindow.Type.Prompt)
-        window.scene.fill = BLACK
-        window.sizeToScene()
-        control.registerShortcuts {
-            on("Ctrl+ENTER") {
-                val (name, spec) = editor.result.now
-                if (spec !is NumericalControlSpec) {
-                    alertError("Only numerical control specs allowed for global controls")
-                    return@on
+        showTextPrompt("Control name", "", context) { name ->
+            if (!Identifier.isValid(name)) return@showTextPrompt false
+            val editor = ParameterDefExpander.expand(name, context)
+            editor.makeRoot()
+            val control = context.createControl(editor)
+            val window = SubWindow(control, "Configure global control", context, SubWindow.Type.Prompt)
+            window.scene.fill = BLACK
+            window.width = 1000.0
+            control.registerShortcuts {
+                on("Ctrl+ENTER") {
+                    val (controlName, spec) = editor.result.now
+                    if (spec !is NumericalControlSpec) {
+                        alertError("Only numerical control specs allowed for global controls")
+                        return@on
+                    }
+                    controls.addControl(controlName.text, spec)
+                    window.hide()
                 }
-                controls.addControl(name.text, spec)
-                window.hide()
             }
+            window.show()
+            true
         }
-        window.show()
     }
 
     override fun addedControl(control: GlobalControls.GlobalControl) {

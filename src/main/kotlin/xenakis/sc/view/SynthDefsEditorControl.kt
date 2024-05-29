@@ -4,11 +4,13 @@ import bundles.Bundle
 import bundles.createBundle
 import hextant.codegen.ProvideImplementation
 import hextant.context.ControlFactory
+import hextant.context.EditorControlGroup
 import hextant.context.createControl
 import hextant.core.Editor
 import hextant.core.view.EditorControl
 import hextant.core.view.ListEditorView
 import hextant.fx.PseudoClasses
+import hextant.fx.initHextantScene
 import javafx.geometry.Pos
 import javafx.scene.control.Button
 import javafx.scene.control.Label
@@ -17,8 +19,10 @@ import javafx.scene.layout.VBox
 import reaktive.event.observe
 import reaktive.value.now
 import xenakis.impl.UDPSuperColliderClient
+import xenakis.impl.randomColor
 import xenakis.model.SynthDefs
 import xenakis.sc.Identifier
+import xenakis.sc.SynthDef
 import xenakis.sc.editor.IdentifierEditor
 import xenakis.sc.editor.SynthDefEditor
 import xenakis.ui.*
@@ -60,10 +64,13 @@ class SynthDefsEditorControl @ProvideImplementation(ControlFactory::class) const
             }
             val newEditor = SynthDefEditor(context, name = IdentifierEditor(context, name))
             editor.addLast(newEditor)
+            newEditor.associatedColor.setText(randomColor())
             if (editor.editors.now.size == 1) {
                 val selector = selectorButtons[newEditor]!!
                 select(selector, newEditor)
             }
+            val control = context[EditorControlGroup].getViewOf(newEditor)
+            openCodeEditor(newEditor, control)
             true
         }
     }
@@ -92,24 +99,20 @@ class SynthDefsEditorControl @ProvideImplementation(ControlFactory::class) const
         }
         val colorLabel = Label("color: ")
         val colorControl = context.createControl(editor.associatedColor)
+        val edit = Icon.View.button(action = "Edit SynthDef") { openCodeEditor(editor, control) }
         val remove = Icon.Delete.button(action = "Remove this SynthDef") { this.editor.remove(editor) }
-        val expand = Icon.Expand.button(action = "Show SynthDef details")
-        val collapse = Icon.Collapse.button(action = "Hide SynthDef details")
-        val header = HBox(
-            selector, name, colorLabel, colorControl,
-            infiniteSpace(), remove, collapse
-        ).styleClass("synth-def-header")
-        val box = VBox(header, control).styleClass("synth-def-box")
-        expand.setOnAction {
-            box.children.add(control)
-            header.children.replaceAll { c -> if (c == expand) collapse else c }
-        }
-        collapse.setOnAction {
-            box.children.remove(control)
-            header.children.replaceAll { c -> if (c == collapse) expand else c }
-        }
+        val box = HBox(selector, name, colorLabel, colorControl, infiniteSpace(), edit, remove)
+            .styleClass("synth-def-box")
         addChild(control, idx)
         defs.children.add(idx, box)
+    }
+
+    private fun openCodeEditor(editor: SynthDefEditor, control: EditorControl<*>) {
+        val window = SubWindow(control, "Edit SynthDef ${editor.name.result.now.text}", context)
+        window.width = 1000.0
+        window.height = 1000.0
+        window.scene.initHextantScene(context, applyStyle = false)
+        window.show()
     }
 
     private fun select(selector: Button, editor: SynthDefEditor) {
@@ -121,6 +124,12 @@ class SynthDefsEditorControl @ProvideImplementation(ControlFactory::class) const
 
     override fun removed(idx: Int) {
         defs.children.removeAt(idx)
+        try {
+            context[SynthDefs].selectedSynthDef
+        } catch (ex: IllegalStateException) {
+            context[SynthDefs].selectedSynthDef = SynthDef.default
+            selectedBtn = null
+        }
     }
 
     override fun empty() {}

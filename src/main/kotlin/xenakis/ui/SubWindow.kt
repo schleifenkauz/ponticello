@@ -48,7 +48,7 @@ class SubWindow(
             initModality(Modality.NONE)
         } else {
             initStyle(StageStyle.DECORATED)
-            initModality(Modality.WINDOW_MODAL)
+            initModality(Modality.NONE)
         }
     }
 

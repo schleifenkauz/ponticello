@@ -24,7 +24,7 @@ class SynthDefs private constructor(
     var selectedSynthDef: SynthDef
         get() = get(selectedSynthDefName)
         set(value) {
-            if (value == selectedSynthDef) return
+            if (value.name.text == selectedSynthDefName) return
             selectedSynthDefName = value.name.text
             updateSelection(value)
         }
