@@ -103,7 +103,7 @@ data class DoubleLiteral(val text: String, val valueOrNull: Double?) : Literal, 
     override val isValid: Boolean
         get() = valueOrNull != null
 
-    val value: Double = valueOrNull ?: 0.0
+    fun get(): Double = valueOrNull ?: 0.0
 
     companion object : TokenType<DoubleLiteral> {
         override fun compile(token: String): DoubleLiteral = DoubleLiteral(token, token.toDoubleOrNull())

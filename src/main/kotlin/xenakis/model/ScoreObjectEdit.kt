@@ -29,20 +29,55 @@ abstract class ScoreObjectEdit(protected val obj: ScoreObject) : AbstractEdit() 
         }
     }
 
-    class ReassignControls(
-        private val oldControls: List<ParameterControl>,
-        private val newControls: List<ParameterControl>,
-        obj: ScoreObject
-    ) : ScoreObjectEdit(obj) {
+    class ReassignControl(
+        private val parameter: String,
+        private val oldControl: ParameterControl,
+        private val newControl: ParameterControl,
+        private val synthObject: SynthObject
+    ) : ScoreObjectEdit(synthObject) {
         override val actionDescription: String
             get() = "Reassign controls"
 
         override fun doUndo() {
-            obj.controls = oldControls
+            synthObject.reassignControl(parameter, oldControl)
         }
 
         override fun doRedo() {
-            obj.controls = newControls
+            synthObject.reassignControl(parameter, newControl)
+        }
+    }
+
+    class AddControl(
+        private val parameter: String,
+        private val control: ParameterControl,
+        private val synthObject: SynthObject
+    ) : ScoreObjectEdit(synthObject) {
+        override val actionDescription: String
+            get() = "Add control"
+
+        override fun doUndo() {
+            synthObject.addControl(parameter, control)
+        }
+
+        override fun doRedo() {
+            synthObject.removeControl(parameter)
+        }
+    }
+
+    class RemoveControl(
+        private val parameter: String,
+        private val control: ParameterControl,
+        private val synthObject: SynthObject
+    ) : ScoreObjectEdit(synthObject) {
+        override val actionDescription: String
+            get() = "Remove control"
+
+        override fun doUndo() {
+            synthObject.addControl(parameter, control)
+        }
+
+        override fun doRedo() {
+            synthObject.removeControl(parameter)
         }
     }
 }

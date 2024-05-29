@@ -78,13 +78,13 @@ data class LinearTransformation(
 
 data class SpecTransformation(val spec: NumericalControlSpec, override val targetRange: DoubleRange) : Transformation {
     override val sourceRange: DoubleRange
-        get() = spec.min.value..spec.max.value
+        get() = spec.min.get()..spec.max.get()
 
     private val tdiff = targetRange.endInclusive - targetRange.start
     private val wmap = spec.warp.map
     private val wunmap = spec.warp.unmap
-    private val fmin = wmap(spec.min.value)
-    private val fmax = wmap(spec.max.value)
+    private val fmin = wmap(spec.min.get())
+    private val fmax = wmap(spec.max.get())
     private val fdiff = fmax - fmin
 
     override fun map(value: Double) = targetRange.start + (wmap(value) - fmin) * tdiff / fdiff

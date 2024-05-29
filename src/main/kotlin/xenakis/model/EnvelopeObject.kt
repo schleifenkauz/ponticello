@@ -28,8 +28,8 @@ class EnvelopeObject(
             viewManager.notifyViews { updatedSpec() }
         }
 
-    override val associatedEnvelopes: List<EnvelopeControl>
-        get() = listOf(EnvelopeControl(name, envelope, spec.associatedColor, display = true))
+    override val associatedControls: Map<String, ParameterControl>
+        get() = mapOf(name to EnvelopeControl(envelope, spec.associatedColor, display = true))
 
     override fun getSpec(parameter: String): ControlSpec = if (parameter == name) spec else super.getSpec(parameter)
 

@@ -8,9 +8,10 @@ import xenakis.impl.Point
 fun Node.setupDragging(
     onPressed: () -> Unit = {},
     onReleased: () -> Unit = {},
-    relocateBy: (ev: MouseEvent, old: Bounds, dx: Double, dy: Double) -> Unit
+    relocateBy: (ev: MouseEvent, start: Point, old: Bounds, dx: Double, dy: Double) -> Unit
 ) {
     var dragStart: Point? = null
+    var localStart: Point? = null
     var oldBounds: Bounds? = null
     addEventHandler(MouseEvent.MOUSE_PRESSED) { ev ->
         onPressed()
@@ -20,11 +21,12 @@ fun Node.setupDragging(
         val start = dragStart
         if (start == null) {
             dragStart = Point(ev.screenX, ev.screenY)
+            localStart = Point(ev.x, ev.y)
             oldBounds = boundsInParent
         } else {
             val dx = ev.screenX - start.x
             val dy = ev.screenY - start.y
-            relocateBy(ev, oldBounds!!, dx, dy)
+            relocateBy(ev, localStart!!, oldBounds!!, dx, dy)
         }
         ev.consume()
     }
@@ -32,6 +34,7 @@ fun Node.setupDragging(
         onReleased()
         dragStart = null
         oldBounds = null
+        localStart = null
         ev.consume()
     }
 }

@@ -42,7 +42,7 @@ data class NumericalControlSpec(
     @Component(ColorEditor::class)
     val associatedColor: Color = Color.WHITE
 ) : ControlSpec {
-    val accuracy get() = accuracy(step.value)
+    val accuracy get() = accuracy(step.get())
 
     constructor(default: Double, min: Double, max: Double, warp: Warp, step: Double, associatedColor: Color) : this(
         DoubleLiteral(default), DoubleLiteral(min), DoubleLiteral(max), warp, DoubleLiteral(step), associatedColor
@@ -54,7 +54,7 @@ data class NumericalControlSpec(
     override val code: String
         get() = "kr(${defaultValue.text}, spec: [${min.text}, ${max.text}, $warp, ${step.text}])"
 
-    val range: DoubleRange get() = min.value..max.value
+    val range: DoubleRange get() = min.get()..max.get()
 
     companion object {
         val DEFAULT = NumericalControlSpec(0.0, 0.0, 1.0, Warp.Linear, 0.1, Color.WHITE)

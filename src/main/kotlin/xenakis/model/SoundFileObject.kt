@@ -38,8 +38,8 @@ class SoundFileObject(
         duration = getDuration(file)
     }
 
-    override val associatedEnvelopes: List<EnvelopeControl>
-        get() = listOf(EnvelopeControl("amp", envelope, Color.WHITE, display = true))
+    override val associatedControls: Map<String, ParameterControl>
+        get() = mapOf("amp" to EnvelopeControl(envelope, Color.WHITE, display = true))
 
     override fun getSpec(parameter: String): ControlSpec =
         if (parameter == "amp") ParameterDef.amp.spec else super.getSpec(parameter)

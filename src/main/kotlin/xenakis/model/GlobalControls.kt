@@ -49,8 +49,8 @@ class GlobalControls(private val controls: MutableList<GlobalControl>) : KnobCon
     }
 
     fun addControl(parameter: String, spec: NumericalControlSpec) {
-        val knobControl = KnobControl(parameter, spec.defaultValue.value)
-        val control = GlobalControl(knobControl, spec)
+        val knobControl = KnobControl(spec.defaultValue.get())
+        val control = GlobalControl(parameter, knobControl, spec)
         controls.add(control)
         setupBus(control, context[UDPSuperColliderClient])
         views.notifyViews { addedControl(control) }
@@ -70,8 +70,7 @@ class GlobalControls(private val controls: MutableList<GlobalControl>) : KnobCon
     }
 
     override fun updatedValue(control: KnobControl, value: Double) {
-        val ctrl = controls.find { it.knobControl == control }
-            ?: error("${control.parameter} not found in global controls")
+        val ctrl = controls.find { it.knobControl == control } ?: error("$control not found in global controls")
         val bus = ctrl.bus
         val formatted = value.format(ctrl.spec.accuracy)
         context[UDPSuperColliderClient].postAsync("if (${bus.variableName} != nil) { ${bus.variableName}.setSynchronous($formatted) };")
@@ -85,11 +84,10 @@ class GlobalControls(private val controls: MutableList<GlobalControl>) : KnobCon
     }
 
     @Serializable
-    class GlobalControl(val knobControl: KnobControl, val spec: NumericalControlSpec) {
+    class GlobalControl(val parameter: String, val knobControl: KnobControl, val spec: NumericalControlSpec) {
         val bus: Bus
             get() {
-                val param = knobControl.parameter
-                val busName = "global_$param"
+                val busName = "global_$parameter"
                 val bus = Bus(busName, Rate.Control, 1)
                 return bus
             }

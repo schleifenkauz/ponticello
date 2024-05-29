@@ -9,6 +9,7 @@ import javafx.scene.shape.Circle
 import javafx.scene.shape.Polyline
 import xenakis.impl.Point
 import xenakis.model.Envelope
+import xenakis.model.EnvelopeControl
 import xenakis.model.EnvelopeEdit
 import xenakis.model.ScoreObject
 import xenakis.sc.LinearTransformation
@@ -16,18 +17,17 @@ import xenakis.sc.NumericalControlSpec
 import xenakis.sc.mapOnto
 
 class EnvelopeEditor(
-    private val parameterName: String, private val envelope: Envelope,
-    private val pane: Pane, private val scoreView: ScorePane,
+    val parameterName: String, private val envelope: Envelope,
+    private val pane: Pane, private val parentPane: ScorePane,
     private val associatedObject: ScoreObject,
 ) : EnvelopeView {
     private val control
-        get() = associatedObject.associatedEnvelopes.find { it.parameter == parameterName }
-            ?: error("control $parameterName not found")
+        get() = associatedObject.associatedControls.getValue(parameterName) as EnvelopeControl
     private val spec get() = associatedObject.getSpec(parameterName) as NumericalControlSpec
     private val yTransform get() = spec.mapOnto(pane.height..0.0)
     private val xTransform get() = LinearTransformation(0.0..associatedObject.duration, 0.0..pane.width)
 
-    private val valueGrid get() = spec.step.value
+    private val valueGrid get() = spec.step.get()
 
     private val mouseInfo = Label() styleClass "coordinate-info"
     private val handles = mutableListOf<Circle>()
@@ -40,6 +40,7 @@ class EnvelopeEditor(
         line.stroke = color
         createNewPointsOnClick()
         setupPositionInfo()
+        setupLineDragging()
         envelope.addView(this)
     }
 
@@ -54,6 +55,24 @@ class EnvelopeEditor(
         }
     }
 
+    private fun setupLineDragging() {
+        line.setupDragging(
+            onPressed = { parentPane.context[UndoManager].beginCompoundEdit("Move envelope segment") },
+            onReleased = { parentPane.context[UndoManager].finishCompoundEdit("Move envelope segment") }
+        ) { ev, start, _, _, dy ->
+            val t = transformXToTime(ev.x)
+            var segmentIdx = envelope.points.map(Point::x).binarySearch(t)
+            if (segmentIdx < 0) segmentIdx = -(segmentIdx + 1)
+            if (segmentIdx == 0 || segmentIdx == envelope.points.size) return@setupDragging
+            if (envelope.points[segmentIdx - 1].y != envelope.points[segmentIdx].y) return@setupDragging
+            val y = start.y + dy
+            val value = transformYToValue(y)
+            envelope.editPoint(segmentIdx - 1, value)
+            envelope.editPoint(segmentIdx, value)
+            relocateInfoToMouse(ev)
+        }
+    }
+
     private fun createNewPointsOnClick() {
         line.setOnMouseClicked { ev ->
             if (ev.isAltDown) {
@@ -62,7 +81,7 @@ class EnvelopeEditor(
                 val newPoint = Point(t, v)
                 var idx = envelope.points.binarySearch(newPoint, compareBy(Point::x))
                 idx = -(idx + 1)
-                scoreView.context[UndoManager].record(EnvelopeEdit.AddPoint(newPoint, idx, envelope))
+                parentPane.context[UndoManager].record(EnvelopeEdit.AddPoint(newPoint, idx, envelope))
                 envelope.addPoint(idx, newPoint)
                 ev.consume()
             } else {
@@ -99,14 +118,14 @@ class EnvelopeEditor(
     }
 
     private fun transformXToTime(x: Double): Double =
-        xTransform.unmap(x.snap(scoreView.timeSnap)).coerceIn(xTransform.sourceRange)
+        xTransform.unmap(x.snap(parentPane.timeSnap)).coerceIn(xTransform.sourceRange)
 
     private fun transformYToValue(y: Double) = yTransform.unmap(y).snap(valueGrid).coerceIn(yTransform.sourceRange)
 
     private fun displayPosition(t: Double, v: Double) {
         val scoreTime = associatedObject.start + t * associatedObject.duration
-        val timeAccuracy = accuracy(scoreView.timeSnap)
-        val valueAccuracy = accuracy(spec.step.value)
+        val timeAccuracy = accuracy(parentPane.timeSnap)
+        val valueAccuracy = accuracy(spec.step.get())
         mouseInfo.text = "t: ${scoreTime.format(timeAccuracy)}, $parameterName: ${v.format(valueAccuracy)}"
     }
 
@@ -143,9 +162,9 @@ class EnvelopeEditor(
         handle.stroke = color.darker()
         handle.strokeWidthProperty().bind(handle.hoverProperty().map { hover -> if (hover) 2.0 else 0.0 })
         handle.setupDragging(
-            onPressed = { scoreView.context[UndoManager].beginCompoundEdit("Move envelope point") },
-            onReleased = { scoreView.context[UndoManager].finishCompoundEdit("Move envelope point") }
-        ) { ev, old, dx, dy ->
+            onPressed = { parentPane.context[UndoManager].beginCompoundEdit("Move envelope point") },
+            onReleased = { parentPane.context[UndoManager].finishCompoundEdit("Move envelope point") }
+        ) { ev, _, old, dx, dy ->
             val idx = handles.indexOf(handle)
             val newX = when (idx) {
                 0 -> xTransform.map(0.0)
@@ -162,7 +181,7 @@ class EnvelopeEditor(
             relocateInfoToMouse(ev)
             val oldPoint = envelope.points[idx]
             val newPoint = Point(px, py)
-            scoreView.context[UndoManager].record(EnvelopeEdit.EditPoint(idx, oldPoint, newPoint, envelope))
+            parentPane.context[UndoManager].record(EnvelopeEdit.EditPoint(idx, oldPoint, newPoint, envelope))
             envelope.editPoint(idx, Point(px, py))
         }
         handle.addEventHandler(MouseEvent.MOUSE_PRESSED) {
@@ -179,7 +198,7 @@ class EnvelopeEditor(
             if (ev.button == MouseButton.SECONDARY) {
                 if (idx != 0 && idx != envelope.points.size - 1) {
                     val point = envelope.points[idx]
-                    scoreView.context[UndoManager].record(EnvelopeEdit.RemovePoint(point, idx, envelope))
+                    parentPane.context[UndoManager].record(EnvelopeEdit.RemovePoint(point, idx, envelope))
                     envelope.removePoint(idx)
                 }
             } else if (!ev.isShiftDown) {
@@ -213,6 +232,7 @@ class EnvelopeEditor(
     }
 
     fun dispose() {
+        removeChildren()
         envelope.removeView(this)
     }
 

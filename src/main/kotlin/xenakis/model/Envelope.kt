@@ -53,6 +53,11 @@ class Envelope(private val _points: MutableList<Point>, val curve: Warp) {
         viewManager.notifyViews { changedPoint(idx, newPoint) }
     }
 
+    fun editPoint(idx: Int, newY: Double) {
+        val newPoint = points[idx].copy(y = newY)
+        editPoint(idx, newPoint)
+    }
+
     fun removePoint(idx: Int) {
         val p = _points.removeAt(idx)
         viewManager.notifyViews { removedPoint(idx, p) }

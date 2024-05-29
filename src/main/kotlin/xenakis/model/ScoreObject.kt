@@ -31,16 +31,15 @@ interface ScoreObject {
     var associatedColor: Color?
     var muted: Boolean
 
-    var controls: List<ParameterControl>
-
     var nameOfNextInChain: String?
     var nextInChain: ClonedObject?
 
-    val associatedEnvelopes: List<EnvelopeControl>
+    val associatedControls: Map<String, ParameterControl> get() = emptyMap()
     fun getSpec(parameter: String): ControlSpec
 
     fun writeStartCode(writer: ScWriter, offset: Double)
     fun writeStopCode(writer: ScWriter)
+
     fun play(client: UDPSuperColliderClient)
 
     fun addToScore(score: Score, context: Context) {
@@ -100,7 +99,6 @@ interface ScoreObject {
                 obj.height = json.getDouble("height") ?: 0.0
                 obj.associatedColor = json.getColor("color")
                 obj.muted = json.getBoolean("muted") ?: false
-                obj.controls = json.getSerializableValue("controls") ?: emptyList()
             }
             return obj
         }
@@ -120,7 +118,6 @@ interface ScoreObject {
                     val color = value.associatedColor
                     if (color != null) put("color", JsonPrimitive(color.toString()))
                     if (value.muted) put("muted", JsonPrimitive(true))
-                    if (value.controls.isNotEmpty()) putSerializableValue("controls", value.controls)
                 }
             }
             encoder.encodeSerializableValue(serializer<JsonObject>(), obj)

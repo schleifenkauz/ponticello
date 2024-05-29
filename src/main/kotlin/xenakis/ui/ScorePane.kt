@@ -15,6 +15,7 @@ import kotlinx.serialization.json.Json
 import xenakis.impl.Arrow
 import xenakis.model.*
 import xenakis.model.Envelope
+import xenakis.sc.Group
 import xenakis.sc.Identifier
 import xenakis.sc.Warp
 import xenakis.sc.editor.BusSelector
@@ -137,7 +138,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
         val view = getObjectView(obj)
         view.addEventHandler(MouseEvent.MOUSE_CLICKED) { ev ->
             view.toFront()
-            selector.select(view, addToSelection = ev.isAltDown)
+            selector.select(view, addToSelection = ev.isShiftDown)
             ev.consume()
         }
         children.add(view)
@@ -288,7 +289,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
 
     private fun mouseReleased(ev: MouseEvent) {
         ev.consume()
-        if (!ev.isAltDown) selector.deselectAll()
+        if (!ev.isShiftDown) selector.deselectAll()
         val newObj = newObjectArea
         val tool = ui.toolSelector.selected.value
         if (tool == AddTime) {
@@ -326,8 +327,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
                     if (!Identifier.isValid(name) || context[NamingManager].isNameTaken(name)) {
                         return@showTextPrompt false
                     }
-                    val obj = SynthObject(name, def.name.text)
-                    obj.controls = def.defaultControls()
+                    val obj = SynthObject(name, def.name.text, Group.DEFAULT, def.defaultControls())
                     addObject(obj, rect)
                     true
                 }
@@ -341,7 +341,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
 
             Tool.Envelope -> {
                 EnvelopeObjectView.showEnvelopeConfig(context) { name, spec, outputBus ->
-                    val value = spec.defaultValue.value
+                    val value = spec.defaultValue.get()
                     val duration = getDuration(rect.width)
                     val envelope = Envelope.constant(value, duration, spec.warp)
                     val obj = EnvelopeObject(name, spec, outputBus, envelope)

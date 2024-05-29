@@ -60,18 +60,8 @@ sealed class AbstractScoreObject(name: String) : ScoreObject {
             viewManager.notifyViews { muteToggled() }
         }
 
-    final override var controls: List<ParameterControl> = emptyList()
-        set(value) {
-            if (field == value) return
-            recordEdit(ScoreObjectEdit.ReassignControls(oldControls = field, newControls = value, this))
-            field = value
-            viewManager.notifyViews { reassignedControls() }
-        }
-
     final override var nameOfNextInChain: String? = null
     final override var nextInChain: ClonedObject? = null
-
-    override val associatedEnvelopes: List<EnvelopeControl> get() = controls.filterIsInstance<EnvelopeControl>()
 
     lateinit var context: Context
         private set
@@ -79,7 +69,7 @@ sealed class AbstractScoreObject(name: String) : ScoreObject {
     final override lateinit var parent: Score
         private set
 
-    private fun recordEdit(edit: ScoreObjectEdit) {
+    protected fun recordEdit(edit: ScoreObjectEdit) {
         if (initialized) {
             context[UndoManager].record(edit)
         }
@@ -112,7 +102,6 @@ sealed class AbstractScoreObject(name: String) : ScoreObject {
         obj.height = height
         obj.associatedColor = associatedColor
         obj.muted = muted
-        obj.controls = controls.mapTo(mutableListOf()) { c -> c.copy() }
         return obj
     }
 
@@ -131,7 +120,6 @@ sealed class AbstractScoreObject(name: String) : ScoreObject {
             obj.position.set(start + position, y)
             obj.duration = duration - position
         }
-        obj.controls = controls.mapTo(mutableListOf()) { c -> c.cut(position / duration, whichHalf) }
         return obj
     }
 

@@ -18,6 +18,7 @@ import xenakis.ui.*
 import kotlin.math.*
 
 class Knob(
+    val parameter: String,
     val control: KnobControl,
     private val spec: NumericalControlSpec,
     private val radius: Double = DEFAULT_RADIUS,
@@ -31,7 +32,7 @@ class Knob(
     private val transform = SpecTransformation(spec, MIN_ANGLE..MAX_ANGLE)
     private val root = Pane(knob, indicator, valueLabel)
 
-    private val discreteValues = ((spec.max.value - spec.min.value) / spec.step.value).roundToInt()
+    private val discreteValues = ((spec.max.get() - spec.min.get()) / spec.step.get()).roundToInt()
 
     init {
         styleClass("control-knob")
@@ -68,12 +69,12 @@ class Knob(
             }
             ev.consume()
         }
-        tooltip = Tooltip(control.parameter)
+        tooltip = Tooltip(parameter)
     }
 
     private fun showValueInput() {
-        val range = spec.min.value..spec.max.value
-        showNumberPrompt("${control.parameter} ($range)", range, control.get(), context) { v ->
+        val range = spec.min.get()..spec.max.get()
+        showNumberPrompt("$parameter ($range)", range, control.get(), context) { v ->
             control.set(v)
         }
     }
@@ -88,12 +89,12 @@ class Knob(
     }
 
     private fun increase() {
-        val newValue = control.get() + spec.step.value
+        val newValue = control.get() + spec.step.get()
         control.set(newValue.coerceIn(spec.range))
     }
 
     private fun decrease() {
-        val newValue = (control.get() - spec.step.value)
+        val newValue = (control.get() - spec.step.get())
         control.set(newValue.coerceIn(spec.range))
     }
 
@@ -103,7 +104,7 @@ class Knob(
         phi += PI / 2
         if (phi < 1.0 / 3 * PI) phi += 2 * PI
         phi = phi.coerceIn(MAX_ANGLE..MIN_ANGLE)
-        val value = transform.unmap(phi).snap(spec.step.value)
+        val value = transform.unmap(phi).snap(spec.step.get())
         control.set(value)
     }
 
@@ -116,7 +117,7 @@ class Knob(
     private fun addDotsOrArc() {
         if (discreteValues <= MAX_DOTS) {
             for (i in 0..discreteValues) {
-                val v = (spec.min.value + i * spec.step.value).round(spec.accuracy)
+                val v = (spec.min.get() + i * spec.step.get()).round(spec.accuracy)
                 val dot = Circle(DOT_RADIUS) styleClass "knob-dot"
                 val p = getPoint(v, radius - 5)
                 dot.centerX = p.x

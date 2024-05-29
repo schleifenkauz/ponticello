@@ -32,7 +32,12 @@
 - SynthDefs
 - common parameter definitions
 
-### Integrate Buffers and SynthDefs views into startup script?
+### Better grid functionality
+
+- time grid in seconds (display on/off)
+- beat grid (display on/off)
+  - specify tempo (beats/second), beats per bar (on/off), and beat subdivisions (on/off)
+- can snap to bars/beats/subdivisions/custom amount in ms
 
 ### Copying and pasting score objects
 
@@ -68,7 +73,6 @@
 - maybe show object toolbar on context click instead of top bar
 - ability to hide tool panes
 - or even better: have all tool-panes as extra windows!
-- make adding envelopes to synths easier
 - ad hoc synths
 - display all non-envelope controls of a synth in its header?
   - easy access but might end up cluttering the interface

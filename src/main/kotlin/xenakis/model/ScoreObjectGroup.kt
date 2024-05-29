@@ -42,7 +42,7 @@ class ScoreObjectGroup(name: String, val score: Score) : AbstractScoreObject(nam
 
                 whichHalf == LEFT && obj.start < position -> {
                     obj.duration = position - obj.start
-                    val leftHalf = obj.cut(position - obj.start, LEFT, obj.name)
+                    val leftHalf = obj.cut(position - obj.start, LEFT, obj.name + "_left")
                         ?: obj.also { it.duration = position - obj.start }
                     cutScore.addObject(leftHalf)
                 }
@@ -54,7 +54,7 @@ class ScoreObjectGroup(name: String, val score: Score) : AbstractScoreObject(nam
 
                 whichHalf == RIGHT && obj.start + obj.duration > position -> {
                     obj.position.start -= position
-                    val rightHalf = obj.cut(position - obj.start, RIGHT, obj.name)
+                    val rightHalf = obj.cut(position - obj.start, RIGHT, obj.name + "_right")
                         ?: obj.also { it.duration -= position - obj.start }
                     cutScore.addObject(rightHalf)
                 }

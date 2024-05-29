@@ -7,7 +7,9 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonObjectBuilder
 import kotlinx.serialization.json.put
 import xenakis.impl.ScWriter
+import xenakis.impl.getSerializableValue
 import xenakis.impl.getString
+import xenakis.impl.putSerializableValue
 import xenakis.sc.ControlSpec
 import xenakis.sc.Group
 import xenakis.sc.SynthDef
@@ -18,7 +20,8 @@ import xenakis.ui.format
 class SynthObject(
     name: String,
     var synthDefName: String,
-    group: Group = Group.DEFAULT
+    group: Group = Group.DEFAULT,
+    private val _controls: MutableMap<String, ParameterControl>
 ) : AbstractScoreObject(name), GroupReference {
     override val type: String
         get() = "synth"
@@ -35,10 +38,40 @@ class SynthObject(
     val synthDef: SynthDef
         get() = context[currentProject].synthDefs.get(synthDefName)
 
-    override fun copy(): ScoreObject = SynthObject(name, synthDefName, group)
+    val controls: Map<String, ParameterControl> get() = _controls
 
-    override fun cut(position: Double, whichHalf: HorizontalDirection): ScoreObject =
-        SynthObject(name, synthDefName, group)
+    fun reassignControl(parameter: String, control: ParameterControl) {
+        if (parameter !in controls) error("Parameter $parameter not found on object $name")
+        val oldControl = _controls[parameter]!!
+        _controls[parameter] = control
+        recordEdit(ScoreObjectEdit.ReassignControl(parameter, oldControl, control, this))
+        viewManager.notifyViews { reassignedControl(parameter, oldControl, control) }
+    }
+
+    fun addControl(parameter: String, control: ParameterControl) {
+        if (synthDef.parameters.none { p -> p.name.text == parameter })
+            error("Parameter $parameter not found on SynthDef for $name")
+        _controls[parameter] = control
+        recordEdit(ScoreObjectEdit.AddControl(parameter, control, this))
+        viewManager.notifyViews { addedControl(parameter, control) }
+    }
+
+    fun removeControl(parameter: String) {
+        val control = _controls.remove(parameter) ?: error("Parameter $parameter not found on object $name")
+        recordEdit(ScoreObjectEdit.RemoveControl(parameter, control, this))
+        viewManager.notifyViews { removedControl(parameter, control) }
+    }
+
+    override val associatedControls: Map<String, ParameterControl> get() = controls
+
+    override fun copy(): ScoreObject = SynthObject(
+        name, synthDefName, group,
+        _controls = controls.mapValuesTo(mutableMapOf()) { (_, c) -> c.copy() })
+
+    override fun cut(position: Double, whichHalf: HorizontalDirection): ScoreObject = SynthObject(
+        name, synthDefName, group,
+        _controls = controls.mapValuesTo(mutableMapOf()) { (_, c) -> c.cut(position, whichHalf) }
+    )
 
     override fun getSpec(parameter: String): ControlSpec = synthDef.getParameter(parameter).spec
 
@@ -56,8 +89,7 @@ class SynthObject(
         writer.appendBlock("s.bind") {
             val synthVar = "~synth_${name}"
             +"$synthVar = Synth(\\${synthDefName}, target: ${group.variableName})"
-            for (control in controls) {
-                val param = control.parameter
+            for ((param, control) in controls) {
                 when (control) {
                     is EnvelopeControl -> {
                         val env = control.envelope.code(offset)
@@ -117,6 +149,7 @@ class SynthObject(
     override fun JsonObjectBuilder.saveToJson() {
         put("synthDef", synthDefName)
         if (group != Group.DEFAULT) put("group", group.name)
+        if (controls.isNotEmpty()) putSerializableValue<Map<String, ParameterControl>>("controls", controls)
     }
 
     object Serializer : ScoreObject.Serializer {
@@ -126,7 +159,8 @@ class SynthObject(
         override fun JsonObject.createFromJson(name: String): ScoreObject {
             val synthDefName = getString("synthDef")!!
             val groupName = getString("group") ?: "default"
-            return SynthObject(name, synthDefName, Group(groupName))
+            val controls = getSerializableValue<Map<String, ParameterControl>>("controls") ?: mapOf()
+            return SynthObject(name, synthDefName, Group(groupName), controls.toMutableMap())
         }
     }
 }

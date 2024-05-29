@@ -33,7 +33,7 @@ class EnvelopeObjectView(val obj: EnvelopeObject) : ScoreObjectView(obj) {
     }
 
     fun updatedSpec() {
-        reassignedControls()
+        repaintEnvelopes()
     }
 
     companion object {

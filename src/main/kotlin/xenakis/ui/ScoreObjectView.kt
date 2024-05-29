@@ -26,7 +26,6 @@ import kotlin.math.absoluteValue
 abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionListener {
     private var dragStart: Point? = null
     private var oldBounds: Bounds? = null
-    private var draggedObject: ScoreObjectView = this
 
     lateinit var pane: ScorePane
         private set
@@ -118,7 +117,8 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
         setupCutting()
         header.children.add(nameLabel)
         setupActions()
-        reassignedControls()
+        displayEnvelopes()
+        displayKnobs()
         myObject.addView(this)
         myObject.position.addListener(this)
         window = SubWindow(this, myObject.name, context, SubWindow.Type.Modal, parent = pane) {
@@ -151,44 +151,72 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
         pseudoClassStateChanged(PseudoClass.getPseudoClass("muted"), myObject.muted)
     }
 
-    open fun reassignedControls() {
-        displayEnvelopes()
-        displayKnobs()
+    fun reassignedControl(parameter: String, oldControl: ParameterControl, newControl: ParameterControl) {
+        removedControl(parameter, oldControl)
+        addedControl(parameter, newControl)
+    }
+
+    fun removedControl(parameter: String, oldControl: ParameterControl) {
+        when (oldControl) {
+            is EnvelopeControl -> removeEnvelope(parameter)
+            is KnobControl -> removeKnob(parameter)
+            else -> {}
+        }
+    }
+
+    fun addedControl(parameter: String, newControl: ParameterControl) {
+        when (newControl) {
+            is EnvelopeControl -> displayEnvelope(parameter, newControl)
+            is KnobControl -> displayKnob(parameter, newControl)
+            else -> {}
+        }
+    }
+
+    private fun removeEnvelope(parameter: String) {
+        val ed = envelopeEditors.find { ed -> ed.parameterName == parameter }
+            ?: error("envelope editor for $parameter not found")
+        ed.dispose()
+        envelopeEditors.remove(ed)
+        if (envelopeEditors.isEmpty()) children.remove(envelopesPane)
+    }
+
+    private fun removeKnob(parameter: String) {
+        knobControls.children.removeIf { k -> k is Knob && k.parameter == parameter }
+        if (knobControls.children.isEmpty()) header.children.remove(knobControls)
+    }
+
+    private fun displayEnvelopes() {
+        setVgrow(envelopesPane, Priority.ALWAYS)
+        for ((parameter, control) in myObject.associatedControls) {
+            if (control !is EnvelopeControl || !control.display) continue
+            displayEnvelope(parameter, control)
+        }
+        val anyEnvelopes = envelopeEditors.any()
+        if (envelopesPane !in children && anyEnvelopes) children.add(envelopesPane)
+        if (envelopesPane in children && !anyEnvelopes) children.remove(envelopesPane)
+    }
+
+    private fun displayEnvelope(parameter: String, control: EnvelopeControl) {
+        val envelope = control.envelope
+        val e = EnvelopeEditor(parameter, envelope, envelopesPane, pane, myObject)
+        e.repaint()
+        envelopeEditors.add(e)
+        if (envelopesPane !in children) children.add(envelopesPane)
     }
 
     private fun displayKnobs() {
         knobControls.children.clear()
-        for (control in myObject.controls) {
+        for ((parameter, control) in myObject.associatedControls) {
             if (control !is KnobControl) continue
-            val spec = myObject.getSpec(control.parameter) as NumericalControlSpec
-            val knob = Knob(control, spec, radius = 24.0, context)
-            knobControls.children.add(knob)
+            displayKnob(parameter, control)
         }
-        if (knobControls.children.any()) {
-            if (knobControls !in header.children) {
-                header.children.add(1, knobControls)
-            }
-        } else header.children.remove(knobControls)
+        if (knobControls !in header.children) header.children.add(knobControls)
     }
 
-    private fun displayEnvelopes() {
-        for (editors in envelopeEditors) {
-            editors.removeChildren()
-            editors.dispose()
-        }
-        envelopeEditors.clear()
-        if (myObject.associatedEnvelopes.isEmpty()) return
-        if (envelopesPane !in children) children.add(envelopesPane)
-        setVgrow(envelopesPane, Priority.ALWAYS)
-        for (control in myObject.associatedEnvelopes) {
-            if (!control.display) continue
-            val parameter = control.parameter
-            val envelope = control.envelope
-            val e = EnvelopeEditor(parameter, envelope, envelopesPane, pane, myObject)
-            e.repaint()
-            envelopeEditors.add(e)
-        }
-        return
+    private fun displayKnob(parameter: String, control: KnobControl) {
+        val spec = myObject.getSpec(parameter) as NumericalControlSpec
+        val knob = Knob(parameter, control, spec, radius = 24.0, context)
+        knobControls.children.add(knob)
     }
 
     private fun setupCutting() {
@@ -259,23 +287,8 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
             if (dragStart == null) {
                 oldBounds = BoundingBox(layoutX, layoutY, prefWidth, prefHeight)
                 dragStart = Point(ev.screenX, ev.screenY)
-                draggedObject = if (ev.isShiftDown) {
-                    val copy = myObject.copy(newName = context[NamingManager].nameForCopy(myObject))
-                    context[UndoManager].beginCompoundEdit("Copy object")
-                    pane.score.addObject(copy)
-                    pane.getObjectView(copy)
-                } else if (ev.isControlDown) {
-                    val clone = myObject.clone(name = context[NamingManager].nameForClone(myObject))
-                    context[UndoManager].beginCompoundEdit("Clone object")
-                    pane.score.addObject(clone)
-                    pane.getObjectView(clone)
-                } else if (isResizeCursor(cursor)) {
-                    context[UndoManager].beginCompoundEdit("Resize object")
-                    this
-                } else {
-                    context[UndoManager].beginCompoundEdit("Move object")
-                    this
-                }
+                if (isResizeCursor(cursor)) context[UndoManager].beginCompoundEdit("Resize object")
+                else context[UndoManager].beginCompoundEdit("Move object")
             }
             ev.consume()
         }
@@ -287,19 +300,15 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
             if (isResizeCursor(cursor)) {
                 resize(oldBounds!!, dx, dy, cursor, ev)
             } else {
-                draggedObject.relocateBy(oldBounds!!, dx, dy)
+                relocateBy(oldBounds!!, dx, dy)
             }
             ev.consume()
         }
         addEventHandler(MouseEvent.MOUSE_RELEASED) { ev ->
             if (context[XenakisUI].toolSelector.selected.value != Tool.Pointer) return@addEventHandler
-            if (draggedObject != this && draggedObject.boundsInParent == this.boundsInParent) {
-                myObject.parent.removeObject(draggedObject.myObject)
-            }
             if (dragStart != null) {
                 dragStart = null
                 oldBounds = null
-                draggedObject = this
                 context[UndoManager].finishCompoundEdit()
             }
             ev.consume()
@@ -321,16 +330,18 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
 
     protected open fun resizeObject(width: Double, height: Double, ev: MouseEvent, cursor: Cursor) {
         val newDur = pane.getDuration(width)
-        if (!ev.isAltDown) {
+        if (!ev.isShiftDown) {
             val resizeFromLeft = cursor in setOf(Cursor.W_RESIZE, Cursor.NW_RESIZE, Cursor.SW_RESIZE)
             val resizeFromRight = cursor in setOf(Cursor.E_RESIZE, Cursor.NE_RESIZE, Cursor.SE_RESIZE)
-            for (ctrl in myObject.associatedEnvelopes) {
-                val spec = myObject.getSpec(ctrl.parameter) as NumericalControlSpec
+            for ((parameter, ctrl) in myObject.associatedControls) {
+                if (ctrl !is EnvelopeControl) continue
+                val spec = myObject.getSpec(parameter) as NumericalControlSpec
                 if (resizeFromLeft) ctrl.envelope.resize(newDur, HorizontalDirection.LEFT, spec)
                 if (resizeFromRight) ctrl.envelope.resize(newDur, HorizontalDirection.RIGHT, spec)
             }
         } else {
-            for (ctrl in myObject.associatedEnvelopes) {
+            for ((_, ctrl) in myObject.associatedControls) {
+                if (ctrl !is EnvelopeControl) continue
                 ctrl.envelope.rescale(newDur)
             }
         }
@@ -341,10 +352,10 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
     open fun getDisplayWidth(): Double = pane.getWidth(myObject.duration)
 
     open fun rescale() {
-        rescaleEnvelopes()
+        repaintEnvelopes()
     }
 
-    private fun rescaleEnvelopes() {
+    protected fun repaintEnvelopes() {
         for (e in envelopeEditors) {
             e.repaint()
         }

@@ -52,8 +52,7 @@ class ClonedObject(
     override var height: Double by { original::height }
     override var associatedColor: Color? by { original::associatedColor }
     override var muted: Boolean by { original::muted }
-    override var controls: List<ParameterControl> by { original::controls }
-    override val associatedEnvelopes: List<EnvelopeControl> get() = original.associatedEnvelopes
+    override val associatedControls: Map<String, ParameterControl> get() = original.associatedControls
 
     override fun getSpec(parameter: String): ControlSpec = original.getSpec(parameter)
 
