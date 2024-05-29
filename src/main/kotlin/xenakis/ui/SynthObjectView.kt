@@ -25,7 +25,11 @@ class SynthObjectView(val obj: SynthObject) : ScoreObjectView(obj) {
         header.children.add(1, btn)
         groupSelector = GroupSelector(context, obj.group)
         groupSelectorControl = GroupSelectorControl(groupSelector, createBundle())
-        obs = groupSelector.result.observe { _, _, group -> obj.group = group }
+        obs = groupSelector.result.observe { _, _, group ->
+            if (obj.group != group && group != GroupSelectorControl.createNew) {
+                obj.group = group
+            }
+        }
         header.children.add(1, groupSelectorControl)
     }
 

@@ -44,7 +44,15 @@
 - what about renaming buses and buffers?
 - naming checks to avoid duplicates
 
+### Rethink the buffer/sound-file system
+
 ### Logging
+
+### Support for patterns
+
+- as synth arguments (must be delta-patterns)
+- as standalone objects (pbind)
+- attaching to a synth in the score (pmono)
 
 ## Bug fixes
 
@@ -60,3 +68,7 @@
 - maybe show object toolbar on context click instead of top bar
 - ability to hide tool panes
 - or even better: have all tool-panes as extra windows!
+- make adding envelopes to synths easier
+- ad hoc synths
+- display all non-envelope controls of a synth in its header?
+  - easy access but might end up cluttering the interface
