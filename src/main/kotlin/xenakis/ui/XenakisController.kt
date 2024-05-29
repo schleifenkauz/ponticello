@@ -14,8 +14,7 @@ import javafx.application.Platform
 import javafx.stage.FileChooser
 import javafx.stage.Stage
 import reaktive.Observer
-import xenakis.impl.UDPSuperColliderClient
-import xenakis.impl.registerImplementationsFromClasspath
+import xenakis.impl.*
 import xenakis.model.NamingManager
 import xenakis.model.Settings
 import xenakis.model.XenakisProject
@@ -41,7 +40,7 @@ class XenakisController(private val primaryStage: Stage) {
     lateinit var context: Context
         private set
 
-    lateinit var client: UDPSuperColliderClient
+    lateinit var client: SuperColliderClient
         private set
 
     private var _currentProject: XenakisProject? = null
@@ -94,9 +93,10 @@ class XenakisController(private val primaryStage: Stage) {
 
     fun startSuperCollider() {
         thread(name = "SuperCollider startup thread", isDaemon = true) {
-            client = UDPSuperColliderClient.create()
-            context[UDPSuperColliderClient] = client
-            statusListener = client.statusUpdates.observe { _, status ->
+            client = OSCSuperColliderClient.create()
+            client.consoleMonitor.addListener(ConsoleMonitor.PipeToSystemOut)
+            context[SuperColliderClient] = client
+            statusListener = client.statusListener.statusUpdates.observe { _, status ->
                 if (status == UDPSuperColliderClient.StatusUpdate.ServerBooted) {
                     isSuperColliderReady = true
                     Platform.runLater {
@@ -113,11 +113,11 @@ class XenakisController(private val primaryStage: Stage) {
     }
 
     fun restartScSynth() {
-        client.postAsync("s.reboot;")
+        client.run("s.reboot;")
     }
 
     fun showServerWindow() {
-        client.postAsync("s.makeWindow;")
+        client.run("s.makeWindow;")
     }
 
     fun startXenakis() {

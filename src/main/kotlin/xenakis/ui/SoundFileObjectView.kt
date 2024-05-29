@@ -5,7 +5,7 @@ import javafx.scene.Cursor
 import javafx.scene.input.MouseEvent
 import javafx.scene.shape.Line
 import javafx.scene.shape.Polyline
-import xenakis.impl.UDPSuperColliderClient
+import xenakis.impl.SuperColliderClient
 import xenakis.impl.readChannels
 import xenakis.model.SoundFileObject
 import xenakis.sc.view.BusSelectorControl
@@ -70,7 +70,7 @@ class SoundFileObjectView(val obj: SoundFileObject) : ScoreObjectView(obj) {
         displayWaveForm()
         header.children.add(1, outBusSelector)
         addAction(Icon.FileReload, "Reload sound file from disk") {
-            obj.reloadFile(context[UDPSuperColliderClient])
+            obj.reloadFile(context[SuperColliderClient])
             val stream = AudioSystem.getAudioInputStream(obj.file)
             channels = stream.readChannels()
             obj.duration = fileDuration / obj.rate

@@ -3,13 +3,13 @@ package xenakis.ui
 import javafx.application.Platform
 import javafx.beans.binding.Bindings
 import javafx.scene.shape.Line
-import xenakis.impl.UDPSuperColliderClient
+import xenakis.impl.SuperColliderClient
 import xenakis.model.XenakisProject
 
 class ScorePlayer(
     private val scoreView: ScoreView,
     private val project: XenakisProject,
-    private val client: UDPSuperColliderClient
+    private val client: SuperColliderClient
 ) : Thread() {
     var isRecording = false
 
@@ -78,8 +78,8 @@ class ScorePlayer(
 
     fun pause() {
         isPlaying = false
-        client.postAsync("s.freeAll;")
-        client.postAsync("~play_score.stop;")
+        client.run("s.freeAll;")
+        client.run("~play_score.stop;")
     }
 
     fun reset() {
@@ -89,9 +89,9 @@ class ScorePlayer(
 
     fun toggleRecording() {
         if (isRecording) {
-            client.postAsync("s.record")
+            client.run("s.record")
         } else {
-            client.postAsync("s.stopRecording")
+            client.run("s.stopRecording")
         }
         isRecording = !isRecording
     }

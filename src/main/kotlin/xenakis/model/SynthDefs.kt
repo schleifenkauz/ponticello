@@ -8,6 +8,7 @@ import hextant.context.createControl
 import hextant.serial.EditorRoot
 import kotlinx.serialization.Serializable
 import reaktive.value.now
+import xenakis.impl.SuperColliderClient
 import xenakis.impl.SuperColliderContext
 import xenakis.sc.SynthDef
 import xenakis.sc.editor.SynthDefListEditor
@@ -18,6 +19,8 @@ class SynthDefs private constructor(
     val editor: EditorRoot<SynthDefListEditor>,
     private var selectedSynthDefName: String = SynthDef.default.name.text
 ) {
+    private val client = editor.editor.context[SuperColliderClient]
+
     val list: List<SynthDef>
         get() = editor.editor.result.now
 
@@ -39,11 +42,13 @@ class SynthDefs private constructor(
         updateSelection(selectedSynthDef)
     }
 
+    fun 
+
     fun get(name: String): SynthDef =
         if (name == "default") SynthDef.default
         else list.find { it.name.text == name } ?: error("no SynthDef with name '$name'")
 
-    fun reload(context: SuperColliderContext) = context.postAsync {
+    fun reload(context: SuperColliderContext) = context.run {
         for (def in list) {
             def.code(this)
             appendLine(".add;")

@@ -9,7 +9,7 @@ import javafx.scene.layout.HBox
 import javafx.scene.layout.VBox
 import reaktive.Observer
 import reaktive.event.observe
-import xenakis.impl.UDPSuperColliderClient
+import xenakis.impl.SuperColliderClient
 import xenakis.model.Buffers
 import xenakis.model.XenakisProject
 import xenakis.sc.*
@@ -44,7 +44,7 @@ class BuffersPane(
         val space = infiniteSpace()
         val addBtn = Icon.Add.button(action = "Load new buffer") { addBuffer() }
         val reloadBtn = Icon.Repeat.button(action = "Reload SynthDefs") {
-            val client = project.context[UDPSuperColliderClient]
+            val client = project.context[SuperColliderClient]
             project.buffers.loadBuffers(client)
         }
         return HBox(label, space, addBtn, reloadBtn).styleClass("tool-pane-header")
@@ -99,7 +99,7 @@ class BuffersPane(
             NoBuffer -> throw AssertionError()
         }
         box.add(Icon.View.button(action = "View buffer contents") {
-            controller.client.postAsync("${buffer.variableName}.plot('${buffer.name.text}')")
+            controller.client.run("${buffer.variableName}.plot('${buffer.name.text}')")
         })
         box.add(Icon.Delete.button(action = "Remove this buffer") {
             buffers.removeBuffer(buffer, context = controller.client)

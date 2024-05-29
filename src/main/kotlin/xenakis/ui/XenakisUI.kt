@@ -341,7 +341,7 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
                 view.playMyObject()
             }
 
-            on("Ctrl+Alt+T") { controller.client.postAsync("s.plotTree;") }
+            on("Ctrl+Alt+T") { controller.client.run("s.plotTree;") }
             on("F1") { context[HelpBrowser].show() }
             on("Ctrl+Shift+D") {
                 showTextPrompt("Look up documentation", "", context) { searchText ->

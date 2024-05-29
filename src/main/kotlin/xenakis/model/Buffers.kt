@@ -9,7 +9,7 @@ import xenakis.sc.Identifier
 class Buffers(private val _buffers: MutableList<Buffer> = mutableListOf()) {
     val buffers: List<Buffer> get() = _buffers
 
-    fun loadBuffers(context: SuperColliderContext) = context.postAsync {
+    fun loadBuffers(context: SuperColliderContext) = context.run {
         for (buf in buffers) {
             +"if(${buf.variableName} != nil) { ${buf.variableName}.free }"
             +buf.initializationCode
@@ -18,26 +18,26 @@ class Buffers(private val _buffers: MutableList<Buffer> = mutableListOf()) {
 
     fun addBuffer(buffer: Buffer, context: SuperColliderContext) {
         _buffers.add(buffer)
-        context.postAsync(buffer.initializationCode)
+        context.run(buffer.initializationCode)
     }
 
     fun removeBuffer(buffer: Buffer, context: SuperColliderContext) {
         _buffers.remove(buffer)
-        context.postAsync {
+        context.run {
             +"${buffer.variableName}.free"
             +"${buffer.variableName} = nil"
         }
     }
 
     fun reloadBuffer(buffer: Buffer, context: SuperColliderContext) {
-        context.postAsync {
+        context.run {
             +"${buffer.variableName}.free"
             +buffer.initializationCode
         }
     }
 
     fun renameBuffer(buffer: Buffer, new: String, context: SuperColliderContext) {
-        context.postAsync {
+        context.run {
             +"~buf_$new = ${buffer.variableName}"
             +"${buffer.variableName} = nil"
         }

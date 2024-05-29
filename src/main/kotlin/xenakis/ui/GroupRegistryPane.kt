@@ -5,7 +5,7 @@ import hextant.fx.registerShortcuts
 import javafx.scene.control.Label
 import javafx.scene.layout.HBox
 import javafx.scene.layout.VBox
-import xenakis.impl.UDPSuperColliderClient
+import xenakis.impl.SuperColliderClient
 import xenakis.model.GroupRegistry
 import xenakis.sc.Group
 import xenakis.sc.Identifier
@@ -27,7 +27,7 @@ class GroupRegistryPane(
         val space = infiniteSpace()
         val addBtn = Icon.Add.button(action = "Add group") { addNewGroup(context) }
         val reloadBtn = Icon.Repeat.button(action = "Reload SynthDefs") {
-            val client = context[UDPSuperColliderClient]
+            val client = context[SuperColliderClient]
             registry.setupGroups(client)
         }
         return HBox(label, space, addBtn, reloadBtn).styleClass("tool-pane-header")

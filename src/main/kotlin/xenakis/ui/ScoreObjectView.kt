@@ -16,7 +16,7 @@ import javafx.scene.paint.Color
 import javafx.scene.paint.Color.BLACK
 import xenakis.impl.Knob
 import xenakis.impl.Point
-import xenakis.impl.UDPSuperColliderClient
+import xenakis.impl.SuperColliderClient
 import xenakis.model.*
 import xenakis.sc.NumericalControlSpec
 import xenakis.ui.ToolSelector.Tool
@@ -71,7 +71,7 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
 
     fun playMyObject() {
         val project = context[currentProject]
-        val client = context[UDPSuperColliderClient]
+        val client = context[SuperColliderClient]
         project.prepareForPlay(client)
         myObject.play(client)
     }

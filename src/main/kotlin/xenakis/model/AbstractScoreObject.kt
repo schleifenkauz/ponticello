@@ -6,7 +6,7 @@ import hextant.undo.UndoManager
 import javafx.geometry.HorizontalDirection
 import javafx.scene.paint.Color
 import xenakis.impl.ScWriter
-import xenakis.impl.UDPSuperColliderClient
+import xenakis.impl.SuperColliderClient
 import xenakis.sc.ControlSpec
 import xenakis.ui.ScoreObjectView
 import xenakis.ui.format
@@ -126,8 +126,8 @@ sealed class AbstractScoreObject(name: String) : ScoreObject {
     override fun getSpec(parameter: String): ControlSpec =
         throw NoSuchElementException("no spec for parameter $parameter in $this")
 
-    final override fun play(client: UDPSuperColliderClient) {
-        client.postAsync {
+    final override fun play(client: SuperColliderClient) {
+        client.run {
             appendLine("Task{")
             writeStartCode(this, offset = 0.0)
             appendLine("${duration.format(2)}.wait;")

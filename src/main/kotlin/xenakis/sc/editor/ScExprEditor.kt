@@ -4,12 +4,12 @@ import hextant.command.Command
 import hextant.command.meta.ProvideCommand
 import hextant.core.Editor
 import reaktive.value.now
-import xenakis.impl.UDPSuperColliderClient
+import xenakis.impl.SuperColliderClient
 import xenakis.sc.ScExpr
 import xenakis.sc.code
 
 interface ScExprEditor<out E : ScExpr> : Editor<E> {
-    fun canEvaluate() = result.now.isValid && context.hasProperty(UDPSuperColliderClient)
+    fun canEvaluate() = result.now.isValid && context.hasProperty(SuperColliderClient)
 
     @ProvideCommand(
         defaultShortcut = "Ctrl?+E",
@@ -18,7 +18,7 @@ interface ScExprEditor<out E : ScExpr> : Editor<E> {
         type = Command.Type.SingleReceiver
     )
     fun eval() {
-        val client = context[UDPSuperColliderClient]
-        client.postAsync(result.now.code)
+        val client = context[SuperColliderClient]
+        client.run(result.now.code)
     }
 }

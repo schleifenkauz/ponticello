@@ -7,14 +7,14 @@ import hextant.context.Context
 import hextant.core.editor.ViewManager
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
+import xenakis.impl.SuperColliderClient
 import xenakis.impl.SuperColliderContext
-import xenakis.impl.UDPSuperColliderClient
 import xenakis.sc.Group
 
 @Serializable
 data class GroupRegistry(private val order: MutableList<Group> = mutableListOf(Group.DEFAULT)) {
     @Transient
-    private lateinit var client: UDPSuperColliderClient
+    private lateinit var client: SuperColliderClient
 
     @Transient
     private val views = ViewManager.createWeakViewManager<View>()
@@ -23,7 +23,7 @@ data class GroupRegistry(private val order: MutableList<Group> = mutableListOf(G
     val groupReferences = ViewManager.createWeakViewManager<GroupReference>()
 
     fun initialize(context: Context) {
-        client = context[UDPSuperColliderClient]
+        client = context[SuperColliderClient]
         context[GroupRegistry] = this
     }
 
@@ -49,7 +49,7 @@ data class GroupRegistry(private val order: MutableList<Group> = mutableListOf(G
         val index = order.indexOf(group)
         if (index == -1) error("$group not registered")
         order.removeAt(index)
-        client.postAsync("${group.variableName}.free; ${group.variableName} = nil;")
+        client.run("${group.variableName}.free; ${group.variableName} = nil;")
         views.notifyViews { removedGroup(group, index) }
         groupReferences.notifyViews {
             if (this.group == group) {
@@ -59,7 +59,7 @@ data class GroupRegistry(private val order: MutableList<Group> = mutableListOf(G
     }
 
     fun renameGroup(group: Group, name: String) {
-        client.postAsync("$name = ${group.variableName}; ${group.variableName} = nil;")
+        client.run("$name = ${group.variableName}; ${group.variableName} = nil;")
         val index = order.indexOf(group)
         if (index == -1) error("$group not registered")
         group.name = name
@@ -74,10 +74,10 @@ data class GroupRegistry(private val order: MutableList<Group> = mutableListOf(G
         order.removeAt(fromIndex)
         order.add(toIndex, group)
         if (toIndex == 0) {
-            client.postAsync("${group.variableName}.moveBefore(${order[0].variableName});")
+            client.run("${group.variableName}.moveBefore(${order[0].variableName});")
         } else {
             val groupBefore = order[toIndex - 1]
-            client.postAsync("${group.variableName}.moveAfter(${groupBefore.variableName});")
+            client.run("${group.variableName}.moveAfter(${groupBefore.variableName});")
         }
         views.notifyViews { movedGroup(group, fromIndex, toIndex) }
     }
@@ -87,18 +87,18 @@ data class GroupRegistry(private val order: MutableList<Group> = mutableListOf(G
     private fun setupGroup(group: Group, groupBefore: Group?, context: SuperColliderContext) {
         if (group == Group.DEFAULT) {
             if (groupBefore != null) {
-                context.postAsync("s.defaultGroup.moveAfter(${groupBefore.variableName});")
+                context.run("s.defaultGroup.moveAfter(${groupBefore.variableName});")
             }
         } else {
             if (groupBefore != null) {
-                context.postAsync("${group.variableName} = Group.after(${groupBefore.variableName});")
+                context.run("${group.variableName} = Group.after(${groupBefore.variableName});")
             } else {
-                context.postAsync("${group.variableName} = Group.new;")
+                context.run("${group.variableName} = Group.new;")
             }
         }
     }
 
-    fun setupGroups(context: SuperColliderContext) = context.postAsync {
+    fun setupGroups(context: SuperColliderContext) = context.run {
         for (group in order) {
             if (group != Group.DEFAULT) {
                 appendBlock("if (${group.variableName} != nil)") {

@@ -51,7 +51,7 @@ class AudioFlowGraph(
 
     fun addBus(bus: BusObject, context: SuperColliderContext) {
         _busses.add(bus)
-        context.postAsync(bus.bus.allocationCode)
+        context.run(bus.bus.allocationCode)
     }
 
     fun removeBus(bus: BusObject) {
@@ -77,13 +77,13 @@ class AudioFlowGraph(
         return if (order.size == flows.size) order else null
     }
 
-    fun allocateBusses(context: SuperColliderContext) = context.postAsync {
+    fun allocateBusses(context: SuperColliderContext) = context.run {
         for ((bus) in busses) {
             if (bus.name != "output") +bus.allocationCode
         }
     }
 
-    fun setupAudioFlow(context: SuperColliderContext) = context.postAsync {
+    fun setupAudioFlow(context: SuperColliderContext) = context.run {
         var prev = "s.defaultGroup"
         for (flow in order) {
             val source = flow.source.bus

@@ -40,7 +40,7 @@ interface ScoreObject {
     fun writeStartCode(writer: ScWriter, offset: Double)
     fun writeStopCode(writer: ScWriter)
 
-    fun play(client: UDPSuperColliderClient)
+    fun play(client: SuperColliderClient)
 
     fun addToScore(score: Score, context: Context) {
         if (nameOfNextInChain != null) {

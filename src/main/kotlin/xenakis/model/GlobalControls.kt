@@ -4,8 +4,8 @@ import hextant.context.Context
 import hextant.core.editor.ViewManager
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
+import xenakis.impl.SuperColliderClient
 import xenakis.impl.SuperColliderContext
-import xenakis.impl.UDPSuperColliderClient
 import xenakis.sc.Bus
 import xenakis.sc.NumericalControlSpec
 import xenakis.sc.Rate
@@ -39,12 +39,12 @@ class GlobalControls(private val controls: MutableList<GlobalControl>) : KnobCon
         val bus = control.bus
         val varName = bus.variableName
         val value = control.knobControl.get()
-        context.postAsync("${bus.allocationCode}; $varName.set($value);")
+        context.run("${bus.allocationCode}; $varName.set($value);")
     }
 
     private fun removeBus(control: GlobalControl) {
         val bus = control.bus
-        context[UDPSuperColliderClient].postAsync("${bus.variableName}.free;")
+        context[SuperColliderClient].run("${bus.variableName}.free;")
         control.knobControl.views.removeView(this)
     }
 
@@ -52,7 +52,7 @@ class GlobalControls(private val controls: MutableList<GlobalControl>) : KnobCon
         val knobControl = KnobControl(spec.defaultValue.get())
         val control = GlobalControl(parameter, knobControl, spec)
         controls.add(control)
-        setupBus(control, context[UDPSuperColliderClient])
+        setupBus(control, context[SuperColliderClient])
         views.notifyViews { addedControl(control) }
         knobControl.addView(this)
     }
@@ -75,14 +75,15 @@ class GlobalControls(private val controls: MutableList<GlobalControl>) : KnobCon
         val ctrl = controls.find { it.knobControl == control } ?: error("$control not found in global controls")
         val bus = ctrl.bus
         val formatted = value.format(ctrl.spec.accuracy)
-        context[UDPSuperColliderClient].postAsync("if (${bus.variableName} != nil) { ${bus.variableName}.setSynchronous($formatted) };")
+        context[SuperColliderClient].run("if (${bus.variableName} != nil) { ${bus.variableName}.setSynchronous($formatted) };")
     }
 
     fun updateControlFromServer(control: GlobalControl) {
         val code = "${control.bus.variableName}.getSynchronous"
-        val answer = context[UDPSuperColliderClient].post(code)
-        val value = answer.toDoubleOrNull() ?: return
-        control.knobControl.set(value)
+        context[SuperColliderClient].eval(code).thenAccept { answer ->
+            val value = answer.toDoubleOrNull() ?: return@thenAccept
+            control.knobControl.set(value)
+        }
     }
 
     @Serializable

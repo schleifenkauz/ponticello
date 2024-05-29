@@ -1,12 +1,11 @@
 package xenakis.impl
 
-import bundles.PublicProperty
-import bundles.publicProperty
-import reaktive.event.event
+import com.illposed.osc.OSCMessage
 import java.net.DatagramPacket
 import java.net.DatagramSocket
 import java.net.InetAddress
 import java.util.*
+import java.util.concurrent.CompletableFuture
 import kotlin.concurrent.thread
 
 class UDPSuperColliderClient private constructor(
@@ -14,39 +13,39 @@ class UDPSuperColliderClient private constructor(
     private val socket: DatagramSocket,
     private val sclangAdr: InetAddress,
     private val sclangPort: Int
-) : SuperColliderContext {
+) : SuperColliderContext, SuperColliderClient {
     private val buffer = ByteArray(BUFFER_SIZE)
-    private var consoleMonitors = mutableListOf<(String) -> Unit>()
-    var status: StatusUpdate = StatusUpdate.Starting
-        private set(value) {
-            field = value
-            statusUpdate.fire(value)
-        }
 
-    private val statusUpdate = event<StatusUpdate>()
-    val statusUpdates get() = statusUpdate.stream
+    override val consoleMonitor = ConsoleMonitor(sclang)
 
-    private val consoleUntilNow = StringBuilder()
-    private var consoleMonitorThread: Thread
+    override val statusListener: StatusListener = StatusListener(consoleMonitor)
 
     init {
-        consoleMonitorThread = monitorConsole()
+        consoleMonitor.start()
     }
 
-    fun post(command: String): String {
-        println("shell> $command")
-        val msg = createMessage(command)
+    override fun eval(code: String): CompletableFuture<String> {
+        println("shell> $code")
+        val msg = createMessage(code)
         send(msg)
         val answer = receiveMessage()
         val value = parseAnswer(answer)
-        return value
+        return CompletableFuture.completedFuture(value)
     }
 
-    override fun postAsync(command: String) {
+    override fun run(command: String) {
         println("shell> $command")
         val msg = createMessage(command)
         send(msg)
         thread(isDaemon = true, name = "Command Thread") { receiveMessage() }
+    }
+
+    override fun sendAsync(address: String, arguments: List<Any>) {
+        TODO("Not yet implemented")
+    }
+
+    override fun send(address: String, arguments: List<Any>): CompletableFuture<OSCMessage> {
+        TODO("Not yet implemented")
     }
 
     private fun createMessage(command: String): ByteArray {
@@ -71,46 +70,12 @@ class UDPSuperColliderClient private constructor(
         return answer
     }
 
-    private fun monitorConsole(): Thread {
-        val stream = sclang.inputStream.reader(Charsets.UTF_8)
-        return thread(isDaemon = true, name = "SuperCollider Console Monitor") {
-            stream.useLines { lines ->
-                for (line in lines) {
-                    if (Thread.interrupted()) break
-                    consoleMonitors.forEach { m -> m.invoke(line + "\n") }
-                    consoleUntilNow.appendLine(line)
-                    println(line)
-                    if ("-> OSCFunc(/eval, nil, nil, nil)" in line) {
-                        status = StatusUpdate.ReadyToBoot
-                    } else if ("SuperCollider 3 server ready." in line) {
-                        status = StatusUpdate.ServerBooted
-                    } else if ("Server 'localhost' exited" in line) {
-                        status = StatusUpdate.ExitedServer
-                    }
-                }
-            }
-        }
-    }
-
-    fun addConsoleMonitor(handler: (String) -> Unit) {
-        handler.invoke(consoleUntilNow.toString())
-        consoleMonitors.add(handler)
-    }
-
-    fun removeConsoleMonitor(handler: (String) -> Unit) {
-        consoleMonitors.remove(handler)
-    }
-
-    fun waitForExit() {
-        sclang.waitFor()
-    }
-
-    fun quit() {
-        consoleMonitorThread.interrupt()
-        postAsync("s.quit;")
-        postAsync("0.exit;")
+    override fun quit() {
+        consoleMonitor.interrupt()
+        run("s.quit;")
+        run("0.exit;")
         socket.disconnect()
-        statusUpdate.fire(StatusUpdate.Exited)
+        statusListener.status = StatusUpdate.Exited
     }
 
     enum class StatusUpdate {
@@ -121,14 +86,14 @@ class UDPSuperColliderClient private constructor(
         Exited
     }
 
-    companion object : PublicProperty<UDPSuperColliderClient> by publicProperty("SuperColliderClient") {
+    companion object {
         @JvmStatic
         fun main(args: Array<String>) {
             val client = create(57120)
             val sc = Scanner(System.`in`)
             while (true) {
                 val x = sc.nextLine() ?: break
-                val answer = client.post(x)
+                val answer = client.eval(x)
                 println(answer)
             }
         }

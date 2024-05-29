@@ -49,11 +49,11 @@ class SoundFileObject(
     }
 
     private fun loadBuffer(context: SuperColliderContext) {
-        context.postAsync("$bufferName = Buffer.read(s, ${file.superColliderPath});")
+        context.run("$bufferName = Buffer.read(s, ${file.superColliderPath});")
     }
 
     override fun onRemove() {
-        val client = context[UDPSuperColliderClient]
+        val client = context[SuperColliderClient]
         freeBuffer(client)
     }
 
@@ -64,7 +64,7 @@ class SoundFileObject(
     }
 
     private fun freeBuffer(client: SuperColliderContext) {
-        client.postAsync("$bufferName.free; $bufferName = nil;")
+        client.run("$bufferName.free; $bufferName = nil;")
     }
 
     override fun writeStartCode(writer: ScWriter, offset: Double) = with(writer) {

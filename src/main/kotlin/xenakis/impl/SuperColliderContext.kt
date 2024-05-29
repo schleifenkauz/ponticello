@@ -1,7 +1,7 @@
 package xenakis.impl
 
 interface SuperColliderContext {
-    fun postAsync(command: String)
+    fun run(command: String)
 
-    fun postAsync(writeCode: ScWriter.() -> Unit): Unit = postAsync(code(writeCode))
+    fun run(writeCode: ScWriter.() -> Unit): Unit = run(code(writeCode))
 }

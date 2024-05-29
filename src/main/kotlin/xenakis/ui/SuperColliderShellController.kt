@@ -11,10 +11,11 @@ import javafx.scene.control.TextArea
 import javafx.scene.control.TextField
 import javafx.scene.layout.VBox
 import javafx.stage.Stage
-import xenakis.impl.UDPSuperColliderClient
+import xenakis.impl.ConsoleMonitor
+import xenakis.impl.SuperColliderClient
 import kotlin.concurrent.thread
 
-class SuperColliderShellController(private val client: UDPSuperColliderClient) {
+class SuperColliderShellController(private val client: SuperColliderClient) : ConsoleMonitor.Listener {
     private val history = mutableListOf<String>()
     private var historyPos = 0
 
@@ -34,14 +35,15 @@ class SuperColliderShellController(private val client: UDPSuperColliderClient) {
     fun submitCommand() {
         val command = commandField.text.ifEmpty { return }
         thread {
-            val result = client.post(command)
-            Platform.runLater {
-                val l = makeHistoryLabel(command, result)
-                repl.children.add(0, l)
-                replScroll.vvalue = replScroll.vmin
+            client.eval(command).thenAccept { result ->
+                Platform.runLater {
+                    val l = makeHistoryLabel(command, result)
+                    repl.children.add(0, l)
+                    replScroll.vvalue = replScroll.vmin
+                }
+                history.add(command)
+                historyPos = history.size
             }
-            history.add(command)
-            historyPos = history.size
         }
         commandField.text = ""
     }
@@ -57,16 +59,18 @@ class SuperColliderShellController(private val client: UDPSuperColliderClient) {
 
     @FXML
     fun initialize() {
-        client.addConsoleMonitor { output ->
-            Platform.runLater {
-                consoleOutput.text += output
-                consoleOutput.scrollTop = Double.MAX_VALUE
-            }
+        client.consoleMonitor.addListener(this)
+    }
+
+    override fun process(txt: String) {
+        Platform.runLater {
+            consoleOutput.text += txt
+            consoleOutput.scrollTop = Double.MAX_VALUE
         }
     }
 
     companion object {
-        fun createShellWindow(client: UDPSuperColliderClient): Stage {
+        fun createShellWindow(client: SuperColliderClient): Stage {
             val controller = SuperColliderShellController(client)
             val loader = FXMLLoader()
             loader.location = controller.javaClass.getResource("shell.fxml")

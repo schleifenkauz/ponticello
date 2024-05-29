@@ -16,7 +16,7 @@ import org.controlsfx.control.PropertySheet
 import org.controlsfx.property.BeanProperty
 import xenakis.impl.Arrow
 import xenakis.impl.Point
-import xenakis.impl.UDPSuperColliderClient
+import xenakis.impl.SuperColliderClient
 import xenakis.model.AudioFlowGraph
 import xenakis.sc.Bus
 import xenakis.sc.Rate
@@ -71,7 +71,7 @@ class AudioFlowGraphPane(val graph: AudioFlowGraph, private val context: Context
         val confirmed = showDetailEditor(bus)
         if (confirmed) {
             val obj = AudioFlowGraph.BusObject(bus, x, y)
-            graph.addBus(obj, context[UDPSuperColliderClient])
+            graph.addBus(obj, context[SuperColliderClient])
             paintBusObject(obj)
             return obj.bus
         } else return null

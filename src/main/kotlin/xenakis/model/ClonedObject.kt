@@ -60,7 +60,7 @@ class ClonedObject(
 
     override fun writeStopCode(writer: ScWriter) = original.writeStopCode(writer)
 
-    override fun play(client: UDPSuperColliderClient) = original.play(client)
+    override fun play(client: SuperColliderClient) = original.play(client)
 
     override fun copy(newName: String): ScoreObject = original.copy(newName)
 

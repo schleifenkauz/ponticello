@@ -18,7 +18,7 @@ import javafx.scene.layout.HBox
 import javafx.scene.layout.VBox
 import reaktive.event.observe
 import reaktive.value.now
-import xenakis.impl.UDPSuperColliderClient
+import xenakis.impl.SuperColliderClient
 import xenakis.impl.randomColor
 import xenakis.model.SynthDefs
 import xenakis.sc.Identifier
@@ -48,7 +48,7 @@ class SynthDefsEditorControl @ProvideImplementation(ControlFactory::class) const
         val space = infiniteSpace()
         val addBtn = Icon.Add.button(action = "Add SynthDef") { addSynthDefEditor() }
         val reloadBtn = Icon.Repeat.button(action = "Reload SynthDefs") {
-            val client = context[UDPSuperColliderClient]
+            val client = context[SuperColliderClient]
             context[SynthDefs].reload(client)
         }
         val header = HBox(label, space, addBtn, reloadBtn).styleClass("tool-pane-header")
