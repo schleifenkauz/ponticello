@@ -14,7 +14,7 @@ interface SuperColliderClient : SuperColliderContext {
 
     fun eval(code: String): CompletableFuture<String> =
         send("/eval", listOf(code)).thenApply { msg ->
-            msg.arguments[0] as String
+            msg.arguments[1] as String
         }
 
     override fun run(command: String) {

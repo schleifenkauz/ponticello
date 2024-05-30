@@ -43,7 +43,7 @@ data class ParameterDef(val name: Identifier, val spec: ControlSpec) {
 @Compound(serializable = true)
 @ListEditor(serializable = true)
 class SynthDef(
-    val name: Identifier, val rate: Rate,
+    val name: Identifier,
     override val parameters: List<ParameterDef>, val ugenGraph: CodeBlock,
     @Component(ColorEditor::class) @Serializable(with = ColorSerializer::class) val associatedColor: Color
 ) : ScElement, ParameterizedObject {
@@ -58,7 +58,7 @@ class SynthDef(
 
     companion object {
         val default = SynthDef(
-            Identifier("default"), Rate.Audio,
+            Identifier("default"),
             parameters = listOf(ParameterDef.freq, ParameterDef.amp, ParameterDef.pan),
             ugenGraph = CodeBlock(emptyList(), emptyList()),
             associatedColor = Color.WHITE

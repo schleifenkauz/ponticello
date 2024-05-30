@@ -5,12 +5,12 @@
 <?import javafx.scene.control.TextArea?>
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.VBox?>
-<SplitPane dividerPositions="0.5" prefWidth="600" prefHeight="600" xmlns="http://javafx.com/javafx/17.0.2-ea" xmlns:fx="http://javafx.com/fxml/1">
+<SplitPane xmlns:fx="http://javafx.com/fxml/1" dividerPositions="0.5" xmlns="http://javafx.com/javafx/17.0.2-ea">
     <VBox>
-        <TextField fx:id="commandField" onAction="#submitCommand" prefWidth="400.0"/>
-        <ScrollPane fx:id="replScroll">
-            <VBox fx:id="repl" prefHeight="550" prefWidth="600.0"/>
+        <TextField fx:id="commandField" onAction="#submitCommand"/>
+        <ScrollPane fx:id="historyScroll">
+            <VBox fx:id="historyPane"/>
         </ScrollPane>
     </VBox>
-    <TextArea fx:id="consoleOutput" editable="false" prefWidth="200.0"/>
+    <TextArea fx:id="consoleOutput" editable="false"/>
 </SplitPane>

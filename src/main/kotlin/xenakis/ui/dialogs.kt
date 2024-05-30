@@ -4,15 +4,18 @@ import hextant.context.Context
 import hextant.fx.Stylesheets
 import hextant.fx.registerShortcuts
 import hextant.fx.setDefaultButton
+import javafx.application.Platform
 import javafx.collections.FXCollections
 import javafx.scene.Node
 import javafx.scene.Parent
 import javafx.scene.Scene
 import javafx.scene.control.*
+import javafx.scene.layout.HBox
 import javafx.stage.Stage
 import javafx.stage.StageStyle
 import javafx.util.StringConverter
 import xenakis.impl.DoubleRange
+import java.util.concurrent.CompletableFuture
 
 @Suppress("unused")
 fun <T : Any> showSelectorDialog(
@@ -38,8 +41,38 @@ fun <T : Any> showSelectorDialog(
     window.show()
 }
 
+fun showYesNoDialog(context: Context, question: String, default: Boolean = false): Boolean {
+    val future = CompletableFuture<Boolean>()
+    val box = HBox(5.0)
+    val window = SubWindow(box, "Yes/No", context, SubWindow.Type.Prompt)
+    val no = Icon.Delete.button(action = "No") {
+        future.complete(false)
+        window.hide()
+    }
+    val yes = Icon.Delete.button(action = "No") {
+        future.complete(false)
+        window.hide()
+    }
+    val label = Label(question)
+    box.children.addAll(no, label, yes)
+    box.registerShortcuts {
+        on("ENTER") {
+            future.complete(default)
+            window.hide()
+        }
+    }
+    window.show()
+    Platform.runLater {
+        if (default) yes.requestFocus()
+        else no.requestFocus()
+    }
+    window.setOnHidden { if (!future.isDone) future.complete(false) }
+    return future.get()
+}
+
 fun showYesNoDialog(question: String, default: Boolean = false): Boolean {
     val alert = Alert(Alert.AlertType.CONFIRMATION, question, ButtonType.YES, ButtonType.NO)
+    alert.dialogPane.scene.stylesheets.add("/xenakis/ui/style.css")
     val defaultBtn = if (default) ButtonType.YES else ButtonType.NO
     alert.setDefaultButton(defaultBtn)
     return alert.showAndWait().getOrNull() == ButtonType.YES

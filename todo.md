@@ -45,7 +45,7 @@
 
 ### Naming in Score and in SuperCollider
 
-- separate name for synthesizer of each clone (or even hash-code suffix for every created synthesizer)
+- separate name for Synth of each clone (or even hash-code suffix for every created synthesizer)
 - what about renaming buses and buffers?
 - naming checks to avoid duplicates
 
@@ -57,6 +57,7 @@
 
 - lag values for bus value controls (adjust with spinner in control assignment)
 - use SynthDefs imported from SuperCollider code
+  - set apart imported and created SynthDefs in UI
 
 ### Support for patterns
 

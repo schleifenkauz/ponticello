@@ -99,7 +99,7 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
         globalControlsWindow.width = 500.0
 
         player = ScorePlayer(scoreView, project, controller.client)
-        shellWindow = SuperColliderShellController.createShellWindow(controller.client)
+        shellWindow = SuperColliderShellController.createShellWindow(context)
 
         project.context[ObjectSelector] = ObjectSelector(project.context, scoreView)
         selectedObjectObserver = scoreView.selector.singleSelected.forEach { view ->
@@ -138,7 +138,8 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
                 if (proj.isFile) {
                     controller.openProject(proj)
                 } else {
-                    val remove = showYesNoDialog("Project file does not exist. Remove from list?", default = true)
+                    val remove =
+                        showYesNoDialog("Project file does not exist. Remove from list?", default = true)
                     if (remove) {
                         controller.removeFromRecentProjects(proj)
                         recentProjects.children.remove(box)
@@ -146,7 +147,8 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
                 }
             }
             val removeBtn = Icon.Close.button(action = "Remove from list of recent projects") {
-                val reallyRemove = showYesNoDialog("Remove project from list of recent projects?", default = true)
+                val reallyRemove =
+                    showYesNoDialog("Remove project from list of recent projects?", default = true)
                 if (reallyRemove) {
                     controller.removeFromRecentProjects(proj)
                     recentProjects.children.remove(box)

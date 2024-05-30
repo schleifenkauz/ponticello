@@ -1,10 +1,10 @@
 package xenakis.ui
 
+import hextant.context.Context
 import javafx.application.Platform
 import javafx.fxml.FXML
 import javafx.fxml.FXMLLoader
 import javafx.scene.Parent
-import javafx.scene.Scene
 import javafx.scene.control.Label
 import javafx.scene.control.ScrollPane
 import javafx.scene.control.TextArea
@@ -26,24 +26,23 @@ class SuperColliderShellController(private val client: SuperColliderClient) : Co
     private lateinit var consoleOutput: TextArea
 
     @FXML
-    private lateinit var repl: VBox
+    private lateinit var historyPane: VBox
 
     @FXML
-    private lateinit var replScroll: ScrollPane
+    private lateinit var historyScroll: ScrollPane
 
     @Suppress("unused") //called from xenakis/ui/shell.fxml
     fun submitCommand() {
         val command = commandField.text.ifEmpty { return }
-        thread {
-            client.eval(command).thenAccept { result ->
-                Platform.runLater {
-                    val l = makeHistoryLabel(command, result)
-                    repl.children.add(0, l)
-                    replScroll.vvalue = replScroll.vmin
-                }
-                history.add(command)
-                historyPos = history.size
+        thread(isDaemon = true, name = "Shell evaluator") {
+            val result = client.eval(command).join()
+            Platform.runLater {
+                val l = makeHistoryLabel(command, result)
+                historyPane.children.add(0, l)
+                historyScroll.vvalue = historyScroll.vmin
             }
+            history.add(command)
+            historyPos = history.size
         }
         commandField.text = ""
     }
@@ -60,6 +59,8 @@ class SuperColliderShellController(private val client: SuperColliderClient) : Co
     @FXML
     fun initialize() {
         client.consoleMonitor.addListener(this)
+        historyPane.maxHeight = Double.MAX_VALUE
+        historyScroll.maxHeight = Double.MAX_VALUE
     }
 
     override fun process(txt: String) {
@@ -70,15 +71,19 @@ class SuperColliderShellController(private val client: SuperColliderClient) : Co
     }
 
     companion object {
-        fun createShellWindow(client: SuperColliderClient): Stage {
+        fun createShellWindow(context: Context): Stage {
+            val client = context[SuperColliderClient]
             val controller = SuperColliderShellController(client)
             val loader = FXMLLoader()
             loader.location = controller.javaClass.getResource("shell.fxml")
             loader.setController(controller)
             val shell = loader.load<Parent>()
-            val window = Stage()
-            window.scene = Scene(shell)
-            window.scene.stylesheets.add("/xenakis/ui/style.css")
+            val window = SubWindow(shell, "SuperCollider shell", context, SubWindow.Type.Modal)
+            window.setOnShown {
+                controller.commandField.requestFocus()
+            }
+            window.width = 1000.0
+            window.height = 1000.0
             return window
         }
     }

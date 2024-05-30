@@ -6,6 +6,7 @@ import com.illposed.osc.OSCMessageListener
 import com.illposed.osc.messageselector.OSCPatternAddressMessageSelector
 import com.illposed.osc.transport.OSCPortIn
 import com.illposed.osc.transport.OSCPortOut
+import com.illposed.osc.transport.OSCPortOutBuilder
 import xenakis.impl.UDPSuperColliderClient.StatusUpdate
 import java.net.InetAddress
 import java.util.concurrent.CompletableFuture
@@ -23,18 +24,21 @@ class OSCSuperColliderClient(
 
     init {
         receiver.dispatcher.addListener(OSCPatternAddressMessageSelector("/reply"), this)
+        receiver.startListening()
         consoleMonitor.start()
     }
 
     override fun sendAsync(address: String, arguments: List<Any>) {
-        val msg = OSCMessage(address, arguments)
+        val adr = if (!address.startsWith('/')) "/$address" else address
+        val msg = OSCMessage(adr, arguments)
         sender.send(msg)
     }
 
     override fun send(address: String, arguments: List<Any>): CompletableFuture<OSCMessage> {
         val id = idCounter++
         val future = CompletableFuture<OSCMessage>()
-        val msg = OSCMessage(address, arguments + listOf(id))
+        val adr = if (!address.startsWith('/')) "/$address" else address
+        val msg = OSCMessage(adr, listOf(id) + arguments)
         waitingForReply[id] = future
         sender.send(msg)
         return future
@@ -52,6 +56,7 @@ class OSCSuperColliderClient(
         run("s.quit;")
         run("0.exit;")
         sender.disconnect()
+        receiver.stopListening()
         receiver.disconnect()
         statusListener.status = StatusUpdate.Exited
     }
@@ -68,7 +73,10 @@ class OSCSuperColliderClient(
             Thread.sleep(100)
             sclang.outputStream.write("this.executeFile(\"$setupFile\");\n".toByteArray())
             sclang.outputStream.flush()
-            val sender = OSCPortOut(InetAddress.getLocalHost(), port)
+            val sender = OSCPortOutBuilder()
+                .setLocalPort(8000)
+                .setRemotePort(port)
+                .build()
             val receiver = OSCPortIn(8000)
             return OSCSuperColliderClient(sclang, sender, receiver)
         }

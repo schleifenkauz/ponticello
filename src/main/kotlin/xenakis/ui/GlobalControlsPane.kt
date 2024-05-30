@@ -2,6 +2,7 @@ package xenakis.ui
 
 import hextant.context.Context
 import hextant.context.createControl
+import hextant.context.withoutUndo
 import hextant.fx.registerShortcuts
 import hextant.serial.makeRoot
 import javafx.scene.layout.HBox
@@ -30,7 +31,7 @@ class GlobalControlsPane(
     private fun addControl() {
         showTextPrompt("Control name", "", context) { name ->
             if (!Identifier.isValid(name)) return@showTextPrompt false
-            val editor = ParameterDefExpander.expand(name, context)
+            val editor = context.withoutUndo { ParameterDefExpander.expand(name, context) }
             editor.makeRoot()
             val control = context.createControl(editor)
             val window = SubWindow(control, "Configure global control", context, SubWindow.Type.Prompt)

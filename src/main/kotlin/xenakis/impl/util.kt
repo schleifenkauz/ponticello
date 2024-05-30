@@ -1,5 +1,6 @@
 package xenakis.impl
 
+import com.illposed.osc.OSCMessage
 import hextant.context.Context
 import hextant.context.Properties.classLoader
 import hextant.plugins.Aspects
@@ -7,6 +8,7 @@ import hextant.plugins.Implementation
 import javafx.scene.paint.Color
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.*
+import xenakis.sc.Warp
 import java.io.File
 import java.io.StringWriter
 import kotlin.properties.ReadWriteProperty
@@ -78,3 +80,14 @@ operator fun <R> (() -> KProperty0<R>).getValue(thisRef: Any, property: KPropert
 private val defaultColors = listOf("red", "green", "blue", "white", "orange", "purple", "cyan")
 
 fun randomColor() = defaultColors.random()
+
+val OSCMessage.boolean get() = arguments[1] as Int != 0
+val OSCMessage.double get() = (arguments[1] as Float).toDouble()
+val OSCMessage.string get() = arguments[1] as String
+val OSCMessage.integer get() = arguments[1] as Int
+val OSCMessage.warp
+    get() = when (arguments[1] as String) {
+        "A LinearWarp" -> Warp.Linear
+        "An ExponentialWarp" -> Warp.Exponential
+        else -> Warp.Linear
+    }
