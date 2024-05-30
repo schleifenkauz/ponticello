@@ -4,58 +4,107 @@ import bundles.PublicProperty
 import bundles.publicProperty
 import bundles.set
 import hextant.context.Context
+import hextant.fx.initHextantScene
+import hextant.fx.registerShortcuts
 import hextant.serial.EditorRoot
-import javafx.collections.FXCollections
+import javafx.css.PseudoClass
 import javafx.geometry.Bounds
+import javafx.geometry.HorizontalDirection.LEFT
+import javafx.geometry.HorizontalDirection.RIGHT
+import javafx.geometry.VerticalDirection.DOWN
+import javafx.geometry.VerticalDirection.UP
 import javafx.scene.control.Label
-import javafx.scene.input.KeyCode
-import javafx.scene.input.KeyEvent
-import javafx.scene.input.MouseEvent
+import javafx.scene.input.*
 import javafx.scene.layout.Pane
-import org.controlsfx.control.PropertySheet
-import org.controlsfx.property.BeanProperty
+import reaktive.value.now
 import xenakis.impl.Arrow
 import xenakis.impl.Point
-import xenakis.impl.SuperColliderClient
 import xenakis.model.AudioFlowGraph
-import xenakis.sc.Bus
-import xenakis.sc.Rate
+import xenakis.model.BusObject
 import xenakis.sc.editor.CodeBlockEditor
-import java.beans.PropertyDescriptor
+import xenakis.ui.XenakisController.Companion.currentProject
 import kotlin.math.sign
-import kotlin.random.Random
 
-class AudioFlowGraphPane(val graph: AudioFlowGraph, private val context: Context) : Pane() {
-    private var sourceBus: AudioFlowGraph.BusObject? = null
+class AudioFlowGraphPane(
+    private val graph: AudioFlowGraph,
+    private val context: Context
+) : Pane(), AudioFlowGraph.View {
+    private var sourceBus: AudioFlowGraph.BusNode? = null
     private var flowArrow: Arrow? = null
     private var dragStart: Point? = null
     private var oldBounds: Bounds? = null
-    private val busLabels = mutableMapOf<AudioFlowGraph.BusObject, Label>()
-    private val flowArrows = mutableMapOf<AudioFlowGraph.AudioFlow, Arrow>()
+    private val busLabels = mutableListOf<Label>()
+    private val flowArrows = mutableListOf<Pair<AudioFlowGraph.AudioFlow, Arrow>>()
+    private val flowDetailWindows = mutableMapOf<AudioFlowGraph.AudioFlow, SubWindow>()
 
     init {
         context[AudioFlowGraphPane] = this
         styleClass("audio-flow-graph")
-        for (obj in graph.busses) {
-            paintBusObject(obj)
+        for (obj in graph.nodes) addedNode(obj)
+        for (flow in graph.flows) addedFlow(flow)
+        resetOnEscape()
+        createNewBusOnShiftClick()
+        newFlowArrowFollowMouse()
+        allowDroppingBusObjects()
+        graph.views.addListener(this)
+    }
+
+    /*
+    * Event listeners
+    * */
+
+    private fun allowDroppingBusObjects() {
+        addEventHandler(DragEvent.DRAG_OVER) { ev ->
+            if (ev.dragboard.hasContent(BusObject.DATA_FORMAT)) {
+                ev.acceptTransferModes(TransferMode.LINK)
+            }
+            ev.consume()
         }
-        for (flow in graph.flows) {
-            paintFlow(flow)
+        addEventHandler(DragEvent.DRAG_ENTERED) { ev ->
+            if (ev.dragboard.hasContent(BusObject.DATA_FORMAT)) {
+                pseudoClassStateChanged(PseudoClass.getPseudoClass("drop-possible"), true)
+            }
+            ev.consume()
         }
-        addEventHandler(KeyEvent.KEY_RELEASED) { ev ->
-            if (ev.code == KeyCode.ESCAPE) {
+        addEventHandler(DragEvent.DRAG_EXITED) { ev ->
+            pseudoClassStateChanged(PseudoClass.getPseudoClass("drop-possible"), false)
+            ev.consume()
+        }
+        addEventHandler(DragEvent.DRAG_DROPPED) { ev ->
+            val busName = ev.dragboard.getContent(BusObject.DATA_FORMAT) as? String ?: return@addEventHandler
+            val bus = context[currentProject].busses.getBus(busName)
+            if (!graph.add(bus, Point(ev.x, ev.y))) {
+                alertError("Cannot add same bus twice in audio flow graph")
+            }
+            ev.consume()
+        }
+    }
+
+    private fun resetOnEscape() {
+        registerShortcuts {
+            on("ESCAPE") {
                 sourceBus = null
                 if (flowArrow != null) children.remove(flowArrow)
                 flowArrow = null
-                ev.consume()
             }
         }
+    }
+
+    private fun createNewBusOnShiftClick() {
         addEventHandler(MouseEvent.MOUSE_CLICKED) { ev ->
             if (ev.isShiftDown) {
-                createNewBus(ev.x, ev.y)
-                ev.consume()
+                context[XenakisUI].busRegistryPane.createNewBus { bus ->
+                    val position = Point(ev.x, ev.y)
+                    val obj = AudioFlowGraph.BusNode(bus.name, position)
+                    graph.add(bus, position)
+                    addedNode(obj)
+                    ev.consume()
+                }
             }
         }
+    }
+
+    private fun newFlowArrowFollowMouse() {
         addEventHandler(MouseEvent.MOUSE_MOVED) { ev ->
             if (flowArrow != null) {
                 val arr = flowArrow!!
@@ -66,86 +115,86 @@ class AudioFlowGraphPane(val graph: AudioFlowGraph, private val context: Context
         }
     }
 
-    fun createNewBus(x: Double = Random.nextDouble(prefWidth), y: Double = Random.nextDouble(prefHeight)): Bus? {
-        val bus = Bus("new_bus", Rate.Audio, 2)
-        val confirmed = showDetailEditor(bus)
-        if (confirmed) {
-            val obj = AudioFlowGraph.BusObject(bus, x, y)
-            graph.addBus(obj, context[SuperColliderClient])
-            paintBusObject(obj)
-            return obj.bus
-        } else return null
+    override fun addedNode(node: AudioFlowGraph.BusNode) {
+        val label = label(node.busName).styleClass("bus-object")
+        label.isFocusTraversable = true
+        label.relocate(node.position.x, node.position.y)
+        setupEvents(node, label)
+        children.add(label)
+        busLabels.add(label)
     }
 
-    private fun paintBusObject(obj: AudioFlowGraph.BusObject) {
-        val label = Label(obj.bus.name).styleClass("bus-object")
-        label.isFocusTraversable = true
-        label.relocate(obj.x, obj.y)
+    override fun addedFlow(flow: AudioFlowGraph.AudioFlow) {
+        val arrow = Arrow() styleClass "flow-arrow"
+        arrow.setOnMouseClicked { ev ->
+            if (ev.button == MouseButton.SECONDARY) {
+                graph.removeFlow(flow)
+            } else {
+                editFlowDetails(flow)
+            }
+            ev.consume()
+        }
+        flowArrows.add(flow to arrow)
+        repositionArrow(arrow, flow)
+        children.add(arrow)
+    }
+
+    override fun movedNode(node: AudioFlowGraph.BusNode) {
+        val label = getLabel(node)
+        label.relocate(node.position.x, node.position.y)
+        for (flow in graph.associatedFlows(node)) {
+            val arrow = flowArrows.find { (f, _) -> f == flow }!!.second
+            repositionArrow(arrow, flow)
+        }
+    }
+
+    private fun repositionArrow(arrow: Arrow, flow: AudioFlowGraph.AudioFlow) {
+        val source = getLabel(flow.source)
+        val target = getLabel(flow.target)
+        val hDir = if (flow.target.position.x > flow.source.position.x) RIGHT else LEFT
+        val vDir = if (flow.target.position.y > flow.source.position.y) DOWN else UP
+        arrow.startX = if (hDir == RIGHT) source.boundsInParent.maxX else source.boundsInParent.minX
+        arrow.startY = if (vDir == DOWN) source.boundsInParent.maxY else source.boundsInParent.minY
+        arrow.endX = if (hDir == RIGHT) target.boundsInParent.minX else target.boundsInParent.maxX
+        arrow.endY = if (vDir == DOWN) target.boundsInParent.minY else target.boundsInParent.maxY
+    }
+
+    private fun getLabel(node: AudioFlowGraph.BusNode) =
+        busLabels.find { l -> l.text == node.busName.now }
+            ?: error("Bus ${node.busName.now} not displayed in AudioFlowGraphPane")
+
+    /*
+    * Graph node event listeners
+    * */
+
+    private fun setupEvents(node: AudioFlowGraph.BusNode, label: Label) {
         label.addEventHandler(MouseEvent.ANY) { ev ->
             when {
-                ev.eventType == MouseEvent.MOUSE_DRAGGED && !ev.isShiftDown -> drag(ev, label, obj)
-                ev.eventType == MouseEvent.MOUSE_RELEASED -> releaseDrag(ev)
+                ev.eventType == MouseEvent.MOUSE_DRAGGED && !ev.isShiftDown -> drag(ev, label, node)
+                ev.eventType == MouseEvent.MOUSE_RELEASED -> releaseDrag()
                 ev.eventType == MouseEvent.MOUSE_CLICKED && ev.isShiftDown && sourceBus == null ->
-                    startNewFlowFrom(obj, ev)
+                    startNewFlowFrom(node, ev)
 
-                ev.eventType == MouseEvent.MOUSE_CLICKED && sourceBus != null -> finishFlowTo(obj, ev)
-                ev.eventType == MouseEvent.MOUSE_CLICKED && ev.clickCount >= 2 -> {
-                    editBusDetails(obj)
-                    ev.consume()
-                }
-
-                ev.eventType == MouseEvent.MOUSE_CLICKED -> {
-                    label.requestFocus()
-                    ev.consume()
-                }
-
+                ev.eventType == MouseEvent.MOUSE_CLICKED && sourceBus != null -> finishFlowTo(node)
+                ev.eventType == MouseEvent.MOUSE_CLICKED -> label.requestFocus()
+                else -> return@addEventHandler
             }
+            ev.consume()
         }
         label.addEventHandler(KeyEvent.KEY_RELEASED) { ev ->
             if (ev.code == KeyCode.DELETE) {
-                removeBus(obj)
+                graph.remove(node)
                 ev.consume()
             }
         }
-        children.add(label)
-        busLabels[obj] = label
     }
 
-    private fun finishFlowTo(target: AudioFlowGraph.BusObject, ev: MouseEvent) {
-        val source = sourceBus!!
-        val arrow = flowArrow!!
-        val flow = AudioFlowGraph.AudioFlow(source, target, EditorRoot.create(CodeBlockEditor(context)))
-        if (!graph.addFlow(flow)) {
-            alertError("Cannot add flow from ${source.bus.name} to ${target.bus.name}")
-            return
-        }
-        setupFlowArrow(arrow, flow)
-        editFlowDetails(flow)
-        sourceBus = null
-        flowArrow = null
-        ev.consume()
-    }
-
-    private fun startNewFlowFrom(obj: AudioFlowGraph.BusObject, ev: MouseEvent) {
-        sourceBus = obj
-        val arrow = Arrow(ev.sceneX, ev.sceneY, ev.sceneX, ev.sceneY)
-        arrow.strokeWidth = 2.5
-        children.add(arrow)
-        flowArrow = arrow
-        ev.consume()
-    }
-
-    private fun releaseDrag(ev: MouseEvent) {
+    private fun releaseDrag() {
         dragStart = null
         oldBounds = null
-        ev.consume()
     }
 
-    private fun drag(
-        ev: MouseEvent,
-        label: Label,
-        obj: AudioFlowGraph.BusObject
-    ) {
+    private fun drag(ev: MouseEvent, label: Label, obj: AudioFlowGraph.BusNode) {
         val start = dragStart
         if (start == null) {
             dragStart = Point(ev.screenX, ev.screenY)
@@ -154,77 +203,60 @@ class AudioFlowGraphPane(val graph: AudioFlowGraph, private val context: Context
             val dx = ev.screenX - start.x
             val dy = ev.screenY - start.y
             val old = oldBounds!!
-            obj.x = (old.minX + dx).coerceIn(0.0, width - label.width)
-            obj.y = (old.minY + dy).coerceIn(0.0, height - label.height)
-            label.relocate(obj.x, obj.y)
-            for (flow in graph.associatedFlows(obj)) {
-                val arrow = flowArrows[flow]!!
-                if (obj == flow.source) {
-                    arrow.setStart(obj.x, obj.y)
-                } else {
-                    arrow.setEnd(obj.x, obj.y)
-                }
-            }
+            val position = Point(
+                (old.minX + dx).coerceIn(0.0, width - label.width),
+                (old.minY + dy).coerceIn(0.0, height - label.height)
+            )
+            graph.move(obj, position)
         }
     }
 
-    private fun setupFlowArrow(arrow: Arrow, flow: AudioFlowGraph.AudioFlow) {
-        arrow.styleClass("flow-arrow")
-        arrow.setOnMouseClicked { editFlowDetails(flow) }
-        flowArrows[flow] = arrow
+    private fun startNewFlowFrom(obj: AudioFlowGraph.BusNode, ev: MouseEvent) {
+        sourceBus = obj
+        val arrow = Arrow(ev.sceneX, ev.sceneY, ev.sceneX, ev.sceneY)
+        arrow.strokeWidth = 2.5
+        children.add(arrow)
+        flowArrow = arrow
     }
 
-    private fun removeBus(obj: AudioFlowGraph.BusObject) {
-        val label = busLabels.remove(obj) ?: error("$obj missing in graph?")
-        children.remove(label)
-        graph.removeBus(obj)
-        for (flow in graph.associatedFlows(obj)) {
-            removeFlow(flow)
-        }
-    }
-
-    private fun removeFlow(flow: AudioFlowGraph.AudioFlow) {
-        graph.removeFlow(flow)
-        val arrow = flowArrows.remove(flow) ?: error("$flow missing in graph?")
+    private fun finishFlowTo(target: AudioFlowGraph.BusNode) {
+        val source = sourceBus!!
+        val arrow = flowArrow!!
         children.remove(arrow)
+        sourceBus = null
+        flowArrow = null
+
+        val flow = AudioFlowGraph.AudioFlow(source, target, EditorRoot.create(CodeBlockEditor(context)))
+        if (!graph.addFlow(flow)) {
+            alertError("Cannot add flow from ${source.busName.now} to ${target.busName.now}")
+            return
+        }
+        editFlowDetails(flow)
+    }
+
+    override fun removedNode(node: AudioFlowGraph.BusNode) {
+        val label = getLabel(node)
+        busLabels.remove(label)
+        children.remove(label)
+    }
+
+    override fun removedFlow(flow: AudioFlowGraph.AudioFlow) {
+        val pair = flowArrows.find { (f, _) -> f == flow }!!
+        flowArrows.remove(pair)
+        children.remove(pair.second)
     }
 
     private fun editFlowDetails(flow: AudioFlowGraph.AudioFlow) {
-        val source = flow.source.bus.name
-        val target = flow.target.bus.name
-        val codePane = CodePane("Audio flow from $source to $target", flow.ugenGraph.control)
-        codePane.addToHeader(Icon.Delete.button {
-            removeFlow(flow)
-        })
-        val arrow = flowArrows[flow]!!
-        showPopup(arrow, codePane)
-    }
-
-    private fun editBusDetails(obj: AudioFlowGraph.BusObject) {
-        val copy = obj.bus.copy()
-        val confirmed = showDetailEditor(copy)
-        if (confirmed) {
-            obj.bus.copyFrom(copy)
-            val label = busLabels[obj]!!
-            label.text = obj.bus.name
+        val window = flowDetailWindows.getOrPut(flow) {
+            val source = flow.source.busName.now
+            val target = flow.target.busName.now
+            SubWindow(flow.ugenGraph.control, "Audio flow from $source to $target", context).apply {
+                width = 1000.0
+                height = 1000.0
+                scene.initHextantScene(context, applyStyle = false)
+            }
         }
-    }
-
-    private fun showDetailEditor(obj: Bus): Boolean {
-        val items = Bus.PROPERTY_NAMES.map { name ->
-            BeanProperty(obj, PropertyDescriptor(name, Bus::class.java))
-        }
-        val sheet = PropertySheet(FXCollections.observableList(items))
-        sheet.isModeSwitcherVisible = false
-        sheet.isSearchBoxVisible = false
-        sheet.setPrefSize(300.0, 145.0)
-        return sheet.showDialog("Bus details", context) { true } ?: false
-    }
-
-    private fun paintFlow(flow: AudioFlowGraph.AudioFlow) {
-        val arrow = Arrow(flow.source.x, flow.source.y, flow.target.x, flow.target.y)
-        setupFlowArrow(arrow, flow)
-        children.add(arrow)
+        window.show()
     }
 
     companion object : PublicProperty<AudioFlowGraphPane> by publicProperty("audio-flow-graph-editor") {

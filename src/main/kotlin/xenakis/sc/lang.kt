@@ -11,7 +11,10 @@ import kotlinx.serialization.descriptors.serialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import xenakis.impl.ScWriter
-import xenakis.sc.editor.*
+import xenakis.sc.editor.LiteralEditor
+import xenakis.sc.editor.LiteralExpander
+import xenakis.sc.editor.ScExprEditor
+import xenakis.sc.editor.ScExprExpander
 import java.io.StringWriter
 
 @Serializable
@@ -173,6 +176,7 @@ data class LiteralArray(val elements: List<Literal>) : Literal {
 
 @Serializable
 @Token(nodeType = ScExpr::class, serializable = true)
+@ListEditor
 data class Identifier(val text: String) : SimpleScElement(text), ScExpr {
     override val isValid: Boolean
         get() = isValid(text)
@@ -197,27 +201,8 @@ data class RawScExpr(val code: String) : ScExpr {
 }
 
 @Serializable
-@Compound(serializable = true)
-@ListEditor(serializable = true)
-data class Variable(
-    val name: Identifier,
-    @Component(OptionalExprEditor::class) val defaultValue: ScExpr = EmptyExpr
-) : ScElement {
-    override val isValid: Boolean
-        get() = name.isValid && defaultValue.isValid
-
-    override fun code(writer: ScWriter) {
-        name.code(writer)
-        if (defaultValue != EmptyExpr) {
-            writer.append(" = ")
-            defaultValue.code(writer)
-        }
-    }
-}
-
-@Serializable
 @Compound(serializable = true, nodeType = ScExpr::class)
-data class CodeBlock(val variables: List<Variable> = emptyList(), val statements: List<ScExpr>) : ScExpr {
+data class CodeBlock(val variables: List<Identifier> = emptyList(), val statements: List<ScExpr>) : ScExpr {
     override val isValid: Boolean
         get() = variables.all { it.isValid } && statements.all { it.isValid }
 
@@ -241,27 +226,8 @@ data class CodeBlock(val variables: List<Variable> = emptyList(), val statements
 }
 
 @Serializable
-@Compound
-@ListEditor
-data class Parameter(
-    val name: Identifier,
-    @Component(OptionalExprEditor::class) val defaultValue: ScExpr = EmptyExpr
-) : ScElement {
-    override val isValid: Boolean
-        get() = name.isValid && defaultValue.isValid
-
-    override fun code(writer: ScWriter) {
-        name.code(writer)
-        if (defaultValue != EmptyExpr) {
-            writer.append(" = ")
-            defaultValue.code(writer)
-        }
-    }
-}
-
-@Serializable
 @Compound(nodeType = ScExpr::class, serializable = true)
-data class ScFunction(val parameters: List<Parameter> = emptyList(), val body: CodeBlock) : ScExpr {
+data class ScFunction(val parameters: List<Identifier> = emptyList(), val body: CodeBlock) : ScExpr {
     override val isValid: Boolean
         get() = parameters.all { it.isValid } && body.isValid
 

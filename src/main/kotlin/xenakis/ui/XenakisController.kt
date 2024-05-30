@@ -17,6 +17,7 @@ import reaktive.Observer
 import xenakis.impl.*
 import xenakis.model.NamingManager
 import xenakis.model.Settings
+import xenakis.model.SuffixGenerator
 import xenakis.model.XenakisProject
 import java.io.File
 import java.util.prefs.Preferences
@@ -79,6 +80,7 @@ class XenakisController(private val primaryStage: Stage) {
         context = HextantCore.defaultContext()
         SnapshotAware.Serializer.reconstructionContext = context
         context[XenakisApp.primaryStage] = primaryStage
+        context[SuffixGenerator] = SuffixGenerator.CountingSuffixGenerator()
         context[Settings] = loadSettings()
         context.registerImplementationsFromClasspath()
         HextantCore.apply(context, PluginBuilder.Phase.Initialize, null)
@@ -88,7 +90,7 @@ class XenakisController(private val primaryStage: Stage) {
     private fun loadSettings(): Settings {
         val file = xenakisDir.resolve("settings.json")
         return if (file.exists()) context.withoutUndo { file.readJson<Settings>() }
-        else Settings.createDefault(context)
+        else Settings.createDefault()
     }
 
     fun startSuperCollider() {

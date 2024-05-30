@@ -79,7 +79,7 @@ operator fun <R> (() -> KProperty0<R>).getValue(thisRef: Any, property: KPropert
 
 private val defaultColors = listOf("red", "green", "blue", "white", "orange", "purple", "cyan")
 
-fun randomColor() = defaultColors.random()
+fun randomColor() = Color.web(defaultColors.random())
 
 val OSCMessage.boolean get() = arguments[1] as Int != 0
 val OSCMessage.double get() = (arguments[1] as Float).toDouble()

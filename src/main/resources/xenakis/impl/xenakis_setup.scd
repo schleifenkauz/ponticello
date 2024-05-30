@@ -15,11 +15,15 @@ OSCdef.trace(false);
 OSCdef('run', {
 	arg msg, time, addr, recvPort;
 	var code = msg[1].asString, answer;
-	code.postln;
-	this.interpret(code);
+	AppClock.sched(0, {
+		this.interpret(code);
+	});
 }, 'run');
 ~setupHandler.('isSynthDef', { |name|
 	SynthDescLib.global.synthDescs[name.asSymbol] != nil;
+});
+~setupHandler.('removeSynthDef', { |name|
+	SynthDescLib.global.synthDescs.removeAt(name);
 });
 ~setupHandler.('controls', { |name|
 	SynthDescLib.global.synthDescs[name.asSymbol].controls.size;
@@ -56,6 +60,7 @@ OSCdef('run', {
 ~setupHandler.('controlStep', { |synthName, controlName|
 	SynthDescLib.global.synthDescs[synthName.asSymbol].specs[controlName].step;
 });
+
 "Successfully setup OSC".postln;
 )
 

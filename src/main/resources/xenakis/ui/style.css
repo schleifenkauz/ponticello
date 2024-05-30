@@ -55,35 +55,22 @@ Slider.control-detail-editor {
 }
 
 .grid-time-code {
-    -fx-stroke: #4bfd01;
+    -fx-stroke: green;
     -fx-font-size: 10;
 }
 
 .score-object {
-    -fx-background-color: black;
+    -fx-border-width: 0px;
 }
 
-.score-object:hover {
-    -fx-background-color: #130000;
-}
-
-.score-object:selected {
-    -fx-background-color: #220000 !important;
+.score-object:select {
+    -fx-border-width: 2px;
+    -fx-border-color: gray;
 }
 
 /*noinspection CssInvalidPseudoSelector*/
 .score-object:muted {
-    -fx-background-color: rgba(0, 0, 0, 0.5);
-}
-
-/*noinspection CssInvalidPseudoSelector*/
-.score-object:hover:muted {
-    -fx-background-color: rgba(19, 0, 0, 0.5);
-}
-
-/*noinspection CssInvalidPseudoSelector*/
-.score-object:selected:muted {
-    -fx-background-color: rgba(34, 0, 0, 0.5) !important;
+    -fx-background-color: gray !important;
 }
 
 /*noinspection CssInvalidPseudoSelector*/
@@ -91,22 +78,14 @@ Slider.control-detail-editor {
     -fx-stroke: gray !important;
 }
 
-.score-object .sub-score {
-    -fx-border-width: 3px;
-    -fx-border-radius: 3px;
-    -fx-border-color: black;
+/*noinspection CssInvalidPseudoSelector*/
+.score-object:clone-of-selected {
+    -fx-border-color: #220022 !important;
 }
 
-.score-object .task-object {
-    -fx-border-width: 2px;
-    -fx-border-radius: 3px;
-    -fx-border-color: gray;
-}
-
-.score-object-name {
-    -fx-text-fill: white;
-    -fx-font-size: 15px;
-    -fx-padding: 5px;
+/*noinspection CssInvalidPseudoSelector*/
+.score-object:original-of-selected {
+    -fx-border-color: #002200 !important;
 }
 
 .toolbar {
@@ -132,7 +111,11 @@ Slider.control-detail-editor {
 }
 
 .audio-flow-graph {
-    -fx-background-color: #2e2f33;
+    -fx-background-color: #1e1f22;
+}
+
+.audio-flow-graph:drop-possible {
+    -fx-background-color: #222720;
 }
 
 .bus-object {
@@ -282,9 +265,19 @@ Slider.control-detail-editor {
     -fx-background-color: #501717 !important;
 }
 
-.identifier-editor {
-    -fx-min-width: 120px;
-    -fx-pref-width: 120px;
+.name {
+    -fx-min-width: 150px;
+    -fx-pref-width: 150px;
+    -fx-spacing: 5px;
+    -fx-padding: 5px;
+    -fx-alignment: center-left;
+    -fx-border-width: 2px;
+    -fx-border-radius: 3px;
+    -fx-border-color: transparent;
+}
+
+.name:hover {
+    -fx-border-color: black;
 }
 
 .parameter-box {
@@ -313,10 +306,6 @@ Slider.control-detail-editor {
     -fx-padding: 5px;
 }
 
-.identifier-editor {
-    -fx-spacing: 10px;
-    -fx-alignment: center-left;
-}
 
 .choice-editor-combo-box {
     -fx-pref-width: 100px;
@@ -343,6 +332,10 @@ Slider.control-detail-editor {
 
 .tool-pane {
     -fx-background-color: #1e1f22;
+}
+
+.tool-pane:drop-possible {
+    -fx-background-color: #222720;
 }
 
 .compound-expr {
@@ -461,16 +454,6 @@ Slider.control-detail-editor {
     -fx-stroke-width: 7px;
 }
 
-/*noinspection CssInvalidPseudoSelector*/
-.score-object:clone-of-selected {
-    -fx-background-color: #220022 !important;
-}
-
-/*noinspection CssInvalidPseudoSelector*/
-.score-object:original-of-selected {
-    -fx-background-color: #002200 !important;
-}
-
 .toolbar-part {
     -fx-border-color: gray;
     -fx-border-width: 1px;
@@ -574,6 +557,7 @@ Slider.control-detail-editor {
     -fx-background-color: transparent;
     -fx-border-color: black;
     -fx-border-width: 2px;
+    -fx-alignment: center-left;
 }
 
 .group-box:hover {
@@ -585,5 +569,33 @@ Slider.control-detail-editor {
 }
 
 .parameter-def .hextant-text {
-    -fx-font-size: 9px;
+    -fx-font-size: 14px;
+}
+
+.synth-def-ref-box {
+    -fx-padding: 5px;
+    -fx-alignment: center-left;
+    -fx-border-width: 2px;
+    -fx-border-color: transparent;
+    -fx-spacing: 5px;
+}
+
+.synth-def-ref-box:hover {
+    -fx-border-color: black;
+    -fx-border-radius: 5px;
+}
+
+.bus-box {
+    -fx-border-radius: 5px;
+    -fx-background-radius: 5px;
+    -fx-padding: 5px;
+    -fx-spacing: 10px;
+    -fx-background-color: transparent;
+    -fx-border-color: black;
+    -fx-border-width: 2px;
+    -fx-alignment: center-left;
+}
+
+.bus-box:hover {
+    -fx-background-color: rgba(100, 0, 0, 0.1);
 }

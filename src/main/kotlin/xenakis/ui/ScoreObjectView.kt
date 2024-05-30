@@ -3,17 +3,20 @@ package xenakis.ui
 import hextant.context.Context
 import hextant.fx.label
 import hextant.undo.UndoManager
-import javafx.beans.property.SimpleBooleanProperty
 import javafx.css.PseudoClass
 import javafx.geometry.BoundingBox
 import javafx.geometry.Bounds
 import javafx.geometry.HorizontalDirection
 import javafx.scene.Cursor
-import javafx.scene.control.*
+import javafx.scene.control.Button
+import javafx.scene.control.ButtonType
+import javafx.scene.control.Spinner
+import javafx.scene.control.TextField
 import javafx.scene.input.MouseEvent
 import javafx.scene.layout.*
 import javafx.scene.paint.Color
 import javafx.scene.paint.Color.BLACK
+import reaktive.value.now
 import xenakis.impl.Knob
 import xenakis.impl.Point
 import xenakis.impl.SuperColliderClient
@@ -31,7 +34,7 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
         private set
     protected lateinit var context: Context
 
-    private val nameLabel = Label().styleClass("score-object-name")
+    private lateinit var nameEditor: NameControl
     private lateinit var muteUnmuteBtn: Button
     val header = HBox(20.0).centerChildrenVertically()
     private val actions = HBox(10.0).centerChildrenVertically()
@@ -41,8 +44,6 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
     private val knobControls = HBox(10.0)
 
     private lateinit var window: SubWindow
-
-    private val selectedProperty = SimpleBooleanProperty(false)
 
     protected open val canUserChangeHeight: Boolean get() = true
     protected open val canUserChangeWidth: Boolean get() = true
@@ -112,17 +113,17 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
         prefHeight = myObject.height
         alwaysUpdateCursor()
         setupDragging()
-        renamedObject()
         recoloredObject()
         setupCutting()
-        header.children.add(nameLabel)
+        nameEditor = NameControl(myObject)
+        header.children.add(nameEditor)
         setupActions()
         displayEnvelopes()
         displayKnobs()
         myObject.addView(this)
         myObject.position.addListener(this)
-        window = SubWindow(this, myObject.name, context, SubWindow.Type.Modal, parent = pane) {
-            title = myObject.name
+        window = SubWindow(this, myObject.name.now, context, SubWindow.Type.Modal, parent = pane) {
+            title = myObject.name.now
         }
     }
 
@@ -134,16 +135,12 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
         return button
     }
 
-    protected open val defaultBorderColor: Color
+    protected open val defaultBackgroundColor: Color
         get() = BLACK
 
     open fun recoloredObject() {
-        val borderColor = myObject.associatedColor ?: defaultBorderColor
-        border = solidBorder(borderColor, width = 2.0, radius = 3.0)
-    }
-
-    fun renamedObject() {
-        nameLabel.text = myObject.name
+        val backgroundColor = myObject.associatedColor ?: defaultBackgroundColor
+        background = Background(BackgroundFill(backgroundColor, CornerRadii.EMPTY, null))
     }
 
     open fun muteToggled() {
@@ -223,8 +220,8 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
         addEventHandler(MouseEvent.MOUSE_CLICKED) { ev ->
             if (context[XenakisUI].toolSelector.selected.value == Tool.Cut) {
                 val cutPosition = pane.getDuration(ev.x - 0.0)
-                val leftHalf = myObject.cut(cutPosition, HorizontalDirection.LEFT, "${myObject.name}_left")
-                val rightHalf = myObject.cut(cutPosition, HorizontalDirection.RIGHT, "${myObject.name}_right")
+                val leftHalf = myObject.cut(cutPosition, HorizontalDirection.LEFT, "${myObject.name.now}_left")
+                val rightHalf = myObject.cut(cutPosition, HorizontalDirection.RIGHT, "${myObject.name.now}_right")
                 if (leftHalf == null || rightHalf == null) return@addEventHandler
                 context[UndoManager].beginCompoundEdit("Cut object")
                 pane.score.removeObject(myObject)
@@ -237,8 +234,12 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
     }
 
     fun setSelected(value: Boolean) {
-        pseudoClassStateChanged(PseudoClass.getPseudoClass("selected"), value)
-        selectedProperty.set(value)
+        if (value) {
+            val backgroundFill = myObject.associatedColor ?: defaultBackgroundColor
+            border = solidBorder(backgroundFill.invert(), width = 4.0)
+        } else {
+            border = null
+        }
         for (obj in pane.score.objects) {
             if (obj is ClonedObject && obj.original == myObject) {
                 pane.getObjectView(obj).setCloneOfSelected(value)

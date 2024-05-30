@@ -3,21 +3,19 @@ package xenakis.sc
 import hextant.codegen.Choice
 import hextant.codegen.UseEditor
 import kotlinx.serialization.Serializable
+import reaktive.value.ReactiveValue
+import reaktive.value.ReactiveVariable
+import reaktive.value.now
+import reaktive.value.reactiveValue
 import xenakis.impl.FileSerializer
 import xenakis.impl.ScWriter
+import xenakis.impl.SuperColliderClient
 import xenakis.impl.superColliderPath
+import xenakis.model.RenamableObject
+import xenakis.sc.editor.AbstractRenamableObject
 import xenakis.sc.editor.BufferSelector
-import xenakis.sc.editor.BusSelector
+import xenakis.ui.XenakisController.Companion.currentProject
 import java.io.File
-
-@Serializable
-data class Group(var name: String) {
-    val variableName: String get() = if (name == "default") "s.defaultGroup" else "~grp_$name"
-
-    companion object {
-        val DEFAULT = Group("default")
-    }
-}
 
 @Choice(defaultValue = "Rate.Audio")
 enum class Rate {
@@ -30,46 +28,23 @@ enum class Rate {
 }
 
 @Serializable
-@UseEditor(BusSelector::class)
-data class Bus(
-    var name: String,
-    var rate: Rate,
-    var channels: Int,
-) {
-    fun copyFrom(obj: Bus) {
-        name = obj.name
-        rate = obj.rate
-        channels = obj.channels
-    }
-
-    val variableName get() = if (name != "output") "~bus_$name" else "0"
-
-    val allocationCode get() = "$variableName = Bus.${rate.name.lowercase()}(s, $channels)"
-
-    companion object {
-        val output = Bus("output", Rate.Audio, 2)
-
-        val PROPERTY_NAMES = listOf("name", "rate", "channels")
-    }
-}
-
-@Serializable
 @UseEditor(BufferSelector::class)
-sealed interface Buffer {
-    var name: Identifier
-
-    val variableName get() = "~buf_${name.text}"
+sealed interface Buffer : RenamableObject {
+    val variableName get() = "~buf_${name.now}"
 
     val initializationCode: String
 }
 
 @Serializable
 object NoBuffer : Buffer {
-    override var name: Identifier
-        get() = Identifier("<none>")
-        set(@Suppress("UNUSED_PARAMETER") value) {
-            throw UnsupportedOperationException("NoBuffer cannot be renamed")
-        }
+    override val name: ReactiveValue<String>
+        get() = reactiveValue("<none>")
+
+    override fun canRenameTo(newName: String): Boolean = false
+
+    override fun rename(newName: String) {
+        throw UnsupportedOperationException("NoBuffer cannot be renamed")
+    }
 
     override val variableName: String
         get() = "0"
@@ -79,12 +54,24 @@ object NoBuffer : Buffer {
 }
 
 @Serializable
-/*@Compound(nodeType = ScExpr::class, serializable = true)*/
+sealed class AbstractBuffer : AbstractRenamableObject(), Buffer {
+    override fun canRenameTo(newName: String): Boolean = context[currentProject].buffers.hasBuffer(newName)
+
+    override fun rename(newName: String) {
+        context[SuperColliderClient].run {
+            +"~buf_$newName = $variableName"
+            +"$variableName = nil"
+        }
+        super.rename(newName)
+    }
+}
+
+@Serializable
 data class FileBuffer(
-    override var name: Identifier,
+    override val mutableName: ReactiveVariable<String>,
     @Serializable(with = FileSerializer::class) var referencedFile: File,
     var startFrame: ScExpr = IntegerLiteral(0), var numFrames: ScExpr = IntegerLiteral(-1),
-) : Buffer, ScExpr {
+) : ScExpr, AbstractBuffer() {
     override fun code(writer: ScWriter) = with(writer) {
         append(variableName)
         append(" = Buffer.read(s, ${referencedFile.superColliderPath}, ")
@@ -99,11 +86,10 @@ data class FileBuffer(
 }
 
 @Serializable
-/*@Compound(nodeType = ScExpr::class, serializable = true)*/
 data class AllocatedBuffer(
-    override var name: Identifier,
+    override val mutableName: ReactiveVariable<String>,
     var numFrames: ScExpr = IntegerLiteral(0), var numChannels: ScExpr = IntegerLiteral(1),
-) : Buffer, ScExpr {
+) : ScExpr, AbstractBuffer() {
     override val initializationCode: String = code
 
     override fun code(writer: ScWriter) {

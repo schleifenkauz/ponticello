@@ -2,7 +2,6 @@ package xenakis.ui
 
 import hextant.context.Context
 import hextant.context.createControl
-import hextant.context.withoutUndo
 import hextant.fx.registerShortcuts
 import hextant.serial.makeRoot
 import javafx.scene.layout.HBox
@@ -11,9 +10,11 @@ import reaktive.value.now
 import xenakis.impl.Knob
 import xenakis.model.GlobalControls
 import xenakis.model.GlobalControlsView
+import xenakis.model.Settings
 import xenakis.sc.Identifier
 import xenakis.sc.NumericalControlSpec
-import xenakis.sc.editor.ParameterDefExpander
+import xenakis.sc.editor.ControlSpecEditor
+import xenakis.ui.XenakisController.Companion.currentProject
 
 class GlobalControlsPane(
     private val controls: GlobalControls,
@@ -31,20 +32,26 @@ class GlobalControlsPane(
     private fun addControl() {
         showTextPrompt("Control name", "", context) { name ->
             if (!Identifier.isValid(name)) return@showTextPrompt false
-            val editor = context.withoutUndo { ParameterDefExpander.expand(name, context) }
+            if (controls.hasControl(name)) return@showTextPrompt false
+            if (context[currentProject].busses.hasBus("global_$name")) return@showTextPrompt false
+            val editor = ControlSpecEditor(context)
+            val defaultControlSpec = context[Settings].getDefaultControlSpec(name)
             editor.makeRoot()
+            if (defaultControlSpec != null) {
+                editor.setResult(defaultControlSpec)
+            }
             val control = context.createControl(editor)
             val window = SubWindow(control, "Configure global control", context, SubWindow.Type.Prompt)
             window.scene.fill = BLACK
-            window.width = 1000.0
+            window.width = 800.0
             control.registerShortcuts {
                 on("Ctrl+ENTER") {
-                    val (controlName, spec) = editor.result.now
+                    val spec = editor.result.now
                     if (spec !is NumericalControlSpec) {
                         alertError("Only numerical control specs allowed for global controls")
                         return@on
                     }
-                    controls.addControl(controlName.text, spec)
+                    controls.addControl(name, spec)
                     window.hide()
                 }
             }

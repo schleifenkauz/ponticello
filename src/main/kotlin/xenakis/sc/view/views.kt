@@ -7,27 +7,17 @@ import bundles.set
 import hextant.codegen.ProvideImplementation
 import hextant.completion.NoCompleter
 import hextant.context.ControlFactory
-import hextant.core.view.*
+import hextant.core.view.ChoiceEditorControl
+import hextant.core.view.CompoundEditorControl
+import hextant.core.view.OptionalEditorControl
+import hextant.core.view.TokenEditorControl
 import hextant.fx.keyword
-import javafx.geometry.Pos
-import xenakis.sc.editor.ParameterDefCompleter
 import xenakis.ui.centerChildrenVertically
 import xenakis.ui.styleClass
 
 val MULTILINE = publicProperty("MULTILINE_ARGUMENTS", false)
 
 val DISPLAY_BRACES = publicProperty("DISPLAY_BRACES", true)
-
-@ProvideImplementation(ControlFactory::class)
-fun createControl(editor: xenakis.sc.editor.ParameterEditor, arguments: Bundle): CompoundEditorControl =
-    CompoundEditorControl(editor, arguments) {
-        horizontal {
-            view(editor.name)
-            operator(" = ")
-            view(editor.defaultValue)
-            root.centerChildrenVertically()
-        }
-    }
 
 @ProvideImplementation(ControlFactory::class)
 fun createControl(editor: xenakis.sc.editor.AccessKeyEditor, arguments: Bundle) =
@@ -132,19 +122,6 @@ fun createControl(editor: xenakis.sc.editor.OperatorEditor, arguments: Bundle): 
     TokenEditorControl(editor, arguments, completer = NoCompleter, styleClass = "operator")
 
 @ProvideImplementation(ControlFactory::class)
-fun createControl(editor: xenakis.sc.editor.ParameterDefEditor, arguments: Bundle) =
-    CompoundEditorControl(editor, arguments) {
-        vertical {
-            styleClass("parameter-def")
-            horizontal(alignment = Pos.CENTER_LEFT, spacing = 5.0) {
-                val nameControl = IdentifierEditorControl(editor.name)
-                add(nameControl)
-                view(editor.spec)
-            }
-        }
-    }
-
-@ProvideImplementation(ControlFactory::class)
 fun createControl(editor: xenakis.sc.editor.BusControlSpecEditor, arguments: Bundle) =
     CompoundEditorControl(editor, arguments) {
         vertical {
@@ -205,10 +182,6 @@ fun createControl(editor: xenakis.sc.editor.OptionalExprEditor, arguments: Bundl
     arguments[OptionalEditorControl.EMPTY_DISPLAY] = { keyword("nil") }
     return OptionalEditorControl(editor, arguments)
 }
-
-@ProvideImplementation(ControlFactory::class)
-fun createControl(editor: xenakis.sc.editor.ParameterDefExpander, arguments: Bundle) =
-    ExpanderControl(editor, arguments, ParameterDefCompleter(editor.context))
 
 @ProvideImplementation(ControlFactory::class)
 fun createControl(editor: xenakis.sc.editor.SymbolLiteralEditor, arguments: Bundle) =

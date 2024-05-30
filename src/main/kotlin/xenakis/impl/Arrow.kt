@@ -14,8 +14,8 @@ import kotlin.math.sqrt
  * @author kn
  */
 class Arrow(
-    private var startX: Double, private var startY: Double,
-    private var endX: Double, private var endY: Double,
+    private var _startX: Double, private var _startY: Double,
+    private var _endX: Double, private var _endY: Double,
     private val arrowHeadSize: Double = DEFAULT_ARROW_HEAD_SIZE
 ) : Path() {
     constructor() : this(0.0, 0.0, 0.0, 0.0)
@@ -25,6 +25,34 @@ class Arrow(
         fill = Color.BLACK
         draw()
     }
+
+    var startX
+        get() = _startX
+        set(value) {
+            _startX = value
+            draw()
+        }
+
+    var startY
+        get() = _startY
+        set(value) {
+            _startY = value
+            draw()
+        }
+
+    var endX
+        get() = _endX
+        set(value) {
+            _endX = value
+            draw()
+        }
+
+    var endY
+        get() = _endY
+        set(value) {
+            _endY = value
+            draw()
+        }
 
     val start get() = Point(startX, startY)
     val end get() = Point(endX, endY)

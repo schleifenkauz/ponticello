@@ -5,14 +5,17 @@ import javafx.scene.paint.Color
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonObjectBuilder
 import kotlinx.serialization.json.put
+import reaktive.value.ReactiveValue
+import reaktive.value.now
+import reaktive.value.reactiveVariable
 import xenakis.impl.*
 import xenakis.sc.ControlSpec
 import xenakis.ui.ScoreObjectView
 
 class ClonedObject(
-    override var name: String,
-    private val originalName: String,
-) : ScoreObject {
+    name: String,
+    private var originalName: ReactiveValue<String>,
+) : ScoreObject(name) {
     constructor(name: String, original: ScoreObject) : this(name, original.name) {
         this.original = original
         resolved = true
@@ -34,16 +37,14 @@ class ClonedObject(
     override var nextInChain: ClonedObject? = null
 
     override fun JsonObjectBuilder.saveToJson() {
-        put("original", original.name)
+        put("original", original.name.now)
     }
-
-    override val parent: Score
-        get() = original.parent
 
     override fun addToScore(score: Score, context: Context) {
         super.addToScore(score, context)
         if (!resolved) {
-            original = score.getObject(originalName)
+            original = score.getObject(originalName.now)
+            originalName = original.name
             resolved = true
         }
     }
@@ -56,9 +57,11 @@ class ClonedObject(
 
     override fun getSpec(parameter: String): ControlSpec = original.getSpec(parameter)
 
-    override fun writeStartCode(writer: ScWriter, offset: Double) = original.writeStartCode(writer, offset)
+    override fun writeStartCode(writer: ScWriter, offset: Double, suffixGenerator: SuffixGenerator) =
+        original.writeStartCode(writer, offset, suffixGenerator)
 
-    override fun writeStopCode(writer: ScWriter) = original.writeStopCode(writer)
+    override fun writeStopCode(writer: ScWriter, suffixGenerator: SuffixGenerator) =
+        original.writeStopCode(writer, suffixGenerator)
 
     override fun play(client: SuperColliderClient) = original.play(client)
 
@@ -76,7 +79,7 @@ class ClonedObject(
 
         override fun JsonObject.createFromJson(name: String): ScoreObject {
             val originalName = getString("original")!!
-            return ClonedObject(name, originalName)
+            return ClonedObject(name, reactiveVariable(originalName))
         }
     }
 }

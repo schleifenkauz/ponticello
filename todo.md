@@ -1,10 +1,5 @@
 ## Functionality
 
-### layout groups, horizontal, vertical and both
-
-- highlight groups when selecting objects
-- ability to remove objects from their group(s)
-
 ### external vst plugins
 
 - piano roll tool
@@ -18,7 +13,7 @@
 
 ### how to react to changes of synth definitions?
 
-- parameter renaming!
+- highlight obsolete arguments in control assignment view
 
 ### Mixing interface in AudioFlowGraph
 
@@ -43,21 +38,13 @@
 
 - ability to copy and paste whole time ranges
 
-### Naming in Score and in SuperCollider
-
-- separate name for Synth of each clone (or even hash-code suffix for every created synthesizer)
-- what about renaming buses and buffers?
-- naming checks to avoid duplicates
-
 ### Rethink the buffer/sound-file system
 
 ### Logging
 
 ### Minor
 
-- lag values for bus value controls (adjust with spinner in control assignment)
-- use SynthDefs imported from SuperCollider code
-  - set apart imported and created SynthDefs in UI
+- lag values for parameters (adjust with spinner in control assignment)
 
 ### Support for patterns
 
@@ -65,18 +52,22 @@
 - as standalone objects (pbind)
 - attaching to a synth in the score (pmono)
 
+## Architecture
+
+- factor out common functionality of all the tool-panes
+    - buses, buffers, synth defs, groups
+
 ## Bug fixes
 
 - why can't we have shortcuts in the ScoreView?
-- make the interaction with sclang less hacky (maybe use Java OSC library?)
 - the mouse position tracker line sometimes interferes with clicks (disabled for now)
-- do not throw Exception when undo is not possible on Ctrl+Z
+- why are HextantTextFields always too small when reopening editors?
 
 ## Nice to have
 
 - integrate close, maximize, minimize into top toolbar and remove window decoration
 - auto resize prompt windows (e.g. parameter definition prompts)
-- maybe show object toolbar on context click instead of top bar
+- maybe show control assignment view in tool-pane?
 - ad hoc synths
 - display all non-envelope controls of a synth in its header?
   - easy access but might end up cluttering the interface

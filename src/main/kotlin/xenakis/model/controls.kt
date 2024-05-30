@@ -1,12 +1,13 @@
 package xenakis.model
 
-import hextant.core.editor.ViewManager
+import hextant.core.editor.ListenerManager
 import javafx.geometry.HorizontalDirection
 import javafx.scene.paint.Color
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import xenakis.impl.ColorSerializer
-import xenakis.sc.*
+import xenakis.sc.Buffer
+import xenakis.sc.ScExpr
 import xenakis.ui.KnobControlView
 
 @Serializable
@@ -19,20 +20,20 @@ sealed class ParameterControl {
 @Serializable
 class KnobControl(private var value: Double) : ParameterControl() {
     @Transient
-    val views = ViewManager.createWeakViewManager<KnobControlView>()
+    val views = ListenerManager.createWeakListenerManager<KnobControlView>()
 
     override fun copy(): ParameterControl = KnobControl(value)
 
     fun set(value: Double) {
         if (value == this.value) return
         this.value = value
-        views.notifyViews { updatedValue(this@KnobControl, value) }
+        views.notifyListeners { updatedValue(this@KnobControl, value) }
     }
 
     fun get() = value
 
     fun addView(view: KnobControlView) {
-        views.addView(view)
+        views.addListener(view)
         view.updatedValue(this, value)
     }
 }
@@ -51,13 +52,13 @@ class EnvelopeControl(
 }
 
 @Serializable
-class BusControl(val bus: Bus) : ParameterControl()
+class BusControl(val bus: BusObject) : ParameterControl()
 
 @Serializable
-class BusValueControl(val bus: Bus) : ParameterControl()
+class BusValueControl(val bus: BusObject) : ParameterControl()
 
 @Serializable
-data class SingleBusValueControl(val bus: Bus) : ParameterControl()
+data class SingleBusValueControl(val bus: BusObject) : ParameterControl()
 
 @Serializable
 data class BufferControl(val buffer: Buffer) : ParameterControl()
@@ -68,11 +69,3 @@ data class CustomControl(val expr: ScExpr) : ParameterControl()
 @Serializable
 data class ConstantControl(val value: Double) : ParameterControl()
 
-fun SynthDef.defaultControls() = parameters.associateTo(mutableMapOf()) { p -> p.name.text to p.defaultControl() }
-
-fun ParameterDef.defaultControl() = when (val spec = spec) {
-    is BufferControlSpec -> BufferControl(spec.defaultValue)
-    is BusControlSpec -> BusControl(spec.defaultValue)
-    is NumericalControlSpec -> ConstantControl(spec.defaultValue.get())
-    is ControlSpecUnspecified -> error("no control spec available")
-}

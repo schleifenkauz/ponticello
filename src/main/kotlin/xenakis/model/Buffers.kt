@@ -1,15 +1,15 @@
 package xenakis.model
 
 import kotlinx.serialization.Serializable
+import reaktive.value.now
 import xenakis.impl.SuperColliderContext
 import xenakis.sc.Buffer
-import xenakis.sc.Identifier
 
 @Serializable
 class Buffers(private val _buffers: MutableList<Buffer> = mutableListOf()) {
     val buffers: List<Buffer> get() = _buffers
 
-    fun loadBuffers(context: SuperColliderContext) = context.run {
+    fun SuperColliderContext.loadBuffers() = run {
         for (buf in buffers) {
             +"if(${buf.variableName} != nil) { ${buf.variableName}.free }"
             +buf.initializationCode
@@ -38,9 +38,9 @@ class Buffers(private val _buffers: MutableList<Buffer> = mutableListOf()) {
 
     fun renameBuffer(buffer: Buffer, new: String, context: SuperColliderContext) {
         context.run {
-            +"~buf_$new = ${buffer.variableName}"
-            +"${buffer.variableName} = nil"
         }
-        buffer.name = Identifier(new)
+        buffer.rename(new)
     }
+
+    fun hasBuffer(name: String): Boolean = _buffers.any { b -> b.name.now == name }
 }

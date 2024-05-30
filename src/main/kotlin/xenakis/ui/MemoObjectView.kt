@@ -3,7 +3,6 @@ package xenakis.ui
 import hextant.fx.registerShortcuts
 import javafx.scene.Cursor
 import javafx.scene.control.ColorPicker
-import javafx.scene.control.Label
 import javafx.scene.control.TextArea
 import javafx.scene.input.MouseEvent
 import javafx.scene.layout.Priority
@@ -12,7 +11,6 @@ import xenakis.model.MemoObject
 
 class MemoObjectView(val obj: MemoObject) : ScoreObjectView(obj) {
     private val textArea = TextArea(obj.text) styleClass "memo-area"
-    private val label = Label(obj.text) styleClass "memo-label"
     private val colorPicker = ColorPicker(obj.associatedColor ?: Color.BLACK) styleClass "button"
 
     override val supportedActions: List<Icon>
@@ -25,26 +23,26 @@ class MemoObjectView(val obj: MemoObject) : ScoreObjectView(obj) {
         colorPicker.valueProperty().addListener { _, _, color ->
             obj.associatedColor = color
         }
-        setVgrow(textArea, Priority.ALWAYS)
-        setVgrow(label, Priority.ALWAYS)
-        label.setOnMouseClicked { ev ->
+        textArea.setOnMouseClicked { ev ->
             if (ev.clickCount >= 2) {
-                children.setAll(textArea)
+                textArea.isEditable = true
+                textArea.requestFocus()
             }
         }
+        setVgrow(textArea, Priority.ALWAYS)
         textArea.registerShortcuts {
             on("ESCAPE") {
-                children.setAll(label)
+                textArea.isEditable = false
             }
         }
         textArea.focusedProperty().addListener { _, _, focused ->
-            if (!focused) children.setAll(label)
+            if (!focused) textArea.isEditable = false
         }
     }
 
     override fun initialize(parent: ScorePane) {
         super.initialize(parent)
-        children.add(label)
+        children.add(textArea)
         header.children.add(1, colorPicker)
     }
 
@@ -62,6 +60,5 @@ class MemoObjectView(val obj: MemoObject) : ScoreObjectView(obj) {
 
     fun textChanged(value: String) {
         if (value != textArea.text) textArea.text = value
-        label.text = value
     }
 }

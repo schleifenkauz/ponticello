@@ -1,6 +1,7 @@
 package xenakis.model
 
 import hextant.context.Context
+import reaktive.value.now
 import xenakis.model.LayoutManager.LayoutAspect.Horizontal
 import xenakis.model.LayoutManager.LayoutAspect.Vertical
 
@@ -33,14 +34,20 @@ class LayoutManager(
         val groups = groups[aspect]!!
         val itr = groups.iterator()
         for (group in itr) {
-            if (newGroup.any { obj -> obj.name in group }) itr.remove()
+            if (newGroup.any { obj -> obj.name.now in group }) itr.remove()
         }
-        groups.add(newGroup.mapTo(mutableSetOf()) { obj -> obj.name })
+        groups.add(newGroup.mapTo(mutableSetOf()) { obj -> obj.name.now })
+    }
+
+    fun removeFromGroup(obj: ScoreObject, aspect: LayoutAspect) {
+        val group = aspect.groupByObject.remove(obj) ?: return
+        group.remove(obj)
+        aspect.groups.forEach { g -> g.remove(obj.name.now) }
     }
 
     fun removedObject(obj: ScoreObject) = eachAspect {
         groupByObject[obj]?.remove(obj)
-        groups.forEach { it.remove(obj.name) }
+        groups.forEach { it.remove(obj.name.now) }
     }
 
     fun moveObject(obj: ScoreObject, dt: Double, dy: Double) {

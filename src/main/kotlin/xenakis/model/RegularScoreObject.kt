@@ -1,8 +1,6 @@
 package xenakis.model
 
-import hextant.context.Context
-import hextant.core.editor.ViewManager
-import hextant.undo.UndoManager
+import hextant.core.editor.ListenerManager
 import javafx.geometry.HorizontalDirection
 import javafx.scene.paint.Color
 import xenakis.impl.ScWriter
@@ -11,35 +9,22 @@ import xenakis.sc.ControlSpec
 import xenakis.ui.ScoreObjectView
 import xenakis.ui.format
 
-sealed class AbstractScoreObject(name: String) : ScoreObject {
-    protected abstract val viewManager: ViewManager<out ScoreObjectView>
-
-    private var initialized = false
-
-    final override var name: String = name
-        set(value) {
-            if (field == value) return
-            recordEdit(ScoreObjectEdit.Rename(oldName = field, newName = value, this))
-            if (initialized) {
-                parent.renamedObject(this, oldName = field, newName = value)
-            }
-            field = value
-            viewManager.notifyViews { renamedObject() }
-        }
+sealed class RegularScoreObject(name: String) : ScoreObject(name) {
+    protected abstract val viewManager: ListenerManager<out ScoreObjectView>
 
     final override val position: ObjectPosition = ObjectPosition(this)
     final override var duration: Double = 0.0
         set(value) {
             if (value == field) return
             field = value
-            viewManager.notifyViews { resized() }
+            viewManager.notifyListeners { resized() }
         }
 
     final override var height: Double = 0.0
         set(value) {
             if (value == field) return
             field = value
-            viewManager.notifyViews { resized() }
+            viewManager.notifyListeners { resized() }
         }
 
     final override val start: Double by position::start
@@ -49,7 +34,7 @@ sealed class AbstractScoreObject(name: String) : ScoreObject {
         set(value) {
             if (field == value) return
             field = value
-            viewManager.notifyViews { recoloredObject() }
+            viewManager.notifyListeners { recoloredObject() }
         }
 
     final override var muted: Boolean = false
@@ -57,34 +42,15 @@ sealed class AbstractScoreObject(name: String) : ScoreObject {
             if (field == value) return
             field = value
             recordEdit(ScoreObjectEdit.Mute(value, this))
-            viewManager.notifyViews { muteToggled() }
+            viewManager.notifyListeners { muteToggled() }
         }
 
     final override var nameOfNextInChain: String? = null
     final override var nextInChain: ClonedObject? = null
 
-    lateinit var context: Context
-        private set
+    override fun writeStartCode(writer: ScWriter, offset: Double, suffixGenerator: SuffixGenerator) {}
 
-    final override lateinit var parent: Score
-        private set
-
-    protected fun recordEdit(edit: ScoreObjectEdit) {
-        if (initialized) {
-            context[UndoManager].record(edit)
-        }
-    }
-
-    override fun addToScore(score: Score, context: Context) {
-        super.addToScore(score, context)
-        this.context = context
-        parent = score
-        initialized = true
-    }
-
-    override fun writeStartCode(writer: ScWriter, offset: Double) {}
-
-    override fun writeStopCode(writer: ScWriter) {}
+    override fun writeStopCode(writer: ScWriter, suffixGenerator: SuffixGenerator) {}
 
     override fun clone(name: String): ClonedObject {
         val clone = ClonedObject(name, this)
@@ -96,7 +62,7 @@ sealed class AbstractScoreObject(name: String) : ScoreObject {
 
     final override fun copy(newName: String): ScoreObject {
         val obj = copy()
-        obj.name = newName
+        obj.rename(newName)
         obj.position.set(position)
         obj.duration = duration
         obj.height = height
@@ -109,7 +75,7 @@ sealed class AbstractScoreObject(name: String) : ScoreObject {
 
     final override fun cut(position: Double, whichHalf: HorizontalDirection, newName: String): ScoreObject? {
         val obj = cut(position, whichHalf) ?: return null
-        obj.name = newName
+        obj.rename(newName)
         obj.height = height
         obj.associatedColor = associatedColor
         obj.muted = muted
@@ -127,18 +93,19 @@ sealed class AbstractScoreObject(name: String) : ScoreObject {
         throw NoSuchElementException("no spec for parameter $parameter in $this")
 
     final override fun play(client: SuperColliderClient) {
+        val suffixGenerator = context[SuffixGenerator]
         client.run {
-            appendLine("Task{")
-            writeStartCode(this, offset = 0.0)
+            appendLine("~player_task = Task{")
+            writeStartCode(this, offset = 0.0, suffixGenerator)
             appendLine("${duration.format(2)}.wait;")
-            writeStopCode(this)
+            writeStopCode(this, suffixGenerator)
             appendLine("}.play")
         }
     }
 
     final override fun addView(view: ScoreObjectView) {
         @Suppress("UNCHECKED_CAST")
-        val unsafe = viewManager as ViewManager<ScoreObjectView>
-        unsafe.addView(view)
+        val unsafe = viewManager as ListenerManager<ScoreObjectView>
+        unsafe.addListener(view)
     }
 }

@@ -12,16 +12,18 @@ import javafx.scene.paint.Color.*
 import javafx.scene.shape.Rectangle
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
+import reaktive.value.now
 import xenakis.impl.Arrow
 import xenakis.model.*
 import xenakis.model.Envelope
-import xenakis.sc.Group
 import xenakis.sc.Identifier
+import xenakis.sc.Rate
 import xenakis.sc.Warp
 import xenakis.sc.editor.BusSelector
 import xenakis.sc.editor.ScFunctionEditor
 import xenakis.ui.ToolSelector.Tool
 import xenakis.ui.ToolSelector.Tool.*
+import javax.sound.sampled.AudioSystem
 
 abstract class ScorePane(val score: Score, val context: Context) : Pane(), ScoreListener {
     private var newObjectArea: Rectangle? = null
@@ -96,12 +98,18 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
     private fun setupDropArea() {
         setupFileDropArea(exactlyOne = true, "wav") { file, ev ->
             val defaultName = Identifier.truncate(file.nameWithoutExtension)
-            val duration = SoundFileObject.getDuration(file)
+            val stream = AudioSystem.getAudioInputStream(file)
+            val format = stream.format
+            val duration = (stream.frameLength / format.frameRate).toDouble()
+            val channels = format.channels
             val obj = SoundFileObject(
-                defaultName, file,
-                outBus = BusSelector(context), startPos = 0.0, rate = 1.0,
+                defaultName,
+                file,
+                outBus = BusSelector(context, preferredRate = Rate.Audio, preferredChannels = channels),
+                startPos = 0.0, rate = 1.0,
                 envelope = Envelope.constant(1.0, duration, Warp.Linear),
             )
+            obj.duration = duration
             obj.position.set(getTime(ev.x), ev.y)
             obj.height = 150.0
             score.addObject(obj)
@@ -201,8 +209,8 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
         val rect = Rectangle(x, y, 0.0, 0.0)
         when (selectedTool) {
             Synth -> {
-                val synthDef = context[SynthDefs].selectedSynthDef
-                rect.stroke = synthDef.associatedColor
+                val synthDef = context[SynthDefRegistry].selectedSynthDef ?: return
+                rect.fill = synthDef.color.now
             }
 
             Task -> rect.fill = GRAY
@@ -315,6 +323,16 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
 
     private fun viewsInside(bounds: Bounds) = views.values.filter { v -> bounds.contains(v.boundsInParent) }
 
+    private fun nameForNewObject(prompt: String, initialName: String, create: (String) -> Unit) {
+        showTextPrompt(prompt, initialName, context) { name ->
+            if (!Identifier.isValid(name) || context[NamingManager].isNameTaken(name)) {
+                return@showTextPrompt false
+            }
+            create(name)
+            true
+        }
+    }
+
     /*
     * Object creation
     * */
@@ -322,32 +340,27 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
     private fun createNewObject(tool: Tool, rect: Rectangle) {
         when (tool) {
             Synth -> {
-                val def = context[SynthDefs].selectedSynthDef
-                showTextPrompt("Synth name", "", context) { name ->
-                    if (!Identifier.isValid(name) || context[NamingManager].isNameTaken(name)) {
-                        return@showTextPrompt false
-                    }
-                    val obj = SynthObject(name, def.name.text, Group.DEFAULT, def.defaultControls())
+                val def = context[SynthDefRegistry].selectedSynthDef ?: return
+                val initialName = context[NamingManager].availableName("synth")
+                nameForNewObject("Synth name", initialName) { name ->
+                    val obj = SynthObject(name, def.name.now, GroupObject.DEFAULT, def.defaultControls())
                     addObject(obj, rect)
-                    true
                 }
             }
 
-            Task -> {
+            Task -> nameForNewObject("Task name", context[NamingManager].availableName("task")) { name ->
                 val editor = EditorRoot.create(ScFunctionEditor(context))
-                val name = context[NamingManager].availableName(prefix = "task")
                 addObject(TaskObject(name, editor, rect.width), rect)
             }
 
-            Tool.Envelope -> {
-                EnvelopeObjectView.showEnvelopeConfig(context) { name, spec, outputBus ->
+            Tool.Envelope -> nameForNewObject("Envelope name", context[NamingManager].availableName("env")) { name ->
+                EnvelopeObjectView.showEnvelopeConfig(context) { spec, outputBus ->
                     val value = spec.defaultValue.get()
                     val duration = getDuration(rect.width)
                     val envelope = Envelope.constant(value, duration, spec.warp)
                     val obj = EnvelopeObject(name, spec, outputBus, envelope)
                     addObject(obj, rect)
                 }
-                return
             }
 
             Memo -> {
@@ -355,8 +368,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
                 addObject(MemoObject(name, "", rect.width), rect)
             }
 
-            Compound -> {
-                val name = context[NamingManager].availableName(prefix = "sub_score")
+            Compound -> nameForNewObject("Object group name", context[NamingManager].availableName("group")) { name ->
                 val objects = viewsInside(rect.boundsInParent).map { it.myObject }
                 for (obj in objects) {
                     score.removeObject(obj)

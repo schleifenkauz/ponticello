@@ -2,6 +2,7 @@ package xenakis.model
 
 import bundles.PublicProperty
 import bundles.publicProperty
+import reaktive.value.now
 
 class NamingManager {
     private val objectsByName = mutableMapOf<String, ScoreObject>()
@@ -11,11 +12,11 @@ class NamingManager {
     fun getObject(name: String): ScoreObject = objectsByName[name] ?: error("no object '$name'")
 
     fun addedObject(obj: ScoreObject) {
-        objectsByName[obj.name] = obj
+        objectsByName[obj.name.now] = obj
     }
 
     fun removedObject(obj: ScoreObject) {
-        objectsByName.remove(obj.name) ?: error("No object with name '${obj.name}' exists")
+        objectsByName.remove(obj.name.now) ?: error("No object with name '${obj.name}' exists")
     }
 
     fun renamedObject(obj: ScoreObject, oldName: String, newName: String) {

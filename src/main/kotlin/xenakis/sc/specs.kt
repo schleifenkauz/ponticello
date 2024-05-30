@@ -8,6 +8,7 @@ import javafx.scene.paint.Color
 import kotlinx.serialization.Serializable
 import xenakis.impl.ColorSerializer
 import xenakis.impl.DoubleRange
+import xenakis.model.BusObject
 import xenakis.sc.editor.ControlSpecEditor
 import xenakis.ui.accuracy
 
@@ -63,7 +64,7 @@ data class NumericalControlSpec(
 
 @Compound(serializable = true)
 @Serializable
-data class BusControlSpec(val defaultValue: Bus) : ControlSpec {
+data class BusControlSpec(val defaultValue: BusObject) : ControlSpec {
     override val type: ParameterType
         get() = ParameterType.Bus
 
@@ -79,13 +80,6 @@ data class BufferControlSpec(val defaultValue: Buffer) : ControlSpec {
 
     override val code: String
         get() = "kr(${defaultValue.variableName})"
-}
-
-object ControlSpecUnspecified : ControlSpec {
-    override val type: ParameterType
-        get() = ParameterType.Unknown
-    override val code: String
-        get() = "[/*unspecified*/]"
 }
 
 fun NumericalControlSpec.mapOnto(targetRange: DoubleRange) = SpecTransformation(this, targetRange)

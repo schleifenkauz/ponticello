@@ -251,8 +251,8 @@ class ControlAssignmentEditor(
                 else -> throw AssertionError()
             } as ControlType<O, *>
 
-            private fun busSelector(project: XenakisProject, bus: xenakis.sc.Bus?): BusSelectorControl {
-                val editor = BusSelector(project.context, xenakis.sc.Bus.output)
+            private fun busSelector(project: XenakisProject, bus: BusObject?): BusSelectorControl {
+                val editor = BusSelector(project.context, bus = project.busses.getOutputBus())
                 if (bus != null) editor.select(bus)
                 return BusSelectorControl(editor, createBundle())
             }

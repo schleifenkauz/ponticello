@@ -1,10 +1,11 @@
 package xenakis.model
 
 import hextant.context.Context
-import hextant.core.editor.ViewManager
+import hextant.core.editor.ListenerManager
 import hextant.undo.UndoManager
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
+import reaktive.value.now
 import xenakis.impl.Point
 import xenakis.impl.ScWriter
 import xenakis.ui.format
@@ -26,7 +27,7 @@ class Score(
     val layoutManager = LayoutManager(_horizontalGroups, _verticalGroups)
 
     @Transient
-    private val views = ViewManager.createWeakViewManager<ScoreListener>()
+    private val views = ListenerManager.createWeakListenerManager<ScoreListener>()
 
     private val namingManger by lazy { context[NamingManager] }
 
@@ -44,7 +45,7 @@ class Score(
     fun getObject(name: String) = namingManger.getObject(name)
 
     fun addListener(listener: ScoreListener) {
-        views.addView(listener)
+        views.addListener(listener)
         for (obj in objects) {
             listener.addedObject(obj)
             val nxt = obj.nextInChain
@@ -55,7 +56,7 @@ class Score(
     fun addObject(obj: ScoreObject) {
         obj.addToScore(this, context)
         _objects.add(obj)
-        views.notifyViews { addedObject(obj) }
+        views.notifyListeners { addedObject(obj) }
         namingManger.addedObject(obj)
         undo.record(ScoreEdit.AddObject(obj, this))
     }
@@ -64,7 +65,7 @@ class Score(
         val objAndItsClones = objects.filterIsInstance<ClonedObject>().filter { it.original == obj } + obj
         for (o in objAndItsClones) {
             _objects.remove(o)
-            views.notifyViews { removedObject(o) }
+            views.notifyListeners { removedObject(o) }
             namingManger.removedObject(o)
             layoutManager.removedObject(o)
             o.onRemove()
@@ -86,21 +87,21 @@ class Score(
 
     private fun chain(previous: ScoreObject, next: ClonedObject) {
         previous.nextInChain = next
-        views.notifyViews { chained(previous, next) }
+        views.notifyListeners { chained(previous, next) }
     }
 
     fun unchain(previous: ScoreObject) {
         val nxt = previous.nextInChain ?: return
         previous.nextInChain = null
-        views.notifyViews { unchained(previous, nxt) }
-        val copy = nxt.original.copy(nxt.name)
+        views.notifyListeners { unchained(previous, nxt) }
+        val copy = nxt.original.copy(nxt.name.now)
         copy.position.set(nxt.position)
         replace(nxt, copy)
         var prev = copy
         var obj = nxt
         while (true) {
             obj = obj.nextInChain ?: break
-            val new = ClonedObject(obj.name, original = copy)
+            val new = ClonedObject(obj.name.now, original = copy)
             new.position.set(obj.position)
             replace(obj, new)
             chain(prev, new)
@@ -123,23 +124,17 @@ class Score(
         }
     }
 
-    fun recoloredSynthDef(name: String) {
-        for (obj in objects) {
-            if (obj is SynthObject && obj.synthDefName == name) {
-                obj.associatedColor = obj.synthDef.associatedColor
-            }
-        }
-    }
-
-    fun writePlayerTask(writer: ScWriter, startTime: Double, taskName: String) {
+    fun writePlayerTask(writer: ScWriter, startTime: Double, taskName: String, suffixGenerator: SuffixGenerator) {
         writer.appendLine("(~$taskName = Task {")
         val relevantObjects = objects.filter { obj -> !obj.muted && obj.start + obj.duration > startTime }
         val starts = relevantObjects.map { obj ->
             val start = obj.start.coerceAtLeast(startTime)
             val offset = (startTime - obj.start).coerceAtLeast(0.0)
-            start to { obj.writeStartCode(writer, offset) }
+            start to { obj.writeStartCode(writer, offset, suffixGenerator) }
         }
-        val stops = relevantObjects.map { obj -> obj.start + obj.duration to { obj.writeStopCode(writer) } }
+        val stops = relevantObjects.map { obj ->
+            obj.start + obj.duration to { obj.writeStopCode(writer, suffixGenerator) }
+        }
         val timedActions = (starts + stops).sortedBy { (t, _) -> t }
         if (timedActions.isNotEmpty()) {
             val (t0, action0) = timedActions.first()
@@ -207,12 +202,12 @@ class Score(
         }
         val horizontalGroups = _horizontalGroups.mapTo(mutableListOf()) { g ->
             g.mapTo(mutableSetOf()) { name ->
-                copies.getValue(namingManger.getObject(name)).name
+                copies.getValue(namingManger.getObject(name)).name.now
             }
         }
         val verticalGroups = _verticalGroups.mapTo(mutableListOf()) { g ->
             g.mapTo(mutableSetOf()) { name ->
-                copies.getValue(namingManger.getObject(name)).name
+                copies.getValue(namingManger.getObject(name)).name.now
             }
         }
         return Score(copies.values.toMutableList(), horizontalGroups, verticalGroups)

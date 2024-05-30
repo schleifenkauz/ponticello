@@ -5,12 +5,13 @@ import hextant.codegen.ProvideImplementation
 import hextant.context.ControlFactory
 import hextant.core.editor.SimpleChoiceEditor
 import hextant.core.view.SimpleChoiceEditorControl
-import xenakis.sc.Group
+import reaktive.value.reactiveVariable
+import xenakis.model.GroupObject
 import xenakis.ui.GroupRegistryPane
 
 class GroupSelectorControl @ProvideImplementation(ControlFactory::class) constructor(
-    editor: SimpleChoiceEditor<Group>, arguments: Bundle
-) : SimpleChoiceEditorControl<Group>(editor, arguments) {
+    editor: SimpleChoiceEditor<GroupObject>, arguments: Bundle
+) : SimpleChoiceEditorControl<GroupObject>(editor, arguments) {
     init {
         minWidth = 150.0
         root.valueProperty().addListener { _, lastSelected, selected ->
@@ -25,6 +26,6 @@ class GroupSelectorControl @ProvideImplementation(ControlFactory::class) constru
     }
 
     companion object {
-        val createNew = Group("<create-new>")
+        val createNew = GroupObject(reactiveVariable("<create-new>"))
     }
 }

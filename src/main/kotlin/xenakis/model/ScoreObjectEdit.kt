@@ -8,11 +8,11 @@ abstract class ScoreObjectEdit(protected val obj: ScoreObject) : AbstractEdit() 
             get() = "Rename object"
 
         override fun doUndo() {
-            obj.name = oldName
+            obj.rename(oldName)
         }
 
         override fun doRedo() {
-            obj.name = newName
+            obj.rename(newName)
         }
     }
 

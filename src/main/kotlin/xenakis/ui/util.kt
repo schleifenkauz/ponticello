@@ -21,6 +21,10 @@ import javafx.scene.paint.Color
 import javafx.stage.Popup
 import org.controlsfx.glyphfont.FontAwesome
 import org.controlsfx.glyphfont.Glyph
+import reaktive.value.ReactiveValue
+import reaktive.value.ReactiveVariable
+import reaktive.value.fx.asObservableValue
+import reaktive.value.now
 import java.io.File
 import java.util.*
 import kotlin.math.ceil
@@ -118,7 +122,10 @@ fun ClosedFloatingPointRange<Double>.reverseIfEmpty() = if (start > endInclusive
 
 fun accuracy(delta: Double) = ceil(-log10(delta).coerceAtMost(0.0)).toInt()
 
-fun Double.format(accuracy: Int) = toString().let { s -> s.take(s.indexOf('.') + 1 + accuracy) }
+fun Double.format(accuracy: Int) = toString().let { s ->
+    if (accuracy == 0) s.take(s.indexOf('.'))
+    else s.take(s.indexOf('.') + 1 + accuracy)
+}
 
 fun Double.round(accuracy: Int): Double {
     val factor = 10.0.pow(accuracy)
@@ -158,10 +165,8 @@ fun Node.setupFileDropArea(exactlyOne: Boolean, extension: String, onDrop: (file
         }
     }
     setOnDragEntered { ev ->
-        if (hasFile(ev, exactlyOne, extension)) pseudoClassStateChanged(
-            PseudoClass.getPseudoClass("drop-possible"),
-            true
-        )
+        if (hasFile(ev, exactlyOne, extension))
+            pseudoClassStateChanged(PseudoClass.getPseudoClass("drop-possible"), true)
         ev.consume()
     }
     setOnDragExited { ev ->
@@ -193,3 +198,17 @@ val Bounds.middleY get() = (minY + maxY) / 2
 
 val Cursor.resizeFromLeft get() = this in setOf(Cursor.W_RESIZE, Cursor.NW_RESIZE, Cursor.SW_RESIZE)
 val Cursor.resizeFromTop get() = this in setOf(Cursor.N_RESIZE, Cursor.NE_RESIZE, Cursor.NW_RESIZE)
+
+fun colorPicker(controlledVar: ReactiveVariable<Color>): ColorPicker {
+    val picker = ColorPicker(controlledVar.now)
+    picker.styleClass.add("button")
+    picker.userData = controlledVar.observe { _, _, newColor -> picker.value = newColor }
+    picker.valueProperty().addListener { _, _, newColor -> controlledVar.set(newColor) }
+    return picker
+}
+
+fun label(text: ReactiveValue<String>): Label {
+    val label = Label()
+    label.textProperty().bind(text.asObservableValue())
+    return label
+}

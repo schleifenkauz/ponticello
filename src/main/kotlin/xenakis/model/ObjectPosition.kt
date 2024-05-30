@@ -1,13 +1,13 @@
 package xenakis.model
 
-import hextant.core.editor.ViewManager
+import hextant.core.editor.ListenerManager
 
 class ObjectPosition(
     private val obj: ScoreObject,
     private var _start: Double = 0.0,
     private var _y: Double = 0.0
 ) : Comparable<ObjectPosition> {
-    private val viewManager = ViewManager.createWeakViewManager<PositionListener>()
+    private val viewManager = ListenerManager.createWeakListenerManager<PositionListener>()
 
     var start: Double
         get() = _start
@@ -26,13 +26,13 @@ class ObjectPosition(
         }
 
     private fun update() {
-        viewManager.notifyViews { moved(obj, start, y) }
+        viewManager.notifyListeners { moved(obj, start, y) }
     }
 
     fun set(time: Double, y: Double) {
         _start = time
         _y = y
-        viewManager.notifyViews { moved(obj, start, y) }
+        viewManager.notifyListeners { moved(obj, start, y) }
     }
 
     fun set(position: ObjectPosition) {
@@ -40,11 +40,11 @@ class ObjectPosition(
     }
 
     fun addListener(listener: PositionListener) {
-        viewManager.addView(listener)
+        viewManager.addListener(listener)
     }
 
     fun removeListener(listener: PositionListener) {
-        viewManager.removeView(listener)
+        viewManager.removeListener(listener)
     }
 
     override fun toString(): String = "start: $start, y: $y"

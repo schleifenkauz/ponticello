@@ -1,6 +1,7 @@
 package xenakis.model
 
 import hextant.context.Context
+import hextant.undo.UndoManager
 import javafx.geometry.HorizontalDirection
 import javafx.scene.input.DataFormat
 import javafx.scene.paint.Color
@@ -12,56 +13,86 @@ import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.*
 import kotlinx.serialization.serializer
+import reaktive.value.ReactiveVariable
+import reaktive.value.now
+import reaktive.value.reactiveVariable
 import xenakis.impl.*
 import xenakis.sc.ControlSpec
+import xenakis.sc.editor.AbstractRenamableObject
 import xenakis.ui.ScoreObjectView
 
 @Serializable(with = ScoreObject.Ser::class)
-interface ScoreObject {
-    val type: String
-    var name: String
+abstract class ScoreObject(name: String) : AbstractRenamableObject() {
+    override val mutableName: ReactiveVariable<String> = reactiveVariable(name)
 
-    val parent: Score
-    val position: ObjectPosition
-    var duration: Double
-    var height: Double
-    val start: Double
-    val y: Double
+    private var initialized = false
 
-    var associatedColor: Color?
-    var muted: Boolean
+    abstract val type: String
 
-    var nameOfNextInChain: String?
-    var nextInChain: ClonedObject?
+    lateinit var parent: Score
+        private set
+    abstract val position: ObjectPosition
+    abstract var duration: Double
+    abstract var height: Double
+    abstract val start: Double
+    abstract val y: Double
 
-    val associatedControls: Map<String, ParameterControl> get() = emptyMap()
-    fun getSpec(parameter: String): ControlSpec
+    abstract var associatedColor: Color?
+    abstract var muted: Boolean
 
-    fun writeStartCode(writer: ScWriter, offset: Double)
-    fun writeStopCode(writer: ScWriter)
+    abstract var nameOfNextInChain: String?
+    abstract var nextInChain: ClonedObject?
 
-    fun play(client: SuperColliderClient)
+    open val associatedControls: Map<String, ParameterControl> get() = emptyMap()
+    abstract fun getSpec(parameter: String): ControlSpec
 
-    fun addToScore(score: Score, context: Context) {
+    abstract fun writeStartCode(writer: ScWriter, offset: Double, suffixGenerator: SuffixGenerator)
+    abstract fun writeStopCode(writer: ScWriter, suffixGenerator: SuffixGenerator)
+
+    abstract fun play(client: SuperColliderClient)
+
+    protected fun recordEdit(edit: ScoreObjectEdit) {
+        if (initialized) {
+            context[UndoManager].record(edit)
+        }
+    }
+
+    override fun canRenameTo(newName: String): Boolean = !context[NamingManager].isNameTaken(newName)
+
+    override fun rename(newName: String) {
+        if (name.now == newName) return
+        recordEdit(ScoreObjectEdit.Rename(oldName = name.now, newName = newName, this))
+        if (initialized) {
+            parent.renamedObject(this, oldName = name.now, newName = newName)
+            parent.context[NamingManager].renamedObject(this, oldName = name.now, newName = newName)
+            parent.layoutManager.renamedObject(oldName = name.now, newName = newName)
+        }
+        super.rename(newName)
+    }
+
+    open fun addToScore(score: Score, context: Context) {
+        initialized = true
+        initialize(context)
         if (nameOfNextInChain != null) {
             nextInChain = score.getObject(nameOfNextInChain!!) as ClonedObject
             nameOfNextInChain = null
         }
+        parent = score
     }
 
-    fun serverBooted(context: SuperColliderContext) {}
+    open fun serverBooted(context: SuperColliderContext) {}
 
-    fun cut(position: Double, whichHalf: HorizontalDirection, newName: String): ScoreObject? = null
+    open fun cut(position: Double, whichHalf: HorizontalDirection, newName: String): ScoreObject? = null
 
-    fun copy(newName: String): ScoreObject
+    abstract fun copy(newName: String): ScoreObject
 
-    fun clone(name: String): ClonedObject
+    abstract fun clone(name: String): ClonedObject
 
-    fun addView(view: ScoreObjectView)
+    abstract fun addView(view: ScoreObjectView)
 
-    fun JsonObjectBuilder.saveToJson()
+    abstract fun JsonObjectBuilder.saveToJson()
 
-    fun onRemove() {}
+    open fun onRemove() {}
 
     interface Serializer {
         val type: String
@@ -107,11 +138,11 @@ interface ScoreObject {
             val type = value.type
             val obj = buildJsonObject {
                 put("type", type)
-                put("name", value.name)
+                put("name", value.name.now)
                 value.run { saveToJson() }
                 if (value.start != 0.0) put("start", value.start)
                 if (value.y != 0.0) put("y", value.y)
-                if (value.nextInChain != null) put("next", value.nextInChain!!.name)
+                if (value.nextInChain != null) put("next", value.nextInChain!!.name.now)
                 if (type != ClonedObject.Serializer.type) {
                     if (value.duration != 0.0) put("duration", value.duration)
                     if (value.height != 0.0) put("height", value.height)

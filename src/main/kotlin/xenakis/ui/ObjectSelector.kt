@@ -97,5 +97,12 @@ class ObjectSelector(private val context: Context, private val rootPane: ScorePa
         layoutManager.addGroup(aspect, selectedObjects)
     }
 
+    fun removeFromLayoutGroup(aspect: LayoutManager.LayoutAspect) {
+        for (obj in selectedObjects) {
+            val layoutManager = obj.parent.layoutManager
+            layoutManager.removeFromGroup(obj, aspect)
+        }
+    }
+
     companion object : PublicProperty<ObjectSelector> by publicProperty("ObjectSelector")
 }

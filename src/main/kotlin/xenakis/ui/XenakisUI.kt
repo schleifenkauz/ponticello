@@ -38,7 +38,6 @@ import reaktive.value.now
 import xenakis.model.LayoutManager.LayoutAspect
 import xenakis.model.Settings
 import xenakis.model.XenakisProject
-import xenakis.sc.view.SynthDefsEditorControl
 import xenakis.ui.ToolSelector.Tool
 
 class XenakisUI(private val stage: Stage, private val controller: XenakisController) : XenakisListener {
@@ -48,7 +47,9 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
 
     private lateinit var serverSetupCodePane: CodePane
     private lateinit var beforePlayCodePane: CodePane
-    private lateinit var synthDefsEditor: SynthDefsEditorControl
+    private lateinit var synthDefsPane: SynthDefRegistryPane
+    lateinit var busRegistryPane: BusRegistryPane
+        private set
     private lateinit var buffersPane: BuffersPane
     private lateinit var groupsPane: GroupRegistryPane
     private lateinit var scoreView: ScoreView
@@ -85,7 +86,9 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
     override fun displayProject(project: XenakisProject) {
         serverSetupCodePane = CodePane("Server setup", project.serverSetup.control)
         beforePlayCodePane = CodePane("Play setup", project.beforePlay.control)
-        synthDefsEditor = project.synthDefs.editor.control as SynthDefsEditorControl
+        synthDefsPane = SynthDefRegistryPane(project.synthDefs)
+        context[SynthDefRegistryPane] = synthDefsPane
+        busRegistryPane = BusRegistryPane(context, project.busses)
         buffersPane = BuffersPane(project.buffers, project, controller)
         groupsPane = GroupRegistryPane(context, project.groups)
         scoreView = ScoreView(project.score, project.context)
@@ -168,10 +171,10 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
     }
 
     private fun createLayout(): VBox {
-        val leftSplitter = SplitPane(synthDefsEditor, buffersPane, groupsPane)
+        val leftSplitter = SplitPane(synthDefsPane, busRegistryPane, buffersPane, groupsPane)
         val rightSplitter = SplitPane(serverSetupCodePane, beforePlayCodePane)
-        leftSplitter.prefWidth = 400.0
-        rightSplitter.prefWidth = 400.0
+        leftSplitter.minWidth = 300.0
+        rightSplitter.minWidth = 300.0
         leftSplitter.orientation = Orientation.VERTICAL
         rightSplitter.orientation = Orientation.VERTICAL
         val horizontalSplitter = SplitPane(leftSplitter, scoreView, rightSplitter)
@@ -243,14 +246,21 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
         Icon.Knob.button(action = "Open global controls") { globalControlsWindow.show() }
     )
 
-    private fun createLayoutBar() = HBox(
-        Icon.Horizontal.button(action = "Create horizontal group") {
+    private fun createLayoutBar(): HBox {
+        val horizontalBtn = Icon.Horizontal.button(action = "Create horizontal group") {
             project.context[ObjectSelector].addLayoutGroup(LayoutAspect.Horizontal)
-        },
-        Icon.Vertical.button(action = "Create vertical group") {
+        }
+        val verticalBtn = Icon.Vertical.button(action = "Create vertical group") {
             project.context[ObjectSelector].addLayoutGroup(LayoutAspect.Vertical)
         }
-    )
+        val removeHorizontalBtn = Icon.HorizontalRemove.button(action = "Remove from horizontal group") {
+            project.context[ObjectSelector].removeFromLayoutGroup(LayoutAspect.Horizontal)
+        }
+        val removeVerticalBtn = Icon.VerticalRemove.button(action = "Remove from vertical group") {
+            project.context[ObjectSelector].removeFromLayoutGroup(LayoutAspect.Vertical)
+        }
+        return HBox(horizontalBtn, verticalBtn, removeHorizontalBtn, removeVerticalBtn)
+    }
 
     private fun createPlayerBar(): HBox {
         playBtn = Icon.Play.button(action = "Start playback") { _ -> togglePlay() }

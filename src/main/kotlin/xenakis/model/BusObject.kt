@@ -1,0 +1,76 @@
+package xenakis.model
+
+import hextant.codegen.UseEditor
+import hextant.context.Context
+import javafx.scene.input.DataFormat
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
+import reaktive.Observer
+import reaktive.value.*
+import xenakis.impl.SuperColliderClient
+import xenakis.sc.Rate
+import xenakis.sc.editor.AbstractRenamableObject
+import xenakis.sc.editor.BusSelector
+import xenakis.ui.XenakisController
+
+@Serializable
+@UseEditor(BusSelector::class)
+class BusObject(
+    override val mutableName: ReactiveVariable<String>,
+    val rate: ReactiveValue<Rate>,
+    val channels: ReactiveValue<Int>,
+    val isOutput: Boolean = false
+) : AbstractRenamableObject() {
+    @Transient
+    private lateinit var observer: Observer
+
+    override fun canRenameTo(newName: String): Boolean =
+        name.now.startsWith("global_") == newName.startsWith("global_") &&
+                !context[XenakisController.currentProject].busses.hasBus(newName)
+
+    override fun rename(newName: String) {
+        context[SuperColliderClient].run("~bus_$newName = $variableName; $variableName = nil;")
+        super.rename(newName)
+    }
+
+    override fun initialize(context: Context) {
+        super.initialize(context)
+        if (!isOutput) {
+            context[SuperColliderClient].run(allocationCode)
+            observer = rate.observe { _ -> reallocate() } and channels.observe { _ -> reallocate() }
+        }
+    }
+
+    fun reallocate() {
+        if (isOutput) return
+        context[SuperColliderClient].run {
+            +"if ($variableName != nil) { $deallocationCode }"
+            +allocationCode
+        }
+    }
+
+    fun removed() {
+        context[SuperColliderClient].run(deallocationCode)
+    }
+
+    val variableName get() = "~bus_${name.now}"
+
+    val allocationCode: String
+        get() =
+            if (isOutput) "$variableName = 0"
+            else "$variableName = Bus.${rate.now.name.lowercase()}(s, ${channels.now})"
+
+    val deallocationCode: String
+        get() = "$variableName.free; $variableName = nil"
+
+    companion object {
+        val output = BusObject(
+            reactiveVariable("output"),
+            reactiveValue(Rate.Audio),
+            reactiveVariable(2),
+            isOutput = true
+        )
+
+        val DATA_FORMAT = DataFormat("bus")
+    }
+}

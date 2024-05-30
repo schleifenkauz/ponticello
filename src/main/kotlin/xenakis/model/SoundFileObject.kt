@@ -1,6 +1,6 @@
 package xenakis.model
 
-import hextant.core.editor.ViewManager
+import hextant.core.editor.ListenerManager
 import hextant.serial.SnapshotAware
 import javafx.geometry.HorizontalDirection
 import javafx.scene.paint.Color
@@ -9,14 +9,12 @@ import kotlinx.serialization.json.JsonObjectBuilder
 import kotlinx.serialization.json.put
 import reaktive.value.now
 import xenakis.impl.*
-import xenakis.sc.Bus
 import xenakis.sc.ControlSpec
-import xenakis.sc.ParameterDef
+import xenakis.sc.Rate
 import xenakis.sc.editor.BusSelector
 import xenakis.ui.SoundFileObjectView
 import xenakis.ui.format
 import java.io.File
-import javax.sound.sampled.AudioSystem
 
 class SoundFileObject(
     name: String,
@@ -24,25 +22,21 @@ class SoundFileObject(
     var outBus: BusSelector,
     var startPos: Double, var rate: Double,
     var envelope: Envelope
-) : AbstractScoreObject(name) {
+) : RegularScoreObject(name) {
     override val type: String
         get() = "sample"
 
-    override val viewManager = ViewManager.createWeakViewManager<SoundFileObjectView>()
+    override val viewManager = ListenerManager.createWeakListenerManager<SoundFileObjectView>()
 
     private val bufferName = "~sample_${file.nameWithoutExtension}_${hashCode()}"
 
-    private val synthName = "~playbuf_${name}_${hashCode()}"
-
-    init {
-        duration = getDuration(file)
-    }
+    private val synthName = "~playbuf_${name}"
 
     override val associatedControls: Map<String, ParameterControl>
         get() = mapOf("amp" to EnvelopeControl(envelope, Color.WHITE, display = true))
 
     override fun getSpec(parameter: String): ControlSpec =
-        if (parameter == "amp") ParameterDef.amp.spec else super.getSpec(parameter)
+        if (parameter == "amp") ParameterDefObject.amp.spec.now else super.getSpec(parameter)
 
     override fun serverBooted(context: SuperColliderContext) {
         loadBuffer(context)
@@ -67,8 +61,8 @@ class SoundFileObject(
         client.run("$bufferName.free; $bufferName = nil;")
     }
 
-    override fun writeStartCode(writer: ScWriter, offset: Double) = with(writer) {
-        append("$synthName = { ")
+    override fun writeStartCode(writer: ScWriter, offset: Double, suffixGenerator: SuffixGenerator) = with(writer) {
+        append("$synthName${suffixGenerator.generateSuffix(this@SoundFileObject)} = { ")
         append("PlayBuf.ar($bufferName.numChannels, $bufferName, ")
         append("rate: ${rate.format(2)}, ")
         append("startPos: $startPos)")
@@ -76,16 +70,16 @@ class SoundFileObject(
         appendLine(".play(s, ${outBus.result.now.variableName});")
     }
 
-    override fun writeStopCode(writer: ScWriter) {
-        writer.appendLine("$synthName.release;")
+    override fun writeStopCode(writer: ScWriter, suffixGenerator: SuffixGenerator) {
+        writer.appendLine("$synthName${suffixGenerator.getSuffix(this)}.release;")
     }
 
-    override fun copy(): SoundFileObject = SoundFileObject(name, file, outBus, startPos, rate, envelope.copy())
+    override fun copy(): SoundFileObject = SoundFileObject(name.now, file, outBus, startPos, rate, envelope.copy())
 
     override fun cut(position: Double, whichHalf: HorizontalDirection): ScoreObject {
         val startPos = if (whichHalf == HorizontalDirection.LEFT) startPos else start + position
         val env = envelope.cut(position / duration, whichHalf)
-        return SoundFileObject(name, file, outBus, startPos, rate, env)
+        return SoundFileObject(name.now, file, outBus, startPos, rate, env)
     }
 
     override fun JsonObjectBuilder.saveToJson() {
@@ -100,22 +94,19 @@ class SoundFileObject(
         if (envelope != Envelope.default) putSerializableValue("envelope", envelope)
     }
 
-    companion object {
-        fun getDuration(file: File): Double {
-            val stream = AudioSystem.getAudioInputStream(file)
-            val format = stream.format
-            return (stream.frameLength / format.frameRate).toDouble()
-        }
-    }
-
     object Serializer : ScoreObject.Serializer {
         override val type: String
             get() = "sample"
 
         override fun JsonObject.createFromJson(name: String): ScoreObject {
             val file = getFile("file")
-            val outBus = getSerializableValue<Bus>("outBus")!!
-            val busEditor = BusSelector(SnapshotAware.Serializer.reconstructionContext, outBus)
+            val outBus = getSerializableValue<BusObject>("outBus")!! //TODO this creates a duplicate bus!!
+            val busEditor = BusSelector(
+                SnapshotAware.Serializer.reconstructionContext,
+                preferredRate = Rate.Audio,
+                preferredChannels = 2, //TODO channel number of the file
+                bus = outBus
+            )
             val startPos = getDouble("startPos") ?: 0.0
             val rate = getDouble("rate") ?: 1.0
             val envelope = getSerializableValue<Envelope>("envelope") ?: Envelope.default

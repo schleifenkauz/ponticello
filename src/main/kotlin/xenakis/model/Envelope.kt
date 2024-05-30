@@ -1,6 +1,6 @@
 package xenakis.model
 
-import hextant.core.editor.ViewManager
+import hextant.core.editor.ListenerManager
 import javafx.geometry.HorizontalDirection
 import javafx.geometry.HorizontalDirection.LEFT
 import javafx.geometry.HorizontalDirection.RIGHT
@@ -16,7 +16,7 @@ import kotlin.math.absoluteValue
 @Serializable
 class Envelope(private val _points: MutableList<Point>, val curve: Warp) {
     @Transient
-    private val viewManager = ViewManager.createWeakViewManager<EnvelopeView>()
+    private val viewManager = ListenerManager.createWeakListenerManager<EnvelopeView>()
 
     val points: List<Point> get() = _points
 
@@ -45,12 +45,12 @@ class Envelope(private val _points: MutableList<Point>, val curve: Warp) {
 
     fun addPoint(idx: Int, point: Point) {
         _points.add(idx, point)
-        viewManager.notifyViews { addedPoint(idx, point) }
+        viewManager.notifyListeners { addedPoint(idx, point) }
     }
 
     fun editPoint(idx: Int, newPoint: Point) {
         _points[idx] = newPoint
-        viewManager.notifyViews { changedPoint(idx, newPoint) }
+        viewManager.notifyListeners { changedPoint(idx, newPoint) }
     }
 
     fun editPoint(idx: Int, newY: Double) {
@@ -60,15 +60,15 @@ class Envelope(private val _points: MutableList<Point>, val curve: Warp) {
 
     fun removePoint(idx: Int) {
         val p = _points.removeAt(idx)
-        viewManager.notifyViews { removedPoint(idx, p) }
+        viewManager.notifyListeners { removedPoint(idx, p) }
     }
 
     fun addView(view: EnvelopeView) {
-        viewManager.addView(view)
+        viewManager.addListener(view)
     }
 
     fun removeView(view: EnvelopeView) {
-        viewManager.removeView(view)
+        viewManager.removeListener(view)
     }
 
     fun cut(position: Double, whichHalf: HorizontalDirection): Envelope {
@@ -84,7 +84,7 @@ class Envelope(private val _points: MutableList<Point>, val curve: Warp) {
 
             RIGHT -> {
                 val right = listOf(pivot) + points.drop(i)
-                Envelope(right.mapTo(mutableListOf()) { (x, y) -> Point((x - position) / (1 - position), y) }, curve)
+                Envelope(right.mapTo(mutableListOf()) { (x, y) -> Point((x - position), y) }, curve)
             }
         }
     }

@@ -1,20 +1,16 @@
 package xenakis.ui
 
 import hextant.fx.add
-import hextant.serial.makeRoot
-import javafx.scene.control.Button
 import javafx.scene.control.Label
 import javafx.scene.control.Spinner
 import javafx.scene.layout.HBox
 import javafx.scene.layout.VBox
-import reaktive.Observer
-import reaktive.event.observe
+import reaktive.value.now
+import reaktive.value.reactiveVariable
 import xenakis.impl.SuperColliderClient
 import xenakis.model.Buffers
 import xenakis.model.XenakisProject
 import xenakis.sc.*
-import xenakis.sc.editor.IdentifierEditor
-import xenakis.sc.view.IdentifierEditorControl
 import java.io.File
 
 class BuffersPane(
@@ -22,8 +18,6 @@ class BuffersPane(
     private val project: XenakisProject,
     private val controller: XenakisController
 ) : VBox() {
-    private val observers = mutableListOf<Observer>()
-
     init {
         styleClass("tool-pane")
         children.add(createHeader())
@@ -45,7 +39,7 @@ class BuffersPane(
         val addBtn = Icon.Add.button(action = "Load new buffer") { addBuffer() }
         val reloadBtn = Icon.Repeat.button(action = "Reload SynthDefs") {
             val client = project.context[SuperColliderClient]
-            project.buffers.loadBuffers(client)
+            project.buffers.run { client.loadBuffers() }
         }
         return HBox(label, space, addBtn, reloadBtn).styleClass("tool-pane-header")
     }
@@ -61,22 +55,13 @@ class BuffersPane(
     }
 
     private fun addBuffer(name: String, file: File) {
-        val buffer = FileBuffer(Identifier(name), file)
+        val buffer = FileBuffer(reactiveVariable(name), file)
         buffers.addBuffer(buffer, context = controller.client)
         displayBuffer(buffer)
     }
 
     private fun displayBuffer(buffer: Buffer) {
-        val name = IdentifierEditor(project.context, buffer.name.text)
-        name.makeRoot()
-        val obs = name.result.observe { _, _, new -> buffers.renameBuffer(buffer, new.text, controller.client) }
-        val nameControl = IdentifierEditorControl(name)
-        nameControl.userData = nameControl.onChangeCommited.observe { oldName: String, newName: String ->
-            showYesNoDialog("Rename references", default = true)
-            project.renamedSynthDef(oldName, newName)
-        }
-
-        observers.add(obs)
+        val nameControl = NameControl(buffer)
         val box = HBox(nameControl)
         when (buffer) {
             is FileBuffer -> {
@@ -99,16 +84,12 @@ class BuffersPane(
             NoBuffer -> throw AssertionError()
         }
         box.add(Icon.View.button(action = "View buffer contents") {
-            controller.client.run("${buffer.variableName}.plot('${buffer.name.text}')")
+            controller.client.run("${buffer.variableName}.plot('${buffer.name.now}')")
         })
         box.add(Icon.Delete.button(action = "Remove this buffer") {
             buffers.removeBuffer(buffer, context = controller.client)
         })
         box.styleClass("buffer-box")
         children.add(box)
-    }
-
-    private fun select(selector: Button, text: String) {
-
     }
 }
