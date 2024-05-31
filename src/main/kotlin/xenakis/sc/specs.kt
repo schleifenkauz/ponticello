@@ -1,5 +1,6 @@
 package xenakis.sc
 
+import hextant.codegen.Choice
 import hextant.codegen.Component
 import hextant.codegen.Compound
 import hextant.codegen.UseEditor
@@ -8,7 +9,6 @@ import javafx.scene.paint.Color
 import kotlinx.serialization.Serializable
 import xenakis.impl.ColorSerializer
 import xenakis.impl.DoubleRange
-import xenakis.model.BusObject
 import xenakis.sc.editor.ControlSpecEditor
 import xenakis.ui.accuracy
 
@@ -64,22 +64,41 @@ data class NumericalControlSpec(
 
 @Compound(serializable = true)
 @Serializable
-data class BusControlSpec(val defaultValue: BusObject) : ControlSpec {
+class BusControlSpec : ControlSpec {
     override val type: ParameterType
         get() = ParameterType.Bus
 
     override val code: String
-        get() = "kr(${defaultValue.variableName})"
+        get() = "kr"
+
+    override fun equals(other: Any?): Boolean = other is BusControlSpec
+
+    override fun hashCode(): Int = -2
+
 }
 
 @Serializable
 @Compound(serializable = true)
-data class BufferControlSpec(val defaultValue: Buffer) : ControlSpec {
+class BufferControlSpec : ControlSpec {
     override val type: ParameterType
         get() = ParameterType.Buffer
 
     override val code: String
-        get() = "kr(${defaultValue.variableName})"
+        get() = "kr"
+
+    override fun equals(other: Any?): Boolean = other is BufferControlSpec
+
+    override fun hashCode(): Int = -1
 }
 
 fun NumericalControlSpec.mapOnto(targetRange: DoubleRange) = SpecTransformation(this, targetRange)
+
+@Choice(defaultValue = "Rate.Audio")
+enum class Rate {
+    Audio, Control;
+
+    override fun toString(): String = when (this) {
+        Audio -> "ar"
+        Control -> "kr"
+    }
+}

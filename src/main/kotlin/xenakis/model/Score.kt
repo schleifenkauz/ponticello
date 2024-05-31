@@ -29,35 +29,35 @@ class Score(
     @Transient
     private val views = ListenerManager.createWeakListenerManager<ScoreListener>()
 
-    private val namingManger by lazy { context[NamingManager] }
+    private val objectRegistry by lazy { context[ScoreObjectRegistry] }
 
     private val undo by lazy { context[UndoManager] }
 
     fun initialize(context: Context) {
         this.context = context
         for (obj in objects) {
-            obj.addToScore(this, context)
-            namingManger.addedObject(obj)
+            objectRegistry.add(obj)
+            obj.addToScore(this)
         }
         layoutManager.initialize(context)
     }
 
-    fun getObject(name: String) = namingManger.getObject(name)
+    fun getObject(name: String) = objectRegistry.get(name)
 
     fun addListener(listener: ScoreListener) {
         views.addListener(listener)
         for (obj in objects) {
             listener.addedObject(obj)
             val nxt = obj.nextInChain
-            if (nxt != null) listener.chained(obj, nxt)
+            if (nxt != null) listener.chained(obj, nxt.get())
         }
     }
 
     fun addObject(obj: ScoreObject) {
-        obj.addToScore(this, context)
+        obj.addToScore(this)
         _objects.add(obj)
+        objectRegistry.add(obj)
         views.notifyListeners { addedObject(obj) }
-        namingManger.addedObject(obj)
         undo.record(ScoreEdit.AddObject(obj, this))
     }
 
@@ -66,7 +66,7 @@ class Score(
         for (o in objAndItsClones) {
             _objects.remove(o)
             views.notifyListeners { removedObject(o) }
-            namingManger.removedObject(o)
+            objectRegistry.remove(o)
             layoutManager.removedObject(o)
             o.onRemove()
         }
@@ -80,27 +80,22 @@ class Score(
         layoutManager.moveObject(obj, dt, dy)
     }
 
-    fun renamedObject(obj: ScoreObject, oldName: String, newName: String) {
-        layoutManager.renamedObject(oldName, newName)
-        namingManger.renamedObject(obj, oldName, newName)
-    }
-
     private fun chain(previous: ScoreObject, next: ClonedObject) {
-        previous.nextInChain = next
+        previous.nextInChain = next.createReference()
         views.notifyListeners { chained(previous, next) }
     }
 
     fun unchain(previous: ScoreObject) {
-        val nxt = previous.nextInChain ?: return
+        val nxt = previous.nextInChain?.get() ?: return
         previous.nextInChain = null
         views.notifyListeners { unchained(previous, nxt) }
-        val copy = nxt.original.copy(nxt.name.now)
+        val copy = nxt.copy(nxt.name.now)
         copy.position.set(nxt.position)
         replace(nxt, copy)
         var prev = copy
         var obj = nxt
         while (true) {
-            obj = obj.nextInChain ?: break
+            obj = obj.nextInChain?.get() ?: break
             val new = ClonedObject(obj.name.now, original = copy)
             new.position.set(obj.position)
             replace(obj, new)
@@ -192,22 +187,22 @@ class Score(
             val copy =
                 if (obj is ClonedObject) {
                     val original = copies[obj.original] ?: error("original for clone $obj not found!")
-                    original.clone(namingManger.nameForClone(original))
-                } else obj.copy(namingManger.nameForCopy(obj))
+                    original.clone(objectRegistry.nameForClone(original))
+                } else obj.copy(objectRegistry.nameForCopy(obj))
             copies[obj] = copy
         }
         for (obj in copies.values) {
-            val nxtInChain = obj.nextInChain ?: continue
-            obj.nextInChain = (copies.getValue(nxtInChain)) as ClonedObject?
+            val nxtInChain = obj.nextInChain?.get() ?: continue
+            obj.nextInChain = copies.getValue(nxtInChain).createReference()
         }
         val horizontalGroups = _horizontalGroups.mapTo(mutableListOf()) { g ->
             g.mapTo(mutableSetOf()) { name ->
-                copies.getValue(namingManger.getObject(name)).name.now
+                copies.getValue(objectRegistry.get(name)).name.now
             }
         }
         val verticalGroups = _verticalGroups.mapTo(mutableListOf()) { g ->
             g.mapTo(mutableSetOf()) { name ->
-                copies.getValue(namingManger.getObject(name)).name.now
+                copies.getValue(objectRegistry.get(name)).name.now
             }
         }
         return Score(copies.values.toMutableList(), horizontalGroups, verticalGroups)

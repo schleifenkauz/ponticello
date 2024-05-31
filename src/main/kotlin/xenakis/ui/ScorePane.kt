@@ -38,7 +38,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
     protected val ui get() = context[XenakisUI]
     private val selectedTool get() = ui.toolSelector.selected.value!!
 
-    val selector: ObjectSelector get() = context[ObjectSelector]
+    val selector: ScoreObjectSelector get() = context[ScoreObjectSelector]
 
     protected abstract val displayStart: Double
     protected abstract val displayEnd: Double
@@ -325,7 +325,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
 
     private fun nameForNewObject(prompt: String, initialName: String, create: (String) -> Unit) {
         showTextPrompt(prompt, initialName, context) { name ->
-            if (!Identifier.isValid(name) || context[NamingManager].isNameTaken(name)) {
+            if (!Identifier.isValid(name) || context[ScoreObjectRegistry].has(name)) {
                 return@showTextPrompt false
             }
             create(name)
@@ -341,34 +341,46 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
         when (tool) {
             Synth -> {
                 val def = context[SynthDefRegistry].selectedSynthDef ?: return
-                val initialName = context[NamingManager].availableName("synth")
+                val defaultGroup = context[GroupRegistry].getDefaultGroup()
+                val initialName = context[ScoreObjectRegistry].availableName("synth")
                 nameForNewObject("Synth name", initialName) { name ->
-                    val obj = SynthObject(name, def.name.now, GroupObject.DEFAULT, def.defaultControls())
+                    val obj = SynthObject(
+                        name,
+                        def.createReference(), defaultGroup.createReference(),
+                        _controls = def.defaultControls(context)
+                    )
                     addObject(obj, rect)
                 }
             }
 
-            Task -> nameForNewObject("Task name", context[NamingManager].availableName("task")) { name ->
+            Task -> nameForNewObject("Task name", context[ScoreObjectRegistry].availableName("task")) { name ->
                 val editor = EditorRoot.create(ScFunctionEditor(context))
                 addObject(TaskObject(name, editor, rect.width), rect)
             }
 
-            Tool.Envelope -> nameForNewObject("Envelope name", context[NamingManager].availableName("env")) { name ->
-                EnvelopeObjectView.showEnvelopeConfig(context) { spec, outputBus ->
+            Tool.Envelope -> nameForNewObject(
+                "Envelope name",
+                context[ScoreObjectRegistry].availableName("env")
+            ) { name ->
+                val busSelector = BusSelector(context, preferredChannels = 1, preferredRate = Rate.Control)
+                EnvelopeObjectView.showEnvelopeConfig(context, busSelector) { spec ->
                     val value = spec.defaultValue.get()
                     val duration = getDuration(rect.width)
                     val envelope = Envelope.constant(value, duration, spec.warp)
-                    val obj = EnvelopeObject(name, spec, outputBus, envelope)
+                    val obj = EnvelopeObject(name, spec, busSelector.result.now, envelope)
                     addObject(obj, rect)
                 }
             }
 
             Memo -> {
-                val name = context[NamingManager].availableName("memo")
+                val name = context[ScoreObjectRegistry].availableName("memo")
                 addObject(MemoObject(name, "", rect.width), rect)
             }
 
-            Compound -> nameForNewObject("Object group name", context[NamingManager].availableName("group")) { name ->
+            Compound -> nameForNewObject(
+                "Object group name",
+                context[ScoreObjectRegistry].availableName("group")
+            ) { name ->
                 val objects = viewsInside(rect.boundsInParent).map { it.myObject }
                 for (obj in objects) {
                     score.removeObject(obj)
@@ -390,6 +402,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
     private fun addObject(obj: ScoreObject, rect: Rectangle) {
         obj.assignBoundsFromRect(rect)
         score.addObject(obj)
+        selector.select(getObjectView(obj), addToSelection = false)
     }
 
     /*

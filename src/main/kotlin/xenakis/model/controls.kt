@@ -1,12 +1,12 @@
 package xenakis.model
 
+import hextant.context.Context
 import hextant.core.editor.ListenerManager
 import javafx.geometry.HorizontalDirection
 import javafx.scene.paint.Color
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import xenakis.impl.ColorSerializer
-import xenakis.sc.Buffer
 import xenakis.sc.ScExpr
 import xenakis.ui.KnobControlView
 
@@ -15,6 +15,8 @@ sealed class ParameterControl {
     open fun copy(): ParameterControl = this
 
     open fun cut(cutPos: Double, whichHalve: HorizontalDirection) = this
+
+    open fun initialize(context: Context) {}
 }
 
 @Serializable
@@ -52,16 +54,32 @@ class EnvelopeControl(
 }
 
 @Serializable
-class BusControl(val bus: BusObject) : ParameterControl()
+class BusControl(val bus: BusObjectReference) : ParameterControl() {
+    override fun initialize(context: Context) {
+        bus.initialize(context)
+    }
+}
 
 @Serializable
-class BusValueControl(val bus: BusObject) : ParameterControl()
+class BusValueControl(val bus: BusObjectReference) : ParameterControl() {
+    override fun initialize(context: Context) {
+        bus.initialize(context)
+    }
+}
 
 @Serializable
-data class SingleBusValueControl(val bus: BusObject) : ParameterControl()
+data class SingleBusValueControl(val bus: BusObjectReference) : ParameterControl() {
+    override fun initialize(context: Context) {
+        bus.initialize(context)
+    }
+}
 
 @Serializable
-data class BufferControl(val buffer: Buffer) : ParameterControl()
+data class BufferControl(val buffer: BufferObjectReference) : ParameterControl() {
+    override fun initialize(context: Context) {
+        buffer.initialize(context)
+    }
+}
 
 @Serializable
 data class CustomControl(val expr: ScExpr) : ParameterControl()

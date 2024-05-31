@@ -15,7 +15,7 @@ import javafx.stage.FileChooser
 import javafx.stage.Stage
 import reaktive.Observer
 import xenakis.impl.*
-import xenakis.model.NamingManager
+import xenakis.model.ScoreObjectRegistry
 import xenakis.model.Settings
 import xenakis.model.SuffixGenerator
 import xenakis.model.XenakisProject
@@ -181,7 +181,7 @@ class XenakisController(private val primaryStage: Stage) {
 
     fun openProject(file: File): Boolean {
         tryWithAlert("Opening project") {
-            context[NamingManager] = NamingManager()
+            context[ScoreObjectRegistry] = ScoreObjectRegistry().also { it.initialize(context) }
             val project = XenakisProject.loadFrom(file, context)
             currentProject = project
         } ?: return false
@@ -194,7 +194,7 @@ class XenakisController(private val primaryStage: Stage) {
 
     fun createNewProject() {
         val location = showSaveDialog("*.json") ?: return
-        context[NamingManager] = NamingManager()
+        context[ScoreObjectRegistry] = ScoreObjectRegistry().also { it.initialize(context) }
         currentProject = XenakisProject.create(location, context)
         saveAs(location)
     }

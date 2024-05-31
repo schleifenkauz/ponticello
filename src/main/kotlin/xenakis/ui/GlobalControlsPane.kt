@@ -33,7 +33,7 @@ class GlobalControlsPane(
         showTextPrompt("Control name", "", context) { name ->
             if (!Identifier.isValid(name)) return@showTextPrompt false
             if (controls.hasControl(name)) return@showTextPrompt false
-            if (context[currentProject].busses.hasBus("global_$name")) return@showTextPrompt false
+            if (context[currentProject].busses.has("global_$name")) return@showTextPrompt false
             val editor = ControlSpecEditor(context)
             val defaultControlSpec = context[Settings].getDefaultControlSpec(name)
             editor.makeRoot()

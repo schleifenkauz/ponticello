@@ -19,10 +19,10 @@ class LayoutManager(
     private fun LayoutAspect.group(obj: ScoreObject) = groupByObject[obj] ?: setOf(obj)
 
     fun initialize(context: Context) {
-        val namingManager = context[NamingManager]
+        val namingManager = context[ScoreObjectRegistry]
         eachAspect {
             for (group in groups) {
-                val objects = group.mapTo(mutableSetOf()) { name -> namingManager.getObject(name) }
+                val objects = group.mapTo(mutableSetOf()) { name -> namingManager.get(name) }
                 for (obj in objects) groupByObject[obj] = objects
             }
         }

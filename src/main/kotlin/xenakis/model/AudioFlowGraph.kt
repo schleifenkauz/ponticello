@@ -26,7 +26,7 @@ class AudioFlowGraph(
     fun initialize(context: Context) {
         registry = context[BusRegistry]
         for (node in nodes) {
-            node.busName = registry.getBus(node.busName.now).name
+            node.busName = registry.get(node.busName.now).name
         }
         for (flow in flows) {
             flow.source = nodes.find { n -> n.busName.now == flow.source.busName.now }!!
@@ -103,8 +103,8 @@ class AudioFlowGraph(
     fun SuperColliderContext.setupAudioFlow() = run {
         var prev = "s.defaultGroup"
         for (flow in order) {
-            val source = registry.getBus(flow.source.busName.now)
-            val target = registry.getBus(flow.target.busName.now)
+            val source = registry.get(flow.source.busName.now)
+            val target = registry.get(flow.target.busName.now)
             val ugenGraph = flow.ugenGraph.editor.result.now
             val synthName = "~flow_${source.name}_${target.name}"
             appendLine("{")

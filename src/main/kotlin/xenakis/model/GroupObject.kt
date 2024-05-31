@@ -14,7 +14,7 @@ data class GroupObject(
 ) : AbstractRenamableObject() {
     val variableName: String get() = if (isDefault) "s.defaultGroup" else "~grp_${name.now}"
 
-    override fun canRenameTo(newName: String): Boolean = !context[GroupRegistry].hasGroup(newName)
+    override fun canRenameTo(newName: String): Boolean = !context[GroupRegistry].has(newName)
 
     override fun rename(newName: String) {
         val client = context[SuperColliderClient]
@@ -22,6 +22,8 @@ data class GroupObject(
         super.rename(newName)
         if (!isDefault) client.run("$variableName = ${oldVariableName}; $oldVariableName = nil;")
     }
+
+    override fun createReference(): GroupObjectReference = GroupObjectReference(this)
 
     companion object {
         val DEFAULT = GroupObject(reactiveVariable("default"), isDefault = true)

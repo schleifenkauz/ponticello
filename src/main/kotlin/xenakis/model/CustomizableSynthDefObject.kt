@@ -1,9 +1,9 @@
 package xenakis.model
 
+import hextant.context.Context
 import hextant.serial.EditorRoot
 import javafx.scene.paint.Color
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.Transient
 import reaktive.list.MutableReactiveList
 import reaktive.value.ReactiveVariable
 import reaktive.value.now
@@ -21,13 +21,6 @@ class CustomizableSynthDefObject(
     override val parameters: MutableReactiveList<ParameterDefObject>,
     val ugenGraph: EditorRoot<CodeBlockEditor>
 ) : SynthDefObject, AbstractRenamableObject() {
-    @Transient
-    private lateinit var registry: SynthDefRegistry
-
-    override fun initialize(registry: SynthDefRegistry) {
-        this.registry = registry
-    }
-
     override fun SuperColliderClient.sync() {
         addToGlobalSynthDescLib()
     }
@@ -36,10 +29,18 @@ class CustomizableSynthDefObject(
         send("removeSynthDef", listOf(name))
     }
 
-    override fun canRenameTo(newName: String): Boolean = !registry.hasSynthDef(newName)
+    override fun initialize(context: Context) {
+        if (initialized) return
+        super.initialize(context)
+        for (parameter in parameters.now) {
+            parameter.initialize(context)
+        }
+    }
+
+    override fun canRenameTo(newName: String): Boolean = !context[SynthDefRegistry].has(newName)
 
     override fun rename(newName: String) {
-        val client = registry.context[SuperColliderClient]
+        val client = context[SuperColliderClient]
         client.removeSynthDef()
         super.rename(newName)
         client.addToGlobalSynthDescLib()

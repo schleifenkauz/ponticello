@@ -8,10 +8,7 @@ import javafx.geometry.BoundingBox
 import javafx.geometry.Bounds
 import javafx.geometry.HorizontalDirection
 import javafx.scene.Cursor
-import javafx.scene.control.Button
-import javafx.scene.control.ButtonType
-import javafx.scene.control.Spinner
-import javafx.scene.control.TextField
+import javafx.scene.control.*
 import javafx.scene.input.MouseEvent
 import javafx.scene.layout.*
 import javafx.scene.paint.Color
@@ -43,6 +40,8 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
     private val envelopeEditors = mutableListOf<EnvelopeEditor>()
     private val knobControls = HBox(10.0)
 
+    protected val colorPicker: ColorPicker = ColorPicker() styleClass "button"
+
     private lateinit var window: SubWindow
 
     protected open val canUserChangeHeight: Boolean get() = true
@@ -50,6 +49,7 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
 
     init {
         styleClass("score-object")
+        colorPicker.prefWidth = 35.0
         envelopesPane.widthProperty().addListener { _ -> rescale() }
         envelopesPane.heightProperty().addListener { _ -> rescale() }
     }
@@ -114,6 +114,7 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
         alwaysUpdateCursor()
         setupDragging()
         recoloredObject()
+        colorPicker.valueProperty().addListener { _, _, newColor -> myObject.associatedColor = newColor }
         setupCutting()
         nameEditor = NameControl(myObject)
         header.children.add(nameEditor)
@@ -141,6 +142,7 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
     open fun recoloredObject() {
         val backgroundColor = myObject.associatedColor ?: defaultBackgroundColor
         background = Background(BackgroundFill(backgroundColor, CornerRadii.EMPTY, null))
+        colorPicker.value = myObject.associatedColor
     }
 
     open fun muteToggled() {
@@ -227,6 +229,8 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
                 pane.score.removeObject(myObject)
                 pane.score.addObject(leftHalf)
                 pane.score.addObject(rightHalf)
+                pane.selector.select(pane.getObjectView(leftHalf), addToSelection = false)
+                pane.selector.select(pane.getObjectView(rightHalf), addToSelection = true)
                 context[UndoManager].finishCompoundEdit("Cut object")
                 ev.consume()
             }

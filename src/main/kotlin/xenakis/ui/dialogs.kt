@@ -15,6 +15,8 @@ import javafx.stage.Stage
 import javafx.stage.StageStyle
 import javafx.util.StringConverter
 import xenakis.impl.DoubleRange
+import xenakis.model.ObjectRegistry
+import xenakis.sc.Identifier
 import java.util.concurrent.CompletableFuture
 
 @Suppress("unused")
@@ -108,6 +110,14 @@ fun showTextPrompt(title: String, initialText: String, context: Context, onEnter
     }
     window.show()
 }
+
+fun showNamePrompt(registry: ObjectRegistry<*>, defaultName: String = "", createObject: (String) -> Unit) =
+    showTextPrompt("${registry.objectType} name", defaultName, registry.context) { name ->
+        if (!Identifier.isValid(name)) return@showTextPrompt false
+        if (registry.has(name)) return@showTextPrompt false
+        createObject(name)
+        true
+    }
 
 fun alertException(action: String, exc: Exception) = Alert(Alert.AlertType.ERROR).run {
     headerText = "Exception while: $action"

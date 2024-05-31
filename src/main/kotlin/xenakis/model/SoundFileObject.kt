@@ -67,7 +67,7 @@ class SoundFileObject(
         append("rate: ${rate.format(2)}, ")
         append("startPos: $startPos)")
         append(" * ${envelope.code(offset, doneAction = "Done.none")} }")
-        appendLine(".play(s, ${outBus.result.now.variableName});")
+        appendLine(".play(s, ${outBus.result.now.get().variableName});")
     }
 
     override fun writeStopCode(writer: ScWriter, suffixGenerator: SuffixGenerator) {
@@ -100,12 +100,12 @@ class SoundFileObject(
 
         override fun JsonObject.createFromJson(name: String): ScoreObject {
             val file = getFile("file")
-            val outBus = getSerializableValue<BusObject>("outBus")!! //TODO this creates a duplicate bus!!
+            val outBus = getSerializableValue<BusObjectReference>("outBus")!!
             val busEditor = BusSelector(
                 SnapshotAware.Serializer.reconstructionContext,
                 preferredRate = Rate.Audio,
                 preferredChannels = 2, //TODO channel number of the file
-                bus = outBus
+                initialValue = outBus
             )
             val startPos = getDouble("startPos") ?: 0.0
             val rate = getDouble("rate") ?: 1.0

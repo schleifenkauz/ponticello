@@ -25,8 +25,6 @@ import xenakis.ui.ScoreObjectView
 abstract class ScoreObject(name: String) : AbstractRenamableObject() {
     override val mutableName: ReactiveVariable<String> = reactiveVariable(name)
 
-    private var initialized = false
-
     abstract val type: String
 
     lateinit var parent: Score
@@ -40,8 +38,7 @@ abstract class ScoreObject(name: String) : AbstractRenamableObject() {
     abstract var associatedColor: Color?
     abstract var muted: Boolean
 
-    abstract var nameOfNextInChain: String?
-    abstract var nextInChain: ClonedObject?
+    abstract var nextInChain: Reference?
 
     open val associatedControls: Map<String, ParameterControl> get() = emptyMap()
     abstract fun getSpec(parameter: String): ControlSpec
@@ -57,27 +54,25 @@ abstract class ScoreObject(name: String) : AbstractRenamableObject() {
         }
     }
 
-    override fun canRenameTo(newName: String): Boolean = !context[NamingManager].isNameTaken(newName)
+    override fun canRenameTo(newName: String): Boolean = !context[ScoreObjectRegistry].has(newName)
 
     override fun rename(newName: String) {
         if (name.now == newName) return
         recordEdit(ScoreObjectEdit.Rename(oldName = name.now, newName = newName, this))
         if (initialized) {
-            parent.renamedObject(this, oldName = name.now, newName = newName)
-            parent.context[NamingManager].renamedObject(this, oldName = name.now, newName = newName)
             parent.layoutManager.renamedObject(oldName = name.now, newName = newName)
         }
         super.rename(newName)
     }
 
-    open fun addToScore(score: Score, context: Context) {
-        initialized = true
-        initialize(context)
-        if (nameOfNextInChain != null) {
-            nextInChain = score.getObject(nameOfNextInChain!!) as ClonedObject
-            nameOfNextInChain = null
-        }
+    fun addToScore(score: Score) {
         parent = score
+    }
+
+    override fun initialize(context: Context) {
+        if (initialized) return
+        super.initialize(context)
+        nextInChain?.initialize(context)
     }
 
     open fun serverBooted(context: SuperColliderContext) {}
@@ -93,6 +88,21 @@ abstract class ScoreObject(name: String) : AbstractRenamableObject() {
     abstract fun JsonObjectBuilder.saveToJson()
 
     open fun onRemove() {}
+
+    override fun createReference(): Reference = Reference(this)
+
+    @Serializable(with = Reference.Serializer::class)
+    class Reference(name: String) : AbstractObjectReference<ScoreObject>(name) {
+        constructor(obj: ScoreObject) : this(obj.name.now) {
+            this.obj = obj
+        }
+
+        override fun getRegistry(context: Context): ObjectRegistry<ScoreObject> = context[ScoreObjectRegistry]
+
+        object Serializer : ObjectReference.Serializer<Reference>() {
+            override fun createReference(name: String): Reference = Reference(name)
+        }
+    }
 
     interface Serializer {
         val type: String
@@ -123,7 +133,7 @@ abstract class ScoreObject(name: String) : AbstractRenamableObject() {
             val obj = ser.run { json.createFromJson(name) }
             obj.position.start = json.getDouble("start") ?: 0.0
             obj.position.y = json.getDouble("y") ?: 0.0
-            obj.nameOfNextInChain = json.getString("next")
+            obj.nextInChain = json.getSerializableValue("next")
 
             if (type != ClonedObject.Serializer.type) {
                 obj.duration = json.getDouble("duration") ?: 0.0
@@ -142,7 +152,7 @@ abstract class ScoreObject(name: String) : AbstractRenamableObject() {
                 value.run { saveToJson() }
                 if (value.start != 0.0) put("start", value.start)
                 if (value.y != 0.0) put("y", value.y)
-                if (value.nextInChain != null) put("next", value.nextInChain!!.name.now)
+                if (value.nextInChain != null) putSerializableValue("next", value.nextInChain!!)
                 if (type != ClonedObject.Serializer.type) {
                     if (value.duration != 0.0) put("duration", value.duration)
                     if (value.height != 0.0) put("height", value.height)

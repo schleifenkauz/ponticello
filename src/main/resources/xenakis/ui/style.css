@@ -63,11 +63,6 @@ Slider.control-detail-editor {
     -fx-border-width: 0px;
 }
 
-.score-object:select {
-    -fx-border-width: 2px;
-    -fx-border-color: gray;
-}
-
 /*noinspection CssInvalidPseudoSelector*/
 .score-object:muted {
     -fx-background-color: gray !important;
@@ -90,7 +85,7 @@ Slider.control-detail-editor {
 
 .toolbar {
     -fx-background-color: #2e2f33;
-    -fx-padding: 5px;
+    /*-fx-padding: 5px;*/
 }
 
 .icon-button {
@@ -118,7 +113,7 @@ Slider.control-detail-editor {
     -fx-background-color: #222720;
 }
 
-.bus-object {
+.bus-node {
     -fx-background-color: #232328;
     -fx-background-radius: 5px;
     -fx-border-color: black;
@@ -128,11 +123,11 @@ Slider.control-detail-editor {
     -fx-font-size: 16px;
 }
 
-.bus-object:hover {
+.bus-node:hover {
     -fx-border-color: white;
 }
 
-.bus-object:focused {
+.bus-node:focused {
     -fx-background-color: #4e0303;
 }
 
@@ -143,13 +138,6 @@ Slider.control-detail-editor {
 .flow-arrow:hover {
     -fx-stroke-width: 4;
 }
-
-/*.search-field {
-    -fx-background-image: url('./icons/find.png');
-    -fx-background-repeat: no-repeat;
-    -fx-background-position: left center;
-    -fx-background-size: 32px;
-}*/
 
 .recent-projects-list {
     -fx-padding: 5px;
@@ -190,6 +178,15 @@ Slider.control-detail-editor {
     -fx-background-color: transparent;
 }
 
+.code-pane {
+    -fx-background-color: #1e1f22;
+    -fx-border-color: black;
+    -fx-border-width: 2px;
+    -fx-border-radius: 5px;
+    -fx-padding: 5px;
+    -fx-background-radius: 5px;
+}
+
 .number {
     -fx-text-fill: #7d00ff !important;
 }
@@ -224,26 +221,31 @@ Slider.control-detail-editor {
     -fx-font-size: 16px;
 }
 
-.synth-defs {
+.tool-pane {
+    -fx-border-color: green;
+    -fx-border-width: 2px;
+    -fx-border-radius: 5px;
+    -fx-background-radius: 5px;
+    -fx-padding: 5px;
     -fx-background-color: #1e1f22;
 }
 
-.code-pane {
-    -fx-background-color: #1e1f22;
+.tool-pane:drop-possible {
+    -fx-background-color: #222720;
 }
 
-.synth-def-box {
+.object-box {
     -fx-border-color: black;
     -fx-border-width: 2px;
     -fx-border-radius: 5px;
     -fx-background-radius: 5px;
     -fx-padding: 2px;
-    -fx-background-color: rgba(0, 0, 0, 0.33);
+    /*-fx-background-color: rgba(0, 0, 0, 0.33)*/;
     -fx-spacing: 5px;
     -fx-alignment: center-left;
 }
 
-.synth-def-box:hover {
+.object-box:hover {
     -fx-background-color: rgba(100, 0, 0, 0.1);
 }
 
@@ -269,43 +271,16 @@ Slider.control-detail-editor {
     -fx-min-width: 150px;
     -fx-pref-width: 150px;
     -fx-spacing: 5px;
-    -fx-padding: 5px;
     -fx-alignment: center-left;
     -fx-border-width: 2px;
     -fx-border-radius: 3px;
     -fx-border-color: transparent;
+    -fx-font-size: 15px;
 }
 
 .name:hover {
     -fx-border-color: black;
 }
-
-.parameter-box {
-    -fx-border-color: black;
-    -fx-border-width: 1px 2px 1px 2px;
-    -fx-border-radius: 5px;
-    -fx-padding: 5px;
-    -fx-alignment: center-left;
-}
-
-.parameter-box:hover {
-    -fx-background-color: rgba(0, 0, 0, 0.2);
-}
-
-.parameter-def-name {
-    -fx-min-width: 120px;
-    -fx-pref-width: 120px;
-}
-
-.numbered-cell {
-    -fx-alignment: center-left;
-}
-
-.editor-list-number {
-    -fx-font-size: 15px;
-    -fx-padding: 5px;
-}
-
 
 .choice-editor-combo-box {
     -fx-pref-width: 100px;
@@ -314,28 +289,6 @@ Slider.control-detail-editor {
 .horizontal-choice-editor {
     -fx-spacing: 5px;
     -fx-alignment: center-left;
-}
-
-.buffer-box {
-    -fx-spacing: 5px;
-    -fx-alignment: center-left;
-    -fx-padding: 5px;
-    -fx-border-color: black;
-    -fx-border-radius: 5px;
-    -fx-background-radius: 5px;
-    -fx-background-color: transparent;
-}
-
-.buffer-box:hover {
-    -fx-background-color: rgba(100, 0, 0, 0.1);
-}
-
-.tool-pane {
-    -fx-background-color: #1e1f22;
-}
-
-.tool-pane:drop-possible {
-    -fx-background-color: #222720;
 }
 
 .compound-expr {
@@ -382,19 +335,7 @@ Slider.control-detail-editor {
 }
 
 .hextant-text.string {
-    -fx-text-fill: string;
-}
-
-.code-pane {
-    -fx-border-color: black;
-    -fx-border-width: 2px;
-    -fx-border-radius: 5px;
-    -fx-padding: 5px;
-    -fx-background-radius: 5px;
-}
-
-.tool-pane-heading {
-    -fx-font-size: 16px;
+    -fx-text-fill: green;
 }
 
 .time-range-rect {
@@ -435,10 +376,6 @@ Slider.control-detail-editor {
 
 .memo-area .scroll-pane .content {
     -fx-background-color: transparent;
-}
-
-.memo-label {
-    -fx-padding: 3px 6px 3px 6px;
 }
 
 .coordinate-info {
@@ -528,13 +465,14 @@ Slider.control-detail-editor {
 }
 
 .prompt-text-field {
-    -fx-font-size: 13.0;
-    -fx-padding: 3px;
+    -fx-pref-width: 200px;
+    -fx-font-size: 14px;
+    -fx-padding: 6px;
     -fx-border-radius: 3px;
-    -fx-border-color: gray;
     -fx-background-radius: 3px;
+    -fx-border-color: gray;
     -fx-background-color: black;
-    -fx-border-width: 2px;
+    -fx-border-width: 3px;
     -fx-prompt-text-fill: gray;
     -fx-text-fill: white;
 }
@@ -548,24 +486,6 @@ Slider.control-detail-editor {
     -fx-border-radius: 5px;
     -fx-background-radius: 5px;
     -fx-pref-height: 64px;
-}
-
-.group-box {
-    -fx-border-radius: 5px;
-    -fx-background-radius: 5px;
-    -fx-padding: 5px;
-    -fx-background-color: transparent;
-    -fx-border-color: black;
-    -fx-border-width: 2px;
-    -fx-alignment: center-left;
-}
-
-.group-box:hover {
-    -fx-background-color: rgba(100, 0, 0, 0.1);
-}
-
-.group-box:focused {
-    -fx-background-color: rgba(100, 0, 0, 0.25);
 }
 
 .parameter-def .hextant-text {
@@ -583,19 +503,4 @@ Slider.control-detail-editor {
 .synth-def-ref-box:hover {
     -fx-border-color: black;
     -fx-border-radius: 5px;
-}
-
-.bus-box {
-    -fx-border-radius: 5px;
-    -fx-background-radius: 5px;
-    -fx-padding: 5px;
-    -fx-spacing: 10px;
-    -fx-background-color: transparent;
-    -fx-border-color: black;
-    -fx-border-width: 2px;
-    -fx-alignment: center-left;
-}
-
-.bus-box:hover {
-    -fx-background-color: rgba(100, 0, 0, 0.1);
 }

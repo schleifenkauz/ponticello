@@ -45,8 +45,7 @@ sealed class RegularScoreObject(name: String) : ScoreObject(name) {
             viewManager.notifyListeners { muteToggled() }
         }
 
-    final override var nameOfNextInChain: String? = null
-    final override var nextInChain: ClonedObject? = null
+    final override var nextInChain: Reference? = null
 
     override fun writeStartCode(writer: ScWriter, offset: Double, suffixGenerator: SuffixGenerator) {}
 

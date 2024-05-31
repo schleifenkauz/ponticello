@@ -4,6 +4,7 @@ import bundles.PublicProperty
 import bundles.publicProperty
 import com.illposed.osc.OSCMessage
 import java.util.concurrent.CompletableFuture
+import java.util.logging.Logger
 
 interface SuperColliderClient : SuperColliderContext {
     val statusListener: StatusListener
@@ -12,18 +13,25 @@ interface SuperColliderClient : SuperColliderContext {
 
     fun send(address: String, arguments: List<Any>): CompletableFuture<OSCMessage>
 
-    fun eval(code: String): CompletableFuture<String> =
-        send("/eval", listOf(code)).thenApply { msg ->
-            msg.arguments[1] as String
+    fun eval(code: String): CompletableFuture<String> {
+        logger.fine("eval: $code")
+        return send("/eval", listOf(code)).thenApply { msg ->
+            val result = msg.arguments[1] as String
+            logger.fine("evaluating $code returned $result")
+            result
         }
+    }
 
     override fun run(command: String) {
+        logger.fine("run: $command")
         sendAsync("/run", listOf(command))
     }
 
     fun quit()
 
-    companion object : PublicProperty<SuperColliderClient> by publicProperty("SuperColliderClient")
+    companion object : PublicProperty<SuperColliderClient> by publicProperty("SuperColliderClient") {
+        private val logger: Logger = Logger.getLogger("SuperColliderClient")
+    }
 
     val consoleMonitor: ConsoleMonitor
 }

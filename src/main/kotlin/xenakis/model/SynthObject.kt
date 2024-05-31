@@ -5,45 +5,42 @@ import hextant.core.editor.ListenerManager
 import javafx.geometry.HorizontalDirection
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonObjectBuilder
-import kotlinx.serialization.json.put
 import reaktive.Observer
 import reaktive.list.observeEach
 import reaktive.value.now
-import reaktive.value.reactiveVariable
 import xenakis.impl.ScWriter
 import xenakis.impl.getSerializableValue
-import xenakis.impl.getString
 import xenakis.impl.putSerializableValue
 import xenakis.sc.ControlSpec
+import xenakis.sc.editor.GroupSelector
 import xenakis.ui.SynthObjectView
 import xenakis.ui.format
 
 class SynthObject(
     name: String,
-    private var synthDefName: String,
-    group: GroupObject = GroupObject.DEFAULT,
+    private val synthDefRef: SynthDefObject.Reference,
+    private val groupRef: GroupObjectReference,
     private val _controls: MutableMap<String, ParameterControl>
-) : RegularScoreObject(name), GroupReference {
+) : RegularScoreObject(name) {
     private lateinit var parameterNameObserver: Observer
     override val type: String
         get() = "synth"
 
     override val viewManager: ListenerManager<SynthObjectView> = ListenerManager.createWeakListenerManager()
 
-    override var group: GroupObject = group
-        set(value) {
-            if (field == value) return
-            viewManager.notifyListeners { changedGroup() }
-            field = value
-        }
-
-    lateinit var synthDef: SynthDefObject
+    @Transient
+    lateinit var groupSelector: GroupSelector
         private set
+
+    private val group: GroupObjectReference get() = groupSelector.result.now
+
+    val synthDef: SynthDefObject get() = synthDefRef.get()
 
     val controls: Map<String, ParameterControl> get() = _controls
 
     fun reassignControl(parameter: String, control: ParameterControl) {
         if (parameter !in controls) error("Parameter $parameter not found on object $name")
+        control.initialize(context)
         val oldControl = _controls[parameter]!!
         _controls[parameter] = control
         recordEdit(ScoreObjectEdit.ReassignControl(parameter, oldControl, control, this))
@@ -53,6 +50,7 @@ class SynthObject(
     fun addControl(parameter: String, control: ParameterControl) {
         if (synthDef.parameters.now.none { p -> p.name.now == parameter })
             error("Parameter $parameter not found on SynthDef for $name")
+        control.initialize(context)
         _controls[parameter] = control
         recordEdit(ScoreObjectEdit.AddControl(parameter, control, this))
         viewManager.notifyListeners { addedControl(parameter, control) }
@@ -67,20 +65,23 @@ class SynthObject(
     override val associatedControls: Map<String, ParameterControl> get() = controls
 
     override fun copy(): ScoreObject = SynthObject(
-        name.now, synthDefName, group,
+        name.now, synthDefRef, group,
         _controls = controls.mapValuesTo(mutableMapOf()) { (_, c) -> c.copy() })
 
     override fun cut(position: Double, whichHalf: HorizontalDirection): ScoreObject = SynthObject(
-        name.now, synthDefName, group,
+        name.now, synthDefRef, groupRef,
         _controls = controls.mapValuesTo(mutableMapOf()) { (_, c) -> c.cut(position, whichHalf) }
     )
 
     override fun getSpec(parameter: String): ControlSpec = synthDef.getParameter(parameter).spec.now
 
-    override fun addToScore(score: Score, context: Context) {
-        super.addToScore(score, context)
-        context[GroupRegistry].groupReferences.addListener(this)
-        synthDef = context[SynthDefRegistry].getSynthDef(synthDefName)
+    override fun initialize(context: Context) {
+        if (initialized) return
+        super.initialize(context)
+        synthDefRef.initialize(context)
+        groupRef.initialize(context)
+        groupSelector = GroupSelector(context, groupRef)
+        for ((_, control) in controls) control.initialize(context)
         parameterNameObserver = synthDef.parameters.observeEach { _, p ->
             p.name.observe { _, oldName, newName ->
                 val control = _controls[oldName] ?: return@observe
@@ -90,16 +91,11 @@ class SynthObject(
         }
     }
 
-    override fun onRemove() {
-        super.onRemove()
-        context[GroupRegistry].groupReferences.removeListener(this)
-    }
-
     override fun writeStartCode(writer: ScWriter, offset: Double, suffixGenerator: SuffixGenerator) {
         val name = "${name.now}${suffixGenerator.generateSuffix(this)}"
         writer.appendBlock("s.bind") {
             val synthVar = "~synth_${name}"
-            +"$synthVar = Synth(\\${synthDefName}, target: ${group.variableName})"
+            +"$synthVar = Synth(\\${synthDef.name.now}, target: ${group.get().variableName})"
             for ((param, control) in controls) {
                 when (control) {
                     is EnvelopeControl -> {
@@ -116,17 +112,17 @@ class SynthObject(
                     }
 
                     is BusControl -> {
-                        val bus = control.bus.variableName
+                        val bus = control.bus.get().variableName
                         +"${synthVar}.set(\\$param, $bus)"
                     }
 
                     is BusValueControl -> {
-                        val bus = control.bus.variableName
+                        val bus = control.bus.get().variableName
                         +"${synthVar}.map(\\$param, $bus)"
                     }
 
                     is SingleBusValueControl -> {
-                        val bus = control.bus.variableName
+                        val bus = control.bus.get().variableName
                         +"${synthVar}.set(\\$param, $bus.getSynchronized)"
                     }
 
@@ -141,7 +137,7 @@ class SynthObject(
                     }
 
                     is BufferControl -> {
-                        val buf = control.buffer.variableName
+                        val buf = control.buffer.get().variableName
                         +"${synthVar}.set(\\$param, $buf)"
                     }
 
@@ -161,8 +157,8 @@ class SynthObject(
     }
 
     override fun JsonObjectBuilder.saveToJson() {
-        put("synthDef", synthDef.name.now)
-        if (group != GroupObject.DEFAULT) put("group", group.name.now)
+        putSerializableValue("synthDef", synthDefRef)
+        putSerializableValue("group", groupRef)
         if (controls.isNotEmpty()) putSerializableValue<Map<String, ParameterControl>>("controls", controls)
     }
 
@@ -171,13 +167,10 @@ class SynthObject(
             get() = "synth"
 
         override fun JsonObject.createFromJson(name: String): ScoreObject {
-            val synthDefName = getString("synthDef")!!
-            val groupName = getString("group") ?: "default"
+            val synthDef: SynthDefObject.Reference = getSerializableValue("synthDef")!!
+            val group: GroupObjectReference = getSerializableValue("group")!!
             val controls = getSerializableValue<Map<String, ParameterControl>>("controls") ?: mapOf()
-            return SynthObject(
-                name, synthDefName,
-                GroupObject(reactiveVariable(groupName)), controls.toMutableMap()
-            )
+            return SynthObject(name, synthDef, group, controls.toMutableMap())
         }
     }
 }

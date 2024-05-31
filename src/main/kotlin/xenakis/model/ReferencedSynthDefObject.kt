@@ -6,6 +6,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import reaktive.list.MutableReactiveList
 import reaktive.list.ReactiveList
+import reaktive.list.reactiveList
 import reaktive.value.ReactiveValue
 import reaktive.value.ReactiveVariable
 import reaktive.value.reactiveValue
@@ -13,7 +14,6 @@ import reaktive.value.reactiveVariable
 import xenakis.impl.*
 import xenakis.sc.BufferControlSpec
 import xenakis.sc.BusControlSpec
-import xenakis.sc.NoBuffer
 import xenakis.sc.NumericalControlSpec
 import java.util.concurrent.CompletableFuture
 
@@ -23,13 +23,12 @@ class ReferencedSynthDefObject(
     override val color: ReactiveVariable<@Serializable(with = ColorSerializer::class) Color>
 ) : SynthDefObject {
     @Transient
-    private lateinit var _parameters: MutableReactiveList<ParameterDefObject>
+    private var _parameters: MutableReactiveList<ParameterDefObject> = reactiveList()
 
-    @Transient
     private lateinit var context: Context
 
-    override fun initialize(registry: SynthDefRegistry) {
-        context = registry.context
+    override fun initialize(context: Context) {
+        this.context = context
         context[SuperColliderClient].sync()
     }
 
@@ -44,7 +43,9 @@ class ReferencedSynthDefObject(
             val parameters = getSynthDefParameters(_name)
             _parameters.now.clear()
             _parameters.now.addAll(parameters)
-            Unit
+            for (param in parameters) {
+                param.initialize(context)
+            }
         }.exceptionally { ex -> ex.printStackTrace() }
     }
 
@@ -58,8 +59,8 @@ class ReferencedSynthDefObject(
                 val type = send("controlType", controlRef).join().string
                 val default = send("controlDefault", controlRef).join()
                 val spec = when (type) {
-                    "bus" -> BusControlSpec(context[BusRegistry].getOutputBus())
-                    "buf" -> BufferControlSpec(NoBuffer)
+                    "bus" -> BusControlSpec()
+                    "buf" -> BufferControlSpec()
                     "num" -> {
                         val min = send("controlMinval", listOf(name, paramName)).join().double
                         val max = send("controlMaxval", listOf(name, paramName)).join().double

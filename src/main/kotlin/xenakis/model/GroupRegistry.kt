@@ -4,64 +4,38 @@ import bundles.PublicProperty
 import bundles.publicProperty
 import bundles.set
 import hextant.context.Context
-import hextant.core.editor.ListenerManager
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.Transient
-import reaktive.value.now
 import xenakis.impl.SuperColliderClient
 import xenakis.impl.SuperColliderContext
 
 @Serializable
-data class GroupRegistry(private val order: MutableList<GroupObject> = mutableListOf(GroupObject.DEFAULT)) {
-    @Transient
-    private lateinit var context: Context
+data class GroupRegistry(
+    private val order: MutableList<GroupObject> = mutableListOf(GroupObject.DEFAULT)
+) : ObjectRegistry<GroupObject>() {
+    override val objects: MutableList<GroupObject>
+        get() = order
 
-    @Transient
-    private val views = ListenerManager.createWeakListenerManager<View>()
+    override val objectType: String
+        get() = "Group"
 
-    @Transient
-    val groupReferences = ListenerManager.createWeakListenerManager<GroupReference>()
-
-    fun initialize(context: Context) {
-        this.context = context
+    override fun initialize(context: Context) {
         context[GroupRegistry] = this
-        for (group in order) {
-            group.initialize(context)
-        }
-    }
-
-    fun addView(view: View) {
-        views.addListener(view)
-        for ((index, group) in order.withIndex()) {
-            view.addedGroup(group, index)
-        }
+        super.initialize(context)
     }
 
     fun asList(): List<GroupObject> = order
 
-    fun add(group: GroupObject) {
-        val groupBefore = order.last()
-        val index = order.size
-        order.add(group)
-        group.initialize(context)
-        setupGroup(group, groupBefore, context[SuperColliderClient])
-        views.notifyListeners { addedGroup(group, index) }
+    fun indexOf(group: GroupObject): Int = asList().indexOf(group)
+
+    fun getDefaultGroup(): GroupObject = objects.find { it.isDefault } ?: error("No default group found!")
+
+    override fun onAdded(obj: GroupObject, idx: Int) {
+        val groupBefore = order.getOrNull(idx - 1)
+        setupGroup(obj, groupBefore, context[SuperColliderClient])
     }
 
-    fun hasGroup(name: String) = order.any { it.name.now == name }
-
-    fun remove(group: GroupObject, replacement: GroupObject? = null) {
-        check(group != GroupObject.DEFAULT) { "attempt to remove default group" }
-        val index = order.indexOf(group)
-        if (index == -1) error("$group not registered")
-        order.removeAt(index)
-        context[SuperColliderClient].run("${group.variableName}.free; ${group.variableName} = nil;")
-        views.notifyListeners { removedGroup(group, index) }
-        groupReferences.notifyListeners {
-            if (this.group == group) {
-                this.group = replacement ?: GroupObject.DEFAULT
-            }
-        }
+    override fun onRemoved(obj: GroupObject, idx: Int) {
+        context[SuperColliderClient].run("${obj.variableName}.free; ${obj.variableName} = nil;")
     }
 
     fun moveGroup(group: GroupObject, deltaIndex: Int) {
@@ -77,13 +51,11 @@ data class GroupRegistry(private val order: MutableList<GroupObject> = mutableLi
             val groupBefore = order[toIndex - 1]
             context[SuperColliderClient].run("${group.variableName}.moveAfter(${groupBefore.variableName});")
         }
-        views.notifyListeners { movedGroup(group, fromIndex, toIndex) }
+        views.notifyListeners { if (this is View) movedGroup(group, fromIndex, toIndex) }
     }
 
-    fun hasReferences(group: GroupObject) = groupReferences.listeners.any { ref -> ref.group == group }
-
     private fun setupGroup(group: GroupObject, groupBefore: GroupObject?, context: SuperColliderContext) {
-        if (group == GroupObject.DEFAULT) {
+        if (group.isDefault) {
             if (groupBefore != null) {
                 context.run("s.defaultGroup.moveAfter(${groupBefore.variableName});")
             }
@@ -98,7 +70,7 @@ data class GroupRegistry(private val order: MutableList<GroupObject> = mutableLi
 
     fun SuperColliderContext.setupGroups() = run {
         for (group in order) {
-            if (group != GroupObject.DEFAULT) {
+            if (!group.isDefault) {
                 appendBlock("if (${group.variableName} != nil)") {
                     +"${group.variableName}.free"
                     +"${group.variableName} = nil"
@@ -112,13 +84,7 @@ data class GroupRegistry(private val order: MutableList<GroupObject> = mutableLi
         }
     }
 
-    fun indexOf(group: GroupObject): Int = asList().indexOf(group)
-
-    interface View {
-        fun addedGroup(group: GroupObject, index: Int)
-
-        fun removedGroup(group: GroupObject, index: Int)
-
+    interface View : ObjectRegistry.View<GroupObject> {
         fun movedGroup(group: GroupObject, fromIndex: Int, toIndex: Int)
     }
 

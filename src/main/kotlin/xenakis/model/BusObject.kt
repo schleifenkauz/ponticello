@@ -1,6 +1,5 @@
 package xenakis.model
 
-import hextant.codegen.UseEditor
 import hextant.context.Context
 import javafx.scene.input.DataFormat
 import kotlinx.serialization.Serializable
@@ -10,23 +9,31 @@ import reaktive.value.*
 import xenakis.impl.SuperColliderClient
 import xenakis.sc.Rate
 import xenakis.sc.editor.AbstractRenamableObject
-import xenakis.sc.editor.BusSelector
 import xenakis.ui.XenakisController
 
 @Serializable
-@UseEditor(BusSelector::class)
 class BusObject(
     override val mutableName: ReactiveVariable<String>,
     val rate: ReactiveValue<Rate>,
     val channels: ReactiveValue<Int>,
     val isOutput: Boolean = false
 ) : AbstractRenamableObject() {
+    val variableName get() = "~bus_${name.now}"
+
+    val allocationCode: String
+        get() =
+            if (isOutput) "$variableName = 0"
+            else "$variableName = Bus.${rate.now.name.lowercase()}(s, ${channels.now})"
+
+    val deallocationCode: String
+        get() = "$variableName.free; $variableName = nil"
+
     @Transient
     private lateinit var observer: Observer
 
     override fun canRenameTo(newName: String): Boolean =
         name.now.startsWith("global_") == newName.startsWith("global_") &&
-                !context[XenakisController.currentProject].busses.hasBus(newName)
+                !context[XenakisController.currentProject].busses.has(newName)
 
     override fun rename(newName: String) {
         context[SuperColliderClient].run("~bus_$newName = $variableName; $variableName = nil;")
@@ -53,15 +60,7 @@ class BusObject(
         context[SuperColliderClient].run(deallocationCode)
     }
 
-    val variableName get() = "~bus_${name.now}"
-
-    val allocationCode: String
-        get() =
-            if (isOutput) "$variableName = 0"
-            else "$variableName = Bus.${rate.now.name.lowercase()}(s, ${channels.now})"
-
-    val deallocationCode: String
-        get() = "$variableName.free; $variableName = nil"
+    override fun createReference(): BusObjectReference = BusObjectReference(this)
 
     companion object {
         val output = BusObject(
@@ -70,6 +69,9 @@ class BusObject(
             reactiveVariable(2),
             isOutput = true
         )
+
+        fun create(name: String, rate: Rate = Rate.Audio, channels: Int = 2) =
+            BusObject(reactiveVariable(name), reactiveVariable(rate), reactiveVariable(channels))
 
         val DATA_FORMAT = DataFormat("bus")
     }

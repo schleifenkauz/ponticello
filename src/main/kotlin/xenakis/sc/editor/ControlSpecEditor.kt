@@ -15,17 +15,13 @@ class ControlSpecEditor(context: Context) :
     fun setResult(spec: ControlSpec) {
         when (spec) {
             is BufferControlSpec -> {
-                val bufferSelector = BufferSelector(context)
-                bufferSelector.select(spec.defaultValue)
-                val specEditor = BufferControlSpecEditor(context, bufferSelector)
+                val specEditor = BufferControlSpecEditor(context)
                 select(ParameterType.Buffer, specEditor)
             }
 
             is BusControlSpec -> {
-                val busSelector = BusSelector(context, bus = spec.defaultValue)
-                busSelector.select(spec.defaultValue)
-                val specEditor = BusControlSpecEditor(context, busSelector)
-                select(ParameterType.Buffer, specEditor)
+                val specEditor = BusControlSpecEditor(context)
+                select(ParameterType.Bus, specEditor)
             }
 
             is NumericalControlSpec -> {

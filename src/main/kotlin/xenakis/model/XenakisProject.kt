@@ -27,7 +27,7 @@ class XenakisProject private constructor(
     val synthDefs: SynthDefRegistry,
     val busses: BusRegistry,
     val flowGraph: AudioFlowGraph,
-    val buffers: Buffers,
+    val buffers: BufferRegistry,
     val globalControls: GlobalControls = GlobalControls(mutableListOf()),
     val groups: GroupRegistry = GroupRegistry(),
     val score: Score
@@ -55,6 +55,7 @@ class XenakisProject private constructor(
         flowGraph.initialize(context)
         synthDefs.initialize(context)
         score.initialize(context)
+        buffers.initialize(context)
         context[SynthDefRegistry] = synthDefs
         client = context[SuperColliderClient]
         statusObserver = client.statusListener.statusUpdates.observe { _, status ->
@@ -95,7 +96,7 @@ class XenakisProject private constructor(
                 appendBlock("Task") {
                     +"s.bootSync"
                     busses.run { reallocateBusses() }
-                    buffers.run { loadBuffers() }
+                    buffers.run { reloadBuffers() }
                     globalControls.run { setBusValues() }
                     groups.run { setupGroups() }
                     for (obj in score.objects) obj.run { serverBooted(this@wrap) }
@@ -131,7 +132,7 @@ class XenakisProject private constructor(
             synthDefs = SynthDefRegistry.newInstance(),
             busses = BusRegistry.createDefault(),
             flowGraph = AudioFlowGraph.createDefault(),
-            buffers = Buffers(mutableListOf()),
+            buffers = BufferRegistry(mutableListOf()),
             score = Score(),
         ).also { project ->
             project.initialize(context)

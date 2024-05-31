@@ -41,6 +41,19 @@ sealed interface ScExpr : ScElement
 @Serializable
 abstract class SimpleScElement(val code: String) : ScElement {
     override fun code(writer: ScWriter) = writer.append(code)
+
+    abstract class Serializer<T : SimpleScElement> : KSerializer<T> {
+        override val descriptor: SerialDescriptor
+            get() = serialDescriptor<String>()
+
+        abstract fun fromString(str: String): T
+
+        override fun deserialize(decoder: Decoder): T = fromString(decoder.decodeString())
+
+        override fun serialize(encoder: Encoder, value: T) {
+            encoder.encodeString(value.code)
+        }
+    }
 }
 
 @Serializable
@@ -99,7 +112,7 @@ data class IntegerLiteral(val text: String, val valueOrNull: Int?) : Literal, Si
 }
 
 @Token(serializable = true)
-@Serializable
+@Serializable(with = DoubleLiteral.Serializer::class)
 data class DoubleLiteral(val text: String, val valueOrNull: Double?) : Literal, SimpleScElement(text) {
     constructor(value: Double) : this(value.toString(), value)
 
@@ -110,6 +123,10 @@ data class DoubleLiteral(val text: String, val valueOrNull: Double?) : Literal, 
 
     companion object : TokenType<DoubleLiteral> {
         override fun compile(token: String): DoubleLiteral = DoubleLiteral(token, token.toDoubleOrNull())
+    }
+
+    object Serializer : SimpleScElement.Serializer<DoubleLiteral>() {
+        override fun fromString(str: String): DoubleLiteral = compile(str)
     }
 }
 
@@ -188,7 +205,7 @@ data class Identifier(val text: String) : SimpleScElement(text), ScExpr {
         fun isValid(token: String): Boolean {
             if (token.isEmpty()) return false
             if (!token.first().isLetterOrDigit() && token.first() != '~') return false
-            return token.drop(1).all { c -> c.isLetterOrDigit() }
+            return token.drop(1).all { c -> c.isLetterOrDigit() || c == '_' }
         }
 
         fun truncate(token: String) = token.filter { it.isLetterOrDigit() }

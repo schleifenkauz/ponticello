@@ -6,10 +6,7 @@ import hextant.context.createControl
 import hextant.fx.PseudoClasses
 import hextant.fx.initHextantScene
 import hextant.serial.EditorRoot
-import javafx.geometry.Pos
 import javafx.scene.control.Button
-import javafx.scene.control.Label
-import javafx.scene.layout.HBox
 import javafx.scene.layout.VBox
 import reaktive.list.reactiveList
 import reaktive.value.binding.map
@@ -18,67 +15,49 @@ import reaktive.value.now
 import reaktive.value.reactiveVariable
 import xenakis.impl.randomColor
 import xenakis.model.*
-import xenakis.sc.Identifier
 import xenakis.sc.editor.CodeBlockEditor
 
 class SynthDefRegistryPane(
     private val registry: SynthDefRegistry,
-) : SynthDefRegistry.View, VBox() {
+) : SynthDefRegistry.View, ObjectRegistryPane<SynthDefObject>(registry) {
     private var selectedBtn: Button? = null
 
     private val selectorButtons = mutableMapOf<SynthDefObject, Button>()
     private val subWindows = mutableMapOf<SynthDefObject, SubWindow>()
 
-    private val defs = VBox().styleClass("synth-def-list")
-
     init {
-        styleClass("tool-pane")
-        initializeLayout()
         registry.addView(this)
     }
 
-    private fun initializeLayout() {
-        val label = Label("Synth Definitions").styleClass("tool-pane-heading")
-        val space = infiniteSpace()
-        val addBtn = Icon.Add.button(action = "Add SynthDef") { addSynthDefEditor() }
-        val reloadBtn = Icon.Repeat.button(action = "Reload SynthDefs") { registry.sync() }
-        val header = HBox(label, space, addBtn, reloadBtn).styleClass("tool-pane-header")
-        header.alignment = Pos.CENTER_LEFT
-        header.spacing = 5.0
-        children.addAll(header, defs)
+    override fun reload() {
+        registry.sync()
     }
 
-    private fun addSynthDefEditor() {
-        showTextPrompt("SynthDef name", "", registry.context) { name ->
-            if (!Identifier.isValid(name) || registry.hasSynthDef(name)) {
-                return@showTextPrompt false
-            }
-            when {
-                name in StandardSynthDefObject.all -> {
-                    val standard = showYesNoDialog(
-                        "SynthDef '$name' is a standard SynthDef. Do you want to load it? A new SynthDef will be created otherwise.",
-                        default = true
-                    )
-                    if (standard) {
-                        registry.addSynthDef(StandardSynthDefObject.all.getValue(name))
-                    } else {
-                        addCustomizableNewSynthDef(name)
-                    }
+    override fun addObject(name: String) {
+        when {
+            name in StandardSynthDefObject.all -> {
+                val standard = showYesNoDialog(
+                    "SynthDef '$name' is a standard SynthDef. Do you want to load it? A new SynthDef will be created otherwise.",
+                    default = true
+                )
+                if (standard) {
+                    registry.add(StandardSynthDefObject.all.getValue(name))
+                } else {
+                    addCustomizableNewSynthDef(name)
                 }
-
-                registry.synthDescLibContains(name).join() -> {
-                    val reference = showYesNoDialog(
-                        "SynthDef '$name' is already defined in the global SynthDescLib. " +
-                                "Import SynthDef '$name' from SynthDescLib? A new SynthDef will be created otherwise.",
-                        default = true
-                    )
-                    if (reference) addReferencedSynthDef(name)
-                    else addCustomizableNewSynthDef(name)
-                }
-
-                else -> addCustomizableNewSynthDef(name)
             }
-            true
+
+            registry.synthDescLibContains(name).join() -> {
+                val reference = showYesNoDialog(
+                    "SynthDef '$name' is already defined in the global SynthDescLib. " +
+                            "Import SynthDef '$name' from SynthDescLib? A new SynthDef will be created otherwise.",
+                    default = true
+                )
+                if (reference) addReferencedSynthDef(name)
+                else addCustomizableNewSynthDef(name)
+            }
+
+            else -> addCustomizableNewSynthDef(name)
         }
     }
 
@@ -91,47 +70,41 @@ class SynthDefRegistryPane(
             parameters = reactiveList(),
             ugenGraph = EditorRoot(ugenGraph, ugenGraphControl)
         )
-        registry.addSynthDef(obj)
+        registry.add(obj)
         editSynthDef(obj)
     }
 
     private fun addReferencedSynthDef(name: String) {
         val def = ReferencedSynthDefObject.loadFromSynthDescLib(name)
-        registry.addSynthDef(def)
+        registry.add(def)
     }
 
-    override fun selectedSynthDef(obj: SynthDefObject?) {
-        if (obj == null) {
-            selectedBtn?.pseudoClassStateChanged(PseudoClasses.SELECTED, false)
-            selectedBtn = null
-        } else {
+    override fun selected(obj: SynthDefObject?) {
+        selectedBtn?.pseudoClassStateChanged(PseudoClasses.SELECTED, false)
+        selectedBtn = null
+        if (obj != null) {
             val selector = selectorButtons[obj] ?: error("selector button for SynthDef ${obj.name.now} not found")
-            select(selector)
+            selector.pseudoClassStateChanged(PseudoClasses.SELECTED, true)
+            selectedBtn = selector
         }
     }
 
-    override fun addedSynthDef(idx: Int, obj: SynthDefObject) {
+    override fun ObjectBox<SynthDefObject>.configureObjectBox() {
         val selector = Button().styleClass("selector-button")
         selectorButtons[obj] = selector
         selector.setOnAction {
             if (selector == selectedBtn) return@setOnAction
-            select(selector)
             registry.selectedSynthDef = obj
         }
-        val nameDisplay =
-            if (obj is RenamableObject) NameControl(obj)
-            else label(obj.name) styleClass "name"
+        children.add(0, selector)
         val colorPicker = colorPicker(obj.color)
-        colorPicker.prefWidth = 35.0
-        val edit = Icon.View.button(action = "Edit SynthDef") { editSynthDef(obj) }
-        val remove = Icon.Delete.button(action = "Remove this SynthDef") { registry.removeSynthDef(obj) }
-        val box = HBox(selector, nameDisplay, colorPicker, infiniteSpace(), edit, remove)
-            .styleClass("synth-def-box")
-        defs.children.add(idx, box)
+        colorPicker.prefWidth = 30.0
+        addExtraControl(colorPicker)
+        addAction(Icon.View, "Edit SynthDef") { editSynthDef(obj) }
     }
 
-    override fun removedSynthDef(idx: Int, obj: SynthDefObject) {
-        defs.children.removeAt(idx)
+    override fun removed(obj: SynthDefObject, idx: Int) {
+        super.removed(obj, idx)
         subWindows.remove(obj)?.hide()
         selectorButtons.remove(obj)
     }
@@ -158,12 +131,6 @@ class SynthDefRegistryPane(
             }
         }
         window.show()
-    }
-
-    private fun select(selector: Button) {
-        selectedBtn?.pseudoClassStateChanged(PseudoClasses.SELECTED, false)
-        selector.pseudoClassStateChanged(PseudoClasses.SELECTED, true)
-        selectedBtn = selector
     }
 
     companion object : PublicProperty<SynthDefRegistryPane> by publicProperty("SynthDefRegistryPane")

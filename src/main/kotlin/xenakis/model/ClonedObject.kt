@@ -5,27 +5,19 @@ import javafx.scene.paint.Color
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonObjectBuilder
 import kotlinx.serialization.json.put
-import reaktive.value.ReactiveValue
 import reaktive.value.now
-import reaktive.value.reactiveVariable
 import xenakis.impl.*
 import xenakis.sc.ControlSpec
 import xenakis.ui.ScoreObjectView
 
 class ClonedObject(
     name: String,
-    private var originalName: ReactiveValue<String>,
+    private var originalRef: Reference,
 ) : ScoreObject(name) {
-    constructor(name: String, original: ScoreObject) : this(name, original.name) {
-        this.original = original
-        resolved = true
-    }
+    constructor(name: String, original: ScoreObject) : this(name, original.createReference())
 
     override val position: ObjectPosition = ObjectPosition(this)
-    lateinit var original: ScoreObject
-        private set
-
-    private var resolved = false
+    val original: ScoreObject get() = originalRef.get()
 
     override val type: String
         get() = "clone"
@@ -33,20 +25,15 @@ class ClonedObject(
     override var start: Double by position::start
     override var y: Double by position::y
 
-    override var nameOfNextInChain: String? = null
-    override var nextInChain: ClonedObject? = null
+    override var nextInChain: Reference? = null
 
     override fun JsonObjectBuilder.saveToJson() {
         put("original", original.name.now)
     }
 
-    override fun addToScore(score: Score, context: Context) {
-        super.addToScore(score, context)
-        if (!resolved) {
-            original = score.getObject(originalName.now)
-            originalName = original.name
-            resolved = true
-        }
+    override fun initialize(context: Context) {
+        super.initialize(context)
+        originalRef.initialize(context)
     }
 
     override var duration: Double by { original::duration }
@@ -78,8 +65,8 @@ class ClonedObject(
             get() = "clone"
 
         override fun JsonObject.createFromJson(name: String): ScoreObject {
-            val originalName = getString("original")!!
-            return ClonedObject(name, reactiveVariable(originalName))
+            val originalName: Reference = getSerializableValue("original")!!
+            return ClonedObject(name, originalName)
         }
     }
 }

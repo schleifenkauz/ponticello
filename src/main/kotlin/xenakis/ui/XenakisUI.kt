@@ -48,9 +48,8 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
     private lateinit var serverSetupCodePane: CodePane
     private lateinit var beforePlayCodePane: CodePane
     private lateinit var synthDefsPane: SynthDefRegistryPane
-    lateinit var busRegistryPane: BusRegistryPane
-        private set
-    private lateinit var buffersPane: BuffersPane
+    private lateinit var busRegistryPane: BusRegistryPane
+    private lateinit var buffersPane: BufferRegistryPane
     private lateinit var groupsPane: GroupRegistryPane
     private lateinit var scoreView: ScoreView
     private lateinit var flowGraphWindow: SubWindow
@@ -88,9 +87,9 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
         beforePlayCodePane = CodePane("Play setup", project.beforePlay.control)
         synthDefsPane = SynthDefRegistryPane(project.synthDefs)
         context[SynthDefRegistryPane] = synthDefsPane
-        busRegistryPane = BusRegistryPane(context, project.busses)
-        buffersPane = BuffersPane(project.buffers, project, controller)
-        groupsPane = GroupRegistryPane(context, project.groups)
+        busRegistryPane = BusRegistryPane(project.busses)
+        buffersPane = BufferRegistryPane(project.buffers, project, controller)
+        groupsPane = GroupRegistryPane(project.groups)
         scoreView = ScoreView(project.score, project.context)
 
         val flowGraphEditor = AudioFlowGraphPane(project.flowGraph, context)
@@ -104,7 +103,7 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
         player = ScorePlayer(scoreView, project, controller.client)
         shellWindow = SuperColliderShellController.createShellWindow(context)
 
-        project.context[ObjectSelector] = ObjectSelector(project.context, scoreView)
+        project.context[ScoreObjectSelector] = ScoreObjectSelector(project.context, scoreView)
         selectedObjectObserver = scoreView.selector.singleSelected.forEach { view ->
             if (view == null) objectActionsBar.children.clear()
             else objectActionsBar.children.setAll(view.header)
@@ -173,8 +172,8 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
     private fun createLayout(): VBox {
         val leftSplitter = SplitPane(synthDefsPane, busRegistryPane, buffersPane, groupsPane)
         val rightSplitter = SplitPane(serverSetupCodePane, beforePlayCodePane)
-        leftSplitter.minWidth = 300.0
-        rightSplitter.minWidth = 300.0
+        leftSplitter.minWidth = 400.0
+        rightSplitter.minWidth = 400.0
         leftSplitter.orientation = Orientation.VERTICAL
         rightSplitter.orientation = Orientation.VERTICAL
         val horizontalSplitter = SplitPane(leftSplitter, scoreView, rightSplitter)
@@ -248,16 +247,16 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
 
     private fun createLayoutBar(): HBox {
         val horizontalBtn = Icon.Horizontal.button(action = "Create horizontal group") {
-            project.context[ObjectSelector].addLayoutGroup(LayoutAspect.Horizontal)
+            project.context[ScoreObjectSelector].addLayoutGroup(LayoutAspect.Horizontal)
         }
         val verticalBtn = Icon.Vertical.button(action = "Create vertical group") {
-            project.context[ObjectSelector].addLayoutGroup(LayoutAspect.Vertical)
+            project.context[ScoreObjectSelector].addLayoutGroup(LayoutAspect.Vertical)
         }
         val removeHorizontalBtn = Icon.HorizontalRemove.button(action = "Remove from horizontal group") {
-            project.context[ObjectSelector].removeFromLayoutGroup(LayoutAspect.Horizontal)
+            project.context[ScoreObjectSelector].removeFromLayoutGroup(LayoutAspect.Horizontal)
         }
         val removeVerticalBtn = Icon.VerticalRemove.button(action = "Remove from vertical group") {
-            project.context[ObjectSelector].removeFromLayoutGroup(LayoutAspect.Vertical)
+            project.context[ScoreObjectSelector].removeFromLayoutGroup(LayoutAspect.Vertical)
         }
         return HBox(horizontalBtn, verticalBtn, removeHorizontalBtn, removeVerticalBtn)
     }

@@ -9,11 +9,13 @@ class ConsoleMonitor(private val process: Process) : Thread() {
         name = "ConsoleMonitor"
     }
 
+    @Synchronized
     fun addListener(listener: Listener) {
         listener.process(consoleUntilNow.toString())
         consoleMonitors.add(listener)
     }
 
+    @Synchronized
     fun removeListener(listener: Listener) {
         consoleMonitors.remove(listener)
     }
@@ -23,8 +25,10 @@ class ConsoleMonitor(private val process: Process) : Thread() {
         stream.useLines { lines ->
             for (line in lines) {
                 if (interrupted()) break
-                consoleMonitors.forEach { m -> m.process(line + "\n") }
-                consoleUntilNow.appendLine(line)
+                synchronized(this) {
+                    consoleMonitors.forEach { m -> m.process(line + "\n") }
+                    consoleUntilNow.appendLine(line)
+                }
             }
         }
     }

@@ -12,7 +12,7 @@ import xenakis.sc.Identifier
 
 class NameControl(val obj: RenamableObject) : Control() {
     private val field = HextantTextField(obj.name.now, autoSize = false).alwaysHGrow()
-    private val btnEdit = Icon.Edit.button(action = "Edit identifier") { startEdit() }
+    private val btnEdit = Icon.Edit.button(action = "Edit name") { startEdit() }
     private val btnCommit = Icon.Check.button(action = "Commit change") { commitEdit() }
     private val root = HBox(field, btnEdit)
     private val observer: Observer

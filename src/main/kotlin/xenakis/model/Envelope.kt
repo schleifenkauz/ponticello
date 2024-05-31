@@ -79,7 +79,7 @@ class Envelope(private val _points: MutableList<Point>, val curve: Warp) {
         return when (whichHalf) {
             LEFT -> {
                 val left = points.take(i) + pivot
-                Envelope(left.mapTo(mutableListOf()) { (x, y) -> Point(x / position, y) }, curve)
+                Envelope(left.toMutableList(), curve)
             }
 
             RIGHT -> {

@@ -8,21 +8,15 @@ import javafx.scene.control.MenuItem
 import javafx.scene.input.MouseEvent
 import javafx.scene.layout.HBox
 import javafx.scene.paint.Color
-import reaktive.Observer
 import reaktive.value.now
 import xenakis.model.Envelope
 import xenakis.model.EnvelopeControl
 import xenakis.model.SynthObject
 import xenakis.sc.NumericalControlSpec
-import xenakis.sc.editor.GroupSelector
-import xenakis.sc.view.GroupSelectorControl
+import xenakis.sc.view.ObjectSelectorControl
 import xenakis.ui.XenakisController.Companion.currentProject
 
 class SynthObjectView(val obj: SynthObject) : ScoreObjectView(obj) {
-    private lateinit var groupSelector: GroupSelector
-    private lateinit var groupSelectorControl: GroupSelectorControl
-    private lateinit var obs: Observer
-
     init {
         styleClass("synth-object")
     }
@@ -31,7 +25,7 @@ class SynthObjectView(val obj: SynthObject) : ScoreObjectView(obj) {
         super.initialize(parent)
         val btn = Icon.Details.button(action = "Open control assignment view") { openControlAssignment() }
         header.children.add(1, btn)
-        setupGroupSelector()
+        header.children.add(1, ObjectSelectorControl(obj.groupSelector, createBundle()))
         setupSynthDefReference()
         listenForMouseEvents()
     }
@@ -43,21 +37,6 @@ class SynthObjectView(val obj: SynthObject) : ScoreObjectView(obj) {
         }
         val box = HBox(nameLabel, viewBtn) styleClass "synth-def-ref-box"
         header.children.add(1, box)
-    }
-
-    private fun setupGroupSelector() {
-        groupSelector = GroupSelector(context, obj.group)
-        groupSelectorControl = GroupSelectorControl(groupSelector, createBundle())
-        obs = groupSelector.result.observe { _, _, group ->
-            if (obj.group != group && group != GroupSelectorControl.createNew) {
-                obj.group = group
-            }
-        }
-        header.children.add(1, groupSelectorControl)
-    }
-
-    fun changedGroup() {
-        if (groupSelector.result.now != obj.group) groupSelector.select(obj.group)
     }
 
     private fun listenForMouseEvents() {
@@ -117,7 +96,7 @@ class SynthObjectView(val obj: SynthObject) : ScoreObjectView(obj) {
         for (param in parameters) {
             val name = param.name.now
             if (name !in obj.controls.keys) {
-                val control = param.defaultControl()
+                val control = param.defaultControl(context)
                 obj.addControl(name, control)
             }
         }

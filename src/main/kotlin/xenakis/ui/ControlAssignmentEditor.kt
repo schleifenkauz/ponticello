@@ -1,7 +1,6 @@
 package xenakis.ui
 
 import bundles.createBundle
-import hextant.core.view.SimpleChoiceEditorControl
 import javafx.collections.FXCollections.observableList
 import javafx.geometry.Pos
 import javafx.scene.Node
@@ -13,10 +12,13 @@ import javafx.scene.paint.Color
 import org.controlsfx.control.ToggleSwitch
 import reaktive.value.now
 import xenakis.model.*
-import xenakis.sc.*
+import xenakis.sc.ControlSpec
+import xenakis.sc.NumericalControlSpec
+import xenakis.sc.RawScExpr
+import xenakis.sc.code
 import xenakis.sc.editor.BufferSelector
 import xenakis.sc.editor.BusSelector
-import xenakis.sc.view.BusSelectorControl
+import xenakis.sc.view.ObjectSelectorControl
 
 class ControlAssignmentEditor(
     private val obj: ScoreObject,
@@ -172,65 +174,66 @@ class ControlAssignmentEditor(
             ): CustomControl = CustomControl(RawScExpr(detailInput.text))
         }
 
-        object Bus : ControlType<BusControl, BusSelectorControl>() {
+        object Bus : ControlType<BusControl, ObjectSelectorControl<BusObject, BusObjectReference>>() {
             override fun createDetailInput(
                 parameter: String,
                 spec: ControlSpec,
                 control: BusControl?,
                 project: XenakisProject
-            ): BusSelectorControl = busSelector(project, control?.bus)
+            ): ObjectSelectorControl<BusObject, BusObjectReference> = busSelector(project, control?.bus)
 
             override fun createControl(
                 obj: ScoreObject,
-                detailInput: BusSelectorControl,
+                detailInput: ObjectSelectorControl<BusObject, BusObjectReference>,
                 spec: ControlSpec
             ): BusControl = BusControl(detailInput.editor.result.now)
         }
 
-        object BusValue : ControlType<BusValueControl, BusSelectorControl>() {
+        object BusValue : ControlType<BusValueControl, ObjectSelectorControl<BusObject, BusObjectReference>>() {
             override fun createDetailInput(
                 parameter: String,
                 spec: ControlSpec,
                 control: BusValueControl?,
                 project: XenakisProject
-            ): BusSelectorControl = busSelector(project, control?.bus)
+            ): ObjectSelectorControl<BusObject, BusObjectReference> = busSelector(project, control?.bus)
 
             override fun createControl(
                 obj: ScoreObject,
-                detailInput: BusSelectorControl,
+                detailInput: ObjectSelectorControl<BusObject, BusObjectReference>,
                 spec: ControlSpec
             ): BusValueControl = BusValueControl(detailInput.editor.result.now)
         }
 
-        object SingleBusValue : ControlType<SingleBusValueControl, BusSelectorControl>() {
+        object SingleBusValue :
+            ControlType<SingleBusValueControl, ObjectSelectorControl<BusObject, BusObjectReference>>() {
             override fun createDetailInput(
                 parameter: String,
                 spec: ControlSpec,
                 control: SingleBusValueControl?,
                 project: XenakisProject
-            ): BusSelectorControl = busSelector(project, control?.bus)
+            ): ObjectSelectorControl<BusObject, BusObjectReference> = busSelector(project, control?.bus)
 
             override fun createControl(
                 obj: ScoreObject,
-                detailInput: BusSelectorControl,
+                detailInput: ObjectSelectorControl<BusObject, BusObjectReference>,
                 spec: ControlSpec
             ): SingleBusValueControl = SingleBusValueControl(detailInput.editor.result.now)
         }
 
-        object Buffer : ControlType<BufferControl, SimpleChoiceEditorControl<xenakis.sc.Buffer>>() {
+        object Buffer : ControlType<BufferControl, ObjectSelectorControl<BufferObject, BufferObjectReference>>() {
             override fun createDetailInput(
                 parameter: String,
                 spec: ControlSpec,
                 control: BufferControl?,
                 project: XenakisProject
-            ): SimpleChoiceEditorControl<xenakis.sc.Buffer> {
-                val editor = BufferSelector(project.context, control?.buffer ?: NoBuffer)
-                return SimpleChoiceEditorControl(editor, createBundle())
+            ): ObjectSelectorControl<BufferObject, BufferObjectReference> {
+                val editor = BufferSelector(project.context, control?.buffer ?: NoBuffer.createReference())
+                return ObjectSelectorControl(editor, createBundle())
             }
 
             override fun createControl(
                 obj: ScoreObject,
-                detailInput: SimpleChoiceEditorControl<xenakis.sc.Buffer>,
+                detailInput: ObjectSelectorControl<BufferObject, BufferObjectReference>,
                 spec: ControlSpec
             ): BufferControl = BufferControl(detailInput.editor.result.now)
         }
@@ -251,10 +254,14 @@ class ControlAssignmentEditor(
                 else -> throw AssertionError()
             } as ControlType<O, *>
 
-            private fun busSelector(project: XenakisProject, bus: BusObject?): BusSelectorControl {
-                val editor = BusSelector(project.context, bus = project.busses.getOutputBus())
+            private fun busSelector(
+                project: XenakisProject,
+                bus: BusObjectReference?
+            ): ObjectSelectorControl<BusObject, BusObjectReference> {
+                val editor =
+                    BusSelector(project.context, initialValue = project.busses.getOutputBus().createReference())
                 if (bus != null) editor.select(bus)
-                return BusSelectorControl(editor, createBundle())
+                return ObjectSelectorControl(editor, createBundle())
             }
         }
     }

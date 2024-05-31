@@ -23,7 +23,7 @@ class TaskObject(name: String, val code: EditorRoot<ScFunctionEditor>, var width
 
     override fun writeStartCode(writer: ScWriter, offset: Double, suffixGenerator: SuffixGenerator) {
         val name = "~task${name.now}${suffixGenerator.generateSuffix(this)}"
-        writer.appendBlock("Task") {
+        writer.appendBlock("$name = Task") {
             val function = code.editor.result.now
             function.code(this)
             this.appendLine(".value()")

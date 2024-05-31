@@ -20,8 +20,9 @@ class ScoreObjectGroup(name: String, val score: Score) : RegularScoreObject(name
 
     override val viewManager = ListenerManager.createWeakListenerManager<ScoreObjectView>()
 
-    override fun addToScore(score: Score, context: Context) {
-        super.addToScore(score, context)
+    override fun initialize(context: Context) {
+        if (initialized) return
+        super.initialize(context)
         this.score.initialize(context)
     }
 

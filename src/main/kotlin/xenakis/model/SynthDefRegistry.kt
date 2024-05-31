@@ -4,7 +4,6 @@ import bundles.PublicProperty
 import bundles.publicProperty
 import bundles.set
 import hextant.context.Context
-import hextant.core.editor.ListenerManager
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import reaktive.value.ReactiveValue
@@ -18,19 +17,18 @@ import java.util.concurrent.CompletableFuture
 class SynthDefRegistry private constructor(
     private val defs: MutableList<SynthDefObject>,
     private var selectedSynthDefName: ReactiveValue<String>? = null
-) {
-    @Transient
-    private val views = ListenerManager.createWeakListenerManager<View>()
+) : ObjectRegistry<SynthDefObject>() {
+    override val objects: MutableList<SynthDefObject>
+        get() = defs
 
-    @Transient
-    lateinit var context: Context
-        private set
+    override val objectType: String
+        get() = "SynthDef"
 
     @Transient
     private lateinit var client: SuperColliderClient
 
-    fun initialize(context: Context) {
-        this.context = context
+    override fun initialize(context: Context) {
+        super.initialize(context)
         context[SynthDefRegistry] = this
         client = context[SuperColliderClient]
     }
@@ -40,45 +38,31 @@ class SynthDefRegistry private constructor(
             if (value == field) return
             field = value
             selectedSynthDefName = value?.name
-            views.notifyListeners { selectedSynthDef(value) }
+            views.notifyListeners { if (this is View) selected(value) }
         }
 
     init {
         selectedSynthDefName = selectedSynthDef?.name
     }
 
-    fun getSynthDef(name: String): SynthDefObject =
-        getSynthDefOrNull(name) ?: error("no SynthDef with name '$name'")
-
     private fun getSynthDefOrNull(name: String): SynthDefObject? = defs.find { it.name.now == name }
-
-    fun hasSynthDef(name: String): Boolean = getSynthDefOrNull(name) != null
 
     fun synthDescLibContains(name: String): CompletableFuture<Boolean> {
         val answer = client.send("isSynthDef", listOf(name))
         return answer.thenApply { msg -> msg.boolean }
     }
 
-    fun addSynthDef(obj: SynthDefObject, idx: Int = defs.size) {
-        defs.add(idx, obj)
-        obj.initialize(this)
-        views.notifyListeners { addedSynthDef(idx, obj) }
+    override fun onAdded(obj: SynthDefObject, idx: Int) {
+        obj.run { client.sync() }
     }
 
-    fun removeSynthDef(obj: SynthDefObject) {
-        val idx = defs.indexOf(obj)
-        if (idx == -1) error("SynthDef ${obj.name} not found in registry")
-        defs.removeAt(idx)
+    override fun onRemoved(obj: SynthDefObject, idx: Int) {
         obj.run { client.removeSynthDef() }
-        views.notifyListeners { removedSynthDef(idx, obj) }
     }
 
     fun addView(view: View) {
-        views.addListener(view)
-        for ((idx, obj) in defs.withIndex()) {
-            view.addedSynthDef(idx, obj)
-        }
-        view.selectedSynthDef(selectedSynthDef)
+        super.addView(view)
+        view.selected(selectedSynthDef)
     }
 
     fun sync() {
@@ -99,11 +83,7 @@ class SynthDefRegistry private constructor(
         fun newInstance(): SynthDefRegistry = SynthDefRegistry(StandardSynthDefObject.all.values.toMutableList())
     }
 
-    interface View {
-        fun addedSynthDef(idx: Int, obj: SynthDefObject)
-
-        fun removedSynthDef(idx: Int, obj: SynthDefObject)
-
-        fun selectedSynthDef(obj: SynthDefObject?)
+    interface View : ObjectRegistry.View<SynthDefObject> {
+        fun selected(obj: SynthDefObject?)
     }
 }

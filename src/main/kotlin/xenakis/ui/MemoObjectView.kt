@@ -2,7 +2,7 @@ package xenakis.ui
 
 import hextant.fx.registerShortcuts
 import javafx.scene.Cursor
-import javafx.scene.control.ColorPicker
+import javafx.scene.control.Label
 import javafx.scene.control.TextArea
 import javafx.scene.input.MouseEvent
 import javafx.scene.layout.Priority
@@ -11,7 +11,7 @@ import xenakis.model.MemoObject
 
 class MemoObjectView(val obj: MemoObject) : ScoreObjectView(obj) {
     private val textArea = TextArea(obj.text) styleClass "memo-area"
-    private val colorPicker = ColorPicker(obj.associatedColor ?: Color.BLACK) styleClass "button"
+    private val label = Label(obj.text) styleClass "memo-label"
 
     override val supportedActions: List<Icon>
         get() = listOf(Icon.Delete)
@@ -23,26 +23,26 @@ class MemoObjectView(val obj: MemoObject) : ScoreObjectView(obj) {
         colorPicker.valueProperty().addListener { _, _, color ->
             obj.associatedColor = color
         }
-        textArea.setOnMouseClicked { ev ->
+        setVgrow(textArea, Priority.ALWAYS)
+        setVgrow(label, Priority.ALWAYS)
+        setOnMouseClicked { ev ->
             if (ev.clickCount >= 2) {
-                textArea.isEditable = true
-                textArea.requestFocus()
+                children.setAll(textArea)
             }
         }
-        setVgrow(textArea, Priority.ALWAYS)
         textArea.registerShortcuts {
             on("ESCAPE") {
-                textArea.isEditable = false
+                children.setAll(label)
             }
         }
         textArea.focusedProperty().addListener { _, _, focused ->
-            if (!focused) textArea.isEditable = false
+            if (!focused) children.setAll(label)
         }
     }
 
     override fun initialize(parent: ScorePane) {
         super.initialize(parent)
-        children.add(textArea)
+        children.add(label)
         header.children.add(1, colorPicker)
     }
 
@@ -60,5 +60,6 @@ class MemoObjectView(val obj: MemoObject) : ScoreObjectView(obj) {
 
     fun textChanged(value: String) {
         if (value != textArea.text) textArea.text = value
+        label.text = value
     }
 }

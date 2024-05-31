@@ -21,6 +21,7 @@ import xenakis.impl.Arrow
 import xenakis.impl.Point
 import xenakis.model.AudioFlowGraph
 import xenakis.model.BusObject
+import xenakis.model.BusRegistry
 import xenakis.sc.editor.CodeBlockEditor
 import xenakis.ui.XenakisController.Companion.currentProject
 import kotlin.math.sign
@@ -72,7 +73,7 @@ class AudioFlowGraphPane(
         }
         addEventHandler(DragEvent.DRAG_DROPPED) { ev ->
             val busName = ev.dragboard.getContent(BusObject.DATA_FORMAT) as? String ?: return@addEventHandler
-            val bus = context[currentProject].busses.getBus(busName)
+            val bus = context[currentProject].busses.get(busName)
             if (!graph.add(bus, Point(ev.x, ev.y))) {
                 alertError("Cannot add same bus twice in audio flow graph")
             }
@@ -93,7 +94,9 @@ class AudioFlowGraphPane(
     private fun createNewBusOnShiftClick() {
         addEventHandler(MouseEvent.MOUSE_CLICKED) { ev ->
             if (ev.isShiftDown) {
-                context[XenakisUI].busRegistryPane.createNewBus { bus ->
+                showNamePrompt(context[BusRegistry]) { name ->
+                    val bus = BusObject.create(name)
+                    context[BusRegistry].add(bus)
                     val position = Point(ev.x, ev.y)
                     val obj = AudioFlowGraph.BusNode(bus.name, position)
                     graph.add(bus, position)
@@ -116,7 +119,7 @@ class AudioFlowGraphPane(
     }
 
     override fun addedNode(node: AudioFlowGraph.BusNode) {
-        val label = label(node.busName).styleClass("bus-object")
+        val label = label(node.busName).styleClass("bus-node")
         label.isFocusTraversable = true
         label.relocate(node.position.x, node.position.y)
         setupEvents(node, label)

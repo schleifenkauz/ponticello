@@ -1,5 +1,6 @@
 package xenakis.model
 
+import hextant.context.Context
 import javafx.scene.paint.Color
 import kotlinx.serialization.Serializable
 import reaktive.list.ReactiveList
@@ -22,6 +23,12 @@ class StandardSynthDefObject(
         get() = reactiveValue(_name)
     override val parameters: ReactiveList<ParameterDefObject>
         get() = unmodifiableReactiveList(_parameters)
+
+    override fun initialize(context: Context) {
+        for (p in _parameters) {
+            p.initialize(context)
+        }
+    }
 
     companion object {
         val default = StandardSynthDefObject(

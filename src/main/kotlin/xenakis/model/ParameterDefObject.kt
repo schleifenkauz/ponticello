@@ -1,34 +1,30 @@
 package xenakis.model
 
+import hextant.context.Context
 import javafx.scene.paint.Color
 import kotlinx.serialization.Serializable
-import reaktive.value.ReactiveValue
 import reaktive.value.ReactiveVariable
 import reaktive.value.now
 import reaktive.value.reactiveVariable
 import xenakis.sc.*
+import xenakis.sc.editor.AbstractRenamableObject
 
 @Serializable
 class ParameterDefObject(
-    private val _name: ReactiveVariable<String>,
+    override val mutableName: ReactiveVariable<String>,
     val spec: ReactiveVariable<ControlSpec>
-) : RenamableObject {
-    override val name: ReactiveValue<String>
-        get() = _name
-
+) : AbstractRenamableObject() {
     constructor(name: String, spec: ControlSpec) : this(reactiveVariable(name), reactiveVariable(spec))
 
     override fun canRenameTo(newName: String): Boolean = true
 
-    override fun rename(newName: String) {
-        _name.set(newName)
-    }
-
-    fun defaultControl() = when (val spec = spec.now) {
-        is BufferControlSpec -> BufferControl(spec.defaultValue)
-        is BusControlSpec -> BusControl(spec.defaultValue)
+    fun defaultControl(context: Context) = when (val spec = spec.now) {
+        is BufferControlSpec -> BufferControl(NoBuffer.createReference())
+        is BusControlSpec -> BusControl(context[BusRegistry].getOutputBus().createReference())
         is NumericalControlSpec -> ConstantControl(spec.defaultValue.get())
     }
+
+    override fun createReference(): Nothing = throw UnsupportedOperationException()
 
     companion object {
         val freq = ParameterDefObject(

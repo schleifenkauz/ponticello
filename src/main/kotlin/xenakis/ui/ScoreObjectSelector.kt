@@ -11,10 +11,10 @@ import reaktive.value.ReactiveValue
 import reaktive.value.now
 import reaktive.value.reactiveVariable
 import xenakis.model.LayoutManager
-import xenakis.model.NamingManager
 import xenakis.model.ScoreObject
+import xenakis.model.ScoreObjectRegistry
 
-class ObjectSelector(private val context: Context, private val rootPane: ScorePane) {
+class ScoreObjectSelector(private val context: Context, private val rootPane: ScorePane) {
     private val _selectedViews = mutableSetOf<ScoreObjectView>()
 
     val selectedViews: Set<ScoreObjectView> get() = _selectedViews
@@ -63,7 +63,7 @@ class ObjectSelector(private val context: Context, private val rootPane: ScorePa
     fun copySelected() {
         if (selectedObjects.isEmpty()) return
         val copies = selectedObjects.map { obj ->
-            val name = context[NamingManager].nameForCopy(obj)
+            val name = context[ScoreObjectRegistry].nameForCopy(obj)
             obj.copy(name)
         }
         setClipboard(copies)
@@ -72,7 +72,7 @@ class ObjectSelector(private val context: Context, private val rootPane: ScorePa
     fun cloneSelected() {
         if (selectedObjects.isEmpty()) return
         val clones = selectedObjects.map { obj ->
-            val name = context[NamingManager].nameForClone(obj)
+            val name = context[ScoreObjectRegistry].nameForClone(obj)
             obj.clone(name)
         }
         setClipboard(clones)
@@ -104,5 +104,5 @@ class ObjectSelector(private val context: Context, private val rootPane: ScorePa
         }
     }
 
-    companion object : PublicProperty<ObjectSelector> by publicProperty("ObjectSelector")
+    companion object : PublicProperty<ScoreObjectSelector> by publicProperty("ObjectSelector")
 }

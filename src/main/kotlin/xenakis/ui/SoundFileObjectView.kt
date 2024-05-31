@@ -8,7 +8,7 @@ import javafx.scene.shape.Polyline
 import xenakis.impl.SuperColliderClient
 import xenakis.impl.readChannels
 import xenakis.model.SoundFileObject
-import xenakis.sc.view.BusSelectorControl
+import xenakis.sc.view.ObjectSelectorControl
 import javax.sound.sampled.AudioInputStream
 import javax.sound.sampled.AudioSystem
 
@@ -19,7 +19,7 @@ class SoundFileObjectView(val obj: SoundFileObject) : ScoreObjectView(obj) {
     private var channels = stream.readChannels()
     private val waveForms = Array(channels.size) { Polyline().styleClass("waveform-line") }
     private val separatorLines = Array(channels.size) { Line().styleClass("channel-separator-line") }
-    private val outBusSelector = BusSelectorControl(obj.outBus, createBundle())
+    private val outBusSelector = ObjectSelectorControl(obj.outBus, createBundle())
 
     override val supportedActions: List<Icon>
         get() = super.supportedActions - Icon.ExtraWindow

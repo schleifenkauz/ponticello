@@ -52,10 +52,14 @@
 - as standalone objects (pbind)
 - attaching to a synth in the score (pmono)
 
+### Bouncing
+
+- to file or to buffer (that is record to file and then load buffer into SC)
+- realtime (easy) and non realtime (not easy, use Score API from SuperCollider)
+
 ## Architecture
 
-- factor out common functionality of all the tool-panes
-    - buses, buffers, synth defs, groups
+- track references to objects, if an object has references, it cannot be removed
 
 ## Bug fixes
 

@@ -12,6 +12,9 @@ import hextant.core.view.CompoundEditorControl
 import hextant.core.view.OptionalEditorControl
 import hextant.core.view.TokenEditorControl
 import hextant.fx.keyword
+import xenakis.sc.editor.BufferSelector
+import xenakis.sc.editor.BusSelector
+import xenakis.sc.editor.GroupSelector
 import xenakis.ui.centerChildrenVertically
 import xenakis.ui.styleClass
 
@@ -123,25 +126,11 @@ fun createControl(editor: xenakis.sc.editor.OperatorEditor, arguments: Bundle): 
 
 @ProvideImplementation(ControlFactory::class)
 fun createControl(editor: xenakis.sc.editor.BusControlSpecEditor, arguments: Bundle) =
-    CompoundEditorControl(editor, arguments) {
-        vertical {
-            horizontal {
-                operator(" = ")
-                view(editor.defaultValue)
-            }
-        }
-    }
+    CompoundEditorControl(editor, arguments) { horizontal { } }
 
 @ProvideImplementation(ControlFactory::class)
 fun createControl(editor: xenakis.sc.editor.BufferControlSpecEditor, arguments: Bundle) =
-    CompoundEditorControl(editor, arguments) {
-        vertical {
-            horizontal {
-                operator(" = ")
-                view(editor.defaultValue)
-            }
-        }
-    }
+    CompoundEditorControl(editor, arguments) { horizontal { } }
 
 @ProvideImplementation(ControlFactory::class)
 fun createControl(editor: xenakis.sc.editor.NumericalControlSpecEditor, arguments: Bundle) =
@@ -202,3 +191,12 @@ fun createControl(editor: xenakis.sc.editor.StringLiteralEditor, arguments: Bund
             operator("\"")
         }
     }
+
+@ProvideImplementation(ControlFactory::class)
+fun createControl(editor: BusSelector, arguments: Bundle) = ObjectSelectorControl(editor, arguments)
+
+@ProvideImplementation(ControlFactory::class)
+fun createControl(editor: BufferSelector, arguments: Bundle) = ObjectSelectorControl(editor, arguments)
+
+@ProvideImplementation(ControlFactory::class)
+fun createControl(editor: GroupSelector, arguments: Bundle) = ObjectSelectorControl(editor, arguments)

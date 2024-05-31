@@ -1,25 +1,30 @@
 package xenakis.sc.editor
 
 import hextant.context.Context
-import hextant.core.editor.SimpleChoiceEditor
+import hextant.serial.Snapshot
 import hextant.serial.SnapshotAware
 import kotlinx.serialization.Serializable
-import reaktive.value.now
-import xenakis.model.GroupObject
-import xenakis.sc.view.GroupSelectorControl
-import xenakis.ui.XenakisController
+import reaktive.value.reactiveVariable
+import xenakis.model.*
 
 @Suppress("SERIALIZER_TYPE_INCOMPATIBLE")
 @Serializable(with = SnapshotAware.Serializer::class)
-class GroupSelector(context: Context, group: GroupObject = GroupObject.DEFAULT) :
-    SimpleChoiceEditor<GroupObject>(context, group) {
-    override fun choices(): List<GroupObject> {
-        val project = context[XenakisController.currentProject]
-        return project.groups.asList() + GroupSelectorControl.createNew
+class GroupSelector(
+    context: Context,
+    group: GroupObjectReference = context[GroupRegistry].getDefaultGroup().createReference()
+) : ObjectSelector<GroupObject, GroupObjectReference>(context, group) {
+    override val registry: ObjectRegistry<GroupObject>
+        get() = context[GroupRegistry]
+
+    override fun createNewObject(name: String): GroupObject {
+        val obj = GroupObject(reactiveVariable(name))
+        return obj
     }
 
-    override fun toString(choice: GroupObject): String = when {
-        choice.name.now == "<create-new>" -> "Create new"
-        else -> choice.name.now
+    override fun createSnapshot(): Snapshot<*> = Snap()
+
+    private class Snap : ObjectSelector.Snap<GroupObject, GroupObjectReference>() {
+        override val serializer: ObjectReference.Serializer<GroupObjectReference>
+            get() = GroupObjectReference.Serializer
     }
 }

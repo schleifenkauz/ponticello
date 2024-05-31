@@ -4,8 +4,6 @@ import hextant.context.Context
 import hextant.core.editor.ListenerManager
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
-import reaktive.value.reactiveValue
-import reaktive.value.reactiveVariable
 import xenakis.impl.SuperColliderClient
 import xenakis.impl.SuperColliderContext
 import xenakis.sc.NumericalControlSpec
@@ -70,7 +68,7 @@ class GlobalControls(private val controls: MutableList<GlobalControl>) : KnobCon
         val ctrl = controls.find { it.knobControl == control } ?: error("$control not found in global controls")
         val bus = ctrl.bus
         val formatted = value.format(ctrl.spec.accuracy)
-        context[SuperColliderClient].run("if (${bus.variableName} != nil) { ${bus.variableName}.setSynchronous($formatted) };")
+        context[SuperColliderClient].run("if (${bus.variableName} != nil) { ${bus.variableName}.set($formatted) };")
     }
 
     fun updateControlFromServer(control: GlobalControl) {
@@ -85,9 +83,6 @@ class GlobalControls(private val controls: MutableList<GlobalControl>) : KnobCon
 
     @Serializable
     class GlobalControl(val parameter: String, val knobControl: KnobControl, val spec: NumericalControlSpec) {
-        val bus: BusObject = BusObject(
-            reactiveVariable("global_$parameter"),
-            reactiveValue(Rate.Control), reactiveValue(1),
-        )
+        val bus: BusObject = BusObject.create("global_$parameter", Rate.Control, 1)
     }
 }
