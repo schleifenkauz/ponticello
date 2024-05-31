@@ -1,36 +1,39 @@
 package xenakis.model
 
+import hextant.context.Context
 import hextant.core.editor.ListenerManager
-import hextant.serial.SnapshotAware
 import javafx.geometry.HorizontalDirection
 import javafx.scene.paint.Color
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonObjectBuilder
 import kotlinx.serialization.json.put
 import reaktive.value.now
-import xenakis.impl.*
+import xenakis.impl.ScWriter
+import xenakis.impl.getDouble
+import xenakis.impl.getSerializableValue
+import xenakis.impl.putSerializableValue
 import xenakis.sc.ControlSpec
 import xenakis.sc.Rate
 import xenakis.sc.editor.BusSelector
 import xenakis.ui.SoundFileObjectView
 import xenakis.ui.format
-import java.io.File
 
-class SoundFileObject(
+class PlayBufObject(
     name: String,
-    val file: File,
-    var outBus: BusSelector,
+    val buffer: BufferObjectReference,
+    private val initialOut: BusObjectReference,
     var startPos: Double, var rate: Double,
     var envelope: Envelope
 ) : RegularScoreObject(name) {
+    lateinit var outSelector: BusSelector
+        private set
+
+    private val out get() = outSelector.result.now
+
     override val type: String
         get() = "sample"
 
     override val viewManager = ListenerManager.createWeakListenerManager<SoundFileObjectView>()
-
-    private val bufferName = "~sample_${file.nameWithoutExtension}_${hashCode()}"
-
-    private val synthName = "~playbuf_${name}"
 
     override val associatedControls: Map<String, ParameterControl>
         get() = mapOf("amp" to EnvelopeControl(envelope, Color.WHITE, display = true))
@@ -38,53 +41,46 @@ class SoundFileObject(
     override fun getSpec(parameter: String): ControlSpec =
         if (parameter == "amp") ParameterDefObject.amp.spec.now else super.getSpec(parameter)
 
-    override fun serverBooted(context: SuperColliderContext) {
-        loadBuffer(context)
-    }
-
-    private fun loadBuffer(context: SuperColliderContext) {
-        context.run("$bufferName = Buffer.read(s, ${file.superColliderPath});")
-    }
-
-    override fun onRemove() {
-        val client = context[SuperColliderClient]
-        freeBuffer(client)
-    }
-
-    fun reloadFile(context: SuperColliderContext) {
-        val client = context
-        freeBuffer(client)
-        loadBuffer(client)
-    }
-
-    private fun freeBuffer(client: SuperColliderContext) {
-        client.run("$bufferName.free; $bufferName = nil;")
+    override fun initialize(context: Context) {
+        if (initialized) return
+        super.initialize(context)
+        buffer.resolve(context)
+        outSelector = BusSelector(
+            context,
+            preferredChannels = buffer.get().channels.now, preferredRate = Rate.Audio,
+            initialValue = initialOut
+        )
     }
 
     override fun writeStartCode(writer: ScWriter, offset: Double, suffixGenerator: SuffixGenerator) = with(writer) {
-        append("$synthName${suffixGenerator.generateSuffix(this@SoundFileObject)} = { ")
-        append("PlayBuf.ar($bufferName.numChannels, $bufferName, ")
+        val bufferName = buffer.get().variableName
+        val outBusName = out.get().variableName
+        val synthName = "~playbuf_${name}${suffixGenerator.generateSuffix(this@PlayBufObject)}"
+        append("$synthName = { ")
+        append("PlayBuf.ar(${bufferName}.numChannels, $bufferName, ")
         append("rate: ${rate.format(2)}, ")
-        append("startPos: $startPos)")
+        append("startPos: $startPos, ")
+        append("loop: 1)")
         append(" * ${envelope.code(offset, doneAction = "Done.none")} }")
-        appendLine(".play(s, ${outBus.result.now.get().variableName});")
+        appendLine(".play(s, $outBusName);")
     }
 
     override fun writeStopCode(writer: ScWriter, suffixGenerator: SuffixGenerator) {
-        writer.appendLine("$synthName${suffixGenerator.getSuffix(this)}.release;")
+        val synthName = "~playbuf_${name}${suffixGenerator.getSuffix(this)}"
+        writer.appendLine("$synthName.release;")
     }
 
-    override fun copy(): SoundFileObject = SoundFileObject(name.now, file, outBus, startPos, rate, envelope.copy())
+    override fun copy(): PlayBufObject = PlayBufObject(name.now, buffer, out, startPos, rate, envelope.copy())
 
     override fun cut(position: Double, whichHalf: HorizontalDirection): ScoreObject {
         val startPos = if (whichHalf == HorizontalDirection.LEFT) startPos else start + position
         val env = envelope.cut(position / duration, whichHalf)
-        return SoundFileObject(name.now, file, outBus, startPos, rate, env)
+        return PlayBufObject(name.now, buffer, out, startPos, rate, env)
     }
 
     override fun JsonObjectBuilder.saveToJson() {
-        put("file", file.absolutePath)
-        putSerializableValue("outBus", outBus.result.now)
+        putSerializableValue("buffer", buffer)
+        putSerializableValue("out", out)
         if (startPos != 0.0) {
             put("startPos", startPos)
         }
@@ -99,18 +95,12 @@ class SoundFileObject(
             get() = "sample"
 
         override fun JsonObject.createFromJson(name: String): ScoreObject {
-            val file = getFile("file")
-            val outBus = getSerializableValue<BusObjectReference>("outBus")!!
-            val busEditor = BusSelector(
-                SnapshotAware.Serializer.reconstructionContext,
-                preferredRate = Rate.Audio,
-                preferredChannels = 2, //TODO channel number of the file
-                initialValue = outBus
-            )
+            val buffer = getSerializableValue<BufferObjectReference>("buffer")!!
+            val out = getSerializableValue<BusObjectReference>("out")!!
             val startPos = getDouble("startPos") ?: 0.0
             val rate = getDouble("rate") ?: 1.0
             val envelope = getSerializableValue<Envelope>("envelope") ?: Envelope.default
-            return SoundFileObject(name, file, busEditor, startPos, rate, envelope)
+            return PlayBufObject(name, buffer, out, startPos, rate, envelope)
         }
     }
 }

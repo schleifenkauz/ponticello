@@ -15,7 +15,6 @@ import kotlinx.serialization.json.Json
 import reaktive.value.now
 import xenakis.impl.Arrow
 import xenakis.model.*
-import xenakis.model.Envelope
 import xenakis.sc.Identifier
 import xenakis.sc.Rate
 import xenakis.sc.Warp
@@ -102,10 +101,10 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
             val format = stream.format
             val duration = (stream.frameLength / format.frameRate).toDouble()
             val channels = format.channels
-            val obj = SoundFileObject(
+            val obj = PlayBufObject(
                 defaultName,
                 file,
-                outBus = BusSelector(context, preferredRate = Rate.Audio, preferredChannels = channels),
+                out = BusSelector(context, preferredRate = Rate.Audio, preferredChannels = channels),
                 startPos = 0.0, rate = 1.0,
                 envelope = Envelope.constant(1.0, duration, Warp.Linear),
             )
@@ -126,7 +125,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
         is SynthObject -> SynthObjectView(obj)
         is TaskObject -> TaskObjectView(obj)
         is EnvelopeObject -> EnvelopeObjectView(obj)
-        is SoundFileObject -> SoundFileObjectView(obj)
+        is PlayBufObject -> SoundFileObjectView(obj)
         is MemoObject -> MemoObjectView(obj)
         is ScoreObjectGroup -> ScoreObjectGroupView(obj)
         is ClonedObject -> {

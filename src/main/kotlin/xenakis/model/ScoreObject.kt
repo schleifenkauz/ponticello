@@ -113,7 +113,7 @@ abstract class ScoreObject(name: String) : AbstractRenamableObject() {
             val all = listOf(
                 MemoObject.Serializer,
                 SynthObject.Serializer,
-                SoundFileObject.Serializer,
+                PlayBufObject.Serializer,
                 TaskObject.Serializer,
                 EnvelopeObject.Serializer,
                 ScoreObjectGroup.Serializer,

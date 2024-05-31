@@ -5,21 +5,22 @@ import javafx.scene.Cursor
 import javafx.scene.input.MouseEvent
 import javafx.scene.shape.Line
 import javafx.scene.shape.Polyline
-import xenakis.impl.SuperColliderClient
+import reaktive.Observer
 import xenakis.impl.readChannels
-import xenakis.model.SoundFileObject
+import xenakis.model.PlayBufObject
 import xenakis.sc.view.ObjectSelectorControl
 import javax.sound.sampled.AudioInputStream
-import javax.sound.sampled.AudioSystem
 
-class SoundFileObjectView(val obj: SoundFileObject) : ScoreObjectView(obj) {
-    private var stream: AudioInputStream = AudioSystem.getAudioInputStream(obj.file)
+class SoundFileObjectView(val obj: PlayBufObject) : ScoreObjectView(obj) {
+    private lateinit var stream: AudioInputStream
     private val frameRate get() = stream.format.frameRate
     private val fileDuration get() = (stream.frameLength / frameRate).toDouble()
-    private var channels = stream.readChannels()
-    private val waveForms = Array(channels.size) { Polyline().styleClass("waveform-line") }
-    private val separatorLines = Array(channels.size) { Line().styleClass("channel-separator-line") }
-    private val outBusSelector = ObjectSelectorControl(obj.outBus, createBundle())
+    private lateinit var contents: Array<DoubleArray>
+    private val waveForms = Array(contents.size) { Polyline().styleClass("waveform-line") }
+    private val separatorLines = Array(contents.size) { Line().styleClass("channel-separator-line") }
+    private val outBusSelector = ObjectSelectorControl(obj.outSelector, createBundle())
+
+    private val contentsObserver: Observer
 
     override val supportedActions: List<Icon>
         get() = super.supportedActions - Icon.ExtraWindow
@@ -28,11 +29,19 @@ class SoundFileObjectView(val obj: SoundFileObject) : ScoreObjectView(obj) {
         envelopesPane.children.addAll(*waveForms, *separatorLines)
         waveForms.forEach { l -> l.toBack() }
         separatorLines.forEach { l -> l.toBack() }
+        contentsObserver = obj.buffer.get().contentsChanged.observe { _, _ -> updateContentDisplay() }
+        updateContentDisplay()
+    }
+
+    private fun updateContentDisplay() {
+        stream = obj.buffer.get().getAudioStream()
+        contents = stream.readChannels()
+        displayWaveForm()
     }
 
     private fun displayWaveForm() {
-        val heightPerChannel = envelopesPane.height / channels.size
-        for (ch in channels.indices) {
+        val heightPerChannel = envelopesPane.height / contents.size
+        for (ch in contents.indices) {
             val baseY = ch * heightPerChannel
             if (ch != 0) {
                 val sep = separatorLines[ch]
@@ -44,7 +53,7 @@ class SoundFileObjectView(val obj: SoundFileObject) : ScoreObjectView(obj) {
             for (x in 0 until envelopesPane.width.toInt()) {
                 val t = obj.startPos + x / pane.pixelsPerSecond
                 val sampleIndex = (t * obj.rate * frameRate).toInt()
-                val value = channels[ch][sampleIndex.coerceIn(channels[ch].indices)]
+                val value = contents[ch][sampleIndex.coerceIn(contents[ch].indices)]
                 val y = baseY + heightPerChannel * (-value / 2 + 1)
                 waveForms[ch].points.addAll(x.toDouble(), y)
             }
@@ -69,13 +78,6 @@ class SoundFileObjectView(val obj: SoundFileObject) : ScoreObjectView(obj) {
         super.initialize(parent)
         displayWaveForm()
         header.children.add(1, outBusSelector)
-        addAction(Icon.FileReload, "Reload sound file from disk") {
-            obj.reloadFile(context[SuperColliderClient])
-            val stream = AudioSystem.getAudioInputStream(obj.file)
-            channels = stream.readChannels()
-            obj.duration = fileDuration / obj.rate
-            rescale()
-        }
     }
 
     override fun rescale() {
