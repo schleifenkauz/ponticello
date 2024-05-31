@@ -59,7 +59,7 @@
 
 ## Architecture
 
-- track references to objects, if an object has references, it cannot be removed
+- track references to objects, if an object has references, it cannot be removed (necessary?)
 
 ## Bug fixes
 

@@ -56,28 +56,28 @@ class EnvelopeControl(
 @Serializable
 class BusControl(val bus: BusObjectReference) : ParameterControl() {
     override fun initialize(context: Context) {
-        bus.initialize(context)
+        bus.resolve(context)
     }
 }
 
 @Serializable
 class BusValueControl(val bus: BusObjectReference) : ParameterControl() {
     override fun initialize(context: Context) {
-        bus.initialize(context)
+        bus.resolve(context)
     }
 }
 
 @Serializable
 data class SingleBusValueControl(val bus: BusObjectReference) : ParameterControl() {
     override fun initialize(context: Context) {
-        bus.initialize(context)
+        bus.resolve(context)
     }
 }
 
 @Serializable
 data class BufferControl(val buffer: BufferObjectReference) : ParameterControl() {
     override fun initialize(context: Context) {
-        buffer.initialize(context)
+        buffer.resolve(context)
     }
 }
 

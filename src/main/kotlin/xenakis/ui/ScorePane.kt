@@ -341,7 +341,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
         when (tool) {
             Synth -> {
                 val def = context[SynthDefRegistry].selectedSynthDef ?: return
-                val defaultGroup = context[GroupRegistry].getDefaultGroup()
+                val defaultGroup = context[GroupRegistry].getDefault()
                 val initialName = context[ScoreObjectRegistry].availableName("synth")
                 nameForNewObject("Synth name", initialName) { name ->
                     val obj = SynthObject(

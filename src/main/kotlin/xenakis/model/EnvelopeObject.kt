@@ -53,7 +53,7 @@ class EnvelopeObject(
     override fun initialize(context: Context) {
         if (initialized) return
         super.initialize(context)
-        initialBus.initialize(context)
+        initialBus.resolve(context)
         busSelector = BusSelector(context, preferredRate = Rate.Control, 1, initialBus)
     }
 

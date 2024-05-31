@@ -3,6 +3,7 @@ package xenakis.sc.editor
 import hextant.context.Context
 import hextant.core.editor.AbstractEditor
 import hextant.serial.Snapshot
+import hextant.undo.AbstractEdit
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonObjectBuilder
 import kotlinx.serialization.json.put
@@ -19,7 +20,7 @@ abstract class ObjectSelector<O : NamedObject, R : ObjectReference<O>>(
     private var selected = reactiveVariable(initialValue)
 
     init {
-        initialValue.initialize(context)
+        initialValue.resolve(context)
     }
 
     override val result: ReactiveValue<R>
@@ -40,6 +41,23 @@ abstract class ObjectSelector<O : NamedObject, R : ObjectReference<O>>(
 
     abstract override fun createSnapshot(): Snapshot<*>
 
+    private class Edit<O : NamedObject, R : ObjectReference<O>>(
+        private val selector: ObjectSelector<O, R>,
+        private val old: R,
+        private val new: R
+    ) : AbstractEdit() {
+        override val actionDescription: String
+            get() = "Select ${selector.registry.objectType}"
+
+        override fun doUndo() {
+            selector.select(old)
+        }
+
+        override fun doRedo() {
+            selector.select(new)
+        }
+    }
+
     protected abstract class Snap<O : NamedObject, R : ObjectReference<O>> : Snapshot<ObjectSelector<O, R>>() {
         private lateinit var selected: R
 
@@ -51,6 +69,7 @@ abstract class ObjectSelector<O : NamedObject, R : ObjectReference<O>>(
 
         override fun reconstructObject(original: ObjectSelector<O, R>) {
             original.selected.now = selected
+            selected.resolve(original.context)
         }
 
         override fun encode(builder: JsonObjectBuilder) {

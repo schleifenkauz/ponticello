@@ -20,7 +20,7 @@ class ParameterDefObject(
 
     fun defaultControl(context: Context) = when (val spec = spec.now) {
         is BufferControlSpec -> BufferControl(NoBuffer.createReference())
-        is BusControlSpec -> BusControl(context[BusRegistry].getOutputBus().createReference())
+        is BusControlSpec -> BusControl(context[BusRegistry].getDefault().createReference())
         is NumericalControlSpec -> ConstantControl(spec.defaultValue.get())
     }
 

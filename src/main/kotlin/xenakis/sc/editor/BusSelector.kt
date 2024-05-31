@@ -51,7 +51,7 @@ class BusSelector(
         ): BusObjectReference {
             val registry = context[BusRegistry]
             val adequate = registry.filter(preferredRate, preferredChannels).firstOrNull()
-            val bus = adequate ?: registry.getOutputBus()
+            val bus = adequate ?: registry.getDefault()
             return bus.createReference()
         }
     }

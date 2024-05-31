@@ -47,6 +47,8 @@ class SynthDefRegistry private constructor(
 
     private fun getSynthDefOrNull(name: String): SynthDefObject? = defs.find { it.name.now == name }
 
+    override fun getDefault(): SynthDefObject = StandardSynthDefObject.default
+
     fun synthDescLibContains(name: String): CompletableFuture<Boolean> {
         val answer = client.send("isSynthDef", listOf(name))
         return answer.thenApply { msg -> msg.boolean }

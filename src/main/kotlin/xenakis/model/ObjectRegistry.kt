@@ -2,6 +2,8 @@ package xenakis.model
 
 import hextant.context.Context
 import hextant.core.editor.ListenerManager
+import hextant.undo.AbstractEdit
+import hextant.undo.UndoManager
 import kotlinx.serialization.Transient
 import reaktive.value.now
 
@@ -24,7 +26,10 @@ abstract class ObjectRegistry<O : NamedObject> {
         }
     }
 
-    open fun get(name: String): O = objects.find { it.name.now == name } ?: error("Object $name not found in $this")
+    abstract fun getDefault(): O
+
+    open fun get(name: String): O = objects.find { it.name.now == name }
+        ?: throw NoSuchElementException("Object $name not found in $this")
 
     fun all(): List<O> = objects
 
@@ -33,6 +38,7 @@ abstract class ObjectRegistry<O : NamedObject> {
     fun add(obj: O, idx: Int = objects.size) {
         obj.initialize(context)
         objects.add(idx, obj)
+        context[UndoManager].record(Edit.AddObject(this, obj, idx))
         onAdded(obj, idx)
         views.notifyListeners { added(obj, idx) }
     }
@@ -41,6 +47,7 @@ abstract class ObjectRegistry<O : NamedObject> {
         val idx = objects.indexOf(obj)
         if (idx == -1) error("Object ${obj.name.now} not found in $this")
         objects.removeAt(idx)
+        context[UndoManager].record(Edit.RemoveObject(this, obj, idx))
         onRemoved(obj, idx)
         views.notifyListeners { removed(obj, idx) }
     }
@@ -48,6 +55,42 @@ abstract class ObjectRegistry<O : NamedObject> {
     protected open fun onAdded(obj: O, idx: Int) {}
 
     protected open fun onRemoved(obj: O, idx: Int) {}
+
+    private sealed class Edit<O : NamedObject>(protected val registry: ObjectRegistry<O>) : AbstractEdit() {
+        class AddObject<O : NamedObject>(
+            registry: ObjectRegistry<O>,
+            private val obj: O,
+            private val idx: Int
+        ) : Edit<O>(registry) {
+            override val actionDescription: String
+                get() = "Add ${registry.objectType}"
+
+            override fun doUndo() {
+                registry.remove(obj)
+            }
+
+            override fun doRedo() {
+                registry.add(obj, idx)
+            }
+        }
+
+        class RemoveObject<O : NamedObject>(
+            registry: ObjectRegistry<O>,
+            private val obj: O,
+            private val idx: Int
+        ) : Edit<O>(registry) {
+            override val actionDescription: String
+                get() = "Remove ${registry.objectType}"
+
+            override fun doUndo() {
+                registry.add(obj, idx)
+            }
+
+            override fun doRedo() {
+                registry.remove(obj)
+            }
+        }
+    }
 
     fun addView(view: View<O>) {
         @Suppress("UNCHECKED_CAST") val unsafe = views as ListenerManager<View<O>>

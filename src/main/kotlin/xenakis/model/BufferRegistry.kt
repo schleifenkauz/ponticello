@@ -26,6 +26,8 @@ class BufferRegistry(
         context[BufferRegistry] = this
     }
 
+    override fun getDefault(): BufferObject = NoBuffer
+
     override fun get(name: String) = if (name == "<none>") NoBuffer else super.get(name)
 
     fun SuperColliderContext.reloadBuffers() = run {

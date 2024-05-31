@@ -78,8 +78,8 @@ class SynthObject(
     override fun initialize(context: Context) {
         if (initialized) return
         super.initialize(context)
-        synthDefRef.initialize(context)
-        groupRef.initialize(context)
+        synthDefRef.resolve(context)
+        groupRef.resolve(context)
         groupSelector = GroupSelector(context, groupRef)
         for ((_, control) in controls) control.initialize(context)
         parameterNameObserver = synthDef.parameters.observeEach { _, p ->

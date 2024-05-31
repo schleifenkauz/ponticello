@@ -1,6 +1,7 @@
 package xenakis.model
 
 import hextant.undo.AbstractEdit
+import javafx.scene.paint.Color
 
 abstract class ScoreObjectEdit(protected val obj: ScoreObject) : AbstractEdit() {
     class Rename(val oldName: String, val newName: String, obj: ScoreObject) : ScoreObjectEdit(obj) {
@@ -78,6 +79,19 @@ abstract class ScoreObjectEdit(protected val obj: ScoreObject) : AbstractEdit() 
 
         override fun doRedo() {
             synthObject.removeControl(parameter)
+        }
+    }
+
+    class Recolor(obj: ScoreObject, private val oldColor: Color?, private val newColor: Color?) : ScoreObjectEdit(obj) {
+        override val actionDescription: String
+            get() = "Recolor object"
+
+        override fun doRedo() {
+            obj.associatedColor = newColor
+        }
+
+        override fun doUndo() {
+            obj.associatedColor = oldColor
         }
     }
 }

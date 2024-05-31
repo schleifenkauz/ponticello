@@ -52,7 +52,7 @@ class XenakisController(private val primaryStage: Stage) {
         get() = _currentProject ?: error("no project opened")
         private set(project) {
             _currentProject = project
-            context[UndoManager] = UndoManager.newInstance()
+            context[UndoManager].reset()
             context[XenakisController.currentProject] = project
             prefs.put("lastFile", project.projectFile.absolutePath)
             addRecentProject(project.projectFile)

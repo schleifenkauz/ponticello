@@ -22,7 +22,7 @@ class BusRegistry(private val busses: MutableList<BusObject>) : ObjectRegistry<B
         context[BusRegistry] = this
     }
 
-    fun getOutputBus() = busses.find { b -> b.isOutput } ?: error("No output bus found in registry")
+    override fun getDefault() = busses.find { b -> b.isOutput } ?: error("No output bus found in registry")
 
     override fun onRemoved(obj: BusObject, idx: Int) {
         obj.removed()

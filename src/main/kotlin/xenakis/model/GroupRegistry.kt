@@ -4,6 +4,7 @@ import bundles.PublicProperty
 import bundles.publicProperty
 import bundles.set
 import hextant.context.Context
+import hextant.undo.AbstractEdit
 import kotlinx.serialization.Serializable
 import xenakis.impl.SuperColliderClient
 import xenakis.impl.SuperColliderContext
@@ -27,7 +28,7 @@ data class GroupRegistry(
 
     fun indexOf(group: GroupObject): Int = asList().indexOf(group)
 
-    fun getDefaultGroup(): GroupObject = objects.find { it.isDefault } ?: error("No default group found!")
+    override fun getDefault(): GroupObject = objects.find { it.isDefault } ?: GroupObject.DEFAULT
 
     override fun onAdded(obj: GroupObject, idx: Int) {
         val groupBefore = order.getOrNull(idx - 1)
@@ -81,6 +82,24 @@ data class GroupRegistry(
         setupGroup(order[0], null, context)
         for ((before, after) in order.zipWithNext()) {
             setupGroup(after, before, context)
+        }
+    }
+
+    private class MoveEdit(
+        private val registry: GroupRegistry,
+        private val obj: GroupObject,
+        private val fromIndex: Int,
+        private val toIndex: Int
+    ) : AbstractEdit() {
+        override val actionDescription: String
+            get() = "Move group"
+
+        override fun doUndo() {
+            registry.moveGroup(obj, fromIndex)
+        }
+
+        override fun doRedo() {
+            registry.moveGroup(obj, toIndex)
         }
     }
 

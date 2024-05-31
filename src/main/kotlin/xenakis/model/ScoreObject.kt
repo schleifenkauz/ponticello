@@ -72,7 +72,7 @@ abstract class ScoreObject(name: String) : AbstractRenamableObject() {
     override fun initialize(context: Context) {
         if (initialized) return
         super.initialize(context)
-        nextInChain?.initialize(context)
+        nextInChain?.resolve(context)
     }
 
     open fun serverBooted(context: SuperColliderContext) {}

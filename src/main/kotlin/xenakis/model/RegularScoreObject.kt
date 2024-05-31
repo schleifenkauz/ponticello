@@ -33,6 +33,7 @@ sealed class RegularScoreObject(name: String) : ScoreObject(name) {
     final override var associatedColor: Color? = null
         set(value) {
             if (field == value) return
+            recordEdit(ScoreObjectEdit.Recolor(this, field, value))
             field = value
             viewManager.notifyListeners { recoloredObject() }
         }

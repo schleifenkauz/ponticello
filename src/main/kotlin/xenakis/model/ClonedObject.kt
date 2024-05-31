@@ -33,7 +33,7 @@ class ClonedObject(
 
     override fun initialize(context: Context) {
         super.initialize(context)
-        originalRef.initialize(context)
+        originalRef.resolve(context)
     }
 
     override var duration: Double by { original::duration }

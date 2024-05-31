@@ -23,7 +23,7 @@ class ParameterDefsPane(
     private val observer: Observer
 
     init {
-        styleClass("parameter-defs")
+        styleClass("tool-pane")
         observer = parameters.observeList { ch ->
             if (ch.wasAdded) addedParameter(ch.added, ch.index)
             if (ch.wasRemoved) removedParameter(ch.removed, ch.index)
@@ -56,7 +56,7 @@ class ParameterDefsPane(
         observers[parameter] = parameter.spec.bind(editor.result)
         val specControl = context.createControl(editor)
         val removeBtn = Icon.Delete.button(action = "Remove parameter") { parameters.now.remove(parameter) }
-        val box = HBox(nameDisplay, specControl, infiniteSpace(), removeBtn) styleClass "parameter-def"
+        val box = HBox(nameDisplay, specControl, infiniteSpace(), removeBtn) styleClass "object-box"
         children.add(index, box)
     }
 }

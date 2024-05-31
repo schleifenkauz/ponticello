@@ -259,7 +259,7 @@ class ControlAssignmentEditor(
                 bus: BusObjectReference?
             ): ObjectSelectorControl<BusObject, BusObjectReference> {
                 val editor =
-                    BusSelector(project.context, initialValue = project.busses.getOutputBus().createReference())
+                    BusSelector(project.context, initialValue = project.busses.getDefault().createReference())
                 if (bus != null) editor.select(bus)
                 return ObjectSelectorControl(editor, createBundle())
             }

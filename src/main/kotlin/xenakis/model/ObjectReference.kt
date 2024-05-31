@@ -11,7 +11,7 @@ import reaktive.value.now
 interface ObjectReference<O : NamedObject> {
     fun get(): O
 
-    fun initialize(context: Context)
+    fun resolve(context: Context)
 
     abstract class Serializer<R : ObjectReference<*>> : KSerializer<R> {
         override val descriptor: SerialDescriptor
