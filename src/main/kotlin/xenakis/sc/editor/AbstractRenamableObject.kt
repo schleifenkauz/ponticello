@@ -28,7 +28,7 @@ abstract class AbstractRenamableObject : RenamableObject {
         this.context = context
     }
 
-    override val name: ReactiveValue<String>
+    final override val name: ReactiveValue<String>
         get() = mutableName
 
     override fun rename(newName: String) {

@@ -38,8 +38,6 @@
 
 - ability to copy and paste whole time ranges
 
-### Rethink the buffer/sound-file system
-
 ### Logging
 
 ### Minor
@@ -60,6 +58,7 @@
 ## Architecture
 
 - track references to objects, if an object has references, it cannot be removed (necessary?)
+- avoid hanging when speaking to SuperCollider (timeouts, async, etc.)
 
 ## Bug fixes
 

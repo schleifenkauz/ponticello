@@ -19,7 +19,7 @@ import xenakis.ui.format
 class SynthObject(
     name: String,
     private val synthDefRef: SynthDefObject.Reference,
-    private val groupRef: GroupObjectReference,
+    private val initialGroup: GroupObjectReference,
     private val _controls: MutableMap<String, ParameterControl>
 ) : RegularScoreObject(name) {
     private lateinit var parameterNameObserver: Observer
@@ -28,11 +28,10 @@ class SynthObject(
 
     override val viewManager: ListenerManager<SynthObjectView> = ListenerManager.createWeakListenerManager()
 
-    @Transient
     lateinit var groupSelector: GroupSelector
         private set
 
-    private val group: GroupObjectReference get() = groupSelector.result.now
+    private val group: GroupObjectReference get() = if (initialized) groupSelector.result.now else initialGroup
 
     val synthDef: SynthDefObject get() = synthDefRef.get()
 
@@ -69,7 +68,7 @@ class SynthObject(
         _controls = controls.mapValuesTo(mutableMapOf()) { (_, c) -> c.copy() })
 
     override fun cut(position: Double, whichHalf: HorizontalDirection): ScoreObject = SynthObject(
-        name.now, synthDefRef, groupRef,
+        name.now, synthDefRef, initialGroup,
         _controls = controls.mapValuesTo(mutableMapOf()) { (_, c) -> c.cut(position, whichHalf) }
     )
 
@@ -79,8 +78,8 @@ class SynthObject(
         if (initialized) return
         super.initialize(context)
         synthDefRef.resolve(context)
-        groupRef.resolve(context)
-        groupSelector = GroupSelector(context, groupRef)
+        initialGroup.resolve(context)
+        groupSelector = GroupSelector(context, initialGroup)
         for ((_, control) in controls) control.initialize(context)
         parameterNameObserver = synthDef.parameters.observeEach { _, p ->
             p.name.observe { _, oldName, newName ->
@@ -158,7 +157,7 @@ class SynthObject(
 
     override fun JsonObjectBuilder.saveToJson() {
         putSerializableValue("synthDef", synthDefRef)
-        putSerializableValue("group", groupRef)
+        putSerializableValue("group", group)
         if (controls.isNotEmpty()) putSerializableValue<Map<String, ParameterControl>>("controls", controls)
     }
 

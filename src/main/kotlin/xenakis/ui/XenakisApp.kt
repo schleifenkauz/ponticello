@@ -3,15 +3,16 @@ package xenakis.ui
 import bundles.publicProperty
 import javafx.application.Application
 import javafx.stage.Stage
-import java.util.logging.ConsoleHandler
 import java.util.logging.Level
 import java.util.logging.Logger
+import java.util.logging.SimpleFormatter
+import java.util.logging.StreamHandler
 
 class XenakisApp : Application() {
     private lateinit var controller: XenakisController
 
     override fun start(stage: Stage) {
-        val handler = ConsoleHandler()
+        val handler = StreamHandler(System.out, SimpleFormatter())
         handler.level = Level.ALL
         Logger.getGlobal().addHandler(handler)
         Logger.getGlobal().level = Level.FINE

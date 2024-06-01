@@ -227,7 +227,8 @@ class ControlAssignmentEditor(
                 control: BufferControl?,
                 project: XenakisProject
             ): ObjectSelectorControl<BufferObject, BufferObjectReference> {
-                val editor = BufferSelector(project.context, control?.buffer ?: NoBuffer.createReference())
+                val initialValue = control?.buffer ?: BufferObject.defaultBuffer.createReference()
+                val editor = BufferSelector(project.context, initialValue)
                 return ObjectSelectorControl(editor, createBundle())
             }
 

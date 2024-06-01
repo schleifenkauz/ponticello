@@ -8,6 +8,7 @@ import kotlinx.serialization.Serializable
 import reaktive.value.now
 import xenakis.impl.SuperColliderClient
 import xenakis.impl.SuperColliderContext
+import java.io.File
 
 @Serializable
 class BufferRegistry(
@@ -26,26 +27,32 @@ class BufferRegistry(
         context[BufferRegistry] = this
     }
 
-    override fun getDefault(): BufferObject = NoBuffer
+    override fun getDefault(): BufferObject = BufferObject.defaultBuffer
 
-    override fun get(name: String) = if (name == "<none>") NoBuffer else super.get(name)
+    override fun get(name: String) = if (name == "0") BufferObject.defaultBuffer else super.get(name)
 
-    fun SuperColliderContext.reloadBuffers() = run {
+    fun hasFile(file: File) = objects.any { o -> o is FileBuffer && o.referencedFile.now == file }
+
+    override fun add(obj: BufferObject, idx: Int) {
+        if (obj is FileBuffer && hasFile(obj.referencedFile.now)) return
+        super.add(obj, idx)
+    }
+
+    fun SuperColliderContext.initializeBuffers() = run {
         for (buf in buffers) {
-            +"if(${buf.variableName} != nil) { ${buf.variableName}.free }"
             +buf.initializationCode
         }
     }
 
-    override fun onAdded(obj: BufferObject, idx: Int) {
-        context[SuperColliderClient].run(obj.initializationCode)
+    fun sync() {
+        val client = context[SuperColliderClient]
+        for (buf in buffers) {
+            buf.sync(client)
+        }
     }
 
     override fun onRemoved(obj: BufferObject, idx: Int) {
-        context[SuperColliderClient].run {
-            +"${obj.variableName}.free"
-            +"${obj.variableName} = nil"
-        }
+        obj.onRemove()
     }
 
     fun reloadBuffer(buffer: BufferObject, context: SuperColliderContext) {
@@ -54,8 +61,6 @@ class BufferRegistry(
             +buffer.initializationCode
         }
     }
-
-    fun hasBuffer(name: String): Boolean = _buffers.any { b -> b.name.now == name }
 
     interface View : ObjectRegistry.View<BufferObject>
 

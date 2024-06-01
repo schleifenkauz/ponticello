@@ -1,6 +1,7 @@
 package xenakis.ui
 
 import hextant.context.Context
+import hextant.fx.initHextantScene
 import hextant.fx.label
 import hextant.undo.UndoManager
 import javafx.css.PseudoClass
@@ -13,6 +14,7 @@ import javafx.scene.input.MouseEvent
 import javafx.scene.layout.*
 import javafx.scene.paint.Color
 import javafx.scene.paint.Color.BLACK
+import reaktive.value.fx.asObservableValue
 import reaktive.value.now
 import xenakis.impl.Knob
 import xenakis.impl.Point
@@ -29,7 +31,7 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
 
     lateinit var pane: ScorePane
         private set
-    protected lateinit var context: Context
+    protected val context: Context get() = pane.context
 
     private lateinit var nameEditor: NameControl
     private lateinit var muteUnmuteBtn: Button
@@ -104,28 +106,53 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
         }
     }
 
+    protected open fun getSubWindowView(): Region = pane.createObjectView(myObject).also { v ->
+        v.pane = pane
+        v.minimalSetup()
+    }
+
     open fun initialize(parent: ScorePane) {
         this.pane = parent
-        this.context = parent.score.context
+        initializeLayout()
+        alwaysUpdateCursor()
+        initializeDragging()
+        recoloredObject()
+        colorPicker.valueProperty().addListener { _, _, newColor -> myObject.associatedColor = newColor }
+        setupCutting()
+        initializeHeader()
+        minimalSetup()
+        setupSubWindow()
+    }
+
+    private fun initializeHeader() {
+        nameEditor = NameControl(myObject)
+        header.children.add(nameEditor)
+        setupActions()
+    }
+
+    private fun initializeLayout() {
         layoutX = pane.getX(myObject.position.start)
         layoutY = myObject.position.y
         prefWidth = getDisplayWidth()
         prefHeight = myObject.height
-        alwaysUpdateCursor()
-        setupDragging()
-        recoloredObject()
-        colorPicker.valueProperty().addListener { _, _, newColor -> myObject.associatedColor = newColor }
-        setupCutting()
-        nameEditor = NameControl(myObject)
-        header.children.add(nameEditor)
-        setupActions()
+        myObject.position.addListener(this)
+    }
+
+    private fun minimalSetup() {
         displayEnvelopes()
         displayKnobs()
         myObject.addView(this)
-        myObject.position.addListener(this)
-        window = SubWindow(this, myObject.name.now, context, SubWindow.Type.Modal, parent = pane) {
-            title = myObject.name.now
-        }
+    }
+
+    private fun setupSubWindow() {
+        val viewInSubWindow = getSubWindowView()
+        window = SubWindow(viewInSubWindow, myObject.name.now, context, SubWindow.Type.Modal)
+        window.titleProperty().bind(myObject.name.asObservableValue())
+        window.width = 1000.0
+        window.height = 1000.0
+        window.scene.initHextantScene(context)
+        viewInSubWindow.prefWidthProperty().bind(window.widthProperty())
+        viewInSubWindow.prefHeightProperty().bind(window.heightProperty())
     }
 
     protected fun addAction(icon: Icon, action: String?, onAction: () -> Unit): Button {
@@ -286,7 +313,7 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
         }
     }
 
-    private fun setupDragging() {
+    private fun initializeDragging() {
         addEventHandler(MouseEvent.MOUSE_PRESSED) { ev ->
             if (context[XenakisUI].toolSelector.selected.value != Tool.Pointer) return@addEventHandler
             if (dragStart == null) {

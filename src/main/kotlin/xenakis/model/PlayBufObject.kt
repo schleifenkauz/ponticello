@@ -8,14 +8,12 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonObjectBuilder
 import kotlinx.serialization.json.put
 import reaktive.value.now
-import xenakis.impl.ScWriter
-import xenakis.impl.getDouble
-import xenakis.impl.getSerializableValue
-import xenakis.impl.putSerializableValue
+import xenakis.impl.*
 import xenakis.sc.ControlSpec
 import xenakis.sc.Rate
+import xenakis.sc.Warp
 import xenakis.sc.editor.BusSelector
-import xenakis.ui.SoundFileObjectView
+import xenakis.ui.PlayBufObjectView
 import xenakis.ui.format
 
 class PlayBufObject(
@@ -28,12 +26,12 @@ class PlayBufObject(
     lateinit var outSelector: BusSelector
         private set
 
-    private val out get() = outSelector.result.now
+    private val out get() = if (initialized) outSelector.result.now else initialOut
 
     override val type: String
         get() = "sample"
 
-    override val viewManager = ListenerManager.createWeakListenerManager<SoundFileObjectView>()
+    override val viewManager = ListenerManager.createWeakListenerManager<PlayBufObjectView>()
 
     override val associatedControls: Map<String, ParameterControl>
         get() = mapOf("amp" to EnvelopeControl(envelope, Color.WHITE, display = true))
@@ -55,7 +53,7 @@ class PlayBufObject(
     override fun writeStartCode(writer: ScWriter, offset: Double, suffixGenerator: SuffixGenerator) = with(writer) {
         val bufferName = buffer.get().variableName
         val outBusName = out.get().variableName
-        val synthName = "~playbuf_${name}${suffixGenerator.generateSuffix(this@PlayBufObject)}"
+        val synthName = "~playbuf_${name.now}${suffixGenerator.generateSuffix(this@PlayBufObject)}"
         append("$synthName = { ")
         append("PlayBuf.ar(${bufferName}.numChannels, $bufferName, ")
         append("rate: ${rate.format(2)}, ")
@@ -66,7 +64,7 @@ class PlayBufObject(
     }
 
     override fun writeStopCode(writer: ScWriter, suffixGenerator: SuffixGenerator) {
-        val synthName = "~playbuf_${name}${suffixGenerator.getSuffix(this)}"
+        val synthName = "~playbuf_${name.now}${suffixGenerator.getSuffix(this)}"
         writer.appendLine("$synthName.release;")
     }
 
@@ -101,6 +99,18 @@ class PlayBufObject(
             val rate = getDouble("rate") ?: 1.0
             val envelope = getSerializableValue<Envelope>("envelope") ?: Envelope.default
             return PlayBufObject(name, buffer, out, startPos, rate, envelope)
+        }
+    }
+
+    companion object {
+        fun create(buffer: BufferObject, context: Context): PlayBufObject? {
+            val duration = buffer.useAudioStream { stream -> stream?.duration } ?: return null
+            val env = Envelope.constant(1.0, duration, Warp.Linear)
+            val out = context[BusRegistry].getDefault()
+            val name = context[ScoreObjectRegistry].availableName(buffer.name.now)
+            val obj = PlayBufObject(name, buffer.createReference(), out.createReference(), 0.0, 1.0, env)
+            obj.duration = duration
+            return obj
         }
     }
 }

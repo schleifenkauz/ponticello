@@ -15,7 +15,6 @@ import xenakis.impl.*
 import xenakis.sc.BufferControlSpec
 import xenakis.sc.BusControlSpec
 import xenakis.sc.NumericalControlSpec
-import java.util.concurrent.CompletableFuture
 
 @Serializable
 class ReferencedSynthDefObject(
@@ -39,14 +38,14 @@ class ReferencedSynthDefObject(
         get() = _parameters
 
     override fun SuperColliderClient.sync() {
-        CompletableFuture.supplyAsync {
+        async {
             val parameters = getSynthDefParameters(_name)
             _parameters.now.clear()
             _parameters.now.addAll(parameters)
             for (param in parameters) {
                 param.initialize(context)
             }
-        }.exceptionally { ex -> ex.printStackTrace() }
+        }
     }
 
     private fun getSynthDefParameters(name: String): MutableList<ParameterDefObject> =

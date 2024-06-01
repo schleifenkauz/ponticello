@@ -9,15 +9,14 @@ import reaktive.Observer
 import xenakis.impl.readChannels
 import xenakis.model.PlayBufObject
 import xenakis.sc.view.ObjectSelectorControl
-import javax.sound.sampled.AudioInputStream
+import javax.sound.sampled.AudioFormat
 
-class SoundFileObjectView(val obj: PlayBufObject) : ScoreObjectView(obj) {
-    private lateinit var stream: AudioInputStream
-    private val frameRate get() = stream.format.frameRate
-    private val fileDuration get() = (stream.frameLength / frameRate).toDouble()
+class PlayBufObjectView(val obj: PlayBufObject) : ScoreObjectView(obj) {
+    private lateinit var format: AudioFormat
     private lateinit var contents: Array<DoubleArray>
-    private val waveForms = Array(contents.size) { Polyline().styleClass("waveform-line") }
-    private val separatorLines = Array(contents.size) { Line().styleClass("channel-separator-line") }
+    private var waveForms = emptyArray<Polyline>()
+    private var separatorLines = emptyArray<Line>()
+
     private val outBusSelector = ObjectSelectorControl(obj.outSelector, createBundle())
 
     private val contentsObserver: Observer
@@ -27,19 +26,26 @@ class SoundFileObjectView(val obj: PlayBufObject) : ScoreObjectView(obj) {
 
     init {
         envelopesPane.children.addAll(*waveForms, *separatorLines)
-        waveForms.forEach { l -> l.toBack() }
-        separatorLines.forEach { l -> l.toBack() }
         contentsObserver = obj.buffer.get().contentsChanged.observe { _, _ -> updateContentDisplay() }
         updateContentDisplay()
     }
 
     private fun updateContentDisplay() {
-        stream = obj.buffer.get().getAudioStream()
-        contents = stream.readChannels()
-        displayWaveForm()
+        obj.buffer.get().useAudioStream { stream ->
+            if (stream != null) {
+                format = stream.format
+                contents = stream.readChannels()
+                displayWaveForm()
+            } else {
+                envelopesPane.children.removeAll(*waveForms, *separatorLines)
+            }
+        }
     }
 
     private fun displayWaveForm() {
+        envelopesPane.children.removeAll(*waveForms, *separatorLines)
+        waveForms = Array(contents.size) { Polyline().styleClass("waveform-line") }
+        separatorLines = Array(contents.size) { Line().styleClass("channel-separator-line") }
         val heightPerChannel = envelopesPane.height / contents.size
         for (ch in contents.indices) {
             val baseY = ch * heightPerChannel
@@ -49,15 +55,18 @@ class SoundFileObjectView(val obj: PlayBufObject) : ScoreObjectView(obj) {
                 sep.startY = baseY
                 sep.endY = baseY
             }
-            waveForms[ch].points.clear()
+            val frameRate = format.frameRate
             for (x in 0 until envelopesPane.width.toInt()) {
                 val t = obj.startPos + x / pane.pixelsPerSecond
                 val sampleIndex = (t * obj.rate * frameRate).toInt()
-                val value = contents[ch][sampleIndex.coerceIn(contents[ch].indices)]
+                val value = contents[ch][sampleIndex % contents[ch].size]
                 val y = baseY + heightPerChannel * (-value / 2 + 1)
                 waveForms[ch].points.addAll(x.toDouble(), y)
             }
         }
+        envelopesPane.children.addAll(*waveForms, *separatorLines)
+        waveForms.forEach { l -> l.toBack() }
+        separatorLines.forEach { l -> l.toBack() }
     }
 
     override fun resizeObject(width: Double, height: Double, ev: MouseEvent, cursor: Cursor) {
@@ -65,13 +74,14 @@ class SoundFileObjectView(val obj: PlayBufObject) : ScoreObjectView(obj) {
         if (ev.isShiftDown) {
             obj.rate *= obj.duration / newDuration
         } else {
-            newDuration = pane.getDuration(width).coerceAtMost(fileDuration / obj.rate)
+            newDuration = pane.getDuration(width)
             if (cursor in setOf(Cursor.W_RESIZE, Cursor.SW_RESIZE, Cursor.NW_RESIZE)) {
+                newDuration = newDuration.coerceAtMost(obj.duration + obj.startPos)
                 val deltaStart = obj.duration - newDuration
-                obj.startPos = (obj.startPos + deltaStart * obj.rate).coerceIn(0.0, fileDuration)
+                obj.startPos = (obj.startPos + deltaStart * obj.rate)
             }
         }
-        obj.duration = newDuration
+        super.resizeObject(width, height, ev, cursor)
     }
 
     override fun initialize(parent: ScorePane) {

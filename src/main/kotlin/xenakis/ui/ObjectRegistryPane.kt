@@ -92,8 +92,8 @@ abstract class ObjectRegistryPane<O : NamedObject>(
             return button
         }
 
-        fun addExtraControl(node: Node) {
-            extraControls.children.add(node)
+        fun addExtraControl(vararg node: Node) {
+            extraControls.children.addAll(*node)
         }
     }
 }

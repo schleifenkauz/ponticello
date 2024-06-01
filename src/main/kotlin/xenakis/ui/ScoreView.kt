@@ -31,8 +31,10 @@ class ScoreView(score: Score, context: Context) : ScorePane(score, context) {
     }
 
     private fun onResize(old: Double, new: Double) {
-        val delta = new - old
-        displayEnd += getDuration(delta)
+        if (old != 0.0) {
+            val delta = new - old
+            displayEnd += getDuration(delta)
+        }
         repaint()
     }
 

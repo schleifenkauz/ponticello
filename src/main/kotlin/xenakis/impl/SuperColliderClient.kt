@@ -14,16 +14,16 @@ interface SuperColliderClient : SuperColliderContext {
     fun send(address: String, arguments: List<Any>): CompletableFuture<OSCMessage>
 
     fun eval(code: String): CompletableFuture<String> {
-        logger.fine("eval: $code")
+        logger.info("eval: $code")
         return send("/eval", listOf(code)).thenApply { msg ->
             val result = msg.arguments[1] as String
-            logger.fine("evaluating $code returned $result")
+            logger.info("evaluating $code returned $result")
             result
         }
     }
 
     override fun run(command: String) {
-        logger.fine("run: $command")
+        logger.info("run: $command")
         sendAsync("/run", listOf(command))
     }
 

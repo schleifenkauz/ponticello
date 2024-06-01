@@ -135,7 +135,7 @@ class AudioFlowGraph(
             val ugenGraph = flow.ugenGraph.editor.result.now
             val synthName = "~flow_${source.name}_${target.name}"
             appendLine("{")
-            +"var sig = In.${source.rate}(${source.variableName}, ${source.channels})"
+            +"var sig = In.${source.rate.now}(${source.variableName}, ${source.channels.now})"
             ugenGraph.writeCode(this)
             val addAction = if (prev == "s.defaultGroup") "addToTail" else "addAfter"
             +"}.play($prev, ${target.variableName}, addAction: '$addAction')"

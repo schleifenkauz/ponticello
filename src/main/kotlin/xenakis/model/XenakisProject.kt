@@ -50,12 +50,12 @@ class XenakisProject private constructor(
     fun initialize(context: Context) {
         this.context = context
         groups.initialize(context)
-        globalControls.initialize(context)
+        buffers.initialize(context)
         busses.initialize(context)
         flowGraph.initialize(context)
+        globalControls.initialize(context)
         synthDefs.initialize(context)
         score.initialize(context)
-        buffers.initialize(context)
         context[SynthDefRegistry] = synthDefs
         client = context[SuperColliderClient]
         statusObserver = client.statusListener.statusUpdates.observe { _, status ->
@@ -96,7 +96,7 @@ class XenakisProject private constructor(
                 appendBlock("Task") {
                     +"s.bootSync"
                     busses.run { reallocateBusses() }
-                    buffers.run { reloadBuffers() }
+                    buffers.run { initializeBuffers() }
                     globalControls.run { setBusValues() }
                     groups.run { setupGroups() }
                     for (obj in score.objects) obj.run { serverBooted(this@wrap) }

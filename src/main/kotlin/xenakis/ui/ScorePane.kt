@@ -15,14 +15,13 @@ import kotlinx.serialization.json.Json
 import reaktive.value.now
 import xenakis.impl.Arrow
 import xenakis.model.*
+import xenakis.model.Envelope
 import xenakis.sc.Identifier
 import xenakis.sc.Rate
-import xenakis.sc.Warp
 import xenakis.sc.editor.BusSelector
 import xenakis.sc.editor.ScFunctionEditor
 import xenakis.ui.ToolSelector.Tool
 import xenakis.ui.ToolSelector.Tool.*
-import javax.sound.sampled.AudioSystem
 
 abstract class ScorePane(val score: Score, val context: Context) : Pane(), ScoreListener {
     private var newObjectArea: Rectangle? = null
@@ -86,33 +85,30 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
             val e = ev.copyFor(pane, pane)
             when (ev.eventType) {
                 MouseEvent.MOUSE_PRESSED -> pane.mousePressed(e)
-                MouseEvent.MOUSE_CLICKED -> pane.mouseClicked(e)
                 MouseEvent.MOUSE_DRAGGED -> pane.mouseDragged(e)
                 MouseEvent.MOUSE_RELEASED -> pane.mouseReleased(e)
             }
         }
-        setupDropArea()
+        addPlayBufOnDrop()
     }
 
-    private fun setupDropArea() {
-        setupFileDropArea(exactlyOne = true, "wav") { file, ev ->
-            val defaultName = Identifier.truncate(file.nameWithoutExtension)
-            val stream = AudioSystem.getAudioInputStream(file)
-            val format = stream.format
-            val duration = (stream.frameLength / format.frameRate).toDouble()
-            val channels = format.channels
-            val obj = PlayBufObject(
-                defaultName,
-                file,
-                out = BusSelector(context, preferredRate = Rate.Audio, preferredChannels = channels),
-                startPos = 0.0, rate = 1.0,
-                envelope = Envelope.constant(1.0, duration, Warp.Linear),
-            )
-            obj.duration = duration
+    private fun addPlayBufOnDrop() {
+        setupDropArea({ db -> db.hasFile("wav") || db.hasContent(BufferObject.DATA_FORMAT) }, { ev ->
+            val db = ev.dragboard
+            val buf = if (db.hasFiles()) {
+                val file = db.files[0]
+                val defaultName = Identifier.truncate(file.nameWithoutExtension)
+                val buffer = FileBuffer.create(file, defaultName)
+                context[BufferRegistry].add(buffer)
+                buffer
+            } else {
+                context[BufferRegistry].get(db.getContent(BufferObject.DATA_FORMAT) as String)
+            }
+            val obj = PlayBufObject.create(buf, context) ?: return@setupDropArea
             obj.position.set(getTime(ev.x), ev.y)
             obj.height = 150.0
             score.addObject(obj)
-        }
+        })
     }
 
     /*
@@ -121,11 +117,11 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
 
     fun getObjectView(obj: ScoreObject) = views.getOrPut(obj) { createObjectView(obj) }
 
-    private fun createObjectView(obj: ScoreObject): ScoreObjectView = when (obj) {
+    fun createObjectView(obj: ScoreObject): ScoreObjectView = when (obj) {
         is SynthObject -> SynthObjectView(obj)
         is TaskObject -> TaskObjectView(obj)
         is EnvelopeObject -> EnvelopeObjectView(obj)
-        is PlayBufObject -> SoundFileObjectView(obj)
+        is PlayBufObject -> PlayBufObjectView(obj)
         is MemoObject -> MemoObjectView(obj)
         is ScoreObjectGroup -> ScoreObjectGroupView(obj)
         is ClonedObject -> {
@@ -273,25 +269,20 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
         }
     }
 
-    private fun mouseClicked(ev: MouseEvent) {
-        if (ev.button == MouseButton.SECONDARY) {
-            val clipboard = Clipboard.getSystemClipboard()
-            if (clipboard.hasContent(ScoreObject.DATA_FORMAT)) {
-                val content = clipboard.getContent(ScoreObject.DATA_FORMAT) as String
-                val objects = Json.decodeFromString(ListSerializer(ScoreObject.Ser), content)
-                val leftTop = objects.minOf { it.position }
-                for (obj in objects) {
-                    score.addObject(obj)
-                    obj.position.start += getTime(ev.x) - leftTop.start
-                    obj.position.start = obj.start.coerceAtLeast(0.0)
-                    obj.position.y += ev.y - leftTop.y
-                    obj.position.y = obj.y.coerceIn(0.0, height - obj.height)
-                }
+    private fun pasteFromClipboard(ev: MouseEvent) {
+        val clipboard = Clipboard.getSystemClipboard()
+        if (clipboard.hasContent(ScoreObject.DATA_FORMAT)) {
+            val content = clipboard.getContent(ScoreObject.DATA_FORMAT) as String
+            val objects = Json.decodeFromString(ListSerializer(ScoreObject.Ser), content)
+            val leftTop = objects.minOf { it.position }
+            for (obj in objects) {
+                score.addObject(obj)
+                obj.position.start += getTime(ev.x) - leftTop.start
+                obj.position.start = obj.start.coerceAtLeast(0.0)
+                obj.position.y += ev.y - leftTop.y
+                obj.position.y = obj.y.coerceIn(0.0, height - obj.height)
             }
-        } else {
-            ui.player.setPlayHeadX(ev.x)
         }
-        ev.consume()
     }
 
     private fun mouseReleased(ev: MouseEvent) {
@@ -299,23 +290,34 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
         if (!ev.isShiftDown) selector.deselectAll()
         val newObj = newObjectArea
         val tool = ui.toolSelector.selected.value
-        if (tool == AddTime) {
-            showNumberPrompt("How much time to add", 0.0..1000.0, 10.0, context) { amount ->
-                addTime(getTime(ev.x), amount)
-            }
-        } else if (newObj != null && tool != Pointer) {
-            if (newObj.width != 0.0 && newObj.height != 0.0) createNewObject(tool, newObj)
-            clearNewShape()
-        } else if (selectedArea in children) {
-            if (selectedArea.width == 0.0 || selectedArea.height == 0.0) {
-                children.remove(selectedArea)
-            } else if (!selectedArea.heightProperty().isBound) {
-                for (view in viewsInside(selectedArea.boundsInParent)) {
-                    selector.select(view, addToSelection = true)
+        when {
+            tool == AddTime -> {
+                showNumberPrompt("How much time to add", 0.0..1000.0, 10.0, context) { amount ->
+                    addTime(getTime(ev.x), amount)
                 }
-                children.remove(selectedArea)
-            } else {
-                selectedArea.requestFocus()
+            }
+
+            tool == Pointer -> {
+                if (ev.button == MouseButton.SECONDARY) pasteFromClipboard(ev)
+                else if (this is ScoreView) ui.player.setPlayHeadX(ev.x)
+            }
+
+            newObj != null -> {
+                if (newObj.width != 0.0 && newObj.height != 0.0) createNewObject(tool, newObj)
+                clearNewShape()
+            }
+
+            selectedArea in children -> {
+                if (selectedArea.width == 0.0 || selectedArea.height == 0.0) {
+                    children.remove(selectedArea)
+                } else if (!selectedArea.heightProperty().isBound) {
+                    for (view in viewsInside(selectedArea.boundsInParent)) {
+                        selector.select(view, addToSelection = true)
+                    }
+                    children.remove(selectedArea)
+                } else {
+                    selectedArea.requestFocus()
+                }
             }
         }
     }

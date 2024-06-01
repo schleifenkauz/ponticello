@@ -15,6 +15,7 @@ import javafx.scene.Cursor
 import javafx.scene.Node
 import javafx.scene.control.*
 import javafx.scene.input.DragEvent
+import javafx.scene.input.Dragboard
 import javafx.scene.input.TransferMode
 import javafx.scene.layout.*
 import javafx.scene.paint.Color
@@ -25,7 +26,6 @@ import reaktive.value.ReactiveValue
 import reaktive.value.ReactiveVariable
 import reaktive.value.fx.asObservableValue
 import reaktive.value.now
-import java.io.File
 import java.util.*
 import kotlin.math.ceil
 import kotlin.math.log10
@@ -157,39 +157,37 @@ fun timeCode(t: Double, accuracy: Int): String {
     }
 }
 
-fun Node.setupFileDropArea(exactlyOne: Boolean, extension: String, onDrop: (file: File, ev: DragEvent) -> Unit) {
-    setOnDragOver { ev ->
-        if (hasFile(ev, exactlyOne, extension)) {
+fun Node.setupDropArea(condition: (db: Dragboard) -> Boolean, onDrop: (ev: DragEvent) -> Unit) {
+    addEventHandler(DragEvent.DRAG_OVER) { ev ->
+        if (condition(ev.dragboard)) {
             ev.acceptTransferModes(*TransferMode.COPY_OR_MOVE)
             ev.consume()
         }
     }
-    setOnDragEntered { ev ->
-        if (hasFile(ev, exactlyOne, extension))
+    addEventHandler(DragEvent.DRAG_ENTERED) { ev ->
+        if (condition(ev.dragboard)) {
             pseudoClassStateChanged(PseudoClass.getPseudoClass("drop-possible"), true)
-        ev.consume()
+            ev.consume()
+        }
     }
-    setOnDragExited { ev ->
-        pseudoClassStateChanged(PseudoClass.getPseudoClass("drop-possible"), false)
-        ev.consume()
+    addEventHandler(DragEvent.DRAG_EXITED) { ev ->
+        if (condition(ev.dragboard)) {
+            pseudoClassStateChanged(PseudoClass.getPseudoClass("drop-possible"), false)
+            ev.consume()
+        }
     }
-    setOnDragDropped { ev ->
-        val db = ev.dragboard
-        if (db.hasFiles()) {
-            for (file in db.files) {
-                onDrop(file, ev)
-            }
+    addEventHandler(DragEvent.DRAG_DROPPED) { ev ->
+        if (condition(ev.dragboard)) {
+            onDrop(ev)
             ev.isDropCompleted = true
             ev.consume()
         }
     }
-
 }
 
-private fun hasFile(ev: DragEvent, exactlyOne: Boolean, extension: String): Boolean {
-    val hasSoundFiles = ev.dragboard.hasFiles() && ev.dragboard.files.any { it.extension == extension }
-    return hasSoundFiles && (!exactlyOne || ev.dragboard.files.size == 1)
-}
+fun Dragboard.hasFiles(extension: String) = hasFiles() && files.all { f -> f.extension == extension }
+
+fun Dragboard.hasFile(extension: String): Boolean = hasFiles(extension) && files.size == 1
 
 fun solidBorder(fill: Color, width: Double = 1.0, radius: Double = 0.0) =
     Border(BorderStroke(fill, BorderStrokeStyle.SOLID, CornerRadii(radius), BorderWidths(width)))

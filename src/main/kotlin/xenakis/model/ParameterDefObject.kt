@@ -19,7 +19,7 @@ class ParameterDefObject(
     override fun canRenameTo(newName: String): Boolean = true
 
     fun defaultControl(context: Context) = when (val spec = spec.now) {
-        is BufferControlSpec -> BufferControl(NoBuffer.createReference())
+        is BufferControlSpec -> BufferControl(BufferObject.defaultBuffer.createReference())
         is BusControlSpec -> BusControl(context[BusRegistry].getDefault().createReference())
         is NumericalControlSpec -> ConstantControl(spec.defaultValue.get())
     }

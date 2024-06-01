@@ -60,7 +60,5 @@ OSCdef('run', {
 ~setupHandler.('controlStep', { |synthName, controlName|
 	SynthDescLib.global.synthDescs[synthName.asSymbol].specs[controlName].step;
 });
-
 "Successfully setup OSC".postln;
 )
-

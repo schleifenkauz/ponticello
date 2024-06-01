@@ -11,6 +11,9 @@ import kotlinx.serialization.json.*
 import xenakis.sc.Warp
 import java.io.File
 import java.io.StringWriter
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.TimeUnit
+import javax.sound.sampled.AudioInputStream
 import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KMutableProperty0
 import kotlin.reflect.KProperty
@@ -91,3 +94,11 @@ val OSCMessage.warp
         "An ExponentialWarp" -> Warp.Exponential
         else -> Warp.Linear
     }
+
+val AudioInputStream.duration get() = (frameLength / format.frameRate).toDouble()
+
+inline fun async(timeLimit: Long = 1000, crossinline code: () -> Unit) {
+    CompletableFuture.supplyAsync { code() }
+        .orTimeout(timeLimit, TimeUnit.MILLISECONDS)
+        .exceptionally { e -> e.printStackTrace() }
+}

@@ -30,7 +30,7 @@ fun <T : Any> showSelectorDialog(
 ) {
     val selector = ComboBox(FXCollections.observableList(items))
     selector.converter = object : StringConverter<T?>() {
-        override fun toString(item: T?): String = stringConverter(item!!)
+        override fun toString(item: T?): String = if (item == null) "<select>" else stringConverter(item)
 
         override fun fromString(p0: String?): T? = null
     }

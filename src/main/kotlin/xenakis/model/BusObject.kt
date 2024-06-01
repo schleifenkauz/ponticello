@@ -18,12 +18,10 @@ class BusObject(
     val channels: ReactiveValue<Int>,
     val isOutput: Boolean = false
 ) : AbstractRenamableObject() {
-    val variableName get() = "~bus_${name.now}"
+    val variableName get() = if (isOutput) "0" else "~bus_${name.now}"
 
     val allocationCode: String
-        get() =
-            if (isOutput) "$variableName = 0"
-            else "$variableName = Bus.${rate.now.name.lowercase()}(s, ${channels.now})"
+        get() = "$variableName = Bus.${rate.now.name.lowercase()}(s, ${channels.now})"
 
     val deallocationCode: String
         get() = "$variableName.free; $variableName = nil"

@@ -35,7 +35,7 @@ abstract class ObjectRegistry<O : NamedObject> {
 
     fun has(name: String) = objects.any { it.name.now == name }
 
-    fun add(obj: O, idx: Int = objects.size) {
+    open fun add(obj: O, idx: Int = objects.size) {
         obj.initialize(context)
         objects.add(idx, obj)
         context[UndoManager].record(Edit.AddObject(this, obj, idx))

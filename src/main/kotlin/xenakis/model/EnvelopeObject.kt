@@ -22,13 +22,11 @@ class EnvelopeObject(
     override val type: String
         get() = "envelope"
 
-    @Transient
     lateinit var busSelector: BusSelector
         private set
 
-    val bus get() = busSelector.result.now
+    val bus get() = if (initialized) busSelector.result.now else initialBus
 
-    @Transient
     override val viewManager = ListenerManager.createWeakListenerManager<EnvelopeObjectView>()
 
     private val envelopeControl: EnvelopeControl get() = EnvelopeControl(envelope, spec.associatedColor, display = true)
@@ -53,7 +51,6 @@ class EnvelopeObject(
     override fun initialize(context: Context) {
         if (initialized) return
         super.initialize(context)
-        initialBus.resolve(context)
         busSelector = BusSelector(context, preferredRate = Rate.Control, 1, initialBus)
     }
 
@@ -74,7 +71,7 @@ class EnvelopeObject(
 
     override fun JsonObjectBuilder.saveToJson() {
         putSerializableValue("spec", spec)
-        putSerializableValue("bus", busSelector)
+        putSerializableValue("bus", bus)
         putSerializableValue("envelope", envelope)
     }
 
