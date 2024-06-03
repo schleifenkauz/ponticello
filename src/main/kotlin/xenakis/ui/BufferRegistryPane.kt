@@ -1,5 +1,8 @@
 package xenakis.ui
 
+import hextant.fx.registerShortcuts
+import javafx.collections.FXCollections
+import javafx.scene.control.ComboBox
 import javafx.scene.control.Label
 import javafx.scene.control.Spinner
 import javafx.scene.control.TextField
@@ -13,6 +16,7 @@ import reaktive.value.now
 import reaktive.value.reactiveVariable
 import xenakis.impl.SuperColliderClient
 import xenakis.model.*
+import xenakis.sc.Identifier
 
 class BufferRegistryPane(
     private val buffers: BufferRegistry,
@@ -34,33 +38,60 @@ class BufferRegistryPane(
         buffers.run { client.initializeBuffers() }
     }
 
+    override fun addObject() {
+        val typeSelector = ComboBox(FXCollections.observableList(BufferObject.Type.values().asList()))
+        typeSelector.value = BufferObject.Type.Allocate
+        val nameInput = TextField() styleClass "prompt-text-field"
+        nameInput.promptText = "Buffer name"
+        val ok = Icon.Check.button(action = "Confirm")
+        val layout = HBox(typeSelector, nameInput).centerChildrenVertically() styleClass "prompt"
+        val window = SubWindow(layout, "Create new buffer", project.context, SubWindow.Type.Prompt)
+        fun commit() {
+            val type = typeSelector.value ?: return
+            val name = nameInput.text
+            if (!Identifier.isValid(name) || buffers.has(name)) return
+            window.hide()
+            addObject(type, name)
+        }
+        ok.setOnAction { commit() }
+        layout.registerShortcuts {
+            on("ENTER") { commit() }
+        }
+        window.sizeToScene()
+        window.show()
+    }
+
     override fun addObject(name: String) {
         val choices = BufferObject.Type.values().toList()
         showSelectorDialog("Buffer type", project.context, choices, null) { type ->
-            val buffer = when (type) {
-                BufferObject.Type.File -> {
-                    val file = controller.showOpenDialog("*.wav") ?: return@showSelectorDialog
-                    if (buffers.hasFile(file)) return@showSelectorDialog
-                    FileBuffer.create(file, name)
-                }
-
-                BufferObject.Type.Allocate -> {
-                    val channelsSpinner = Spinner<Int>(1, 12, 2)
-                    val xLabel = Label("x")
-                    val framesField = TextField()
-                    framesField.promptText = "Number of frames"
-                    val layout = HBox(5.0, channelsSpinner, xLabel, framesField).centerChildrenVertically()
-                    layout.showDialog("Configure buffer", project.context, style = StageStyle.UTILITY) {
-                        val channels = channelsSpinner.value
-                        val frames = framesField.text.toIntOrNull() ?: return@showDialog null
-                        AllocatedBuffer.create(name, channels, frames)
-                    } ?: return@showSelectorDialog
-                }
-
-                BufferObject.Type.Reference -> ReferencedBuffer(reactiveVariable(name))
-            }
-            buffers.add(buffer)
+            addObject(type, name)
         }
+    }
+
+    private fun addObject(type: BufferObject.Type, name: String) {
+        val buffer = when (type) {
+            BufferObject.Type.File -> {
+                val file = controller.showOpenDialog("*.wav") ?: return
+                if (buffers.hasFile(file)) return
+                FileBuffer.create(file, name)
+            }
+
+            BufferObject.Type.Allocate -> {
+                val channelsSpinner = Spinner<Int>(1, 12, 2)
+                val xLabel = Label("x")
+                val framesField = TextField()
+                framesField.promptText = "Number of frames"
+                val layout = HBox(5.0, channelsSpinner, xLabel, framesField).centerChildrenVertically()
+                layout.showDialog("Configure buffer", project.context, style = StageStyle.UTILITY) {
+                    val channels = channelsSpinner.value
+                    val frames = framesField.text.toIntOrNull() ?: return@showDialog null
+                    AllocatedBuffer.create(name, channels, frames)
+                } ?: return
+            }
+
+            BufferObject.Type.Reference -> ReferencedBuffer(reactiveVariable(name))
+        }
+        buffers.add(buffer)
     }
 
     override fun ObjectBox<BufferObject>.configureObjectBox() {
@@ -77,26 +108,38 @@ class BufferRegistryPane(
                     obj.loadFile(newFile)
                     buffers.reloadBuffer(obj, context = controller.client)
                 }
-                addAction(Icon.View, description = "View buffer contents") {
-                    controller.client.run("${obj.variableName}.plot('${obj.name.now}')")
-                }
             }
 
             is AllocatedBuffer -> {
                 val channelsSpinner = Spinner<Int>(1, 12, obj.channels.now)
+                channelsSpinner.prefWidth = 70.0
                 channelsSpinner.valueFactory.valueProperty().bindBidirectional(obj.channels.asProperty())
                 val framesInput = TextField(obj.frames.now.toString())
-                framesInput.setOnAction {
-                    val frames = framesInput.text.toIntOrNull() ?: return@setOnAction
-                    obj.frames.now = frames
-                }
+                framesInput.promptText = "Number of frames"
+                framesInput.id = "frames-input"
+                val xLabel = Label("x")
+                addExtraControl(channelsSpinner, xLabel, framesInput)
             }
 
             is ReferencedBuffer -> {
                 addBufferInfo()
             }
         }
-        addAction(Icon.Repeat, "Sync with server") { obj.sync(buffers.context[SuperColliderClient]) }
+        addAction(Icon.View, description = "View buffer contents") {
+            controller.client.run("${obj.variableName}.plot('${obj.name.now}')")
+        }
+        addAction(Icon.Repeat, "Sync with server") {
+            if (obj is AllocatedBuffer) {
+                val framesInput = lookup("#frames-input") as TextField
+                val n = framesInput.text.toIntOrNull()
+                if (n == null) {
+                    alertError("Not a valid number of frames specified.")
+                    return@addAction
+                }
+                obj.frames.set(n)
+            }
+            obj.sync(buffers.context[SuperColliderClient])
+        }
         setOnDragDetected { ev ->
             val db = startDragAndDrop(TransferMode.COPY)
             db.setContent(mapOf(BufferObject.DATA_FORMAT to obj.name.now))

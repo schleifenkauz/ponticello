@@ -95,7 +95,7 @@ fun showNumberPrompt(
 }
 
 fun showTextPrompt(title: String, initialText: String, context: Context, onEnter: (String) -> Boolean) {
-    val field = TextField() styleClass "prompt-text-field"
+    val field = TextField().styleClass("prompt", "prompt-text-field")
     field.promptText = title
     field.text = initialText
     field.selectAll()

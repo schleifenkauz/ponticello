@@ -28,6 +28,7 @@ class ScWriter(private val output: Appendable) {
     }
 
     operator fun String.unaryPlus() {
+        if (this.isBlank()) return
         append(this)
         appendLine(";")
     }

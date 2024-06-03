@@ -464,15 +464,20 @@ Slider.control-detail-editor {
     -fx-text-fill: white;
 }
 
-.prompt-text-field {
-    -fx-pref-width: 200px;
-    -fx-font-size: 14px;
+.prompt {
     -fx-padding: 6px;
     -fx-border-radius: 3px;
     -fx-background-radius: 3px;
     -fx-border-color: gray;
     -fx-background-color: black;
     -fx-border-width: 3px;
+}
+
+.prompt-text-field {
+    -fx-background-color: transparent;
+    -fx-border-width: 0px;
+    -fx-pref-width: 200px;
+    -fx-font-size: 14px;
     -fx-prompt-text-fill: gray;
     -fx-text-fill: white;
 }

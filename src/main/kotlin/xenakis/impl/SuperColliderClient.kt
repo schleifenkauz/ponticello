@@ -15,7 +15,7 @@ interface SuperColliderClient : SuperColliderContext {
 
     fun eval(code: String): CompletableFuture<String> {
         logger.info("eval: $code")
-        return send("/eval", listOf(code)).thenApply { msg ->
+        return send("eval", listOf(code)).thenApply { msg ->
             val result = msg.arguments[1] as String
             logger.info("evaluating $code returned $result")
             result
@@ -24,7 +24,7 @@ interface SuperColliderClient : SuperColliderContext {
 
     override fun run(command: String) {
         logger.info("run: $command")
-        sendAsync("/run", listOf(command))
+        sendAsync("run", listOf(command))
     }
 
     fun quit()

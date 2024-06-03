@@ -13,7 +13,7 @@ data class AllocatedBuffer(
     override val channels: ReactiveVariable<Int>, override val frames: ReactiveVariable<Int>
 ) : BufferObject() {
     override val initializationCode: String
-        get() = "$variableName = Buffer.alloc(s, ${channels.now}, ${frames.now})"
+        get() = "$variableName = Buffer.alloc(s, ${frames.now}, ${channels.now})"
 
     override fun sync(client: SuperColliderClient) {
         async {

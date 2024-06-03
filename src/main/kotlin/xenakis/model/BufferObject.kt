@@ -43,7 +43,7 @@ sealed class BufferObject : AbstractRenamableObject() {
 
     protected fun reallocate() {
         context[SuperColliderClient].run {
-            +"if ($variableName != nil) { $variableName.free; };"
+            +"if ($variableName != nil) { $variableName.free; }"
             +initializationCode
         }
     }

@@ -100,8 +100,8 @@ class XenakisProject private constructor(
                     globalControls.run { setBusValues() }
                     groups.run { setupGroups() }
                     for (obj in score.objects) obj.run { serverBooted(this@wrap) }
-                    run(serverSetup.editor.result.now.code)
-                    run("\"Server is setup\".postln;")
+                    +serverSetup.editor.result.now.code
+                    +"\"Server is setup\".postln"
                 }
                 appendLine(".play;")
             }

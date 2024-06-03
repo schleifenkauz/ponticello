@@ -10,7 +10,11 @@
 };
 OSCdef.trace(false);
 ~setupHandler.('eval', { |code|
-	this.interpret(code.asString).asString;
+	var answer;
+	'eval '.post; code.postln;
+	answer = this.interpret(code.asString).asString;
+	'answer is: '; answer.postln;
+	answer;
 });
 OSCdef('run', {
 	arg msg, time, addr, recvPort;
@@ -46,9 +50,7 @@ OSCdef('run', {
 });
 ~setupHandler.('controlMinval', { |synthName, controlName|
 	var minval;
-	'minval of '.post; synthName.post; '.'.post; controlName.postln;
 	minval = SynthDescLib.global.synthDescs[synthName.asSymbol].specs[controlName].minval;
-	'is '.post; minval.postln;
 	minval
 });
 ~setupHandler.('controlMaxval', { |synthName, controlName|
@@ -60,5 +62,5 @@ OSCdef('run', {
 ~setupHandler.('controlStep', { |synthName, controlName|
 	SynthDescLib.global.synthDescs[synthName.asSymbol].specs[controlName].step;
 });
-"Successfully setup OSC".postln;
+"Successfully setup OSC!".postln;
 )

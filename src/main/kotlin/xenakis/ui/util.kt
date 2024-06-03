@@ -210,3 +210,5 @@ fun label(text: ReactiveValue<String>): Label {
     label.textProperty().bind(text.asObservableValue())
     return label
 }
+
+fun plural(noun: String) = if (noun.endsWith("s")) "${noun}es" else "${noun}s"

@@ -54,6 +54,7 @@
 
 - to file or to buffer (that is record to file and then load buffer into SC)
 - realtime (easy) and non realtime (not easy, use Score API from SuperCollider)
+- or have a live buffer to which everything is recorded, from which you can choose snippets
 
 ## Architecture
 

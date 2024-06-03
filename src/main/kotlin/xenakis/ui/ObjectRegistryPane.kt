@@ -27,7 +27,7 @@ abstract class ObjectRegistryPane<O : NamedObject>(
 
     private fun createHeader(): HBox {
         val type = registry.objectType
-        val label = Label("${type}s").styleClass("tool-pane-heading")
+        val label = Label(plural(type)).styleClass("tool-pane-heading")
         val space = infiniteSpace()
         val addBtn = Icon.Add.button(action = "Add $type") {
             addObject()
@@ -53,7 +53,7 @@ abstract class ObjectRegistryPane<O : NamedObject>(
 
     protected abstract fun reload()
 
-    private fun addObject() = showNamePrompt(registry) { name -> addObject(name) }
+    protected open fun addObject() = showNamePrompt(registry) { name -> addObject(name) }
 
     protected abstract fun addObject(name: String)
 
@@ -77,7 +77,7 @@ abstract class ObjectRegistryPane<O : NamedObject>(
     class ObjectBox<O : NamedObject>(private val pane: ObjectRegistryPane<O>, val obj: O) : HBox() {
         val actions = HBox().centerChildrenVertically()
 
-        private val extraControls = HBox().centerChildrenVertically()
+        private val extraControls = HBox(5.0).centerChildrenVertically()
 
         init {
             styleClass("object-box")
