@@ -31,6 +31,7 @@ data class GroupRegistry(
     override fun getDefault(): GroupObject = objects.find { it.isDefault } ?: GroupObject.DEFAULT
 
     override fun onAdded(obj: GroupObject, idx: Int) {
+        super.onAdded(obj, idx)
         val groupBefore = order.getOrNull(idx - 1)
         setupGroup(obj, groupBefore, context[SuperColliderClient])
     }

@@ -37,12 +37,13 @@ class Score(
         this.context = context
         for (obj in objects) {
             objectRegistry.add(obj)
+        }
+        for (obj in objects) {
+            obj.initialize(context)
             obj.addToScore(this)
         }
         layoutManager.initialize(context)
     }
-
-    fun getObject(name: String) = objectRegistry.get(name)
 
     fun addListener(listener: ScoreListener) {
         views.addListener(listener)

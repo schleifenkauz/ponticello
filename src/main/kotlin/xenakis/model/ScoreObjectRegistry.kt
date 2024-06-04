@@ -10,6 +10,8 @@ class ScoreObjectRegistry : ObjectRegistry<ScoreObject>() {
     override val objectType: String
         get() = "Score object"
 
+    override fun onAdded(obj: ScoreObject, idx: Int) {}
+
     override fun getDefault(): ScoreObject = error("No default score object")
 
     fun availableName(prefix: String): String {

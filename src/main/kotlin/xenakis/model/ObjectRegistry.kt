@@ -36,10 +36,9 @@ abstract class ObjectRegistry<O : NamedObject> {
     fun has(name: String) = objects.any { it.name.now == name }
 
     open fun add(obj: O, idx: Int = objects.size) {
-        obj.initialize(context)
         objects.add(idx, obj)
-        context[UndoManager].record(Edit.AddObject(this, obj, idx))
         onAdded(obj, idx)
+        context[UndoManager].record(Edit.AddObject(this, obj, idx))
         views.notifyListeners { added(obj, idx) }
     }
 
@@ -52,7 +51,9 @@ abstract class ObjectRegistry<O : NamedObject> {
         views.notifyListeners { removed(obj, idx) }
     }
 
-    protected open fun onAdded(obj: O, idx: Int) {}
+    protected open fun onAdded(obj: O, idx: Int) {
+        obj.initialize(context)
+    }
 
     protected open fun onRemoved(obj: O, idx: Int) {}
 

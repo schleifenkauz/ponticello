@@ -55,6 +55,7 @@ class InstrumentRegistry private constructor(
     }
 
     override fun onAdded(obj: InstrumentObject, idx: Int) {
+        super.onAdded(obj, idx)
         obj.run { client.sync() }
     }
 
