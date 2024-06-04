@@ -55,6 +55,7 @@ class Score(
     }
 
     fun addObject(obj: ScoreObject) {
+        obj.initialize(context)
         obj.addToScore(this)
         _objects.add(obj)
         objectRegistry.add(obj)

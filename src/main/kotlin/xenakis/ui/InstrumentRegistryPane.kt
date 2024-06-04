@@ -1,16 +1,20 @@
 package xenakis.ui
 
 import bundles.PublicProperty
+import bundles.createBundle
 import bundles.publicProperty
 import hextant.fx.PseudoClasses
 import hextant.fx.initHextantScene
+import javafx.application.Platform
 import javafx.scene.control.Button
 import javafx.scene.layout.VBox
 import reaktive.value.binding.map
 import reaktive.value.fx.asObservableValue
 import reaktive.value.now
+import xenakis.impl.SuperColliderClient
+import xenakis.impl.async
 import xenakis.model.*
-import xenakis.model.InstrumentObject.Type
+import xenakis.sc.view.ObjectSelectorControl
 
 class InstrumentRegistryPane(
     private val registry: InstrumentRegistry,
@@ -29,23 +33,29 @@ class InstrumentRegistryPane(
     }
 
     override fun addObject() {
-        val options = Type.values().asList()
-        val default = Type.SynthDef
-        showCreateNewDialog(options, default, ::createObject)
+        async {
+            val availablePlugins = registry.context[SuperColliderClient]
+                .eval("VSTPlugin.pluginList.collect(_.name);")
+                .join()
+                .removePrefix("[ ").removeSuffix("]")
+                .split(", ")
+                .map { name -> "Plugin: $name" }
+            val default = "New SynthDef"
+            val options = listOf(default) + availablePlugins
+            Platform.runLater {
+                showCreateNewDialog(options, default, ::createObject)
+            }
+        }
     }
 
-    private fun createObject(type: Type, name: String): InstrumentObject = when (type) {
-        Type.SynthDef -> createSynthDef(name)
-        Type.VSTPlugin -> createVSTInstrument(name)
+    private fun createObject(type: String, name: String): InstrumentObject = when (type) {
+        "New SynthDef" -> createSynthDef(name)
+        else -> VSTPluginObject.create(registry.context, name, type.removePrefix("Plugin: "))
     }
 
     override fun addObject(name: String) {
         val obj = createSynthDef(name)
         registry.add(obj)
-    }
-
-    private fun createVSTInstrument(name: String): VSTPluginObject {
-        TODO()
     }
 
     fun createSynthDef(name: String) = when {
@@ -92,6 +102,10 @@ class InstrumentRegistryPane(
         val colorPicker = colorPicker(obj.color)
         colorPicker.prefWidth = 30.0
         addExtraControl(colorPicker)
+        if (obj is VSTPluginObject) {
+            val outSelectorControl = ObjectSelectorControl(obj.outputSelector, createBundle())
+            addExtraControl(outSelectorControl)
+        }
         addAction(Icon.View, "Edit SynthDef") { editSynthDef(obj) }
     }
 

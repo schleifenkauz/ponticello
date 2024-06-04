@@ -22,7 +22,7 @@ class InstrumentRegistry private constructor(
         get() = instruments
 
     override val objectType: String
-        get() = "SynthDef"
+        get() = "Instrument"
 
     @Transient
     private lateinit var client: SuperColliderClient
@@ -55,8 +55,12 @@ class InstrumentRegistry private constructor(
     }
 
     override fun onAdded(obj: InstrumentObject, idx: Int) {
-        super.onAdded(obj, idx)
-        obj.run { client.sync() }
+        if (obj is VSTPluginObject) {
+            obj.initializeNew(context)
+        } else {
+            obj.initialize(context)
+            obj.run { client.sync() }
+        }
     }
 
     override fun onRemoved(obj: InstrumentObject, idx: Int) {
@@ -78,6 +82,16 @@ class InstrumentRegistry private constructor(
         for (def in instruments) {
             if (def is CustomizableSynthDefObject) {
                 def.run { addToGlobalSynthDescLib() }
+            }
+        }
+    }
+
+    fun SuperColliderContext.loadVSTPlugins() {
+        for (instr in instruments) {
+            if (instr is VSTPluginObject) {
+                //val channelsCode = "VSTPlugin.plugins['$pluginName'].outputs[0].channels"
+                //val outputChannels = client.eval(channelsCode).join().toIntOrNull() ?: 2
+                instr.run { loadVSTPlugin() }
             }
         }
     }

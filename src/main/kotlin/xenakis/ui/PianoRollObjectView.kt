@@ -1,7 +1,6 @@
 package xenakis.ui
 
 import hextant.undo.UndoManager
-import javafx.scene.Cursor
 import javafx.scene.input.MouseButton
 import javafx.scene.input.MouseEvent
 import javafx.scene.layout.Pane
@@ -52,7 +51,7 @@ class PianoRollObjectView(private val obj: PianoRollObject) : ScoreObjectView(ob
             if (context[XenakisUI].toolSelector.selected.value != ToolSelector.Tool.PianoRoll) return@addEventHandler
             when (ev.eventType) {
                 MouseEvent.MOUSE_ENTERED -> notePane.children.remove(cursor)
-                MouseEvent.MOUSE_EXITED -> if (cursor !in notePane.children) notePane.children.add(cursor)
+                //MouseEvent.MOUSE_EXITED -> if (cursor !in notePane.children) notePane.children.add(cursor)
             }
             ev.consume()
         }

@@ -95,8 +95,10 @@ class XenakisProject private constructor(
             run {
                 appendBlock("Task") {
                     +"s.bootSync"
+                    +"VSTPlugin.search"
                     busses.run { reallocateBusses() }
                     buffers.run { initializeBuffers() }
+                    instruments.run { loadVSTPlugins() }
                     globalControls.run { setBusValues() }
                     groups.run { setupGroups() }
                     for (obj in score.objects) obj.run { serverBooted(this@wrap) }

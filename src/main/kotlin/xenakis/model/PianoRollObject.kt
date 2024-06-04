@@ -35,7 +35,7 @@ class PianoRollObject(
     lateinit var instrumentSelector: InstrumentSelector
         private set
 
-    val instrument get() = instrumentSelector.result.now
+    val instrument get() = if (initialized) instrumentSelector.result.now else initialInstrument
 
     val pitchRange get() = lowestPitch..highestPitch
 
@@ -123,7 +123,7 @@ class PianoRollObject(
                 val deltaTime = (t - currentTime)
                 +"$deltaTime.wait"
                 val eventMap = instrument.get().createEvent().toMutableMap()
-                eventMap["duration"] = dur.format(3)
+                eventMap["sustain"] = dur.format(3)
                 eventMap["midinote"] = midinote.toString()
                 eventMap["velocity"] = velocity.toString()
                 +eventMap.entries.joinToString(", ", "(", ").play") { (name, value) -> "$name: $value" }

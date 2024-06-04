@@ -1,19 +1,26 @@
 (
+SynthDef(\vst_instrument, {
+	arg out = 0;
+	var snd;
+	snd = VSTPlugin.ar(nil, 2);
+	Out.ar(out, snd);
+}).add;
+
 ~setupHandler = { arg address, handler;
 	OSCdef(address, {
 		arg msg, time, addr, recvPort;
 		var argument, id, answer;
-		id = msg[1];
-		answer = handler.(*msg.drop(2));
-		addr.sendMsg('/reply', id, answer);
+		AppClock.sched(0.0) {
+			id = msg[1];
+			answer = handler.(*msg.drop(2));
+			addr.sendMsg('/reply', id, answer);
+		}
 	}, address);
 };
 OSCdef.trace(false);
 ~setupHandler.('eval', { |code|
 	var answer;
-	'eval '.post; code.postln;
 	answer = this.interpret(code.asString).asString;
-	'answer is: '; answer.postln;
 	answer;
 });
 OSCdef('run', {

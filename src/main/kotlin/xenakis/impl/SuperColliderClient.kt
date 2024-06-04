@@ -4,6 +4,7 @@ import bundles.PublicProperty
 import bundles.publicProperty
 import com.illposed.osc.OSCMessage
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.TimeUnit
 import java.util.logging.Logger
 
 interface SuperColliderClient : SuperColliderContext {
@@ -15,11 +16,13 @@ interface SuperColliderClient : SuperColliderContext {
 
     fun eval(code: String): CompletableFuture<String> {
         logger.info("eval: $code")
-        return send("eval", listOf(code)).thenApply { msg ->
-            val result = msg.arguments[1] as String
-            logger.info("evaluating $code returned $result")
-            result
-        }
+        return send("eval", listOf(code))
+            .orTimeout(10000, TimeUnit.MILLISECONDS)
+            .thenApply { msg ->
+                val result = msg.arguments[1] as String
+                logger.info("evaluating $code returned $result")
+                result
+            }
     }
 
     override fun run(command: String) {
