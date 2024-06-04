@@ -61,6 +61,7 @@ class ScoreView(score: Score, context: Context) : ScorePane(score, context) {
         for (t in displayStart..displayEnd step gridDist) {
             val x = getX(t)
             val l = Line(x, 20.0, x, height - 40.0).styleClass("grid-line")
+            l.viewOrder = -100.0
             l.endYProperty().bind(heightProperty().subtract(40))
             children.add(l)
             val timeCode = timeCode(t, accuracy)
@@ -80,7 +81,7 @@ class ScoreView(score: Score, context: Context) : ScorePane(score, context) {
     private fun setupPositionTracker() {
         positionTracker.startY = 10.0
         positionTracker.endYProperty().bind(heightProperty().subtract(10))
-        positionTracker.viewOrder = 1.0
+        positionTracker.viewOrder = 100.0
         setOnMouseEntered { ev ->
             if (!ev.x.isNaN()) {
                 positionTracker.layoutX = ev.x.snap(timeSnap)

@@ -8,6 +8,7 @@ import javafx.scene.control.MenuItem
 import javafx.scene.input.MouseEvent
 import javafx.scene.layout.HBox
 import javafx.scene.paint.Color
+import reaktive.value.ReactiveValue
 import reaktive.value.now
 import xenakis.model.Envelope
 import xenakis.model.EnvelopeControl
@@ -33,7 +34,7 @@ class SynthObjectView(val obj: SynthObject) : ScoreObjectView(obj) {
     private fun setupSynthDefReference() {
         val nameLabel = label(obj.synthDef.name) styleClass "synth-def-ref-label"
         val viewBtn = Icon.View.button(action = "View SynthDef") {
-            context[SynthDefRegistryPane].editSynthDef(obj.synthDef)
+            context[InstrumentRegistryPane].editSynthDef(obj.synthDef)
         }
         val box = HBox(nameLabel, viewBtn) styleClass "synth-def-ref-box"
         header.children.add(1, box)
@@ -102,6 +103,6 @@ class SynthObjectView(val obj: SynthObject) : ScoreObjectView(obj) {
         }
     }
 
-    override val defaultBackgroundColor: Color
-        get() = obj.synthDef.color.now
+    override val defaultBackgroundColor: ReactiveValue<Color>
+        get() = obj.synthDef.color
 }

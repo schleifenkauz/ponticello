@@ -2,6 +2,7 @@ package xenakis.model
 
 import bundles.PublicProperty
 import bundles.publicProperty
+import reaktive.value.now
 
 class ScoreObjectRegistry : ObjectRegistry<ScoreObject>() {
     override val objects: MutableList<ScoreObject> = mutableListOf()
@@ -19,9 +20,9 @@ class ScoreObjectRegistry : ObjectRegistry<ScoreObject>() {
         throw AssertionError()
     }
 
-    fun nameForCopy(obj: ScoreObject): String = availableName("${obj.name}_copy")
+    fun nameForCopy(obj: ScoreObject): String = availableName("${obj.name.now}_copy")
 
-    fun nameForClone(obj: ScoreObject): String = availableName("${obj.name}_clone")
+    fun nameForClone(obj: ScoreObject): String = availableName("${obj.name.now}_clone")
 
     companion object : PublicProperty<ScoreObjectRegistry> by publicProperty("ScoreObjectRegistry")
 }

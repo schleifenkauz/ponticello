@@ -124,6 +124,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
         is PlayBufObject -> PlayBufObjectView(obj)
         is MemoObject -> MemoObjectView(obj)
         is ScoreObjectGroup -> ScoreObjectGroupView(obj)
+        is PianoRollObject -> PianoRollObjectView(obj)
         is ClonedObject -> {
             val view = createObjectView(obj.original)
             view.myObject = obj
@@ -204,7 +205,8 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
         val rect = Rectangle(x, y, 0.0, 0.0)
         when (selectedTool) {
             Synth -> {
-                val synthDef = context[SynthDefRegistry].selectedSynthDef ?: return
+                val synthDef = context[InstrumentRegistry].selectedInstrument
+                if (synthDef !is SynthDefObject) return
                 rect.fill = synthDef.color.now
             }
 
@@ -216,6 +218,8 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
                 rect.stroke = WHITE
                 rect.fill = rgb(0, 0, 0, 0.3)
             }
+
+            PianoRoll -> rect.fill = context[InstrumentRegistry].selectedInstrument?.color?.now ?: return
 
             Pointer -> {
                 selectedArea.x = x
@@ -324,7 +328,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
 
     private fun viewsInside(bounds: Bounds) = views.values.filter { v -> bounds.contains(v.boundsInParent) }
 
-    private fun nameForNewObject(prompt: String, initialName: String, create: (String) -> Unit) {
+    private fun promptNewObjectName(prompt: String, initialName: String, create: (String) -> Unit) {
         showTextPrompt(prompt, initialName, context) { name ->
             if (!Identifier.isValid(name) || context[ScoreObjectRegistry].has(name)) {
                 return@showTextPrompt false
@@ -341,25 +345,28 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
     private fun createNewObject(tool: Tool, rect: Rectangle) {
         when (tool) {
             Synth -> {
-                val def = context[SynthDefRegistry].selectedSynthDef ?: return
+                val def = context[InstrumentRegistry].selectedInstrument
+                if (def !is SynthDefObject) return
                 val defaultGroup = context[GroupRegistry].getDefault()
                 val initialName = context[ScoreObjectRegistry].availableName("synth")
-                nameForNewObject("Synth name", initialName) { name ->
+                promptNewObjectName("Synth name", initialName) { name ->
+                    @Suppress("UNCHECKED_CAST")
+                    val ref = def.createReference() as ObjectReference<SynthDefObject>
                     val obj = SynthObject(
                         name,
-                        def.createReference(), defaultGroup.createReference(),
+                        ref, defaultGroup.createReference(),
                         _controls = def.defaultControls(context)
                     )
                     addObject(obj, rect)
                 }
             }
 
-            Task -> nameForNewObject("Task name", context[ScoreObjectRegistry].availableName("task")) { name ->
+            Task -> promptNewObjectName("Task name", context[ScoreObjectRegistry].availableName("task")) { name ->
                 val editor = EditorRoot.create(ScFunctionEditor(context))
                 addObject(TaskObject(name, editor, rect.width), rect)
             }
 
-            Tool.Envelope -> nameForNewObject(
+            Tool.Envelope -> promptNewObjectName(
                 "Envelope name",
                 context[ScoreObjectRegistry].availableName("env")
             ) { name ->
@@ -378,7 +385,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
                 addObject(MemoObject(name, "", rect.width), rect)
             }
 
-            Compound -> nameForNewObject(
+            Compound -> promptNewObjectName(
                 "Object group name",
                 context[ScoreObjectRegistry].availableName("group")
             ) { name ->
@@ -390,6 +397,15 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
                 }
                 val subScore = Score(objects.toMutableList())
                 addObject(ScoreObjectGroup(name, subScore), rect)
+            }
+
+            PianoRoll -> promptNewObjectName("Pattern name", "") { name ->
+                val instr = context[InstrumentRegistry].selectedInstrument ?: return@promptNewObjectName
+                val lowestPitch = 48
+                val highestPitch = 72
+                val notes = mutableListOf<PianoRollObject.Note>()
+                val obj = PianoRollObject(name, instr.createReference(), lowestPitch, highestPitch, notes)
+                addObject(obj, rect)
             }
 
             else -> {

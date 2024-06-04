@@ -50,6 +50,8 @@ val File.superColliderPath get() = "\"" + absolutePath.replace('\\', '/') + "\""
 
 fun JsonObject.getDouble(name: String) = get(name)?.jsonPrimitive?.double
 
+fun JsonObject.getInt(name: String) = get(name)?.jsonPrimitive?.int
+
 fun JsonObject.getString(name: String) = get(name)?.jsonPrimitive?.content
 
 fun JsonObject.getBoolean(name: String) = get(name)?.jsonPrimitive?.boolean
@@ -102,3 +104,15 @@ inline fun async(timeLimit: Long = 1000, crossinline code: () -> Unit) {
         .orTimeout(timeLimit, TimeUnit.MILLISECONDS)
         .exceptionally { e -> e.printStackTrace() }
 }
+
+inline fun <V> KMutableProperty0<V>.reactive(crossinline onUpdate: (oldValue: V, newValue: V) -> Unit) =
+    object : ReadWriteProperty<Any?, V> {
+        override fun getValue(thisRef: Any?, property: KProperty<*>): V = get()
+
+        override fun setValue(thisRef: Any?, property: KProperty<*>, value: V) {
+            val oldValue = get()
+            if (oldValue == value) return
+            set(value)
+            onUpdate(oldValue, value)
+        }
+    }

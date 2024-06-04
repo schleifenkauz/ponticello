@@ -14,8 +14,13 @@ import javafx.scene.input.MouseEvent
 import javafx.scene.layout.*
 import javafx.scene.paint.Color
 import javafx.scene.paint.Color.BLACK
+import reaktive.value.ReactiveValue
+import reaktive.value.binding.map
+import reaktive.value.binding.orElse
+import reaktive.value.forEach
 import reaktive.value.fx.asObservableValue
 import reaktive.value.now
+import reaktive.value.reactiveVariable
 import xenakis.impl.Knob
 import xenakis.impl.Point
 import xenakis.impl.SuperColliderClient
@@ -42,6 +47,7 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
     private val envelopeEditors = mutableListOf<EnvelopeEditor>()
     private val knobControls = HBox(10.0)
 
+    protected val backgroundColor by lazy { myObject.associatedColor.orElse(defaultBackgroundColor) }
     protected val colorPicker: ColorPicker = ColorPicker() styleClass "button"
 
     private lateinit var window: SubWindow
@@ -51,7 +57,7 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
 
     init {
         styleClass("score-object")
-        colorPicker.prefWidth = 35.0
+        colorPicker.prefWidth = 30.0
         envelopesPane.widthProperty().addListener { _ -> rescale() }
         envelopesPane.heightProperty().addListener { _ -> rescale() }
     }
@@ -116,8 +122,8 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
         initializeLayout()
         alwaysUpdateCursor()
         initializeDragging()
-        recoloredObject()
-        colorPicker.valueProperty().addListener { _, _, newColor -> myObject.associatedColor = newColor }
+        setBackground()
+        border = solidBorder(Color.GRAY, width = 1.0)
         setupCutting()
         initializeHeader()
         minimalSetup()
@@ -151,8 +157,8 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
         window.width = 1000.0
         window.height = 1000.0
         window.scene.initHextantScene(context)
-        viewInSubWindow.prefWidthProperty().bind(window.widthProperty())
-        viewInSubWindow.prefHeightProperty().bind(window.heightProperty())
+        //viewInSubWindow.prefWidthProperty().bind(window.widthProperty())
+        //viewInSubWindow.prefHeightProperty().bind(window.heightProperty())
     }
 
     protected fun addAction(icon: Icon, action: String?, onAction: () -> Unit): Button {
@@ -163,13 +169,20 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
         return button
     }
 
-    protected open val defaultBackgroundColor: Color
-        get() = BLACK
+    protected open val defaultBackgroundColor: ReactiveValue<Color>
+        get() = reactiveVariable(BLACK)
 
-    open fun recoloredObject() {
-        val backgroundColor = myObject.associatedColor ?: defaultBackgroundColor
-        background = Background(BackgroundFill(backgroundColor, CornerRadii.EMPTY, null))
-        colorPicker.value = myObject.associatedColor
+    private fun setBackground() {
+        backgroundProperty().bind(backgroundColor.map { color ->
+            Background(BackgroundFill(color, CornerRadii.EMPTY, null))
+        }.asObservableValue())
+        colorPicker.userData = backgroundColor.forEach { color ->
+            colorPicker.value = color
+        }
+        colorPicker.valueProperty().addListener { _, oldColor, newColor ->
+            myObject.associatedColor.now = newColor
+            context[UndoManager].record(ScoreObjectEdit.Recolor(myObject, oldColor, newColor))
+        }
     }
 
     open fun muteToggled() {
@@ -266,10 +279,10 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
 
     fun setSelected(value: Boolean) {
         if (value) {
-            val backgroundFill = myObject.associatedColor ?: defaultBackgroundColor
-            border = solidBorder(backgroundFill.invert(), width = 4.0)
+            val backgroundFill = backgroundColor.now
+            border = solidBorder(backgroundFill.invert(), width = 1.0)
         } else {
-            border = null
+            border = solidBorder(Color.GRAY, width = 1.0)
         }
         for (obj in pane.score.objects) {
             if (obj is ClonedObject && obj.original == myObject) {

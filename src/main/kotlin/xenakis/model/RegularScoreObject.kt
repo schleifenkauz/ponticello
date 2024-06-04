@@ -3,7 +3,9 @@ package xenakis.model
 import hextant.core.editor.ListenerManager
 import javafx.geometry.HorizontalDirection
 import javafx.scene.paint.Color
-import xenakis.impl.ScWriter
+import reaktive.value.ReactiveVariable
+import reaktive.value.now
+import reaktive.value.reactiveVariable
 import xenakis.impl.SuperColliderClient
 import xenakis.sc.ControlSpec
 import xenakis.ui.ScoreObjectView
@@ -30,13 +32,7 @@ sealed class RegularScoreObject(name: String) : ScoreObject(name) {
     final override val start: Double by position::start
     final override val y: Double by position::y
 
-    final override var associatedColor: Color? = null
-        set(value) {
-            if (field == value) return
-            recordEdit(ScoreObjectEdit.Recolor(this, field, value))
-            field = value
-            viewManager.notifyListeners { recoloredObject() }
-        }
+    final override val associatedColor: ReactiveVariable<Color?> = reactiveVariable(null)
 
     final override var muted: Boolean = false
         set(value) {
@@ -47,10 +43,6 @@ sealed class RegularScoreObject(name: String) : ScoreObject(name) {
         }
 
     final override var nextInChain: Reference? = null
-
-    override fun writeStartCode(writer: ScWriter, offset: Double, suffixGenerator: SuffixGenerator) {}
-
-    override fun writeStopCode(writer: ScWriter, suffixGenerator: SuffixGenerator) {}
 
     override fun clone(name: String): ClonedObject {
         val clone = ClonedObject(name, this)
@@ -66,7 +58,7 @@ sealed class RegularScoreObject(name: String) : ScoreObject(name) {
         obj.position.set(position)
         obj.duration = duration
         obj.height = height
-        obj.associatedColor = associatedColor
+        obj.associatedColor.now = associatedColor.now
         obj.muted = muted
         return obj
     }
@@ -77,7 +69,7 @@ sealed class RegularScoreObject(name: String) : ScoreObject(name) {
         val obj = cut(position, whichHalf) ?: return null
         obj.rename(newName)
         obj.height = height
-        obj.associatedColor = associatedColor
+        obj.associatedColor.now = associatedColor.now
         obj.muted = muted
         if (whichHalf == HorizontalDirection.LEFT) {
             obj.position.set(start, y)
@@ -93,17 +85,16 @@ sealed class RegularScoreObject(name: String) : ScoreObject(name) {
         throw NoSuchElementException("no spec for parameter $parameter in $this")
 
     final override fun play(client: SuperColliderClient) {
-        val suffixGenerator = context[SuffixGenerator]
         client.run {
             appendLine("~player_task = Task{")
-            writeStartCode(this, offset = 0.0, suffixGenerator)
+            writeStartCode(this, offset = 0.0)
             appendLine("${duration.format(2)}.wait;")
-            writeStopCode(this, suffixGenerator)
+            writeStopCode(this)
             appendLine("}.play")
         }
     }
 
-    final override fun addView(view: ScoreObjectView) {
+    override fun addView(view: ScoreObjectView) {
         @Suppress("UNCHECKED_CAST")
         val unsafe = viewManager as ListenerManager<ScoreObjectView>
         unsafe.addListener(view)

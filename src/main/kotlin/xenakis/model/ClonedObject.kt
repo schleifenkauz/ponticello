@@ -5,6 +5,7 @@ import javafx.scene.paint.Color
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonObjectBuilder
 import kotlinx.serialization.json.put
+import reaktive.value.ReactiveVariable
 import reaktive.value.now
 import xenakis.impl.*
 import xenakis.sc.ControlSpec
@@ -38,17 +39,17 @@ class ClonedObject(
 
     override var duration: Double by { original::duration }
     override var height: Double by { original::height }
-    override var associatedColor: Color? by { original::associatedColor }
+    override val associatedColor: ReactiveVariable<Color?> get() = original.associatedColor
     override var muted: Boolean by { original::muted }
     override val associatedControls: Map<String, ParameterControl> get() = original.associatedControls
 
     override fun getSpec(parameter: String): ControlSpec = original.getSpec(parameter)
 
-    override fun writeStartCode(writer: ScWriter, offset: Double, suffixGenerator: SuffixGenerator) =
-        original.writeStartCode(writer, offset, suffixGenerator)
+    override fun writeStartCode(writer: ScWriter, offset: Double, name: String) =
+        original.writeStartCode(writer, offset, this.name.now)
 
-    override fun writeStopCode(writer: ScWriter, suffixGenerator: SuffixGenerator) =
-        original.writeStopCode(writer, suffixGenerator)
+    override fun writeStopCode(writer: ScWriter, name: String) =
+        original.writeStopCode(writer, this.name.now)
 
     override fun play(client: SuperColliderClient) = original.play(client)
 

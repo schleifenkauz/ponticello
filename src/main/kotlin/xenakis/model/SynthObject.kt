@@ -18,7 +18,7 @@ import xenakis.ui.format
 
 class SynthObject(
     name: String,
-    private val synthDefRef: SynthDefObject.Reference,
+    private val synthDefRef: ObjectReference<SynthDefObject>,
     private val initialGroup: GroupObjectReference,
     private val _controls: MutableMap<String, ParameterControl>
 ) : RegularScoreObject(name) {
@@ -90,8 +90,7 @@ class SynthObject(
         }
     }
 
-    override fun writeStartCode(writer: ScWriter, offset: Double, suffixGenerator: SuffixGenerator) {
-        val name = "${name.now}${suffixGenerator.generateSuffix(this)}"
+    override fun writeStartCode(writer: ScWriter, offset: Double, name: String) {
         writer.appendBlock("s.bind") {
             val synthVar = "~synth_${name}"
             +"$synthVar = Synth(\\${synthDef.name.now}, target: ${group.get().variableName})"
@@ -147,16 +146,12 @@ class SynthObject(
         writer.appendLine(";")
     }
 
-    override fun writeStopCode(writer: ScWriter, suffixGenerator: SuffixGenerator) {
-        val name = "${name.now}${suffixGenerator.getSuffix(this)}"
-        with(writer) {
-            val synthVar = "~synth_$name"
-            +"$synthVar.free"
-        }
+    override fun writeStopCode(writer: ScWriter, name: String) {
+        writer.appendLine("~synth_$name.free;")
     }
 
     override fun JsonObjectBuilder.saveToJson() {
-        putSerializableValue("synthDef", synthDefRef)
+        putSerializableValue("synthDef", synthDefRef as InstrumentObject.Reference)
         putSerializableValue("group", group)
         if (controls.isNotEmpty()) putSerializableValue<Map<String, ParameterControl>>("controls", controls)
     }
@@ -166,7 +161,9 @@ class SynthObject(
             get() = "synth"
 
         override fun JsonObject.createFromJson(name: String): ScoreObject {
-            val synthDef: SynthDefObject.Reference = getSerializableValue("synthDef")!!
+            val synthDef = getSerializableValue<InstrumentObject.Reference>("synthDef")!!
+            @Suppress("UNCHECKED_CAST")
+            synthDef as ObjectReference<SynthDefObject>
             val group: GroupObjectReference = getSerializableValue("group")!!
             val controls = getSerializableValue<Map<String, ParameterControl>>("controls") ?: mapOf()
             return SynthObject(name, synthDef, group, controls.toMutableMap())

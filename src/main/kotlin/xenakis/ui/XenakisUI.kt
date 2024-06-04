@@ -47,7 +47,7 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
 
     private lateinit var serverSetupCodePane: CodePane
     private lateinit var beforePlayCodePane: CodePane
-    private lateinit var synthDefsPane: SynthDefRegistryPane
+    private lateinit var synthDefsPane: InstrumentRegistryPane
     private lateinit var busRegistryPane: BusRegistryPane
     private lateinit var buffersPane: BufferRegistryPane
     private lateinit var groupsPane: GroupRegistryPane
@@ -85,8 +85,8 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
     override fun displayProject(project: XenakisProject) {
         serverSetupCodePane = CodePane("Server setup", project.serverSetup.control)
         beforePlayCodePane = CodePane("Play setup", project.beforePlay.control)
-        synthDefsPane = SynthDefRegistryPane(project.synthDefs)
-        context[SynthDefRegistryPane] = synthDefsPane
+        synthDefsPane = InstrumentRegistryPane(project.instruments)
+        context[InstrumentRegistryPane] = synthDefsPane
         busRegistryPane = BusRegistryPane(project.busses)
         buffersPane = BufferRegistryPane(project.buffers, project, controller)
         groupsPane = GroupRegistryPane(project.groups)
@@ -327,7 +327,6 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
             on("Alt?+E") { toolSelector.select(Tool.Envelope) }
             on("Alt?+M") { toolSelector.select(Tool.Memo) }
             on("Alt?+A") { toolSelector.select(Tool.AddTime) }
-            on("Alt?+C") { toolSelector.select(Tool.AddTime) }
 
             on("DELETE") { scoreView.removeSelected() }
             on("ESCAPE") {
@@ -369,7 +368,7 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
             on("Ctrl?+C") {
                 scoreView.selector.copySelected()
             }
-            on("Ctrl+Shift+C") {
+            on("Ctrl?+Alt+C") {
                 scoreView.selector.cloneSelected()
             }
         }

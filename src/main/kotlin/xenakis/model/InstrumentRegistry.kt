@@ -14,12 +14,12 @@ import xenakis.impl.boolean
 import java.util.concurrent.CompletableFuture
 
 @Serializable
-class SynthDefRegistry private constructor(
-    private val defs: MutableList<SynthDefObject>,
-    private var selectedSynthDefName: ReactiveValue<String>? = null
-) : ObjectRegistry<SynthDefObject>() {
-    override val objects: MutableList<SynthDefObject>
-        get() = defs
+class InstrumentRegistry private constructor(
+    private val instruments: MutableList<InstrumentObject>,
+    private var selectedInstrumentName: ReactiveValue<String>? = null
+) : ObjectRegistry<InstrumentObject>() {
+    override val objects: MutableList<InstrumentObject>
+        get() = instruments
 
     override val objectType: String
         get() = "SynthDef"
@@ -29,23 +29,23 @@ class SynthDefRegistry private constructor(
 
     override fun initialize(context: Context) {
         super.initialize(context)
-        context[SynthDefRegistry] = this
+        context[InstrumentRegistry] = this
         client = context[SuperColliderClient]
     }
 
-    var selectedSynthDef: SynthDefObject? = selectedSynthDefName?.let { name -> getSynthDefOrNull(name.now) }
+    var selectedInstrument: InstrumentObject? = selectedInstrumentName?.let { name -> getSynthDefOrNull(name.now) }
         set(value) {
             if (value == field) return
             field = value
-            selectedSynthDefName = value?.name
+            selectedInstrumentName = value?.name
             views.notifyListeners { if (this is View) selected(value) }
         }
 
     init {
-        selectedSynthDefName = selectedSynthDef?.name
+        selectedInstrumentName = selectedInstrument?.name
     }
 
-    private fun getSynthDefOrNull(name: String): SynthDefObject? = defs.find { it.name.now == name }
+    private fun getSynthDefOrNull(name: String): InstrumentObject? = instruments.find { it.name.now == name }
 
     override fun getDefault(): SynthDefObject = StandardSynthDefObject.default
 
@@ -54,38 +54,38 @@ class SynthDefRegistry private constructor(
         return answer.thenApply { msg -> msg.boolean }
     }
 
-    override fun onAdded(obj: SynthDefObject, idx: Int) {
+    override fun onAdded(obj: InstrumentObject, idx: Int) {
         obj.run { client.sync() }
     }
 
-    override fun onRemoved(obj: SynthDefObject, idx: Int) {
-        obj.run { client.removeSynthDef() }
+    override fun onRemoved(obj: InstrumentObject, idx: Int) {
+        obj.run { client.remove() }
     }
 
     fun addView(view: View) {
         super.addView(view)
-        view.selected(selectedSynthDef)
+        view.selected(selectedInstrument)
     }
 
     fun sync() {
-        for (def in defs) {
+        for (def in instruments) {
             def.run { client.sync() }
         }
     }
 
     fun SuperColliderContext.addSynthDefs() {
-        for (def in defs) {
+        for (def in instruments) {
             if (def is CustomizableSynthDefObject) {
                 def.run { addToGlobalSynthDescLib() }
             }
         }
     }
 
-    companion object : PublicProperty<SynthDefRegistry> by publicProperty("SynthDefs") {
-        fun newInstance(): SynthDefRegistry = SynthDefRegistry(StandardSynthDefObject.all.values.toMutableList())
+    companion object : PublicProperty<InstrumentRegistry> by publicProperty("SynthDefs") {
+        fun newInstance(): InstrumentRegistry = InstrumentRegistry(StandardSynthDefObject.all.values.toMutableList())
     }
 
-    interface View : ObjectRegistry.View<SynthDefObject> {
-        fun selected(obj: SynthDefObject?)
+    interface View : ObjectRegistry.View<InstrumentObject> {
+        fun selected(obj: InstrumentObject?)
     }
 }

@@ -26,14 +26,12 @@ class ScoreObjectGroup(name: String, val score: Score) : RegularScoreObject(name
         this.score.initialize(context)
     }
 
-    override fun writeStartCode(writer: ScWriter, offset: Double, suffixGenerator: SuffixGenerator) {
-        val suffix = suffixGenerator.generateSuffix(this)
-        score.writePlayerTask(writer, offset, taskName = "play_${name.now}$suffix", suffixGenerator)
+    override fun writeStartCode(writer: ScWriter, offset: Double, name: String) {
+        score.writePlayerTask(writer, offset, taskName = "play_$name", prefix = "_$name")
     }
 
-    override fun writeStopCode(writer: ScWriter, suffixGenerator: SuffixGenerator) {
-        val suffix = suffixGenerator.getSuffix(this)
-        writer.appendLine("play_${name.now}$suffix.stop;")
+    override fun writeStopCode(writer: ScWriter, name: String) {
+        writer.appendLine("play_$name.stop;")
     }
 
     override fun cut(position: Double, whichHalf: HorizontalDirection): ScoreObject {

@@ -119,16 +119,18 @@ class Score(
         }
     }
 
-    fun writePlayerTask(writer: ScWriter, startTime: Double, taskName: String, suffixGenerator: SuffixGenerator) {
+    fun writePlayerTask(writer: ScWriter, startTime: Double, taskName: String, prefix: String) {
         writer.appendLine("(~$taskName = Task {")
         val relevantObjects = objects.filter { obj -> !obj.muted && obj.start + obj.duration > startTime }
         val starts = relevantObjects.map { obj ->
             val start = obj.start.coerceAtLeast(startTime)
             val offset = (startTime - obj.start).coerceAtLeast(0.0)
-            start to { obj.writeStartCode(writer, offset, suffixGenerator) }
+            val name = "$prefix${obj.name.now}"
+            start to { obj.writeStartCode(writer, offset, name) }
         }
         val stops = relevantObjects.map { obj ->
-            obj.start + obj.duration to { obj.writeStopCode(writer, suffixGenerator) }
+            val name = "$prefix${obj.name.now}"
+            obj.start + obj.duration to { obj.writeStopCode(writer, name) }
         }
         val timedActions = (starts + stops).sortedBy { (t, _) -> t }
         if (timedActions.isNotEmpty()) {
@@ -172,7 +174,7 @@ class Score(
             t += period
             val layer = n % layers
             val y = obj.y + (layer * obj.height)
-            val clone = obj.clone("${obj.name}_loop$n")
+            val clone = obj.clone("${obj.name.now}_loop$n")
             clone.position.set(t, y)
             addObject(clone)
             chain(prev, clone)

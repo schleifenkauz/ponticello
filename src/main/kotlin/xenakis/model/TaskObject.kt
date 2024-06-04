@@ -21,9 +21,8 @@ class TaskObject(name: String, val code: EditorRoot<ScFunctionEditor>, var width
 
     override fun copy(): ScoreObject = TaskObject(name.now, code.clone(), width)
 
-    override fun writeStartCode(writer: ScWriter, offset: Double, suffixGenerator: SuffixGenerator) {
-        val name = "~task${name.now}${suffixGenerator.generateSuffix(this)}"
-        writer.appendBlock("$name = Task") {
+    override fun writeStartCode(writer: ScWriter, offset: Double, name: String) {
+        writer.appendBlock("~task_$name = Task") {
             val function = code.editor.result.now
             function.code(this)
             this.appendLine(".value()")
@@ -31,9 +30,8 @@ class TaskObject(name: String, val code: EditorRoot<ScFunctionEditor>, var width
         writer.appendLine(".play;")
     }
 
-    override fun writeStopCode(writer: ScWriter, suffixGenerator: SuffixGenerator) {
-        val name = "~task${name.now}${suffixGenerator.getSuffix(this)}"
-        writer.append("$name.stop;")
+    override fun writeStopCode(writer: ScWriter, name: String) {
+        writer.append("~task_$name.stop;")
     }
 
     override fun JsonObjectBuilder.saveToJson() {

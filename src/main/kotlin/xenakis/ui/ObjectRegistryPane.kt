@@ -1,15 +1,15 @@
 package xenakis.ui
 
+import hextant.fx.registerShortcuts
+import javafx.collections.FXCollections
 import javafx.scene.Node
-import javafx.scene.control.Button
-import javafx.scene.control.Label
-import javafx.scene.control.SplitPane
-import javafx.scene.control.Tooltip
+import javafx.scene.control.*
 import javafx.scene.layout.HBox
 import javafx.scene.layout.VBox
 import xenakis.model.NamedObject
 import xenakis.model.ObjectRegistry
 import xenakis.model.RenamableObject
+import xenakis.sc.Identifier
 
 abstract class ObjectRegistryPane<O : NamedObject>(
     private val registry: ObjectRegistry<O>
@@ -49,6 +49,30 @@ abstract class ObjectRegistryPane<O : NamedObject>(
         collapseExpandBtn.rotate = 180.0
         collapseExpandBtn.tooltip = Tooltip("Expand")
         /*maxHeight = USE_PREF_SIZE*/
+    }
+
+    protected fun <T : Any> showCreateNewDialog(options: List<T>, default: T, createObject: (T, String) -> O?) {
+        val typeSelector = ComboBox(FXCollections.observableList(options))
+        typeSelector.value = default
+        val nameInput = TextField() styleClass "prompt-text-field"
+        nameInput.promptText = "${registry.objectType} name"
+        val ok = Icon.Check.button(action = "Confirm")
+        val layout = HBox(typeSelector, nameInput).centerChildrenVertically() styleClass "prompt"
+        val window = SubWindow(layout, "Create new buffer", registry.context, SubWindow.Type.Prompt)
+        fun commit() {
+            val type = typeSelector.value ?: return
+            val name = nameInput.text
+            if (!Identifier.isValid(name) || registry.has(name)) return
+            window.hide()
+            val obj = createObject(type, name) ?: return
+            registry.add(obj)
+        }
+        ok.setOnAction { commit() }
+        layout.registerShortcuts {
+            on("ENTER") { commit() }
+        }
+        window.sizeToScene()
+        window.show()
     }
 
     protected abstract fun reload()

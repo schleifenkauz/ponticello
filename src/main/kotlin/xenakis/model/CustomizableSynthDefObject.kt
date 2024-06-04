@@ -5,11 +5,14 @@ import hextant.serial.EditorRoot
 import javafx.scene.paint.Color
 import kotlinx.serialization.Serializable
 import reaktive.list.MutableReactiveList
+import reaktive.list.reactiveList
 import reaktive.value.ReactiveVariable
 import reaktive.value.now
+import reaktive.value.reactiveVariable
 import xenakis.impl.ColorSerializer
 import xenakis.impl.SuperColliderClient
 import xenakis.impl.SuperColliderContext
+import xenakis.impl.randomColor
 import xenakis.sc.*
 import xenakis.sc.editor.AbstractRenamableObject
 import xenakis.sc.editor.CodeBlockEditor
@@ -25,7 +28,7 @@ class CustomizableSynthDefObject(
         addToGlobalSynthDescLib()
     }
 
-    override fun SuperColliderClient.removeSynthDef() {
+    override fun SuperColliderClient.remove() {
         send("removeSynthDef", listOf(name))
     }
 
@@ -37,11 +40,11 @@ class CustomizableSynthDefObject(
         }
     }
 
-    override fun canRenameTo(newName: String): Boolean = !context[SynthDefRegistry].has(newName)
+    override fun canRenameTo(newName: String): Boolean = !context[InstrumentRegistry].has(newName)
 
     override fun rename(newName: String) {
         val client = context[SuperColliderClient]
-        client.removeSynthDef()
+        client.remove()
         super.rename(newName)
         client.addToGlobalSynthDescLib()
     }
@@ -60,5 +63,14 @@ class CustomizableSynthDefObject(
         val graphFunc = ScFunction(emptyList(), block)
         graphFunc.code(this)
         appendLine(").add;")
+    }
+
+    companion object {
+        fun create(name: String, context: Context) = CustomizableSynthDefObject(
+            mutableName = reactiveVariable(name),
+            color = reactiveVariable(randomColor()),
+            parameters = reactiveList(),
+            ugenGraph = EditorRoot.create(CodeBlockEditor(context))
+        )
     }
 }

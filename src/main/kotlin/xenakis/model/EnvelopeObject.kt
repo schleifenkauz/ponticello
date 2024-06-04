@@ -64,7 +64,7 @@ class EnvelopeObject(
     override fun cut(position: Double, whichHalf: HorizontalDirection): ScoreObject =
         EnvelopeObject(name.now, spec, bus, envelope.cut(position / duration, whichHalf))
 
-    override fun writeStartCode(writer: ScWriter, offset: Double, suffixGenerator: SuffixGenerator) {
+    override fun writeStartCode(writer: ScWriter, offset: Double, name: String) {
         val env = envelope.code(offset)
         writer.append("{ $env }.play(s, ${busSelector.result.now.get().variableName});")
     }

@@ -35,7 +35,7 @@ abstract class ScoreObject(name: String) : AbstractRenamableObject() {
     abstract val start: Double
     abstract val y: Double
 
-    abstract var associatedColor: Color?
+    abstract val associatedColor: ReactiveVariable<Color?>
     abstract var muted: Boolean
 
     abstract var nextInChain: Reference?
@@ -43,8 +43,9 @@ abstract class ScoreObject(name: String) : AbstractRenamableObject() {
     open val associatedControls: Map<String, ParameterControl> get() = emptyMap()
     abstract fun getSpec(parameter: String): ControlSpec
 
-    abstract fun writeStartCode(writer: ScWriter, offset: Double, suffixGenerator: SuffixGenerator)
-    abstract fun writeStopCode(writer: ScWriter, suffixGenerator: SuffixGenerator)
+    open fun writeStartCode(writer: ScWriter, offset: Double, name: String = this.name.now) {}
+
+    open fun writeStopCode(writer: ScWriter, name: String = this.name.now) {}
 
     abstract fun play(client: SuperColliderClient)
 
@@ -117,6 +118,7 @@ abstract class ScoreObject(name: String) : AbstractRenamableObject() {
                 TaskObject.Serializer,
                 EnvelopeObject.Serializer,
                 ScoreObjectGroup.Serializer,
+                PianoRollObject.Serializer,
                 ClonedObject.Serializer
             ).associateBy { it.type }
         }
@@ -138,7 +140,7 @@ abstract class ScoreObject(name: String) : AbstractRenamableObject() {
             if (type != ClonedObject.Serializer.type) {
                 obj.duration = json.getDouble("duration") ?: 0.0
                 obj.height = json.getDouble("height") ?: 0.0
-                obj.associatedColor = json.getColor("color")
+                obj.associatedColor.now = json.getColor("color")
                 obj.muted = json.getBoolean("muted") ?: false
             }
             return obj
@@ -156,7 +158,7 @@ abstract class ScoreObject(name: String) : AbstractRenamableObject() {
                 if (type != ClonedObject.Serializer.type) {
                     if (value.duration != 0.0) put("duration", value.duration)
                     if (value.height != 0.0) put("height", value.height)
-                    val color = value.associatedColor
+                    val color = value.associatedColor.now
                     if (color != null) put("color", JsonPrimitive(color.toString()))
                     if (value.muted) put("muted", JsonPrimitive(true))
                 }

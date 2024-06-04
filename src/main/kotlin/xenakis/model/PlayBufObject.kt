@@ -50,10 +50,10 @@ class PlayBufObject(
         )
     }
 
-    override fun writeStartCode(writer: ScWriter, offset: Double, suffixGenerator: SuffixGenerator) = with(writer) {
+    override fun writeStartCode(writer: ScWriter, offset: Double, name: String) = with(writer) {
         val bufferName = buffer.get().variableName
         val outBusName = out.get().variableName
-        val synthName = "~playbuf_${name.now}${suffixGenerator.generateSuffix(this@PlayBufObject)}"
+        val synthName = "~playbuf_$name"
         append("$synthName = { ")
         append("PlayBuf.ar(${bufferName}.numChannels, $bufferName, ")
         append("rate: ${rate.format(2)}, ")
@@ -63,8 +63,8 @@ class PlayBufObject(
         appendLine(".play(s, $outBusName);")
     }
 
-    override fun writeStopCode(writer: ScWriter, suffixGenerator: SuffixGenerator) {
-        val synthName = "~playbuf_${name.now}${suffixGenerator.getSuffix(this)}"
+    override fun writeStopCode(writer: ScWriter, name: String) {
+        val synthName = "~playbuf_$name"
         writer.appendLine("$synthName.release;")
     }
 

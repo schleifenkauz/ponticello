@@ -466,11 +466,11 @@ Slider.control-detail-editor {
 
 .prompt {
     -fx-padding: 6px;
-    -fx-border-radius: 3px;
+    -fx-background-color: black !important;
     -fx-background-radius: 3px;
-    -fx-border-color: gray;
-    -fx-background-color: black;
-    -fx-border-width: 3px;
+    -fx-border-radius: 3px;
+    -fx-border-width: 3px !important;
+    -fx-border-color: gray !important;
 }
 
 .prompt-text-field {
@@ -508,4 +508,21 @@ Slider.control-detail-editor {
 .synth-def-ref-box:hover {
     -fx-border-color: black;
     -fx-border-radius: 5px;
+}
+
+.pitch-line {
+    -fx-stroke: white;
+}
+
+.note-object {
+    -fx-stroke-width: 2px;
+    -fx-stroke: transparent;
+}
+
+.note-object:hover {
+    -fx-stroke: gray;
+}
+
+.note-object:focused {
+    -fx-fill: white;
 }

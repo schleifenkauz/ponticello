@@ -24,7 +24,7 @@ import java.io.Writer
 class XenakisProject private constructor(
     val serverSetup: EditorRoot<CodeBlockEditor>,
     val beforePlay: EditorRoot<CodeBlockEditor>,
-    val synthDefs: SynthDefRegistry,
+    val instruments: InstrumentRegistry,
     val busses: BusRegistry,
     val flowGraph: AudioFlowGraph,
     val buffers: BufferRegistry,
@@ -54,9 +54,9 @@ class XenakisProject private constructor(
         busses.initialize(context)
         flowGraph.initialize(context)
         globalControls.initialize(context)
-        synthDefs.initialize(context)
+        instruments.initialize(context)
         score.initialize(context)
-        context[SynthDefRegistry] = synthDefs
+        context[InstrumentRegistry] = instruments
         client = context[SuperColliderClient]
         statusObserver = client.statusListener.statusUpdates.observe { _, status ->
             if (status == UDPSuperColliderClient.StatusUpdate.ReadyToBoot) {
@@ -74,14 +74,14 @@ class XenakisProject private constructor(
         val context = SuperColliderWriterContext(writer)
         bootServer(context)
         prepareForPlay(context)
-        context.run { score.writePlayerTask(this, startTime = 0.0, taskName = "play_score", SuffixGenerator.None) }
+        context.run { score.writePlayerTask(this, startTime = 0.0, taskName = "play_score", prefix = "") }
     }
 
     fun playScore(fromTime: Double) {
         val suffixGenerator = context[SuffixGenerator]
         SuperColliderWriterContext.wrap(client) {
             prepareForPlay(this)
-            run { score.writePlayerTask(this, fromTime, taskName = "play_score", suffixGenerator) }
+            run { score.writePlayerTask(this, fromTime, taskName = "play_score", prefix = "") }
         }
     }
 
@@ -112,7 +112,7 @@ class XenakisProject private constructor(
         SuperColliderWriterContext.wrap(context) {
             run(beforePlay.editor.result.now.code)
             flowGraph.run { setupAudioFlow() }
-            synthDefs.run { addSynthDefs() }
+            instruments.run { addSynthDefs() }
             groups.run { setupGroups() }
         }
     }
@@ -129,7 +129,7 @@ class XenakisProject private constructor(
         fun create(location: File, context: Context) = XenakisProject(
             serverSetup = EditorRoot.create(CodeBlockEditor(context)),
             beforePlay = EditorRoot.create(CodeBlockEditor(context)),
-            synthDefs = SynthDefRegistry.newInstance(),
+            instruments = InstrumentRegistry.newInstance(),
             busses = BusRegistry.createDefault(),
             flowGraph = AudioFlowGraph.createDefault(),
             buffers = BufferRegistry(mutableListOf()),

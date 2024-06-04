@@ -43,6 +43,7 @@ enum class Icon {
     Undo, Redo,
     Memo,
     Knob,
+    Midi,
 
     /*Color,*/
     FileReload,
