@@ -7,6 +7,7 @@ import javafx.geometry.Bounds
 import javafx.scene.input.Clipboard
 import javafx.scene.input.MouseButton
 import javafx.scene.input.MouseEvent
+import javafx.scene.layout.HBox
 import javafx.scene.layout.Pane
 import javafx.scene.paint.Color.*
 import javafx.scene.shape.Rectangle
@@ -40,7 +41,9 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
 
     protected abstract val displayStart: Double
     protected abstract val displayEnd: Double
-    abstract val timeSnap: Double
+
+    abstract val xAccuracy: Int
+    abstract fun snapToGrid(x: Double): Double
 
     abstract val pixelsPerSecond: Double
     fun getX(time: Double) = (time - displayStart) * pixelsPerSecond
@@ -67,6 +70,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
             if (obj.start + obj.duration < displayStart) continue
             view.prefWidth = view.getDisplayWidth()
             view.relocate(getX(obj.start), obj.y)
+            view.rescale()
             children.add(view)
         }
         for ((_, v) in outgoingArrows) {
@@ -125,6 +129,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
         is MemoObject -> MemoObjectView(obj)
         is ScoreObjectGroup -> ScoreObjectGroupView(obj)
         is PianoRollObject -> PianoRollObjectView(obj)
+        is TempoGridObject -> TempoGridObjectView(obj)
         is ClonedObject -> {
             val view = createObjectView(obj.original)
             view.myObject = obj
@@ -200,7 +205,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
         val selectedTool = ui.toolSelector.selected.value!!
         if (newObjectArea != null) return
         children.remove(selectedArea)
-        val x = ev.x.snap(timeSnap)
+        val x = snapToGrid(ev.x)
         val y = ev.y
         val rect = Rectangle(x, y, 0.0, 0.0)
         when (selectedTool) {
@@ -220,6 +225,11 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
             }
 
             PianoRoll -> rect.fill = context[InstrumentRegistry].selectedInstrument?.color?.now ?: return
+
+            TempoGrid -> {
+                rect.fill = TRANSPARENT
+                rect.stroke = BLACK
+            }
 
             Pointer -> {
                 selectedArea.x = x
@@ -245,7 +255,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
 
     private fun mouseDragged(ev: MouseEvent) {
         val newObj = newObjectArea
-        val x = ev.x.snap(timeSnap)
+        val x = snapToGrid(ev.x)
         val y = ev.y
         when {
             newObj != null -> {
@@ -361,7 +371,8 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
                 }
             }
 
-            Task -> promptNewObjectName("Task name", context[ScoreObjectRegistry].availableName("task")) { name ->
+            Task -> {
+                val name = context[ScoreObjectRegistry].availableName("task")
                 val editor = EditorRoot.create(ScFunctionEditor(context))
                 addObject(TaskObject(name, editor, rect.width), rect)
             }
@@ -385,10 +396,8 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
                 addObject(MemoObject(name, "", rect.width), rect)
             }
 
-            Compound -> promptNewObjectName(
-                "Object group name",
-                context[ScoreObjectRegistry].availableName("group")
-            ) { name ->
+            Compound -> {
+                val name = context[ScoreObjectRegistry].availableName("group")
                 val objects = viewsInside(rect.boundsInParent).map { it.myObject }
                 for (obj in objects) {
                     score.removeObject(obj)
@@ -408,12 +417,22 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
                 addObject(obj, rect)
             }
 
-            else -> {
+            TempoGrid -> {
+                val name = context[ScoreObjectRegistry].availableName("grid")
+                val obj = TempoGridObject.createDefault(name)
+                val configLayout = HBox(10.0)
+                TempoGridObjectView.createConfigurationBar(configLayout, obj)
+                val result = configLayout.showDialog("Configure tempo grid", context) { obj }
+                if (result != null) {
+                    addObject(obj, rect)
+                }
+            }
+
+            Pointer, Cut, AddTime -> {
                 System.err.println("Unrecognized tool $tool")
                 return
             }
         }
-
     }
 
     private fun addObject(obj: ScoreObject, rect: Rectangle) {

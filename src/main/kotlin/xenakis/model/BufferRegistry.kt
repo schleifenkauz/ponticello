@@ -36,10 +36,6 @@ class BufferRegistry(
         super.add(obj, idx)
     }
 
-    override fun onRemoved(obj: BufferObject, idx: Int) {
-        obj.remove()
-    }
-
     interface View : ObjectRegistry.View<BufferObject>
 
     companion object : PublicProperty<BufferRegistry> by publicProperty("BufferRegistry")

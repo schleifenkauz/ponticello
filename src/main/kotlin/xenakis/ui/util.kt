@@ -212,3 +212,7 @@ fun label(text: ReactiveValue<String>): Label {
 }
 
 fun plural(noun: String) = if (noun.endsWith("s")) "${noun}es" else "${noun}s"
+
+fun Node.setPseudoClassState(name: String, value: Boolean) {
+    pseudoClassStateChanged(PseudoClass.getPseudoClass(name), value)
+}

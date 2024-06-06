@@ -12,10 +12,13 @@ class SubScorePane(
         get() = 0.0
     override val displayEnd: Double
         get() = obj.duration
-    override val timeSnap: Double
-        get() = parent.timeSnap
     override val pixelsPerSecond: Double
         get() = parent.pixelsPerSecond
+
+    override fun snapToGrid(x: Double): Double = parent.snapToGrid(x)
+
+    override val xAccuracy: Int
+        get() = parent.xAccuracy
 
     init {
         obj.score.addListener(this)

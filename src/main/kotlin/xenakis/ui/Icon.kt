@@ -44,6 +44,7 @@ enum class Icon {
     Memo,
     Knob,
     Midi,
+    Tempo,
 
     /*Color,*/
     FileReload,

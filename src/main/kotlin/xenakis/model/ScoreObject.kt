@@ -87,8 +87,6 @@ abstract class ScoreObject(name: String) : AbstractRenamableObject() {
 
     abstract fun JsonObjectBuilder.saveToJson()
 
-    open fun onRemove() {}
-
     override fun createReference(): Reference = Reference(this)
 
     @Serializable(with = Reference.Serializer::class)
@@ -118,6 +116,7 @@ abstract class ScoreObject(name: String) : AbstractRenamableObject() {
                 EnvelopeObject.Serializer,
                 ScoreObjectGroup.Serializer,
                 PianoRollObject.Serializer,
+                TempoGridObject.Serializer,
                 ClonedObject.Serializer
             ).associateBy { it.type }
         }

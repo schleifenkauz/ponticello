@@ -63,7 +63,7 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
     lateinit var player: ScorePlayer
     private lateinit var shellWindow: Stage
 
-    private val objectActionsBar = HBox(5.0)
+    private val contextBar = HBox(5.0)
     private lateinit var selectedObjectObserver: Observer
 
     private var displaysProject = false
@@ -72,8 +72,8 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
 
     init {
         context[XenakisUI] = this
-        objectActionsBar.alwaysHGrow()
-        objectActionsBar.centerChildrenVertically()
+        contextBar.alwaysHGrow()
+        contextBar.centerChildrenVertically()
         context[HelpBrowser] = HelpBrowser(context)
         settingsWindow = SubWindow(SettingsPane(context[Settings], context), "Settings", context)
         settingsWindow.width = 1000.0
@@ -105,8 +105,11 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
 
         project.context[ScoreObjectSelector] = ScoreObjectSelector(project.context, scoreView)
         selectedObjectObserver = scoreView.selector.singleSelected.forEach { view ->
-            if (view == null) objectActionsBar.children.clear()
-            else objectActionsBar.children.setAll(view.header)
+            if (view == null) {
+                contextBar.children.clear()
+            } else {
+                contextBar.children.setAll(view.header)
+            }
         }
 
         stage.scene.root = createLayout()
@@ -180,7 +183,7 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
         SplitPane.setResizableWithParent(leftSplitter, false)
         SplitPane.setResizableWithParent(rightSplitter, false)
         val toolbar = createToolbar()
-        objectActionsBar.prefWidthProperty().bind(toolbar.widthProperty().multiply(0.33))
+        contextBar.prefWidthProperty().bind(toolbar.widthProperty().multiply(0.33))
         for (box in toolbar.children) HBox.setHgrow(box, Priority.ALWAYS)
         VBox.setVgrow(horizontalSplitter, Priority.ALWAYS)
         val layout = VBox(toolbar, horizontalSplitter)
@@ -217,7 +220,7 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
                 fileBar, undoRedoBar, playerBar,
                 toolSelector styleClass "toolbar-part", layoutBar
             ), HBox(
-                objectActionsBar styleClass "toolbar-part",
+                contextBar styleClass "toolbar-part",
                 miscBar
             )
         ).styleClass("toolbar")

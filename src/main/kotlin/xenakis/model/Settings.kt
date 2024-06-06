@@ -9,7 +9,9 @@ import reaktive.list.toReactiveList
 import reaktive.value.now
 
 @Serializable
-class Settings(val defaultParametersDefs: MutableReactiveList<ParameterDefObject> = reactiveList()) {
+class Settings(
+    val defaultParametersDefs: MutableReactiveList<ParameterDefObject> = reactiveList(),
+) {
     fun getDefaultControlSpec(name: String) = defaultParametersDefs.now.find { p -> p.name.now == name }?.spec?.now
 
     companion object : PublicProperty<Settings> by publicProperty("SETTINGS") {

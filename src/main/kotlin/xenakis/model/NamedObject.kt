@@ -8,5 +8,7 @@ interface NamedObject {
 
     fun initialize(context: Context)
 
+    fun remove()
+
     fun createReference(): ObjectReference<*>
 }

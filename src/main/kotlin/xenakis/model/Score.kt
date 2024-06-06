@@ -70,7 +70,6 @@ class Score(
             views.notifyListeners { removedObject(o) }
             objectRegistry.remove(o)
             layoutManager.removedObject(o)
-            o.onRemove()
         }
         undo.record(ScoreEdit.RemoveObjects(objAndItsClones, this))
     }

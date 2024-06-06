@@ -47,7 +47,10 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
     private val envelopeEditors = mutableListOf<EnvelopeEditor>()
     private val knobControls = HBox(10.0)
 
+    protected open val defaultBackgroundColor: ReactiveValue<Color>
+        get() = reactiveVariable(BLACK)
     protected val backgroundColor by lazy { myObject.associatedColor.orElse(defaultBackgroundColor) }
+    protected open val borderColorWhenSelected: Color get() = backgroundColor.now.invert()
     protected val colorPicker: ColorPicker = ColorPicker() styleClass "button"
 
     private lateinit var window: SubWindow
@@ -171,9 +174,6 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
         return button
     }
 
-    protected open val defaultBackgroundColor: ReactiveValue<Color>
-        get() = reactiveVariable(BLACK)
-
     private fun setBackground() {
         backgroundProperty().bind(backgroundColor.map { color ->
             Background(BackgroundFill(color, CornerRadii.EMPTY, null))
@@ -281,10 +281,9 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
 
     fun setSelected(value: Boolean) {
         if (value) {
-            val backgroundFill = backgroundColor.now
-            border = solidBorder(backgroundFill.invert(), width = 1.0)
+            border = solidBorder(borderColorWhenSelected, width = 2.0)
         } else {
-            border = solidBorder(Color.GRAY, width = 1.0)
+            border = solidBorder(Color.GRAY, width = 2.0)
         }
         for (obj in pane.score.objects) {
             if (obj is ClonedObject && obj.original == myObject) {
@@ -368,7 +367,7 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
         x >= 0.0 && y >= 0.0 && x + width <= pane.width && y + height <= pane.height
 
     private fun relocateBy(old: Bounds, dx: Double, dy: Double) {
-        var x = (old.minX + dx).snap(pane.timeSnap)
+        var x = pane.snapToGrid(old.minX + dx)
         var y = (old.minY + dy)
         x = x.coerceIn(0.0, pane.width - width)
         y = y.coerceIn(0.0, pane.height - height)
@@ -435,8 +434,8 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
     }
 
     private fun resize(x: Double, y: Double, width: Double, height: Double, ev: MouseEvent, cursor: Cursor) {
-        val snappedX = x.snap(pane.timeSnap)
-        val snappedWidth = width.snap(pane.timeSnap)
+        val snappedX = pane.snapToGrid(x)
+        val snappedWidth = pane.snapToGrid(width)
         if (snappedWidth < 10.0 || height < 10.0) return
         if (!isInParentBounds(snappedX, y, snappedWidth, height)) return
         val oldWidth = getDisplayWidth()
@@ -448,6 +447,7 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
 
     fun resized() {
         setPrefSize(getDisplayWidth(), myObject.height)
+        rescale()
     }
 
     private fun resize(old: Bounds, dx: Double, dy: Double, cursor: Cursor, ev: MouseEvent) {

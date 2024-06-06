@@ -42,7 +42,7 @@ Slider.control-detail-editor {
 }
 
 .grid-line {
-    -fx-stroke: gray;
+    -fx-stroke: green;
 }
 
 .play-head {
@@ -349,8 +349,8 @@ Slider.control-detail-editor {
 }
 
 .mouse-tracker-line {
-    -fx-stroke-width: 1px !important;
-    -fx-stroke: rgba(255, 255, 255, 0.2) !important;
+    -fx-stroke-width: 3px !important;
+    -fx-stroke: white !important;
 }
 
 .waveform-line {
@@ -525,4 +525,31 @@ Slider.control-detail-editor {
 
 .note-object:focused {
     -fx-fill: white;
+}
+
+.tempo-line {
+    -fx-stroke: green;
+}
+
+.bar-line {
+    -fx-stroke-width: 3px;
+}
+
+.beat-line {
+    -fx-stroke-width: 2px;
+}
+
+.tick-line {
+    -fx-stroke-width: 1px;
+}
+
+.bar-number {
+    -fx-font-size: 12px;
+    -fx-fill: green;
+    -fx-font-weight: 300;
+}
+
+.tempo-grid {
+    -fx-border-width: 2px !important;
+    -fx-border-color: green !important;
 }

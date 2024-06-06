@@ -11,11 +11,15 @@ import kotlin.math.exp
 class ScoreView(score: Score, context: Context) : ScorePane(score, context) {
     private val positionTracker = Line() styleClass "mouse-tracker-line"
 
-    override var timeSnap: Double = 0.1
+    private var timeSnap: Double = 0.1
+    override val xAccuracy: Int
+        get() = accuracy(timeSnap)
     override var displayStart: Double = 0.0
     override var displayEnd: Double = 0.0
     override val pixelsPerSecond: Double
         get() = width / (displayEnd - displayStart)
+
+    override fun snapToGrid(x: Double): Double = x.snap(timeSnap)
 
     init {
         listenForEvents()
@@ -60,9 +64,12 @@ class ScoreView(score: Score, context: Context) : ScorePane(score, context) {
         val accuracy = accuracy(gridDist)
         for (t in displayStart..displayEnd step gridDist) {
             val x = getX(t)
-            val l = Line(x, 20.0, x, height - 40.0).styleClass("grid-line")
+            val l = Line() styleClass "grid-line"
             l.viewOrder = -100.0
-            l.endYProperty().bind(heightProperty().subtract(40))
+            l.startX = x
+            l.endX = x
+            l.startYProperty().bind(heightProperty().subtract(25))
+            l.endYProperty().bind(heightProperty())
             children.add(l)
             val timeCode = timeCode(t, accuracy)
             val txt = Text(timeCode).styleClass("grid-time-code")
@@ -79,24 +86,24 @@ class ScoreView(score: Score, context: Context) : ScorePane(score, context) {
     }
 
     private fun setupPositionTracker() {
-        positionTracker.startY = 10.0
-        positionTracker.endYProperty().bind(heightProperty().subtract(10))
+        positionTracker.startYProperty().bind(heightProperty())
+        positionTracker.endYProperty().bind(heightProperty().subtract(25))
         positionTracker.viewOrder = 100.0
         setOnMouseEntered { ev ->
             if (!ev.x.isNaN()) {
-                positionTracker.layoutX = ev.x.snap(timeSnap)
-                //children.add(positionTracker)
+                positionTracker.layoutX = snapToGrid(ev.x)
+                children.add(positionTracker)
                 ev.consume()
             }
         }
         setOnMouseMoved { ev ->
             if (!ev.x.isNaN()) {
-                positionTracker.layoutX = ev.x.snap(timeSnap)
+                positionTracker.layoutX = snapToGrid(ev.x)
                 ev.consume()
             }
         }
         setOnMouseExited { ev ->
-            //children.remove(positionTracker)
+            children.remove(positionTracker)
             ev.consume()
         }
     }

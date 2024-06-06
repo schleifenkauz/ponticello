@@ -23,6 +23,7 @@ class ToolSelector : SelectorBar<ToolSelector.Tool>(Tool.values().toList()) {
         Envelope(Icon.Envelope),
         Memo(Icon.Memo),
         PianoRoll(Icon.Midi),
+        TempoGrid(Icon.Tempo),
         Compound(Icon.Compound),
         Cut(Icon.Cut),
         AddTime(Icon.AddTime);

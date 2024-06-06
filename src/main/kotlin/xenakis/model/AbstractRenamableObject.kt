@@ -29,7 +29,7 @@ abstract class AbstractRenamableObject : RenamableObject {
         this.context = context
     }
 
-    open fun remove() {
+    override fun remove() {
         if (!initialized) error("Object ${this.name.now} was not initialized!")
         logger.fine("Remove ${this.name.now}")
         initialized = false

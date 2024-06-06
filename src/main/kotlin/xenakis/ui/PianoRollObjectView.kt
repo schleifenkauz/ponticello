@@ -113,7 +113,7 @@ class PianoRollObjectView(private val obj: PianoRollObject) : ScoreObjectView(ob
                 }
 
                 MouseEvent.MOUSE_MOVED -> {
-                    cursor.x = (ev.x - 10.0).snap(pane.timeSnap)
+                    cursor.x = pane.snapToGrid(ev.x - 10.0)
                     cursor.y = ev.y.snap(obj.pixelsPerPitch)
                 }
 
@@ -126,7 +126,7 @@ class PianoRollObjectView(private val obj: PianoRollObject) : ScoreObjectView(ob
                 }
 
                 MouseEvent.MOUSE_DRAGGED -> {
-                    cursor.width = (ev.x - cursor.x).snap(pane.timeSnap)
+                    cursor.width = pane.snapToGrid(ev.x - cursor.x)
                 }
 
                 MouseEvent.MOUSE_RELEASED -> {

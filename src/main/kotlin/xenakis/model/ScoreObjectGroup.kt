@@ -75,10 +75,10 @@ class ScoreObjectGroup(name: String, val score: Score) : RegularScoreObject(name
 
     override fun copy(): ScoreObject = ScoreObjectGroup(name.now, score.copy())
 
-    override fun onRemove() {
-        super.onRemove()
+    override fun remove() {
+        super.remove()
         for (obj in score.objects) {
-            obj.onRemove()
+            context[ScoreObjectRegistry].remove(obj)
         }
     }
 

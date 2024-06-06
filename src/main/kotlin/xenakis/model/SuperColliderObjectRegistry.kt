@@ -20,8 +20,4 @@ abstract class SuperColliderObjectRegistry<O : SuperColliderObject> : ObjectRegi
             obj.run { allocateServerObject() }
         }
     }
-
-    override fun onRemoved(obj: O, idx: Int) {
-        obj.remove()
-    }
 }
