@@ -4,24 +4,37 @@ import kotlinx.serialization.Serializable
 import reaktive.value.ReactiveVariable
 import reaktive.value.now
 import reaktive.value.reactiveVariable
-import xenakis.impl.SuperColliderClient
-import xenakis.sc.editor.AbstractRenamableObject
+import xenakis.impl.ScWriter
+import xenakis.model.SuperColliderObject.LiveCycleType
 
 @Serializable
-data class GroupObject(
+class GroupObject(
     override val mutableName: ReactiveVariable<String>,
     val isDefault: Boolean = false
-) : AbstractRenamableObject() {
-    val variableName: String get() = if (isDefault) "s.defaultGroup" else "~grp_${name.now}"
+) : AbstractSuperColliderObject() {
+    override val variableName: String get() = if (isDefault) "s.defaultGroup" else "~grp_${name.now}"
+
+    override val liveCycleType: LiveCycleType
+        get() = LiveCycleType.ServerTree
+
+    var previous: GroupObject? = null
+        set(prev) {
+            if (field == prev) return
+            field = prev
+            redefine()
+        }
+
+    override fun ScWriter.allocateServerObject() {
+        if (!isDefault) +"$variableName = Group.new"
+        val prev = previous
+        if (prev != null) {
+            client.run("${variableName}.moveAfter(${prev.variableName});")
+        } else {
+            client.run("$variableName.moveToHead;")
+        }
+    }
 
     override fun canRenameTo(newName: String): Boolean = !context[GroupRegistry].has(newName)
-
-    override fun rename(newName: String) {
-        val client = context[SuperColliderClient]
-        val oldVariableName = variableName
-        super.rename(newName)
-        if (!isDefault) client.run("$variableName = ${oldVariableName}; $oldVariableName = nil;")
-    }
 
     override fun createReference(): GroupObjectReference = GroupObjectReference(this)
 

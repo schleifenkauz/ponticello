@@ -30,6 +30,11 @@ interface SuperColliderClient : SuperColliderContext {
         sendAsync("run", listOf(command))
     }
 
+    override fun run(writeCode: ScWriter.() -> Unit) {
+        val command = code(writeCode)
+        if (command.isNotBlank()) run(command)
+    }
+
     fun quit()
 
     companion object : PublicProperty<SuperColliderClient> by publicProperty("SuperColliderClient") {

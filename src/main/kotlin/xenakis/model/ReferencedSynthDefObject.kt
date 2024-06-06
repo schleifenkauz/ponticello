@@ -28,8 +28,14 @@ class ReferencedSynthDefObject(
 
     override fun initialize(context: Context) {
         this.context = context
-        context[SuperColliderClient].sync()
+        updateParameters()
     }
+
+    override fun ScWriter.allocateServerObject() {}
+
+    override fun ScWriter.freeServerObject() {}
+
+    override fun remove() {}
 
     override val name: ReactiveValue<String>
         get() = reactiveValue(_name)
@@ -37,7 +43,11 @@ class ReferencedSynthDefObject(
     override val parameters: ReactiveList<ParameterDefObject>
         get() = _parameters
 
-    override fun SuperColliderClient.sync() {
+    override fun sync(writer: ScWriter) {
+        updateParameters()
+    }
+
+    private fun updateParameters() {
         async {
             val parameters = getSynthDefParameters(_name)
             _parameters.now.clear()

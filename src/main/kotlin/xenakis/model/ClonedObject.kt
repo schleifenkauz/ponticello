@@ -7,7 +7,10 @@ import kotlinx.serialization.json.JsonObjectBuilder
 import kotlinx.serialization.json.put
 import reaktive.value.ReactiveVariable
 import reaktive.value.now
-import xenakis.impl.*
+import xenakis.impl.ScWriter
+import xenakis.impl.getSerializableValue
+import xenakis.impl.getValue
+import xenakis.impl.setValue
 import xenakis.sc.ControlSpec
 import xenakis.ui.ScoreObjectView
 
@@ -51,7 +54,7 @@ class ClonedObject(
     override fun writeStopCode(writer: ScWriter, name: String) =
         original.writeStopCode(writer, this.name.now)
 
-    override fun play(client: SuperColliderClient) = original.play(client)
+    override fun play(writer: ScWriter) = original.play(writer)
 
     override fun copy(newName: String): ScoreObject = original.copy(newName)
 

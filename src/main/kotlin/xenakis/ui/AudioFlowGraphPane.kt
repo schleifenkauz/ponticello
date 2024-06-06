@@ -76,7 +76,7 @@ class AudioFlowGraphPane(
         addEventHandler(DragEvent.DRAG_DROPPED) { ev ->
             val busName = ev.dragboard.getContent(BusObject.DATA_FORMAT) as? String ?: return@addEventHandler
             val bus = context[currentProject].busses.get(busName).createReference()
-            if (!graph.add(bus, Point(ev.x, ev.y))) {
+            if (!graph.addNode(bus, Point(ev.x, ev.y))) {
                 alertError("Cannot add same bus twice in audio flow graph")
             }
             ev.consume()
@@ -100,7 +100,7 @@ class AudioFlowGraphPane(
                     val bus = BusObject.create(name)
                     context[BusRegistry].add(bus)
                     val position = Point(ev.x, ev.y)
-                    graph.add(bus.createReference(), position)
+                    graph.addNode(bus.createReference(), position)
                     ev.consume()
                 }
             }
@@ -188,7 +188,7 @@ class AudioFlowGraphPane(
         }
         label.addEventHandler(KeyEvent.KEY_RELEASED) { ev ->
             if (ev.code == KeyCode.DELETE) {
-                graph.remove(node)
+                graph.removeNode(node)
                 ev.consume()
             }
         }
@@ -262,6 +262,13 @@ class AudioFlowGraphPane(
                 width = 1000.0
                 height = 1000.0
                 scene.initHextantScene(context, applyStyle = false)
+                setOnCloseRequest {
+                    val updateFlow = showYesNoDialog("Update audio flow on server", default = true)
+                    if (updateFlow) {
+                        graph.updateFlow()
+                    }
+                    hide()
+                }
             }
         }
         window.show()

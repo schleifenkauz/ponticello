@@ -3,6 +3,11 @@
 ### external vst plugins
 
 - piano roll tool
+  - resizing note objects
+  - how to display/change velocity?
+  - control overall arguments
+  - extra arguments for each note?
+- usage in ad hoc synths
 
 ### sound file objects
 
@@ -65,7 +70,7 @@
 
 - why can't we have shortcuts in the ScoreView?
 - the mouse position tracker line sometimes interferes with clicks (disabled for now)
-- why are HextantTextFields always too small when reopening editors?
+- why are HextantTextFields sometimes too small when reopening editors?
 
 ## Nice to have
 

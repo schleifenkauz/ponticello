@@ -6,7 +6,7 @@ import javafx.scene.paint.Color
 import reaktive.value.ReactiveVariable
 import reaktive.value.now
 import reaktive.value.reactiveVariable
-import xenakis.impl.SuperColliderClient
+import xenakis.impl.ScWriter
 import xenakis.sc.ControlSpec
 import xenakis.ui.ScoreObjectView
 import xenakis.ui.format
@@ -84,14 +84,13 @@ sealed class RegularScoreObject(name: String) : ScoreObject(name) {
     override fun getSpec(parameter: String): ControlSpec =
         throw NoSuchElementException("no spec for parameter $parameter in $this")
 
-    final override fun play(client: SuperColliderClient) {
-        client.run {
-            appendLine("~player_task = Task{")
-            writeStartCode(this, offset = 0.0)
-            appendLine("${duration.format(2)}.wait;")
-            writeStopCode(this)
-            appendLine("}.play")
+    final override fun play(writer: ScWriter) {
+        writer.appendBlock("~player_task = Task") {
+            writeStartCode(writer, offset = 0.0)
+            +"${duration.format(2)}.wait"
+            writeStopCode(writer)
         }
+        writer.appendLine("}.play")
     }
 
     override fun addView(view: ScoreObjectView) {

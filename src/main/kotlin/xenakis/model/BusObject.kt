@@ -5,57 +5,43 @@ import javafx.scene.input.DataFormat
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import reaktive.Observer
-import reaktive.value.*
-import xenakis.impl.SuperColliderClient
+import reaktive.value.ReactiveVariable
+import reaktive.value.now
+import reaktive.value.reactiveVariable
+import xenakis.impl.ScWriter
+import xenakis.model.SuperColliderObject.LiveCycleType
 import xenakis.sc.Rate
-import xenakis.sc.editor.AbstractRenamableObject
 import xenakis.ui.XenakisController
 
 @Serializable
 class BusObject(
     override val mutableName: ReactiveVariable<String>,
-    val rate: ReactiveValue<Rate>,
-    val channels: ReactiveValue<Int>,
+    val rate: ReactiveVariable<Rate>,
+    val channels: ReactiveVariable<Int>,
     val isOutput: Boolean = false
-) : AbstractRenamableObject() {
-    val variableName get() = if (isOutput) "0" else "~bus_${name.now}"
+) : AbstractSuperColliderObject() {
+    override val variableName get() = if (isOutput) "0" else "~bus_${name.now}"
 
-    val allocationCode: String
-        get() = "$variableName = Bus.${rate.now.name.lowercase()}(s, ${channels.now})"
-
-    val deallocationCode: String
-        get() = "$variableName.free; $variableName = nil"
+    override val liveCycleType: LiveCycleType
+        get() = LiveCycleType.ServerBoot
 
     @Transient
     private lateinit var observer: Observer
+
+    override fun ScWriter.allocateServerObject() {
+        if (!isOutput) +"$variableName = Bus.${rate.now.name.lowercase()}(s, ${channels.now})"
+    }
 
     override fun canRenameTo(newName: String): Boolean =
         name.now.startsWith("global_") == newName.startsWith("global_") &&
                 !context[XenakisController.currentProject].busses.has(newName)
 
-    override fun rename(newName: String) {
-        context[SuperColliderClient].run("~bus_$newName = $variableName; $variableName = nil;")
-        super.rename(newName)
-    }
-
     override fun initialize(context: Context) {
+        if (initialized) return
         super.initialize(context)
         if (!isOutput) {
-            context[SuperColliderClient].run(allocationCode)
-            observer = rate.observe { _ -> reallocate() } and channels.observe { _ -> reallocate() }
+            observer = rate.observe { _ -> redefine() } and channels.observe { _ -> redefine() }
         }
-    }
-
-    fun reallocate() {
-        if (isOutput) return
-        context[SuperColliderClient].run {
-            +"if ($variableName != nil) { $deallocationCode }"
-            +allocationCode
-        }
-    }
-
-    fun removed() {
-        context[SuperColliderClient].run(deallocationCode)
     }
 
     override fun createReference(): BusObjectReference = BusObjectReference(this)
@@ -63,7 +49,7 @@ class BusObject(
     companion object {
         val output = BusObject(
             reactiveVariable("output"),
-            reactiveValue(Rate.Audio),
+            reactiveVariable(Rate.Audio),
             reactiveVariable(2),
             isOutput = true
         )

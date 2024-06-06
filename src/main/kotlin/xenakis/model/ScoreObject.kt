@@ -18,7 +18,6 @@ import reaktive.value.now
 import reaktive.value.reactiveVariable
 import xenakis.impl.*
 import xenakis.sc.ControlSpec
-import xenakis.sc.editor.AbstractRenamableObject
 import xenakis.ui.ScoreObjectView
 
 @Serializable(with = ScoreObject.Ser::class)
@@ -47,7 +46,7 @@ abstract class ScoreObject(name: String) : AbstractRenamableObject() {
 
     open fun writeStopCode(writer: ScWriter, name: String = this.name.now) {}
 
-    abstract fun play(client: SuperColliderClient)
+    abstract fun play(writer: ScWriter)
 
     protected fun recordEdit(edit: ScoreObjectEdit) {
         if (initialized) {

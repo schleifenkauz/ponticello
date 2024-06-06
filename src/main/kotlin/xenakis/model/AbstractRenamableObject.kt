@@ -1,4 +1,4 @@
-package xenakis.sc.editor
+package xenakis.model
 
 import hextant.context.Context
 import kotlinx.serialization.Serializable
@@ -6,16 +6,17 @@ import kotlinx.serialization.Transient
 import reaktive.value.ReactiveValue
 import reaktive.value.ReactiveVariable
 import reaktive.value.now
-import xenakis.model.RenamableObject
 import java.util.logging.Logger
 
 @Serializable
 abstract class AbstractRenamableObject : RenamableObject {
     @Transient
     protected var initialized = false
-        private set
 
     protected abstract val mutableName: ReactiveVariable<String>
+
+    final override val name: ReactiveValue<String>
+        get() = mutableName
 
     @Transient
     lateinit var context: Context
@@ -28,8 +29,11 @@ abstract class AbstractRenamableObject : RenamableObject {
         this.context = context
     }
 
-    final override val name: ReactiveValue<String>
-        get() = mutableName
+    open fun remove() {
+        if (!initialized) error("Object ${this.name.now} was not initialized!")
+        logger.fine("Remove ${this.name.now}")
+        initialized = false
+    }
 
     override fun rename(newName: String) {
         mutableName.now = newName

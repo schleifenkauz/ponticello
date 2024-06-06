@@ -1,6 +1,7 @@
 package xenakis.impl
 
 import com.illposed.osc.OSCMessage
+import xenakis.impl.StatusListener.StatusUpdate
 import java.net.DatagramPacket
 import java.net.DatagramSocket
 import java.net.InetAddress
@@ -76,14 +77,6 @@ class UDPSuperColliderClient private constructor(
         run("0.exit;")
         socket.disconnect()
         statusListener.status = StatusUpdate.Exited
-    }
-
-    enum class StatusUpdate {
-        Starting,
-        ReadyToBoot,
-        ServerBooted,
-        ExitedServer,
-        Exited
     }
 
     companion object {

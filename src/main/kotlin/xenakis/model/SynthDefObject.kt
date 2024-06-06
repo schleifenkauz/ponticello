@@ -4,9 +4,13 @@ import hextant.context.Context
 import kotlinx.serialization.Serializable
 import reaktive.list.ReactiveList
 import reaktive.value.now
+import xenakis.model.SuperColliderObject.LiveCycleType
 
 @Serializable
 sealed interface SynthDefObject : ParameterizedObject, InstrumentObject {
+    override val liveCycleType: LiveCycleType
+        get() = LiveCycleType.ServerBoot
+
     val parameters: ReactiveList<ParameterDefObject>
 
     override fun getParameter(name: String): ParameterDefObject =

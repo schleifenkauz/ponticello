@@ -10,6 +10,7 @@ import reaktive.value.ReactiveVariable
 import reaktive.value.reactiveValue
 import reaktive.value.reactiveVariable
 import xenakis.impl.ColorSerializer
+import xenakis.impl.ScWriter
 import xenakis.sc.NumericalControlSpec
 import xenakis.sc.Warp
 
@@ -29,6 +30,14 @@ class StandardSynthDefObject(
             p.initialize(context)
         }
     }
+
+    override fun ScWriter.allocateServerObject() {}
+
+    override fun sync(writer: ScWriter) {}
+
+    override fun remove() {}
+
+    override fun ScWriter.freeServerObject() {}
 
     companion object {
         val default = StandardSynthDefObject(

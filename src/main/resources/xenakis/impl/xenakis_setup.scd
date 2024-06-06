@@ -6,6 +6,13 @@ SynthDef(\vst_instrument, {
 	Out.ar(out, snd);
 }).add;
 
+ServerBoot.add {
+	Task {
+		1.wait;
+		VSTPlugin.search;
+	}.play;
+};
+
 ~setupHandler = { arg address, handler;
 	OSCdef(address, {
 		arg msg, time, addr, recvPort;

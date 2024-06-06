@@ -5,14 +5,14 @@ import bundles.publicProperty
 import bundles.set
 import hextant.context.Context
 import hextant.undo.AbstractEdit
+import hextant.undo.UndoManager
 import kotlinx.serialization.Serializable
 import xenakis.impl.SuperColliderClient
-import xenakis.impl.SuperColliderContext
 
 @Serializable
 data class GroupRegistry(
     private val order: MutableList<GroupObject> = mutableListOf(GroupObject.DEFAULT)
-) : ObjectRegistry<GroupObject>() {
+) : SuperColliderObjectRegistry<GroupObject>() {
     override val objects: MutableList<GroupObject>
         get() = order
 
@@ -20,8 +20,8 @@ data class GroupRegistry(
         get() = "Group"
 
     override fun initialize(context: Context) {
-        context[GroupRegistry] = this
         super.initialize(context)
+        context[GroupRegistry] = this
     }
 
     fun asList(): List<GroupObject> = order
@@ -30,14 +30,13 @@ data class GroupRegistry(
 
     override fun getDefault(): GroupObject = objects.find { it.isDefault } ?: GroupObject.DEFAULT
 
-    override fun onAdded(obj: GroupObject, idx: Int) {
-        super.onAdded(obj, idx)
-        val groupBefore = order.getOrNull(idx - 1)
-        setupGroup(obj, groupBefore, context[SuperColliderClient])
-    }
-
-    override fun onRemoved(obj: GroupObject, idx: Int) {
-        context[SuperColliderClient].run("${obj.variableName}.free; ${obj.variableName} = nil;")
+    override fun syncAll() {
+        context[SuperColliderClient].run {
+            +"${order.first().variableName}.moveToHead"
+            for ((prev, next) in order.zipWithNext()) {
+                +"${next.variableName}.moveAfter(${prev.variableName})"
+            }
+        }
     }
 
     fun moveGroup(group: GroupObject, deltaIndex: Int) {
@@ -47,43 +46,9 @@ data class GroupRegistry(
         if (toIndex !in order.indices) error("invalid deltaIndex: $deltaIndex, fromIndex = $fromIndex")
         order.removeAt(fromIndex)
         order.add(toIndex, group)
-        if (toIndex == 0) {
-            context[SuperColliderClient].run("${group.variableName}.moveBefore(${order[0].variableName});")
-        } else {
-            val groupBefore = order[toIndex - 1]
-            context[SuperColliderClient].run("${group.variableName}.moveAfter(${groupBefore.variableName});")
-        }
+        group.previous = order.getOrNull(toIndex - 1)
+        context[UndoManager].record(MoveEdit(this, group, fromIndex, toIndex))
         views.notifyListeners { if (this is View) movedGroup(group, fromIndex, toIndex) }
-    }
-
-    private fun setupGroup(group: GroupObject, groupBefore: GroupObject?, context: SuperColliderContext) {
-        if (group.isDefault) {
-            if (groupBefore != null) {
-                context.run("s.defaultGroup.moveAfter(${groupBefore.variableName});")
-            }
-        } else {
-            if (groupBefore != null) {
-                context.run("${group.variableName} = Group.after(${groupBefore.variableName});")
-            } else {
-                context.run("${group.variableName} = Group.new;")
-            }
-        }
-    }
-
-    fun SuperColliderContext.setupGroups() = run {
-        for (group in order) {
-            if (!group.isDefault) {
-                appendBlock("if (${group.variableName} != nil)") {
-                    +"${group.variableName}.free"
-                    +"${group.variableName} = nil"
-                }
-                appendLine(";")
-            }
-        }
-        setupGroup(order[0], null, context)
-        for ((before, after) in order.zipWithNext()) {
-            setupGroup(after, before, context)
-        }
     }
 
     private class MoveEdit(

@@ -1,12 +1,14 @@
 package xenakis.impl
 
 import xenakis.sc.ScElement
+import java.io.StringWriter
 
-class ScWriter(private val output: Appendable) {
+class ScWriter(private val output: Appendable) : SuperColliderContext {
     private var indent = ""
     private var newLine = true
 
-    val context = SuperColliderWriterContext(output)
+    val context: SuperColliderContext get() = this
+    val writer: ScWriter get() = this
 
     fun append(str: String) {
         if (newLine) {
@@ -51,7 +53,7 @@ class ScWriter(private val output: Appendable) {
     inline fun indented(block: ScWriter.() -> Unit) {
         increaseIndent()
         appendLine()
-        block()
+        this.block()
         appendLine()
         decreaseIndent()
     }
@@ -70,5 +72,23 @@ class ScWriter(private val output: Appendable) {
         append("(")
         indented(block)
         appendLine(")")
+    }
+
+    override fun run(command: String) {
+        appendLine(command)
+    }
+
+    override fun run(writeCode: ScWriter.() -> Unit) {
+        this.writeCode()
+    }
+
+    companion object {
+        inline fun wrap(context: SuperColliderContext, block: ScWriter.() -> Unit) {
+            if (context is ScWriter) return context.block()
+            val writer = StringWriter()
+            val wrapper = ScWriter(writer)
+            wrapper.block()
+            context.run(writer.toString())
+        }
     }
 }

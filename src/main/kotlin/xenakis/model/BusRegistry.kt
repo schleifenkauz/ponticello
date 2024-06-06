@@ -25,12 +25,12 @@ class BusRegistry(private val busses: MutableList<BusObject>) : ObjectRegistry<B
     override fun getDefault() = busses.find { b -> b.isOutput } ?: error("No output bus found in registry")
 
     override fun onRemoved(obj: BusObject, idx: Int) {
-        obj.removed()
+        obj.remove()
     }
 
-    fun SuperColliderContext.reallocateBusses() = run {
+    fun SuperColliderContext.syncBusses() = run {
         for (bus in busses) {
-            bus.reallocate()
+            bus.sync()
         }
     }
 

@@ -9,11 +9,10 @@ import reaktive.value.ReactiveVariable
 import reaktive.value.now
 import reaktive.value.reactiveVariable
 import xenakis.impl.ColorSerializer
-import xenakis.impl.SuperColliderClient
-import xenakis.impl.SuperColliderContext
+import xenakis.impl.ScWriter
 import xenakis.impl.randomColor
+import xenakis.model.SuperColliderObject.LiveCycleType
 import xenakis.sc.Rate
-import xenakis.sc.editor.AbstractRenamableObject
 import xenakis.sc.editor.BusSelector
 
 @Serializable
@@ -23,8 +22,11 @@ class VSTPluginObject private constructor(
     private val presetName: String,
     private var output: BusObjectReference,
     override val color: ReactiveVariable<@Serializable(with = ColorSerializer::class) Color>
-) : InstrumentObject, AbstractRenamableObject() {
-    private val controllerName get() = "~ctrl_${name.now}"
+) : InstrumentObject, AbstractSuperColliderObject() {
+    override val variableName get() = "~plugin_${name.now}"
+
+    override val liveCycleType: LiveCycleType
+        get() = LiveCycleType.ServerTree
 
     @Transient
     lateinit var outputSelector: BusSelector
@@ -34,71 +36,67 @@ class VSTPluginObject private constructor(
     private lateinit var outputSelectorObserver: Observer
 
     @Transient
-    private var isNew: Boolean = false
-
-    @Transient
     private var controllerInfo: ControllerInfo? = null
-
-    private val client get() = context[SuperColliderClient]
 
     fun initialize(context: Context, controllerInfo: ControllerInfo) {
         this.controllerInfo = controllerInfo
         initialize(context)
     }
 
-    fun initializeNew(context: Context) {
-        isNew = true
-        initialize(context)
-    }
-
     override fun initialize(context: Context) {
         if (initialized) return
-        super.initialize(context)
         outputSelector = BusSelector(context, Rate.Audio, 2, output)
-        outputSelectorObserver = outputSelector.result.observe { _, _, new -> output = new }
-        if (client.eval("s.hasBooted").join() == "true") this.client.loadVSTPlugin()
+        outputSelectorObserver = outputSelector.result.observe { _, _, newOutput ->
+            output = newOutput
+            client.run("if (s.serverRunning) { $variableName.synth.set(\\out, ${newOutput.get().variableName}) };")
+        }
+        super.initialize(context)
     }
 
-    fun SuperColliderContext.loadVSTPlugin() {
-        run {
-            appendBlock("if (s.hasBooted)") {
-                val info = controllerInfo
-                if (info != null) {
-                    +"$controllerName = VSTPluginController(${info.synthName}, \\${info.id})"
-                } else {
-                    val synthName = "~tmp_synth"
-                    +"$synthName = Synth(\\vst_instrument, [out: ${output.get().variableName}])"
-                    +"$controllerName = VSTPluginController($synthName)"
-                }
-                val action = if (isNew) "{}" else "_.loadPreset('$presetName')"
-                +"$controllerName.open('$pluginName', action: $action)"
+    override fun ScWriter.allocateServerObject() {
+        appendBlock("Task") {
+            val info = controllerInfo
+            if (info != null) {
+                +"$variableName = VSTPluginController(${info.synthName}, \\${info.id})"
+            } else {
+                val synthName = "~tmp_synth"
+                +"s.sync"
+                +"2.wait"
+                +"$synthName = Synth(\\vst_instrument, [out: ${output.get().variableName}])"
+                +"s.sync"
+                +"0.5.wait"
+                +"if (true) { $variableName = VSTPluginController($synthName) } { $variableName.synth = ~tmp_synth }"
             }
-            appendLine(";")
+            +"$variableName.open('$pluginName.vst3', editor: true, verbose: true)"
+            +"s.sync"
+            +"0.5.wait"
+            +"if ($variableName.info.presets.any { |p| p.name == \"$presetName\" }) { $variableName.loadPreset('$presetName') }"
+            +"'opened plugin'.postln"
         }
+        appendLine(".play;")
+    }
+
+    override fun ScWriter.freeServerObject() {
+        +"$variableName.close; $variableName.synth.free; $variableName = nil;"
+    }
+
+    override fun ScWriter.removeFromServer() {
+        freeServerObject()
+        "$variableName = nil;"
     }
 
     override fun canRenameTo(newName: String): Boolean =
-        !(context[InstrumentRegistry].has(name.now) && context[InstrumentRegistry].has(newName))
-
-    override fun rename(newName: String) {
-        val oldControllerName = controllerName
-        super.rename(newName)
-        client.run("$controllerName = $oldControllerName; $oldControllerName = nil;")
-    }
-
-    override fun SuperColliderClient.sync() {
-        run("if ($controllerName != nil) { $controllerName.savePreset('$presetName') };")
-    }
-
-    override fun SuperColliderClient.remove() {
-        run("$controllerName.synth.free; $controllerName = nil;")
-    }
+        !(context[InstrumentRegistry].has(this) && context[InstrumentRegistry].has(newName))
 
     fun showEditor() {
-        client.run("$controllerName.editor;")
+        client.run("$variableName.editor;")
     }
 
-    override fun createEvent(): Map<String, String> = mapOf("type" to "\\vst_midi", "vst" to controllerName)
+    fun savePreset() {
+        client.run("if (s.serverRunning) { $variableName.savePreset('$presetName') };")
+    }
+
+    override fun createEvent(): Map<String, String> = mapOf("type" to "\\vst_midi", "vst" to variableName)
 
     data class ControllerInfo(val synthName: String, val id: String)
 

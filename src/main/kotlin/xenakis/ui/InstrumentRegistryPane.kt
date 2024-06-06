@@ -29,7 +29,7 @@ class InstrumentRegistryPane(
     }
 
     override fun reload() {
-        registry.sync()
+        registry.syncAll()
     }
 
     override fun addObject() {
@@ -102,11 +102,12 @@ class InstrumentRegistryPane(
         val colorPicker = colorPicker(obj.color)
         colorPicker.prefWidth = 30.0
         addExtraControl(colorPicker)
+        addAction(Icon.View, "Edit SynthDef") { editSynthDef(obj) }
         if (obj is VSTPluginObject) {
             val outSelectorControl = ObjectSelectorControl(obj.outputSelector, createBundle())
             addExtraControl(outSelectorControl)
+            addAction(Icon.Save, description = "Save VST plugin configuration") { obj.savePreset() }
         }
-        addAction(Icon.View, "Edit SynthDef") { editSynthDef(obj) }
     }
 
     override fun removed(obj: InstrumentObject, idx: Int) {

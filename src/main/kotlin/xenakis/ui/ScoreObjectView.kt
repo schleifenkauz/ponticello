@@ -80,9 +80,11 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
 
     fun playMyObject() {
         val project = context[currentProject]
-        val client = context[SuperColliderClient]
-        project.prepareForPlay(client)
-        myObject.play(client)
+        val beforePlay = project.beforePlay.editor.result.now
+        context[SuperColliderClient].run {
+            beforePlay.code(this)
+            myObject.play(this)
+        }
     }
 
     fun createLoop() {

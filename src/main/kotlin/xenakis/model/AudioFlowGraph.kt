@@ -7,9 +7,12 @@ import hextant.undo.AbstractEdit
 import hextant.undo.UndoManager
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
+import reaktive.Observer
 import reaktive.value.now
 import xenakis.impl.Point
-import xenakis.impl.SuperColliderContext
+import xenakis.impl.ScWriter
+import xenakis.impl.StatusListener
+import xenakis.impl.SuperColliderClient
 import xenakis.sc.editor.CodeBlockEditor
 import java.util.*
 
@@ -22,22 +25,32 @@ class AudioFlowGraph(
     private lateinit var registry: BusRegistry
 
     @Transient
+    private lateinit var client: SuperColliderClient
+
+    @Transient
     private lateinit var undoManager: UndoManager
 
     @Transient
     val views = ListenerManager.createWeakListenerManager<View>()
+
+    @Transient
+    private val nodeNameObservers = mutableMapOf<BusObjectReference, Observer>()
 
     val flows: List<AudioFlow> get() = _flows
     val nodes: List<BusNode> get() = _nodes
 
     fun initialize(context: Context) {
         registry = context[BusRegistry]
+        client = context[SuperColliderClient]
         registry.addView(this)
         undoManager = context[UndoManager]
         for (obj in nodes) obj.ref.resolve(context)
         for (flow in flows) {
             flow.source.resolve(context)
             flow.target.resolve(context)
+        }
+        client.statusListener.on(StatusListener.StatusUpdate.ReadyToBoot) {
+            client.run { defineAudioFlow() }
         }
     }
 
@@ -55,10 +68,11 @@ class AudioFlowGraph(
         _flows.add(flow)
         val newOrder = findFlowOrder()
         if (newOrder == null) {
-            removeFlow(flow)
+            _flows.remove(flow)
             return false
         }
         order = newOrder
+        client.run { redefineAudioFlow() }
         undoManager.record(Edit.AddFlow(this, flow))
         views.notifyListeners { addedFlow(flow) }
         return true
@@ -66,8 +80,57 @@ class AudioFlowGraph(
 
     fun removeFlow(flow: AudioFlow) {
         _flows.remove(flow)
+        order = findFlowOrder()!!
+        client.run {
+            +"${flow.synthName}.free"
+            +"${flow.synthName} = nil"
+            redefineAudioFlow()
+        }
         undoManager.record(Edit.RemoveFlow(this, flow))
         views.notifyListeners { removedFlow(flow) }
+    }
+
+    fun updateFlow() {
+        client.run { redefineAudioFlow() }
+    }
+
+    private fun ScWriter.redefineAudioFlow() {
+        clearAudioFlow()
+        defineAudioFlow()
+    }
+
+    private fun ScWriter.clearAudioFlow() {
+        +"ServerTree.remove(~setup_flow)"
+        for (flow in flows) {
+            +"${flow.synthName}.free"
+            +"${flow.synthName} = nil"
+        }
+    }
+
+    private fun ScWriter.defineAudioFlow() {
+        appendBlock("~setup_flow = ") {
+            setupAudioFlow()
+            +"'setup audio flow'.postln"
+        }
+        appendLine(";")
+        +"ServerTree.add(~setup_flow)"
+        +"if (s.serverRunning) { ~setup_flow.value }"
+
+    }
+
+    private fun ScWriter.setupAudioFlow() {
+        var prev = "s.defaultGroup"
+        for (flow in order) {
+            val source = flow.source.get()
+            val target = flow.target.get()
+            val ugenGraph = flow.ugenGraph.editor.result.now
+            appendLine("${flow.synthName} = {")
+            +"var sig = In.${source.rate.now}(${source.variableName}, ${source.channels.now})"
+            ugenGraph.writeCode(this)
+            val addAction = if (prev == "s.defaultGroup") "addToTail" else "addAfter"
+            +"}.play($prev, ${target.variableName}, addAction: '$addAction')"
+            prev = flow.synthName
+        }
     }
 
     override fun added(obj: BusObject, idx: Int) {}
@@ -75,24 +138,40 @@ class AudioFlowGraph(
     override fun removed(obj: BusObject, idx: Int) {
         for (node in nodes.toList()) {
             if (node.ref.get() == obj) {
-                remove(node)
+                removeNode(node)
             }
         }
     }
 
-    fun add(bus: BusObjectReference, position: Point): Boolean {
+    fun addNode(bus: BusObjectReference, position: Point): Boolean {
         val obj = BusNode(bus, position)
-        return add(obj)
+        return addNode(obj)
     }
 
-    private fun add(obj: BusNode): Boolean {
+    private fun addNode(obj: BusNode): Boolean {
         if (nodes.any { n -> n.ref == obj.ref }) {
             return false
         }
         _nodes.add(obj)
+        nodeNameObservers[obj.ref] = obj.ref.get().name.observe { _, oldName, _ -> renamedNode(obj, oldName) }
         undoManager.record(Edit.AddNode(this, obj))
         views.notifyListeners { addedNode(obj) }
         return true
+    }
+
+    private fun renamedNode(obj: BusNode, oldName: String) {
+        client.run {
+            for (flow in associatedFlows(obj)) {
+                val newSourceName = flow.source.get().name.now
+                val newTargetName = flow.target.get().name.now
+                val oldFlowName =
+                    if (flow.target == obj.ref) "~flow_${newSourceName}_${oldName}"
+                    else "~flow_${oldName}_$newTargetName"
+                val newFlowName = flow.synthName
+                +"$newFlowName = $oldFlowName"
+                +"$oldFlowName = nil"
+            }
+        }
     }
 
     fun move(node: BusNode, position: Point) {
@@ -101,11 +180,12 @@ class AudioFlowGraph(
         views.notifyListeners { movedNode(node) }
     }
 
-    fun remove(node: BusNode) {
+    fun removeNode(node: BusNode) {
         _nodes.remove(node)
         val associatedFlows = associatedFlows(node)
         views.notifyListeners { removedNode(node) }
         for (flow in associatedFlows) removeFlow(flow)
+        nodeNameObservers.remove(node.ref)!!.kill()
         undoManager.record(Edit.RemoveNode(this, node, associatedFlows))
     }
 
@@ -113,34 +193,22 @@ class AudioFlowGraph(
         flows.filter { f -> f.source == bus.ref || f.target == bus.ref }
 
     private fun findFlowOrder(): List<AudioFlow>? {
-        val q: Queue<AudioFlow> = LinkedList(flows)
+        val q: Queue<AudioFlow> = LinkedList()
         val order = mutableListOf<AudioFlow>()
         val dependencies = mutableMapOf<BusObjectReference, Int>()
         for (flow in flows) dependencies[flow.target] = (dependencies[flow.target] ?: 0) + 1
+        for (flow in flows) if ((dependencies[flow.source] ?: 0) == 0) q.offer(flow)
         while (q.isNotEmpty()) {
             val flow = q.poll()
-            if ((dependencies[flow.source] ?: 0) == 0) {
-                order.add(flow)
-                for (e in edges(flow.target)) q.offer(e)
+            order.add(flow)
+            dependencies[flow.target] = dependencies[flow.target]!! - 1
+            if (dependencies[flow.target] == 0) {
+                for (e in edges(flow.target)) {
+                    q.offer(e)
+                }
             }
         }
         return if (order.size == flows.size) order else null
-    }
-
-    fun SuperColliderContext.setupAudioFlow() = run {
-        var prev = "s.defaultGroup"
-        for (flow in order) {
-            val source = flow.source.get()
-            val target = flow.target.get()
-            val ugenGraph = flow.ugenGraph.editor.result.now
-            val synthName = "~flow_${source.name}_${target.name}"
-            appendLine("{")
-            +"var sig = In.${source.rate.now}(${source.variableName}, ${source.channels.now})"
-            ugenGraph.writeCode(this)
-            val addAction = if (prev == "s.defaultGroup") "addToTail" else "addAfter"
-            +"}.play($prev, ${target.variableName}, addAction: '$addAction')"
-            prev = synthName
-        }
     }
 
     @Serializable
@@ -152,6 +220,8 @@ class AudioFlowGraph(
         val target: BusObjectReference,
         val ugenGraph: EditorRoot<CodeBlockEditor>
     ) {
+        val synthName get() = "~flow_${source.get().name.now}_${target.get().name.now}"
+
         override fun equals(other: Any?): Boolean {
             if (this === other) return true
             if (javaClass != other?.javaClass) return false
@@ -185,12 +255,12 @@ class AudioFlowGraph(
                 get() = "Remove audio flow graph node"
 
             override fun doUndo() {
-                graph.add(node)
+                graph.addNode(node)
                 for (flow in associatedFlows) graph.addFlow(flow)
             }
 
             override fun doRedo() {
-                graph.remove(node)
+                graph.removeNode(node)
             }
         }
 
@@ -199,11 +269,11 @@ class AudioFlowGraph(
                 get() = "Add audio flow graph node"
 
             override fun doUndo() {
-                graph.remove(node)
+                graph.removeNode(node)
             }
 
             override fun doRedo() {
-                graph.add(node)
+                graph.addNode(node)
             }
         }
 

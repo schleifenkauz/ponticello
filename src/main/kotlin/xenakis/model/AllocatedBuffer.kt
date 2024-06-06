@@ -4,7 +4,7 @@ import kotlinx.serialization.Serializable
 import reaktive.value.ReactiveVariable
 import reaktive.value.now
 import reaktive.value.reactiveVariable
-import xenakis.impl.SuperColliderClient
+import xenakis.impl.ScWriter
 import xenakis.impl.async
 
 @Serializable
@@ -12,18 +12,19 @@ data class AllocatedBuffer(
     override val mutableName: ReactiveVariable<String>,
     override val channels: ReactiveVariable<Int>, override val frames: ReactiveVariable<Int>
 ) : BufferObject() {
-    override val initializationCode: String
-        get() = "$variableName = Buffer.alloc(s, ${frames.now}, ${channels.now})"
+    override fun ScWriter.allocateServerObject() {
+        +"$variableName = Buffer.alloc(s, ${frames.now}, ${channels.now})"
+    }
 
-    override fun sync(client: SuperColliderClient) {
+    override fun sync(writer: ScWriter) {
         async {
             val exists = client.eval(variableName).join()
-            if (exists == "nil") reallocate()
+            if (exists == "nil") super.sync(writer)
             else {
                 val channelsOnServer = client.eval("$variableName.numChannels").join().toInt()
                 val framesOnServer = client.eval("$variableName.numFrames").join().toInt()
                 if (channelsOnServer != channels.now || framesOnServer != frames.now) {
-                    reallocate()
+                    super.sync(writer)
                 }
             }
         }

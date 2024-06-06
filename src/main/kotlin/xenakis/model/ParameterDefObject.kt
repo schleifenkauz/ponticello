@@ -7,7 +7,6 @@ import reaktive.value.ReactiveVariable
 import reaktive.value.now
 import reaktive.value.reactiveVariable
 import xenakis.sc.*
-import xenakis.sc.editor.AbstractRenamableObject
 
 @Serializable
 class ParameterDefObject(

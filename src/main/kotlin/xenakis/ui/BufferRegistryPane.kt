@@ -11,14 +11,13 @@ import reaktive.value.binding.map
 import reaktive.value.fx.asProperty
 import reaktive.value.now
 import reaktive.value.reactiveVariable
-import xenakis.impl.SuperColliderClient
 import xenakis.model.*
 
 class BufferRegistryPane(
     private val buffers: BufferRegistry,
     private val project: XenakisProject,
     private val controller: XenakisController
-) : ObjectRegistryPane<BufferObject>(buffers) {
+) : SuperColliderObjectRegistryPane<BufferObject>(buffers) {
     init {
         setupDropArea({ db -> db.hasFiles("wav") }, { ev ->
             for (file in ev.dragboard.files) {
@@ -27,11 +26,6 @@ class BufferRegistryPane(
             }
         })
         buffers.addView(this)
-    }
-
-    override fun reload() {
-        val client = project.context[SuperColliderClient]
-        buffers.run { client.initializeBuffers() }
     }
 
     override fun addObject() {
@@ -88,7 +82,7 @@ class BufferRegistryPane(
                     val newFile = controller.showOpenDialog("*.wav") ?: return@addAction
                     if (buffers.hasFile(newFile)) return@addAction
                     obj.loadFile(newFile)
-                    buffers.reloadBuffer(obj, context = controller.client)
+                    obj.sync()
                 }
             }
 
@@ -124,7 +118,7 @@ class BufferRegistryPane(
             }
             obj.frames.set(n)
         }
-        obj.sync(buffers.context[SuperColliderClient])
+        obj.sync()
     }
 
     private fun ObjectBox<BufferObject>.addBufferInfo() {

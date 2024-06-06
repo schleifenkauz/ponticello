@@ -7,7 +7,7 @@ import com.illposed.osc.messageselector.OSCPatternAddressMessageSelector
 import com.illposed.osc.transport.OSCPortIn
 import com.illposed.osc.transport.OSCPortOut
 import com.illposed.osc.transport.OSCPortOutBuilder
-import xenakis.impl.UDPSuperColliderClient.StatusUpdate
+import xenakis.impl.StatusListener.StatusUpdate
 import java.net.InetAddress
 import java.util.concurrent.CompletableFuture
 

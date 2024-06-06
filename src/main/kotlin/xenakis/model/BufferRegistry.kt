@@ -6,14 +6,12 @@ import bundles.set
 import hextant.context.Context
 import kotlinx.serialization.Serializable
 import reaktive.value.now
-import xenakis.impl.SuperColliderClient
-import xenakis.impl.SuperColliderContext
 import java.io.File
 
 @Serializable
 class BufferRegistry(
     private val _buffers: MutableList<BufferObject> = mutableListOf()
-) : ObjectRegistry<BufferObject>() {
+) : SuperColliderObjectRegistry<BufferObject>() {
     val buffers: List<BufferObject> get() = _buffers
 
     override val objectType: String
@@ -38,28 +36,8 @@ class BufferRegistry(
         super.add(obj, idx)
     }
 
-    fun SuperColliderContext.initializeBuffers() = run {
-        for (buf in buffers) {
-            +buf.initializationCode
-        }
-    }
-
-    fun sync() {
-        val client = context[SuperColliderClient]
-        for (buf in buffers) {
-            buf.sync(client)
-        }
-    }
-
     override fun onRemoved(obj: BufferObject, idx: Int) {
-        obj.onRemove()
-    }
-
-    fun reloadBuffer(buffer: BufferObject, context: SuperColliderContext) {
-        context.run {
-            +"${buffer.variableName}.free"
-            +buffer.initializationCode
-        }
+        obj.remove()
     }
 
     interface View : ObjectRegistry.View<BufferObject>

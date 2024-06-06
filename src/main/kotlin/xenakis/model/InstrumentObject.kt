@@ -5,15 +5,10 @@ import javafx.scene.paint.Color
 import kotlinx.serialization.Serializable
 import reaktive.value.ReactiveVariable
 import reaktive.value.now
-import xenakis.impl.SuperColliderClient
 
 @Serializable
-sealed interface InstrumentObject : NamedObject {
+sealed interface InstrumentObject : NamedObject, SuperColliderObject {
     val color: ReactiveVariable<Color>
-
-    fun SuperColliderClient.sync() {}
-
-    fun SuperColliderClient.remove() {}
 
     fun createEvent(): Map<String, String>
 
@@ -30,9 +25,5 @@ sealed interface InstrumentObject : NamedObject {
         object Serializer : ObjectReference.Serializer<Reference>() {
             override fun createReference(name: String): Reference = Reference(name)
         }
-    }
-
-    enum class Type {
-        SynthDef, VSTPlugin
     }
 }

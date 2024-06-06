@@ -9,12 +9,10 @@ import kotlinx.serialization.Transient
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import reaktive.Observer
 import reaktive.value.now
+import xenakis.impl.ScWriter
+import xenakis.impl.StatusListener.StatusUpdate
 import xenakis.impl.SuperColliderClient
-import xenakis.impl.SuperColliderContext
-import xenakis.impl.SuperColliderWriterContext
-import xenakis.impl.UDPSuperColliderClient
 import xenakis.sc.code
 import xenakis.sc.editor.CodeBlockEditor
 import java.io.File
@@ -41,9 +39,6 @@ class XenakisProject private constructor(
         private set
 
     @Transient
-    private lateinit var statusObserver: Observer
-
-    @Transient
     lateinit var projectFile: File
         private set
 
@@ -58,11 +53,19 @@ class XenakisProject private constructor(
         score.initialize(context)
         context[InstrumentRegistry] = instruments
         client = context[SuperColliderClient]
-        statusObserver = client.statusListener.statusUpdates.observe { _, status ->
-            if (status == UDPSuperColliderClient.StatusUpdate.ReadyToBoot) {
-                bootServer(client)
+        client.statusListener.on(StatusUpdate.ReadyToBoot) {
+            client.run {
+                addServerBootHooks()
+                +"s.boot"
             }
         }
+    }
+
+    private fun ScWriter.addServerBootHooks() {
+        appendBlock("ServerBoot.add") {
+            +serverSetup.editor.result.now.code
+        }
+        appendLine(";")
     }
 
     fun saveTo(file: File) {
@@ -71,52 +74,24 @@ class XenakisProject private constructor(
     }
 
     fun exportAsScript(writer: Writer) {
-        val context = SuperColliderWriterContext(writer)
-        bootServer(context)
-        prepareForPlay(context)
-        context.run { score.writePlayerTask(this, startTime = 0.0, taskName = "play_score", prefix = "") }
+        val scWriter = ScWriter(writer)
+        beforePlay.editor.result.now.code(scWriter)
+        score.writePlayerTask(scWriter, startTime = 0.0, taskName = "play_score", prefix = "")
     }
 
     fun playScore(fromTime: Double) {
-        val suffixGenerator = context[SuffixGenerator]
-        SuperColliderWriterContext.wrap(client) {
-            prepareForPlay(this)
-            run { score.writePlayerTask(this, fromTime, taskName = "play_score", prefix = "") }
+        client.run {
+            beforePlay.editor.result.now.code(this)
+            score.writePlayerTask(this, fromTime, taskName = "play_score", prefix = "")
         }
+    }
+
+    private fun bootServer() {
+        client.run("s.boot;")
     }
 
     fun rebootServer() {
-        client.run("s.quit")
-        bootServer(client)
-    }
-
-    fun bootServer(context: SuperColliderContext) {
-        SuperColliderWriterContext.wrap(context) {
-            run {
-                appendBlock("Task") {
-                    +"s.bootSync"
-                    +"VSTPlugin.search"
-                    busses.run { reallocateBusses() }
-                    buffers.run { initializeBuffers() }
-                    instruments.run { loadVSTPlugins() }
-                    globalControls.run { setBusValues() }
-                    groups.run { setupGroups() }
-                    for (obj in score.objects) obj.run { serverBooted(this@wrap) }
-                    +serverSetup.editor.result.now.code
-                    +"\"Server is setup\".postln"
-                }
-                appendLine(".play;")
-            }
-        }
-    }
-
-    fun prepareForPlay(context: SuperColliderContext) {
-        SuperColliderWriterContext.wrap(context) {
-            run(beforePlay.editor.result.now.code)
-            flowGraph.run { setupAudioFlow() }
-            instruments.run { addSynthDefs() }
-            groups.run { setupGroups() }
-        }
+        client.run("s.reboot;")
     }
 
     companion object {

@@ -3,13 +3,12 @@ package xenakis.ui
 import hextant.fx.registerShortcuts
 import javafx.scene.control.Button
 import reaktive.value.reactiveVariable
-import xenakis.impl.SuperColliderClient
 import xenakis.model.GroupObject
 import xenakis.model.GroupRegistry
 
 class GroupRegistryPane(
     private val registry: GroupRegistry
-) : ObjectRegistryPane<GroupObject>(registry), GroupRegistry.View {
+) : SuperColliderObjectRegistryPane<GroupObject>(registry), GroupRegistry.View {
     init {
         registry.addView(this)
     }
@@ -56,10 +55,6 @@ class GroupRegistryPane(
         boxes.children.add(toIndex, box)
         updateMoveButtonsAround(fromIndex)
         updateMoveButtonsAround(toIndex)
-    }
-
-    override fun reload() {
-        registry.run { context[SuperColliderClient].setupGroups() }
     }
 
     override fun addObject(name: String) {

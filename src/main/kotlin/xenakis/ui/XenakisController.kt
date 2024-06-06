@@ -13,11 +13,13 @@ import hextant.undo.UndoManager
 import javafx.application.Platform
 import javafx.stage.FileChooser
 import javafx.stage.Stage
-import reaktive.Observer
-import xenakis.impl.*
+import xenakis.impl.ConsoleMonitor
+import xenakis.impl.OSCSuperColliderClient
+import xenakis.impl.StatusListener.StatusUpdate
+import xenakis.impl.SuperColliderClient
+import xenakis.impl.registerImplementationsFromClasspath
 import xenakis.model.ScoreObjectRegistry
 import xenakis.model.Settings
-import xenakis.model.SuffixGenerator
 import xenakis.model.XenakisProject
 import java.io.File
 import java.util.prefs.Preferences
@@ -46,8 +48,6 @@ class XenakisController(private val primaryStage: Stage) {
 
     private var _currentProject: XenakisProject? = null
 
-    private lateinit var statusListener: Observer
-
     var currentProject: XenakisProject
         get() = _currentProject ?: error("no project opened")
         private set(project) {
@@ -59,7 +59,6 @@ class XenakisController(private val primaryStage: Stage) {
             listeners { displayProject(currentProject) }
         }
 
-    val isProjectOpened get() = _currentProject != null
 
     var isSuperColliderReady: Boolean = false
         private set
@@ -80,7 +79,6 @@ class XenakisController(private val primaryStage: Stage) {
         context = HextantCore.defaultContext()
         SnapshotAware.Serializer.reconstructionContext = context
         context[XenakisApp.primaryStage] = primaryStage
-        context[SuffixGenerator] = SuffixGenerator.CountingSuffixGenerator()
         context[Settings] = loadSettings()
         context.registerImplementationsFromClasspath()
         HextantCore.apply(context, PluginBuilder.Phase.Initialize, null)
@@ -98,17 +96,16 @@ class XenakisController(private val primaryStage: Stage) {
             client = OSCSuperColliderClient.create()
             client.consoleMonitor.addListener(ConsoleMonitor.PipeToSystemOut)
             context[SuperColliderClient] = client
-            statusListener = client.statusListener.statusUpdates.observe { _, status ->
-                if (status == UDPSuperColliderClient.StatusUpdate.ServerBooted) {
-                    isSuperColliderReady = true
-                    Platform.runLater {
-                        listeners { readyToPlay() }
-                    }
-                } else if (status == UDPSuperColliderClient.StatusUpdate.ReadyToBoot) {
-                    isSuperColliderReady = false
-                    Platform.runLater {
-                        listeners { waitingForBoot() }
-                    }
+            client.statusListener.on(StatusUpdate.ServerBooted) {
+                isSuperColliderReady = true
+                Platform.runLater {
+                    listeners { readyToPlay() }
+                }
+            }
+            client.statusListener.on(StatusUpdate.ReadyToBoot) {
+                isSuperColliderReady = false
+                Platform.runLater {
+                    listeners { waitingForBoot() }
                 }
             }
         }

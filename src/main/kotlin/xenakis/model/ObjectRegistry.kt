@@ -34,6 +34,7 @@ abstract class ObjectRegistry<O : NamedObject> {
     fun all(): List<O> = objects
 
     fun has(name: String) = objects.any { it.name.now == name }
+    fun has(obj: O) = obj in objects
 
     open fun add(obj: O, idx: Int = objects.size) {
         objects.add(idx, obj)

@@ -6,7 +6,7 @@ import reaktive.value.ReactiveInt
 import reaktive.value.ReactiveVariable
 import reaktive.value.now
 import reaktive.value.reactiveVariable
-import xenakis.impl.SuperColliderClient
+import xenakis.impl.ScWriter
 
 @Serializable
 class ReferencedBuffer(override val mutableName: ReactiveVariable<String>) : BufferObject() {
@@ -21,23 +21,26 @@ class ReferencedBuffer(override val mutableName: ReactiveVariable<String>) : Buf
     override val variableName: String
         get() = name.now
 
-    override val initializationCode: String
-        get() = ""
+    override fun ScWriter.allocateServerObject() {}
 
-    override fun sync(client: SuperColliderClient) {
+    override fun ScWriter.freeServerObject() {}
+
+    override fun ScWriter.addToServer() {}
+
+    override fun rename(newName: String) {
+        mutableName.set(newName)
+        sync()
+    }
+
+    override fun remove() {}
+
+    override fun sync(writer: ScWriter) {
         val channels = client.eval("$variableName.numChannels").join()
         val frames = client.eval("if ($variableName != nil) { $variableName.numFrames } { nil }").join()
         _channels.set(channels.toIntOrNull() ?: 0)
         _frames.set(frames.toIntOrNull() ?: 0)
         contentChange.fire()
     }
-
-    override fun rename(newName: String) {
-        mutableName.set(newName)
-        sync(context[SuperColliderClient])
-    }
-
-    override fun onRemove() {}
 
     companion object {
         fun create(name: String) = ReferencedBuffer(reactiveVariable(name))

@@ -3,7 +3,7 @@ package xenakis.model
 import kotlinx.serialization.Serializable
 import reaktive.value.*
 import xenakis.impl.FileSerializer
-import xenakis.impl.SuperColliderClient
+import xenakis.impl.ScWriter
 import xenakis.impl.superColliderPath
 import java.io.File
 import java.util.logging.Level
@@ -26,10 +26,13 @@ data class FileBuffer(
     override val frames: ReactiveInt
         get() = _frames
 
+    override fun ScWriter.allocateServerObject() {
+        +"$variableName = Buffer.read(s, ${referencedFile.now.superColliderPath})"
+    }
+
     fun loadFile(file: File) {
         sourceFile.set(file)
-        updateInfo()
-        reallocate()
+        client.run { sync(writer) }
         contentChange.fire()
     }
 
@@ -40,12 +43,9 @@ data class FileBuffer(
         null
     }
 
-    override val initializationCode: String
-        get() = "$variableName = Buffer.read(s, ${referencedFile.now.superColliderPath})"
-
-    override fun sync(client: SuperColliderClient) {
+    override fun sync(writer: ScWriter) {
+        super.sync(writer)
         updateInfo()
-        client.run("if ($variableName == nil) { $initializationCode; };")
     }
 
     private fun updateInfo() {
