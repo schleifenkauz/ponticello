@@ -4,6 +4,7 @@ import hextant.context.Context
 import hextant.core.editor.ListenerManager
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
+import xenakis.impl.ScWriter
 import xenakis.impl.SuperColliderClient
 import xenakis.impl.SuperColliderContext
 import xenakis.sc.NumericalControlSpec
@@ -26,7 +27,7 @@ class GlobalControls(private val controls: MutableList<GlobalControl>) : KnobCon
         }
     }
 
-    fun SuperColliderContext.setBusValues() {
+    fun ScWriter.setBusValues() {
         for (control in controls) {
             setupBus(control)
         }

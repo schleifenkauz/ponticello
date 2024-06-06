@@ -15,9 +15,9 @@ abstract class SuperColliderObjectRegistry<O : SuperColliderObject> : ObjectRegi
         }
     }
 
-    fun initialize(writer: ScWriter) {
+    fun ScWriter.allocateAll() {
         for (obj in objects) {
-            obj.run { writer.allocateServerObject() }
+            obj.run { allocateServerObject() }
         }
     }
 

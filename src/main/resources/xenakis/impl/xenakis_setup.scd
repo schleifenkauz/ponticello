@@ -5,6 +5,23 @@ SynthDef(\vst_instrument, {
 	snd = VSTPlugin.ar(nil, 2);
 	Out.ar(out, snd);
 }).add;
+SynthDef(\diskout, {
+	arg bus = 0, buf;
+	DiskOut.ar(buf, In.ar(bus, 2));
+}).add;
+
+~record_buf = Buffer.alloc(s, 65536, 2, );
+~tmp_path = "~/.xenakis/tmp.wav".standardizePath;
+'recording to '.post; ~tmp_path.postln;
+~record_buf.write(~tmp_path, "wav", "int16", 0, 0, true);
+
+~startRecording = { arg bus = 0;
+	~record_synth = Synth.tail(nil, \diskout, [bus:bus, buf:~record_buf]);
+};
+
+~stopRecording = {
+	~record_synth.free;
+};
 
 ServerBoot.add {
 	Task {

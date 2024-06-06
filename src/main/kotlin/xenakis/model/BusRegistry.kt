@@ -6,11 +6,10 @@ import bundles.set
 import hextant.context.Context
 import kotlinx.serialization.Serializable
 import reaktive.value.now
-import xenakis.impl.SuperColliderContext
 import xenakis.sc.Rate
 
 @Serializable
-class BusRegistry(private val busses: MutableList<BusObject>) : ObjectRegistry<BusObject>() {
+class BusRegistry(private val busses: MutableList<BusObject>) : SuperColliderObjectRegistry<BusObject>() {
     override val objects: MutableList<BusObject>
         get() = busses
 
@@ -23,16 +22,6 @@ class BusRegistry(private val busses: MutableList<BusObject>) : ObjectRegistry<B
     }
 
     override fun getDefault() = busses.find { b -> b.isOutput } ?: error("No output bus found in registry")
-
-    override fun onRemoved(obj: BusObject, idx: Int) {
-        obj.remove()
-    }
-
-    fun SuperColliderContext.syncBusses() = run {
-        for (bus in busses) {
-            bus.sync()
-        }
-    }
 
     fun filter(rate: Rate?, channels: Int): List<BusObject> = busses.filter { b ->
         (rate == null || b.rate.now == rate) && (channels == -1 || b.channels.now == channels)

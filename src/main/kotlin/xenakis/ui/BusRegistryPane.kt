@@ -7,18 +7,13 @@ import javafx.scene.input.TransferMode
 import reaktive.value.fx.asObservableValue
 import reaktive.value.fx.asProperty
 import reaktive.value.now
-import xenakis.impl.SuperColliderClient
 import xenakis.model.BusObject
 import xenakis.model.BusRegistry
 import xenakis.sc.Rate
 
-class BusRegistryPane(private val busses: BusRegistry) : ObjectRegistryPane<BusObject>(busses) {
+class BusRegistryPane(private val busses: BusRegistry) : SuperColliderObjectRegistryPane<BusObject>(busses) {
     init {
         busses.addView(this)
-    }
-
-    override fun reload() {
-        busses.run { context[SuperColliderClient].syncBusses() }
     }
 
     override fun addObject(name: String) {

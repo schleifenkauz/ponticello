@@ -7,6 +7,8 @@
   - how to display/change velocity?
   - control overall arguments
   - extra arguments for each note?
+  - resizing with shift means stretching/squishing
+  - resizing vertically without shift means adjusting pitch range
 - usage in ad hoc synths
 
 ### sound file objects

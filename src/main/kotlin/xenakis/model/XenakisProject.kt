@@ -16,7 +16,6 @@ import xenakis.impl.SuperColliderClient
 import xenakis.sc.code
 import xenakis.sc.editor.CodeBlockEditor
 import java.io.File
-import java.io.Writer
 
 @Serializable
 class XenakisProject private constructor(
@@ -73,17 +72,22 @@ class XenakisProject private constructor(
         file.writeText(str)
     }
 
-    fun exportAsScript(writer: Writer) {
-        val scWriter = ScWriter(writer)
-        beforePlay.editor.result.now.code(scWriter)
-        score.writePlayerTask(scWriter, startTime = 0.0, taskName = "play_score", prefix = "")
+    fun exportAsScript(output: Appendable) {
+        with(ScWriter(output)) {
+            serverSetup.editor.result.now.code(writer)
+            beforePlay.editor.result.now.code(writer)
+            groups.run { allocateAll() }
+            groups.run { allocateAll() }
+            flowGraph.run { setupAudioFlow() }
+            globalControls.run { setBusValues() }
+            instruments.run { allocateAll() }
+            score.writePlayerTask(writer, startTime = 0.0, taskName = "play_score", prefix = "")
+        }
     }
 
-    fun playScore(fromTime: Double) {
-        client.run {
-            beforePlay.editor.result.now.code(this)
-            score.writePlayerTask(this, fromTime, taskName = "play_score", prefix = "")
-        }
+    fun ScWriter.playScore(fromTime: Double) {
+        beforePlay.editor.result.now.code(this)
+        score.writePlayerTask(this, fromTime, taskName = "play_score", prefix = "")
     }
 
     private fun bootServer() {

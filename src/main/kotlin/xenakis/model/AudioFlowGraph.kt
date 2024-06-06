@@ -118,7 +118,7 @@ class AudioFlowGraph(
 
     }
 
-    private fun ScWriter.setupAudioFlow() {
+    fun ScWriter.setupAudioFlow() {
         var prev = "s.defaultGroup"
         for (flow in order) {
             val source = flow.source.get()

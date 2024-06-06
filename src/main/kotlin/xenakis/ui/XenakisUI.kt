@@ -270,7 +270,7 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
             stopBtn.isDisable = true
             recordBtn.isDisable = true
         }
-        return HBox(playBtn, stopBtn, recordBtn)
+        return HBox(playBtn, stopBtn /*recordBtn*/)
     }
 
     private fun toggleRecord() {

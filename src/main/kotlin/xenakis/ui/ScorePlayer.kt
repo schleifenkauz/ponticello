@@ -72,14 +72,19 @@ class ScorePlayer(
     fun play() {
         if (isPlaying) return
         val startTime = scoreView.getTime(playHead.layoutX - PLAY_HEAD_WIDTH)
-        project.playScore(startTime)
+        client.run {
+            +"~startRecording.value(0)"
+            project.run { playScore(startTime) }
+        }
         isPlaying = true
     }
 
     fun pause() {
         isPlaying = false
-        client.run("s.freeAll;")
-        client.run("~play_score.stop;")
+        client.run {
+            +"s.freeAll"
+            +"~play_score.stop"
+        }
     }
 
     fun reset() {

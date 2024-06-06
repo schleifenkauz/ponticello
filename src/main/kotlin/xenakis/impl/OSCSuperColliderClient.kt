@@ -8,7 +8,6 @@ import com.illposed.osc.transport.OSCPortIn
 import com.illposed.osc.transport.OSCPortOut
 import com.illposed.osc.transport.OSCPortOutBuilder
 import xenakis.impl.StatusListener.StatusUpdate
-import java.net.InetAddress
 import java.util.concurrent.CompletableFuture
 
 class OSCSuperColliderClient(
@@ -79,13 +78,6 @@ class OSCSuperColliderClient(
                 .build()
             val receiver = OSCPortIn(8000)
             return OSCSuperColliderClient(sclang, sender, receiver)
-        }
-
-        @JvmStatic
-        fun main(args: Array<String>) {
-            val out = OSCPortOut(InetAddress.getLocalHost(), OSCPortOut.DEFAULT_SC_LANG_OSC_PORT)
-            out.send(OSCMessage("/run", listOf("'hello world'.postln")))
-            Thread.sleep(5000)
         }
     }
 }
