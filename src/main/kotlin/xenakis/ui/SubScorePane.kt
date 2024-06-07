@@ -1,6 +1,7 @@
 package xenakis.ui
 
 import hextant.context.Context
+import xenakis.impl.Point
 import xenakis.model.ScoreObjectGroup
 
 class SubScorePane(
@@ -15,7 +16,14 @@ class SubScorePane(
     override val pixelsPerSecond: Double
         get() = parent.pixelsPerSecond
 
-    override fun snapToGrid(x: Double): Double = parent.snapToGrid(x)
+    override fun snapToGrid(x: Double, y: Double): Point {
+        var coords = this.localToScreen(x, y)
+        coords = parent.screenToLocal(coords)
+        coords = parent.snapToGrid(coords.x, coords.y).point2d
+        coords = parent.localToScreen(coords)
+        coords = this.screenToLocal(coords)
+        return Point(coords)
+    }
 
     override val xAccuracy: Int
         get() = parent.xAccuracy

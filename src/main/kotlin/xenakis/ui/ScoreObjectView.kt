@@ -4,7 +4,6 @@ import hextant.context.Context
 import hextant.fx.initHextantScene
 import hextant.fx.label
 import hextant.undo.UndoManager
-import javafx.css.PseudoClass
 import javafx.geometry.BoundingBox
 import javafx.geometry.Bounds
 import javafx.geometry.HorizontalDirection
@@ -51,6 +50,7 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
         get() = reactiveVariable(BLACK)
     protected val backgroundColor by lazy { myObject.associatedColor.orElse(defaultBackgroundColor) }
     protected open val borderColorWhenSelected: Color get() = backgroundColor.now.invert()
+    protected open val nonSelectedBorderColor: Color get() = Color.GRAY
     protected val colorPicker: ColorPicker = ColorPicker() styleClass "button"
 
     private lateinit var window: SubWindow
@@ -128,7 +128,7 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
         alwaysUpdateCursor()
         initializeDragging()
         setBackground()
-        border = solidBorder(Color.GRAY, width = 1.0)
+        border = solidBorder(nonSelectedBorderColor, width = 2.0)
         setupCutting()
         initializeHeader()
         minimalSetup()
@@ -189,7 +189,7 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
 
     open fun muteToggled() {
         muteUnmuteBtn.graphic = if (myObject.muted) Icon.Mute.getView() else Icon.Unmute.getView()
-        pseudoClassStateChanged(PseudoClass.getPseudoClass("muted"), myObject.muted)
+        setPseudoClassState("muted", myObject.muted)
     }
 
     fun reassignedControl(parameter: String, oldControl: ParameterControl, newControl: ParameterControl) {
@@ -280,10 +280,10 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
     }
 
     fun setSelected(value: Boolean) {
-        if (value) {
-            border = solidBorder(borderColorWhenSelected, width = 2.0)
+        border = if (value) {
+            solidBorder(borderColorWhenSelected, width = 2.0)
         } else {
-            border = solidBorder(Color.GRAY, width = 2.0)
+            solidBorder(nonSelectedBorderColor, width = 2.0)
         }
         for (obj in pane.score.objects) {
             if (obj is ClonedObject && obj.original == myObject) {
@@ -296,11 +296,11 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
     }
 
     private fun setCloneOfSelected(value: Boolean) {
-        pseudoClassStateChanged(PseudoClass.getPseudoClass("copy-of-selected"), value)
+        setPseudoClassState("copy-of-selected", value)
     }
 
     private fun setOriginalOfSelected(value: Boolean) {
-        pseudoClassStateChanged(PseudoClass.getPseudoClass("original-of-selected"), value)
+        setPseudoClassState("original-of-selected", value)
     }
 
     private fun delete() {
@@ -367,8 +367,7 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
         x >= 0.0 && y >= 0.0 && x + width <= pane.width && y + height <= pane.height
 
     private fun relocateBy(old: Bounds, dx: Double, dy: Double) {
-        var x = pane.snapToGrid(old.minX + dx)
-        var y = (old.minY + dy)
+        var (x, y) = pane.snapToGrid(old.minX + dx, (old.minY + dy))
         x = x.coerceIn(0.0, pane.width - width)
         y = y.coerceIn(0.0, pane.height - height)
         relocateObject(x, y)
@@ -434,10 +433,10 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
     }
 
     private fun resize(x: Double, y: Double, width: Double, height: Double, ev: MouseEvent, cursor: Cursor) {
-        val snappedX = pane.snapToGrid(x)
-        val snappedWidth = pane.snapToGrid(width)
+        val (snappedX, snappedY) = pane.snapToGrid(x, y)
+        val (snappedWidth) = pane.snapToGrid(width, snappedY)
         if (snappedWidth < 10.0 || height < 10.0) return
-        if (!isInParentBounds(snappedX, y, snappedWidth, height)) return
+        if (!isInParentBounds(snappedX, snappedY, snappedWidth, height)) return
         val oldWidth = getDisplayWidth()
         val oldHeight = myObject.height
         resizeObject(snappedWidth, height, ev, cursor)

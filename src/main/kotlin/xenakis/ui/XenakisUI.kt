@@ -54,6 +54,7 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
     private lateinit var scoreView: ScoreView
     private lateinit var flowGraphWindow: SubWindow
     private lateinit var globalControlsWindow: SubWindow
+    val gridConfig: GridConfig = GridConfig()
     private val settingsWindow: Stage
 
     private lateinit var playBtn: Button
@@ -217,7 +218,7 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
             10.0,
             HBox(
                 10.0,
-                fileBar, undoRedoBar, playerBar,
+                fileBar, undoRedoBar, playerBar, gridConfig,
                 toolSelector styleClass "toolbar-part", layoutBar
             ), HBox(
                 contextBar styleClass "toolbar-part",
@@ -324,18 +325,26 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
             on("Ctrl+SPACE") { togglePlay() }
             on("Ctrl+PERIOD") { stop() }
 
-            on("Alt?+P") { toolSelector.select(Tool.Pointer) }
-            on("Alt?+S") { toolSelector.select(Tool.Synth) }
-            on("Alt?+T") { toolSelector.select(Tool.Task) }
-            on("Alt?+E") { toolSelector.select(Tool.Envelope) }
-            on("Alt?+M") { toolSelector.select(Tool.Memo) }
-            on("Alt?+A") { toolSelector.select(Tool.AddTime) }
-
-            on("DELETE") { scoreView.removeSelected() }
             on("ESCAPE") {
                 scoreView.clearNewShape()
-                scoreView.selector.deselectAll()
+                context[ScoreObjectSelector].deselectAll()
+                toolSelector.select(Tool.Pointer)
             }
+            on("Alt?+DIGIT1") { toolSelector.select(Tool.Synth) }
+            on("Alt?+DIGIT2") { toolSelector.select(Tool.Task) }
+            on("Alt?+DIGIT3") { toolSelector.select(Tool.Envelope) }
+            on("Alt?+DIGIT4") { toolSelector.select(Tool.Memo) }
+            on("Alt?+DIGIT5") { toolSelector.select(Tool.PianoRoll) }
+            on("Alt?+DIGIT6") { toolSelector.select(Tool.TempoGrid) }
+            on("Alt?+DIGIT7") { toolSelector.select(Tool.Group) }
+            on("Alt?+DIGIT8") { toolSelector.select(Tool.Cut) }
+            on("Alt?+DIGIT9") { toolSelector.select(Tool.AddTime) }
+
+            on("Alt?+G") { gridConfig.gridToggle.toggle() }
+            on("Alt?+S") { gridConfig.snapToggle.toggle() }
+
+            on("DELETE") { scoreView.removeSelected() }
+
             on("Ctrl+D") {
                 val view = scoreView.selector.singleSelected.now
                 if (view is SynthObjectView) {

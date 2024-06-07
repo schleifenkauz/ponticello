@@ -93,7 +93,7 @@ Slider.control-detail-editor {
     -fx-background-radius: 6px;
     -fx-border-radius: 6px;
     -fx-border-color: transparent;
-    -fx-border-width: 1px;
+    -fx-border-width: 2px;
 }
 
 .icon-button:hover {
@@ -101,8 +101,8 @@ Slider.control-detail-editor {
 }
 
 .icon-button:selected {
-    -fx-border-width: 2px;
     -fx-border-color: black;
+    -fx-background-color: #351919 !important;
 }
 
 .audio-flow-graph {
@@ -396,7 +396,7 @@ Slider.control-detail-editor {
     -fx-border-width: 1px;
     -fx-border-radius: 5px;
     -fx-spacing: 3px;
-    -fx-padding: 0 10px 0 10px;
+    -fx-padding: 0px 10px 0px 10px;
     -fx-pref-height: 50px;
     -fx-alignment: center-left;
     -fx-background-color: rgba(0, 0, 0, 0.15);
@@ -549,7 +549,7 @@ Slider.control-detail-editor {
     -fx-font-weight: 300;
 }
 
-.tempo-grid {
-    -fx-border-width: 2px !important;
-    -fx-border-color: green !important;
+.grid-marker-line {
+    -fx-stroke: white;
+    -fx-stroke-width: 3px;
 }

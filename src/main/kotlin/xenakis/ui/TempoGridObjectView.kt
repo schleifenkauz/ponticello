@@ -14,12 +14,14 @@ import reaktive.value.reactiveValue
 import xenakis.model.TempoGridObject
 import kotlin.math.ceil
 
-class TempoGridObjectView(private val obj: TempoGridObject) : ScoreObjectView(obj) {
+class TempoGridObjectView(val obj: TempoGridObject) : ScoreObjectView(obj) {
     private val area = Pane()
+    private val marker = Line() styleClass "grid-marker-line"
 
     init {
         styleClass("tempo-grid")
         children.add(area)
+        marker.endYProperty().bind(heightProperty())
     }
 
     override val supportedActions: List<Icon>
@@ -28,11 +30,13 @@ class TempoGridObjectView(private val obj: TempoGridObject) : ScoreObjectView(ob
     override val borderColorWhenSelected: Color
         get() = Color.GREEN
 
+    override val nonSelectedBorderColor: Color
+        get() = Color.TRANSPARENT
+
     override fun initialize(parent: ScorePane) {
         super.initialize(parent)
         createConfigurationBar(header, obj)
-        widthProperty().addListener { _ -> rescale() }
-        heightProperty().addListener { _ -> rescale() }
+        marker.visibleProperty().bind(context[XenakisUI].gridConfig.snapToggle.selectedProperty())
     }
 
     override fun rescale() {
@@ -58,7 +62,7 @@ class TempoGridObjectView(private val obj: TempoGridObject) : ScoreObjectView(ob
             area.children.add(barLine)
             val barNumberDist = pane.pixelsPerSecond / barsPerSecond
             if (barNumberDist > MIN_BAR_NUMBER_DIST) {
-                val barNumber = Text((barX - 5).coerceAtLeast(0.0), 5.0, bar.toString())
+                val barNumber = Text((barX - 5).coerceAtLeast(0.0), 12.0, bar.toString())
                     .styleClass("bar-number")
                 area.children.add(barNumber)
             }
@@ -86,6 +90,16 @@ class TempoGridObjectView(private val obj: TempoGridObject) : ScoreObjectView(ob
         val secondsPerBeat = 60.0 / obj.beatsPerMinute.now
         val t = ((bar * obj.beatsPerBar.now) + beat + (tick.toDouble() / obj.ticksPerBeat.now)) * secondsPerBeat
         return pane.getWidth(t)
+    }
+
+    fun unmark() {
+        area.children.remove(marker)
+    }
+
+    fun mark(x: Double) {
+        if (marker !in area.children) area.children.add(marker)
+        marker.startX = x
+        marker.endX = x
     }
 
     override val defaultBackgroundColor: ReactiveValue<Color>

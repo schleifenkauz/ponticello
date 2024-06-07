@@ -34,18 +34,16 @@
 - SynthDefs
 - common parameter definitions
 
-### Better grid functionality
-
-- time grid in seconds (display on/off)
-- beat grid (display on/off)
-  - specify tempo (beats/second), beats per bar (on/off), and beat subdivisions (on/off)
-- can snap to bars/beats/subdivisions/custom amount in ms
-
 ### Copying and pasting score objects
 
 - ability to copy and paste whole time ranges
 
 ### Logging
+
+### Stretching time regions
+
+- select time, then drag with shift
+- stretch objects or only reposition?
 
 ### Minor
 

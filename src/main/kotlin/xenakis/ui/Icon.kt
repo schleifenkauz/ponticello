@@ -1,6 +1,8 @@
 package xenakis.ui
 
 import javafx.scene.control.Button
+import javafx.scene.control.ButtonBase
+import javafx.scene.control.ToggleButton
 import javafx.scene.control.Tooltip
 import javafx.scene.image.Image
 import javafx.scene.image.ImageView
@@ -45,6 +47,8 @@ enum class Icon {
     Knob,
     Midi,
     Tempo,
+    Snap,
+    TimeGrid,
 
     /*Color,*/
     FileReload,
@@ -61,20 +65,29 @@ enum class Icon {
         val view = ImageView(image)
         view.isPreserveRatio = true
         view.fitWidth = size
-        view.isSmooth = true
+        view.isSmooth = false
         return view
     }
 
     fun button(radius: Double = DEFAULT_RADIUS, action: String? = null, onAction: (Button) -> Unit = {}): Button =
         Button().apply {
-            graphic = getView(size = radius * 1.25)
-            /*shape = Circle(radius)*/
-            tooltip = action?.let(::Tooltip)
-            setMinSize(radius * 2, radius * 2)
-            setMaxSize(radius * 2, radius * 2)
+            configureButton(radius, action)
             setOnAction { onAction(this) }
-            neverHGrow()
-            styleClass("icon-button")
+        }
+
+    private fun ButtonBase.configureButton(radius: Double, description: String?) {
+        graphic = getView(size = radius * 1.25)
+        tooltip = description?.let(::Tooltip)
+        setMinSize(radius * 2, radius * 2)
+        setMaxSize(radius * 2, radius * 2)
+        neverHGrow()
+        styleClass("icon-button")
+    }
+
+    fun toggleButton(radius: Double = DEFAULT_RADIUS, description: String? = null): ToggleButton =
+        ToggleButton().apply {
+            configureButton(radius, description)
+            styleClass("icon-toggle")
         }
 
     companion object {

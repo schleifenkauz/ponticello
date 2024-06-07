@@ -4,9 +4,12 @@ import hextant.context.Context
 import hextant.fx.registerShortcuts
 import javafx.scene.shape.Line
 import javafx.scene.text.Text
+import xenakis.impl.Point
 import xenakis.impl.step
 import xenakis.model.Score
+import xenakis.ui.GridConfig.SnapOption.Seconds
 import kotlin.math.exp
+import kotlin.math.roundToInt
 
 class ScoreView(score: Score, context: Context) : ScorePane(score, context) {
     private val positionTracker = Line() styleClass "mouse-tracker-line"
@@ -19,7 +22,27 @@ class ScoreView(score: Score, context: Context) : ScorePane(score, context) {
     override val pixelsPerSecond: Double
         get() = width / (displayEnd - displayStart)
 
-    override fun snapToGrid(x: Double): Double = x.snap(timeSnap)
+    override fun snapToGrid(x: Double, y: Double): Point {
+        val gridConfig = context[XenakisUI].gridConfig
+        if (!gridConfig.snapToggle.isSelected) return Point(x, y)
+        when (val option = gridConfig.snapOption.value ?: Seconds) {
+            Seconds -> return Point(getX(getTime(x).roundToInt().toDouble()), y)
+            else -> {
+                val grids = allViews.filterIsInstance<TempoGridObjectView>()
+                val relevantGrids = grids.filter { g -> x in g.layoutX..g.width }
+                val nearestGrid = relevantGrids.minByOrNull { g -> g.verticalDist(y) }
+                for (grid in grids) {
+                    if (grid != nearestGrid) grid.unmark()
+                }
+                if (nearestGrid == null) return Point(x, y)
+                var t = getTime(x)
+                t = nearestGrid.obj.snapToGrid(t, option)
+                val snappedX = getX(t)
+                nearestGrid.mark(snappedX - nearestGrid.layoutX)
+                return Point(snappedX, y)
+            }
+        }
+    }
 
     init {
         listenForEvents()
@@ -56,6 +79,7 @@ class ScoreView(score: Score, context: Context) : ScorePane(score, context) {
     }
 
     private fun displayTimeGrid() {
+        val gridConfig = context[XenakisUI].gridConfig
         var idx = QUANTIZED_PIXELS_PER_SECOND.binarySearchBy(pixelsPerSecond) { s -> s }
         if (idx < 0) idx = (-(idx + 1)).coerceAtMost(QUANTIZED_PIXELS_PER_SECOND.size - 1)
         val quantizedPixelsPerSecond = QUANTIZED_PIXELS_PER_SECOND[idx]
@@ -68,13 +92,15 @@ class ScoreView(score: Score, context: Context) : ScorePane(score, context) {
             l.viewOrder = -100.0
             l.startX = x
             l.endX = x
-            l.startYProperty().bind(heightProperty().subtract(25))
-            l.endYProperty().bind(heightProperty())
+            l.startYProperty().bind(heightProperty().subtract(40))
+            l.endYProperty().bind(heightProperty().subtract(5))
+            l.visibleProperty().bind(gridConfig.gridToggle.selectedProperty())
             children.add(l)
             val timeCode = timeCode(t, accuracy)
             val txt = Text(timeCode).styleClass("grid-time-code")
-            txt.relocate(x - 8, height - 20)
-            txt.layoutYProperty().bind(heightProperty().subtract(20))
+            txt.x = x - 8
+            txt.yProperty().bind(heightProperty().subtract(40))
+            txt.visibleProperty().bind(gridConfig.gridToggle.selectedProperty())
             children.add(txt)
         }
     }
@@ -86,19 +112,19 @@ class ScoreView(score: Score, context: Context) : ScorePane(score, context) {
     }
 
     private fun setupPositionTracker() {
-        positionTracker.startYProperty().bind(heightProperty())
-        positionTracker.endYProperty().bind(heightProperty().subtract(25))
+        positionTracker.startYProperty().bind(heightProperty().subtract(40))
+        positionTracker.endYProperty().bind(heightProperty().subtract(5))
         positionTracker.viewOrder = 100.0
         setOnMouseEntered { ev ->
             if (!ev.x.isNaN()) {
-                positionTracker.layoutX = snapToGrid(ev.x)
+                positionTracker.layoutX = snapToGrid(ev.x, ev.y).x
                 children.add(positionTracker)
                 ev.consume()
             }
         }
         setOnMouseMoved { ev ->
             if (!ev.x.isNaN()) {
-                positionTracker.layoutX = snapToGrid(ev.x)
+                positionTracker.layoutX = snapToGrid(ev.x, ev.y).x
                 ev.consume()
             }
         }

@@ -118,7 +118,7 @@ class EnvelopeEditor(
     }
 
     private fun transformXToTime(x: Double): Double =
-        xTransform.unmap(parentPane.snapToGrid(x)).coerceIn(xTransform.sourceRange)
+        xTransform.unmap(parentPane.snapToGrid(x, associatedObject.y).x).coerceIn(xTransform.sourceRange)
 
     private fun transformYToValue(y: Double) = yTransform.unmap(y).snap(valueGrid).coerceIn(yTransform.sourceRange)
 

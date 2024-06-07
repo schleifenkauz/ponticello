@@ -166,13 +166,13 @@ fun Node.setupDropArea(condition: (db: Dragboard) -> Boolean, onDrop: (ev: DragE
     }
     addEventHandler(DragEvent.DRAG_ENTERED) { ev ->
         if (condition(ev.dragboard)) {
-            pseudoClassStateChanged(PseudoClass.getPseudoClass("drop-possible"), true)
+            setPseudoClassState("drop-possible", true)
             ev.consume()
         }
     }
     addEventHandler(DragEvent.DRAG_EXITED) { ev ->
         if (condition(ev.dragboard)) {
-            pseudoClassStateChanged(PseudoClass.getPseudoClass("drop-possible"), false)
+            setPseudoClassState("drop-possible", false)
             ev.consume()
         }
     }
@@ -215,4 +215,14 @@ fun plural(noun: String) = if (noun.endsWith("s")) "${noun}es" else "${noun}s"
 
 fun Node.setPseudoClassState(name: String, value: Boolean) {
     pseudoClassStateChanged(PseudoClass.getPseudoClass(name), value)
+}
+
+fun Region.verticalDist(y: Double) = when {
+    y < layoutY -> layoutY - y
+    y > layoutY + height -> y - (layoutY + height)
+    else -> 0.0
+}
+
+fun ToggleButton.toggle() {
+    isSelected = !isSelected
 }

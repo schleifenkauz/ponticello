@@ -15,6 +15,7 @@ import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
 import reaktive.value.now
 import xenakis.impl.Arrow
+import xenakis.impl.Point
 import xenakis.model.*
 import xenakis.model.Envelope
 import xenakis.sc.Identifier
@@ -43,7 +44,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
     protected abstract val displayEnd: Double
 
     abstract val xAccuracy: Int
-    abstract fun snapToGrid(x: Double): Double
+    abstract fun snapToGrid(x: Double, y: Double): Point
 
     abstract val pixelsPerSecond: Double
     fun getX(time: Double) = (time - displayStart) * pixelsPerSecond
@@ -205,8 +206,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
         val selectedTool = ui.toolSelector.selected.value!!
         if (newObjectArea != null) return
         children.remove(selectedArea)
-        val x = snapToGrid(ev.x)
-        val y = ev.y
+        val (x, y) = snapToGrid(ev.x, ev.y)
         val rect = Rectangle(x, y, 0.0, 0.0)
         when (selectedTool) {
             Synth -> {
@@ -219,7 +219,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
             Tool.Envelope -> rect.fill = WHITE
             Memo -> rect.fill = BLACK
 
-            Compound -> {
+            Group -> {
                 rect.stroke = WHITE
                 rect.fill = rgb(0, 0, 0, 0.3)
             }
@@ -255,8 +255,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
 
     private fun mouseDragged(ev: MouseEvent) {
         val newObj = newObjectArea
-        val x = snapToGrid(ev.x)
-        val y = ev.y
+        val (x, y) = snapToGrid(ev.x, ev.y)
         when {
             newObj != null -> {
                 newObj.width = x - newObj.x
@@ -396,7 +395,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
                 addObject(MemoObject(name, "", rect.width), rect)
             }
 
-            Compound -> {
+            Group -> {
                 val name = context[ScoreObjectRegistry].availableName("group")
                 val objects = viewsInside(rect.boundsInParent).map { it.myObject }
                 for (obj in objects) {

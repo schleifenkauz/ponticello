@@ -8,7 +8,6 @@ import hextant.fx.initHextantScene
 import hextant.fx.registerShortcuts
 import hextant.serial.EditorRoot
 import hextant.undo.UndoManager
-import javafx.css.PseudoClass
 import javafx.geometry.Bounds
 import javafx.geometry.HorizontalDirection.LEFT
 import javafx.geometry.HorizontalDirection.RIGHT
@@ -65,12 +64,12 @@ class AudioFlowGraphPane(
         }
         addEventHandler(DragEvent.DRAG_ENTERED) { ev ->
             if (ev.dragboard.hasContent(BusObject.DATA_FORMAT)) {
-                pseudoClassStateChanged(PseudoClass.getPseudoClass("drop-possible"), true)
+                setPseudoClassState("drop-possible", true)
             }
             ev.consume()
         }
         addEventHandler(DragEvent.DRAG_EXITED) { ev ->
-            pseudoClassStateChanged(PseudoClass.getPseudoClass("drop-possible"), false)
+            setPseudoClassState("drop-possible", false)
             ev.consume()
         }
         addEventHandler(DragEvent.DRAG_DROPPED) { ev ->
