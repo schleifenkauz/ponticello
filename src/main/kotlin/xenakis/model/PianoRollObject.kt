@@ -121,6 +121,7 @@ class PianoRollObject(
     }
 
     override fun writeStartCode(writer: ScWriter, offset: Double, name: String) {
+        val generalEventDict = eventDictionary.editor.result.now
         writer.appendBlock("~play_$name = Task") {
             var currentTime = 0.0
             for (n in notes.sortedBy { n -> n.time }) {
@@ -132,9 +133,10 @@ class PianoRollObject(
                 val deltaTime = (t - currentTime)
                 +"$deltaTime.wait"
                 val eventMap = instrument.get().createEvent().toMutableMap()
-                eventMap["sustain"] = dur.format(3)
+                eventMap["duration"] = dur.format(3)
                 eventMap["midinote"] = midinote.toString()
                 for ((key, value) in eventDict.entries) eventMap[key.text] = value.code
+                for ((key, value) in generalEventDict.entries) eventMap[key.text] = value.code
                 +eventMap.entries.joinToString(", ", "(", ").play") { (name, value) -> "$name: $value" }
                 currentTime = t
             }
