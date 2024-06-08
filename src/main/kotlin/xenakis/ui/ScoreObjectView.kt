@@ -308,8 +308,8 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
 
     private fun relocateBy(old: Bounds, dx: Double, dy: Double) {
         var (x, y) = pane.snapToGrid(old.minX + dx, (old.minY + dy))
-        x = x.coerceIn(0.0, pane.width - width)
-        y = y.coerceIn(0.0, pane.height - height)
+        x = x.coerceAtLeast(0.0)
+        y = y.coerceAtLeast(0.0)
         relocateObject(x, y)
     }
 
