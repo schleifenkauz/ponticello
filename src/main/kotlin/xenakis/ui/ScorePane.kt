@@ -320,26 +320,22 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
             }
 
             tool == Pointer -> {
-                if (ev.button == MouseButton.SECONDARY) pasteFromClipboard(ev)
+                if (selectedArea in children && selectedArea.width != 0.0 && selectedArea.height != 0.0) {
+                    if (!selectedArea.heightProperty().isBound) {
+                        for (view in viewsInside(selectedArea.boundsInParent)) {
+                            selector.select(view, addToSelection = true)
+                        }
+                        children.remove(selectedArea)
+                    } else {
+                        selectedArea.requestFocus()
+                    }
+                } else if (ev.button == MouseButton.SECONDARY) pasteFromClipboard(ev)
                 else if (this is ScoreView) ui.player.setPlayHeadX(ev.x)
             }
 
             newObj != null -> {
                 if (newObj.width != 0.0 && newObj.height != 0.0) createNewObject(tool, newObj)
                 clearNewShape()
-            }
-
-            selectedArea in children -> {
-                if (selectedArea.width == 0.0 || selectedArea.height == 0.0) {
-                    children.remove(selectedArea)
-                } else if (!selectedArea.heightProperty().isBound) {
-                    for (view in viewsInside(selectedArea.boundsInParent)) {
-                        selector.select(view, addToSelection = true)
-                    }
-                    children.remove(selectedArea)
-                } else {
-                    selectedArea.requestFocus()
-                }
             }
         }
     }
