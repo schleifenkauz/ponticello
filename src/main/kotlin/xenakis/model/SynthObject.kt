@@ -14,7 +14,6 @@ import xenakis.impl.putSerializableValue
 import xenakis.sc.ControlSpec
 import xenakis.sc.editor.GroupSelector
 import xenakis.ui.SynthObjectView
-import xenakis.ui.format
 
 class SynthObject(
     name: String,
@@ -93,7 +92,16 @@ class SynthObject(
     override fun writeStartCode(writer: ScWriter, offset: Double, name: String) {
         writer.appendBlock("s.bind") {
             val synthVar = "~synth_${name}"
-            +"$synthVar = Synth(\\${synthDef.name.now}, target: ${group.get().variableName})"
+            val constantArguments = controls.mapNotNull { (param, control) ->
+                when (control) {
+                    is BufferControl -> param to control.buffer.get().variableName
+                    is BusControl -> param to control.bus.get().variableName
+                    is ConstantControl -> param to control.value.toString()
+                    is KnobControl -> param to control.get().toString()
+                    else -> null
+                }
+            }.joinToString(", ", "[", "]") { (param, value) -> "$param: $value" }
+            +"$synthVar = Synth(\\${synthDef.name.now}, $constantArguments, target: ${group.get().variableName})"
             for ((param, control) in controls) {
                 when (control) {
                     is EnvelopeControl -> {
@@ -102,16 +110,6 @@ class SynthObject(
                         +"$busName = Bus.control(s, 1)"
                         +"{ $env }.play(s, $busName)"
                         +"${synthVar}.map(\\$param, $busName)"
-                    }
-
-                    is KnobControl -> {
-                        val value = control.get().format(2)
-                        +"${synthVar}.set(\\$param, $value)"
-                    }
-
-                    is BusControl -> {
-                        val bus = control.bus.get().variableName
-                        +"${synthVar}.set(\\$param, $bus)"
                     }
 
                     is BusValueControl -> {
@@ -133,13 +131,7 @@ class SynthObject(
                         +" }.play(s, $busName)"
                         +"${synthVar}.map(\\$param, $busName)"
                     }
-
-                    is BufferControl -> {
-                        val buf = control.buffer.get().variableName
-                        +"${synthVar}.set(\\$param, $buf)"
-                    }
-
-                    is ConstantControl -> +"${synthVar}.set(\\$param, ${control.value})"
+                    else -> {} //already handled in constantArguments
                 }
             }
         }
