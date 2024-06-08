@@ -17,7 +17,7 @@ class BusSelector(
     val preferredRate: Rate? = null,
     val preferredChannels: Int = -1,
     initialValue: BusObjectReference = getDefaultBus(context, preferredRate, preferredChannels)
-) : ObjectSelector<BusObject, BusObjectReference>(context, initialValue) {
+) : ObjectSelector<BusObject, BusObjectReference>(context, initialValue), ScExprEditor<BusObjectReference> {
     override val registry: ObjectRegistry<BusObject>
         get() = context[BusRegistry]
 
@@ -33,8 +33,8 @@ class BusSelector(
                     && (preferredChannels == -1 || channels == preferredChannels)
         }
 
-    override fun extractText(choice: BusObject): ReactiveString = choice.name
-    //binding(choice.name, choice.rate, choice.channels) { name, rate, channels -> "$name ($rate x $channels)" }
+    override fun extractText(choice: BusObject): ReactiveString =
+        binding(choice.name, choice.rate, choice.channels) { name, rate, channels -> "$name ($rate x $channels)" }
 
     override fun createSnapshot(): Snapshot<*> = Snap()
 

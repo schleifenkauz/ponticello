@@ -57,6 +57,9 @@ data class NumericalControlSpec(
 
     val range: DoubleRange get() = min.get()..max.get()
 
+    override fun toString(): String =
+        "default: ${defaultValue.text}, range: ${min.text}..${max.text}, warp: $warp, step: ${step.text}"
+
     companion object {
         val DEFAULT = NumericalControlSpec(0.0, 0.0, 1.0, Warp.Linear, 0.1, Color.WHITE)
     }
@@ -75,6 +78,7 @@ class BusControlSpec : ControlSpec {
 
     override fun hashCode(): Int = -2
 
+    override fun toString(): String = "bus"
 }
 
 @Serializable
@@ -89,6 +93,8 @@ class BufferControlSpec : ControlSpec {
     override fun equals(other: Any?): Boolean = other is BufferControlSpec
 
     override fun hashCode(): Int = -1
+
+    override fun toString(): String = "buf"
 }
 
 fun NumericalControlSpec.mapOnto(targetRange: DoubleRange) = SpecTransformation(this, targetRange)

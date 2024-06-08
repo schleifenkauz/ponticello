@@ -20,6 +20,7 @@ import javafx.scene.input.TransferMode
 import javafx.scene.layout.*
 import javafx.scene.paint.Color
 import javafx.stage.Popup
+import javafx.stage.Window
 import org.controlsfx.glyphfont.FontAwesome
 import org.controlsfx.glyphfont.Glyph
 import reaktive.value.ReactiveValue
@@ -226,3 +227,12 @@ fun Region.verticalDist(y: Double) = when {
 fun ToggleButton.toggle() {
     isSelected = !isSelected
 }
+
+fun background(color: Color) = Background(BackgroundFill(color, null, null))
+
+fun Window.resize(width: Double, height: Double) {
+    this.width = width
+    this.height = height
+}
+
+fun <R : Region> R.setPreferredWidth(width: Double) = also { r -> r.prefWidth = width }

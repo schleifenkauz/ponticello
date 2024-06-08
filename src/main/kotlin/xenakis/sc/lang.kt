@@ -32,11 +32,10 @@ val ScElement.code: String
         return writer.toString()
     }
 
-@Serializable
 @EditorInterface(ScExprEditor::class)
 @UseEditor(ScExprExpander::class)
 @ListEditor(serializable = true)
-sealed interface ScExpr : ScElement
+interface ScExpr : ScElement
 
 @Serializable
 abstract class SimpleScElement(val code: String) : ScElement {
@@ -399,3 +398,7 @@ data class SpreadArray(val array: ScExpr) : ScExpr {
         array.code(writer)
     }
 }
+
+@Serializable
+@Compound(serializable = true)
+data class EventDictionary(val entries: List<NamedExpr>)

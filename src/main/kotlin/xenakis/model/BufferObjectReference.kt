@@ -4,13 +4,19 @@ import hextant.codegen.UseEditor
 import hextant.context.Context
 import kotlinx.serialization.Serializable
 import reaktive.value.now
+import xenakis.impl.ScWriter
+import xenakis.sc.ScExpr
 import xenakis.sc.editor.BufferSelector
 
 @UseEditor(BufferSelector::class)
 @Serializable(with = BufferObjectReference.Serializer::class)
-class BufferObjectReference(name: String) : AbstractObjectReference<BufferObject>(name) {
+class BufferObjectReference(name: String) : AbstractObjectReference<BufferObject>(name), ScExpr {
     constructor(obj: BufferObject) : this(obj.name.now) {
         this.obj = obj
+    }
+
+    override fun code(writer: ScWriter) {
+        writer.append(get().variableName)
     }
 
     override fun getRegistry(context: Context): ObjectRegistry<BufferObject> = context[BufferRegistry]

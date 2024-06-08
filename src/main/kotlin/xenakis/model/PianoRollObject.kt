@@ -1,7 +1,9 @@
 package xenakis.model
 
 import hextant.context.Context
+import hextant.context.withoutUndo
 import hextant.core.editor.ListenerManager
+import hextant.serial.EditorRoot
 import hextant.undo.AbstractEdit
 import hextant.undo.PropertyEdit
 import hextant.undo.UndoManager
@@ -15,7 +17,8 @@ import kotlinx.serialization.json.JsonObjectBuilder
 import kotlinx.serialization.json.put
 import reaktive.value.now
 import xenakis.impl.*
-import xenakis.sc.editor.InstrumentSelector
+import xenakis.sc.code
+import xenakis.sc.editor.*
 import xenakis.ui.PianoRollObjectView
 import xenakis.ui.ScoreObjectView
 import xenakis.ui.format
@@ -24,7 +27,8 @@ import kotlin.math.roundToInt
 class PianoRollObject(
     name: String,
     private val initialInstrument: InstrumentObject.Reference,
-    private var lowestPitch: Int, private var highestPitch: Int,
+    lowestPitch: Int, highestPitch: Int,
+    val eventDictionary: EditorRoot<EventDictionaryEditor>,
     private val notes: MutableList<Note>
 ) : RegularScoreObject(name) {
     override val type: String
@@ -37,9 +41,23 @@ class PianoRollObject(
 
     val instrument get() = if (initialized) instrumentSelector.result.now else initialInstrument
 
+    var lowestPitch = lowestPitch
+        set(value) {
+            field = value
+            viewManager.notifyListeners { updatedPitchRange() }
+        }
+
+    var highestPitch = highestPitch
+        set(value) {
+            field = value
+            viewManager.notifyListeners { updatedPitchRange() }
+        }
+
     val pitchRange get() = lowestPitch..highestPitch
 
     val pixelsPerPitch get() = height / (highestPitch - lowestPitch)
+
+    fun notes(): List<Note> = notes
 
     override fun initialize(context: Context) {
         if (initialized) return
@@ -71,19 +89,9 @@ class PianoRollObject(
         viewManager.notifyListeners { removedNote(note) }
     }
 
-    fun setLowestPitch(pitch: Int) {
-        lowestPitch = pitch
-        viewManager.notifyListeners { updatedPitchRange() }
-    }
+    fun getY(pitch: Int) = (highestPitch - pitch) * pixelsPerPitch - pixelsPerPitch
 
-    fun setHighestPitch(pitch: Int) {
-        highestPitch = pitch
-        viewManager.notifyListeners { updatedPitchRange() }
-    }
-
-    fun getY(pitch: Int) = (highestPitch - pitch) * pixelsPerPitch
-
-    fun getMidiNote(y: Double): Int = ((height - y) / pixelsPerPitch).roundToInt() + lowestPitch
+    fun getMidiNote(y: Double): Int = ((height - y) / pixelsPerPitch).roundToInt() + lowestPitch - 1
 
     private fun updateNote(note: Note) {
         viewManager.notifyListeners { updatedNote(note) }
@@ -100,6 +108,7 @@ class PianoRollObject(
 
     override fun copy(): ScoreObject = PianoRollObject(
         name.now, instrument, lowestPitch, highestPitch,
+        eventDictionary.clone(),
         notes.mapTo(mutableListOf()) { n -> n.copy() }
     )
 
@@ -108,7 +117,7 @@ class PianoRollObject(
             LEFT -> notes.filter { n -> n.time < position }
             RIGHT -> notes.filter { n -> n.time >= position }
         }.mapTo(mutableListOf()) { n -> n.copy() }
-        return PianoRollObject(name.now, initialInstrument, lowestPitch, highestPitch, notes)
+        return PianoRollObject(name.now, initialInstrument, lowestPitch, highestPitch, eventDictionary.clone(), notes)
     }
 
     override fun writeStartCode(writer: ScWriter, offset: Double, name: String) {
@@ -119,13 +128,13 @@ class PianoRollObject(
                 if (t < 0.0) continue
                 val dur = n.duration
                 val midinote = n.midinote
-                val velocity = n.velocity
+                val eventDict = n.eventDictionary.editor.result.now
                 val deltaTime = (t - currentTime)
                 +"$deltaTime.wait"
                 val eventMap = instrument.get().createEvent().toMutableMap()
                 eventMap["sustain"] = dur.format(3)
                 eventMap["midinote"] = midinote.toString()
-                eventMap["velocity"] = velocity.toString()
+                for ((key, value) in eventDict.entries) eventMap[key.text] = value.code
                 +eventMap.entries.joinToString(", ", "(", ").play") { (name, value) -> "$name: $value" }
                 currentTime = t
             }
@@ -141,6 +150,7 @@ class PianoRollObject(
         putSerializableValue("instrument", instrument)
         put("lowestPitch", lowestPitch)
         put("highestPitch", highestPitch)
+        putSerializableValue("eventDictionary", eventDictionary)
         putSerializableValue("notes", notes as List<Note>)
     }
 
@@ -177,7 +187,7 @@ class PianoRollObject(
         private var _time: Double,
         private var _duration: Double,
         private var _midinote: Int,
-        private var _velocity: Int
+        val eventDictionary: EditorRoot<EventDictionaryEditor>
     ) {
         @Transient
         lateinit var parent: PianoRollObject
@@ -194,14 +204,26 @@ class PianoRollObject(
             parent.context[UndoManager].record(PropertyEdit(this::midinote, oldValue, newValue, "Edit note time"))
             parent.updateNote(this)
         }
-        var velocity: Int by this::_velocity.reactive { oldValue, newValue ->
-            parent.context[UndoManager].record(PropertyEdit(this::velocity, oldValue, newValue, "Edit note time"))
-            parent.updateNote(this)
+
+        override fun toString(): String = "Note(start: $time, dur: $duration, pitch: $midinote)"
+
+        fun copy() = Note(time, duration, midinote, eventDictionary.clone())
+
+        companion object {
+            fun create(context: Context, time: Double, duration: Double, midinote: Int): Note {
+                val eventDictionary = EventDictionaryEditor(context)
+                context.withoutUndo {
+                    eventDictionary.entries.addLast(
+                        NamedExprEditor(
+                            context,
+                            IdentifierEditor(context, "velocity"),
+                            ScExprExpander(context, "60")
+                        )
+                    )
+                }
+                return Note(time, duration, midinote, EditorRoot.create(eventDictionary))
+            }
         }
-
-        override fun toString(): String = "Note(start: $time, dur: $duration, pitch: $midinote, velocity: $velocity)"
-
-        fun copy() = Note(time, duration, midinote, velocity)
     }
 
     object Serializer : ScoreObject.Serializer {
@@ -212,8 +234,9 @@ class PianoRollObject(
             val instrument = getSerializableValue<InstrumentObject.Reference>("instrument")!!
             val lowestPitch = getInt("lowestPitch")!!
             val highestPitch = getInt("highestPitch")!!
+            val eventDictionary = getSerializableValue<EditorRoot<EventDictionaryEditor>>("eventDictionary")!!
             val notes = getSerializableValue<List<Note>>("notes")!!.toMutableList()
-            return PianoRollObject(name, instrument, lowestPitch, highestPitch, notes)
+            return PianoRollObject(name, instrument, lowestPitch, highestPitch, eventDictionary, notes)
         }
     }
 }

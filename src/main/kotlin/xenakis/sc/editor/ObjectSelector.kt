@@ -4,6 +4,7 @@ import hextant.context.Context
 import hextant.core.editor.AbstractEditor
 import hextant.serial.Snapshot
 import hextant.undo.AbstractEdit
+import hextant.undo.UndoManager
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonObjectBuilder
 import kotlinx.serialization.json.put
@@ -27,6 +28,7 @@ abstract class ObjectSelector<O : NamedObject, R : ObjectReference<O>>(
         get() = selected
 
     fun select(value: R) {
+        context[UndoManager].record(Edit(this, selected.now, value))
         selected.set(value)
         notifyViews { selected(value.get()) }
     }

@@ -4,7 +4,6 @@ import hextant.context.Context
 import hextant.fx.initHextantScene
 import hextant.fx.label
 import hextant.undo.UndoManager
-import javafx.geometry.BoundingBox
 import javafx.geometry.Bounds
 import javafx.geometry.HorizontalDirection
 import javafx.scene.Cursor
@@ -21,18 +20,13 @@ import reaktive.value.fx.asObservableValue
 import reaktive.value.now
 import reaktive.value.reactiveVariable
 import xenakis.impl.Knob
-import xenakis.impl.Point
 import xenakis.impl.SuperColliderClient
 import xenakis.model.*
 import xenakis.sc.NumericalControlSpec
 import xenakis.ui.ToolSelector.Tool
 import xenakis.ui.XenakisController.Companion.currentProject
-import kotlin.math.absoluteValue
 
 abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionListener {
-    private var dragStart: Point? = null
-    private var oldBounds: Bounds? = null
-
     lateinit var pane: ScorePane
         private set
     protected val context: Context get() = pane.context
@@ -54,9 +48,6 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
     protected val colorPicker: ColorPicker = ColorPicker() styleClass "button"
 
     private lateinit var window: SubWindow
-
-    protected open val canUserChangeHeight: Boolean get() = true
-    protected open val canUserChangeWidth: Boolean get() = true
 
     init {
         styleClass("score-object")
@@ -125,8 +116,12 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
     open fun initialize(parent: ScorePane) {
         this.pane = parent
         initializeLayout()
-        alwaysUpdateCursor()
-        initializeDragging()
+        setupDraggingAndResizing(
+            context,
+            canUserChangeWidth = true, canUserChangeHeight = true, Tool.Pointer,
+            beforeResize = this::beforeResize,
+            relocateBy = this::relocateBy, resize = this::resize
+        )
         setBackground()
         border = solidBorder(nonSelectedBorderColor, width = 2.0)
         setupCutting()
@@ -311,61 +306,6 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
     * Dragging and resizing
     * */
 
-    private fun alwaysUpdateCursor() {
-        setOnMouseEntered { ev ->
-            if (!ev.isPrimaryButtonDown) {
-                updateCursor(ev.x, ev.y)
-            }
-        }
-        setOnMouseMoved { ev ->
-            if (!ev.isPrimaryButtonDown) {
-                updateCursor(ev.x, ev.y)
-            }
-        }
-        setOnMouseExited { ev ->
-            if (!ev.isPrimaryButtonDown) cursor = Cursor.DEFAULT
-        }
-    }
-
-    private fun initializeDragging() {
-        addEventHandler(MouseEvent.MOUSE_PRESSED) { ev ->
-            if (context[XenakisUI].toolSelector.selected.value != Tool.Pointer) return@addEventHandler
-            if (dragStart == null) {
-                oldBounds = BoundingBox(layoutX, layoutY, prefWidth, prefHeight)
-                dragStart = Point(ev.screenX, ev.screenY)
-                if (isResizeCursor(cursor)) context[UndoManager].beginCompoundEdit("Resize object")
-                else context[UndoManager].beginCompoundEdit("Move object")
-            }
-            ev.consume()
-        }
-        addEventHandler(MouseEvent.MOUSE_DRAGGED) { ev ->
-            if (context[XenakisUI].toolSelector.selected.value != Tool.Pointer) return@addEventHandler
-            val start = dragStart ?: return@addEventHandler
-            val dx = ev.screenX - start.x
-            val dy = ev.screenY - start.y
-            if (isResizeCursor(cursor)) {
-                resize(oldBounds!!, dx, dy, cursor, ev)
-            } else {
-                relocateBy(oldBounds!!, dx, dy)
-            }
-            ev.consume()
-        }
-        addEventHandler(MouseEvent.MOUSE_RELEASED) { ev ->
-            if (context[XenakisUI].toolSelector.selected.value != Tool.Pointer) return@addEventHandler
-            if (dragStart != null) {
-                dragStart = null
-                oldBounds = null
-                context[UndoManager].finishCompoundEdit()
-            }
-            ev.consume()
-        }
-    }
-
-    private fun isResizeCursor(cursor: Cursor) = cursor.toString().endsWith("RESIZE")
-
-    private fun isInParentBounds(x: Double, y: Double, width: Double, height: Double) =
-        x >= 0.0 && y >= 0.0 && x + width <= pane.width && y + height <= pane.height
-
     private fun relocateBy(old: Bounds, dx: Double, dy: Double) {
         var (x, y) = pane.snapToGrid(old.minX + dx, (old.minY + dy))
         x = x.coerceIn(0.0, pane.width - width)
@@ -394,6 +334,8 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
         myObject.height = height
     }
 
+    protected open fun beforeResize(ev: MouseEvent, cursor: Cursor) {}
+
     open fun getDisplayWidth(): Double = pane.getWidth(myObject.duration)
 
     open fun rescale() {
@@ -414,29 +356,11 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
         relocate(pane.getX(myObject.start), myObject.y)
     }
 
-    private fun updateCursor(x: Double, y: Double) {
-        val tx = 5
-        val ty = 5
-        val dx = (x - prefWidth).absoluteValue
-        val dy = (y - prefHeight).absoluteValue
-        cursor = when {
-            x.absoluteValue < tx && y.absoluteValue < ty && canUserChangeHeight && canUserChangeWidth -> Cursor.NW_RESIZE
-            x.absoluteValue < tx && dy.absoluteValue < ty && canUserChangeHeight && canUserChangeWidth -> Cursor.SW_RESIZE
-            dx < tx && y.absoluteValue < ty && canUserChangeHeight && canUserChangeWidth -> Cursor.NE_RESIZE
-            dx < tx && dy < ty && canUserChangeHeight && canUserChangeWidth -> Cursor.SE_RESIZE
-            x.absoluteValue < tx && canUserChangeWidth -> Cursor.W_RESIZE
-            dx < tx && canUserChangeWidth -> Cursor.E_RESIZE
-            y.absoluteValue < ty && canUserChangeHeight -> Cursor.N_RESIZE
-            dy < ty && canUserChangeHeight -> Cursor.S_RESIZE
-            else -> Cursor.DEFAULT
-        }
-    }
-
     private fun resize(x: Double, y: Double, width: Double, height: Double, ev: MouseEvent, cursor: Cursor) {
         val (snappedX, snappedY) = pane.snapToGrid(x, y)
         val (snappedWidth) = pane.snapToGrid(width, snappedY)
         if (snappedWidth < 10.0 || height < 10.0) return
-        if (!isInParentBounds(snappedX, snappedY, snappedWidth, height)) return
+        if (!isInParentBounds(pane, snappedX, snappedY, snappedWidth, height)) return
         val oldWidth = getDisplayWidth()
         val oldHeight = myObject.height
         resizeObject(snappedWidth, height, ev, cursor)

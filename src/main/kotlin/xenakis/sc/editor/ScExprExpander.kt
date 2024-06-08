@@ -115,6 +115,9 @@ class ScExprExpander(context: Context) : ConfiguredExpander<ScExpr, ScExprEditor
             "block" expand { ctx -> CodeBlockEditor(ctx) }
             "function" expand { ctx -> ScFunctionEditor(ctx) }
             "new" expand { ctx -> NewObjectEditor(ctx) }
+            "bus" expand { ctx -> BusSelector(ctx) }
+            "buffer" expand { ctx -> BufferSelector(ctx) }
+            "group" expand { ctx -> GroupSelector(ctx) }
         }
     }
 }

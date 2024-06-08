@@ -511,20 +511,20 @@ Slider.control-detail-editor {
 }
 
 .pitch-line {
-    -fx-stroke: white;
+    -fx-stroke: black;
 }
 
 .note-object {
-    -fx-stroke-width: 2px;
-    -fx-stroke: transparent;
+    -fx-border-width: 2px;
+    -fx-border-color: transparent;
 }
 
 .note-object:hover {
-    -fx-stroke: gray;
+    -fx-border-color: gray;
 }
 
 .note-object:focused {
-    -fx-fill: white;
+    -fx-border-color: white;
 }
 
 .tempo-line {

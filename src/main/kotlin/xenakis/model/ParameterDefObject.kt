@@ -25,6 +25,8 @@ class ParameterDefObject(
 
     override fun createReference(): Nothing = throw UnsupportedOperationException()
 
+    override fun toString(): String = "${name.now}: ${spec.now}"
+
     companion object {
         val freq = ParameterDefObject(
             "freq",

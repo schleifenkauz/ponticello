@@ -4,24 +4,24 @@ import hextant.context.Context
 import hextant.serial.Snapshot
 import hextant.serial.SnapshotAware
 import kotlinx.serialization.Serializable
-import xenakis.model.BufferObject
-import xenakis.model.BufferObjectReference
-import xenakis.model.BufferRegistry
-import xenakis.model.ObjectRegistry
+import xenakis.model.*
 
 @Suppress("SERIALIZER_TYPE_INCOMPATIBLE")
 @Serializable(with = SnapshotAware.Serializer::class)
 class BufferSelector(
     context: Context, initialValue: BufferObjectReference = BufferObject.defaultBuffer.createReference()
-) : ObjectSelector<BufferObject, BufferObjectReference>(context, initialValue) {
+) : ObjectSelector<BufferObject, BufferObjectReference>(context, initialValue), ScExprEditor<BufferObjectReference> {
     override val registry: ObjectRegistry<BufferObject>
         get() = context[BufferRegistry]
 
     override fun createNewObject(name: String): BufferObject {
-        TODO("Not yet implemented")
+        throw UnsupportedOperationException("BufferSelector doesn't support creating new object")
     }
 
-    override fun createSnapshot(): Snapshot<*> {
-        TODO("Not yet implemented")
+    override fun createSnapshot(): Snapshot<*> = Snap()
+
+    private class Snap : ObjectSelector.Snap<BufferObject, BufferObjectReference>() {
+        override val serializer: ObjectReference.Serializer<BufferObjectReference>
+            get() = BufferObjectReference.Serializer
     }
 }

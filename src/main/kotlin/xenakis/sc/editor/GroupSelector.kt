@@ -12,7 +12,7 @@ import xenakis.model.*
 class GroupSelector(
     context: Context,
     group: GroupObjectReference = context[GroupRegistry].getDefault().createReference()
-) : ObjectSelector<GroupObject, GroupObjectReference>(context, group) {
+) : ObjectSelector<GroupObject, GroupObjectReference>(context, group), ScExprEditor<GroupObjectReference> {
     override val registry: ObjectRegistry<GroupObject>
         get() = context[GroupRegistry]
 

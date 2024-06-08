@@ -7,14 +7,10 @@ import bundles.set
 import hextant.codegen.ProvideImplementation
 import hextant.completion.NoCompleter
 import hextant.context.ControlFactory
-import hextant.core.view.ChoiceEditorControl
-import hextant.core.view.CompoundEditorControl
-import hextant.core.view.OptionalEditorControl
-import hextant.core.view.TokenEditorControl
+import hextant.core.view.*
 import hextant.fx.keyword
-import xenakis.sc.editor.BufferSelector
-import xenakis.sc.editor.BusSelector
-import xenakis.sc.editor.GroupSelector
+import hextant.fx.view
+import xenakis.ui.button
 import xenakis.ui.centerChildrenVertically
 import xenakis.ui.styleClass
 
@@ -193,10 +189,25 @@ fun createControl(editor: xenakis.sc.editor.StringLiteralEditor, arguments: Bund
     }
 
 @ProvideImplementation(ControlFactory::class)
-fun createControl(editor: BusSelector, arguments: Bundle) = ObjectSelectorControl(editor, arguments)
+fun createSelectorControl(editor: xenakis.sc.editor.BusSelector, arguments: Bundle) =
+    ObjectSelectorControl(editor, arguments)
 
 @ProvideImplementation(ControlFactory::class)
-fun createControl(editor: BufferSelector, arguments: Bundle) = ObjectSelectorControl(editor, arguments)
+fun createSelectorControl(editor: xenakis.sc.editor.BufferSelector, arguments: Bundle) =
+    ObjectSelectorControl(editor, arguments)
 
 @ProvideImplementation(ControlFactory::class)
-fun createControl(editor: GroupSelector, arguments: Bundle) = ObjectSelectorControl(editor, arguments)
+fun createSelectorControl(editor: xenakis.sc.editor.GroupSelector, arguments: Bundle) =
+    ObjectSelectorControl(editor, arguments)
+
+@ProvideImplementation(ControlFactory::class)
+fun createControl(editor: xenakis.sc.editor.EventDictionaryEditor, arguments: Bundle) =
+    CompoundEditorControl(editor, arguments) {
+        vertical {
+            view(editor.entries) {
+                set(ListEditorControl.ORIENTATION, ListEditorControl.Orientation.Vertical)
+                set(ListEditorControl.EMPTY_DISPLAY) { null }
+            }
+            add(button("Add entry") { editor.entries.addLast() })
+        }
+    }

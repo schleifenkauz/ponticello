@@ -48,7 +48,7 @@ class CustomizableSynthDefObject(
     }
 
     override fun remove() {
-        context[SuperColliderClient].send("removeSynthDef", listOf(name))
+        context[SuperColliderClient].send("removeSynthDef", listOf(name.now))
     }
 
     override fun initialize(context: Context) {

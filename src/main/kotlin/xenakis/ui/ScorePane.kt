@@ -3,24 +3,33 @@ package xenakis.ui
 import hextant.context.Context
 import hextant.serial.EditorRoot
 import javafx.application.Platform
+import javafx.collections.FXCollections
 import javafx.geometry.Bounds
+import javafx.geometry.Pos
+import javafx.scene.control.ComboBox
+import javafx.scene.control.Label
+import javafx.scene.control.Spinner
+import javafx.scene.control.TextField
 import javafx.scene.input.Clipboard
 import javafx.scene.input.MouseButton
 import javafx.scene.input.MouseEvent
 import javafx.scene.layout.HBox
 import javafx.scene.layout.Pane
+import javafx.scene.layout.VBox
 import javafx.scene.paint.Color.*
 import javafx.scene.shape.Rectangle
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
 import reaktive.value.now
 import xenakis.impl.Arrow
+import xenakis.impl.MidiPitch
 import xenakis.impl.Point
 import xenakis.model.*
 import xenakis.model.Envelope
 import xenakis.sc.Identifier
 import xenakis.sc.Rate
 import xenakis.sc.editor.BusSelector
+import xenakis.sc.editor.EventDictionaryEditor
 import xenakis.sc.editor.ScFunctionEditor
 import xenakis.ui.ToolSelector.Tool
 import xenakis.ui.ToolSelector.Tool.*
@@ -407,12 +416,33 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
                 addObject(ScoreObjectGroup(name, subScore), rect)
             }
 
-            PianoRoll -> promptNewObjectName("Pattern name", "") { name ->
-                val instr = context[InstrumentRegistry].selectedInstrument ?: return@promptNewObjectName
-                val lowestPitch = 48
-                val highestPitch = 72
-                val notes = mutableListOf<PianoRollObject.Note>()
-                val obj = PianoRollObject(name, instr.createReference(), lowestPitch, highestPitch, notes)
+            PianoRoll -> {
+                val instr = context[InstrumentRegistry].selectedInstrument ?: return
+                val defaultName = context[ScoreObjectRegistry].availableName("piano_roll")
+                val nameField = TextField(defaultName)
+                val rootPitchSelector = ComboBox(FXCollections.observableList(MidiPitch.allPitchClasses()))
+                rootPitchSelector.value = MidiPitch(0)
+                val registerSpinner = Spinner<Int>(0, 10, 4)
+                val octaves = Spinner<Int>(1, 12, 2)
+                val layout = VBox(
+                    HBox(Label("Name: ").setPreferredWidth(150.0), nameField).centerChildrenVertically(),
+                    HBox(
+                        Label("Root pitch class: ").setPreferredWidth(150.0),
+                        rootPitchSelector
+                    ).centerChildrenVertically(),
+                    HBox(Label("Base register: ").setPreferredWidth(150.0), registerSpinner).centerChildrenVertically(),
+                    HBox(Label("Octaves: ").setPreferredWidth(150.0), octaves).centerChildrenVertically()
+                )
+                layout.alignment = Pos.CENTER_LEFT
+                val obj = layout.showDialog("Configure PianoRoll", context) {
+                    val name = nameField.text
+                    if (!Identifier.isValid(name) || context[ScoreObjectRegistry].has(name)) return@showDialog null
+                    val lowestPitch = rootPitchSelector.value.step + 12 * registerSpinner.value
+                    val highestPitch = lowestPitch + 12 * octaves.value
+                    val notes = mutableListOf<PianoRollObject.Note>()
+                    val eventDictionary = EditorRoot.create(EventDictionaryEditor(context))
+                    PianoRollObject(name, instr.createReference(), lowestPitch, highestPitch, eventDictionary, notes)
+                } ?: return
                 addObject(obj, rect)
             }
 

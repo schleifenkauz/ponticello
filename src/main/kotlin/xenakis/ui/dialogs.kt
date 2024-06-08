@@ -14,6 +14,7 @@ import javafx.scene.layout.HBox
 import javafx.stage.Stage
 import javafx.stage.StageStyle
 import javafx.util.StringConverter
+import org.controlsfx.control.Notifications
 import xenakis.impl.DoubleRange
 import xenakis.model.ObjectRegistry
 import xenakis.sc.Identifier
@@ -125,7 +126,7 @@ fun alertException(action: String, exc: Exception) = Alert(Alert.AlertType.ERROR
     show()
 }
 
-fun alertError(text: String) = Alert(Alert.AlertType.ERROR, text).show()
+fun alertError(text: String) = Notifications.create().text(text).darkStyle().showError()
 
 fun <T : Any> tryWithAlert(actionDescription: String, action: () -> T): T? = try {
     action()

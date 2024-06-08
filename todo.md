@@ -2,13 +2,6 @@
 
 ### external vst plugins
 
-- piano roll tool
-  - resizing note objects
-  - how to display/change velocity?
-  - control overall arguments
-  - extra arguments for each note?
-  - resizing with shift means stretching/squishing
-  - resizing vertically without shift means adjusting pitch range
 - usage in ad hoc synths
 
 ### sound file objects
@@ -65,6 +58,8 @@
 
 - track references to objects, if an object has references, it cannot be removed (necessary?)
 - avoid hanging when speaking to SuperCollider (timeouts, async, etc.)
+- we have to have access to the registry while deserializing the score objects!
+  - write custom serializer for XenakisProject
 
 ## Bug fixes
 
