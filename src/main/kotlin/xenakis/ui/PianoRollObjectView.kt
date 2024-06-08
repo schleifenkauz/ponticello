@@ -203,6 +203,7 @@ class PianoRollObjectView(private val obj: PianoRollObject) : ScoreObjectView(ob
         super.initialize(parent)
         children.add(notePane)
         drawOrientationLines()
+        shadeBlackKeys()
         val instrumentSelector = ObjectSelectorControl(obj.instrumentSelector, createBundle())
         header.children.add(instrumentSelector)
         addAction(Icon.Details, action = "Edit event dictionary") {
