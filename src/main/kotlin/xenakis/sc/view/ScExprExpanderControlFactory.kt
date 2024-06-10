@@ -32,7 +32,7 @@ object ScExprExpanderControlFactory : ControlFactory<xenakis.sc.editor.ScExprExp
                 }
 
                 is BooleanLiteral, Nil -> "keyword"
-                is DoubleLiteral, is IntegerLiteral -> "number"
+                is DoubleLiteral -> "number"
                 is UnrecognizedToken -> "unrecognized"
                 else -> null
             }

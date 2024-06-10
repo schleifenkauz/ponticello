@@ -1,14 +1,15 @@
 package xenakis.model
 
 import hextant.context.Context
+import hextant.core.EditorView
+import hextant.core.editor.AbstractEditor
 import hextant.serial.EditorRoot
 import javafx.scene.paint.Color
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 import reaktive.list.MutableReactiveList
 import reaktive.list.reactiveList
-import reaktive.value.ReactiveVariable
-import reaktive.value.now
-import reaktive.value.reactiveVariable
+import reaktive.value.*
 import xenakis.impl.ColorSerializer
 import xenakis.impl.ScWriter
 import xenakis.impl.SuperColliderClient
@@ -23,6 +24,9 @@ class CustomizableSynthDefObject(
     override val parameters: MutableReactiveList<ParameterDefObject>,
     val ugenGraph: EditorRoot<CodeBlockEditor>
 ) : SynthDefObject, AbstractRenamableObject() {
+    @Transient
+    private val editor = SynthDefEditor(ugenGraph.editor.context, this)
+
     override fun sync(writer: ScWriter) {
         writer.allocateServerObject()
     }
@@ -66,6 +70,17 @@ class CustomizableSynthDefObject(
         remove()
         super.rename(newName)
         client.run { sync(this) }
+    }
+
+    class SynthDefEditor(
+        context: Context, val obj: CustomizableSynthDefObject
+    ) : AbstractEditor<SynthDefObject, EditorView>(context) {
+        override val result: ReactiveValue<SynthDefObject>
+            get() = reactiveValue(obj)
+
+        init {
+            addChild(obj.ugenGraph.editor)
+        }
     }
 
     companion object {

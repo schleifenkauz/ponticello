@@ -3,9 +3,18 @@ package xenakis.ui
 import bundles.set
 import hextant.context.ControlFactory
 import hextant.context.SelectionDistributor
+import hextant.core.editor.getParent
 import hextant.core.view.EditorControl
 import hextant.plugins.*
+import hextant.undo.compoundEdit
 import reaktive.value.now
+import xenakis.impl.randomColor
+import xenakis.model.CustomizableSynthDefObject.SynthDefEditor
+import xenakis.model.ParameterDefObject
+import xenakis.sc.DoubleLiteral
+import xenakis.sc.Identifier
+import xenakis.sc.NumericalControlSpec
+import xenakis.sc.Warp
 import xenakis.sc.editor.ScExprExpander
 import xenakis.sc.view.*
 import xenakis.sc.view.ScFunctionEditorControl.Companion.SINGLE_LINE_FUNCTION
@@ -39,6 +48,40 @@ object XenakisHextantPlugin : PluginInitializer({
         name = "Convert to single-line function"
         applicableIf { ctrl -> ctrl.canBeSingleLine.now }
         executing { ctrl -> ctrl.arguments[SINGLE_LINE_FUNCTION] = true }
+    }
+
+    registerCommand<ScExprExpander, Unit> {
+        shortName = "extract-param"
+        name = "Extract parameter"
+        applicableIf { ed ->
+            ed.result.now is DoubleLiteral && ed.getParent<SynthDefEditor>() != null
+        }
+        executing { editor ->
+            showTextPrompt("Parameter name", "", editor.context) { name ->
+                if (!Identifier.isValid(name)) return@showTextPrompt false
+                val def = editor.getParent<SynthDefEditor>()
+                if (def == null) {
+                    alertError("Could not get SynthDefEditor for extracted parameter.")
+                    return@showTextPrompt true
+                }
+                val parameters = def.obj.parameters
+                val defaultValue = editor.result.now
+                if (defaultValue !is DoubleLiteral) {
+                    alertError("Could not extract parameter default value.")
+                    return@showTextPrompt true
+                }
+                val spec = NumericalControlSpec(
+                    defaultValue, defaultValue, defaultValue,
+                    Warp.Linear, DoubleLiteral(1.0), randomColor()
+                )
+                val param = ParameterDefObject(name, spec)
+                editor.context.compoundEdit("Extract parameter") {
+                    parameters.now.add(param)
+                    editor.setText(name)
+                }
+                true
+            }
+        }
     }
 }) {
     private inline fun <reified C : EditorControl<*>> PluginBuilder.multilineCommand(itemType: String) =

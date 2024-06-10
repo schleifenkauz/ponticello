@@ -43,7 +43,6 @@
 - lag values for parameters (adjust with spinner in control assignment)
 - fixed duration synths (don't need to be released)
   - maybe also distinguish between gated SynthDefs (can be `release`d) and those that have to be `free`d
-- command to introduce parameter for constant expression in SynthDef
 - save the snap and grid visibility settings (per project?)
 - update SynthDefs on closing configuration window
 - add SynthDefs on loading project

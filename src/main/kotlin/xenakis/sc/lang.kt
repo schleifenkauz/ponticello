@@ -63,7 +63,6 @@ sealed interface Literal : ScExpr {
     companion object : TokenType<Literal> {
         override fun compile(token: String): Literal {
             if (token.isEmpty()) return EmptyExpr
-            token.toIntOrNull()?.let { value -> return IntegerLiteral(value) }
             token.toDoubleOrNull()?.let { value -> return DoubleLiteral(token, value) }
             if (token == "true") return BooleanLiteral(true)
             if (token == "false") return BooleanLiteral(false)
@@ -95,20 +94,6 @@ data class BooleanLiteral(val value: Boolean) : Literal, SimpleScElement("$value
 
 @Serializable
 object Nil : Literal, SimpleScElement("nil")
-
-@Serializable
-data class IntegerLiteral(val text: String, val valueOrNull: Int?) : Literal, SimpleScElement(text) {
-    constructor(value: Int) : this(value.toString(), value)
-
-    override val isValid: Boolean
-        get() = valueOrNull != null
-
-    val value: Int = valueOrNull ?: 0
-
-    companion object : TokenType<IntegerLiteral> {
-        override fun compile(token: String): IntegerLiteral = IntegerLiteral(token, token.toIntOrNull())
-    }
-}
 
 @Token(serializable = true)
 @Serializable(with = DoubleLiteral.Serializer::class)
