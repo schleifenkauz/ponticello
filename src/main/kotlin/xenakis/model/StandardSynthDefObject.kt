@@ -35,6 +35,8 @@ class StandardSynthDefObject(
 
     override fun sync(writer: ScWriter) {}
 
+    override fun sync() {}
+
     override fun remove() {}
 
     override fun ScWriter.freeServerObject() {}

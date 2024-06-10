@@ -8,10 +8,12 @@ import javafx.scene.paint.Color
 import javafx.scene.shape.Line
 import javafx.scene.text.Text
 import reaktive.value.ReactiveValue
+import reaktive.value.fx.asObservableValue
 import reaktive.value.fx.asProperty
 import reaktive.value.now
 import reaktive.value.reactiveValue
 import xenakis.model.TempoGridObject
+import xenakis.ui.XenakisController.Companion.currentProject
 import kotlin.math.ceil
 
 class TempoGridObjectView(val obj: TempoGridObject) : ScoreObjectView(obj) {
@@ -36,7 +38,7 @@ class TempoGridObjectView(val obj: TempoGridObject) : ScoreObjectView(obj) {
     override fun initialize(parent: ScorePane) {
         super.initialize(parent)
         createConfigurationBar(header, obj)
-        marker.visibleProperty().bind(context[XenakisUI].gridConfig.snapToggle.selectedProperty())
+        marker.visibleProperty().bind(context[currentProject].settings.snapEnabled.asObservableValue())
     }
 
     override fun rescale() {

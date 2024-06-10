@@ -31,6 +31,10 @@ class CustomizableSynthDefObject(
         writer.allocateServerObject()
     }
 
+    override fun sync() {
+        context[SuperColliderClient].run { sync(writer) }
+    }
+
     override fun ScWriter.allocateServerObject() {
         append("SynthDef(\\${name.now}, ")
         val parameterVariables = parameters.now.map { p -> Identifier(p.name.now) }
@@ -66,10 +70,9 @@ class CustomizableSynthDefObject(
     override fun canRenameTo(newName: String): Boolean = !context[InstrumentRegistry].has(newName)
 
     override fun rename(newName: String) {
-        val client = context[SuperColliderClient]
         remove()
         super.rename(newName)
-        client.run { sync(this) }
+        context[SuperColliderClient].run { sync(this) }
     }
 
     class SynthDefEditor(

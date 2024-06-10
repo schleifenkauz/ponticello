@@ -90,7 +90,7 @@ sealed class RegularScoreObject(name: String) : ScoreObject(name) {
             +"${duration.format(2)}.wait"
             writeStopCode(writer)
         }
-        writer.appendLine("}.play")
+        writer.appendLine(".play")
     }
 
     override fun addView(view: ScoreObjectView) {

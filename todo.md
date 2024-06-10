@@ -43,13 +43,11 @@
 - lag values for parameters (adjust with spinner in control assignment)
 - fixed duration synths (don't need to be released)
   - maybe also distinguish between gated SynthDefs (can be `release`d) and those that have to be `free`d
-- save the snap and grid visibility settings (per project?)
-- update SynthDefs on closing configuration window
-- add SynthDefs on loading project
 - allow for more cases of pasting code
 - add to expr list with comma
 - looping period specifiable in beats/ticks/bars
 - ability to drag multiple objects at once
+- start moving play-head only when SuperCollider answers with `\playing` message
 
 ### Support for patterns
 

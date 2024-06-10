@@ -25,6 +25,10 @@ abstract class AbstractSuperColliderObject : AbstractRenamableObject(), SuperCol
         }
     }
 
+    override fun sync() {
+        client.run { sync(writer) }
+    }
+
     protected fun redefine() {
         client.run {
             removeFromServer()
@@ -58,10 +62,6 @@ abstract class AbstractSuperColliderObject : AbstractRenamableObject(), SuperCol
             +"$variableName = nil;"
         }
         initialized = false
-    }
-
-    fun sync() {
-        context[SuperColliderClient].run { sync(writer) }
     }
 
     override fun rename(newName: String) {

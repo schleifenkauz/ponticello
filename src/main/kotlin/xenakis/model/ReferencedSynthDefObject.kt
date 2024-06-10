@@ -47,6 +47,10 @@ class ReferencedSynthDefObject(
         updateParameters()
     }
 
+    override fun sync() {
+        updateParameters()
+    }
+
     private fun updateParameters() {
         async {
             val parameters = getSynthDefParameters(_name)

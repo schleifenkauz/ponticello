@@ -10,8 +10,7 @@ import reaktive.value.now
 import reaktive.value.reactiveVariable
 import xenakis.impl.copy
 import xenakis.impl.getInt
-import xenakis.ui.GridConfig
-import xenakis.ui.GridConfig.SnapOption.*
+import xenakis.model.InteractionSettings.SnapOption
 import xenakis.ui.TempoGridObjectView
 import kotlin.math.roundToInt
 
@@ -41,12 +40,12 @@ class TempoGridObject(
     override fun copy(): ScoreObject =
         TempoGridObject(name.now, beatsPerMinute.copy(), beatsPerBar.copy(), ticksPerBeat.copy())
 
-    fun snapToGrid(t: Double, option: GridConfig.SnapOption): Double {
+    fun snapToGrid(t: Double, option: SnapOption): Double {
         val beatUnit = 60.0 / beatsPerMinute.now
         val unit = when (option) {
-            Bars -> beatUnit * beatsPerBar.now
-            Beats -> beatUnit
-            Ticks -> beatUnit / ticksPerBeat.now
+            SnapOption.Bars -> beatUnit * beatsPerBar.now
+            SnapOption.Beats -> beatUnit
+            SnapOption.Ticks -> beatUnit / ticksPerBeat.now
             else -> throw AssertionError("Invalid snap option $option")
         }
         return (((t - start) / unit).roundToInt() * unit) + start

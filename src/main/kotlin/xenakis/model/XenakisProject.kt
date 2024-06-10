@@ -19,13 +19,14 @@ import java.io.File
 
 @Serializable
 class XenakisProject private constructor(
+    val settings: InteractionSettings,
     val serverSetup: EditorRoot<CodeBlockEditor>,
     val beforePlay: EditorRoot<CodeBlockEditor>,
     val instruments: InstrumentRegistry,
     val busses: BusRegistry,
     val flowGraph: AudioFlowGraph,
     val buffers: BufferRegistry,
-    val globalControls: GlobalControls = GlobalControls(mutableListOf()),
+    val globalControls: GlobalControls,
     val groups: GroupRegistry = GroupRegistry(),
     val score: Score
 ) {
@@ -55,6 +56,7 @@ class XenakisProject private constructor(
         client.statusListener.on(StatusUpdate.ReadyToBoot) {
             client.run {
                 addServerBootHooks()
+                instruments.run { allocateAll() }
                 +"s.boot"
             }
         }
@@ -90,10 +92,6 @@ class XenakisProject private constructor(
         score.writePlayerTask(this, fromTime, taskName = "play_score", prefix = "")
     }
 
-    private fun bootServer() {
-        client.run("s.boot;")
-    }
-
     fun rebootServer() {
         client.run("s.reboot;")
     }
@@ -108,12 +106,14 @@ class XenakisProject private constructor(
         }
 
         fun create(location: File, context: Context) = XenakisProject(
+            settings = InteractionSettings.default(),
             serverSetup = EditorRoot.create(CodeBlockEditor(context)),
             beforePlay = EditorRoot.create(CodeBlockEditor(context)),
             instruments = InstrumentRegistry.newInstance(),
             busses = BusRegistry.createDefault(),
             flowGraph = AudioFlowGraph.createDefault(),
             buffers = BufferRegistry(mutableListOf()),
+            globalControls = GlobalControls(mutableListOf()),
             score = Score(),
         ).also { project ->
             project.initialize(context)

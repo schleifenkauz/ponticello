@@ -5,6 +5,7 @@ import bundles.createBundle
 import bundles.publicProperty
 import hextant.fx.PseudoClasses
 import hextant.fx.initHextantScene
+import hextant.fx.registerShortcuts
 import javafx.application.Platform
 import javafx.scene.control.Button
 import javafx.scene.layout.VBox
@@ -123,23 +124,27 @@ class InstrumentRegistryPane(
         }
         obj as SynthDefObject
         val window = subWindows.getOrPut(obj) {
-            val pane = if (obj is CustomizableSynthDefObject) {
+            if (obj is CustomizableSynthDefObject) {
                 val pane = VBox(
                     ParameterDefsPane(registry.context, obj.parameters),
                     obj.ugenGraph.control
                 ) styleClass "synth-def-pane"
-                pane
-            } else ParameterInfoPane(obj.parameters)
-            SubWindow(pane, "", registry.context).apply {
-                titleProperty().bind(obj.name.map { name -> "SynthDef $name" }.asObservableValue())
-                width = 1000.0
-                height = 1000.0
-                setOnShown {
-                    if (obj is CustomizableSynthDefObject) {
-                        obj.ugenGraph.control.requestLayout()
+                SubWindow(pane, "", registry.context).apply {
+                    titleProperty().bind(obj.name.map { name -> "SynthDef $name" }.asObservableValue())
+                    width = 1000.0
+                    height = 1000.0
+                    scene.initHextantScene(registry.context, applyStyle = false)
+                    scene.registerShortcuts {
+                        on("Ctrl+S") { obj.sync() }
+                        on("Ctrl+Shift+S") {
+                            obj.sync()
+                            hide()
+                        }
                     }
                 }
-                scene.initHextantScene(registry.context, applyStyle = false)
+            } else {
+                val pane = ParameterInfoPane(obj.parameters)
+                SubWindow(pane, obj.name.now, registry.context, type = SubWindow.Type.Popup)
             }
         }
         window.show()

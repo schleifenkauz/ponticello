@@ -35,6 +35,7 @@ import reaktive.value.binding.not
 import reaktive.value.forEach
 import reaktive.value.fx.asObservableValue
 import reaktive.value.now
+import reaktive.value.toggle
 import xenakis.model.LayoutManager.LayoutAspect
 import xenakis.model.Settings
 import xenakis.model.XenakisProject
@@ -54,7 +55,6 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
     private lateinit var scoreView: ScoreView
     private lateinit var flowGraphWindow: SubWindow
     private lateinit var globalControlsWindow: SubWindow
-    val gridConfig: GridConfig = GridConfig()
     private val settingsWindow: Stage
 
     private lateinit var playBtn: Button
@@ -212,13 +212,14 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
         val fileBar = createFileBar() styleClass "toolbar-part"
         val undoRedoBar = createUndoRedoBar() styleClass "toolbar-part"
         val playerBar = createPlayerBar() styleClass "toolbar-part"
+        val interactionConfig = InteractionConfig(project.settings)
         val layoutBar = createLayoutBar() styleClass "toolbar-part"
         val miscBar = createMiscBar() styleClass "toolbar-part"
         return HBox(
             10.0,
             HBox(
                 10.0,
-                fileBar, undoRedoBar, playerBar, gridConfig,
+                fileBar, undoRedoBar, playerBar, interactionConfig,
                 toolSelector styleClass "toolbar-part", layoutBar
             ), HBox(
                 contextBar styleClass "toolbar-part",
@@ -340,8 +341,8 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
             on("Alt?+DIGIT8") { toolSelector.select(Tool.Cut) }
             on("Alt?+DIGIT9") { toolSelector.select(Tool.AddTime) }
 
-            on("Alt?+G") { gridConfig.gridToggle.toggle() }
-            on("Alt?+S") { gridConfig.snapToggle.toggle() }
+            on("Alt?+G") { project.settings.displayTimeGrid.toggle() }
+            on("Alt?+S") { project.settings.snapEnabled.toggle() }
 
             on("DELETE") { scoreView.removeSelected() }
 

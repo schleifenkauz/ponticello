@@ -11,6 +11,8 @@ interface SuperColliderObject : NamedObject {
 
     fun sync(writer: ScWriter)
 
+    fun sync()
+
     enum class LiveCycleType {
         ServerBoot, ServerTree;
     }

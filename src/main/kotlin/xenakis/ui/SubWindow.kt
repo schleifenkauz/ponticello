@@ -49,6 +49,9 @@ class SubWindow(
         } else {
             initStyle(StageStyle.DECORATED)
             initModality(Modality.NONE)
+            scene.registerShortcuts {
+                on("Ctrl+W") { hide() }
+            }
         }
     }
 

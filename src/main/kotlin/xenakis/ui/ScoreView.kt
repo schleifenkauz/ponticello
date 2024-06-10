@@ -4,10 +4,13 @@ import hextant.context.Context
 import hextant.fx.registerShortcuts
 import javafx.scene.shape.Line
 import javafx.scene.text.Text
+import reaktive.value.fx.asObservableValue
+import reaktive.value.now
 import xenakis.impl.Point
 import xenakis.impl.step
+import xenakis.model.InteractionSettings.SnapOption
 import xenakis.model.Score
-import xenakis.ui.GridConfig.SnapOption.Seconds
+import xenakis.ui.XenakisController.Companion.currentProject
 import kotlin.math.exp
 import kotlin.math.roundToInt
 
@@ -23,10 +26,10 @@ class ScoreView(score: Score, context: Context) : ScorePane(score, context) {
         get() = width / (displayEnd - displayStart)
 
     override fun snapToGrid(x: Double, y: Double): Point {
-        val gridConfig = context[XenakisUI].gridConfig
-        if (!gridConfig.snapToggle.isSelected) return Point(x, y)
-        when (val option = gridConfig.snapOption.value ?: Seconds) {
-            Seconds -> return Point(getX(getTime(x).roundToInt().toDouble()), y)
+        val settings = context[currentProject].settings
+        if (!settings.snapEnabled.now) return Point(x, y)
+        when (val option = settings.snapOption.now) {
+            SnapOption.Seconds -> return Point(getX(getTime(x).roundToInt().toDouble()), y)
             else -> {
                 val grids = allViews.filterIsInstance<TempoGridObjectView>()
                 val relevantGrids = grids.filter { g -> x in g.layoutX..g.width }
@@ -79,7 +82,8 @@ class ScoreView(score: Score, context: Context) : ScorePane(score, context) {
     }
 
     private fun displayTimeGrid() {
-        val gridConfig = context[XenakisUI].gridConfig
+        val settings = context[currentProject].settings
+        val gridVisible = settings.displayTimeGrid.asObservableValue()
         var idx = QUANTIZED_PIXELS_PER_SECOND.binarySearchBy(pixelsPerSecond) { s -> s }
         if (idx < 0) idx = (-(idx + 1)).coerceAtMost(QUANTIZED_PIXELS_PER_SECOND.size - 1)
         val quantizedPixelsPerSecond = QUANTIZED_PIXELS_PER_SECOND[idx]
@@ -94,13 +98,13 @@ class ScoreView(score: Score, context: Context) : ScorePane(score, context) {
             l.endX = x
             l.startYProperty().bind(heightProperty().subtract(40))
             l.endYProperty().bind(heightProperty().subtract(5))
-            l.visibleProperty().bind(gridConfig.gridToggle.selectedProperty())
+            l.visibleProperty().bind(gridVisible)
             children.add(l)
             val timeCode = timeCode(t, accuracy)
             val txt = Text(timeCode).styleClass("grid-time-code")
             txt.x = x - 8
             txt.yProperty().bind(heightProperty().subtract(40))
-            txt.visibleProperty().bind(gridConfig.gridToggle.selectedProperty())
+            txt.visibleProperty().bind(gridVisible)
             children.add(txt)
         }
     }
