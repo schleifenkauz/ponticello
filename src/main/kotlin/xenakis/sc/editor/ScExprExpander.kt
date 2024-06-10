@@ -23,29 +23,34 @@ class ScExprExpander(context: Context) : ConfiguredExpander<ScExpr, ScExprEditor
 
     override fun defaultResult(): ScExpr = EmptyExpr
 
-    override fun autoExpand(text: String): ScExprEditor<*>? = when {
-        text in Operator.map -> OperatorExprEditor(context, operator = OperatorEditor(context, text))
-        text.endsWith(".") && text.dropLast(1).toIntOrNull() == null ->
-            MessageSendEditor(context, ScExprExpander(context, text.dropLast(1)))
+    override fun autoExpand(text: String): Boolean {
+        val editor = when {
+            text in Operator.map -> OperatorExprEditor(context, operator = OperatorEditor(context, text))
+            text.endsWith(".") && text.dropLast(1).toIntOrNull() == null ->
+                MessageSendEditor(context, ScExprExpander(context, text.dropLast(1)))
 
-        text == "=" -> AssignmentEditor(context)
-        text == "." -> MessageSendEditor(context)
-        text == ":" -> NamedExprEditor(context)
+            text == "=" -> AssignmentEditor(context)
+            text == "." -> MessageSendEditor(context)
+            text == ":" -> NamedExprEditor(context)
 
-        text.endsWith("=") && Identifier.isValid(text.dropLast(1)) ->
-            AssignmentEditor(context, IdentifierEditor(context, text.dropLast(1)))
+            text.endsWith("=") && Identifier.isValid(text.dropLast(1)) ->
+                AssignmentEditor(context, IdentifierEditor(context, text.dropLast(1)))
 
-        text.endsWith(":") && Identifier.isValid(text.dropLast(1)) ->
-            NamedExprEditor(context, IdentifierEditor(context, text.dropLast(1)))
+            text.endsWith(":") && Identifier.isValid(text.dropLast(1)) ->
+                NamedExprEditor(context, IdentifierEditor(context, text.dropLast(1)))
 
-        text.endsWith("(") && Identifier.isValid(text.dropLast(1)) ->
-            NewObjectEditor(context, IdentifierEditor(context, text.dropLast(1)))
+            text.endsWith("(") && Identifier.isValid(text.dropLast(1)) ->
+                NewObjectEditor(context, IdentifierEditor(context, text.dropLast(1)))
 
-        text == "\\" -> SymbolLiteralEditor(context)
-        text == "'" -> StringLiteralEditor(context)
-        text == "{" -> ScFunctionEditor(context)
-        text == "(" -> CodeBlockEditor(context)
-        else -> null
+            text == "\\" -> SymbolLiteralEditor(context)
+            text == "'" -> StringLiteralEditor(context)
+            text == "{" -> ScFunctionEditor(context)
+            text == "(" -> CodeBlockEditor(context)
+            else -> null
+        }
+        return if (editor != null) {
+            autoExpandTo(editor)
+        } else super.autoExpand(text)
     }
 
     override fun onExpansion(editor: ScExprEditor<*>) {
@@ -56,10 +61,8 @@ class ScExprExpander(context: Context) : ConfiguredExpander<ScExpr, ScExprEditor
             editor is MessageSendEditor && editor.receiver.result.now != EmptyExpr ->
                 editor.method.notifyViews { focus() }
 
-
             editor is NamedExprEditor && editor.name.text.now != "" ->
                 editor.value.notifyViews { focus() }
-
 
             editor is NewObjectEditor && editor.className.text.now != "" ->
                 editor.arguments.notifyViews { focus() }

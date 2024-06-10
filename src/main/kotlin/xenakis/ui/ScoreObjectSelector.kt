@@ -19,7 +19,7 @@ class ScoreObjectSelector(private val context: Context, private val rootPane: Sc
 
     val selectedViews: Set<ScoreObjectView> get() = _selectedViews
 
-    val selectedObjects get() = _selectedViews.map { view -> view.myObject }
+    val selectedObjects: Set<ScoreObject> get() = _selectedViews.mapTo(mutableSetOf()) { view -> view.myObject }
 
     private val _singleSelected = reactiveVariable<ScoreObjectView?>(null)
     val singleSelected: ReactiveValue<ScoreObjectView?> get() = _singleSelected
@@ -54,9 +54,8 @@ class ScoreObjectSelector(private val context: Context, private val rootPane: Sc
 
     fun removeSelected() {
         context[UndoManager].beginCompoundEdit()
-        for (view in selectedViews) {
-            view.pane.score.removeObject(view.myObject)
-        }
+        val score = selectedObjects.firstOrNull()?.parent ?: return
+        score.removeObjects(selectedObjects)
         context[UndoManager].finishCompoundEdit("Remove objects")
     }
 

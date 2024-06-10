@@ -18,7 +18,7 @@ abstract class ScoreEdit(val score: Score) : AbstractEdit() {
         }
     }
 
-    class RemoveObjects(private val objects: List<ScoreObject>, score: Score) : ScoreEdit(score) {
+    class RemoveObjects(private val objects: Set<ScoreObject>, score: Score) : ScoreEdit(score) {
         override val actionDescription: String
             get() = "Remove objects from score"
 
@@ -27,7 +27,7 @@ abstract class ScoreEdit(val score: Score) : AbstractEdit() {
         }
 
         override fun doRedo() {
-            for (obj in objects) score.removeObject(obj)
+            score.removeObjects(objects)
         }
 
         override fun mergeWith(other: Edit): Edit? {

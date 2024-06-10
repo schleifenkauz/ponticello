@@ -8,6 +8,8 @@ import hextant.codegen.ProvideImplementation
 import hextant.completion.NoCompleter
 import hextant.context.ControlFactory
 import hextant.core.view.*
+import hextant.core.view.ListEditorControl.Companion.EMPTY_DISPLAY
+import hextant.core.view.ListEditorControl.Companion.ORIENTATION
 import hextant.fx.keyword
 import hextant.fx.view
 import xenakis.ui.button
@@ -205,8 +207,8 @@ fun createControl(editor: xenakis.sc.editor.EventDictionaryEditor, arguments: Bu
     CompoundEditorControl(editor, arguments) {
         vertical {
             view(editor.entries) {
-                set(ListEditorControl.ORIENTATION, ListEditorControl.Orientation.Vertical)
-                set(ListEditorControl.EMPTY_DISPLAY) { null }
+                set(ORIENTATION, ListEditorControl.Orientation.Vertical)
+                set(EMPTY_DISPLAY) { null }
             }
             add(button("Add entry") { editor.entries.addLast() })
         }

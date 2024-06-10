@@ -7,6 +7,7 @@ import bundles.set
 import hextant.codegen.ProvideImplementation
 import hextant.context.ControlFactory
 import hextant.core.view.CompoundEditorControl
+import hextant.core.view.ListEditorControl.Companion.ADD_WITH_COMMA
 import hextant.core.view.ListEditorControl.Companion.CELL_FACTORY
 import hextant.core.view.ListEditorControl.Companion.ORIENTATION
 import hextant.core.view.ListEditorControl.Orientation.Horizontal
@@ -50,6 +51,7 @@ class ScFunctionEditorControl @ProvideImplementation(ControlFactory::class) cons
         view(editor.parameters) {
             set(ORIENTATION, Horizontal)
             set(CELL_FACTORY) { SeparatorCell(", ") }
+            set(ADD_WITH_COMMA, true)
         }
     }
 

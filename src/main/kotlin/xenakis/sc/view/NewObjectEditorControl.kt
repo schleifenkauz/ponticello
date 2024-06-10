@@ -6,6 +6,7 @@ import hextant.codegen.ProvideImplementation
 import hextant.context.ControlFactory
 import hextant.core.view.CompoundEditorControl
 import hextant.core.view.ListEditorControl
+import hextant.core.view.ListEditorControl.Companion.ADD_WITH_COMMA
 import hextant.core.view.ListEditorControl.Companion.CELL_FACTORY
 import hextant.core.view.ListEditorControl.Companion.ORIENTATION
 import hextant.core.view.ListEditorControl.Orientation
@@ -35,7 +36,8 @@ class NewObjectEditorControl @ProvideImplementation(ControlFactory::class) const
             if (!arguments[MULTILINE] || !anyArguments.now) {
                 view(editor.arguments) {
                     set(ORIENTATION, Orientation.Horizontal)
-                    set(CELL_FACTORY) { SeparatorCell(" ").also { it.root.centerChildrenVertically() } }
+                    set(CELL_FACTORY) { SeparatorCell(", ").also { it.root.centerChildrenVertically() } }
+                    set(ADD_WITH_COMMA, true)
                 }.root.styleClass("arguments").centerChildrenVertically()
             }
         }

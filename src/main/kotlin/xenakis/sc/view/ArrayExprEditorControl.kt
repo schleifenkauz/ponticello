@@ -5,6 +5,7 @@ import bundles.set
 import hextant.codegen.ProvideImplementation
 import hextant.context.ControlFactory
 import hextant.core.view.CompoundEditorControl
+import hextant.core.view.ListEditorControl.Companion.ADD_WITH_COMMA
 import hextant.core.view.ListEditorControl.Companion.CELL_FACTORY
 import hextant.core.view.ListEditorControl.Companion.ORIENTATION
 import hextant.core.view.ListEditorControl.Orientation
@@ -22,7 +23,8 @@ class ArrayExprEditorControl @ProvideImplementation(ControlFactory::class) const
             if (arguments[MULTILINE]) set(ORIENTATION, Orientation.Vertical)
             else {
                 set(ORIENTATION, Orientation.Horizontal)
-                set(CELL_FACTORY) { SeparatorCell(" ").also { it.root.centerChildrenVertically() } }
+                set(CELL_FACTORY) { SeparatorCell(", ").also { it.root.centerChildrenVertically() } }
+                set(ADD_WITH_COMMA, true)
             }
         }.root.styleClass("compound-expr", "array")
     }

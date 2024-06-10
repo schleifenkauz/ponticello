@@ -65,16 +65,20 @@ class Score(
         undo.record(ScoreEdit.AddObject(obj, this))
     }
 
-    fun removeObject(obj: ScoreObject) {
-        //val objAndItsClones = objects.filterIsInstance<ClonedObject>().filter { it.original == obj } + obj
-        val objAndItsClones = listOf(obj)
-        for (o in objAndItsClones) {
+    fun removeObjects(set: Set<ScoreObject>) {
+        val objectsAndTheirClones = objects.filterTo(mutableSetOf()) { o -> o is ClonedObject && o.original in set }
+        objectsAndTheirClones.addAll(set)
+        for (o in objectsAndTheirClones) {
             _objects.remove(o)
             views.notifyListeners { removedObject(o) }
             objectRegistry.remove(o)
             layoutManager.removedObject(o)
         }
-        undo.record(ScoreEdit.RemoveObjects(objAndItsClones, this))
+        undo.record(ScoreEdit.RemoveObjects(objectsAndTheirClones, this))
+    }
+
+    fun removeObject(obj: ScoreObject) {
+        removeObjects(setOf(obj))
     }
 
     fun moveObject(obj: ScoreObject, newStart: Double, newY: Double) {

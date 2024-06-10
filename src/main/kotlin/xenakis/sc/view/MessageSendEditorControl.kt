@@ -6,6 +6,7 @@ import hextant.codegen.ProvideImplementation
 import hextant.context.ControlFactory
 import hextant.core.view.CompoundEditorControl
 import hextant.core.view.ListEditorControl
+import hextant.core.view.ListEditorControl.Companion.ADD_WITH_COMMA
 import hextant.core.view.ListEditorControl.Companion.CELL_FACTORY
 import hextant.core.view.ListEditorControl.Companion.ORIENTATION
 import hextant.core.view.ListEditorControl.Orientation
@@ -41,7 +42,8 @@ class MessageSendEditorControl @ProvideImplementation(ControlFactory::class) con
                 space()
                 view(editor.arguments, cached = false) {
                     set(ORIENTATION, Orientation.Horizontal)
-                    set(CELL_FACTORY) { SeparatorCell(" ").also { it.root.centerChildrenVertically() } }
+                    set(CELL_FACTORY) { SeparatorCell(", ").also { it.root.centerChildrenVertically() } }
+                    set(ADD_WITH_COMMA, true)
                 }.root.centerChildrenVertically().styleClass("compound-expr", "arguments")
             }
         }

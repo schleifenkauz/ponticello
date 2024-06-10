@@ -9,6 +9,7 @@ import hextant.codegen.ProvideImplementation
 import hextant.context.ControlFactory
 import hextant.core.view.CompoundEditorControl
 import hextant.core.view.ListEditorControl
+import hextant.core.view.ListEditorControl.Companion.ADD_WITH_COMMA
 import hextant.core.view.ListEditorControl.Companion.CELL_FACTORY
 import hextant.core.view.ListEditorControl.Companion.EMPTY_DISPLAY
 import hextant.core.view.ListEditorControl.Companion.ORIENTATION
@@ -42,6 +43,7 @@ class CodeBlockEditorControl @ProvideImplementation(ControlFactory::class) const
                 view(editor.variables) {
                     set(ORIENTATION, Horizontal)
                     set(CELL_FACTORY) { SeparatorCell(", ") }
+                    set(ADD_WITH_COMMA, true)
                 }
             }
             view(editor.statements) {

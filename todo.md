@@ -44,7 +44,6 @@
 - fixed duration synths (don't need to be released)
   - maybe also distinguish between gated SynthDefs (can be `release`d) and those that have to be `free`d
 - allow for more cases of pasting code
-- add to expr list with comma
 - looping period specifiable in beats/ticks/bars
 - ability to drag multiple objects at once
 - start moving play-head only when SuperCollider answers with `\playing` message
@@ -70,10 +69,6 @@
 - use SuperCollider `Score` object for playback (this also means ability to do NRT bouncing!)
 
 ## Bug fixes
-
-- why can't we have shortcuts in the ScoreView?
-- the mouse position tracker line sometimes interferes with clicks (disabled for now)
-- why are HextantTextFields sometimes too small when reopening editors?
 
 ## Nice to have
 
