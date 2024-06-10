@@ -36,6 +36,7 @@ class ClonedObject(
     }
 
     override fun initialize(context: Context) {
+        if (initialized) return
         super.initialize(context)
         originalRef.resolve(context)
     }

@@ -98,6 +98,7 @@ class InstrumentRegistryPane(
         selector.setOnAction {
             if (selector == selectedBtn) return@setOnAction
             registry.selectedInstrument = obj
+            registry.context[XenakisUI].toolSelector.select(ToolSelector.Tool.Synth)
         }
         children.add(0, selector)
         val colorPicker = colorPicker(obj.color)

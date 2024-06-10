@@ -25,6 +25,12 @@ class SubScorePane(
         return Point(coords)
     }
 
+    override fun getNearestGrid(x: Double, y: Double): TempoGridObjectView? {
+        var coords = this.localToScreen(x, y)
+        coords = parent.screenToLocal(coords)
+        return parent.getNearestGrid(coords.x, coords.y)
+    }
+
     override val xAccuracy: Int
         get() = parent.xAccuracy
 

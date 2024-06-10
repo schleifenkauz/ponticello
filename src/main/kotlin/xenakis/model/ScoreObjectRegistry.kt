@@ -10,7 +10,13 @@ class ScoreObjectRegistry : ObjectRegistry<ScoreObject>() {
     override val objectType: String
         get() = "Score object"
 
-    override fun onAdded(obj: ScoreObject, idx: Int) {}
+    override fun onAdded(obj: ScoreObject, idx: Int) {
+        println("Added ${obj.name.now} to registry")
+    }
+
+    override fun onRemoved(obj: ScoreObject, idx: Int) {
+        println("Removed ${obj.name.now} from registry")
+    }
 
     override fun getDefault(): ScoreObject = error("No default score object")
 

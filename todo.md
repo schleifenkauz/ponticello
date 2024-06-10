@@ -68,13 +68,17 @@
   - write custom serializer for `XenakisProject`
 - use SuperCollider `Score` object for playback (this also means ability to do NRT bouncing!)
 
-## Bug fixes
+## Bugs
+
+- when pasting multiple objects at once sometimes some of the clone/copies are not shown
+  - they are present in the score
+  - they are present in the views-map of the ScorePane
+  - they are present in the children of the ScorePane
+  - they are not shown when reopening the score
+  - what could it be???
 
 ## Nice to have
 
 - integrate close, maximize, minimize into top toolbar and remove window decoration
-- auto resize prompt windows (e.g. parameter definition prompts)
-- maybe show control assignment view in tool-pane?
-- ad hoc synths
 - display all non-envelope controls of a synth in its header?
   - easy access but might end up cluttering the interface

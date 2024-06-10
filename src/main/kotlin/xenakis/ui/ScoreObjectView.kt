@@ -84,6 +84,8 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
     }
 
     fun createLoop() {
+        val settings = context[currentProject].settings
+        val grid = pane.getNearestGrid(layoutX, layoutY).takeIf { settings.snapEnabled.now }
         val periodInput = TextField(myObject.duration.format(2))
         val numberOfRepeats = Spinner<Int>(1, 1000, 1, 1)
         val box = GridPane().apply {
@@ -112,7 +114,9 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
 
     protected open fun getSubWindowView(): Region = pane.createObjectView(myObject).also { v ->
         v.pane = pane
-        v.minimalSetup()
+        v.displayEnvelopes()
+        v.displayKnobs()
+        v.myObject.addView(v)
     }
 
     open fun initialize(parent: ScorePane) {
@@ -129,8 +133,9 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
         border = solidBorder(nonSelectedBorderColor, width = 2.0)
         setupCutting()
         initializeHeader()
-        minimalSetup()
-        setupSubWindow()
+        displayEnvelopes()
+        displayKnobs()
+        myObject.addView(this)
         isInitialized = true
     }
 
@@ -154,12 +159,6 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
         prefWidth = getDisplayWidth()
         prefHeight = myObject.height
         myObject.position.addListener(this)
-    }
-
-    private fun minimalSetup() {
-        displayEnvelopes()
-        displayKnobs()
-        myObject.addView(this)
     }
 
     private fun setupSubWindow() {
@@ -287,6 +286,7 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
     }
 
     fun setSelected(value: Boolean) {
+        println("Set selected ${myObject.name.now} = $value")
         border = if (value) {
             solidBorder(borderColorWhenSelected, width = 2.0)
         } else {

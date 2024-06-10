@@ -10,9 +10,9 @@ import kotlinx.serialization.json.Json
 import reaktive.value.ReactiveValue
 import reaktive.value.now
 import reaktive.value.reactiveVariable
+import xenakis.model.ClonedObject
 import xenakis.model.LayoutManager
 import xenakis.model.ScoreObject
-import xenakis.model.ScoreObjectRegistry
 
 class ScoreObjectSelector(private val context: Context, private val rootPane: ScorePane) {
     private val _selectedViews = mutableSetOf<ScoreObjectView>()
@@ -61,19 +61,19 @@ class ScoreObjectSelector(private val context: Context, private val rootPane: Sc
 
     fun copySelected() {
         if (selectedObjects.isEmpty()) return
-        val copies = selectedObjects.map { obj ->
-            val name = context[ScoreObjectRegistry].nameForCopy(obj)
-            obj.copy(name)
+        val copies = selectedObjects.map { o ->
+            if (o is ClonedObject) {
+                val copy = o.original.copy(o.original.name.now)
+                copy.position.set(o.position)
+                copy
+            } else o
         }
         setClipboard(copies)
     }
 
     fun cloneSelected() {
         if (selectedObjects.isEmpty()) return
-        val clones = selectedObjects.map { obj ->
-            val name = context[ScoreObjectRegistry].nameForClone(obj)
-            obj.clone(name)
-        }
+        val clones = selectedObjects.map { obj -> obj.clone(obj.name.now) }
         setClipboard(clones)
     }
 
@@ -98,7 +98,7 @@ class ScoreObjectSelector(private val context: Context, private val rootPane: Sc
 
     fun removeFromLayoutGroup(aspect: LayoutManager.LayoutAspect) {
         for (obj in selectedObjects) {
-            val layoutManager = obj.parent.layoutManager
+            val layoutManager = obj.parent!!.layoutManager
             layoutManager.removeFromGroup(obj, aspect)
         }
     }

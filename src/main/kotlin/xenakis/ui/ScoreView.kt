@@ -31,10 +31,8 @@ class ScoreView(score: Score, context: Context) : ScorePane(score, context) {
         when (val option = settings.snapOption.now) {
             SnapOption.Seconds -> return Point(getX(getTime(x).roundToInt().toDouble()), y)
             else -> {
-                val grids = allViews.filterIsInstance<TempoGridObjectView>()
-                val relevantGrids = grids.filter { g -> x in g.layoutX..g.width }
-                val nearestGrid = relevantGrids.minByOrNull { g -> g.verticalDist(y) }
-                for (grid in grids) {
+                val nearestGrid = getNearestGrid(x, y)
+                for (grid in allViews.filterIsInstance<TempoGridObjectView>()) {
                     if (grid != nearestGrid) grid.unmark()
                 }
                 if (nearestGrid == null) return Point(x, y)
@@ -45,6 +43,13 @@ class ScoreView(score: Score, context: Context) : ScorePane(score, context) {
                 return Point(snappedX, y)
             }
         }
+    }
+
+    override fun getNearestGrid(x: Double, y: Double): TempoGridObjectView? {
+        val grids = allViews.filterIsInstance<TempoGridObjectView>()
+        val relevantGrids = grids.filter { g -> x in g.layoutX..g.width }
+        val nearestGrid = relevantGrids.minByOrNull { g -> g.verticalDist(y) }
+        return nearestGrid
     }
 
     init {

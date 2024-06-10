@@ -1,7 +1,9 @@
 package xenakis.ui
 
 import hextant.context.Context
+import hextant.context.withoutUndo
 import hextant.serial.EditorRoot
+import hextant.undo.compoundEdit
 import javafx.application.Platform
 import javafx.collections.FXCollections
 import javafx.geometry.Bounds
@@ -54,6 +56,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
 
     abstract val xAccuracy: Int
     abstract fun snapToGrid(x: Double, y: Double): Point
+    abstract fun getNearestGrid(x: Double, y: Double): TempoGridObjectView?
 
     abstract val pixelsPerSecond: Double
     fun getX(time: Double) = (time - displayStart) * pixelsPerSecond
@@ -288,17 +291,28 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
     }
 
     private fun pasteFromClipboard(ev: MouseEvent) {
-        val clipboard = Clipboard.getSystemClipboard()
-        if (clipboard.hasContent(ScoreObject.DATA_FORMAT)) {
-            val content = clipboard.getContent(ScoreObject.DATA_FORMAT) as String
-            val objects = Json.decodeFromString(ListSerializer(ScoreObject.Ser), content)
-            val leftTop = objects.minOf { it.position }
-            for (obj in objects) {
-                score.addObject(obj)
-                obj.position.start += getTime(ev.x) - leftTop.start
-                obj.position.start = obj.start.coerceAtLeast(0.0)
-                obj.position.y += ev.y - leftTop.y
-                obj.position.y = obj.y.coerceIn(0.0, height - obj.height)
+        context.compoundEdit("Paste objects") {
+            val clipboard = Clipboard.getSystemClipboard()
+            if (clipboard.hasContent(ScoreObject.DATA_FORMAT)) {
+                val content = clipboard.getContent(ScoreObject.DATA_FORMAT) as String
+                val objects = Json.decodeFromString(ListSerializer(ScoreObject.Ser), content)
+                val leftTop = objects.minOf { it.position }
+                val (x, y) = snapToGrid(ev.x, ev.y)
+                for (obj in objects) {
+                    obj.initialize(context)
+                    val name =
+                        if (obj is ClonedObject) context[ScoreObjectRegistry].nameForClone(obj.original)
+                        else context[ScoreObjectRegistry].nameForCopy(obj)
+                    context.withoutUndo {
+                        obj.rename(name)
+                        obj.position.start += getTime(x) - leftTop.start
+                        obj.position.start = obj.start.coerceAtLeast(0.0)
+                        obj.position.y += y - leftTop.y
+                        obj.position.y = obj.y.coerceIn(0.0, height - obj.height)
+                    }
+                    score.addObject(obj)
+                    Thread.sleep(100)
+                }
             }
         }
     }
@@ -398,14 +412,16 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
 
             Group -> {
                 val name = context[ScoreObjectRegistry].availableName("group")
-                val objects = viewsInside(rect.boundsInParent).map { it.myObject }
-                for (obj in objects) {
-                    score.removeObject(obj)
-                    obj.position.start -= getTime(rect.x)
-                    obj.position.y -= rect.y
+                context.compoundEdit("Add object group") {
+                    val objects = viewsInside(rect.boundsInParent).mapTo(mutableSetOf()) { it.myObject }
+                    score.removeObjects(objects)
+                    for (obj in objects) {
+                        obj.position.start -= getTime(rect.x)
+                        obj.position.y -= rect.y
+                    }
+                    val subScore = Score(objects.toMutableList())
+                    addObject(ScoreObjectGroup(name, subScore), rect)
                 }
-                val subScore = Score(objects.toMutableList())
-                addObject(ScoreObjectGroup(name, subScore), rect)
             }
 
             PianoRoll -> {

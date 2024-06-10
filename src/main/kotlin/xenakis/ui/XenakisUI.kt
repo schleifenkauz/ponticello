@@ -323,6 +323,10 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
             on("Ctrl+N") { controller.createNewProject() }
             on("Ctrl+E") { controller.exportAsScript() }
 
+            on("Ctrl+A") {
+                context[ScoreObjectSelector].selectAll()
+            }
+
             on("Ctrl+SPACE") { togglePlay() }
             on("Ctrl+PERIOD") { stop() }
 

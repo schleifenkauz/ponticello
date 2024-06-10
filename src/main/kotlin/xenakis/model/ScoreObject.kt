@@ -27,7 +27,7 @@ abstract class ScoreObject(name: String) : AbstractRenamableObject() {
 
     abstract val type: String
 
-    lateinit var parent: Score
+    var parent: Score? = null
         private set
     abstract val position: ObjectPosition
     abstract var duration: Double
@@ -60,9 +60,7 @@ abstract class ScoreObject(name: String) : AbstractRenamableObject() {
     override fun rename(newName: String) {
         if (name.now == newName) return
         recordEdit(ScoreObjectEdit.Rename(oldName = name.now, newName = newName, this))
-        if (initialized) {
-            parent.layoutManager.renamedObject(oldName = name.now, newName = newName)
-        }
+        parent?.layoutManager?.renamedObject(oldName = name.now, newName = newName)
         super.rename(newName)
     }
 

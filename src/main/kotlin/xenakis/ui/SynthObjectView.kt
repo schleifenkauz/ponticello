@@ -25,6 +25,7 @@ class SynthObjectView(val obj: SynthObject) : ScoreObjectView(obj) {
     override fun initialize(parent: ScorePane) {
         super.initialize(parent)
         val btn = Icon.Details.button(action = "Open control assignment view") { openControlAssignment() }
+        header.children.add(1, colorPicker)
         header.children.add(1, btn)
         header.children.add(1, ObjectSelectorControl(obj.groupSelector, createBundle()))
         setupSynthDefReference()
