@@ -83,13 +83,15 @@ class XenakisProject private constructor(
             flowGraph.run { setupAudioFlow() }
             globalControls.run { setBusValues() }
             instruments.run { allocateAll() }
-            score.writePlayerTask(writer, startTime = 0.0, taskName = "play_score", prefix = "")
+            score.writePlayerTask(writer, startFrom = 0.0, prefix = "")
         }
     }
 
     fun ScWriter.playScore(fromTime: Double) {
+        appendLine("~synths = ();")
+        appendLine("~tasks = ();")
         beforePlay.editor.result.now.code(this)
-        score.writePlayerTask(this, fromTime, taskName = "play_score", prefix = "")
+        score.writePlayerTask(this, fromTime, prefix = "")
     }
 
     fun rebootServer() {

@@ -17,6 +17,7 @@ import javafx.scene.shape.Line
 import javafx.scene.shape.Rectangle
 import reaktive.value.ReactiveValue
 import reaktive.value.binding.binding
+import reaktive.value.binding.flatMap
 import reaktive.value.binding.map
 import reaktive.value.fx.asObservableValue
 import reaktive.value.now
@@ -286,7 +287,7 @@ class PianoRollObjectView(private val obj: PianoRollObject) : ScoreObjectView(ob
     }
 
     override val defaultBackgroundColor: ReactiveValue<Color>
-        get() = obj.instrument.get().color
+        get() = obj.instrumentSelector.result.flatMap { instr -> instr.get().color }
 
     companion object {
         private const val CURSOR_OPACITY = 0.6

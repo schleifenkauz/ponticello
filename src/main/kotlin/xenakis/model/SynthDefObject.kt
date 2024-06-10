@@ -18,6 +18,4 @@ sealed interface SynthDefObject : ParameterizedObject, InstrumentObject {
 
     fun defaultControls(context: Context) =
         parameters.now.associateTo(mutableMapOf()) { p -> p.name.now to p.defaultControl(context) }
-
-    override fun createEvent(): Map<String, String> = mapOf("instrument" to "\\${name.now}")
 }

@@ -45,7 +45,14 @@ abstract class ScoreObject(name: String) : AbstractRenamableObject() {
 
     open fun writeStartCode(writer: ScWriter, offset: Double, name: String = this.name.now) {}
 
-    open fun writeStopCode(writer: ScWriter, name: String = this.name.now) {}
+    open fun writeCode(writer: ScWriter, playAt: Double, name: String) {
+        if (playAt < -duration) return
+        val offset = -(playAt.coerceAtMost(0.0))
+        writer.appendBlock("s.makeBundle(${(playAt).coerceAtLeast(0.0)})") {
+            writeStartCode(writer, offset, name)
+        }
+        writer.appendLine(";")
+    }
 
     abstract fun play(writer: ScWriter)
 

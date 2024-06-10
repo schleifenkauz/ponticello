@@ -9,7 +9,7 @@ import kotlinx.serialization.Transient
 import reaktive.value.now
 import xenakis.impl.Point
 import xenakis.impl.ScWriter
-import xenakis.ui.format
+import xenakis.ui.ScoreObjectSelector
 
 @Serializable
 class Score(
@@ -93,7 +93,7 @@ class Score(
         undo.record(ScoreEdit.MoveObject(obj, Point(obj.start, obj.y), Point(newStart, newY), this))
         val dt = newStart - obj.start
         val dy = newY - obj.y
-        layoutManager.moveObject(obj, dt, dy)
+        layoutManager.moveObject(obj, dt, dy, context[ScoreObjectSelector].selectedObjects)
     }
 
     private fun chain(previous: ScoreObject, next: ClonedObject) {
@@ -135,32 +135,12 @@ class Score(
         }
     }
 
-    fun writePlayerTask(writer: ScWriter, startTime: Double, taskName: String, prefix: String) {
-        writer.appendLine("~$taskName = Task {")
-        val relevantObjects = objects.filter { obj -> !obj.muted && obj.start + obj.duration > startTime }
-        val starts = relevantObjects.map { obj ->
-            val start = obj.start.coerceAtLeast(startTime)
-            val offset = (startTime - obj.start).coerceAtLeast(0.0)
-            val name = "$prefix${obj.name.now}"
-            start to { obj.writeStartCode(writer, offset, name) }
+    fun writePlayerTask(writer: ScWriter, startFrom: Double, prefix: String) {
+        for (obj in objects) {
+            if (obj.muted) continue
+            if (startFrom > obj.start + obj.duration) continue
+            obj.writeCode(writer, obj.start - startFrom, name = prefix + obj.name.now)
         }
-        val stops = relevantObjects.map { obj ->
-            val name = "$prefix${obj.name.now}"
-            obj.start + obj.duration to { obj.writeStopCode(writer, name) }
-        }
-        val timedActions = (starts + stops).sortedBy { (t, _) -> t }
-        if (timedActions.isNotEmpty()) {
-            val (t0, action0) = timedActions.first()
-            val startDiff = t0 - startTime
-            writer.appendLine("${startDiff.format(2)}.wait;")
-            action0.invoke()
-            timedActions.zipWithNext { (t1, _), (t2, action) ->
-                val d = t2 - t1
-                writer.appendLine("${d.format(2)}.wait;")
-                action.invoke()
-            }
-        }
-        writer.appendLine("}.play;")
     }
 
     fun deleteTimeRange(start: Double, end: Double) {

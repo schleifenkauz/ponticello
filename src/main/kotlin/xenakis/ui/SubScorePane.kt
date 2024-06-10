@@ -35,6 +35,7 @@ class SubScorePane(
         get() = parent.xAccuracy
 
     init {
+        listenForEvents()
         obj.score.addListener(this)
     }
 

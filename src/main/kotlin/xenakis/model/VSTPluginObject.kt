@@ -96,8 +96,6 @@ class VSTPluginObject private constructor(
         client.run("if (s.serverRunning) { $variableName.savePreset('$presetName') };")
     }
 
-    override fun createEvent(): Map<String, String> = mapOf("type" to "\\vst_midi", "vst" to variableName)
-
     data class ControllerInfo(val synthName: String, val id: String)
 
     companion object {

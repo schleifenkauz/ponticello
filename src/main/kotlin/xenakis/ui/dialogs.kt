@@ -132,7 +132,7 @@ fun <T : Any> tryWithAlert(actionDescription: String, action: () -> T): T? = try
     action()
 } catch (e: Exception) {
     e.printStackTrace()
-    alertException(actionDescription, e)
+    alertError("Exception while $actionDescription: ${e.message}")
     null
 }
 

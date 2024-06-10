@@ -9,7 +9,6 @@ import reaktive.value.reactiveVariable
 import xenakis.impl.ScWriter
 import xenakis.sc.ControlSpec
 import xenakis.ui.ScoreObjectView
-import xenakis.ui.format
 
 sealed class RegularScoreObject(name: String) : ScoreObject(name) {
     protected abstract val viewManager: ListenerManager<out ScoreObjectView>
@@ -85,12 +84,7 @@ sealed class RegularScoreObject(name: String) : ScoreObject(name) {
         throw NoSuchElementException("no spec for parameter $parameter in $this")
 
     final override fun play(writer: ScWriter) {
-        writer.appendBlock("~player_task = Task") {
-            writeStartCode(writer, offset = 0.0)
-            +"${duration.format(2)}.wait"
-            writeStopCode(writer)
-        }
-        writer.appendLine(".play")
+        writeStartCode(writer, offset = 0.0)
     }
 
     override fun addView(view: ScoreObjectView) {

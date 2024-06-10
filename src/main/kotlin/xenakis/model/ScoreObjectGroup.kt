@@ -26,12 +26,9 @@ class ScoreObjectGroup(name: String, val score: Score) : RegularScoreObject(name
         this.score.initialize(context)
     }
 
-    override fun writeStartCode(writer: ScWriter, offset: Double, name: String) {
-        score.writePlayerTask(writer, offset, taskName = "play_$name", prefix = "_$name")
-    }
-
-    override fun writeStopCode(writer: ScWriter, name: String) {
-        writer.appendLine("~play_$name.stop;")
+    override fun writeCode(writer: ScWriter, playAt: Double, name: String) {
+        if (playAt < -duration) return
+        score.writePlayerTask(writer, -(playAt + start), prefix = "${name}_")
     }
 
     override fun cut(position: Double, whichHalf: HorizontalDirection): ScoreObject {
@@ -79,6 +76,7 @@ class ScoreObjectGroup(name: String, val score: Score) : RegularScoreObject(name
         super.remove()
         for (obj in score.objects) {
             context[ScoreObjectRegistry].remove(obj)
+            obj.remove()
         }
     }
 

@@ -131,32 +131,36 @@ class PianoRollObject(
         return PianoRollObject(name.now, initialInstrument, lowestPitch, highestPitch, eventDictionary.clone(), notes)
     }
 
-    override fun writeStartCode(writer: ScWriter, offset: Double, name: String) {
+    override fun writeCode(writer: ScWriter, playAt: Double, name: String) {
         val generalEventDict = eventDictionary.editor.result.now
-        writer.appendBlock("~play_$name = Task") {
-            var currentTime = 0.0
-            for (n in notes.sortedBy { n -> n.time }) {
-                val t = n.time - offset
-                if (t < 0.0) continue
-                val dur = n.duration
-                val midinote = n.midinote
-                val eventDict = n.eventDictionary.editor.result.now
-                val deltaTime = (t - currentTime)
-                +"$deltaTime.wait"
-                val eventMap = instrument.get().createEvent().toMutableMap()
-                eventMap["duration"] = dur.format(3)
-                eventMap["midinote"] = midinote.toString()
-                for ((key, value) in eventDict.entries) eventMap[key.text] = value.code
-                for ((key, value) in generalEventDict.entries) eventMap[key.text] = value.code
-                +eventMap.entries.joinToString(", ", "(", ").play") { (name, value) -> "$name: $value" }
-                currentTime = t
+        for (n in notes) {
+            val t = playAt + n.time
+            if (t < -duration) continue
+            val offset = -t.coerceAtMost(0.0)
+            val dur = n.duration - offset
+            val midinote = n.midinote
+            val eventDict = n.eventDictionary.editor.result.now
+            val eventMap = mutableMapOf<String, String>()
+            eventMap["duration"] = dur.format(3)
+            for ((key, value) in eventDict.entries) eventMap[key.text] = value.code
+            for ((key, value) in generalEventDict.entries) eventMap[key.text] = value.code
+            when (val instr = instrument.get()) {
+                is SynthDefObject -> {
+                    eventMap["freq"] = "$midinote.midicps + ${eventMap["detune"] ?: 0}.midiratio"
+                    eventMap.remove("detune")
+                    val namedValues = eventMap.entries.joinToString { (name, value) -> "$name: $value" }
+                    writer.appendLine("s.makeBundle($t) { Synth(\\${instr.name.now}, [${namedValues}]) };")
+                }
+
+                is VSTPluginObject -> {
+                    eventMap["midinote"] = midinote.toString()
+                    eventMap["type"] = "\\vst_midi"
+                    eventMap["vst"] = instr.variableName
+                    val namedValues = eventMap.entries.joinToString { (name, value) -> "$name: $value" }
+                    writer.appendLine("SystemClock.sched($t) { (type: \\vst_midi, vst: ${instr.variableName}, $namedValues).play };")
+                }
             }
         }
-        writer.appendLine(".play;")
-    }
-
-    override fun writeStopCode(writer: ScWriter, name: String) {
-        writer.appendLine("~play_$name.stop;")
     }
 
     override fun JsonObjectBuilder.saveToJson() {

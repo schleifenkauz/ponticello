@@ -1,5 +1,7 @@
 package xenakis.impl
 
+import kotlin.math.pow
+
 class MidiPitch(val step: Int) {
     fun getNoteName(): String {
         val octave = step / 12
@@ -16,5 +18,7 @@ class MidiPitch(val step: Int) {
         private val NOTE_NAMES = listOf("C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B")
 
         fun allPitchClasses() = (0..11).map { step -> MidiPitch(step) }
+
+        fun toFreq(midinote: Int) = 440 * 2.0.pow((midinote - 69) / 12.0)
     }
 }

@@ -53,19 +53,13 @@ class PlayBufObject(
     override fun writeStartCode(writer: ScWriter, offset: Double, name: String) = with(writer) {
         val bufferName = buffer.get().variableName
         val outBusName = out.get().variableName
-        val synthName = "~playbuf_$name"
-        append("$synthName = { ")
+        append("~synths['$name'] = { ")
         append("PlayBuf.ar(${bufferName}.numChannels, $bufferName, ")
         append("rate: ${rate.format(2)}, ")
         append("startPos: $startPos, ")
         append("loop: 1)")
-        append(" * ${envelope.code(offset, doneAction = "Done.none")} }")
+        append(" * ${envelope.code(offset, doneAction = "Done.freeSelf")} }")
         appendLine(".play(s, $outBusName);")
-    }
-
-    override fun writeStopCode(writer: ScWriter, name: String) {
-        val synthName = "~playbuf_$name"
-        writer.appendLine("$synthName.release;")
     }
 
     override fun copy(): PlayBufObject = PlayBufObject(name.now, buffer, out, startPos, rate, envelope.copy())

@@ -10,8 +10,6 @@ import reaktive.value.now
 sealed interface InstrumentObject : NamedObject, SuperColliderObject {
     val color: ReactiveVariable<Color>
 
-    fun createEvent(): Map<String, String>
-
     override fun createReference(): Reference = Reference(this)
 
     @Serializable(with = Reference.Serializer::class)

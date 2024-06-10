@@ -4,6 +4,8 @@ import javafx.application.Platform
 import javafx.beans.binding.Bindings
 import javafx.scene.shape.Line
 import xenakis.impl.SuperColliderClient
+import xenakis.impl.async
+import xenakis.impl.code
 import xenakis.model.XenakisProject
 
 class ScorePlayer(
@@ -72,18 +74,20 @@ class ScorePlayer(
     fun play() {
         if (isPlaying) return
         val startTime = scoreView.getTime(playHead.layoutX - PLAY_HEAD_WIDTH)
-        client.run {
-            +"~startRecording.value(0)"
-            project.run { playScore(startTime) }
+        async(timeLimit = 2000) {
+            client.eval(code {
+                +"~startRecording.value(0)"
+                project.run { playScore(startTime) }
+            }).join()
+            isPlaying = true
         }
-        isPlaying = true
     }
 
     fun pause() {
         isPlaying = false
         client.run {
+            +"~tasks.do { |t| t.stop; }"
             +"s.freeAll"
-            +"~play_score.stop"
         }
     }
 

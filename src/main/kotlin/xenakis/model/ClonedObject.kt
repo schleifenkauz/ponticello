@@ -49,11 +49,10 @@ class ClonedObject(
 
     override fun getSpec(parameter: String): ControlSpec = original.getSpec(parameter)
 
-    override fun writeStartCode(writer: ScWriter, offset: Double, name: String) =
-        original.writeStartCode(writer, offset, this.name.now)
+    override fun writeCode(writer: ScWriter, playAt: Double, name: String) = original.writeCode(writer, playAt, name)
 
-    override fun writeStopCode(writer: ScWriter, name: String) =
-        original.writeStopCode(writer, this.name.now)
+    override fun writeStartCode(writer: ScWriter, offset: Double, name: String) =
+        original.writeStartCode(writer, offset, name)
 
     override fun play(writer: ScWriter) = original.play(writer)
 

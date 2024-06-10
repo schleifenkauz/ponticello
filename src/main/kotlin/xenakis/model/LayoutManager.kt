@@ -50,9 +50,9 @@ class LayoutManager(
         groups.forEach { it.remove(obj.name.now) }
     }
 
-    fun moveObject(obj: ScoreObject, dt: Double, dy: Double) {
-        val vert = Vertical.groupByObject[obj] ?: setOf(obj)
-        val hor = Horizontal.groupByObject[obj] ?: setOf(obj)
+    fun moveObject(obj: ScoreObject, dt: Double, dy: Double, selectedObjects: Set<ScoreObject>) {
+        val vert = (Vertical.groupByObject[obj] ?: setOf(obj)) + selectedObjects
+        val hor = (Horizontal.groupByObject[obj] ?: setOf(obj)) + selectedObjects
         for (o in vert) o.position.y += dy
         for (o in hor) o.position.start += dt
     }
