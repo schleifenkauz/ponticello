@@ -1,6 +1,7 @@
 package xenakis.model
 
 import hextant.context.Context
+import hextant.undo.Edit
 import hextant.undo.UndoManager
 import javafx.geometry.HorizontalDirection
 import javafx.scene.input.DataFormat
@@ -48,7 +49,7 @@ abstract class ScoreObject(name: String) : AbstractRenamableObject() {
 
     abstract fun play(writer: ScWriter)
 
-    protected fun recordEdit(edit: ScoreObjectEdit) {
+    protected fun recordEdit(edit: Edit) {
         if (initialized) {
             context[UndoManager].record(edit)
         }

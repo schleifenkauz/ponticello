@@ -140,7 +140,7 @@ fun <T : Any> Node.showDialog(
     title: String,
     buttonTypes: List<ButtonType> = listOf(ButtonType.OK, ButtonType.CANCEL),
     confirmButton: ButtonType = ButtonType.OK,
-    style: StageStyle = StageStyle.UNDECORATED,
+    style: StageStyle = StageStyle.DECORATED,
     applyStylesheets: (scene: Scene) -> Unit = {},
     extraConfig: Dialog<T>.() -> Unit = {},
     resultConverter: (btn: ButtonType) -> T? = { null }
@@ -161,7 +161,7 @@ fun <T : Any> Node.showDialog(
     context: Context,
     confirmButton: ButtonType = ButtonType.OK,
     buttonTypes: List<ButtonType> = listOf(confirmButton, ButtonType.CANCEL),
-    style: StageStyle = StageStyle.UNDECORATED,
+    style: StageStyle = StageStyle.DECORATED,
     extraConfig: Dialog<T>.() -> Unit = {},
     resultConverter: (btn: ButtonType) -> T? = { null }
 ) = this.showDialog(

@@ -49,6 +49,8 @@ class Score(
         views.addListener(listener)
         for (obj in objects) {
             listener.addedObject(obj)
+        }
+        for (obj in objects) {
             val nxt = obj.nextInChain
             if (nxt != null) listener.chained(obj, nxt.get())
         }
@@ -64,7 +66,8 @@ class Score(
     }
 
     fun removeObject(obj: ScoreObject) {
-        val objAndItsClones = objects.filterIsInstance<ClonedObject>().filter { it.original == obj } + obj
+        //val objAndItsClones = objects.filterIsInstance<ClonedObject>().filter { it.original == obj } + obj
+        val objAndItsClones = listOf(obj)
         for (o in objAndItsClones) {
             _objects.remove(o)
             views.notifyListeners { removedObject(o) }
@@ -121,7 +124,7 @@ class Score(
     }
 
     fun writePlayerTask(writer: ScWriter, startTime: Double, taskName: String, prefix: String) {
-        writer.appendLine("(~$taskName = Task {")
+        writer.appendLine("~$taskName = Task {")
         val relevantObjects = objects.filter { obj -> !obj.muted && obj.start + obj.duration > startTime }
         val starts = relevantObjects.map { obj ->
             val start = obj.start.coerceAtLeast(startTime)
@@ -145,7 +148,7 @@ class Score(
                 action.invoke()
             }
         }
-        writer.appendLine("}.play)")
+        writer.appendLine("}.play;")
     }
 
     fun deleteTimeRange(start: Double, end: Double) {

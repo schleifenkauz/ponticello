@@ -27,6 +27,8 @@ import xenakis.ui.ToolSelector.Tool
 import xenakis.ui.XenakisController.Companion.currentProject
 
 abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionListener {
+    var isInitialized: Boolean = false
+        private set
     lateinit var pane: ScorePane
         private set
     protected val context: Context get() = pane.context
@@ -116,6 +118,7 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
     open fun initialize(parent: ScorePane) {
         this.pane = parent
         initializeLayout()
+        setupSelecting()
         setupDraggingAndResizing(
             context,
             canUserChangeWidth = true, canUserChangeHeight = true, Tool.Pointer,
@@ -128,6 +131,15 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
         initializeHeader()
         minimalSetup()
         setupSubWindow()
+        isInitialized = true
+    }
+
+    private fun setupSelecting() {
+        addEventHandler(MouseEvent.MOUSE_CLICKED) { ev ->
+            toFront()
+            context[ScoreObjectSelector].select(this, addToSelection = ev.isShiftDown)
+            ev.consume()
+        }
     }
 
     private fun initializeHeader() {

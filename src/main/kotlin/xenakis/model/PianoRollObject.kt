@@ -89,6 +89,17 @@ class PianoRollObject(
         viewManager.notifyListeners { removedNote(note) }
     }
 
+    fun transpose(deltaPitch: Int) {
+        context.withoutUndo {
+            lowestPitch += deltaPitch
+            highestPitch += deltaPitch
+            for (note in notes) {
+                note.midinote += deltaPitch
+            }
+        }
+        recordEdit(Edit.Transpose(this, deltaPitch))
+    }
+
     fun getY(pitch: Int) = (highestPitch - pitch) * pixelsPerPitch - pixelsPerPitch
 
     fun getMidiNote(y: Double): Int = ((height - y) / pixelsPerPitch).roundToInt() + lowestPitch - 1
@@ -180,6 +191,19 @@ class PianoRollObject(
 
             override fun doRedo() {
                 obj.removeNote(note)
+            }
+        }
+
+        class Transpose(private val obj: PianoRollObject, private val deltaPitch: Int) : AbstractEdit() {
+            override val actionDescription: String
+                get() = "Transpose"
+
+            override fun doUndo() {
+                obj.transpose(-deltaPitch)
+            }
+
+            override fun doRedo() {
+                obj.transpose(deltaPitch)
             }
         }
     }

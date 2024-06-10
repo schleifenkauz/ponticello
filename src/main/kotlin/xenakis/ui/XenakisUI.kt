@@ -351,7 +351,7 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
                     view.openControlAssignment()
                 }
             }
-            on("Ctrl+M") {
+            on("Alt?+M") {
                 scoreView.selector.toggleMuteSelected()
             }
             on("Alt+L") {

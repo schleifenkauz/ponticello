@@ -31,7 +31,7 @@ class ScoreObjectGroup(name: String, val score: Score) : RegularScoreObject(name
     }
 
     override fun writeStopCode(writer: ScWriter, name: String) {
-        writer.appendLine("play_$name.stop;")
+        writer.appendLine("~play_$name.stop;")
     }
 
     override fun cut(position: Double, whichHalf: HorizontalDirection): ScoreObject {

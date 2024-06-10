@@ -6,8 +6,8 @@
 
 ### sound file objects
 
-- maybe have a configurable playbuf-synth (additional parameters, filters, etc.)
-    - defaults to simple PlayBuf
+- maybe have a configurable `playbuf`-synth (additional parameters, filters, etc.)
+  - defaults to simple `PlayBuf`
 - simple effects (e.g. reverse)
 - spectral view
 
@@ -41,12 +41,22 @@
 ### Minor
 
 - lag values for parameters (adjust with spinner in control assignment)
+- fixed duration synths (don't need to be released)
+  - maybe also distinguish between gated SynthDefs (can be `release`d) and those that have to be `free`d
+- command to introduce parameter for constant expression in SynthDef
+- save the snap and grid visibility settings (per project?)
+- update SynthDefs on closing configuration window
+- add SynthDefs on loading project
+- allow for more cases of pasting code
+- add to expr list with comma
+- looping period specifiable in beats/ticks/bars
+- ability to drag multiple objects at once
 
 ### Support for patterns
 
 - as synth arguments (must be delta-patterns)
-- as standalone objects (pbind)
-- attaching to a synth in the score (pmono)
+- as standalone objects (`pbind`)
+- attaching to a synth in the score (`pmono`)
 
 ### Bouncing
 
@@ -59,7 +69,8 @@
 - track references to objects, if an object has references, it cannot be removed (necessary?)
 - avoid hanging when speaking to SuperCollider (timeouts, async, etc.)
 - we have to have access to the registry while deserializing the score objects!
-  - write custom serializer for XenakisProject
+  - write custom serializer for `XenakisProject`
+- use SuperCollider `Score` object for playback (this also means ability to do NRT bouncing!)
 
 ## Bug fixes
 

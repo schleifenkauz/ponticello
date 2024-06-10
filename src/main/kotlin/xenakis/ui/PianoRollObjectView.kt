@@ -4,9 +4,12 @@ import bundles.createBundle
 import hextant.fx.initHextantScene
 import hextant.serial.EditorRoot
 import javafx.scene.Cursor
+import javafx.scene.control.Label
+import javafx.scene.control.Spinner
 import javafx.scene.input.MouseButton
 import javafx.scene.input.MouseEvent
 import javafx.scene.layout.BorderPane
+import javafx.scene.layout.HBox
 import javafx.scene.layout.Pane
 import javafx.scene.layout.Region
 import javafx.scene.paint.Color
@@ -209,7 +212,17 @@ class PianoRollObjectView(private val obj: PianoRollObject) : ScoreObjectView(ob
         addAction(Icon.Details, action = "Edit event dictionary") {
             showEventDictionaryEditor(obj.eventDictionary)
         }
+        addAction(Icon.Transpose, action = "Transpose") {
+            showTransposeDialog()
+        }
         listenForMouseEvents()
+    }
+
+    private fun showTransposeDialog() {
+        val spinner = Spinner<Int>(-36, +36, 0, 1)
+        val layout = HBox(5.0, Label("Semitones"), spinner).centerChildrenVertically()
+        val deltaPitch = layout.showDialog("Transpose", context) { spinner.value } ?: return
+        obj.transpose(deltaPitch)
     }
 
     private fun listenForMouseEvents() {

@@ -93,7 +93,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
         addEventHandler(MouseEvent.ANY) { ev ->
             val pane = when (val target = ev.target) {
                 is ScorePane -> target
-                is ScoreObjectGroupView -> target.scorePane
+                is ScoreObjectGroupView -> if (target.isInitialized) target.scorePane else return@addEventHandler
                 else -> return@addEventHandler
             }
             val e = ev.copyFor(pane, pane)
@@ -129,7 +129,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
     * Score object view management
     * +*/
 
-    fun getObjectView(obj: ScoreObject) = views.getOrPut(obj) { createObjectView(obj) }
+    fun getObjectView(obj: ScoreObject) = views[obj] ?: error("No view found for ${obj.name.now}")
 
     fun createObjectView(obj: ScoreObject): ScoreObjectView = when (obj) {
         is SynthObject -> SynthObjectView(obj)
@@ -154,12 +154,8 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
     * */
 
     override fun addedObject(obj: ScoreObject) {
-        val view = getObjectView(obj)
-        view.addEventHandler(MouseEvent.MOUSE_CLICKED) { ev ->
-            view.toFront()
-            selector.select(view, addToSelection = ev.isShiftDown)
-            ev.consume()
-        }
+        val view = createObjectView(obj)
+        views[obj] = view
         children.add(view)
         view.initialize(this)
         Platform.runLater {

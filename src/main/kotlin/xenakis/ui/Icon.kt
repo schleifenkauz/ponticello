@@ -49,6 +49,7 @@ enum class Icon {
     Tempo,
     Snap,
     TimeGrid,
+    Transpose,
 
     /*Color,*/
     FileReload,
