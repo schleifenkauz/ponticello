@@ -6,6 +6,7 @@ import hextant.undo.AbstractEdit
 import hextant.undo.UndoManager
 import kotlinx.serialization.Transient
 import reaktive.value.now
+import java.util.logging.Logger
 
 abstract class ObjectRegistry<O : NamedObject> {
     protected abstract val objects: MutableList<O>
@@ -53,11 +54,13 @@ abstract class ObjectRegistry<O : NamedObject> {
     }
 
     protected open fun onAdded(obj: O, idx: Int) {
+        logger.info("Added ${obj.name.now} to registry")
         obj.initialize(context)
     }
 
     protected open fun onRemoved(obj: O, idx: Int) {
         obj.remove()
+        logger.info("Removed ${obj.name.now} from registry")
     }
 
     private sealed class Edit<O : NamedObject>(protected val registry: ObjectRegistry<O>) : AbstractEdit() {
@@ -102,6 +105,10 @@ abstract class ObjectRegistry<O : NamedObject> {
         for ((idx, bus) in objects.withIndex()) {
             view.added(bus, idx)
         }
+    }
+
+    companion object {
+        private val logger = Logger.getLogger("ObjectRegistry")
     }
 
     interface View<in O : NamedObject> {

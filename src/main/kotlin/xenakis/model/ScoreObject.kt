@@ -75,6 +75,20 @@ abstract class ScoreObject(name: String) : AbstractRenamableObject() {
         parent = score
     }
 
+    fun duplicateClone() {
+        val cloned = if (this is ClonedObject) original else this
+        val clone = clone(context[ScoreObjectRegistry].nameForClone(cloned))
+        clone.position.start += duration
+        parent!!.addObject(clone)
+    }
+
+    fun duplicateCopy() {
+        val cloned = if (this is ClonedObject) original else this
+        val copy = copy(context[ScoreObjectRegistry].nameForClone(cloned))
+        copy.position.start += duration
+        parent!!.addObject(copy)
+    }
+
     override fun initialize(context: Context) {
         if (initialized) return
         super.initialize(context)

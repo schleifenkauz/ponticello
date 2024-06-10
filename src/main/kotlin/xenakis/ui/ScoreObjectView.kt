@@ -12,6 +12,7 @@ import javafx.scene.input.MouseEvent
 import javafx.scene.layout.*
 import javafx.scene.paint.Color
 import javafx.scene.paint.Color.BLACK
+import org.controlsfx.control.ToggleSwitch
 import reaktive.value.ReactiveValue
 import reaktive.value.binding.map
 import reaktive.value.binding.orElse
@@ -22,9 +23,11 @@ import reaktive.value.reactiveVariable
 import xenakis.impl.Knob
 import xenakis.impl.SuperColliderClient
 import xenakis.model.*
+import xenakis.model.InteractionSettings.SnapOption
 import xenakis.sc.NumericalControlSpec
 import xenakis.ui.ToolSelector.Tool
 import xenakis.ui.XenakisController.Companion.currentProject
+import java.util.logging.Logger
 
 abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionListener {
     var isInitialized: Boolean = false
@@ -85,29 +88,43 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
 
     fun createLoop() {
         val settings = context[currentProject].settings
-        val grid = pane.getNearestGrid(layoutX, layoutY).takeIf { settings.snapEnabled.now }
-        val periodInput = TextField(myObject.duration.format(2))
-        val numberOfRepeats = Spinner<Int>(1, 1000, 1, 1)
-        val box = GridPane().apply {
-            add(label("Loop period (s): "), 0, 0)
-            add(periodInput, 0, 1)
-            add(label("Number of repetitions"), 1, 0)
-            add(numberOfRepeats, 1, 1)
+        val grid = pane.getNearestGrid(layoutX, layoutY)?.obj.takeIf { settings.snapEnabled.now }
+        val periodUnit = if (grid == null) null else settings.snapOption.now
+        val periodInput = when (periodUnit) {
+            null -> TextField(myObject.duration.format(3))
+            else -> {
+                val default = (myObject.duration / grid!!.getDuration(periodUnit) + 0.95).toInt()
+                Spinner<Int>(1, Int.MAX_VALUE, default)
+            }
         }
+        val switchChainArrows = ToggleSwitch("Create chain arrows")
+        val repetitionsInput = Spinner<Int>(1, 1000, 1, 1)
+        val box = VBox(
+            10.0,
+            HBox(label("Loop period ($periodUnit): ").setPreferredWidth(200.0), periodInput).centerChildrenVertically(),
+            HBox(label("Number of repetitions").setPreferredWidth(200.0), repetitionsInput).centerChildrenVertically(),
+            switchChainArrows
+        )
         box.showDialog(
             "Loop configuration", context,
             extraConfig = {
-                val btnOk = dialogPane.lookupButton(ButtonType.OK)
-                btnOk.disableProperty().bind(periodInput.textProperty().map { txt ->
-                    val v = txt.toDoubleOrNull()
-                    v == null || v == 0.0
-                })
+                if (periodInput is TextField) {
+                    val btnOk = dialogPane.lookupButton(ButtonType.OK)
+                    btnOk.disableProperty().bind(periodInput.textProperty().map { txt ->
+                        val v = txt.toDoubleOrNull()
+                        v == null || v == 0.0
+                    })
+                }
             }
         ) { btn ->
             if (btn == ButtonType.OK) {
-                val period = periodInput.text.toDouble()
-                val repetitions = numberOfRepeats.value
-                pane.score.loop(myObject, period, repetitions)
+                val period = when (periodInput) {
+                    is Spinner<*> -> periodInput.value as Int * grid!!.getDuration(periodUnit ?: SnapOption.Seconds)
+                    is TextField -> periodInput.text.toDouble()
+                    else -> error("Invalid period input control: $periodInput")
+                }
+                val repetitions = repetitionsInput.value
+                pane.score.loop(myObject, period, repetitions, switchChainArrows.isSelected)
             }
         }
     }
@@ -286,7 +303,7 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
     }
 
     fun setSelected(value: Boolean) {
-        println("Set selected ${myObject.name.now} = $value")
+        logger.info("Set selected ${myObject.name.now} = $value")
         border = if (value) {
             solidBorder(borderColorWhenSelected, width = 2.0)
         } else {
@@ -396,5 +413,9 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
             Cursor.SW_RESIZE -> resize(old.minX + dx, old.minY, old.width - dx, old.height + dy, ev, cursor)
             Cursor.W_RESIZE -> resize(old.minX + dx, old.minY, old.width - dx, old.height, ev, cursor)
         }
+    }
+
+    companion object {
+        private val logger = Logger.getLogger("ScoreObjectView")
     }
 }

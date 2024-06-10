@@ -52,6 +52,16 @@ class TempoGridObject(
         return (((t - start) / unit).roundToInt() * unit) + start
     }
 
+    fun getDuration(periodUnit: SnapOption): Double {
+        val beatDur = (60.0 / beatsPerMinute.now)
+        return when (periodUnit) {
+            SnapOption.Seconds -> 1.0
+            SnapOption.Bars -> beatsPerBar.now * beatDur
+            SnapOption.Beats -> beatDur
+            SnapOption.Ticks -> beatDur / ticksPerBeat.now
+        }
+    }
+
     override fun writeCode(writer: ScWriter, playAt: Double, name: String) {}
 
     override fun JsonObjectBuilder.saveToJson() {

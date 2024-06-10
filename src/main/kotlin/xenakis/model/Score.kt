@@ -10,6 +10,7 @@ import reaktive.value.now
 import xenakis.impl.Point
 import xenakis.impl.ScWriter
 import xenakis.ui.ScoreObjectSelector
+import java.util.logging.Logger
 
 @Serializable
 class Score(
@@ -57,15 +58,13 @@ class Score(
     }
 
     fun addObject(obj: ScoreObject) {
-        println("Adding object ${obj.name.now} ${obj.position}")
+        logger.info("Adding object ${obj.name.now} ${obj.position}")
         obj.initialize(context)
         obj.addToScore(this)
         _objects.add(obj)
-        println("!!!")
         context.withoutUndo {
             objectRegistry.add(obj)
         }
-        println("added to registry")
         views.notifyListeners { addedObject(obj) }
         undo.record(ScoreEdit.AddObject(obj, this))
     }
@@ -74,7 +73,7 @@ class Score(
         val objectsAndTheirClones = objects.filterTo(mutableSetOf()) { o -> o is ClonedObject && o.original in set }
         objectsAndTheirClones.addAll(set)
         for (o in objectsAndTheirClones) {
-            println("Removing ${o.name.now}")
+            logger.info("Removing ${o.name.now}")
             _objects.remove(o)
             views.notifyListeners { removedObject(o) }
             context.withoutUndo {
@@ -161,7 +160,7 @@ class Score(
         undo.finishCompoundEdit("Delete time range")
     }
 
-    fun loop(obj: ScoreObject, period: Double, repetitions: Int) {
+    fun loop(obj: ScoreObject, period: Double, repetitions: Int, chainArrows: Boolean) {
         context[UndoManager].beginCompoundEdit("Loop object")
         var t = obj.start
         val layers = (obj.duration / period + 0.95).toInt()
@@ -173,7 +172,7 @@ class Score(
             val clone = obj.clone("${obj.name.now}_loop$n")
             clone.position.set(t, y)
             addObject(clone)
-            chain(prev, clone)
+            if (chainArrows) chain(prev, clone)
             prev = clone
         }
         context[UndoManager].finishCompoundEdit()
@@ -204,5 +203,9 @@ class Score(
             }
         }
         return Score(copies.values.toMutableList(), horizontalGroups, verticalGroups)
+    }
+
+    companion object {
+        private val logger = Logger.getLogger("Score")
     }
 }

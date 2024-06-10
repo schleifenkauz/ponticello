@@ -359,9 +359,17 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
             on("Alt?+M") {
                 scoreView.selector.toggleMuteSelected()
             }
-            on("Alt+L") {
+            on("Alt?+L") {
                 val view = scoreView.selector.singleSelected.now ?: return@on
                 view.createLoop()
+            }
+            on("Alt?+D") {
+                val selected = scoreView.selector.singleSelected.now ?: return@on
+                selected.myObject.duplicateCopy()
+            }
+            on("Alt?+Shift+D") {
+                val selected = scoreView.selector.singleSelected.now ?: return@on
+                selected.myObject.duplicateClone()
             }
             on("Alt+SPACE") {
                 val view = scoreView.selector.singleSelected.now ?: return@on
@@ -385,7 +393,7 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
             on("Ctrl?+C") {
                 scoreView.selector.copySelected()
             }
-            on("Ctrl?+Alt+C") {
+            on("Ctrl?+Shift+C") {
                 scoreView.selector.cloneSelected()
             }
         }
