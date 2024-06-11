@@ -6,7 +6,8 @@ import bundles.set
 import hextant.context.Context
 import hextant.fx.initHextantScene
 import hextant.fx.registerShortcuts
-import hextant.serial.EditorRoot
+import hextant.fx.runFXWithTimeout
+import hextant.fx.shortcut
 import hextant.undo.UndoManager
 import javafx.geometry.Bounds
 import javafx.geometry.HorizontalDirection.LEFT
@@ -23,7 +24,6 @@ import xenakis.model.AudioFlowGraph
 import xenakis.model.BusObject
 import xenakis.model.BusObjectReference
 import xenakis.model.BusRegistry
-import xenakis.sc.editor.CodeBlockEditor
 import xenakis.ui.XenakisController.Companion.currentProject
 import kotlin.math.sign
 
@@ -44,6 +44,12 @@ class AudioFlowGraphPane(
         styleClass("audio-flow-graph")
         for (obj in graph.nodes) addedNode(obj)
         for (flow in graph.flows) addedFlow(flow)
+        sceneProperty().addListener { _ ->
+            runFXWithTimeout(50) {
+                for ((flow, arrow) in flowArrows)
+                    repositionArrow(arrow, flow)
+            }
+        }
         resetOnEscape()
         createNewBusOnShiftClick()
         newFlowArrowFollowMouse()
@@ -79,6 +85,12 @@ class AudioFlowGraphPane(
                 alertError("Cannot add same bus twice in audio flow graph")
             }
             ev.consume()
+        }
+        registerShortcuts {
+            on("Ctrl+S") {
+                graph.updateFlow()
+                notifyConfirm("Updated Audio flow graph")
+            }
         }
     }
 
@@ -232,9 +244,8 @@ class AudioFlowGraphPane(
         children.remove(arrow)
         sourceBus = null
         flowArrow = null
-
-        val flow = AudioFlowGraph.AudioFlow(source.ref, target.ref, EditorRoot.create(CodeBlockEditor(context)))
-        if (!graph.addFlow(flow)) {
+        val flow = graph.addFlow(source, target)
+        if (flow == null) {
             alertError("Cannot add flow from ${source.ref.get().name.now} to ${target.ref.get().name.now}")
             return
         }
@@ -257,16 +268,16 @@ class AudioFlowGraphPane(
         val window = flowDetailWindows.getOrPut(flow) {
             val source = flow.source.get().name.now
             val target = flow.target.get().name.now
-            SubWindow(flow.ugenGraph.control, "Audio flow from $source to $target", context).apply {
+            SubWindow(flow.synth.control, "Audio flow from $source to $target", context).apply {
                 width = 1000.0
                 height = 1000.0
                 scene.initHextantScene(context, applyStyle = false)
-                setOnCloseRequest {
-                    val updateFlow = showYesNoDialog("Update audio flow on server", default = true)
-                    if (updateFlow) {
+                addEventFilter(KeyEvent.KEY_RELEASED) { ev ->
+                    if ("Ctrl+S".shortcut.matches(ev)) {
                         graph.updateFlow()
+                        notifyConfirm("Updated Audio flow graph")
+                        ev.consume()
                     }
-                    hide()
                 }
             }
         }

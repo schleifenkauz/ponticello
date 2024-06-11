@@ -10,6 +10,7 @@ import reaktive.value.now
 import reaktive.value.reactiveVariable
 import xenakis.impl.ColorSerializer
 import xenakis.impl.ScWriter
+import xenakis.impl.SuperColliderClient
 import xenakis.impl.randomColor
 import xenakis.model.SuperColliderObject.LiveCycleType
 import xenakis.sc.Rate
@@ -105,5 +106,12 @@ class VSTPluginObject private constructor(
             val output = context[BusRegistry].getDefault().createReference()
             return VSTPluginObject(reactiveVariable(name), pluginName, presetName, output, reactiveVariable(color))
         }
+
+        fun availablePlugins(context: Context) = context[SuperColliderClient]
+            .eval("VSTPlugin.pluginList.collect(_.name);")
+            .join()
+            .removePrefix("[ ").removeSuffix("]")
+            .split(", ")
+
     }
 }

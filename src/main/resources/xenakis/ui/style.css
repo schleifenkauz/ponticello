@@ -330,6 +330,11 @@ Slider.control-detail-editor {
     -fx-border-color: cyan !important;
 }
 
+.plugin {
+    -fx-border-color: white;
+    -fx-padding: 5px;
+}
+
 .hextant-text.symbol {
     -fx-text-fill: green;
 }

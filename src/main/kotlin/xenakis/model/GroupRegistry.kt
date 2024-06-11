@@ -10,8 +10,8 @@ import kotlinx.serialization.Serializable
 import xenakis.impl.SuperColliderClient
 
 @Serializable
-data class GroupRegistry(
-    private val order: MutableList<GroupObject> = mutableListOf(GroupObject.DEFAULT)
+class GroupRegistry private constructor(
+    private val order: MutableList<GroupObject>
 ) : SuperColliderObjectRegistry<GroupObject>() {
     override val objects: MutableList<GroupObject>
         get() = order
@@ -73,5 +73,7 @@ data class GroupRegistry(
         fun movedGroup(group: GroupObject, fromIndex: Int, toIndex: Int)
     }
 
-    companion object : PublicProperty<GroupRegistry> by publicProperty("GroupRegistry")
+    companion object : PublicProperty<GroupRegistry> by publicProperty("GroupRegistry") {
+        fun createDefault() = GroupRegistry(mutableListOf(GroupObject.DEFAULT))
+    }
 }

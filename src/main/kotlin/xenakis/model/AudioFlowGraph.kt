@@ -1,6 +1,7 @@
 package xenakis.model
 
 import hextant.context.Context
+import hextant.context.withoutUndo
 import hextant.core.editor.ListenerManager
 import hextant.serial.EditorRoot
 import hextant.undo.AbstractEdit
@@ -13,7 +14,7 @@ import xenakis.impl.Point
 import xenakis.impl.ScWriter
 import xenakis.impl.StatusListener
 import xenakis.impl.SuperColliderClient
-import xenakis.sc.editor.CodeBlockEditor
+import xenakis.sc.editor.*
 import java.util.*
 
 @Serializable
@@ -62,6 +63,50 @@ class AudioFlowGraph(
     @Transient
     var order = findFlowOrder() ?: error("audio flow graph contains cycles")
         private set
+
+    fun addFlow(source: BusNode, target: BusNode): AudioFlow? {
+        val context = registry.context
+        val synth = AdhocSynthEditor(context)
+        context.withoutUndo {
+            val sourceBus = source.ref.get()
+            val targetBus = target.ref.get()
+            synth.name.setText("flow_${sourceBus.name.now}_${target.ref.get().name.now}")
+            synth.block.variables.addLast(IdentifierEditor(context, "snd"))
+            val getIn = ScExprExpander(
+                context, AssignmentEditor(
+                    context, IdentifierEditor(context, "snd"), ScExprExpander(
+                        context, MessageSendEditor(
+                            context,
+                            ScExprExpander(context, "In"),
+                            IdentifierEditor(context, sourceBus.rate.get().toString()),
+                            ScExprListEditor(
+                                context,
+                                ScExprExpander(context, BusSelector(context, initialValue = source.ref)),
+                                ScExprExpander(context, sourceBus.channels.now.toString())
+                            )
+                        )
+                    )
+                )
+            )
+            synth.block.statements.addLast(getIn)
+            val writeOut = ScExprExpander(
+                context, MessageSendEditor(
+                    context,
+                    ScExprExpander(context, "Out"),
+                    IdentifierEditor(context, targetBus.rate.get().toString()),
+                    ScExprListEditor(
+                        context,
+                        ScExprExpander(context, BusSelector(context, initialValue = target.ref)),
+                        ScExprExpander(context, "snd")
+                    )
+                )
+            )
+            synth.block.statements.addLast(writeOut)
+        }
+        val flow = AudioFlow(source.ref, target.ref, EditorRoot.create(synth))
+        return if (addFlow(flow)) flow
+        else null
+    }
 
     fun addFlow(flow: AudioFlow): Boolean {
         if (_flows.any { f -> f.source == flow.source && f.target == flow.target }) return false
@@ -121,14 +166,9 @@ class AudioFlowGraph(
     fun ScWriter.setupAudioFlow() {
         var prev = "s.defaultGroup"
         for (flow in order) {
-            val source = flow.source.get()
-            val target = flow.target.get()
-            val ugenGraph = flow.ugenGraph.editor.result.now
-            appendLine("${flow.synthName} = {")
-            +"var sig = In.${source.rate.now}(${source.variableName}, ${source.channels.now})"
-            ugenGraph.writeCode(this)
-            val addAction = if (prev == "s.defaultGroup") "addToTail" else "addAfter"
-            +"}.play($prev, ${target.variableName}, addAction: '$addAction')"
+            val synth = flow.synth.editor.result.now
+            val addAction = if (prev == "s.defaultGroup") "'addToTail'" else "'addAfter'"
+            synth.writeCode(writer, flow.synthName, prev, addAction, wrapInTask = true)
             prev = flow.synthName
         }
     }
@@ -218,7 +258,7 @@ class AudioFlowGraph(
     class AudioFlow(
         val source: BusObjectReference,
         val target: BusObjectReference,
-        val ugenGraph: EditorRoot<CodeBlockEditor>
+        val synth: EditorRoot<AdhocSynthEditor>
     ) {
         val synthName get() = "~flow_${source.get().name.now}_${target.get().name.now}"
 

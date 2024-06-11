@@ -85,7 +85,7 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
 
     override fun displayProject(project: XenakisProject) {
         serverSetupCodePane = CodePane("Server setup", project.serverSetup.control)
-        beforePlayCodePane = CodePane("Play setup", project.beforePlay.control)
+        beforePlayCodePane = CodePane("Play setup", project.serverTree.control)
         synthDefsPane = InstrumentRegistryPane(project.instruments)
         context[InstrumentRegistryPane] = synthDefsPane
         busRegistryPane = BusRegistryPane(project.busses)
@@ -141,7 +141,7 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
             }
             val box = HBox(vertical).styleClass("project-box")
             vertical.setOnMouseClicked {
-                if (proj.isFile) {
+                if (proj.isDirectory) {
                     controller.openProject(proj)
                 } else {
                     val remove =
@@ -391,9 +391,11 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
             on("F5") { controller.restartScSynth() }
 
             on("Ctrl?+C") {
+                toolSelector.select(Tool.Pointer)
                 scoreView.selector.copySelected()
             }
             on("Ctrl?+Shift+C") {
+                toolSelector.select(Tool.Pointer)
                 scoreView.selector.cloneSelected()
             }
         }

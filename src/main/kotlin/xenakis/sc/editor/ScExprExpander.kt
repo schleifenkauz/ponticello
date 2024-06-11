@@ -9,7 +9,9 @@ import hextant.core.editor.ExpanderConfig
 import hextant.core.editor.copy
 import hextant.undo.makeUndoableEdit
 import reaktive.value.now
+import xenakis.model.VSTPluginObject
 import xenakis.sc.*
+import xenakis.ui.showSelectorDialog
 
 class ScExprExpander(context: Context) : ConfiguredExpander<ScExpr, ScExprEditor<*>>(config, context),
     ScExprEditor<ScExpr> {
@@ -121,6 +123,12 @@ class ScExprExpander(context: Context) : ConfiguredExpander<ScExpr, ScExprEditor
             "bus" expand { ctx -> BusSelector(ctx) }
             "buffer" expand { ctx -> BufferSelector(ctx) }
             "group" expand { ctx -> GroupSelector(ctx) }
+            "plugin" expand { ctx ->
+                val availablePlugins = VSTPluginObject.availablePlugins(ctx)
+                val pluginName = showSelectorDialog("Plugin", ctx, availablePlugins, null) ?: return@expand null
+                VSTPluginEditor(ctx, pluginName)
+            }
+            "synth" expand { ctx -> AdhocSynthEditor(ctx) }
         }
     }
 }

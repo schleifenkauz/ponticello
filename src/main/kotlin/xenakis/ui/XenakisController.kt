@@ -11,6 +11,7 @@ import hextant.serial.readJson
 import hextant.serial.writeJson
 import hextant.undo.UndoManager
 import javafx.application.Platform
+import javafx.stage.DirectoryChooser
 import javafx.stage.FileChooser
 import javafx.stage.Stage
 import xenakis.impl.ConsoleMonitor
@@ -59,12 +60,12 @@ class XenakisController(private val primaryStage: Stage) {
             listeners { displayProject(currentProject) }
         }
 
-
     var isSuperColliderReady: Boolean = false
         private set
 
-    private val xenakisDir = File(System.getProperty("user.home")).resolve(".xenakis")
-        .also { if (!it.exists()) it.mkdir() }
+    private val userHome = File(System.getProperty("user.home"))
+
+    private val xenakisDir = userHome.resolve(".xenakis").also { dir -> if (!dir.exists()) dir.mkdir() }
 
     private val fc = FileChooser().apply {
         extensionFilters.setAll(
@@ -72,7 +73,11 @@ class XenakisController(private val primaryStage: Stage) {
             FileChooser.ExtensionFilter("SuperCollider Scripts", "*.scd"),
             FileChooser.ExtensionFilter("Sound Files", listOf("*.wav", "*.mp3"))
         )
-        initialDirectory = xenakisDir
+        initialDirectory = userHome
+    }
+
+    private val dc = DirectoryChooser().apply {
+        initialDirectory = userHome.resolve("Xenakis Projects").also { dir -> if (!dir.exists()) dir.mkdir() }
     }
 
     fun setupHextant() {
@@ -157,29 +162,26 @@ class XenakisController(private val primaryStage: Stage) {
     private fun lastFile(): File? = prefs.get("lastFile", null)?.let(::File)?.takeIf { it.exists() }
 
     fun saveProject() {
-        setExtensionFilter("*.json")
-        val file = lastFile() ?: fc.showSaveDialog(primaryStage) ?: return
-        tryWithAlert("Saving score") {
-            saveAs(file)
-        }
+        val file = lastFile() ?: dc.showDialog(primaryStage) ?: return
+        tryWithAlert("Saving score") { saveIn(file) }
     }
 
-    private fun saveAs(file: File) {
-        currentProject.saveTo(file)
-        prefs.put("lastFile", file.absolutePath)
-        addRecentProject(file)
+    private fun saveIn(folder: File) {
+        currentProject.saveTo(folder)
+        prefs.put("lastFile", folder.absolutePath)
+        addRecentProject(folder)
     }
 
     fun openProject() {
-        setExtensionFilter("*.json")
+        setExtensionFilter("*.xen")
         val file = fc.showOpenDialog(primaryStage) ?: return
-        openProject(file)
+        openProject(file.parentFile)
     }
 
-    fun openProject(file: File): Boolean {
+    fun openProject(folder: File): Boolean {
         tryWithAlert("Opening project") {
-            context[ScoreObjectRegistry] = ScoreObjectRegistry().also { it.initialize(context) }
-            val project = XenakisProject.loadFrom(file, context)
+            context[ScoreObjectRegistry] = ScoreObjectRegistry().also { r -> r.initialize(context) }
+            val project = XenakisProject.loadFrom(folder, context)
             currentProject = project
         } ?: return false
         return true
@@ -190,20 +192,17 @@ class XenakisController(private val primaryStage: Stage) {
     }
 
     fun createNewProject() {
-        val location = showSaveDialog("*.json") ?: return
+        val location = dc.showDialog(primaryStage) ?: return
+        location.mkdir()
+        location.resolve("project.xen").writeText(location.name)
         context[ScoreObjectRegistry] = ScoreObjectRegistry().also { it.initialize(context) }
         currentProject = XenakisProject.create(location, context)
-        saveAs(location)
+        saveIn(location)
     }
 
     fun showOpenDialog(extension: String): File? {
         setExtensionFilter(extension)
         return fc.showOpenDialog(primaryStage)
-    }
-
-    fun showSaveDialog(extension: String): File? {
-        setExtensionFilter(extension)
-        return fc.showSaveDialog(primaryStage)
     }
 
     private fun clearLastFile() {

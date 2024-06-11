@@ -1,14 +1,12 @@
 package xenakis.model
 
-import bundles.set
 import hextant.context.Context
 import hextant.context.withoutUndo
 import hextant.serial.EditorRoot
+import hextant.serial.readJson
+import hextant.serial.writeJson
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
-import kotlinx.serialization.decodeFromString
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
 import reaktive.value.now
 import xenakis.impl.ScWriter
 import xenakis.impl.StatusListener.StatusUpdate
@@ -20,14 +18,14 @@ import java.io.File
 @Serializable
 class XenakisProject private constructor(
     val settings: InteractionSettings,
-    val serverSetup: EditorRoot<CodeBlockEditor>,
-    val beforePlay: EditorRoot<CodeBlockEditor>,
-    val instruments: InstrumentRegistry,
+    val groups: GroupRegistry,
     val busses: BusRegistry,
-    val flowGraph: AudioFlowGraph,
     val buffers: BufferRegistry,
+    val instruments: InstrumentRegistry,
+    val flowGraph: AudioFlowGraph,
     val globalControls: GlobalControls,
-    val groups: GroupRegistry = GroupRegistry(),
+    val serverSetup: EditorRoot<CodeBlockEditor>,
+    val serverTree: EditorRoot<CodeBlockEditor>,
     val score: Score
 ) {
     @Transient
@@ -44,14 +42,6 @@ class XenakisProject private constructor(
 
     fun initialize(context: Context) {
         this.context = context
-        groups.initialize(context)
-        buffers.initialize(context)
-        busses.initialize(context)
-        flowGraph.initialize(context)
-        globalControls.initialize(context)
-        instruments.initialize(context)
-        score.initialize(context)
-        context[InstrumentRegistry] = instruments
         client = context[SuperColliderClient]
         client.statusListener.on(StatusUpdate.ReadyToBoot) {
             client.run {
@@ -69,15 +59,23 @@ class XenakisProject private constructor(
         appendLine(";")
     }
 
-    fun saveTo(file: File) {
-        val str = Json.encodeToString(this)
-        file.writeText(str)
+    fun saveTo(folder: File) {
+        folder.resolve("settings.json").writeJson(settings)
+        folder.resolve("groups.json").writeJson(groups)
+        folder.resolve("busses.json").writeJson(busses)
+        folder.resolve("buffers.json").writeJson(buffers)
+        folder.resolve("instruments.json").writeJson(instruments)
+        folder.resolve("flow_graph.json").writeJson(flowGraph)
+        folder.resolve("global_controls.json").writeJson(globalControls)
+        folder.resolve("server_setup.json").writeJson(serverSetup)
+        folder.resolve("server_tree.json").writeJson(serverTree)
+        folder.resolve("score.json").writeJson(score)
     }
 
     fun exportAsScript(output: Appendable) {
         with(ScWriter(output)) {
             serverSetup.editor.result.now.code(writer)
-            beforePlay.editor.result.now.code(writer)
+            serverTree.editor.result.now.code(writer)
             groups.run { allocateAll() }
             groups.run { allocateAll() }
             flowGraph.run { setupAudioFlow() }
@@ -90,7 +88,7 @@ class XenakisProject private constructor(
     fun ScWriter.playScore(fromTime: Double) {
         appendLine("~synths = ();")
         appendLine("~tasks = ();")
-        beforePlay.editor.result.now.code(this)
+        serverTree.editor.result.now.code(this)
         score.writePlayerTask(this, fromTime, prefix = "")
     }
 
@@ -99,24 +97,50 @@ class XenakisProject private constructor(
     }
 
     companion object {
-        fun loadFrom(file: File, context: Context): XenakisProject {
-            val str = file.readText()
-            val project = context.withoutUndo { Json.decodeFromString<XenakisProject>(str) }
-            project.projectFile = file
-            project.initialize(context)
-            return project
+        fun loadFrom(folder: File, context: Context): XenakisProject {
+            context.withoutUndo {
+                val settings = folder.resolve("settings.json").readJson<InteractionSettings>()
+                val groups = GroupRegistry.createDefault()
+                //folder.resolve("groups.json").readJson<GroupRegistry>()
+                groups.initialize(context)
+                val busses = folder.resolve("busses.json").readJson<BusRegistry>()
+                busses.initialize(context)
+                val buffers = folder.resolve("buffers.json").readJson<BufferRegistry>()
+                buffers.initialize(context)
+                val instruments = folder.resolve("instruments.json").readJson<InstrumentRegistry>()
+                instruments.initialize(context)
+                val flowGraph = folder.resolve("flow_graph.json").readJson<AudioFlowGraph>()
+                flowGraph.initialize(context)
+                val globalControls = folder.resolve("global_controls.json").readJson<GlobalControls>()
+                globalControls.initialize(context)
+                val serverSetup = folder.resolve("server_setup.json").readJson<EditorRoot<CodeBlockEditor>>()
+                val beforePlay = folder.resolve("server_tree.json").readJson<EditorRoot<CodeBlockEditor>>()
+                val score = folder.resolve("score.json").readJson<Score>()
+                score.initialize(context)
+                return XenakisProject(
+                    settings,
+                    groups, busses, buffers, instruments,
+                    flowGraph, globalControls,
+                    serverSetup, beforePlay,
+                    score
+                ).also { p ->
+                    p.initialize(context)
+                    p.projectFile = folder
+                }
+            }
         }
 
         fun create(location: File, context: Context) = XenakisProject(
             settings = InteractionSettings.default(),
+            groups = GroupRegistry.createDefault().also { r -> r.initialize(context) },
+            busses = BusRegistry.createDefault().also { r -> r.initialize(context) },
+            buffers = BufferRegistry(mutableListOf()).also { r -> r.initialize(context) },
+            instruments = InstrumentRegistry.newInstance().also { r -> r.initialize(context) },
+            flowGraph = AudioFlowGraph.createDefault().also { g -> g.initialize(context) },
+            globalControls = GlobalControls(mutableListOf()).also { c -> c.initialize(context) },
             serverSetup = EditorRoot.create(CodeBlockEditor(context)),
-            beforePlay = EditorRoot.create(CodeBlockEditor(context)),
-            instruments = InstrumentRegistry.newInstance(),
-            busses = BusRegistry.createDefault(),
-            flowGraph = AudioFlowGraph.createDefault(),
-            buffers = BufferRegistry(mutableListOf()),
-            globalControls = GlobalControls(mutableListOf()),
-            score = Score(),
+            serverTree = EditorRoot.create(CodeBlockEditor(context)),
+            score = Score().also { score -> score.initialize(context) },
         ).also { project ->
             project.initialize(context)
             project.projectFile = location

@@ -79,7 +79,7 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
 
     fun playMyObject() {
         val project = context[currentProject]
-        val beforePlay = project.beforePlay.editor.result.now
+        val beforePlay = project.serverTree.editor.result.now
         context[SuperColliderClient].run {
             beforePlay.code(this)
             myObject.play(this)
@@ -134,6 +134,10 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
         v.displayEnvelopes()
         v.displayKnobs()
         v.myObject.addView(v)
+    }
+
+    fun showInSubWindow() {
+        window.show()
     }
 
     open fun initialize(parent: ScorePane) {

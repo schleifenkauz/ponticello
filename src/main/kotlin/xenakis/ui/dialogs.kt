@@ -20,15 +20,13 @@ import xenakis.model.ObjectRegistry
 import xenakis.sc.Identifier
 import java.util.concurrent.CompletableFuture
 
-@Suppress("unused")
 fun <T : Any> showSelectorDialog(
     title: String,
     context: Context,
     items: List<T>,
     initialValue: T?,
     stringConverter: (T) -> String = { it.toString() },
-    onConfirmed: (T) -> Unit
-) {
+): T? {
     val selector = ComboBox(FXCollections.observableList(items))
     selector.converter = object : StringConverter<T?>() {
         override fun toString(item: T?): String = if (item == null) "<select>" else stringConverter(item)
@@ -37,11 +35,13 @@ fun <T : Any> showSelectorDialog(
     }
     selector.value = initialValue
     val window = SubWindow(selector, title, context, SubWindow.Type.Prompt)
+    var confirmed = false
     selector.setOnAction {
+        confirmed = true
         window.hide()
-        onConfirmed(selector.value)
     }
-    window.show()
+    window.showAndWait()
+    return if (confirmed) selector.value else null
 }
 
 fun showYesNoDialog(context: Context, question: String, default: Boolean = false): Boolean {
@@ -127,6 +127,10 @@ fun alertException(action: String, exc: Exception) = Alert(Alert.AlertType.ERROR
 }
 
 fun alertError(text: String) = Notifications.create().text(text).darkStyle().showError()
+
+fun notifyConfirm(message: String) = Notifications.create().text(message).darkStyle().showConfirm()
+
+fun notifyInfo(message: String) = Notifications.create().text(message).darkStyle().showInformation()
 
 fun <T : Any> tryWithAlert(actionDescription: String, action: () -> T): T? = try {
     action()

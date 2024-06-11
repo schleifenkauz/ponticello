@@ -1,9 +1,5 @@
 ## Functionality
 
-### external vst plugins
-
-- usage in ad hoc synths
-
 ### sound file objects
 
 - maybe have a configurable `playbuf`-synth (additional parameters, filters, etc.)
@@ -45,6 +41,7 @@
   - but what if they are too short to be well-visible in the score?
   - maybe also distinguish between gated SynthDefs (can be `release`d) and those that have to be `free`d
 - allow for more cases of pasting code
+- editing parameters of the VSTPlugins should have realtime effects
 
 ### Support for patterns
 
@@ -57,13 +54,12 @@
 - to file or to buffer (that is record to file and then load buffer into SC)
 - realtime (easy) and non realtime (not easy, use Score API from SuperCollider)
 - or have a live buffer to which everything is recorded, from which you can choose snippets
+- can be done via Audacity for now (record from pipewire and then export as WAV to create a buffer in xenakis)
 
 ## Architecture
 
 - track references to objects, if an object has references, it cannot be removed (necessary?)
 - avoid hanging when speaking to SuperCollider (timeouts, async, etc.)
-- we have to have access to the registry while deserializing the score objects!
-  - write custom serializer for `XenakisProject`
 - use SuperCollider `Score` object for playback (this also means ability to do NRT bouncing!)
 
 ## Bugs

@@ -12,7 +12,6 @@ import javafx.scene.layout.VBox
 import reaktive.value.binding.map
 import reaktive.value.fx.asObservableValue
 import reaktive.value.now
-import xenakis.impl.SuperColliderClient
 import xenakis.impl.async
 import xenakis.model.*
 import xenakis.sc.view.ObjectSelectorControl
@@ -35,12 +34,7 @@ class InstrumentRegistryPane(
 
     override fun addObject() {
         async {
-            val availablePlugins = registry.context[SuperColliderClient]
-                .eval("VSTPlugin.pluginList.collect(_.name);")
-                .join()
-                .removePrefix("[ ").removeSuffix("]")
-                .split(", ")
-                .map { name -> "Plugin: $name" }
+            val availablePlugins = VSTPluginObject.availablePlugins(registry.context).map { name -> "Plugin: $name" }
             val default = "New SynthDef"
             val options = listOf(default) + availablePlugins
             Platform.runLater {

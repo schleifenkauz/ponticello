@@ -33,7 +33,10 @@ abstract class ObjectRegistryPane<O : NamedObject>(
             addObject()
             expand()
         }
-        val reloadBtn = Icon.Repeat.button(action = "Sync ${type}s") { reload() }
+        val reloadBtn = Icon.Repeat.button(action = "Sync ${plural(type)}") {
+            reload()
+            notifyConfirm("Synchronized ${plural(type)} with server")
+        }
         return HBox(label, space, addBtn, reloadBtn, collapseExpandBtn).styleClass("tool-pane-header")
     }
 

@@ -47,7 +47,7 @@ class ControlAssignmentEditor(
         comboBox.valueProperty().addListener { _, _, t ->
             detailEditor = detailEditors.getOrPut(t) { t.createDetailInput(parameter, spec, null, project) }
         }
-        nameLabel.minWidth = 80.0
+        nameLabel.minWidth = 150.0
         comboBox.prefWidth = COMBO_BOX_WIDTH
         comboBox.maxWidth = COMBO_BOX_WIDTH
         comboBox.minWidth = COMBO_BOX_WIDTH

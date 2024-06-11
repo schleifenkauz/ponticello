@@ -39,6 +39,7 @@ class TempoGridObjectView(val obj: TempoGridObject) : ScoreObjectView(obj) {
         super.initialize(parent)
         createConfigurationBar(header, obj)
         marker.visibleProperty().bind(context[currentProject].settings.snapEnabled.asObservableValue())
+        repaint()
     }
 
     override fun rescale() {

@@ -36,9 +36,8 @@ class BufferRegistryPane(
 
     override fun addObject(name: String) {
         val choices = BufferObject.Type.values().toList()
-        showSelectorDialog("Buffer type", project.context, choices, null) { type ->
-            addObject(type, name)
-        }
+        val type = showSelectorDialog("Buffer type", project.context, choices, null) ?: return
+        addObject(type, name)
     }
 
     private fun addObject(type: BufferObject.Type, name: String): BufferObject? {
