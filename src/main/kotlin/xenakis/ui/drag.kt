@@ -1,6 +1,5 @@
 package xenakis.ui
 
-import hextant.context.Context
 import hextant.undo.UndoManager
 import javafx.geometry.BoundingBox
 import javafx.geometry.Bounds
@@ -47,12 +46,13 @@ fun Node.setupDragging(
 }
 
 fun Region.setupDraggingAndResizing(
-    context: Context,
+    pane: ScorePane,
     canUserChangeWidth: Boolean, canUserChangeHeight: Boolean, tool: Tool,
     relocateBy: (old: Bounds, dx: Double, dy: Double) -> Unit,
     resize: (Bounds, Double, Double, Cursor, MouseEvent) -> Unit,
     beforeResize: (MouseEvent, Cursor) -> Unit = { _, _ -> }, afterResize: (MouseEvent, Cursor) -> Unit = { _, _ -> }
 ) {
+    val context = pane.context
     val toolSelector = context[XenakisUI].toolSelector
     configureResizeCursor(canUserChangeWidth, canUserChangeHeight, toolSelector, tool)
     var dragStart: Point? = null

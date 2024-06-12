@@ -41,6 +41,8 @@ class ClonedObject(
         originalRef.resolve(context)
     }
 
+    val ref get() = originalRef
+
     override var duration: Double by { original::duration }
     override var height: Double by { original::height }
     override val associatedColor: ReactiveVariable<Color?> get() = original.associatedColor
@@ -56,7 +58,11 @@ class ClonedObject(
 
     override fun play(writer: ScWriter) = original.play(writer)
 
-    override fun copy(newName: String): ScoreObject = original.copy(newName)
+    override fun copy(newName: String): ScoreObject {
+        val copy = original.copy(newName)
+        copy.position.set(this.position)
+        return copy
+    }
 
     override fun clone(name: String): ClonedObject {
         val clone = original.clone(name)

@@ -93,7 +93,7 @@ class ScorePlayer(
 
     fun reset() {
         Platform.runLater { playHead.layoutX = PLAY_HEAD_WIDTH }
-        playHeadPosition = 0.0
+        playHeadPosition = scoreView.getX(0.0)
     }
 
     fun toggleRecording() {

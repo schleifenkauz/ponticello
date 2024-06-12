@@ -1,7 +1,6 @@
 package xenakis.ui
 
 import hextant.context.Context
-import hextant.context.withoutUndo
 import hextant.serial.EditorRoot
 import hextant.undo.compoundEdit
 import javafx.application.Platform
@@ -56,6 +55,10 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
 
     abstract val xAccuracy: Int
     abstract fun snapToGrid(x: Double, y: Double): Point
+    abstract fun getGrids(x: Double): List<TempoGridObjectView>
+    open fun markX(x: Double) {
+        getGrids(x).forEach { g -> g.mark(x) }
+    }
     abstract fun getNearestGrid(x: Double, y: Double): TempoGridObjectView?
 
     abstract val pixelsPerSecond: Double
@@ -268,10 +271,11 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
             newObj != null -> {
                 newObj.width = x - newObj.x
                 newObj.height = ev.y - newObj.y
+                markX(x)
                 ev.consume()
             }
 
-            selectedArea in children && selectedTool == Pointer -> {
+            selectedArea in children && (this is ScoreView && selectedTool == Pointer || this is SubScorePane && selectedTool == Group) -> {
                 if (x > selectedArea.x) {
                     selectedArea.width = x - selectedArea.x
                 } else {
@@ -286,6 +290,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
                         selectedArea.y = y
                     }
                 }
+                markX(x)
             }
         }
     }
@@ -299,18 +304,17 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
                 val leftTop = objects.minOf { it.position }
                 val (x, y) = snapToGrid(ev.x, ev.y)
                 for (obj in objects) {
-                    obj.initialize(context)
-                    val name =
-                        if (obj is ClonedObject) context[ScoreObjectRegistry].nameForClone(obj.original)
-                        else context[ScoreObjectRegistry].nameForCopy(obj)
-                    context.withoutUndo {
-                        obj.rename(name)
-                        obj.position.start += getTime(x) - leftTop.start
-                        obj.position.start = obj.start.coerceAtLeast(0.0)
-                        obj.position.y += y - leftTop.y
-                        obj.position.y = obj.y.coerceIn(0.0, height - obj.height)
-                    }
-                    score.addObject(obj)
+                    obj.setContext(context)
+                    val renamed =
+                        if (obj is ClonedObject) {
+                            obj.ref.resolve(context)
+                            obj.clone(context[ScoreObjectRegistry].nameForClone(obj.original))
+                        } else obj.copy(context[ScoreObjectRegistry].nameForCopy(obj))
+                    renamed.position.start += getTime(x) - leftTop.start
+                    renamed.position.start = renamed.start.coerceAtLeast(0.0)
+                    renamed.position.y += y - leftTop.y
+                    renamed.position.y = renamed.y.coerceIn(0.0, height - obj.height)
+                    score.addObject(renamed)
                     Thread.sleep(100)
                 }
             }

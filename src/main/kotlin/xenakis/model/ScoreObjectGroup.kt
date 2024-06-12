@@ -20,6 +20,11 @@ class ScoreObjectGroup(name: String, val score: Score) : RegularScoreObject(name
 
     override val viewManager = ListenerManager.createWeakListenerManager<ScoreObjectView>()
 
+    override fun setContext(context: Context) {
+        super.setContext(context)
+        score.setContext(context)
+    }
+
     override fun initialize(context: Context) {
         if (initialized) return
         super.initialize(context)
@@ -28,7 +33,7 @@ class ScoreObjectGroup(name: String, val score: Score) : RegularScoreObject(name
 
     override fun writeCode(writer: ScWriter, playAt: Double, name: String) {
         if (playAt < -duration) return
-        score.writePlayerTask(writer, -(playAt + start), prefix = "${name}_")
+        score.writePlayerTask(writer, -playAt, prefix = "${name}_")
     }
 
     override fun cut(position: Double, whichHalf: HorizontalDirection): ScoreObject {

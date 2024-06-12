@@ -66,7 +66,7 @@ class PianoRollObjectView(private val obj: PianoRollObject) : ScoreObjectView(ob
     private fun setupNoteObjectEvents(rect: Region, note: PianoRollObject.Note) {
         rect.isFocusTraversable = true
         rect.setupDraggingAndResizing(
-            context,
+            pane,
             canUserChangeWidth = true, canUserChangeHeight = false, ToolSelector.Tool.PianoRoll,
             relocateBy = { old, dx, dy ->
                 val (x, y) = snapToGrid(old.minX + dx, old.minY + dy)

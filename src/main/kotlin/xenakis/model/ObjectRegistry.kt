@@ -38,6 +38,7 @@ abstract class ObjectRegistry<O : NamedObject> {
     fun has(obj: O) = obj in objects
 
     open fun add(obj: O, idx: Int = objects.size) {
+        if (has(obj.name.now)) error("$objectType with name ${obj.name.now} already registered.")
         objects.add(idx, obj)
         onAdded(obj, idx)
         context[UndoManager].record(Edit.AddObject(this, obj, idx))
@@ -54,13 +55,11 @@ abstract class ObjectRegistry<O : NamedObject> {
     }
 
     protected open fun onAdded(obj: O, idx: Int) {
-        logger.info("Added ${obj.name.now} to registry")
         obj.initialize(context)
     }
 
     protected open fun onRemoved(obj: O, idx: Int) {
         obj.remove()
-        logger.info("Removed ${obj.name.now} from registry")
     }
 
     private sealed class Edit<O : NamedObject>(protected val registry: ObjectRegistry<O>) : AbstractEdit() {

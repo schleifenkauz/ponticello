@@ -195,8 +195,19 @@ fun solidBorder(fill: Color, width: Double = 1.0, radius: Double = 0.0) =
 
 val Bounds.middleY get() = (minY + maxY) / 2
 
-val Cursor.resizeFromLeft get() = this in setOf(Cursor.W_RESIZE, Cursor.NW_RESIZE, Cursor.SW_RESIZE)
-val Cursor.resizeFromTop get() = this in setOf(Cursor.N_RESIZE, Cursor.NE_RESIZE, Cursor.NW_RESIZE)
+private val resizeTop = setOf(Cursor.N_RESIZE, Cursor.NW_RESIZE, Cursor.NE_RESIZE)
+private val resizeLeft = setOf(Cursor.W_RESIZE, Cursor.NW_RESIZE, Cursor.SW_RESIZE)
+private val resizeBottom = setOf(Cursor.S_RESIZE, Cursor.SE_RESIZE, Cursor.SW_RESIZE)
+private val resizeRight = setOf(Cursor.E_RESIZE, Cursor.NE_RESIZE, Cursor.SE_RESIZE)
+private val resizeVerticalCursors = resizeTop + resizeBottom
+private val resizeHorizontalCursors = resizeLeft + resizeRight
+
+val Cursor.resizeFromTop get() = this in resizeTop
+val Cursor.resizeFromLeft get() = this in resizeLeft
+val Cursor.resizeFromRight get() = this in resizeRight
+val Cursor.resizeFromBottom get() = this in resizeBottom
+val Cursor.resizeVertical get() = this in resizeVerticalCursors
+val Cursor.resizeHorizontal get() = this in resizeHorizontalCursors
 
 fun colorPicker(controlledVar: ReactiveVariable<Color>): ColorPicker {
     val picker = ColorPicker(controlledVar.now)

@@ -101,8 +101,8 @@ class TempoGridObjectView(val obj: TempoGridObject) : ScoreObjectView(obj) {
 
     fun mark(x: Double) {
         if (marker !in area.children) area.children.add(marker)
-        marker.startX = x
-        marker.endX = x
+        marker.startX = x - layoutX
+        marker.endX = x - layoutX
     }
 
     override val defaultBackgroundColor: ReactiveValue<Color>

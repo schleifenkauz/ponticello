@@ -3,6 +3,8 @@ package xenakis.ui
 import hextant.context.Context
 import hextant.fx.initHextantScene
 import hextant.fx.label
+import hextant.undo.AbstractEdit
+import hextant.undo.Edit
 import hextant.undo.UndoManager
 import javafx.geometry.Bounds
 import javafx.geometry.HorizontalDirection
@@ -145,7 +147,7 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
         initializeLayout()
         setupSelecting()
         setupDraggingAndResizing(
-            context,
+            parent,
             canUserChangeWidth = true, canUserChangeHeight = true, Tool.Pointer,
             beforeResize = this::beforeResize,
             relocateBy = this::relocateBy, resize = this::resize
@@ -307,7 +309,6 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
     }
 
     fun setSelected(value: Boolean) {
-        logger.info("Set selected ${myObject.name.now} = $value")
         border = if (value) {
             solidBorder(borderColorWhenSelected, width = 2.0)
         } else {
@@ -343,7 +344,10 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
         var (x, y) = pane.snapToGrid(old.minX + dx, (old.minY + dy))
         x = x.coerceAtLeast(0.0)
         y = y.coerceAtLeast(0.0)
-        relocateObject(x, y)
+        if (pane is SubScorePane) x = x.coerceAtMost(pane.width - old.width)
+        y = y.coerceAtMost(pane.height - old.height)
+        pane.score.moveObject(myObject, pane.getTime(x), y)
+        pane.markX(x)
     }
 
     protected open fun resizeObject(width: Double, height: Double, ev: MouseEvent, cursor: Cursor) {
@@ -381,24 +385,8 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
         }
     }
 
-    private fun relocateObject(x: Double, y: Double) {
-        pane.score.moveObject(myObject, pane.getTime(x), y)
-    }
-
     final override fun moved(obj: ScoreObject, start: Double, y: Double) {
         relocate(pane.getX(myObject.start), myObject.y)
-    }
-
-    private fun resize(x: Double, y: Double, width: Double, height: Double, ev: MouseEvent, cursor: Cursor) {
-        val (snappedX, snappedY) = pane.snapToGrid(x, y)
-        val (snappedWidth) = pane.snapToGrid(width, snappedY)
-        if (snappedWidth < 10.0 || height < 10.0) return
-        if (!isInParentBounds(pane, snappedX, snappedY, snappedWidth, height)) return
-        val oldWidth = getDisplayWidth()
-        val oldHeight = myObject.height
-        resizeObject(snappedWidth, height, ev, cursor)
-        if (cursor.resizeFromLeft) myObject.position.start += pane.getDuration(oldWidth - getDisplayWidth())
-        if (cursor.resizeFromTop) myObject.position.y += oldHeight - myObject.height
     }
 
     fun resized() {
@@ -406,17 +394,62 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
         rescale()
     }
 
-    private fun resize(old: Bounds, dx: Double, dy: Double, cursor: Cursor, ev: MouseEvent) {
-        when (cursor) {
-            Cursor.NW_RESIZE -> resize(old.minX + dx, old.minY + dy, old.width - dx, old.height - dy, ev, cursor)
-            Cursor.N_RESIZE -> resize(old.minX, old.minY + dy, old.width, old.height - dy, ev, cursor)
-            Cursor.NE_RESIZE -> resize(old.minX, old.minY + dy, old.width + dx, old.height - dy, ev, cursor)
-            Cursor.E_RESIZE -> resize(old.minX, old.minY, old.width + dx, old.height, ev, cursor)
-            Cursor.SE_RESIZE -> resize(old.minX, old.minY, old.width + dx, old.height + dy, ev, cursor)
-            Cursor.S_RESIZE -> resize(old.minX, old.minY, old.width, old.height + dy, ev, cursor)
-            Cursor.SW_RESIZE -> resize(old.minX + dx, old.minY, old.width - dx, old.height + dy, ev, cursor)
-            Cursor.W_RESIZE -> resize(old.minX + dx, old.minY, old.width - dx, old.height, ev, cursor)
+    private fun resize(old: Bounds, deltaX: Double, deltaY: Double, cursor: Cursor, ev: MouseEvent) {
+        val oldX = if (cursor.resizeFromLeft) old.minX else old.maxX
+        val oldY = if (cursor.resizeFromTop) old.minY else old.maxY
+        val (x, y) = pane.snapToGrid(oldX + deltaX, oldY + deltaY)
+        pane.markX(x)
+        val dx = x - oldX
+        val dy = y - oldY
+        var newWidth = old.width
+        if (cursor.resizeFromLeft) newWidth -= dx
+        else if (cursor.resizeFromRight) newWidth += dx
+        var newHeight = old.height
+        if (cursor.resizeFromTop) newHeight -= dy
+        else if (cursor.resizeFromBottom) newHeight += dy
+
+        newWidth = newWidth.coerceAtLeast(10.0)
+        newHeight = newHeight.coerceAtLeast(10.0)
+
+        val oldWidth = getDisplayWidth()
+        val oldHeight = myObject.height
+
+        if (cursor.resizeFromLeft) newWidth = newWidth.coerceAtMost(oldWidth + old.minX)
+        if (pane is SubScorePane && cursor.resizeFromRight) newWidth = newWidth.coerceAtMost(pane.width - old.minX)
+        if (cursor.resizeFromTop) newHeight = newHeight.coerceAtMost(oldHeight + old.minY)
+        if (cursor.resizeFromBottom) newHeight = newHeight.coerceAtMost(pane.height - old.minY)
+
+        resizeObject(newWidth, newHeight, ev, cursor)
+        context[UndoManager].record(ResizeEdit(this, oldWidth, oldHeight, newWidth, newHeight, ev, cursor))
+        val newX = if (cursor.resizeFromLeft) myObject.start + (oldWidth - getDisplayWidth()) else myObject.start
+        val newY = if (cursor.resizeFromTop) myObject.y + (oldHeight - myObject.height) else myObject.y
+        pane.score.moveObject(myObject, newX, newY)
+    }
+
+    private class ResizeEdit(
+        private val obj: ScoreObjectView,
+        private val oldWidth: Double,
+        private val oldHeight: Double,
+        private val newWidth: Double,
+        private val newHeight: Double,
+        private val ev: MouseEvent,
+        private val cursor: Cursor
+    ) : AbstractEdit() {
+        override val actionDescription: String
+            get() = "Resize object"
+
+        override fun doUndo() {
+            obj.resizeObject(oldWidth, oldHeight, ev, cursor)
         }
+
+        override fun doRedo() {
+            obj.resizeObject(newWidth, newHeight, ev, cursor)
+        }
+
+        override fun mergeWith(other: Edit): Edit? =
+            if (other is ResizeEdit && other.obj == this.obj && other.cursor == this.cursor && other.ev.isShiftDown == this.ev.isShiftDown)
+                ResizeEdit(obj, oldWidth, oldHeight, other.newWidth, other.newHeight, ev, cursor)
+            else null
     }
 
     companion object {

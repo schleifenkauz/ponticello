@@ -24,6 +24,13 @@ class Score(
     lateinit var context: Context
         private set
 
+    fun setContext(context: Context) {
+        this.context = context
+    }
+
+    @Transient
+    private var initialized = false
+
     @Transient
     val layoutManager = LayoutManager(_horizontalGroups, _verticalGroups)
 
@@ -35,9 +42,10 @@ class Score(
     private val undo by lazy { context[UndoManager] }
 
     fun initialize(context: Context) {
-        this.context = context
+        if (initialized) return
+        setContext(context)
         for (obj in objects) {
-            objectRegistry.add(obj)
+            if (!objectRegistry.has(obj.name.now)) objectRegistry.add(obj)
         }
         for (obj in objects) {
             obj.initialize(context)
@@ -89,7 +97,10 @@ class Score(
     }
 
     fun moveObject(obj: ScoreObject, newStart: Double, newY: Double) {
-        undo.record(ScoreEdit.MoveObject(obj, Point(obj.start, obj.y), Point(newStart, newY), this))
+        val oldPos = Point(obj.start, obj.y)
+        val newPos = Point(newStart, newY)
+        if (oldPos == newPos) return
+        undo.record(ScoreEdit.MoveObject(obj, oldPos, newPos, this))
         val dt = newStart - obj.start
         val dy = newY - obj.y
         layoutManager.moveObject(obj, dt, dy, context[ScoreObjectSelector].selectedObjects)
@@ -179,28 +190,35 @@ class Score(
     }
 
     fun copy(): Score {
-        val copies = mutableMapOf<ScoreObject, ScoreObject>()
+        val copies = mutableMapOf<String, ScoreObject>()
         for (obj in objects) {
             val copy =
                 if (obj is ClonedObject) {
-                    val original = copies[obj.original] ?: error("original for clone $obj not found!")
-                    original.clone(objectRegistry.nameForClone(original))
+                    obj.ref.resolve(context)
+                    val original = copies[obj.original.name.now] ?: error("original for $obj not found!")
+                    val clone = original.clone(objectRegistry.nameForClone(original))
+                    clone.position.set(obj.position)
+                    clone
                 } else obj.copy(objectRegistry.nameForCopy(obj))
-            copies[obj] = copy
+            objectRegistry.add(copy) //just to avoid name clashes, removed later in method
+            copies[obj.name.now] = copy
         }
         for (obj in copies.values) {
             val nxtInChain = obj.nextInChain?.get() ?: continue
-            obj.nextInChain = copies.getValue(nxtInChain).createReference()
+            obj.nextInChain = copies.getValue(nxtInChain.name.now).createReference()
         }
         val horizontalGroups = _horizontalGroups.mapTo(mutableListOf()) { g ->
             g.mapTo(mutableSetOf()) { name ->
-                copies.getValue(objectRegistry.get(name)).name.now
+                copies.getValue(name).name.now
             }
         }
         val verticalGroups = _verticalGroups.mapTo(mutableListOf()) { g ->
             g.mapTo(mutableSetOf()) { name ->
-                copies.getValue(objectRegistry.get(name)).name.now
+                copies.getValue(name).name.now
             }
+        }
+        for (obj in copies.values) {
+            objectRegistry.remove(obj)
         }
         return Score(copies.values.toMutableList(), horizontalGroups, verticalGroups)
     }

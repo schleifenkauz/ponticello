@@ -1,6 +1,7 @@
 package xenakis.ui
 
 import hextant.context.Context
+import javafx.geometry.Point2D
 import xenakis.impl.Point
 import xenakis.model.ScoreObjectGroup
 
@@ -16,18 +17,38 @@ class SubScorePane(
     override val pixelsPerSecond: Double
         get() = parent.pixelsPerSecond
 
-    override fun snapToGrid(x: Double, y: Double): Point {
+    private fun translateToParent(x: Double, y: Double): Point2D {
         var coords = this.localToScreen(x, y)
         coords = parent.screenToLocal(coords)
+        return coords
+    }
+
+    private fun translateFromParent(coords: Point2D): Point2D {
+        var coords1 = coords
+        coords1 = parent.localToScreen(coords1)
+        coords1 = this.screenToLocal(coords1)
+        return coords1
+    }
+
+    override fun getGrids(x: Double): List<TempoGridObjectView> {
+        val coords = translateToParent(x, 0.0)
+        return parent.getGrids(coords.x)
+    }
+
+    override fun markX(x: Double) {
+        val coords = translateToParent(x, 0.0)
+        parent.markX(coords.x)
+    }
+
+    override fun snapToGrid(x: Double, y: Double): Point {
+        var coords = translateToParent(x, y)
         coords = parent.snapToGrid(coords.x, coords.y).point2d
-        coords = parent.localToScreen(coords)
-        coords = this.screenToLocal(coords)
+        coords = translateFromParent(coords)
         return Point(coords)
     }
 
     override fun getNearestGrid(x: Double, y: Double): TempoGridObjectView? {
-        var coords = this.localToScreen(x, y)
-        coords = parent.screenToLocal(coords)
+        val coords = translateToParent(x, y)
         return parent.getNearestGrid(coords.x, coords.y)
     }
 

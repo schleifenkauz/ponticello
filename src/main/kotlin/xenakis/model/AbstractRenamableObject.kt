@@ -22,22 +22,28 @@ abstract class AbstractRenamableObject : RenamableObject {
     lateinit var context: Context
         private set
 
-    override fun initialize(context: Context) {
-        if (initialized) return
-        logger.fine("Initialize ${this.name.now}")
-        initialized = true
+    open fun setContext(context: Context) {
         this.context = context
     }
 
+    override fun initialize(context: Context) {
+        if (initialized) return
+        logger.fine("Initialize $this")
+        initialized = true
+        setContext(context)
+    }
+
     override fun remove() {
-        if (!initialized) error("Object ${this.name.now} was not initialized!")
-        logger.fine("Remove ${this.name.now}")
+        if (!initialized) return
+        logger.fine("Remove $this")
         initialized = false
     }
 
     override fun rename(newName: String) {
         mutableName.now = newName
     }
+
+    override fun toString(): String = "${javaClass.simpleName} ${name.now}"
 
     companion object {
         private val logger = Logger.getLogger("AbstractRenamableObject")

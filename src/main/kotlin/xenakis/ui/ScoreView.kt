@@ -25,6 +25,14 @@ class ScoreView(score: Score, context: Context) : ScorePane(score, context) {
     override val pixelsPerSecond: Double
         get() = width / (displayEnd - displayStart)
 
+    override fun getGrids(x: Double): List<TempoGridObjectView> = allViews.filterIsInstance<TempoGridObjectView>()
+        .filter { v -> x in v.layoutX..v.width }
+
+    override fun markX(x: Double) {
+        super.markX(x)
+        positionTracker.layoutX = x
+    }
+
     override fun snapToGrid(x: Double, y: Double): Point {
         val settings = context[currentProject].settings
         if (!settings.snapEnabled.now) return Point(x, y)
@@ -39,7 +47,6 @@ class ScoreView(score: Score, context: Context) : ScorePane(score, context) {
                 var t = getTime(x)
                 t = nearestGrid.obj.snapToGrid(t, option)
                 val snappedX = getX(t)
-                nearestGrid.mark(snappedX - nearestGrid.layoutX)
                 return Point(snappedX, y)
             }
         }
@@ -126,14 +133,14 @@ class ScoreView(score: Score, context: Context) : ScorePane(score, context) {
         positionTracker.viewOrder = 100.0
         setOnMouseEntered { ev ->
             if (!ev.x.isNaN()) {
-                positionTracker.layoutX = snapToGrid(ev.x, ev.y).x
                 children.add(positionTracker)
                 ev.consume()
             }
         }
         setOnMouseMoved { ev ->
             if (!ev.x.isNaN()) {
-                positionTracker.layoutX = snapToGrid(ev.x, ev.y).x
+                val x = snapToGrid(ev.x, ev.y).x
+                markX(x)
                 ev.consume()
             }
         }
