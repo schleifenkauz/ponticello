@@ -13,7 +13,7 @@ abstract class AbstractRenamableObject : RenamableObject {
     @Transient
     protected var initialized = false
 
-    protected abstract val mutableName: ReactiveVariable<String>
+    abstract val mutableName: ReactiveVariable<String>
 
     final override val name: ReactiveValue<String>
         get() = mutableName
@@ -28,14 +28,12 @@ abstract class AbstractRenamableObject : RenamableObject {
 
     override fun initialize(context: Context) {
         if (initialized) return
-        logger.fine("Initialize $this")
         initialized = true
         setContext(context)
     }
 
     override fun remove() {
         if (!initialized) return
-        logger.fine("Remove $this")
         initialized = false
     }
 

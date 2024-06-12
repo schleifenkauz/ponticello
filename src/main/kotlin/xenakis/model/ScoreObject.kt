@@ -16,19 +16,18 @@ import kotlinx.serialization.json.*
 import kotlinx.serialization.serializer
 import reaktive.value.ReactiveVariable
 import reaktive.value.now
-import reaktive.value.reactiveVariable
 import xenakis.impl.*
+import xenakis.model.Score.Companion.rootScore
 import xenakis.sc.ControlSpec
 import xenakis.ui.ScoreObjectView
 
 @Serializable(with = ScoreObject.Ser::class)
-abstract class ScoreObject(name: String) : AbstractRenamableObject() {
-    override val mutableName: ReactiveVariable<String> = reactiveVariable(name)
-
+abstract class ScoreObject : AbstractRenamableObject() {
     abstract val type: String
 
     var parent: Score? = null
         private set
+
     abstract val position: ObjectPosition
     abstract var duration: Double
     abstract var height: Double
@@ -66,7 +65,7 @@ abstract class ScoreObject(name: String) : AbstractRenamableObject() {
 
     override fun rename(newName: String) {
         if (name.now == newName) return
-        recordEdit(ScoreObjectEdit.Rename(oldName = name.now, newName = newName, this))
+        if (initialized) recordEdit(ScoreObjectEdit.Rename(oldName = name.now, newName = newName, this))
         parent?.layoutManager?.renamedObject(oldName = name.now, newName = newName)
         super.rename(newName)
     }
@@ -75,18 +74,19 @@ abstract class ScoreObject(name: String) : AbstractRenamableObject() {
         parent = score
     }
 
-    fun duplicateClone() {
-        val cloned = if (this is ClonedObject) original else this
-        val clone = clone(context[ScoreObjectRegistry].nameForClone(cloned))
+    fun duplicateClone(): ScoreObject {
+        val clone = clone()
         clone.position.start += duration
         parent!!.addObject(clone)
+        return clone
     }
 
-    fun duplicateCopy() {
-        val cloned = if (this is ClonedObject) original else this
-        val copy = copy(context[ScoreObjectRegistry].nameForClone(cloned))
+    fun duplicateCopy(): ScoreObject {
+        val copied = if (this is ClonedObject) original else this
+        val copy = copy(parent!!.nameForCopy(copied))
         copy.position.start += duration
         parent!!.addObject(copy)
+        return copy
     }
 
     override fun initialize(context: Context) {
@@ -101,7 +101,7 @@ abstract class ScoreObject(name: String) : AbstractRenamableObject() {
 
     abstract fun copy(newName: String): ScoreObject
 
-    abstract fun clone(name: String): ClonedObject
+    abstract fun clone(): ClonedObject
 
     abstract fun addView(view: ScoreObjectView)
 
@@ -109,16 +109,21 @@ abstract class ScoreObject(name: String) : AbstractRenamableObject() {
 
     override fun createReference(): Reference = Reference(this)
 
-    @Serializable(with = Reference.Serializer::class)
-    class Reference(name: String) : AbstractObjectReference<ScoreObject>(name) {
-        constructor(obj: ScoreObject) : this(obj.name.now) {
+    @Serializable
+    class Reference(private val subScoreName: String, private val name: String) : ObjectReference<ScoreObject> {
+        private var obj: ScoreObject? = null
+
+        constructor(obj: ScoreObject) : this(obj.parent!!.scoreName.now, obj.name.now) {
             this.obj = obj
         }
 
-        override fun getRegistry(context: Context): ObjectRegistry<ScoreObject> = context[ScoreObjectRegistry]
+        override fun get(): ScoreObject = obj ?: error("ScoreObject not yet resolved")
 
-        object Serializer : ObjectReference.Serializer<Reference>() {
-            override fun createReference(name: String): Reference = Reference(name)
+        override fun resolve(context: Context) {
+            if (obj != null) return
+            val rootScore = context[rootScore]
+            val score = if (subScoreName == "<root>") rootScore else rootScore.getSubScore(subScoreName)
+            obj = score.getObject(name)
         }
     }
 

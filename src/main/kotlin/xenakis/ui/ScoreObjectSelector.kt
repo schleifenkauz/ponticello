@@ -63,7 +63,7 @@ class ScoreObjectSelector(private val context: Context, private val rootPane: Sc
         if (selectedObjects.isEmpty()) return
         val copies = selectedObjects.map { obj ->
             if (obj is ClonedObject) {
-                val copy = obj.original.copy(obj.name.now)
+                val copy = obj.original.copy(obj.original.name.now)
                 copy.position.set(obj.position)
                 copy
             } else obj
@@ -73,7 +73,7 @@ class ScoreObjectSelector(private val context: Context, private val rootPane: Sc
 
     fun cloneSelected() {
         if (selectedObjects.isEmpty()) return
-        val clones = selectedObjects.map { obj -> obj.clone(obj.name.now) }
+        val clones = selectedObjects.map { obj -> obj.clone() }
         setClipboard(clones)
     }
 

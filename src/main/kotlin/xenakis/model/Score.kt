@@ -1,11 +1,13 @@
 package xenakis.model
 
+import bundles.publicProperty
+import bundles.set
 import hextant.context.Context
-import hextant.context.withoutUndo
 import hextant.core.editor.ListenerManager
 import hextant.undo.UndoManager
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
+import reaktive.value.ReactiveString
 import reaktive.value.now
 import xenakis.impl.Point
 import xenakis.impl.ScWriter
@@ -18,7 +20,10 @@ class Score(
     private val _horizontalGroups: MutableList<MutableSet<String>> = mutableListOf(),
     private val _verticalGroups: MutableList<MutableSet<String>> = mutableListOf(),
 ) {
-    val objects: MutableList<ScoreObject> get() = _objects
+    val objects: List<ScoreObject> get() = _objects
+
+    lateinit var scoreName: ReactiveString
+        private set
 
     @Transient
     lateinit var context: Context
@@ -37,16 +42,13 @@ class Score(
     @Transient
     private val views = ListenerManager.createWeakListenerManager<ScoreListener>()
 
-    private val objectRegistry by lazy { context[ScoreObjectRegistry] }
-
     private val undo by lazy { context[UndoManager] }
 
-    fun initialize(context: Context) {
+    fun initialize(context: Context, scoreName: ReactiveString) {
         if (initialized) return
+        this.scoreName = scoreName
         setContext(context)
-        for (obj in objects) {
-            if (!objectRegistry.has(obj.name.now)) objectRegistry.add(obj)
-        }
+        if (scoreName.now == "<root>") context[rootScore] = this
         for (obj in objects) {
             obj.initialize(context)
             obj.addToScore(this)
@@ -65,14 +67,26 @@ class Score(
         }
     }
 
+    fun has(name: String) = objects.any { obj -> obj !is ClonedObject && obj.name.now == name }
+
+    fun getObject(name: String) =
+        objects.find { obj -> obj !is ClonedObject && obj.name.now == name }
+            ?: error("ScoreObject $name not found in ${scoreName.now}")
+
+    fun getSubScore(name: String): Score {
+        val obj = getObject(name)
+        val group = obj as? ScoreObjectGroup ?: error("$obj is not a sub score")
+        return group.score
+    }
+
+    fun copy() = Score(objects.mapTo(mutableListOf()) { o -> o.copy(o.name.now) }, _horizontalGroups, _verticalGroups)
+
     fun addObject(obj: ScoreObject) {
-        logger.info("Adding object ${obj.name.now} ${obj.position}")
+        if (obj !is ClonedObject && has(obj.name.now)) error("Name clash: $obj")
         obj.initialize(context)
+        logger.info("Adding object ${obj.name.now} ${obj.position}")
         obj.addToScore(this)
         _objects.add(obj)
-        context.withoutUndo {
-            objectRegistry.add(obj)
-        }
         views.notifyListeners { addedObject(obj) }
         undo.record(ScoreEdit.AddObject(obj, this))
     }
@@ -84,9 +98,6 @@ class Score(
             logger.info("Removing ${o.name.now}")
             _objects.remove(o)
             views.notifyListeners { removedObject(o) }
-            context.withoutUndo {
-                objectRegistry.remove(o)
-            }
             layoutManager.removedObject(o)
         }
         undo.record(ScoreEdit.RemoveObjects(objectsAndTheirClones, this))
@@ -122,7 +133,7 @@ class Score(
         var obj = nxt
         while (true) {
             obj = obj.nextInChain?.get() ?: break
-            val new = ClonedObject(obj.name.now, original = copy)
+            val new = ClonedObject(copy)
             new.position.set(obj.position)
             replace(obj, new)
             chain(prev, new)
@@ -146,11 +157,24 @@ class Score(
     }
 
     fun writePlayerTask(writer: ScWriter, startFrom: Double, prefix: String) {
-        for (obj in objects) {
+        val suffixes = mutableMapOf<String, Pair<Double, Int>>()
+        for (obj in objects.sortedBy { o -> o.start }) {
             if (obj.muted) continue
             if (startFrom > obj.start + obj.duration) continue
-            obj.writeCode(writer, obj.start - startFrom, name = prefix + obj.name.now)
+            val suffix = getSuffix(obj, suffixes)
+            obj.writeCode(writer, obj.start - startFrom, name = prefix + obj.name.now + suffix)
         }
+    }
+
+    private fun getSuffix(obj: ScoreObject, suffixes: MutableMap<String, Pair<Double, Int>>): String {
+        if (obj !is ClonedObject) return ""
+        val (end, idx) = suffixes[obj.name.now] ?: return ""
+        if (end < obj.start) {
+            suffixes.remove(obj.name.now)
+            return ""
+        }
+        suffixes[obj.name.now] = Pair(obj.start + obj.duration, idx + 1)
+        return idx.toString()
     }
 
     fun deleteTimeRange(start: Double, end: Double) {
@@ -180,7 +204,7 @@ class Score(
             t += period
             val layer = n % layers
             val y = obj.y + (layer * obj.height)
-            val clone = obj.clone("${obj.name.now}_loop$n")
+            val clone = obj.clone()
             clone.position.set(t, y)
             addObject(clone)
             if (chainArrows) chain(prev, clone)
@@ -189,41 +213,23 @@ class Score(
         context[UndoManager].finishCompoundEdit()
     }
 
-    fun copy(): Score {
-        val copies = mutableMapOf<String, ScoreObject>()
-        for (obj in objects) {
-            val copy =
-                if (obj is ClonedObject) {
-                    obj.ref.resolve(context)
-                    val original = copies[obj.original.name.now] ?: error("original for $obj not found!")
-                    val clone = original.clone(objectRegistry.nameForClone(original))
-                    clone.position.set(obj.position)
-                    clone
-                } else obj.copy(objectRegistry.nameForCopy(obj))
-            objectRegistry.add(copy) //just to avoid name clashes, removed later in method
-            copies[obj.name.now] = copy
+    fun availableName(prefix: String): String {
+        for (n in 1..Int.MAX_VALUE) {
+            val name = "${prefix}$n"
+            if (!has(name)) return name
         }
-        for (obj in copies.values) {
-            val nxtInChain = obj.nextInChain?.get() ?: continue
-            obj.nextInChain = copies.getValue(nxtInChain.name.now).createReference()
-        }
-        val horizontalGroups = _horizontalGroups.mapTo(mutableListOf()) { g ->
-            g.mapTo(mutableSetOf()) { name ->
-                copies.getValue(name).name.now
-            }
-        }
-        val verticalGroups = _verticalGroups.mapTo(mutableListOf()) { g ->
-            g.mapTo(mutableSetOf()) { name ->
-                copies.getValue(name).name.now
-            }
-        }
-        for (obj in copies.values) {
-            objectRegistry.remove(obj)
-        }
-        return Score(copies.values.toMutableList(), horizontalGroups, verticalGroups)
+        throw AssertionError()
+    }
+
+    fun nameForCopy(obj: ScoreObject): String {
+        val name = obj.name.now
+        val prefix = name.dropLastWhile { it.isDigit() }
+        return availableName(prefix)
     }
 
     companion object {
+        val rootScore = publicProperty<Score>("root-score")
+
         private val logger = Logger.getLogger("Score")
     }
 }

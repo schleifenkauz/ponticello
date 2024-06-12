@@ -97,11 +97,10 @@ class PlayBufObject(
     }
 
     companion object {
-        fun create(buffer: BufferObject, context: Context): PlayBufObject? {
+        fun create(buffer: BufferObject, name: String, context: Context): PlayBufObject? {
             val duration = buffer.useAudioStream { stream -> stream?.duration } ?: return null
             val env = Envelope.constant(1.0, duration, Warp.Linear)
             val out = context[BusRegistry].getDefault()
-            val name = context[ScoreObjectRegistry].availableName(buffer.name.now)
             val obj = PlayBufObject(name, buffer.createReference(), out.createReference(), 0.0, 1.0, env)
             obj.duration = duration
             return obj

@@ -21,9 +21,9 @@ class XenakisApp : Application() {
         controller.startSuperCollider()
         val ui = XenakisUI(stage, controller)
         controller.addListener(ui)
-        controller.startXenakis()
         stage.title = "Xenakis"
         stage.show()
+        controller.startXenakis()
     }
 
     override fun stop() {

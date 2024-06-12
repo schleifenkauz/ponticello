@@ -59,6 +59,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
     open fun markX(x: Double) {
         getGrids(x).forEach { g -> g.mark(x) }
     }
+
     abstract fun getNearestGrid(x: Double, y: Double): TempoGridObjectView?
 
     abstract val pixelsPerSecond: Double
@@ -124,7 +125,8 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
             } else {
                 context[BufferRegistry].get(db.getContent(BufferObject.DATA_FORMAT) as String)
             }
-            val obj = PlayBufObject.create(buf, context) ?: return@setupDropArea
+            val name = score.availableName(buf.name.now)
+            val obj = PlayBufObject.create(buf, name, context) ?: return@setupDropArea
             obj.position.set(getTime(ev.x), ev.y)
             obj.height = 150.0
             score.addObject(obj)
@@ -302,20 +304,16 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
                 val content = clipboard.getContent(ScoreObject.DATA_FORMAT) as String
                 val objects = Json.decodeFromString(ListSerializer(ScoreObject.Ser), content)
                 val leftTop = objects.minOf { it.position }
+                if (!ev.isShiftDown) selector.deselectAll()
                 val (x, y) = snapToGrid(ev.x, ev.y)
                 for (obj in objects) {
-                    obj.setContext(context)
-                    val renamed =
-                        if (obj is ClonedObject) {
-                            obj.ref.resolve(context)
-                            obj.clone(context[ScoreObjectRegistry].nameForClone(obj.original))
-                        } else obj.copy(context[ScoreObjectRegistry].nameForCopy(obj))
-                    renamed.position.start += getTime(x) - leftTop.start
-                    renamed.position.start = renamed.start.coerceAtLeast(0.0)
-                    renamed.position.y += y - leftTop.y
-                    renamed.position.y = renamed.y.coerceIn(0.0, height - obj.height)
-                    score.addObject(renamed)
-                    Thread.sleep(100)
+                    if (obj !is ClonedObject) {
+                        obj.rename(score.nameForCopy(obj))
+                    }
+                    obj.position.start += getTime(x) - leftTop.start
+                    obj.position.y += y - leftTop.y
+                    score.addObject(obj)
+                    selector.select(getObjectView(obj), addToSelection = true)
                 }
             }
         }
@@ -376,7 +374,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
                 val def = context[InstrumentRegistry].selectedInstrument
                 if (def !is SynthDefObject) return
                 val defaultGroup = context[GroupRegistry].getDefault()
-                val initialName = context[ScoreObjectRegistry].availableName("synth")
+                val initialName = score.availableName(def.name.now)
                 promptNewObjectName("Synth name", initialName) { name ->
                     @Suppress("UNCHECKED_CAST")
                     val ref = def.createReference() as ObjectReference<SynthDefObject>
@@ -390,14 +388,14 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
             }
 
             Task -> {
-                val name = context[ScoreObjectRegistry].availableName("task")
+                val name = score.availableName("task")
                 val editor = EditorRoot.create(ScFunctionEditor(context))
                 addObject(TaskObject(name, editor, rect.width), rect)
             }
 
             Tool.Envelope -> promptNewObjectName(
                 "Envelope name",
-                context[ScoreObjectRegistry].availableName("env")
+                score.availableName("env")
             ) { name ->
                 val busSelector = BusSelector(context, preferredChannels = 1, preferredRate = Rate.Control)
                 EnvelopeObjectView.showEnvelopeConfig(context, busSelector) { spec ->
@@ -410,12 +408,12 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
             }
 
             Memo -> {
-                val name = context[ScoreObjectRegistry].availableName("memo")
+                val name = score.availableName("memo")
                 addObject(MemoObject(name, "", rect.width), rect)
             }
 
             Group -> {
-                val name = context[ScoreObjectRegistry].availableName("group")
+                val name = score.availableName("group")
                 context.compoundEdit("Add object group") {
                     val objects = viewsInside(rect.boundsInParent).mapTo(mutableSetOf()) { it.myObject }
                     score.removeObjects(objects)
@@ -430,7 +428,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
 
             PianoRoll -> {
                 val instr = context[InstrumentRegistry].selectedInstrument ?: return
-                val defaultName = context[ScoreObjectRegistry].availableName("piano_roll")
+                val defaultName = score.availableName("piano_roll")
                 val nameField = TextField(defaultName)
                 val rootPitchSelector = ComboBox(FXCollections.observableList(MidiPitch.allPitchClasses()))
                 rootPitchSelector.value = MidiPitch(0)
@@ -459,7 +457,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
             }
 
             TempoGrid -> {
-                val name = context[ScoreObjectRegistry].availableName("grid")
+                val name = score.availableName("grid")
                 val obj = TempoGridObject.createDefault(name)
                 val configLayout = HBox(10.0)
                 TempoGridObjectView.createConfigurationBar(configLayout, obj)

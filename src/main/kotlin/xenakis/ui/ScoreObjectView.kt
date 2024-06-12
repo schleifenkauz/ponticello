@@ -371,7 +371,9 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
         myObject.height = height
     }
 
-    protected open fun beforeResize(ev: MouseEvent, cursor: Cursor) {}
+    protected open fun beforeResize(ev: MouseEvent, cursor: Cursor) {
+        context[ScoreObjectSelector].select(this, addToSelection = ev.isShiftDown)
+    }
 
     open fun getDisplayWidth(): Double = pane.getWidth(myObject.duration)
 

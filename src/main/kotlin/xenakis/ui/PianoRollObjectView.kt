@@ -117,6 +117,7 @@ class PianoRollObjectView(private val obj: PianoRollObject) : ScoreObjectView(ob
     }
 
     override fun beforeResize(ev: MouseEvent, cursor: Cursor) {
+        super.beforeResize(ev, cursor)
         pixelsPerPitchBeforeResize = obj.pixelsPerPitch
     }
 

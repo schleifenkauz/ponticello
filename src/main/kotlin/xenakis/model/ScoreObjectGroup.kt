@@ -28,7 +28,7 @@ class ScoreObjectGroup(name: String, val score: Score) : RegularScoreObject(name
     override fun initialize(context: Context) {
         if (initialized) return
         super.initialize(context)
-        this.score.initialize(context)
+        this.score.initialize(context, name)
     }
 
     override fun writeCode(writer: ScWriter, playAt: Double, name: String) {
@@ -37,35 +37,36 @@ class ScoreObjectGroup(name: String, val score: Score) : RegularScoreObject(name
     }
 
     override fun cut(position: Double, whichHalf: HorizontalDirection): ScoreObject {
-        val cutScore = Score()
-        cutScore.initialize(context)
+        val objects = mutableListOf<ScoreObject>()
         for (obj in score.objects) {
             when {
                 whichHalf == LEFT && obj.start + obj.duration <= position -> {
-                    cutScore.addObject(obj)
+                    objects.add(obj)
                 }
 
                 whichHalf == LEFT && obj.start < position -> {
                     obj.duration = position - obj.start
                     val leftHalf = obj.cut(position - obj.start, LEFT, obj.name.now + "_left")
                         ?: obj.also { it.duration = position - obj.start }
-                    cutScore.addObject(leftHalf)
+                    objects.add(leftHalf)
                 }
 
                 whichHalf == RIGHT && obj.start >= position -> {
                     obj.position.start -= position
-                    cutScore.addObject(obj)
+                    objects.add(obj)
                 }
 
                 whichHalf == RIGHT && obj.start + obj.duration > position -> {
                     obj.position.start -= position
                     val rightHalf = obj.cut(position - obj.start, RIGHT, obj.name.now + "_right")
                         ?: obj.also { it.duration -= position - obj.start }
-                    cutScore.addObject(rightHalf)
+                    objects.add(rightHalf)
                 }
             }
         }
-        return ScoreObjectGroup(name.now, cutScore)
+        val score = Score(objects)
+        val name = if (whichHalf == LEFT) "${name.now}_left" else "${name.now}_right"
+        return ScoreObjectGroup(name, score)
     }
 
     override fun serverBooted(context: SuperColliderContext) {

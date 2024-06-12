@@ -10,8 +10,10 @@ import xenakis.impl.ScWriter
 import xenakis.sc.ControlSpec
 import xenakis.ui.ScoreObjectView
 
-sealed class RegularScoreObject(name: String) : ScoreObject(name) {
+sealed class RegularScoreObject(name: String) : ScoreObject() {
     protected abstract val viewManager: ListenerManager<out ScoreObjectView>
+
+    override val mutableName: ReactiveVariable<String> = reactiveVariable(name)
 
     final override val position: ObjectPosition = ObjectPosition(this)
     final override var duration: Double = 0.0
@@ -43,8 +45,8 @@ sealed class RegularScoreObject(name: String) : ScoreObject(name) {
 
     final override var nextInChain: Reference? = null
 
-    override fun clone(name: String): ClonedObject {
-        val clone = ClonedObject(name, this)
+    override fun clone(): ClonedObject {
+        val clone = ClonedObject(this)
         clone.position.set(this.position)
         return clone
     }

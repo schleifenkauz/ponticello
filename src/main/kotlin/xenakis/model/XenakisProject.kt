@@ -8,6 +8,7 @@ import hextant.serial.writeJson
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import reaktive.value.now
+import reaktive.value.reactiveValue
 import xenakis.impl.ScWriter
 import xenakis.impl.StatusListener.StatusUpdate
 import xenakis.impl.SuperColliderClient
@@ -116,7 +117,7 @@ class XenakisProject private constructor(
                 val serverSetup = folder.resolve("server_setup.json").readJson<EditorRoot<CodeBlockEditor>>()
                 val beforePlay = folder.resolve("server_tree.json").readJson<EditorRoot<CodeBlockEditor>>()
                 val score = folder.resolve("score.json").readJson<Score>()
-                score.initialize(context)
+                score.initialize(context, reactiveValue("<root>"))
                 return XenakisProject(
                     settings,
                     groups, busses, buffers, instruments,
@@ -140,7 +141,7 @@ class XenakisProject private constructor(
             globalControls = GlobalControls(mutableListOf()).also { c -> c.initialize(context) },
             serverSetup = EditorRoot.create(CodeBlockEditor(context)),
             serverTree = EditorRoot.create(CodeBlockEditor(context)),
-            score = Score().also { score -> score.initialize(context) },
+            score = Score().also { score -> score.initialize(context, reactiveValue("<root>")) },
         ).also { project ->
             project.initialize(context)
             project.projectFile = location

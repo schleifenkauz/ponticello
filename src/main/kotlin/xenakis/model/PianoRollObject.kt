@@ -4,6 +4,7 @@ import hextant.context.Context
 import hextant.context.withoutUndo
 import hextant.core.editor.ListenerManager
 import hextant.serial.EditorRoot
+import hextant.serial.SnapshotAware
 import hextant.undo.AbstractEdit
 import hextant.undo.PropertyEdit
 import hextant.undo.UndoManager
@@ -119,7 +120,7 @@ class PianoRollObject(
 
     override fun copy(): ScoreObject = PianoRollObject(
         name.now, instrument, lowestPitch, highestPitch,
-        eventDictionary.clone(),
+        context.withoutUndo { eventDictionary.clone() },
         notes.mapTo(mutableListOf()) { n -> n.copy() }
     )
 
@@ -264,9 +265,11 @@ class PianoRollObject(
             val instrument = getSerializableValue<InstrumentObject.Reference>("instrument")!!
             val lowestPitch = getInt("lowestPitch")!!
             val highestPitch = getInt("highestPitch")!!
-            val eventDictionary = getSerializableValue<EditorRoot<EventDictionaryEditor>>("eventDictionary")!!
-            val notes = getSerializableValue<List<Note>>("notes")!!.toMutableList()
-            return PianoRollObject(name, instrument, lowestPitch, highestPitch, eventDictionary, notes)
+            SnapshotAware.Serializer.reconstructionContext.withoutUndo {
+                val eventDictionary = getSerializableValue<EditorRoot<EventDictionaryEditor>>("eventDictionary")!!
+                val notes = getSerializableValue<List<Note>>("notes")!!.toMutableList()
+                return PianoRollObject(name, instrument, lowestPitch, highestPitch, eventDictionary, notes)
+            }
         }
     }
 }

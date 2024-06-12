@@ -4,21 +4,17 @@ import hextant.context.Context
 import javafx.scene.paint.Color
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonObjectBuilder
-import kotlinx.serialization.json.put
 import reaktive.value.ReactiveVariable
 import reaktive.value.now
-import xenakis.impl.ScWriter
-import xenakis.impl.getSerializableValue
-import xenakis.impl.getValue
-import xenakis.impl.setValue
+import xenakis.impl.*
 import xenakis.sc.ControlSpec
 import xenakis.ui.ScoreObjectView
 
-class ClonedObject(
-    name: String,
-    private var originalRef: Reference,
-) : ScoreObject(name) {
-    constructor(name: String, original: ScoreObject) : this(name, original.createReference())
+class ClonedObject(private var originalRef: Reference) : ScoreObject() {
+    constructor(original: ScoreObject) : this(original.createReference())
+
+    override val mutableName: ReactiveVariable<String>
+        get() = original.mutableName
 
     override val position: ObjectPosition = ObjectPosition(this)
     val original: ScoreObject get() = originalRef.get()
@@ -32,7 +28,7 @@ class ClonedObject(
     override var nextInChain: Reference? = null
 
     override fun JsonObjectBuilder.saveToJson() {
-        put("original", original.name.now)
+        putSerializableValue("scoreOfOriginal", original.parent!!.scoreName.now)
     }
 
     override fun initialize(context: Context) {
@@ -40,8 +36,6 @@ class ClonedObject(
         super.initialize(context)
         originalRef.resolve(context)
     }
-
-    val ref get() = originalRef
 
     override var duration: Double by { original::duration }
     override var height: Double by { original::height }
@@ -64,8 +58,8 @@ class ClonedObject(
         return copy
     }
 
-    override fun clone(name: String): ClonedObject {
-        val clone = original.clone(name)
+    override fun clone(): ClonedObject {
+        val clone = original.clone()
         clone.position.set(this.position)
         return clone
     }
@@ -79,8 +73,9 @@ class ClonedObject(
             get() = "clone"
 
         override fun JsonObject.createFromJson(name: String): ScoreObject {
-            val originalName: Reference = getSerializableValue("original")!!
-            return ClonedObject(name, originalName)
+            val scoreOfOriginal = getString("scoreOfOriginal")!!
+            val originalRef = Reference(scoreOfOriginal, name)
+            return ClonedObject(originalRef)
         }
     }
 }

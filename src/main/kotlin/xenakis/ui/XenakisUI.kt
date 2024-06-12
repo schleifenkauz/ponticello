@@ -9,10 +9,7 @@ import hextant.command.line.CommandLinePopup
 import hextant.context.Properties
 import hextant.context.SelectionDistributor
 import hextant.core.view.EditorControl
-import hextant.fx.handleCommands
-import hextant.fx.initHextantScene
-import hextant.fx.label
-import hextant.fx.registerShortcuts
+import hextant.fx.*
 import hextant.undo.UndoManager
 import hextant.undo.historyShortcuts
 import javafx.application.Platform
@@ -183,6 +180,11 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
         val horizontalSplitter = SplitPane(leftSplitter, scoreView, rightSplitter)
         SplitPane.setResizableWithParent(leftSplitter, false)
         SplitPane.setResizableWithParent(rightSplitter, false)
+        horizontalSplitter.sceneProperty().addListener { _ ->
+            runFXWithTimeout(50) {
+                horizontalSplitter.setDividerPositions(0.15, 0.85)
+            }
+        }
         val toolbar = createToolbar()
         contextBar.prefWidthProperty().bind(toolbar.widthProperty().multiply(0.33))
         for (box in toolbar.children) HBox.setHgrow(box, Priority.ALWAYS)
@@ -365,11 +367,15 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
             }
             on("Alt?+D") {
                 val selected = scoreView.selector.singleSelected.now ?: return@on
-                selected.myObject.duplicateCopy()
+                val obj = selected.myObject.duplicateCopy()
+                val view = selected.pane.getObjectView(obj)
+                scoreView.selector.select(view, addToSelection = false)
             }
             on("Alt?+Shift+D") {
                 val selected = scoreView.selector.singleSelected.now ?: return@on
-                selected.myObject.duplicateClone()
+                val obj = selected.myObject.duplicateClone()
+                val view = selected.pane.getObjectView(obj)
+                scoreView.selector.select(view, addToSelection = false)
             }
             on("Alt+SPACE") {
                 val view = scoreView.selector.singleSelected.now ?: return@on
