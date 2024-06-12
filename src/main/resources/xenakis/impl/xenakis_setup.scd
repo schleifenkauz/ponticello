@@ -19,10 +19,6 @@ SynthDef(\diskout, {
 	~record_synth = Synth.tail(nil, \diskout, [bus:bus, buf:~record_buf]);
 };
 
-~stopRecording = {
-	~record_synth.free;
-};
-
 ServerBoot.add {
 	Task {
 		1.wait;

@@ -492,7 +492,7 @@ data class AdhocSynth(
             val action = "action: { |c| if (c.info.presets.any { |p| p.name == \"$presetName\" }) { " +
                     "c.loadPreset('$presetName') " +
                     "}}"
-            +"VSTPluginController($synthName).open('$pluginName.vst3', $action)"
+            +"~ctrl_$presetName = VSTPluginController($synthName).open('$pluginName.vst3', $action)"
         }
     }
 }

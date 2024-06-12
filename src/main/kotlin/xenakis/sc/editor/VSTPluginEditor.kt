@@ -32,25 +32,33 @@ class VSTPluginEditor(context: Context) : CompoundEditor<VSTPlugin>(context), Sc
             VSTPlugin(input.get(), channels.get(), pluginName, id.get().text, presetName ?: "<no preset>")
         }
 
+    private val controllerVar get() = "~ctrl_$presetName"
+
     fun configurePlugin() {
         context[SuperColliderClient].run {
-            appendBlock("Task") {
-                +"~tmp_synth = Synth(\\vst_instrument)"
-                +"s.sync"
-                val action = "action: { |c| " +
-                        "if (c.info.presets.any { |p| p.name == \"$presetName\" }) { " +
-                        "c.loadPreset('$presetName') " +
-                        "};" +
-                        "c.editor; }"
-                +"~ctrl_$presetName = VSTPluginController(~tmp_synth).open('$pluginName.vst3', editor: true, $action)"
+            appendBlock("if ($controllerVar == nil)") {
+                appendBlock("Task") {
+                    +"~tmp_synth = Synth(\\vst_instrument)"
+                    +"s.sync"
+                    val action = "action: { |c| " +
+                            "if (c.info.presets.any { |p| p.name == \"$presetName\" }) { " +
+                            "c.loadPreset('$presetName') " +
+                            "};" +
+                            "c.editor; }"
+                    +"$controllerVar = VSTPluginController(~tmp_synth).open('$pluginName.vst3', editor: true, $action)"
+                }
+                +".play"
             }
-            +".play"
+            appendBlock {
+                +"$controllerVar.editor"
+            }
+            appendLine(";")
         }
     }
 
     fun saveConfiguration() {
         context[SuperColliderClient].run {
-            +"if (~ctrl_$presetName != nil) { ~ctrl_$presetName.savePreset('$presetName') }"
+            +"if ($controllerVar != nil) { ~ctrl_$presetName.savePreset('$presetName') }"
         }
     }
 
