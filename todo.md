@@ -41,7 +41,6 @@
   - but what if they are too short to be well-visible in the score?
   - maybe also distinguish between gated SynthDefs (can be `release`d) and those that have to be `free`d
 - allow for more cases of pasting code
-- editing parameters of the VSTPlugins should have realtime effects
 - save presets to files in project directory
 
 ### Support for patterns
