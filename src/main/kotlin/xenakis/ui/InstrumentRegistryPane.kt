@@ -131,7 +131,10 @@ class InstrumentRegistryPane(
                     height = 1000.0
                     scene.initHextantScene(registry.context, applyStyle = false)
                     scene.registerShortcuts {
-                        on("Ctrl+S") { obj.sync() }
+                        on("Ctrl+S") {
+                            obj.sync()
+                            notifyInfo("Synchronized SynthDef '${obj.name.now}'")
+                        }
                         on("Ctrl+Shift+S") {
                             obj.sync()
                             hide()

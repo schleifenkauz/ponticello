@@ -136,7 +136,6 @@ class SynthObject(
                     else -> {} //already handled in constantArguments
                 }
             }
-            appendLine(";")
         }
     }
 

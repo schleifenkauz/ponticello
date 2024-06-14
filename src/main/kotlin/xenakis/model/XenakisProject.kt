@@ -88,7 +88,6 @@ class XenakisProject private constructor(
     fun ScWriter.playScore(fromTime: Double) {
         appendLine("~synths = ();")
         appendLine("~tasks = ();")
-        serverTree.editor.result.now.code(this, context)
         score.writePlayerTask(this, fromTime, prefix = "")
     }
 

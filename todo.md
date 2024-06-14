@@ -37,10 +37,8 @@
 ### Minor
 
 - lag values for parameters (adjust with spinner in control assignment)
-- fixed duration synths?
-  - but what if they are too short to be well-visible in the score?
-  - maybe also distinguish between gated SynthDefs (can be `release`d) and those that have to be `free`d
 - allow for more cases of pasting code
+- save window positions
 
 ### Support for patterns
 
