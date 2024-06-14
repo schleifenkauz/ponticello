@@ -225,9 +225,7 @@ data class CodeBlock(val variables: List<Identifier> = emptyList(), val statemen
         get() = variables + statements
 
     override fun code(writer: ScWriter, context: Context) {
-        if (variables.isNotEmpty() || statements.isNotEmpty()) {
-            writer.appendGroup { writeCode(writer, context) }
-        }
+        writer.appendGroup { writeCode(writer, context) }
     }
 
     fun writeCode(writer: ScWriter, context: Context) = with(writer) {

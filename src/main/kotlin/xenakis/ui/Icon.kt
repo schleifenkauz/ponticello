@@ -6,6 +6,7 @@ import javafx.scene.control.ToggleButton
 import javafx.scene.control.Tooltip
 import javafx.scene.image.Image
 import javafx.scene.image.ImageView
+import javafx.scene.input.MouseEvent
 
 enum class Icon {
     Envelope,
@@ -51,6 +52,7 @@ enum class Icon {
     TimeGrid,
     Transpose,
     GoToStart,
+    SetupCode,
 
     /*Color,*/
     FileReload,
@@ -71,10 +73,10 @@ enum class Icon {
         return view
     }
 
-    fun button(radius: Double = DEFAULT_RADIUS, action: String? = null, onAction: (Button) -> Unit = {}): Button =
+    fun button(radius: Double = DEFAULT_RADIUS, action: String? = null, onAction: (MouseEvent) -> Unit = {}): Button =
         Button().apply {
             configureButton(radius, action)
-            setOnAction { onAction(this) }
+            setOnMouseClicked { ev -> onAction(ev) }
         }
 
     private fun ButtonBase.configureButton(radius: Double, description: String?) {

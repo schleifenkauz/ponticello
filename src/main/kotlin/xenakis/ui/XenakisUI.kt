@@ -36,6 +36,7 @@ import reaktive.value.now
 import reaktive.value.toggle
 import xenakis.model.LayoutManager.LayoutAspect
 import xenakis.model.Settings
+import xenakis.model.SuperColliderObject
 import xenakis.model.XenakisProject
 import xenakis.ui.ToolSelector.Tool
 
@@ -44,8 +45,6 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
 
     val toolSelector = ToolSelector()
 
-    private lateinit var serverSetupCodePane: CodePane
-    private lateinit var beforePlayCodePane: CodePane
     private lateinit var synthDefsPane: InstrumentRegistryPane
     private lateinit var busRegistryPane: BusRegistryPane
     private lateinit var samplesPane: SampleRegistryPane
@@ -53,6 +52,8 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
     private lateinit var scoreView: ScoreView
     private lateinit var flowGraphWindow: SubWindow
     private lateinit var globalControlsWindow: SubWindow
+    private lateinit var serverTreeCodeWindow: SubWindow
+    private lateinit var serverSetupCodeWindow: SubWindow
     private val settingsWindow: Stage
 
     private lateinit var playBtn: Button
@@ -82,8 +83,6 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
     }
 
     override fun displayProject(project: XenakisProject) {
-        serverSetupCodePane = CodePane("Server setup", project.serverSetup.control)
-        beforePlayCodePane = CodePane("Play setup", project.serverTree.control)
         synthDefsPane = InstrumentRegistryPane(project.instruments)
         context[InstrumentRegistryPane] = synthDefsPane
         busRegistryPane = BusRegistryPane(project.busses)
@@ -98,6 +97,25 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
         val globalControlsPane = GlobalControlsPane(project.globalControls, context)
         globalControlsWindow = SubWindow(globalControlsPane, "Global controls", context)
         globalControlsWindow.width = 500.0
+
+        serverSetupCodeWindow = SubWindow(project.serverSetup.control, "ServerSetup", context)
+        serverSetupCodeWindow.scene.registerShortcuts {
+            on("Ctrl+S") {
+                val setupCode = project.serverSetup.editor.result.now
+                project.updateSetupCode(setupCode, SuperColliderObject.LiveCycleType.ServerBoot)
+                notifyInfo("ServerSetup updated")
+            }
+        }
+        serverSetupCodeWindow.resize(500.0, 500.0)
+        serverTreeCodeWindow = SubWindow(project.serverTree.control, "ServerTree", context)
+        serverTreeCodeWindow.scene.registerShortcuts {
+            on("Ctrl+S") {
+                val serverTreeCode = project.serverTree.editor.result.now
+                project.updateSetupCode(serverTreeCode, SuperColliderObject.LiveCycleType.ServerTree)
+                notifyInfo("ServerTree updated")
+            }
+        }
+        serverTreeCodeWindow.resize(500.0, 500.0)
 
         player = ScorePlayer(scoreView, project, controller.client)
         shellWindow = SuperColliderShellController.createShellWindow(context)
@@ -175,16 +193,13 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
     }
 
     private fun createLayout(): VBox {
-        val leftSplitter = SplitPane(synthDefsPane, busRegistryPane, samplesPane, groupsPane)
-        val rightSplitter = SplitPane(serverSetupCodePane, beforePlayCodePane)
-        leftSplitter.orientation = Orientation.VERTICAL
-        rightSplitter.orientation = Orientation.VERTICAL
-        val horizontalSplitter = SplitPane(leftSplitter, scoreView, rightSplitter)
-        SplitPane.setResizableWithParent(leftSplitter, false)
-        SplitPane.setResizableWithParent(rightSplitter, false)
+        val toolPanes = SplitPane(synthDefsPane, busRegistryPane, samplesPane, groupsPane)
+        toolPanes.orientation = Orientation.VERTICAL
+        val horizontalSplitter = SplitPane(scoreView, toolPanes)
+        SplitPane.setResizableWithParent(toolPanes, false)
         horizontalSplitter.sceneProperty().addListener { _ ->
             runFXWithTimeout(50) {
-                horizontalSplitter.setDividerPositions(0.18, 0.95)
+                horizontalSplitter.setDividerPositions(0.82)
             }
         }
         val toolbar = createToolbar()
@@ -246,11 +261,15 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
 
     private fun createMiscBar() = HBox(
         Icon.Console.button(action = "Open console") { shellWindow.show() },
+        Icon.SetupCode.button(action = "Edit setup code") { ev ->
+            if (ev.isShiftDown) serverSetupCodeWindow.show()
+            else serverTreeCodeWindow.show()
+        },
         Icon.Restart.button(action = "Restart server") { project.rebootServer() },
         Icon.Browser.button(action = "Open help browser") { project.context[HelpBrowser].show() },
         Icon.Graph.button(action = "Edit audio flow graph") { flowGraphWindow.show() },
         Icon.Settings.button(action = "Edit settings") { settingsWindow.show() },
-        Icon.Knob.button(action = "Open global controls") { globalControlsWindow.show() }
+        Icon.Knob.button(action = "Edit global controls") { globalControlsWindow.show() }
     )
 
     private fun createLayoutBar(): HBox {

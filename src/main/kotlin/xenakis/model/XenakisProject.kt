@@ -14,7 +14,8 @@ import reaktive.value.reactiveValue
 import xenakis.impl.ScWriter
 import xenakis.impl.StatusListener.StatusUpdate
 import xenakis.impl.SuperColliderClient
-import xenakis.sc.code
+import xenakis.model.SuperColliderObject.LiveCycleType
+import xenakis.sc.CodeBlock
 import xenakis.sc.editor.CodeBlockEditor
 import java.io.File
 
@@ -49,18 +50,12 @@ class XenakisProject private constructor(
         client = context[SuperColliderClient]
         client.statusListener.on(StatusUpdate.ReadyToBoot) {
             client.run {
-                addServerBootHooks()
+                updateSetupCode(serverSetup.editor.result.now, LiveCycleType.ServerBoot)
+                updateSetupCode(serverTree.editor.result.now, LiveCycleType.ServerTree)
                 instruments.run { allocateAll() }
-                +"s.boot"
+                +"s.reboot"
             }
         }
-    }
-
-    private fun ScWriter.addServerBootHooks() {
-        appendBlock("ServerBoot.add") {
-            +serverSetup.editor.result.now.code(context)
-        }
-        appendLine(";")
     }
 
     fun saveTo(folder: File) {
@@ -99,6 +94,19 @@ class XenakisProject private constructor(
 
     fun rebootServer() {
         client.run("s.reboot;")
+    }
+
+    fun updateSetupCode(setupCode: CodeBlock, liveCycleType: LiveCycleType) {
+        val funcName = "~setup$liveCycleType"
+        client.run {
+            +"if ($funcName != nil) { $liveCycleType.remove(~setup$liveCycleType) }"
+            append("$funcName = ")
+            appendBlock {
+                setupCode.writeCode(writer, context)
+            }
+            appendLine(";")
+            +"$liveCycleType.add($funcName, s)"
+        }
     }
 
     companion object {
