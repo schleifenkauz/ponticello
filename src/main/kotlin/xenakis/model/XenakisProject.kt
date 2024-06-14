@@ -1,5 +1,7 @@
 package xenakis.model
 
+import bundles.publicProperty
+import bundles.set
 import hextant.context.Context
 import hextant.context.withoutUndo
 import hextant.serial.EditorRoot
@@ -22,6 +24,7 @@ class XenakisProject private constructor(
     val groups: GroupRegistry,
     val busses: BusRegistry,
     val buffers: BufferRegistry,
+    val samples: SampleRegistry,
     val instruments: InstrumentRegistry,
     val flowGraph: AudioFlowGraph,
     val globalControls: GlobalControls,
@@ -38,7 +41,7 @@ class XenakisProject private constructor(
         private set
 
     @Transient
-    lateinit var projectFile: File
+    lateinit var projectDirectory: File
         private set
 
     fun initialize(context: Context) {
@@ -65,6 +68,7 @@ class XenakisProject private constructor(
         folder.resolve("groups.json").writeJson(groups)
         folder.resolve("busses.json").writeJson(busses)
         folder.resolve("buffers.json").writeJson(buffers)
+        folder.resolve("samples.json").writeJson(samples)
         folder.resolve("instruments.json").writeJson(instruments)
         folder.resolve("flow_graph.json").writeJson(flowGraph)
         folder.resolve("global_controls.json").writeJson(globalControls)
@@ -98,16 +102,20 @@ class XenakisProject private constructor(
     }
 
     companion object {
+        val projectDirectory = publicProperty<File>("Project directory")
+
         fun loadFrom(folder: File, context: Context): XenakisProject {
+            context[projectDirectory] = folder
             context.withoutUndo {
                 val settings = folder.resolve("settings.json").readJson<InteractionSettings>()
-                val groups = GroupRegistry.createDefault()
-                //folder.resolve("groups.json").readJson<GroupRegistry>()
+                val groups = folder.resolve("groups.json").readJson<GroupRegistry>()
                 groups.initialize(context)
                 val busses = folder.resolve("busses.json").readJson<BusRegistry>()
                 busses.initialize(context)
                 val buffers = folder.resolve("buffers.json").readJson<BufferRegistry>()
                 buffers.initialize(context)
+                val samples = folder.resolve("samples.json").readJson<SampleRegistry>()
+                samples.initialize(context)
                 val instruments = folder.resolve("instruments.json").readJson<InstrumentRegistry>()
                 instruments.initialize(context)
                 val flowGraph = folder.resolve("flow_graph.json").readJson<AudioFlowGraph>()
@@ -120,13 +128,13 @@ class XenakisProject private constructor(
                 score.initialize(context, reactiveValue("<root>"))
                 return XenakisProject(
                     settings,
-                    groups, busses, buffers, instruments,
+                    groups, busses, buffers, samples, instruments,
                     flowGraph, globalControls,
                     serverSetup, beforePlay,
                     score
                 ).also { p ->
                     p.initialize(context)
-                    p.projectFile = folder
+                    p.projectDirectory = folder
                 }
             }
         }
@@ -136,6 +144,7 @@ class XenakisProject private constructor(
             groups = GroupRegistry.createDefault().also { r -> r.initialize(context) },
             busses = BusRegistry.createDefault().also { r -> r.initialize(context) },
             buffers = BufferRegistry(mutableListOf()).also { r -> r.initialize(context) },
+            samples = SampleRegistry(mutableListOf()).also { r -> r.initialize(context) },
             instruments = InstrumentRegistry.newInstance().also { r -> r.initialize(context) },
             flowGraph = AudioFlowGraph.createDefault().also { g -> g.initialize(context) },
             globalControls = GlobalControls(mutableListOf()).also { c -> c.initialize(context) },
@@ -144,7 +153,7 @@ class XenakisProject private constructor(
             score = Score().also { score -> score.initialize(context, reactiveValue("<root>")) },
         ).also { project ->
             project.initialize(context)
-            project.projectFile = location
+            project.projectDirectory = location
         }
     }
 }

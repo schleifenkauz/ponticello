@@ -12,6 +12,7 @@ import reaktive.value.fx.asProperty
 import reaktive.value.now
 import reaktive.value.reactiveVariable
 import xenakis.model.*
+import java.io.File
 
 class BufferRegistryPane(
     private val buffers: BufferRegistry,
@@ -28,7 +29,7 @@ class BufferRegistryPane(
         buffers.addView(this)
     }
 
-    override fun addObject() {
+    override fun addObject(name: (File) -> String) {
         val options = BufferObject.Type.values().asList()
         val default = BufferObject.Type.Allocate
         showCreateNewDialog(options, default, ::addObject)
@@ -44,7 +45,7 @@ class BufferRegistryPane(
         return when (type) {
             BufferObject.Type.File -> {
                 val file = controller.showOpenDialog("*.wav") ?: return null
-                if (buffers.hasFile(file)) return null
+                if (buffers.getBufferFor(file) != null) return null
                 FileBuffer.create(file, name)
             }
 
@@ -72,14 +73,14 @@ class BufferRegistryPane(
         addAction(Icon.Repeat, "Sync with server") { sync(obj) }
         when (obj) {
             is FileBuffer -> {
-                val fileName = obj.referencedFile.map { f -> f.relativeTo(project.projectFile).toString() }
+                val fileName = obj.referencedFile.map { f -> f.relativeTo(project.projectDirectory).toString() }
                 val fileLabel = label(fileName)
                 //TODO add file info as tooltip
                 addExtraControl(fileLabel)
                 addBufferInfo()
                 addAction(Icon.Open, description = "Replace buffer contents") {
                     val newFile = controller.showOpenDialog("*.wav") ?: return@addAction
-                    if (buffers.hasFile(newFile)) return@addAction
+                    if (buffers.getBufferFor(newFile) != null) return@addAction
                     obj.loadFile(newFile)
                     obj.sync()
                 }

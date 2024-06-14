@@ -39,7 +39,7 @@ class ReferencedBuffer(override val mutableName: ReactiveVariable<String>) : Buf
         val frames = client.eval("if ($variableName != nil) { $variableName.numFrames } { nil }").join()
         _channels.set(channels.toIntOrNull() ?: 0)
         _frames.set(frames.toIntOrNull() ?: 0)
-        contentChange.fire()
+        contentChanged()
     }
 
     companion object {

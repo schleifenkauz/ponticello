@@ -10,6 +10,7 @@ import javafx.beans.value.ObservableValue
 import javafx.css.PseudoClass
 import javafx.event.ActionEvent
 import javafx.geometry.Bounds
+import javafx.geometry.Insets
 import javafx.geometry.Pos
 import javafx.scene.Cursor
 import javafx.scene.Node
@@ -191,7 +192,7 @@ fun Dragboard.hasFiles(extension: String) = hasFiles() && files.all { f -> f.ext
 fun Dragboard.hasFile(extension: String): Boolean = hasFiles(extension) && files.size == 1
 
 fun solidBorder(fill: Color, width: Double = 1.0, radius: Double = 0.0) =
-    Border(BorderStroke(fill, BorderStrokeStyle.SOLID, CornerRadii(radius), BorderWidths(width)))
+    Border(BorderStroke(fill, BorderStrokeStyle.SOLID, CornerRadii(radius), BorderWidths(width), Insets(-width)))
 
 val Bounds.middleY get() = (minY + maxY) / 2
 

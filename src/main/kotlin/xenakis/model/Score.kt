@@ -3,6 +3,7 @@ package xenakis.model
 import bundles.publicProperty
 import bundles.set
 import hextant.context.Context
+import hextant.context.withoutUndo
 import hextant.core.editor.ListenerManager
 import hextant.undo.UndoManager
 import kotlinx.serialization.Serializable
@@ -148,10 +149,12 @@ class Score(
 
     fun addTime(location: Double, amount: Double) {
         undo.record(ScoreEdit.AddTime(location, amount, this))
-        for (obj in objects) {
-            if (obj.start > location) {
-                val newStart = obj.start + amount
-                moveObject(obj, newStart, obj.y)
+        context.withoutUndo {
+            for (obj in objects) {
+                if (obj.start > location) {
+                    val newStart = obj.start + amount
+                    moveObject(obj, newStart, obj.y)
+                }
             }
         }
     }

@@ -28,6 +28,7 @@ data class AllocatedBuffer(
                 }
             }
         }
+        contentChanged()
     }
 
     companion object {

@@ -10,6 +10,7 @@ import xenakis.model.NamedObject
 import xenakis.model.ObjectRegistry
 import xenakis.model.RenamableObject
 import xenakis.sc.Identifier
+import java.io.File
 
 abstract class ObjectRegistryPane<O : NamedObject>(
     private val registry: ObjectRegistry<O>
@@ -30,7 +31,7 @@ abstract class ObjectRegistryPane<O : NamedObject>(
         val label = Label(plural(type)).styleClass("tool-pane-heading")
         val space = infiniteSpace()
         val addBtn = Icon.Add.button(action = "Add $type") {
-            addObject()
+            addObject { file -> Identifier.truncate(file.nameWithoutExtension) }
             expand()
         }
         val reloadBtn = Icon.Repeat.button(action = "Sync ${plural(type)}") {
@@ -80,7 +81,7 @@ abstract class ObjectRegistryPane<O : NamedObject>(
 
     protected abstract fun reload()
 
-    protected open fun addObject() = showNamePrompt(registry) { name -> addObject(name) }
+    protected open fun addObject(name: (File) -> String) = showNamePrompt(registry) { name -> addObject(name) }
 
     protected abstract fun addObject(name: String)
 

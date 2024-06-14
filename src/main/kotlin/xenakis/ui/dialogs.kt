@@ -15,6 +15,7 @@ import javafx.stage.Stage
 import javafx.stage.StageStyle
 import javafx.util.StringConverter
 import org.controlsfx.control.Notifications
+import org.controlsfx.control.SearchableComboBox
 import xenakis.impl.DoubleRange
 import xenakis.model.ObjectRegistry
 import xenakis.sc.Identifier
@@ -27,7 +28,7 @@ fun <T : Any> showSelectorDialog(
     initialValue: T?,
     stringConverter: (T) -> String = { it.toString() },
 ): T? {
-    val selector = ComboBox(FXCollections.observableList(items))
+    val selector = SearchableComboBox(FXCollections.observableList(items))
     selector.converter = object : StringConverter<T?>() {
         override fun toString(item: T?): String = if (item == null) "<select>" else stringConverter(item)
 
@@ -39,6 +40,9 @@ fun <T : Any> showSelectorDialog(
     selector.setOnAction {
         confirmed = true
         window.hide()
+    }
+    window.setOnShown {
+        selector.requestFocus()
     }
     window.showAndWait()
     return if (confirmed) selector.value else null

@@ -423,7 +423,10 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
 
         resizeObject(newWidth, newHeight, ev, cursor)
         context[UndoManager].record(ResizeEdit(this, oldWidth, oldHeight, newWidth, newHeight, ev, cursor))
-        val newX = if (cursor.resizeFromLeft) myObject.start + (oldWidth - getDisplayWidth()) else myObject.start
+        val newX =
+            if (cursor.resizeFromLeft)
+                myObject.start + pane.getDuration(oldWidth - getDisplayWidth())
+            else myObject.start
         val newY = if (cursor.resizeFromTop) myObject.y + (oldHeight - myObject.height) else myObject.y
         pane.score.moveObject(myObject, newX, newY)
     }

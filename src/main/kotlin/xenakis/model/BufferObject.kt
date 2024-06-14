@@ -9,9 +9,10 @@ import reaktive.value.ReactiveInt
 import reaktive.value.now
 import reaktive.value.reactiveVariable
 import xenakis.impl.SuperColliderClient
-import xenakis.impl.superColliderPath
+import xenakis.impl.string
 import xenakis.model.SuperColliderObject.LiveCycleType
 import java.io.File
+import java.util.logging.Logger
 import javax.sound.sampled.AudioInputStream
 import javax.sound.sampled.AudioSystem
 
@@ -26,23 +27,63 @@ sealed class BufferObject : AbstractSuperColliderObject() {
 
     abstract val frames: ReactiveInt
 
+    private val rootDir
+        get() = context[XenakisProject.projectDirectory].resolve("buffers")
+            .also { d -> if (!d.isDirectory) d.mkdir() }
+
+    private val wavFile get() = rootDir.resolve("${name.now}.wav")
+
+    val spectrogramFile get() = rootDir.resolve("${name.now}_spectrogram.png")
+
     @Transient
-    protected val contentChange = unitEvent()
+    private val contentChange = unitEvent()
 
     val contentsChanged: EventStream<Unit> get() = contentChange.stream
 
+    protected fun contentChanged() {
+        contentChange.fire()
+    }
+
     override fun canRenameTo(newName: String): Boolean = !context[BufferRegistry].has(newName)
 
-    protected open fun getAudioStream(): AudioInputStream? {
-        val file = File.createTempFile("buffer_contents", ".wav")
-        context[SuperColliderClient].eval("$variableName.write(${file.superColliderPath}, 'wav', 'int16');")
-        //TODO somehow wait for the buffer to be written to disk
-        return AudioSystem.getAudioInputStream(file)
+    protected fun updated() {
+        val file = wavFile
+        val bufnum = context[SuperColliderClient].eval("$variableName.bufnum").join().toIntOrNull()
+        if (bufnum == null) {
+            logger.severe("Could not get bufnum for Buffer ${name.now}")
+            return
+        }
+        val status = context[SuperColliderClient].send("writeBuf", listOf(file, bufnum)).join().string
+        if (status != "ok") {
+            logger.severe("Error while writing buffer ${name.now} to project directory")
+            return
+        }
+        createSpectrogram(file)
+    }
+
+    private fun createSpectrogram(file: File) {
+        val command = arrayOf("sox", file.name, "-n", "spectrogram", "-o", "$spectrogramFile")
+        Runtime.getRuntime()
+            .exec(command)
+            .onExit().thenApply { proc ->
+                val exitCode = proc.exitValue()
+                if (exitCode == 0) logger.info("Created spectrogram for buffer ${name.now}")
+                else logger.severe("Non zero exit code $exitCode creating spectrogram for buffer ${name.now}")
+            }
+    }
+
+    override fun rename(newName: String) {
+        val wavFile = wavFile
+        if (wavFile.isFile) wavFile.renameTo(rootDir.resolve("$newName.wav"))
+        val spectrogramFile = rootDir.resolve("${name.now}_spectrogram.png")
+        if (spectrogramFile.isFile) spectrogramFile.renameTo(rootDir.resolve("${newName}_spectrogram.wav"))
+        super.rename(newName)
     }
 
     fun <T> useAudioStream(block: (AudioInputStream?) -> T): T {
-        val stream = getAudioStream()
-        return if (stream == null) block(null) else stream.use(block)
+        if (!wavFile.isFile) return block(null)
+        val stream = AudioSystem.getAudioInputStream(wavFile)
+        return stream.use(block)
     }
 
     override fun createReference(): BufferObjectReference = BufferObjectReference(this)
@@ -52,6 +93,8 @@ sealed class BufferObject : AbstractSuperColliderObject() {
     }
 
     companion object {
+        private val logger = Logger.getLogger("BufferObject")
+
         val DATA_FORMAT = DataFormat("buffer")
 
         val defaultBuffer = ReferencedBuffer(reactiveVariable("0"))

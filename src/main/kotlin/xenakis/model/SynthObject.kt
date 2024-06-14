@@ -89,51 +89,54 @@ class SynthObject(
         }
     }
 
-    override fun writeStartCode(writer: ScWriter, offset: Double, name: String) = with(writer) {
-        val constantArguments = controls.mapNotNull { (param, control) ->
-            when (control) {
-                is BufferControl -> param to control.buffer.get().variableName
-                is BusControl -> param to control.bus.get().variableName
-                is ConstantControl -> param to control.value.toString()
-                is KnobControl -> param to control.get().toString()
-                else -> null
+    override fun writeStartCode(writer: ScWriter, offset: Double, name: String) {
+        writer.appendBlock("s.makeBundle(0)") {
+            val constantArguments = controls.mapNotNull { (param, control) ->
+                when (control) {
+                    is BufferControl -> param to control.buffer.get().variableName
+                    is BusControl -> param to control.bus.get().variableName
+                    is ConstantControl -> param to control.value.toString()
+                    is KnobControl -> param to control.get().toString()
+                    else -> null
+                }
+            }.joinToString { (param, value) -> "$param: $value" }
+            val synthVar = "~synths['$name']"
+            val duration = "duration: ${duration - offset}"
+            +"$synthVar = Synth(\\${synthDef.name.now}, [$constantArguments, $duration], target: ${group.get().variableName})"
+            for ((param, control) in controls) {
+                when (control) {
+                    is EnvelopeControl -> {
+                        val env = control.envelope.code(offset)
+                        val busName = "~auxil_${name}_${param}"
+                        +"$busName = Bus.control(s, 1)"
+                        +"{ $env }.play(s, $busName)"
+                        +"${synthVar}.map(\\$param, $busName)"
+                    }
+
+                    is BusValueControl -> {
+                        val bus = control.bus.get().variableName
+                        +"${synthVar}.map(\\$param, $bus)"
+                    }
+
+                    is SingleBusValueControl -> {
+                        val bus = control.bus.get().variableName
+                        +"${synthVar}.set(\\$param, $bus.getSynchronized)"
+                    }
+
+                    is CustomControl -> {
+                        val expr = control.expr
+                        val busName = "~auxil_${name}_${param}"
+                        +"$busName = Bus.control(s, 1)"
+                        this.append("{ ")
+                        expr.code(this)
+                        +" }.play(s, $busName)"
+                        +"${synthVar}.map(\\$param, $busName)"
+                    }
+
+                    else -> {} //already handled in constantArguments
+                }
             }
-        }.joinToString { (param, value) -> "$param: $value" }
-        val synthVar = "~synths['$name']"
-        val duration = "duration: ${duration - offset}"
-        +"$synthVar = Synth(\\${synthDef.name.now}, [$constantArguments, $duration], target: ${group.get().variableName})"
-        for ((param, control) in controls) {
-            when (control) {
-                is EnvelopeControl -> {
-                    val env = control.envelope.code(offset)
-                    val busName = "~auxil_${name}_${param}"
-                    +"$busName = Bus.control(s, 1)"
-                    +"{ $env }.play(s, $busName)"
-                    +"${synthVar}.map(\\$param, $busName)"
-                }
-
-                is BusValueControl -> {
-                    val bus = control.bus.get().variableName
-                    +"${synthVar}.map(\\$param, $bus)"
-                }
-
-                is SingleBusValueControl -> {
-                    val bus = control.bus.get().variableName
-                    +"${synthVar}.set(\\$param, $bus.getSynchronized)"
-                }
-
-                is CustomControl -> {
-                    val expr = control.expr
-                    val busName = "~auxil_${name}_${param}"
-                    +"$busName = Bus.control(s, 1)"
-                    this.append("{ ")
-                    expr.code(this)
-                    +" }.play(s, $busName)"
-                    +"${synthVar}.map(\\$param, $busName)"
-                }
-
-                else -> {} //already handled in constantArguments
-            }
+            appendLine(";")
         }
     }
 

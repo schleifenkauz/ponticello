@@ -24,6 +24,7 @@ import javafx.scene.layout.Pane
 import javafx.scene.layout.Priority
 import javafx.scene.layout.VBox
 import javafx.scene.paint.Color
+import javafx.stage.Screen
 import javafx.stage.Stage
 import org.controlsfx.control.textfield.TextFields
 import reaktive.Observer
@@ -47,7 +48,7 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
     private lateinit var beforePlayCodePane: CodePane
     private lateinit var synthDefsPane: InstrumentRegistryPane
     private lateinit var busRegistryPane: BusRegistryPane
-    private lateinit var buffersPane: BufferRegistryPane
+    private lateinit var samplesPane: SampleRegistryPane
     private lateinit var groupsPane: GroupRegistryPane
     private lateinit var scoreView: ScoreView
     private lateinit var flowGraphWindow: SubWindow
@@ -56,7 +57,6 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
 
     private lateinit var playBtn: Button
     private lateinit var stopBtn: Button
-    private lateinit var recordBtn: Button
 
     lateinit var player: ScorePlayer
     private lateinit var shellWindow: Stage
@@ -77,6 +77,7 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
         settingsWindow.width = 1000.0
         settingsWindow.height = 1000.0
         stage.scene = Scene(Pane())
+        stage.scene.addGlobalShortcuts()
         stage.scene.initHextantScene(context)
     }
 
@@ -86,7 +87,7 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
         synthDefsPane = InstrumentRegistryPane(project.instruments)
         context[InstrumentRegistryPane] = synthDefsPane
         busRegistryPane = BusRegistryPane(project.busses)
-        buffersPane = BufferRegistryPane(project.buffers, project, controller)
+        samplesPane = SampleRegistryPane(project.samples, controller)
         groupsPane = GroupRegistryPane(project.groups)
         scoreView = ScoreView(project.score, project.context)
 
@@ -113,7 +114,10 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
         stage.scene.root = createLayout()
         stage.isResizable = true
         Platform.runLater {
-            stage.isMaximized = true
+            val screenSize = Screen.getPrimary().bounds
+            stage.resize(screenSize.width * 0.75, screenSize.height)
+        }
+        runFXWithTimeout(1000) {
             scoreView.displayWholeScore()
         }
         displaysProject = true
@@ -171,10 +175,8 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
     }
 
     private fun createLayout(): VBox {
-        val leftSplitter = SplitPane(synthDefsPane, busRegistryPane, buffersPane, groupsPane)
+        val leftSplitter = SplitPane(synthDefsPane, busRegistryPane, samplesPane, groupsPane)
         val rightSplitter = SplitPane(serverSetupCodePane, beforePlayCodePane)
-        leftSplitter.minWidth = 400.0
-        rightSplitter.minWidth = 400.0
         leftSplitter.orientation = Orientation.VERTICAL
         rightSplitter.orientation = Orientation.VERTICAL
         val horizontalSplitter = SplitPane(leftSplitter, scoreView, rightSplitter)
@@ -182,7 +184,7 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
         SplitPane.setResizableWithParent(rightSplitter, false)
         horizontalSplitter.sceneProperty().addListener { _ ->
             runFXWithTimeout(50) {
-                horizontalSplitter.setDividerPositions(0.15, 0.85)
+                horizontalSplitter.setDividerPositions(0.18, 0.95)
             }
         }
         val toolbar = createToolbar()
@@ -190,7 +192,6 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
         for (box in toolbar.children) HBox.setHgrow(box, Priority.ALWAYS)
         VBox.setVgrow(horizontalSplitter, Priority.ALWAYS)
         val layout = VBox(toolbar, horizontalSplitter)
-        addShortcuts(layout)
         val context = project.context
         val commandLinePopup = CommandLinePopup(
             context, context[Properties.localCommandLine],
@@ -271,24 +272,12 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
     private fun createPlayerBar(): HBox {
         playBtn = Icon.Play.button(action = "Start playback") { _ -> togglePlay() }
         stopBtn = Icon.Stop.button(action = "Pause and free all nodes") { stop() }
-        recordBtn = Icon.RecordInactive.button(action = "Start recording") { toggleRecord() }
+        val goToStartBtn = Icon.GoToStart.button(action = "Move play head to start") { player.movePlayHead(0.0) }
         if (!controller.isSuperColliderReady) {
             playBtn.isDisable = true
             stopBtn.isDisable = true
-            recordBtn.isDisable = true
         }
-        return HBox(playBtn, stopBtn /*recordBtn*/)
-    }
-
-    private fun toggleRecord() {
-        player.toggleRecording()
-        if (player.isRecording) {
-            recordBtn.graphic = Icon.RecordActive.getView()
-            recordBtn.tooltip = Tooltip("Finish recording")
-        } else {
-            recordBtn.graphic = Icon.RecordInactive.getView()
-            recordBtn.tooltip = Tooltip("Start recording")
-        }
+        return HBox(goToStartBtn, playBtn, stopBtn)
     }
 
     private fun togglePlay() {
@@ -318,8 +307,9 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
         Icon.Close.button(action = "Close project and open startup screen") { controller.closeProject() }
     )
 
-    private fun addShortcuts(layout: VBox) {
-        layout.registerShortcuts {
+    private fun Scene.addGlobalShortcuts() {
+        registerShortcuts {
+            if (!controller.isProjectOpened) return@registerShortcuts
             on("Ctrl+S") { controller.saveProject() }
             on("Ctrl+O") { controller.openProject() }
             on("Ctrl+N") { controller.createNewProject() }
@@ -329,8 +319,18 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
                 context[ScoreObjectSelector].selectAll()
             }
 
-            on("Ctrl+SPACE") { togglePlay() }
-            on("Ctrl+PERIOD") { stop() }
+            on("Ctrl?+SPACE") { togglePlay() }
+            on("Ctrl?+PERIOD") { stop() }
+            on("HOME") { scoreView.displayWholeScore() }
+            on("DIGIT0") {
+                scoreView.display(0.0, scoreView.displayedDuration)
+                player.movePlayHead(0.0)
+            }
+            on("Shift+DIGIT0") {
+                player.movePlayHead(scoreView.displayStart)
+            }
+            on("PAGE_UP") { scoreView.scroll(-100.0 / scoreView.pixelsPerSecond) }
+            on("PAGE_DOWN") { scoreView.scroll(100.0 / scoreView.pixelsPerSecond) }
 
             on("ESCAPE") {
                 scoreView.clearNewShape()
@@ -411,7 +411,6 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
         if (displaysProject) {
             playBtn.isDisable = false
             stopBtn.isDisable = false
-            recordBtn.isDisable = false
         }
     }
 
@@ -419,7 +418,6 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
         if (displaysProject) {
             playBtn.isDisable = true
             stopBtn.isDisable = true
-            recordBtn.isDisable = true
         }
     }
 

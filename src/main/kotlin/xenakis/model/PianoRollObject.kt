@@ -134,7 +134,7 @@ class PianoRollObject(
 
     override fun writeCode(writer: ScWriter, playAt: Double, name: String) {
         val generalEventDict = eventDictionary.editor.result.now
-        for (n in notes) {
+        for ((idx, n) in notes.withIndex()) {
             val t = playAt + n.time
             if (t < -duration) continue
             val offset = -t.coerceAtMost(0.0)
@@ -150,7 +150,13 @@ class PianoRollObject(
                     eventMap["freq"] = "$midinote.midicps + ${eventMap["detune"] ?: 0}.midiratio"
                     eventMap.remove("detune")
                     val namedValues = eventMap.entries.joinToString { (name, value) -> "$name: $value" }
-                    writer.appendLine("s.makeBundle($t) { Synth(\\${instr.name.now}, [${namedValues}]) };")
+                    val synthName = "~synths[${name}_${idx}]"
+                    writer.appendBlock("AppClock.sched($t)") {
+                        appendBlock("if (~play)") {
+                            +"$synthName = Synth(\\\${instr.name.now}, [${namedValues}]) }"
+                        }
+                    }
+                    writer.appendLine()
                 }
 
                 is VSTPluginObject -> {
@@ -158,7 +164,12 @@ class PianoRollObject(
                     eventMap["type"] = "\\vst_midi"
                     eventMap["vst"] = instr.variableName
                     val namedValues = eventMap.entries.joinToString { (name, value) -> "$name: $value" }
-                    writer.appendLine("SystemClock.sched($t) { (type: \\vst_midi, vst: ${instr.variableName}, $namedValues).play };")
+                    writer.appendBlock("SystemClock.sched($t)") {
+                        appendBlock("if (~play)") {
+                            +"(type: \\vst_midi, vst: ${instr.variableName}, $namedValues).play"
+                        }
+                    }
+                    writer.appendLine(";")
                 }
             }
         }

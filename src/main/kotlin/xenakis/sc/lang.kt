@@ -486,6 +486,7 @@ data class AdhocSynth(
         +".add.play($target, addAction: $addAction)"
         if (plugins.isEmpty()) return
         +"s.sync"
+        +"1.wait"
         for (plugin in plugins) {
             val pluginName = plugin.pluginName
             val presetName = plugin.presetName

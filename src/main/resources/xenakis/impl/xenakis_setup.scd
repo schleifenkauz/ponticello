@@ -26,10 +26,12 @@ ServerBoot.add {
 	}.play;
 };
 
+~play = false;
+
 ~setupHandler = { arg address, handler;
 	OSCdef(address, {
 		arg msg, time, addr, recvPort;
-		var argument, id, answer;
+		var id, answer;
 		AppClock.sched(0.0) {
 			id = msg[1];
 			answer = handler.(*msg.drop(2));
@@ -38,6 +40,18 @@ ServerBoot.add {
 	}, address);
 };
 OSCdef.trace(false);
+OSCdef('writeBuf', {
+    arg msg, time, addr, recvPort;
+    var bufnum, filename, id, answer;
+    AppClock.sched(0.0) {
+        id = msg[1];
+        bufnum = msg[2];
+        filename = msg[3];
+        Buffer.cachedBufferAt(bufnum).write(filename, 'wav', 'int16') {
+            addr.sendMsg('/replay', id, 'ok');
+        }
+    }
+});
 ~setupHandler.('eval', { |code|
 	var answer;
 	answer = this.interpret(code.asString).asString;

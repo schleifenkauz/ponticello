@@ -23,7 +23,7 @@ class Envelope(private val _points: MutableList<Point>, val curve: Warp) {
     val duration get() = points.last().x
 
     fun code(offset: Double, doneAction: String = "Done.freeSelf"): String {
-        require(offset <= points.last().x)
+        require(offset <= duration) { "Invalid offset: $offset, duration is $duration" }
         val afterOffset = if (offset == 0.0) this else cut(offset, whichHalf = RIGHT)
         val levels = afterOffset.points.map { (_, y) -> y.format(2) }
         val times = afterOffset.points.zipWithNext { a, b -> (b.x - a.x).format(2) }

@@ -55,10 +55,12 @@ class XenakisController(private val primaryStage: Stage) {
             _currentProject = project
             context[UndoManager].reset()
             context[XenakisController.currentProject] = project
-            prefs.put("lastFile", project.projectFile.absolutePath)
-            addRecentProject(project.projectFile)
+            prefs.put("lastFile", project.projectDirectory.absolutePath)
+            addRecentProject(project.projectDirectory)
             listeners { displayProject(currentProject) }
         }
+
+    val isProjectOpened get() = _currentProject != null
 
     var isSuperColliderReady: Boolean = false
         private set
@@ -164,6 +166,7 @@ class XenakisController(private val primaryStage: Stage) {
     fun saveProject() {
         val file = lastFile() ?: dc.showDialog(primaryStage) ?: return
         tryWithAlert("Saving score") { saveIn(file) }
+        notifyInfo("Saved project ${currentProject.projectDirectory.name}")
     }
 
     private fun saveIn(folder: File) {
@@ -192,12 +195,17 @@ class XenakisController(private val primaryStage: Stage) {
     }
 
     fun createNewProject() {
-        val location = dc.showDialog(primaryStage) ?: return
-        location.mkdir()
-        location.resolve("project.xen").writeText(location.name)
-        context[ScoreObjectRegistry] = ScoreObjectRegistry().also { it.initialize(context) }
-        currentProject = XenakisProject.create(location, context)
-        saveIn(location)
+        showTextPrompt("Project name", "", context) { name ->
+            if (name.isNotBlank()) {
+                val location = userHome.resolve("Xenakis Projects").resolve(name)
+                location.mkdir()
+                location.resolve("project.xen").writeText(location.name)
+                context[ScoreObjectRegistry] = ScoreObjectRegistry().also { it.initialize(context) }
+                currentProject = XenakisProject.create(location, context)
+                saveIn(location)
+                true
+            } else false
+        }
     }
 
     fun showOpenDialog(extension: String): File? {

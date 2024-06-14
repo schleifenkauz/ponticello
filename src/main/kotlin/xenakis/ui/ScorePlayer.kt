@@ -76,8 +76,10 @@ class ScorePlayer(
         val startTime = scoreView.getTime(playHead.layoutX - PLAY_HEAD_WIDTH)
         async(timeLimit = 2000) {
             client.eval(code {
-                +"~startRecording.value(0)"
+                +"~play = true"
+                //+"~startRecording.value(0)"
                 project.run { playScore(startTime) }
+                +"nil"
             }).join()
             isPlaying = true
         }
@@ -86,23 +88,21 @@ class ScorePlayer(
     fun pause() {
         isPlaying = false
         client.run {
+            +"~play = false"
             +"~tasks.do { |t| t.stop; }"
-            +"s.freeAll"
+            +"~synths.do { |s| s.free; }"
         }
     }
 
     fun reset() {
-        Platform.runLater { playHead.layoutX = PLAY_HEAD_WIDTH }
-        playHeadPosition = scoreView.getX(0.0)
+        pause()
+        client.run("s.freeAll")
     }
 
-    fun toggleRecording() {
-        if (isRecording) {
-            client.run("s.record")
-        } else {
-            client.run("s.stopRecording")
-        }
-        isRecording = !isRecording
+    fun movePlayHead(pos: Double) {
+        if (isPlaying) return
+        playHeadPosition = pos
+        Platform.runLater { playHead.layoutX = scoreView.getX(pos) }
     }
 
     fun repaint() {

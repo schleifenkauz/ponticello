@@ -6,10 +6,7 @@ import xenakis.impl.FileSerializer
 import xenakis.impl.ScWriter
 import xenakis.impl.superColliderPath
 import java.io.File
-import java.util.logging.Level
 import java.util.logging.Logger
-import javax.sound.sampled.AudioInputStream
-import javax.sound.sampled.AudioSystem
 
 @Serializable
 data class FileBuffer(
@@ -28,24 +25,21 @@ data class FileBuffer(
 
     override fun ScWriter.allocateServerObject() {
         +"$variableName = Buffer.read(s, ${referencedFile.now.superColliderPath})"
+        updated()
+        contentChanged()
     }
 
     fun loadFile(file: File) {
         sourceFile.set(file)
         client.run { sync(writer) }
-        contentChange.fire()
-    }
-
-    override fun getAudioStream(): AudioInputStream? = try {
-        AudioSystem.getAudioInputStream(sourceFile.now)
-    } catch (e: Exception) {
-        logger.log(Level.SEVERE, "Error while getting audio stream for file ${sourceFile.now}: ${e.message}", e)
-        null
+        updated()
+        contentChanged()
     }
 
     override fun sync(writer: ScWriter) {
         super.sync(writer)
         updateInfo()
+        contentChanged()
     }
 
     private fun updateInfo() {
@@ -56,7 +50,6 @@ data class FileBuffer(
     }
 
     companion object {
-
         private val logger = Logger.getLogger("FileBuffer")
 
         fun create(file: File, name: String = file.nameWithoutExtension) =

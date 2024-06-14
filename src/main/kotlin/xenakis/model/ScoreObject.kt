@@ -47,8 +47,10 @@ abstract class ScoreObject : AbstractRenamableObject() {
     open fun writeCode(writer: ScWriter, playAt: Double, name: String) {
         if (playAt < -duration) return
         val offset = -(playAt.coerceAtMost(0.0))
-        writer.appendBlock("s.makeBundle(${(playAt).coerceAtLeast(0.0)})") {
-            writeStartCode(writer, offset, name)
+        writer.appendBlock("AppClock.sched(${(playAt).coerceAtLeast(0.0)})") {
+            appendBlock("if (~play)") {
+                writeStartCode(writer, offset, name)
+            }
         }
         writer.appendLine(";")
     }
@@ -136,7 +138,7 @@ abstract class ScoreObject : AbstractRenamableObject() {
             val all = listOf(
                 MemoObject.Serializer,
                 SynthObject.Serializer,
-                PlayBufObject.Serializer,
+                SamplePlayObject.Serializer,
                 TaskObject.Serializer,
                 EnvelopeObject.Serializer,
                 ScoreObjectGroup.Serializer,

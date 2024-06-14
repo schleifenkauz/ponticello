@@ -29,10 +29,10 @@ class BufferRegistry(
 
     override fun get(name: String) = if (name == "0") BufferObject.defaultBuffer else super.get(name)
 
-    fun hasFile(file: File) = objects.any { o -> o is FileBuffer && o.referencedFile.now == file }
+    fun getBufferFor(file: File): BufferObject? = objects.find { o -> o is FileBuffer && o.referencedFile.now == file }
 
     override fun add(obj: BufferObject, idx: Int) {
-        if (obj is FileBuffer && hasFile(obj.referencedFile.now)) return
+        if (obj is FileBuffer && getBufferFor(obj.referencedFile.now) != null) return
         super.add(obj, idx)
     }
 

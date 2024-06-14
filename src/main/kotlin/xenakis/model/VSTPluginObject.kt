@@ -66,7 +66,7 @@ class VSTPluginObject private constructor(
                 +"$synthName = Synth(\\vst_instrument, [out: ${output.get().variableName}])"
                 +"s.sync"
                 +"0.5.wait"
-                +"if (true) { $variableName = VSTPluginController($synthName) } { $variableName.synth = ~tmp_synth }"
+                +"$variableName = VSTPluginController($synthName)"
             }
             +"$variableName.open('$pluginName.vst3', editor: true, verbose: true)"
             +"s.sync"
@@ -108,9 +108,9 @@ class VSTPluginObject private constructor(
         }
 
         fun availablePlugins(context: Context) = context[SuperColliderClient]
-            .eval("VSTPlugin.pluginList.collect(_.name);")
+            .eval("var str = \"\"; VSTPlugin.pluginList.do { |p| str = str ++ \", \" ++ p.name }; str;")
             .join()
-            .removePrefix("[ ").removeSuffix("]")
+            .removePrefix(", ")
             .split(", ")
 
     }

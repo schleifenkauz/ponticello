@@ -20,10 +20,12 @@ class ScoreView(score: Score, context: Context) : ScorePane(score, context) {
     private var timeSnap: Double = 0.1
     override val xAccuracy: Int
         get() = accuracy(timeSnap)
-    override var displayStart: Double = 0.0
+    public override var displayStart: Double = 0.0
     override var displayEnd: Double = 0.0
     override val pixelsPerSecond: Double
         get() = width / (displayEnd - displayStart)
+
+    val displayedDuration get() = displayEnd - displayStart
 
     override fun getGrids(x: Double): List<TempoGridObjectView> = allViews.filterIsInstance<TempoGridObjectView>()
         .filter { v -> x in v.layoutX..v.width }
@@ -72,18 +74,14 @@ class ScoreView(score: Score, context: Context) : ScorePane(score, context) {
         }
     }
 
-    private fun onResize(old: Double, new: Double) {
-        if (old != 0.0) {
-            val delta = new - old
-            displayEnd += getDuration(delta)
-        }
-        repaint()
+    fun displayWholeScore() {
+        val totalDuration = score.objects.maxOfOrNull { obj -> obj.start + obj.duration } ?: 60.0
+        display(0.0, totalDuration)
     }
 
-    fun displayWholeScore() {
-        displayStart = 0.0
-        displayEnd = score.objects.maxOfOrNull { obj -> obj.start + obj.duration } ?: 60.0
-        widthProperty().addListener { _, old, new -> onResize(old.toDouble(), new.toDouble()) }
+    fun display(start: Double, end: Double) {
+        displayStart = start
+        displayEnd = end
         repaint()
     }
 
@@ -171,7 +169,7 @@ class ScoreView(score: Score, context: Context) : ScorePane(score, context) {
         repaint()
     }
 
-    private fun scroll(amount: Double) {
+    fun scroll(amount: Double) {
         displayStart += amount
         displayEnd += amount
         noNegativeTimes()

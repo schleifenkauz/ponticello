@@ -8,17 +8,20 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonObjectBuilder
 import kotlinx.serialization.json.put
 import reaktive.value.now
-import xenakis.impl.*
+import xenakis.impl.ScWriter
+import xenakis.impl.getDouble
+import xenakis.impl.getSerializableValue
+import xenakis.impl.putSerializableValue
 import xenakis.sc.ControlSpec
 import xenakis.sc.Rate
 import xenakis.sc.Warp
 import xenakis.sc.editor.BusSelector
-import xenakis.ui.PlayBufObjectView
+import xenakis.ui.SamplePlayObjectView
 import xenakis.ui.format
 
-class PlayBufObject(
+class SamplePlayObject(
     name: String,
-    val buffer: BufferObjectReference,
+    val sample: SampleObjectReference,
     private val initialOut: BusObjectReference,
     var startPos: Double, var rate: Double,
     var envelope: Envelope
@@ -31,7 +34,7 @@ class PlayBufObject(
     override val type: String
         get() = "sample"
 
-    override val viewManager = ListenerManager.createWeakListenerManager<PlayBufObjectView>()
+    override val viewManager = ListenerManager.createWeakListenerManager<SamplePlayObjectView>()
 
     override val associatedControls: Map<String, ParameterControl>
         get() = mapOf("amp" to EnvelopeControl(envelope, Color.WHITE, display = true))
@@ -42,36 +45,38 @@ class PlayBufObject(
     override fun initialize(context: Context) {
         if (initialized) return
         super.initialize(context)
-        buffer.resolve(context)
+        sample.resolve(context)
         outSelector = BusSelector(
             context,
-            preferredChannels = buffer.get().channels.now, preferredRate = Rate.Audio,
+            preferredChannels = sample.get().channels, preferredRate = Rate.Audio,
             initialValue = initialOut
         )
     }
 
     override fun writeStartCode(writer: ScWriter, offset: Double, name: String) = with(writer) {
-        val bufferName = buffer.get().variableName
+        val sample = sample.get()
+        val bufferName = sample.variableName
         val outBusName = out.get().variableName
+        val startPosSamples = startPos + offset * sample.sampleRate
         append("~synths['$name'] = { ")
         append("PlayBuf.ar(${bufferName}.numChannels, $bufferName, ")
-        append("rate: ${rate.format(2)}, ")
-        append("startPos: $startPos, ")
+        append("rate: BufRateScale.kr($bufferName) * ${rate.format(2)}, ")
+        append("startPos: $startPosSamples, ")
         append("loop: 1)")
         append(" * ${envelope.code(offset, doneAction = "Done.freeSelf")} }")
         appendLine(".play(s, $outBusName);")
     }
 
-    override fun copy(): PlayBufObject = PlayBufObject(name.now, buffer, out, startPos, rate, envelope.copy())
+    override fun copy(): SamplePlayObject = SamplePlayObject(name.now, sample, out, startPos, rate, envelope.copy())
 
     override fun cut(position: Double, whichHalf: HorizontalDirection): ScoreObject {
         val startPos = if (whichHalf == HorizontalDirection.LEFT) startPos else start + position
         val env = envelope.cut(position / duration, whichHalf)
-        return PlayBufObject(name.now, buffer, out, startPos, rate, env)
+        return SamplePlayObject(name.now, sample, out, startPos, rate, env)
     }
 
     override fun JsonObjectBuilder.saveToJson() {
-        putSerializableValue("buffer", buffer)
+        putSerializableValue("sample", sample)
         putSerializableValue("out", out)
         if (startPos != 0.0) {
             put("startPos", startPos)
@@ -87,21 +92,21 @@ class PlayBufObject(
             get() = "sample"
 
         override fun JsonObject.createFromJson(name: String): ScoreObject {
-            val buffer = getSerializableValue<BufferObjectReference>("buffer")!!
+            val sample = getSerializableValue<SampleObjectReference>("sample")!!
             val out = getSerializableValue<BusObjectReference>("out")!!
             val startPos = getDouble("startPos") ?: 0.0
             val rate = getDouble("rate") ?: 1.0
             val envelope = getSerializableValue<Envelope>("envelope") ?: Envelope.default
-            return PlayBufObject(name, buffer, out, startPos, rate, envelope)
+            return SamplePlayObject(name, sample, out, startPos, rate, envelope)
         }
     }
 
     companion object {
-        fun create(buffer: BufferObject, name: String, context: Context): PlayBufObject? {
-            val duration = buffer.useAudioStream { stream -> stream?.duration } ?: return null
+        fun create(buffer: SampleObject, name: String, context: Context): SamplePlayObject {
+            val duration = buffer.duration
             val env = Envelope.constant(1.0, duration, Warp.Linear)
             val out = context[BusRegistry].getDefault()
-            val obj = PlayBufObject(name, buffer.createReference(), out.createReference(), 0.0, 1.0, env)
+            val obj = SamplePlayObject(name, buffer.createReference(), out.createReference(), 0.0, 1.0, env)
             obj.duration = duration
             return obj
         }

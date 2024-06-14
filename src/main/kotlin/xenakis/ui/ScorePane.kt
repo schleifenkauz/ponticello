@@ -22,6 +22,7 @@ import javafx.scene.shape.Rectangle
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
 import reaktive.value.now
+import reaktive.value.reactiveVariable
 import xenakis.impl.Arrow
 import xenakis.impl.MidiPitch
 import xenakis.impl.Point
@@ -114,19 +115,21 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
     }
 
     private fun addPlayBufOnDrop() {
-        setupDropArea({ db -> db.hasFile("wav") || db.hasContent(BufferObject.DATA_FORMAT) }, { ev ->
+        setupDropArea({ db -> db.hasFile("wav") || db.hasContent(SampleObject.DATA_FORMAT) }, { ev ->
             val db = ev.dragboard
-            val buf = if (db.hasFiles()) {
+            val sample = if (db.hasFiles()) {
                 val file = db.files[0]
-                val defaultName = Identifier.truncate(file.nameWithoutExtension)
-                val buffer = FileBuffer.create(file, defaultName)
-                context[BufferRegistry].add(buffer)
-                buffer
-            } else {
-                context[BufferRegistry].get(db.getContent(BufferObject.DATA_FORMAT) as String)
-            }
-            val name = score.availableName(buf.name.now)
-            val obj = PlayBufObject.create(buf, name, context) ?: return@setupDropArea
+                context[SampleRegistry].getSample(file) ?: run {
+                    val name = Identifier.truncate(file.nameWithoutExtension)
+                    val sample = SampleObject(reactiveVariable(name), file)
+                    context[SampleRegistry].add(sample)
+                    sample
+                }
+            } else if (db.hasContent(SampleObject.DATA_FORMAT)) {
+                context[SampleRegistry].get(db.getContent(SampleObject.DATA_FORMAT) as String)
+            } else return@setupDropArea
+            val name = score.availableName(sample.name.now)
+            val obj = SamplePlayObject.create(sample, name, context)
             obj.position.set(getTime(ev.x), ev.y)
             obj.height = 150.0
             score.addObject(obj)
@@ -143,7 +146,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
         is SynthObject -> SynthObjectView(obj)
         is TaskObject -> TaskObjectView(obj)
         is EnvelopeObject -> EnvelopeObjectView(obj)
-        is PlayBufObject -> PlayBufObjectView(obj)
+        is SamplePlayObject -> SamplePlayObjectView(obj)
         is MemoObject -> MemoObjectView(obj)
         is ScoreObjectGroup -> ScoreObjectGroupView(obj)
         is PianoRollObject -> PianoRollObjectView(obj)
