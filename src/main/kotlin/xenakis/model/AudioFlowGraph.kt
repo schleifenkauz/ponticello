@@ -168,7 +168,7 @@ class AudioFlowGraph(
         for (flow in order) {
             val synth = flow.synth.editor.result.now
             val addAction = if (prev == "s.defaultGroup") "'addToTail'" else "'addAfter'"
-            synth.writeCode(writer, flow.synthName, prev, addAction, wrapInTask = true)
+            synth.writeCode(writer, registry.context, flow.synthName, prev, addAction, wrapInTask = true)
             prev = flow.synthName
         }
     }

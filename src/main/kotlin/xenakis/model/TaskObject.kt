@@ -26,7 +26,7 @@ class TaskObject(name: String, val code: EditorRoot<ScFunctionEditor>, var width
         writer.appendBlock("SystemClock.sched(${(playAt).coerceAtLeast(0.0)})") {
             writer.appendBlock("~tasks['$name'] = Task") {
                 val function = code.editor.result.now
-                function.code(writer)
+                function.code(writer, context)
                 appendLine(".value()")
             }
             writer.appendLine(".play;")

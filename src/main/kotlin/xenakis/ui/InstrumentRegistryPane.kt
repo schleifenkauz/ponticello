@@ -103,7 +103,7 @@ class InstrumentRegistryPane(
         if (obj is VSTPluginObject) {
             val outSelectorControl = ObjectSelectorControl(obj.outputSelector, createBundle())
             addExtraControl(outSelectorControl)
-            addAction(Icon.Save, description = "Save VST plugin configuration") { obj.savePreset() }
+            addAction(Icon.Save, description = "Save VST plugin configuration") { obj.saveConfiguration() }
         }
     }
 

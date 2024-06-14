@@ -19,6 +19,6 @@ interface ScExprEditor<out E : ScExpr> : Editor<E> {
     )
     fun eval() {
         val client = context[SuperColliderClient]
-        client.run(result.now.code)
+        client.run(result.now.code(context))
     }
 }

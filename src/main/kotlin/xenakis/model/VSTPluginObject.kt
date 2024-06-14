@@ -8,11 +8,9 @@ import reaktive.Observer
 import reaktive.value.ReactiveVariable
 import reaktive.value.now
 import reaktive.value.reactiveVariable
-import xenakis.impl.ColorSerializer
-import xenakis.impl.ScWriter
-import xenakis.impl.SuperColliderClient
-import xenakis.impl.randomColor
+import xenakis.impl.*
 import xenakis.model.SuperColliderObject.LiveCycleType
+import xenakis.model.XenakisProject.Companion.projectDirectory
 import xenakis.sc.Rate
 import xenakis.sc.editor.BusSelector
 
@@ -71,7 +69,8 @@ class VSTPluginObject private constructor(
             +"$variableName.open('$pluginName.vst3', editor: true, verbose: true)"
             +"s.sync"
             +"0.5.wait"
-            +"if ($variableName.info.presets.any { |p| p.name == \"$presetName\" }) { $variableName.loadPreset('$presetName') }"
+            val presetFile = context[projectDirectory].resolve("presets").resolve("$presetName.fxp").superColliderPath
+            +"if (PathName(${presetFile}).isFile) { $variableName.readProgram($presetFile) }"
             +"'opened plugin'.postln"
         }
         appendLine(".play;")
@@ -93,8 +92,10 @@ class VSTPluginObject private constructor(
         client.run("$variableName.editor;")
     }
 
-    fun savePreset() {
-        client.run("if (s.serverRunning) { $variableName.savePreset('$presetName') };")
+    fun saveConfiguration() {
+        val presetFile = context[projectDirectory].resolve("presets").resolve("$presetName.fxp")
+        if (!presetFile.parentFile.isDirectory) presetFile.parentFile.mkdir()
+        client.run("if (s.serverRunning) { $variableName.writeProgram(${presetFile.superColliderPath}) };")
     }
 
     data class ControllerInfo(val synthName: String, val id: String)

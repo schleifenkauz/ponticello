@@ -1,5 +1,6 @@
 package xenakis.impl
 
+import hextant.context.Context
 import xenakis.sc.ScElement
 import java.io.StringWriter
 
@@ -7,7 +8,6 @@ class ScWriter(private val output: Appendable) : SuperColliderContext {
     private var indent = ""
     private var newLine = true
 
-    val context: SuperColliderContext get() = this
     val writer: ScWriter get() = this
 
     fun append(str: String) {
@@ -35,10 +35,10 @@ class ScWriter(private val output: Appendable) : SuperColliderContext {
         appendLine(";")
     }
 
-    fun appendList(list: Iterable<ScElement>, separator: String) {
+    fun appendList(list: Iterable<ScElement>, separator: String, context: Context) {
         for ((i, element) in list.withIndex()) {
             if (i != 0) append(separator)
-            element.code(this)
+            element.code(this, context)
         }
     }
 

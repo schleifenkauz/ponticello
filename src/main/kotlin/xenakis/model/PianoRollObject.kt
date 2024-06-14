@@ -143,8 +143,8 @@ class PianoRollObject(
             val eventDict = n.eventDictionary.editor.result.now
             val eventMap = mutableMapOf<String, String>()
             eventMap["duration"] = dur.format(3)
-            for ((key, value) in eventDict.entries) eventMap[key.text] = value.code
-            for ((key, value) in generalEventDict.entries) eventMap[key.text] = value.code
+            for ((key, value) in eventDict.entries) eventMap[key.text] = value.code(context)
+            for ((key, value) in generalEventDict.entries) eventMap[key.text] = value.code(context)
             when (val instr = instrument.get()) {
                 is SynthDefObject -> {
                     eventMap["freq"] = "$midinote.midicps + ${eventMap["detune"] ?: 0}.midiratio"

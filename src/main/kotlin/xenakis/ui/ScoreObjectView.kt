@@ -83,7 +83,7 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
         val project = context[currentProject]
         val beforePlay = project.serverTree.editor.result.now
         context[SuperColliderClient].run {
-            beforePlay.code(this)
+            beforePlay.code(this, context)
             myObject.play(this)
         }
     }

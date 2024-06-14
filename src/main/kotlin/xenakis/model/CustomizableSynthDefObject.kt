@@ -49,7 +49,7 @@ class CustomizableSynthDefObject(
             statements = parameterAssignments + getDuration + ugenGraph.editor.result.now.statements + freeAfterDuration
         )
         val graphFunc = ScFunction(emptyList(), block)
-        graphFunc.code(this)
+        graphFunc.code(this, context)
         appendLine(").add;")
     }
 

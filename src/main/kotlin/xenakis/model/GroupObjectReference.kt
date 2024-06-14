@@ -15,7 +15,7 @@ class GroupObjectReference(name: String) : AbstractObjectReference<GroupObject>(
         this.obj = obj
     }
 
-    override fun code(writer: ScWriter) {
+    override fun code(writer: ScWriter, context: Context) {
         writer.append(get().variableName)
     }
 

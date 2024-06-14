@@ -165,7 +165,7 @@ class ControlAssignmentEditor(
                 spec: ControlSpec,
                 control: CustomControl?,
                 project: XenakisProject,
-            ): TextField = TextField(control?.expr?.code.orEmpty())
+            ): TextField = TextField(control?.expr?.code(project.context).orEmpty())
 
             override fun createControl(
                 obj: ScoreObject,

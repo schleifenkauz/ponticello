@@ -3,6 +3,7 @@ package xenakis.sc
 import hextant.codegen.*
 import hextant.completion.CompletionStrategy
 import hextant.completion.ConfiguredCompleter
+import hextant.context.Context
 import hextant.core.editor.TokenType
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
@@ -11,7 +12,9 @@ import kotlinx.serialization.descriptors.serialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import xenakis.impl.ScWriter
+import xenakis.impl.superColliderPath
 import xenakis.model.GroupObjectReference
+import xenakis.model.XenakisProject.Companion.projectDirectory
 import xenakis.sc.editor.*
 import java.io.StringWriter
 
@@ -21,16 +24,15 @@ sealed interface ScElement {
 
     val children: List<ScElement> get() = emptyList()
 
-    fun code(writer: ScWriter)
+    fun code(writer: ScWriter, context: Context)
 }
 
-val ScElement.code: String
-    get() {
-        val writer = StringWriter()
-        val scWriter = ScWriter(writer)
-        code(scWriter)
-        return writer.toString()
-    }
+fun ScElement.code(context: Context): String {
+    val writer = StringWriter()
+    val scWriter = ScWriter(writer)
+    code(scWriter, context)
+    return writer.toString()
+}
 
 @EditorInterface(ScExprEditor::class)
 @UseEditor(ScExprExpander::class)
@@ -39,7 +41,7 @@ interface ScExpr : ScElement
 
 @Serializable
 abstract class SimpleScElement(val code: String) : ScElement {
-    override fun code(writer: ScWriter) = writer.append(code)
+    override fun code(writer: ScWriter, context: Context) = writer.append(code)
 
     abstract class Serializer<T : SimpleScElement> : KSerializer<T> {
         override val descriptor: SerialDescriptor
@@ -78,13 +80,13 @@ data class UnrecognizedToken(val text: String) : Literal, Invalid {
     override val isValid: Boolean
         get() = false
 
-    override fun code(writer: ScWriter) {
+    override fun code(writer: ScWriter, context: Context) {
         writer.append("/*unrecognized*/$text/*unrecognized*/")
     }
 }
 
 object EmptyExpr : Literal, Invalid {
-    override fun code(writer: ScWriter) {
+    override fun code(writer: ScWriter, context: Context) {
         writer.append("")
     }
 }
@@ -131,9 +133,9 @@ data class ArrayExpr(val elements: List<ScExpr>) : ScExpr {
     override val children: List<ScElement>
         get() = elements
 
-    override fun code(writer: ScWriter) = with(writer) {
+    override fun code(writer: ScWriter, context: Context) = with(writer) {
         append("[")
-        appendList(elements, separator = ", ")
+        appendList(elements, separator = ", ", context)
         append("]")
     }
 }
@@ -148,10 +150,10 @@ data class NamedExpr(val name: Identifier, val value: ScExpr) : ScExpr {
     override val children: List<ScElement>
         get() = listOf(name, value)
 
-    override fun code(writer: ScWriter) {
-        name.code(writer)
+    override fun code(writer: ScWriter, context: Context) {
+        name.code(writer, context)
         writer.append(": ")
-        value.code(writer)
+        value.code(writer, context)
     }
 }
 
@@ -164,9 +166,9 @@ data class TupleExpr(val elements: List<NamedExpr>) : Literal {
     override val children: List<ScElement>
         get() = elements
 
-    override fun code(writer: ScWriter) = with(writer) {
+    override fun code(writer: ScWriter, context: Context) = with(writer) {
         append("(")
-        appendList(elements, separator = ", ")
+        appendList(elements, separator = ", ", context)
         append(")")
     }
 }
@@ -180,9 +182,9 @@ data class LiteralArray(val elements: List<Literal>) : Literal {
     override val children: List<ScElement>
         get() = elements
 
-    override fun code(writer: ScWriter) = with(writer) {
+    override fun code(writer: ScWriter, context: Context) = with(writer) {
         append("[")
-        appendList(elements, separator = ", ")
+        appendList(elements, separator = ", ", context)
         append("]")
     }
 }
@@ -210,7 +212,7 @@ data class Identifier(val text: String) : SimpleScElement(text), ScExpr {
 
 @Serializable
 data class RawScExpr(val code: String) : ScExpr {
-    override fun code(writer: ScWriter) = writer.append(code)
+    override fun code(writer: ScWriter, context: Context) = writer.append(code)
 }
 
 @Serializable
@@ -222,20 +224,20 @@ data class CodeBlock(val variables: List<Identifier> = emptyList(), val statemen
     override val children: List<ScElement>
         get() = variables + statements
 
-    override fun code(writer: ScWriter) {
+    override fun code(writer: ScWriter, context: Context) {
         if (variables.isNotEmpty() || statements.isNotEmpty()) {
-            writer.appendGroup { writeCode(this) }
+            writer.appendGroup { writeCode(writer, context) }
         }
     }
 
-    fun writeCode(writer: ScWriter) = with(writer) {
+    fun writeCode(writer: ScWriter, context: Context) = with(writer) {
         if (variables.isNotEmpty()) {
             append("var ")
-            appendList(variables, separator = ", ")
+            appendList(variables, separator = ", ", context)
             appendLine(";")
         }
         for (expr in statements) {
-            expr.code(this)
+            expr.code(this, context)
             appendLine(";")
         }
     }
@@ -250,13 +252,13 @@ data class ScFunction(val parameters: List<Identifier> = emptyList(), val body: 
     override val isValid: Boolean
         get() = parameters.all { it.isValid } && body.isValid
 
-    override fun code(writer: ScWriter) = writer.appendBlock("") {
+    override fun code(writer: ScWriter, context: Context) = writer.appendBlock("") {
         if (parameters.isNotEmpty()) {
             append("arg ")
-            appendList(parameters, separator = ", ")
+            appendList(parameters, separator = ", ", context)
             appendLine(";")
         }
-        body.writeCode(this)
+        body.writeCode(writer, context)
     }
 }
 
@@ -269,9 +271,9 @@ data class Assignment(val variable: Identifier, val expression: ScExpr) : ScExpr
     override val children: List<ScElement>
         get() = listOf(variable, expression)
 
-    override fun code(writer: ScWriter) {
+    override fun code(writer: ScWriter, context: Context) {
         writer.append("${variable.text} = ")
-        expression.code(writer)
+        expression.code(writer, context)
     }
 }
 
@@ -286,7 +288,7 @@ sealed class Operator(val code: String) : Selector, ScElement {
 
     override fun toString(): String = code
 
-    override fun code(writer: ScWriter) = writer.append(code)
+    override fun code(writer: ScWriter, context: Context) = writer.append(code)
 
     companion object : TokenType<Operator>, ConfiguredCompleter<Any?, Operator>(CompletionStrategy.simple) {
         val map = values().associateBy { op -> op.code }
@@ -336,13 +338,13 @@ data class MessageSend(val receiver: ScExpr, val method: Identifier, val argumen
     override val children: List<ScElement>
         get() = listOf(receiver, method) + arguments
 
-    override fun code(writer: ScWriter) = with(writer) {
-        receiver.code(writer)
+    override fun code(writer: ScWriter, context: Context) = with(writer) {
+        receiver.code(writer, context)
         writer.append(".")
-        method.code(writer)
+        method.code(writer, context)
         if (arguments.isNotEmpty()) {
             append("(")
-            appendList(arguments, separator = ", ")
+            appendList(arguments, separator = ", ", context)
             append(")")
         }
     }
@@ -362,11 +364,11 @@ data class OperatorExpr(val left: ScExpr, val operator: Operator, val right: ScE
     override val children: List<ScElement>
         get() = listOf(left, operator, right)
 
-    override fun code(writer: ScWriter) {
+    override fun code(writer: ScWriter, context: Context) {
         writer.append("(")
-        left.code(writer)
+        left.code(writer, context)
         writer.append(" ${operator.code} ")
-        right.code(writer)
+        right.code(writer, context)
         writer.append(")")
     }
 }
@@ -380,10 +382,10 @@ data class NewObject(val className: Identifier, val arguments: List<ScExpr>) : S
     override val children: List<ScElement>
         get() = listOf(className) + arguments
 
-    override fun code(writer: ScWriter) = with(writer) {
-        className.code(writer)
+    override fun code(writer: ScWriter, context: Context) = with(writer) {
+        className.code(writer, context)
         append("(")
-        appendList(arguments, ", ")
+        appendList(arguments, separator = ", ", context)
         append(")")
     }
 }
@@ -397,10 +399,10 @@ data class AccessKey(val receiver: ScExpr, val key: ScExpr) : ScExpr {
     override val children: List<ScElement>
         get() = listOf(receiver, key)
 
-    override fun code(writer: ScWriter) = with(writer) {
-        receiver.code(writer)
+    override fun code(writer: ScWriter, context: Context) = with(writer) {
+        receiver.code(writer, context)
         append("[")
-        key.code(writer)
+        key.code(writer, context)
         append("]")
     }
 }
@@ -414,9 +416,9 @@ data class SpreadArray(val array: ScExpr) : ScExpr {
     override val children: List<ScElement>
         get() = listOf(array)
 
-    override fun code(writer: ScWriter) {
+    override fun code(writer: ScWriter, context: Context) {
         writer.append("*")
-        array.code(writer)
+        array.code(writer, context)
     }
 }
 
@@ -438,8 +440,8 @@ data class VSTPlugin(
     override val children: List<ScElement>
         get() = listOf(input)
 
-    override fun code(writer: ScWriter) {
-        writer.append("VSTPlugin.ar(${input.code}, $channels, id: '$id')")
+    override fun code(writer: ScWriter, context: Context) {
+        writer.append("VSTPlugin.ar(${input.code(context)}, $channels, id: '$id')")
     }
 }
 
@@ -456,32 +458,40 @@ data class AdhocSynth(
     override val children: List<ScElement>
         get() = listOf(block)
 
-    override fun code(writer: ScWriter) = writeCode(
-        writer,
+    override fun code(writer: ScWriter, context: Context) = writeCode(
+        writer, context,
         synthName = "~adhoc_${name.text}",
         target = group.get().variableName,
         addAction = "addToHead",
         wrapInTask = false
     )
 
-    fun writeCode(writer: ScWriter, synthName: String, target: String, addAction: String, wrapInTask: Boolean) =
+    fun writeCode(
+        writer: ScWriter,
+        context: Context,
+        synthName: String,
+        target: String,
+        addAction: String,
+        wrapInTask: Boolean
+    ) =
         with(writer) {
             val plugins = block.statements.flatMap { s -> s.allChildren<VSTPlugin>() }
             if (wrapInTask && plugins.isNotEmpty()) {
                 appendBlock("Task") {
-                    writeCodeInsideTask(plugins, synthName, writer, target, addAction)
+                    writeCodeInsideTask(context, plugins, synthName, target, addAction)
                 }
                 +".play"
             } else {
-                writeCodeInsideTask(plugins, synthName, writer, target, addAction)
+                writeCodeInsideTask(context, plugins, synthName, target, addAction)
             }
         }
 
     private fun ScWriter.writeCodeInsideTask(
-        plugins: List<VSTPlugin>, synthName: String, writer: ScWriter, target: String, addAction: String
+        context: Context, plugins: List<VSTPlugin>,
+        synthName: String, target: String, addAction: String
     ) {
         appendBlock("$synthName = SynthDef(\\${name.text})") {
-            block.writeCode(writer)
+            block.writeCode(writer, context)
         }
         +".add.play($target, addAction: $addAction)"
         if (plugins.isEmpty()) return
@@ -490,9 +500,8 @@ data class AdhocSynth(
         for (plugin in plugins) {
             val pluginName = plugin.pluginName
             val presetName = plugin.presetName
-            val action = "action: { |c| if (c.info.presets.any { |p| p.name == \"$presetName\" }) { " +
-                    "c.loadPreset('$presetName') " +
-                    "}}"
+            val presetFile = context[projectDirectory].resolve("presets").resolve("$presetName.fxp").superColliderPath
+            val action = "action: { |c| if (PathName(${presetFile}).isFile) { c.readProgram(${presetFile}) } }"
             +"~ctrl_$presetName = VSTPluginController($synthName, id: '${plugin.id}').open('$pluginName.vst3', $action)"
         }
     }

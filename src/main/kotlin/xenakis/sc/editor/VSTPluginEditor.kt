@@ -9,7 +9,10 @@ import kotlinx.serialization.json.put
 import reaktive.value.ReactiveValue
 import xenakis.impl.SuperColliderClient
 import xenakis.impl.getString
+import xenakis.impl.superColliderPath
+import xenakis.model.XenakisProject.Companion.projectDirectory
 import xenakis.sc.VSTPlugin
+import xenakis.ui.alertError
 
 class VSTPluginEditor(context: Context) : CompoundEditor<VSTPlugin>(context), ScExprEditor<VSTPlugin> {
     constructor(context: Context, pluginName: String) : this(context) {
@@ -35,30 +38,25 @@ class VSTPluginEditor(context: Context) : CompoundEditor<VSTPlugin>(context), Sc
     private val controllerVar get() = "~ctrl_$presetName"
 
     fun configurePlugin() {
-        context[SuperColliderClient].run {
-            appendBlock("if ($controllerVar == nil)") {
-                appendBlock("Task") {
-                    +"~tmp_synth = Synth(\\vst_instrument)"
-                    +"s.sync"
-                    val action = "action: { |c| " +
-                            "if (c.info.presets.any { |p| p.name == \"$presetName\" }) { " +
-                            "c.loadPreset('$presetName') " +
-                            "};" +
-                            "c.editor; }"
-                    +"$controllerVar = VSTPluginController(~tmp_synth).open('$pluginName.vst3', editor: true, $action)"
-                }
-                +".play"
-            }
-            appendBlock {
-                +"$controllerVar.editor"
-            }
-            appendLine(";")
+        if (!checkControllerVar()) return
+        context[SuperColliderClient].run("$controllerVar.editor")
+    }
+
+    private fun checkControllerVar(): Boolean {
+        val controller = context[SuperColliderClient].eval(controllerVar).join()
+        if (controller == "nil") {
+            alertError("Plugin was not loaded")
+            return false
         }
+        return true
     }
 
     fun saveConfiguration() {
+        if (!checkControllerVar()) return
+        val presetFile = context[projectDirectory].resolve("presets").resolve("$presetName.fxp")
+        if (!presetFile.parentFile.isDirectory) presetFile.parentFile.mkdir()
         context[SuperColliderClient].run {
-            +"if ($controllerVar != nil) { ~ctrl_$presetName.savePreset('$presetName') }"
+            +"~ctrl_$presetName.writeProgram(${presetFile.superColliderPath})"
         }
     }
 

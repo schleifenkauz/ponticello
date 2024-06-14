@@ -128,7 +128,7 @@ class SynthObject(
                         val busName = "~auxil_${name}_${param}"
                         +"$busName = Bus.control(s, 1)"
                         this.append("{ ")
-                        expr.code(this)
+                        expr.code(this, context)
                         +" }.play(s, $busName)"
                         +"${synthVar}.map(\\$param, $busName)"
                     }

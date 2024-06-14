@@ -58,7 +58,7 @@ class XenakisProject private constructor(
 
     private fun ScWriter.addServerBootHooks() {
         appendBlock("ServerBoot.add") {
-            +serverSetup.editor.result.now.code
+            +serverSetup.editor.result.now.code(context)
         }
         appendLine(";")
     }
@@ -79,8 +79,8 @@ class XenakisProject private constructor(
 
     fun exportAsScript(output: Appendable) {
         with(ScWriter(output)) {
-            serverSetup.editor.result.now.code(writer)
-            serverTree.editor.result.now.code(writer)
+            serverSetup.editor.result.now.code(writer, context)
+            serverTree.editor.result.now.code(writer, context)
             groups.run { allocateAll() }
             groups.run { allocateAll() }
             flowGraph.run { setupAudioFlow() }
@@ -93,7 +93,7 @@ class XenakisProject private constructor(
     fun ScWriter.playScore(fromTime: Double) {
         appendLine("~synths = ();")
         appendLine("~tasks = ();")
-        serverTree.editor.result.now.code(this)
+        serverTree.editor.result.now.code(this, context)
         score.writePlayerTask(this, fromTime, prefix = "")
     }
 
