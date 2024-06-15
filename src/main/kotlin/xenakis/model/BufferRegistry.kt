@@ -27,7 +27,7 @@ class BufferRegistry(
 
     override fun getDefault(): BufferObject = BufferObject.defaultBuffer
 
-    override fun get(name: String) = if (name == "0") BufferObject.defaultBuffer else super.get(name)
+    override fun getOrNull(name: String) = if (name == "0") BufferObject.defaultBuffer else super.getOrNull(name)
 
     fun getBufferFor(file: File): BufferObject? = objects.find { o -> o is FileBuffer && o.referencedFile.now == file }
 

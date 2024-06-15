@@ -77,12 +77,12 @@ class VSTPluginObject private constructor(
     }
 
     override fun ScWriter.freeServerObject() {
-        +"$variableName.close; $variableName.synth.free; $variableName = nil;"
+        +"$variableName.close; $variableName.synth.free; $variableName = nil"
     }
 
     override fun ScWriter.removeFromServer() {
         freeServerObject()
-        "$variableName = nil;"
+        +"$variableName = nil"
     }
 
     override fun canRenameTo(newName: String): Boolean =

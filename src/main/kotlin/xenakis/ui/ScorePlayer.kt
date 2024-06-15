@@ -13,8 +13,6 @@ class ScorePlayer(
     private val project: XenakisProject,
     private val client: SuperColliderClient
 ) : Thread() {
-    var isRecording = false
-
     var playHeadPosition = 0.0
         private set
 
@@ -29,14 +27,12 @@ class ScorePlayer(
     init {
         isDaemon = true
         start()
-        setupIndicator()
+        setupPlayHead()
     }
 
-    private fun setupIndicator() {
+    private fun setupPlayHead() {
+        playHead.viewOrder = -500.0
         playHead.strokeWidthProperty().bind(Bindings.divide(PLAY_HEAD_WIDTH, scoreView.scaleXProperty()))
-        playHead.setOnMouseClicked {
-            playHead.toFront()
-        }
         playHead.endYProperty().bind(scoreView.heightProperty().subtract(20.0))
     }
 
@@ -90,7 +86,7 @@ class ScorePlayer(
         client.run {
             +"~play = false"
             +"~tasks.do { |t| if (t.isPlaying) { t.stop; } }"
-            +"~synths.do { |s| if (s.isRunning) { s.free } }"
+            +"~synths.do { |s| s.free }"
         }
     }
 

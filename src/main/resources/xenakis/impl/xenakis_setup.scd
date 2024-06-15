@@ -9,6 +9,19 @@ SynthDef(\diskout, {
 	arg bus = 0, buf;
 	DiskOut.ar(buf, In.ar(bus, 2));
 }).add;
+SynthDef(\playbuf, {
+    var buf, amp, rate, startPos, out, snd, duration;
+    buf = \buf.kr;
+    amp = \amp.kr(0.1, spec: [0.0, 1.0, 'lin', 0.01]);
+    rate = \rate.kr(1.0, spec: [0.01, 5.0, 'lin', 0.01]);
+    startPos = \startPos.kr(0.0, spec: [0.0, 10000.0, 'lin', 0.01]);
+    out = \out.kr;
+    duration = \duration.ir;
+    snd = PlayBuf.ar(2, buf, rate: (BufRateScale.kr(buf) * rate), startPos: (startPos * BufSampleRate.kr(buf)), loop:  1);
+    snd = (snd * amp);
+    Out.ar(out, snd);
+    Env.new(levels: [0, 0], times: [duration]).kr(Done.freeSelf);
+  }).add;
 
 ~record_buf = Buffer.alloc(s, 65536, 2, );
 ~tmp_path = "~/.xenakis/tmp.wav".standardizePath;
@@ -75,13 +88,6 @@ OSCdef('run', {
 });
 ~setupHandler.('controlName', { |name, idx|
 	SynthDescLib.global.synthDescs[name.asSymbol].controls[idx].name;
-});
-~setupHandler.('controlType', { |name, idx|
-	var desc, ctrl, rate, spec;
-	desc = SynthDescLib.global.synthDescs[name.asSymbol];
-	ctrl = desc.controls[idx];
-	spec = desc.specs[ctrl.name];
-	if (name.asString.beginsWith("buf")) { 'buf' } { if (spec == nil) { 'bus' } { 'num' } };
 });
 ~setupHandler.('controlDefault', { |name, idx|
 	SynthDescLib.global.synthDescs[name.asSymbol].controls[idx].defaultValue;

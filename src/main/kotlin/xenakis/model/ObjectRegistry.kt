@@ -29,8 +29,9 @@ abstract class ObjectRegistry<O : NamedObject> {
 
     abstract fun getDefault(): O
 
-    open fun get(name: String): O = objects.find { it.name.now == name }
-        ?: throw NoSuchElementException("Object $name not found in $this")
+    fun get(name: String): O = getOrNull(name) ?: throw NoSuchElementException("Object $name not found in $this")
+
+    open fun getOrNull(name: String) = objects.find { it.name.now == name }
 
     fun all(): List<O> = objects
 

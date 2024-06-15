@@ -7,10 +7,7 @@ abstract class SuperColliderObjectRegistry<O : SuperColliderObject> : ObjectRegi
     open fun syncAll() {
         context[SuperColliderClient].run {
             for (obj in objects) {
-                obj.run {
-                    freeServerObject()
-                    allocateServerObject()
-                }
+                obj.sync()
             }
         }
     }

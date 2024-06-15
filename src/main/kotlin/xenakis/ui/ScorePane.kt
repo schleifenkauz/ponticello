@@ -144,7 +144,12 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
 
     private fun createPlayBufObject(sample: SampleObject, ev: DragEvent) {
         val name = score.availableName(sample.name.now)
-        val synthDef = context[InstrumentRegistry].selectedInstrument ?: ReferencedSynthDefObject.playbuf
+        val instruments = context[InstrumentRegistry]
+        val synthDef = instruments.selectedInstrument ?: instruments.getOrNull("playbuf") ?: run {
+            val playbuf = ReferencedSynthDefObject.playbuf
+            instruments.add(playbuf)
+            playbuf
+        }
         if (synthDef !is SynthDefObject) {
             alertError("A SynthDef should be selected for sample playback to work")
             return

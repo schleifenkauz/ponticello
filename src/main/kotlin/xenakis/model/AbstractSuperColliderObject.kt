@@ -58,8 +58,8 @@ abstract class AbstractSuperColliderObject : AbstractRenamableObject(), SuperCol
     override fun onRemoved() {
         client.run {
             removeFromServer()
-            +"$functionName = nil;"
-            +"$variableName = nil;"
+            +"$functionName = nil"
+            +"$variableName = nil"
         }
         initialized = false
     }

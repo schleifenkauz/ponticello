@@ -283,6 +283,7 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
         val spec = myObject.getSpec(parameter) as NumericalControlSpec
         val knob = Knob(parameter, control, spec, radius = 24.0, context)
         knobControls.children.add(knob)
+        if (knobControls !in header.children) header.children.add(knobControls)
     }
 
     private fun setupCutting() {

@@ -143,7 +143,10 @@ class InstrumentRegistryPane(
                 }
             } else {
                 val pane = ParameterInfoPane(obj.parameters)
-                SubWindow(pane, obj.name.now, registry.context, type = SubWindow.Type.Popup)
+                SubWindow(pane, obj.name.now, registry.context, type = SubWindow.Type.Popup).apply {
+                    width = 1000.0
+                    height = 1000.0
+                }
             }
         }
         window.show()

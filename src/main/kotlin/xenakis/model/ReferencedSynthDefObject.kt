@@ -24,6 +24,7 @@ class ReferencedSynthDefObject(
     @Transient
     private var _parameters: MutableReactiveList<ParameterDefObject> = reactiveList()
 
+    @Transient
     private lateinit var context: Context
 
     override fun onAdded(context: Context) {}
@@ -71,20 +72,18 @@ class ReferencedSynthDefObject(
             for (i in 0 until nParams) {
                 val controlRef = listOf(name, i)
                 val paramName = send("controlName", controlRef).join().string
-                val type = send("controlType", controlRef).join().string
+                if (paramName == "duration") continue
                 val default = send("controlDefault", controlRef).join()
-                val spec = when (type) {
-                    "bus" -> BusControlSpec()
+                val spec = when (paramName) {
+                    in setOf("in", "out", "bus") -> BusControlSpec()
                     "buf" -> BufferControlSpec()
-                    "num" -> {
+                    else -> {
                         val min = send("controlMinval", listOf(name, paramName)).join().double
                         val max = send("controlMaxval", listOf(name, paramName)).join().double
                         val warp = send("controlWarp", listOf(name, paramName)).join().warp
                         val step = send("controlStep", listOf(name, paramName)).join().double
                         NumericalControlSpec(default.double, min, max, warp, step, randomColor())
                     }
-
-                    else -> error("unknown control type: $type")
                 }
                 val param = ParameterDefObject(paramName, spec)
                 params.add(param)

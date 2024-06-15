@@ -26,7 +26,9 @@ class SampleObject(
     override val variableName: String
         get() = "~sample_${name.now}"
 
-    private val samplesDir get() = context[XenakisProject.projectDirectory].resolve("samples")
+    private val samplesDir
+        get() = context[XenakisProject.projectDirectory].resolve("samples")
+            .also { d -> if (!d.isDirectory) d.mkdir() }
 
     val wavFile get() = referencedFile //samplesDir.resolve("${name.now}.wav")
     val spectrogramFile get() = samplesDir.resolve("${name.now}_spectrogram.png")

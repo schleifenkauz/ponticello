@@ -160,6 +160,7 @@ class XenakisProject private constructor(
             serverTree = EditorRoot.create(CodeBlockEditor(context)),
             score = Score().also { score -> score.initialize(context, reactiveValue(ROOT_SCORE_NAME)) },
         ).also { project ->
+            context[projectDirectory] = location
             project.initialize(context)
             project.projectDirectory = location
         }
