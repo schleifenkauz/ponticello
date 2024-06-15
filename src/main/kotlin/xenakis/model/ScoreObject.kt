@@ -40,7 +40,7 @@ abstract class ScoreObject : AbstractRenamableObject() {
 
     abstract var nextInChain: Reference?
 
-    open val associatedControls: Map<String, ParameterControl> get() = emptyMap()
+    abstract val associatedControls: Map<String, ParameterControl>
     abstract fun getSpec(parameter: String): ControlSpec
 
     open fun writeStartCode(writer: ScWriter, offset: Double, name: String = this.name.now) {}
@@ -139,7 +139,6 @@ abstract class ScoreObject : AbstractRenamableObject() {
             val all = listOf(
                 MemoObject.Serializer,
                 SynthObject.Serializer,
-                SamplePlayObject.Serializer,
                 TaskObject.Serializer,
                 EnvelopeObject.Serializer,
                 ScoreObjectGroup.Serializer,

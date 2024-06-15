@@ -18,6 +18,9 @@ class BusSelector(
     val preferredChannels: Int = -1,
     initialValue: BusObjectReference = getDefaultBus(context, preferredRate, preferredChannels)
 ) : ObjectSelector<BusObject, BusObjectReference>(context, initialValue), ScExprEditor<BusObjectReference> {
+    override val isNullable: Boolean
+        get() = false
+
     override val registry: ObjectRegistry<BusObject>
         get() = context[BusRegistry]
 

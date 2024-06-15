@@ -14,7 +14,7 @@ import xenakis.model.ObjectRegistry
 import xenakis.sc.editor.ObjectSelector
 import xenakis.ui.showNamePrompt
 
-class ObjectSelectorControl<O : NamedObject, R : ObjectReference<O>>(
+class ObjectSelectorControl<O : NamedObject, R : ObjectReference<O>?>(
     val editor: ObjectSelector<O, R>, arguments: Bundle
 ) : EditorControl<Node>(editor, arguments), ObjectRegistry.View<O>, ObjectSelectorView<O> {
     private val comboBox = ComboBox<Option<O>>()
@@ -24,22 +24,22 @@ class ObjectSelectorControl<O : NamedObject, R : ObjectReference<O>>(
         editor.registry.addView(this)
         comboBox.buttonCell = ObjectCell()
         comboBox.setCellFactory { ObjectCell() }
-        comboBox.value = Option.Choose(editor.result.now.get())
         comboBox.items.add(Option.CreateNew)
         comboBox.valueProperty().addListener { _, last, value -> selected(last, value) }
         editor.addView(this)
     }
 
-    override fun selected(obj: O) {
-        comboBox.value = Option.Choose(obj)
+    override fun selected(obj: O?) {
+        val option = if (obj == null) Option.None else Option.Choose(obj)
+        comboBox.value = option
     }
 
-    private fun selected(last: Option<O>, new: Option<O>) {
+    private fun selected(last: Option<O>?, new: Option<O>) {
         when (new) {
             Option.CreateNew -> {
                 comboBox.selectionModel.select(last)
                 showNamePrompt(editor.registry) { name ->
-                    val obj = editor.createNewObject(name)
+                    val obj = editor.createNewObject(name) ?: return@showNamePrompt
                     editor.registry.add(obj)
                     comboBox.selectionModel.select(Option.Choose(obj))
                 }
@@ -48,6 +48,11 @@ class ObjectSelectorControl<O : NamedObject, R : ObjectReference<O>>(
             is Option.Choose -> {
                 @Suppress("UNCHECKED_CAST")
                 editor.select(new.obj.createReference() as R)
+            }
+
+            Option.None -> {
+                check(editor.isNullable)
+                editor.select(null as R)
             }
         }
     }
@@ -82,6 +87,10 @@ class ObjectSelectorControl<O : NamedObject, R : ObjectReference<O>>(
                     text = ""
                 }
 
+                item == Option.None -> {
+                    text = "None"
+                }
+
                 item == Option.CreateNew -> {
                     text = "Create new"
                 }
@@ -96,6 +105,7 @@ class ObjectSelectorControl<O : NamedObject, R : ObjectReference<O>>(
 
     private sealed interface Option<out O : NamedObject> {
         data class Choose<O : NamedObject>(val obj: O) : Option<O>
+        object None : Option<Nothing>
         object CreateNew : Option<Nothing>
     }
 }

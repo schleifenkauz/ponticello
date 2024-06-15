@@ -3,21 +3,32 @@ package xenakis.ui
 import bundles.createBundle
 import hextant.undo.UndoManager
 import javafx.geometry.Point2D
+import javafx.geometry.Rectangle2D
+import javafx.scene.Cursor
 import javafx.scene.control.ContextMenu
 import javafx.scene.control.MenuItem
+import javafx.scene.image.Image
+import javafx.scene.image.ImageView
 import javafx.scene.input.MouseEvent
 import javafx.scene.layout.HBox
 import javafx.scene.paint.Color
+import reaktive.Observer
 import reaktive.value.ReactiveValue
 import reaktive.value.now
 import xenakis.model.Envelope
 import xenakis.model.EnvelopeControl
+import xenakis.model.ParameterControl
 import xenakis.model.SynthObject
 import xenakis.sc.NumericalControlSpec
 import xenakis.sc.view.ObjectSelectorControl
 import xenakis.ui.XenakisController.Companion.currentProject
 
 class SynthObjectView(val obj: SynthObject) : ScoreObjectView(obj) {
+    private lateinit var image: Image
+    private val spectrogramViews = mutableListOf<ImageView>()
+
+    private var sampleContentsObserver: Observer? = null
+
     init {
         styleClass("synth-object")
     }
@@ -30,6 +41,90 @@ class SynthObjectView(val obj: SynthObject) : ScoreObjectView(obj) {
         header.children.add(1, ObjectSelectorControl(obj.groupSelector, createBundle()))
         setupSynthDefReference()
         listenForMouseEvents()
+        loadSpectrogram()
+    }
+
+    override fun resizeObject(width: Double, height: Double, ev: MouseEvent, cursor: Cursor) {
+        var newDuration = pane.getDuration(width)
+        if (ev.isShiftDown && obj.playBufRate != null) {
+            obj.playBufRate = obj.playBufRate!! * (obj.duration / newDuration)
+        } else if (obj.playbufStartPos != null) {
+            newDuration = pane.getDuration(width)
+            if (cursor in setOf(Cursor.W_RESIZE, Cursor.SW_RESIZE, Cursor.NW_RESIZE)) {
+                newDuration = newDuration.coerceAtMost(obj.duration + obj.playbufStartPos!!)
+                val deltaStart = obj.duration - newDuration
+                obj.playbufStartPos = (obj.playbufStartPos!! + deltaStart * (obj.playBufRate ?: 1.0))
+            }
+        }
+        super.resizeObject(pane.getWidth(newDuration), height, ev, cursor)
+    }
+
+    override fun removedControl(parameter: String, oldControl: ParameterControl) {
+        super.removedControl(parameter, oldControl)
+        if (parameter == "buf") {
+            sampleContentsObserver?.kill()
+            envelopesPane.children.removeAll(spectrogramViews)
+        } else if (parameter == "startPos" || parameter == "rate") displaySpectrogram()
+    }
+
+    override fun addedControl(parameter: String, newControl: ParameterControl) {
+        super.addedControl(parameter, newControl)
+        if (parameter == "buf" && obj.sample != null) {
+            sampleContentsObserver = obj.sample?.contentsChanged?.observe { _, _ -> loadSpectrogram() }
+            loadSpectrogram()
+        } else if (parameter == "startPos" || parameter == "rate") displaySpectrogram()
+    }
+
+    override fun rescale() {
+        super.rescale()
+        displaySpectrogram()
+    }
+
+    private fun loadSpectrogram() {
+        envelopesPane.children.removeAll(spectrogramViews)
+        spectrogramViews.clear()
+        val imageFile = obj.sample?.spectrogramFile ?: return
+        if (!imageFile.isFile) return
+        image = Image(imageFile.inputStream())
+        displaySpectrogram()
+    }
+
+    private fun displaySpectrogram() {
+        envelopesPane.children.removeAll(spectrogramViews)
+        spectrogramViews.clear()
+        val sample = obj.sample ?: return
+        val startPos = obj.playbufStartPos ?: 0.0
+        val rate = obj.playBufRate ?: 1.0
+        val bufDur = (sample.duration - startPos) / rate
+        var remainingDuration = obj.duration
+        while (remainingDuration != 0.0) {
+            val imageDur =
+                minOf(remainingDuration, if (remainingDuration == obj.duration) bufDur else sample.duration / rate)
+            val view = ImageView(image)
+            displaySpectrogram(
+                view, imageDur,
+                sample.duration, rate, startPos = if (remainingDuration == obj.duration) startPos else 0.0
+            )
+            view.viewOrder = 100.0
+            view.layoutX = pane.getWidth(obj.duration - remainingDuration)
+            remainingDuration -= imageDur
+            spectrogramViews.add(view)
+        }
+        envelopesPane.children.addAll(spectrogramViews)
+    }
+
+    private fun displaySpectrogram(
+        view: ImageView, duration: Double,
+        sampleDuration: Double, rate: Double, startPos: Double
+    ) {
+        val pixelsPerSecond = image.width / sampleDuration * rate
+        val minX = pixelsPerSecond * startPos
+        val minY = 0.0
+        val width = pixelsPerSecond * duration
+        val height = image.height
+        view.viewport = Rectangle2D(minX, minY, width, height)
+        view.fitHeight = prefHeight
+        view.fitWidth = pane.getWidth(duration)
     }
 
     private fun setupSynthDefReference() {

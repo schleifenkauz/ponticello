@@ -3,6 +3,7 @@ package xenakis.model
 import hextant.context.Context
 import hextant.core.editor.ListenerManager
 import javafx.geometry.HorizontalDirection
+import javafx.geometry.HorizontalDirection.RIGHT
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonObjectBuilder
 import reaktive.Observer
@@ -36,6 +37,30 @@ class SynthObject(
 
     val controls: Map<String, ParameterControl> get() = _controls
 
+    var sample: SampleObject?
+        get() = (controls["buf"] as? BufferControl)?.takeIf { ctrl -> ctrl.display }?.sample?.get()
+        set(value) {
+            check(sample != null) { "$this has no buffer control" }
+            check(value != null) { "Attempt to set buffer of $this to null" }
+            reassignControl("buf", BufferControl(value.createReference(), true))
+        }
+
+    var playbufStartPos: Double?
+        get() = (controls["startPos"] as? ConstantControl)?.takeIf { sample != null }?.value
+        set(value) {
+            check(playbufStartPos != null) { "$this has no 'startPos' control" }
+            check(value != null) { "Attempt to set startPos of $this to null" }
+            reassignControl("startPos", ConstantControl(value))
+        }
+
+    var playBufRate: Double?
+        get() = (controls["rate"] as? ConstantControl)?.takeIf { sample != null }?.value
+        set(value) {
+            check(playbufStartPos != null) { "$this has no 'rate' control" }
+            check(value != null) { "Attempt to set rate of $this to null" }
+            reassignControl("rate", ConstantControl(value))
+        }
+
     fun reassignControl(parameter: String, control: ParameterControl) {
         if (parameter !in controls) error("Parameter $parameter not found on object $name")
         control.initialize(context)
@@ -68,7 +93,14 @@ class SynthObject(
 
     override fun cut(position: Double, whichHalf: HorizontalDirection): ScoreObject = SynthObject(
         name.now, synthDefRef, initialGroup,
-        _controls = controls.mapValuesTo(mutableMapOf()) { (_, c) -> c.cut(position, whichHalf) }
+        _controls = controls.mapValuesTo(mutableMapOf()) { (name, c) ->
+            when {
+                name == "startPos" && c is ConstantControl && whichHalf == RIGHT ->
+                    ConstantControl(c.value + position * (playBufRate ?: 1.0))
+
+                else -> c.cut(position, whichHalf)
+            }
+        }
     )
 
     override fun getSpec(parameter: String): ControlSpec = synthDef.getParameter(parameter).spec.now
@@ -93,9 +125,16 @@ class SynthObject(
         writer.appendBlock("s.makeBundle(0)") {
             val constantArguments = controls.mapNotNull { (param, control) ->
                 when (control) {
-                    is BufferControl -> param to control.buffer.get().variableName
+                    is BufferControl -> param to (control.sample?.get()?.variableName ?: "0")
                     is BusControl -> param to control.bus.get().variableName
-                    is ConstantControl -> param to control.value.toString()
+                    is ConstantControl -> {
+                        val value = when (param) {
+                            "startPos" -> control.value + offset
+                            else -> control.value
+                        }
+                        param to value.toString()
+                    }
+
                     is KnobControl -> param to control.get().toString()
                     else -> null
                 }

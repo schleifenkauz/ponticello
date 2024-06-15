@@ -75,9 +75,9 @@ data class SingleBusValueControl(val bus: BusObjectReference) : ParameterControl
 }
 
 @Serializable
-data class BufferControl(val buffer: BufferObjectReference) : ParameterControl() {
+data class BufferControl(val sample: SampleObjectReference?, val display: Boolean = true) : ParameterControl() {
     override fun initialize(context: Context) {
-        buffer.resolve(context)
+        sample?.resolve(context)
     }
 }
 

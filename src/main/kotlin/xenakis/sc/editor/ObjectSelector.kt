@@ -15,13 +15,15 @@ import xenakis.model.ObjectReference
 import xenakis.model.ObjectRegistry
 import xenakis.sc.view.ObjectSelectorView
 
-abstract class ObjectSelector<O : NamedObject, R : ObjectReference<O>>(
+abstract class ObjectSelector<O : NamedObject, R : ObjectReference<O>?>(
     context: Context, initialValue: R
 ) : AbstractEditor<R, ObjectSelectorView<O>>(context) {
     private var selected = reactiveVariable(initialValue)
 
+    abstract val isNullable: Boolean
+
     init {
-        initialValue.resolve(context)
+        initialValue?.resolve(context)
     }
 
     override val result: ReactiveValue<R>
@@ -30,12 +32,16 @@ abstract class ObjectSelector<O : NamedObject, R : ObjectReference<O>>(
     fun select(value: R) {
         context[UndoManager].record(Edit(this, selected.now, value))
         selected.set(value)
-        notifyViews { selected(value.get()) }
+        notifyViews { selected(value?.get()) }
+    }
+
+    override fun viewAdded(view: ObjectSelectorView<O>) {
+        view.selected(selected.now?.get())
     }
 
     abstract val registry: ObjectRegistry<O>
 
-    abstract fun createNewObject(name: String): O
+    abstract fun createNewObject(name: String): O?
 
     open fun canSelect(choice: O): ReactiveBoolean = reactiveValue(true)
 
@@ -43,7 +49,7 @@ abstract class ObjectSelector<O : NamedObject, R : ObjectReference<O>>(
 
     abstract override fun createSnapshot(): Snapshot<*>
 
-    private class Edit<O : NamedObject, R : ObjectReference<O>>(
+    private class Edit<O : NamedObject, R : ObjectReference<O>?>(
         private val selector: ObjectSelector<O, R>,
         private val old: R,
         private val new: R

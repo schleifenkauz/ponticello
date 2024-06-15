@@ -16,9 +16,10 @@ class BusRegistryPane(private val busses: BusRegistry) : SuperColliderObjectRegi
         busses.addView(this)
     }
 
-    override fun addObject(name: String) {
+    override fun addObject(name: String): BusObject {
         val bus = BusObject.create(name)
         busses.add(bus)
+        return bus
     }
 
     override fun canDelete(obj: BusObject): Boolean = !obj.isOutput

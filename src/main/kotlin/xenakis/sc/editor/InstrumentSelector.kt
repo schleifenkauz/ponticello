@@ -12,6 +12,9 @@ class InstrumentSelector(
     context: Context,
     initialValue: InstrumentObject.Reference
 ) : ObjectSelector<InstrumentObject, InstrumentObject.Reference>(context, initialValue) {
+    override val isNullable: Boolean
+        get() = false
+
     override val registry: ObjectRegistry<InstrumentObject>
         get() = context[InstrumentRegistry]
 

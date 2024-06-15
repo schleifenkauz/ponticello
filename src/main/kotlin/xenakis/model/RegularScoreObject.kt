@@ -34,6 +34,7 @@ sealed class RegularScoreObject(name: String) : ScoreObject() {
     final override val y: Double by position::y
 
     final override val associatedColor: ReactiveVariable<Color?> = reactiveVariable(null)
+    override val associatedControls: Map<String, ParameterControl> get() = emptyMap()
 
     final override var muted: Boolean = false
         set(value) {

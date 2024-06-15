@@ -224,7 +224,7 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
         addedControl(parameter, newControl)
     }
 
-    fun removedControl(parameter: String, oldControl: ParameterControl) {
+    open fun removedControl(parameter: String, oldControl: ParameterControl) {
         when (oldControl) {
             is EnvelopeControl -> removeEnvelope(parameter)
             is KnobControl -> removeKnob(parameter)
@@ -232,7 +232,7 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
         }
     }
 
-    fun addedControl(parameter: String, newControl: ParameterControl) {
+    open fun addedControl(parameter: String, newControl: ParameterControl) {
         when (newControl) {
             is EnvelopeControl -> displayEnvelope(parameter, newControl)
             is KnobControl -> displayKnob(parameter, newControl)
@@ -259,9 +259,7 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
             if (control !is EnvelopeControl || !control.display) continue
             displayEnvelope(parameter, control)
         }
-        val anyEnvelopes = envelopeEditors.any()
-        if (envelopesPane !in children && anyEnvelopes) children.add(envelopesPane)
-        if (envelopesPane in children && !anyEnvelopes) children.remove(envelopesPane)
+        if (envelopesPane !in children) children.add(envelopesPane)
     }
 
     private fun displayEnvelope(parameter: String, control: EnvelopeControl) {

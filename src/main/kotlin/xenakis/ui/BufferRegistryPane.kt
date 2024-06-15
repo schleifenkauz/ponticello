@@ -12,7 +12,6 @@ import reaktive.value.fx.asProperty
 import reaktive.value.now
 import reaktive.value.reactiveVariable
 import xenakis.model.*
-import java.io.File
 
 class BufferRegistryPane(
     private val buffers: BufferRegistry,
@@ -29,16 +28,16 @@ class BufferRegistryPane(
         buffers.addView(this)
     }
 
-    override fun addObject(name: (File) -> String) {
+    override fun addObject() {
         val options = BufferObject.Type.values().asList()
         val default = BufferObject.Type.Allocate
         showCreateNewDialog(options, default, ::addObject)
     }
 
-    override fun addObject(name: String) {
+    override fun addObject(name: String): BufferObject? {
         val choices = BufferObject.Type.values().toList()
-        val type = showSelectorDialog("Buffer type", project.context, choices, null) ?: return
-        addObject(type, name)
+        val type = showSelectorDialog("Buffer type", project.context, choices, null) ?: return null
+        return addObject(type, name)
     }
 
     private fun addObject(type: BufferObject.Type, name: String): BufferObject? {

@@ -12,12 +12,9 @@ import javafx.scene.paint.Color
 import org.controlsfx.control.ToggleSwitch
 import reaktive.value.now
 import xenakis.model.*
-import xenakis.sc.ControlSpec
-import xenakis.sc.NumericalControlSpec
-import xenakis.sc.RawScExpr
-import xenakis.sc.code
-import xenakis.sc.editor.BufferSelector
+import xenakis.sc.*
 import xenakis.sc.editor.BusSelector
+import xenakis.sc.editor.SampleSelector
 import xenakis.sc.view.ObjectSelectorControl
 
 class ControlAssignmentEditor(
@@ -220,23 +217,29 @@ class ControlAssignmentEditor(
             ): SingleBusValueControl = SingleBusValueControl(detailInput.editor.result.now)
         }
 
-        object Buffer : ControlType<BufferControl, ObjectSelectorControl<BufferObject, BufferObjectReference>>() {
+        object Buffer : ControlType<BufferControl, HBox>() {
             override fun createDetailInput(
                 parameter: String,
                 spec: ControlSpec,
                 control: BufferControl?,
                 project: XenakisProject
-            ): ObjectSelectorControl<BufferObject, BufferObjectReference> {
-                val initialValue = control?.buffer ?: BufferObject.defaultBuffer.createReference()
-                val editor = BufferSelector(project.context, initialValue)
-                return ObjectSelectorControl(editor, createBundle())
+            ): HBox {
+                val initialValue = control?.sample
+                val editor = SampleSelector(project.context, initialValue)
+                val selectorControl = ObjectSelectorControl(editor, createBundle())
+                val displaySwitch = ToggleSwitch("Display")
+                spec as BufferControlSpec
+                val display = control?.display ?: spec.isPlayBufSource
+                displaySwitch.isSelected = display
+                return HBox(5.0, selectorControl, displaySwitch).centerChildrenVertically()
             }
 
-            override fun createControl(
-                obj: ScoreObject,
-                detailInput: ObjectSelectorControl<BufferObject, BufferObjectReference>,
-                spec: ControlSpec
-            ): BufferControl = BufferControl(detailInput.editor.result.now)
+            override fun createControl(obj: ScoreObject, detailInput: HBox, spec: ControlSpec): BufferControl {
+                val sampleSelectorControl = detailInput.children[0] as ObjectSelectorControl<*, *>
+                val sampleSelector = sampleSelectorControl.editor as SampleSelector
+                val displaySwitch = detailInput.children[1] as ToggleSwitch
+                return BufferControl(sampleSelector.result.now, displaySwitch.isSelected)
+            }
         }
 
         companion object {

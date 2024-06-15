@@ -1,5 +1,8 @@
 package xenakis.ui
 
+import bundles.PublicProperty
+import bundles.publicProperty
+import bundles.set
 import javafx.scene.image.Image
 import javafx.scene.input.TransferMode
 import reaktive.value.now
@@ -22,18 +25,22 @@ class SampleRegistryPane(
             }
         })
         samples.addView(this)
+        samples.context[SampleRegistryPane] = this
     }
 
-    override fun addObject(name: (File) -> String) {
-        val file = controller.showOpenDialog("*.wav") ?: return
-        if (samples.getSample(file) != null) return
+    override fun addObject() {
+        addSample { file -> Identifier.truncate(file.nameWithoutExtension) }
+    }
+
+    private fun addSample(name: (File) -> String): SampleObject? {
+        val file = controller.showOpenDialog("*.wav") ?: return null
+        if (samples.getSample(file) != null) return null
         val sample = SampleObject(reactiveVariable(name(file)), file)
         samples.add(sample)
+        return sample
     }
 
-    override fun addObject(name: String) {
-        addObject { _ -> name }
-    }
+    public override fun addObject(name: String): SampleObject? = addSample { _ -> name }
 
     override fun ObjectBox<SampleObject>.configureObjectBox() {
         addAction(Icon.View, description = "View sample") {
@@ -56,4 +63,6 @@ class SampleRegistryPane(
             ev.consume()
         }
     }
+
+    companion object : PublicProperty<SampleRegistryPane> by publicProperty("SampleRegistryPane")
 }

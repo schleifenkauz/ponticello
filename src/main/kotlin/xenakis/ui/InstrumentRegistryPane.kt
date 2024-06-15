@@ -15,7 +15,6 @@ import reaktive.value.now
 import xenakis.impl.async
 import xenakis.model.*
 import xenakis.sc.view.ObjectSelectorControl
-import java.io.File
 
 class InstrumentRegistryPane(
     private val registry: InstrumentRegistry,
@@ -33,7 +32,7 @@ class InstrumentRegistryPane(
         registry.syncAll()
     }
 
-    override fun addObject(name: (File) -> String) {
+    override fun addObject() {
         async {
             val availablePlugins = VSTPluginObject.availablePlugins(registry.context).map { name -> "Plugin: $name" }
             val default = "New SynthDef"
@@ -49,9 +48,10 @@ class InstrumentRegistryPane(
         else -> VSTPluginObject.create(registry.context, name, type.removePrefix("Plugin: "))
     }
 
-    override fun addObject(name: String) {
+    override fun addObject(name: String): InstrumentObject {
         val obj = createSynthDef(name)
         registry.add(obj)
+        return obj
     }
 
     fun createSynthDef(name: String) = when {

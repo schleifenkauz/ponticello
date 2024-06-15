@@ -11,10 +11,12 @@ import xenakis.model.*
 class BufferSelector(
     context: Context, initialValue: BufferObjectReference = BufferObject.defaultBuffer.createReference()
 ) : ObjectSelector<BufferObject, BufferObjectReference>(context, initialValue), ScExprEditor<BufferObjectReference> {
+    override val isNullable: Boolean
+        get() = false
     override val registry: ObjectRegistry<BufferObject>
         get() = context[BufferRegistry]
 
-    override fun createNewObject(name: String): BufferObject {
+    override fun createNewObject(name: String): BufferObject? {
         throw UnsupportedOperationException("BufferSelector doesn't support creating new object")
     }
 

@@ -11,9 +11,7 @@ import javafx.scene.control.ComboBox
 import javafx.scene.control.Label
 import javafx.scene.control.Spinner
 import javafx.scene.control.TextField
-import javafx.scene.input.Clipboard
-import javafx.scene.input.MouseButton
-import javafx.scene.input.MouseEvent
+import javafx.scene.input.*
 import javafx.scene.layout.HBox
 import javafx.scene.layout.Pane
 import javafx.scene.layout.VBox
@@ -28,6 +26,7 @@ import xenakis.impl.MidiPitch
 import xenakis.impl.Point
 import xenakis.model.*
 import xenakis.model.Envelope
+import xenakis.sc.BufferControlSpec
 import xenakis.sc.Identifier
 import xenakis.sc.Rate
 import xenakis.sc.editor.BusSelector
@@ -120,24 +119,61 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
 
     private fun addPlayBufOnDrop() {
         setupDropArea({ db -> db.hasFile("wav") || db.hasContent(SampleObject.DATA_FORMAT) }, { ev ->
-            val db = ev.dragboard
-            val sample = if (db.hasFiles()) {
-                val file = db.files[0]
-                context[SampleRegistry].getSample(file) ?: run {
-                    val name = Identifier.truncate(file.nameWithoutExtension)
-                    val sample = SampleObject(reactiveVariable(name), file)
-                    context[SampleRegistry].add(sample)
-                    sample
-                }
-            } else if (db.hasContent(SampleObject.DATA_FORMAT)) {
-                context[SampleRegistry].get(db.getContent(SampleObject.DATA_FORMAT) as String)
-            } else return@setupDropArea
-            val name = score.availableName(sample.name.now)
-            val obj = SamplePlayObject.create(sample, name, context)
-            obj.position.set(getTime(ev.x), ev.y)
-            obj.height = 150.0
-            score.addObject(obj)
+            val sample = extractSampleFromDragBoard(ev.dragboard) ?: return@setupDropArea
+            createPlayBufObject(sample, ev)
         })
+    }
+
+    private fun extractSampleFromDragBoard(db: Dragboard): SampleObject? = when {
+        db.hasFiles() -> {
+            val file = db.files[0]
+            context[SampleRegistry].getSample(file) ?: run {
+                val name = Identifier.truncate(file.nameWithoutExtension)
+                val sample = SampleObject(reactiveVariable(name), file)
+                context[SampleRegistry].add(sample)
+                sample
+            }
+        }
+
+        db.hasContent(SampleObject.DATA_FORMAT) -> {
+            context[SampleRegistry].get(db.getContent(SampleObject.DATA_FORMAT) as String)
+        }
+
+        else -> null
+    }
+
+    private fun createPlayBufObject(sample: SampleObject, ev: DragEvent) {
+        val name = score.availableName(sample.name.now)
+        val synthDef = context[InstrumentRegistry].selectedInstrument ?: ReferencedSynthDefObject.playbuf
+        if (synthDef !is SynthDefObject) {
+            alertError("A SynthDef should be selected for sample playback to work")
+            return
+        }
+        val bufParameter = synthDef.parameters.now.find { p -> p.name.now == "buf" }
+        if (bufParameter == null) {
+            alertError("No parameter 'buf' found in in SynthDef ${synthDef.name.now}")
+            return
+        }
+        val spec = bufParameter.spec.now
+        if (spec !is BufferControlSpec) {
+            alertError("Parameter 'buf' of SynthDef ${synthDef.name.now} is not of type 'buf'")
+            return
+        }
+        if (!spec.isPlayBufSource) {
+            alertError("Parameter 'buf' of SynthDef ${synthDef.name.now} is not marked as a PlayBuf source")
+            return
+        }
+        val group = context[GroupRegistry].getDefault()
+        val controls = synthDef.defaultControls(context)
+        controls["buf"] = BufferControl(sample.createReference(), display = true)
+        @Suppress("UNCHECKED_CAST")
+        val synthDefRef = synthDef.createReference() as ObjectReference<SynthDefObject>
+        val obj = SynthObject(name, synthDefRef, group.createReference(), controls)
+        val (x, y) = snapToGrid(ev.x, ev.y)
+        obj.position.set(getTime(x), y)
+        obj.duration = sample.duration
+        obj.height = 150.0
+        score.addObject(obj)
     }
 
     /*
@@ -150,7 +186,6 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
         is SynthObject -> SynthObjectView(obj)
         is TaskObject -> TaskObjectView(obj)
         is EnvelopeObject -> EnvelopeObjectView(obj)
-        is SamplePlayObject -> SamplePlayObjectView(obj)
         is MemoObject -> MemoObjectView(obj)
         is ScoreObjectGroup -> ScoreObjectGroupView(obj)
         is PianoRollObject -> PianoRollObjectView(obj)

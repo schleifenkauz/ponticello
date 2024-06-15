@@ -57,9 +57,10 @@ class GroupRegistryPane(
         updateMoveButtonsAround(toIndex)
     }
 
-    override fun addObject(name: String) {
+    override fun addObject(name: String): GroupObject {
         val obj = GroupObject(reactiveVariable(name))
         registry.add(obj)
+        return obj
     }
 
     private fun shiftFocus(from: GroupObject, deltaIndex: Int) {
