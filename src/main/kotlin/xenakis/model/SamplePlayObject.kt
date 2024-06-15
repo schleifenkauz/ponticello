@@ -70,8 +70,8 @@ class SamplePlayObject(
     override fun copy(): SamplePlayObject = SamplePlayObject(name.now, sample, out, startPos, rate, envelope.copy())
 
     override fun cut(position: Double, whichHalf: HorizontalDirection): ScoreObject {
-        val startPos = if (whichHalf == HorizontalDirection.LEFT) startPos else start + position
-        val env = envelope.cut(position / duration, whichHalf)
+        val startPos = if (whichHalf == HorizontalDirection.LEFT) startPos else startPos + position * rate
+        val env = envelope.cut(position, whichHalf)
         return SamplePlayObject(name.now, sample, out, startPos, rate, env)
     }
 

@@ -234,6 +234,10 @@ Slider.control-detail-editor {
     -fx-background-color: #222720;
 }
 
+.score-pane:drop-possible {
+    -fx-background-color: #222720;
+}
+
 .object-box {
     -fx-border-color: black;
     -fx-border-width: 2px;

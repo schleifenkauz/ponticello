@@ -55,7 +55,7 @@ abstract class AbstractSuperColliderObject : AbstractRenamableObject(), SuperCol
         freeServerObject()
     }
 
-    override fun remove() {
+    override fun onRemoved() {
         client.run {
             removeFromServer()
             +"$functionName = nil;"

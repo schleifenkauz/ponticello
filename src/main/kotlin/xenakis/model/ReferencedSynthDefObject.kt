@@ -26,16 +26,18 @@ class ReferencedSynthDefObject(
 
     private lateinit var context: Context
 
+    override fun onAdded(context: Context) {}
+
     override fun initialize(context: Context) {
         this.context = context
         updateParameters()
     }
 
+    override fun onRemoved() {}
+
     override fun ScWriter.allocateServerObject() {}
 
     override fun ScWriter.freeServerObject() {}
-
-    override fun remove() {}
 
     override val name: ReactiveValue<String>
         get() = reactiveValue(_name)

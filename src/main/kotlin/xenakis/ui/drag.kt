@@ -87,7 +87,7 @@ fun Region.setupDraggingAndResizing(
             dragStart = null
             oldBounds = null
             context[UndoManager].finishCompoundEdit()
-            afterResize(ev, cursor)
+            afterResize(ev, cursor ?: Cursor.DEFAULT)
         }
         ev.consume()
     }

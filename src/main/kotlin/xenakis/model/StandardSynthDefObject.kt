@@ -25,19 +25,21 @@ class StandardSynthDefObject(
     override val parameters: ReactiveList<ParameterDefObject>
         get() = unmodifiableReactiveList(_parameters)
 
+    override fun onAdded(context: Context) {}
+
     override fun initialize(context: Context) {
         for (p in _parameters) {
             p.initialize(context)
         }
     }
 
+    override fun onRemoved() {}
+
     override fun ScWriter.allocateServerObject() {}
 
     override fun sync(writer: ScWriter) {}
 
     override fun sync() {}
-
-    override fun remove() {}
 
     override fun ScWriter.freeServerObject() {}
 

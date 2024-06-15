@@ -18,14 +18,14 @@ import xenakis.sc.mapOnto
 
 class EnvelopeEditor(
     val parameterName: String, private val envelope: Envelope,
-    private val pane: Pane, private val parentPane: ScorePane,
+    private val objectView: ScoreObjectView, private val pane: Pane, private val parentPane: ScorePane,
     private val associatedObject: ScoreObject,
 ) : EnvelopeView {
     private val control
         get() = associatedObject.associatedControls.getValue(parameterName) as EnvelopeControl
     private val spec get() = associatedObject.getSpec(parameterName) as NumericalControlSpec
-    private val yTransform get() = spec.mapOnto(pane.height..0.0)
-    private val xTransform get() = LinearTransformation(0.0..associatedObject.duration, 0.0..pane.width)
+    private val xTransform get() = LinearTransformation(0.0..associatedObject.duration, 0.0..objectView.prefWidth)
+    private val yTransform get() = spec.mapOnto(objectView.prefHeight..0.0)
 
     private val valueGrid get() = spec.step.get()
 

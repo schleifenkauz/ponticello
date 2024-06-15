@@ -180,7 +180,12 @@ fun Node.setupDropArea(condition: (db: Dragboard) -> Boolean, onDrop: (ev: DragE
     }
     addEventHandler(DragEvent.DRAG_DROPPED) { ev ->
         if (condition(ev.dragboard)) {
-            onDrop(ev)
+            try {
+                onDrop(ev)
+            } catch (ex: Exception) {
+                System.err.println("Exception while dropping")
+                ex.printStackTrace()
+            }
             ev.isDropCompleted = true
             ev.consume()
         }

@@ -69,6 +69,10 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
     fun getDuration(width: Double) = width / pixelsPerSecond
     fun getWidth(duration: Double) = duration * pixelsPerSecond
 
+    init {
+        styleClass("score-pane")
+    }
+
     protected open fun addTime(location: Double, amount: Double) {
         score.addTime(location, amount)
     }
@@ -166,9 +170,9 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
 
     override fun addedObject(obj: ScoreObject) {
         val view = createObjectView(obj)
+        view.initialize(this)
         views[obj] = view
         children.add(view)
-        view.initialize(this)
         Platform.runLater {
             view.requestFocus()
         }
@@ -359,7 +363,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
 
     private fun promptNewObjectName(prompt: String, initialName: String, create: (String) -> Unit) {
         showTextPrompt(prompt, initialName, context) { name ->
-            if (!Identifier.isValid(name) || context[ScoreObjectRegistry].has(name)) {
+            if (!Identifier.isValid(name) || score.has(name)) {
                 return@showTextPrompt false
             }
             create(name)
@@ -449,7 +453,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
                 layout.alignment = Pos.CENTER_LEFT
                 val obj = layout.showDialog("Configure PianoRoll", context) {
                     val name = nameField.text
-                    if (!Identifier.isValid(name) || context[ScoreObjectRegistry].has(name)) return@showDialog null
+                    if (!Identifier.isValid(name) || score.has(name)) return@showDialog null
                     val lowestPitch = rootPitchSelector.value.step + 12 * registerSpinner.value
                     val highestPitch = lowestPitch + 12 * octaves.value
                     val notes = mutableListOf<PianoRollObject.Note>()

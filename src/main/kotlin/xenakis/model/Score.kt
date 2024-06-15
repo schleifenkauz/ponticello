@@ -49,12 +49,12 @@ class Score(
         if (initialized) return
         this.scoreName = scoreName
         setContext(context)
-        if (scoreName.now == "<root>") context[rootScore] = this
+        if (scoreName.now == ROOT_SCORE_NAME) context[rootScore] = this
         for (obj in objects) {
             obj.initialize(context)
             obj.addToScore(this)
         }
-        layoutManager.initialize(context)
+        layoutManager.initialize(this)
     }
 
     fun addListener(listener: ScoreListener) {
@@ -232,6 +232,8 @@ class Score(
 
     companion object {
         val rootScore = publicProperty<Score>("root-score")
+
+        const val ROOT_SCORE_NAME = "<root>"
 
         private val logger = Logger.getLogger("Score")
     }

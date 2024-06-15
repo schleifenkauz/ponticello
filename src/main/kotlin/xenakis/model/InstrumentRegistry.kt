@@ -53,14 +53,6 @@ class InstrumentRegistry private constructor(
         return answer.thenApply { msg -> msg.boolean }
     }
 
-    override fun onAdded(obj: InstrumentObject, idx: Int) {
-        if (obj is VSTPluginObject) {
-            obj.initialize(context)
-        } else {
-            obj.initialize(context)
-        }
-    }
-
     fun addView(view: View) {
         super.addView(view)
         view.selected(selectedInstrument)

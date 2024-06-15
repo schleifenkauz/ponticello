@@ -1,6 +1,5 @@
 package xenakis.model
 
-import hextant.context.Context
 import reaktive.value.now
 import xenakis.model.LayoutManager.LayoutAspect.Horizontal
 import xenakis.model.LayoutManager.LayoutAspect.Vertical
@@ -18,11 +17,10 @@ class LayoutManager(
 
     private fun LayoutAspect.group(obj: ScoreObject) = groupByObject[obj] ?: setOf(obj)
 
-    fun initialize(context: Context) {
-        val namingManager = context[ScoreObjectRegistry]
+    fun initialize(score: Score) {
         eachAspect {
             for (group in groups) {
-                val objects = group.mapTo(mutableSetOf()) { name -> namingManager.get(name) }
+                val objects = group.mapTo(mutableSetOf()) { name -> score.getObject(name) }
                 for (obj in objects) groupByObject[obj] = objects
             }
         }

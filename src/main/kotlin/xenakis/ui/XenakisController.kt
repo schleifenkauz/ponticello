@@ -19,7 +19,6 @@ import xenakis.impl.OSCSuperColliderClient
 import xenakis.impl.StatusListener.StatusUpdate
 import xenakis.impl.SuperColliderClient
 import xenakis.impl.registerImplementationsFromClasspath
-import xenakis.model.ScoreObjectRegistry
 import xenakis.model.Settings
 import xenakis.model.XenakisProject
 import java.io.File
@@ -183,7 +182,6 @@ class XenakisController(private val primaryStage: Stage) {
 
     fun openProject(folder: File): Boolean {
         tryWithAlert("Opening project") {
-            context[ScoreObjectRegistry] = ScoreObjectRegistry().also { r -> r.initialize(context) }
             val project = XenakisProject.loadFrom(folder, context)
             currentProject = project
         } ?: return false
@@ -200,7 +198,6 @@ class XenakisController(private val primaryStage: Stage) {
                 val location = userHome.resolve("Xenakis Projects").resolve(name)
                 location.mkdir()
                 location.resolve("project.xen").writeText(location.name)
-                context[ScoreObjectRegistry] = ScoreObjectRegistry().also { it.initialize(context) }
                 currentProject = XenakisProject.create(location, context)
                 saveIn(location)
                 true

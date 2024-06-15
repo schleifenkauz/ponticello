@@ -49,7 +49,8 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
     private lateinit var busRegistryPane: BusRegistryPane
     private lateinit var samplesPane: SampleRegistryPane
     private lateinit var groupsPane: GroupRegistryPane
-    private lateinit var scoreView: ScoreView
+    lateinit var scoreView: ScoreView
+        private set
     private lateinit var flowGraphWindow: SubWindow
     private lateinit var globalControlsWindow: SubWindow
     private lateinit var serverTreeCodeWindow: SubWindow

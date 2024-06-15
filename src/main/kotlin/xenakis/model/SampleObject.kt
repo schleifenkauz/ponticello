@@ -65,16 +65,24 @@ class SampleObject(
         }
     }
 
+    override fun onAdded(context: Context) {
+        setContext(context)
+        updateSpectrogram()
+    }
+
     override fun initialize(context: Context) {
         super.initialize(context)
         updateInfos()
     }
 
+    override fun onRemoved() {
+        super.onRemoved()
+        spectrogramFile.delete()
+    }
+
     fun loadFile(file: File) {
         referencedFile = file
-        update()
-        updateInfos()
-        contentChange.fire()
+        sync()
     }
 
     override fun canRenameTo(newName: String): Boolean = !context[SampleRegistry].has(newName)
@@ -104,12 +112,13 @@ class SampleObject(
     }
 
     override fun sync(writer: ScWriter) {
-        update()
+        updateSpectrogram()
+        updateInfos()
         contentChange.fire()
         super.sync(writer)
     }
 
-    private fun update() {
+    private fun updateSpectrogram() {
         if (referencedFile.isFile) {
             //if (referencedFile.absolutePath != wavFile.absolutePath) {
             //referencedFile.copyTo(wavFile, overwrite = true)

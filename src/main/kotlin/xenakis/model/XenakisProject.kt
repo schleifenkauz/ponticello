@@ -14,6 +14,7 @@ import reaktive.value.reactiveValue
 import xenakis.impl.ScWriter
 import xenakis.impl.StatusListener.StatusUpdate
 import xenakis.impl.SuperColliderClient
+import xenakis.model.Score.Companion.ROOT_SCORE_NAME
 import xenakis.model.SuperColliderObject.LiveCycleType
 import xenakis.sc.CodeBlock
 import xenakis.sc.editor.CodeBlockEditor
@@ -132,7 +133,7 @@ class XenakisProject private constructor(
                 val serverSetup = folder.resolve("server_setup.json").readJson<EditorRoot<CodeBlockEditor>>()
                 val beforePlay = folder.resolve("server_tree.json").readJson<EditorRoot<CodeBlockEditor>>()
                 val score = folder.resolve("score.json").readJson<Score>()
-                score.initialize(context, reactiveValue("<root>"))
+                score.initialize(context, reactiveValue(ROOT_SCORE_NAME))
                 return XenakisProject(
                     settings,
                     groups, busses, buffers, samples, instruments,
@@ -157,7 +158,7 @@ class XenakisProject private constructor(
             globalControls = GlobalControls(mutableListOf()).also { c -> c.initialize(context) },
             serverSetup = EditorRoot.create(CodeBlockEditor(context)),
             serverTree = EditorRoot.create(CodeBlockEditor(context)),
-            score = Score().also { score -> score.initialize(context, reactiveValue("<root>")) },
+            score = Score().also { score -> score.initialize(context, reactiveValue(ROOT_SCORE_NAME)) },
         ).also { project ->
             project.initialize(context)
             project.projectDirectory = location

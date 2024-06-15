@@ -108,7 +108,7 @@ class SynthObject(
                     is EnvelopeControl -> {
                         val env = control.envelope.code(offset)
                         val busName = "~auxil_${name}_${param}"
-                        +"$busName = Bus.control(s, 1)"
+                        +"$busName  = Bus.control(s, 1)"
                         +"{ $env }.play(s, $busName)"
                         +"${synthVar}.map(\\$param, $busName)"
                     }

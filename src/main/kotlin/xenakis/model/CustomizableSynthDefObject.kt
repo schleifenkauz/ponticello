@@ -54,10 +54,10 @@ class CustomizableSynthDefObject(
     }
 
     override fun ScWriter.freeServerObject() {
-        remove()
+        onRemoved()
     }
 
-    override fun remove() {
+    override fun onRemoved() {
         context[SuperColliderClient].send("removeSynthDef", listOf(name.now))
     }
 
@@ -72,7 +72,7 @@ class CustomizableSynthDefObject(
     override fun canRenameTo(newName: String): Boolean = !context[InstrumentRegistry].has(newName)
 
     override fun rename(newName: String) {
-        remove()
+        onRemoved()
         super.rename(newName)
         context[SuperColliderClient].run { sync(this) }
     }

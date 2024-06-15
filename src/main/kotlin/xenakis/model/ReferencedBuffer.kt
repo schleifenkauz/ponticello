@@ -32,7 +32,7 @@ class ReferencedBuffer(override val mutableName: ReactiveVariable<String>) : Buf
         sync()
     }
 
-    override fun remove() {}
+    override fun onRemoved() {}
 
     override fun sync(writer: ScWriter) {
         val channels = client.eval("$variableName.numChannels").join()

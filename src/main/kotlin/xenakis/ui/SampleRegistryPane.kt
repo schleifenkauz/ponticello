@@ -1,5 +1,6 @@
 package xenakis.ui
 
+import javafx.scene.image.Image
 import javafx.scene.input.TransferMode
 import reaktive.value.now
 import reaktive.value.reactiveVariable
@@ -43,11 +44,15 @@ class SampleRegistryPane(
             val newFile = controller.showOpenDialog("*.wav") ?: return@addAction
             if (samples.getSample(newFile) != null) return@addAction
             obj.loadFile(newFile)
-            obj.sync()
         }
         setOnDragDetected { ev ->
             val db = startDragAndDrop(TransferMode.COPY)
             db.setContent(mapOf(SampleObject.DATA_FORMAT to obj.name.now))
+            val width = samples.context[XenakisUI].scoreView.getWidth(obj.duration)
+            val height = 150.0
+            val preserveRatio = false
+            val smooth = false
+            db.dragView = Image(obj.spectrogramFile.inputStream(), width, height, preserveRatio, smooth)
             ev.consume()
         }
     }

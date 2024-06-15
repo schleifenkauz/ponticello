@@ -6,9 +6,11 @@ import reaktive.value.ReactiveValue
 interface NamedObject {
     val name: ReactiveValue<String>
 
+    fun onAdded(context: Context)
+
     fun initialize(context: Context)
 
-    fun remove()
+    fun onRemoved()
 
     fun createReference(): ObjectReference<*>
 }

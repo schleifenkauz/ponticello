@@ -17,6 +17,7 @@ import kotlinx.serialization.serializer
 import reaktive.value.ReactiveVariable
 import reaktive.value.now
 import xenakis.impl.*
+import xenakis.model.Score.Companion.ROOT_SCORE_NAME
 import xenakis.model.Score.Companion.rootScore
 import xenakis.sc.ControlSpec
 import xenakis.ui.ScoreObjectView
@@ -63,7 +64,7 @@ abstract class ScoreObject : AbstractRenamableObject() {
         }
     }
 
-    override fun canRenameTo(newName: String): Boolean = !context[ScoreObjectRegistry].has(newName)
+    override fun canRenameTo(newName: String): Boolean = parent == null || !parent!!.has(newName)
 
     override fun rename(newName: String) {
         if (name.now == newName) return
@@ -124,7 +125,7 @@ abstract class ScoreObject : AbstractRenamableObject() {
         override fun resolve(context: Context) {
             if (obj != null) return
             val rootScore = context[rootScore]
-            val score = if (subScoreName == "<root>") rootScore else rootScore.getSubScore(subScoreName)
+            val score = if (subScoreName == ROOT_SCORE_NAME) rootScore else rootScore.getSubScore(subScoreName)
             obj = score.getObject(name)
         }
     }

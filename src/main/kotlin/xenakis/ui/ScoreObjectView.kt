@@ -59,8 +59,6 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
     init {
         styleClass("score-object")
         colorPicker.prefWidth = 30.0
-        envelopesPane.widthProperty().addListener { _ -> rescale() }
-        envelopesPane.heightProperty().addListener { _ -> rescale() }
     }
 
     protected open val supportedActions get() = listOf(Icon.Delete, Icon.Play, Icon.Mute, Icon.Repeat, Icon.ExtraWindow)
@@ -268,7 +266,7 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
 
     private fun displayEnvelope(parameter: String, control: EnvelopeControl) {
         val envelope = control.envelope
-        val e = EnvelopeEditor(parameter, envelope, envelopesPane, pane, myObject)
+        val e = EnvelopeEditor(parameter, envelope, this, envelopesPane, pane, myObject)
         e.repaint()
         envelopeEditors.add(e)
         if (envelopesPane !in children) children.add(envelopesPane)

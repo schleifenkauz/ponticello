@@ -55,11 +55,12 @@ abstract class ObjectRegistry<O : NamedObject> {
     }
 
     protected open fun onAdded(obj: O, idx: Int) {
+        obj.onAdded(context)
         obj.initialize(context)
     }
 
     protected open fun onRemoved(obj: O, idx: Int) {
-        obj.remove()
+        obj.onRemoved()
     }
 
     private sealed class Edit<O : NamedObject>(protected val registry: ObjectRegistry<O>) : AbstractEdit() {

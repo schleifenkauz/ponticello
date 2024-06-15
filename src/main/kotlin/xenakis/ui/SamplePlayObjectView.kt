@@ -9,6 +9,7 @@ import javafx.scene.input.MouseEvent
 import reaktive.Observer
 import xenakis.model.SamplePlayObject
 import xenakis.sc.view.ObjectSelectorControl
+import java.util.logging.Logger
 
 class SamplePlayObjectView(val obj: SamplePlayObject) : ScoreObjectView(obj) {
     private val outBusSelector = ObjectSelectorControl(obj.outSelector, createBundle())
@@ -31,6 +32,10 @@ class SamplePlayObjectView(val obj: SamplePlayObject) : ScoreObjectView(obj) {
         envelopesPane.children.removeAll(views)
         views.clear()
         val bufDur = (obj.sample.get().duration - obj.startPos) / obj.rate
+        if (bufDur <= 0.0) {
+            logger.severe("Negative buffer duration $bufDur in object $obj")
+            return
+        }
         var remainingDuration = obj.duration
         while (remainingDuration != 0.0) {
             val imageDur = minOf(remainingDuration, bufDur)
@@ -80,5 +85,9 @@ class SamplePlayObjectView(val obj: SamplePlayObject) : ScoreObjectView(obj) {
     override fun rescale() {
         super.rescale()
         display()
+    }
+
+    companion object {
+        private val logger = Logger.getLogger("SamplePlayObjectView")
     }
 }
