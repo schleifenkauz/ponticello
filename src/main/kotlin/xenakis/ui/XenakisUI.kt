@@ -34,6 +34,7 @@ import reaktive.value.forEach
 import reaktive.value.fx.asObservableValue
 import reaktive.value.now
 import reaktive.value.toggle
+import xenakis.model.ClonedObject
 import xenakis.model.LayoutManager.LayoutAspect
 import xenakis.model.Settings
 import xenakis.model.SuperColliderObject
@@ -354,8 +355,10 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
 
             on("ESCAPE") {
                 scoreView.clearNewShape()
+                scoreView.clearClipboard()
                 context[ScoreObjectSelector].deselectAll()
                 toolSelector.select(Tool.Pointer)
+                toolSelector.getButton(Tool.Pointer).graphic = Tool.Pointer.icon.getView()
             }
             on("Alt?+DIGIT1") { toolSelector.select(Tool.Synth) }
             on("Alt?+DIGIT2") { toolSelector.select(Tool.Task) }
@@ -416,13 +419,22 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
             on("Ctrl+G") { globalControlsWindow.show() }
             on("F5") { controller.restartScSynth() }
 
-            on("Ctrl?+C") {
+            on("Shift?+C") { ev ->
                 toolSelector.select(Tool.Pointer)
-                scoreView.selector.copySelected()
+                val view = context[ScoreObjectSelector].singleSelected.now ?: return@on
+                var obj = view.myObject
+                if (ev.isShiftDown && obj !is ClonedObject) obj = obj.clone()
+                else if (!ev.isShiftDown && obj is ClonedObject) obj = obj.original
+                scoreView.setClipboard(obj, view)
             }
-            on("Ctrl?+Shift+C") {
+
+            on("Ctrl+C") {
                 toolSelector.select(Tool.Pointer)
-                scoreView.selector.cloneSelected()
+                context[ScoreObjectSelector].copySelected()
+            }
+            on("Ctrl+Shift+C") {
+                toolSelector.select(Tool.Pointer)
+                context[ScoreObjectSelector].cloneSelected()
             }
         }
     }

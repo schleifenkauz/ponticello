@@ -58,9 +58,11 @@ abstract class SelectorBar<T>(options: List<T>) : HBox(10.0) {
     }
 
     fun select(option: T) {
-        val btn = map.getValue(option)
+        val btn = getButton(option)
         btn.isSelected = true
     }
+
+    fun getButton(option: T) = map.getValue(option)
 
     fun selectIndex(index: Int) {
         if (index in allButtons.indices) allButtons[index].isSelected = true

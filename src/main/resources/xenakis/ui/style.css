@@ -358,8 +358,8 @@ Slider.control-detail-editor {
 }
 
 .mouse-tracker-line {
-    -fx-stroke-width: 3px !important;
-    -fx-stroke: white !important;
+    -fx-stroke-width: 1px;
+    -fx-stroke: gray;
 }
 
 .waveform-line {

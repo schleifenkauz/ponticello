@@ -2,6 +2,10 @@ package xenakis.ui
 
 import hextant.context.Context
 import hextant.fx.registerShortcuts
+import javafx.geometry.Rectangle2D
+import javafx.scene.SnapshotParameters
+import javafx.scene.image.ImageView
+import javafx.scene.robot.Robot
 import javafx.scene.shape.Line
 import javafx.scene.text.Text
 import reaktive.value.fx.asObservableValue
@@ -10,12 +14,18 @@ import xenakis.impl.Point
 import xenakis.impl.step
 import xenakis.model.InteractionSettings.SnapOption
 import xenakis.model.Score
+import xenakis.model.ScoreObject
 import xenakis.ui.XenakisController.Companion.currentProject
 import kotlin.math.exp
 import kotlin.math.roundToInt
 
 class ScoreView(score: Score, context: Context) : ScorePane(score, context) {
     private val positionTracker = Line() styleClass "mouse-tracker-line"
+    private val robot = Robot()
+
+    var clipboardObject: ScoreObject? = null
+        private set
+    private val clipboardObjectView: ImageView = ImageView().also { v -> v.isVisible = false }
 
     private var timeSnap: Double = 0.1
     override val xAccuracy: Int
@@ -26,6 +36,42 @@ class ScoreView(score: Score, context: Context) : ScorePane(score, context) {
         get() = width / (displayEnd - displayStart)
 
     val displayedDuration get() = displayEnd - displayStart
+
+    init {
+        children.add(clipboardObjectView)
+        listenForEvents()
+        score.addListener(this)
+        styleClass.add("score-view")
+        selectedArea.registerShortcuts {
+            on("Alt+S") {
+                displayStart = getTime(selectedArea.x)
+                displayEnd = getTime(selectedArea.x + selectedArea.width)
+                repaint()
+            }
+        }
+    }
+
+    fun setClipboard(obj: ScoreObject, view: ScoreObjectView) {
+        clipboardObject = obj
+        val parameters = SnapshotParameters()
+        view.snapshot(parameters, null)
+        clipboardObjectView.image = view.snapshot(parameters, null)
+        clipboardObjectView.viewport = Rectangle2D(5.0, 3.0, view.prefWidth - 4.0, view.prefHeight - 4.0)
+        val mousePos = screenToLocal(robot.mousePosition)
+        val (x, y) = snapToGrid(mousePos.x, mousePos.y)
+        clipboardObjectView.relocate(x, y)
+        clipboardObjectView.opacity = 0.3
+        clipboardObjectView.isMouseTransparent = true
+        clipboardObjectView.visibleProperty().bind(hoverProperty())
+    }
+
+    fun clearClipboard() {
+        clipboardObject = null
+        clipboardObjectView.visibleProperty().unbind()
+        clipboardObjectView.isVisible = false
+    }
+
+    fun isInDuplicateMode() = clipboardObject != null
 
     override fun getGrids(x: Double): List<TempoGridObjectView> = allViews.filterIsInstance<TempoGridObjectView>()
         .filter { v -> x in v.layoutX..v.width }
@@ -61,19 +107,6 @@ class ScoreView(score: Score, context: Context) : ScorePane(score, context) {
         return nearestGrid
     }
 
-    init {
-        listenForEvents()
-        score.addListener(this)
-        styleClass.add("score-view")
-        selectedArea.registerShortcuts {
-            on("Alt+S") {
-                displayStart = getTime(selectedArea.x)
-                displayEnd = getTime(selectedArea.x + selectedArea.width)
-                repaint()
-            }
-        }
-    }
-
     fun displayWholeScore() {
         val totalDuration = score.objects.maxOfOrNull { obj -> obj.start + obj.duration } ?: 60.0
         display(0.0, totalDuration)
@@ -87,6 +120,8 @@ class ScoreView(score: Score, context: Context) : ScorePane(score, context) {
 
     override fun repaint() {
         super.repaint()
+        children.add(clipboardObjectView)
+        children.add(positionTracker)
         ui.player.repaint()
         displayTimeGrid()
     }
@@ -126,25 +161,18 @@ class ScoreView(score: Score, context: Context) : ScorePane(score, context) {
     }
 
     private fun setupPositionTracker() {
-        positionTracker.startYProperty().bind(heightProperty().subtract(40))
+        positionTracker.startY = 5.0
         positionTracker.endYProperty().bind(heightProperty().subtract(5))
-        positionTracker.viewOrder = 100.0
-        setOnMouseEntered { ev ->
-            if (!ev.x.isNaN()) {
-                children.add(positionTracker)
-                ev.consume()
-            }
-        }
+        positionTracker.viewOrder = -100.0
+        positionTracker.isMouseTransparent = true
+        positionTracker.visibleProperty().bind(hoverProperty())
         setOnMouseMoved { ev ->
             if (!ev.x.isNaN()) {
-                val x = snapToGrid(ev.x, ev.y).x
+                val (x, y) = snapToGrid(ev.x, ev.y)
                 markX(x)
+                clipboardObjectView.relocate(x, y)
                 ev.consume()
             }
-        }
-        setOnMouseExited { ev ->
-            children.remove(positionTracker)
-            ev.consume()
         }
     }
 

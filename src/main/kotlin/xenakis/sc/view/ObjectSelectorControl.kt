@@ -27,6 +27,7 @@ class ObjectSelectorControl<O : NamedObject, R : ObjectReference<O>>(
         comboBox.value = Option.Choose(editor.result.now.get())
         comboBox.items.add(Option.CreateNew)
         comboBox.valueProperty().addListener { _, last, value -> selected(last, value) }
+        editor.addView(this)
     }
 
     override fun selected(obj: O) {

@@ -304,7 +304,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
         }
     }
 
-    private fun pasteFromClipboard(ev: MouseEvent) {
+    private fun pasteFromSystemClipboard(ev: MouseEvent) {
         context.compoundEdit("Paste objects") {
             val clipboard = Clipboard.getSystemClipboard()
             if (clipboard.hasContent(ScoreObject.DATA_FORMAT)) {
@@ -339,7 +339,17 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
             }
 
             tool == Pointer -> {
-                if (selectedArea in children && selectedArea.width != 0.0 && selectedArea.height != 0.0) {
+                val scoreView = context[XenakisUI].scoreView
+                if (ev.button == MouseButton.PRIMARY && scoreView.isInDuplicateMode()) {
+                    val obj = scoreView.clipboardObject!!
+                    val duplicate = if (obj is ClonedObject) obj.original.clone() else obj.copy(score.nameForCopy(obj))
+                    if (duplicate is ClonedObject && score.getObject(duplicate.name.now) != duplicate.original) {
+                        alertError("Object with name ${duplicate.name.now} already present in score ${score.scoreName.now}")
+                        return
+                    }
+                    duplicate.position.set(getTime(ev.x), ev.y)
+                    score.addObject(duplicate)
+                } else if (selectedArea in children && selectedArea.width != 0.0 && selectedArea.height != 0.0) {
                     if (!selectedArea.heightProperty().isBound) {
                         for (view in viewsInside(selectedArea.boundsInParent)) {
                             selector.select(view, addToSelection = true)
@@ -348,7 +358,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
                     } else {
                         selectedArea.requestFocus()
                     }
-                } else if (ev.button == MouseButton.SECONDARY) pasteFromClipboard(ev)
+                } else if (ev.button == MouseButton.SECONDARY) pasteFromSystemClipboard(ev)
                 else if (this is ScoreView) ui.player.setPlayHeadX(ev.x)
             }
 
