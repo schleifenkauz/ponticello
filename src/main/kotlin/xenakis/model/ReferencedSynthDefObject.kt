@@ -55,13 +55,11 @@ class ReferencedSynthDefObject(
     }
 
     private fun updateParameters() {
-        async {
-            val parameters = getSynthDefParameters(_name)
-            _parameters.now.clear()
-            _parameters.now.addAll(parameters)
-            for (param in parameters) {
-                param.initialize(context)
-            }
+        val parameters = getSynthDefParameters(_name)
+        _parameters.now.clear()
+        _parameters.now.addAll(parameters)
+        for (param in parameters) {
+            param.initialize(context)
         }
     }
 

@@ -271,15 +271,19 @@ Slider.control-detail-editor {
     -fx-min-width: 250px;
     -fx-pref-width: 250px;
     -fx-spacing: 5px;
+    -fx-padding: 0px 5px 0px 5px;
     -fx-alignment: center-left;
     -fx-border-width: 2px;
     -fx-border-radius: 3px;
-    -fx-border-color: transparent;
-    -fx-font-size: 15px;
+    -fx-border-color: black;
 }
 
-.name:hover {
-    -fx-border-color: black;
+.name-field {
+    -fx-font-size: 14px;
+    -fx-background-color: transparent;
+    -fx-background-radius: 0;
+    -fx-border-width: 0;
+    -fx-padding: 0;
 }
 
 .choice-editor-combo-box {

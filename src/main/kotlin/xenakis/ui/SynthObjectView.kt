@@ -19,12 +19,13 @@ import xenakis.model.*
 import xenakis.sc.NumericalControlSpec
 
 class SynthObjectView(val obj: SynthObject) : ScoreObjectView(obj), SynthControls.View {
-    private lateinit var image: Image
+    private var image: Image? = null
     private val spectrogramViews = mutableListOf<ImageView>()
 
     private var startPosObserver: Observer? = null
     private var rateObserver: Observer? = null
     private var sampleObserver: Observer? = null
+    private var sampleDisplayObserver: Observer? = null
     private var sampleContentObserver: Observer? = null
 
     init {
@@ -41,11 +42,11 @@ class SynthObjectView(val obj: SynthObject) : ScoreObjectView(obj), SynthControl
         sampleObserver = obj.sample.forEach { s ->
             sampleContentObserver?.kill()
             if (s != null) {
-                sampleContentObserver = s.get().contentsChanged.observe { _ -> loadSpectrogram() }
-                loadSpectrogram()
+                sampleContentObserver = s.get().contentsChanged.observe { _ -> updateSpectrogram() }
+                updateSpectrogram()
             }
         }
-        loadSpectrogram()
+        sampleDisplayObserver = obj.displaySample?.forEach { updateSpectrogram() }
     }
 
     override fun resizeObject(width: Double, height: Double, ev: MouseEvent, cursor: Cursor) {
@@ -93,9 +94,10 @@ class SynthObjectView(val obj: SynthObject) : ScoreObjectView(obj), SynthControl
         displaySpectrogram()
     }
 
-    private fun loadSpectrogram() {
+    private fun updateSpectrogram() {
         envelopesPane.children.removeAll(spectrogramViews)
         spectrogramViews.clear()
+        if (obj.displaySample?.now != true) return
         val imageFile = obj.sample.now?.get()?.spectrogramFile ?: return
         if (!imageFile.isFile) return
         image = Image(imageFile.inputStream())
@@ -105,6 +107,7 @@ class SynthObjectView(val obj: SynthObject) : ScoreObjectView(obj), SynthControl
     private fun displaySpectrogram() {
         envelopesPane.children.removeAll(spectrogramViews)
         spectrogramViews.clear()
+        if (image == null) return
         val sample = obj.sample.now?.get() ?: return
         val startPos = obj.playbufStartPos?.now ?: 0.0
         val rate = obj.playBufRate?.now ?: 1.0
@@ -130,11 +133,11 @@ class SynthObjectView(val obj: SynthObject) : ScoreObjectView(obj), SynthControl
         view: ImageView, duration: Double,
         sampleDuration: Double, rate: Double, startPos: Double
     ) {
-        val pixelsPerSecond = image.width / sampleDuration * rate
+        val pixelsPerSecond = image!!.width / sampleDuration * rate
         val minX = pixelsPerSecond * startPos
         val minY = 0.0
         val width = pixelsPerSecond * duration
-        val height = image.height
+        val height = image!!.height
         view.viewport = Rectangle2D(minX, minY, width, height)
         view.fitHeight = prefHeight
         view.fitWidth = pane.getWidth(duration)

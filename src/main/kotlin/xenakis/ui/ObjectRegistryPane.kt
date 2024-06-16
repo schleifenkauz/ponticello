@@ -64,6 +64,7 @@ abstract class ObjectRegistryPane<O : NamedObject>(
         val window = SubWindow(layout, "Create new buffer", registry.context, SubWindow.Type.Prompt) {
             nameInput.requestFocus()
         }
+
         fun commit() {
             val type = typeSelector.value ?: return
             val name = nameInput.text
@@ -110,7 +111,9 @@ abstract class ObjectRegistryPane<O : NamedObject>(
 
         init {
             styleClass("object-box")
-            val nameDisplay = if (obj is RenamableObject) NameControl(obj) else label(obj.name) styleClass "name"
+            val nameDisplay =
+                if (obj is RenamableObject) NameControl(obj)
+                else HBox(label(obj.name).styleClass("name-field")).styleClass("name")
             children.addAll(nameDisplay, extraControls, infiniteSpace(), actions)
             addAction(Icon.Delete, "Remove object") { pane.registry.remove(obj) }.isDisable = !pane.canDelete(obj)
         }

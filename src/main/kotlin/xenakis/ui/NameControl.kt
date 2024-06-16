@@ -1,9 +1,9 @@
 package xenakis.ui
 
-import hextant.fx.HextantTextField
 import hextant.fx.registerShortcuts
 import hextant.fx.setRoot
 import javafx.scene.control.Control
+import javafx.scene.control.TextField
 import javafx.scene.layout.HBox
 import reaktive.Observer
 import reaktive.value.now
@@ -11,7 +11,7 @@ import xenakis.model.RenamableObject
 import xenakis.sc.Identifier
 
 class NameControl(val obj: RenamableObject) : Control() {
-    private val field = HextantTextField(obj.name.now, autoSize = false).alwaysHGrow()
+    private val field = TextField(obj.name.now).alwaysHGrow()
     private val btnEdit = Icon.Edit.button(action = "Edit name") { startEdit() }
     private val btnCommit = Icon.Check.button(action = "Commit change") { commitEdit() }
     private val root = HBox(field, btnEdit)
@@ -19,6 +19,7 @@ class NameControl(val obj: RenamableObject) : Control() {
 
     init {
         root styleClass "name"
+        field styleClass "name-field"
         setRoot(root)
         field.isEditable = false
         registerShortcuts {

@@ -34,8 +34,11 @@ class SynthObject(
 
     val group: ReactiveValue<GroupObjectReference> get() = (controls["group"] as GroupControl).group
 
-    val sample: ReactiveValue<SampleObjectReference?>
-        get() = (controls.controlMap["buf"] as? BufferControl)?.sample ?: reactiveVariable(null)
+    private val bufferControl get() = controls.controlMap["buf"] as? BufferControl
+
+    val sample: ReactiveValue<SampleObjectReference?> get() = bufferControl?.sample ?: reactiveVariable(null)
+
+    val displaySample: ReactiveValue<Boolean>? get() = bufferControl?.display
 
     val playbufStartPos: ReactiveVariable<Double>?
         get() = (controls["startPos"] as? ConstantControl)?.value
