@@ -17,11 +17,15 @@ TextField.editable-text {
     -fx-border-width: 1px;
 }
 
-.control-assignment-editor {
+.detail-item {
     -fx-border-width: 1;
     -fx-border-radius: 3px;
     -fx-border-color: black;
     -fx-padding: 5px;
+}
+
+.detail-item:hover {
+    -fx-background-color: rgba(100, 0, 0, 0.1);
 }
 
 Slider.control-detail-editor {
@@ -168,14 +172,6 @@ Slider.control-detail-editor {
 
 .startup-screen {
     -fx-padding: 5px;
-}
-
-.code-area {
-    -fx-background-color: transparent;
-}
-
-.code-area > .viewport {
-    -fx-background-color: transparent;
 }
 
 .code-pane {
@@ -375,15 +371,15 @@ Slider.control-detail-editor {
     -fx-text-fill: white;
 }
 
-.memo-area .scroll-pane {
+.scroll-pane {
     -fx-background-color: transparent;
 }
 
-.memo-area .scroll-pane .viewport {
+.scroll-pane .viewport {
     -fx-background-color: transparent;
 }
 
-.memo-area .scroll-pane .content {
+.scroll-pane .content {
     -fx-background-color: transparent;
 }
 
@@ -504,19 +500,6 @@ Slider.control-detail-editor {
 
 .parameter-def .hextant-text {
     -fx-font-size: 14px;
-}
-
-.synth-def-ref-box {
-    -fx-padding: 5px;
-    -fx-alignment: center-left;
-    -fx-border-width: 2px;
-    -fx-border-color: transparent;
-    -fx-spacing: 5px;
-}
-
-.synth-def-ref-box:hover {
-    -fx-border-color: black;
-    -fx-border-radius: 5px;
 }
 
 .pitch-line {

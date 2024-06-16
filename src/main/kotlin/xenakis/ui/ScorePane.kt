@@ -168,12 +168,12 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
             alertError("Parameter 'buf' of SynthDef ${synthDef.name.now} is not marked as a PlayBuf source")
             return
         }
-        val group = context[GroupRegistry].getDefault()
         val controls = synthDef.defaultControls(context)
-        controls["buf"] = BufferControl(sample.createReference(), display = true)
+        val bufCtrl = controls["buf"] as BufferControl
+        bufCtrl.sample.set(sample.createReference())
         @Suppress("UNCHECKED_CAST")
         val synthDefRef = synthDef.createReference() as ObjectReference<SynthDefObject>
-        val obj = SynthObject(name, synthDefRef, group.createReference(), controls)
+        val obj = SynthObject(name, synthDefRef, controls)
         val (x, y) = snapToGrid(ev.x, ev.y)
         obj.position.set(getTime(x), y)
         obj.duration = sample.duration
@@ -430,16 +430,11 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
             Synth -> {
                 val def = context[InstrumentRegistry].selectedInstrument
                 if (def !is SynthDefObject) return
-                val defaultGroup = context[GroupRegistry].getDefault()
                 val initialName = score.availableName(def.name.now)
                 promptNewObjectName("Synth name", initialName) { name ->
                     @Suppress("UNCHECKED_CAST")
                     val ref = def.createReference() as ObjectReference<SynthDefObject>
-                    val obj = SynthObject(
-                        name,
-                        ref, defaultGroup.createReference(),
-                        _controls = def.defaultControls(context)
-                    )
+                    val obj = SynthObject(name, ref, controls = def.defaultControls(context))
                     addObject(obj, rect)
                 }
             }

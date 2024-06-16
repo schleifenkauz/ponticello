@@ -6,7 +6,9 @@ import hextant.serial.SnapshotAware
 import kotlinx.serialization.Serializable
 import reaktive.value.ReactiveBoolean
 import reaktive.value.ReactiveString
+import reaktive.value.ReactiveVariable
 import reaktive.value.binding.binding
+import reaktive.value.reactiveVariable
 import xenakis.model.*
 import xenakis.sc.Rate
 
@@ -16,8 +18,15 @@ class BusSelector(
     context: Context,
     val preferredRate: Rate? = null,
     val preferredChannels: Int = -1,
-    initialValue: BusObjectReference = getDefaultBus(context, preferredRate, preferredChannels)
-) : ObjectSelector<BusObject, BusObjectReference>(context, initialValue), ScExprEditor<BusObjectReference> {
+    selected: ReactiveVariable<BusObjectReference>
+) : ObjectSelector<BusObject, BusObjectReference>(context, selected), ScExprEditor<BusObjectReference> {
+    constructor(
+        context: Context,
+        preferredRate: Rate? = null,
+        preferredChannels: Int = -1,
+        initialValue: BusObjectReference = getDefaultBus(context, preferredRate, preferredChannels)
+    ) : this(context, preferredRate, preferredChannels, reactiveVariable(initialValue))
+
     override val isNullable: Boolean
         get() = false
 

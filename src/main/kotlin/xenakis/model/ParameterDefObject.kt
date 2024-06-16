@@ -18,9 +18,10 @@ class ParameterDefObject(
     override fun canRenameTo(newName: String): Boolean = true
 
     fun defaultControl(context: Context) = when (val spec = spec.now) {
-        is BufferControlSpec -> BufferControl(null)
-        is BusControlSpec -> BusControl(context[BusRegistry].getDefault().createReference())
-        is NumericalControlSpec -> ConstantControl(spec.defaultValue.get())
+        is BufferControlSpec -> BufferControl(reactiveVariable(null))
+        is BusControlSpec -> BusControl(reactiveVariable(context[BusRegistry].getDefault().createReference()))
+        is NumericalControlSpec -> ConstantControl(reactiveVariable(spec.defaultValue.get()))
+        is GroupControlSpec -> GroupControl(reactiveVariable(context[GroupRegistry].getDefault().createReference()))
     }
 
     override fun createReference(): Nothing = throw UnsupportedOperationException()
@@ -28,15 +29,15 @@ class ParameterDefObject(
     override fun toString(): String = "${name.now}: ${spec.now}"
 
     companion object {
-        val freq = ParameterDefObject(
+        private val freq = ParameterDefObject(
             "freq",
             NumericalControlSpec(440.0, 20.0, 20000.0, Warp.Exponential, 1.0, Color.BLACK)
         )
-        val amp = ParameterDefObject(
+        private val amp = ParameterDefObject(
             "amp",
             NumericalControlSpec(0.1, 0.0, 1.0, Warp.Linear, 0.01, Color.ORANGE)
         )
-        val pan = ParameterDefObject(
+        private val pan = ParameterDefObject(
             "pan",
             NumericalControlSpec(0.0, -1.0, 1.0, Warp.Linear, 0.1, Color.BLUE)
         )

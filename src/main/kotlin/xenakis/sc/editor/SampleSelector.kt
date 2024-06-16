@@ -2,16 +2,17 @@ package xenakis.sc.editor
 
 import hextant.context.Context
 import hextant.serial.Snapshot
-import xenakis.model.ObjectRegistry
-import xenakis.model.SampleObject
-import xenakis.model.SampleObjectReference
-import xenakis.model.SampleRegistry
+import reaktive.value.ReactiveVariable
+import reaktive.value.reactiveVariable
+import xenakis.model.*
 import xenakis.ui.SampleRegistryPane
 
 class SampleSelector(
     context: Context,
-    initialValue: SampleObjectReference?
-) : ObjectSelector<SampleObject, SampleObjectReference?>(context, initialValue) {
+    selected: ReactiveVariable<SampleObjectReference?>
+) : ObjectSelector<SampleObject, SampleObjectReference?>(context, selected) {
+    constructor(context: Context, initialValue: SampleObjectReference?) : this(context, reactiveVariable(initialValue))
+
     override val isNullable: Boolean
         get() = true
     override val registry: ObjectRegistry<SampleObject>
@@ -19,7 +20,10 @@ class SampleSelector(
 
     override fun createNewObject(name: String): SampleObject? = context[SampleRegistryPane].addObject(name)
 
-    override fun createSnapshot(): Snapshot<*> {
-        TODO("Not yet implemented")
+    override fun createSnapshot(): Snapshot<*> = Snap()
+
+    private class Snap : ObjectSelector.Snap<SampleObject, SampleObjectReference?>() {
+        override val serializer: ObjectReference.Serializer<SampleObjectReference?>
+            get() = SampleObjectReference.Serializer
     }
 }

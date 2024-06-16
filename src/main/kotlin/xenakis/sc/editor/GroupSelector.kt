@@ -4,6 +4,7 @@ import hextant.context.Context
 import hextant.serial.Snapshot
 import hextant.serial.SnapshotAware
 import kotlinx.serialization.Serializable
+import reaktive.value.ReactiveVariable
 import reaktive.value.reactiveVariable
 import xenakis.model.*
 
@@ -11,8 +12,12 @@ import xenakis.model.*
 @Serializable(with = SnapshotAware.Serializer::class)
 class GroupSelector(
     context: Context,
-    group: GroupObjectReference = context[GroupRegistry].getDefault().createReference()
-) : ObjectSelector<GroupObject, GroupObjectReference>(context, group), ScExprEditor<GroupObjectReference> {
+    selected: ReactiveVariable<GroupObjectReference>
+) : ObjectSelector<GroupObject, GroupObjectReference>(context, selected), ScExprEditor<GroupObjectReference> {
+    constructor(
+        context: Context, group: GroupObjectReference = context[GroupRegistry].getDefault().createReference()
+    ) : this(context, reactiveVariable(group))
+
     override val isNullable: Boolean
         get() = false
 

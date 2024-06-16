@@ -7,6 +7,8 @@ import javafx.scene.input.MouseEvent
 import javafx.scene.layout.Pane
 import javafx.scene.shape.Circle
 import javafx.scene.shape.Polyline
+import reaktive.value.binding.map
+import reaktive.value.fx.asObservableValue
 import xenakis.impl.Point
 import xenakis.model.Envelope
 import xenakis.model.EnvelopeControl
@@ -37,7 +39,7 @@ class EnvelopeEditor(
 
     init {
         mouseInfo.isVisible = false
-        line.stroke = color
+        line.strokeProperty().bind(color.asObservableValue())
         createNewPointsOnClick()
         setupPositionInfo()
         setupLineDragging()
@@ -151,7 +153,10 @@ class EnvelopeEditor(
     }
 
     private fun addHandle(idx: Int, x: Double, y: Double) {
-        val handle = Circle(x, y, HANDLE_RADIUS, color)
+        val handle = Circle(x, y, HANDLE_RADIUS)
+        handle.fillProperty().bind(color.asObservableValue())
+        handle.strokeProperty().bind(color.map { c -> c.darker() }.asObservableValue())
+        handle.strokeWidthProperty().bind(handle.hoverProperty().map { hover -> if (hover) 2.0 else 0.0 })
         setupHandle(handle)
         pane.children.add(handle)
         handles.add(idx, handle)
@@ -159,8 +164,6 @@ class EnvelopeEditor(
 
     private fun setupHandle(handle: Circle) {
         var dragging = false
-        handle.stroke = color.darker()
-        handle.strokeWidthProperty().bind(handle.hoverProperty().map { hover -> if (hover) 2.0 else 0.0 })
         handle.setupDragging(
             onPressed = { parentPane.context[UndoManager].beginCompoundEdit("Move envelope point") },
             onReleased = { parentPane.context[UndoManager].finishCompoundEdit("Move envelope point") }

@@ -16,9 +16,7 @@ import javafx.application.Platform
 import javafx.geometry.Orientation
 import javafx.geometry.Pos
 import javafx.scene.Scene
-import javafx.scene.control.Button
-import javafx.scene.control.SplitPane
-import javafx.scene.control.Tooltip
+import javafx.scene.control.*
 import javafx.scene.layout.HBox
 import javafx.scene.layout.Pane
 import javafx.scene.layout.Priority
@@ -57,14 +55,17 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
     private lateinit var serverTreeCodeWindow: SubWindow
     private lateinit var serverSetupCodeWindow: SubWindow
     private val settingsWindow: Stage
+    private val contextBar = HBox()
+    private val detailPane = VBox(10.0).apply {
+        styleClass("tool-pane")
+        children.add(Label("Object details") styleClass "tool-pane-heading")
+    }
 
     private lateinit var playBtn: Button
     private lateinit var stopBtn: Button
-
     lateinit var player: ScorePlayer
-    private lateinit var shellWindow: Stage
 
-    private val contextBar = HBox(5.0)
+    private lateinit var shellWindow: Stage
     private lateinit var selectedObjectObserver: Observer
 
     private var displaysProject = false
@@ -73,8 +74,6 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
 
     init {
         context[XenakisUI] = this
-        contextBar.alwaysHGrow()
-        contextBar.centerChildrenVertically()
         context[HelpBrowser] = HelpBrowser(context)
         settingsWindow = SubWindow(SettingsPane(context[Settings], context), "Settings", context)
         settingsWindow.width = 1000.0
@@ -124,10 +123,13 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
 
         project.context[ScoreObjectSelector] = ScoreObjectSelector(project.context, scoreView)
         selectedObjectObserver = scoreView.selector.singleSelected.forEach { view ->
+            if (detailPane.children.size == 2) detailPane.children.removeAt(1)
             if (view == null) {
-                contextBar.children.clear()
+                contextBar.isVisible = false
             } else {
-                contextBar.children.setAll(view.header)
+                detailPane.children.add(view.detailPane)
+                contextBar.isVisible = true
+                contextBar.children.setAll(view.actions)
             }
         }
 
@@ -195,7 +197,7 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
     }
 
     private fun createLayout(): VBox {
-        val toolPanes = SplitPane(synthDefsPane, busRegistryPane, samplesPane, groupsPane)
+        val toolPanes = SplitPane(detailPane, synthDefsPane, busRegistryPane, samplesPane, groupsPane)
         toolPanes.orientation = Orientation.VERTICAL
         val horizontalSplitter = SplitPane(scoreView, toolPanes)
         SplitPane.setResizableWithParent(toolPanes, false)
@@ -205,7 +207,6 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
             }
         }
         val toolbar = createToolbar()
-        contextBar.prefWidthProperty().bind(toolbar.widthProperty().multiply(0.33))
         for (box in toolbar.children) HBox.setHgrow(box, Priority.ALWAYS)
         VBox.setVgrow(horizontalSplitter, Priority.ALWAYS)
         val layout = VBox(toolbar, horizontalSplitter)
@@ -241,10 +242,11 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
                 10.0,
                 fileBar, undoRedoBar, playerBar, interactionConfig,
                 toolSelector styleClass "toolbar-part", layoutBar
-            ), HBox(
-                contextBar styleClass "toolbar-part",
-                miscBar
-            )
+            ),
+            infiniteSpace(),
+            HBox(contextBar styleClass "toolbar-part"),
+            infiniteSpace(),
+            miscBar
         ).styleClass("toolbar")
     }
 
@@ -375,12 +377,6 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
 
             on("DELETE") { scoreView.removeSelected() }
 
-            on("Ctrl+D") {
-                val view = scoreView.selector.singleSelected.now
-                if (view is SynthObjectView) {
-                    view.openControlAssignment()
-                }
-            }
             on("Alt?+M") {
                 scoreView.selector.toggleMuteSelected()
             }

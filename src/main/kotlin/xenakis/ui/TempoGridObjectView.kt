@@ -37,7 +37,7 @@ class TempoGridObjectView(val obj: TempoGridObject) : ScoreObjectView(obj) {
 
     override fun initialize(parent: ScorePane) {
         super.initialize(parent)
-        createConfigurationBar(header, obj)
+        createConfigurationBar(detailPane, obj)
         marker.visibleProperty().bind(context[currentProject].settings.snapEnabled.asObservableValue())
         repaint()
     }

@@ -1,7 +1,6 @@
 package xenakis.ui
 
 import hextant.context.Context
-import hextant.fx.initHextantScene
 import hextant.fx.label
 import hextant.undo.AbstractEdit
 import hextant.undo.Edit
@@ -15,6 +14,7 @@ import javafx.scene.layout.*
 import javafx.scene.paint.Color
 import javafx.scene.paint.Color.BLACK
 import org.controlsfx.control.ToggleSwitch
+import reaktive.Observer
 import reaktive.value.ReactiveValue
 import reaktive.value.binding.map
 import reaktive.value.binding.orElse
@@ -29,9 +29,8 @@ import xenakis.model.InteractionSettings.SnapOption
 import xenakis.sc.NumericalControlSpec
 import xenakis.ui.ToolSelector.Tool
 import xenakis.ui.XenakisController.Companion.currentProject
-import java.util.logging.Logger
 
-abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionListener {
+abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionListener, SynthControls.View {
     var isInitialized: Boolean = false
         private set
     lateinit var pane: ScorePane
@@ -40,12 +39,13 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
 
     private lateinit var nameEditor: NameControl
     private lateinit var muteUnmuteBtn: Button
-    val header = HBox(20.0).centerChildrenVertically()
-    private val actions = HBox(10.0).centerChildrenVertically()
-    protected val envelopesPane = Pane()
+    private val envelopeDisplayObservers = mutableMapOf<String, Observer>()
+    val actions = HBox().centerChildrenVertically() styleClass "actions"
+    private val knobControls = FlowPane().centerChildrenVertically() styleClass "knobs"
+    val detailPane = DetailPane()
 
+    protected val envelopesPane = Pane()
     private val envelopeEditors = mutableListOf<EnvelopeEditor>()
-    private val knobControls = HBox(10.0)
 
     protected open val defaultBackgroundColor: ReactiveValue<Color>
         get() = reactiveVariable(BLACK)
@@ -54,17 +54,14 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
     protected open val nonSelectedBorderColor: Color get() = Color.GRAY
     protected val colorPicker: ColorPicker = ColorPicker() styleClass "button"
 
-    private lateinit var window: SubWindow
-
     init {
         styleClass("score-object")
         colorPicker.prefWidth = 30.0
     }
 
-    protected open val supportedActions get() = listOf(Icon.Delete, Icon.Play, Icon.Mute, Icon.Repeat, Icon.ExtraWindow)
+    protected open val supportedActions get() = listOf(Icon.Delete, Icon.Play, Icon.Mute, Icon.Repeat)
 
     private fun setupActions() {
-        header.children.add(actions)
         if (Icon.Repeat in supportedActions) addAction(Icon.Repeat, "Loop this object", ::createLoop)
         if (Icon.Mute in supportedActions) {
             val icon = if (myObject.muted) Icon.Mute else Icon.Unmute
@@ -74,7 +71,6 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
         }
         if (Icon.Play in supportedActions) addAction(Icon.Play, "Play this object", ::playMyObject)
         if (Icon.Delete in supportedActions) addAction(Icon.Delete, "Delete this object", ::delete)
-        if (Icon.ExtraWindow in supportedActions) addAction(Icon.ExtraWindow, "Open in extra window") { window.show() }
     }
 
     fun playMyObject() {
@@ -129,17 +125,6 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
         }
     }
 
-    protected open fun getSubWindowView(): Region = pane.createObjectView(myObject).also { v ->
-        v.pane = pane
-        v.displayEnvelopes()
-        v.displayKnobs()
-        v.myObject.addView(v)
-    }
-
-    fun showInSubWindow() {
-        window.show()
-    }
-
     open fun initialize(parent: ScorePane) {
         this.pane = parent
         initializeLayout()
@@ -153,8 +138,10 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
         setBackground()
         border = solidBorder(nonSelectedBorderColor, width = 2.0)
         setupCutting()
-        initializeHeader()
-        displayEnvelopes()
+        initializeNameEditor()
+        setupActions()
+        children.add(envelopesPane)
+        setVgrow(envelopesPane, Priority.ALWAYS)
         displayKnobs()
         myObject.addView(this)
         isInitialized = true
@@ -168,10 +155,9 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
         }
     }
 
-    private fun initializeHeader() {
+    private fun initializeNameEditor() {
         nameEditor = NameControl(myObject)
-        header.children.add(nameEditor)
-        setupActions()
+        detailPane.addItem("Name: ", nameEditor)
     }
 
     private fun initializeLayout() {
@@ -180,17 +166,6 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
         prefWidth = getDisplayWidth()
         prefHeight = myObject.height
         myObject.position.addListener(this)
-    }
-
-    private fun setupSubWindow() {
-        val viewInSubWindow = getSubWindowView()
-        window = SubWindow(viewInSubWindow, myObject.name.now, context, SubWindow.Type.Modal)
-        window.titleProperty().bind(myObject.name.asObservableValue())
-        window.width = 1000.0
-        window.height = 1000.0
-        window.scene.initHextantScene(context)
-        //viewInSubWindow.prefWidthProperty().bind(window.widthProperty())
-        //viewInSubWindow.prefHeightProperty().bind(window.heightProperty())
     }
 
     protected fun addAction(icon: Icon, action: String?, onAction: () -> Unit): Button {
@@ -219,23 +194,28 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
         setPseudoClassState("muted", myObject.muted)
     }
 
-    fun reassignedControl(parameter: String, oldControl: ParameterControl, newControl: ParameterControl) {
+    override fun reassignedControl(parameter: String, oldControl: ParameterControl, control: ParameterControl) {
         removedControl(parameter, oldControl)
-        addedControl(parameter, newControl)
+        addedControl(parameter, control)
     }
 
-    open fun removedControl(parameter: String, oldControl: ParameterControl) {
-        when (oldControl) {
-            is EnvelopeControl -> removeEnvelope(parameter)
+    override fun removedControl(parameter: String, control: ParameterControl) {
+        when (control) {
+            is EnvelopeControl -> removedEnvelopeControl(parameter)
             is KnobControl -> removeKnob(parameter)
             else -> {}
         }
     }
 
-    open fun addedControl(parameter: String, newControl: ParameterControl) {
-        when (newControl) {
-            is EnvelopeControl -> displayEnvelope(parameter, newControl)
-            is KnobControl -> displayKnob(parameter, newControl)
+    private fun removedEnvelopeControl(parameter: String) {
+        removeEnvelope(parameter)
+        envelopeDisplayObservers.remove(parameter)!!.kill()
+    }
+
+    override fun addedControl(parameter: String, control: ParameterControl) {
+        when (control) {
+            is EnvelopeControl -> addedDisplayControl(control, parameter)
+            is KnobControl -> displayKnob(parameter, control)
             else -> {}
         }
     }
@@ -250,16 +230,14 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
 
     private fun removeKnob(parameter: String) {
         knobControls.children.removeIf { k -> k is Knob && k.parameter == parameter }
-        if (knobControls.children.isEmpty()) header.children.remove(knobControls)
     }
 
-    private fun displayEnvelopes() {
-        setVgrow(envelopesPane, Priority.ALWAYS)
-        for ((parameter, control) in myObject.associatedControls) {
-            if (control !is EnvelopeControl || !control.display) continue
-            displayEnvelope(parameter, control)
+    private fun addedDisplayControl(control: EnvelopeControl, parameter: String) {
+        if (control.display.now) displayEnvelope(parameter, control)
+        envelopeDisplayObservers[parameter] = control.display.observe { _, _, display ->
+            if (display) displayEnvelope(parameter, control)
+            else removeEnvelope(parameter)
         }
-        if (envelopesPane !in children) children.add(envelopesPane)
     }
 
     private fun displayEnvelope(parameter: String, control: EnvelopeControl) {
@@ -276,14 +254,12 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
             if (control !is KnobControl) continue
             displayKnob(parameter, control)
         }
-        if (knobControls !in header.children) header.children.add(knobControls)
     }
 
     private fun displayKnob(parameter: String, control: KnobControl) {
         val spec = myObject.getSpec(parameter) as NumericalControlSpec
         val knob = Knob(parameter, control, spec, radius = 24.0, context)
         knobControls.children.add(knob)
-        if (knobControls !in header.children) header.children.add(knobControls)
     }
 
     private fun setupCutting() {
@@ -452,9 +428,5 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
             if (other is ResizeEdit && other.obj == this.obj && other.cursor == this.cursor && other.ev.isShiftDown == this.ev.isShiftDown)
                 ResizeEdit(obj, oldWidth, oldHeight, other.newWidth, other.newHeight, ev, cursor)
             else null
-    }
-
-    companion object {
-        private val logger = Logger.getLogger("ScoreObjectView")
     }
 }

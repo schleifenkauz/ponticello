@@ -18,12 +18,11 @@ class EnvelopeObjectView(val obj: EnvelopeObject) : ScoreObjectView(obj) {
 
     override fun initialize(parent: ScorePane) {
         super.initialize(parent)
-        val btn = Icon.Details.button(action = "Edit Envelope configuration") {
+        addAction(Icon.Details, action = "Edit Envelope configuration") {
             showEnvelopeConfig(context, obj.busSelector, obj.spec) { spec -> obj.spec = spec }
         }
         val selectorControl = ObjectSelectorControl(obj.busSelector, createBundle())
-        header.children.add(1, selectorControl)
-        header.children.add(1, btn)
+        detailPane.addItem("Output bus: ", selectorControl)
     }
 
     fun updatedSpec() {

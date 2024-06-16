@@ -2,12 +2,16 @@ package xenakis.model
 
 import hextant.context.Context
 import hextant.core.editor.ListenerManager
+import hextant.serial.EditorRoot
 import javafx.geometry.HorizontalDirection
 import javafx.scene.paint.Color
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
+import reaktive.value.ReactiveVariable
+import reaktive.value.now
+import reaktive.value.reactiveVariable
 import xenakis.impl.ColorSerializer
-import xenakis.sc.ScExpr
+import xenakis.sc.editor.ScExprExpander
 import xenakis.ui.KnobControlView
 
 @Serializable
@@ -43,8 +47,8 @@ class KnobControl(private var value: Double) : ParameterControl() {
 @Serializable
 class EnvelopeControl(
     val envelope: Envelope,
-    @Serializable(with = ColorSerializer::class) val displayColor: Color,
-    val display: Boolean
+    val displayColor: ReactiveVariable<@Serializable(with = ColorSerializer::class) Color>,
+    val display: ReactiveVariable<Boolean>
 ) : ParameterControl() {
     override fun copy(): ParameterControl =
         EnvelopeControl(envelope = envelope.copy(), displayColor, display)
@@ -54,36 +58,46 @@ class EnvelopeControl(
 }
 
 @Serializable
-class BusControl(val bus: BusObjectReference) : ParameterControl() {
+class BusControl(val bus: ReactiveVariable<BusObjectReference>) : ParameterControl() {
     override fun initialize(context: Context) {
-        bus.resolve(context)
+        bus.now.resolve(context)
     }
 }
 
 @Serializable
-class BusValueControl(val bus: BusObjectReference) : ParameterControl() {
+class BusValueControl(val bus: ReactiveVariable<BusObjectReference>) : ParameterControl() {
     override fun initialize(context: Context) {
-        bus.resolve(context)
+        bus.now.resolve(context)
     }
 }
 
 @Serializable
-data class SingleBusValueControl(val bus: BusObjectReference) : ParameterControl() {
+data class SingleBusValueControl(val bus: ReactiveVariable<BusObjectReference>) : ParameterControl() {
     override fun initialize(context: Context) {
-        bus.resolve(context)
+        bus.now.resolve(context)
     }
 }
 
 @Serializable
-data class BufferControl(val sample: SampleObjectReference?, val display: Boolean = true) : ParameterControl() {
+data class BufferControl(
+    val sample: ReactiveVariable<SampleObjectReference?>,
+    val display: ReactiveVariable<Boolean> = reactiveVariable(true)
+) : ParameterControl() {
     override fun initialize(context: Context) {
-        sample?.resolve(context)
+        sample.now?.resolve(context)
     }
 }
 
 @Serializable
-data class CustomControl(val expr: ScExpr) : ParameterControl()
+data class GroupControl(val group: ReactiveVariable<GroupObjectReference>) : ParameterControl() {
+    override fun initialize(context: Context) {
+        group.now.resolve(context)
+    }
+}
 
 @Serializable
-data class ConstantControl(val value: Double) : ParameterControl()
+data class CustomControl(val expr: EditorRoot<ScExprExpander>) : ParameterControl()
+
+@Serializable
+data class ConstantControl(val value: ReactiveVariable<Double>) : ParameterControl()
 

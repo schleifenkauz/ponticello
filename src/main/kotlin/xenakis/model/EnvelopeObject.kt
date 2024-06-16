@@ -6,6 +6,7 @@ import javafx.geometry.HorizontalDirection
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonObjectBuilder
 import reaktive.value.now
+import reaktive.value.reactiveVariable
 import xenakis.impl.ScWriter
 import xenakis.impl.getSerializableValue
 import xenakis.impl.putSerializableValue
@@ -29,7 +30,12 @@ class EnvelopeObject(
 
     override val viewManager = ListenerManager.createWeakListenerManager<EnvelopeObjectView>()
 
-    private val envelopeControl: EnvelopeControl get() = EnvelopeControl(envelope, spec.associatedColor, display = true)
+    private val envelopeControl: EnvelopeControl
+        get() = EnvelopeControl(
+            envelope,
+            reactiveVariable(spec.associatedColor),
+            display = reactiveVariable(true)
+        )
 
     var spec: NumericalControlSpec = spec
         set(value) {

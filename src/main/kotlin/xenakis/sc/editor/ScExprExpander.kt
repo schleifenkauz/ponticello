@@ -7,12 +7,16 @@ import hextant.context.withoutUndo
 import hextant.core.editor.ConfiguredExpander
 import hextant.core.editor.ExpanderConfig
 import hextant.core.editor.copy
+import hextant.serial.SnapshotAware
 import hextant.undo.makeUndoableEdit
+import kotlinx.serialization.Serializable
 import reaktive.value.now
 import xenakis.model.VSTPluginObject
 import xenakis.sc.*
 import xenakis.ui.showSelectorDialog
 
+@Suppress("SERIALIZER_TYPE_INCOMPATIBLE")
+@Serializable(with = SnapshotAware.Serializer::class)
 class ScExprExpander(context: Context) : ConfiguredExpander<ScExpr, ScExprEditor<*>>(config, context),
     ScExprEditor<ScExpr> {
     constructor(context: Context, text: String) : this(context) {

@@ -97,6 +97,21 @@ class BufferControlSpec(val isPlayBufSource: Boolean = true) : ControlSpec {
     override fun toString(): String = "buf"
 }
 
+@Serializable
+class GroupControlSpec : ControlSpec {
+    override val type: ParameterType
+        get() = ParameterType.Unknown
+
+    override val code: String
+        get() = throw UnsupportedOperationException("Group control has no code")
+
+    override fun equals(other: Any?): Boolean = other is GroupControlSpec
+
+    override fun hashCode(): Int = -1
+
+    override fun toString(): String = "buf"
+}
+
 fun NumericalControlSpec.mapOnto(targetRange: DoubleRange) = SpecTransformation(this, targetRange)
 
 @Choice(defaultValue = "Rate.Audio")

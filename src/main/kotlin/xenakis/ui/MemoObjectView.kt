@@ -39,7 +39,7 @@ class MemoObjectView(val obj: MemoObject) : ScoreObjectView(obj) {
     override fun initialize(parent: ScorePane) {
         super.initialize(parent)
         children.add(label)
-        header.children.add(1, colorPicker)
+        detailPane.addItem("Color: ", colorPicker)
     }
 
     override fun resizeObject(width: Double, height: Double, ev: MouseEvent, cursor: Cursor) {

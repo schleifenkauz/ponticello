@@ -210,10 +210,8 @@ class PianoRollObjectView(private val obj: PianoRollObject) : ScoreObjectView(ob
         drawOrientationLines()
         shadeBlackKeys()
         val instrumentSelector = ObjectSelectorControl(obj.instrumentSelector, createBundle())
-        header.children.add(instrumentSelector)
-        addAction(Icon.Details, action = "Edit event dictionary") {
-            showEventDictionaryEditor(obj.eventDictionary)
-        }
+        detailPane.addItem("Instrument: ", instrumentSelector)
+        detailPane.addLargeItem("Event dictionary", obj.eventDictionary.control)
         addAction(Icon.Transpose, action = "Transpose") {
             showTransposeDialog()
         }

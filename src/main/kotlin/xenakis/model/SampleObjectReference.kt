@@ -12,7 +12,7 @@ class SampleObjectReference(name: String) : AbstractObjectReference<SampleObject
 
     override fun getRegistry(context: Context): ObjectRegistry<SampleObject> = context[SampleRegistry]
 
-    object Serializer : ObjectReference.Serializer<SampleObjectReference>() {
+    object Serializer : ObjectReference.Serializer<SampleObjectReference?>() {
         override fun createReference(name: String): SampleObjectReference = SampleObjectReference(name)
     }
 }

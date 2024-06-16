@@ -16,14 +16,14 @@ import xenakis.model.ObjectRegistry
 import xenakis.sc.view.ObjectSelectorView
 
 abstract class ObjectSelector<O : NamedObject, R : ObjectReference<O>?>(
-    context: Context, initialValue: R
+    context: Context, private val selected: ReactiveVariable<R>
 ) : AbstractEditor<R, ObjectSelectorView<O>>(context) {
-    private var selected = reactiveVariable(initialValue)
+    constructor(context: Context, initialValue: R) : this(context, reactiveVariable(initialValue))
 
     abstract val isNullable: Boolean
 
     init {
-        initialValue?.resolve(context)
+        selected.now?.resolve(context)
     }
 
     override val result: ReactiveValue<R>
@@ -66,27 +66,33 @@ abstract class ObjectSelector<O : NamedObject, R : ObjectReference<O>?>(
         }
     }
 
-    protected abstract class Snap<O : NamedObject, R : ObjectReference<O>> : Snapshot<ObjectSelector<O, R>>() {
-        private lateinit var selected: R
+    protected abstract class Snap<O : NamedObject, R : ObjectReference<O>?> : Snapshot<ObjectSelector<O, R>>() {
+        private var selected: R? = null
+        private var initialized = false
 
         protected abstract val serializer: ObjectReference.Serializer<R>
 
         override fun doRecord(original: ObjectSelector<O, R>) {
+            initialized = true
             selected = original.selected.now
         }
 
+        @Suppress("UNCHECKED_CAST")
         override fun reconstructObject(original: ObjectSelector<O, R>) {
-            original.selected.now = selected
-            selected.resolve(original.context)
+            check(initialized)
+            original.selected.now = selected as R
+            selected?.resolve(original.context)
         }
 
         override fun encode(builder: JsonObjectBuilder) {
-            builder.put("selected", selected.get().name.now)
+            check(initialized)
+            builder.put("selected", selected?.get()?.name?.now)
         }
 
         override fun decode(element: JsonObject) {
-            val name = element.getString("selected")!!
-            selected = serializer.createReference(name)
+            val name = element.getString("selected")
+            selected = name?.let(serializer::createReference)
+            initialized = true
         }
     }
 }

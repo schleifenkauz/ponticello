@@ -2,10 +2,7 @@
 
 ### sound file objects
 
-- maybe have a configurable `playbuf`-synth (additional parameters, filters, etc.)
-  - defaults to simple `PlayBuf`
-- simple effects (e.g. reverse)
-- spectral view
+- reverse!
 
 ### how to react to changes of synth definitions?
 
@@ -77,5 +74,3 @@
 ## Nice to have
 
 - integrate close, maximize, minimize into top toolbar and remove window decoration
-- display all non-envelope controls of a synth in its header?
-  - easy access but might end up cluttering the interface

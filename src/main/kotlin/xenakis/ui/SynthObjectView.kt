@@ -1,7 +1,5 @@
 package xenakis.ui
 
-import bundles.createBundle
-import hextant.undo.UndoManager
 import javafx.geometry.Point2D
 import javafx.geometry.Rectangle2D
 import javafx.scene.Cursor
@@ -14,20 +12,20 @@ import javafx.scene.layout.HBox
 import javafx.scene.paint.Color
 import reaktive.Observer
 import reaktive.value.ReactiveValue
+import reaktive.value.forEach
 import reaktive.value.now
-import xenakis.model.Envelope
-import xenakis.model.EnvelopeControl
-import xenakis.model.ParameterControl
-import xenakis.model.SynthObject
+import reaktive.value.reactiveVariable
+import xenakis.model.*
 import xenakis.sc.NumericalControlSpec
-import xenakis.sc.view.ObjectSelectorControl
-import xenakis.ui.XenakisController.Companion.currentProject
 
-class SynthObjectView(val obj: SynthObject) : ScoreObjectView(obj) {
+class SynthObjectView(val obj: SynthObject) : ScoreObjectView(obj), SynthControls.View {
     private lateinit var image: Image
     private val spectrogramViews = mutableListOf<ImageView>()
 
-    private var sampleContentsObserver: Observer? = null
+    private var startPosObserver: Observer? = null
+    private var rateObserver: Observer? = null
+    private var sampleObserver: Observer? = null
+    private var sampleContentObserver: Observer? = null
 
     init {
         styleClass("synth-object")
@@ -35,44 +33,59 @@ class SynthObjectView(val obj: SynthObject) : ScoreObjectView(obj) {
 
     override fun initialize(parent: ScorePane) {
         super.initialize(parent)
-        val btn = Icon.Details.button(action = "Open control assignment view") { openControlAssignment() }
-        header.children.add(1, colorPicker)
-        header.children.add(1, btn)
-        header.children.add(1, ObjectSelectorControl(obj.groupSelector, createBundle()))
+        detailPane.addItem("Color:", colorPicker)
+        obj.controls.addView(this)
         setupSynthDefReference()
         listenForMouseEvents()
+        detailPane.addLargeItem("Synth controls", ControlAssignmentView(obj))
+        sampleObserver = obj.sample.forEach { s ->
+            sampleContentObserver?.kill()
+            if (s != null) {
+                sampleContentObserver = s.get().contentsChanged.observe { _ -> loadSpectrogram() }
+                loadSpectrogram()
+            }
+        }
         loadSpectrogram()
     }
 
     override fun resizeObject(width: Double, height: Double, ev: MouseEvent, cursor: Cursor) {
         var newDuration = pane.getDuration(width)
         if (ev.isShiftDown && obj.playBufRate != null) {
-            obj.playBufRate = obj.playBufRate!! * (obj.duration / newDuration)
+            obj.playBufRate!!.now *= (obj.duration / newDuration)
         } else if (obj.playbufStartPos != null) {
             newDuration = pane.getDuration(width)
             if (cursor in setOf(Cursor.W_RESIZE, Cursor.SW_RESIZE, Cursor.NW_RESIZE)) {
-                newDuration = newDuration.coerceAtMost(obj.duration + obj.playbufStartPos!!)
+                newDuration = newDuration.coerceAtMost(obj.duration + obj.playbufStartPos!!.now)
                 val deltaStart = obj.duration - newDuration
-                obj.playbufStartPos = (obj.playbufStartPos!! + deltaStart * (obj.playBufRate ?: 1.0))
+                obj.playbufStartPos!!.now = (obj.playbufStartPos!!.now + deltaStart * (obj.playBufRate?.now ?: 1.0))
             }
         }
         super.resizeObject(pane.getWidth(newDuration), height, ev, cursor)
     }
 
-    override fun removedControl(parameter: String, oldControl: ParameterControl) {
-        super.removedControl(parameter, oldControl)
-        if (parameter == "buf") {
-            sampleContentsObserver?.kill()
-            envelopesPane.children.removeAll(spectrogramViews)
-        } else if (parameter == "startPos" || parameter == "rate") displaySpectrogram()
+    override fun removedControl(parameter: String, control: ParameterControl) {
+        super.removedControl(parameter, control)
+        if (control !is ConstantControl) return
+        when (parameter) {
+            "startPos" -> {
+                startPosObserver?.kill()
+                displaySpectrogram()
+            }
+
+            "rate" -> {
+                rateObserver?.kill()
+                displaySpectrogram()
+            }
+        }
     }
 
-    override fun addedControl(parameter: String, newControl: ParameterControl) {
-        super.addedControl(parameter, newControl)
-        if (parameter == "buf" && obj.sample != null) {
-            sampleContentsObserver = obj.sample?.contentsChanged?.observe { _, _ -> loadSpectrogram() }
-            loadSpectrogram()
-        } else if (parameter == "startPos" || parameter == "rate") displaySpectrogram()
+    override fun addedControl(parameter: String, control: ParameterControl) {
+        super.addedControl(parameter, control)
+        if (control !is ConstantControl) return
+        when (parameter) {
+            "startPos" -> startPosObserver = control.value.forEach { _ -> displaySpectrogram() }
+            "rate" -> startPosObserver = control.value.forEach { _ -> displaySpectrogram() }
+        }
     }
 
     override fun rescale() {
@@ -83,7 +96,7 @@ class SynthObjectView(val obj: SynthObject) : ScoreObjectView(obj) {
     private fun loadSpectrogram() {
         envelopesPane.children.removeAll(spectrogramViews)
         spectrogramViews.clear()
-        val imageFile = obj.sample?.spectrogramFile ?: return
+        val imageFile = obj.sample.now?.get()?.spectrogramFile ?: return
         if (!imageFile.isFile) return
         image = Image(imageFile.inputStream())
         displaySpectrogram()
@@ -92,9 +105,9 @@ class SynthObjectView(val obj: SynthObject) : ScoreObjectView(obj) {
     private fun displaySpectrogram() {
         envelopesPane.children.removeAll(spectrogramViews)
         spectrogramViews.clear()
-        val sample = obj.sample ?: return
-        val startPos = obj.playbufStartPos ?: 0.0
-        val rate = obj.playBufRate ?: 1.0
+        val sample = obj.sample.now?.get() ?: return
+        val startPos = obj.playbufStartPos?.now ?: 0.0
+        val rate = obj.playBufRate?.now ?: 1.0
         val bufDur = (sample.duration - startPos) / rate
         var remainingDuration = obj.duration
         while (remainingDuration != 0.0) {
@@ -128,20 +141,16 @@ class SynthObjectView(val obj: SynthObject) : ScoreObjectView(obj) {
     }
 
     private fun setupSynthDefReference() {
-        val nameLabel = label(obj.synthDef.name) styleClass "synth-def-ref-label"
+        val nameLabel = label(obj.synthDef.name)
         val viewBtn = Icon.View.button(action = "View SynthDef") {
             context[InstrumentRegistryPane].editSynthDef(obj.synthDef)
         }
-        val box = HBox(nameLabel, viewBtn) styleClass "synth-def-ref-box"
-        header.children.add(1, box)
+        val box = HBox(5.0, nameLabel, viewBtn).centerChildrenVertically()
+        detailPane.addItem("SynthDef: ", box)
     }
 
     private fun listenForMouseEvents() {
         addEventHandler(MouseEvent.MOUSE_CLICKED) { ev ->
-            if (ev.clickCount >= 2 && obj.controls.isNotEmpty()) {
-                openControlAssignment()
-                ev.consume()
-            }
             if (ev.isAltDown) {
                 val p = localToScreen(ev.x, ev.y)
                 showNewEnvelopePopup(p)
@@ -155,7 +164,7 @@ class SynthObjectView(val obj: SynthObject) : ScoreObjectView(obj) {
             .filter { p -> p.spec.now is NumericalControlSpec }
             .filter { p ->
                 val control = obj.controls[p.name.now]
-                control !is EnvelopeControl || !control.display
+                control !is EnvelopeControl || !control.display.now
             }
         val menu = ContextMenu()
         for (p in possibleParameters) {
@@ -167,36 +176,16 @@ class SynthObjectView(val obj: SynthObject) : ScoreObjectView(obj) {
                 val env =
                     if (oldControl is EnvelopeControl) oldControl.envelope
                     else Envelope.constant(spec.defaultValue.get(), obj.duration, spec.warp)
-                val control = EnvelopeControl(env, spec.associatedColor, display = true)
-                obj.reassignControl(name, control)
+                val control = EnvelopeControl(
+                    env, reactiveVariable(spec.associatedColor),
+                    display = reactiveVariable(true)
+                )
+                obj.controls.reassignControl(name, control)
             }
             menu.items.add(item)
         }
         menu.isAutoHide = true
         menu.show(scene.window, point.x, point.y)
-    }
-
-    fun openControlAssignment() {
-        //TODO: Highlight unused controls in assignment view with ability to remove them
-        cleanupControls()
-        context[UndoManager].finishCompoundEdit()
-        ControlAssignmentView.show(obj, context[currentProject])
-    }
-
-    private fun cleanupControls() {
-        context[UndoManager].beginCompoundEdit("Adjust controls to changes in SynthDef")
-        val parameters = obj.synthDef.parameters.now
-        val parameterNames = parameters.map { p -> p.name.now }
-        for ((parameter, _) in obj.controls.toMap()) {
-            if (parameter !in parameterNames) obj.removeControl(parameter)
-        }
-        for (param in parameters) {
-            val name = param.name.now
-            if (name !in obj.controls.keys) {
-                val control = param.defaultControl(context)
-                obj.addControl(name, control)
-            }
-        }
     }
 
     override val defaultBackgroundColor: ReactiveValue<Color>
