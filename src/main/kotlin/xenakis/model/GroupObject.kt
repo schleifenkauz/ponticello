@@ -14,6 +14,9 @@ class GroupObject(
 ) : AbstractSuperColliderObject() {
     override val variableName: String get() = if (isDefault) "s.defaultGroup" else "~grp_${name.now}"
 
+    override val functionName: String
+        get() = if (isDefault) "~default_group_init" else super.functionName
+
     override val liveCycleType: LiveCycleType
         get() = LiveCycleType.ServerTree
 
@@ -28,9 +31,9 @@ class GroupObject(
         if (!isDefault) +"$variableName = Group.new"
         val prev = previous
         if (prev != null) {
-            client.run("${variableName}.moveAfter(${prev.variableName});")
+            +"${variableName}.moveAfter(${prev.variableName})"
         } else {
-            client.run("$variableName.moveToHead;")
+            +"$variableName.moveToHead"
         }
     }
 

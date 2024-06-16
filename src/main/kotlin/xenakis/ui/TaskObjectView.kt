@@ -1,5 +1,6 @@
 package xenakis.ui
 
+import hextant.context.Context
 import hextant.fx.initHextantScene
 import javafx.scene.control.ScrollPane
 import javafx.scene.input.MouseButton
@@ -18,12 +19,16 @@ class TaskObjectView(val obj: TaskObject) : ScoreObjectView(obj) {
 
     init {
         styleClass("task-object")
-        window.titleProperty().bind(obj.name.map { name -> "Code: $name" }.asObservableValue())
-        window.resize(1000.0, 1000.0)
         val nameLabel = label(obj.name)
         val layout = BorderPane(nameLabel)
         children.add(layout)
-        window.scene.initHextantScene(context, applyStyle = false)
+    }
+
+    override fun initialize(parent: ScorePane) {
+        super.initialize(parent)
+        window.titleProperty().bind(obj.name.map { name -> "Code: $name" }.asObservableValue())
+        window.resize(1000.0, 1000.0)
+        window.scene.initHextantScene(context)
         addEventHandler(MouseEvent.MOUSE_CLICKED) { ev ->
             if (ev.button == MouseButton.PRIMARY && ev.clickCount >= 2) {
                 window.show()

@@ -56,7 +56,8 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
 
     init {
         styleClass("score-object")
-        colorPicker.prefWidth = 30.0
+        colorPicker.setFixedWidth(30.0)
+        colorPicker.prefHeight = 30.0
     }
 
     protected open val supportedActions get() = listOf(Icon.Delete, Icon.Play, Icon.Mute, Icon.Repeat)
@@ -97,8 +98,8 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
         val repetitionsInput = Spinner<Int>(1, 1000, 1, 1)
         val box = VBox(
             10.0,
-            HBox(label("Loop period ($periodUnit): ").setPreferredWidth(200.0), periodInput).centerChildrenVertically(),
-            HBox(label("Number of repetitions").setPreferredWidth(200.0), repetitionsInput).centerChildrenVertically(),
+            HBox(label("Loop period ($periodUnit): ").setFixedWidth(200.0), periodInput).centerChildrenVertically(),
+            HBox(label("Number of repetitions").setFixedWidth(200.0), repetitionsInput).centerChildrenVertically(),
             switchChainArrows
         )
         box.showDialog(

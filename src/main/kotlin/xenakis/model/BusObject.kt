@@ -21,6 +21,7 @@ class BusObject(
     val isOutput: Boolean = false
 ) : AbstractSuperColliderObject() {
     override val variableName get() = if (isOutput) "0" else "~bus_${name.now}"
+    override val functionName get() = if (isOutput) "~default_bus_init" else "~bus_${name.now}"
 
     override val liveCycleType: LiveCycleType
         get() = LiveCycleType.ServerBoot

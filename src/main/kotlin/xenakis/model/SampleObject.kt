@@ -102,8 +102,12 @@ class SampleObject(
     }
 
     private fun createSpectrogram(): CompletableFuture<Unit> {
-        val command =
-            arrayOf("sox", wavFile.absolutePath, "-n", "spectrogram", "-r", "-o", spectrogramFile.absolutePath)
+        val soxCommand = System.getenv().getOrDefault("sox_path", "sox")
+        val command = arrayOf(
+            soxCommand, wavFile.absolutePath,
+            "-n", "spectrogram", "-r",
+            "-o", spectrogramFile.absolutePath
+        )
         return Runtime.getRuntime()
             .exec(command)
             .onExit().thenApply { proc ->

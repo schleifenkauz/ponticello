@@ -3,6 +3,7 @@ package xenakis.ui
 import javafx.scene.Node
 import javafx.scene.control.Label
 import javafx.scene.layout.HBox
+import javafx.scene.layout.Priority
 import javafx.scene.layout.VBox
 
 class DetailPane : VBox() {
@@ -13,6 +14,7 @@ class DetailPane : VBox() {
     fun addItem(name: String, control: Node) {
         val label = Label(name)
         label.prefWidth = LABEL_WIDTH
+        HBox.setHgrow(control, Priority.ALWAYS)
         val box = HBox(5.0, label, control).centerChildrenVertically() styleClass "detail-item"
         children.add(box)
     }

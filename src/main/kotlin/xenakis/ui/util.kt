@@ -252,4 +252,13 @@ fun Window.resize(width: Double, height: Double) {
     this.height = height
 }
 
-fun <R : Region> R.setPreferredWidth(width: Double) = also { r -> r.prefWidth = width }
+fun Window.relocate(x: Double, y: Double) {
+    this.x = x
+    this.y = y
+}
+
+fun <R : Region> R.setFixedWidth(width: Double) = also { r ->
+    r.prefWidth = width
+    r.minWidth = width
+    r.maxWidth = width
+}

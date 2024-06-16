@@ -26,16 +26,16 @@ class BusRegistryPane(private val busses: BusRegistry) : SuperColliderObjectRegi
 
     override fun ObjectBox<BusObject>.configureObjectBox() {
         val rateSelector = ComboBox(FXCollections.observableList(Rate.values().asList()))
-        val channelsSpinner = Spinner<Int>(0, 12, 2)
-        channelsSpinner.prefWidth = 70.0
-        if (!obj.isOutput) {
+        rateSelector.minWidth = USE_PREF_SIZE
+        val channelsSpinner = Spinner<Int>(0, 12, 2).setFixedWidth(50.0)
+        if (obj.isOutput) {
+            rateSelector.valueProperty().bind(obj.rate.asObservableValue())
+            rateSelector.isDisable = true
+            channelsSpinner.valueFactory.valueProperty().bind(obj.channels.asObservableValue())
+            channelsSpinner.isDisable = true
+        } else {
             rateSelector.valueProperty().bindBidirectional(obj.rate.asProperty())
             channelsSpinner.valueFactory.valueProperty().bindBidirectional(obj.channels.asProperty())
-        } else {
-            rateSelector.valueProperty().bind(obj.rate.asObservableValue())
-            rateSelector.isEditable = false
-            channelsSpinner.valueFactory.valueProperty().bind(obj.channels.asObservableValue())
-            channelsSpinner.isEditable = false
         }
         addExtraControl(rateSelector, channelsSpinner)
         setOnDragDetected { ev ->

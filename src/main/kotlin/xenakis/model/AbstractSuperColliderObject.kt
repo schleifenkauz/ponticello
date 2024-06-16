@@ -8,7 +8,7 @@ import xenakis.impl.SuperColliderClient
 abstract class AbstractSuperColliderObject : AbstractRenamableObject(), SuperColliderObject {
     abstract val variableName: String
 
-    private val functionName get() = "~init_${name.now}"
+    protected open val functionName get() = "${variableName}_init"
 
     protected val client get() = context[SuperColliderClient]
 

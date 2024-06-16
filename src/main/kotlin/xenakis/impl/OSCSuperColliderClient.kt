@@ -4,11 +4,16 @@ import com.illposed.osc.OSCMessage
 import com.illposed.osc.OSCMessageEvent
 import com.illposed.osc.OSCMessageListener
 import com.illposed.osc.messageselector.OSCPatternAddressMessageSelector
+import com.illposed.osc.transport.NetworkProtocol
+import com.illposed.osc.transport.OSCPort.DEFAULT_SC_LANG_OSC_PORT
 import com.illposed.osc.transport.OSCPortIn
 import com.illposed.osc.transport.OSCPortOut
 import com.illposed.osc.transport.OSCPortOutBuilder
 import xenakis.impl.StatusListener.StatusUpdate
+import java.net.InetAddress
+import java.net.InetSocketAddress
 import java.util.concurrent.CompletableFuture
+import kotlin.io.path.toPath
 
 class OSCSuperColliderClient(
     process: Process,
@@ -64,20 +69,30 @@ class OSCSuperColliderClient(
         private const val SETUP_FILE = "xenakis_setup.scd"
 
         fun create(port: Int = OSCPortOut.DEFAULT_SC_LANG_OSC_PORT): OSCSuperColliderClient {
-            val setupFile = this::class.java.getResource(SETUP_FILE)!!.path!!
+            val setupFile = this::class.java.getResource(SETUP_FILE)!!.toURI().toPath().toFile().superColliderPath
             val sclang = ProcessBuilder(mutableListOf("sclang", "-u", "$port"))
                 .redirectInput(ProcessBuilder.Redirect.PIPE)
                 .redirectOutput(ProcessBuilder.Redirect.PIPE)
                 .start()
             Thread.sleep(100)
-            sclang.outputStream.write("this.executeFile(\"$setupFile\");\n".toByteArray())
+            sclang.outputStream.write("this.executeFile($setupFile);\n".toByteArray())
             sclang.outputStream.flush()
+            val localhost = InetAddress.getLoopbackAddress()
+            val local = InetSocketAddress(localhost, DEFAULT_SC_LANG_OSC_PORT + 20)
+            val remote = InetSocketAddress(localhost, DEFAULT_SC_LANG_OSC_PORT)
             val sender = OSCPortOutBuilder()
-                .setLocalPort(8000)
-                .setRemotePort(port)
+                .setLocalSocketAddress(local)
+                .setRemoteSocketAddress(remote)
                 .build()
-            val receiver = OSCPortIn(8000)
+            val receiver = OSCPortIn(local)
             return OSCSuperColliderClient(sclang, sender, receiver)
+        }
+
+        @JvmStatic
+        fun main(args: Array<String>) {
+            val client = create()
+            Thread.sleep(2000)
+            client.run("'hello'.postln")
         }
     }
 }

@@ -86,8 +86,7 @@ class BufferRegistryPane(
             }
 
             is AllocatedBuffer -> {
-                val channelsSpinner = Spinner<Int>(1, 12, obj.channels.now)
-                channelsSpinner.prefWidth = 70.0
+                val channelsSpinner = Spinner<Int>(1, 12, obj.channels.now).setFixedWidth(70.0)
                 channelsSpinner.valueFactory.valueProperty().bindBidirectional(obj.channels.asProperty())
                 val framesInput = TextField(obj.frames.now.toString())
                 framesInput.promptText = "Number of frames"

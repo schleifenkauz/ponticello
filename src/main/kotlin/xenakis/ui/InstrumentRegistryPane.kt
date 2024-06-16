@@ -100,7 +100,7 @@ class InstrumentRegistryPane(
         }
         children.add(0, selector)
         val colorPicker = colorPicker(obj.color)
-        colorPicker.prefWidth = 30.0
+        colorPicker.setFixedWidth(30.0)
         addExtraControl(colorPicker)
         addAction(Icon.View, "Edit SynthDef") { editSynthDef(obj) }
         if (obj is VSTPluginObject) {
@@ -147,8 +147,7 @@ class InstrumentRegistryPane(
             } else {
                 val pane = ParameterInfoPane(obj.parameters)
                 SubWindow(pane, obj.name.now, registry.context, type = SubWindow.Type.Popup).apply {
-                    width = 1000.0
-                    height = 1000.0
+                    resize(1000.0, 300.0)
                 }
             }
         }

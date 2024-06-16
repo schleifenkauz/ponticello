@@ -487,13 +487,13 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
                 val registerSpinner = Spinner<Int>(0, 10, 4)
                 val octaves = Spinner<Int>(1, 12, 2)
                 val layout = VBox(
-                    HBox(Label("Name: ").setPreferredWidth(150.0), nameField).centerChildrenVertically(),
+                    HBox(Label("Name: ").setFixedWidth(150.0), nameField).centerChildrenVertically(),
                     HBox(
-                        Label("Root pitch class: ").setPreferredWidth(150.0),
+                        Label("Root pitch class: ").setFixedWidth(150.0),
                         rootPitchSelector
                     ).centerChildrenVertically(),
-                    HBox(Label("Base register: ").setPreferredWidth(150.0), registerSpinner).centerChildrenVertically(),
-                    HBox(Label("Octaves: ").setPreferredWidth(150.0), octaves).centerChildrenVertically()
+                    HBox(Label("Base register: ").setFixedWidth(150.0), registerSpinner).centerChildrenVertically(),
+                    HBox(Label("Octaves: ").setFixedWidth(150.0), octaves).centerChildrenVertically()
                 )
                 layout.alignment = Pos.CENTER_LEFT
                 val obj = layout.showDialog("Configure PianoRoll", context) {

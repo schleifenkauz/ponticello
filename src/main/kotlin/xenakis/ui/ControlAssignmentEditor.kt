@@ -57,9 +57,7 @@ class ControlAssignmentEditor(
             obj.controls.reassignControl(parameter, control)
         }
         nameLabel.minWidth = DetailPane.LABEL_WIDTH - 5.0
-        comboBox.prefWidth = COMBO_BOX_WIDTH
-        comboBox.maxWidth = COMBO_BOX_WIDTH
-        comboBox.minWidth = COMBO_BOX_WIDTH
+        comboBox.setFixedWidth(COMBO_BOX_WIDTH)
     }
 
     fun setControl(control: ParameterControl) {

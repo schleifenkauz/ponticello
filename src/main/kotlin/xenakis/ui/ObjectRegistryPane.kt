@@ -5,6 +5,7 @@ import javafx.collections.FXCollections
 import javafx.scene.Node
 import javafx.scene.control.*
 import javafx.scene.layout.HBox
+import javafx.scene.layout.Priority
 import javafx.scene.layout.VBox
 import xenakis.model.NamedObject
 import xenakis.model.ObjectRegistry
@@ -114,7 +115,8 @@ abstract class ObjectRegistryPane<O : NamedObject>(
             val nameDisplay =
                 if (obj is RenamableObject) NameControl(obj)
                 else HBox(label(obj.name).styleClass("name-field")).styleClass("name")
-            children.addAll(nameDisplay, extraControls, infiniteSpace(), actions)
+            HBox.setHgrow(nameDisplay, Priority.ALWAYS)
+            children.addAll(nameDisplay, extraControls, actions)
             addAction(Icon.Delete, "Remove object") { pane.registry.remove(obj) }.isDisable = !pane.canDelete(obj)
         }
 

@@ -138,6 +138,7 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
         Platform.runLater {
             val screenSize = Screen.getPrimary().bounds
             stage.resize(screenSize.width * 0.75, screenSize.height)
+            stage.relocate(0.0, 0.0)
         }
         runFXWithTimeout(1000) {
             scoreView.displayWholeScore()

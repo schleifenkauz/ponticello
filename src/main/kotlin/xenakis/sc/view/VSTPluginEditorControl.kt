@@ -9,7 +9,7 @@ import hextant.fx.view
 import xenakis.sc.editor.VSTPluginEditor
 import xenakis.ui.Icon
 import xenakis.ui.centerChildrenVertically
-import xenakis.ui.setPreferredWidth
+import xenakis.ui.setFixedWidth
 
 class VSTPluginEditorControl @ProvideImplementation(ControlFactory::class) constructor(
     private val editor: VSTPluginEditor,
@@ -27,7 +27,7 @@ class VSTPluginEditorControl @ProvideImplementation(ControlFactory::class) const
         view(editor.channels) {
             set(IntSpinnerControl.MIN, 1)
             set(IntSpinnerControl.MAX, 12)
-        }.setPreferredWidth(70.0)
+        }.setFixedWidth(70.0)
         space()
         add(Icon.View.button(action = "Configure plugin") {
             editor.configurePlugin()

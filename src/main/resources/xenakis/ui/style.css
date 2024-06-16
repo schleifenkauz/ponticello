@@ -256,6 +256,7 @@ Slider.control-detail-editor {
     -fx-background-radius: 5px;
     -fx-background-color: #232323;
     -fx-pref-width: 32px;
+    -fx-min-width: 32px;
     -fx-pref-height: 32px;
 }
 
@@ -268,8 +269,6 @@ Slider.control-detail-editor {
 }
 
 .name {
-    -fx-min-width: 250px;
-    -fx-pref-width: 250px;
     -fx-spacing: 5px;
     -fx-padding: 0px 5px 0px 5px;
     -fx-alignment: center-left;

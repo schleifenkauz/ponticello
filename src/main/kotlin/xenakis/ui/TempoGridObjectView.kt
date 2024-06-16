@@ -115,12 +115,10 @@ class TempoGridObjectView(val obj: TempoGridObject) : ScoreObjectView(obj) {
         private const val MIN_BAR_NUMBER_DIST = 30.0
 
         fun createConfigurationBar(layout: Pane, obj: TempoGridObject) {
-            val bpmSpinner = Spinner<Int>(10, 500, 60)
-            val bpbSpinner = Spinner<Int>(1, 24, 4)
-            val tpbSpinner = Spinner<Int>(1, 24, 4)
-            bpmSpinner.prefWidth = 70.0
-            bpbSpinner.prefWidth = 70.0
-            tpbSpinner.prefWidth = 70.0
+            val bpmSpinner = Spinner<Int>(10, 500, 60).setFixedWidth(100.0)
+            val bpbSpinner = Spinner<Int>(1, 24, 4).setFixedWidth(100.0)
+            val tpbSpinner = Spinner<Int>(1, 24, 4).setFixedWidth(100.0)
+            bpmSpinner.isEditable = true
             val labelBpm = Label("BPM:")
             val x = Label("x")
             bpmSpinner.valueFactory.valueProperty().bindBidirectional(obj.beatsPerMinute.asProperty())
