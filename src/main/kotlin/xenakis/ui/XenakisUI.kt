@@ -168,18 +168,16 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
                 if (proj.isDirectory) {
                     controller.openProject(proj)
                 } else {
-                    val remove =
-                        showYesNoDialog("Project file does not exist. Remove from list?", default = true)
-                    if (remove) {
+                    val remove = showYesNoDialog("Project file does not exist. Remove from list?", default = true)
+                    if (remove == true) {
                         controller.removeFromRecentProjects(proj)
                         recentProjects.children.remove(box)
                     }
                 }
             }
             val removeBtn = Icon.Close.button(action = "Remove from list of recent projects") {
-                val reallyRemove =
-                    showYesNoDialog("Remove project from list of recent projects?", default = true)
-                if (reallyRemove) {
+                val reallyRemove = showYesNoDialog("Remove project from list of recent projects?", default = true)
+                if (reallyRemove == true) {
                     controller.removeFromRecentProjects(proj)
                     recentProjects.children.remove(box)
                 }

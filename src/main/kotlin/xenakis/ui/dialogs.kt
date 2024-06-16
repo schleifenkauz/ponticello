@@ -77,12 +77,13 @@ fun showYesNoDialog(context: Context, question: String, default: Boolean = false
     return future.get()
 }
 
-fun showYesNoDialog(question: String, default: Boolean = false): Boolean {
+fun showYesNoDialog(question: String, default: Boolean = false): Boolean? {
     val alert = Alert(Alert.AlertType.CONFIRMATION, question, ButtonType.YES, ButtonType.NO)
     alert.dialogPane.scene.stylesheets.add("/xenakis/ui/style.css")
     val defaultBtn = if (default) ButtonType.YES else ButtonType.NO
     alert.setDefaultButton(defaultBtn)
-    return alert.showAndWait().getOrNull() == ButtonType.YES
+    val button = alert.showAndWait().getOrNull() ?: return null
+    return button == ButtonType.YES
 }
 
 fun showNumberPrompt(

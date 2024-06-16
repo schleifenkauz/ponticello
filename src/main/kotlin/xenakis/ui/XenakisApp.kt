@@ -21,6 +21,13 @@ class XenakisApp : Application() {
         controller.startSuperCollider()
         val ui = XenakisUI(stage, controller)
         controller.addListener(ui)
+        stage.setOnCloseRequest {
+            if (controller.isProjectOpened) {
+                val save = showYesNoDialog("Save project?", default = true) ?: return@setOnCloseRequest
+                if (save) controller.saveProject()
+                stage.hide()
+            }
+        }
         stage.title = "Xenakis"
         stage.show()
         controller.startXenakis()

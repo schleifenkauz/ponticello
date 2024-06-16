@@ -18,7 +18,7 @@ class InstrumentSelector(
     override val registry: ObjectRegistry<InstrumentObject>
         get() = context[InstrumentRegistry]
 
-    override fun createNewObject(name: String): InstrumentObject = context[InstrumentRegistryPane].createSynthDef(name)
+    override fun createNewObject(name: String): InstrumentObject? = context[InstrumentRegistryPane].createSynthDef(name)
 
     override fun createSnapshot(): Snapshot<*> = Snap()
 

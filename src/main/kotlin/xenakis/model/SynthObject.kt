@@ -42,10 +42,10 @@ class SynthObject(
     val displaySample: ReactiveValue<Boolean>? get() = bufferControl?.display
 
     val playbufStartPos: ReactiveVariable<Double>?
-        get() = (controls["startPos"] as? ConstantControl)?.value
+        get() = (controls.controlMap["startPos"] as? ConstantControl)?.value
 
     val playBufRate: ReactiveVariable<Double>?
-        get() = (controls["rate"] as? ConstantControl)?.value
+        get() = (controls.controlMap["rate"] as? ConstantControl)?.value
 
     override val associatedControls: Map<String, ParameterControl> get() = controls.controlMap
 

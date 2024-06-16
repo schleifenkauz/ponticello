@@ -43,38 +43,40 @@ class InstrumentRegistryPane(
         }
     }
 
-    private fun createObject(type: String, name: String): InstrumentObject = when (type) {
+    private fun createObject(type: String, name: String): InstrumentObject? = when (type) {
         "New SynthDef" -> createSynthDef(name)
         else -> VSTPluginObject.create(registry.context, name, type.removePrefix("Plugin: "))
     }
 
-    override fun addObject(name: String): InstrumentObject {
-        val obj = createSynthDef(name)
+    override fun addObject(name: String): SynthDefObject? {
+        val obj = createSynthDef(name) ?: return null
         registry.add(obj)
         return obj
     }
 
-    fun createSynthDef(name: String) = when {
-        name in StandardSynthDefObject.all -> {
-            val standard = showYesNoDialog(
-                "SynthDef '$name' is a standard SynthDef. Do you want to load it? A new SynthDef will be created otherwise.",
-                default = true
-            )
-            if (standard) StandardSynthDefObject.all.getValue(name)
-            else CustomizableSynthDefObject.create(name, registry.context)
-        }
+    fun createSynthDef(name: String): SynthDefObject? {
+        when {
+            name in StandardSynthDefObject.all -> {
+                val standard = showYesNoDialog(
+                    "SynthDef '$name' is a standard SynthDef. Do you want to load it? A new SynthDef will be created otherwise.",
+                    default = true
+                ) ?: return null
+                return if (standard) StandardSynthDefObject.all.getValue(name)
+                else CustomizableSynthDefObject.create(name, registry.context)
+            }
 
-        registry.synthDescLibContains(name).join() -> {
-            val reference = showYesNoDialog(
-                "SynthDef '$name' is already defined in the global SynthDescLib. " +
-                        "Import SynthDef '$name' from SynthDescLib? A new SynthDef will be created otherwise.",
-                default = true
-            )
-            if (reference) ReferencedSynthDefObject.loadFromSynthDescLib(name)
-            else CustomizableSynthDefObject.create(name, registry.context)
-        }
+            registry.synthDescLibContains(name).join() -> {
+                val reference = showYesNoDialog(
+                    "SynthDef '$name' is already defined in the global SynthDescLib. " +
+                            "Import SynthDef '$name' from SynthDescLib? A new SynthDef will be created otherwise.",
+                    default = true
+                ) ?: return null
+                return if (reference) ReferencedSynthDefObject.loadFromSynthDescLib(name)
+                else CustomizableSynthDefObject.create(name, registry.context)
+            }
 
-        else -> CustomizableSynthDefObject.create(name, registry.context)
+            else -> return CustomizableSynthDefObject.create(name, registry.context)
+        }
     }
 
     override fun selected(obj: InstrumentObject?) {
