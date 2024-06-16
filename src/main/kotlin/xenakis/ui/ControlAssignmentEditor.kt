@@ -9,9 +9,10 @@ import javafx.scene.Node
 import javafx.scene.control.*
 import javafx.scene.layout.HBox
 import javafx.scene.layout.Priority
-import javafx.scene.layout.Region
+import javafx.util.Duration
 import org.controlsfx.control.ToggleSwitch
 import reaktive.value.ReactiveVariable
+import reaktive.value.forEach
 import reaktive.value.fx.asProperty
 import reaktive.value.now
 import reaktive.value.reactiveVariable
@@ -53,11 +54,20 @@ class ControlAssignmentEditor(
             if (settingControl) return@addListener
             @Suppress("UNCHECKED_CAST")
             t as ControlType<ParameterControl>
-            val control = t.createDefaultControl(obj, spec, obj.context)
-            obj.controls.reassignControl(parameter, control)
+            updateControlType(t)
         }
         nameLabel.minWidth = DetailPane.LABEL_WIDTH - 5.0
         comboBox.setFixedWidth(COMBO_BOX_WIDTH)
+    }
+
+    private fun updateControlType(t: ControlType<*>) {
+        val oldValue = when (val oldControl = obj.controls[parameter]) {
+            is ConstantControl -> oldControl.value.now
+            is KnobControl -> oldControl.get()
+            else -> null
+        }
+        val control = t.createDefaultControl(obj, spec, oldValue)
+        obj.controls.reassignControl(parameter, control)
     }
 
     fun setControl(control: ParameterControl) {
@@ -72,7 +82,7 @@ class ControlAssignmentEditor(
     sealed class ControlType<C : ParameterControl> {
         abstract fun createDetailInput(spec: ControlSpec, control: C, context: Context): Node
 
-        abstract fun createDefaultControl(obj: ScoreObject, spec: ControlSpec, context: Context): C
+        abstract fun createDefaultControl(obj: ScoreObject, spec: ControlSpec, initialValue: Double?): C
 
         override fun toString(): String = this::class.simpleName!!
 
@@ -93,49 +103,66 @@ class ControlAssignmentEditor(
                 return spinner
             }
 
-            override fun createDefaultControl(obj: ScoreObject, spec: ControlSpec, context: Context): ConstantControl {
+            override fun createDefaultControl(
+                obj: ScoreObject,
+                spec: ControlSpec,
+                initialValue: Double?
+            ): ConstantControl {
                 spec as NumericalControlSpec
-                return ConstantControl(reactiveVariable(spec.defaultValue.get()))
+                return ConstantControl(reactiveVariable(initialValue ?: spec.defaultValue.get()))
             }
         }
 
         object Knob : ControlType<KnobControl>() {
             override fun createDetailInput(spec: ControlSpec, control: KnobControl, context: Context): Node {
                 spec as NumericalControlSpec
-                val slider = Slider(spec.min.get(), spec.max.get(), control.get())
-                slider.blockIncrement = spec.step.get()
-                slider.majorTickUnit = spec.step.get()
+                val min = spec.min.get()
+                val max = spec.max.get()
+                val step = spec.step.get()
+                val slider = Slider(min, max, control.get())
+                slider.isShowTickMarks = (max - min) / step < 25.0
+                slider.blockIncrement = step
+                slider.majorTickUnit = step
                 slider.minorTickCount = 0
                 slider.isSnapToTicks = true
-                val accuracy = accuracy(spec.step.get())
-                slider.tooltipProperty().bind(slider.valueProperty().map { value ->
-                    val v = value.toDouble().format(accuracy)
-                    Tooltip(v)
-                })
+                val accuracy = accuracy(step)
+                slider.valueProperty().addListener { _, _, value -> control.value.set(value.toDouble()) }
+                slider.tooltip = Tooltip().apply {
+                    hideDelay = Duration.ONE
+                    showDelay = Duration.ZERO
+                }
+                slider.userData = control.value.forEach { value ->
+                    slider.value = value
+                    slider.tooltip.text = value.format(accuracy)
+                }
                 return slider
             }
 
-            override fun createDefaultControl(obj: ScoreObject, spec: ControlSpec, context: Context): KnobControl {
+            override fun createDefaultControl(obj: ScoreObject, spec: ControlSpec, initialValue: Double?): KnobControl {
                 spec as NumericalControlSpec
-                return KnobControl(spec.defaultValue.get())
+                return KnobControl(reactiveVariable(initialValue ?: spec.defaultValue.get()))
             }
         }
 
         object Envelope : ControlType<EnvelopeControl>() {
             override fun createDetailInput(spec: ControlSpec, control: EnvelopeControl, context: Context): Node {
                 val colorPicker = colorPicker(control.displayColor)
-                val toggle = ToggleSwitch()
+                colorPicker.setFixedWidth(30.0)
+                val toggle = ToggleSwitch("Display: ")
                 toggle.selectedProperty().bindBidirectional(control.display.asProperty())
-                val space = Region()
-                setHgrow(space, Priority.ALWAYS)
-                val box = HBox(colorPicker, space, toggle)
+                val box = HBox(colorPicker, infiniteSpace(), toggle)
                 box.alignment = Pos.CENTER_LEFT
                 return box
             }
 
-            override fun createDefaultControl(obj: ScoreObject, spec: ControlSpec, context: Context): EnvelopeControl {
+            override fun createDefaultControl(
+                obj: ScoreObject,
+                spec: ControlSpec,
+                initialValue: Double?
+            ): EnvelopeControl {
                 spec as NumericalControlSpec
-                val env = xenakis.model.Envelope.constant(spec.defaultValue.get(), obj.duration, spec.warp)
+                val value = initialValue ?: spec.defaultValue.get()
+                val env = xenakis.model.Envelope.constant(value, obj.duration, spec.warp)
                 val displayColor = reactiveVariable(spec.associatedColor)
                 val display = reactiveVariable(true)
                 return EnvelopeControl(env, displayColor, display)
@@ -146,8 +173,12 @@ class ControlAssignmentEditor(
             override fun createDetailInput(spec: ControlSpec, control: CustomControl, context: Context): Node =
                 control.expr.control
 
-            override fun createDefaultControl(obj: ScoreObject, spec: ControlSpec, context: Context): CustomControl {
-                val editor = ScExprExpander(context)
+            override fun createDefaultControl(
+                obj: ScoreObject,
+                spec: ControlSpec,
+                initialValue: Double?
+            ): CustomControl {
+                val editor = ScExprExpander(obj.context)
                 val root = EditorRoot.create(editor)
                 return CustomControl(root)
             }
@@ -157,16 +188,20 @@ class ControlAssignmentEditor(
             override fun createDetailInput(spec: ControlSpec, control: BusControl, context: Context): Node =
                 busSelector(context, control.bus)
 
-            override fun createDefaultControl(obj: ScoreObject, spec: ControlSpec, context: Context): BusControl =
-                BusControl(reactiveVariable(context[BusRegistry].getDefault().createReference()))
+            override fun createDefaultControl(obj: ScoreObject, spec: ControlSpec, initialValue: Double?): BusControl =
+                BusControl(reactiveVariable(obj.context[BusRegistry].getDefault().createReference()))
         }
 
         object BusValue : ControlType<BusValueControl>() {
             override fun createDetailInput(spec: ControlSpec, control: BusValueControl, context: Context): Node =
                 busSelector(context, control.bus)
 
-            override fun createDefaultControl(obj: ScoreObject, spec: ControlSpec, context: Context): BusValueControl =
-                BusValueControl(reactiveVariable(context[BusRegistry].getDefault().createReference()))
+            override fun createDefaultControl(
+                obj: ScoreObject,
+                spec: ControlSpec,
+                initialValue: Double?
+            ): BusValueControl =
+                BusValueControl(reactiveVariable(obj.context[BusRegistry].getDefault().createReference()))
         }
 
         object SingleBusValue :
@@ -175,9 +210,9 @@ class ControlAssignmentEditor(
                 busSelector(context, control.bus)
 
             override fun createDefaultControl(
-                obj: ScoreObject, spec: ControlSpec, context: Context
+                obj: ScoreObject, spec: ControlSpec, initialValue: Double?
             ): SingleBusValueControl =
-                SingleBusValueControl(reactiveVariable(context[BusRegistry].getDefault().createReference()))
+                SingleBusValueControl(reactiveVariable(obj.context[BusRegistry].getDefault().createReference()))
 
         }
 
@@ -186,13 +221,17 @@ class ControlAssignmentEditor(
                 val initialValue = control.sample
                 val editor = SampleSelector(context, initialValue)
                 val selectorControl = ObjectSelectorControl(editor, createBundle())
-                val displaySwitch = ToggleSwitch("Display")
+                val displaySwitch = ToggleSwitch("Display: ")
                 spec as BufferControlSpec
                 displaySwitch.selectedProperty().bindBidirectional(control.display.asProperty())
-                return HBox(5.0, selectorControl, displaySwitch).centerChildrenVertically()
+                return HBox(selectorControl, infiniteSpace(), displaySwitch).centerChildrenVertically()
             }
 
-            override fun createDefaultControl(obj: ScoreObject, spec: ControlSpec, context: Context): BufferControl {
+            override fun createDefaultControl(
+                obj: ScoreObject,
+                spec: ControlSpec,
+                initialValue: Double?
+            ): BufferControl {
                 spec as BufferControlSpec
                 val display = reactiveVariable(spec.isPlayBufSource)
                 val sample: ReactiveVariable<SampleObjectReference?> = reactiveVariable(null)
@@ -206,8 +245,12 @@ class ControlAssignmentEditor(
                 return ObjectSelectorControl(selector, createBundle())
             }
 
-            override fun createDefaultControl(obj: ScoreObject, spec: ControlSpec, context: Context): GroupControl =
-                GroupControl(reactiveVariable(context[GroupRegistry].getDefault().createReference()))
+            override fun createDefaultControl(
+                obj: ScoreObject,
+                spec: ControlSpec,
+                initialValue: Double?
+            ): GroupControl =
+                GroupControl(reactiveVariable(obj.context[GroupRegistry].getDefault().createReference()))
         }
 
         companion object {

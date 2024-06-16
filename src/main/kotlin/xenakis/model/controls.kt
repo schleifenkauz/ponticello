@@ -1,18 +1,16 @@
 package xenakis.model
 
 import hextant.context.Context
-import hextant.core.editor.ListenerManager
 import hextant.serial.EditorRoot
 import javafx.geometry.HorizontalDirection
 import javafx.scene.paint.Color
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.Transient
 import reaktive.value.ReactiveVariable
 import reaktive.value.now
 import reaktive.value.reactiveVariable
 import xenakis.impl.ColorSerializer
+import xenakis.impl.copy
 import xenakis.sc.editor.ScExprExpander
-import xenakis.ui.KnobControlView
 
 @Serializable
 sealed class ParameterControl {
@@ -24,24 +22,10 @@ sealed class ParameterControl {
 }
 
 @Serializable
-class KnobControl(private var value: Double) : ParameterControl() {
-    @Transient
-    val views = ListenerManager.createWeakListenerManager<KnobControlView>()
+class KnobControl(val value: ReactiveVariable<Double>) : ParameterControl() {
+    override fun copy(): ParameterControl = KnobControl(value.copy())
 
-    override fun copy(): ParameterControl = KnobControl(value)
-
-    fun set(value: Double) {
-        if (value == this.value) return
-        this.value = value
-        views.notifyListeners { updatedValue(this@KnobControl, value) }
-    }
-
-    fun get() = value
-
-    fun addView(view: KnobControlView) {
-        views.addListener(view)
-        view.updatedValue(this, value)
-    }
+    fun get() = value.now
 }
 
 @Serializable

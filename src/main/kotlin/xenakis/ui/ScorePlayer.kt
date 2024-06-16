@@ -86,7 +86,7 @@ class ScorePlayer(
         client.run {
             +"~play = false"
             +"~tasks.do { |t| if (t.isPlaying) { t.stop; } }"
-            +"~synths.do { |s| s.free }"
+            +"~synths.do { |s| if (s.isRunning) { s.free } }"
         }
     }
 

@@ -4,18 +4,24 @@ import hextant.context.Context
 import hextant.core.editor.ListenerManager
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
+import reaktive.Observer
+import reaktive.value.forEach
+import reaktive.value.now
+import reaktive.value.reactiveVariable
 import xenakis.impl.ScWriter
 import xenakis.impl.SuperColliderClient
 import xenakis.impl.SuperColliderContext
 import xenakis.sc.NumericalControlSpec
 import xenakis.sc.Rate
-import xenakis.ui.KnobControlView
 import xenakis.ui.format
 
 @Serializable
-class GlobalControls(private val controls: MutableList<GlobalControl>) : KnobControlView {
+class GlobalControls(private val controls: MutableList<GlobalControl>) {
     @Transient
     val views = ListenerManager.createWeakListenerManager<GlobalControlsView>()
+
+    @Transient
+    private val valueObservers = mutableMapOf<GlobalControl, Observer>()
 
     @Transient
     private lateinit var context: Context
@@ -23,7 +29,7 @@ class GlobalControls(private val controls: MutableList<GlobalControl>) : KnobCon
     fun initialize(context: Context) {
         this.context = context
         for (ctrl in controls) {
-            ctrl.knobControl.addView(this)
+            valueObservers[ctrl] = ctrl.knobControl.value.forEach { value -> updatedValue(ctrl, value) }
         }
     }
 
@@ -41,13 +47,13 @@ class GlobalControls(private val controls: MutableList<GlobalControl>) : KnobCon
     }
 
     fun addControl(parameter: String, spec: NumericalControlSpec) {
-        val knobControl = KnobControl(spec.defaultValue.get())
+        val knobControl = KnobControl(reactiveVariable(spec.defaultValue.get()))
         val control = GlobalControl(parameter, knobControl, spec)
         context[BusRegistry].add(control.bus)
         controls.add(control)
         context[SuperColliderClient].setupBus(control)
         views.notifyListeners { addedControl(control) }
-        knobControl.addView(this)
+        valueObservers[control] = control.knobControl.value.forEach { value -> updatedValue(control, value) }
     }
 
     fun removeControl(control: GlobalControl) {
@@ -55,7 +61,7 @@ class GlobalControls(private val controls: MutableList<GlobalControl>) : KnobCon
         views.notifyListeners { removedControl(control) }
         val bus = control.bus
         context[BusRegistry].remove(bus)
-        control.knobControl.views.removeListener(this)
+        valueObservers.remove(control)?.kill()
     }
 
     fun addView(view: GlobalControlsView) {
@@ -65,10 +71,9 @@ class GlobalControls(private val controls: MutableList<GlobalControl>) : KnobCon
         }
     }
 
-    override fun updatedValue(control: KnobControl, value: Double) {
-        val ctrl = controls.find { it.knobControl == control } ?: error("$control not found in global controls")
-        val bus = ctrl.bus
-        val formatted = value.format(ctrl.spec.accuracy)
+    private fun updatedValue(control: GlobalControl, value: Double) {
+        val bus = control.bus
+        val formatted = value.format(control.spec.accuracy)
         context[SuperColliderClient].run("if (${bus.variableName} != nil) { ${bus.variableName}.set($formatted) };")
     }
 
@@ -76,7 +81,7 @@ class GlobalControls(private val controls: MutableList<GlobalControl>) : KnobCon
         val code = "${control.bus.variableName}.getSynchronous"
         context[SuperColliderClient].eval(code).thenAccept { answer ->
             val value = answer.toDoubleOrNull() ?: return@thenAccept
-            control.knobControl.set(value)
+            control.knobControl.value.now = value
         }
     }
 

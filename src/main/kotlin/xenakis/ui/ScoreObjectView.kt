@@ -75,10 +75,8 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
     }
 
     fun playMyObject() {
-        val project = context[currentProject]
-        val beforePlay = project.serverTree.editor.result.now
         context[SuperColliderClient].run {
-            beforePlay.code(this, context)
+            +"~synths = ()"
             myObject.play(this)
         }
     }
@@ -193,11 +191,6 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
     open fun muteToggled() {
         muteUnmuteBtn.graphic = if (myObject.muted) Icon.Mute.getView() else Icon.Unmute.getView()
         setPseudoClassState("muted", myObject.muted)
-    }
-
-    override fun reassignedControl(parameter: String, oldControl: ParameterControl, control: ParameterControl) {
-        removedControl(parameter, oldControl)
-        addedControl(parameter, control)
     }
 
     override fun removedControl(parameter: String, control: ParameterControl) {

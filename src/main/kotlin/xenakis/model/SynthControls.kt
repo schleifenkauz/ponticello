@@ -122,6 +122,9 @@ class SynthControls(private val map: MutableMap<String, ParameterControl>) {
     interface View {
         fun addedControl(parameter: String, control: ParameterControl)
         fun removedControl(parameter: String, control: ParameterControl)
-        fun reassignedControl(parameter: String, oldControl: ParameterControl, control: ParameterControl)
+        fun reassignedControl(parameter: String, oldControl: ParameterControl, control: ParameterControl) {
+            removedControl(parameter, oldControl)
+            addedControl(parameter, control)
+        }
     }
 }

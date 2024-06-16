@@ -94,5 +94,6 @@ sealed class RegularScoreObject(name: String) : ScoreObject() {
         @Suppress("UNCHECKED_CAST")
         val unsafe = viewManager as ListenerManager<ScoreObjectView>
         unsafe.addListener(view)
+        if (muted) view.muteToggled()
     }
 }

@@ -11,6 +11,8 @@ import javafx.scene.layout.Pane
 import javafx.scene.shape.Arc
 import javafx.scene.shape.Circle
 import javafx.scene.shape.Line
+import reaktive.Observer
+import reaktive.value.forEach
 import xenakis.model.KnobControl
 import xenakis.sc.NumericalControlSpec
 import xenakis.sc.SpecTransformation
@@ -23,7 +25,7 @@ class Knob(
     private val spec: NumericalControlSpec,
     private val radius: Double = DEFAULT_RADIUS,
     private val context: Context
-) : Control(), KnobControlView {
+) : Control() {
     private val knobDots = mutableListOf<Circle>()
     private val knob = Circle(radius, radius, radius - 10) styleClass "knob-mass"
     private val indicator = Line(radius, radius, 0.0, 0.0) styleClass "knob-indicator"
@@ -34,13 +36,15 @@ class Knob(
 
     private val discreteValues = ((spec.max.get() - spec.min.get()) / spec.step.get()).roundToInt()
 
+    private val valueObserver: Observer
+
     init {
         styleClass("control-knob")
         setRoot(root)
         isFocusTraversable = true
         setPrefSize(radius * 2, radius * 2)
         setMinSize(radius * 2, radius * 2)
-        control.addView(this)
+        valueObserver = control.value.forEach { value -> updatedValue(value) }
         indicator.stroke = spec.associatedColor
         valueLabel.centerHorizontally(this)
         valueLabel.layoutY = radius * 1.4
@@ -75,7 +79,7 @@ class Knob(
     private fun showValueInput() {
         val range = spec.min.get()..spec.max.get()
         showNumberPrompt("$parameter ($range)", range, control.get(), context) { v ->
-            control.set(v)
+            control.value.set(v)
         }
     }
 
@@ -90,12 +94,12 @@ class Knob(
 
     private fun increase() {
         val newValue = control.get() + spec.step.get()
-        control.set(newValue.coerceIn(spec.range))
+        control.value.set(newValue.coerceIn(spec.range))
     }
 
     private fun decrease() {
         val newValue = (control.get() - spec.step.get())
-        control.set(newValue.coerceIn(spec.range))
+        control.value.set(newValue.coerceIn(spec.range))
     }
 
     private fun setValueFromMouse(x: Double, y: Double) {
@@ -105,7 +109,7 @@ class Knob(
         if (phi < 1.0 / 3 * PI) phi += 2 * PI
         phi = phi.coerceIn(MAX_ANGLE..MIN_ANGLE)
         val value = transform.unmap(phi).snap(spec.step.get())
-        control.set(value)
+        control.value.set(value)
     }
 
     private fun getPoint(value: Double, r: Double): Point {
@@ -131,7 +135,7 @@ class Knob(
         }
     }
 
-    override fun updatedValue(control: KnobControl, value: Double) {
+    private fun updatedValue(value: Double) {
         valueLabel.text = value.format(spec.accuracy)
         val start = getPoint(value, radius / 3)
         val end = getPoint(value, radius - 10.0)

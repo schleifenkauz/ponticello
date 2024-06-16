@@ -32,7 +32,7 @@ class GroupObject(
         val prev = previous
         if (prev != null) {
             +"${variableName}.moveAfter(${prev.variableName})"
-        } else {
+        } else if (!isDefault) {
             +"$variableName.moveToHead"
         }
     }

@@ -4,8 +4,6 @@ import com.illposed.osc.OSCMessage
 import com.illposed.osc.OSCMessageEvent
 import com.illposed.osc.OSCMessageListener
 import com.illposed.osc.messageselector.OSCPatternAddressMessageSelector
-import com.illposed.osc.transport.NetworkProtocol
-import com.illposed.osc.transport.OSCPort.DEFAULT_SC_LANG_OSC_PORT
 import com.illposed.osc.transport.OSCPortIn
 import com.illposed.osc.transport.OSCPortOut
 import com.illposed.osc.transport.OSCPortOutBuilder
@@ -78,8 +76,8 @@ class OSCSuperColliderClient(
             sclang.outputStream.write("this.executeFile($setupFile);\n".toByteArray())
             sclang.outputStream.flush()
             val localhost = InetAddress.getLoopbackAddress()
-            val local = InetSocketAddress(localhost, DEFAULT_SC_LANG_OSC_PORT + 20)
-            val remote = InetSocketAddress(localhost, DEFAULT_SC_LANG_OSC_PORT)
+            val local = InetSocketAddress(localhost, 8000)
+            val remote = InetSocketAddress(localhost, port)
             val sender = OSCPortOutBuilder()
                 .setLocalSocketAddress(local)
                 .setRemoteSocketAddress(remote)

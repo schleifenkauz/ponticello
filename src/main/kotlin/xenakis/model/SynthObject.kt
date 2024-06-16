@@ -8,11 +8,9 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonObjectBuilder
 import reaktive.Observer
 import reaktive.list.observeEach
-import reaktive.value.ReactiveValue
-import reaktive.value.ReactiveVariable
-import reaktive.value.now
-import reaktive.value.reactiveVariable
+import reaktive.value.*
 import xenakis.impl.ScWriter
+import xenakis.impl.SuperColliderClient
 import xenakis.impl.getSerializableValue
 import xenakis.impl.putSerializableValue
 import xenakis.sc.ControlSpec
@@ -23,12 +21,15 @@ class SynthObject(
     name: String,
     private val synthDefRef: ObjectReference<SynthDefObject>,
     val controls: SynthControls
-) : RegularScoreObject(name) {
+) : RegularScoreObject(name), SynthControls.View {
     private lateinit var parameterNameObserver: Observer
     override val type: String
         get() = "synth"
 
     override val viewManager: ListenerManager<SynthObjectView> = ListenerManager.createWeakListenerManager()
+
+    private val controlObservers = mutableMapOf<ParameterControl, Observer>()
+    private val activeSynths = mutableSetOf<String>()
 
     val synthDef: SynthDefObject get() = synthDefRef.get()
 
@@ -74,6 +75,7 @@ class SynthObject(
         super.initialize(context)
         synthDefRef.resolve(context)
         controls.initialize(context, synthDef)
+        controls.addView(this)
         parameterNameObserver = synthDef.parameters.observeEach { _, p ->
             p.name.observe { _, oldName, newName ->
                 val control = controls.controlMap[oldName] ?: return@observe
@@ -83,7 +85,46 @@ class SynthObject(
         }
     }
 
+    private fun runOnActiveSynths(action: ScWriter.() -> Unit) {
+        context[SuperColliderClient].run {
+            for (synth in activeSynths) {
+                appendBlock("if (~synths != nil && ~synths['$synth'] != nil && ~synths['$synth'].isRunning)") {
+                    append("~synths['$synth'].")
+                    action()
+                }
+                appendLine(";")
+            }
+        }
+    }
+
+    override fun addedControl(parameter: String, control: ParameterControl) {
+        when (control) {
+            is BusControl -> controlObservers[control] = control.bus.forEach { bus ->
+                runOnActiveSynths { +"set('$parameter', ${bus.get().variableName})" }
+            }
+
+            is BusValueControl -> controlObservers[control] = control.bus.forEach { bus ->
+                runOnActiveSynths { +"map('$parameter', ${bus.get().variableName})" }
+            }
+
+            is ConstantControl -> controlObservers[control] = control.value.forEach { value ->
+                runOnActiveSynths { +"set('$parameter', $value)" }
+            }
+
+            is KnobControl -> controlObservers[control] = control.value.forEach { value ->
+                runOnActiveSynths { +"set('$parameter', $value)" }
+            }
+
+            else -> {} //no realtime updates possible
+        }
+    }
+
+    override fun removedControl(parameter: String, control: ParameterControl) {
+        controlObservers.remove(control)?.kill()
+    }
+
     override fun writeStartCode(writer: ScWriter, offset: Double, name: String) {
+        activeSynths.add(name)
         writer.appendBlock("s.makeBundle(0)") {
             val constantArguments = controls.controlMap.mapNotNull { (param, control) ->
                 when (control) {
@@ -105,6 +146,7 @@ class SynthObject(
             val duration = "duration: ${duration - offset}"
             val group = group.now.get()
             +"$synthVar = Synth(\\${synthDef.name.now}, [$constantArguments, $duration], target: ${group.variableName})"
+            +"$synthVar.register"
             for ((param, control) in controls.controlMap) {
                 when (control) {
                     is EnvelopeControl -> {

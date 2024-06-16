@@ -8,6 +8,8 @@
 
 - highlight obsolete arguments in control assignment view
 
+### Make playback more reactive
+
 ### Mixing interface in AudioFlowGraph
 
 ### Is there a better way of handling source-filter relations than groups?

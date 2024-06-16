@@ -22,6 +22,7 @@ TextField.editable-text {
     -fx-border-radius: 3px;
     -fx-border-color: black;
     -fx-padding: 5px;
+    -fx-alignment: center-left;
 }
 
 .detail-item:hover {
@@ -69,12 +70,7 @@ Slider.control-detail-editor {
 
 /*noinspection CssInvalidPseudoSelector*/
 .score-object:muted {
-    -fx-background-color: gray !important;
-}
-
-/*noinspection CssInvalidPseudoSelector*/
-.score-object:muted .waveform-line {
-    -fx-stroke: gray !important;
+    -fx-opacity: 0.5;
 }
 
 /*noinspection CssInvalidPseudoSelector*/
