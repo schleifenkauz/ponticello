@@ -127,7 +127,7 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
             if (view == null) {
                 contextBar.isVisible = false
             } else {
-                detailPane.children.add(view.detailPane)
+                detailPane.children.add(view.getDetailPane())
                 contextBar.isVisible = true
                 contextBar.children.setAll(view.actions)
             }
@@ -333,7 +333,7 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
 
     private fun Scene.addGlobalShortcuts() {
         registerShortcuts {
-            if (!controller.isProjectOpened) return@registerShortcuts
+            //if (!controller.isProjectOpened) return@registerShortcuts
             on("Ctrl+S") { controller.saveProject() }
             on("Ctrl+O") { controller.openProject() }
             on("Ctrl+N") { controller.createNewProject() }
@@ -343,18 +343,34 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
                 context[ScoreObjectSelector].selectAll()
             }
 
-            on("Ctrl?+SPACE") { togglePlay() }
-            on("Ctrl?+PERIOD") { stop() }
+            on("Ctrl?+SPACE") { ev ->
+                if (ev.isControlDown || ev.target !is TextInputControl) togglePlay()
+            }
+            on("Ctrl?+PERIOD") { ev ->
+                if (ev.isControlDown || ev.target !is TextInputControl) stop()
+            }
             on("HOME") { scoreView.displayWholeScore() }
-            on("DIGIT0") {
-                scoreView.display(0.0, scoreView.displayedDuration)
-                player.movePlayHead(0.0)
+            on("DIGIT0") { ev ->
+                if (ev.target !is TextInputControl) {
+                    scoreView.display(0.0, scoreView.displayedDuration)
+                    player.movePlayHead(0.0)
+                }
             }
-            on("Shift+DIGIT0") {
-                player.movePlayHead(scoreView.displayStart)
+            on("Shift+DIGIT0") { ev ->
+                if (ev.target !is TextInputControl) {
+                    player.movePlayHead(scoreView.displayStart)
+                }
             }
-            on("PAGE_UP") { scoreView.scroll(-100.0 / scoreView.pixelsPerSecond) }
-            on("PAGE_DOWN") { scoreView.scroll(100.0 / scoreView.pixelsPerSecond) }
+            on("PAGE_UP") { ev ->
+                if (ev.target !is TextInputControl) {
+                    scoreView.scroll(-100.0 / scoreView.pixelsPerSecond)
+                }
+            }
+            on("PAGE_DOWN") { ev ->
+                if (ev.target !is TextInputControl) {
+                    scoreView.scroll(100.0 / scoreView.pixelsPerSecond)
+                }
+            }
 
             on("ESCAPE") {
                 scoreView.clearNewShape()
@@ -363,39 +379,53 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
                 toolSelector.select(Tool.Pointer)
                 toolSelector.getButton(Tool.Pointer).graphic = Tool.Pointer.icon.getView()
             }
-            on("Alt?+DIGIT1") { toolSelector.select(Tool.Synth) }
-            on("Alt?+DIGIT2") { toolSelector.select(Tool.Task) }
-            on("Alt?+DIGIT3") { toolSelector.select(Tool.Envelope) }
-            on("Alt?+DIGIT4") { toolSelector.select(Tool.Memo) }
-            on("Alt?+DIGIT5") { toolSelector.select(Tool.PianoRoll) }
-            on("Alt?+DIGIT6") { toolSelector.select(Tool.TempoGrid) }
-            on("Alt?+DIGIT7") { toolSelector.select(Tool.Group) }
-            on("Alt?+DIGIT8") { toolSelector.select(Tool.Cut) }
-            on("Alt?+DIGIT9") { toolSelector.select(Tool.AddTime) }
+            registerToolNumber(Tool.Synth, 1)
+            registerToolNumber(Tool.Task, 2)
+            registerToolNumber(Tool.Envelope, 3)
+            registerToolNumber(Tool.Memo, 4)
+            registerToolNumber(Tool.PianoRoll, 5)
+            registerToolNumber(Tool.TempoGrid, 6)
+            registerToolNumber(Tool.Group, 7)
+            registerToolNumber(Tool.Cut, 8)
+            registerToolNumber(Tool.AddTime, 9)
 
-            on("Alt?+G") { project.settings.displayTimeGrid.toggle() }
-            on("Alt?+S") { project.settings.snapEnabled.toggle() }
+            on("Alt?+G") { ev ->
+                if (ev.isAltDown || ev.target !is TextInputControl) {
+                    project.settings.displayTimeGrid.toggle()
+                }
+            }
+            on("Alt?+S") { ev ->
+                if (ev.isAltDown || ev.target !is TextInputControl) {
+                    project.settings.snapEnabled.toggle()
+                }
+            }
 
-            on("DELETE") { scoreView.removeSelected() }
+            on("DELETE") { ev ->
+                if (ev.target !is TextInputControl) {
+                    scoreView.removeSelected()
+                }
+            }
 
-            on("Alt?+M") {
-                scoreView.selector.toggleMuteSelected()
+            on("Alt?+M") { ev ->
+                if (ev.isAltDown || ev.target !is TextInputControl) {
+                    scoreView.selector.toggleMuteSelected()
+                }
             }
-            on("Alt?+L") {
-                val view = scoreView.selector.singleSelected.now ?: return@on
-                view.createLoop()
+            on("Alt?+L") { ev ->
+                if (ev.isAltDown || ev.target !is TextInputControl) {
+                    val view = scoreView.selector.singleSelected.now ?: return@on
+                    view.createLoop()
+                }
             }
-            on("Alt?+D") {
-                val selected = scoreView.selector.singleSelected.now ?: return@on
-                val obj = selected.myObject.duplicateCopy()
-                val view = selected.pane.getObjectView(obj)
-                scoreView.selector.select(view, addToSelection = false)
-            }
-            on("Alt?+Shift+D") {
-                val selected = scoreView.selector.singleSelected.now ?: return@on
-                val obj = selected.myObject.duplicateClone()
-                val view = selected.pane.getObjectView(obj)
-                scoreView.selector.select(view, addToSelection = false)
+            on("Alt?+Shift?+D") { ev ->
+                if (ev.isAltDown || ev.target !is TextInputControl) {
+                    val selected = scoreView.selector.singleSelected.now ?: return@on
+                    val obj =
+                        if (ev.isShiftDown) selected.myObject.duplicateClone()
+                        else selected.myObject.duplicateCopy()
+                    val view = selected.pane.getObjectView(obj)
+                    scoreView.selector.select(view, addToSelection = false)
+                }
             }
             on("Alt+SPACE") {
                 val view = scoreView.selector.singleSelected.now ?: return@on
@@ -417,12 +447,14 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
             on("F5") { controller.restartScSynth() }
 
             on("Shift?+C") { ev ->
-                toolSelector.select(Tool.Pointer)
-                val view = context[ScoreObjectSelector].singleSelected.now ?: return@on
-                var obj = view.myObject
-                if (ev.isShiftDown && obj !is ClonedObject) obj = obj.clone()
-                else if (!ev.isShiftDown && obj is ClonedObject) obj = obj.original
-                scoreView.setClipboard(obj, view)
+                if (ev.target !is TextInputControl) {
+                    toolSelector.select(Tool.Pointer)
+                    val view = context[ScoreObjectSelector].singleSelected.now ?: return@on
+                    var obj = view.myObject
+                    if (ev.isShiftDown && obj !is ClonedObject) obj = obj.clone()
+                    else if (!ev.isShiftDown && obj is ClonedObject) obj = obj.original
+                    scoreView.setClipboard(obj, view)
+                }
             }
 
             on("Ctrl+C") {
@@ -432,6 +464,14 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
             on("Ctrl+Shift+C") {
                 toolSelector.select(Tool.Pointer)
                 context[ScoreObjectSelector].cloneSelected()
+            }
+        }
+    }
+
+    private fun KeyEventHandlerBody<Unit>.registerToolNumber(tool: Tool, digit: Int) {
+        on("Alt?+DIGIT$digit") { ev ->
+            if (ev.isAltDown || ev.target !is TextInputControl) {
+                toolSelector.select(tool)
             }
         }
     }

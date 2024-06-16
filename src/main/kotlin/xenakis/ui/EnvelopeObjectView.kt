@@ -21,8 +21,11 @@ class EnvelopeObjectView(val obj: EnvelopeObject) : ScoreObjectView(obj) {
         addAction(Icon.Details, action = "Edit Envelope configuration") {
             showEnvelopeConfig(context, obj.busSelector, obj.spec) { spec -> obj.spec = spec }
         }
+    }
+
+    override fun DetailPane.setupDetailPane() {
         val selectorControl = ObjectSelectorControl(obj.busSelector, createBundle())
-        detailPane.addItem("Output bus: ", selectorControl)
+        addItem("Output bus: ", selectorControl)
     }
 
     fun updatedSpec() {

@@ -48,7 +48,7 @@ class PianoRollObjectView(private val obj: PianoRollObject) : ScoreObjectView(ob
     }
 
     private fun updateNoteDisplay(rect: Region, note: PianoRollObject.Note) {
-        rect.layoutX = pane.getWidth(note.time)
+        rect.layoutX = pane.getWidth(note.onset)
         rect.layoutY = obj.getY(note.midinote)
         rect.prefWidth = pane.getWidth(note.duration)
         rect.prefHeight = obj.pixelsPerPitch
@@ -70,21 +70,21 @@ class PianoRollObjectView(private val obj: PianoRollObject) : ScoreObjectView(ob
             canUserChangeWidth = true, canUserChangeHeight = false, ToolSelector.Tool.PianoRoll,
             relocateBy = { old, dx, dy ->
                 val (x, y) = snapToGrid(old.minX + dx, old.minY + dy)
-                note.time = pane.getDuration(x).coerceIn(0.0, obj.duration - note.duration)
+                note.onset = pane.getDuration(x).coerceIn(0.0, obj.duration - note.duration)
                 note.midinote = obj.getMidiNote(y).coerceIn(obj.pitchRange)
             },
             resize = { old, dx, dy, cursor, _ ->
                 when (cursor) {
                     Cursor.W_RESIZE -> {
                         val (x) = snapToGrid(old.minX + dx, old.minY + dy)
-                        val oldTime = note.time
-                        note.time = pane.getDuration(x).coerceAtLeast(0.0)
-                        note.duration += (oldTime - note.time)
+                        val oldTime = note.onset
+                        note.onset = pane.getDuration(x).coerceAtLeast(0.0)
+                        note.duration += (oldTime - note.onset)
                     }
 
                     Cursor.E_RESIZE -> {
                         val (x) = snapToGrid(old.maxX + dx, old.maxY + dy)
-                        note.duration = pane.getDuration(x - old.minX).coerceIn(0.0, obj.duration - note.time)
+                        note.duration = pane.getDuration(x - old.minX).coerceIn(0.0, obj.duration - note.onset)
                     }
                 }
             }
@@ -128,7 +128,7 @@ class PianoRollObjectView(private val obj: PianoRollObject) : ScoreObjectView(ob
             obj.duration = dur
             obj.height = height
             for (note in obj.notes()) {
-                note.time *= horizontalRatio
+                note.onset *= horizontalRatio
                 note.duration *= horizontalRatio
             }
         } else {
@@ -137,8 +137,8 @@ class PianoRollObjectView(private val obj: PianoRollObject) : ScoreObjectView(ob
             val notes = obj.notes()
             if (notes.isNotEmpty()) {
                 minDur =
-                    if (cursor.resizeFromLeft) obj.duration - notes.minOf { n -> n.time }
-                    else notes.maxOf { o -> o.time + o.duration }
+                    if (cursor.resizeFromLeft) obj.duration - notes.minOf { n -> n.onset }
+                    else notes.maxOf { o -> o.onset + o.duration }
 
                 minHeight =
                     if (cursor.resizeFromTop) obj.height - notes.minOf { n -> obj.getY(n.midinote) }
@@ -155,7 +155,7 @@ class PianoRollObjectView(private val obj: PianoRollObject) : ScoreObjectView(ob
             obj.height = pitches * pixelsPerPitchBeforeResize
             if (cursor.resizeFromLeft) {
                 for (note in obj.notes()) {
-                    note.time += deltaDur
+                    note.onset += deltaDur
                 }
             }
         }
@@ -209,13 +209,17 @@ class PianoRollObjectView(private val obj: PianoRollObject) : ScoreObjectView(ob
         children.add(notePane)
         drawOrientationLines()
         shadeBlackKeys()
-        val instrumentSelector = ObjectSelectorControl(obj.instrumentSelector, createBundle())
-        detailPane.addItem("Instrument: ", instrumentSelector)
-        detailPane.addLargeItem("Event dictionary", obj.eventDictionary.control)
         addAction(Icon.Transpose, action = "Transpose") {
             showTransposeDialog()
         }
         listenForMouseEvents()
+    }
+
+    override fun DetailPane.setupDetailPane() {
+        val instrumentSelector = ObjectSelectorControl(obj.instrumentSelector, createBundle())
+        addItem("Instrument: ", instrumentSelector)
+        addLargeItem("Event dictionary", obj.eventDictionary.control)
+
     }
 
     private fun showTransposeDialog() {
@@ -231,7 +235,15 @@ class PianoRollObjectView(private val obj: PianoRollObject) : ScoreObjectView(ob
             background.invert().deriveColor(0.0, 1.0, 1.0, opacity)
         }.asObservableValue())
         notePane.addEventHandler(MouseEvent.ANY) { ev ->
-            if (context[XenakisUI].toolSelector.selected.value != ToolSelector.Tool.PianoRoll) {
+            val selectedTool = context[XenakisUI].toolSelector.selected.value
+            if (selectedTool == ToolSelector.Tool.AddTime && ev.eventType == MouseEvent.MOUSE_CLICKED) {
+                val (x, _) = snapToGrid(ev.x, ev.y)
+                val position = pane.getDuration(x)
+                showNumberPrompt("How much time to add", 0.0..1000.0, 10.0, context) { amount ->
+                    obj.addTime(position, amount)
+                }
+            }
+            if (selectedTool != ToolSelector.Tool.PianoRoll) {
                 notePane.children.remove(cursor)
                 return@addEventHandler
             }
@@ -241,7 +253,7 @@ class PianoRollObjectView(private val obj: PianoRollObject) : ScoreObjectView(ob
                 }
 
                 MouseEvent.MOUSE_MOVED -> {
-                    cursor.x = snapToGrid(ev.x - 10.0, ev.y).x
+                    cursor.x = snapToGrid(ev.x, ev.y).x
                     cursor.y = ev.y.snap(obj.pixelsPerPitch)
                     if (cursor.y > prefHeight) notePane.children.remove(cursor)
                 }

@@ -20,8 +20,11 @@ class ScoreObjectGroupView(private val obj: ScoreObjectGroup) : ScoreObjectView(
         scorePane.prefHeightProperty().bind(heightProperty())
         widthProperty().addListener { _ -> rescale() }
         heightProperty().addListener { _ -> rescale() }
-        detailPane.addItem("Color:", colorPicker)
         scorePane.repaint()
+    }
+
+    override fun DetailPane.setupDetailPane() {
+        addItem("Color:", colorPicker)
     }
 
     override fun rescale() {

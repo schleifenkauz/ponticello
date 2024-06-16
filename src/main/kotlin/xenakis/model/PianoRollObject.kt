@@ -71,10 +71,32 @@ class PianoRollObject(
 
     fun addTime(position: Double, amount: Double) {
         require(position in 0.0..duration) { "Invalid position $position not in 0..$duration" }
-        for (note in notes) {
-            if (note.time >= position) note.time += amount
+        recordEdit(Edit.AddTime(this, position, amount))
+        context.withoutUndo {
+            for (note in notes) {
+                if (note.onset >= position) note.onset += amount
+            }
+            duration += amount
         }
-        duration += amount
+    }
+
+    fun deleteTimeRange(from: Double, to: Double) {
+        require(0.0 <= from && from < to && to < duration) { "Invalid time range: $from..$to" }
+        recordEdit(Edit.DeleteTimeRange(this, from, to))
+        context.withoutUndo {
+            duration -= to - from
+            for (note in notes) {
+                if (note.onset >= from) {
+                    if (note.onset + note.duration <= to) {
+                        removeNote(note)
+                    } else if (note.onset >= to) {
+                        note.onset -= (to - from)
+                    } else {
+                        note.onset = from
+                    }
+                }
+            }
+        }
     }
 
     fun addNote(note: Note) {
@@ -126,8 +148,8 @@ class PianoRollObject(
 
     override fun cut(position: Double, whichHalf: HorizontalDirection): ScoreObject {
         val notes = when (whichHalf) {
-            LEFT -> notes.filter { n -> n.time < position }
-            RIGHT -> notes.filter { n -> n.time >= position }
+            LEFT -> notes.filter { n -> n.onset < position }
+            RIGHT -> notes.filter { n -> n.onset >= position }
         }.mapTo(mutableListOf()) { n -> n.copy() }
         return PianoRollObject(name.now, initialInstrument, lowestPitch, highestPitch, eventDictionary.clone(), notes)
     }
@@ -135,7 +157,7 @@ class PianoRollObject(
     override fun writeCode(writer: ScWriter, playAt: Double, name: String) {
         val generalEventDict = eventDictionary.editor.result.now
         for ((idx, n) in notes.withIndex()) {
-            val t = playAt + n.time
+            val t = playAt + n.onset
             if (t < -duration) continue
             val offset = -t.coerceAtMost(0.0)
             val dur = n.duration - offset
@@ -150,13 +172,13 @@ class PianoRollObject(
                     eventMap["freq"] = "$midinote.midicps + ${eventMap["detune"] ?: 0}.midiratio"
                     eventMap.remove("detune")
                     val namedValues = eventMap.entries.joinToString { (name, value) -> "$name: $value" }
-                    val synthName = "~synths[${name}_${idx}]"
+                    val synthName = "~synths['${name}_${idx}']"
                     writer.appendBlock("AppClock.sched($t)") {
                         appendBlock("if (~play)") {
-                            +"$synthName = Synth(\\\${instr.name.now}, [${namedValues}]) }"
+                            +"$synthName = Synth(\\${instr.name.now}, [${namedValues}])"
                         }
                     }
-                    writer.appendLine()
+                    writer.appendLine(";")
                 }
 
                 is VSTPluginObject -> {
@@ -222,6 +244,37 @@ class PianoRollObject(
                 obj.transpose(deltaPitch)
             }
         }
+
+        class AddTime(
+            private val obj: PianoRollObject, private val position: Double, private val amount: Double
+        ) : AbstractEdit() {
+            override val actionDescription: String
+                get() = "Add time"
+
+            override fun doRedo() {
+                obj.addTime(position, amount)
+            }
+
+            override fun doUndo() {
+                obj.deleteTimeRange(position, position + amount)
+            }
+        }
+
+        class DeleteTimeRange(
+            private val obj: PianoRollObject, private val from: Double, private val to: Double
+        ) : AbstractEdit() {
+            override val actionDescription: String
+                get() = "Remove time range"
+
+            override fun doRedo() {
+                obj.deleteTimeRange(from, to)
+            }
+
+            override fun doUndo() {
+                obj.addTime(from, amount = to - from)
+            }
+        }
+
     }
 
     @Serializable
@@ -234,8 +287,8 @@ class PianoRollObject(
         @Transient
         lateinit var parent: PianoRollObject
 
-        var time: Double by this::_time.reactive { oldValue, newValue ->
-            parent.context[UndoManager].record(PropertyEdit(this::time, oldValue, newValue, "Edit note time"))
+        var onset: Double by this::_time.reactive { oldValue, newValue ->
+            parent.context[UndoManager].record(PropertyEdit(this::onset, oldValue, newValue, "Edit note time"))
             parent.updateNote(this)
         }
         var duration: Double by this::_duration.reactive { oldValue, newValue ->
@@ -247,9 +300,9 @@ class PianoRollObject(
             parent.updateNote(this)
         }
 
-        override fun toString(): String = "Note(start: $time, dur: $duration, pitch: $midinote)"
+        override fun toString(): String = "Note(start: $onset, dur: $duration, pitch: $midinote)"
 
-        fun copy() = Note(time, duration, midinote, eventDictionary.clone())
+        fun copy() = Note(onset, duration, midinote, eventDictionary.clone())
 
         companion object {
             fun create(context: Context, time: Double, duration: Double, midinote: Int): Note {

@@ -21,20 +21,21 @@ class TaskObject(name: String, val code: EditorRoot<ScFunctionEditor>, var width
 
     override fun copy(): ScoreObject = TaskObject(name.now, code.clone(), width)
 
-    override fun writeCode(writer: ScWriter, playAt: Double, name: String) {
+    override fun writeCode(writer: ScWriter, playAt: Double, name: String) = with(writer) {
         if (playAt < -duration) return
-        writer.appendBlock("SystemClock.sched(${(playAt).coerceAtLeast(0.0)})") {
-            writer.appendBlock("~tasks['$name'] = Task") {
+        appendBlock("SystemClock.sched(${(playAt).coerceAtLeast(0.0)})") {
+            appendBlock("~tasks['$name'] = Task") {
                 val function = code.editor.result.now
                 function.code(writer, context)
                 appendLine(".value()")
             }
-            writer.appendLine(".play;")
+            appendLine(".play;")
         }
-        writer.appendLine(";")
-        writer.appendBlock("SystemClock.sched(${playAt + duration})") {
-            writer.appendLine("~tasks['$name'].stop;")
+        appendLine(";")
+        appendBlock("SystemClock.sched(${playAt + duration})") {
+            appendLine("~tasks['$name'].stop;")
         }
+        appendLine(";")
     }
 
     override fun JsonObjectBuilder.saveToJson() {

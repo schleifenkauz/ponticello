@@ -511,12 +511,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
             TempoGrid -> {
                 val name = score.availableName("grid")
                 val obj = TempoGridObject.createDefault(name)
-                val configLayout = HBox(10.0)
-                TempoGridObjectView.createConfigurationBar(configLayout, obj)
-                val result = configLayout.showDialog("Configure tempo grid", context) { obj }
-                if (result != null) {
-                    addObject(obj, rect)
-                }
+                addObject(obj, rect)
             }
 
             Pointer, Cut, AddTime -> {

@@ -39,6 +39,7 @@ class ScoreView(score: Score, context: Context) : ScorePane(score, context) {
 
     init {
         children.add(clipboardObjectView)
+        isFocusTraversable = true
         listenForEvents()
         score.addListener(this)
         styleClass.add("score-view")

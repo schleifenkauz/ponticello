@@ -1,8 +1,6 @@
 package xenakis.ui
 
-import javafx.scene.control.Label
 import javafx.scene.control.Spinner
-import javafx.scene.layout.HBox
 import javafx.scene.layout.Pane
 import javafx.scene.paint.Color
 import javafx.scene.shape.Line
@@ -37,9 +35,21 @@ class TempoGridObjectView(val obj: TempoGridObject) : ScoreObjectView(obj) {
 
     override fun initialize(parent: ScorePane) {
         super.initialize(parent)
-        createConfigurationBar(detailPane, obj)
         marker.visibleProperty().bind(context[currentProject].settings.snapEnabled.asObservableValue())
         repaint()
+    }
+
+    override fun DetailPane.setupDetailPane() {
+        val bpmSpinner = Spinner<Int>(10, 500, 60).setFixedWidth(100.0)
+        val bpbSpinner = Spinner<Int>(1, 24, 4).setFixedWidth(100.0)
+        val tpbSpinner = Spinner<Int>(1, 24, 4).setFixedWidth(100.0)
+        bpmSpinner.isEditable = true
+        bpmSpinner.valueFactory.valueProperty().bindBidirectional(obj.beatsPerMinute.asProperty())
+        bpbSpinner.valueFactory.valueProperty().bindBidirectional(obj.beatsPerBar.asProperty())
+        tpbSpinner.valueFactory.valueProperty().bindBidirectional(obj.ticksPerBeat.asProperty())
+        addItem("Beats per minute:", bpmSpinner)
+        addItem("Beats per bar:", bpbSpinner)
+        addItem("Ticks per bar:", tpbSpinner)
     }
 
     override fun rescale() {
@@ -113,21 +123,5 @@ class TempoGridObjectView(val obj: TempoGridObject) : ScoreObjectView(obj) {
         private const val BEAT_LINE_SPACE = 0.3
         private const val TICK_LINE_SPACE = 0.4
         private const val MIN_BAR_NUMBER_DIST = 30.0
-
-        fun createConfigurationBar(layout: Pane, obj: TempoGridObject) {
-            val bpmSpinner = Spinner<Int>(10, 500, 60).setFixedWidth(100.0)
-            val bpbSpinner = Spinner<Int>(1, 24, 4).setFixedWidth(100.0)
-            val tpbSpinner = Spinner<Int>(1, 24, 4).setFixedWidth(100.0)
-            bpmSpinner.isEditable = true
-            val labelBpm = Label("BPM:")
-            val x = Label("x")
-            bpmSpinner.valueFactory.valueProperty().bindBidirectional(obj.beatsPerMinute.asProperty())
-            bpbSpinner.valueFactory.valueProperty().bindBidirectional(obj.beatsPerBar.asProperty())
-            tpbSpinner.valueFactory.valueProperty().bindBidirectional(obj.ticksPerBeat.asProperty())
-            layout.children.addAll(
-                HBox(labelBpm, bpmSpinner).centerChildrenVertically(),
-                HBox(bpbSpinner, x, tpbSpinner).centerChildrenVertically()
-            )
-        }
     }
 }

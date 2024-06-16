@@ -34,11 +34,8 @@ class SynthObjectView(val obj: SynthObject) : ScoreObjectView(obj), SynthControl
 
     override fun initialize(parent: ScorePane) {
         super.initialize(parent)
-        detailPane.addItem("Color:", colorPicker)
         obj.controls.addView(this)
-        setupSynthDefReference()
         listenForMouseEvents()
-        detailPane.addLargeItem("Synth controls", ControlAssignmentView(obj))
         sampleObserver = obj.sample.forEach { s ->
             sampleContentObserver?.kill()
             if (s != null) {
@@ -47,6 +44,18 @@ class SynthObjectView(val obj: SynthObject) : ScoreObjectView(obj), SynthControl
             }
         }
         sampleDisplayObserver = obj.displaySample?.forEach { updateSpectrogram() }
+    }
+
+    override fun DetailPane.setupDetailPane() {
+        addItem("Color:", colorPicker)
+        val nameLabel = label(obj.synthDef.name)
+        val viewBtn = Icon.View.button(action = "View SynthDef") {
+            context[InstrumentRegistryPane].editSynthDef(obj.synthDef)
+        }
+        val box = HBox(5.0, nameLabel, viewBtn).centerChildrenVertically()
+        addItem("SynthDef: ", box)
+        addLargeItem("Synth controls", ControlAssignmentView(obj))
+
     }
 
     override fun resizeObject(width: Double, height: Double, ev: MouseEvent, cursor: Cursor) {
@@ -141,15 +150,6 @@ class SynthObjectView(val obj: SynthObject) : ScoreObjectView(obj), SynthControl
         view.viewport = Rectangle2D(minX, minY, width, height)
         view.fitHeight = prefHeight
         view.fitWidth = pane.getWidth(duration)
-    }
-
-    private fun setupSynthDefReference() {
-        val nameLabel = label(obj.synthDef.name)
-        val viewBtn = Icon.View.button(action = "View SynthDef") {
-            context[InstrumentRegistryPane].editSynthDef(obj.synthDef)
-        }
-        val box = HBox(5.0, nameLabel, viewBtn).centerChildrenVertically()
-        detailPane.addItem("SynthDef: ", box)
     }
 
     private fun listenForMouseEvents() {

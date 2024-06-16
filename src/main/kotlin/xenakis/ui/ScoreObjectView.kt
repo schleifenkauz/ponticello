@@ -42,7 +42,6 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
     private val envelopeDisplayObservers = mutableMapOf<String, Observer>()
     val actions = HBox().centerChildrenVertically() styleClass "actions"
     private val knobControls = FlowPane().centerChildrenVertically() styleClass "knobs"
-    val detailPane = DetailPane()
 
     protected val envelopesPane = Pane()
     private val envelopeEditors = mutableListOf<EnvelopeEditor>()
@@ -56,11 +55,20 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
 
     init {
         styleClass("score-object")
+        isFocusTraversable = true
         colorPicker.setFixedWidth(30.0)
         colorPicker.prefHeight = 30.0
     }
 
     protected open val supportedActions get() = listOf(Icon.Delete, Icon.Play, Icon.Mute, Icon.Repeat)
+
+    fun getDetailPane() = DetailPane().apply {
+        nameEditor = NameControl(myObject)
+        addItem("Name: ", nameEditor)
+        setupDetailPane()
+    }
+
+    protected open fun DetailPane.setupDetailPane() {}
 
     private fun setupActions() {
         if (Icon.Repeat in supportedActions) addAction(Icon.Repeat, "Loop this object", ::createLoop)
@@ -137,7 +145,6 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
         setBackground()
         border = solidBorder(nonSelectedBorderColor, width = 2.0)
         setupCutting()
-        initializeNameEditor()
         setupActions()
         children.add(envelopesPane)
         setVgrow(envelopesPane, Priority.ALWAYS)
@@ -149,14 +156,10 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
     private fun setupSelecting() {
         addEventHandler(MouseEvent.MOUSE_CLICKED) { ev ->
             toFront()
+            requestFocus()
             context[ScoreObjectSelector].select(this, addToSelection = ev.isShiftDown)
             ev.consume()
         }
-    }
-
-    private fun initializeNameEditor() {
-        nameEditor = NameControl(myObject)
-        detailPane.addItem("Name: ", nameEditor)
     }
 
     private fun initializeLayout() {
