@@ -29,7 +29,7 @@ class SynthObject(
     override val viewManager: ListenerManager<SynthObjectView> = ListenerManager.createWeakListenerManager()
 
     private val controlObservers = mutableMapOf<ParameterControl, Observer>()
-    private val activeSynths = mutableSetOf<String>()
+    private val myActiveSynths = mutableSetOf<String>()
 
     val synthDef: SynthDefObject get() = synthDefRef.get()
 
@@ -87,7 +87,7 @@ class SynthObject(
 
     private fun runOnActiveSynths(action: ScWriter.() -> Unit) {
         context[SuperColliderClient].run {
-            for (synth in activeSynths) {
+            for (synth in myActiveSynths) {
                 appendBlock("if (~synths != nil && ~synths['$synth'] != nil && ~synths['$synth'].isRunning)") {
                     append("~synths['$synth'].")
                     action()
@@ -123,9 +123,13 @@ class SynthObject(
         controlObservers.remove(control)?.kill()
     }
 
-    override fun writeStartCode(writer: ScWriter, offset: Double, name: String) {
-        activeSynths.add(name)
-        writer.appendBlock("s.makeBundle(0)") {
+    override fun writeStartCode(
+        env: ScorePlayEnv,
+        offset: Double,
+        name: String
+    ) {
+        myActiveSynths.add(name)
+        env.writer.appendBlock("s.makeBundle(0)") {
             val constantArguments = controls.controlMap.mapNotNull { (param, control) ->
                 when (control) {
                     is BufferControl -> param to (control.sample.now?.get()?.variableName ?: "0")
@@ -141,19 +145,31 @@ class SynthObject(
                     is KnobControl -> param to control.get().toString()
                     else -> null
                 }
-            }.joinToString { (param, value) -> "$param: $value" }
+            }.joinToString { (param, value) -> "$param: $value" } + ", duration: ${duration - offset}"
             val synthVar = "~synths['$name']"
-            val duration = "duration: ${duration - offset}"
             val group = group.now.get()
-            +"$synthVar = Synth(\\${synthDef.name.now}, [$constantArguments, $duration], target: ${group.variableName})"
+            val synthDefName = synthDef.name.now
+            val parallelSynths = env.activeSynths(this@SynthObject.group.now)
+            val runBefore = parallelSynths
+                .filter { (_, _, pos) -> pos.y > this@SynthObject.y }
+                .minByOrNull { (_, _, pos) -> pos.y }
+            val runAfter = parallelSynths
+                .filter { (_, _, pos) -> pos.y < this@SynthObject.y }
+                .maxByOrNull { (_, _, pos) -> pos.y }
+            val (addAction, target) = when {
+                runAfter != null -> Pair("'addAfter'", "~synths['${runAfter.name}']")
+                runBefore != null -> Pair("'addBefore'", "~synths['${runBefore.name}']")
+                else -> Pair("'addToHead'", group.variableName)
+            }
+            +"$synthVar = Synth(\\$synthDefName, [$constantArguments], target: $target, addAction: $addAction)"
             +"$synthVar.register"
             for ((param, control) in controls.controlMap) {
                 when (control) {
                     is EnvelopeControl -> {
-                        val env = control.envelope.code(offset)
+                        val envelopeCode = control.envelope.code(offset)
                         val busName = "~auxil_${name}_${param}"
                         +"$busName  = Bus.control(s, 1)"
-                        +"{ $env }.play(s, $busName)"
+                        +"{ $envelopeCode }.play(s, $busName)"
                         +"${synthVar}.map(\\$param, $busName)"
                     }
 
@@ -180,6 +196,7 @@ class SynthObject(
                     else -> {} //already handled in constantArguments
                 }
             }
+            //+"$synthVar.run"
         }
     }
 

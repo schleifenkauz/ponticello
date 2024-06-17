@@ -3,17 +3,16 @@ package xenakis.model
 import hextant.core.editor.ListenerManager
 
 class ObjectPosition(
-    private val obj: ScoreObject,
-    private var _start: Double = 0.0,
+    private var _time: Double = 0.0,
     private var _y: Double = 0.0
 ) : Comparable<ObjectPosition> {
-    private val viewManager = ListenerManager.createWeakListenerManager<PositionListener>()
+    private val viewManager = ListenerManager.createWeakListenerManager<Listener>()
 
-    var start: Double
-        get() = _start
+    var time: Double
+        get() = _time
         set(value) {
-            if (_start == value) return
-            _start = value
+            if (_time == value) return
+            _time = value
             update()
         }
 
@@ -26,31 +25,41 @@ class ObjectPosition(
         }
 
     private fun update() {
-        viewManager.notifyListeners { moved(obj, start, y) }
+        viewManager.notifyListeners { moved(time, y) }
     }
 
     fun set(time: Double, y: Double) {
-        _start = time
+        _time = time
         _y = y
-        viewManager.notifyListeners { moved(obj, start, y) }
+        viewManager.notifyListeners { moved(this@ObjectPosition.time, y) }
     }
 
     fun set(position: ObjectPosition) {
-        set(position.start, position.y)
+        set(position.time, position.y)
     }
 
-    fun addListener(listener: PositionListener) {
+    operator fun plus(position: ObjectPosition) = ObjectPosition(this.time + position.time, this.y + position.y)
+
+    fun addListener(listener: Listener) {
         viewManager.addListener(listener)
     }
 
-    fun removeListener(listener: PositionListener) {
+    fun removeListener(listener: Listener) {
         viewManager.removeListener(listener)
     }
 
-    override fun toString(): String = "start: $start, y: $y"
+    override fun toString(): String = "start: $time, y: $y"
 
     override fun compareTo(other: ObjectPosition): Int =
-        compareValuesBy(this, other, ObjectPosition::start, ObjectPosition::y)
+        compareValuesBy(this, other, ObjectPosition::time, ObjectPosition::y)
 
-    fun copy(): ObjectPosition = ObjectPosition(obj, start, y)
+    fun copy(): ObjectPosition = ObjectPosition(time, y)
+
+    interface Listener {
+        fun moved(start: Double, y: Double)
+    }
+
+    companion object {
+        fun origin() = ObjectPosition(0.0, 0.0)
+    }
 }

@@ -52,7 +52,7 @@ class LayoutManager(
         val vert = (Vertical.groupByObject[obj] ?: setOf(obj)) + selectedObjects
         val hor = (Horizontal.groupByObject[obj] ?: setOf(obj)) + selectedObjects
         for (o in vert) o.position.y += dy
-        for (o in hor) o.position.start += dt
+        for (o in hor) o.position.time += dt
     }
 
     fun renamedObject(oldName: String, newName: String) = eachAspect {

@@ -12,12 +12,6 @@
 
 ### Mixing interface in AudioFlowGraph
 
-### Is there a better way of handling source-filter relations than groups?
-
-- one idea: objects further down the score get moved after those further up in the server tree
-- other idea: make dependencies explicit with dependency arrows
-  - but how to handle this with clones?
-
 ### completion
 
 - buffer refs

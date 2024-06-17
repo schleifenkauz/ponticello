@@ -3,10 +3,13 @@ package xenakis.ui
 import javafx.application.Platform
 import javafx.beans.binding.Bindings
 import javafx.scene.shape.Line
+import reaktive.value.now
+import xenakis.impl.ScWriter
 import xenakis.impl.SuperColliderClient
 import xenakis.impl.async
 import xenakis.impl.code
-import xenakis.model.XenakisProject
+import xenakis.model.*
+import java.util.*
 
 class ScorePlayer(
     private val scoreView: ScoreView,
@@ -67,6 +70,47 @@ class ScorePlayer(
         }
     }
 
+    private fun getSuffixFor(obj: ScoreObject, suffixes: MutableMap<String, Pair<Double, Int>>): String {
+        if (obj !is ClonedObject) return ""
+        val (end, idx) = suffixes[obj.name.now] ?: return ""
+        if (end < obj.start) {
+            suffixes.remove(obj.name.now)
+            return ""
+        }
+        suffixes[obj.name.now] = Pair(obj.start + obj.duration, idx + 1)
+        return idx.toString()
+    }
+
+    private fun writePlayerTask(writer: ScWriter, rootScore: Score, startFrom: Double) {
+        val unvisitedSubScores: Queue<SubScore> = LinkedList()
+        unvisitedSubScores.offer(SubScore(rootScore, prefix = "", ObjectPosition(-startFrom, 0.0)))
+        val locatedObjects = mutableListOf<LocatedScoreObject>()
+        val suffixes = mutableMapOf<String, Pair<Double, Int>>()
+        while (unvisitedSubScores.isNotEmpty()) {
+            val (score, prefix, position) = unvisitedSubScores.poll()
+            for (obj in score.objects) {
+                if (obj.muted) continue
+                val absolutePosition = position + obj.position
+                if (absolutePosition.time + obj.duration <= 0) continue
+                val original = if (obj is ClonedObject) obj.original else obj
+                val name = prefix + obj.name.now + getSuffixFor(obj, suffixes)
+                if (original is ScoreObjectGroup) {
+                    unvisitedSubScores.offer(SubScore(original.score, prefix = "${name}_", absolutePosition))
+                } else {
+                    locatedObjects.add(LocatedScoreObject(original, name, absolutePosition))
+                }
+            }
+        }
+        locatedObjects.sortBy { (_, _, pos) -> pos.time }
+        val env = ScorePlayEnv(writer.writer)
+        for (located in locatedObjects) {
+            val (obj, name, pos) = located
+            env.advanceToTime(pos.time)
+            obj.writeCode(env, name, pos.time)
+            env.markObjectStart(located)
+        }
+    }
+
     fun play() {
         if (isPlaying) return
         val startTime = scoreView.getTime(playHead.layoutX - PLAY_HEAD_WIDTH)
@@ -74,7 +118,9 @@ class ScorePlayer(
             client.eval(code {
                 +"~play = true"
                 //+"~startRecording.value(0)"
-                project.run { playScore(startTime) }
+                writer.appendLine("~synths = ();")
+                writer.appendLine("~tasks = ();")
+                writePlayerTask(writer, project.score, startTime)
                 +"nil"
             }).join()
             isPlaying = true
@@ -105,6 +151,10 @@ class ScorePlayer(
         scoreView.children.add(playHead)
         playHead.layoutX = scoreView.getX(playHeadPosition)
     }
+
+    private data class SubScore(val score: Score, val prefix: String, val position: ObjectPosition)
+
+    data class LocatedScoreObject(val obj: ScoreObject, val name: String, val absolutePosition: ObjectPosition)
 
     companion object {
         private const val PLAY_HEAD_WIDTH = 2.0

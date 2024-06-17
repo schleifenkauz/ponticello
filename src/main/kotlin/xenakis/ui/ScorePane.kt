@@ -357,7 +357,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
                     if (obj !is ClonedObject) {
                         obj.rename(score.nameForCopy(obj))
                     }
-                    obj.position.start += getTime(x) - leftTop.start
+                    obj.position.time += getTime(x) - leftTop.time
                     obj.position.y += y - leftTop.y
                     score.addObject(obj)
                     selector.select(getObjectView(obj), addToSelection = true)
@@ -470,7 +470,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
                     val objects = viewsInside(rect.boundsInParent).mapTo(mutableSetOf()) { it.myObject }
                     score.removeObjects(objects)
                     for (obj in objects) {
-                        obj.position.start -= getTime(rect.x)
+                        obj.position.time -= getTime(rect.x)
                         obj.position.y -= rect.y
                     }
                     val subScore = Score(objects.toMutableList())

@@ -23,14 +23,13 @@ import reaktive.value.fx.asObservableValue
 import reaktive.value.now
 import reaktive.value.reactiveVariable
 import xenakis.impl.Knob
-import xenakis.impl.SuperColliderClient
 import xenakis.model.*
 import xenakis.model.InteractionSettings.SnapOption
 import xenakis.sc.NumericalControlSpec
 import xenakis.ui.ToolSelector.Tool
 import xenakis.ui.XenakisController.Companion.currentProject
 
-abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionListener, SynthControls.View {
+abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), ObjectPosition.Listener, SynthControls.View {
     var isInitialized: Boolean = false
         private set
     lateinit var pane: ScorePane
@@ -60,7 +59,7 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
         colorPicker.prefHeight = 30.0
     }
 
-    protected open val supportedActions get() = listOf(Icon.Delete, Icon.Play, Icon.Mute, Icon.Repeat)
+    protected open val supportedActions get() = listOf(Icon.Delete, Icon.Mute, Icon.Repeat)
 
     fun getDetailPane() = DetailPane().apply {
         nameEditor = NameControl(myObject)
@@ -78,15 +77,7 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
                 myObject.muted = !myObject.muted
             }
         }
-        if (Icon.Play in supportedActions) addAction(Icon.Play, "Play this object", ::playMyObject)
         if (Icon.Delete in supportedActions) addAction(Icon.Delete, "Delete this object", ::delete)
-    }
-
-    fun playMyObject() {
-        context[SuperColliderClient].run {
-            +"~synths = ()"
-            myObject.play(this)
-        }
     }
 
     fun createLoop() {
@@ -163,7 +154,7 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
     }
 
     private fun initializeLayout() {
-        layoutX = pane.getX(myObject.position.start)
+        layoutX = pane.getX(myObject.position.time)
         layoutY = myObject.position.y
         prefWidth = getDisplayWidth()
         prefHeight = myObject.height
@@ -357,7 +348,7 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), PositionList
         }
     }
 
-    final override fun moved(obj: ScoreObject, start: Double, y: Double) {
+    final override fun moved(start: Double, y: Double) {
         relocate(pane.getX(myObject.start), myObject.y)
     }
 

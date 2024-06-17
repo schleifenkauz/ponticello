@@ -11,7 +11,6 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import reaktive.value.now
 import reaktive.value.reactiveValue
-import xenakis.impl.ScWriter
 import xenakis.impl.StatusListener.StatusUpdate
 import xenakis.impl.SuperColliderClient
 import xenakis.model.Score.Companion.ROOT_SCORE_NAME
@@ -71,25 +70,6 @@ class XenakisProject private constructor(
         folder.resolve("server_setup.json").writeJson(serverSetup)
         folder.resolve("server_tree.json").writeJson(serverTree)
         folder.resolve("score.json").writeJson(score)
-    }
-
-    fun exportAsScript(output: Appendable) {
-        with(ScWriter(output)) {
-            serverSetup.editor.result.now.code(writer, context)
-            serverTree.editor.result.now.code(writer, context)
-            groups.run { allocateAll() }
-            groups.run { allocateAll() }
-            flowGraph.run { setupAudioFlow() }
-            globalControls.run { setBusValues() }
-            instruments.run { allocateAll() }
-            score.writePlayerTask(writer, startFrom = 0.0, prefix = "")
-        }
-    }
-
-    fun ScWriter.playScore(fromTime: Double) {
-        appendLine("~synths = ();")
-        appendLine("~tasks = ();")
-        score.writePlayerTask(this, fromTime, prefix = "")
     }
 
     fun rebootServer() {

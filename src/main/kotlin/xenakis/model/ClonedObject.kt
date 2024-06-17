@@ -6,7 +6,10 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonObjectBuilder
 import reaktive.value.ReactiveVariable
 import reaktive.value.now
-import xenakis.impl.*
+import xenakis.impl.getString
+import xenakis.impl.getValue
+import xenakis.impl.putSerializableValue
+import xenakis.impl.setValue
 import xenakis.sc.ControlSpec
 import xenakis.ui.ScoreObjectView
 
@@ -16,13 +19,13 @@ class ClonedObject(private var originalRef: Reference) : ScoreObject() {
     override val mutableName: ReactiveVariable<String>
         get() = original.mutableName
 
-    override val position: ObjectPosition = ObjectPosition(this)
+    override val position: ObjectPosition = ObjectPosition()
     val original: ScoreObject get() = originalRef.get()
 
     override val type: String
         get() = "clone"
 
-    override var start: Double by position::start
+    override var start: Double by position::time
     override var y: Double by position::y
 
     override var nextInChain: Reference? = null
@@ -45,12 +48,10 @@ class ClonedObject(private var originalRef: Reference) : ScoreObject() {
 
     override fun getSpec(parameter: String): ControlSpec = original.getSpec(parameter)
 
-    override fun writeCode(writer: ScWriter, playAt: Double, name: String) = original.writeCode(writer, playAt, name)
+    override fun writeCode(env: ScorePlayEnv, name: String, playAt: Double) = original.writeCode(env, name, playAt)
 
-    override fun writeStartCode(writer: ScWriter, offset: Double, name: String) =
-        original.writeStartCode(writer, offset, name)
-
-    override fun play(writer: ScWriter) = original.play(writer)
+    override fun writeStartCode(env: ScorePlayEnv, offset: Double, name: String) =
+        original.writeStartCode(env, offset, name)
 
     override fun copy(newName: String): ScoreObject {
         val copy = original.copy(newName)

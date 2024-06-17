@@ -214,16 +214,6 @@ class XenakisController(private val primaryStage: Stage) {
         prefs.put("lastFile", "")
     }
 
-    fun exportAsScript() {
-        setExtensionFilter("*.scd")
-        val file = fc.showSaveDialog(primaryStage) ?: return
-        tryWithAlert("Exporting score as SuperCollider script") {
-            val writer = file.writer()
-            currentProject.exportAsScript(writer)
-            writer.close()
-        }
-    }
-
     fun closeProject() {
         clearLastFile()
         goToStartupScreen()

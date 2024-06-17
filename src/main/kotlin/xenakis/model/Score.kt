@@ -11,7 +11,6 @@ import kotlinx.serialization.Transient
 import reaktive.value.ReactiveString
 import reaktive.value.now
 import xenakis.impl.Point
-import xenakis.impl.ScWriter
 import xenakis.ui.ScoreObjectSelector
 import java.util.logging.Logger
 
@@ -157,27 +156,6 @@ class Score(
                 }
             }
         }
-    }
-
-    fun writePlayerTask(writer: ScWriter, startFrom: Double, prefix: String) {
-        val suffixes = mutableMapOf<String, Pair<Double, Int>>()
-        for (obj in objects.sortedBy { o -> o.start }) {
-            if (obj.muted) continue
-            if (startFrom > obj.start + obj.duration) continue
-            val suffix = getSuffix(obj, suffixes)
-            obj.writeCode(writer, obj.start - startFrom, name = prefix + obj.name.now + suffix)
-        }
-    }
-
-    private fun getSuffix(obj: ScoreObject, suffixes: MutableMap<String, Pair<Double, Int>>): String {
-        if (obj !is ClonedObject) return ""
-        val (end, idx) = suffixes[obj.name.now] ?: return ""
-        if (end < obj.start) {
-            suffixes.remove(obj.name.now)
-            return ""
-        }
-        suffixes[obj.name.now] = Pair(obj.start + obj.duration, idx + 1)
-        return idx.toString()
     }
 
     fun deleteTimeRange(start: Double, end: Double) {

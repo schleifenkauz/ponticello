@@ -8,7 +8,6 @@ import javafx.geometry.HorizontalDirection.RIGHT
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonObjectBuilder
 import reaktive.value.now
-import xenakis.impl.ScWriter
 import xenakis.impl.SuperColliderContext
 import xenakis.impl.getSerializableValue
 import xenakis.impl.putSerializableValue
@@ -31,9 +30,8 @@ class ScoreObjectGroup(name: String, val score: Score) : RegularScoreObject(name
         this.score.initialize(context, name)
     }
 
-    override fun writeCode(writer: ScWriter, playAt: Double, name: String) {
-        if (playAt < -duration) return
-        score.writePlayerTask(writer, -playAt, prefix = "${name}_")
+    override fun writeCode(env: ScorePlayEnv, name: String, playAt: Double) {
+        throw UnsupportedOperationException()
     }
 
     override fun cut(position: Double, whichHalf: HorizontalDirection): ScoreObject {
@@ -52,12 +50,12 @@ class ScoreObjectGroup(name: String, val score: Score) : RegularScoreObject(name
                 }
 
                 whichHalf == RIGHT && obj.start >= position -> {
-                    obj.position.start -= position
+                    obj.position.time -= position
                     objects.add(obj)
                 }
 
                 whichHalf == RIGHT && obj.start + obj.duration > position -> {
-                    obj.position.start -= position
+                    obj.position.time -= position
                     val rightHalf = obj.cut(position - obj.start, RIGHT, obj.name.now + "_right")
                         ?: obj.also { it.duration -= position - obj.start }
                     objects.add(rightHalf)

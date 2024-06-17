@@ -5,7 +5,6 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonObjectBuilder
 import kotlinx.serialization.json.put
 import reaktive.value.now
-import xenakis.impl.ScWriter
 import xenakis.impl.getDouble
 import xenakis.impl.getString
 import xenakis.ui.MemoObjectView
@@ -32,7 +31,7 @@ class MemoObject(name: String, text: String, width: Double) : RegularScoreObject
 
     override fun copy(): ScoreObject = MemoObject(name.now, text, width)
 
-    override fun writeCode(writer: ScWriter, playAt: Double, name: String) {}
+    override fun writeCode(env: ScorePlayEnv, name: String, playAt: Double) {}
 
     override fun JsonObjectBuilder.saveToJson() {
         put("text", text)

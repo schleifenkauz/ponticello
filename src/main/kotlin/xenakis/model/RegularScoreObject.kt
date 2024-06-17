@@ -6,7 +6,6 @@ import javafx.scene.paint.Color
 import reaktive.value.ReactiveVariable
 import reaktive.value.now
 import reaktive.value.reactiveVariable
-import xenakis.impl.ScWriter
 import xenakis.sc.ControlSpec
 import xenakis.ui.ScoreObjectView
 
@@ -15,7 +14,7 @@ sealed class RegularScoreObject(name: String) : ScoreObject() {
 
     override val mutableName: ReactiveVariable<String> = reactiveVariable(name)
 
-    final override val position: ObjectPosition = ObjectPosition(this)
+    final override val position: ObjectPosition = ObjectPosition()
     final override var duration: Double = 0.0
         set(value) {
             if (value == field) return
@@ -30,7 +29,7 @@ sealed class RegularScoreObject(name: String) : ScoreObject() {
             viewManager.notifyListeners { resized() }
         }
 
-    final override val start: Double by position::start
+    final override val start: Double by position::time
     final override val y: Double by position::y
 
     final override val associatedColor: ReactiveVariable<Color?> = reactiveVariable(null)
@@ -86,9 +85,6 @@ sealed class RegularScoreObject(name: String) : ScoreObject() {
     override fun getSpec(parameter: String): ControlSpec =
         throw NoSuchElementException("no spec for parameter $parameter in $this")
 
-    final override fun play(writer: ScWriter) {
-        writeStartCode(writer, offset = 0.0)
-    }
 
     override fun addView(view: ScoreObjectView) {
         @Suppress("UNCHECKED_CAST")

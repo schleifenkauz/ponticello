@@ -10,7 +10,6 @@ import xenakis.impl.Point
 import xenakis.sc.NumericalControlSpec
 import xenakis.sc.Warp
 import xenakis.ui.EnvelopeView
-import xenakis.ui.format
 import kotlin.math.absoluteValue
 
 @Serializable
@@ -25,8 +24,8 @@ class Envelope(private val _points: MutableList<Point>, val curve: Warp) {
     fun code(offset: Double, doneAction: String = "Done.freeSelf"): String {
         require(offset <= duration) { "Invalid offset: $offset, duration is $duration" }
         val afterOffset = if (offset == 0.0) this else cut(offset, whichHalf = RIGHT)
-        val levels = afterOffset.points.map { (_, y) -> y.format(2) }
-        val times = afterOffset.points.zipWithNext { a, b -> (b.x - a.x).format(2) }
+        val levels = afterOffset.points.map { (_, y) -> y.toString() }
+        val times = afterOffset.points.zipWithNext { a, b -> (b.x - a.x).toString() }
         return "EnvGen.kr(Env.new(levels: $levels, times: $times, curve: $curve), doneAction: $doneAction)"
     }
 

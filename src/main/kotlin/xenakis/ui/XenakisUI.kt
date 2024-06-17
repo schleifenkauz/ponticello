@@ -325,17 +325,15 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
         Icon.Save.button(action = "Save Project") { controller.saveProject() },
         Icon.Open.button(action = "Open Project") { controller.openProject() },
         Icon.Create.button(action = "Create new Project") { controller.createNewProject() },
-        Icon.Export.button(action = "Export as SuperCollider script") { controller.exportAsScript() },
         Icon.Close.button(action = "Close project and open startup screen") { controller.closeProject() }
     )
 
     private fun Scene.addGlobalShortcuts() {
         registerShortcuts {
-            //if (!controller.isProjectOpened) return@registerShortcuts
+            if (!controller.isProjectOpened) return@registerShortcuts
             on("Ctrl+S") { controller.saveProject() }
             on("Ctrl+O") { controller.openProject() }
             on("Ctrl+N") { controller.createNewProject() }
-            on("Ctrl+E") { controller.exportAsScript() }
 
             on("Ctrl+A") {
                 context[ScoreObjectSelector].selectAll()
@@ -424,10 +422,6 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
                     val view = selected.pane.getObjectView(obj)
                     scoreView.selector.select(view, addToSelection = false)
                 }
-            }
-            on("Alt+SPACE") {
-                val view = scoreView.selector.singleSelected.now ?: return@on
-                view.playMyObject()
             }
 
             on("Ctrl+Alt+T") { controller.client.run("s.plotTree;") }

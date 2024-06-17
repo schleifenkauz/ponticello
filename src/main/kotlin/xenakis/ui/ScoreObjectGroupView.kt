@@ -55,7 +55,7 @@ class ScoreObjectGroupView(private val obj: ScoreObjectGroup) : ScoreObjectView(
         obj.height += deltaHeight
         if (cursor.resizeFromLeft) {
             for (obj in obj.score.objects) {
-                obj.position.start += deltaDur
+                obj.position.time += deltaDur
             }
         }
         if (cursor.resizeFromTop) {

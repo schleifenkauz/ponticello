@@ -8,7 +8,6 @@ import reaktive.Observer
 import reaktive.value.ReactiveVariable
 import reaktive.value.now
 import reaktive.value.reactiveVariable
-import xenakis.impl.ScWriter
 import xenakis.impl.copy
 import xenakis.impl.getInt
 import xenakis.model.InteractionSettings.SnapOption
@@ -62,7 +61,7 @@ class TempoGridObject(
         }
     }
 
-    override fun writeCode(writer: ScWriter, playAt: Double, name: String) {}
+    override fun writeCode(env: ScorePlayEnv, name: String, playAt: Double) {}
 
     override fun JsonObjectBuilder.saveToJson() {
         put("bpm", beatsPerMinute.now)

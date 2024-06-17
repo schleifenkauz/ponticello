@@ -43,20 +43,18 @@ abstract class ScoreObject : AbstractRenamableObject() {
     abstract val associatedControls: Map<String, ParameterControl>
     abstract fun getSpec(parameter: String): ControlSpec
 
-    open fun writeStartCode(writer: ScWriter, offset: Double, name: String = this.name.now) {}
+    open fun writeStartCode(env: ScorePlayEnv, offset: Double, name: String = this.name.now) {}
 
-    open fun writeCode(writer: ScWriter, playAt: Double, name: String) {
+    open fun writeCode(env: ScorePlayEnv, name: String, playAt: Double) = with(env.writer) {
         if (playAt < -duration) return
         val offset = -(playAt.coerceAtMost(0.0))
-        writer.appendBlock("AppClock.sched(${(playAt).coerceAtLeast(0.0)})") {
+        appendBlock("AppClock.sched(${(playAt).coerceAtLeast(0.0)})") {
             appendBlock("if (~play)") {
-                writeStartCode(writer, offset, name)
+                writeStartCode(env, offset, name)
             }
         }
-        writer.appendLine(";")
+        appendLine(";")
     }
-
-    abstract fun play(writer: ScWriter)
 
     protected fun recordEdit(edit: Edit) {
         if (initialized) {
@@ -79,7 +77,7 @@ abstract class ScoreObject : AbstractRenamableObject() {
 
     fun duplicateClone(): ScoreObject {
         val clone = clone()
-        clone.position.start += duration
+        clone.position.time += duration
         parent!!.addObject(clone)
         return clone
     }
@@ -87,7 +85,7 @@ abstract class ScoreObject : AbstractRenamableObject() {
     fun duplicateCopy(): ScoreObject {
         val copied = if (this is ClonedObject) original else this
         val copy = copy(parent!!.nameForCopy(copied))
-        copy.position.start += duration
+        copy.position.time += duration
         parent!!.addObject(copy)
         return copy
     }
@@ -158,7 +156,7 @@ abstract class ScoreObject : AbstractRenamableObject() {
             val ser = Serializer.all[type] ?: error("unknown score object type $type")
             val name = json.getString("name") ?: error("no name found for object of type $type")
             val obj = ser.run { json.createFromJson(name) }
-            obj.position.start = json.getDouble("start") ?: 0.0
+            obj.position.time = json.getDouble("start") ?: 0.0
             obj.position.y = json.getDouble("y") ?: 0.0
             obj.nextInChain = json.getSerializableValue("next")
 
