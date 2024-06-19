@@ -7,9 +7,11 @@ import hextant.context.withoutUndo
 import hextant.fx.PseudoClasses
 import hextant.fx.initHextantScene
 import hextant.fx.registerShortcuts
+import hextant.serial.readJson
 import hextant.serial.snapshot
 import javafx.application.Platform
 import javafx.scene.control.Button
+import javafx.scene.input.DataFormat
 import javafx.scene.layout.VBox
 import reaktive.value.binding.map
 import reaktive.value.fx.asObservableValue
@@ -17,6 +19,8 @@ import reaktive.value.now
 import xenakis.impl.async
 import xenakis.model.*
 import xenakis.sc.view.ObjectSelectorControl
+import java.util.logging.Level
+import java.util.logging.Logger
 
 class InstrumentRegistryPane(
     private val registry: InstrumentRegistry,
@@ -28,6 +32,23 @@ class InstrumentRegistryPane(
 
     init {
         registry.addView(this)
+        setupDropArea(
+            { db -> db.hasContent(DataFormat.FILES) && db.files.all { f -> f.name == "instruments.json" } }
+        ) { ev ->
+            for (file in ev.dragboard.files) {
+                try {
+                    val instruments = file.readJson<InstrumentRegistry>()
+                    for (instr in instruments.all()) {
+                        if (!registry.has(instr.name.now)) {
+                            registry.add(instr)
+                        }
+                    }
+                } catch (ex: Exception) {
+                    logger.log(Level.SEVERE, ex.message, ex)
+                    alertError("Error adding instruments: ${ex.message}")
+                }
+            }
+        }
     }
 
     override fun reload() {
@@ -161,5 +182,7 @@ class InstrumentRegistryPane(
         window.show()
     }
 
-    companion object : PublicProperty<InstrumentRegistryPane> by publicProperty("SynthDefRegistryPane")
+    companion object : PublicProperty<InstrumentRegistryPane> by publicProperty("SynthDefRegistryPane") {
+        private val logger = Logger.getLogger("InstrumentRegistryPane")
+    }
 }

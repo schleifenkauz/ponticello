@@ -4,8 +4,6 @@ import bundles.PublicProperty
 import bundles.publicProperty
 import bundles.set
 import javafx.scene.image.Image
-import javafx.scene.input.TransferMode
-import reaktive.value.now
 import reaktive.value.reactiveVariable
 import xenakis.model.SampleObject
 import xenakis.model.SampleRegistry
@@ -52,15 +50,10 @@ class SampleRegistryPane(
             if (samples.getSample(newFile) != null) return@addAction
             obj.loadFile(newFile)
         }
-        setOnDragDetected { ev ->
-            val db = startDragAndDrop(TransferMode.COPY)
-            db.setContent(mapOf(SampleObject.DATA_FORMAT to obj.name.now))
+        addGrabber(SampleObject.DATA_FORMAT) {
             val width = samples.context[XenakisUI].scoreView.getWidth(obj.duration)
             val height = 150.0
-            val preserveRatio = false
-            val smooth = false
-            db.dragView = Image(obj.spectrogramFile.inputStream(), width, height, preserveRatio, smooth)
-            ev.consume()
+            dragView = Image(obj.spectrogramFile.inputStream(), width, height, false, false)
         }
     }
 

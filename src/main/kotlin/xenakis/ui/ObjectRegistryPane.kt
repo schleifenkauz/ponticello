@@ -4,9 +4,13 @@ import hextant.fx.registerShortcuts
 import javafx.collections.FXCollections
 import javafx.scene.Node
 import javafx.scene.control.*
+import javafx.scene.input.DataFormat
+import javafx.scene.input.Dragboard
+import javafx.scene.input.TransferMode
 import javafx.scene.layout.HBox
 import javafx.scene.layout.Priority
 import javafx.scene.layout.VBox
+import reaktive.value.now
 import xenakis.model.NamedObject
 import xenakis.model.ObjectRegistry
 import xenakis.model.RenamableObject
@@ -115,7 +119,7 @@ abstract class ObjectRegistryPane<O : NamedObject>(
             val nameDisplay =
                 if (obj is RenamableObject) NameControl(obj)
                 else HBox(label(obj.name).styleClass("name-field")).styleClass("name")
-            HBox.setHgrow(nameDisplay, Priority.ALWAYS)
+            setHgrow(nameDisplay, Priority.ALWAYS)
             children.addAll(nameDisplay, extraControls, actions)
             addAction(Icon.Delete, "Remove object") { pane.registry.remove(obj) }.isDisable = !pane.canDelete(obj)
         }
@@ -124,6 +128,16 @@ abstract class ObjectRegistryPane<O : NamedObject>(
             val button = icon.button(action = description) { action() }
             actions.children.add(0, button)
             return button
+        }
+
+        fun addGrabber(dataFormat: DataFormat, extraConfig: Dragboard.() -> Unit = {}) {
+            val btn = addAction(Icon.Grab, "Grab object") { }
+            btn.setOnDragDetected { ev ->
+                val db = startDragAndDrop(TransferMode.COPY)
+                db.setContent(mapOf(dataFormat to obj.name.now))
+                db.extraConfig()
+                ev.consume()
+            }
         }
 
         fun addExtraControl(vararg node: Node) {
