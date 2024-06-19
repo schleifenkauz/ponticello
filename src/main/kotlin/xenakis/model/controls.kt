@@ -46,6 +46,8 @@ class BusControl(val bus: ReactiveVariable<BusObjectReference>) : ParameterContr
     override fun initialize(context: Context) {
         bus.now.resolve(context)
     }
+
+    override fun copy(): ParameterControl = BusControl(bus.copy())
 }
 
 @Serializable
@@ -53,6 +55,8 @@ class BusValueControl(val bus: ReactiveVariable<BusObjectReference>) : Parameter
     override fun initialize(context: Context) {
         bus.now.resolve(context)
     }
+
+    override fun copy(): ParameterControl = BusValueControl(bus.copy())
 }
 
 @Serializable
@@ -60,6 +64,8 @@ data class SingleBusValueControl(val bus: ReactiveVariable<BusObjectReference>) 
     override fun initialize(context: Context) {
         bus.now.resolve(context)
     }
+
+    override fun copy(): ParameterControl = SingleBusValueControl(bus.copy())
 }
 
 @Serializable
@@ -70,6 +76,8 @@ data class BufferControl(
     override fun initialize(context: Context) {
         sample.now?.resolve(context)
     }
+
+    override fun copy(): ParameterControl = BufferControl(sample.copy(), display.copy())
 }
 
 @Serializable
@@ -77,11 +85,17 @@ data class GroupControl(val group: ReactiveVariable<GroupObjectReference>) : Par
     override fun initialize(context: Context) {
         group.now.resolve(context)
     }
+
+    override fun copy(): ParameterControl = GroupControl(group.copy())
 }
 
 @Serializable
-data class CustomControl(val expr: EditorRoot<ScExprExpander>) : ParameterControl()
+data class CustomControl(val expr: EditorRoot<ScExprExpander>) : ParameterControl() {
+    override fun copy(): ParameterControl = CustomControl(expr.clone())
+}
 
 @Serializable
-data class ConstantControl(val value: ReactiveVariable<Double>) : ParameterControl()
+data class ConstantControl(val value: ReactiveVariable<Double>) : ParameterControl() {
+    override fun copy(): ParameterControl = ConstantControl(value.copy())
+}
 

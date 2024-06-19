@@ -10,7 +10,6 @@ import reaktive.Observer
 import reaktive.list.observeEach
 import reaktive.value.*
 import xenakis.impl.ScWriter
-import xenakis.impl.SuperColliderClient
 import xenakis.impl.getSerializableValue
 import xenakis.impl.putSerializableValue
 import xenakis.sc.ControlSpec
@@ -86,15 +85,17 @@ class SynthObject(
     }
 
     private fun runOnActiveSynths(action: ScWriter.() -> Unit) {
-        context[SuperColliderClient].run {
-            for (synth in myActiveSynths) {
-                appendBlock("if (~synths != nil && ~synths['$synth'] != nil && ~synths['$synth'].isRunning)") {
-                    append("~synths['$synth'].")
-                    action()
+        /*
+                context[SuperColliderClient].run {
+                    for (synth in myActiveSynths) {
+                        appendBlock("if (~synths != nil && ~synths['$synth'] != nil && ~synths['$synth'].isRunning)") {
+                            append("~synths['$synth'].")
+                            action()
+                        }
+                        appendLine(";")
+                    }
                 }
-                appendLine(";")
-            }
-        }
+        */
     }
 
     override fun addedControl(parameter: String, control: ParameterControl) {
@@ -123,11 +124,7 @@ class SynthObject(
         controlObservers.remove(control)?.kill()
     }
 
-    override fun writeStartCode(
-        env: ScorePlayEnv,
-        offset: Double,
-        name: String
-    ) {
+    override fun writeStartCode(env: ScorePlayEnv, offset: Double, name: String) {
         myActiveSynths.add(name)
         env.writer.appendBlock("s.makeBundle(0)") {
             val constantArguments = controls.controlMap.mapNotNull { (param, control) ->
@@ -187,8 +184,8 @@ class SynthObject(
                         val expr = control.expr.editor.result.now
                         val busName = "~auxil_${name}_${param}"
                         +"$busName = Bus.control(s, 1)"
-                        this.append("{ ")
-                        expr.code(this, context)
+                        append("{ ")
+                        expr.code(writer, context)
                         +" }.play(s, $busName)"
                         +"${synthVar}.map(\\$param, $busName)"
                     }

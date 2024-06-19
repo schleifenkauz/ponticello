@@ -5,7 +5,7 @@ import xenakis.impl.ScWriter
 import xenakis.ui.ScorePlayer.LocatedScoreObject
 import java.util.*
 
-class ScorePlayEnv(val writer: ScWriter) {
+class ScorePlayEnv(val writer: ScWriter, val nthStart: Int) {
     private val activeObjects: PriorityQueue<LocatedScoreObject> =
         PriorityQueue(compareBy { (obj, _, pos) -> pos.time + obj.duration })
 

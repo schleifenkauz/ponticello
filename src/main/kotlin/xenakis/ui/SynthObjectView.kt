@@ -108,7 +108,6 @@ class SynthObjectView(val obj: SynthObject) : ScoreObjectView(obj), SynthControl
         spectrogramViews.clear()
         if (obj.displaySample?.now != true) return
         val imageFile = obj.sample.now?.get()?.spectrogramFile ?: return
-        if (!imageFile.isFile) return
         image = Image(imageFile.inputStream())
         displaySpectrogram()
     }
@@ -116,6 +115,7 @@ class SynthObjectView(val obj: SynthObject) : ScoreObjectView(obj), SynthControl
     private fun displaySpectrogram() {
         envelopesPane.children.removeAll(spectrogramViews)
         spectrogramViews.clear()
+        if (obj.displaySample?.now != true) return
         if (image == null) return
         val sample = obj.sample.now?.get() ?: return
         val startPos = obj.playbufStartPos?.now ?: 0.0

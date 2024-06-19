@@ -3,9 +3,11 @@ package xenakis.ui
 import bundles.PublicProperty
 import bundles.createBundle
 import bundles.publicProperty
+import hextant.context.withoutUndo
 import hextant.fx.PseudoClasses
 import hextant.fx.initHextantScene
 import hextant.fx.registerShortcuts
+import hextant.serial.snapshot
 import javafx.application.Platform
 import javafx.scene.control.Button
 import javafx.scene.layout.VBox
@@ -132,11 +134,14 @@ class InstrumentRegistryPane(
                 ) styleClass "synth-def-pane"
                 SubWindow(pane, "", registry.context).apply {
                     titleProperty().bind(obj.name.map { name -> "SynthDef $name" }.asObservableValue())
-                    width = 1000.0
-                    height = 1000.0
+                    resize(900.0, 800.0)
                     scene.initHextantScene(registry.context, applyStyle = false)
                     scene.registerShortcuts {
                         on("Ctrl+S") {
+                            val editor = obj.ugenGraph.editor
+                            editor.context.withoutUndo {
+                                editor.snapshot().reconstructObject(editor)
+                            }
                             obj.sync()
                             notifyInfo("Synchronized SynthDef '${obj.name.now}'")
                         }
@@ -149,7 +154,7 @@ class InstrumentRegistryPane(
             } else {
                 val pane = ParameterInfoPane(obj.parameters)
                 SubWindow(pane, obj.name.now, registry.context, type = SubWindow.Type.Popup).apply {
-                    resize(1000.0, 300.0)
+                    resize(800.0, 300.0)
                 }
             }
         }

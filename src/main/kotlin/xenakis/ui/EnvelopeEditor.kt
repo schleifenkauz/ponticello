@@ -119,8 +119,13 @@ class EnvelopeEditor(
         line.points[idx * 2 + 1] = ty
     }
 
-    private fun transformXToTime(x: Double): Double =
-        xTransform.unmap(parentPane.snapToGrid(x, associatedObject.y).x).coerceIn(xTransform.sourceRange)
+    private fun transformXToTime(x: Double): Double {
+        val scoreX = x + objectView.layoutX
+        val scoreY = associatedObject.y + objectView.layoutX
+        val xInScore = parentPane.snapToGrid(scoreX, scoreY).x
+        val xInObject = xInScore - objectView.layoutX
+        return xTransform.unmap(xInObject).coerceIn(xTransform.sourceRange)
+    }
 
     private fun transformYToValue(y: Double) = yTransform.unmap(y).snap(valueGrid).coerceIn(yTransform.sourceRange)
 
@@ -170,11 +175,11 @@ class EnvelopeEditor(
         ) { ev, _, old, dx, dy ->
             val idx = handles.indexOf(handle)
             val newX = when (idx) {
-                0 -> xTransform.map(0.0)
-                envelope.points.size - 1 -> xTransform.map(associatedObject.duration)
-                else -> (old.minX + dx / pane.parent.scaleX).coerceIn(xTransform.targetRange.reverseIfEmpty())
+                0 -> 0.0
+                envelope.points.size - 1 -> objectView.prefWidth
+                else -> (old.minX + dx).coerceIn(xTransform.targetRange.reverseIfEmpty())
             }
-            val newY = (old.minY + dy / pane.parent.scaleY).coerceIn(yTransform.targetRange.reverseIfEmpty())
+            val newY = (old.minY + dy).coerceIn(yTransform.targetRange.reverseIfEmpty())
 
             val px = transformXToTime(newX)
             val py = transformYToValue(newY)
@@ -198,11 +203,15 @@ class EnvelopeEditor(
         }
         handle.setOnMouseClicked { ev ->
             val idx = handles.indexOf(handle)
+            val point = envelope.points[idx]
             if (ev.button == MouseButton.SECONDARY) {
                 if (idx != 0 && idx != envelope.points.size - 1) {
-                    val point = envelope.points[idx]
                     parentPane.context[UndoManager].record(EnvelopeEdit.RemovePoint(point, idx, envelope))
                     envelope.removePoint(idx)
+                }
+            } else if (ev.clickCount >= 2) {
+                showNumberPrompt("$parameterName at t=${point.x}", spec.range, point.y, parentPane.context) { value ->
+                    envelope.editPoint(idx, point.copy(y = value))
                 }
             } else if (!ev.isShiftDown) {
                 bringToFront()

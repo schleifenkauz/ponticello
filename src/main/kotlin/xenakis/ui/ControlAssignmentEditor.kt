@@ -2,11 +2,13 @@ package xenakis.ui
 
 import bundles.createBundle
 import hextant.context.Context
+import hextant.fx.initHextantScene
 import hextant.serial.EditorRoot
 import javafx.collections.FXCollections.observableList
 import javafx.geometry.Pos
 import javafx.scene.Node
 import javafx.scene.control.*
+import javafx.scene.layout.BorderPane
 import javafx.scene.layout.HBox
 import javafx.scene.layout.Priority
 import javafx.util.Duration
@@ -74,13 +76,13 @@ class ControlAssignmentEditor(
         val type = ControlType.getType(control)
         settingControl = true
         comboBox.value = type
-        detailEditor = type.createDetailInput(spec, control, obj.context)
+        detailEditor = type.createDetailInput(parameter, spec, control, obj.context)
         detailEditors[type] = detailEditor!!
         settingControl = false
     }
 
     sealed class ControlType<C : ParameterControl> {
-        abstract fun createDetailInput(spec: ControlSpec, control: C, context: Context): Node
+        abstract fun createDetailInput(parameter: String, spec: ControlSpec, control: C, context: Context): Node
 
         abstract fun createDefaultControl(obj: ScoreObject, spec: ControlSpec, initialValue: Double?): C
 
@@ -88,6 +90,7 @@ class ControlAssignmentEditor(
 
         object Constant : ControlType<ConstantControl>() {
             override fun createDetailInput(
+                parameter: String,
                 spec: ControlSpec,
                 control: ConstantControl,
                 context: Context,
@@ -114,7 +117,12 @@ class ControlAssignmentEditor(
         }
 
         object Knob : ControlType<KnobControl>() {
-            override fun createDetailInput(spec: ControlSpec, control: KnobControl, context: Context): Node {
+            override fun createDetailInput(
+                parameter: String,
+                spec: ControlSpec,
+                control: KnobControl,
+                context: Context
+            ): Node {
                 spec as NumericalControlSpec
                 val min = spec.min.get()
                 val max = spec.max.get()
@@ -145,7 +153,12 @@ class ControlAssignmentEditor(
         }
 
         object Envelope : ControlType<EnvelopeControl>() {
-            override fun createDetailInput(spec: ControlSpec, control: EnvelopeControl, context: Context): Node {
+            override fun createDetailInput(
+                parameter: String,
+                spec: ControlSpec,
+                control: EnvelopeControl,
+                context: Context
+            ): Node {
                 val colorPicker = colorPicker(control.displayColor)
                 colorPicker.setFixedWidth(30.0)
                 val toggle = ToggleSwitch("Display: ")
@@ -170,8 +183,18 @@ class ControlAssignmentEditor(
         }
 
         object LFO : ControlType<CustomControl>() {
-            override fun createDetailInput(spec: ControlSpec, control: CustomControl, context: Context): Node =
-                control.expr.control
+            override fun createDetailInput(
+                parameter: String,
+                spec: ControlSpec,
+                control: CustomControl,
+                context: Context
+            ): Node {
+                val pane = ScrollPane(control.expr.control)
+                val window = SubWindow(BorderPane(pane), "LFO for $parameter", context)
+                window.scene.initHextantScene(context)
+                window.resize(800.0, 800.0)
+                return button("Code") { window.show() }
+            }
 
             override fun createDefaultControl(
                 obj: ScoreObject,
@@ -185,7 +208,12 @@ class ControlAssignmentEditor(
         }
 
         object Bus : ControlType<BusControl>() {
-            override fun createDetailInput(spec: ControlSpec, control: BusControl, context: Context): Node =
+            override fun createDetailInput(
+                parameter: String,
+                spec: ControlSpec,
+                control: BusControl,
+                context: Context
+            ): Node =
                 busSelector(context, control.bus)
 
             override fun createDefaultControl(obj: ScoreObject, spec: ControlSpec, initialValue: Double?): BusControl =
@@ -193,7 +221,12 @@ class ControlAssignmentEditor(
         }
 
         object BusValue : ControlType<BusValueControl>() {
-            override fun createDetailInput(spec: ControlSpec, control: BusValueControl, context: Context): Node =
+            override fun createDetailInput(
+                parameter: String,
+                spec: ControlSpec,
+                control: BusValueControl,
+                context: Context
+            ): Node =
                 busSelector(context, control.bus)
 
             override fun createDefaultControl(
@@ -206,7 +239,12 @@ class ControlAssignmentEditor(
 
         object SingleBusValue :
             ControlType<SingleBusValueControl>() {
-            override fun createDetailInput(spec: ControlSpec, control: SingleBusValueControl, context: Context): Node =
+            override fun createDetailInput(
+                parameter: String,
+                spec: ControlSpec,
+                control: SingleBusValueControl,
+                context: Context
+            ): Node =
                 busSelector(context, control.bus)
 
             override fun createDefaultControl(
@@ -217,7 +255,12 @@ class ControlAssignmentEditor(
         }
 
         object Buffer : ControlType<BufferControl>() {
-            override fun createDetailInput(spec: ControlSpec, control: BufferControl, context: Context): Node {
+            override fun createDetailInput(
+                parameter: String,
+                spec: ControlSpec,
+                control: BufferControl,
+                context: Context
+            ): Node {
                 val initialValue = control.sample
                 val editor = SampleSelector(context, initialValue)
                 val selectorControl = ObjectSelectorControl(editor, createBundle())
@@ -240,7 +283,12 @@ class ControlAssignmentEditor(
         }
 
         object Group : ControlType<GroupControl>() {
-            override fun createDetailInput(spec: ControlSpec, control: GroupControl, context: Context): Node {
+            override fun createDetailInput(
+                parameter: String,
+                spec: ControlSpec,
+                control: GroupControl,
+                context: Context
+            ): Node {
                 val selector = GroupSelector(context, control.group)
                 return ObjectSelectorControl(selector, createBundle())
             }

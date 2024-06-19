@@ -16,6 +16,8 @@ class ScorePlayer(
     private val project: XenakisProject,
     private val client: SuperColliderClient
 ) : Thread() {
+    private var nthStart = 0
+
     var playHeadPosition = 0.0
         private set
 
@@ -70,22 +72,17 @@ class ScorePlayer(
         }
     }
 
-    private fun getSuffixFor(obj: ScoreObject, suffixes: MutableMap<String, Pair<Double, Int>>): String {
-        if (obj !is ClonedObject) return ""
-        val (end, idx) = suffixes[obj.name.now] ?: return ""
-        if (end < obj.start) {
-            suffixes.remove(obj.name.now)
-            return ""
-        }
-        suffixes[obj.name.now] = Pair(obj.start + obj.duration, idx + 1)
-        return idx.toString()
+    private fun getSuffixFor(obj: ScoreObject, suffixes: MutableMap<String, Int>): String {
+        val idx = suffixes.getOrPut(obj.name.now) { 0 }
+        suffixes[obj.name.now] = idx + 1
+        return if (idx == 0) "" else idx.toString()
     }
 
     private fun writePlayerTask(writer: ScWriter, rootScore: Score, startFrom: Double) {
         val unvisitedSubScores: Queue<SubScore> = LinkedList()
         unvisitedSubScores.offer(SubScore(rootScore, prefix = "", ObjectPosition(-startFrom, 0.0)))
         val locatedObjects = mutableListOf<LocatedScoreObject>()
-        val suffixes = mutableMapOf<String, Pair<Double, Int>>()
+        val suffixes = mutableMapOf<String, Int>()
         while (unvisitedSubScores.isNotEmpty()) {
             val (score, prefix, position) = unvisitedSubScores.poll()
             for (obj in score.objects) {
@@ -102,7 +99,7 @@ class ScorePlayer(
             }
         }
         locatedObjects.sortBy { (_, _, pos) -> pos.time }
-        val env = ScorePlayEnv(writer.writer)
+        val env = ScorePlayEnv(writer.writer, nthStart)
         for (located in locatedObjects) {
             val (obj, name, pos) = located
             env.advanceToTime(pos.time)
@@ -116,11 +113,12 @@ class ScorePlayer(
         val startTime = scoreView.getTime(playHead.layoutX - PLAY_HEAD_WIDTH)
         async(timeLimit = 2000) {
             client.eval(code {
-                +"~play = true"
+                +"~play = $nthStart"
                 //+"~startRecording.value(0)"
                 writer.appendLine("~synths = ();")
                 writer.appendLine("~tasks = ();")
                 writePlayerTask(writer, project.score, startTime)
+                nthStart += 1
                 +"nil"
             }).join()
             isPlaying = true

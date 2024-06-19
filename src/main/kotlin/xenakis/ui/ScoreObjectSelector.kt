@@ -53,8 +53,13 @@ class ScoreObjectSelector(private val context: Context, private val rootPane: Sc
     }
 
     fun removeSelected() {
-        context[UndoManager].beginCompoundEdit()
         val score = selectedObjects.firstOrNull()?.parent ?: return
+        if (selectedObjects.any { obj -> rootPane.score.hasClonesOf(obj) }) {
+            val removeNevertheless =
+                showYesNoDialog("Some of the selected objects have clones. Those will be removed too. Continue?")
+            if (removeNevertheless != true) return
+        }
+        context[UndoManager].beginCompoundEdit()
         score.removeObjects(selectedObjects)
         context[UndoManager].finishCompoundEdit("Remove objects")
     }

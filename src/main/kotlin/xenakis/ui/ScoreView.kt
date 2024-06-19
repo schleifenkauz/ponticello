@@ -44,7 +44,7 @@ class ScoreView(score: Score, context: Context) : ScorePane(score, context) {
         score.addListener(this)
         styleClass.add("score-view")
         selectedArea.registerShortcuts {
-            on("Alt+S") {
+            on("S") {
                 displayStart = getTime(selectedArea.x)
                 displayEnd = getTime(selectedArea.x + selectedArea.width)
                 repaint()
@@ -62,6 +62,7 @@ class ScoreView(score: Score, context: Context) : ScorePane(score, context) {
         val (x, y) = snapToGrid(mousePos.x, mousePos.y)
         clipboardObjectView.relocate(x, y)
         clipboardObjectView.opacity = 0.3
+        clipboardObjectView.viewOrder = -1000.0
         clipboardObjectView.isMouseTransparent = true
         clipboardObjectView.visibleProperty().bind(hoverProperty())
     }
@@ -180,7 +181,7 @@ class ScoreView(score: Score, context: Context) : ScorePane(score, context) {
     private fun setupNavigation() {
         setOnScroll { ev ->
             if (ev.isControlDown) {
-                val factor = exp(-ev.deltaY * 0.002)
+                val factor = exp(-ev.deltaY * 0.01)
                 zoom(factor, ev.x)
             } else {
                 scroll(-ev.deltaX / pixelsPerSecond)

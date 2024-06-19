@@ -17,6 +17,7 @@ import javafx.geometry.Orientation
 import javafx.geometry.Pos
 import javafx.scene.Scene
 import javafx.scene.control.*
+import javafx.scene.input.KeyEvent
 import javafx.scene.layout.HBox
 import javafx.scene.layout.Pane
 import javafx.scene.layout.Priority
@@ -340,30 +341,30 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
             }
 
             on("Ctrl?+SPACE") { ev ->
-                if (ev.isControlDown || ev.target !is TextInputControl) togglePlay()
+                if (ev.isControlDown || !ev.isTargetTextInput) togglePlay()
             }
             on("Ctrl?+PERIOD") { ev ->
-                if (ev.isControlDown || ev.target !is TextInputControl) stop()
+                if (ev.isControlDown || !ev.isTargetTextInput) stop()
             }
             on("HOME") { scoreView.displayWholeScore() }
             on("DIGIT0") { ev ->
-                if (ev.target !is TextInputControl) {
+                if (!ev.isTargetTextInput) {
                     scoreView.display(0.0, scoreView.displayedDuration)
                     player.movePlayHead(0.0)
                 }
             }
             on("Shift+DIGIT0") { ev ->
-                if (ev.target !is TextInputControl) {
+                if (!ev.isTargetTextInput) {
                     player.movePlayHead(scoreView.displayStart)
                 }
             }
             on("PAGE_UP") { ev ->
-                if (ev.target !is TextInputControl) {
+                if (!ev.isTargetTextInput) {
                     scoreView.scroll(-100.0 / scoreView.pixelsPerSecond)
                 }
             }
             on("PAGE_DOWN") { ev ->
-                if (ev.target !is TextInputControl) {
+                if (!ev.isTargetTextInput) {
                     scoreView.scroll(100.0 / scoreView.pixelsPerSecond)
                 }
             }
@@ -385,36 +386,36 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
             registerToolNumber(Tool.Cut, 8)
             registerToolNumber(Tool.AddTime, 9)
 
-            on("Alt?+G") { ev ->
-                if (ev.isAltDown || ev.target !is TextInputControl) {
+            on("Alt+G") { ev ->
+                if (ev.isAltDown || !ev.isTargetTextInput) {
                     project.settings.displayTimeGrid.toggle()
                 }
             }
-            on("Alt?+S") { ev ->
-                if (ev.isAltDown || ev.target !is TextInputControl) {
+            on("Alt+S") { ev ->
+                if (ev.isAltDown || !ev.isTargetTextInput) {
                     project.settings.snapEnabled.toggle()
                 }
             }
 
             on("DELETE") { ev ->
-                if (ev.target !is TextInputControl) {
+                if (!ev.isTargetTextInput) {
                     scoreView.removeSelected()
                 }
             }
 
             on("Alt?+M") { ev ->
-                if (ev.isAltDown || ev.target !is TextInputControl) {
+                if (ev.isAltDown || !ev.isTargetTextInput) {
                     scoreView.selector.toggleMuteSelected()
                 }
             }
             on("Alt?+L") { ev ->
-                if (ev.isAltDown || ev.target !is TextInputControl) {
+                if (ev.isAltDown || !ev.isTargetTextInput) {
                     val view = scoreView.selector.singleSelected.now ?: return@on
                     view.createLoop()
                 }
             }
             on("Alt?+Shift?+D") { ev ->
-                if (ev.isAltDown || ev.target !is TextInputControl) {
+                if (ev.isAltDown || !ev.isTargetTextInput) {
                     val selected = scoreView.selector.singleSelected.now ?: return@on
                     val obj =
                         if (ev.isShiftDown) selected.myObject.duplicateClone()
@@ -439,7 +440,7 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
             on("F5") { controller.restartScSynth() }
 
             on("Shift?+C") { ev ->
-                if (ev.target !is TextInputControl) {
+                if (!ev.isTargetTextInput) {
                     toolSelector.select(Tool.Pointer)
                     val view = context[ScoreObjectSelector].singleSelected.now ?: return@on
                     var obj = view.myObject
@@ -462,11 +463,13 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
 
     private fun KeyEventHandlerBody<Unit>.registerToolNumber(tool: Tool, digit: Int) {
         on("Alt?+DIGIT$digit") { ev ->
-            if (ev.isAltDown || ev.target !is TextInputControl) {
+            if (ev.isAltDown || !ev.isTargetTextInput) {
                 toolSelector.select(tool)
             }
         }
     }
+
+    private val KeyEvent.isTargetTextInput get() = target is TextInputControl || target is Spinner<*>
 
     override fun readyToPlay() {
         if (displaysProject) {

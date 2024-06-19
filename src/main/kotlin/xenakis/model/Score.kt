@@ -208,6 +208,15 @@ class Score(
         return availableName(prefix)
     }
 
+    fun hasClonesOf(obj: ScoreObject): Boolean {
+        if (obj is ClonedObject) return false
+        for (o in objects) {
+            if (o is ClonedObject && o.original == obj) return true
+            if (o is ScoreObjectGroup && o.score.hasClonesOf(obj)) return true
+        }
+        return false
+    }
+
     companion object {
         val rootScore = publicProperty<Score>("root-score")
 

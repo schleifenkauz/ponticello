@@ -49,7 +49,7 @@ abstract class ScoreObject : AbstractRenamableObject() {
         if (playAt < -duration) return
         val offset = -(playAt.coerceAtMost(0.0))
         appendBlock("AppClock.sched(${(playAt).coerceAtLeast(0.0)})") {
-            appendBlock("if (~play)") {
+            appendBlock("if (~play == ${env.nthStart})") {
                 writeStartCode(env, offset, name)
             }
         }
