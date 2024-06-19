@@ -7,6 +7,7 @@ import javafx.geometry.HorizontalDirection.RIGHT
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonObjectBuilder
 import reaktive.Observer
+import reaktive.collection.observeCollection
 import reaktive.list.observeEach
 import reaktive.value.*
 import xenakis.impl.ScWriter
@@ -28,6 +29,7 @@ class SynthObject(
     override val viewManager: ListenerManager<SynthObjectView> = ListenerManager.createWeakListenerManager()
 
     private val controlObservers = mutableMapOf<ParameterControl, Observer>()
+    private lateinit var parameterObserver: Observer
     private val myActiveSynths = mutableSetOf<String>()
 
     val synthDef: SynthDefObject get() = synthDefRef.get()
@@ -41,10 +43,10 @@ class SynthObject(
     val displaySample: ReactiveValue<Boolean>? get() = bufferControl?.display
 
     val playbufStartPos: ReactiveVariable<Double>?
-        get() = (controls.controlMap["startPos"] as? ConstantControl)?.value
+        get() = (controls.controlMap["startPos"] as? ConstantControl)?.value?.takeIf { bufferControl != null }
 
     val playBufRate: ReactiveVariable<Double>?
-        get() = (controls.controlMap["rate"] as? ConstantControl)?.value
+        get() = (controls.controlMap["rate"] as? ConstantControl)?.value?.takeIf { bufferControl != null }
 
     override val associatedControls: Map<String, ParameterControl> get() = controls.controlMap
 
@@ -65,6 +67,18 @@ class SynthObject(
         }
     )
 
+    fun reverse() {
+        for (ctrl in controls.controlMap.values) {
+            if (ctrl is EnvelopeControl) {
+                ctrl.envelope.reverse()
+            }
+        }
+        if (sample.now != null && playBufRate != null && playbufStartPos != null) {
+            playbufStartPos!!.now += playBufRate!!.now * duration
+            playBufRate!!.now *= -1
+        }
+    }
+
     override fun getSpec(parameter: String): ControlSpec =
         if (parameter == "group") GroupControlSpec()
         else synthDef.getParameter(parameter).spec.now
@@ -73,8 +87,10 @@ class SynthObject(
         if (initialized) return
         super.initialize(context)
         synthDefRef.resolve(context)
-        controls.initialize(context, synthDef)
-        controls.addView(this)
+        parameterObserver = synthDef.parameters.observeCollection(
+            added = { _, param -> controls.addControl(param.name.now, param.defaultControl(context)) },
+            removed = { _, param -> controls.removeControl(param.name.now) }
+        )
         parameterNameObserver = synthDef.parameters.observeEach { _, p ->
             p.name.observe { _, oldName, newName ->
                 val control = controls.controlMap[oldName] ?: return@observe
@@ -82,6 +98,8 @@ class SynthObject(
                 controls.addControl(newName, control)
             }
         }
+        controls.initialize(context, synthDef)
+        controls.addView(this)
     }
 
     private fun runOnActiveSynths(action: ScWriter.() -> Unit) {

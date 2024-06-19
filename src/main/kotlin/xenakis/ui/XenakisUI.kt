@@ -33,11 +33,8 @@ import reaktive.value.forEach
 import reaktive.value.fx.asObservableValue
 import reaktive.value.now
 import reaktive.value.toggle
-import xenakis.model.ClonedObject
+import xenakis.model.*
 import xenakis.model.LayoutManager.LayoutAspect
-import xenakis.model.Settings
-import xenakis.model.SuperColliderObject
-import xenakis.model.XenakisProject
 import xenakis.ui.ToolSelector.Tool
 
 class XenakisUI(private val stage: Stage, private val controller: XenakisController) : XenakisListener {
@@ -412,6 +409,15 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
                 if (ev.isAltDown || !ev.isTargetTextInput) {
                     val view = scoreView.selector.singleSelected.now ?: return@on
                     view.createLoop()
+                }
+            }
+            on("Alt?+R") { ev ->
+                if (ev.isAltDown || !ev.isTargetTextInput) {
+                    for (obj in scoreView.selector.selectedObjects) {
+                        if (obj is SynthObject) {
+                            obj.reverse()
+                        }
+                    }
                 }
             }
             on("Alt?+Shift?+D") { ev ->

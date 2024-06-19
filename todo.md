@@ -42,7 +42,6 @@
   - add increment and decrement buttons to slider
   - always display current value (where?)
   - show double input dialog on double click (no pun intended)
-- show double input dialog when double-clicking on envelope handle
 - custom min/max value for envelope controls? (if the spec provided by the SynthDef is to large)
 - inter-project SynthDef collection
 

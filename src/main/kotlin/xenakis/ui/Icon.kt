@@ -53,6 +53,8 @@ enum class Icon {
     Transpose,
     GoToStart,
     SetupCode,
+    Reverse,
+    Grab,
 
     /*Color,*/
     FileReload,

@@ -142,6 +142,13 @@ class Envelope(private val _points: MutableList<Point>, val curve: Warp) {
         }
     }
 
+    fun reverse() {
+        val points = points.toList()
+        for (idx in points.indices) {
+            editPoint(idx, points[points.size - 1 - idx])
+        }
+    }
+
     companion object {
         fun constant(value: Double, duration: Double, curve: Warp) =
             Envelope(mutableListOf(Point(0.0, value), Point(duration, value)), curve)
