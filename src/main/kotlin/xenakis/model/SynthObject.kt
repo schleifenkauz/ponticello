@@ -74,7 +74,7 @@ class SynthObject(
             }
         }
         if (sample.now != null && playBufRate != null && playbufStartPos != null) {
-            playbufStartPos!!.now += playBufRate!!.now * duration
+            playbufStartPos!!.now += (playBufRate!!.now * duration).coerceAtMost(sample.now!!.get().duration)
             playBufRate!!.now *= -1
         }
     }

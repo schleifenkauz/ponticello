@@ -69,9 +69,11 @@ class SynthObjectView(val obj: SynthObject) : ScoreObjectView(obj), SynthControl
         } else if (obj.playbufStartPos != null) {
             newDuration = pane.getDuration(width)
             if (cursor in setOf(Cursor.W_RESIZE, Cursor.SW_RESIZE, Cursor.NW_RESIZE)) {
-                newDuration = newDuration.coerceAtMost(obj.duration + obj.playbufStartPos!!.now)
+                val rate = obj.playBufRate?.now ?: 1.0
+                newDuration = newDuration
+                    .coerceAtMost(obj.duration + obj.playbufStartPos!!.now)
                 val deltaStart = obj.duration - newDuration
-                obj.playbufStartPos!!.now += deltaStart * (obj.playBufRate?.now ?: 1.0)
+                obj.playbufStartPos!!.now += deltaStart * rate
             }
         }
         super.resizeObject(pane.getWidth(newDuration), height, ev, cursor)
@@ -123,10 +125,11 @@ class SynthObjectView(val obj: SynthObject) : ScoreObjectView(obj), SynthControl
         if (image == null) return
         val sample = obj.sample.now?.get() ?: return
         val rate = obj.playBufRate?.now ?: 1.0
+        if (rate == 0.0) return
         val defaultStartPos = if (rate < 0) sample.duration else 0.0
         val startPos = obj.playbufStartPos?.now ?: defaultStartPos
         var t = 0.0
-        for (i in 0..20) {
+        for (i in 0..100) {
             if (t >= obj.duration) break
             var imageDur = if (t == 0.0) {
                 if (rate < 0) startPos / -rate else (sample.duration - startPos) / rate
@@ -149,7 +152,7 @@ class SynthObjectView(val obj: SynthObject) : ScoreObjectView(obj), SynthControl
         sampleDuration: Double, rate: Double, startPos: Double
     ) {
         val pixelsPerSecond = image!!.width / sampleDuration * rate.absoluteValue
-        var minX = pixelsPerSecond * startPos
+        var minX = (image!!.width / sampleDuration) * startPos
         val minY = 0.0
         val width = pixelsPerSecond * duration
         if (rate < 0.0) minX -= width

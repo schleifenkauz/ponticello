@@ -8,7 +8,7 @@ import javafx.scene.layout.VBox
 
 class DetailPane : VBox() {
     init {
-        styleClass("detail-pane")
+        styleClass("detail-pane", "tool-pane")
     }
 
     fun addItem(name: String, control: Node) {

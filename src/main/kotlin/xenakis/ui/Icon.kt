@@ -53,6 +53,7 @@ enum class Icon {
     Grab,
     Bus,
     Samples,
+    Instrument,
 
     Browser,
     Compound,

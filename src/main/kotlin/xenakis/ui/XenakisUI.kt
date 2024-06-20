@@ -17,17 +17,15 @@ import javafx.geometry.Orientation
 import javafx.geometry.Pos
 import javafx.scene.Scene
 import javafx.scene.control.*
-import javafx.scene.input.KeyCombination
 import javafx.scene.input.KeyEvent
-import javafx.scene.layout.HBox
-import javafx.scene.layout.Pane
-import javafx.scene.layout.Priority
-import javafx.scene.layout.VBox
+import javafx.scene.layout.*
 import javafx.scene.paint.Color
 import javafx.stage.Screen
 import javafx.stage.Stage
 import org.controlsfx.control.textfield.TextFields
 import reaktive.Observer
+import reaktive.value.binding.equalTo
+import reaktive.value.binding.impl.notNull
 import reaktive.value.binding.map
 import reaktive.value.binding.not
 import reaktive.value.forEach
@@ -47,7 +45,8 @@ class XenakisUI(
 
     val toolSelector = ToolSelector()
 
-    private lateinit var instrumentRegistryPane: InstrumentRegistryPane
+    private lateinit var instrumentsPane: InstrumentRegistryPane
+    private lateinit var instrumentsWindow: SubWindow
     private lateinit var busRegistryPane: BusRegistryPane
     private lateinit var busesWindow: SubWindow
     private lateinit var samplesPane: SampleRegistryPane
@@ -88,8 +87,8 @@ class XenakisUI(
     }
 
     override fun displayProject(project: XenakisProject) {
-        instrumentRegistryPane = InstrumentRegistryPane(project.instruments)
-        context[InstrumentRegistryPane] = instrumentRegistryPane
+        instrumentsPane = InstrumentRegistryPane(project.instruments)
+        context[InstrumentRegistryPane] = instrumentsPane
         busRegistryPane = BusRegistryPane(project.busses)
         samplesPane = SampleRegistryPane(project.samples, controller)
         scoreView = ScoreView(project.score, project.context)
@@ -144,8 +143,7 @@ class XenakisUI(
                 stage.resize(screenSize.width * 0.75, screenSize.height)
                 stage.relocate(0.0, 0.0)
             } else {
-                stage.isFullScreen = true
-                stage.fullScreenExitKeyCombination = KeyCombination.keyCombination("Ctrl+F4")
+                stage.isMaximized = true
             }
         }
         runFXWithTimeout(1000) {
@@ -198,27 +196,29 @@ class XenakisUI(
         val top = HBox(searchIcon, searchField, btnOpen, createNew).styleClass("startup-screen-top-bar")
         val layout = VBox(top, recentProjects).styleClass("startup-screen")
         stage.scene.root = layout
-        stage.isFullScreen = false
+        stage.isMaximized = false
         stage.sizeToScene()
         stage.centerOnScreen()
         stage.isResizable = false
     }
 
     private fun createLayout(): VBox {
-        val toolPanes =
-            if (mode == Mode.Desktop) SplitPane(detailPane, instrumentRegistryPane, busRegistryPane, samplesPane)
-            else SplitPane(detailPane, instrumentRegistryPane)
-        toolPanes.orientation = Orientation.VERTICAL
-        val horizontalSplitter = SplitPane(scoreView, toolPanes)
-        horizontalSplitter.sceneProperty().addListener { _ ->
-            runFXWithTimeout(50) {
-                horizontalSplitter.setDividerPositions(0.82)
+        var mainView: Region = scoreView
+        if (mode == Mode.Desktop) {
+            val toolPanes = SplitPane(detailPane, instrumentsPane, busRegistryPane, samplesPane)
+            toolPanes.orientation = Orientation.VERTICAL
+            val horizontalSplitter = SplitPane(scoreView, toolPanes)
+            horizontalSplitter.sceneProperty().addListener { _ ->
+                runFXWithTimeout(50) {
+                    horizontalSplitter.setDividerPositions(0.82)
+                }
             }
+            mainView = horizontalSplitter
         }
         val toolbar = createToolbar()
         for (box in toolbar.children) HBox.setHgrow(box, Priority.ALWAYS)
-        VBox.setVgrow(horizontalSplitter, Priority.ALWAYS)
-        val layout = VBox(toolbar, horizontalSplitter)
+        VBox.setVgrow(mainView, Priority.ALWAYS)
+        val layout = VBox(toolbar, mainView)
         val context = project.context
         val commandLinePopup = CommandLinePopup(
             context, context[Properties.localCommandLine],
@@ -287,9 +287,13 @@ class XenakisUI(
             if (mode == Mode.Laptop) {
                 busesWindow = SubWindow(busRegistryPane, "Busses", context, type = SubWindow.Type.Popup)
                 samplesWindow = SubWindow(samplesPane, "Samples", context, type = SubWindow.Type.Popup)
+                instrumentsWindow = SubWindow(instrumentsPane, "Instruments", context, type = SubWindow.Type.Popup)
                 +Icon.Bus.button(action = "Show buses") { busesWindow.show() }
                 +Icon.Samples.button(action = "Show samples") { samplesWindow.show() }
-                //+Icon.Instrument.button(action = "Show instruments") { samplesWindow.show() }
+                +Icon.Instrument.button(action = "Show instruments") { instrumentsWindow.show() }
+                add(Icon.Details.button(action = "Edit object properties") { showDetailPaneOfSelectedObject() }) {
+                    disableProperty().bind(scoreView.selector.singleSelected.equalTo(null).asObservableValue())
+                }
             }
         }
     }
@@ -418,6 +422,16 @@ class XenakisUI(
                         samplesWindow.show()
                     }
                 }
+                on("Alt?+I") { ev ->
+                    if (ev.isAltDown || !ev.isTargetTextInput) {
+                        instrumentsWindow.show()
+                    }
+                }
+                on("Alt?+P") { ev ->
+                    if (ev.isAltDown || !ev.isTargetTextInput) {
+                        showDetailPaneOfSelectedObject()
+                    }
+                }
             }
 
             on("DELETE") { ev ->
@@ -491,6 +505,14 @@ class XenakisUI(
                 context[ScoreObjectSelector].cloneSelected()
             }
         }
+    }
+
+    private fun showDetailPaneOfSelectedObject() {
+        val selected = scoreView.selector.singleSelected.now ?: return
+        val pane = selected.getDetailPane()
+        val name = selected.myObject.name.now
+        val window = SubWindow(pane, "Configure $name", context, type = SubWindow.Type.Popup)
+        window.show()
     }
 
     private fun KeyEventHandlerBody<Unit>.registerToolNumber(tool: Tool, digit: Int) {

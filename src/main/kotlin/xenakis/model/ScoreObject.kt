@@ -3,6 +3,7 @@ package xenakis.model
 import hextant.context.Context
 import hextant.undo.Edit
 import hextant.undo.UndoManager
+import hextant.undo.compoundEdit
 import javafx.geometry.HorizontalDirection
 import javafx.scene.input.DataFormat
 import javafx.scene.paint.Color
@@ -76,18 +77,22 @@ abstract class ScoreObject : AbstractRenamableObject() {
     }
 
     fun duplicateClone(): ScoreObject {
-        val clone = clone()
-        clone.position.time += duration
-        parent!!.addObject(clone)
-        return clone
+        context.compoundEdit("Duplicate object") {
+            val clone = clone()
+            clone.position.time += duration
+            parent!!.addObject(clone)
+            return clone
+        }
     }
 
     fun duplicateCopy(): ScoreObject {
-        val copied = if (this is ClonedObject) original else this
-        val copy = copy(parent!!.nameForCopy(copied))
-        copy.position.time += duration
-        parent!!.addObject(copy)
-        return copy
+        context.compoundEdit("Duplicate object") {
+            val copied = if (this is ClonedObject) original else this
+            val copy = copy(parent!!.nameForCopy(copied))
+            copy.position.time += duration
+            parent!!.addObject(copy)
+            return copy
+        }
     }
 
     override fun initialize(context: Context) {
