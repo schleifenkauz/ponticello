@@ -17,6 +17,7 @@ import javafx.geometry.Orientation
 import javafx.geometry.Pos
 import javafx.scene.Scene
 import javafx.scene.control.*
+import javafx.scene.input.KeyCombination
 import javafx.scene.input.KeyEvent
 import javafx.scene.layout.HBox
 import javafx.scene.layout.Pane
@@ -37,15 +38,20 @@ import xenakis.model.*
 import xenakis.model.LayoutManager.LayoutAspect
 import xenakis.ui.ToolSelector.Tool
 
-class XenakisUI(private val stage: Stage, private val controller: XenakisController) : XenakisListener {
-    val project get() = controller.currentProject
+class XenakisUI(
+    private val stage: Stage,
+    private val controller: XenakisController,
+    private val mode: Mode
+) : XenakisListener {
+    private val project get() = controller.currentProject
 
     val toolSelector = ToolSelector()
 
-    private lateinit var synthDefsPane: InstrumentRegistryPane
+    private lateinit var instrumentRegistryPane: InstrumentRegistryPane
     private lateinit var busRegistryPane: BusRegistryPane
+    private lateinit var busesWindow: SubWindow
     private lateinit var samplesPane: SampleRegistryPane
-    private lateinit var groupsPane: GroupRegistryPane
+    private lateinit var samplesWindow: SubWindow
     lateinit var scoreView: ScoreView
         private set
     private lateinit var flowGraphWindow: SubWindow
@@ -82,11 +88,10 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
     }
 
     override fun displayProject(project: XenakisProject) {
-        synthDefsPane = InstrumentRegistryPane(project.instruments)
-        context[InstrumentRegistryPane] = synthDefsPane
+        instrumentRegistryPane = InstrumentRegistryPane(project.instruments)
+        context[InstrumentRegistryPane] = instrumentRegistryPane
         busRegistryPane = BusRegistryPane(project.busses)
         samplesPane = SampleRegistryPane(project.samples, controller)
-        groupsPane = GroupRegistryPane(project.groups)
         scoreView = ScoreView(project.score, project.context)
 
         val flowGraphEditor = AudioFlowGraphPane(project.flowGraph, context)
@@ -134,9 +139,14 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
         stage.scene.root = createLayout()
         stage.isResizable = true
         Platform.runLater {
-            val screenSize = Screen.getPrimary().bounds
-            stage.resize(screenSize.width * 0.75, screenSize.height)
-            stage.relocate(0.0, 0.0)
+            if (mode == Mode.Desktop) {
+                val screenSize = Screen.getPrimary().bounds
+                stage.resize(screenSize.width * 0.75, screenSize.height)
+                stage.relocate(0.0, 0.0)
+            } else {
+                stage.isFullScreen = true
+                stage.fullScreenExitKeyCombination = KeyCombination.keyCombination("Ctrl+F4")
+            }
         }
         runFXWithTimeout(1000) {
             scoreView.displayWholeScore()
@@ -188,16 +198,18 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
         val top = HBox(searchIcon, searchField, btnOpen, createNew).styleClass("startup-screen-top-bar")
         val layout = VBox(top, recentProjects).styleClass("startup-screen")
         stage.scene.root = layout
-        stage.isMaximized = false
+        stage.isFullScreen = false
         stage.sizeToScene()
+        stage.centerOnScreen()
         stage.isResizable = false
     }
 
     private fun createLayout(): VBox {
-        val toolPanes = SplitPane(detailPane, synthDefsPane, busRegistryPane, samplesPane, groupsPane)
+        val toolPanes =
+            if (mode == Mode.Desktop) SplitPane(detailPane, instrumentRegistryPane, busRegistryPane, samplesPane)
+            else SplitPane(detailPane, instrumentRegistryPane)
         toolPanes.orientation = Orientation.VERTICAL
         val horizontalSplitter = SplitPane(scoreView, toolPanes)
-        SplitPane.setResizableWithParent(toolPanes, false)
         horizontalSplitter.sceneProperty().addListener { _ ->
             runFXWithTimeout(50) {
                 horizontalSplitter.setDividerPositions(0.82)
@@ -260,18 +272,27 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
         return HBox(undo, redo)
     }
 
-    private fun createMiscBar() = HBox(
-        Icon.Console.button(action = "Open console") { shellWindow.show() },
-        Icon.SetupCode.button(action = "Edit setup code") { ev ->
-            if (ev.isShiftDown) serverSetupCodeWindow.show()
-            else serverTreeCodeWindow.show()
-        },
-        Icon.Restart.button(action = "Restart server") { project.rebootServer() },
-        Icon.Browser.button(action = "Open help browser") { project.context[HelpBrowser].show() },
-        Icon.Graph.button(action = "Edit audio flow graph") { flowGraphWindow.show() },
-        Icon.Settings.button(action = "Edit settings") { settingsWindow.show() },
-        Icon.Knob.button(action = "Edit global controls") { globalControlsWindow.show() }
-    )
+    private fun createMiscBar() = hbox {
+        children {
+            +Icon.Console.button(action = "Open console") { shellWindow.show() }
+            +Icon.SetupCode.button(action = "Edit setup code") { ev ->
+                if (ev.isShiftDown) serverSetupCodeWindow.show()
+                else serverTreeCodeWindow.show()
+            }
+            +Icon.Restart.button(action = "Restart server") { project.rebootServer() }
+            +Icon.Browser.button(action = "Open help browser") { project.context[HelpBrowser].show() }
+            +Icon.Graph.button(action = "Edit audio flow graph") { flowGraphWindow.show() }
+            +Icon.Settings.button(action = "Edit settings") { settingsWindow.show() }
+            +Icon.Knob.button(action = "Edit global controls") { globalControlsWindow.show() }
+            if (mode == Mode.Laptop) {
+                busesWindow = SubWindow(busRegistryPane, "Busses", context, type = SubWindow.Type.Popup)
+                samplesWindow = SubWindow(samplesPane, "Samples", context, type = SubWindow.Type.Popup)
+                +Icon.Bus.button(action = "Show buses") { busesWindow.show() }
+                +Icon.Samples.button(action = "Show samples") { samplesWindow.show() }
+                //+Icon.Instrument.button(action = "Show instruments") { samplesWindow.show() }
+            }
+        }
+    }
 
     private fun createLayoutBar(): HBox {
         val horizontalBtn = Icon.Horizontal.button(action = "Create horizontal group") {
@@ -383,14 +404,19 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
             registerToolNumber(Tool.Cut, 8)
             registerToolNumber(Tool.AddTime, 9)
 
-            on("Alt+G") { ev ->
-                if (ev.isAltDown || !ev.isTargetTextInput) {
-                    project.settings.displayTimeGrid.toggle()
+            on("Alt+G") { project.settings.displayTimeGrid.toggle() }
+            on("Alt+S") { project.settings.snapEnabled.toggle() }
+
+            if (mode == Mode.Laptop) {
+                on("Alt?+B") { ev ->
+                    if (ev.isAltDown || !ev.isTargetTextInput) {
+                        busesWindow.show()
+                    }
                 }
-            }
-            on("Alt+S") { ev ->
-                if (ev.isAltDown || !ev.isTargetTextInput) {
-                    project.settings.snapEnabled.toggle()
+                on("Alt?+F") { ev ->
+                    if (ev.isAltDown || !ev.isTargetTextInput) {
+                        samplesWindow.show()
+                    }
                 }
             }
 
@@ -489,6 +515,10 @@ class XenakisUI(private val stage: Stage, private val controller: XenakisControl
             playBtn.isDisable = true
             stopBtn.isDisable = true
         }
+    }
+
+    enum class Mode {
+        Desktop, Laptop;
     }
 
     companion object : PublicProperty<XenakisUI> by publicProperty("XenakisUI")

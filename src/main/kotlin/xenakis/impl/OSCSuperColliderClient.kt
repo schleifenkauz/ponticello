@@ -5,6 +5,7 @@ import com.illposed.osc.OSCMessageEvent
 import com.illposed.osc.OSCMessageListener
 import com.illposed.osc.messageselector.OSCPatternAddressMessageSelector
 import com.illposed.osc.transport.OSCPortIn
+import com.illposed.osc.transport.OSCPortInBuilder
 import com.illposed.osc.transport.OSCPortOut
 import com.illposed.osc.transport.OSCPortOutBuilder
 import xenakis.impl.StatusListener.StatusUpdate
@@ -26,7 +27,9 @@ class OSCSuperColliderClient(
 
     init {
         receiver.dispatcher.addListener(OSCPatternAddressMessageSelector("/reply"), this)
+        receiver.connect()
         receiver.startListening()
+        println(receiver.isListening)
         consoleMonitor.start()
     }
 
@@ -49,6 +52,7 @@ class OSCSuperColliderClient(
     override fun acceptMessage(event: OSCMessageEvent) {
         val msg = event.message
         val id = msg.arguments[0] as? Int ?: error("Reply message didn't have an id!")
+        println("Received reply: $id")
         val future = waitingForReply.remove(id) ?: error("Wasn't waiting for a reply for id $id")
         future.complete(msg)
     }
@@ -76,13 +80,16 @@ class OSCSuperColliderClient(
             sclang.outputStream.write("this.executeFile($setupFile);\n".toByteArray())
             sclang.outputStream.flush()
             val localhost = InetAddress.getLoopbackAddress()
-            val local = InetSocketAddress(localhost, 8000)
+            val local = InetSocketAddress(localhost, 51730)
             val remote = InetSocketAddress(localhost, port)
+            println(remote)
             val sender = OSCPortOutBuilder()
                 .setLocalSocketAddress(local)
                 .setRemoteSocketAddress(remote)
                 .build()
-            val receiver = OSCPortIn(local)
+            val receiver = OSCPortInBuilder()
+                .setSocketAddress(local)
+                .build()
             return OSCSuperColliderClient(sclang, sender, receiver)
         }
 

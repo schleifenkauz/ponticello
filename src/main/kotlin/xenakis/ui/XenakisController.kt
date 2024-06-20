@@ -23,7 +23,6 @@ import xenakis.model.Settings
 import xenakis.model.XenakisProject
 import java.io.File
 import java.util.prefs.Preferences
-import kotlin.concurrent.thread
 
 class XenakisController(private val primaryStage: Stage) {
     private val listeners = mutableListOf<XenakisListener>()
@@ -70,7 +69,7 @@ class XenakisController(private val primaryStage: Stage) {
 
     private val fc = FileChooser().apply {
         extensionFilters.setAll(
-            FileChooser.ExtensionFilter("JSON Files", "*.json"),
+            FileChooser.ExtensionFilter("Xenakis Projects", "*.xen"),
             FileChooser.ExtensionFilter("SuperCollider Scripts", "*.scd"),
             FileChooser.ExtensionFilter("Sound Files", listOf("*.wav", "*.mp3"))
         )
@@ -98,31 +97,25 @@ class XenakisController(private val primaryStage: Stage) {
     }
 
     fun startSuperCollider() {
-        thread(name = "SuperCollider startup thread", isDaemon = true) {
-            client = OSCSuperColliderClient.create()
-            client.consoleMonitor.addListener(ConsoleMonitor.PipeToSystemOut)
-            context[SuperColliderClient] = client
-            client.statusListener.on(StatusUpdate.ServerBooted) {
-                isSuperColliderReady = true
-                Platform.runLater {
-                    listeners { readyToPlay() }
-                }
+        client = OSCSuperColliderClient.create()
+        client.consoleMonitor.addListener(ConsoleMonitor.PipeToSystemOut)
+        context[SuperColliderClient] = client
+        client.statusListener.on(StatusUpdate.ServerBooted) {
+            isSuperColliderReady = true
+            Platform.runLater {
+                listeners { readyToPlay() }
             }
-            client.statusListener.on(StatusUpdate.ReadyToBoot) {
-                isSuperColliderReady = false
-                Platform.runLater {
-                    listeners { waitingForBoot() }
-                }
+        }
+        client.statusListener.on(StatusUpdate.ReadyToBoot) {
+            isSuperColliderReady = false
+            Platform.runLater {
+                listeners { waitingForBoot() }
             }
         }
     }
 
     fun restartScSynth() {
         client.run("s.reboot;")
-    }
-
-    fun showServerWindow() {
-        client.run("s.makeWindow;")
     }
 
     fun startXenakis() {
@@ -220,6 +213,7 @@ class XenakisController(private val primaryStage: Stage) {
     }
 
     private fun goToStartupScreen() {
+        _currentProject = null
         listeners { displayStartupScreen() }
     }
 

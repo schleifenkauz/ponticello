@@ -3,6 +3,8 @@ package xenakis.ui
 import bundles.publicProperty
 import javafx.application.Application
 import javafx.stage.Stage
+import xenakis.impl.isMyComputerDumb
+import xenakis.ui.XenakisUI.Mode
 import java.util.logging.Level
 import java.util.logging.Logger
 import java.util.logging.SimpleFormatter
@@ -19,7 +21,8 @@ class XenakisApp : Application() {
         controller = XenakisController(stage)
         controller.setupHextant()
         controller.startSuperCollider()
-        val ui = XenakisUI(stage, controller)
+        val mode = if (isMyComputerDumb) Mode.Laptop else Mode.Desktop
+        val ui = XenakisUI(stage, controller, mode)
         controller.addListener(ui)
         stage.setOnCloseRequest {
             if (controller.isProjectOpened) {

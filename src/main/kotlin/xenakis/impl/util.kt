@@ -120,3 +120,5 @@ inline fun <V> KMutableProperty0<V>.reactive(crossinline onUpdate: (oldValue: V,
     }
 
 fun <T> ReactiveVariable<T>.copy() = reactiveVariable(get())
+
+val isMyComputerDumb get() = System.getProperty("os.name").contains("Windows")

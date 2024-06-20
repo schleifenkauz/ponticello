@@ -15,6 +15,10 @@ interface SuperColliderClient : SuperColliderContext {
     fun send(address: String, arguments: List<Any>): CompletableFuture<OSCMessage>
 
     fun eval(code: String): CompletableFuture<String> {
+        if (isMyComputerDumb) {
+            run(code)
+            return CompletableFuture.completedFuture("")
+        }
         logger.info("eval: $code")
         return send("eval", listOf(code))
             .orTimeout(10000, TimeUnit.MILLISECONDS)

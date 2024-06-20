@@ -192,7 +192,8 @@ fun Node.setupDropArea(condition: (db: Dragboard) -> Boolean, onDrop: (ev: DragE
     }
 }
 
-fun Dragboard.hasFiles(extension: String) = hasFiles() && files.all { f -> f.extension == extension }
+fun Dragboard.hasFiles(extension: String) =
+    hasFiles() && files.all { f -> f.extension.equals(extension, ignoreCase = true) }
 
 fun Dragboard.hasFile(extension: String): Boolean = hasFiles(extension) && files.size == 1
 
@@ -263,3 +264,4 @@ fun <R : Region> R.setFixedWidth(width: Double) = also { r ->
     r.maxWidth = width
 }
 
+val Node.add: Pane.() -> Unit get() = { children.add(this@add) }

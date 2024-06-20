@@ -28,6 +28,9 @@ SynthDef(\playbuf, {
 'recording to '.post; ~tmp_path.postln;
 ~record_buf.write(~tmp_path, "wav", "int16", 0, 0, true);
 
+NetAddr.langPort.postln;
+NetAddr.localAddr.postln;
+
 ~startRecording = { arg bus = 0;
 	~record_synth = Synth.tail(nil, \diskout, [bus:bus, buf:~record_buf]);
 };
@@ -48,6 +51,8 @@ ServerBoot.add {
 		AppClock.sched(0.0) {
 			id = msg[1];
 			answer = handler.(*msg.drop(2));
+			'sending reply: '.post;
+			addr.postln;
 			addr.sendMsg('/reply', id, answer);
 		}
 	}, address);
@@ -67,12 +72,16 @@ OSCdef('writeBuf', {
 });
 ~setupHandler.('eval', { |code|
 	var answer;
+	'eval: '.post;
+	code.asString.postln;
 	answer = this.interpret(code.asString).asString;
 	answer;
 });
 OSCdef('run', {
 	arg msg, time, addr, recvPort;
 	var code = msg[1].asString, answer;
+	'eval: '.post;
+    code.asString.postln;
 	AppClock.sched(0, {
 		this.interpret(code);
 	});

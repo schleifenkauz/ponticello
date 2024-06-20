@@ -17,6 +17,7 @@ import reaktive.value.binding.map
 import reaktive.value.fx.asObservableValue
 import reaktive.value.now
 import xenakis.impl.async
+import xenakis.impl.isMyComputerDumb
 import xenakis.model.*
 import xenakis.sc.view.ObjectSelectorControl
 import java.util.logging.Level
@@ -88,7 +89,7 @@ class InstrumentRegistryPane(
                 else CustomizableSynthDefObject.create(name, registry.context)
             }
 
-            registry.synthDescLibContains(name).join() -> {
+            !isMyComputerDumb && registry.synthDescLibContains(name).join() -> {
                 val reference = showYesNoDialog(
                     "SynthDef '$name' is already defined in the global SynthDescLib. " +
                             "Import SynthDef '$name' from SynthDescLib? A new SynthDef will be created otherwise.",
