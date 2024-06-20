@@ -3,6 +3,7 @@ package xenakis.ui
 import javafx.collections.FXCollections
 import javafx.scene.control.ComboBox
 import javafx.scene.control.Spinner
+import javafx.scene.input.TransferMode
 import reaktive.value.fx.asObservableValue
 import reaktive.value.fx.asProperty
 import xenakis.model.BusObject
@@ -35,7 +36,7 @@ class BusRegistryPane(private val busses: BusRegistry) : SuperColliderObjectRegi
             rateSelector.valueProperty().bindBidirectional(obj.rate.asProperty())
             channelsSpinner.valueFactory.valueProperty().bindBidirectional(obj.channels.asProperty())
         }
-        addGrabber(BusObject.DATA_FORMAT)
+        addGrabber(BusObject.DATA_FORMAT, transferMode = TransferMode.LINK)
         addExtraControl(rateSelector, channelsSpinner)
     }
 }

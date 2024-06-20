@@ -126,7 +126,8 @@ class SynthObjectView(val obj: SynthObject) : ScoreObjectView(obj), SynthControl
         val defaultStartPos = if (rate < 0) sample.duration else 0.0
         val startPos = obj.playbufStartPos?.now ?: defaultStartPos
         var t = 0.0
-        while (t < obj.duration) {
+        for (i in 0..20) {
+            if (t >= obj.duration) break
             var imageDur = if (t == 0.0) {
                 if (rate < 0) startPos / -rate else (sample.duration - startPos) / rate
             } else sample.duration / rate.absoluteValue
@@ -153,6 +154,7 @@ class SynthObjectView(val obj: SynthObject) : ScoreObjectView(obj), SynthControl
         val width = pixelsPerSecond * duration
         if (rate < 0.0) minX -= width
         val height = image!!.height
+        if (width < 0 || height < 0) return
         view.viewport = Rectangle2D(minX, minY, width, height)
         view.fitHeight = prefHeight
         view.fitWidth = pane.getWidth(duration)

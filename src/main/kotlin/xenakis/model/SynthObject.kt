@@ -151,7 +151,7 @@ class SynthObject(
                     is BusControl -> param to control.bus.now.get().variableName
                     is ConstantControl -> {
                         val value = when (param) {
-                            "startPos" -> control.value.now + offset
+                            "startPos" -> control.value.now + offset * (playBufRate?.now ?: 0.0)
                             else -> control.value.now
                         }
                         param to value.toString()

@@ -130,10 +130,10 @@ abstract class ObjectRegistryPane<O : NamedObject>(
             return button
         }
 
-        fun addGrabber(dataFormat: DataFormat, extraConfig: Dragboard.() -> Unit = {}) {
+        fun addGrabber(dataFormat: DataFormat, transferMode: TransferMode, extraConfig: Dragboard.() -> Unit = {}) {
             val btn = addAction(Icon.Grab, "Grab object") { }
             btn.setOnDragDetected { ev ->
-                val db = startDragAndDrop(TransferMode.COPY)
+                val db = startDragAndDrop(transferMode)
                 db.setContent(mapOf(dataFormat to obj.name.now))
                 db.extraConfig()
                 ev.consume()

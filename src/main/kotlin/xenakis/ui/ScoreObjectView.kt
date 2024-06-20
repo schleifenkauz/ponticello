@@ -213,7 +213,6 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), ObjectPositi
             ?: error("envelope editor for $parameter not found")
         ed.dispose()
         envelopeEditors.remove(ed)
-        if (envelopeEditors.isEmpty()) children.remove(envelopesPane)
     }
 
     private fun removeKnob(parameter: String) {
@@ -233,7 +232,6 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), ObjectPositi
         val e = EnvelopeEditor(parameter, envelope, this, envelopesPane, pane, myObject)
         e.repaint()
         envelopeEditors.add(e)
-        if (envelopesPane !in children) children.add(envelopesPane)
     }
 
     private fun displayKnobs() {
