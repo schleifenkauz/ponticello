@@ -11,12 +11,12 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import reaktive.value.now
 import reaktive.value.reactiveValue
-import xenakis.impl.StatusListener.StatusUpdate
 import xenakis.impl.SuperColliderClient
 import xenakis.model.Score.Companion.ROOT_SCORE_NAME
 import xenakis.model.SuperColliderObject.LiveCycleType
 import xenakis.sc.CodeBlock
 import xenakis.sc.editor.CodeBlockEditor
+import xenakis.ui.XenakisController
 import java.io.File
 
 @Serializable
@@ -48,13 +48,11 @@ class XenakisProject private constructor(
     fun initialize(context: Context) {
         this.context = context
         client = context[SuperColliderClient]
-        client.statusListener.on(StatusUpdate.ReadyToBoot) {
-            client.run {
-                updateSetupCode(serverSetup.editor.result.now, LiveCycleType.ServerBoot)
-                updateSetupCode(serverTree.editor.result.now, LiveCycleType.ServerTree)
-                instruments.run { allocateAll() }
-                +"s.reboot"
-            }
+        client.run {
+            instruments.run { allocateAll() }
+            flowGraph.run {  }
+            updateSetupCode(serverSetup.editor.result.now, LiveCycleType.ServerBoot)
+            updateSetupCode(serverTree.editor.result.now, LiveCycleType.ServerTree)
         }
     }
 
@@ -70,10 +68,6 @@ class XenakisProject private constructor(
         folder.resolve("server_setup.json").writeJson(serverSetup)
         folder.resolve("server_tree.json").writeJson(serverTree)
         folder.resolve("score.json").writeJson(score)
-    }
-
-    fun rebootServer() {
-        client.run("s.reboot;")
     }
 
     fun updateSetupCode(setupCode: CodeBlock, liveCycleType: LiveCycleType) {
@@ -92,27 +86,36 @@ class XenakisProject private constructor(
     companion object {
         val projectDirectory = publicProperty<File>("Project directory")
 
-        fun loadFrom(folder: File, context: Context): XenakisProject {
+        fun loadFrom(folder: File, context: Context, listener: XenakisController): XenakisProject {
             context[projectDirectory] = folder
             context.withoutUndo {
                 val settings = folder.resolve("settings.json").readJson<InteractionSettings>()
                 val groups = folder.resolve("groups.json").readJson<GroupRegistry>()
                 groups.initialize(context)
+                listener.setProgress(0.45, "Loading busses")
                 val busses = folder.resolve("busses.json").readJson<BusRegistry>()
                 busses.initialize(context)
+                listener.setProgress(0.5, "Loading buffers")
                 val buffers = folder.resolve("buffers.json").readJson<BufferRegistry>()
                 buffers.initialize(context)
+                listener.setProgress(0.55, "Loading samples")
                 val samples = folder.resolve("samples.json").readJson<SampleRegistry>()
                 samples.initialize(context)
+                listener.setProgress(0.6, "Loading instruments")
                 val instruments = folder.resolve("instruments.json").readJson<InstrumentRegistry>()
                 instruments.initialize(context)
+                listener.setProgress(0.65, "Loading audio flow graph")
                 val flowGraph = folder.resolve("flow_graph.json").readJson<AudioFlowGraph>()
                 flowGraph.initialize(context)
+                listener.setProgress(0.7, "Loading global controls")
                 val globalControls = folder.resolve("global_controls.json").readJson<GlobalControls>()
                 globalControls.initialize(context)
+                listener.setProgress(0.75, "Loading server setup code")
                 val serverSetup = folder.resolve("server_setup.json").readJson<EditorRoot<CodeBlockEditor>>()
                 val beforePlay = folder.resolve("server_tree.json").readJson<EditorRoot<CodeBlockEditor>>()
+                listener.setProgress(0.9, "Loading score")
                 val score = folder.resolve("score.json").readJson<Score>()
+                listener.setProgress(0.9, "Ready")
                 score.initialize(context, reactiveValue(ROOT_SCORE_NAME))
                 return XenakisProject(
                     settings,

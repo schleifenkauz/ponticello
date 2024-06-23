@@ -7,6 +7,7 @@
 ### how to react to changes of synth definitions?
 
 - highlight obsolete arguments in control assignment view
+- ability to add extra parameters for usage in LFO?
 
 ### Make playback more reactive
 
@@ -44,6 +45,8 @@
   - show double input dialog on double click (no pun intended)
 - custom min/max value for envelope controls? (if the spec provided by the SynthDef is to large)
 - inter-project SynthDef collection
+- effects that work with intermediate buses have to be executed after the flow synths
+- fix time display and snapping in envelope editors
 
 ### Support for patterns
 

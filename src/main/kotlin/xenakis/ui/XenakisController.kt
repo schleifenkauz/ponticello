@@ -28,7 +28,9 @@ class XenakisController(private val primaryStage: Stage) {
     private val listeners = mutableListOf<XenakisListener>()
 
     private fun listeners(action: XenakisListener.() -> Unit) {
-        listeners.forEach(action)
+        Platform.runLater {
+            listeners.forEach(action)
+        }
     }
 
     fun addListener(listener: XenakisListener) {
@@ -81,6 +83,7 @@ class XenakisController(private val primaryStage: Stage) {
     }
 
     fun setupHextant() {
+        setProgress(0.0, "Setting up Hextant")
         context = HextantCore.defaultContext()
         SnapshotAware.Serializer.reconstructionContext = context
         context[XenakisApp.primaryStage] = primaryStage
@@ -88,6 +91,7 @@ class XenakisController(private val primaryStage: Stage) {
         context.registerImplementationsFromClasspath()
         HextantCore.apply(context, PluginBuilder.Phase.Initialize, null)
         XenakisHextantPlugin.apply(context, PluginBuilder.Phase.Initialize, null)
+        setProgress(0.1, "OSC connected")
     }
 
     private fun loadSettings(): Settings {
@@ -100,17 +104,27 @@ class XenakisController(private val primaryStage: Stage) {
         client = OSCSuperColliderClient.create()
         client.consoleMonitor.addListener(ConsoleMonitor.PipeToSystemOut)
         context[SuperColliderClient] = client
+        setProgress(0.1, "Starting SuperCollider")
+        client.statusListener.on(StatusUpdate.ReadyToBoot) {
+            isSuperColliderReady = false
+            Thread.sleep(200)
+            client.run("s.reboot;")
+            setProgress(0.2, "Booting scsynth")
+            Platform.runLater {
+                listeners { waitingForBoot() }
+            }
+        }
         client.statusListener.on(StatusUpdate.ServerBooted) {
             isSuperColliderReady = true
+            setProgress(0.3, "Connecting via OSC")
             Platform.runLater {
                 listeners { readyToPlay() }
             }
         }
-        client.statusListener.on(StatusUpdate.ReadyToBoot) {
-            isSuperColliderReady = false
-            Platform.runLater {
-                listeners { waitingForBoot() }
-            }
+        client.statusListener.on(StatusUpdate.OSCReady) {
+            Thread.sleep(200)
+            setProgress(0.4, "OSC connected")
+            startXenakis()
         }
     }
 
@@ -118,7 +132,7 @@ class XenakisController(private val primaryStage: Stage) {
         client.run("s.reboot;")
     }
 
-    fun startXenakis() {
+    private fun startXenakis() {
         val file = lastFile()
         if (file != null) {
             if (!file.exists() || !openProject(file)) {
@@ -175,10 +189,14 @@ class XenakisController(private val primaryStage: Stage) {
 
     fun openProject(folder: File): Boolean {
         tryWithAlert("Opening project") {
-            val project = XenakisProject.loadFrom(folder, context)
+            val project = XenakisProject.loadFrom(folder, context, this)
             currentProject = project
         } ?: return false
         return true
+    }
+
+    fun setProgress(progress: Double, status: String) {
+        listeners { displayProgress(progress, status) }
     }
 
     private fun setExtensionFilter(ext: String) {

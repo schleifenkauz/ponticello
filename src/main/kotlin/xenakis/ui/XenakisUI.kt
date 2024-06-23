@@ -25,7 +25,6 @@ import javafx.stage.Stage
 import org.controlsfx.control.textfield.TextFields
 import reaktive.Observer
 import reaktive.value.binding.equalTo
-import reaktive.value.binding.impl.notNull
 import reaktive.value.binding.map
 import reaktive.value.binding.not
 import reaktive.value.forEach
@@ -45,12 +44,17 @@ class XenakisUI(
 
     val toolSelector = ToolSelector()
 
+    private val progressBar = ProgressBar()
+    private val statusText = Label()
+
     private lateinit var instrumentsPane: InstrumentRegistryPane
     private lateinit var instrumentsWindow: SubWindow
     private lateinit var busRegistryPane: BusRegistryPane
     private lateinit var busesWindow: SubWindow
     private lateinit var samplesPane: SampleRegistryPane
     private lateinit var samplesWindow: SubWindow
+    private lateinit var groupsPane: GroupRegistryPane
+    private lateinit var groupsWindow: SubWindow
     lateinit var scoreView: ScoreView
         private set
     private lateinit var flowGraphWindow: SubWindow
@@ -91,6 +95,7 @@ class XenakisUI(
         context[InstrumentRegistryPane] = instrumentsPane
         busRegistryPane = BusRegistryPane(project.busses)
         samplesPane = SampleRegistryPane(project.samples, controller)
+        groupsPane = GroupRegistryPane(project.groups)
         scoreView = ScoreView(project.score, project.context)
 
         val flowGraphEditor = AudioFlowGraphPane(project.flowGraph, context)
@@ -150,6 +155,21 @@ class XenakisUI(
             scoreView.displayWholeScore()
         }
         displaysProject = true
+    }
+
+    override fun displayLoadScreen() {
+        val logo = Icon.AppIcon.getView(size = 500.0)
+        progressBar.prefWidth = logo.prefWidth(-1.0)
+        stage.scene.root = VBox(logo, StackPane(progressBar, statusText))
+        stage.sizeToScene()
+        Platform.runLater {
+            stage.centerOnScreen()
+        }
+    }
+
+    override fun displayProgress(progress: Double, status: String) {
+        progressBar.progress = progress
+        statusText.text = status
     }
 
     override fun displayStartupScreen() {
@@ -279,7 +299,7 @@ class XenakisUI(
                 if (ev.isShiftDown) serverSetupCodeWindow.show()
                 else serverTreeCodeWindow.show()
             }
-            +Icon.Restart.button(action = "Restart server") { project.rebootServer() }
+            +Icon.Restart.button(action = "Restart server") { controller.restartScSynth() }
             +Icon.Browser.button(action = "Open help browser") { project.context[HelpBrowser].show() }
             +Icon.Graph.button(action = "Edit audio flow graph") { flowGraphWindow.show() }
             +Icon.Settings.button(action = "Edit settings") { settingsWindow.show() }
@@ -288,6 +308,7 @@ class XenakisUI(
                 busesWindow = SubWindow(busRegistryPane, "Busses", context, type = SubWindow.Type.Popup)
                 samplesWindow = SubWindow(samplesPane, "Samples", context, type = SubWindow.Type.Popup)
                 instrumentsWindow = SubWindow(instrumentsPane, "Instruments", context, type = SubWindow.Type.Popup)
+                groupsWindow = SubWindow(groupsPane, "Groups", context, type = SubWindow.Type.Popup)
                 +Icon.Bus.button(action = "Show buses") { busesWindow.show() }
                 +Icon.Samples.button(action = "Show samples") { samplesWindow.show() }
                 +Icon.Instrument.button(action = "Show instruments") { instrumentsWindow.show() }
@@ -408,10 +429,15 @@ class XenakisUI(
             registerToolNumber(Tool.Cut, 8)
             registerToolNumber(Tool.AddTime, 9)
 
-            on("Alt+G") { project.settings.displayTimeGrid.toggle() }
+            on("Alt+T") { project.settings.displayTimeGrid.toggle() }
             on("Alt+S") { project.settings.snapEnabled.toggle() }
 
             if (mode == Mode.Laptop) {
+                on("Alt+G") { ev ->
+                    if (ev.isAltDown || !ev.isTargetTextInput) {
+                        groupsWindow.show()
+                    }
+                }
                 on("Alt?+B") { ev ->
                     if (ev.isAltDown || !ev.isTargetTextInput) {
                         busesWindow.show()

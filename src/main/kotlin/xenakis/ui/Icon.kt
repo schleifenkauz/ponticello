@@ -16,6 +16,7 @@ enum class Icon {
     Delete,
     Settings,
     Details,
+    AppIcon,
     Pointer,
     Create,
     Play,
@@ -62,7 +63,7 @@ enum class Icon {
 
     private val file = name.lowercase() + "_green.png"
     private val url = javaClass.getResource("icons/$file") ?: error("icon $file not found")
-    private val image = Image(url.toExternalForm(), 20.0, 20.0, true, false)
+    val image: Image = Image(url.toExternalForm())
 
     fun getView(size: Double = DEFAULT_RADIUS * 1.25): ImageView {
         val view = ImageView(image)

@@ -10,4 +10,8 @@ interface XenakisListener {
     fun displayProject(project: XenakisProject)
 
     fun displayStartupScreen()
+
+    fun displayLoadScreen()
+
+    fun displayProgress(progress: Double, status: String)
 }

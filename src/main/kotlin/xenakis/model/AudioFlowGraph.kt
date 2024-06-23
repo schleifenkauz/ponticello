@@ -50,9 +50,8 @@ class AudioFlowGraph(
             flow.source.resolve(context)
             flow.target.resolve(context)
         }
-        client.statusListener.on(StatusListener.StatusUpdate.ReadyToBoot) {
-            client.run { defineAudioFlow() }
-        }
+
+        client.run { defineAudioFlow() }
     }
 
     private fun edges(node: BusObjectReference) = flows.filter { f -> f.source == node }
@@ -163,11 +162,11 @@ class AudioFlowGraph(
 
     }
 
-    fun ScWriter.setupAudioFlow() {
+    private fun ScWriter.setupAudioFlow() {
         var prev = "s.defaultGroup"
         for (flow in order) {
             val synth = flow.synth.editor.result.now
-            val addAction = if (prev == "s.defaultGroup") "'addToTail'" else "'addAfter'"
+            val addAction = if (prev == "s.defaultGroup") "'addToHead'" else "'addAfter'"
             synth.writeCode(writer, registry.context, flow.synthName, prev, addAction, wrapInTask = true)
             prev = flow.synthName
         }

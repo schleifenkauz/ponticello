@@ -161,7 +161,7 @@ class SynthObjectView(val obj: SynthObject) : ScoreObjectView(obj), SynthControl
         view.viewport = Rectangle2D(minX, minY, width, height)
         view.fitHeight = prefHeight
         view.fitWidth = pane.getWidth(duration)
-        view.viewOrder = 100.0
+        view.viewOrder = 1000.0
         if (rate < 0) view.transforms.addAll(
             Translate(prefWidth, 0.0),
             Scale(-1.0, 1.0),

@@ -265,6 +265,7 @@ Slider.control-detail-editor {
 }
 
 .name {
+
     -fx-spacing: 5px;
     -fx-padding: 0px 5px 0px 5px;
     -fx-alignment: center-left;
@@ -543,4 +544,9 @@ Slider.control-detail-editor {
 .grid-marker-line {
     -fx-stroke: white;
     -fx-stroke-width: 3px;
+}
+
+.progress-bar > .bar {
+    -fx-background-insets: 1 1 2 1;
+    -fx-padding: 0.35em;
 }

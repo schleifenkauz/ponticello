@@ -51,7 +51,7 @@ class EnvelopeEditor(
         line.setOnMouseExited { mouseInfo.isVisible = false }
         line.setOnMouseMoved { ev ->
             val t = transformXToTime(ev.x)
-            val v = transformYToValue(ev.y)
+            val v = envelope.interpolateValueAt(t)
             relocateInfoToMouse(ev)
             displayPosition(t, v)
         }

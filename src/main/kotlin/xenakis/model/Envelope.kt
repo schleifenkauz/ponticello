@@ -29,7 +29,7 @@ class Envelope(private val _points: MutableList<Point>, val curve: Warp) {
         return "EnvGen.kr(Env.new(levels: $levels, times: $times, curve: $curve), doneAction: $doneAction)"
     }
 
-    private fun interpolateValueAt(t: Double): Double {
+    fun interpolateValueAt(t: Double): Double {
         var i = points.binarySearch(Point(t, 0.0))
         if (i >= 0) return points[i].y
         i = -(i + 1)

@@ -23,12 +23,11 @@ class StatusListener(private val monitor: ConsoleMonitor) : ConsoleMonitor.Liste
     }
 
     override fun process(txt: String) {
-        if ("Welcome to SuperCollider" in txt) {
-            status = StatusUpdate.ReadyToBoot
-        } else if ("SuperCollider 3 server ready." in txt) {
-            status = StatusUpdate.ServerBooted
-        } else if ("Server 'localhost' exited" in txt) {
-            status = StatusUpdate.ExitedServer
+        when {
+            "Welcome to SuperCollider" in txt -> status = StatusUpdate.ReadyToBoot
+            "SuperCollider 3 server ready." in txt -> status = StatusUpdate.ServerBooted
+            "Successfully setup OSC!" in txt -> status = StatusUpdate.OSCReady
+            "Server 'localhost' exited" in txt -> status = StatusUpdate.ExitedServer
         }
     }
 
@@ -40,6 +39,7 @@ class StatusListener(private val monitor: ConsoleMonitor) : ConsoleMonitor.Liste
     enum class StatusUpdate {
         Starting,
         ReadyToBoot,
+        OSCReady,
         ServerBooted,
         ExitedServer,
         Exited
