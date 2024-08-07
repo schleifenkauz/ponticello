@@ -57,6 +57,6 @@ class HelpBrowser(context: Context) {
     }
 
     companion object : PublicProperty<HelpBrowser> by publicProperty("help-browser", null) {
-        private const val URL_ROOT = "https://doc.sccode.org/"
+        private const val URL_ROOT = "file:///C:/Users/nikok/AppData/Local/SuperCollider/Help"
     }
 }
