@@ -11,6 +11,7 @@ import hextant.context.SelectionDistributor
 import hextant.core.view.EditorControl
 import hextant.fx.*
 import hextant.undo.UndoManager
+import hextant.undo.compoundEdit
 import hextant.undo.historyShortcuts
 import javafx.application.Platform
 import javafx.geometry.Orientation
@@ -494,6 +495,20 @@ class XenakisUI(
                         else selected.myObject.duplicateCopy()
                     val view = selected.pane.getObjectView(obj)
                     scoreView.selector.select(view, addToSelection = false)
+                }
+            }
+
+            on("Alt?+U") { ev ->
+                if (ev.isAltDown || !ev.isTargetTextInput) {
+                    val obj = scoreView.selector.singleSelected.now?.myObject ?: return@on
+                    if (obj is ClonedObject) {
+                        context.compoundEdit("Unlink object from its original") {
+                            val name = obj.parent!!.nameForCopy(obj)
+                            val copy = obj.copy(name)
+                            obj.parent!!.removeObject(obj)
+                            obj.parent!!.addObject(copy)
+                        }
+                    }
                 }
             }
 
