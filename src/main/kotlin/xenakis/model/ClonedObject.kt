@@ -6,10 +6,7 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonObjectBuilder
 import reaktive.value.ReactiveVariable
 import reaktive.value.now
-import xenakis.impl.getString
-import xenakis.impl.getValue
-import xenakis.impl.putSerializableValue
-import xenakis.impl.setValue
+import xenakis.impl.*
 import xenakis.sc.ControlSpec
 import xenakis.ui.ScoreObjectView
 
@@ -48,10 +45,7 @@ class ClonedObject(private var originalRef: Reference) : ScoreObject() {
 
     override fun getSpec(parameter: String): ControlSpec = original.getSpec(parameter)
 
-    override fun writeCode(env: ScorePlayEnv, name: String, playAt: Double) = original.writeCode(env, name, playAt)
-
-    override fun writeStartCode(env: ScorePlayEnv, offset: Double, name: String) =
-        original.writeStartCode(env, offset, name)
+    override fun writeCode(env: ScorePlayEnv, name: String, cutoff: Double) = original.writeCode(env, name, cutoff)
 
     override fun copy(newName: String): ScoreObject {
         val copy = original.copy(newName)

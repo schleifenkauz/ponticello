@@ -81,11 +81,34 @@ OSCdef('run', {
 	arg msg, time, addr, recvPort;
 	var code = msg[1].asString, answer;
 	'eval: '.post;
-    code.asString.postln;
+    code.postln;
 	AppClock.sched(0, {
 		this.interpret(code);
 	});
 }, 'run');
+OSCdef('start_play', {
+	arg msg;
+	~play_start = TempoClock.beats;
+	'PLAY at t = '.post; ~play_start.postln;
+	~synths = ();
+	~tasks = ();
+}, '/start_play');
+OSCdef('pause_play', {
+    ~play_start = -1;
+    ~synths.do { |s| if (s.isRunning) { s.free } };
+    ~tasks.do { |t| if (t.isPlaying) { t.stop; } };
+    'PAUSE'.postln;
+}, '/pause_play');
+OSCdef('schedule', {
+	arg msg;
+	var time = msg[2].asFloat, code = msg[3].asString, my_play_start = ~play_start;
+	TempoClock.schedAbs(max(~play_start + time, TempoClock.beats)) {
+	    if (my_play_start == ~play_start) {
+		    this.interpret(code);
+		};
+		nil;
+	}
+}, '/schedule');
 ~setupHandler.('isSynthDef', { |name|
 	SynthDescLib.global.synthDescs[name.asSymbol] != nil;
 });

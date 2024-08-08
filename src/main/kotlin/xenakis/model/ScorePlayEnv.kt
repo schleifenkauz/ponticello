@@ -1,11 +1,10 @@
 package xenakis.model
 
 import reaktive.value.now
-import xenakis.impl.ScWriter
 import xenakis.ui.ScorePlayer.LocatedScoreObject
 import java.util.*
 
-class ScorePlayEnv(val writer: ScWriter, val nthStart: Int) {
+class ScorePlayEnv {
     private val activeObjects: PriorityQueue<LocatedScoreObject> =
         PriorityQueue(compareBy { (obj, _, pos) -> pos.time + obj.duration })
 
@@ -24,8 +23,4 @@ class ScorePlayEnv(val writer: ScWriter, val nthStart: Int) {
 
     fun activeSynths(group: GroupObjectReference) =
         activeObjects.filter { (obj, _, _) -> obj is SynthObject && obj.group.now == group }
-
-    fun nearestSynthFromTop(y: Double) = activeObjects.filter { (obj, _, pos) ->
-        obj is SynthObject && pos.y > y
-    }.minByOrNull { (_, _, pos) -> pos.y }
 }

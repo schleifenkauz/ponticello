@@ -6,9 +6,7 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonObjectBuilder
 import kotlinx.serialization.json.put
 import reaktive.value.now
-import xenakis.impl.getDouble
-import xenakis.impl.getSerializableValue
-import xenakis.impl.putSerializableValue
+import xenakis.impl.*
 import xenakis.sc.editor.ScFunctionEditor
 import xenakis.ui.TaskObjectView
 
@@ -20,17 +18,14 @@ class TaskObject(name: String, val code: EditorRoot<ScFunctionEditor>, var width
 
     override fun copy(): ScoreObject = TaskObject(name.now, code.clone(), width)
 
-    override fun writeCode(env: ScorePlayEnv, name: String, playAt: Double) = with(env.writer) {
-        appendBlock("SystemClock.sched(${playAt.coerceAtLeast(0.0)})") {
-            appendBlock("~tasks['$name'] = Task") {
-                val function = code.editor.result.now
-                function.code(writer, context)
-                appendLine(".value()")
-            }
-            appendLine(".play;")
+    override fun writeCode(env: ScorePlayEnv, name: String, cutoff: Double): String = code {
+        appendBlock("~tasks['$name'] = Task") {
+            val function = code.editor.result.now
+            function.code(writer, context)
+            appendLine(".value()")
         }
-        appendLine(";")
-        appendBlock("SystemClock.sched(${playAt + duration})") {
+        appendLine(".play;")
+        appendBlock("SystemClock.sched(${duration - cutoff})") {
             appendLine("~tasks['$name'].stop;")
         }
         appendLine(";")

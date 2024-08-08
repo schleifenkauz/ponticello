@@ -17,10 +17,7 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonObjectBuilder
 import kotlinx.serialization.json.put
 import reaktive.value.now
-import xenakis.impl.getInt
-import xenakis.impl.getSerializableValue
-import xenakis.impl.putSerializableValue
-import xenakis.impl.reactive
+import xenakis.impl.*
 import xenakis.sc.code
 import xenakis.sc.editor.*
 import xenakis.ui.PianoRollObjectView
@@ -156,31 +153,25 @@ class PianoRollObject(
         return PianoRollObject(name.now, initialInstrument, lowestPitch, highestPitch, eventDictionary.clone(), notes)
     }
 
-    override fun writeCode(env: ScorePlayEnv, name: String, playAt: Double) {
+    override fun writeCode(env: ScorePlayEnv, name: String, cutoff: Double): String = code {
         val generalEventDict = eventDictionary.editor.result.now
         for ((idx, n) in notes.withIndex()) {
-            val t = playAt + n.onset
-            if (t < -duration) continue
-            val offset = -t.coerceAtMost(0.0)
-            val dur = n.duration - offset
+            val t = n.onset - cutoff
+            if (t < -n.duration) continue
+            val dur = n.duration + t.coerceAtMost(0.0)
             val midinote = n.midinote
             val eventDict = n.eventDictionary.editor.result.now
             val eventMap = mutableMapOf<String, String>()
             eventMap["duration"] = dur.toString()
             for ((key, value) in eventDict.entries) eventMap[key.text] = value.code(context)
             for ((key, value) in generalEventDict.entries) eventMap[key.text] = value.code(context)
-            when (val instr = instrument.get()) {
+            val playNote = when (val instr = instrument.get()) {
                 is SynthDefObject -> {
                     eventMap["freq"] = "$midinote.midicps + ${eventMap["detune"] ?: 0}.midiratio"
                     eventMap.remove("detune")
                     val namedValues = eventMap.entries.joinToString { (name, value) -> "$name: $value" }
                     val synthName = "~synths['${name}_${idx}']"
-                    env.writer.appendBlock("AppClock.sched($t)") {
-                        appendBlock("if (~play)") {
-                            +"$synthName = Synth(\\${instr.name.now}, [${namedValues}])"
-                        }
-                    }
-                    env.writer.appendLine(";")
+                    "$synthName = Synth(\\${instr.name.now}, [${namedValues}])"
                 }
 
                 is VSTPluginObject -> {
@@ -188,14 +179,13 @@ class PianoRollObject(
                     eventMap["type"] = "\\vst_midi"
                     eventMap["vst"] = instr.variableName
                     val namedValues = eventMap.entries.joinToString { (name, value) -> "$name: $value" }
-                    env.writer.appendBlock("SystemClock.sched($t)") {
-                        appendBlock("if (~play)") {
-                            +"(type: \\vst_midi, vst: ${instr.variableName}, $namedValues).play"
-                        }
-                    }
-                    env.writer.appendLine(";")
+                    "(type: \\vst_midi, vst: ${instr.variableName}, $namedValues).play"
                 }
             }
+            appendBlock("TempoClock.sched(${t.coerceAtLeast(0.0)})") {
+                +playNote
+            }
+            appendLine(";")
         }
     }
 

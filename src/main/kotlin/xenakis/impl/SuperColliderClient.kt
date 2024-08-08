@@ -12,7 +12,7 @@ interface SuperColliderClient : SuperColliderContext {
 
     fun sendAsync(address: String, arguments: List<Any>)
 
-    fun send(address: String, arguments: List<Any>): CompletableFuture<OSCMessage>
+    fun send(address: String, arguments: List<Any> = emptyList()): CompletableFuture<OSCMessage>
 
     fun eval(code: String): CompletableFuture<String> {
         if (isMyComputerDumb) {

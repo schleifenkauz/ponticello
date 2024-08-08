@@ -1,22 +1,25 @@
 package xenakis.ui
 
+import com.illposed.osc.OSCPacketDispatcher.DaemonThreadFactory
 import javafx.application.Platform
 import javafx.beans.binding.Bindings
 import javafx.scene.shape.Line
 import reaktive.value.now
-import xenakis.impl.ScWriter
 import xenakis.impl.SuperColliderClient
-import xenakis.impl.async
-import xenakis.impl.code
 import xenakis.model.*
 import java.util.*
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
+import kotlin.concurrent.thread
 
 class ScorePlayer(
     private val scoreView: ScoreView,
     private val project: XenakisProject,
     private val client: SuperColliderClient
 ) : Thread() {
-    private var nthStart = 0
+    private var latencyReached = false
+
+    private val executor = Executors.newSingleThreadScheduledExecutor(DaemonThreadFactory())
 
     var playHeadPosition = 0.0
         private set
@@ -54,12 +57,12 @@ class ScorePlayer(
         var lastTime = System.currentTimeMillis()
         while (true) {
             val now = System.currentTimeMillis()
-            if (isPlaying) {
+            if (isPlaying && latencyReached) {
                 val dt = now - lastTime
                 playHeadPosition += dt / 1000.0
                 val x = scoreView.getX(playHeadPosition)
                 Platform.runLater {
-                    if (isPlaying) playHead.layoutX = x
+                    if (isPlaying && latencyReached) playHead.layoutX = x
                 }
             }
             lastTime = now
@@ -78,9 +81,9 @@ class ScorePlayer(
         return if (idx == 0) "" else idx.toString()
     }
 
-    private fun writePlayerTask(writer: ScWriter, rootScore: Score, startFrom: Double) {
+    private fun prepareScore(startFrom: Double): MutableList<LocatedScoreObject> {
         val unvisitedSubScores: Queue<SubScore> = LinkedList()
-        unvisitedSubScores.offer(SubScore(rootScore, prefix = "", ObjectPosition(-startFrom, 0.0)))
+        unvisitedSubScores.offer(SubScore(project.score, prefix = "", ObjectPosition(-startFrom, 0.0)))
         val locatedObjects = mutableListOf<LocatedScoreObject>()
         val suffixes = mutableMapOf<String, Int>()
         while (unvisitedSubScores.isNotEmpty()) {
@@ -88,7 +91,8 @@ class ScorePlayer(
             for (obj in score.objects) {
                 if (obj.muted) continue
                 val absolutePosition = position + obj.position
-                if (absolutePosition.time + obj.duration <= 0) continue
+                val t = absolutePosition.time
+                if (t + obj.duration <= 0) continue
                 val original = if (obj is ClonedObject) obj.original else obj
                 val name = prefix + obj.name.now + getSuffixFor(obj, suffixes)
                 if (original is ScoreObjectGroup) {
@@ -99,39 +103,46 @@ class ScorePlayer(
             }
         }
         locatedObjects.sortBy { (_, _, pos) -> pos.time }
-        val env = ScorePlayEnv(writer.writer, nthStart)
+        return locatedObjects
+    }
+
+    private fun scheduleObjects(locatedObjects: MutableList<LocatedScoreObject>) {
+        val env = ScorePlayEnv()
         for (located in locatedObjects) {
             val (obj, name, pos) = located
             env.advanceToTime(pos.time)
-            obj.writeCode(env, name, pos.time)
+            val cutoff = (-pos.time).coerceAtLeast(0.0)
+            val code = obj.writeCode(env, name, cutoff)
             env.markObjectStart(located)
+            if (code == "") continue
+            val t = pos.time.coerceAtLeast(0.0)
+            var delay = (t * 1000).toLong()
+            //schedule a good amount of time before the actual event, but leave a bit of latency for the early events
+            delay = (delay - LOOK_AHEAD).coerceAtLeast(10)
+            executor.schedule({
+                println("SCHEDULE $name for $t + $LATENCY")
+                if (isPlaying) client.send("schedule", listOf((t + LATENCY).toString(), code))
+            }, delay, TimeUnit.MILLISECONDS)
         }
     }
 
     fun play() {
         if (isPlaying) return
-        val startTime = scoreView.getTime(playHead.layoutX - PLAY_HEAD_WIDTH)
-        async(timeLimit = 2000) {
-            client.eval(code {
-                +"~play = $nthStart"
-                //+"~startRecording.value(0)"
-                writer.appendLine("~synths = ();")
-                writer.appendLine("~tasks = ();")
-                writePlayerTask(writer, project.score, startTime)
-                nthStart += 1
-                +"nil"
-            }).join()
+        val startFrom = scoreView.getTime(playHead.layoutX - PLAY_HEAD_WIDTH)
+        thread(isDaemon = true) {
+            client.send("start_play")
+            val locatedObjects = prepareScore(startFrom)
+            scheduleObjects(locatedObjects)
+            latencyReached = false
             isPlaying = true
+            sleep((LATENCY * 1000).toLong())
+            latencyReached = true
         }
     }
 
     fun pause() {
         isPlaying = false
-        client.run {
-            +"~play = false"
-            +"~tasks.do { |t| if (t.isPlaying) { t.stop; } }"
-            +"~synths.do { |s| if (s.isRunning) { s.free } }"
-        }
+        client.send("pause_play")
     }
 
     fun reset() {
@@ -150,11 +161,21 @@ class ScorePlayer(
         playHead.layoutX = scoreView.getX(playHeadPosition)
     }
 
+    fun close() {
+        executor.shutdownNow()
+    }
+
     private data class SubScore(val score: Score, val prefix: String, val position: ObjectPosition)
 
-    data class LocatedScoreObject(val obj: ScoreObject, val name: String, val absolutePosition: ObjectPosition)
+    data class LocatedScoreObject(
+        val obj: ScoreObject,
+        val name: String,
+        val absolutePosition: ObjectPosition,
+    )
 
     companion object {
+        private const val LATENCY = 0.3
+        private const val LOOK_AHEAD = 1000
         private const val PLAY_HEAD_WIDTH = 2.0
     }
 }

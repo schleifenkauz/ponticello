@@ -7,6 +7,7 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonObjectBuilder
 import reaktive.value.now
 import reaktive.value.reactiveVariable
+import xenakis.impl.code
 import xenakis.impl.getSerializableValue
 import xenakis.impl.putSerializableValue
 import xenakis.sc.ControlSpec
@@ -69,9 +70,9 @@ class EnvelopeObject(
     override fun cut(position: Double, whichHalf: HorizontalDirection): ScoreObject =
         EnvelopeObject(name.now, spec, bus, envelope.cut(position / duration, whichHalf))
 
-    override fun writeStartCode(env: ScorePlayEnv, offset: Double, name: String) {
-        val envelopeCode = envelope.code(offset)
-        env.writer.append("{ $envelopeCode }.play(s, ${busSelector.result.now.get().variableName});")
+    override fun writeCode(env: ScorePlayEnv, name: String, cutoff: Double): String = code {
+        val envelopeCode = envelope.code(cutoff)
+        append("{ $envelopeCode }.play(s, ${busSelector.result.now.get().variableName});")
     }
 
     override fun JsonObjectBuilder.saveToJson() {

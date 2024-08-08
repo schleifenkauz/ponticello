@@ -61,7 +61,7 @@ class TempoGridObject(
         }
     }
 
-    override fun writeCode(env: ScorePlayEnv, name: String, playAt: Double) {}
+    override fun writeCode(env: ScorePlayEnv, name: String, cutoff: Double): String = ""
 
     override fun JsonObjectBuilder.saveToJson() {
         put("bpm", beatsPerMinute.now)

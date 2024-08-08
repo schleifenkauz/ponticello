@@ -31,7 +31,7 @@ class MemoObject(name: String, text: String, width: Double) : RegularScoreObject
 
     override fun copy(): ScoreObject = MemoObject(name.now, text, width)
 
-    override fun writeCode(env: ScorePlayEnv, name: String, playAt: Double) {}
+    override fun writeCode(env: ScorePlayEnv, name: String, cutoff: Double): String = ""
 
     override fun JsonObjectBuilder.saveToJson() {
         put("text", text)

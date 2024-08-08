@@ -11,6 +11,7 @@ import reaktive.collection.observeCollection
 import reaktive.list.observeEach
 import reaktive.value.*
 import xenakis.impl.ScWriter
+import xenakis.impl.code
 import xenakis.impl.getSerializableValue
 import xenakis.impl.putSerializableValue
 import xenakis.sc.ControlSpec
@@ -142,16 +143,16 @@ class SynthObject(
         controlObservers.remove(control)?.kill()
     }
 
-    override fun writeStartCode(env: ScorePlayEnv, offset: Double, name: String) {
+    override fun writeCode(env: ScorePlayEnv, name: String, cutoff: Double): String = code {
         myActiveSynths.add(name)
-        env.writer.appendBlock("s.makeBundle(0)") {
+        appendBlock("s.makeBundle(0)") {
             val constantArguments = controls.controlMap.mapNotNull { (param, control) ->
                 when (control) {
                     is BufferControl -> param to (control.sample.now?.get()?.variableName ?: "0")
                     is BusControl -> param to control.bus.now.get().variableName
                     is ConstantControl -> {
                         val value = when (param) {
-                            "startPos" -> control.value.now + offset * (playBufRate?.now ?: 0.0)
+                            "startPos" -> control.value.now + cutoff * (playBufRate?.now ?: 0.0)
                             else -> control.value.now
                         }
                         param to value.toString()
@@ -160,28 +161,28 @@ class SynthObject(
                     is KnobControl -> param to control.get().toString()
                     else -> null
                 }
-            }.joinToString { (param, value) -> "$param: $value" } + ", duration: ${duration - offset}"
+            }.joinToString { (param, value) -> "$param: $value" } + ", duration: ${duration - cutoff}"
             val synthVar = "~synths['$name']"
-            val group = group.now.get()
+            val group = group.now
             val synthDefName = synthDef.name.now
-            val parallelSynths = env.activeSynths(this@SynthObject.group.now)
+            val parallelSynths = env.activeSynths(group)
             val runBefore = parallelSynths
-                .filter { (_, _, pos) -> pos.y > this@SynthObject.y }
+                .filter { (_, _, pos) -> pos.y > y }
                 .minByOrNull { (_, _, pos) -> pos.y }
             val runAfter = parallelSynths
-                .filter { (_, _, pos) -> pos.y < this@SynthObject.y }
+                .filter { (_, _, pos) -> pos.y < y }
                 .maxByOrNull { (_, _, pos) -> pos.y }
             val (addAction, target) = when {
                 runAfter != null -> Pair("'addAfter'", "~synths['${runAfter.name}']")
                 runBefore != null -> Pair("'addBefore'", "~synths['${runBefore.name}']")
-                else -> Pair("'addToHead'", group.variableName)
+                else -> Pair("'addToHead'", group.get().variableName)
             }
             +"$synthVar = Synth(\\$synthDefName, [$constantArguments], target: $target, addAction: $addAction)"
             +"$synthVar.register"
             for ((param, control) in controls.controlMap) {
                 when (control) {
                     is EnvelopeControl -> {
-                        val envelopeCode = control.envelope.code(offset)
+                        val envelopeCode = control.envelope.code(cutoff)
                         val busName = "~auxil_${name}_${param}"
                         +"$busName  = Bus.control(s, 1)"
                         +"{ $envelopeCode }.play(s, $busName)"

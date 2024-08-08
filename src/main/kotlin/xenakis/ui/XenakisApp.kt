@@ -14,12 +14,13 @@ import kotlin.concurrent.thread
 
 class XenakisApp : Application() {
     private lateinit var controller: XenakisController
+    private lateinit var ui: XenakisUI
 
     override fun start(stage: Stage) {
         setupLogging()
         controller = XenakisController(stage)
         controller.setupHextant()
-        val ui = setupStage(stage)
+        ui = setupStage(stage)
         stage.show()
         ThemeWindowManagerFactory.create().setDarkModeForWindowFrame(stage, true)
 
@@ -53,6 +54,7 @@ class XenakisApp : Application() {
     }
 
     override fun stop() {
+        ui.player.close()
         controller.quitApplication()
     }
 

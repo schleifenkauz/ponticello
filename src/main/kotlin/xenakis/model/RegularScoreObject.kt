@@ -85,7 +85,6 @@ sealed class RegularScoreObject(name: String) : ScoreObject() {
     override fun getSpec(parameter: String): ControlSpec =
         throw NoSuchElementException("no spec for parameter $parameter in $this")
 
-
     override fun addView(view: ScoreObjectView) {
         @Suppress("UNCHECKED_CAST")
         val unsafe = viewManager as ListenerManager<ScoreObjectView>

@@ -44,18 +44,7 @@ abstract class ScoreObject : AbstractRenamableObject() {
     abstract val associatedControls: Map<String, ParameterControl>
     abstract fun getSpec(parameter: String): ControlSpec
 
-    open fun writeStartCode(env: ScorePlayEnv, offset: Double, name: String = this.name.now) {}
-
-    open fun writeCode(env: ScorePlayEnv, name: String, playAt: Double) = with(env.writer) {
-        if (playAt < -duration) return
-        val offset = -(playAt.coerceAtMost(0.0))
-        appendBlock("AppClock.sched(${(playAt).coerceAtLeast(0.0)})") {
-            appendBlock("if (~play == ${env.nthStart})") {
-                writeStartCode(env, offset, name)
-            }
-        }
-        appendLine(";")
-    }
+    abstract fun writeCode(env: ScorePlayEnv, name: String, cutoff: Double): String
 
     protected fun recordEdit(edit: Edit) {
         if (initialized) {

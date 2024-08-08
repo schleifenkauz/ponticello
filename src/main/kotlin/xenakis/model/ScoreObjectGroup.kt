@@ -30,7 +30,7 @@ class ScoreObjectGroup(name: String, val score: Score) : RegularScoreObject(name
         this.score.initialize(context, name)
     }
 
-    override fun writeCode(env: ScorePlayEnv, name: String, playAt: Double) {
+    override fun writeCode(env: ScorePlayEnv, name: String, cutoff: Double): String {
         throw UnsupportedOperationException()
     }
 
