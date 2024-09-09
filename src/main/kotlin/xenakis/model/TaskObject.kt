@@ -8,6 +8,7 @@ import kotlinx.serialization.json.put
 import reaktive.value.now
 import xenakis.impl.*
 import xenakis.sc.editor.ScFunctionEditor
+import xenakis.ui.ScorePlayer
 import xenakis.ui.TaskObjectView
 
 class TaskObject(name: String, val code: EditorRoot<ScFunctionEditor>, var width: Double) : RegularScoreObject(name) {
@@ -20,6 +21,7 @@ class TaskObject(name: String, val code: EditorRoot<ScFunctionEditor>, var width
 
     override fun writeCode(env: ScorePlayEnv, name: String, cutoff: Double): String = code {
         appendBlock("~tasks['$name'] = Task") {
+            +"${ScorePlayer.SERVER_LATENCY}.wait"
             val function = code.editor.result.now
             function.code(writer, context)
             appendLine(".value()")

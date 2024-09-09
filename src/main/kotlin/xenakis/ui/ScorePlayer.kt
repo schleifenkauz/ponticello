@@ -120,8 +120,10 @@ class ScorePlayer(
             //schedule a good amount of time before the actual event, but leave a bit of latency for the early events
             delay = (delay - LOOK_AHEAD).coerceAtLeast(10)
             executor.schedule({
-                println("SCHEDULE $name for $t + $LATENCY")
-                if (isPlaying) client.send("schedule", listOf((t + LATENCY).toString(), code))
+                if (isPlaying) {
+                    println("SCHEDULE $name for $t + $SCLANG_LATENCY")
+                    client.send("schedule", listOf((t + SCLANG_LATENCY).toString(), code))
+                }
             }, delay, TimeUnit.MILLISECONDS)
         }
     }
@@ -135,7 +137,7 @@ class ScorePlayer(
             scheduleObjects(locatedObjects)
             latencyReached = false
             isPlaying = true
-            sleep((LATENCY * 1000).toLong())
+            sleep(((SCLANG_LATENCY + SERVER_LATENCY) * 1000).toLong())
             latencyReached = true
         }
     }
@@ -174,8 +176,9 @@ class ScorePlayer(
     )
 
     companion object {
-        private const val LATENCY = 0.3
+        private const val SCLANG_LATENCY = 0.5
         private const val LOOK_AHEAD = 1000
         private const val PLAY_HEAD_WIDTH = 2.0
+        const val SERVER_LATENCY = 0.3
     }
 }

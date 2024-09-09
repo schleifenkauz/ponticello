@@ -16,6 +16,7 @@ import xenakis.impl.getSerializableValue
 import xenakis.impl.putSerializableValue
 import xenakis.sc.ControlSpec
 import xenakis.sc.GroupControlSpec
+import xenakis.ui.ScorePlayer
 import xenakis.ui.SynthObjectView
 
 class SynthObject(
@@ -145,7 +146,7 @@ class SynthObject(
 
     override fun writeCode(env: ScorePlayEnv, name: String, cutoff: Double): String = code {
         myActiveSynths.add(name)
-        appendBlock("s.makeBundle(0)") {
+        appendBlock("s.makeBundle(${ScorePlayer.SERVER_LATENCY})") {
             val constantArguments = controls.controlMap.mapNotNull { (param, control) ->
                 when (control) {
                     is BufferControl -> param to (control.sample.now?.get()?.variableName ?: "0")
