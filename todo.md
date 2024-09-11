@@ -90,6 +90,8 @@
 
 ## Bugs
 
+- on startup an unnecessarily large empty space is displayed
+  - on scrolling the display works correctly
 - sometimes playback stops at a specific score object: find out what causes this and fix it
 - sometimes playback is duplicated with a short delay
 - why doesn't windows let SuperCollider speak to Xenakis?

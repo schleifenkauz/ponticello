@@ -206,7 +206,7 @@ class XenakisController(private val primaryStage: Stage) {
     fun createNewProject() {
         showTextPrompt("Project name", "", context) { name ->
             if (name.isNotBlank()) {
-                val location = userHome.resolve("Xenakis Projects").resolve(name)
+                val location = userHome.resolve("compositions").resolve(name) //TODO introduce option for projects location
                 location.mkdir()
                 location.resolve("project.xen").writeText(location.name)
                 currentProject = XenakisProject.create(location, context)

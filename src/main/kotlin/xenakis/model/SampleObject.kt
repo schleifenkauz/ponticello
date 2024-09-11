@@ -18,6 +18,7 @@ import java.util.logging.Logger
 import javax.sound.sampled.AudioInputStream
 import javax.sound.sampled.AudioSystem
 
+//TODO resolve files relative to project location (or simply copy them to the samples directory...)
 @Serializable
 class SampleObject(
     override val mutableName: ReactiveVariable<String>,

@@ -81,6 +81,13 @@ class ControlAssignmentEditor(
         settingControl = false
     }
 
+    fun getInputControl() = detailEditor
+
+    fun focusInputControl(): Boolean {
+        detailEditor?.requestFocus()
+        return detailEditor != null
+    }
+
     sealed class ControlType<C : ParameterControl> {
         abstract fun createDetailInput(parameter: String, spec: ControlSpec, control: C, context: Context): Node
 
