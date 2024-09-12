@@ -388,7 +388,8 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
                         alertError("Object with name ${duplicate.name.now} already present in score ${score.scoreName.now}")
                         return
                     }
-                    duplicate.position.set(getTime(ev.x), ev.y)
+                    val (x, y) = snapToGrid(ev.x, ev.y)
+                    duplicate.position.set(getTime(x), y)
                     score.addObject(duplicate)
                 } else if (selectedArea in children && selectedArea.width != 0.0 && selectedArea.height != 0.0) {
                     if (!selectedArea.heightProperty().isBound) {

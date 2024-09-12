@@ -40,10 +40,13 @@
   - add it from global collection
   - create a new one, which can be added to the global collection if needed
 
-### Save window positions
+### Improve layout
 
-- main window size and position
-- arrangement of utility panes
+- fix time display and snapping in envelope editors
+- save main window size/position and arrangement of utility panes
+- do we need an extra window for LFO code?
+- integrate the buses pane into the audio flow window (it is only needed there)
+- make the sample pane a searchable popup (but what about adding samples from the file explorer?)
 
 ### Unify knob control and constant control
 
@@ -74,11 +77,8 @@
 - lag values for parameters (adjust with spinner in control assignment)
 - allow for more cases of pasting code
 - custom min/max value for envelope controls? (if the spec provided by the SynthDef is to large)
-- fix time display and snapping in envelope editors
 - avoid hanging when speaking to SuperCollider (timeouts, async, etc.)
 - kill sclang.exe and scsynth.exe before startup (?)
-- do we need an extra window for LFO code? 
-- make the samples/buses/instruments display more compact and searchable (especially useful for samples)
 - possibility to replace instrument of a SynthObject, reusing common controls
 
 ## Long term architectural ideas
@@ -96,6 +96,7 @@
 
 - effects that work with intermediate buses have to be executed after the flow synths
 - sometimes the first ScoreObject is not played, when the cursor starts exactly over it
+- fix time display and snapping in envelope editors
 
 ## Nice to have
 
