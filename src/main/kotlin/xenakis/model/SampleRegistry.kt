@@ -19,7 +19,7 @@ class SampleRegistry(private val samples: MutableList<SampleObject>) : SuperColl
         super.initialize(context)
     }
 
-    fun getSample(file: File): SampleObject? = objects.find { o -> o.referencedFile == file }
+    fun getSample(file: File): SampleObject? = objects.find { o -> o.audioFile == file }
 
     override fun getDefault(): SampleObject = throw NotImplementedError()
 

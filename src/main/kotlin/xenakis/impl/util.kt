@@ -48,7 +48,7 @@ inline fun code(writeCode: ScWriter.() -> Unit): String {
     return code
 }
 
-val File.superColliderPath get() = "\"" + absolutePath.replace('\\', '/') + "\""
+val File.superColliderPath get() = "\"" + absoluteFile.invariantSeparatorsPath + "\""
 
 fun JsonObject.getDouble(name: String) = get(name)?.jsonPrimitive?.double
 
@@ -122,3 +122,6 @@ inline fun <V> KMutableProperty0<V>.reactive(crossinline onUpdate: (oldValue: V,
 fun <T> ReactiveVariable<T>.copy() = reactiveVariable(get())
 
 val isMyComputerDumb get() = System.getProperty("os.name").contains("Windows")
+
+fun String.replacePrefix(prefix: String, replacement: String) =
+    if (startsWith(prefix)) replacement + drop(prefix.length) else this

@@ -1,5 +1,6 @@
 package xenakis.ui
 
+import javafx.application.Platform
 import javafx.geometry.Point2D
 import javafx.geometry.Rectangle2D
 import javafx.scene.Cursor
@@ -110,12 +111,14 @@ class SynthObjectView(val obj: SynthObject) : ScoreObjectView(obj), SynthControl
     }
 
     private fun updateSpectrogram() {
-        envelopesPane.children.removeAll(spectrogramViews)
-        spectrogramViews.clear()
-        if (obj.displaySample?.now != true) return
-        val imageFile = obj.sample.now?.get()?.spectrogramFile ?: return
-        image = Image(imageFile.inputStream())
-        displaySpectrogram()
+        Platform.runLater {
+            envelopesPane.children.removeAll(spectrogramViews)
+            spectrogramViews.clear()
+            if (obj.displaySample?.now != true) return@runLater
+            val imageFile = obj.sample.now?.get()?.spectrogramFile ?: return@runLater
+            image = Image(imageFile.inputStream())
+            displaySpectrogram()
+        }
     }
 
     private fun displaySpectrogram() {

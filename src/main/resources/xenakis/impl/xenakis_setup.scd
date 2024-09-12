@@ -89,7 +89,6 @@ OSCdef('run', {
 OSCdef('start_play', {
 	arg msg;
 	~play_start = TempoClock.beats;
-	'PLAY at t = '.post; ~play_start.postln;
 	~synths = ();
 	~tasks = ();
 }, '/start_play');

@@ -56,8 +56,8 @@ abstract class ObjectRegistry<O : NamedObject> {
     }
 
     protected open fun onAdded(obj: O, idx: Int) {
-        obj.onAdded(context)
         obj.initialize(context)
+        obj.onAdded(context)
     }
 
     protected open fun onRemoved(obj: O, idx: Int) {

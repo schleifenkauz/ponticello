@@ -9,6 +9,7 @@ import hextant.serial.readJson
 import hextant.serial.writeJson
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
+import kotlinx.serialization.json.Json
 import reaktive.value.now
 import reaktive.value.reactiveValue
 import xenakis.impl.SuperColliderClient
@@ -56,18 +57,19 @@ class XenakisProject private constructor(
         }
     }
 
-    fun saveTo(folder: File) {
-        folder.resolve("settings.json").writeJson(settings)
-        folder.resolve("groups.json").writeJson(groups)
-        folder.resolve("busses.json").writeJson(busses)
-        folder.resolve("buffers.json").writeJson(buffers)
-        folder.resolve("samples.json").writeJson(samples)
-        folder.resolve("instruments.json").writeJson(instruments)
-        folder.resolve("flow_graph.json").writeJson(flowGraph)
-        folder.resolve("global_controls.json").writeJson(globalControls)
-        folder.resolve("server_setup.json").writeJson(serverSetup)
-        folder.resolve("server_tree.json").writeJson(serverTree)
-        folder.resolve("score.json").writeJson(score)
+    fun saveTo(projectDirectory: File) {
+        val data = projectDirectory.resolve("xenakis_data")
+        data.resolve("settings.json").writeJson(settings)
+        data.resolve("groups.json").writeJson(groups)
+        data.resolve("busses.json").writeJson(busses)
+        data.resolve("buffers.json").writeJson(buffers)
+        data.resolve("samples.json").writeJson(samples)
+        data.resolve("instruments.json").writeJson(instruments)
+        data.resolve("flow_graph.json").writeJson(flowGraph)
+        data.resolve("global_controls.json").writeJson(globalControls)
+        data.resolve("server_setup.json").writeJson(serverSetup)
+        data.resolve("server_tree.json").writeJson(serverTree)
+        data.resolve("score.json").writeJson(score)
     }
 
     fun updateSetupCode(setupCode: CodeBlock, liveCycleType: LiveCycleType) {
@@ -88,33 +90,34 @@ class XenakisProject private constructor(
 
         fun loadFrom(folder: File, context: Context, listener: XenakisController): XenakisProject {
             context[projectDirectory] = folder
+            val data = folder.resolve("xenakis_data")
             context.withoutUndo {
-                val settings = folder.resolve("settings.json").readJson<InteractionSettings>()
-                val groups = folder.resolve("groups.json").readJson<GroupRegistry>()
+                val settings = data.resolve("settings.json").readJson<InteractionSettings>()
+                val groups = data.resolve("groups.json").readJson<GroupRegistry>()
                 groups.initialize(context)
                 listener.setProgress(0.45, "Loading busses")
-                val busses = folder.resolve("busses.json").readJson<BusRegistry>()
+                val busses = data.resolve("busses.json").readJson<BusRegistry>()
                 busses.initialize(context)
                 listener.setProgress(0.5, "Loading buffers")
-                val buffers = folder.resolve("buffers.json").readJson<BufferRegistry>()
+                val buffers = data.resolve("buffers.json").readJson<BufferRegistry>()
                 buffers.initialize(context)
                 listener.setProgress(0.55, "Loading samples")
-                val samples = folder.resolve("samples.json").readJson<SampleRegistry>()
+                val samples = data.resolve("samples.json").readJson<SampleRegistry>(Json { ignoreUnknownKeys = true })
                 samples.initialize(context)
                 listener.setProgress(0.6, "Loading instruments")
-                val instruments = folder.resolve("instruments.json").readJson<InstrumentRegistry>()
+                val instruments = data.resolve("instruments.json").readJson<InstrumentRegistry>()
                 instruments.initialize(context)
                 listener.setProgress(0.65, "Loading audio flow graph")
-                val flowGraph = folder.resolve("flow_graph.json").readJson<AudioFlowGraph>()
+                val flowGraph = data.resolve("flow_graph.json").readJson<AudioFlowGraph>()
                 flowGraph.initialize(context)
                 listener.setProgress(0.7, "Loading global controls")
-                val globalControls = folder.resolve("global_controls.json").readJson<GlobalControls>()
+                val globalControls = data.resolve("global_controls.json").readJson<GlobalControls>()
                 globalControls.initialize(context)
                 listener.setProgress(0.75, "Loading server setup code")
-                val serverSetup = folder.resolve("server_setup.json").readJson<EditorRoot<CodeBlockEditor>>()
-                val beforePlay = folder.resolve("server_tree.json").readJson<EditorRoot<CodeBlockEditor>>()
+                val serverSetup = data.resolve("server_setup.json").readJson<EditorRoot<CodeBlockEditor>>()
+                val beforePlay = data.resolve("server_tree.json").readJson<EditorRoot<CodeBlockEditor>>()
                 listener.setProgress(0.9, "Loading score")
-                val score = folder.resolve("score.json").readJson<Score>()
+                val score = data.resolve("score.json").readJson<Score>()
                 listener.setProgress(0.9, "Ready")
                 score.initialize(context, reactiveValue(ROOT_SCORE_NAME))
                 return XenakisProject(

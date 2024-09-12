@@ -34,6 +34,7 @@ import xenakis.sc.editor.EventDictionaryEditor
 import xenakis.sc.editor.ScFunctionEditor
 import xenakis.ui.ToolSelector.Tool
 import xenakis.ui.ToolSelector.Tool.*
+import xenakis.ui.XenakisController.Companion.currentProject
 
 abstract class ScorePane(val score: Score, val context: Context) : Pane(), ScoreListener {
     private var newObjectArea: Rectangle? = null
@@ -129,7 +130,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
             val file = db.files[0]
             context[SampleRegistry].getSample(file) ?: run {
                 val name = Identifier.truncate(file.nameWithoutExtension)
-                val sample = SampleObject(reactiveVariable(name), file)
+                val sample = SampleObject.create(context[currentProject], reactiveVariable(name), file)
                 context[SampleRegistry].add(sample)
                 sample
             }
@@ -187,7 +188,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
 
     fun getObjectView(obj: ScoreObject) = views[obj] ?: error("No view found for ${obj.name.now}")
 
-    fun createObjectView(obj: ScoreObject): ScoreObjectView = when (obj) {
+    private fun createObjectView(obj: ScoreObject): ScoreObjectView = when (obj) {
         is SynthObject -> SynthObjectView(obj)
         is TaskObject -> TaskObjectView(obj)
         is EnvelopeObject -> EnvelopeObjectView(obj)

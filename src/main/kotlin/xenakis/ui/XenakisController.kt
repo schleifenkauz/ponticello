@@ -78,9 +78,7 @@ class XenakisController(private val primaryStage: Stage) {
         initialDirectory = userHome
     }
 
-    private val dc = DirectoryChooser().apply {
-        initialDirectory = userHome.resolve("Xenakis Projects").also { dir -> if (!dir.exists()) dir.mkdir() }
-    }
+    private val dc = DirectoryChooser()
 
     fun setupHextant() {
         setProgress(0.0, "Setting up Hextant")

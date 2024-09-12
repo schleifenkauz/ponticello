@@ -131,11 +131,13 @@ fun alertException(action: String, exc: Exception) = Alert(Alert.AlertType.ERROR
     show()
 }
 
-fun alertError(text: String) = Notifications.create().text(text).darkStyle().showError()
+fun alertError(text: String) = Platform.runLater { Notifications.create().text(text).darkStyle().showError() }
 
-fun notifyConfirm(message: String) = Notifications.create().text(message).darkStyle().showConfirm()
+fun notifyConfirm(message: String) =
+    Platform.runLater { Notifications.create().text(message).darkStyle().showConfirm() }
 
-fun notifyInfo(message: String) = Notifications.create().text(message).darkStyle().showInformation()
+fun notifyInfo(message: String) =
+    Platform.runLater { Notifications.create().text(message).darkStyle().showInformation() }
 
 fun <T : Any> tryWithAlert(actionDescription: String, action: () -> T): T? = try {
     action()

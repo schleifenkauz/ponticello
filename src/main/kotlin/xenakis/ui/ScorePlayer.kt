@@ -121,7 +121,6 @@ class ScorePlayer(
             delay = (delay - LOOK_AHEAD).coerceAtLeast(10)
             executor.schedule({
                 if (isPlaying) {
-                    println("SCHEDULE $name for $t + $SCLANG_LATENCY")
                     client.send("schedule", listOf((t + SCLANG_LATENCY).toString(), code))
                 }
             }, delay, TimeUnit.MILLISECONDS)

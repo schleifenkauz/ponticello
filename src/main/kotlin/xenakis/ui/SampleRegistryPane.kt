@@ -19,8 +19,8 @@ class SampleRegistryPane(
             for (file in ev.dragboard.files) {
                 if (samples.getSample(file) != null) return@setupDropArea
                 val name = reactiveVariable(Identifier.truncate(file.nameWithoutExtension))
-                val buffer = SampleObject(name, file)
-                samples.add(buffer)
+                val sample = SampleObject.create(controller.currentProject, name, file)
+                samples.add(sample)
             }
         })
         samples.addView(this)
@@ -34,7 +34,7 @@ class SampleRegistryPane(
     private fun addSample(name: (File) -> String): SampleObject? {
         val file = controller.showOpenDialog("*.wav") ?: return null
         if (samples.getSample(file) != null) return null
-        val sample = SampleObject(reactiveVariable(name(file)), file)
+        val sample = SampleObject.create(controller.currentProject, reactiveVariable(name(file)), file)
         samples.add(sample)
         return sample
     }
