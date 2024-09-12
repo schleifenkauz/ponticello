@@ -27,35 +27,34 @@
 
 - ability to copy and paste whole time ranges
 
-### Logging
+### Logging and error management
 
 ### Stretching time regions
 
 - select time, then drag with shift
 - stretch objects or only reposition?
 
-### Minor
+### Inter-project SynthDef collection
 
-- lag values for parameters (adjust with spinner in control assignment)
-- allow for more cases of pasting code
-- save window positions
-- unify knob control and constant control
-  - add increment and decrement buttons to slider
-  - always display current value (where?)
-  - show double input dialog on double click (no pun intended)
-- custom min/max value for envelope controls? (if the spec provided by the SynthDef is to large)
-- inter-project SynthDef collection
-- effects that work with intermediate buses have to be executed after the flow synths
-- fix time display and snapping in envelope editors
-- make y position dependent on screen resolution?
-- switch to next property with TAB
-- avoid hanging when speaking to SuperCollider (timeouts, async, etc.)
-- kill sclang.exe and scsynth.exe before startup (?)
-- add new envelope points on the path, not at the cursor position
-- do we need an extra window for LFO code? 
-- make the samples/buses/instruments display more compact and searchable (especially useful for samples)
-- possibility to replace instrument of a SynthObject, reusing common controls
-- sometimes the first ScoreObject is not played, when the cursor starts exactly over it
+- two ways to add SynthDefs to projects
+  - add it from global collection
+  - create a new one, which can be added to the global collection if needed
+
+### Save window positions
+
+- main window size and position
+- arrangement of utility panes
+
+### Unify knob control and constant control
+
+- add increment and decrement buttons to slider
+- always display current value (where?)
+- show double input dialog on double click (no pun intended)
+
+### Make y position of ScoreObjects relative to screen resolution
+
+- this would simplify working on the same project from different screens
+- y coordinate between 0 and 1, automatically scaled to size of score on the screen
 
 ### Support for patterns
 
@@ -70,20 +69,33 @@
 - or have a live buffer to which everything is recorded, from which you can choose snippets
 - can be done via Audacity for now (record from pipewire and then export as WAV to create a buffer in xenakis)
 
-## Architecture
+### Minor
 
-- track references to objects, if an object has references, it cannot be removed (necessary?)
+- lag values for parameters (adjust with spinner in control assignment)
+- allow for more cases of pasting code
+- custom min/max value for envelope controls? (if the spec provided by the SynthDef is to large)
+- fix time display and snapping in envelope editors
 - avoid hanging when speaking to SuperCollider (timeouts, async, etc.)
-- use SuperCollider `Score` object for playback (this also means ability to do NRT bouncing!)
+- kill sclang.exe and scsynth.exe before startup (?)
+- do we need an extra window for LFO code? 
+- make the samples/buses/instruments display more compact and searchable (especially useful for samples)
+- possibility to replace instrument of a SynthObject, reusing common controls
+
+## Long term architectural ideas
+
+### track references to objects, if an object has references, it cannot be removed (necessary?)
+
+### use SuperCollider `Score` object for playback (this also means ability to do NRT bouncing!)
+
+### remove distinction between originals and clones
+
+- remove position property from ScoreObject
+- instead a score is a collection of ScoreObjects and positioned instantiations
 
 ## Bugs
 
-- when pasting multiple objects at once sometimes some of the clone/copies are not shown
-  - they are present in the score
-  - they are present in the views-map of the ScorePane
-  - they are present in the children of the ScorePane
-  - they are not shown when reopening the score
-  - what could it be???
+- effects that work with intermediate buses have to be executed after the flow synths
+- sometimes the first ScoreObject is not played, when the cursor starts exactly over it
 
 ## Nice to have
 

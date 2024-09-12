@@ -9,6 +9,8 @@ import kotlinx.serialization.Transient
 import xenakis.impl.Point
 import xenakis.sc.NumericalControlSpec
 import xenakis.sc.Warp
+import xenakis.sc.map
+import xenakis.sc.unmap
 import xenakis.ui.EnvelopeView
 import kotlin.math.absoluteValue
 
@@ -35,9 +37,10 @@ class Envelope(private val _points: MutableList<Point>, val curve: Warp) {
         i = -(i + 1)
         val (x1, y1) = if (i == 0) points[1] else points[i - 1]
         val (x2, y2) = if (i == points.size) points[i - 2] else points[i]
-        val slope = (y2 - y1) / (x2 - x1)
+        val slope = (curve.map(y2) - curve.map(y1)) / (x2 - x1)
         val dx = t - x1
-        return y1 + slope * dx
+        val dy = slope * dx
+        return curve.unmap(curve.map(y1) + dy)
     }
 
     fun copy() = Envelope(_points.toMutableList(), curve)

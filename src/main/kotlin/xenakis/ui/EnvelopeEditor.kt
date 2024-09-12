@@ -79,7 +79,7 @@ class EnvelopeEditor(
         line.setOnMouseClicked { ev ->
             if (ev.isAltDown) {
                 val t = transformXToTime(ev.x)
-                val v = transformYToValue(ev.y)
+                val v = envelope.interpolateValueAt(t)
                 val newPoint = Point(t, v)
                 var idx = envelope.points.binarySearch(newPoint, compareBy(Point::x))
                 idx = -(idx + 1)
