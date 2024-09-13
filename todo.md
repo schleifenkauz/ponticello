@@ -1,17 +1,10 @@
 ## Functionality
 
-### sound file objects
-
-- reverse!
-
-### how to react to changes of synth definitions?
-
-- highlight obsolete arguments in control assignment view
-- ability to add extra parameters for usage in LFO?
-
 ### Make playback more reactive
 
-### Mixing interface in AudioFlowGraph
+- can we generate code on the fly, i.e. only shortly before the cursor hits an object?
+- global variables are already reactive
+- would be interesting to have live-control over constant parameters of individual objects
 
 ### completion
 
@@ -27,7 +20,14 @@
 
 - ability to copy and paste whole time ranges
 
+### Mixing interface in AudioFlowGraph
+
+- special "mixing-node" which has a volume (and pan?) control for every of its inputs
+
 ### Logging and error management
+
+- more logging
+- also user options for logging level
 
 ### Stretching time regions
 
@@ -42,10 +42,12 @@
 
 ### Improve layout
 
+- fix time display and snapping in envelope editors
 - save main window size/position and arrangement of utility panes
 - do we need an extra window for LFO code?
 - integrate the buses pane into the audio flow window (it is only needed there)
 - make the sample pane a searchable popup (but what about adding samples from the file explorer?)
+- integrate close, maximize, minimize into top toolbar and remove window decoration
 
 ### Unify knob control and constant control
 
@@ -64,12 +66,12 @@
 - as standalone objects (`pbind`)
 - attaching to a synth in the score (`pmono`)
 
-### Bouncing
+### Moving (resizing?) objects with arrow keys
 
-- to file or to buffer (that is record to file and then load buffer into SC)
-- realtime (easy) and non realtime (not easy, use Score API from SuperCollider)
-- or have a live buffer to which everything is recorded, from which you can choose snippets
-- can be done via Audacity for now (record from pipewire and then export as WAV to create a buffer in xenakis)
+- react to time snap options
+- when no snap, move in screen pixels (?)
+- when alt is pressed resize instead
+- shift activates stretching mode
 
 ### More flexible controls for SynthObjects
 
@@ -79,6 +81,13 @@
 - when adding envelope controls, min/max values can be specified
 - controls can also be removed => default values are used in that case
 - also controls not present in the SynthDef can be added, which can then be used from LFO code
+
+### Bouncing
+
+- to file or to buffer (that is record to file and then load buffer into SC)
+- realtime (easy) and non realtime (not easy, use Score API from SuperCollider)
+- or have a live buffer to which everything is recorded, from which you can choose snippets
+- can be done via Audacity for now (record from pipewire and then export as WAV to create a buffer in xenakis)
 
 ### Minor
 
@@ -100,8 +109,8 @@
 - effects that work with intermediate buses have to be executed after the flow synths
 - sometimes the first ScoreObject is not played, when the cursor starts exactly over it
 - fix time display and snapping in envelope editors
-- switch between edit and move mode on memo objects
-
-## Nice to have
-
-- integrate close, maximize, minimize into top toolbar and remove window decoration
+- on startup an unnecessarily large empty space is displayed
+- on scrolling the display works correctly
+- sometimes playback stops at a specific score object: find out what causes this and fix it
+- sometimes playback is duplicated with a short delay
+- why doesn't windows let SuperCollider speak to Xenakis?
