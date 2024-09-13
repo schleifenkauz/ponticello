@@ -22,7 +22,8 @@ import xenakis.model.*
 import xenakis.sc.NumericalControlSpec
 import kotlin.math.absoluteValue
 
-class SynthObjectView(val obj: SynthObject) : ScoreObjectView(obj), SynthControls.View {
+class SynthObjectView(instance: ScoreObjectInstance, val obj: SynthObject) : ScoreObjectView(instance),
+    SynthControls.View {
     private var image: Image? = null
     private val spectrogramViews = mutableListOf<ImageView>()
 
@@ -44,7 +45,7 @@ class SynthObjectView(val obj: SynthObject) : ScoreObjectView(obj), SynthControl
         sampleObserver = obj.sample.forEach { s ->
             sampleContentObserver?.kill()
             if (s != null) {
-                sampleContentObserver = s.get().contentsChanged.observe { _ -> updateSpectrogram() }
+                sampleContentObserver = s.get<SampleObject>().contentsChanged.observe { _ -> updateSpectrogram() }
                 updateSpectrogram()
             }
         }
@@ -115,7 +116,7 @@ class SynthObjectView(val obj: SynthObject) : ScoreObjectView(obj), SynthControl
             envelopesPane.children.removeAll(spectrogramViews)
             spectrogramViews.clear()
             if (obj.displaySample?.now != true) return@runLater
-            val imageFile = obj.sample.now?.get()?.spectrogramFile ?: return@runLater
+            val imageFile = obj.sample.now?.get<SampleObject>()?.spectrogramFile ?: return@runLater
             image = Image(imageFile.inputStream())
             displaySpectrogram()
         }
@@ -126,7 +127,7 @@ class SynthObjectView(val obj: SynthObject) : ScoreObjectView(obj), SynthControl
         spectrogramViews.clear()
         if (obj.displaySample?.now != true) return
         if (image == null) return
-        val sample = obj.sample.now?.get() ?: return
+        val sample = obj.sample.now?.get<SampleObject>() ?: return
         val rate = obj.playBufRate?.now ?: 1.0
         if (rate == 0.0) return
         val defaultStartPos = if (rate < 0) sample.duration else 0.0

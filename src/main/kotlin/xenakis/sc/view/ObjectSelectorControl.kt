@@ -14,14 +14,14 @@ import xenakis.model.ObjectRegistry
 import xenakis.sc.editor.ObjectSelector
 import xenakis.ui.showNamePrompt
 
-class ObjectSelectorControl<O : NamedObject, R : ObjectReference<O>?>(
+class ObjectSelectorControl<O : NamedObject, R : ObjectReference?>(
     val editor: ObjectSelector<O, R>, arguments: Bundle
 ) : EditorControl<Node>(editor, arguments), ObjectRegistry.View<O>, ObjectSelectorView<O> {
     private val comboBox = ComboBox<Option<O>>()
     private val observers = mutableMapOf<O, Observer>()
 
     init {
-        editor.registry.addView(this)
+        editor.getRegistry(context).addView(this)
         comboBox.buttonCell = ObjectCell()
         comboBox.setCellFactory { ObjectCell() }
         comboBox.items.add(Option.CreateNew)
@@ -38,20 +38,18 @@ class ObjectSelectorControl<O : NamedObject, R : ObjectReference<O>?>(
         when (new) {
             Option.CreateNew -> {
                 comboBox.selectionModel.select(last)
-                showNamePrompt(editor.registry) { name ->
+                showNamePrompt(editor.getRegistry(context)) { name ->
                     val obj = editor.createNewObject(name) ?: return@showNamePrompt
-                    editor.registry.add(obj)
+                    editor.getRegistry(context).add(obj)
                     comboBox.selectionModel.select(Option.Choose(obj))
                 }
             }
 
             is Option.Choose -> {
-                @Suppress("UNCHECKED_CAST")
                 editor.select(new.obj.createReference() as R)
             }
 
             Option.None -> {
-                check(editor.isNullable)
                 editor.select(null as R)
             }
         }

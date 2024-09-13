@@ -28,7 +28,7 @@ class ReferencedBuffer(override val mutableName: ReactiveVariable<String>) : Buf
     override fun ScWriter.addToServer() {}
 
     override fun rename(newName: String) {
-        mutableName.set(newName)
+        super.rename(newName)
         sync()
     }
 

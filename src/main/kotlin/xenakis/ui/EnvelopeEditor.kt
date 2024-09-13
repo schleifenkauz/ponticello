@@ -121,7 +121,7 @@ class EnvelopeEditor(
 
     private fun transformXToTime(x: Double): Double {
         val scoreX = x + objectView.layoutX
-        val scoreY = associatedObject.y + objectView.layoutX
+        val scoreY = objectView.instance.y + objectView.layoutX
         val xInScore = parentPane.snapToGrid(scoreX, scoreY).x
         val xInObject = xInScore - objectView.layoutX
         return xTransform.unmap(xInObject).coerceIn(xTransform.sourceRange)
@@ -130,7 +130,7 @@ class EnvelopeEditor(
     private fun transformYToValue(y: Double) = yTransform.unmap(y).snap(valueGrid).coerceIn(yTransform.sourceRange)
 
     private fun displayPosition(t: Double, v: Double) {
-        val scoreTime = associatedObject.start + t * associatedObject.duration
+        val scoreTime = objectView.instance.time + t * associatedObject.duration
         val timeAccuracy = parentPane.xAccuracy
         val valueAccuracy = accuracy(spec.step.get())
         mouseInfo.text = "t: ${scoreTime.format(timeAccuracy)}, $parameterName: ${v.format(valueAccuracy)}"

@@ -1,51 +1,42 @@
 package xenakis.model
 
 import hextant.core.editor.ListenerManager
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.JsonObjectBuilder
-import kotlinx.serialization.json.put
-import reaktive.value.now
-import xenakis.impl.getDouble
-import xenakis.impl.getString
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
+import reaktive.value.ReactiveVariable
+import reaktive.value.reactiveVariable
 import xenakis.ui.MemoObjectView
 
-class MemoObject(name: String, text: String, width: Double) : RegularScoreObject(name) {
+@Serializable
+class MemoObject(
+    override val mutableName: ReactiveVariable<String>,
+    @SerialName("text") private var _text: String,
+    @SerialName("width") private var _width: Double
+) : ScoreObject() {
     override val type: String
         get() = "memo"
 
+    @Transient
     override val viewManager = ListenerManager.createWeakListenerManager<MemoObjectView>()
 
-    var width = width
+    var width: Double
+        get() = _width
         set(value) {
-            if (field == value) return
-            field = value
+            if (_width == value) return
+            _width = value
             viewManager.notifyListeners { resized() }
         }
 
-    var text = text
+    var text: String
+        get() = _text
         set(value) {
-            if (value == field) return
-            field = value
+            if (value == _text) return
+            _text = value
             viewManager.notifyListeners { textChanged(value) }
         }
 
-    override fun copy(): ScoreObject = MemoObject(name.now, text, width)
+    override fun doClone(newName: String): ScoreObject = MemoObject(reactiveVariable(newName), text, width)
 
     override fun writeCode(env: ScorePlayEnv, name: String, cutoff: Double): String = ""
-
-    override fun JsonObjectBuilder.saveToJson() {
-        put("text", text)
-        put("width", width)
-    }
-
-    object Serializer : ScoreObject.Serializer {
-        override val type: String
-            get() = "memo"
-
-        override fun JsonObject.createFromJson(name: String): ScoreObject {
-            val text = getString("text") ?: ""
-            val width = getDouble("width") ?: 0.0
-            return MemoObject(name, text, width)
-        }
-    }
 }

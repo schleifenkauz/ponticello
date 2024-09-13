@@ -32,6 +32,7 @@ class XenakisProject private constructor(
     val globalControls: GlobalControls,
     val serverSetup: EditorRoot<CodeBlockEditor>,
     val serverTree: EditorRoot<CodeBlockEditor>,
+    val objects: ScoreObjectRegistry,
     val score: Score
 ) {
     @Transient
@@ -59,17 +60,19 @@ class XenakisProject private constructor(
 
     fun saveTo(projectDirectory: File) {
         val data = projectDirectory.resolve("xenakis_data")
-        data.resolve("settings.json").writeJson(settings)
-        data.resolve("groups.json").writeJson(groups)
-        data.resolve("busses.json").writeJson(busses)
-        data.resolve("buffers.json").writeJson(buffers)
-        data.resolve("samples.json").writeJson(samples)
-        data.resolve("instruments.json").writeJson(instruments)
-        data.resolve("flow_graph.json").writeJson(flowGraph)
-        data.resolve("global_controls.json").writeJson(globalControls)
-        data.resolve("server_setup.json").writeJson(serverSetup)
-        data.resolve("server_tree.json").writeJson(serverTree)
-        data.resolve("score.json").writeJson(score)
+        data.mkdirs()
+        data.resolve("settings.json").writeJson(settings, json)
+        data.resolve("groups.json").writeJson(groups, json)
+        data.resolve("busses.json").writeJson(busses, json)
+        data.resolve("buffers.json").writeJson(buffers, json)
+        data.resolve("samples.json").writeJson(samples, json)
+        data.resolve("instruments.json").writeJson(instruments, json)
+        data.resolve("flow_graph.json").writeJson(flowGraph, json)
+        data.resolve("global_controls.json").writeJson(globalControls, json)
+        data.resolve("server_setup.json").writeJson(serverSetup, json)
+        data.resolve("server_tree.json").writeJson(serverTree, json)
+        data.resolve("objects.json").writeJson(objects, json)
+        data.resolve("score.json").writeJson(score, json)
     }
 
     fun updateSetupCode(setupCode: CodeBlock, liveCycleType: LiveCycleType) {
@@ -86,6 +89,10 @@ class XenakisProject private constructor(
     }
 
     companion object {
+        val json = Json {
+            prettyPrint = true
+        }
+
         val projectDirectory = publicProperty<File>("Project directory")
 
         fun loadFrom(folder: File, context: Context, listener: XenakisController): XenakisProject {
@@ -116,6 +123,8 @@ class XenakisProject private constructor(
                 listener.setProgress(0.75, "Loading server setup code")
                 val serverSetup = data.resolve("server_setup.json").readJson<EditorRoot<CodeBlockEditor>>()
                 val beforePlay = data.resolve("server_tree.json").readJson<EditorRoot<CodeBlockEditor>>()
+                val objects = data.resolve("objects.json").readJson<ScoreObjectRegistry>()
+                objects.initialize(context)
                 listener.setProgress(0.9, "Loading score")
                 val score = data.resolve("score.json").readJson<Score>()
                 listener.setProgress(0.9, "Ready")
@@ -125,7 +134,7 @@ class XenakisProject private constructor(
                     groups, busses, buffers, samples, instruments,
                     flowGraph, globalControls,
                     serverSetup, beforePlay,
-                    score
+                    objects, score
                 ).also { p ->
                     p.initialize(context)
                     p.projectDirectory = folder
@@ -144,6 +153,7 @@ class XenakisProject private constructor(
             globalControls = GlobalControls(mutableListOf()).also { c -> c.initialize(context) },
             serverSetup = EditorRoot.create(CodeBlockEditor(context)),
             serverTree = EditorRoot.create(CodeBlockEditor(context)),
+            objects = ScoreObjectRegistry(mutableListOf()).also { r -> r.initialize(context) },
             score = Score().also { score -> score.initialize(context, reactiveValue(ROOT_SCORE_NAME)) },
         ).also { project ->
             context[projectDirectory] = location

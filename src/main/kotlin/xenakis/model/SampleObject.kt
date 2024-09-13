@@ -149,7 +149,7 @@ class SampleObject private constructor(
         }
     }
 
-    override fun createReference(): SampleObjectReference = SampleObjectReference(this)
+    override fun createReference(): ObjectReference = ObjectReference(this)
 
     companion object {
         private val logger = Logger.getLogger("SampleObject")

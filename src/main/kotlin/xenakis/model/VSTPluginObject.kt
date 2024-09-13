@@ -19,7 +19,7 @@ class VSTPluginObject private constructor(
     override val mutableName: ReactiveVariable<String>,
     private val pluginName: String,
     private val presetName: String,
-    private var output: BusObjectReference,
+    private var output: ObjectReference,
     override val color: ReactiveVariable<@Serializable(with = ColorSerializer::class) Color>
 ) : InstrumentObject, AbstractSuperColliderObject() {
     override val variableName get() = "~plugin_${name.now}"
@@ -44,10 +44,11 @@ class VSTPluginObject private constructor(
 
     override fun initialize(context: Context) {
         if (initialized) return
-        outputSelector = BusSelector(context, Rate.Audio, 2, output)
+        outputSelector = BusSelector(context, Rate.Audio, 2)
         outputSelectorObserver = outputSelector.result.observe { _, _, newOutput ->
             output = newOutput
-            client.run("if (s.serverRunning) { $variableName.synth.set(\\out, ${newOutput.get().variableName}) };")
+            val bus = newOutput.get<BusObject>().variableName
+            client.run("if (s.serverRunning) { $variableName.synth.set(\\out, $bus) };")
         }
         super.initialize(context)
     }
@@ -61,7 +62,7 @@ class VSTPluginObject private constructor(
                 val synthName = "~tmp_synth"
                 +"s.sync"
                 +"2.wait"
-                +"$synthName = Synth(\\vst_instrument, [out: ${output.get().variableName}])"
+                +"$synthName = Synth(\\vst_instrument, [out: ${output.get<BusObject>().variableName}])"
                 +"s.sync"
                 +"0.5.wait"
                 +"$variableName = VSTPluginController($synthName)"

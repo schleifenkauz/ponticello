@@ -82,23 +82,30 @@ class ScorePlayer(
     }
 
     private fun prepareScore(startFrom: Double): MutableList<LocatedScoreObject> {
+        //TODO react to new architecture
         val unvisitedSubScores: Queue<SubScore> = LinkedList()
-        unvisitedSubScores.offer(SubScore(project.score, prefix = "", ObjectPosition(-startFrom, 0.0)))
+        unvisitedSubScores.offer(
+            SubScore(
+                project.score,
+                prefix = "",
+                ScoreObjectInstance.ObjectPosition(-startFrom, 0.0)
+            )
+        )
         val locatedObjects = mutableListOf<LocatedScoreObject>()
         val suffixes = mutableMapOf<String, Int>()
         while (unvisitedSubScores.isNotEmpty()) {
             val (score, prefix, position) = unvisitedSubScores.poll()
-            for (obj in score.objects) {
-                if (obj.muted) continue
-                val absolutePosition = position + obj.position
+            for (inst in score.objectInstances) {
+                if (inst.muted) continue
+                val absolutePosition = position + inst.position
                 val t = absolutePosition.time
-                if (t + obj.duration <= 0) continue
-                val original = if (obj is ClonedObject) obj.original else obj
+                if (t + inst.duration <= 0) continue
+                val obj = inst.obj
                 val name = prefix + obj.name.now + getSuffixFor(obj, suffixes)
-                if (original is ScoreObjectGroup) {
-                    unvisitedSubScores.offer(SubScore(original.score, prefix = "${name}_", absolutePosition))
+                if (obj is ScoreObjectGroup) {
+                    unvisitedSubScores.offer(SubScore(obj.score, prefix = "${name}_", absolutePosition))
                 } else {
-                    locatedObjects.add(LocatedScoreObject(original, name, absolutePosition))
+                    locatedObjects.add(LocatedScoreObject(obj, name, absolutePosition))
                 }
             }
         }
@@ -166,12 +173,12 @@ class ScorePlayer(
         executor.shutdownNow()
     }
 
-    private data class SubScore(val score: Score, val prefix: String, val position: ObjectPosition)
+    private data class SubScore(val score: Score, val prefix: String, val position: ScoreObjectInstance.ObjectPosition)
 
     data class LocatedScoreObject(
         val obj: ScoreObject,
         val name: String,
-        val absolutePosition: ObjectPosition,
+        val absolutePosition: ScoreObjectInstance.ObjectPosition,
     )
 
     companion object {

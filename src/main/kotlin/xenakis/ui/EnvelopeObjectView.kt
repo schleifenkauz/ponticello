@@ -7,12 +7,13 @@ import hextant.fx.hbox
 import hextant.serial.makeRoot
 import reaktive.value.now
 import xenakis.model.EnvelopeObject
+import xenakis.model.ScoreObjectInstance
 import xenakis.sc.NumericalControlSpec
 import xenakis.sc.editor.BusSelector
 import xenakis.sc.editor.createEditor
 import xenakis.sc.view.ObjectSelectorControl
 
-class EnvelopeObjectView(val obj: EnvelopeObject) : ScoreObjectView(obj) {
+class EnvelopeObjectView(inst: ScoreObjectInstance, val obj: EnvelopeObject) : ScoreObjectView(inst) {
     override val supportedActions: List<Icon>
         get() = listOf(Icon.Delete, Icon.Repeat, Icon.ExtraWindow)
 

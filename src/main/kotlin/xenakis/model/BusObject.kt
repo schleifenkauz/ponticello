@@ -45,8 +45,6 @@ class BusObject(
         }
     }
 
-    override fun createReference(): BusObjectReference = BusObjectReference(this)
-
     companion object {
         val output = BusObject(
             reactiveVariable("output"),

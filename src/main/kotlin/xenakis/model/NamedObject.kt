@@ -12,5 +12,5 @@ interface NamedObject {
 
     fun onRemoved()
 
-    fun createReference(): ObjectReference<*>
+    fun createReference(): ObjectReference = ObjectReference(this)
 }

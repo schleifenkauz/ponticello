@@ -284,7 +284,7 @@ class ControlAssignmentEditor(
             ): BufferControl {
                 spec as BufferControlSpec
                 val display = reactiveVariable(spec.isPlayBufSource)
-                val sample: ReactiveVariable<SampleObjectReference?> = reactiveVariable(null)
+                val sample: ReactiveVariable<ObjectReference?> = reactiveVariable(null)
                 return BufferControl(sample, display)
             }
         }
@@ -327,9 +327,10 @@ class ControlAssignmentEditor(
 
             private fun busSelector(
                 context: Context,
-                bus: ReactiveVariable<BusObjectReference>
-            ): ObjectSelectorControl<BusObject, BusObjectReference> {
-                val editor = BusSelector(context, selected = bus)
+                ref: ReactiveVariable<ObjectReference>
+            ): ObjectSelectorControl<BusObject, ObjectReference> {
+                val bus = ref.now.get<BusObject>()
+                val editor = BusSelector(context, bus.rate.now, bus.channels.now, ref)
                 return ObjectSelectorControl(editor, createBundle())
             }
         }

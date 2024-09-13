@@ -25,6 +25,8 @@ class ScoreView(score: Score, context: Context) : ScorePane(score, context) {
 
     var clipboardObject: ScoreObject? = null
         private set
+    var clipboardMode: ClipboardMode? = null
+        private set
     private val clipboardObjectView: ImageView = ImageView().also { v -> v.isVisible = false }
 
     private var timeSnap: Double = 0.1
@@ -52,8 +54,13 @@ class ScoreView(score: Score, context: Context) : ScorePane(score, context) {
         }
     }
 
-    fun setClipboard(obj: ScoreObject, view: ScoreObjectView) {
+    enum class ClipboardMode {
+        Duplicate, Clone;
+    }
+
+    fun setClipboard(obj: ScoreObject, view: ScoreObjectView, mode: ClipboardMode) {
         clipboardObject = obj
+        clipboardMode = mode
         val parameters = SnapshotParameters()
         view.snapshot(parameters, null)
         clipboardObjectView.image = view.snapshot(parameters, null)
@@ -69,6 +76,7 @@ class ScoreView(score: Score, context: Context) : ScorePane(score, context) {
 
     fun clearClipboard() {
         clipboardObject = null
+        clipboardMode = null
         clipboardObjectView.visibleProperty().unbind()
         clipboardObjectView.isVisible = false
     }
@@ -95,7 +103,7 @@ class ScoreView(score: Score, context: Context) : ScorePane(score, context) {
                 }
                 if (nearestGrid == null) return Point(x, y)
                 var t = getTime(x)
-                t = nearestGrid.obj.snapToGrid(t, option)
+                t = nearestGrid.obj.snapToGrid(nearestGrid.instance, t, option)
                 val snappedX = getX(t)
                 return Point(snappedX, y)
             }
@@ -110,7 +118,7 @@ class ScoreView(score: Score, context: Context) : ScorePane(score, context) {
     }
 
     fun displayWholeScore() {
-        val totalDuration = score.objects.maxOfOrNull { obj -> obj.start + obj.duration } ?: 60.0
+        val totalDuration = score.objectInstances.maxOfOrNull { obj -> obj.time + obj.duration } ?: 60.0
         display(0.0, totalDuration)
     }
 

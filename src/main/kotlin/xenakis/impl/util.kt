@@ -8,7 +8,7 @@ import hextant.plugins.Implementation
 import javafx.scene.paint.Color
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.*
-import reaktive.value.ReactiveVariable
+import reaktive.value.ReactiveValue
 import reaktive.value.reactiveVariable
 import xenakis.sc.Warp
 import java.io.File
@@ -119,7 +119,7 @@ inline fun <V> KMutableProperty0<V>.reactive(crossinline onUpdate: (oldValue: V,
         }
     }
 
-fun <T> ReactiveVariable<T>.copy() = reactiveVariable(get())
+fun <T> ReactiveValue<T>.copy() = reactiveVariable(get())
 
 val isMyComputerDumb get() = System.getProperty("os.name").contains("Windows")
 

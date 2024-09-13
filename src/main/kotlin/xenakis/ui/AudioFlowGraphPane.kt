@@ -22,8 +22,8 @@ import xenakis.impl.Arrow
 import xenakis.impl.Point
 import xenakis.model.AudioFlowGraph
 import xenakis.model.BusObject
-import xenakis.model.BusObjectReference
 import xenakis.model.BusRegistry
+import xenakis.model.ObjectReference
 import xenakis.ui.XenakisController.Companion.currentProject
 import kotlin.math.sign
 
@@ -130,7 +130,7 @@ class AudioFlowGraphPane(
     }
 
     override fun addedNode(node: AudioFlowGraph.BusNode) {
-        val label = label(node.ref.get().name).styleClass("bus-node")
+        val label = label(node.ref.get<BusObject>().name).styleClass("bus-node")
         label.isFocusTraversable = true
         label.relocate(node.position.x, node.position.y)
         setupEvents(node, label)
@@ -175,9 +175,9 @@ class AudioFlowGraphPane(
         arrow.endY = if (vDir == DOWN) target.boundsInParent.minY else target.boundsInParent.maxY
     }
 
-    private fun getLabel(node: BusObjectReference) =
-        busLabels.find { l -> l.text == node.get().name.now }
-            ?: error("Bus ${node.get().name.now} not displayed in AudioFlowGraphPane")
+    private fun getLabel(node: ObjectReference) =
+        busLabels.find { l -> l.text == node.get<BusObject>().name.now }
+            ?: error("Bus ${node.get<BusObject>().name.now} not displayed in AudioFlowGraphPane")
 
     /*
     * Graph node event listeners
@@ -246,7 +246,9 @@ class AudioFlowGraphPane(
         flowArrow = null
         val flow = graph.addFlow(source, target)
         if (flow == null) {
-            alertError("Cannot add flow from ${source.ref.get().name.now} to ${target.ref.get().name.now}")
+            val sourceName = source.ref.get<BusObject>().name.now
+            val targetName = target.ref.get<BusObject>().name.now
+            alertError("Cannot add flow from $sourceName to $targetName")
             return
         }
         editFlowDetails(flow)
@@ -266,8 +268,8 @@ class AudioFlowGraphPane(
 
     private fun editFlowDetails(flow: AudioFlowGraph.AudioFlow) {
         val window = flowDetailWindows.getOrPut(flow) {
-            val source = flow.source.get().name.now
-            val target = flow.target.get().name.now
+            val source = flow.source.get<BusObject>().name.now
+            val target = flow.target.get<BusObject>().name.now
             SubWindow(flow.synth.control, "Audio flow from $source to $target", context).apply {
                 width = 1000.0
                 height = 1000.0

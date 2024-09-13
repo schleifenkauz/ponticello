@@ -21,6 +21,6 @@ class ScorePlayEnv {
         }
     }
 
-    fun activeSynths(group: GroupObjectReference) =
+    fun activeSynths(group: ObjectReference) =
         activeObjects.filter { (obj, _, _) -> obj is SynthObject && obj.group.now == group }
 }

@@ -7,8 +7,9 @@ import javafx.scene.control.TextArea
 import javafx.scene.input.MouseEvent
 import javafx.scene.layout.Priority
 import xenakis.model.MemoObject
+import xenakis.model.ScoreObjectInstance
 
-class MemoObjectView(val obj: MemoObject) : ScoreObjectView(obj) {
+class MemoObjectView(inst: ScoreObjectInstance, val obj: MemoObject) : ScoreObjectView(inst) {
     private val textArea = TextArea(obj.text) styleClass "memo-area"
     private val label = Label(obj.text) styleClass "memo-label"
 

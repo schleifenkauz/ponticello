@@ -5,23 +5,25 @@ import hextant.core.editor.ListenerManager
 import javafx.geometry.HorizontalDirection
 import javafx.geometry.HorizontalDirection.LEFT
 import javafx.geometry.HorizontalDirection.RIGHT
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.JsonObjectBuilder
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
+import reaktive.value.ReactiveVariable
 import reaktive.value.now
+import reaktive.value.reactiveVariable
 import xenakis.impl.SuperColliderContext
-import xenakis.impl.getSerializableValue
-import xenakis.impl.putSerializableValue
 import xenakis.ui.ScoreObjectView
 
-class ScoreObjectGroup(name: String, val score: Score) : RegularScoreObject(name) {
+@Serializable
+class ScoreObjectGroup(override val mutableName: ReactiveVariable<String>, val score: Score) : ScoreObject() {
     override val type: String
         get() = "compound"
 
+    @Transient
     override val viewManager = ListenerManager.createWeakListenerManager<ScoreObjectView>()
 
     override fun setContext(context: Context) {
         super.setContext(context)
-        score.setContext(context)
+        score.context = context
     }
 
     override fun initialize(context: Context) {
@@ -34,37 +36,35 @@ class ScoreObjectGroup(name: String, val score: Score) : RegularScoreObject(name
         throw UnsupportedOperationException()
     }
 
-    override fun cut(position: Double, whichHalf: HorizontalDirection): ScoreObject {
-        val objects = mutableListOf<ScoreObject>()
-        for (obj in score.objects) {
+    override fun doCut(position: Double, whichHalf: HorizontalDirection, newName: String): ScoreObject {
+        val objects = mutableListOf<ScoreObjectInstance>()
+        for (inst in score.objectInstances) {
             when {
-                whichHalf == LEFT && obj.start + obj.duration <= position -> {
-                    objects.add(obj)
+                whichHalf == LEFT && inst.time + inst.duration <= position -> {
+                    objects.add(inst)
                 }
 
-                whichHalf == LEFT && obj.start < position -> {
-                    obj.duration = position - obj.start
-                    val leftHalf = obj.cut(position - obj.start, LEFT, obj.name.now + "_left")
-                        ?: obj.also { it.duration = position - obj.start }
+                whichHalf == LEFT && inst.time < position -> {
+                    inst.obj.duration = position - inst.time
+                    val leftHalf = inst.cut(position - inst.time, LEFT)
                     objects.add(leftHalf)
                 }
 
-                whichHalf == RIGHT && obj.start >= position -> {
-                    obj.position.time -= position
-                    objects.add(obj)
+                whichHalf == RIGHT && inst.time >= position -> {
+                    inst.setTime(inst.time - position)
+                    objects.add(inst)
                 }
 
-                whichHalf == RIGHT && obj.start + obj.duration > position -> {
-                    obj.position.time -= position
-                    val rightHalf = obj.cut(position - obj.start, RIGHT, obj.name.now + "_right")
-                        ?: obj.also { it.duration -= position - obj.start }
+                whichHalf == RIGHT && inst.time + inst.duration > position -> {
+                    inst.setTime(inst.time - position)
+                    val rightHalf = inst.cut(position - inst.time, RIGHT)
                     objects.add(rightHalf)
                 }
             }
         }
         val score = Score(objects)
         val name = if (whichHalf == LEFT) "${name.now}_left" else "${name.now}_right"
-        return ScoreObjectGroup(name, score)
+        return ScoreObjectGroup(reactiveVariable(name), score)
     }
 
     override fun serverBooted(context: SuperColliderContext) {
@@ -74,25 +74,12 @@ class ScoreObjectGroup(name: String, val score: Score) : RegularScoreObject(name
         }
     }
 
-    override fun copy(): ScoreObject = ScoreObjectGroup(name.now, score.copy())
+    override fun doClone(newName: String): ScoreObject = ScoreObjectGroup(reactiveVariable(newName), score.clone())
 
     override fun onRemoved() {
         super.onRemoved()
         for (obj in score.objects) {
             obj.onRemoved()
-        }
-    }
-
-    override fun JsonObjectBuilder.saveToJson() {
-        putSerializableValue("score", score)
-    }
-
-    object Serializer : ScoreObject.Serializer {
-        override val type: String get() = "compound"
-
-        override fun JsonObject.createFromJson(name: String): ScoreObject {
-            val score = getSerializableValue<Score>("score")!!
-            return ScoreObjectGroup(name, score)
         }
     }
 }

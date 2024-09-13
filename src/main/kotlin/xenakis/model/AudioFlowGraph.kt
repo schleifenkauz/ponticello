@@ -12,7 +12,6 @@ import reaktive.Observer
 import reaktive.value.now
 import xenakis.impl.Point
 import xenakis.impl.ScWriter
-import xenakis.impl.StatusListener
 import xenakis.impl.SuperColliderClient
 import xenakis.sc.editor.*
 import java.util.*
@@ -35,7 +34,7 @@ class AudioFlowGraph(
     val views = ListenerManager.createWeakListenerManager<View>()
 
     @Transient
-    private val nodeNameObservers = mutableMapOf<BusObjectReference, Observer>()
+    private val nodeNameObservers = mutableMapOf<ObjectReference, Observer>()
 
     val flows: List<AudioFlow> get() = _flows
     val nodes: List<BusNode> get() = _nodes
@@ -45,19 +44,19 @@ class AudioFlowGraph(
         client = context[SuperColliderClient]
         registry.addView(this)
         undoManager = context[UndoManager]
-        for (obj in nodes) obj.ref.resolve(context)
+        for (obj in nodes) obj.ref.resolve(context[BusRegistry])
         for (flow in flows) {
-            flow.source.resolve(context)
-            flow.target.resolve(context)
+            flow.source.resolve(context[BusRegistry])
+            flow.target.resolve(context[BusRegistry])
         }
 
         client.run { defineAudioFlow() }
     }
 
-    private fun edges(node: BusObjectReference) = flows.filter { f -> f.source == node }
+    private fun edges(node: ObjectReference) = flows.filter { f -> f.source == node }
 
-    fun getNode(bus: BusObjectReference) = nodes.find { it.ref == bus }
-        ?: throw NoSuchElementException("No node for bus ${bus.get().name.now} found")
+    fun getNode(bus: ObjectReference) = nodes.find { it.ref == bus }
+        ?: throw NoSuchElementException("No node for bus ${bus.get<BusObject>().name.now} found")
 
     @Transient
     var order = findFlowOrder() ?: error("audio flow graph contains cycles")
@@ -67,9 +66,9 @@ class AudioFlowGraph(
         val context = registry.context
         val synth = AdhocSynthEditor(context)
         context.withoutUndo {
-            val sourceBus = source.ref.get()
-            val targetBus = target.ref.get()
-            synth.name.setText("flow_${sourceBus.name.now}_${target.ref.get().name.now}")
+            val sourceBus = source.ref.get<BusObject>()
+            val targetBus = target.ref.get<BusObject>()
+            synth.name.setText("flow_${sourceBus.name.now}_${target.ref.get<BusObject>().name.now}")
             synth.block.variables.addLast(IdentifierEditor(context, "snd"))
             val getIn = ScExprExpander(
                 context, AssignmentEditor(
@@ -80,7 +79,7 @@ class AudioFlowGraph(
                             IdentifierEditor(context, sourceBus.rate.get().toString()),
                             ScExprListEditor(
                                 context,
-                                ScExprExpander(context, BusSelector(context, initialValue = source.ref)),
+                                ScExprExpander(context /*BusSelector(context, selected = reactiveVariable(source.ref))*/), //TODO write wrapper class
                                 ScExprExpander(context, sourceBus.channels.now.toString())
                             )
                         )
@@ -95,7 +94,7 @@ class AudioFlowGraph(
                     IdentifierEditor(context, targetBus.rate.get().toString()),
                     ScExprListEditor(
                         context,
-                        ScExprExpander(context, BusSelector(context, initialValue = target.ref)),
+                        ScExprExpander(context /*BusSelector(context, selected = reactiveVariable(target.ref))*/), //TODO write wrapper class
                         ScExprExpander(context, "snd")
                     )
                 )
@@ -176,13 +175,13 @@ class AudioFlowGraph(
 
     override fun removed(obj: BusObject, idx: Int) {
         for (node in nodes.toList()) {
-            if (node.ref.get() == obj) {
+            if (node.ref.get<BusObject>() == obj) {
                 removeNode(node)
             }
         }
     }
 
-    fun addNode(bus: BusObjectReference, position: Point): Boolean {
+    fun addNode(bus: ObjectReference, position: Point): Boolean {
         val obj = BusNode(bus, position)
         return addNode(obj)
     }
@@ -192,7 +191,8 @@ class AudioFlowGraph(
             return false
         }
         _nodes.add(obj)
-        nodeNameObservers[obj.ref] = obj.ref.get().name.observe { _, oldName, _ -> renamedNode(obj, oldName) }
+        nodeNameObservers[obj.ref] =
+            obj.ref.get<BusObject>().name.observe { _, oldName, _ -> renamedNode(obj, oldName) }
         undoManager.record(Edit.AddNode(this, obj))
         views.notifyListeners { addedNode(obj) }
         return true
@@ -201,8 +201,8 @@ class AudioFlowGraph(
     private fun renamedNode(obj: BusNode, oldName: String) {
         client.run {
             for (flow in associatedFlows(obj)) {
-                val newSourceName = flow.source.get().name.now
-                val newTargetName = flow.target.get().name.now
+                val newSourceName = flow.source.get<BusObject>().name.now
+                val newTargetName = flow.target.get<BusObject>().name.now
                 val oldFlowName =
                     if (flow.target == obj.ref) "~flow_${newSourceName}_${oldName}"
                     else "~flow_${oldName}_$newTargetName"
@@ -234,7 +234,7 @@ class AudioFlowGraph(
     private fun findFlowOrder(): List<AudioFlow>? {
         val q: Queue<AudioFlow> = LinkedList()
         val order = mutableListOf<AudioFlow>()
-        val dependencies = mutableMapOf<BusObjectReference, Int>()
+        val dependencies = mutableMapOf<ObjectReference, Int>()
         for (flow in flows) dependencies[flow.target] = (dependencies[flow.target] ?: 0) + 1
         for (flow in flows) if ((dependencies[flow.source] ?: 0) == 0) q.offer(flow)
         while (q.isNotEmpty()) {
@@ -251,15 +251,15 @@ class AudioFlowGraph(
     }
 
     @Serializable
-    data class BusNode(val ref: BusObjectReference, var position: Point)
+    data class BusNode(val ref: ObjectReference, var position: Point)
 
     @Serializable
     class AudioFlow(
-        val source: BusObjectReference,
-        val target: BusObjectReference,
+        val source: ObjectReference,
+        val target: ObjectReference,
         val synth: EditorRoot<AdhocSynthEditor>
     ) {
-        val synthName get() = "~flow_${source.get().name.now}_${target.get().name.now}"
+        val synthName get() = "~flow_${source.get<BusObject>().name.now}_${target.get<BusObject>().name.now}"
 
         override fun equals(other: Any?): Boolean {
             if (this === other) return true

@@ -10,11 +10,12 @@ import reaktive.value.fx.asObservableValue
 import reaktive.value.fx.asProperty
 import reaktive.value.now
 import reaktive.value.reactiveValue
+import xenakis.model.ScoreObjectInstance
 import xenakis.model.TempoGridObject
 import xenakis.ui.XenakisController.Companion.currentProject
 import kotlin.math.ceil
 
-class TempoGridObjectView(val obj: TempoGridObject) : ScoreObjectView(obj) {
+class TempoGridObjectView(inst: ScoreObjectInstance, val obj: TempoGridObject) : ScoreObjectView(inst) {
     private val area = Pane()
     private val marker = Line() styleClass "grid-marker-line"
 

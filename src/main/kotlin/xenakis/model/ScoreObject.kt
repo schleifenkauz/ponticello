@@ -1,48 +1,27 @@
 package xenakis.model
 
-import hextant.context.Context
+import hextant.core.editor.ListenerManager
 import hextant.undo.Edit
 import hextant.undo.UndoManager
-import hextant.undo.compoundEdit
 import javafx.geometry.HorizontalDirection
 import javafx.scene.input.DataFormat
 import javafx.scene.paint.Color
-import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.descriptors.SerialDescriptor
-import kotlinx.serialization.descriptors.serialDescriptor
-import kotlinx.serialization.encoding.Decoder
-import kotlinx.serialization.encoding.Encoder
-import kotlinx.serialization.json.*
-import kotlinx.serialization.serializer
 import reaktive.value.ReactiveVariable
 import reaktive.value.now
-import xenakis.impl.*
-import xenakis.model.Score.Companion.ROOT_SCORE_NAME
-import xenakis.model.Score.Companion.rootScore
+import reaktive.value.reactiveVariable
+import xenakis.impl.ColorSerializer
+import xenakis.impl.SuperColliderContext
 import xenakis.sc.ControlSpec
 import xenakis.ui.ScoreObjectView
 
-@Serializable(with = ScoreObject.Ser::class)
-abstract class ScoreObject : AbstractRenamableObject() {
+@Serializable
+sealed class ScoreObject : AbstractRenamableObject() {
     abstract val type: String
 
-    var parent: Score? = null
-        private set
+    val associatedColor: ReactiveVariable<@Serializable(with = ColorSerializer::class) Color?> = reactiveVariable(null)
 
-    abstract val position: ObjectPosition
-    abstract var duration: Double
-    abstract var height: Double
-    abstract val start: Double
-    abstract val y: Double
-
-    abstract val associatedColor: ReactiveVariable<Color?>
-    abstract var muted: Boolean
-
-    abstract var nextInChain: Reference?
-
-    abstract val associatedControls: Map<String, ParameterControl>
-    abstract fun getSpec(parameter: String): ControlSpec
+    open val associatedControls: Map<String, ParameterControl> get() = emptyMap()
 
     abstract fun writeCode(env: ScorePlayEnv, name: String, cutoff: Double): String
 
@@ -52,136 +31,64 @@ abstract class ScoreObject : AbstractRenamableObject() {
         }
     }
 
-    override fun canRenameTo(newName: String): Boolean = parent == null || !parent!!.has(newName)
+    override fun canRenameTo(newName: String): Boolean = context[ScoreObjectRegistry].has(newName)
 
     override fun rename(newName: String) {
         if (name.now == newName) return
         if (initialized) recordEdit(ScoreObjectEdit.Rename(oldName = name.now, newName = newName, this))
-        parent?.layoutManager?.renamedObject(oldName = name.now, newName = newName)
         super.rename(newName)
-    }
-
-    fun addToScore(score: Score) {
-        parent = score
-    }
-
-    fun duplicateClone(): ScoreObject {
-        context.compoundEdit("Duplicate object") {
-            val clone = clone()
-            clone.position.time += duration
-            parent!!.addObject(clone)
-            return clone
-        }
-    }
-
-    fun duplicateCopy(): ScoreObject {
-        context.compoundEdit("Duplicate object") {
-            val copied = if (this is ClonedObject) original else this
-            val copy = copy(parent!!.nameForCopy(copied))
-            copy.position.time += duration
-            parent!!.addObject(copy)
-            return copy
-        }
-    }
-
-    override fun initialize(context: Context) {
-        if (initialized) return
-        super.initialize(context)
-        nextInChain?.resolve(context)
     }
 
     open fun serverBooted(context: SuperColliderContext) {}
 
-    open fun cut(position: Double, whichHalf: HorizontalDirection, newName: String): ScoreObject? = null
+    protected abstract val viewManager: ListenerManager<out ScoreObjectView>
 
-    abstract fun copy(newName: String): ScoreObject
-
-    abstract fun clone(): ClonedObject
-
-    abstract fun addView(view: ScoreObjectView)
-
-    abstract fun JsonObjectBuilder.saveToJson()
-
-    override fun createReference(): Reference = Reference(this)
-
-    @Serializable
-    class Reference(private val subScoreName: String, private val name: String) : ObjectReference<ScoreObject> {
-        private var obj: ScoreObject? = null
-
-        constructor(obj: ScoreObject) : this(obj.parent!!.scoreName.now, obj.name.now) {
-            this.obj = obj
+    var duration: Double = 0.0
+        set(value) {
+            if (value == field) return
+            field = value
+            viewManager.notifyListeners { resized() }
         }
 
-        override fun get(): ScoreObject = obj ?: error("ScoreObject not yet resolved")
-
-        override fun resolve(context: Context) {
-            if (obj != null) return
-            val rootScore = context[rootScore]
-            val score = if (subScoreName == ROOT_SCORE_NAME) rootScore else rootScore.getSubScore(subScoreName)
-            obj = score.getObject(name)
+    var height: Double = 0.0
+        set(value) {
+            if (value == field) return
+            field = value
+            viewManager.notifyListeners { resized() }
         }
+
+    protected abstract fun doClone(newName: String): ScoreObject
+
+    fun clone(newName: String): ScoreObject {
+        val obj = doClone(newName)
+        obj.duration = duration
+        obj.height = height
+        obj.associatedColor.now = associatedColor.now
+        return obj
     }
 
-    interface Serializer {
-        val type: String
+    protected open fun doCut(position: Double, whichHalf: HorizontalDirection, newName: String): ScoreObject? = null
 
-        fun JsonObject.createFromJson(name: String): ScoreObject
-
-        companion object {
-            val all = listOf(
-                MemoObject.Serializer,
-                SynthObject.Serializer,
-                TaskObject.Serializer,
-                EnvelopeObject.Serializer,
-                ScoreObjectGroup.Serializer,
-                PianoRollObject.Serializer,
-                TempoGridObject.Serializer,
-                ClonedObject.Serializer
-            ).associateBy { it.type }
+    fun cut(position: Double, whichHalf: HorizontalDirection, newName: String): ScoreObject? {
+        val obj = doCut(position, whichHalf, newName) ?: return null
+        obj.rename(newName)
+        obj.height = height
+        obj.associatedColor.now = associatedColor.now
+        if (whichHalf == HorizontalDirection.LEFT) {
+            obj.duration = position
+        } else {
+            obj.duration = duration - position
         }
+        return obj
     }
 
-    object Ser : KSerializer<ScoreObject> {
-        override val descriptor: SerialDescriptor = serialDescriptor<JsonObject>()
+    open fun getSpec(parameter: String): ControlSpec =
+        throw NoSuchElementException("no spec for parameter $parameter in $this")
 
-        override fun deserialize(decoder: Decoder): ScoreObject {
-            val json = decoder.decodeSerializableValue(serializer<JsonObject>())
-            val type = json.getValue("type").jsonPrimitive.content
-            val ser = Serializer.all[type] ?: error("unknown score object type $type")
-            val name = json.getString("name") ?: error("no name found for object of type $type")
-            val obj = ser.run { json.createFromJson(name) }
-            obj.position.time = json.getDouble("start") ?: 0.0
-            obj.position.y = json.getDouble("y") ?: 0.0
-            obj.nextInChain = json.getSerializableValue("next")
-
-            if (type != ClonedObject.Serializer.type) {
-                obj.duration = json.getDouble("duration") ?: 0.0
-                obj.height = json.getDouble("height") ?: 0.0
-                obj.associatedColor.now = json.getColor("color")
-                obj.muted = json.getBoolean("muted") ?: false
-            }
-            return obj
-        }
-
-        override fun serialize(encoder: Encoder, value: ScoreObject) {
-            val type = value.type
-            val obj = buildJsonObject {
-                put("type", type)
-                put("name", value.name.now)
-                value.run { saveToJson() }
-                if (value.start != 0.0) put("start", value.start)
-                if (value.y != 0.0) put("y", value.y)
-                if (value.nextInChain != null) putSerializableValue("next", value.nextInChain!!)
-                if (type != ClonedObject.Serializer.type) {
-                    if (value.duration != 0.0) put("duration", value.duration)
-                    if (value.height != 0.0) put("height", value.height)
-                    val color = value.associatedColor.now
-                    if (color != null) put("color", JsonPrimitive(color.toString()))
-                    if (value.muted) put("muted", JsonPrimitive(true))
-                }
-            }
-            encoder.encodeSerializableValue(serializer<JsonObject>(), obj)
-        }
+    open fun addView(view: ScoreObjectView) {
+        @Suppress("UNCHECKED_CAST")
+        val unsafe = viewManager as ListenerManager<ScoreObjectView>
+        unsafe.addListener(view)
     }
 
     companion object {

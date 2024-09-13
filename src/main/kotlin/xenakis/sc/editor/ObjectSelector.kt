@@ -14,32 +14,38 @@ import xenakis.model.NamedObject
 import xenakis.model.ObjectReference
 import xenakis.model.ObjectRegistry
 import xenakis.sc.view.ObjectSelectorView
+import kotlin.reflect.KClass
 
-abstract class ObjectSelector<O : NamedObject, R : ObjectReference<O>?>(
-    context: Context, private val selected: ReactiveVariable<R>
+abstract class ObjectSelector<O : NamedObject, R : ObjectReference?>(
+    context: Context,
+    private val selected: ReactiveVariable<R>
 ) : AbstractEditor<R, ObjectSelectorView<O>>(context) {
-    constructor(context: Context, initialValue: R) : this(context, reactiveVariable(initialValue))
+    abstract fun getRegistry(context: Context): ObjectRegistry<O>
 
-    abstract val isNullable: Boolean
-
-    init {
-        selected.now?.resolve(context)
-    }
+    abstract val objectClass: KClass<O>
 
     override val result: ReactiveValue<R>
         get() = selected
 
+    init {
+        selected.now?.resolve(this.getRegistry(context))
+    }
+
     fun select(value: R) {
         context[UndoManager].record(Edit(this, selected.now, value))
         selected.set(value)
-        notifyViews { selected(value?.get()) }
+        notifyViews { selected(value?.get(objectClass)) }
+    }
+
+    fun selectInitial(value: R) {
+        if (value == null) return
+        value.resolve(getRegistry(context))
+        selected.set(value)
     }
 
     override fun viewAdded(view: ObjectSelectorView<O>) {
-        view.selected(selected.now?.get())
+        view.selected(selected.now?.get(objectClass))
     }
-
-    abstract val registry: ObjectRegistry<O>
 
     abstract fun createNewObject(name: String): O?
 
@@ -47,15 +53,15 @@ abstract class ObjectSelector<O : NamedObject, R : ObjectReference<O>?>(
 
     open fun extractText(choice: O): ReactiveString = choice.name
 
-    abstract override fun createSnapshot(): Snapshot<*>
+    override fun createSnapshot(): Snapshot<*> = Snap<O, R>()
 
-    private class Edit<O : NamedObject, R : ObjectReference<O>?>(
+    private class Edit<O : NamedObject, R : ObjectReference?>(
         private val selector: ObjectSelector<O, R>,
         private val old: R,
         private val new: R
     ) : AbstractEdit() {
         override val actionDescription: String
-            get() = "Select ${selector.registry.objectType}"
+            get() = "Select ${selector.getRegistry(selector.context).objectType}"
 
         override fun doUndo() {
             selector.select(old)
@@ -66,11 +72,9 @@ abstract class ObjectSelector<O : NamedObject, R : ObjectReference<O>?>(
         }
     }
 
-    protected abstract class Snap<O : NamedObject, R : ObjectReference<O>?> : Snapshot<ObjectSelector<O, R>>() {
-        private var selected: R? = null
+    protected class Snap<O : NamedObject, R : ObjectReference?> : Snapshot<ObjectSelector<O, R>>() {
+        private var selected: ObjectReference? = null
         private var initialized = false
-
-        protected abstract val serializer: ObjectReference.Serializer<R>
 
         override fun doRecord(original: ObjectSelector<O, R>) {
             initialized = true
@@ -81,17 +85,17 @@ abstract class ObjectSelector<O : NamedObject, R : ObjectReference<O>?>(
         override fun reconstructObject(original: ObjectSelector<O, R>) {
             check(initialized)
             original.selected.now = selected as R
-            selected?.resolve(original.context)
+            selected?.resolve(original.getRegistry(original.context))
         }
 
         override fun encode(builder: JsonObjectBuilder) {
             check(initialized)
-            builder.put("selected", selected?.get()?.name?.now)
+            builder.put("selected", selected?.get<NamedObject>()?.name?.now)
         }
 
         override fun decode(element: JsonObject) {
             val name = element.getString("selected")
-            selected = name?.let(serializer::createReference)
+            selected = name?.let(::ObjectReference)
             initialized = true
         }
     }

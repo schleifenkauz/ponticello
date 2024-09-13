@@ -3,31 +3,35 @@ package xenakis.model
 import hextant.context.Context
 import hextant.core.editor.ListenerManager
 import javafx.geometry.HorizontalDirection
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.JsonObjectBuilder
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
+import reaktive.value.ReactiveVariable
 import reaktive.value.now
 import reaktive.value.reactiveVariable
 import xenakis.impl.code
-import xenakis.impl.getSerializableValue
-import xenakis.impl.putSerializableValue
 import xenakis.sc.ControlSpec
 import xenakis.sc.NumericalControlSpec
 import xenakis.sc.Rate
 import xenakis.sc.editor.BusSelector
 import xenakis.ui.EnvelopeObjectView
 
-class EnvelopeObject(
-    name: String, spec: NumericalControlSpec,
-    private val initialBus: BusObjectReference, val envelope: Envelope
-) : RegularScoreObject(name) {
+@Serializable
+data class EnvelopeObject(
+    @SerialName("name") override val mutableName: ReactiveVariable<String>,
+    @SerialName("spec") private var _spec: NumericalControlSpec,
+    @SerialName("bus") private val _initialBusRef: ObjectReference?,
+    val envelope: Envelope
+) : ScoreObject() {
     override val type: String
         get() = "envelope"
 
     lateinit var busSelector: BusSelector
         private set
 
-    val bus get() = if (initialized) busSelector.result.now else initialBus
+    val bus get() = if (initialized) busSelector.result.now else _initialBusRef
 
+    @Transient
     override val viewManager = ListenerManager.createWeakListenerManager<EnvelopeObjectView>()
 
     private val envelopeControl: EnvelopeControl
@@ -37,10 +41,11 @@ class EnvelopeObject(
             display = reactiveVariable(true)
         )
 
-    var spec: NumericalControlSpec = spec
+    var spec: NumericalControlSpec
+        get() = _spec
         set(value) {
-            if (value == field) return
-            field = value
+            if (value == _spec) return
+            _spec = value
             viewManager.notifyListeners { updatedSpec() }
         }
 
@@ -57,7 +62,10 @@ class EnvelopeObject(
     override fun initialize(context: Context) {
         if (initialized) return
         super.initialize(context)
-        busSelector = BusSelector(context, preferredRate = Rate.Control, 1, initialBus)
+        busSelector = BusSelector(context, preferredRate = Rate.Control, 1)
+        if (_initialBusRef != null) {
+            busSelector.selectInitial(_initialBusRef)
+        }
     }
 
     override val associatedControls: Map<String, ParameterControl>
@@ -65,31 +73,14 @@ class EnvelopeObject(
 
     override fun getSpec(parameter: String): ControlSpec = if (parameter == name.now) spec else super.getSpec(parameter)
 
-    override fun copy(): ScoreObject = EnvelopeObject(name.now, spec, bus, envelope.copy())
+    override fun doClone(newName: String): ScoreObject =
+        EnvelopeObject(reactiveVariable(newName), spec, bus, envelope.copy())
 
-    override fun cut(position: Double, whichHalf: HorizontalDirection): ScoreObject =
-        EnvelopeObject(name.now, spec, bus, envelope.cut(position / duration, whichHalf))
+    override fun doCut(position: Double, whichHalf: HorizontalDirection, newName: String): ScoreObject =
+        EnvelopeObject(reactiveVariable(newName), spec, bus, envelope.cut(position / duration, whichHalf))
 
     override fun writeCode(env: ScorePlayEnv, name: String, cutoff: Double): String = code {
         val envelopeCode = envelope.code(cutoff)
-        append("{ $envelopeCode }.play(s, ${busSelector.result.now.get().variableName});")
-    }
-
-    override fun JsonObjectBuilder.saveToJson() {
-        putSerializableValue("spec", spec)
-        putSerializableValue("bus", bus)
-        putSerializableValue("envelope", envelope)
-    }
-
-    object Serializer : ScoreObject.Serializer {
-        override val type: String
-            get() = "envelope"
-
-        override fun JsonObject.createFromJson(name: String): ScoreObject {
-            val spec = getSerializableValue<NumericalControlSpec>("spec")!!
-            val bus = getSerializableValue<BusObjectReference>("bus")!!
-            val envelope = getSerializableValue<Envelope>("envelope")!!
-            return EnvelopeObject(name, spec, bus, envelope)
-        }
+        append("{ $envelopeCode }.play(s, ${busSelector.result.now.get<BusObject>().variableName});")
     }
 }

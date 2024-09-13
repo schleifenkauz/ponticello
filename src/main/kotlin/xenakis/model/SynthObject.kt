@@ -4,43 +4,49 @@ import hextant.context.Context
 import hextant.core.editor.ListenerManager
 import javafx.geometry.HorizontalDirection
 import javafx.geometry.HorizontalDirection.RIGHT
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.JsonObjectBuilder
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 import reaktive.Observer
 import reaktive.collection.observeCollection
 import reaktive.list.observeEach
 import reaktive.value.*
 import xenakis.impl.ScWriter
 import xenakis.impl.code
-import xenakis.impl.getSerializableValue
-import xenakis.impl.putSerializableValue
 import xenakis.sc.ControlSpec
 import xenakis.sc.GroupControlSpec
 import xenakis.ui.ScorePlayer
 import xenakis.ui.SynthObjectView
 
+@Serializable
 class SynthObject(
-    name: String,
-    private val synthDefRef: ObjectReference<SynthDefObject>,
+    override val mutableName: ReactiveVariable<String>,
+    private val synthDefRef: ObjectReference,
     val controls: SynthControls
-) : RegularScoreObject(name), SynthControls.View {
+) : ScoreObject(), SynthControls.View {
+    @Transient
     private lateinit var parameterNameObserver: Observer
     override val type: String
         get() = "synth"
 
+    @Transient
     override val viewManager: ListenerManager<SynthObjectView> = ListenerManager.createWeakListenerManager()
 
+    @Transient
     private val controlObservers = mutableMapOf<ParameterControl, Observer>()
+
+    @Transient
     private lateinit var parameterObserver: Observer
+
+    @Transient
     private val myActiveSynths = mutableSetOf<String>()
 
     val synthDef: SynthDefObject get() = synthDefRef.get()
 
-    val group: ReactiveValue<GroupObjectReference> get() = (controls["group"] as GroupControl).group
+    val group: ReactiveValue<ObjectReference> get() = (controls["group"] as GroupControl).group
 
     private val bufferControl get() = controls.controlMap["buf"] as? BufferControl
 
-    val sample: ReactiveValue<SampleObjectReference?> get() = bufferControl?.sample ?: reactiveVariable(null)
+    val sample: ReactiveValue<ObjectReference?> get() = bufferControl?.sample ?: reactiveVariable(null)
 
     val displaySample: ReactiveValue<Boolean>? get() = bufferControl?.display
 
@@ -52,13 +58,13 @@ class SynthObject(
 
     override val associatedControls: Map<String, ParameterControl> get() = controls.controlMap
 
-    override fun copy(): ScoreObject = SynthObject(
-        name.now, synthDefRef,
+    override fun doClone(newName: String): ScoreObject = SynthObject(
+        reactiveVariable(newName), synthDefRef,
         controls = controls.copy()
     )
 
-    override fun cut(position: Double, whichHalf: HorizontalDirection): ScoreObject = SynthObject(
-        name.now, synthDefRef,
+    override fun doCut(position: Double, whichHalf: HorizontalDirection, newName: String): ScoreObject = SynthObject(
+        reactiveVariable(newName), synthDefRef,
         controls = controls.transformControls { name, c ->
             when {
                 name == "startPos" && c is ConstantControl && whichHalf == RIGHT ->
@@ -76,7 +82,7 @@ class SynthObject(
             }
         }
         if (sample.now != null && playBufRate != null && playbufStartPos != null) {
-            playbufStartPos!!.now += (playBufRate!!.now * duration).coerceAtMost(sample.now!!.get().duration)
+            playbufStartPos!!.now += (playBufRate!!.now * duration).coerceAtMost(sample.now!!.get<SampleObject>().duration)
             playBufRate!!.now *= -1
         }
     }
@@ -88,7 +94,7 @@ class SynthObject(
     override fun initialize(context: Context) {
         if (initialized) return
         super.initialize(context)
-        synthDefRef.resolve(context)
+        synthDefRef.resolve(context[InstrumentRegistry])
         parameterObserver = synthDef.parameters.observeCollection(
             added = { _, param -> controls.addControl(param.name.now, param.defaultControl(context)) },
             removed = { _, param -> controls.removeControl(param.name.now) }
@@ -121,11 +127,11 @@ class SynthObject(
     override fun addedControl(parameter: String, control: ParameterControl) {
         when (control) {
             is BusControl -> controlObservers[control] = control.bus.forEach { bus ->
-                runOnActiveSynths { +"set('$parameter', ${bus.get().variableName})" }
+                runOnActiveSynths { +"set('$parameter', ${bus.get<BusObject>().variableName})" }
             }
 
             is BusValueControl -> controlObservers[control] = control.bus.forEach { bus ->
-                runOnActiveSynths { +"map('$parameter', ${bus.get().variableName})" }
+                runOnActiveSynths { +"map('$parameter', ${bus.get<BusObject>().variableName})" }
             }
 
             is ConstantControl -> controlObservers[control] = control.value.forEach { value ->
@@ -149,8 +155,8 @@ class SynthObject(
         appendBlock("s.makeBundle(${ScorePlayer.SERVER_LATENCY})") {
             val constantArguments = controls.controlMap.mapNotNull { (param, control) ->
                 when (control) {
-                    is BufferControl -> param to (control.sample.now?.get()?.variableName ?: "0")
-                    is BusControl -> param to control.bus.now.get().variableName
+                    is BufferControl -> param to (control.sample.now?.get<SampleObject>()?.variableName ?: "0")
+                    is BusControl -> param to control.bus.now.get<BusObject>().variableName
                     is ConstantControl -> {
                         val value = when (param) {
                             "startPos" -> control.value.now + cutoff * (playBufRate?.now ?: 0.0)
@@ -167,16 +173,17 @@ class SynthObject(
             val group = group.now
             val synthDefName = synthDef.name.now
             val parallelSynths = env.activeSynths(group)
+            //TODO we need the position here
             val runBefore = parallelSynths
-                .filter { (_, _, pos) -> pos.y > y }
+                //.filter { (_, _, pos) -> pos.y > this@SynthObject }
                 .minByOrNull { (_, _, pos) -> pos.y }
             val runAfter = parallelSynths
-                .filter { (_, _, pos) -> pos.y < y }
+                //.filter { (_, _, pos) -> pos.y < y }
                 .maxByOrNull { (_, _, pos) -> pos.y }
             val (addAction, target) = when {
                 runAfter != null -> Pair("'addAfter'", "~synths['${runAfter.name}']")
                 runBefore != null -> Pair("'addBefore'", "~synths['${runBefore.name}']")
-                else -> Pair("'addToHead'", group.get().variableName)
+                else -> Pair("'addToHead'", group.get<GroupObject>().variableName)
             }
             +"$synthVar = Synth(\\$synthDefName, [$constantArguments], target: $target, addAction: $addAction)"
             +"$synthVar.register"
@@ -191,12 +198,12 @@ class SynthObject(
                     }
 
                     is BusValueControl -> {
-                        val bus = control.bus.now.get().variableName
+                        val bus = control.bus.now.get<BusObject>().variableName
                         +"${synthVar}.map(\\$param, $bus)"
                     }
 
                     is SingleBusValueControl -> {
-                        val bus = control.bus.now.get().variableName
+                        val bus = control.bus.now.get<BusObject>().variableName
                         +"${synthVar}.set(\\$param, $bus.getSynchronized)"
                     }
 
@@ -214,24 +221,6 @@ class SynthObject(
                 }
             }
             //+"$synthVar.run"
-        }
-    }
-
-    override fun JsonObjectBuilder.saveToJson() {
-        putSerializableValue("synthDef", synthDefRef as InstrumentObject.Reference)
-        putSerializableValue("controls", controls)
-    }
-
-    object Serializer : ScoreObject.Serializer {
-        override val type: String
-            get() = "synth"
-
-        override fun JsonObject.createFromJson(name: String): ScoreObject {
-            val synthDef = getSerializableValue<InstrumentObject.Reference>("synthDef")!!
-            @Suppress("UNCHECKED_CAST")
-            synthDef as ObjectReference<SynthDefObject>
-            val controls = getSerializableValue<SynthControls>("controls")!!
-            return SynthObject(name, synthDef, controls)
         }
     }
 }

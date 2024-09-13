@@ -24,12 +24,14 @@ import reaktive.value.now
 import reaktive.value.reactiveVariable
 import xenakis.impl.MidiPitch
 import xenakis.impl.Point
+import xenakis.model.InstrumentObject
 import xenakis.model.PianoRollObject
+import xenakis.model.ScoreObjectInstance
 import xenakis.sc.editor.EventDictionaryEditor
 import xenakis.sc.view.ObjectSelectorControl
 import kotlin.math.roundToInt
 
-class PianoRollObjectView(private val obj: PianoRollObject) : ScoreObjectView(obj) {
+class PianoRollObjectView(inst: ScoreObjectInstance, private val obj: PianoRollObject) : ScoreObjectView(inst) {
     private val noteRects = mutableMapOf<PianoRollObject.Note, BorderPane>()
     private val orientationLines = mutableListOf<Line>()
     private val blackKeys = mutableListOf<Rectangle>()
@@ -298,7 +300,7 @@ class PianoRollObjectView(private val obj: PianoRollObject) : ScoreObjectView(ob
     }
 
     override val defaultBackgroundColor: ReactiveValue<Color>
-        get() = obj.instrumentSelector.result.flatMap { instr -> instr.get().color }
+        get() = obj.instrumentSelector.result.flatMap { instr -> instr.get<InstrumentObject>().color }
 
     companion object {
         private const val CURSOR_OPACITY = 0.6

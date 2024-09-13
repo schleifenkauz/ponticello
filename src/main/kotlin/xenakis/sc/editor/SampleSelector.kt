@@ -1,29 +1,22 @@
 package xenakis.sc.editor
 
 import hextant.context.Context
-import hextant.serial.Snapshot
 import reaktive.value.ReactiveVariable
-import reaktive.value.reactiveVariable
-import xenakis.model.*
+import xenakis.model.ObjectReference
+import xenakis.model.ObjectRegistry
+import xenakis.model.SampleObject
+import xenakis.model.SampleRegistry
 import xenakis.ui.SampleRegistryPane
+import kotlin.reflect.KClass
 
 class SampleSelector(
     context: Context,
-    selected: ReactiveVariable<SampleObjectReference?>
-) : ObjectSelector<SampleObject, SampleObjectReference?>(context, selected) {
-    constructor(context: Context, initialValue: SampleObjectReference?) : this(context, reactiveVariable(initialValue))
+    selected: ReactiveVariable<ObjectReference?>,
+) : ObjectSelector<SampleObject, ObjectReference?>(context, selected) {
+    override fun getRegistry(context: Context): ObjectRegistry<SampleObject> = context[SampleRegistry]
 
-    override val isNullable: Boolean
-        get() = true
-    override val registry: ObjectRegistry<SampleObject>
-        get() = context[SampleRegistry]
+    override val objectClass: KClass<SampleObject>
+        get() = SampleObject::class
 
     override fun createNewObject(name: String): SampleObject? = context[SampleRegistryPane].addObject(name)
-
-    override fun createSnapshot(): Snapshot<*> = Snap()
-
-    private class Snap : ObjectSelector.Snap<SampleObject, SampleObjectReference?>() {
-        override val serializer: ObjectReference.Serializer<SampleObjectReference?>
-            get() = SampleObjectReference.Serializer
-    }
 }

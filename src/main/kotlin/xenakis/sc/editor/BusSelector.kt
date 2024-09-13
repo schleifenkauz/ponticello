@@ -1,7 +1,6 @@
 package xenakis.sc.editor
 
 import hextant.context.Context
-import hextant.serial.Snapshot
 import hextant.serial.SnapshotAware
 import kotlinx.serialization.Serializable
 import reaktive.value.ReactiveBoolean
@@ -9,8 +8,12 @@ import reaktive.value.ReactiveString
 import reaktive.value.ReactiveVariable
 import reaktive.value.binding.binding
 import reaktive.value.reactiveVariable
-import xenakis.model.*
+import xenakis.model.BusObject
+import xenakis.model.BusRegistry
+import xenakis.model.ObjectReference
+import xenakis.model.ObjectRegistry
 import xenakis.sc.Rate
+import kotlin.reflect.KClass
 
 @Suppress("SERIALIZER_TYPE_INCOMPATIBLE")
 @Serializable(with = SnapshotAware.Serializer::class)
@@ -18,20 +21,13 @@ class BusSelector(
     context: Context,
     val preferredRate: Rate? = null,
     val preferredChannels: Int = -1,
-    selected: ReactiveVariable<BusObjectReference>
-) : ObjectSelector<BusObject, BusObjectReference>(context, selected), ScExprEditor<BusObjectReference> {
-    constructor(
-        context: Context,
-        preferredRate: Rate? = null,
-        preferredChannels: Int = -1,
-        initialValue: BusObjectReference = getDefaultBus(context, preferredRate, preferredChannels)
-    ) : this(context, preferredRate, preferredChannels, reactiveVariable(initialValue))
+    selected: ReactiveVariable<ObjectReference>
+    = reactiveVariable(getDefaultBus(context, preferredRate, preferredChannels))
+) : ObjectSelector<BusObject, ObjectReference>(context, selected) {
+    override fun getRegistry(context: Context): ObjectRegistry<BusObject> = context[BusRegistry]
 
-    override val isNullable: Boolean
-        get() = false
-
-    override val registry: ObjectRegistry<BusObject>
-        get() = context[BusRegistry]
+    override val objectClass: KClass<BusObject>
+        get() = BusObject::class
 
     override fun createNewObject(name: String): BusObject {
         val channels = preferredChannels.takeIf { it != -1 } ?: 2
@@ -48,19 +44,12 @@ class BusSelector(
     override fun extractText(choice: BusObject): ReactiveString =
         binding(choice.name, choice.rate, choice.channels) { name, rate, channels -> "$name ($rate x $channels)" }
 
-    override fun createSnapshot(): Snapshot<*> = Snap()
-
-    private class Snap : ObjectSelector.Snap<BusObject, BusObjectReference>() {
-        override val serializer: ObjectReference.Serializer<BusObjectReference>
-            get() = BusObjectReference.Serializer
-    }
-
     companion object {
         private fun getDefaultBus(
             context: Context,
             preferredRate: Rate?,
             preferredChannels: Int
-        ): BusObjectReference {
+        ): ObjectReference {
             val registry = context[BusRegistry]
             val adequate = registry.filter(preferredRate, preferredChannels).firstOrNull()
             val bus = adequate ?: registry.getDefault()

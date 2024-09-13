@@ -33,7 +33,7 @@ import reaktive.value.fx.asObservableValue
 import reaktive.value.now
 import reaktive.value.toggle
 import xenakis.model.*
-import xenakis.model.LayoutManager.LayoutAspect
+import xenakis.ui.ScoreView.ClipboardMode
 import xenakis.ui.ToolSelector.Tool
 
 class XenakisUI(
@@ -129,7 +129,7 @@ class XenakisUI(
         player = ScorePlayer(scoreView, project, controller.client)
         shellWindow = SuperColliderShellController.createShellWindow(context)
 
-        project.context[ScoreObjectSelector] = ScoreObjectSelector(project.context, scoreView)
+        project.context[ScoreObjectSelectionManager] = ScoreObjectSelectionManager(project.context, scoreView)
         selectedObjectObserver = scoreView.selector.singleSelected.forEach { view ->
             if (detailPane.children.size == 2) detailPane.children.removeAt(1)
             if (view == null) {
@@ -264,14 +264,13 @@ class XenakisUI(
         val undoRedoBar = createUndoRedoBar() styleClass "toolbar-part"
         val playerBar = createPlayerBar() styleClass "toolbar-part"
         val interactionConfig = InteractionConfig(project.settings)
-        val layoutBar = createLayoutBar() styleClass "toolbar-part"
         val miscBar = createMiscBar() styleClass "toolbar-part"
         return HBox(
             10.0,
             HBox(
                 10.0,
                 fileBar, undoRedoBar, playerBar, interactionConfig,
-                toolSelector styleClass "toolbar-part", layoutBar
+                toolSelector styleClass "toolbar-part"
             ),
             infiniteSpace(),
             HBox(contextBar styleClass "toolbar-part"),
@@ -320,22 +319,6 @@ class XenakisUI(
         }
     }
 
-    private fun createLayoutBar(): HBox {
-        val horizontalBtn = Icon.Horizontal.button(action = "Create horizontal group") {
-            project.context[ScoreObjectSelector].addLayoutGroup(LayoutAspect.Horizontal)
-        }
-        val verticalBtn = Icon.Vertical.button(action = "Create vertical group") {
-            project.context[ScoreObjectSelector].addLayoutGroup(LayoutAspect.Vertical)
-        }
-        val removeHorizontalBtn = Icon.HorizontalRemove.button(action = "Remove from horizontal group") {
-            project.context[ScoreObjectSelector].removeFromLayoutGroup(LayoutAspect.Horizontal)
-        }
-        val removeVerticalBtn = Icon.VerticalRemove.button(action = "Remove from vertical group") {
-            project.context[ScoreObjectSelector].removeFromLayoutGroup(LayoutAspect.Vertical)
-        }
-        return HBox(horizontalBtn, verticalBtn, removeHorizontalBtn, removeVerticalBtn)
-    }
-
     private fun createPlayerBar(): HBox {
         playBtn = Icon.Play.button(action = "Start playback") { _ -> togglePlay() }
         stopBtn = Icon.Stop.button(action = "Pause and free all nodes") { stop() }
@@ -381,7 +364,7 @@ class XenakisUI(
             on("Ctrl+N") { controller.createNewProject() }
 
             on("Ctrl+A") {
-                context[ScoreObjectSelector].selectAll()
+                context[ScoreObjectSelectionManager].selectAll()
             }
 
             on("Ctrl?+SPACE") { ev ->
@@ -416,7 +399,7 @@ class XenakisUI(
             on("ESCAPE") {
                 scoreView.clearNewShape()
                 scoreView.clearClipboard()
-                context[ScoreObjectSelector].deselectAll()
+                context[ScoreObjectSelectionManager].deselectAll()
                 toolSelector.select(Tool.Pointer)
                 toolSelector.getButton(Tool.Pointer).graphic = Tool.Pointer.icon.getView()
             }
@@ -467,6 +450,29 @@ class XenakisUI(
                 }
             }
 
+            on("Shift?+LEFT") { ev ->
+                if (!ev.isTargetTextInput) {
+                    val selected = context[ScoreObjectSelectionManager].selectedViews
+                    for (view in selected) {
+                        val inst = view.instance
+                        val x = view.pane.getX(inst.time)
+                        val grid = view.pane.getNearestGrid(x, inst.y)
+                        val snapOption = if (project.settings.snapEnabled.now) project.settings.snapOption.now else null
+                        val deltaX =
+                            if (snapOption != null && grid != null) grid.obj.getDuration(snapOption)
+                            else 1.0 / scoreView.pixelsPerSecond
+                        if (ev.isShiftDown) {
+                            inst.obj.duration += deltaX
+                            for (i in project.score.instancesOf(inst.obj)) {
+                                i.setTime(i.time - deltaX)
+                            }
+                        } else {
+                            inst.setTime(inst.time - deltaX)
+                        }
+                    }
+                }
+            }
+
             on("Alt?+M") { ev ->
                 if (ev.isAltDown || !ev.isTargetTextInput) {
                     scoreView.selector.toggleMuteSelected()
@@ -480,7 +486,8 @@ class XenakisUI(
             }
             on("Alt?+R") { ev ->
                 if (ev.isAltDown || !ev.isTargetTextInput) {
-                    for (obj in scoreView.selector.selectedObjects) {
+                    for (inst in scoreView.selector.selectedInstances) {
+                        val obj = inst.obj
                         if (obj is SynthObject) {
                             obj.reverse()
                         }
@@ -490,9 +497,14 @@ class XenakisUI(
             on("Alt?+Shift?+D") { ev ->
                 if (ev.isAltDown || !ev.isTargetTextInput) {
                     val selected = scoreView.selector.singleSelected.now ?: return@on
+                    val inst = selected.instance
                     val obj =
-                        if (ev.isShiftDown) selected.myObject.duplicateClone()
-                        else selected.myObject.duplicateCopy()
+                        if (ev.isShiftDown) inst.duplicate(inst.time + inst.duration, inst.y)
+                        else {
+                            val name = context[ScoreObjectRegistry].nameForClone(inst.obj)
+                            inst.clone(name, inst.time + inst.duration, inst.y)
+                        }
+                    inst.score.addObject(obj)
                     val view = selected.pane.getObjectView(obj)
                     scoreView.selector.select(view, addToSelection = false)
                 }
@@ -500,15 +512,14 @@ class XenakisUI(
 
             on("Alt?+U") { ev ->
                 if (ev.isAltDown || !ev.isTargetTextInput) {
-                    val obj = scoreView.selector.singleSelected.now?.myObject ?: return@on
-                    if (obj is ClonedObject) {
-                        context.compoundEdit("Unlink object from its original") {
-                            val name = obj.parent!!.nameForCopy(obj)
-                            val copy = obj.copy(name)
-                            obj.parent!!.removeObject(obj)
-                            obj.parent!!.addObject(copy)
-                        }
+                    val inst = scoreView.selector.singleSelected.now?.instance ?: return@on
+                    context.compoundEdit("Unlink object from its original") {
+                        val name = context[ScoreObjectRegistry].nameForClone(inst.obj)
+                        val clone = inst.clone(name, inst.time, inst.y)
+                        inst.score.removeObject(inst)
+                        inst.score.addObject(clone)
                     }
+                    //TODO multiple instances of the same object should be linked afterwards
                 }
             }
 
@@ -529,21 +540,20 @@ class XenakisUI(
             on("Shift?+C") { ev ->
                 if (!ev.isTargetTextInput) {
                     toolSelector.select(Tool.Pointer)
-                    val view = context[ScoreObjectSelector].singleSelected.now ?: return@on
-                    var obj = view.myObject
-                    if (ev.isShiftDown && obj !is ClonedObject) obj = obj.clone()
-                    else if (!ev.isShiftDown && obj is ClonedObject) obj = obj.original
-                    scoreView.setClipboard(obj, view)
+                    val view = context[ScoreObjectSelectionManager].singleSelected.now ?: return@on
+                    val obj = view.instance.obj
+                    val mode = if (ev.isShiftDown) ClipboardMode.Duplicate else ClipboardMode.Clone
+                    scoreView.setClipboard(obj, view, mode)
                 }
             }
 
             on("Ctrl+C") {
                 toolSelector.select(Tool.Pointer)
-                context[ScoreObjectSelector].copySelected()
+                context[ScoreObjectSelectionManager].cloneToClipboard()
             }
             on("Ctrl+Shift+C") {
                 toolSelector.select(Tool.Pointer)
-                context[ScoreObjectSelector].cloneSelected()
+                context[ScoreObjectSelectionManager].duplicateToClipboard()
             }
         }
     }
@@ -551,7 +561,7 @@ class XenakisUI(
     private fun showDetailPaneOfSelectedObject() {
         val selected = scoreView.selector.singleSelected.now ?: return
         val pane = selected.getDetailPane()
-        val name = selected.myObject.name.now
+        val name = selected.instance.obj.name.now
         val window = SubWindow(pane, "Configure $name", context, type = SubWindow.Type.Popup)
         window.show()
     }

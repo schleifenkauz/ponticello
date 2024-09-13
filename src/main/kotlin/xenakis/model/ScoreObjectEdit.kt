@@ -18,19 +18,6 @@ abstract class ScoreObjectEdit(protected val obj: ScoreObject) : AbstractEdit() 
         }
     }
 
-    class Mute(val value: Boolean, obj: ScoreObject) : ScoreObjectEdit(obj) {
-        override val actionDescription: String
-            get() = if (value) "Mute" else "Unmute"
-
-        override fun doUndo() {
-            obj.muted = !value
-        }
-
-        override fun doRedo() {
-            obj.muted = value
-        }
-    }
-
     class Recolor(obj: ScoreObject, private val oldColor: Color?, private val newColor: Color?) : ScoreObjectEdit(obj) {
         override val actionDescription: String
             get() = "Recolor object"

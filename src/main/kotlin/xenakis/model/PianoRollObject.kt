@@ -4,52 +4,58 @@ import hextant.context.Context
 import hextant.context.withoutUndo
 import hextant.core.editor.ListenerManager
 import hextant.serial.EditorRoot
-import hextant.serial.SnapshotAware
 import hextant.undo.AbstractEdit
 import hextant.undo.PropertyEdit
 import hextant.undo.UndoManager
 import javafx.geometry.HorizontalDirection
 import javafx.geometry.HorizontalDirection.LEFT
 import javafx.geometry.HorizontalDirection.RIGHT
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.JsonObjectBuilder
-import kotlinx.serialization.json.put
+import reaktive.value.ReactiveVariable
 import reaktive.value.now
-import xenakis.impl.*
+import reaktive.value.reactiveVariable
+import xenakis.impl.code
+import xenakis.impl.reactive
 import xenakis.sc.code
 import xenakis.sc.editor.*
 import xenakis.ui.PianoRollObjectView
 import xenakis.ui.ScoreObjectView
 import kotlin.math.roundToInt
 
+@Serializable
 class PianoRollObject(
-    name: String,
-    private val initialInstrument: InstrumentObject.Reference,
-    lowestPitch: Int, highestPitch: Int,
+    override val mutableName: ReactiveVariable<String>,
+    private val initialInstrument: ObjectReference,
+    @SerialName("lowestPitch") private var _lowestPitch: Int,
+    @SerialName("highestPitch") private var _highestPitch: Int,
     val eventDictionary: EditorRoot<EventDictionaryEditor>,
     private val notes: MutableList<Note>
-) : RegularScoreObject(name) {
+) : ScoreObject() {
     override val type: String
         get() = "piano-roll"
 
+    @Transient
     override val viewManager: ListenerManager<PianoRollObjectView> = ListenerManager.createWeakListenerManager()
 
+    @Transient
     lateinit var instrumentSelector: InstrumentSelector
         private set
 
     val instrument get() = if (initialized) instrumentSelector.result.now else initialInstrument
 
-    var lowestPitch = lowestPitch
+    var lowestPitch
+        get() = _lowestPitch
         set(value) {
-            field = value
+            _lowestPitch = value
             viewManager.notifyListeners { updatedPitchRange() }
         }
 
-    var highestPitch = highestPitch
+    var highestPitch
+        get() = _highestPitch
         set(value) {
-            field = value
+            _highestPitch = value
             viewManager.notifyListeners { updatedPitchRange() }
         }
 
@@ -62,7 +68,7 @@ class PianoRollObject(
     override fun initialize(context: Context) {
         if (initialized) return
         super.initialize(context)
-        instrumentSelector = InstrumentSelector(context, initialInstrument)
+        instrumentSelector = InstrumentSelector(context, reactiveVariable(initialInstrument))
         for (note in notes) {
             note.parent = this
         }
@@ -139,18 +145,22 @@ class PianoRollObject(
         }
     }
 
-    override fun copy(): ScoreObject = PianoRollObject(
-        name.now, instrument, lowestPitch, highestPitch,
+    override fun doClone(newName: String): ScoreObject = PianoRollObject(
+        reactiveVariable(newName), instrument, lowestPitch, highestPitch,
         context.withoutUndo { eventDictionary.clone() },
         notes.mapTo(mutableListOf()) { n -> n.copy() }
     )
 
-    override fun cut(position: Double, whichHalf: HorizontalDirection): ScoreObject {
+    override fun doCut(position: Double, whichHalf: HorizontalDirection, newName: String): ScoreObject {
         val notes = when (whichHalf) {
             LEFT -> notes.filter { n -> n.onset < position }
             RIGHT -> notes.filter { n -> n.onset >= position }
         }.mapTo(mutableListOf()) { n -> n.copy() }
-        return PianoRollObject(name.now, initialInstrument, lowestPitch, highestPitch, eventDictionary.clone(), notes)
+        return PianoRollObject(
+            reactiveVariable(newName), initialInstrument,
+            lowestPitch, highestPitch,
+            eventDictionary.clone(), notes
+        )
     }
 
     override fun writeCode(env: ScorePlayEnv, name: String, cutoff: Double): String = code {
@@ -165,7 +175,7 @@ class PianoRollObject(
             eventMap["duration"] = dur.toString()
             for ((key, value) in eventDict.entries) eventMap[key.text] = value.code(context)
             for ((key, value) in generalEventDict.entries) eventMap[key.text] = value.code(context)
-            val playNote = when (val instr = instrument.get()) {
+            val playNote = when (val instr = instrument.get<InstrumentObject>()) {
                 is SynthDefObject -> {
                     eventMap["freq"] = "$midinote.midicps + ${eventMap["detune"] ?: 0}.midiratio"
                     eventMap.remove("detune")
@@ -187,14 +197,6 @@ class PianoRollObject(
             }
             appendLine(";")
         }
-    }
-
-    override fun JsonObjectBuilder.saveToJson() {
-        putSerializableValue("instrument", instrument)
-        put("lowestPitch", lowestPitch)
-        put("highestPitch", highestPitch)
-        putSerializableValue("eventDictionary", eventDictionary)
-        putSerializableValue("notes", notes as List<Note>)
     }
 
     abstract class Edit(protected val obj: PianoRollObject, protected val note: Note) : AbstractEdit() {
@@ -309,22 +311,6 @@ class PianoRollObject(
                     )
                 }
                 return Note(time, duration, midinote, EditorRoot.create(eventDictionary))
-            }
-        }
-    }
-
-    object Serializer : ScoreObject.Serializer {
-        override val type: String
-            get() = "piano-roll"
-
-        override fun JsonObject.createFromJson(name: String): ScoreObject {
-            val instrument = getSerializableValue<InstrumentObject.Reference>("instrument")!!
-            val lowestPitch = getInt("lowestPitch")!!
-            val highestPitch = getInt("highestPitch")!!
-            SnapshotAware.Serializer.reconstructionContext.withoutUndo {
-                val eventDictionary = getSerializableValue<EditorRoot<EventDictionaryEditor>>("eventDictionary")!!
-                val notes = getSerializableValue<List<Note>>("notes")!!.toMutableList()
-                return PianoRollObject(name, instrument, lowestPitch, highestPitch, eventDictionary, notes)
             }
         }
     }

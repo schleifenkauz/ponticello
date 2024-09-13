@@ -42,7 +42,6 @@
 
 ### Improve layout
 
-- fix time display and snapping in envelope editors
 - save main window size/position and arrangement of utility panes
 - do we need an extra window for LFO code?
 - integrate the buses pane into the audio flow window (it is only needed there)
@@ -87,16 +86,12 @@
 
 ### use SuperCollider `Score` object for playback (this also means ability to do NRT bouncing!)
 
-### remove distinction between originals and clones
-
-- remove position property from ScoreObject
-- instead a score is a collection of ScoreObjects and positioned instantiations
-
 ## Bugs
 
 - effects that work with intermediate buses have to be executed after the flow synths
 - sometimes the first ScoreObject is not played, when the cursor starts exactly over it
 - fix time display and snapping in envelope editors
+- switch between edit and move mode on memo objects
 
 ## Nice to have
 

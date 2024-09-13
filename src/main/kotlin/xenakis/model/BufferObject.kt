@@ -86,8 +86,6 @@ sealed class BufferObject : AbstractSuperColliderObject() {
         return stream.use(block)
     }
 
-    override fun createReference(): BufferObjectReference = BufferObjectReference(this)
-
     enum class Type {
         File, Allocate, Reference
     }

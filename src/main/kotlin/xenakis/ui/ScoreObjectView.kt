@@ -13,7 +13,6 @@ import javafx.scene.input.MouseEvent
 import javafx.scene.layout.*
 import javafx.scene.paint.Color
 import javafx.scene.paint.Color.BLACK
-import org.controlsfx.control.ToggleSwitch
 import reaktive.Observer
 import reaktive.value.ReactiveValue
 import reaktive.value.binding.map
@@ -29,7 +28,8 @@ import xenakis.sc.NumericalControlSpec
 import xenakis.ui.ToolSelector.Tool
 import xenakis.ui.XenakisController.Companion.currentProject
 
-abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), ObjectPosition.Listener, SynthControls.View {
+abstract class ScoreObjectView(val instance: ScoreObjectInstance) : VBox(), ScoreObjectInstance.Listener,
+    SynthControls.View {
     var isInitialized: Boolean = false
         private set
     lateinit var pane: ScorePane
@@ -47,7 +47,7 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), ObjectPositi
 
     protected open val defaultBackgroundColor: ReactiveValue<Color>
         get() = reactiveVariable(BLACK)
-    protected val backgroundColor by lazy { myObject.associatedColor.orElse(defaultBackgroundColor) }
+    protected val backgroundColor by lazy { instance.obj.associatedColor.orElse(defaultBackgroundColor) }
     protected open val borderColorWhenSelected: Color get() = backgroundColor.now.invert()
     protected open val nonSelectedBorderColor: Color get() = Color.GRAY
     protected val colorPicker: ColorPicker = ColorPicker() styleClass "button"
@@ -62,7 +62,7 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), ObjectPositi
     protected open val supportedActions get() = listOf(Icon.Delete, Icon.Mute, Icon.Repeat)
 
     fun getDetailPane() = DetailPane().apply {
-        nameEditor = NameControl(myObject)
+        nameEditor = NameControl(instance.obj)
         addItem("Name: ", nameEditor)
         setupDetailPane()
     }
@@ -72,9 +72,9 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), ObjectPositi
     private fun setupActions() {
         if (Icon.Repeat in supportedActions) addAction(Icon.Repeat, "Loop this object", ::createLoop)
         if (Icon.Mute in supportedActions) {
-            val icon = if (myObject.muted) Icon.Mute else Icon.Unmute
+            val icon = if (instance.muted) Icon.Mute else Icon.Unmute
             muteUnmuteBtn = addAction(icon, "Toggle mute") {
-                myObject.muted = !myObject.muted
+                instance.toggleMuted()
             }
         }
         if (Icon.Delete in supportedActions) addAction(Icon.Delete, "Delete this object", ::delete)
@@ -85,19 +85,17 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), ObjectPositi
         val grid = pane.getNearestGrid(layoutX, layoutY)?.obj.takeIf { settings.snapEnabled.now }
         val periodUnit = if (grid == null) null else settings.snapOption.now
         val periodInput = when (periodUnit) {
-            null -> TextField(myObject.duration.format(3))
+            null -> TextField(instance.duration.format(3))
             else -> {
-                val default = (myObject.duration / grid!!.getDuration(periodUnit) + 0.95).toInt()
+                val default = (instance.duration / grid!!.getDuration(periodUnit) + 0.95).toInt()
                 Spinner<Int>(1, Int.MAX_VALUE, default)
             }
         }
-        val switchChainArrows = ToggleSwitch("Create chain arrows")
         val repetitionsInput = Spinner<Int>(1, 1000, 1, 1)
         val box = VBox(
             10.0,
             HBox(label("Loop period ($periodUnit): ").setFixedWidth(200.0), periodInput).centerChildrenVertically(),
-            HBox(label("Number of repetitions").setFixedWidth(200.0), repetitionsInput).centerChildrenVertically(),
-            switchChainArrows
+            HBox(label("Number of repetitions").setFixedWidth(200.0), repetitionsInput).centerChildrenVertically()
         )
         box.showDialog(
             "Loop configuration", context,
@@ -118,7 +116,7 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), ObjectPositi
                     else -> error("Invalid period input control: $periodInput")
                 }
                 val repetitions = repetitionsInput.value
-                pane.score.loop(myObject, period, repetitions, switchChainArrows.isSelected)
+                pane.score.loop(instance, period, repetitions)
             }
         }
     }
@@ -140,7 +138,7 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), ObjectPositi
         children.add(envelopesPane)
         setVgrow(envelopesPane, Priority.ALWAYS)
         displayKnobs()
-        myObject.addView(this)
+        instance.obj.addView(this)
         isInitialized = true
     }
 
@@ -148,17 +146,17 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), ObjectPositi
         addEventHandler(MouseEvent.MOUSE_CLICKED) { ev ->
             toFront()
             requestFocus()
-            context[ScoreObjectSelector].select(this, addToSelection = ev.isShiftDown)
+            context[ScoreObjectSelectionManager].select(this, addToSelection = ev.isShiftDown)
             ev.consume()
         }
     }
 
     private fun initializeLayout() {
-        layoutX = pane.getX(myObject.position.time)
-        layoutY = myObject.position.y
+        layoutX = pane.getX(instance.position.time)
+        layoutY = instance.position.y
         prefWidth = getDisplayWidth()
-        prefHeight = myObject.height
-        myObject.position.addListener(this)
+        prefHeight = instance.height
+        instance.addListener(this)
     }
 
     protected fun addAction(icon: Icon, action: String?, onAction: () -> Unit): Button {
@@ -177,14 +175,14 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), ObjectPositi
             colorPicker.value = color
         }
         colorPicker.valueProperty().addListener { _, oldColor, newColor ->
-            myObject.associatedColor.now = newColor
-            context[UndoManager].record(ScoreObjectEdit.Recolor(myObject, oldColor, newColor))
+            instance.obj.associatedColor.now = newColor
+            context[UndoManager].record(ScoreObjectEdit.Recolor(instance.obj, oldColor, newColor))
         }
     }
 
-    open fun muteToggled() {
-        muteUnmuteBtn.graphic = if (myObject.muted) Icon.Mute.getView() else Icon.Unmute.getView()
-        setPseudoClassState("muted", myObject.muted)
+    override fun toggledMute(muted: Boolean) {
+        muteUnmuteBtn.graphic = if (instance.muted) Icon.Mute.getView() else Icon.Unmute.getView()
+        setPseudoClassState("muted", instance.muted)
     }
 
     override fun removedControl(parameter: String, control: ParameterControl) {
@@ -229,21 +227,21 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), ObjectPositi
 
     private fun displayEnvelope(parameter: String, control: EnvelopeControl) {
         val envelope = control.envelope
-        val e = EnvelopeEditor(parameter, envelope, this, envelopesPane, pane, myObject)
+        val e = EnvelopeEditor(parameter, envelope, this, envelopesPane, pane, instance.obj)
         e.repaint()
         envelopeEditors.add(e)
     }
 
     private fun displayKnobs() {
         knobControls.children.clear()
-        for ((parameter, control) in myObject.associatedControls) {
+        for ((parameter, control) in instance.obj.associatedControls) {
             if (control !is KnobControl) continue
             displayKnob(parameter, control)
         }
     }
 
     private fun displayKnob(parameter: String, control: KnobControl) {
-        val spec = myObject.getSpec(parameter) as NumericalControlSpec
+        val spec = instance.obj.getSpec(parameter) as NumericalControlSpec
         val knob = Knob(parameter, control, spec, radius = 24.0, context)
         knobControls.children.add(knob)
     }
@@ -252,16 +250,14 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), ObjectPositi
         addEventHandler(MouseEvent.MOUSE_CLICKED) { ev ->
             if (context[XenakisUI].toolSelector.selected.value == Tool.Cut) {
                 val cutPosition = pane.getDuration(ev.x - 0.0)
-                val leftHalf = myObject.cut(cutPosition, HorizontalDirection.LEFT, "${myObject.name.now}_left")
-                val rightHalf = myObject.cut(cutPosition, HorizontalDirection.RIGHT, "${myObject.name.now}_right")
-                if (leftHalf == null || rightHalf == null) return@addEventHandler
                 context[UndoManager].beginCompoundEdit("Cut object")
-                pane.score.removeObject(myObject)
+                pane.score.removeObject(instance)
+                val (leftHalf, rightHalf) = instance.cut(cutPosition) ?: return@addEventHandler
                 pane.score.addObject(leftHalf)
                 pane.score.addObject(rightHalf)
+                context[UndoManager].finishCompoundEdit("Cut object")
                 pane.selector.select(pane.getObjectView(leftHalf), addToSelection = false)
                 pane.selector.select(pane.getObjectView(rightHalf), addToSelection = true)
-                context[UndoManager].finishCompoundEdit("Cut object")
                 ev.consume()
             }
         }
@@ -273,14 +269,7 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), ObjectPositi
         } else {
             solidBorder(nonSelectedBorderColor, width = 2.0)
         }
-        for (obj in pane.score.objects) {
-            if (obj is ClonedObject && obj.original == myObject) {
-                pane.getObjectView(obj).setCloneOfSelected(value)
-            }
-            if (myObject is ClonedObject && (myObject as ClonedObject).original == obj) {
-                pane.getObjectView(obj).setOriginalOfSelected(value)
-            }
-        }
+        //highlight other instances
     }
 
     private fun setCloneOfSelected(value: Boolean) {
@@ -292,7 +281,7 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), ObjectPositi
     }
 
     private fun delete() {
-        pane.score.removeObject(myObject)
+        pane.score.removeObject(instance)
     }
 
     /*
@@ -305,7 +294,7 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), ObjectPositi
         y = y.coerceAtLeast(0.0)
         if (pane is SubScorePane) x = x.coerceAtMost(pane.width - old.width)
         y = y.coerceAtMost(pane.height - old.height)
-        pane.score.moveObject(myObject, pane.getTime(x), y)
+        instance.moveTo(pane.getTime(x), y)
         pane.markX(x)
     }
 
@@ -314,27 +303,27 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), ObjectPositi
         if (!ev.isShiftDown) {
             val resizeFromLeft = cursor in setOf(Cursor.W_RESIZE, Cursor.NW_RESIZE, Cursor.SW_RESIZE)
             val resizeFromRight = cursor in setOf(Cursor.E_RESIZE, Cursor.NE_RESIZE, Cursor.SE_RESIZE)
-            for ((parameter, ctrl) in myObject.associatedControls) {
+            for ((parameter, ctrl) in instance.obj.associatedControls) {
                 if (ctrl !is EnvelopeControl) continue
-                val spec = myObject.getSpec(parameter) as NumericalControlSpec
+                val spec = instance.obj.getSpec(parameter) as NumericalControlSpec
                 if (resizeFromLeft) ctrl.envelope.resize(newDur, HorizontalDirection.LEFT, spec)
                 if (resizeFromRight) ctrl.envelope.resize(newDur, HorizontalDirection.RIGHT, spec)
             }
         } else {
-            for ((_, ctrl) in myObject.associatedControls) {
+            for ((_, ctrl) in instance.obj.associatedControls) {
                 if (ctrl !is EnvelopeControl) continue
                 ctrl.envelope.rescale(newDur)
             }
         }
-        myObject.duration = newDur
-        myObject.height = height
+        instance.obj.duration = newDur
+        instance.obj.height = height
     }
 
     protected open fun beforeResize(ev: MouseEvent, cursor: Cursor) {
-        context[ScoreObjectSelector].select(this, addToSelection = ev.isShiftDown)
+        context[ScoreObjectSelectionManager].select(this, addToSelection = ev.isShiftDown)
     }
 
-    open fun getDisplayWidth(): Double = pane.getWidth(myObject.duration)
+    open fun getDisplayWidth(): Double = pane.getWidth(instance.duration)
 
     open fun rescale() {
         repaintEnvelopes()
@@ -347,11 +336,11 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), ObjectPositi
     }
 
     final override fun moved(start: Double, y: Double) {
-        relocate(pane.getX(myObject.start), myObject.y)
+        relocate(pane.getX(instance.time), instance.y)
     }
 
     fun resized() {
-        setPrefSize(getDisplayWidth(), myObject.height)
+        setPrefSize(getDisplayWidth(), instance.height)
         rescale()
     }
 
@@ -373,7 +362,7 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), ObjectPositi
         newHeight = newHeight.coerceAtLeast(10.0)
 
         val oldWidth = getDisplayWidth()
-        val oldHeight = myObject.height
+        val oldHeight = instance.height
 
         if (cursor.resizeFromLeft) newWidth = newWidth.coerceAtMost(oldWidth + old.minX)
         if (pane is SubScorePane && cursor.resizeFromRight) newWidth = newWidth.coerceAtMost(pane.width - old.minX)
@@ -384,10 +373,10 @@ abstract class ScoreObjectView(var myObject: ScoreObject) : VBox(), ObjectPositi
         context[UndoManager].record(ResizeEdit(this, oldWidth, oldHeight, newWidth, newHeight, ev, cursor))
         val newX =
             if (cursor.resizeFromLeft)
-                myObject.start + pane.getDuration(oldWidth - getDisplayWidth())
-            else myObject.start
-        val newY = if (cursor.resizeFromTop) myObject.y + (oldHeight - myObject.height) else myObject.y
-        pane.score.moveObject(myObject, newX, newY)
+                instance.time + pane.getDuration(oldWidth - getDisplayWidth())
+            else instance.time
+        val newY = if (cursor.resizeFromTop) instance.y + (oldHeight - instance.height) else instance.y
+        instance.moveTo(newX, newY)
     }
 
     private class ResizeEdit(

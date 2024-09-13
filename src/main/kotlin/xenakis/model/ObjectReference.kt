@@ -1,38 +1,79 @@
-@file:OptIn(ExperimentalSerializationApi::class)
-
 package xenakis.model
 
-import hextant.context.Context
-import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.KSerializer
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.serialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import reaktive.value.now
+import java.util.logging.Level
+import java.util.logging.Logger
+import kotlin.reflect.KClass
+import kotlin.reflect.cast
 
-interface ObjectReference<O : NamedObject> {
-    fun get(): O
+@Serializable(with = ObjectReference.Serializer::class)
+class ObjectReference(private var name: String) {
+    @Transient
+    private var obj: NamedObject? = null
 
-    fun resolve(context: Context)
+    constructor(obj: NamedObject) : this(obj.name.now) {
+        this.obj = obj
+    }
 
-    abstract class Serializer<R : ObjectReference<*>?> : KSerializer<R> {
+    fun <O : NamedObject> get(cls: KClass<O>): O = when {
+        obj == null -> error("Object $name not resolved!")
+        !cls.isInstance(obj) -> error("Object $name was not resolved to an object of $cls")
+        else -> cls.cast(obj)
+    }
+
+    inline fun <reified O : NamedObject> get(): O = get(O::class)
+
+    fun <O : NamedObject> resolve(registry: ObjectRegistry<O>) {
+        if (obj != null) {
+            logger.fine("ObjectReference '$name' already resolved")
+            return
+        }
+        try {
+            obj = registry.get(name)
+        } catch (ex: NoSuchElementException) {
+            logger.log(Level.SEVERE, ex.message, ex)
+            obj = registry.getDefault()
+        }
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is ObjectReference) return false
+
+        if (obj != null) {
+            if (other.obj != obj) return false
+        } else if (name != other.name) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        return if (obj != null) obj.hashCode() else name.hashCode()
+    }
+
+    class Serializer : KSerializer<ObjectReference> {
         override val descriptor: SerialDescriptor
             get() = serialDescriptor<String?>()
 
-        abstract fun createReference(name: String): R
-
-        override fun serialize(encoder: Encoder, value: R) {
-            if (value == null) encoder.encodeNull()
-            else {
-                encoder.encodeNotNullMark()
-                encoder.encodeString(value.get().name.now)
-            }
+        override fun serialize(encoder: Encoder, value: ObjectReference) {
+            val obj = value.get(NamedObject::class)
+            encoder.encodeString(obj.name.now)
         }
 
-        override fun deserialize(decoder: Decoder): R {
-            return if (decoder.decodeNotNullMark()) createReference(decoder.decodeString())
-            else null as R
+        override fun deserialize(decoder: Decoder): ObjectReference {
+            val name = decoder.decodeString()
+            return ObjectReference(name)
         }
+    }
+
+    companion object {
+        private val logger = Logger.getLogger("ObjectReference")
     }
 }

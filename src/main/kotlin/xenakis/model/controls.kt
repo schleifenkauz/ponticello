@@ -42,27 +42,27 @@ class EnvelopeControl(
 }
 
 @Serializable
-class BusControl(val bus: ReactiveVariable<BusObjectReference>) : ParameterControl() {
+class BusControl(val bus: ReactiveVariable<ObjectReference>) : ParameterControl() {
     override fun initialize(context: Context) {
-        bus.now.resolve(context)
+        bus.now.resolve(context[BusRegistry])
     }
 
     override fun copy(): ParameterControl = BusControl(bus.copy())
 }
 
 @Serializable
-class BusValueControl(val bus: ReactiveVariable<BusObjectReference>) : ParameterControl() {
+class BusValueControl(val bus: ReactiveVariable<ObjectReference>) : ParameterControl() {
     override fun initialize(context: Context) {
-        bus.now.resolve(context)
+        bus.now.resolve(context[BusRegistry])
     }
 
     override fun copy(): ParameterControl = BusValueControl(bus.copy())
 }
 
 @Serializable
-data class SingleBusValueControl(val bus: ReactiveVariable<BusObjectReference>) : ParameterControl() {
+data class SingleBusValueControl(val bus: ReactiveVariable<ObjectReference>) : ParameterControl() {
     override fun initialize(context: Context) {
-        bus.now.resolve(context)
+        bus.now.resolve(context[BusRegistry])
     }
 
     override fun copy(): ParameterControl = SingleBusValueControl(bus.copy())
@@ -70,20 +70,20 @@ data class SingleBusValueControl(val bus: ReactiveVariable<BusObjectReference>) 
 
 @Serializable
 data class BufferControl(
-    val sample: ReactiveVariable<SampleObjectReference?>,
+    val sample: ReactiveVariable<ObjectReference?>,
     val display: ReactiveVariable<Boolean> = reactiveVariable(true)
 ) : ParameterControl() {
     override fun initialize(context: Context) {
-        sample.now?.resolve(context)
+        sample.now?.resolve(context[SampleRegistry])
     }
 
     override fun copy(): ParameterControl = BufferControl(sample.copy(), display.copy())
 }
 
 @Serializable
-data class GroupControl(val group: ReactiveVariable<GroupObjectReference>) : ParameterControl() {
+data class GroupControl(val group: ReactiveVariable<ObjectReference>) : ParameterControl() {
     override fun initialize(context: Context) {
-        group.now.resolve(context)
+        group.now.resolve(context[GroupRegistry])
     }
 
     override fun copy(): ParameterControl = GroupControl(group.copy())

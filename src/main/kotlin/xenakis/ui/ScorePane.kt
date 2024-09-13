@@ -17,8 +17,8 @@ import javafx.scene.layout.Pane
 import javafx.scene.layout.VBox
 import javafx.scene.paint.Color.*
 import javafx.scene.shape.Rectangle
-import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.serializer
 import reaktive.value.now
 import reaktive.value.reactiveVariable
 import xenakis.impl.Arrow
@@ -32,6 +32,7 @@ import xenakis.sc.Rate
 import xenakis.sc.editor.BusSelector
 import xenakis.sc.editor.EventDictionaryEditor
 import xenakis.sc.editor.ScFunctionEditor
+import xenakis.ui.ScoreView.ClipboardMode
 import xenakis.ui.ToolSelector.Tool
 import xenakis.ui.ToolSelector.Tool.*
 import xenakis.ui.XenakisController.Companion.currentProject
@@ -43,13 +44,13 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
     private val outgoingArrows = mutableMapOf<ScoreObjectView, Pair<Arrow, ScoreObjectView>>()
     private val ingoingArrows = mutableMapOf<ScoreObjectView, Pair<Arrow, ScoreObjectView>>()
 
-    private val views = mutableMapOf<ScoreObject, ScoreObjectView>()
+    private val views = mutableMapOf<ScoreObjectInstance, ScoreObjectView>()
     val allViews: Collection<ScoreObjectView> get() = views.values
 
     protected val ui get() = context[XenakisUI]
     private val selectedTool get() = ui.toolSelector.selected.value!!
 
-    val selector: ScoreObjectSelector get() = context[ScoreObjectSelector]
+    val selector: ScoreObjectSelectionManager get() = context[ScoreObjectSelectionManager]
 
     protected abstract val displayStart: Double
     protected abstract val displayEnd: Double
@@ -88,10 +89,10 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
 
     private fun layoutObjects() {
         for ((obj, view) in views) {
-            if (obj.start > displayEnd) continue
-            if (obj.start + obj.duration < displayStart) continue
+            if (obj.time > displayEnd) continue
+            if (obj.time + obj.duration < displayStart) continue
             view.prefWidth = view.getDisplayWidth()
-            view.relocate(getX(obj.start), obj.y)
+            view.relocate(getX(obj.time), obj.y)
             view.rescale()
             children.add(view)
         }
@@ -144,7 +145,6 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
     }
 
     private fun createPlayBufObject(sample: SampleObject, ev: DragEvent) {
-        val name = score.availableName(sample.name.now)
         val instruments = context[InstrumentRegistry]
         val synthDef = instruments.selectedInstrument ?: instruments.getOrNull("playbuf") ?: run {
             val playbuf = ReferencedSynthDefObject.playbuf
@@ -172,35 +172,30 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
         val controls = synthDef.defaultControls(context)
         val bufCtrl = controls["buf"] as BufferControl
         bufCtrl.sample.set(sample.createReference())
-        @Suppress("UNCHECKED_CAST")
-        val synthDefRef = synthDef.createReference() as ObjectReference<SynthDefObject>
-        val obj = SynthObject(name, synthDefRef, controls)
-        val (x, y) = snapToGrid(ev.x, ev.y)
-        obj.position.set(getTime(x), y)
+        val synthDefRef = synthDef.createReference()
+        val name = context[ScoreObjectRegistry].availableName(sample.name.now)
+        val obj = SynthObject(reactiveVariable(name), synthDefRef, controls)
         obj.duration = sample.duration
         obj.height = 150.0
-        score.addObject(obj)
+        val (x, y) = snapToGrid(ev.x, ev.y)
+        val inst = ScoreObjectInstance(obj.createReference(), getTime(x), y)
+        score.addObject(inst)
     }
 
     /*
     * Score object view management
     * +*/
 
-    fun getObjectView(obj: ScoreObject) = views[obj] ?: error("No view found for ${obj.name.now}")
+    fun getObjectView(inst: ScoreObjectInstance) = views[inst] ?: error("No view found for ${inst.obj.name.now}")
 
-    private fun createObjectView(obj: ScoreObject): ScoreObjectView = when (obj) {
-        is SynthObject -> SynthObjectView(obj)
-        is TaskObject -> TaskObjectView(obj)
-        is EnvelopeObject -> EnvelopeObjectView(obj)
-        is MemoObject -> MemoObjectView(obj)
-        is ScoreObjectGroup -> ScoreObjectGroupView(obj)
-        is PianoRollObject -> PianoRollObjectView(obj)
-        is TempoGridObject -> TempoGridObjectView(obj)
-        is ClonedObject -> {
-            val view = createObjectView(obj.original)
-            view.myObject = obj
-            view
-        }
+    private fun createObjectView(inst: ScoreObjectInstance): ScoreObjectView = when (val obj = inst.obj) {
+        is SynthObject -> SynthObjectView(inst, obj)
+        is TaskObject -> TaskObjectView(inst, obj)
+        is EnvelopeObject -> EnvelopeObjectView(inst, obj)
+        is MemoObject -> MemoObjectView(inst, obj)
+        is ScoreObjectGroup -> ScoreObjectGroupView(inst, obj)
+        is PianoRollObject -> PianoRollObjectView(inst, obj)
+        is TempoGridObject -> TempoGridObjectView(inst, obj)
 
         else -> throw AssertionError()
     }
@@ -209,7 +204,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
     * Score change handlers
     * */
 
-    override fun addedObject(obj: ScoreObject) {
+    override fun addedObject(obj: ScoreObjectInstance) {
         val view = createObjectView(obj)
         view.initialize(this)
         views[obj] = view
@@ -219,43 +214,11 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
         }
     }
 
-    override fun removedObject(obj: ScoreObject) {
+    override fun removedObject(obj: ScoreObjectInstance) {
         val view = views.remove(obj) ?: return
         children.remove(view)
         ingoingArrows.remove(view)?.let { (arr, _) -> children.remove(arr) }
         outgoingArrows.remove(view)?.let { (arr, _) -> children.remove(arr) }
-    }
-
-    override fun chained(previous: ScoreObject, next: ScoreObject) {
-        val prevView = getObjectView(previous)
-        val nextView = getObjectView(next)
-        val arrow = Arrow() styleClass "chain-arrow"
-        arrow.setOnMouseClicked { ev ->
-            if (ev.button == MouseButton.SECONDARY) {
-                score.unchain(previous)
-            }
-        }
-        paintArrow(arrow, prevView, nextView)
-        outgoingArrows[prevView] = arrow to nextView
-        ingoingArrows[nextView] = arrow to prevView
-        children.add(arrow)
-    }
-
-    override fun unchained(previous: ScoreObject, next: ScoreObject) {
-        val prevView = getObjectView(previous)
-        val (_, arrow) = outgoingArrows.remove(prevView) ?: error("$previous was not chained to $next")
-        children.remove(arrow)
-    }
-
-    private fun paintArrow(arr: Arrow, prev: ScoreObjectView, nxt: ScoreObjectView) {
-        arr.setStart(prev.boundsInParent.maxX, prev.boundsInParent.middleY)
-        arr.setEnd(nxt.boundsInParent.minX, nxt.boundsInParent.middleY)
-        prev.boundsInParentProperty().addListener { _, _, bounds ->
-            arr.setStart(bounds.maxX, bounds.middleY)
-        }
-        nxt.boundsInParentProperty().addListener { _, _, bounds ->
-            arr.setEnd(bounds.minX, bounds.middleY)
-        }
     }
 
     /*
@@ -350,16 +313,12 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
             val clipboard = Clipboard.getSystemClipboard()
             if (clipboard.hasContent(ScoreObject.DATA_FORMAT)) {
                 val content = clipboard.getContent(ScoreObject.DATA_FORMAT) as String
-                val objects = Json.decodeFromString(ListSerializer(ScoreObject.Ser), content)
+                val objects = Json.decodeFromString(serializer<List<ScoreObjectInstance>>(), content)
                 val leftTop = objects.minOf { it.position }
                 if (!ev.isShiftDown) selector.deselectAll()
                 val (x, y) = snapToGrid(ev.x, ev.y)
                 for (obj in objects) {
-                    if (obj !is ClonedObject) {
-                        obj.rename(score.nameForCopy(obj))
-                    }
-                    obj.position.time += getTime(x) - leftTop.time
-                    obj.position.y += y - leftTop.y
+                    obj.moveTo(getTime(x) - leftTop.time, y - leftTop.y)
                     score.addObject(obj)
                     selector.select(getObjectView(obj), addToSelection = true)
                 }
@@ -382,14 +341,14 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
             tool == Pointer -> {
                 val scoreView = context[XenakisUI].scoreView
                 if (ev.button == MouseButton.PRIMARY && scoreView.isInDuplicateMode()) {
-                    val obj = scoreView.clipboardObject!!
-                    val duplicate = if (obj is ClonedObject) obj.original.clone() else obj.copy(score.nameForCopy(obj))
-                    if (duplicate is ClonedObject && score.getObject(duplicate.name.now) != duplicate.original) {
-                        alertError("Object with name ${duplicate.name.now} already present in score ${score.scoreName.now}")
-                        return
+                    var obj = scoreView.clipboardObject!!
+                    if (scoreView.clipboardMode == ClipboardMode.Clone) {
+                        val name = context[ScoreObjectRegistry].nameForClone(obj)
+                        obj = obj.clone(name)
+                        context[ScoreObjectRegistry].add(obj)
                     }
                     val (x, y) = snapToGrid(ev.x, ev.y)
-                    duplicate.position.set(getTime(x), y)
+                    val duplicate = ScoreObjectInstance(obj.createReference(), getTime(x), y)
                     score.addObject(duplicate)
                 } else if (selectedArea in children && selectedArea.width != 0.0 && selectedArea.height != 0.0) {
                     if (!selectedArea.heightProperty().isBound) {
@@ -432,57 +391,55 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
             Synth -> {
                 val def = context[InstrumentRegistry].selectedInstrument
                 if (def !is SynthDefObject) return
-                val initialName = score.availableName(def.name.now)
+                val initialName = context[ScoreObjectRegistry].availableName(def.name.now)
                 promptNewObjectName("Synth name", initialName) { name ->
-                    @Suppress("UNCHECKED_CAST")
-                    val ref = def.createReference() as ObjectReference<SynthDefObject>
-                    val obj = SynthObject(name, ref, controls = def.defaultControls(context))
-                    addObject(obj, rect)
+                    val ref = def.createReference()
+                    val obj = SynthObject(reactiveVariable(name), ref, controls = def.defaultControls(context))
+                    addNewObject(obj, rect)
                 }
             }
 
             Task -> {
-                val name = score.availableName("task")
+                val name = context[ScoreObjectRegistry].availableName("task")
                 val editor = EditorRoot.create(ScFunctionEditor(context))
-                addObject(TaskObject(name, editor, rect.width), rect)
+                addNewObject(TaskObject(reactiveVariable(name), editor, rect.width), rect)
             }
 
             Tool.Envelope -> promptNewObjectName(
                 "Envelope name",
-                score.availableName("env")
+                context[ScoreObjectRegistry].availableName("env")
             ) { name ->
                 val busSelector = BusSelector(context, preferredChannels = 1, preferredRate = Rate.Control)
                 EnvelopeObjectView.showEnvelopeConfig(context, busSelector) { spec ->
                     val value = spec.defaultValue.get()
                     val duration = getDuration(rect.width)
                     val envelope = Envelope.constant(value, duration, spec.warp)
-                    val obj = EnvelopeObject(name, spec, busSelector.result.now, envelope)
-                    addObject(obj, rect)
+                    val obj = EnvelopeObject(reactiveVariable(name), spec, busSelector.result.now, envelope)
+                    addNewObject(obj, rect)
                 }
             }
 
             Memo -> {
-                val name = score.availableName("memo")
-                addObject(MemoObject(name, "", rect.width), rect)
+                val name = context[ScoreObjectRegistry].availableName("memo")
+                addNewObject(MemoObject(reactiveVariable(name), "", rect.width), rect)
             }
 
             Group -> {
-                val name = score.availableName("group")
+                val name = context[ScoreObjectRegistry].availableName("group")
                 context.compoundEdit("Add object group") {
-                    val objects = viewsInside(rect.boundsInParent).mapTo(mutableSetOf()) { it.myObject }
+                    val objects = viewsInside(rect.boundsInParent).mapTo(mutableSetOf()) { it.instance }
                     score.removeObjects(objects)
                     for (obj in objects) {
-                        obj.position.time -= getTime(rect.x)
-                        obj.position.y -= rect.y
+                        obj.moveTo(obj.time - getTime(rect.x), obj.y - rect.y)
                     }
                     val subScore = Score(objects.toMutableList())
-                    addObject(ScoreObjectGroup(name, subScore), rect)
+                    addNewObject(ScoreObjectGroup(reactiveVariable(name), subScore), rect)
                 }
             }
 
             PianoRoll -> {
                 val instr = context[InstrumentRegistry].selectedInstrument ?: return
-                val defaultName = score.availableName("piano_roll")
+                val defaultName = context[ScoreObjectRegistry].availableName("piano_roll")
                 val nameField = TextField(defaultName)
                 val rootPitchSelector = ComboBox(FXCollections.observableList(MidiPitch.allPitchClasses()))
                 rootPitchSelector.value = MidiPitch(0)
@@ -505,15 +462,22 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
                     val highestPitch = lowestPitch + 12 * octaves.value
                     val notes = mutableListOf<PianoRollObject.Note>()
                     val eventDictionary = EditorRoot.create(EventDictionaryEditor(context))
-                    PianoRollObject(name, instr.createReference(), lowestPitch, highestPitch, eventDictionary, notes)
+                    PianoRollObject(
+                        reactiveVariable(name),
+                        instr.createReference(),
+                        lowestPitch,
+                        highestPitch,
+                        eventDictionary,
+                        notes
+                    )
                 } ?: return
-                addObject(obj, rect)
+                addNewObject(obj, rect)
             }
 
             TempoGrid -> {
-                val name = score.availableName("grid")
+                val name = context[ScoreObjectRegistry].availableName("grid")
                 val obj = TempoGridObject.createDefault(name)
-                addObject(obj, rect)
+                addNewObject(obj, rect)
             }
 
             Pointer, Cut, AddTime -> {
@@ -523,21 +487,18 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
         }
     }
 
-    private fun addObject(obj: ScoreObject, rect: Rectangle) {
-        obj.assignBoundsFromRect(rect)
-        score.addObject(obj)
-        selector.select(getObjectView(obj), addToSelection = false)
+    private fun addNewObject(obj: ScoreObject, rect: Rectangle) {
+        obj.duration = getDuration(rect.width)
+        obj.height = rect.height
+        context[ScoreObjectRegistry].add(obj)
+        val inst = ScoreObjectInstance(obj.createReference(), getTime(rect.x), rect.y)
+        score.addObject(inst)
+        selector.select(getObjectView(inst), addToSelection = false)
     }
 
     /*
     * Object creation rectangle
     * */
-
-    private fun ScoreObject.assignBoundsFromRect(r: Rectangle) {
-        position.set(getTime(r.x), r.y)
-        duration = getDuration(r.width)
-        height = r.height
-    }
 
     private fun setNewShape(s: Rectangle) {
         if (s !in children) children.add(s)

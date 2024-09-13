@@ -13,7 +13,7 @@ abstract class AbstractRenamableObject : RenamableObject {
     @Transient
     protected var initialized = false
 
-    abstract val mutableName: ReactiveVariable<String>
+    protected abstract val mutableName: ReactiveVariable<String>
 
     final override val name: ReactiveValue<String>
         get() = mutableName

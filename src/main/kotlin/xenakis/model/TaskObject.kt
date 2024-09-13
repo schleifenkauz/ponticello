@@ -2,22 +2,25 @@ package xenakis.model
 
 import hextant.core.editor.ListenerManager
 import hextant.serial.EditorRoot
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.JsonObjectBuilder
-import kotlinx.serialization.json.put
+import reaktive.value.ReactiveVariable
 import reaktive.value.now
-import xenakis.impl.*
+import reaktive.value.reactiveVariable
+import xenakis.impl.code
 import xenakis.sc.editor.ScFunctionEditor
 import xenakis.ui.ScorePlayer
 import xenakis.ui.TaskObjectView
 
-class TaskObject(name: String, val code: EditorRoot<ScFunctionEditor>, var width: Double) : RegularScoreObject(name) {
+class TaskObject(
+    override val mutableName: ReactiveVariable<String>,
+    val code: EditorRoot<ScFunctionEditor>,
+    var width: Double
+) : ScoreObject() {
     override val type: String
         get() = "task"
 
     override val viewManager = ListenerManager.createWeakListenerManager<TaskObjectView>()
 
-    override fun copy(): ScoreObject = TaskObject(name.now, code.clone(), width)
+    override fun doClone(newName: String): ScoreObject = TaskObject(reactiveVariable(newName), code.clone(), width)
 
     override fun writeCode(env: ScorePlayEnv, name: String, cutoff: Double): String = code {
         appendBlock("~tasks['$name'] = Task") {
@@ -31,21 +34,5 @@ class TaskObject(name: String, val code: EditorRoot<ScFunctionEditor>, var width
             appendLine("~tasks['$name'].stop;")
         }
         appendLine(";")
-    }
-
-    override fun JsonObjectBuilder.saveToJson() {
-        putSerializableValue("code", code)
-        put("width", width)
-    }
-
-    object Serializer : ScoreObject.Serializer {
-        override val type: String
-            get() = "task"
-
-        override fun JsonObject.createFromJson(name: String): ScoreObject {
-            val code = getSerializableValue<EditorRoot<ScFunctionEditor>>("code")!!
-            val width = getDouble("width")!!
-            return TaskObject(name, code, width)
-        }
     }
 }

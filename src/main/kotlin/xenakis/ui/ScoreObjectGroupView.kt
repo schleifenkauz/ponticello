@@ -3,8 +3,9 @@ package xenakis.ui
 import javafx.scene.Cursor
 import javafx.scene.input.MouseEvent
 import xenakis.model.ScoreObjectGroup
+import xenakis.model.ScoreObjectInstance
 
-class ScoreObjectGroupView(private val obj: ScoreObjectGroup) : ScoreObjectView(obj) {
+class ScoreObjectGroupView(inst: ScoreObjectInstance, private val obj: ScoreObjectGroup) : ScoreObjectView(inst) {
     lateinit var scorePane: ScorePane
         private set
 
@@ -39,11 +40,11 @@ class ScoreObjectGroupView(private val obj: ScoreObjectGroup) : ScoreObjectView(
         val dur = pane.getDuration(width)
         var minDur = 0.0
         var minHeight = 0.0
-        val objects = obj.score.objects
+        val objects = obj.score.objectInstances
         if (objects.isNotEmpty()) {
             minDur =
-                if (cursor.resizeFromLeft) obj.duration - objects.minOf { o -> o.start }
-                else objects.maxOf { o -> o.start + o.duration }
+                if (cursor.resizeFromLeft) obj.duration - objects.minOf { o -> o.time }
+                else objects.maxOf { o -> o.time + o.duration }
 
             minHeight =
                 if (cursor.resizeFromTop) obj.height - objects.minOf { o -> o.y }
@@ -54,13 +55,13 @@ class ScoreObjectGroupView(private val obj: ScoreObjectGroup) : ScoreObjectView(
         obj.duration += deltaDur
         obj.height += deltaHeight
         if (cursor.resizeFromLeft) {
-            for (obj in obj.score.objects) {
-                obj.position.time += deltaDur
+            for (obj in obj.score.objectInstances) {
+                obj.setTime(obj.time + deltaDur)
             }
         }
         if (cursor.resizeFromTop) {
-            for (obj in obj.score.objects) {
-                obj.position.y += deltaHeight
+            for (obj in obj.score.objectInstances) {
+                obj.setY(obj.y + deltaHeight)
             }
         }
     }
