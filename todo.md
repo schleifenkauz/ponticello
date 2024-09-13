@@ -71,6 +71,15 @@
 - or have a live buffer to which everything is recorded, from which you can choose snippets
 - can be done via Audacity for now (record from pipewire and then export as WAV to create a buffer in xenakis)
 
+### More flexible controls for SynthObjects
+
+- untie the controls from the SynthDef parameters
+- when creating a SynthObject the object has no controls
+- controls can be added either as Envelopes with Alt+Click on the ObjectView or as other controls from the DetailPane
+- when adding envelope controls, min/max values can be specified
+- controls can also be removed => default values are used in that case
+- also controls not present in the SynthDef can be added, which can then be used from LFO code
+
 ### Minor
 
 - lag values for parameters (adjust with spinner in control assignment)
