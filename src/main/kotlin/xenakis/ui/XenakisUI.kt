@@ -515,14 +515,18 @@ class XenakisUI(
 
             on("Alt?+U") { ev ->
                 if (ev.isAltDown || !ev.isTargetTextInput) {
-                    val inst = scoreView.selector.singleSelected.now?.instance ?: return@on
                     context.compoundEdit("Unlink object from its original") {
-                        val name = context[ScoreObjectRegistry].nameForClone(inst.obj)
-                        val clone = inst.clone(name, inst.time, inst.y)
-                        inst.score.removeObject(inst)
-                        inst.score.addObject(clone)
+                        for ((obj, instances) in scoreView.selector.selectedInstances.groupBy { inst -> inst.obj }) {
+                            val name = context[ScoreObjectRegistry].nameForClone(obj)
+                            val clone = obj.clone(name)
+                            val newRef = clone.createReference()
+                            for (oldInst in instances) {
+                                val newInst = ScoreObjectInstance(newRef, oldInst.time, oldInst.y, oldInst.muted)
+                                oldInst.score.removeObject(oldInst)
+                                oldInst.score.addObject(newInst)
+                            }
+                        }
                     }
-                    //TODO multiple instances of the same object should be linked afterwards
                 }
             }
 

@@ -83,8 +83,8 @@ class Score(private val instances: MutableList<ScoreObjectInstance> = mutableLis
     fun removeObjects(set: Set<ScoreObjectInstance>) {
         for (inst in set) {
             logger.info("Removing ${inst.obj.name.now} from score ${scoreName.now}")
-            if (!context[rootScore].hasInstancesOf(inst.obj)) context[ScoreObjectRegistry].remove(inst.obj)
             instances.remove(inst)
+            if (!context[rootScore].hasInstancesOf(inst.obj)) context[ScoreObjectRegistry].remove(inst.obj)
             views.notifyListeners { removedObject(inst) }
         }
         undo.record(ScoreEdit.RemoveObjects(set, this))

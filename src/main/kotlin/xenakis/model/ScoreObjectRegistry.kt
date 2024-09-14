@@ -33,5 +33,14 @@ class ScoreObjectRegistry(override val objects: MutableList<ScoreObject>) : Obje
         return availableName(prefix)
     }
 
+    fun deleteUnusedObjects(score: Score) {
+        val usedObjects = score.objectInstances.mapTo(mutableSetOf()) { inst -> inst.obj }
+        for (obj in objects.toList()) {
+            if (obj !in usedObjects) {
+                remove(obj)
+            }
+        }
+    }
+
     companion object : PublicProperty<ScoreObjectRegistry> by publicProperty("ScoreObjectRegistry")
 }
