@@ -232,6 +232,7 @@ class XenakisUI(
         if (mode == Mode.Desktop) {
             val toolPanes = SplitPane(detailPane, instrumentsPane)
             toolPanes.orientation = Orientation.VERTICAL
+            toolPanes.setDividerPositions(0.5)
             val horizontalSplitter = SplitPane(scoreView, toolPanes)
             horizontalSplitter.sceneProperty().addListener { _ ->
                 runFXWithTimeout(50) {

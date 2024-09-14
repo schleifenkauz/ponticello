@@ -6,10 +6,13 @@ import hextant.undo.AbstractEdit
 import hextant.undo.UndoManager
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
-import reaktive.value.now
+import xenakis.sc.ControlSpec
 
 @Serializable
-class SynthControls(private val map: MutableMap<String, ParameterControl>) {
+class SynthControls(
+    private val map: MutableMap<String, ParameterControl>,
+    private val extraSpecs: MutableMap<String, ControlSpec> = mutableMapOf()
+) {
     @Transient
     private lateinit var context: Context
 
@@ -29,6 +32,8 @@ class SynthControls(private val map: MutableMap<String, ParameterControl>) {
 
     operator fun get(name: String) = map.getValue(name)
 
+    fun getExtraSpec(parameter: String): ControlSpec? = extraSpecs[parameter]
+
     fun reassignControl(parameter: String, control: ParameterControl) {
         if (parameter !in map) error("Parameter $parameter not found in controls for ")
         control.initialize(context)
@@ -38,18 +43,17 @@ class SynthControls(private val map: MutableMap<String, ParameterControl>) {
         viewManager.notifyListeners { reassignedControl(parameter, oldControl, control) }
     }
 
-    fun addControl(parameter: String, control: ParameterControl) {
-        if (synthDef.parameters.now.none { p -> p.name.now == parameter })
-            error("Parameter $parameter not found in ${synthDef.name.now}")
+    fun addControl(parameter: String, control: ParameterControl, extraSpec: ControlSpec?) {
         control.initialize(context)
         map[parameter] = control
-        context[UndoManager].record(Edit.AddControl(this, parameter, control))
+        if (extraSpec != null) extraSpecs[parameter] = extraSpec
+        context[UndoManager].record(Edit.AddControl(this, parameter, control, extraSpec))
         viewManager.notifyListeners { addedControl(parameter, control) }
     }
 
     fun removeControl(parameter: String) {
         val control = map.remove(parameter) ?: error("Parameter $parameter not found in controls")
-        context[UndoManager].record(Edit.RemoveControl(this, parameter, control))
+        context[UndoManager].record(Edit.RemoveControl(this, parameter, control, extraSpecs[parameter]))
         viewManager.notifyListeners { removedControl(parameter, control) }
     }
 
@@ -88,16 +92,17 @@ class SynthControls(private val map: MutableMap<String, ParameterControl>) {
             controls: SynthControls,
             private val parameter: String,
             private val control: ParameterControl,
+            private val extraSpec: ControlSpec?,
         ) : Edit(controls) {
             override val actionDescription: String
                 get() = "Add control"
 
             override fun doUndo() {
-                controls.addControl(parameter, control)
+                controls.removeControl(parameter)
             }
 
             override fun doRedo() {
-                controls.removeControl(parameter)
+                controls.addControl(parameter, control, extraSpec)
             }
         }
 
@@ -105,12 +110,13 @@ class SynthControls(private val map: MutableMap<String, ParameterControl>) {
             controls: SynthControls,
             private val parameter: String,
             private val control: ParameterControl,
+            private val extraSpec: ControlSpec?,
         ) : Edit(controls) {
             override val actionDescription: String
                 get() = "Remove control"
 
             override fun doUndo() {
-                controls.addControl(parameter, control)
+                controls.addControl(parameter, control, extraSpec)
             }
 
             override fun doRedo() {

@@ -36,15 +36,18 @@ class ControlAssignmentEditor(
     private val nameLabel = Label(parameter).also { l -> l.styleClass.add("control-label") }
     private val comboBox = ComboBox(observableList(ControlType.all))
     private val detailEditors = mutableMapOf<ControlType<*>, Node>()
+    private val deleteBtn = Icon.Delete.button(action = "Remove control") {
+        obj.controls.removeControl(parameter)
+    }
     private var settingControl = false
     private var detailEditor: Node? = null
         set(value) {
             field = value!!
             value.styleClass?.add("control-detail-editor")
             if (spec is NumericalControlSpec) {
-                children.setAll(nameLabel, comboBox, detailEditor)
+                children.setAll(nameLabel, comboBox, detailEditor, infiniteSpace(), deleteBtn)
             } else {
-                children.setAll(nameLabel, detailEditor)
+                children.setAll(nameLabel, detailEditor, infiniteSpace(), deleteBtn)
             }
             setHgrow(value, Priority.ALWAYS)
         }

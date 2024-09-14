@@ -21,7 +21,7 @@ class GroupSelector(
         context, reactiveVariable(context[GroupRegistry].getDefault().createReference())
     )
 
-    override fun getRegistry(context: Context): ObjectRegistry<GroupObject> = context[GroupRegistry]
+    override fun getRegistry(context: Context): ObjectRegistry<*> = context[GroupRegistry]
 
     override val objectClass: KClass<GroupObject>
         get() = GroupObject::class

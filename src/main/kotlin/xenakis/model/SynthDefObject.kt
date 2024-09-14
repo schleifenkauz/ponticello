@@ -6,6 +6,7 @@ import reaktive.list.ReactiveList
 import reaktive.value.now
 import reaktive.value.reactiveVariable
 import xenakis.model.SuperColliderObject.LiveCycleType
+import xenakis.sc.GroupControlSpec
 
 @Serializable
 sealed interface SynthDefObject : ParameterizedObject, InstrumentObject {
@@ -16,8 +17,11 @@ sealed interface SynthDefObject : ParameterizedObject, InstrumentObject {
 
     val parameters: ReactiveList<ParameterDefObject>
 
-    override fun getParameter(name: String): ParameterDefObject =
-        parameters.now.find { it.name.now == name } ?: error("Parameter $name not found in SynthDef '${this.name.now}'")
+    override fun getParameter(name: String): ParameterDefObject = when (name) {
+        "group" -> ParameterDefObject("group", GroupControlSpec())
+        else -> parameters.now.find { it.name.now == name }
+            ?: error("Parameter $name not found in SynthDef '${this.name.now}'")
+    }
 
     fun defaultControls(context: Context): SynthControls {
         val controls = parameters.now.associateTo(mutableMapOf()) { p -> p.name.now to p.defaultControl(context) }

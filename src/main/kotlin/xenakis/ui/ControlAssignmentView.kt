@@ -61,11 +61,4 @@ class ControlAssignmentView(private val obj: SynthObject) : VBox(), SynthControl
         editor.setControl(control)
     }
 
-    companion object {
-        fun create(obj: SynthObject): ControlAssignmentView {
-            val view = ControlAssignmentView(obj)
-            return view
-        }
-
-    }
 }

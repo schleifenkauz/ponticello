@@ -59,13 +59,8 @@
 
 ### More flexible controls for SynthObjects
 
-- untie the controls from the SynthDef parameters
-- when creating a SynthObject the object has no controls
-- controls can be added either as Envelopes with Alt+Click on the ObjectView or as other controls from the DetailPane
 - when adding envelope controls, min/max values can be specified
-- controls can also be removed => default values are used in that case
-- also controls not present in the SynthDef can be added, which can then be used from LFO code
-- possibility to replace instrument of a SynthObject
+- ability to reference Synth controls from within custom LFO code
 
 ### Bouncing
 
@@ -76,16 +71,16 @@
 
 ### Minor
 
-- lag values for parameters (adjust with spinner in control assignment)
 - allow for more cases of pasting code
 - avoid hanging when speaking to SuperCollider (timeouts, async, etc.)
 - kill sclang.exe and scsynth.exe before startup (?)
 
-## Long term architectural ideas
+## Long term architectural ideas/question
 
-### track references to objects, if an object has references, it cannot be removed (necessary?)
-
-### use SuperCollider `Score` object for playback (this also means ability to do NRT bouncing!)
+- track references to objects, if an object has references, it cannot be removed (necessary?)
+- use SuperCollider `Score` object for playback (this also means ability to do NRT bouncing!)
+- should SynthDefs and VSTPlugin have a separate registry
+- Do we need groups?
 
 ## Bugs
 
@@ -95,4 +90,3 @@
 - on startup an unnecessarily large empty space is displayed, on scrolling the display works correctly
 - sometimes playback stops at a specific score object: find out what causes this and fix it
 - sometimes playback is duplicated with a short delay
-- why doesn't windows let SuperCollider speak to Xenakis?

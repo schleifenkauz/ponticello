@@ -22,7 +22,7 @@ abstract class ObjectSelector<O : NamedObject, R : ObjectReference?>(
     context: Context,
     private val _selected: ReactiveVariable<R>
 ) : AbstractEditor<ObjectReferenceExpr, ObjectSelectorView<O>>(context), ScExprEditor<ObjectReferenceExpr> {
-    abstract fun getRegistry(context: Context): ObjectRegistry<O>
+    abstract fun getRegistry(context: Context): ObjectRegistry<*>
 
     abstract val objectClass: KClass<O>
 

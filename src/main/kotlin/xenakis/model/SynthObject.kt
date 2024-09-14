@@ -5,23 +5,23 @@ import hextant.core.editor.ListenerManager
 import javafx.geometry.HorizontalDirection
 import javafx.geometry.HorizontalDirection.RIGHT
 import javafx.geometry.VerticalDirection
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import reaktive.Observer
-import reaktive.collection.observeCollection
 import reaktive.list.observeEach
 import reaktive.value.*
 import xenakis.impl.ScWriter
 import xenakis.impl.code
 import xenakis.sc.ControlSpec
-import xenakis.sc.GroupControlSpec
+import xenakis.sc.editor.SynthDefSelector
 import xenakis.ui.ScorePlayer
 import xenakis.ui.SynthObjectView
 
 @Serializable
 class SynthObject(
     override val mutableName: ReactiveVariable<String>,
-    private val synthDefRef: ObjectReference,
+    @SerialName("synthDefRef") private val _initialSynthDef: ObjectReference,
     val controls: SynthControls
 ) : ScoreObject(), SynthControls.View {
     @Transient
@@ -41,7 +41,10 @@ class SynthObject(
     @Transient
     private val myActiveSynths = mutableSetOf<String>()
 
-    val synthDef: SynthDefObject get() = synthDefRef.get()
+    @Transient
+    lateinit var synthDefSelector: SynthDefSelector
+        private set
+    val synthDef: SynthDefObject get() = synthDefSelector.selected.now.get()
 
     val group: ReactiveValue<ObjectReference> get() = (controls["group"] as GroupControl).group
 
@@ -60,12 +63,12 @@ class SynthObject(
     override val associatedControls: Map<String, ParameterControl> get() = controls.controlMap
 
     override fun doClone(newName: String): ScoreObject = SynthObject(
-        reactiveVariable(newName), synthDefRef,
+        reactiveVariable(newName), synthDef.createReference(),
         controls = controls.copy()
     )
 
     override fun doCut(position: Double, whichHalf: HorizontalDirection, newName: String): ScoreObject = SynthObject(
-        reactiveVariable(newName), synthDefRef,
+        reactiveVariable(newName), synthDef.createReference(),
         controls = controls.transformControls { name, c ->
             when {
                 name == "startPos" && c is ConstantControl && whichHalf == RIGHT ->
@@ -85,12 +88,12 @@ class SynthObject(
     ) {
         var newDuration = duration
         if (stretch && playBufRate != null) {
-            playBufRate!!.now *= (duration / newDuration)
+            playBufRate!!.now *= (this.duration / newDuration)
         } else if (playbufStartPos != null) {
             if (horizontalDirection == HorizontalDirection.LEFT) {
                 val rate = playBufRate?.now ?: 1.0
-                newDuration = newDuration.coerceAtMost(duration + playbufStartPos!!.now)
-                val deltaStart = duration - newDuration
+                newDuration = newDuration.coerceAtMost(this.duration + playbufStartPos!!.now)
+                val deltaStart = this.duration - newDuration
                 playbufStartPos!!.now += deltaStart * rate
             }
         }
@@ -110,22 +113,23 @@ class SynthObject(
     }
 
     override fun getSpec(parameter: String): ControlSpec =
-        if (parameter == "group") GroupControlSpec()
-        else synthDef.getParameter(parameter).spec.now
+        controls.getExtraSpec(parameter) ?: synthDef.getParameter(parameter).spec.now
 
     override fun initialize(context: Context) {
         if (initialized) return
         super.initialize(context)
-        synthDefRef.resolve(context[InstrumentRegistry.local])
-        parameterObserver = synthDef.parameters.observeCollection(
-            added = { _, param -> controls.addControl(param.name.now, param.defaultControl(context)) },
-            removed = { _, param -> controls.removeControl(param.name.now) }
-        )
+        _initialSynthDef.resolve(context[InstrumentRegistry.local])
+        synthDefSelector = SynthDefSelector(context, reactiveVariable(_initialSynthDef))
+        /*        parameterObserver = synthDef.parameters.observeCollection(
+                    added = { _, param -> controls.addControl(param.name.now, param.defaultControl(context)) },
+                    removed = { _, param -> controls.removeControl(param.name.now) }
+                )*/
         parameterNameObserver = synthDef.parameters.observeEach { _, p ->
             p.name.observe { _, oldName, newName ->
                 val control = controls.controlMap[oldName] ?: return@observe
+                val extraSpec = controls.getExtraSpec(oldName)
                 controls.removeControl(oldName)
-                controls.addControl(newName, control)
+                controls.addControl(newName, control, extraSpec = extraSpec)
             }
         }
         controls.initialize(context, synthDef)
@@ -234,7 +238,7 @@ class SynthObject(
                         val busName = "~auxil_${name}_${param}"
                         +"$busName = Bus.control(s, 1)"
                         append("{ ")
-                        expr.code(writer, context)
+                        expr.code(writer, context) //TODO make other controls usable from within LFO code
                         +" }.play(s, $busName)"
                         +"${synthVar}.map(\\$param, $busName)"
                     }

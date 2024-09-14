@@ -4,11 +4,14 @@ import hextant.codegen.Choice
 import hextant.codegen.Component
 import hextant.codegen.Compound
 import hextant.codegen.UseEditor
+import hextant.context.Context
 import hextant.core.editor.ColorEditor
 import javafx.scene.paint.Color
 import kotlinx.serialization.Serializable
+import reaktive.value.reactiveVariable
 import xenakis.impl.ColorSerializer
 import xenakis.impl.DoubleRange
+import xenakis.model.*
 import xenakis.sc.editor.ControlSpecEditor
 import xenakis.ui.accuracy
 
@@ -29,6 +32,13 @@ sealed interface ControlSpec {
     val type: ParameterType
 
     val code: String
+}
+
+fun ControlSpec.defaultControl(context: Context) = when (this) {
+    is BufferControlSpec -> BufferControl(reactiveVariable(null))
+    is BusControlSpec -> BusControl(reactiveVariable(context[BusRegistry].getDefault().createReference()))
+    is NumericalControlSpec -> ConstantControl(reactiveVariable(defaultValue.get()))
+    is GroupControlSpec -> GroupControl(reactiveVariable(context[GroupRegistry].getDefault().createReference()))
 }
 
 @Serializable

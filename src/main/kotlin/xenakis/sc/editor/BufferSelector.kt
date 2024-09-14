@@ -17,7 +17,7 @@ class BufferSelector(
     context: Context,
     selected: ReactiveVariable<ObjectReference?> = reactiveVariable(null)
 ) : ObjectSelector<BufferObject, ObjectReference?>(context, selected) {
-    override fun getRegistry(context: Context): ObjectRegistry<BufferObject> = context[BufferRegistry]
+    override fun getRegistry(context: Context): ObjectRegistry<*> = context[BufferRegistry]
 
     override val objectClass: KClass<BufferObject>
         get() = BufferObject::class

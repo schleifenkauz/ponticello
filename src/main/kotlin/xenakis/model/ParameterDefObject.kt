@@ -6,7 +6,10 @@ import kotlinx.serialization.Serializable
 import reaktive.value.ReactiveVariable
 import reaktive.value.now
 import reaktive.value.reactiveVariable
-import xenakis.sc.*
+import xenakis.sc.ControlSpec
+import xenakis.sc.NumericalControlSpec
+import xenakis.sc.Warp
+import xenakis.sc.defaultControl
 
 @Serializable
 class ParameterDefObject(
@@ -17,12 +20,7 @@ class ParameterDefObject(
 
     override fun canRenameTo(newName: String): Boolean = true
 
-    fun defaultControl(context: Context) = when (val spec = spec.now) {
-        is BufferControlSpec -> BufferControl(reactiveVariable(null))
-        is BusControlSpec -> BusControl(reactiveVariable(context[BusRegistry].getDefault().createReference()))
-        is NumericalControlSpec -> ConstantControl(reactiveVariable(spec.defaultValue.get()))
-        is GroupControlSpec -> GroupControl(reactiveVariable(context[GroupRegistry].getDefault().createReference()))
-    }
+    fun defaultControl(context: Context) = spec.now.defaultControl(context)
 
     override fun createReference(): Nothing = throw UnsupportedOperationException()
 

@@ -8,6 +8,7 @@ import reaktive.value.fx.asObservableValue
 import reaktive.value.now
 import xenakis.model.NamedObject
 import xenakis.model.ObjectReference
+import xenakis.model.ObjectRegistry
 import xenakis.sc.editor.ObjectSelector
 import xenakis.ui.SearchableRegistryView
 
@@ -15,7 +16,9 @@ class ObjectSelectorControl<O : NamedObject, R : ObjectReference?>(
     val editor: ObjectSelector<O, R>, arguments: Bundle
 ) : EditorControl<Node>(editor, arguments), ObjectSelectorView<O> {
     private val button = Button()
-    private val listView = object : SearchableRegistryView<O>(editor.getRegistry(context)) {
+
+    @Suppress("UNCHECKED_CAST")
+    private val listView = object : SearchableRegistryView<O>(editor.getRegistry(context) as ObjectRegistry<O>) {
         override fun createObject(name: String): O? = editor.createNewObject(name)
 
         override fun displayText(option: O): String = editor.extractText(option).now

@@ -1,9 +1,12 @@
 package xenakis.ui
 
+import bundles.createBundle
 import javafx.application.Platform
 import javafx.geometry.Point2D
 import javafx.geometry.Rectangle2D
+import javafx.scene.Node
 import javafx.scene.control.ContextMenu
+import javafx.scene.control.Label
 import javafx.scene.control.MenuItem
 import javafx.scene.image.Image
 import javafx.scene.image.ImageView
@@ -19,6 +22,7 @@ import reaktive.value.now
 import reaktive.value.reactiveVariable
 import xenakis.model.*
 import xenakis.sc.NumericalControlSpec
+import xenakis.sc.view.ObjectSelectorControl
 import kotlin.math.absoluteValue
 
 class SynthObjectView(instance: ScoreObjectInstance, val obj: SynthObject) : ScoreObjectView(instance),
@@ -53,14 +57,46 @@ class SynthObjectView(instance: ScoreObjectInstance, val obj: SynthObject) : Sco
 
     override fun DetailPane.setupDetailPane() {
         addItem("Color:", colorPicker)
-        val nameLabel = label(obj.synthDef.name)
         val viewBtn = Icon.View.button(action = "View SynthDef") {
             context[InstrumentRegistryPane].editInstrument(obj.synthDef)
         }
-        val box = HBox(5.0, nameLabel, viewBtn).centerChildrenVertically()
-        addItem("SynthDef: ", box)
-        addLargeItem("Synth controls", ControlAssignmentView(obj))
+        val box = ObjectSelectorControl(obj.synthDefSelector, createBundle())
+        addItem("SynthDef: ", HBox(5.0, box, viewBtn).centerChildrenVertically())
+        val header = HBox(
+            5.0,
+            Label("Synth controls").styleClass("tool-pane-heading"),
+            infiniteSpace(),
+            Icon.Add.button(action = "Add control") { ev ->
+                if (ev.isShiftDown) {
+                    addControlsForAllSynthParameters()
+                } else {
+                    addNewControl(box)
+                }
+            }
+        ) styleClass "tool-pane-header"
+        children.addAll(header, ControlAssignmentView(obj))
 
+    }
+
+    private fun addControlsForAllSynthParameters() {
+        for (param in obj.synthDef.parameters.now) {
+            val name = param.name.now
+            if (name !in obj.controls.controlMap) {
+                obj.controls.addControl(name, param.defaultControl(context), extraSpec = null)
+            }
+        }
+    }
+
+    private fun addNewControl(anchorNode: Node) {
+        val listView = SearchableParameterListView(context, obj.synthDef)
+        val assignedParameters = obj.controls.controlMap.keys.map(obj.synthDef::getParameter)
+        listView.removedOptions.addAll(assignedParameters)
+        listView.showPopup(context, "Add control", anchorNode = anchorNode) { option ->
+            val extraSpec = if (option.name.now !in obj.synthDef.parameters.now.map { p -> p.name.now }) {
+                option.spec.now
+            } else null
+            obj.controls.addControl(option.name.now, option.defaultControl(context), extraSpec)
+        }
     }
 
     override fun removedControl(parameter: String, control: ParameterControl) {

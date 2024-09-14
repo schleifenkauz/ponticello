@@ -14,7 +14,7 @@ class SampleSelector(
     context: Context,
     selected: ReactiveVariable<ObjectReference?> = reactiveVariable(null),
 ) : ObjectSelector<SampleObject, ObjectReference?>(context, selected) {
-    override fun getRegistry(context: Context): ObjectRegistry<SampleObject> = context[SampleRegistry]
+    override fun getRegistry(context: Context): ObjectRegistry<*> = context[SampleRegistry]
 
     override val objectClass: KClass<SampleObject>
         get() = SampleObject::class
