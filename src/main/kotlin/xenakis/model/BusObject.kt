@@ -20,7 +20,7 @@ class BusObject(
     val channels: ReactiveVariable<Int>,
     val isOutput: Boolean = false
 ) : AbstractSuperColliderObject() {
-    override val variableName get() = if (isOutput) "0" else "~bus_${name.now}"
+    override val superColliderName get() = if (isOutput) "0" else "~bus_${name.now}"
     override val functionName get() = if (isOutput) "~default_bus_init" else "~bus_${name.now}"
 
     override val liveCycleType: LiveCycleType
@@ -30,7 +30,7 @@ class BusObject(
     private lateinit var observer: Observer
 
     override fun ScWriter.allocateServerObject() {
-        if (!isOutput) +"$variableName = Bus.${rate.now.name.lowercase()}(s, ${channels.now})"
+        if (!isOutput) +"$superColliderName = Bus.${rate.now.name.lowercase()}(s, ${channels.now})"
     }
 
     override fun canRenameTo(newName: String): Boolean =

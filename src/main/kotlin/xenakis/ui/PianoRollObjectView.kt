@@ -259,7 +259,7 @@ class PianoRollObjectView(inst: ScoreObjectInstance, private val obj: PianoRollO
     }
 
     override val defaultBackgroundColor: ReactiveValue<Color>
-        get() = obj.instrumentSelector.result.flatMap { instr -> instr.get<InstrumentObject>().color }
+        get() = obj.instrumentSelector.selected.flatMap { instr -> instr.get<InstrumentObject>().color }
 
     companion object {
         private const val CURSOR_OPACITY = 0.6

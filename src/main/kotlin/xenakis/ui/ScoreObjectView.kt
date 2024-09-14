@@ -397,4 +397,5 @@ abstract class ScoreObjectView(val instance: ScoreObjectInstance) : VBox(), Scor
         }
     }
 
+    override fun toString(): String = "ScoreObjectView for ${instance.obj} at ${instance.position}"
 }

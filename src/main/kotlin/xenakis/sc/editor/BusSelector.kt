@@ -21,8 +21,8 @@ class BusSelector(
     context: Context,
     val preferredRate: Rate? = null,
     val preferredChannels: Int = -1,
-    selected: ReactiveVariable<ObjectReference>
-    = reactiveVariable(getDefaultBus(context, preferredRate, preferredChannels))
+    selected: ReactiveVariable<ObjectReference> =
+        reactiveVariable(getDefaultBus(context, preferredRate, preferredChannels))
 ) : ObjectSelector<BusObject, ObjectReference>(context, selected) {
     override fun getRegistry(context: Context): ObjectRegistry<BusObject> = context[BusRegistry]
 

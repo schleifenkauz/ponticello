@@ -410,7 +410,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
                     val value = spec.defaultValue.get()
                     val duration = getDuration(rect.width)
                     val envelope = Envelope.constant(value, duration, spec.warp)
-                    val obj = EnvelopeObject(reactiveVariable(name), spec, busSelector.result.now, envelope)
+                    val obj = EnvelopeObject(reactiveVariable(name), spec, busSelector.selected.now, envelope)
                     addNewObject(obj, rect)
                 }
             }

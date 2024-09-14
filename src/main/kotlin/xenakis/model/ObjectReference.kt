@@ -30,6 +30,8 @@ class ObjectReference(private var name: String) {
 
     inline fun <reified O : NamedObject> get(): O = get(O::class)
 
+    fun getName() = name
+
     fun <O : NamedObject> resolve(registry: ObjectRegistry<O>) {
         if (obj != null) {
             logger.fine("ObjectReference '$name' already resolved")
@@ -57,6 +59,8 @@ class ObjectReference(private var name: String) {
     override fun hashCode(): Int {
         return if (obj != null) obj.hashCode() else name.hashCode()
     }
+
+    override fun toString(): String = "#$name"
 
     class Serializer : KSerializer<ObjectReference> {
         override val descriptor: SerialDescriptor

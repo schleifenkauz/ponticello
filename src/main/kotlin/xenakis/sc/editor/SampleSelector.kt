@@ -2,6 +2,7 @@ package xenakis.sc.editor
 
 import hextant.context.Context
 import reaktive.value.ReactiveVariable
+import reaktive.value.reactiveVariable
 import xenakis.model.ObjectReference
 import xenakis.model.ObjectRegistry
 import xenakis.model.SampleObject
@@ -11,7 +12,7 @@ import kotlin.reflect.KClass
 
 class SampleSelector(
     context: Context,
-    selected: ReactiveVariable<ObjectReference?>,
+    selected: ReactiveVariable<ObjectReference?> = reactiveVariable(null),
 ) : ObjectSelector<SampleObject, ObjectReference?>(context, selected) {
     override fun getRegistry(context: Context): ObjectRegistry<SampleObject> = context[SampleRegistry]
 

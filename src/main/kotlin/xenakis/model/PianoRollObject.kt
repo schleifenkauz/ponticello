@@ -44,7 +44,7 @@ class PianoRollObject(
     lateinit var instrumentSelector: InstrumentSelector
         private set
 
-    val instrument get() = if (initialized) instrumentSelector.result.now else initialInstrument
+    val instrument get() = if (initialized) instrumentSelector.selected.now else initialInstrument
 
     var lowestPitch
         get() = _lowestPitch
@@ -232,9 +232,9 @@ class PianoRollObject(
                 is VSTPluginObject -> {
                     eventMap["midinote"] = midinote.toString()
                     eventMap["type"] = "\\vst_midi"
-                    eventMap["vst"] = instr.variableName
+                    eventMap["vst"] = instr.superColliderName
                     val namedValues = eventMap.entries.joinToString { (name, value) -> "$name: $value" }
-                    "(type: \\vst_midi, vst: ${instr.variableName}, $namedValues).play"
+                    "(type: \\vst_midi, vst: ${instr.superColliderName}, $namedValues).play"
                 }
             }
             appendBlock("TempoClock.sched(${t.coerceAtLeast(0.0)})") {

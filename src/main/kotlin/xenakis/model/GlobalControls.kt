@@ -41,7 +41,7 @@ class GlobalControls(private val controls: MutableList<GlobalControl>) {
 
     private fun SuperColliderContext.setupBus(control: GlobalControl) {
         val bus = control.bus
-        val varName = bus.variableName
+        val varName = bus.superColliderName
         val value = control.knobControl.get()
         run("$varName.set($value);")
     }
@@ -74,11 +74,11 @@ class GlobalControls(private val controls: MutableList<GlobalControl>) {
     private fun updatedValue(control: GlobalControl, value: Double) {
         val bus = control.bus
         val formatted = value.format(control.spec.accuracy)
-        context[SuperColliderClient].run("if (${bus.variableName} != nil) { ${bus.variableName}.set($formatted) };")
+        context[SuperColliderClient].run("if (${bus.superColliderName} != nil) { ${bus.superColliderName}.set($formatted) };")
     }
 
     fun updateControlFromServer(control: GlobalControl) {
-        val code = "${control.bus.variableName}.getSynchronous"
+        val code = "${control.bus.superColliderName}.getSynchronous"
         context[SuperColliderClient].eval(code).thenAccept { answer ->
             val value = answer.toDoubleOrNull() ?: return@thenAccept
             control.knobControl.value.now = value

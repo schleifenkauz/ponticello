@@ -22,7 +22,7 @@ class VSTPluginObject private constructor(
     private var output: ObjectReference,
     override val color: ReactiveVariable<@Serializable(with = ColorSerializer::class) Color>
 ) : InstrumentObject, AbstractSuperColliderObject() {
-    override val variableName get() = "~plugin_${name.now}"
+    override val superColliderName get() = "~plugin_${name.now}"
 
     override val liveCycleType: LiveCycleType
         get() = LiveCycleType.ServerTree
@@ -45,10 +45,10 @@ class VSTPluginObject private constructor(
     override fun initialize(context: Context) {
         if (initialized) return
         outputSelector = BusSelector(context, Rate.Audio, 2)
-        outputSelectorObserver = outputSelector.result.observe { _, _, newOutput ->
+        outputSelectorObserver = outputSelector.selected.observe { _, _, newOutput ->
             output = newOutput
-            val bus = newOutput.get<BusObject>().variableName
-            client.run("if (s.serverRunning) { $variableName.synth.set(\\out, $bus) };")
+            val bus = newOutput.get<BusObject>().superColliderName
+            client.run("if (s.serverRunning) { $superColliderName.synth.set(\\out, $bus) };")
         }
         super.initialize(context)
     }
@@ -57,46 +57,46 @@ class VSTPluginObject private constructor(
         appendBlock("Task") {
             val info = controllerInfo
             if (info != null) {
-                +"$variableName = VSTPluginController(${info.synthName}, \\${info.id})"
+                +"$superColliderName = VSTPluginController(${info.synthName}, \\${info.id})"
             } else {
                 val synthName = "~tmp_synth"
                 +"s.sync"
                 +"2.wait"
-                +"$synthName = Synth(\\vst_instrument, [out: ${output.get<BusObject>().variableName}])"
+                +"$synthName = Synth(\\vst_instrument, [out: ${output.get<BusObject>().superColliderName}])"
                 +"s.sync"
                 +"0.5.wait"
-                +"$variableName = VSTPluginController($synthName)"
+                +"$superColliderName = VSTPluginController($synthName)"
             }
-            +"$variableName.open('$pluginName.vst3', editor: true, verbose: true)"
+            +"$superColliderName.open('$pluginName.vst3', editor: true, verbose: true)"
             +"s.sync"
             +"0.5.wait"
             val presetFile = context[projectDirectory].resolve("presets").resolve("$presetName.fxp").superColliderPath
-            +"if (PathName(${presetFile}).isFile) { $variableName.readProgram($presetFile) }"
+            +"if (PathName(${presetFile}).isFile) { $superColliderName.readProgram($presetFile) }"
             +"'opened plugin'.postln"
         }
         appendLine(".play;")
     }
 
     override fun ScWriter.freeServerObject() {
-        +"$variableName.close; $variableName.synth.free; $variableName = nil"
+        +"$superColliderName.close; $superColliderName.synth.free; $superColliderName = nil"
     }
 
     override fun ScWriter.removeFromServer() {
         freeServerObject()
-        +"$variableName = nil"
+        +"$superColliderName = nil"
     }
 
     override fun canRenameTo(newName: String): Boolean =
         !(context[InstrumentRegistry].has(this) && context[InstrumentRegistry].has(newName))
 
     fun showEditor() {
-        client.run("$variableName.editor;")
+        client.run("$superColliderName.editor;")
     }
 
     fun saveConfiguration() {
         val presetFile = context[projectDirectory].resolve("presets").resolve("$presetName.fxp")
         if (!presetFile.parentFile.isDirectory) presetFile.parentFile.mkdir()
-        client.run("if (s.serverRunning) { $variableName.writeProgram(${presetFile.superColliderPath}) };")
+        client.run("if (s.serverRunning) { $superColliderName.writeProgram(${presetFile.superColliderPath}) };")
     }
 
     data class ControllerInfo(val synthName: String, val id: String)

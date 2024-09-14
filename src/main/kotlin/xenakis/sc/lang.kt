@@ -14,7 +14,7 @@ import kotlinx.serialization.encoding.Encoder
 import xenakis.impl.ScWriter
 import xenakis.impl.superColliderPath
 import xenakis.model.GroupObject
-import xenakis.model.ObjectReference
+import xenakis.model.ObjectReferenceExpr
 import xenakis.model.XenakisProject.Companion.projectDirectory
 import xenakis.sc.editor.*
 import java.io.StringWriter
@@ -449,7 +449,7 @@ data class VSTPlugin(
 data class AdhocSynth(
     val name: Identifier,
     val block: CodeBlock,
-    @Component(GroupSelector::class) val group: ObjectReference,
+    @Component(GroupSelector::class) val group: ObjectReferenceExpr,
 ) : ScExpr {
     override val isValid: Boolean
         get() = block.isValid
@@ -460,7 +460,7 @@ data class AdhocSynth(
     override fun code(writer: ScWriter, context: Context) = writeCode(
         writer, context,
         synthName = "~adhoc_${name.text}",
-        target = group.get<GroupObject>().variableName,
+        target = group.reference!!.get<GroupObject>().superColliderName,
         addAction = "addToHead",
         wrapInTask = false
     )

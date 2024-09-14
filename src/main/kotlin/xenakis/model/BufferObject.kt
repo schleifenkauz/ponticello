@@ -18,7 +18,7 @@ import javax.sound.sampled.AudioSystem
 
 @Serializable
 sealed class BufferObject : AbstractSuperColliderObject() {
-    override val variableName get() = "~buf_${name.now}"
+    override val superColliderName get() = "~buf_${name.now}"
 
     override val liveCycleType: LiveCycleType
         get() = LiveCycleType.ServerBoot
@@ -48,7 +48,7 @@ sealed class BufferObject : AbstractSuperColliderObject() {
 
     protected fun updated() {
         val file = wavFile
-        val bufnum = context[SuperColliderClient].eval("$variableName.bufnum").join().toIntOrNull()
+        val bufnum = context[SuperColliderClient].eval("$superColliderName.bufnum").join().toIntOrNull()
         if (bufnum == null) {
             logger.severe("Could not get bufnum for Buffer ${name.now}")
             return

@@ -1,14 +1,11 @@
 package xenakis.model
 
 import hextant.context.Context
-import reaktive.value.now
 import xenakis.impl.ScWriter
 import xenakis.impl.SuperColliderClient
 
 abstract class AbstractSuperColliderObject : AbstractRenamableObject(), SuperColliderObject {
-    abstract val variableName: String
-
-    protected open val functionName get() = "${variableName}_init"
+    protected open val functionName get() = "${superColliderName}_init"
 
     protected val client get() = context[SuperColliderClient]
 
@@ -47,7 +44,7 @@ abstract class AbstractSuperColliderObject : AbstractRenamableObject(), SuperCol
     }
 
     override fun ScWriter.freeServerObject() {
-        +"if ($variableName != nil) { $variableName.free }"
+        +"if ($superColliderName != nil) { $superColliderName.free }"
     }
 
     protected open fun ScWriter.removeFromServer() {
@@ -59,18 +56,18 @@ abstract class AbstractSuperColliderObject : AbstractRenamableObject(), SuperCol
         client.run {
             removeFromServer()
             +"$functionName = nil"
-            +"$variableName = nil"
+            +"$superColliderName = nil"
         }
         initialized = false
     }
 
     override fun rename(newName: String) {
         val oldFunctionName = functionName
-        val oldVariableName = variableName
+        val oldVariableName = superColliderName
         super.rename(newName)
         client.run {
             +"$functionName = $oldFunctionName"
-            +"$variableName = $oldVariableName"
+            +"$superColliderName = $oldVariableName"
             +"$oldFunctionName = nil"
             +"$oldVariableName = nil"
         }

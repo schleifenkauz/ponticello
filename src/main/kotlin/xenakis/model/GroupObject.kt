@@ -12,7 +12,7 @@ class GroupObject(
     override val mutableName: ReactiveVariable<String>,
     val isDefault: Boolean = false
 ) : AbstractSuperColliderObject() {
-    override val variableName: String get() = if (isDefault) "s.defaultGroup" else "~grp_${name.now}"
+    override val superColliderName: String get() = if (isDefault) "s.defaultGroup" else "~grp_${name.now}"
 
     override val functionName: String
         get() = if (isDefault) "~default_group_init" else super.functionName
@@ -28,12 +28,12 @@ class GroupObject(
         }
 
     override fun ScWriter.allocateServerObject() {
-        if (!isDefault) +"$variableName = Group.new"
+        if (!isDefault) +"$superColliderName = Group.new"
         val prev = previous
         if (prev != null) {
-            +"${variableName}.moveAfter(${prev.variableName})"
+            +"${superColliderName}.moveAfter(${prev.superColliderName})"
         } else if (!isDefault) {
-            +"$variableName.moveToHead"
+            +"$superColliderName.moveToHead"
         }
     }
 

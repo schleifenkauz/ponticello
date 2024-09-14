@@ -23,7 +23,7 @@ class SampleObject private constructor(
     override val mutableName: ReactiveVariable<String>,
     private var referencedFile: String
 ) : AbstractSuperColliderObject() {
-    override val variableName: String
+    override val superColliderName: String
         get() = "~sample_${name.now}"
 
     private val samplesDir
@@ -112,7 +112,7 @@ class SampleObject private constructor(
     }
 
     override fun ScWriter.allocateServerObject() {
-        +"$variableName = Buffer.read(s, ${audioFile.superColliderPath})"
+        +"$superColliderName = Buffer.read(s, ${audioFile.superColliderPath})"
     }
 
     private fun createSpectrogram(): CompletableFuture<Unit> {

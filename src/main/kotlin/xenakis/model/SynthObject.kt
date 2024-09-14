@@ -149,11 +149,11 @@ class SynthObject(
     override fun addedControl(parameter: String, control: ParameterControl) {
         when (control) {
             is BusControl -> controlObservers[control] = control.bus.forEach { bus ->
-                runOnActiveSynths { +"set('$parameter', ${bus.get<BusObject>().variableName})" }
+                runOnActiveSynths { +"set('$parameter', ${bus.get<BusObject>().superColliderName})" }
             }
 
             is BusValueControl -> controlObservers[control] = control.bus.forEach { bus ->
-                runOnActiveSynths { +"map('$parameter', ${bus.get<BusObject>().variableName})" }
+                runOnActiveSynths { +"map('$parameter', ${bus.get<BusObject>().superColliderName})" }
             }
 
             is ConstantControl -> controlObservers[control] = control.value.forEach { value ->
@@ -177,8 +177,8 @@ class SynthObject(
         appendBlock("s.makeBundle(${ScorePlayer.SERVER_LATENCY})") {
             val constantArguments = controls.controlMap.mapNotNull { (param, control) ->
                 when (control) {
-                    is BufferControl -> param to (control.sample.now?.get<SampleObject>()?.variableName ?: "0")
-                    is BusControl -> param to control.bus.now.get<BusObject>().variableName
+                    is BufferControl -> param to (control.sample.now?.get<SampleObject>()?.superColliderName ?: "0")
+                    is BusControl -> param to control.bus.now.get<BusObject>().superColliderName
                     is ConstantControl -> {
                         val value = when (param) {
                             "startPos" -> control.value.now + cutoff * (playBufRate?.now ?: 0.0)
@@ -205,7 +205,7 @@ class SynthObject(
             val (addAction, target) = when {
                 runAfter != null -> Pair("'addAfter'", "~synths['${runAfter.name}']")
                 runBefore != null -> Pair("'addBefore'", "~synths['${runBefore.name}']")
-                else -> Pair("'addToHead'", group.get<GroupObject>().variableName)
+                else -> Pair("'addToHead'", group.get<GroupObject>().superColliderName)
             }
             +"$synthVar = Synth(\\$synthDefName, [$constantArguments], target: $target, addAction: $addAction)"
             +"$synthVar.register"
@@ -220,12 +220,12 @@ class SynthObject(
                     }
 
                     is BusValueControl -> {
-                        val bus = control.bus.now.get<BusObject>().variableName
+                        val bus = control.bus.now.get<BusObject>().superColliderName
                         +"${synthVar}.map(\\$param, $bus)"
                     }
 
                     is SingleBusValueControl -> {
-                        val bus = control.bus.now.get<BusObject>().variableName
+                        val bus = control.bus.now.get<BusObject>().superColliderName
                         +"${synthVar}.set(\\$param, $bus.getSynchronized)"
                     }
 

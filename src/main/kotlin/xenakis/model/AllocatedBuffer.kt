@@ -13,16 +13,16 @@ data class AllocatedBuffer(
     override val channels: ReactiveVariable<Int>, override val frames: ReactiveVariable<Int>
 ) : BufferObject() {
     override fun ScWriter.allocateServerObject() {
-        +"$variableName = Buffer.alloc(s, ${frames.now}, ${channels.now})"
+        +"$superColliderName = Buffer.alloc(s, ${frames.now}, ${channels.now})"
     }
 
     override fun sync(writer: ScWriter) {
         async {
-            val exists = client.eval(variableName).join()
+            val exists = client.eval(superColliderName).join()
             if (exists == "nil") super.sync(writer)
             else {
-                val channelsOnServer = client.eval("$variableName.numChannels").join().toInt()
-                val framesOnServer = client.eval("$variableName.numFrames").join().toInt()
+                val channelsOnServer = client.eval("$superColliderName.numChannels").join().toInt()
+                val framesOnServer = client.eval("$superColliderName.numFrames").join().toInt()
                 if (channelsOnServer != channels.now || framesOnServer != frames.now) {
                     super.sync(writer)
                 }

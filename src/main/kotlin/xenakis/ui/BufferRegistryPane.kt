@@ -67,7 +67,7 @@ class BufferRegistryPane(
 
     override fun ObjectBox<BufferObject>.configureObjectBox() {
         addAction(Icon.View, description = "View buffer contents") {
-            controller.client.run("${obj.variableName}.plot('${obj.name.now}')")
+            controller.client.run("${obj.superColliderName}.plot('${obj.name.now}')")
         }
         addAction(Icon.Repeat, "Sync with server") { sync(obj) }
         when (obj) {

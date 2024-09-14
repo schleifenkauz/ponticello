@@ -9,6 +9,8 @@ import xenakis.model.SuperColliderObject.LiveCycleType
 
 @Serializable
 sealed interface SynthDefObject : ParameterizedObject, InstrumentObject {
+    override val superColliderName: String
+        get() = "\\${name.now}"
     override val liveCycleType: LiveCycleType
         get() = LiveCycleType.ServerBoot
 

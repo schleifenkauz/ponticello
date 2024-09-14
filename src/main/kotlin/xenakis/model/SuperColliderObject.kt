@@ -3,6 +3,8 @@ package xenakis.model
 import xenakis.impl.ScWriter
 
 interface SuperColliderObject : NamedObject {
+    val superColliderName: String
+
     val liveCycleType: LiveCycleType
 
     fun ScWriter.allocateServerObject()

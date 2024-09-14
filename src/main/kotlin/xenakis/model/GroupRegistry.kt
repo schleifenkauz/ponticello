@@ -32,9 +32,9 @@ class GroupRegistry private constructor(
 
     override fun syncAll() {
         context[SuperColliderClient].run {
-            +"${order.first().variableName}.moveToHead"
+            +"${order.first().superColliderName}.moveToHead"
             for ((prev, next) in order.zipWithNext()) {
-                +"${next.variableName}.moveAfter(${prev.variableName})"
+                +"${next.superColliderName}.moveAfter(${prev.superColliderName})"
             }
         }
     }

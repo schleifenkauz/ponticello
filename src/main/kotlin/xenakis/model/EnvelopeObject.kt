@@ -29,7 +29,7 @@ data class EnvelopeObject(
     lateinit var busSelector: BusSelector
         private set
 
-    val bus get() = if (initialized) busSelector.result.now else _initialBusRef
+    val bus get() = if (initialized) busSelector.selected.now else _initialBusRef
 
     @Transient
     override val viewManager = ListenerManager.createWeakListenerManager<EnvelopeObjectView>()
@@ -81,6 +81,6 @@ data class EnvelopeObject(
 
     override fun writeCode(env: ScorePlayEnv, name: String, cutoff: Double): String = code {
         val envelopeCode = envelope.code(cutoff)
-        append("{ $envelopeCode }.play(s, ${busSelector.result.now.get<BusObject>().variableName});")
+        append("{ $envelopeCode }.play(s, ${busSelector.selected.now.get<BusObject>().superColliderName});")
     }
 }

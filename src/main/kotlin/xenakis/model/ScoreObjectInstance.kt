@@ -120,6 +120,8 @@ class ScoreObjectInstance(
 
         operator fun plus(position: ObjectPosition): ObjectPosition =
             ObjectPosition(time + position.time, y + position.y)
+
+        override fun toString(): String = "time: $time, y: $y"
     }
 
     interface Listener {

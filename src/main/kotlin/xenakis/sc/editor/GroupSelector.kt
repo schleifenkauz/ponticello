@@ -15,8 +15,12 @@ import kotlin.reflect.KClass
 @Serializable(with = SnapshotAware.Serializer::class)
 class GroupSelector(
     context: Context,
-    selected: ReactiveVariable<ObjectReference> = reactiveVariable(ObjectReference("<invalid>")),
+    selected: ReactiveVariable<ObjectReference>,
 ) : ObjectSelector<GroupObject, ObjectReference>(context, selected) {
+    constructor(context: Context) : this(
+        context, reactiveVariable(context[GroupRegistry].getDefault().createReference())
+    )
+
     override fun getRegistry(context: Context): ObjectRegistry<GroupObject> = context[GroupRegistry]
 
     override val objectClass: KClass<GroupObject>

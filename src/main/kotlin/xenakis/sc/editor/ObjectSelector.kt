@@ -9,23 +9,27 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonObjectBuilder
 import kotlinx.serialization.json.put
 import reaktive.value.*
+import reaktive.value.binding.map
 import xenakis.impl.getString
 import xenakis.model.NamedObject
 import xenakis.model.ObjectReference
+import xenakis.model.ObjectReferenceExpr
 import xenakis.model.ObjectRegistry
 import xenakis.sc.view.ObjectSelectorView
 import kotlin.reflect.KClass
 
 abstract class ObjectSelector<O : NamedObject, R : ObjectReference?>(
     context: Context,
-    private val selected: ReactiveVariable<R>
-) : AbstractEditor<R, ObjectSelectorView<O>>(context) {
+    private val _selected: ReactiveVariable<R>
+) : AbstractEditor<ObjectReferenceExpr, ObjectSelectorView<O>>(context), ScExprEditor<ObjectReferenceExpr> {
     abstract fun getRegistry(context: Context): ObjectRegistry<O>
 
     abstract val objectClass: KClass<O>
 
-    override val result: ReactiveValue<R>
-        get() = selected
+    val selected: ReactiveVariable<R> get() = _selected
+
+    override val result: ReactiveValue<ObjectReferenceExpr>
+        get() = selected.map { ref -> ObjectReferenceExpr(ref) }
 
     init {
         selected.now?.resolve(this.getRegistry(context))

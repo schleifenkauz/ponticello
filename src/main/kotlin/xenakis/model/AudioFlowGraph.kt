@@ -10,6 +10,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import reaktive.Observer
 import reaktive.value.now
+import reaktive.value.reactiveVariable
 import xenakis.impl.Point
 import xenakis.impl.ScWriter
 import xenakis.impl.SuperColliderClient
@@ -79,7 +80,7 @@ class AudioFlowGraph(
                             IdentifierEditor(context, sourceBus.rate.get().toString()),
                             ScExprListEditor(
                                 context,
-                                ScExprExpander(context /*BusSelector(context, selected = reactiveVariable(source.ref))*/), //TODO write wrapper class
+                                ScExprExpander(context, BusSelector(context, selected = reactiveVariable(source.ref))),
                                 ScExprExpander(context, sourceBus.channels.now.toString())
                             )
                         )
@@ -94,7 +95,7 @@ class AudioFlowGraph(
                     IdentifierEditor(context, targetBus.rate.get().toString()),
                     ScExprListEditor(
                         context,
-                        ScExprExpander(context /*BusSelector(context, selected = reactiveVariable(target.ref))*/), //TODO write wrapper class
+                        ScExprExpander(context, BusSelector(context, selected = reactiveVariable(target.ref))),
                         ScExprExpander(context, "snd")
                     )
                 )

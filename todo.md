@@ -73,6 +73,7 @@
 - when adding envelope controls, min/max values can be specified
 - controls can also be removed => default values are used in that case
 - also controls not present in the SynthDef can be added, which can then be used from LFO code
+- possibility to replace instrument of a SynthObject
 
 ### Bouncing
 
@@ -87,7 +88,6 @@
 - allow for more cases of pasting code
 - avoid hanging when speaking to SuperCollider (timeouts, async, etc.)
 - kill sclang.exe and scsynth.exe before startup (?)
-- possibility to replace instrument of a SynthObject, reusing common controls
 
 ## Long term architectural ideas
 

@@ -24,7 +24,7 @@ data class FileBuffer(
         get() = _frames
 
     override fun ScWriter.allocateServerObject() {
-        +"$variableName = Buffer.read(s, ${referencedFile.now.superColliderPath})"
+        +"$superColliderName = Buffer.read(s, ${referencedFile.now.superColliderPath})"
         updated()
         contentChanged()
     }
