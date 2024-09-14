@@ -101,13 +101,14 @@ class ScoreObjectInstance(
         val time = if (whichHalf == HorizontalDirection.LEFT) time else time + position
         val half = obj.cut(position, whichHalf, name) ?: run {
             val clone = obj.clone(name)
-            clone.duration = if (whichHalf == HorizontalDirection.LEFT) position else obj.duration - position
+            val dur = if (whichHalf == HorizontalDirection.LEFT) position else obj.duration - position
+            clone.resize(dur, height, stretch = false, null, null)
             clone
         }
         return ScoreObjectInstance(half.createReference(), time, y, muted)
     }
 
-    fun cut(position: Double): Pair<ScoreObjectInstance, ScoreObjectInstance>? {
+    fun cut(position: Double): Pair<ScoreObjectInstance, ScoreObjectInstance> {
         val left = cut(position, HorizontalDirection.LEFT)
         val right = cut(position, HorizontalDirection.RIGHT)
         return left to right

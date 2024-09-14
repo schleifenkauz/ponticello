@@ -4,6 +4,7 @@ import hextant.context.Context
 import hextant.core.editor.ListenerManager
 import javafx.geometry.HorizontalDirection
 import javafx.geometry.HorizontalDirection.RIGHT
+import javafx.geometry.VerticalDirection
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import reaktive.Observer
@@ -74,6 +75,27 @@ class SynthObject(
             }
         }
     )
+
+    override fun resize(
+        duration: Double,
+        height: Double,
+        stretch: Boolean,
+        horizontalDirection: HorizontalDirection?,
+        verticalDirection: VerticalDirection?
+    ) {
+        var newDuration = duration
+        if (stretch && playBufRate != null) {
+            playBufRate!!.now *= (duration / newDuration)
+        } else if (playbufStartPos != null) {
+            if (horizontalDirection == HorizontalDirection.LEFT) {
+                val rate = playBufRate?.now ?: 1.0
+                newDuration = newDuration.coerceAtMost(duration + playbufStartPos!!.now)
+                val deltaStart = duration - newDuration
+                playbufStartPos!!.now += deltaStart * rate
+            }
+        }
+        super.resize(newDuration, height, stretch, horizontalDirection, verticalDirection)
+    }
 
     fun reverse() {
         for (ctrl in controls.controlMap.values) {

@@ -42,7 +42,6 @@
 
 ### Improve layout
 
-- fix time display and snapping in envelope editors
 - save main window size/position and arrangement of utility panes
 - do we need an extra window for LFO code?
 - integrate the buses pane into the audio flow window (it is only needed there)
@@ -66,13 +65,6 @@
 - as standalone objects (`pbind`)
 - attaching to a synth in the score (`pmono`)
 
-### Moving (resizing?) objects with arrow keys
-
-- react to time snap options
-- when no snap, move in screen pixels (?)
-- when alt is pressed resize instead
-- shift activates stretching mode
-
 ### More flexible controls for SynthObjects
 
 - untie the controls from the SynthDef parameters
@@ -93,7 +85,6 @@
 
 - lag values for parameters (adjust with spinner in control assignment)
 - allow for more cases of pasting code
-- custom min/max value for envelope controls? (if the spec provided by the SynthDef is to large)
 - avoid hanging when speaking to SuperCollider (timeouts, async, etc.)
 - kill sclang.exe and scsynth.exe before startup (?)
 - possibility to replace instrument of a SynthObject, reusing common controls
@@ -109,8 +100,7 @@
 - effects that work with intermediate buses have to be executed after the flow synths
 - sometimes the first ScoreObject is not played, when the cursor starts exactly over it
 - fix time display and snapping in envelope editors
-- on startup an unnecessarily large empty space is displayed
-- on scrolling the display works correctly
+- on startup an unnecessarily large empty space is displayed, on scrolling the display works correctly
 - sometimes playback stops at a specific score object: find out what causes this and fix it
 - sometimes playback is duplicated with a short delay
 - why doesn't windows let SuperCollider speak to Xenakis?

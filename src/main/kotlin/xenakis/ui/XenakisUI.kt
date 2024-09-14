@@ -14,10 +14,13 @@ import hextant.undo.UndoManager
 import hextant.undo.compoundEdit
 import hextant.undo.historyShortcuts
 import javafx.application.Platform
+import javafx.geometry.HorizontalDirection
 import javafx.geometry.Orientation
 import javafx.geometry.Pos
+import javafx.geometry.VerticalDirection
 import javafx.scene.Scene
 import javafx.scene.control.*
+import javafx.scene.input.KeyCode
 import javafx.scene.input.KeyEvent
 import javafx.scene.layout.*
 import javafx.scene.paint.Color
@@ -88,6 +91,7 @@ class XenakisUI(
         settingsWindow.height = 1000.0
         stage.scene = Scene(Pane())
         stage.scene.addGlobalShortcuts()
+        stage.scene.registerArrowKeys()
         stage.scene.initHextantScene(context)
     }
 
@@ -356,6 +360,28 @@ class XenakisUI(
         Icon.Close.button(action = "Close project and open startup screen") { controller.closeProject() }
     )
 
+    private fun Scene.registerArrowKeys() {
+        addEventFilter(KeyEvent.ANY) { ev ->
+            if (!ev.isAltDown && ev.isTargetTextInput) return@addEventFilter
+            if (ev.code !in setOf(KeyCode.LEFT, KeyCode.RIGHT, KeyCode.UP, KeyCode.DOWN)) return@addEventFilter
+            val stretch = ev.isShiftDown
+            val resize = ev.isControlDown
+            if (stretch && !resize) return@addEventFilter
+            ev.consume()
+            if (ev.eventType != KeyEvent.KEY_PRESSED) return@addEventFilter
+            val selected = context[ScoreObjectSelectionManager].selectedViews
+            for (view in selected) {
+                when (ev.code) {
+                    KeyCode.LEFT -> view.adjustHorizontal(direction = HorizontalDirection.LEFT, resize, stretch)
+                    KeyCode.RIGHT -> view.adjustHorizontal(direction = HorizontalDirection.RIGHT, resize, stretch)
+                    KeyCode.UP -> view.adjustVertical(direction = VerticalDirection.UP, resize, stretch)
+                    KeyCode.DOWN -> view.adjustVertical(direction = VerticalDirection.DOWN, resize, stretch)
+                    else -> throw AssertionError()
+                }
+            }
+        }
+    }
+
     private fun Scene.addGlobalShortcuts() {
         registerShortcuts {
             if (!controller.isProjectOpened) return@registerShortcuts
@@ -447,29 +473,6 @@ class XenakisUI(
             on("DELETE") { ev ->
                 if (!ev.isTargetTextInput) {
                     scoreView.removeSelected()
-                }
-            }
-
-            on("Shift?+LEFT") { ev ->
-                if (!ev.isTargetTextInput) {
-                    val selected = context[ScoreObjectSelectionManager].selectedViews
-                    for (view in selected) {
-                        val inst = view.instance
-                        val x = view.pane.getX(inst.time)
-                        val grid = view.pane.getNearestGrid(x, inst.y)
-                        val snapOption = if (project.settings.snapEnabled.now) project.settings.snapOption.now else null
-                        val deltaX =
-                            if (snapOption != null && grid != null) grid.obj.getDuration(snapOption)
-                            else 1.0 / scoreView.pixelsPerSecond
-                        if (ev.isShiftDown) {
-                            inst.obj.duration += deltaX
-                            for (i in project.score.instancesOf(inst.obj)) {
-                                i.setTime(i.time - deltaX)
-                            }
-                        } else {
-                            inst.setTime(inst.time - deltaX)
-                        }
-                    }
                 }
             }
 

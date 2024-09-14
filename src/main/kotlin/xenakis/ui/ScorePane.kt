@@ -175,8 +175,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
         val synthDefRef = synthDef.createReference()
         val name = context[ScoreObjectRegistry].availableName(sample.name.now)
         val obj = SynthObject(reactiveVariable(name), synthDefRef, controls)
-        obj.duration = sample.duration
-        obj.height = 150.0
+        obj.setInitialSize(sample.duration, 150.0)
         val (x, y) = snapToGrid(ev.x, ev.y)
         val inst = ScoreObjectInstance(obj.createReference(), getTime(x), y)
         score.addObject(inst)
@@ -196,8 +195,6 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
         is ScoreObjectGroup -> ScoreObjectGroupView(inst, obj)
         is PianoRollObject -> PianoRollObjectView(inst, obj)
         is TempoGridObject -> TempoGridObjectView(inst, obj)
-
-        else -> throw AssertionError()
     }
 
     /*
@@ -345,7 +342,6 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
                     if (scoreView.clipboardMode == ClipboardMode.Clone) {
                         val name = context[ScoreObjectRegistry].nameForClone(obj)
                         obj = obj.clone(name)
-                        context[ScoreObjectRegistry].add(obj)
                     }
                     val (x, y) = snapToGrid(ev.x, ev.y)
                     val duplicate = ScoreObjectInstance(obj.createReference(), getTime(x), y)
@@ -488,9 +484,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
     }
 
     private fun addNewObject(obj: ScoreObject, rect: Rectangle) {
-        obj.duration = getDuration(rect.width)
-        obj.height = rect.height
-        context[ScoreObjectRegistry].add(obj)
+        obj.setInitialSize(getDuration(rect.width), rect.height)
         val inst = ScoreObjectInstance(obj.createReference(), getTime(rect.x), rect.y)
         score.addObject(inst)
         selector.select(getObjectView(inst), addToSelection = false)

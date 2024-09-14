@@ -70,8 +70,10 @@ class Score(private val instances: MutableList<ScoreObjectInstance> = mutableLis
     fun clone() = Score(instances.mapTo(mutableListOf()) { inst -> inst.duplicate(inst.position) })
 
     fun addObject(inst: ScoreObjectInstance) {
+        val registry = context[ScoreObjectRegistry]
+        if (!registry.has(inst.obj.name.now)) registry.add(inst.obj)
+        logger.info("Adding object ${inst.obj.name.now} at ${inst.position}")
         inst.initialize(context)
-        logger.info("Adding object ${inst.obj.name.now} ${inst.position}")
         inst.addToScore(this)
         instances.add(inst)
         views.notifyListeners { addedObject(inst) }
@@ -80,7 +82,8 @@ class Score(private val instances: MutableList<ScoreObjectInstance> = mutableLis
 
     fun removeObjects(set: Set<ScoreObjectInstance>) {
         for (inst in set) {
-            logger.info("Removing ${inst.obj.name.now}")
+            logger.info("Removing ${inst.obj.name.now} from score ${scoreName.now}")
+            if (!context[rootScore].hasInstancesOf(inst.obj)) context[ScoreObjectRegistry].remove(inst.obj)
             instances.remove(inst)
             views.notifyListeners { removedObject(inst) }
         }

@@ -2,11 +2,10 @@ package xenakis.ui
 
 import hextant.context.Context
 import hextant.fx.label
-import hextant.undo.AbstractEdit
-import hextant.undo.Edit
 import hextant.undo.UndoManager
 import javafx.geometry.Bounds
 import javafx.geometry.HorizontalDirection
+import javafx.geometry.VerticalDirection
 import javafx.scene.Cursor
 import javafx.scene.control.*
 import javafx.scene.input.MouseEvent
@@ -252,7 +251,7 @@ abstract class ScoreObjectView(val instance: ScoreObjectInstance) : VBox(), Scor
                 val cutPosition = pane.getDuration(ev.x - 0.0)
                 context[UndoManager].beginCompoundEdit("Cut object")
                 pane.score.removeObject(instance)
-                val (leftHalf, rightHalf) = instance.cut(cutPosition) ?: return@addEventHandler
+                val (leftHalf, rightHalf) = instance.cut(cutPosition)
                 pane.score.addObject(leftHalf)
                 pane.score.addObject(rightHalf)
                 context[UndoManager].finishCompoundEdit("Cut object")
@@ -300,23 +299,17 @@ abstract class ScoreObjectView(val instance: ScoreObjectInstance) : VBox(), Scor
 
     protected open fun resizeObject(width: Double, height: Double, ev: MouseEvent, cursor: Cursor) {
         val newDur = pane.getDuration(width)
-        if (!ev.isShiftDown) {
-            val resizeFromLeft = cursor in setOf(Cursor.W_RESIZE, Cursor.NW_RESIZE, Cursor.SW_RESIZE)
-            val resizeFromRight = cursor in setOf(Cursor.E_RESIZE, Cursor.NE_RESIZE, Cursor.SE_RESIZE)
-            for ((parameter, ctrl) in instance.obj.associatedControls) {
-                if (ctrl !is EnvelopeControl) continue
-                val spec = instance.obj.getSpec(parameter) as NumericalControlSpec
-                if (resizeFromLeft) ctrl.envelope.resize(newDur, HorizontalDirection.LEFT, spec)
-                if (resizeFromRight) ctrl.envelope.resize(newDur, HorizontalDirection.RIGHT, spec)
-            }
-        } else {
-            for ((_, ctrl) in instance.obj.associatedControls) {
-                if (ctrl !is EnvelopeControl) continue
-                ctrl.envelope.rescale(newDur)
-            }
+        val horizontalDirection = when (cursor) {
+            in setOf(Cursor.W_RESIZE, Cursor.NW_RESIZE, Cursor.SW_RESIZE) -> HorizontalDirection.LEFT
+            in setOf(Cursor.E_RESIZE, Cursor.NE_RESIZE, Cursor.SE_RESIZE) -> HorizontalDirection.RIGHT
+            else -> null
         }
-        instance.obj.duration = newDur
-        instance.obj.height = height
+        val verticalDirection = when (cursor) {
+            in setOf(Cursor.N_RESIZE, Cursor.NW_RESIZE, Cursor.NE_RESIZE) -> VerticalDirection.UP
+            in setOf(Cursor.S_RESIZE, Cursor.SW_RESIZE, Cursor.SE_RESIZE) -> VerticalDirection.DOWN
+            else -> null
+        }
+        instance.obj.resize(newDur, height, stretch = ev.isShiftDown, horizontalDirection, verticalDirection)
     }
 
     protected open fun beforeResize(ev: MouseEvent, cursor: Cursor) {
@@ -370,38 +363,38 @@ abstract class ScoreObjectView(val instance: ScoreObjectInstance) : VBox(), Scor
         if (cursor.resizeFromBottom) newHeight = newHeight.coerceAtMost(pane.height - old.minY)
 
         resizeObject(newWidth, newHeight, ev, cursor)
-        context[UndoManager].record(ResizeEdit(this, oldWidth, oldHeight, newWidth, newHeight, ev, cursor))
-        val newX =
-            if (cursor.resizeFromLeft)
-                instance.time + pane.getDuration(oldWidth - getDisplayWidth())
-            else instance.time
-        val newY = if (cursor.resizeFromTop) instance.y + (oldHeight - instance.height) else instance.y
-        instance.moveTo(newX, newY)
     }
 
-    private class ResizeEdit(
-        private val obj: ScoreObjectView,
-        private val oldWidth: Double,
-        private val oldHeight: Double,
-        private val newWidth: Double,
-        private val newHeight: Double,
-        private val ev: MouseEvent,
-        private val cursor: Cursor
-    ) : AbstractEdit() {
-        override val actionDescription: String
-            get() = "Resize object"
-
-        override fun doUndo() {
-            obj.resizeObject(oldWidth, oldHeight, ev, cursor)
+    fun adjustHorizontal(direction: HorizontalDirection, resize: Boolean, stretch: Boolean) {
+        val x = pane.getX(instance.time)
+        val grid = pane.getNearestGrid(x, instance.y)
+        val settings = context[currentProject].settings
+        val snapOption = if (settings.snapEnabled.now) settings.snapOption.now else null
+        val factor = if (direction == HorizontalDirection.LEFT) -1.0 else 1.0
+        val deltaT =
+            if (snapOption != null && grid != null) grid.obj.getDuration(snapOption) * factor
+            else factor / pane.pixelsPerSecond
+        if (resize) {
+            instance.obj.resize(
+                instance.obj.duration + deltaT, instance.obj.height, stretch,
+                horizontalDirection = HorizontalDirection.RIGHT, verticalDirection = null
+            )
+        } else {
+            val (snappedX, _) = pane.snapToGrid(pane.getX(instance.time + deltaT), instance.y)
+            instance.setTime(pane.getTime(snappedX))
         }
-
-        override fun doRedo() {
-            obj.resizeObject(newWidth, newHeight, ev, cursor)
-        }
-
-        override fun mergeWith(other: Edit): Edit? =
-            if (other is ResizeEdit && other.obj == this.obj && other.cursor == this.cursor && other.ev.isShiftDown == this.ev.isShiftDown)
-                ResizeEdit(obj, oldWidth, oldHeight, other.newWidth, other.newHeight, ev, cursor)
-            else null
     }
+
+    fun adjustVertical(direction: VerticalDirection, resize: Boolean, stretch: Boolean) {
+        val deltaY = if (direction == VerticalDirection.UP) -5.0 else 5.0
+        if (resize) {
+            instance.obj.resize(
+                instance.obj.duration, instance.obj.height + deltaY, stretch,
+                horizontalDirection = null, verticalDirection = VerticalDirection.DOWN
+            )
+        } else {
+            instance.setY(instance.y + deltaY)
+        }
+    }
+
 }

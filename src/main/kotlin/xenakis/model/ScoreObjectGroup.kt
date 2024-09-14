@@ -5,6 +5,8 @@ import hextant.core.editor.ListenerManager
 import javafx.geometry.HorizontalDirection
 import javafx.geometry.HorizontalDirection.LEFT
 import javafx.geometry.HorizontalDirection.RIGHT
+import javafx.geometry.VerticalDirection
+import javafx.geometry.VerticalDirection.UP
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import reaktive.value.ReactiveVariable
@@ -45,7 +47,6 @@ class ScoreObjectGroup(override val mutableName: ReactiveVariable<String>, val s
                 }
 
                 whichHalf == LEFT && inst.time < position -> {
-                    inst.obj.duration = position - inst.time
                     val leftHalf = inst.cut(position - inst.time, LEFT)
                     objects.add(leftHalf)
                 }
@@ -56,7 +57,6 @@ class ScoreObjectGroup(override val mutableName: ReactiveVariable<String>, val s
                 }
 
                 whichHalf == RIGHT && inst.time + inst.duration > position -> {
-                    inst.setTime(inst.time - position)
                     val rightHalf = inst.cut(position - inst.time, RIGHT)
                     objects.add(rightHalf)
                 }
@@ -65,6 +65,43 @@ class ScoreObjectGroup(override val mutableName: ReactiveVariable<String>, val s
         val score = Score(objects)
         val name = if (whichHalf == LEFT) "${name.now}_left" else "${name.now}_right"
         return ScoreObjectGroup(reactiveVariable(name), score)
+    }
+
+    override fun resize(
+        duration: Double, height: Double, stretch: Boolean,
+        horizontalDirection: HorizontalDirection?, verticalDirection: VerticalDirection?
+    ) {
+        var minDur = 0.0
+        var minHeight = 0.0
+        val objects = score.objectInstances
+        if (objects.isNotEmpty()) {
+            minDur =
+                if (horizontalDirection == LEFT) duration - objects.minOf { o -> o.time }
+                else objects.maxOf { o -> o.time + o.duration }
+
+            minHeight =
+                if (verticalDirection == UP) height - objects.minOf { o -> o.y }
+                else objects.maxOf { o -> o.y + o.height }
+        }
+        val deltaDur = duration.coerceAtLeast(minDur) - duration
+        val deltaHeight = height.coerceAtLeast(minHeight) - height
+        super.resize(
+            this.duration + deltaDur,
+            this.height + deltaHeight,
+            stretch,
+            horizontalDirection,
+            verticalDirection
+        )
+        if (horizontalDirection == LEFT) {
+            for (inst in score.objectInstances) {
+                inst.setTime(inst.time + deltaDur)
+            }
+        }
+        if (verticalDirection == UP) {
+            for (inst in score.objectInstances) {
+                inst.setY(inst.y + deltaHeight)
+            }
+        }
     }
 
     override fun serverBooted(context: SuperColliderContext) {

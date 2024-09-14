@@ -40,7 +40,10 @@ abstract class ObjectRegistry<O : NamedObject> {
 
     open fun add(obj: O, idx: Int = objects.size) {
         if (has(obj.name.now)) error("$objectType with name ${obj.name.now} already registered.")
+        obj.initialize(context)
         objects.add(idx, obj)
+        logger.info("Adding $obj to ${javaClass.simpleName}")
+        obj.onAdded(context)
         onAdded(obj, idx)
         context[UndoManager].record(Edit.AddObject(this, obj, idx))
         views.notifyListeners { added(obj, idx) }
@@ -49,20 +52,17 @@ abstract class ObjectRegistry<O : NamedObject> {
     open fun remove(obj: O) {
         val idx = objects.indexOf(obj)
         if (idx == -1) error("Object ${obj.name.now} not found in $this")
+        logger.info("Removing $obj from ${javaClass.simpleName}")
         objects.removeAt(idx)
-        context[UndoManager].record(Edit.RemoveObject(this, obj, idx))
+        obj.onRemoved()
         onRemoved(obj, idx)
+        context[UndoManager].record(Edit.RemoveObject(this, obj, idx))
         views.notifyListeners { removed(obj, idx) }
     }
 
-    protected open fun onAdded(obj: O, idx: Int) {
-        obj.initialize(context)
-        obj.onAdded(context)
-    }
+    protected open fun onAdded(obj: O, idx: Int) {}
 
-    protected open fun onRemoved(obj: O, idx: Int) {
-        obj.onRemoved()
-    }
+    protected open fun onRemoved(obj: O, idx: Int) {}
 
     private sealed class Edit<O : NamedObject>(protected val registry: ObjectRegistry<O>) : AbstractEdit() {
         class AddObject<O : NamedObject>(

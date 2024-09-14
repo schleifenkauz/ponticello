@@ -3,7 +3,6 @@ package xenakis.ui
 import javafx.application.Platform
 import javafx.geometry.Point2D
 import javafx.geometry.Rectangle2D
-import javafx.scene.Cursor
 import javafx.scene.control.ContextMenu
 import javafx.scene.control.MenuItem
 import javafx.scene.image.Image
@@ -62,23 +61,6 @@ class SynthObjectView(instance: ScoreObjectInstance, val obj: SynthObject) : Sco
         addItem("SynthDef: ", box)
         addLargeItem("Synth controls", ControlAssignmentView(obj))
 
-    }
-
-    override fun resizeObject(width: Double, height: Double, ev: MouseEvent, cursor: Cursor) {
-        var newDuration = pane.getDuration(width)
-        if (ev.isShiftDown && obj.playBufRate != null) {
-            obj.playBufRate!!.now *= (obj.duration / newDuration)
-        } else if (obj.playbufStartPos != null) {
-            newDuration = pane.getDuration(width)
-            if (cursor in setOf(Cursor.W_RESIZE, Cursor.SW_RESIZE, Cursor.NW_RESIZE)) {
-                val rate = obj.playBufRate?.now ?: 1.0
-                newDuration = newDuration
-                    .coerceAtMost(obj.duration + obj.playbufStartPos!!.now)
-                val deltaStart = obj.duration - newDuration
-                obj.playbufStartPos!!.now += deltaStart * rate
-            }
-        }
-        super.resizeObject(pane.getWidth(newDuration), height, ev, cursor)
     }
 
     override fun removedControl(parameter: String, control: ParameterControl) {

@@ -29,7 +29,6 @@ import xenakis.model.PianoRollObject
 import xenakis.model.ScoreObjectInstance
 import xenakis.sc.editor.EventDictionaryEditor
 import xenakis.sc.view.ObjectSelectorControl
-import kotlin.math.roundToInt
 
 class PianoRollObjectView(inst: ScoreObjectInstance, private val obj: PianoRollObject) : ScoreObjectView(inst) {
     private val noteRects = mutableMapOf<PianoRollObject.Note, BorderPane>()
@@ -121,46 +120,6 @@ class PianoRollObjectView(inst: ScoreObjectInstance, private val obj: PianoRollO
     override fun beforeResize(ev: MouseEvent, cursor: Cursor) {
         super.beforeResize(ev, cursor)
         pixelsPerPitchBeforeResize = obj.pixelsPerPitch
-    }
-
-    override fun resizeObject(width: Double, height: Double, ev: MouseEvent, cursor: Cursor) {
-        val dur = pane.getDuration(width)
-        if (ev.isShiftDown) {
-            val horizontalRatio = dur / obj.duration
-            obj.duration = dur
-            obj.height = height
-            for (note in obj.notes()) {
-                note.onset *= horizontalRatio
-                note.duration *= horizontalRatio
-            }
-        } else {
-            var minDur = 0.0
-            var minHeight = 0.0
-            val notes = obj.notes()
-            if (notes.isNotEmpty()) {
-                minDur =
-                    if (cursor.resizeFromLeft) obj.duration - notes.minOf { n -> n.onset }
-                    else notes.maxOf { o -> o.onset + o.duration }
-
-                minHeight =
-                    if (cursor.resizeFromTop) obj.height - notes.minOf { n -> obj.getY(n.midinote) }
-                    else notes.maxOf { n -> obj.getY(n.midinote) + obj.pixelsPerPitch }
-            }
-            val deltaDur = dur.coerceAtLeast(minDur) - obj.duration
-            val deltaHeight = height.coerceAtLeast(minHeight) - obj.height
-            obj.duration += deltaDur
-            val pitches = ((obj.height + deltaHeight) / pixelsPerPitchBeforeResize).roundToInt()
-            if (pitches != obj.pitchRange.count()) {
-                if (cursor.resizeFromTop) obj.highestPitch = obj.lowestPitch + pitches
-                else obj.lowestPitch = obj.highestPitch - pitches
-            }
-            obj.height = pitches * pixelsPerPitchBeforeResize
-            if (cursor.resizeFromLeft) {
-                for (note in obj.notes()) {
-                    note.onset += deltaDur
-                }
-            }
-        }
     }
 
     fun updatedNote(note: PianoRollObject.Note) {

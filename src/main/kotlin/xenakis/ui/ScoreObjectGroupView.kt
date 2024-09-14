@@ -1,7 +1,5 @@
 package xenakis.ui
 
-import javafx.scene.Cursor
-import javafx.scene.input.MouseEvent
 import xenakis.model.ScoreObjectGroup
 import xenakis.model.ScoreObjectInstance
 
@@ -33,36 +31,6 @@ class ScoreObjectGroupView(inst: ScoreObjectInstance, private val obj: ScoreObje
         scorePane.repaint()
         for (view in scorePane.allViews) {
             view.rescale()
-        }
-    }
-
-    override fun resizeObject(width: Double, height: Double, ev: MouseEvent, cursor: Cursor) {
-        val dur = pane.getDuration(width)
-        var minDur = 0.0
-        var minHeight = 0.0
-        val objects = obj.score.objectInstances
-        if (objects.isNotEmpty()) {
-            minDur =
-                if (cursor.resizeFromLeft) obj.duration - objects.minOf { o -> o.time }
-                else objects.maxOf { o -> o.time + o.duration }
-
-            minHeight =
-                if (cursor.resizeFromTop) obj.height - objects.minOf { o -> o.y }
-                else objects.maxOf { o -> o.y + o.height }
-        }
-        val deltaDur = dur.coerceAtLeast(minDur) - obj.duration
-        val deltaHeight = height.coerceAtLeast(minHeight) - obj.height
-        obj.duration += deltaDur
-        obj.height += deltaHeight
-        if (cursor.resizeFromLeft) {
-            for (obj in obj.score.objectInstances) {
-                obj.setTime(obj.time + deltaDur)
-            }
-        }
-        if (cursor.resizeFromTop) {
-            for (obj in obj.score.objectInstances) {
-                obj.setY(obj.y + deltaHeight)
-            }
         }
     }
 }

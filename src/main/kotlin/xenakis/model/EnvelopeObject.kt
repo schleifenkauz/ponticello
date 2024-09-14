@@ -21,7 +21,7 @@ data class EnvelopeObject(
     @SerialName("name") override val mutableName: ReactiveVariable<String>,
     @SerialName("spec") private var _spec: NumericalControlSpec,
     @SerialName("bus") private val _initialBusRef: ObjectReference?,
-    val envelope: Envelope
+    @SerialName("envelope") val envelope: Envelope
 ) : ScoreObject() {
     override val type: String
         get() = "envelope"

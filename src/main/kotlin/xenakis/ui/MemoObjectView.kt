@@ -48,7 +48,7 @@ class MemoObjectView(inst: ScoreObjectInstance, val obj: MemoObject) : ScoreObje
 
     override fun resizeObject(width: Double, height: Double, ev: MouseEvent, cursor: Cursor) {
         obj.width = width.coerceAtLeast(50.0)
-        obj.height = height.coerceAtLeast(50.0)
+        obj.resize(obj.duration, height, stretch = false, null, null)
     }
 
     override fun getDisplayWidth(): Double = obj.width

@@ -10,6 +10,7 @@ import hextant.undo.UndoManager
 import javafx.geometry.HorizontalDirection
 import javafx.geometry.HorizontalDirection.LEFT
 import javafx.geometry.HorizontalDirection.RIGHT
+import javafx.geometry.VerticalDirection
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
@@ -63,6 +64,8 @@ class PianoRollObject(
 
     val pixelsPerPitch get() = height / (highestPitch - lowestPitch)
 
+    var pixelsPerPitchBeforeResize: Double = -1.0
+
     fun notes(): List<Note> = notes
 
     override fun initialize(context: Context) {
@@ -71,6 +74,48 @@ class PianoRollObject(
         instrumentSelector = InstrumentSelector(context, reactiveVariable(initialInstrument))
         for (note in notes) {
             note.parent = this
+        }
+    }
+
+    override fun resize(
+        duration: Double, height: Double, stretch: Boolean,
+        horizontalDirection: HorizontalDirection?, verticalDirection: VerticalDirection?
+    ) {
+        if (stretch) {
+            val horizontalRatio = duration / this.duration
+            this.duration = duration
+            this.height = height
+            for (note in notes()) {
+                note.onset *= horizontalRatio
+                note.duration *= horizontalRatio
+            }
+        } else {
+            var minDur = 0.0
+            var minHeight = 0.0
+            val notes = notes()
+            if (notes.isNotEmpty()) {
+                minDur =
+                    if (horizontalDirection == LEFT) duration - notes.minOf { n -> n.onset }
+                    else notes.maxOf { o -> o.onset + o.duration }
+
+                minHeight =
+                    if (verticalDirection == VerticalDirection.UP) height - notes.minOf { n -> getY(n.midinote) }
+                    else notes.maxOf { n -> getY(n.midinote) + pixelsPerPitch }
+            }
+            val deltaDur = duration.coerceAtLeast(minDur) - duration
+            val deltaHeight = height.coerceAtLeast(minHeight) - height
+            this.duration += deltaDur
+            val pitches = ((height + deltaHeight) / pixelsPerPitchBeforeResize).roundToInt()
+            if (pitches != pitchRange.count()) {
+                if (verticalDirection == VerticalDirection.DOWN) highestPitch = lowestPitch + pitches
+                else lowestPitch = highestPitch - pitches
+            }
+            this.height = pitches * pixelsPerPitchBeforeResize
+            if (horizontalDirection == LEFT) {
+                for (note in notes()) {
+                    note.onset += deltaDur
+                }
+            }
         }
     }
 
