@@ -121,7 +121,7 @@ inline fun <V> KMutableProperty0<V>.reactive(crossinline onUpdate: (oldValue: V,
 
 fun <T> ReactiveValue<T>.copy() = reactiveVariable(get())
 
-val isMyComputerDumb get() = System.getProperty("os.name").contains("Windows")
+val isMyComputerDumb get() = System.getProperty("os.name").contains("Windows") || true
 
 fun String.replacePrefix(prefix: String, replacement: String) =
     if (startsWith(prefix)) replacement + drop(prefix.length) else this

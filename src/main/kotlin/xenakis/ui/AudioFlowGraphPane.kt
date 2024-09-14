@@ -12,6 +12,7 @@ import hextant.undo.UndoManager
 import javafx.geometry.Bounds
 import javafx.geometry.HorizontalDirection.LEFT
 import javafx.geometry.HorizontalDirection.RIGHT
+import javafx.geometry.Point2D
 import javafx.geometry.VerticalDirection.DOWN
 import javafx.geometry.VerticalDirection.UP
 import javafx.scene.control.Label
@@ -62,6 +63,16 @@ class AudioFlowGraphPane(
     * */
 
     private fun allowDroppingBusObjects() {
+        setOnMouseClicked { ev ->
+            if (ev.isAltDown) {
+                val busList = SearchableBusListView(context[BusRegistry])
+                busList.removedOptions.addAll(graph.nodes.map { node -> node.ref.get<BusObject>() })
+                val anchor = Point2D(ev.screenX, ev.screenY)
+                busList.showPopup(context, "Add bus node", anchor) { bus ->
+                    graph.addNode(bus.createReference(), Point(ev.x, ev.y))
+                }
+            }
+        }
         addEventHandler(DragEvent.DRAG_OVER) { ev ->
             if (ev.dragboard.hasContent(BusObject.DATA_FORMAT)) {
                 ev.acceptTransferModes(TransferMode.LINK)

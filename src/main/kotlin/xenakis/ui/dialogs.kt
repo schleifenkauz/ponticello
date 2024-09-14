@@ -181,10 +181,10 @@ fun <T : Any> Node.showDialog(
     extraConfig, resultConverter
 )
 
-@Suppress("unused")
 fun Parent.showWindow(title: String, context: Context, type: SubWindow.Type): Stage {
-    val window = SubWindow(this, title, context, type = type, applyStylesheets = true)
-    window.sizeToScene()
+    val window = SubWindow(this, title, context, type = type)
     window.show()
     return window
 }
+
+fun Parent.showPopup(title: String, context: Context): Stage = showWindow(title, context, SubWindow.Type.Popup)

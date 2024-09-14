@@ -1,6 +1,5 @@
 package xenakis.model
 
-import bundles.PublicProperty
 import bundles.publicProperty
 import bundles.set
 import hextant.context.Context
@@ -28,7 +27,7 @@ class InstrumentRegistry private constructor(
 
     override fun initialize(context: Context) {
         super.initialize(context)
-        context[InstrumentRegistry] = this
+        context[local] = this
         client = context[SuperColliderClient]
     }
 
@@ -58,8 +57,11 @@ class InstrumentRegistry private constructor(
         view.selected(selectedInstrument)
     }
 
-    companion object : PublicProperty<InstrumentRegistry> by publicProperty("SynthDefs") {
-        fun newInstance(): InstrumentRegistry = InstrumentRegistry(StandardSynthDefObject.all.values.toMutableList())
+    companion object {
+        val local = publicProperty<InstrumentRegistry>("local InstrumentRegistry")
+        val global = publicProperty<InstrumentRegistry>("global InstrumentRegistry")
+
+        fun createDefault(): InstrumentRegistry = InstrumentRegistry(StandardSynthDefObject.all.values.toMutableList())
     }
 
     interface View : ObjectRegistry.View<InstrumentObject> {

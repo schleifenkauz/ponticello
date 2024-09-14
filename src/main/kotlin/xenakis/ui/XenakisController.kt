@@ -1,5 +1,6 @@
 package xenakis.ui
 
+import bundles.PublicProperty
 import bundles.publicProperty
 import bundles.set
 import hextant.context.Context
@@ -84,8 +85,10 @@ class XenakisController(private val primaryStage: Stage) {
         setProgress(0.0, "Setting up Hextant")
         context = HextantCore.defaultContext()
         SnapshotAware.Serializer.reconstructionContext = context
+        context[XenakisController] = this
         context[XenakisApp.primaryStage] = primaryStage
         context[Settings] = loadSettings()
+        context[GlobalSynthDefLib] = GlobalSynthDefLib(context, xenakisDir.resolve("synth-def-lib.json"))
         context.registerImplementationsFromClasspath()
         HextantCore.apply(context, PluginBuilder.Phase.Initialize, null)
         XenakisHextantPlugin.apply(context, PluginBuilder.Phase.Initialize, null)
@@ -204,7 +207,8 @@ class XenakisController(private val primaryStage: Stage) {
     fun createNewProject() {
         showTextPrompt("Project name", "", context) { name ->
             if (name.isNotBlank()) {
-                val location = userHome.resolve("compositions").resolve(name) //TODO introduce option for projects location
+                val location =
+                    userHome.resolve("compositions").resolve(name) //TODO introduce option for projects location
                 location.mkdir()
                 location.resolve("project.xen").writeText(location.name)
                 currentProject = XenakisProject.create(location, context)
@@ -238,7 +242,7 @@ class XenakisController(private val primaryStage: Stage) {
         client.quit()
     }
 
-    companion object {
+    companion object : PublicProperty<XenakisController> by publicProperty("XenakisController") {
         val currentProject = publicProperty<XenakisProject>("currentProject", null)
     }
 }

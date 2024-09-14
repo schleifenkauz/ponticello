@@ -35,7 +35,7 @@ class AudioFlowGraph(
     val views = ListenerManager.createWeakListenerManager<View>()
 
     @Transient
-    private val nodeNameObservers = mutableMapOf<ObjectReference, Observer>()
+    private val nodeNameObservers = mutableMapOf<BusObject, Observer>()
 
     val flows: List<AudioFlow> get() = _flows
     val nodes: List<BusNode> get() = _nodes
@@ -187,15 +187,15 @@ class AudioFlowGraph(
         return addNode(obj)
     }
 
-    private fun addNode(obj: BusNode): Boolean {
-        if (nodes.any { n -> n.ref == obj.ref }) {
+    private fun addNode(node: BusNode): Boolean {
+        if (nodes.any { n -> n.ref == node.ref }) {
             return false
         }
-        _nodes.add(obj)
-        nodeNameObservers[obj.ref] =
-            obj.ref.get<BusObject>().name.observe { _, oldName, _ -> renamedNode(obj, oldName) }
-        undoManager.record(Edit.AddNode(this, obj))
-        views.notifyListeners { addedNode(obj) }
+        _nodes.add(node)
+        val obj = node.ref.get<BusObject>()
+        nodeNameObservers[obj] = obj.name.observe { _, oldName, _ -> renamedNode(node, oldName) }
+        undoManager.record(Edit.AddNode(this, node))
+        views.notifyListeners { addedNode(node) }
         return true
     }
 
@@ -225,7 +225,7 @@ class AudioFlowGraph(
         val associatedFlows = associatedFlows(node)
         views.notifyListeners { removedNode(node) }
         for (flow in associatedFlows) removeFlow(flow)
-        nodeNameObservers.remove(node.ref)!!.kill()
+        nodeNameObservers.remove(node.ref.get())!!.kill()
         undoManager.record(Edit.RemoveNode(this, node, associatedFlows))
     }
 

@@ -207,6 +207,7 @@ Slider.control-detail-editor {
 .tool-pane-header {
     -fx-padding: 5px;
     -fx-alignment: center-left;
+    -fx-spacing: 5px;
 }
 
 .tool-pane-heading {
@@ -265,7 +266,6 @@ Slider.control-detail-editor {
 }
 
 .name {
-
     -fx-spacing: 5px;
     -fx-padding: 0px 5px 0px 5px;
     -fx-alignment: center-left;
@@ -549,4 +549,39 @@ Slider.control-detail-editor {
 .progress-bar > .bar {
     -fx-background-insets: 1 1 2 1;
     -fx-padding: 0.35em;
+}
+
+.searchable-list {
+    -fx-padding: 2px;
+    -fx-background-color: #2a2a32;
+    -fx-spacing: 3px;
+}
+
+.search-text {
+    -fx-font-size: 12px;
+    -fx-background-color: transparent;
+    -fx-border-color: grey;
+    -fx-border-width: 0px 0px 1px 0px;
+    -fx-border-radius: 0px;
+    -fx-padding: 5px 5px 5px 5px;
+    -fx-max-width: 1000;
+}
+
+.options-box {
+    -fx-padding: 2px;
+}
+
+.option-cell {
+    -fx-background-color: transparent;
+    -fx-padding: 3px;
+    -fx-background-radius: 3px;
+}
+
+.option-cell:selected {
+    -fx-background-color: #351919 !important;
+}
+
+.option-label {
+    -fx-text-fill: white;
+    -fx-font-size: 12px;
 }

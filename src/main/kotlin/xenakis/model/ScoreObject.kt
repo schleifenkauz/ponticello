@@ -35,7 +35,7 @@ sealed class ScoreObject : AbstractRenamableObject() {
         }
     }
 
-    override fun canRenameTo(newName: String): Boolean = context[ScoreObjectRegistry].has(newName)
+    override fun canRenameTo(newName: String): Boolean = !context[ScoreObjectRegistry].has(newName)
 
     override fun rename(newName: String) {
         if (name.now == newName) return

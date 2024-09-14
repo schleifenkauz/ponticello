@@ -39,8 +39,6 @@ class GroupObject(
 
     override fun canRenameTo(newName: String): Boolean = !context[GroupRegistry].has(newName)
 
-    override fun createReference(): ObjectReference = ObjectReference(this)
-
     companion object {
         val DEFAULT = GroupObject(reactiveVariable("default"), isDefault = true)
     }

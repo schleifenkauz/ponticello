@@ -1,9 +1,10 @@
 package xenakis.ui
 
-import hextant.fx.registerShortcuts
 import hextant.fx.setRoot
+import hextant.fx.shortcut
 import javafx.scene.control.Control
 import javafx.scene.control.TextField
+import javafx.scene.input.KeyEvent
 import javafx.scene.layout.HBox
 import reaktive.Observer
 import reaktive.value.now
@@ -22,12 +23,23 @@ class NameControl(val obj: RenamableObject) : Control() {
         field styleClass "name-field"
         setRoot(root)
         field.isEditable = false
-        registerShortcuts {
-            on("ENTER") { commitEdit() }
-            on("ESCAPE") { abandonCommit() }
+        btnCommit.isFocusTraversable = false
+        field.addEventFilter(KeyEvent.KEY_PRESSED) { ev ->
+            if ("ENTER".shortcut.matches(ev)) {
+                commitEdit()
+                ev.consume()
+            } else if ("ESCAPE".shortcut.matches(ev)) {
+                abandonEdit()
+                ev.consume()
+            }
         }
-        setOnMouseClicked { ev ->
+        field.setOnMouseClicked { ev ->
             if (ev.clickCount >= 2 && !field.isEditable) startEdit()
+        }
+        field.focusedProperty().addListener { _, wasFocused, nowFocused ->
+            if (wasFocused && !nowFocused) {
+                abandonEdit()
+            }
         }
         observer = obj.name.observe { _, _, newName -> field.text = newName }
     }
@@ -56,7 +68,7 @@ class NameControl(val obj: RenamableObject) : Control() {
         }
     }
 
-    private fun abandonCommit() {
+    private fun abandonEdit() {
         if (!field.isEditable) return
         field.isEditable = false
         field.text = obj.name.now

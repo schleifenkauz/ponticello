@@ -15,10 +15,10 @@ class InstrumentSelector(
     selected: ReactiveVariable<ObjectReference>,
 ) : ObjectSelector<InstrumentObject, ObjectReference>(context, selected) {
     constructor(context: Context) : this(
-        context, reactiveVariable(context[InstrumentRegistry].getDefault().createReference())
+        context, reactiveVariable(context[InstrumentRegistry.local].getDefault().createReference())
     )
 
-    override fun getRegistry(context: Context): ObjectRegistry<InstrumentObject> = context[InstrumentRegistry]
+    override fun getRegistry(context: Context): ObjectRegistry<InstrumentObject> = context[InstrumentRegistry.local]
 
     override val objectClass: KClass<InstrumentObject>
         get() = InstrumentObject::class

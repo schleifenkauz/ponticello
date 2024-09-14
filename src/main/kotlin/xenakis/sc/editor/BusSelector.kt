@@ -3,11 +3,8 @@ package xenakis.sc.editor
 import hextant.context.Context
 import hextant.serial.SnapshotAware
 import kotlinx.serialization.Serializable
-import reaktive.value.ReactiveBoolean
-import reaktive.value.ReactiveString
-import reaktive.value.ReactiveVariable
+import reaktive.value.*
 import reaktive.value.binding.binding
-import reaktive.value.reactiveVariable
 import xenakis.model.BusObject
 import xenakis.model.BusRegistry
 import xenakis.model.ObjectReference
@@ -41,8 +38,9 @@ class BusSelector(
                     && (preferredChannels == -1 || channels == preferredChannels)
         }
 
-    override fun extractText(choice: BusObject): ReactiveString =
-        binding(choice.name, choice.rate, choice.channels) { name, rate, channels -> "$name ($rate x $channels)" }
+    override fun extractText(choice: BusObject?): ReactiveString =
+        if (choice == null) reactiveValue("<none>")
+        else binding(choice.name, choice.rate, choice.channels) { name, rate, channels -> "$name ($rate x $channels)" }
 
     companion object {
         private fun getDefaultBus(

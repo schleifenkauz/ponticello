@@ -145,7 +145,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
     }
 
     private fun createPlayBufObject(sample: SampleObject, ev: DragEvent) {
-        val instruments = context[InstrumentRegistry]
+        val instruments = context[InstrumentRegistry.local]
         val synthDef = instruments.selectedInstrument ?: instruments.getOrNull("playbuf") ?: run {
             val playbuf = ReferencedSynthDefObject.playbuf
             instruments.add(playbuf)
@@ -231,7 +231,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
         val rect = Rectangle(x, y, 0.0, 0.0)
         when (selectedTool) {
             Synth -> {
-                val synthDef = context[InstrumentRegistry].selectedInstrument
+                val synthDef = context[InstrumentRegistry.local].selectedInstrument
                 if (synthDef !is SynthDefObject) return
                 rect.fill = synthDef.color.now
             }
@@ -245,7 +245,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
                 rect.fill = rgb(0, 0, 0, 0.3)
             }
 
-            PianoRoll -> rect.fill = context[InstrumentRegistry].selectedInstrument?.color?.now ?: return
+            PianoRoll -> rect.fill = context[InstrumentRegistry.local].selectedInstrument?.color?.now ?: return
 
             TempoGrid -> {
                 rect.fill = TRANSPARENT
@@ -385,7 +385,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
     private fun createNewObject(tool: Tool, rect: Rectangle) {
         when (tool) {
             Synth -> {
-                val def = context[InstrumentRegistry].selectedInstrument
+                val def = context[InstrumentRegistry.local].selectedInstrument
                 if (def !is SynthDefObject) return
                 val initialName = context[ScoreObjectRegistry].availableName(def.name.now)
                 promptNewObjectName("Synth name", initialName) { name ->
@@ -434,7 +434,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
             }
 
             PianoRoll -> {
-                val instr = context[InstrumentRegistry].selectedInstrument ?: return
+                val instr = context[InstrumentRegistry.local].selectedInstrument ?: return
                 val defaultName = context[ScoreObjectRegistry].availableName("piano_roll")
                 val nameField = TextField(defaultName)
                 val rootPitchSelector = ComboBox(FXCollections.observableList(MidiPitch.allPitchClasses()))

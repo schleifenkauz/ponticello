@@ -34,18 +34,10 @@
 - select time, then drag with shift
 - stretch objects or only reposition?
 
-### Inter-project SynthDef collection
-
-- two ways to add SynthDefs to projects
-  - add it from global collection
-  - create a new one, which can be added to the global collection if needed
-
 ### Improve layout
 
 - save main window size/position and arrangement of utility panes
 - do we need an extra window for LFO code?
-- integrate the buses pane into the audio flow window (it is only needed there)
-- make the sample pane a searchable popup (but what about adding samples from the file explorer?)
 - integrate close, maximize, minimize into top toolbar and remove window decoration
 
 ### Unify knob control and constant control

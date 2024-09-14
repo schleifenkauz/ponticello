@@ -87,7 +87,7 @@ class VSTPluginObject private constructor(
     }
 
     override fun canRenameTo(newName: String): Boolean =
-        !(context[InstrumentRegistry].has(this) && context[InstrumentRegistry].has(newName))
+        !(context[InstrumentRegistry.local].has(this) && context[InstrumentRegistry.local].has(newName))
 
     fun showEditor() {
         client.run("$superColliderName.editor;")

@@ -55,7 +55,7 @@ abstract class ObjectSelector<O : NamedObject, R : ObjectReference?>(
 
     open fun canSelect(choice: O): ReactiveBoolean = reactiveValue(true)
 
-    open fun extractText(choice: O): ReactiveString = choice.name
+    open fun extractText(choice: O?): ReactiveString = choice?.name ?: reactiveValue("<none>")
 
     override fun createSnapshot(): Snapshot<*> = Snap<O, R>()
 

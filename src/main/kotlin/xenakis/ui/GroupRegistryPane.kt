@@ -27,7 +27,7 @@ class GroupRegistryPane(
     override fun canDelete(obj: GroupObject): Boolean = !obj.isDefault
 
     private fun updateMoveButtonsAround(idx: Int) {
-        val indices = boxes.children.indices
+        val indices = layout.children.indices
         if (idx - 1 in indices) box(idx - 1).updateMoveButtons()
         if (idx + 1 in indices) box(idx + 1).updateMoveButtons()
     }
@@ -51,8 +51,8 @@ class GroupRegistryPane(
     }
 
     override fun movedGroup(group: GroupObject, fromIndex: Int, toIndex: Int) {
-        val box = boxes.children.removeAt(fromIndex)
-        boxes.children.add(toIndex, box)
+        val box = layout.children.removeAt(fromIndex)
+        layout.children.add(toIndex, box)
         updateMoveButtonsAround(fromIndex)
         updateMoveButtonsAround(toIndex)
     }
@@ -65,8 +65,8 @@ class GroupRegistryPane(
 
     private fun shiftFocus(from: GroupObject, deltaIndex: Int) {
         val index = registry.indexOf(from) + deltaIndex
-        if (deltaIndex in boxes.children.indices) {
-            boxes.children[index].requestFocus()
+        if (deltaIndex in layout.children.indices) {
+            layout.children[index].requestFocus()
         }
     }
 }

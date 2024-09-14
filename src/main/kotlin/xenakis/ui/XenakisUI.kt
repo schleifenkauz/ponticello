@@ -230,7 +230,7 @@ class XenakisUI(
     private fun createLayout(): VBox {
         var mainView: Region = scoreView
         if (mode == Mode.Desktop) {
-            val toolPanes = SplitPane(detailPane, instrumentsPane, busRegistryPane, samplesPane)
+            val toolPanes = SplitPane(detailPane, instrumentsPane)
             toolPanes.orientation = Orientation.VERTICAL
             val horizontalSplitter = SplitPane(scoreView, toolPanes)
             horizontalSplitter.sceneProperty().addListener { _ ->
@@ -308,14 +308,22 @@ class XenakisUI(
             +Icon.Graph.button(action = "Edit audio flow graph") { flowGraphWindow.show() }
             +Icon.Settings.button(action = "Edit settings") { settingsWindow.show() }
             +Icon.Knob.button(action = "Edit global controls") { globalControlsWindow.show() }
+            val subWindowType = if (mode == Mode.Laptop) SubWindow.Type.Popup else SubWindow.Type.Modal
+            busesWindow = SubWindow(busRegistryPane, "Busses", context, subWindowType)
+            +Icon.Bus.button(action = "Show buses") {
+                busesWindow.show()
+                busesWindow.requestFocus()
+            }
+            samplesWindow = SubWindow(samplesPane, "Samples", context, subWindowType)
+            +Icon.Samples.button(action = "Show samples") {
+                samplesWindow.show()
+                samplesWindow.requestFocus()
+            }
             if (mode == Mode.Laptop) {
-                busesWindow = SubWindow(busRegistryPane, "Busses", context, type = SubWindow.Type.Popup)
-                samplesWindow = SubWindow(samplesPane, "Samples", context, type = SubWindow.Type.Popup)
-                instrumentsWindow = SubWindow(instrumentsPane, "Instruments", context, type = SubWindow.Type.Popup)
-                groupsWindow = SubWindow(groupsPane, "Groups", context, type = SubWindow.Type.Popup)
-                +Icon.Bus.button(action = "Show buses") { busesWindow.show() }
-                +Icon.Samples.button(action = "Show samples") { samplesWindow.show() }
+                instrumentsWindow = SubWindow(instrumentsPane, "Instruments", context, subWindowType)
                 +Icon.Instrument.button(action = "Show instruments") { instrumentsWindow.show() }
+                //groupsWindow = SubWindow(groupsPane, "Groups", context, type = SubWindow.Type.Popup)
+                //+Icon.Groups.button(action = "Show groups") { groupsWindow.show() }
                 add(Icon.Details.button(action = "Edit object properties") { showDetailPaneOfSelectedObject() }) {
                     disableProperty().bind(scoreView.selector.singleSelected.equalTo(null).asObservableValue())
                 }

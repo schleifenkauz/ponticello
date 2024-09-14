@@ -51,8 +51,10 @@ ServerBoot.add {
 		AppClock.sched(0.0) {
 			id = msg[1];
 			answer = handler.(*msg.drop(2));
-			'sending reply: '.post;
-			addr.postln;
+			'sending reply to '.post;
+			addr.post;
+			'; id='.post;
+			id.postln;
 			addr.sendMsg('/reply', id, answer);
 		}
 	}, address);

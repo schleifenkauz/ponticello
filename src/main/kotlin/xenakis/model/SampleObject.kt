@@ -103,11 +103,8 @@ class SampleObject private constructor(
     override fun canRenameTo(newName: String): Boolean = !context[SampleRegistry].has(newName)
 
     override fun rename(newName: String) {
-        val extension = audioFile.extension
-        val oldAudioFile = audioFile
-        super.rename(newName)
         val oldSpectrogramFile = spectrogramFile
-        if (oldAudioFile.isFile) audioFile.renameTo(samplesDir.resolve("$newName.$extension"))
+        super.rename(newName)
         if (oldSpectrogramFile.isFile) oldSpectrogramFile.renameTo(spectrogramFile)
     }
 
@@ -147,8 +144,6 @@ class SampleObject private constructor(
             Thread.sleep(10)
         }
     }
-
-    override fun createReference(): ObjectReference = ObjectReference(this)
 
     companion object {
         private val logger = Logger.getLogger("SampleObject")

@@ -69,7 +69,7 @@ class CustomizableSynthDefObject(
         }
     }
 
-    override fun canRenameTo(newName: String): Boolean = !context[InstrumentRegistry].has(newName)
+    override fun canRenameTo(newName: String): Boolean = !context[InstrumentRegistry.local].has(newName)
 
     override fun rename(newName: String) {
         onRemoved()
@@ -94,6 +94,15 @@ class CustomizableSynthDefObject(
             color = reactiveVariable(randomColor()),
             parameters = reactiveList(),
             ugenGraph = EditorRoot.create(CodeBlockEditor(context))
+        )
+
+        fun sine(context: Context) = CustomizableSynthDefObject(
+            mutableName = reactiveVariable("sine"),
+            color = reactiveVariable(Color.WHITE),
+            parameters = reactiveList(
+
+            ),
+            ugenGraph = EditorRoot.create(CodeBlockEditor(context = context))
         )
     }
 }

@@ -38,6 +38,13 @@ abstract class ObjectRegistry<O : NamedObject> {
     fun has(name: String) = objects.any { it.name.now == name }
     fun has(obj: O) = obj in objects
 
+    fun overwrite(obj: O) {
+        val old = get(obj.name.now)
+        val index = objects.indexOf(old)
+        remove(old)
+        add(obj, index)
+    }
+
     open fun add(obj: O, idx: Int = objects.size) {
         if (has(obj.name.now)) error("$objectType with name ${obj.name.now} already registered.")
         obj.initialize(context)

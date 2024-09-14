@@ -55,7 +55,7 @@ class SynthObjectView(instance: ScoreObjectInstance, val obj: SynthObject) : Sco
         addItem("Color:", colorPicker)
         val nameLabel = label(obj.synthDef.name)
         val viewBtn = Icon.View.button(action = "View SynthDef") {
-            context[InstrumentRegistryPane].editSynthDef(obj.synthDef)
+            context[InstrumentRegistryPane].editInstrument(obj.synthDef)
         }
         val box = HBox(5.0, nameLabel, viewBtn).centerChildrenVertically()
         addItem("SynthDef: ", box)

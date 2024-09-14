@@ -10,6 +10,8 @@ import javafx.scene.input.TransferMode
 import javafx.scene.layout.HBox
 import javafx.scene.layout.Priority
 import javafx.scene.layout.VBox
+import org.controlsfx.control.SearchableComboBox
+import org.controlsfx.control.textfield.CustomTextField
 import reaktive.value.now
 import xenakis.model.NamedObject
 import xenakis.model.ObjectRegistry
@@ -19,54 +21,50 @@ import xenakis.sc.Identifier
 abstract class ObjectRegistryPane<O : NamedObject>(
     private val registry: ObjectRegistry<O>
 ) : VBox(), ObjectRegistry.View<O> {
-    private val collapseExpandBtn = Icon.Expand.button { if (boxes in children) collapse() else expand() }
-    protected val boxes = VBox()
+    protected val layout = VBox()
+    private val boxes = mutableListOf<ObjectBox<O>>()
+    protected val searchText = CustomTextField().styleClass("search-text")
     private val header = createHeader()
 
     init {
         styleClass.add("tool-pane")
-        children.add(header)
-        expand()
+        val scrollPane = ScrollPane(layout)
+        scrollPane.isFitToWidth = true
+        children.addAll(header, scrollPane)
         SplitPane.setResizableWithParent(this, false)
+        HBox.setHgrow(searchText, Priority.ALWAYS)
+        searchText.left = Label("", Icon.Search.getView(Icon.DEFAULT_RADIUS))
+        searchText.textProperty().addListener { _, _, _ ->
+            layoutBoxes()
+        }
+        registerShortcuts {
+            on("INSERT") {
+                addObject()
+            }
+        }
+        layoutBoxes()
     }
 
     private fun createHeader(): HBox {
         val type = registry.objectType
         val label = Label(plural(type)).styleClass("tool-pane-heading")
         val space = infiniteSpace()
-        val addBtn = Icon.Add.button(action = "Add $type") {
-            addObject()
-            expand()
-        }
+        val addBtn = Icon.Add.button(action = "Add $type") { addObject() }
         val reloadBtn = Icon.Repeat.button(action = "Sync ${plural(type)}") {
             reload()
             notifyConfirm("Synchronized ${plural(type)} with server")
         }
-        return HBox(label, space, addBtn, reloadBtn, collapseExpandBtn).styleClass("tool-pane-header")
-    }
-
-    fun collapse() {
-        children.remove(boxes)
-        collapseExpandBtn.rotate = 0.0
-        collapseExpandBtn.tooltip = Tooltip("Collapse")
-        /*maxHeight = header.height*/
-    }
-
-    fun expand() {
-        if (boxes !in children) children.add(boxes)
-        collapseExpandBtn.rotate = 180.0
-        collapseExpandBtn.tooltip = Tooltip("Expand")
-        /*maxHeight = USE_PREF_SIZE*/
+        return HBox(label, searchText, space, addBtn, reloadBtn).styleClass("tool-pane-header")
     }
 
     protected fun <T : Any> showCreateNewDialog(options: List<T>, default: T, createObject: (T, String) -> O?) {
-        val typeSelector = ComboBox(FXCollections.observableList(options))
+        val typeSelector = SearchableComboBox(FXCollections.observableList(options))
         typeSelector.value = default
         val nameInput = TextField() styleClass "prompt-text-field"
         nameInput.promptText = "${registry.objectType} name"
         val ok = Icon.Check.button(action = "Confirm")
         val layout = HBox(typeSelector, nameInput).centerChildrenVertically() styleClass "prompt"
-        val window = SubWindow(layout, "Create new buffer", registry.context, SubWindow.Type.Prompt) {
+        val window = SubWindow(layout, "Create new ${registry.objectType}", registry.context, SubWindow.Type.Prompt) {
             nameInput.requestFocus()
         }
 
@@ -86,9 +84,16 @@ abstract class ObjectRegistryPane<O : NamedObject>(
         window.show()
     }
 
+    private fun layoutBoxes() {
+        layout.children.clear()
+        for (box in boxes) {
+            if (matchesSearch(box.obj)) layout.children.add(box)
+        }
+    }
+
     protected abstract fun reload()
 
-    protected open fun addObject() = showNamePrompt(registry) { name -> addObject(name) }
+    protected open fun addObject() = showNamePrompt(registry, defaultName = searchText.text) { name -> addObject(name) }
 
     protected abstract fun addObject(name: String): O?
 
@@ -96,18 +101,21 @@ abstract class ObjectRegistryPane<O : NamedObject>(
 
     protected open fun ObjectBox<O>.configureObjectBox() {}
 
+    private fun matchesSearch(obj: O) = obj.name.now.contains(searchText.text, ignoreCase = true)
+
     override fun added(obj: O, idx: Int) {
         val box = ObjectBox(this, obj)
         box.configureObjectBox()
-        boxes.children.add(idx, box)
+        boxes.add(box)
+        layoutBoxes()
     }
 
     override fun removed(obj: O, idx: Int) {
-        boxes.children.removeAt(idx)
+        val box = boxes.removeAt(idx)
+        layout.children.remove(box)
     }
 
-    @Suppress("UNCHECKED_CAST")
-    fun box(idx: Int): ObjectBox<O> = boxes.children[idx] as ObjectBox<O>
+    fun box(idx: Int): ObjectBox<O> = boxes[idx]
 
     class ObjectBox<O : NamedObject>(private val pane: ObjectRegistryPane<O>, val obj: O) : HBox() {
         val actions = HBox().centerChildrenVertically()
@@ -120,6 +128,7 @@ abstract class ObjectRegistryPane<O : NamedObject>(
                 if (obj is RenamableObject) NameControl(obj)
                 else HBox(label(obj.name).styleClass("name-field")).styleClass("name")
             setHgrow(nameDisplay, Priority.ALWAYS)
+            maxWidth = Double.MAX_VALUE
             children.addAll(nameDisplay, extraControls, actions)
             addAction(Icon.Delete, "Remove object") { pane.registry.remove(obj) }.isDisable = !pane.canDelete(obj)
         }

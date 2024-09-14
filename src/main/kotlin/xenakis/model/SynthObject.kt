@@ -116,7 +116,7 @@ class SynthObject(
     override fun initialize(context: Context) {
         if (initialized) return
         super.initialize(context)
-        synthDefRef.resolve(context[InstrumentRegistry])
+        synthDefRef.resolve(context[InstrumentRegistry.local])
         parameterObserver = synthDef.parameters.observeCollection(
             added = { _, param -> controls.addControl(param.name.now, param.defaultControl(context)) },
             removed = { _, param -> controls.removeControl(param.name.now) }

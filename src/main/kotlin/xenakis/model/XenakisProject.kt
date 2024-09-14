@@ -149,7 +149,7 @@ class XenakisProject private constructor(
             busses = BusRegistry.createDefault().also { r -> r.initialize(context) },
             buffers = BufferRegistry(mutableListOf()).also { r -> r.initialize(context) },
             samples = SampleRegistry(mutableListOf()).also { r -> r.initialize(context) },
-            instruments = InstrumentRegistry.newInstance().also { r -> r.initialize(context) },
+            instruments = InstrumentRegistry.createDefault().also { r -> r.initialize(context) },
             flowGraph = AudioFlowGraph.createDefault().also { g -> g.initialize(context) },
             globalControls = GlobalControls(mutableListOf()).also { c -> c.initialize(context) },
             serverSetup = EditorRoot.create(CodeBlockEditor(context)),
