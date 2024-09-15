@@ -29,15 +29,15 @@ class ParameterDefObject(
     companion object {
         private val freq = ParameterDefObject(
             "freq",
-            NumericalControlSpec(440.0, 20.0, 20000.0, Warp.Exponential, 1.0, Color.BLACK)
+            NumericalControlSpec(440.0, 20.0, 20000.0, 1.0, Warp.Exponential, Color.BLACK)
         )
         private val amp = ParameterDefObject(
             "amp",
-            NumericalControlSpec(0.1, 0.0, 1.0, Warp.Linear, 0.01, Color.ORANGE)
+            NumericalControlSpec(0.1, 0.0, 1.0, 0.01, Warp.Linear, Color.ORANGE)
         )
         private val pan = ParameterDefObject(
             "pan",
-            NumericalControlSpec(0.0, -1.0, 1.0, Warp.Linear, 0.1, Color.BLUE)
+            NumericalControlSpec(0.0, -1.0, 1.0, 0.1, Warp.Linear, Color.BLUE)
         )
 
         val defaults = listOf(freq, amp, pan)

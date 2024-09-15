@@ -69,6 +69,11 @@
 - or have a live buffer to which everything is recorded, from which you can choose snippets
 - can be done via Audacity for now (record from pipewire and then export as WAV to create a buffer in xenakis)
 
+### Better object selection highlighting
+
+- make it clear which objects are selected
+- also highlight instances of the same object
+
 ### Minor
 
 - allow for more cases of pasting code

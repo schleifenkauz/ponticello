@@ -16,7 +16,7 @@ class ScorePlayer(
     private val scoreInstances = mutableMapOf<Score, MutableSet<ScoreObjectInstance>>()
     private fun scoreInstances(score: Score) = scoreInstances.getOrPut(score) { mutableSetOf() }
 
-    private val env = ScorePlayEnv()
+    private val env = ScorePlayEnv(rootScore.context)
 
     var isPlaying = false
         private set
@@ -107,7 +107,7 @@ class ScorePlayer(
             val now = System.currentTimeMillis()
             if (isPlaying) {
                 val dt = (now - lastTime) / 1000.0
-                scheduleEvents(playHead.currentTime + LOOK_AHEAD, dt)
+                scheduleEvents(playHead.currentTime + env.lookAhead, dt)
                 playHead.advance(dt)
             }
             lastTime = now
@@ -125,12 +125,12 @@ class ScorePlayer(
     private fun startPlay(startFrom: Double) {
         println("Starting playback at $startFrom")
         lastPlayFrom = startFrom
-        val activeObjects = activeObjects(startFrom, delta = LOOK_AHEAD)
+        val activeObjects = activeObjects(startFrom, delta = env.lookAhead)
         for ((_, position, inst) in activeObjects) {
             if (inst != null && !inst.muted) {
                 val obj = inst.obj
                 val delta = inst.start - startFrom
-                val pos = position + ObjectPosition(delta.coerceAtLeast(0.0), 0.0)
+                val pos = ObjectPosition(startFrom + delta.coerceAtLeast(0.0), position.y)
                 env.markStart(obj, position) //important that we mark the original object not the cutoff one
                 println("   Scheduling $obj at $pos, delta: $delta")
                 scheduleObject(obj, pos, cutoff = -delta.coerceAtMost(0.0))
@@ -167,7 +167,7 @@ class ScorePlayer(
     private fun scheduleObject(obj: ScoreObject, absolutePosition: ObjectPosition, cutoff: Double) {
         val time = absolutePosition.time - lastPlayFrom
         val name = env.getUniqueNameFor(obj)
-        val timeForExecution = (time + SC_LANG_LATENCY).toString()
+        val timeForExecution = (time + env.scLangLatency).toString()
         val o = if (cutoff > 0.0) obj.cut(cutoff, HorizontalDirection.RIGHT, obj.name.now) ?: obj else obj
         val code = o.writeCode(name, absolutePosition, env)
         if (code == "") return
@@ -182,7 +182,7 @@ class ScorePlayer(
             println("START PLAYBACK")
             client.send("start_play")
             startPlay(playHead.currentTime)
-            sleep(toMs(LOOK_AHEAD))
+            sleep(toMs(env.lookAhead))
             isPlaying = true
         }
     }
@@ -218,8 +218,5 @@ class ScorePlayer(
 
     companion object {
         private const val DELTA_T = 0.03
-        const val SERVER_LATENCY: Double = 0.3
-        private const val SC_LANG_LATENCY = 2.0
-        private const val LOOK_AHEAD = SC_LANG_LATENCY + SERVER_LATENCY
     }
 }

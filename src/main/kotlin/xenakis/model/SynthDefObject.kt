@@ -5,6 +5,7 @@ import kotlinx.serialization.Serializable
 import reaktive.list.ReactiveList
 import reaktive.value.now
 import reaktive.value.reactiveVariable
+import xenakis.impl.ScWriter
 import xenakis.model.SuperColliderObject.LiveCycleType
 import xenakis.sc.GroupControlSpec
 
@@ -21,6 +22,10 @@ sealed interface SynthDefObject : ParameterizedObject, InstrumentObject {
         "group" -> ParameterDefObject("group", GroupControlSpec())
         else -> parameters.now.find { it.name.now == name }
             ?: error("Parameter $name not found in SynthDef '${this.name.now}'")
+    }
+
+    override fun ScWriter.addToServer() {
+        allocateServerObject()
     }
 
     fun defaultControls(context: Context): SynthControls {

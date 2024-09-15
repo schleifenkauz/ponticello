@@ -18,6 +18,7 @@ import xenakis.model.SuperColliderObject.LiveCycleType
 import xenakis.sc.CodeBlock
 import xenakis.sc.editor.CodeBlockEditor
 import xenakis.ui.XenakisController
+import xenakis.ui.notifyConfirm
 import java.io.File
 
 @Serializable
@@ -51,8 +52,6 @@ class XenakisProject private constructor(
         this.context = context
         client = context[SuperColliderClient]
         client.run {
-            instruments.run { allocateAll() }
-            flowGraph.run {  }
             updateSetupCode(serverSetup.editor.result.now, LiveCycleType.ServerBoot)
             updateSetupCode(serverTree.editor.result.now, LiveCycleType.ServerTree)
         }
@@ -87,6 +86,16 @@ class XenakisProject private constructor(
             appendLine(";")
             +"$liveCycleType.add($funcName, s)"
         }
+    }
+
+    fun syncWithSuperCollider() {
+        groups.syncAll()
+        instruments.syncAll()
+        buffers.syncAll()
+        busses.syncAll()
+        samples.syncAll()
+        flowGraph.updateFlow()
+        notifyConfirm("Synchronized with SuperCollider")
     }
 
     companion object {

@@ -37,7 +37,7 @@ abstract class AbstractSuperColliderObject : AbstractRenamableObject(), SuperCol
         }
     }
 
-    protected open fun ScWriter.addToServer() {
+    override fun ScWriter.addToServer() {
         appendBlock("$functionName = ") {
             allocateServerObject()
         }

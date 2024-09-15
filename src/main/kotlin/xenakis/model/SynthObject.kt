@@ -16,7 +16,6 @@ import xenakis.impl.code
 import xenakis.impl.copy
 import xenakis.sc.ControlSpec
 import xenakis.sc.editor.SynthDefSelector
-import xenakis.ui.ScorePlayer
 import xenakis.ui.SynthObjectView
 
 @Serializable
@@ -177,13 +176,9 @@ class SynthObject(
         controlObservers.remove(control)?.kill()
     }
 
-    override fun writeCode(
-        name: String,
-        position: ObjectPosition,
-        env: ScorePlayEnv
-    ): String = code {
+    override fun writeCode(name: String, position: ObjectPosition, env: ScorePlayEnv): String = code {
         myActiveSynths.add(name)
-        appendBlock("s.makeBundle(${ScorePlayer.SERVER_LATENCY})") {
+        appendBlock("s.makeBundle(${env.serverLatency})") {
             val constantArguments = controls.controlMap.mapNotNull { (param, control) ->
                 when (control) {
                     is BufferControl -> param to (control.sample.now?.get<SampleObject>()?.superColliderName ?: "0")

@@ -13,7 +13,7 @@ import javafx.scene.layout.VBox
 import xenakis.sc.editor.ScExprEditor
 
 class CodePane(title: String, val control: EditorControl<*>) : VBox() {
-    private val titleLabel = Label(title).styleClass("tool-pane-heading")
+    private val titleLabel = Label(title).styleClass("heading")
     private val header = createHeader()
     private val scrollPane = ScrollPane(control).styleClass("code-area")
 

@@ -11,6 +11,8 @@ interface SuperColliderObject : NamedObject {
 
     fun ScWriter.freeServerObject()
 
+    fun ScWriter.addToServer()
+
     fun sync(writer: ScWriter)
 
     fun sync()

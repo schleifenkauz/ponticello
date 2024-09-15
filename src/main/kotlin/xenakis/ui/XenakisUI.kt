@@ -69,7 +69,7 @@ class XenakisUI(
     private val contextBar = HBox()
     private val detailPane = VBox(10.0).apply {
         styleClass("tool-pane")
-        children.add(Label("Object details") styleClass "tool-pane-heading")
+        children.add(Label("Object details") styleClass "heading")
     }
 
     private lateinit var playBtn: Button
@@ -324,6 +324,9 @@ class XenakisUI(
                 samplesWindow.show()
                 samplesWindow.requestFocus()
             }
+            +Icon.Sync.button(action = "Sync with SuperCollider") {
+                project.syncWithSuperCollider()
+            }
             if (mode == Mode.Laptop) {
                 instrumentsWindow = SubWindow(instrumentsPane, "Instruments", context, subWindowType)
                 +Icon.Instrument.button(action = "Show instruments") { instrumentsWindow.show() }
@@ -557,6 +560,8 @@ class XenakisUI(
             on("Ctrl+Shift+F") { flowGraphWindow.show() }
             on("Ctrl+Alt+S") { settingsWindow.show() }
             on("Ctrl+G") { globalControlsWindow.show() }
+            on("Ctrl+B") { busesWindow.show() }
+            on("Ctrl+S") { samplesWindow.show() }
             on("F5") { controller.restartScSynth() }
 
             on("Shift?+C") { ev ->
@@ -577,6 +582,8 @@ class XenakisUI(
                 toolSelector.select(Tool.Pointer)
                 context[ScoreObjectSelectionManager].duplicateToClipboard()
             }
+
+            on("Ctrl+Shift+S") { project.syncWithSuperCollider() }
         }
     }
 

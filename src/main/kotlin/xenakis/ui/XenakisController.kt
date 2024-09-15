@@ -108,7 +108,7 @@ class XenakisController(private val primaryStage: Stage) {
         setProgress(0.1, "Starting SuperCollider")
         client.statusListener.on(StatusUpdate.ReadyToBoot) {
             isSuperColliderReady = false
-            Thread.sleep(200)
+            Thread.sleep(500)
             client.run("s.reboot;")
             setProgress(0.2, "Booting scsynth")
             Platform.runLater {
@@ -123,7 +123,7 @@ class XenakisController(private val primaryStage: Stage) {
             }
         }
         client.statusListener.on(StatusUpdate.OSCReady) {
-            Thread.sleep(200)
+            Thread.sleep(500)
             setProgress(0.4, "OSC connected")
             startXenakis()
         }

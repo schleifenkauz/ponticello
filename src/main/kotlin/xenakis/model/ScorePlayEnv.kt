@@ -1,10 +1,15 @@
 package xenakis.model
 
+import hextant.context.Context
 import reaktive.value.now
 
-class ScorePlayEnv {
+class ScorePlayEnv(private val context: Context) {
     private val activeSynths = mutableSetOf<ActiveSynth>()
     private val suffixes = mutableMapOf<ScoreObject, Int>()
+
+    val serverLatency: Double get() = context[Settings].serverLatency.now
+    val scLangLatency: Double get() = context[Settings].scLangLatency.now
+    val lookAhead: Double get() = scLangLatency + serverLatency
 
     @Synchronized
     fun markStart(obj: ScoreObject, position: ObjectPosition) {

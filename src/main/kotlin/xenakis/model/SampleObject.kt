@@ -81,6 +81,7 @@ class SampleObject private constructor(
     override fun onAdded(context: Context) {
         setContext(context)
         updateSpectrogram()
+        super.onAdded(context)
     }
 
     override fun initialize(context: Context) {

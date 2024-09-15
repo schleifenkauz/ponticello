@@ -8,7 +8,6 @@ import reaktive.value.now
 import reaktive.value.reactiveVariable
 import xenakis.impl.code
 import xenakis.sc.editor.ScFunctionEditor
-import xenakis.ui.ScorePlayer
 import xenakis.ui.TaskObjectView
 
 class TaskObject(
@@ -23,13 +22,9 @@ class TaskObject(
 
     override fun doClone(newName: String): ScoreObject = TaskObject(reactiveVariable(newName), code.clone(), width)
 
-    override fun writeCode(
-        name: String,
-        position: ObjectPosition,
-        env: ScorePlayEnv
-    ): String = code {
+    override fun writeCode(name: String, position: ObjectPosition, env: ScorePlayEnv): String = code {
         appendBlock("~tasks['$name'] = Task") {
-            +"${ScorePlayer.SERVER_LATENCY}.wait"
+            +"${env.serverLatency}.wait"
             val function = code.editor.result.now
             function.code(writer, context)
             appendLine(".value()")

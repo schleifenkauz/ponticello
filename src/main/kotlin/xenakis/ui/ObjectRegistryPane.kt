@@ -47,7 +47,7 @@ abstract class ObjectRegistryPane<O : NamedObject>(
 
     private fun createHeader(): HBox {
         val type = registry.objectType
-        val label = Label(plural(type)).styleClass("tool-pane-heading")
+        val label = Label(plural(type)).styleClass("heading")
         val space = infiniteSpace()
         val addBtn = Icon.Add.button(action = "Add $type") { addObject() }
         val reloadBtn = Icon.Repeat.button(action = "Sync ${plural(type)}") {

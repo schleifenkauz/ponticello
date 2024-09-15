@@ -210,7 +210,7 @@ Slider.control-detail-editor {
     -fx-spacing: 5px;
 }
 
-.tool-pane-heading {
+.heading {
     -fx-font-size: 16px;
 }
 
@@ -584,4 +584,8 @@ Slider.control-detail-editor {
 .option-label {
     -fx-text-fill: white;
     -fx-font-size: 12px;
+}
+
+.settings-pane {
+    -fx-background-color: #1e1f22;
 }

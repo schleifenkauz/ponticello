@@ -64,7 +64,7 @@ class SynthObjectView(instance: ScoreObjectInstance, val obj: SynthObject) : Sco
         addItem("SynthDef: ", HBox(5.0, box, viewBtn).centerChildrenVertically())
         val header = HBox(
             5.0,
-            Label("Synth controls").styleClass("tool-pane-heading"),
+            Label("Synth controls").styleClass("heading"),
             infiniteSpace(),
             Icon.Add.button(action = "Add control") { ev ->
                 if (ev.isShiftDown) {

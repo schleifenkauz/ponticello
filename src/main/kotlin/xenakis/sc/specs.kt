@@ -55,9 +55,10 @@ data class NumericalControlSpec(
 ) : ControlSpec {
     val accuracy get() = accuracy(step.get())
 
-    constructor(default: Double, min: Double, max: Double, warp: Warp, step: Double, associatedColor: Color) : this(
-        DoubleLiteral(default), DoubleLiteral(min), DoubleLiteral(max), warp, DoubleLiteral(step), associatedColor
-    )
+    constructor(
+        default: Double, min: Double, max: Double, step: Double,
+        warp: Warp = Warp.Linear, associatedColor: Color = Color.WHITE
+    ) : this(DoubleLiteral(default), DoubleLiteral(min), DoubleLiteral(max), warp, DoubleLiteral(step), associatedColor)
 
     override val type: ParameterType
         get() = ParameterType.Numerical
@@ -71,7 +72,7 @@ data class NumericalControlSpec(
         "default: ${defaultValue.text}, range: ${min.text}..${max.text}, warp: $warp, step: ${step.text}"
 
     companion object {
-        val DEFAULT = NumericalControlSpec(0.0, 0.0, 1.0, Warp.Linear, 0.1, Color.WHITE)
+        val DEFAULT = NumericalControlSpec(0.0, 0.0, 1.0, 0.1, Warp.Linear, Color.WHITE)
     }
 }
 
