@@ -12,7 +12,6 @@ class ScorePlayer(
     private val playHead: PlayHead,
     private val client: SuperColliderClient
 ) : Thread(), ScoreListener {
-    //TODO synchronize between player thread and score changes from FXThread
     private val events = TreeSet<Event>()
     private val scoreInstances = mutableMapOf<Score, MutableSet<ScoreObjectInstance>>()
     private fun scoreInstances(score: Score) = scoreInstances.getOrPut(score) { mutableSetOf() }
@@ -36,43 +35,46 @@ class ScorePlayer(
         }
     }
 
-    override fun addedObject(score: Score, inst: ScoreObjectInstance) {
+    override fun addedObject(score: Score, inst: ScoreObjectInstance) = synchronized(events) {
         val obj = inst.obj
         if (obj is ScoreObjectGroup) {
             scoreInstances(obj.score).add(inst)
             obj.score.addListener(this)
         }
+        println("Added $inst to ${score.scoreName.now}")
         for (pos in absolutePositions(score)) {
             val position = pos + inst.position
+            println("   at $position")
             events.add(Event(Event.Type.ObjectStart, position, inst))
             events.add(Event(Event.Type.ObjectEnd, position + ObjectPosition(obj.duration, 0.0), inst))
         }
     }
 
-    override fun removedObject(score: Score, inst: ScoreObjectInstance) {
+    override fun removedObject(score: Score, inst: ScoreObjectInstance): Unit = synchronized(events) {
         val obj = inst.obj
-        for (pos in absolutePositions(score)) {
-            val position = pos + inst.position
-            events.add(Event(Event.Type.ObjectStart, position, inst))
-            events.add(Event(Event.Type.ObjectEnd, position + ObjectPosition(obj.duration, 0.0), inst))
+        val itr = events.iterator()
+        for (ev in itr) {
+            if (ev.obj == inst) {
+                itr.remove()
+                println("Removed ${ev.type}: ${ev.obj} at ${ev.absolutePosition}")
+            }
         }
         if (obj is ScoreObjectGroup) {
-            scoreInstances(score).remove(inst)
+            scoreInstances(obj.score).remove(inst)
             for (subInst in obj.score.objectInstances) {
-                removedObject(obj.score, inst)
+                removedObject(obj.score, subInst)
             }
             obj.score.removeListener(this)
         }
     }
 
-    //TODO there is a bug here
-    override fun movedObject(score: Score, inst: ScoreObjectInstance, oldPosition: ObjectPosition) {
-        val oldInstance = ScoreObjectInstance(inst.obj.createReference(), oldPosition.time, oldPosition.y, inst.muted)
-        removedObject(score, oldInstance)
-        addedObject(score, inst)
-    }
+    override fun movedObject(score: Score, inst: ScoreObjectInstance, oldPosition: ObjectPosition) =
+        synchronized(events) {
+            removedObject(score, inst)
+            addedObject(score, inst)
+        }
 
-    private fun eventsAt(time: Double, delta: Double): List<Event> {
+    private fun eventsAt(time: Double, delta: Double): List<Event> = synchronized(events) {
         val dummy = Event(Event.Type.Dummy, ObjectPosition(time, 0.0), null)
         return events.tailSet(dummy).takeWhile { ev -> ev.absolutePosition.time < time + delta }
     }
@@ -126,31 +128,34 @@ class ScorePlayer(
         val activeObjects = activeObjects(startFrom, delta = LOOK_AHEAD)
         for ((_, position, inst) in activeObjects) {
             if (inst != null && !inst.muted) {
-                var obj = inst.obj
+                val obj = inst.obj
                 val delta = inst.start - startFrom
-                if (delta < 0.0) obj = obj.cut(-delta, HorizontalDirection.RIGHT, obj.name.now) ?: obj
                 val pos = position + ObjectPosition(delta.coerceAtLeast(0.0), 0.0)
-                env.markStart(obj, pos)
-                println("Scheduling $obj at $pos, delta: $delta")
-                scheduleObject(obj, pos)
+                env.markStart(obj, position) //important that we mark the original object not the cutoff one
+                println("   Scheduling $obj at $pos, delta: $delta")
+                scheduleObject(obj, pos, cutoff = -delta.coerceAtMost(0.0))
             }
         }
     }
 
     private fun scheduleEvents(t: Double, delta: Double) {
+        var printedInterval = false
         for ((type, position, inst) in eventsAt(t, delta)) {
             if (inst == null || inst.muted) continue
-            println("interval at t=${t}s, delta = ${delta}s")
+            if (!printedInterval) {
+                println("interval at t=${t}s, delta = ${delta}s")
+                printedInterval = true
+            }
             val obj = inst.obj
             when (type) {
                 Event.Type.ObjectStart -> {
-                    println("ObjectStart: $obj at $position")
+                    println("   ObjectStart: $obj at $position")
                     env.markStart(obj, position)
-                    scheduleObject(obj, position)
+                    scheduleObject(obj, position, cutoff = 0.0)
                 }
 
                 Event.Type.ObjectEnd -> {
-                    println("ObjectEnd: $obj at $position")
+                    println("   ObjectEnd: $obj at $position")
                     env.markEnd(obj, position)
                 }
 
@@ -159,25 +164,24 @@ class ScorePlayer(
         }
     }
 
-    private fun scheduleObject(obj: ScoreObject, absolutePosition: ObjectPosition) {
+    private fun scheduleObject(obj: ScoreObject, absolutePosition: ObjectPosition, cutoff: Double) {
         val time = absolutePosition.time - lastPlayFrom
         val name = env.getUniqueNameFor(obj)
         val timeForExecution = (time + SC_LANG_LATENCY).toString()
-        val code = obj.writeCode(name, absolutePosition, env)
+        val o = if (cutoff > 0.0) obj.cut(cutoff, HorizontalDirection.RIGHT, obj.name.now) ?: obj else obj
+        val code = o.writeCode(name, absolutePosition, env)
         if (code == "") return
-        println("unique name for $obj at $time: $name")
-        println("time for execution: ${timeForExecution}s")
-        println("code: $code")
+        println("   unique name for $o at $time: $name")
+        println("   time for execution: ${timeForExecution}s")
         client.send("schedule", listOf(timeForExecution, code))
     }
 
     fun play() {
         if (isPlaying) return
-        val startFrom = playHead.currentTime
         thread(isDaemon = true) {
             println("START PLAYBACK")
             client.send("start_play")
-            startPlay(startFrom)
+            startPlay(playHead.currentTime)
             sleep(toMs(LOOK_AHEAD))
             isPlaying = true
         }
@@ -187,6 +191,7 @@ class ScorePlayer(
         if (!isPlaying) return
         isPlaying = false
         println("PAUSE PLAYBACK")
+        env.clear()
         client.send("pause_play")
     }
 
@@ -214,7 +219,7 @@ class ScorePlayer(
     companion object {
         private const val DELTA_T = 0.03
         const val SERVER_LATENCY: Double = 0.3
-        private const val SC_LANG_LATENCY = 1.0
+        private const val SC_LANG_LATENCY = 2.0
         private const val LOOK_AHEAD = SC_LANG_LATENCY + SERVER_LATENCY
     }
 }

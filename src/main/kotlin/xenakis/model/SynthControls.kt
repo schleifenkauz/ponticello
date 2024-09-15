@@ -60,7 +60,7 @@ class SynthControls(
     fun transformControls(f: (String, ParameterControl) -> ParameterControl) =
         SynthControls(map.mapValuesTo(mutableMapOf()) { (name, ctrl) -> f(name, ctrl) })
 
-    fun copy() = SynthControls(map.mapValuesTo(mutableMapOf()) { (_, c) -> c.copy() })
+    fun copy() = SynthControls(map.mapValuesTo(mutableMapOf()) { (_, c) -> c.copy() }, extraSpecs.toMutableMap())
 
     fun addView(view: View) {
         for ((name, control) in controlMap) {

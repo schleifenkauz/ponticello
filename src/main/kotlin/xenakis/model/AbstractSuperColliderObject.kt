@@ -12,6 +12,9 @@ abstract class AbstractSuperColliderObject : AbstractRenamableObject(), SuperCol
     override fun initialize(context: Context) {
         if (initialized) return
         super.initialize(context)
+    }
+
+    override fun onAdded(context: Context) {
         client.run { addToServer() }
     }
 

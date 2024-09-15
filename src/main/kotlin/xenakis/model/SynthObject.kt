@@ -204,6 +204,7 @@ class SynthObject(
             val group = group.now
             val synthDefName = synthDef.name.now
             val (addAction, target) = env.getSynthOrderFor(group, position)
+            println("   $name $addAction $target")
             +"$synthVar = Synth(\\$synthDefName, [$constantArguments], target: $target, addAction: $addAction)"
             +"$synthVar.register"
             for ((param, control) in controls.controlMap) {

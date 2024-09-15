@@ -2,10 +2,9 @@
 
 ### Make playback more reactive
 
-- can we generate code on the fly, i.e. only shortly before the cursor hits an object?
-- global variables are already reactive
 - would be interesting to have live-control over constant parameters of individual objects
 - live mute/unmute
+- also react to objects being resized(?)
 
 ### completion
 
@@ -86,8 +85,5 @@
 ## Bugs
 
 - effects that work with intermediate buses have to be executed after the flow synths
-- sometimes the first ScoreObject is not played, when the cursor starts exactly over it
 - fix time display and snapping in envelope editors
-- on startup an unnecessarily large empty space is displayed, on scrolling the display works correctly
-- sometimes playback stops at a specific score object: find out what causes this and fix it
-- sometimes playback is duplicated with a short delay
+- weird window behaviour on startup

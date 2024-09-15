@@ -26,18 +26,15 @@ abstract class AbstractRenamableObject : RenamableObject {
         this.context = context
     }
 
-    override fun onAdded(context: Context) {}
-
     override fun initialize(context: Context) {
         if (initialized) return
         initialized = true
         setContext(context)
     }
 
-    override fun onRemoved() {
-        if (!initialized) return
-        initialized = false
-    }
+    override fun onAdded(context: Context) {}
+
+    override fun onRemoved() {}
 
     override fun rename(newName: String) {
         mutableName.now = newName
