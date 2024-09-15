@@ -37,7 +37,6 @@ class PianoRollObjectView(inst: ScoreObjectInstance, private val obj: PianoRollO
     private val notePane = Pane()
     private val cursor = Rectangle(10.0, obj.pixelsPerPitch) styleClass "note-cursor"
     private val cursorOpacity = reactiveVariable(CURSOR_OPACITY)
-    private var pixelsPerPitchBeforeResize: Double = obj.pixelsPerPitch
 
     fun addedNote(note: PianoRollObject.Note) {
         val rect = BorderPane() styleClass "note-object"
@@ -119,7 +118,7 @@ class PianoRollObjectView(inst: ScoreObjectInstance, private val obj: PianoRollO
 
     override fun beforeResize(ev: MouseEvent, cursor: Cursor) {
         super.beforeResize(ev, cursor)
-        pixelsPerPitchBeforeResize = obj.pixelsPerPitch
+        obj.pixelsPerPitchBeforeResize = obj.pixelsPerPitch
     }
 
     fun updatedNote(note: PianoRollObject.Note) {

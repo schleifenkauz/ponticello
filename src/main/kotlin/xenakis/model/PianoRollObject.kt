@@ -18,6 +18,7 @@ import reaktive.value.ReactiveVariable
 import reaktive.value.now
 import reaktive.value.reactiveVariable
 import xenakis.impl.code
+import xenakis.impl.copy
 import xenakis.impl.reactive
 import xenakis.sc.code
 import xenakis.sc.editor.*
@@ -27,8 +28,8 @@ import kotlin.math.roundToInt
 
 @Serializable
 class PianoRollObject(
-    override val mutableName: ReactiveVariable<String>,
-    private val initialInstrument: ObjectReference,
+    @SerialName("name") override val mutableName: ReactiveVariable<String>,
+    @SerialName("instrument") private val _instrument: ReactiveVariable<ObjectReference>,
     @SerialName("lowestPitch") private var _lowestPitch: Int,
     @SerialName("highestPitch") private var _highestPitch: Int,
     val eventDictionary: EditorRoot<EventDictionaryEditor>,
@@ -44,7 +45,7 @@ class PianoRollObject(
     lateinit var instrumentSelector: InstrumentSelector
         private set
 
-    val instrument get() = if (initialized) instrumentSelector.selected.now else initialInstrument
+    private val instrument get() = _instrument.now.get<InstrumentObject>()
 
     var lowestPitch
         get() = _lowestPitch
@@ -71,7 +72,7 @@ class PianoRollObject(
     override fun initialize(context: Context) {
         if (initialized) return
         super.initialize(context)
-        instrumentSelector = InstrumentSelector(context, reactiveVariable(initialInstrument))
+        instrumentSelector = InstrumentSelector(context, _instrument)
         for (note in notes) {
             note.parent = this
         }
@@ -191,7 +192,7 @@ class PianoRollObject(
     }
 
     override fun doClone(newName: String): ScoreObject = PianoRollObject(
-        reactiveVariable(newName), instrument, lowestPitch, highestPitch,
+        reactiveVariable(newName), _instrument.copy(), lowestPitch, highestPitch,
         context.withoutUndo { eventDictionary.clone() },
         notes.mapTo(mutableListOf()) { n -> n.copy() }
     )
@@ -202,16 +203,20 @@ class PianoRollObject(
             RIGHT -> notes.filter { n -> n.onset >= position }
         }.mapTo(mutableListOf()) { n -> n.copy() }
         return PianoRollObject(
-            reactiveVariable(newName), initialInstrument,
+            reactiveVariable(newName), _instrument,
             lowestPitch, highestPitch,
             eventDictionary.clone(), notes
         )
     }
 
-    override fun writeCode(env: ScorePlayEnv, name: String, cutoff: Double): String = code {
+    override fun writeCode(
+        name: String,
+        position: ObjectPosition,
+        env: ScorePlayEnv
+    ): String = code {
         val generalEventDict = eventDictionary.editor.result.now
         for ((idx, n) in notes.withIndex()) {
-            val t = n.onset - cutoff
+            val t = n.onset
             if (t < -n.duration) continue
             val dur = n.duration + t.coerceAtMost(0.0)
             val midinote = n.midinote
@@ -220,7 +225,7 @@ class PianoRollObject(
             eventMap["duration"] = dur.toString()
             for ((key, value) in eventDict.entries) eventMap[key.text] = value.code(context)
             for ((key, value) in generalEventDict.entries) eventMap[key.text] = value.code(context)
-            val playNote = when (val instr = instrument.get<InstrumentObject>()) {
+            val playNote = when (val instr = instrument) {
                 is SynthDefObject -> {
                     eventMap["freq"] = "$midinote.midicps + ${eventMap["detune"] ?: 0}.midiratio"
                     eventMap.remove("detune")

@@ -1,8 +1,6 @@
 package xenakis.sc.editor
 
 import hextant.context.Context
-import hextant.serial.SnapshotAware
-import kotlinx.serialization.Serializable
 import reaktive.value.ReactiveVariable
 import reaktive.value.reactiveVariable
 import xenakis.model.InstrumentRegistry
@@ -12,7 +10,6 @@ import xenakis.model.SynthDefObject
 import xenakis.ui.InstrumentRegistryPane
 import kotlin.reflect.KClass
 
-@Serializable(with = SnapshotAware.Serializer::class)
 class SynthDefSelector(
     context: Context,
     selected: ReactiveVariable<ObjectReference>,

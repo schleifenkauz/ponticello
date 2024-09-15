@@ -89,10 +89,10 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
 
     private fun layoutObjects() {
         for ((obj, view) in views) {
-            if (obj.time > displayEnd) continue
-            if (obj.time + obj.duration < displayStart) continue
+            if (obj.start > displayEnd) continue
+            if (obj.start + obj.duration < displayStart) continue
             view.prefWidth = view.getDisplayWidth()
-            view.relocate(getX(obj.time), obj.y)
+            view.relocate(getX(obj.start), obj.y)
             view.rescale()
             children.add(view)
         }
@@ -172,7 +172,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
         val controls = synthDef.defaultControls(context)
         val bufCtrl = controls["buf"] as BufferControl
         bufCtrl.sample.set(sample.createReference())
-        val synthDefRef = synthDef.createReference()
+        val synthDefRef = reactiveVariable(synthDef.createReference())
         val name = context[ScoreObjectRegistry].availableName(sample.name.now)
         val obj = SynthObject(reactiveVariable(name), synthDefRef, controls)
         obj.setInitialSize(sample.duration, 150.0)
@@ -201,18 +201,18 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
     * Score change handlers
     * */
 
-    override fun addedObject(obj: ScoreObjectInstance) {
-        val view = createObjectView(obj)
+    override fun addedObject(score: Score, inst: ScoreObjectInstance) {
+        val view = createObjectView(inst)
         view.initialize(this)
-        views[obj] = view
+        views[inst] = view
         children.add(view)
         Platform.runLater {
             view.requestFocus()
         }
     }
 
-    override fun removedObject(obj: ScoreObjectInstance) {
-        val view = views.remove(obj) ?: return
+    override fun removedObject(score: Score, inst: ScoreObjectInstance) {
+        val view = views.remove(inst) ?: return
         children.remove(view)
         ingoingArrows.remove(view)?.let { (arr, _) -> children.remove(arr) }
         outgoingArrows.remove(view)?.let { (arr, _) -> children.remove(arr) }
@@ -356,7 +356,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
                         selectedArea.requestFocus()
                     }
                 } else if (ev.button == MouseButton.SECONDARY) pasteFromSystemClipboard(ev)
-                else if (this is ScoreView) ui.player.setPlayHeadX(ev.x)
+                else if (this is ScoreView && !ui.player.isPlaying) ui.playHead.setPlayHeadX(ev.x)
             }
 
             newObj != null -> {
@@ -389,7 +389,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
                 if (def !is SynthDefObject) return
                 val initialName = context[ScoreObjectRegistry].availableName(def.name.now)
                 promptNewObjectName("Synth name", initialName) { name ->
-                    val ref = def.createReference()
+                    val ref = reactiveVariable(def.createReference())
                     val obj = SynthObject(reactiveVariable(name), ref, controls = def.defaultControls(context))
                     addNewObject(obj, rect)
                 }
@@ -410,7 +410,8 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
                     val value = spec.defaultValue.get()
                     val duration = getDuration(rect.width)
                     val envelope = Envelope.constant(value, duration, spec.warp)
-                    val obj = EnvelopeObject(reactiveVariable(name), spec, busSelector.selected.now, envelope)
+                    val busRef = reactiveVariable(busSelector.selected.now)
+                    val obj = EnvelopeObject(reactiveVariable(name), spec, busRef, envelope)
                     addNewObject(obj, rect)
                 }
             }
@@ -426,7 +427,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
                     val objects = viewsInside(rect.boundsInParent).mapTo(mutableSetOf()) { it.instance }
                     score.removeObjects(objects)
                     for (obj in objects) {
-                        obj.moveTo(obj.time - getTime(rect.x), obj.y - rect.y)
+                        obj.moveTo(obj.start - getTime(rect.x), obj.y - rect.y)
                     }
                     val subScore = Score(objects.toMutableList())
                     addNewObject(ScoreObjectGroup(reactiveVariable(name), subScore), rect)
@@ -460,7 +461,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
                     val eventDictionary = EditorRoot.create(EventDictionaryEditor(context))
                     PianoRollObject(
                         reactiveVariable(name),
-                        instr.createReference(),
+                        reactiveVariable(instr.createReference()),
                         lowestPitch,
                         highestPitch,
                         eventDictionary,

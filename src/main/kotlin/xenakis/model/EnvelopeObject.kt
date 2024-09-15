@@ -10,9 +10,9 @@ import reaktive.value.ReactiveVariable
 import reaktive.value.now
 import reaktive.value.reactiveVariable
 import xenakis.impl.code
+import xenakis.impl.copy
 import xenakis.sc.ControlSpec
 import xenakis.sc.NumericalControlSpec
-import xenakis.sc.Rate
 import xenakis.sc.editor.BusSelector
 import xenakis.ui.EnvelopeObjectView
 
@@ -20,7 +20,7 @@ import xenakis.ui.EnvelopeObjectView
 data class EnvelopeObject(
     @SerialName("name") override val mutableName: ReactiveVariable<String>,
     @SerialName("spec") private var _spec: NumericalControlSpec,
-    @SerialName("bus") private val _initialBusRef: ObjectReference?,
+    @SerialName("bus") private val busRef: ReactiveVariable<ObjectReference>,
     @SerialName("envelope") val envelope: Envelope
 ) : ScoreObject() {
     override val type: String
@@ -29,7 +29,7 @@ data class EnvelopeObject(
     lateinit var busSelector: BusSelector
         private set
 
-    val bus get() = if (initialized) busSelector.selected.now else _initialBusRef
+    val bus: BusObject get() = busRef.now.get()
 
     @Transient
     override val viewManager = ListenerManager.createWeakListenerManager<EnvelopeObjectView>()
@@ -62,10 +62,7 @@ data class EnvelopeObject(
     override fun initialize(context: Context) {
         if (initialized) return
         super.initialize(context)
-        busSelector = BusSelector(context, preferredRate = Rate.Control, 1)
-        if (_initialBusRef != null) {
-            busSelector.selectInitial(_initialBusRef)
-        }
+        busSelector = BusSelector(context, bus.rate.now, bus.channels.now, busRef)
     }
 
     override val associatedControls: Map<String, ParameterControl>
@@ -74,13 +71,13 @@ data class EnvelopeObject(
     override fun getSpec(parameter: String): ControlSpec = if (parameter == name.now) spec else super.getSpec(parameter)
 
     override fun doClone(newName: String): ScoreObject =
-        EnvelopeObject(reactiveVariable(newName), spec, bus, envelope.copy())
+        EnvelopeObject(reactiveVariable(newName), spec, busRef.copy(), envelope.copy())
 
     override fun doCut(position: Double, whichHalf: HorizontalDirection, newName: String): ScoreObject =
-        EnvelopeObject(reactiveVariable(newName), spec, bus, envelope.cut(position / duration, whichHalf))
+        EnvelopeObject(reactiveVariable(newName), spec, busRef.copy(), envelope.cut(position / duration, whichHalf))
 
-    override fun writeCode(env: ScorePlayEnv, name: String, cutoff: Double): String = code {
-        val envelopeCode = envelope.code(cutoff)
+    override fun writeCode(name: String, position: ObjectPosition, env: ScorePlayEnv): String = code {
+        val envelopeCode = envelope.code()
         append("{ $envelopeCode }.play(s, ${busSelector.selected.now.get<BusObject>().superColliderName});")
     }
 }

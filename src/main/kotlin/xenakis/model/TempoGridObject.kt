@@ -1,6 +1,7 @@
 package xenakis.model
 
 import hextant.core.editor.ListenerManager
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import reaktive.Observer
@@ -14,7 +15,7 @@ import kotlin.math.roundToInt
 
 @Serializable
 class TempoGridObject(
-    override val mutableName: ReactiveVariable<String>,
+    @SerialName("name") override val mutableName: ReactiveVariable<String>,
     val beatsPerMinute: ReactiveVariable<Int>,
     val beatsPerBar: ReactiveVariable<Int>,
     val ticksPerBeat: ReactiveVariable<Int>
@@ -45,7 +46,7 @@ class TempoGridObject(
             SnapOption.Ticks -> beatUnit / ticksPerBeat.now
             else -> throw AssertionError("Invalid snap option $option")
         }
-        return (((t - instance.time) / unit).roundToInt() * unit) + instance.time
+        return (((t - instance.start) / unit).roundToInt() * unit) + instance.start
     }
 
     fun getDuration(periodUnit: SnapOption): Double {
@@ -58,7 +59,11 @@ class TempoGridObject(
         }
     }
 
-    override fun writeCode(env: ScorePlayEnv, name: String, cutoff: Double): String = ""
+    override fun writeCode(
+        name: String,
+        position: ObjectPosition,
+        env: ScorePlayEnv
+    ): String = ""
 
     companion object {
         fun create(name: String, bpm: Int, bpb: Int, tpb: Int): TempoGridObject =

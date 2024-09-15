@@ -46,8 +46,12 @@ class Score(private val instances: MutableList<ScoreObjectInstance> = mutableLis
     fun addListener(listener: ScoreListener) {
         views.addListener(listener)
         for (inst in objectInstances) {
-            listener.addedObject(inst)
+            listener.addedObject(this, inst)
         }
+    }
+
+    fun removeListener(listener: ScoreListener) {
+        views.removeListener(listener)
     }
 
     fun has(name: String) = objects.any { obj -> obj.name.now == name }
@@ -76,7 +80,7 @@ class Score(private val instances: MutableList<ScoreObjectInstance> = mutableLis
         inst.initialize(context)
         inst.addToScore(this)
         instances.add(inst)
-        views.notifyListeners { addedObject(inst) }
+        views.notifyListeners { addedObject(this@Score, inst) }
         undo.record(ScoreEdit.AddObject(inst, this))
     }
 
@@ -85,7 +89,7 @@ class Score(private val instances: MutableList<ScoreObjectInstance> = mutableLis
             logger.info("Removing ${inst.obj.name.now} from score ${scoreName.now}")
             instances.remove(inst)
             if (!context[rootScore].hasInstancesOf(inst.obj)) context[ScoreObjectRegistry].remove(inst.obj)
-            views.notifyListeners { removedObject(inst) }
+            views.notifyListeners { removedObject(this@Score, inst) }
         }
         undo.record(ScoreEdit.RemoveObjects(set, this))
     }
@@ -94,12 +98,27 @@ class Score(private val instances: MutableList<ScoreObjectInstance> = mutableLis
         removeObjects(setOf(obj))
     }
 
+    fun movedObject(inst: ScoreObjectInstance, oldPosition: ObjectPosition) {
+        views.notifyListeners { movedObject(this@Score, inst, oldPosition) }
+    }
+
+    fun activeObjects(time: Double): List<ScoreObjectInstance> = buildList {
+        var firstThatEndsAfter = instances.binarySearch { inst -> inst.end.compareTo(time) }
+        if (firstThatEndsAfter < 0) firstThatEndsAfter = -(firstThatEndsAfter + 1)
+        var lastThatStartsBefore = instances.binarySearch { inst -> inst.start.compareTo(time) }
+        if (lastThatStartsBefore < 0) lastThatStartsBefore = -(lastThatStartsBefore + 1)
+        for (i in firstThatEndsAfter..lastThatStartsBefore) {
+            val inst = instances[i]
+            if (time in inst.timeRange) add(inst)
+        }
+    }
+
     fun addTime(location: Double, amount: Double) {
         undo.record(ScoreEdit.AddTime(location, amount, this))
         context.withoutUndo {
             for (inst in objectInstances) {
-                if (inst.time > location) {
-                    val newStart = inst.time + amount
+                if (inst.start > location) {
+                    val newStart = inst.start + amount
                     inst.setTime(newStart)
                 }
             }
@@ -110,11 +129,11 @@ class Score(private val instances: MutableList<ScoreObjectInstance> = mutableLis
         undo.beginCompoundEdit()
         val removedDuration = end - start
         for (inst in objectInstances) {
-            if (inst.time > start) {
-                if (inst.time + inst.obj.duration < end) {
+            if (inst.start > start) {
+                if (inst.start + inst.obj.duration < end) {
                     removeObject(inst)
                 } else {
-                    val newStart = (inst.time - removedDuration).coerceAtLeast(0.0)
+                    val newStart = (inst.start - removedDuration).coerceAtLeast(0.0)
                     inst.setTime(newStart)
                 }
             }
@@ -124,7 +143,7 @@ class Score(private val instances: MutableList<ScoreObjectInstance> = mutableLis
 
     fun loop(inst: ScoreObjectInstance, period: Double, repetitions: Int) {
         context[UndoManager].beginCompoundEdit("Loop object")
-        var t = inst.time
+        var t = inst.start
         val layers = (inst.obj.duration / period + 0.95).toInt()
         for (n in 1..repetitions) {
             t += period

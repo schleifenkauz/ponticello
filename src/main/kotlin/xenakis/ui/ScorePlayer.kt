@@ -1,155 +1,192 @@
 package xenakis.ui
 
-import com.illposed.osc.OSCPacketDispatcher.DaemonThreadFactory
-import javafx.application.Platform
-import javafx.beans.binding.Bindings
-import javafx.scene.shape.Line
+import javafx.geometry.HorizontalDirection
 import reaktive.value.now
 import xenakis.impl.SuperColliderClient
 import xenakis.model.*
 import java.util.*
-import java.util.concurrent.Executors
-import java.util.concurrent.TimeUnit
 import kotlin.concurrent.thread
 
 class ScorePlayer(
-    private val scoreView: ScoreView,
-    private val project: XenakisProject,
+    private val rootScore: Score,
+    private val playHead: PlayHead,
     private val client: SuperColliderClient
-) : Thread() {
-    private var latencyReached = false
+) : Thread(), ScoreListener {
+    //TODO synchronize between player thread and score changes from FXThread
+    private val events = TreeSet<Event>()
+    private val scoreInstances = mutableMapOf<Score, MutableSet<ScoreObjectInstance>>()
+    private fun scoreInstances(score: Score) = scoreInstances.getOrPut(score) { mutableSetOf() }
 
-    private val executor = Executors.newSingleThreadScheduledExecutor(DaemonThreadFactory())
-
-    var playHeadPosition = 0.0
-        private set
-
-    @Suppress("InconsistentCommentForJavaParameter")
-    val playHead = Line(
-        /* startX = */ PLAY_HEAD_WIDTH,
-        /* startY = */ 20.0,
-        /* endX = */ PLAY_HEAD_WIDTH,
-        /* endY = */ scoreView.height - 20.0
-    ).styleClass("play-head")
-
-    init {
-        isDaemon = true
-        start()
-        setupPlayHead()
-    }
-
-    private fun setupPlayHead() {
-        playHead.viewOrder = -500.0
-        playHead.strokeWidthProperty().bind(Bindings.divide(PLAY_HEAD_WIDTH, scoreView.scaleXProperty()))
-        playHead.endYProperty().bind(scoreView.heightProperty().subtract(20.0))
-    }
-
-    fun setPlayHeadX(x: Double) {
-        if (isPlaying) return
-        playHead.layoutX = x
-        playHeadPosition = scoreView.getTime(playHead.layoutX)
-    }
+    private val env = ScorePlayEnv()
 
     var isPlaying = false
         private set
+    private var lastPlayFrom: Double = 0.0
+
+    init {
+        rootScore.addListener(this)
+        isDaemon = true
+        start()
+    }
+
+    private fun absolutePositions(score: Score): List<ObjectPosition> = when {
+        score == rootScore -> listOf(ObjectPosition(0.0, 0.0))
+        else -> scoreInstances(score).flatMap { inst ->
+            absolutePositions(inst.score).map { pos -> pos + inst.position }
+        }
+    }
+
+    override fun addedObject(score: Score, inst: ScoreObjectInstance) {
+        val obj = inst.obj
+        if (obj is ScoreObjectGroup) {
+            scoreInstances(obj.score).add(inst)
+            obj.score.addListener(this)
+        }
+        for (pos in absolutePositions(score)) {
+            val position = pos + inst.position
+            events.add(Event(Event.Type.ObjectStart, position, inst))
+            events.add(Event(Event.Type.ObjectEnd, position + ObjectPosition(obj.duration, 0.0), inst))
+        }
+    }
+
+    override fun removedObject(score: Score, inst: ScoreObjectInstance) {
+        val obj = inst.obj
+        for (pos in absolutePositions(score)) {
+            val position = pos + inst.position
+            events.add(Event(Event.Type.ObjectStart, position, inst))
+            events.add(Event(Event.Type.ObjectEnd, position + ObjectPosition(obj.duration, 0.0), inst))
+        }
+        if (obj is ScoreObjectGroup) {
+            scoreInstances(score).remove(inst)
+            for (subInst in obj.score.objectInstances) {
+                removedObject(obj.score, inst)
+            }
+            obj.score.removeListener(this)
+        }
+    }
+
+    //TODO there is a bug here
+    override fun movedObject(score: Score, inst: ScoreObjectInstance, oldPosition: ObjectPosition) {
+        val oldInstance = ScoreObjectInstance(inst.obj.createReference(), oldPosition.time, oldPosition.y, inst.muted)
+        removedObject(score, oldInstance)
+        addedObject(score, inst)
+    }
+
+    private fun eventsAt(time: Double, delta: Double): List<Event> {
+        val dummy = Event(Event.Type.Dummy, ObjectPosition(time, 0.0), null)
+        return events.tailSet(dummy).takeWhile { ev -> ev.absolutePosition.time < time + delta }
+    }
+
+    private fun activeObjects(time: Double, delta: Double): List<Event> {
+        val dest = mutableListOf<Event>()
+        collectActiveObjects(ObjectPosition(0.0, 0.0), rootScore, time, delta, dest)
+        return dest
+    }
+
+    private fun collectActiveObjects(
+        position: ObjectPosition, score: Score, time: Double, delta: Double,
+        dest: MutableList<Event>
+    ) {
+        if (position.time > time) return
+        for (inst in score.objectInstances) {
+            val obj = inst.obj
+            val absolutePosition = position + inst.position
+            if (obj is ScoreObjectGroup) {
+                collectActiveObjects(absolutePosition, score, time, delta, dest)
+            } else if (absolutePosition.time - delta <= time && time <= absolutePosition.time + obj.duration) {
+                dest.add(Event(Event.Type.Dummy, absolutePosition, inst))
+            }
+        }
+    }
 
     override fun run() {
         var lastTime = System.currentTimeMillis()
-        while (true) {
+        while (!interrupted()) {
             val now = System.currentTimeMillis()
-            if (isPlaying && latencyReached) {
-                val dt = now - lastTime
-                playHeadPosition += dt / 1000.0
-                val x = scoreView.getX(playHeadPosition)
-                Platform.runLater {
-                    if (isPlaying && latencyReached) playHead.layoutX = x
-                }
+            if (isPlaying) {
+                val dt = (now - lastTime) / 1000.0
+                scheduleEvents(playHead.currentTime + LOOK_AHEAD, dt)
+                playHead.advance(dt)
             }
             lastTime = now
             try {
-                sleep(10)
+                sleep(toMs(DELTA_T))
             } catch (ex: InterruptedException) {
-                ex.printStackTrace()
+                //ex.printStackTrace()
                 return
             }
         }
     }
 
-    private fun getSuffixFor(obj: ScoreObject, suffixes: MutableMap<String, Int>): String {
-        val idx = suffixes.getOrPut(obj.name.now) { 0 }
-        suffixes[obj.name.now] = idx + 1
-        return if (idx == 0) "" else idx.toString()
-    }
+    private fun toMs(t: Double) = (t * 1000).toLong()
 
-    private fun prepareScore(startFrom: Double): MutableList<LocatedScoreObject> {
-        //TODO react to new architecture
-        val unvisitedSubScores: Queue<SubScore> = LinkedList()
-        unvisitedSubScores.offer(
-            SubScore(
-                project.score,
-                prefix = "",
-                ScoreObjectInstance.ObjectPosition(-startFrom, 0.0)
-            )
-        )
-        val locatedObjects = mutableListOf<LocatedScoreObject>()
-        val suffixes = mutableMapOf<String, Int>()
-        while (unvisitedSubScores.isNotEmpty()) {
-            val (score, prefix, position) = unvisitedSubScores.poll()
-            for (inst in score.objectInstances) {
-                if (inst.muted) continue
-                val absolutePosition = position + inst.position
-                val t = absolutePosition.time
-                if (t + inst.duration <= 0) continue
-                val obj = inst.obj
-                val name = prefix + obj.name.now + getSuffixFor(obj, suffixes)
-                if (obj is ScoreObjectGroup) {
-                    unvisitedSubScores.offer(SubScore(obj.score, prefix = "${name}_", absolutePosition))
-                } else {
-                    locatedObjects.add(LocatedScoreObject(obj, name, absolutePosition))
-                }
+    private fun startPlay(startFrom: Double) {
+        println("Starting playback at $startFrom")
+        lastPlayFrom = startFrom
+        val activeObjects = activeObjects(startFrom, delta = LOOK_AHEAD)
+        for ((_, position, inst) in activeObjects) {
+            if (inst != null && !inst.muted) {
+                var obj = inst.obj
+                val delta = inst.start - startFrom
+                if (delta < 0.0) obj = obj.cut(-delta, HorizontalDirection.RIGHT, obj.name.now) ?: obj
+                val pos = position + ObjectPosition(delta.coerceAtLeast(0.0), 0.0)
+                env.markStart(obj, pos)
+                println("Scheduling $obj at $pos, delta: $delta")
+                scheduleObject(obj, pos)
             }
         }
-        locatedObjects.sortBy { (_, _, pos) -> pos.time }
-        return locatedObjects
     }
 
-    private fun scheduleObjects(locatedObjects: MutableList<LocatedScoreObject>) {
-        val env = ScorePlayEnv()
-        for (located in locatedObjects) {
-            val (obj, name, pos) = located
-            env.advanceToTime(pos.time)
-            val cutoff = (-pos.time).coerceAtLeast(0.0)
-            val code = obj.writeCode(env, name, cutoff)
-            env.markObjectStart(located)
-            if (code == "") continue
-            val t = pos.time.coerceAtLeast(0.0)
-            var delay = (t * 1000).toLong()
-            //schedule a good amount of time before the actual event, but leave a bit of latency for the early events
-            delay = (delay - LOOK_AHEAD).coerceAtLeast(10)
-            executor.schedule({
-                if (isPlaying) {
-                    client.send("schedule", listOf((t + SCLANG_LATENCY).toString(), code))
+    private fun scheduleEvents(t: Double, delta: Double) {
+        for ((type, position, inst) in eventsAt(t, delta)) {
+            if (inst == null || inst.muted) continue
+            println("interval at t=${t}s, delta = ${delta}s")
+            val obj = inst.obj
+            when (type) {
+                Event.Type.ObjectStart -> {
+                    println("ObjectStart: $obj at $position")
+                    env.markStart(obj, position)
+                    scheduleObject(obj, position)
                 }
-            }, delay, TimeUnit.MILLISECONDS)
+
+                Event.Type.ObjectEnd -> {
+                    println("ObjectEnd: $obj at $position")
+                    env.markEnd(obj, position)
+                }
+
+                else -> {}
+            }
         }
+    }
+
+    private fun scheduleObject(obj: ScoreObject, absolutePosition: ObjectPosition) {
+        val time = absolutePosition.time - lastPlayFrom
+        val name = env.getUniqueNameFor(obj)
+        val timeForExecution = (time + SC_LANG_LATENCY).toString()
+        val code = obj.writeCode(name, absolutePosition, env)
+        if (code == "") return
+        println("unique name for $obj at $time: $name")
+        println("time for execution: ${timeForExecution}s")
+        println("code: $code")
+        client.send("schedule", listOf(timeForExecution, code))
     }
 
     fun play() {
         if (isPlaying) return
-        val startFrom = scoreView.getTime(playHead.layoutX - PLAY_HEAD_WIDTH)
+        val startFrom = playHead.currentTime
         thread(isDaemon = true) {
+            println("START PLAYBACK")
             client.send("start_play")
-            val locatedObjects = prepareScore(startFrom)
-            scheduleObjects(locatedObjects)
-            latencyReached = false
+            startPlay(startFrom)
+            sleep(toMs(LOOK_AHEAD))
             isPlaying = true
-            sleep(((SCLANG_LATENCY + SERVER_LATENCY) * 1000).toLong())
-            latencyReached = true
         }
     }
 
     fun pause() {
+        if (!isPlaying) return
         isPlaying = false
+        println("PAUSE PLAYBACK")
         client.send("pause_play")
     }
 
@@ -158,33 +195,26 @@ class ScorePlayer(
         client.run("s.freeAll")
     }
 
-    fun movePlayHead(pos: Double) {
-        if (isPlaying) return
-        playHeadPosition = pos
-        Platform.runLater { playHead.layoutX = scoreView.getX(pos) }
-    }
-
-    fun repaint() {
-        scoreView.children.add(playHead)
-        playHead.layoutX = scoreView.getX(playHeadPosition)
-    }
-
     fun close() {
-        executor.shutdownNow()
+        interrupt()
     }
 
-    private data class SubScore(val score: Score, val prefix: String, val position: ScoreObjectInstance.ObjectPosition)
+    data class Event(
+        val type: Type,
+        val absolutePosition: ObjectPosition,
+        val obj: ScoreObjectInstance?
+    ) : Comparable<Event> {
+        override fun compareTo(other: Event): Int = compareValuesBy(this, other, Event::absolutePosition)
 
-    data class LocatedScoreObject(
-        val obj: ScoreObject,
-        val name: String,
-        val absolutePosition: ScoreObjectInstance.ObjectPosition,
-    )
+        enum class Type {
+            Dummy, ObjectStart, ObjectEnd;
+        }
+    }
 
     companion object {
-        private const val SCLANG_LATENCY = 0.5
-        private const val LOOK_AHEAD = 1000
-        private const val PLAY_HEAD_WIDTH = 2.0
-        const val SERVER_LATENCY = 0.3
+        private const val DELTA_T = 0.03
+        const val SERVER_LATENCY: Double = 0.3
+        private const val SC_LANG_LATENCY = 1.0
+        private const val LOOK_AHEAD = SC_LANG_LATENCY + SERVER_LATENCY
     }
 }

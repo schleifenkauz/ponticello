@@ -59,7 +59,7 @@ class ScoreObjectSelectionManager(private val context: Context, private val root
     fun cloneToClipboard() {
         if (selectedInstances.isEmpty()) return
         val copies = selectedInstances.map { inst ->
-            inst.clone(inst.obj.name.now, inst.time, inst.y)
+            inst.clone(inst.obj.name.now, inst.start, inst.y)
         }
         setClipboard(copies)
     }

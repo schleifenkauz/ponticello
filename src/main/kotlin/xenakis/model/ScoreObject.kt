@@ -27,7 +27,7 @@ sealed class ScoreObject : AbstractRenamableObject() {
 
     open val associatedControls: Map<String, ParameterControl> get() = emptyMap()
 
-    abstract fun writeCode(env: ScorePlayEnv, name: String, cutoff: Double): String
+    abstract fun writeCode(name: String, position: ObjectPosition, env: ScorePlayEnv): String
 
     protected fun recordEdit(edit: Edit) {
         if (initialized) {
@@ -81,7 +81,7 @@ sealed class ScoreObject : AbstractRenamableObject() {
         this.duration = duration
         this.height = height
         for (inst in context[rootScore].instancesOf(this)) {
-            if (horizontalDirection == HorizontalDirection.LEFT) inst.setTime(inst.time - deltaDur)
+            if (horizontalDirection == HorizontalDirection.LEFT) inst.setTime(inst.start - deltaDur)
             if (verticalDirection == VerticalDirection.UP) inst.setY(inst.y - deltaHeight)
         }
         context[UndoManager].record(

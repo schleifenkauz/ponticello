@@ -5,6 +5,7 @@
 - can we generate code on the fly, i.e. only shortly before the cursor hits an object?
 - global variables are already reactive
 - would be interesting to have live-control over constant parameters of individual objects
+- live mute/unmute
 
 ### completion
 

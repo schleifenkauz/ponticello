@@ -2,6 +2,7 @@ package xenakis.model
 
 import hextant.core.editor.ListenerManager
 import hextant.serial.EditorRoot
+import kotlinx.serialization.SerialName
 import reaktive.value.ReactiveVariable
 import reaktive.value.now
 import reaktive.value.reactiveVariable
@@ -11,7 +12,7 @@ import xenakis.ui.ScorePlayer
 import xenakis.ui.TaskObjectView
 
 class TaskObject(
-    override val mutableName: ReactiveVariable<String>,
+    @SerialName("name") override val mutableName: ReactiveVariable<String>,
     val code: EditorRoot<ScFunctionEditor>,
     var width: Double
 ) : ScoreObject() {
@@ -22,7 +23,11 @@ class TaskObject(
 
     override fun doClone(newName: String): ScoreObject = TaskObject(reactiveVariable(newName), code.clone(), width)
 
-    override fun writeCode(env: ScorePlayEnv, name: String, cutoff: Double): String = code {
+    override fun writeCode(
+        name: String,
+        position: ObjectPosition,
+        env: ScorePlayEnv
+    ): String = code {
         appendBlock("~tasks['$name'] = Task") {
             +"${ScorePlayer.SERVER_LATENCY}.wait"
             val function = code.editor.result.now
@@ -30,7 +35,7 @@ class TaskObject(
             appendLine(".value()")
         }
         appendLine(".play;")
-        appendBlock("SystemClock.sched(${duration - cutoff})") {
+        appendBlock("SystemClock.sched(${duration})") {
             appendLine("~tasks['$name'].stop;")
         }
         appendLine(";")

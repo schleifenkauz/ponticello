@@ -27,8 +27,9 @@ import xenakis.sc.NumericalControlSpec
 import xenakis.ui.ToolSelector.Tool
 import xenakis.ui.XenakisController.Companion.currentProject
 
-abstract class ScoreObjectView(val instance: ScoreObjectInstance) : VBox(), ScoreObjectInstance.Listener,
-    SynthControls.View {
+abstract class ScoreObjectView(
+    val instance: ScoreObjectInstance
+) : VBox(), ScoreObjectInstance.Listener, SynthControls.View {
     var isInitialized: Boolean = false
         private set
     lateinit var pane: ScorePane
@@ -329,7 +330,7 @@ abstract class ScoreObjectView(val instance: ScoreObjectInstance) : VBox(), Scor
     }
 
     final override fun moved(start: Double, y: Double) {
-        relocate(pane.getX(instance.time), instance.y)
+        relocate(pane.getX(instance.start), instance.y)
     }
 
     fun resized() {
@@ -366,7 +367,7 @@ abstract class ScoreObjectView(val instance: ScoreObjectInstance) : VBox(), Scor
     }
 
     fun adjustHorizontal(direction: HorizontalDirection, resize: Boolean, stretch: Boolean) {
-        val x = pane.getX(instance.time)
+        val x = pane.getX(instance.start)
         val grid = pane.getNearestGrid(x, instance.y)
         val settings = context[currentProject].settings
         val snapOption = if (settings.snapEnabled.now) settings.snapOption.now else null
@@ -380,7 +381,7 @@ abstract class ScoreObjectView(val instance: ScoreObjectInstance) : VBox(), Scor
                 horizontalDirection = HorizontalDirection.RIGHT, verticalDirection = null
             )
         } else {
-            val (snappedX, _) = pane.snapToGrid(pane.getX(instance.time + deltaT), instance.y)
+            val (snappedX, _) = pane.snapToGrid(pane.getX(instance.start + deltaT), instance.y)
             instance.setTime(pane.getTime(snappedX))
         }
     }

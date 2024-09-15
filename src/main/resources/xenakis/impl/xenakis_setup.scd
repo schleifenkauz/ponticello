@@ -98,7 +98,6 @@ OSCdef('pause_play', {
     ~play_start = -1;
     ~synths.do { |s| if (s.isRunning) { s.free } };
     ~tasks.do { |t| if (t.isPlaying) { t.stop; } };
-    'PAUSE'.postln;
 }, '/pause_play');
 OSCdef('schedule', {
 	arg msg;

@@ -7,6 +7,7 @@ import javafx.geometry.HorizontalDirection.LEFT
 import javafx.geometry.HorizontalDirection.RIGHT
 import javafx.geometry.VerticalDirection
 import javafx.geometry.VerticalDirection.UP
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import reaktive.value.ReactiveVariable
@@ -16,7 +17,10 @@ import xenakis.impl.SuperColliderContext
 import xenakis.ui.ScoreObjectView
 
 @Serializable
-class ScoreObjectGroup(override val mutableName: ReactiveVariable<String>, val score: Score) : ScoreObject() {
+class ScoreObjectGroup(
+    @SerialName("name") override val mutableName: ReactiveVariable<String>,
+    val score: Score
+) : ScoreObject() {
     override val type: String
         get() = "compound"
 
@@ -34,7 +38,11 @@ class ScoreObjectGroup(override val mutableName: ReactiveVariable<String>, val s
         this.score.initialize(context, name)
     }
 
-    override fun writeCode(env: ScorePlayEnv, name: String, cutoff: Double): String {
+    override fun writeCode(
+        name: String,
+        position: ObjectPosition,
+        env: ScorePlayEnv
+    ): String {
         throw UnsupportedOperationException()
     }
 
@@ -42,22 +50,22 @@ class ScoreObjectGroup(override val mutableName: ReactiveVariable<String>, val s
         val objects = mutableListOf<ScoreObjectInstance>()
         for (inst in score.objectInstances) {
             when {
-                whichHalf == LEFT && inst.time + inst.duration <= position -> {
+                whichHalf == LEFT && inst.start + inst.duration <= position -> {
                     objects.add(inst)
                 }
 
-                whichHalf == LEFT && inst.time < position -> {
-                    val leftHalf = inst.cut(position - inst.time, LEFT)
+                whichHalf == LEFT && inst.start < position -> {
+                    val leftHalf = inst.cut(position - inst.start, LEFT)
                     objects.add(leftHalf)
                 }
 
-                whichHalf == RIGHT && inst.time >= position -> {
-                    inst.setTime(inst.time - position)
+                whichHalf == RIGHT && inst.start >= position -> {
+                    inst.setTime(inst.start - position)
                     objects.add(inst)
                 }
 
-                whichHalf == RIGHT && inst.time + inst.duration > position -> {
-                    val rightHalf = inst.cut(position - inst.time, RIGHT)
+                whichHalf == RIGHT && inst.start + inst.duration > position -> {
+                    val rightHalf = inst.cut(position - inst.start, RIGHT)
                     objects.add(rightHalf)
                 }
             }
@@ -76,8 +84,8 @@ class ScoreObjectGroup(override val mutableName: ReactiveVariable<String>, val s
         val objects = score.objectInstances
         if (objects.isNotEmpty()) {
             minDur =
-                if (horizontalDirection == LEFT) duration - objects.minOf { o -> o.time }
-                else objects.maxOf { o -> o.time + o.duration }
+                if (horizontalDirection == LEFT) duration - objects.minOf { o -> o.start }
+                else objects.maxOf { o -> o.start + o.duration }
 
             minHeight =
                 if (verticalDirection == UP) height - objects.minOf { o -> o.y }
@@ -94,7 +102,7 @@ class ScoreObjectGroup(override val mutableName: ReactiveVariable<String>, val s
         )
         if (horizontalDirection == LEFT) {
             for (inst in score.objectInstances) {
-                inst.setTime(inst.time + deltaDur)
+                inst.setTime(inst.start + deltaDur)
             }
         }
         if (verticalDirection == UP) {

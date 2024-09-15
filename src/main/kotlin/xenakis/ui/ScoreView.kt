@@ -118,7 +118,7 @@ class ScoreView(score: Score, context: Context) : ScorePane(score, context) {
     }
 
     fun displayWholeScore() {
-        val totalDuration = score.objectInstances.maxOfOrNull { obj -> obj.time + obj.duration } ?: 60.0
+        val totalDuration = score.objectInstances.maxOfOrNull { obj -> obj.start + obj.duration } ?: 60.0
         display(0.0, totalDuration)
     }
 
@@ -132,7 +132,7 @@ class ScoreView(score: Score, context: Context) : ScorePane(score, context) {
         super.repaint()
         children.add(clipboardObjectView)
         children.add(positionTracker)
-        ui.player.repaint()
+        ui.playHead.repaint()
         displayTimeGrid()
     }
 

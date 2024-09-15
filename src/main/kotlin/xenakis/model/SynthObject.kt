@@ -13,6 +13,7 @@ import reaktive.list.observeEach
 import reaktive.value.*
 import xenakis.impl.ScWriter
 import xenakis.impl.code
+import xenakis.impl.copy
 import xenakis.sc.ControlSpec
 import xenakis.sc.editor.SynthDefSelector
 import xenakis.ui.ScorePlayer
@@ -20,8 +21,8 @@ import xenakis.ui.SynthObjectView
 
 @Serializable
 class SynthObject(
-    override val mutableName: ReactiveVariable<String>,
-    @SerialName("synthDefRef") private val _initialSynthDef: ObjectReference,
+    @SerialName("name") override val mutableName: ReactiveVariable<String>,
+    @SerialName("synthDef") private val synthDefRef: ReactiveVariable<ObjectReference>,
     val controls: SynthControls
 ) : ScoreObject(), SynthControls.View {
     @Transient
@@ -44,7 +45,8 @@ class SynthObject(
     @Transient
     lateinit var synthDefSelector: SynthDefSelector
         private set
-    val synthDef: SynthDefObject get() = synthDefSelector.selected.now.get()
+
+    val synthDef: SynthDefObject get() = synthDefRef.now.get()
 
     val group: ReactiveValue<ObjectReference> get() = (controls["group"] as GroupControl).group
 
@@ -63,12 +65,12 @@ class SynthObject(
     override val associatedControls: Map<String, ParameterControl> get() = controls.controlMap
 
     override fun doClone(newName: String): ScoreObject = SynthObject(
-        reactiveVariable(newName), synthDef.createReference(),
+        reactiveVariable(newName), synthDefRef.copy(),
         controls = controls.copy()
     )
 
     override fun doCut(position: Double, whichHalf: HorizontalDirection, newName: String): ScoreObject = SynthObject(
-        reactiveVariable(newName), synthDef.createReference(),
+        reactiveVariable(newName), synthDefRef.copy(),
         controls = controls.transformControls { name, c ->
             when {
                 name == "startPos" && c is ConstantControl && whichHalf == RIGHT ->
@@ -118,8 +120,7 @@ class SynthObject(
     override fun initialize(context: Context) {
         if (initialized) return
         super.initialize(context)
-        _initialSynthDef.resolve(context[InstrumentRegistry.local])
-        synthDefSelector = SynthDefSelector(context, reactiveVariable(_initialSynthDef))
+        synthDefSelector = SynthDefSelector(context, synthDefRef)
         /*        parameterObserver = synthDef.parameters.observeCollection(
                     added = { _, param -> controls.addControl(param.name.now, param.defaultControl(context)) },
                     removed = { _, param -> controls.removeControl(param.name.now) }
@@ -176,7 +177,11 @@ class SynthObject(
         controlObservers.remove(control)?.kill()
     }
 
-    override fun writeCode(env: ScorePlayEnv, name: String, cutoff: Double): String = code {
+    override fun writeCode(
+        name: String,
+        position: ObjectPosition,
+        env: ScorePlayEnv
+    ): String = code {
         myActiveSynths.add(name)
         appendBlock("s.makeBundle(${ScorePlayer.SERVER_LATENCY})") {
             val constantArguments = controls.controlMap.mapNotNull { (param, control) ->
@@ -185,7 +190,7 @@ class SynthObject(
                     is BusControl -> param to control.bus.now.get<BusObject>().superColliderName
                     is ConstantControl -> {
                         val value = when (param) {
-                            "startPos" -> control.value.now + cutoff * (playBufRate?.now ?: 0.0)
+                            "startPos" -> control.value.now * (playBufRate?.now ?: 0.0)
                             else -> control.value.now
                         }
                         param to value.toString()
@@ -194,29 +199,17 @@ class SynthObject(
                     is KnobControl -> param to control.get().toString()
                     else -> null
                 }
-            }.joinToString { (param, value) -> "$param: $value" } + ", duration: ${duration - cutoff}"
+            }.joinToString { (param, value) -> "$param: $value" } + ", duration: $duration"
             val synthVar = "~synths['$name']"
             val group = group.now
             val synthDefName = synthDef.name.now
-            val parallelSynths = env.activeSynths(group)
-            //TODO we need the position here
-            val runBefore = parallelSynths
-                //.filter { (_, _, pos) -> pos.y > this@SynthObject }
-                .minByOrNull { (_, _, pos) -> pos.y }
-            val runAfter = parallelSynths
-                //.filter { (_, _, pos) -> pos.y < y }
-                .maxByOrNull { (_, _, pos) -> pos.y }
-            val (addAction, target) = when {
-                runAfter != null -> Pair("'addAfter'", "~synths['${runAfter.name}']")
-                runBefore != null -> Pair("'addBefore'", "~synths['${runBefore.name}']")
-                else -> Pair("'addToHead'", group.get<GroupObject>().superColliderName)
-            }
+            val (addAction, target) = env.getSynthOrderFor(group, position)
             +"$synthVar = Synth(\\$synthDefName, [$constantArguments], target: $target, addAction: $addAction)"
             +"$synthVar.register"
             for ((param, control) in controls.controlMap) {
                 when (control) {
                     is EnvelopeControl -> {
-                        val envelopeCode = control.envelope.code(cutoff)
+                        val envelopeCode = control.envelope.code()
                         val busName = "~auxil_${name}_${param}"
                         +"$busName  = Bus.control(s, 1)"
                         +"{ $envelopeCode }.play(s, $busName)"

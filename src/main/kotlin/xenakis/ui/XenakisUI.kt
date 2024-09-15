@@ -74,7 +74,10 @@ class XenakisUI(
 
     private lateinit var playBtn: Button
     private lateinit var stopBtn: Button
+    lateinit var playHead: PlayHead
+        private set
     lateinit var player: ScorePlayer
+        private set
 
     private lateinit var shellWindow: Stage
     private lateinit var selectedObjectObserver: Observer
@@ -130,7 +133,8 @@ class XenakisUI(
         }
         serverTreeCodeWindow.resize(500.0, 500.0)
 
-        player = ScorePlayer(scoreView, project, controller.client)
+        playHead = PlayHead(scoreView)
+        player = ScorePlayer(scoreView.score, playHead, controller.client)
         shellWindow = SuperColliderShellController.createShellWindow(context)
 
         project.context[ScoreObjectSelectionManager] = ScoreObjectSelectionManager(project.context, scoreView)
@@ -335,7 +339,9 @@ class XenakisUI(
     private fun createPlayerBar(): HBox {
         playBtn = Icon.Play.button(action = "Start playback") { _ -> togglePlay() }
         stopBtn = Icon.Stop.button(action = "Pause and free all nodes") { stop() }
-        val goToStartBtn = Icon.GoToStart.button(action = "Move play head to start") { player.movePlayHead(0.0) }
+        val goToStartBtn = Icon.GoToStart.button(action = "Move play head to start") {
+            if (!player.isPlaying) playHead.movePlayHead(0.0)
+        }
         if (!controller.isSuperColliderReady) {
             playBtn.isDisable = true
             stopBtn.isDisable = true
@@ -410,14 +416,14 @@ class XenakisUI(
             }
             on("HOME") { scoreView.displayWholeScore() }
             on("DIGIT0") { ev ->
-                if (!ev.isTargetTextInput) {
+                if (!ev.isTargetTextInput && !player.isPlaying) {
                     scoreView.display(0.0, scoreView.displayedDuration)
-                    player.movePlayHead(0.0)
+                    playHead.movePlayHead(0.0)
                 }
             }
             on("Shift+DIGIT0") { ev ->
-                if (!ev.isTargetTextInput) {
-                    player.movePlayHead(scoreView.displayStart)
+                if (!ev.isTargetTextInput && !player.isPlaying) {
+                    playHead.movePlayHead(scoreView.displayStart)
                 }
             }
             on("PAGE_UP") { ev ->
@@ -511,10 +517,10 @@ class XenakisUI(
                     val selected = scoreView.selector.singleSelected.now ?: return@on
                     val inst = selected.instance
                     val obj =
-                        if (ev.isShiftDown) inst.duplicate(inst.time + inst.duration, inst.y)
+                        if (ev.isShiftDown) inst.duplicate(inst.start + inst.duration, inst.y)
                         else {
                             val name = context[ScoreObjectRegistry].nameForClone(inst.obj)
-                            inst.clone(name, inst.time + inst.duration, inst.y)
+                            inst.clone(name, inst.start + inst.duration, inst.y)
                         }
                     inst.score.addObject(obj)
                     val view = selected.pane.getObjectView(obj)
@@ -530,7 +536,7 @@ class XenakisUI(
                             val clone = obj.clone(name)
                             val newRef = clone.createReference()
                             for (oldInst in instances) {
-                                val newInst = ScoreObjectInstance(newRef, oldInst.time, oldInst.y, oldInst.muted)
+                                val newInst = ScoreObjectInstance(newRef, oldInst.start, oldInst.y, oldInst.muted)
                                 oldInst.score.removeObject(oldInst)
                                 oldInst.score.addObject(newInst)
                             }
