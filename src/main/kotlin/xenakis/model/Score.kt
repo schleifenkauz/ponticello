@@ -16,7 +16,7 @@ import java.util.logging.Logger
 class Score(private val instances: MutableList<ScoreObjectInstance> = mutableListOf()) {
     val objectInstances: List<ScoreObjectInstance> get() = instances
 
-    val objects = objectInstances.map { inst -> inst.obj }
+    val objects get() = objectInstances.map { inst -> inst.obj }
 
     lateinit var scoreName: ReactiveString
         private set
@@ -39,7 +39,7 @@ class Score(private val instances: MutableList<ScoreObjectInstance> = mutableLis
         if (scoreName.now == ROOT_SCORE_NAME) context[rootScore] = this
         for (inst in objectInstances) {
             inst.initialize(context)
-            inst.addToScore(this)
+            inst.addedToScore(this)
         }
     }
 
@@ -56,16 +56,6 @@ class Score(private val instances: MutableList<ScoreObjectInstance> = mutableLis
 
     fun has(name: String) = objects.any { obj -> obj.name.now == name }
 
-    fun getObject(name: String) =
-        objects.find { obj -> obj.name.now == name }
-            ?: error("ScoreObject $name not found in ${scoreName.now}")
-
-    fun getSubScore(name: String): Score {
-        val obj = getObject(name)
-        val group = obj as? ScoreObjectGroup ?: error("$obj is not a sub score")
-        return group.score
-    }
-
     fun deepClone() = Score(instances.mapTo(mutableListOf()) { inst ->
         val name = context[ScoreObjectRegistry].nameForClone(inst.obj)
         inst.clone(name, inst.position)
@@ -74,11 +64,9 @@ class Score(private val instances: MutableList<ScoreObjectInstance> = mutableLis
     fun clone() = Score(instances.mapTo(mutableListOf()) { inst -> inst.duplicate(inst.position) })
 
     fun addObject(inst: ScoreObjectInstance) {
-        val registry = context[ScoreObjectRegistry]
-        if (!registry.has(inst.obj.name.now)) registry.add(inst.obj)
         logger.info("Adding object ${inst.obj.name.now} at ${inst.position}")
         inst.initialize(context)
-        inst.addToScore(this)
+        inst.addedToScore(this)
         instances.add(inst)
         views.notifyListeners { addedObject(this@Score, inst) }
         undo.record(ScoreEdit.AddObject(inst, this))
@@ -88,7 +76,7 @@ class Score(private val instances: MutableList<ScoreObjectInstance> = mutableLis
         for (inst in set) {
             logger.info("Removing ${inst.obj.name.now} from score ${scoreName.now}")
             instances.remove(inst)
-            if (!context[rootScore].hasInstancesOf(inst.obj)) context[ScoreObjectRegistry].remove(inst.obj)
+            inst.removedFromScore()
             views.notifyListeners { removedObject(this@Score, inst) }
         }
         undo.record(ScoreEdit.RemoveObjects(set, this))
@@ -98,19 +86,8 @@ class Score(private val instances: MutableList<ScoreObjectInstance> = mutableLis
         removeObjects(setOf(obj))
     }
 
-    fun movedObject(inst: ScoreObjectInstance, oldPosition: ObjectPosition) {
-        views.notifyListeners { movedObject(this@Score, inst, oldPosition) }
-    }
-
-    fun activeObjects(time: Double): List<ScoreObjectInstance> = buildList {
-        var firstThatEndsAfter = instances.binarySearch { inst -> inst.end.compareTo(time) }
-        if (firstThatEndsAfter < 0) firstThatEndsAfter = -(firstThatEndsAfter + 1)
-        var lastThatStartsBefore = instances.binarySearch { inst -> inst.start.compareTo(time) }
-        if (lastThatStartsBefore < 0) lastThatStartsBefore = -(lastThatStartsBefore + 1)
-        for (i in firstThatEndsAfter..lastThatStartsBefore) {
-            val inst = instances[i]
-            if (time in inst.timeRange) add(inst)
-        }
+    fun movedObject(inst: ScoreObjectInstance) {
+        views.notifyListeners { this.movedObject(this@Score, inst) }
     }
 
     fun addTime(location: Double, amount: Double) {

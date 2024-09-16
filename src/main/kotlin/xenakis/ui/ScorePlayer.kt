@@ -68,7 +68,7 @@ class ScorePlayer(
         }
     }
 
-    override fun movedObject(score: Score, inst: ScoreObjectInstance, oldPosition: ObjectPosition) =
+    override fun movedObject(score: Score, inst: ScoreObjectInstance) =
         synchronized(events) {
             removedObject(score, inst)
             addedObject(score, inst)

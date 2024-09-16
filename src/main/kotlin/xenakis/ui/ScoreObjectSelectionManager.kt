@@ -59,6 +59,11 @@ class ScoreObjectSelectionManager(private val context: Context, private val root
         if (_selectedViews.remove(view)) {
             updateIsSelected(view)
         }
+        if (view is ScoreObjectGroupView) {
+            for (v in view.scorePane.allViews) {
+                removed(v)
+            }
+        }
         _singleSelected.set(_selectedViews.singleOrNull())
     }
 

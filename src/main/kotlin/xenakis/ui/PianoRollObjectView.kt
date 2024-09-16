@@ -68,8 +68,8 @@ class PianoRollObjectView(inst: ScoreObjectInstance, private val obj: PianoRollO
         rect.setupDraggingAndResizing(
             pane,
             canUserChangeWidth = true, canUserChangeHeight = false, ToolSelector.Tool.PianoRoll,
-            relocateBy = { old, dx, dy ->
-                val (x, y) = snapToGrid(old.minX + dx, old.minY + dy)
+            drag = { toX, toY ->
+                val (x, y) = snapToGrid(toX, toY)
                 note.onset = pane.getDuration(x).coerceIn(0.0, obj.duration - note.duration)
                 note.midinote = obj.getMidiNote(y).coerceIn(obj.pitchRange)
             },

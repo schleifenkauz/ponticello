@@ -10,6 +10,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import reaktive.value.now
+import xenakis.model.Score.Companion.rootScore
 
 @Serializable
 class ScoreObjectInstance(
@@ -30,8 +31,28 @@ class ScoreObjectInstance(
 
     val obj: ScoreObject get() = objectRef.get()
 
-    fun addToScore(score: Score) {
+    fun addedToScore(score: Score) {
         this.score = score
+        val registry = context[ScoreObjectRegistry]
+        val o = obj
+        if (!registry.has(o.name.now)) registry.add(o)
+        if (o is ScoreObjectGroup) {
+            for (inst in o.score.objectInstances) {
+                inst.addedToScore(o.score)
+            }
+        }
+    }
+
+    fun removedFromScore() {
+        val o = obj
+        if (!context[rootScore].hasInstancesOf(o)) {
+            context[ScoreObjectRegistry].remove(o)
+            if (o is ScoreObjectGroup) {
+                for (subInst in o.score.objectInstances) {
+                    subInst.removedFromScore()
+                }
+            }
+        }
     }
 
     fun initialize(context: Context) {
@@ -65,7 +86,7 @@ class ScoreObjectInstance(
         val after = ObjectPosition(time, y)
         this._time = time
         this._y = y
-        score.movedObject(this, before)
+        score.movedObject(this)
         context[UndoManager].record(MoveObject(this, before, after))
         viewManager.notifyListeners { moved(time, y) }
     }

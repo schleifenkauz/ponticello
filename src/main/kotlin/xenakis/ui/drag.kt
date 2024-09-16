@@ -48,7 +48,7 @@ fun Node.setupDragging(
 fun Region.setupDraggingAndResizing(
     pane: ScorePane,
     canUserChangeWidth: Boolean, canUserChangeHeight: Boolean, tool: Tool,
-    relocateBy: (old: Bounds, dx: Double, dy: Double) -> Unit,
+    drag: (x: Double, y: Double) -> Unit,
     resize: (Bounds, Double, Double, Cursor, MouseEvent) -> Unit,
     beforeResize: (MouseEvent, Cursor) -> Unit = { _, _ -> }, afterResize: (MouseEvent, Cursor) -> Unit = { _, _ -> }
 ) {
@@ -77,7 +77,9 @@ fun Region.setupDraggingAndResizing(
         if (isResizeCursor(cursor)) {
             resize(oldBounds!!, dx, dy, cursor, ev)
         } else {
-            relocateBy(oldBounds!!, dx, dy)
+            val x = oldBounds!!.minX + dx
+            val y = oldBounds!!.minY + dy
+            drag(x, y)
         }
         ev.consume()
     }

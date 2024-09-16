@@ -165,10 +165,6 @@ sealed class ScoreObject : AbstractRenamableObject() {
         }
     }
 
-    interface Listener {
-        fun instanceSelected(yesOrNo: Boolean)
-    }
-
     companion object {
         val DATA_FORMAT = DataFormat("score-object")
     }

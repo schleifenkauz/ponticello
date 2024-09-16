@@ -12,11 +12,11 @@ class ScoreObjectRegistry(override val objects: MutableList<ScoreObject>) : Obje
     override val objectType: String
         get() = "score-object"
 
-    override fun getDefault(): ScoreObject = throw UnsupportedOperationException("No default score object available")
+    override fun getDefault(): ScoreObject = throw UnsupportedOperationException("No default ScoreObject available")
 
     override fun initialize(context: Context) {
-        super.initialize(context)
         context[ScoreObjectRegistry] = this
+        super.initialize(context)
     }
 
     fun availableName(prefix: String): String {
@@ -31,15 +31,6 @@ class ScoreObjectRegistry(override val objects: MutableList<ScoreObject>) : Obje
         val name = obj.name.now
         val prefix = name.dropLastWhile { it.isDigit() }
         return availableName(prefix)
-    }
-
-    fun deleteUnusedObjects(score: Score) {
-        val usedObjects = score.objectInstances.mapTo(mutableSetOf()) { inst -> inst.obj }
-        for (obj in objects.toList()) {
-            if (obj !in usedObjects) {
-                remove(obj)
-            }
-        }
     }
 
     companion object : PublicProperty<ScoreObjectRegistry> by publicProperty("ScoreObjectRegistry")

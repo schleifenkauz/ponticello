@@ -131,7 +131,7 @@ abstract class ScoreObjectView(
             parent,
             canUserChangeWidth = true, canUserChangeHeight = true, Tool.Pointer,
             beforeResize = this::beforeResize,
-            relocateBy = this::relocateBy, resize = this::resize
+            drag = this::dragTo, resize = this::resize
         )
         setBackground()
         setupCutting()
@@ -146,8 +146,8 @@ abstract class ScoreObjectView(
     private fun setupSelecting() {
         addEventHandler(MouseEvent.MOUSE_CLICKED) { ev ->
             toFront()
-            requestFocus()
             context[ScoreObjectSelectionManager].select(this, addToSelection = ev.isShiftDown)
+
             ev.consume()
         }
     }
@@ -294,7 +294,7 @@ abstract class ScoreObjectView(
         context[ScoreObjectSelectionManager].select(this, addToSelection = ev.isShiftDown)
     }
 
-    private fun relocateBy(old: Bounds, dx: Double, dy: Double) {
+    private fun dragTo(toX: Double, toY: Double) {
         val movedObjects = context[ScoreObjectSelectionManager].selectedViews //one of these is guaranteed to be <this>
         val relativeMinX = movedObjects.minOf { v -> v.layoutX } - this.layoutX // => 0 if only <this> is selected
         val relativeMinY = movedObjects.minOf { v -> v.layoutY } - this.layoutY // => 0 if only <this> is selected
@@ -302,7 +302,7 @@ abstract class ScoreObjectView(
             movedObjects.maxOf { v -> v.layoutX + v.width } - this.layoutX // => this.width if only <this> is selected
         val relativeMaxY =
             movedObjects.maxOf { v -> v.layoutY + v.height } - this.layoutY // => this.height if only <this> is selected
-        var (x, y) = pane.snapToGrid(old.minX + dx, (old.minY + dy))
+        var (x, y) = pane.snapToGrid(toX, toY)
         x = x.coerceAtLeast(-relativeMinX)
         y = y.coerceAtLeast(-relativeMinY)
         if (pane is SubScorePane) x = x.coerceAtMost(pane.width - relativeMaxX)

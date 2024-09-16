@@ -70,7 +70,6 @@ class XenakisProject private constructor(
         data.resolve("global_controls.json").writeJson(globalControls, json)
         data.resolve("server_setup.json").writeJson(serverSetup, json)
         data.resolve("server_tree.json").writeJson(serverTree, json)
-        objects.deleteUnusedObjects(score)
         data.resolve("objects.json").writeJson(objects, json)
         data.resolve("score.json").writeJson(score, json)
     }
