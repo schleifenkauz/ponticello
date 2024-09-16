@@ -31,7 +31,7 @@ class TempoGridObjectView(inst: ScoreObjectInstance, val obj: TempoGridObject) :
     override val borderColorWhenSelected: Color
         get() = Color.GREEN
 
-    override val nonSelectedBorderColor: Color
+    override val borderColorWhenNotSelected: Color
         get() = Color.TRANSPARENT
 
     override fun initialize(parent: ScorePane) {

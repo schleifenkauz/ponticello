@@ -18,42 +18,78 @@ class ScoreObjectSelectionManager(private val context: Context, private val root
 
     val selectedViews: Set<ScoreObjectView> get() = _selectedViews
 
-    val selectedInstances: Set<ScoreObjectInstance> get() = _selectedViews.mapTo(mutableSetOf()) { view -> view.instance }
+    val selectedInstances: Set<ScoreObjectInstance> get() = selectedViews.mapTo(mutableSetOf()) { view -> view.instance }
+
+    val selectedObjects: Set<ScoreObject> get() = selectedInstances.mapTo(mutableSetOf()) { inst -> inst.obj }
 
     private val _singleSelected = reactiveVariable<ScoreObjectView?>(null)
     val singleSelected: ReactiveValue<ScoreObjectView?> get() = _singleSelected
 
-    val focusedScorePane: ScorePane get() = singleSelected.now?.pane ?: rootPane
+    private val focusedScorePane: ScorePane
+        get() = (singleSelected.now as? ScoreObjectGroupView)?.scorePane
+            ?: selectedViews.mapTo(mutableSetOf()) { v -> v.pane }.singleOrNull()
+            ?: rootPane
 
     fun select(view: ScoreObjectView, addToSelection: Boolean): Boolean {
-        for (selected in selectedViews.toSet()) {
-            if (selected.pane != view.pane || !addToSelection) {
-                _selectedViews.remove(selected)
-                selected.setSelected(false)
+        for (v in selectedViews.toSet()) {
+            if (!addToSelection || v.pane != view.pane) {
+                _selectedViews.remove(v)
+                updateIsSelected(v)
             }
         }
         if (view !in _selectedViews) _selectedViews.add(view)
         else _selectedViews.remove(view)
         _singleSelected.set(_selectedViews.singleOrNull())
         val selected = view in _selectedViews
-        view.setSelected(selected)
+        updateIsSelected(view)
         return selected
     }
 
+    private fun updateIsSelected(view: ScoreObjectView) {
+        val isSelected = view in selectedViews
+        view.setSelected(isSelected)
+        if (isSelected) {
+            view.instance.obj.viewManager.notifyListeners { isSomeInstanceSelected(true) }
+        } else if (view.instance.obj !in selectedObjects) {
+            view.instance.obj.viewManager.notifyListeners { isSomeInstanceSelected(false) }
+        }
+    }
+
+    fun removed(view: ScoreObjectView) {
+        if (_selectedViews.remove(view)) {
+            updateIsSelected(view)
+        }
+        _singleSelected.set(_selectedViews.singleOrNull())
+    }
+
     fun deselectAll() {
-        for (v in _selectedViews) v.setSelected(false)
+        val previouslySelected = selectedViews.toSet()
+        val previouslySelectedObjects = selectedObjects.toSet()
         _selectedViews.clear()
         _singleSelected.set(null)
+        for (obj in previouslySelectedObjects) {
+            obj.viewManager.notifyListeners { isSomeInstanceSelected(false) }
+        }
+        for (v in previouslySelected) {
+            v.setSelected(false)
+        }
     }
 
     fun selectAll() {
+        val focusedPane = focusedScorePane
         deselectAll()
-        for (v in focusedScorePane.allViews) select(v, addToSelection = true)
+        for (v in focusedPane.allViews) {
+            _selectedViews.add(v)
+            v.setSelected(true)
+            v.instance.obj.viewManager.notifyListeners { isSomeInstanceSelected(true) }
+        }
+        _singleSelected.set(_selectedViews.singleOrNull())
     }
 
     fun removeSelected() {
         val score = selectedInstances.firstOrNull()?.score ?: return
         score.removeObjects(selectedInstances)
+        deselectAll()
     }
 
     fun cloneToClipboard() {

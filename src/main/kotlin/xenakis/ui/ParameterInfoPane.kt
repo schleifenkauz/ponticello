@@ -11,6 +11,7 @@ import reaktive.value.now
 import xenakis.model.ParameterDefObject
 import xenakis.sc.BufferControlSpec
 import xenakis.sc.BusControlSpec
+import xenakis.sc.GroupControlSpec
 import xenakis.sc.NumericalControlSpec
 
 class ParameterInfoPane(parameters: ReactiveList<ParameterDefObject>) :
@@ -31,6 +32,7 @@ class ParameterInfoPane(parameters: ReactiveList<ParameterDefObject>) :
                     when (val spec = item.spec.now) {
                         is BufferControlSpec -> add(Label("buf"))
                         is BusControlSpec -> add(Label("bus"))
+                        is GroupControlSpec -> add(Label("group"))
                         is NumericalControlSpec -> {
                             add(Label("num, "))
                             add(Label("default = ${spec.defaultValue.text}, ")) {

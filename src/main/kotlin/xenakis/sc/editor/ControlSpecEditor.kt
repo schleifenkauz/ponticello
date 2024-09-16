@@ -29,6 +29,7 @@ class ControlSpecEditor(context: Context) :
                 select(ParameterType.Numerical, specEditor)
             }
 
+            else -> {}
         }
     }
 

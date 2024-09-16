@@ -48,8 +48,10 @@ abstract class ScoreObjectView(
     protected open val defaultBackgroundColor: ReactiveValue<Color>
         get() = reactiveVariable(BLACK)
     protected val backgroundColor by lazy { instance.obj.associatedColor.orElse(defaultBackgroundColor) }
-    protected open val borderColorWhenSelected: Color get() = backgroundColor.now.invert()
-    protected open val nonSelectedBorderColor: Color get() = Color.GRAY
+    protected open val borderColorWhenSelected: Color get() = Color.web("#2a66ff") //backgroundColor.now.invert().brighter()
+    protected open val borderColorWhenNotSelected: Color get() = Color.TRANSPARENT
+    protected open val borderColorWhenSameObjectSelected: Color get() = Color.GRAY
+
     protected val colorPicker: ColorPicker = ColorPicker() styleClass "button"
 
     init {
@@ -132,7 +134,6 @@ abstract class ScoreObjectView(
             relocateBy = this::relocateBy, resize = this::resize
         )
         setBackground()
-        border = solidBorder(nonSelectedBorderColor, width = 2.0)
         setupCutting()
         setupActions()
         children.add(envelopesPane)
@@ -264,20 +265,21 @@ abstract class ScoreObjectView(
     }
 
     fun setSelected(value: Boolean) {
-        border = if (value) {
-            solidBorder(borderColorWhenSelected, width = 2.0)
-        } else {
-            solidBorder(nonSelectedBorderColor, width = 2.0)
+        val borderColor = when {
+            value -> borderColorWhenSelected
+            instance.obj in context[ScoreObjectSelectionManager].selectedObjects -> borderColorWhenSameObjectSelected
+            else -> borderColorWhenNotSelected
         }
-        //highlight other instances
+        border = solidBorder(borderColor, width = BORDER_WIDTH, radius = 2.0)
     }
 
-    private fun setCloneOfSelected(value: Boolean) {
-        setPseudoClassState("copy-of-selected", value)
-    }
-
-    private fun setOriginalOfSelected(value: Boolean) {
-        setPseudoClassState("original-of-selected", value)
+    fun isSomeInstanceSelected(yesOrNo: Boolean) {
+        val borderColor = when {
+            this in context[ScoreObjectSelectionManager].selectedViews -> borderColorWhenSelected
+            yesOrNo -> borderColorWhenSameObjectSelected
+            else -> borderColorWhenNotSelected
+        }
+        border = solidBorder(borderColor, width = BORDER_WIDTH, radius = 2.0)
     }
 
     private fun delete() {
@@ -288,13 +290,29 @@ abstract class ScoreObjectView(
     * Dragging and resizing
     * */
 
+    protected open fun beforeResize(ev: MouseEvent, cursor: Cursor) {
+        context[ScoreObjectSelectionManager].select(this, addToSelection = ev.isShiftDown)
+    }
+
     private fun relocateBy(old: Bounds, dx: Double, dy: Double) {
+        val movedObjects = context[ScoreObjectSelectionManager].selectedViews //one of these is guaranteed to be <this>
+        val relativeMinX = movedObjects.minOf { v -> v.layoutX } - this.layoutX // => 0 if only <this> is selected
+        val relativeMinY = movedObjects.minOf { v -> v.layoutY } - this.layoutY // => 0 if only <this> is selected
+        val relativeMaxX =
+            movedObjects.maxOf { v -> v.layoutX + v.width } - this.layoutX // => this.width if only <this> is selected
+        val relativeMaxY =
+            movedObjects.maxOf { v -> v.layoutY + v.height } - this.layoutY // => this.height if only <this> is selected
         var (x, y) = pane.snapToGrid(old.minX + dx, (old.minY + dy))
-        x = x.coerceAtLeast(0.0)
-        y = y.coerceAtLeast(0.0)
-        if (pane is SubScorePane) x = x.coerceAtMost(pane.width - old.width)
-        y = y.coerceAtMost(pane.height - old.height)
-        instance.moveTo(pane.getTime(x), y)
+        x = x.coerceAtLeast(-relativeMinX)
+        y = y.coerceAtLeast(-relativeMinY)
+        if (pane is SubScorePane) x = x.coerceAtMost(pane.width - relativeMaxX)
+        y = y.coerceAtMost(pane.height - relativeMaxY)
+        val deltaT = pane.getTime(x) - instance.start
+        val deltaY = y - instance.y
+        for (view in movedObjects) {
+            val inst = view.instance
+            inst.moveTo(inst.start + deltaT, inst.y + deltaY)
+        }
         pane.markX(x)
     }
 
@@ -311,10 +329,6 @@ abstract class ScoreObjectView(
             else -> null
         }
         instance.obj.resize(newDur, height, stretch = ev.isShiftDown, horizontalDirection, verticalDirection)
-    }
-
-    protected open fun beforeResize(ev: MouseEvent, cursor: Cursor) {
-        context[ScoreObjectSelectionManager].select(this, addToSelection = ev.isShiftDown)
     }
 
     open fun getDisplayWidth(): Double = pane.getWidth(instance.duration)
@@ -399,4 +413,9 @@ abstract class ScoreObjectView(
     }
 
     override fun toString(): String = "ScoreObjectView for ${instance.obj} at ${instance.position}"
+
+    companion object {
+        private const val BORDER_WIDTH = 4.0
+        private const val BORDER_RADIUS = 2.0
+    }
 }

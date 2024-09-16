@@ -45,7 +45,7 @@ sealed class ScoreObject : AbstractRenamableObject() {
 
     open fun serverBooted(context: SuperColliderContext) {}
 
-    protected abstract val viewManager: ListenerManager<out ScoreObjectView>
+    abstract val viewManager: ListenerManager<out ScoreObjectView>
 
     var duration: Double = 0.0
         protected set
@@ -163,6 +163,10 @@ sealed class ScoreObject : AbstractRenamableObject() {
                 )
             }
         }
+    }
+
+    interface Listener {
+        fun instanceSelected(yesOrNo: Boolean)
     }
 
     companion object {

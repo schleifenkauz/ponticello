@@ -46,7 +46,10 @@ abstract class ObjectRegistry<O : NamedObject> {
     }
 
     open fun add(obj: O, idx: Int = objects.size) {
-        if (has(obj.name.now)) error("$objectType with name ${obj.name.now} already registered.")
+        if (has(obj.name.now)) {
+            logger.severe("$objectType with name ${obj.name.now} already registered.")
+            return
+        }
         obj.initialize(context)
         objects.add(idx, obj)
         logger.info("Adding $obj to ${javaClass.simpleName}")
@@ -58,7 +61,10 @@ abstract class ObjectRegistry<O : NamedObject> {
 
     open fun remove(obj: O) {
         val idx = objects.indexOf(obj)
-        if (idx == -1) error("Object ${obj.name.now} not found in $this")
+        if (idx == -1) {
+            logger.severe("Object ${obj.name.now} not found in $this")
+            return
+        }
         logger.info("Removing $obj from ${javaClass.simpleName}")
         objects.removeAt(idx)
         obj.onRemoved()

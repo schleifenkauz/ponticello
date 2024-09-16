@@ -21,7 +21,6 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.serializer
 import reaktive.value.now
 import reaktive.value.reactiveVariable
-import xenakis.impl.Arrow
 import xenakis.impl.MidiPitch
 import xenakis.impl.Point
 import xenakis.model.*
@@ -40,9 +39,6 @@ import xenakis.ui.XenakisController.Companion.currentProject
 abstract class ScorePane(val score: Score, val context: Context) : Pane(), ScoreListener {
     private var newObjectArea: Rectangle? = null
     protected val selectedArea: Rectangle = Rectangle() styleClass "time-range-rect"
-
-    private val outgoingArrows = mutableMapOf<ScoreObjectView, Pair<Arrow, ScoreObjectView>>()
-    private val ingoingArrows = mutableMapOf<ScoreObjectView, Pair<Arrow, ScoreObjectView>>()
 
     private val views = mutableMapOf<ScoreObjectInstance, ScoreObjectView>()
     val allViews: Collection<ScoreObjectView> get() = views.values
@@ -95,10 +91,6 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
             view.relocate(getX(obj.start), obj.y)
             view.rescale()
             children.add(view)
-        }
-        for ((_, v) in outgoingArrows) {
-            val (arr, _) = v
-            children.add(arr)
         }
     }
 
@@ -213,9 +205,8 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
 
     override fun removedObject(score: Score, inst: ScoreObjectInstance) {
         val view = views.remove(inst) ?: return
+        context[ScoreObjectSelectionManager].removed(view)
         children.remove(view)
-        ingoingArrows.remove(view)?.let { (arr, _) -> children.remove(arr) }
-        outgoingArrows.remove(view)?.let { (arr, _) -> children.remove(arr) }
     }
 
     /*

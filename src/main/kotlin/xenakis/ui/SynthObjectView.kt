@@ -25,8 +25,9 @@ import xenakis.sc.NumericalControlSpec
 import xenakis.sc.view.ObjectSelectorControl
 import kotlin.math.absoluteValue
 
-class SynthObjectView(instance: ScoreObjectInstance, val obj: SynthObject) : ScoreObjectView(instance),
-    SynthControls.View {
+class SynthObjectView(
+    instance: ScoreObjectInstance, val obj: SynthObject
+) : ScoreObjectView(instance), SynthControls.View {
     private var image: Image? = null
     private val spectrogramViews = mutableListOf<ImageView>()
 
