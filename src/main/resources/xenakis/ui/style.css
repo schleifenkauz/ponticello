@@ -68,21 +68,6 @@ Slider.control-detail-editor {
     -fx-border-width: 0px;
 }
 
-/*noinspection CssInvalidPseudoSelector*/
-.score-object:muted {
-    -fx-opacity: 0.5;
-}
-
-/*noinspection CssInvalidPseudoSelector*/
-.score-object:clone-of-selected {
-    -fx-border-color: #220022 !important;
-}
-
-/*noinspection CssInvalidPseudoSelector*/
-.score-object:original-of-selected {
-    -fx-border-color: #002200 !important;
-}
-
 .toolbar {
     -fx-background-color: #2e2f33;
     /*-fx-padding: 5px;*/

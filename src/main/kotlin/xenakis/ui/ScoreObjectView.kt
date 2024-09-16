@@ -183,7 +183,7 @@ abstract class ScoreObjectView(
 
     override fun toggledMute(muted: Boolean) {
         muteUnmuteBtn.graphic = if (instance.muted) Icon.Mute.getView() else Icon.Unmute.getView()
-        setPseudoClassState("muted", instance.muted)
+        opacity = if (muted) 0.5 else 1.0
     }
 
     override fun removedControl(parameter: String, control: ParameterControl) {

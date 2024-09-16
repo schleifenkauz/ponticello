@@ -5,6 +5,7 @@ import reaktive.value.now
 import xenakis.impl.SuperColliderClient
 import xenakis.model.*
 import java.util.*
+import java.util.logging.Logger
 import kotlin.concurrent.thread
 
 class ScorePlayer(
@@ -36,27 +37,42 @@ class ScorePlayer(
     }
 
     override fun addedObject(score: Score, inst: ScoreObjectInstance) = synchronized(events) {
+        if (inst.muted) return
+        addToPlayback(inst, score)
+    }
+
+    override fun removedObject(score: Score, inst: ScoreObjectInstance): Unit = synchronized(events) {
+        if (inst.muted) return
+        removeFromPlayback(inst)
+    }
+
+    private fun addToPlayback(inst: ScoreObjectInstance, score: Score) {
         val obj = inst.obj
         if (obj is ScoreObjectGroup) {
             scoreInstances(obj.score).add(inst)
             obj.score.addListener(this)
-        }
-        println("Added $inst to ${score.scoreName.now}")
-        for (pos in absolutePositions(score)) {
-            val position = pos + inst.position
-            println("   at $position")
-            events.add(Event(Event.Type.ObjectStart, position, inst))
-            events.add(Event(Event.Type.ObjectEnd, position + ObjectPosition(obj.duration, 0.0), inst))
+        } else {
+            logger.info("Added $inst to ${score.scoreName.now}")
+            for (pos in absolutePositions(score)) {
+                val posStart = pos + inst.position
+                val posEnd = posStart + ObjectPosition(obj.duration, 0.0)
+                logger.info("   at $posStart")
+                if (isPlaying && playHead.currentTime in posStart.time - env.lookAhead..posEnd.time) {
+                    scheduleInstantly(inst, posStart, playHead.currentTime)
+                }
+                events.add(Event(Event.Type.ObjectStart, posStart, inst))
+                events.add(Event(Event.Type.ObjectEnd, posStart + posEnd, inst))
+            }
         }
     }
 
-    override fun removedObject(score: Score, inst: ScoreObjectInstance): Unit = synchronized(events) {
+    private fun removeFromPlayback(inst: ScoreObjectInstance) {
         val obj = inst.obj
         val itr = events.iterator()
         for (ev in itr) {
             if (ev.obj == inst) {
                 itr.remove()
-                println("Removed ${ev.type}: ${ev.obj} at ${ev.absolutePosition}")
+                logger.info("Removed ${ev.type}: ${ev.obj} at ${ev.absolutePosition}")
             }
         }
         if (obj is ScoreObjectGroup) {
@@ -65,14 +81,31 @@ class ScorePlayer(
                 removedObject(obj.score, subInst)
             }
             obj.score.removeListener(this)
+        } else if (isPlaying) {
+            for ((activeInstance, pos, name) in env.activeInstances(inst)) {
+                val activeObj = activeInstance.obj
+                if (activeObj is SynthObject) {
+                    client.run("~synths['$name'].free;")
+                } else if (activeObj is TaskObject) {
+                    client.run("~tasks['$name'].free;")
+                }
+                env.markEnd(activeInstance, pos)
+                val endPos = pos + ObjectPosition(activeObj.duration, 0.0)
+                events.remove(Event(Event.Type.ObjectEnd, endPos, activeInstance))
+            }
         }
     }
 
     override fun movedObject(score: Score, inst: ScoreObjectInstance) =
         synchronized(events) {
-            removedObject(score, inst)
-            addedObject(score, inst)
+            removeFromPlayback(inst)
+            addToPlayback(inst, score)
         }
+
+    override fun toggledMute(score: Score, inst: ScoreObjectInstance, muted: Boolean) = synchronized(events) {
+        if (muted) removeFromPlayback(inst)
+        else addToPlayback(inst, score)
+    }
 
     private fun eventsAt(time: Double, delta: Double): List<Event> = synchronized(events) {
         val dummy = Event(Event.Type.Dummy, ObjectPosition(time, 0.0), null)
@@ -123,19 +156,23 @@ class ScorePlayer(
     private fun toMs(t: Double) = (t * 1000).toLong()
 
     private fun startPlay(startFrom: Double) {
-        println("Starting playback at $startFrom")
+        logger.info("Starting playback at $startFrom")
         lastPlayFrom = startFrom
         val activeObjects = activeObjects(startFrom, delta = env.lookAhead)
         for ((_, position, inst) in activeObjects) {
             if (inst != null && !inst.muted) {
-                val obj = inst.obj
-                val delta = inst.start - startFrom
-                val pos = ObjectPosition(startFrom + delta.coerceAtLeast(0.0), position.y)
-                env.markStart(obj, position) //important that we mark the original object not the cutoff one
-                println("   Scheduling $obj at $pos, delta: $delta")
-                scheduleObject(obj, pos, cutoff = -delta.coerceAtMost(0.0))
+                scheduleInstantly(inst, position, lastPlayFrom)
             }
         }
+    }
+
+    private fun scheduleInstantly(inst: ScoreObjectInstance, position: ObjectPosition, tNow: Double) {
+        val obj = inst.obj
+        val delta = inst.start - tNow
+        val pos = ObjectPosition(tNow + delta.coerceAtLeast(0.0), position.y)
+        val name = env.markStart(inst, position) //important that we mark the original object not the cutoff one
+        logger.info("   Scheduling $obj at $pos, delta: $delta")
+        scheduleObject(obj, pos, name, cutoff = -delta.coerceAtMost(0.0))
     }
 
     private fun scheduleEvents(t: Double, delta: Double) {
@@ -143,20 +180,20 @@ class ScorePlayer(
         for ((type, position, inst) in eventsAt(t, delta)) {
             if (inst == null || inst.muted) continue
             if (!printedInterval) {
-                println("interval at t=${t}s, delta = ${delta}s")
+                logger.info("interval at t=${t}s, delta = ${delta}s")
                 printedInterval = true
             }
             val obj = inst.obj
             when (type) {
                 Event.Type.ObjectStart -> {
-                    println("   ObjectStart: $obj at $position")
-                    env.markStart(obj, position)
-                    scheduleObject(obj, position, cutoff = 0.0)
+                    logger.info("   ObjectStart: $obj at $position")
+                    val name = env.markStart(inst, position)
+                    scheduleObject(obj, position, name, cutoff = 0.0)
                 }
 
                 Event.Type.ObjectEnd -> {
-                    println("   ObjectEnd: $obj at $position")
-                    env.markEnd(obj, position)
+                    logger.info("   ObjectEnd: $obj at $position")
+                    env.markEnd(inst, position)
                 }
 
                 else -> {}
@@ -164,22 +201,21 @@ class ScorePlayer(
         }
     }
 
-    private fun scheduleObject(obj: ScoreObject, absolutePosition: ObjectPosition, cutoff: Double) {
+    private fun scheduleObject(obj: ScoreObject, absolutePosition: ObjectPosition, name: String, cutoff: Double) {
         val time = absolutePosition.time - lastPlayFrom
-        val name = env.getUniqueNameFor(obj)
         val timeForExecution = (time + env.scLangLatency).toString()
         val o = if (cutoff > 0.0) obj.cut(cutoff, HorizontalDirection.RIGHT, obj.name.now) ?: obj else obj
         val code = o.writeCode(name, absolutePosition, env)
         if (code == "") return
-        println("   unique name for $o at $time: $name")
-        println("   time for execution: ${timeForExecution}s")
+        logger.info("   unique name for $o at $time: $name")
+        logger.info("   time for execution: ${timeForExecution}s")
         client.send("schedule", listOf(timeForExecution, code))
     }
 
     fun play() {
         if (isPlaying) return
         thread(isDaemon = true) {
-            println("START PLAYBACK")
+            logger.info("START PLAYBACK")
             client.send("start_play")
             startPlay(playHead.currentTime)
             sleep(toMs(env.lookAhead))
@@ -190,7 +226,7 @@ class ScorePlayer(
     fun pause() {
         if (!isPlaying) return
         isPlaying = false
-        println("PAUSE PLAYBACK")
+        logger.info("PAUSE PLAYBACK")
         env.clear()
         client.send("pause_play")
     }
@@ -218,5 +254,7 @@ class ScorePlayer(
 
     companion object {
         private const val DELTA_T = 0.03
+
+        private val logger = Logger.getLogger("ScorePlayer")
     }
 }
