@@ -86,4 +86,3 @@
 - effects that work with intermediate buses have to be executed after the flow synths
 - fix time display and snapping in envelope editors
 - weird window behaviour on startup
-- also bugs with SubScores... (impossible to resize)

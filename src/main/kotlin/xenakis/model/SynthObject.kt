@@ -81,13 +81,10 @@ class SynthObject(
     )
 
     override fun resize(
-        duration: Double,
-        height: Double,
-        stretch: Boolean,
-        horizontalDirection: HorizontalDirection?,
-        verticalDirection: VerticalDirection?
+        targetDuration: Double, targetHeight: Double,
+        stretch: Boolean, horizontalDirection: HorizontalDirection?, verticalDirection: VerticalDirection?
     ) {
-        var newDuration = duration
+        var newDuration = targetDuration
         if (stretch && playBufRate != null) {
             playBufRate!!.now *= (this.duration / newDuration)
         } else if (playbufStartPos != null) {
@@ -98,7 +95,7 @@ class SynthObject(
                 playbufStartPos!!.now += deltaStart * rate
             }
         }
-        super.resize(newDuration, height, stretch, horizontalDirection, verticalDirection)
+        super.resize(newDuration, targetHeight, stretch, horizontalDirection, verticalDirection)
     }
 
     fun reverse() {

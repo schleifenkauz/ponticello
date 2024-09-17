@@ -22,5 +22,6 @@ object Utils {
         set(UndoManager, UndoManager.newInstance())
         set(ScoreObjectRegistry, ScoreObjectRegistry(mutableListOf()).also { it.initialize(this) })
         set(InstrumentRegistry.local, InstrumentRegistry.createDefault())
+        set(GroupRegistry, GroupRegistry.createDefault())
     }
 }

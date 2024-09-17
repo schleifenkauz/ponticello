@@ -76,7 +76,7 @@ class ScoreObjectGroup(
     }
 
     override fun resize(
-        duration: Double, height: Double, stretch: Boolean,
+        targetDuration: Double, targetHeight: Double, stretch: Boolean,
         horizontalDirection: HorizontalDirection?, verticalDirection: VerticalDirection?
     ) {
         var minDur = 0.0
@@ -84,15 +84,15 @@ class ScoreObjectGroup(
         val objects = score.objectInstances
         if (objects.isNotEmpty()) {
             minDur =
-                if (horizontalDirection == LEFT) duration - objects.minOf { o -> o.start }
+                if (horizontalDirection == LEFT) this.duration - objects.minOf { o -> o.start }
                 else objects.maxOf { o -> o.start + o.duration }
 
             minHeight =
-                if (verticalDirection == UP) height - objects.minOf { o -> o.y }
+                if (verticalDirection == UP) this.height - objects.minOf { o -> o.y }
                 else objects.maxOf { o -> o.y + o.height }
         }
-        val deltaDur = duration.coerceAtLeast(minDur) - duration
-        val deltaHeight = height.coerceAtLeast(minHeight) - height
+        val deltaDur = targetDuration.coerceAtLeast(minDur) - this.duration
+        val deltaHeight = targetHeight.coerceAtLeast(minHeight) - this.height
         super.resize(
             this.duration + deltaDur,
             this.height + deltaHeight,

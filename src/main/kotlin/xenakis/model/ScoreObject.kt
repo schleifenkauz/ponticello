@@ -59,34 +59,34 @@ sealed class ScoreObject : AbstractRenamableObject() {
     }
 
     open fun resize(
-        duration: Double, height: Double, stretch: Boolean,
+        targetDuration: Double, targetHeight: Double, stretch: Boolean,
         horizontalDirection: HorizontalDirection?, verticalDirection: VerticalDirection?
     ) {
         if (!stretch) {
             for ((parameter, ctrl) in associatedControls) {
                 if (ctrl !is EnvelopeControl) continue
                 val spec = getSpec(parameter) as NumericalControlSpec
-                if (horizontalDirection != null) ctrl.envelope.resize(duration, horizontalDirection, spec)
+                if (horizontalDirection != null) ctrl.envelope.resize(targetDuration, horizontalDirection, spec)
             }
         } else {
             for ((_, ctrl) in associatedControls) {
                 if (ctrl !is EnvelopeControl) continue
-                ctrl.envelope.rescale(duration)
+                ctrl.envelope.rescale(targetDuration)
             }
         }
         val oldDuration = this.duration
         val oldHeight = this.height
-        val deltaDur = duration - oldDuration
-        val deltaHeight = height - oldHeight
-        this.duration = duration
-        this.height = height
+        val deltaDur = targetDuration - oldDuration
+        val deltaHeight = targetHeight - oldHeight
+        this.duration = targetDuration
+        this.height = targetHeight
         for (inst in context[rootScore].instancesOf(this)) {
             if (horizontalDirection == HorizontalDirection.LEFT) inst.setTime(inst.start - deltaDur)
             if (verticalDirection == VerticalDirection.UP) inst.setY(inst.y - deltaHeight)
         }
         context[UndoManager].record(
             ResizeEdit(
-                this, oldDuration, oldHeight, duration, height,
+                this, oldDuration, oldHeight, targetDuration, targetHeight,
                 stretch, horizontalDirection, verticalDirection
             )
         )

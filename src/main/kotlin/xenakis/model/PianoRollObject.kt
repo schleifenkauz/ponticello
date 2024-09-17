@@ -79,13 +79,12 @@ class PianoRollObject(
     }
 
     override fun resize(
-        duration: Double, height: Double, stretch: Boolean,
+        targetDuration: Double, targetHeight: Double, stretch: Boolean,
         horizontalDirection: HorizontalDirection?, verticalDirection: VerticalDirection?
     ) {
         if (stretch) {
-            val horizontalRatio = duration / this.duration
-            this.duration = duration
-            this.height = height
+            val horizontalRatio = targetDuration / this.duration
+            super.resize(targetDuration, targetHeight, true, horizontalDirection, verticalDirection)
             for (note in notes()) {
                 note.onset *= horizontalRatio
                 note.duration *= horizontalRatio
@@ -96,22 +95,24 @@ class PianoRollObject(
             val notes = notes()
             if (notes.isNotEmpty()) {
                 minDur =
-                    if (horizontalDirection == LEFT) duration - notes.minOf { n -> n.onset }
+                    if (horizontalDirection == LEFT) this.duration - notes.minOf { n -> n.onset }
                     else notes.maxOf { o -> o.onset + o.duration }
 
                 minHeight =
-                    if (verticalDirection == VerticalDirection.UP) height - notes.minOf { n -> getY(n.midinote) }
+                    if (verticalDirection == VerticalDirection.UP) this.height - notes.minOf { n -> getY(n.midinote) }
                     else notes.maxOf { n -> getY(n.midinote) + pixelsPerPitch }
             }
-            val deltaDur = duration.coerceAtLeast(minDur) - duration
-            val deltaHeight = height.coerceAtLeast(minHeight) - height
-            this.duration += deltaDur
-            val pitches = ((height + deltaHeight) / pixelsPerPitchBeforeResize).roundToInt()
+            val deltaDur = targetDuration.coerceAtLeast(minDur) - this.duration
+            val deltaHeight = targetHeight.coerceAtLeast(minHeight) - this.height
+            val pitches = ((targetHeight + deltaHeight) / pixelsPerPitchBeforeResize).roundToInt()
             if (pitches != pitchRange.count()) {
                 if (verticalDirection == VerticalDirection.DOWN) highestPitch = lowestPitch + pitches
                 else lowestPitch = highestPitch - pitches
             }
-            this.height = pitches * pixelsPerPitchBeforeResize
+            super.resize(
+                this.duration + deltaDur, pitches * pixelsPerPitchBeforeResize,
+                stretch = false, horizontalDirection, verticalDirection
+            )
             if (horizontalDirection == LEFT) {
                 for (note in notes()) {
                     note.onset += deltaDur
