@@ -130,8 +130,8 @@ abstract class ScoreObjectView(
         setupDraggingAndResizing(
             parent,
             canUserChangeWidth = true, canUserChangeHeight = true, Tool.Pointer,
-            beforeResize = this::beforeResize,
-            drag = this::dragTo, resize = this::resize
+            drag = this::dragTo, resize = this::resize,
+            beforeResize = this::beforeResize, finishDrag = this::finishedDrag
         )
         setBackground()
         setupCutting()
@@ -144,10 +144,9 @@ abstract class ScoreObjectView(
     }
 
     private fun setupSelecting() {
-        addEventHandler(MouseEvent.MOUSE_CLICKED) { ev ->
+        addEventHandler(MouseEvent.MOUSE_PRESSED) { ev ->
             toFront()
             context[ScoreObjectSelectionManager].select(this, addToSelection = ev.isShiftDown)
-
             ev.consume()
         }
     }
@@ -311,7 +310,7 @@ abstract class ScoreObjectView(
         val deltaY = y - instance.y
         for (view in movedObjects) {
             val inst = view.instance
-            inst.moveTo(inst.start + deltaT, inst.y + deltaY)
+            inst.moveTo(inst.start + deltaT, inst.y + deltaY, finished = false)
         }
         pane.markX(x)
     }
@@ -329,6 +328,10 @@ abstract class ScoreObjectView(
             else -> null
         }
         instance.obj.resize(newDur, height, stretch = ev.isShiftDown, horizontalDirection, verticalDirection)
+    }
+
+    protected open fun finishedDrag() {
+        pane.score.movedObject(instance)
     }
 
     open fun getDisplayWidth(): Double = pane.getWidth(instance.duration)

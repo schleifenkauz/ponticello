@@ -226,8 +226,10 @@ class XenakisUI(
         val layout = VBox(top, recentProjects).styleClass("startup-screen")
         stage.scene.root = layout
         stage.isMaximized = false
-        stage.sizeToScene()
-        stage.centerOnScreen()
+        runFXWithTimeout(100) {
+            stage.sizeToScene()
+            stage.centerOnScreen()
+        }
         stage.isResizable = false
     }
 
@@ -303,28 +305,28 @@ class XenakisUI(
 
     private fun createMiscBar() = hbox {
         children {
-            +Icon.Console.button(action = "Open console") { shellWindow.show() }
+            +Icon.Console.button(action = "Open console (Ctrl+T)") { shellWindow.show() }
             +Icon.SetupCode.button(action = "Edit setup code") { ev ->
                 if (ev.isShiftDown) serverSetupCodeWindow.show()
                 else serverTreeCodeWindow.show()
             }
-            +Icon.Restart.button(action = "Restart server") { controller.restartScSynth() }
-            +Icon.Browser.button(action = "Open help browser") { project.context[HelpBrowser].show() }
-            +Icon.Graph.button(action = "Edit audio flow graph") { flowGraphWindow.show() }
-            +Icon.Settings.button(action = "Edit settings") { settingsWindow.show() }
-            +Icon.Knob.button(action = "Edit global controls") { globalControlsWindow.show() }
+            +Icon.Restart.button(action = "Restart server (F5)") { controller.restartScSynth() }
+            +Icon.Browser.button(action = "Open help browser (F1)") { project.context[HelpBrowser].show() }
+            +Icon.Graph.button(action = "Edit audio flow graph (Ctrl+Shift+F)") { flowGraphWindow.show() }
+            +Icon.Settings.button(action = "Edit settings (Ctrl+Alt+S)") { settingsWindow.show() }
+            +Icon.Knob.button(action = "Edit global controls (Ctrl+G)") { globalControlsWindow.show() }
             val subWindowType = if (mode == Mode.Laptop) SubWindow.Type.Popup else SubWindow.Type.Modal
             busesWindow = SubWindow(busRegistryPane, "Busses", context, subWindowType)
-            +Icon.Bus.button(action = "Show buses") {
+            +Icon.Bus.button(action = "Show buses (Ctrl+B)") {
                 busesWindow.show()
                 busesWindow.requestFocus()
             }
             samplesWindow = SubWindow(samplesPane, "Samples", context, subWindowType)
-            +Icon.Samples.button(action = "Show samples") {
+            +Icon.Samples.button(action = "Show samples (Ctrl+F)") {
                 samplesWindow.show()
                 samplesWindow.requestFocus()
             }
-            +Icon.Sync.button(action = "Sync with SuperCollider") {
+            +Icon.Sync.button(action = "Sync with SuperCollider (Ctrl+Shift+S)") {
                 project.syncWithSuperCollider()
             }
             if (mode == Mode.Laptop) {
@@ -332,7 +334,7 @@ class XenakisUI(
                 +Icon.Instrument.button(action = "Show instruments") { instrumentsWindow.show() }
                 //groupsWindow = SubWindow(groupsPane, "Groups", context, type = SubWindow.Type.Popup)
                 //+Icon.Groups.button(action = "Show groups") { groupsWindow.show() }
-                add(Icon.Details.button(action = "Edit object properties") { showDetailPaneOfSelectedObject() }) {
+                add(Icon.Details.button(action = "Edit object properties (P)") { showDetailPaneOfSelectedObject() }) {
                     disableProperty().bind(scoreView.selector.singleSelected.equalTo(null).asObservableValue())
                 }
             }
@@ -340,9 +342,9 @@ class XenakisUI(
     }
 
     private fun createPlayerBar(): HBox {
-        playBtn = Icon.Play.button(action = "Start playback") { _ -> togglePlay() }
-        stopBtn = Icon.Stop.button(action = "Pause and free all nodes") { stop() }
-        val goToStartBtn = Icon.GoToStart.button(action = "Move play head to start") {
+        playBtn = Icon.Play.button(action = "Start playback (Ctrl?+Space)") { _ -> togglePlay() }
+        stopBtn = Icon.Stop.button(action = "Pause playback (Ctrl?+Space)") { stop() }
+        val goToStartBtn = Icon.GoToStart.button(action = "Move play head to start (0)") {
             if (!player.isPlaying) playHead.movePlayHead(0.0)
         }
         if (!controller.isSuperColliderReady) {
@@ -372,9 +374,9 @@ class XenakisUI(
     }
 
     private fun createFileBar() = HBox(
-        Icon.Save.button(action = "Save Project") { controller.saveProject() },
-        Icon.Open.button(action = "Open Project") { controller.openProject() },
-        Icon.Create.button(action = "Create new Project") { controller.createNewProject() },
+        Icon.Save.button(action = "Save Project (Ctrl+S)") { controller.saveProject() },
+        Icon.Open.button(action = "Open Project (Ctrl+O)") { controller.openProject() },
+        Icon.Create.button(action = "Create new Project (Ctrl+N)") { controller.createNewProject() },
         Icon.Close.button(action = "Close project and open startup screen") { controller.closeProject() }
     )
 
@@ -418,13 +420,13 @@ class XenakisUI(
                 if (ev.isControlDown || !ev.isTargetTextInput) stop()
             }
             on("HOME") { scoreView.displayWholeScore() }
-            on("DIGIT0") { ev ->
+            on("Shift+DIGIT0") { ev ->
                 if (!ev.isTargetTextInput && !player.isPlaying) {
                     scoreView.display(0.0, scoreView.displayedDuration)
                     playHead.movePlayHead(0.0)
                 }
             }
-            on("Shift+DIGIT0") { ev ->
+            on("DIGIT0") { ev ->
                 if (!ev.isTargetTextInput && !player.isPlaying) {
                     playHead.movePlayHead(scoreView.displayStart)
                 }
@@ -561,7 +563,7 @@ class XenakisUI(
             on("Ctrl+Alt+S") { settingsWindow.show() }
             on("Ctrl+G") { globalControlsWindow.show() }
             on("Ctrl+B") { busesWindow.show() }
-            on("Ctrl+S") { samplesWindow.show() }
+            on("Ctrl+F") { samplesWindow.show() }
             on("F5") { controller.restartScSynth() }
 
             on("Shift?+C") { ev ->

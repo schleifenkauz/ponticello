@@ -64,7 +64,7 @@ class Score(private val instances: MutableList<ScoreObjectInstance> = mutableLis
     fun clone() = Score(instances.mapTo(mutableListOf()) { inst -> inst.duplicate(inst.position) })
 
     fun addObject(inst: ScoreObjectInstance) {
-        logger.info("Adding object ${inst.obj.name.now} at ${inst.position}")
+        logger.info("Adding object ${inst.obj.name.now} at ${inst.position} to ${scoreName.now}")
         inst.initialize(context)
         inst.addedToScore(this)
         instances.add(inst)
@@ -143,6 +143,14 @@ class Score(private val instances: MutableList<ScoreObjectInstance> = mutableLis
             val o = inst.obj
             if (o == obj) yield(inst)
             else if (o is ScoreObjectGroup) yieldAll(o.score.instancesOf(obj))
+        }
+    }
+
+    fun allInstances(): Sequence<ScoreObjectInstance> = sequence {
+        for (inst in objectInstances) {
+            val o = inst.obj
+            yield(inst)
+            if (o is ScoreObjectGroup) yieldAll(o.score.allInstances())
         }
     }
 

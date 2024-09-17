@@ -25,6 +25,7 @@ import xenakis.impl.MidiPitch
 import xenakis.impl.Point
 import xenakis.model.*
 import xenakis.model.Envelope
+import xenakis.model.Score.Companion.rootScore
 import xenakis.sc.BufferControlSpec
 import xenakis.sc.Identifier
 import xenakis.sc.Rate
@@ -315,8 +316,9 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
     }
 
     private fun mouseReleased(ev: MouseEvent) {
+        if (ev.source != this) return
         ev.consume()
-        if (!ev.isShiftDown) selector.deselectAll()
+        if (score == context[rootScore] && !ev.isShiftDown) selector.deselectAll()
         val newObj = newObjectArea
         val tool = ui.toolSelector.selected.value
         when {

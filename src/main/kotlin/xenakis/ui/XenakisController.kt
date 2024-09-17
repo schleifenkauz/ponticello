@@ -237,6 +237,17 @@ class XenakisController(private val primaryStage: Stage) {
         listeners { displayStartupScreen() }
     }
 
+    fun closeRequest(stage: Stage) {
+        if (!isProjectOpened) {
+            stage.hide()
+            return
+        }
+        //TODO check if any edits have been made since the last save
+        val save = showYesNoDialog("Save project?", default = true) ?: return
+        if (save) saveProject()
+        stage.hide()
+    }
+
     fun quitApplication() {
         xenakisDir.resolve("settings.json").writeJson(context[Settings])
         client.quit()

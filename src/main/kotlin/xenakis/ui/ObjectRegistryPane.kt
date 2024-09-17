@@ -57,6 +57,10 @@ abstract class ObjectRegistryPane<O : NamedObject>(
         return HBox(label, searchText, space, addBtn, reloadBtn).styleClass("tool-pane-header")
     }
 
+    override fun requestFocus() {
+        searchText.requestFocus()
+    }
+
     protected fun <T : Any> showCreateNewDialog(options: List<T>, default: T, createObject: (T, String) -> O?) {
         val typeSelector = SearchableComboBox(FXCollections.observableList(options))
         typeSelector.value = default

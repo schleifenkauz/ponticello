@@ -87,7 +87,8 @@ class PianoRollObjectView(inst: ScoreObjectInstance, private val obj: PianoRollO
                         note.duration = pane.getDuration(x - old.minX).coerceIn(0.0, obj.duration - note.onset)
                     }
                 }
-            }
+            },
+            finishDrag = {}
         )
         rect.addEventHandler(MouseEvent.ANY) { ev ->
             if (context[XenakisUI].toolSelector.selected.value != ToolSelector.Tool.PianoRoll) return@addEventHandler

@@ -5,7 +5,6 @@ import com.pixelduke.window.ThemeWindowManagerFactory
 import javafx.application.Application
 import javafx.stage.Screen
 import javafx.stage.Stage
-import xenakis.impl.isMyComputerDumb
 import xenakis.ui.XenakisUI.Mode
 import java.util.logging.Level
 import java.util.logging.Logger
@@ -36,13 +35,7 @@ class XenakisApp : Application() {
         val largeScreenAvailable = Screen.getScreens().any { s -> s.bounds.width > 3000 }
         val mode = if (largeScreenAvailable) Mode.Desktop else Mode.Laptop
         val ui = XenakisUI(stage, controller, mode)
-        stage.setOnCloseRequest {
-            if (controller.isProjectOpened) {
-                val save = showYesNoDialog("Save project?", default = true) ?: return@setOnCloseRequest
-                if (save) controller.saveProject()
-                stage.hide()
-            }
-        }
+        stage.setOnCloseRequest { controller.closeRequest(stage) }
         stage.icons.setAll(Icon.AppIcon.image)
         stage.title = "Xenakis"
         return ui
