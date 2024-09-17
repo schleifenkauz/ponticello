@@ -2,8 +2,7 @@
 
 ### Make playback more reactive
 
-- would be interesting to have live-control over constant parameters of individual objects
-- also react to objects being resized(?)
+- also react to objects being resized(!)
 
 ### completion
 
@@ -39,12 +38,6 @@
 - do we need an extra window for LFO code?
 - integrate close, maximize, minimize into top toolbar and remove window decoration
 
-### Unify knob control and constant control
-
-- add increment and decrement buttons to slider
-- always display current value (where?)
-- show double input dialog on double click (no pun intended)
-
 ### Make y position of ScoreObjects relative to screen resolution
 
 - this would simplify working on the same project from different screens
@@ -59,7 +52,6 @@
 ### More flexible controls for SynthObjects
 
 - when adding envelope controls, min/max values can be specified
-- ability to reference Synth controls from within custom LFO code
 
 ### Bouncing
 

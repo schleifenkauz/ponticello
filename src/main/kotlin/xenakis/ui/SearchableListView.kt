@@ -106,7 +106,7 @@ abstract class SearchableListView<E> : VBox() {
         }
     }
 
-    private fun select(option: E?) {
+    fun select(option: E?) {
         optionBoxes[selectedOption]?.pseudoClassStateChanged(SELECTED, false)
         selectedOption = option
         optionBoxes[selectedOption]?.pseudoClassStateChanged(SELECTED, true)
@@ -126,8 +126,9 @@ abstract class SearchableListView<E> : VBox() {
         searchText.text = text
     }
 
-    fun showPopup(context: Context, title: String, anchor: Point2D, onConfirm: (E) -> Unit) {
+    fun showPopup(context: Context, title: String, anchor: Point2D, initialOption: E? = null, onConfirm: (E) -> Unit) {
         initializeOptions()
+        if (initialOption in filteredOptions) select(initialOption)
         val window = SubWindow(this, title, context, type = SubWindow.Type.Popup)
         window.x = anchor.x
         window.y = anchor.y
@@ -135,9 +136,9 @@ abstract class SearchableListView<E> : VBox() {
         window.showAndWait()
     }
 
-    fun showPopup(context: Context, title: String, anchorNode: Node, onConfirm: (E) -> Unit) {
+    fun showPopup(context: Context, title: String, anchorNode: Node, initialOption: E? = null, onConfirm: (E) -> Unit) {
         val anchor = anchorNode.localToScreen(0.0, 0.0)
-        showPopup(context, title, anchor, onConfirm)
+        showPopup(context, title, anchor, initialOption, onConfirm)
     }
 
     protected fun hide() {

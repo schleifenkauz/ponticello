@@ -25,7 +25,7 @@ class ControlAssignmentView(private val obj: SynthObject) : VBox(), SynthControl
 
         editor.addEventFilter(KeyEvent.ANY) { ev ->
             if (ev.code == KeyCode.TAB) {
-                if (ev.target != editor.getInputControl() || ev.eventType != KeyEvent.KEY_PRESSED) {
+                if (ev.eventType != KeyEvent.KEY_PRESSED) {
                     return@addEventFilter
                 }
                 ev.consume()

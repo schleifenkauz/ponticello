@@ -316,7 +316,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
     }
 
     private fun mouseReleased(ev: MouseEvent) {
-        if (ev.source != this) return
+        if (ev.target != this) return
         ev.consume()
         if (score == context[rootScore] && !ev.isShiftDown) selector.deselectAll()
         val newObj = newObjectArea

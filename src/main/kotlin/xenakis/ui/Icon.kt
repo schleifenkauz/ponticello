@@ -36,7 +36,7 @@ enum class Icon {
     Edit,
     Check,
     Expand,
-    Add,
+    Add, Minus,
     View,
     Mute,
     Unmute,

@@ -409,8 +409,8 @@ class XenakisUI(
             on("Ctrl+O") { controller.openProject() }
             on("Ctrl+N") { controller.createNewProject() }
 
-            on("Ctrl+A") {
-                context[ScoreObjectSelectionManager].selectAll()
+            on("Ctrl+A") { ev ->
+                if (!ev.isTargetTextInput) context[ScoreObjectSelectionManager].selectAll()
             }
 
             on("Ctrl?+SPACE") { ev ->

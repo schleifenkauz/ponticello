@@ -129,9 +129,9 @@ class SynthObject(
     private fun runOnActiveSynths(action: ScWriter.() -> Unit) {
         if (!context.hasProperty(ScorePlayer) || !context[ScorePlayer].isPlaying) return
         context[SuperColliderClient].run {
-            for (synth in context[ScorePlayer].env.activeInstances(this@SynthObject)) {
-                appendBlock("if (~synths != nil && ~synths['$synth'] != nil && ~synths['$synth'].isRunning)") {
-                    append("~synths['$synth'].")
+            for ((_, _, name) in context[ScorePlayer].env.activeInstances(this@SynthObject)) {
+                appendBlock("if (~synths != nil && ~synths['$name'] != nil && ~synths['$name'].isRunning)") {
+                    append("~synths['$name'].")
                     action()
                 }
                 appendLine(";")

@@ -28,8 +28,10 @@ class ObjectSelectorControl<O : NamedObject, R : ObjectReference?>(
         editor.addView(this)
         button.setOnAction {
             val title = "Select ${editor.getRegistry(context).objectType}"
-            listView.enterText(editor.selected.now?.getName() ?: "")
-            listView.showPopup(context, title, anchorNode = button) { option ->
+
+            @Suppress("UNCHECKED_CAST")
+            val initialOption = editor.selected.now?.get<NamedObject>() as O?
+            listView.showPopup(context, title, anchorNode = button, initialOption) { option ->
                 @Suppress("UNCHECKED_CAST")
                 editor.select(option.createReference() as R)
             }

@@ -4,17 +4,16 @@ import bundles.createBundle
 import hextant.context.Context
 import hextant.fx.initHextantScene
 import hextant.serial.EditorRoot
-import javafx.collections.FXCollections.observableList
 import javafx.geometry.Pos
 import javafx.scene.Node
-import javafx.scene.control.*
+import javafx.scene.control.Button
+import javafx.scene.control.Label
+import javafx.scene.control.ScrollPane
 import javafx.scene.layout.BorderPane
 import javafx.scene.layout.HBox
 import javafx.scene.layout.Priority
-import javafx.util.Duration
 import org.controlsfx.control.ToggleSwitch
 import reaktive.value.ReactiveVariable
-import reaktive.value.forEach
 import reaktive.value.fx.asProperty
 import reaktive.value.now
 import reaktive.value.reactiveVariable
@@ -33,8 +32,9 @@ class ControlAssignmentEditor(
     val parameter: String,
     private val spec: ControlSpec
 ) : HBox(5.0) {
-    private val nameLabel = Label(parameter).also { l -> l.styleClass.add("control-label") }
-    private val comboBox = ComboBox(observableList(ControlType.all))
+    private val nameLabel = Label(parameter)
+    private var selectedOption: ControlType<*>? = null
+    private val optionButton = Button()
     private val detailEditors = mutableMapOf<ControlType<*>, Node>()
     private val deleteBtn = Icon.Delete.button(action = "Remove control") {
         obj.controls.removeControl(parameter)
@@ -45,7 +45,7 @@ class ControlAssignmentEditor(
             field = value!!
             value.styleClass?.add("control-detail-editor")
             if (spec is NumericalControlSpec) {
-                children.setAll(nameLabel, comboBox, detailEditor, infiniteSpace(), deleteBtn)
+                children.setAll(nameLabel, optionButton, detailEditor, infiniteSpace(), deleteBtn)
             } else {
                 children.setAll(nameLabel, detailEditor, infiniteSpace(), deleteBtn)
             }
@@ -54,15 +54,17 @@ class ControlAssignmentEditor(
 
     init {
         styleClass.add("detail-item")
-        comboBox.styleClass.add("control-option-selector")
-        comboBox.valueProperty().addListener { _, _, t ->
-            if (settingControl) return@addListener
-            @Suppress("UNCHECKED_CAST")
-            t as ControlType<ParameterControl>
-            updateControlType(t)
+        optionButton.setOnAction {
+            val listView = SimpleSearchableListView(ControlType.all)
+            listView.showPopup(
+                obj.context, "Select control type",
+                anchorNode = optionButton, initialOption = selectedOption
+            ) { option ->
+                updateControlType(option)
+            }
         }
+        optionButton.minWidth = 85.0
         nameLabel.minWidth = DetailPane.LABEL_WIDTH - 5.0
-        comboBox.setFixedWidth(COMBO_BOX_WIDTH)
     }
 
     private fun updateControlType(t: ControlType<*>) {
@@ -78,7 +80,7 @@ class ControlAssignmentEditor(
     fun setControl(control: ParameterControl) {
         val type = ControlType.getType(control)
         settingControl = true
-        comboBox.value = type
+        optionButton.text = type.toString()
         detailEditor = type.createDetailInput(parameter, spec, control, obj.context)
         detailEditors[type] = detailEditor!!
         settingControl = false
@@ -96,69 +98,30 @@ class ControlAssignmentEditor(
 
         abstract fun createDefaultControl(obj: ScoreObject, spec: ControlSpec, initialValue: Double?): C
 
-        override fun toString(): String = this::class.simpleName!!
+        override fun toString(): String = when (this) {
+            Buffer -> "Buffer"
+            Bus -> "Bus"
+            BusValue -> "Bus"
+            Value -> "Value"
+            Envelope -> "Envelope"
+            Group -> "Group"
+            LFO -> "LFO"
+            SingleBusValue -> "Bus Value"
+        }
 
-        object Constant : ControlType<ConstantControl>() {
+        object Value : ControlType<ConstantControl>() {
             override fun createDetailInput(
                 parameter: String,
                 spec: ControlSpec,
                 control: ConstantControl,
-                context: Context,
-            ): Spinner<Double> {
-                spec as NumericalControlSpec
-                val spinner = Spinner<Double>(
-                    spec.min.get(), spec.max.get(),
-                    control.value.now,
-                    spec.step.get()
-                )
-                spinner.isEditable = true
-                spinner.valueFactory.valueProperty().bindBidirectional(control.value.asProperty())
-                return spinner
-            }
+                context: Context
+            ): Node = ControlSlider(control.value, spec as NumericalControlSpec)
 
             override fun createDefaultControl(
-                obj: ScoreObject,
-                spec: ControlSpec,
-                initialValue: Double?
+                obj: ScoreObject, spec: ControlSpec, initialValue: Double?
             ): ConstantControl {
                 spec as NumericalControlSpec
                 return ConstantControl(reactiveVariable(initialValue ?: spec.defaultValue.get()))
-            }
-        }
-
-        object Knob : ControlType<KnobControl>() {
-            override fun createDetailInput(
-                parameter: String,
-                spec: ControlSpec,
-                control: KnobControl,
-                context: Context
-            ): Node {
-                spec as NumericalControlSpec
-                val min = spec.min.get()
-                val max = spec.max.get()
-                val step = spec.step.get()
-                val slider = Slider(min, max, control.get())
-                slider.isShowTickMarks = (max - min) / step < 25.0
-                slider.blockIncrement = step
-                slider.majorTickUnit = step
-                slider.minorTickCount = 0
-                slider.isSnapToTicks = true
-                val accuracy = accuracy(step)
-                slider.valueProperty().addListener { _, _, value -> control.value.set(value.toDouble()) }
-                slider.tooltip = Tooltip().apply {
-                    hideDelay = Duration.ONE
-                    showDelay = Duration.ZERO
-                }
-                slider.userData = control.value.forEach { value ->
-                    slider.value = value
-                    slider.tooltip.text = value.format(accuracy)
-                }
-                return slider
-            }
-
-            override fun createDefaultControl(obj: ScoreObject, spec: ControlSpec, initialValue: Double?): KnobControl {
-                spec as NumericalControlSpec
-                return KnobControl(reactiveVariable(initialValue ?: spec.defaultValue.get()))
             }
         }
 
@@ -202,7 +165,7 @@ class ControlAssignmentEditor(
                 val pane = ScrollPane(control.expr.control)
                 val window = SubWindow(BorderPane(pane), "LFO for $parameter", context)
                 window.scene.initHextantScene(context)
-                window.resize(800.0, 800.0)
+                window.resize(500.0, 200.0)
                 return button("Code") { window.show() }
             }
 
@@ -312,12 +275,11 @@ class ControlAssignmentEditor(
         }
 
         companion object {
-            val all: List<ControlType<*>> = listOf(Constant, Knob, LFO, Envelope, BusValue, SingleBusValue)
+            val all: List<ControlType<*>> = listOf(Value, LFO, Envelope, BusValue, SingleBusValue)
 
             @Suppress("UNCHECKED_CAST")
             fun <O : ParameterControl> getType(option: O) = when (option) {
-                is KnobControl -> Knob
-                is ConstantControl -> Constant
+                is ConstantControl -> Value
                 is CustomControl -> LFO
                 is EnvelopeControl -> Envelope
                 is BusControl -> Bus
@@ -337,9 +299,5 @@ class ControlAssignmentEditor(
                 return ObjectSelectorControl(editor, createBundle())
             }
         }
-    }
-
-    companion object {
-        private const val COMBO_BOX_WIDTH = 120.0
     }
 }

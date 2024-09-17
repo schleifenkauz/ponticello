@@ -33,11 +33,6 @@ Slider.control-detail-editor {
     -fx-padding: 6px;
 }
 
-.control-label {
-    -fx-pref-width: 75px;
-    -fx-padding: 5px;
-}
-
 .command-history-label:focused {
     -fx-background-color: gray;
 }
@@ -573,4 +568,24 @@ Slider.control-detail-editor {
 
 .settings-pane {
     -fx-background-color: #1e1f22;
+}
+
+.control-input-text {
+    -fx-background-color: transparent;
+    -fx-min-width: 90px;
+    -fx-pref-width: 90px !important;
+    -fx-border-color: rgba(67, 67, 67, 0.5);
+    -fx-border-radius: 3px;
+}
+
+.slider-adjust-button {
+    -fx-border-width: 3px !important;
+}
+
+.slider-adjust-button:hover {
+    -fx-border-color: black;
+}
+
+.toggle-switch {
+    -fx-background-color: transparent !important;
 }
