@@ -12,10 +12,13 @@ import reaktive.Observer
 import reaktive.list.observeEach
 import reaktive.value.*
 import xenakis.impl.ScWriter
+import xenakis.impl.SuperColliderClient
 import xenakis.impl.code
 import xenakis.impl.copy
 import xenakis.sc.ControlSpec
+import xenakis.sc.Identifier
 import xenakis.sc.editor.SynthDefSelector
+import xenakis.sc.transform
 import xenakis.ui.SynthObjectView
 
 @Serializable
@@ -34,12 +37,6 @@ class SynthObject(
 
     @Transient
     private val controlObservers = mutableMapOf<ParameterControl, Observer>()
-
-    @Transient
-    private lateinit var parameterObserver: Observer
-
-    @Transient
-    private val myActiveSynths = mutableSetOf<String>()
 
     @Transient
     lateinit var synthDefSelector: SynthDefSelector
@@ -117,10 +114,6 @@ class SynthObject(
         if (initialized) return
         super.initialize(context)
         synthDefSelector = SynthDefSelector(context, synthDefRef)
-        /*        parameterObserver = synthDef.parameters.observeCollection(
-                    added = { _, param -> controls.addControl(param.name.now, param.defaultControl(context)) },
-                    removed = { _, param -> controls.removeControl(param.name.now) }
-                )*/
         parameterNameObserver = synthDef.parameters.observeEach { _, p ->
             p.name.observe { _, oldName, newName ->
                 val control = controls.controlMap[oldName] ?: return@observe
@@ -134,17 +127,16 @@ class SynthObject(
     }
 
     private fun runOnActiveSynths(action: ScWriter.() -> Unit) {
-        /*
-                context[SuperColliderClient].run {
-                    for (synth in myActiveSynths) {
-                        appendBlock("if (~synths != nil && ~synths['$synth'] != nil && ~synths['$synth'].isRunning)") {
-                            append("~synths['$synth'].")
-                            action()
-                        }
-                        appendLine(";")
-                    }
+        if (!context.hasProperty(ScorePlayer) || !context[ScorePlayer].isPlaying) return
+        context[SuperColliderClient].run {
+            for (synth in context[ScorePlayer].env.activeInstances(this@SynthObject)) {
+                appendBlock("if (~synths != nil && ~synths['$synth'] != nil && ~synths['$synth'].isRunning)") {
+                    append("~synths['$synth'].")
+                    action()
                 }
-        */
+                appendLine(";")
+            }
+        }
     }
 
     override fun addedControl(parameter: String, control: ParameterControl) {
@@ -174,7 +166,6 @@ class SynthObject(
     }
 
     override fun writeCode(name: String, position: ObjectPosition, env: ScorePlayEnv): String = code {
-        myActiveSynths.add(name)
         appendBlock("s.makeBundle(${env.serverLatency})") {
             val constantArguments = controls.controlMap.mapNotNull { (param, control) ->
                 when (control) {
@@ -220,11 +211,14 @@ class SynthObject(
                     }
 
                     is CustomControl -> {
+                        val code = controls.controlMap.entries
+                            .associate { (name, control) -> "~ctrl_$name" to control.makeExpr() }
                         val expr = control.expr.editor.result.now
+                            .transform<Identifier> { e -> code[e.text] ?: e }
                         val busName = "~auxil_${name}_${param}"
                         +"$busName = Bus.control(s, 1)"
                         append("{ ")
-                        expr.code(writer, context) //TODO make other controls usable from within LFO code
+                        expr.code(writer, context)
                         +" }.play(s, $busName)"
                         +"${synthVar}.map(\\$param, $busName)"
                     }

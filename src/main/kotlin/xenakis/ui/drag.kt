@@ -50,7 +50,7 @@ fun Region.setupDraggingAndResizing(
     canUserChangeWidth: Boolean, canUserChangeHeight: Boolean, tool: Tool,
     drag: (x: Double, y: Double) -> Unit,
     resize: (Bounds, Double, Double, Cursor, MouseEvent) -> Unit,
-    beforeResize: (MouseEvent, Cursor) -> Unit = { _, _ -> },
+    startDrag: (MouseEvent, Cursor) -> Unit = { _, _ -> },
     finishDrag: () -> Unit = {}
 ) {
     val context = pane.context
@@ -65,7 +65,7 @@ fun Region.setupDraggingAndResizing(
             dragStart = Point(ev.screenX, ev.screenY)
             if (isResizeCursor(cursor)) {
                 context[UndoManager].beginCompoundEdit("Resize object")
-                beforeResize(ev, cursor)
+                startDrag(ev, cursor)
             } else context[UndoManager].beginCompoundEdit("Move object")
         }
         ev.consume()

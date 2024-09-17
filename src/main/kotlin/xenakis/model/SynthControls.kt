@@ -13,6 +13,9 @@ class SynthControls(
     private val map: MutableMap<String, ParameterControl>,
     private val extraSpecs: MutableMap<String, ControlSpec> = mutableMapOf()
 ) {
+    val extraParameters: Collection<ParameterDefObject>
+        get() = extraSpecs.map { (name, spec) -> ParameterDefObject(name, spec) }
+
     @Transient
     private lateinit var context: Context
 
@@ -34,21 +37,27 @@ class SynthControls(
 
     fun getExtraSpec(parameter: String): ControlSpec? = extraSpecs[parameter]
 
-    fun reassignControl(parameter: String, control: ParameterControl) {
-        if (parameter !in map) error("Parameter $parameter not found in controls for ")
-        control.initialize(context)
+    fun reassignControl(parameter: String, control: ParameterControl, extraSpec: ControlSpec? = null) {
+        if (parameter !in map) {
+            addControl(parameter, control, extraSpec)
+            return
+        }
         val oldControl = map[parameter]!!
-        map[parameter] = control
+        doAddControl(control, parameter, extraSpec)
         context[UndoManager].record(Edit.ReassignControl(this, parameter, oldControl, control))
         viewManager.notifyListeners { reassignedControl(parameter, oldControl, control) }
     }
 
     fun addControl(parameter: String, control: ParameterControl, extraSpec: ControlSpec?) {
+        doAddControl(control, parameter, extraSpec)
+        context[UndoManager].record(Edit.AddControl(this, parameter, control, extraSpec))
+        viewManager.notifyListeners { addedControl(parameter, control) }
+    }
+
+    private fun doAddControl(control: ParameterControl, parameter: String, extraSpec: ControlSpec?) {
         control.initialize(context)
         map[parameter] = control
         if (extraSpec != null) extraSpecs[parameter] = extraSpec
-        context[UndoManager].record(Edit.AddControl(this, parameter, control, extraSpec))
-        viewManager.notifyListeners { addedControl(parameter, control) }
     }
 
     fun removeControl(parameter: String) {

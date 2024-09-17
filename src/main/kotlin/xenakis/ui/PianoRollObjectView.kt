@@ -117,8 +117,8 @@ class PianoRollObjectView(inst: ScoreObjectInstance, private val obj: PianoRollO
         window.show()
     }
 
-    override fun beforeResize(ev: MouseEvent, cursor: Cursor) {
-        super.beforeResize(ev, cursor)
+    override fun startDrag(ev: MouseEvent, cursor: Cursor) {
+        super.startDrag(ev, cursor)
         obj.pixelsPerPitchBeforeResize = obj.pixelsPerPitch
     }
 

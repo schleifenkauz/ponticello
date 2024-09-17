@@ -5,9 +5,7 @@ import javafx.application.Platform
 import javafx.geometry.Point2D
 import javafx.geometry.Rectangle2D
 import javafx.scene.Node
-import javafx.scene.control.ContextMenu
 import javafx.scene.control.Label
-import javafx.scene.control.MenuItem
 import javafx.scene.image.Image
 import javafx.scene.image.ImageView
 import javafx.scene.input.MouseEvent
@@ -89,13 +87,13 @@ class SynthObjectView(
     }
 
     private fun addNewControl(anchorNode: Node) {
-        val listView = SearchableParameterListView(context, obj.synthDef)
+        val listView = SearchableParameterListView(context, obj.synthDef.parameters.now)
         val assignedParameters = obj.controls.controlMap.keys.map(obj.synthDef::getParameter)
         listView.removedOptions.addAll(assignedParameters)
         listView.showPopup(context, "Add control", anchorNode = anchorNode) { option ->
-            val extraSpec = if (option.name.now !in obj.synthDef.parameters.now.map { p -> p.name.now }) {
-                option.spec.now
-            } else null
+            val extraSpec = option.spec.now.takeIf {
+                option.name.now !in obj.synthDef.parameters.now.map { p -> p.name.now }
+            }
             obj.controls.addControl(option.name.now, option.defaultControl(context), extraSpec)
         }
     }
@@ -194,7 +192,7 @@ class SynthObjectView(
     private fun listenForMouseEvents() {
         addEventHandler(MouseEvent.MOUSE_CLICKED) { ev ->
             if (ev.isAltDown) {
-                val p = localToScreen(ev.x, ev.y)
+                val p = Point2D(ev.screenX, ev.screenY)
                 showNewEnvelopePopup(p)
                 ev.consume()
             }
@@ -202,32 +200,27 @@ class SynthObjectView(
     }
 
     private fun showNewEnvelopePopup(point: Point2D) {
-        val possibleParameters = obj.synthDef.parameters.now
+        val allParameters = obj.synthDef.parameters.now + obj.controls.extraParameters
+        val possibleParameters = allParameters
             .filter { p -> p.spec.now is NumericalControlSpec }
             .filter { p ->
                 val control = obj.controls.controlMap[p.name.now]
                 control != null && (control !is EnvelopeControl || !control.display.now)
             }
-        val menu = ContextMenu()
-        for (p in possibleParameters) {
-            val name = p.name.now
-            val spec = p.spec.now as NumericalControlSpec
-            val item = MenuItem(name)
-            item.setOnAction {
-                val oldControl = obj.controls[p.name.now]
-                val env =
-                    if (oldControl is EnvelopeControl) oldControl.envelope
-                    else Envelope.constant(spec.defaultValue.get(), obj.duration, spec.warp)
-                val control = EnvelopeControl(
-                    env, reactiveVariable(spec.associatedColor),
-                    display = reactiveVariable(true)
-                )
-                obj.controls.reassignControl(name, control)
+        val listView = SearchableParameterListView(context, possibleParameters)
+        listView.showPopup(context, "Add envelope", point) { param ->
+            val name = param.name.now
+            val spec = param.spec.now as NumericalControlSpec
+            val env = Envelope.constant(spec.defaultValue.get(), obj.duration, spec.warp)
+            val control = EnvelopeControl(
+                env, reactiveVariable(spec.associatedColor),
+                display = reactiveVariable(true)
+            )
+            val extraSpec = param.spec.now.takeIf {
+                name !in obj.synthDef.parameters.now.map { p -> p.name.now }
             }
-            menu.items.add(item)
+            obj.controls.reassignControl(name, control, extraSpec)
         }
-        menu.isAutoHide = true
-        menu.show(scene.window, point.x, point.y)
     }
 
     override val defaultBackgroundColor: ReactiveValue<Color>

@@ -25,75 +25,84 @@ class ScoreEventCollector(
         }
     }
 
+    private fun absolutePositions(instance: ScoreObjectInstance) =
+        absolutePositions(instance.score).map { pos -> pos + instance.position }
+
     @Synchronized
     override fun addedObject(score: Score, inst: ScoreObjectInstance) {
         if (inst.muted) return
-        addToPlayback(inst, score)
+        for (position in absolutePositions(inst)) {
+            addToPlayback(inst, position)
+        }
     }
 
     @Synchronized
     override fun removedObject(score: Score, inst: ScoreObjectInstance) {
         if (inst.muted) return
-        removeFromPlayback(inst)
+        for (position in absolutePositions(inst)) {
+            removeFromPlayback(inst, position)
+        }
     }
 
-    private fun addToPlayback(inst: ScoreObjectInstance, score: Score) {
+    private fun addToPlayback(inst: ScoreObjectInstance, position: ObjectPosition) {
         val obj = inst.obj
         if (obj is ScoreObjectGroup) {
-            logger.info("Added sub score ${obj.name.now} to ${score.scoreName.now} at ${inst.position}")
+            logger.info("Added sub score ${obj.name.now} to ${inst.score.scoreName.now} at ${inst.position}")
             scoreInstances(obj.score).add(inst)
-            obj.score.addListener(this)
-        } else {
-            logger.info("Added $inst to ${score.scoreName.now}")
-            for (pos in absolutePositions(score)) {
-                val posStart = pos + inst.position
-                val posEnd = posStart + ObjectPosition(obj.duration, 0.0)
-                logger.info("   at $posStart")
-                if (player != null && env != null && player.isPlaying && player.currentTime in posStart.time - env.lookAhead..posEnd.time) {
-                    player.scheduleInstantly(inst, posStart)
+            if (scoreInstances(obj.score).size == 1) {
+                obj.score.addListener(this) //this will recurse into [addToPlayBack] via [addedObject]
+            } else {
+                for (subInst in obj.score.objectInstances) {
+                    addToPlayback(subInst, position + subInst.position)
                 }
-                events.add(Event(Event.Type.ObjectStart, posStart, inst))
-                events.add(Event(Event.Type.ObjectEnd, posEnd, inst))
             }
+        } else {
+            logger.info("Added $inst to ${inst.score.scoreName.now} at $position")
+            val posEnd = position + ObjectPosition(obj.duration, 0.0)
+            if (player != null && env != null && player.isPlaying && player.currentTime in position.time - env.lookAhead..posEnd.time) {
+                player.scheduleInstantly(inst, position)
+            }
+            events.add(Event(Event.Type.ObjectStart, position, inst))
+            events.add(Event(Event.Type.ObjectEnd, posEnd, inst))
         }
     }
 
-    private fun removeFromPlayback(inst: ScoreObjectInstance) {
+    private fun removeFromPlayback(inst: ScoreObjectInstance, position: ObjectPosition) {
         val obj = inst.obj
-        val itr = events.iterator()
-        for (ev in itr) {
-            if (ev.inst == inst) {
-                itr.remove()
-                logger.info("Removed ${ev.type}: ${ev.inst} at ${ev.absolutePosition}")
-            }
-        }
         if (obj is ScoreObjectGroup) {
             scoreInstances(obj.score).remove(inst)
+            if (scoreInstances(obj.score).isEmpty()) obj.score.removeListener(this)
             for (subInst in obj.score.objectInstances) {
-                removedObject(obj.score, subInst)
+                removeFromPlayback(subInst, position + subInst.position)
             }
-            obj.score.removeListener(this)
-        } else if (player != null && env != null && player.isPlaying) {
-            for ((activeInstance, pos, name) in env.activeInstances(inst)) {
-                env.markEnd(activeInstance, pos)
-                val endPos = pos + ObjectPosition(activeInstance.obj.duration, 0.0)
-                events.remove(Event(Event.Type.ObjectEnd, endPos, activeInstance))
-                player.stopPlayBackInstantly(activeInstance, name)
+        } else {
+            logger.info("Removed $inst from ${inst.score.scoreName.now} at $position")
+            val posEnd = position + ObjectPosition(obj.duration, 0.0)
+            events.remove(Event(Event.Type.ObjectStart, position, inst))
+            events.remove(Event(Event.Type.ObjectEnd, posEnd, inst))
+            if (player != null && env != null && player.isPlaying) {
+                for ((activeInstance, pos, name) in env.activeInstances(inst)) {
+                    if (pos == position) player.stopPlayBackInstantly(activeInstance, pos, name)
+                }
             }
         }
     }
 
     @Synchronized
-    override fun movedObject(score: Score, inst: ScoreObjectInstance) {
+    override fun movedObject(score: Score, inst: ScoreObjectInstance, oldPosition: ObjectPosition) {
         if (inst.muted) return
-        removeFromPlayback(inst)
-        addToPlayback(inst, score)
+        for (position in absolutePositions(inst.score)) {
+            removeFromPlayback(inst, position + oldPosition)
+            addToPlayback(inst, position + inst.position)
+        }
     }
 
     @Synchronized
     override fun toggledMute(score: Score, inst: ScoreObjectInstance, muted: Boolean) {
-        if (muted) removeFromPlayback(inst)
-        else addToPlayback(inst, score)
+        for (position in absolutePositions(inst)) {
+            if (muted) removeFromPlayback(inst, position)
+            else addToPlayback(inst, position)
+        }
     }
 
     @Synchronized

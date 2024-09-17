@@ -134,7 +134,7 @@ class XenakisUI(
         serverTreeCodeWindow.resize(500.0, 500.0)
 
         playHead = PlayHead(scoreView)
-        player = ScorePlayer(scoreView.score, playHead, controller.client)
+        player = ScorePlayer(project.score, playHead, controller.client)
         shellWindow = SuperColliderShellController.createShellWindow(context)
 
         project.context[ScoreObjectSelectionManager] = ScoreObjectSelectionManager(project.context, scoreView)
@@ -573,6 +573,16 @@ class XenakisUI(
                     val obj = view.instance.obj
                     val mode = if (ev.isShiftDown) ClipboardMode.Duplicate else ClipboardMode.Clone
                     scoreView.setClipboard(obj, view, mode)
+                }
+            }
+
+            on("X") { ev ->
+                if (!ev.isTargetTextInput) {
+                    toolSelector.select(Tool.Pointer)
+                    val view = context[ScoreObjectSelectionManager].singleSelected.now ?: return@on
+                    val inst = view.instance
+                    inst.score.removeObject(inst)
+                    scoreView.setClipboard(inst.obj, view, ClipboardMode.Duplicate)
                 }
             }
 

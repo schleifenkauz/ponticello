@@ -4,14 +4,15 @@ import hextant.context.Context
 import reaktive.value.now
 import xenakis.model.ParameterDefObject
 import xenakis.model.Settings
-import xenakis.model.SynthDefObject
 import xenakis.sc.BufferControlSpec
 import xenakis.sc.BusControlSpec
 import xenakis.sc.GroupControlSpec
 import xenakis.sc.NumericalControlSpec
 
-class SearchableParameterListView(private val context: Context, private val synthDef: SynthDefObject) :
-    SimpleSearchableListView<ParameterDefObject>(synthDef.parameters.now) {
+class SearchableParameterListView(
+    private val context: Context,
+    val parameters: List<ParameterDefObject>,
+) : SimpleSearchableListView<ParameterDefObject>(parameters) {
     override fun extractText(option: ParameterDefObject): String = option.name.now
 
     override fun displayText(option: ParameterDefObject): String {

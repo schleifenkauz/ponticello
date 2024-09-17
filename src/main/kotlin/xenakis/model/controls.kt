@@ -10,6 +10,7 @@ import reaktive.value.now
 import reaktive.value.reactiveVariable
 import xenakis.impl.ColorSerializer
 import xenakis.impl.copy
+import xenakis.sc.*
 import xenakis.sc.editor.ScExprExpander
 
 @Serializable
@@ -99,3 +100,14 @@ data class ConstantControl(val value: ReactiveVariable<Double>) : ParameterContr
     override fun copy(): ParameterControl = ConstantControl(value.copy())
 }
 
+fun ParameterControl.makeExpr(): ScExpr = when (this) {
+    is BufferControl -> sample.now?.get<SampleObject>()?.superColliderExpr ?: Nil
+    is BusControl -> bus.now.get<BusObject>().superColliderExpr
+    is BusValueControl -> RawScExpr("In.ar(${bus.now.get<BusObject>().superColliderName})")
+    is ConstantControl -> DoubleLiteral(value.now)
+    is CustomControl -> expr.editor.result.now
+    is EnvelopeControl -> RawScExpr(envelope.code())
+    is GroupControl -> group.now.get<GroupObject>().superColliderExpr
+    is KnobControl -> DoubleLiteral(value.now)
+    is SingleBusValueControl -> bus.now.get<BusObject>().superColliderExpr.send("getSynchronous")
+}

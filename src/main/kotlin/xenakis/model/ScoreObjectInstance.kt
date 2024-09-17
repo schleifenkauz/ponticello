@@ -86,7 +86,7 @@ class ScoreObjectInstance(
         val after = ObjectPosition(time, y)
         this._time = time
         this._y = y
-        if (finished) score.movedObject(this)
+        if (finished) score.movedObject(this, before)
         context[UndoManager].record(MoveObject(this, before, after))
         viewManager.notifyListeners { moved(time, y) }
     }

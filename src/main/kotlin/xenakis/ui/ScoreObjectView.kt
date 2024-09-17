@@ -40,7 +40,7 @@ abstract class ScoreObjectView(
     private lateinit var muteUnmuteBtn: Button
     private val envelopeDisplayObservers = mutableMapOf<String, Observer>()
     val actions = HBox().centerChildrenVertically() styleClass "actions"
-    private val knobControls = FlowPane().centerChildrenVertically() styleClass "knobs"
+    private val knobControls = FlowPane().centerChildrenVertically() styleClass "knobs" //TODO remove
 
     protected val envelopesPane = Pane()
     private val envelopeEditors = mutableListOf<EnvelopeEditor>()
@@ -53,6 +53,8 @@ abstract class ScoreObjectView(
     protected open val borderColorWhenSameObjectSelected: Color get() = Color.GRAY
 
     protected val colorPicker: ColorPicker = ColorPicker() styleClass "button"
+
+    private var positionBeforeDrag = instance.position
 
     init {
         styleClass("score-object")
@@ -131,7 +133,8 @@ abstract class ScoreObjectView(
             parent,
             canUserChangeWidth = true, canUserChangeHeight = true, Tool.Pointer,
             drag = this::dragTo, resize = this::resize,
-            beforeResize = this::beforeResize, finishDrag = this::finishedDrag
+            startDrag = this::startDrag,
+            finishDrag = this::finishedDrag
         )
         setBackground()
         setupCutting()
@@ -269,7 +272,7 @@ abstract class ScoreObjectView(
             instance.obj in context[ScoreObjectSelectionManager].selectedObjects -> borderColorWhenSameObjectSelected
             else -> borderColorWhenNotSelected
         }
-        border = solidBorder(borderColor, width = BORDER_WIDTH, radius = 2.0)
+        border = solidBorder(borderColor, width = BORDER_WIDTH, radius = BORDER_RADIUS)
     }
 
     fun isSomeInstanceSelected(yesOrNo: Boolean) {
@@ -278,7 +281,7 @@ abstract class ScoreObjectView(
             yesOrNo -> borderColorWhenSameObjectSelected
             else -> borderColorWhenNotSelected
         }
-        border = solidBorder(borderColor, width = BORDER_WIDTH, radius = 2.0)
+        border = solidBorder(borderColor, width = BORDER_WIDTH, radius = BORDER_RADIUS)
     }
 
     private fun delete() {
@@ -289,8 +292,13 @@ abstract class ScoreObjectView(
     * Dragging and resizing
     * */
 
-    protected open fun beforeResize(ev: MouseEvent, cursor: Cursor) {
+    protected open fun startDrag(ev: MouseEvent, cursor: Cursor) {
         context[ScoreObjectSelectionManager].select(this, addToSelection = ev.isShiftDown)
+        positionBeforeDrag = instance.position
+    }
+
+    protected open fun finishedDrag() {
+        pane.score.movedObject(instance, positionBeforeDrag)
     }
 
     private fun dragTo(toX: Double, toY: Double) {
@@ -328,10 +336,6 @@ abstract class ScoreObjectView(
             else -> null
         }
         instance.obj.resize(newDur, height, stretch = ev.isShiftDown, horizontalDirection, verticalDirection)
-    }
-
-    protected open fun finishedDrag() {
-        pane.score.movedObject(instance)
     }
 
     open fun getDisplayWidth(): Double = pane.getWidth(instance.duration)

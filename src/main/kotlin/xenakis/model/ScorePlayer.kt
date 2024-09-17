@@ -1,5 +1,8 @@
 package xenakis.model
 
+import bundles.PublicProperty
+import bundles.publicProperty
+import bundles.set
 import javafx.geometry.HorizontalDirection
 import reaktive.value.now
 import xenakis.impl.SuperColliderClient
@@ -13,7 +16,7 @@ class ScorePlayer(
     private val playHead: PlayHead,
     private val client: SuperColliderClient
 ) : Thread() {
-    private val env = ScorePlayEnv(rootScore.context[Settings])
+    val env = ScorePlayEnv(rootScore.context[Settings])
     private val events = ScoreEventCollector(rootScore, this, env)
 
     var isPlaying = false
@@ -22,6 +25,7 @@ class ScorePlayer(
     val currentTime get() = playHead.currentTime
 
     init {
+        rootScore.context[ScorePlayer] = this
         isDaemon = true
         start()
     }
@@ -89,7 +93,8 @@ class ScorePlayer(
         scheduleObject(obj, pos, name, cutoff = -delta.coerceAtMost(0.0))
     }
 
-    fun stopPlayBackInstantly(activeInstance: ScoreObjectInstance, name: String) {
+    fun stopPlayBackInstantly(activeInstance: ScoreObjectInstance, pos: ObjectPosition, name: String) {
+        env.markEnd(activeInstance, pos)
         when (activeInstance.obj) {
             is SynthObject -> client.run("~synths['$name'].free;")
             is TaskObject -> client.run("~tasks['$name'].free;")
@@ -162,7 +167,7 @@ class ScorePlayer(
         interrupt()
     }
 
-    companion object {
+    companion object : PublicProperty<ScorePlayer> by publicProperty("ScorePlayer") {
         private const val DELTA_T = 0.03
 
         private val logger = Logger.getLogger("ScorePlayer")

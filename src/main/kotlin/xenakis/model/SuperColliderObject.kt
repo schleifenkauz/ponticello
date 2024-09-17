@@ -1,9 +1,12 @@
 package xenakis.model
 
 import xenakis.impl.ScWriter
+import xenakis.sc.Identifier
 
 interface SuperColliderObject : NamedObject {
     val superColliderName: String
+
+    val superColliderExpr get() = Identifier(superColliderName)
 
     val liveCycleType: LiveCycleType
 

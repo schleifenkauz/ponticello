@@ -65,7 +65,9 @@ class ScorePlayEnv(private val settings: Settings) {
         suffixes.clear()
     }
 
-    fun activeInstances(inst: ScoreObjectInstance) = activeInstances.keys.filter { o -> o.inst == inst }
+    fun activeInstances(inst: ScoreObjectInstance) = activeInstances.keys.filter { act -> act.inst == inst }
+
+    fun activeInstances(obj: ScoreObject) = activeInstances.keys.filter { act -> act.inst.obj == obj }
 
     data class SynthOrder(val addAction: String, val target: String)
 
