@@ -11,6 +11,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import reaktive.value.now
 import xenakis.model.Score.Companion.rootScore
+import xenakis.ui.Direction
 
 @Serializable
 class ScoreObjectInstance(
@@ -28,6 +29,21 @@ class ScoreObjectInstance(
     @Transient
     lateinit var score: Score
         private set
+
+    val start get() = _time
+    val y get() = _y
+    val position get() = ObjectPosition(start, y)
+
+    val muted get() = _muted
+
+    val duration get() = obj.duration
+    val height get() = obj.height
+
+    val end get() = start + duration
+    val timeRange get() = start..end
+
+    @Transient
+    private var positionBeforeMove = position
 
     val obj: ScoreObject get() = objectRef.get()
 
@@ -62,45 +78,42 @@ class ScoreObjectInstance(
 
     fun addListener(listener: Listener) {
         viewManager.addListener(listener)
-        //listener.toggledMute(muted)
+        listener.toggledMute(muted)
     }
 
     fun removeListener(listener: Listener) {
         viewManager.removeListener(listener)
     }
 
-    val start get() = _time
-    val y get() = _y
-    val position get() = ObjectPosition(start, y)
+    fun beginMove() {
+        positionBeforeMove = position
+    }
 
-    val muted get() = _muted
-
-    val duration get() = obj.duration
-    val height get() = obj.height
-
-    val end get() = start + duration
-    val timeRange get() = start..end
-
-    fun moveTo(time: Double, y: Double, finished: Boolean = true) {
-        val before = ObjectPosition(this._time, this._y)
-        val after = ObjectPosition(time, y)
+    fun moveTo(time: Double, y: Double, simpleMove: Boolean) {
+        if (this.start == time && this.y == y) return
+        if (simpleMove) beginMove()
         this._time = time
         this._y = y
-        if (finished) score.movedObject(this, before)
-        context[UndoManager].record(MoveObject(this, before, after))
         viewManager.notifyListeners { moved(time, y) }
+        if (simpleMove) finishMove()
+    }
+
+    fun finishMove(notifyScore: Boolean = true) {
+        if (position == positionBeforeMove) return
+        if (notifyScore) score.movedObject(this, positionBeforeMove)
+        context[UndoManager].record(MoveObject(this, positionBeforeMove, position))
     }
 
     fun moveTo(position: ObjectPosition) {
-        moveTo(position.time, position.y)
+        moveTo(position.time, position.y, simpleMove = true)
     }
 
     fun setTime(time: Double) {
-        moveTo(time, _y)
+        moveTo(time, _y, simpleMove = true)
     }
 
     fun setY(y: Double) {
-        moveTo(_time, y)
+        moveTo(_time, y, simpleMove = true)
     }
 
     fun toggleMuted() {
@@ -129,7 +142,7 @@ class ScoreObjectInstance(
         val half = obj.cut(position, whichHalf, name) ?: run {
             val clone = obj.clone(name)
             val dur = if (whichHalf == HorizontalDirection.LEFT) position else obj.duration - position
-            clone.resize(dur, height, stretch = false, null, null)
+            clone.resize(dur, height, stretch = false, direction = Direction.NONE)
             clone
         }
         return ScoreObjectInstance(half.createReference(), time, y, muted)
@@ -141,7 +154,7 @@ class ScoreObjectInstance(
         return left to right
     }
 
-    override fun toString(): String = "instance of $obj, start: $start, y: $y"
+    override fun toString(): String = "instance of $obj at $position in ${score.scoreName.now}"
 
     interface Listener {
         fun moved(start: Double, y: Double)
@@ -158,11 +171,11 @@ class ScoreObjectInstance(
             get() = "Move object"
 
         override fun doRedo() {
-            obj.moveTo(after.time, after.y)
+            obj.moveTo(after.time, after.y, simpleMove = true)
         }
 
         override fun doUndo() {
-            obj.moveTo(before.time, before.y)
+            obj.moveTo(before.time, before.y, simpleMove = true)
         }
 
         override fun mergeWith(other: Edit): Edit? {

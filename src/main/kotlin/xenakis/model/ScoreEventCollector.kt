@@ -1,6 +1,7 @@
 package xenakis.model
 
 import reaktive.value.now
+import xenakis.ui.Direction
 import java.util.*
 import java.util.logging.Logger
 
@@ -8,11 +9,12 @@ class ScoreEventCollector(
     private val rootScore: Score,
     private val player: ScorePlayer?,
     private val env: ScorePlayEnv?
-) : ScoreListener {
+) : ScoreListener, ScoreObject.Listener, ObjectRegistry.Listener<ScoreObject> {
     private val events = TreeSet<Event>()
     private val scoreInstances = mutableMapOf<Score, MutableSet<ScoreObjectInstance>>()
 
     init {
+        rootScore.context[ScoreObjectRegistry].addListener(this)
         rootScore.addListener(this)
     }
 
@@ -21,6 +23,7 @@ class ScoreEventCollector(
     private fun absolutePositions(score: Score): List<ObjectPosition> = when {
         score == rootScore -> listOf(ObjectPosition(0.0, 0.0))
         else -> scoreInstances(score).flatMap { inst ->
+            if (inst.muted) emptyList<ObjectPosition>()
             absolutePositions(inst.score).map { pos -> pos + inst.position }
         }
     }
@@ -41,6 +44,75 @@ class ScoreEventCollector(
         if (inst.muted) return
         for (position in absolutePositions(inst)) {
             removeFromPlayback(inst, position)
+        }
+    }
+
+    @Synchronized
+    override fun added(obj: ScoreObject, idx: Int) {
+        obj.addListener(this)
+    }
+
+    @Synchronized
+    override fun removed(obj: ScoreObject, idx: Int) {
+        obj.removeListener(this)
+    }
+
+    @Synchronized
+    override fun finishedResize(obj: ScoreObject, deltaDuration: Double, deltaHeight: Double, direction: Direction) {
+        if (obj is ScoreObjectGroup) return
+        val eventsBefore = events.size
+        for (inst in rootScore.instancesOf(obj, filterMuted = true)) {
+            for ((t, y) in absolutePositions(inst)) {
+                val oldStart = ObjectPosition(
+                    if (direction.left) t + deltaDuration else t,
+                    if (direction.up) y + deltaHeight else y
+                )
+                val oldEnd = ObjectPosition(
+                    if (direction.right) t + obj.duration - deltaDuration else t + obj.duration,
+                    if (direction.up) y + deltaHeight else y
+                )
+                val newStart = ObjectPosition(t, y)
+                val newEnd = ObjectPosition(t + obj.duration, y)
+                if (newStart != oldStart) {
+                    if (events.remove(Event(Event.Type.ObjectStart, oldStart, inst))) {
+                        events.add(Event(Event.Type.ObjectStart, newStart, inst))
+                    } else {
+                        logger.severe("Failed to set object start of $inst at ($t, $y) from $oldStart to $newStart")
+                    }
+                }
+                if (newEnd != oldEnd) {
+                    if (events.remove(Event(Event.Type.ObjectEnd, oldEnd, inst))) {
+                        events.add(Event(Event.Type.ObjectEnd, newEnd, inst))
+                    } else {
+                        logger.severe("Failed to set object end of $inst at ($t, $y) from $oldEnd to $newEnd")
+                    }
+                }
+            }
+        }
+        if (events.size != eventsBefore) {
+            logger.severe("Resizing object changed number of score events")
+        }
+    }
+
+    @Synchronized
+    override fun movedObject(score: Score, inst: ScoreObjectInstance, oldPosition: ObjectPosition) {
+        if (inst.muted) return
+        val eventsBefore = events.size
+        logger.info("Move object $inst from $oldPosition")
+        for (position in absolutePositions(inst.score)) {
+            removeFromPlayback(inst, position + oldPosition)
+            addToPlayback(inst, position + inst.position)
+        }
+        if (events.size != eventsBefore) {
+            logger.severe("Resizing object changed number of score events")
+        }
+    }
+
+    @Synchronized
+    override fun toggledMute(score: Score, inst: ScoreObjectInstance, muted: Boolean) {
+        for (position in absolutePositions(inst)) {
+            if (muted) removeFromPlayback(inst, position)
+            else addToPlayback(inst, position)
         }
     }
 
@@ -76,32 +148,17 @@ class ScoreEventCollector(
                 removeFromPlayback(subInst, position + subInst.position)
             }
         } else {
-            logger.info("Removed $inst from ${inst.score.scoreName.now} at $position")
+            logger.info("Removing $inst from ${inst.score.scoreName.now} at $position")
             val posEnd = position + ObjectPosition(obj.duration, 0.0)
-            events.remove(Event(Event.Type.ObjectStart, position, inst))
-            events.remove(Event(Event.Type.ObjectEnd, posEnd, inst))
+            if (!events.remove(Event(Event.Type.ObjectStart, position, inst)))
+                logger.severe("Failed to remove object start at $position")
+            if (!events.remove(Event(Event.Type.ObjectEnd, posEnd, inst)))
+                logger.severe("Failed to remove object end at $posEnd")
             if (player != null && env != null && player.isPlaying) {
                 for ((activeInstance, pos, name) in env.activeInstances(inst)) {
                     if (pos == position) player.stopPlayBackInstantly(activeInstance, pos, name)
                 }
             }
-        }
-    }
-
-    @Synchronized
-    override fun movedObject(score: Score, inst: ScoreObjectInstance, oldPosition: ObjectPosition) {
-        if (inst.muted) return
-        for (position in absolutePositions(inst.score)) {
-            removeFromPlayback(inst, position + oldPosition)
-            addToPlayback(inst, position + inst.position)
-        }
-    }
-
-    @Synchronized
-    override fun toggledMute(score: Score, inst: ScoreObjectInstance, muted: Boolean) {
-        for (position in absolutePositions(inst)) {
-            if (muted) removeFromPlayback(inst, position)
-            else addToPlayback(inst, position)
         }
     }
 

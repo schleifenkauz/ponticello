@@ -21,7 +21,7 @@ import java.util.*
 class AudioFlowGraph(
     private val _nodes: MutableList<BusNode>,
     private val _flows: MutableList<AudioFlow>,
-) : ObjectRegistry.View<BusObject> {
+) : ObjectRegistry.Listener<BusObject> {
     @Transient
     private lateinit var registry: BusRegistry
 
@@ -43,7 +43,7 @@ class AudioFlowGraph(
     fun initialize(context: Context) {
         registry = context[BusRegistry]
         client = context[SuperColliderClient]
-        registry.addView(this)
+        registry.addListener(this)
         undoManager = context[UndoManager]
         for (obj in nodes) obj.ref.resolve(context[BusRegistry])
         for (flow in flows) {

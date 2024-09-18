@@ -8,9 +8,9 @@ import xenakis.model.GroupRegistry
 
 class GroupRegistryPane(
     private val registry: GroupRegistry
-) : SuperColliderObjectRegistryPane<GroupObject>(registry), GroupRegistry.View {
+) : SuperColliderObjectRegistryPane<GroupObject>(registry), GroupRegistry.Listener {
     init {
-        registry.addView(this)
+        registry.addListener(this)
     }
 
     override fun added(obj: GroupObject, idx: Int) {

@@ -5,10 +5,11 @@ import hextant.undo.AbstractEdit
 import hextant.undo.Edit
 import hextant.undo.UndoManager
 import javafx.geometry.HorizontalDirection
-import javafx.geometry.VerticalDirection
+import javafx.geometry.HorizontalDirection.LEFT
 import javafx.scene.input.DataFormat
 import javafx.scene.paint.Color
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 import reaktive.value.ReactiveVariable
 import reaktive.value.now
 import reaktive.value.reactiveVariable
@@ -17,7 +18,7 @@ import xenakis.impl.SuperColliderContext
 import xenakis.model.Score.Companion.rootScore
 import xenakis.sc.ControlSpec
 import xenakis.sc.NumericalControlSpec
-import xenakis.ui.ScoreObjectView
+import xenakis.ui.Direction
 
 @Serializable
 sealed class ScoreObject : AbstractRenamableObject() {
@@ -26,6 +27,27 @@ sealed class ScoreObject : AbstractRenamableObject() {
     val associatedColor: ReactiveVariable<@Serializable(with = ColorSerializer::class) Color?> = reactiveVariable(null)
 
     open val associatedControls: Map<String, ParameterControl> get() = emptyMap()
+
+    var duration: Double = 0.0
+        protected set
+
+    var height: Double = 0.0
+        protected set
+
+    @Transient
+    private val viewManager: ListenerManager<Listener> = ListenerManager.createWeakListenerManager()
+
+    @Transient
+    private var durationBeforeResize: Double = 0.0
+
+    @Transient
+    private var heightBeforeResize: Double = 0.0
+
+    @Transient
+    protected lateinit var resizeDirection: Direction
+
+    @Transient
+    protected var stretchResize: Boolean = false
 
     abstract fun writeCode(name: String, position: ObjectPosition, env: ScorePlayEnv): String
 
@@ -45,28 +67,31 @@ sealed class ScoreObject : AbstractRenamableObject() {
 
     open fun serverBooted(context: SuperColliderContext) {}
 
-    abstract val viewManager: ListenerManager<out ScoreObjectView>
-
-    var duration: Double = 0.0
-        protected set
-
-    var height: Double = 0.0
-        protected set
-
     fun setInitialSize(duration: Double, height: Double) {
         this.duration = duration
         this.height = height
     }
 
-    open fun resize(
-        targetDuration: Double, targetHeight: Double, stretch: Boolean,
-        horizontalDirection: HorizontalDirection?, verticalDirection: VerticalDirection?
-    ) {
-        if (!stretch) {
+    open fun beginResize(stretch: Boolean, direction: Direction) {
+        durationBeforeResize = duration
+        heightBeforeResize = height
+        stretchResize = stretch
+        resizeDirection = direction
+        if (direction.left || direction.up) {
+            for (inst in context[rootScore].instancesOf(this)) {
+                inst.beginMove()
+            }
+        }
+    }
+
+    open fun resize(targetDuration: Double, targetHeight: Double) {
+        if (!stretchResize) {
             for ((parameter, ctrl) in associatedControls) {
                 if (ctrl !is EnvelopeControl) continue
                 val spec = getSpec(parameter) as NumericalControlSpec
-                if (horizontalDirection != null) ctrl.envelope.resize(targetDuration, horizontalDirection, spec)
+                if (resizeDirection.horizontal != null) {
+                    ctrl.envelope.resize(targetDuration, resizeDirection.horizontal!!, spec)
+                }
             }
         } else {
             for ((_, ctrl) in associatedControls) {
@@ -74,23 +99,43 @@ sealed class ScoreObject : AbstractRenamableObject() {
                 ctrl.envelope.rescale(targetDuration)
             }
         }
-        val oldDuration = this.duration
-        val oldHeight = this.height
-        val deltaDur = targetDuration - oldDuration
-        val deltaHeight = targetHeight - oldHeight
+        val deltaDur = targetDuration - duration
+        val deltaHeight = targetHeight - height
         this.duration = targetDuration
         this.height = targetHeight
         for (inst in context[rootScore].instancesOf(this)) {
-            if (horizontalDirection == HorizontalDirection.LEFT) inst.setTime(inst.start - deltaDur)
-            if (verticalDirection == VerticalDirection.UP) inst.setY(inst.y - deltaHeight)
+            val instTime = if (resizeDirection.left) inst.start - deltaDur else inst.start
+            val instY = if (resizeDirection.up) inst.y - deltaHeight else inst.y
+            inst.moveTo(instTime, instY, simpleMove = false)
         }
-        context[UndoManager].record(
-            ResizeEdit(
-                this, oldDuration, oldHeight, targetDuration, targetHeight,
-                stretch, horizontalDirection, verticalDirection
+        viewManager.notifyListeners { resizedObject(this@ScoreObject) }
+    }
+
+    open fun finishResize() {
+        if (duration != durationBeforeResize || height != heightBeforeResize) {
+            val deltaDuration = duration - durationBeforeResize
+            val deltaHeight = height - heightBeforeResize
+            viewManager.notifyListeners {
+                finishedResize(this@ScoreObject, deltaDuration, deltaHeight, resizeDirection)
+            }
+            context[UndoManager].record(
+                ResizeEdit(
+                    this, durationBeforeResize, heightBeforeResize, this.duration, this.height,
+                    stretchResize, resizeDirection
+                )
             )
-        )
-        viewManager.notifyListeners { resized() }
+            if (resizeDirection.left || resizeDirection.up) {
+                for (inst in context[rootScore].instancesOf(this)) {
+                    inst.finishMove(notifyScore = false)
+                }
+            }
+        }
+    }
+
+    fun resize(targetDuration: Double, targetHeight: Double, stretch: Boolean, direction: Direction) {
+        beginResize(stretch, direction)
+        resize(targetDuration, targetHeight)
+        finishResize()
     }
 
     protected abstract fun doClone(newName: String): ScoreObject
@@ -100,6 +145,7 @@ sealed class ScoreObject : AbstractRenamableObject() {
         obj.duration = duration
         obj.height = height
         obj.associatedColor.now = associatedColor.now
+        obj.initialize(context)
         return obj
     }
 
@@ -110,21 +156,41 @@ sealed class ScoreObject : AbstractRenamableObject() {
         obj.rename(newName)
         obj.height = height
         obj.associatedColor.now = associatedColor.now
-        if (whichHalf == HorizontalDirection.LEFT) {
+        if (whichHalf == LEFT) {
             obj.duration = position
         } else {
             obj.duration = duration - position
         }
+        obj.initialize(context)
         return obj
     }
 
     open fun getSpec(parameter: String): ControlSpec =
         throw NoSuchElementException("no spec for parameter $parameter in $this")
 
-    open fun addView(view: ScoreObjectView) {
-        @Suppress("UNCHECKED_CAST")
-        val unsafe = viewManager as ListenerManager<ScoreObjectView>
-        unsafe.addListener(view)
+    fun notifyListeners(action: Listener.() -> Unit) {
+        viewManager.notifyListeners(action)
+    }
+
+    @JvmName("notifyListenersGeneric")
+    inline fun <reified L : Listener> notifyListeners(crossinline action: L.() -> Unit) {
+        notifyListeners { if (this is L) action() }
+    }
+
+    open fun addListener(view: Listener) {
+        viewManager.addListener(view)
+    }
+
+    fun removeListener(listener: Listener) {
+        viewManager.removeListener(listener)
+    }
+
+    interface Listener {
+        fun resizedObject(obj: ScoreObject) {}
+
+        fun finishedResize(obj: ScoreObject, deltaDuration: Double, deltaHeight: Double, direction: Direction) {}
+
+        fun isSomeInstanceSelected(yesOrNo: Boolean) {}
     }
 
     private class ResizeEdit(
@@ -134,18 +200,17 @@ sealed class ScoreObject : AbstractRenamableObject() {
         private val newDuration: Double,
         private val newHeight: Double,
         private val stretch: Boolean,
-        private val horizontalDirection: HorizontalDirection?,
-        private val verticalDirection: VerticalDirection?
+        private val direction: Direction
     ) : AbstractEdit() {
         override val actionDescription: String
             get() = "Resize object"
 
         override fun doUndo() {
-            obj.resize(oldDuration, oldHeight, stretch, horizontalDirection, verticalDirection)
+            obj.resize(oldDuration, oldHeight, stretch, direction)
         }
 
         override fun doRedo() {
-            obj.resize(newDuration, newHeight, stretch, horizontalDirection, verticalDirection)
+            obj.resize(newDuration, newHeight, stretch, direction)
         }
 
         override fun mergeWith(other: Edit): Edit? {
@@ -153,13 +218,12 @@ sealed class ScoreObject : AbstractRenamableObject() {
                 other !is ResizeEdit -> null
                 other.obj != this.obj -> null
                 other.stretch != this.stretch -> null
-                other.horizontalDirection != this.horizontalDirection -> null
-                other.verticalDirection != this.verticalDirection -> null
+                other.direction != this.direction -> null
                 this.newDuration != other.oldDuration -> null
                 this.newHeight != other.oldHeight -> null
                 else -> ResizeEdit(
                     obj, oldDuration, oldHeight, other.newDuration, other.newHeight,
-                    stretch, horizontalDirection, verticalDirection
+                    stretch, direction
                 )
             }
         }

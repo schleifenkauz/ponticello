@@ -136,13 +136,14 @@ class Score(private val instances: MutableList<ScoreObjectInstance> = mutableLis
         context[UndoManager].finishCompoundEdit()
     }
 
-    fun hasInstancesOf(obj: ScoreObject): Boolean = instancesOf(obj).any()
+    fun hasInstancesOf(obj: ScoreObject, filterMuted: Boolean = false): Boolean = instancesOf(obj, filterMuted).any()
 
-    fun instancesOf(obj: ScoreObject): Sequence<ScoreObjectInstance> = sequence {
+    fun instancesOf(obj: ScoreObject, filterMuted: Boolean = false): Sequence<ScoreObjectInstance> = sequence {
         for (inst in objectInstances) {
             val o = inst.obj
+            if (filterMuted && inst.muted) continue
             if (o == obj) yield(inst)
-            else if (o is ScoreObjectGroup) yieldAll(o.score.instancesOf(obj))
+            else if (o is ScoreObjectGroup) yieldAll(o.score.instancesOf(obj, filterMuted))
         }
     }
 

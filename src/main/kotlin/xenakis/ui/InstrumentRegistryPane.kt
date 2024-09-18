@@ -23,7 +23,7 @@ import java.util.logging.Logger
 
 class InstrumentRegistryPane(
     private val registry: InstrumentRegistry,
-) : InstrumentRegistry.View, ObjectRegistryPane<InstrumentObject>(registry) {
+) : InstrumentRegistry.Listener, ObjectRegistryPane<InstrumentObject>(registry) {
     private var selectedBtn: Button? = null
 
     private val selectorButtons = mutableMapOf<InstrumentObject, Button>()

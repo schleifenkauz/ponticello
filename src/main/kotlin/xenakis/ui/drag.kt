@@ -51,7 +51,7 @@ fun Region.setupDraggingAndResizing(
     drag: (x: Double, y: Double) -> Unit,
     resize: (Bounds, Double, Double, Cursor, MouseEvent) -> Unit,
     startDrag: (MouseEvent, Cursor) -> Unit = { _, _ -> },
-    finishDrag: () -> Unit = {}
+    finishDrag: (MouseEvent, Cursor) -> Unit = { _, _ -> }
 ) {
     val context = pane.context
     val toolSelector = context[XenakisUI].toolSelector
@@ -63,9 +63,9 @@ fun Region.setupDraggingAndResizing(
         if (dragStart == null) {
             oldBounds = BoundingBox(layoutX, layoutY, width, height)
             dragStart = Point(ev.screenX, ev.screenY)
+            startDrag(ev, cursor)
             if (isResizeCursor(cursor)) {
                 context[UndoManager].beginCompoundEdit("Resize object")
-                startDrag(ev, cursor)
             } else context[UndoManager].beginCompoundEdit("Move object")
         }
         ev.consume()
@@ -88,7 +88,7 @@ fun Region.setupDraggingAndResizing(
         if (toolSelector.selected.value != tool) return@addEventHandler
         if (dragStart != null) {
             if (ev.screenX != dragStart!!.x || ev.screenY != dragStart!!.y) {
-                finishDrag()
+                finishDrag(ev, cursor)
             }
             dragStart = null
             oldBounds = null

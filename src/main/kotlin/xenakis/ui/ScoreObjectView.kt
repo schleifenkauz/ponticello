@@ -5,6 +5,7 @@ import hextant.fx.label
 import hextant.undo.UndoManager
 import javafx.geometry.Bounds
 import javafx.geometry.HorizontalDirection
+import javafx.geometry.HorizontalDirection.RIGHT
 import javafx.geometry.VerticalDirection
 import javafx.scene.Cursor
 import javafx.scene.control.*
@@ -29,7 +30,7 @@ import xenakis.ui.XenakisController.Companion.currentProject
 
 abstract class ScoreObjectView(
     val instance: ScoreObjectInstance
-) : VBox(), ScoreObjectInstance.Listener, SynthControls.View {
+) : VBox(), ScoreObjectInstance.Listener, SynthControls.View, ScoreObject.Listener {
     var isInitialized: Boolean = false
         private set
     lateinit var pane: ScorePane
@@ -53,8 +54,6 @@ abstract class ScoreObjectView(
     protected open val borderColorWhenSameObjectSelected: Color get() = Color.GRAY
 
     protected val colorPicker: ColorPicker = ColorPicker() styleClass "button"
-
-    private var positionBeforeDrag = instance.position
 
     init {
         styleClass("score-object")
@@ -142,7 +141,8 @@ abstract class ScoreObjectView(
         children.add(envelopesPane)
         setVgrow(envelopesPane, Priority.ALWAYS)
         displayKnobs()
-        instance.obj.addView(this)
+        instance.addListener(this)
+        instance.obj.addListener(this)
         isInitialized = true
     }
 
@@ -159,7 +159,6 @@ abstract class ScoreObjectView(
         layoutY = instance.position.y
         prefWidth = getDisplayWidth()
         prefHeight = instance.height
-        instance.addListener(this)
     }
 
     protected fun addAction(icon: Icon, action: String?, onAction: () -> Unit): Button {
@@ -275,7 +274,7 @@ abstract class ScoreObjectView(
         border = solidBorder(borderColor, width = BORDER_WIDTH, radius = BORDER_RADIUS)
     }
 
-    fun isSomeInstanceSelected(yesOrNo: Boolean) {
+    override fun isSomeInstanceSelected(yesOrNo: Boolean) {
         val borderColor = when {
             this in context[ScoreObjectSelectionManager].selectedViews -> borderColorWhenSelected
             yesOrNo -> borderColorWhenSameObjectSelected
@@ -294,11 +293,15 @@ abstract class ScoreObjectView(
 
     protected open fun startDrag(ev: MouseEvent, cursor: Cursor) {
         context[ScoreObjectSelectionManager].select(this, addToSelection = ev.isShiftDown)
-        positionBeforeDrag = instance.position
+        if (cursor.isResizeCursor) {
+            val direction = cursor.resizeDirection()
+            instance.obj.beginResize(stretch = ev.isShiftDown, direction)
+        } else instance.beginMove()
     }
 
-    protected open fun finishedDrag() {
-        pane.score.movedObject(instance, positionBeforeDrag)
+    protected open fun finishedDrag(ev: MouseEvent, cursor: Cursor) {
+        if (cursor.isResizeCursor) instance.obj.finishResize()
+        else instance.finishMove()
     }
 
     private fun dragTo(toX: Double, toY: Double) {
@@ -318,24 +321,14 @@ abstract class ScoreObjectView(
         val deltaY = y - instance.y
         for (view in movedObjects) {
             val inst = view.instance
-            inst.moveTo(inst.start + deltaT, inst.y + deltaY, finished = false)
+            inst.moveTo(inst.start + deltaT, inst.y + deltaY, simpleMove = false)
         }
         pane.markX(x)
     }
 
     protected open fun resizeObject(width: Double, height: Double, ev: MouseEvent, cursor: Cursor) {
         val newDur = pane.getDuration(width)
-        val horizontalDirection = when (cursor) {
-            in setOf(Cursor.W_RESIZE, Cursor.NW_RESIZE, Cursor.SW_RESIZE) -> HorizontalDirection.LEFT
-            in setOf(Cursor.E_RESIZE, Cursor.NE_RESIZE, Cursor.SE_RESIZE) -> HorizontalDirection.RIGHT
-            else -> null
-        }
-        val verticalDirection = when (cursor) {
-            in setOf(Cursor.N_RESIZE, Cursor.NW_RESIZE, Cursor.NE_RESIZE) -> VerticalDirection.UP
-            in setOf(Cursor.S_RESIZE, Cursor.SW_RESIZE, Cursor.SE_RESIZE) -> VerticalDirection.DOWN
-            else -> null
-        }
-        instance.obj.resize(newDur, height, stretch = ev.isShiftDown, horizontalDirection, verticalDirection)
+        instance.obj.resize(newDur, height)
     }
 
     open fun getDisplayWidth(): Double = pane.getWidth(instance.duration)
@@ -354,24 +347,25 @@ abstract class ScoreObjectView(
         relocate(pane.getX(instance.start), instance.y)
     }
 
-    fun resized() {
+    override fun resizedObject(obj: ScoreObject) {
         setPrefSize(getDisplayWidth(), instance.height)
         rescale()
     }
 
     private fun resize(old: Bounds, deltaX: Double, deltaY: Double, cursor: Cursor, ev: MouseEvent) {
-        val oldX = if (cursor.resizeFromLeft) old.minX else old.maxX
-        val oldY = if (cursor.resizeFromTop) old.minY else old.maxY
+        val direction = cursor.resizeDirection()
+        val oldX = if (direction.left) old.minX else old.maxX
+        val oldY = if (direction.up) old.minY else old.maxY
         val (x, y) = pane.snapToGrid(oldX + deltaX, oldY + deltaY)
         pane.markX(x)
         val dx = x - oldX
         val dy = y - oldY
         var newWidth = old.width
-        if (cursor.resizeFromLeft) newWidth -= dx
-        else if (cursor.resizeFromRight) newWidth += dx
+        if (direction.left) newWidth -= dx
+        else if (direction.right) newWidth += dx
         var newHeight = old.height
-        if (cursor.resizeFromTop) newHeight -= dy
-        else if (cursor.resizeFromBottom) newHeight += dy
+        if (direction.up) newHeight -= dy
+        else if (direction.down) newHeight += dy
 
         newWidth = newWidth.coerceAtLeast(10.0)
         newHeight = newHeight.coerceAtLeast(10.0)
@@ -379,10 +373,10 @@ abstract class ScoreObjectView(
         val oldWidth = getDisplayWidth()
         val oldHeight = instance.height
 
-        if (cursor.resizeFromLeft) newWidth = newWidth.coerceAtMost(oldWidth + old.minX)
-        if (pane is SubScorePane && cursor.resizeFromRight) newWidth = newWidth.coerceAtMost(pane.width - old.minX)
-        if (cursor.resizeFromTop) newHeight = newHeight.coerceAtMost(oldHeight + old.minY)
-        if (cursor.resizeFromBottom) newHeight = newHeight.coerceAtMost(pane.height - old.minY)
+        if (direction.left) newWidth = newWidth.coerceAtMost(oldWidth + old.minX)
+        if (pane is SubScorePane && direction.right) newWidth = newWidth.coerceAtMost(pane.width - old.minX)
+        if (direction.up) newHeight = newHeight.coerceAtMost(oldHeight + old.minY)
+        if (direction.down) newHeight = newHeight.coerceAtMost(pane.height - old.minY)
 
         resizeObject(newWidth, newHeight, ev, cursor)
     }
@@ -399,7 +393,7 @@ abstract class ScoreObjectView(
         if (resize) {
             instance.obj.resize(
                 instance.obj.duration + deltaT, instance.obj.height, stretch,
-                horizontalDirection = HorizontalDirection.RIGHT, verticalDirection = null
+                direction = Direction.horizontal(RIGHT)
             )
         } else {
             val (snappedX, _) = pane.snapToGrid(pane.getX(instance.start + deltaT), instance.y)
@@ -411,8 +405,10 @@ abstract class ScoreObjectView(
         val deltaY = if (direction == VerticalDirection.UP) -5.0 else 5.0
         if (resize) {
             instance.obj.resize(
-                instance.obj.duration, instance.obj.height + deltaY, stretch,
-                horizontalDirection = null, verticalDirection = VerticalDirection.DOWN
+                instance.obj.duration,
+                instance.obj.height + deltaY,
+                stretch,
+                direction = Direction.vertical(VerticalDirection.DOWN)
             )
         } else {
             instance.setY(instance.y + deltaY)

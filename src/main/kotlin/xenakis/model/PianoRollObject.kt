@@ -2,7 +2,6 @@ package xenakis.model
 
 import hextant.context.Context
 import hextant.context.withoutUndo
-import hextant.core.editor.ListenerManager
 import hextant.serial.EditorRoot
 import hextant.undo.AbstractEdit
 import hextant.undo.PropertyEdit
@@ -10,7 +9,6 @@ import hextant.undo.UndoManager
 import javafx.geometry.HorizontalDirection
 import javafx.geometry.HorizontalDirection.LEFT
 import javafx.geometry.HorizontalDirection.RIGHT
-import javafx.geometry.VerticalDirection
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
@@ -22,8 +20,8 @@ import xenakis.impl.copy
 import xenakis.impl.reactive
 import xenakis.sc.code
 import xenakis.sc.editor.*
+import xenakis.ui.Direction
 import xenakis.ui.PianoRollObjectView
-import xenakis.ui.ScoreObjectView
 import kotlin.math.roundToInt
 
 @Serializable
@@ -39,9 +37,6 @@ class PianoRollObject(
         get() = "piano-roll"
 
     @Transient
-    override val viewManager: ListenerManager<PianoRollObjectView> = ListenerManager.createWeakListenerManager()
-
-    @Transient
     lateinit var instrumentSelector: InstrumentSelector
         private set
 
@@ -51,21 +46,22 @@ class PianoRollObject(
         get() = _lowestPitch
         set(value) {
             _lowestPitch = value
-            viewManager.notifyListeners { updatedPitchRange() }
+            notifyListeners<PianoRollObjectView> { updatedPitchRange() }
         }
 
     var highestPitch
         get() = _highestPitch
         set(value) {
             _highestPitch = value
-            viewManager.notifyListeners { updatedPitchRange() }
+            notifyListeners<PianoRollObjectView> { updatedPitchRange() }
         }
 
     val pitchRange get() = lowestPitch..highestPitch
 
     val pixelsPerPitch get() = height / (highestPitch - lowestPitch)
 
-    var pixelsPerPitchBeforeResize: Double = -1.0
+    @Transient
+    private var pixelsPerPitchBeforeResize: Double = -1.0
 
     fun notes(): List<Note> = notes
 
@@ -78,13 +74,15 @@ class PianoRollObject(
         }
     }
 
-    override fun resize(
-        targetDuration: Double, targetHeight: Double, stretch: Boolean,
-        horizontalDirection: HorizontalDirection?, verticalDirection: VerticalDirection?
-    ) {
-        if (stretch) {
+    override fun beginResize(stretch: Boolean, direction: Direction) {
+        super.beginResize(stretch, direction)
+        pixelsPerPitchBeforeResize = pixelsPerPitch
+    }
+
+    override fun resize(targetDuration: Double, targetHeight: Double) {
+        if (stretchResize) {
             val horizontalRatio = targetDuration / this.duration
-            super.resize(targetDuration, targetHeight, true, horizontalDirection, verticalDirection)
+            super.resize(targetDuration, targetHeight)
             for (note in notes()) {
                 note.onset *= horizontalRatio
                 note.duration *= horizontalRatio
@@ -95,25 +93,22 @@ class PianoRollObject(
             val notes = notes()
             if (notes.isNotEmpty()) {
                 minDur =
-                    if (horizontalDirection == LEFT) this.duration - notes.minOf { n -> n.onset }
+                    if (resizeDirection.left) this.duration - notes.minOf { n -> n.onset }
                     else notes.maxOf { o -> o.onset + o.duration }
 
                 minHeight =
-                    if (verticalDirection == VerticalDirection.UP) this.height - notes.minOf { n -> getY(n.midinote) }
+                    if (resizeDirection.up) this.height - notes.minOf { n -> getY(n.midinote) }
                     else notes.maxOf { n -> getY(n.midinote) + pixelsPerPitch }
             }
             val deltaDur = targetDuration.coerceAtLeast(minDur) - this.duration
             val deltaHeight = targetHeight.coerceAtLeast(minHeight) - this.height
             val pitches = ((targetHeight + deltaHeight) / pixelsPerPitchBeforeResize).roundToInt()
             if (pitches != pitchRange.count()) {
-                if (verticalDirection == VerticalDirection.DOWN) highestPitch = lowestPitch + pitches
+                if (resizeDirection.down) highestPitch = lowestPitch + pitches
                 else lowestPitch = highestPitch - pitches
             }
-            super.resize(
-                this.duration + deltaDur, pitches * pixelsPerPitchBeforeResize,
-                stretch = false, horizontalDirection, verticalDirection
-            )
-            if (horizontalDirection == LEFT) {
+            super.resize(this.duration + deltaDur, pitches * pixelsPerPitchBeforeResize)
+            if (resizeDirection.left) {
                 for (note in notes()) {
                     note.onset += deltaDur
                 }
@@ -155,13 +150,13 @@ class PianoRollObject(
         notes.add(note)
         note.parent = this
         context[UndoManager].record(Edit.AddNote(this, note))
-        viewManager.notifyListeners { addedNote(note) }
+        notifyListeners<PianoRollObjectView> { addedNote(note) }
     }
 
     fun removeNote(note: Note) {
         notes.remove(note)
         context[UndoManager].record(Edit.RemoveNote(this, note))
-        viewManager.notifyListeners { removedNote(note) }
+        notifyListeners<PianoRollObjectView> { removedNote(note) }
     }
 
     fun transpose(deltaPitch: Int) {
@@ -180,11 +175,11 @@ class PianoRollObject(
     fun getMidiNote(y: Double): Int = ((height - y) / pixelsPerPitch).roundToInt() + lowestPitch - 1
 
     private fun updateNote(note: Note) {
-        viewManager.notifyListeners { updatedNote(note) }
+        notifyListeners<PianoRollObjectView> { updatedNote(note) }
     }
 
-    override fun addView(view: ScoreObjectView) {
-        super.addView(view)
+    override fun addListener(view: Listener) {
+        super.addListener(view)
         if (view is PianoRollObjectView) {
             for (note in notes) {
                 view.addedNote(note)

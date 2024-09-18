@@ -62,12 +62,12 @@ class SubScorePane(
 
     override fun addTime(location: Double, amount: Double) {
         super.addTime(location, amount)
-        obj.resize(obj.duration + amount, obj.height, stretch = false, null, null)
+        obj.resize(obj.duration + amount, obj.height, stretch = false, Direction.NONE)
     }
 
     override fun deleteTimeRange(start: Double, end: Double) {
         super.deleteTimeRange(start, end)
         val amount = end - start
-        obj.resize(obj.duration - amount, obj.height, stretch = false, null, null)
+        obj.resize(obj.duration - amount, obj.height, stretch = false, Direction.NONE)
     }
 }

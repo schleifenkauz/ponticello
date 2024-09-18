@@ -36,7 +36,7 @@ class InstrumentRegistry private constructor(
             if (value == field) return
             field = value
             selectedInstrumentName = value?.name
-            views.notifyListeners { if (this is View) selected(value) }
+            views.notifyListeners { if (this is Listener) selected(value) }
         }
 
     init {
@@ -52,8 +52,8 @@ class InstrumentRegistry private constructor(
         return answer.thenApply { msg -> msg.boolean }
     }
 
-    fun addView(view: View) {
-        super.addView(view)
+    fun addView(view: Listener) {
+        super.addListener(view)
         view.selected(selectedInstrument)
     }
 
@@ -64,7 +64,7 @@ class InstrumentRegistry private constructor(
         fun createDefault(): InstrumentRegistry = InstrumentRegistry(StandardSynthDefObject.all.values.toMutableList())
     }
 
-    interface View : ObjectRegistry.View<InstrumentObject> {
+    interface Listener : ObjectRegistry.Listener<InstrumentObject> {
         fun selected(obj: InstrumentObject?)
     }
 }

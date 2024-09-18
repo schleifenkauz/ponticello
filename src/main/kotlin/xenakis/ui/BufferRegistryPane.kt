@@ -25,7 +25,7 @@ class BufferRegistryPane(
                 buffers.add(buffer)
             }
         })
-        buffers.addView(this)
+        buffers.addListener(this)
     }
 
     override fun addObject() {

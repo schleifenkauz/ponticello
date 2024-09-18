@@ -1,10 +1,8 @@
 package xenakis.model
 
 import hextant.context.Context
-import hextant.core.editor.ListenerManager
 import javafx.geometry.HorizontalDirection
 import javafx.geometry.HorizontalDirection.RIGHT
-import javafx.geometry.VerticalDirection
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
@@ -19,7 +17,6 @@ import xenakis.sc.ControlSpec
 import xenakis.sc.Identifier
 import xenakis.sc.editor.SynthDefSelector
 import xenakis.sc.transform
-import xenakis.ui.SynthObjectView
 
 @Serializable
 class SynthObject(
@@ -31,9 +28,6 @@ class SynthObject(
     private lateinit var parameterNameObserver: Observer
     override val type: String
         get() = "synth"
-
-    @Transient
-    override val viewManager: ListenerManager<SynthObjectView> = ListenerManager.createWeakListenerManager()
 
     @Transient
     private val controlObservers = mutableMapOf<ParameterControl, Observer>()
@@ -77,22 +71,19 @@ class SynthObject(
         }
     )
 
-    override fun resize(
-        targetDuration: Double, targetHeight: Double,
-        stretch: Boolean, horizontalDirection: HorizontalDirection?, verticalDirection: VerticalDirection?
-    ) {
+    override fun resize(targetDuration: Double, targetHeight: Double) {
         var newDuration = targetDuration
-        if (stretch && playBufRate != null) {
+        if (stretchResize && playBufRate != null) {
             playBufRate!!.now *= (this.duration / newDuration)
         } else if (playbufStartPos != null) {
-            if (horizontalDirection == HorizontalDirection.LEFT) {
+            if (resizeDirection.left) {
                 val rate = playBufRate?.now ?: 1.0
                 newDuration = newDuration.coerceAtMost(this.duration + playbufStartPos!!.now)
                 val deltaStart = this.duration - newDuration
                 playbufStartPos!!.now += deltaStart * rate
             }
         }
-        super.resize(newDuration, targetHeight, stretch, horizontalDirection, verticalDirection)
+        super.resize(newDuration, targetHeight)
     }
 
     fun reverse() {

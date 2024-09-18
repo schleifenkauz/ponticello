@@ -14,7 +14,7 @@ abstract class ObjectRegistry<O : NamedObject> {
     abstract val objectType: String
 
     @Transient
-    val views: ListenerManager<out View<O>> = ListenerManager.createWeakListenerManager()
+    val views: ListenerManager<out Listener<O>> = ListenerManager.createWeakListenerManager()
 
     @Transient
     lateinit var context: Context
@@ -113,11 +113,11 @@ abstract class ObjectRegistry<O : NamedObject> {
         }
     }
 
-    fun addView(view: View<O>) {
-        @Suppress("UNCHECKED_CAST") val unsafe = views as ListenerManager<View<O>>
-        unsafe.addListener(view)
+    fun addListener(listener: Listener<O>) {
+        @Suppress("UNCHECKED_CAST") val unsafe = views as ListenerManager<Listener<O>>
+        unsafe.addListener(listener)
         for ((idx, bus) in objects.withIndex()) {
-            view.added(bus, idx)
+            listener.added(bus, idx)
         }
     }
 
@@ -125,7 +125,7 @@ abstract class ObjectRegistry<O : NamedObject> {
         private val logger = Logger.getLogger("ObjectRegistry")
     }
 
-    interface View<in O : NamedObject> {
+    interface Listener<in O : NamedObject> {
         fun added(obj: O, idx: Int)
         fun removed(obj: O, idx: Int)
     }

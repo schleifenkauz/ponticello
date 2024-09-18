@@ -48,7 +48,7 @@ class GroupRegistry private constructor(
         order.add(toIndex, group)
         group.previous = order.getOrNull(toIndex - 1)
         context[UndoManager].record(MoveEdit(this, group, fromIndex, toIndex))
-        views.notifyListeners { if (this is View) movedGroup(group, fromIndex, toIndex) }
+        views.notifyListeners { if (this is Listener) movedGroup(group, fromIndex, toIndex) }
     }
 
     private class MoveEdit(
@@ -69,7 +69,7 @@ class GroupRegistry private constructor(
         }
     }
 
-    interface View : ObjectRegistry.View<GroupObject> {
+    interface Listener : ObjectRegistry.Listener<GroupObject> {
         fun movedGroup(group: GroupObject, fromIndex: Int, toIndex: Int)
     }
 

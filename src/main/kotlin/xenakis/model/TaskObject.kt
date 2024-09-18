@@ -18,8 +18,6 @@ class TaskObject(
     override val type: String
         get() = "task"
 
-    override val viewManager = ListenerManager.createWeakListenerManager<TaskObjectView>()
-
     override fun doClone(newName: String): ScoreObject = TaskObject(reactiveVariable(newName), code.clone(), width)
 
     override fun writeCode(name: String, position: ObjectPosition, env: ScorePlayEnv): String = code {

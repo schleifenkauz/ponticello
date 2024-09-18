@@ -36,7 +36,7 @@ class BufferRegistry(
         super.add(obj, idx)
     }
 
-    interface View : ObjectRegistry.View<BufferObject>
+    interface Listener : ObjectRegistry.Listener<BufferObject>
 
     companion object : PublicProperty<BufferRegistry> by publicProperty("BufferRegistry")
 }

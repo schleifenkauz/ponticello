@@ -35,7 +35,6 @@
 ### Improve layout
 
 - save main window size/position and arrangement of utility panes
-- do we need an extra window for LFO code?
 - integrate close, maximize, minimize into top toolbar and remove window decoration
 
 ### Make y position of ScoreObjects relative to screen resolution

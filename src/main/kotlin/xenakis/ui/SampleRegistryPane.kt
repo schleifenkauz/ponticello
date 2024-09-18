@@ -23,7 +23,7 @@ class SampleRegistryPane(
                 samples.add(sample)
             }
         })
-        samples.addView(this)
+        samples.addListener(this)
         samples.context[SampleRegistryPane] = this
     }
 

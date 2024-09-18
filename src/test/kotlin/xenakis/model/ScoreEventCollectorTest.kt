@@ -47,7 +47,7 @@ class ScoreEventCollectorTest {
                     val time = rnd.nextDouble(100.0)
                     val y = rnd.nextDouble(100.0)
                     val inst = rootScore.allInstances().toList().random()
-                    inst.moveTo(time, y)
+                    inst.moveTo(time, y, simpleMove = true)
                 }
 
                 else -> {

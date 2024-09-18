@@ -12,7 +12,7 @@ import xenakis.sc.Rate
 
 class BusRegistryPane(private val busses: BusRegistry) : SuperColliderObjectRegistryPane<BusObject>(busses) {
     init {
-        busses.addView(this)
+        busses.addListener(this)
     }
 
     override fun addObject(name: String): BusObject {

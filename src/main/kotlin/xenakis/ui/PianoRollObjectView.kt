@@ -88,7 +88,6 @@ class PianoRollObjectView(inst: ScoreObjectInstance, private val obj: PianoRollO
                     }
                 }
             },
-            finishDrag = {}
         )
         rect.addEventHandler(MouseEvent.ANY) { ev ->
             if (context[XenakisUI].toolSelector.selected.value != ToolSelector.Tool.PianoRoll) return@addEventHandler
@@ -115,11 +114,6 @@ class PianoRollObjectView(inst: ScoreObjectInstance, private val obj: PianoRollO
         window.scene.initHextantScene(context, applyStyle = false)
         window.resize(500.0, 500.0)
         window.show()
-    }
-
-    override fun startDrag(ev: MouseEvent, cursor: Cursor) {
-        super.startDrag(ev, cursor)
-        obj.pixelsPerPitchBeforeResize = obj.pixelsPerPitch
     }
 
     fun updatedNote(note: PianoRollObject.Note) {

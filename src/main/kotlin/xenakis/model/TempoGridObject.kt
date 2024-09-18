@@ -1,6 +1,5 @@
 package xenakis.model
 
-import hextant.core.editor.ListenerManager
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
@@ -28,11 +27,8 @@ class TempoGridObject(
     override val type: String
         get() = "tempo"
 
-    @Transient
-    override val viewManager = ListenerManager.createWeakListenerManager<TempoGridObjectView>()
-
     private fun fireUpdatedConfig() {
-        viewManager.notifyListeners { updatedConfig() }
+        notifyListeners<TempoGridObjectView> { updatedConfig() }
     }
 
     override fun doClone(newName: String): ScoreObject =

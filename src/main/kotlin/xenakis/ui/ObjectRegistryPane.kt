@@ -20,7 +20,7 @@ import xenakis.sc.Identifier
 
 abstract class ObjectRegistryPane<O : NamedObject>(
     private val registry: ObjectRegistry<O>
-) : VBox(), ObjectRegistry.View<O> {
+) : VBox(), ObjectRegistry.Listener<O> {
     protected val layout = VBox()
     private val boxes = mutableListOf<ObjectBox<O>>()
     protected val searchText = CustomTextField().styleClass("search-text")

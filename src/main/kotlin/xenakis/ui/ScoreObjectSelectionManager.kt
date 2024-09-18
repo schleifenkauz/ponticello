@@ -49,9 +49,9 @@ class ScoreObjectSelectionManager(private val context: Context, private val root
         val isSelected = view in selectedViews
         view.setSelected(isSelected)
         if (isSelected) {
-            view.instance.obj.viewManager.notifyListeners { isSomeInstanceSelected(true) }
+            view.instance.obj.notifyListeners { isSomeInstanceSelected(true) }
         } else if (view.instance.obj !in selectedObjects) {
-            view.instance.obj.viewManager.notifyListeners { isSomeInstanceSelected(false) }
+            view.instance.obj.notifyListeners { isSomeInstanceSelected(false) }
         }
     }
 
@@ -73,7 +73,7 @@ class ScoreObjectSelectionManager(private val context: Context, private val root
         _selectedViews.clear()
         _singleSelected.set(null)
         for (obj in previouslySelectedObjects) {
-            obj.viewManager.notifyListeners { isSomeInstanceSelected(false) }
+            obj.notifyListeners { isSomeInstanceSelected(false) }
         }
         for (v in previouslySelected) {
             v.setSelected(false)
@@ -86,7 +86,7 @@ class ScoreObjectSelectionManager(private val context: Context, private val root
         for (v in focusedPane.allViews) {
             _selectedViews.add(v)
             v.setSelected(true)
-            v.instance.obj.viewManager.notifyListeners { isSomeInstanceSelected(true) }
+            v.instance.obj.notifyListeners { isSomeInstanceSelected(true) }
         }
         _singleSelected.set(_selectedViews.singleOrNull())
     }

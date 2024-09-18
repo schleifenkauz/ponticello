@@ -307,7 +307,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
                 if (!ev.isShiftDown) selector.deselectAll()
                 val (x, y) = snapToGrid(ev.x, ev.y)
                 for (obj in objects) {
-                    obj.moveTo(getTime(x) - leftTop.time, y - leftTop.y)
+                    obj.moveTo(getTime(x) - leftTop.time, y - leftTop.y, simpleMove = true)
                     score.addObject(obj)
                     selector.select(getObjectView(obj), addToSelection = true)
                 }
@@ -420,7 +420,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
                     val objects = viewsInside(rect.boundsInParent).mapTo(mutableSetOf()) { it.instance }
                     score.removeObjects(objects)
                     for (obj in objects) {
-                        obj.moveTo(obj.start - getTime(rect.x), obj.y - rect.y)
+                        obj.moveTo(obj.start - getTime(rect.x), obj.y - rect.y, simpleMove = true)
                     }
                     val subScore = Score(objects.toMutableList())
                     addNewObject(ScoreObjectGroup(reactiveVariable(name), subScore), rect)

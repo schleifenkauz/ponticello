@@ -1,11 +1,9 @@
 package xenakis.model
 
 import hextant.context.Context
-import hextant.core.editor.ListenerManager
 import javafx.geometry.HorizontalDirection
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.Transient
 import reaktive.value.ReactiveVariable
 import reaktive.value.now
 import reaktive.value.reactiveVariable
@@ -31,9 +29,6 @@ data class EnvelopeObject(
 
     val bus: BusObject get() = busRef.now.get()
 
-    @Transient
-    override val viewManager = ListenerManager.createWeakListenerManager<EnvelopeObjectView>()
-
     private val envelopeControl: EnvelopeControl
         get() = EnvelopeControl(
             envelope,
@@ -46,17 +41,13 @@ data class EnvelopeObject(
         set(value) {
             if (value == _spec) return
             _spec = value
-            viewManager.notifyListeners { updatedSpec() }
+            notifyListeners<EnvelopeObjectView> { updatedSpec() }
         }
 
     override fun rename(newName: String) {
-        viewManager.notifyListeners {
-            removedControl(name.now, envelopeControl)
-        }
+        notifyListeners<EnvelopeObjectView> { removedControl(name.now, envelopeControl) }
         super.rename(newName)
-        viewManager.notifyListeners {
-            addedControl(newName, envelopeControl)
-        }
+        notifyListeners<EnvelopeObjectView> { addedControl(newName, envelopeControl) }
     }
 
     override fun initialize(context: Context) {

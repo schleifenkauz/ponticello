@@ -10,8 +10,14 @@ import javafx.beans.value.ObservableValue
 import javafx.css.PseudoClass
 import javafx.event.ActionEvent
 import javafx.geometry.Bounds
+import javafx.geometry.HorizontalDirection
+import javafx.geometry.HorizontalDirection.LEFT
+import javafx.geometry.HorizontalDirection.RIGHT
 import javafx.geometry.Insets
 import javafx.geometry.Pos
+import javafx.geometry.VerticalDirection
+import javafx.geometry.VerticalDirection.DOWN
+import javafx.geometry.VerticalDirection.UP
 import javafx.scene.Cursor
 import javafx.scene.Node
 import javafx.scene.control.*
@@ -202,19 +208,51 @@ fun solidBorder(fill: Color, width: Double = 1.0, radius: Double = 0.0) =
 
 val Bounds.middleY get() = (minY + maxY) / 2
 
-private val resizeTop = setOf(Cursor.N_RESIZE, Cursor.NW_RESIZE, Cursor.NE_RESIZE)
-private val resizeLeft = setOf(Cursor.W_RESIZE, Cursor.NW_RESIZE, Cursor.SW_RESIZE)
-private val resizeBottom = setOf(Cursor.S_RESIZE, Cursor.SE_RESIZE, Cursor.SW_RESIZE)
-private val resizeRight = setOf(Cursor.E_RESIZE, Cursor.NE_RESIZE, Cursor.SE_RESIZE)
-private val resizeVerticalCursors = resizeTop + resizeBottom
-private val resizeHorizontalCursors = resizeLeft + resizeRight
+data class Direction(
+    private val horizontalDirection: HorizontalDirection?,
+    private val verticalDirection: VerticalDirection?
+) {
+    val horizontal get() = horizontalDirection
+    val vertical get() = verticalDirection
 
-val Cursor.resizeFromTop get() = this in resizeTop
-val Cursor.resizeFromLeft get() = this in resizeLeft
-val Cursor.resizeFromRight get() = this in resizeRight
-val Cursor.resizeFromBottom get() = this in resizeBottom
-val Cursor.resizeVertical get() = this in resizeVerticalCursors
-val Cursor.resizeHorizontal get() = this in resizeHorizontalCursors
+    val left get() = horizontalDirection == LEFT
+    val right get() = horizontalDirection == RIGHT
+    val up get() = verticalDirection == UP
+    val down get() = verticalDirection == DOWN
+
+    override fun toString(): String {
+        val vertical = verticalDirection?.name?.lowercase()
+        val horizontal = horizontalDirection?.name?.lowercase()
+        return when {
+            vertical == null && horizontal == null -> "none"
+            vertical == null -> horizontal!!
+            horizontal == null -> vertical
+            else -> "${vertical}_$horizontal"
+        }
+    }
+
+    companion object {
+        val NONE get() = Direction(null, null)
+
+        fun horizontal(direction: HorizontalDirection) = Direction(direction, null)
+
+        fun vertical(direction: VerticalDirection) = Direction(null, direction)
+    }
+}
+
+val Cursor.isResizeCursor get() = this.toString().endsWith("RESIZE")
+
+fun Cursor.resizeDirection() = when (this) {
+    Cursor.N_RESIZE -> Direction(null, UP)
+    Cursor.NW_RESIZE -> Direction(LEFT, UP)
+    Cursor.NE_RESIZE -> Direction(RIGHT, UP)
+    Cursor.S_RESIZE -> Direction(null, DOWN)
+    Cursor.SW_RESIZE -> Direction(LEFT, DOWN)
+    Cursor.SE_RESIZE -> Direction(RIGHT, DOWN)
+    Cursor.E_RESIZE -> Direction(RIGHT, null)
+    Cursor.W_RESIZE -> Direction(LEFT, null)
+    else -> throw IllegalArgumentException("Cursor $this is not a resize cursor")
+}
 
 fun colorPicker(controlledVar: ReactiveVariable<Color>): ColorPicker {
     val picker = ColorPicker(controlledVar.now)
