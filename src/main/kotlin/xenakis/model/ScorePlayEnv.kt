@@ -32,7 +32,7 @@ class ScorePlayEnv(private val settings: Settings) {
         val suffix = activeInstances.remove(element)
         if (suffix == null) {
             logger.severe("could not remove $element from")
-            for (synth in activeInstances) {
+            for (synth in activeInstances.keys) {
                 logger.severe("   $synth")
             }
         } else suffixes(obj).remove(suffix)

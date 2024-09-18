@@ -1,9 +1,5 @@
 ## Functionality
 
-### Make playback more reactive
-
-- also react to objects being resized(!)
-
 ### completion
 
 - buffer refs

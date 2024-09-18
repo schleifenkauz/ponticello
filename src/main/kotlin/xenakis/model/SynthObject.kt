@@ -17,6 +17,7 @@ import xenakis.sc.ControlSpec
 import xenakis.sc.Identifier
 import xenakis.sc.editor.SynthDefSelector
 import xenakis.sc.transform
+import xenakis.ui.Direction
 
 @Serializable
 class SynthObject(
@@ -35,6 +36,9 @@ class SynthObject(
     @Transient
     lateinit var synthDefSelector: SynthDefSelector
         private set
+
+    @Transient
+    private var playBufRateBeforeResize = 0.0
 
     val synthDef: SynthDefObject get() = synthDefRef.now.get()
 
@@ -71,6 +75,13 @@ class SynthObject(
         }
     )
 
+    override fun beginResize(stretch: Boolean, direction: Direction) {
+        super.beginResize(stretch, direction)
+        if (stretch && playBufRate != null) {
+            playBufRateBeforeResize = playBufRate!!.now
+        }
+    }
+
     override fun resize(targetDuration: Double, targetHeight: Double) {
         var newDuration = targetDuration
         if (stretchResize && playBufRate != null) {
@@ -84,6 +95,13 @@ class SynthObject(
             }
         }
         super.resize(newDuration, targetHeight)
+    }
+
+    override fun finishResize() {
+        super.finishResize()
+        if (stretchResize && playBufRate != null) {
+            playBufRate!!.now = playBufRateBeforeResize * (durationBeforeResize / duration)
+        }
     }
 
     fun reverse() {

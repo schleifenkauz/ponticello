@@ -104,7 +104,8 @@ class ScorePlayer(
 
     private fun scheduleEvents(t: Double, delta: Double) {
         var printedInterval = false
-        for ((type, position, inst) in events.eventsAt(t, delta)) {
+        for (ev in events.eventsAt(t, delta)) {
+            val (type, position, inst) = ev
             if (inst == null || inst.muted) continue
             if (!printedInterval) {
                 logger.info("interval at t=${t}s, delta = ${delta}s")
@@ -125,6 +126,7 @@ class ScorePlayer(
 
                 else -> {}
             }
+            ev.scheduled = true
         }
     }
 
@@ -154,6 +156,7 @@ class ScorePlayer(
         if (!isPlaying) return
         isPlaying = false
         logger.info("PAUSE PLAYBACK")
+        events.resetEvents()
         env.clear()
         client.send("pause_play")
     }

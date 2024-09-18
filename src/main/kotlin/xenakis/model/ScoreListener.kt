@@ -5,7 +5,7 @@ interface ScoreListener {
 
     fun removedObject(score: Score, inst: ScoreObjectInstance)
 
-    fun movedObject(score: Score, inst: ScoreObjectInstance, oldPosition: ObjectPosition) {}
+    fun movedObject(score: Score, inst: ScoreObjectInstance, dt: Double, dy: Double) {}
 
     fun toggledMute(score: Score, inst: ScoreObjectInstance, muted: Boolean) {}
 }

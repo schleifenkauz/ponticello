@@ -38,7 +38,7 @@ sealed class ScoreObject : AbstractRenamableObject() {
     private val viewManager: ListenerManager<Listener> = ListenerManager.createWeakListenerManager()
 
     @Transient
-    private var durationBeforeResize: Double = 0.0
+    protected var durationBeforeResize: Double = 0.0
 
     @Transient
     private var heightBeforeResize: Double = 0.0

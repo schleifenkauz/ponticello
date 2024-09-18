@@ -61,42 +61,32 @@ class ScoreEventCollector(
     override fun finishedResize(obj: ScoreObject, deltaDuration: Double, deltaHeight: Double, direction: Direction) {
         if (obj is ScoreObjectGroup) return
         val eventsBefore = events.size
-        for (inst in rootScore.instancesOf(obj, filterMuted = true)) {
-            for ((t, y) in absolutePositions(inst)) {
-                val oldStart = ObjectPosition(
-                    if (direction.left) t + deltaDuration else t,
-                    if (direction.up) y + deltaHeight else y
-                )
-                val oldEnd = ObjectPosition(
-                    if (direction.right) t + obj.duration - deltaDuration else t + obj.duration,
-                    if (direction.up) y + deltaHeight else y
-                )
-                val newStart = ObjectPosition(t, y)
-                val newEnd = ObjectPosition(t + obj.duration, y)
-                if (newStart != oldStart) {
-                    if (events.remove(Event(Event.Type.ObjectStart, oldStart, inst))) {
-                        events.add(Event(Event.Type.ObjectStart, newStart, inst))
-                    } else {
-                        logger.severe("Failed to set object start of $inst at ($t, $y) from $oldStart to $newStart")
-                    }
-                }
-                if (newEnd != oldEnd) {
-                    if (events.remove(Event(Event.Type.ObjectEnd, oldEnd, inst))) {
-                        events.add(Event(Event.Type.ObjectEnd, newEnd, inst))
-                    } else {
-                        logger.severe("Failed to set object end of $inst at ($t, $y) from $oldEnd to $newEnd")
-                    }
-                }
+        val itr = events.iterator()
+        val newEvents = mutableListOf<Event>()
+        for (ev in itr) {
+            if (ev.inst?.obj != obj) continue
+            val (t, y) = ev.absolutePosition
+            val newY = if (direction.up) y - deltaHeight else y
+            if (ev.type == Event.Type.ObjectStart && (direction.left || direction.up)) {
+                itr.remove()
+                val newStart = ObjectPosition(if (direction.left) t - deltaDuration else t, newY)
+                newEvents.add(Event(Event.Type.ObjectStart, newStart, ev.inst))
+            } else if (ev.type == Event.Type.ObjectEnd && (direction.right || direction.up)) {
+                itr.remove()
+                val newEnd = ObjectPosition(if (direction.right) t + deltaDuration else t, newY)
+                newEvents.add(Event(Event.Type.ObjectEnd, newEnd, ev.inst))
             }
         }
+        events.addAll(newEvents)
         if (events.size != eventsBefore) {
             logger.severe("Resizing object changed number of score events")
         }
     }
 
     @Synchronized
-    override fun movedObject(score: Score, inst: ScoreObjectInstance, oldPosition: ObjectPosition) {
+    override fun movedObject(score: Score, inst: ScoreObjectInstance, dt: Double, dy: Double) {
         if (inst.muted) return
+        val oldPosition = inst.position + ObjectPosition(-dt, -dy)
         val eventsBefore = events.size
         logger.info("Move object $inst from $oldPosition")
         for (position in absolutePositions(inst.score)) {
@@ -104,7 +94,7 @@ class ScoreEventCollector(
             addToPlayback(inst, position + inst.position)
         }
         if (events.size != eventsBefore) {
-            logger.severe("Resizing object changed number of score events")
+            logger.severe("Moving object changed number of score events")
         }
     }
 
@@ -129,7 +119,7 @@ class ScoreEventCollector(
                 }
             }
         } else {
-            logger.info("Added $inst to ${inst.score.scoreName.now} at $position")
+            logger.info("Added $inst at $position")
             val posEnd = position + ObjectPosition(obj.duration, 0.0)
             if (player != null && env != null && player.isPlaying && player.currentTime in position.time - env.lookAhead..posEnd.time) {
                 player.scheduleInstantly(inst, position)
@@ -148,7 +138,7 @@ class ScoreEventCollector(
                 removeFromPlayback(subInst, position + subInst.position)
             }
         } else {
-            logger.info("Removing $inst from ${inst.score.scoreName.now} at $position")
+            logger.info("Removing $inst at $position")
             val posEnd = position + ObjectPosition(obj.duration, 0.0)
             if (!events.remove(Event(Event.Type.ObjectStart, position, inst)))
                 logger.severe("Failed to remove object start at $position")
@@ -165,13 +155,22 @@ class ScoreEventCollector(
     @Synchronized
     fun eventsAt(time: Double, delta: Double): List<Event> {
         val dummy = Event(Event.Type.Dummy, ObjectPosition(time, 0.0), null)
-        return events.tailSet(dummy).takeWhile { ev -> ev.absolutePosition.time < time + delta }
+        return events.tailSet(dummy)
+            .takeWhile { ev -> ev.absolutePosition.time < time + delta }
+            .filter { ev -> !ev.scheduled }
+    }
+
+    fun resetEvents() {
+        for (ev in events) {
+            ev.scheduled = false
+        }
     }
 
     data class Event(
         val type: Type,
         val absolutePosition: ObjectPosition,
-        val inst: ScoreObjectInstance?
+        val inst: ScoreObjectInstance?,
+        var scheduled: Boolean = false
     ) : Comparable<Event> {
         override fun compareTo(other: Event): Int = compareValuesBy(this, other, Event::absolutePosition)
 

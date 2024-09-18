@@ -87,7 +87,9 @@ class Score(private val instances: MutableList<ScoreObjectInstance> = mutableLis
     }
 
     fun movedObject(inst: ScoreObjectInstance, oldPosition: ObjectPosition) {
-        views.notifyListeners { movedObject(this@Score, inst, oldPosition) }
+        val dt = inst.start - oldPosition.time
+        val dy = inst.y - oldPosition.y
+        views.notifyListeners { movedObject(this@Score, inst, dt, dy) }
     }
 
     fun toggledMute(inst: ScoreObjectInstance, muted: Boolean) {
