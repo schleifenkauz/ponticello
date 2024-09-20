@@ -21,7 +21,7 @@ import java.util.*
 class AudioFlowGraph(
     private val _nodes: MutableList<BusNode>,
     private val _flows: MutableList<AudioFlow>,
-) : ObjectRegistry.Listener<BusObject> {
+) : ObjectRegistry.Listener<BusObject>, XenakisProject.ProjectComponent {
     @Transient
     private lateinit var registry: BusRegistry
 
@@ -36,6 +36,9 @@ class AudioFlowGraph(
 
     @Transient
     private val nodeNameObservers = mutableMapOf<BusObject, Observer>()
+
+    override val componentName: String
+        get() = "flow_graph"
 
     val flows: List<AudioFlow> get() = _flows
     val nodes: List<BusNode> get() = _nodes

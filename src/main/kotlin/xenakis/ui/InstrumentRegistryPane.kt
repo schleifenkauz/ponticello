@@ -33,7 +33,7 @@ class InstrumentRegistryPane(
         registry.addView(this)
     }
 
-    override fun reload() {
+    override fun sync() {
         registry.syncAll()
     }
 

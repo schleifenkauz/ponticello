@@ -177,6 +177,7 @@ class XenakisController(private val primaryStage: Stage) {
     }
 
     private fun saveIn(folder: File) {
+        currentProject.projectDirectory
         currentProject.saveTo(folder)
         prefs.put("lastFile", folder.absolutePath)
         addRecentProject(folder)

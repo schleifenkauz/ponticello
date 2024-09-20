@@ -6,7 +6,8 @@ import xenakis.model.SuperColliderObjectRegistry
 abstract class SuperColliderObjectRegistryPane<O : AbstractSuperColliderObject>(
     private val registry: SuperColliderObjectRegistry<O>
 ) : ObjectRegistryPane<O>(registry) {
-    override fun reload() {
+    override fun sync() {
         registry.syncAll()
+        registry.save()
     }
 }

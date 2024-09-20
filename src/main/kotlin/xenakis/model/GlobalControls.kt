@@ -16,7 +16,7 @@ import xenakis.sc.Rate
 import xenakis.ui.format
 
 @Serializable
-class GlobalControls(private val controls: MutableList<GlobalControl>) {
+class GlobalControls(private val controls: MutableList<GlobalControl>) : XenakisProject.ProjectComponent {
     @Transient
     val views = ListenerManager.createWeakListenerManager<GlobalControlsView>()
 
@@ -25,6 +25,9 @@ class GlobalControls(private val controls: MutableList<GlobalControl>) {
 
     @Transient
     private lateinit var context: Context
+
+    override val componentName: String
+        get() = "global_controls"
 
     fun initialize(context: Context) {
         this.context = context

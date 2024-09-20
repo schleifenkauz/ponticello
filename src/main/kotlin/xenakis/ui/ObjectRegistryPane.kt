@@ -51,7 +51,7 @@ abstract class ObjectRegistryPane<O : NamedObject>(
         val space = infiniteSpace()
         val addBtn = Icon.Add.button(action = "Add $type") { addObject() }
         val reloadBtn = Icon.Repeat.button(action = "Sync ${plural(type)}") {
-            reload()
+            sync()
             notifyConfirm("Synchronized ${plural(type)} with server")
         }
         return HBox(label, searchText, space, addBtn, reloadBtn).styleClass("tool-pane-header")
@@ -95,7 +95,7 @@ abstract class ObjectRegistryPane<O : NamedObject>(
         }
     }
 
-    protected abstract fun reload()
+    protected abstract fun sync()
 
     protected open fun addObject() = showNamePrompt(registry, defaultName = searchText.text) { name -> addObject(name) }
 

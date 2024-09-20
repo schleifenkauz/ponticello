@@ -13,7 +13,8 @@ import reaktive.value.now
 import java.util.logging.Logger
 
 @Serializable
-class Score(private val instances: MutableList<ScoreObjectInstance> = mutableListOf()) {
+class Score(private val instances: MutableList<ScoreObjectInstance> = mutableListOf()) :
+    XenakisProject.ProjectComponent {
     val objectInstances: List<ScoreObjectInstance> get() = instances
 
     val objects get() = objectInstances.map { inst -> inst.obj }
@@ -31,6 +32,9 @@ class Score(private val instances: MutableList<ScoreObjectInstance> = mutableLis
     private val views = ListenerManager.createWeakListenerManager<ScoreListener>()
 
     private val undo by lazy { context[UndoManager] }
+
+    override val componentName: String
+        get() = if (scoreName.now == "<root>") "score" else throw AssertionError()
 
     fun initialize(context: Context, scoreName: ReactiveString) {
         if (initialized) return

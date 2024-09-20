@@ -88,7 +88,8 @@ class SynthObjectView(
 
     private fun addNewControl(anchorNode: Node) {
         val listView = SearchableParameterListView(context, obj.synthDef.parameters.now)
-        val assignedParameters = obj.controls.controlMap.keys.map(obj.synthDef::getParameter)
+        val assignedParameters = obj.controls.controlMap.keys
+            .map { key -> ParameterDefObject(key, obj.getSpec(key)) }
         listView.removedOptions.addAll(assignedParameters)
         listView.showPopup(context, "Add control", anchorNode = anchorNode) { option ->
             val extraSpec = option.spec.now.takeIf {

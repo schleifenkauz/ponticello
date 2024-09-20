@@ -31,8 +31,7 @@ class XenakisProject private constructor(
     val instruments: InstrumentRegistry,
     val flowGraph: AudioFlowGraph,
     val globalControls: GlobalControls,
-    val serverSetup: EditorRoot<CodeBlockEditor>,
-    val serverTree: EditorRoot<CodeBlockEditor>,
+    val setupCode: SetupCode,
     val objects: ScoreObjectRegistry,
     val score: Score
 ) {
@@ -48,30 +47,33 @@ class XenakisProject private constructor(
     lateinit var projectDirectory: File
         private set
 
+    val dataDir get() = projectDirectory.resolve("xenakis_data")
+
+    val components
+        get() = listOf(
+            settings,
+            groups, busses, buffers, samples, instruments,
+            flowGraph, globalControls, objects, setupCode,
+            score
+        )
+
     fun initialize(context: Context) {
         this.context = context
         client = context[SuperColliderClient]
         client.run {
-            updateSetupCode(serverSetup.editor.result.now, LiveCycleType.ServerBoot)
-            updateSetupCode(serverTree.editor.result.now, LiveCycleType.ServerTree)
+            updateSetupCode(setupCode.serverSetup.editor.result.now, LiveCycleType.ServerBoot)
+            updateSetupCode(setupCode.serverTree.editor.result.now, LiveCycleType.ServerTree)
         }
     }
 
     fun saveTo(projectDirectory: File) {
-        val data = projectDirectory.resolve("xenakis_data")
-        data.mkdirs()
-        data.resolve("settings.json").writeJson(settings, json)
-        data.resolve("groups.json").writeJson(groups, json)
-        data.resolve("busses.json").writeJson(busses, json)
-        data.resolve("buffers.json").writeJson(buffers, json)
-        data.resolve("samples.json").writeJson(samples, json)
-        data.resolve("instruments.json").writeJson(instruments, json)
-        data.resolve("flow_graph.json").writeJson(flowGraph, json)
-        data.resolve("global_controls.json").writeJson(globalControls, json)
-        data.resolve("server_setup.json").writeJson(serverSetup, json)
-        data.resolve("server_tree.json").writeJson(serverTree, json)
-        data.resolve("objects.json").writeJson(objects, json)
-        data.resolve("score.json").writeJson(score, json)
+        this.projectDirectory = projectDirectory
+        dataDir.mkdirs()
+        for (component in components) save(component)
+    }
+
+    inline fun <reified T : ProjectComponent> save(component: T) {
+        dataDir.resolve("${component.componentName}.json").writeJson(component, json)
     }
 
     fun updateSetupCode(setupCode: CodeBlock, liveCycleType: LiveCycleType) {
@@ -95,6 +97,10 @@ class XenakisProject private constructor(
         samples.syncAll()
         flowGraph.updateFlow()
         notifyConfirm("Synchronized with SuperCollider")
+    }
+
+    interface ProjectComponent {
+        val componentName: String
     }
 
     companion object {
@@ -142,7 +148,7 @@ class XenakisProject private constructor(
                     settings,
                     groups, busses, buffers, samples, instruments,
                     flowGraph, globalControls,
-                    serverSetup, beforePlay,
+                    SetupCode(serverSetup, beforePlay),
                     objects, score
                 ).also { p ->
                     p.initialize(context)
@@ -160,8 +166,7 @@ class XenakisProject private constructor(
             instruments = InstrumentRegistry.createDefault().also { r -> r.initialize(context) },
             flowGraph = AudioFlowGraph.createDefault().also { g -> g.initialize(context) },
             globalControls = GlobalControls(mutableListOf()).also { c -> c.initialize(context) },
-            serverSetup = EditorRoot.create(CodeBlockEditor(context)),
-            serverTree = EditorRoot.create(CodeBlockEditor(context)),
+            setupCode = SetupCode.default(context),
             objects = ScoreObjectRegistry(mutableListOf()).also { r -> r.initialize(context) },
             score = Score().also { score -> score.initialize(context, reactiveValue(ROOT_SCORE_NAME)) },
         ).also { project ->

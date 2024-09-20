@@ -6,12 +6,17 @@ import hextant.undo.AbstractEdit
 import hextant.undo.UndoManager
 import kotlinx.serialization.Transient
 import reaktive.value.now
+import xenakis.ui.XenakisController.Companion.currentProject
+import xenakis.ui.plural
 import java.util.logging.Logger
 
-abstract class ObjectRegistry<O : NamedObject> {
+abstract class ObjectRegistry<O : NamedObject> : XenakisProject.ProjectComponent {
     protected abstract val objects: MutableList<O>
 
     abstract val objectType: String
+
+    override val componentName: String
+        get() = plural(objectType)
 
     @Transient
     val views: ListenerManager<out Listener<O>> = ListenerManager.createWeakListenerManager()
@@ -25,6 +30,10 @@ abstract class ObjectRegistry<O : NamedObject> {
         for (obj in objects) {
             obj.initialize(context)
         }
+    }
+
+    fun save() {
+        context[currentProject].save(this)
     }
 
     abstract fun getDefault(): O

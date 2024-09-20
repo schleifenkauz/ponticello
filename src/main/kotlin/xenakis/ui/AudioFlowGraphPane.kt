@@ -52,7 +52,7 @@ class AudioFlowGraphPane(
             }
         }
         resetOnEscape()
-        createNewBusOnShiftClick()
+        createNewBusOnAltClick()
         newFlowArrowFollowMouse()
         allowDroppingBusObjects()
         graph.views.addListener(this)
@@ -98,10 +98,7 @@ class AudioFlowGraphPane(
             ev.consume()
         }
         registerShortcuts {
-            on("Ctrl+S") {
-                graph.updateFlow()
-                notifyConfirm("Updated Audio flow graph")
-            }
+            on("Ctrl+S") { sync() }
         }
     }
 
@@ -115,9 +112,9 @@ class AudioFlowGraphPane(
         }
     }
 
-    private fun createNewBusOnShiftClick() {
+    private fun createNewBusOnAltClick() {
         addEventHandler(MouseEvent.MOUSE_CLICKED) { ev ->
-            if (ev.isShiftDown) {
+            if (ev.isAltDown) {
                 showNamePrompt(context[BusRegistry]) { name ->
                     val bus = BusObject.create(name)
                     context[BusRegistry].add(bus)
@@ -287,14 +284,19 @@ class AudioFlowGraphPane(
                 scene.initHextantScene(context, applyStyle = false)
                 addEventFilter(KeyEvent.KEY_RELEASED) { ev ->
                     if ("Ctrl+S".shortcut.matches(ev)) {
-                        graph.updateFlow()
-                        notifyConfirm("Updated Audio flow graph")
+                        sync()
                         ev.consume()
                     }
                 }
             }
         }
         window.show()
+    }
+
+    private fun sync() {
+        graph.updateFlow()
+        context[currentProject].save(graph)
+        notifyConfirm("Updated Audio flow graph")
     }
 
     companion object : PublicProperty<AudioFlowGraphPane> by publicProperty("audio-flow-graph-editor") {

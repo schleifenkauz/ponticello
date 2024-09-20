@@ -23,6 +23,13 @@
 - more logging
 - also user options for logging level
 
+### Server/device management
+
+- ability to specify server boot options (rt-memory, device, in/out-busses, etc.)
+- adding input buses
+- automatically split/combine buses in audio flow graph
+- changing number of output channels
+
 ### Stretching time regions
 
 - select time, then drag with shift
@@ -46,7 +53,8 @@
 
 ### More flexible controls for SynthObjects
 
-- when adding envelope controls, min/max values can be specified
+- when adding envelope controls, the spec could be edited
+- also: options to sync from/to SynthDef spec
 
 ### Bouncing
 
@@ -58,7 +66,6 @@
 ### Minor
 
 - allow for more cases of pasting code
-- avoid hanging when speaking to SuperCollider (timeouts, async, etc.)
 - kill sclang.exe and scsynth.exe before startup (?)
 
 ## Long term architectural ideas/question
