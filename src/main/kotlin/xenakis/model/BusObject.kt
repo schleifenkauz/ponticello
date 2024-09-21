@@ -18,10 +18,21 @@ class BusObject(
     override val mutableName: ReactiveVariable<String>,
     val rate: ReactiveVariable<Rate>,
     val channels: ReactiveVariable<Int>,
-    val isOutput: Boolean = false
+    val type: Type = Type.Regular
 ) : AbstractSuperColliderObject() {
-    override val superColliderName get() = if (isOutput) "0" else "~bus_${name.now}"
-    override val functionName get() = if (isOutput) "~default_bus_init" else "~bus_${name.now}"
+    override val superColliderName
+        get() = when (type) {
+            Type.Input -> "s.inputBus"
+            Type.Output -> "s.outputBus"
+            Type.Regular -> "~bus_${name.now}"
+        }
+
+    override val functionName
+        get() = when (type) {
+            Type.Output -> "~output_bus_init"
+            Type.Input -> "~input_bus_init"
+            Type.Regular -> "~bus_${name.now}"
+        }
 
     override val liveCycleType: LiveCycleType
         get() = LiveCycleType.ServerBoot
@@ -30,7 +41,11 @@ class BusObject(
     private lateinit var observer: Observer
 
     override fun ScWriter.allocateServerObject() {
-        if (!isOutput) +"$superColliderName = Bus.${rate.now.name.lowercase()}(s, ${channels.now})"
+        when (type) {
+            Type.Input -> {}
+            Type.Output -> {}
+            Type.Regular -> +"$superColliderName = Bus.${rate.now.name.lowercase()}(s, ${channels.now})"
+        }
     }
 
     override fun canRenameTo(newName: String): Boolean =
@@ -40,17 +55,28 @@ class BusObject(
     override fun initialize(context: Context) {
         if (initialized) return
         super.initialize(context)
-        if (!isOutput) {
+        if (type == Type.Regular) {
             observer = rate.observe { _ -> redefine() } and channels.observe { _ -> redefine() }
         }
     }
 
+    enum class Type {
+        Regular, Input, Output;
+    }
+
     companion object {
+        val input = BusObject(
+            reactiveVariable("input"),
+            reactiveVariable(Rate.Audio),
+            reactiveVariable(2),
+            type = Type.Input
+        )
+
         val output = BusObject(
             reactiveVariable("output"),
             reactiveVariable(Rate.Audio),
             reactiveVariable(2),
-            isOutput = true
+            type = Type.Output
         )
 
         fun create(name: String, rate: Rate = Rate.Audio, channels: Int = 2) =

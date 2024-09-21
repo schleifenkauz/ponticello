@@ -21,13 +21,13 @@ class BusRegistryPane(private val busses: BusRegistry) : SuperColliderObjectRegi
         return bus
     }
 
-    override fun canDelete(obj: BusObject): Boolean = !obj.isOutput
+    override fun canDelete(obj: BusObject): Boolean = obj.type == BusObject.Type.Regular
 
     override fun ObjectBox<BusObject>.configureObjectBox() {
         val rateSelector = ComboBox(FXCollections.observableList(Rate.values().asList()))
         rateSelector.minWidth = USE_PREF_SIZE
         val channelsSpinner = Spinner<Int>(0, 12, 2).setFixedWidth(50.0)
-        if (obj.isOutput) {
+        if (obj.type != BusObject.Type.Regular) {
             rateSelector.valueProperty().bind(obj.rate.asObservableValue())
             rateSelector.isDisable = true
             channelsSpinner.valueFactory.valueProperty().bind(obj.channels.asObservableValue())

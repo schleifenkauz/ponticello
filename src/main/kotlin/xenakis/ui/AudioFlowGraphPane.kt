@@ -52,7 +52,6 @@ class AudioFlowGraphPane(
             }
         }
         resetOnEscape()
-        createNewBusOnAltClick()
         newFlowArrowFollowMouse()
         allowDroppingBusObjects()
         graph.views.addListener(this)
@@ -108,20 +107,6 @@ class AudioFlowGraphPane(
                 sourceBus = null
                 if (flowArrow != null) children.remove(flowArrow)
                 flowArrow = null
-            }
-        }
-    }
-
-    private fun createNewBusOnAltClick() {
-        addEventHandler(MouseEvent.MOUSE_CLICKED) { ev ->
-            if (ev.isAltDown) {
-                showNamePrompt(context[BusRegistry]) { name ->
-                    val bus = BusObject.create(name)
-                    context[BusRegistry].add(bus)
-                    val position = Point(ev.x, ev.y)
-                    graph.addNode(bus.createReference(), position)
-                    ev.consume()
-                }
             }
         }
     }
@@ -194,9 +179,9 @@ class AudioFlowGraphPane(
     private fun setupEvents(node: AudioFlowGraph.BusNode, label: Label) {
         label.addEventHandler(MouseEvent.ANY) { ev ->
             when {
-                ev.eventType == MouseEvent.MOUSE_DRAGGED && !ev.isShiftDown -> drag(ev, label, node)
+                ev.eventType == MouseEvent.MOUSE_DRAGGED && !ev.isAltDown -> drag(ev, label, node)
                 ev.eventType == MouseEvent.MOUSE_RELEASED -> releaseDrag()
-                ev.eventType == MouseEvent.MOUSE_CLICKED && ev.isShiftDown && sourceBus == null ->
+                ev.eventType == MouseEvent.MOUSE_CLICKED && ev.isAltDown && sourceBus == null ->
                     startNewFlowFrom(node, ev)
 
                 ev.eventType == MouseEvent.MOUSE_CLICKED && sourceBus != null -> finishFlowTo(node)

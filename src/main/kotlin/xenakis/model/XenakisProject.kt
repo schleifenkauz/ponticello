@@ -4,7 +4,6 @@ import bundles.publicProperty
 import bundles.set
 import hextant.context.Context
 import hextant.context.withoutUndo
-import hextant.serial.EditorRoot
 import hextant.serial.readJson
 import hextant.serial.writeJson
 import kotlinx.serialization.Serializable
@@ -16,7 +15,6 @@ import xenakis.impl.SuperColliderClient
 import xenakis.model.Score.Companion.ROOT_SCORE_NAME
 import xenakis.model.SuperColliderObject.LiveCycleType
 import xenakis.sc.CodeBlock
-import xenakis.sc.editor.CodeBlockEditor
 import xenakis.ui.XenakisController
 import xenakis.ui.notifyConfirm
 import java.io.File
@@ -32,6 +30,7 @@ class XenakisProject private constructor(
     val flowGraph: AudioFlowGraph,
     val globalControls: GlobalControls,
     val setupCode: SetupCode,
+    val serverOptions: ServerOptions,
     val objects: ScoreObjectRegistry,
     val score: Score
 ) {
@@ -99,7 +98,8 @@ class XenakisProject private constructor(
         notifyConfirm("Synchronized with SuperCollider")
     }
 
-    interface ProjectComponent {
+    @Serializable
+    sealed interface ProjectComponent {
         val componentName: String
     }
 
@@ -136,8 +136,14 @@ class XenakisProject private constructor(
                 val globalControls = data.resolve("global_controls.json").readJson<GlobalControls>()
                 globalControls.initialize(context)
                 listener.setProgress(0.75, "Loading server setup code")
-                val serverSetup = data.resolve("server_setup.json").readJson<EditorRoot<CodeBlockEditor>>()
-                val beforePlay = data.resolve("server_tree.json").readJson<EditorRoot<CodeBlockEditor>>()
+                val setupCodeFile = data.resolve("setup_code.json")
+                val setupCode =
+                    if (setupCodeFile.isFile) setupCodeFile.readJson<SetupCode>()
+                    else SetupCode.default(context)
+                val serverOptionsFile = data.resolve("server_options.json")
+                val serverOptions =
+                    if (serverOptionsFile.isFile) serverOptionsFile.readJson<ServerOptions>()
+                    else ServerOptions()
                 val objects = data.resolve("objects.json").readJson<ScoreObjectRegistry>()
                 objects.initialize(context)
                 listener.setProgress(0.9, "Loading score")
@@ -147,8 +153,7 @@ class XenakisProject private constructor(
                 return XenakisProject(
                     settings,
                     groups, busses, buffers, samples, instruments,
-                    flowGraph, globalControls,
-                    SetupCode(serverSetup, beforePlay),
+                    flowGraph, globalControls, setupCode, serverOptions,
                     objects, score
                 ).also { p ->
                     p.initialize(context)
@@ -166,7 +171,7 @@ class XenakisProject private constructor(
             instruments = InstrumentRegistry.createDefault().also { r -> r.initialize(context) },
             flowGraph = AudioFlowGraph.createDefault().also { g -> g.initialize(context) },
             globalControls = GlobalControls(mutableListOf()).also { c -> c.initialize(context) },
-            setupCode = SetupCode.default(context),
+            setupCode = SetupCode.default(context), serverOptions = ServerOptions(),
             objects = ScoreObjectRegistry(mutableListOf()).also { r -> r.initialize(context) },
             score = Score().also { score -> score.initialize(context, reactiveValue(ROOT_SCORE_NAME)) },
         ).also { project ->

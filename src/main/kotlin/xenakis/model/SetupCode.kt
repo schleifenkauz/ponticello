@@ -6,7 +6,7 @@ import kotlinx.serialization.Serializable
 import xenakis.sc.editor.CodeBlockEditor
 
 @Serializable
-class SetupCode(
+data class SetupCode(
     val serverSetup: EditorRoot<CodeBlockEditor>,
     val serverTree: EditorRoot<CodeBlockEditor>,
 ) : XenakisProject.ProjectComponent {

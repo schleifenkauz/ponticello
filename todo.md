@@ -27,7 +27,7 @@
 
 - ability to specify server boot options (rt-memory, device, in/out-busses, etc.)
 - adding input buses
-- automatically split/combine buses in audio flow graph
+- automatically split/combine buses in audio flow graph (`S` on selected bus node)
 - changing number of output channels
 
 ### Stretching time regions

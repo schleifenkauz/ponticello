@@ -21,13 +21,14 @@ class BusRegistry(private val busses: MutableList<BusObject>) : SuperColliderObj
         context[BusRegistry] = this
     }
 
-    override fun getDefault() = busses.find { b -> b.isOutput } ?: error("No output bus found in registry")
+    override fun getDefault() = busses.find { b -> b.type == BusObject.Type.Output }
+        ?: error("No output bus found in registry")
 
     fun filter(rate: Rate?, channels: Int): List<BusObject> = busses.filter { b ->
         (rate == null || b.rate.now == rate) && (channels == -1 || b.channels.now == channels)
     }
 
     companion object : PublicProperty<BusRegistry> by publicProperty("BusRegistry") {
-        fun createDefault(): BusRegistry = BusRegistry(mutableListOf(BusObject.output))
+        fun createDefault(): BusRegistry = BusRegistry(mutableListOf(BusObject.output, BusObject.input))
     }
 }

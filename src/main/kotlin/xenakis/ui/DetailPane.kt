@@ -6,7 +6,7 @@ import javafx.scene.layout.HBox
 import javafx.scene.layout.Priority
 import javafx.scene.layout.VBox
 
-class DetailPane : VBox() {
+open class DetailPane : VBox() {
     init {
         styleClass("detail-pane", "tool-pane")
     }

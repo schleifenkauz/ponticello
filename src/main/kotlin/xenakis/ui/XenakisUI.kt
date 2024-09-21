@@ -114,19 +114,20 @@ class XenakisUI(
         globalControlsWindow = SubWindow(globalControlsPane, "Global controls", context)
         globalControlsWindow.width = 500.0
 
-        serverSetupCodeWindow = SubWindow(project.serverSetup.control, "ServerSetup", context)
+        val (serverSetup, serverTree) = project.setupCode
+        serverSetupCodeWindow = SubWindow(serverSetup.control, "ServerSetup", context)
         serverSetupCodeWindow.scene.registerShortcuts {
             on("Ctrl+S") {
-                val setupCode = project.serverSetup.editor.result.now
+                val setupCode = serverSetup.editor.result.now
                 project.updateSetupCode(setupCode, SuperColliderObject.LiveCycleType.ServerBoot)
                 notifyInfo("ServerSetup updated")
             }
         }
         serverSetupCodeWindow.resize(500.0, 500.0)
-        serverTreeCodeWindow = SubWindow(project.serverTree.control, "ServerTree", context)
+        serverTreeCodeWindow = SubWindow(serverTree.control, "ServerTree", context)
         serverTreeCodeWindow.scene.registerShortcuts {
             on("Ctrl+S") {
-                val serverTreeCode = project.serverTree.editor.result.now
+                val serverTreeCode = serverTree.editor.result.now
                 project.updateSetupCode(serverTreeCode, SuperColliderObject.LiveCycleType.ServerTree)
                 notifyInfo("ServerTree updated")
             }
@@ -310,7 +311,14 @@ class XenakisUI(
                 if (ev.isShiftDown) serverSetupCodeWindow.show()
                 else serverTreeCodeWindow.show()
             }
-            +Icon.Restart.button(action = "Restart server (F5)") { controller.restartScSynth() }
+            +Icon.Restart.button(action = "Restart server (F5)") { ev ->
+                if (ev.isShiftDown) {
+                    val pane = ServerOptionsPane(context, project.serverOptions)
+                    pane.showWindow("Server options", context, SubWindow.Type.Modal)
+                } else {
+                    controller.rebootServer()
+                }
+            }
             +Icon.Browser.button(action = "Open help browser (F1)") { project.context[HelpBrowser].show() }
             +Icon.Graph.button(action = "Edit audio flow graph (Ctrl+Shift+F)") { flowGraphWindow.show() }
             +Icon.Settings.button(action = "Edit settings (Ctrl+Alt+S)") { settingsWindow.show() }
@@ -564,7 +572,7 @@ class XenakisUI(
             on("Ctrl+G") { globalControlsWindow.show() }
             on("Ctrl+B") { busesWindow.show() }
             on("Ctrl+F") { samplesWindow.show() }
-            on("F5") { controller.restartScSynth() }
+            on("F5") { controller.rebootServer() }
 
             on("Shift?+C") { ev ->
                 if (!ev.isTargetTextInput) {
