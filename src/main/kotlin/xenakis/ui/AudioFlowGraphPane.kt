@@ -10,9 +10,11 @@ import hextant.fx.runFXWithTimeout
 import hextant.fx.shortcut
 import hextant.undo.UndoManager
 import javafx.geometry.Bounds
+import javafx.geometry.HorizontalDirection
 import javafx.geometry.HorizontalDirection.LEFT
 import javafx.geometry.HorizontalDirection.RIGHT
 import javafx.geometry.Point2D
+import javafx.geometry.VerticalDirection
 import javafx.geometry.VerticalDirection.DOWN
 import javafx.geometry.VerticalDirection.UP
 import javafx.scene.control.Label
@@ -26,6 +28,7 @@ import xenakis.model.BusObject
 import xenakis.model.BusRegistry
 import xenakis.model.ObjectReference
 import xenakis.ui.XenakisController.Companion.currentProject
+import kotlin.math.absoluteValue
 import kotlin.math.sign
 
 class AudioFlowGraphPane(
@@ -168,12 +171,28 @@ class AudioFlowGraphPane(
         val target = getLabel(flow.target)
         val targetPos = graph.getNode(flow.target).position
         val sourcePos = graph.getNode(flow.source).position
-        val hDir = if (targetPos.x > sourcePos.x) RIGHT else LEFT
-        val vDir = if (targetPos.y > sourcePos.y) DOWN else UP
-        arrow.startX = if (hDir == RIGHT) source.boundsInParent.maxX else source.boundsInParent.minX
-        arrow.startY = if (vDir == DOWN) source.boundsInParent.maxY else source.boundsInParent.minY
-        arrow.endX = if (hDir == RIGHT) target.boundsInParent.minX else target.boundsInParent.maxX
-        arrow.endY = if (vDir == DOWN) target.boundsInParent.minY else target.boundsInParent.maxY
+        val deltaX = targetPos.x - sourcePos.x
+        val deltaY = targetPos.y - sourcePos.y
+        val slopeH = deltaX / deltaY.absoluteValue
+        val slopeV = deltaY / deltaX.absoluteValue
+        val hDir = if (slopeH < -0.1) LEFT else if (slopeH > 0.1) RIGHT else null
+        val vDir = if (slopeV < -0.1) DOWN else if (slopeV > 0.1) UP else null
+        arrow.startX = xPos(hDir?.invert(), source)
+        arrow.startY = yPos(vDir?.invert(), source)
+        arrow.endX = xPos(hDir, target)
+        arrow.endY = yPos(vDir, target)
+    }
+
+    private fun xPos(hDir: HorizontalDirection?, target: Label) = when (hDir) {
+        RIGHT -> target.boundsInParent.minX
+        LEFT -> target.boundsInParent.maxX
+        else -> target.boundsInParent.middleX
+    }
+
+    private fun yPos(vDir: VerticalDirection?, source: Label) = when (vDir) {
+        DOWN -> source.boundsInParent.maxY
+        UP -> source.boundsInParent.minY
+        else -> source.boundsInParent.middleY
     }
 
     private fun getLabel(node: ObjectReference) =

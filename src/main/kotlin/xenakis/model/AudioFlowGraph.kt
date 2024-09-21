@@ -119,7 +119,8 @@ class AudioFlowGraph(
                 val subBus = if (registry.has(subBusName)) registry.get(subBusName) else
                     BusObject(reactiveVariable(subBusName), node.bus.rate.copy(), reactiveVariable(1))
                         .also { newBus -> registry.add(newBus) }
-                BusNode(subBus.createReference(), node.position + Point(idx * 50.0, 30.0)).also { n -> addNode(n) }
+                val deltaX = (idx - (channels / 2 + 1)) * 100.0
+                BusNode(subBus.createReference(), node.position + Point(deltaX, 100.0)).also { n -> addNode(n) }
             }
             if (associatedFlows(subNode).any { f -> f.source == node.ref || f.target == node.ref }) {
                 return
