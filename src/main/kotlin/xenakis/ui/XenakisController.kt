@@ -109,10 +109,12 @@ class XenakisController(private val primaryStage: Stage) {
         client.statusListener.on(StatusUpdate.ReadyToBoot) {
             isSuperColliderReady = false
             Thread.sleep(500)
-            currentProject.serverOptions.reboot(context)
-            setProgress(0.2, "Booting scsynth")
-            Platform.runLater {
-                listeners { waitingForBoot() }
+            if (_currentProject != null) {
+                currentProject.serverOptions.reboot(context)
+                setProgress(0.2, "Booting scsynth")
+                Platform.runLater {
+                    listeners { waitingForBoot() }
+                }
             }
         }
         client.statusListener.on(StatusUpdate.ServerBooted) {

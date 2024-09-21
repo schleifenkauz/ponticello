@@ -14,6 +14,7 @@ import reaktive.value.reactiveVariable
 import xenakis.impl.Point
 import xenakis.impl.ScWriter
 import xenakis.impl.SuperColliderClient
+import xenakis.impl.copy
 import xenakis.sc.editor.*
 import java.util.*
 
@@ -24,6 +25,8 @@ class AudioFlowGraph(
 ) : ObjectRegistry.Listener<BusObject>, XenakisProject.ProjectComponent {
     @Transient
     private lateinit var registry: BusRegistry
+
+    val context get() = registry.context
 
     @Transient
     private lateinit var client: SuperColliderClient
@@ -67,45 +70,14 @@ class AudioFlowGraph(
         private set
 
     fun addFlow(source: BusNode, target: BusNode): AudioFlow? {
-        val context = registry.context
         val synth = AdhocSynthEditor(context)
-        context.withoutUndo {
-            val sourceBus = source.ref.get<BusObject>()
-            val targetBus = target.ref.get<BusObject>()
-            synth.name.setText("flow_${sourceBus.name.now}_${target.ref.get<BusObject>().name.now}")
-            synth.block.variables.addLast(IdentifierEditor(context, "snd"))
-            val getIn = ScExprExpander(
-                context, AssignmentEditor(
-                    context, IdentifierEditor(context, "snd"), ScExprExpander(
-                        context, MessageSendEditor(
-                            context,
-                            ScExprExpander(context, "In"),
-                            IdentifierEditor(context, sourceBus.rate.get().toString()),
-                            ScExprListEditor(
-                                context,
-                                ScExprExpander(context, BusSelector(context, selected = reactiveVariable(source.ref))),
-                                ScExprExpander(context, sourceBus.channels.now.toString())
-                            )
-                        )
-                    )
-                )
-            )
-            synth.block.statements.addLast(getIn)
-            val writeOut = ScExprExpander(
-                context, MessageSendEditor(
-                    context,
-                    ScExprExpander(context, "Out"),
-                    IdentifierEditor(context, targetBus.rate.get().toString()),
-                    ScExprListEditor(
-                        context,
-                        ScExprExpander(context, BusSelector(context, selected = reactiveVariable(target.ref))),
-                        ScExprExpander(context, "snd")
-                    )
-                )
-            )
-            synth.block.statements.addLast(writeOut)
-        }
         val flow = AudioFlow(source.ref, target.ref, EditorRoot.create(synth))
+        context.withoutUndo {
+            synth.name.setText(flow.synthName.removePrefix("~"))
+            synth.block.variables.addLast(IdentifierEditor(context, "snd"))
+            synth.block.statements.addLast(assign("snd", `in`(context, source.bus)))
+            synth.block.statements.addLast(out(context, target.bus, ScExprExpander(context, "snd")))
+        }
         return if (addFlow(flow)) flow
         else null
     }
@@ -135,6 +107,55 @@ class AudioFlowGraph(
         }
         undoManager.record(Edit.RemoveFlow(this, flow))
         views.notifyListeners { removedFlow(flow) }
+    }
+
+    fun split(node: BusNode, output: Boolean) {
+        val name = node.bus.name.now
+        val channels = node.bus.channels.now
+        if (channels <= 1) return
+        for (idx in 1..channels) {
+            val subBusName = "$name$idx"
+            val subNode = nodes.find { it.ref.getName() == subBusName } ?: run {
+                val subBus = if (registry.has(subBusName)) registry.get(subBusName) else
+                    BusObject(reactiveVariable(subBusName), node.bus.rate.copy(), reactiveVariable(1))
+                        .also { newBus -> registry.add(newBus) }
+                BusNode(subBus.createReference(), node.position + Point(idx * 50.0, 30.0)).also { n -> addNode(n) }
+            }
+            if (associatedFlows(subNode).any { f -> f.source == node.ref || f.target == node.ref }) {
+                return
+            }
+            val flow = if (!output) {
+                val synth = AdhocSynthEditor(registry.context)
+                context.withoutUndo {
+                    synth.name.setText("flow_${name}_${subBusName}")
+                    synth.block.variables.addLast(IdentifierEditor(context, "snd"))
+                    synth.block.statements.addLast(
+                        assign("snd", `in`(context, selectSubBus(context, node.ref, idx), node.bus.rate.now, 1))
+                    )
+                    synth.block.statements.addLast(
+                        out(context, subNode.bus, ScExprExpander(context, "snd"))
+                    )
+                }
+                AudioFlow(node.ref, subNode.ref, EditorRoot.create(synth))
+            } else {
+                val synth = AdhocSynthEditor(registry.context)
+                context.withoutUndo {
+                    synth.name.setText("flow_${subBusName}_${name}")
+                    synth.block.variables.addLast(IdentifierEditor(context, "snd"))
+                    synth.block.statements.addLast(assign("snd", `in`(context, subNode.bus)))
+                    synth.block.statements.addLast(
+                        out(
+                            context,
+                            selectSubBus(context, node.ref, idx),
+                            ScExprExpander(context, "snd"),
+                            node.bus.rate.now
+                        )
+                    )
+                }
+                AudioFlow(subNode.ref, node.ref, EditorRoot.create(synth))
+            }
+            addFlow(flow)
+        }
     }
 
     fun updateFlow() {
@@ -255,7 +276,9 @@ class AudioFlowGraph(
     }
 
     @Serializable
-    data class BusNode(val ref: ObjectReference, var position: Point)
+    data class BusNode(val ref: ObjectReference, var position: Point) {
+        val bus get() = ref.get<BusObject>()
+    }
 
     @Serializable
     class AudioFlow(

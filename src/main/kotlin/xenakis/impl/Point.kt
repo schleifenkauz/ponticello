@@ -13,5 +13,7 @@ data class Point(val x: Double, val y: Double) : Comparable<Point> {
 
     override fun compareTo(other: Point): Int = compareValuesBy(this, other, Point::x, Point::y)
 
+    operator fun plus(point: Point) = Point(x + point.x, y + point.y)
+
     val point2d get() = Point2D(x, y)
 }

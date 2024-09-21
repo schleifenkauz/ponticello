@@ -51,7 +51,7 @@ class AudioFlowGraphPane(
                     repositionArrow(arrow, flow)
             }
         }
-        resetOnEscape()
+        registerShortcuts()
         newFlowArrowFollowMouse()
         allowDroppingBusObjects()
         graph.views.addListener(this)
@@ -96,18 +96,15 @@ class AudioFlowGraphPane(
             }
             ev.consume()
         }
-        registerShortcuts {
-            on("Ctrl+S") { sync() }
-        }
     }
 
-    private fun resetOnEscape() {
-        registerShortcuts {
-            on("ESCAPE") {
-                sourceBus = null
-                if (flowArrow != null) children.remove(flowArrow)
-                flowArrow = null
-            }
+    private fun registerShortcuts() = registerShortcuts {
+        on("Ctrl+S") { sync() }
+        on("ESCAPE") {
+            requestFocus()
+            sourceBus = null
+            if (flowArrow != null) children.remove(flowArrow)
+            flowArrow = null
         }
     }
 
@@ -123,8 +120,19 @@ class AudioFlowGraphPane(
     }
 
     override fun addedNode(node: AudioFlowGraph.BusNode) {
-        val label = label(node.ref.get<BusObject>().name).styleClass("bus-node")
+        val label = label(node.bus.name).styleClass("bus-node")
         label.isFocusTraversable = true
+        label.registerShortcuts {
+            on("S") { ev ->
+                val output = ev.isShiftDown
+                graph.split(node, output)
+            }
+            on("F2") {
+                showNamePrompt(context[BusRegistry], node.bus.name.now) { name ->
+                    node.bus.rename(name)
+                }
+            }
+        }
         label.relocate(node.position.x, node.position.y)
         setupEvents(node, label)
         children.add(label)

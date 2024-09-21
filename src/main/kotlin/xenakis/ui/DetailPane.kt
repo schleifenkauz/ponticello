@@ -26,6 +26,6 @@ open class DetailPane : VBox() {
     }
 
     companion object {
-        const val LABEL_WIDTH = 100.0
+        const val LABEL_WIDTH = 130.0
     }
 }

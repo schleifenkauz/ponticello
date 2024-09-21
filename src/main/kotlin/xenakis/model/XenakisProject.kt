@@ -6,8 +6,7 @@ import hextant.context.Context
 import hextant.context.withoutUndo
 import hextant.serial.readJson
 import hextant.serial.writeJson
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.Transient
+import kotlinx.serialization.*
 import kotlinx.serialization.json.Json
 import reaktive.value.now
 import reaktive.value.reactiveValue
@@ -52,7 +51,7 @@ class XenakisProject private constructor(
         get() = listOf(
             settings,
             groups, busses, buffers, samples, instruments,
-            flowGraph, globalControls, objects, setupCode,
+            flowGraph, globalControls, objects, setupCode, serverOptions,
             score
         )
 
@@ -71,8 +70,11 @@ class XenakisProject private constructor(
         for (component in components) save(component)
     }
 
+    @Suppress("UNCHECKED_CAST")
+    @OptIn(InternalSerializationApi::class)
     inline fun <reified T : ProjectComponent> save(component: T) {
-        dataDir.resolve("${component.componentName}.json").writeJson(component, json)
+        val serializer = component::class.serializer() as KSerializer<T>
+        dataDir.resolve("${component.componentName}.json").writeJson(serializer, component, json)
     }
 
     fun updateSetupCode(setupCode: CodeBlock, liveCycleType: LiveCycleType) {
@@ -118,7 +120,7 @@ class XenakisProject private constructor(
                 val groups = data.resolve("groups.json").readJson<GroupRegistry>()
                 groups.initialize(context)
                 listener.setProgress(0.45, "Loading busses")
-                val busses = data.resolve("busses.json").readJson<BusRegistry>()
+                val busses = data.resolve("Buses.json").readJson<BusRegistry>()
                 busses.initialize(context)
                 listener.setProgress(0.5, "Loading buffers")
                 val buffers = data.resolve("buffers.json").readJson<BufferRegistry>()

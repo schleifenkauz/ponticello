@@ -9,7 +9,10 @@ import xenakis.impl.SuperColliderClient
 data class ServerOptions(
     var numInputChannels: Int = 2, var numOutputChannels: Int = 2,
     var memSize: Int = 8192, var sampleRate: Int = 44100
-) {
+) : XenakisProject.ProjectComponent {
+    override val componentName: String
+        get() = "server_options"
+
     fun reboot(context: Context) {
         val buses = context[BusRegistry]
         buses.get("input").channels.now = numInputChannels
