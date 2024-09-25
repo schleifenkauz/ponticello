@@ -12,15 +12,15 @@ import xenakis.ui.ToolSelector.Tool
 import kotlin.math.absoluteValue
 
 fun Node.setupDragging(
-    onPressed: () -> Unit = {},
-    onReleased: () -> Unit = {},
+    onPressed: (ev: MouseEvent) -> Unit = {},
+    onReleased: (ev: MouseEvent) -> Unit = {},
     relocateBy: (ev: MouseEvent, start: Point, old: Bounds, dx: Double, dy: Double) -> Unit
 ) {
     var dragStart: Point? = null
     var localStart: Point? = null
     var oldBounds: Bounds? = null
     addEventHandler(MouseEvent.MOUSE_PRESSED) { ev ->
-        onPressed()
+        onPressed(ev)
         ev.consume()
     }
     addEventHandler(MouseEvent.MOUSE_DRAGGED) { ev ->
@@ -37,7 +37,7 @@ fun Node.setupDragging(
         ev.consume()
     }
     addEventHandler(MouseEvent.MOUSE_RELEASED) { ev ->
-        onReleased()
+        onReleased(ev)
         dragStart = null
         oldBounds = null
         localStart = null
@@ -139,6 +139,3 @@ private fun Region.updateCursor(
 }
 
 private fun isResizeCursor(cursor: Cursor?) = cursor.toString().endsWith("RESIZE")
-
-fun isInParentBounds(parent: Region, x: Double, y: Double, width: Double, height: Double) =
-    x >= 0.0 && y >= 0.0 && x + width <= parent.width && y + height <= parent.height

@@ -40,6 +40,10 @@ class EnvelopeControl(
 
     override fun cut(cutPos: Double, whichHalve: HorizontalDirection): ParameterControl =
         EnvelopeControl(envelope.cut(cutPos, whichHalve), displayColor, display)
+
+    override fun initialize(context: Context) {
+        envelope.initialize(context)
+    }
 }
 
 @Serializable

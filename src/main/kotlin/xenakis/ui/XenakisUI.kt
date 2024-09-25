@@ -390,6 +390,7 @@ class XenakisUI(
 
     private fun Scene.registerArrowKeys() {
         addEventFilter(KeyEvent.ANY) { ev ->
+            if (ev.target !is ScoreObjectView) return@addEventFilter
             if (!ev.isAltDown && ev.isTargetTextInput) return@addEventFilter
             if (ev.code !in setOf(KeyCode.LEFT, KeyCode.RIGHT, KeyCode.UP, KeyCode.DOWN)) return@addEventFilter
             val stretch = ev.isShiftDown

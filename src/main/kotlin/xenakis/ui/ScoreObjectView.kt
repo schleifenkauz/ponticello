@@ -35,7 +35,7 @@ abstract class ScoreObjectView(
         private set
     lateinit var pane: ScorePane
         private set
-    protected val context: Context get() = pane.context
+    val context: Context get() = pane.context
 
     private lateinit var nameEditor: NameControl
     private lateinit var muteUnmuteBtn: Button
@@ -381,16 +381,25 @@ abstract class ScoreObjectView(
         resizeObject(newWidth, newHeight, ev, cursor)
     }
 
-    fun adjustHorizontal(direction: HorizontalDirection, resize: Boolean, stretch: Boolean) {
+    fun getNearestGrid(): TempoGridObjectView? {
         val x = pane.getX(instance.start)
         val y = pane.getScoreY(instance.y)
-        val grid = pane.getNearestGrid(x, y)
+        return pane.getNearestGrid(x, y)
+    }
+
+    fun getDeltaX(direction: HorizontalDirection): Double {
+        val grid = getNearestGrid()
         val settings = context[currentProject].settings
         val snapOption = if (settings.snapEnabled.now) settings.snapOption.now else null
         val factor = if (direction == HorizontalDirection.LEFT) -1.0 else 1.0
         val deltaT =
             if (snapOption != null && grid != null) grid.obj.getDuration(snapOption) * factor
             else factor / pane.pixelsPerSecond
+        return deltaT
+    }
+
+    fun adjustHorizontal(direction: HorizontalDirection, resize: Boolean, stretch: Boolean) {
+        val deltaT = getDeltaX(direction)
         if (resize) {
             instance.obj.resize(
                 instance.obj.duration + deltaT, instance.obj.height, stretch,

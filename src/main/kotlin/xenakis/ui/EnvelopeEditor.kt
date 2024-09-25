@@ -1,8 +1,10 @@
 package xenakis.ui
 
-import hextant.undo.UndoManager
-import javafx.geometry.Point2D
+import hextant.fx.registerShortcuts
+import javafx.beans.binding.Bindings
+import javafx.geometry.HorizontalDirection
 import javafx.scene.control.Label
+import javafx.scene.input.KeyEvent
 import javafx.scene.input.MouseButton
 import javafx.scene.input.MouseEvent
 import javafx.scene.layout.Pane
@@ -11,13 +13,14 @@ import javafx.scene.shape.Circle
 import javafx.scene.shape.Polyline
 import reaktive.value.binding.map
 import reaktive.value.fx.asObservableValue
+import reaktive.value.now
 import xenakis.impl.Point
 import xenakis.model.Envelope
 import xenakis.model.EnvelopeControl
-import xenakis.model.EnvelopeEdit
 import xenakis.sc.LinearTransformation
 import xenakis.sc.NumericalControlSpec
 import xenakis.sc.mapOnto
+import kotlin.math.absoluteValue
 
 class EnvelopeEditor(
     val parameterName: String, private val envelope: Envelope,
@@ -61,20 +64,32 @@ class EnvelopeEditor(
     }
 
     private fun setupLineDragging() {
+        var draggingSegment = false
         line.setupDragging(
-            onPressed = { parentPane.context[UndoManager].beginCompoundEdit("Move envelope segment") },
-            onReleased = { parentPane.context[UndoManager].finishCompoundEdit("Move envelope segment") }
+            onPressed = { ev ->
+                val t = transformXToTime(ev.x)
+                var segmentIdx = envelope.points.map(Point::x).binarySearch(t)
+                if (segmentIdx < 0) segmentIdx = -(segmentIdx + 1)
+                if (segmentIdx == 0 || segmentIdx == envelope.points.size) return@setupDragging
+                val diff = envelope.points[segmentIdx - 1].y - envelope.points[segmentIdx].y
+                if (diff.absoluteValue >= spec.step.get()) return@setupDragging
+                draggingSegment = true
+                envelope.beginSegmentEdit(segmentIdx - 1)
+            },
+            onReleased = {
+                if (draggingSegment) {
+                    envelope.finishEdit()
+                    draggingSegment = false
+                }
+            }
         ) { ev, start, _, _, dy ->
-            val t = transformXToTime(ev.x)
-            var segmentIdx = envelope.points.map(Point::x).binarySearch(t)
-            if (segmentIdx < 0) segmentIdx = -(segmentIdx + 1)
-            if (segmentIdx == 0 || segmentIdx == envelope.points.size) return@setupDragging
-            if (envelope.points[segmentIdx - 1].y != envelope.points[segmentIdx].y) return@setupDragging
-            val y = start.y + dy
-            val value = transformYToValue(y)
-            envelope.editPoint(segmentIdx - 1, value)
-            envelope.editPoint(segmentIdx, value)
-            displayPosition(t, value)
+            if (draggingSegment) {
+                val t = transformXToTime(ev.x)
+                val y = start.y + dy
+                val value = transformYToValue(y)
+                envelope.editSegment(value)
+                displayPosition(t, value)
+            }
         }
     }
 
@@ -86,7 +101,6 @@ class EnvelopeEditor(
                 val newPoint = Point(t, v)
                 var idx = envelope.points.binarySearch(newPoint, compareBy(Point::x))
                 idx = -(idx + 1)
-                parentPane.context[UndoManager].record(EnvelopeEdit.AddPoint(newPoint, idx, envelope))
                 envelope.addPoint(idx, newPoint)
                 ev.consume()
             } else {
@@ -141,7 +155,8 @@ class EnvelopeEditor(
         val absoluteTime = parentPane.rootPane.getTime(coords.x)
         val timeAccuracy = parentPane.xAccuracy
         val timeStr = timeCode(absoluteTime, timeAccuracy)
-        */val valueAccuracy = accuracy(spec.step.get())
+        */
+        val valueAccuracy = accuracy(spec.step.get())
         mouseInfo.text = "$parameterName: ${v.format(valueAccuracy)}"
         var y = yTransform.map(v)
         val infoHeight = mouseInfo.prefHeight(-1.0)
@@ -174,9 +189,16 @@ class EnvelopeEditor(
 
     private fun addHandle(idx: Int, x: Double, y: Double) {
         val handle = Circle(x, y, HANDLE_RADIUS)
+        handle.isFocusTraversable = true
         handle.fillProperty().bind(color.asObservableValue())
-        handle.strokeProperty().bind(color.map { c -> c.darker() }.asObservableValue())
-        handle.strokeWidthProperty().bind(handle.hoverProperty().map { hover -> if (hover) 2.0 else 0.0 })
+        handle.strokeProperty().bind(Bindings.createObjectBinding({
+            val focused = handle.isFocused
+            if (focused) color.now.invert() else color.now.darker()
+        }, handle.focusedProperty(), color.asObservableValue()))
+        handle.strokeWidthProperty().bind(
+            handle.hoverProperty().or(handle.focusedProperty())
+                .map { hover -> if (hover) 2.0 else 0.0 }
+        )
         setupHandle(handle)
         pane.children.add(handle)
         handles.add(idx, handle)
@@ -184,10 +206,22 @@ class EnvelopeEditor(
 
     private fun setupHandle(handle: Circle) {
         var dragging = false
+        handle.registerShortcuts {
+            val idx = handles.indexOf(handle)
+            on("ENTER") { showPromptFor(idx) }
+            on("DELETE") { removeHandle(idx) }
+        }
+        handle.registerShortcuts(KeyEvent.KEY_PRESSED) {
+            val idx = handles.indexOf(handle)
+            on("LEFT") { adjustPointHorizontal(idx, HorizontalDirection.LEFT) }
+            on("RIGHT") { adjustPointHorizontal(idx, HorizontalDirection.RIGHT) }
+            on("UP") { adjustPointVertical(idx, +1) }
+            on("DOWN") { adjustPointVertical(idx, -1) }
+        }
         handle.setupDragging(
-            onPressed = { parentPane.context[UndoManager].beginCompoundEdit("Move envelope point") },
-            onReleased = { parentPane.context[UndoManager].finishCompoundEdit("Move envelope point") }
-        ) { ev, _, old, dx, dy ->
+            onPressed = { envelope.beginPointEdit(handles.indexOf(handle)) },
+            onReleased = { envelope.finishEdit() }
+        ) { _, _, old, dx, dy ->
             val idx = handles.indexOf(handle)
             val newX = when (idx) {
                 0 -> 0.0
@@ -196,16 +230,14 @@ class EnvelopeEditor(
             }
             val newY = (old.minY + dy).coerceIn(yTransform.targetRange.reverseIfEmpty())
 
-            val t = transformXToTime(newX)
+            var t = transformXToTime(newX)
             val v = transformYToValue(newY)
 
-            if (idx > 0 && t < envelope.points[idx - 1].x) return@setupDragging
-            if (idx + 1 < envelope.points.size && t > envelope.points[idx + 1].x) return@setupDragging
+            if (idx != 0 && idx != envelope.points.size - 1) {
+                t = t.coerceIn(envelope.points[idx - 1].x..envelope.points[idx + 1].x)
+            }
             displayPosition(t, v)
-            val oldPoint = envelope.points[idx]
-            val newPoint = Point(t, v)
-            parentPane.context[UndoManager].record(EnvelopeEdit.EditPoint(idx, oldPoint, newPoint, envelope))
-            envelope.editPoint(idx, Point(t, v))
+            envelope.editPoint(Point(t, v))
         }
         handle.addEventHandler(MouseEvent.MOUSE_PRESSED) {
             dragging = true
@@ -218,17 +250,12 @@ class EnvelopeEditor(
         }
         handle.setOnMouseClicked { ev ->
             val idx = handles.indexOf(handle)
-            val point = envelope.points[idx]
             if (ev.button == MouseButton.SECONDARY) {
-                if (idx != 0 && idx != envelope.points.size - 1) {
-                    parentPane.context[UndoManager].record(EnvelopeEdit.RemovePoint(point, idx, envelope))
-                    envelope.removePoint(idx)
-                }
+                removeHandle(idx)
             } else if (ev.clickCount >= 2) {
-                showNumberPrompt("$parameterName at t=${point.x}", spec.range, point.y, parentPane.context) { value ->
-                    envelope.editPoint(idx, point.copy(y = value))
-                }
+                showPromptFor(idx)
             } else if (!ev.isShiftDown) {
+                handle.requestFocus()
                 bringToFront()
             }
             ev.consume()
@@ -243,6 +270,29 @@ class EnvelopeEditor(
         handle.setOnMouseExited { ev ->
             mouseInfo.isVisible = dragging
             ev.consume()
+        }
+    }
+
+    private fun adjustPointVertical(idx: Int, dir: Int) {
+        val delta = spec.step.get() * dir
+        envelope.adjustPointVertical(idx, delta)
+    }
+
+    private fun adjustPointHorizontal(idx: Int, dir: HorizontalDirection) {
+        val delta = objectView.getDeltaX(dir)
+        envelope.adjustPointHorizontal(idx, delta)
+    }
+
+    private fun showPromptFor(idx: Int) {
+        val point = envelope.points[idx]
+        showNumberPrompt(parameterName, spec.range, point.y, parentPane.context) { value ->
+            envelope.editPoint(idx, value)
+        }
+    }
+
+    private fun removeHandle(idx: Int) {
+        if (idx != 0 && idx != envelope.points.size - 1) {
+            envelope.removePoint(idx)
         }
     }
 
