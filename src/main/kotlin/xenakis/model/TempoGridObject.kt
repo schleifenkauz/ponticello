@@ -26,6 +26,8 @@ class TempoGridObject(
 
     override val type: String
         get() = "tempo"
+    override val canMute: Boolean
+        get() = false
 
     private fun fireUpdatedConfig() {
         notifyListeners<TempoGridObjectView> { updatedConfig() }

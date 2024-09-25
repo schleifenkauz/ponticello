@@ -23,7 +23,7 @@ import xenakis.ui.Direction
 @Serializable
 sealed class ScoreObject : AbstractRenamableObject() {
     abstract val type: String
-
+    open val canMute: Boolean get() = true
     val associatedColor: ReactiveVariable<@Serializable(with = ColorSerializer::class) Color?> = reactiveVariable(null)
 
     open val associatedControls: Map<String, ParameterControl> get() = emptyMap()

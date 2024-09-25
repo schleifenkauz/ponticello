@@ -15,6 +15,9 @@ class MemoObject(
     override val type: String
         get() = "memo"
 
+    override val canMute: Boolean
+        get() = false
+
     var width: Double
         get() = _width
         set(value) {

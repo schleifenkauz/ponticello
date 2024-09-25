@@ -27,9 +27,9 @@ import kotlin.math.roundToInt
 @Serializable
 class PianoRollObject(
     @SerialName("name") override val mutableName: ReactiveVariable<String>,
-    @SerialName("instrument") private val _instrument: ReactiveVariable<ObjectReference>,
-    @SerialName("lowestPitch") private var _lowestPitch: Int,
-    @SerialName("highestPitch") private var _highestPitch: Int,
+    @SerialName("instrument") private val mInstrument: ReactiveVariable<ObjectReference>,
+    @SerialName("lowestPitch") private var mLowestPitch: Int,
+    @SerialName("highestPitch") private var mHighestPitch: Int,
     val eventDictionary: EditorRoot<EventDictionaryEditor>,
     private val notes: MutableList<Note>
 ) : ScoreObject() {
@@ -40,19 +40,19 @@ class PianoRollObject(
     lateinit var instrumentSelector: InstrumentSelector
         private set
 
-    private val instrument get() = _instrument.now.get<InstrumentObject>()
+    private val instrument get() = mInstrument.now.get<InstrumentObject>()
 
     var lowestPitch
-        get() = _lowestPitch
+        get() = mLowestPitch
         set(value) {
-            _lowestPitch = value
+            mLowestPitch = value
             notifyListeners<PianoRollObjectView> { updatedPitchRange() }
         }
 
     var highestPitch
-        get() = _highestPitch
+        get() = mHighestPitch
         set(value) {
-            _highestPitch = value
+            mHighestPitch = value
             notifyListeners<PianoRollObjectView> { updatedPitchRange() }
         }
 
@@ -68,7 +68,7 @@ class PianoRollObject(
     override fun initialize(context: Context) {
         if (initialized) return
         super.initialize(context)
-        instrumentSelector = InstrumentSelector(context, _instrument)
+        instrumentSelector = InstrumentSelector(context, mInstrument)
         for (note in notes) {
             note.parent = this
         }
@@ -188,7 +188,7 @@ class PianoRollObject(
     }
 
     override fun doClone(newName: String): ScoreObject = PianoRollObject(
-        reactiveVariable(newName), _instrument.copy(), lowestPitch, highestPitch,
+        reactiveVariable(newName), mInstrument.copy(), lowestPitch, highestPitch,
         context.withoutUndo { eventDictionary.clone() },
         notes.mapTo(mutableListOf()) { n -> n.copy() }
     )
@@ -199,7 +199,7 @@ class PianoRollObject(
             RIGHT -> notes.filter { n -> n.onset >= position }
         }.mapTo(mutableListOf()) { n -> n.copy() }
         return PianoRollObject(
-            reactiveVariable(newName), _instrument,
+            reactiveVariable(newName), mInstrument,
             lowestPitch, highestPitch,
             eventDictionary.clone(), notes
         )

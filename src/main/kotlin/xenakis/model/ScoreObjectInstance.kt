@@ -117,10 +117,12 @@ class ScoreObjectInstance(
     }
 
     fun toggleMuted() {
-        _muted = !_muted
-        context[UndoManager].record(ToggleMute(this))
-        viewManager.notifyListeners { toggledMute(_muted) }
-        score.toggledMute(this, muted)
+        if (obj.canMute) {
+            _muted = !_muted
+            context[UndoManager].record(ToggleMute(this))
+            viewManager.notifyListeners { toggledMute(_muted) }
+            score.toggledMute(this, muted)
+        }
     }
 
     fun duplicate(time: Double, y: Double) = ScoreObjectInstance(objectRef, time, y, _muted)

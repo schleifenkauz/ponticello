@@ -17,7 +17,7 @@ import xenakis.ui.EnvelopeObjectView
 @Serializable
 data class EnvelopeObject(
     @SerialName("name") override val mutableName: ReactiveVariable<String>,
-    @SerialName("spec") private var _spec: NumericalControlSpec,
+    @SerialName("spec") private var initialSpec: NumericalControlSpec,
     @SerialName("bus") private val busRef: ReactiveVariable<ObjectReference>,
     @SerialName("envelope") val envelope: Envelope
 ) : ScoreObject() {
@@ -37,10 +37,10 @@ data class EnvelopeObject(
         )
 
     var spec: NumericalControlSpec
-        get() = _spec
+        get() = initialSpec
         set(value) {
-            if (value == _spec) return
-            _spec = value
+            if (value == initialSpec) return
+            initialSpec = value
             notifyListeners<EnvelopeObjectView> { updatedSpec() }
         }
 

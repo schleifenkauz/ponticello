@@ -48,7 +48,7 @@ abstract class ScoreObjectView(
 
     protected open val defaultBackgroundColor: ReactiveValue<Color>
         get() = reactiveVariable(BLACK)
-    protected val backgroundColor by lazy { instance.obj.associatedColor.orElse(defaultBackgroundColor) }
+    val backgroundColor by lazy { instance.obj.associatedColor.orElse(defaultBackgroundColor) }
     protected open val borderColorWhenSelected: Color get() = Color.web("#2a66ff") //backgroundColor.now.invert().brighter()
     protected open val borderColorWhenNotSelected: Color get() = Color.TRANSPARENT
     protected open val borderColorWhenSameObjectSelected: Color get() = Color.GRAY
@@ -183,8 +183,10 @@ abstract class ScoreObjectView(
     }
 
     override fun toggledMute(muted: Boolean) {
-        muteUnmuteBtn.graphic = if (instance.muted) Icon.Mute.getView() else Icon.Unmute.getView()
-        opacity = if (muted) 0.5 else 1.0
+        if (Icon.Mute in supportedActions) {
+            muteUnmuteBtn.graphic = if (instance.muted) Icon.Mute.getView() else Icon.Unmute.getView()
+            opacity = if (muted) 0.5 else 1.0
+        }
     }
 
     override fun removedControl(parameter: String, control: ParameterControl) {

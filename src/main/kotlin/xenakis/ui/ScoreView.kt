@@ -29,9 +29,9 @@ class ScoreView(score: Score, context: Context) : ScorePane(score, context) {
         private set
     private val clipboardObjectView: ImageView = ImageView().also { v -> v.isVisible = false }
 
-    private var timeSnap: Double = 0.1
+    private var timeGrid: Double = 0.1
     override val xAccuracy: Int
-        get() = accuracy(timeSnap)
+        get() = accuracy(timeGrid)
     public override var displayStart: Double = 0.0
     override var displayEnd: Double = 0.0
     override val pixelsPerSecond: Double
@@ -145,10 +145,8 @@ class ScoreView(score: Score, context: Context) : ScorePane(score, context) {
         var idx = QUANTIZED_PIXELS_PER_SECOND.binarySearchBy(pixelsPerSecond) { s -> s }
         if (idx < 0) idx = (-(idx + 1)).coerceAtMost(QUANTIZED_PIXELS_PER_SECOND.size - 1)
         val quantizedPixelsPerSecond = QUANTIZED_PIXELS_PER_SECOND[idx]
-        val gridDist = (1 / quantizedPixelsPerSecond) * 50.0
-        timeSnap = getWidth(gridDist) / 10.0
-        val accuracy = accuracy(gridDist)
-        for (t in displayStart..displayEnd step gridDist) {
+        timeGrid = (1 / quantizedPixelsPerSecond) * 50.0
+        for (t in displayStart..displayEnd step timeGrid) {
             val x = getX(t)
             val l = Line() styleClass "grid-line"
             l.viewOrder = -100.0
@@ -158,7 +156,7 @@ class ScoreView(score: Score, context: Context) : ScorePane(score, context) {
             l.endYProperty().bind(heightProperty().subtract(5))
             l.visibleProperty().bind(gridVisible)
             children.add(l)
-            val timeCode = timeCode(t, accuracy)
+            val timeCode = timeCode(t, xAccuracy)
             val txt = Text(timeCode).styleClass("grid-time-code")
             txt.x = x - 8
             txt.yProperty().bind(heightProperty().subtract(40))

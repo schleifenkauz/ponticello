@@ -28,10 +28,11 @@
 - select time, then drag with shift
 - stretch objects or only reposition?
 
-### Improve layout
+### UI niceties
 
 - save main window size/position and arrangement of utility panes
 - integrate close, maximize, minimize into top toolbar and remove window decoration
+- sleeker dialogs
 
 ### Support for patterns
 
@@ -66,5 +67,4 @@
 ## Bugs
 
 - effects that work with intermediate buses have to be executed after the flow synths
-- fix snapping in envelopes and sub-objects
 - weird window behaviour on startup
