@@ -66,5 +66,5 @@
 ## Bugs
 
 - effects that work with intermediate buses have to be executed after the flow synths
-- fix time display and snapping in envelope editors
+- fix snapping in envelopes and sub-objects
 - weird window behaviour on startup

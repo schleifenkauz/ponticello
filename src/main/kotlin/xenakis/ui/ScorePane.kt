@@ -51,7 +51,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
 
     protected abstract val displayStart: Double
     protected abstract val displayEnd: Double
-    abstract val rootPaneHeight: Double
+    abstract val rootPane: ScoreView
 
     abstract val xAccuracy: Int
     abstract fun snapToGrid(x: Double, y: Double): Point
@@ -68,8 +68,8 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
     fun getDuration(width: Double) = width / pixelsPerSecond
     fun getWidth(duration: Double) = duration * pixelsPerSecond
 
-    fun getScoreY(paneY: Double) = paneY / rootPaneHeight
-    fun getPaneY(scoreY: Double) = scoreY * rootPaneHeight
+    fun getScoreY(paneY: Double) = paneY / rootPane.height
+    fun getPaneY(scoreY: Double) = scoreY * rootPane.height
 
     init {
         styleClass("score-pane")

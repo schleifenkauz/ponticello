@@ -1,6 +1,7 @@
 package xenakis.ui
 
 import hextant.undo.UndoManager
+import javafx.geometry.Point2D
 import javafx.scene.control.Label
 import javafx.scene.input.MouseButton
 import javafx.scene.input.MouseEvent
@@ -13,15 +14,14 @@ import xenakis.impl.Point
 import xenakis.model.Envelope
 import xenakis.model.EnvelopeControl
 import xenakis.model.EnvelopeEdit
-import xenakis.model.ScoreObject
 import xenakis.sc.LinearTransformation
 import xenakis.sc.NumericalControlSpec
 import xenakis.sc.mapOnto
+import kotlin.math.abs
 
 class EnvelopeEditor(
     val parameterName: String, private val envelope: Envelope,
-    private val objectView: ScoreObjectView, private val pane: Pane, private val parentPane: ScorePane,
-    private val associatedObject: ScoreObject,
+    private val objectView: ScoreObjectView, private val pane: Pane,
 ) : EnvelopeView {
     private val control
         get() = associatedObject.associatedControls.getValue(parameterName) as EnvelopeControl
@@ -36,6 +36,9 @@ class EnvelopeEditor(
     private val line = Polyline() styleClass "envelope-line"
 
     private val color get() = control.displayColor
+
+    private val parentPane get() = objectView.pane
+    private val associatedObject get() = objectView.instance.obj
 
     init {
         mouseInfo.isVisible = false
@@ -130,10 +133,14 @@ class EnvelopeEditor(
     private fun transformYToValue(y: Double) = yTransform.unmap(y).snap(valueGrid).coerceIn(yTransform.sourceRange)
 
     private fun displayPosition(t: Double, v: Double) {
-        val scoreTime = objectView.instance.start + t * associatedObject.duration
+        var coords = Point2D(parentPane.getWidth(t), 0.0)
+        coords = objectView.localToScene(coords)
+        coords = parentPane.rootPane.sceneToLocal(coords)
+        val absoluteTime = parentPane.rootPane.getTime(coords.x)
         val timeAccuracy = parentPane.xAccuracy
+        val timeStr = timeCode(absoluteTime, timeAccuracy)
         val valueAccuracy = accuracy(spec.step.get())
-        mouseInfo.text = "t: ${scoreTime.format(timeAccuracy)}, $parameterName: ${v.format(valueAccuracy)}"
+        mouseInfo.text = "t: $timeStr, $parameterName: ${v.format(valueAccuracy)}"
     }
 
     fun repaint() {
