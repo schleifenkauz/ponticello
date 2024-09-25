@@ -121,7 +121,7 @@ class EnvelopeEditor(
 
     private fun transformXToTime(x: Double): Double {
         val scoreX = x + objectView.layoutX
-        val scoreY = objectView.instance.y + objectView.layoutX
+        val scoreY = objectView.paneY
         val xInScore = parentPane.snapToGrid(scoreX, scoreY).x
         val xInObject = xInScore - objectView.layoutX
         return xTransform.unmap(xInObject).coerceIn(xTransform.sourceRange)

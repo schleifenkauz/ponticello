@@ -146,7 +146,7 @@ class XenakisProject private constructor(
                 val serverOptions =
                     if (serverOptionsFile.isFile) serverOptionsFile.readJson<ServerOptions>()
                     else ServerOptions()
-                val objects = data.resolve("objects.json").readJson<ScoreObjectRegistry>()
+                val objects = data.resolve("score_objects.json").readJson<ScoreObjectRegistry>()
                 objects.initialize(context)
                 listener.setProgress(0.9, "Loading score")
                 val score = data.resolve("score.json").readJson<Score>()

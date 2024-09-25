@@ -77,11 +77,6 @@ sealed class ScoreObject : AbstractRenamableObject() {
         heightBeforeResize = height
         stretchResize = stretch
         resizeDirection = direction
-        if (direction.left || direction.up) {
-            for (inst in context[rootScore].instancesOf(this)) {
-                inst.beginMove()
-            }
-        }
     }
 
     open fun resize(targetDuration: Double, targetHeight: Double) {
@@ -124,11 +119,6 @@ sealed class ScoreObject : AbstractRenamableObject() {
                     stretchResize, resizeDirection
                 )
             )
-            if (resizeDirection.left || resizeDirection.up) {
-                for (inst in context[rootScore].instancesOf(this)) {
-                    inst.finishMove(notifyScore = false)
-                }
-            }
         }
     }
 

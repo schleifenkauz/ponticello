@@ -36,7 +36,8 @@ class ScoreView(score: Score, context: Context) : ScorePane(score, context) {
     override var displayEnd: Double = 0.0
     override val pixelsPerSecond: Double
         get() = width / (displayEnd - displayStart)
-
+    override val rootPaneHeight: Double
+        get() = height
     val displayedDuration get() = displayEnd - displayStart
 
     init {
@@ -52,6 +53,8 @@ class ScoreView(score: Score, context: Context) : ScorePane(score, context) {
                 repaint()
             }
         }
+        heightProperty().addListener { _ -> repaint() }
+        widthProperty().addListener { _ -> repaint() }
     }
 
     enum class ClipboardMode {

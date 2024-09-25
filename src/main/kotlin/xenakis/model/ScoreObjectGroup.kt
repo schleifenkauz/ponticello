@@ -35,13 +35,7 @@ class ScoreObjectGroup(
         this.score.initialize(context, name)
     }
 
-    override fun writeCode(
-        name: String,
-        position: ObjectPosition,
-        env: ScorePlayEnv
-    ): String {
-        throw UnsupportedOperationException()
-    }
+    override fun writeCode(name: String, position: ObjectPosition, env: ScorePlayEnv): String = ""
 
     override fun doCut(position: Double, whichHalf: HorizontalDirection, newName: String): ScoreObject {
         val objects = mutableListOf<ScoreObjectInstance>()

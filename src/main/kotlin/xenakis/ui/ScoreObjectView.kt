@@ -55,6 +55,8 @@ abstract class ScoreObjectView(
 
     protected val colorPicker: ColorPicker = ColorPicker() styleClass "button"
 
+    val paneY get() = pane.getPaneY(instance.y)
+
     init {
         styleClass("score-object")
         isFocusTraversable = true
@@ -155,10 +157,8 @@ abstract class ScoreObjectView(
     }
 
     private fun initializeLayout() {
-        layoutX = pane.getX(instance.position.time)
-        layoutY = instance.position.y
-        prefWidth = getDisplayWidth()
-        prefHeight = instance.height
+        relocate(pane.getX(instance.start), pane.getPaneY(instance.y))
+        setPrefSize(getDisplayWidth(), pane.getPaneY(instance.height))
     }
 
     protected fun addAction(icon: Icon, action: String?, onAction: () -> Unit): Button {
@@ -318,7 +318,7 @@ abstract class ScoreObjectView(
         if (pane is SubScorePane) x = x.coerceAtMost(pane.width - relativeMaxX)
         y = y.coerceAtMost(pane.height - relativeMaxY)
         val deltaT = pane.getTime(x) - instance.start
-        val deltaY = y - instance.y
+        val deltaY = pane.getScoreY(y) - instance.y
         for (view in movedObjects) {
             val inst = view.instance
             inst.moveTo(inst.start + deltaT, inst.y + deltaY, simpleMove = false)
@@ -328,7 +328,8 @@ abstract class ScoreObjectView(
 
     protected open fun resizeObject(width: Double, height: Double, ev: MouseEvent, cursor: Cursor) {
         val newDur = pane.getDuration(width)
-        instance.obj.resize(newDur, height)
+        val newHeight = pane.getScoreY(height)
+        instance.obj.resize(newDur, newHeight)
     }
 
     open fun getDisplayWidth(): Double = pane.getWidth(instance.duration)
@@ -344,11 +345,11 @@ abstract class ScoreObjectView(
     }
 
     final override fun moved(start: Double, y: Double) {
-        relocate(pane.getX(instance.start), instance.y)
+        relocate(pane.getX(instance.start), pane.getPaneY(y))
     }
 
     override fun resizedObject(obj: ScoreObject) {
-        setPrefSize(getDisplayWidth(), instance.height)
+        setPrefSize(getDisplayWidth(), pane.getPaneY(instance.height))
         rescale()
     }
 
@@ -370,12 +371,9 @@ abstract class ScoreObjectView(
         newWidth = newWidth.coerceAtLeast(10.0)
         newHeight = newHeight.coerceAtLeast(10.0)
 
-        val oldWidth = getDisplayWidth()
-        val oldHeight = instance.height
-
-        if (direction.left) newWidth = newWidth.coerceAtMost(oldWidth + old.minX)
+        if (direction.left) newWidth = newWidth.coerceAtMost(old.maxX)
         if (pane is SubScorePane && direction.right) newWidth = newWidth.coerceAtMost(pane.width - old.minX)
-        if (direction.up) newHeight = newHeight.coerceAtMost(oldHeight + old.minY)
+        if (direction.up) newHeight = newHeight.coerceAtMost(old.maxY)
         if (direction.down) newHeight = newHeight.coerceAtMost(pane.height - old.minY)
 
         resizeObject(newWidth, newHeight, ev, cursor)
@@ -383,7 +381,8 @@ abstract class ScoreObjectView(
 
     fun adjustHorizontal(direction: HorizontalDirection, resize: Boolean, stretch: Boolean) {
         val x = pane.getX(instance.start)
-        val grid = pane.getNearestGrid(x, instance.y)
+        val y = pane.getScoreY(instance.y)
+        val grid = pane.getNearestGrid(x, y)
         val settings = context[currentProject].settings
         val snapOption = if (settings.snapEnabled.now) settings.snapOption.now else null
         val factor = if (direction == HorizontalDirection.LEFT) -1.0 else 1.0
@@ -396,13 +395,14 @@ abstract class ScoreObjectView(
                 direction = Direction.horizontal(RIGHT)
             )
         } else {
-            val (snappedX, _) = pane.snapToGrid(pane.getX(instance.start + deltaT), instance.y)
+            val (snappedX, _) = pane.snapToGrid(pane.getX(instance.start + deltaT), paneY)
             instance.setTime(pane.getTime(snappedX))
         }
     }
 
     fun adjustVertical(direction: VerticalDirection, resize: Boolean, stretch: Boolean) {
-        val deltaY = if (direction == VerticalDirection.UP) -5.0 else 5.0
+        var deltaY = 0.01
+        if (direction == VerticalDirection.UP) deltaY *= -1
         if (resize) {
             instance.obj.resize(
                 instance.obj.duration,

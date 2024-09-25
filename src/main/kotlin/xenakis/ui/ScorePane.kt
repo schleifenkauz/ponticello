@@ -51,6 +51,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
 
     protected abstract val displayStart: Double
     protected abstract val displayEnd: Double
+    abstract val rootPaneHeight: Double
 
     abstract val xAccuracy: Int
     abstract fun snapToGrid(x: Double, y: Double): Point
@@ -66,6 +67,9 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
     fun getTime(x: Double) = (x / pixelsPerSecond) + displayStart
     fun getDuration(width: Double) = width / pixelsPerSecond
     fun getWidth(duration: Double) = duration * pixelsPerSecond
+
+    fun getScoreY(paneY: Double) = paneY / rootPaneHeight
+    fun getPaneY(scoreY: Double) = scoreY * rootPaneHeight
 
     init {
         styleClass("score-pane")
@@ -85,11 +89,11 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
     }
 
     private fun layoutObjects() {
-        for ((obj, view) in views) {
-            if (obj.start > displayEnd) continue
-            if (obj.start + obj.duration < displayStart) continue
-            view.prefWidth = view.getDisplayWidth()
-            view.relocate(getX(obj.start), obj.y)
+        for ((inst, view) in views) {
+            if (inst.start > displayEnd) continue
+            if (inst.start + inst.duration < displayStart) continue
+            view.setPrefSize(view.getDisplayWidth(), getPaneY(inst.height))
+            view.relocate(getX(inst.start), getPaneY(inst.y))
             view.rescale()
             children.add(view)
         }
@@ -170,7 +174,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
         val obj = SynthObject(reactiveVariable(name), synthDefRef, controls)
         obj.setInitialSize(sample.duration, 150.0)
         val (x, y) = snapToGrid(ev.x, ev.y)
-        val inst = ScoreObjectInstance(obj.createReference(), getTime(x), y)
+        val inst = ScoreObjectInstance(obj.createReference(), getTime(x), getScoreY(y))
         score.addObject(inst)
     }
 
@@ -337,7 +341,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
                         obj = obj.clone(name)
                     }
                     val (x, y) = snapToGrid(ev.x, ev.y)
-                    val duplicate = ScoreObjectInstance(obj.createReference(), getTime(x), y)
+                    val duplicate = ScoreObjectInstance(obj.createReference(), getTime(x), getScoreY(y))
                     score.addObject(duplicate)
                 } else if (selectedArea in children && selectedArea.width != 0.0 && selectedArea.height != 0.0) {
                     if (!selectedArea.heightProperty().isBound) {
@@ -420,7 +424,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
                     val objects = viewsInside(rect.boundsInParent).mapTo(mutableSetOf()) { it.instance }
                     score.removeObjects(objects)
                     for (obj in objects) {
-                        obj.moveTo(obj.start - getTime(rect.x), obj.y - rect.y, simpleMove = true)
+                        obj.moveTo(obj.start - getTime(rect.x), obj.y - getScoreY(rect.y), simpleMove = true)
                     }
                     val subScore = Score(objects.toMutableList())
                     addNewObject(ScoreObjectGroup(reactiveVariable(name), subScore), rect)
@@ -478,8 +482,8 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
     }
 
     private fun addNewObject(obj: ScoreObject, rect: Rectangle) {
-        obj.setInitialSize(getDuration(rect.width), rect.height)
-        val inst = ScoreObjectInstance(obj.createReference(), getTime(rect.x), rect.y)
+        obj.setInitialSize(getDuration(rect.width), getScoreY(rect.height))
+        val inst = ScoreObjectInstance(obj.createReference(), getTime(rect.x), getScoreY(rect.y))
         score.addObject(inst)
         selector.select(getObjectView(inst), addToSelection = false)
     }

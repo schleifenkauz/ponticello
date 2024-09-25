@@ -10,7 +10,7 @@ import reaktive.value.now
 @Serializable
 class ScoreObjectRegistry(override val objects: MutableList<ScoreObject>) : ObjectRegistry<ScoreObject>() {
     override val objectType: String
-        get() = "score-object"
+        get() = "score_object"
 
     override fun getDefault(): ScoreObject = throw UnsupportedOperationException("No default ScoreObject available")
 

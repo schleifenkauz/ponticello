@@ -17,6 +17,9 @@ class SubScorePane(
     override val pixelsPerSecond: Double
         get() = parent.pixelsPerSecond
 
+    override val rootPaneHeight: Double
+        get() = parent.rootPaneHeight
+
     private fun translateToParent(x: Double, y: Double): Point2D {
         var coords = this.localToScreen(x, y)
         coords = parent.screenToLocal(coords)

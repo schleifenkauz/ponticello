@@ -23,13 +23,6 @@
 - more logging
 - also user options for logging level
 
-### Server/device management
-
-- ability to specify server boot options (rt-memory, device, in/out-busses, etc.)
-- adding input buses
-- automatically split/combine buses in audio flow graph (`S` on selected bus node)
-- changing number of output channels
-
 ### Stretching time regions
 
 - select time, then drag with shift
@@ -39,11 +32,6 @@
 
 - save main window size/position and arrangement of utility panes
 - integrate close, maximize, minimize into top toolbar and remove window decoration
-
-### Make y position of ScoreObjects relative to screen resolution
-
-- this would simplify working on the same project from different screens
-- y coordinate between 0 and 1, automatically scaled to size of score on the screen
 
 ### Support for patterns
 
