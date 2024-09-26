@@ -2,16 +2,16 @@ package xenakis.ui
 
 import bundles.createBundle
 import hextant.fx.initHextantScene
+import hextant.fx.registerShortcuts
 import hextant.serial.EditorRoot
+import javafx.beans.binding.Bindings
+import javafx.geometry.HorizontalDirection
 import javafx.geometry.VerticalDirection
 import javafx.scene.Cursor
-import javafx.scene.control.Label
-import javafx.scene.control.Spinner
+import javafx.scene.input.KeyEvent
 import javafx.scene.input.MouseButton
 import javafx.scene.input.MouseEvent
 import javafx.scene.layout.BorderPane
-import javafx.scene.layout.HBox
-import javafx.scene.layout.Pane
 import javafx.scene.layout.Region
 import javafx.scene.paint.Color
 import javafx.scene.shape.Line
@@ -19,7 +19,6 @@ import javafx.scene.shape.Rectangle
 import reaktive.value.ReactiveValue
 import reaktive.value.binding.binding
 import reaktive.value.binding.flatMap
-import reaktive.value.binding.map
 import reaktive.value.fx.asObservableValue
 import reaktive.value.now
 import reaktive.value.reactiveVariable
@@ -39,6 +38,7 @@ class PianoRollObjectView(inst: ScoreObjectInstance, private val obj: PianoRollO
     private val pixelsPerPitch get() = prefHeight / (obj.highestPitch - obj.lowestPitch + 1)
     private val cursor = Rectangle(10.0, pixelsPerPitch) styleClass "note-cursor"
     private val cursorOpacity = reactiveVariable(CURSOR_OPACITY)
+    private val selectedTool get() = context[XenakisUI].toolSelector.selected
 
     private fun getY(pitch: Int) = (obj.highestPitch - pitch) * pixelsPerPitch
 
@@ -46,7 +46,18 @@ class PianoRollObjectView(inst: ScoreObjectInstance, private val obj: PianoRollO
 
     fun addedNote(note: PianoRollObject.Note) {
         val rect = BorderPane() styleClass "note-object"
-        rect.backgroundProperty().bind(backgroundColor.map { c -> c.invert() }.asObservableValue().map(::background))
+        rect.backgroundProperty().bind(Bindings.createObjectBinding({
+            val background = backgroundColor.now
+            if (rect.isFocused && selectedTool.value == ToolSelector.Tool.PianoRoll)
+                background(background.interpolate(background.invert(), 0.8))
+            else background(background.invert())
+        }, backgroundColor.asObservableValue(), rect.focusedProperty(), selectedTool))
+        rect.borderProperty().bind(Bindings.createObjectBinding({
+            if (rect.isHover && selectedTool.value == ToolSelector.Tool.PianoRoll) {
+                val background = backgroundColor.now.invert()
+                solidBorder(background.darker(), 2.0)
+            } else solidBorder(Color.TRANSPARENT, 2.0)
+        }, backgroundColor.asObservableValue(), rect.hoverProperty(), selectedTool))
         noteRects[note] = rect
         setupNoteObjectEvents(rect, note)
         updateNoteDisplay(rect, note)
@@ -96,29 +107,51 @@ class PianoRollObjectView(inst: ScoreObjectInstance, private val obj: PianoRollO
             },
         )
         rect.addEventHandler(MouseEvent.ANY) { ev ->
-            if (context[XenakisUI].toolSelector.selected.value != ToolSelector.Tool.PianoRoll) return@addEventHandler
+            if (selectedTool.value != ToolSelector.Tool.PianoRoll) return@addEventHandler
             when (ev.eventType) {
                 MouseEvent.MOUSE_ENTERED -> children.remove(cursor)
                 MouseEvent.MOUSE_EXITED -> if (cursor !in children && !ev.isPrimaryButtonDown && !ev.isSecondaryButtonDown) {
-                    children.add(cursor)
+                    try {
+                        children.add(cursor)
+                    } catch (e: IllegalArgumentException) { //this occurs if the cursor was already added, how is this possible?
+                        println("Attempt to duplicate cursor...")
+                    }
                 }
 
-                MouseEvent.MOUSE_CLICKED -> {
-                    if (ev.button == MouseButton.SECONDARY) obj.removeNote(note)
-                    else if (ev.clickCount >= 2) {
-                        showEventDictionaryEditor(note.eventDictionary)
-                    }
+                MouseEvent.MOUSE_CLICKED -> when {
+                    ev.button == MouseButton.SECONDARY -> obj.removeNote(note)
+                    ev.clickCount >= 2 -> showEventDictionaryEditor(note.eventDictionary)
+                    else -> rect.requestFocus()
                 }
             }
             ev.consume()
+        }
+        rect.registerShortcuts(KeyEvent.KEY_PRESSED) {
+            on("LEFT") {
+                val delta = getDeltaX(HorizontalDirection.LEFT)
+                if (note.onset + delta >= 0.0) note.onset += delta
+            }
+            on("RIGHT") {
+                val delta = getDeltaX(HorizontalDirection.RIGHT)
+                if (note.onset + delta + note.duration <= obj.duration) note.onset += delta
+            }
+            on("DOWN") {
+                if (note.midinote - 1 >= obj.lowestPitch) note.midinote--
+            }
+            on("UP") {
+                if (note.midinote + 1 <= obj.highestPitch) note.midinote++
+            }
+            on("DELETE") {
+                obj.removeNote(note)
+            }
         }
     }
 
     private fun showEventDictionaryEditor(dictionary: EditorRoot<EventDictionaryEditor>) {
         val control = dictionary.control
-        val window = SubWindow(control, "Note properties", context, type = SubWindow.Type.Popup)
+        val window = SubWindow(control, "Note properties", context, type = SubWindow.Type.Modal)
         window.scene.initHextantScene(context, applyStyle = false)
-        window.resize(500.0, 500.0)
+        window.resize(300.0, 200.0)
         window.show()
     }
 
@@ -200,7 +233,7 @@ class PianoRollObjectView(inst: ScoreObjectInstance, private val obj: PianoRollO
             background.invert().deriveColor(0.0, 1.0, 1.0, opacity)
         }.asObservableValue())
         addEventHandler(MouseEvent.ANY) { ev ->
-            val selectedTool = context[XenakisUI].toolSelector.selected.value
+            val selectedTool = selectedTool.value
             if (selectedTool == ToolSelector.Tool.AddTime && ev.eventType == MouseEvent.MOUSE_CLICKED) {
                 val (x, _) = snapToGrid(ev.x, ev.y)
                 val position = pane.getDuration(x)

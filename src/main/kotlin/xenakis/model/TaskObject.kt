@@ -1,15 +1,15 @@
 package xenakis.model
 
-import hextant.core.editor.ListenerManager
 import hextant.serial.EditorRoot
 import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 import reaktive.value.ReactiveVariable
 import reaktive.value.now
 import reaktive.value.reactiveVariable
 import xenakis.impl.code
 import xenakis.sc.editor.ScFunctionEditor
-import xenakis.ui.TaskObjectView
 
+@Serializable
 class TaskObject(
     @SerialName("name") override val mutableName: ReactiveVariable<String>,
     val code: EditorRoot<ScFunctionEditor>,

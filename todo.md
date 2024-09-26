@@ -54,7 +54,6 @@
 ### Minor
 
 - allow for more cases of pasting code
-- make note objects in PianoRollObjects focusable and movable with arrow keys
 - kill sclang.exe and scsynth.exe before startup (?)
 
 ## Long term architectural ideas/question
