@@ -11,11 +11,12 @@ import xenakis.model.ObjectReference
 import xenakis.model.ObjectRegistry
 import xenakis.sc.editor.ObjectSelector
 import xenakis.ui.SearchableRegistryView
+import xenakis.ui.styleClass
 
 class ObjectSelectorControl<O : NamedObject, R : ObjectReference?>(
     val editor: ObjectSelector<O, R>, arguments: Bundle
 ) : EditorControl<Node>(editor, arguments), ObjectSelectorView<O> {
-    private val button = Button()
+    private val button = Button() styleClass "sleek-button"
 
     @Suppress("UNCHECKED_CAST")
     private val listView = object : SearchableRegistryView<O>(editor.getRegistry(context) as ObjectRegistry<O>) {

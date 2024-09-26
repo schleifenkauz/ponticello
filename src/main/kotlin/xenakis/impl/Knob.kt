@@ -30,6 +30,7 @@ class Knob(
     private val knob = Circle(radius, radius, radius - 10) styleClass "knob-mass"
     private val indicator = Line(radius, radius, 0.0, 0.0) styleClass "knob-indicator"
     private val valueLabel = Label() styleClass "knob-value"
+
     @Suppress("EmptyRange")
     private val transform = SpecTransformation(spec, MIN_ANGLE..MAX_ANGLE)
     private val root = Pane(knob, indicator, valueLabel)
@@ -78,9 +79,8 @@ class Knob(
 
     private fun showValueInput() {
         val range = spec.min.get()..spec.max.get()
-        showNumberPrompt("$parameter ($range)", range, control.get(), context) { v ->
-            control.value.set(v)
-        }
+        val v = DoubleInput("$parameter ($range)", control.get(), range).showDialog(context) ?: return
+        control.value.set(v)
     }
 
     private fun addShortcuts() = addEventHandler(KeyEvent.KEY_PRESSED) { ev ->

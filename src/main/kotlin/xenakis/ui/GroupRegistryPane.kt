@@ -7,7 +7,7 @@ import xenakis.model.GroupObject
 import xenakis.model.GroupRegistry
 
 class GroupRegistryPane(
-    private val registry: GroupRegistry
+    override val registry: GroupRegistry
 ) : SuperColliderObjectRegistryPane<GroupObject>(registry), GroupRegistry.Listener {
     init {
         registry.addListener(this)

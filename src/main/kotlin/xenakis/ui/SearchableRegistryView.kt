@@ -1,6 +1,7 @@
 package xenakis.ui
 
 import hextant.fx.registerShortcuts
+import hextant.fx.runFXWithTimeout
 import javafx.scene.Node
 import javafx.scene.control.Label
 import javafx.scene.layout.HBox
@@ -19,16 +20,21 @@ abstract class SearchableRegistryView<O : NamedObject>(
             if (obj is RenamableObject) {
                 on("F2") {
                     hide()
-                    showNamePrompt(registry, defaultName = obj.name.now) { newName ->
-                        obj.rename(newName)
-                    }
+                    val newName = NameInput(
+                        registry,
+                        "Rename ${registry.objectType} ${obj.name.now}",
+                        initialName = obj.name.now
+                    ).showDialog(registry.context) ?: return@on
+                    obj.rename(newName)
                 }
             }
             if (obj != null) {
                 on("DELETE") {
                     hide()
-                    if (showYesNoDialog("Delete ${registry.objectType} ${obj.name.now}?") == true) {
-                        registry.remove(obj)
+                    runFXWithTimeout(25) {
+                        val question = "Delete ${registry.objectType} ${obj.name.now}?"
+                        val really = YesNoInput(question).showDialog(registry.context)
+                        if (really) registry.remove(obj)
                     }
                 }
             }

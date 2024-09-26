@@ -94,7 +94,7 @@ class InstrumentRegistryPane(
                 val name = option.instrument.name.now
                 if (registry.has(name)) {
                     Platform.runLater {
-                        if (showYesNoDialog("Overwrite SynthDef $name?") == true) {
+                        if (YesNoInput("Overwrite SynthDef $name?").showDialog(registry.context) == true) {
                             registry.overwrite(option.instrument)
                         }
                     }
@@ -105,10 +105,10 @@ class InstrumentRegistryPane(
 
             is AddInstrumentOption.VSTPlugin -> {
                 Platform.runLater {
-                    showNamePrompt(registry, option.pluginName) { name ->
-                        val plugin = VSTPluginObject.create(registry.context, name, option.pluginName)
-                        registry.add(plugin)
-                    }
+                    val name = NameInput(registry, "Name for new VSTPlugin instance", option.pluginName)
+                        .showDialog(registry.context) ?: return@runLater
+                    val plugin = VSTPluginObject.create(registry.context, name, option.pluginName)
+                    registry.add(plugin)
                 }
             }
         }
@@ -123,20 +123,20 @@ class InstrumentRegistryPane(
     fun createSynthDef(name: String): SynthDefObject? {
         when {
             name in StandardSynthDefObject.all -> {
-                val standard = showYesNoDialog(
+                val standard = YesNoInput(
                     "SynthDef '$name' is a standard SynthDef. Do you want to load it? A new SynthDef will be created otherwise.",
                     default = true
-                ) ?: return null
+                ).showDialog(registry.context) ?: return null
                 return if (standard) StandardSynthDefObject.all.getValue(name)
                 else CustomizableSynthDefObject.create(name, registry.context)
             }
 
             !isMyComputerDumb && registry.synthDescLibContains(name).join() -> {
-                val reference = showYesNoDialog(
+                val reference = YesNoInput(
                     "SynthDef '$name' is already defined in the global SynthDescLib. " +
                             "Import SynthDef '$name' from SynthDescLib? A new SynthDef will be created otherwise.",
                     default = true
-                ) ?: return null
+                ).showDialog(registry.context) ?: return null
                 return if (reference) ReferencedSynthDefObject.loadFromSynthDescLib(name)
                 else CustomizableSynthDefObject.create(name, registry.context)
             }
@@ -186,7 +186,10 @@ class InstrumentRegistryPane(
                         Platform.runLater {
                             val name = obj.name.now
                             if (!globalLib.has(name) ||
-                                showYesNoDialog("Overwrite SynthDef $name in global library?", default = true) == true
+                                YesNoInput(
+                                    "Overwrite SynthDef $name in global library?",
+                                    default = true
+                                ).showDialog(registry.context) == true
                             ) {
                                 globalLib.push(obj)
                             }

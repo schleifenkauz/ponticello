@@ -36,7 +36,7 @@ class BufferRegistryPane(
 
     override fun addObject(name: String): BufferObject? {
         val choices = BufferObject.Type.values().toList()
-        val type = showSelectorDialog("Buffer type", project.context, choices, null) ?: return null
+        val type = showSelectorDialog(project.context, "Buffer type", choices) ?: return null
         return addObject(type, name)
     }
 
@@ -48,18 +48,15 @@ class BufferRegistryPane(
                 FileBuffer.create(file, name)
             }
 
-            BufferObject.Type.Allocate -> {
-                val channelsSpinner = Spinner<Int>(1, 12, 2)
-                val xLabel = Label("x")
-                val framesField = TextField()
-                framesField.promptText = "Number of frames"
-                val layout = HBox(5.0, channelsSpinner, xLabel, framesField).centerChildrenVertically()
-                layout.showDialog("Configure buffer", project.context, style = StageStyle.UTILITY) {
+            BufferObject.Type.Allocate -> compoundInput<AllocatedBuffer>("Configure buffer $name") {
+                val channelsSpinner = Spinner<Int>(1, 12, 2) named "Channels"
+                val framesField = TextField() named "Frames"
+                onConfirm {
                     val channels = channelsSpinner.value
-                    val frames = framesField.text.toIntOrNull() ?: return@showDialog null
+                    val frames = framesField.text.toIntOrNull() ?: return@onConfirm null
                     AllocatedBuffer.create(name, channels, frames)
-                } ?: return null
-            }
+                }
+            }.showDialog(registry.context)
 
             BufferObject.Type.Reference -> ReferencedBuffer(reactiveVariable(name))
         }

@@ -189,10 +189,9 @@ class PianoRollObjectView(inst: ScoreObjectInstance, private val obj: PianoRollO
     }
 
     private fun showTransposeDialog() {
-        val spinner = Spinner<Int>(-36, +36, 0, 1)
-        val layout = HBox(5.0, Label("Semitones"), spinner).centerChildrenVertically()
-        val deltaPitch = layout.showDialog("Transpose", context) { spinner.value } ?: return
-        obj.transpose(deltaPitch)
+        val semitones = IntegerInput("Tranpose by semitones", 0, -36..36)
+            .showDialog(context) ?: return
+        obj.transpose(semitones)
     }
 
     private fun listenForMouseEvents() {
@@ -205,9 +204,9 @@ class PianoRollObjectView(inst: ScoreObjectInstance, private val obj: PianoRollO
             if (selectedTool == ToolSelector.Tool.AddTime && ev.eventType == MouseEvent.MOUSE_CLICKED) {
                 val (x, _) = snapToGrid(ev.x, ev.y)
                 val position = pane.getDuration(x)
-                showNumberPrompt("How much time to add", 0.0..1000.0, 10.0, context) { amount ->
-                    obj.addTime(position, amount)
-                }
+                val amount = DoubleInput("How much time to add", 10.0, 0.0..1000.0).showDialog(context)
+                    ?: return@addEventHandler
+                obj.addTime(position, amount)
             }
             if (selectedTool != ToolSelector.Tool.PianoRoll) {
                 children.remove(cursor)

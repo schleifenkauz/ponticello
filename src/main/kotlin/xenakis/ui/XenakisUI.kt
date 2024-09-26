@@ -36,7 +36,6 @@ import reaktive.value.fx.asObservableValue
 import reaktive.value.now
 import reaktive.value.toggle
 import xenakis.model.*
-import xenakis.sc.view.ObjectSelectorControl
 import xenakis.ui.ScoreView.ClipboardMode
 import xenakis.ui.ToolSelector.Tool
 
@@ -205,16 +204,22 @@ class XenakisUI(
                 if (proj.isDirectory) {
                     controller.openProject(proj)
                 } else {
-                    val remove = showYesNoDialog("Project file does not exist. Remove from list?", default = true)
-                    if (remove == true) {
+                    val remove = YesNoInput(
+                        "Project file does not exist. Remove from list?",
+                        default = true
+                    ).showDialog(context)
+                    if (remove) {
                         controller.removeFromRecentProjects(proj)
                         recentProjects.children.remove(box)
                     }
                 }
             }
             val removeBtn = Icon.Close.button(action = "Remove from list of recent projects") {
-                val reallyRemove = showYesNoDialog("Remove project from list of recent projects?", default = true)
-                if (reallyRemove == true) {
+                val reallyRemove = YesNoInput(
+                    "Remove project from list of recent projects?",
+                    default = true
+                ).showDialog(context)
+                if (reallyRemove) {
                     controller.removeFromRecentProjects(proj)
                     recentProjects.children.remove(box)
                 }
@@ -314,8 +319,7 @@ class XenakisUI(
             }
             +Icon.Restart.button(action = "Restart server (F5)") { ev ->
                 if (ev.isShiftDown) {
-                    val pane = ServerOptionsPane(context, project.serverOptions)
-                    pane.showWindow("Server options", context, SubWindow.Type.Modal)
+                    ServerOptionsPane(context, project.serverOptions).showDialog(context)
                 } else {
                     controller.rebootServer()
                 }
@@ -563,10 +567,8 @@ class XenakisUI(
             on("Ctrl+Alt+T") { controller.client.run("s.plotTree;") }
             on("F1") { context[HelpBrowser].show() }
             on("Ctrl+Shift+D") {
-                showTextPrompt("Look up documentation", "", context) { searchText ->
-                    context[HelpBrowser].searchDocumentation(searchText)
-                    true
-                }
+                val searchText = SimpleTextInput("Look up documentation", "").showDialog(context) ?: return@on
+                context[HelpBrowser].searchDocumentation(searchText)
             }
             on("Ctrl+T") { shellWindow.show() }
             on("Ctrl+Shift+F") { flowGraphWindow.show() }
@@ -613,7 +615,7 @@ class XenakisUI(
         val selected = scoreView.selector.singleSelected.now ?: return
         val pane = selected.getDetailPane()
         val name = selected.instance.obj.name.now
-        val window = SubWindow(pane, "Configure $name", context, type = SubWindow.Type.Popup)
+        val window = SubWindow(pane, "Configure $name", context, type = SubWindow.Type.Modal)
         window.show()
     }
 

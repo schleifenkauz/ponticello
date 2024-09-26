@@ -5,6 +5,7 @@ import hextant.serial.EditorRoot
 import hextant.undo.compoundEdit
 import javafx.application.Platform
 import javafx.collections.FXCollections
+import javafx.collections.FXCollections.observableList
 import javafx.geometry.Bounds
 import javafx.geometry.Pos
 import javafx.scene.control.ComboBox
@@ -327,9 +328,8 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
         val tool = ui.toolSelector.selected.value
         when {
             tool == AddTime -> {
-                showNumberPrompt("How much time to add", 0.0..1000.0, 10.0, context) { amount ->
-                    addTime(getTime(ev.x), amount)
-                }
+                val amount = DoubleInput("How much time to add", 10.0, 0.0..1000.0).showDialog(context) ?: return
+                addTime(getTime(ev.x), amount)
             }
 
             tool == Pointer -> {
@@ -365,16 +365,6 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
 
     private fun viewsInside(bounds: Bounds) = views.values.filter { v -> bounds.contains(v.boundsInParent) }
 
-    private fun promptNewObjectName(prompt: String, initialName: String, create: (String) -> Unit) {
-        showTextPrompt(prompt, initialName, context) { name ->
-            if (!Identifier.isValid(name) || score.has(name)) {
-                return@showTextPrompt false
-            }
-            create(name)
-            true
-        }
-    }
-
     /*
     * Object creation
     * */
@@ -385,11 +375,11 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
                 val def = context[InstrumentRegistry].selectedInstrument.now
                 if (def !is SynthDefObject) return
                 val initialName = context[ScoreObjectRegistry].availableName(def.name.now)
-                promptNewObjectName("Synth name", initialName) { name ->
-                    val ref = reactiveVariable(def.createReference())
-                    val obj = SynthObject(reactiveVariable(name), ref, controls = def.defaultControls(context))
-                    addNewObject(obj, rect)
-                }
+                val name = NameInput(context[ScoreObjectRegistry], "Name for new Synth object", initialName)
+                    .showDialog(context) ?: return
+                val ref = reactiveVariable(def.createReference())
+                val obj = SynthObject(reactiveVariable(name), ref, controls = def.defaultControls(context))
+                addNewObject(obj, rect)
             }
 
             Task -> {
@@ -398,19 +388,20 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
                 addNewObject(TaskObject(reactiveVariable(name), editor, rect.width), rect)
             }
 
-            Tool.Envelope -> promptNewObjectName(
-                "Envelope name",
-                context[ScoreObjectRegistry].availableName("env")
-            ) { name ->
+            Tool.Envelope -> {
+                val initialName = context[ScoreObjectRegistry].availableName("env")
+                val name = NameInput(context[ScoreObjectRegistry], "Name for new Envelope object", initialName)
+                    .showDialog(context) ?: return
                 val busSelector = BusSelector(context, preferredChannels = 1, preferredRate = Rate.Control)
-                EnvelopeObjectView.showEnvelopeConfig(context, busSelector) { spec ->
-                    val value = spec.defaultValue.get()
-                    val duration = getDuration(rect.width)
-                    val envelope = Envelope.constant(value, duration, spec.warp)
-                    val busRef = reactiveVariable(busSelector.selected.now)
-                    val obj = EnvelopeObject(reactiveVariable(name), spec, busRef, envelope)
-                    addNewObject(obj, rect)
-                }
+                val spec = EnvelopeObjectView.showEnvelopeConfig(
+                    context, "Control spec for envelope $name", busSelector
+                ) ?: return
+                val value = spec.defaultValue.get()
+                val duration = getDuration(rect.width)
+                val envelope = Envelope.constant(value, duration, spec.warp)
+                val busRef = reactiveVariable(busSelector.selected.now)
+                val obj = EnvelopeObject(reactiveVariable(name), spec, busRef, envelope)
+                addNewObject(obj, rect)
             }
 
             Memo -> {
@@ -433,39 +424,31 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
 
             PianoRoll -> {
                 val instr = context[InstrumentRegistry].selectedInstrument.now ?: return
-                val defaultName = context[ScoreObjectRegistry].availableName("piano_roll")
-                val nameField = TextField(defaultName)
-                val rootPitchSelector = ComboBox(FXCollections.observableList(MidiPitch.allPitchClasses()))
-                rootPitchSelector.value = MidiPitch(0)
-                val registerSpinner = Spinner<Int>(0, 10, 4)
-                val octaves = Spinner<Int>(1, 12, 2)
-                val layout = VBox(
-                    HBox(Label("Name: ").setFixedWidth(150.0), nameField).centerChildrenVertically(),
-                    HBox(
-                        Label("Root pitch class: ").setFixedWidth(150.0),
-                        rootPitchSelector
-                    ).centerChildrenVertically(),
-                    HBox(Label("Base register: ").setFixedWidth(150.0), registerSpinner).centerChildrenVertically(),
-                    HBox(Label("Octaves: ").setFixedWidth(150.0), octaves).centerChildrenVertically()
-                )
-                layout.alignment = Pos.CENTER_LEFT
-                val obj = layout.showDialog("Configure PianoRoll", context) {
-                    val name = nameField.text
-                    if (!Identifier.isValid(name) || score.has(name)) return@showDialog null
-                    val lowestPitch = rootPitchSelector.value.step + 12 * registerSpinner.value
-                    val highestPitch = lowestPitch + 12 * octaves.value
-                    val notes = mutableListOf<PianoRollObject.Note>()
-                    val eventDictionary = EditorRoot.create(EventDictionaryEditor(context))
-                    PianoRollObject(
-                        reactiveVariable(name),
-                        reactiveVariable(instr.createReference()),
-                        lowestPitch,
-                        highestPitch,
-                        eventDictionary,
-                        notes
-                    )
-                } ?: return
-                addNewObject(obj, rect)
+                compoundInput<Unit>("Configure new object") {
+                    val defaultName = context[ScoreObjectRegistry].availableName("piano_roll")
+                    val nameField = TextField(defaultName) named "Object name"
+                    val rootPitchSelector = ComboBox(observableList(MidiPitch.allPitchClasses())) named "Root pitch class"
+                    rootPitchSelector.value = MidiPitch(0)
+                    val registerSpinner = Spinner<Int>(0, 10, 4) named "Base register"
+                    val octaves = Spinner<Int>(1, 12, 2) named "Octaves"
+                    onConfirm {
+                        val name = nameField.text
+                        if (!Identifier.isValid(name) || score.has(name)) return@onConfirm null
+                        val lowestPitch = rootPitchSelector.value.step + 12 * registerSpinner.value
+                        val highestPitch = lowestPitch + 12 * octaves.value
+                        val notes = mutableListOf<PianoRollObject.Note>()
+                        val eventDictionary = EditorRoot.create(EventDictionaryEditor(context))
+                        val obj = PianoRollObject(
+                            reactiveVariable(name),
+                            reactiveVariable(instr.createReference()),
+                            lowestPitch,
+                            highestPitch,
+                            eventDictionary,
+                            notes
+                        )
+                        addNewObject(obj, rect)
+                    }
+                }.showDialog(context)
             }
 
             TempoGrid -> {

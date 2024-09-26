@@ -3,8 +3,9 @@ package xenakis.ui
 import bundles.createBundle
 import hextant.context.Context
 import hextant.context.createControl
-import hextant.fx.hbox
+import hextant.fx.vbox
 import hextant.serial.makeRoot
+import javafx.scene.layout.VBox
 import reaktive.value.now
 import xenakis.model.EnvelopeObject
 import xenakis.model.ScoreObjectInstance
@@ -20,7 +21,10 @@ class EnvelopeObjectView(inst: ScoreObjectInstance, val obj: EnvelopeObject) : S
     override fun initialize(parent: ScorePane) {
         super.initialize(parent)
         addAction(Icon.Details, action = "Edit Envelope configuration") {
-            showEnvelopeConfig(context, obj.busSelector, obj.spec) { spec -> obj.spec = spec }
+            obj.spec = showEnvelopeConfig(
+                context, "Edit Envelope configuration of ${obj.name.now}",
+                obj.busSelector, obj.spec
+            ) ?: return@addAction
         }
     }
 
@@ -33,29 +37,34 @@ class EnvelopeObjectView(inst: ScoreObjectInstance, val obj: EnvelopeObject) : S
         repaintEnvelopes()
     }
 
+    class ControlSpecInput(
+        override val title: String,
+        busSelector: BusSelector, initialSpec: NumericalControlSpec, context: Context
+    ) : InputNode<NumericalControlSpec?, VBox>() {
+        private val specEditor = initialSpec.createEditor(context).also { editor -> editor.makeRoot() }
+        private val specControl = context.createControl(specEditor)
+        private val outputBusControl = ObjectSelectorControl(busSelector, createBundle())
+        private val complete = Icon.Check.button(action = "Confirm") {
+            val spec = specEditor.result.now
+            commit(spec)
+        }
+        override val content: VBox = vbox(specControl, outputBusControl, complete) {
+            spacing = 5.0
+            centerChildrenVertically()
+        }
+
+        override fun getDefault(): NumericalControlSpec? = null
+    }
+
     companion object {
         fun showEnvelopeConfig(
             context: Context,
+            title: String,
             busSelector: BusSelector,
             initialSpec: NumericalControlSpec = NumericalControlSpec.DEFAULT,
-            onConfirm: (spec: NumericalControlSpec) -> Unit
-        ) {
-            val specEditor = initialSpec.createEditor(context)
-            specEditor.makeRoot()
-            val specControl = context.createControl(specEditor)
-            val outputBusControl = ObjectSelectorControl(busSelector, createBundle())
-            val complete = Icon.Check.button(action = "Confirm") {
-                specControl.scene.window.hide()
-                val spec = specEditor.result.now
-                onConfirm(spec)
-            }
-            val layout = hbox(specControl, outputBusControl, complete) {
-                spacing = 5.0
-                centerChildrenVertically()
-            }
-            val window = SubWindow(layout, title = "Envelope config", context, type = SubWindow.Type.Prompt)
-            window.width = 1000.0
-            window.show()
+        ): NumericalControlSpec? {
+            val input = ControlSpecInput(title, busSelector, initialSpec, context)
+            return input.showDialog(context)
         }
     }
 }

@@ -450,11 +450,11 @@ Slider.control-detail-editor {
 }
 
 .prompt {
-    -fx-padding: 6px;
+    -fx-padding: 3px;
     -fx-background-color: black !important;
     -fx-background-radius: 3px;
     -fx-border-radius: 3px;
-    -fx-border-width: 3px !important;
+    -fx-border-width: 1px !important;
     -fx-border-color: gray !important;
 }
 
@@ -465,6 +465,44 @@ Slider.control-detail-editor {
     -fx-font-size: 14px;
     -fx-prompt-text-fill: gray;
     -fx-text-fill: white;
+}
+
+.dialog-title {
+    -fx-font-size: 14px;
+    -fx-alignment: center;
+    -fx-padding: 3px;
+}
+
+.dialog-box {
+    -fx-border-color: gray;
+    -fx-border-radius: 3px;
+    -fx-border-width: 1px;
+    -fx-padding: 3px;
+    -fx-spacing: 2px;
+    -fx-alignment: center;
+    -fx-background-color: #1e1f22;
+}
+
+Button.sleek-button {
+    -fx-padding: 3px;
+    -fx-background-color: black;
+    -fx-border-color: rgba(128, 128, 128, 0.3);
+    -fx-background-radius: 5px;
+    -fx-border-radius: 5px;
+}
+
+Button.sleek-button:hover {
+    -fx-background-color: #351919;
+}
+
+Button.sleek-button:focused {
+    -fx-border-color: #501717;
+}
+
+.buttons-bar {
+    -fx-spacing: 10px;
+    -fx-padding: 3px;
+    -fx-alignment: center;
 }
 
 .global-controls {
@@ -589,3 +627,4 @@ Slider.control-detail-editor {
 .toggle-switch {
     -fx-background-color: transparent !important;
 }
+

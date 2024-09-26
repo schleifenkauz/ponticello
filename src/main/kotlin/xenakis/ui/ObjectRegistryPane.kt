@@ -97,7 +97,11 @@ abstract class ObjectRegistryPane<O : NamedObject>(
 
     protected abstract fun sync()
 
-    protected open fun addObject() = showNamePrompt(registry, defaultName = searchText.text) { name -> addObject(name) }
+    protected open fun addObject() {
+        val name = NameInput(registry, "Name for new ${registry.objectType}", initialName = searchText.text)
+            .showDialog(registry.context) ?: return
+        addObject(name)
+    }
 
     protected abstract fun addObject(name: String): O?
 

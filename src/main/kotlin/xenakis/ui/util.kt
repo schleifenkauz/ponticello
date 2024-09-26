@@ -57,7 +57,7 @@ fun <N : Node> N.styleClass(vararg classes: String) = also { it.styleClass.addAl
 infix fun <N : Node> N.styleClass(name: String) = also { it.styleClass.add(name) }
 
 fun button(text: String = "", onAction: (ev: ActionEvent) -> Unit) =
-    Button(text).also { btn -> btn.setOnAction(onAction) }
+    Button(text).styleClass("sleek-button").also { btn -> btn.setOnAction(onAction) }
 
 fun button(glyph: FontAwesome.Glyph, onAction: (ev: ActionEvent) -> Unit) =
     Button(null, Glyph("FontAwesome", glyph)).also { btn -> btn.setOnAction(onAction) }

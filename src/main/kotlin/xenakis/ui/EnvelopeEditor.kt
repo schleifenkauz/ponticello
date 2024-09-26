@@ -207,7 +207,7 @@ class EnvelopeEditor(
         var dragging = false
         handle.registerShortcuts {
             val idx = handles.indexOf(handle)
-            on("ENTER") { showPromptFor(idx) }
+            on("V") { showPromptFor(idx) }
             on("DELETE") { removeHandle(idx) }
         }
         handle.registerShortcuts(KeyEvent.KEY_PRESSED) {
@@ -284,9 +284,9 @@ class EnvelopeEditor(
 
     private fun showPromptFor(idx: Int) {
         val point = envelope.points[idx]
-        showNumberPrompt(parameterName, spec.range, point.y, parentPane.context) { value ->
-            envelope.editPoint(idx, value)
-        }
+        val value = DoubleInput("Value for $parameterName", point.y, spec.range)
+            .showDialog(parentPane.context) ?: return
+        envelope.editPoint(idx, value)
     }
 
     private fun removeHandle(idx: Int) {

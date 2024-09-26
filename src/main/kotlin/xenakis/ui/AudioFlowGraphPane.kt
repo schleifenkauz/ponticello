@@ -131,9 +131,9 @@ class AudioFlowGraphPane(
                 graph.split(node, output)
             }
             on("F2") {
-                showNamePrompt(context[BusRegistry], node.bus.name.now) { name ->
-                    node.bus.rename(name)
-                }
+                val name = NameInput(context[BusRegistry], "Rename bus", node.bus.name.now)
+                    .showDialog(context) ?: return@on
+                node.bus.rename(name)
             }
         }
         label.relocate(node.position.x, node.position.y)

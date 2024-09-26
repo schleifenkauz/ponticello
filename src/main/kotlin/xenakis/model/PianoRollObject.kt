@@ -337,7 +337,9 @@ class PianoRollObject(
 
         override fun toString(): String = "Note(start: $onset, dur: $duration, pitch: $midinote)"
 
-        fun copy() = Note(onset, duration, midinote, eventDictionary.clone())
+        fun copy() = Note(onset, duration, midinote,
+            eventDictionary.editor.context.withoutUndo { eventDictionary.clone() }
+        )
 
         companion object {
             fun create(context: Context, time: Double, duration: Double, midinote: Int): Note {

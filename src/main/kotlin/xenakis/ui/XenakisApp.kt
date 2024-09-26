@@ -35,7 +35,10 @@ class XenakisApp : Application() {
         val largeScreenAvailable = Screen.getScreens().any { s -> s.bounds.width > 3000 }
         val mode = if (largeScreenAvailable) Mode.Desktop else Mode.Laptop
         val ui = XenakisUI(stage, controller, mode)
-        stage.setOnCloseRequest { controller.closeRequest(stage) }
+        stage.setOnCloseRequest { ev ->
+            controller.closeRequest(stage)
+            ev.consume()
+        }
         stage.icons.setAll(Icon.AppIcon.image)
         stage.title = "Xenakis"
         return ui

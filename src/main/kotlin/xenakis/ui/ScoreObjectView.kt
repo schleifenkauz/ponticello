@@ -1,7 +1,6 @@
 package xenakis.ui
 
 import hextant.context.Context
-import hextant.fx.label
 import hextant.undo.UndoManager
 import javafx.geometry.Bounds
 import javafx.geometry.HorizontalDirection
@@ -88,32 +87,22 @@ abstract class ScoreObjectView(
         val settings = context[currentProject].settings
         val grid = pane.getNearestGrid(layoutX, layoutY)?.obj.takeIf { settings.snapEnabled.now }
         val periodUnit = if (grid == null) null else settings.snapOption.now
-        val periodInput = when (periodUnit) {
-            null -> TextField(instance.duration.format(3))
-            else -> {
-                val default = (instance.duration / grid!!.getDuration(periodUnit) + 0.95).toInt()
-                Spinner<Int>(1, Int.MAX_VALUE, default)
-            }
-        }
-        val repetitionsInput = Spinner<Int>(1, 1000, 1, 1)
-        val box = VBox(
-            10.0,
-            HBox(label("Loop period ($periodUnit): ").setFixedWidth(200.0), periodInput).centerChildrenVertically(),
-            HBox(label("Number of repetitions").setFixedWidth(200.0), repetitionsInput).centerChildrenVertically()
-        )
-        box.showDialog(
-            "Loop configuration", context,
-            extraConfig = {
-                if (periodInput is TextField) {
-                    val btnOk = dialogPane.lookupButton(ButtonType.OK)
-                    btnOk.disableProperty().bind(periodInput.textProperty().map { txt ->
-                        val v = txt.toDoubleOrNull()
-                        v == null || v == 0.0
-                    })
+        compoundInput<Unit>("Configure loop of object ${instance.obj.name.now}") {
+            val periodInput = when (periodUnit) {
+                null -> TextField(instance.duration.format(3))
+                else -> {
+                    val default = (instance.duration / grid!!.getDuration(periodUnit) + 0.95).toInt()
+                    Spinner<Int>(1, Int.MAX_VALUE, default)
                 }
+            } named "Loop period ($periodUnit)"
+            val repetitionsInput = Spinner<Int>(1, 1000, 1, 1) named "Number of repetitions"
+            if (periodInput is TextField) {
+                confirmButton.disableProperty().bind(periodInput.textProperty().map { txt ->
+                    val v = txt.toDoubleOrNull()
+                    v == null || v == 0.0
+                })
             }
-        ) { btn ->
-            if (btn == ButtonType.OK) {
+            onConfirm {
                 val period = when (periodInput) {
                     is Spinner<*> -> periodInput.value as Int * grid!!.getDuration(periodUnit ?: SnapOption.Seconds)
                     is TextField -> periodInput.text.toDouble()
@@ -122,7 +111,7 @@ abstract class ScoreObjectView(
                 val repetitions = repetitionsInput.value
                 pane.score.loop(instance, period, repetitions)
             }
-        }
+        }.showDialog(context)
     }
 
     open fun initialize(parent: ScorePane) {

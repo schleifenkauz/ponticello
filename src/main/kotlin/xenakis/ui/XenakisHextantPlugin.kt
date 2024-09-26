@@ -57,29 +57,27 @@ object XenakisHextantPlugin : PluginInitializer({
             ed.result.now is DoubleLiteral && ed.getParent<SynthDefEditor>() != null
         }
         executing { editor ->
-            showTextPrompt("Parameter name", "", editor.context) { name ->
-                if (!Identifier.isValid(name)) return@showTextPrompt false
-                val def = editor.getParent<SynthDefEditor>()
-                if (def == null) {
-                    alertError("Could not get SynthDefEditor for extracted parameter.")
-                    return@showTextPrompt true
-                }
-                val parameters = def.obj.parameters
-                val defaultValue = editor.result.now
-                if (defaultValue !is DoubleLiteral) {
-                    alertError("Could not extract parameter default value.")
-                    return@showTextPrompt true
-                }
-                val spec = NumericalControlSpec(
-                    defaultValue, defaultValue, defaultValue,
-                    Warp.Linear, DoubleLiteral(1.0), randomColor()
-                )
-                val param = ParameterDefObject(name, spec)
-                editor.context.compoundEdit("Extract parameter") {
-                    parameters.now.add(param)
-                    editor.setText(name)
-                }
-                true
+            val name = PredicateTextInput("Parameter name", "") { name -> Identifier.isValid(name) }
+                .showDialog(editor.context) ?: return@executing
+            val def = editor.getParent<SynthDefEditor>()
+            if (def == null) {
+                alertError("Could not get SynthDefEditor for extracted parameter.")
+                return@executing
+            }
+            val parameters = def.obj.parameters
+            val defaultValue = editor.result.now
+            if (defaultValue !is DoubleLiteral) {
+                alertError("Could not extract parameter default value.")
+                return@executing
+            }
+            val spec = NumericalControlSpec(
+                defaultValue, defaultValue, defaultValue,
+                Warp.Linear, DoubleLiteral(1.0), randomColor()
+            )
+            val param = ParameterDefObject(name, spec)
+            editor.context.compoundEdit("Extract parameter") {
+                parameters.now.add(param)
+                editor.setText(name)
             }
         }
     }

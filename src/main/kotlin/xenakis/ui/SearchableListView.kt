@@ -126,12 +126,17 @@ abstract class SearchableListView<E> : VBox() {
         searchText.text = text
     }
 
-    fun showPopup(context: Context, title: String, anchor: Point2D, initialOption: E? = null, onConfirm: (E) -> Unit) {
+    fun showPopup(
+        context: Context, title: String, anchor: Point2D? = null,
+        initialOption: E? = null, onConfirm: (E) -> Unit
+    ) {
         initializeOptions()
         if (initialOption in filteredOptions) select(initialOption)
         val window = SubWindow(this, title, context, type = SubWindow.Type.Popup)
-        window.x = anchor.x
-        window.y = anchor.y
+        if (anchor != null) {
+            window.x = anchor.x
+            window.y = anchor.y
+        } else window.centerOnScreen()
         val observer = confirmedOption.observe { _, option -> onConfirm(option) }
         window.showAndWait()
     }

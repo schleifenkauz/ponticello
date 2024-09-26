@@ -208,17 +208,12 @@ class XenakisController(private val primaryStage: Stage) {
     }
 
     fun createNewProject() {
-        showTextPrompt("Project name", "", context) { name ->
-            if (name.isNotBlank()) {
-                val location =
-                    userHome.resolve("compositions").resolve(name) //TODO introduce option for projects location
-                location.mkdir()
-                location.resolve("project.xen").writeText(location.name)
-                currentProject = XenakisProject.create(location, context)
-                saveIn(location)
-                true
-            } else false
-        }
+        val name = PredicateTextInput("Project name", "") { name -> name.isNotBlank() }.showDialog(context) ?: return
+        val location = userHome.resolve("compositions").resolve(name) //TODO introduce option for projects location
+        location.mkdir()
+        location.resolve("project.xen").writeText(location.name)
+        currentProject = XenakisProject.create(location, context)
+        saveIn(location)
     }
 
     fun showOpenDialog(extension: String): File? {
@@ -246,7 +241,9 @@ class XenakisController(private val primaryStage: Stage) {
             return
         }
         //TODO check if any edits have been made since the last save
-        val save = showYesNoDialog("Save project?", default = true) ?: return
+        val save = CancellableYesNoInput("Save project before exiting?", default = true)
+            .showDialog(context)
+        if (save == null) return
         if (save) saveProject()
         stage.hide()
     }

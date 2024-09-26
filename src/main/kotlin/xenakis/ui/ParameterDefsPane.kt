@@ -33,14 +33,12 @@ class ParameterDefsPane(
     }
 
     private fun addParameter() {
-        showTextPrompt("Parameter name", "", context) { name ->
-            if (!Identifier.isValid(name)) return@showTextPrompt false
-            if (parameters.now.any { p -> p.name.now == name }) return@showTextPrompt false
-            val spec = context[Settings].getDefaultControlSpec(name) ?: NumericalControlSpec.DEFAULT
-            val parameter = ParameterDefObject(name, spec)
-            parameters.now.add(parameter)
-            true
-        }
+        val name = PredicateTextInput("Parameter name", "") { name ->
+            Identifier.isValid(name) && parameters.now.none { p -> p.name.now == name }
+        }.showDialog(context) ?: return
+        val spec = context[Settings].getDefaultControlSpec(name) ?: NumericalControlSpec.DEFAULT
+        val parameter = ParameterDefObject(name, spec)
+        parameters.now.add(parameter)
     }
 
     private fun removedParameter(parameter: ParameterDefObject, index: Int) {

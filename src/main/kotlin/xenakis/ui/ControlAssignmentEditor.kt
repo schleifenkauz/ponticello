@@ -34,7 +34,7 @@ class ControlAssignmentEditor(
 ) : HBox(5.0) {
     private val nameLabel = Label(parameter)
     private var selectedOption: ControlType<*>? = null
-    private val optionButton = Button()
+    private val optionButton = Button() styleClass "sleek-button"
     private val detailEditors = mutableMapOf<ControlType<*>, Node>()
     private val deleteBtn = Icon.Delete.button(action = "Remove control") {
         obj.controls.removeControl(parameter)

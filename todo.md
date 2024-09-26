@@ -32,7 +32,6 @@
 
 - save main window size/position and arrangement of utility panes
 - integrate close, maximize, minimize into top toolbar and remove window decoration
-- sleeker dialogs
 
 ### Support for patterns
 
@@ -55,6 +54,7 @@
 ### Minor
 
 - allow for more cases of pasting code
+- make note objects in PianoRollObjects focusable and movable with arrow keys
 - kill sclang.exe and scsynth.exe before startup (?)
 
 ## Long term architectural ideas/question
@@ -63,6 +63,8 @@
 - use SuperCollider `Score` object for playback (this also means ability to do NRT bouncing!)
 - should SynthDefs and VSTPlugin have a separate registry
 - Do we need groups?
+- idea: edit a clone of a SubScore in a SubWindow and sync it with the main score on demand 
+  - well-suited for DJ use cases
 
 ## Bugs
 

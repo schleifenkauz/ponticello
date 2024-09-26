@@ -30,34 +30,36 @@ class GlobalControlsPane(
     }
 
     private fun addControl() {
-        showTextPrompt("Control name", "", context) { name ->
-            if (!Identifier.isValid(name)) return@showTextPrompt false
-            if (controls.hasControl(name)) return@showTextPrompt false
-            if (context[currentProject].busses.has("global_$name")) return@showTextPrompt false
-            val editor = ControlSpecEditor(context)
-            val defaultControlSpec = context[Settings].getDefaultControlSpec(name)
-            editor.makeRoot()
-            if (defaultControlSpec != null) {
-                editor.setResult(defaultControlSpec)
+        val name = PredicateTextInput("Control name", "") { name ->
+            when {
+                !Identifier.isValid(name) -> false
+                controls.hasControl(name) -> false
+                context[currentProject].busses.has("global_$name") -> false
+                else -> true
             }
-            val control = context.createControl(editor)
-            val window = SubWindow(control, "Configure global control", context, SubWindow.Type.Prompt)
-            window.scene.fill = BLACK
-            window.width = 800.0
-            control.registerShortcuts {
-                on("Ctrl+ENTER") {
-                    val spec = editor.result.now
-                    if (spec !is NumericalControlSpec) {
-                        alertError("Only numerical control specs allowed for global controls")
-                        return@on
-                    }
-                    controls.addControl(name, spec)
-                    window.hide()
-                }
-            }
-            window.show()
-            true
+        }.showDialog(context) ?: return
+        val editor = ControlSpecEditor(context)
+        val defaultControlSpec = context[Settings].getDefaultControlSpec(name)
+        editor.makeRoot()
+        if (defaultControlSpec != null) {
+            editor.setResult(defaultControlSpec)
         }
+        val control = context.createControl(editor)
+        val window = SubWindow(control, "Configure global control", context, SubWindow.Type.Prompt)
+        window.scene.fill = BLACK
+        window.width = 800.0
+        control.registerShortcuts {
+            on("Ctrl+ENTER") {
+                val spec = editor.result.now
+                if (spec !is NumericalControlSpec) {
+                    alertError("Only numerical control specs allowed for global controls")
+                    return@on
+                }
+                controls.addControl(name, spec)
+                window.hide()
+            }
+        }
+        window.show()
     }
 
     override fun addedControl(control: GlobalControls.GlobalControl) {
