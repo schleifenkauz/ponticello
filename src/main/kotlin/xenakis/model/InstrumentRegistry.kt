@@ -1,12 +1,17 @@
 package xenakis.model
 
+import bundles.PublicProperty
 import bundles.publicProperty
 import bundles.set
 import hextant.context.Context
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import reaktive.value.ReactiveValue
+import reaktive.value.ReactiveVariable
+import reaktive.value.binding.map
 import reaktive.value.now
+import reaktive.value.reactiveVariable
 import xenakis.impl.SuperColliderClient
 import xenakis.impl.boolean
 import java.util.concurrent.CompletableFuture
@@ -14,7 +19,7 @@ import java.util.concurrent.CompletableFuture
 @Serializable
 class InstrumentRegistry private constructor(
     private val instruments: MutableList<InstrumentObject>,
-    private var selectedInstrumentName: ReactiveValue<String>? = null
+    @SerialName("selectedInstrument") private val selectedInstrumentRef: ReactiveVariable<ObjectReference?>
 ) : SuperColliderObjectRegistry<InstrumentObject>() {
     override val objects: MutableList<InstrumentObject>
         get() = instruments
@@ -25,27 +30,24 @@ class InstrumentRegistry private constructor(
     @Transient
     private lateinit var client: SuperColliderClient
 
+    @Transient
+    lateinit var selectedInstrument: ReactiveValue<InstrumentObject?>
+        private set
+
     override fun initialize(context: Context) {
         super.initialize(context)
-        context[local] = this
+        context[InstrumentRegistry] = this
         client = context[SuperColliderClient]
+        selectedInstrumentRef.now?.resolve(this)
+        selectedInstrument = selectedInstrumentRef.map { ref -> ref?.get() }
     }
-
-    var selectedInstrument: InstrumentObject? = selectedInstrumentName?.let { name -> getSynthDefOrNull(name.now) }
-        set(value) {
-            if (value == field) return
-            field = value
-            selectedInstrumentName = value?.name
-            views.notifyListeners { if (this is Listener) selected(value) }
-        }
-
-    init {
-        selectedInstrumentName = selectedInstrument?.name
-    }
-
-    private fun getSynthDefOrNull(name: String): InstrumentObject? = instruments.find { it.name.now == name }
 
     override fun getDefault(): SynthDefObject = StandardSynthDefObject.default
+
+    fun select(instrument: InstrumentObject?) {
+        selectedInstrumentRef.now = instrument?.createReference()
+        views.notifyListeners { if (this is Listener) this.selected(instrument) }
+    }
 
     fun synthDescLibContains(name: String): CompletableFuture<Boolean> {
         val answer = client.send("isSynthDef", listOf(name))
@@ -54,14 +56,12 @@ class InstrumentRegistry private constructor(
 
     fun addView(view: Listener) {
         super.addListener(view)
-        view.selected(selectedInstrument)
+        view.selected(selectedInstrument.now)
     }
 
-    companion object {
-        val local = publicProperty<InstrumentRegistry>("local InstrumentRegistry")
-        val global = publicProperty<InstrumentRegistry>("global InstrumentRegistry")
-
-        fun createDefault(): InstrumentRegistry = InstrumentRegistry(StandardSynthDefObject.all.values.toMutableList())
+    companion object : PublicProperty<InstrumentRegistry> by publicProperty("InstrumentRegistry") {
+        fun createDefault(): InstrumentRegistry =
+            InstrumentRegistry(StandardSynthDefObject.all.values.toMutableList(), reactiveVariable(null))
     }
 
     interface Listener : ObjectRegistry.Listener<InstrumentObject> {

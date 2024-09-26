@@ -25,6 +25,8 @@ class GlobalSynthDefLib(private val context: Context, private val file: File) {
 
     fun get(): List<CustomizableSynthDefObject> = collection
 
+    fun get(name: String) = get().find { instr -> instr.name.now == name }
+
     fun push(synthDef: CustomizableSynthDefObject) {
         reload()
         val defs = collection.toMutableList()

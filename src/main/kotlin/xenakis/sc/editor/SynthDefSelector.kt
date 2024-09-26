@@ -15,10 +15,10 @@ class SynthDefSelector(
     selected: ReactiveVariable<ObjectReference>,
 ) : ObjectSelector<SynthDefObject, ObjectReference>(context, selected) {
     constructor(context: Context) : this(
-        context, reactiveVariable(context[InstrumentRegistry.local].getDefault().createReference())
+        context, reactiveVariable(context[InstrumentRegistry].getDefault().createReference())
     )
 
-    override fun getRegistry(context: Context): ObjectRegistry<*> = context[InstrumentRegistry.local]
+    override fun getRegistry(context: Context): ObjectRegistry<*> = context[InstrumentRegistry]
 
     override val objectClass: KClass<SynthDefObject>
         get() = SynthDefObject::class

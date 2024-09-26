@@ -26,7 +26,7 @@ import javafx.scene.layout.*
 import javafx.scene.paint.Color
 import javafx.stage.Screen
 import javafx.stage.Stage
-import org.controlsfx.control.textfield.TextFields
+import org.controlsfx.control.textfield.CustomTextField
 import reaktive.Observer
 import reaktive.value.binding.equalTo
 import reaktive.value.binding.map
@@ -36,6 +36,7 @@ import reaktive.value.fx.asObservableValue
 import reaktive.value.now
 import reaktive.value.toggle
 import xenakis.model.*
+import xenakis.sc.view.ObjectSelectorControl
 import xenakis.ui.ScoreView.ClipboardMode
 import xenakis.ui.ToolSelector.Tool
 
@@ -46,7 +47,7 @@ class XenakisUI(
 ) : XenakisListener {
     private val project get() = controller.currentProject
 
-    val toolSelector = ToolSelector()
+    val toolSelector = ToolSelector(context)
 
     private val progressBar = ProgressBar()
     private val statusText = Label()
@@ -184,11 +185,11 @@ class XenakisUI(
 
     override fun displayStartupScreen() {
         displaysProject = false
-        val searchField = TextFields.createClearableTextField().apply {
-            styleClass("search-field")
+        val searchField = CustomTextField().apply {
+            styleClass("search-text")
+            left = Icon.Search.getView()
             promptText = "Search for project..."
         }
-        val searchIcon = Icon.Find.getView()
         val btnOpen = button("Open") { controller.openProject() }
         val createNew = button("Create new") { controller.createNewProject() }
         val recentProjects = VBox().styleClass("recent-projects-list")
@@ -223,7 +224,7 @@ class XenakisUI(
             box.alignment = Pos.CENTER_LEFT
             recentProjects.children.add(box)
         }
-        val top = HBox(searchIcon, searchField, btnOpen, createNew).styleClass("startup-screen-top-bar")
+        val top = HBox(searchField, btnOpen, createNew).styleClass("startup-screen-top-bar")
         val layout = VBox(top, recentProjects).styleClass("startup-screen")
         stage.scene.root = layout
         stage.isMaximized = false
@@ -287,7 +288,7 @@ class XenakisUI(
             infiniteSpace(),
             HBox(contextBar styleClass "toolbar-part"),
             infiniteSpace(),
-            miscBar
+            miscBar.also { HBox.setHgrow(it, Priority.NEVER) }
         ).styleClass("toolbar")
     }
 

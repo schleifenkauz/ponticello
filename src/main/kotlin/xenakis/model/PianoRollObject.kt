@@ -37,7 +37,7 @@ class PianoRollObject(
         get() = "piano-roll"
 
     @Transient
-    lateinit var instrumentSelector: InstrumentSelector
+    lateinit var instrumentSelector: InstrumentSelector<ObjectReference>
         private set
 
     private val instrument get() = mInstrument.now.get<InstrumentObject>()

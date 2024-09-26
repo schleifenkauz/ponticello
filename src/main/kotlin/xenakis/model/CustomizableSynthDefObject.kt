@@ -69,7 +69,7 @@ class CustomizableSynthDefObject(
         }
     }
 
-    override fun canRenameTo(newName: String): Boolean = !context[InstrumentRegistry.local].has(newName)
+    override fun canRenameTo(newName: String): Boolean = !context[InstrumentRegistry].has(newName)
 
     override fun rename(newName: String) {
         onRemoved()

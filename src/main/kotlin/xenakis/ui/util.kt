@@ -103,7 +103,11 @@ fun menuItem(text: String, action: () -> Unit) = MenuItem(text).also { item ->
     }
 }
 
-fun <N : Node> N.alwaysHGrow() = also { HBox.setHgrow(it, Priority.ALWAYS) }
+fun <N : Region> N.alwaysHGrow() = also {
+    maxWidth = Double.MAX_VALUE
+    HBox.setHgrow(it, Priority.ALWAYS)
+}
+
 fun <N : Node> N.neverHGrow() = also { HBox.setHgrow(it, Priority.NEVER) }
 fun <N : Node> N.alwaysVGrow() = also { VBox.setVgrow(it, Priority.ALWAYS) }
 
