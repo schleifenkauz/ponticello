@@ -131,7 +131,7 @@ class SynthObjectView(
 
     private fun updateSpectrogram() {
         Platform.runLater {
-            envelopesPane.children.removeAll(spectrogramViews)
+            children.removeAll(spectrogramViews)
             spectrogramViews.clear()
             if (obj.displaySample?.now != true) return@runLater
             val imageFile = obj.sample.now?.get<SampleObject>()?.spectrogramFile ?: return@runLater
@@ -141,7 +141,7 @@ class SynthObjectView(
     }
 
     private fun displaySpectrogram() {
-        envelopesPane.children.removeAll(spectrogramViews)
+        children.removeAll(spectrogramViews)
         spectrogramViews.clear()
         if (obj.displaySample?.now != true) return
         if (image == null) return
@@ -166,7 +166,7 @@ class SynthObjectView(
             t += imageDur
             spectrogramViews.add(view)
         }
-        envelopesPane.children.addAll(spectrogramViews)
+        children.addAll(spectrogramViews)
     }
 
     private fun displaySpectrogram(

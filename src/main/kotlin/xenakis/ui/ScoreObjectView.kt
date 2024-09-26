@@ -30,7 +30,7 @@ import xenakis.ui.XenakisController.Companion.currentProject
 
 abstract class ScoreObjectView(
     val instance: ScoreObjectInstance
-) : VBox(), ScoreObjectInstance.Listener, SynthControls.View, ScoreObject.Listener {
+) : Pane(), ScoreObjectInstance.Listener, SynthControls.View, ScoreObject.Listener {
     var isInitialized: Boolean = false
         private set
     lateinit var pane: ScorePane
@@ -43,7 +43,6 @@ abstract class ScoreObjectView(
     val actions = HBox().centerChildrenVertically() styleClass "actions"
     private val knobControls = FlowPane().centerChildrenVertically() styleClass "knobs" //TODO remove
 
-    protected val envelopesPane = Pane()
     private val envelopeEditors = mutableListOf<EnvelopeEditor>()
 
     protected open val defaultBackgroundColor: ReactiveValue<Color>
@@ -140,8 +139,6 @@ abstract class ScoreObjectView(
         setBackground()
         setupCutting()
         setupActions()
-        children.add(envelopesPane)
-        setVgrow(envelopesPane, Priority.ALWAYS)
         displayKnobs()
         instance.addListener(this)
         instance.obj.addListener(this)
@@ -231,7 +228,7 @@ abstract class ScoreObjectView(
 
     private fun displayEnvelope(parameter: String, control: EnvelopeControl) {
         val envelope = control.envelope
-        val e = EnvelopeEditor(parameter, envelope, this, envelopesPane)
+        val e = EnvelopeEditor(parameter, envelope, this)
         e.repaint()
         envelopeEditors.add(e)
     }
@@ -411,9 +408,13 @@ abstract class ScoreObjectView(
         }
     }
 
-    fun adjustVertical(direction: VerticalDirection, resize: Boolean, stretch: Boolean) {
+    open fun adjustVertical(direction: VerticalDirection, resize: Boolean, stretch: Boolean) {
         var deltaY = 0.01
         if (direction == VerticalDirection.UP) deltaY *= -1
+        adjustVertical(resize, stretch, deltaY)
+    }
+
+    protected fun adjustVertical(resize: Boolean, stretch: Boolean, deltaY: Double) {
         if (resize) {
             instance.obj.resize(
                 instance.obj.duration,

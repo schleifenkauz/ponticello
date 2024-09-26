@@ -324,7 +324,7 @@ class XenakisUI(
             +Icon.Graph.button(action = "Edit audio flow graph (Ctrl+Shift+F)") { flowGraphWindow.show() }
             +Icon.Settings.button(action = "Edit settings (Ctrl+Alt+S)") { settingsWindow.show() }
             +Icon.Knob.button(action = "Edit global controls (Ctrl+G)") { globalControlsWindow.show() }
-            val subWindowType = if (mode == Mode.Laptop) SubWindow.Type.Popup else SubWindow.Type.Modal
+            val subWindowType = SubWindow.Type.Modal
             busesWindow = SubWindow(busRegistryPane, "Busses", context, subWindowType)
             +Icon.Bus.button(action = "Show buses (Ctrl+B)") {
                 busesWindow.show()

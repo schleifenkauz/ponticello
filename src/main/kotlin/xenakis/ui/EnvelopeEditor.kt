@@ -7,7 +7,6 @@ import javafx.scene.control.Label
 import javafx.scene.input.KeyEvent
 import javafx.scene.input.MouseButton
 import javafx.scene.input.MouseEvent
-import javafx.scene.layout.Pane
 import javafx.scene.paint.Color
 import javafx.scene.shape.Circle
 import javafx.scene.shape.Polyline
@@ -24,7 +23,7 @@ import kotlin.math.absoluteValue
 
 class EnvelopeEditor(
     val parameterName: String, private val envelope: Envelope,
-    private val objectView: ScoreObjectView, private val pane: Pane,
+    private val objectView: ScoreObjectView,
 ) : EnvelopeView {
     private val control
         get() = associatedObject.associatedControls.getValue(parameterName) as EnvelopeControl
@@ -118,7 +117,7 @@ class EnvelopeEditor(
 
     override fun removedPoint(idx: Int, point: Point) {
         val handle = handles.removeAt(idx)
-        pane.children.remove(handle)
+        objectView.children.remove(handle)
         line.points.remove(idx * 2, (idx + 1) * 2)
     }
 
@@ -162,16 +161,16 @@ class EnvelopeEditor(
         val infoHeight = mouseInfo.prefHeight(-1.0)
         val infoWidth = mouseInfo.prefWidth(-1.0)
         if (y < infoHeight * 2) y += infoHeight / 1.5 else y -= infoHeight * 1.5
-        val infoX = (x - infoWidth / 2).coerceIn(0.0, pane.width - infoWidth)
+        val infoX = (x - infoWidth / 2).coerceIn(0.0, objectView.width - infoWidth)
         mouseInfo.relocate(infoX, y)
     }
 
     fun repaint() {
         removeChildren()
-        pane.children.add(mouseInfo)
+        objectView.children.add(mouseInfo)
         handles.clear()
         line.points.clear()
-        pane.children.add(line)
+        objectView.children.add(line)
 
         for ((idx, p) in envelope.points.withIndex()) {
             val x = xTransform.map(p.x)
@@ -182,9 +181,9 @@ class EnvelopeEditor(
     }
 
     private fun removeChildren() {
-        pane.children.removeAll(handles)
-        pane.children.remove(line)
-        pane.children.remove(mouseInfo)
+        objectView.children.removeAll(handles)
+        objectView.children.remove(line)
+        objectView.children.remove(mouseInfo)
     }
 
     private fun addHandle(idx: Int, x: Double, y: Double) {
@@ -200,7 +199,7 @@ class EnvelopeEditor(
                 .map { hover -> if (hover) 2.0 else 0.0 }
         )
         setupHandle(handle)
-        pane.children.add(handle)
+        objectView.children.add(handle)
         handles.add(idx, handle)
     }
 

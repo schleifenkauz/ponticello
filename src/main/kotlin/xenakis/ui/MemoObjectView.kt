@@ -20,8 +20,6 @@ class MemoObjectView(inst: ScoreObjectInstance, val obj: MemoObject) : ScoreObje
         textArea.textProperty().addListener { _, _, newText ->
             obj.text = newText
         }
-        setVgrow(textArea, Priority.ALWAYS)
-        setVgrow(label, Priority.ALWAYS)
         setOnMouseClicked { ev ->
             if (ev.clickCount >= 2) {
                 children.setAll(textArea)
