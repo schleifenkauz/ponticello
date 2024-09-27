@@ -37,6 +37,7 @@ abstract class ObjectRegistryPane<O : NamedObject>(
         searchText.left = Label("", Icon.Search.getView(Icon.DEFAULT_RADIUS))
         searchText.textProperty().addListener { _, _, _ ->
             layoutBoxes()
+            if (scene != null) scene.window.sizeToScene()
         }
         registerShortcuts {
             on("INSERT") {

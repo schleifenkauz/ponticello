@@ -341,17 +341,17 @@ class XenakisUI(
                 samplesWindow.show()
                 samplesWindow.requestFocus()
             }
-            +Icon.Sync.button(action = "Sync with SuperCollider (Ctrl+Shift+S)") {
-                project.syncWithSuperCollider()
-            }
             if (mode == Mode.Laptop) {
                 instrumentsWindow = SubWindow(instrumentsPane, "Instruments", context, subWindowType)
-                +Icon.Instrument.button(action = "Show instruments") { instrumentsWindow.show() }
+                +Icon.Instrument.button(action = "Show instruments (Alt+I)") { instrumentsWindow.show() }
                 groupsWindow = SubWindow(groupsPane, "Groups", context, subWindowType)
-                +Icon.Groups.button(action = "Show groups") { groupsWindow.show() }
+                +Icon.Groups.button(action = "Show groups (Alt+G)") { groupsWindow.show() }
                 add(Icon.Details.button(action = "Edit object properties (P)") { showDetailPaneOfSelectedObject() }) {
                     disableProperty().bind(scoreView.selector.singleSelected.equalTo(null).asObservableValue())
                 }
+            }
+            +Icon.Sync.button(action = "Sync with SuperCollider (Ctrl+Shift+S)") {
+                project.syncWithSuperCollider()
             }
         }
     }
@@ -479,7 +479,7 @@ class XenakisUI(
             on("Alt+S") { project.settings.snapEnabled.toggle() }
 
             if (mode == Mode.Laptop) {
-                on("Alt+G") { ev ->
+                on("Alt?+G") { ev ->
                     if (ev.isAltDown || !ev.isTargetTextInput) {
                         groupsWindow.show()
                     }

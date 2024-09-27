@@ -486,6 +486,7 @@ Slider.control-detail-editor {
 Button.sleek-button {
     -fx-padding: 3px !important;
     -fx-background-color: black !important;
+    -fx-border-width: 2px;
     -fx-border-color: rgba(128, 128, 128, 0.3) !important;
     -fx-background-radius: 5px !important;
     -fx-border-radius: 5px !important;

@@ -57,7 +57,7 @@ abstract class SearchableListView<E> : VBox() {
         filteredOptions = options().filter { option -> extractText(option).contains(txt, ignoreCase = true) }
         select(filteredOptions.firstOrNull { option -> option !in removedOptions })
         layoutOptionBoxes()
-        scene.window.sizeToScene()
+        if (scene != null) scene.window.sizeToScene()
     }
 
     private fun prepareOptionBoxes() {
