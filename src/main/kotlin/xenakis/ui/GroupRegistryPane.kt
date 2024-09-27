@@ -53,8 +53,8 @@ class GroupRegistryPane(
     override fun movedGroup(group: GroupObject, fromIndex: Int, toIndex: Int) {
         val box = layout.children.removeAt(fromIndex)
         layout.children.add(toIndex, box)
-        updateMoveButtonsAround(fromIndex)
-        updateMoveButtonsAround(toIndex)
+        box(fromIndex).updateMoveButtons()
+        box(toIndex).updateMoveButtons()
     }
 
     override fun addObject(name: String): GroupObject {

@@ -33,7 +33,6 @@ abstract class AbstractSuperColliderObject : AbstractRenamableObject(), SuperCol
         client.run {
             removeFromServer()
             addToServer()
-
         }
     }
 

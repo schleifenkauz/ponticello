@@ -62,7 +62,7 @@ fun button(text: String = "", onAction: (ev: ActionEvent) -> Unit) =
 fun button(glyph: FontAwesome.Glyph, onAction: (ev: ActionEvent) -> Unit) =
     Button(null, Glyph("FontAwesome", glyph)).also { btn -> btn.setOnAction(onAction) }
 
-fun textField(text: String = "", config: TextField.() -> Unit) =
+fun textField(text: String = "", config: TextField.() -> Unit = {}) =
     TextField(text).styleClass("sleek-text-field").apply(config)
 
 fun showPopup(owner: Node, node: Node) = popup(node).show(owner)

@@ -7,7 +7,6 @@ import hextant.context.Context
 import hextant.undo.AbstractEdit
 import hextant.undo.UndoManager
 import kotlinx.serialization.Serializable
-import xenakis.impl.SuperColliderClient
 
 @Serializable
 class GroupRegistry private constructor(
@@ -20,8 +19,21 @@ class GroupRegistry private constructor(
         get() = "Group"
 
     override fun initialize(context: Context) {
+        for ((prev, nxt) in order.zipWithNext()) {
+            nxt.previous = prev
+        }
         super.initialize(context)
         context[GroupRegistry] = this
+    }
+
+    override fun add(obj: GroupObject, idx: Int) {
+        obj.previous = order.getOrNull(idx - 1)
+        super.add(obj, idx)
+    }
+
+    override fun onRemoved(obj: GroupObject, idx: Int) {
+        super.onRemoved(obj, idx)
+        if (idx + 1 in order.indices) order[idx + 1].previous = order[idx]
     }
 
     fun asList(): List<GroupObject> = order
@@ -29,15 +41,6 @@ class GroupRegistry private constructor(
     fun indexOf(group: GroupObject): Int = asList().indexOf(group)
 
     override fun getDefault(): GroupObject = objects.find { it.isDefault } ?: GroupObject.DEFAULT
-
-    override fun syncAll() {
-        context[SuperColliderClient].run {
-            +"${order.first().superColliderName}.moveToHead"
-            for ((prev, next) in order.zipWithNext()) {
-                +"${next.superColliderName}.moveAfter(${prev.superColliderName})"
-            }
-        }
-    }
 
     fun moveGroup(group: GroupObject, deltaIndex: Int) {
         val fromIndex = order.indexOf(group)

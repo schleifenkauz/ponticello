@@ -347,8 +347,8 @@ class XenakisUI(
             if (mode == Mode.Laptop) {
                 instrumentsWindow = SubWindow(instrumentsPane, "Instruments", context, subWindowType)
                 +Icon.Instrument.button(action = "Show instruments") { instrumentsWindow.show() }
-                //groupsWindow = SubWindow(groupsPane, "Groups", context, type = SubWindow.Type.Popup)
-                //+Icon.Groups.button(action = "Show groups") { groupsWindow.show() }
+                groupsWindow = SubWindow(groupsPane, "Groups", context, subWindowType)
+                +Icon.Groups.button(action = "Show groups") { groupsWindow.show() }
                 add(Icon.Details.button(action = "Edit object properties (P)") { showDetailPaneOfSelectedObject() }) {
                     disableProperty().bind(scoreView.selector.singleSelected.equalTo(null).asObservableValue())
                 }

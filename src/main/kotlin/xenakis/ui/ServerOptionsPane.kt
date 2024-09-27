@@ -1,7 +1,7 @@
 package xenakis.ui
 
 import hextant.context.Context
-import javafx.collections.FXCollections
+import javafx.collections.FXCollections.observableList
 import javafx.scene.control.ComboBox
 import javafx.scene.control.Spinner
 import xenakis.model.ServerOptions
@@ -11,17 +11,14 @@ class ServerOptionsPane(
     private val context: Context,
     private val options: ServerOptions
 ) : CompoundPrompt<Unit>("Server options") {
-    private val numInputChannels = Spinner<Int>(0, 24, options.numInputChannels)
-    private val numOutputChannels = Spinner<Int>(1, 24, options.numOutputChannels)
-    private val memSize = Spinner<Int>(8192, 8192 * 64, options.memSize, 8192)
-    private val sampleRate = ComboBox(FXCollections.observableList(listOf(44100, 48000, 96000, 192000)))
+    private val device = textField(options.device) named "Device"
+    private val numInputChannels = Spinner<Int>(0, 24, options.numInputChannels) named "Input channels"
+    private val numOutputChannels = Spinner<Int>(1, 24, options.numOutputChannels) named "Output channels"
+    private val memSize = Spinner<Int>(8192, 8192 * 64, options.memSize, 8192) named "Runtime memory (kB)"
+    private val sampleRate = ComboBox(observableList(listOf(44100, 48000, 96000, 192000))) named "Sample rate"
 
     init {
         sampleRate.value = options.sampleRate
-        addItem("Input channels", numInputChannels)
-        addItem("Output channels", numOutputChannels)
-        addItem("Runtime memory (kB)", memSize)
-        addItem("Sample rate", sampleRate)
         confirmButton.text = "Confirm and reboot server"
     }
 
@@ -30,6 +27,7 @@ class ServerOptionsPane(
         options.numOutputChannels = numOutputChannels.value
         options.memSize = memSize.value
         options.sampleRate = sampleRate.value
+        options.device = device.text
         options.reboot(context)
     }
 }

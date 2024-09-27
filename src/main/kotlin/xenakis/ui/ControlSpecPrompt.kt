@@ -1,6 +1,5 @@
 package xenakis.ui
 
-import hextant.fx.textField
 import javafx.beans.binding.Bindings
 import javafx.collections.FXCollections.observableList
 import javafx.scene.control.Button

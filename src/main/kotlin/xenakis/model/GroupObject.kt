@@ -1,6 +1,7 @@
 package xenakis.model
 
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 import reaktive.value.ReactiveVariable
 import reaktive.value.now
 import reaktive.value.reactiveVariable
@@ -20,16 +21,21 @@ class GroupObject(
     override val liveCycleType: LiveCycleType
         get() = LiveCycleType.ServerTree
 
+    @Transient
     var previous: GroupObject? = null
         set(prev) {
             if (field == prev) return
             field = prev
-            redefine()
+            if (initialized) client.run { moveAfter(prev) }
         }
 
     override fun ScWriter.allocateServerObject() {
         if (!isDefault) +"$superColliderName = Group.new"
         val prev = previous
+        moveAfter(prev)
+    }
+
+    private fun ScWriter.moveAfter(prev: GroupObject?) {
         if (prev != null) {
             +"${superColliderName}.moveAfter(${prev.superColliderName})"
         } else if (!isDefault) {

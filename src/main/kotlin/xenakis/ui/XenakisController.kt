@@ -111,30 +111,26 @@ class XenakisController(private val primaryStage: Stage) {
         client.statusListener.on(StatusUpdate.ReadyToBoot) {
             isSuperColliderReady = false
             Thread.sleep(500)
-            if (_currentProject != null) {
-                currentProject.serverOptions.reboot(context)
-                setProgress(0.2, "Booting scsynth")
-                Platform.runLater {
-                    listeners { waitingForBoot() }
-                }
-            }
-        }
-        client.statusListener.on(StatusUpdate.ServerBooted) {
-            isSuperColliderReady = true
-            setProgress(0.3, "Connecting via OSC")
+            setProgress(0.2, "SuperCollider started, connecting via OSC")
             Platform.runLater {
-                listeners { readyToPlay() }
+                listeners { waitingForBoot() }
             }
         }
         client.statusListener.on(StatusUpdate.OSCReady) {
             Thread.sleep(500)
-            setProgress(0.4, "OSC connected")
+            setProgress(0.4, "OSC connected, initializing project")
             startXenakis()
+        }
+        client.statusListener.on(StatusUpdate.ServerBooted) {
+            isSuperColliderReady = true
+            Platform.runLater {
+                listeners { readyToPlay() }
+            }
         }
     }
 
     fun rebootServer() {
-        client.run("s.reboot;")
+        currentProject.serverOptions.reboot(context)
     }
 
     private fun startXenakis() {
@@ -197,6 +193,7 @@ class XenakisController(private val primaryStage: Stage) {
         tryWithAlert("Opening project") {
             val project = XenakisProject.loadFrom(folder, context, this)
             currentProject = project
+            rebootServer()
         } ?: return false
         return true
     }

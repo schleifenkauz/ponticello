@@ -7,6 +7,7 @@ import xenakis.impl.SuperColliderClient
 
 @Serializable
 data class ServerOptions(
+    var device: String = "",
     var numInputChannels: Int = 2, var numOutputChannels: Int = 2,
     var memSize: Int = 8192, var sampleRate: Int = 44100
 ) : XenakisProject.ProjectComponent {
@@ -18,6 +19,7 @@ data class ServerOptions(
         buses.get("input").channels.now = numInputChannels
         buses.get("output").channels.now = numOutputChannels
         context[SuperColliderClient].run {
+            +"s.options.device_(${if (device.isEmpty()) "nil" else "\"$device\""})"
             +"s.options.numInputBusChannels = $numInputChannels"
             +"s.options.numOutputBusChannels = $numOutputChannels"
             +"s.options.memSize = $memSize"

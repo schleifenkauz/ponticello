@@ -188,12 +188,14 @@ class AudioFlowGraph(
     }
 
     private fun ScWriter.setupAudioFlow() {
-        var prev = "s.defaultGroup"
-        for (flow in order) {
-            val synth = flow.synth.editor.result.now
-            val addAction = if (prev == "s.defaultGroup") "'addToHead'" else "'addAfter'"
-            synth.writeCode(writer, registry.context, flow.synthName, prev, addAction, wrapInTask = true)
-            prev = flow.synthName
+        for ((group, flows) in order) {
+            var prev = group.superColliderName
+            for (flow in flows) {
+                val synth = flow.synth.editor.result.now
+                val addAction = if (prev.startsWith("~grp")) "'addToHead'" else "'addAfter'"
+                synth.writeCode(writer, registry.context, flow.synthName, prev, addAction, wrapInTask = true)
+                prev = flow.synthName
+            }
         }
     }
 
@@ -246,35 +248,42 @@ class AudioFlowGraph(
     }
 
     fun removeNode(node: BusNode) {
-        _nodes.remove(node)
+        if (!_nodes.remove(node)) return
         val associatedFlows = associatedFlows(node)
         views.notifyListeners { removedNode(node) }
         for (flow in associatedFlows) removeFlow(flow)
-        nodeNameObservers.remove(node.ref.get())!!.kill()
+        nodeNameObservers.remove(node.ref.get())?.kill()
         undoManager.record(Edit.RemoveNode(this, node, associatedFlows))
     }
 
     fun associatedFlows(bus: BusNode) =
         flows.filter { f -> f.source == bus.ref || f.target == bus.ref }
 
-    private fun findFlowOrder(): List<AudioFlow>? {
-        val q: Queue<AudioFlow> = LinkedList()
-        val order = mutableListOf<AudioFlow>()
-        val dependencies = mutableMapOf<ObjectReference, Int>()
-        for (flow in flows) dependencies[flow.target] = (dependencies[flow.target] ?: 0) + 1
-        for (flow in flows) if ((dependencies[flow.source] ?: 0) == 0) q.offer(flow)
-        while (q.isNotEmpty()) {
-            val flow = q.poll()
-            order.add(flow)
-            dependencies[flow.target] = dependencies[flow.target]!! - 1
-            if (dependencies[flow.target] == 0) {
-                for (e in edges(flow.target)) {
-                    q.offer(e)
+    private fun findFlowOrder(): Map<GroupObject, List<AudioFlow>>? {
+        val orders = mutableMapOf<GroupObject, List<AudioFlow>>()
+        for ((group, flows) in flows.groupBy { f -> getGroup(f) }) {
+            val q: Queue<AudioFlow> = LinkedList()
+            val order = mutableListOf<AudioFlow>()
+            val dependencies = mutableMapOf<ObjectReference, Int>()
+            for (flow in flows) dependencies[flow.target] = (dependencies[flow.target] ?: 0) + 1
+            for (flow in flows) if ((dependencies[flow.source] ?: 0) == 0) q.offer(flow)
+            while (q.isNotEmpty()) {
+                val flow = q.poll()
+                order.add(flow)
+                dependencies[flow.target] = dependencies[flow.target]!! - 1
+                if (dependencies[flow.target] == 0) {
+                    for (e in edges(flow.target)) {
+                        q.offer(e)
+                    }
                 }
             }
+            if (order.size == flows.size) orders.put(group, order) else return null
         }
-        return if (order.size == flows.size) order else null
+        return orders
     }
+
+    private fun getGroup(f: AudioFlow) =
+        f.synth.editor.result.now.group.reference?.get<GroupObject>() ?: context[GroupRegistry].getDefault()
 
     @Serializable
     data class BusNode(val ref: ObjectReference, var position: Point) {

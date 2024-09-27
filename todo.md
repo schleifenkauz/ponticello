@@ -62,6 +62,5 @@
 
 ## Bugs
 
-- effects that work with intermediate buses have to be executed after the flow synths
 - weird window behaviour on startup
 - when adding a new parameter control, the window is unresponsive
