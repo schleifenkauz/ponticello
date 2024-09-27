@@ -9,12 +9,11 @@ import hextant.core.editor.ExpanderConfig
 import hextant.core.editor.copy
 import hextant.serial.SnapshotAware
 import hextant.undo.makeUndoableEdit
-import javafx.stage.Screen
 import kotlinx.serialization.Serializable
 import reaktive.value.now
 import xenakis.model.VSTPluginObject
 import xenakis.sc.*
-import xenakis.ui.showSelectorDialog
+import xenakis.ui.prompt.showSelectorDialog
 
 @Suppress("SERIALIZER_TYPE_INCOMPATIBLE")
 @Serializable(with = SnapshotAware.Serializer::class)
@@ -130,7 +129,8 @@ class ScExprExpander(context: Context) : ConfiguredExpander<ScExpr, ScExprEditor
             "group" expand { ctx -> GroupSelector(ctx) }
             "plugin" expand { ctx ->
                 val availablePlugins = VSTPluginObject.availablePlugins(ctx)
-                val pluginName = showSelectorDialog(ctx, "Plugin", availablePlugins, null) ?: return@expand null
+                val pluginName = showSelectorDialog(ctx, "Plugin", availablePlugins, null, anchor = null)
+                    ?: return@expand null
                 VSTPluginEditor(ctx, pluginName)
             }
             "synth" expand { ctx -> AdhocSynthEditor(ctx) }

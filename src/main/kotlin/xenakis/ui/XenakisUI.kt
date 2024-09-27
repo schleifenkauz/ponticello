@@ -38,6 +38,8 @@ import reaktive.value.toggle
 import xenakis.model.*
 import xenakis.ui.ScoreView.ClipboardMode
 import xenakis.ui.ToolSelector.Tool
+import xenakis.ui.prompt.SimpleTextPrompt
+import xenakis.ui.prompt.YesNoPrompt
 
 class XenakisUI(
     private val stage: Stage,
@@ -185,7 +187,7 @@ class XenakisUI(
     override fun displayStartupScreen() {
         displaysProject = false
         val searchField = CustomTextField().apply {
-            styleClass("search-text")
+            styleClass("sleek-text-field")
             left = Icon.Search.getView()
             promptText = "Search for project..."
         }
@@ -204,22 +206,22 @@ class XenakisUI(
                 if (proj.isDirectory) {
                     controller.openProject(proj)
                 } else {
-                    val remove = YesNoInput(
+                    val remove = YesNoPrompt(
                         "Project file does not exist. Remove from list?",
                         default = true
                     ).showDialog(context)
-                    if (remove) {
+                    if (remove == true) {
                         controller.removeFromRecentProjects(proj)
                         recentProjects.children.remove(box)
                     }
                 }
             }
             val removeBtn = Icon.Close.button(action = "Remove from list of recent projects") {
-                val reallyRemove = YesNoInput(
+                val reallyRemove = YesNoPrompt(
                     "Remove project from list of recent projects?",
                     default = true
                 ).showDialog(context)
-                if (reallyRemove) {
+                if (reallyRemove == true) {
                     controller.removeFromRecentProjects(proj)
                     recentProjects.children.remove(box)
                 }
@@ -567,7 +569,7 @@ class XenakisUI(
             on("Ctrl+Alt+T") { controller.client.run("s.plotTree;") }
             on("F1") { context[HelpBrowser].show() }
             on("Ctrl+Shift+D") {
-                val searchText = SimpleTextInput("Look up documentation", "").showDialog(context) ?: return@on
+                val searchText = SimpleTextPrompt("Look up documentation", "").showDialog(context) ?: return@on
                 context[HelpBrowser].searchDocumentation(searchText)
             }
             on("Ctrl+T") { shellWindow.show() }

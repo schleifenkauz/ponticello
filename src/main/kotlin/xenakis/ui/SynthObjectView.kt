@@ -87,13 +87,15 @@ class SynthObjectView(
     }
 
     private fun addNewControl(anchorNode: Node) {
-        val listView = SearchableParameterListView(context, obj.synthDef.parameters.now)
-        val assignedParameters = obj.controls.controlMap.keys
-            .map { key -> ParameterDefObject(key, obj.getSpec(key)) }
-        listView.removedOptions.addAll(assignedParameters)
+        val defaultParameters = context[Settings].defaultParametersDefs.now
+        val synthParameters = obj.synthDef.parameters.now
+        val unassignedParameters = (synthParameters + defaultParameters)
+            .filter { param -> param.name.now !in obj.controls.controlMap }
+            .filter { param -> !(param in defaultParameters && synthParameters.any { p -> p.name.now == param.name.now }) }
+        val listView = SearchableParameterListView(context, unassignedParameters, obj)
         listView.showPopup(context, "Add control", anchorNode = anchorNode) { option ->
             val extraSpec = option.spec.now.takeIf {
-                option.name.now !in obj.synthDef.parameters.now.map { p -> p.name.now }
+                option.name.now !in synthParameters.map { p -> p.name.now }
             }
             obj.controls.addControl(option.name.now, option.defaultControl(context), extraSpec)
         }
@@ -201,16 +203,20 @@ class SynthObjectView(
     }
 
     private fun showNewEnvelopePopup(point: Point2D) {
-        val allParameters = obj.synthDef.parameters.now + obj.controls.extraParameters
-        val possibleParameters = allParameters
+        val possibleParameters = obj.parameters
             .filter { p -> p.spec.now is NumericalControlSpec }
             .filter { p ->
                 val control = obj.controls.controlMap[p.name.now]
                 control != null && (control !is EnvelopeControl || !control.display.now)
             }
-        val listView = SearchableParameterListView(context, possibleParameters)
+        val listView = SearchableParameterListView(context, possibleParameters, obj)
         listView.showPopup(context, "Add envelope", point) { param ->
             val name = param.name.now
+            val oldControl = obj.controls[name]
+            if (oldControl is EnvelopeControl) {
+                oldControl.display.now = true
+                return@showPopup
+            }
             val spec = param.spec.now as NumericalControlSpec
             val env = Envelope.constant(spec.defaultValue.get(), obj.duration, spec.warp)
             val control = EnvelopeControl(

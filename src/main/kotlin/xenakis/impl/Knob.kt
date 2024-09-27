@@ -17,6 +17,7 @@ import xenakis.model.KnobControl
 import xenakis.sc.NumericalControlSpec
 import xenakis.sc.SpecTransformation
 import xenakis.ui.*
+import xenakis.ui.prompt.DoublePrompt
 import kotlin.math.*
 
 class Knob(
@@ -79,7 +80,7 @@ class Knob(
 
     private fun showValueInput() {
         val range = spec.min.get()..spec.max.get()
-        val v = DoubleInput("$parameter ($range)", control.get(), range).showDialog(context) ?: return
+        val v = DoublePrompt("$parameter ($range)", control.get(), range).showDialog(context) ?: return
         control.value.set(v)
     }
 

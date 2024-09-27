@@ -4,18 +4,13 @@ import hextant.context.Context
 import hextant.serial.EditorRoot
 import hextant.undo.compoundEdit
 import javafx.application.Platform
-import javafx.collections.FXCollections
 import javafx.collections.FXCollections.observableList
 import javafx.geometry.Bounds
-import javafx.geometry.Pos
 import javafx.scene.control.ComboBox
-import javafx.scene.control.Label
 import javafx.scene.control.Spinner
 import javafx.scene.control.TextField
 import javafx.scene.input.*
-import javafx.scene.layout.HBox
 import javafx.scene.layout.Pane
-import javafx.scene.layout.VBox
 import javafx.scene.paint.Color.*
 import javafx.scene.shape.Rectangle
 import kotlinx.serialization.json.Json
@@ -37,6 +32,9 @@ import xenakis.ui.ScoreView.ClipboardMode
 import xenakis.ui.ToolSelector.Tool
 import xenakis.ui.ToolSelector.Tool.*
 import xenakis.ui.XenakisController.Companion.currentProject
+import xenakis.ui.prompt.DoublePrompt
+import xenakis.ui.prompt.NamePrompt
+import xenakis.ui.prompt.compoundInput
 
 abstract class ScorePane(val score: Score, val context: Context) : Pane(), ScoreListener {
     private var newObjectArea: Rectangle? = null
@@ -328,7 +326,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
         val tool = ui.toolSelector.selected.value
         when {
             tool == AddTime -> {
-                val amount = DoubleInput("How much time to add", 10.0, 0.0..1000.0).showDialog(context) ?: return
+                val amount = DoublePrompt("How much time to add", 10.0, 0.0..1000.0).showDialog(context) ?: return
                 addTime(getTime(ev.x), amount)
             }
 
@@ -375,7 +373,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
                 val def = context[InstrumentRegistry].selectedInstrument.now
                 if (def !is SynthDefObject) return
                 val initialName = context[ScoreObjectRegistry].availableName(def.name.now)
-                val name = NameInput(context[ScoreObjectRegistry], "Name for new Synth object", initialName)
+                val name = NamePrompt(context[ScoreObjectRegistry], "Name for new Synth object", initialName)
                     .showDialog(context) ?: return
                 val ref = reactiveVariable(def.createReference())
                 val obj = SynthObject(reactiveVariable(name), ref, controls = def.defaultControls(context))
@@ -390,7 +388,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
 
             Tool.Envelope -> {
                 val initialName = context[ScoreObjectRegistry].availableName("env")
-                val name = NameInput(context[ScoreObjectRegistry], "Name for new Envelope object", initialName)
+                val name = NamePrompt(context[ScoreObjectRegistry], "Name for new Envelope object", initialName)
                     .showDialog(context) ?: return
                 val busSelector = BusSelector(context, preferredChannels = 1, preferredRate = Rate.Control)
                 val spec = EnvelopeObjectView.showEnvelopeConfig(

@@ -39,11 +39,6 @@
 - as standalone objects (`pbind`)
 - attaching to a synth in the score (`pmono`)
 
-### More flexible controls for SynthObjects
-
-- when adding envelope controls, the spec could be edited
-- also: options to sync from/to SynthDef spec
-
 ### Bouncing
 
 - to file or to buffer (that is record to file and then load buffer into SC)
@@ -69,3 +64,4 @@
 
 - effects that work with intermediate buses have to be executed after the flow synths
 - weird window behaviour on startup
+- when adding a new parameter control, the window is unresponsive

@@ -29,6 +29,8 @@ import xenakis.model.PianoRollObject
 import xenakis.model.ScoreObjectInstance
 import xenakis.sc.editor.EventDictionaryEditor
 import xenakis.sc.view.ObjectSelectorControl
+import xenakis.ui.prompt.DoublePrompt
+import xenakis.ui.prompt.IntegerPrompt
 import kotlin.math.roundToInt
 
 class PianoRollObjectView(inst: ScoreObjectInstance, private val obj: PianoRollObject) : ScoreObjectView(inst) {
@@ -222,7 +224,7 @@ class PianoRollObjectView(inst: ScoreObjectInstance, private val obj: PianoRollO
     }
 
     private fun showTransposeDialog() {
-        val semitones = IntegerInput("Tranpose by semitones", 0, -36..36)
+        val semitones = IntegerPrompt("Tranpose by semitones", 0, -36..36)
             .showDialog(context) ?: return
         obj.transpose(semitones)
     }
@@ -237,7 +239,7 @@ class PianoRollObjectView(inst: ScoreObjectInstance, private val obj: PianoRollO
             if (selectedTool == ToolSelector.Tool.AddTime && ev.eventType == MouseEvent.MOUSE_CLICKED) {
                 val (x, _) = snapToGrid(ev.x, ev.y)
                 val position = pane.getDuration(x)
-                val amount = DoubleInput("How much time to add", 10.0, 0.0..1000.0).showDialog(context)
+                val amount = DoublePrompt("How much time to add", 10.0, 0.0..1000.0).showDialog(context)
                     ?: return@addEventHandler
                 obj.addTime(position, amount)
             }

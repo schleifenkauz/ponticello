@@ -25,6 +25,10 @@ open class DetailPane : VBox() {
         children.add(box)
     }
 
+    fun clear() {
+        children.clear()
+    }
+
     companion object {
         const val LABEL_WIDTH = 130.0
     }

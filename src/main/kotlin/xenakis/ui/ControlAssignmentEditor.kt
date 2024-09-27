@@ -30,13 +30,13 @@ import xenakis.sc.view.ObjectSelectorControl
 class ControlAssignmentEditor(
     private val obj: SynthObject,
     val parameter: String,
-    private val spec: ControlSpec
 ) : HBox(5.0) {
     private val nameLabel = Label(parameter)
     private var selectedOption: ControlType<*>? = null
     private val optionButton = Button() styleClass "sleek-button"
     private val detailEditors = mutableMapOf<ControlType<*>, Node>()
-    private val deleteBtn = Icon.Delete.button(action = "Remove control") {
+    private val spec get() = obj.getSpec(parameter)
+    private val deleteBtn = Icon.Delete.button(radius = 12.0, action = "Remove control") {
         obj.controls.removeControl(parameter)
     }
     private var settingControl = false
@@ -54,13 +54,16 @@ class ControlAssignmentEditor(
 
     init {
         styleClass.add("detail-item")
-        optionButton.setOnAction {
-            val listView = SimpleSearchableListView(ControlType.all)
-            listView.showPopup(
-                obj.context, "Select control type",
-                anchorNode = optionButton, initialOption = selectedOption
-            ) { option ->
-                updateControlType(option)
+        optionButton.setOnMouseClicked { ev ->
+            if (ev.isShiftDown) ControlSpecPrompt(obj, parameter).showDialog(obj.context)
+            else {
+                val listView = SimpleSearchableListView(ControlType.all)
+                listView.showPopup(
+                    obj.context, "Select control type",
+                    anchorNode = optionButton, initialOption = selectedOption
+                ) { option ->
+                    updateControlType(option)
+                }
             }
         }
         optionButton.minWidth = 85.0
@@ -85,8 +88,6 @@ class ControlAssignmentEditor(
         detailEditors[type] = detailEditor!!
         settingControl = false
     }
-
-    fun getInputControl() = detailEditor
 
     fun focusInputControl(): Boolean {
         detailEditor?.requestFocus()

@@ -6,6 +6,7 @@ import hextant.undo.AbstractEdit
 import hextant.undo.UndoManager
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
+import reaktive.value.now
 import xenakis.sc.ControlSpec
 
 @Serializable
@@ -54,6 +55,23 @@ class SynthControls(
         viewManager.notifyListeners { addedControl(parameter, control) }
     }
 
+    fun setExtraSpec(parameter: String, spec: ControlSpec) {
+        val before = extraSpecs[parameter]
+        extraSpecs[parameter] = spec
+        if (before == null && spec == synthDef.getParameter(parameter).spec) {
+            return
+        }
+        context[UndoManager].record(Edit.EditExtraSpec(this, parameter, before, spec))
+        viewManager.notifyListeners { changedSpec(parameter, spec) }
+    }
+
+    fun removeExtraSpec(parameter: String) {
+        val before = extraSpecs.remove(parameter)
+        context[UndoManager].record(Edit.EditExtraSpec(this, parameter, before, extraSpecAfter = null))
+        val synthDefSpec = synthDef.getParameter(parameter).spec.now
+        viewManager.notifyListeners { changedSpec(parameter, synthDefSpec) }
+    }
+
     private fun doAddControl(control: ParameterControl, parameter: String, extraSpec: ControlSpec?) {
         control.initialize(context)
         map[parameter] = control
@@ -62,12 +80,13 @@ class SynthControls(
 
     fun removeControl(parameter: String) {
         val control = map.remove(parameter) ?: error("Parameter $parameter not found in controls")
+        extraSpecs.remove(parameter)
         context[UndoManager].record(Edit.RemoveControl(this, parameter, control, extraSpecs[parameter]))
         viewManager.notifyListeners { removedControl(parameter, control) }
     }
 
     fun transformControls(f: (String, ParameterControl) -> ParameterControl) =
-        SynthControls(map.mapValuesTo(mutableMapOf()) { (name, ctrl) -> f(name, ctrl) })
+        SynthControls(map.mapValuesTo(mutableMapOf()) { (name, ctrl) -> f(name, ctrl) }, extraSpecs.toMutableMap())
 
     fun copy() = SynthControls(map.mapValuesTo(mutableMapOf()) { (_, c) -> c.copy() }, extraSpecs.toMutableMap())
 
@@ -132,6 +151,30 @@ class SynthControls(
                 controls.removeControl(parameter)
             }
         }
+
+        class EditExtraSpec(
+            controls: SynthControls,
+            private val parameter: String,
+            private val extraSpecBefore: ControlSpec?,
+            private val extraSpecAfter: ControlSpec?
+        ) : Edit(controls) {
+            override val actionDescription: String
+                get() = when {
+                    extraSpecBefore != null && extraSpecAfter == null -> "Reset parameter spec"
+                    extraSpecBefore == null && extraSpecAfter != null -> "Add extra parameter spec"
+                    else -> "Modify extra spec"
+                }
+
+            override fun doRedo() {
+                if (extraSpecAfter != null) controls.setExtraSpec(parameter, extraSpecAfter)
+                else controls.removeExtraSpec(parameter)
+            }
+
+            override fun doUndo() {
+                if (extraSpecBefore != null) controls.setExtraSpec(parameter, extraSpecBefore)
+                else controls.removeExtraSpec(parameter)
+            }
+        }
     }
 
     interface View {
@@ -141,5 +184,6 @@ class SynthControls(
             removedControl(parameter, oldControl)
             addedControl(parameter, control)
         }
+        fun changedSpec(parameter: String, newSpec: ControlSpec) {}
     }
 }

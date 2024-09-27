@@ -42,6 +42,10 @@ class SynthObject(
 
     val synthDef: SynthDefObject get() = synthDefRef.now.get()
 
+    val parameters
+        get() = controls.extraParameters + synthDef.parameters.now
+            .filter { param -> controls.getExtraSpec(param.name.now) == null }
+
     val group: ReactiveValue<ObjectReference> get() = (controls["group"] as GroupControl).group
 
     private val bufferControl get() = controls.controlMap["buf"] as? BufferControl

@@ -15,6 +15,7 @@ import xenakis.sc.Identifier
 import xenakis.sc.NumericalControlSpec
 import xenakis.sc.editor.ControlSpecEditor
 import xenakis.ui.XenakisController.Companion.currentProject
+import xenakis.ui.prompt.PredicateTextPrompt
 
 class GlobalControlsPane(
     private val controls: GlobalControls,
@@ -30,7 +31,7 @@ class GlobalControlsPane(
     }
 
     private fun addControl() {
-        val name = PredicateTextInput("Control name", "") { name ->
+        val name = PredicateTextPrompt("Control name", "") { name ->
             when {
                 !Identifier.isValid(name) -> false
                 controls.hasControl(name) -> false

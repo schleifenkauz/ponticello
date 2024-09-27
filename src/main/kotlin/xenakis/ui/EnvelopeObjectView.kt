@@ -13,6 +13,7 @@ import xenakis.sc.NumericalControlSpec
 import xenakis.sc.editor.BusSelector
 import xenakis.sc.editor.createEditor
 import xenakis.sc.view.ObjectSelectorControl
+import xenakis.ui.prompt.Prompt
 
 class EnvelopeObjectView(inst: ScoreObjectInstance, val obj: EnvelopeObject) : ScoreObjectView(inst) {
     override val supportedActions: List<Icon>
@@ -40,7 +41,7 @@ class EnvelopeObjectView(inst: ScoreObjectInstance, val obj: EnvelopeObject) : S
     class ControlSpecInput(
         override val title: String,
         busSelector: BusSelector, initialSpec: NumericalControlSpec, context: Context
-    ) : InputNode<NumericalControlSpec?, VBox>() {
+    ) : Prompt<NumericalControlSpec?, VBox>() {
         private val specEditor = initialSpec.createEditor(context).also { editor -> editor.makeRoot() }
         private val specControl = context.createControl(specEditor)
         private val outputBusControl = ObjectSelectorControl(busSelector, createBundle())

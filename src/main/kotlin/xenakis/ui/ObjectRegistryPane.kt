@@ -17,13 +17,14 @@ import xenakis.model.NamedObject
 import xenakis.model.ObjectRegistry
 import xenakis.model.RenamableObject
 import xenakis.sc.Identifier
+import xenakis.ui.prompt.NamePrompt
 
 abstract class ObjectRegistryPane<O : NamedObject>(
     private val registry: ObjectRegistry<O>
 ) : VBox(), ObjectRegistry.Listener<O> {
     protected val layout = VBox()
     private val boxes = mutableListOf<ObjectBox<O>>()
-    protected val searchText = CustomTextField().styleClass("search-text")
+    protected val searchText = CustomTextField().styleClass("sleek-text-field")
     private val header = createHeader()
 
     init {
@@ -98,7 +99,7 @@ abstract class ObjectRegistryPane<O : NamedObject>(
     protected abstract fun sync()
 
     protected open fun addObject() {
-        val name = NameInput(registry, "Name for new ${registry.objectType}", initialName = searchText.text)
+        val name = NamePrompt(registry, "Name for new ${registry.objectType}", initialName = searchText.text)
             .showDialog(registry.context) ?: return
         addObject(name)
     }

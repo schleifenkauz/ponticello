@@ -484,19 +484,19 @@ Slider.control-detail-editor {
 }
 
 Button.sleek-button {
-    -fx-padding: 3px;
-    -fx-background-color: black;
-    -fx-border-color: rgba(128, 128, 128, 0.3);
-    -fx-background-radius: 5px;
-    -fx-border-radius: 5px;
+    -fx-padding: 3px !important;
+    -fx-background-color: black !important;
+    -fx-border-color: rgba(128, 128, 128, 0.3) !important;
+    -fx-background-radius: 5px !important;
+    -fx-border-radius: 5px !important;
 }
 
 Button.sleek-button:hover {
-    -fx-background-color: #351919;
+    -fx-background-color: #351919 !important;
 }
 
 Button.sleek-button:focused {
-    -fx-border-color: #501717;
+    -fx-border-color: #501717 !important;
 }
 
 .buttons-bar {
@@ -575,7 +575,7 @@ Button.sleek-button:focused {
     -fx-spacing: 3px;
 }
 
-.search-text {
+.sleek-text-field {
     -fx-font-size: 12px;
     -fx-background-color: transparent;
     -fx-border-color: grey;

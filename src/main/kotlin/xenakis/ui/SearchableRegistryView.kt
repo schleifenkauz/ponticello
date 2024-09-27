@@ -10,6 +10,8 @@ import xenakis.model.NamedObject
 import xenakis.model.ObjectRegistry
 import xenakis.model.RenamableObject
 import xenakis.sc.Identifier
+import xenakis.ui.prompt.NamePrompt
+import xenakis.ui.prompt.YesNoPrompt
 
 abstract class SearchableRegistryView<O : NamedObject>(
     private val registry: ObjectRegistry<O>
@@ -20,7 +22,7 @@ abstract class SearchableRegistryView<O : NamedObject>(
             if (obj is RenamableObject) {
                 on("F2") {
                     hide()
-                    val newName = NameInput(
+                    val newName = NamePrompt(
                         registry,
                         "Rename ${registry.objectType} ${obj.name.now}",
                         initialName = obj.name.now
@@ -33,8 +35,8 @@ abstract class SearchableRegistryView<O : NamedObject>(
                     hide()
                     runFXWithTimeout(25) {
                         val question = "Delete ${registry.objectType} ${obj.name.now}?"
-                        val really = YesNoInput(question).showDialog(registry.context)
-                        if (really) registry.remove(obj)
+                        val really = YesNoPrompt(question).showDialog(registry.context)
+                        if (really == true) registry.remove(obj)
                     }
                 }
             }

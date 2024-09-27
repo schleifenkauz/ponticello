@@ -14,6 +14,7 @@ import reaktive.value.now
 import xenakis.sc.NumericalControlSpec
 import xenakis.sc.SpecTransformation
 import kotlin.concurrent.thread
+import kotlin.math.absoluteValue
 
 class ControlSlider(
     private val value: ReactiveVariable<Double>,
@@ -68,10 +69,18 @@ class ControlSlider(
 
     private fun setupDataFlow() {
         valueObserver = value.forEach { v ->
-            slider.value = transform.map(v)
+            val mapped = transform.map(v)
+            if ((slider.value - mapped).absoluteValue > 1e-5) {
+                slider.value = mapped
+            }
             textInput.text = v.format(accuracy(spec.step.get()))
         }
-        slider.valueProperty().addListener { _, _, v -> value.set(transform.unmap(v.toDouble()).snap(spec.step.get())) }
+        slider.valueProperty().addListener { _, _, v ->
+            val unmapped = transform.unmap(v.toDouble()).snap(spec.step.get())
+            if ((unmapped - value.now).absoluteValue > 1e-5) {
+                value.set(unmapped)
+            }
+        }
         textInput.setOnAction {
             var v = textInput.text.toDoubleOrNull() ?: return@setOnAction
             v = v.coerceIn(spec.range)

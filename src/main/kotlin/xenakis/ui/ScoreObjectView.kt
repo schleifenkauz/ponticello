@@ -23,9 +23,11 @@ import reaktive.value.reactiveVariable
 import xenakis.impl.Knob
 import xenakis.model.*
 import xenakis.model.InteractionSettings.SnapOption
+import xenakis.sc.ControlSpec
 import xenakis.sc.NumericalControlSpec
 import xenakis.ui.ToolSelector.Tool
 import xenakis.ui.XenakisController.Companion.currentProject
+import xenakis.ui.prompt.compoundInput
 
 abstract class ScoreObjectView(
     val instance: ScoreObjectInstance
@@ -194,6 +196,10 @@ abstract class ScoreObjectView(
             is KnobControl -> displayKnob(parameter, control)
             else -> {}
         }
+    }
+
+    override fun changedSpec(parameter: String, newSpec: ControlSpec) {
+        envelopeEditors.find { ed -> ed.parameterName == parameter }?.repaint()
     }
 
     private fun removeEnvelope(parameter: String) {

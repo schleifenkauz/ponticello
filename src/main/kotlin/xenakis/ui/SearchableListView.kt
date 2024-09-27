@@ -12,7 +12,7 @@ import org.controlsfx.control.textfield.CustomTextField
 import reaktive.event.event
 
 abstract class SearchableListView<E> : VBox() {
-    private val searchText = CustomTextField().styleClass("search-text")
+    private val searchText = CustomTextField().styleClass("sleek-text-field")
     private val optionsBox = VBox().styleClass("options-box")
 
     private val optionBoxes = mutableMapOf<E, Node>()

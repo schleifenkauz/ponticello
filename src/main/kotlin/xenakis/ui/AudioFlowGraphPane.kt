@@ -28,6 +28,7 @@ import xenakis.model.BusObject
 import xenakis.model.BusRegistry
 import xenakis.model.ObjectReference
 import xenakis.ui.XenakisController.Companion.currentProject
+import xenakis.ui.prompt.NamePrompt
 import kotlin.math.absoluteValue
 import kotlin.math.sign
 
@@ -131,7 +132,7 @@ class AudioFlowGraphPane(
                 graph.split(node, output)
             }
             on("F2") {
-                val name = NameInput(context[BusRegistry], "Rename bus", node.bus.name.now)
+                val name = NamePrompt(context[BusRegistry], "Rename bus", node.bus.name.now)
                     .showDialog(context) ?: return@on
                 node.bus.rename(name)
             }

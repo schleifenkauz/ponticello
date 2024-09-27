@@ -7,6 +7,7 @@ import javafx.scene.layout.VBox
 import xenakis.model.ParameterControl
 import xenakis.model.SynthControls
 import xenakis.model.SynthObject
+import xenakis.sc.ControlSpec
 
 class ControlAssignmentView(private val obj: SynthObject) : VBox(), SynthControls.View {
     private val editorByParameter = mutableMapOf<String, ControlAssignmentEditor>()
@@ -18,11 +19,15 @@ class ControlAssignmentView(private val obj: SynthObject) : VBox(), SynthControl
     }
 
     override fun addedControl(parameter: String, control: ParameterControl) {
-        val spec = obj.getSpec(parameter)
-        val editor = ControlAssignmentEditor(obj, parameter, spec)
+        val editor = ControlAssignmentEditor(obj, parameter)
         editor.setControl(control)
         editors.add(editor)
+        navigateWithTab(editor)
+        editorByParameter[parameter] = editor
+        children.add(editor)
+    }
 
+    private fun navigateWithTab(editor: ControlAssignmentEditor) {
         editor.addEventFilter(KeyEvent.ANY) { ev ->
             if (ev.code == KeyCode.TAB) {
                 if (ev.eventType != KeyEvent.KEY_PRESSED) {
@@ -45,9 +50,6 @@ class ControlAssignmentView(private val obj: SynthObject) : VBox(), SynthControl
                 }
             }
         }
-
-        editorByParameter[parameter] = editor
-        children.add(editor)
     }
 
     override fun removedControl(parameter: String, control: ParameterControl) {
@@ -61,4 +63,8 @@ class ControlAssignmentView(private val obj: SynthObject) : VBox(), SynthControl
         editor.setControl(control)
     }
 
+    override fun changedSpec(parameter: String, newSpec: ControlSpec) {
+        val editor = editorByParameter[parameter] ?: return
+        editor.setControl(obj.controls[parameter])
+    }
 }

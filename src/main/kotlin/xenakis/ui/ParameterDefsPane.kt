@@ -8,12 +8,14 @@ import javafx.scene.layout.HBox
 import javafx.scene.layout.VBox
 import reaktive.Observer
 import reaktive.list.MutableReactiveList
+import reaktive.value.forEach
 import reaktive.value.now
 import xenakis.model.ParameterDefObject
 import xenakis.model.Settings
 import xenakis.sc.Identifier
 import xenakis.sc.NumericalControlSpec
 import xenakis.sc.editor.ControlSpecEditor
+import xenakis.ui.prompt.PredicateTextPrompt
 
 class ParameterDefsPane(
     private val context: Context,
@@ -33,7 +35,7 @@ class ParameterDefsPane(
     }
 
     private fun addParameter() {
-        val name = PredicateTextInput("Parameter name", "") { name ->
+        val name = PredicateTextPrompt("Parameter name", "") { name ->
             Identifier.isValid(name) && parameters.now.none { p -> p.name.now == name }
         }.showDialog(context) ?: return
         val spec = context[Settings].getDefaultControlSpec(name) ?: NumericalControlSpec.DEFAULT
@@ -51,7 +53,12 @@ class ParameterDefsPane(
         val editor = ControlSpecEditor(context)
         editor.makeRoot()
         context.withoutUndo { editor.setResult(parameter.spec.now) }
-        observers[parameter] = parameter.spec.bind(editor.result)
+        observers[parameter] =
+            parameter.spec.forEach { spec ->
+                if (editor.result.now != spec) editor.setResult(spec)
+            } and editor.result.observe { _, _, new ->
+                if (new != parameter.spec.now) parameter.spec.now = new
+            }
         val specControl = context.createControl(editor)
         val removeBtn = Icon.Delete.button(action = "Remove parameter") { parameters.now.remove(parameter) }
         val box = HBox(nameDisplay, specControl, infiniteSpace(), removeBtn) styleClass "object-box"

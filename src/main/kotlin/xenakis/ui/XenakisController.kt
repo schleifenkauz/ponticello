@@ -22,6 +22,8 @@ import xenakis.impl.SuperColliderClient
 import xenakis.impl.registerImplementationsFromClasspath
 import xenakis.model.Settings
 import xenakis.model.XenakisProject
+import xenakis.ui.prompt.PredicateTextPrompt
+import xenakis.ui.prompt.YesNoPrompt
 import java.io.File
 import java.util.prefs.Preferences
 
@@ -208,7 +210,7 @@ class XenakisController(private val primaryStage: Stage) {
     }
 
     fun createNewProject() {
-        val name = PredicateTextInput("Project name", "") { name -> name.isNotBlank() }.showDialog(context) ?: return
+        val name = PredicateTextPrompt("Project name", "") { name -> name.isNotBlank() }.showDialog(context) ?: return
         val location = userHome.resolve("compositions").resolve(name) //TODO introduce option for projects location
         location.mkdir()
         location.resolve("project.xen").writeText(location.name)
@@ -241,9 +243,8 @@ class XenakisController(private val primaryStage: Stage) {
             return
         }
         //TODO check if any edits have been made since the last save
-        val save = CancellableYesNoInput("Save project before exiting?", default = true)
-            .showDialog(context)
-        if (save == null) return
+        val save = YesNoPrompt("Save project before exiting?", cancellable = true, default = true)
+            .showDialog(context) ?: return
         if (save) saveProject()
         stage.hide()
     }

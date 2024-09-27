@@ -19,7 +19,7 @@ class ObjectSelectorControl<O : NamedObject, R : ObjectReference?>(
     private val button = Button() styleClass "sleek-button"
 
     @Suppress("UNCHECKED_CAST")
-    private val listView = object : SearchableRegistryView<O>(editor.getRegistry(context) as ObjectRegistry<O>) {
+    private val listView get() = object : SearchableRegistryView<O>(editor.getRegistry(context) as ObjectRegistry<O>) {
         override fun createObject(name: String): O? = editor.createNewObject(name)
 
         override fun displayText(option: O): String = editor.extractText(option).now

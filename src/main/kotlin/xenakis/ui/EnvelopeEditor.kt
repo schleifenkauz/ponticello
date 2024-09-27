@@ -19,6 +19,7 @@ import xenakis.model.EnvelopeControl
 import xenakis.sc.LinearTransformation
 import xenakis.sc.NumericalControlSpec
 import xenakis.sc.mapOnto
+import xenakis.ui.prompt.DoublePrompt
 import kotlin.math.absoluteValue
 
 class EnvelopeEditor(
@@ -284,7 +285,7 @@ class EnvelopeEditor(
 
     private fun showPromptFor(idx: Int) {
         val point = envelope.points[idx]
-        val value = DoubleInput("Value for $parameterName", point.y, spec.range)
+        val value = DoublePrompt("Value for $parameterName", point.y, spec.range)
             .showDialog(parentPane.context) ?: return
         envelope.editPoint(idx, value)
     }

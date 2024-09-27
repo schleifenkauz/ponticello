@@ -5,11 +5,12 @@ import javafx.collections.FXCollections
 import javafx.scene.control.ComboBox
 import javafx.scene.control.Spinner
 import xenakis.model.ServerOptions
+import xenakis.ui.prompt.CompoundPrompt
 
 class ServerOptionsPane(
     private val context: Context,
     private val options: ServerOptions
-) : CompoundInput<Unit>("Server options") {
+) : CompoundPrompt<Unit>("Server options") {
     private val numInputChannels = Spinner<Int>(0, 24, options.numInputChannels)
     private val numOutputChannels = Spinner<Int>(1, 24, options.numOutputChannels)
     private val memSize = Spinner<Int>(8192, 8192 * 64, options.memSize, 8192)

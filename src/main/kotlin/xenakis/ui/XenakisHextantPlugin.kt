@@ -20,6 +20,7 @@ import xenakis.sc.view.*
 import xenakis.sc.view.ScFunctionEditorControl.Companion.SINGLE_LINE_FUNCTION
 import xenakis.ui.XenakisHextantPlugin.multilineCommand
 import xenakis.ui.XenakisHextantPlugin.singleLineCommand
+import xenakis.ui.prompt.PredicateTextPrompt
 
 object XenakisHextantPlugin : PluginInitializer({
     stylesheet("xenakis/ui/style.css")
@@ -57,7 +58,7 @@ object XenakisHextantPlugin : PluginInitializer({
             ed.result.now is DoubleLiteral && ed.getParent<SynthDefEditor>() != null
         }
         executing { editor ->
-            val name = PredicateTextInput("Parameter name", "") { name -> Identifier.isValid(name) }
+            val name = PredicateTextPrompt("Parameter name", "") { name -> Identifier.isValid(name) }
                 .showDialog(editor.context) ?: return@executing
             val def = editor.getParent<SynthDefEditor>()
             if (def == null) {

@@ -24,6 +24,8 @@ sealed interface SynthDefObject : ParameterizedObject, InstrumentObject {
             ?: error("Parameter $name not found in SynthDef '${this.name.now}'")
     }
 
+    override fun hasParameter(name: String): Boolean = parameters.now.any { it.name.now == name }
+
     override fun ScWriter.addToServer() {
         allocateServerObject()
     }

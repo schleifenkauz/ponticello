@@ -4,14 +4,14 @@ import javafx.scene.control.Label
 import javafx.scene.control.Spinner
 import javafx.scene.control.TextField
 import javafx.scene.input.TransferMode
-import javafx.scene.layout.HBox
 import javafx.scene.layout.Region
-import javafx.stage.StageStyle
 import reaktive.value.binding.map
 import reaktive.value.fx.asProperty
 import reaktive.value.now
 import reaktive.value.reactiveVariable
 import xenakis.model.*
+import xenakis.ui.prompt.compoundInput
+import xenakis.ui.prompt.showSelectorDialog
 
 class BufferRegistryPane(
     private val buffers: BufferRegistry,
@@ -36,7 +36,7 @@ class BufferRegistryPane(
 
     override fun addObject(name: String): BufferObject? {
         val choices = BufferObject.Type.values().toList()
-        val type = showSelectorDialog(project.context, "Buffer type", choices) ?: return null
+        val type = showSelectorDialog(project.context, "Buffer type", choices, anchorNode = this) ?: return null
         return addObject(type, name)
     }
 

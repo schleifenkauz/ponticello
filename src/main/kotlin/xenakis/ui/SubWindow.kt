@@ -25,7 +25,10 @@ class SubWindow(
         scene = Scene(root)
         if (applyStylesheets) context[Stylesheets].manage(scene)
         initWindowType()
-        removeRootFromParentOnShowing()
+        setOnShowing {
+            root.requestFocus()
+            onShowing()
+        }
     }
 
     private fun initWindowType() {
@@ -33,8 +36,10 @@ class SubWindow(
             scene.registerShortcuts {
                 on("ESCAPE") { hide() }
             }
-            focusedProperty().addListener { _, _, hasFocus ->
-                if (!hasFocus) hide()
+            if (type == Type.Popup) {
+                focusedProperty().addListener { _, _, hasFocus ->
+                    if (!hasFocus) hide()
+                }
             }
             initStyle(StageStyle.UNDECORATED)
             initModality(Modality.NONE)
@@ -53,13 +58,6 @@ class SubWindow(
         root.widthProperty().addListener { _, _, _ -> sizeToScene() }
         root.widthProperty().addListener { _, _, _ -> sizeToScene() }
         isResizable = false
-    }
-
-    private fun removeRootFromParentOnShowing() {
-        setOnShowing {
-            root.requestFocus()
-            onShowing()
-        }
     }
 
     enum class Type {

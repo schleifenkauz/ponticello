@@ -16,13 +16,13 @@ import xenakis.sc.editor.ControlSpecEditor
 import xenakis.ui.accuracy
 
 enum class ParameterType {
-    Bus, Buffer, Numerical, Unknown;
+    Bus, Buffer, Numerical, Group;
 
     override fun toString(): String = when (this) {
         Bus -> "bus"
         Buffer -> "buf"
         Numerical -> "num"
-        Unknown -> "???"
+        Group -> "group"
     }
 }
 
@@ -111,7 +111,7 @@ class BufferControlSpec(val isPlayBufSource: Boolean = true) : ControlSpec {
 @Serializable
 class GroupControlSpec : ControlSpec {
     override val type: ParameterType
-        get() = ParameterType.Unknown
+        get() = ParameterType.Group
 
     override val code: String
         get() = throw UnsupportedOperationException("Group control has no code")
