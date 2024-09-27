@@ -352,15 +352,15 @@ Slider.control-detail-editor {
 }
 
 .scroll-pane {
-    -fx-background-color: transparent;
+    -fx-background-color: transparent !important;
 }
 
 .scroll-pane .viewport {
-    -fx-background-color: transparent;
+    -fx-background-color: transparent !important;
 }
 
 .scroll-pane .content {
-    -fx-background-color: transparent;
+    -fx-background-color: transparent !important;
 }
 
 .coordinate-info {

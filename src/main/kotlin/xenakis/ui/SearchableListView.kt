@@ -31,7 +31,7 @@ abstract class SearchableListView<E> : VBox() {
     init {
         styleClass("searchable-list")
         searchText.left = Label("", Icon.Search.getView(Icon.DEFAULT_RADIUS))
-        setPrefSize(300.0, 500.0)
+        setMaxSize(300.0, 500.0)
         children.addAll(searchText, optionsBox)
         registerShortcuts()
         searchText.textProperty().addListener { _, _, txt -> updatedText(txt) }
@@ -57,6 +57,7 @@ abstract class SearchableListView<E> : VBox() {
         filteredOptions = options().filter { option -> extractText(option).contains(txt, ignoreCase = true) }
         select(filteredOptions.firstOrNull { option -> option !in removedOptions })
         layoutOptionBoxes()
+        scene.window.sizeToScene()
     }
 
     private fun prepareOptionBoxes() {
@@ -72,7 +73,6 @@ abstract class SearchableListView<E> : VBox() {
 
     private fun layoutOptionBoxes() {
         optionsBox.children.clear()
-        if (filteredOptions.size == 1 && extractText(filteredOptions[0]) == searchText.text) return
         for (option in filteredOptions) {
             if (option in removedOptions) continue
             val box = optionBoxes.getValue(option)

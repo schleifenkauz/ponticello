@@ -35,7 +35,7 @@ enum class Icon {
     Vertical, VerticalRemove,
     Edit,
     Check,
-    Expand,
+    Expand, Collapse,
     Add, Minus,
     View,
     Mute,

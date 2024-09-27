@@ -14,6 +14,7 @@ import javafx.scene.layout.VBox
 import reaktive.value.binding.map
 import reaktive.value.fx.asObservableValue
 import reaktive.value.now
+import xenakis.impl.CollapsablePane
 import xenakis.impl.async
 import xenakis.impl.isMyComputerDumb
 import xenakis.model.*
@@ -217,7 +218,7 @@ class InstrumentRegistryPane(
         val window = subWindows.getOrPut(obj) {
             if (obj is CustomizableSynthDefObject) {
                 val pane = VBox(
-                    ParameterDefsPane(registry.context, obj.parameters),
+                    CollapsablePane("Parameters", ParameterDefsPane(registry.context, obj.parameters)),
                     obj.ugenGraph.control
                 ) styleClass "synth-def-pane"
                 SubWindow(pane, "", registry.context).apply {
