@@ -14,8 +14,8 @@ import xenakis.ui.prompt.NamePrompt
 import xenakis.ui.prompt.YesNoPrompt
 
 abstract class SearchableRegistryView<O : NamedObject>(
-    private val registry: ObjectRegistry<O>
-) : SearchableListView<O>() {
+    private val registry: ObjectRegistry<O>, title: String
+) : SearchableListView<O>(title) {
     init {
         registerShortcuts {
             val obj = selectedOption

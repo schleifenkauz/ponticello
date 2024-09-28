@@ -57,10 +57,10 @@ class ControlAssignmentEditor(
         optionButton.setOnMouseClicked { ev ->
             if (ev.isShiftDown) ControlSpecPrompt(obj, parameter).showDialog(obj.context)
             else {
-                val listView = SimpleSearchableListView(ControlType.all)
+                val listView = SimpleSearchableListView(ControlType.all, "Select control type")
                 listView.showPopup(
-                    obj.context, "Select control type",
-                    anchorNode = optionButton, initialOption = selectedOption
+                    obj.context, anchorNode = optionButton,
+                    initialOption = selectedOption
                 ) { option ->
                     updateControlType(option)
                 }

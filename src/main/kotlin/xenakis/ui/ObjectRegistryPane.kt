@@ -24,7 +24,7 @@ abstract class ObjectRegistryPane<O : NamedObject>(
 ) : VBox(), ObjectRegistry.Listener<O> {
     protected val layout = VBox()
     private val boxes = mutableListOf<ObjectBox<O>>()
-    protected val searchText = CustomTextField().styleClass("sleek-text-field")
+    protected val searchText = CustomTextField().styleClass("sleek-text-field", "search-field")
     private val header = createHeader()
 
     init {
@@ -34,11 +34,9 @@ abstract class ObjectRegistryPane<O : NamedObject>(
         children.addAll(header, scrollPane)
         SplitPane.setResizableWithParent(this, false)
         HBox.setHgrow(searchText, Priority.ALWAYS)
+        searchText.promptText = "Search..."
         searchText.left = Label("", Icon.Search.getView(Icon.DEFAULT_RADIUS))
-        searchText.textProperty().addListener { _, _, _ ->
-            layoutBoxes()
-            if (scene != null) scene.window.sizeToScene()
-        }
+        searchText.textProperty().addListener { _, _, _ -> layoutBoxes() }
         registerShortcuts {
             on("INSERT") {
                 addObject()
@@ -95,6 +93,7 @@ abstract class ObjectRegistryPane<O : NamedObject>(
         for (box in boxes) {
             if (matchesSearch(box.obj)) layout.children.add(box)
         }
+        if (scene != null) scene.window.sizeToScene()
     }
 
     protected abstract fun sync()
@@ -123,6 +122,7 @@ abstract class ObjectRegistryPane<O : NamedObject>(
     override fun removed(obj: O, idx: Int) {
         val box = boxes.removeAt(idx)
         layout.children.remove(box)
+        if (scene != null) scene.window.sizeToScene()
     }
 
     fun box(idx: Int): ObjectBox<O> = boxes[idx]

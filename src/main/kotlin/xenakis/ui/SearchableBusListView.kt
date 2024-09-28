@@ -5,8 +5,8 @@ import xenakis.model.BusObject
 import xenakis.model.BusRegistry
 
 class SearchableBusListView(
-    registry: BusRegistry,
-) : SearchableRegistryView<BusObject>(registry) {
+    registry: BusRegistry, title: String,
+) : SearchableRegistryView<BusObject>(registry, title) {
     override fun displayText(option: BusObject): String =
         "${option.name.now}: ${option.channels.now} x ${option.rate.now}"
 

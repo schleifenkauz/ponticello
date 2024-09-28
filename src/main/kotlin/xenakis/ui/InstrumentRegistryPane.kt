@@ -50,7 +50,7 @@ class InstrumentRegistryPane(
         val options: List<AddInstrumentOption> = synthDefsFromGlobal// + availablePlugins
         val searchableList = AddInstrumentOptionListView(options)
         searchableList.enterText(searchText.text)
-        searchableList.showPopup(registry.context, "Add instrument", anchorNode = this) { option ->
+        searchableList.showPopup(registry.context, anchorNode = this) { option ->
             createObject(option)
         }
     }
@@ -65,7 +65,7 @@ class InstrumentRegistryPane(
 
     private inner class AddInstrumentOptionListView(
         options: List<AddInstrumentOption>
-    ) : SimpleSearchableListView<AddInstrumentOption>(options) {
+    ) : SimpleSearchableListView<AddInstrumentOption>(options, "Add instrument") {
         override fun makeOption(text: String): AddInstrumentOption? {
             return if (Identifier.isValid(text) && !registry.has(text)) AddInstrumentOption.NewSynthDef(text)
             else null
@@ -195,6 +195,7 @@ class InstrumentRegistryPane(
                                 ).showDialog(registry.context) == true
                             ) {
                                 globalLib.push(obj)
+                                notifyConfirm("Saved SynthDef '${obj.name.now}' to global library.")
                             }
                         }
                     }

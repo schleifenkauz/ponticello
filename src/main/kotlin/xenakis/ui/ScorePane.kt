@@ -91,7 +91,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
         for ((inst, view) in views) {
             if (inst.start > displayEnd) continue
             if (inst.start + inst.duration < displayStart) continue
-            view.setPrefSize(view.getDisplayWidth(), getPaneY(inst.height))
+            view.setPrefSize(view.getDisplayWidth(), view.getDisplayHeight())
             view.relocate(getX(inst.start), getPaneY(inst.y))
             view.rescale()
             children.add(view)
@@ -217,6 +217,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
     * Mouse events
     * */
 
+
     private fun mousePressed(ev: MouseEvent) {
         ev.consume()
         val selectedTool = ui.toolSelector.selected.value!!
@@ -231,7 +232,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
                 rect.fill = synthDef.color.now
             }
 
-            Task -> rect.fill = GRAY
+            Task -> return
             Tool.Envelope -> rect.fill = WHITE
             Memo -> rect.fill = BLACK
 
@@ -354,6 +355,18 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
                 else if (this is ScoreView && !ui.player.isPlaying) ui.playHead.setPlayHeadX(ev.x)
             }
 
+            tool == Task && ev.clickCount >= 2 -> {
+                val defaultName = context[ScoreObjectRegistry].availableName("task")
+                val name = NamePrompt(context[ScoreObjectRegistry], "Task name", defaultName)
+                    .showDialog(context) ?: return
+                val code = EditorRoot.create(ScFunctionEditor(context))
+                val obj = TaskObject(reactiveVariable(name), code, width)
+                val time = getTime(ev.x)
+                val y = getScoreY(ev.y)
+                val inst = ScoreObjectInstance(obj.createReference(), time, y)
+                score.addObject(inst)
+            }
+
             newObj != null -> {
                 if (newObj.width != 0.0 && newObj.height != 0.0) createNewObject(tool, newObj)
                 clearNewShape()
@@ -378,12 +391,6 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
                 val ref = reactiveVariable(def.createReference())
                 val obj = SynthObject(reactiveVariable(name), ref, controls = def.defaultControls(context))
                 addNewObject(obj, rect)
-            }
-
-            Task -> {
-                val name = context[ScoreObjectRegistry].availableName("task")
-                val editor = EditorRoot.create(ScFunctionEditor(context))
-                addNewObject(TaskObject(reactiveVariable(name), editor, rect.width), rect)
             }
 
             Tool.Envelope -> {
@@ -455,8 +462,8 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
                 addNewObject(obj, rect)
             }
 
-            Pointer, Cut, AddTime -> {
-                System.err.println("Unrecognized tool $tool")
+            Pointer, Cut, AddTime, Task -> {
+                System.err.println("Unrecognized object type $tool")
                 return
             }
         }

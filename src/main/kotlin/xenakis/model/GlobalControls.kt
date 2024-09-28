@@ -34,12 +34,19 @@ class GlobalControls(private val controls: MutableList<GlobalControl>) : Xenakis
         for (ctrl in controls) {
             valueObservers[ctrl] = ctrl.knobControl.value.forEach { value -> updatedValue(ctrl, value) }
         }
+        context[SuperColliderClient].run { setBusValues(writer) }
     }
 
-    fun ScWriter.setBusValues() {
-        for (control in controls) {
-            setupBus(control)
+    fun setBusValues(writer: ScWriter) = writer.run {
+        +"if (~init_global_controls != nil) { ServerTree.remove(~init_global_controls) }"
+        appendBlock("~init_global_controls = ") {
+            for (control in controls) {
+                setupBus(control)
+            }
         }
+        appendLine(";")
+        +"ServerTree.add(~init_global_controls)"
+        +"if (s.serverRunning) { ~init_global_controls.value }"
     }
 
     private fun SuperColliderContext.setupBus(control: GlobalControl) {

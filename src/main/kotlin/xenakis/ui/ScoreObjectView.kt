@@ -7,7 +7,10 @@ import javafx.geometry.HorizontalDirection
 import javafx.geometry.HorizontalDirection.RIGHT
 import javafx.geometry.VerticalDirection
 import javafx.scene.Cursor
-import javafx.scene.control.*
+import javafx.scene.control.Button
+import javafx.scene.control.ColorPicker
+import javafx.scene.control.Spinner
+import javafx.scene.control.TextField
 import javafx.scene.input.MouseEvent
 import javafx.scene.layout.*
 import javafx.scene.paint.Color
@@ -140,13 +143,14 @@ abstract class ScoreObjectView(
         addEventHandler(MouseEvent.MOUSE_PRESSED) { ev ->
             toFront()
             context[ScoreObjectSelectionManager].select(this, addToSelection = ev.isShiftDown)
+            requestFocus()
             ev.consume()
         }
     }
 
     private fun initializeLayout() {
         relocate(pane.getX(instance.start), pane.getPaneY(instance.y))
-        setPrefSize(getDisplayWidth(), pane.getPaneY(instance.height))
+        setPrefSize(getDisplayWidth(), getDisplayHeight())
     }
 
     protected fun addAction(icon: Icon, action: String?, onAction: () -> Unit): Button {
@@ -328,6 +332,8 @@ abstract class ScoreObjectView(
 
     open fun getDisplayWidth(): Double = pane.getWidth(instance.duration)
 
+    open fun getDisplayHeight() = pane.getPaneY(instance.height)
+
     open fun rescale() {
         repaintEnvelopes()
     }
@@ -343,7 +349,7 @@ abstract class ScoreObjectView(
     }
 
     override fun resizedObject(obj: ScoreObject) {
-        setPrefSize(getDisplayWidth(), pane.getPaneY(instance.height))
+        setPrefSize(getDisplayWidth(), getDisplayHeight())
         rescale()
     }
 

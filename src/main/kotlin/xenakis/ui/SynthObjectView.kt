@@ -92,8 +92,8 @@ class SynthObjectView(
         val unassignedParameters = (synthParameters + defaultParameters)
             .filter { param -> param.name.now !in obj.controls.controlMap }
             .filter { param -> !(param in defaultParameters && synthParameters.any { p -> p.name.now == param.name.now }) }
-        val listView = SearchableParameterListView(context, unassignedParameters, obj)
-        listView.showPopup(context, "Add control", anchorNode = anchorNode) { option ->
+        val listView = SearchableParameterListView(context, unassignedParameters, obj, "Add new control")
+        listView.showPopup(context, anchorNode = anchorNode) { option ->
             val extraSpec = option.spec.now.takeIf {
                 option.name.now !in synthParameters.map { p -> p.name.now }
             }
@@ -209,8 +209,8 @@ class SynthObjectView(
                 val control = obj.controls.controlMap[p.name.now]
                 control != null && (control !is EnvelopeControl || !control.display.now)
             }
-        val listView = SearchableParameterListView(context, possibleParameters, obj)
-        listView.showPopup(context, "Add envelope", point) { param ->
+        val listView = SearchableParameterListView(context, possibleParameters, obj, "Add new envelope")
+        listView.showPopup(context, point) { param ->
             val name = param.name.now
             val oldControl = obj.controls[name]
             if (oldControl is EnvelopeControl) {

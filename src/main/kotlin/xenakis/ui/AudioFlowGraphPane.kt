@@ -68,10 +68,10 @@ class AudioFlowGraphPane(
     private fun allowDroppingBusObjects() {
         setOnMouseClicked { ev ->
             if (ev.isAltDown) {
-                val busList = SearchableBusListView(context[BusRegistry])
+                val busList = SearchableBusListView(context[BusRegistry], "Add bus node")
                 busList.removedOptions.addAll(graph.nodes.map { node -> node.ref.get<BusObject>() })
                 val anchor = Point2D(ev.screenX, ev.screenY)
-                busList.showPopup(context, "Add bus node", anchor) { bus ->
+                busList.showPopup(context, anchor) { bus ->
                     graph.addNode(bus.createReference(), Point(ev.x, ev.y))
                 }
             }

@@ -577,13 +577,17 @@ Button.sleek-button:focused {
 }
 
 .sleek-text-field {
+    -fx-prompt-text-fill: gray;
     -fx-font-size: 12px;
     -fx-background-color: transparent;
     -fx-border-color: grey;
-    -fx-border-width: 0px 0px 1px 0px;
     -fx-border-radius: 0px;
     -fx-padding: 5px 5px 5px 5px;
     -fx-max-width: 1000;
+}
+
+.search-field {
+    -fx-border-width: 0px 0px 1px 0px;
 }
 
 .options-box {

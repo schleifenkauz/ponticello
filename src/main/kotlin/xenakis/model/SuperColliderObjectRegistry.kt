@@ -16,9 +16,13 @@ abstract class SuperColliderObjectRegistry<O : SuperColliderObject> : ObjectRegi
 
     open fun syncAll() {
         context[SuperColliderClient].run {
-            for (obj in objects) {
-                obj.sync()
-            }
+            syncAll(this)
+        }
+    }
+
+    fun syncAll(writer: ScWriter) {
+        for (obj in objects) {
+            obj.sync(writer)
         }
     }
 

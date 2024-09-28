@@ -29,7 +29,7 @@ enum class Icon {
     Restart,
     Graph,
     ExtraWindow,
-    Find,
+    Search,
     Close,
     Horizontal, HorizontalRemove,
     Vertical, VerticalRemove,
@@ -60,7 +60,7 @@ enum class Icon {
     Compound,
     Cut,
     Up, Down,
-    Sync, AddGlobal, Search;
+    Sync, AddGlobal;
 
     private val file = name.lowercase() + "_green.png"
     private val url = javaClass.getResource("icons/$file") ?: error("icon $file not found")

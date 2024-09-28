@@ -8,8 +8,8 @@ import xenakis.model.SynthObject
 import xenakis.sc.*
 
 class SearchableParameterListView(
-    private val context: Context, val parameters: List<ParameterDefObject>, val obj: SynthObject
-) : SimpleSearchableListView<ParameterDefObject>(parameters) {
+    private val context: Context, val parameters: List<ParameterDefObject>, val obj: SynthObject, title: String
+) : SimpleSearchableListView<ParameterDefObject>(parameters, title) {
     override fun extractText(option: ParameterDefObject): String = option.name.now
 
     override fun displayText(option: ParameterDefObject): String {

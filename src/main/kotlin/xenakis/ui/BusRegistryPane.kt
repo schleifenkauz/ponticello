@@ -6,6 +6,7 @@ import javafx.scene.control.Spinner
 import javafx.scene.input.TransferMode
 import reaktive.value.fx.asObservableValue
 import reaktive.value.fx.asProperty
+import xenakis.impl.SuperColliderClient
 import xenakis.model.BusObject
 import xenakis.model.BusRegistry
 import xenakis.sc.Rate
@@ -37,6 +38,9 @@ class BusRegistryPane(private val busses: BusRegistry) : SuperColliderObjectRegi
             channelsSpinner.valueFactory.valueProperty().bindBidirectional(obj.channels.asProperty())
         }
         addGrabber(BusObject.DATA_FORMAT, transferMode = TransferMode.LINK)
+        addAction(Icon.View, "Monitor bus") {
+            registry.context[SuperColliderClient].run("${obj.superColliderName}.scope;")
+        }
         addExtraControl(rateSelector, channelsSpinner)
     }
 }

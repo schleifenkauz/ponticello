@@ -91,7 +91,7 @@ class AudioFlowGraph(
             return false
         }
         order = newOrder
-        client.run { redefineAudioFlow() }
+        client.run { redefineAudioFlow(this) }
         undoManager.record(Edit.AddFlow(this, flow))
         views.notifyListeners { addedFlow(flow) }
         return true
@@ -103,7 +103,7 @@ class AudioFlowGraph(
         client.run {
             +"${flow.synthName}.free"
             +"${flow.synthName} = nil"
-            redefineAudioFlow()
+            redefineAudioFlow(this)
         }
         undoManager.record(Edit.RemoveFlow(this, flow))
         views.notifyListeners { removedFlow(flow) }
@@ -160,12 +160,12 @@ class AudioFlowGraph(
     }
 
     fun updateFlow() {
-        client.run { redefineAudioFlow() }
+        client.run { redefineAudioFlow(this) }
     }
 
-    private fun ScWriter.redefineAudioFlow() {
-        clearAudioFlow()
-        defineAudioFlow()
+    fun redefineAudioFlow(writer: ScWriter) {
+        writer.clearAudioFlow()
+        writer.defineAudioFlow()
     }
 
     private fun ScWriter.clearAudioFlow() {
@@ -273,7 +273,7 @@ class AudioFlowGraph(
                 dependencies[flow.target] = dependencies[flow.target]!! - 1
                 if (dependencies[flow.target] == 0) {
                     for (e in edges(flow.target)) {
-                        q.offer(e)
+                        if (getGroup(e) == group) q.offer(e)
                     }
                 }
             }

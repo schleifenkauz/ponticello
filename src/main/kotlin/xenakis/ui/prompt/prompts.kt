@@ -10,11 +10,11 @@ fun <T : Any> showSelectorDialog(
     items: List<T>, initialValue: T? = null,
     anchor: Point2D? = null, stringConverter: (T) -> String = { it.toString() }
 ): T? {
-    val view = object : SimpleSearchableListView<T>(items) {
+    val view = object : SimpleSearchableListView<T>(items, title) {
         override fun extractText(option: T): String = stringConverter(option)
     }
     var value = initialValue
-    view.showPopup(context, title, anchor, initialValue) { v -> value = v }
+    view.showPopup(context, anchor, initialValue) { v -> value = v }
     return value
 }
 

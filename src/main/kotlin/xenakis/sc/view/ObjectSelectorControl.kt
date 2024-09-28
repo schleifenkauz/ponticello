@@ -19,11 +19,15 @@ class ObjectSelectorControl<O : NamedObject, R : ObjectReference?>(
     private val button = Button() styleClass "sleek-button"
 
     @Suppress("UNCHECKED_CAST")
-    private val listView get() = object : SearchableRegistryView<O>(editor.getRegistry(context) as ObjectRegistry<O>) {
-        override fun createObject(name: String): O? = editor.createNewObject(name)
+    private val listView: SearchableRegistryView<O>
+        get() {
+            val registry = editor.getRegistry(context) as ObjectRegistry<O>
+            return object : SearchableRegistryView<O>(registry, "Select ${registry.objectType}") {
+                override fun createObject(name: String): O? = editor.createNewObject(name)
 
-        override fun displayText(option: O): String = editor.extractText(option).now
-    }
+                override fun displayText(option: O): String = editor.extractText(option).now
+            }
+        }
 
     init {
         editor.addView(this)
@@ -32,7 +36,7 @@ class ObjectSelectorControl<O : NamedObject, R : ObjectReference?>(
 
             @Suppress("UNCHECKED_CAST")
             val initialOption = editor.selected.now?.get<NamedObject>() as O?
-            listView.showPopup(context, title, anchorNode = button, initialOption) { option ->
+            listView.showPopup(context, anchorNode = button, initialOption) { option ->
                 @Suppress("UNCHECKED_CAST")
                 editor.select(option.createReference() as R)
             }

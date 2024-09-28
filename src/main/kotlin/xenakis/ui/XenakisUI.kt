@@ -187,7 +187,7 @@ class XenakisUI(
     override fun displayStartupScreen() {
         displaysProject = false
         val searchField = CustomTextField().apply {
-            styleClass("sleek-text-field")
+            styleClass("sleek-text-field", "search-field")
             left = Icon.Search.getView()
             promptText = "Search for project..."
         }

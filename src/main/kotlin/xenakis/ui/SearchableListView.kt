@@ -11,8 +11,8 @@ import javafx.scene.layout.VBox
 import org.controlsfx.control.textfield.CustomTextField
 import reaktive.event.event
 
-abstract class SearchableListView<E> : VBox() {
-    private val searchText = CustomTextField().styleClass("sleek-text-field")
+abstract class SearchableListView<E>(private val title: String) : VBox() {
+    private val searchText = CustomTextField().styleClass("sleek-text-field", "search-field")
     private val optionsBox = VBox().styleClass("options-box")
 
     private val optionBoxes = mutableMapOf<E, Node>()
@@ -30,8 +30,9 @@ abstract class SearchableListView<E> : VBox() {
 
     init {
         styleClass("searchable-list")
+        searchText.promptText = "$title..."
         searchText.left = Label("", Icon.Search.getView(Icon.DEFAULT_RADIUS))
-        setMaxSize(300.0, 500.0)
+        this.setMaxSize(300.0, 500.0)
         children.addAll(searchText, optionsBox)
         registerShortcuts()
         searchText.textProperty().addListener { _, _, txt -> updatedText(txt) }
@@ -127,7 +128,7 @@ abstract class SearchableListView<E> : VBox() {
     }
 
     fun showPopup(
-        context: Context, title: String, anchor: Point2D? = null,
+        context: Context, anchor: Point2D? = null,
         initialOption: E? = null, onConfirm: (E) -> Unit
     ) {
         initializeOptions()
@@ -141,9 +142,9 @@ abstract class SearchableListView<E> : VBox() {
         window.showAndWait()
     }
 
-    fun showPopup(context: Context, title: String, anchorNode: Node, initialOption: E? = null, onConfirm: (E) -> Unit) {
+    fun showPopup(context: Context, anchorNode: Node, initialOption: E? = null, onConfirm: (E) -> Unit) {
         val anchor = anchorNode.localToScreen(0.0, 0.0)
-        showPopup(context, title, anchor, initialOption, onConfirm)
+        showPopup(context, anchor, initialOption, onConfirm)
     }
 
     protected fun hide() {

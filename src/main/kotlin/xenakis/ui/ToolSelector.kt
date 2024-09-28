@@ -22,9 +22,9 @@ class ToolSelector(private val context: Context) : SelectorBar<ToolSelector.Tool
             addEventHandler(MouseEvent.MOUSE_CLICKED) { ev ->
                 if (ev.clickCount >= 2) {
                     val instruments = context[InstrumentRegistry]
-                    SimpleSearchableRegistryView(instruments).showPopup(
-                        context, "Select instrument",
-                        anchorNode = this, initialOption = instruments.selectedInstrument.now
+                    SimpleSearchableRegistryView(instruments, "Select instrument").showPopup(
+                        context, anchorNode = this,
+                        initialOption = instruments.selectedInstrument.now
                     ) { instr -> instruments.select(instr) }
                 }
             }
