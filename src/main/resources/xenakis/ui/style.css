@@ -1,7 +1,7 @@
 .root {
-    -fx-accent: #18528a;
+    -fx-accent: green;
     -fx-focus-color: -fx-accent;
-    -fx-base: #2e2f33;
+    -fx-base: #1d1d20;
     -fx-control-inner-background: derive(-fx-base, 35%);
     -fx-control-inner-background-alt: -fx-control-inner-background;
 }
@@ -378,11 +378,11 @@ Label.memo-area {
 }
 
 .envelope-line {
-    -fx-stroke-width: 5px;
+    -fx-stroke-width: 2px;
 }
 
 .envelope-line:hover {
-    -fx-stroke-width: 7px;
+    -fx-stroke-width: 4px;
 }
 
 .toolbar-part {
@@ -642,3 +642,8 @@ Button.sleek-button:focused {
     -fx-background-color: transparent !important;
 }
 
+.envelope-sub-window {
+    -fx-border-color: grey;
+    -fx-border-width: 1px;
+    -fx-border-radius: 3px;
+}

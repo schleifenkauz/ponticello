@@ -5,12 +5,15 @@ import hextant.fx.registerShortcuts
 import javafx.geometry.Rectangle2D
 import javafx.scene.SnapshotParameters
 import javafx.scene.image.ImageView
+import javafx.scene.layout.Pane
+import javafx.scene.paint.Color
 import javafx.scene.robot.Robot
 import javafx.scene.shape.Line
 import javafx.scene.text.Text
 import reaktive.value.fx.asObservableValue
 import reaktive.value.now
 import xenakis.impl.Point
+import xenakis.impl.replacePrefix
 import xenakis.impl.step
 import xenakis.model.InteractionSettings.SnapOption
 import xenakis.model.Score
@@ -39,6 +42,9 @@ class ScoreView(score: Score, context: Context) : ScorePane(score, context) {
     override val rootPane: ScoreView
         get() = this
     val displayedDuration get() = displayEnd - displayStart
+
+    private var magnifiedEnvelope: EnvelopeEditor? = null
+    private var magnifierWindow: SubWindow? = null
 
     init {
         children.add(clipboardObjectView)
@@ -120,6 +126,33 @@ class ScoreView(score: Score, context: Context) : ScorePane(score, context) {
         return nearestGrid
     }
 
+    fun magnifyEnvelope(editor: EnvelopeEditor) {
+        val pane = Pane() styleClass "envelope-sub-window"
+        val semitransparent = editor.objectView.backgroundColor.now.deriveColor(1.0, 1.0, 1.0, 0.3)
+        pane.style = "-fx-background-color: ${semitransparent.toString().replacePrefix("0x", "#")};"
+        magnifiedEnvelope = EnvelopeEditor(editor.parameterName, editor.envelope, editor.objectView, pane)
+        val objName = editor.objectView.instance.obj.name.now
+        val title = "Envelope for ${editor.parameterName} of $objName"
+        magnifierWindow?.hide()
+        magnifierWindow = SubWindow(pane, title, editor.objectView.context, SubWindow.Type.Popup)
+        repositionEnvelopeMagnifier()
+        magnifierWindow!!.show()
+    }
+
+    private fun repositionEnvelopeMagnifier() {
+        val editor = magnifiedEnvelope ?: return
+        val window = magnifierWindow ?: return
+        editor.pane.setPrefSize(editor.objectView.prefWidth, height / 5)
+        editor.repaint()
+        val coords = editor.objectView.localToScreen(0.0, 0.0) ?: return
+        window.sizeToScene()
+        window.x = coords.x
+        window.y =
+            if (coords.y + editor.objectView.prefHeight / 2 > height / 2) coords.y - editor.pane.prefHeight - 10.0
+            else coords.y + editor.objectView.prefHeight + 10.0
+        window.scene.fill = Color.TRANSPARENT
+    }
+
     fun displayWholeScore() {
         val totalDuration = score.objectInstances.maxOfOrNull { obj -> obj.start + obj.duration } ?: 60.0
         display(0.0, totalDuration)
@@ -133,6 +166,7 @@ class ScoreView(score: Score, context: Context) : ScorePane(score, context) {
 
     override fun repaint() {
         super.repaint()
+        repositionEnvelopeMagnifier()
         children.add(clipboardObjectView)
         children.add(positionTracker)
         ui.playHead.repaint()

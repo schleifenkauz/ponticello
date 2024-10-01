@@ -5,8 +5,10 @@ import javafx.beans.binding.Bindings
 import javafx.geometry.HorizontalDirection
 import javafx.scene.control.Label
 import javafx.scene.input.KeyEvent
-import javafx.scene.input.MouseButton
+import javafx.scene.input.MouseButton.PRIMARY
+import javafx.scene.input.MouseButton.SECONDARY
 import javafx.scene.input.MouseEvent
+import javafx.scene.layout.Pane
 import javafx.scene.paint.Color
 import javafx.scene.shape.Circle
 import javafx.scene.shape.Polyline
@@ -16,6 +18,7 @@ import reaktive.value.now
 import xenakis.impl.Point
 import xenakis.model.Envelope
 import xenakis.model.EnvelopeControl
+import xenakis.model.SynthObject
 import xenakis.sc.LinearTransformation
 import xenakis.sc.NumericalControlSpec
 import xenakis.sc.mapOnto
@@ -23,14 +26,18 @@ import xenakis.ui.prompt.DoublePrompt
 import kotlin.math.absoluteValue
 
 class EnvelopeEditor(
-    val parameterName: String, private val envelope: Envelope,
-    private val objectView: ScoreObjectView,
+    val parameterName: String, val envelope: Envelope,
+    val objectView: ScoreObjectView, val pane: Pane
 ) : EnvelopeView {
     private val control
         get() = associatedObject.associatedControls.getValue(parameterName) as EnvelopeControl
     private val spec get() = associatedObject.getSpec(parameterName) as NumericalControlSpec
-    private val xTransform get() = LinearTransformation(0.0..associatedObject.duration, 0.0..objectView.prefWidth)
-    private val yTransform get() = spec.mapOnto(objectView.prefHeight..0.0)
+    private val xTransform
+        get() = LinearTransformation(
+            0.0..associatedObject.duration,
+            0.0..pane.prefWidth
+        )
+    private val yTransform get() = spec.mapOnto(pane.prefHeight - HANDLE_RADIUS..HANDLE_RADIUS)
 
     private val valueGrid get() = spec.step.get()
 
@@ -47,7 +54,7 @@ class EnvelopeEditor(
         mouseInfo.isVisible = false
         line.strokeProperty().bind(color.asObservableValue())
         mouseInfo.textFillProperty().bind(objectView.backgroundColor.map(Color::invert).asObservableValue())
-        createNewPointsOnClick()
+        configureMouseActions()
         setupPositionInfo()
         setupLineDragging()
         envelope.addView(this)
@@ -93,20 +100,41 @@ class EnvelopeEditor(
         }
     }
 
-    private fun createNewPointsOnClick() {
-        line.setOnMouseClicked { ev ->
-            if (ev.isAltDown) {
-                val t = transformXToTime(ev.x)
-                val v = envelope.interpolateValueAt(t)
-                val newPoint = Point(t, v)
-                var idx = envelope.points.binarySearch(newPoint, compareBy(Point::x))
-                idx = -(idx + 1)
-                envelope.addPoint(idx, newPoint)
+    private fun configureMouseActions() {
+        if (pane != objectView) {
+            pane.setOnMouseClicked { ev ->
+                when {
+                    ev.button == SECONDARY && ev.clickCount == 1 -> createNewPoint(ev, interpolate = false)
+                }
                 ev.consume()
-            } else {
-                bringToFront()
             }
         }
+        line.setOnMouseClicked { ev ->
+            when {
+                ev.button == PRIMARY && ev.clickCount == 2 -> {
+                    if (ev.isShiftDown) {
+                        val obj = objectView.instance.obj
+                        if (obj is SynthObject) {
+                            ControlSpecPrompt(obj, parameterName, spec).showDialog(objectView.context)
+                        }
+                    } else objectView.pane.rootPane.magnifyEnvelope(this)
+                }
+
+                ev.button == PRIMARY -> bringToFront()
+                ev.button == SECONDARY -> createNewPoint(ev, interpolate = true)
+                else -> {}
+            }
+            ev.consume()
+        }
+    }
+
+    private fun createNewPoint(ev: MouseEvent, interpolate: Boolean) {
+        val t = transformXToTime(ev.x)
+        val v = if (interpolate) envelope.interpolateValueAt(t) else transformYToValue(ev.y)
+        val newPoint = Point(t, v)
+        var idx = envelope.points.binarySearch(newPoint, compareBy(Point::x))
+        idx = -(idx + 1)
+        envelope.addPoint(idx, newPoint)
     }
 
     override fun addedPoint(idx: Int, point: Point) {
@@ -118,7 +146,7 @@ class EnvelopeEditor(
 
     override fun removedPoint(idx: Int, point: Point) {
         val handle = handles.removeAt(idx)
-        objectView.children.remove(handle)
+        pane.children.remove(handle)
         line.points.remove(idx * 2, (idx + 1) * 2)
     }
 
@@ -161,18 +189,18 @@ class EnvelopeEditor(
         var y = yTransform.map(v)
         val infoHeight = mouseInfo.prefHeight(-1.0)
         val infoWidth = mouseInfo.prefWidth(-1.0)
-        if (objectView.width < infoWidth) return
+        if (objectView.prefWidth < infoWidth) return
         if (y < infoHeight * 2) y += infoHeight / 1.5 else y -= infoHeight * 1.5
-        val infoX = (x - infoWidth / 2).coerceIn(0.0, objectView.width - infoWidth)
+        val infoX = (x - infoWidth / 2).coerceIn(0.0, pane.prefWidth - infoWidth)
         mouseInfo.relocate(infoX, y)
     }
 
     fun repaint() {
         removeChildren()
-        objectView.children.add(mouseInfo)
+        pane.children.add(mouseInfo)
         handles.clear()
         line.points.clear()
-        objectView.children.add(line)
+        pane.children.add(line)
 
         for ((idx, p) in envelope.points.withIndex()) {
             val x = xTransform.map(p.x)
@@ -183,9 +211,9 @@ class EnvelopeEditor(
     }
 
     private fun removeChildren() {
-        objectView.children.removeAll(handles)
-        objectView.children.remove(line)
-        objectView.children.remove(mouseInfo)
+        pane.children.removeAll(handles)
+        pane.children.remove(line)
+        pane.children.remove(mouseInfo)
     }
 
     private fun addHandle(idx: Int, x: Double, y: Double) {
@@ -201,7 +229,7 @@ class EnvelopeEditor(
                 .map { hover -> if (hover) 2.0 else 0.0 }
         )
         setupHandle(handle)
-        objectView.children.add(handle)
+        pane.children.add(handle)
         handles.add(idx, handle)
     }
 
@@ -251,7 +279,7 @@ class EnvelopeEditor(
         }
         handle.setOnMouseClicked { ev ->
             val idx = handles.indexOf(handle)
-            if (ev.button == MouseButton.SECONDARY) {
+            if (ev.button == SECONDARY) {
                 removeHandle(idx)
             } else if (ev.clickCount >= 2) {
                 showPromptFor(idx)
@@ -310,6 +338,6 @@ class EnvelopeEditor(
     }
 
     companion object {
-        private const val HANDLE_RADIUS = 5.0
+        private const val HANDLE_RADIUS = 3.0
     }
 }

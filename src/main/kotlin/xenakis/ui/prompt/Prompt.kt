@@ -37,7 +37,7 @@ abstract class Prompt<R, N : Node> {
     fun showDialog(context: Context): R {
         commited = false
         val layout = createLayout()
-        window = SubWindow(layout, title, context, SubWindow.Type.Prompt)
+        window = SubWindow(layout, title, context, SubWindow.Type.Popup)
         window.setOnShown { onReceiveFocus() }
         window.sizeToScene()
         window.showAndWait()

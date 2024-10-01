@@ -232,8 +232,7 @@ abstract class ScoreObjectView(
 
     private fun displayEnvelope(parameter: String, control: EnvelopeControl) {
         val envelope = control.envelope
-        val e = EnvelopeEditor(parameter, envelope, this)
-        e.repaint()
+        val e = EnvelopeEditor(parameter, envelope, this, pane = this)
         envelopeEditors.add(e)
     }
 

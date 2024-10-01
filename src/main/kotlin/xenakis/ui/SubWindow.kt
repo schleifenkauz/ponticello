@@ -9,40 +9,41 @@ import javafx.scene.layout.Region
 import javafx.stage.Modality
 import javafx.stage.Stage
 import javafx.stage.StageStyle
-import xenakis.ui.XenakisApp.Companion.primaryStage
 
 class SubWindow(
     private val root: Parent,
     title: String,
     context: Context,
     private val type: Type = Type.Modal,
-    applyStylesheets: Boolean = true,
-    private val onShowing: SubWindow.() -> Unit = {}
+    applyStylesheets: Boolean = true
 ) : Stage() {
     init {
-        initOwner(context[primaryStage])
+        //initOwner(context[primaryStage])
         this.title = title
         scene = Scene(root)
         if (applyStylesheets) context[Stylesheets].manage(scene)
         initWindowType()
         setOnShowing {
             root.requestFocus()
-            onShowing()
         }
     }
 
     private fun initWindowType() {
-        if (type in setOf(Type.Prompt, Type.Popup)) {
+        val style = when (type) {
+            Type.Modal -> StageStyle.DECORATED
+            Type.Popup -> StageStyle.TRANSPARENT
+            Type.Undecorated -> StageStyle.TRANSPARENT
+        }
+        initStyle(style)
+        if (type == Type.Popup) {
             scene.registerShortcuts {
                 on("ESCAPE") { hide() }
             }
             focusedProperty().addListener { _, _, hasFocus ->
                 if (!hasFocus) hide()
             }
-            initStyle(StageStyle.UNDECORATED)
             initModality(Modality.NONE)
         } else {
-            initStyle(StageStyle.DECORATED)
             initModality(Modality.WINDOW_MODAL)
             scene.registerShortcuts {
                 on("Ctrl+W") { hide() }
@@ -59,6 +60,6 @@ class SubWindow(
     }
 
     enum class Type {
-        Popup, Prompt, Modal
+        Popup, Undecorated, Modal;
     }
 }

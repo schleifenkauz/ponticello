@@ -330,21 +330,20 @@ class XenakisUI(
             +Icon.Graph.button(action = "Edit audio flow graph (Ctrl+Shift+F)") { flowGraphWindow.show() }
             +Icon.Settings.button(action = "Edit settings (Ctrl+Alt+S)") { settingsWindow.show() }
             +Icon.Knob.button(action = "Edit global controls (Ctrl+G)") { globalControlsWindow.show() }
-            val subWindowType = SubWindow.Type.Modal
-            busesWindow = SubWindow(busRegistryPane, "Busses", context, subWindowType)
+            busesWindow = SubWindow(busRegistryPane, "Busses", context, SubWindow.Type.Undecorated)
             +Icon.Bus.button(action = "Show buses (Ctrl+B)") {
                 busesWindow.show()
                 busesWindow.requestFocus()
             }
-            samplesWindow = SubWindow(samplesPane, "Samples", context, subWindowType)
+            samplesWindow = SubWindow(samplesPane, "Samples", context, SubWindow.Type.Undecorated)
             +Icon.Samples.button(action = "Show samples (Ctrl+F)") {
                 samplesWindow.show()
                 samplesWindow.requestFocus()
             }
             if (mode == Mode.Laptop) {
-                instrumentsWindow = SubWindow(instrumentsPane, "Instruments", context, subWindowType)
+                instrumentsWindow = SubWindow(instrumentsPane, "Instruments", context, SubWindow.Type.Undecorated)
                 +Icon.Instrument.button(action = "Show instruments (Alt+I)") { instrumentsWindow.show() }
-                groupsWindow = SubWindow(groupsPane, "Groups", context, subWindowType)
+                groupsWindow = SubWindow(groupsPane, "Groups", context, SubWindow.Type.Undecorated)
                 +Icon.Groups.button(action = "Show groups (Alt+G)") { groupsWindow.show() }
                 add(Icon.Details.button(action = "Edit object properties (P)") { showDetailPaneOfSelectedObject() }) {
                     disableProperty().bind(scoreView.selector.singleSelected.equalTo(null).asObservableValue())
@@ -617,7 +616,7 @@ class XenakisUI(
         val selected = scoreView.selector.singleSelected.now ?: return
         val pane = selected.getDetailPane()
         val name = selected.instance.obj.name.now
-        val window = SubWindow(pane, "Configure $name", context, type = SubWindow.Type.Modal)
+        val window = SubWindow(pane, "Configure $name", context, type = SubWindow.Type.Undecorated)
         window.show()
     }
 

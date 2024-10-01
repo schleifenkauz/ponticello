@@ -69,10 +69,8 @@ abstract class ObjectRegistryPane<O : NamedObject>(
         nameInput.promptText = "${registry.objectType} name"
         val ok = Icon.Check.button(action = "Confirm")
         val layout = HBox(typeSelector, nameInput).centerChildren() styleClass "prompt"
-        val window = SubWindow(layout, "Create new ${registry.objectType}", registry.context, SubWindow.Type.Prompt) {
-            nameInput.requestFocus()
-        }
-
+        val window = SubWindow(layout, "Create new ${registry.objectType}", registry.context, SubWindow.Type.Popup)
+        window.setOnShown { nameInput.requestFocus() }
         fun commit() {
             val type = typeSelector.value ?: return
             val name = nameInput.text

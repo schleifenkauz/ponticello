@@ -46,7 +46,7 @@ class GlobalControlsPane(
             editor.setResult(defaultControlSpec)
         }
         val control = context.createControl(editor)
-        val window = SubWindow(control, "Configure global control", context, SubWindow.Type.Prompt)
+        val window = SubWindow(control, "Configure global control", context, SubWindow.Type.Popup)
         window.scene.fill = BLACK
         window.width = 800.0
         control.registerShortcuts {

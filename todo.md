@@ -82,6 +82,7 @@
 
 - weird window behaviour on startup
 - when adding a new parameter control, the window is unresponsive
+- something is not right with the playbackRate parameter behaviour
 
 ### Namen überlegen
 
