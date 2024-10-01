@@ -21,7 +21,7 @@ class ScorePlayEnv(private val settings: Settings) {
         suffixes.add(suffix)
         val name = if (suffix == 0) obj.name.now else "${obj.name.now}_$suffix"
         activeInstances[ActiveInstance(inst, position, name)] = suffix
-        logger.info("   marked start for $obj, suffix = $suffix")
+        logger.fine("   marked start for $obj, suffix = $suffix")
         return name
     }
 
@@ -36,7 +36,7 @@ class ScorePlayEnv(private val settings: Settings) {
                 logger.severe("   $synth")
             }
         } else suffixes(obj).remove(suffix)
-        logger.info("   marked end for $obj, suffix = $suffix")
+        logger.fine("   marked end for $obj, suffix = $suffix")
     }
 
     @Synchronized

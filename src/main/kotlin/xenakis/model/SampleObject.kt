@@ -124,7 +124,7 @@ class SampleObject private constructor(
             .exec(command)
             .onExit().thenApply { proc ->
                 val exitCode = proc.exitValue()
-                if (exitCode == 0) logger.info("Created spectrogram for buffer ${name.now}")
+                if (exitCode == 0) logger.fine("Created spectrogram for buffer ${name.now}")
                 else logger.severe("Non zero exit code $exitCode creating spectrogram for buffer ${name.now}")
             }
     }

@@ -49,7 +49,7 @@ class ControlSlider(
         }
         children.addAll(textInput, /*btnDec, */slider /*btnInc*/)
         setHgrow(slider, Priority.ALWAYS)
-        centerChildrenVertically()
+        centerChildren()
         setupDataFlow()
     }
 

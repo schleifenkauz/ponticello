@@ -10,21 +10,12 @@ import xenakis.ui.MemoObjectView
 class MemoObject(
     @SerialName("name") override val mutableName: ReactiveVariable<String>,
     @SerialName("text") private var _text: String,
-    @SerialName("width") private var _width: Double
 ) : ScoreObject() {
     override val type: String
         get() = "memo"
 
     override val canMute: Boolean
         get() = false
-
-    var width: Double
-        get() = _width
-        set(value) {
-            if (_width == value) return
-            _width = value
-            notifyListeners { resizedObject(this@MemoObject) }
-        }
 
     var text: String
         get() = _text
@@ -34,7 +25,7 @@ class MemoObject(
             notifyListeners<MemoObjectView> { textChanged(value) }
         }
 
-    override fun doClone(newName: String): ScoreObject = MemoObject(reactiveVariable(newName), text, width)
+    override fun doClone(newName: String): ScoreObject = MemoObject(reactiveVariable(newName), text)
 
     override fun writeCode(name: String, position: ObjectPosition, env: ScorePlayEnv): String = ""
 }

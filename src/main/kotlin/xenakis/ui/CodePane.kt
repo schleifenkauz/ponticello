@@ -31,7 +31,7 @@ class CodePane(title: String, val control: EditorControl<*>) : VBox() {
         val reevaluateBtn = Icon.Repeat.button(action = "Reevaluate code") { evaluate() }
         return hbox(titleLabel, infiniteSpace(), reevaluateBtn) {
             styleClass("tool-pane-header")
-            centerChildrenVertically()
+            centerChildren()
         }
     }
 

@@ -44,7 +44,6 @@ class GlobalControls(private val controls: MutableList<GlobalControl>) : Xenakis
                 setupBus(control)
             }
         }
-        appendLine(";")
         +"ServerTree.add(~init_global_controls)"
         +"if (s.serverRunning) { ~init_global_controls.value }"
     }

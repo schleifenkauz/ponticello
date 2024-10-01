@@ -35,7 +35,8 @@ class ControlAssignmentEditor(
     private var selectedOption: ControlType<*>? = null
     private val optionButton = Button() styleClass "sleek-button"
     private val detailEditors = mutableMapOf<ControlType<*>, Node>()
-    private val spec get() = obj.getSpec(parameter)
+    private val spec
+        get() = obj.getSpec(parameter) ?: error("Parameter $parameter not found in $obj")
     private val deleteBtn = Icon.Delete.button(radius = 12.0, action = "Remove control") {
         obj.controls.removeControl(parameter)
     }
@@ -55,7 +56,7 @@ class ControlAssignmentEditor(
     init {
         styleClass.add("detail-item")
         optionButton.setOnMouseClicked { ev ->
-            if (ev.isShiftDown) ControlSpecPrompt(obj, parameter).showDialog(obj.context)
+            if (ev.isShiftDown) ControlSpecPrompt(obj, parameter, spec).showDialog(obj.context)
             else {
                 val listView = SimpleSearchableListView(ControlType.all, "Select control type")
                 listView.showPopup(
@@ -241,7 +242,7 @@ class ControlAssignmentEditor(
                 val displaySwitch = ToggleSwitch("Display: ")
                 spec as BufferControlSpec
                 displaySwitch.selectedProperty().bindBidirectional(control.display.asProperty())
-                return HBox(selectorControl, infiniteSpace(), displaySwitch).centerChildrenVertically()
+                return HBox(selectorControl, infiniteSpace(), displaySwitch).centerChildren()
             }
 
             override fun createDefaultControl(

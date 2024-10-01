@@ -1,6 +1,7 @@
 package xenakis.ui
 
 import hextant.context.Context
+import hextant.fx.runFXWithTimeout
 import hextant.serial.EditorRoot
 import hextant.undo.compoundEdit
 import javafx.application.Platform
@@ -171,7 +172,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
         val synthDefRef = reactiveVariable(synthDef.createReference())
         val name = context[ScoreObjectRegistry].availableName(sample.name.now)
         val obj = SynthObject(reactiveVariable(name), synthDefRef, controls)
-        obj.setInitialSize(sample.duration, 150.0)
+        obj.setInitialSize(sample.duration, 0.05)
         val (x, y) = snapToGrid(ev.x, ev.y)
         val inst = ScoreObjectInstance(obj.createReference(), getTime(x), getScoreY(y))
         score.addObject(inst)
@@ -217,7 +218,6 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
     * Mouse events
     * */
 
-
     private fun mousePressed(ev: MouseEvent) {
         ev.consume()
         val selectedTool = ui.toolSelector.selected.value!!
@@ -232,9 +232,8 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
                 rect.fill = synthDef.color.now
             }
 
-            Task -> return
+            Task, Memo -> return
             Tool.Envelope -> rect.fill = WHITE
-            Memo -> rect.fill = BLACK
 
             Group -> {
                 rect.stroke = WHITE
@@ -264,8 +263,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
                 return
             }
 
-            Cut -> return
-            AddTime -> return
+            Cut, AddTime -> return
         }
         setNewShape(rect)
     }
@@ -355,16 +353,33 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
                 else if (this is ScoreView && !ui.player.isPlaying) ui.playHead.setPlayHeadX(ev.x)
             }
 
-            tool == Task && ev.clickCount >= 2 -> {
-                val defaultName = context[ScoreObjectRegistry].availableName("task")
-                val name = NamePrompt(context[ScoreObjectRegistry], "Task name", defaultName)
-                    .showDialog(context) ?: return
-                val code = EditorRoot.create(ScFunctionEditor(context))
-                val obj = TaskObject(reactiveVariable(name), code, width)
+            tool in setOf(Task, Memo) && ev.clickCount >= 2 -> {
+                val obj = when (tool) {
+                    Task -> {
+                        val defaultName = context[ScoreObjectRegistry].availableName("task")
+                        val name = NamePrompt(context[ScoreObjectRegistry], "Task name", defaultName)
+                            .showDialog(context) ?: return
+                        val code = EditorRoot.create(ScFunctionEditor(context))
+                        TaskObject(reactiveVariable(name), code)
+                    }
+
+                    Memo -> {
+                        val defaultName = context[ScoreObjectRegistry].availableName("memo")
+                        MemoObject(reactiveVariable(defaultName), "")
+                    }
+
+                    else -> throw AssertionError()
+                }
                 val time = getTime(ev.x)
                 val y = getScoreY(ev.y)
                 val inst = ScoreObjectInstance(obj.createReference(), time, y)
                 score.addObject(inst)
+                if (obj is MemoObject) {
+                    val view = getObjectView(inst) as MemoObjectView
+                    runFXWithTimeout {
+                        view.enterEdit()
+                    }
+                }
             }
 
             newObj != null -> {
@@ -409,11 +424,6 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
                 addNewObject(obj, rect)
             }
 
-            Memo -> {
-                val name = context[ScoreObjectRegistry].availableName("memo")
-                addNewObject(MemoObject(reactiveVariable(name), "", rect.width), rect)
-            }
-
             Group -> {
                 val name = context[ScoreObjectRegistry].availableName("group")
                 context.compoundEdit("Add object group") {
@@ -432,7 +442,8 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
                 compoundInput<Unit>("Configure new object") {
                     val defaultName = context[ScoreObjectRegistry].availableName("piano_roll")
                     val nameField = TextField(defaultName) named "Object name"
-                    val rootPitchSelector = ComboBox(observableList(MidiPitch.allPitchClasses())) named "Root pitch class"
+                    val rootPitchSelector =
+                        ComboBox(observableList(MidiPitch.allPitchClasses())) named "Root pitch class"
                     rootPitchSelector.value = MidiPitch(0)
                     val registerSpinner = Spinner<Int>(0, 10, 4) named "Base register"
                     val octaves = Spinner<Int>(1, 12, 2) named "Octaves"
@@ -462,7 +473,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
                 addNewObject(obj, rect)
             }
 
-            Pointer, Cut, AddTime, Task -> {
+            Pointer, Cut, AddTime, Task, Memo -> {
                 System.err.println("Unrecognized object type $tool")
                 return
             }

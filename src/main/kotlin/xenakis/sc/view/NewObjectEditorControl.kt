@@ -15,7 +15,7 @@ import hextant.fx.view
 import javafx.scene.layout.HBox
 import reaktive.collection.binding.isNotEmpty
 import reaktive.value.now
-import xenakis.ui.centerChildrenVertically
+import xenakis.ui.centerChildren
 import xenakis.ui.styleClass
 
 class NewObjectEditorControl @ProvideImplementation(ControlFactory::class) constructor(
@@ -36,9 +36,9 @@ class NewObjectEditorControl @ProvideImplementation(ControlFactory::class) const
             if (!arguments[MULTILINE] || !anyArguments.now) {
                 view(editor.arguments) {
                     set(ORIENTATION, Orientation.Horizontal)
-                    set(CELL_FACTORY) { SeparatorCell(", ").also { it.root.centerChildrenVertically() } }
+                    set(CELL_FACTORY) { SeparatorCell(", ").also { it.root.centerChildren() } }
                     set(ADD_WITH_COMMA, true)
-                }.root.styleClass("arguments").centerChildrenVertically()
+                }.root.styleClass("arguments").centerChildren()
             }
         }
         if (arguments[MULTILINE] && anyArguments.now) {

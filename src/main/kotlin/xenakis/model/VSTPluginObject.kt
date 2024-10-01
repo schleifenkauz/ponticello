@@ -54,7 +54,7 @@ class VSTPluginObject private constructor(
     }
 
     override fun ScWriter.allocateServerObject() {
-        appendBlock("Task") {
+        appendBlock("Task", endLine = false) {
             val info = controllerInfo
             if (info != null) {
                 +"$superColliderName = VSTPluginController(${info.synthName}, \\${info.id})"

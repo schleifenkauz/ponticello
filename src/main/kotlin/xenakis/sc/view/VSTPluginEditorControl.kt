@@ -8,7 +8,7 @@ import hextant.core.view.CompoundEditorControl
 import hextant.fx.view
 import xenakis.sc.editor.VSTPluginEditor
 import xenakis.ui.Icon
-import xenakis.ui.centerChildrenVertically
+import xenakis.ui.centerChildren
 import xenakis.ui.setFixedWidth
 
 class VSTPluginEditorControl @ProvideImplementation(ControlFactory::class) constructor(
@@ -36,6 +36,6 @@ class VSTPluginEditorControl @ProvideImplementation(ControlFactory::class) const
         add(Icon.Save.button(action = "Save configuration") {
             editor.saveConfiguration()
         })
-        root.centerChildrenVertically()
+        root.centerChildren()
     }
 }

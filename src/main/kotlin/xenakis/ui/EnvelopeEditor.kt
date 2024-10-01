@@ -161,6 +161,7 @@ class EnvelopeEditor(
         var y = yTransform.map(v)
         val infoHeight = mouseInfo.prefHeight(-1.0)
         val infoWidth = mouseInfo.prefWidth(-1.0)
+        if (objectView.width < infoWidth) return
         if (y < infoHeight * 2) y += infoHeight / 1.5 else y -= infoHeight * 1.5
         val infoX = (x - infoWidth / 2).coerceIn(0.0, objectView.width - infoWidth)
         mouseInfo.relocate(infoX, y)
@@ -275,7 +276,9 @@ class EnvelopeEditor(
 
     private fun adjustPointVertical(idx: Int, dir: Int) {
         val delta = spec.step.get() * dir
-        envelope.adjustPointVertical(idx, delta)
+        if (envelope.points[idx].y + delta in spec.range) {
+            envelope.adjustPointVertical(idx, delta)
+        }
     }
 
     private fun adjustPointHorizontal(idx: Int, dir: HorizontalDirection) {

@@ -19,7 +19,7 @@ class SettingsPane(settings: Settings, context: Context) : VBox(5.0) {
             +Label("Playback options").styleClass("heading")
             +hbox {
                 spacing = 10.0
-                centerChildrenVertically()
+                centerChildren()
                 children {
                     +Label("Latency: ")
                     +hbox(

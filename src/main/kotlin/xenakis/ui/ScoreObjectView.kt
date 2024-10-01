@@ -44,8 +44,8 @@ abstract class ScoreObjectView(
     private lateinit var nameEditor: NameControl
     private lateinit var muteUnmuteBtn: Button
     private val envelopeDisplayObservers = mutableMapOf<String, Observer>()
-    val actions = HBox().centerChildrenVertically() styleClass "actions"
-    private val knobControls = FlowPane().centerChildrenVertically() styleClass "knobs" //TODO remove
+    val actions = HBox().centerChildren() styleClass "actions"
+    private val knobControls = FlowPane().centerChildren() styleClass "knobs" //TODO remove
 
     private val envelopeEditors = mutableListOf<EnvelopeEditor>()
 
@@ -120,6 +120,7 @@ abstract class ScoreObjectView(
     }
 
     open fun initialize(parent: ScorePane) {
+        if (isInitialized) return
         this.pane = parent
         initializeLayout()
         setupSelecting()
@@ -141,11 +142,15 @@ abstract class ScoreObjectView(
 
     private fun setupSelecting() {
         addEventHandler(MouseEvent.MOUSE_PRESSED) { ev ->
-            toFront()
-            context[ScoreObjectSelectionManager].select(this, addToSelection = ev.isShiftDown)
-            requestFocus()
+            selectThis(ev.isShiftDown)
             ev.consume()
         }
+    }
+
+    protected fun selectThis(addToSelection: Boolean) {
+        toFront()
+        context[ScoreObjectSelectionManager].select(this, addToSelection = addToSelection)
+        requestFocus()
     }
 
     private fun initializeLayout() {
@@ -290,7 +295,6 @@ abstract class ScoreObjectView(
     * */
 
     protected open fun startDrag(ev: MouseEvent, cursor: Cursor) {
-        context[ScoreObjectSelectionManager].select(this, addToSelection = ev.isShiftDown)
         if (cursor.isResizeCursor) {
             val direction = cursor.resizeDirection()
             instance.obj.beginResize(stretch = ev.isShiftDown, direction)

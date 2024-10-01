@@ -1,12 +1,13 @@
 package xenakis.ui
 
+import javafx.scene.Cursor
 import javafx.scene.control.ScrollPane
-import javafx.scene.layout.BorderPane
+import javafx.scene.input.MouseEvent
 import xenakis.model.ScoreObjectInstance
 import xenakis.model.TaskObject
 
 class TaskObjectView(inst: ScoreObjectInstance, val obj: TaskObject) : ScoreObjectView(inst) {
-    private val nameLabel = label(obj.name)
+    private val nameLabel = label(obj.name) styleClass "task-label"
 
     private val codeEditor = obj.code.control
 
@@ -16,9 +17,10 @@ class TaskObjectView(inst: ScoreObjectInstance, val obj: TaskObject) : ScoreObje
         styleClass("task-object")
         nameLabel.widthProperty().addListener { _ -> resizedObject(obj) }
         nameLabel.heightProperty().addListener { _ -> resizedObject(obj) }
-        val layout = BorderPane(nameLabel)
-        children.add(layout)
+        children.add(nameLabel)
     }
+
+    override fun resizeObject(width: Double, height: Double, ev: MouseEvent, cursor: Cursor) {}
 
     override fun getDisplayWidth(): Double = nameLabel.width
 

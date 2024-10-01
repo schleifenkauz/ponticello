@@ -19,12 +19,21 @@ class ControlAssignmentView(private val obj: SynthObject) : VBox(), SynthControl
     }
 
     override fun addedControl(parameter: String, control: ParameterControl) {
+        if (obj.getSpec(parameter) == null) return
         val editor = ControlAssignmentEditor(obj, parameter)
         editor.setControl(control)
         editors.add(editor)
         navigateWithTab(editor)
         editorByParameter[parameter] = editor
         children.add(editor)
+        if (scene != null) scene.window.sizeToScene()
+    }
+
+    override fun removedControl(parameter: String, control: ParameterControl) {
+        val editor = editorByParameter.remove(parameter) ?: return
+        editors.remove(editor)
+        children.remove(editor)
+        if (scene != null) scene.window.sizeToScene()
     }
 
     private fun navigateWithTab(editor: ControlAssignmentEditor) {
@@ -50,12 +59,6 @@ class ControlAssignmentView(private val obj: SynthObject) : VBox(), SynthControl
                 }
             }
         }
-    }
-
-    override fun removedControl(parameter: String, control: ParameterControl) {
-        val editor = editorByParameter.remove(parameter)
-        editors.remove(editor)
-        children.remove(editor)
     }
 
     override fun reassignedControl(parameter: String, oldControl: ParameterControl, control: ParameterControl) {

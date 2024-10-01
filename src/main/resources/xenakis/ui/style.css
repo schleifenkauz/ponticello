@@ -349,6 +349,15 @@ Slider.control-detail-editor {
 .memo-area {
     -fx-background-color: transparent;
     -fx-text-fill: white;
+    -fx-alignment: center;
+}
+
+Label.memo-area {
+    -fx-padding: 7px;
+}
+
+.task-label {
+    -fx-padding: 5px;
 }
 
 .scroll-pane {

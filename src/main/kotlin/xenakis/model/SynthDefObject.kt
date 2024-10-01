@@ -18,13 +18,12 @@ sealed interface SynthDefObject : ParameterizedObject, InstrumentObject {
 
     val parameters: ReactiveList<ParameterDefObject>
 
-    override fun getParameter(name: String): ParameterDefObject = when (name) {
+    override fun getParameter(name: String): ParameterDefObject? = when (name) {
         "group" -> ParameterDefObject("group", GroupControlSpec())
         else -> parameters.now.find { it.name.now == name }
-            ?: error("Parameter $name not found in SynthDef '${this.name.now}'")
     }
 
-    override fun hasParameter(name: String): Boolean = parameters.now.any { it.name.now == name }
+    override fun hasParameter(name: String): Boolean = name == "group" || parameters.now.any { it.name.now == name }
 
     override fun ScWriter.addToServer() {
         allocateServerObject()

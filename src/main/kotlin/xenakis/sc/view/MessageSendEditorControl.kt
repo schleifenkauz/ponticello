@@ -16,7 +16,7 @@ import hextant.fx.view
 import reaktive.collection.binding.isNotEmpty
 import reaktive.value.now
 import xenakis.ui.HelpBrowser
-import xenakis.ui.centerChildrenVertically
+import xenakis.ui.centerChildren
 import xenakis.ui.styleClass
 
 class MessageSendEditorControl @ProvideImplementation(ControlFactory::class) constructor(
@@ -42,9 +42,9 @@ class MessageSendEditorControl @ProvideImplementation(ControlFactory::class) con
                 space()
                 view(editor.arguments, cached = false) {
                     set(ORIENTATION, Orientation.Horizontal)
-                    set(CELL_FACTORY) { SeparatorCell(", ").also { it.root.centerChildrenVertically() } }
+                    set(CELL_FACTORY) { SeparatorCell(", ").also { it.root.centerChildren() } }
                     set(ADD_WITH_COMMA, true)
-                }.root.centerChildrenVertically().styleClass("compound-expr", "arguments")
+                }.root.centerChildren().styleClass("compound-expr", "arguments")
             }
         }
         if (arguments[MULTILINE] && hasArguments.now) {

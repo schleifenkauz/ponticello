@@ -28,6 +28,7 @@ abstract class ObjectRegistryPane<O : NamedObject>(
     private val header = createHeader()
 
     init {
+        maxHeight = 1000.0
         styleClass.add("tool-pane")
         val scrollPane = ScrollPane(layout)
         scrollPane.isFitToWidth = true
@@ -67,7 +68,7 @@ abstract class ObjectRegistryPane<O : NamedObject>(
         val nameInput = TextField() styleClass "prompt-text-field"
         nameInput.promptText = "${registry.objectType} name"
         val ok = Icon.Check.button(action = "Confirm")
-        val layout = HBox(typeSelector, nameInput).centerChildrenVertically() styleClass "prompt"
+        val layout = HBox(typeSelector, nameInput).centerChildren() styleClass "prompt"
         val window = SubWindow(layout, "Create new ${registry.objectType}", registry.context, SubWindow.Type.Prompt) {
             nameInput.requestFocus()
         }
@@ -128,9 +129,9 @@ abstract class ObjectRegistryPane<O : NamedObject>(
     fun box(idx: Int): ObjectBox<O> = boxes[idx]
 
     class ObjectBox<O : NamedObject>(private val pane: ObjectRegistryPane<O>, val obj: O) : HBox() {
-        val actions = HBox().centerChildrenVertically()
+        val actions = HBox().centerChildren()
 
-        private val extraControls = HBox(5.0).centerChildrenVertically()
+        private val extraControls = HBox(5.0).centerChildren()
 
         init {
             styleClass("object-box")

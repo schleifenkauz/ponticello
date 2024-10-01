@@ -181,7 +181,6 @@ class AudioFlowGraph(
             setupAudioFlow()
             +"'setup audio flow'.postln"
         }
-        appendLine(";")
         +"ServerTree.add(~setup_flow)"
         +"if (s.serverRunning) { ~setup_flow.value }"
 

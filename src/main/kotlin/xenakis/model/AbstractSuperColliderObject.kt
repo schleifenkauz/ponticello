@@ -40,7 +40,6 @@ abstract class AbstractSuperColliderObject : AbstractRenamableObject(), SuperCol
         appendBlock("$functionName = ") {
             allocateServerObject()
         }
-        appendLine(";")
         +"$liveCycleType.add($functionName)"
         +"if (s.serverRunning) { $functionName.value }"
     }

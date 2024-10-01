@@ -36,10 +36,8 @@ class SubWindow(
             scene.registerShortcuts {
                 on("ESCAPE") { hide() }
             }
-            if (type == Type.Popup) {
-                focusedProperty().addListener { _, _, hasFocus ->
-                    if (!hasFocus) hide()
-                }
+            focusedProperty().addListener { _, _, hasFocus ->
+                if (!hasFocus) hide()
             }
             initStyle(StageStyle.UNDECORATED)
             initModality(Modality.NONE)

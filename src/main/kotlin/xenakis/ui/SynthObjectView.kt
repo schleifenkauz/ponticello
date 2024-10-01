@@ -60,7 +60,7 @@ class SynthObjectView(
             context[InstrumentRegistryPane].editInstrument(obj.synthDef)
         }
         val box = ObjectSelectorControl(obj.synthDefSelector, createBundle())
-        addItem("SynthDef: ", HBox(5.0, box, viewBtn).centerChildrenVertically())
+        addItem("SynthDef: ", HBox(5.0, box, viewBtn).centerChildren())
         val header = HBox(
             5.0,
             Label("Synth controls").styleClass("heading"),
@@ -207,16 +207,11 @@ class SynthObjectView(
             .filter { p -> p.spec.now is NumericalControlSpec }
             .filter { p ->
                 val control = obj.controls.controlMap[p.name.now]
-                control != null && (control !is EnvelopeControl || !control.display.now)
+                control !is EnvelopeControl || !control.display.now
             }
         val listView = SearchableParameterListView(context, possibleParameters, obj, "Add new envelope")
         listView.showPopup(context, point) { param ->
             val name = param.name.now
-            val oldControl = obj.controls[name]
-            if (oldControl is EnvelopeControl) {
-                oldControl.display.now = true
-                return@showPopup
-            }
             val spec = param.spec.now as NumericalControlSpec
             val env = Envelope.constant(spec.defaultValue.get(), obj.duration, spec.warp)
             val control = EnvelopeControl(
@@ -226,7 +221,8 @@ class SynthObjectView(
             val extraSpec = param.spec.now.takeIf {
                 name !in obj.synthDef.parameters.now.map { p -> p.name.now }
             }
-            obj.controls.reassignControl(name, control, extraSpec)
+            if (name !in obj.controls.controlMap) obj.controls.addControl(name, control, spec)
+            else obj.controls.addControl(name, control, extraSpec)
         }
     }
 

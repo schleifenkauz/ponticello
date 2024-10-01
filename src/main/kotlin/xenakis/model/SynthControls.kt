@@ -58,7 +58,7 @@ class SynthControls(
     fun setExtraSpec(parameter: String, spec: ControlSpec) {
         val before = extraSpecs[parameter]
         extraSpecs[parameter] = spec
-        if (before == null && spec == synthDef.getParameter(parameter).spec) {
+        if (before == null && spec == synthDef.getParameter(parameter)?.spec) {
             return
         }
         context[UndoManager].record(Edit.EditExtraSpec(this, parameter, before, spec))
@@ -68,7 +68,8 @@ class SynthControls(
     fun removeExtraSpec(parameter: String) {
         val before = extraSpecs.remove(parameter)
         context[UndoManager].record(Edit.EditExtraSpec(this, parameter, before, extraSpecAfter = null))
-        val synthDefSpec = synthDef.getParameter(parameter).spec.now
+        val defParameter = synthDef.getParameter(parameter)!!
+        val synthDefSpec = defParameter.spec.now
         viewManager.notifyListeners { changedSpec(parameter, synthDefSpec) }
     }
 

@@ -1,43 +1,54 @@
 package xenakis.ui
 
-import hextant.fx.registerShortcuts
 import javafx.scene.Cursor
 import javafx.scene.control.Label
 import javafx.scene.control.TextArea
+import javafx.scene.input.KeyCode
+import javafx.scene.input.KeyEvent
 import javafx.scene.input.MouseEvent
-import javafx.scene.layout.Priority
+import javafx.scene.layout.HBox
+import javafx.scene.text.Text
 import xenakis.model.MemoObject
 import xenakis.model.ScoreObjectInstance
 
 class MemoObjectView(inst: ScoreObjectInstance, val obj: MemoObject) : ScoreObjectView(inst) {
-    private val textArea = TextArea(obj.text) styleClass "memo-area"
-    private val label = Label(obj.text) styleClass "memo-label"
+    private val edit = TextArea(obj.text) styleClass "memo-area"
+    private val display = Label(obj.text) styleClass "memo-area"
+    private val computeSize = Text(obj.text)
 
     override val supportedActions: List<Icon>
         get() = listOf(Icon.Delete)
 
     init {
-        textArea.textProperty().addListener { _, _, newText ->
-            obj.text = newText
+        exitEdit()
+        edit.textProperty().addListener { _, _, text ->
+            if (obj.text != text) obj.text = text
         }
-        setOnMouseClicked { ev ->
-            if (ev.clickCount >= 2) {
-                children.setAll(textArea)
+        addEventFilter(MouseEvent.MOUSE_CLICKED) { ev ->
+            if (ev.clickCount >= 2) enterEdit() else selectThis(addToSelection = ev.isShiftDown)
+            ev.consume()
+        }
+        addEventFilter(KeyEvent.KEY_PRESSED) { ev ->
+            if (ev.code == KeyCode.ESCAPE) {
+                exitEdit()
+                ev.consume()
             }
         }
-        textArea.registerShortcuts {
-            on("ESCAPE") {
-                children.setAll(label)
-            }
-        }
-        textArea.focusedProperty().addListener { _, _, focused ->
-            if (!focused) children.setAll(label)
+        edit.focusedProperty().addListener { _, _, focused ->
+            if (!focused) exitEdit()
         }
     }
 
-    override fun initialize(parent: ScorePane) {
-        super.initialize(parent)
-        children.add(label)
+    fun enterEdit() {
+        if (edit in children) return
+        children.setAll(HBox(edit).centerChildren())
+        edit.selectAll()
+        edit.requestFocus()
+    }
+
+    private fun exitEdit() {
+        if (display in children) return
+        children.setAll(HBox(display).centerChildren())
     }
 
     override fun DetailPane.setupDetailPane() {
@@ -45,14 +56,18 @@ class MemoObjectView(inst: ScoreObjectInstance, val obj: MemoObject) : ScoreObje
     }
 
     override fun resizeObject(width: Double, height: Double, ev: MouseEvent, cursor: Cursor) {
-        obj.width = width.coerceAtLeast(50.0)
-        obj.resize(obj.duration, height)
     }
 
-    override fun getDisplayWidth(): Double = obj.width
+    override fun getDisplayWidth(): Double = computeSize.prefWidth(-1.0) + 15
+
+    override fun getDisplayHeight(): Double = computeSize.prefHeight(-1.0) + 10
 
     fun textChanged(value: String) {
-        if (value != textArea.text) textArea.text = value
-        label.text = value
+        if (value != edit.text) {
+            edit.text = value
+        }
+        display.text = value
+        computeSize.text = value
+        resizedObject(obj)
     }
 }

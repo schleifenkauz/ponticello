@@ -17,7 +17,7 @@ class ToolSelector(private val context: Context) : SelectorBar<ToolSelector.Tool
         setMinSize(Icon.DEFAULT_RADIUS * 2, Icon.DEFAULT_RADIUS * 2)
         setMaxSize(Icon.DEFAULT_RADIUS * 2, Icon.DEFAULT_RADIUS * 2)
         styleClass("icon-button")
-        centerChildrenVertically()
+        centerChildren()
         if (option in setOf(Tool.Synth, Tool.PianoRoll))
             addEventHandler(MouseEvent.MOUSE_CLICKED) { ev ->
                 if (ev.clickCount >= 2) {

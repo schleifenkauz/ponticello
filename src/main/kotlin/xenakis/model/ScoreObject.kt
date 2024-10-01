@@ -155,7 +155,7 @@ sealed class ScoreObject : AbstractRenamableObject() {
         return obj
     }
 
-    open fun getSpec(parameter: String): ControlSpec =
+    open fun getSpec(parameter: String): ControlSpec? =
         throw NoSuchElementException("no spec for parameter $parameter in $this")
 
     fun notifyListeners(action: Listener.() -> Unit) {

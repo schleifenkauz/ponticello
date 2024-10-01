@@ -116,10 +116,10 @@ fun hspace(width: Double) = Region().apply { prefWidth = width }
 
 fun infiniteSpace() = Region().alwaysHGrow()
 
-fun <N : Node> N.centerChildrenVertically() = also {
+fun <N : Node> N.centerChildren() = also {
     when (it) {
         is HBox -> it.alignment = Pos.CENTER_LEFT
-        is VBox -> it.alignment = Pos.CENTER_LEFT
+        is VBox -> it.alignment = Pos.TOP_CENTER
         else -> {}
     }
 }

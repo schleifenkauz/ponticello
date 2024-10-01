@@ -85,7 +85,6 @@ class XenakisProject private constructor(
             appendBlock {
                 setupCode.writeCode(writer, context)
             }
-            appendLine(";")
             +"$liveCycleType.add($funcName, s)"
         }
     }

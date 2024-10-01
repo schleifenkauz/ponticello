@@ -9,6 +9,7 @@ import javafx.scene.control.ToggleButton
 import javafx.scene.paint.Color
 import org.controlsfx.control.SegmentedButton
 import reaktive.value.now
+import xenakis.model.CustomizableSynthDefObject
 import xenakis.model.ParameterDefObject
 import xenakis.model.SynthObject
 import xenakis.sc.*
@@ -17,7 +18,7 @@ import xenakis.ui.prompt.CompoundPrompt
 
 class ControlSpecPrompt(
     private val obj: SynthObject, private val parameter: String,
-    initialSpec: ControlSpec = obj.getSpec(parameter)
+    initialSpec: ControlSpec
 ) : CompoundPrompt<ParameterDefObject>("Control spec for parameter $parameter of synth ${obj.name.now}") {
     private var currentSpecType = initialSpec.type
         set(value) {
@@ -42,10 +43,13 @@ class ControlSpecPrompt(
         window.hide()
     }
 
-    private val confirmAndSyncBtn = button(
-        if (!obj.synthDef.hasParameter(parameter)) "Confirm and add to SynthDef" else "Confirm and sync"
-    ) {
+    private val confirmAndSyncBtn = button("Confirm and sync") {
         confirmAndSync()
+        window.hide()
+    }
+
+    private val confirmAndAddBtn = button("Confirm and add to SynthDef") {
+        confirmAndAdd()
         window.hide()
     }
 
@@ -91,16 +95,26 @@ class ControlSpecPrompt(
         associatedColor named "Color"
     }
 
-    override fun extraButtons(): List<Button> =
-        if (obj.synthDef.hasParameter(parameter)) listOf(confirmAndSyncBtn, resetBtn) else listOf(confirmAndSyncBtn)
+    override fun extraButtons(): List<Button> = when {
+        obj.synthDef !is CustomizableSynthDefObject -> emptyList()
+        obj.synthDef.hasParameter(parameter) -> listOf(confirmAndSyncBtn, resetBtn)
+        else -> listOf(confirmAndAddBtn)
+    }
 
     private fun reset() {
         obj.controls.removeExtraSpec(parameter)
     }
 
     private fun confirmAndSync() {
-        confirm()
-        obj.synthDef.getParameter(parameter).spec.now = makeSpec()
+        val param = confirm()
+        val defParameter = obj.synthDef.getParameter(parameter)!!
+        defParameter.spec.now = param.spec.now
+    }
+
+    private fun confirmAndAdd() {
+        val param = confirm()
+        val def = obj.synthDef as CustomizableSynthDefObject
+        def.parameters.now.add(param)
     }
 
     override fun confirm(): ParameterDefObject {

@@ -11,7 +11,7 @@ import hextant.core.view.ListEditorControl.Companion.ORIENTATION
 import hextant.core.view.ListEditorControl.Orientation
 import hextant.core.view.ListEditorControl.SeparatorCell
 import hextant.fx.view
-import xenakis.ui.centerChildrenVertically
+import xenakis.ui.centerChildren
 import xenakis.ui.styleClass
 
 class ArrayExprEditorControl @ProvideImplementation(ControlFactory::class) constructor(
@@ -23,7 +23,7 @@ class ArrayExprEditorControl @ProvideImplementation(ControlFactory::class) const
             if (arguments[MULTILINE]) set(ORIENTATION, Orientation.Vertical)
             else {
                 set(ORIENTATION, Orientation.Horizontal)
-                set(CELL_FACTORY) { SeparatorCell(", ").also { it.root.centerChildrenVertically() } }
+                set(CELL_FACTORY) { SeparatorCell(", ").also { it.root.centerChildren() } }
                 set(ADD_WITH_COMMA, true)
             }
         }.root.styleClass("compound-expr", "array")

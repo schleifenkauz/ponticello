@@ -236,7 +236,6 @@ class PianoRollObject(
             appendBlock("TempoClock.sched(${t.coerceAtLeast(0.0)})") {
                 +playNote
             }
-            appendLine(";")
         }
     }
 

@@ -19,18 +19,18 @@ interface SuperColliderClient : SuperColliderContext {
             run(code)
             return CompletableFuture.completedFuture("")
         }
-        logger.info("eval: $code")
+        logger.fine("eval: $code")
         return send("eval", listOf(code))
             .orTimeout(10000, TimeUnit.MILLISECONDS)
             .thenApply { msg ->
                 val result = msg.arguments[1] as String
-                logger.info("evaluating $code returned $result")
+                logger.fine("evaluating $code returned $result")
                 result
             }
     }
 
     override fun run(command: String) {
-        logger.info("run: $command")
+        logger.fine("run: $command")
         sendAsync("run", listOf(command))
     }
 

@@ -59,7 +59,8 @@ data class EnvelopeObject(
     override val associatedControls: Map<String, ParameterControl>
         get() = mapOf(name.now to envelopeControl)
 
-    override fun getSpec(parameter: String): ControlSpec = if (parameter == name.now) spec else super.getSpec(parameter)
+    override fun getSpec(parameter: String): ControlSpec? =
+        if (parameter == name.now) spec else super.getSpec(parameter)
 
     override fun doClone(newName: String): ScoreObject =
         EnvelopeObject(reactiveVariable(newName), spec, busRef.copy(), envelope.copy())

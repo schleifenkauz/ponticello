@@ -120,8 +120,8 @@ class SynthObject(
         }
     }
 
-    override fun getSpec(parameter: String): ControlSpec =
-        controls.getExtraSpec(parameter) ?: synthDef.getParameter(parameter).spec.now
+    override fun getSpec(parameter: String): ControlSpec? =
+        controls.getExtraSpec(parameter) ?: synthDef.getParameter(parameter)?.spec?.now
 
     override fun initialize(context: Context) {
         if (initialized) return
@@ -147,7 +147,6 @@ class SynthObject(
                     append("~synths['$name'].")
                     action()
                 }
-                appendLine(";")
             }
         }
     }
@@ -181,7 +180,8 @@ class SynthObject(
     override fun writeCode(name: String, position: ObjectPosition, env: ScorePlayEnv): String = code {
         appendBlock("s.makeBundle(${env.serverLatency})") {
             val constantArguments = controls.controlMap.mapNotNull { (param, control) ->
-                when (control) {
+                if (!synthDef.hasParameter(param)) null
+                else when (control) {
                     is BufferControl -> param to (control.sample.now?.get<SampleObject>()?.superColliderName ?: "0")
                     is BusControl -> param to control.bus.now.get<BusObject>().superColliderName
                     is ConstantControl -> {
@@ -193,6 +193,7 @@ class SynthObject(
                     }
 
                     is KnobControl -> param to control.get().toString()
+                    is EnvelopeControl -> param to control.envelope.points[0].y
                     else -> null
                 }
             }.joinToString { (param, value) -> "$param: $value" } + ", duration: $duration"
@@ -200,7 +201,6 @@ class SynthObject(
             val group = group.now
             val synthDefName = synthDef.name.now
             val (addAction, target) = env.getSynthOrderFor(group, position)
-            println("   $name $addAction $target")
             +"$synthVar = Synth(\\$synthDefName, [$constantArguments], target: $target, addAction: $addAction)"
             +"$synthVar.register"
             for ((param, control) in controls.controlMap) {
@@ -230,16 +230,17 @@ class SynthObject(
                             .transform<Identifier> { e -> code[e.text] ?: e }
                         val busName = "~auxil_${name}_${param}"
                         +"$busName = Bus.control(s, 1)"
-                        append("{ ")
-                        expr.code(writer, context)
-                        +" }.play(s, $busName)"
+                        appendBlock("", endLine = false) {
+                            +"Env.new(levels: [0, 0], times: [$duration]).kr(Done.freeSelf)"
+                            expr.code(writer, context)
+                        }
+                        +".play(s, $busName)"
                         +"${synthVar}.map(\\$param, $busName)"
                     }
 
                     else -> {} //already handled in constantArguments
                 }
             }
-            //+"$synthVar.run"
         }
     }
 }

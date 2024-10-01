@@ -88,7 +88,7 @@ class ScoreEventCollector(
         if (inst.muted) return
         val oldPosition = inst.position + ObjectPosition(-dt, -dy)
         val eventsBefore = events.size
-        logger.info("Move object $inst from $oldPosition")
+        logger.fine("Move object $inst from $oldPosition")
         for (position in absolutePositions(inst.score)) {
             removeFromPlayback(inst, position + oldPosition)
             addToPlayback(inst, position + inst.position)
@@ -109,7 +109,7 @@ class ScoreEventCollector(
     private fun addToPlayback(inst: ScoreObjectInstance, position: ObjectPosition) {
         val obj = inst.obj
         if (obj is ScoreObjectGroup) {
-            logger.info("Added sub score ${obj.name.now} to ${inst.score.scoreName.now} at ${inst.position}")
+            logger.fine("Added sub score ${obj.name.now} to ${inst.score.scoreName.now} at ${inst.position}")
             scoreInstances(obj.score).add(inst)
             if (scoreInstances(obj.score).size == 1) {
                 obj.score.addListener(this) //this will recurse into [addToPlayBack] via [addedObject]
@@ -119,7 +119,7 @@ class ScoreEventCollector(
                 }
             }
         } else {
-            logger.info("Added $inst at $position")
+            logger.fine("Added $inst at $position")
             val posEnd = position + ObjectPosition(obj.duration, 0.0)
             if (player != null && env != null && player.isPlaying && player.currentTime in position.time - env.lookAhead..posEnd.time) {
                 player.scheduleInstantly(inst, position)
@@ -138,7 +138,7 @@ class ScoreEventCollector(
                 removeFromPlayback(subInst, position + subInst.position)
             }
         } else {
-            logger.info("Removing $inst at $position")
+            logger.fine("Removing $inst at $position")
             val posEnd = position + ObjectPosition(obj.duration, 0.0)
             if (!events.remove(Event(Event.Type.ObjectStart, position, inst)))
                 logger.severe("Failed to remove object start at $position")

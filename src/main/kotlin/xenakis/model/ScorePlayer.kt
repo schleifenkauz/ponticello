@@ -89,7 +89,7 @@ class ScorePlayer(
         val delta = position.time - currentTime
         val pos = ObjectPosition(currentTime + delta.coerceAtLeast(0.0), position.y)
         val name = env.markStart(inst, position) //important that we mark the original object not the cutoff one
-        logger.info("   Scheduling $obj at $pos, delta: $delta")
+        logger.fine("   Scheduling $obj at $pos, delta: $delta")
         scheduleObject(obj, pos, name, cutoff = -delta.coerceAtMost(0.0))
     }
 
@@ -108,19 +108,19 @@ class ScorePlayer(
             val (type, position, inst) = ev
             if (inst == null || inst.muted) continue
             if (!printedInterval) {
-                logger.info("interval at t=${t}s, delta = ${delta}s")
+                logger.fine("interval at t=${t}s, delta = ${delta}s")
                 printedInterval = true
             }
             val obj = inst.obj
             when (type) {
                 Event.Type.ObjectStart -> {
-                    logger.info("   ObjectStart: $obj at $position")
+                    logger.fine("   ObjectStart: $obj at $position")
                     val name = env.markStart(inst, position)
                     scheduleObject(obj, position, name, cutoff = 0.0)
                 }
 
                 Event.Type.ObjectEnd -> {
-                    logger.info("   ObjectEnd: $obj at $position")
+                    logger.fine("   ObjectEnd: $obj at $position")
                     env.markEnd(inst, position + ObjectPosition(-obj.duration, 0.0))
                 }
 
@@ -136,8 +136,8 @@ class ScorePlayer(
         val o = if (cutoff > 0.0) obj.cut(cutoff, HorizontalDirection.RIGHT, obj.name.now) ?: obj else obj
         val code = o.writeCode(name, absolutePosition, env)
         if (code == "") return
-        logger.info("   unique name for $o at $time: $name")
-        logger.info("   time for execution: ${timeForExecution}s")
+        logger.fine("   unique name for $o at $time: $name")
+        logger.fine("   time for execution: ${timeForExecution}s")
         client.send("schedule", listOf(timeForExecution, code))
     }
 

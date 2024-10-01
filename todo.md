@@ -52,18 +52,39 @@
 - allow for more cases of pasting code
 - kill sclang.exe and scsynth.exe before startup (?)
 - specify expected channels (and ar/kr) for bus and buffer parameters
+- dedicated In/Out expressions, which automatically infer the number of channels
 - lhs of assignments can be compound expressions
+- button for solo playback of single element
+  - can we have a cursor for this?
 
 ## Long term architectural ideas/question
 
 - track references to objects, if an object has references, it cannot be removed (necessary?)
 - use SuperCollider `Score` object for playback (this also means ability to do NRT bouncing!)
-- should SynthDefs and VSTPlugin have a separate registry
-- Do we need groups?
-- idea: edit a clone of a SubScore in a SubWindow and sync it with the main score on demand
+- should `SynthDef`s and `VSTPlugin` have a separate registry
+- `SynthObjects` as `SynthDef`s, instances as `Synth`s (easier control mapping?)
+- idea: edit a clone of a `ScoreObjectGroup` in a `SubWindow` and sync it with the main score on demand
   - well-suited for DJ use cases
+- time jumps
+  - like goto statements
+  - can have conditions (examples...?)
+- separate pane for notifications (infos, confirmations, warnings, errors)
+  - user can set level (debug, verbose, regular)
+  - also report exceptions happening in SuperCollider
+- vertical sections (like JavaFX `SplitPane`)
+  - draggable dividers
+  - dragging them stretches/shrinks all the sections uniformly
+  - double click with shift on a divider adds a new section
+  - sections can have associated buses, that are used for any new Synths that have bus parameters
+  - implicitly duplicate SynthDefs for mono/stereo
 
 ## Bugs
 
 - weird window behaviour on startup
 - when adding a new parameter control, the window is unresponsive
+
+### Namen überlegen
+
+- vielleicht: Ponticello (wegen Brücke)
+- oder: multiphonic
+- oder: Antiphonoskop

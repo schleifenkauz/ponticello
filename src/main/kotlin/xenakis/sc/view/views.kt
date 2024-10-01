@@ -13,7 +13,7 @@ import hextant.core.view.ListEditorControl.Companion.ORIENTATION
 import hextant.fx.keyword
 import hextant.fx.view
 import xenakis.ui.button
-import xenakis.ui.centerChildrenVertically
+import xenakis.ui.centerChildren
 import xenakis.ui.styleClass
 
 val MULTILINE = publicProperty("MULTILINE_ARGUMENTS", false)
@@ -29,7 +29,7 @@ fun createControl(editor: xenakis.sc.editor.AccessKeyEditor, arguments: Bundle) 
             operator("[")
             view(editor.key)
             operator("]")
-            root.centerChildrenVertically()
+            root.centerChildren()
         }
     }
 
@@ -41,7 +41,7 @@ fun createControl(editor: xenakis.sc.editor.AssignmentEditor, arguments: Bundle)
             view(editor.variable)
             operator(" = ")
             view(editor.expression)
-            root.centerChildrenVertically()
+            root.centerChildren()
         }
     }
 
@@ -55,7 +55,7 @@ fun createControl(editor: xenakis.sc.editor.OperatorExprEditor, arguments: Bundl
             view(editor.operator)
             space()
             view(editor.right)
-            root.centerChildrenVertically()
+            root.centerChildren()
         }
     }
 
@@ -152,7 +152,7 @@ fun createControl(editor: xenakis.sc.editor.NumericalControlSpecEditor, argument
             keyword("color: ")
             view(editor.associatedColor)//.minWidth = 30.0
             styleClass("numerical-control-spec")
-            root.centerChildrenVertically()
+            root.centerChildren()
         }
     }
 

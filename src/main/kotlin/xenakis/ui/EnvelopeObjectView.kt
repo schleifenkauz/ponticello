@@ -51,7 +51,7 @@ class EnvelopeObjectView(inst: ScoreObjectInstance, val obj: EnvelopeObject) : S
         }
         override val content: VBox = vbox(specControl, outputBusControl, complete) {
             spacing = 5.0
-            centerChildrenVertically()
+            centerChildren()
         }
 
         override fun getDefault(): NumericalControlSpec? = null

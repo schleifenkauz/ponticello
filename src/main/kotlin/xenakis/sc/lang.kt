@@ -251,7 +251,7 @@ data class ScFunction(val parameters: List<Identifier> = emptyList(), val body: 
     override val isValid: Boolean
         get() = parameters.all { it.isValid } && body.isValid
 
-    override fun code(writer: ScWriter, context: Context) = writer.appendBlock("") {
+    override fun code(writer: ScWriter, context: Context) = writer.appendBlock("", endLine = false) {
         if (parameters.isNotEmpty()) {
             append("arg ")
             appendList(parameters, separator = ", ", context)
@@ -476,7 +476,7 @@ data class AdhocSynth(
         with(writer) {
             val plugins = block.statements.flatMap { s -> s.allChildren<VSTPlugin>() }
             if (wrapInTask && plugins.isNotEmpty()) {
-                appendBlock("Task") {
+                appendBlock("Task", endLine = false) {
                     writeCodeInsideTask(context, plugins, synthName, target, addAction)
                 }
                 +".play"
@@ -489,7 +489,7 @@ data class AdhocSynth(
         context: Context, plugins: List<VSTPlugin>,
         synthName: String, target: String, addAction: String
     ) {
-        appendBlock("$synthName = SynthDef(\\${name.text})") {
+        appendBlock("$synthName = SynthDef(\\${name.text})", endLine = false) {
             block.writeCode(writer, context)
         }
         +".add.play($target, addAction: $addAction)"
