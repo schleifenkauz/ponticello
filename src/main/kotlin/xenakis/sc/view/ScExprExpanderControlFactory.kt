@@ -20,7 +20,7 @@ object ScExprExpanderControlFactory : ControlFactory<xenakis.sc.editor.ScExprExp
         completer.addCompleter(xenakis.sc.editor.ScExprExpander.config.completer(CompletionStrategy.simple))
         completer.addCompleter(ReferenceCompleter)
         arguments[ExpanderControl.COMPLETER] = completer
-        val control = ExpanderControl(editor, arguments)
+        val control = ExprExpanderControl(editor, arguments)
         val possibleStyleClasses = listOf("identifier", "keyword", "number", "unrecognized")
         val observer = editor.result.forEach { result ->
             control.root.styleClass.removeAll(possibleStyleClasses)

@@ -213,3 +213,27 @@ fun createControl(editor: xenakis.sc.editor.EventDictionaryEditor, arguments: Bu
             add(button("Add entry") { editor.entries.addLast() })
         }
     }
+
+@ProvideImplementation(ControlFactory::class)
+fun createAControl(editor: xenakis.sc.editor.InExprEditor, arguments: Bundle) =
+    CompoundEditorControl(editor, arguments) {
+        horizontal {
+            styleClass("bus-operation", "compound-expr")
+            keyword("in")
+            space()
+            view(editor.busSelector)
+        }
+    }
+
+@ProvideImplementation(ControlFactory::class)
+fun createAControl(editor: xenakis.sc.editor.OutExprEditor, arguments: Bundle) =
+    CompoundEditorControl(editor, arguments) {
+        horizontal {
+            styleClass("bus-operation", "compound-expr")
+            keyword("out")
+            space()
+            view(editor.busSelector)
+            space()
+            view(editor.channelsArray)
+        }
+    }

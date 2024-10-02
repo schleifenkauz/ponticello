@@ -32,12 +32,16 @@ class ObjectSelectorControl<O : NamedObject, R : ObjectReference?>(
     init {
         editor.addView(this)
         button.setOnAction {
+            showSelectorPopup()
+        }
+    }
+
+    fun showSelectorPopup() {
+        @Suppress("UNCHECKED_CAST")
+        val initialOption = editor.selected.now?.get<NamedObject>() as O?
+        listView.showPopup(context, anchorNode = button, initialOption) { option ->
             @Suppress("UNCHECKED_CAST")
-            val initialOption = editor.selected.now?.get<NamedObject>() as O?
-            listView.showPopup(context, anchorNode = button, initialOption) { option ->
-                @Suppress("UNCHECKED_CAST")
-                editor.select(option.createReference() as R)
-            }
+            editor.select(option.createReference() as R)
         }
     }
 

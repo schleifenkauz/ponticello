@@ -88,8 +88,8 @@ abstract class ObjectSelector<O : NamedObject, R : ObjectReference?>(
         @Suppress("UNCHECKED_CAST")
         override fun reconstructObject(original: ObjectSelector<O, R>) {
             check(initialized)
-            original.selected.now = selected as R
             selected?.resolve(original.getRegistry(original.context))
+            original.selected.now = selected as R
         }
 
         override fun encode(builder: JsonObjectBuilder) {

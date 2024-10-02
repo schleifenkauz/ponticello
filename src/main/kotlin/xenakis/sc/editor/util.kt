@@ -2,7 +2,6 @@ package xenakis.sc.editor
 
 import hextant.context.Context
 import hextant.core.editor.ColorEditor
-import reaktive.value.now
 import reaktive.value.reactiveVariable
 import xenakis.model.BusObject
 import xenakis.model.ObjectReference
@@ -19,14 +18,14 @@ fun NumericalControlSpec.createEditor(context: Context) = NumericalControlSpecEd
     associatedColor = ColorEditor(context, associatedColor)
 )
 
-fun ScExprEditor<*>.exp() = ScExprExpander(context, this)
+private fun ScExprEditor<*>.exp() = ScExprExpander(context, this)
 
 fun simpleText(context: Context, text: String) = ScExprExpander(context, text)
 
 fun out(context: Context, outputBus: BusObject, snd: ScExprExpander): ScExprExpander {
-    val outExpr =
-        ScExprExpander(context, BusSelector(context, selected = reactiveVariable(outputBus.createReference())))
-    return out(context, outExpr, snd, outputBus.rate.now)
+    val editor = OutExprEditor(context, channelsArray = snd)
+    editor.busSelector.select(outputBus.createReference())
+    return editor.exp()
 }
 
 fun out(
@@ -45,10 +44,8 @@ fun out(
     )
 ).exp()
 
-fun `in`(context: Context, inputBus: BusObject): ScExprExpander {
-    val bus = BusSelector(context, selected = reactiveVariable(inputBus.createReference()))
-    return `in`(context, ScExprExpander(context, bus), inputBus.rate.get(), inputBus.channels.now)
-}
+fun `in`(context: Context, inputBus: BusObject): ScExprExpander =
+    InExprEditor(context).apply { busSelector.select(inputBus.createReference()) }.exp()
 
 fun `in`(context: Context, bus: ScExprExpander, rate: Rate, channels: Int) = ScExprExpander(
     context, MessageSendEditor(

@@ -354,7 +354,7 @@ class XenakisUI(
             }
             if (mode == Mode.Laptop) {
                 instrumentsWindow = SubWindow(instrumentsPane, "Instruments", context, SubWindow.Type.Undecorated)
-                +Icon.SoundCode3.button(action = "Show instruments (Alt+I)") { instrumentsWindow.show() }
+                +Icon.SoundCode.button(action = "Show instruments (Alt+I)") { instrumentsWindow.show() }
                 groupsWindow = SubWindow(groupsPane, "Groups", context, SubWindow.Type.Undecorated)
                 +Icon.Groups.button(action = "Show groups (Alt+G)") { groupsWindow.show() }
                 add(Icon.Details.button(action = "Edit object properties (P)") { showDetailPaneOfSelectedObject() }) {

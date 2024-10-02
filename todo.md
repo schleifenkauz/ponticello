@@ -52,7 +52,6 @@
 - allow for more cases of pasting code
 - kill sclang.exe and scsynth.exe before startup (?)
 - specify expected channels (and ar/kr) for bus and buffer parameters
-- dedicated In/Out expressions, which automatically infer the number of channels
 - lhs of assignments can be compound expressions
 - button for solo playback of single element
   - can we have a cursor for this?

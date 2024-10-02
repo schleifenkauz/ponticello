@@ -277,6 +277,7 @@ Slider.control-detail-editor {
     -fx-background-radius: 5px !important;
     -fx-padding: 2px !important;
     -fx-border-color: gray;
+    -fx-alignment: center-left;
 }
 
 .new-object {

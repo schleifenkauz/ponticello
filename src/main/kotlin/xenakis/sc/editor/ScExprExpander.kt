@@ -134,6 +134,8 @@ class ScExprExpander(context: Context) : ConfiguredExpander<ScExpr, ScExprEditor
                 VSTPluginEditor(ctx, pluginName)
             }
             "synth" expand { ctx -> AdhocSynthEditor(ctx) }
+            "in" expand { ctx -> InExprEditor(ctx) }
+            "out" expand { ctx -> OutExprEditor(ctx) }
         }
     }
 }

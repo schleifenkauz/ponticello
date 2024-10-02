@@ -21,11 +21,15 @@ object NotificationView : Logger.View {
         if (record.level < level) return
         val notification = Notifications.create().text(record.message).darkStyle()
         Platform.runLater {
-            when (record.level) {
-                Fine, Info -> notification.showInformation()
-                Confirmation -> notification.showConfirm()
-                Warning -> notification.showWarning()
-                Error -> notification.showError()
+            try {
+                when (record.level) {
+                    Fine, Info -> notification.showInformation()
+                    Confirmation -> notification.showConfirm()
+                    Warning -> notification.showWarning()
+                    Error -> notification.showError()
+                }
+            } catch (e: NullPointerException) {
+                return@runLater //main window already closed
             }
         }
     }

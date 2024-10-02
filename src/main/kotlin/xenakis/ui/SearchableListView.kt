@@ -152,7 +152,7 @@ abstract class SearchableListView<E>(private val title: String) : VBox() {
 
     fun showPopup(context: Context, anchorNode: Node, initialOption: E? = null, onConfirm: (E) -> Unit) {
         val anchor = anchorNode.localToScreen(0.0, 0.0)
-        showPopup(context, anchor, anchorNode.scene.window, initialOption, onConfirm)
+        showPopup(context, anchor, anchorNode.scene?.window, initialOption, onConfirm)
     }
 
     fun selectorButton(

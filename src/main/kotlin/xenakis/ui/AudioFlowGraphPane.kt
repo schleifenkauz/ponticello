@@ -46,9 +46,11 @@ class AudioFlowGraphPane(
         for (obj in graph.nodes) addedNode(obj)
         for (flow in graph.flows) addedFlow(flow)
         sceneProperty().addListener { _, _, sc ->
-            sc?.window?.setOnShown {
-                for ((flow, arrow) in flowArrows)
-                    repositionArrow(arrow, flow)
+            sc?.windowProperty()?.addListener { _, _, window ->
+                window.setOnShown {
+                    for ((flow, arrow) in flowArrows)
+                        repositionArrow(arrow, flow)
+                }
             }
         }
         registerShortcuts()
@@ -290,6 +292,7 @@ class AudioFlowGraphPane(
             SubWindow(flow.synth.control, "Audio flow from $source to $target", context, owner = scene.window).apply {
                 width = 1000.0
                 height = 1000.0
+                setOnShown { flow.synth.control.receiveFocus() }
                 scene.initHextantScene(context, applyStyle = false)
                 addEventFilter(KeyEvent.KEY_RELEASED) { ev ->
                     if ("Ctrl+S".shortcut.matches(ev)) {
