@@ -6,7 +6,6 @@ import bundles.set
 import hextant.context.Context
 import hextant.fx.initHextantScene
 import hextant.fx.registerShortcuts
-import hextant.fx.runFXWithTimeout
 import hextant.fx.shortcut
 import hextant.undo.UndoManager
 import javafx.geometry.Bounds
@@ -23,10 +22,7 @@ import javafx.scene.layout.Pane
 import reaktive.value.now
 import xenakis.impl.Arrow
 import xenakis.impl.Point
-import xenakis.model.AudioFlowGraph
-import xenakis.model.BusObject
-import xenakis.model.BusRegistry
-import xenakis.model.ObjectReference
+import xenakis.model.*
 import xenakis.ui.XenakisController.Companion.currentProject
 import xenakis.ui.prompt.NamePrompt
 import kotlin.math.absoluteValue
@@ -49,8 +45,8 @@ class AudioFlowGraphPane(
         styleClass("audio-flow-graph")
         for (obj in graph.nodes) addedNode(obj)
         for (flow in graph.flows) addedFlow(flow)
-        sceneProperty().addListener { _ ->
-            runFXWithTimeout(50) {
+        sceneProperty().addListener { _, _, sc ->
+            sc?.window?.setOnShown {
                 for ((flow, arrow) in flowArrows)
                     repositionArrow(arrow, flow)
             }
@@ -133,7 +129,7 @@ class AudioFlowGraphPane(
             }
             on("F2") {
                 val name = NamePrompt(context[BusRegistry], "Rename bus", node.bus.name.now)
-                    .showDialog(context) ?: return@on
+                    .showDialog(context, label) ?: return@on
                 node.bus.rename(name)
             }
         }
@@ -291,7 +287,7 @@ class AudioFlowGraphPane(
         val window = flowDetailWindows.getOrPut(flow) {
             val source = flow.source.get<BusObject>().name.now
             val target = flow.target.get<BusObject>().name.now
-            SubWindow(flow.synth.control, "Audio flow from $source to $target", context).apply {
+            SubWindow(flow.synth.control, "Audio flow from $source to $target", context, owner = scene.window).apply {
                 width = 1000.0
                 height = 1000.0
                 scene.initHextantScene(context, applyStyle = false)
@@ -309,7 +305,7 @@ class AudioFlowGraphPane(
     private fun sync() {
         graph.updateFlow()
         context[currentProject].save(graph)
-        notifyConfirm("Updated Audio flow graph")
+        Logger.confirm("Updated Audio flow graph", Logger.Category.AudioFlow)
     }
 
     companion object : PublicProperty<AudioFlowGraphPane> by publicProperty("audio-flow-graph-editor") {

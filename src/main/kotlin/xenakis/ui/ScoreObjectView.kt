@@ -116,7 +116,7 @@ abstract class ScoreObjectView(
                 val repetitions = repetitionsInput.value
                 pane.score.loop(instance, period, repetitions)
             }
-        }.showDialog(context)
+        }.showDialog(context, anchorNode = this)
     }
 
     open fun initialize(parent: ScorePane) {

@@ -115,7 +115,7 @@ class EnvelopeEditor(
                     if (ev.isShiftDown) {
                         val obj = objectView.instance.obj
                         if (obj is SynthObject) {
-                            ControlSpecPrompt(obj, parameterName, spec).showDialog(objectView.context)
+                            ControlSpecPrompt(obj, parameterName, spec).showDialog(objectView.context, pane)
                         }
                     } else objectView.pane.rootPane.magnifyEnvelope(this)
                 }
@@ -317,7 +317,7 @@ class EnvelopeEditor(
     private fun showPromptFor(idx: Int) {
         val point = envelope.points[idx]
         val value = DoublePrompt("Value for $parameterName", point.y, spec.range)
-            .showDialog(parentPane.context) ?: return
+            .showDialog(parentPane.context, handles[idx]) ?: return
         envelope.editPoint(idx, value)
     }
 

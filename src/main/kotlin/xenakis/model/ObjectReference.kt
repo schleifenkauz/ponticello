@@ -8,8 +8,6 @@ import kotlinx.serialization.descriptors.serialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import reaktive.value.now
-import java.util.logging.Level
-import java.util.logging.Logger
 import kotlin.reflect.KClass
 import kotlin.reflect.cast
 
@@ -33,14 +31,11 @@ class ObjectReference(private var name: String) {
     fun getName() = name
 
     fun <O : NamedObject> resolve(registry: ObjectRegistry<O>) {
-        if (obj != null) {
-            logger.fine("ObjectReference '$name' already resolved")
-            return
-        }
+        if (obj != null) return
         try {
             obj = registry.get(name)
         } catch (ex: NoSuchElementException) {
-            logger.log(Level.SEVERE, ex.message, ex)
+            Logger.severe("${registry.objectType} '$name' not found", Logger.Category.Registries)
             obj = registry.getDefault()
         }
     }
@@ -75,9 +70,5 @@ class ObjectReference(private var name: String) {
             val name = decoder.decodeString()
             return ObjectReference(name)
         }
-    }
-
-    companion object {
-        private val logger = Logger.getLogger("ObjectReference")
     }
 }

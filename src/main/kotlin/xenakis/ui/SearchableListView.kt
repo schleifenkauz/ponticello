@@ -5,11 +5,15 @@ import hextant.fx.PseudoClasses.SELECTED
 import hextant.fx.shortcut
 import javafx.geometry.Point2D
 import javafx.scene.Node
+import javafx.scene.control.Button
 import javafx.scene.control.Label
 import javafx.scene.input.KeyEvent
+import javafx.scene.input.MouseButton
 import javafx.scene.layout.VBox
+import javafx.stage.Window
 import org.controlsfx.control.textfield.CustomTextField
 import reaktive.event.event
+import kotlin.reflect.KMutableProperty0
 
 abstract class SearchableListView<E>(private val title: String) : VBox() {
     private val searchText = CustomTextField().styleClass("sleek-text-field", "search-field")
@@ -25,6 +29,8 @@ abstract class SearchableListView<E>(private val title: String) : VBox() {
     val confirmedOption get() = confirmOption.stream
 
     val removedOptions = mutableSetOf<E>()
+
+    private var window: SubWindow? = null
 
     protected abstract fun options(): List<E>
 
@@ -48,6 +54,8 @@ abstract class SearchableListView<E>(private val title: String) : VBox() {
     protected abstract fun createCell(option: E): Node
 
     protected abstract fun extractText(option: E): String
+
+    protected open fun displayText(option: E): String = extractText(option)
 
     override fun requestFocus() {
         searchText.requestFocus()
@@ -128,23 +136,48 @@ abstract class SearchableListView<E>(private val title: String) : VBox() {
     }
 
     fun showPopup(
-        context: Context, anchor: Point2D? = null,
-        initialOption: E? = null, onConfirm: (E) -> Unit
+        context: Context, anchor: Point2D? = null, owner: Window? = null, initialOption: E? = null,
+        onConfirm: (E) -> Unit
     ) {
         initializeOptions()
         if (initialOption in filteredOptions) select(initialOption)
-        val window = SubWindow(this, title, context, type = SubWindow.Type.Popup)
+        if (window == null) window = SubWindow(this, title, context, type = SubWindow.Type.Popup, owner)
         if (anchor != null) {
-            window.x = anchor.x
-            window.y = anchor.y
-        } else window.centerOnScreen()
+            window!!.x = anchor.x
+            window!!.y = anchor.y
+        } else window!!.centerOnScreen()
         val observer = confirmedOption.observe { _, option -> onConfirm(option) }
-        window.showAndWait()
+        window!!.showAndWait()
     }
 
     fun showPopup(context: Context, anchorNode: Node, initialOption: E? = null, onConfirm: (E) -> Unit) {
         val anchor = anchorNode.localToScreen(0.0, 0.0)
-        showPopup(context, anchor, initialOption, onConfirm)
+        showPopup(context, anchor, anchorNode.scene.window, initialOption, onConfirm)
+    }
+
+    fun selectorButton(
+        property: KMutableProperty0<E>, context: Context, default: E = property.get(),
+        displayText: (E) -> String = this::displayText
+    ): Button {
+        val button = button(displayText(property.get()))
+        button.setOnMouseClicked { ev ->
+            when (ev.button) {
+                MouseButton.PRIMARY -> {
+                    showPopup(context, anchorNode = button, initialOption = property.get()) { option ->
+                        property.set(option)
+                        button.text = displayText(property.get())
+                    }
+                }
+
+                MouseButton.SECONDARY -> {
+                    property.set(default)
+                    button.text = displayText(property.get())
+                }
+
+                else -> {}
+            }
+        }
+        return button
     }
 
     protected fun hide() {

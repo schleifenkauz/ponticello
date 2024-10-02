@@ -60,7 +60,8 @@ enum class Icon {
     Compound,
     Cut,
     Up, Down,
-    Sync, AddGlobal;
+    Sync, AddGlobal, Log,
+    Debug, Info, Confirmation, Warning, Error;
 
     private val file = name.lowercase() + "_green.png"
     private val url = javaClass.getResource("icons/$file") ?: error("icon $file not found")

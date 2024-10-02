@@ -26,7 +26,7 @@ abstract class SearchableRegistryView<O : NamedObject>(
                         registry,
                         "Rename ${registry.objectType} ${obj.name.now}",
                         initialName = obj.name.now
-                    ).showDialog(registry.context) ?: return@on
+                    ).showDialog(registry.context, anchorNode = this@SearchableRegistryView) ?: return@on
                     obj.rename(newName)
                 }
             }
@@ -35,7 +35,7 @@ abstract class SearchableRegistryView<O : NamedObject>(
                     hide()
                     runFXWithTimeout(25) {
                         val question = "Delete ${registry.objectType} ${obj.name.now}?"
-                        val really = YesNoPrompt(question).showDialog(registry.context)
+                        val really = YesNoPrompt(question).showDialog(registry.context, this@SearchableRegistryView)
                         if (really == true) registry.remove(obj)
                     }
                 }
@@ -59,8 +59,6 @@ abstract class SearchableRegistryView<O : NamedObject>(
     }
 
     protected abstract fun createObject(name: String): O?
-
-    protected open fun displayText(option: O): String = extractText(option)
 
     override fun extractText(option: O): String = option.name.now
 }

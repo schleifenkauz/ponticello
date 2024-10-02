@@ -12,7 +12,6 @@ import xenakis.impl.SuperColliderClient
 import xenakis.impl.string
 import xenakis.model.SuperColliderObject.LiveCycleType
 import java.io.File
-import java.util.logging.Logger
 import javax.sound.sampled.AudioInputStream
 import javax.sound.sampled.AudioSystem
 
@@ -50,12 +49,12 @@ sealed class BufferObject : AbstractSuperColliderObject() {
         val file = wavFile
         val bufnum = context[SuperColliderClient].eval("$superColliderName.bufnum").join().toIntOrNull()
         if (bufnum == null) {
-            logger.severe("Could not get bufnum for Buffer ${name.now}")
+            Logger.severe("Could not get bufnum for Buffer ${name.now}", Logger.Category.SuperCollider)
             return
         }
         val status = context[SuperColliderClient].send("writeBuf", listOf(file, bufnum)).join().string
         if (status != "ok") {
-            logger.severe("Error while writing buffer ${name.now} to project directory")
+            Logger.severe("Error while writing buffer ${name.now} to project directory", Logger.Category.SuperCollider)
             return
         }
         createSpectrogram(file)
@@ -67,8 +66,8 @@ sealed class BufferObject : AbstractSuperColliderObject() {
             .exec(command)
             .onExit().thenApply { proc ->
                 val exitCode = proc.exitValue()
-                if (exitCode == 0) logger.fine("Created spectrogram for buffer ${name.now}")
-                else logger.severe("Non zero exit code $exitCode creating spectrogram for buffer ${name.now}")
+                if (exitCode == 0) Logger.fine("Created spectrogram for buffer ${name.now}", Logger.Category.Buffers)
+                else Logger.severe("Non zero exit code $exitCode creating spectrogram for buffer ${name.now}")
             }
     }
 
@@ -91,8 +90,6 @@ sealed class BufferObject : AbstractSuperColliderObject() {
     }
 
     companion object {
-        private val logger = Logger.getLogger("BufferObject")
-
         val DATA_FORMAT = DataFormat("buffer")
 
         val defaultBuffer = ReferencedBuffer(reactiveVariable("0"))

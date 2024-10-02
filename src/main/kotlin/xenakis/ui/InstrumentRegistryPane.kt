@@ -22,7 +22,6 @@ import xenakis.sc.Identifier
 import xenakis.sc.view.ObjectSelectorControl
 import xenakis.ui.prompt.NamePrompt
 import xenakis.ui.prompt.YesNoPrompt
-import java.util.logging.Logger
 
 class InstrumentRegistryPane(
     private val registry: InstrumentRegistry,
@@ -97,7 +96,7 @@ class InstrumentRegistryPane(
                 val name = option.instrument.name.now
                 if (registry.has(name)) {
                     Platform.runLater {
-                        if (YesNoPrompt("Overwrite SynthDef $name?").showDialog(registry.context) == true) {
+                        if (YesNoPrompt("Overwrite SynthDef $name?").showDialog(registry.context, this) == true) {
                             registry.overwrite(option.instrument)
                         }
                     }
@@ -109,7 +108,7 @@ class InstrumentRegistryPane(
             is AddInstrumentOption.VSTPlugin -> {
                 Platform.runLater {
                     val name = NamePrompt(registry, "Name for new VSTPlugin instance", option.pluginName)
-                        .showDialog(registry.context) ?: return@runLater
+                        .showDialog(registry.context, this) ?: return@runLater
                     val plugin = VSTPluginObject.create(registry.context, name, option.pluginName)
                     registry.add(plugin)
                 }
@@ -129,7 +128,7 @@ class InstrumentRegistryPane(
                 val standard = YesNoPrompt(
                     "SynthDef '$name' is a standard SynthDef. Do you want to load it? A new SynthDef will be created otherwise.",
                     default = true
-                ).showDialog(registry.context) ?: return null
+                ).showDialog(registry.context, this) ?: return null
                 return if (standard) StandardSynthDefObject.all.getValue(name)
                 else CustomizableSynthDefObject.create(name, registry.context)
             }
@@ -139,7 +138,7 @@ class InstrumentRegistryPane(
                     "SynthDef '$name' is already defined in the global SynthDescLib. " +
                             "Import SynthDef '$name' from SynthDescLib? A new SynthDef will be created otherwise.",
                     default = true
-                ).showDialog(registry.context) ?: return null
+                ).showDialog(registry.context, this) ?: return null
                 return if (reference) ReferencedSynthDefObject.loadFromSynthDescLib(name)
                 else CustomizableSynthDefObject.create(name, registry.context)
             }
@@ -192,10 +191,13 @@ class InstrumentRegistryPane(
                                 YesNoPrompt(
                                     "Overwrite SynthDef $name in global library?",
                                     default = true
-                                ).showDialog(registry.context) == true
+                                ).showDialog(registry.context, anchorNode = this) == true
                             ) {
                                 globalLib.push(obj)
-                                notifyConfirm("Saved SynthDef '${obj.name.now}' to global library.")
+                                Logger.confirm(
+                                    "Saved SynthDef '${obj.name.now}' to global library.",
+                                    Logger.Category.Instruments
+                                )
                             }
                         }
                     }
@@ -222,7 +224,7 @@ class InstrumentRegistryPane(
                     CollapsablePane("Parameters", ParameterDefsPane(registry.context, obj.parameters)),
                     obj.ugenGraph.control
                 ) styleClass "synth-def-pane"
-                SubWindow(pane, "", registry.context).apply {
+                SubWindow(pane, "", registry.context, owner = scene.window).apply {
                     titleProperty().bind(obj.name.map { name -> "SynthDef $name" }.asObservableValue())
                     resize(900.0, 800.0)
                     scene.initHextantScene(registry.context, applyStyle = false)
@@ -233,7 +235,7 @@ class InstrumentRegistryPane(
                                 editor.snapshot().reconstructObject(editor)
                             }
                             obj.sync()
-                            notifyInfo("Synchronized SynthDef '${obj.name.now}'")
+                            Logger.confirm("Synchronized SynthDef '${obj.name.now}'", Logger.Category.Instruments)
                         }
                         on("Ctrl+Shift+S") {
                             obj.sync()
@@ -243,7 +245,13 @@ class InstrumentRegistryPane(
                 }
             } else {
                 val pane = ParameterInfoPane(obj.parameters)
-                SubWindow(pane, obj.name.now, registry.context, type = SubWindow.Type.Popup).apply {
+                SubWindow(
+                    pane,
+                    obj.name.now,
+                    registry.context,
+                    type = SubWindow.Type.Popup,
+                    owner = scene.window
+                ).apply {
                     resize(800.0, 300.0)
                 }
             }
@@ -251,7 +259,5 @@ class InstrumentRegistryPane(
         window.show()
     }
 
-    companion object : PublicProperty<InstrumentRegistryPane> by publicProperty("InstrumentRegistryPane") {
-        private val logger = Logger.getLogger("InstrumentRegistryPane")
-    }
+    companion object : PublicProperty<InstrumentRegistryPane> by publicProperty("InstrumentRegistryPane")
 }

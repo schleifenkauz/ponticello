@@ -8,7 +8,6 @@ import reaktive.value.now
 import xenakis.impl.SuperColliderClient
 import xenakis.model.ScoreEventCollector.Event
 import xenakis.ui.PlayHead
-import java.util.logging.Logger
 import kotlin.concurrent.thread
 
 class ScorePlayer(
@@ -74,7 +73,7 @@ class ScorePlayer(
     private fun toMs(t: Double) = (t * 1000).toLong()
 
     private fun startPlay(startFrom: Double) {
-        logger.info("Starting playback at $startFrom")
+        Logger.fine("Starting playback at $startFrom", Logger.Category.Playback)
         lastPlayFrom = startFrom
         val activeObjects = activeObjects(startFrom, delta = env.lookAhead)
         for ((_, position, inst) in activeObjects) {
@@ -89,7 +88,7 @@ class ScorePlayer(
         val delta = position.time - currentTime
         val pos = ObjectPosition(currentTime + delta.coerceAtLeast(0.0), position.y)
         val name = env.markStart(inst, position) //important that we mark the original object not the cutoff one
-        logger.fine("   Scheduling $obj at $pos, delta: $delta")
+        Logger.fine("Scheduling $obj at $pos, delta: $delta", Logger.Category.Playback)
         scheduleObject(obj, pos, name, cutoff = -delta.coerceAtMost(0.0))
     }
 
@@ -108,19 +107,19 @@ class ScorePlayer(
             val (type, position, inst) = ev
             if (inst == null || inst.muted) continue
             if (!printedInterval) {
-                logger.fine("interval at t=${t}s, delta = ${delta}s")
+                Logger.fine("interval at t=${t}s, delta = ${delta}s", Logger.Category.Playback)
                 printedInterval = true
             }
             val obj = inst.obj
             when (type) {
                 Event.Type.ObjectStart -> {
-                    logger.fine("   ObjectStart: $obj at $position")
+                    Logger.fine("ObjectStart: $obj at $position", Logger.Category.Playback)
                     val name = env.markStart(inst, position)
                     scheduleObject(obj, position, name, cutoff = 0.0)
                 }
 
                 Event.Type.ObjectEnd -> {
-                    logger.fine("   ObjectEnd: $obj at $position")
+                    Logger.fine("ObjectEnd: $obj at $position", Logger.Category.Playback)
                     env.markEnd(inst, position + ObjectPosition(-obj.duration, 0.0))
                 }
 
@@ -136,15 +135,15 @@ class ScorePlayer(
         val o = if (cutoff > 0.0) obj.cut(cutoff, HorizontalDirection.RIGHT, obj.name.now) ?: obj else obj
         val code = o.writeCode(name, absolutePosition, env)
         if (code == "") return
-        logger.fine("   unique name for $o at $time: $name")
-        logger.fine("   time for execution: ${timeForExecution}s")
+        Logger.fine("unique name for $o at $time: $name", Logger.Category.Playback)
+        Logger.fine("time for execution: ${timeForExecution}s", Logger.Category.Playback)
         client.send("schedule", listOf(timeForExecution, code))
     }
 
     fun play() {
         if (isPlaying) return
         thread(isDaemon = true) {
-            logger.info("START PLAYBACK")
+            Logger.info("Starting playback", Logger.Category.Playback)
             client.send("start_play")
             startPlay(playHead.currentTime)
             sleep(toMs(env.lookAhead))
@@ -155,7 +154,7 @@ class ScorePlayer(
     fun pause() {
         if (!isPlaying) return
         isPlaying = false
-        logger.info("PAUSE PLAYBACK")
+        Logger.info("Pausing playback", Logger.Category.Playback)
         events.resetEvents()
         env.clear()
         client.send("pause_play")
@@ -172,7 +171,5 @@ class ScorePlayer(
 
     companion object : PublicProperty<ScorePlayer> by publicProperty("ScorePlayer") {
         private const val DELTA_T = 0.03
-
-        private val logger = Logger.getLogger("ScorePlayer")
     }
 }

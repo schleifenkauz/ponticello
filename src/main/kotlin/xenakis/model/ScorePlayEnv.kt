@@ -1,7 +1,6 @@
 package xenakis.model
 
 import reaktive.value.now
-import java.util.logging.Logger
 
 class ScorePlayEnv(private val settings: Settings) {
     private val activeInstances = mutableMapOf<ActiveInstance, Int>()
@@ -21,7 +20,7 @@ class ScorePlayEnv(private val settings: Settings) {
         suffixes.add(suffix)
         val name = if (suffix == 0) obj.name.now else "${obj.name.now}_$suffix"
         activeInstances[ActiveInstance(inst, position, name)] = suffix
-        logger.fine("   marked start for $obj, suffix = $suffix")
+        Logger.fine("marked start for $obj, suffix = $suffix", Logger.Category.Playback)
         return name
     }
 
@@ -31,12 +30,12 @@ class ScorePlayEnv(private val settings: Settings) {
         val element = ActiveInstance(inst, position, "<dummy>")
         val suffix = activeInstances.remove(element)
         if (suffix == null) {
-            logger.severe("could not remove $element from")
+            Logger.severe("could not remove $element from")
             for (synth in activeInstances.keys) {
-                logger.severe("   $synth")
+                Logger.severe("   $synth")
             }
         } else suffixes(obj).remove(suffix)
-        logger.fine("   marked end for $obj, suffix = $suffix")
+        Logger.fine("marked end for $obj, suffix = $suffix", Logger.Category.Playback)
     }
 
     @Synchronized
@@ -91,9 +90,5 @@ class ScorePlayEnv(private val settings: Settings) {
             result = 31 * result + absolutePosition.hashCode()
             return result
         }
-    }
-
-    companion object {
-        private val logger = Logger.getLogger("ScorePlayEnv")
     }
 }

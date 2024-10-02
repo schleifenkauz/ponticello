@@ -5,11 +5,8 @@ import com.pixelduke.window.ThemeWindowManagerFactory
 import javafx.application.Application
 import javafx.stage.Screen
 import javafx.stage.Stage
+import xenakis.model.Logger
 import xenakis.ui.XenakisUI.Mode
-import java.util.logging.Level
-import java.util.logging.Logger
-import java.util.logging.SimpleFormatter
-import java.util.logging.StreamHandler
 import kotlin.concurrent.thread
 
 class XenakisApp : Application() {
@@ -45,10 +42,13 @@ class XenakisApp : Application() {
     }
 
     private fun setupLogging() {
-        val handler = StreamHandler(System.out, SimpleFormatter())
-        handler.level = Level.ALL
-        Logger.getGlobal().addHandler(handler)
-        Logger.getGlobal().level = Level.FINE
+        Thread.currentThread().setUncaughtExceptionHandler { _, e ->
+            e.printStackTrace()
+            Logger.error(e.message ?: "<no message>", null, detailMessage = e.stackTraceString())
+        }
+        Logger.level = Logger.Level.Fine
+        NotificationView.level = Logger.Level.Confirmation
+        Logger.addView(NotificationView)
     }
 
     override fun stop() {

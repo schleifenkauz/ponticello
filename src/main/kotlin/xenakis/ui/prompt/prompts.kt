@@ -14,7 +14,7 @@ fun <T : Any> showSelectorDialog(
         override fun extractText(option: T): String = stringConverter(option)
     }
     var value = initialValue
-    view.showPopup(context, anchor, initialValue) { v -> value = v }
+    view.showPopup(context, anchor, initialOption = initialValue) { v -> value = v }
     return value
 }
 

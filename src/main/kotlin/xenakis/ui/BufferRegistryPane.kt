@@ -56,7 +56,7 @@ class BufferRegistryPane(
                     val frames = framesField.text.toIntOrNull() ?: return@onConfirm null
                     AllocatedBuffer.create(name, channels, frames)
                 }
-            }.showDialog(registry.context)
+            }.showDialog(registry.context, this)
 
             BufferObject.Type.Reference -> ReferencedBuffer(reactiveVariable(name))
         }

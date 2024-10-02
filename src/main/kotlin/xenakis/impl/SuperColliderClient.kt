@@ -3,9 +3,10 @@ package xenakis.impl
 import bundles.PublicProperty
 import bundles.publicProperty
 import com.illposed.osc.OSCMessage
+import xenakis.model.Logger
+import xenakis.model.Logger.Category
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
-import java.util.logging.Logger
 
 interface SuperColliderClient : SuperColliderContext {
     val statusListener: StatusListener
@@ -19,18 +20,19 @@ interface SuperColliderClient : SuperColliderContext {
             run(code)
             return CompletableFuture.completedFuture("")
         }
-        logger.fine("eval: $code")
+        Logger.fine("eval $code", Category.SuperCollider, detailMessage = code)
         return send("eval", listOf(code))
             .orTimeout(10000, TimeUnit.MILLISECONDS)
             .thenApply { msg ->
                 val result = msg.arguments[1] as String
-                logger.fine("evaluating $code returned $result")
+                Logger.fine("evaluating $code returned ${result.take(20)}", Category.SuperCollider, result)
                 result
             }
     }
 
     override fun run(command: String) {
-        logger.fine("run: $command")
+        if (command == "(\n)\n") return
+        Logger.fine("run: $command", Category.SuperCollider)
         sendAsync("run", listOf(command))
     }
 
@@ -41,9 +43,7 @@ interface SuperColliderClient : SuperColliderContext {
 
     fun quit()
 
-    companion object : PublicProperty<SuperColliderClient> by publicProperty("SuperColliderClient") {
-        private val logger: Logger = Logger.getLogger("SuperColliderClient")
-    }
+    companion object : PublicProperty<SuperColliderClient> by publicProperty("SuperColliderClient")
 
     val consoleMonitor: ConsoleMonitor
 }

@@ -10,7 +10,6 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import reaktive.value.ReactiveString
 import reaktive.value.now
-import java.util.logging.Logger
 
 @Serializable
 class Score(private val instances: MutableList<ScoreObjectInstance> = mutableListOf()) :
@@ -68,7 +67,7 @@ class Score(private val instances: MutableList<ScoreObjectInstance> = mutableLis
     fun clone() = Score(instances.mapTo(mutableListOf()) { inst -> inst.duplicate(inst.position) })
 
     fun addObject(inst: ScoreObjectInstance) {
-        logger.info("Adding object ${inst.obj.name.now} at ${inst.position} to ${scoreName.now}")
+        Logger.info("Adding object ${inst.obj.name.now} at ${inst.position} to ${scoreName.now}", Logger.Category.Score)
         inst.initialize(context)
         inst.addedToScore(this)
         instances.add(inst)
@@ -78,7 +77,7 @@ class Score(private val instances: MutableList<ScoreObjectInstance> = mutableLis
 
     fun removeObjects(set: Set<ScoreObjectInstance>) {
         for (inst in set) {
-            logger.info("Removing ${inst.obj.name.now} from score ${scoreName.now}")
+            Logger.info("Removing ${inst.obj.name.now} from score ${scoreName.now}", Logger.Category.Score)
             instances.remove(inst)
             inst.removedFromScore()
             views.notifyListeners { removedObject(this@Score, inst) }
@@ -165,7 +164,5 @@ class Score(private val instances: MutableList<ScoreObjectInstance> = mutableLis
         val rootScore = publicProperty<Score>("root-score")
 
         const val ROOT_SCORE_NAME = "<root>"
-
-        private val logger = Logger.getLogger("Score")
     }
 }

@@ -13,6 +13,7 @@ import javafx.scene.layout.VBox
 import org.controlsfx.control.SearchableComboBox
 import org.controlsfx.control.textfield.CustomTextField
 import reaktive.value.now
+import xenakis.model.Logger
 import xenakis.model.NamedObject
 import xenakis.model.ObjectRegistry
 import xenakis.model.RenamableObject
@@ -53,7 +54,7 @@ abstract class ObjectRegistryPane<O : NamedObject>(
         val addBtn = Icon.Add.button(action = "Add $type") { addObject() }
         val reloadBtn = Icon.Repeat.button(action = "Sync ${plural(type)}") {
             sync()
-            notifyConfirm("Synchronized ${plural(type)} with server")
+            Logger.confirm("Synchronized ${plural(type)} with server", Logger.Category.Registries)
         }
         return HBox(label, searchText, space, addBtn, reloadBtn).styleClass("tool-pane-header")
     }
@@ -69,7 +70,10 @@ abstract class ObjectRegistryPane<O : NamedObject>(
         nameInput.promptText = "${registry.objectType} name"
         val ok = Icon.Check.button(action = "Confirm")
         val layout = HBox(typeSelector, nameInput).centerChildren() styleClass "prompt"
-        val window = SubWindow(layout, "Create new ${registry.objectType}", registry.context, SubWindow.Type.Popup)
+        val window = SubWindow(
+            layout, "Create new ${registry.objectType}", registry.context,
+            type = SubWindow.Type.Popup, owner = scene.window
+        )
         window.setOnShown { nameInput.requestFocus() }
         fun commit() {
             val type = typeSelector.value ?: return
@@ -99,7 +103,7 @@ abstract class ObjectRegistryPane<O : NamedObject>(
 
     protected open fun addObject() {
         val name = NamePrompt(registry, "Name for new ${registry.objectType}", initialName = searchText.text)
-            .showDialog(registry.context) ?: return
+            .showDialog(registry.context, this) ?: return
         addObject(name)
     }
 

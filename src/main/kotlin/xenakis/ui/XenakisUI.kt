@@ -61,12 +61,14 @@ class XenakisUI(
     private lateinit var samplesWindow: SubWindow
     private lateinit var groupsPane: GroupRegistryPane
     private lateinit var groupsWindow: SubWindow
+    private lateinit var logWindow: SubWindow
     lateinit var scoreView: ScoreView
         private set
     private lateinit var flowGraphWindow: SubWindow
     private lateinit var globalControlsWindow: SubWindow
     private lateinit var serverTreeCodeWindow: SubWindow
     private lateinit var serverSetupCodeWindow: SubWindow
+
     private val settingsWindow: Stage
     private val contextBar = HBox()
     private val detailPane = VBox(10.0).apply {
@@ -106,6 +108,8 @@ class XenakisUI(
         busRegistryPane = BusRegistryPane(project.busses)
         samplesPane = SampleRegistryPane(project.samples, controller)
         groupsPane = GroupRegistryPane(project.groups)
+        val logPane = LogPane(context, Logger)
+        logWindow = SubWindow(logPane, "Log", context, SubWindow.Type.Undecorated)
         scoreView = ScoreView(project.score, project.context)
 
         val flowGraphEditor = AudioFlowGraphPane(project.flowGraph, context)
@@ -122,7 +126,7 @@ class XenakisUI(
             on("Ctrl+S") {
                 val setupCode = serverSetup.editor.result.now
                 project.updateSetupCode(setupCode, SuperColliderObject.LiveCycleType.ServerBoot)
-                notifyInfo("ServerSetup updated")
+                Logger.confirm("ServerSetup updated", Logger.Category.All)
             }
         }
         serverSetupCodeWindow.resize(500.0, 500.0)
@@ -131,7 +135,7 @@ class XenakisUI(
             on("Ctrl+S") {
                 val serverTreeCode = serverTree.editor.result.now
                 project.updateSetupCode(serverTreeCode, SuperColliderObject.LiveCycleType.ServerTree)
-                notifyInfo("ServerTree updated")
+                Logger.confirm("ServerTree updated", Logger.Category.All)
             }
         }
         serverTreeCodeWindow.resize(500.0, 500.0)
@@ -314,6 +318,14 @@ class XenakisUI(
 
     private fun createMiscBar() = hbox {
         children {
+            +Icon.Log.button(action = "Show log (Ctrl+L)") { ev ->
+                if (ev.isShiftDown) {
+                    SimpleSearchableListView(Logger.Level.values().asList(), "Select notification level")
+                        .showPopup(context, this@hbox, NotificationView.level) { lvl ->
+                            NotificationView.level = lvl
+                        }
+                } else logWindow.show()
+            }
             +Icon.Console.button(action = "Open console (Ctrl+T)") { shellWindow.show() }
             +Icon.SetupCode.button(action = "Edit setup code") { ev ->
                 if (ev.isShiftDown) serverSetupCodeWindow.show()
@@ -331,7 +343,7 @@ class XenakisUI(
             +Icon.Settings.button(action = "Edit settings (Ctrl+Alt+S)") { settingsWindow.show() }
             +Icon.Knob.button(action = "Edit global controls (Ctrl+G)") { globalControlsWindow.show() }
             busesWindow = SubWindow(busRegistryPane, "Busses", context, SubWindow.Type.Undecorated)
-            +Icon.Bus.button(action = "Show buses (Ctrl+B)") {
+            +Icon.Bus.button(action = "Show buses (Alt+B)") {
                 busesWindow.show()
                 busesWindow.requestFocus()
             }
@@ -565,6 +577,7 @@ class XenakisUI(
                 }
             }
 
+            on("Ctrl+L") { logWindow.show() }
             on("Ctrl+Alt+T") { controller.client.run("s.plotTree;") }
             on("F1") { context[HelpBrowser].show() }
             on("Ctrl+Shift+D") {
@@ -575,7 +588,7 @@ class XenakisUI(
             on("Ctrl+Shift+F") { flowGraphWindow.show() }
             on("Ctrl+Alt+S") { settingsWindow.show() }
             on("Ctrl+G") { globalControlsWindow.show() }
-            on("Ctrl+B") { busesWindow.show() }
+            on("Alt+B") { busesWindow.show() }
             on("Ctrl+F") { samplesWindow.show() }
             on("F5") { controller.rebootServer() }
 

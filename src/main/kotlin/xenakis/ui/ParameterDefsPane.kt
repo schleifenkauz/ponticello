@@ -37,7 +37,7 @@ class ParameterDefsPane(
     private fun addParameter() {
         val name = PredicateTextPrompt("Parameter name", "") { name ->
             Identifier.isValid(name) && parameters.now.none { p -> p.name.now == name }
-        }.showDialog(context) ?: return
+        }.showDialog(context, this) ?: return
         val spec = context[Settings].getDefaultControlSpec(name) ?: NumericalControlSpec.DEFAULT
         val parameter = ParameterDefObject(name, spec)
         parameters.now.add(parameter)

@@ -20,6 +20,7 @@ import xenakis.impl.OSCSuperColliderClient
 import xenakis.impl.StatusListener.StatusUpdate
 import xenakis.impl.SuperColliderClient
 import xenakis.impl.registerImplementationsFromClasspath
+import xenakis.model.Logger
 import xenakis.model.Settings
 import xenakis.model.XenakisProject
 import xenakis.ui.prompt.PredicateTextPrompt
@@ -173,7 +174,7 @@ class XenakisController(private val primaryStage: Stage) {
     fun saveProject() {
         val file = lastFile() ?: dc.showDialog(primaryStage) ?: return
         tryWithAlert("Saving score") { saveIn(file) }
-        notifyInfo("Saved project ${currentProject.projectDirectory.name}")
+        Logger.confirm("Saved project ${currentProject.projectDirectory.name}", Logger.Category.Project)
     }
 
     private fun saveIn(folder: File) {
@@ -190,7 +191,8 @@ class XenakisController(private val primaryStage: Stage) {
     }
 
     fun openProject(folder: File): Boolean {
-        tryWithAlert("Opening project") {
+        tryWithAlert("Opening project", category = Logger.Category.Project) {
+            Logger.clear()
             val project = XenakisProject.loadFrom(folder, context, this)
             currentProject = project
             rebootServer()

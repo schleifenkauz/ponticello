@@ -14,7 +14,6 @@ import xenakis.model.SuperColliderObject.LiveCycleType
 import xenakis.model.XenakisProject.Companion.projectDirectory
 import java.io.File
 import java.util.concurrent.CompletableFuture
-import java.util.logging.Logger
 import javax.sound.sampled.AudioInputStream
 import javax.sound.sampled.AudioSystem
 
@@ -63,7 +62,7 @@ class SampleObject private constructor(
 
     private fun <T> useAudioStream(block: (AudioInputStream) -> T): T? {
         if (!audioFile.isFile) {
-            logger.severe("No audio stream found for sample ${name.now}: $referencedFile")
+            Logger.severe("No audio stream found for sample ${name.now}: $referencedFile")
             return null
         }
         val stream = AudioSystem.getAudioInputStream(audioFile)
@@ -124,8 +123,8 @@ class SampleObject private constructor(
             .exec(command)
             .onExit().thenApply { proc ->
                 val exitCode = proc.exitValue()
-                if (exitCode == 0) logger.fine("Created spectrogram for buffer ${name.now}")
-                else logger.severe("Non zero exit code $exitCode creating spectrogram for buffer ${name.now}")
+                if (exitCode == 0) Logger.fine("Created spectrogram for sample ${name.now}", Logger.Category.Samples)
+                else Logger.severe("Non zero exit code $exitCode creating spectrogram for sample ${name.now}")
             }
     }
 
@@ -147,8 +146,6 @@ class SampleObject private constructor(
     }
 
     companion object {
-        private val logger = Logger.getLogger("SampleObject")
-
         fun relativizePath(base: File, audioFile: File): String {
             return when {
                 audioFile.startsWith(base) -> "./" + audioFile.relativeTo(base).path

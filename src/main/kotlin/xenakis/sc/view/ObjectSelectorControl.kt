@@ -32,8 +32,6 @@ class ObjectSelectorControl<O : NamedObject, R : ObjectReference?>(
     init {
         editor.addView(this)
         button.setOnAction {
-            val title = "Select ${editor.getRegistry(context).objectType}"
-
             @Suppress("UNCHECKED_CAST")
             val initialOption = editor.selected.now?.get<NamedObject>() as O?
             listView.showPopup(context, anchorNode = button, initialOption) { option ->

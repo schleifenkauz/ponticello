@@ -647,3 +647,16 @@ Button.sleek-button:focused {
     -fx-border-width: 1px;
     -fx-border-radius: 3px;
 }
+
+.log-record {
+    -fx-alignment: center-left;
+    -fx-padding: 3px;
+}
+
+.log-record:hover {
+    -fx-background-color: #351919;
+}
+
+.log-record:focused {
+    -fx-background-color: #501717;
+}

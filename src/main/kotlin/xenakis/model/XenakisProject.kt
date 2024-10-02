@@ -15,7 +15,6 @@ import xenakis.model.Score.Companion.ROOT_SCORE_NAME
 import xenakis.model.SuperColliderObject.LiveCycleType
 import xenakis.sc.CodeBlock
 import xenakis.ui.XenakisController
-import xenakis.ui.notifyConfirm
 import java.io.File
 
 @Serializable
@@ -97,7 +96,7 @@ class XenakisProject private constructor(
         samples.syncAll(writer)
         flowGraph.redefineAudioFlow(writer)
         globalControls.setBusValues(writer)
-        notifyConfirm("Synchronized with SuperCollider")
+        Logger.confirm("Synchronized with SuperCollider", Logger.Category.Project)
     }
 
     @Serializable

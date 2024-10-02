@@ -9,16 +9,19 @@ import javafx.scene.layout.Region
 import javafx.stage.Modality
 import javafx.stage.Stage
 import javafx.stage.StageStyle
+import javafx.stage.Window
+import xenakis.ui.XenakisApp.Companion.primaryStage
 
 class SubWindow(
     private val root: Parent,
     title: String,
     context: Context,
     private val type: Type = Type.Modal,
+    owner: Window? = context[primaryStage],
     applyStylesheets: Boolean = true
 ) : Stage() {
     init {
-        //initOwner(context[primaryStage])
+        initOwner(owner)
         this.title = title
         scene = Scene(root)
         if (applyStylesheets) context[Stylesheets].manage(scene)

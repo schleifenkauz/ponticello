@@ -56,7 +56,7 @@ class ControlAssignmentEditor(
     init {
         styleClass.add("detail-item")
         optionButton.setOnMouseClicked { ev ->
-            if (ev.isShiftDown) ControlSpecPrompt(obj, parameter, spec).showDialog(obj.context)
+            if (ev.isShiftDown) ControlSpecPrompt(obj, parameter, spec).showDialog(obj.context, optionButton)
             else {
                 val listView = SimpleSearchableListView(ControlType.all, "Select control type")
                 listView.showPopup(

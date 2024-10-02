@@ -4,8 +4,11 @@ import hextant.context.Context
 import javafx.scene.Node
 import javafx.scene.Parent
 import javafx.scene.control.Label
+import javafx.scene.layout.Region
 import javafx.scene.layout.VBox
+import javafx.stage.Window
 import xenakis.ui.SubWindow
+import xenakis.ui.XenakisApp.Companion.primaryStage
 import xenakis.ui.styleClass
 
 abstract class Prompt<R, N : Node> {
@@ -34,13 +37,21 @@ abstract class Prompt<R, N : Node> {
         content
     ) styleClass "dialog-box"
 
-    fun showDialog(context: Context): R {
+    fun showDialog(
+        context: Context, anchorNode: Node? = null,
+        owner: Window? = anchorNode?.scene?.window ?: context[primaryStage]
+    ): R {
         commited = false
         val layout = createLayout()
-        window = SubWindow(layout, title, context, SubWindow.Type.Popup)
+        window = SubWindow(layout, title, context, SubWindow.Type.Popup, owner)
         window.setOnShown { onReceiveFocus() }
         window.sizeToScene()
         window.showAndWait()
+        if (anchorNode != null) {
+            val coords = anchorNode.localToScreen(0.0, 0.0)
+            window.x = coords.x
+            window.y = coords.y + ((anchorNode as? Region)?.height ?: 10.0) + 5.0
+        }
         @Suppress("UNCHECKED_CAST")
         return if (commited) result as R else getDefault()
     }

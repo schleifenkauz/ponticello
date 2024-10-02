@@ -80,7 +80,7 @@ class Knob(
 
     private fun showValueInput() {
         val range = spec.min.get()..spec.max.get()
-        val v = DoublePrompt("$parameter ($range)", control.get(), range).showDialog(context) ?: return
+        val v = DoublePrompt("$parameter ($range)", control.get(), range).showDialog(context, this) ?: return
         control.value.set(v)
     }
 

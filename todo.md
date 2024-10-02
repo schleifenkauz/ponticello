@@ -56,6 +56,7 @@
 - lhs of assignments can be compound expressions
 - button for solo playback of single element
   - can we have a cursor for this?
+- clear ServerTree and ServerBoot when closing a project
 
 ## Long term architectural ideas/question
 
@@ -68,8 +69,6 @@
 - time jumps
   - like goto statements
   - can have conditions (examples...?)
-- separate pane for notifications (infos, confirmations, warnings, errors)
-  - user can set level (debug, verbose, regular)
   - also report exceptions happening in SuperCollider
 - vertical sections (like JavaFX `SplitPane`)
   - draggable dividers
@@ -77,12 +76,16 @@
   - double click with shift on a divider adds a new section
   - sections can have associated buses, that are used for any new Synths that have bus parameters
   - implicitly duplicate SynthDefs for mono/stereo
+- `Task`s and `Pbind`s as instruments
+- VSTPlugin `SynthObject`s
+  - retrieve parameters from plugin info, make them controllable in the `DetailPane` or as envelopes
 
 ## Bugs
 
 - weird window behaviour on startup
 - when adding a new parameter control, the window is unresponsive
 - something is not right with the playbackRate parameter behaviour
+- sometimes objects right after the playback start cursor position are not played
 
 ### Namen überlegen
 

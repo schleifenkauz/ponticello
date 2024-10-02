@@ -3,7 +3,6 @@ package xenakis.model
 import reaktive.value.now
 import xenakis.ui.Direction
 import java.util.*
-import java.util.logging.Logger
 
 class ScoreEventCollector(
     private val rootScore: Score,
@@ -79,7 +78,7 @@ class ScoreEventCollector(
         }
         events.addAll(newEvents)
         if (events.size != eventsBefore) {
-            logger.severe("Resizing object changed number of score events")
+            Logger.severe("Resizing object changed number of score events")
         }
     }
 
@@ -88,13 +87,13 @@ class ScoreEventCollector(
         if (inst.muted) return
         val oldPosition = inst.position + ObjectPosition(-dt, -dy)
         val eventsBefore = events.size
-        logger.fine("Move object $inst from $oldPosition")
+        Logger.fine("Move object $inst from $oldPosition", Logger.Category.Playback)
         for (position in absolutePositions(inst.score)) {
             removeFromPlayback(inst, position + oldPosition)
             addToPlayback(inst, position + inst.position)
         }
         if (events.size != eventsBefore) {
-            logger.severe("Moving object changed number of score events")
+            Logger.severe("Moving object changed number of score events")
         }
     }
 
@@ -109,7 +108,10 @@ class ScoreEventCollector(
     private fun addToPlayback(inst: ScoreObjectInstance, position: ObjectPosition) {
         val obj = inst.obj
         if (obj is ScoreObjectGroup) {
-            logger.fine("Added sub score ${obj.name.now} to ${inst.score.scoreName.now} at ${inst.position}")
+            Logger.fine(
+                "Added sub score ${obj.name.now} to ${inst.score.scoreName.now} at ${inst.position}",
+                Logger.Category.Playback
+            )
             scoreInstances(obj.score).add(inst)
             if (scoreInstances(obj.score).size == 1) {
                 obj.score.addListener(this) //this will recurse into [addToPlayBack] via [addedObject]
@@ -119,7 +121,7 @@ class ScoreEventCollector(
                 }
             }
         } else {
-            logger.fine("Added $inst at $position")
+            Logger.fine("Added $inst at $position", Logger.Category.Playback)
             val posEnd = position + ObjectPosition(obj.duration, 0.0)
             if (player != null && env != null && player.isPlaying && player.currentTime in position.time - env.lookAhead..posEnd.time) {
                 player.scheduleInstantly(inst, position)
@@ -138,12 +140,12 @@ class ScoreEventCollector(
                 removeFromPlayback(subInst, position + subInst.position)
             }
         } else {
-            logger.fine("Removing $inst at $position")
+            Logger.fine("Removing $inst at $position", Logger.Category.Playback)
             val posEnd = position + ObjectPosition(obj.duration, 0.0)
             if (!events.remove(Event(Event.Type.ObjectStart, position, inst)))
-                logger.severe("Failed to remove object start at $position")
+                Logger.severe("Failed to remove object start at $position")
             if (!events.remove(Event(Event.Type.ObjectEnd, posEnd, inst)))
-                logger.severe("Failed to remove object end at $posEnd")
+                Logger.severe("Failed to remove object end at $posEnd")
             if (player != null && env != null && player.isPlaying) {
                 for ((activeInstance, pos, name) in env.activeInstances(inst)) {
                     if (pos == position) player.stopPlayBackInstantly(activeInstance, pos, name)
@@ -179,9 +181,5 @@ class ScoreEventCollector(
         enum class Type {
             Dummy, ObjectStart, ObjectEnd;
         }
-    }
-
-    companion object {
-        private val logger = Logger.getLogger("ScoreEventCollector")
     }
 }

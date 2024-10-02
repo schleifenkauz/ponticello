@@ -38,7 +38,7 @@ class GlobalControlsPane(
                 context[currentProject].busses.has("global_$name") -> false
                 else -> true
             }
-        }.showDialog(context) ?: return
+        }.showDialog(context, this) ?: return
         val editor = ControlSpecEditor(context)
         val defaultControlSpec = context[Settings].getDefaultControlSpec(name)
         editor.makeRoot()
@@ -46,7 +46,7 @@ class GlobalControlsPane(
             editor.setResult(defaultControlSpec)
         }
         val control = context.createControl(editor)
-        val window = SubWindow(control, "Configure global control", context, SubWindow.Type.Popup)
+        val window = SubWindow(control, "Configure global control", context, SubWindow.Type.Popup, owner = scene.window)
         window.scene.fill = BLACK
         window.width = 800.0
         control.registerShortcuts {

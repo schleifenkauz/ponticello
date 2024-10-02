@@ -8,7 +8,6 @@ import kotlinx.serialization.Transient
 import reaktive.value.now
 import xenakis.ui.XenakisController.Companion.currentProject
 import xenakis.ui.plural
-import java.util.logging.Logger
 
 abstract class ObjectRegistry<O : NamedObject> : XenakisProject.ProjectComponent {
     protected abstract val objects: MutableList<O>
@@ -56,12 +55,12 @@ abstract class ObjectRegistry<O : NamedObject> : XenakisProject.ProjectComponent
 
     open fun add(obj: O, idx: Int = objects.size) {
         if (has(obj.name.now)) {
-            logger.severe("$objectType with name ${obj.name.now} already registered.")
+            Logger.severe("$objectType with name ${obj.name.now} already registered.", Logger.Category.Registries)
             return
         }
         obj.initialize(context)
         objects.add(idx, obj)
-        logger.info("Adding $obj to ${javaClass.simpleName}")
+        Logger.info("Adding $obj to ${javaClass.simpleName}", Logger.Category.Registries)
         obj.onAdded(context)
         onAdded(obj, idx)
         context[UndoManager].record(Edit.AddObject(this, obj, idx))
@@ -71,10 +70,10 @@ abstract class ObjectRegistry<O : NamedObject> : XenakisProject.ProjectComponent
     open fun remove(obj: O) {
         val idx = objects.indexOf(obj)
         if (idx == -1) {
-            logger.severe("Object ${obj.name.now} not found in $this")
+            Logger.severe("Object ${obj.name.now} not found in $this")
             return
         }
-        logger.info("Removing $obj from ${javaClass.simpleName}")
+        Logger.info("Removing $obj from ${javaClass.simpleName}", Logger.Category.Registries)
         objects.removeAt(idx)
         obj.onRemoved()
         onRemoved(obj, idx)
@@ -128,10 +127,6 @@ abstract class ObjectRegistry<O : NamedObject> : XenakisProject.ProjectComponent
         for ((idx, bus) in objects.withIndex()) {
             listener.added(bus, idx)
         }
-    }
-
-    companion object {
-        private val logger = Logger.getLogger("ObjectRegistry")
     }
 
     interface Listener<in O : NamedObject> {
