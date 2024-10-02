@@ -339,7 +339,7 @@ class XenakisUI(
                 }
             }
             +Icon.Browser.button(action = "Open help browser (F1)") { project.context[HelpBrowser].show() }
-            +Icon.Graph.button(action = "Edit audio flow graph (Ctrl+Shift+F)") { flowGraphWindow.show() }
+            +Icon.Flow.button(action = "Edit audio flow graph (Ctrl+Shift+F)") { flowGraphWindow.show() }
             +Icon.Settings.button(action = "Edit settings (Ctrl+Alt+S)") { settingsWindow.show() }
             +Icon.Knob.button(action = "Edit global controls (Ctrl+G)") { globalControlsWindow.show() }
             busesWindow = SubWindow(busRegistryPane, "Busses", context, SubWindow.Type.Undecorated)
@@ -354,7 +354,7 @@ class XenakisUI(
             }
             if (mode == Mode.Laptop) {
                 instrumentsWindow = SubWindow(instrumentsPane, "Instruments", context, SubWindow.Type.Undecorated)
-                +Icon.Instrument.button(action = "Show instruments (Alt+I)") { instrumentsWindow.show() }
+                +Icon.SoundCode3.button(action = "Show instruments (Alt+I)") { instrumentsWindow.show() }
                 groupsWindow = SubWindow(groupsPane, "Groups", context, SubWindow.Type.Undecorated)
                 +Icon.Groups.button(action = "Show groups (Alt+G)") { groupsWindow.show() }
                 add(Icon.Details.button(action = "Edit object properties (P)") { showDetailPaneOfSelectedObject() }) {

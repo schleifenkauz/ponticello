@@ -9,30 +9,26 @@ import javafx.scene.image.ImageView
 import javafx.scene.input.MouseEvent
 
 enum class Icon {
-    Envelope,
-    Synth,
-    Code,
+    Pointer,
+    Envelope, Synth, Code,
+    AddTime,
     Repeat,
     Delete,
     Settings,
     Details,
     AppIcon,
-    Pointer,
     Create,
     Play,
     Stop,
+    Flow,
     Pause,
-    AddTime,
     Console,
     Save,
     Open,
     Restart,
-    Graph,
     ExtraWindow,
     Search,
     Close,
-    Horizontal, HorizontalRemove,
-    Vertical, VerticalRemove,
     Edit,
     Check,
     Expand, Collapse,
@@ -54,7 +50,7 @@ enum class Icon {
     Grab,
     Bus,
     Samples,
-    Instrument,
+    SoundCode,
     Groups,
     Browser,
     Compound,
@@ -63,7 +59,7 @@ enum class Icon {
     Sync, AddGlobal, Log,
     Debug, Info, Confirmation, Warning, Error;
 
-    private val file = name.lowercase() + "_green.png"
+    private val file = name.lowercase() + ".png"
     private val url = javaClass.getResource("icons/$file") ?: error("icon $file not found")
     val image: Image = Image(url.toExternalForm())
 
