@@ -9,10 +9,15 @@ import xenakis.impl.SuperColliderClient
 data class ServerOptions(
     var device: String = "",
     var numInputChannels: Int = 2, var numOutputChannels: Int = 2,
-    var memSize: Int = 8192, var sampleRate: Int = 44100
+    var memSize: Int = 8192, var sampleRate: Int = 44100,
+    var recordedBus: ObjectReference? = null
 ) : XenakisProject.ProjectComponent {
     override val componentName: String
         get() = "server_options"
+
+    fun initialize(context: Context) {
+        if (recordedBus != null) recordedBus!!.resolve(context[BusRegistry])
+    }
 
     fun reboot(context: Context) {
         val buses = context[BusRegistry]

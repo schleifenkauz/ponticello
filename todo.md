@@ -68,11 +68,11 @@
 - `Task`s and `Pbind`s as instruments
 - VSTPlugin `SynthObject`s
   - retrieve parameters from plugin info, make them controllable in the `DetailPane` or as envelopes
-- functionality to record into buffer from input channels while playing back the project
 
 ## Bugs
 
 - weird window behaviour on startup
+- something is not quite right yet in `ScoreEventCollector`
 
 ### Namen überlegen
 

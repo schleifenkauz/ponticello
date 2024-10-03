@@ -137,14 +137,9 @@ class XenakisProject private constructor(
                 val globalControls = data.resolve("global_controls.json").readJson<GlobalControls>()
                 globalControls.initialize(context)
                 listener.setProgress(0.75, "Loading server setup code")
-                val setupCodeFile = data.resolve("setup_code.json")
-                val setupCode =
-                    if (setupCodeFile.isFile) setupCodeFile.readJson<SetupCode>()
-                    else SetupCode.default(context)
-                val serverOptionsFile = data.resolve("server_options.json")
-                val serverOptions =
-                    if (serverOptionsFile.isFile) serverOptionsFile.readJson<ServerOptions>()
-                    else ServerOptions()
+                val setupCode = data.resolve("setup_code.json").readJson<SetupCode>()
+                val serverOptions = data.resolve("server_options.json").readJson<ServerOptions>()
+                serverOptions.initialize(context)
                 val objects = data.resolve("score_objects.json").readJson<ScoreObjectRegistry>()
                 objects.initialize(context)
                 listener.setProgress(0.9, "Loading score")

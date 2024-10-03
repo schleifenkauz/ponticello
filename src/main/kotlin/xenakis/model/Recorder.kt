@@ -38,7 +38,13 @@ class Recorder(private val context: Context) {
     private fun startRecording() {
         val path = pathForNextRecording()
         pathOfLastRecording = path
-        client.run("s.record(${path.superColliderPath}, 0, $numOutputChannels)")
+        val recordedBus = getRecordedBus()
+        client.run("s.record(${path.superColliderPath}, ${recordedBus.superColliderName}, ${recordedBus.channels.now})")
+    }
+
+    private fun getRecordedBus(): BusObject {
+        val options = context[currentProject].serverOptions
+        return options.recordedBus?.get<BusObject>() ?: context[BusRegistry].getDefault()
     }
 
     fun stopRecording() {
@@ -69,18 +75,17 @@ class Recorder(private val context: Context) {
     private fun scheduleRecording() {
         val path = pathForNextRecording()
         pathOfLastRecording = path
-        client.run("s.prepareForRecord(${path.superColliderPath}, $numOutputChannels)")
+        val bus = getRecordedBus()
+        client.run("s.prepareForRecord(${path.superColliderPath}, ${bus.channels.now})")
         val settings = context[Settings]
         val code = code {
             val serverLatency = settings.serverLatency.now
             appendBlock("s.makeBundle($serverLatency)") {
-                +"s.record"
+                +"s.record(bus: ${getRecordedBus()})"
             }
         }
         client.send("schedule", listOf(settings.scLangLatency.now, code))
     }
-
-    private val numOutputChannels get() = context[currentProject].serverOptions.numOutputChannels
 
     private fun pathForNextRecording(): File {
         val fileName = DateTimeFormatter.ofPattern("yyyy-MM-dd_kk-mm").format(LocalDateTime.now()) + ".wav"

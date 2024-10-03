@@ -36,6 +36,7 @@ import reaktive.value.fx.asObservableValue
 import reaktive.value.now
 import reaktive.value.toggle
 import xenakis.model.*
+import xenakis.sc.Rate
 import xenakis.ui.ScoreView.ClipboardMode
 import xenakis.ui.ToolSelector.Tool
 import xenakis.ui.prompt.SimpleTextPrompt
@@ -370,7 +371,16 @@ class XenakisUI(
     private fun createPlayerBar(): HBox {
         playBtn = Icon.Play.button(action = "Start playback (Ctrl?+Space)") { _ -> togglePlay() }
         stopBtn = Icon.Stop.button(action = "Pause playback (Ctrl?+Space)") { stopPlayback() }
-        recordingBtn = Icon.RecordInactive.button(action = "Activate Recording (Ctrl+R)") { toggleRecording() }
+        recordingBtn = Icon.RecordInactive.button(action = "Activate Recording (Ctrl+R)") { ev ->
+            if (ev.isShiftDown) {
+                val currentSelected = project.serverOptions.recordedBus?.get<BusObject>()
+                    ?: context[BusRegistry].getDefault()
+                SearchableBusListView(context[BusRegistry], "Select bus to record to", rate = Rate.Audio)
+                    .showPopup(context, anchorNode = recordingBtn, initialOption = currentSelected) { bus ->
+                        project.serverOptions.recordedBus = bus.createReference()
+                    }
+            } else toggleRecording()
+        }
         val goToStartBtn = Icon.GoToStart.button(action = "Move play head to start (0)") {
             playback.movePlayHeadToStart()
         }
