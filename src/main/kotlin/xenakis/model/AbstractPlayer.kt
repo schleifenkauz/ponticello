@@ -69,9 +69,7 @@ abstract class AbstractPlayer(private val deltaT: Double) : Thread() {
 
     protected abstract fun pausePlayback()
 
-    protected open fun resetPlayback() {
-        client.run("s.freeAll")
-    }
+    protected abstract fun resetPlayback()
 
     open fun close() {
         interrupt()

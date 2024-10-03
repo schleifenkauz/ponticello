@@ -20,8 +20,7 @@
 
 ### Logging and error management
 
-- more logging
-- also user options for logging level
+- also report exceptions happening in SuperCollider
 
 ### Stretching time regions
 
@@ -40,13 +39,6 @@
 - as standalone objects (`pbind`)
 - attaching to a synth in the score (`pmono`)
 
-### Bouncing
-
-- to file or to buffer (that is record to file and then load buffer into SC)
-- realtime (easy) and non realtime (not easy, use Score API from SuperCollider)
-- or have a live buffer to which everything is recorded, from which you can choose snippets
-- can be done via Audacity for now (record from pipewire and then export as WAV to create a buffer in xenakis)
-
 ### Minor
 
 - allow for more cases of pasting code
@@ -54,19 +46,19 @@
 - specify expected channels (and ar/kr) for bus and buffer parameters
 - lhs of assignments can be compound expressions
 - clear ServerTree and ServerBoot when closing a project
+  - or just reboot sclang.exe, this would mean generally restructuring the startup process
+- EnvelopeObjects can be removed and replaced with a simple SynthDef `krOut`
 
-## Long term architectural ideas/question
+## Long term architectural ideas/questions
 
 - track references to objects, if an object has references, it cannot be removed (necessary?)
 - use SuperCollider `Score` object for playback (this also means ability to do NRT bouncing!)
 - should `SynthDef`s and `VSTPlugin` have a separate registry
-- `SynthObjects` as `SynthDef`s, instances as `Synth`s (easier control mapping?)
 - idea: edit a clone of a `ScoreObjectGroup` in a `SubWindow` and sync it with the main score on demand
   - well-suited for DJ use cases
 - time jumps
   - like goto statements
   - can have conditions (examples...?)
-  - also report exceptions happening in SuperCollider
 - vertical sections (like JavaFX `SplitPane`)
   - draggable dividers
   - dragging them stretches/shrinks all the sections uniformly
@@ -87,5 +79,5 @@
 ### Namen überlegen
 
 - vielleicht: Ponticello (wegen Brücke)
-- oder: multiphonic
+- oder: multiphonix
 - oder: Antiphonoskop

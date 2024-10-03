@@ -78,6 +78,7 @@ class XenakisUI(
 
     private lateinit var playBtn: Button
     private lateinit var stopBtn: Button
+    private lateinit var recordingBtn: Button
     lateinit var playback: PlaybackManager
         private set
 
@@ -367,7 +368,8 @@ class XenakisUI(
 
     private fun createPlayerBar(): HBox {
         playBtn = Icon.Play.button(action = "Start playback (Ctrl?+Space)") { _ -> togglePlay() }
-        stopBtn = Icon.Stop.button(action = "Pause playback (Ctrl?+Space)") { stop() }
+        stopBtn = Icon.Stop.button(action = "Pause playback (Ctrl?+Space)") { stopPlayback() }
+        recordingBtn = Icon.RecordInactive.button(action = "Activate Recording (Ctrl+R)") { toggleRecording() }
         val goToStartBtn = Icon.GoToStart.button(action = "Move play head to start (0)") {
             playback.movePlayHeadToStart()
         }
@@ -375,7 +377,18 @@ class XenakisUI(
             playBtn.isDisable = true
             stopBtn.isDisable = true
         }
-        return HBox(goToStartBtn, playBtn, stopBtn)
+        return HBox(goToStartBtn, playBtn, stopBtn, recordingBtn)
+    }
+
+    private fun toggleRecording() {
+        playback.recorder.toggleIsActive()
+        if (!playback.recorder.isActive) {
+            recordingBtn.tooltip = Tooltip("Start Recording (Ctrl+R)")
+            recordingBtn.graphic = Icon.RecordInactive.getView()
+        } else {
+            recordingBtn.tooltip = Tooltip("Stop Recording (Ctrl+R)")
+            recordingBtn.graphic = Icon.RecordActive.getView()
+        }
     }
 
     private fun togglePlay() {
@@ -390,11 +403,12 @@ class XenakisUI(
         }
     }
 
-    private fun stop() {
-        playback.player.pause()
-        playback.player.reset()
+    private fun stopPlayback() {
         playBtn.graphic = Icon.Play.getView()
         playBtn.tooltip = Tooltip("Start playback")
+        recordingBtn.graphic = Icon.RecordInactive.getView()
+        recordingBtn.tooltip = Tooltip("Start recording")
+        playback.player.reset()
     }
 
     private fun createFileBar() = HBox(
@@ -445,8 +459,11 @@ class XenakisUI(
                 val time = scoreView.translateTimeFrom(playback.playHead.pane, playback.playHead.currentTime)
                 scoreView.display(time, time + scoreView.displayedDuration)
             }
+            on("Ctrl+R") {
+                toggleRecording()
+            }
             on("Ctrl?+PERIOD") { ev ->
-                if (ev.isControlDown || !ev.isTargetTextInput) stop()
+                if (ev.isControlDown || !ev.isTargetTextInput) stopPlayback()
             }
             on("HOME") { scoreView.displayWholeScore() }
             on("Shift+DIGIT0") { ev ->
