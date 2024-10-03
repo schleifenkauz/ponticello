@@ -27,6 +27,7 @@ import xenakis.ui.prompt.PredicateTextPrompt
 import xenakis.ui.prompt.YesNoPrompt
 import java.io.File
 import java.util.prefs.Preferences
+import kotlin.system.exitProcess
 
 class XenakisController(private val primaryStage: Stage) {
     private val listeners = mutableListOf<XenakisListener>()
@@ -251,6 +252,7 @@ class XenakisController(private val primaryStage: Stage) {
     fun quitApplication() {
         xenakisDir.resolve("settings.json").writeJson(context[Settings])
         client.quit()
+        exitProcess(0)
     }
 
     companion object : PublicProperty<XenakisController> by publicProperty("XenakisController") {

@@ -124,10 +124,12 @@ class ScoreEventCollector(
 
     @Synchronized
     override fun toggledMute(score: Score, inst: ScoreObjectInstance, muted: Boolean) {
+        if (!muted) added(inst)
         for (position in absolutePositions(inst)) {
             if (muted) removeFromPlayback(inst, position)
             else addToPlayback(inst, position)
         }
+        if (muted) removed(inst)
     }
 
     private fun addToPlayback(inst: ScoreObjectInstance, position: ObjectPosition) {

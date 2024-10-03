@@ -108,7 +108,7 @@ class BufferRegistryPane(
             val framesInput = lookup("#frames-input") as TextField
             val n = framesInput.text.toIntOrNull()
             if (n == null) {
-                alertError("Not a valid number of frames specified.")
+                Logger.error("Not a valid number of frames specified.", Logger.Category.Buffers)
                 return
             }
             obj.frames.set(n)

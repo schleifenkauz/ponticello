@@ -50,11 +50,10 @@ class ScoreView(score: Score, context: Context) : ScorePane(score, context) {
     private var magnifierWindow: SubWindow? = null
 
     init {
+        styleClass.add("score-view")
         children.add(clipboardObjectView)
         isFocusTraversable = true
         listenForEvents()
-        score.addListener(this)
-        styleClass.add("score-view")
         selectedArea.registerShortcuts {
             on("S") {
                 displayStart = getTime(selectedArea.x)
@@ -64,6 +63,10 @@ class ScoreView(score: Score, context: Context) : ScorePane(score, context) {
         }
         heightProperty().addListener { _ -> repaint() }
         widthProperty().addListener { _ -> repaint() }
+    }
+
+    fun initialize() {
+        this.score.addListener(this)
     }
 
     enum class ClipboardMode {

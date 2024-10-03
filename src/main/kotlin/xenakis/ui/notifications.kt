@@ -1,20 +1,11 @@
 package xenakis.ui
 
 import javafx.application.Platform
-import javafx.scene.control.Alert
 import org.controlsfx.control.Notifications
 import xenakis.model.Logger
 import xenakis.model.Logger.Level.*
 import java.io.PrintWriter
 import java.io.StringWriter
-
-fun alertException(action: String, exc: Exception) = Alert(Alert.AlertType.ERROR).run {
-    headerText = "Exception while: $action"
-    contentText = exc.message
-    show()
-}
-
-fun alertError(text: String) = Platform.runLater { Notifications.create().text(text).darkStyle().showError() }
 
 object NotificationView : Logger.View {
     override fun logged(record: Logger.Record) {

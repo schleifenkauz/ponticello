@@ -110,6 +110,7 @@ class XenakisUI(
         val logPane = LogPane(context, Logger)
         logWindow = SubWindow(logPane, "Log", context, SubWindow.Type.Undecorated)
         scoreView = ScoreView(project.score, project.context)
+        scoreView.initialize()
 
         val flowGraphEditor = AudioFlowGraphPane(project.flowGraph, context)
         flowGraphEditor.setPrefSize(1000.0, 1000.0)

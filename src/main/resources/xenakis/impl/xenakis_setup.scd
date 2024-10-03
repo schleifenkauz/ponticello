@@ -104,7 +104,6 @@ OSCdef('schedule', {
 	var time = msg[2].asFloat, code = msg[3].asString, my_play_start = ~play_start;
 	TempoClock.schedAbs(max(~play_start + time, TempoClock.beats)) {
 	    if (my_play_start == ~play_start) {
-	        code.postln;
 		    this.interpret(code);
 		};
 		nil;

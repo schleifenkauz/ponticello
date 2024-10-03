@@ -10,6 +10,8 @@ import reaktive.value.now
 import xenakis.impl.Knob
 import xenakis.model.GlobalControls
 import xenakis.model.GlobalControlsView
+import xenakis.model.Logger
+import xenakis.model.Logger.Category
 import xenakis.model.Settings
 import xenakis.sc.Identifier
 import xenakis.sc.NumericalControlSpec
@@ -53,7 +55,7 @@ class GlobalControlsPane(
             on("Ctrl+ENTER") {
                 val spec = editor.result.now
                 if (spec !is NumericalControlSpec) {
-                    alertError("Only numerical control specs allowed for global controls")
+                    Logger.error("Only numerical control specs allowed for global controls", Category.GlobalControls)
                     return@on
                 }
                 controls.addControl(name, spec)

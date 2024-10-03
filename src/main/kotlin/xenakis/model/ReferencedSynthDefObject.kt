@@ -15,7 +15,6 @@ import xenakis.impl.*
 import xenakis.sc.BufferControlSpec
 import xenakis.sc.BusControlSpec
 import xenakis.sc.NumericalControlSpec
-import xenakis.ui.alertError
 
 @Serializable
 class ReferencedSynthDefObject(
@@ -57,7 +56,7 @@ class ReferencedSynthDefObject(
 
     private fun updateParameters() {
         if (isMyComputerDumb) {
-            alertError("Windows computer is dumb.")
+            Logger.error("Windows computer is dumb.")
             return
         }
         val parameters = getSynthDefParameters(_name)

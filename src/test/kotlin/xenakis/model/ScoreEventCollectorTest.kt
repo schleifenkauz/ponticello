@@ -30,24 +30,31 @@ class ScoreEventCollectorTest {
                     val time = rnd.nextDouble(100.0)
                     val y = rnd.nextDouble(100.0)
                     val muted = rnd.nextDouble() <= 0.2
-                    parentScore.addObject(ScoreObjectInstance(obj.createReference(), time, y, muted))
+                    val inst = ScoreObjectInstance(obj.createReference(), time, y, muted)
+                    parentScore.addObject(inst)
+                    println("Add $inst")
                 }
 
                 p < 0.65 -> {
                     val inst = rootScore.allInstances().toList().random()
+                    println("Remove $inst")
                     inst.score.removeObject(inst)
                 }
 
                 p < 0.8 -> {
                     val inst = rootScore.allInstances().toList().random()
                     inst.toggleMuted()
+                    println("Toggle mute $inst = ${inst.muted}")
                 }
 
                 p < 0.9 -> {
                     val time = rnd.nextDouble(100.0)
                     val y = rnd.nextDouble(100.0)
                     val inst = rootScore.allInstances().toList().random()
+                    inst.beginMove()
                     inst.moveTo(time, y, simpleMove = true)
+                    inst.finishMove()
+                    println("Moved $inst")
                 }
 
                 else -> {
@@ -59,7 +66,9 @@ class ScoreEventCollectorTest {
                     obj.setInitialSize(100.0, 100.0)
                     val time = rnd.nextDouble(100.0)
                     val y = rnd.nextDouble(100.0)
-                    parentScore.addObject(ScoreObjectInstance(obj.createReference(), time, y))
+                    val inst = ScoreObjectInstance(obj.createReference(), time, y)
+                    parentScore.addObject(inst)
+                    println("Added $inst")
                 }
             }
             checkEvents(rootScore, collector)
@@ -100,7 +109,7 @@ class ScoreEventCollectorTest {
         val obj = Utils.createDummyObject("obj1")
         subInst.toggleMuted()
         subScore.addObject(ScoreObjectInstance(obj.createReference(), 10.0, 10.0))
-        assertArrayEquals(collector.eventsAt(0.0, 10000.0).toTypedArray(), emptyArray())
+        checkEvents(rootScore, collector)
         subInst.toggleMuted()
         checkEvents(rootScore, collector)
     }

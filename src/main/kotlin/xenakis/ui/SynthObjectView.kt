@@ -151,16 +151,19 @@ class SynthObjectView(
         val rate = obj.playBufRate?.now ?: 1.0
         if (rate == 0.0) return
         val defaultStartPos = if (rate < 0) sample.duration else 0.0
-        val startPos = obj.playbufStartPos?.now ?: defaultStartPos
+        var startPos = obj.playbufStartPos?.now?.wrapAt(sample.duration) ?: defaultStartPos
+        if (rate < 0.0 && startPos < 1e-5) startPos = sample.duration
         var t = 0.0
         for (i in 0..100) {
             if (t >= obj.duration) break
-            var imageDur = if (t == 0.0) {
-                if (rate < 0) startPos / -rate else (sample.duration - startPos) / rate
-            } else sample.duration / rate.absoluteValue
+            var imageDur = when {
+                t > 0.0 -> sample.duration / rate.absoluteValue
+                rate > 0.0 -> (sample.duration - startPos) / rate
+                else -> startPos / -rate
+            }
             if (t + imageDur > obj.duration) imageDur = obj.duration - t
             val view = ImageView(image)
-            displaySpectrogram(
+            displaySpectrogramPart(
                 view, imageDur, sample.duration, rate,
                 startPos = if (t == 0.0) startPos else defaultStartPos
             )
@@ -171,7 +174,7 @@ class SynthObjectView(
         children.addAll(spectrogramViews)
     }
 
-    private fun displaySpectrogram(
+    private fun displaySpectrogramPart(
         view: ImageView, duration: Double,
         sampleDuration: Double, rate: Double, startPos: Double
     ) {
@@ -187,7 +190,7 @@ class SynthObjectView(
         view.fitWidth = pane.getWidth(duration)
         view.viewOrder = 1000.0
         if (rate < 0) view.transforms.addAll(
-            Translate(prefWidth, 0.0),
+            Translate(view.fitWidth, 0.0),
             Scale(-1.0, 1.0),
         )
     }

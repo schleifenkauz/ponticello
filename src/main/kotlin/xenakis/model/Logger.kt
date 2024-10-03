@@ -85,6 +85,7 @@ object Logger {
         object GlobalControls : Category(superCategory = Registries)
         object Server : Category()
         object Project : Category()
+        object VSTPlugins : Category()
 
         fun filter(category: Category?): Boolean =
             category == this || (category?.superCategory != null && filter(category.superCategory))

@@ -75,7 +75,7 @@ class ScorePlayer(
 
     override fun scheduleEvents(t: Double, delta: Double) {
         var printedInterval = false
-        for (ev in events.eventsAt(t, delta)) {
+        for (ev in events.eventsAt(t, delta * 2)) {
             val (type, position, inst) = ev
             if (inst == null || inst.muted) continue
             if (!printedInterval) {

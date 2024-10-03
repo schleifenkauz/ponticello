@@ -18,6 +18,7 @@ import xenakis.sc.Identifier
 import xenakis.sc.editor.SynthDefSelector
 import xenakis.sc.transform
 import xenakis.ui.Direction
+import xenakis.ui.wrapAt
 
 @Serializable
 class SynthObject(
@@ -115,8 +116,11 @@ class SynthObject(
             }
         }
         if (sample.now != null && playBufRate != null && playbufStartPos != null) {
-            playbufStartPos!!.now += (playBufRate!!.now * duration).coerceAtMost(sample.now!!.get<SampleObject>().duration)
+            val sampleDur = sample.now!!.get<SampleObject>().duration
+            playbufStartPos!!.now = (playbufStartPos!!.now + playBufRate!!.now * duration).wrapAt(sampleDur)
+            while (playbufStartPos!!.now < 0.0) playbufStartPos!!.now += sampleDur
             playBufRate!!.now *= -1
+            if (playbufStartPos!!.now == 0.0 && playBufRate!!.now < 0.0) playbufStartPos!!.now = sampleDur
         }
     }
 

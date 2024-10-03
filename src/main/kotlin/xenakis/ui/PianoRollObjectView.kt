@@ -25,6 +25,7 @@ import reaktive.value.reactiveVariable
 import xenakis.impl.MidiPitch
 import xenakis.impl.Point
 import xenakis.model.InstrumentObject
+import xenakis.model.Logger
 import xenakis.model.PianoRollObject
 import xenakis.model.ScoreObjectInstance
 import xenakis.sc.editor.EventDictionaryEditor
@@ -158,12 +159,12 @@ class PianoRollObjectView(inst: ScoreObjectInstance, private val obj: PianoRollO
     }
 
     fun updatedNote(note: PianoRollObject.Note) {
-        val rect = noteRects[note] ?: return alertError("Note $note was note displayed in $this")
+        val rect = noteRects[note] ?: return Logger.error("Note $note was note displayed in $this")
         updateNoteDisplay(rect, note)
     }
 
     fun removedNote(note: PianoRollObject.Note) {
-        val rect = noteRects.remove(note) ?: return alertError("Note $note was note displayed in $this")
+        val rect = noteRects.remove(note) ?: return Logger.error("Note $note was note displayed in $this")
         children.remove(rect)
     }
 

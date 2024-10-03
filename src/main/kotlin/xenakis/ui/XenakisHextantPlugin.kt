@@ -10,6 +10,7 @@ import hextant.undo.compoundEdit
 import reaktive.value.now
 import xenakis.impl.randomColor
 import xenakis.model.CustomizableSynthDefObject.SynthDefEditor
+import xenakis.model.Logger
 import xenakis.model.ParameterDefObject
 import xenakis.sc.DoubleLiteral
 import xenakis.sc.Identifier
@@ -62,13 +63,13 @@ object XenakisHextantPlugin : PluginInitializer({
                 .showDialog(editor.context) ?: return@executing
             val def = editor.getParent<SynthDefEditor>()
             if (def == null) {
-                alertError("Could not get SynthDefEditor for extracted parameter.")
+                Logger.error("Could not get SynthDefEditor for extracted parameter.")
                 return@executing
             }
             val parameters = def.obj.parameters
             val defaultValue = editor.result.now
             if (defaultValue !is DoubleLiteral) {
-                alertError("Could not extract parameter default value.")
+                Logger.error("Could not extract parameter default value.")
                 return@executing
             }
             val spec = NumericalControlSpec(

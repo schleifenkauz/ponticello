@@ -10,9 +10,9 @@ import reaktive.value.ReactiveValue
 import xenakis.impl.SuperColliderClient
 import xenakis.impl.getString
 import xenakis.impl.superColliderPath
+import xenakis.model.Logger
 import xenakis.model.XenakisProject.Companion.projectDirectory
 import xenakis.sc.VSTPlugin
-import xenakis.ui.alertError
 
 class VSTPluginEditor(context: Context) : CompoundEditor<VSTPlugin>(context), ScExprEditor<VSTPlugin> {
     constructor(context: Context, pluginName: String) : this(context) {
@@ -45,7 +45,7 @@ class VSTPluginEditor(context: Context) : CompoundEditor<VSTPlugin>(context), Sc
     private fun checkControllerVar(): Boolean {
         val controller = context[SuperColliderClient].eval(controllerVar).join()
         if (controller == "nil") {
-            alertError("Plugin was not loaded")
+            Logger.error("Plugin was not loaded", Logger.Category.VSTPlugins)
             return false
         }
         return true

@@ -94,7 +94,7 @@ class AudioFlowGraphPane(
             val busName = ev.dragboard.getContent(BusObject.DATA_FORMAT) as? String ?: return@addEventHandler
             val bus = context[currentProject].busses.get(busName).createReference()
             if (!graph.addNode(bus, Point(ev.x, ev.y))) {
-                alertError("Cannot add same bus twice in audio flow graph")
+                Logger.error("Cannot add same bus twice in audio flow graph")
             }
             ev.consume()
         }
@@ -267,7 +267,7 @@ class AudioFlowGraphPane(
         if (flow == null) {
             val sourceName = source.ref.get<BusObject>().name.now
             val targetName = target.ref.get<BusObject>().name.now
-            alertError("Cannot add flow from $sourceName to $targetName")
+            Logger.error("Cannot add flow from $sourceName to $targetName", Logger.Category.AudioFlow)
             return
         }
         editFlowDetails(flow)

@@ -22,6 +22,7 @@ import xenakis.impl.MidiPitch
 import xenakis.impl.Point
 import xenakis.model.*
 import xenakis.model.Envelope
+import xenakis.model.Logger.Category
 import xenakis.model.Score.Companion.rootScore
 import xenakis.sc.BufferControlSpec
 import xenakis.sc.Identifier
@@ -149,21 +150,24 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
             playbuf
         }
         if (synthDef !is SynthDefObject) {
-            alertError("A SynthDef should be selected for sample playback to work")
+            Logger.error("A SynthDef should be selected for sample playback to work", Category.Buffers)
             return
         }
         val bufParameter = synthDef.parameters.now.find { p -> p.name.now == "buf" }
         if (bufParameter == null) {
-            alertError("No parameter 'buf' found in in SynthDef ${synthDef.name.now}")
+            Logger.error("No parameter 'buf' found in in SynthDef ${synthDef.name.now}", Category.Buffers)
             return
         }
         val spec = bufParameter.spec.now
         if (spec !is BufferControlSpec) {
-            alertError("Parameter 'buf' of SynthDef ${synthDef.name.now} is not of type 'buf'")
+            Logger.error("Parameter 'buf' of SynthDef ${synthDef.name.now} is not of type 'buf'", Category.Buffers)
             return
         }
         if (!spec.isPlayBufSource) {
-            alertError("Parameter 'buf' of SynthDef ${synthDef.name.now} is not marked as a PlayBuf source")
+            Logger.error(
+                "Parameter 'buf' of SynthDef ${synthDef.name.now} is not marked as a PlayBuf source",
+                Category.Buffers
+            )
             return
         }
         val controls = synthDef.defaultControls(context)

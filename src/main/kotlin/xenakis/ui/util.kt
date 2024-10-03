@@ -28,10 +28,7 @@ import reaktive.value.ReactiveVariable
 import reaktive.value.fx.asObservableValue
 import reaktive.value.now
 import java.util.*
-import kotlin.math.ceil
-import kotlin.math.log10
-import kotlin.math.pow
-import kotlin.math.roundToInt
+import kotlin.math.*
 
 fun <T> Optional<T>.getOrNull(): T? = orElse(null)
 
@@ -148,7 +145,18 @@ fun Region.centerHorizontally(parent: Region) {
     layoutXProperty().bind(parent.widthProperty().subtract(widthProperty()).divide(2))
 }
 
-fun Double.snap(grid: Double): Double = if (grid == 0.0 || grid.isNaN()) this else (this / grid).roundToInt() * grid
+fun Double.snap(grid: Double): Double {
+    if (grid == 0.0 || grid.isNaN() || this == 0.0) return this
+    if (grid < 0.0) return snap(-grid)
+    var v = 0.0
+    for (i in 20 downTo 0) {
+        val f = 2.0.pow(i)
+        if (v + f * grid <= this.absoluteValue) v += f * grid
+    }
+    return v * this.sign
+}
+
+fun Double.wrapAt(divisor: Double): Double = this - snap(divisor)
 
 fun timeCode(t: Double, accuracy: Int): String {
     var seconds = t.toInt()
