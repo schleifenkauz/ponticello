@@ -1,62 +1,43 @@
 package xenakis.ui
 
 import hextant.context.Context
-import javafx.geometry.Point2D
 import xenakis.impl.Point
 import xenakis.model.ScoreObjectGroup
 
-class SubScorePane(
-    private val obj: ScoreObjectGroup,
-    context: Context,
-    val parent: ScorePane
-) : ScorePane(obj.score, context) {
+class SubScorePane(private val obj: ScoreObjectGroup, context: Context) : ScorePane(obj.score, context) {
     override val displayStart: Double
         get() = 0.0
     override val displayEnd: Double
         get() = obj.duration
     override val pixelsPerSecond: Double
-        get() = parent.pixelsPerSecond
+        get() = rootPane.pixelsPerSecond
 
-    override val rootPane: ScoreView
-        get() = parent.rootPane
-
-    private fun translateToParent(x: Double, y: Double): Point2D {
-        var coords = this.localToScreen(x, y)
-        coords = parent.screenToLocal(coords)
-        return coords
-    }
-
-    private fun translateFromParent(coords: Point2D): Point2D {
-        var coords1 = coords
-        coords1 = parent.localToScreen(coords1)
-        coords1 = this.screenToLocal(coords1)
-        return coords1
-    }
+    override val rootPane: ScoreView get() = context[XenakisUI].scoreView
 
     override fun getGrids(x: Double): List<TempoGridObjectView> {
-        val coords = translateToParent(x, 0.0)
-        return parent.getGrids(coords.x)
+        val coords = rootPane.translateFrom(this, x, 0.0)
+        return rootPane.getGrids(coords.x)
     }
 
     override fun markX(x: Double) {
-        val coords = translateToParent(x, 0.0)
-        parent.markX(coords.x)
+        val coords = rootPane.translateFrom(this, x, 0.0)
+        rootPane.markX(coords.x)
     }
 
     override fun snapToGrid(x: Double, y: Double): Point {
-        var coords = translateToParent(x, y)
-        coords = parent.snapToGrid(coords.x, coords.y).point2d
-        coords = translateFromParent(coords)
-        return Point(coords)
+        var coords = rootPane.translateFrom(this, x, y)
+        coords = rootPane.snapToGrid(coords.x, coords.y)
+        coords = rootPane.translateTo(this, coords.x, coords.y)
+        return coords
     }
 
     override fun getNearestGrid(x: Double, y: Double): TempoGridObjectView? {
-        val coords = translateToParent(x, y)
-        return parent.getNearestGrid(coords.x, coords.y)
+        val coords = rootPane.translateFrom(this, x, y)
+        return rootPane.getNearestGrid(coords.x, coords.y)
     }
 
     override val xAccuracy: Int
-        get() = parent.xAccuracy
+        get() = rootPane.xAccuracy
 
     init {
         listenForEvents()

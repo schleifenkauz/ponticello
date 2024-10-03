@@ -3,6 +3,7 @@ package xenakis.ui
 import hextant.context.Context
 import hextant.fx.registerShortcuts
 import javafx.geometry.Rectangle2D
+import javafx.scene.Node
 import javafx.scene.SnapshotParameters
 import javafx.scene.image.ImageView
 import javafx.scene.layout.Pane
@@ -16,6 +17,8 @@ import xenakis.impl.Point
 import xenakis.impl.replacePrefix
 import xenakis.impl.step
 import xenakis.model.InteractionSettings.SnapOption
+import xenakis.model.Logger
+import xenakis.model.ObjectPosition
 import xenakis.model.Score
 import xenakis.model.ScoreObject
 import xenakis.ui.XenakisController.Companion.currentProject
@@ -100,6 +103,36 @@ class ScoreView(score: Score, context: Context) : ScorePane(score, context) {
         positionTracker.layoutX = x
     }
 
+    fun translateFrom(child: Node, x: Double, y: Double): Point {
+        if (child == this) return Point(x, y)
+        var coords = child.localToScreen(x, y)
+        coords = screenToLocal(coords)
+        return Point(coords)
+    }
+
+    fun translateFrom(child: Node, position: ObjectPosition): ObjectPosition {
+        if (child == this) return position
+        val (x, y) = translateFrom(child, getWidth(position.time), getPaneY(position.y))
+        return ObjectPosition(getTime(x), getScoreY(y))
+    }
+
+    fun translateTimeFrom(child: Node, time: Double): Double = translateFrom(child, ObjectPosition(time, 0.0)).time
+
+    fun translateTo(child: Node, x: Double, y: Double): Point {
+        if (child == this) return Point(x, y)
+        var coords = localToScreen(x, y)
+        coords = child.screenToLocal(coords)
+        return Point(coords)
+    }
+
+    fun translateTo(child: Node, position: ObjectPosition): ObjectPosition {
+        if (child == this) return position
+        val (x, y) = translateTo(child, getWidth(position.time), getPaneY(position.y))
+        return ObjectPosition(getWidth(x), getScoreY(y))
+    }
+
+    fun translateTimeTo(child: Node, time: Double): Double = translateTo(child, ObjectPosition(time, 0.0)).time
+
     override fun snapToGrid(x: Double, y: Double): Point {
         val settings = context[currentProject].settings
         if (!settings.snapEnabled.now) return Point(x, y)
@@ -159,6 +192,10 @@ class ScoreView(score: Score, context: Context) : ScorePane(score, context) {
     }
 
     fun display(start: Double, end: Double) {
+        if (end < start) {
+            Logger.severe("Attempt to display empty time range: $start .. $end", Logger.Category.Score)
+            return
+        }
         displayStart = start
         displayEnd = end
         repaint()
@@ -169,7 +206,7 @@ class ScoreView(score: Score, context: Context) : ScorePane(score, context) {
         repositionEnvelopeMagnifier()
         children.add(clipboardObjectView)
         children.add(positionTracker)
-        ui.playHead.repaint()
+        ui.playback.playHead.updatePosition()
         displayTimeGrid()
     }
 

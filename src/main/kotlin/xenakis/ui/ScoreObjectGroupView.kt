@@ -3,7 +3,7 @@ package xenakis.ui
 import xenakis.model.ScoreObjectGroup
 import xenakis.model.ScoreObjectInstance
 
-class ScoreObjectGroupView(inst: ScoreObjectInstance, private val obj: ScoreObjectGroup) : ScoreObjectView(inst) {
+class ScoreObjectGroupView(inst: ScoreObjectInstance, val obj: ScoreObjectGroup) : ScoreObjectView(inst) {
     lateinit var scorePane: ScorePane
         private set
 
@@ -13,7 +13,7 @@ class ScoreObjectGroupView(inst: ScoreObjectInstance, private val obj: ScoreObje
 
     override fun initialize(parent: ScorePane) {
         super.initialize(parent)
-        scorePane = SubScorePane(obj, context, pane)
+        scorePane = SubScorePane(obj, context)
         children.add(scorePane)
         scorePane.prefWidthProperty().bind(widthProperty())
         scorePane.prefHeightProperty().bind(heightProperty())

@@ -53,8 +53,6 @@
 - kill sclang.exe and scsynth.exe before startup (?)
 - specify expected channels (and ar/kr) for bus and buffer parameters
 - lhs of assignments can be compound expressions
-- button for solo playback of single element
-  - can we have a cursor for this?
 - clear ServerTree and ServerBoot when closing a project
 
 ## Long term architectural ideas/question

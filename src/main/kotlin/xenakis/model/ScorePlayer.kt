@@ -1,33 +1,23 @@
 package xenakis.model
 
-import bundles.PublicProperty
-import bundles.publicProperty
-import bundles.set
 import javafx.geometry.HorizontalDirection
 import reaktive.value.now
 import xenakis.impl.SuperColliderClient
 import xenakis.model.ScoreEventCollector.Event
 import xenakis.ui.PlayHead
-import kotlin.concurrent.thread
 
 class ScorePlayer(
     private val rootScore: Score,
-    private val playHead: PlayHead,
-    private val client: SuperColliderClient
-) : Thread() {
-    val env = ScorePlayEnv(rootScore.context[Settings])
-    private val events = ScoreEventCollector(rootScore, this, env)
+    override val playHead: PlayHead,
+    override val client: SuperColliderClient,
+    private val env: ScorePlayEnv = ScorePlayEnv(rootScore.context[Settings]),
+    private val events: ScoreEventCollector
+) : AbstractPlayer(DELTA_T) {
 
-    var isPlaying = false
-        private set
     private var lastPlayFrom: Double = 0.0
-    val currentTime get() = playHead.currentTime
 
-    init {
-        rootScore.context[ScorePlayer] = this
-        isDaemon = true
-        start()
-    }
+    override val lookAhead: Double
+        get() = env.lookAhead
 
     private fun activeObjects(time: Double, delta: Double): List<Event> {
         val dest = mutableListOf<Event>()
@@ -51,28 +41,8 @@ class ScorePlayer(
         }
     }
 
-    override fun run() {
-        var lastTime = System.currentTimeMillis()
-        while (!interrupted()) {
-            val now = System.currentTimeMillis()
-            if (isPlaying) {
-                val dt = (now - lastTime) / 1000.0
-                scheduleEvents(playHead.currentTime + env.lookAhead, dt)
-                playHead.advance(dt)
-            }
-            lastTime = now
-            try {
-                sleep(toMs(DELTA_T))
-            } catch (ex: InterruptedException) {
-                //ex.printStackTrace()
-                return
-            }
-        }
-    }
-
-    private fun toMs(t: Double) = (t * 1000).toLong()
-
-    private fun startPlay(startFrom: Double) {
+    override fun startPlay(startFrom: Double) {
+        client.send("start_play")
         Logger.fine("Starting playback at $startFrom", Logger.Category.Playback)
         lastPlayFrom = startFrom
         val activeObjects = activeObjects(startFrom, delta = env.lookAhead)
@@ -85,8 +55,8 @@ class ScorePlayer(
 
     fun scheduleInstantly(inst: ScoreObjectInstance, position: ObjectPosition) {
         val obj = inst.obj
-        val delta = position.time - currentTime
-        val pos = ObjectPosition(currentTime + delta.coerceAtLeast(0.0), position.y)
+        val delta = position.time - playHead.currentTime
+        val pos = ObjectPosition(playHead.currentTime + delta.coerceAtLeast(0.0), position.y)
         val name = env.markStart(inst, position) //important that we mark the original object not the cutoff one
         Logger.fine("Scheduling $obj at $pos, delta: $delta", Logger.Category.Playback)
         scheduleObject(obj, pos, name, cutoff = -delta.coerceAtMost(0.0))
@@ -101,7 +71,7 @@ class ScorePlayer(
         }
     }
 
-    private fun scheduleEvents(t: Double, delta: Double) {
+    override fun scheduleEvents(t: Double, delta: Double) {
         var printedInterval = false
         for (ev in events.eventsAt(t, delta)) {
             val (type, position, inst) = ev
@@ -140,36 +110,14 @@ class ScorePlayer(
         client.send("schedule", listOf(timeForExecution, code))
     }
 
-    fun play() {
-        if (isPlaying) return
-        thread(isDaemon = true) {
-            Logger.info("Starting playback", Logger.Category.Playback)
-            client.send("start_play")
-            startPlay(playHead.currentTime)
-            sleep(toMs(env.lookAhead))
-            isPlaying = true
-        }
-    }
-
-    fun pause() {
-        if (!isPlaying) return
-        isPlaying = false
+    override fun pausePlayback() {
         Logger.info("Pausing playback", Logger.Category.Playback)
+        client.send("pause_play")
         events.resetEvents()
         env.clear()
-        client.send("pause_play")
     }
 
-    fun reset() {
-        pause()
-        client.run("s.freeAll")
-    }
-
-    fun close() {
-        interrupt()
-    }
-
-    companion object : PublicProperty<ScorePlayer> by publicProperty("ScorePlayer") {
+    companion object {
         private const val DELTA_T = 0.03
     }
 }

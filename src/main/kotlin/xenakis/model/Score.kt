@@ -46,10 +46,12 @@ class Score(private val instances: MutableList<ScoreObjectInstance> = mutableLis
         }
     }
 
-    fun addListener(listener: ScoreListener) {
+    fun addListener(listener: ScoreListener, notify: Boolean = true) {
         views.addListener(listener)
-        for (inst in objectInstances) {
-            listener.addedObject(this, inst)
+        if (notify) {
+            for (inst in objectInstances) {
+                listener.addedObject(this, inst)
+            }
         }
     }
 

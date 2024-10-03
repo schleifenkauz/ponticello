@@ -37,7 +37,7 @@ import xenakis.ui.prompt.DoublePrompt
 import xenakis.ui.prompt.NamePrompt
 import xenakis.ui.prompt.compoundInput
 
-abstract class ScorePane(val score: Score, val context: Context) : Pane(), ScoreListener {
+abstract class ScorePane(val score: Score, val context: Context) : Pane(), ScoreListener, TimeBlock {
     private var newObjectArea: Rectangle? = null
     protected val selectedArea: Rectangle = Rectangle() styleClass "time-range-rect"
 
@@ -63,10 +63,10 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
     abstract fun getNearestGrid(x: Double, y: Double): TempoGridObjectView?
 
     abstract val pixelsPerSecond: Double
-    fun getX(time: Double) = (time - displayStart) * pixelsPerSecond
-    fun getTime(x: Double) = (x / pixelsPerSecond) + displayStart
-    fun getDuration(width: Double) = width / pixelsPerSecond
-    fun getWidth(duration: Double) = duration * pixelsPerSecond
+    override fun getX(time: Double) = (time - displayStart) * pixelsPerSecond
+    override fun getTime(x: Double) = (x / pixelsPerSecond) + displayStart
+    override fun getDuration(width: Double) = width / pixelsPerSecond
+    override fun getWidth(duration: Double) = duration * pixelsPerSecond
 
     fun getScoreY(paneY: Double) = paneY / rootPane.height
     fun getPaneY(scoreY: Double) = scoreY * rootPane.height
@@ -350,7 +350,14 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
                         selectedArea.requestFocus()
                     }
                 } else if (ev.button == MouseButton.SECONDARY) pasteFromSystemClipboard(ev)
-                else if (this is ScoreView && !ui.player.isPlaying) ui.playHead.setPlayHeadX(ev.x)
+                else if (this is ScoreView && !ui.playback.player.isPlaying) {
+                    if (ev.isControlDown) {
+                        ui.playback.attachToMainScore()
+                    }
+                    if (ui.playback.isAttachedTo(this)) {
+                        ui.playback.playHead.setPlayHeadX(ev.x)
+                    }
+                }
             }
 
             tool in setOf(Task, Memo) && ev.clickCount >= 2 -> {

@@ -30,5 +30,7 @@ data class ObjectPosition(val time: Double, val y: Double) : Comparable<ObjectPo
 
     companion object {
         private const val DELTA = 0.001
+
+        val ZERO = ObjectPosition(0.0, 0.0)
     }
 }

@@ -34,7 +34,7 @@ import xenakis.ui.prompt.compoundInput
 
 abstract class ScoreObjectView(
     val instance: ScoreObjectInstance
-) : Pane(), ScoreObjectInstance.Listener, SynthControls.View, ScoreObject.Listener {
+) : Pane(), ScoreObjectInstance.Listener, SynthControls.View, ScoreObject.Listener, TimeBlock {
     var isInitialized: Boolean = false
         private set
     lateinit var pane: ScorePane
@@ -52,7 +52,7 @@ abstract class ScoreObjectView(
     protected open val defaultBackgroundColor: ReactiveValue<Color>
         get() = reactiveVariable(BLACK)
     val backgroundColor by lazy { instance.obj.associatedColor.orElse(defaultBackgroundColor) }
-    protected open val borderColorWhenSelected: Color get() = Color.web("#2a66ff") //backgroundColor.now.invert().brighter()
+    protected open val borderColorWhenSelected: Color get() = Color.web("#2a66ff")
     protected open val borderColorWhenNotSelected: Color get() = Color.TRANSPARENT
     protected open val borderColorWhenSameObjectSelected: Color get() = Color.GRAY
 
@@ -66,6 +66,14 @@ abstract class ScoreObjectView(
         colorPicker.setFixedWidth(30.0)
         colorPicker.prefHeight = 30.0
     }
+
+    override fun getDuration(width: Double): Double = pane.getDuration(width)
+
+    override fun getWidth(duration: Double): Double = pane.getWidth(duration)
+
+    override fun getTime(x: Double): Double = getDuration(x)
+
+    override fun getX(time: Double): Double = getWidth(time)
 
     protected open val supportedActions get() = listOf(Icon.Delete, Icon.Mute, Icon.Repeat)
 
@@ -123,7 +131,6 @@ abstract class ScoreObjectView(
         if (isInitialized) return
         this.pane = parent
         initializeLayout()
-        setupSelecting()
         setupDraggingAndResizing(
             parent,
             canUserChangeWidth = true, canUserChangeHeight = true, Tool.Pointer,
@@ -132,19 +139,12 @@ abstract class ScoreObjectView(
             finishDrag = this::finishedDrag
         )
         setBackground()
-        setupCutting()
+        addMouseActions()
         setupActions()
         displayKnobs()
         instance.addListener(this)
         instance.obj.addListener(this)
         isInitialized = true
-    }
-
-    private fun setupSelecting() {
-        addEventHandler(MouseEvent.MOUSE_PRESSED) { ev ->
-            selectThis(ev.isShiftDown)
-            ev.consume()
-        }
     }
 
     protected fun selectThis(addToSelection: Boolean) {
@@ -250,19 +250,34 @@ abstract class ScoreObjectView(
         knobControls.children.add(knob)
     }
 
-    private fun setupCutting() {
+    private fun addMouseActions() {
         addEventHandler(MouseEvent.MOUSE_CLICKED) { ev ->
-            if (context[XenakisUI].toolSelector.selected.value == Tool.Cut) {
-                val cutPosition = pane.getDuration(ev.x - 0.0)
-                context[UndoManager].beginCompoundEdit("Cut object")
-                pane.score.removeObject(instance)
-                val (leftHalf, rightHalf) = instance.cut(cutPosition)
-                pane.score.addObject(leftHalf)
-                pane.score.addObject(rightHalf)
-                context[UndoManager].finishCompoundEdit("Cut object")
-                pane.selector.select(pane.getObjectView(leftHalf), addToSelection = false)
-                pane.selector.select(pane.getObjectView(rightHalf), addToSelection = true)
-                ev.consume()
+            ev.consume()
+            val tool = context[XenakisUI].toolSelector.selected.value
+            when (tool) {
+                Tool.Cut -> {
+                    val cutPosition = pane.getDuration(ev.x - 0.0)
+                    context[UndoManager].beginCompoundEdit("Cut object")
+                    pane.score.removeObject(instance)
+                    val (leftHalf, rightHalf) = instance.cut(cutPosition)
+                    pane.score.addObject(leftHalf)
+                    pane.score.addObject(rightHalf)
+                    context[UndoManager].finishCompoundEdit("Cut object")
+                    pane.selector.select(pane.getObjectView(leftHalf), addToSelection = false)
+                    pane.selector.select(pane.getObjectView(rightHalf), addToSelection = true)
+                }
+
+                else -> {
+                    val playback = context[PlaybackManager]
+                    if (ev.isControlDown) {
+                        playback.attachToView(this)
+                    } else {
+                        selectThis(ev.isShiftDown)
+                    }
+                    if (playback.isAttachedTo(this)) {
+                        playback.playHead.setPlayHeadX(ev.x)
+                    }
+                }
             }
         }
     }

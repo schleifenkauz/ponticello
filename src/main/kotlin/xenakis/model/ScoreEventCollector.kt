@@ -6,18 +6,21 @@ import java.util.*
 
 class ScoreEventCollector(
     private val rootScore: Score,
-    private val player: ScorePlayer?,
     private val env: ScorePlayEnv?
-) : ScoreListener, ScoreObject.Listener, ObjectRegistry.Listener<ScoreObject> {
+) : ScoreListener, ScoreObject.Listener {
     private val events = TreeSet<Event>()
     private val scoreInstances = mutableMapOf<Score, MutableSet<ScoreObjectInstance>>()
+    private val instances = mutableMapOf<ScoreObject, MutableSet<ScoreObjectInstance>>()
+
+    var player: ScorePlayer? = null
 
     init {
-        rootScore.context[ScoreObjectRegistry].addListener(this)
         rootScore.addListener(this)
     }
 
     private fun scoreInstances(score: Score) = scoreInstances.getOrPut(score) { mutableSetOf() }
+
+    private fun instances(obj: ScoreObject) = instances.getOrPut(obj) { mutableSetOf() }
 
     private fun absolutePositions(score: Score): List<ObjectPosition> = when {
         score == rootScore -> listOf(ObjectPosition(0.0, 0.0))
@@ -33,27 +36,49 @@ class ScoreEventCollector(
     @Synchronized
     override fun addedObject(score: Score, inst: ScoreObjectInstance) {
         if (inst.muted) return
+        added(inst)
         for (position in absolutePositions(inst)) {
             addToPlayback(inst, position)
+        }
+    }
+
+    private fun added(inst: ScoreObjectInstance) {
+        val obj = inst.obj
+        if (instances(obj).add(inst) && instances(obj).size == 1) {
+            obj.addListener(this)
+        }
+        if (obj is ScoreObjectGroup) {
+            if (scoreInstances(obj.score).add(inst) && scoreInstances(obj.score).size == 1) {
+                obj.score.addListener(this, notify = false)
+                for (subInst in obj.score.objectInstances) {
+                    added(subInst)
+                }
+            }
         }
     }
 
     @Synchronized
     override fun removedObject(score: Score, inst: ScoreObjectInstance) {
         if (inst.muted) return
+        removed(inst)
         for (position in absolutePositions(inst)) {
             removeFromPlayback(inst, position)
         }
     }
 
-    @Synchronized
-    override fun added(obj: ScoreObject, idx: Int) {
-        obj.addListener(this)
-    }
-
-    @Synchronized
-    override fun removed(obj: ScoreObject, idx: Int) {
-        obj.removeListener(this)
+    private fun removed(inst: ScoreObjectInstance) {
+        val obj = inst.obj
+        if (instances(obj).remove(inst) && instances(obj).isEmpty()) {
+            obj.removeListener(this)
+        }
+        if (obj is ScoreObjectGroup) {
+            if (scoreInstances(obj.score).remove(inst) && scoreInstances(obj.score).isEmpty()) {
+                obj.score.removeListener(this)
+                for (subInst in obj.score.objectInstances) {
+                    removed(subInst)
+                }
+            }
+        }
     }
 
     @Synchronized
@@ -112,17 +137,13 @@ class ScoreEventCollector(
                 "Added sub score ${obj.name.now} to ${inst.score.scoreName.now} at ${inst.position}",
                 Logger.Category.Playback
             )
-            scoreInstances(obj.score).add(inst)
-            if (scoreInstances(obj.score).size == 1) {
-                obj.score.addListener(this) //this will recurse into [addToPlayBack] via [addedObject]
-            } else {
-                for (subInst in obj.score.objectInstances) {
-                    addToPlayback(subInst, position + subInst.position)
-                }
+            for (subInst in obj.score.objectInstances) {
+                addToPlayback(subInst, position + subInst.position)
             }
         } else {
             Logger.fine("Added $inst at $position", Logger.Category.Playback)
             val posEnd = position + ObjectPosition(obj.duration, 0.0)
+            val player = player
             if (player != null && env != null && player.isPlaying && player.currentTime in position.time - env.lookAhead..posEnd.time) {
                 player.scheduleInstantly(inst, position)
             }
@@ -134,18 +155,19 @@ class ScoreEventCollector(
     private fun removeFromPlayback(inst: ScoreObjectInstance, position: ObjectPosition) {
         val obj = inst.obj
         if (obj is ScoreObjectGroup) {
-            scoreInstances(obj.score).remove(inst)
-            if (scoreInstances(obj.score).isEmpty()) obj.score.removeListener(this)
             for (subInst in obj.score.objectInstances) {
                 removeFromPlayback(subInst, position + subInst.position)
             }
         } else {
             Logger.fine("Removing $inst at $position", Logger.Category.Playback)
             val posEnd = position + ObjectPosition(obj.duration, 0.0)
-            if (!events.remove(Event(Event.Type.ObjectStart, position, inst)))
+            if (!events.remove(Event(Event.Type.ObjectStart, position, inst))) {
                 Logger.severe("Failed to remove object start at $position")
-            if (!events.remove(Event(Event.Type.ObjectEnd, posEnd, inst)))
+            }
+            if (!events.remove(Event(Event.Type.ObjectEnd, posEnd, inst))) {
                 Logger.severe("Failed to remove object end at $posEnd")
+            }
+            val player = player
             if (player != null && env != null && player.isPlaying) {
                 for ((activeInstance, pos, name) in env.activeInstances(inst)) {
                     if (pos == position) player.stopPlayBackInstantly(activeInstance, pos, name)
@@ -165,6 +187,16 @@ class ScoreEventCollector(
     fun resetEvents() {
         for (ev in events) {
             ev.scheduled = false
+        }
+    }
+
+    fun removeListeners() {
+        rootScore.removeListener(this)
+        for ((score, instances) in scoreInstances) {
+            if (instances.isNotEmpty()) score.removeListener(this)
+        }
+        for ((obj, instances) in instances) {
+            if (instances.isNotEmpty()) obj.removeListener(this)
         }
     }
 

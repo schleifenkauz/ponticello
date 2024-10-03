@@ -1,46 +1,54 @@
 package xenakis.ui
 
 import javafx.application.Platform
-import javafx.beans.binding.Bindings
+import javafx.scene.layout.Pane
 import javafx.scene.shape.Line
 
-class PlayHead(private val scoreView: ScoreView) {
-    private var playHeadPosition = 0.0
+class PlayHead {
+    var currentTime = 0.0
+        private set
 
-    private val playHead = Line(PLAY_HEAD_WIDTH, 20.0, PLAY_HEAD_WIDTH, scoreView.height - 20.0).styleClass("play-head")
+    private val playHead = Line().styleClass("play-head")
 
-    val currentTime get() = scoreView.getTime(playHead.layoutX - PLAY_HEAD_WIDTH)
+    private lateinit var timeBlock: TimeBlock
+    lateinit var pane: Pane
+        private set
 
     init {
-        setupPlayHead()
+        playHead.viewOrder = -500.0
+        playHead.strokeWidth = PLAY_HEAD_WIDTH
     }
 
-    private fun setupPlayHead() {
-        playHead.viewOrder = -500.0
-        playHead.strokeWidthProperty().bind(Bindings.divide(PLAY_HEAD_WIDTH, scoreView.scaleXProperty()))
-        playHead.endYProperty().bind(scoreView.heightProperty().subtract(20.0))
+    fun <T> attachTo(target: T, verticalPadding: Double) where T : TimeBlock, T : Pane {
+        (playHead.parent as? Pane)?.children?.remove(playHead)
+        playHead.startY = verticalPadding
+        if (playHead.endYProperty().isBound) playHead.endYProperty().unbind()
+        playHead.endYProperty().bind(target.heightProperty().subtract(verticalPadding))
+        movePlayHead(0.0)
+        timeBlock = target
+        pane = target
     }
 
     fun setPlayHeadX(x: Double) {
         playHead.layoutX = x
-        playHeadPosition = scoreView.getTime(playHead.layoutX)
-    }
-
-    fun repaint() {
-        scoreView.children.add(playHead)
-        playHead.layoutX = scoreView.getX(playHeadPosition)
+        currentTime = timeBlock.getTime(x)
     }
 
     fun movePlayHead(pos: Double) {
-        playHeadPosition = pos
-        Platform.runLater { playHead.layoutX = scoreView.getX(pos) }
+        currentTime = pos
+        Platform.runLater { updatePosition() }
+    }
+
+    fun updatePosition() {
+        if (!pane.children.contains(playHead)) pane.children.add(playHead)
+        playHead.layoutX = timeBlock.getX(currentTime)
     }
 
     fun advance(dt: Double) {
-        movePlayHead(playHeadPosition + dt)
+        movePlayHead(currentTime + dt)
     }
 
     companion object {
-        private const val PLAY_HEAD_WIDTH = 2.0
+        const val PLAY_HEAD_WIDTH = 2.0
     }
 }

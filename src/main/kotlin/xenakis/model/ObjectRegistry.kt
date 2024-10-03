@@ -129,6 +129,11 @@ abstract class ObjectRegistry<O : NamedObject> : XenakisProject.ProjectComponent
         }
     }
 
+    fun removeListener(listener: Listener<O>) {
+        @Suppress("UNCHECKED_CAST") val unsafe = views as ListenerManager<Listener<O>>
+        unsafe.removeListener(listener)
+    }
+
     interface Listener<in O : NamedObject> {
         fun added(obj: O, idx: Int)
         fun removed(obj: O, idx: Int)

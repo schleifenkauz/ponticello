@@ -47,11 +47,7 @@ Slider.control-detail-editor {
 
 .play-head {
     -fx-stroke: green;
-    -fx-stroke-width: 3px;
-}
-
-.play-head:hover {
-    -fx-stroke-width: 5px;
+    -fx-stroke-width: 2px;
 }
 
 .grid-time-code {

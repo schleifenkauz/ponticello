@@ -140,9 +140,9 @@ class SynthObject(
     }
 
     private fun runOnActiveSynths(action: ScWriter.() -> Unit) {
-        if (!context.hasProperty(ScorePlayer) || !context[ScorePlayer].isPlaying) return
+        if (!context.hasProperty(PlaybackManager) || !context[PlaybackManager].player.isPlaying) return
         context[SuperColliderClient].run {
-            for ((_, _, name) in context[ScorePlayer].env.activeInstances(this@SynthObject)) {
+            for ((_, _, name) in context[PlaybackManager].env.activeInstances(this@SynthObject)) {
                 appendBlock("if (~synths != nil && ~synths['$name'] != nil && ~synths['$name'].isRunning)") {
                     append("~synths['$name'].")
                     action()

@@ -78,9 +78,7 @@ class XenakisUI(
 
     private lateinit var playBtn: Button
     private lateinit var stopBtn: Button
-    lateinit var playHead: PlayHead
-        private set
-    lateinit var player: ScorePlayer
+    lateinit var playback: PlaybackManager
         private set
 
     private lateinit var shellWindow: Stage
@@ -140,8 +138,8 @@ class XenakisUI(
         }
         serverTreeCodeWindow.resize(500.0, 500.0)
 
-        playHead = PlayHead(scoreView)
-        player = ScorePlayer(project.score, playHead, controller.client)
+        playback = PlaybackManager(scoreView)
+        context[PlaybackManager] = playback
         shellWindow = SuperColliderShellController.createShellWindow(context)
 
         project.context[ScoreObjectSelectionManager] = ScoreObjectSelectionManager(project.context, scoreView)
@@ -371,7 +369,7 @@ class XenakisUI(
         playBtn = Icon.Play.button(action = "Start playback (Ctrl?+Space)") { _ -> togglePlay() }
         stopBtn = Icon.Stop.button(action = "Pause playback (Ctrl?+Space)") { stop() }
         val goToStartBtn = Icon.GoToStart.button(action = "Move play head to start (0)") {
-            if (!player.isPlaying) playHead.movePlayHead(0.0)
+            playback.movePlayHeadToStart()
         }
         if (!controller.isSuperColliderReady) {
             playBtn.isDisable = true
@@ -381,20 +379,20 @@ class XenakisUI(
     }
 
     private fun togglePlay() {
-        if (!player.isPlaying) {
+        if (!playback.player.isPlaying) {
             playBtn.graphic = Icon.Pause.getView()
             playBtn.tooltip = Tooltip("Pause playback")
-            player.play()
+            playback.player.play()
         } else {
             playBtn.graphic = Icon.Play.getView()
             playBtn.tooltip = Tooltip("Start playback")
-            player.pause()
+            playback.player.pause()
         }
     }
 
     private fun stop() {
-        player.pause()
-        player.reset()
+        playback.player.pause()
+        playback.player.reset()
         playBtn.graphic = Icon.Play.getView()
         playBtn.tooltip = Tooltip("Start playback")
     }
@@ -440,22 +438,27 @@ class XenakisUI(
                 if (!ev.isTargetTextInput) context[ScoreObjectSelectionManager].selectAll()
             }
 
-            on("Ctrl?+SPACE") { ev ->
+            on("Alt?+SPACE") { ev ->
                 if (ev.isControlDown || !ev.isTargetTextInput) togglePlay()
+            }
+            on("Ctrl+SPACE") {
+                val time = scoreView.translateTimeFrom(playback.playHead.pane, playback.playHead.currentTime)
+                scoreView.display(time, time + scoreView.displayedDuration)
             }
             on("Ctrl?+PERIOD") { ev ->
                 if (ev.isControlDown || !ev.isTargetTextInput) stop()
             }
             on("HOME") { scoreView.displayWholeScore() }
             on("Shift+DIGIT0") { ev ->
-                if (!ev.isTargetTextInput && !player.isPlaying) {
+                if (!ev.isTargetTextInput && !playback.player.isPlaying) {
                     scoreView.display(0.0, scoreView.displayedDuration)
-                    playHead.movePlayHead(0.0)
+                    playback.attachToMainScore()
+                    playback.movePlayHeadToStart()
                 }
             }
             on("DIGIT0") { ev ->
-                if (!ev.isTargetTextInput && !player.isPlaying) {
-                    playHead.movePlayHead(scoreView.displayStart)
+                if (!ev.isTargetTextInput) {
+                    playback.movePlayHeadToStart()
                 }
             }
             on("PAGE_UP") { ev ->
@@ -472,9 +475,9 @@ class XenakisUI(
             on("ESCAPE") {
                 scoreView.clearNewShape()
                 scoreView.clearClipboard()
+                playback.attachToMainScore()
                 context[ScoreObjectSelectionManager].deselectAll()
                 toolSelector.select(Tool.Pointer)
-                toolSelector.getButton(Tool.Pointer).graphic = Tool.Pointer.icon.getView()
             }
             registerToolNumber(Tool.Synth, 1)
             registerToolNumber(Tool.Task, 2)

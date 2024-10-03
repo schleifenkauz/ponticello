@@ -52,7 +52,7 @@ class XenakisApp : Application() {
     }
 
     override fun stop() {
-        ui.player.close()
+        ui.playback.player.close()
         controller.quitApplication()
     }
 
