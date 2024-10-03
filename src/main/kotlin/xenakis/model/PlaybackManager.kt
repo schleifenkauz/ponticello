@@ -14,6 +14,7 @@ import xenakis.ui.ScoreView
 class PlaybackManager(private val scoreView: ScoreView) {
     val env: ScorePlayEnv = ScorePlayEnv(scoreView.context[Settings])
     val playHead = PlayHead()
+    val recorder = Recorder(scoreView.context)
     lateinit var player: ScorePlayer
         private set
     private lateinit var events: ScoreEventCollector
@@ -46,7 +47,7 @@ class PlaybackManager(private val scoreView: ScoreView) {
     private fun attachTo(score: Score) {
         detach()
         events = ScoreEventCollector(score, env)
-        player = ScorePlayer(score, playHead, scoreView.context[SuperColliderClient], env, events)
+        player = ScorePlayer(score, playHead, scoreView.context[SuperColliderClient], env, events, recorder)
         events.player = player
         isAttached = true
     }

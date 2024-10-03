@@ -11,7 +11,8 @@ class ScorePlayer(
     override val playHead: PlayHead,
     override val client: SuperColliderClient,
     private val env: ScorePlayEnv = ScorePlayEnv(rootScore.context[Settings]),
-    private val events: ScoreEventCollector
+    private val events: ScoreEventCollector,
+    private val recorder: Recorder,
 ) : AbstractPlayer(DELTA_T) {
 
     private var lastPlayFrom: Double = 0.0
@@ -43,6 +44,7 @@ class ScorePlayer(
 
     override fun startPlay(startFrom: Double) {
         client.send("start_play")
+        recorder.startingPlayback()
         Logger.fine("Starting playback at $startFrom", Logger.Category.Playback)
         lastPlayFrom = startFrom
         val activeObjects = activeObjects(startFrom, delta = env.lookAhead)
@@ -57,7 +59,7 @@ class ScorePlayer(
         val obj = inst.obj
         val delta = position.time - playHead.currentTime
         val pos = ObjectPosition(playHead.currentTime + delta.coerceAtLeast(0.0), position.y)
-        val name = env.markStart(inst, position) //important that we mark the original object not the cutoff one
+        val name = env.markStart(inst, position)
         Logger.fine("Scheduling $obj at $pos, delta: $delta", Logger.Category.Playback)
         scheduleObject(obj, pos, name, cutoff = -delta.coerceAtMost(0.0))
     }
@@ -112,9 +114,15 @@ class ScorePlayer(
 
     override fun pausePlayback() {
         Logger.info("Pausing playback", Logger.Category.Playback)
+        recorder.pausingPlayback()
         client.send("pause_play")
         events.resetEvents()
         env.clear()
+    }
+
+    override fun resetPlayback() {
+        if (recorder.isActive) recorder.stopRecording()
+        client.run("s.freeAll")
     }
 
     companion object {

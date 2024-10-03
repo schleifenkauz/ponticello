@@ -44,6 +44,8 @@ abstract class SearchableListView<E>(private val title: String) : VBox() {
         searchText.textProperty().addListener { _, _, txt -> updatedText(txt) }
     }
 
+    protected fun getBox(option: E) = optionBoxes[option]
+
     private fun initializeOptions() {
         prepareOptionBoxes()
         updatedText(searchText.text)

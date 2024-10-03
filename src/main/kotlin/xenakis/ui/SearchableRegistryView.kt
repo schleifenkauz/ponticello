@@ -22,12 +22,14 @@ abstract class SearchableRegistryView<O : NamedObject>(
             if (obj is RenamableObject) {
                 on("F2") {
                     hide()
-                    val newName = NamePrompt(
-                        registry,
-                        "Rename ${registry.objectType} ${obj.name.now}",
-                        initialName = obj.name.now
-                    ).showDialog(registry.context, anchorNode = this@SearchableRegistryView) ?: return@on
-                    obj.rename(newName)
+                    runFXWithTimeout {
+                        val newName = NamePrompt(
+                            registry,
+                            "Rename ${registry.objectType} ${obj.name.now}",
+                            initialName = obj.name.now
+                        ).showDialog(registry.context, anchorNode = getBox(obj)) ?: return@runFXWithTimeout
+                        obj.rename(newName)
+                    }
                 }
             }
             if (obj != null) {
@@ -35,7 +37,7 @@ abstract class SearchableRegistryView<O : NamedObject>(
                     hide()
                     runFXWithTimeout(25) {
                         val question = "Delete ${registry.objectType} ${obj.name.now}?"
-                        val really = YesNoPrompt(question).showDialog(registry.context, this@SearchableRegistryView)
+                        val really = YesNoPrompt(question).showDialog(registry.context, anchorNode = getBox(obj))
                         if (really == true) registry.remove(obj)
                     }
                 }

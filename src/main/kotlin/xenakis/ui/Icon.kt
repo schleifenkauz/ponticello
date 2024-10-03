@@ -57,17 +57,17 @@ enum class Icon {
     Cut,
     Up, Down,
     Sync, AddGlobal, Log,
-    Debug, Info, Confirmation, Warning, Error;
+    Debug, Info, Confirmation, Warning, Error,
+    RecordActive, RecordInactive;
 
     private val file = name.lowercase() + ".png"
     private val url = javaClass.getResource("icons/$file") ?: error("icon $file not found")
-    val image: Image = Image(url.toExternalForm())
+    val image: Image get() = Image(url.toExternalForm())
 
     fun getView(size: Double = DEFAULT_RADIUS * 1.25): ImageView {
         val view = ImageView(image)
         view.isPreserveRatio = true
         view.fitWidth = size
-        view.isSmooth = false
         return view
     }
 
