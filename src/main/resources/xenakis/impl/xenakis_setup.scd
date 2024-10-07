@@ -23,18 +23,6 @@ SynthDef(\playbuf, {
     Env.new(levels: [0, 0], times: [duration]).kr(Done.freeSelf);
   }).add;
 
-~record_buf = Buffer.alloc(s, 65536, 2, );
-~tmp_path = "~/.xenakis/tmp.wav".standardizePath;
-'recording to '.post; ~tmp_path.postln;
-~record_buf.write(~tmp_path, "wav", "int16", 0, 0, true);
-
-NetAddr.langPort.postln;
-NetAddr.localAddr.postln;
-
-~startRecording = { arg bus = 0;
-	~record_synth = Synth.tail(nil, \diskout, [bus:bus, buf:~record_buf]);
-};
-
 ServerBoot.add {
 	Task {
 		1.wait;

@@ -322,12 +322,10 @@ abstract class ScoreObjectView(
 
     private fun dragTo(toX: Double, toY: Double) {
         val movedObjects = context[ScoreObjectSelectionManager].selectedViews //one of these is guaranteed to be <this>
-        val relativeMinX = movedObjects.minOf { v -> v.layoutX } - this.layoutX // => 0 if only <this> is selected
-        val relativeMinY = movedObjects.minOf { v -> v.layoutY } - this.layoutY // => 0 if only <this> is selected
-        val relativeMaxX =
-            movedObjects.maxOf { v -> v.layoutX + v.width } - this.layoutX // => this.width if only <this> is selected
-        val relativeMaxY =
-            movedObjects.maxOf { v -> v.layoutY + v.height } - this.layoutY // => this.height if only <this> is selected
+        val relativeMinX = movedObjects.minOfOrNull { v -> v.layoutX - this.layoutX } ?: 0.0
+        val relativeMinY = movedObjects.minOfOrNull { v -> v.layoutY - this.layoutY } ?: 0.0
+        val relativeMaxX = movedObjects.maxOfOrNull { v -> v.layoutX + v.width - this.layoutX } ?: this.width
+        val relativeMaxY = movedObjects.maxOfOrNull { v -> v.layoutY + v.height - this.layoutY } ?: this.height
         var (x, y) = pane.snapToGrid(toX, toY)
         x = x.coerceAtLeast(-relativeMinX)
         y = y.coerceAtLeast(-relativeMinY)

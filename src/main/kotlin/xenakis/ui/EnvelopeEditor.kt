@@ -37,7 +37,7 @@ class EnvelopeEditor(
             0.0..associatedObject.duration,
             0.0..pane.prefWidth
         )
-    private val yTransform get() = spec.mapOnto(pane.prefHeight - HANDLE_RADIUS..HANDLE_RADIUS)
+    private val yTransform get() = spec.mapOnto(pane.prefHeight..0.0)
 
     private val valueGrid get() = spec.step.get()
 

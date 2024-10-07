@@ -81,7 +81,7 @@ class Recorder(private val context: Context) {
         val code = code {
             val serverLatency = settings.serverLatency.now
             appendBlock("s.makeBundle($serverLatency)") {
-                +"s.record(bus: ${getRecordedBus()})"
+                +"s.record(bus: ${bus.superColliderName})"
             }
         }
         client.send("schedule", listOf(settings.scLangLatency.now, code))
