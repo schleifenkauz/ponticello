@@ -43,7 +43,7 @@ class ScoreObjectInstance(
     val timeRange get() = start..end
 
     @Transient
-    private var positionBeforeMove = position
+    private var positionBeforeMove = ObjectPosition.ZERO
 
     val obj: ScoreObject get() = objectRef.get()
 
@@ -102,6 +102,7 @@ class ScoreObjectInstance(
         if (position == positionBeforeMove) return
         if (notifyScore) score.movedObject(this, positionBeforeMove)
         context[UndoManager].record(MoveObject(this, positionBeforeMove, position))
+        positionBeforeMove = ObjectPosition.ZERO
     }
 
     fun moveTo(position: ObjectPosition) {

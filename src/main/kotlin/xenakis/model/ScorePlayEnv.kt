@@ -30,12 +30,11 @@ class ScorePlayEnv(private val settings: Settings) {
         val element = ActiveInstance(inst, position, "<dummy>")
         val suffix = activeInstances.remove(element)
         if (suffix == null) {
-            Logger.severe("could not remove $element from")
-            for (synth in activeInstances.keys) {
-                Logger.severe("   $synth")
-            }
-        } else suffixes(obj).remove(suffix)
-        Logger.fine("marked end for $obj, suffix = $suffix", Logger.Category.Playback)
+            Logger.warn("could not remove $element", Logger.Category.Playback)
+        } else {
+            suffixes(obj).remove(suffix)
+            Logger.fine("marked end for $obj, suffix = $suffix", Logger.Category.Playback)
+        }
     }
 
     @Synchronized
@@ -43,7 +42,9 @@ class ScorePlayEnv(private val settings: Settings) {
         val relevant = activeInstances.keys
             .filter { s ->
                 val obj = s.inst.obj
-                obj is SynthObject && obj.group.now == group && s.absolutePosition.time < position.time
+                obj is SynthObject && obj.group.now == group
+                        && s.absolutePosition.time < position.time
+                        && s.absolutePosition.time + s.inst.obj.duration > position.time + 0.1
             }
         val runBefore = relevant
             .filter { (_, pos) -> pos.y > position.y }

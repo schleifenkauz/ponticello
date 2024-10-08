@@ -33,6 +33,7 @@ class CustomizableSynthDefObject(
 
     override fun sync() {
         context[SuperColliderClient].run { sync(writer) }
+        Logger.confirm("Synchronized SynthDef '${name.now}'", Logger.Category.Instruments)
     }
 
     override fun ScWriter.allocateServerObject() {

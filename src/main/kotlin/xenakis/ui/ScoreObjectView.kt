@@ -233,6 +233,7 @@ abstract class ScoreObjectView(
     private fun displayEnvelope(parameter: String, control: EnvelopeControl) {
         val envelope = control.envelope
         val e = EnvelopeEditor(parameter, envelope, this, pane = this)
+        e.repaint()
         envelopeEditors.add(e)
     }
 
@@ -271,14 +272,16 @@ abstract class ScoreObjectView(
                     val playback = context[PlaybackManager]
                     if (ev.isControlDown) {
                         playback.attachToView(this)
-                    } else {
-                        selectThis(ev.isShiftDown)
                     }
                     if (playback.isAttachedTo(this)) {
                         playback.playHead.setPlayHeadX(ev.x)
                     }
                 }
             }
+        }
+        addEventHandler(MouseEvent.MOUSE_PRESSED) { ev ->
+            selectThis(ev.isShiftDown)
+            ev.consume()
         }
     }
 

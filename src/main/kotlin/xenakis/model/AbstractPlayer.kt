@@ -42,7 +42,7 @@ abstract class AbstractPlayer(private val deltaT: Double) : Thread() {
 
     private fun toMs(t: Double) = (t * 1000).toLong()
 
-    protected abstract fun startPlay(startFrom: Double)
+    protected abstract fun startPlay(startFrom: Double): Boolean
 
     protected abstract fun scheduleEvents(t: Double, delta: Double)
 
@@ -50,7 +50,9 @@ abstract class AbstractPlayer(private val deltaT: Double) : Thread() {
         if (isPlaying) return
         thread(isDaemon = true) {
             Logger.info("Starting playback", Logger.Category.Playback)
-            startPlay(playHead.currentTime)
+            if (!startPlay(playHead.currentTime)) {
+                return@thread
+            }
             sleep(toMs(lookAhead))
             isPlaying = true
         }

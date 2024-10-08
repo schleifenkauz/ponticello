@@ -6,7 +6,6 @@ import kotlinx.serialization.Transient
 import reaktive.value.ReactiveValue
 import reaktive.value.ReactiveVariable
 import reaktive.value.now
-import java.util.logging.Logger
 
 @Serializable
 abstract class AbstractRenamableObject : RenamableObject {
@@ -41,8 +40,4 @@ abstract class AbstractRenamableObject : RenamableObject {
     }
 
     override fun toString(): String = "${javaClass.simpleName} ${name.now}"
-
-    companion object {
-        private val logger = Logger.getLogger("AbstractRenamableObject")
-    }
 }

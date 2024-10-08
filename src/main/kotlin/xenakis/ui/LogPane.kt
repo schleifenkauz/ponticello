@@ -2,6 +2,7 @@ package xenakis.ui
 
 import hextant.context.Context
 import hextant.fx.setPadding
+import javafx.application.Platform
 import javafx.scene.control.Label
 import javafx.scene.control.ScrollPane
 import javafx.scene.control.Tooltip
@@ -40,11 +41,15 @@ class LogPane(private val context: Context, private val logger: Logger) : VBox()
         searchField.promptText = "Search..."
         searchField.textProperty().addListener { _ -> displayFilteredRecords() }
         val heading = Label("Log") styleClass "heading"
-        val levelSelector = SimpleSearchableListView(Logger.Level.values().asList(), "Select level")
+        val levelSelector = SimpleSearchableListView(Logger.Level.entries, "Select level")
             .selectorButton(this::level, context) { lvl -> "Level: $lvl" }
         val categorySelector = SimpleSearchableListView(Logger.Category.values(), "Select category")
             .selectorButton(this::category, context) { cat -> "Category: $cat" }
-        val header = HBox(heading, searchField, levelSelector, categorySelector) styleClass "tool-pane-header"
+        val buttonClear = button("Clear log") { logger.clear() }
+        val header = HBox(
+            heading, searchField,
+            levelSelector, categorySelector, buttonClear
+        ) styleClass "tool-pane-header"
         displayFilteredRecords()
         logger.addView(this)
         scrollPane.isFitToWidth = true
@@ -61,7 +66,7 @@ class LogPane(private val context: Context, private val logger: Logger) : VBox()
         scrollPane.vvalue = 1.0
     }
 
-    private fun displayFilteredRecords() {
+    private fun displayFilteredRecords() = Platform.runLater {
         boxes.children.clear()
         for (record in logger.getRecords(filter)) {
             boxes.children.add(createRecordBox(record))
@@ -71,8 +76,12 @@ class LogPane(private val context: Context, private val logger: Logger) : VBox()
 
     override fun logged(record: Logger.Record) {
         if (filter.accepts(record)) {
-            boxes.children.add(createRecordBox(record))
+            Platform.runLater { boxes.children.add(createRecordBox(record)) }
         }
+    }
+
+    override fun clearedLog() {
+        Platform.runLater { boxes.children.clear() }
     }
 
     private fun createRecordBox(record: Logger.Record): HBox {

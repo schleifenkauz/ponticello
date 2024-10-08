@@ -30,35 +30,47 @@ ServerBoot.add {
 	}.play;
 };
 
-~play = false;
+~xenakis_addr = NetAddr("localhost", 7772);
 
 ~setupHandler = { arg address, handler;
 	OSCdef(address, {
 		arg msg, time, addr, recvPort;
-		var id, answer, returnAddr = NetAddr("localhost", 7772);
+		var id, answer;
         id = msg[1];
-        answer = handler.(*msg.drop(2));
-        'sending reply to '.post;
-        returnAddr.post;
-        '; id='.post;
-        id.postln;
-        returnAddr.sendMsg('/reply', id, answer.asString);
+        try {
+            answer = handler.(*msg.drop(2));
+            ~xenakis_addr.sendMsg('/reply', id, answer.asString);
+        } { |error|
+			~xenakis_addr.sendMsg('/error', id, error.what);
+        }
 	}, address);
 };
 OSCdef.trace(false);
-~setupHandler.('eval', { |code|
-	'eval: '.post;
-	code.asString.postln;
-	this.interpret(code.asString);
-});
+OSCdef('eval', {
+	arg msg, time, addr, recvPort;
+	var id = msg[1], code = msg[2], fct, answer;
+	fct = this.compile(code.asString);
+    if (fct == nil) { ~xenakis_addr.sendMsg('error', id, "Compilation error") } {
+        AppClock.sched(0) {
+            try {
+                answer = fct.value;
+                ~xenakis_addr.sendMsg('/reply', id, answer.asString);
+            } { |error|
+                ~xenakis_addr.sendMsg('/error', id, error.what);
+            }
+        }
+	}
+}, 'eval');
 OSCdef('run', {
 	arg msg, time, addr, recvPort;
-	var code = msg[1].asString, answer;
-	'eval: '.post;
-    code.postln;
-	AppClock.sched(0, {
-		this.interpret(code);
-	});
+	var code = msg[1], fct;
+	fct = this.compile(code.asString);
+	if (fct == nil) { ~xenakis_addr.sendMsg('error', -1, "Compilation error") };
+	AppClock.sched(0) {
+		try { fct.value } { |error|
+			~xenakis_addr.sendMsg('/error', -1, error.what);
+		}
+	}
 }, 'run');
 OSCdef('start_play', {
 	arg msg;
@@ -73,10 +85,14 @@ OSCdef('pause_play', {
 }, '/pause_play');
 OSCdef('schedule', {
 	arg msg;
-	var time = msg[2].asFloat, code = msg[3].asString, my_play_start = ~play_start;
+	var time = msg[2].asFloat, code = msg[3], fct, my_play_start = ~play_start;
+	fct = this.compile(code.asString);
+	if (fct == nil) { "Compilation error".throw };
 	TempoClock.schedAbs(max(~play_start + time, TempoClock.beats)) {
 	    if (my_play_start == ~play_start) {
-		    this.interpret(code);
+		    try { fct.value } { |error|
+				~xenakis_addr.sendMsg('/error', -1, error.what);
+			}
 		};
 		nil;
 	}

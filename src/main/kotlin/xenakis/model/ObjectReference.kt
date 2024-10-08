@@ -59,7 +59,7 @@ class ObjectReference(private var name: String) {
 
     class Serializer : KSerializer<ObjectReference> {
         override val descriptor: SerialDescriptor
-            get() = serialDescriptor<String?>()
+            get() = serialDescriptor<String>()
 
         override fun serialize(encoder: Encoder, value: ObjectReference) {
             val obj = value.get(NamedObject::class)

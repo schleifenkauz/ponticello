@@ -110,8 +110,7 @@ class VSTPluginObject private constructor(
         }
 
         fun availablePlugins(context: Context) = context[SuperColliderClient]
-            .eval("var str = \"\"; VSTPlugin.pluginList.do { |p| str = str ++ \", \" ++ p.name }; str;")
-            .join()
+            .eval("var str = \"\"; VSTPlugin.pluginList.do { |p| str = str ++ \", \" ++ p.name }; str;").get()
             .removePrefix(", ")
             .split(", ")
             .toSet()

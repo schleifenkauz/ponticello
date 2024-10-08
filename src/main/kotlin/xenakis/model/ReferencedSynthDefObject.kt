@@ -70,20 +70,20 @@ class ReferencedSynthDefObject(
     private fun getSynthDefParameters(name: String): MutableList<ParameterDefObject> =
         with(context[SuperColliderClient]) {
             val params = mutableListOf<ParameterDefObject>()
-            val nParams = send("controls", listOf(name)).join().toInt()
+            val nParams = send("controls", listOf(name)).get().toInt()
             for (i in 0 until nParams) {
                 val controlRef = listOf(name, i)
-                val paramName = send("controlName", controlRef).join()
+                val paramName = send("controlName", controlRef).get()
                 if (paramName == "duration") continue
-                val default = send("controlDefault", controlRef).join()
+                val default = send("controlDefault", controlRef).get()
                 val spec = when (paramName) {
                     in setOf("in", "out", "bus") -> BusControlSpec()
                     "buf" -> BufferControlSpec()
                     else -> {
-                        val min = send("controlMinval", listOf(name, paramName)).join().toDouble()
-                        val max = send("controlMaxval", listOf(name, paramName)).join().toDouble()
-                        val warp = send("controlWarp", listOf(name, paramName)).join().toWarp()
-                        val step = send("controlStep", listOf(name, paramName)).join().toDouble()
+                        val min = send("controlMinval", listOf(name, paramName)).get().toDouble()
+                        val max = send("controlMaxval", listOf(name, paramName)).get().toDouble()
+                        val warp = send("controlWarp", listOf(name, paramName)).get().toWarp()
+                        val step = send("controlStep", listOf(name, paramName)).get().toDouble()
                         NumericalControlSpec(default.toDouble(), min, max, step, warp, randomColor())
                     }
                 }

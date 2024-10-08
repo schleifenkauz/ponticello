@@ -16,7 +16,7 @@ class ScoreEventCollectorTest {
         val collector = ScoreEventCollector(rootScore, null)
         val objects = mutableListOf<ScoreObject>()
         val subScores = mutableListOf<Score>()
-        val rnd = Random(1000)
+        val rnd = Random(100)
         for (i in 0..1000) {
             val p = rnd.nextDouble()
             when {
@@ -24,9 +24,9 @@ class ScoreEventCollectorTest {
                     val obj =
                         if (objects.isEmpty() || rnd.nextBoolean()) {
                             Utils.createDummyObject("obj${objects.size}").also { objects.add(it) }
-                        } else objects.random()
+                        } else objects.random(rnd)
                     val parentScore =
-                        if (subScores.isEmpty() || rnd.nextDouble() < 0.8) rootScore else subScores.random()
+                        if (subScores.isEmpty() || rnd.nextDouble() < 0.8) rootScore else subScores.random(rnd)
                     val time = rnd.nextDouble(100.0)
                     val y = rnd.nextDouble(100.0)
                     val muted = rnd.nextDouble() <= 0.2
@@ -36,13 +36,13 @@ class ScoreEventCollectorTest {
                 }
 
                 p < 0.65 -> {
-                    val inst = rootScore.allInstances().toList().random()
+                    val inst = rootScore.allInstances().toList().random(rnd)
                     println("Remove $inst")
                     inst.score.removeObject(inst)
                 }
 
                 p < 0.8 -> {
-                    val inst = rootScore.allInstances().toList().random()
+                    val inst = rootScore.allInstances().toList().random(rnd)
                     inst.toggleMuted()
                     println("Toggle mute $inst = ${inst.muted}")
                 }
@@ -50,16 +50,14 @@ class ScoreEventCollectorTest {
                 p < 0.9 -> {
                     val time = rnd.nextDouble(100.0)
                     val y = rnd.nextDouble(100.0)
-                    val inst = rootScore.allInstances().toList().random()
-                    inst.beginMove()
+                    val inst = rootScore.allInstances().toList().random(rnd)
                     inst.moveTo(time, y, simpleMove = true)
-                    inst.finishMove()
                     println("Moved $inst")
                 }
 
                 else -> {
                     val parentScore =
-                        if (subScores.isEmpty() || rnd.nextDouble() < 0.8) rootScore else subScores.random()
+                        if (subScores.isEmpty() || rnd.nextDouble() < 0.8) rootScore else subScores.random(rnd)
                     val subScore = Score()
                     subScores.add(subScore)
                     val obj = ScoreObjectGroup(reactiveVariable("score${subScores.size}"), subScore)
@@ -90,7 +88,7 @@ class ScoreEventCollectorTest {
         }
 
     private fun checkEvents(score: Score, collector: ScoreEventCollector) {
-        val expectedEvents = expectedEvents(score).sorted()
+        val expectedEvents = expectedEvents(score).sortedBy { ev -> ev.absolutePosition }
         val actualEvents = collector.eventsAt(0.0, delta = 10000.0)
         assertArrayEquals(expectedEvents.toTypedArray(), actualEvents.toTypedArray())
         println("CHECK OKAY: ${expectedEvents.size} events")

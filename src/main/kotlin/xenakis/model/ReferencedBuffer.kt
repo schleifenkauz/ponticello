@@ -35,8 +35,8 @@ class ReferencedBuffer(override val mutableName: ReactiveVariable<String>) : Buf
     override fun onRemoved() {}
 
     override fun sync(writer: ScWriter) {
-        val channels = client.eval("$superColliderName.numChannels").join()
-        val frames = client.eval("if ($superColliderName != nil) { $superColliderName.numFrames } { nil }").join()
+        val channels = client.eval("$superColliderName.numChannels").get()
+        val frames = client.eval("if ($superColliderName != nil) { $superColliderName.numFrames } { nil }").get()
         _channels.set(channels.toIntOrNull() ?: 0)
         _frames.set(frames.toIntOrNull() ?: 0)
         contentChanged()

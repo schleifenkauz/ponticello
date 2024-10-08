@@ -15,7 +15,6 @@ import hextant.undo.compoundEdit
 import hextant.undo.historyShortcuts
 import javafx.application.Platform
 import javafx.geometry.HorizontalDirection
-import javafx.geometry.Orientation
 import javafx.geometry.Pos
 import javafx.geometry.VerticalDirection
 import javafx.scene.Scene
@@ -250,13 +249,12 @@ class XenakisUI(
     private fun createLayout(): VBox {
         var mainView: Region = scoreView
         if (mode == Mode.Desktop) {
-            val toolPanes = SplitPane(detailPane, instrumentsPane)
-            toolPanes.orientation = Orientation.VERTICAL
-            val horizontalSplitter = SplitPane(scoreView, toolPanes)
-            horizontalSplitter.sceneProperty().addListener { _ ->
-                runFXWithTimeout(100) {
-                    toolPanes.setDividerPositions(0.5)
-                    horizontalSplitter.setDividerPositions(0.82)
+            val horizontalSplitter = SplitPane(scoreView, detailPane)
+            horizontalSplitter.sceneProperty().addListener { _, _, sc ->
+                if (sc != null && sc.window != null) {
+                    runFXWithTimeout(100) {
+                        horizontalSplitter.setDividerPositions(0.82)
+                    }
                 }
             }
             mainView = horizontalSplitter
@@ -321,7 +319,7 @@ class XenakisUI(
         children {
             +Icon.Log.button(action = "Show log (Ctrl+L)") { ev ->
                 if (ev.isShiftDown) {
-                    SimpleSearchableListView(Logger.Level.values().asList(), "Select notification level")
+                    SimpleSearchableListView(Logger.Level.entries, "Select notification level")
                         .showPopup(context, this@hbox, NotificationView.level) { lvl ->
                             NotificationView.level = lvl
                         }
@@ -353,11 +351,11 @@ class XenakisUI(
                 samplesWindow.show()
                 samplesWindow.requestFocus()
             }
+            instrumentsWindow = SubWindow(instrumentsPane, "Instruments", context, SubWindow.Type.Undecorated)
+            +Icon.SoundCode.button(action = "Show instruments (Alt+I)") { instrumentsWindow.show() }
+            groupsWindow = SubWindow(groupsPane, "Groups", context, SubWindow.Type.Undecorated)
+            +Icon.Groups.button(action = "Show groups (Alt+G)") { groupsWindow.show() }
             if (mode == Mode.Laptop) {
-                instrumentsWindow = SubWindow(instrumentsPane, "Instruments", context, SubWindow.Type.Undecorated)
-                +Icon.SoundCode.button(action = "Show instruments (Alt+I)") { instrumentsWindow.show() }
-                groupsWindow = SubWindow(groupsPane, "Groups", context, SubWindow.Type.Undecorated)
-                +Icon.Groups.button(action = "Show groups (Alt+G)") { groupsWindow.show() }
                 add(Icon.Details.button(action = "Edit object properties (P)") { showDetailPaneOfSelectedObject() }) {
                     disableProperty().bind(scoreView.selector.singleSelected.equalTo(null).asObservableValue())
                 }
@@ -404,13 +402,16 @@ class XenakisUI(
 
     private fun togglePlay() {
         if (!playback.player.isPlaying) {
+            playback.player.play()
+        } else {
+            playback.player.pause()
+        }
+        if (playback.player.isPlaying) {
             playBtn.graphic = Icon.Pause.getView()
             playBtn.tooltip = Tooltip("Pause playback")
-            playback.player.play()
         } else {
             playBtn.graphic = Icon.Play.getView()
             playBtn.tooltip = Tooltip("Start playback")
-            playback.player.pause()
         }
     }
 
@@ -520,27 +521,27 @@ class XenakisUI(
             on("Alt+T") { project.settings.displayTimeGrid.toggle() }
             on("Alt+S") { project.settings.snapEnabled.toggle() }
 
+            on("Alt?+G") { ev ->
+                if (ev.isAltDown || !ev.isTargetTextInput) {
+                    groupsWindow.show()
+                }
+            }
+            on("Alt?+B") { ev ->
+                if (ev.isAltDown || !ev.isTargetTextInput) {
+                    busesWindow.show()
+                }
+            }
+            on("Alt?+F") { ev ->
+                if (ev.isAltDown || !ev.isTargetTextInput) {
+                    samplesWindow.show()
+                }
+            }
+            on("Alt?+I") { ev ->
+                if (ev.isAltDown || !ev.isTargetTextInput) {
+                    instrumentsWindow.show()
+                }
+            }
             if (mode == Mode.Laptop) {
-                on("Alt?+G") { ev ->
-                    if (ev.isAltDown || !ev.isTargetTextInput) {
-                        groupsWindow.show()
-                    }
-                }
-                on("Alt?+B") { ev ->
-                    if (ev.isAltDown || !ev.isTargetTextInput) {
-                        busesWindow.show()
-                    }
-                }
-                on("Alt?+F") { ev ->
-                    if (ev.isAltDown || !ev.isTargetTextInput) {
-                        samplesWindow.show()
-                    }
-                }
-                on("Alt?+I") { ev ->
-                    if (ev.isAltDown || !ev.isTargetTextInput) {
-                        instrumentsWindow.show()
-                    }
-                }
                 on("Alt?+P") { ev ->
                     if (ev.isAltDown || !ev.isTargetTextInput) {
                         showDetailPaneOfSelectedObject()
@@ -628,7 +629,7 @@ class XenakisUI(
                     toolSelector.select(Tool.Pointer)
                     val view = context[ScoreObjectSelectionManager].singleSelected.now ?: return@on
                     val obj = view.instance.obj
-                    val mode = if (ev.isShiftDown) ClipboardMode.Duplicate else ClipboardMode.Clone
+                    val mode = if (ev.isShiftDown) ClipboardMode.Clone else ClipboardMode.Duplicate
                     scoreView.setClipboard(obj, view, mode)
                 }
             }

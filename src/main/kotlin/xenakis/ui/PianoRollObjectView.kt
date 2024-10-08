@@ -152,7 +152,7 @@ class PianoRollObjectView(inst: ScoreObjectInstance, private val obj: PianoRollO
 
     private fun showEventDictionaryEditor(dictionary: EditorRoot<EventDictionaryEditor>) {
         val control = dictionary.control
-        val window = SubWindow(control, "Note properties", context, type = SubWindow.Type.Modal)
+        val window = SubWindow(control, "Note properties", context, type = SubWindow.Type.ToolWindow)
         window.scene.initHextantScene(context, applyStyle = false)
         window.resize(300.0, 200.0)
         window.show()

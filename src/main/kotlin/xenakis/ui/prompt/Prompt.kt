@@ -43,7 +43,7 @@ abstract class Prompt<R, N : Node> {
     ): R {
         commited = false
         val layout = createLayout()
-        window = SubWindow(layout, title, context, SubWindow.Type.Popup, owner)
+        window = SubWindow(layout, title, context, SubWindow.Type.Prompt, owner)
         window.setOnShown { onReceiveFocus() }
         window.sizeToScene()
         window.showAndWait()

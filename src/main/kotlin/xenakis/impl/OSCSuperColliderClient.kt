@@ -11,6 +11,8 @@ import java.net.InetAddress
 import java.net.InetSocketAddress
 import java.nio.ByteBuffer
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.Future
+import java.util.concurrent.TimeUnit
 import kotlin.io.path.toPath
 
 class OSCSuperColliderClient(
@@ -36,14 +38,14 @@ class OSCSuperColliderClient(
         sender.send(msg)
     }
 
-    override fun send(address: String, arguments: List<Any>): CompletableFuture<String> {
+    override fun send(address: String, arguments: List<Any>): Future<String> {
         val id = idCounter++
         val future = CompletableFuture<String>()
         val adr = if (!address.startsWith('/')) "/$address" else address
         val msg = OSCMessage(adr, listOf(id) + arguments)
         waitingForReply[id] = future
         sender.send(msg)
-        return future
+        return future.orTimeout(1, TimeUnit.SECONDS)
     }
 
     override fun run() {
@@ -51,18 +53,34 @@ class OSCSuperColliderClient(
             val buf = ByteArray(4096)
             val packet = DatagramPacket(buf, buf.size)
             receiver.receive(packet)
-            if (String(buf, 0, 8).startsWith("/reply")) {
-                var len = 0
-                while (len + 16 < buf.size && buf[len + 16].toInt() != 0) len++
-                val result = String(buf, 16, len)
-                val id = ByteBuffer.wrap(buf, 12, 4).getInt()
-                Logger.fine("id: $id, result: $result", Logger.Category.SuperCollider)
-                val future = waitingForReply.remove(id)
-                if (future == null) {
-                    Logger.error("Wasn't waiting for a reply for id $id")
-                    continue
+            val path = String(buf, 0, 8)
+            when {
+                path.startsWith("/reply") -> {
+                    val result = getContentString(buf)
+                    val id = getId(buf)
+                    Logger.fine("Completed id: $id, result: $result", Logger.Category.SuperCollider)
+                    val future = waitingForReply.remove(id)
+                    if (future == null) {
+                        Logger.error("Wasn't waiting for a reply for id $id")
+                        continue
+                    }
+                    future.complete(result)
                 }
-                future.complete(result)
+
+                path.startsWith("/error") -> {
+                    val message = getContentString(buf)
+                    val id = getId(buf)
+                    val errorMessage = "Error in SuperCollider: $message"
+                    Logger.error(errorMessage, Logger.Category.SuperCollider)
+                    if (id != -1) {
+                        val future = waitingForReply.remove(id)
+                        if (future == null) {
+                            Logger.error("Wasn't waiting for a reply for id $id")
+                            continue
+                        }
+                        future.completeExceptionally(SuperColliderException(errorMessage))
+                    }
+                }
             }
             try {
                 sleep(10)
@@ -72,6 +90,15 @@ class OSCSuperColliderClient(
             }
         }
         receiver.close()
+    }
+
+    private fun getId(buf: ByteArray) = ByteBuffer.wrap(buf, 12, 4).getInt()
+
+    private fun getContentString(buf: ByteArray): String {
+        var len = 0
+        while (len + 16 < buf.size && buf[len + 16].toInt() != 0) len++
+        val result = String(buf, 16, len)
+        return result
     }
 
     override fun quit() {

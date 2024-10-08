@@ -25,6 +25,9 @@ object NotificationView : Logger.View {
         }
     }
 
+    override fun clearedLog() {
+    }
+
     var level = Confirmation
 }
 

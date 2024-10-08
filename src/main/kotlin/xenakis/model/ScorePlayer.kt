@@ -30,7 +30,7 @@ class ScorePlayer(
         position: ObjectPosition, score: Score, time: Double, delta: Double,
         dest: MutableList<Event>
     ) {
-        if (position.time > time) return
+        if (position.time - delta > time) return
         for (inst in score.objectInstances) {
             val obj = inst.obj
             val absolutePosition = position + inst.position
@@ -42,8 +42,8 @@ class ScorePlayer(
         }
     }
 
-    override fun startPlay(startFrom: Double) {
-        client.send("start_play")
+    override fun startPlay(startFrom: Double): Boolean {
+        client.sendAsync("start_play")
         recorder.startingPlayback()
         Logger.fine("Starting playback at $startFrom", Logger.Category.Playback)
         lastPlayFrom = startFrom
@@ -53,6 +53,7 @@ class ScorePlayer(
                 scheduleInstantly(inst, position)
             }
         }
+        return true
     }
 
     fun scheduleInstantly(inst: ScoreObjectInstance, position: ObjectPosition) {
@@ -75,7 +76,7 @@ class ScorePlayer(
 
     override fun scheduleEvents(t: Double, delta: Double) {
         var printedInterval = false
-        for (ev in events.eventsAt(t, delta * 2)) {
+        for (ev in events.eventsAt(t - delta, delta * 5)) {
             val (type, position, inst) = ev
             if (inst == null || inst.muted) continue
             if (!printedInterval) {

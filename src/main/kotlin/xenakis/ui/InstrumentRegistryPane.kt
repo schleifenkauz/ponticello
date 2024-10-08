@@ -133,7 +133,7 @@ class InstrumentRegistryPane(
                 else CustomizableSynthDefObject.create(name, registry.context)
             }
 
-            canSuperColliderTalkToMe && registry.synthDescLibContains(name).join() -> {
+            canSuperColliderTalkToMe && registry.synthDescLibContains(name) -> {
                 val reference = YesNoPrompt(
                     "SynthDef '$name' is already defined in the global SynthDescLib. " +
                             "Import SynthDef '$name' from SynthDescLib? A new SynthDef will be created otherwise.",
@@ -235,7 +235,6 @@ class InstrumentRegistryPane(
                                 editor.snapshot().reconstructObject(editor)
                             }
                             obj.sync()
-                            Logger.confirm("Synchronized SynthDef '${obj.name.now}'", Logger.Category.Instruments)
                         }
                         on("Ctrl+Shift+S") {
                             obj.sync()

@@ -37,6 +37,7 @@ object Logger {
 
     fun clear() {
         records.clear()
+        views.notifyListeners { clearedLog() }
     }
 
     fun addView(view: View) {
@@ -61,6 +62,8 @@ object Logger {
 
     interface View {
         fun logged(record: Record)
+
+        fun clearedLog()
     }
 
     enum class Level : Comparable<Level> {

@@ -13,7 +13,6 @@ import reaktive.value.binding.map
 import reaktive.value.now
 import reaktive.value.reactiveVariable
 import xenakis.impl.SuperColliderClient
-import java.util.concurrent.CompletableFuture
 
 @Serializable
 class InstrumentRegistry private constructor(
@@ -48,9 +47,9 @@ class InstrumentRegistry private constructor(
         views.notifyListeners { if (this is Listener) this.selected(instrument) }
     }
 
-    fun synthDescLibContains(name: String): CompletableFuture<Boolean> {
+    fun synthDescLibContains(name: String): Boolean {
         val answer = client.send("isSynthDef", listOf(name))
-        return answer.thenApply { msg -> msg.toBoolean() }
+        return answer.get().toBoolean()
     }
 
     fun addView(view: Listener) {

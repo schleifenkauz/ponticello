@@ -88,10 +88,8 @@ class GlobalControls(private val controls: MutableList<GlobalControl>) : Xenakis
 
     fun updateControlFromServer(control: GlobalControl) {
         val code = "${control.bus.superColliderName}.getSynchronous"
-        context[SuperColliderClient].eval(code).thenAccept { answer ->
-            val value = answer.toDoubleOrNull() ?: return@thenAccept
-            control.knobControl.value.now = value
-        }
+        val value = context[SuperColliderClient].eval(code).get().toDoubleOrNull() ?: return
+        control.knobControl.value.now = value
     }
 
     fun hasControl(name: String): Boolean = controls.any { ctrl -> ctrl.parameter == name }

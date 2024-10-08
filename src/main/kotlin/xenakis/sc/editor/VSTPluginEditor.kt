@@ -43,7 +43,7 @@ class VSTPluginEditor(context: Context) : CompoundEditor<VSTPlugin>(context), Sc
     }
 
     private fun checkControllerVar(): Boolean {
-        val controller = context[SuperColliderClient].eval(controllerVar).join()
+        val controller = context[SuperColliderClient].eval(controllerVar).get()
         if (controller == "nil") {
             Logger.error("Plugin was not loaded", Logger.Category.VSTPlugins)
             return false

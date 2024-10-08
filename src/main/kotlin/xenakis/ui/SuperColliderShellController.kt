@@ -13,6 +13,7 @@ import javafx.scene.layout.VBox
 import javafx.stage.Stage
 import xenakis.impl.ConsoleMonitor
 import xenakis.impl.SuperColliderClient
+import xenakis.impl.SuperColliderException
 import kotlin.concurrent.thread
 
 class SuperColliderShellController(private val client: SuperColliderClient) : ConsoleMonitor.Listener {
@@ -35,7 +36,11 @@ class SuperColliderShellController(private val client: SuperColliderClient) : Co
     fun submitCommand() {
         val command = commandField.text.ifEmpty { return }
         thread(isDaemon = true, name = "Shell evaluator") {
-            val result = client.eval(command).join()
+            val result = try {
+                client.eval(command).get()
+            } catch (e: SuperColliderException) {
+                e.message ?: "Unknown error"
+            }
             Platform.runLater {
                 val l = makeHistoryLabel(command, result)
                 historyPane.children.add(0, l)
@@ -78,7 +83,7 @@ class SuperColliderShellController(private val client: SuperColliderClient) : Co
             loader.location = controller.javaClass.getResource("shell.fxml")
             loader.setController(controller)
             val shell = loader.load<Parent>()
-            val window = SubWindow(shell, "SuperCollider shell", context, SubWindow.Type.Modal)
+            val window = SubWindow(shell, "SuperCollider shell", context, SubWindow.Type.ToolWindow)
             window.setOnShown {
                 controller.commandField.requestFocus()
             }

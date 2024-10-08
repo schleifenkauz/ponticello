@@ -48,6 +48,7 @@
 - clear ServerTree and ServerBoot when closing a project
   - or just reboot sclang.exe, this would mean generally restructuring the startup process
 - EnvelopeObjects can be removed and replaced with a simple SynthDef `krOut`
+- re-enable allocated buffers (can be used with WrBuf/RdBuf SynthDefs)
 
 ## Long term architectural ideas/questions
 
@@ -69,6 +70,10 @@
 - VSTPlugin `SynthObject`s
   - retrieve parameters from plugin info, make them controllable in the `DetailPane` or as envelopes
 - Rethink the Json serialization of Hextant editors
+- Attach transformations to buses not to flows
+  - order of transformation synths could be decided by the order of the buses in the registry
+  - how to display/manage flows?
+  - graphical tools for EQ, compression (multi-band), reverb, etc. (integrate as special editors?)
 
 ## Bugs
 

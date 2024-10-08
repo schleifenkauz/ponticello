@@ -18,11 +18,11 @@ data class AllocatedBuffer(
 
     override fun sync(writer: ScWriter) {
         async {
-            val exists = client.eval(superColliderName).join()
+            val exists = client.eval(superColliderName).get()
             if (exists == "nil") super.sync(writer)
             else {
-                val channelsOnServer = client.eval("$superColliderName.numChannels").join().toInt()
-                val framesOnServer = client.eval("$superColliderName.numFrames").join().toInt()
+                val channelsOnServer = client.eval("$superColliderName.numChannels").get().toInt()
+                val framesOnServer = client.eval("$superColliderName.numFrames").get().toInt()
                 if (channelsOnServer != channels.now || framesOnServer != frames.now) {
                     super.sync(writer)
                 }

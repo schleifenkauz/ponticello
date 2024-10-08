@@ -16,7 +16,7 @@ class SubWindow(
     private val root: Parent,
     title: String,
     context: Context,
-    private val type: Type = Type.Modal,
+    private val type: Type = Type.ToolWindow,
     owner: Window? = context[primaryStage],
     applyStylesheets: Boolean = true
 ) : Stage() {
@@ -26,28 +26,42 @@ class SubWindow(
         scene = Scene(root)
         if (applyStylesheets) context[Stylesheets].manage(scene)
         initWindowType()
+        registerShortcuts()
         setOnShowing {
             root.requestFocus()
         }
     }
 
     private fun initWindowType() {
-        val style = when (type) {
-            Type.Modal -> StageStyle.DECORATED
-            Type.Popup -> StageStyle.TRANSPARENT
-            Type.Undecorated -> StageStyle.TRANSPARENT
+        when (type) {
+            Type.Popup -> {
+                focusedProperty().addListener { _, _, hasFocus ->
+                    if (!hasFocus) hide()
+                }
+                initStyle(StageStyle.TRANSPARENT)
+            }
+
+            Type.Prompt -> {
+                initStyle(StageStyle.TRANSPARENT)
+                initModality(Modality.WINDOW_MODAL)
+            }
+
+            Type.ToolWindow -> {
+                initStyle(StageStyle.DECORATED)
+            }
+
+            Type.Undecorated -> {
+                initStyle(StageStyle.TRANSPARENT)
+            }
         }
-        initStyle(style)
-        if (type == Type.Popup) {
+    }
+
+    private fun registerShortcuts() {
+        if (type in setOf(Type.Popup, Type.Prompt)) {
             scene.registerShortcuts {
                 on("ESCAPE") { hide() }
             }
-            focusedProperty().addListener { _, _, hasFocus ->
-                if (!hasFocus) hide()
-            }
-            initModality(Modality.NONE)
         } else {
-            initModality(Modality.WINDOW_MODAL)
             scene.registerShortcuts {
                 on("Ctrl+W") { hide() }
             }
@@ -63,6 +77,6 @@ class SubWindow(
     }
 
     enum class Type {
-        Popup, Undecorated, Modal;
+        Popup, Undecorated, ToolWindow, Prompt;
     }
 }

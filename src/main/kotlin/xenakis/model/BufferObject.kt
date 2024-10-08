@@ -46,12 +46,12 @@ sealed class BufferObject : AbstractSuperColliderObject() {
 
     protected fun updated() {
         val file = wavFile
-        val bufnum = context[SuperColliderClient].eval("$superColliderName.bufnum").join().toIntOrNull()
+        val bufnum = context[SuperColliderClient].eval("$superColliderName.bufnum").get().toIntOrNull()
         if (bufnum == null) {
             Logger.severe("Could not get bufnum for Buffer ${name.now}", Logger.Category.SuperCollider)
             return
         }
-        val status = context[SuperColliderClient].send("writeBuf", listOf(file, bufnum)).join()
+        val status = context[SuperColliderClient].send("writeBuf", listOf(file, bufnum)).get()
         if (status != "ok") {
             Logger.severe("Error while writing buffer ${name.now} to project directory", Logger.Category.SuperCollider)
             return
