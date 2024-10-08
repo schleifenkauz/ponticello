@@ -38,7 +38,7 @@ abstract class SearchableListView<E>(private val title: String) : VBox() {
         styleClass("searchable-list")
         searchText.promptText = "$title..."
         searchText.left = Label("", Icon.Search.getView(Icon.DEFAULT_RADIUS))
-        this.setMaxSize(300.0, 500.0)
+        optionsBox.setMaxSize(300.0, 500.0)
         children.addAll(searchText, optionsBox)
         registerShortcuts()
         searchText.textProperty().addListener { _, _, txt -> updatedText(txt) }
