@@ -49,7 +49,7 @@ class ScorePlayer(
         lastPlayFrom = startFrom
         val activeObjects = activeObjects(startFrom, delta = env.lookAhead)
         for ((_, position, inst) in activeObjects) {
-            if (inst != null && !inst.muted) {
+            if (!inst.muted) {
                 scheduleInstantly(inst, position)
             }
         }

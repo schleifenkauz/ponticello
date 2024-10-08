@@ -418,13 +418,15 @@ abstract class ScoreObjectView(
     fun adjustHorizontal(direction: HorizontalDirection, resize: Boolean, stretch: Boolean) {
         val deltaT = getDeltaX(direction)
         if (resize) {
+            val targetDuration = (instance.obj.duration + deltaT).coerceAtMost(pane.maxTime - instance.start)
             instance.obj.resize(
-                instance.obj.duration + deltaT, instance.obj.height, stretch,
+                targetDuration, instance.obj.height, stretch,
                 direction = Direction.horizontal(RIGHT)
             )
         } else {
             val (snappedX, _) = pane.snapToGrid(pane.getX(instance.start + deltaT), paneY)
-            instance.setTime(pane.getTime(snappedX))
+            val start = pane.getTime(snappedX).coerceIn(0.0, pane.maxTime - instance.obj.duration)
+            instance.setTime(start)
         }
     }
 
@@ -436,18 +438,20 @@ abstract class ScoreObjectView(
 
     protected fun adjustVertical(resize: Boolean, stretch: Boolean, deltaY: Double) {
         if (resize) {
+            val targetHeight = (instance.obj.height + deltaY).coerceAtMost(pane.maxY - instance.y)
             instance.obj.resize(
                 instance.obj.duration,
-                instance.obj.height + deltaY,
+                targetHeight,
                 stretch,
                 direction = Direction.vertical(VerticalDirection.DOWN)
             )
         } else {
-            instance.setY(instance.y + deltaY)
+            val y = (instance.y + deltaY).coerceIn(0.0, pane.maxY - instance.obj.height)
+            instance.setY(y)
         }
     }
 
-    override fun toString(): String = "ScoreObjectView for ${instance.obj} at ${instance.position}"
+    override fun toString(): String = "ScoreObjectView for $instance"
 
     companion object {
         private const val BORDER_WIDTH = 4.0

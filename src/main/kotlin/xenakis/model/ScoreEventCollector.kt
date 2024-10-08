@@ -99,7 +99,7 @@ class ScoreEventCollector(
         val newEvents = mutableListOf<Event>()
         for ((_, events) in events) {
             val itr = events.iterator()
-            for (ev in events) {
+            for (ev in itr) {
                 if (ev.inst.obj != obj) continue
                 val (t, y) = ev.absolutePosition
                 val newY = if (direction.up) y - deltaHeight else y

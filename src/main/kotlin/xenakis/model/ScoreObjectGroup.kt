@@ -1,20 +1,16 @@
 package xenakis.model
 
 import hextant.context.Context
-import hextant.core.editor.ListenerManager
 import javafx.geometry.HorizontalDirection
 import javafx.geometry.HorizontalDirection.LEFT
 import javafx.geometry.HorizontalDirection.RIGHT
-import javafx.geometry.VerticalDirection.UP
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.Transient
 import reaktive.value.ReactiveVariable
 import reaktive.value.now
 import reaktive.value.reactiveVariable
 import xenakis.impl.SuperColliderContext
 import xenakis.ui.Direction
-import xenakis.ui.ScoreObjectView
 
 @Serializable
 class ScoreObjectGroup(

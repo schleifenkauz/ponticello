@@ -11,7 +11,10 @@ class SubScorePane(private val obj: ScoreObjectGroup, context: Context) : ScoreP
         get() = obj.duration
     override val pixelsPerSecond: Double
         get() = rootPane.pixelsPerSecond
-
+    override val maxTime: Double
+        get() = obj.duration
+    override val maxY: Double
+        get() = obj.height
     override val rootPane: ScoreView get() = context[XenakisUI].scoreView
 
     override fun getGrids(x: Double): List<TempoGridObjectView> {

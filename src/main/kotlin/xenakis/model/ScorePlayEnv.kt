@@ -80,14 +80,14 @@ class ScorePlayEnv(private val settings: Settings) {
             if (this === other) return true
             if (other !is ActiveInstance) return false
 
-            if (inst != other.inst) return false
+            if (inst.obj != other.inst.obj) return false
             if (absolutePosition != other.absolutePosition) return false
 
             return true
         }
 
         override fun hashCode(): Int {
-            var result = inst.hashCode()
+            var result = inst.obj.hashCode()
             result = 31 * result + absolutePosition.hashCode()
             return result
         }

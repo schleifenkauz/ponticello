@@ -188,14 +188,7 @@ class SynthObject(
                 else when (control) {
                     is BufferControl -> param to (control.sample.now?.get<SampleObject>()?.superColliderName ?: "0")
                     is BusControl -> param to control.bus.now.get<BusObject>().superColliderName
-                    is ConstantControl -> {
-                        val value = when (param) {
-                            "startPos" -> control.value.now * (playBufRate?.now ?: 0.0)
-                            else -> control.value.now
-                        }
-                        param to value.toString()
-                    }
-
+                    is ConstantControl -> param to control.value.now.toString()
                     is KnobControl -> param to control.get().toString()
                     is EnvelopeControl -> param to control.envelope.points[0].y
                     else -> null

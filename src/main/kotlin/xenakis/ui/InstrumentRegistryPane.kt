@@ -98,10 +98,12 @@ class InstrumentRegistryPane(
                     Platform.runLater {
                         if (YesNoPrompt("Overwrite SynthDef $name?").showDialog(registry.context, this) == true) {
                             registry.overwrite(option.instrument)
+                            option.instrument.sync()
                         }
                     }
                 } else {
                     registry.add(option.instrument)
+                    option.instrument.sync()
                 }
             }
 

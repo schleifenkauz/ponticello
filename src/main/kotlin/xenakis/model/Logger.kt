@@ -18,6 +18,8 @@ object Logger {
             System.err.println("Error: $message")
             if (detailMessage != null && detailMessage != message) {
                 System.err.println("$detailMessage")
+            } else {
+                Thread.dumpStack()
             }
         }
         views.notifyListeners { logged(record) }

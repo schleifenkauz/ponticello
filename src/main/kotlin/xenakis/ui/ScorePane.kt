@@ -52,6 +52,8 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
 
     protected abstract val displayStart: Double
     protected abstract val displayEnd: Double
+    abstract val maxTime: Double
+    abstract val maxY: Double
     abstract val rootPane: ScoreView
 
     abstract val xAccuracy: Int
@@ -337,12 +339,15 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
                 val scoreView = context[XenakisUI].scoreView
                 if (ev.button == MouseButton.PRIMARY && scoreView.isInDuplicateMode()) {
                     var obj = scoreView.clipboardObject!!
+                    if (obj.height > maxY || obj.duration > maxTime) return
                     if (scoreView.clipboardMode == ClipboardMode.Clone) {
                         val name = context[ScoreObjectRegistry].nameForClone(obj)
                         obj = obj.clone(name)
                     }
                     val (x, y) = snapToGrid(ev.x, ev.y)
-                    val duplicate = ScoreObjectInstance(obj.createReference(), getTime(x), getScoreY(y))
+                    val time = getTime(x).coerceIn(0.0, maxTime - obj.duration)
+                    val scoreY = getScoreY(y).coerceIn(0.0, maxY - obj.height)
+                    val duplicate = ScoreObjectInstance(obj.createReference(), time, scoreY)
                     score.addObject(duplicate)
                 } else if (selectedArea in children && selectedArea.width != 0.0 && selectedArea.height != 0.0) {
                     if (!selectedArea.heightProperty().isBound) {

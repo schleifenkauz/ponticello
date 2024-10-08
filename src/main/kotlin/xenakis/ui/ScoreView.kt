@@ -42,6 +42,10 @@ class ScoreView(score: Score, context: Context) : ScorePane(score, context) {
     override var displayEnd: Double = 0.0
     override val pixelsPerSecond: Double
         get() = width / (displayEnd - displayStart)
+    override val maxTime: Double
+        get() = Double.POSITIVE_INFINITY
+    override val maxY: Double
+        get() = 1.0
     override val rootPane: ScoreView
         get() = this
     val displayedDuration get() = displayEnd - displayStart
