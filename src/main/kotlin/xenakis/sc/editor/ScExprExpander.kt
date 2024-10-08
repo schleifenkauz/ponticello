@@ -128,7 +128,7 @@ class ScExprExpander(context: Context) : ConfiguredExpander<ScExpr, ScExprEditor
             "buffer" expand { ctx -> BufferSelector(ctx) }
             "group" expand { ctx -> GroupSelector(ctx) }
             "plugin" expand { ctx ->
-                val availablePlugins = VSTPluginObject.availablePlugins(ctx)
+                val availablePlugins = VSTPluginObject.availablePlugins(ctx).toList()
                 val pluginName = showSelectorDialog(ctx, "Plugin", availablePlugins, null, anchor = null)
                     ?: return@expand null
                 VSTPluginEditor(ctx, pluginName)

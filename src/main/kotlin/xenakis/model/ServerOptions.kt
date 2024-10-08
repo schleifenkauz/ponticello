@@ -4,6 +4,7 @@ import hextant.context.Context
 import kotlinx.serialization.Serializable
 import reaktive.value.now
 import xenakis.impl.SuperColliderClient
+import xenakis.impl.isWindows
 
 @Serializable
 data class ServerOptions(
@@ -24,7 +25,9 @@ data class ServerOptions(
         buses.get("input").channels.now = numInputChannels
         buses.get("output").channels.now = numOutputChannels
         context[SuperColliderClient].run {
-            +"s.options.device_(${if (device.isEmpty()) "nil" else "\"$device\""})"
+            if (isWindows) {
+                +"s.options.device_(${if (device.isEmpty()) "nil" else "\"$device\""})"
+            }
             +"s.options.numInputBusChannels = $numInputChannels"
             +"s.options.numOutputBusChannels = $numOutputChannels"
             +"s.options.memSize = $memSize"

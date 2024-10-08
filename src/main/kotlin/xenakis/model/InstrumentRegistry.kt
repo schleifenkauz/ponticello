@@ -13,7 +13,6 @@ import reaktive.value.binding.map
 import reaktive.value.now
 import reaktive.value.reactiveVariable
 import xenakis.impl.SuperColliderClient
-import xenakis.impl.boolean
 import java.util.concurrent.CompletableFuture
 
 @Serializable
@@ -51,7 +50,7 @@ class InstrumentRegistry private constructor(
 
     fun synthDescLibContains(name: String): CompletableFuture<Boolean> {
         val answer = client.send("isSynthDef", listOf(name))
-        return answer.thenApply { msg -> msg.boolean }
+        return answer.thenApply { msg -> msg.toBoolean() }
     }
 
     fun addView(view: Listener) {

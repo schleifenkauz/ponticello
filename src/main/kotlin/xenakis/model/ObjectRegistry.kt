@@ -15,7 +15,7 @@ abstract class ObjectRegistry<O : NamedObject> : XenakisProject.ProjectComponent
     abstract val objectType: String
 
     override val componentName: String
-        get() = plural(objectType)
+        get() = plural(objectType).lowercase()
 
     @Transient
     val views: ListenerManager<out Listener<O>> = ListenerManager.createWeakListenerManager()

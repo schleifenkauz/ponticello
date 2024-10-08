@@ -68,6 +68,7 @@
 - `Task`s and `Pbind`s as instruments
 - VSTPlugin `SynthObject`s
   - retrieve parameters from plugin info, make them controllable in the `DetailPane` or as envelopes
+- Rethink the Json serialization of Hextant editors
 
 ## Bugs
 

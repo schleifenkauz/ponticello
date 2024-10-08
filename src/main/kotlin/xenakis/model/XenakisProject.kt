@@ -119,7 +119,7 @@ class XenakisProject private constructor(
                 val groups = data.resolve("groups.json").readJson<GroupRegistry>()
                 groups.initialize(context)
                 listener.setProgress(0.45, "Loading busses")
-                val busses = data.resolve("Buses.json").readJson<BusRegistry>()
+                val busses = data.resolve("buses.json").readJson<BusRegistry>()
                 busses.initialize(context)
                 listener.setProgress(0.5, "Loading buffers")
                 val buffers = data.resolve("buffers.json").readJson<BufferRegistry>()

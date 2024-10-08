@@ -16,7 +16,7 @@ import reaktive.value.fx.asObservableValue
 import reaktive.value.now
 import xenakis.impl.CollapsablePane
 import xenakis.impl.async
-import xenakis.impl.isMyComputerDumb
+import xenakis.impl.canSuperColliderTalkToMe
 import xenakis.model.*
 import xenakis.sc.Identifier
 import xenakis.sc.view.ObjectSelectorControl
@@ -40,13 +40,13 @@ class InstrumentRegistryPane(
     }
 
     override fun addObject() {
-        /*            val availablePlugins = VSTPluginObject.availablePlugins(registry.context)
-                        .map { name -> AddInstrumentOption.VSTPlugin(name) }*/
+        val availablePlugins = VSTPluginObject.availablePlugins(registry.context)
+            .map { name -> AddInstrumentOption.VSTPlugin(name) }
         val globalLib = registry.context[GlobalSynthDefLib]
         globalLib.reload()
         val synthDefsFromGlobal = globalLib.get()
             .map { instr -> AddInstrumentOption.SynthDefFromGlobalLib(instr) }
-        val options: List<AddInstrumentOption> = synthDefsFromGlobal// + availablePlugins
+        val options: List<AddInstrumentOption> = synthDefsFromGlobal + availablePlugins
         val searchableList = AddInstrumentOptionListView(options)
         searchableList.enterText(searchText.text)
         searchableList.showPopup(registry.context, anchorNode = this) { option ->
@@ -133,7 +133,7 @@ class InstrumentRegistryPane(
                 else CustomizableSynthDefObject.create(name, registry.context)
             }
 
-            !isMyComputerDumb && registry.synthDescLibContains(name).join() -> {
+            canSuperColliderTalkToMe && registry.synthDescLibContains(name).join() -> {
                 val reference = YesNoPrompt(
                     "SynthDef '$name' is already defined in the global SynthDescLib. " +
                             "Import SynthDef '$name' from SynthDescLib? A new SynthDef will be created otherwise.",

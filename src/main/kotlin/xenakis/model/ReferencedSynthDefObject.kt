@@ -55,8 +55,8 @@ class ReferencedSynthDefObject(
     }
 
     private fun updateParameters() {
-        if (isMyComputerDumb) {
-            Logger.error("Windows computer is dumb.")
+        if (!canSuperColliderTalkToMe) {
+            Logger.error("SuperCollider cannot send data to me")
             return
         }
         val parameters = getSynthDefParameters(_name)
@@ -70,21 +70,21 @@ class ReferencedSynthDefObject(
     private fun getSynthDefParameters(name: String): MutableList<ParameterDefObject> =
         with(context[SuperColliderClient]) {
             val params = mutableListOf<ParameterDefObject>()
-            val nParams = send("controls", listOf(name)).join().integer
+            val nParams = send("controls", listOf(name)).join().toInt()
             for (i in 0 until nParams) {
                 val controlRef = listOf(name, i)
-                val paramName = send("controlName", controlRef).join().string
+                val paramName = send("controlName", controlRef).join()
                 if (paramName == "duration") continue
                 val default = send("controlDefault", controlRef).join()
                 val spec = when (paramName) {
                     in setOf("in", "out", "bus") -> BusControlSpec()
                     "buf" -> BufferControlSpec()
                     else -> {
-                        val min = send("controlMinval", listOf(name, paramName)).join().double
-                        val max = send("controlMaxval", listOf(name, paramName)).join().double
-                        val warp = send("controlWarp", listOf(name, paramName)).join().warp
-                        val step = send("controlStep", listOf(name, paramName)).join().double
-                        NumericalControlSpec(default.double, min, max, step, warp, randomColor())
+                        val min = send("controlMinval", listOf(name, paramName)).join().toDouble()
+                        val max = send("controlMaxval", listOf(name, paramName)).join().toDouble()
+                        val warp = send("controlWarp", listOf(name, paramName)).join().toWarp()
+                        val step = send("controlStep", listOf(name, paramName)).join().toDouble()
+                        NumericalControlSpec(default.toDouble(), min, max, step, warp, randomColor())
                     }
                 }
                 val param = ParameterDefObject(paramName, spec)

@@ -14,6 +14,12 @@ object Logger {
         val timestamp = System.currentTimeMillis()
         val record = Record(timestamp, level, category, message, detailMessage)
         records.add(record)
+        if (level == Level.Error) {
+            System.err.println("Error: $message")
+            if (detailMessage != null && detailMessage != message) {
+                System.err.println("$detailMessage")
+            }
+        }
         views.notifyListeners { logged(record) }
     }
 
@@ -87,8 +93,12 @@ object Logger {
         object Project : Category()
         object VSTPlugins : Category()
 
-        fun filter(category: Category?): Boolean =
-            category == this || (category?.superCategory != null && filter(category.superCategory))
+        fun filter(category: Category?): Boolean = when {
+            this == All -> true
+            category == this -> true
+            category?.superCategory != null -> filter(category.superCategory)
+            else -> false
+        }
 
         override fun toString(): String = javaClass.simpleName
 

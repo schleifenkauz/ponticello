@@ -1,43 +1,33 @@
 package xenakis.impl
 
-import com.illposed.osc.*
-import com.illposed.osc.messageselector.OSCPatternAddressMessageSelector
-import com.illposed.osc.transport.OSCPortIn
-import com.illposed.osc.transport.OSCPortInBuilder
+import com.illposed.osc.OSCMessage
 import com.illposed.osc.transport.OSCPortOut
 import com.illposed.osc.transport.OSCPortOutBuilder
 import xenakis.impl.StatusListener.StatusUpdate
+import xenakis.model.Logger
+import java.net.DatagramPacket
+import java.net.DatagramSocket
 import java.net.InetAddress
 import java.net.InetSocketAddress
+import java.nio.ByteBuffer
 import java.util.concurrent.CompletableFuture
 import kotlin.io.path.toPath
 
 class OSCSuperColliderClient(
     process: Process,
     private val sender: OSCPortOut,
-    private val receiver: OSCPortIn
-) : OSCMessageListener, SuperColliderClient {
+    private val receiver: DatagramSocket
+) : SuperColliderClient, Thread() {
     private var idCounter = 0
-    private val waitingForReply = mutableMapOf<Int, CompletableFuture<OSCMessage>>()
+    private val waitingForReply = mutableMapOf<Int, CompletableFuture<String>>()
 
     override val consoleMonitor: ConsoleMonitor = ConsoleMonitor(process)
     override val statusListener: StatusListener = StatusListener(consoleMonitor)
 
     init {
-        receiver.connect()
-        receiver.startListening()
-        receiver.addPacketListener(object : OSCPacketListener {
-            override fun handlePacket(event: OSCPacketEvent?) {
-                println(event)
-            }
-
-            override fun handleBadData(event: OSCBadDataEvent?) {
-                println(event)
-            }
-        })
-        receiver.dispatcher.addListener(OSCPatternAddressMessageSelector("/reply"), this)
-        println(receiver.isListening)
         consoleMonitor.start()
+        isDaemon = true
+        start()
     }
 
     override fun sendAsync(address: String, arguments: List<Any>) {
@@ -46,9 +36,9 @@ class OSCSuperColliderClient(
         sender.send(msg)
     }
 
-    override fun send(address: String, arguments: List<Any>): CompletableFuture<OSCMessage> {
+    override fun send(address: String, arguments: List<Any>): CompletableFuture<String> {
         val id = idCounter++
-        val future = CompletableFuture<OSCMessage>()
+        val future = CompletableFuture<String>()
         val adr = if (!address.startsWith('/')) "/$address" else address
         val msg = OSCMessage(adr, listOf(id) + arguments)
         waitingForReply[id] = future
@@ -56,12 +46,32 @@ class OSCSuperColliderClient(
         return future
     }
 
-    override fun acceptMessage(event: OSCMessageEvent) {
-        val msg = event.message
-        val id = msg.arguments[0] as? Int ?: error("Reply message didn't have an id!")
-        println("Received reply: $id")
-        val future = waitingForReply.remove(id) ?: error("Wasn't waiting for a reply for id $id")
-        future.complete(msg)
+    override fun run() {
+        while (!interrupted()) {
+            val buf = ByteArray(4096)
+            val packet = DatagramPacket(buf, buf.size)
+            receiver.receive(packet)
+            if (String(buf, 0, 8).startsWith("/reply")) {
+                var len = 0
+                while (len + 16 < buf.size && buf[len + 16].toInt() != 0) len++
+                val result = String(buf, 16, len)
+                val id = ByteBuffer.wrap(buf, 12, 4).getInt()
+                Logger.fine("id: $id, result: $result", Logger.Category.SuperCollider)
+                val future = waitingForReply.remove(id)
+                if (future == null) {
+                    Logger.error("Wasn't waiting for a reply for id $id")
+                    continue
+                }
+                future.complete(result)
+            }
+            try {
+                sleep(10)
+            } catch (e: InterruptedException) {
+                receiver.close()
+                return
+            }
+        }
+        receiver.close()
     }
 
     override fun quit() {
@@ -69,41 +79,39 @@ class OSCSuperColliderClient(
         run("s.quit;")
         run("0.exit;")
         sender.disconnect()
-        receiver.stopListening()
-        receiver.disconnect()
+        interrupt()
         statusListener.status = StatusUpdate.Exited
     }
 
     companion object {
         private const val SETUP_FILE = "xenakis_setup.scd"
 
-        fun create(port: Int = OSCPortOut.DEFAULT_SC_LANG_OSC_PORT): OSCSuperColliderClient {
+        fun create(scPort: Int = OSCPortOut.DEFAULT_SC_LANG_OSC_PORT): OSCSuperColliderClient {
             val setupFile = this::class.java.getResource(SETUP_FILE)!!.toURI().toPath().toFile().superColliderPath
-            val sclang = ProcessBuilder(mutableListOf("sclang", "-u", "$port"))
+            val sclang = ProcessBuilder(mutableListOf("sclang", "-u", "$scPort"))
                 .redirectInput(ProcessBuilder.Redirect.PIPE)
                 .redirectOutput(ProcessBuilder.Redirect.PIPE)
                 .start()
-            Thread.sleep(100)
+            sleep(100)
             sclang.outputStream.write("this.executeFile($setupFile);\n".toByteArray())
             sclang.outputStream.flush()
             val localhost = InetAddress.getLoopbackAddress()
-            val local = InetSocketAddress(localhost, 51750)
-            val remote = InetSocketAddress(localhost, port)
+            val myPort = 7771
+            val local = InetSocketAddress(localhost, myPort)
+            val remote = InetSocketAddress(localhost, scPort)
             println("local: $local, remote: $remote")
             val sender = OSCPortOutBuilder()
                 .setLocalSocketAddress(local)
                 .setRemoteSocketAddress(remote)
                 .build()
-            val receiver = OSCPortInBuilder()
-                .setSocketAddress(local)
-                .build()
+            val receiver = DatagramSocket(myPort + 1)
             return OSCSuperColliderClient(sclang, sender, receiver)
         }
 
         @JvmStatic
         fun main(args: Array<String>) {
             val client = create()
-            Thread.sleep(2000)
+            sleep(200000)
             client.run("'hello'.postln")
         }
     }

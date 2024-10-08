@@ -1,10 +1,10 @@
 plugins {
     id 'java'
     id 'application'
-    id 'org.jetbrains.kotlin.jvm' version '1.6.21'
-    id 'org.jetbrains.kotlin.kapt' version '1.6.21'
+    id 'org.jetbrains.kotlin.jvm' version '1.9.25'
+    id 'org.jetbrains.kotlin.kapt' version '1.9.25'
     id 'org.openjfx.javafxplugin' version '0.1.0'
-    id 'org.jetbrains.kotlin.plugin.serialization' version '1.6.21'
+    id 'org.jetbrains.kotlin.plugin.serialization' version '1.9.25'
 }
 
 group 'com.github.nkb03'
@@ -21,11 +21,16 @@ ext {
 
 kotlin {
     jvmToolchain {
-        languageVersion.set(JavaLanguageVersion.of(17))
+        languageVersion.set(JavaLanguageVersion.of(19))
     }
 }
 
-compileKotlin.kotlinOptions.jvmTarget = 17
+compileKotlin {
+    kotlinOptions {
+        jvmTarget = 19
+        freeCompilerArgs += '-opt-in=kotlin.RequiresOptIn'
+    }
+}
 
 javafx {
     version = '17.0.6'

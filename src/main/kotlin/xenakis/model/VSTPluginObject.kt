@@ -44,7 +44,7 @@ class VSTPluginObject private constructor(
 
     override fun initialize(context: Context) {
         if (initialized) return
-        outputSelector = BusSelector(context, Rate.Audio, 2)
+        outputSelector = BusSelector(context, Rate.Audio, 2, reactiveVariable(output))
         outputSelectorObserver = outputSelector.selected.observe { _, _, newOutput ->
             output = newOutput
             val bus = newOutput.get<BusObject>().superColliderName
@@ -114,6 +114,6 @@ class VSTPluginObject private constructor(
             .join()
             .removePrefix(", ")
             .split(", ")
-
+            .toSet()
     }
 }

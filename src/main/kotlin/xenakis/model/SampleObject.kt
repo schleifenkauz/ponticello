@@ -148,9 +148,9 @@ class SampleObject private constructor(
     companion object {
         fun relativizePath(base: File, audioFile: File): String {
             return when {
-                audioFile.startsWith(base) -> "./" + audioFile.relativeTo(base).path
-                audioFile.startsWith(base.parentFile) -> "../" + audioFile.relativeTo(base.parentFile).path
-                else -> audioFile.absolutePath
+                audioFile.startsWith(base) -> "./" + audioFile.relativeTo(base).invariantSeparatorsPath
+                audioFile.startsWith(base.parentFile) -> "../" + audioFile.relativeTo(base.parentFile).invariantSeparatorsPath
+                else -> audioFile.absoluteFile.invariantSeparatorsPath
             }
         }
 

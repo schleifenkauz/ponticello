@@ -94,7 +94,9 @@ class BusControlSpec : ControlSpec {
 
 @Serializable
 @Compound(serializable = true)
-class BufferControlSpec(val isPlayBufSource: Boolean = true) : ControlSpec {
+class BufferControlSpec : ControlSpec {
+    var isPlayBufSource: Boolean = true
+
     override val type: ParameterType
         get() = ParameterType.Buffer
 

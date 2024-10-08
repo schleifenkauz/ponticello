@@ -9,7 +9,6 @@ import reaktive.value.ReactiveInt
 import reaktive.value.now
 import reaktive.value.reactiveVariable
 import xenakis.impl.SuperColliderClient
-import xenakis.impl.string
 import xenakis.model.SuperColliderObject.LiveCycleType
 import java.io.File
 import javax.sound.sampled.AudioInputStream
@@ -52,7 +51,7 @@ sealed class BufferObject : AbstractSuperColliderObject() {
             Logger.severe("Could not get bufnum for Buffer ${name.now}", Logger.Category.SuperCollider)
             return
         }
-        val status = context[SuperColliderClient].send("writeBuf", listOf(file, bufnum)).join().string
+        val status = context[SuperColliderClient].send("writeBuf", listOf(file, bufnum)).join()
         if (status != "ok") {
             Logger.severe("Error while writing buffer ${name.now} to project directory", Logger.Category.SuperCollider)
             return

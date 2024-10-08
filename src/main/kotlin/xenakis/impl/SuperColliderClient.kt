@@ -2,7 +2,6 @@ package xenakis.impl
 
 import bundles.PublicProperty
 import bundles.publicProperty
-import com.illposed.osc.OSCMessage
 import xenakis.model.Logger
 import xenakis.model.Logger.Category
 import java.util.concurrent.CompletableFuture
@@ -13,19 +12,18 @@ interface SuperColliderClient : SuperColliderContext {
 
     fun sendAsync(address: String, arguments: List<Any>)
 
-    fun send(address: String, arguments: List<Any> = emptyList()): CompletableFuture<OSCMessage>
+    fun send(address: String, arguments: List<Any> = emptyList()): CompletableFuture<String>
 
     fun eval(code: String): CompletableFuture<String> {
-        if (isMyComputerDumb) {
+        if (!canSuperColliderTalkToMe) {
             run(code)
             return CompletableFuture.completedFuture("")
         }
         Logger.fine("eval $code", Category.SuperCollider, detailMessage = code)
         return send("eval", listOf(code))
             .orTimeout(10000, TimeUnit.MILLISECONDS)
-            .thenApply { msg ->
-                val result = msg.arguments[1] as String
-                Logger.fine("evaluating $code returned ${result.take(20)}", Category.SuperCollider, result)
+            .thenApply { result ->
+                Logger.fine("evaluating $code returned $result", Category.SuperCollider, result)
                 result
             }
     }

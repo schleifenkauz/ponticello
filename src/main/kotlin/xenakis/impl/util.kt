@@ -1,12 +1,10 @@
 package xenakis.impl
 
-import com.illposed.osc.OSCMessage
 import hextant.context.Context
 import hextant.context.Properties.classLoader
 import hextant.plugins.Aspects
 import hextant.plugins.Implementation
 import javafx.scene.paint.Color
-import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.*
 import reaktive.value.ReactiveValue
 import reaktive.value.reactiveVariable
@@ -88,16 +86,11 @@ private val defaultColors = listOf("red", "green", "blue", "white", "orange", "p
 
 fun randomColor() = Color.web(defaultColors.random())
 
-val OSCMessage.boolean get() = arguments[1] as Int != 0
-val OSCMessage.double get() = (arguments[1] as Float).toDouble()
-val OSCMessage.string get() = arguments[1] as String
-val OSCMessage.integer get() = arguments[1] as Int
-val OSCMessage.warp
-    get() = when (arguments[1] as String) {
-        "A LinearWarp" -> Warp.Linear
-        "An ExponentialWarp" -> Warp.Exponential
-        else -> Warp.Linear
-    }
+fun String.toWarp() = when (this) {
+    "A LinearWarp" -> Warp.Linear
+    "An ExponentialWarp" -> Warp.Exponential
+    else -> Warp.Linear
+}
 
 val AudioInputStream.duration get() = (frameLength / format.frameRate).toDouble()
 
@@ -121,7 +114,9 @@ inline fun <V> KMutableProperty0<V>.reactive(crossinline onUpdate: (oldValue: V,
 
 fun <T> ReactiveValue<T>.copy() = reactiveVariable(get())
 
-val isMyComputerDumb get() = System.getProperty("os.name").contains("Windows") || true
+val isWindows get() = System.getProperty("os.name").contains("Windows")
+
+val canSuperColliderTalkToMe get() = true
 
 fun String.replacePrefix(prefix: String, replacement: String) =
     if (startsWith(prefix)) replacement + drop(prefix.length) else this

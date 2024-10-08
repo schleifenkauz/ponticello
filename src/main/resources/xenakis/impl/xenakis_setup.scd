@@ -35,37 +35,21 @@ ServerBoot.add {
 ~setupHandler = { arg address, handler;
 	OSCdef(address, {
 		arg msg, time, addr, recvPort;
-		var id, answer;
-		AppClock.sched(0.0) {
-			id = msg[1];
-			answer = handler.(*msg.drop(2));
-			'sending reply to '.post;
-			addr.post;
-			'; id='.post;
-			id.postln;
-			addr.sendMsg('/reply', id, answer);
-		}
+		var id, answer, returnAddr = NetAddr("localhost", 7772);
+        id = msg[1];
+        answer = handler.(*msg.drop(2));
+        'sending reply to '.post;
+        returnAddr.post;
+        '; id='.post;
+        id.postln;
+        returnAddr.sendMsg('/reply', id, answer.asString);
 	}, address);
 };
 OSCdef.trace(false);
-OSCdef('writeBuf', {
-    arg msg, time, addr, recvPort;
-    var bufnum, filename, id, answer;
-    AppClock.sched(0.0) {
-        id = msg[1];
-        bufnum = msg[2];
-        filename = msg[3];
-        Buffer.cachedBufferAt(bufnum).write(filename, 'wav', 'int16') {
-            addr.sendMsg('/replay', id, 'ok');
-        }
-    }
-});
 ~setupHandler.('eval', { |code|
-	var answer;
 	'eval: '.post;
 	code.asString.postln;
-	answer = this.interpret(code.asString).asString;
-	answer;
+	this.interpret(code.asString);
 });
 OSCdef('run', {
 	arg msg, time, addr, recvPort;
