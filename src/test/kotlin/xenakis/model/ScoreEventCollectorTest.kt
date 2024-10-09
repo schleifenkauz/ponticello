@@ -30,7 +30,7 @@ class ScoreEventCollectorTest {
                     val time = rnd.nextDouble(100.0)
                     val y = rnd.nextDouble(100.0)
                     val muted = rnd.nextDouble() <= 0.2
-                    val inst = ScoreObjectInstance(obj.createReference(), time, y, muted)
+                    val inst = ScoreObjectInstance(obj, time, y, muted)
                     parentScore.addObject(inst)
                     println("Add $inst")
                 }
@@ -64,7 +64,7 @@ class ScoreEventCollectorTest {
                     obj.setInitialSize(100.0, 100.0)
                     val time = rnd.nextDouble(100.0)
                     val y = rnd.nextDouble(100.0)
-                    val inst = ScoreObjectInstance(obj.createReference(), time, y)
+                    val inst = ScoreObjectInstance(obj, time, y)
                     parentScore.addObject(inst)
                     println("Added $inst")
                 }

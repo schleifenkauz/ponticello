@@ -12,7 +12,6 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import reaktive.value.now
 import xenakis.model.Score.Companion.rootScore
-import xenakis.ui.Direction
 
 @Serializable
 class ScoreObjectInstance(
@@ -21,6 +20,14 @@ class ScoreObjectInstance(
     @SerialName("y") private var _y: Double,
     @SerialName("muted") private var _muted: Boolean = false
 ) {
+    constructor(
+        obj: ScoreObject, time: Double, y: Double, muted: Boolean = false
+    ) : this(obj.createReference(), time, y, muted)
+
+    constructor(
+        obj: ScoreObject, position: ObjectPosition, muted: Boolean = false
+    ) : this(obj, position.time, position.y, muted)
+
     @Transient
     private val viewManager = ListenerManager.createWeakListenerManager<Listener>()
 
@@ -152,33 +159,23 @@ class ScoreObjectInstance(
     fun clone(
         time: Double = this.start, y: Double = this.y,
         newName: String = context[ScoreObjectRegistry].nameForClone(obj)
-    ): ScoreObjectInstance {
-        val clonedObj = obj.clone(newName)
-        val ref = clonedObj.createReference()
-        val inst = ScoreObjectInstance(ref, time, y, _muted)
-        return inst
-    }
+    ): ScoreObjectInstance = ScoreObjectInstance(obj.clone(newName), time, y, _muted)
 
     fun clone(
         position: ObjectPosition = this.position,
         newName: String = context[ScoreObjectRegistry].nameForClone(obj)
     ) = clone(position.time, position.y, newName)
 
-    fun cut(position: Double, whichHalf: HorizontalDirection): ScoreObjectInstance {
+    fun cut(position: Double, whichHalf: HorizontalDirection): ScoreObjectInstance? {
         val name = "${obj.name.now}_" + (if (whichHalf == HorizontalDirection.LEFT) "left" else "right")
         val time = if (whichHalf == HorizontalDirection.LEFT) start else start + position
-        val half = obj.cut(position, whichHalf, name) ?: run {
-            val clone = obj.clone(name)
-            val dur = if (whichHalf == HorizontalDirection.LEFT) position else obj.duration - position
-            clone.resize(dur, height, ScoreObject.ResizeType.Regular, direction = Direction.NONE)
-            clone
-        }
-        return ScoreObjectInstance(half.createReference(), time, y, muted)
+        val half = obj.cut(position, whichHalf, name) ?: return null
+        return ScoreObjectInstance(half, time, y, muted)
     }
 
-    fun cut(position: Double): Pair<ScoreObjectInstance, ScoreObjectInstance> {
-        val left = cut(position, HorizontalDirection.LEFT)
-        val right = cut(position, HorizontalDirection.RIGHT)
+    fun cut(position: Double): Pair<ScoreObjectInstance, ScoreObjectInstance>? {
+        val left = cut(position, HorizontalDirection.LEFT) ?: return null
+        val right = cut(position, HorizontalDirection.RIGHT) ?: return null
         return left to right
     }
 

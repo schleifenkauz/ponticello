@@ -56,7 +56,9 @@ Slider.control-detail-editor {
 }
 
 .score-object {
-    -fx-border-width: 0px;
+    -fx-border-width: 0.5px;
+    -fx-border-color: white;
+    -fx-border-radius: 2px;
 }
 
 .toolbar {

@@ -60,7 +60,7 @@ fun Region.setupDraggingAndResizing(
     var oldBounds: Bounds? = null
     addEventHandler(MouseEvent.MOUSE_PRESSED) { ev ->
         if (toolSelector.selected.value != tool) return@addEventHandler
-        if (dragStart == null) {
+        if (dragStart == null && cursor != null) {
             oldBounds = BoundingBox(layoutX, layoutY, width, height)
             dragStart = Point(ev.screenX, ev.screenY)
             startDrag(ev, cursor)

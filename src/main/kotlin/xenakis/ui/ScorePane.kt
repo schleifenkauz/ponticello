@@ -22,13 +22,10 @@ import reaktive.value.reactiveVariable
 import xenakis.impl.MidiPitch
 import xenakis.impl.Point
 import xenakis.model.*
-import xenakis.model.Envelope
 import xenakis.model.Logger.Category
 import xenakis.model.Score.Companion.rootScore
 import xenakis.sc.BufferControlSpec
 import xenakis.sc.Identifier
-import xenakis.sc.Rate
-import xenakis.sc.editor.BusSelector
 import xenakis.sc.editor.EventDictionaryEditor
 import xenakis.sc.editor.ScFunctionEditor
 import xenakis.ui.ToolSelector.Tool
@@ -180,7 +177,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
         val obj = SynthObject(reactiveVariable(name), synthDefRef, controls)
         obj.setInitialSize(sample.duration, 0.05)
         val (x, y) = snapToGrid(ev.x, ev.y)
-        val inst = ScoreObjectInstance(obj.createReference(), getTime(x), getScoreY(y))
+        val inst = ScoreObjectInstance(obj, getTime(x), getScoreY(y))
         score.addObject(inst)
     }
 
@@ -193,7 +190,6 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
     private fun createObjectView(inst: ScoreObjectInstance): ScoreObjectView = when (val obj = inst.obj) {
         is SynthObject -> SynthObjectView(inst, obj)
         is TaskObject -> TaskObjectView(inst, obj)
-        is EnvelopeObject -> EnvelopeObjectView(inst, obj)
         is MemoObject -> MemoObjectView(inst, obj)
         is ScoreObjectGroup -> ScoreObjectGroupView(inst, obj)
         is PianoRollObject -> PianoRollObjectView(inst, obj)
@@ -239,7 +235,6 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
             }
 
             Task, Memo -> return
-            Tool.Envelope -> rect.fill = WHITE
 
             Group -> {
                 rect.stroke = WHITE
@@ -346,7 +341,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
                     val (x, y) = snapToGrid(ev.x, ev.y)
                     val time = getTime(x).coerceIn(0.0, maxTime - obj.duration)
                     val scoreY = getScoreY(y).coerceIn(0.0, maxY - obj.height)
-                    val duplicate = ScoreObjectInstance(obj.createReference(), time, scoreY)
+                    val duplicate = ScoreObjectInstance(obj, time, scoreY)
                     score.addObject(duplicate)
                 } else if (selectedArea in children && selectedArea.width != 0.0 && selectedArea.height != 0.0) {
                     if (!selectedArea.heightProperty().isBound) {
@@ -387,7 +382,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
                 }
                 val time = getTime(ev.x)
                 val y = getScoreY(ev.y)
-                val inst = ScoreObjectInstance(obj.createReference(), time, y)
+                val inst = ScoreObjectInstance(obj, time, y)
                 score.addObject(inst)
                 if (obj is MemoObject) {
                     val view = getObjectView(inst) as MemoObjectView
@@ -420,22 +415,6 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
                     .showDialog(context) ?: return
                 val ref = reactiveVariable(def.createReference())
                 val obj = SynthObject(reactiveVariable(name), ref, controls = def.defaultControls(context))
-                addNewObject(obj, rect)
-            }
-
-            Tool.Envelope -> {
-                val initialName = context[ScoreObjectRegistry].availableName("env")
-                val name = NamePrompt(context[ScoreObjectRegistry], "Name for new Envelope object", initialName)
-                    .showDialog(context) ?: return
-                val busSelector = BusSelector(context, preferredChannels = 1, preferredRate = Rate.Control)
-                val spec = EnvelopeObjectView.showEnvelopeConfig(
-                    context, "Control spec for envelope $name", busSelector
-                ) ?: return
-                val value = spec.defaultValue.get()
-                val duration = getDuration(rect.width)
-                val envelope = Envelope.constant(value, duration, spec.warp)
-                val busRef = reactiveVariable(busSelector.selected.now)
-                val obj = EnvelopeObject(reactiveVariable(name), spec, busRef, envelope)
                 addNewObject(obj, rect)
             }
 

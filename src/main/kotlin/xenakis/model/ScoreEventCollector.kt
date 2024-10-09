@@ -40,7 +40,7 @@ class ScoreEventCollector(
     private fun removeEvent(event: Event) {
         val set = events[event.absolutePosition] ?: mutableSetOf()
         if (!set.remove(event)) {
-            Logger.severe("Failed to remove $event")
+            Logger.warn("Failed to remove $event", Logger.Category.Playback)
         }
     }
 
@@ -116,7 +116,7 @@ class ScoreEventCollector(
         }
         for (ev in newEvents) addEvent(ev)
         if (nEvents() != eventsBefore) {
-            Logger.severe("Resizing object changed number of score events")
+            Logger.warn("Resizing object changed number of score events", Logger.Category.Playback)
         }
     }
 
@@ -131,7 +131,7 @@ class ScoreEventCollector(
             addToPlayback(inst, position + inst.position)
         }
         if (nEvents() != eventsBefore) {
-            Logger.severe("Moving object changed number of score events")
+            Logger.warn("Moving object changed number of score events", Logger.Category.Playback)
         }
     }
 

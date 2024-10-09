@@ -61,7 +61,7 @@ class PlaybackManager(private val scoreView: ScoreView) {
 
     companion object : PublicProperty<PlaybackManager> by publicProperty("PlaybackManager") {
         private fun simpleScore(obj: ScoreObject): Score {
-            val inst = ScoreObjectInstance(obj.createReference(), 0.0, 0.0)
+            val inst = ScoreObjectInstance(obj, ObjectPosition.ZERO)
             val score = Score(mutableListOf(inst))
             score.initialize(obj.context, reactiveValue(obj.name.now + "_score"))
             return score

@@ -1,11 +1,15 @@
 package xenakis.ui
 
+import javafx.scene.paint.Color
 import xenakis.model.ScoreObjectGroup
 import xenakis.model.ScoreObjectInstance
 
 class ScoreObjectGroupView(inst: ScoreObjectInstance, val obj: ScoreObjectGroup) : ScoreObjectView(inst) {
     lateinit var scorePane: ScorePane
         private set
+
+    override val borderColorWhenNotSelected: Color
+        get() = Color.WHITE
 
     init {
         styleClass("sub-score")

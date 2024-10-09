@@ -113,6 +113,7 @@ class XenakisUI(
         val logPane = LogPane(context, Logger)
         logWindow = SubWindow(logPane, "Log", context, SubWindow.Type.Undecorated)
         scoreView = ScoreView(project.score, project.context)
+        project.context[ScoreObjectSelectionManager] = ScoreObjectSelectionManager(project.context, scoreView)
         scoreView.initialize()
 
         val flowGraphEditor = AudioFlowGraphPane(project.flowGraph, context)
@@ -147,7 +148,6 @@ class XenakisUI(
         context[PlaybackManager] = playback
         shellWindow = SuperColliderShellController.createShellWindow(context)
 
-        project.context[ScoreObjectSelectionManager] = ScoreObjectSelectionManager(project.context, scoreView)
         selectedObjectObserver = scoreView.selector.singleSelected.forEach { view ->
             if (detailPane.children.size == 2) detailPane.children.removeAt(1)
             if (view == null) {
@@ -441,8 +441,8 @@ class XenakisUI(
                 val position = ObjectPosition(start, inst.y)
                 val newInst = if (ev.isShiftDown) inst.clone(position) else inst.duplicate(position)
                 inst.score!!.addObject(newInst)
-                val newView = view.pane.getObjectView(inst)
-                runFXWithTimeout(50) {
+                val newView = view.pane.getObjectView(newInst)
+                runFXWithTimeout(10) {
                     context[ScoreObjectSelectionManager].select(newView, addToSelection = false)
                 }
             } else {
@@ -492,10 +492,18 @@ class XenakisUI(
                 playback.attachToMainScore()
             }
             context[ScoreObjectSelectionManager].deselectAll()
-            toolSelector.select(Tool.Pointer)
         }
-        on("Ctrl+A") { ev ->
-            if (!ev.isTargetTextInput) context[ScoreObjectSelectionManager].selectAll()
+        on("Ctrl+A") {
+            context[ScoreObjectSelectionManager].selectAll()
+        }
+        on("Ctrl+Shift+A") {
+            val selected = scoreView.selector.singleSelected.now ?: return@on
+            for (inst in selected.pane.score.instancesOf(selected.instance.obj)) {
+                if (inst != selected.instance) {
+                    val view = selected.pane.getObjectView(inst)
+                    context[ScoreObjectSelectionManager].select(view, addToSelection = true)
+                }
+            }
         }
         on("C") { ev ->
             if (!ev.isTargetTextInput) {
@@ -521,9 +529,8 @@ class XenakisUI(
                 for ((obj, instances) in scoreView.selector.selectedInstances.groupBy { inst -> inst.obj }) {
                     val name = context[ScoreObjectRegistry].nameForClone(obj)
                     val clone = obj.clone(name)
-                    val newRef = clone.createReference()
                     for (oldInst in instances) {
-                        val newInst = ScoreObjectInstance(newRef, oldInst.start, oldInst.y, oldInst.muted)
+                        val newInst = ScoreObjectInstance(clone, oldInst.position, oldInst.muted)
                         oldInst.score?.removeObject(oldInst)
                         oldInst.score?.addObject(newInst)
                     }
@@ -548,7 +555,7 @@ class XenakisUI(
             val name = context[ScoreObjectRegistry].availableName("group")
             val newObj = ScoreObjectGroup(reactiveVariable(name), newScore)
             newObj.setInitialSize(maxX - minX, maxY - minY)
-            val newInst = ScoreObjectInstance(newObj.createReference(), minX, minY)
+            val newInst = ScoreObjectInstance(newObj, minX, minY)
             parentPane.score.addObject(newInst)
             context.compoundEdit("Create group from objects") {
                 for (inst in instances) {
@@ -683,17 +690,13 @@ class XenakisUI(
 
     private fun KeyEventHandlerBody<Unit>.addScoreNavigationShortcuts() {
         on("HOME") { scoreView.displayWholeScore() }
-        on("Shift+DIGIT0") { ev ->
-            if (!ev.isTargetTextInput && !playback.player.isPlaying) {
+        on("Ctrl+Shift?+DIGIT0") { ev ->
+            if (ev.isShiftDown) {
+                if (playback.player.isPlaying) return@on
                 scoreView.display(0.0, scoreView.displayedDuration)
                 playback.attachToMainScore()
-                playback.movePlayHeadToStart()
             }
-        }
-        on("DIGIT0") { ev ->
-            if (!ev.isTargetTextInput) {
-                playback.movePlayHeadToStart()
-            }
+            playback.movePlayHeadToStart()
         }
         on("PAGE_UP") { ev ->
             if (!ev.isTargetTextInput) {
@@ -708,15 +711,13 @@ class XenakisUI(
     }
 
     private fun KeyEventHandlerBody<Unit>.addToolSelectionShortcuts() {
-        registerToolNumber(Tool.Synth, 1)
-        registerToolNumber(Tool.Task, 2)
-        registerToolNumber(Tool.Envelope, 3)
-        registerToolNumber(Tool.Memo, 4)
-        registerToolNumber(Tool.PianoRoll, 5)
-        registerToolNumber(Tool.TempoGrid, 6)
-        registerToolNumber(Tool.Group, 7)
-        registerToolNumber(Tool.Cut, 8)
-        registerToolNumber(Tool.AddTime, 9)
+        for (tool in Tool.entries) {
+            on("DIGIT${tool.ordinal}") { ev ->
+                if (!ev.isTargetTextInput) {
+                    toolSelector.select(tool)
+                }
+            }
+        }
     }
 
     private fun KeyEventHandlerBody<Unit>.addGridRelatedShortcuts() {
@@ -740,7 +741,12 @@ class XenakisUI(
         on("Ctrl+S") { controller.saveProject() }
         on("Ctrl+O") { controller.openProject() }
         on("Ctrl+N") { controller.createNewProject() }
-        on("Ctrl+Q") { controller.closeRequest(stage) }
+        on("Ctrl+Shift?+Q") { ev ->
+            if (ev.isShiftDown) {
+                controller.saveProject()
+                controller.quitApplication()
+            } else controller.closeRequest(stage)
+        }
     }
 
     private fun setClipboard(selected: ScoreObjectView) {
@@ -754,14 +760,6 @@ class XenakisUI(
         val name = selected.instance.obj.name.now
         val window = SubWindow(pane, "Configure $name", context, type = SubWindow.Type.Undecorated)
         window.show()
-    }
-
-    private fun KeyEventHandlerBody<Unit>.registerToolNumber(tool: Tool, digit: Int) {
-        on("DIGIT$digit") { ev ->
-            if (!ev.isTargetTextInput) {
-                toolSelector.select(tool)
-            }
-        }
     }
 
     private val KeyEvent.isTargetTextInput get() = target is TextInputControl || target is Spinner<*>

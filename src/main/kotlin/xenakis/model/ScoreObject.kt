@@ -147,7 +147,12 @@ sealed class ScoreObject : AbstractRenamableObject() {
         return obj
     }
 
-    protected open fun doCut(position: Double, whichHalf: HorizontalDirection, newName: String): ScoreObject? = null
+    protected open fun doCut(position: Double, whichHalf: HorizontalDirection, newName: String): ScoreObject? {
+        val clone = clone(newName)
+        val dur = if (whichHalf == LEFT) position else duration - position
+        clone.resize(dur, height, ResizeType.Regular, direction = Direction.NONE)
+        return clone
+    }
 
     fun cut(position: Double, whichHalf: HorizontalDirection, newName: String): ScoreObject? {
         val obj = doCut(position, whichHalf, newName) ?: return null

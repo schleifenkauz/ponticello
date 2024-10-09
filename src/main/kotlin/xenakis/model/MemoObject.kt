@@ -1,5 +1,6 @@
 package xenakis.model
 
+import javafx.geometry.HorizontalDirection
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import reaktive.value.ReactiveVariable
@@ -24,6 +25,8 @@ class MemoObject(
             _text = value
             notifyListeners<MemoObjectView> { textChanged(value) }
         }
+
+    override fun doCut(position: Double, whichHalf: HorizontalDirection, newName: String): ScoreObject? = null
 
     override fun doClone(newName: String): ScoreObject = MemoObject(reactiveVariable(newName), text)
 

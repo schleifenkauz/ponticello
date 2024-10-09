@@ -8,7 +8,6 @@ import javafx.scene.control.ToggleGroup
 import javafx.scene.control.Tooltip
 import javafx.scene.layout.HBox
 import xenakis.ui.dontDeselectAll
-import xenakis.ui.map
 
 abstract class SelectorBar<T>(options: List<T>) : HBox(10.0) {
     protected open fun extractGraphic(option: T): Node? = null
@@ -46,7 +45,7 @@ abstract class SelectorBar<T>(options: List<T>) : HBox(10.0) {
     private fun ToggleButton.display(option: T) {
         text = extractText(option)
         graphic = extractGraphic(option)
-        tooltip = this@SelectorBar.extractDescription(option)?.let(::Tooltip)
+        tooltip = extractDescription(option)?.let(::Tooltip)
         if (graphic == null) padding = Insets(11.0)
         extraConfig(option)
     }

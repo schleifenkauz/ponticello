@@ -2,8 +2,10 @@ package xenakis.ui
 
 import hextant.context.Context
 import hextant.undo.UndoManager
+import hextant.undo.compoundEdit
 import javafx.geometry.Bounds
 import javafx.geometry.HorizontalDirection
+import javafx.geometry.HorizontalDirection.LEFT
 import javafx.geometry.HorizontalDirection.RIGHT
 import javafx.geometry.VerticalDirection
 import javafx.scene.Cursor
@@ -26,6 +28,7 @@ import reaktive.value.reactiveVariable
 import xenakis.impl.Knob
 import xenakis.model.*
 import xenakis.model.InteractionSettings.SnapOption
+import xenakis.model.Score.Companion.rootScore
 import xenakis.sc.ControlSpec
 import xenakis.sc.NumericalControlSpec
 import xenakis.ui.ToolSelector.Tool
@@ -256,15 +259,17 @@ abstract class ScoreObjectView(
             val tool = context[XenakisUI].toolSelector.selected.value
             when (tool) {
                 Tool.Cut -> {
-                    val cutPosition = pane.getDuration(ev.x - 0.0)
-                    context[UndoManager].beginCompoundEdit("Cut object")
-                    pane.score.removeObject(instance)
-                    val (leftHalf, rightHalf) = instance.cut(cutPosition)
-                    pane.score.addObject(leftHalf)
-                    pane.score.addObject(rightHalf)
-                    context[UndoManager].finishCompoundEdit("Cut object")
-                    pane.selector.select(pane.getObjectView(leftHalf), addToSelection = false)
-                    pane.selector.select(pane.getObjectView(rightHalf), addToSelection = true)
+                    val obj = instance.obj
+                    if (obj is ScoreObjectGroup && ev.isShiftDown) {
+                        val position = pane.getScoreY(ev.y)
+                        val (top, bottom) = obj.cutVertically(position)
+                        replaceWithCutHalves(top, bottom, relativePosition = ObjectPosition(0.0, position))
+                    } else if (!ev.isShiftDown) {
+                        val position = pane.getDuration(ev.x)
+                        val leftHalf = obj.cut(position, LEFT, "${obj.name.now}_left") ?: return@addEventHandler
+                        val rightHalf = obj.cut(position, RIGHT, "${obj.name.now}_right") ?: return@addEventHandler
+                        replaceWithCutHalves(leftHalf, rightHalf, relativePosition = ObjectPosition(position, 0.0))
+                    }
                 }
 
                 else -> {
@@ -284,22 +289,35 @@ abstract class ScoreObjectView(
         }
     }
 
-    fun setSelected(value: Boolean) {
-        val borderColor = when {
-            value -> borderColorWhenSelected
-            instance.obj in context[ScoreObjectSelectionManager].selectedObjects -> borderColorWhenSameObjectSelected
-            else -> borderColorWhenNotSelected
+    private fun replaceWithCutHalves(half1: ScoreObject, half2: ScoreObject, relativePosition: ObjectPosition) {
+        context.compoundEdit("Cut object") {
+            for (inst in context[rootScore].instancesOf(instance.obj).toList()) {
+                val score = inst.score
+                score!!.removeObject(inst)
+                val inst1 = ScoreObjectInstance(half1, inst.position, inst.muted)
+                val inst2 = ScoreObjectInstance(half2, inst.position + relativePosition, inst.muted)
+                score.addObject(inst1)
+                score.addObject(inst2)
+            }
         }
-        border = solidBorder(borderColor, width = BORDER_WIDTH, radius = BORDER_RADIUS)
+    }
+
+    fun setSelected(value: Boolean) {
+        val (borderColor, width) = when {
+            value -> borderColorWhenSelected to BORDER_WIDTH
+            instance.obj in context[ScoreObjectSelectionManager].selectedObjects -> borderColorWhenSameObjectSelected to BORDER_WIDTH
+            else -> borderColorWhenNotSelected to 0.5
+        }
+        border = solidBorder(borderColor, width = width, radius = BORDER_RADIUS)
     }
 
     override fun isSomeInstanceSelected(yesOrNo: Boolean) {
-        val borderColor = when {
-            this in context[ScoreObjectSelectionManager].selectedViews -> borderColorWhenSelected
-            yesOrNo -> borderColorWhenSameObjectSelected
-            else -> borderColorWhenNotSelected
+        val (borderColor, width) = when {
+            this in context[ScoreObjectSelectionManager].selectedViews -> borderColorWhenSelected to BORDER_WIDTH
+            yesOrNo -> borderColorWhenSameObjectSelected to BORDER_WIDTH
+            else -> borderColorWhenNotSelected to 0.5
         }
-        border = solidBorder(borderColor, width = BORDER_WIDTH, radius = BORDER_RADIUS)
+        border = solidBorder(borderColor, width = width, radius = BORDER_RADIUS)
     }
 
     private fun delete() {
@@ -410,7 +428,7 @@ abstract class ScoreObjectView(
         val grid = getNearestGrid()
         val settings = context[currentProject].settings
         val snapOption = if (settings.snapEnabled.now) settings.snapOption.now else null
-        val factor = if (direction == HorizontalDirection.LEFT) -1.0 else 1.0
+        val factor = if (direction == LEFT) -1.0 else 1.0
         val deltaT =
             if (snapOption != null && grid != null) grid.obj.getDuration(snapOption) * factor
             else factor / pane.pixelsPerSecond
@@ -454,7 +472,7 @@ abstract class ScoreObjectView(
     override fun toString(): String = "ScoreObjectView for $instance"
 
     companion object {
-        private const val BORDER_WIDTH = 4.0
+        private const val BORDER_WIDTH = 3.0
         private const val BORDER_RADIUS = 2.0
     }
 }

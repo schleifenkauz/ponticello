@@ -22,8 +22,6 @@ class ScoreObjectGroup(
     override val type: String
         get() = "compound"
 
-    private var deepStretch: Boolean = false
-
     override fun setContext(context: Context) {
         super.setContext(context)
         score.context = context
@@ -46,7 +44,7 @@ class ScoreObjectGroup(
                 }
 
                 whichHalf == LEFT && inst.start < position -> {
-                    val leftHalf = inst.cut(position - inst.start, LEFT)
+                    val leftHalf = inst.cut(position - inst.start, LEFT) ?: inst
                     objects.add(leftHalf)
                 }
 
@@ -56,7 +54,7 @@ class ScoreObjectGroup(
                 }
 
                 whichHalf == RIGHT && inst.start + inst.duration > position -> {
-                    val rightHalf = inst.cut(position - inst.start, RIGHT)
+                    val rightHalf = inst.cut(position - inst.start, RIGHT) ?: continue
                     objects.add(rightHalf)
                 }
             }
@@ -64,6 +62,22 @@ class ScoreObjectGroup(
         val score = Score(objects)
         val name = if (whichHalf == LEFT) "${name.now}_left" else "${name.now}_right"
         return ScoreObjectGroup(reactiveVariable(name), score)
+    }
+
+    fun cutVertically(position: Double): Pair<ScoreObjectGroup, ScoreObjectGroup> {
+        val top = mutableListOf<ScoreObjectInstance>()
+        val bottom = mutableListOf<ScoreObjectInstance>()
+        for (inst in score.objectInstances) {
+            if (inst.y < position) top.add(inst)
+            else bottom.add(ScoreObjectInstance(inst.obj, inst.start, inst.y - position))
+        }
+        val name1 = reactiveVariable(name.now + "_top")
+        val name2 = reactiveVariable(name.now + "_bot")
+        val obj1 = ScoreObjectGroup(name1, Score(top))
+        val obj2 = ScoreObjectGroup(name2, Score(bottom))
+        obj1.setInitialSize(duration, position)
+        obj2.setInitialSize(duration, height - position)
+        return Pair(obj1, obj2)
     }
 
     override fun beginResize(type: ResizeType, direction: Direction): Boolean {

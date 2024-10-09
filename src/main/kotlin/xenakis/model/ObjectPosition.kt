@@ -29,7 +29,7 @@ data class ObjectPosition(val time: Double, val y: Double) : Comparable<ObjectPo
     override fun hashCode(): Int = 37 * (time * 1000).toLong().hashCode() + y.hashCode()
 
     companion object {
-        private const val DELTA = 0.01
+        private const val DELTA = 0.001
 
         val ZERO = ObjectPosition(0.0, 0.0)
     }

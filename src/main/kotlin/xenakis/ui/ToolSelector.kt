@@ -7,6 +7,7 @@ import javafx.scene.input.MouseEvent
 import reaktive.value.now
 import xenakis.impl.SelectorBar
 import xenakis.model.InstrumentRegistry
+import xenakis.ui.ToolSelector.Tool.*
 
 class ToolSelector(private val context: Context) : SelectorBar<ToolSelector.Tool>(Tool.entries) {
     override fun extractGraphic(option: Tool): Node {
@@ -19,7 +20,7 @@ class ToolSelector(private val context: Context) : SelectorBar<ToolSelector.Tool
         styleClass("icon-button")
         centerChildren()
         when (option) {
-            Tool.Synth, Tool.PianoRoll -> {
+            Synth, PianoRoll -> {
                 addEventHandler(MouseEvent.MOUSE_CLICKED) { ev ->
                     if (ev.isShiftDown) {
                         context[XenakisUI].instrumentsWindow.show()
@@ -37,11 +38,17 @@ class ToolSelector(private val context: Context) : SelectorBar<ToolSelector.Tool
         }
     }
 
+    override fun extractDescription(option: Tool): String = when (option) {
+        Group -> "Object group"
+        TempoGrid -> "Grid"
+        AddTime -> "Add time"
+        else -> option.name
+    } + "(${option.ordinal})"
+
     enum class Tool(val icon: Icon) {
         Pointer(Icon.Pointer),
         Synth(Icon.Synth),
         Task(Icon.Code),
-        Envelope(Icon.Envelope),
         Memo(Icon.Memo),
         PianoRoll(Icon.Midi),
         TempoGrid(Icon.Tempo),

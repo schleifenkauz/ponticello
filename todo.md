@@ -47,9 +47,7 @@
 - lhs of assignments can be compound expressions
 - clear ServerTree and ServerBoot when closing a project
   - or just reboot sclang.exe, this would mean generally restructuring the startup process
-- EnvelopeObjects can be removed and replaced with a simple SynthDef `krOut`
 - re-enable allocated buffers (can be used with WrBuf/RdBuf SynthDefs)
-- remove `StandardSynthDefObject`
 
 ## Long term architectural ideas/questions
 
