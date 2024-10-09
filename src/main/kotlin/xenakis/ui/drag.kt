@@ -50,7 +50,7 @@ fun Region.setupDraggingAndResizing(
     canUserChangeWidth: Boolean, canUserChangeHeight: Boolean, tool: Tool,
     drag: (x: Double, y: Double) -> Unit,
     resize: (Bounds, Double, Double, Cursor, MouseEvent) -> Unit,
-    startDrag: (MouseEvent, Cursor) -> Unit = { _, _ -> },
+    startDrag: (MouseEvent, Cursor) -> Boolean = { _, _ -> true },
     finishDrag: (MouseEvent, Cursor) -> Unit = { _, _ -> }
 ) {
     val context = pane.context

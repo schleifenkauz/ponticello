@@ -2,6 +2,7 @@ package xenakis.ui
 
 import hextant.context.Context
 import xenakis.impl.Point
+import xenakis.model.ScoreObject
 import xenakis.model.ScoreObjectGroup
 
 class SubScorePane(private val obj: ScoreObjectGroup, context: Context) : ScorePane(obj.score, context) {
@@ -49,12 +50,12 @@ class SubScorePane(private val obj: ScoreObjectGroup, context: Context) : ScoreP
 
     override fun addTime(location: Double, amount: Double) {
         super.addTime(location, amount)
-        obj.resize(obj.duration + amount, obj.height, stretch = false, Direction.NONE)
+        obj.resize(obj.duration + amount, obj.height, ScoreObject.ResizeType.Regular, Direction.NONE)
     }
 
     override fun deleteTimeRange(start: Double, end: Double) {
         super.deleteTimeRange(start, end)
         val amount = end - start
-        obj.resize(obj.duration - amount, obj.height, stretch = false, Direction.NONE)
+        obj.resize(obj.duration - amount, obj.height, ScoreObject.ResizeType.Regular, Direction.NONE)
     }
 }

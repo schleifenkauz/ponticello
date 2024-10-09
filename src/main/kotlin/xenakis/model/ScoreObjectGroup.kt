@@ -4,12 +4,14 @@ import hextant.context.Context
 import javafx.geometry.HorizontalDirection
 import javafx.geometry.HorizontalDirection.LEFT
 import javafx.geometry.HorizontalDirection.RIGHT
+import javafx.geometry.VerticalDirection.DOWN
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import reaktive.value.ReactiveVariable
 import reaktive.value.now
 import reaktive.value.reactiveVariable
 import xenakis.impl.SuperColliderContext
+import xenakis.model.Score.Companion.rootScore
 import xenakis.ui.Direction
 
 @Serializable
@@ -19,6 +21,8 @@ class ScoreObjectGroup(
 ) : ScoreObject() {
     override val type: String
         get() = "compound"
+
+    private var deepStretch: Boolean = false
 
     override fun setContext(context: Context) {
         super.setContext(context)
@@ -62,20 +66,29 @@ class ScoreObjectGroup(
         return ScoreObjectGroup(reactiveVariable(name), score)
     }
 
-    override fun beginResize(stretch: Boolean, direction: Direction) {
-        super.beginResize(stretch, direction)
-        if (stretch || direction.left || direction.up) {
+    override fun beginResize(type: ResizeType, direction: Direction): Boolean {
+        super.beginResize(type, direction)
+        if (type.isStretch || direction.left || direction.up) {
             for (inst in score.objectInstances) {
                 inst.beginMove()
             }
+            for (inst in context[rootScore].instancesOf(this)) {
+                context[PlaybackManager].events.removedObject(inst.score!!, inst)
+            }
         }
+        if (type == ResizeType.DeepStretch) {
+            for (obj in score.objects) {
+                obj.beginResize(ResizeType.DeepStretch, Direction(RIGHT, DOWN))
+            }
+        }
+        return true
     }
 
     override fun resize(targetDuration: Double, targetHeight: Double) {
         var minDur = 0.0
         var minHeight = 0.0
         val objects = score.objectInstances
-        if (objects.isNotEmpty()) {
+        if (objects.isNotEmpty() && !resizeType.isStretch) { //todo compute min dimensions when resizeType=Stretch
             minDur =
                 if (resizeDirection.left) this.duration - objects.minOf { o -> o.start }
                 else objects.maxOf { o -> o.start + o.duration }
@@ -88,18 +101,38 @@ class ScoreObjectGroup(
         val deltaHeight = targetHeight.coerceAtLeast(minHeight) - this.height
         super.resize(this.duration + deltaDur, this.height + deltaHeight)
         for (inst in score.objectInstances) {
-            val newTime = if (resizeDirection.left) inst.start + deltaDur else inst.start
-            val newY = if (resizeDirection.up) inst.y + deltaHeight else inst.y
-            inst.moveTo(newTime, newY, simpleMove = false)
+            if (resizeType.isStretch) {
+                val factorT = this.duration / durationBeforeResize
+                val factorY = this.height / heightBeforeResize
+                val newTime = inst.positionBeforeMove.time * factorT
+                val newY = inst.positionBeforeMove.y * factorY
+                inst.moveTo(newTime, newY, simpleMove = false)
+                if (resizeType == ResizeType.DeepStretch) {
+                    val obj = inst.obj
+                    obj.resize(obj.durationBeforeResize * factorT, obj.heightBeforeResize * factorY)
+                }
+            } else {
+                val newTime = if (resizeDirection.left) inst.start + deltaDur else inst.start
+                val newY = if (resizeDirection.up) inst.y + deltaHeight else inst.y
+                inst.moveTo(newTime, newY, simpleMove = false)
+            }
         }
     }
 
-    override fun finishResize() {
-        super.finishResize()
-        if (stretchResize || resizeDirection.left || resizeDirection.up) {
-            for (inst in score.objectInstances) {
-                inst.finishMove(notifyScore = stretchResize)
+    override fun finishResize(recordEdit: Boolean) {
+        super.finishResize(recordEdit)
+        if (resizeType == ResizeType.DeepStretch) {
+            for (obj in score.objects) {
+                obj.finishResize(recordEdit = false)
             }
+        }
+        if (resizeType.isStretch || resizeDirection.left || resizeDirection.up) {
+            for (inst in score.objectInstances) {
+                inst.finishMove(notifyScore = false, recordEdit = false)
+            }
+        }
+        for (inst in context[rootScore].instancesOf(this)) {
+            context[PlaybackManager].events.addedObject(inst.score!!, inst)
         }
     }
 

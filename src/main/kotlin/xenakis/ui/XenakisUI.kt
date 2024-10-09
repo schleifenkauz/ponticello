@@ -15,6 +15,7 @@ import hextant.undo.compoundEdit
 import hextant.undo.historyShortcuts
 import javafx.application.Platform
 import javafx.geometry.HorizontalDirection
+import javafx.geometry.HorizontalDirection.RIGHT
 import javafx.geometry.Pos
 import javafx.geometry.VerticalDirection
 import javafx.scene.Scene
@@ -33,11 +34,14 @@ import reaktive.value.binding.not
 import reaktive.value.forEach
 import reaktive.value.fx.asObservableValue
 import reaktive.value.now
+import reaktive.value.reactiveVariable
 import reaktive.value.toggle
 import xenakis.model.*
 import xenakis.model.InteractionSettings.SnapOption
 import xenakis.sc.Rate
 import xenakis.ui.ToolSelector.Tool
+import xenakis.ui.prompt.IntegerPrompt
+import xenakis.ui.prompt.NamePrompt
 import xenakis.ui.prompt.SimpleTextPrompt
 import xenakis.ui.prompt.YesNoPrompt
 
@@ -427,33 +431,30 @@ class XenakisUI(
         addEventFilter(KeyEvent.KEY_PRESSED) { ev ->
             if (ev.target !is ScoreObjectView) return@addEventFilter
             if (ev.isTargetTextInput) return@addEventFilter
-            val selected = context[ScoreObjectSelectionManager].selectedViews
             if (ev.code !in setOf(KeyCode.LEFT, KeyCode.RIGHT, KeyCode.UP, KeyCode.DOWN)) return@addEventFilter
             if (ev.isAltDown) {
-                if (ev.isControlDown) return@addEventFilter
+                val view = context[ScoreObjectSelectionManager].singleSelected.now ?: return@addEventFilter
+                val inst = view.instance
                 if (ev.code !in setOf(KeyCode.LEFT, KeyCode.RIGHT)) return@addEventFilter
-                for (view in selected) {
-                    var inst = view.instance
-                    val start = if (ev.code == KeyCode.RIGHT) inst.start + inst.obj.duration
-                    else inst.start - inst.obj.duration
-                    val position = ObjectPosition(start, inst.y)
-                    inst = if (ev.isShiftDown) inst.clone(position) else inst.duplicate(position)
-                    view.instance.score!!.addObject(inst)
-                    val newView = view.pane.getObjectView(inst)
-                    runFXWithTimeout(50) {
-                        context[ScoreObjectSelectionManager].select(newView, addToSelection = false)
-                    }
+                val start = if (ev.code == KeyCode.RIGHT) inst.start + inst.obj.duration
+                else inst.start - inst.obj.duration
+                val position = ObjectPosition(start, inst.y)
+                val newInst = if (ev.isShiftDown) inst.clone(position) else inst.duplicate(position)
+                inst.score!!.addObject(newInst)
+                val newView = view.pane.getObjectView(inst)
+                runFXWithTimeout(50) {
+                    context[ScoreObjectSelectionManager].select(newView, addToSelection = false)
                 }
             } else {
-                val stretch = ev.isShiftDown
+                val selected = context[ScoreObjectSelectionManager].selectedViews
                 val resize = ev.isControlDown
-                if (stretch && !resize) return@addEventFilter
+                val resizeType = ev.resizeType ?: return@addEventFilter
                 for (view in selected) {
                     when (ev.code) {
-                        KeyCode.LEFT -> view.adjustHorizontal(direction = HorizontalDirection.LEFT, resize, stretch)
-                        KeyCode.RIGHT -> view.adjustHorizontal(direction = HorizontalDirection.RIGHT, resize, stretch)
-                        KeyCode.UP -> view.adjustVertical(direction = VerticalDirection.UP, resize, stretch)
-                        KeyCode.DOWN -> view.adjustVertical(direction = VerticalDirection.DOWN, resize, stretch)
+                        KeyCode.LEFT -> view.adjustHorizontal(direction = HorizontalDirection.LEFT, resize, resizeType)
+                        KeyCode.RIGHT -> view.adjustHorizontal(direction = RIGHT, resize, resizeType)
+                        KeyCode.UP -> view.adjustVertical(direction = VerticalDirection.UP, resize, resizeType)
+                        KeyCode.DOWN -> view.adjustVertical(direction = VerticalDirection.DOWN, resize, resizeType)
                         else -> throw AssertionError()
                     }
                 }
@@ -507,28 +508,56 @@ class XenakisUI(
             scoreView.selector.setSystemClipboard(selected)
         }
         on("X") { ev ->
-            if (!ev.isTargetTextInput) {
-                toolSelector.select(Tool.Pointer)
-                val view = context[ScoreObjectSelectionManager].singleSelected.now ?: return@on
-                val inst = view.instance
-                inst.score?.removeObject(inst)
-                scoreView.setClipboard(inst.obj, view)
-            }
+            if (ev.isTargetTextInput) return@on
+            toolSelector.select(Tool.Pointer)
+            val view = context[ScoreObjectSelectionManager].singleSelected.now ?: return@on
+            val inst = view.instance
+            inst.score?.removeObject(inst)
+            scoreView.setClipboard(inst.obj, view)
         }
         on("U") { ev ->
-            if (ev.isAltDown || !ev.isTargetTextInput) {
-                context.compoundEdit("Unlink object from its original") {
-                    for ((obj, instances) in scoreView.selector.selectedInstances.groupBy { inst -> inst.obj }) {
-                        val name = context[ScoreObjectRegistry].nameForClone(obj)
-                        val clone = obj.clone(name)
-                        val newRef = clone.createReference()
-                        for (oldInst in instances) {
-                            val newInst = ScoreObjectInstance(newRef, oldInst.start, oldInst.y, oldInst.muted)
-                            oldInst.score?.removeObject(oldInst)
-                            oldInst.score?.addObject(newInst)
-                        }
+            if (ev.isTargetTextInput) return@on
+            context.compoundEdit("Unlink object from its original") {
+                for ((obj, instances) in scoreView.selector.selectedInstances.groupBy { inst -> inst.obj }) {
+                    val name = context[ScoreObjectRegistry].nameForClone(obj)
+                    val clone = obj.clone(name)
+                    val newRef = clone.createReference()
+                    for (oldInst in instances) {
+                        val newInst = ScoreObjectInstance(newRef, oldInst.start, oldInst.y, oldInst.muted)
+                        oldInst.score?.removeObject(oldInst)
+                        oldInst.score?.addObject(newInst)
                     }
                 }
+            }
+        }
+
+        on("Shift?+G") { ev ->
+            if (ev.isTargetTextInput) return@on
+            val views = scoreView.selector.selectedViews
+            //import to get a single ScorePane (not a single Score)
+            // because we want the instances to be from one ScorePane (or the root score)
+            val parentPane = views.mapTo(mutableSetOf()) { v -> v.pane }.singleOrNull() ?: return@on
+            val instances = views.map { v -> v.instance }
+            val minX = instances.minOf { inst -> inst.start }
+            val minY = instances.minOf { inst -> inst.y }
+            val maxX = instances.maxOf { inst -> inst.start + inst.duration }
+            val maxY = instances.maxOf { inst -> inst.y + inst.height }
+            val relativePosition = ObjectPosition(-minX, -minY)
+            val recurse = ev.isShiftDown
+            val newScore = Score()
+            val name = context[ScoreObjectRegistry].availableName("group")
+            val newObj = ScoreObjectGroup(reactiveVariable(name), newScore)
+            newObj.setInitialSize(maxX - minX, maxY - minY)
+            val newInst = ScoreObjectInstance(newObj.createReference(), minX, minY)
+            parentPane.score.addObject(newInst)
+            context.compoundEdit("Create group from objects") {
+                for (inst in instances) {
+                    inst.moveInto(newScore, relativePosition, recurse)
+                }
+            }
+            runFXWithTimeout {
+                val view = parentPane.getObjectView(newInst)
+                context[ScoreObjectSelectionManager].select(view, addToSelection = false)
             }
         }
     }
@@ -557,6 +586,52 @@ class XenakisUI(
                     if (obj is SynthObject) {
                         obj.reverse()
                     }
+                }
+            }
+        }
+        on("F2") { ev ->
+            if (ev.isTargetTextInput) return@on
+            val view = scoreView.selector.singleSelected.now ?: return@on
+            val obj = view.instance.obj
+            val name = NamePrompt(context[ScoreObjectRegistry], "New name for object", obj.name.now)
+                .showDialog(context) ?: return@on
+            obj.rename(name)
+        }
+        on("Ctrl?+Shift?+E") { ev ->
+            if (ev.isTargetTextInput) return@on
+            val inst = scoreView.selector.singleSelected.now?.instance ?: return@on
+            val obj = inst.obj as? ScoreObjectGroup ?: return@on
+            val times =
+                if (ev.isControlDown) IntegerPrompt("Loop count", 1, 1..16).showDialog(context) ?: return@on
+                else 1
+            context.compoundEdit("Extend object group") {
+                val duration = obj.duration
+                obj.resize(
+                    duration * (times + 1), obj.height,
+                    ScoreObject.ResizeType.Regular, Direction.horizontal(RIGHT)
+                )
+                for (n in 1..times) {
+                    for (subInst in obj.score.objectInstances.toList()) {
+                        val pos = subInst.position + ObjectPosition(duration * n, 0.0)
+                        val newInst = if (ev.isShiftDown) subInst.clone(pos) else subInst.duplicate(pos)
+                        obj.score.addObject(newInst)
+                    }
+                }
+            }
+        }
+        on("Shift+DELETE") { ev ->
+            if (!ev.isTargetTextInput) {
+                val view = scoreView.selector.singleSelected.now ?: return@on
+                val inst = view.instance
+                val obj = inst.obj as? ScoreObjectGroup ?: return@on
+                val parentScore = inst.score!!
+                context.compoundEdit("Move objects to parent score") {
+                    for (subInst in obj.score.objectInstances.toList()) {
+                        obj.score.removeObject(subInst)
+                        subInst.moveTo(inst.position + subInst.position)
+                        parentScore.addObject(subInst)
+                    }
+                    inst.score!!.removeObject(inst)
                 }
             }
         }
@@ -650,7 +725,7 @@ class XenakisUI(
                 project.settings.displayTimeGrid.toggle()
             }
         }
-        on("G") { ev ->
+        on("Q") { ev ->
             if (!ev.isTargetTextInput) {
                 project.settings.snapEnabled.toggle()
             }
@@ -665,6 +740,7 @@ class XenakisUI(
         on("Ctrl+S") { controller.saveProject() }
         on("Ctrl+O") { controller.openProject() }
         on("Ctrl+N") { controller.createNewProject() }
+        on("Ctrl+Q") { controller.closeRequest(stage) }
     }
 
     private fun setClipboard(selected: ScoreObjectView) {

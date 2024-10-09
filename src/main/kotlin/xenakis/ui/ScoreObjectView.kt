@@ -41,7 +41,7 @@ abstract class ScoreObjectView(
         private set
     val context: Context get() = pane.context
 
-    private lateinit var nameEditor: NameControl
+    val nameEditor: NameControl = NameControl(instance.obj)
     private lateinit var muteUnmuteBtn: Button
     private val envelopeDisplayObservers = mutableMapOf<String, Observer>()
     val actions = HBox().centerChildren() styleClass "actions"
@@ -78,7 +78,6 @@ abstract class ScoreObjectView(
     protected open val supportedActions get() = listOf(Icon.Delete, Icon.Mute, Icon.Repeat)
 
     fun getDetailPane() = DetailPane().apply {
-        nameEditor = NameControl(instance.obj)
         addItem("Name: ", nameEditor)
         setupDetailPane()
     }
@@ -311,11 +310,14 @@ abstract class ScoreObjectView(
     * Dragging and resizing
     * */
 
-    protected open fun startDrag(ev: MouseEvent, cursor: Cursor) {
+    protected open fun startDrag(ev: MouseEvent, cursor: Cursor): Boolean {
         if (cursor.isResizeCursor) {
             val direction = cursor.resizeDirection()
-            instance.obj.beginResize(stretch = ev.isShiftDown, direction)
-        } else instance.beginMove()
+            return instance.obj.beginResize(ev.resizeType ?: return false, direction)
+        } else {
+            instance.beginMove()
+            return true
+        }
     }
 
     protected open fun finishedDrag(ev: MouseEvent, cursor: Cursor) {
@@ -415,13 +417,13 @@ abstract class ScoreObjectView(
         return deltaT
     }
 
-    fun adjustHorizontal(direction: HorizontalDirection, resize: Boolean, stretch: Boolean) {
+    fun adjustHorizontal(direction: HorizontalDirection, resize: Boolean, resizeType: ScoreObject.ResizeType?) {
         val deltaT = getDeltaX(direction)
         if (resize) {
             val targetDuration = (instance.obj.duration + deltaT).coerceAtMost(pane.maxTime - instance.start)
             instance.obj.resize(
-                targetDuration, instance.obj.height, stretch,
-                direction = Direction.horizontal(RIGHT)
+                targetDuration, instance.obj.height,
+                resizeType!!, Direction.horizontal(RIGHT)
             )
         } else {
             val (snappedX, _) = pane.snapToGrid(pane.getX(instance.start + deltaT), paneY)
@@ -430,20 +432,18 @@ abstract class ScoreObjectView(
         }
     }
 
-    open fun adjustVertical(direction: VerticalDirection, resize: Boolean, stretch: Boolean) {
+    open fun adjustVertical(direction: VerticalDirection, resize: Boolean, resizeType: ScoreObject.ResizeType) {
         var deltaY = 0.01
         if (direction == VerticalDirection.UP) deltaY *= -1
-        adjustVertical(resize, stretch, deltaY)
+        adjustVertical(resize, resizeType, deltaY)
     }
 
-    protected fun adjustVertical(resize: Boolean, stretch: Boolean, deltaY: Double) {
+    protected fun adjustVertical(resize: Boolean, resizeType: ScoreObject.ResizeType, deltaY: Double) {
         if (resize) {
             val targetHeight = (instance.obj.height + deltaY).coerceAtMost(pane.maxY - instance.y)
             instance.obj.resize(
-                instance.obj.duration,
-                targetHeight,
-                stretch,
-                direction = Direction.vertical(VerticalDirection.DOWN)
+                instance.obj.duration, targetHeight,
+                resizeType, Direction.vertical(VerticalDirection.DOWN)
             )
         } else {
             val y = (instance.y + deltaY).coerceIn(0.0, pane.maxY - instance.obj.height)

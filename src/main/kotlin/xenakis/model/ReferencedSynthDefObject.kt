@@ -94,15 +94,9 @@ class ReferencedSynthDefObject(
         }
 
     companion object {
-        val playbuf = ReferencedSynthDefObject("playbuf", reactiveVariable(Color.BLACK))
-
         fun loadFromSynthDescLib(name: String): SynthDefObject {
-            return if (name in StandardSynthDefObject.all)
-                StandardSynthDefObject.all.getValue(name)
-            else {
-                val associatedColor = reactiveVariable(randomColor())
-                ReferencedSynthDefObject(name, associatedColor)
-            }
+            val associatedColor = reactiveVariable(randomColor())
+            return ReferencedSynthDefObject(name, associatedColor)
         }
 
     }

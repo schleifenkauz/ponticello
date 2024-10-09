@@ -115,7 +115,7 @@ class ScoreEventCollector(
             }
         }
         for (ev in newEvents) addEvent(ev)
-        if (events.size != eventsBefore) {
+        if (nEvents() != eventsBefore) {
             Logger.severe("Resizing object changed number of score events")
         }
     }

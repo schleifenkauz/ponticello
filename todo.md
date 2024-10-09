@@ -49,6 +49,7 @@
   - or just reboot sclang.exe, this would mean generally restructuring the startup process
 - EnvelopeObjects can be removed and replaced with a simple SynthDef `krOut`
 - re-enable allocated buffers (can be used with WrBuf/RdBuf SynthDefs)
+- remove `StandardSynthDefObject`
 
 ## Long term architectural ideas/questions
 
@@ -67,6 +68,7 @@
   - sections can have associated buses, that are used for any new Synths that have bus parameters
 - implicitly duplicate SynthDefs for mono/stereo
 - `Task`s and `Pbind`s as instruments
+  - introduce `ProcessObject` which is a bit like `SynthObject` but takes a `ProcessDef`
 - VSTPlugin `SynthObject`s
   - retrieve parameters from plugin info, make them controllable in the `DetailPane` or as envelopes
 - Rethink the Json serialization of Hextant editors
@@ -74,8 +76,6 @@
   - order of transformation synths could be decided by the order of the buses in the registry
   - how to display/manage flows?
   - graphical tools for EQ, compression (multi-band), reverb, etc. (integrate as special editors?)
-- idea: ability to combine SubScores
-  - hold shift while creating new sub score whose area encompasses the added sub scores
 - attach a default bus object to SubScores
 
 ## Bugs

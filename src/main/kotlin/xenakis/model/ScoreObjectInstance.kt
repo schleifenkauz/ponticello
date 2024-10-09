@@ -1,6 +1,7 @@
 package xenakis.model
 
 import hextant.context.Context
+import hextant.context.withoutUndo
 import hextant.core.editor.ListenerManager
 import hextant.undo.AbstractEdit
 import hextant.undo.Edit
@@ -43,7 +44,8 @@ class ScoreObjectInstance(
     val timeRange get() = start..end
 
     @Transient
-    private var positionBeforeMove = ObjectPosition.ZERO
+    var positionBeforeMove = ObjectPosition.ZERO
+        private set
 
     val obj: ScoreObject get() = objectRef.get()
 
@@ -51,7 +53,9 @@ class ScoreObjectInstance(
         this.score = score
         val registry = context[ScoreObjectRegistry]
         val o = obj
-        if (!registry.has(o.name.now)) registry.add(o)
+        if (!registry.has(o.name.now)) {
+            context.withoutUndo { registry.add(o) }
+        }
         if (o is ScoreObjectGroup) {
             for (inst in o.score.objectInstances) {
                 inst.addedToScore(o.score)
@@ -62,8 +66,8 @@ class ScoreObjectInstance(
     fun removedFromScore() {
         score = null
         val o = obj
-        if (!context[rootScore].hasInstancesOf(o)) {
-            context[ScoreObjectRegistry].remove(o)
+        if (!context[rootScore].hasInstancesOf(o) && context[ScoreObjectRegistry].has(o)) {
+            context.withoutUndo { context[ScoreObjectRegistry].remove(o) }
             if (o is ScoreObjectGroup) {
                 for (subInst in o.score.objectInstances) {
                     subInst.removedFromScore()
@@ -99,10 +103,10 @@ class ScoreObjectInstance(
         if (simpleMove) finishMove()
     }
 
-    fun finishMove(notifyScore: Boolean = true) {
+    fun finishMove(notifyScore: Boolean = true, recordEdit: Boolean = true) {
         if (position == positionBeforeMove) return
         if (notifyScore) score?.movedObject(this, positionBeforeMove)
-        context[UndoManager].record(MoveObject(this, positionBeforeMove, position))
+        if (recordEdit) context[UndoManager].record(MoveObject(this, positionBeforeMove, position))
         positionBeforeMove = ObjectPosition.ZERO
     }
 
@@ -116,6 +120,20 @@ class ScoreObjectInstance(
 
     fun setY(y: Double) {
         moveTo(_time, y, simpleMove = true)
+    }
+
+    fun moveInto(newScore: Score, relativePosition: ObjectPosition, recurse: Boolean) {
+        val obj = obj
+        if (recurse && obj is ScoreObjectGroup) {
+            for (inst in obj.score.objectInstances.toList()) {
+                inst.moveInto(newScore, relativePosition + this.position, recurse = true)
+            }
+            score!!.removeObject(this)
+        } else {
+            score!!.removeObject(this)
+            moveTo(position + relativePosition)
+            newScore.addObject(this)
+        }
     }
 
     fun toggleMuted() {
@@ -152,7 +170,7 @@ class ScoreObjectInstance(
         val half = obj.cut(position, whichHalf, name) ?: run {
             val clone = obj.clone(name)
             val dur = if (whichHalf == HorizontalDirection.LEFT) position else obj.duration - position
-            clone.resize(dur, height, stretch = false, direction = Direction.NONE)
+            clone.resize(dur, height, ScoreObject.ResizeType.Regular, direction = Direction.NONE)
             clone
         }
         return ScoreObjectInstance(half.createReference(), time, y, muted)

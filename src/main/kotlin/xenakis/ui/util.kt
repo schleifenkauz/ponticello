@@ -14,9 +14,7 @@ import javafx.geometry.Insets
 import javafx.geometry.Pos
 import javafx.scene.Node
 import javafx.scene.control.*
-import javafx.scene.input.DragEvent
-import javafx.scene.input.Dragboard
-import javafx.scene.input.TransferMode
+import javafx.scene.input.*
 import javafx.scene.layout.*
 import javafx.scene.paint.Color
 import javafx.stage.Popup
@@ -27,6 +25,7 @@ import reaktive.value.ReactiveValue
 import reaktive.value.ReactiveVariable
 import reaktive.value.fx.asObservableValue
 import reaktive.value.now
+import xenakis.model.ScoreObject
 import java.util.*
 import kotlin.math.*
 
@@ -263,4 +262,15 @@ fun <R : Region> R.setFixedWidth(width: Double) = also { r ->
     r.maxWidth = width
 }
 
-val Node.add: Pane.() -> Unit get() = { children.add(this@add) }
+val KeyEvent.resizeType: ScoreObject.ResizeType?
+    get() = resizeType(isShiftDown, isAltDown)
+
+val MouseEvent.resizeType: ScoreObject.ResizeType?
+    get() = resizeType(isShiftDown, isAltDown)
+
+private fun resizeType(shift: Boolean, alt: Boolean) = when {
+    shift && alt -> ScoreObject.ResizeType.DeepStretch
+    shift -> ScoreObject.ResizeType.Stretch
+    alt -> null
+    else -> ScoreObject.ResizeType.Regular
+}

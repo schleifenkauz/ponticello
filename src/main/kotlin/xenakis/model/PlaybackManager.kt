@@ -17,7 +17,8 @@ class PlaybackManager(private val scoreView: ScoreView) {
     val recorder = Recorder(scoreView.context)
     lateinit var player: ScorePlayer
         private set
-    private lateinit var events: ScoreEventCollector
+    lateinit var events: ScoreEventCollector
+        private set
     private var isAttached = false
 
     init {

@@ -38,16 +38,18 @@ sealed class ScoreObject : AbstractRenamableObject() {
     private val viewManager: ListenerManager<Listener> = ListenerManager.createWeakListenerManager()
 
     @Transient
-    protected var durationBeforeResize: Double = 0.0
+    var durationBeforeResize: Double = 0.0
+        private set
 
     @Transient
-    private var heightBeforeResize: Double = 0.0
+    var heightBeforeResize: Double = 0.0
+        private set
 
     @Transient
     protected lateinit var resizeDirection: Direction
 
     @Transient
-    protected var stretchResize: Boolean = false
+    protected var resizeType: ResizeType = ResizeType.Regular
 
     abstract fun writeCode(name: String, position: ObjectPosition, env: ScorePlayEnv): String
 
@@ -72,26 +74,31 @@ sealed class ScoreObject : AbstractRenamableObject() {
         this.height = height
     }
 
-    open fun beginResize(stretch: Boolean, direction: Direction) {
+    open fun beginResize(type: ResizeType, direction: Direction): Boolean {
         durationBeforeResize = duration
         heightBeforeResize = height
-        stretchResize = stretch
+        resizeType = type
         resizeDirection = direction
+        return type != ResizeType.DeepStretch
     }
 
     open fun resize(targetDuration: Double, targetHeight: Double) {
-        if (!stretchResize) {
-            for ((parameter, ctrl) in associatedControls) {
-                if (ctrl !is EnvelopeControl) continue
-                val spec = getSpec(parameter) as NumericalControlSpec
-                if (resizeDirection.horizontal != null) {
-                    ctrl.envelope.resize(targetDuration, resizeDirection.horizontal!!, spec)
+        when (resizeType) {
+            ResizeType.Regular -> {
+                for ((parameter, ctrl) in associatedControls) {
+                    if (ctrl !is EnvelopeControl) continue
+                    val spec = getSpec(parameter) as NumericalControlSpec
+                    if (resizeDirection.horizontal != null) {
+                        ctrl.envelope.resize(targetDuration, resizeDirection.horizontal!!, spec)
+                    }
                 }
             }
-        } else {
-            for ((_, ctrl) in associatedControls) {
-                if (ctrl !is EnvelopeControl) continue
-                ctrl.envelope.rescale(targetDuration)
+
+            ResizeType.Stretch, ResizeType.DeepStretch -> {
+                for ((_, ctrl) in associatedControls) {
+                    if (ctrl !is EnvelopeControl) continue
+                    ctrl.envelope.rescale(targetDuration)
+                }
             }
         }
         val deltaDur = targetDuration - duration
@@ -106,24 +113,25 @@ sealed class ScoreObject : AbstractRenamableObject() {
         viewManager.notifyListeners { resizedObject(this@ScoreObject) }
     }
 
-    open fun finishResize() {
-        if (duration != durationBeforeResize || height != heightBeforeResize) {
-            val deltaDuration = duration - durationBeforeResize
-            val deltaHeight = height - heightBeforeResize
-            viewManager.notifyListeners {
-                finishedResize(this@ScoreObject, deltaDuration, deltaHeight, resizeDirection)
-            }
+    open fun finishResize(recordEdit: Boolean = true) {
+        if (duration == durationBeforeResize && height == heightBeforeResize) return
+        val deltaDuration = duration - durationBeforeResize
+        val deltaHeight = height - heightBeforeResize
+        viewManager.notifyListeners {
+            finishedResize(this@ScoreObject, deltaDuration, deltaHeight, resizeDirection)
+        }
+        if (recordEdit) {
             context[UndoManager].record(
                 ResizeEdit(
                     this, durationBeforeResize, heightBeforeResize, this.duration, this.height,
-                    stretchResize, resizeDirection
+                    resizeType, resizeDirection
                 )
             )
         }
     }
 
-    fun resize(targetDuration: Double, targetHeight: Double, stretch: Boolean, direction: Direction) {
-        beginResize(stretch, direction)
+    fun resize(targetDuration: Double, targetHeight: Double, type: ResizeType, direction: Direction) {
+        beginResize(type, direction)
         resize(targetDuration, targetHeight)
         finishResize()
     }
@@ -189,34 +197,40 @@ sealed class ScoreObject : AbstractRenamableObject() {
         private val oldHeight: Double,
         private val newDuration: Double,
         private val newHeight: Double,
-        private val stretch: Boolean,
+        private val type: ResizeType,
         private val direction: Direction
     ) : AbstractEdit() {
         override val actionDescription: String
             get() = "Resize object"
 
         override fun doUndo() {
-            obj.resize(oldDuration, oldHeight, stretch, direction)
+            obj.resize(oldDuration, oldHeight, type, direction)
         }
 
         override fun doRedo() {
-            obj.resize(newDuration, newHeight, stretch, direction)
+            obj.resize(newDuration, newHeight, type, direction)
         }
 
         override fun mergeWith(other: Edit): Edit? {
             return when {
                 other !is ResizeEdit -> null
                 other.obj != this.obj -> null
-                other.stretch != this.stretch -> null
+                other.type != this.type -> null
                 other.direction != this.direction -> null
                 this.newDuration != other.oldDuration -> null
                 this.newHeight != other.oldHeight -> null
                 else -> ResizeEdit(
                     obj, oldDuration, oldHeight, other.newDuration, other.newHeight,
-                    stretch, direction
+                    type, direction
                 )
             }
         }
+    }
+
+    enum class ResizeType {
+        Regular, Stretch, DeepStretch;
+
+        val isStretch: Boolean get() = this == Stretch || this == DeepStretch
     }
 
     companion object {

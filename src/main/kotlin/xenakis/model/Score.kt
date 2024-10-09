@@ -16,7 +16,7 @@ class Score(private val instances: MutableList<ScoreObjectInstance> = mutableLis
     XenakisProject.ProjectComponent {
     val objectInstances: List<ScoreObjectInstance> get() = instances
 
-    val objects get() = objectInstances.map { inst -> inst.obj }
+    val objects get() = objectInstances.mapTo(mutableSetOf()) { inst -> inst.obj }
 
     lateinit var scoreName: ReactiveString
         private set
@@ -81,8 +81,8 @@ class Score(private val instances: MutableList<ScoreObjectInstance> = mutableLis
         for (inst in set) {
             Logger.info("Removing ${inst.obj.name.now} from score ${scoreName.now}", Logger.Category.Score)
             instances.remove(inst)
-            inst.removedFromScore()
             views.notifyListeners { removedObject(this@Score, inst) }
+            inst.removedFromScore()
         }
         undo.record(ScoreEdit.RemoveObjects(set, this))
     }

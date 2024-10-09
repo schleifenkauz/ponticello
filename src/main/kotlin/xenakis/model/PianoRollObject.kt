@@ -70,13 +70,13 @@ class PianoRollObject(
         }
     }
 
-    override fun beginResize(stretch: Boolean, direction: Direction) {
-        super.beginResize(stretch, direction)
+    override fun beginResize(type: ResizeType, direction: Direction): Boolean {
         pixelsPerPitch = height / (highestPitch - lowestPitch + 1)
+        return super.beginResize(type, direction)
     }
 
     override fun resize(targetDuration: Double, targetHeight: Double) {
-        if (stretchResize) {
+        if (resizeType.isStretch) {
             val horizontalRatio = targetDuration / this.duration
             super.resize(targetDuration, targetHeight)
             for (note in notes) {

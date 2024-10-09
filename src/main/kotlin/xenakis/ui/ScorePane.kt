@@ -398,7 +398,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
             }
 
             newObj != null -> {
-                if (newObj.width != 0.0 && newObj.height != 0.0) createNewObject(tool, newObj)
+                if (newObj.width != 0.0 && newObj.height != 0.0) createNewObject(tool, newObj, ev)
                 clearNewShape()
             }
         }
@@ -410,7 +410,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
     * Object creation
     * */
 
-    private fun createNewObject(tool: Tool, rect: Rectangle) {
+    private fun createNewObject(tool: Tool, rect: Rectangle, ev: MouseEvent) {
         when (tool) {
             Synth -> {
                 val def = context[InstrumentRegistry].selectedInstrument.now
@@ -442,13 +442,13 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
             Group -> {
                 val name = context[ScoreObjectRegistry].availableName("group")
                 context.compoundEdit("Add object group") {
-                    val objects = viewsInside(rect.boundsInParent).mapTo(mutableSetOf()) { it.instance }
-                    score.removeObjects(objects)
-                    for (obj in objects) {
-                        obj.moveTo(obj.start - getTime(rect.x), obj.y - getScoreY(rect.y), simpleMove = true)
+                    val subScore = Score(mutableListOf())
+                    val relativePosition = ObjectPosition(-getTime(rect.x), -getScoreY(rect.y))
+                    val groupObj = ScoreObjectGroup(reactiveVariable(name), subScore)
+                    addNewObject(groupObj, rect)
+                    for (view in viewsInside(rect.boundsInParent)) {
+                        view.instance.moveInto(subScore, relativePosition, recurse = ev.isShiftDown)
                     }
-                    val subScore = Score(objects.toMutableList())
-                    addNewObject(ScoreObjectGroup(reactiveVariable(name), subScore), rect)
                 }
             }
 

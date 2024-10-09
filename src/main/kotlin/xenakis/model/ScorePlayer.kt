@@ -75,14 +75,9 @@ class ScorePlayer(
     }
 
     override fun scheduleEvents(t: Double, delta: Double) {
-        var printedInterval = false
         for (ev in events.eventsAt(t - delta, delta * 5)) {
             val (type, position, inst) = ev
-            if (inst == null || inst.muted) continue
-            if (!printedInterval) {
-                Logger.fine("interval at t=${t}s, delta = ${delta}s", Logger.Category.Playback)
-                printedInterval = true
-            }
+            if (inst.muted) continue
             val obj = inst.obj
             when (type) {
                 Event.Type.ObjectStart -> {

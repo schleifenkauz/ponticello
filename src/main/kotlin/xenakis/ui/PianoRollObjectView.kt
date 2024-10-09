@@ -24,10 +24,7 @@ import reaktive.value.now
 import reaktive.value.reactiveVariable
 import xenakis.impl.MidiPitch
 import xenakis.impl.Point
-import xenakis.model.InstrumentObject
-import xenakis.model.Logger
-import xenakis.model.PianoRollObject
-import xenakis.model.ScoreObjectInstance
+import xenakis.model.*
 import xenakis.sc.editor.EventDictionaryEditor
 import xenakis.sc.view.ObjectSelectorControl
 import xenakis.ui.prompt.DoublePrompt
@@ -218,10 +215,10 @@ class PianoRollObjectView(inst: ScoreObjectInstance, private val obj: PianoRollO
         addLargeItem("Event dictionary", obj.eventDictionary.control)
     }
 
-    override fun adjustVertical(direction: VerticalDirection, resize: Boolean, stretch: Boolean) {
+    override fun adjustVertical(direction: VerticalDirection, resize: Boolean, resizeType: ScoreObject.ResizeType) {
         var deltaY = obj.height / (obj.highestPitch - obj.lowestPitch + 1)
         if (direction == VerticalDirection.UP) deltaY *= -1
-        adjustVertical(resize, stretch, deltaY)
+        adjustVertical(resize, resizeType, deltaY)
     }
 
     private fun showTransposeDialog() {

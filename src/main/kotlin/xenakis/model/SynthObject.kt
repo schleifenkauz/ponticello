@@ -80,16 +80,16 @@ class SynthObject(
         }
     )
 
-    override fun beginResize(stretch: Boolean, direction: Direction) {
-        super.beginResize(stretch, direction)
-        if (stretch && playBufRate != null) {
+    override fun beginResize(type: ResizeType, direction: Direction): Boolean {
+        if (type.isStretch && playBufRate != null) {
             playBufRateBeforeResize = playBufRate!!.now
         }
+        return super.beginResize(type, direction)
     }
 
     override fun resize(targetDuration: Double, targetHeight: Double) {
         var newDuration = targetDuration
-        if (stretchResize && playBufRate != null) {
+        if (resizeType.isStretch && playBufRate != null) {
             playBufRate!!.now *= (this.duration / newDuration)
         } else if (playbufStartPos != null) {
             if (resizeDirection.left) {
@@ -102,9 +102,9 @@ class SynthObject(
         super.resize(newDuration, targetHeight)
     }
 
-    override fun finishResize() {
-        super.finishResize()
-        if (stretchResize && playBufRate != null) {
+    override fun finishResize(recordEdit: Boolean) {
+        super.finishResize(recordEdit)
+        if (resizeType.isStretch && playBufRate != null) {
             playBufRate!!.now = playBufRateBeforeResize * (durationBeforeResize / duration)
         }
     }
