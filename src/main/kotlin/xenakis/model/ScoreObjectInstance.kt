@@ -27,7 +27,7 @@ class ScoreObjectInstance(
     private lateinit var context: Context
 
     @Transient
-    lateinit var score: Score
+    var score: Score? = null
         private set
 
     val start get() = _time
@@ -60,6 +60,7 @@ class ScoreObjectInstance(
     }
 
     fun removedFromScore() {
+        score = null
         val o = obj
         if (!context[rootScore].hasInstancesOf(o)) {
             context[ScoreObjectRegistry].remove(o)
@@ -100,7 +101,7 @@ class ScoreObjectInstance(
 
     fun finishMove(notifyScore: Boolean = true) {
         if (position == positionBeforeMove) return
-        if (notifyScore) score.movedObject(this, positionBeforeMove)
+        if (notifyScore) score?.movedObject(this, positionBeforeMove)
         context[UndoManager].record(MoveObject(this, positionBeforeMove, position))
         positionBeforeMove = ObjectPosition.ZERO
     }
@@ -122,7 +123,7 @@ class ScoreObjectInstance(
             _muted = !_muted
             context[UndoManager].record(ToggleMute(this))
             viewManager.notifyListeners { toggledMute(_muted) }
-            score.toggledMute(this, muted)
+            score?.toggledMute(this, muted)
         }
     }
 
@@ -130,14 +131,20 @@ class ScoreObjectInstance(
 
     fun duplicate(position: ObjectPosition) = duplicate(position.time, position.y)
 
-    fun clone(newName: String, time: Double, y: Double): ScoreObjectInstance {
+    fun clone(
+        time: Double = this.start, y: Double = this.y,
+        newName: String = context[ScoreObjectRegistry].nameForClone(obj)
+    ): ScoreObjectInstance {
         val clonedObj = obj.clone(newName)
         val ref = clonedObj.createReference()
         val inst = ScoreObjectInstance(ref, time, y, _muted)
         return inst
     }
 
-    fun clone(newName: String, position: ObjectPosition) = clone(newName, position.time, position.y)
+    fun clone(
+        position: ObjectPosition = this.position,
+        newName: String = context[ScoreObjectRegistry].nameForClone(obj)
+    ) = clone(position.time, position.y, newName)
 
     fun cut(position: Double, whichHalf: HorizontalDirection): ScoreObjectInstance {
         val name = "${obj.name.now}_" + (if (whichHalf == HorizontalDirection.LEFT) "left" else "right")
@@ -157,7 +164,7 @@ class ScoreObjectInstance(
         return left to right
     }
 
-    override fun toString(): String = "instance of $obj at $position in ${score.scoreName.now}"
+    override fun toString(): String = "instance of $obj at $position in ${score?.scoreName?.now}"
 
     interface Listener {
         fun moved(start: Double, y: Double)

@@ -35,16 +35,14 @@ import reaktive.value.fx.asObservableValue
 import reaktive.value.now
 import reaktive.value.toggle
 import xenakis.model.*
+import xenakis.model.InteractionSettings.SnapOption
 import xenakis.sc.Rate
-import xenakis.ui.ScoreView.ClipboardMode
 import xenakis.ui.ToolSelector.Tool
 import xenakis.ui.prompt.SimpleTextPrompt
 import xenakis.ui.prompt.YesNoPrompt
 
 class XenakisUI(
-    private val stage: Stage,
-    private val controller: XenakisController,
-    private val mode: Mode
+    private val stage: Stage, private val controller: XenakisController, private val mode: Mode
 ) : XenakisListener {
     private val project get() = controller.currentProject
 
@@ -54,7 +52,8 @@ class XenakisUI(
     private val statusText = Label()
 
     private lateinit var instrumentsPane: InstrumentRegistryPane
-    private lateinit var instrumentsWindow: SubWindow
+    lateinit var instrumentsWindow: SubWindow
+        private set
     private lateinit var busRegistryPane: BusRegistryPane
     private lateinit var busesWindow: SubWindow
     private lateinit var samplesPane: SampleRegistryPane
@@ -211,8 +210,7 @@ class XenakisUI(
                     controller.openProject(proj)
                 } else {
                     val remove = YesNoPrompt(
-                        "Project file does not exist. Remove from list?",
-                        default = true
+                        "Project file does not exist. Remove from list?", default = true
                     ).showDialog(context)
                     if (remove == true) {
                         controller.removeFromRecentProjects(proj)
@@ -222,8 +220,7 @@ class XenakisUI(
             }
             val removeBtn = Icon.Close.button(action = "Remove from list of recent projects") {
                 val reallyRemove = YesNoPrompt(
-                    "Remove project from list of recent projects?",
-                    default = true
+                    "Remove project from list of recent projects?", default = true
                 ).showDialog(context)
                 if (reallyRemove == true) {
                     controller.removeFromRecentProjects(proj)
@@ -264,10 +261,9 @@ class XenakisUI(
         VBox.setVgrow(mainView, Priority.ALWAYS)
         val layout = VBox(toolbar, mainView)
         val context = project.context
-        val commandLinePopup = CommandLinePopup(
-            context, context[Properties.localCommandLine],
-            arguments = createBundle { set(CommandLineControl.HISTORY_ITEMS, 0) }
-        )
+        val commandLinePopup = CommandLinePopup(context,
+            context[Properties.localCommandLine],
+            arguments = createBundle { set(CommandLineControl.HISTORY_ITEMS, 0) })
         layout.registerShortcuts {
             handleCommands(project, context, context[Properties.globalCommandLine])
             on("Alt+SPACE") {
@@ -288,18 +284,14 @@ class XenakisUI(
         val playerBar = createPlayerBar() styleClass "toolbar-part"
         val interactionConfig = InteractionConfig(project.settings)
         val miscBar = createMiscBar() styleClass "toolbar-part"
-        return HBox(
-            10.0,
+        return HBox(10.0,
             HBox(
-                10.0,
-                fileBar, undoRedoBar, playerBar, interactionConfig,
-                toolSelector styleClass "toolbar-part"
+                10.0, fileBar, undoRedoBar, playerBar, interactionConfig, toolSelector styleClass "toolbar-part"
             ),
             infiniteSpace(),
             HBox(contextBar styleClass "toolbar-part"),
             infiniteSpace(),
-            miscBar.also { HBox.setHgrow(it, Priority.NEVER) }
-        ).styleClass("toolbar")
+            miscBar.also { HBox.setHgrow(it, Priority.NEVER) }).styleClass("toolbar")
     }
 
     private fun createUndoRedoBar(): HBox {
@@ -319,10 +311,13 @@ class XenakisUI(
         children {
             +Icon.Log.button(action = "Show log (Ctrl+L)") { ev ->
                 if (ev.isShiftDown) {
-                    SimpleSearchableListView(Logger.Level.entries, "Select notification level")
-                        .showPopup(context, this@hbox, NotificationView.level) { lvl ->
-                            NotificationView.level = lvl
-                        }
+                    SimpleSearchableListView(Logger.Level.entries, "Select notification level").showPopup(
+                        context,
+                        this@hbox,
+                        NotificationView.level
+                    ) { lvl ->
+                        NotificationView.level = lvl
+                    }
                 } else logWindow.show()
             }
             +Icon.Console.button(action = "Open console (Ctrl+T)") { shellWindow.show() }
@@ -340,9 +335,9 @@ class XenakisUI(
             +Icon.Browser.button(action = "Open help browser (F1)") { project.context[HelpBrowser].show() }
             +Icon.Flow.button(action = "Edit audio flow graph (Ctrl+Shift+F)") { flowGraphWindow.show() }
             +Icon.Settings.button(action = "Edit settings (Ctrl+Alt+S)") { settingsWindow.show() }
-            +Icon.Knob.button(action = "Edit global controls (Ctrl+G)") { globalControlsWindow.show() }
+            +Icon.Knob.button(action = "Edit global controls (Ctrl+Shift+G)") { globalControlsWindow.show() }
             busesWindow = SubWindow(busRegistryPane, "Busses", context, SubWindow.Type.Undecorated)
-            +Icon.Bus.button(action = "Show buses (Alt+B)") {
+            +Icon.Bus.button(action = "Show buses (Ctrl+B)") {
                 busesWindow.show()
                 busesWindow.requestFocus()
             }
@@ -352,9 +347,8 @@ class XenakisUI(
                 samplesWindow.requestFocus()
             }
             instrumentsWindow = SubWindow(instrumentsPane, "Instruments", context, SubWindow.Type.Undecorated)
-            +Icon.SoundCode.button(action = "Show instruments (Alt+I)") { instrumentsWindow.show() }
             groupsWindow = SubWindow(groupsPane, "Groups", context, SubWindow.Type.Undecorated)
-            +Icon.Groups.button(action = "Show groups (Alt+G)") { groupsWindow.show() }
+            +Icon.Groups.button(action = "Show groups (Ctrl+G)") { groupsWindow.show() }
             if (mode == Mode.Laptop) {
                 add(Icon.Details.button(action = "Edit object properties (P)") { showDetailPaneOfSelectedObject() }) {
                     disableProperty().bind(scoreView.selector.singleSelected.equalTo(null).asObservableValue())
@@ -367,16 +361,19 @@ class XenakisUI(
     }
 
     private fun createPlayerBar(): HBox {
-        playBtn = Icon.Play.button(action = "Start playback (Ctrl?+Space)") { _ -> togglePlay() }
-        stopBtn = Icon.Stop.button(action = "Pause playback (Ctrl?+Space)") { stopPlayback() }
+        playBtn = Icon.Play.button(action = "Start playback (Space)") { _ -> togglePlay() }
+        stopBtn = Icon.Stop.button(action = "Pause playback (Space)") { stopPlayback() }
         recordingBtn = Icon.RecordInactive.button(action = "Activate Recording (Ctrl+R)") { ev ->
             if (ev.isShiftDown) {
-                val currentSelected = project.serverOptions.recordedBus?.get<BusObject>()
-                    ?: context[BusRegistry].getDefault()
-                SearchableBusListView(context[BusRegistry], "Select bus to record to", rate = Rate.Audio)
-                    .showPopup(context, anchorNode = recordingBtn, initialOption = currentSelected) { bus ->
-                        project.serverOptions.recordedBus = bus.createReference()
-                    }
+                val currentSelected =
+                    project.serverOptions.recordedBus?.get<BusObject>() ?: context[BusRegistry].getDefault()
+                SearchableBusListView(context[BusRegistry], "Select bus to record to", rate = Rate.Audio).showPopup(
+                    context,
+                    anchorNode = recordingBtn,
+                    initialOption = currentSelected
+                ) { bus ->
+                    project.serverOptions.recordedBus = bus.createReference()
+                }
             } else toggleRecording()
         }
         val goToStartBtn = Icon.GoToStart.button(action = "Move play head to start (0)") {
@@ -402,14 +399,12 @@ class XenakisUI(
 
     private fun togglePlay() {
         if (!playback.player.isPlaying) {
-            playback.player.play()
+            if (playback.player.play()) {
+                playBtn.graphic = Icon.Pause.getView()
+                playBtn.tooltip = Tooltip("Pause playback")
+            }
         } else {
             playback.player.pause()
-        }
-        if (playback.player.isPlaying) {
-            playBtn.graphic = Icon.Pause.getView()
-            playBtn.tooltip = Tooltip("Pause playback")
-        } else {
             playBtn.graphic = Icon.Play.getView()
             playBtn.tooltip = Tooltip("Start playback")
         }
@@ -423,238 +418,258 @@ class XenakisUI(
         playback.player.reset()
     }
 
-    private fun createFileBar() = HBox(
-        Icon.Save.button(action = "Save Project (Ctrl+S)") { controller.saveProject() },
+    private fun createFileBar() = HBox(Icon.Save.button(action = "Save Project (Ctrl+S)") { controller.saveProject() },
         Icon.Open.button(action = "Open Project (Ctrl+O)") { controller.openProject() },
         Icon.Create.button(action = "Create new Project (Ctrl+N)") { controller.createNewProject() },
-        Icon.Close.button(action = "Close project and open startup screen") { controller.closeProject() }
-    )
+        Icon.Close.button(action = "Close project and open startup screen") { controller.closeProject() })
 
     private fun Scene.registerArrowKeys() {
-        addEventFilter(KeyEvent.ANY) { ev ->
+        addEventFilter(KeyEvent.KEY_PRESSED) { ev ->
             if (ev.target !is ScoreObjectView) return@addEventFilter
-            if (!ev.isAltDown && ev.isTargetTextInput) return@addEventFilter
-            if (ev.code !in setOf(KeyCode.LEFT, KeyCode.RIGHT, KeyCode.UP, KeyCode.DOWN)) return@addEventFilter
-            val stretch = ev.isShiftDown
-            val resize = ev.isControlDown
-            if (stretch && !resize) return@addEventFilter
-            ev.consume()
-            if (ev.eventType != KeyEvent.KEY_PRESSED) return@addEventFilter
+            if (ev.isTargetTextInput) return@addEventFilter
             val selected = context[ScoreObjectSelectionManager].selectedViews
-            for (view in selected) {
-                when (ev.code) {
-                    KeyCode.LEFT -> view.adjustHorizontal(direction = HorizontalDirection.LEFT, resize, stretch)
-                    KeyCode.RIGHT -> view.adjustHorizontal(direction = HorizontalDirection.RIGHT, resize, stretch)
-                    KeyCode.UP -> view.adjustVertical(direction = VerticalDirection.UP, resize, stretch)
-                    KeyCode.DOWN -> view.adjustVertical(direction = VerticalDirection.DOWN, resize, stretch)
-                    else -> throw AssertionError()
+            if (ev.code !in setOf(KeyCode.LEFT, KeyCode.RIGHT, KeyCode.UP, KeyCode.DOWN)) return@addEventFilter
+            if (ev.isAltDown) {
+                if (ev.isControlDown) return@addEventFilter
+                if (ev.code !in setOf(KeyCode.LEFT, KeyCode.RIGHT)) return@addEventFilter
+                for (view in selected) {
+                    var inst = view.instance
+                    val start = if (ev.code == KeyCode.RIGHT) inst.start + inst.obj.duration
+                    else inst.start - inst.obj.duration
+                    val position = ObjectPosition(start, inst.y)
+                    inst = if (ev.isShiftDown) inst.clone(position) else inst.duplicate(position)
+                    view.instance.score!!.addObject(inst)
+                    val newView = view.pane.getObjectView(inst)
+                    runFXWithTimeout(50) {
+                        context[ScoreObjectSelectionManager].select(newView, addToSelection = false)
+                    }
+                }
+            } else {
+                val stretch = ev.isShiftDown
+                val resize = ev.isControlDown
+                if (stretch && !resize) return@addEventFilter
+                for (view in selected) {
+                    when (ev.code) {
+                        KeyCode.LEFT -> view.adjustHorizontal(direction = HorizontalDirection.LEFT, resize, stretch)
+                        KeyCode.RIGHT -> view.adjustHorizontal(direction = HorizontalDirection.RIGHT, resize, stretch)
+                        KeyCode.UP -> view.adjustVertical(direction = VerticalDirection.UP, resize, stretch)
+                        KeyCode.DOWN -> view.adjustVertical(direction = VerticalDirection.DOWN, resize, stretch)
+                        else -> throw AssertionError()
+                    }
                 }
             }
+            ev.consume()
         }
     }
 
     private fun Scene.addGlobalShortcuts() {
         registerShortcuts {
-            if (!controller.isProjectOpened) return@registerShortcuts
-            on("Ctrl+S") { controller.saveProject() }
-            on("Ctrl+O") { controller.openProject() }
-            on("Ctrl+N") { controller.createNewProject() }
-
-            on("Ctrl+A") { ev ->
-                if (!ev.isTargetTextInput) context[ScoreObjectSelectionManager].selectAll()
-            }
-
-            on("Alt?+SPACE") { ev ->
-                if (ev.isControlDown || !ev.isTargetTextInput) togglePlay()
-            }
-            on("Ctrl+SPACE") {
-                val time = scoreView.translateTimeFrom(playback.playHead.pane, playback.playHead.currentTime)
-                scoreView.display(time, time + scoreView.displayedDuration)
-            }
-            on("Ctrl+R") {
-                toggleRecording()
-            }
-            on("Ctrl?+PERIOD") { ev ->
-                if (ev.isControlDown || !ev.isTargetTextInput) stopPlayback()
-            }
-            on("HOME") { scoreView.displayWholeScore() }
-            on("Shift+DIGIT0") { ev ->
-                if (!ev.isTargetTextInput && !playback.player.isPlaying) {
-                    scoreView.display(0.0, scoreView.displayedDuration)
-                    playback.attachToMainScore()
-                    playback.movePlayHeadToStart()
-                }
-            }
-            on("DIGIT0") { ev ->
-                if (!ev.isTargetTextInput) {
-                    playback.movePlayHeadToStart()
-                }
-            }
-            on("PAGE_UP") { ev ->
-                if (!ev.isTargetTextInput) {
-                    scoreView.scroll(-100.0 / scoreView.pixelsPerSecond)
-                }
-            }
-            on("PAGE_DOWN") { ev ->
-                if (!ev.isTargetTextInput) {
-                    scoreView.scroll(100.0 / scoreView.pixelsPerSecond)
-                }
-            }
-
-            on("ESCAPE") {
-                scoreView.clearNewShape()
-                scoreView.clearClipboard()
-                playback.attachToMainScore()
-                context[ScoreObjectSelectionManager].deselectAll()
-                toolSelector.select(Tool.Pointer)
-            }
-            registerToolNumber(Tool.Synth, 1)
-            registerToolNumber(Tool.Task, 2)
-            registerToolNumber(Tool.Envelope, 3)
-            registerToolNumber(Tool.Memo, 4)
-            registerToolNumber(Tool.PianoRoll, 5)
-            registerToolNumber(Tool.TempoGrid, 6)
-            registerToolNumber(Tool.Group, 7)
-            registerToolNumber(Tool.Cut, 8)
-            registerToolNumber(Tool.AddTime, 9)
-
-            on("Alt+T") { project.settings.displayTimeGrid.toggle() }
-            on("Alt+S") { project.settings.snapEnabled.toggle() }
-
-            on("Alt?+G") { ev ->
-                if (ev.isAltDown || !ev.isTargetTextInput) {
-                    groupsWindow.show()
-                }
-            }
-            on("Alt?+B") { ev ->
-                if (ev.isAltDown || !ev.isTargetTextInput) {
-                    busesWindow.show()
-                }
-            }
-            on("Alt?+F") { ev ->
-                if (ev.isAltDown || !ev.isTargetTextInput) {
-                    samplesWindow.show()
-                }
-            }
-            on("Alt?+I") { ev ->
-                if (ev.isAltDown || !ev.isTargetTextInput) {
-                    instrumentsWindow.show()
-                }
-            }
-            if (mode == Mode.Laptop) {
-                on("Alt?+P") { ev ->
-                    if (ev.isAltDown || !ev.isTargetTextInput) {
-                        showDetailPaneOfSelectedObject()
-                    }
-                }
-            }
-
-            on("DELETE") { ev ->
-                if (!ev.isTargetTextInput) {
-                    scoreView.removeSelected()
-                }
-            }
-
-            on("Alt?+M") { ev ->
-                if (ev.isAltDown || !ev.isTargetTextInput) {
-                    scoreView.selector.toggleMuteSelected()
-                }
-            }
-            on("Alt?+L") { ev ->
-                if (ev.isAltDown || !ev.isTargetTextInput) {
-                    val view = scoreView.selector.singleSelected.now ?: return@on
-                    view.createLoop()
-                }
-            }
-            on("Alt?+R") { ev ->
-                if (ev.isAltDown || !ev.isTargetTextInput) {
-                    for (inst in scoreView.selector.selectedInstances) {
-                        val obj = inst.obj
-                        if (obj is SynthObject) {
-                            obj.reverse()
-                        }
-                    }
-                }
-            }
-            on("Alt?+Shift?+D") { ev ->
-                if (ev.isAltDown || !ev.isTargetTextInput) {
-                    val selected = scoreView.selector.singleSelected.now ?: return@on
-                    val inst = selected.instance
-                    val obj =
-                        if (ev.isShiftDown) inst.duplicate(inst.start + inst.duration, inst.y)
-                        else {
-                            val name = context[ScoreObjectRegistry].nameForClone(inst.obj)
-                            inst.clone(name, inst.start + inst.duration, inst.y)
-                        }
-                    inst.score.addObject(obj)
-                    val view = selected.pane.getObjectView(obj)
-                    scoreView.selector.select(view, addToSelection = false)
-                }
-            }
-
-            on("Alt?+U") { ev ->
-                if (ev.isAltDown || !ev.isTargetTextInput) {
-                    context.compoundEdit("Unlink object from its original") {
-                        for ((obj, instances) in scoreView.selector.selectedInstances.groupBy { inst -> inst.obj }) {
-                            val name = context[ScoreObjectRegistry].nameForClone(obj)
-                            val clone = obj.clone(name)
-                            val newRef = clone.createReference()
-                            for (oldInst in instances) {
-                                val newInst = ScoreObjectInstance(newRef, oldInst.start, oldInst.y, oldInst.muted)
-                                oldInst.score.removeObject(oldInst)
-                                oldInst.score.addObject(newInst)
-                            }
-                        }
-                    }
-                }
-            }
-
-            on("Ctrl+L") { logWindow.show() }
-            on("Ctrl+Alt+T") { controller.client.run("s.plotTree;") }
-            on("F1") { context[HelpBrowser].show() }
-            on("Ctrl+Shift+D") {
-                val searchText = SimpleTextPrompt("Look up documentation", "").showDialog(context) ?: return@on
-                context[HelpBrowser].searchDocumentation(searchText)
-            }
-            on("Ctrl+T") { shellWindow.show() }
-            on("Ctrl+Shift+F") { flowGraphWindow.show() }
-            on("Ctrl+Alt+S") { settingsWindow.show() }
-            on("Ctrl+G") { globalControlsWindow.show() }
-            on("Alt+B") { busesWindow.show() }
-            on("Ctrl+F") { samplesWindow.show() }
-            on("F5") { controller.rebootServer() }
-
-            on("Shift?+C") { ev ->
-                if (!ev.isTargetTextInput) {
-                    toolSelector.select(Tool.Pointer)
-                    val view = context[ScoreObjectSelectionManager].singleSelected.now ?: return@on
-                    val obj = view.instance.obj
-                    val mode = if (ev.isShiftDown) ClipboardMode.Clone else ClipboardMode.Duplicate
-                    scoreView.setClipboard(obj, view, mode)
-                }
-            }
-
-            on("X") { ev ->
-                if (!ev.isTargetTextInput) {
-                    toolSelector.select(Tool.Pointer)
-                    val view = context[ScoreObjectSelectionManager].singleSelected.now ?: return@on
-                    val inst = view.instance
-                    inst.score.removeObject(inst)
-                    scoreView.setClipboard(inst.obj, view, ClipboardMode.Duplicate)
-                }
-            }
-
-            on("Ctrl+C") {
-                toolSelector.select(Tool.Pointer)
-                context[ScoreObjectSelectionManager].cloneToClipboard()
-            }
-            on("Ctrl+Shift+C") {
-                toolSelector.select(Tool.Pointer)
-                context[ScoreObjectSelectionManager].duplicateToClipboard()
-            }
-
-            on("Ctrl+Shift+S") { project.syncWithSuperCollider() }
+            addProjectShortcuts()
+            addPlaybackShortcuts()
+            addScoreNavigationShortcuts()
+            addToolSelectionShortcuts()
+            addGridRelatedShortcuts()
+            addToolWindowShortcuts()
+            addObjectManipulationShortcuts()
+            addSelectionRelatedShortcuts()
+            addServerShortcuts()
         }
+    }
+
+    private fun KeyEventHandlerBody<Unit>.addServerShortcuts() {
+        on("F5") { controller.rebootServer() }
+        on("Shift+F5") { ServerOptionsPane(context, project.serverOptions).showDialog(context) }
+        on("Ctrl+Shift+S") { project.syncWithSuperCollider() }
+        on("Ctrl+Alt+T") { controller.client.run("s.plotTree;") }
+    }
+
+    private fun KeyEventHandlerBody<Unit>.addSelectionRelatedShortcuts() {
+        on("ESCAPE") {
+            scoreView.clearNewShape()
+            scoreView.clearClipboard()
+            if (!playback.player.isPlaying) {
+                playback.attachToMainScore()
+            }
+            context[ScoreObjectSelectionManager].deselectAll()
+            toolSelector.select(Tool.Pointer)
+        }
+        on("Ctrl+A") { ev ->
+            if (!ev.isTargetTextInput) context[ScoreObjectSelectionManager].selectAll()
+        }
+        on("C") { ev ->
+            if (!ev.isTargetTextInput) {
+                val selected = scoreView.selector.singleSelected.now ?: return@on
+                setClipboard(selected)
+            }
+        }
+        on("Ctrl+C") {
+            val selected = scoreView.selector.selectedInstances.toList()
+            scoreView.selector.setSystemClipboard(selected)
+        }
+        on("X") { ev ->
+            if (!ev.isTargetTextInput) {
+                toolSelector.select(Tool.Pointer)
+                val view = context[ScoreObjectSelectionManager].singleSelected.now ?: return@on
+                val inst = view.instance
+                inst.score?.removeObject(inst)
+                scoreView.setClipboard(inst.obj, view)
+            }
+        }
+        on("U") { ev ->
+            if (ev.isAltDown || !ev.isTargetTextInput) {
+                context.compoundEdit("Unlink object from its original") {
+                    for ((obj, instances) in scoreView.selector.selectedInstances.groupBy { inst -> inst.obj }) {
+                        val name = context[ScoreObjectRegistry].nameForClone(obj)
+                        val clone = obj.clone(name)
+                        val newRef = clone.createReference()
+                        for (oldInst in instances) {
+                            val newInst = ScoreObjectInstance(newRef, oldInst.start, oldInst.y, oldInst.muted)
+                            oldInst.score?.removeObject(oldInst)
+                            oldInst.score?.addObject(newInst)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private fun KeyEventHandlerBody<Unit>.addObjectManipulationShortcuts() {
+        on("DELETE") { ev ->
+            if (!ev.isTargetTextInput) {
+                scoreView.removeSelected()
+            }
+        }
+        on("M") { ev ->
+            if (!ev.isTargetTextInput) {
+                scoreView.selector.toggleMuteSelected()
+            }
+        }
+        on("L") { ev ->
+            if (!ev.isTargetTextInput) {
+                val view = scoreView.selector.singleSelected.now ?: return@on
+                view.createLoop()
+            }
+        }
+        on("R") { ev ->
+            if (!ev.isTargetTextInput) {
+                for (inst in scoreView.selector.selectedInstances) {
+                    val obj = inst.obj
+                    if (obj is SynthObject) {
+                        obj.reverse()
+                    }
+                }
+            }
+        }
+    }
+
+    private fun KeyEventHandlerBody<Unit>.addToolWindowShortcuts() {
+        on("Ctrl+G") { groupsWindow.show() }
+        on("Ctrl+B") { busesWindow.show() }
+        on("Ctrl+F") { samplesWindow.show() }
+        on("Ctrl+I") { instrumentsWindow.show() }
+        on("Ctrl+L") { logWindow.show() }
+        on("Ctrl+Shift+G") { globalControlsWindow.show() }
+        on("Ctrl+Shift+F") { flowGraphWindow.show() }
+        on("Ctrl+Alt+S") { settingsWindow.show() }
+
+        on("F1") { context[HelpBrowser].show() }
+        on("Ctrl+Shift+D") {
+            val searchText = SimpleTextPrompt("Look up documentation", "").showDialog(context) ?: return@on
+            context[HelpBrowser].searchDocumentation(searchText)
+        }
+        on("Ctrl+T") { shellWindow.show() }
+
+        if (mode == Mode.Laptop) {
+            on("P") { ev ->
+                if (!ev.isTargetTextInput) {
+                    showDetailPaneOfSelectedObject()
+                }
+            }
+        }
+    }
+
+    private fun KeyEventHandlerBody<Unit>.addPlaybackShortcuts() {
+        on("SPACE") { ev ->
+            if (ev.isControlDown || !ev.isTargetTextInput) togglePlay()
+        }
+        on("Ctrl+SPACE") {
+            val time = scoreView.translateTimeFrom(playback.playHead.pane, playback.playHead.currentTime)
+            scoreView.display(time, time + scoreView.displayedDuration)
+        }
+        on("Ctrl?+PERIOD") { ev ->
+            if (ev.isControlDown || !ev.isTargetTextInput) {
+                stopPlayback()
+            }
+        }
+        on("Ctrl+R") {
+            toggleRecording()
+        }
+    }
+
+    private fun KeyEventHandlerBody<Unit>.addScoreNavigationShortcuts() {
+        on("HOME") { scoreView.displayWholeScore() }
+        on("Shift+DIGIT0") { ev ->
+            if (!ev.isTargetTextInput && !playback.player.isPlaying) {
+                scoreView.display(0.0, scoreView.displayedDuration)
+                playback.attachToMainScore()
+                playback.movePlayHeadToStart()
+            }
+        }
+        on("DIGIT0") { ev ->
+            if (!ev.isTargetTextInput) {
+                playback.movePlayHeadToStart()
+            }
+        }
+        on("PAGE_UP") { ev ->
+            if (!ev.isTargetTextInput) {
+                scoreView.scroll(-100.0 / scoreView.pixelsPerSecond)
+            }
+        }
+        on("PAGE_DOWN") { ev ->
+            if (!ev.isTargetTextInput) {
+                scoreView.scroll(100.0 / scoreView.pixelsPerSecond)
+            }
+        }
+    }
+
+    private fun KeyEventHandlerBody<Unit>.addToolSelectionShortcuts() {
+        registerToolNumber(Tool.Synth, 1)
+        registerToolNumber(Tool.Task, 2)
+        registerToolNumber(Tool.Envelope, 3)
+        registerToolNumber(Tool.Memo, 4)
+        registerToolNumber(Tool.PianoRoll, 5)
+        registerToolNumber(Tool.TempoGrid, 6)
+        registerToolNumber(Tool.Group, 7)
+        registerToolNumber(Tool.Cut, 8)
+        registerToolNumber(Tool.AddTime, 9)
+    }
+
+    private fun KeyEventHandlerBody<Unit>.addGridRelatedShortcuts() {
+        on("T") { ev ->
+            if (!ev.isTargetTextInput) {
+                project.settings.displayTimeGrid.toggle()
+            }
+        }
+        on("G") { ev ->
+            if (!ev.isTargetTextInput) {
+                project.settings.snapEnabled.toggle()
+            }
+        }
+        on("Alt+DIGIT1") { project.settings.snapOption.now = SnapOption.Seconds }
+        on("Alt+DIGIT2") { project.settings.snapOption.now = SnapOption.Bars }
+        on("Alt+DIGIT3") { project.settings.snapOption.now = SnapOption.Beats }
+        on("Alt+DIGIT4") { project.settings.snapOption.now = SnapOption.Ticks }
+    }
+
+    private fun KeyEventHandlerBody<Unit>.addProjectShortcuts() {
+        on("Ctrl+S") { controller.saveProject() }
+        on("Ctrl+O") { controller.openProject() }
+        on("Ctrl+N") { controller.createNewProject() }
+    }
+
+    private fun setClipboard(selected: ScoreObjectView) {
+        toolSelector.select(Tool.Pointer)
+        scoreView.setClipboard(selected.instance.obj, selected)
     }
 
     private fun showDetailPaneOfSelectedObject() {
@@ -666,8 +681,8 @@ class XenakisUI(
     }
 
     private fun KeyEventHandlerBody<Unit>.registerToolNumber(tool: Tool, digit: Int) {
-        on("Alt?+DIGIT$digit") { ev ->
-            if (ev.isAltDown || !ev.isTargetTextInput) {
+        on("DIGIT$digit") { ev ->
+            if (!ev.isTargetTextInput) {
                 toolSelector.select(tool)
             }
         }

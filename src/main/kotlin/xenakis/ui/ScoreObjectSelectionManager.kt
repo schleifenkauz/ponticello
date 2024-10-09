@@ -97,24 +97,18 @@ class ScoreObjectSelectionManager(private val context: Context, private val root
         deselectAll()
     }
 
-    fun cloneToClipboard() {
-        if (selectedInstances.isEmpty()) return
-        val copies = selectedInstances.map { inst ->
-            inst.clone(inst.obj.name.now, inst.start, inst.y)
-        }
-        setClipboard(copies)
-    }
-
-    fun duplicateToClipboard() {
-        if (selectedInstances.isEmpty()) return
-        val clones = selectedInstances.map { inst -> inst.duplicate(inst.position) }
-        setClipboard(clones)
-    }
-
-    private fun setClipboard(objects: List<ScoreObjectInstance>) {
+    fun setSystemClipboard(objects: List<ScoreObjectInstance>) {
         val json = Json.encodeToString(serializer(), objects)
         val clipboard = Clipboard.getSystemClipboard()
         clipboard.setContent(mapOf(ScoreObject.DATA_FORMAT to json))
+    }
+
+    fun getSystemClipboard(): List<ScoreObjectInstance>? {
+        val clipboard = Clipboard.getSystemClipboard()
+        if (!clipboard.hasContent(ScoreObject.DATA_FORMAT)) return null
+        val content = clipboard.getContent(ScoreObject.DATA_FORMAT) as String
+        val instances = Json.decodeFromString(serializer<List<ScoreObjectInstance>>(), content)
+        return instances
     }
 
     fun toggleMuteSelected() {

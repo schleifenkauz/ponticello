@@ -21,7 +21,7 @@ class ScoreObjectRegistry(override val objects: MutableList<ScoreObject>) : Obje
 
     fun availableName(prefix: String): String {
         for (n in 1..Int.MAX_VALUE) {
-            val name = "${prefix}$n"
+            val name = "${prefix}_$n"
             if (!has(name)) return name
         }
         throw AssertionError()
@@ -29,7 +29,7 @@ class ScoreObjectRegistry(override val objects: MutableList<ScoreObject>) : Obje
 
     fun nameForClone(obj: ScoreObject): String {
         val name = obj.name.now
-        val prefix = name.dropLastWhile { it.isDigit() }
+        val prefix = name.dropLastWhile { it.isDigit() }.removeSuffix("_")
         return availableName(prefix)
     }
 

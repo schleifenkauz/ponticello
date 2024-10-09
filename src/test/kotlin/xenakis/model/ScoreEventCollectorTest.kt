@@ -38,7 +38,7 @@ class ScoreEventCollectorTest {
                 p < 0.65 -> {
                     val inst = rootScore.allInstances().toList().random(rnd)
                     println("Remove $inst")
-                    inst.score.removeObject(inst)
+                    inst.score?.removeObject(inst)
                 }
 
                 p < 0.8 -> {

@@ -17,6 +17,7 @@ import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
 
 class LogPane(private val context: Context, private val logger: Logger) : VBox(), Logger.View {
     private val boxes = VBox() styleClass "log-records"
@@ -91,7 +92,7 @@ class LogPane(private val context: Context, private val logger: Logger) : VBox()
         if (message.length > 120) message = message.take(120) + "..."
         val label = Label(message)
         val time = LocalDateTime.ofInstant(Instant.ofEpochMilli(record.timestamp), ZoneId.systemDefault())
-        val timeStr = DateTimeFormatter.ISO_LOCAL_TIME.format(time)
+        val timeStr = DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT).format(time)
         label.tooltip = Tooltip(timeStr)
         val box = HBox(5.0, icon, label).centerChildren() styleClass "log-record"
         box.isFocusTraversable = true

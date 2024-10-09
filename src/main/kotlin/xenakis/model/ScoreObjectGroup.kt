@@ -64,7 +64,7 @@ class ScoreObjectGroup(
 
     override fun beginResize(stretch: Boolean, direction: Direction) {
         super.beginResize(stretch, direction)
-        if (direction.left || direction.up) {
+        if (stretch || direction.left || direction.up) {
             for (inst in score.objectInstances) {
                 inst.beginMove()
             }
@@ -96,9 +96,9 @@ class ScoreObjectGroup(
 
     override fun finishResize() {
         super.finishResize()
-        if (resizeDirection.left || resizeDirection.up) {
+        if (stretchResize || resizeDirection.left || resizeDirection.up) {
             for (inst in score.objectInstances) {
-                inst.finishMove(notifyScore = false)
+                inst.finishMove(notifyScore = stretchResize)
             }
         }
     }

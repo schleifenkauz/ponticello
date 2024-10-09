@@ -25,13 +25,13 @@ class ScoreEventCollector(
     private fun absolutePositions(score: Score): List<ObjectPosition> = when {
         score == rootScore -> listOf(ObjectPosition(0.0, 0.0))
         else -> scoreInstances(score).flatMap { inst ->
-            if (inst.muted) emptyList<ObjectPosition>()
-            absolutePositions(inst.score).map { pos -> pos + inst.position }
+            if (inst.muted || inst.score == null) emptyList<ObjectPosition>()
+            absolutePositions(inst.score!!).map { pos -> pos + inst.position }
         }
     }
 
     private fun absolutePositions(instance: ScoreObjectInstance) =
-        absolutePositions(instance.score).map { pos -> pos + instance.position }
+        instance.score?.let { absolutePositions(it).map { pos -> pos + instance.position } } ?: emptyList()
 
     private fun addEvent(event: Event) {
         events.getOrPut(event.absolutePosition) { mutableSetOf() }.add(event)
@@ -126,7 +126,7 @@ class ScoreEventCollector(
         val oldPosition = inst.position + ObjectPosition(-dt, -dy)
         val eventsBefore = nEvents()
         Logger.fine("Move object $inst from $oldPosition", Logger.Category.Playback)
-        for (position in absolutePositions(inst.score)) {
+        for (position in absolutePositions(score)) {
             removeFromPlayback(inst, position + oldPosition)
             addToPlayback(inst, position + inst.position)
         }
@@ -148,11 +148,11 @@ class ScoreEventCollector(
     }
 
     private fun addToPlayback(inst: ScoreObjectInstance, position: ObjectPosition) {
-        if (inst.muted) return
+        if (inst.muted || inst.score == null) return
         val obj = inst.obj
         if (obj is ScoreObjectGroup) {
             Logger.fine(
-                "Added sub score ${obj.name.now} to ${inst.score.scoreName.now} at ${inst.position}",
+                "Added sub score ${obj.name.now} to ${inst.score!!.scoreName.now} at ${inst.position}",
                 Logger.Category.Playback
             )
             for (subInst in obj.score.objectInstances) {

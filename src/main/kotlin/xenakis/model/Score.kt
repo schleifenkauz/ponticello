@@ -63,7 +63,7 @@ class Score(private val instances: MutableList<ScoreObjectInstance> = mutableLis
 
     fun deepClone() = Score(instances.mapTo(mutableListOf()) { inst ->
         val name = context[ScoreObjectRegistry].nameForClone(inst.obj)
-        inst.clone(name, inst.position)
+        inst.clone(inst.position, name)
     })
 
     fun clone() = Score(instances.mapTo(mutableListOf()) { inst -> inst.duplicate(inst.position) })

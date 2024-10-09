@@ -46,16 +46,17 @@ abstract class AbstractPlayer(private val deltaT: Double) : Thread() {
 
     protected abstract fun scheduleEvents(t: Double, delta: Double)
 
-    fun play() {
-        if (isPlaying) return
+    fun play(): Boolean {
+        if (isPlaying) return true
+        Logger.info("Starting playback", Logger.Category.Playback)
+        if (!startPlay(playHead.currentTime)) {
+            return false
+        }
         thread(isDaemon = true) {
-            Logger.info("Starting playback", Logger.Category.Playback)
-            if (!startPlay(playHead.currentTime)) {
-                return@thread
-            }
             sleep(toMs(lookAhead))
             isPlaying = true
         }
+        return true
     }
 
     fun pause() {

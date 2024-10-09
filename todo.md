@@ -74,6 +74,9 @@
   - order of transformation synths could be decided by the order of the buses in the registry
   - how to display/manage flows?
   - graphical tools for EQ, compression (multi-band), reverb, etc. (integrate as special editors?)
+- idea: ability to combine SubScores
+  - hold shift while creating new sub score whose area encompasses the added sub scores
+- attach a default bus object to SubScores
 
 ## Bugs
 

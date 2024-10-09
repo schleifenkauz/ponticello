@@ -31,8 +31,6 @@ class ScoreView(score: Score, context: Context) : ScorePane(score, context) {
 
     var clipboardObject: ScoreObject? = null
         private set
-    var clipboardMode: ClipboardMode? = null
-        private set
     private val clipboardObjectView: ImageView = ImageView().also { v -> v.isVisible = false }
 
     private var timeGrid: Double = 0.1
@@ -73,13 +71,8 @@ class ScoreView(score: Score, context: Context) : ScorePane(score, context) {
         this.score.addListener(this)
     }
 
-    enum class ClipboardMode {
-        Duplicate, Clone;
-    }
-
-    fun setClipboard(obj: ScoreObject, view: ScoreObjectView, mode: ClipboardMode) {
+    fun setClipboard(obj: ScoreObject, view: ScoreObjectView) {
         clipboardObject = obj
-        clipboardMode = mode
         val parameters = SnapshotParameters()
         view.snapshot(parameters, null)
         clipboardObjectView.image = view.snapshot(parameters, null)
@@ -95,7 +88,6 @@ class ScoreView(score: Score, context: Context) : ScorePane(score, context) {
 
     fun clearClipboard() {
         clipboardObject = null
-        clipboardMode = null
         clipboardObjectView.visibleProperty().unbind()
         clipboardObjectView.isVisible = false
     }

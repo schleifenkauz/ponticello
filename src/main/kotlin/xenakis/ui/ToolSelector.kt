@@ -8,7 +8,7 @@ import reaktive.value.now
 import xenakis.impl.SelectorBar
 import xenakis.model.InstrumentRegistry
 
-class ToolSelector(private val context: Context) : SelectorBar<ToolSelector.Tool>(Tool.values().toList()) {
+class ToolSelector(private val context: Context) : SelectorBar<ToolSelector.Tool>(Tool.entries) {
     override fun extractGraphic(option: Tool): Node {
         return option.icon.getView()
     }
@@ -18,16 +18,23 @@ class ToolSelector(private val context: Context) : SelectorBar<ToolSelector.Tool
         setMaxSize(Icon.DEFAULT_RADIUS * 2, Icon.DEFAULT_RADIUS * 2)
         styleClass("icon-button")
         centerChildren()
-        if (option in setOf(Tool.Synth, Tool.PianoRoll))
-            addEventHandler(MouseEvent.MOUSE_CLICKED) { ev ->
-                if (ev.clickCount >= 2) {
-                    val instruments = context[InstrumentRegistry]
-                    SimpleSearchableRegistryView(instruments, "Select instrument").showPopup(
-                        context, anchorNode = this,
-                        initialOption = instruments.selectedInstrument.now
-                    ) { instr -> instruments.select(instr) }
+        when (option) {
+            Tool.Synth, Tool.PianoRoll -> {
+                addEventHandler(MouseEvent.MOUSE_CLICKED) { ev ->
+                    if (ev.isShiftDown) {
+                        context[XenakisUI].instrumentsWindow.show()
+                    } else if (ev.clickCount >= 2) {
+                        val instruments = context[InstrumentRegistry]
+                        SimpleSearchableRegistryView(instruments, "Select instrument").showPopup(
+                            context, anchorNode = this,
+                            initialOption = instruments.selectedInstrument.now
+                        ) { instr -> instruments.select(instr) }
+                    }
                 }
             }
+
+            else -> {}
+        }
     }
 
     enum class Tool(val icon: Icon) {

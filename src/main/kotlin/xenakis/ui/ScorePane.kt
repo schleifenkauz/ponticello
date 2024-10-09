@@ -10,12 +10,13 @@ import javafx.geometry.Bounds
 import javafx.scene.control.ComboBox
 import javafx.scene.control.Spinner
 import javafx.scene.control.TextField
-import javafx.scene.input.*
+import javafx.scene.input.DragEvent
+import javafx.scene.input.Dragboard
+import javafx.scene.input.MouseButton
+import javafx.scene.input.MouseEvent
 import javafx.scene.layout.Pane
 import javafx.scene.paint.Color.*
 import javafx.scene.shape.Rectangle
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.serializer
 import reaktive.value.now
 import reaktive.value.reactiveVariable
 import xenakis.impl.MidiPitch
@@ -30,7 +31,6 @@ import xenakis.sc.Rate
 import xenakis.sc.editor.BusSelector
 import xenakis.sc.editor.EventDictionaryEditor
 import xenakis.sc.editor.ScFunctionEditor
-import xenakis.ui.ScoreView.ClipboardMode
 import xenakis.ui.ToolSelector.Tool
 import xenakis.ui.ToolSelector.Tool.*
 import xenakis.ui.XenakisController.Companion.currentProject
@@ -306,19 +306,18 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
     }
 
     private fun pasteFromSystemClipboard(ev: MouseEvent) {
+        var instances = context[ScoreObjectSelectionManager].getSystemClipboard() ?: return
         context.compoundEdit("Paste objects") {
-            val clipboard = Clipboard.getSystemClipboard()
-            if (clipboard.hasContent(ScoreObject.DATA_FORMAT)) {
-                val content = clipboard.getContent(ScoreObject.DATA_FORMAT) as String
-                val objects = Json.decodeFromString(serializer<List<ScoreObjectInstance>>(), content)
-                val leftTop = objects.minOf { it.position }
-                if (!ev.isShiftDown) selector.deselectAll()
-                val (x, y) = snapToGrid(ev.x, ev.y)
-                for (obj in objects) {
-                    obj.moveTo(getTime(x) - leftTop.time, y - leftTop.y, simpleMove = true)
-                    score.addObject(obj)
-                    selector.select(getObjectView(obj), addToSelection = true)
-                }
+            if (ev.isShiftDown) {
+                instances = instances.map { inst -> inst.clone() }
+            }
+            val leftTop = instances.minOf { it.position }
+            selector.deselectAll()
+            val (x, y) = snapToGrid(ev.x, ev.y)
+            for (inst in instances) {
+                inst.moveTo(getTime(x) - leftTop.time, y - leftTop.y, simpleMove = true)
+                score.addObject(inst)
+                selector.select(getObjectView(inst), addToSelection = true)
             }
         }
     }
@@ -340,7 +339,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
                 if (ev.button == MouseButton.PRIMARY && scoreView.isInDuplicateMode()) {
                     var obj = scoreView.clipboardObject!!
                     if (obj.height > maxY || obj.duration > maxTime) return
-                    if (scoreView.clipboardMode == ClipboardMode.Clone) {
+                    if (ev.isShiftDown) {
                         val name = context[ScoreObjectRegistry].nameForClone(obj)
                         obj = obj.clone(name)
                     }
