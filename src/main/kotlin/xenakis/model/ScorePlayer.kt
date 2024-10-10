@@ -2,7 +2,7 @@ package xenakis.model
 
 import javafx.geometry.HorizontalDirection
 import reaktive.value.now
-import xenakis.impl.SuperColliderClient
+import xenakis.impl.*
 import xenakis.model.ScoreEventCollector.Event
 import xenakis.ui.PlayHead
 
@@ -15,19 +15,19 @@ class ScorePlayer(
     private val recorder: Recorder,
 ) : AbstractPlayer(DELTA_T) {
 
-    private var lastPlayFrom: Double = 0.0
+    private var lastPlayFrom: Decimal = PlayHead.START
 
-    override val lookAhead: Double
+    override val lookAhead: Decimal
         get() = env.lookAhead
 
-    private fun activeObjects(time: Double, delta: Double): List<Event> {
+    private fun activeObjects(time: Decimal, delta: Decimal): List<Event> {
         val dest = mutableListOf<Event>()
         collectActiveObjects(ObjectPosition(0.0, 0.0), rootScore, time, delta, dest)
         return dest
     }
 
     private fun collectActiveObjects(
-        position: ObjectPosition, score: Score, time: Double, delta: Double,
+        position: ObjectPosition, score: Score, time: Decimal, delta: Decimal,
         dest: MutableList<Event>
     ) {
         if (position.time - delta > time) return
@@ -42,7 +42,7 @@ class ScorePlayer(
         }
     }
 
-    override fun startPlay(startFrom: Double): Boolean {
+    override fun startPlay(startFrom: Decimal): Boolean {
         client.sendAsync("start_play")
         recorder.startingPlayback()
         Logger.fine("Starting playback at $startFrom", Logger.Category.Playback)
@@ -59,10 +59,10 @@ class ScorePlayer(
     fun scheduleInstantly(inst: ScoreObjectInstance, position: ObjectPosition) {
         val obj = inst.obj
         val delta = position.time - playHead.currentTime
-        val pos = ObjectPosition(playHead.currentTime + delta.coerceAtLeast(0.0), position.y)
+        val pos = ObjectPosition(playHead.currentTime + delta.coerceAtLeast(zero), position.y)
         val name = env.markStart(inst, position)
         Logger.fine("Scheduling $obj at $pos, delta: $delta", Logger.Category.Playback)
-        scheduleObject(obj, pos, name, cutoff = -delta.coerceAtMost(0.0))
+        scheduleObject(obj, pos, name, cutoff = -delta.coerceAtMost(zero))
     }
 
     fun stopPlayBackInstantly(activeInstance: ScoreObjectInstance, pos: ObjectPosition, name: String) {
@@ -74,7 +74,7 @@ class ScorePlayer(
         }
     }
 
-    override fun scheduleEvents(t: Double, delta: Double) {
+    override fun scheduleEvents(t: Decimal, delta: Decimal) {
         for (ev in events.eventsAt(t - delta, delta * 5)) {
             val (type, position, inst) = ev
             if (inst.muted) continue
@@ -83,12 +83,12 @@ class ScorePlayer(
                 Event.Type.ObjectStart -> {
                     Logger.fine("ObjectStart: $obj at $position", Logger.Category.Playback)
                     val name = env.markStart(inst, position)
-                    scheduleObject(obj, position, name, cutoff = 0.0)
+                    scheduleObject(obj, position, name, cutoff = zero)
                 }
 
                 Event.Type.ObjectEnd -> {
                     Logger.fine("ObjectEnd: $obj at $position", Logger.Category.Playback)
-                    env.markEnd(inst, position + ObjectPosition(-obj.duration, 0.0))
+                    env.markEnd(inst, position + ObjectPosition(-obj.duration, zero))
                 }
 
                 else -> {}
@@ -97,10 +97,10 @@ class ScorePlayer(
         }
     }
 
-    private fun scheduleObject(obj: ScoreObject, absolutePosition: ObjectPosition, name: String, cutoff: Double) {
+    private fun scheduleObject(obj: ScoreObject, absolutePosition: ObjectPosition, name: String, cutoff: Decimal) {
         val time = absolutePosition.time - lastPlayFrom
         val timeForExecution = (time + env.scLangLatency).toString()
-        val o = if (cutoff > 0.0) obj.cut(cutoff, HorizontalDirection.RIGHT, obj.name.now) ?: obj else obj
+        val o = if (cutoff > zero) obj.cut(cutoff, HorizontalDirection.RIGHT, obj.name.now) ?: obj else obj
         val code = o.writeCode(name, absolutePosition, env)
         if (code == "") return
         Logger.fine("unique name for $o at $time: $name", Logger.Category.Playback)
@@ -122,6 +122,6 @@ class ScorePlayer(
     }
 
     companion object {
-        private const val DELTA_T = 0.03
+        private val DELTA_T = 0.03.toDecimal()
     }
 }

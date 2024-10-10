@@ -19,8 +19,7 @@ import javafx.scene.paint.Color.*
 import javafx.scene.shape.Rectangle
 import reaktive.value.now
 import reaktive.value.reactiveVariable
-import xenakis.impl.MidiPitch
-import xenakis.impl.Point
+import xenakis.impl.*
 import xenakis.model.*
 import xenakis.model.Logger.Category
 import xenakis.model.Score.Companion.rootScore
@@ -31,7 +30,7 @@ import xenakis.sc.editor.ScFunctionEditor
 import xenakis.ui.ToolSelector.Tool
 import xenakis.ui.ToolSelector.Tool.*
 import xenakis.ui.XenakisController.Companion.currentProject
-import xenakis.ui.prompt.DoublePrompt
+import xenakis.ui.prompt.DecimalPrompt
 import xenakis.ui.prompt.NamePrompt
 import xenakis.ui.prompt.compoundInput
 
@@ -47,39 +46,48 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
 
     val selector: ScoreObjectSelectionManager get() = context[ScoreObjectSelectionManager]
 
-    protected abstract val displayStart: Double
-    protected abstract val displayEnd: Double
-    abstract val maxTime: Double
-    abstract val maxY: Double
-    abstract val rootPane: ScoreView
-
+    protected abstract val displayStart: Decimal
+    protected abstract val displayEnd: Decimal
+    abstract val maxTime: Decimal
+    abstract val maxY: Decimal
+    val rootPane: ScoreView get() = context[XenakisUI].scoreView
     abstract val xAccuracy: Int
-    abstract fun snapToGrid(x: Double, y: Double): Point
-    abstract fun getGrids(x: Double): List<TempoGridObjectView>
-    open fun markX(x: Double) {
-        getGrids(x).forEach { g -> g.mark(x) }
+    abstract val pixelsPerSecond: Double
+
+    open fun snapToGrid(position: ObjectPosition): ObjectPosition =
+        rootPane.snapToGrid(position + absolutePosition) - absolutePosition
+
+    open fun getNearestGrid(position: ObjectPosition): ScoreObjectInstance? =
+        rootPane.getNearestGrid(position + absolutePosition)
+
+    fun snapToGrid(x: Double, y: Double): ObjectPosition = snapToGrid(ObjectPosition(getTime(x), getScoreY(y)))
+
+    open fun markT(t: Decimal) {
+        val time = t + absolutePosition.time
+        rootPane.markT(time)
     }
 
-    abstract fun getNearestGrid(x: Double, y: Double): TempoGridObjectView?
+    override fun getX(time: Decimal): Double = ((time - displayStart) * pixelsPerSecond).toDouble()
 
-    abstract val pixelsPerSecond: Double
-    override fun getX(time: Double) = (time - displayStart) * pixelsPerSecond
-    override fun getTime(x: Double) = (x / pixelsPerSecond) + displayStart
-    override fun getDuration(width: Double) = width / pixelsPerSecond
-    override fun getWidth(duration: Double) = duration * pixelsPerSecond
+    override fun getTime(x: Double): Decimal = (x / pixelsPerSecond) + displayStart
 
-    fun getScoreY(paneY: Double) = paneY / rootPane.height
-    fun getPaneY(scoreY: Double) = scoreY * rootPane.height
+    override fun getDuration(width: Double): Decimal =
+        (width / pixelsPerSecond).asTime
+
+    override fun getWidth(duration: Decimal): Double = (duration * pixelsPerSecond).toDouble()
+
+    fun getScoreY(paneY: Double): Decimal = (paneY / rootPane.height).asY
+    fun getPaneY(scoreY: Decimal): Double = (scoreY * rootPane.height).toDouble()
 
     init {
         styleClass("score-pane")
     }
 
-    protected open fun addTime(location: Double, amount: Double) {
+    protected open fun addTime(location: Decimal, amount: Decimal) {
         score.addTime(location, amount)
     }
 
-    protected open fun deleteTimeRange(start: Double, end: Double) {
+    protected open fun deleteTimeRange(start: Decimal, end: Decimal) {
         score.deleteTimeRange(start, end)
     }
 
@@ -175,9 +183,9 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
         val synthDefRef = reactiveVariable(synthDef.createReference())
         val name = context[ScoreObjectRegistry].availableName(sample.name.now)
         val obj = SynthObject(reactiveVariable(name), synthDefRef, controls)
-        obj.setInitialSize(sample.duration, 0.05)
-        val (x, y) = snapToGrid(ev.x, ev.y)
-        val inst = ScoreObjectInstance(obj, getTime(x), getScoreY(y))
+        obj.setInitialSize(sample.duration, 0.05.withPrecision(ObjectPosition.Y_PRECISION))
+        val pos = snapToGrid(ev.x, ev.y)
+        val inst = ScoreObjectInstance(obj, pos)
         score.addObject(inst)
     }
 
@@ -225,8 +233,8 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
         val selectedTool = ui.toolSelector.selected.value!!
         if (newObjectArea != null) return
         children.remove(selectedArea)
-        val (x, y) = snapToGrid(ev.x, ev.y)
-        val rect = Rectangle(x, y, 0.0, 0.0)
+        val (t, y) = snapToGrid(ev.x, ev.y)
+        val rect = Rectangle(getX(t), getPaneY(y), 0.0, 0.0)
         when (selectedTool) {
             Synth -> {
                 val synthDef = context[InstrumentRegistry].selectedInstrument.now
@@ -249,7 +257,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
             }
 
             Pointer -> {
-                selectedArea.x = x
+                selectedArea.x = getX(t)
                 selectedArea.width = 0.0
                 if (ev.isShiftDown) {
                     selectedArea.y = 0.0
@@ -257,7 +265,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
                         selectedArea.heightProperty().bind(this.heightProperty())
                 } else {
                     selectedArea.heightProperty().unbind()
-                    selectedArea.y = y
+                    selectedArea.y = ev.y
                     selectedArea.height = 0.0
                 }
                 children.add(selectedArea)
@@ -271,12 +279,14 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
 
     private fun mouseDragged(ev: MouseEvent) {
         val newObj = newObjectArea
-        val (x, y) = snapToGrid(ev.x, ev.y)
+        val (t, y) = snapToGrid(ev.x, ev.y)
+        val x = getX(t)
+        val paneY = getPaneY(y)
         when {
             newObj != null -> {
                 newObj.width = x - newObj.x
-                newObj.height = ev.y - newObj.y
-                markX(x)
+                newObj.height = paneY - newObj.y
+                markT(t)
                 ev.consume()
             }
 
@@ -288,14 +298,14 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
                     selectedArea.x = x
                 }
                 if (!selectedArea.heightProperty().isBound) {
-                    if (y > selectedArea.y) {
-                        selectedArea.height = y - selectedArea.y
+                    if (paneY > selectedArea.y) {
+                        selectedArea.height = paneY - selectedArea.y
                     } else {
-                        selectedArea.height += selectedArea.y - y
-                        selectedArea.y = y
+                        selectedArea.height += selectedArea.y - paneY
+                        selectedArea.y = paneY
                     }
                 }
-                markX(x)
+                markT(t)
             }
         }
     }
@@ -308,9 +318,9 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
             }
             val leftTop = instances.minOf { it.position }
             selector.deselectAll()
-            val (x, y) = snapToGrid(ev.x, ev.y)
+            val (t, y) = snapToGrid(ev.x, ev.y)
             for (inst in instances) {
-                inst.moveTo(getTime(x) - leftTop.time, y - leftTop.y, simpleMove = true)
+                inst.moveTo(t - leftTop.time, y - leftTop.y, simpleMove = true)
                 score.addObject(inst)
                 selector.select(getObjectView(inst), addToSelection = true)
             }
@@ -323,10 +333,14 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
         if (score == context[rootScore] && !ev.isShiftDown) selector.deselectAll()
         val newObj = newObjectArea
         val tool = ui.toolSelector.selected.value
+        val (t, y) = snapToGrid(ev.x, ev.y)
         when {
             tool == AddTime -> {
-                val amount = DoublePrompt("How much time to add", 10.0, 0.0..1000.0).showDialog(context) ?: return
-                addTime(getTime(ev.x), amount)
+                val amount = DecimalPrompt(
+                    "How much time to add",
+                    precision = 2, initialValue = 10.0, 0.0..1000.0
+                ).showDialog(context) ?: return
+                addTime(t, amount)
             }
 
             tool == Pointer -> {
@@ -338,9 +352,8 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
                         val name = context[ScoreObjectRegistry].nameForClone(obj)
                         obj = obj.clone(name)
                     }
-                    val (x, y) = snapToGrid(ev.x, ev.y)
-                    val time = getTime(x).coerceIn(0.0, maxTime - obj.duration)
-                    val scoreY = getScoreY(y).coerceIn(0.0, maxY - obj.height)
+                    val time = t.coerceIn(zero, maxTime - obj.duration)
+                    val scoreY = y.coerceIn(zero, maxY - obj.height)
                     val duplicate = ScoreObjectInstance(obj, time, scoreY)
                     score.addObject(duplicate)
                 } else if (selectedArea in children && selectedArea.width != 0.0 && selectedArea.height != 0.0) {
@@ -358,7 +371,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
                         ui.playback.attachToMainScore()
                     }
                     if (ui.playback.isAttachedTo(this)) {
-                        ui.playback.playHead.setPlayHeadX(ev.x)
+                        ui.playback.playHead.movePlayHead(t)
                     }
                 }
             }
@@ -380,9 +393,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
 
                     else -> throw AssertionError()
                 }
-                val time = getTime(ev.x)
-                val y = getScoreY(ev.y)
-                val inst = ScoreObjectInstance(obj, time, y)
+                val inst = ScoreObjectInstance(obj, t, y)
                 score.addObject(inst)
                 if (obj is MemoObject) {
                     val view = getObjectView(inst) as MemoObjectView

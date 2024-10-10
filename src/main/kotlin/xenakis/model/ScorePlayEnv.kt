@@ -1,14 +1,16 @@
 package xenakis.model
 
 import reaktive.value.now
+import xenakis.impl.Decimal
+import xenakis.impl.toDecimal
 
 class ScorePlayEnv(private val settings: Settings) {
     private val activeInstances = mutableMapOf<ActiveInstance, Int>()
     private val suffixes = mutableMapOf<ScoreObject, MutableSet<Int>>()
 
-    val serverLatency: Double get() = settings.serverLatency.now
-    val scLangLatency: Double get() = settings.scLangLatency.now
-    val lookAhead: Double get() = scLangLatency + serverLatency
+    val serverLatency: Decimal get() = settings.serverLatency.now
+    val scLangLatency: Decimal get() = settings.scLangLatency.now
+    val lookAhead: Decimal get() = scLangLatency + serverLatency
 
     private fun suffixes(obj: ScoreObject) = suffixes.getOrPut(obj) { mutableSetOf() }
 
@@ -44,7 +46,7 @@ class ScorePlayEnv(private val settings: Settings) {
                 val obj = s.inst.obj
                 obj is SynthObject && obj.group.now == group
                         && s.absolutePosition.time < position.time
-                        && s.absolutePosition.time + s.inst.obj.duration > position.time + 0.1
+                        && s.absolutePosition.time + s.inst.obj.duration > position.time + 0.1.toDecimal()
             }
         val runBefore = relevant
             .filter { (_, pos) -> pos.y > position.y }

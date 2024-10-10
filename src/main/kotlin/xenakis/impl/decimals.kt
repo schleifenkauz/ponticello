@@ -1,11 +1,21 @@
 package xenakis.impl
 
+import xenakis.model.ObjectPosition
 import java.util.*
 import kotlin.math.*
 
 typealias DoubleRange = ClosedFloatingPointRange<Double>
 
-infix fun DoubleRange.step(step: Double) = sequence {
+val DoubleRange.asDecimal: DecimalRange get() = start.toDecimal()..endInclusive.toDecimal()
+
+class DecimalRange(override val start: Decimal, override val endInclusive: Decimal) :
+    ClosedFloatingPointRange<Decimal> {
+    override fun lessThanOrEquals(a: Decimal, b: Decimal): Boolean = a <= b
+}
+
+operator fun Decimal.rangeTo(other: Decimal) = DecimalRange(this, other)
+
+infix fun DecimalRange.step(step: Double) = sequence {
     var value = start
     while (value <= endInclusive) {
         yield(value)
@@ -15,11 +25,16 @@ infix fun DoubleRange.step(step: Double) = sequence {
 
 fun Double.withPrecision(precision: Int) = Decimal(this, precision)
 
+val Double.asTime get() = withPrecision(ObjectPosition.TIME_PRECISION)
+val Double.asY get() = withPrecision(ObjectPosition.Y_PRECISION)
+
+fun zero(precision: Int) = Decimal(0.0, precision)
+
 val zero = Decimal(0.0, 0)
 
-val one = Decimal(1.0, 0)
+fun one(precision: Int) = Decimal(1.0, precision)
 
-val Double.dec get() = withPrecision(0)
+val one = Decimal(1.0, 0)
 
 operator fun Decimal.plus(other: Double) = Decimal(value + other, precision)
 
@@ -29,6 +44,14 @@ operator fun Decimal.times(other: Double) = Decimal(value * other, precision)
 
 operator fun Decimal.div(other: Double) = Decimal(value / other, precision)
 
+operator fun Decimal.plus(other: Int) = Decimal(value + other, precision)
+
+operator fun Decimal.minus(other: Int) = Decimal(value - other, precision)
+
+operator fun Decimal.times(other: Int) = Decimal(value * other, precision)
+
+operator fun Decimal.div(other: Int) = Decimal(value / other, precision)
+
 operator fun Double.plus(other: Decimal) = Decimal(this + other.value, other.precision)
 
 operator fun Double.minus(other: Decimal) = Decimal(this - other.value, other.precision)
@@ -37,20 +60,57 @@ operator fun Double.times(other: Decimal) = Decimal(this * other.value, other.pr
 
 operator fun Double.div(other: Decimal) = Decimal(this / other.value, other.precision)
 
-fun Double.snap(grid: Double): Decimal {
-    if (grid == 0.0 || grid.isNaN()) error("Invalid grid value: $grid")
-    if (grid < 0.0) return snap(-grid)
-    var v = 0.0
-    for (i in 20 downTo 0) {
-        val f = 2.0.pow(i)
-        if (v + f * grid <= this.absoluteValue) v += f * grid
+operator fun Int.plus(other: Decimal) = Decimal(this + other.value, other.precision)
+
+operator fun Int.minus(other: Decimal) = Decimal(this - other.value, other.precision)
+
+operator fun Int.times(other: Decimal) = Decimal(this * other.value, other.precision)
+
+operator fun Int.div(other: Decimal) = Decimal(this / other.value, other.precision)
+
+operator fun Decimal.unaryMinus() = Decimal(-value, precision)
+
+val Decimal.sqrt get() = Decimal(sqrt(value), precision)
+
+fun exp(value: Decimal) = Decimal(exp(value.value), value.precision)
+
+fun Decimal.ceilToInt(): Int = ceil(value).toInt()
+
+fun Decimal.roundToInt(): Int = value.toInt()
+
+fun Decimal.abs() = Decimal(value.absoluteValue, precision)
+
+val Decimal.absoluteValue get() = value.absoluteValue
+
+fun Decimal.withPrecision(precision: Int) = Decimal(value, precision)
+
+fun Decimal.round(precision: Int) = Decimal(value.round(precision), precision)
+
+fun String.parseDecimal(): Decimal? {
+    val precision = when (val decimalPointIndex = indexOf('.')) {
+        -1 -> 0
+        else -> length - decimalPointIndex - 1
     }
-    return Decimal(v * this.sign, accuracy(grid))
+    return toDoubleOrNull()?.withPrecision(precision)
 }
 
-fun Double.wrapAt(divisor: Double): Decimal = this - snap(divisor)
+fun Double.toDecimal() = toString().parseDecimal()!!
+fun Int.toDecimal() = Decimal(toDouble(), 0)
 
-fun timeCode(t: Double, accuracy: Int): String {
+fun Double.snap(grid: Decimal): Decimal {
+    if (grid == zero || grid.isNaN()) error("Invalid grid value: $grid")
+    if (grid < zero) return snap(-grid)
+    var v = zero(grid.precision)
+    for (i in 20 downTo 0) {
+        val f = 2.0.pow(i)
+        if ((v + f * grid).value <= this) v += f * grid
+    }
+    return v
+}
+
+fun Decimal.wrapAt(divisor: Decimal): Decimal = this - value.snap(divisor)
+
+fun timeCode(t: Decimal, accuracy: Int): String {
     var seconds = t.toInt()
     val milliseconds = ((t - seconds) * 10.0.pow(accuracy)).toInt()
     val minutes = seconds / 60

@@ -2,7 +2,7 @@ package xenakis.ui.prompt
 
 import hextant.fx.registerShortcuts
 import javafx.scene.input.KeyEvent
-import xenakis.impl.DoubleRange
+import xenakis.impl.*
 import xenakis.model.ObjectRegistry
 import xenakis.sc.Identifier
 
@@ -16,11 +16,19 @@ class SimpleTextPrompt(title: String, initialText: String) : TextPrompt<String>(
     override fun convert(text: String): String = text
 }
 
-class DoublePrompt(
-    title: String, initialValue: Double?,
-    private val range: DoubleRange = Double.MIN_VALUE..Double.MAX_VALUE
-) : TextPrompt<Double>(title, initialValue?.toString().orEmpty()) {
-    override fun convert(text: String): Double? = text.toDoubleOrNull()?.takeIf { v -> v in range }
+class DecimalPrompt(
+    title: String, private val precision: Int, initialValue: Decimal?,
+    private val range: DecimalRange = (-Decimal.INF)..Decimal.INF
+) : TextPrompt<Decimal>(title, initialValue?.toString().orEmpty()) {
+    constructor(title: String, initialValue: Decimal, range: DecimalRange = (-Decimal.INF)..Decimal.INF) : this(
+        title, initialValue.precision, initialValue, range
+    )
+
+    constructor(title: String, precision: Int, initialValue: Double, range: DoubleRange) : this(
+        title, precision, initialValue.toDecimal(), range.asDecimal
+    )
+
+    override fun convert(text: String): Decimal? = text.parseDecimal()?.takeIf { v -> v in range }?.round(precision)
 }
 
 class IntegerPrompt(

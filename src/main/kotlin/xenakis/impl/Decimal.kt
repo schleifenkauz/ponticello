@@ -14,9 +14,10 @@ import kotlinx.serialization.json.JsonUnquotedLiteral
 import kotlinx.serialization.json.jsonPrimitive
 import java.util.*
 import kotlin.math.max
+import kotlin.math.pow
 
 @Serializable(with = Decimal.Serializer::class)
-data class Decimal(val value: Double, val precision: Int) : Number(), Comparable<Decimal> {
+class Decimal(val value: Double, val precision: Int) : Number(), Comparable<Decimal> {
     override fun toByte(): Byte = value.toInt().toByte()
 
     override fun toDouble(): Double = value
@@ -29,7 +30,7 @@ data class Decimal(val value: Double, val precision: Int) : Number(), Comparable
 
     override fun toShort(): Short = value.toInt().toShort()
 
-    override fun compareTo(other: Decimal): Int = value.compareTo(other.value)
+    override fun compareTo(other: Decimal): Int = if (this == other) 0 else value.compareTo(other.value)
 
     operator fun plus(other: Decimal): Decimal = Decimal(value + other.value, max(precision, other.precision))
 
@@ -39,14 +40,43 @@ data class Decimal(val value: Double, val precision: Int) : Number(), Comparable
 
     operator fun div(other: Decimal): Decimal = Decimal(value / other.value, max(precision, other.precision))
 
+    fun pow(exponent: Int): Decimal = Decimal(value.pow(exponent), precision)
+
+    fun pow(exponent: Double): Decimal = Decimal(value.pow(exponent), precision)
+
     override fun toString(): String =
         if (precision == 0) value.toLong().toString()
-        else String.format(Locale.US, "%.${precision}f", this)
+        else value.format(precision)
+
+    fun toCanonicalString() = when (val str = toString()) {
+        "0" -> "0"
+        else -> str.dropLastWhile { c -> c == '0' }.removeSuffix(".")
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (other !is Decimal) return false
+        val precision = maxOf(precision, other.precision)
+        val str1 = value.format(precision)
+        val str2 = other.value.format(precision)
+        return str1 == str2
+    }
+
+    override fun hashCode(): Int = toCanonicalString().hashCode()
+
+    fun isNaN() = value.isNaN()
+
+    companion object {
+        val NaN get() = Decimal(Double.NaN, 0)
+
+        val INF get() = Decimal(Double.POSITIVE_INFINITY, 0)
+
+        private fun Double.format(precision: Int) = String.format(Locale.US, "%.${precision}f", this)
+    }
 
     @OptIn(ExperimentalSerializationApi::class)
     object Serializer : KSerializer<Decimal> {
         override val descriptor: SerialDescriptor
-            get() = PrimitiveSerialDescriptor("BigDecimal", PrimitiveKind.STRING)
+            get() = PrimitiveSerialDescriptor("Decimal", PrimitiveKind.DOUBLE)
 
         override fun deserialize(decoder: Decoder): Decimal {
             val str = when (decoder) {
@@ -57,7 +87,7 @@ data class Decimal(val value: Double, val precision: Int) : Number(), Comparable
                 -1 -> 0
                 else -> str.length - decimalPointIdx - 1
             }
-            val value = str.toDouble()
+            val value = str.toDoubleOrNull() ?: error("Invalid decimal: $str")
             return Decimal(value, precision)
         }
 

@@ -1,44 +1,32 @@
 package xenakis.ui
 
 import hextant.context.Context
-import xenakis.impl.Point
+import xenakis.impl.Decimal
+import xenakis.impl.asTime
+import xenakis.model.ObjectPosition
 import xenakis.model.ScoreObject
 import xenakis.model.ScoreObjectGroup
+import xenakis.model.ScoreObjectInstance
 
-class SubScorePane(private val obj: ScoreObjectGroup, context: Context) : ScorePane(obj.score, context) {
-    override val displayStart: Double
-        get() = 0.0
-    override val displayEnd: Double
+class SubScorePane(
+    private val instance: ScoreObjectInstance,
+    private val obj: ScoreObjectGroup,
+    private val parentPane: ScorePane,
+    context: Context
+) : ScorePane(obj.score, context) {
+    override val displayStart: Decimal
+        get() = 0.0.asTime
+    override val displayEnd: Decimal
         get() = obj.duration
     override val pixelsPerSecond: Double
         get() = rootPane.pixelsPerSecond
-    override val maxTime: Double
+    override val maxTime: Decimal
         get() = obj.duration
-    override val maxY: Double
+    override val maxY: Decimal
         get() = obj.height
-    override val rootPane: ScoreView get() = context[XenakisUI].scoreView
 
-    override fun getGrids(x: Double): List<TempoGridObjectView> {
-        val coords = rootPane.translateFrom(this, x, 0.0)
-        return rootPane.getGrids(coords.x)
-    }
-
-    override fun markX(x: Double) {
-        val coords = rootPane.translateFrom(this, x, 0.0)
-        rootPane.markX(coords.x)
-    }
-
-    override fun snapToGrid(x: Double, y: Double): Point {
-        var coords = rootPane.translateFrom(this, x, y)
-        coords = rootPane.snapToGrid(coords.x, coords.y)
-        coords = rootPane.translateTo(this, coords.x, coords.y)
-        return coords
-    }
-
-    override fun getNearestGrid(x: Double, y: Double): TempoGridObjectView? {
-        val coords = rootPane.translateFrom(this, x, y)
-        return rootPane.getNearestGrid(coords.x, coords.y)
-    }
+    override val absolutePosition: ObjectPosition
+        get() = parentPane.absolutePosition + instance.position
 
     override val xAccuracy: Int
         get() = rootPane.xAccuracy
@@ -48,12 +36,12 @@ class SubScorePane(private val obj: ScoreObjectGroup, context: Context) : ScoreP
         obj.score.addListener(this)
     }
 
-    override fun addTime(location: Double, amount: Double) {
+    override fun addTime(location: Decimal, amount: Decimal) {
         super.addTime(location, amount)
         obj.resize(obj.duration + amount, obj.height, ScoreObject.ResizeType.Regular, Direction.NONE)
     }
 
-    override fun deleteTimeRange(start: Double, end: Double) {
+    override fun deleteTimeRange(start: Decimal, end: Decimal) {
         super.deleteTimeRange(start, end)
         val amount = end - start
         obj.resize(obj.duration - amount, obj.height, ScoreObject.ResizeType.Regular, Direction.NONE)

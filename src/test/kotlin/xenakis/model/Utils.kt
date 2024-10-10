@@ -4,6 +4,8 @@ import bundles.set
 import hextant.context.ContextImpl
 import hextant.undo.UndoManager
 import reaktive.value.reactiveVariable
+import xenakis.impl.asTime
+import xenakis.impl.toDecimal
 
 object Utils {
     val defaultGroup = GroupObject.DEFAULT.createReference()
@@ -14,7 +16,7 @@ object Utils {
             synthDefRef = reactiveVariable(ObjectReference("default")),
             controls = SynthControls(mutableMapOf("group" to GroupControl(reactiveVariable(defaultGroup))))
         )
-        dummy1.setInitialSize(10.0, 100.0)
+        dummy1.setInitialSize(10.0.asTime, 100.0.toDecimal())
         return dummy1
     }
 

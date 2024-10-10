@@ -6,8 +6,9 @@ import reaktive.value.ReactiveValue
 import reaktive.value.binding.binding
 import reaktive.value.binding.flatMap
 import reaktive.value.reactiveValue
+import xenakis.impl.zero
 import xenakis.model.BusObject
-import xenakis.sc.DoubleLiteral
+import xenakis.sc.DecimalLiteral
 import xenakis.sc.Identifier
 import xenakis.sc.ScExpr
 import xenakis.sc.send
@@ -21,7 +22,7 @@ class OutExprEditor(
     val channelsArray by child(channelsArray)
 
     override val result: ReactiveValue<ScExpr> = busSelector.result.flatMap { ref ->
-        val bus = ref.reference?.get<BusObject>() ?: return@flatMap reactiveValue(DoubleLiteral(0.0))
+        val bus = ref.reference?.get<BusObject>() ?: return@flatMap reactiveValue(DecimalLiteral(zero))
         binding(bus.rate, channelsArray.result) { rate, snd ->
             Identifier("Out").send(rate.toString(), ref, snd)
         }

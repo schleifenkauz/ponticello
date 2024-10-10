@@ -22,12 +22,11 @@ import reaktive.value.binding.flatMap
 import reaktive.value.fx.asObservableValue
 import reaktive.value.now
 import reaktive.value.reactiveVariable
-import xenakis.impl.MidiPitch
-import xenakis.impl.Point
+import xenakis.impl.*
 import xenakis.model.*
 import xenakis.sc.editor.EventDictionaryEditor
 import xenakis.sc.view.ObjectSelectorControl
-import xenakis.ui.prompt.DoublePrompt
+import xenakis.ui.prompt.DecimalPrompt
 import xenakis.ui.prompt.IntegerPrompt
 import kotlin.math.roundToInt
 
@@ -71,13 +70,9 @@ class PianoRollObjectView(inst: ScoreObjectInstance, private val obj: PianoRollO
         rect.prefHeight = pixelsPerPitch
     }
 
-    private fun snapToGrid(x: Double, y: Double): Point {
-        var p = localToScreen(x, y)
-        p = pane.screenToLocal(p)
-        p = pane.snapToGrid(p.x, p.y).point2d
-        p = pane.localToScreen(p)
-        p = screenToLocal(p)
-        return Point(p)
+    private fun snapToGrid(x: Double, y: Double): Decimal {
+        val pos = ObjectPosition(getTime(x), pane.getScoreY(y))
+        return pane.rootPane.snapToGrid(pos + absolutePosition).time - absolutePosition.time
     }
 
     private fun setupNoteObjectEvents(rect: Region, note: PianoRollObject.Note) {
@@ -86,22 +81,22 @@ class PianoRollObjectView(inst: ScoreObjectInstance, private val obj: PianoRollO
             pane,
             canUserChangeWidth = true, canUserChangeHeight = false, ToolSelector.Tool.PianoRoll,
             drag = { toX, toY ->
-                val (x, y) = snapToGrid(toX, toY)
-                note.onset = pane.getDuration(x).coerceIn(0.0, obj.duration - note.duration)
-                note.midinote = getMidiNote(y).coerceIn(obj.pitchRange)
+                val t = snapToGrid(toX, toY)
+                note.onset = t.coerceIn(zero, obj.duration - note.duration)
+                note.midinote = getMidiNote(toY).coerceIn(obj.pitchRange)
             },
             resize = { old, dx, dy, cursor, _ ->
                 when (cursor) {
                     Cursor.W_RESIZE -> {
-                        val (x) = snapToGrid(old.minX + dx, old.minY + dy)
+                        val t = snapToGrid(old.minX + dx, old.minY + dy)
                         val oldTime = note.onset
-                        note.onset = pane.getDuration(x).coerceAtLeast(0.0)
+                        note.onset = t.coerceAtLeast(zero)
                         note.duration += (oldTime - note.onset)
                     }
 
                     Cursor.E_RESIZE -> {
-                        val (x) = snapToGrid(old.maxX + dx, old.maxY + dy)
-                        note.duration = pane.getDuration(x - old.minX).coerceIn(0.0, obj.duration - note.onset)
+                        val t = snapToGrid(old.maxX + dx - old.minX, old.maxY + dy)
+                        note.duration = t.coerceIn(zero, obj.duration - note.onset)
                     }
                 }
             },
@@ -129,7 +124,7 @@ class PianoRollObjectView(inst: ScoreObjectInstance, private val obj: PianoRollO
         rect.registerShortcuts(KeyEvent.KEY_PRESSED) {
             on("LEFT") {
                 val delta = getDeltaX(HorizontalDirection.LEFT)
-                if (note.onset + delta >= 0.0) note.onset += delta
+                if (note.onset + delta >= zero) note.onset += delta
             }
             on("RIGHT") {
                 val delta = getDeltaX(HorizontalDirection.RIGHT)
@@ -235,11 +230,13 @@ class PianoRollObjectView(inst: ScoreObjectInstance, private val obj: PianoRollO
         addEventHandler(MouseEvent.ANY) { ev ->
             val selectedTool = selectedTool.value
             if (selectedTool == ToolSelector.Tool.AddTime && ev.eventType == MouseEvent.MOUSE_CLICKED) {
-                val (x, _) = snapToGrid(ev.x, ev.y)
-                val position = pane.getDuration(x)
-                val amount = DoublePrompt("How much time to add", 10.0, 0.0..1000.0).showDialog(context)
+                val t = snapToGrid(ev.x, ev.y)
+                val amount = DecimalPrompt(
+                    "How much time to add", precision = ObjectPosition.TIME_PRECISION,
+                    10.0, 0.0..1000.0
+                ).showDialog(context)
                     ?: return@addEventHandler
-                obj.addTime(position, amount)
+                obj.addTime(t, amount)
             }
             if (selectedTool != ToolSelector.Tool.PianoRoll) {
                 children.remove(cursor)
@@ -251,8 +248,8 @@ class PianoRollObjectView(inst: ScoreObjectInstance, private val obj: PianoRollO
                 }
 
                 MouseEvent.MOUSE_MOVED -> {
-                    cursor.x = snapToGrid(ev.x, ev.y).x
-                    cursor.y = ev.y.snap(pixelsPerPitch)
+                    cursor.x = getX(snapToGrid(ev.x, ev.y))
+                    cursor.y = ev.y.snap(pixelsPerPitch.toDecimal()).toDouble()
                     if (cursor.y > prefHeight) children.remove(cursor)
                 }
 
@@ -267,7 +264,7 @@ class PianoRollObjectView(inst: ScoreObjectInstance, private val obj: PianoRollO
                 }
 
                 MouseEvent.MOUSE_DRAGGED -> {
-                    cursor.width = snapToGrid(ev.x - cursor.x, ev.y).x
+                    cursor.width = getWidth(snapToGrid(ev.x - cursor.x, ev.y))
                     ev.consume()
                 }
 

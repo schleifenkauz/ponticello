@@ -10,6 +10,7 @@ import javafx.css.PseudoClass
 import javafx.event.ActionEvent
 import javafx.geometry.Bounds
 import javafx.geometry.Insets
+import javafx.geometry.Point2D
 import javafx.geometry.Pos
 import javafx.scene.Node
 import javafx.scene.control.*
@@ -24,8 +25,20 @@ import reaktive.value.ReactiveValue
 import reaktive.value.ReactiveVariable
 import reaktive.value.fx.asObservableValue
 import reaktive.value.now
+import xenakis.impl.Decimal
+import xenakis.impl.asY
 import xenakis.model.ScoreObject
+import xenakis.model.ScoreObjectInstance
 import java.util.*
+import kotlin.math.pow
+import kotlin.math.sqrt
+
+operator fun Point2D.plus(other: Point2D) = Point2D(x + other.x, y + other.y)
+
+operator fun Point2D.component1() = x
+operator fun Point2D.component2() = y
+
+infix fun Point2D.dist(p: Point2D) = sqrt((p.x - x).pow(2) + (p.y - y).pow(2))
 
 fun <T> Optional<T>.getOrNull(): T? = orElse(null)
 
@@ -180,10 +193,10 @@ fun Node.setPseudoClassState(name: String, value: Boolean) {
     pseudoClassStateChanged(PseudoClass.getPseudoClass(name), value)
 }
 
-fun Region.verticalDist(y: Double) = when {
-    y < layoutY -> layoutY - y
-    y > layoutY + height -> y - (layoutY + height)
-    else -> 0.0
+fun ScoreObjectInstance.verticalDist(y: Decimal) = when {
+    y < this.y -> this.y - y
+    y > y + height -> y - (this.y + this.height)
+    else -> 0.0.asY
 }
 
 fun ToggleButton.toggle() {

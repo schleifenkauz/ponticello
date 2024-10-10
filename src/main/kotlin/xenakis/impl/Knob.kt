@@ -2,6 +2,7 @@ package xenakis.impl
 
 import hextant.context.Context
 import hextant.fx.setRoot
+import javafx.geometry.Point2D
 import javafx.scene.control.Control
 import javafx.scene.control.Label
 import javafx.scene.control.Tooltip
@@ -16,8 +17,9 @@ import reaktive.value.forEach
 import xenakis.model.KnobControl
 import xenakis.sc.NumericalControlSpec
 import xenakis.sc.SpecTransformation
-import xenakis.ui.*
-import xenakis.ui.prompt.DoublePrompt
+import xenakis.ui.centerHorizontally
+import xenakis.ui.prompt.DecimalPrompt
+import xenakis.ui.styleClass
 import kotlin.math.*
 
 class Knob(
@@ -80,8 +82,8 @@ class Knob(
 
     private fun showValueInput() {
         val range = spec.min.get()..spec.max.get()
-        val v = DoublePrompt("$parameter ($range)", control.get(), range).showDialog(context, this) ?: return
-        control.value.set(v)
+        val v = DecimalPrompt("$parameter ($range)", control.get(), range).showDialog(context, this) ?: return
+        control.value.set(v.withPrecision(spec.precision))
     }
 
     private fun addShortcuts() = addEventHandler(KeyEvent.KEY_PRESSED) { ev ->
@@ -113,16 +115,16 @@ class Knob(
         control.value.set(value)
     }
 
-    private fun getPoint(value: Double, r: Double): Point {
-        val phi = transform.map(value) - PI / 2
-        val p = Point(radius + r * sin(phi), radius + r * cos(phi))
+    private fun getPoint(value: Decimal, r: Double): Point2D {
+        val phi = transform.map(value.toDouble()) - PI / 2
+        val p = Point2D(radius + r * sin(phi), radius + r * cos(phi))
         return p
     }
 
     private fun addDotsOrArc() {
         if (discreteValues <= MAX_DOTS) {
             for (i in 0..discreteValues) {
-                val v = (spec.min.get() + i * spec.step.get()).round(spec.accuracy)
+                val v = (spec.min.get() + i * spec.step.get()).withPrecision(spec.precision)
                 val dot = Circle(DOT_RADIUS) styleClass "knob-dot"
                 val p = getPoint(v, radius - 5)
                 dot.centerX = p.x
@@ -136,8 +138,8 @@ class Knob(
         }
     }
 
-    private fun updatedValue(value: Double) {
-        valueLabel.text = value.format(spec.accuracy)
+    private fun updatedValue(value: Decimal) {
+        valueLabel.text = value.toString()
         val start = getPoint(value, radius / 3)
         val end = getPoint(value, radius - 10.0)
         indicator.startX = start.x

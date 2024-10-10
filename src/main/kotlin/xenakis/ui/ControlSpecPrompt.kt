@@ -9,6 +9,7 @@ import javafx.scene.control.ToggleButton
 import javafx.scene.paint.Color
 import org.controlsfx.control.SegmentedButton
 import reaktive.value.now
+import xenakis.impl.parseDecimal
 import xenakis.model.CustomizableSynthDefObject
 import xenakis.model.ParameterDefObject
 import xenakis.model.SynthObject
@@ -60,10 +61,10 @@ class ControlSpecPrompt(
     private val warpBox = ComboBox(observableList(Warp.values().asList()))
     private val associatedColor = ColorPicker(numericalSpec?.associatedColor ?: Color.BLACK)
 
-    private val min get() = minTxt.text.toDoubleOrNull()
-    private val max get() = maxTxt.text.toDoubleOrNull()
-    private val default get() = defaultTxt.text.toDoubleOrNull()
-    private val step get() = stepTxt.text.toDoubleOrNull()
+    private val min get() = minTxt.text.parseDecimal()
+    private val max get() = maxTxt.text.parseDecimal()
+    private val default get() = defaultTxt.text.parseDecimal()
+    private val step get() = stepTxt.text.parseDecimal()
     private val warp get() = warpBox.value
 
     init {

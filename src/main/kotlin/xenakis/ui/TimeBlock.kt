@@ -1,11 +1,16 @@
 package xenakis.ui
 
+import xenakis.impl.Decimal
+import xenakis.model.ObjectPosition
+
 interface TimeBlock {
-    fun getDuration(width: Double): Double
+    val absolutePosition: ObjectPosition
 
-    fun getTime(x: Double): Double
+    fun getDuration(width: Double): Decimal
 
-    fun getWidth(duration: Double): Double
+    fun getTime(x: Double): Decimal
 
-    fun getX(time: Double): Double
+    fun getWidth(duration: Decimal): Double
+
+    fun getX(time: Decimal): Double
 }

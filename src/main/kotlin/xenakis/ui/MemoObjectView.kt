@@ -1,6 +1,5 @@
 package xenakis.ui
 
-import javafx.scene.Cursor
 import javafx.scene.control.Label
 import javafx.scene.control.TextArea
 import javafx.scene.input.KeyCode
@@ -53,9 +52,6 @@ class MemoObjectView(inst: ScoreObjectInstance, val obj: MemoObject) : ScoreObje
 
     override fun DetailPane.setupDetailPane() {
         addItem("Color: ", colorPicker)
-    }
-
-    override fun resizeObject(width: Double, height: Double, ev: MouseEvent, cursor: Cursor) {
     }
 
     override fun getDisplayWidth(): Double = computeSize.prefWidth(-1.0) + 15

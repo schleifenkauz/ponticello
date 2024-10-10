@@ -2,7 +2,7 @@ package xenakis.sc
 
 import hextant.codegen.Choice
 import kotlinx.serialization.Serializable
-import xenakis.impl.DoubleRange
+import xenakis.impl.*
 import kotlin.math.exp
 import kotlin.math.ln
 import kotlin.math.pow
@@ -45,7 +45,7 @@ val Warp.unmap
     }
 
 interface Transformation {
-    val sourceRange: DoubleRange
+    val sourceRange: DecimalRange
     val targetRange: DoubleRange
 
     fun map(value: Double): Double
@@ -53,8 +53,8 @@ interface Transformation {
 }
 
 data class IdentityTransformation(val range: DoubleRange) : Transformation {
-    override val sourceRange: DoubleRange
-        get() = range
+    override val sourceRange: DecimalRange
+        get() = range.asDecimal
 
     override val targetRange: DoubleRange
         get() = range
@@ -65,29 +65,29 @@ data class IdentityTransformation(val range: DoubleRange) : Transformation {
 }
 
 data class LinearTransformation(
-    override val sourceRange: DoubleRange,
+    override val sourceRange: DecimalRange,
     override val targetRange: DoubleRange
 ) : Transformation {
     private val factor = (targetRange.endInclusive - targetRange.start) / (sourceRange.endInclusive - targetRange.start)
     private val summand = targetRange.start - sourceRange.start
 
-    override fun map(value: Double): Double = value * factor + summand
+    override fun map(value: Double): Double = (value * factor + summand).value
 
-    override fun unmap(value: Double): Double = value / factor + summand
+    override fun unmap(value: Double): Double = (value / factor + summand).value
 }
 
 data class SpecTransformation(val spec: NumericalControlSpec, override val targetRange: DoubleRange) : Transformation {
-    override val sourceRange: DoubleRange
+    override val sourceRange: DecimalRange
         get() = spec.min.get()..spec.max.get()
 
     private val tdiff = targetRange.endInclusive - targetRange.start
     private val wmap = spec.warp.map
     private val wunmap = spec.warp.unmap
-    private val fmin = wmap(spec.min.get())
-    private val fmax = wmap(spec.max.get())
+    private val fmin = wmap(spec.min.get().toDouble())
+    private val fmax = wmap(spec.max.get().toDouble())
     private val fdiff = fmax - fmin
 
-    override fun map(value: Double) = targetRange.start + (wmap(value) - fmin) * tdiff / fdiff
+    override fun map(value: Double): Double = targetRange.start + (wmap(value) - fmin) * tdiff / fdiff
 
     override fun unmap(value: Double) = wunmap(((value - targetRange.start) * fdiff / tdiff) + fmin)
 }

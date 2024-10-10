@@ -7,10 +7,9 @@ import reaktive.Observer
 import reaktive.value.ReactiveVariable
 import reaktive.value.now
 import reaktive.value.reactiveVariable
-import xenakis.impl.copy
+import xenakis.impl.*
 import xenakis.model.InteractionSettings.SnapOption
 import xenakis.ui.TempoGridObjectView
-import kotlin.math.roundToInt
 
 @Serializable
 class TempoGridObject(
@@ -36,21 +35,21 @@ class TempoGridObject(
     override fun doClone(newName: String): ScoreObject =
         TempoGridObject(reactiveVariable(newName), beatsPerMinute.copy(), beatsPerBar.copy(), ticksPerBeat.copy())
 
-    fun snapToGrid(instance: ScoreObjectInstance, t: Double, option: SnapOption): Double {
-        val beatUnit = 60.0 / beatsPerMinute.now
+    fun snapToGrid(t: Decimal, option: SnapOption): Decimal {
+        val beatUnit = 60.0.asTime / beatsPerMinute.now
         val unit = when (option) {
             SnapOption.Bars -> beatUnit * beatsPerBar.now
             SnapOption.Beats -> beatUnit
             SnapOption.Ticks -> beatUnit / ticksPerBeat.now
             else -> throw AssertionError("Invalid snap option $option")
         }
-        return (((t - instance.start) / unit).roundToInt() * unit) + instance.start
+        return (t / unit).roundToInt() * unit
     }
 
-    fun getDuration(periodUnit: SnapOption): Double {
-        val beatDur = (60.0 / beatsPerMinute.now)
+    fun getDuration(periodUnit: SnapOption): Decimal {
+        val beatDur = (60.0.asTime / beatsPerMinute.now)
         return when (periodUnit) {
-            SnapOption.Seconds -> 1.0
+            SnapOption.Seconds -> one
             SnapOption.Bars -> beatsPerBar.now * beatDur
             SnapOption.Beats -> beatDur
             SnapOption.Ticks -> beatDur / ticksPerBeat.now

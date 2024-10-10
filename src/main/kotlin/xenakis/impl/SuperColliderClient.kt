@@ -26,7 +26,12 @@ interface SuperColliderClient : SuperColliderContext {
     override fun run(command: String) {
         if (command == "(\n)\n") return
         Logger.fine("run: $command", Category.SuperCollider)
-        send("eval", listOf(command)).get()
+        try {
+            send("eval", listOf(command)).get()
+        } catch (e: Exception) {
+            System.err.println("Exception while running $command")
+            e.printStackTrace()
+        }
     }
 
     override fun run(writeCode: ScWriter.() -> Unit) {

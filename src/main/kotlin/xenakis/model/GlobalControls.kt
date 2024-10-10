@@ -8,10 +8,7 @@ import reaktive.Observer
 import reaktive.value.forEach
 import reaktive.value.now
 import reaktive.value.reactiveVariable
-import xenakis.impl.ScWriter
-import xenakis.impl.SuperColliderClient
-import xenakis.impl.SuperColliderContext
-import xenakis.impl.format
+import xenakis.impl.*
 import xenakis.sc.NumericalControlSpec
 import xenakis.sc.Rate
 
@@ -80,16 +77,15 @@ class GlobalControls(private val controls: MutableList<GlobalControl>) : Xenakis
         }
     }
 
-    private fun updatedValue(control: GlobalControl, value: Double) {
+    private fun updatedValue(control: GlobalControl, value: Decimal) {
         val bus = control.bus
-        val formatted = value.format(control.spec.accuracy)
-        context[SuperColliderClient].run("if (${bus.superColliderName} != nil) { ${bus.superColliderName}.set($formatted) };")
+        context[SuperColliderClient].run("if (${bus.superColliderName} != nil) { ${bus.superColliderName}.set($value) };")
     }
 
     fun updateControlFromServer(control: GlobalControl) {
         val code = "${control.bus.superColliderName}.getSynchronous"
-        val value = context[SuperColliderClient].eval(code).get().toDoubleOrNull() ?: return
-        control.knobControl.value.now = value
+        val value = context[SuperColliderClient].eval(code).get().parseDecimal() ?: return
+        control.knobControl.value.now = value.withPrecision(control.spec.precision)
     }
 
     fun hasControl(name: String): Boolean = controls.any { ctrl -> ctrl.parameter == name }
@@ -97,5 +93,10 @@ class GlobalControls(private val controls: MutableList<GlobalControl>) : Xenakis
     @Serializable
     class GlobalControl(val parameter: String, val knobControl: KnobControl, val spec: NumericalControlSpec) {
         val bus: BusObject = BusObject.create("global_$parameter", Rate.Control, 1)
+
+        init {
+            //this is only for needed when opening projects that were created before the decimal-precision update
+            knobControl.value.now = knobControl.value.now.withPrecision(spec.precision)
+        }
     }
 }

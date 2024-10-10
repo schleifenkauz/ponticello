@@ -9,18 +9,12 @@ import kotlinx.serialization.Transient
 import reaktive.Observer
 import reaktive.list.observeEach
 import reaktive.value.*
-import xenakis.impl.ScWriter
-import xenakis.impl.SuperColliderClient
-import xenakis.impl.code
-import xenakis.impl.copy
-import xenakis.impl.format
+import xenakis.impl.*
 import xenakis.sc.ControlSpec
 import xenakis.sc.Identifier
-import xenakis.sc.NumericalControlSpec
 import xenakis.sc.editor.SynthDefSelector
 import xenakis.sc.transform
 import xenakis.ui.Direction
-import xenakis.ui.wrapAt
 
 @Serializable
 class SynthObject(
@@ -41,7 +35,7 @@ class SynthObject(
         private set
 
     @Transient
-    private var playBufRateBeforeResize = 0.0
+    private var playBufRateBeforeResize = zero
 
     val synthDef: SynthDefObject get() = synthDefRef.now.get()
 
@@ -57,10 +51,10 @@ class SynthObject(
 
     val displaySample: ReactiveValue<Boolean>? get() = bufferControl?.display
 
-    val playbufStartPos: ReactiveVariable<Double>?
+    val playbufStartPos: ReactiveVariable<Decimal>?
         get() = (controls.controlMap["startPos"] as? ConstantControl)?.value?.takeIf { bufferControl != null }
 
-    val playBufRate: ReactiveVariable<Double>?
+    val playBufRate: ReactiveVariable<Decimal>?
         get() = (controls.controlMap["rate"] as? ConstantControl)?.value?.takeIf { bufferControl != null }
 
     override val associatedControls: Map<String, ParameterControl> get() = controls.controlMap
@@ -70,12 +64,12 @@ class SynthObject(
         controls = controls.copy()
     )
 
-    override fun doCut(position: Double, whichHalf: HorizontalDirection, newName: String): ScoreObject = SynthObject(
+    override fun doCut(position: Decimal, whichHalf: HorizontalDirection, newName: String): ScoreObject = SynthObject(
         reactiveVariable(newName), synthDefRef.copy(),
         controls = controls.transformControls { name, c ->
             when {
                 name == "startPos" && c is ConstantControl && whichHalf == RIGHT ->
-                    ConstantControl(reactiveVariable(c.value.now + position * (playBufRate?.now ?: 1.0)))
+                    ConstantControl(reactiveVariable(c.value.now + position * (playBufRate?.now ?: one(3))))
 
                 else -> c.cut(position, whichHalf)
             }
@@ -89,13 +83,13 @@ class SynthObject(
         return super.beginResize(type, direction)
     }
 
-    override fun resize(targetDuration: Double, targetHeight: Double) {
+    override fun resize(targetDuration: Decimal, targetHeight: Decimal) {
         var newDuration = targetDuration
         if (resizeType.isStretch && playBufRate != null) {
             playBufRate!!.now *= (this.duration / newDuration)
         } else if (playbufStartPos != null) {
             if (resizeDirection.left) {
-                val rate = playBufRate?.now ?: 1.0
+                val rate = playBufRate?.now ?: one(precision = 3)
                 newDuration = newDuration.coerceAtMost(this.duration + playbufStartPos!!.now)
                 val deltaStart = this.duration - newDuration
                 playbufStartPos!!.now += deltaStart * rate
@@ -120,9 +114,9 @@ class SynthObject(
         if (sample.now != null && playBufRate != null && playbufStartPos != null) {
             val sampleDur = sample.now!!.get<SampleObject>().duration
             playbufStartPos!!.now = (playbufStartPos!!.now + playBufRate!!.now * duration).wrapAt(sampleDur)
-            while (playbufStartPos!!.now < 0.0) playbufStartPos!!.now += sampleDur
+            while (playbufStartPos!!.now < zero) playbufStartPos!!.now += sampleDur
             playBufRate!!.now *= -1
-            if (playbufStartPos!!.now == 0.0 && playBufRate!!.now < 0.0) playbufStartPos!!.now = sampleDur
+            if (playbufStartPos!!.now == zero && playBufRate!!.now < zero) playbufStartPos!!.now = sampleDur
         }
     }
 
@@ -167,25 +161,17 @@ class SynthObject(
                 runOnActiveSynths { +"map('$parameter', ${bus.get<BusObject>().superColliderName})" }
             }
 
-            is ConstantControl -> {
-                val accuracy = (getSpec(parameter) as? NumericalControlSpec)?.accuracy ?: 3
-                controlObservers[control] = control.value.forEach { value ->
-                    runOnActiveSynths { +"set('$parameter', ${value.format(accuracy)})" }
-                }
+            is ConstantControl -> controlObservers[control] = control.value.forEach { value ->
+                runOnActiveSynths { +"set('$parameter', $value)" }
             }
 
-            is KnobControl -> {
-                val accuracy = valueAccuracyFor(parameter)
-                controlObservers[control] = control.value.forEach { value ->
-                    runOnActiveSynths { +"set('$parameter', ${value.format(accuracy)})" }
-                }
+            is KnobControl -> controlObservers[control] = control.value.forEach { value ->
+                runOnActiveSynths { +"set('$parameter', $value)" }
             }
 
             else -> {} //no realtime updates possible
         }
     }
-
-    private fun valueAccuracyFor(parameter: String) = (getSpec(parameter) as? NumericalControlSpec)?.accuracy ?: 3
 
     override fun removedControl(parameter: String, control: ParameterControl) {
         controlObservers.remove(control)?.kill()
@@ -198,12 +184,12 @@ class SynthObject(
                 else when (control) {
                     is BufferControl -> param to (control.sample.now?.get<SampleObject>()?.superColliderName ?: "0")
                     is BusControl -> param to control.bus.now.get<BusObject>().superColliderName
-                    is ConstantControl -> param to control.value.now.format(valueAccuracyFor(param))
-                    is KnobControl -> param to control.get().format(valueAccuracyFor(param))
-                    is EnvelopeControl -> param to control.envelope.points[0].y.format(valueAccuracyFor(param))
+                    is ConstantControl -> param to control.value.now.toString()
+                    is KnobControl -> param to control.get().toString()
+                    is EnvelopeControl -> param to control.envelope.points[0].value.toString()
                     else -> null
                 }
-            }.joinToString { (param, value) -> "$param: $value" } + ", duration: ${duration.format(3)}"
+            }.joinToString { (param, value) -> "$param: $value" } + ", duration: ${duration}"
             val synthVar = "~synths['$name']"
             val group = group.now
             val synthDefName = synthDef.name.now

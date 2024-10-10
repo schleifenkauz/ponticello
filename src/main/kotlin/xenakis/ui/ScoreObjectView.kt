@@ -25,8 +25,7 @@ import reaktive.value.forEach
 import reaktive.value.fx.asObservableValue
 import reaktive.value.now
 import reaktive.value.reactiveVariable
-import xenakis.impl.Knob
-import xenakis.impl.format
+import xenakis.impl.*
 import xenakis.model.*
 import xenakis.model.InteractionSettings.SnapOption
 import xenakis.model.Score.Companion.rootScore
@@ -45,7 +44,7 @@ abstract class ScoreObjectView(
         private set
     val context: Context get() = pane.context
 
-    val nameEditor: NameControl = NameControl(instance.obj)
+    private val nameEditor: NameControl = NameControl(instance.obj)
     private lateinit var muteUnmuteBtn: Button
     private val envelopeDisplayObservers = mutableMapOf<String, Observer>()
     val actions = HBox().centerChildren() styleClass "actions"
@@ -62,7 +61,7 @@ abstract class ScoreObjectView(
 
     protected val colorPicker: ColorPicker = ColorPicker() styleClass "button"
 
-    val paneY get() = pane.getPaneY(instance.y)
+    override val absolutePosition get() = instance.position + pane.absolutePosition
 
     init {
         styleClass("score-object")
@@ -71,13 +70,13 @@ abstract class ScoreObjectView(
         colorPicker.prefHeight = 30.0
     }
 
-    override fun getDuration(width: Double): Double = pane.getDuration(width)
+    override fun getDuration(width: Double): Decimal = pane.getDuration(width)
 
-    override fun getWidth(duration: Double): Double = pane.getWidth(duration)
+    override fun getWidth(duration: Decimal): Double = pane.getWidth(duration)
 
-    override fun getTime(x: Double): Double = getDuration(x)
+    override fun getTime(x: Double): Decimal = getDuration(x)
 
-    override fun getX(time: Double): Double = getWidth(time)
+    override fun getX(time: Decimal): Double = getWidth(time)
 
     protected open val supportedActions get() = listOf(Icon.Delete, Icon.Mute, Icon.Repeat)
 
@@ -101,11 +100,12 @@ abstract class ScoreObjectView(
 
     fun createLoop() {
         val settings = context[currentProject].settings
-        val grid = pane.getNearestGrid(layoutX, layoutY)?.obj.takeIf { settings.snapEnabled.now }
+        val grid = pane.getNearestGrid(instance.position)?.obj
+            .takeIf { settings.snapEnabled.now } as TempoGridObject?
         val periodUnit = if (grid == null) null else settings.snapOption.now
         compoundInput<Unit>("Configure loop of object ${instance.obj.name.now}") {
             val periodInput = when (periodUnit) {
-                null -> TextField(instance.duration.format(3))
+                null -> TextField(instance.duration.toString())
                 else -> {
                     val default = (instance.duration / grid!!.getDuration(periodUnit) + 0.95).toInt()
                     Spinner<Int>(1, Int.MAX_VALUE, default)
@@ -121,7 +121,7 @@ abstract class ScoreObjectView(
             onConfirm {
                 val period = when (periodInput) {
                     is Spinner<*> -> periodInput.value as Int * grid!!.getDuration(periodUnit ?: SnapOption.Seconds)
-                    is TextField -> periodInput.text.toDouble()
+                    is TextField -> periodInput.text.parseDecimal()!!
                     else -> error("Invalid period input control: $periodInput")
                 }
                 val repetitions = repetitionsInput.value
@@ -134,9 +134,10 @@ abstract class ScoreObjectView(
         if (isInitialized) return
         this.pane = parent
         initializeLayout()
+        val canResize = instance.obj.canResize
         setupDraggingAndResizing(
             parent,
-            canUserChangeWidth = true, canUserChangeHeight = true, Tool.Pointer,
+            canUserChangeWidth = canResize, canUserChangeHeight = canResize, Tool.Pointer,
             drag = this::dragTo, resize = this::resize,
             startDrag = this::startDrag,
             finishDrag = this::finishedDrag
@@ -264,12 +265,12 @@ abstract class ScoreObjectView(
                     if (obj is ScoreObjectGroup && ev.isShiftDown) {
                         val position = pane.getScoreY(ev.y)
                         val (top, bottom) = obj.cutVertically(position)
-                        replaceWithCutHalves(top, bottom, relativePosition = ObjectPosition(0.0, position))
+                        replaceWithCutHalves(top, bottom, relativePosition = ObjectPosition(zero, position))
                     } else if (!ev.isShiftDown) {
                         val position = pane.getDuration(ev.x)
                         val leftHalf = obj.cut(position, LEFT, "${obj.name.now}_left") ?: return@addEventHandler
                         val rightHalf = obj.cut(position, RIGHT, "${obj.name.now}_right") ?: return@addEventHandler
-                        replaceWithCutHalves(leftHalf, rightHalf, relativePosition = ObjectPosition(position, 0.0))
+                        replaceWithCutHalves(leftHalf, rightHalf, relativePosition = ObjectPosition(position, zero))
                     }
                 }
 
@@ -345,29 +346,31 @@ abstract class ScoreObjectView(
     }
 
     private fun dragTo(toX: Double, toY: Double) {
-        val movedObjects = context[ScoreObjectSelectionManager].selectedViews //one of these is guaranteed to be <this>
-        val relativeMinX = movedObjects.minOfOrNull { v -> v.layoutX - this.layoutX } ?: 0.0
-        val relativeMinY = movedObjects.minOfOrNull { v -> v.layoutY - this.layoutY } ?: 0.0
-        val relativeMaxX = movedObjects.maxOfOrNull { v -> v.layoutX + v.width - this.layoutX } ?: this.width
-        val relativeMaxY = movedObjects.maxOfOrNull { v -> v.layoutY + v.height - this.layoutY } ?: this.height
-        var (x, y) = pane.snapToGrid(toX, toY)
-        x = x.coerceAtLeast(-relativeMinX)
+        val movedObjects =
+            context[ScoreObjectSelectionManager].selectedInstances //one of these is guaranteed to be <this.instance>
+        val relativeMinT = movedObjects.minOfOrNull { inst ->
+            inst.start - this.instance.start
+        } ?: 0.0.asTime
+        val relativeMinY = movedObjects.minOfOrNull { inst ->
+            inst.y - this.instance.y
+        } ?: 0.0.asY
+        val relativeMaxT = movedObjects.maxOfOrNull { inst ->
+            inst.start + inst.obj.duration - this.instance.start
+        } ?: instance.obj.duration
+        val relativeMaxY = movedObjects.maxOfOrNull { inst ->
+            inst.y + inst.height - this.instance.y
+        } ?: instance.obj.height
+        var (t, y) = pane.snapToGrid(toX, toY)
+        t = t.coerceAtLeast(-relativeMinT)
         y = y.coerceAtLeast(-relativeMinY)
-        if (pane is SubScorePane) x = x.coerceAtMost(pane.width - relativeMaxX)
+        if (pane is SubScorePane) t = t.coerceAtMost(instance.obj.duration - relativeMaxT)
         y = y.coerceAtMost(pane.height - relativeMaxY)
-        val deltaT = pane.getTime(x) - instance.start
-        val deltaY = pane.getScoreY(y) - instance.y
-        for (view in movedObjects) {
-            val inst = view.instance
+        val deltaT = t - instance.start
+        val deltaY = y - instance.y
+        for (inst in movedObjects) {
             inst.moveTo(inst.start + deltaT, inst.y + deltaY, simpleMove = false)
         }
-        pane.markX(x)
-    }
-
-    protected open fun resizeObject(width: Double, height: Double, ev: MouseEvent, cursor: Cursor) {
-        val newDur = pane.getDuration(width)
-        val newHeight = pane.getScoreY(height)
-        instance.obj.resize(newDur, newHeight)
+        pane.markT(t)
     }
 
     open fun getDisplayWidth(): Double = pane.getWidth(instance.duration)
@@ -378,13 +381,13 @@ abstract class ScoreObjectView(
         repaintEnvelopes()
     }
 
-    protected fun repaintEnvelopes() {
+    private fun repaintEnvelopes() {
         for (e in envelopeEditors) {
             e.repaint()
         }
     }
 
-    final override fun moved(start: Double, y: Double) {
+    final override fun moved(start: Decimal, y: Decimal) {
         relocate(pane.getX(instance.start), pane.getPaneY(y))
     }
 
@@ -394,45 +397,41 @@ abstract class ScoreObjectView(
     }
 
     private fun resize(old: Bounds, deltaX: Double, deltaY: Double, cursor: Cursor, ev: MouseEvent) {
+        check(instance.obj.canResize) { "Attempt to resize object that is not resizable" }
         val direction = cursor.resizeDirection()
         val oldX = if (direction.left) old.minX else old.maxX
         val oldY = if (direction.up) old.minY else old.maxY
-        val (x, y) = pane.snapToGrid(oldX + deltaX, oldY + deltaY)
-        pane.markX(x)
-        val dx = x - oldX
-        val dy = y - oldY
-        var newWidth = old.width
-        if (direction.left) newWidth -= dx
-        else if (direction.right) newWidth += dx
-        var newHeight = old.height
+        val (t, y) = pane.snapToGrid(oldX + deltaX, oldY + deltaY)
+        pane.markT(t)
+        val dt = t - getDuration(oldX)
+        val dy = y - pane.getScoreY(oldY)
+        var newDur = getDuration(old.width)
+        if (direction.left) newDur -= dt
+        else if (direction.right) newDur += dt
+        var newHeight = pane.getScoreY(old.height)
         if (direction.up) newHeight -= dy
         else if (direction.down) newHeight += dy
 
-        newWidth = newWidth.coerceAtLeast(10.0)
-        newHeight = newHeight.coerceAtLeast(10.0)
+        newDur = newDur.coerceAtLeast(getDuration(10.0))
+        newHeight = newHeight.coerceAtLeast(0.01.asY)
 
-        if (direction.left) newWidth = newWidth.coerceAtMost(old.maxX)
-        if (pane is SubScorePane && direction.right) newWidth = newWidth.coerceAtMost(pane.width - old.minX)
-        if (direction.up) newHeight = newHeight.coerceAtMost(old.maxY)
-        if (direction.down) newHeight = newHeight.coerceAtMost(pane.height - old.minY)
+        if (direction.left) newDur = newDur.coerceAtMost(getDuration(old.maxX))
+        if (pane is SubScorePane && direction.right) newDur =
+            newDur.coerceAtMost(instance.duration - getDuration(old.minX))
+        if (direction.up) newHeight = newHeight.coerceAtMost(pane.getScoreY(old.maxY))
+        if (direction.down) newHeight = newHeight.coerceAtMost(instance.height - pane.getScoreY(old.minY))
 
-        resizeObject(newWidth, newHeight, ev, cursor)
+        instance.obj.resize(newDur, newHeight)
     }
 
-    fun getNearestGrid(): TempoGridObjectView? {
-        val x = pane.getX(instance.start)
-        val y = pane.getScoreY(instance.y)
-        return pane.getNearestGrid(x, y)
-    }
-
-    fun getDeltaX(direction: HorizontalDirection): Double {
-        val grid = getNearestGrid()
+    fun getDeltaX(direction: HorizontalDirection): Decimal {
+        val grid = pane.getNearestGrid(instance.position)?.obj as TempoGridObject?
         val settings = context[currentProject].settings
         val snapOption = if (settings.snapEnabled.now) settings.snapOption.now else null
         val factor = if (direction == LEFT) -1.0 else 1.0
         val deltaT =
-            if (snapOption != null && grid != null) grid.obj.getDuration(snapOption) * factor
-            else factor / pane.pixelsPerSecond
+            if (snapOption != null && grid != null) grid.getDuration(snapOption) * factor
+            else (factor / pane.pixelsPerSecond).asTime
         return deltaT
     }
 
@@ -445,19 +444,19 @@ abstract class ScoreObjectView(
                 resizeType!!, Direction.horizontal(RIGHT)
             )
         } else {
-            val (snappedX, _) = pane.snapToGrid(pane.getX(instance.start + deltaT), paneY)
-            val start = pane.getTime(snappedX).coerceIn(0.0, pane.maxTime - instance.obj.duration)
+            val (t, _) = pane.snapToGrid(instance.position.plusTime(deltaT))
+            val start = t.coerceIn(zero, pane.maxTime - instance.obj.duration)
             instance.setTime(start)
         }
     }
 
     open fun adjustVertical(direction: VerticalDirection, resize: Boolean, resizeType: ScoreObject.ResizeType) {
-        var deltaY = 0.01
+        var deltaY = 0.01.asTime
         if (direction == VerticalDirection.UP) deltaY *= -1
         adjustVertical(resize, resizeType, deltaY)
     }
 
-    protected fun adjustVertical(resize: Boolean, resizeType: ScoreObject.ResizeType, deltaY: Double) {
+    protected fun adjustVertical(resize: Boolean, resizeType: ScoreObject.ResizeType, deltaY: Decimal) {
         if (resize) {
             val targetHeight = (instance.obj.height + deltaY).coerceAtMost(pane.maxY - instance.y)
             instance.obj.resize(
@@ -465,7 +464,7 @@ abstract class ScoreObjectView(
                 resizeType, Direction.vertical(VerticalDirection.DOWN)
             )
         } else {
-            val y = (instance.y + deltaY).coerceIn(0.0, pane.maxY - instance.obj.height)
+            val y = (instance.y + deltaY).coerceIn(zero, pane.maxY - instance.obj.height)
             instance.setY(y)
         }
     }

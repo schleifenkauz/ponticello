@@ -6,6 +6,7 @@ import kotlinx.serialization.Serializable
 import reaktive.value.ReactiveVariable
 import reaktive.value.now
 import reaktive.value.reactiveVariable
+import xenakis.impl.toDecimal
 import xenakis.sc.ControlSpec
 import xenakis.sc.NumericalControlSpec
 import xenakis.sc.Warp
@@ -29,15 +30,15 @@ class ParameterDefObject(
     companion object {
         private val freq = ParameterDefObject(
             "freq",
-            NumericalControlSpec(440.0, 20.0, 20000.0, 1.0, Warp.Exponential, Color.BLACK)
+            NumericalControlSpec(440.0, 20.0, 20000.0, 1.0.toDecimal(), Warp.Exponential, Color.BLACK)
         )
         private val amp = ParameterDefObject(
             "amp",
-            NumericalControlSpec(0.1, 0.0, 1.0, 0.01, Warp.Linear, Color.ORANGE)
+            NumericalControlSpec(0.1, 0.0, 1.0, 0.01.toDecimal(), Warp.Linear, Color.ORANGE)
         )
         private val pan = ParameterDefObject(
             "pan",
-            NumericalControlSpec(0.0, -1.0, 1.0, 0.1, Warp.Linear, Color.BLUE)
+            NumericalControlSpec(0.0, -1.0, 1.0, 0.1.toDecimal(), Warp.Linear, Color.BLUE)
         )
 
         val defaults = listOf(freq, amp, pan)

@@ -13,8 +13,7 @@ import kotlinx.serialization.Transient
 import reaktive.value.ReactiveVariable
 import reaktive.value.now
 import reaktive.value.reactiveVariable
-import xenakis.impl.ColorSerializer
-import xenakis.impl.SuperColliderContext
+import xenakis.impl.*
 import xenakis.model.Score.Companion.rootScore
 import xenakis.sc.ControlSpec
 import xenakis.sc.NumericalControlSpec
@@ -28,21 +27,23 @@ sealed class ScoreObject : AbstractRenamableObject() {
 
     open val associatedControls: Map<String, ParameterControl> get() = emptyMap()
 
-    var duration: Double = 0.0
+    open val canResize: Boolean get() = true
+
+    var duration: Decimal = zero(ObjectPosition.TIME_PRECISION)
         protected set
 
-    var height: Double = 0.0
+    var height: Decimal = zero(ObjectPosition.Y_PRECISION)
         protected set
 
     @Transient
     private val viewManager: ListenerManager<Listener> = ListenerManager.createWeakListenerManager()
 
     @Transient
-    var durationBeforeResize: Double = 0.0
+    var durationBeforeResize: Decimal = zero(ObjectPosition.TIME_PRECISION)
         private set
 
     @Transient
-    var heightBeforeResize: Double = 0.0
+    var heightBeforeResize: Decimal = zero(ObjectPosition.Y_PRECISION)
         private set
 
     @Transient
@@ -50,6 +51,12 @@ sealed class ScoreObject : AbstractRenamableObject() {
 
     @Transient
     protected var resizeType: ResizeType = ResizeType.Regular
+
+    init {
+        //this is only for needed when opening projects that were created before the decimal-precision update
+        duration = duration.withPrecision(ObjectPosition.TIME_PRECISION)
+        height = height.withPrecision(ObjectPosition.Y_PRECISION)
+    }
 
     abstract fun writeCode(name: String, position: ObjectPosition, env: ScorePlayEnv): String
 
@@ -69,7 +76,7 @@ sealed class ScoreObject : AbstractRenamableObject() {
 
     open fun serverBooted(context: SuperColliderContext) {}
 
-    fun setInitialSize(duration: Double, height: Double) {
+    fun setInitialSize(duration: Decimal, height: Decimal) {
         this.duration = duration
         this.height = height
     }
@@ -82,7 +89,7 @@ sealed class ScoreObject : AbstractRenamableObject() {
         return type != ResizeType.DeepStretch
     }
 
-    open fun resize(targetDuration: Double, targetHeight: Double) {
+    open fun resize(targetDuration: Decimal, targetHeight: Decimal) {
         when (resizeType) {
             ResizeType.Regular -> {
                 for ((parameter, ctrl) in associatedControls) {
@@ -130,7 +137,7 @@ sealed class ScoreObject : AbstractRenamableObject() {
         }
     }
 
-    fun resize(targetDuration: Double, targetHeight: Double, type: ResizeType, direction: Direction) {
+    fun resize(targetDuration: Decimal, targetHeight: Decimal, type: ResizeType, direction: Direction) {
         beginResize(type, direction)
         resize(targetDuration, targetHeight)
         finishResize()
@@ -147,14 +154,14 @@ sealed class ScoreObject : AbstractRenamableObject() {
         return obj
     }
 
-    protected open fun doCut(position: Double, whichHalf: HorizontalDirection, newName: String): ScoreObject? {
+    protected open fun doCut(position: Decimal, whichHalf: HorizontalDirection, newName: String): ScoreObject? {
         val clone = clone(newName)
         val dur = if (whichHalf == LEFT) position else duration - position
         clone.resize(dur, height, ResizeType.Regular, direction = Direction.NONE)
         return clone
     }
 
-    fun cut(position: Double, whichHalf: HorizontalDirection, newName: String): ScoreObject? {
+    fun cut(position: Decimal, whichHalf: HorizontalDirection, newName: String): ScoreObject? {
         val obj = doCut(position, whichHalf, newName) ?: return null
         obj.rename(newName)
         obj.height = height
@@ -191,17 +198,17 @@ sealed class ScoreObject : AbstractRenamableObject() {
     interface Listener {
         fun resizedObject(obj: ScoreObject) {}
 
-        fun finishedResize(obj: ScoreObject, deltaDuration: Double, deltaHeight: Double, direction: Direction) {}
+        fun finishedResize(obj: ScoreObject, deltaDuration: Decimal, deltaHeight: Decimal, direction: Direction) {}
 
         fun isSomeInstanceSelected(yesOrNo: Boolean) {}
     }
 
     private class ResizeEdit(
         private val obj: ScoreObject,
-        private val oldDuration: Double,
-        private val oldHeight: Double,
-        private val newDuration: Double,
-        private val newHeight: Double,
+        private val oldDuration: Decimal,
+        private val oldHeight: Decimal,
+        private val newDuration: Decimal,
+        private val newHeight: Decimal,
         private val type: ResizeType,
         private val direction: Direction
     ) : AbstractEdit() {

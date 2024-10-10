@@ -3,6 +3,7 @@ package xenakis.ui
 import hextant.fx.registerShortcuts
 import javafx.beans.binding.Bindings
 import javafx.geometry.HorizontalDirection
+import javafx.geometry.Point2D
 import javafx.scene.control.Label
 import javafx.scene.input.KeyEvent
 import javafx.scene.input.MouseButton.PRIMARY
@@ -15,18 +16,15 @@ import javafx.scene.shape.Polyline
 import reaktive.value.binding.map
 import reaktive.value.fx.asObservableValue
 import reaktive.value.now
-import xenakis.impl.Point
-import xenakis.impl.accuracy
-import xenakis.impl.format
-import xenakis.impl.reverseIfEmpty
+import xenakis.impl.*
 import xenakis.model.Envelope
+import xenakis.model.Envelope.EnvelopePoint
 import xenakis.model.EnvelopeControl
+import xenakis.model.ObjectPosition
 import xenakis.model.SynthObject
-import xenakis.sc.LinearTransformation
 import xenakis.sc.NumericalControlSpec
 import xenakis.sc.mapOnto
-import xenakis.ui.prompt.DoublePrompt
-import kotlin.math.absoluteValue
+import xenakis.ui.prompt.DecimalPrompt
 
 class EnvelopeEditor(
     val parameterName: String, val envelope: Envelope,
@@ -35,11 +33,6 @@ class EnvelopeEditor(
     private val control
         get() = associatedObject.associatedControls.getValue(parameterName) as EnvelopeControl
     private val spec get() = associatedObject.getSpec(parameterName) as NumericalControlSpec
-    private val xTransform
-        get() = LinearTransformation(
-            0.0..associatedObject.duration,
-            0.0..pane.prefWidth
-        )
     private val yTransform get() = spec.mapOnto(pane.prefHeight..0.0)
 
     private val valueGrid get() = spec.step.get()
@@ -67,7 +60,7 @@ class EnvelopeEditor(
         line.setOnMouseEntered { mouseInfo.isVisible = true }
         line.setOnMouseExited { mouseInfo.isVisible = false }
         line.setOnMouseMoved { ev ->
-            val t = transformXToTime(ev.x)
+            val t = parentPane.getTime(ev.x)
             val v = envelope.interpolateValueAt(t)
             displayPosition(t, v)
         }
@@ -78,11 +71,11 @@ class EnvelopeEditor(
         line.setupDragging(
             onPressed = { ev ->
                 val t = transformXToTime(ev.x)
-                var segmentIdx = envelope.points.map(Point::x).binarySearch(t)
+                var segmentIdx = envelope.points.map(EnvelopePoint::time).binarySearch(t)
                 if (segmentIdx < 0) segmentIdx = -(segmentIdx + 1)
                 if (segmentIdx == 0 || segmentIdx == envelope.points.size) return@setupDragging
-                val diff = envelope.points[segmentIdx - 1].y - envelope.points[segmentIdx].y
-                if (diff.absoluteValue >= spec.step.get()) return@setupDragging
+                val diff = envelope.points[segmentIdx - 1].value - envelope.points[segmentIdx].value
+                if (diff.abs() >= spec.step.get()) return@setupDragging
                 draggingSegment = true
                 envelope.beginSegmentEdit(segmentIdx - 1)
             },
@@ -134,31 +127,31 @@ class EnvelopeEditor(
     private fun createNewPoint(ev: MouseEvent, interpolate: Boolean) {
         val t = transformXToTime(ev.x)
         val v = if (interpolate) envelope.interpolateValueAt(t) else transformYToValue(ev.y)
-        val newPoint = Point(t, v)
-        var idx = envelope.points.binarySearch(newPoint, compareBy(Point::x))
+        val newPoint = EnvelopePoint(t, v)
+        var idx = envelope.points.binarySearch(newPoint, compareBy(EnvelopePoint::time))
         idx = -(idx + 1)
         envelope.addPoint(idx, newPoint)
     }
 
-    override fun addedPoint(idx: Int, point: Point) {
-        val x = xTransform.map(point.x)
-        val y = yTransform.map(point.y)
+    override fun addedPoint(idx: Int, point: EnvelopePoint) {
+        val x = parentPane.getWidth(point.time)
+        val y = yTransform.map(point.value.toDouble())
         line.points.addAll(idx * 2, listOf(x, y))
         addHandle(idx, x, y)
     }
 
-    override fun removedPoint(idx: Int, point: Point) {
+    override fun removedPoint(idx: Int, point: EnvelopePoint) {
         val handle = handles.removeAt(idx)
         pane.children.remove(handle)
         line.points.remove(idx * 2, (idx + 1) * 2)
     }
 
-    override fun changedPoint(idx: Int, newPoint: Point) {
+    override fun changedPoint(idx: Int, newPoint: EnvelopePoint) {
         val (px, py) = newPoint
         displayPosition(px, py)
 
-        val tx = xTransform.map(px)
-        val ty = yTransform.map(py)
+        val tx = parentPane.getWidth(px)
+        val ty = yTransform.map(py.toDouble())
 
         handles[idx].centerX = tx
         handles[idx].centerY = ty
@@ -167,29 +160,20 @@ class EnvelopeEditor(
         line.points[idx * 2 + 1] = ty
     }
 
-    private fun transformXToTime(x: Double): Double {
-        val scoreX = x + objectView.layoutX
-        val scoreY = objectView.paneY
-        val snappedX = parentPane.snapToGrid(scoreX, scoreY).x
-        parentPane.markX(snappedX)
-        val xInObject = snappedX - objectView.layoutX
-        return xTransform.unmap(xInObject).coerceIn(xTransform.sourceRange)
+    private fun transformXToTime(x: Double): Decimal {
+        val pos = ObjectPosition(parentPane.getDuration(x), 0.0.asY) + objectView.absolutePosition
+        val (t, _) = parentPane.rootPane.snapToGrid(pos) - objectView.absolutePosition
+        parentPane.markT(t)
+        return t.coerceIn(zero..associatedObject.duration)
     }
 
-    private fun transformYToValue(y: Double) = yTransform.unmap(y).snap(valueGrid).coerceIn(yTransform.sourceRange)
+    private fun transformYToValue(y: Double): Decimal =
+        yTransform.unmap(y).snap(valueGrid).coerceIn(yTransform.sourceRange)
 
-    private fun displayPosition(t: Double, v: Double) {
+    private fun displayPosition(t: Decimal, v: Decimal) {
         val x = parentPane.getWidth(t)
-        /*var coords = Point2D(x, 0.0)
-        coords = objectView.localToScene(coords)
-        coords = parentPane.rootPane.sceneToLocal(coords)
-        val absoluteTime = parentPane.rootPane.getTime(coords.x)
-        val timeAccuracy = parentPane.xAccuracy
-        val timeStr = timeCode(absoluteTime, timeAccuracy)
-        */
-        val valueAccuracy = accuracy(spec.step.get())
-        mouseInfo.text = "$parameterName: ${v.format(valueAccuracy)}"
-        var y = yTransform.map(v)
+        mouseInfo.text = "$parameterName: ${v.toCanonicalString()}"
+        var y = yTransform.map(v.toDouble())
         val infoHeight = mouseInfo.prefHeight(-1.0)
         val infoWidth = mouseInfo.prefWidth(-1.0)
         if (objectView.prefWidth < infoWidth) return
@@ -206,8 +190,8 @@ class EnvelopeEditor(
         pane.children.add(line)
 
         for ((idx, p) in envelope.points.withIndex()) {
-            val x = xTransform.map(p.x)
-            val y = yTransform.map(p.y)
+            val x = parentPane.getWidth(p.time)
+            val y = yTransform.map(p.value.toDouble())
             line.points.addAll(x, y)
             addHandle(idx, x, y)
         }
@@ -258,7 +242,7 @@ class EnvelopeEditor(
             val newX = when (idx) {
                 0 -> 0.0
                 envelope.points.size - 1 -> objectView.prefWidth
-                else -> (old.minX + dx).coerceIn(xTransform.targetRange.reverseIfEmpty())
+                else -> (old.minX + dx).coerceIn(0.0..pane.width)
             }
             val newY = (old.minY + dy).coerceIn(yTransform.targetRange.reverseIfEmpty())
 
@@ -266,19 +250,19 @@ class EnvelopeEditor(
             val v = transformYToValue(newY)
 
             if (idx != 0 && idx != envelope.points.size - 1) {
-                t = t.coerceIn(envelope.points[idx - 1].x..envelope.points[idx + 1].x)
+                t = t.coerceIn(envelope.points[idx - 1].time..envelope.points[idx + 1].time)
             }
             displayPosition(t, v)
-            envelope.editPoint(Point(t, v))
+            envelope.editPoint(EnvelopePoint(t, v))
         }
         handle.addEventHandler(MouseEvent.MOUSE_PRESSED) {
             dragging = true
         }
         handle.addEventHandler(MouseEvent.MOUSE_RELEASED) { ev ->
             dragging = false
-            val mousePos = Point(ev.screenX, ev.screenY)
+            val mousePos = Point2D(ev.screenX, ev.screenY)
             val center = handle.localToScreen(handle.centerX, handle.centerY)
-            mouseInfo.isVisible = mousePos.dist(Point(center.x, center.y)) <= handle.radius
+            mouseInfo.isVisible = mousePos dist Point2D(center.x, center.y) <= handle.radius
         }
         handle.setOnMouseClicked { ev ->
             val idx = handles.indexOf(handle)
@@ -296,7 +280,7 @@ class EnvelopeEditor(
             mouseInfo.isVisible = true
             val idx = handles.indexOf(handle)
             val p = envelope.points[idx]
-            displayPosition(p.x, p.y)
+            displayPosition(p.time, p.value)
             ev.consume()
         }
         handle.setOnMouseExited { ev ->
@@ -307,7 +291,7 @@ class EnvelopeEditor(
 
     private fun adjustPointVertical(idx: Int, dir: Int) {
         val delta = spec.step.get() * dir
-        if (envelope.points[idx].y + delta in spec.range) {
+        if (envelope.points[idx].value + delta in spec.range) {
             envelope.adjustPointVertical(idx, delta)
         }
     }
@@ -319,9 +303,9 @@ class EnvelopeEditor(
 
     private fun showPromptFor(idx: Int) {
         val point = envelope.points[idx]
-        val value = DoublePrompt("Value for $parameterName", point.y, spec.range)
+        val value = DecimalPrompt("Value for $parameterName", point.value, spec.range)
             .showDialog(parentPane.context, handles[idx]) ?: return
-        envelope.editPoint(idx, value.snap(valueGrid))
+        envelope.editPoint(idx, value.value.snap(valueGrid))
     }
 
     private fun removeHandle(idx: Int) {

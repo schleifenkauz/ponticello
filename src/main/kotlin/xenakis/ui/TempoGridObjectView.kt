@@ -10,10 +10,10 @@ import reaktive.value.fx.asObservableValue
 import reaktive.value.fx.asProperty
 import reaktive.value.now
 import reaktive.value.reactiveValue
+import xenakis.impl.*
 import xenakis.model.ScoreObjectInstance
 import xenakis.model.TempoGridObject
 import xenakis.ui.XenakisController.Companion.currentProject
-import kotlin.math.ceil
 
 class TempoGridObjectView(inst: ScoreObjectInstance, val obj: TempoGridObject) : ScoreObjectView(inst) {
     private val area = Pane()
@@ -66,7 +66,7 @@ class TempoGridObjectView(inst: ScoreObjectInstance, val obj: TempoGridObject) :
         val bpm = obj.beatsPerMinute.now
         val bpb = obj.beatsPerBar.now
         val tpb = obj.ticksPerBeat.now
-        val bars = ceil(obj.duration * bpm / 60 / bpb).toInt()
+        val bars = (obj.duration * bpm / 60 / bpb).ceilToInt()
         val barsPerSecond = bpm.toDouble() / bpb / 60
         for (bar in 0..bars) {
             val barX = getX(bar)
@@ -101,7 +101,7 @@ class TempoGridObjectView(inst: ScoreObjectInstance, val obj: TempoGridObject) :
     }
 
     private fun getX(bar: Int, beat: Int = 0, tick: Int = 0): Double {
-        val secondsPerBeat = 60.0 / obj.beatsPerMinute.now
+        val secondsPerBeat = 60.0.asTime / obj.beatsPerMinute.now
         val t = ((bar * obj.beatsPerBar.now) + beat + (tick.toDouble() / obj.ticksPerBeat.now)) * secondsPerBeat
         return pane.getWidth(t)
     }
@@ -110,10 +110,10 @@ class TempoGridObjectView(inst: ScoreObjectInstance, val obj: TempoGridObject) :
         area.children.remove(marker)
     }
 
-    fun mark(x: Double) {
+    fun mark(t: Decimal) {
         if (marker !in area.children) area.children.add(marker)
-        marker.startX = x - layoutX
-        marker.endX = x - layoutX
+        marker.startX = getWidth(t)
+        marker.endX = getWidth(t)
     }
 
     override val defaultBackgroundColor: ReactiveValue<Color>

@@ -1,6 +1,9 @@
 package xenakis.model
 
 import reaktive.value.now
+import xenakis.impl.Decimal
+import xenakis.impl.unaryMinus
+import xenakis.impl.zero
 import xenakis.ui.Direction
 import java.util.*
 
@@ -93,7 +96,7 @@ class ScoreEventCollector(
     }
 
     @Synchronized
-    override fun finishedResize(obj: ScoreObject, deltaDuration: Double, deltaHeight: Double, direction: Direction) {
+    override fun finishedResize(obj: ScoreObject, deltaDuration: Decimal, deltaHeight: Decimal, direction: Direction) {
         if (obj is ScoreObjectGroup) return
         val eventsBefore = events.size
         val newEvents = mutableListOf<Event>()
@@ -121,7 +124,7 @@ class ScoreEventCollector(
     }
 
     @Synchronized
-    override fun movedObject(score: Score, inst: ScoreObjectInstance, dt: Double, dy: Double) {
+    override fun movedObject(score: Score, inst: ScoreObjectInstance, dt: Decimal, dy: Decimal) {
         if (inst.muted) return
         val oldPosition = inst.position + ObjectPosition(-dt, -dy)
         val eventsBefore = nEvents()
@@ -160,9 +163,12 @@ class ScoreEventCollector(
             }
         } else {
             Logger.fine("Added $inst at $position", Logger.Category.Playback)
-            val posEnd = position + ObjectPosition(obj.duration, 0.0)
+            val posEnd = position + ObjectPosition(obj.duration, zero)
             val player = player
-            if (player != null && env != null && player.isPlaying && player.currentTime in position.time - env.lookAhead..posEnd.time) {
+            if (
+                player != null && env != null && player.isPlaying
+                && player.currentTime in position.time - env.lookAhead..posEnd.time
+            ) {
                 player.scheduleInstantly(inst, position)
             }
             addEvent(Event(Event.Type.ObjectStart, position, inst))
@@ -179,7 +185,7 @@ class ScoreEventCollector(
             }
         } else {
             Logger.fine("Removing $inst at $position", Logger.Category.Playback)
-            val posEnd = position + ObjectPosition(obj.duration, 0.0)
+            val posEnd = position + ObjectPosition(obj.duration, zero)
             removeEvent(Event(Event.Type.ObjectStart, position, inst))
             removeEvent(Event(Event.Type.ObjectEnd, posEnd, inst))
             val player = player
@@ -192,8 +198,8 @@ class ScoreEventCollector(
     }
 
     @Synchronized
-    fun eventsAt(time: Double, delta: Double): List<Event> {
-        val pos = ObjectPosition(time, 0.0)
+    fun eventsAt(time: Decimal, delta: Decimal): List<Event> {
+        val pos = ObjectPosition(time, zero)
         return events.tailMap(pos)
             .entries
             .takeWhile { (pos, _) -> pos.time < time + delta }

@@ -21,7 +21,6 @@ import javafx.scene.input.*
 import javafx.scene.layout.Pane
 import reaktive.value.now
 import xenakis.impl.Arrow
-import xenakis.impl.Point
 import xenakis.model.*
 import xenakis.ui.XenakisController.Companion.currentProject
 import xenakis.ui.prompt.NamePrompt
@@ -34,7 +33,7 @@ class AudioFlowGraphPane(
 ) : Pane(), AudioFlowGraph.View {
     private var sourceBus: AudioFlowGraph.BusNode? = null
     private var flowArrow: Arrow? = null
-    private var dragStart: Point? = null
+    private var dragStart: Point2D? = null
     private var oldBounds: Bounds? = null
     private val busLabels = mutableListOf<Label>()
     private val flowArrows = mutableListOf<Pair<AudioFlowGraph.AudioFlow, Arrow>>()
@@ -70,7 +69,7 @@ class AudioFlowGraphPane(
                 busList.removedOptions.addAll(graph.nodes.map { node -> node.ref.get<BusObject>() })
                 val anchor = Point2D(ev.screenX, ev.screenY)
                 busList.showPopup(context, anchor) { bus ->
-                    graph.addNode(bus.createReference(), Point(ev.x, ev.y))
+                    graph.addNode(bus.createReference(), Point2D(ev.x, ev.y))
                 }
             }
         }
@@ -93,7 +92,7 @@ class AudioFlowGraphPane(
         addEventHandler(DragEvent.DRAG_DROPPED) { ev ->
             val busName = ev.dragboard.getContent(BusObject.DATA_FORMAT) as? String ?: return@addEventHandler
             val bus = context[currentProject].busses.get(busName).createReference()
-            if (!graph.addNode(bus, Point(ev.x, ev.y))) {
+            if (!graph.addNode(bus, Point2D(ev.x, ev.y))) {
                 Logger.error("Cannot add same bus twice in audio flow graph")
             }
             ev.consume()
@@ -234,14 +233,14 @@ class AudioFlowGraphPane(
     private fun drag(ev: MouseEvent, label: Label, obj: AudioFlowGraph.BusNode) {
         val start = dragStart
         if (start == null) {
-            dragStart = Point(ev.screenX, ev.screenY)
+            dragStart = Point2D(ev.screenX, ev.screenY)
             oldBounds = label.boundsInParent
             context[UndoManager].beginCompoundEdit("Move audio flow node")
         } else {
             val dx = ev.screenX - start.x
             val dy = ev.screenY - start.y
             val old = oldBounds!!
-            val position = Point(
+            val position = Point2D(
                 (old.minX + dx).coerceIn(0.0, width - label.width),
                 (old.minY + dy).coerceIn(0.0, height - label.height)
             )

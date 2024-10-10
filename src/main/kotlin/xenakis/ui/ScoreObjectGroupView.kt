@@ -4,7 +4,7 @@ import javafx.scene.paint.Color
 import xenakis.model.ScoreObjectGroup
 import xenakis.model.ScoreObjectInstance
 
-class ScoreObjectGroupView(inst: ScoreObjectInstance, val obj: ScoreObjectGroup) : ScoreObjectView(inst) {
+class ScoreObjectGroupView(private val inst: ScoreObjectInstance, val obj: ScoreObjectGroup) : ScoreObjectView(inst) {
     lateinit var scorePane: ScorePane
         private set
 
@@ -17,7 +17,7 @@ class ScoreObjectGroupView(inst: ScoreObjectInstance, val obj: ScoreObjectGroup)
 
     override fun initialize(parent: ScorePane) {
         super.initialize(parent)
-        scorePane = SubScorePane(obj, context)
+        scorePane = SubScorePane(inst, obj, parent, context)
         children.add(scorePane)
         scorePane.prefWidthProperty().bind(widthProperty())
         scorePane.prefHeightProperty().bind(heightProperty())

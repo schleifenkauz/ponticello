@@ -1,10 +1,13 @@
 package xenakis.model
 
+import xenakis.impl.Decimal
 import xenakis.impl.SuperColliderClient
+import xenakis.impl.asTime
+import xenakis.impl.times
 import xenakis.ui.PlayHead
 import kotlin.concurrent.thread
 
-abstract class AbstractPlayer(private val deltaT: Double) : Thread() {
+abstract class AbstractPlayer(private val deltaT: Decimal) : Thread() {
     var isPlaying = false
         private set
 
@@ -14,7 +17,7 @@ abstract class AbstractPlayer(private val deltaT: Double) : Thread() {
 
     protected abstract val client: SuperColliderClient
 
-    protected abstract val lookAhead: Double
+    protected abstract val lookAhead: Decimal
 
     init {
         isDaemon = true
@@ -26,7 +29,7 @@ abstract class AbstractPlayer(private val deltaT: Double) : Thread() {
         while (!interrupted()) {
             val now = System.currentTimeMillis()
             if (isPlaying) {
-                val dt = (now - lastTime) / 1000.0
+                val dt = ((now - lastTime) / 1000.0).asTime
                 scheduleEvents(playHead.currentTime + lookAhead, dt)
                 playHead.advance(dt)
             }
@@ -40,11 +43,11 @@ abstract class AbstractPlayer(private val deltaT: Double) : Thread() {
         }
     }
 
-    private fun toMs(t: Double) = (t * 1000).toLong()
+    private fun toMs(t: Decimal) = (t * 1000).toLong()
 
-    protected abstract fun startPlay(startFrom: Double): Boolean
+    protected abstract fun startPlay(startFrom: Decimal): Boolean
 
-    protected abstract fun scheduleEvents(t: Double, delta: Double)
+    protected abstract fun scheduleEvents(t: Decimal, delta: Decimal)
 
     fun play(): Boolean {
         if (isPlaying) return true

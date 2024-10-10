@@ -38,11 +38,11 @@ class ControlSpecEditor(context: Context) :
         ParameterType.Buffer -> BufferControlSpecEditor(context)
         ParameterType.Numerical -> NumericalControlSpecEditor(
             context,
-            defaultValue = DoubleLiteralEditor(context, "0"),
-            min = DoubleLiteralEditor(context, "0"),
-            max = DoubleLiteralEditor(context, "1"),
+            defaultValue = DecimalLiteralEditor(context, "0"),
+            min = DecimalLiteralEditor(context, "0"),
+            max = DecimalLiteralEditor(context, "1"),
             warp = WarpEditor(context, Warp.Linear),
-            step = DoubleLiteralEditor(context, "0.1"),
+            step = DecimalLiteralEditor(context, "0.1"),
             associatedColor = ColorEditor(context, randomColor())
         )
 

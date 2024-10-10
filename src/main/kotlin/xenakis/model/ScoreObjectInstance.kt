@@ -11,17 +11,19 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import reaktive.value.now
+import xenakis.impl.Decimal
+import xenakis.impl.withPrecision
 import xenakis.model.Score.Companion.rootScore
 
 @Serializable
 class ScoreObjectInstance(
     @SerialName("object") private var objectRef: ObjectReference,
-    @SerialName("time") private var _time: Double,
-    @SerialName("y") private var _y: Double,
+    @SerialName("time") private var _time: Decimal,
+    @SerialName("y") private var _y: Decimal,
     @SerialName("muted") private var _muted: Boolean = false
 ) {
     constructor(
-        obj: ScoreObject, time: Double, y: Double, muted: Boolean = false
+        obj: ScoreObject, time: Decimal, y: Decimal, muted: Boolean = false
     ) : this(obj.createReference(), time, y, muted)
 
     constructor(
@@ -86,6 +88,9 @@ class ScoreObjectInstance(
     fun initialize(context: Context) {
         this.context = context
         objectRef.resolve(context[ScoreObjectRegistry])
+        //this is only for needed when opening projects that were created before the decimal-precision update
+        _time = _time.withPrecision(ObjectPosition.TIME_PRECISION)
+        _y = _y.withPrecision(ObjectPosition.Y_PRECISION)
     }
 
     fun addListener(listener: Listener) {
@@ -101,7 +106,7 @@ class ScoreObjectInstance(
         positionBeforeMove = position
     }
 
-    fun moveTo(time: Double, y: Double, simpleMove: Boolean) {
+    fun moveTo(time: Decimal, y: Decimal, simpleMove: Boolean) {
         if (this.start == time && this.y == y) return
         if (simpleMove) beginMove()
         this._time = time
@@ -121,11 +126,11 @@ class ScoreObjectInstance(
         moveTo(position.time, position.y, simpleMove = true)
     }
 
-    fun setTime(time: Double) {
+    fun setTime(time: Decimal) {
         moveTo(time, _y, simpleMove = true)
     }
 
-    fun setY(y: Double) {
+    fun setY(y: Decimal) {
         moveTo(_time, y, simpleMove = true)
     }
 
@@ -152,12 +157,12 @@ class ScoreObjectInstance(
         }
     }
 
-    fun duplicate(time: Double, y: Double) = ScoreObjectInstance(objectRef, time, y, _muted)
+    fun duplicate(time: Decimal, y: Decimal) = ScoreObjectInstance(objectRef, time, y, _muted)
 
     fun duplicate(position: ObjectPosition) = duplicate(position.time, position.y)
 
     fun clone(
-        time: Double = this.start, y: Double = this.y,
+        time: Decimal = this.start, y: Decimal = this.y,
         newName: String = context[ScoreObjectRegistry].nameForClone(obj)
     ): ScoreObjectInstance = ScoreObjectInstance(obj.clone(newName), time, y, _muted)
 
@@ -166,14 +171,14 @@ class ScoreObjectInstance(
         newName: String = context[ScoreObjectRegistry].nameForClone(obj)
     ) = clone(position.time, position.y, newName)
 
-    fun cut(position: Double, whichHalf: HorizontalDirection): ScoreObjectInstance? {
+    fun cut(position: Decimal, whichHalf: HorizontalDirection): ScoreObjectInstance? {
         val name = "${obj.name.now}_" + (if (whichHalf == HorizontalDirection.LEFT) "left" else "right")
         val time = if (whichHalf == HorizontalDirection.LEFT) start else start + position
         val half = obj.cut(position, whichHalf, name) ?: return null
         return ScoreObjectInstance(half, time, y, muted)
     }
 
-    fun cut(position: Double): Pair<ScoreObjectInstance, ScoreObjectInstance>? {
+    fun cut(position: Decimal): Pair<ScoreObjectInstance, ScoreObjectInstance>? {
         val left = cut(position, HorizontalDirection.LEFT) ?: return null
         val right = cut(position, HorizontalDirection.RIGHT) ?: return null
         return left to right
@@ -182,7 +187,7 @@ class ScoreObjectInstance(
     override fun toString(): String = "instance of $obj at $position in ${score?.scoreName?.now}"
 
     interface Listener {
-        fun moved(start: Double, y: Double)
+        fun moved(start: Decimal, y: Decimal)
 
         fun toggledMute(muted: Boolean)
     }

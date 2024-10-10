@@ -4,6 +4,10 @@ import org.junit.jupiter.api.Assertions.assertArrayEquals
 import org.junit.jupiter.api.Test
 import reaktive.value.reactiveValue
 import reaktive.value.reactiveVariable
+import xenakis.impl.asTime
+import xenakis.impl.asY
+import xenakis.impl.withPrecision
+import xenakis.impl.zero
 import xenakis.model.ScoreEventCollector.Event
 import kotlin.random.Random
 
@@ -27,8 +31,8 @@ class ScoreEventCollectorTest {
                         } else objects.random(rnd)
                     val parentScore =
                         if (subScores.isEmpty() || rnd.nextDouble() < 0.8) rootScore else subScores.random(rnd)
-                    val time = rnd.nextDouble(100.0)
-                    val y = rnd.nextDouble(100.0)
+                    val time = rnd.nextDouble(100.0).asTime
+                    val y = rnd.nextDouble(100.0).asY
                     val muted = rnd.nextDouble() <= 0.2
                     val inst = ScoreObjectInstance(obj, time, y, muted)
                     parentScore.addObject(inst)
@@ -48,8 +52,8 @@ class ScoreEventCollectorTest {
                 }
 
                 p < 0.9 -> {
-                    val time = rnd.nextDouble(100.0)
-                    val y = rnd.nextDouble(100.0)
+                    val time = rnd.nextDouble(100.0).asTime
+                    val y = rnd.nextDouble(100.0).asY
                     val inst = rootScore.allInstances().toList().random(rnd)
                     inst.moveTo(time, y, simpleMove = true)
                     println("Moved $inst")
@@ -61,9 +65,9 @@ class ScoreEventCollectorTest {
                     val subScore = Score()
                     subScores.add(subScore)
                     val obj = ScoreObjectGroup(reactiveVariable("score${subScores.size}"), subScore)
-                    obj.setInitialSize(100.0, 100.0)
-                    val time = rnd.nextDouble(100.0)
-                    val y = rnd.nextDouble(100.0)
+                    obj.setInitialSize(100.0.asTime, 100.0.withPrecision(ObjectPosition.Y_PRECISION))
+                    val time = rnd.nextDouble(100.0).asTime
+                    val y = rnd.nextDouble(100.0).asY
                     val inst = ScoreObjectInstance(obj, time, y)
                     parentScore.addObject(inst)
                     println("Added $inst")
@@ -82,14 +86,14 @@ class ScoreEventCollectorTest {
                 val startPos = inst.position + scorePosition
                 listOf(
                     Event(Event.Type.ObjectStart, startPos, inst),
-                    Event(Event.Type.ObjectEnd, startPos + ObjectPosition(inst.obj.duration, 0.0), inst)
+                    Event(Event.Type.ObjectEnd, startPos + ObjectPosition(inst.obj.duration, zero), inst)
                 )
             }
         }
 
     private fun checkEvents(score: Score, collector: ScoreEventCollector) {
         val expectedEvents = expectedEvents(score).sortedBy { ev -> ev.absolutePosition }
-        val actualEvents = collector.eventsAt(0.0, delta = 10000.0)
+        val actualEvents = collector.eventsAt(zero, delta = 10000.0.asTime)
         assertArrayEquals(expectedEvents.toTypedArray(), actualEvents.toTypedArray())
         println("CHECK OKAY: ${expectedEvents.size} events")
     }
@@ -102,11 +106,18 @@ class ScoreEventCollectorTest {
         val collector = ScoreEventCollector(rootScore, null)
         val subScore = Score()
         val subObj = ScoreObjectGroup(reactiveVariable("sub_score"), subScore)
-        val subInst = ScoreObjectInstance(subObj.createReference(), 10.0, 100.0)
+        val subInst =
+            ScoreObjectInstance(subObj.createReference(), 10.0.asTime, 100.0.withPrecision(ObjectPosition.Y_PRECISION))
         rootScore.addObject(subInst)
         val obj = Utils.createDummyObject("obj1")
         subInst.toggleMuted()
-        subScore.addObject(ScoreObjectInstance(obj.createReference(), 10.0, 10.0))
+        subScore.addObject(
+            ScoreObjectInstance(
+                obj.createReference(),
+                10.0.asTime,
+                10.0.asY
+            )
+        )
         checkEvents(rootScore, collector)
         subInst.toggleMuted()
         checkEvents(rootScore, collector)

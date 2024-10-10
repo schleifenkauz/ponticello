@@ -6,16 +6,18 @@ import hextant.core.editor.ListenerManager
 import hextant.serial.EditorRoot
 import hextant.undo.AbstractEdit
 import hextant.undo.UndoManager
+import javafx.geometry.Point2D
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import reaktive.Observer
 import reaktive.value.now
 import reaktive.value.reactiveVariable
-import xenakis.impl.Point
+import xenakis.impl.Point2DSerializer
 import xenakis.impl.ScWriter
 import xenakis.impl.SuperColliderClient
 import xenakis.impl.copy
 import xenakis.sc.editor.*
+import xenakis.ui.plus
 import java.util.*
 
 @Serializable
@@ -120,7 +122,7 @@ class AudioFlowGraph(
                     BusObject(reactiveVariable(subBusName), node.bus.rate.copy(), reactiveVariable(1))
                         .also { newBus -> registry.add(newBus) }
                 val deltaX = (idx - (channels / 2 + 1)) * 100.0
-                BusNode(subBus.createReference(), node.position + Point(deltaX, 100.0)).also { n -> addNode(n) }
+                BusNode(subBus.createReference(), node.position + Point2D(deltaX, 100.0)).also { n -> addNode(n) }
             }
             if (associatedFlows(subNode).any { f -> f.source == node.ref || f.target == node.ref }) {
                 return
@@ -208,7 +210,7 @@ class AudioFlowGraph(
         }
     }
 
-    fun addNode(bus: ObjectReference, position: Point): Boolean {
+    fun addNode(bus: ObjectReference, position: Point2D): Boolean {
         val obj = BusNode(bus, position)
         return addNode(obj)
     }
@@ -240,7 +242,7 @@ class AudioFlowGraph(
         }
     }
 
-    fun move(node: BusNode, position: Point) {
+    fun move(node: BusNode, position: Point2D) {
         undoManager.record(Edit.MoveNode(this, node, node.position, position))
         node.position = position
         views.notifyListeners { movedNode(node) }
@@ -285,7 +287,7 @@ class AudioFlowGraph(
         f.synth.editor.result.now.group.reference?.get<GroupObject>() ?: context[GroupRegistry].getDefault()
 
     @Serializable
-    data class BusNode(val ref: ObjectReference, var position: Point) {
+    data class BusNode(val ref: ObjectReference, @Serializable(with = Point2DSerializer::class) var position: Point2D) {
         val bus get() = ref.get<BusObject>()
     }
 
@@ -381,8 +383,8 @@ class AudioFlowGraph(
         class MoveNode(
             graph: AudioFlowGraph,
             private val node: BusNode,
-            private val fromPosition: Point,
-            private val toPosition: Point
+            private val fromPosition: Point2D,
+            private val toPosition: Point2D
         ) : Edit(graph) {
             override val actionDescription: String
                 get() = "Move Flow"

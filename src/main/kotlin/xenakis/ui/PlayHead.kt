@@ -3,14 +3,18 @@ package xenakis.ui
 import javafx.application.Platform
 import javafx.scene.layout.Pane
 import javafx.scene.shape.Line
+import xenakis.impl.Decimal
+import xenakis.impl.zero
+import xenakis.model.ObjectPosition
 
 class PlayHead {
-    var currentTime = 0.0
+    var currentTime = START
         private set
 
     private val playHead = Line().styleClass("play-head")
 
-    private lateinit var timeBlock: TimeBlock
+    lateinit var timeBlock: TimeBlock
+        private set
     lateinit var pane: Pane
         private set
 
@@ -24,7 +28,7 @@ class PlayHead {
         playHead.startY = verticalPadding
         if (playHead.endYProperty().isBound) playHead.endYProperty().unbind()
         playHead.endYProperty().bind(target.heightProperty().subtract(verticalPadding))
-        movePlayHead(0.0)
+        movePlayHead(START)
         timeBlock = target
         pane = target
     }
@@ -34,9 +38,13 @@ class PlayHead {
         currentTime = timeBlock.getTime(x)
     }
 
-    fun movePlayHead(pos: Double) {
+    fun movePlayHead(pos: Decimal) {
         currentTime = pos
         Platform.runLater { updatePosition() }
+    }
+
+    fun movePlayHeadToStart() {
+        movePlayHead(START)
     }
 
     fun updatePosition() {
@@ -44,11 +52,12 @@ class PlayHead {
         playHead.layoutX = timeBlock.getX(currentTime)
     }
 
-    fun advance(dt: Double) {
+    fun advance(dt: Decimal) {
         movePlayHead(currentTime + dt)
     }
 
     companion object {
         const val PLAY_HEAD_WIDTH = 2.0
+        val START = zero(ObjectPosition.TIME_PRECISION)
     }
 }

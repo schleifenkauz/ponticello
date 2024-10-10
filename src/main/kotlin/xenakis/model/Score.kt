@@ -10,6 +10,10 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import reaktive.value.ReactiveString
 import reaktive.value.now
+import xenakis.impl.Decimal
+import xenakis.impl.plus
+import xenakis.impl.times
+import xenakis.impl.zero
 
 @Serializable
 class Score(private val instances: MutableList<ScoreObjectInstance> = mutableListOf()) :
@@ -101,7 +105,7 @@ class Score(private val instances: MutableList<ScoreObjectInstance> = mutableLis
         views.notifyListeners { toggledMute(this@Score, inst, muted) }
     }
 
-    fun addTime(location: Double, amount: Double) {
+    fun addTime(location: Decimal, amount: Decimal) {
         undo.record(ScoreEdit.AddTime(location, amount, this))
         context.withoutUndo {
             for (inst in objectInstances) {
@@ -113,7 +117,7 @@ class Score(private val instances: MutableList<ScoreObjectInstance> = mutableLis
         }
     }
 
-    fun deleteTimeRange(start: Double, end: Double) {
+    fun deleteTimeRange(start: Decimal, end: Decimal) {
         undo.beginCompoundEdit()
         val removedDuration = end - start
         for (inst in objectInstances) {
@@ -121,7 +125,7 @@ class Score(private val instances: MutableList<ScoreObjectInstance> = mutableLis
                 if (inst.start + inst.obj.duration < end) {
                     removeObject(inst)
                 } else {
-                    val newStart = (inst.start - removedDuration).coerceAtLeast(0.0)
+                    val newStart = (inst.start - removedDuration).coerceAtLeast(zero)
                     inst.setTime(newStart)
                 }
             }
@@ -129,7 +133,7 @@ class Score(private val instances: MutableList<ScoreObjectInstance> = mutableLis
         undo.finishCompoundEdit("Delete time range")
     }
 
-    fun loop(inst: ScoreObjectInstance, period: Double, repetitions: Int) {
+    fun loop(inst: ScoreObjectInstance, period: Decimal, repetitions: Int) {
         context[UndoManager].beginCompoundEdit("Loop object")
         var t = inst.start
         val layers = (inst.obj.duration / period + 0.95).toInt()

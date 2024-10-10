@@ -1,5 +1,6 @@
 package xenakis.impl
 
+import javafx.geometry.Point2D
 import javafx.scene.paint.Color
 import javafx.scene.shape.LineTo
 import javafx.scene.shape.MoveTo
@@ -54,8 +55,8 @@ class Arrow(
             draw()
         }
 
-    val start get() = Point(startX, startY)
-    val end get() = Point(endX, endY)
+    val start get() = Point2D(startX, startY)
+    val end get() = Point2D(endX, endY)
 
     fun setStart(x: Double, y: Double) {
         startX = x
@@ -79,10 +80,10 @@ class Arrow(
         val angle = atan2((endY - startY), (endX - startX)) - Math.PI / 2.0
         val sin = sin(angle)
         val cos = cos(angle)
-        //point1
+        //Point2D1
         val x1 = (-1.0 / 2.0 * cos + sqrt(3.0) / 2 * sin) * arrowHeadSize + endX
         val y1 = (-1.0 / 2.0 * sin - sqrt(3.0) / 2 * cos) * arrowHeadSize + endY
-        //point2
+        //Point2D2
         val x2 = (1.0 / 2.0 * cos + sqrt(3.0) / 2 * sin) * arrowHeadSize + endX
         val y2 = (1.0 / 2.0 * sin - sqrt(3.0) / 2 * cos) * arrowHeadSize + endY
 

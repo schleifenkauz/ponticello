@@ -17,6 +17,7 @@ import reaktive.value.ReactiveVariable
 import reaktive.value.fx.asProperty
 import reaktive.value.now
 import reaktive.value.reactiveVariable
+import xenakis.impl.Decimal
 import xenakis.model.*
 import xenakis.sc.BufferControlSpec
 import xenakis.sc.ControlSpec
@@ -98,7 +99,7 @@ class ControlAssignmentEditor(
     sealed class ControlType<C : ParameterControl> {
         abstract fun createDetailInput(parameter: String, spec: ControlSpec, control: C, context: Context): Node
 
-        abstract fun createDefaultControl(obj: ScoreObject, spec: ControlSpec, initialValue: Double?): C
+        abstract fun createDefaultControl(obj: ScoreObject, spec: ControlSpec, initialValue: Decimal?): C
 
         override fun toString(): String = when (this) {
             Buffer -> "Buffer"
@@ -120,7 +121,7 @@ class ControlAssignmentEditor(
             ): Node = ControlSlider(control.value, spec as NumericalControlSpec)
 
             override fun createDefaultControl(
-                obj: ScoreObject, spec: ControlSpec, initialValue: Double?
+                obj: ScoreObject, spec: ControlSpec, initialValue: Decimal?
             ): ConstantControl {
                 spec as NumericalControlSpec
                 return ConstantControl(reactiveVariable(initialValue ?: spec.defaultValue.get()))
@@ -146,7 +147,7 @@ class ControlAssignmentEditor(
             override fun createDefaultControl(
                 obj: ScoreObject,
                 spec: ControlSpec,
-                initialValue: Double?
+                initialValue: Decimal?
             ): EnvelopeControl {
                 spec as NumericalControlSpec
                 val value = initialValue ?: spec.defaultValue.get()
@@ -174,7 +175,7 @@ class ControlAssignmentEditor(
             override fun createDefaultControl(
                 obj: ScoreObject,
                 spec: ControlSpec,
-                initialValue: Double?
+                initialValue: Decimal?
             ): CustomControl {
                 val editor = ScExprExpander(obj.context)
                 val root = EditorRoot.create(editor)
@@ -191,7 +192,7 @@ class ControlAssignmentEditor(
             ): Node =
                 busSelector(context, control.bus)
 
-            override fun createDefaultControl(obj: ScoreObject, spec: ControlSpec, initialValue: Double?): BusControl =
+            override fun createDefaultControl(obj: ScoreObject, spec: ControlSpec, initialValue: Decimal?): BusControl =
                 BusControl(reactiveVariable(obj.context[BusRegistry].getDefault().createReference()))
         }
 
@@ -207,7 +208,7 @@ class ControlAssignmentEditor(
             override fun createDefaultControl(
                 obj: ScoreObject,
                 spec: ControlSpec,
-                initialValue: Double?
+                initialValue: Decimal?
             ): BusValueControl =
                 BusValueControl(reactiveVariable(obj.context[BusRegistry].getDefault().createReference()))
         }
@@ -223,7 +224,7 @@ class ControlAssignmentEditor(
                 busSelector(context, control.bus)
 
             override fun createDefaultControl(
-                obj: ScoreObject, spec: ControlSpec, initialValue: Double?
+                obj: ScoreObject, spec: ControlSpec, initialValue: Decimal?
             ): SingleBusValueControl =
                 SingleBusValueControl(reactiveVariable(obj.context[BusRegistry].getDefault().createReference()))
 
@@ -248,7 +249,7 @@ class ControlAssignmentEditor(
             override fun createDefaultControl(
                 obj: ScoreObject,
                 spec: ControlSpec,
-                initialValue: Double?
+                initialValue: Decimal?
             ): BufferControl {
                 spec as BufferControlSpec
                 val display = reactiveVariable(spec.isPlayBufSource)
@@ -271,7 +272,7 @@ class ControlAssignmentEditor(
             override fun createDefaultControl(
                 obj: ScoreObject,
                 spec: ControlSpec,
-                initialValue: Double?
+                initialValue: Decimal?
             ): GroupControl =
                 GroupControl(reactiveVariable(obj.context[GroupRegistry].getDefault().createReference()))
         }

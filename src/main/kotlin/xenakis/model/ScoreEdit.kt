@@ -2,6 +2,7 @@ package xenakis.model
 
 import hextant.undo.AbstractEdit
 import hextant.undo.Edit
+import xenakis.impl.Decimal
 
 abstract class ScoreEdit(val score: Score) : AbstractEdit() {
     class AddObject(val obj: ScoreObjectInstance, score: Score) : ScoreEdit(score) {
@@ -36,7 +37,7 @@ abstract class ScoreEdit(val score: Score) : AbstractEdit() {
         }
     }
 
-    class AddTime(private val location: Double, private val amount: Double, score: Score) : ScoreEdit(score) {
+    class AddTime(private val location: Decimal, private val amount: Decimal, score: Score) : ScoreEdit(score) {
         override val actionDescription: String
             get() = "Add $amount seconds at $location"
 

@@ -10,7 +10,9 @@ import kotlinx.serialization.Serializable
 import reaktive.value.ReactiveVariable
 import reaktive.value.now
 import reaktive.value.reactiveVariable
+import xenakis.impl.Decimal
 import xenakis.impl.SuperColliderContext
+import xenakis.impl.zero
 import xenakis.model.Score.Companion.rootScore
 import xenakis.ui.Direction
 
@@ -35,7 +37,7 @@ class ScoreObjectGroup(
 
     override fun writeCode(name: String, position: ObjectPosition, env: ScorePlayEnv): String = ""
 
-    override fun doCut(position: Double, whichHalf: HorizontalDirection, newName: String): ScoreObject {
+    override fun doCut(position: Decimal, whichHalf: HorizontalDirection, newName: String): ScoreObject {
         val objects = mutableListOf<ScoreObjectInstance>()
         for (inst in score.objectInstances) {
             when {
@@ -64,7 +66,7 @@ class ScoreObjectGroup(
         return ScoreObjectGroup(reactiveVariable(name), score)
     }
 
-    fun cutVertically(position: Double): Pair<ScoreObjectGroup, ScoreObjectGroup> {
+    fun cutVertically(position: Decimal): Pair<ScoreObjectGroup, ScoreObjectGroup> {
         val top = mutableListOf<ScoreObjectInstance>()
         val bottom = mutableListOf<ScoreObjectInstance>()
         for (inst in score.objectInstances) {
@@ -98,9 +100,9 @@ class ScoreObjectGroup(
         return true
     }
 
-    override fun resize(targetDuration: Double, targetHeight: Double) {
-        var minDur = 0.0
-        var minHeight = 0.0
+    override fun resize(targetDuration: Decimal, targetHeight: Decimal) {
+        var minDur = zero(ObjectPosition.TIME_PRECISION)
+        var minHeight = zero(ObjectPosition.Y_PRECISION)
         val objects = score.objectInstances
         if (objects.isNotEmpty() && !resizeType.isStretch) { //todo compute min dimensions when resizeType=Stretch
             minDur =

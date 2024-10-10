@@ -3,21 +3,21 @@ package xenakis.ui
 import hextant.undo.UndoManager
 import javafx.geometry.BoundingBox
 import javafx.geometry.Bounds
+import javafx.geometry.Point2D
 import javafx.scene.Cursor
 import javafx.scene.Node
 import javafx.scene.input.MouseEvent
 import javafx.scene.layout.Region
-import xenakis.impl.Point
 import xenakis.ui.ToolSelector.Tool
 import kotlin.math.absoluteValue
 
 fun Node.setupDragging(
     onPressed: (ev: MouseEvent) -> Unit = {},
     onReleased: (ev: MouseEvent) -> Unit = {},
-    relocateBy: (ev: MouseEvent, start: Point, old: Bounds, dx: Double, dy: Double) -> Unit
+    relocateBy: (ev: MouseEvent, start: Point2D, old: Bounds, dx: Double, dy: Double) -> Unit
 ) {
-    var dragStart: Point? = null
-    var localStart: Point? = null
+    var dragStart: Point2D? = null
+    var localStart: Point2D? = null
     var oldBounds: Bounds? = null
     addEventHandler(MouseEvent.MOUSE_PRESSED) { ev ->
         onPressed(ev)
@@ -26,8 +26,8 @@ fun Node.setupDragging(
     addEventHandler(MouseEvent.MOUSE_DRAGGED) { ev ->
         val start = dragStart
         if (start == null) {
-            dragStart = Point(ev.screenX, ev.screenY)
-            localStart = Point(ev.x, ev.y)
+            dragStart = Point2D(ev.screenX, ev.screenY)
+            localStart = Point2D(ev.x, ev.y)
             oldBounds = boundsInParent
         } else {
             val dx = ev.screenX - start.x
@@ -56,13 +56,13 @@ fun Region.setupDraggingAndResizing(
     val context = pane.context
     val toolSelector = context[XenakisUI].toolSelector
     configureResizeCursor(canUserChangeWidth, canUserChangeHeight, toolSelector, tool)
-    var dragStart: Point? = null
+    var dragStart: Point2D? = null
     var oldBounds: Bounds? = null
     addEventHandler(MouseEvent.MOUSE_PRESSED) { ev ->
         if (toolSelector.selected.value != tool) return@addEventHandler
         if (dragStart == null && cursor != null) {
             oldBounds = BoundingBox(layoutX, layoutY, width, height)
-            dragStart = Point(ev.screenX, ev.screenY)
+            dragStart = Point2D(ev.screenX, ev.screenY)
             startDrag(ev, cursor)
             if (isResizeCursor(cursor)) {
                 context[UndoManager].beginCompoundEdit("Resize object")

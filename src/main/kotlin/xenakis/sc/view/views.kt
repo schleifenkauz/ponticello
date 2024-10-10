@@ -161,7 +161,7 @@ fun createControl(editor: xenakis.sc.editor.ControlSpecEditor, arguments: Bundle
     ChoiceEditorControl(editor, arguments).styleClass("control-spec")
 
 @ProvideImplementation(ControlFactory::class)
-fun createControl(editor: xenakis.sc.editor.DoubleLiteralEditor, arguments: Bundle) =
+fun createControl(editor: xenakis.sc.editor.DecimalLiteralEditor, arguments: Bundle) =
     TokenEditorControl(editor, arguments, styleClass = "number")
 
 @ProvideImplementation(ControlFactory::class)

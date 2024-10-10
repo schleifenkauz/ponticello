@@ -2,6 +2,8 @@ package xenakis.model
 
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
+import xenakis.impl.asTime
+import xenakis.impl.toDecimal
 import xenakis.model.ScorePlayEnv.SynthOrder
 
 class ScorePlayEnvTest {
@@ -9,7 +11,7 @@ class ScorePlayEnvTest {
     fun testGeneratingSuffixes() {
         val env = ScorePlayEnv(settings)
         val dummy1 = Utils.createDummyObject("synth")
-        val inst1 = ScoreObjectInstance(dummy1.createReference(), 5.0, 100.0)
+        val inst1 = ScoreObjectInstance(dummy1.createReference(), 5.0.asTime, 100.0.toDecimal())
         val name1 = env.markStart(inst1, ObjectPosition(5.0, 100.0))
         assertEquals("synth", name1)
         val name2 = env.markStart(inst1, ObjectPosition(10.0, 300.0))
@@ -23,7 +25,7 @@ class ScorePlayEnvTest {
     fun testSynthOrder() {
         val env = ScorePlayEnv(settings)
         val dummy1 = Utils.createDummyObject("synth")
-        val inst1 = ScoreObjectInstance(dummy1.createReference(), 3.0, 100.0)
+        val inst1 = ScoreObjectInstance(dummy1.createReference(), 3.0.asTime, 100.0.toDecimal())
         val group = Utils.defaultGroup
         val name1 = env.markStart(inst1, ObjectPosition(3.0, 100.0))
         val order1 = env.getSynthOrderFor(group, ObjectPosition(5.0, 200.0))

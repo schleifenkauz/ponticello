@@ -36,6 +36,10 @@ import reaktive.value.fx.asObservableValue
 import reaktive.value.now
 import reaktive.value.reactiveVariable
 import reaktive.value.toggle
+import xenakis.impl.asTime
+import xenakis.impl.times
+import xenakis.impl.unaryMinus
+import xenakis.impl.zero
 import xenakis.model.*
 import xenakis.model.InteractionSettings.SnapOption
 import xenakis.sc.Rate
@@ -545,17 +549,17 @@ class XenakisUI(
             // because we want the instances to be from one ScorePane (or the root score)
             val parentPane = views.mapTo(mutableSetOf()) { v -> v.pane }.singleOrNull() ?: return@on
             val instances = views.map { v -> v.instance }
-            val minX = instances.minOf { inst -> inst.start }
+            val minT = instances.minOf { inst -> inst.start }
             val minY = instances.minOf { inst -> inst.y }
-            val maxX = instances.maxOf { inst -> inst.start + inst.duration }
+            val maxT = instances.maxOf { inst -> inst.start + inst.duration }
             val maxY = instances.maxOf { inst -> inst.y + inst.height }
-            val relativePosition = ObjectPosition(-minX, -minY)
+            val relativePosition = ObjectPosition(-minT, -minY)
             val recurse = ev.isShiftDown
             val newScore = Score()
             val name = context[ScoreObjectRegistry].availableName("group")
             val newObj = ScoreObjectGroup(reactiveVariable(name), newScore)
-            newObj.setInitialSize(maxX - minX, maxY - minY)
-            val newInst = ScoreObjectInstance(newObj, minX, minY)
+            newObj.setInitialSize(maxT - minT, maxY - minY)
+            val newInst = ScoreObjectInstance(newObj, minT, minY)
             parentPane.score.addObject(newInst)
             context.compoundEdit("Create group from objects") {
                 for (inst in instances) {
@@ -619,7 +623,7 @@ class XenakisUI(
                 )
                 for (n in 1..times) {
                     for (subInst in obj.score.objectInstances.toList()) {
-                        val pos = subInst.position + ObjectPosition(duration * n, 0.0)
+                        val pos = subInst.position + ObjectPosition(duration * n, zero)
                         val newInst = if (ev.isShiftDown) subInst.clone(pos) else subInst.duplicate(pos)
                         obj.score.addObject(newInst)
                     }
@@ -675,7 +679,7 @@ class XenakisUI(
             if (ev.isControlDown || !ev.isTargetTextInput) togglePlay()
         }
         on("Ctrl+SPACE") {
-            val time = scoreView.translateTimeFrom(playback.playHead.pane, playback.playHead.currentTime)
+            val time = playback.player.currentTime + playback.playHead.timeBlock.absolutePosition.time
             scoreView.display(time, time + scoreView.displayedDuration)
         }
         on("Ctrl?+PERIOD") { ev ->
@@ -693,7 +697,7 @@ class XenakisUI(
         on("Ctrl+Shift?+DIGIT0") { ev ->
             if (ev.isShiftDown) {
                 if (playback.player.isPlaying) return@on
-                scoreView.display(0.0, scoreView.displayedDuration)
+                scoreView.display(0.0.asTime, scoreView.displayedDuration)
                 playback.attachToMainScore()
             }
             playback.movePlayHeadToStart()

@@ -8,11 +8,12 @@ import hextant.core.view.EditorControl
 import hextant.plugins.*
 import hextant.undo.compoundEdit
 import reaktive.value.now
+import xenakis.impl.one
 import xenakis.impl.randomColor
 import xenakis.model.CustomizableSynthDefObject.SynthDefEditor
 import xenakis.model.Logger
 import xenakis.model.ParameterDefObject
-import xenakis.sc.DoubleLiteral
+import xenakis.sc.DecimalLiteral
 import xenakis.sc.Identifier
 import xenakis.sc.NumericalControlSpec
 import xenakis.sc.Warp
@@ -56,7 +57,7 @@ object XenakisHextantPlugin : PluginInitializer({
         shortName = "extract-param"
         name = "Extract parameter"
         applicableIf { ed ->
-            ed.result.now is DoubleLiteral && ed.getParent<SynthDefEditor>() != null
+            ed.result.now is DecimalLiteral && ed.getParent<SynthDefEditor>() != null
         }
         executing { editor ->
             val name = PredicateTextPrompt("Parameter name", "") { name -> Identifier.isValid(name) }
@@ -68,13 +69,13 @@ object XenakisHextantPlugin : PluginInitializer({
             }
             val parameters = def.obj.parameters
             val defaultValue = editor.result.now
-            if (defaultValue !is DoubleLiteral) {
+            if (defaultValue !is DecimalLiteral) {
                 Logger.error("Could not extract parameter default value.")
                 return@executing
             }
             val spec = NumericalControlSpec(
                 defaultValue, defaultValue, defaultValue,
-                Warp.Linear, DoubleLiteral(1.0), randomColor()
+                Warp.Linear, DecimalLiteral(one), randomColor()
             )
             val param = ParameterDefObject(name, spec)
             editor.context.compoundEdit("Extract parameter") {

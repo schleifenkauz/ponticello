@@ -18,10 +18,10 @@ import reaktive.value.ReactiveValue
 import reaktive.value.forEach
 import reaktive.value.now
 import reaktive.value.reactiveVariable
+import xenakis.impl.*
 import xenakis.model.*
 import xenakis.sc.NumericalControlSpec
 import xenakis.sc.view.ObjectSelectorControl
-import kotlin.math.absoluteValue
 
 class SynthObjectView(
     instance: ScoreObjectInstance, val obj: SynthObject
@@ -148,24 +148,24 @@ class SynthObjectView(
         if (obj.displaySample?.now != true) return
         if (image == null) return
         val sample = obj.sample.now?.get<SampleObject>() ?: return
-        val rate = obj.playBufRate?.now ?: 1.0
-        if (rate == 0.0) return
-        val defaultStartPos = if (rate < 0) sample.duration else 0.0
+        val rate = obj.playBufRate?.now ?: one(3)
+        if (rate == zero) return
+        val defaultStartPos = if (rate < zero) sample.duration else zero
         var startPos = obj.playbufStartPos?.now?.wrapAt(sample.duration) ?: defaultStartPos
-        if (rate < 0.0 && startPos < 1e-5) startPos = sample.duration
-        var t = 0.0
+        if (rate < zero && startPos < 1e-5.asTime) startPos = sample.duration
+        var t = zero
         for (i in 0..100) {
             if (t >= obj.duration) break
             var imageDur = when {
-                t > 0.0 -> sample.duration / rate.absoluteValue
-                rate > 0.0 -> (sample.duration - startPos) / rate
+                t > zero -> sample.duration / rate.abs()
+                rate > zero -> (sample.duration - startPos) / rate
                 else -> startPos / -rate
             }
             if (t + imageDur > obj.duration) imageDur = obj.duration - t
             val view = ImageView(image)
             displaySpectrogramPart(
                 view, imageDur, sample.duration, rate,
-                startPos = if (t == 0.0) startPos else defaultStartPos
+                startPos = if (t == zero) startPos else defaultStartPos
             )
             view.layoutX = pane.getWidth(t)
             t += imageDur
@@ -175,21 +175,21 @@ class SynthObjectView(
     }
 
     private fun displaySpectrogramPart(
-        view: ImageView, duration: Double,
-        sampleDuration: Double, rate: Double, startPos: Double
+        view: ImageView, duration: Decimal,
+        sampleDuration: Decimal, rate: Decimal, startPos: Decimal
     ) {
-        val pixelsPerSecond = image!!.width / sampleDuration * rate.absoluteValue
-        var minX = (image!!.width / sampleDuration) * startPos
+        val pixelsPerSecond = (image!!.width / sampleDuration * rate.absoluteValue).toDouble()
+        var minX = ((image!!.width / sampleDuration) * startPos).toDouble()
         val minY = 0.0
-        val width = pixelsPerSecond * duration
-        if (rate < 0.0) minX -= width
+        val width = (pixelsPerSecond * duration).toDouble()
+        if (rate < zero) minX -= width
         val height = image!!.height
-        if (width < 0 || height < 0) return
+        if (width < 0.0 || height < 0.0) return
         view.viewport = Rectangle2D(minX, minY, width, height)
         view.fitHeight = prefHeight
         view.fitWidth = pane.getWidth(duration)
         view.viewOrder = 1000.0
-        if (rate < 0) view.transforms.addAll(
+        if (rate < zero) view.transforms.addAll(
             Translate(view.fitWidth, 0.0),
             Scale(-1.0, 1.0),
         )

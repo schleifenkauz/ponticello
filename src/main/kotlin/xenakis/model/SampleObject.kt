@@ -7,9 +7,7 @@ import kotlinx.serialization.Transient
 import reaktive.event.unitEvent
 import reaktive.value.ReactiveVariable
 import reaktive.value.now
-import xenakis.impl.ScWriter
-import xenakis.impl.duration
-import xenakis.impl.superColliderPath
+import xenakis.impl.*
 import xenakis.model.SuperColliderObject.LiveCycleType
 import xenakis.model.XenakisProject.Companion.projectDirectory
 import java.io.File
@@ -44,7 +42,7 @@ class SampleObject private constructor(
     val spectrogramFile get() = samplesDir.resolve("${name.now}_spectrogram.png")
 
     @Transient
-    var duration: Double = -1.0
+    var duration: Decimal = -one(ObjectPosition.TIME_PRECISION)
 
     @Transient
     var channels: Int = 0
@@ -71,7 +69,7 @@ class SampleObject private constructor(
 
     private fun updateInfos() {
         useAudioStream { s ->
-            duration = s.duration
+            duration = s.duration.asTime
             channels = s.format.channels
             sampleRate = s.format.sampleRate.toDouble()
         }

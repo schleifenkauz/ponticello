@@ -3,7 +3,6 @@ package xenakis.ui
 import hextant.context.Context
 import hextant.fx.registerShortcuts
 import javafx.geometry.Rectangle2D
-import javafx.scene.Node
 import javafx.scene.SnapshotParameters
 import javafx.scene.image.ImageView
 import javafx.scene.layout.Pane
@@ -13,18 +12,11 @@ import javafx.scene.shape.Line
 import javafx.scene.text.Text
 import reaktive.value.fx.asObservableValue
 import reaktive.value.now
-import xenakis.impl.Point
-import xenakis.impl.accuracy
-import xenakis.impl.replacePrefix
-import xenakis.impl.step
+import xenakis.impl.*
+import xenakis.model.*
 import xenakis.model.InteractionSettings.SnapOption
-import xenakis.model.Logger
-import xenakis.model.ObjectPosition
-import xenakis.model.Score
-import xenakis.model.ScoreObject
 import xenakis.ui.XenakisController.Companion.currentProject
 import kotlin.math.exp
-import kotlin.math.roundToInt
 
 class ScoreView(score: Score, context: Context) : ScorePane(score, context) {
     private val positionTracker = Line() styleClass "mouse-tracker-line"
@@ -37,16 +29,17 @@ class ScoreView(score: Score, context: Context) : ScorePane(score, context) {
     private var timeGrid: Double = 0.1
     override val xAccuracy: Int
         get() = accuracy(timeGrid)
-    public override var displayStart: Double = 0.0
-    override var displayEnd: Double = 0.0
+    public override var displayStart: Decimal = 0.0.asTime
+    override var displayEnd: Decimal = 0.0.asTime
     override val pixelsPerSecond: Double
-        get() = width / (displayEnd - displayStart)
-    override val maxTime: Double
-        get() = Double.POSITIVE_INFINITY
-    override val maxY: Double
-        get() = 1.0
-    override val rootPane: ScoreView
-        get() = this
+        get() = (width / (displayEnd - displayStart)).toDouble()
+    override val maxTime: Decimal
+        get() = Decimal.INF
+    override val maxY: Decimal
+        get() = 1.0.asY
+    override val absolutePosition: ObjectPosition
+        get() = ObjectPosition.ZERO
+
     val displayedDuration get() = displayEnd - displayStart
 
     private var magnifiedEnvelope: EnvelopeEditor? = null
@@ -79,8 +72,8 @@ class ScoreView(score: Score, context: Context) : ScorePane(score, context) {
         clipboardObjectView.image = view.snapshot(parameters, null)
         clipboardObjectView.viewport = Rectangle2D(5.0, 3.0, view.prefWidth - 4.0, view.prefHeight - 4.0)
         val mousePos = screenToLocal(robot.mousePosition)
-        val (x, y) = snapToGrid(mousePos.x, mousePos.y)
-        clipboardObjectView.relocate(x, y)
+        val (t, y) = snapToGrid(mousePos.x, mousePos.y)
+        clipboardObjectView.relocate(getX(t), getPaneY(y))
         clipboardObjectView.opacity = 0.3
         clipboardObjectView.viewOrder = -1000.0
         clipboardObjectView.isMouseTransparent = true
@@ -95,67 +88,39 @@ class ScoreView(score: Score, context: Context) : ScorePane(score, context) {
 
     fun isInDuplicateMode() = clipboardObject != null
 
-    override fun getGrids(x: Double): List<TempoGridObjectView> = allViews.filterIsInstance<TempoGridObjectView>()
-        .filter { v -> x in v.layoutX..v.width }
-
-    override fun markX(x: Double) {
-        super.markX(x)
-        positionTracker.layoutX = x
-    }
-
-    fun translateFrom(child: Node, x: Double, y: Double): Point {
-        if (child == this) return Point(x, y)
-        var coords = child.localToScreen(x, y)
-        coords = screenToLocal(coords)
-        return Point(coords)
-    }
-
-    fun translateFrom(child: Node, position: ObjectPosition): ObjectPosition {
-        if (child == this) return position
-        val (x, y) = translateFrom(child, getWidth(position.time), getPaneY(position.y))
-        return ObjectPosition(getTime(x), getScoreY(y))
-    }
-
-    fun translateTimeFrom(child: Node, time: Double): Double = translateFrom(child, ObjectPosition(time, 0.0)).time
-
-    fun translateTo(child: Node, x: Double, y: Double): Point {
-        if (child == this) return Point(x, y)
-        var coords = localToScreen(x, y)
-        coords = child.screenToLocal(coords)
-        return Point(coords)
-    }
-
-    fun translateTo(child: Node, position: ObjectPosition): ObjectPosition {
-        if (child == this) return position
-        val (x, y) = translateTo(child, getWidth(position.time), getPaneY(position.y))
-        return ObjectPosition(getWidth(x), getScoreY(y))
-    }
-
-    fun translateTimeTo(child: Node, time: Double): Double = translateTo(child, ObjectPosition(time, 0.0)).time
-
-    override fun snapToGrid(x: Double, y: Double): Point {
+    override fun snapToGrid(position: ObjectPosition): ObjectPosition {
         val settings = context[currentProject].settings
-        if (!settings.snapEnabled.now) return Point(x, y)
+        val (t, y) = position
+        if (!settings.snapEnabled.now) return position
         when (val option = settings.snapOption.now) {
-            SnapOption.Seconds -> return Point(getX(getTime(x).roundToInt().toDouble()), y)
+            SnapOption.Seconds -> return ObjectPosition(t.round(0), y)
             else -> {
-                val nearestGrid = getNearestGrid(x, y)
+                val nearestGrid = getNearestGrid(position)
                 for (grid in allViews.filterIsInstance<TempoGridObjectView>()) {
-                    if (grid != nearestGrid) grid.unmark()
+                    if (grid.instance != nearestGrid) grid.unmark()
                 }
-                if (nearestGrid == null) return Point(x, y)
-                var t = getTime(x)
-                t = nearestGrid.obj.snapToGrid(nearestGrid.instance, t, option)
-                val snappedX = getX(t)
-                return Point(snappedX, y)
+                if (nearestGrid == null) return position
+                val obj = nearestGrid.obj as TempoGridObject
+                val snapped = obj.snapToGrid(t - nearestGrid.start, option)
+                return ObjectPosition(snapped + nearestGrid.start, y)
             }
         }
     }
 
-    override fun getNearestGrid(x: Double, y: Double): TempoGridObjectView? {
-        val grids = allViews.filterIsInstance<TempoGridObjectView>()
-        val relevantGrids = grids.filter { g -> x in g.layoutX..g.width }
-        val nearestGrid = relevantGrids.minByOrNull { g -> g.verticalDist(y) }
+    override fun markT(t: Decimal) {
+        val grids = allViews
+            .filterIsInstance<TempoGridObjectView>()
+            .filter { v -> t in v.instance.timeRange }
+        for (g in grids) {
+            g.mark(t - g.instance.start)
+        }
+        positionTracker.layoutX = getX(t)
+    }
+
+    override fun getNearestGrid(position: ObjectPosition): ScoreObjectInstance? {
+        val grids = score.objectInstances.filter { inst -> inst.obj is TempoGridObject }
+        val relevantGrids = grids.filter { g -> position.time in g.timeRange }
+        val nearestGrid = relevantGrids.minByOrNull { g -> g.verticalDist(position.y) }
         return nearestGrid
     }
 
@@ -187,11 +152,11 @@ class ScoreView(score: Score, context: Context) : ScorePane(score, context) {
     }
 
     fun displayWholeScore() {
-        val totalDuration = score.objectInstances.maxOfOrNull { obj -> obj.start + obj.duration } ?: 60.0
-        display(0.0, totalDuration)
+        val totalDuration = score.objectInstances.maxOfOrNull { obj -> obj.start + obj.duration } ?: 60.0.asTime
+        display(zero, totalDuration)
     }
 
-    fun display(start: Double, end: Double) {
+    fun display(start: Decimal, end: Decimal) {
         if (end < start) {
             Logger.severe("Attempt to display empty time range: $start .. $end", Logger.Category.Score)
             return
@@ -249,12 +214,10 @@ class ScoreView(score: Score, context: Context) : ScorePane(score, context) {
         positionTracker.isMouseTransparent = true
         positionTracker.visibleProperty().bind(hoverProperty())
         setOnMouseMoved { ev ->
-            if (!ev.x.isNaN()) {
-                val (x, y) = snapToGrid(ev.x, ev.y)
-                markX(x)
-                clipboardObjectView.relocate(x, y)
-                ev.consume()
-            }
+            val (t, y) = snapToGrid(ev.x, ev.y)
+            markT(t)
+            clipboardObjectView.relocate(getX(t), getPaneY(y))
+            ev.consume()
         }
     }
 
@@ -287,7 +250,7 @@ class ScoreView(score: Score, context: Context) : ScorePane(score, context) {
     }
 
     private fun noNegativeTimes() {
-        if (displayStart < 0) {
+        if (displayStart < zero) {
             displayEnd -= displayStart
             displayStart -= displayStart
         }

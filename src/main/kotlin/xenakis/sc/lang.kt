@@ -6,13 +6,13 @@ import hextant.completion.ConfiguredCompleter
 import hextant.context.Context
 import hextant.core.editor.TokenType
 import kotlinx.serialization.KSerializer
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.serialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
-import xenakis.impl.ScWriter
-import xenakis.impl.superColliderPath
+import xenakis.impl.*
 import xenakis.model.GroupObject
 import xenakis.model.ObjectReferenceExpr
 import xenakis.model.XenakisProject.Companion.projectDirectory
@@ -66,7 +66,7 @@ sealed interface Literal : ScExpr {
     companion object : TokenType<Literal> {
         override fun compile(token: String): Literal {
             if (token.isEmpty()) return EmptyExpr
-            token.toDoubleOrNull()?.let { value -> return DoubleLiteral(token, value) }
+            token.toDoubleOrNull()?.let { _ -> return DecimalLiteral.compile(token) }
             if (token == "true") return BooleanLiteral(true)
             if (token == "false") return BooleanLiteral(false)
             if (token == "nil") return Nil
@@ -99,21 +99,27 @@ data class BooleanLiteral(val value: Boolean) : Literal, SimpleScElement("$value
 object Nil : Literal, SimpleScElement("nil")
 
 @Token(serializable = true)
-@Serializable(with = DoubleLiteral.Serializer::class)
-data class DoubleLiteral(val text: String, val valueOrNull: Double?) : Literal, SimpleScElement(text) {
-    constructor(value: Double) : this(value.toString(), value)
+@Serializable(with = DecimalLiteral.Serializer::class)
+@SerialName("DoubleLiteral")
+data class DecimalLiteral(val text: String, val valueOrNull: Decimal?) : Literal, SimpleScElement(text) {
+    constructor(value: Decimal) : this(value.toString(), value)
 
     override val isValid: Boolean
         get() = valueOrNull != null
 
-    fun get(): Double = valueOrNull ?: 0.0
+    fun get(): Decimal = valueOrNull ?: zero
 
-    companion object : TokenType<DoubleLiteral> {
-        override fun compile(token: String): DoubleLiteral = DoubleLiteral(token, token.toDoubleOrNull())
+    companion object : TokenType<DecimalLiteral> {
+
+        override fun compile(token: String): DecimalLiteral {
+            if (token == "0") return DecimalLiteral(zero)
+            val txt = token.dropLastWhile { c -> c == '0' }.removeSuffix(".")
+            return DecimalLiteral(txt, txt.parseDecimal())
+        }
     }
 
-    object Serializer : SimpleScElement.Serializer<DoubleLiteral>() {
-        override fun fromString(str: String): DoubleLiteral = compile(str)
+    object Serializer : SimpleScElement.Serializer<DecimalLiteral>() {
+        override fun fromString(str: String): DecimalLiteral = compile(str)
     }
 }
 

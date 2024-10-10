@@ -9,6 +9,7 @@ import reaktive.value.ReactiveVariable
 import reaktive.value.now
 import reaktive.value.reactiveVariable
 import xenakis.impl.ColorSerializer
+import xenakis.impl.Decimal
 import xenakis.impl.copy
 import xenakis.sc.*
 import xenakis.sc.editor.ScExprExpander
@@ -17,13 +18,13 @@ import xenakis.sc.editor.ScExprExpander
 sealed class ParameterControl {
     open fun copy(): ParameterControl = this
 
-    open fun cut(cutPos: Double, whichHalve: HorizontalDirection) = this
+    open fun cut(cutPos: Decimal, whichHalve: HorizontalDirection) = this
 
     open fun initialize(context: Context) {}
 }
 
 @Serializable
-class KnobControl(val value: ReactiveVariable<Double>) : ParameterControl() {
+class KnobControl(val value: ReactiveVariable<Decimal>) : ParameterControl() {
     override fun copy(): ParameterControl = KnobControl(value.copy())
 
     fun get() = value.now
@@ -38,7 +39,7 @@ class EnvelopeControl(
     override fun copy(): ParameterControl =
         EnvelopeControl(envelope = envelope.copy(), displayColor, display)
 
-    override fun cut(cutPos: Double, whichHalve: HorizontalDirection): ParameterControl =
+    override fun cut(cutPos: Decimal, whichHalve: HorizontalDirection): ParameterControl =
         EnvelopeControl(envelope.cut(cutPos, whichHalve), displayColor, display)
 
     override fun initialize(context: Context) {
@@ -100,7 +101,7 @@ data class CustomControl(val expr: EditorRoot<ScExprExpander>) : ParameterContro
 }
 
 @Serializable
-data class ConstantControl(val value: ReactiveVariable<Double>) : ParameterControl() {
+data class ConstantControl(val value: ReactiveVariable<Decimal>) : ParameterControl() {
     override fun copy(): ParameterControl = ConstantControl(value.copy())
 }
 
@@ -108,10 +109,10 @@ fun ParameterControl.makeExpr(): ScExpr = when (this) {
     is BufferControl -> sample.now?.get<SampleObject>()?.superColliderExpr ?: Nil
     is BusControl -> bus.now.get<BusObject>().superColliderExpr
     is BusValueControl -> RawScExpr("In.ar(${bus.now.get<BusObject>().superColliderName})")
-    is ConstantControl -> DoubleLiteral(value.now)
+    is ConstantControl -> DecimalLiteral(value.now)
     is CustomControl -> expr.editor.result.now
     is EnvelopeControl -> RawScExpr(envelope.code())
     is GroupControl -> group.now.get<GroupObject>().superColliderExpr
-    is KnobControl -> DoubleLiteral(value.now)
+    is KnobControl -> DecimalLiteral(value.now)
     is SingleBusValueControl -> bus.now.get<BusObject>().superColliderExpr.send("getSynchronous")
 }

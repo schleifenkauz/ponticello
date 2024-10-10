@@ -15,14 +15,11 @@ import kotlinx.serialization.Transient
 import reaktive.value.ReactiveVariable
 import reaktive.value.now
 import reaktive.value.reactiveVariable
-import xenakis.impl.code
-import xenakis.impl.copy
-import xenakis.impl.reactive
+import xenakis.impl.*
 import xenakis.sc.code
 import xenakis.sc.editor.*
 import xenakis.ui.Direction
 import xenakis.ui.PianoRollObjectView
-import kotlin.math.ceil
 
 @Serializable
 class PianoRollObject(
@@ -71,11 +68,11 @@ class PianoRollObject(
     }
 
     override fun beginResize(type: ResizeType, direction: Direction): Boolean {
-        pixelsPerPitch = height / (highestPitch - lowestPitch + 1)
+        pixelsPerPitch = (height / (highestPitch - lowestPitch + 1)).value
         return super.beginResize(type, direction)
     }
 
-    override fun resize(targetDuration: Double, targetHeight: Double) {
+    override fun resize(targetDuration: Decimal, targetHeight: Decimal) {
         if (resizeType.isStretch) {
             val horizontalRatio = targetDuration / this.duration
             super.resize(targetDuration, targetHeight)
@@ -84,29 +81,32 @@ class PianoRollObject(
                 note.duration *= horizontalRatio
             }
         } else {
-            var minDur = 0.0
-            var minHeight = 0.0
+            var minDur = zero(ObjectPosition.TIME_PRECISION)
+            var minHeight = zero(ObjectPosition.Y_PRECISION)
             if (notes.isNotEmpty()) {
                 minDur = when {
                     resizeDirection.left -> this.duration - notes.minOf { n -> n.onset }
                     resizeDirection.right -> notes.maxOf { o -> o.onset + o.duration }
-                    else -> 0.0
+                    else -> minDur
                 }
 
                 minHeight = when {
                     resizeDirection.down -> this.height - notes.minOf { n -> pixelsPerPitch * (n.midinote - lowestPitch) }
-                    resizeDirection.up -> notes.maxOf { n -> (pixelsPerPitch * (n.midinote - lowestPitch)) + pixelsPerPitch }
-                    else -> 0.0
+                    resizeDirection.up -> notes.maxOf { n ->
+                        (pixelsPerPitch * (n.midinote - lowestPitch)) + pixelsPerPitch
+                    }.asY
+
+                    else -> minHeight
                 }
             }
             val deltaDur = targetDuration.coerceAtLeast(minDur) - this.duration
             val deltaHeight = targetHeight.coerceAtLeast(minHeight) - this.height
-            val pitches = ceil((this.height + deltaHeight) / pixelsPerPitch).toInt()
+            val pitches = ((this.height + deltaHeight) / pixelsPerPitch).ceilToInt()
             if (pitches != pitchRange.count()) {
                 if (resizeDirection.up) highestPitch = lowestPitch + pitches
                 else if (resizeDirection.down) lowestPitch = highestPitch - pitches
             }
-            super.resize(this.duration + deltaDur, pitches * pixelsPerPitch)
+            super.resize(this.duration + deltaDur, (pitches * pixelsPerPitch).withPrecision(ObjectPosition.Y_PRECISION))
             if (resizeDirection.left) {
                 for (note in this.notes) {
                     note.onset += deltaDur
@@ -115,8 +115,8 @@ class PianoRollObject(
         }
     }
 
-    fun addTime(position: Double, amount: Double) {
-        require(position in 0.0..duration) { "Invalid position $position not in 0..$duration" }
+    fun addTime(position: Decimal, amount: Decimal) {
+        require(position in zero..duration) { "Invalid position $position not in 0..$duration" }
         recordEdit(Edit.AddTime(this, position, amount))
         context.withoutUndo {
             for (note in notes) {
@@ -126,8 +126,8 @@ class PianoRollObject(
         }
     }
 
-    fun deleteTimeRange(from: Double, to: Double) {
-        require(0.0 <= from && from < to && to < duration) { "Invalid time range: $from..$to" }
+    fun deleteTimeRange(from: Decimal, to: Decimal) {
+        require(zero <= from && from < to && to < duration) { "Invalid time range: $from..$to" }
         recordEdit(Edit.DeleteTimeRange(this, from, to))
         context.withoutUndo {
             duration -= to - from
@@ -188,7 +188,7 @@ class PianoRollObject(
         notes.mapTo(mutableListOf()) { n -> n.copy() }
     )
 
-    override fun doCut(position: Double, whichHalf: HorizontalDirection, newName: String): ScoreObject {
+    override fun doCut(position: Decimal, whichHalf: HorizontalDirection, newName: String): ScoreObject {
         val notes = when (whichHalf) {
             LEFT -> notes.filter { n -> n.onset < position }
             RIGHT -> notes.filter { n -> n.onset >= position }
@@ -209,7 +209,7 @@ class PianoRollObject(
         for ((idx, n) in notes.withIndex()) {
             val t = n.onset
             if (t < -n.duration) continue
-            val dur = n.duration + t.coerceAtMost(0.0)
+            val dur = n.duration + t.coerceAtMost(zero)
             val midinote = n.midinote
             val eventDict = n.eventDictionary.editor.result.now
             val eventMap = mutableMapOf<String, String>()
@@ -233,7 +233,7 @@ class PianoRollObject(
                     "(type: \\vst_midi, vst: ${instr.superColliderName}, $namedValues).play"
                 }
             }
-            appendBlock("TempoClock.sched(${t.coerceAtLeast(0.0)})") {
+            appendBlock("TempoClock.sched(${t.coerceAtLeast(zero)})") {
                 +playNote
             }
         }
@@ -280,7 +280,7 @@ class PianoRollObject(
         }
 
         class AddTime(
-            private val obj: PianoRollObject, private val position: Double, private val amount: Double
+            private val obj: PianoRollObject, private val position: Decimal, private val amount: Decimal
         ) : AbstractEdit() {
             override val actionDescription: String
                 get() = "Add time"
@@ -295,7 +295,7 @@ class PianoRollObject(
         }
 
         class DeleteTimeRange(
-            private val obj: PianoRollObject, private val from: Double, private val to: Double
+            private val obj: PianoRollObject, private val from: Decimal, private val to: Decimal
         ) : AbstractEdit() {
             override val actionDescription: String
                 get() = "Remove time range"
@@ -313,19 +313,19 @@ class PianoRollObject(
 
     @Serializable
     class Note(
-        private var _time: Double,
-        private var _duration: Double,
+        private var _time: Decimal,
+        private var _duration: Decimal,
         private var _midinote: Int,
         val eventDictionary: EditorRoot<EventDictionaryEditor>
     ) {
         @Transient
         lateinit var parent: PianoRollObject
 
-        var onset: Double by this::_time.reactive { oldValue, newValue ->
+        var onset: Decimal by this::_time.reactive { oldValue, newValue ->
             parent.context[UndoManager].record(PropertyEdit(this::onset, oldValue, newValue, "Edit note time"))
             parent.updateNote(this)
         }
-        var duration: Double by this::_duration.reactive { oldValue, newValue ->
+        var duration: Decimal by this::_duration.reactive { oldValue, newValue ->
             parent.context[UndoManager].record(PropertyEdit(this::duration, oldValue, newValue, "Edit note time"))
             parent.updateNote(this)
         }
@@ -341,7 +341,7 @@ class PianoRollObject(
         )
 
         companion object {
-            fun create(context: Context, time: Double, duration: Double, midinote: Int): Note {
+            fun create(context: Context, time: Decimal, duration: Decimal, midinote: Int): Note {
                 val eventDictionary = EventDictionaryEditor(context)
                 context.withoutUndo {
                     eventDictionary.entries.addLast(

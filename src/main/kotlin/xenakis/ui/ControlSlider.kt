@@ -11,14 +11,16 @@ import reaktive.Observer
 import reaktive.value.ReactiveVariable
 import reaktive.value.forEach
 import reaktive.value.now
-import xenakis.impl.accuracy
-import xenakis.impl.format
+import xenakis.impl.Decimal
+import xenakis.impl.parseDecimal
+import xenakis.impl.snap
+import xenakis.impl.unaryMinus
 import xenakis.sc.NumericalControlSpec
 import xenakis.sc.SpecTransformation
 import kotlin.concurrent.thread
 
 class ControlSlider(
-    private val value: ReactiveVariable<Double>,
+    private val value: ReactiveVariable<Decimal>,
     private val spec: NumericalControlSpec,
 ) : HBox(5.0) {
     private val slider = Slider()
@@ -37,13 +39,13 @@ class ControlSlider(
         styleClass("control-slider")
         slider.min = 0.0
         slider.max = 1.0
-        btnInc.setOnMousePressed { startAdjust(+spec.step.get()) }
+        btnInc.setOnMousePressed { startAdjust(spec.step.get()) }
         btnInc.setOnMouseReleased { buttonReleased = true }
         btnDec.setOnMousePressed { startAdjust(-spec.step.get()) }
         btnDec.setOnMouseReleased { buttonReleased = true }
         textInput.registerShortcuts(eventType = KeyEvent.KEY_PRESSED) {
-            on("Alt+PLUS") { adjust(+spec.step.get()) }
-            on("UP") { adjust(+spec.step.get()) }
+            on("Alt+PLUS") { adjust(spec.step.get()) }
+            on("UP") { adjust(spec.step.get()) }
             on("Alt+MINUS") { adjust(-spec.step.get()) }
             on("DOWN") { adjust(-spec.step.get()) }
             on("Ctrl+BACK_SPACE") { value.now = spec.defaultValue.get() }
@@ -54,7 +56,7 @@ class ControlSlider(
         setupDataFlow()
     }
 
-    private fun startAdjust(delta: Double) {
+    private fun startAdjust(delta: Decimal) {
         buttonReleased = false
         thread {
             while (!buttonReleased) {
@@ -64,16 +66,16 @@ class ControlSlider(
         }
     }
 
-    private fun adjust(delta: Double) {
+    private fun adjust(delta: Decimal) {
         if (value.now + delta in spec.range) value.now += delta
     }
 
     private fun setupDataFlow() {
         var updating = false
         valueObserver = value.forEach { v ->
-            textInput.text = v.format(accuracy(spec.step.get()))
+            textInput.text = v.toString()
             if (updating) return@forEach
-            val mapped = transform.map(v)
+            val mapped = transform.map(v.toDouble())
             updating = true
             slider.value = mapped
             updating = false
@@ -86,13 +88,13 @@ class ControlSlider(
             updating = false
         }
         textInput.setOnAction {
-            var v = textInput.text.toDoubleOrNull() ?: return@setOnAction
+            var v = textInput.text.parseDecimal() ?: return@setOnAction
             v = v.coerceIn(spec.range)
-            v = v.snap(spec.step.get())
+            v = v.value.snap(spec.step.get())
             value.now = v
         }
         textInput.focusedProperty().addListener { _, _, focused ->
-            if (!focused) textInput.text = value.now.format(accuracy(spec.step.get()))
+            if (!focused) textInput.text = value.now.toString()
         }
     }
 

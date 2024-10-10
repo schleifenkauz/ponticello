@@ -17,6 +17,9 @@ class TaskObject(
     override val type: String
         get() = "task"
 
+    override val canResize: Boolean
+        get() = false
+
     override fun doClone(newName: String): ScoreObject = TaskObject(reactiveVariable(newName), code.clone())
 
     override fun writeCode(name: String, position: ObjectPosition, env: ScorePlayEnv): String = code {

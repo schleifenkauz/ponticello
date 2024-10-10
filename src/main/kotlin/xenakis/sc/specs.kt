@@ -9,9 +9,7 @@ import hextant.core.editor.ColorEditor
 import javafx.scene.paint.Color
 import kotlinx.serialization.Serializable
 import reaktive.value.reactiveVariable
-import xenakis.impl.ColorSerializer
-import xenakis.impl.DoubleRange
-import xenakis.impl.accuracy
+import xenakis.impl.*
 import xenakis.model.*
 import xenakis.sc.editor.ControlSpecEditor
 
@@ -44,35 +42,43 @@ fun ControlSpec.defaultControl(context: Context) = when (this) {
 @Serializable
 @Compound(serializable = true)
 data class NumericalControlSpec(
-    val defaultValue: DoubleLiteral,
-    val min: DoubleLiteral,
-    val max: DoubleLiteral,
+    val defaultValue: DecimalLiteral,
+    val min: DecimalLiteral,
+    val max: DecimalLiteral,
     val warp: Warp,
-    val step: DoubleLiteral,
+    val step: DecimalLiteral,
     @Serializable(with = ColorSerializer::class)
     @Component(ColorEditor::class)
     val associatedColor: Color = Color.WHITE
 ) : ControlSpec {
-    val accuracy get() = accuracy(step.get())
+    val precision get() = step.get().precision
 
     constructor(
-        default: Double, min: Double, max: Double, step: Double,
+        default: Double, min: Double, max: Double, step: Decimal,
         warp: Warp = Warp.Linear, associatedColor: Color = Color.WHITE
-    ) : this(DoubleLiteral(default), DoubleLiteral(min), DoubleLiteral(max), warp, DoubleLiteral(step), associatedColor)
+    ) : this(
+        default.withPrecision(step.precision),
+        min.withPrecision(step.precision), max.withPrecision(step.precision),
+        step, warp, associatedColor
+    )
+
+    constructor(default: Decimal, min: Decimal, max: Decimal, step: Decimal, warp: Warp, associatedColor: Color) : this(
+        DecimalLiteral(default), DecimalLiteral(min), DecimalLiteral(max), warp, DecimalLiteral(step), associatedColor
+    )
 
     override val type: ParameterType
         get() = ParameterType.Numerical
 
     override val code: String
-        get() = "kr(${defaultValue.text}, spec: [${min.text}, ${max.text}, $warp, ${step.text}])"
+        get() = "kr(${defaultValue.get()}, spec: [${min.get()}, ${max.get()}, $warp, ${step.get()}])"
 
-    val range: DoubleRange get() = min.get()..max.get()
+    val range: DecimalRange get() = min.get()..max.get()
 
     override fun toString(): String =
         "default: ${defaultValue.text}, range: ${min.text}..${max.text}, warp: $warp, step: ${step.text}"
 
     companion object {
-        val DEFAULT = NumericalControlSpec(0.0, 0.0, 1.0, 0.1, Warp.Linear, Color.WHITE)
+        val DEFAULT = NumericalControlSpec(0.0, 0.0, 1.0, 0.1.toDecimal(), Warp.Linear, Color.WHITE)
     }
 }
 

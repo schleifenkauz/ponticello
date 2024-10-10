@@ -55,7 +55,7 @@ class PlaybackManager(private val scoreView: ScoreView) {
 
     fun movePlayHeadToStart() {
         if (!player.isPlaying) {
-            playHead.movePlayHead(0.0)
+            playHead.movePlayHeadToStart()
         }
     }
 

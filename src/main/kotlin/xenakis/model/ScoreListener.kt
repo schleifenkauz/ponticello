@@ -1,11 +1,13 @@
 package xenakis.model
 
+import xenakis.impl.Decimal
+
 interface ScoreListener {
     fun addedObject(score: Score, inst: ScoreObjectInstance)
 
     fun removedObject(score: Score, inst: ScoreObjectInstance)
 
-    fun movedObject(score: Score, inst: ScoreObjectInstance, dt: Double, dy: Double) {}
+    fun movedObject(score: Score, inst: ScoreObjectInstance, dt: Decimal, dy: Decimal) {}
 
     fun toggledMute(score: Score, inst: ScoreObjectInstance, muted: Boolean) {}
 }

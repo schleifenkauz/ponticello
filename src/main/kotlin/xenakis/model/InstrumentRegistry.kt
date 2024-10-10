@@ -59,7 +59,7 @@ class InstrumentRegistry private constructor(
 
     companion object : PublicProperty<InstrumentRegistry> by publicProperty("InstrumentRegistry") {
         fun createDefault(): InstrumentRegistry =
-            InstrumentRegistry(StandardSynthDefObject.all.values.toMutableList(), reactiveVariable(null))
+            InstrumentRegistry(mutableListOf(), reactiveVariable(null))
     }
 
     interface Listener : ObjectRegistry.Listener<InstrumentObject> {

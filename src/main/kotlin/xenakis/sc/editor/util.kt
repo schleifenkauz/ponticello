@@ -10,11 +10,11 @@ import xenakis.sc.Rate
 
 fun NumericalControlSpec.createEditor(context: Context) = NumericalControlSpecEditor(
     context,
-    defaultValue = DoubleLiteralEditor(context, defaultValue.text),
-    min = DoubleLiteralEditor(context, min.text),
-    max = DoubleLiteralEditor(context, max.text),
+    defaultValue = DecimalLiteralEditor(context, defaultValue.text),
+    min = DecimalLiteralEditor(context, min.text),
+    max = DecimalLiteralEditor(context, max.text),
     warp = WarpEditor(context, warp),
-    step = DoubleLiteralEditor(context, step.text),
+    step = DecimalLiteralEditor(context, step.text),
     associatedColor = ColorEditor(context, associatedColor)
 )
 
