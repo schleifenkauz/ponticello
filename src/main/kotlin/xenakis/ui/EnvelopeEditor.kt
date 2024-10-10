@@ -16,6 +16,9 @@ import reaktive.value.binding.map
 import reaktive.value.fx.asObservableValue
 import reaktive.value.now
 import xenakis.impl.Point
+import xenakis.impl.accuracy
+import xenakis.impl.format
+import xenakis.impl.reverseIfEmpty
 import xenakis.model.Envelope
 import xenakis.model.EnvelopeControl
 import xenakis.model.SynthObject
@@ -318,7 +321,7 @@ class EnvelopeEditor(
         val point = envelope.points[idx]
         val value = DoublePrompt("Value for $parameterName", point.y, spec.range)
             .showDialog(parentPane.context, handles[idx]) ?: return
-        envelope.editPoint(idx, value)
+        envelope.editPoint(idx, value.snap(valueGrid))
     }
 
     private fun removeHandle(idx: Int) {

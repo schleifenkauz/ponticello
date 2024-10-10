@@ -11,6 +11,8 @@ import reaktive.Observer
 import reaktive.value.ReactiveVariable
 import reaktive.value.forEach
 import reaktive.value.now
+import xenakis.impl.accuracy
+import xenakis.impl.format
 import xenakis.sc.NumericalControlSpec
 import xenakis.sc.SpecTransformation
 import kotlin.concurrent.thread

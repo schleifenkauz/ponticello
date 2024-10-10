@@ -11,9 +11,9 @@ import kotlinx.serialization.Serializable
 import reaktive.value.reactiveVariable
 import xenakis.impl.ColorSerializer
 import xenakis.impl.DoubleRange
+import xenakis.impl.accuracy
 import xenakis.model.*
 import xenakis.sc.editor.ControlSpecEditor
-import xenakis.ui.accuracy
 
 enum class ParameterType {
     Bus, Buffer, Numerical, Group;

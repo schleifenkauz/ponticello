@@ -14,6 +14,7 @@ import javafx.scene.text.Text
 import reaktive.value.fx.asObservableValue
 import reaktive.value.now
 import xenakis.impl.Point
+import xenakis.impl.accuracy
 import xenakis.impl.replacePrefix
 import xenakis.impl.step
 import xenakis.model.InteractionSettings.SnapOption

@@ -1,6 +1,6 @@
 package xenakis.model
 
-import xenakis.ui.format
+import xenakis.impl.format
 import kotlin.math.abs
 
 data class ObjectPosition(val time: Double, val y: Double) : Comparable<ObjectPosition> {
@@ -17,7 +17,7 @@ data class ObjectPosition(val time: Double, val y: Double) : Comparable<ObjectPo
     operator fun plus(position: ObjectPosition): ObjectPosition =
         ObjectPosition(time + position.time, y + position.y)
 
-    override fun toString(): String = "(${time.format(2)}, ${y.format(1)})"
+    override fun toString(): String = "(${time.format(3)}, ${y.format(3)})"
 
     override fun equals(other: Any?): Boolean = when {
         other !is ObjectPosition -> false
@@ -32,5 +32,11 @@ data class ObjectPosition(val time: Double, val y: Double) : Comparable<ObjectPo
         private const val DELTA = 0.001
 
         val ZERO = ObjectPosition(0.0, 0.0)
+
+        @JvmStatic
+        fun main(args: Array<String>) {
+            println(0.1 + 0.2)
+            println((0.1 + 0.2).format(4))
+        }
     }
 }

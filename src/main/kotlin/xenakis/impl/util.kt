@@ -5,7 +5,7 @@ import hextant.context.Properties.classLoader
 import hextant.plugins.Aspects
 import hextant.plugins.Implementation
 import javafx.scene.paint.Color
-import kotlinx.serialization.json.*
+import kotlinx.serialization.json.Json
 import reaktive.value.ReactiveValue
 import reaktive.value.reactiveVariable
 import xenakis.sc.Warp
@@ -18,16 +18,6 @@ import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KMutableProperty0
 import kotlin.reflect.KProperty
 import kotlin.reflect.KProperty0
-
-typealias DoubleRange = ClosedFloatingPointRange<Double>
-
-infix fun DoubleRange.step(step: Double) = sequence {
-    var value = start
-    while (value <= endInclusive) {
-        yield(value)
-        value += step
-    }
-}
 
 fun Context.registerImplementationsFromClasspath() {
     val cl = this[classLoader]
@@ -47,25 +37,6 @@ inline fun code(writeCode: ScWriter.() -> Unit): String {
 }
 
 val File.superColliderPath get() = "\"" + absoluteFile.invariantSeparatorsPath + "\""
-
-fun JsonObject.getDouble(name: String) = get(name)?.jsonPrimitive?.double
-
-fun JsonObject.getInt(name: String) = get(name)?.jsonPrimitive?.int
-
-fun JsonObject.getString(name: String) = get(name)?.jsonPrimitive?.content
-
-fun JsonObject.getBoolean(name: String) = get(name)?.jsonPrimitive?.boolean
-
-fun JsonObject.getFile(name: String) = File(getString(name) ?: "")
-
-fun JsonObject.getColor(name: String) = getString(name)?.let { str -> Color.web(str) }
-
-inline fun <reified T> JsonObject.getSerializableValue(name: String) =
-    get(name)?.let { obj -> Json.decodeFromJsonElement<T>(obj) }
-
-inline fun <reified T> JsonObjectBuilder.putSerializableValue(name: String, value: T) {
-    put(name, Json.encodeToJsonElement(value))
-}
 
 fun <T> unsupported(): ReadWriteProperty<Any?, T> = object : ReadWriteProperty<Any?, T> {
     override fun getValue(thisRef: Any?, property: KProperty<*>): T =

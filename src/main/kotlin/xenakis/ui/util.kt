@@ -4,7 +4,6 @@ package xenakis.ui
 
 import javafx.beans.Observable
 import javafx.beans.property.Property
-import javafx.beans.property.SimpleDoubleProperty
 import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.value.ObservableValue
 import javafx.css.PseudoClass
@@ -27,7 +26,6 @@ import reaktive.value.fx.asObservableValue
 import reaktive.value.now
 import xenakis.model.ScoreObject
 import java.util.*
-import kotlin.math.*
 
 fun <T> Optional<T>.getOrNull(): T? = orElse(null)
 
@@ -40,12 +38,6 @@ fun ToggleGroup.addRadioButton(text: String, controlledNode: Node? = null) = Rad
         }
     }
     controlledNode?.disableProperty()?.bind(selectedToggleProperty().isEqualTo(btn).not())
-}
-
-fun DialogPane.setDefaultButton(type: ButtonType, disable: ObservableValue<Boolean>) {
-    val btn = lookupButton(type) as Button
-    btn.disableProperty().bind(disable)
-    btn.isDefaultButton = true
 }
 
 fun <N : Node> N.styleClass(vararg classes: String) = also { it.styleClass.addAll(classes) }
@@ -120,54 +112,8 @@ fun <N : Node> N.centerChildren() = also {
     }
 }
 
-fun ClosedFloatingPointRange<Double>.reverseIfEmpty() = if (start > endInclusive) endInclusive..start else this
-
-fun accuracy(delta: Double) = ceil(-log10(delta).coerceAtMost(0.0)).toInt()
-
-fun Double.format(accuracy: Int) = toString().let { s ->
-    if (accuracy == 0) s.take(s.indexOf('.'))
-    else s.take(s.indexOf('.') + 1 + accuracy)
-}
-
-fun Double.round(accuracy: Int): Double {
-    val factor = 10.0.pow(accuracy)
-    return (this * factor).roundToInt() / factor
-}
-
-fun <N : Node> N.antiScale(container: Node) = apply {
-    val one = SimpleDoubleProperty(1.0)
-    scaleXProperty().bind(one.divide(container.scaleXProperty()))
-    scaleYProperty().bind(one.divide(container.scaleYProperty()))
-}
-
 fun Region.centerHorizontally(parent: Region) {
     layoutXProperty().bind(parent.widthProperty().subtract(widthProperty()).divide(2))
-}
-
-fun Double.snap(grid: Double): Double {
-    if (grid == 0.0 || grid.isNaN() || this == 0.0) return this
-    if (grid < 0.0) return snap(-grid)
-    var v = 0.0
-    for (i in 20 downTo 0) {
-        val f = 2.0.pow(i)
-        if (v + f * grid <= this.absoluteValue) v += f * grid
-    }
-    return v * this.sign
-}
-
-fun Double.wrapAt(divisor: Double): Double = this - snap(divisor)
-
-fun timeCode(t: Double, accuracy: Int): String {
-    var seconds = t.toInt()
-    val milliseconds = ((t - seconds) * 10.0.pow(accuracy)).toInt()
-    val minutes = seconds / 60
-    seconds %= 60
-    return when {
-        accuracy == 0 && minutes == 0 -> "$seconds"
-        accuracy == 0 -> String.format("%d:%02d", minutes, seconds)
-        minutes == 0 -> String.format("%d,%0${accuracy}d", seconds, milliseconds)
-        else -> String.format("%d:%02d,%0${accuracy}d", minutes, seconds, milliseconds)
-    }
 }
 
 fun Node.setupDropArea(condition: (db: Dragboard) -> Boolean, onDrop: (ev: DragEvent) -> Unit) {

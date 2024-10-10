@@ -11,9 +11,9 @@ import reaktive.value.reactiveVariable
 import xenakis.impl.ScWriter
 import xenakis.impl.SuperColliderClient
 import xenakis.impl.SuperColliderContext
+import xenakis.impl.format
 import xenakis.sc.NumericalControlSpec
 import xenakis.sc.Rate
-import xenakis.ui.format
 
 @Serializable
 class GlobalControls(private val controls: MutableList<GlobalControl>) : XenakisProject.ProjectComponent {

@@ -13,8 +13,10 @@ import xenakis.impl.ScWriter
 import xenakis.impl.SuperColliderClient
 import xenakis.impl.code
 import xenakis.impl.copy
+import xenakis.impl.format
 import xenakis.sc.ControlSpec
 import xenakis.sc.Identifier
+import xenakis.sc.NumericalControlSpec
 import xenakis.sc.editor.SynthDefSelector
 import xenakis.sc.transform
 import xenakis.ui.Direction
@@ -165,17 +167,25 @@ class SynthObject(
                 runOnActiveSynths { +"map('$parameter', ${bus.get<BusObject>().superColliderName})" }
             }
 
-            is ConstantControl -> controlObservers[control] = control.value.forEach { value ->
-                runOnActiveSynths { +"set('$parameter', $value)" }
+            is ConstantControl -> {
+                val accuracy = (getSpec(parameter) as? NumericalControlSpec)?.accuracy ?: 3
+                controlObservers[control] = control.value.forEach { value ->
+                    runOnActiveSynths { +"set('$parameter', ${value.format(accuracy)})" }
+                }
             }
 
-            is KnobControl -> controlObservers[control] = control.value.forEach { value ->
-                runOnActiveSynths { +"set('$parameter', $value)" }
+            is KnobControl -> {
+                val accuracy = valueAccuracyFor(parameter)
+                controlObservers[control] = control.value.forEach { value ->
+                    runOnActiveSynths { +"set('$parameter', ${value.format(accuracy)})" }
+                }
             }
 
             else -> {} //no realtime updates possible
         }
     }
+
+    private fun valueAccuracyFor(parameter: String) = (getSpec(parameter) as? NumericalControlSpec)?.accuracy ?: 3
 
     override fun removedControl(parameter: String, control: ParameterControl) {
         controlObservers.remove(control)?.kill()
@@ -188,12 +198,12 @@ class SynthObject(
                 else when (control) {
                     is BufferControl -> param to (control.sample.now?.get<SampleObject>()?.superColliderName ?: "0")
                     is BusControl -> param to control.bus.now.get<BusObject>().superColliderName
-                    is ConstantControl -> param to control.value.now.toString()
-                    is KnobControl -> param to control.get().toString()
-                    is EnvelopeControl -> param to control.envelope.points[0].y
+                    is ConstantControl -> param to control.value.now.format(valueAccuracyFor(param))
+                    is KnobControl -> param to control.get().format(valueAccuracyFor(param))
+                    is EnvelopeControl -> param to control.envelope.points[0].y.format(valueAccuracyFor(param))
                     else -> null
                 }
-            }.joinToString { (param, value) -> "$param: $value" } + ", duration: $duration"
+            }.joinToString { (param, value) -> "$param: $value" } + ", duration: ${duration.format(3)}"
             val synthVar = "~synths['$name']"
             val group = group.now
             val synthDefName = synthDef.name.now

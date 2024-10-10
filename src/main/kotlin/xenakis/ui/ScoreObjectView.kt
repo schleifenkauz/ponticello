@@ -26,6 +26,7 @@ import reaktive.value.fx.asObservableValue
 import reaktive.value.now
 import reaktive.value.reactiveVariable
 import xenakis.impl.Knob
+import xenakis.impl.format
 import xenakis.model.*
 import xenakis.model.InteractionSettings.SnapOption
 import xenakis.model.Score.Companion.rootScore
