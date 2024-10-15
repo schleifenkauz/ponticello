@@ -5,10 +5,10 @@ import hextant.serial.SnapshotAware
 import kotlinx.serialization.Serializable
 import reaktive.value.*
 import reaktive.value.binding.binding
-import xenakis.model.BusObject
-import xenakis.model.BusRegistry
-import xenakis.model.ObjectReference
-import xenakis.model.ObjectRegistry
+import xenakis.model.obj.BusObject
+import xenakis.model.registry.BusRegistry
+import xenakis.model.registry.ObjectReference
+import xenakis.model.registry.ObjectRegistry
 import xenakis.sc.Rate
 import kotlin.reflect.KClass
 
@@ -18,9 +18,9 @@ class BusSelector(
     context: Context,
     val preferredRate: Rate? = null,
     val preferredChannels: Int = -1,
-    selected: ReactiveVariable<ObjectReference> =
+    selected: ReactiveVariable<ObjectReference?> =
         reactiveVariable(getDefaultBus(context, preferredRate, preferredChannels))
-) : ObjectSelector<BusObject, ObjectReference>(context, selected) {
+) : ObjectSelector<BusObject, ObjectReference?>(context, selected) {
     override fun getRegistry(context: Context): ObjectRegistry<*> = context[BusRegistry]
 
     override val objectClass: KClass<BusObject>

@@ -1,0 +1,324 @@
+package xenakis.ui.controls
+
+import bundles.createBundle
+import hextant.context.Context
+import hextant.fx.initHextantScene
+import hextant.serial.EditorRoot
+import javafx.geometry.Pos
+import javafx.scene.Node
+import javafx.scene.control.Button
+import javafx.scene.control.Label
+import javafx.scene.control.ScrollPane
+import javafx.scene.layout.BorderPane
+import javafx.scene.layout.HBox
+import javafx.scene.layout.Priority
+import org.controlsfx.control.ToggleSwitch
+import reaktive.value.ReactiveVariable
+import reaktive.value.fx.asProperty
+import reaktive.value.now
+import reaktive.value.reactiveVariable
+import xenakis.impl.Decimal
+import xenakis.model.obj.BusObject
+import xenakis.model.registry.BusRegistry
+import xenakis.model.registry.GroupRegistry
+import xenakis.model.registry.ObjectReference
+import xenakis.model.score.*
+import xenakis.sc.BufferControlSpec
+import xenakis.sc.ControlSpec
+import xenakis.sc.NumericalControlSpec
+import xenakis.sc.editor.BusSelector
+import xenakis.sc.editor.GroupSelector
+import xenakis.sc.editor.SampleSelector
+import xenakis.sc.editor.ScExprExpander
+import xenakis.sc.view.ObjectSelectorControl
+import xenakis.ui.Icon
+import xenakis.ui.impl.*
+import xenakis.ui.prompt.ControlSpecPrompt
+import xenakis.ui.registry.SimpleSearchableListView
+
+class ControlAssignmentEditor(
+    private val obj: ParameterizedScoreObject,
+    val parameter: String,
+) : HBox(5.0) {
+    private val nameLabel = Label(parameter)
+    private var selectedOption: ControlType<*>? = null
+    private val optionButton = Button() styleClass "sleek-button"
+    private val detailEditors = mutableMapOf<ControlType<*>, Node>()
+    private val spec
+        get() = obj.getSpec(parameter) ?: error("Parameter $parameter not found in $obj")
+    private val deleteBtn = Icon.Delete.button(radius = 12.0, action = "Remove control") {
+        obj.controls.removeControl(parameter)
+    }
+    private var settingControl = false
+    private var detailEditor: Node? = null
+        set(value) {
+            field = value!!
+            value.styleClass?.add("control-detail-editor")
+            if (spec is NumericalControlSpec) {
+                children.setAll(nameLabel, optionButton, detailEditor, infiniteSpace(), deleteBtn)
+            } else {
+                children.setAll(nameLabel, detailEditor, infiniteSpace(), deleteBtn)
+            }
+            setHgrow(value, Priority.ALWAYS)
+        }
+
+    init {
+        styleClass.add("detail-item")
+        optionButton.isFocusTraversable = false
+        optionButton.setOnMouseClicked { ev ->
+            if (ev.isShiftDown) {
+                ControlSpecPrompt(obj, parameter, spec)
+                    .showDialog(obj.context, optionButton)
+            } else {
+                val listView = SimpleSearchableListView(ControlType.all, "Select control type")
+                listView.showPopup(
+                    obj.context, anchorNode = optionButton,
+                    initialOption = selectedOption
+                ) { option ->
+                    updateControlType(option)
+                }
+            }
+        }
+        optionButton.minWidth = 85.0
+        nameLabel.minWidth = DetailPane.LABEL_WIDTH - 5.0
+    }
+
+    private fun updateControlType(t: ControlType<*>) {
+        val oldValue = when (val oldControl = obj.controls[parameter]) {
+            is ConstantControl -> oldControl.value.now
+            is KnobControl -> oldControl.get()
+            else -> null
+        }
+        val control = t.createDefaultControl(obj, spec, oldValue)
+        obj.controls.reassignControl(parameter, control)
+    }
+
+    fun setControl(control: ParameterControl) {
+        val type = ControlType.getType(control)
+        settingControl = true
+        optionButton.text = type.toString()
+        detailEditor = type.createDetailInput(obj, parameter, spec, control)
+        detailEditors[type] = detailEditor!!
+        settingControl = false
+    }
+
+    fun focusInputControl(): Boolean {
+        detailEditor?.requestFocus()
+        return detailEditor != null
+    }
+
+    sealed class ControlType<C : ParameterControl> {
+        abstract fun createDetailInput(
+            obj: ParameterizedScoreObject,
+            parameter: String,
+            spec: ControlSpec,
+            control: C
+        ): Node
+
+        abstract fun createDefaultControl(obj: ScoreObject, spec: ControlSpec, initialValue: Decimal?): C
+
+        override fun toString(): String = when (this) {
+            Buffer -> "Buffer"
+            Bus -> "Bus"
+            BusValue -> "Bus"
+            Value -> "Value"
+            Envelope -> "Envelope"
+            Group -> "Group"
+            LFO -> "LFO"
+            SingleBusValue -> "Bus Value"
+        }
+
+        object Value : ControlType<ConstantControl>() {
+            override fun createDetailInput(
+                obj: ParameterizedScoreObject,
+                parameter: String,
+                spec: ControlSpec,
+                control: ConstantControl
+            ): Node = ControlSlider(obj, parameter, control.value)
+
+            override fun createDefaultControl(
+                obj: ScoreObject, spec: ControlSpec, initialValue: Decimal?
+            ): ConstantControl {
+                spec as NumericalControlSpec
+                return ConstantControl(reactiveVariable(initialValue ?: spec.defaultValue.get()))
+            }
+        }
+
+        object Envelope : ControlType<EnvelopeControl>() {
+            override fun createDetailInput(
+                obj: ParameterizedScoreObject,
+                parameter: String,
+                spec: ControlSpec,
+                control: EnvelopeControl
+            ): Node {
+                val colorPicker = colorPicker(control.displayColor)
+                colorPicker.setFixedWidth(30.0)
+                val toggle = ToggleSwitch("Display: ")
+                toggle.selectedProperty().bindBidirectional(control.display.asProperty())
+                val box = HBox(colorPicker, infiniteSpace(), toggle)
+                box.alignment = Pos.CENTER_LEFT
+                return box
+            }
+
+            override fun createDefaultControl(
+                obj: ScoreObject,
+                spec: ControlSpec,
+                initialValue: Decimal?
+            ): EnvelopeControl {
+                spec as NumericalControlSpec
+                val value = initialValue ?: spec.defaultValue.get()
+                val env = xenakis.model.score.Envelope.constant(value, obj.duration, spec.warp)
+                val displayColor = reactiveVariable(spec.associatedColor)
+                val display = reactiveVariable(true)
+                return EnvelopeControl(env, displayColor, display)
+            }
+        }
+
+        object LFO : ControlType<CustomControl>() {
+            override fun createDetailInput(
+                obj: ParameterizedScoreObject,
+                parameter: String,
+                spec: ControlSpec,
+                control: CustomControl
+            ): Node {
+                val pane = ScrollPane(control.expr.control)
+                val window = SubWindow(BorderPane(pane), "LFO for $parameter", obj.context)
+                window.scene.initHextantScene(obj.context)
+                window.resize(500.0, 200.0)
+                return button("Code") { window.show() }
+            }
+
+            override fun createDefaultControl(
+                obj: ScoreObject,
+                spec: ControlSpec,
+                initialValue: Decimal?
+            ): CustomControl {
+                val editor = ScExprExpander(obj.context)
+                val root = EditorRoot.create(editor)
+                return CustomControl(root)
+            }
+        }
+
+        object Bus : ControlType<BusControl>() {
+            override fun createDetailInput(
+                obj: ParameterizedScoreObject,
+                parameter: String,
+                spec: ControlSpec,
+                control: BusControl
+            ): Node = busSelector(obj.context, control.bus)
+
+            override fun createDefaultControl(obj: ScoreObject, spec: ControlSpec, initialValue: Decimal?): BusControl =
+                BusControl(reactiveVariable(obj.context[BusRegistry].getDefault().createReference()))
+        }
+
+        object BusValue : ControlType<BusValueControl>() {
+            override fun createDetailInput(
+                obj: ParameterizedScoreObject,
+                parameter: String,
+                spec: ControlSpec,
+                control: BusValueControl
+            ): Node = busSelector(obj.context, control.bus)
+
+            override fun createDefaultControl(
+                obj: ScoreObject,
+                spec: ControlSpec,
+                initialValue: Decimal?
+            ): BusValueControl =
+                BusValueControl(reactiveVariable(obj.context[BusRegistry].getDefault().createReference()))
+        }
+
+        object SingleBusValue :
+            ControlType<SingleBusValueControl>() {
+            override fun createDetailInput(
+                obj: ParameterizedScoreObject,
+                parameter: String,
+                spec: ControlSpec,
+                control: SingleBusValueControl
+            ): Node = busSelector(obj.context, control.bus)
+
+            override fun createDefaultControl(
+                obj: ScoreObject, spec: ControlSpec, initialValue: Decimal?
+            ): SingleBusValueControl =
+                SingleBusValueControl(reactiveVariable(obj.context[BusRegistry].getDefault().createReference()))
+
+        }
+
+        object Buffer : ControlType<BufferControl>() {
+            override fun createDetailInput(
+                obj: ParameterizedScoreObject,
+                parameter: String,
+                spec: ControlSpec,
+                control: BufferControl
+            ): Node {
+                val initialValue = control.sample
+                val editor = SampleSelector(obj.context, initialValue)
+                val selectorControl = ObjectSelectorControl(editor, createBundle())
+                val displaySwitch = ToggleSwitch("Display: ")
+                spec as BufferControlSpec
+                displaySwitch.selectedProperty().bindBidirectional(control.display.asProperty())
+                return HBox(selectorControl, infiniteSpace(), displaySwitch).centerChildren()
+            }
+
+            override fun createDefaultControl(
+                obj: ScoreObject,
+                spec: ControlSpec,
+                initialValue: Decimal?
+            ): BufferControl {
+                spec as BufferControlSpec
+                val display = reactiveVariable(spec.isPlayBufSource)
+                val sample: ReactiveVariable<ObjectReference?> = reactiveVariable(null)
+                return BufferControl(sample, display)
+            }
+        }
+
+        object Group : ControlType<GroupControl>() {
+            override fun createDetailInput(
+                obj: ParameterizedScoreObject,
+                parameter: String,
+                spec: ControlSpec,
+                control: GroupControl
+            ): Node {
+                @Suppress("UNCHECKED_CAST")
+                val selector = GroupSelector(obj.context, control.group as ReactiveVariable<ObjectReference?>)
+                return ObjectSelectorControl(selector, createBundle())
+            }
+
+            override fun createDefaultControl(
+                obj: ScoreObject,
+                spec: ControlSpec,
+                initialValue: Decimal?
+            ): GroupControl =
+                GroupControl(reactiveVariable(obj.context[GroupRegistry].getDefault().createReference()))
+        }
+
+        companion object {
+            val all: List<ControlType<*>> = listOf(Value, LFO, Envelope, BusValue, SingleBusValue)
+
+            @Suppress("UNCHECKED_CAST")
+            fun <O : ParameterControl> getType(option: O) = when (option) {
+                is ConstantControl -> Value
+                is CustomControl -> LFO
+                is EnvelopeControl -> Envelope
+                is BusControl -> Bus
+                is BusValueControl -> BusValue
+                is SingleBusValueControl -> SingleBusValue
+                is BufferControl -> Buffer
+                is GroupControl -> Group
+                else -> throw AssertionError()
+            } as ControlType<O>
+
+            private fun busSelector(
+                context: Context,
+                ref: ReactiveVariable<ObjectReference>
+            ): ObjectSelectorControl<BusObject, ObjectReference?> {
+                val bus = ref.now.get<BusObject>()
+
+                @Suppress("UNCHECKED_CAST") // this is fine because BusSelector never chooses the null value
+                val nullableRef = ref as ReactiveVariable<ObjectReference?>
+                val editor = BusSelector(context, bus.rate.now, bus.channels.now, nullableRef)
+
+                return ObjectSelectorControl(editor, createBundle())
+            }
+        }
+    }
+}

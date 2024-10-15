@@ -6,8 +6,8 @@ import javafx.scene.Parent
 import javafx.scene.control.Button
 import javafx.scene.layout.HBox
 import javafx.scene.layout.VBox
-import xenakis.ui.button
-import xenakis.ui.styleClass
+import xenakis.ui.impl.button
+import xenakis.ui.impl.styleClass
 
 abstract class ConfirmablePrompt<R : Any, N : Node>(final override val title: String) : Prompt<R?, N>() {
     val cancelButton = button("Cancel") { commit(null) }

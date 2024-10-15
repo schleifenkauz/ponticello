@@ -8,7 +8,9 @@ import xenakis.impl.asTime
 import xenakis.impl.asY
 import xenakis.impl.withPrecision
 import xenakis.impl.zero
-import xenakis.model.ScoreEventCollector.Event
+import xenakis.model.player.ScoreEventCollector
+import xenakis.model.player.ScoreEventCollector.Event
+import xenakis.model.score.*
 import kotlin.random.Random
 
 class ScoreEventCollectorTest {

@@ -2,8 +2,10 @@ package xenakis.model
 
 import hextant.context.Context
 import kotlinx.serialization.Serializable
-import xenakis.impl.ScWriter
+import xenakis.model.obj.SuperColliderObject
+import xenakis.model.registry.ObjectReference
 import xenakis.sc.ScExpr
+import xenakis.sc.client.ScWriter
 
 @Serializable
 class ObjectReferenceExpr(val reference: ObjectReference?) : ScExpr {

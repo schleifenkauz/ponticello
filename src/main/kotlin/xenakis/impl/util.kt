@@ -9,6 +9,7 @@ import kotlinx.serialization.json.Json
 import reaktive.value.ReactiveValue
 import reaktive.value.reactiveVariable
 import xenakis.sc.Warp
+import xenakis.sc.client.ScWriter
 import java.io.File
 import java.io.StringWriter
 import java.util.concurrent.CompletableFuture

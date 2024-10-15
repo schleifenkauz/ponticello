@@ -48,10 +48,7 @@ class Decimal(val value: Double, val precision: Int) : Number(), Comparable<Deci
         if (precision == 0) value.toLong().toString()
         else value.format(precision)
 
-    fun toCanonicalString() = when (val str = toString()) {
-        "0" -> "0"
-        else -> str.dropLastWhile { c -> c == '0' }.removeSuffix(".")
-    }
+    fun toCanonicalString() = toString().canonicalizeDecimal()
 
     override fun equals(other: Any?): Boolean {
         if (other !is Decimal) return false

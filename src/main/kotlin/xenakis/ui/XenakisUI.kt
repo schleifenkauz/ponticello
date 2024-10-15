@@ -40,14 +40,28 @@ import xenakis.impl.asTime
 import xenakis.impl.times
 import xenakis.impl.unaryMinus
 import xenakis.impl.zero
-import xenakis.model.*
 import xenakis.model.InteractionSettings.SnapOption
+import xenakis.model.Logger
+import xenakis.model.Settings
+import xenakis.model.XenakisProject
+import xenakis.model.obj.BusObject
+import xenakis.model.obj.SuperColliderObject
+import xenakis.model.player.PlaybackManager
+import xenakis.model.registry.BusRegistry
+import xenakis.model.registry.ScoreObjectRegistry
+import xenakis.model.score.*
 import xenakis.sc.Rate
 import xenakis.ui.ToolSelector.Tool
+import xenakis.ui.impl.*
+import xenakis.ui.misc.*
 import xenakis.ui.prompt.IntegerPrompt
 import xenakis.ui.prompt.NamePrompt
 import xenakis.ui.prompt.SimpleTextPrompt
 import xenakis.ui.prompt.YesNoPrompt
+import xenakis.ui.registry.*
+import xenakis.ui.score.ScoreObjectSelectionManager
+import xenakis.ui.score.ScoreObjectView
+import xenakis.ui.score.ScoreView
 
 class XenakisUI(
     private val stage: Stage, private val controller: XenakisController, private val mode: Mode
@@ -59,8 +73,13 @@ class XenakisUI(
     private val progressBar = ProgressBar()
     private val statusText = Label()
 
-    private lateinit var instrumentsPane: InstrumentRegistryPane
+    lateinit var instrumentsPane: InstrumentRegistryPane
+        private set
     lateinit var instrumentsWindow: SubWindow
+        private set
+    lateinit var processDefsPane: ProcessDefRegistryPane
+        private set
+    lateinit var processDefsWindow: SubWindow
         private set
     private lateinit var busRegistryPane: BusRegistryPane
     private lateinit var busesWindow: SubWindow
@@ -110,12 +129,23 @@ class XenakisUI(
 
     override fun displayProject(project: XenakisProject) {
         instrumentsPane = InstrumentRegistryPane(project.instruments)
-        context[InstrumentRegistryPane] = instrumentsPane
+        instrumentsWindow = SubWindow(instrumentsPane, "Instruments", context, SubWindow.Type.Undecorated)
+
+        processDefsPane = ProcessDefRegistryPane((project.processDefs))
+        processDefsWindow = SubWindow(processDefsPane, "Process Definitions", context, SubWindow.Type.Undecorated)
+
         busRegistryPane = BusRegistryPane(project.busses)
+        busesWindow = SubWindow(busRegistryPane, "Busses", context, SubWindow.Type.Undecorated)
+
         samplesPane = SampleRegistryPane(project.samples, controller)
+        samplesWindow = SubWindow(samplesPane, "Samples", context, SubWindow.Type.Undecorated)
+
         groupsPane = GroupRegistryPane(project.groups)
+        groupsWindow = SubWindow(groupsPane, "Groups", context, SubWindow.Type.Undecorated)
+
         val logPane = LogPane(context, Logger)
         logWindow = SubWindow(logPane, "Log", context, SubWindow.Type.Undecorated)
+
         scoreView = ScoreView(project.score, project.context)
         project.context[ScoreObjectSelectionManager] = ScoreObjectSelectionManager(project.context, scoreView)
         scoreView.initialize()
@@ -202,8 +232,8 @@ class XenakisUI(
             left = Icon.Search.getView()
             promptText = "Search for project..."
         }
-        val btnOpen = button("Open") { controller.openProject() }
-        val createNew = button("Create new") { controller.createNewProject() }
+        val btnOpen = xenakis.ui.impl.button("Open") { controller.openProject() }
+        val createNew = xenakis.ui.impl.button("Create new") { controller.createNewProject() }
         val recentProjects = VBox().styleClass("recent-projects-list")
         for (proj in controller.recentProjects()) {
             val name = label(proj.nameWithoutExtension).styleClass("project-name")
@@ -344,18 +374,14 @@ class XenakisUI(
             +Icon.Flow.button(action = "Edit audio flow graph (Ctrl+Shift+F)") { flowGraphWindow.show() }
             +Icon.Settings.button(action = "Edit settings (Ctrl+Alt+S)") { settingsWindow.show() }
             +Icon.Knob.button(action = "Edit global controls (Ctrl+Shift+G)") { globalControlsWindow.show() }
-            busesWindow = SubWindow(busRegistryPane, "Busses", context, SubWindow.Type.Undecorated)
             +Icon.Bus.button(action = "Show buses (Ctrl+B)") {
                 busesWindow.show()
                 busesWindow.requestFocus()
             }
-            samplesWindow = SubWindow(samplesPane, "Samples", context, SubWindow.Type.Undecorated)
             +Icon.Samples.button(action = "Show samples (Ctrl+F)") {
                 samplesWindow.show()
                 samplesWindow.requestFocus()
             }
-            instrumentsWindow = SubWindow(instrumentsPane, "Instruments", context, SubWindow.Type.Undecorated)
-            groupsWindow = SubWindow(groupsPane, "Groups", context, SubWindow.Type.Undecorated)
             +Icon.Groups.button(action = "Show groups (Ctrl+G)") { groupsWindow.show() }
             if (mode == Mode.Laptop) {
                 add(Icon.Details.button(action = "Edit object properties (P)") { showDetailPaneOfSelectedObject() }) {
@@ -489,15 +515,17 @@ class XenakisUI(
     }
 
     private fun KeyEventHandlerBody<Unit>.addSelectionRelatedShortcuts() {
-        on("ESCAPE") {
-            scoreView.clearNewShape()
+        on("ESCAPE") { ev ->
+            if (ev.isTargetTextInput) return@on
+            scoreView.endNewObject()
             scoreView.clearClipboard()
             if (!playback.player.isPlaying) {
                 playback.attachToMainScore()
             }
             context[ScoreObjectSelectionManager].deselectAll()
         }
-        on("Ctrl+A") {
+        on("Ctrl+A") { ev ->
+            if (ev.isTargetTextInput) return@on
             context[ScoreObjectSelectionManager].selectAll()
         }
         on("Ctrl+Shift+A") {
@@ -510,12 +538,12 @@ class XenakisUI(
             }
         }
         on("C") { ev ->
-            if (!ev.isTargetTextInput) {
-                val selected = scoreView.selector.singleSelected.now ?: return@on
-                setClipboard(selected)
-            }
+            if (ev.isTargetTextInput) return@on
+            val selected = scoreView.selector.singleSelected.now ?: return@on
+            setClipboard(selected)
         }
-        on("Ctrl+C") {
+        on("Ctrl+C") { ev ->
+            if (ev.isTargetTextInput) return@on
             val selected = scoreView.selector.selectedInstances.toList()
             scoreView.selector.setSystemClipboard(selected)
         }
@@ -535,8 +563,8 @@ class XenakisUI(
                     val clone = obj.clone(name)
                     for (oldInst in instances) {
                         val newInst = ScoreObjectInstance(clone, oldInst.position, oldInst.muted)
-                        oldInst.score?.removeObject(oldInst)
                         oldInst.score?.addObject(newInst)
+                        oldInst.score?.removeObject(oldInst)
                     }
                 }
             }
@@ -653,6 +681,7 @@ class XenakisUI(
         on("Ctrl+B") { busesWindow.show() }
         on("Ctrl+F") { samplesWindow.show() }
         on("Ctrl+I") { instrumentsWindow.show() }
+        on("Ctrl+P") { processDefsWindow.show() }
         on("Ctrl+L") { logWindow.show() }
         on("Ctrl+Shift+G") { globalControlsWindow.show() }
         on("Ctrl+Shift+F") { flowGraphWindow.show() }

@@ -10,9 +10,9 @@ import hextant.undo.compoundEdit
 import reaktive.value.now
 import xenakis.impl.one
 import xenakis.impl.randomColor
-import xenakis.model.CustomizableSynthDefObject.SynthDefEditor
 import xenakis.model.Logger
-import xenakis.model.ParameterDefObject
+import xenakis.model.obj.CustomizableSynthDefObject.SynthDefEditor
+import xenakis.model.obj.ParameterDefObject
 import xenakis.sc.DecimalLiteral
 import xenakis.sc.Identifier
 import xenakis.sc.NumericalControlSpec

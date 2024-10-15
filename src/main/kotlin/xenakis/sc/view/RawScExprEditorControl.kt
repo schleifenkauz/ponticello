@@ -6,7 +6,7 @@ import hextant.context.ControlFactory
 import hextant.core.view.EditorControl
 import javafx.scene.control.Label
 import xenakis.sc.editor.RawScExprEditor
-import xenakis.ui.label
+import xenakis.ui.impl.label
 
 class RawScExprEditorControl @ProvideImplementation(ControlFactory::class) constructor(
     private val editor: RawScExprEditor, arguments: Bundle

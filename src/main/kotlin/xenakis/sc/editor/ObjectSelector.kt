@@ -11,10 +11,10 @@ import kotlinx.serialization.json.put
 import reaktive.value.*
 import reaktive.value.binding.map
 import xenakis.impl.getString
-import xenakis.model.NamedObject
-import xenakis.model.ObjectReference
 import xenakis.model.ObjectReferenceExpr
-import xenakis.model.ObjectRegistry
+import xenakis.model.registry.NamedObject
+import xenakis.model.registry.ObjectReference
+import xenakis.model.registry.ObjectRegistry
 import xenakis.sc.view.ObjectSelectorView
 import kotlin.reflect.KClass
 

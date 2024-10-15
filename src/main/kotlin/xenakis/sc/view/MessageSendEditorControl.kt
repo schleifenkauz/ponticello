@@ -15,9 +15,9 @@ import hextant.fx.registerShortcuts
 import hextant.fx.view
 import reaktive.collection.binding.isNotEmpty
 import reaktive.value.now
-import xenakis.ui.HelpBrowser
-import xenakis.ui.centerChildren
-import xenakis.ui.styleClass
+import xenakis.ui.impl.centerChildren
+import xenakis.ui.impl.styleClass
+import xenakis.ui.misc.HelpBrowser
 
 class MessageSendEditorControl @ProvideImplementation(ControlFactory::class) constructor(
     private val editor: xenakis.sc.editor.MessageSendEditor,

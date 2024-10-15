@@ -11,6 +11,7 @@ import reaktive.value.now
 import reaktive.value.reactiveVariable
 import xenakis.impl.Decimal
 import xenakis.impl.withPrecision
+import xenakis.model.obj.ParameterDefObject
 
 @Serializable
 class Settings(

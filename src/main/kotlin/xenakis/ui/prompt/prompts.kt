@@ -3,7 +3,7 @@ package xenakis.ui.prompt
 import hextant.context.Context
 import javafx.geometry.Point2D
 import javafx.scene.Node
-import xenakis.ui.SimpleSearchableListView
+import xenakis.ui.registry.SimpleSearchableListView
 
 fun <T : Any> showSelectorDialog(
     context: Context, title: String,

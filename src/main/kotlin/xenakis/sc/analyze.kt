@@ -39,7 +39,28 @@ fun ScExpr.transform(f: (ScExpr) -> ScExpr): ScExpr = when (this) {
 inline fun <reified E : ScExpr> ScExpr.transform(crossinline f: (E) -> ScExpr) =
     transform { e -> if (e is E) f(e) else e }
 
-fun ScExpr.substitute(name: String, expr: ScExpr) = transform { e -> if (e == Identifier(name)) expr else e }
+fun ScExpr.substitute(map: Map<String, ScExpr>): ScExpr = transform { e ->
+    when {
+        e is Identifier && e.text in map -> map.getValue(e.text)
+        e is CodeBlock -> {
+            val shadowedVariables = e.variables.mapTo(mutableSetOf()) { v -> v.text }
+            val shadowedMap = map - shadowedVariables
+            CodeBlock(e.variables, e.statements.map { s -> s.substitute(shadowedMap) })
+        }
+
+        e is ScFunction -> {
+            val shadowedVariables =
+                e.parameters.mapTo(mutableSetOf()) { v -> v.text } + e.body.variables.mapTo(mutableSetOf()) { v -> v.text }
+            val shadowedMap = map - shadowedVariables
+            ScFunction(
+                e.parameters,
+                CodeBlock(e.body.variables, e.body.statements.map { s -> s.substitute(shadowedMap) })
+            )
+        }
+
+        else -> e
+    }
+}
 
 private fun CodeBlock.transformBlock(f: (ScExpr) -> ScExpr) =
     CodeBlock(variables, statements.map { s -> s.transform(f) })

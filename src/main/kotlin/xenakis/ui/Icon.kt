@@ -7,10 +7,12 @@ import javafx.scene.control.Tooltip
 import javafx.scene.image.Image
 import javafx.scene.image.ImageView
 import javafx.scene.input.MouseEvent
+import xenakis.ui.impl.neverHGrow
+import xenakis.ui.impl.styleClass
 
 enum class Icon {
     Pointer,
-    Envelope, Synth, Code,
+    Synth, Code, Process,
     AddTime,
     Repeat,
     Delete,

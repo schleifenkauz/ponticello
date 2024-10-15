@@ -7,12 +7,12 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonObjectBuilder
 import kotlinx.serialization.json.put
 import reaktive.value.ReactiveValue
-import xenakis.impl.SuperColliderClient
 import xenakis.impl.getString
 import xenakis.impl.superColliderPath
 import xenakis.model.Logger
 import xenakis.model.XenakisProject.Companion.projectDirectory
 import xenakis.sc.VSTPlugin
+import xenakis.sc.client.SuperColliderClient
 
 class VSTPluginEditor(context: Context) : CompoundEditor<VSTPlugin>(context), ScExprEditor<VSTPlugin> {
     constructor(context: Context, pluginName: String) : this(context) {

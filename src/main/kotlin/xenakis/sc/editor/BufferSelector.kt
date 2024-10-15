@@ -5,10 +5,10 @@ import hextant.serial.SnapshotAware
 import kotlinx.serialization.Serializable
 import reaktive.value.ReactiveVariable
 import reaktive.value.reactiveVariable
-import xenakis.model.BufferObject
-import xenakis.model.BufferRegistry
-import xenakis.model.ObjectReference
-import xenakis.model.ObjectRegistry
+import xenakis.model.obj.BufferObject
+import xenakis.model.registry.BufferRegistry
+import xenakis.model.registry.ObjectReference
+import xenakis.model.registry.ObjectRegistry
 import kotlin.reflect.KClass
 
 @Suppress("SERIALIZER_TYPE_INCOMPATIBLE")

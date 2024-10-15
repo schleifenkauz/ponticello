@@ -4,7 +4,10 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import xenakis.impl.asTime
 import xenakis.impl.toDecimal
-import xenakis.model.ScorePlayEnv.SynthOrder
+import xenakis.model.player.ScorePlayEnv
+import xenakis.model.player.ScorePlayEnv.SynthOrder
+import xenakis.model.score.ObjectPosition
+import xenakis.model.score.ScoreObjectInstance
 
 class ScorePlayEnvTest {
     @Test

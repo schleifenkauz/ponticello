@@ -7,7 +7,7 @@ import javafx.scene.control.ToggleButton
 import javafx.scene.control.ToggleGroup
 import javafx.scene.control.Tooltip
 import javafx.scene.layout.HBox
-import xenakis.ui.dontDeselectAll
+import xenakis.ui.impl.dontDeselectAll
 
 abstract class SelectorBar<T>(options: List<T>) : HBox(10.0) {
     protected open fun extractGraphic(option: T): Node? = null

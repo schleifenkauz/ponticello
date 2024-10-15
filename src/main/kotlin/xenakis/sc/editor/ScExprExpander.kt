@@ -11,7 +11,7 @@ import hextant.serial.SnapshotAware
 import hextant.undo.makeUndoableEdit
 import kotlinx.serialization.Serializable
 import reaktive.value.now
-import xenakis.model.VSTPluginObject
+import xenakis.model.obj.VSTPluginObject
 import xenakis.sc.*
 import xenakis.ui.prompt.showSelectorDialog
 

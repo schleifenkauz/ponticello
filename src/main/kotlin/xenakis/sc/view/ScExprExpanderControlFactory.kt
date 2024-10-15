@@ -11,7 +11,7 @@ import hextant.fx.registerShortcuts
 import reaktive.value.forEach
 import xenakis.sc.*
 import xenakis.sc.editor.ReferenceCompleter
-import xenakis.ui.HelpBrowser
+import xenakis.ui.misc.HelpBrowser
 
 @ProvideImplementation(ControlFactory::class)
 object ScExprExpanderControlFactory : ControlFactory<xenakis.sc.editor.ScExprExpander> {

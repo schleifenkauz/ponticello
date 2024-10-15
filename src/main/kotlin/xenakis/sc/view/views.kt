@@ -12,9 +12,9 @@ import hextant.core.view.ListEditorControl.Companion.EMPTY_DISPLAY
 import hextant.core.view.ListEditorControl.Companion.ORIENTATION
 import hextant.fx.keyword
 import hextant.fx.view
-import xenakis.ui.button
-import xenakis.ui.centerChildren
-import xenakis.ui.styleClass
+import xenakis.ui.impl.button
+import xenakis.ui.impl.centerChildren
+import xenakis.ui.impl.styleClass
 
 val MULTILINE = publicProperty("MULTILINE_ARGUMENTS", false)
 

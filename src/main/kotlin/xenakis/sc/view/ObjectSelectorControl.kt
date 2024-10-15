@@ -6,12 +6,12 @@ import javafx.scene.Node
 import javafx.scene.control.Button
 import reaktive.value.fx.asObservableValue
 import reaktive.value.now
-import xenakis.model.NamedObject
-import xenakis.model.ObjectReference
-import xenakis.model.ObjectRegistry
+import xenakis.model.registry.NamedObject
+import xenakis.model.registry.ObjectReference
+import xenakis.model.registry.ObjectRegistry
 import xenakis.sc.editor.ObjectSelector
-import xenakis.ui.SearchableRegistryView
-import xenakis.ui.styleClass
+import xenakis.ui.impl.styleClass
+import xenakis.ui.registry.SearchableRegistryView
 
 class ObjectSelectorControl<O : NamedObject, R : ObjectReference?>(
     val editor: ObjectSelector<O, R>, arguments: Bundle

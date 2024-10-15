@@ -3,7 +3,7 @@ package xenakis.ui.prompt
 import javafx.scene.Node
 import javafx.scene.layout.Priority
 import javafx.scene.layout.VBox
-import xenakis.ui.DetailPane
+import xenakis.ui.controls.DetailPane
 
 open class CompoundPrompt<R : Any>(title: String) : ConfirmablePrompt<R, DetailPane>(title) {
     private lateinit var confirm: () -> R?

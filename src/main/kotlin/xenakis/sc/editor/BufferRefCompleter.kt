@@ -3,7 +3,7 @@ package xenakis.sc.editor
 import hextant.completion.CompletionStrategy
 import hextant.completion.ConfiguredCompleter
 import hextant.context.Context
-import xenakis.model.BufferObject
+import xenakis.model.obj.BufferObject
 import xenakis.ui.XenakisController
 
 class BufferRefCompleter(

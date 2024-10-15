@@ -48,6 +48,11 @@
 - clear ServerTree and ServerBoot when closing a project
   - or just reboot sclang.exe, this would mean generally restructuring the startup process
 - re-enable allocated buffers (can be used with WrBuf/RdBuf SynthDefs)
+- ability to specify numerical parameter as envelope only/constant only
+- new parameter type: buffer position (range depends on supplied buffer)
+- duplicating registry objects (SynthDefs, ProcessDefs, etc.)
+- reordering parameters and controls
+- undo/redo for control sliders
 
 ## Long term architectural ideas/questions
 
@@ -65,8 +70,6 @@
   - double click with shift on a divider adds a new section
   - sections can have associated buses, that are used for any new Synths that have bus parameters
 - implicitly duplicate SynthDefs for mono/stereo
-- `Task`s and `Pbind`s as instruments
-  - introduce `ProcessObject` which is a bit like `SynthObject` but takes a `ProcessDef`
 - VSTPlugin `SynthObject`s
   - retrieve parameters from plugin info, make them controllable in the `DetailPane` or as envelopes
 - Rethink the Json serialization of Hextant editors
@@ -74,12 +77,14 @@
   - order of transformation synths could be decided by the order of the buses in the registry
   - how to display/manage flows?
   - graphical tools for EQ, compression (multi-band), reverb, etc. (integrate as special editors?)
-- attach a default bus object to SubScores
 
 ## Bugs
 
 - weird window behaviour on startup
-- something is not quite right yet in `ScoreEventCollector`
+- control specs are behaving weird
+  - synth parameter specs are not updated when editing
+  - extra specs are not used when opening project
+- something is not quite right yet in `ScoreEventCollector` (especially when resizing objects...)
 
 ### Namen überlegen
 

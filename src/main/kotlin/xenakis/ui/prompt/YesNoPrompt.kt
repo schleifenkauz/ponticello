@@ -2,8 +2,8 @@ package xenakis.ui.prompt
 
 import hextant.fx.registerShortcuts
 import javafx.scene.layout.HBox
-import xenakis.ui.button
-import xenakis.ui.styleClass
+import xenakis.ui.impl.button
+import xenakis.ui.impl.styleClass
 
 class YesNoPrompt(
     private val question: String,

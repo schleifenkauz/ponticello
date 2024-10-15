@@ -3,7 +3,7 @@ package xenakis.ui.prompt
 import hextant.fx.registerShortcuts
 import javafx.scene.input.KeyEvent
 import xenakis.impl.*
-import xenakis.model.ObjectRegistry
+import xenakis.model.registry.ObjectRegistry
 import xenakis.sc.Identifier
 
 class PredicateTextPrompt(

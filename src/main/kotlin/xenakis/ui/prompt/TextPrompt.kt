@@ -1,7 +1,7 @@
 package xenakis.ui.prompt
 
 import javafx.scene.control.TextField
-import xenakis.ui.styleClass
+import xenakis.ui.impl.styleClass
 
 abstract class TextPrompt<R : Any>(final override val title: String, initialText: String) : Prompt<R?, TextField>() {
     protected abstract fun convert(text: String): R?

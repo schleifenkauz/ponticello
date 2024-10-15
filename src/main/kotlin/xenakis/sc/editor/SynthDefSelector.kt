@@ -3,11 +3,11 @@ package xenakis.sc.editor
 import hextant.context.Context
 import reaktive.value.ReactiveVariable
 import reaktive.value.reactiveVariable
-import xenakis.model.InstrumentRegistry
-import xenakis.model.ObjectReference
-import xenakis.model.ObjectRegistry
-import xenakis.model.SynthDefObject
-import xenakis.ui.InstrumentRegistryPane
+import xenakis.model.obj.SynthDefObject
+import xenakis.model.registry.InstrumentRegistry
+import xenakis.model.registry.ObjectReference
+import xenakis.model.registry.ObjectRegistry
+import xenakis.ui.XenakisUI
 import kotlin.reflect.KClass
 
 class SynthDefSelector(
@@ -23,5 +23,6 @@ class SynthDefSelector(
     override val objectClass: KClass<SynthDefObject>
         get() = SynthDefObject::class
 
-    override fun createNewObject(name: String): SynthDefObject? = context[InstrumentRegistryPane].createSynthDef(name)
+    override fun createNewObject(name: String): SynthDefObject? =
+        context[XenakisUI].instrumentsPane.createSynthDef(name)
 }

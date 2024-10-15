@@ -10,7 +10,13 @@ import javafx.scene.paint.Color
 import kotlinx.serialization.Serializable
 import reaktive.value.reactiveVariable
 import xenakis.impl.*
-import xenakis.model.*
+import xenakis.model.registry.BusRegistry
+import xenakis.model.registry.GroupRegistry
+import xenakis.model.registry.ObjectReference
+import xenakis.model.score.BufferControl
+import xenakis.model.score.BusControl
+import xenakis.model.score.ConstantControl
+import xenakis.model.score.GroupControl
 import xenakis.sc.editor.ControlSpecEditor
 
 enum class ParameterType {
@@ -32,9 +38,12 @@ sealed interface ControlSpec {
     val code: String
 }
 
-fun ControlSpec.defaultControl(context: Context) = when (this) {
+fun ControlSpec.defaultControl(context: Context, defaultBus: ObjectReference?) = when (this) {
     is BufferControlSpec -> BufferControl(reactiveVariable(null))
-    is BusControlSpec -> BusControl(reactiveVariable(context[BusRegistry].getDefault().createReference()))
+    is BusControlSpec -> {
+        val bus = defaultBus ?: context[BusRegistry].getDefault().createReference()
+        BusControl(reactiveVariable(bus))
+    }
     is NumericalControlSpec -> ConstantControl(reactiveVariable(defaultValue.get()))
     is GroupControlSpec -> GroupControl(reactiveVariable(context[GroupRegistry].getDefault().createReference()))
 }
@@ -78,7 +87,7 @@ data class NumericalControlSpec(
         "default: ${defaultValue.text}, range: ${min.text}..${max.text}, warp: $warp, step: ${step.text}"
 
     companion object {
-        val DEFAULT = NumericalControlSpec(0.0, 0.0, 1.0, 0.1.toDecimal(), Warp.Linear, Color.WHITE)
+        val DEFAULT = NumericalControlSpec(zero, zero, one, 0.01.toDecimal(), Warp.Linear, Color.WHITE)
     }
 }
 

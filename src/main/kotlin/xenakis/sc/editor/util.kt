@@ -3,8 +3,8 @@ package xenakis.sc.editor
 import hextant.context.Context
 import hextant.core.editor.ColorEditor
 import reaktive.value.reactiveVariable
-import xenakis.model.BusObject
-import xenakis.model.ObjectReference
+import xenakis.model.obj.BusObject
+import xenakis.model.registry.ObjectReference
 import xenakis.sc.NumericalControlSpec
 import xenakis.sc.Rate
 

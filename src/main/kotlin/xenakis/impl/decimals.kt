@@ -1,6 +1,6 @@
 package xenakis.impl
 
-import xenakis.model.ObjectPosition
+import xenakis.model.score.ObjectPosition
 import java.util.*
 import kotlin.math.*
 
@@ -86,6 +86,11 @@ fun Decimal.withPrecision(precision: Int) = Decimal(value, precision)
 
 fun Decimal.round(precision: Int) = Decimal(value.round(precision), precision)
 
+fun String.canonicalizeDecimal(): String {
+    if ('.' !in this) return this
+    return dropLastWhile { c -> c == '0' }.removeSuffix(".")
+}
+
 fun String.parseDecimal(): Decimal? {
     val precision = when (val decimalPointIndex = indexOf('.')) {
         -1 -> 0
@@ -100,12 +105,14 @@ fun Int.toDecimal() = Decimal(toDouble(), 0)
 fun Double.snap(grid: Decimal): Decimal {
     if (grid == zero || grid.isNaN()) error("Invalid grid value: $grid")
     if (grid < zero) return snap(-grid)
+    if (this < 0.0) return -(-this).snap(grid)
     var v = zero(grid.precision)
+    val max = this + grid.value / 2
     for (i in 20 downTo 0) {
         val f = 2.0.pow(i)
-        if ((v + f * grid).value <= this) v += f * grid
+        if ((v + f * grid).value <= max) v += f * grid
     }
-    return v
+    return v.round(grid.precision)
 }
 
 fun Decimal.wrapAt(divisor: Decimal): Decimal = this - value.snap(divisor)
@@ -127,7 +134,7 @@ fun DoubleRange.reverseIfEmpty() = if (start > endInclusive) endInclusive..start
 
 fun accuracy(delta: Double) = ceil(-log10(delta).coerceAtMost(0.0)).toInt()
 
-fun Double.format(accuracy: Int) = String.format(Locale.US, "%.${accuracy}f", this).dropLastWhile { c -> c == '0' }
+fun Double.format(accuracy: Int) = String.format(Locale.US, "%.${accuracy}f", this).canonicalizeDecimal()
 
 fun Double.round(accuracy: Int): Double {
     val factor = 10.0.pow(accuracy)

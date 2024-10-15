@@ -4,8 +4,8 @@ import hextant.command.Command
 import hextant.command.meta.ProvideCommand
 import hextant.core.Editor
 import reaktive.value.now
-import xenakis.impl.SuperColliderClient
 import xenakis.sc.ScExpr
+import xenakis.sc.client.SuperColliderClient
 import xenakis.sc.code
 
 interface ScExprEditor<out E : ScExpr> : Editor<E> {

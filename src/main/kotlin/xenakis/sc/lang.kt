@@ -12,10 +12,14 @@ import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.serialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
-import xenakis.impl.*
-import xenakis.model.GroupObject
+import xenakis.impl.Decimal
+import xenakis.impl.parseDecimal
+import xenakis.impl.superColliderPath
+import xenakis.impl.zero
 import xenakis.model.ObjectReferenceExpr
 import xenakis.model.XenakisProject.Companion.projectDirectory
+import xenakis.model.obj.GroupObject
+import xenakis.sc.client.ScWriter
 import xenakis.sc.editor.*
 import java.io.StringWriter
 
@@ -100,7 +104,7 @@ object Nil : Literal, SimpleScElement("nil")
 
 @Token(serializable = true)
 @Serializable(with = DecimalLiteral.Serializer::class)
-@SerialName("DoubleLiteral")
+@SerialName("DoubleLiteral") //backward compatibility
 data class DecimalLiteral(val text: String, val valueOrNull: Decimal?) : Literal, SimpleScElement(text) {
     constructor(value: Decimal) : this(value.toString(), value)
 
@@ -111,11 +115,7 @@ data class DecimalLiteral(val text: String, val valueOrNull: Decimal?) : Literal
 
     companion object : TokenType<DecimalLiteral> {
 
-        override fun compile(token: String): DecimalLiteral {
-            if (token == "0") return DecimalLiteral(zero)
-            val txt = token.dropLastWhile { c -> c == '0' }.removeSuffix(".")
-            return DecimalLiteral(txt, txt.parseDecimal())
-        }
+        override fun compile(token: String): DecimalLiteral = DecimalLiteral(token, token.parseDecimal())
     }
 
     object Serializer : SimpleScElement.Serializer<DecimalLiteral>() {

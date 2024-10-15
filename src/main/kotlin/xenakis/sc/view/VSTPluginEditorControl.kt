@@ -8,8 +8,8 @@ import hextant.core.view.CompoundEditorControl
 import hextant.fx.view
 import xenakis.sc.editor.VSTPluginEditor
 import xenakis.ui.Icon
-import xenakis.ui.centerChildren
-import xenakis.ui.setFixedWidth
+import xenakis.ui.impl.centerChildren
+import xenakis.ui.impl.setFixedWidth
 
 class VSTPluginEditorControl @ProvideImplementation(ControlFactory::class) constructor(
     private val editor: VSTPluginEditor,

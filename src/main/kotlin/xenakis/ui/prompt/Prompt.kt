@@ -7,9 +7,9 @@ import javafx.scene.control.Label
 import javafx.scene.layout.Region
 import javafx.scene.layout.VBox
 import javafx.stage.Window
-import xenakis.ui.SubWindow
 import xenakis.ui.XenakisApp.Companion.primaryStage
-import xenakis.ui.styleClass
+import xenakis.ui.impl.SubWindow
+import xenakis.ui.impl.styleClass
 
 abstract class Prompt<R, N : Node> {
     private var commited = false

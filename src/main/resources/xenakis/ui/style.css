@@ -377,11 +377,11 @@ Label.memo-area {
 }
 
 .envelope-line {
-    -fx-stroke-width: 2px;
+    -fx-stroke-width: 4px;
 }
 
 .envelope-line:hover {
-    -fx-stroke-width: 4px;
+    -fx-stroke-width: 5px;
 }
 
 .toolbar-part {

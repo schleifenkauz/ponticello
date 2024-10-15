@@ -5,18 +5,18 @@ import hextant.serial.SnapshotAware
 import kotlinx.serialization.Serializable
 import reaktive.value.ReactiveVariable
 import reaktive.value.reactiveVariable
-import xenakis.model.GroupObject
-import xenakis.model.GroupRegistry
-import xenakis.model.ObjectReference
-import xenakis.model.ObjectRegistry
+import xenakis.model.obj.GroupObject
+import xenakis.model.registry.GroupRegistry
+import xenakis.model.registry.ObjectReference
+import xenakis.model.registry.ObjectRegistry
 import kotlin.reflect.KClass
 
 @Suppress("SERIALIZER_TYPE_INCOMPATIBLE")
 @Serializable(with = SnapshotAware.Serializer::class)
 class GroupSelector(
     context: Context,
-    selected: ReactiveVariable<ObjectReference>,
-) : ObjectSelector<GroupObject, ObjectReference>(context, selected) {
+    selected: ReactiveVariable<ObjectReference?>,
+) : ObjectSelector<GroupObject, ObjectReference?>(context, selected) {
     constructor(context: Context) : this(
         context, reactiveVariable(context[GroupRegistry].getDefault().createReference())
     )
@@ -26,8 +26,5 @@ class GroupSelector(
     override val objectClass: KClass<GroupObject>
         get() = GroupObject::class
 
-    override fun createNewObject(name: String): GroupObject {
-        val obj = GroupObject(reactiveVariable(name))
-        return obj
-    }
+    override fun createNewObject(name: String): GroupObject = GroupObject(reactiveVariable(name))
 }

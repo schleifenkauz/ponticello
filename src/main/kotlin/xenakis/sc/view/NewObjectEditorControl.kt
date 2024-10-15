@@ -15,8 +15,8 @@ import hextant.fx.view
 import javafx.scene.layout.HBox
 import reaktive.collection.binding.isNotEmpty
 import reaktive.value.now
-import xenakis.ui.centerChildren
-import xenakis.ui.styleClass
+import xenakis.ui.impl.centerChildren
+import xenakis.ui.impl.styleClass
 
 class NewObjectEditorControl @ProvideImplementation(ControlFactory::class) constructor(
     private val editor: xenakis.sc.editor.NewObjectEditor,

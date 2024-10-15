@@ -3,11 +3,11 @@ package xenakis.sc.editor
 import hextant.context.Context
 import reaktive.value.ReactiveVariable
 import reaktive.value.reactiveVariable
-import xenakis.model.ObjectReference
-import xenakis.model.ObjectRegistry
-import xenakis.model.SampleObject
-import xenakis.model.SampleRegistry
-import xenakis.ui.SampleRegistryPane
+import xenakis.model.obj.SampleObject
+import xenakis.model.registry.ObjectReference
+import xenakis.model.registry.ObjectRegistry
+import xenakis.model.registry.SampleRegistry
+import xenakis.ui.registry.SampleRegistryPane
 import kotlin.reflect.KClass
 
 class SampleSelector(

@@ -3,8 +3,10 @@ package xenakis.model
 import hextant.context.Context
 import kotlinx.serialization.Serializable
 import reaktive.value.now
-import xenakis.impl.SuperColliderClient
 import xenakis.impl.isWindows
+import xenakis.model.registry.BusRegistry
+import xenakis.model.registry.ObjectReference
+import xenakis.sc.client.SuperColliderClient
 
 @Serializable
 data class ServerOptions(

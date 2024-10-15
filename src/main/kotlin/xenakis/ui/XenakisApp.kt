@@ -7,6 +7,8 @@ import javafx.stage.Screen
 import javafx.stage.Stage
 import xenakis.model.Logger
 import xenakis.ui.XenakisUI.Mode
+import xenakis.ui.impl.NotificationView
+import xenakis.ui.impl.stackTraceString
 import kotlin.concurrent.thread
 
 class XenakisApp : Application() {

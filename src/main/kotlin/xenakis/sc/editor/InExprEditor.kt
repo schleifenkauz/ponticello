@@ -8,7 +8,7 @@ import reaktive.value.binding.flatMap
 import reaktive.value.reactiveValue
 import xenakis.impl.toDecimal
 import xenakis.impl.zero
-import xenakis.model.BusObject
+import xenakis.model.obj.BusObject
 import xenakis.sc.DecimalLiteral
 import xenakis.sc.Identifier
 import xenakis.sc.ScExpr
