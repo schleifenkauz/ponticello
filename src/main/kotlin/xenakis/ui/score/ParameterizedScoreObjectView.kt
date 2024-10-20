@@ -100,7 +100,8 @@ abstract class ParameterizedScoreObjectView(
         listView.showPopup(context, point) { param ->
             val name = param.name.now
             val spec = param.spec.now as NumericalControlSpec
-            val env = Envelope.constant(spec.defaultValue.get(), obj.duration, spec.warp)
+            val initialValue = obj.controls.controlMap[name]?.getNumericalValue() ?: spec.defaultValue.get()
+            val env = Envelope.constant(initialValue, obj.duration, spec.warp)
             val control = EnvelopeControl(
                 env, reactiveVariable(spec.associatedColor),
                 display = reactiveVariable(true)

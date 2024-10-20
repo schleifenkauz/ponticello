@@ -36,4 +36,6 @@ interface SynthDefObject : ParameterizedObjectDef, InstrumentObject {
     override fun ScWriter.addToServer() {
         allocateServerObject()
     }
+
+    override fun copy(name: String): SynthDefObject
 }

@@ -1,6 +1,7 @@
 package xenakis.model.obj
 
 import hextant.context.Context
+import hextant.context.withoutUndo
 import hextant.core.EditorView
 import hextant.core.editor.AbstractEditor
 import hextant.serial.EditorRoot
@@ -9,8 +10,10 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import reaktive.list.MutableReactiveList
 import reaktive.list.reactiveList
+import reaktive.list.toReactiveList
 import reaktive.value.*
 import xenakis.impl.ColorSerializer
+import xenakis.impl.copy
 import xenakis.impl.randomColor
 import xenakis.model.Logger
 import xenakis.model.registry.InstrumentRegistry
@@ -28,6 +31,12 @@ class CustomizableSynthDefObject(
 ) : SynthDefObject, AbstractRenamableObject(), ConfigurableParameterizedObjectDef, InstrumentObject {
     @Transient
     private val editor = SynthDefEditor(ugenGraph.editor.context, this)
+
+    override fun copy(name: String): SynthDefObject = CustomizableSynthDefObject(
+        reactiveVariable(name), color.copy(),
+        parameters.now.map { p -> p.copy() }.toReactiveList(),
+        context.withoutUndo { ugenGraph.clone() }
+    )
 
     override fun sync(writer: ScWriter) {
         writer.allocateServerObject()

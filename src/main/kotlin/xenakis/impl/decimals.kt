@@ -8,9 +8,12 @@ typealias DoubleRange = ClosedFloatingPointRange<Double>
 
 val DoubleRange.asDecimal: DecimalRange get() = start.toDecimal()..endInclusive.toDecimal()
 
-class DecimalRange(override val start: Decimal, override val endInclusive: Decimal) :
-    ClosedFloatingPointRange<Decimal> {
+data class DecimalRange(
+    override val start: Decimal, override val endInclusive: Decimal
+) : ClosedFloatingPointRange<Decimal> {
     override fun lessThanOrEquals(a: Decimal, b: Decimal): Boolean = a <= b
+
+    override fun toString(): String = "$start..$endInclusive"
 }
 
 operator fun Decimal.rangeTo(other: Decimal) = DecimalRange(this, other)
@@ -115,7 +118,11 @@ fun Double.snap(grid: Decimal): Decimal {
     return v.round(grid.precision)
 }
 
-fun Decimal.wrapAt(divisor: Decimal): Decimal = this - value.snap(divisor)
+fun Decimal.wrapAt(divisor: Decimal): Decimal = when {
+    this < zero -> -(-this).wrapAt(divisor)
+    this < divisor -> this
+    else -> this - value.snap(divisor)
+}
 
 fun timeCode(t: Decimal, accuracy: Int): String {
     var seconds = t.toInt()

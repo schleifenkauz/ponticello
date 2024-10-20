@@ -3,8 +3,6 @@ package xenakis.model.player
 import bundles.PublicProperty
 import bundles.publicProperty
 import javafx.scene.layout.Pane
-import reaktive.value.now
-import reaktive.value.reactiveValue
 import xenakis.model.Settings
 import xenakis.model.score.ObjectPosition
 import xenakis.model.score.Score
@@ -68,7 +66,7 @@ class PlaybackManager(private val scoreView: ScoreView) {
         private fun simpleScore(obj: ScoreObject): Score {
             val inst = ScoreObjectInstance(obj, ObjectPosition.ZERO)
             val score = Score(mutableListOf(inst))
-            score.initialize(obj.context, reactiveValue(obj.name.now + "_score"))
+            score.initialize(obj.context, null)
             return score
         }
     }

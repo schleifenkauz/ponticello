@@ -6,10 +6,12 @@ import javafx.scene.paint.Color
 import kotlinx.serialization.Serializable
 import reaktive.list.MutableReactiveList
 import reaktive.list.reactiveList
+import reaktive.list.toReactiveList
 import reaktive.value.ReactiveVariable
 import reaktive.value.now
 import reaktive.value.reactiveVariable
 import xenakis.impl.ColorSerializer
+import xenakis.impl.copy
 import xenakis.impl.randomColor
 import xenakis.model.Logger
 import xenakis.model.registry.ProcessDefRegistry
@@ -69,6 +71,13 @@ class ProcessDefObject(
         super.rename(newName)
         sync()
     }
+
+    fun copy(name: String): ProcessDefObject = ProcessDefObject(
+        reactiveVariable(name),
+        color.copy(),
+        parameters.now.map { p -> p.copy() }.toReactiveList(),
+        processCode.clone()
+    )
 
     companion object {
         fun newEmpty(name: String, context: Context) = ProcessDefObject(

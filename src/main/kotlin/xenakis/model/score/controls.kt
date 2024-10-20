@@ -123,3 +123,10 @@ fun ParameterControl.makeExpr(): ScExpr = when (this) {
     is KnobControl -> DecimalLiteral(value.now)
     is SingleBusValueControl -> bus.now.get<BusObject>().superColliderExpr.send("getSynchronous")
 }
+
+fun ParameterControl.getNumericalValue() = when (this) {
+    is ConstantControl -> value.now
+    is KnobControl -> get()
+    is EnvelopeControl -> envelope.points.first().value
+    else -> null
+}

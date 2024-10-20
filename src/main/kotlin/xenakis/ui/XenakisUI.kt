@@ -19,6 +19,7 @@ import javafx.geometry.HorizontalDirection.RIGHT
 import javafx.geometry.Pos
 import javafx.geometry.VerticalDirection
 import javafx.scene.Scene
+import javafx.scene.SceneAntialiasing
 import javafx.scene.control.*
 import javafx.scene.input.KeyCode
 import javafx.scene.input.KeyEvent
@@ -53,6 +54,7 @@ import xenakis.model.score.*
 import xenakis.sc.Rate
 import xenakis.ui.ToolSelector.Tool
 import xenakis.ui.impl.*
+import xenakis.ui.impl.button
 import xenakis.ui.misc.*
 import xenakis.ui.prompt.IntegerPrompt
 import xenakis.ui.prompt.NamePrompt
@@ -121,7 +123,7 @@ class XenakisUI(
         settingsWindow = SubWindow(SettingsPane(context[Settings], context), "Settings", context)
         settingsWindow.width = 1000.0
         settingsWindow.height = 1000.0
-        stage.scene = Scene(Pane())
+        stage.scene = Scene(Pane(), -1.0, -1.0, false, SceneAntialiasing.DISABLED)
         stage.scene.addGlobalShortcuts()
         stage.scene.registerArrowKeys()
         stage.scene.initHextantScene(context)
@@ -232,8 +234,8 @@ class XenakisUI(
             left = Icon.Search.getView()
             promptText = "Search for project..."
         }
-        val btnOpen = xenakis.ui.impl.button("Open") { controller.openProject() }
-        val createNew = xenakis.ui.impl.button("Create new") { controller.createNewProject() }
+        val btnOpen = button("Open") { controller.openProject() }
+        val createNew = button("Create new") { controller.createNewProject() }
         val recentProjects = VBox().styleClass("recent-projects-list")
         for (proj in controller.recentProjects()) {
             val name = label(proj.nameWithoutExtension).styleClass("project-name")
@@ -477,6 +479,7 @@ class XenakisUI(
                 }
             } else {
                 val selected = context[ScoreObjectSelectionManager].selectedViews
+                    .associateBy { v -> v.instance }.values //filters out views that display the same instance
                 val resize = ev.isControlDown
                 val resizeType = ev.resizeType ?: return@addEventFilter
                 for (view in selected) {
@@ -620,8 +623,7 @@ class XenakisUI(
         }
         on("R") { ev ->
             if (!ev.isTargetTextInput) {
-                for (inst in scoreView.selector.selectedInstances) {
-                    val obj = inst.obj
+                for (obj in scoreView.selector.selectedObjects) {
                     if (obj is SynthObject) {
                         obj.reverse()
                     }
@@ -666,7 +668,6 @@ class XenakisUI(
                 val parentScore = inst.score!!
                 context.compoundEdit("Move objects to parent score") {
                     for (subInst in obj.score.objectInstances.toList()) {
-                        obj.score.removeObject(subInst)
                         subInst.moveTo(inst.position + subInst.position)
                         parentScore.addObject(subInst)
                     }

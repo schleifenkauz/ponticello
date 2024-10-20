@@ -4,7 +4,6 @@ import javafx.geometry.HorizontalDirection
 import reaktive.value.now
 import xenakis.impl.*
 import xenakis.model.Logger
-import xenakis.model.Settings
 import xenakis.model.player.ScoreEventCollector.Event
 import xenakis.model.score.*
 import xenakis.sc.client.SuperColliderClient
@@ -14,7 +13,7 @@ class ScorePlayer(
     private val rootScore: Score,
     override val playHead: PlayHead,
     override val client: SuperColliderClient,
-    private val env: ScorePlayEnv = ScorePlayEnv(rootScore.context[Settings]),
+    private val env: ScorePlayEnv,
     private val events: ScoreEventCollector,
     private val recorder: Recorder,
 ) : AbstractPlayer(DELTA_T) {

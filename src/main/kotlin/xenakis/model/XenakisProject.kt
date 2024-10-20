@@ -12,11 +12,9 @@ import kotlinx.serialization.Transient
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.serializer
 import reaktive.value.now
-import reaktive.value.reactiveValue
 import xenakis.model.obj.SuperColliderObject.LiveCycleType
 import xenakis.model.registry.*
 import xenakis.model.score.Score
-import xenakis.model.score.Score.Companion.ROOT_SCORE_NAME
 import xenakis.sc.CodeBlock
 import xenakis.sc.client.SuperColliderClient
 import xenakis.ui.XenakisController
@@ -151,7 +149,10 @@ class XenakisProject private constructor(
                 listener.setProgress(0.9, "Loading score")
                 val score = data.resolve("score.json").readJson<Score>()
                 listener.setProgress(0.9, "Ready")
-                score.initialize(context, reactiveValue(ROOT_SCORE_NAME))
+                score.initialize(context, null)
+                for (inst in score.objectInstances) {
+                    inst.addedToScore(score)
+                }
                 return XenakisProject(
                     settings,
                     groups, busses, buffers, samples, instruments,
@@ -176,7 +177,7 @@ class XenakisProject private constructor(
             processDefs = ProcessDefRegistry(mutableListOf()).also { r -> r.initialize(context) },
             setupCode = SetupCode.default(context), serverOptions = ServerOptions(),
             objects = ScoreObjectRegistry(mutableListOf()).also { r -> r.initialize(context) },
-            score = Score().also { score -> score.initialize(context, reactiveValue(ROOT_SCORE_NAME)) },
+            score = Score().also { score -> score.initialize(context, null) },
         ).also { project ->
             context[projectDirectory] = location
             project.initialize(context)

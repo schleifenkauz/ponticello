@@ -89,7 +89,7 @@ class Recorder(private val context: Context) {
                 +"s.record(bus: ${bus.superColliderName})"
             }
         }
-        client.send("schedule", listOf(settings.scLangLatency.now, code))
+        client.send("schedule", listOf(settings.scLangLatency.now.toDouble(), code))
     }
 
     private fun pathForNextRecording(): File {

@@ -31,9 +31,10 @@ class ScoreObjectSelectionManager(private val context: Context, private val root
             ?: rootPane
 
     fun select(view: ScoreObjectView, addToSelection: Boolean): Boolean {
-        for (v in selectedViews.toSet()) {
-            if (!addToSelection || v.pane != view.pane) {
-                _selectedViews.remove(v)
+        if (!addToSelection) {
+            val selectedBefore = selectedViews.toSet()
+            _selectedViews.clear()
+            for (v in selectedBefore) {
                 updateIsSelected(v)
             }
         }

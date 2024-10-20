@@ -21,14 +21,10 @@ abstract class AbstractRenamableObject : RenamableObject {
     lateinit var context: Context
         private set
 
-    open fun setContext(context: Context) {
-        this.context = context
-    }
-
     override fun initialize(context: Context) {
         if (initialized) return
         initialized = true
-        setContext(context)
+        this.context = context
     }
 
     override fun onAdded(context: Context) {}
@@ -39,5 +35,5 @@ abstract class AbstractRenamableObject : RenamableObject {
         mutableName.now = newName
     }
 
-    override fun toString(): String = "${javaClass.simpleName} ${name.now}"
+    override fun toString(): String = "${javaClass.simpleName} #${name.now}"
 }

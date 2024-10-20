@@ -30,6 +30,11 @@ class ReferencedSynthDefObject(
     @Transient
     private lateinit var context: Context
 
+    override val canCopy: Boolean
+        get() = false
+
+    override fun copy(name: String): SynthDefObject = throw UnsupportedOperationException("Cannot copy $this")
+
     override fun onAdded(context: Context) {}
 
     override fun initialize(context: Context) {
@@ -95,6 +100,8 @@ class ReferencedSynthDefObject(
             }
             return params
         }
+
+    override fun toString(): String = "ReferencedSynthDef #$name"
 
     companion object {
         fun loadFromSynthDescLib(name: String): SynthDefObject {

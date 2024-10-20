@@ -143,6 +143,15 @@ class InstrumentRegistryPane(
         colorPicker.setFixedWidth(30.0)
         addExtraControl(colorPicker)
         addAction(Icon.View, "Edit SynthDef") { editInstrument(obj) }
+        if (obj.canCopy) {
+            addAction(Icon.Duplicate, "Duplicate SynthDef") {
+                val initialName = obj.name.now + "_copy"
+                val name = NamePrompt(registry, "Name for new duplicate instrument", initialName)
+                    .showDialog(registry.context, this) ?: return@addAction
+                val copy = obj.copy(name)
+                registry.add(copy)
+            }
+        }
         if (obj is VSTPluginObject) {
             val outSelectorControl = ObjectSelectorControl(obj.outputSelector, createBundle())
             addExtraControl(outSelectorControl)

@@ -1,6 +1,9 @@
 package xenakis.ui.controls
 
 import hextant.fx.registerShortcuts
+import hextant.undo.AbstractEdit
+import hextant.undo.Edit
+import hextant.undo.UndoManager
 import javafx.application.Platform
 import javafx.scene.control.Slider
 import javafx.scene.control.TextField
@@ -28,12 +31,13 @@ import kotlin.concurrent.thread
 class ControlSlider(
     private val obj: ParameterizedScoreObject,
     private val parameter: String,
-    private val value: ReactiveVariable<Decimal>,
+    private val variable: ReactiveVariable<Decimal>,
 ) : HBox(5.0) {
     private val spec get() = obj.getSpec(parameter) as NumericalControlSpec
 
     private val slider = Slider()
     private var buttonReleased = false
+    private var updating = false
     private val textInput = TextField().styleClass("control-input-text")
     private val btnDec = Icon.Minus.button(radius = 12.0, action = "Decrement").styleClass("slider-adjust-button")
     private val btnInc = Icon.Add.button(radius = 12.0, action = "Increment").styleClass("slider-adjust-button")
@@ -57,7 +61,7 @@ class ControlSlider(
             on("UP") { adjust(spec.step.get()) }
             on("Alt+MINUS") { adjust(-spec.step.get()) }
             on("DOWN") { adjust(-spec.step.get()) }
-            on("Ctrl+BACK_SPACE") { value.now = spec.defaultValue.get() }
+            on("Ctrl+BACK_SPACE") { variable.now = spec.defaultValue.get() }
         }
         children.addAll(textInput, /*btnDec, */slider /*btnInc*/)
         setHgrow(slider, Priority.ALWAYS)
@@ -76,25 +80,24 @@ class ControlSlider(
     }
 
     private fun adjust(delta: Decimal) {
-        if (value.now + delta in spec.range) value.now += delta
+        if (variable.now + delta in spec.range) variable.now += delta
     }
 
     private fun setupDataFlow() {
-        var updating = false
-        valueObserver = value.forEach { v ->
+        valueObserver = variable.forEach { v ->
             textInput.text = v.toString()
             if (updating) return@forEach
             val mapped = transform.map(v.toDouble())
-            updating = true
             slider.value = mapped
-            updating = false
+        }
+        slider.valueChangingProperty().addListener { _, _, changing ->
+            if (changing) obj.context[UndoManager].beginCompoundEdit("Adjust $parameter")
+            else obj.context[UndoManager].finishCompoundEdit("Adjust $parameter")
         }
         slider.valueProperty().addListener { _, _, v ->
             if (updating) return@addListener
-            val unmapped = transform.unmap(v.toDouble()).snap(spec.step.get())
-            updating = true
-            value.set(unmapped)
-            updating = false
+            val newValue = transform.unmap(v.toDouble()).snap(spec.step.get())
+            updateValue(newValue)
         }
         textInput.setOnAction {
             var v = textInput.text.parseDecimal() ?: return@setOnAction
@@ -113,11 +116,43 @@ class ControlSlider(
                 }
             }
             v = v.coerceIn(spec.range)
-            value.now = v
+            updateValue(v)
         }
         textInput.focusedProperty().addListener { _, _, focused ->
-            if (!focused) textInput.text = value.now.toString()
+            if (!focused) textInput.text = variable.now.toString()
         }
     }
 
+    private fun updateValue(newValue: Decimal) {
+        updating = true
+        val oldValue = variable.get()
+        variable.set(newValue)
+        obj.context[UndoManager].record(UpdateValue(variable, parameter, oldValue, newValue))
+        println("Update $parameter: $oldValue -> $newValue")
+        updating = false
+    }
+
+    private class UpdateValue(
+        private val variable: ReactiveVariable<Decimal>, private val parameter: String,
+        private val oldValue: Decimal, private val newValue: Decimal
+    ) : AbstractEdit() {
+        override val actionDescription: String
+            get() = "Update $parameter"
+
+        override fun doRedo() {
+            variable.set(newValue)
+        }
+
+        override fun doUndo() {
+            variable.set(oldValue)
+        }
+
+        override fun mergeWith(other: Edit): Edit? = when {
+            other !is UpdateValue -> null
+            other.parameter != this.parameter -> null
+            other.variable !== this.variable -> null
+            other.oldValue != this.newValue -> null
+            else -> UpdateValue(variable, parameter, this.oldValue, other.newValue)
+        }
+    }
 }

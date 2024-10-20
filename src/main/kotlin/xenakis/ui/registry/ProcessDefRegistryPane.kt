@@ -4,10 +4,12 @@ import hextant.fx.initHextantScene
 import javafx.scene.layout.VBox
 import reaktive.value.binding.map
 import reaktive.value.fx.asObservableValue
+import reaktive.value.now
 import xenakis.model.obj.ProcessDefObject
 import xenakis.model.registry.ProcessDefRegistry
 import xenakis.ui.Icon
 import xenakis.ui.impl.*
+import xenakis.ui.prompt.NamePrompt
 
 class ProcessDefRegistryPane(
     registry: ProcessDefRegistry
@@ -28,6 +30,13 @@ class ProcessDefRegistryPane(
         val colorPicker = colorPicker(obj.color)
         colorPicker.setFixedWidth(30.0)
         addExtraControl(colorPicker)
+        addAction(Icon.Duplicate, "Duplicate ProcessDef") {
+            val initialName = obj.name.now + "_copy"
+            val name = NamePrompt(registry, "Name for new duplicate instrument", initialName)
+                .showDialog(registry.context, this) ?: return@addAction
+            val copy = obj.copy(name)
+            registry.add(copy)
+        }
         addAction(Icon.View, "Edit ProcessDef") { editProcessDef(obj) }
     }
 

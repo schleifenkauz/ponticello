@@ -222,6 +222,7 @@ class EnvelopeEditor(
             handle.hoverProperty().or(handle.focusedProperty())
                 .map { hover -> if (hover) 2.0 else 0.0 }
         )
+        handle.viewOrder = -1000.0
         setupHandle(handle)
         pane.children.add(handle)
         handles.add(idx, handle)

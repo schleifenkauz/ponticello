@@ -18,10 +18,6 @@
 
 - special "mixing-node" which has a volume (and pan?) control for every of its inputs
 
-### Logging and error management
-
-- also report exceptions happening in SuperCollider
-
 ### Stretching time regions
 
 - select time, then drag with shift
@@ -41,7 +37,6 @@
 
 ### Minor
 
-- allow for more cases of pasting code
 - kill sclang.exe and scsynth.exe before startup (?)
 - specify expected channels (and ar/kr) for bus and buffer parameters
 - lhs of assignments can be compound expressions
@@ -50,9 +45,12 @@
 - re-enable allocated buffers (can be used with WrBuf/RdBuf SynthDefs)
 - ability to specify numerical parameter as envelope only/constant only
 - new parameter type: buffer position (range depends on supplied buffer)
-- duplicating registry objects (SynthDefs, ProcessDefs, etc.)
+  - or use 0..1 range and scale to buffer duration
 - reordering parameters and controls
-- undo/redo for control sliders
+- ability to specify value for horizontal envelope lines via input prompt (how? double click displays )
+- ability to specify added time in beats/bars/ticks
+- make floating windows movable/resizable
+- show instrument when pressing I on selected `SynthObject`
 
 ## Long term architectural ideas/questions
 
@@ -77,13 +75,14 @@
   - order of transformation synths could be decided by the order of the buses in the registry
   - how to display/manage flows?
   - graphical tools for EQ, compression (multi-band), reverb, etc. (integrate as special editors?)
+- looped envelopes
+  - also different curvatures!
+- ability to execute commands using a query/update language
+- ability to show objects in resizable/movable floating window (with detail pane)
 
 ## Bugs
 
-- weird window behaviour on startup
-- control specs are behaving weird
-  - synth parameter specs are not updated when editing
-  - extra specs are not used when opening project
+- resizing behaviour is not quite right
 - something is not quite right yet in `ScoreEventCollector` (especially when resizing objects...)
 
 ### Namen überlegen

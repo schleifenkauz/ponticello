@@ -216,12 +216,10 @@ abstract class ScoreObjectView(
                     if (playback.isAttachedTo(this)) {
                         playback.playHead.setPlayHeadX(ev.x)
                     }
+                    selectThis(ev.isShiftDown)
+                    ev.consume()
                 }
             }
-        }
-        addEventHandler(MouseEvent.MOUSE_PRESSED) { ev ->
-            selectThis(ev.isShiftDown)
-            ev.consume()
         }
     }
 
@@ -249,7 +247,7 @@ abstract class ScoreObjectView(
 
     override fun isSomeInstanceSelected(yesOrNo: Boolean) {
         val (borderColor, width) = when {
-            this in context[ScoreObjectSelectionManager].selectedViews -> borderColorWhenSelected to BORDER_WIDTH
+            instance in context[ScoreObjectSelectionManager].selectedInstances -> borderColorWhenSelected to BORDER_WIDTH
             yesOrNo -> borderColorWhenSameObjectSelected to BORDER_WIDTH
             else -> borderColorWhenNotSelected to 0.5
         }
@@ -265,46 +263,44 @@ abstract class ScoreObjectView(
     * */
 
     protected open fun startDrag(ev: MouseEvent, cursor: Cursor): Boolean {
+        val selectedInstances = context[ScoreObjectSelectionManager].selectedInstances + this.instance
         if (cursor.isResizeCursor) {
+            if (selectedInstances.size > 1) return false
             val direction = cursor.resizeDirection()
             return instance.obj.beginResize(ev.resizeType ?: return false, direction)
         } else {
-            instance.beginMove()
+            for (inst in selectedInstances) {
+                inst.beginMove()
+            }
             return true
         }
     }
 
     protected open fun finishedDrag(ev: MouseEvent, cursor: Cursor) {
         if (cursor.isResizeCursor) instance.obj.finishResize()
-        else instance.finishMove()
+        else {
+            val selectedInstances = context[ScoreObjectSelectionManager].selectedInstances + this.instance
+            for (inst in selectedInstances) {
+                inst.finishMove()
+            }
+        }
     }
 
     private fun dragTo(toX: Double, toY: Double) {
-        val movedObjects =
-            context[ScoreObjectSelectionManager].selectedInstances //one of these is guaranteed to be <this.instance>
-        val relativeMinT = movedObjects.minOfOrNull { inst ->
-            inst.start - this.instance.start
-        } ?: 0.0.asTime
-        val relativeMinY = movedObjects.minOfOrNull { inst ->
-            inst.y - this.instance.y
-        } ?: 0.0.asY
-        val relativeMaxT = movedObjects.maxOfOrNull { inst ->
-            inst.start + inst.obj.duration - this.instance.start
-        } ?: instance.obj.duration
-        val relativeMaxY = movedObjects.maxOfOrNull { inst ->
-            inst.y + inst.height - this.instance.y
-        } ?: instance.obj.height
-        var (t, y) = pane.snapToGrid(toX, toY)
-        t = t.coerceAtLeast(-relativeMinT)
-        y = y.coerceAtLeast(-relativeMinY)
-        if (pane is SubScorePane) t = t.coerceAtMost(instance.obj.duration - relativeMaxT)
-        y = y.coerceAtMost(pane.height - relativeMaxY)
-        val deltaT = t - instance.start
-        val deltaY = y - instance.y
+        //one of these is guaranteed to be <this.instance>
+        val movedObjects = context[ScoreObjectSelectionManager].selectedInstances
+        if (movedObjects.isEmpty()) return //can this really happen?
+        val minDeltaT = -movedObjects.minOf { inst -> inst.start }
+        val maxDeltaT = movedObjects.minOf { inst -> inst.score!!.maxTime - inst.end }
+        val minDeltaY = -movedObjects.minOf { inst -> inst.y }
+        val maxDeltaY = movedObjects.minOf { inst -> inst.score!!.maxY - (inst.y + inst.height) }
+        val (t, y) = pane.snapToGrid(toX, toY)
+        val deltaT = (t - instance.start).coerceIn(minDeltaT..maxDeltaT)
+        val deltaY = (y - instance.y).coerceIn(minDeltaY..maxDeltaY)
         for (inst in movedObjects) {
             inst.moveTo(inst.start + deltaT, inst.y + deltaY, simpleMove = false)
         }
-        pane.markT(t)
+        pane.markT(instance.start + deltaT)
     }
 
     open fun getDisplayWidth(): Double = pane.getWidth(instance.duration)
@@ -367,15 +363,17 @@ abstract class ScoreObjectView(
     fun adjustHorizontal(direction: HorizontalDirection, resize: Boolean, resizeType: ScoreObject.ResizeType?) {
         val deltaT = getDeltaX(direction)
         if (resize) {
-            val targetDuration = (instance.obj.duration + deltaT).coerceAtMost(pane.maxTime - instance.start)
+            val targetDuration = (instance.obj.duration + deltaT).coerceAtMost(pane.score.maxTime - instance.start)
             instance.obj.resize(
                 targetDuration, instance.obj.height,
                 resizeType!!, Direction.horizontal(RIGHT)
             )
+            pane.markT(instance.end)
         } else {
             val (t, _) = pane.snapToGrid(instance.position.plusTime(deltaT))
-            val start = t.coerceIn(zero, pane.maxTime - instance.obj.duration)
+            val start = t.coerceIn(zero, pane.score.maxTime - instance.obj.duration)
             instance.setTime(start)
+            pane.markT(start)
         }
     }
 
@@ -387,13 +385,13 @@ abstract class ScoreObjectView(
 
     protected fun adjustVertical(resize: Boolean, resizeType: ScoreObject.ResizeType, deltaY: Decimal) {
         if (resize) {
-            val targetHeight = (instance.obj.height + deltaY).coerceAtMost(pane.maxY - instance.y)
+            val targetHeight = (instance.obj.height + deltaY).coerceAtMost(pane.score.maxY - instance.y)
             instance.obj.resize(
                 instance.obj.duration, targetHeight,
                 resizeType, Direction.vertical(VerticalDirection.DOWN)
             )
         } else {
-            val y = (instance.y + deltaY).coerceIn(zero, pane.maxY - instance.obj.height)
+            val y = (instance.y + deltaY).coerceIn(zero, pane.score.maxY - instance.obj.height)
             instance.setY(y)
         }
     }

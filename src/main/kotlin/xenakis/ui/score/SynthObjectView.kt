@@ -26,7 +26,7 @@ import xenakis.ui.impl.styleClass
 class SynthObjectView(
     instance: ScoreObjectInstance, override val obj: SynthObject
 ) : ParameterizedScoreObjectView(instance), ParameterControls.View {
-    private var image: Image? = null
+    private var spectrogramImage: Image? = null
     private val spectrogramViews = mutableListOf<ImageView>()
 
     private var startPosObserver: Observer? = null
@@ -102,7 +102,7 @@ class SynthObjectView(
             spectrogramViews.clear()
             if (obj.displaySample?.now != true) return@runLater
             val imageFile = obj.sample.now?.get<SampleObject>()?.spectrogramFile ?: return@runLater
-            image = Image(imageFile.inputStream())
+            spectrogramImage = Image(imageFile.inputStream())
             displaySpectrogram()
         }
     }
@@ -111,9 +111,9 @@ class SynthObjectView(
         children.removeAll(spectrogramViews)
         spectrogramViews.clear()
         if (obj.displaySample?.now != true) return
-        if (image == null) return
+        if (spectrogramImage == null) return
         val sample = obj.sample.now?.get<SampleObject>() ?: return
-        val rate = obj.playBufRate?.now ?: one(3)
+        val rate = obj.playBufRate?.now ?: one(precision = 3)
         if (rate == zero) return
         val defaultStartPos = if (rate < zero) sample.duration else zero
         var startPos = obj.playbufStartPos?.now?.wrapAt(sample.duration) ?: defaultStartPos
@@ -127,9 +127,8 @@ class SynthObjectView(
                 else -> startPos / -rate
             }
             if (t + imageDur > obj.duration) imageDur = obj.duration - t
-            val view = ImageView(image)
-            displaySpectrogramPart(
-                view, imageDur, sample.duration, rate,
+            val view = displaySpectrogramPart(
+                imageDur, sample.duration, rate,
                 startPos = if (t == zero) startPos else defaultStartPos
             )
             view.layoutX = pane.getWidth(t)
@@ -140,16 +139,18 @@ class SynthObjectView(
     }
 
     private fun displaySpectrogramPart(
-        view: ImageView, duration: Decimal,
-        sampleDuration: Decimal, rate: Decimal, startPos: Decimal
-    ) {
-        val pixelsPerSecond = (image!!.width / sampleDuration * rate.absoluteValue).toDouble()
-        var minX = ((image!!.width / sampleDuration) * startPos).toDouble()
+        duration: Decimal,
+        sampleDuration: Decimal,
+        rate: Decimal,
+        startPos: Decimal
+    ): ImageView {
+        val view = ImageView(spectrogramImage)
+        val pixelsPerSecond = (spectrogramImage!!.width / sampleDuration * rate.absoluteValue).toDouble()
+        var minX = ((spectrogramImage!!.width / sampleDuration) * startPos).toDouble()
         val minY = 0.0
         val width = (pixelsPerSecond * duration).toDouble()
         if (rate < zero) minX -= width
-        val height = image!!.height
-        if (width < 0.0 || height < 0.0) return
+        val height = spectrogramImage!!.height
         view.viewport = Rectangle2D(minX, minY, width, height)
         view.fitHeight = prefHeight
         view.fitWidth = pane.getWidth(duration)
@@ -158,5 +159,6 @@ class SynthObjectView(
             Translate(view.fitWidth, 0.0),
             Scale(-1.0, 1.0),
         )
+        return view
     }
 }

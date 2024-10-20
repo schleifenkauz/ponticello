@@ -44,6 +44,12 @@ class VSTPluginObject private constructor(
     @Transient
     private var controllerInfo: ControllerInfo? = null
 
+    override val canCopy: Boolean
+        get() = false
+
+    override fun copy(name: String): InstrumentObject =
+        throw UnsupportedOperationException("Cannot copy $this")
+
     fun initialize(context: Context, controllerInfo: ControllerInfo) {
         this.controllerInfo = controllerInfo
         initialize(context)

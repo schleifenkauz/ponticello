@@ -6,6 +6,7 @@ import kotlinx.serialization.Serializable
 import reaktive.value.ReactiveVariable
 import reaktive.value.now
 import reaktive.value.reactiveVariable
+import xenakis.impl.copy
 import xenakis.impl.toDecimal
 import xenakis.model.registry.ObjectReference
 import xenakis.sc.ControlSpec
@@ -28,6 +29,8 @@ class ParameterDefObject(
     override fun createReference(): Nothing = throw UnsupportedOperationException()
 
     override fun toString(): String = "${name.now}: ${spec.now}"
+
+    fun copy() = ParameterDefObject(mutableName.copy(), spec.copy())
 
     companion object {
         private val freq = ParameterDefObject(

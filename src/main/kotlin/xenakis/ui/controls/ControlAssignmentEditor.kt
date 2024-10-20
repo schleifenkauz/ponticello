@@ -87,6 +87,7 @@ class ControlAssignmentEditor(
         val oldValue = when (val oldControl = obj.controls[parameter]) {
             is ConstantControl -> oldControl.value.now
             is KnobControl -> oldControl.get()
+            is EnvelopeControl -> oldControl.envelope.points.first().value
             else -> null
         }
         val control = t.createDefaultControl(obj, spec, oldValue)
@@ -195,6 +196,9 @@ class ControlAssignmentEditor(
             ): CustomControl {
                 val editor = ScExprExpander(obj.context)
                 val root = EditorRoot.create(editor)
+                if (initialValue != null) {
+                    editor.setText(initialValue.toString())
+                }
                 return CustomControl(root)
             }
         }

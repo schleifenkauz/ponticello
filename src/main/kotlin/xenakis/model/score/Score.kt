@@ -10,10 +10,8 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import reaktive.value.ReactiveString
 import reaktive.value.now
-import xenakis.impl.Decimal
-import xenakis.impl.plus
-import xenakis.impl.times
-import xenakis.impl.zero
+import reaktive.value.reactiveValue
+import xenakis.impl.*
 import xenakis.model.Logger
 import xenakis.model.XenakisProject
 import xenakis.model.registry.ScoreObjectRegistry
@@ -33,6 +31,10 @@ class Score(
     lateinit var context: Context
 
     @Transient
+    var parentObject: ScoreObjectGroup? = null
+        private set
+
+    @Transient
     private var initialized = false
 
     @Transient
@@ -40,17 +42,20 @@ class Score(
 
     private val undo by lazy { context[UndoManager] }
 
+    val maxTime get() = parentObject?.duration ?: Decimal.INF
+    val maxY get() = parentObject?.height ?: one(ObjectPosition.Y_PRECISION)
+
     override val componentName: String
         get() = if (scoreName.now == "<root>") "score" else throw AssertionError()
 
-    fun initialize(context: Context, scoreName: ReactiveString) {
+    fun initialize(context: Context, parentObject: ScoreObjectGroup?) {
         if (initialized) return
-        this.scoreName = scoreName
         this.context = context
-        if (scoreName.now == ROOT_SCORE_NAME) context[rootScore] = this
+        this.parentObject = parentObject
+        if (parentObject == null) context[rootScore] = this
+        this.scoreName = parentObject?.name ?: reactiveValue(ROOT_SCORE_NAME)
         for (inst in objectInstances) {
             inst.initialize(context)
-            inst.addedToScore(this)
         }
     }
 
@@ -77,9 +82,9 @@ class Score(
     fun clone() = Score(instances.mapTo(mutableListOf()) { inst -> inst.duplicate(inst.position) })
 
     fun addObject(inst: ScoreObjectInstance) {
-        Logger.info("Adding object ${inst.obj.name.now} at ${inst.position} to ${scoreName.now}", Logger.Category.Score)
         inst.initialize(context)
         inst.addedToScore(this)
+        Logger.info("Adding object ${inst.obj.name.now} at ${inst.position} to ${scoreName.now}", Logger.Category.Score)
         instances.add(inst)
         views.notifyListeners { addedObject(this@Score, inst) }
         undo.record(ScoreEdit.AddObject(inst, this))

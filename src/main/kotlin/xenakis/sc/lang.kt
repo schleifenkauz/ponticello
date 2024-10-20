@@ -108,6 +108,8 @@ object Nil : Literal, SimpleScElement("nil")
 data class DecimalLiteral(val text: String, val valueOrNull: Decimal?) : Literal, SimpleScElement(text) {
     constructor(value: Decimal) : this(value.toString(), value)
 
+    override fun toString(): String = text
+
     override val isValid: Boolean
         get() = valueOrNull != null
 

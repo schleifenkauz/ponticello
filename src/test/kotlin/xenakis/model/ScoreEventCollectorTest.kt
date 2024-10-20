@@ -2,7 +2,6 @@ package xenakis.model
 
 import org.junit.jupiter.api.Assertions.assertArrayEquals
 import org.junit.jupiter.api.Test
-import reaktive.value.reactiveValue
 import reaktive.value.reactiveVariable
 import xenakis.impl.asTime
 import xenakis.impl.asY
@@ -18,7 +17,7 @@ class ScoreEventCollectorTest {
     fun randomlyAddAndRemoveObjects() {
         val context = Utils.createContext()
         val rootScore = Score()
-        rootScore.initialize(context, reactiveValue("<root>"))
+        rootScore.initialize(context, null)
         val collector = ScoreEventCollector(rootScore, null)
         val objects = mutableListOf<ScoreObject>()
         val subScores = mutableListOf<Score>()
@@ -104,7 +103,7 @@ class ScoreEventCollectorTest {
     fun addInstanceToMutedSubScore() {
         val context = Utils.createContext()
         val rootScore = Score()
-        rootScore.initialize(context, reactiveValue("<root>"))
+        rootScore.initialize(context, null)
         val collector = ScoreEventCollector(rootScore, null)
         val subScore = Score()
         val subObj = ScoreObjectGroup(reactiveVariable("sub_score"), subScore)

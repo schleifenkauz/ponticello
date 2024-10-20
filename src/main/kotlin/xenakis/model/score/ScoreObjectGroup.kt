@@ -33,11 +33,6 @@ class ScoreObjectGroup(
     override val type: String
         get() = "compound"
 
-    override fun setContext(context: Context) {
-        super.setContext(context)
-        score.context = context
-    }
-
     @Transient
     lateinit var groupSelector: GroupSelector
         private set
@@ -51,7 +46,7 @@ class ScoreObjectGroup(
         super.initialize(context)
         groupSelector = GroupSelector(context, defaultGroupRef)
         busSelector = BusSelector(context, preferredRate = null, preferredChannels = -1, defaultBusRef)
-        this.score.initialize(context, name)
+        this.score.initialize(context, this)
     }
 
     override fun writeCode(name: String, position: ObjectPosition, env: ScorePlayEnv): String = ""

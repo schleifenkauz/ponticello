@@ -43,6 +43,7 @@ import xenakis.ui.impl.styleClass
 import xenakis.ui.prompt.DecimalPrompt
 import xenakis.ui.prompt.NamePrompt
 import xenakis.ui.prompt.compoundInput
+import xenakis.ui.registry.SimpleSearchableRegistryView
 
 abstract class ScorePane(val score: Score, val context: Context) : Pane(), ScoreListener, TimeBlock {
     private var newObject: NewObjectRect? = null
@@ -59,8 +60,6 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
     protected abstract val displayStart: Decimal
     protected abstract val displayEnd: Decimal
     abstract val associatedObject: ScoreObjectGroup?
-    val maxTime: Decimal get() = associatedObject?.duration ?: Decimal.INF
-    val maxY: Decimal get() = associatedObject?.height ?: one(ObjectPosition.Y_PRECISION)
 
     open fun snapToGrid(position: ObjectPosition): ObjectPosition =
         context.rootPane.snapToGrid(position + absolutePosition) - absolutePosition
@@ -108,9 +107,11 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
         for ((inst, view) in views) {
             if (inst.start > displayEnd) continue
             if (inst.start + inst.duration < displayStart) continue
-            view.setPrefSize(view.getDisplayWidth(), view.getDisplayHeight())
+            if (view.getDisplayWidth() != view.prefWidth || view.getDisplayHeight() != view.prefHeight) {
+                view.setPrefSize(view.getDisplayWidth(), view.getDisplayHeight())
+                view.rescale()
+            }
             view.relocate(getX(inst.start), getPaneY(inst.y))
-            view.rescale()
             children.add(view)
         }
     }
@@ -342,8 +343,8 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
             selector.deselectAll()
             val (t, y) = snapToGrid(ev.x, ev.y)
             for (inst in instances) {
-                inst.moveTo(t - leftTop.time, y - leftTop.y, simpleMove = true)
                 score.addObject(inst)
+                inst.moveTo(t - leftTop.time, y - leftTop.y, simpleMove = true)
                 selector.select(getObjectView(inst), addToSelection = true)
             }
         }
@@ -367,33 +368,49 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
 
             tool == Pointer -> {
                 val scoreView = context[XenakisUI].scoreView
-                if (ev.button == MouseButton.PRIMARY && scoreView.isInDuplicateMode()) {
-                    var obj = scoreView.clipboardObject!!
-                    if (obj.height > maxY || obj.duration > maxTime) return
-                    if (ev.isShiftDown) {
-                        val name = context[ScoreObjectRegistry].nameForClone(obj)
-                        obj = obj.clone(name)
-                    }
-                    val time = t.coerceIn(zero, maxTime - obj.duration)
-                    val scoreY = y.coerceIn(zero, maxY - obj.height)
-                    val duplicate = ScoreObjectInstance(obj, time, scoreY)
-                    score.addObject(duplicate)
-                } else if (selectedArea in children && selectedArea.width != 0.0 && selectedArea.height != 0.0) {
-                    if (!selectedArea.heightProperty().isBound) {
-                        for (view in viewsInside(selectedArea.boundsInParent)) {
-                            selector.select(view, addToSelection = true)
+                when {
+                    ev.button == MouseButton.PRIMARY && ev.isAltDown -> {
+                        val popup = SimpleSearchableRegistryView(context[ScoreObjectRegistry], "Add object instance")
+                        val anchor = localToScreen(ev.x, ev.y)
+                        popup.showPopup(context, anchor, scene.window) { obj ->
+                            val pos = snapToGrid(ev.x, ev.y)
+                            val inst = ScoreObjectInstance(obj, pos)
+                            score.addObject(inst)
                         }
-                        children.remove(selectedArea)
-                    } else {
-                        selectedArea.requestFocus()
                     }
-                } else if (ev.button == MouseButton.SECONDARY) pasteFromSystemClipboard(ev)
-                else if (this is ScoreView && !ui.playback.player.isPlaying) {
-                    if (ev.isControlDown) {
-                        ui.playback.attachToMainScore()
+
+                    ev.button == MouseButton.PRIMARY && scoreView.isInDuplicateMode() -> {
+                        var obj = scoreView.clipboardObject!!
+                        if (obj.height > score.maxY || obj.duration > score.maxTime) return
+                        if (ev.isShiftDown) {
+                            val name = context[ScoreObjectRegistry].nameForClone(obj)
+                            obj = obj.clone(name)
+                        }
+                        val time = t.coerceIn(zero, score.maxTime - obj.duration)
+                        val scoreY = y.coerceIn(zero, score.maxY - obj.height)
+                        val duplicate = ScoreObjectInstance(obj, time, scoreY)
+                        score.addObject(duplicate)
                     }
-                    if (ui.playback.isAttachedTo(this)) {
-                        ui.playback.playHead.movePlayHead(t)
+
+                    selectedArea in children && selectedArea.width != 0.0 && selectedArea.height != 0.0 -> {
+                        if (!selectedArea.heightProperty().isBound) {
+                            for (view in viewsInside(selectedArea.boundsInParent)) {
+                                selector.select(view, addToSelection = true)
+                            }
+                            children.remove(selectedArea)
+                        } else {
+                            selectedArea.requestFocus()
+                        }
+                    }
+
+                    ev.button == MouseButton.SECONDARY -> pasteFromSystemClipboard(ev)
+                    this is ScoreView && !ui.playback.player.isPlaying -> {
+                        if (ev.isControlDown) {
+                            ui.playback.attachToMainScore()
+                        }
+                        if (ui.playback.isAttachedTo(this)) {
+                            ui.playback.playHead.movePlayHead(t)
+                        }
                     }
                 }
             }
