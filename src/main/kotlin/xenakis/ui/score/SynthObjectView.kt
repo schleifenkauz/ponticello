@@ -101,8 +101,8 @@ class SynthObjectView(
             children.removeAll(spectrogramViews)
             spectrogramViews.clear()
             if (obj.displaySample?.now != true) return@runLater
-            val imageFile = obj.sample.now?.get<SampleObject>()?.spectrogramFile ?: return@runLater
-            spectrogramImage = Image(imageFile.inputStream())
+            val sample = obj.sample.now?.get<SampleObject>()
+            spectrogramImage = sample?.spectrogramImage ?: return@runLater
             displaySpectrogram()
         }
     }

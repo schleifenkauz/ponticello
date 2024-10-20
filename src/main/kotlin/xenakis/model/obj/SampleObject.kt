@@ -1,6 +1,7 @@
 package xenakis.model.obj
 
 import hextant.context.Context
+import javafx.scene.image.Image
 import javafx.scene.input.DataFormat
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
@@ -45,6 +46,8 @@ class SampleObject private constructor(
     }
 
     val spectrogramFile get() = samplesDir.resolve("${name.now}_spectrogram.png")
+
+    val spectrogramImage by lazy { Image(spectrogramFile.inputStream()) }
 
     @Transient
     var duration: Decimal = -one(ObjectPosition.TIME_PRECISION)

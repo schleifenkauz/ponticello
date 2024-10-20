@@ -79,6 +79,7 @@
   - also different curvatures!
 - ability to execute commands using a query/update language
 - ability to show objects in resizable/movable floating window (with detail pane)
+- are there better methods of navigating through the score?
 
 ## Bugs
 
