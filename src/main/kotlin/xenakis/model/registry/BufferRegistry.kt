@@ -24,7 +24,7 @@ class BufferRegistry(
         context[BufferRegistry] = this
     }
 
-    override fun getDefault(): BufferObject = error("No default buffer")
+    override fun getDefault(name: String?): BufferObject = error("No default buffer")
 
     interface Listener : ObjectRegistry.Listener<BufferObject>
 

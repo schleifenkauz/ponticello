@@ -186,6 +186,13 @@ class ScoreObjectInstance(
         return left to right
     }
 
+    fun replaceWith(obj: ScoreObject) {
+        val score = this.score ?: error("Cannot replace $this as it has no parent score")
+        score.removeObject(this)
+        val newInst = ScoreObjectInstance(obj, this.position)
+        score.addObject(newInst)
+    }
+
     override fun toString(): String = "instance of $obj at $position in ${score?.scoreName?.now}"
 
     interface Listener {

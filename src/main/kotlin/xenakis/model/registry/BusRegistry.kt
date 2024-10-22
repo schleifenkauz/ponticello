@@ -22,7 +22,7 @@ class BusRegistry(private val busses: MutableList<BusObject>) : SuperColliderObj
         context[BusRegistry] = this
     }
 
-    override fun getDefault() = getOutput()
+    override fun getDefault(name: String?) = getOutput()
 
     fun getOutput() = busses.find { b -> b.type == BusObject.Type.Output }
         ?: error("No output bus found in registry")

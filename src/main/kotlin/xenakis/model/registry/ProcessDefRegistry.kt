@@ -30,7 +30,7 @@ class ProcessDefRegistry(
         selected = def.createReference()
     }
 
-    override fun getDefault(): ProcessDefObject = error("No default Process object available")
+    override fun getDefault(name: String?): ProcessDefObject = error("No default Process object available")
 
     companion object : PublicProperty<ProcessDefRegistry> by publicProperty("ProcessDefRegistry")
 }

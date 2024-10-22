@@ -37,7 +37,7 @@ abstract class ObjectRegistry<O : NamedObject> : XenakisProject.ProjectComponent
         context[currentProject].save(this)
     }
 
-    abstract fun getDefault(): O
+    abstract fun getDefault(name: String? = null): O
 
     fun get(name: String): O = getOrNull(name) ?: throw NoSuchElementException("Object $name not found in $this")
 

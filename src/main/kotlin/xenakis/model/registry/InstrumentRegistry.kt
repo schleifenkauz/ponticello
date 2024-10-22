@@ -43,7 +43,8 @@ class InstrumentRegistry(
         selectedInstrument = selectedInstrumentRef.map { ref -> ref?.get() }
     }
 
-    override fun getDefault(): InstrumentObject = selectedInstrument.now ?: error("No default SynthDefObject available")
+    override fun getDefault(name: String?): InstrumentObject =
+        selectedInstrument.now ?: error("No default SynthDefObject available")
 
     fun select(instrument: InstrumentObject?) {
         selectedInstrumentRef.now = instrument?.createReference()

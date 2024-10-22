@@ -255,4 +255,15 @@ sealed class ScoreObject : AbstractRenamableObject() {
     companion object {
         val DATA_FORMAT = DataFormat("score-object")
     }
+
+    @Serializable
+    class Unresolved(override val mutableName: ReactiveVariable<String>) : ScoreObject() {
+
+        override val type: String
+            get() = "none"
+
+        override fun writeCode(name: String, position: ObjectPosition, env: ScorePlayEnv): String = ""
+
+        override fun doClone(newName: String): ScoreObject = this
+    }
 }

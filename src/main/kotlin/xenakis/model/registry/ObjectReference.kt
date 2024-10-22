@@ -37,7 +37,7 @@ class ObjectReference(private var name: String) {
             obj = registry.get(name)
         } catch (ex: NoSuchElementException) {
             Logger.severe("${registry.objectType} '$name' not found", Logger.Category.Registries)
-            obj = registry.getDefault()
+            obj = registry.getDefault(name)
         }
     }
 

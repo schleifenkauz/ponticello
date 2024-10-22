@@ -22,7 +22,7 @@ class SampleRegistry(private val samples: MutableList<SampleObject>) : SuperColl
 
     fun getSample(file: File): SampleObject? = objects.find { o -> o.audioFile == file }
 
-    override fun getDefault(): SampleObject = throw NotImplementedError()
+    override fun getDefault(name: String?): SampleObject = throw NotImplementedError()
 
     companion object : PublicProperty<SampleRegistry> by publicProperty("SampleRegistry")
 }

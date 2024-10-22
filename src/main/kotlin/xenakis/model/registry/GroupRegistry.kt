@@ -41,7 +41,7 @@ class GroupRegistry private constructor(
 
     fun indexOf(group: GroupObject): Int = asList().indexOf(group)
 
-    override fun getDefault(): GroupObject = objects.find { it.isDefault } ?: GroupObject.DEFAULT
+    override fun getDefault(name: String?): GroupObject = objects.find { it.isDefault } ?: GroupObject.DEFAULT
 
     fun moveGroup(group: GroupObject, deltaIndex: Int) {
         val fromIndex = order.indexOf(group)

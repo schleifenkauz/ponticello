@@ -219,6 +219,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
         is ScoreObjectGroup -> ScoreObjectGroupView(inst, obj)
         is PianoRollObject -> PianoRollObjectView(inst, obj)
         is TempoGridObject -> TempoGridObjectView(inst, obj)
+        is ScoreObject.Unresolved -> UnresolvedScoreObjectView(obj, inst)
     }
 
     /*

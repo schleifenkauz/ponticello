@@ -178,7 +178,9 @@ abstract class ParameterizedScoreObjectView(
 
     override fun rescale() {
         for (e in envelopeEditors) {
-            e.repaint()
+            if (obj.getSpec(e.parameterName) is NumericalControlSpec) {
+                e.repaint()
+            }
         }
     }
 
