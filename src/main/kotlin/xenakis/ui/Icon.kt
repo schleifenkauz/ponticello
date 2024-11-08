@@ -65,7 +65,7 @@ enum class Icon {
 
     private val file = name.lowercase() + ".png"
     private val url = javaClass.getResource("icons/$file") ?: error("icon $file not found")
-    val image: Image get() = Image(url.toExternalForm())
+    val image: Image by lazy { Image(url.toExternalForm()) }
 
     fun getView(size: Double = DEFAULT_RADIUS * 1.25): ImageView {
         val view = ImageView(image)

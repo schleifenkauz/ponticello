@@ -47,10 +47,12 @@
 - new parameter type: buffer position (range depends on supplied buffer)
   - or use 0..1 range and scale to buffer duration
 - reordering parameters and controls
+- ability to rename controls?
 - ability to specify value for horizontal envelope lines via input prompt (how? double click displays )
 - ability to specify added time in beats/bars/ticks
 - make floating windows movable/resizable
 - show instrument when pressing I on selected `SynthObject`
+- extra resize tool
 
 ## Long term architectural ideas/questions
 
@@ -80,12 +82,17 @@
 - ability to execute commands using a query/update language
 - ability to show objects in resizable/movable floating window (with detail pane)
 - are there better methods of navigating through the score?
+  - a little overview pane at the bottom (like in VSCode)
 - ability to take snapshots of the main score (basic version control)
+- sub score windows for live loops
 
 ## Bugs
 
 - resizing behaviour is not quite right
 - something is not quite right yet in `ScoreEventCollector` (especially when resizing objects...)
+- moving objects to sub score parent is buggy
+- wait for synth to be allocated before applying envelopes
+- flow graph doesn't react to change of group for flow (only after reopening the project)
 
 ### Namen überlegen
 

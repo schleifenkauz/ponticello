@@ -52,7 +52,7 @@ class XenakisProject private constructor(
     val components
         get() = listOf(
             settings,
-            groups, busses, buffers, samples, instruments,
+            groups, busses, buffers, samples, instruments, processDefs,
             flowGraph, globalControls, objects, setupCode, serverOptions,
             score
         )
@@ -67,6 +67,12 @@ class XenakisProject private constructor(
     }
 
     fun saveTo(projectDirectory: File) {
+        for (inst in score.allInstances()) {
+            if (!objects.has(inst.obj)) {
+                Logger.warn("Had to read object for $inst", Logger.Category.Project)
+                objects.add(inst.obj)
+            }
+        }
         this.projectDirectory = projectDirectory
         dataDir.mkdirs()
         for (component in components) save(component)
@@ -127,7 +133,7 @@ class XenakisProject private constructor(
                 val buffers = data.resolve("buffers.json").readJson<BufferRegistry>()
                 buffers.initialize(context)
                 listener.setProgress(0.55, "Loading samples")
-                val samples = data.resolve("samples.json").readJson<SampleRegistry>(Json { ignoreUnknownKeys = true })
+                val samples = data.resolve("samples.json").readJson<SampleRegistry>()
                 samples.initialize(context)
                 listener.setProgress(0.6, "Loading instruments")
                 val instruments = data.resolve("instruments.json").readJson<InstrumentRegistry>()
@@ -138,7 +144,9 @@ class XenakisProject private constructor(
                 listener.setProgress(0.7, "Loading global controls")
                 val globalControls = data.resolve("global_controls.json").readJson<GlobalControls>()
                 globalControls.initialize(context)
-                val processDefs = data.resolve("process_defs.json").readJson<ProcessDefRegistry>()
+                val processDefs =
+                    if (!data.resolve("process_defs.json").exists()) ProcessDefRegistry()
+                    else data.resolve("process_defs.json").readJson<ProcessDefRegistry>()
                 processDefs.initialize(context)
                 listener.setProgress(0.75, "Loading server setup code")
                 val setupCode = data.resolve("setup_code.json").readJson<SetupCode>()

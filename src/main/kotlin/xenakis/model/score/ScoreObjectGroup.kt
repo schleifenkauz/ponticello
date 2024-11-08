@@ -14,10 +14,8 @@ import reaktive.value.reactiveVariable
 import xenakis.impl.Decimal
 import xenakis.impl.copy
 import xenakis.impl.zero
-import xenakis.model.player.PlaybackManager
 import xenakis.model.player.ScorePlayEnv
 import xenakis.model.registry.ObjectReference
-import xenakis.model.score.Score.Companion.rootScore
 import xenakis.sc.client.SuperColliderContext
 import xenakis.sc.editor.BusSelector
 import xenakis.sc.editor.GroupSelector
@@ -102,9 +100,6 @@ class ScoreObjectGroup(
             for (inst in score.objectInstances) {
                 inst.beginMove()
             }
-            for (inst in context[rootScore].instancesOf(this)) {
-                context[PlaybackManager].events.removedObject(inst.score!!, inst)
-            }
         }
         if (type == ResizeType.DeepStretch) {
             for (obj in score.objects) {
@@ -160,9 +155,6 @@ class ScoreObjectGroup(
             for (inst in score.objectInstances) {
                 inst.finishMove(notifyScore = false, recordEdit = false)
             }
-        }
-        for (inst in context[rootScore].instancesOf(this)) {
-            context[PlaybackManager].events.addedObject(inst.score!!, inst)
         }
     }
 

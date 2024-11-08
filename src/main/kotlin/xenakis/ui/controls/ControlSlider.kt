@@ -128,7 +128,6 @@ class ControlSlider(
         val oldValue = variable.get()
         variable.set(newValue)
         obj.context[UndoManager].record(UpdateValue(variable, parameter, oldValue, newValue))
-        println("Update $parameter: $oldValue -> $newValue")
         updating = false
     }
 
