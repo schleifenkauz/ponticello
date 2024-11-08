@@ -88,8 +88,10 @@ class PianoRollObjectView(inst: ScoreObjectInstance, private val obj: PianoRollO
     private fun setupNoteObjectEvents(rect: Region, note: PianoRollObject.Note) {
         rect.isFocusTraversable = true
         rect.setupDraggingAndResizing(
-            pane,
-            canUserChangeWidth = true, canUserChangeHeight = false, ToolSelector.Tool.PianoRoll,
+            context = pane.context,
+            canUserChangeWidth = true, canUserChangeHeight = false,
+            moveTool = ToolSelector.Tool.PianoRoll,
+            resizeTool = ToolSelector.Tool.PianoRoll,
             drag = { toX, toY ->
                 val t = snapToGrid(toX, toY)
                 note.onset = t.coerceIn(zero, obj.duration - note.duration)
@@ -133,11 +135,11 @@ class PianoRollObjectView(inst: ScoreObjectInstance, private val obj: PianoRollO
         }
         rect.registerShortcuts(KeyEvent.KEY_PRESSED) {
             on("LEFT") {
-                val delta = getDeltaX(HorizontalDirection.LEFT)
+                val delta = getDeltaT(HorizontalDirection.LEFT)
                 if (note.onset + delta >= zero) note.onset += delta
             }
             on("RIGHT") {
-                val delta = getDeltaX(HorizontalDirection.RIGHT)
+                val delta = getDeltaT(HorizontalDirection.RIGHT)
                 if (note.onset + delta + note.duration <= obj.duration) note.onset += delta
             }
             on("DOWN") {

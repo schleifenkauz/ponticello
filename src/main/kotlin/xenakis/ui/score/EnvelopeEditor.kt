@@ -21,6 +21,7 @@ import xenakis.model.score.*
 import xenakis.model.score.Envelope.EnvelopePoint
 import xenakis.sc.NumericalControlSpec
 import xenakis.sc.mapOnto
+import xenakis.ui.ToolSelector
 import xenakis.ui.impl.dist
 import xenakis.ui.impl.rootPane
 import xenakis.ui.impl.setupDragging
@@ -32,6 +33,8 @@ class EnvelopeEditor(
     val parameterName: String, val envelope: Envelope,
     val objectView: ScoreObjectView, val pane: Pane
 ) : EnvelopeView {
+    private val context get() = parentPane.context
+
     private val color get() = control.displayColor
     private val parentPane get() = objectView.pane
     private val associatedObject get() = objectView.instance.obj
@@ -70,6 +73,7 @@ class EnvelopeEditor(
     private fun setupLineDragging() {
         var draggingSegment = false
         line.setupDragging(
+            context, dragTool = ToolSelector.Tool.Pointer,
             onPressed = { ev ->
                 val t = transformXToTime(ev.x)
                 var segmentIdx = envelope.points.map(EnvelopePoint::time).binarySearch(t)
@@ -169,7 +173,7 @@ class EnvelopeEditor(
 
     private fun transformXToTime(x: Double): Decimal {
         val pos = ObjectPosition(parentPane.getDuration(x), 0.0.asY) + objectView.absolutePosition
-        val (t, _) = parentPane.context.rootPane.snapToGrid(pos)
+        val (t, _) = context.rootPane.snapToGrid(pos)
         parentPane.markT(t)
         return (t - objectView.absolutePosition.time).coerceIn(zero..associatedObject.duration)
     }
@@ -243,6 +247,8 @@ class EnvelopeEditor(
             on("DOWN") { adjustPointVertical(idx, -1) }
         }
         handle.setupDragging(
+            context,
+            dragTool = ToolSelector.Tool.Pointer,
             onPressed = { envelope.beginPointEdit(handles.indexOf(handle)) },
             onReleased = { envelope.finishEdit() }
         ) { _, _, old, dx, dy ->
@@ -304,14 +310,29 @@ class EnvelopeEditor(
     }
 
     private fun adjustPointHorizontal(idx: Int, dir: HorizontalDirection) {
-        val delta = objectView.getDeltaX(dir)
-        envelope.adjustPointHorizontal(idx, delta)
+        if (idx == 0 || idx == envelope.points.size - 1) return
+        val positionInPane = objectView.instance.position.plusTime(envelope.points[idx].time)
+        val tBefore = envelope.points[idx].time
+        val deltaT = objectView.getDeltaT(dir)
+        val snapped = objectView.pane.snapToGrid(positionInPane)
+        val tSnapped = snapped.time - objectView.instance.start
+        val newT = when {
+            deltaT > 0.0.asTime && tSnapped > tBefore -> tSnapped
+            deltaT > 0.0.asTime && tSnapped <= tBefore -> tSnapped + deltaT
+            deltaT < 0.0.asTime && tSnapped >= tBefore -> tSnapped + deltaT
+            deltaT < 0.0.asTime && tSnapped < tBefore -> tSnapped
+            else -> throw AssertionError("All cases are covered")
+        }
+        parentPane.markT(newT + objectView.instance.start)
+        envelope.beginPointEdit(idx)
+        envelope.editPoint(envelope.points[idx].copy(time = newT))
+        envelope.finishEdit()
     }
 
     private fun showPromptFor(idx: Int) {
         val point = envelope.points[idx]
         val value = DecimalPrompt("Value for $parameterName", point.value, spec.range)
-            .showDialog(parentPane.context, handles[idx]) ?: return
+            .showDialog(context, handles[idx]) ?: return
         envelope.editPoint(idx, value.value.snap(valueGrid))
     }
 

@@ -53,6 +53,7 @@
 - make floating windows movable/resizable
 - show instrument when pressing I on selected `SynthObject`
 - extra resize tool
+- automatically loop, when playback cursor reaches end of attached object
 
 ## Long term architectural ideas/questions
 
@@ -69,7 +70,6 @@
   - dragging them stretches/shrinks all the sections uniformly
   - double click with shift on a divider adds a new section
   - sections can have associated buses, that are used for any new Synths that have bus parameters
-- implicitly duplicate SynthDefs for mono/stereo
 - VSTPlugin `SynthObject`s
   - retrieve parameters from plugin info, make them controllable in the `DetailPane` or as envelopes
 - Rethink the Json serialization of Hextant editors

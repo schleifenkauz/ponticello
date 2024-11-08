@@ -125,9 +125,9 @@ class Envelope(private val _points: MutableList<EnvelopePoint>, private val curv
     fun adjustPointHorizontal(idx: Int, delta: Decimal) {
         val p = points[idx]
         if (idx == 0 || idx == points.size - 1) return
-        val newX = (p.time + delta).coerceIn(points[idx - 1].time, points[idx + 1].time)
+        val newT = (p.time + delta).coerceIn(points[idx - 1].time, points[idx + 1].time)
         beginPointEdit(idx)
-        editPoint(p.copy(time = newX))
+        editPoint(p.copy(time = newT))
         finishEdit()
     }
 

@@ -69,6 +69,7 @@ class ToolSelector(private val context: Context) : SelectorBar<ToolSelector.Tool
 
     enum class Tool(val icon: Icon) {
         Pointer(Icon.Pointer),
+        Resize(Icon.Resize),
         Synth(Icon.Synth),
         Process(Icon.Process),
         Task(Icon.Code),

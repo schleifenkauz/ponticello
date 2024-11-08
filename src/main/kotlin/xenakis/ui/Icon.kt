@@ -11,7 +11,7 @@ import xenakis.ui.impl.neverHGrow
 import xenakis.ui.impl.styleClass
 
 enum class Icon {
-    Pointer,
+    Pointer, Resize,
     Synth, Code, Process,
     AddTime,
     Repeat,

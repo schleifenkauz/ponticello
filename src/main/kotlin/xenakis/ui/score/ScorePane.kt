@@ -266,7 +266,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
                 rect.fill = processDef.color.now
             }
 
-            Task, Memo -> return
+            Task, Memo, Cut, AddTime, Resize -> return
 
             Group -> {
                 rect.stroke = WHITE
@@ -295,8 +295,6 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
                 children.add(selectedArea)
                 return
             }
-
-            Cut, AddTime -> return
         }
         beginNewObject(pos, rect)
     }
@@ -530,7 +528,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
                 TempoGridObject.createDefault(name)
             }
 
-            Pointer, Cut, AddTime, Task, Memo -> {
+            Pointer, Cut, AddTime, Task, Memo, Resize -> {
                 Logger.warn("Unrecognized object type $tool", Category.Score)
                 return
             }
@@ -544,8 +542,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
         selector.select(getObjectView(inst), addToSelection = false)
     }
 
-    inner class NewObjectRect(val rect: Rectangle, initialPosition: ObjectPosition) {
-
+    private inner class NewObjectRect(val rect: Rectangle, initialPosition: ObjectPosition) {
         private var corner1 = initialPosition
         private var corner2 = initialPosition
 

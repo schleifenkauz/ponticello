@@ -136,8 +136,9 @@ abstract class ScoreObjectView(
         initializeLayout()
         val canResize = instance.obj.canResize
         setupDraggingAndResizing(
-            parent,
-            canUserChangeWidth = canResize, canUserChangeHeight = canResize, Tool.Pointer,
+            parent.context,
+            canUserChangeWidth = canResize, canUserChangeHeight = canResize,
+            moveTool = Tool.Pointer, resizeTool = Tool.Resize,
             drag = this::dragTo, resize = this::resize,
             startDrag = this::startDrag,
             finishDrag = this::finishedDrag
@@ -208,17 +209,19 @@ abstract class ScoreObjectView(
                     }
                 }
 
-                else -> {
+                Tool.Pointer -> {
                     val playback = context[PlaybackManager]
-                    if (ev.isControlDown) {
-                        playback.attachToView(this)
+                    if (!playback.player.isPlaying) {
+                        if (ev.isControlDown) {
+                            playback.attachToView(this)
+                        }
+                        if (playback.isAttachedTo(this)) {
+                            playback.playHead.setPlayHeadX(ev.x)
+                        }
                     }
-                    if (playback.isAttachedTo(this)) {
-                        playback.playHead.setPlayHeadX(ev.x)
-                    }
-                    selectThis(ev.isShiftDown)
-                    ev.consume()
                 }
+
+                else -> {}
             }
         }
     }
@@ -263,6 +266,7 @@ abstract class ScoreObjectView(
     * */
 
     protected open fun startDrag(ev: MouseEvent, cursor: Cursor): Boolean {
+        selectThis(addToSelection = ev.isShiftDown)
         val selectedInstances = context[ScoreObjectSelectionManager].selectedInstances + this.instance
         if (cursor.isResizeCursor) {
             if (selectedInstances.size > 1) return false
@@ -287,9 +291,7 @@ abstract class ScoreObjectView(
     }
 
     private fun dragTo(toX: Double, toY: Double) {
-        //one of these is guaranteed to be <this.instance>
-        val movedObjects = context[ScoreObjectSelectionManager].selectedInstances
-        if (movedObjects.isEmpty()) return //can this really happen?
+        val movedObjects = context[ScoreObjectSelectionManager].selectedInstances + this.instance
         val minDeltaT = -movedObjects.minOf { inst -> inst.start }
         val maxDeltaT = movedObjects.minOf { inst -> inst.score!!.maxTime - inst.end }
         val minDeltaY = -movedObjects.minOf { inst -> inst.y }
@@ -349,7 +351,7 @@ abstract class ScoreObjectView(
         instance.obj.resize(newDur, newHeight)
     }
 
-    fun getDeltaX(direction: HorizontalDirection): Decimal {
+    fun getDeltaT(direction: HorizontalDirection): Decimal {
         val grid = pane.getNearestGrid(instance.position)?.obj as TempoGridObject?
         val settings = context[currentProject].settings
         val snapOption = if (settings.snapEnabled.now) settings.snapOption.now else null
@@ -361,7 +363,7 @@ abstract class ScoreObjectView(
     }
 
     fun adjustHorizontal(direction: HorizontalDirection, resize: Boolean, resizeType: ScoreObject.ResizeType?) {
-        val deltaT = getDeltaX(direction)
+        val deltaT = getDeltaT(direction)
         if (resize) {
             val targetDuration = (instance.obj.duration + deltaT).coerceAtMost(pane.score.maxTime - instance.start)
             instance.obj.resize(

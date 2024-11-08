@@ -745,7 +745,7 @@ class XenakisUI(
     }
 
     private fun KeyEventHandlerBody<Unit>.addToolSelectionShortcuts() {
-        for (tool in Tool.entries) {
+        for (tool in Tool.entries.take(10)) {
             on("DIGIT${tool.ordinal}") { ev ->
                 if (!ev.isTargetTextInput) {
                     toolSelector.select(tool)
