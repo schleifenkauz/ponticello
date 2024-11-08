@@ -47,7 +47,7 @@ class SubWindow(
             }
 
             Type.ToolWindow -> {
-                initStyle(StageStyle.UNIFIED)
+                initStyle(StageStyle.DECORATED)
             }
 
             Type.Undecorated -> {
