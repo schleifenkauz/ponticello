@@ -4,6 +4,7 @@ import hextant.fx.registerShortcuts
 import javafx.beans.binding.Bindings
 import javafx.geometry.HorizontalDirection
 import javafx.geometry.Point2D
+import javafx.scene.Cursor
 import javafx.scene.control.Label
 import javafx.scene.input.KeyEvent
 import javafx.scene.input.MouseButton.PRIMARY
@@ -74,6 +75,7 @@ class EnvelopeEditor(
         var draggingSegment = false
         line.setupDragging(
             context, dragTool = ToolSelector.Tool.Pointer,
+            defaultCursor = Cursor.CROSSHAIR, dragCursor = Cursor.V_RESIZE,
             onPressed = { ev ->
                 val t = transformXToTime(ev.x)
                 var segmentIdx = envelope.points.map(EnvelopePoint::time).binarySearch(t)
@@ -227,6 +229,7 @@ class EnvelopeEditor(
                 .map { hover -> if (hover) 2.0 else 0.0 }
         )
         handle.viewOrder = -1000.0
+        handle.cursor = Cursor.CROSSHAIR
         setupHandle(handle)
         pane.children.add(handle)
         handles.add(idx, handle)
@@ -248,6 +251,7 @@ class EnvelopeEditor(
         }
         handle.setupDragging(
             context,
+            defaultCursor = Cursor.CROSSHAIR, dragCursor = Cursor.MOVE,
             dragTool = ToolSelector.Tool.Pointer,
             onPressed = { envelope.beginPointEdit(handles.indexOf(handle)) },
             onReleased = { envelope.finishEdit() }

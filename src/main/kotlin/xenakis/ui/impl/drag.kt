@@ -9,14 +9,13 @@ import javafx.scene.Cursor
 import javafx.scene.Node
 import javafx.scene.input.MouseEvent
 import javafx.scene.layout.Region
-import xenakis.ui.ToolSelector
 import xenakis.ui.ToolSelector.Tool
 import xenakis.ui.XenakisUI
 import kotlin.math.absoluteValue
 
 fun Node.setupDragging(
-    context: Context,
-    dragTool: Tool,
+    context: Context, dragTool: Tool,
+    defaultCursor: Cursor = Cursor.OPEN_HAND, dragCursor: Cursor = Cursor.CLOSED_HAND,
     onPressed: (ev: MouseEvent) -> Unit = {},
     onReleased: (ev: MouseEvent) -> Unit = {},
     relocateBy: (ev: MouseEvent, start: Point2D, old: Bounds, dx: Double, dy: Double) -> Unit
@@ -25,18 +24,13 @@ fun Node.setupDragging(
     var localStart: Point2D? = null
     var oldBounds: Bounds? = null
     val toolSelector = context[XenakisUI].toolSelector
-    cursor = Cursor.DEFAULT
+    cursor = defaultCursor
     addEventHandler(MouseEvent.ANY) { ev ->
         if (toolSelector.selected.value != dragTool) return@addEventHandler
         when (ev.eventType) {
-            MouseEvent.MOUSE_ENTERED -> cursor = Cursor.OPEN_HAND
-            MouseEvent.MOUSE_EXITED -> {
-                if (dragStart == null) cursor = Cursor.DEFAULT
-            }
-
             MouseEvent.MOUSE_PRESSED -> {
+                cursor = dragCursor
                 onPressed(ev)
-                cursor = Cursor.CLOSED_HAND
             }
 
             MouseEvent.MOUSE_DRAGGED -> {
@@ -53,7 +47,7 @@ fun Node.setupDragging(
             }
 
             MouseEvent.MOUSE_RELEASED -> {
-                cursor = Cursor.OPEN_HAND
+                cursor = defaultCursor
                 onReleased(ev)
                 dragStart = null
                 oldBounds = null
@@ -75,68 +69,60 @@ fun Region.setupDraggingAndResizing(
     startDrag: (MouseEvent, Cursor) -> Boolean = { _, _ -> true },
     finishDrag: (MouseEvent, Cursor) -> Unit = { _, _ -> }
 ) {
+    cursor = Cursor.OPEN_HAND
     val toolSelector = context[XenakisUI].toolSelector
-    updateCursor(canUserChangeWidth, canUserChangeHeight, toolSelector, moveTool, resizeTool)
     var dragStart: Point2D? = null
     var oldBounds: Bounds? = null
-    addEventHandler(MouseEvent.MOUSE_PRESSED) { ev ->
-        if (toolSelector.selected.value !in setOf(moveTool, resizeTool)) return@addEventHandler
-        if (dragStart == null && cursor != null) {
-            oldBounds = BoundingBox(layoutX, layoutY, width, height)
-            dragStart = Point2D(ev.screenX, ev.screenY)
-            startDrag(ev, cursor)
-            if (isResizeCursor(cursor)) {
-                context[UndoManager].beginCompoundEdit("Resize object")
-            } else {
-                context[UndoManager].beginCompoundEdit("Move object")
-            }
-        }
-        ev.consume()
-    }
-    addEventHandler(MouseEvent.MOUSE_DRAGGED) { ev ->
-        if (toolSelector.selected.value !in setOf(moveTool, resizeTool)) return@addEventHandler
-        val start = dragStart ?: return@addEventHandler
-        val dx = ev.screenX - start.x
-        val dy = ev.screenY - start.y
-        if (isResizeCursor(cursor)) {
-            resize(oldBounds!!, dx, dy, cursor, ev)
-        } else {
-            val x = oldBounds!!.minX + dx
-            val y = oldBounds!!.minY + dy
-            drag(x, y)
-        }
-        ev.consume()
-    }
-    addEventHandler(MouseEvent.MOUSE_RELEASED) { ev ->
-        if (toolSelector.selected.value !in setOf(moveTool, resizeTool)) return@addEventHandler
-        if (dragStart != null) {
-            if (ev.screenX != dragStart!!.x || ev.screenY != dragStart!!.y) {
-                finishDrag(ev, cursor)
-            }
-            dragStart = null
-            oldBounds = null
-            context[UndoManager].finishCompoundEdit()
-        }
-        ev.consume()
-    }
-}
-
-private fun Region.updateCursor(
-    canUserChangeWidth: Boolean, canUserChangeHeight: Boolean,
-    toolSelector: ToolSelector, moveTool: Tool, resizeTool: Tool
-) {
-    cursor = Cursor.DEFAULT
     addEventHandler(MouseEvent.ANY) { ev ->
+        if (toolSelector.selected.value !in setOf(moveTool, resizeTool)) return@addEventHandler
         when (ev.eventType) {
-            MouseEvent.MOUSE_ENTERED, MouseEvent.MOUSE_MOVED, MouseEvent.MOUSE_PRESSED, MouseEvent.MOUSE_RELEASED -> {
+            MouseEvent.MOUSE_PRESSED -> {
+                if (dragStart == null && cursor != null) {
+                    oldBounds = BoundingBox(layoutX, layoutY, width, height)
+                    dragStart = Point2D(ev.screenX, ev.screenY)
+                    startDrag(ev, cursor)
+                    if (isResizeCursor(cursor)) {
+                        context[UndoManager].beginCompoundEdit("Resize object")
+                    } else {
+                        context[UndoManager].beginCompoundEdit("Move object")
+                    }
+                }
+            }
+
+            MouseEvent.MOUSE_DRAGGED -> {
+                val start = dragStart ?: return@addEventHandler
+                val dx = ev.screenX - start.x
+                val dy = ev.screenY - start.y
+                if (isResizeCursor(cursor)) {
+                    resize(oldBounds!!, dx, dy, cursor, ev)
+                } else {
+                    val x = oldBounds!!.minX + dx
+                    val y = oldBounds!!.minY + dy
+                    drag(x, y)
+                }
+            }
+
+            MouseEvent.MOUSE_MOVED -> {
                 cursor = getCursor(
                     toolSelector.selected.value, moveTool, resizeTool,
                     ev, canUserChangeWidth, canUserChangeHeight, ev.isPrimaryButtonDown
                 )
             }
 
-            MouseEvent.MOUSE_EXITED -> cursor = Cursor.DEFAULT
+            MouseEvent.MOUSE_RELEASED -> {
+                if (dragStart != null) {
+                    if (ev.screenX != dragStart!!.x || ev.screenY != dragStart!!.y) {
+                        finishDrag(ev, cursor)
+                    }
+                    dragStart = null
+                    oldBounds = null
+                    context[UndoManager].finishCompoundEdit()
+                }
+            }
+
+            else -> return@addEventHandler
         }
+        ev.consume()
     }
 }
 
@@ -151,9 +137,8 @@ private fun Region.getCursor(
     val dx = (x - prefWidth).absoluteValue
     val dy = (y - prefHeight).absoluteValue
     return when {
-        selectedTool == moveTool && closeHand -> Cursor.CLOSED_HAND
-        selectedTool == moveTool && !closeHand -> Cursor.OPEN_HAND
-        selectedTool != resizeTool -> Cursor.DEFAULT
+        selectedTool == moveTool -> if (closeHand) Cursor.CLOSED_HAND else Cursor.OPEN_HAND
+        selectedTool != resizeTool -> if (closeHand) cursor else Cursor.DEFAULT
         x.absoluteValue < tx && y.absoluteValue < ty && canUserChangeHeight && canUserChangeWidth -> Cursor.NW_RESIZE
         x.absoluteValue < tx && dy.absoluteValue < ty && canUserChangeHeight && canUserChangeWidth -> Cursor.SW_RESIZE
         dx < tx && y.absoluteValue < ty && canUserChangeHeight && canUserChangeWidth -> Cursor.NE_RESIZE
@@ -162,9 +147,8 @@ private fun Region.getCursor(
         dx < tx && canUserChangeWidth -> Cursor.E_RESIZE
         y.absoluteValue < ty && canUserChangeHeight -> Cursor.N_RESIZE
         dy < ty && canUserChangeHeight -> Cursor.S_RESIZE
-        !closeHand -> Cursor.OPEN_HAND
         closeHand -> Cursor.CLOSED_HAND
-        else -> Cursor.DEFAULT
+        else -> Cursor.OPEN_HAND
     }
 }
 

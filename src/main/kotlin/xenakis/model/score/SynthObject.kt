@@ -187,7 +187,6 @@ class SynthObject(
             val (addAction, target) = env.getSynthOrderFor(group, position)
             +"$synthVar = Synth(\\$synthDefName, [$constantArguments], target: $target, addAction: $addAction)"
             +"$synthVar.register"
-            +"s.sync"
             for ((param, control) in controls.controlMap) {
                 when (control) {
                     is EnvelopeControl -> {

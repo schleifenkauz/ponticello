@@ -515,6 +515,13 @@ class XenakisUI(
         on("Shift+F5") { ServerOptionsPane(context, project.serverOptions).showDialog(context) }
         on("Ctrl+Shift+S") { project.syncWithSuperCollider() }
         on("Ctrl+Alt+T") { controller.client.run("s.plotTree;") }
+        on("Ctrl+Shift+M") { controller.client.run("s.scope;") }
+        on("Ctrl+Alt+M") { controller.client.run("FreqScope.new;") }
+        on("Ctrl+M") {
+            val numIns = project.serverOptions.numInputChannels
+            val numOuts = project.serverOptions.numOutputChannels
+            controller.client.run("ServerMeter.new(s, $numIns, $numOuts)")
+        }
     }
 
     private fun KeyEventHandlerBody<Unit>.addSelectionRelatedShortcuts() {
