@@ -10,7 +10,6 @@ import javafx.geometry.Bounds
 import javafx.scene.control.ComboBox
 import javafx.scene.control.Spinner
 import javafx.scene.control.TextField
-import javafx.scene.input.DragEvent
 import javafx.scene.input.Dragboard
 import javafx.scene.input.MouseButton
 import javafx.scene.input.MouseEvent
@@ -25,10 +24,12 @@ import xenakis.model.Logger.Category
 import xenakis.model.obj.ParameterizedObjectDef
 import xenakis.model.obj.SampleObject
 import xenakis.model.obj.SynthDefObject
-import xenakis.model.registry.*
+import xenakis.model.registry.InstrumentRegistry
+import xenakis.model.registry.ProcessDefRegistry
+import xenakis.model.registry.SampleRegistry
+import xenakis.model.registry.ScoreObjectRegistry
 import xenakis.model.score.*
 import xenakis.model.score.Score.Companion.rootScore
-import xenakis.sc.BufferControlSpec
 import xenakis.sc.Identifier
 import xenakis.sc.editor.EventDictionaryEditor
 import xenakis.sc.editor.ScFunctionEditor
@@ -46,8 +47,8 @@ import xenakis.ui.prompt.compoundInput
 import xenakis.ui.registry.SimpleSearchableRegistryView
 
 abstract class ScorePane(val score: Score, val context: Context) : Pane(), ScoreListener, TimeBlock {
-    private var newObject: NewObjectRect? = null
-    protected val selectedArea: Rectangle = Rectangle() styleClass "time-range-rect"
+    private var newObject: RectangleSelection? = null
+    protected var selectedArea: RectangleSelection? = null
 
     private val views = mutableMapOf<ScoreObjectInstance, ScoreObjectView>()
     val allViews: Collection<ScoreObjectView> get() = views.values
@@ -136,7 +137,8 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
     private fun addPlayBufOnDrop() {
         setupDropArea({ db -> db.hasFile("wav") || db.hasContent(SampleObject.DATA_FORMAT) }, { ev ->
             val sample = extractSampleFromDragBoard(ev.dragboard) ?: return@setupDropArea
-            createPlayBufObject(sample, ev)
+            val pos = snapToGrid(ev.x, ev.y)
+            createPlayBufObject(sample, pos)
         })
     }
 
@@ -158,45 +160,23 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
         else -> null
     }
 
-    private fun createPlayBufObject(sample: SampleObject, ev: DragEvent) {
-        val instruments = context[InstrumentRegistry]
-        val synthDef = instruments.selectedInstrument.now ?: instruments.getOrNull("playbuf") ?: run {
-            val playbuf = context[GlobalSynthDefLib].get("playbuf") ?: return
-            instruments.add(playbuf)
-            playbuf
+    private fun createPlayBufObject(sample: SampleObject, pos: ObjectPosition) =
+        context.compoundEdit("Add sample to score") {
+            val instruments = context[InstrumentRegistry]
+            val synthDef = instruments.selectedInstrument.now
+            if (synthDef !is SynthDefObject) {
+                Logger.error("A SynthDef should be selected for sample playback to work", Category.Buffers)
+                return
+            }
+            val controls = getDefaultControls(synthDef)
+            val synthDefRef = reactiveVariable(synthDef.createReference())
+            val name = context[ScoreObjectRegistry].availableName(sample.name.now)
+            val obj = SynthObject(reactiveVariable(name), synthDefRef, controls)
+            obj.setInitialSize(sample.duration, 0.02.withPrecision(ObjectPosition.Y_PRECISION))
+            val inst = ScoreObjectInstance(obj, pos)
+            score.addObject(inst)
+            controls.reassignControl("buf", BufferControl(reactiveVariable(sample.createReference())))
         }
-        if (synthDef !is SynthDefObject) {
-            Logger.error("A SynthDef should be selected for sample playback to work", Category.Buffers)
-            return
-        }
-        val bufParameter = synthDef.parameters.now.find { p -> p.name.now == "buf" }
-        if (bufParameter == null) {
-            Logger.error("No parameter 'buf' found in in SynthDef ${synthDef.name.now}", Category.Buffers)
-            return
-        }
-        val spec = bufParameter.spec.now
-        if (spec !is BufferControlSpec) {
-            Logger.error("Parameter 'buf' of SynthDef ${synthDef.name.now} is not of type 'buf'", Category.Buffers)
-            return
-        }
-        if (!spec.isPlayBufSource) {
-            Logger.error(
-                "Parameter 'buf' of SynthDef ${synthDef.name.now} is not marked as a PlayBuf source",
-                Category.Buffers
-            )
-            return
-        }
-        val controls = getDefaultControls(synthDef)
-        val bufCtrl = controls["buf"] as BufferControl
-        bufCtrl.sample.set(sample.createReference())
-        val synthDefRef = reactiveVariable(synthDef.createReference())
-        val name = context[ScoreObjectRegistry].availableName(sample.name.now)
-        val obj = SynthObject(reactiveVariable(name), synthDefRef, controls)
-        obj.setInitialSize(sample.duration, 0.05.withPrecision(ObjectPosition.Y_PRECISION))
-        val pos = snapToGrid(ev.x, ev.y)
-        val inst = ScoreObjectInstance(obj, pos)
-        score.addObject(inst)
-    }
 
     private fun getDefaultControls(def: ParameterizedObjectDef): ParameterControls {
         val defaultGroup = associatedObject?.defaultGroupRef?.now
@@ -250,7 +230,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
         ev.consume()
         val selectedTool = ui.toolSelector.selected.value!!
         if (newObject != null) return
-        children.remove(selectedArea)
+        clearRegionSelection()
         val pos = snapToGrid(ev.x, ev.y)
         val (t, y) = pos
         val rect = Rectangle(getX(t), getPaneY(y), 0.0, 0.0)
@@ -281,56 +261,51 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
             }
 
             Pointer -> {
-                selectedArea.x = getX(t)
-                selectedArea.width = 0.0
-                if (ev.isShiftDown) {
-                    selectedArea.y = 0.0
-                    if (!selectedArea.heightProperty().isBound)
-                        selectedArea.heightProperty().bind(this.heightProperty())
-                } else {
-                    selectedArea.heightProperty().unbind()
-                    selectedArea.y = ev.y
-                    selectedArea.height = 0.0
-                }
-                children.add(selectedArea)
+                startSelection(pos, ev)
                 return
             }
         }
         beginNewObject(pos, rect)
     }
 
+    protected open fun startSelection(pos: ObjectPosition, ev: MouseEvent) {
+        check(selectedArea == null)
+        val selectionRect = Rectangle() styleClass "selection-rect"
+        val selection = RectangleSelection(this, selectionRect, pos)
+        if (ev.isControlDown) {
+            selection.useAsTimeSelection()
+        }
+        children.add(selection.rect)
+        selectedArea = selection
+    }
+
+    private fun clearRegionSelection() {
+        val selection = selectedArea ?: return
+        children.remove(selection.rect)
+        selectedArea = null
+    }
+
     private fun mouseDragged(ev: MouseEvent) {
         val newObj = newObject
         val pos = snapToGrid(ev.x, ev.y)
-        val (t, y) = pos
-        val x = getX(t)
-        val paneY = getPaneY(y)
         when {
             newObj != null -> {
                 newObj.setOppositeCorner(pos)
-                markT(t)
+                markT(pos.time)
                 ev.consume()
             }
 
-            selectedArea in children && (this is ScoreView && selectedTool == Pointer || this is SubScorePane && selectedTool == Group) -> {
-                if (x > selectedArea.x) {
-                    selectedArea.width = x - selectedArea.x
-                } else {
-                    selectedArea.width += selectedArea.x - x
-                    selectedArea.x = x
-                }
-                if (!selectedArea.heightProperty().isBound) {
-                    if (paneY > selectedArea.y) {
-                        selectedArea.height = paneY - selectedArea.y
-                    } else {
-                        selectedArea.height += selectedArea.y - paneY
-                        selectedArea.y = paneY
-                    }
-                }
-                markT(t)
+            selectedArea != null && canSelectRegion() -> {
+                val selection = selectedArea!!
+                selection.setOppositeCorner(pos)
+                markT(pos.time)
             }
         }
     }
+
+    private fun canSelectRegion() =
+        (this is ScoreView && selectedTool in setOf(Pointer, Resize)
+                || this is SubScorePane && selectedTool == Group)
 
     private fun pasteFromSystemClipboard(ev: MouseEvent) {
         var instances = context[ScoreObjectSelectionManager].getSystemClipboard() ?: return
@@ -354,8 +329,10 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
         ev.consume()
         if (score == context[rootScore] && !ev.isShiftDown) selector.deselectAll()
         val newObj = newObject
+        val selection = selectedArea
         val tool = ui.toolSelector.selected.value
         val (t, y) = snapToGrid(ev.x, ev.y)
+        val scoreView = context[XenakisUI].scoreView
         when {
             tool == AddTime -> {
                 val amount = DecimalPrompt(
@@ -363,55 +340,6 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
                     precision = 2, initialValue = 10.0, 0.0..1000.0
                 ).showDialog(context) ?: return
                 addTime(t, amount)
-            }
-
-            tool == Pointer -> {
-                val scoreView = context[XenakisUI].scoreView
-                when {
-                    ev.button == MouseButton.PRIMARY && ev.isAltDown -> {
-                        val popup = SimpleSearchableRegistryView(context[ScoreObjectRegistry], "Add object instance")
-                        val anchor = localToScreen(ev.x, ev.y)
-                        popup.showPopup(context, anchor, scene.window) { obj ->
-                            val pos = snapToGrid(ev.x, ev.y)
-                            val inst = ScoreObjectInstance(obj, pos)
-                            score.addObject(inst)
-                        }
-                    }
-
-                    ev.button == MouseButton.PRIMARY && scoreView.isInDuplicateMode() -> {
-                        var obj = scoreView.clipboardObject!!
-                        if (obj.height > score.maxY || obj.duration > score.maxTime) return
-                        if (ev.isShiftDown) {
-                            val name = context[ScoreObjectRegistry].nameForClone(obj)
-                            obj = obj.clone(name)
-                        }
-                        val time = t.coerceIn(zero, score.maxTime - obj.duration)
-                        val scoreY = y.coerceIn(zero, score.maxY - obj.height)
-                        val duplicate = ScoreObjectInstance(obj, time, scoreY)
-                        score.addObject(duplicate)
-                    }
-
-                    selectedArea in children && selectedArea.width != 0.0 && selectedArea.height != 0.0 -> {
-                        if (!selectedArea.heightProperty().isBound) {
-                            for (view in viewsInside(selectedArea.boundsInParent)) {
-                                selector.select(view, addToSelection = true)
-                            }
-                            children.remove(selectedArea)
-                        } else {
-                            selectedArea.requestFocus()
-                        }
-                    }
-
-                    ev.button == MouseButton.SECONDARY -> pasteFromSystemClipboard(ev)
-                    this is ScoreView && !ui.playback.player.isPlaying -> {
-                        if (ev.isControlDown) {
-                            ui.playback.attachToMainScore()
-                        }
-                        if (ui.playback.isAttachedTo(this)) {
-                            ui.playback.playHead.movePlayHead(t)
-                        }
-                    }
-                }
             }
 
             tool in setOf(Task, Memo) && ev.clickCount >= 2 -> {
@@ -447,6 +375,71 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
                 }
                 endNewObject()
             }
+
+            ev.button == MouseButton.PRIMARY && ev.isAltDown && ev.isShiftDown -> {
+                val popup = SimpleSearchableRegistryView(context[ScoreObjectRegistry], "Add object instance")
+                val anchor = localToScreen(ev.x, ev.y)
+                popup.showPopup(context, anchor, scene.window) { obj ->
+                    val pos = snapToGrid(ev.x, ev.y)
+                    val inst = ScoreObjectInstance(obj, pos)
+                    score.addObject(inst)
+                }
+            }
+
+            ev.button == MouseButton.PRIMARY && ev.isAltDown -> {
+                val popup = SimpleSearchableRegistryView(context[SampleRegistry], "Place sample")
+                val anchor = localToScreen(ev.x, ev.y)
+                popup.showPopup(context, anchor, scene.window) { sample ->
+                    val pos = snapToGrid(ev.x, ev.y)
+                    createPlayBufObject(sample, pos)
+                }
+            }
+
+            ev.button == MouseButton.PRIMARY && scoreView.isInDuplicateMode() -> {
+                var obj = scoreView.clipboardObject!!
+                if (obj.height > score.maxY || obj.duration > score.maxTime) return
+                if (ev.isShiftDown) {
+                    val name = context[ScoreObjectRegistry].nameForClone(obj)
+                    obj = obj.clone(name)
+                }
+                val time = t.coerceIn(zero, score.maxTime - obj.duration)
+                val scoreY = y.coerceIn(zero, score.maxY - obj.height)
+                val duplicate = ScoreObjectInstance(obj, time, scoreY)
+                score.addObject(duplicate)
+            }
+
+            selection != null && selection.isNotEmpty() -> {
+                if (!ev.isShiftDown) {
+                    selector.deselectAll()
+                }
+                if (selection.isTimeSelection) {
+                    selection.rect.requestFocus()
+                } else {
+                    val views = viewsInside(selection.rect.boundsInParent)
+                    for (view in views) {
+                        selector.select(view, addToSelection = true)
+                    }
+                    clearRegionSelection()
+                }
+            }
+
+            ev.button == MouseButton.SECONDARY -> pasteFromSystemClipboard(ev)
+
+            this is ScoreView && !ui.playback.player.isPlaying -> {
+                if (ev.isControlDown) {
+                    ui.playback.attachToMainScore()
+                }
+                if (ui.playback.isAttachedTo(this)) {
+                    ui.playback.playHead.movePlayHead(t)
+                }
+            }
+
+            this is ScoreView -> {
+                if (!ev.isShiftDown) {
+                    context[ScoreObjectSelectionManager].deselectAll()
+                    requestFocus()
+                }
+            }
         }
     }
 
@@ -456,7 +449,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
     * Object creation
     * */
 
-    private fun createNewObject(tool: Tool, rect: NewObjectRect, ev: MouseEvent) {
+    private fun createNewObject(tool: Tool, rect: RectangleSelection, ev: MouseEvent) {
         val obj = when (tool) {
             Synth -> {
                 val def = context[InstrumentRegistry].selectedInstrument.now
@@ -542,38 +535,9 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
         selector.select(getObjectView(inst), addToSelection = false)
     }
 
-    private inner class NewObjectRect(val rect: Rectangle, initialPosition: ObjectPosition) {
-        private var corner1 = initialPosition
-        private var corner2 = initialPosition
-
-        private val time get() = minOf(corner1.time, corner2.time)
-        private val y get() = minOf(corner1.y, corner2.y)
-        private val height get() = (corner1.y - corner2.y).abs()
-        private val duration get() = (corner1.time - corner2.time).abs()
-
-        init {
-            setOppositeCorner(corner2)
-        }
-
-        fun setOppositeCorner(position: ObjectPosition) {
-            corner2 = position
-            rect.x = getX(time)
-            rect.y = getPaneY(y)
-            rect.width = getWidth(duration)
-            rect.height = getPaneY(height)
-        }
-
-        fun createInstance(obj: ScoreObject): ScoreObjectInstance {
-            obj.setInitialSize(duration, height)
-            return ScoreObjectInstance(obj, time, y)
-        }
-
-        fun isNotEmpty(): Boolean = corner1 != corner2
-    }
-
     private fun beginNewObject(position: ObjectPosition, s: Rectangle) {
         if (s !in children) children.add(s)
-        newObject = NewObjectRect(s, position)
+        newObject = RectangleSelection(this, s, position)
     }
 
     fun endNewObject() {
@@ -584,11 +548,12 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
     }
 
     fun removeSelected() {
-        if (selectedArea in children && selectedArea.heightProperty().isBound) {
-            val start = getTime(selectedArea.x)
-            val end = getTime(selectedArea.x + selectedArea.width)
+        val selection = selectedArea
+        if (selection != null && selection.isTimeSelection) {
+            val start = selection.time
+            val end = selection.time + selection.duration
             deleteTimeRange(start, end)
-            children.remove(selectedArea)
+            clearRegionSelection()
         } else {
             selector.removeSelected()
         }

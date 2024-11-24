@@ -320,7 +320,7 @@ abstract class ScoreObjectView(
         rescale()
     }
 
-    @Suppress("UNUSED_PARAMETER") //parameter is needed to be compatible with Node.setupDraggingAndResizing
+    @Suppress("UNUSED_PARAMETER") //parameter [ev] is needed to be compatible with Node.setupDraggingAndResizing
     private fun resize(old: Bounds, deltaX: Double, deltaY: Double, cursor: Cursor, ev: MouseEvent) {
         check(instance.obj.canResize) { "Attempt to resize object that is not resizable" }
         val direction = cursor.resizeDirection()

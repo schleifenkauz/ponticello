@@ -5,6 +5,7 @@ import hextant.fx.registerShortcuts
 import javafx.geometry.Rectangle2D
 import javafx.scene.SnapshotParameters
 import javafx.scene.image.ImageView
+import javafx.scene.input.MouseEvent
 import javafx.scene.layout.Pane
 import javafx.scene.paint.Color
 import javafx.scene.robot.Robot
@@ -56,19 +57,24 @@ class ScoreView(score: Score, context: Context) : ScorePane(score, context) {
         children.add(clipboardObjectView)
         isFocusTraversable = true
         listenForEvents()
-        selectedArea.registerShortcuts {
-            on("S") {
-                displayStart = getTime(selectedArea.x)
-                displayEnd = getTime(selectedArea.x + selectedArea.width)
-                repaint()
-            }
-        }
         heightProperty().addListener { _ -> repaint() }
         widthProperty().addListener { _ -> repaint() }
     }
 
     fun initialize() {
         this.score.addListener(this)
+    }
+
+    override fun startSelection(pos: ObjectPosition, ev: MouseEvent) {
+        super.startSelection(pos, ev)
+        val selection = selectedArea!!
+        selection.rect.registerShortcuts {
+            on("S") {
+                displayStart = selection.time.coerceAtMost(0.0.asTime)
+                displayEnd = selection.time + selection.duration
+                repaint()
+            }
+        }
     }
 
     fun setClipboard(obj: ScoreObject, view: ScoreObjectView) {
@@ -209,6 +215,7 @@ class ScoreView(score: Score, context: Context) : ScorePane(score, context) {
 
     override fun listenForEvents() {
         super.listenForEvents()
+        isFocusTraversable = true
         setupPositionTracker()
         setupNavigation()
     }
@@ -233,7 +240,7 @@ class ScoreView(score: Score, context: Context) : ScorePane(score, context) {
                 val factor = exp(-ev.deltaY * 0.01)
                 zoom(factor, ev.x)
             } else {
-                scroll(-ev.deltaX / pixelsPerSecond)
+                scroll(-ev.deltaY / pixelsPerSecond)
             }
         }
     }

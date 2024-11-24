@@ -93,8 +93,10 @@ class ScoreObjectSelectionManager(private val context: Context, private val root
     }
 
     fun removeSelected() {
-        val score = selectedInstances.firstOrNull()?.score ?: return
-        score.removeObjects(selectedInstances)
+        for (inst in selectedInstances) {
+            val score = inst.score ?: error("No score associated with $inst")
+            score.removeObject(inst)
+        }
         deselectAll()
     }
 

@@ -107,6 +107,7 @@ fun Region.setupDraggingAndResizing(
                     toolSelector.selected.value, moveTool, resizeTool,
                     ev, canUserChangeWidth, canUserChangeHeight, ev.isPrimaryButtonDown
                 )
+                return@addEventHandler
             }
 
             MouseEvent.MOUSE_RELEASED -> {

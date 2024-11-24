@@ -12,7 +12,7 @@ import xenakis.sc.client.SuperColliderClient
 data class ServerOptions(
     var device: String = "",
     var numInputChannels: Int = 2, var numOutputChannels: Int = 2,
-    var memSize: Int = 8192, var sampleRate: Int = 44100,
+    var memSize: Int = 8192, var sampleRate: Int = 44100, var numWireBufs: Int = 8192,
     var recordedBus: ObjectReference? = null
 ) : XenakisProject.ProjectComponent {
     override val componentName: String
@@ -33,6 +33,7 @@ data class ServerOptions(
             +"s.options.numInputBusChannels = $numInputChannels"
             +"s.options.numOutputBusChannels = $numOutputChannels"
             +"s.options.memSize = $memSize"
+            +"s.options.numWireBufs = $numWireBufs"
             +"s.options.sampleRate = $sampleRate"
             +"s.reboot"
         }

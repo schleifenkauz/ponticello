@@ -57,7 +57,6 @@ class SuperColliderShellController(private val client: SuperColliderClient) : Co
         val l = Label("$command -> $result")
         l.isFocusTraversable = true
         l.styleClass.add("command-history-label")
-        l.stylesheets.add(javaClass.getResource("style.css")!!.toExternalForm())
         l.setOnMouseClicked { commandField.text = command }
         return l
     }

@@ -54,9 +54,15 @@
 - show instrument when pressing I on selected `SynthObject`
 - extra resize tool
 - automatically loop, when playback cursor reaches end of attached object
+- recognize transport shortcuts from all windows
+- allow changing samples on SynthObject by dragging and dropping
+- ability to reroute arrows in flow graph
+- utility to test SynthDefs with different parameters
+- option to create external automation (adding a kr-write `SynthObject`) for numerical parameter
 
-## Long term architectural ideas/questions
+## Long term ideas/questions
 
+- have a "workspace" for untimed objects
 - track references to objects, if an object has references, it cannot be removed (necessary?)
 - use SuperCollider `Score` object for playback (this also means ability to do NRT bouncing!)
 - should `SynthDef`s and `VSTPlugin` have a separate registry
@@ -85,6 +91,8 @@
   - a little overview pane at the bottom (like in VSCode)
 - ability to take snapshots of the main score (basic version control)
 - sub score windows for live loops
+- is arrow key navigation inside the score somehow possible?
+- zoom tool: (selectable with `Z`)
 
 ## Bugs
 
@@ -93,6 +101,8 @@
 - moving objects to sub score parent is buggy
 - wait for synth to be allocated before applying envelopes
 - flow graph doesn't react to change of group for flow (only after reopening the project)
+- sub-objects get buggy after unlinking group objects
+- region based selection doesn't always work
 
 ### Namen überlegen
 

@@ -178,6 +178,10 @@ class SynthObject(
                     is ConstantControl -> param to control.value.now.toString()
                     is KnobControl -> param to control.get().toString()
                     is EnvelopeControl -> param to control.envelope.points[0].value.toString()
+                    is SingleBusValueControl -> {
+                        val bus = control.bus.now.get<BusObject>().superColliderName
+                        param to "$bus.getSynchronous"
+                    }
                     else -> null
                 }
             }.joinToString { (param, value) -> "$param: $value" } + ", duration: $duration"
@@ -202,10 +206,13 @@ class SynthObject(
                         +"${synthVar}.map(\\$param, $bus)"
                     }
 
-                    is SingleBusValueControl -> {
-                        val bus = control.bus.now.get<BusObject>().superColliderName
-                        +"${synthVar}.set(\\$param, $bus.getSynchronized)"
-                    }
+                    /*
+                                        is SingleBusValueControl -> {
+                                            val bus = control.bus.now.get<BusObject>().superColliderName
+                                            +"$bus.postln"
+                                            +"${synthVar}.set(\\$param, $bus.value)"
+                                        }
+                    */
 
                     is CustomControl -> {
                         val code = controls.controlMap.entries

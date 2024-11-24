@@ -1,7 +1,6 @@
 package xenakis.model.score
 
 import bundles.publicProperty
-import bundles.set
 import hextant.context.Context
 import hextant.context.withoutUndo
 import hextant.core.editor.ListenerManager
@@ -52,7 +51,6 @@ class Score(
         if (initialized) return
         this.context = context
         this.parentObject = parentObject
-        if (parentObject == null) context[rootScore] = this
         this.scoreName = parentObject?.name ?: reactiveValue(ROOT_SCORE_NAME)
         for (inst in objectInstances) {
             inst.initialize(context)

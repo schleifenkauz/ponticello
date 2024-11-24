@@ -322,12 +322,12 @@ Slider.control-detail-editor {
     -fx-text-fill: green;
 }
 
-.time-range-rect {
+.selection-rect {
     -fx-stroke: gray;
     -fx-fill: rgba(0, 0, 0, 0.2);
 }
 
-.time-range-rect:focused {
+.selection-rect:focused {
     -fx-fill: rgba(0, 0, 0, 0.3);
     -fx-stroke: green;
 }

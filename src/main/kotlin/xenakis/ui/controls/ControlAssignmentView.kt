@@ -8,6 +8,7 @@ import xenakis.model.score.ParameterControl
 import xenakis.model.score.ParameterControls
 import xenakis.model.score.ParameterizedScoreObject
 import xenakis.sc.ControlSpec
+import xenakis.ui.XenakisApp.Companion.primaryStage
 
 class ControlAssignmentView(private val obj: ParameterizedScoreObject) : VBox(), ParameterControls.View {
     private val editorByParameter = mutableMapOf<String, ControlAssignmentEditor>()
@@ -26,14 +27,14 @@ class ControlAssignmentView(private val obj: ParameterizedScoreObject) : VBox(),
         navigateWithTab(editor)
         editorByParameter[parameter] = editor
         children.add(editor)
-        if (scene != null) scene.window.sizeToScene()
+        if (scene != null && scene.window != obj.context[primaryStage]) scene.window.sizeToScene()
     }
 
     override fun removedControl(parameter: String, control: ParameterControl) {
         val editor = editorByParameter.remove(parameter) ?: return
         editors.remove(editor)
         children.remove(editor)
-        if (scene != null) scene.window.sizeToScene()
+        if (scene != null && scene.window != obj.context[primaryStage]) scene.window.sizeToScene()
     }
 
     private fun navigateWithTab(editor: ControlAssignmentEditor) {

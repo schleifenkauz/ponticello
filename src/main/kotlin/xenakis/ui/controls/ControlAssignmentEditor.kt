@@ -17,7 +17,6 @@ import reaktive.value.ReactiveVariable
 import reaktive.value.fx.asProperty
 import reaktive.value.now
 import reaktive.value.reactiveVariable
-import xenakis.impl.Decimal
 import xenakis.model.obj.BusObject
 import xenakis.model.registry.BusRegistry
 import xenakis.model.registry.GroupRegistry
@@ -84,13 +83,8 @@ class ControlAssignmentEditor(
     }
 
     private fun updateControlType(t: ControlType<*>) {
-        val oldValue = when (val oldControl = obj.controls[parameter]) {
-            is ConstantControl -> oldControl.value.now
-            is KnobControl -> oldControl.get()
-            is EnvelopeControl -> oldControl.envelope.points.first().value
-            else -> null
-        }
-        val control = t.createDefaultControl(obj, spec, oldValue)
+        val oldControl = obj.controls[parameter]
+        val control = t.createDefaultControl(obj, spec, oldControl)
         obj.controls.reassignControl(parameter, control)
     }
 
@@ -116,7 +110,7 @@ class ControlAssignmentEditor(
             control: C
         ): Node
 
-        abstract fun createDefaultControl(obj: ScoreObject, spec: ControlSpec, initialValue: Decimal?): C
+        abstract fun createDefaultControl(obj: ScoreObject, spec: ControlSpec, oldControl: ParameterControl): C
 
         override fun toString(): String = when (this) {
             Buffer -> "Buffer"
@@ -138,10 +132,10 @@ class ControlAssignmentEditor(
             ): Node = ControlSlider(obj, parameter, control.value)
 
             override fun createDefaultControl(
-                obj: ScoreObject, spec: ControlSpec, initialValue: Decimal?
+                obj: ScoreObject, spec: ControlSpec, oldControl: ParameterControl
             ): ConstantControl {
                 spec as NumericalControlSpec
-                return ConstantControl(reactiveVariable(initialValue ?: spec.defaultValue.get()))
+                return ConstantControl(reactiveVariable(oldControl.getNumericalValue() ?: spec.defaultValue.get()))
             }
         }
 
@@ -164,10 +158,10 @@ class ControlAssignmentEditor(
             override fun createDefaultControl(
                 obj: ScoreObject,
                 spec: ControlSpec,
-                initialValue: Decimal?
+                oldControl: ParameterControl
             ): EnvelopeControl {
                 spec as NumericalControlSpec
-                val value = initialValue ?: spec.defaultValue.get()
+                val value = oldControl.getNumericalValue() ?: spec.defaultValue.get()
                 val env = xenakis.model.score.Envelope.constant(value, obj.duration, spec.warp)
                 val displayColor = reactiveVariable(spec.associatedColor)
                 val display = reactiveVariable(true)
@@ -192,12 +186,12 @@ class ControlAssignmentEditor(
             override fun createDefaultControl(
                 obj: ScoreObject,
                 spec: ControlSpec,
-                initialValue: Decimal?
+                oldControl: ParameterControl
             ): CustomControl {
                 val editor = ScExprExpander(obj.context)
                 val root = EditorRoot.create(editor)
-                if (initialValue != null) {
-                    editor.setText(initialValue.toString())
+                if (oldControl.getNumericalValue() != null) {
+                    editor.setText(oldControl.getNumericalValue().toString())
                 }
                 return CustomControl(root)
             }
@@ -211,8 +205,14 @@ class ControlAssignmentEditor(
                 control: BusControl
             ): Node = busSelector(obj.context, control.bus)
 
-            override fun createDefaultControl(obj: ScoreObject, spec: ControlSpec, initialValue: Decimal?): BusControl =
-                BusControl(reactiveVariable(obj.context[BusRegistry].getDefault().createReference()))
+            override fun createDefaultControl(
+                obj: ScoreObject,
+                spec: ControlSpec,
+                oldControl: ParameterControl
+            ): BusControl {
+                val initial = oldControl.getBus() ?: obj.context[BusRegistry].getDefault().createReference()
+                return BusControl(reactiveVariable(initial))
+            }
         }
 
         object BusValue : ControlType<BusValueControl>() {
@@ -226,9 +226,11 @@ class ControlAssignmentEditor(
             override fun createDefaultControl(
                 obj: ScoreObject,
                 spec: ControlSpec,
-                initialValue: Decimal?
-            ): BusValueControl =
-                BusValueControl(reactiveVariable(obj.context[BusRegistry].getDefault().createReference()))
+                oldControl: ParameterControl
+            ): BusValueControl {
+                val initial = oldControl.getBus() ?: obj.context[BusRegistry].getDefault().createReference()
+                return BusValueControl(reactiveVariable(initial))
+            }
         }
 
         object SingleBusValue :
@@ -241,9 +243,11 @@ class ControlAssignmentEditor(
             ): Node = busSelector(obj.context, control.bus)
 
             override fun createDefaultControl(
-                obj: ScoreObject, spec: ControlSpec, initialValue: Decimal?
-            ): SingleBusValueControl =
-                SingleBusValueControl(reactiveVariable(obj.context[BusRegistry].getDefault().createReference()))
+                obj: ScoreObject, spec: ControlSpec, oldControl: ParameterControl
+            ): SingleBusValueControl {
+                val initial = oldControl.getBus() ?: obj.context[BusRegistry].getDefault().createReference()
+                return SingleBusValueControl(reactiveVariable(initial))
+            }
 
         }
 
@@ -266,7 +270,7 @@ class ControlAssignmentEditor(
             override fun createDefaultControl(
                 obj: ScoreObject,
                 spec: ControlSpec,
-                initialValue: Decimal?
+                oldControl: ParameterControl
             ): BufferControl {
                 spec as BufferControlSpec
                 val display = reactiveVariable(spec.isPlayBufSource)
@@ -290,7 +294,7 @@ class ControlAssignmentEditor(
             override fun createDefaultControl(
                 obj: ScoreObject,
                 spec: ControlSpec,
-                initialValue: Decimal?
+                oldControl: ParameterControl
             ): GroupControl =
                 GroupControl(reactiveVariable(obj.context[GroupRegistry].getDefault().createReference()))
         }

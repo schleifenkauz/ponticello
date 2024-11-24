@@ -15,6 +15,7 @@ import reaktive.value.now
 import xenakis.model.obj.SuperColliderObject.LiveCycleType
 import xenakis.model.registry.*
 import xenakis.model.score.Score
+import xenakis.model.score.Score.Companion.rootScore
 import xenakis.sc.CodeBlock
 import xenakis.sc.client.SuperColliderClient
 import xenakis.ui.XenakisController
@@ -69,7 +70,7 @@ class XenakisProject private constructor(
     fun saveTo(projectDirectory: File) {
         for (inst in score.allInstances()) {
             if (!objects.has(inst.obj)) {
-                Logger.warn("Had to read object for $inst", Logger.Category.Project)
+                Logger.warn("Had to readd object for $inst", Logger.Category.Project)
                 objects.add(inst.obj)
             }
         }
@@ -158,6 +159,7 @@ class XenakisProject private constructor(
                 val score = data.resolve("score.json").readJson<Score>()
                 listener.setProgress(0.9, "Ready")
                 score.initialize(context, null)
+                context[rootScore] = score
                 for (inst in score.objectInstances) {
                     inst.addedToScore(score)
                 }

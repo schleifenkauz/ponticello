@@ -49,6 +49,7 @@ import xenakis.model.obj.BusObject
 import xenakis.model.obj.SuperColliderObject
 import xenakis.model.player.PlaybackManager
 import xenakis.model.registry.BusRegistry
+import xenakis.model.registry.InstrumentRegistry
 import xenakis.model.registry.ScoreObjectRegistry
 import xenakis.model.score.*
 import xenakis.sc.Rate
@@ -525,14 +526,18 @@ class XenakisUI(
     }
 
     private fun KeyEventHandlerBody<Unit>.addSelectionRelatedShortcuts() {
-        on("ESCAPE") { ev ->
-            if (ev.isTargetTextInput) return@on
+        on("ESCAPE") {
             scoreView.endNewObject()
             scoreView.clearClipboard()
-            if (!playback.player.isPlaying) {
+            if (!playback.player.isPlaying && playback.playHead.pane is ScoreObjectView) {
+                val attachedView = playback.playHead.pane as ScoreObjectView
+                val absoluteTime = attachedView.absolutePosition.time + playback.playHead.currentTime
                 playback.attachToMainScore()
+                playback.playHead.movePlayHead(absoluteTime)
             }
             context[ScoreObjectSelectionManager].deselectAll()
+            context[XenakisUI].scoreView.requestFocus()
+            context[XenakisUI].toolSelector.select(Tool.Pointer)
         }
         on("Ctrl+A") { ev ->
             if (ev.isTargetTextInput) return@on
@@ -694,6 +699,14 @@ class XenakisUI(
         on("Ctrl+Shift+G") { globalControlsWindow.show() }
         on("Ctrl+Shift+F") { flowGraphWindow.show() }
         on("Ctrl+Alt+S") { settingsWindow.show() }
+
+        on("Shift+I") {
+            val registry = context[InstrumentRegistry]
+            SimpleSearchableRegistryView(registry, "Select instrument")
+                .showPopup(context, initialOption = registry.selectedInstrument.now) { instr ->
+                    registry.select(instr)
+                }
+        }
 
         on("F1") { context[HelpBrowser].show() }
         on("Ctrl+Shift+D") {

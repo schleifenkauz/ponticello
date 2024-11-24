@@ -6,6 +6,7 @@ import bundles.set
 import javafx.scene.image.Image
 import javafx.scene.input.TransferMode
 import reaktive.value.reactiveVariable
+import xenakis.impl.asY
 import xenakis.model.obj.SampleObject
 import xenakis.model.registry.SampleRegistry
 import xenakis.sc.Identifier
@@ -57,8 +58,9 @@ class SampleRegistryPane(
             obj.loadFile(newFile)
         }
         addGrabber(SampleObject.DATA_FORMAT, TransferMode.COPY) {
-            val width = samples.context[XenakisUI].scoreView.getWidth(obj.duration)
-            val height = 150.0
+            val scoreView = samples.context[XenakisUI].scoreView
+            val width = scoreView.getWidth(obj.duration)
+            val height = scoreView.getPaneY(0.02.asY)
             dragView = Image(obj.spectrogramFile.inputStream(), width, height, false, false)
         }
     }
