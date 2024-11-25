@@ -23,10 +23,7 @@ class SampleRegistryPane(
     init {
         setupDropArea({ db -> db.hasFiles("wav") }, { ev ->
             for (file in ev.dragboard.files) {
-                if (samples.getSample(file) != null) return@setupDropArea
-                val name = reactiveVariable(Identifier.truncate(file.nameWithoutExtension))
-                val sample = SampleObject.create(controller.currentProject, name, file)
-                samples.add(sample)
+                samples.getOrAdd(file)
             }
         })
         samples.addListener(this)

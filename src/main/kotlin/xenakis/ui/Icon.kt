@@ -61,7 +61,7 @@ enum class Icon {
     Sync, AddGlobal, Log,
     Debug, Info, Confirmation, Warning, Error,
     RecordActive, RecordInactive,
-    Duplicate, Oscilloscope;
+    Duplicate, Options;
 
     private val file = name.lowercase() + ".png"
     private val url = javaClass.getResource("icons/$file") ?: error("icon $file not found")

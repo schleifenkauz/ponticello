@@ -5,7 +5,10 @@ import bundles.publicProperty
 import bundles.set
 import hextant.context.Context
 import kotlinx.serialization.Serializable
+import reaktive.value.reactiveVariable
 import xenakis.model.obj.SampleObject
+import xenakis.sc.Identifier
+import xenakis.ui.XenakisController.Companion.currentProject
 import java.io.File
 
 @Serializable
@@ -21,6 +24,13 @@ class SampleRegistry(private val samples: MutableList<SampleObject>) : SuperColl
     }
 
     fun getSample(file: File): SampleObject? = objects.find { o -> o.audioFile == file }
+
+    fun getOrAdd(file: File): SampleObject = getSample(file) ?: run {
+        val name = reactiveVariable(Identifier.truncate(file.nameWithoutExtension))
+        val sample = SampleObject.create(context[currentProject], name, file)
+        add(sample)
+        return sample
+    }
 
     override fun getDefault(name: String?): SampleObject = samples.first()
 

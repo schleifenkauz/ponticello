@@ -59,6 +59,8 @@
 - ability to reroute arrows in flow graph
 - utility to test SynthDefs with different parameters
 - option to create external automation (adding a kr-write `SynthObject`) for numerical parameter
+- shortcut for selecting all instances of the selected object (for example `Ctrl+Shift+A`)
+- select new objects after unlinking
 
 ## Long term ideas/questions
 
@@ -102,6 +104,7 @@
 - wait for synth to be allocated before applying envelopes
 - flow graph doesn't react to change of group for flow (only after reopening the project)
 - sub-objects get buggy after unlinking group objects
+  - the new objects don't get added to the `ScoreEventCollector`
 - region based selection doesn't always work
 
 ### Namen überlegen

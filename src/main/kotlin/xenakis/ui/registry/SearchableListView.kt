@@ -2,6 +2,7 @@ package xenakis.ui.registry
 
 import hextant.context.Context
 import hextant.fx.PseudoClasses.SELECTED
+import hextant.fx.runFXWithTimeout
 import hextant.fx.shortcut
 import javafx.geometry.Point2D
 import javafx.scene.Node
@@ -132,7 +133,9 @@ abstract class SearchableListView<E>(private val title: String) : VBox() {
 
     private fun confirm(option: E) {
         hide()
-        confirmOption.fire(option)
+        runFXWithTimeout {
+            confirmOption.fire(option)
+        }
     }
 
     private fun confirmText(text: String) {

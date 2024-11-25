@@ -17,7 +17,9 @@ interface ParameterizedObjectDef {
         context: Context, defaultGroup: ObjectReference?, defaultBus: ObjectReference?
     ): ParameterControls {
         val controls =
-            parameters.now.associateTo(mutableMapOf()) { p -> p.name.now to p.defaultControl(context, defaultBus) }
+            parameters.now.associateTo(mutableMapOf()) { p ->
+                p.name.now to p.defaultControl(context, defaultBus)
+            }
         return ParameterControls(controls)
     }
 }

@@ -8,6 +8,7 @@ import hextant.undo.UndoManager
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonObjectBuilder
 import kotlinx.serialization.json.put
+import reaktive.Observer
 import reaktive.value.*
 import reaktive.value.binding.map
 import xenakis.impl.getString
@@ -27,18 +28,21 @@ abstract class ObjectSelector<O : NamedObject, R : ObjectReference?>(
     abstract val objectClass: KClass<O>
 
     val selected: ReactiveVariable<R> get() = _selected
+    private val observer: Observer
 
     override val result: ReactiveValue<ObjectReferenceExpr>
         get() = selected.map { ref -> ObjectReferenceExpr(ref) }
 
     init {
         selected.now?.resolve(this.getRegistry(context))
+        observer = selected.observe { _, _, value ->
+            notifyViews { selected(value?.get(objectClass)) }
+        }
     }
 
     fun select(value: R) {
         context[UndoManager].record(Edit(this, selected.now, value))
         selected.set(value)
-        notifyViews { selected(value?.get(objectClass)) }
     }
 
     fun selectInitial(value: R) {

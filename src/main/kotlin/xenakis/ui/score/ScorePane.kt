@@ -35,7 +35,6 @@ import xenakis.sc.editor.EventDictionaryEditor
 import xenakis.sc.editor.ScFunctionEditor
 import xenakis.ui.ToolSelector.Tool
 import xenakis.ui.ToolSelector.Tool.*
-import xenakis.ui.XenakisController.Companion.currentProject
 import xenakis.ui.XenakisUI
 import xenakis.ui.impl.hasFile
 import xenakis.ui.impl.rootPane
@@ -145,12 +144,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
     private fun extractSampleFromDragBoard(db: Dragboard): SampleObject? = when {
         db.hasFiles() -> {
             val file = db.files[0]
-            context[SampleRegistry].getSample(file) ?: run {
-                val name = Identifier.truncate(file.nameWithoutExtension)
-                val sample = SampleObject.create(context[currentProject], reactiveVariable(name), file)
-                context[SampleRegistry].add(sample)
-                sample
-            }
+            context[SampleRegistry].getOrAdd(file)
         }
 
         db.hasContent(SampleObject.DATA_FORMAT) -> {

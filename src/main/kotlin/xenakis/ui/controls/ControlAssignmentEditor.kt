@@ -9,6 +9,8 @@ import javafx.scene.Node
 import javafx.scene.control.Button
 import javafx.scene.control.Label
 import javafx.scene.control.ScrollPane
+import javafx.scene.input.DragEvent
+import javafx.scene.input.Dragboard
 import javafx.scene.layout.BorderPane
 import javafx.scene.layout.HBox
 import javafx.scene.layout.Priority
@@ -18,12 +20,15 @@ import reaktive.value.fx.asProperty
 import reaktive.value.now
 import reaktive.value.reactiveVariable
 import xenakis.model.obj.BusObject
+import xenakis.model.obj.SampleObject
 import xenakis.model.registry.BusRegistry
 import xenakis.model.registry.GroupRegistry
 import xenakis.model.registry.ObjectReference
+import xenakis.model.registry.SampleRegistry
 import xenakis.model.score.*
 import xenakis.sc.BufferControlSpec
 import xenakis.sc.ControlSpec
+import xenakis.sc.Identifier
 import xenakis.sc.NumericalControlSpec
 import xenakis.sc.editor.BusSelector
 import xenakis.sc.editor.GroupSelector
@@ -33,6 +38,7 @@ import xenakis.sc.view.ObjectSelectorControl
 import xenakis.ui.Icon
 import xenakis.ui.impl.*
 import xenakis.ui.prompt.ControlSpecPrompt
+import xenakis.ui.prompt.PredicateTextPrompt
 import xenakis.ui.registry.SimpleSearchableListView
 
 class ControlAssignmentEditor(
@@ -45,18 +51,41 @@ class ControlAssignmentEditor(
     private val detailEditors = mutableMapOf<ControlType<*>, Node>()
     private val spec
         get() = obj.getSpec(parameter) ?: error("Parameter $parameter not found in $obj")
-    private val deleteBtn = Icon.Delete.button(radius = 12.0, action = "Remove control") {
-        obj.controls.removeControl(parameter)
+    private val actionsBtn = Icon.Options.button(radius = 12.0, action = "Control options") {
+        showActionPopup()
     }
+
+    private fun showActionPopup() {
+        val actions = Option.entries.toMutableList()
+        if (obj.controls[parameter] !is KnobControl) actions.remove(Option.EditSpec)
+        SimpleSearchableListView(Option.entries, "Action")
+            .showPopup(obj.context, anchorNode = actionsBtn) { action -> selected(action) }
+    }
+
+    private fun selected(option: Option) {
+        when (option) {
+            Option.Delete -> obj.controls.removeControl(parameter)
+            Option.Rename -> {
+                val name = PredicateTextPrompt("Name for option", parameter) { name ->
+                    Identifier.isValid(name) && name !in obj.controls.controlMap
+                }.showDialog(obj.context, optionButton) ?: return
+                obj.controls.renameControl(parameter, name)
+            }
+
+            Option.EditSpec -> ControlSpecPrompt(obj, parameter, spec)
+                .showDialog(obj.context, actionsBtn)
+        }
+    }
+
     private var settingControl = false
     private var detailEditor: Node? = null
         set(value) {
             field = value!!
             value.styleClass?.add("control-detail-editor")
             if (spec is NumericalControlSpec) {
-                children.setAll(nameLabel, optionButton, detailEditor, infiniteSpace(), deleteBtn)
+                children.setAll(nameLabel, optionButton, detailEditor, infiniteSpace(), actionsBtn)
             } else {
-                children.setAll(nameLabel, detailEditor, infiniteSpace(), deleteBtn)
+                children.setAll(nameLabel, detailEditor, infiniteSpace(), actionsBtn)
             }
             setHgrow(value, Priority.ALWAYS)
         }
@@ -64,22 +93,36 @@ class ControlAssignmentEditor(
     init {
         styleClass.add("detail-item")
         optionButton.isFocusTraversable = false
-        optionButton.setOnMouseClicked { ev ->
-            if (ev.isShiftDown) {
-                ControlSpecPrompt(obj, parameter, spec)
-                    .showDialog(obj.context, optionButton)
-            } else {
-                val listView = SimpleSearchableListView(ControlType.all, "Select control type")
-                listView.showPopup(
-                    obj.context, anchorNode = optionButton,
-                    initialOption = selectedOption
-                ) { option ->
-                    updateControlType(option)
-                }
-            }
-        }
+        optionButton.setOnMouseClicked { showOptionPopup() }
         optionButton.minWidth = 85.0
         nameLabel.minWidth = DetailPane.LABEL_WIDTH - 5.0
+        setupDropArea(this::canDrop, ::onDrop)
+    }
+
+    private fun onDrop(ev: DragEvent) {
+        val db = ev.dragboard
+        val samples = obj.context[SampleRegistry]
+        val sample =
+            if (db.hasFile("wav")) samples.getOrAdd(db.files[0])
+            else if (db.hasContent(SampleObject.DATA_FORMAT)) samples.get(db.getContent(SampleObject.DATA_FORMAT) as String)
+            else return
+        val ctrl = obj.controls[parameter] as BufferControl
+        ctrl.sample.set(sample.createReference())
+    }
+
+    private fun canDrop(db: Dragboard): Boolean {
+        if (obj.controls[parameter] !is BufferControl) return false
+        return db.hasFile("wav") || db.hasContent(SampleObject.DATA_FORMAT)
+    }
+
+    private fun showOptionPopup() {
+        val listView = SimpleSearchableListView(ControlType.all, "Select control type")
+        listView.showPopup(
+            obj.context, anchorNode = optionButton,
+            initialOption = selectedOption
+        ) { option ->
+            updateControlType(option)
+        }
     }
 
     private fun updateControlType(t: ControlType<*>) {
@@ -100,6 +143,16 @@ class ControlAssignmentEditor(
     fun focusInputControl(): Boolean {
         detailEditor?.requestFocus()
         return detailEditor != null
+    }
+
+    private enum class Option {
+        Delete, Rename, EditSpec;
+
+        override fun toString(): String = when (this) {
+            Delete -> "delete"
+            Rename -> "rename"
+            EditSpec -> "edit spec"
+        }
     }
 
     sealed class ControlType<C : ParameterControl> {

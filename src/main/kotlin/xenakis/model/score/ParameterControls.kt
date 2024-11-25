@@ -123,6 +123,15 @@ class ParameterControls(
         viewManager.addListener(view)
     }
 
+    fun renameControl(parameter: String, newName: String) {
+        check(parameter in controlMap) { "No parameter with name '$parameter'" }
+        check(newName !in controlMap) { "Parameter with name '$newName' already exists" }
+        val control = get(parameter)
+        val idx = controlMap
+        removeControl(parameter)
+        addControl(newName, control)
+    }
+
     abstract class Edit(protected val controls: ParameterControls) : AbstractEdit() {
         class ReassignControl(
             controls: ParameterControls,
