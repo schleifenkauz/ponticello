@@ -310,7 +310,7 @@ class XenakisUI(
             on("Alt+SPACE") {
                 val focusedView = context[SelectionDistributor].focusedView.now
                 if (focusedView is EditorControl<*>) {
-                    val point = focusedView.localToScreen(0.0, 0.0)
+                    val point = focusedView.localToScreen(0.0, 0.0) ?: return@on
                     commandLinePopup.show(stage, point.x, point.y)
                 }
             }
@@ -462,8 +462,12 @@ class XenakisUI(
 
     private fun Scene.registerArrowKeys() {
         addEventFilter(KeyEvent.KEY_PRESSED) { ev ->
-            if (ev.target !is ScoreObjectView) return@addEventFilter
             if (ev.isTargetTextInput) return@addEventFilter
+            if (ev.code in setOf(KeyCode.PAGE_UP, KeyCode.PAGE_DOWN)) {
+                val delta = if (ev.code == KeyCode.PAGE_UP) 100.0 else -100.0
+                scoreView.scroll(delta / scoreView.pixelsPerSecond)
+            }
+            if (ev.target !is ScoreObjectView) return@addEventFilter
             if (ev.code !in setOf(KeyCode.LEFT, KeyCode.RIGHT, KeyCode.UP, KeyCode.DOWN)) return@addEventFilter
             if (ev.isAltDown) {
                 val view = context[ScoreObjectSelectionManager].singleSelected.now ?: return@addEventFilter
@@ -725,25 +729,18 @@ class XenakisUI(
     }
 
     private fun KeyEventHandlerBody<Unit>.addPlaybackShortcuts() {
-        on("SPACE") { ev ->
-            if (ev.isControlDown || !ev.isTargetTextInput) togglePlay()
-        }
-        on("Ctrl+SPACE") {
+        on("Ctrl+SPACE") { togglePlay() }
+        on("Shift+SPACE") {
             val time = playback.player.currentTime + playback.playHead.timeBlock.absolutePosition.time
             scoreView.display(time, time + scoreView.displayedDuration)
         }
-        on("Ctrl?+PERIOD") { ev ->
-            if (ev.isControlDown || !ev.isTargetTextInput) {
-                stopPlayback()
-            }
-        }
-        on("Ctrl+R") {
-            toggleRecording()
-        }
+        on("Ctrl+PERIOD") { stopPlayback() }
+        on("Ctrl+R") { toggleRecording() }
     }
 
     private fun KeyEventHandlerBody<Unit>.addScoreNavigationShortcuts() {
-        on("HOME") { scoreView.displayWholeScore() }
+        on("HOME") { scoreView.display(0.0.asTime, scoreView.displayedDuration) }
+        on("Shift+HOME") { scoreView.displayWholeScore() }
         on("Ctrl+Shift?+DIGIT0") { ev ->
             if (ev.isShiftDown) {
                 if (playback.player.isPlaying) return@on
@@ -751,16 +748,6 @@ class XenakisUI(
                 playback.attachToMainScore()
             }
             playback.movePlayHeadToStart()
-        }
-        on("PAGE_UP") { ev ->
-            if (!ev.isTargetTextInput) {
-                scoreView.scroll(-100.0 / scoreView.pixelsPerSecond)
-            }
-        }
-        on("PAGE_DOWN") { ev ->
-            if (!ev.isTargetTextInput) {
-                scoreView.scroll(100.0 / scoreView.pixelsPerSecond)
-            }
         }
     }
 

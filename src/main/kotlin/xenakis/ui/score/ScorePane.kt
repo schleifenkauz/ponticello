@@ -44,6 +44,7 @@ import xenakis.ui.prompt.DecimalPrompt
 import xenakis.ui.prompt.NamePrompt
 import xenakis.ui.prompt.compoundInput
 import xenakis.ui.registry.SimpleSearchableRegistryView
+import kotlin.math.absoluteValue
 
 abstract class ScorePane(val score: Score, val context: Context) : Pane(), ScoreListener, TimeBlock {
     private var newObject: RectangleSelection? = null
@@ -99,20 +100,23 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
     }
 
     open fun repaint() {
-        children.clear()
         layoutObjects()
     }
 
     private fun layoutObjects() {
         for ((inst, view) in views) {
-            if (inst.start > displayEnd) continue
-            if (inst.start + inst.duration < displayStart) continue
-            if (view.getDisplayWidth() != view.prefWidth || view.getDisplayHeight() != view.prefHeight) {
+            if (inst.start > displayEnd || inst.start + inst.duration < displayStart) {
+                children.remove(view)
+                continue
+            }
+            val resizeHorizontal = (view.getDisplayWidth() - view.prefWidth).absoluteValue > 0.01
+            val resizeVertical = (view.getDisplayHeight() - view.prefHeight).absoluteValue > 0.01
+            if (resizeHorizontal || resizeVertical) {
                 view.setPrefSize(view.getDisplayWidth(), view.getDisplayHeight())
                 view.rescale()
             }
             view.relocate(getX(inst.start), getPaneY(inst.y))
-            children.add(view)
+            if (view !in children) children.add(view)
         }
     }
 
@@ -240,7 +244,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
                 rect.fill = processDef.color.now
             }
 
-            Task, Memo, Cut, AddTime, Resize -> return
+            Task, Memo, Cut, AddTime -> return
 
             Group -> {
                 rect.stroke = WHITE
@@ -254,7 +258,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
                 rect.stroke = BLACK
             }
 
-            Pointer -> {
+            Pointer, Resize -> {
                 startSelection(pos, ev)
                 return
             }

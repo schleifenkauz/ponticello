@@ -127,7 +127,8 @@ class ParameterControls(
         check(parameter in controlMap) { "No parameter with name '$parameter'" }
         check(newName !in controlMap) { "Parameter with name '$newName' already exists" }
         val control = get(parameter)
-        val idx = controlMap
+        val spec = extraSpecs.remove(parameter)
+        if (spec != null) extraSpecs[newName] = spec
         removeControl(parameter)
         addControl(newName, control)
     }

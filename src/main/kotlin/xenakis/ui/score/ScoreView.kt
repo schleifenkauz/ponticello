@@ -3,6 +3,7 @@ package xenakis.ui.score
 import hextant.context.Context
 import hextant.fx.registerShortcuts
 import javafx.geometry.Rectangle2D
+import javafx.scene.Node
 import javafx.scene.SnapshotParameters
 import javafx.scene.image.ImageView
 import javafx.scene.input.MouseEvent
@@ -30,6 +31,7 @@ class ScoreView(score: Score, context: Context) : ScorePane(score, context) {
     var clipboardObject: ScoreObject? = null
         private set
     private val clipboardObjectView: ImageView = ImageView().also { v -> v.isVisible = false }
+    private val timeGridObjects = mutableListOf<Node>()
 
     private var timeGrid: Double = 0.1
     val xAccuracy: Int
@@ -181,13 +183,15 @@ class ScoreView(score: Score, context: Context) : ScorePane(score, context) {
     override fun repaint() {
         super.repaint()
         repositionEnvelopeMagnifier()
-        children.add(clipboardObjectView)
-        children.add(positionTracker)
+        if (clipboardObjectView !in children) children.add(clipboardObjectView)
+        if (positionTracker !in children) children.add(positionTracker)
         ui.playback.playHead.updatePosition()
         displayTimeGrid()
     }
 
     private fun displayTimeGrid() {
+        children.removeAll(timeGridObjects)
+        timeGridObjects.clear()
         val settings = context[currentProject].settings
         val gridVisible = settings.displayTimeGrid.asObservableValue()
         var idx = QUANTIZED_PIXELS_PER_SECOND.binarySearchBy(pixelsPerSecond) { s -> s }
@@ -203,14 +207,15 @@ class ScoreView(score: Score, context: Context) : ScorePane(score, context) {
             l.startYProperty().bind(heightProperty().subtract(40))
             l.endYProperty().bind(heightProperty().subtract(5))
             l.visibleProperty().bind(gridVisible)
-            children.add(l)
+            timeGridObjects.add(l)
             val timeCode = timeCode(t, xAccuracy)
             val txt = Text(timeCode).styleClass("grid-time-code")
             txt.x = x - 8
             txt.yProperty().bind(heightProperty().subtract(40))
             txt.visibleProperty().bind(gridVisible)
-            children.add(txt)
+            timeGridObjects.add(txt)
         }
+        children.addAll(timeGridObjects)
     }
 
     override fun listenForEvents() {

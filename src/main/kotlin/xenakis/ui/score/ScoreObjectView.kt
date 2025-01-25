@@ -209,7 +209,7 @@ abstract class ScoreObjectView(
                     }
                 }
 
-                Tool.Pointer -> {
+                Tool.Pointer, Tool.Resize -> {
                     val playback = context[PlaybackManager]
                     if (!playback.player.isPlaying) {
                         if (ev.isControlDown) {

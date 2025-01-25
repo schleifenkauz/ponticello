@@ -61,6 +61,12 @@
 - option to create external automation (adding a kr-write `SynthObject`) for numerical parameter
 - shortcut for selecting all instances of the selected object (for example `Ctrl+Shift+A`)
 - select new objects after unlinking
+- specifying default value for control busses
+- make pasting with shortcut (V and Shift+V)
+  - how to query mouse position (`javafx.scene.robot.Robot.mousePosition`)
+- object insertion with INSERT
+- zoom with `Ctrl+MINUS` and `Ctrl+PLUS`
+- ability to mute flow graph arrows
 
 ## Long term ideas/questions
 
@@ -95,6 +101,8 @@
 - sub score windows for live loops
 - is arrow key navigation inside the score somehow possible?
 - zoom tool: (selectable with `Z`)
+- create a simple action system to have a better shortcut architecture
+- live updates for envelopes
 
 ## Bugs
 
@@ -106,6 +114,7 @@
 - sub-objects get buggy after unlinking group objects
   - the new objects don't get added to the `ScoreEventCollector`
 - region based selection doesn't always work
+- selection based region display is not quite right
 
 ### Namen überlegen
 

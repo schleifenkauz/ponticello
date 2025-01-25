@@ -79,7 +79,7 @@ fun exp(value: Decimal) = Decimal(exp(value.value), value.precision)
 
 fun Decimal.ceilToInt(): Int = ceil(value).toInt()
 
-fun Decimal.roundToInt(): Int = value.toInt()
+fun Decimal.roundToInt(): Int = value.roundToInt()
 
 fun Decimal.abs() = Decimal(value.absoluteValue, precision)
 
