@@ -101,8 +101,8 @@ sealed class ScoreObject : AbstractRenamableObject() {
             ResizeType.Regular -> {
                 for ((parameter, ctrl) in associatedControls) {
                     if (ctrl !is EnvelopeControl) continue
-                    val spec = getSpec(parameter) as NumericalControlSpec
-                    if (resizeDirection.horizontal != null) {
+                    val spec = getSpec(parameter) as? NumericalControlSpec
+                    if (spec != null && resizeDirection.horizontal != null) {
                         ctrl.envelope.resize(targetDuration, resizeDirection.horizontal!!, spec)
                     }
                 }

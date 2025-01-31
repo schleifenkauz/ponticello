@@ -159,9 +159,11 @@ abstract class ParameterizedScoreObjectView(
 
     private fun displayEnvelope(parameter: String, control: EnvelopeControl) {
         val envelope = control.envelope
-        val e = EnvelopeEditor(parameter, envelope, this, pane = this)
-        e.repaint()
-        envelopeEditors.add(e)
+        if (obj.getSpec(parameter) is NumericalControlSpec) {
+            val e = EnvelopeEditor(parameter, envelope, this, pane = this)
+            e.repaint()
+            envelopeEditors.add(e)
+        }
     }
 
     private fun removeKnob(parameter: String) {
