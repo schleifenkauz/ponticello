@@ -20,6 +20,9 @@ class ScorePlayer(
 
     private var lastPlayFrom: Decimal = PlayHead.START
 
+    override val maxTime: Decimal
+        get() = rootScore.maxTime
+
     override val lookAhead: Decimal
         get() = env.lookAhead
 

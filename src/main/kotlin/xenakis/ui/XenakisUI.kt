@@ -719,6 +719,16 @@ class XenakisUI(
         }
         on("Ctrl+T") { shellWindow.show() }
 
+        on("I") { ev ->
+            val selected = context[ScoreObjectSelectionManager].singleSelected.now?.instance?.obj
+            if (!ev.isTargetTextInput) {
+                if (selected is SynthObject) {
+                    instrumentsPane.editInstrument(selected.synthDef)
+                } else if (selected is ProcessObject) {
+                    processDefsPane.editProcessDef(selected.processDef)
+                }
+            }
+        }
         if (mode == Mode.Laptop) {
             on("P") { ev ->
                 if (!ev.isTargetTextInput) {

@@ -10,14 +10,6 @@
 - SynthDefs
 - common parameter definitions
 
-### Copying and pasting score objects
-
-- ability to copy and paste whole time ranges
-
-### Mixing interface in AudioFlowGraph
-
-- special "mixing-node" which has a volume (and pan?) control for every of its inputs
-
 ### Stretching time regions
 
 - select time, then drag with shift
@@ -35,13 +27,39 @@
 - as standalone objects (`pbind`)
 - attaching to a synth in the score (`pmono`)
 
+### Reorganize startup and project opening
+
+- don't start sclang.exe on startup
+- start new sclang instance when opening a project and kill the process when closing the project
+
+### Unclutter the Json serialization of Hextant editors
+
+### Attach transformations to buses not to flows
+
+- flow graph only for managing the order of execution
+  - ability to reroute arrows in flow graph
+- how to mute?
+  - disable flow graph arrows
+  - or mute individual buses
+- graphical tools for EQ, compression (multi-band), reverb, etc.
+  - integrate as special editors?
+- track view, where the different buses are listed horizontally and associated transformations are ordered vertically
+- or open transformation chain by clicking on bus in the flow graph
+
+### Action system to have a better shortcut architecture
+
+- also integrate StreamDeck
+- recognize transport shortcuts from all windows
+
+### Improve zooming functionality
+
+- zoom tool: (selectable with `Z`)
+- zoom with `Ctrl+MINUS` and `Ctrl+PLUS`
+
 ### Minor
 
-- kill sclang.exe and scsynth.exe before startup (?)
 - specify expected channels (and ar/kr) for bus and buffer parameters
 - lhs of assignments can be compound expressions
-- clear ServerTree and ServerBoot when closing a project
-  - or just reboot sclang.exe, this would mean generally restructuring the startup process
 - re-enable allocated buffers (can be used with WrBuf/RdBuf SynthDefs)
 - ability to specify numerical parameter as envelope only/constant only
 - new parameter type: buffer position (range depends on supplied buffer)
@@ -51,13 +69,6 @@
 - ability to specify value for horizontal envelope lines via input prompt (how? double click displays )
 - ability to specify added time in beats/bars/ticks
 - make floating windows movable/resizable
-- show instrument when pressing I on selected `SynthObject`
-- extra resize tool
-- automatically loop, when playback cursor reaches end of attached object
-- recognize transport shortcuts from all windows
-- allow changing samples on SynthObject by dragging and dropping
-- ability to reroute arrows in flow graph
-- utility to test SynthDefs with different parameters
 - option to create external automation (adding a kr-write `SynthObject`) for numerical parameter
 - shortcut for selecting all instances of the selected object (for example `Ctrl+Shift+A`)
 - select new objects after unlinking
@@ -65,44 +76,58 @@
 - make pasting with shortcut (V and Shift+V)
   - how to query mouse position (`javafx.scene.robot.Robot.mousePosition`)
 - object insertion with INSERT
-- zoom with `Ctrl+MINUS` and `Ctrl+PLUS`
-- ability to mute flow graph arrows
+- live updates for envelopes
+- ability to copy and paste whole time ranges
 
-## Long term ideas/questions
+## Long term ideas
 
-- have a "workspace" for untimed objects
-- track references to objects, if an object has references, it cannot be removed (necessary?)
-- use SuperCollider `Score` object for playback (this also means ability to do NRT bouncing!)
+### Untimed workspace
+
+- space for objects to live in, that are not (yet) in the main score
+
+### Track references to objects
+
+- buses, samples, score objects, etc.
+- if an object has references, it cannot be removed
+- is this necessary?
+
+### use SuperCollider `Score` object for playback
+
+- this means ability to do NRT bouncing!
+
+### Rethink VSTPlugins
+
 - should `SynthDef`s and `VSTPlugin` have a separate registry
-- idea: edit a clone of a `ScoreObjectGroup` in a `SubWindow` and sync it with the main score on demand
-  - well-suited for DJ use cases
+- retrieve parameters from plugin info, make them controllable in the `DetailPane` or as envelopes
+
+### Live mode
+
+- edit a clone of a `ScoreObjectGroup` in a `SubWindow` and sync it with the main score on demand
+- sub score windows for live loops
 - time jumps
   - like goto statements
   - can have conditions (examples...?)
-- vertical sections (like JavaFX `SplitPane`)
-  - draggable dividers
-  - dragging them stretches/shrinks all the sections uniformly
-  - double click with shift on a divider adds a new section
-  - sections can have associated buses, that are used for any new Synths that have bus parameters
-- VSTPlugin `SynthObject`s
-  - retrieve parameters from plugin info, make them controllable in the `DetailPane` or as envelopes
-- Rethink the Json serialization of Hextant editors
-- Attach transformations to buses not to flows
-  - order of transformation synths could be decided by the order of the buses in the registry
-  - how to display/manage flows?
-  - graphical tools for EQ, compression (multi-band), reverb, etc. (integrate as special editors?)
-- looped envelopes
-  - also different curvatures!
-- ability to execute commands using a query/update language
-- ability to show objects in resizable/movable floating window (with detail pane)
-- are there better methods of navigating through the score?
-  - a little overview pane at the bottom (like in VSCode)
-- ability to take snapshots of the main score (basic version control)
-- sub score windows for live loops
+
+### Different curvatures for envelopes
+
+### Ability to execute commands using a query/update language
+
+### Ability to show score objects in resizable/movable floating window (with detail pane)
+
+### Are there better methods of navigating through the score?
+
+- for example a little overview pane at the bottom (like in VSCode)
 - is arrow key navigation inside the score somehow possible?
-- zoom tool: (selectable with `Z`)
-- create a simple action system to have a better shortcut architecture
-- live updates for envelopes
+
+### Ability to take snapshots of the main score (basic version control)
+
+### Divide the score into multiple tracks
+
+- vertical sections (like JavaFX `SplitPane`)
+- draggable dividers
+- dragging them stretches/shrinks all the other sections uniformly
+- double click with shift on a divider adds a new section
+- sections can have associated buses, that are used for any new Synths that have bus parameters
 
 ## Bugs
 
@@ -113,11 +138,11 @@
 - flow graph doesn't react to change of group for flow (only after reopening the project)
 - sub-objects get buggy after unlinking group objects
   - the new objects don't get added to the `ScoreEventCollector`
-- region based selection doesn't always work
 - selection based region display is not quite right
+- renaming controls doesn't work
+- creating custom parameters doesn't work
 
 ### Namen überlegen
 
 - vielleicht: Ponticello (wegen Brücke)
 - oder: multiphonix
-- oder: Antiphonoskop

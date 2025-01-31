@@ -20,6 +20,8 @@ abstract class AbstractPlayer(private val deltaT: Decimal) : Thread() {
 
     protected abstract val lookAhead: Decimal
 
+    protected abstract val maxTime: Decimal
+
     init {
         isDaemon = true
         start()
@@ -31,8 +33,14 @@ abstract class AbstractPlayer(private val deltaT: Decimal) : Thread() {
             val now = System.currentTimeMillis()
             if (isPlaying) {
                 val dt = ((now - lastTime) / 1000.0).asTime
-                scheduleEvents(playHead.currentTime + lookAhead, dt)
-                playHead.advance(dt)
+                var t = playHead.currentTime + lookAhead
+                if (t >= maxTime) {
+                    t = 0.0.asTime
+                    playHead.movePlayHeadToStart()
+                } else {
+                    playHead.advance(dt)
+                }
+                scheduleEvents(t, dt)
             }
             lastTime = now
             try {
