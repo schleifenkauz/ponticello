@@ -768,6 +768,14 @@ class XenakisUI(
                     toolSelector.select(tool)
                 }
             }
+            if (tool != Tool.Pointer) {
+                on("Ctrl+DIGIT${tool.ordinal}") {
+                    toolSelector.select(tool)
+                }
+            }
+        }
+        on("Ctrl+Shift+P") {
+            toolSelector.select(Tool.Pointer)
         }
     }
 
@@ -777,15 +785,15 @@ class XenakisUI(
                 project.settings.displayTimeGrid.toggle()
             }
         }
-        on("Q") { ev ->
-            if (!ev.isTargetTextInput) {
+        on("Alt?+Q") { ev ->
+            if (ev.isAltDown || !ev.isTargetTextInput) {
                 project.settings.snapEnabled.toggle()
             }
         }
-        on("Alt+DIGIT1") { project.settings.snapOption.now = SnapOption.Seconds }
-        on("Alt+DIGIT2") { project.settings.snapOption.now = SnapOption.Bars }
-        on("Alt+DIGIT3") { project.settings.snapOption.now = SnapOption.Beats }
-        on("Alt+DIGIT4") { project.settings.snapOption.now = SnapOption.Ticks }
+        on("Alt+S") { project.settings.snapOption.now = SnapOption.Seconds }
+        on("Alt+B") { project.settings.snapOption.now = SnapOption.Bars }
+        on("Alt+N") { project.settings.snapOption.now = SnapOption.Beats }
+        on("Alt+T") { project.settings.snapOption.now = SnapOption.Ticks }
     }
 
     private fun KeyEventHandlerBody<Unit>.addProjectShortcuts() {

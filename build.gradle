@@ -37,6 +37,10 @@ javafx {
     modules = ['javafx.controls', 'javafx.fxml', 'javafx.web']
 }
 
+application {
+    mainClassName = "xenakis.ui.XenakisApp"
+}
+
 dependencies {
     implementation 'org.controlsfx:controlsfx:11.1.2'
     implementation 'com.pixelduke:fxthemes:1.5.1'
