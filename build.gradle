@@ -48,9 +48,9 @@ dependencies {
     implementation 'org.jetbrains.kotlinx:kotlinx-serialization-core:1.6.3'
     implementation 'org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3'
 
-    implementation 'com.github.nkb03:hextant-core:1.1-SNAPSHOT'
-    implementation 'com.github.nkb03:hextant-codegen:1.0-SNAPSHOT'
-    kapt 'com.github.nkb03:hextant-codegen:1.0-SNAPSHOT'
+    implementation 'de.schleifenkauz:hextant-core:1.1-SNAPSHOT'
+    implementation 'de.schleifenkauz:hextant-codegen:1.0-SNAPSHOT'
+    kapt 'de.schleifenkauz:hextant-codegen:1.0-SNAPSHOT'
 
     implementation 'com.illposed.osc:javaosc-core:0.9'
 
