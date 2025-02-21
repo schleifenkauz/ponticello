@@ -40,7 +40,7 @@ abstract class ObjectRegistryPane<O : NamedObject>(
         SplitPane.setResizableWithParent(this, false)
         HBox.setHgrow(searchText, Priority.ALWAYS)
         searchText.promptText = "Search..."
-        searchText.left = Label("", Icon.Search.getView(Icon.DEFAULT_RADIUS))
+        searchText.left = Icon.Search.getGraphic()
         searchText.textProperty().addListener { _, _, _ -> layoutBoxes() }
         registerShortcuts {
             on("INSERT") {

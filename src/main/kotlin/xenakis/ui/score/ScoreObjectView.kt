@@ -185,7 +185,7 @@ abstract class ScoreObjectView(
 
     override fun toggledMute(muted: Boolean) {
         if (Icon.Mute in supportedActions) {
-            muteUnmuteBtn.graphic = if (instance.muted) Icon.Mute.getView() else Icon.Unmute.getView()
+            muteUnmuteBtn.graphic = if (instance.muted) Icon.Mute.getGraphic() else Icon.Unmute.getGraphic()
             opacity = if (muted) 0.5 else 1.0
         }
     }

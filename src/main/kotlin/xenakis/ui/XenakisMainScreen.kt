@@ -21,7 +21,10 @@ import javafx.scene.Scene
 import javafx.scene.control.*
 import javafx.scene.input.KeyCode
 import javafx.scene.input.KeyEvent
-import javafx.scene.layout.*
+import javafx.scene.layout.HBox
+import javafx.scene.layout.Priority
+import javafx.scene.layout.Region
+import javafx.scene.layout.VBox
 import javafx.stage.Screen
 import javafx.stage.Stage
 import reaktive.Observer
@@ -330,30 +333,30 @@ class XenakisMainScreen(val project: XenakisProject) : Activity() {
         playback.recorder.toggleIsActive()
         if (!playback.recorder.isActive) {
             recordingBtn.tooltip = Tooltip("Start Recording (Ctrl+R)")
-            recordingBtn.graphic = Icon.RecordInactive.getView()
+            recordingBtn.graphic = Icon.RecordInactive.getGraphic()
         } else {
             recordingBtn.tooltip = Tooltip("Stop Recording (Ctrl+R)")
-            recordingBtn.graphic = Icon.RecordActive.getView()
+            recordingBtn.graphic = Icon.RecordActive.getGraphic()
         }
     }
 
     private fun togglePlay() {
         if (!playback.player.isPlaying) {
             if (playback.player.play()) {
-                playBtn.graphic = Icon.Pause.getView()
+                playBtn.graphic = Icon.Pause.getGraphic()
                 playBtn.tooltip = Tooltip("Pause playback")
             }
         } else {
             playback.player.pause()
-            playBtn.graphic = Icon.Play.getView()
+            playBtn.graphic = Icon.Play.getGraphic()
             playBtn.tooltip = Tooltip("Start playback")
         }
     }
 
     private fun stopPlayback() {
-        playBtn.graphic = Icon.Play.getView()
+        playBtn.graphic = Icon.Play.getGraphic()
         playBtn.tooltip = Tooltip("Start playback")
-        recordingBtn.graphic = Icon.RecordInactive.getView()
+        recordingBtn.graphic = Icon.RecordInactive.getGraphic()
         recordingBtn.tooltip = Tooltip("Start recording")
         playback.player.reset()
     }

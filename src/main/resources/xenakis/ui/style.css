@@ -74,6 +74,11 @@ Slider.control-detail-editor {
     -fx-border-width: 2px;
 }
 
+.icon-button FontIcon {
+    -fx-icon-size: 24px;
+    -fx-icon-color: -fx-accent;
+}
+
 .icon-button:hover {
     -fx-background-color: #351919;
 }
@@ -600,6 +605,11 @@ Button.sleek-button:focused {
 
 .search-field {
     -fx-border-width: 0px 0px 1px 0px;
+}
+
+.search-field FontIcon {
+    -fx-icon-size: 16px;
+    -fx-icon-color: -fx-accent;
 }
 
 .options-box {

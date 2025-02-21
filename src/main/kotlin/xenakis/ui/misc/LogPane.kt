@@ -41,7 +41,7 @@ class LogPane(private val context: Context, private val logger: Logger) : VBox()
 
     init {
         styleClass("tool-pane")
-        searchField.left = Icon.Search.getView()
+        searchField.left = Icon.Search.getGraphic()
         searchField.promptText = "Search..."
         searchField.textProperty().addListener { _ -> displayFilteredRecords() }
         val heading = Label("Log") styleClass "heading"
@@ -89,7 +89,7 @@ class LogPane(private val context: Context, private val logger: Logger) : VBox()
     }
 
     private fun createRecordBox(record: Logger.Record): HBox {
-        val icon = record.level.icon.getView()
+        val icon = record.level.icon.getGraphic()
         var message = record.message
         message = message.replace("\n", "\\n")
         if (message.length > 120) message = message.take(120) + "..."

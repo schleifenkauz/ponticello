@@ -7,7 +7,6 @@ import hextant.fx.shortcut
 import javafx.geometry.Point2D
 import javafx.scene.Node
 import javafx.scene.control.Button
-import javafx.scene.control.Label
 import javafx.scene.input.KeyEvent
 import javafx.scene.input.MouseButton
 import javafx.scene.layout.VBox
@@ -45,7 +44,7 @@ abstract class SearchableListView<E>(private val title: String) : VBox() {
     init {
         styleClass("searchable-list")
         searchText.promptText = "$title..."
-        searchText.left = Label("", Icon.Search.getView(Icon.DEFAULT_RADIUS))
+        searchText.left = Icon.Search.getGraphic()
         optionsBox.setMaxSize(300.0, 500.0)
         children.addAll(searchText, optionsBox)
         registerShortcuts()

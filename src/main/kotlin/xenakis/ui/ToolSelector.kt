@@ -4,6 +4,7 @@ import hextant.context.Context
 import javafx.scene.Node
 import javafx.scene.control.ToggleButton
 import javafx.scene.input.MouseEvent
+import org.kordamp.ikonli.javafx.FontIcon
 import reaktive.value.now
 import xenakis.impl.SelectorBar
 import xenakis.model.registry.InstrumentRegistry
@@ -14,9 +15,7 @@ import xenakis.ui.impl.styleClass
 import xenakis.ui.registry.SimpleSearchableRegistryView
 
 class ToolSelector(private val context: Context) : SelectorBar<ToolSelector.Tool>(Tool.entries) {
-    override fun extractGraphic(option: Tool): Node {
-        return option.icon.getView()
-    }
+    override fun extractGraphic(option: Tool): Node = FontIcon(option.icon.iconCode)
 
     override fun ToggleButton.extraConfig(option: Tool) {
         setMinSize(Icon.DEFAULT_RADIUS * 2, Icon.DEFAULT_RADIUS * 2)

@@ -132,6 +132,10 @@
 - double click with shift on a divider adds a new section
 - sections can have associated buses, that are used for any new Synths that have bus parameters
 
+### Nicer console
+
+- use Hextant editors for commands
+
 ## Bugs
 
 - resizing behaviour is not quite right
