@@ -10,7 +10,7 @@ import javafx.scene.Node
 import javafx.scene.input.MouseEvent
 import javafx.scene.layout.Region
 import xenakis.ui.ToolSelector.Tool
-import xenakis.ui.XenakisUI
+import xenakis.ui.XenakisMainScreen
 import kotlin.math.absoluteValue
 
 fun Node.setupDragging(
@@ -23,7 +23,7 @@ fun Node.setupDragging(
     var dragStart: Point2D? = null
     var localStart: Point2D? = null
     var oldBounds: Bounds? = null
-    val toolSelector = context[XenakisUI].toolSelector
+    val toolSelector = context[XenakisMainScreen].toolSelector
     cursor = defaultCursor
     addEventHandler(MouseEvent.ANY) { ev ->
         if (toolSelector.selected.value != dragTool) return@addEventHandler
@@ -70,7 +70,7 @@ fun Region.setupDraggingAndResizing(
     finishDrag: (MouseEvent, Cursor) -> Unit = { _, _ -> }
 ) {
     cursor = Cursor.OPEN_HAND
-    val toolSelector = context[XenakisUI].toolSelector
+    val toolSelector = context[XenakisMainScreen].toolSelector
     var dragStart: Point2D? = null
     var oldBounds: Bounds? = null
     addEventHandler(MouseEvent.ANY) { ev ->

@@ -26,8 +26,8 @@ import xenakis.model.obj.BusObject
 import xenakis.model.registry.AudioFlowGraph
 import xenakis.model.registry.BusRegistry
 import xenakis.model.registry.ObjectReference
-import xenakis.ui.XenakisController.Companion.currentProject
 import xenakis.ui.impl.*
+import xenakis.ui.launcher.XenakisLauncher.Companion.currentProject
 import xenakis.ui.prompt.NamePrompt
 import kotlin.math.absoluteValue
 import kotlin.math.sign
@@ -293,7 +293,7 @@ class AudioFlowGraphPane(
         val window = flowDetailWindows.getOrPut(flow) {
             val source = flow.source.get<BusObject>().name.now
             val target = flow.target.get<BusObject>().name.now
-            SubWindow(flow.synth.control, "Audio flow from $source to $target", context, owner = scene.window).apply {
+            SubWindow(flow.synth.control, "Audio flow from $source to $target", context, customOwnerWindow = scene.window).apply {
                 width = 1000.0
                 height = 1000.0
                 setOnShown { flow.synth.control.receiveFocus() }

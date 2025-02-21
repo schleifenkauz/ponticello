@@ -9,7 +9,7 @@ import xenakis.model.score.ScoreObjectInstance
 import xenakis.sc.editor.ProcessDefSelector
 import xenakis.sc.view.ObjectSelectorControl
 import xenakis.ui.Icon
-import xenakis.ui.XenakisUI
+import xenakis.ui.XenakisMainScreen
 import xenakis.ui.controls.DetailPane
 import xenakis.ui.impl.centerChildren
 
@@ -22,7 +22,7 @@ class ProcessObjectView(
     override fun setupDetailPane(pane: DetailPane) {
         pane.addItem("Color:", this.colorPicker)
         val viewBtn = Icon.View.button(action = "View SynthDef") {
-            context[XenakisUI].processDefsPane.editProcessDef(obj.processDef)
+            context[XenakisMainScreen].processDefsPane.editProcessDef(obj.processDef)
         }
         val selector = ProcessDefSelector(context, obj.processDefRef)
         val box = ObjectSelectorControl(selector, createBundle())

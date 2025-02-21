@@ -11,7 +11,7 @@ import xenakis.model.obj.SampleObject
 import xenakis.model.registry.BusRegistry
 import xenakis.model.registry.SampleRegistry
 import xenakis.sc.client.SuperColliderClient
-import xenakis.ui.XenakisController.Companion.currentProject
+import xenakis.ui.launcher.XenakisLauncher.Companion.currentProject
 import xenakis.ui.prompt.NamePrompt
 import xenakis.ui.prompt.YesNoPrompt
 import java.io.File

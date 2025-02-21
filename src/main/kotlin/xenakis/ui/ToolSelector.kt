@@ -27,7 +27,7 @@ class ToolSelector(private val context: Context) : SelectorBar<ToolSelector.Tool
             Synth, PianoRoll -> {
                 addEventHandler(MouseEvent.MOUSE_CLICKED) { ev ->
                     if (ev.isShiftDown) {
-                        context[XenakisUI].instrumentsWindow.show()
+                        context[XenakisMainScreen].instrumentsWindow.show()
                         ev.consume()
                     } else if (ev.clickCount >= 2) {
                         ev.consume()
@@ -43,7 +43,7 @@ class ToolSelector(private val context: Context) : SelectorBar<ToolSelector.Tool
             Process -> {
                 addEventHandler(MouseEvent.MOUSE_CLICKED) { ev ->
                     if (ev.isShiftDown) {
-                        context[XenakisUI].processDefsWindow.show()
+                        context[XenakisMainScreen].processDefsWindow.show()
                         ev.consume()
                     } else if (ev.clickCount >= 2) {
                         ev.consume()

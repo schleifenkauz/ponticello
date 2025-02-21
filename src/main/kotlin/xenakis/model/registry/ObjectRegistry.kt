@@ -8,8 +8,8 @@ import kotlinx.serialization.Transient
 import reaktive.value.now
 import xenakis.model.Logger
 import xenakis.model.XenakisProject
-import xenakis.ui.XenakisController.Companion.currentProject
 import xenakis.ui.impl.plural
+import xenakis.ui.launcher.XenakisLauncher.Companion.currentProject
 
 abstract class ObjectRegistry<O : NamedObject> : XenakisProject.ProjectComponent {
     protected abstract val objects: MutableList<O>

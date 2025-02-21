@@ -11,7 +11,7 @@ import reaktive.value.reactiveVariable
 import xenakis.model.obj.SuperColliderObject.LiveCycleType
 import xenakis.sc.Rate
 import xenakis.sc.client.ScWriter
-import xenakis.ui.XenakisController
+import xenakis.ui.launcher.XenakisLauncher
 
 @Serializable
 class BusObject(
@@ -50,7 +50,7 @@ class BusObject(
 
     override fun canRenameTo(newName: String): Boolean =
         name.now.startsWith("global_") == newName.startsWith("global_") &&
-                !context[XenakisController.currentProject].busses.has(newName)
+                !context[XenakisLauncher.currentProject].busses.has(newName)
 
     override fun initialize(context: Context) {
         if (initialized) return

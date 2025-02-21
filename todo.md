@@ -78,10 +78,13 @@
 - object insertion with INSERT
 - live updates for envelopes
 - ability to copy and paste whole time ranges
+- maybe use material icons instead of image files... (better resolution)
+- modularize and cleanup stylesheets
+- option to copy samples to project directory
 
 ## Long term ideas
 
-### Untimed workspace
+### Ability to view all the ScoreObjects
 
 - space for objects to live in, that are not (yet) in the main score
 

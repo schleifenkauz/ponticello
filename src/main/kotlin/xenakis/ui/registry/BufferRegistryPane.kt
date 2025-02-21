@@ -8,14 +8,14 @@ import reaktive.value.now
 import xenakis.model.Logger
 import xenakis.model.obj.BufferObject
 import xenakis.model.registry.BufferRegistry
+import xenakis.sc.client.SuperColliderClient
 import xenakis.ui.Icon
-import xenakis.ui.XenakisController
 import xenakis.ui.impl.setFixedWidth
+import xenakis.ui.launcher.XenakisLauncher
 import xenakis.ui.prompt.compoundInput
 
 class BufferRegistryPane(
-    buffers: BufferRegistry,
-    private val controller: XenakisController
+    private val buffers: BufferRegistry,
 ) : SuperColliderObjectRegistryPane<BufferObject>(buffers) {
     init {
         buffers.addListener(this)
@@ -35,7 +35,7 @@ class BufferRegistryPane(
 
     override fun ObjectBox<BufferObject>.configureObjectBox() {
         addAction(Icon.View, description = "View buffer contents") {
-            controller.client.run("${obj.superColliderName}.plot('${obj.name.now}')")
+            buffers.context[SuperColliderClient].run("${obj.superColliderName}.plot('${obj.name.now}')")
         }
         addAction(Icon.Repeat, "Sync with server") { sync(obj) }
         val channelsSpinner = Spinner<Int>(1, 12, obj.channels.now).setFixedWidth(70.0)

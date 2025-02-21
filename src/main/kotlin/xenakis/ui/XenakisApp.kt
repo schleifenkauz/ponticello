@@ -3,44 +3,20 @@ package xenakis.ui
 import bundles.publicProperty
 import com.pixelduke.window.ThemeWindowManagerFactory
 import javafx.application.Application
-import javafx.stage.Screen
 import javafx.stage.Stage
 import xenakis.model.Logger
-import xenakis.ui.XenakisUI.Mode
 import xenakis.ui.impl.NotificationView
 import xenakis.ui.impl.stackTraceString
-import kotlin.concurrent.thread
+import xenakis.ui.launcher.XenakisLauncher
 
 class XenakisApp : Application() {
-    private lateinit var controller: XenakisController
-    private lateinit var ui: XenakisUI
+    private lateinit var launcher: XenakisLauncher
 
     override fun start(stage: Stage) {
         setupLogging()
-        controller = XenakisController(stage)
-        controller.setupHextant()
-        ui = setupStage(stage)
-        stage.show()
         ThemeWindowManagerFactory.create().setDarkModeForWindowFrame(stage, true)
-
-        controller.addListener(ui)
-        ui.displayLoadScreen()
-        thread {
-            controller.startSuperCollider()
-        }
-    }
-
-    private fun setupStage(stage: Stage): XenakisUI {
-        val largeScreenAvailable = Screen.getScreens().any { s -> s.bounds.width > 3000 }
-        val mode = if (largeScreenAvailable) Mode.Desktop else Mode.Laptop
-        val ui = XenakisUI(stage, controller, mode)
-        stage.setOnCloseRequest { ev ->
-            controller.closeRequest(stage)
-            ev.consume()
-        }
-        stage.icons.setAll(Icon.AppIcon.image)
-        stage.title = "Xenakis"
-        return ui
+        launcher = XenakisLauncher()
+        launcher.launchXenakis(stage)
     }
 
     private fun setupLogging() {
@@ -54,8 +30,7 @@ class XenakisApp : Application() {
     }
 
     override fun stop() {
-        ui.playback.player.close()
-        controller.quitApplication()
+        launcher.quitApplication()
     }
 
     companion object {

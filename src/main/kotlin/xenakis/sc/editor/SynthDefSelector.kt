@@ -7,7 +7,7 @@ import xenakis.model.obj.SynthDefObject
 import xenakis.model.registry.InstrumentRegistry
 import xenakis.model.registry.ObjectReference
 import xenakis.model.registry.ObjectRegistry
-import xenakis.ui.XenakisUI
+import xenakis.ui.XenakisMainScreen
 import kotlin.reflect.KClass
 
 class SynthDefSelector(
@@ -24,5 +24,5 @@ class SynthDefSelector(
         get() = SynthDefObject::class
 
     override fun createNewObject(name: String): SynthDefObject? =
-        context[XenakisUI].instrumentsPane.createSynthDef(name)
+        context[XenakisMainScreen].instrumentsPane.createSynthDef(name)
 }

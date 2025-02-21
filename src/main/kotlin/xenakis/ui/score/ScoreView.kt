@@ -18,10 +18,10 @@ import xenakis.impl.*
 import xenakis.model.InteractionSettings.SnapOption
 import xenakis.model.Logger
 import xenakis.model.score.*
-import xenakis.ui.XenakisController.Companion.currentProject
 import xenakis.ui.impl.SubWindow
 import xenakis.ui.impl.styleClass
 import xenakis.ui.impl.verticalDist
+import xenakis.ui.launcher.XenakisLauncher.Companion.currentProject
 import kotlin.math.exp
 
 class ScoreView(score: Score, context: Context) : ScorePane(score, context) {

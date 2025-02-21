@@ -75,7 +75,7 @@ abstract class ObjectRegistryPane<O : NamedObject>(
         val layout = HBox(typeSelector, nameInput).centerChildren() styleClass "prompt"
         val window = SubWindow(
             layout, "Create new ${registry.objectType}", registry.context,
-            type = SubWindow.Type.Popup, owner = scene.window
+            type = SubWindow.Type.Popup, customOwnerWindow = scene.window
         )
         window.setOnShown { nameInput.requestFocus() }
         fun commit() {

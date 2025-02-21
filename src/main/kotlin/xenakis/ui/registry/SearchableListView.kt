@@ -153,7 +153,7 @@ abstract class SearchableListView<E>(private val title: String) : VBox() {
     ) {
         initializeOptions()
         if (initialOption in filteredOptions) select(initialOption)
-        if (window == null) window = SubWindow(this, title, context, type = SubWindow.Type.Popup, owner)
+        if (window == null) window = SubWindow(this, title, context, type = SubWindow.Type.Popup, customOwnerWindow = owner)
         if (anchor != null) {
             window!!.x = anchor.x
             window!!.y = anchor.y

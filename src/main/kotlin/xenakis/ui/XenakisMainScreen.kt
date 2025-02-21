@@ -16,18 +16,14 @@ import hextant.undo.historyShortcuts
 import javafx.application.Platform
 import javafx.geometry.HorizontalDirection
 import javafx.geometry.HorizontalDirection.RIGHT
-import javafx.geometry.Pos
 import javafx.geometry.VerticalDirection
 import javafx.scene.Scene
-import javafx.scene.SceneAntialiasing
 import javafx.scene.control.*
 import javafx.scene.input.KeyCode
 import javafx.scene.input.KeyEvent
 import javafx.scene.layout.*
-import javafx.scene.paint.Color
 import javafx.stage.Screen
 import javafx.stage.Stage
-import org.controlsfx.control.textfield.CustomTextField
 import reaktive.Observer
 import reaktive.value.binding.equalTo
 import reaktive.value.binding.map
@@ -53,52 +49,45 @@ import xenakis.model.registry.InstrumentRegistry
 import xenakis.model.registry.ScoreObjectRegistry
 import xenakis.model.score.*
 import xenakis.sc.Rate
+import xenakis.sc.client.SuperColliderClient
 import xenakis.ui.ToolSelector.Tool
+import xenakis.ui.XenakisApp.Companion.primaryStage
 import xenakis.ui.impl.*
-import xenakis.ui.impl.button
+import xenakis.ui.launcher.Activity
+import xenakis.ui.launcher.XenakisLauncher
 import xenakis.ui.misc.*
 import xenakis.ui.prompt.IntegerPrompt
 import xenakis.ui.prompt.NamePrompt
 import xenakis.ui.prompt.SimpleTextPrompt
-import xenakis.ui.prompt.YesNoPrompt
 import xenakis.ui.registry.*
 import xenakis.ui.score.ScoreObjectSelectionManager
 import xenakis.ui.score.ScoreObjectView
 import xenakis.ui.score.ScoreView
 
-class XenakisUI(
-    private val stage: Stage, private val controller: XenakisController, private val mode: Mode
-) : XenakisListener {
-    private val project get() = controller.currentProject
-
+class XenakisMainScreen(val project: XenakisProject) : Activity() {
     val toolSelector = ToolSelector(context)
 
-    private val progressBar = ProgressBar()
-    private val statusText = Label()
+    val instrumentsPane = InstrumentRegistryPane(project.instruments)
+    val instrumentsWindow = SubWindow(instrumentsPane, "Instruments", context, SubWindow.Type.Undecorated)
+    var processDefsPane = ProcessDefRegistryPane(project.processDefs)
+    var processDefsWindow = SubWindow(processDefsPane, "Process Definitions", context, SubWindow.Type.Undecorated)
+    private val busRegistryPane = BusRegistryPane(project.busses)
+    private val busesWindow = SubWindow(busRegistryPane, "Busses", context, SubWindow.Type.Undecorated)
+    private val samplesPane = SampleRegistryPane(project.samples)
+    private val samplesWindow = SubWindow(samplesPane, "Samples", context, SubWindow.Type.Undecorated)
+    private val groupsPane = GroupRegistryPane(project.groups)
+    private val groupsWindow = SubWindow(groupsPane, "Groups", context, SubWindow.Type.Undecorated)
 
-    lateinit var instrumentsPane: InstrumentRegistryPane
-        private set
-    lateinit var instrumentsWindow: SubWindow
-        private set
-    lateinit var processDefsPane: ProcessDefRegistryPane
-        private set
-    lateinit var processDefsWindow: SubWindow
-        private set
-    private lateinit var busRegistryPane: BusRegistryPane
-    private lateinit var busesWindow: SubWindow
-    private lateinit var samplesPane: SampleRegistryPane
-    private lateinit var samplesWindow: SubWindow
-    private lateinit var groupsPane: GroupRegistryPane
-    private lateinit var groupsWindow: SubWindow
-    private lateinit var logWindow: SubWindow
-    lateinit var scoreView: ScoreView
-        private set
-    private lateinit var flowGraphWindow: SubWindow
-    private lateinit var globalControlsWindow: SubWindow
-    private lateinit var serverTreeCodeWindow: SubWindow
-    private lateinit var serverSetupCodeWindow: SubWindow
+    private val logWindow = SubWindow(LogPane(context, Logger), "Log", context, SubWindow.Type.Undecorated)
+    private val settingsWindow = SubWindow(SettingsPane(context[Settings], context), "Settings", context)
 
-    private val settingsWindow: Stage
+    private val flowGraphWindow: SubWindow
+    private val globalControlsWindow: SubWindow
+    private val serverTreeCodeWindow: SubWindow
+
+    private val serverSetupCodeWindow: SubWindow
+
+    val scoreView: ScoreView
     private val contextBar = HBox()
     private val detailPane = VBox(10.0).apply {
         styleClass("tool-pane")
@@ -108,46 +97,26 @@ class XenakisUI(
     private lateinit var playBtn: Button
     private lateinit var stopBtn: Button
     private lateinit var recordingBtn: Button
-    lateinit var playback: PlaybackManager
+    var playback: PlaybackManager
         private set
 
-    private lateinit var shellWindow: Stage
-    private lateinit var selectedObjectObserver: Observer
+    private var shellWindow: Stage
+    private var selectedObjectObserver: Observer
 
-    private var displaysProject = false
+    override val context get() = project.context
 
-    private val context get() = controller.context
+    private val launcher get() = context[XenakisLauncher]
+
+    private val mode: Mode
 
     init {
-        context[XenakisUI] = this
+        val largeScreenAvailable = Screen.getScreens().any { s -> s.bounds.width > 3000 }
+        mode = if (largeScreenAvailable) Mode.Desktop else Mode.Laptop
+
+        context[XenakisMainScreen] = this
         context[HelpBrowser] = HelpBrowser(context)
-        settingsWindow = SubWindow(SettingsPane(context[Settings], context), "Settings", context)
         settingsWindow.width = 1000.0
         settingsWindow.height = 1000.0
-        stage.scene = Scene(Pane(), -1.0, -1.0, false, SceneAntialiasing.DISABLED)
-        stage.scene.addGlobalShortcuts()
-        stage.scene.registerArrowKeys()
-        stage.scene.initHextantScene(context)
-    }
-
-    override fun displayProject(project: XenakisProject) {
-        instrumentsPane = InstrumentRegistryPane(project.instruments)
-        instrumentsWindow = SubWindow(instrumentsPane, "Instruments", context, SubWindow.Type.Undecorated)
-
-        processDefsPane = ProcessDefRegistryPane((project.processDefs))
-        processDefsWindow = SubWindow(processDefsPane, "Process Definitions", context, SubWindow.Type.Undecorated)
-
-        busRegistryPane = BusRegistryPane(project.busses)
-        busesWindow = SubWindow(busRegistryPane, "Busses", context, SubWindow.Type.Undecorated)
-
-        samplesPane = SampleRegistryPane(project.samples, controller)
-        samplesWindow = SubWindow(samplesPane, "Samples", context, SubWindow.Type.Undecorated)
-
-        groupsPane = GroupRegistryPane(project.groups)
-        groupsWindow = SubWindow(groupsPane, "Groups", context, SubWindow.Type.Undecorated)
-
-        val logPane = LogPane(context, Logger)
-        logWindow = SubWindow(logPane, "Log", context, SubWindow.Type.Undecorated)
 
         scoreView = ScoreView(project.score, project.context)
         project.context[ScoreObjectSelectionManager] = ScoreObjectSelectionManager(project.context, scoreView)
@@ -195,8 +164,13 @@ class XenakisUI(
                 contextBar.children.setAll(view.actions)
             }
         }
+    }
 
-        stage.scene.root = createLayout()
+    override fun beforeShowing() {
+        stage.scene.addGlobalShortcuts()
+        stage.scene.registerArrowKeys()
+        stage.scene.initHextantScene(context)
+        stage.title = "Xenakis: ${project.name}"
         stage.isResizable = true
         Platform.runLater {
             if (mode == Mode.Desktop) {
@@ -207,84 +181,15 @@ class XenakisUI(
                 stage.isMaximized = true
             }
         }
+    }
+
+    override fun afterShowing() {
         runFXWithTimeout(1000) {
             scoreView.displayWholeScore()
         }
-        displaysProject = true
     }
 
-    override fun displayLoadScreen() {
-        val logo = Icon.AppIcon.getView(size = 500.0)
-        progressBar.prefWidth = logo.prefWidth(-1.0)
-        stage.scene.root = VBox(logo, StackPane(progressBar, statusText))
-        stage.sizeToScene()
-        Platform.runLater {
-            stage.centerOnScreen()
-        }
-    }
-
-    override fun displayProgress(progress: Double, status: String) {
-        progressBar.progress = progress
-        statusText.text = status
-    }
-
-    override fun displayStartupScreen() {
-        displaysProject = false
-        val searchField = CustomTextField().apply {
-            styleClass("sleek-text-field", "search-field")
-            left = Icon.Search.getView()
-            promptText = "Search for project..."
-        }
-        val btnOpen = button("Open") { controller.openProject() }
-        val createNew = button("Create new") { controller.createNewProject() }
-        val recentProjects = VBox().styleClass("recent-projects-list")
-        for (proj in controller.recentProjects()) {
-            val name = label(proj.nameWithoutExtension).styleClass("project-name")
-            val path = label(proj.absolutePath).styleClass("project-path")
-            val vertical = VBox(name, path)
-            if (!proj.isFile) {
-                path.textFill = Color.RED
-            }
-            val box = HBox(vertical).styleClass("project-box")
-            vertical.setOnMouseClicked {
-                if (proj.isDirectory) {
-                    controller.openProject(proj)
-                } else {
-                    val remove = YesNoPrompt(
-                        "Project file does not exist. Remove from list?", default = true
-                    ).showDialog(context)
-                    if (remove == true) {
-                        controller.removeFromRecentProjects(proj)
-                        recentProjects.children.remove(box)
-                    }
-                }
-            }
-            val removeBtn = Icon.Close.button(action = "Remove from list of recent projects") {
-                val reallyRemove = YesNoPrompt(
-                    "Remove project from list of recent projects?", default = true
-                ).showDialog(context)
-                if (reallyRemove == true) {
-                    controller.removeFromRecentProjects(proj)
-                    recentProjects.children.remove(box)
-                }
-            }
-            val space = infiniteSpace()
-            box.children.addAll(space, removeBtn)
-            box.alignment = Pos.CENTER_LEFT
-            recentProjects.children.add(box)
-        }
-        val top = HBox(searchField, btnOpen, createNew).styleClass("startup-screen-top-bar")
-        val layout = VBox(top, recentProjects).styleClass("startup-screen")
-        stage.scene.root = layout
-        stage.isMaximized = false
-        runFXWithTimeout(100) {
-            stage.sizeToScene()
-            stage.centerOnScreen()
-        }
-        stage.isResizable = false
-    }
-
-    private fun createLayout(): VBox {
+    override fun getLayout(): VBox {
         var mainView: Region = scoreView
         if (mode == Mode.Desktop) {
             val horizontalSplitter = SplitPane(scoreView, detailPane)
@@ -302,7 +207,8 @@ class XenakisUI(
         VBox.setVgrow(mainView, Priority.ALWAYS)
         val layout = VBox(toolbar, mainView)
         val context = project.context
-        val commandLinePopup = CommandLinePopup(context,
+        val commandLinePopup = CommandLinePopup(
+            context,
             context[Properties.localCommandLine],
             arguments = createBundle { set(CommandLineControl.HISTORY_ITEMS, 0) })
         layout.registerShortcuts {
@@ -311,7 +217,7 @@ class XenakisUI(
                 val focusedView = context[SelectionDistributor].focusedView.now
                 if (focusedView is EditorControl<*>) {
                     val point = focusedView.localToScreen(0.0, 0.0) ?: return@on
-                    commandLinePopup.show(stage, point.x, point.y)
+                    commandLinePopup.show(context[primaryStage], point.x, point.y)
                 }
             }
             historyShortcuts(context[UndoManager])
@@ -325,7 +231,8 @@ class XenakisUI(
         val playerBar = createPlayerBar() styleClass "toolbar-part"
         val interactionConfig = InteractionConfig(project.settings)
         val miscBar = createMiscBar() styleClass "toolbar-part"
-        return HBox(10.0,
+        return HBox(
+            10.0,
             HBox(
                 10.0, fileBar, undoRedoBar, playerBar, interactionConfig, toolSelector styleClass "toolbar-part"
             ),
@@ -370,7 +277,7 @@ class XenakisUI(
                 if (ev.isShiftDown) {
                     ServerOptionsPane(context, project.serverOptions).showDialog(context)
                 } else {
-                    controller.rebootServer()
+                    project.rebootServer()
                 }
             }
             +Icon.Browser.button(action = "Open help browser (F1)") { project.context[HelpBrowser].show() }
@@ -416,10 +323,6 @@ class XenakisUI(
         val goToStartBtn = Icon.GoToStart.button(action = "Move play head to start (0)") {
             playback.movePlayHeadToStart()
         }
-        if (!controller.isSuperColliderReady) {
-            playBtn.isDisable = true
-            stopBtn.isDisable = true
-        }
         return HBox(goToStartBtn, playBtn, stopBtn, recordingBtn)
     }
 
@@ -455,10 +358,11 @@ class XenakisUI(
         playback.player.reset()
     }
 
-    private fun createFileBar() = HBox(Icon.Save.button(action = "Save Project (Ctrl+S)") { controller.saveProject() },
-        Icon.Open.button(action = "Open Project (Ctrl+O)") { controller.openProject() },
-        Icon.Create.button(action = "Create new Project (Ctrl+N)") { controller.createNewProject() },
-        Icon.Close.button(action = "Close project and open startup screen") { controller.closeProject() })
+    private fun createFileBar() = HBox(
+        Icon.Save.button(action = "Save Project (Ctrl+S)") { launcher.saveProject() },
+        Icon.Open.button(action = "Open Project (Ctrl+O)") { launcher.openProject() },
+        Icon.Create.button(action = "Create new Project (Ctrl+N)") { launcher.createNewProject() },
+        Icon.Close.button(action = "Close project and open startup screen") { launcher.closeProject() })
 
     private fun Scene.registerArrowKeys() {
         addEventFilter(KeyEvent.KEY_PRESSED) { ev ->
@@ -516,16 +420,16 @@ class XenakisUI(
     }
 
     private fun KeyEventHandlerBody<Unit>.addServerShortcuts() {
-        on("F5") { controller.rebootServer() }
+        on("F5") { project.rebootServer() }
         on("Shift+F5") { ServerOptionsPane(context, project.serverOptions).showDialog(context) }
         on("Ctrl+Shift+S") { project.syncWithSuperCollider() }
-        on("Ctrl+Alt+T") { controller.client.run("s.plotTree;") }
-        on("Ctrl+Shift+M") { controller.client.run("s.scope;") }
-        on("Ctrl+Alt+M") { controller.client.run("FreqScope.new;") }
+        on("Ctrl+Alt+T") { context[SuperColliderClient].run("s.plotTree;") }
+        on("Ctrl+Shift+M") { context[SuperColliderClient].run("s.scope;") }
+        on("Ctrl+Alt+M") { context[SuperColliderClient].run("FreqScope.new;") }
         on("Ctrl+M") {
             val numIns = project.serverOptions.numInputChannels
             val numOuts = project.serverOptions.numOutputChannels
-            controller.client.run("ServerMeter.new(s, $numIns, $numOuts)")
+            context[SuperColliderClient].run("ServerMeter.new(s, $numIns, $numOuts)")
         }
     }
 
@@ -540,8 +444,8 @@ class XenakisUI(
                 playback.playHead.movePlayHead(absoluteTime)
             }
             context[ScoreObjectSelectionManager].deselectAll()
-            context[XenakisUI].scoreView.requestFocus()
-            context[XenakisUI].toolSelector.select(Tool.Pointer)
+            context[XenakisMainScreen].scoreView.requestFocus()
+            context[XenakisMainScreen].toolSelector.select(Tool.Pointer)
         }
         on("Ctrl+A") { ev ->
             if (ev.isTargetTextInput) return@on
@@ -797,14 +701,14 @@ class XenakisUI(
     }
 
     private fun KeyEventHandlerBody<Unit>.addProjectShortcuts() {
-        on("Ctrl+S") { controller.saveProject() }
-        on("Ctrl+O") { controller.openProject() }
-        on("Ctrl+N") { controller.createNewProject() }
+        on("Ctrl+S") { launcher.saveProject() }
+        on("Ctrl+O") { launcher.openProject() }
+        on("Ctrl+N") { launcher.createNewProject() }
         on("Ctrl+Shift?+Q") { ev ->
             if (ev.isShiftDown) {
-                controller.saveProject()
-                controller.quitApplication()
-            } else controller.closeRequest(stage)
+                launcher.saveProject()
+                launcher.quitApplication()
+            } else launcher.closeRequest()
         }
     }
 
@@ -823,23 +727,14 @@ class XenakisUI(
 
     private val KeyEvent.isTargetTextInput get() = target is TextInputControl || target is Spinner<*>
 
-    override fun readyToPlay() {
-        if (displaysProject) {
-            playBtn.isDisable = false
-            stopBtn.isDisable = false
-        }
-    }
-
-    override fun waitingForBoot() {
-        if (displaysProject) {
-            playBtn.isDisable = true
-            stopBtn.isDisable = true
-        }
-    }
-
     enum class Mode {
         Desktop, Laptop;
     }
 
-    companion object : PublicProperty<XenakisUI> by publicProperty("XenakisUI")
+    override fun close() {
+        context[SuperColliderClient].quit()
+        //TODO is there more cleanup to do?
+    }
+
+    companion object : PublicProperty<XenakisMainScreen> by publicProperty("XenakisUI")
 }

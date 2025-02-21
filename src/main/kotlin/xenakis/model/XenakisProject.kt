@@ -18,7 +18,9 @@ import xenakis.model.score.Score
 import xenakis.model.score.Score.Companion.rootScore
 import xenakis.sc.CodeBlock
 import xenakis.sc.client.SuperColliderClient
-import xenakis.ui.XenakisController
+import xenakis.ui.launcher.LoadingScreen
+import xenakis.ui.launcher.ProgressIndicator
+import xenakis.ui.launcher.XenakisLauncher
 import java.io.File
 
 class XenakisProject private constructor(
@@ -47,6 +49,8 @@ class XenakisProject private constructor(
     @Transient
     lateinit var projectDirectory: File
         private set
+
+    val name: String get() = projectDirectory.name
 
     val dataDir get() = projectDirectory.resolve("xenakis_data")
 
@@ -109,6 +113,10 @@ class XenakisProject private constructor(
         Logger.confirm("Synchronized with SuperCollider", Logger.Category.Project)
     }
 
+    fun rebootServer() {
+        serverOptions.reboot(context)
+    }
+
     interface ProjectComponent {
         val componentName: String
     }
@@ -120,44 +128,44 @@ class XenakisProject private constructor(
 
         val projectDirectory = publicProperty<File>("Project directory")
 
-        fun loadFrom(folder: File, context: Context, listener: XenakisController): XenakisProject {
+        fun loadFrom(folder: File, context: Context, indicator: ProgressIndicator): XenakisProject {
             context[projectDirectory] = folder
             val data = folder.resolve("xenakis_data")
             context.withoutUndo {
                 val settings = data.resolve("settings.json").readJson<InteractionSettings>()
                 val groups = data.resolve("groups.json").readJson<GroupRegistry>()
                 groups.initialize(context)
-                listener.setProgress(0.45, "Loading busses")
+                indicator.displayProgress(0.45, "Loading busses")
                 val busses = data.resolve("buses.json").readJson<BusRegistry>()
                 busses.initialize(context)
-                listener.setProgress(0.5, "Loading buffers")
+                indicator.displayProgress(0.5, "Loading buffers")
                 val buffers = data.resolve("buffers.json").readJson<BufferRegistry>()
                 buffers.initialize(context)
-                listener.setProgress(0.55, "Loading samples")
+                indicator.displayProgress(0.55, "Loading samples")
                 val samples = data.resolve("samples.json").readJson<SampleRegistry>()
                 samples.initialize(context)
-                listener.setProgress(0.6, "Loading instruments")
+                indicator.displayProgress(0.6, "Loading instruments")
                 val instruments = data.resolve("instruments.json").readJson<InstrumentRegistry>()
                 instruments.initialize(context)
-                listener.setProgress(0.65, "Loading audio flow graph")
+                indicator.displayProgress(0.65, "Loading audio flow graph")
                 val flowGraph = data.resolve("flow_graph.json").readJson<AudioFlowGraph>()
                 flowGraph.initialize(context)
-                listener.setProgress(0.7, "Loading global controls")
+                indicator.displayProgress(0.7, "Loading global controls")
                 val globalControls = data.resolve("global_controls.json").readJson<GlobalControls>()
                 globalControls.initialize(context)
                 val processDefs =
                     if (!data.resolve("process_defs.json").exists()) ProcessDefRegistry()
                     else data.resolve("process_defs.json").readJson<ProcessDefRegistry>()
                 processDefs.initialize(context)
-                listener.setProgress(0.75, "Loading server setup code")
+                indicator.displayProgress(0.75, "Loading server setup code")
                 val setupCode = data.resolve("setup_code.json").readJson<SetupCode>()
                 val serverOptions = data.resolve("server_options.json").readJson<ServerOptions>()
                 serverOptions.initialize(context)
                 val objects = data.resolve("score_objects.json").readJson<ScoreObjectRegistry>()
                 objects.initialize(context)
-                listener.setProgress(0.9, "Loading score")
+                indicator.displayProgress(0.9, "Loading score")
                 val score = data.resolve("score.json").readJson<Score>()
-                listener.setProgress(0.9, "Ready")
+                indicator.displayProgress(0.9, "Almost ready")
                 score.initialize(context, null)
                 context[rootScore] = score
                 for (inst in score.objectInstances) {

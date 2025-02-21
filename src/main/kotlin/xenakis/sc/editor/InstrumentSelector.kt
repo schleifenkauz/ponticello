@@ -7,7 +7,7 @@ import xenakis.model.obj.InstrumentObject
 import xenakis.model.registry.InstrumentRegistry
 import xenakis.model.registry.ObjectReference
 import xenakis.model.registry.ObjectRegistry
-import xenakis.ui.XenakisUI
+import xenakis.ui.XenakisMainScreen
 import kotlin.reflect.KClass
 
 class InstrumentSelector<R : ObjectReference?>(
@@ -25,5 +25,5 @@ class InstrumentSelector<R : ObjectReference?>(
         get() = InstrumentObject::class
 
     override fun createNewObject(name: String): InstrumentObject? =
-        context[XenakisUI].instrumentsPane.createSynthDef(name)
+        context[XenakisMainScreen].instrumentsPane.createSynthDef(name)
 }

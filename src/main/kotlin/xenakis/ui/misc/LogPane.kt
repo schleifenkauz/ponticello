@@ -108,7 +108,7 @@ class LogPane(private val context: Context, private val logger: Logger) : VBox()
                 pane.setMaxSize(1000.0, 1000.0)
                 pane.border = solidBorder(Color.GRAY)
                 pane.setPadding(5.0)
-                val window = SubWindow(pane, "Details", context, SubWindow.Type.Popup, owner = scene.window)
+                val window = SubWindow(pane, "Details", context, SubWindow.Type.Popup, customOwnerWindow = scene.window)
                 window.sizeToScene()
                 window.show()
             }

@@ -6,6 +6,9 @@ import xenakis.impl.canSuperColliderTalkToMe
 import xenakis.impl.code
 import xenakis.model.Logger
 import xenakis.model.Logger.Category
+import xenakis.sc.client.StatusListener.StatusUpdate
+import xenakis.ui.launcher.ProgressIndicator
+import java.lang.Thread.sleep
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Future
 
@@ -43,7 +46,26 @@ interface SuperColliderClient : SuperColliderContext {
 
     fun quit()
 
-    companion object : PublicProperty<SuperColliderClient> by publicProperty("SuperColliderClient")
-
     val consoleMonitor: ConsoleMonitor
+
+    fun bootServer(indicator: ProgressIndicator, onReady: () -> Unit) {
+        consoleMonitor.addListener(ConsoleMonitor.PipeToSystemOut)
+        indicator.displayProgress(0.1, "Starting SuperCollider")
+        statusListener.on(StatusUpdate.ScLangBooted) {
+            sleep(500)
+            indicator.displayProgress(0.2, "SuperCollider started, connecting via OSC")
+        }
+        statusListener.on(StatusUpdate.OSCReady) {
+            sleep(500)
+            indicator.displayProgress(0.3, "OSC connected, booting server")
+            run("s.boot;")
+        }
+        statusListener.on(StatusUpdate.ServerBooted) {
+            indicator.displayProgress(0.4, "Server booted")
+            onReady()
+            statusListener.remove()
+        }
+    }
+
+    companion object : PublicProperty<SuperColliderClient> by publicProperty("SuperColliderClient")
 }

@@ -46,7 +46,7 @@ class ProcessDefRegistryPane(
                 CollapsablePane("Parameters", ParameterDefsPane(registry.context, obj.parameters)),
                 obj.processCode.control
             ) styleClass "synth-def-pane"
-            SubWindow(pane, "", registry.context, owner = scene.window).apply {
+            SubWindow(pane, "", registry.context, customOwnerWindow = scene.window).apply {
                 titleProperty().bind(obj.name.map { name -> "ProcessDef $name" }.asObservableValue())
                 resize(900.0, 800.0)
                 scene.initHextantScene(registry.context, applyStyle = false)

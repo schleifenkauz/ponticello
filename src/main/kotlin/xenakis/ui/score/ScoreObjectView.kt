@@ -31,11 +31,11 @@ import xenakis.model.score.*
 import xenakis.model.score.Score.Companion.rootScore
 import xenakis.ui.Icon
 import xenakis.ui.ToolSelector.Tool
-import xenakis.ui.XenakisController.Companion.currentProject
-import xenakis.ui.XenakisUI
+import xenakis.ui.XenakisMainScreen
 import xenakis.ui.controls.DetailPane
 import xenakis.ui.controls.NameControl
 import xenakis.ui.impl.*
+import xenakis.ui.launcher.XenakisLauncher.Companion.currentProject
 import xenakis.ui.prompt.compoundInput
 
 abstract class ScoreObjectView(
@@ -193,7 +193,7 @@ abstract class ScoreObjectView(
     private fun addMouseActions() {
         addEventHandler(MouseEvent.MOUSE_CLICKED) { ev ->
             ev.consume()
-            val tool = context[XenakisUI].toolSelector.selected.value
+            val tool = context[XenakisMainScreen].toolSelector.selected.value
             when (tool) {
                 Tool.Cut -> {
                     val obj = instance.obj

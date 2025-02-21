@@ -15,10 +15,10 @@ import xenakis.sc.Identifier
 import xenakis.sc.NumericalControlSpec
 import xenakis.sc.editor.ControlSpecEditor
 import xenakis.ui.Icon
-import xenakis.ui.XenakisController.Companion.currentProject
 import xenakis.ui.controls.Knob
 import xenakis.ui.impl.SubWindow
 import xenakis.ui.impl.styleClass
+import xenakis.ui.launcher.XenakisLauncher.Companion.currentProject
 import xenakis.ui.prompt.PredicateTextPrompt
 
 class GlobalControlsPane(
@@ -50,7 +50,7 @@ class GlobalControlsPane(
             editor.setResult(defaultControlSpec)
         }
         val control = context.createControl(editor)
-        val window = SubWindow(control, "Configure global control", context, SubWindow.Type.Popup, owner = scene.window)
+        val window = SubWindow(control, "Configure global control", context, SubWindow.Type.Popup, customOwnerWindow = scene.window)
         window.scene.fill = BLACK
         window.width = 800.0
         control.registerShortcuts {

@@ -17,17 +17,17 @@ class SubWindow(
     title: String,
     context: Context,
     private val type: Type = Type.ToolWindow,
-    owner: Window? = context[primaryStage],
-    applyStylesheets: Boolean = true
+    applyStylesheets: Boolean = true,
+    private val customOwnerWindow: Window? = null,
 ) : Stage() {
     init {
-        initOwner(owner)
         this.title = title
         scene = Scene(root)
         if (applyStylesheets) context[Stylesheets].manage(scene)
         initWindowType()
         registerShortcuts()
         setOnShowing {
+            initOwner(customOwnerWindow ?: context[primaryStage])
             root.requestFocus()
         }
     }

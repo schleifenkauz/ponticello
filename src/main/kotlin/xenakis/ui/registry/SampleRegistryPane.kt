@@ -11,14 +11,15 @@ import xenakis.model.obj.SampleObject
 import xenakis.model.registry.SampleRegistry
 import xenakis.sc.Identifier
 import xenakis.ui.Icon
-import xenakis.ui.XenakisController
-import xenakis.ui.XenakisUI
+import xenakis.ui.XenakisMainScreen
 import xenakis.ui.impl.hasFiles
 import xenakis.ui.impl.setupDropArea
+import xenakis.ui.launcher.XenakisFiles
+import xenakis.ui.launcher.XenakisLauncher.Companion.currentProject
 import java.io.File
 
 class SampleRegistryPane(
-    private val samples: SampleRegistry, private val controller: XenakisController
+    private val samples: SampleRegistry
 ) : SuperColliderObjectRegistryPane<SampleObject>(samples) {
     init {
         setupDropArea({ db -> db.hasFiles("wav") }, { ev ->
@@ -35,9 +36,9 @@ class SampleRegistryPane(
     }
 
     private fun addSample(name: (File) -> String): SampleObject? {
-        val file = controller.showOpenDialog("*.wav") ?: return null
+        val file = samples.context[XenakisFiles].showOpenDialog("*.wav") ?: return null
         if (samples.getSample(file) != null) return null
-        val sample = SampleObject.create(controller.currentProject, reactiveVariable(name(file)), file)
+        val sample = SampleObject.create(samples.context[currentProject], reactiveVariable(name(file)), file)
         samples.add(sample)
         return sample
     }
@@ -50,12 +51,12 @@ class SampleRegistryPane(
         }
         addAction(Icon.Repeat, "Reload sample and sync with server") { obj.sync() }
         addAction(Icon.Open, description = "Replace sample contents") {
-            val newFile = controller.showOpenDialog("*.wav") ?: return@addAction
+            val newFile = samples.context[XenakisFiles].showOpenDialog("*.wav") ?: return@addAction
             if (samples.getSample(newFile) != null) return@addAction
             obj.loadFile(newFile)
         }
         addGrabber(SampleObject.DATA_FORMAT, TransferMode.COPY) {
-            val scoreView = samples.context[XenakisUI].scoreView
+            val scoreView = samples.context[XenakisMainScreen].scoreView
             val width = scoreView.getWidth(obj.duration)
             val height = scoreView.getPaneY(0.02.asY)
             dragView = Image(obj.spectrogramFile.inputStream(), width, height, false, false)

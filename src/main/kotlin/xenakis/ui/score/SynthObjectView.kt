@@ -18,7 +18,7 @@ import xenakis.model.obj.SampleObject
 import xenakis.model.score.*
 import xenakis.sc.view.ObjectSelectorControl
 import xenakis.ui.Icon
-import xenakis.ui.XenakisUI
+import xenakis.ui.XenakisMainScreen
 import xenakis.ui.controls.DetailPane
 import xenakis.ui.impl.centerChildren
 import xenakis.ui.impl.styleClass
@@ -59,7 +59,7 @@ class SynthObjectView(
     override fun setupDetailPane(pane: DetailPane) {
         pane.addItem("Color:", this.colorPicker)
         val viewBtn = Icon.View.button(action = "View SynthDef") {
-            context[XenakisUI].instrumentsPane.editInstrument(obj.synthDef)
+            context[XenakisMainScreen].instrumentsPane.editInstrument(obj.synthDef)
         }
         val box = ObjectSelectorControl(obj.synthDefSelector, createBundle())
         pane.addItem("SynthDef: ", HBox(5.0, box, viewBtn).centerChildren())

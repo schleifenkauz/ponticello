@@ -8,7 +8,7 @@ import kotlinx.serialization.Serializable
 import reaktive.value.reactiveVariable
 import xenakis.model.obj.SampleObject
 import xenakis.sc.Identifier
-import xenakis.ui.XenakisController.Companion.currentProject
+import xenakis.ui.launcher.XenakisLauncher.Companion.currentProject
 import java.io.File
 
 @Serializable

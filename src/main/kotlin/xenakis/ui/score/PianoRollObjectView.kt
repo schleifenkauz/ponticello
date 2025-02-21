@@ -33,7 +33,7 @@ import xenakis.sc.editor.EventDictionaryEditor
 import xenakis.sc.view.ObjectSelectorControl
 import xenakis.ui.Icon
 import xenakis.ui.ToolSelector
-import xenakis.ui.XenakisUI
+import xenakis.ui.XenakisMainScreen
 import xenakis.ui.controls.DetailPane
 import xenakis.ui.impl.*
 import xenakis.ui.prompt.DecimalPrompt
@@ -47,7 +47,7 @@ class PianoRollObjectView(inst: ScoreObjectInstance, private val obj: PianoRollO
     private val pixelsPerPitch get() = prefHeight / (obj.highestPitch - obj.lowestPitch + 1)
     private val cursor = Rectangle(10.0, pixelsPerPitch) styleClass "note-cursor"
     private val cursorOpacity = reactiveVariable(CURSOR_OPACITY)
-    private val selectedTool get() = context[XenakisUI].toolSelector.selected
+    private val selectedTool get() = context[XenakisMainScreen].toolSelector.selected
 
     private fun getY(pitch: Int) = (obj.highestPitch - pitch) * pixelsPerPitch
 

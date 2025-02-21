@@ -14,11 +14,11 @@ import xenakis.impl.*
 import xenakis.model.score.ScoreObjectInstance
 import xenakis.model.score.TempoGridObject
 import xenakis.ui.Icon
-import xenakis.ui.XenakisController.Companion.currentProject
 import xenakis.ui.controls.DetailPane
 import xenakis.ui.impl.rootPane
 import xenakis.ui.impl.setFixedWidth
 import xenakis.ui.impl.styleClass
+import xenakis.ui.launcher.XenakisLauncher.Companion.currentProject
 
 class TempoGridObjectView(inst: ScoreObjectInstance, val obj: TempoGridObject) : ScoreObjectView(inst) {
     private val area = Pane()

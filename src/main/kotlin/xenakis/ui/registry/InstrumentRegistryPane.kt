@@ -214,7 +214,7 @@ class InstrumentRegistryPane(
                     obj.name.now,
                     registry.context,
                     type = SubWindow.Type.Popup,
-                    owner = scene.window
+                    customOwnerWindow = scene.window
                 ).apply {
                     resize(800.0, 300.0)
                 }

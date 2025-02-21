@@ -35,7 +35,7 @@ import xenakis.sc.editor.EventDictionaryEditor
 import xenakis.sc.editor.ScFunctionEditor
 import xenakis.ui.ToolSelector.Tool
 import xenakis.ui.ToolSelector.Tool.*
-import xenakis.ui.XenakisUI
+import xenakis.ui.XenakisMainScreen
 import xenakis.ui.impl.hasFile
 import xenakis.ui.impl.rootPane
 import xenakis.ui.impl.setupDropArea
@@ -53,7 +53,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
     private val views = mutableMapOf<ScoreObjectInstance, ScoreObjectView>()
     val allViews: Collection<ScoreObjectView> get() = views.values
 
-    protected val ui get() = context[XenakisUI]
+    protected val ui get() = context[XenakisMainScreen]
     private val selectedTool get() = ui.toolSelector.selected.value!!
 
     val selector: ScoreObjectSelectionManager get() = context[ScoreObjectSelectionManager]
@@ -330,7 +330,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
         val selection = selectedArea
         val tool = ui.toolSelector.selected.value
         val (t, y) = snapToGrid(ev.x, ev.y)
-        val scoreView = context[XenakisUI].scoreView
+        val scoreView = context[XenakisMainScreen].scoreView
         when {
             tool == AddTime -> {
                 val amount = DecimalPrompt(
