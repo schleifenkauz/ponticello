@@ -1,6 +1,5 @@
 package xenakis.ui.launcher
 
-import xenakis.ui.XenakisApp
 import java.io.File
 import java.util.prefs.Preferences
 

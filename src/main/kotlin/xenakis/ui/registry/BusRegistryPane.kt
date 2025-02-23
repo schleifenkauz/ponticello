@@ -4,13 +4,13 @@ import javafx.collections.FXCollections
 import javafx.scene.control.ComboBox
 import javafx.scene.control.Spinner
 import javafx.scene.input.TransferMode
+import org.kordamp.ikonli.evaicons.Evaicons
 import reaktive.value.fx.asObservableValue
 import reaktive.value.fx.asProperty
 import xenakis.model.obj.BusObject
 import xenakis.model.registry.BusRegistry
 import xenakis.sc.Rate
 import xenakis.sc.client.SuperColliderClient
-import xenakis.ui.Icon
 import xenakis.ui.impl.setFixedWidth
 
 class BusRegistryPane(private val busses: BusRegistry) : SuperColliderObjectRegistryPane<BusObject>(busses) {
@@ -40,7 +40,7 @@ class BusRegistryPane(private val busses: BusRegistry) : SuperColliderObjectRegi
             channelsSpinner.valueFactory.valueProperty().bindBidirectional(obj.channels.asProperty())
         }
         addGrabber(BusObject.DATA_FORMAT, transferMode = TransferMode.LINK)
-        addAction(Icon.View, "Monitor bus") {
+        addAction(Evaicons.ACTIVITY, "Monitor bus") {
             registry.context[SuperColliderClient].run("${obj.superColliderName}.scope;")
         }
         addExtraControl(rateSelector, channelsSpinner)

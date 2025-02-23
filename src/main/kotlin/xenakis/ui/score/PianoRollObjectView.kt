@@ -31,11 +31,10 @@ import xenakis.model.score.ScoreObject
 import xenakis.model.score.ScoreObjectInstance
 import xenakis.sc.editor.EventDictionaryEditor
 import xenakis.sc.view.ObjectSelectorControl
-import xenakis.ui.Icon
-import xenakis.ui.ToolSelector
-import xenakis.ui.XenakisMainScreen
+import xenakis.ui.actions.ToolSelector
 import xenakis.ui.controls.DetailPane
 import xenakis.ui.impl.*
+import xenakis.ui.launcher.XenakisMainScreen
 import xenakis.ui.prompt.DecimalPrompt
 import xenakis.ui.prompt.IntegerPrompt
 import kotlin.math.roundToInt
@@ -209,9 +208,6 @@ class PianoRollObjectView(inst: ScoreObjectInstance, private val obj: PianoRollO
         super.initialize(parent)
         drawOrientationLines()
         shadeBlackKeys()
-        addAction(Icon.Transpose, action = "Transpose") {
-            showTransposeDialog()
-        }
         listenForMouseEvents()
     }
 
@@ -228,7 +224,7 @@ class PianoRollObjectView(inst: ScoreObjectInstance, private val obj: PianoRollO
         adjustVertical(resize, resizeType, deltaY)
     }
 
-    private fun showTransposeDialog() {
+    fun showTransposeDialog() {
         val semitones = IntegerPrompt("Tranpose by semitones", 0, -36..36)
             .showDialog(context) ?: return
         obj.transpose(semitones)

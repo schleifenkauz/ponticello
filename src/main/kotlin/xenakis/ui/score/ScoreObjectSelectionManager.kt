@@ -3,7 +3,6 @@ package xenakis.ui.score
 import bundles.PublicProperty
 import bundles.publicProperty
 import hextant.context.Context
-import hextant.undo.UndoManager
 import javafx.scene.input.Clipboard
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.serializer
@@ -13,7 +12,7 @@ import reaktive.value.reactiveVariable
 import xenakis.model.score.ScoreObject
 import xenakis.model.score.ScoreObjectInstance
 
-class ScoreObjectSelectionManager(private val context: Context, private val rootPane: ScorePane) {
+class ScoreObjectSelectionManager(val context: Context, private val rootPane: ScorePane) {
     private val _selectedViews = mutableSetOf<ScoreObjectView>()
 
     val selectedViews: Set<ScoreObjectView> get() = _selectedViews
@@ -22,11 +21,16 @@ class ScoreObjectSelectionManager(private val context: Context, private val root
 
     val selectedObjects: Set<ScoreObject> get() = selectedInstances.mapTo(mutableSetOf()) { inst -> inst.obj }
 
-    private val _singleSelected = reactiveVariable<ScoreObjectView?>(null)
-    val singleSelected: ReactiveValue<ScoreObjectView?> get() = _singleSelected
+    private val _focusedView = reactiveVariable<ScoreObjectView?>(null)
+
+    val focusedView: ReactiveValue<ScoreObjectView?> get() = _focusedView
+
+    val focusedInstance get() = focusedView.now?.instance
+
+    val focusedObject get() = focusedInstance?.obj
 
     private val focusedScorePane: ScorePane
-        get() = (singleSelected.now as? ScoreObjectGroupView)?.scorePane
+        get() = (focusedView.now as? ScoreObjectGroupView)?.scorePane
             ?: selectedViews.mapTo(mutableSetOf()) { v -> v.pane }.singleOrNull()
             ?: rootPane
 
@@ -40,7 +44,7 @@ class ScoreObjectSelectionManager(private val context: Context, private val root
         }
         if (view !in _selectedViews) _selectedViews.add(view)
         else _selectedViews.remove(view)
-        _singleSelected.set(_selectedViews.singleOrNull())
+        _focusedView.set(_selectedViews.singleOrNull())
         val selected = view in _selectedViews
         updateIsSelected(view)
         return selected
@@ -65,14 +69,14 @@ class ScoreObjectSelectionManager(private val context: Context, private val root
                 removed(v)
             }
         }
-        _singleSelected.set(_selectedViews.singleOrNull())
+        _focusedView.set(_selectedViews.singleOrNull())
     }
 
     fun deselectAll() {
         val previouslySelected = selectedViews.toSet()
         val previouslySelectedObjects = selectedObjects.toSet()
         _selectedViews.clear()
-        _singleSelected.set(null)
+        _focusedView.set(null)
         for (obj in previouslySelectedObjects) {
             obj.notifyListeners { isSomeInstanceSelected(false) }
         }
@@ -89,7 +93,7 @@ class ScoreObjectSelectionManager(private val context: Context, private val root
             v.setSelected(true)
             v.instance.obj.notifyListeners { isSomeInstanceSelected(true) }
         }
-        _singleSelected.set(_selectedViews.singleOrNull())
+        _focusedView.set(_selectedViews.singleOrNull())
     }
 
     fun removeSelected() {
@@ -115,11 +119,7 @@ class ScoreObjectSelectionManager(private val context: Context, private val root
     }
 
     fun toggleMuteSelected() {
-        context[UndoManager].beginCompoundEdit("Toggle mute")
-        for (obj in selectedInstances) {
-            obj.toggleMuted()
-        }
-        context[UndoManager].finishCompoundEdit()
+
     }
 
     companion object : PublicProperty<ScoreObjectSelectionManager> by publicProperty("ObjectSelector")

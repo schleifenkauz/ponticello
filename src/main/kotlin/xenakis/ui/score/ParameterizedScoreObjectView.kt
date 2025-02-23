@@ -6,6 +6,7 @@ import javafx.scene.control.Label
 import javafx.scene.input.MouseEvent
 import javafx.scene.layout.FlowPane
 import javafx.scene.layout.HBox
+import org.kordamp.ikonli.material2.Material2MZ
 import reaktive.Observer
 import reaktive.value.now
 import reaktive.value.reactiveVariable
@@ -13,7 +14,7 @@ import xenakis.model.Settings
 import xenakis.model.score.*
 import xenakis.sc.ControlSpec
 import xenakis.sc.NumericalControlSpec
-import xenakis.ui.Icon
+import xenakis.ui.actions.button
 import xenakis.ui.controls.ControlAssignmentView
 import xenakis.ui.controls.DetailPane
 import xenakis.ui.controls.Knob
@@ -32,7 +33,7 @@ abstract class ParameterizedScoreObjectView(
     abstract val obj: ParameterizedScoreObject
 
     override fun setupDetailPane(pane: DetailPane) {
-        val addButton = Icon.Add.button(action = "Add control")
+        val addButton = Material2MZ.PLUS.button(action = "Add control")
         val header = HBox(
             5.0,
             Label("Synth controls").styleClass("heading"),

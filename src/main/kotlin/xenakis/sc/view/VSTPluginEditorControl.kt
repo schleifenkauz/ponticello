@@ -6,8 +6,10 @@ import hextant.codegen.ProvideImplementation
 import hextant.context.ControlFactory
 import hextant.core.view.CompoundEditorControl
 import hextant.fx.view
+import org.kordamp.ikonli.material2.Material2MZ
+import org.kordamp.ikonli.materialdesign2.MaterialDesignE
 import xenakis.sc.editor.VSTPluginEditor
-import xenakis.ui.Icon
+import xenakis.ui.actions.button
 import xenakis.ui.impl.centerChildren
 import xenakis.ui.impl.setFixedWidth
 
@@ -29,11 +31,11 @@ class VSTPluginEditorControl @ProvideImplementation(ControlFactory::class) const
             set(IntSpinnerControl.MAX, 12)
         }.setFixedWidth(70.0)
         space()
-        add(Icon.View.button(action = "Configure plugin") {
+        add(MaterialDesignE.EYE.button(action = "Configure plugin") {
             editor.configurePlugin()
         })
         space()
-        add(Icon.Save.button(action = "Save configuration") {
+        add(Material2MZ.SAVE.button(action = "Save configuration") {
             editor.saveConfiguration()
         })
         root.centerChildren()

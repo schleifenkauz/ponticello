@@ -18,9 +18,7 @@ import xenakis.model.score.Score
 import xenakis.model.score.Score.Companion.rootScore
 import xenakis.sc.CodeBlock
 import xenakis.sc.client.SuperColliderClient
-import xenakis.ui.launcher.LoadingScreen
 import xenakis.ui.launcher.ProgressIndicator
-import xenakis.ui.launcher.XenakisLauncher
 import java.io.File
 
 class XenakisProject private constructor(
@@ -157,7 +155,7 @@ class XenakisProject private constructor(
                     if (!data.resolve("process_defs.json").exists()) ProcessDefRegistry()
                     else data.resolve("process_defs.json").readJson<ProcessDefRegistry>()
                 processDefs.initialize(context)
-                indicator.displayProgress(0.75, "Loading server setup code")
+                indicator.displayProgress(0.75, "Loading custom setup code")
                 val setupCode = data.resolve("setup_code.json").readJson<SetupCode>()
                 val serverOptions = data.resolve("server_options.json").readJson<ServerOptions>()
                 serverOptions.initialize(context)

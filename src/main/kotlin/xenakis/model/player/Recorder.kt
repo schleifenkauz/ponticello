@@ -1,6 +1,7 @@
 package xenakis.model.player
 
 import hextant.context.Context
+import reaktive.value.ReactiveBoolean
 import reaktive.value.now
 import reaktive.value.reactiveVariable
 import xenakis.impl.code
@@ -23,21 +24,21 @@ class Recorder(private val context: Context) {
 
     private var pathOfLastRecording: File? = null
 
-    var isActive = false
-        private set
+    private val _isActive = reactiveVariable(false)
+    val isActive: ReactiveBoolean get() = _isActive
 
     fun toggleIsActive() {
-        isActive = !isActive
-        if (isActive && context[PlaybackManager].player.isPlaying) startRecording()
+        _isActive.now = !isActive.now
+        if (isActive.now && context[PlaybackManager].player.isPlaying.now) startRecording()
         else stopRecording()
     }
 
     fun startingPlayback() {
-        if (isActive) scheduleRecording()
+        if (isActive.now) scheduleRecording()
     }
 
     fun pausingPlayback() {
-        if (isActive) pauseRecording()
+        if (isActive.now) pauseRecording()
     }
 
     private fun startRecording() {

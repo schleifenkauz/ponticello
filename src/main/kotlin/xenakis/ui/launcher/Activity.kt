@@ -4,8 +4,8 @@ import hextant.context.Context
 import hextant.fx.initHextantScene
 import javafx.scene.Parent
 import javafx.scene.Scene
+import javafx.scene.image.Image
 import javafx.stage.Stage
-import xenakis.ui.Icon
 
 abstract class Activity {
     protected lateinit var stage: Stage
@@ -23,7 +23,7 @@ abstract class Activity {
         this.stage = stage
         stage.scene = Scene(getLayout())
         stage.scene.initHextantScene(context)
-        stage.icons.setAll(Icon.AppIcon.image)
+        stage.icons.setAll(APP_ICON)
         beforeShowing()
         stage.show()
         afterShowing()
@@ -35,4 +35,8 @@ abstract class Activity {
     }
 
     protected open fun close() {}
+
+    companion object {
+        val APP_ICON = Image(XenakisApp::class.java.getResource("/xenakis/ui/icons/appicon.png")!!.toExternalForm())
+    }
 }

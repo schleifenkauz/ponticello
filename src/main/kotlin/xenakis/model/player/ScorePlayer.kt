@@ -55,7 +55,7 @@ class ScorePlayer(
         lastPlayFrom = startFrom
         val activeObjects = activeObjects(startFrom, delta = env.lookAhead)
         for ((_, position, inst) in activeObjects) {
-            if (!inst.muted) {
+            if (!inst.muted.now) {
                 scheduleInstantly(inst, position)
             }
         }
@@ -83,7 +83,7 @@ class ScorePlayer(
     override fun scheduleEvents(t: Decimal, delta: Decimal) {
         for (ev in events.eventsAt(t - delta, delta * 5)) {
             val (type, position, inst) = ev
-            if (inst.muted) continue
+            if (inst.muted.now) continue
             val obj = inst.obj
             when (type) {
                 Event.Type.ObjectStart -> {
@@ -123,7 +123,7 @@ class ScorePlayer(
     }
 
     override fun resetPlayback() {
-        if (recorder.isActive) recorder.stopRecording()
+        if (recorder.isActive.now) recorder.stopRecording()
         client.run("s.freeAll")
     }
 

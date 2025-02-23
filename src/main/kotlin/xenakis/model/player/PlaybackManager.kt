@@ -3,6 +3,7 @@ package xenakis.model.player
 import bundles.PublicProperty
 import bundles.publicProperty
 import javafx.scene.layout.Pane
+import reaktive.value.now
 import xenakis.model.Settings
 import xenakis.model.score.ObjectPosition
 import xenakis.model.score.Score
@@ -20,9 +21,10 @@ class PlaybackManager(private val scoreView: ScoreView) {
     val recorder = Recorder(scoreView.context)
     lateinit var player: ScorePlayer
         private set
-    lateinit var events: ScoreEventCollector
-        private set
+    private lateinit var events: ScoreEventCollector
     private var isAttached = false
+
+    val context get() = scoreView.context
 
     init {
         attachToMainScore()
@@ -57,7 +59,7 @@ class PlaybackManager(private val scoreView: ScoreView) {
     }
 
     fun movePlayHeadToStart() {
-        if (!player.isPlaying) {
+        if (!player.isPlaying.now) {
             playHead.movePlayHeadToStart()
         }
     }

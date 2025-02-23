@@ -12,13 +12,24 @@ import javafx.scene.layout.Priority
 import javafx.scene.layout.VBox
 import org.controlsfx.control.SearchableComboBox
 import org.controlsfx.control.textfield.CustomTextField
+import org.kordamp.ikonli.Ikon
+import org.kordamp.ikonli.javafx.FontIcon
+import org.kordamp.ikonli.material2.Material2AL
+import org.kordamp.ikonli.material2.Material2MZ
+import org.kordamp.ikonli.materialdesign2.MaterialDesignC
+import org.kordamp.ikonli.materialdesign2.MaterialDesignP
+import org.kordamp.ikonli.materialdesign2.MaterialDesignS
 import reaktive.value.now
+import reaktive.value.reactiveValue
 import xenakis.model.Logger
 import xenakis.model.obj.RenamableObject
 import xenakis.model.registry.NamedObject
 import xenakis.model.registry.ObjectRegistry
 import xenakis.sc.Identifier
-import xenakis.ui.Icon
+import xenakis.ui.actions.ActionBar
+import xenakis.ui.actions.button
+import xenakis.ui.actions.collectActions
+import xenakis.ui.actions.registerShortcuts
 import xenakis.ui.controls.NameControl
 import xenakis.ui.impl.*
 import xenakis.ui.prompt.NamePrompt
@@ -40,13 +51,9 @@ abstract class ObjectRegistryPane<O : NamedObject>(
         SplitPane.setResizableWithParent(this, false)
         HBox.setHgrow(searchText, Priority.ALWAYS)
         searchText.promptText = "Search..."
-        searchText.left = Icon.Search.getGraphic()
+        searchText.left = FontIcon(Material2MZ.SEARCH)
         searchText.textProperty().addListener { _, _, _ -> layoutBoxes() }
-        registerShortcuts {
-            on("INSERT") {
-                addObject()
-            }
-        }
+        registerShortcuts(actions.withContext(this))
         layoutBoxes()
     }
 
@@ -54,12 +61,8 @@ abstract class ObjectRegistryPane<O : NamedObject>(
         val type = registry.objectType
         val label = Label(plural(type)).styleClass("heading")
         val space = infiniteSpace()
-        val addBtn = Icon.Add.button(action = "Add $type") { addObject() }
-        val reloadBtn = Icon.Repeat.button(action = "Sync ${plural(type)}") {
-            sync()
-            Logger.confirm("Synchronized ${plural(type)} with server", Logger.Category.Registries)
-        }
-        return HBox(label, searchText, space, addBtn, reloadBtn).styleClass("tool-pane-header")
+        val actionBar = ActionBar(actions.withContext(this))
+        return HBox(label, searchText, space, actionBar).styleClass("tool-pane-header")
     }
 
     override fun requestFocus() {
@@ -71,7 +74,7 @@ abstract class ObjectRegistryPane<O : NamedObject>(
         typeSelector.value = default
         val nameInput = TextField() styleClass "prompt-text-field"
         nameInput.promptText = "${registry.objectType} name"
-        val ok = Icon.Check.button(action = "Confirm")
+        val ok = Material2AL.CHECK.button(action = "Confirm")
         val layout = HBox(typeSelector, nameInput).centerChildren() styleClass "prompt"
         val window = SubWindow(
             layout, "Create new ${registry.objectType}", registry.context,
@@ -146,17 +149,17 @@ abstract class ObjectRegistryPane<O : NamedObject>(
             setHgrow(nameDisplay, Priority.ALWAYS)
             maxWidth = Double.MAX_VALUE
             children.addAll(nameDisplay, extraControls, actions)
-            addAction(Icon.Delete, "Remove object") { pane.registry.remove(obj) }.isDisable = !pane.canDelete(obj)
+            addAction(Material2AL.DELETE, "Remove object") { pane.registry.remove(obj) }.isDisable = !pane.canDelete(obj)
         }
 
-        fun addAction(icon: Icon, description: String, action: () -> Unit): Button {
+        fun addAction(icon: Ikon, description: String, action: () -> Unit): Button {
             val button = icon.button(action = description) { action() }
             actions.children.add(0, button)
             return button
         }
 
         fun addGrabber(dataFormat: DataFormat, transferMode: TransferMode, extraConfig: Dragboard.() -> Unit = {}) {
-            val btn = addAction(Icon.Grab, "Grab object") { }
+            val btn = addAction(MaterialDesignC.CURSOR_POINTER, "Grab object") { }
             btn.setOnDragDetected { ev ->
                 val db = startDragAndDrop(transferMode)
                 db.setContent(mapOf(dataFormat to obj.name.now))
@@ -167,6 +170,26 @@ abstract class ObjectRegistryPane<O : NamedObject>(
 
         fun addExtraControl(vararg node: Node) {
             extraControls.children.addAll(*node)
+        }
+    }
+
+    companion object {
+        private val actions = collectActions<ObjectRegistryPane<*>> {
+            addAction("Create object") {
+                description { p -> reactiveValue("Create new ${p.registry.objectType}") }
+                shortcut("Ctrl+PLUS")
+                icon(MaterialDesignP.PLUS)
+                execute { p -> p.addObject() }
+            }
+            addAction("Sync registry") {
+                description { p -> reactiveValue("Sync ${plural(p.registry.objectType)}") }
+                shortcut("Ctrl+Shift+S")
+                icon(MaterialDesignS.SYNC)
+                execute { p ->
+                    p.sync()
+                    Logger.confirm("Synchronized ${plural(p.registry.objectType)} with server", Logger.Category.Registries)
+                }
+            }
         }
     }
 }

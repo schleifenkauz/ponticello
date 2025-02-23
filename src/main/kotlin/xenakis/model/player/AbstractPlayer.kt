@@ -1,5 +1,8 @@
 package xenakis.model.player
 
+import reaktive.value.ReactiveValue
+import reaktive.value.now
+import reaktive.value.reactiveVariable
 import xenakis.impl.Decimal
 import xenakis.impl.asTime
 import xenakis.impl.times
@@ -9,8 +12,9 @@ import xenakis.ui.misc.PlayHead
 import kotlin.concurrent.thread
 
 abstract class AbstractPlayer(private val deltaT: Decimal) : Thread() {
-    var isPlaying = false
-        private set
+    private val _isPlaying = reactiveVariable(false)
+
+    val isPlaying: ReactiveValue<Boolean> = _isPlaying
 
     protected abstract val playHead: PlayHead
 
@@ -31,7 +35,7 @@ abstract class AbstractPlayer(private val deltaT: Decimal) : Thread() {
         var lastTime = System.currentTimeMillis()
         while (!interrupted()) {
             val now = System.currentTimeMillis()
-            if (isPlaying) {
+            if (isPlaying.now) {
                 val dt = ((now - lastTime) / 1000.0).asTime
                 var t = playHead.currentTime + lookAhead
                 if (t >= maxTime) {
@@ -59,21 +63,21 @@ abstract class AbstractPlayer(private val deltaT: Decimal) : Thread() {
     protected abstract fun scheduleEvents(t: Decimal, delta: Decimal)
 
     fun play(): Boolean {
-        if (isPlaying) return true
+        if (isPlaying.now) return true
         Logger.info("Starting playback", Logger.Category.Playback)
         if (!startPlay(playHead.currentTime)) {
             return false
         }
         thread(isDaemon = true) {
             sleep(toMs(lookAhead))
-            isPlaying = true
+            _isPlaying.now = true
         }
         return true
     }
 
     fun pause() {
-        if (!isPlaying) return
-        isPlaying = false
+        if (!isPlaying.now) return
+        _isPlaying.now = false
         pausePlayback()
     }
 

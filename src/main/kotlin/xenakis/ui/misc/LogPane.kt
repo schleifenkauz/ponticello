@@ -12,8 +12,11 @@ import javafx.scene.layout.VBox
 import javafx.scene.paint.Color
 import javafx.scene.text.Text
 import org.controlsfx.control.textfield.CustomTextField
+import org.kordamp.ikonli.javafx.FontIcon
+import org.kordamp.ikonli.material2.Material2MZ
+import org.kordamp.ikonli.materialdesign2.MaterialDesignE
 import xenakis.model.Logger
-import xenakis.ui.Icon
+import xenakis.ui.actions.button
 import xenakis.ui.impl.*
 import xenakis.ui.registry.SimpleSearchableListView
 import java.time.Instant
@@ -41,7 +44,7 @@ class LogPane(private val context: Context, private val logger: Logger) : VBox()
 
     init {
         styleClass("tool-pane")
-        searchField.left = Icon.Search.getGraphic()
+        searchField.left = FontIcon(Material2MZ.SEARCH)
         searchField.promptText = "Search..."
         searchField.textProperty().addListener { _ -> displayFilteredRecords() }
         val heading = Label("Log") styleClass "heading"
@@ -89,7 +92,7 @@ class LogPane(private val context: Context, private val logger: Logger) : VBox()
     }
 
     private fun createRecordBox(record: Logger.Record): HBox {
-        val icon = record.level.icon.getGraphic()
+        val icon = FontIcon(record.level.icon)
         var message = record.message
         message = message.replace("\n", "\\n")
         if (message.length > 120) message = message.take(120) + "..."
@@ -101,7 +104,7 @@ class LogPane(private val context: Context, private val logger: Logger) : VBox()
         box.isFocusTraversable = true
         val detailMessage = record.detailMessage ?: record.message.takeIf { msg -> msg.length > 100 }
         if (detailMessage != null) {
-            val viewBtn = Icon.View.button(action = "View details") {
+            val viewBtn = MaterialDesignE.EYE.button(action = "View details") {
                 val text = Text(detailMessage)
                 text.fill = Color.WHITE
                 val pane = BorderPane(text)

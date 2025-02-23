@@ -9,7 +9,6 @@ import javafx.scene.layout.HBox
 import javafx.scene.text.Text
 import xenakis.model.score.MemoObject
 import xenakis.model.score.ScoreObjectInstance
-import xenakis.ui.Icon
 import xenakis.ui.controls.DetailPane
 import xenakis.ui.impl.centerChildren
 import xenakis.ui.impl.styleClass
@@ -18,9 +17,6 @@ class MemoObjectView(inst: ScoreObjectInstance, val obj: MemoObject) : ScoreObje
     private val edit = TextArea(obj.text) styleClass "memo-area"
     private val display = Label(obj.text) styleClass "memo-area"
     private val computeSize = Text(obj.text)
-
-    override val supportedActions: List<Icon>
-        get() = listOf(Icon.Delete)
 
     init {
         exitEdit()

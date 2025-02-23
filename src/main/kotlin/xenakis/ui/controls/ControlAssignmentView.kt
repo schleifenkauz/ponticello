@@ -8,7 +8,7 @@ import xenakis.model.score.ParameterControl
 import xenakis.model.score.ParameterControls
 import xenakis.model.score.ParameterizedScoreObject
 import xenakis.sc.ControlSpec
-import xenakis.ui.XenakisApp.Companion.primaryStage
+import xenakis.ui.launcher.XenakisApp.Companion.primaryStage
 
 class ControlAssignmentView(private val obj: ParameterizedScoreObject) : VBox(), ParameterControls.View {
     private val editorByParameter = mutableMapOf<String, ControlAssignmentEditor>()

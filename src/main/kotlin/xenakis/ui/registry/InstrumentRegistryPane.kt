@@ -4,6 +4,10 @@ import bundles.createBundle
 import hextant.fx.initHextantScene
 import javafx.application.Platform
 import javafx.scene.layout.VBox
+import org.kordamp.ikonli.material2.Material2AL
+import org.kordamp.ikonli.material2.Material2MZ
+import org.kordamp.ikonli.materialdesign2.MaterialDesignC
+import org.kordamp.ikonli.materialdesign2.MaterialDesignE
 import reaktive.value.binding.map
 import reaktive.value.fx.asObservableValue
 import reaktive.value.now
@@ -15,7 +19,6 @@ import xenakis.model.registry.GlobalSynthDefLib
 import xenakis.model.registry.InstrumentRegistry
 import xenakis.sc.Identifier
 import xenakis.sc.view.ObjectSelectorControl
-import xenakis.ui.Icon
 import xenakis.ui.impl.*
 import xenakis.ui.prompt.NamePrompt
 import xenakis.ui.prompt.YesNoPrompt
@@ -142,9 +145,9 @@ class InstrumentRegistryPane(
         val colorPicker = colorPicker(obj.color)
         colorPicker.setFixedWidth(30.0)
         addExtraControl(colorPicker)
-        addAction(Icon.View, "Edit SynthDef") { editInstrument(obj) }
+        addAction(Material2AL.CODE, "Edit SynthDef") { editInstrument(obj) }
         if (obj.canCopy) {
-            addAction(Icon.Duplicate, "Duplicate SynthDef") {
+            addAction(MaterialDesignC.CONTENT_DUPLICATE, "Duplicate SynthDef") {
                 val initialName = obj.name.now + "_copy"
                 val name = NamePrompt(registry, "Name for new duplicate instrument", initialName)
                     .showDialog(registry.context, this) ?: return@addAction
@@ -155,11 +158,11 @@ class InstrumentRegistryPane(
         if (obj is VSTPluginObject) {
             val outSelectorControl = ObjectSelectorControl(obj.outputSelector, createBundle())
             addExtraControl(outSelectorControl)
-            addAction(Icon.Save, description = "Save VST plugin configuration") { obj.saveConfiguration() }
+            addAction(Material2MZ.SAVE, description = "Save VST plugin configuration") { obj.saveConfiguration() }
         }
         if (obj is CustomizableSynthDefObject) {
             val globalLib = registry.context[GlobalSynthDefLib]
-            addAction(Icon.AddGlobal, description = "Save to global SynthDef library") {
+            addAction(MaterialDesignE.EXPORT_VARIANT, description = "Save to global SynthDef library") {
                 async(timeLimit = 10000) {
                     synchronized(globalLib) {
                         globalLib.reload()

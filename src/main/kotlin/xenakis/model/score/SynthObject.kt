@@ -131,7 +131,7 @@ class SynthObject(
     }
 
     private fun runOnActiveSynths(action: ScWriter.() -> Unit) {
-        if (!context.hasProperty(PlaybackManager) || !context[PlaybackManager].player.isPlaying) return
+        if (!context.hasProperty(PlaybackManager) || !context[PlaybackManager].player.isPlaying.now) return
         context[SuperColliderClient].run {
             for ((_, _, name) in context[PlaybackManager].env.activeInstances(this@SynthObject)) {
                 appendBlock("if (~synths != nil && ~synths['$name'] != nil && ~synths['$name'].isRunning)") {

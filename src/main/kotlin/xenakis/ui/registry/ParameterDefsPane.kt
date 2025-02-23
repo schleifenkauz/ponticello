@@ -6,6 +6,7 @@ import hextant.context.withoutUndo
 import hextant.serial.makeRoot
 import javafx.scene.layout.HBox
 import javafx.scene.layout.VBox
+import org.kordamp.ikonli.material2.Material2AL
 import reaktive.Observer
 import reaktive.list.MutableReactiveList
 import reaktive.value.forEach
@@ -15,7 +16,7 @@ import xenakis.model.obj.ParameterDefObject
 import xenakis.sc.Identifier
 import xenakis.sc.NumericalControlSpec
 import xenakis.sc.editor.ControlSpecEditor
-import xenakis.ui.Icon
+import xenakis.ui.actions.button
 import xenakis.ui.controls.NameControl
 import xenakis.ui.impl.button
 import xenakis.ui.impl.infiniteSpace
@@ -65,7 +66,7 @@ class ParameterDefsPane(
                 if (new != parameter.spec.now) parameter.spec.now = new
             }
         val specControl = context.createControl(editor)
-        val removeBtn = Icon.Delete.button(action = "Remove parameter") { parameters.now.remove(parameter) }
+        val removeBtn = Material2AL.DELETE.button(action = "Remove parameter") { parameters.now.remove(parameter) }
         val box = HBox(nameDisplay, specControl, infiniteSpace(), removeBtn) styleClass "object-box"
         children.add(index, box)
     }

@@ -4,30 +4,53 @@ import javafx.scene.Node
 import javafx.scene.control.Label
 import javafx.scene.layout.HBox
 import javafx.scene.layout.VBox
-import xenakis.ui.Icon
+import org.kordamp.ikonli.materialdesign2.MaterialDesignC
+import reaktive.value.now
+import reaktive.value.reactiveVariable
+import xenakis.ui.actions.ActionBar
+import xenakis.ui.actions.collectActions
 
-class CollapsablePane(title: String, private val content: Node) : VBox() {
+class CollapsablePane(
+    title: String,
+    private val content: Node,
+    initiallyExpanded: Boolean = true
+) : VBox() {
     private val heading = Label(title) styleClass "heading"
-    private val collapseBtn = Icon.Collapse.button { collapse() }
-    private val expandBtn = Icon.Expand.button { expand() }
-    private val header = HBox(heading, infiniteSpace(), collapseBtn).centerChildren()
+    private val expanded = reactiveVariable(initiallyExpanded)
+    private val actionBar = ActionBar(actions.withContext(this))
+    private val header = HBox(heading, infiniteSpace(), actionBar).centerChildren()
 
     init {
         children.add(header)
-        children.add(content)
+        if (initiallyExpanded) children.add(content)
     }
 
     fun collapse() {
-        if (content in children) {
+        if (expanded.now) {
             children.remove(content)
-            header.children[2] = expandBtn
+            expanded.now = true
         }
     }
 
     fun expand() {
-        if (content !in children) {
+        if (!expanded.now) {
             children.add(content)
-            header.children[2] = collapseBtn
+            expanded.now = true
+        }
+    }
+
+    companion object {
+        private val actions = collectActions<CollapsablePane> {
+            addAction("Collapse") {
+                icon(MaterialDesignC.CHEVRON_UP)
+                applicableIf { p -> p.expanded }
+                execute { p -> p.collapse() }
+            }
+            addAction("Expand") {
+                icon(MaterialDesignC.CHEVRON_DOWN)
+                applicableIf { p -> p.expanded }
+                execute { p -> p.expand() }
+            }
         }
     }
 }

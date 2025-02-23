@@ -10,8 +10,9 @@ import javafx.scene.control.Label
 import javafx.scene.control.ScrollPane
 import javafx.scene.layout.HBox
 import javafx.scene.layout.VBox
+import org.kordamp.ikonli.material2.Material2MZ
 import xenakis.sc.editor.ScExprEditor
-import xenakis.ui.Icon
+import xenakis.ui.actions.button
 import xenakis.ui.impl.centerChildren
 import xenakis.ui.impl.infiniteSpace
 import xenakis.ui.impl.styleClass
@@ -32,7 +33,7 @@ class CodePane(title: String, val control: EditorControl<*>) : VBox() {
     }
 
     private fun createHeader(): HBox {
-        val reevaluateBtn = Icon.Repeat.button(action = "Reevaluate code") { evaluate() }
+        val reevaluateBtn = Material2MZ.SYNC.button(action = "Reevaluate code") { evaluate() }
         return hbox(titleLabel, infiniteSpace(), reevaluateBtn) {
             styleClass("tool-pane-header")
             centerChildren()

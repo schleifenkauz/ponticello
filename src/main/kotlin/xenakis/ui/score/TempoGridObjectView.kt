@@ -13,7 +13,6 @@ import reaktive.value.reactiveValue
 import xenakis.impl.*
 import xenakis.model.score.ScoreObjectInstance
 import xenakis.model.score.TempoGridObject
-import xenakis.ui.Icon
 import xenakis.ui.controls.DetailPane
 import xenakis.ui.impl.rootPane
 import xenakis.ui.impl.setFixedWidth
@@ -29,9 +28,6 @@ class TempoGridObjectView(inst: ScoreObjectInstance, val obj: TempoGridObject) :
         children.add(area)
         marker.endYProperty().bind(heightProperty())
     }
-
-    override val supportedActions: List<Icon>
-        get() = listOf(Icon.Delete)
 
     override val borderColorWhenSelected: Color
         get() = Color.GREEN

@@ -34,7 +34,7 @@ import xenakis.model.obj.SuperColliderObject
 import xenakis.model.score.ScoreObject
 import xenakis.model.score.ScoreObjectInstance
 import xenakis.sc.editor.CodeBlockEditor
-import xenakis.ui.XenakisMainScreen
+import xenakis.ui.launcher.XenakisMainScreen
 import kotlin.math.pow
 import kotlin.math.sqrt
 

@@ -7,9 +7,8 @@ import hextant.context.withoutUndo
 import hextant.serial.readJson
 import javafx.stage.DirectoryChooser
 import javafx.stage.FileChooser
-import javafx.stage.Window
 import xenakis.model.Settings
-import xenakis.ui.XenakisApp.Companion.primaryStage
+import xenakis.ui.launcher.XenakisApp.Companion.primaryStage
 import java.io.File
 
 class XenakisFiles(private val context: Context) {

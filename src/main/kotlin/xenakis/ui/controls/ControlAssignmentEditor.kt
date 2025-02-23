@@ -15,9 +15,12 @@ import javafx.scene.layout.BorderPane
 import javafx.scene.layout.HBox
 import javafx.scene.layout.Priority
 import org.controlsfx.control.ToggleSwitch
+import org.kordamp.ikonli.codicons.Codicons
+import org.kordamp.ikonli.material2.Material2AL
 import reaktive.value.ReactiveVariable
 import reaktive.value.fx.asProperty
 import reaktive.value.now
+import reaktive.value.reactiveValue
 import reaktive.value.reactiveVariable
 import xenakis.model.obj.BusObject
 import xenakis.model.obj.SampleObject
@@ -28,17 +31,16 @@ import xenakis.model.registry.SampleRegistry
 import xenakis.model.score.*
 import xenakis.sc.BufferControlSpec
 import xenakis.sc.ControlSpec
-import xenakis.sc.Identifier
 import xenakis.sc.NumericalControlSpec
 import xenakis.sc.editor.BusSelector
 import xenakis.sc.editor.GroupSelector
 import xenakis.sc.editor.SampleSelector
 import xenakis.sc.editor.ScExprExpander
 import xenakis.sc.view.ObjectSelectorControl
-import xenakis.ui.Icon
+import xenakis.ui.actions.ActionBar
+import xenakis.ui.actions.collectActions
 import xenakis.ui.impl.*
 import xenakis.ui.prompt.ControlSpecPrompt
-import xenakis.ui.prompt.PredicateTextPrompt
 import xenakis.ui.registry.SimpleSearchableListView
 
 class ControlAssignmentEditor(
@@ -51,41 +53,16 @@ class ControlAssignmentEditor(
     private val detailEditors = mutableMapOf<ControlType<*>, Node>()
     private val spec
         get() = obj.getSpec(parameter) ?: error("Parameter $parameter not found in $obj")
-    private val actionsBtn = Icon.Options.button(radius = 12.0, action = "Control options") {
-        showActionPopup()
-    }
-
-    private fun showActionPopup() {
-        val actions = Option.entries.toMutableList()
-        if (obj.controls[parameter] !is KnobControl) actions.remove(Option.EditSpec)
-        SimpleSearchableListView(Option.entries, "Action")
-            .showPopup(obj.context, anchorNode = actionsBtn) { action -> selected(action) }
-    }
-
-    private fun selected(option: Option) {
-        when (option) {
-            Option.Delete -> obj.controls.removeControl(parameter)
-            Option.Rename -> {
-                val name = PredicateTextPrompt("Name for option", parameter) { name ->
-                    Identifier.isValid(name) && name !in obj.controls.controlMap
-                }.showDialog(obj.context, optionButton) ?: return
-                obj.controls.renameControl(parameter, name)
-            }
-
-            Option.EditSpec -> ControlSpecPrompt(obj, parameter, spec)
-                .showDialog(obj.context, actionsBtn)
-        }
-    }
-
+    private val actionBar: ActionBar = ActionBar(actions.withContext(this))
     private var settingControl = false
     private var detailEditor: Node? = null
         set(value) {
             field = value!!
             value.styleClass?.add("control-detail-editor")
             if (spec is NumericalControlSpec) {
-                children.setAll(nameLabel, optionButton, detailEditor, infiniteSpace(), actionsBtn)
+                children.setAll(nameLabel, optionButton, detailEditor, infiniteSpace(), actionBar)
             } else {
-                children.setAll(nameLabel, detailEditor, infiniteSpace(), actionsBtn)
+                children.setAll(nameLabel, detailEditor, infiniteSpace(), actionBar)
             }
             setHgrow(value, Priority.ALWAYS)
         }
@@ -379,6 +356,25 @@ class ControlAssignmentEditor(
                 val editor = BusSelector(context, bus.rate.now, bus.channels.now, nullableRef)
 
                 return ObjectSelectorControl(editor, createBundle())
+            }
+        }
+    }
+
+    companion object {
+        private val actions = collectActions<ControlAssignmentEditor> {
+            addAction("Remove") {
+                shortcut("Ctrl+DELETE")
+                icon(Material2AL.DELETE)
+                execute { editor -> editor.obj.controls.removeControl(editor.parameter) }
+            }
+            addAction("Edit spec") {
+                shortcut("Ctrl+P")
+                applicableIf { editor -> reactiveValue(editor.spec is NumericalControlSpec) }
+                //editor.obj.def.getParameter(editor.parameter)!!.spec.map { s -> s is NumericalControlSpec }
+                icon(Codicons.SYMBOL_PROPERTY)
+                execute { editor: ControlAssignmentEditor -> ControlSpecPrompt(editor.obj, editor.parameter, editor.spec)
+                    .showDialog(editor.obj.context, editor.actionBar)
+                }
             }
         }
     }

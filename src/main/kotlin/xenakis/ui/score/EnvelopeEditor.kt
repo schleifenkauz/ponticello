@@ -22,7 +22,7 @@ import xenakis.model.score.*
 import xenakis.model.score.Envelope.EnvelopePoint
 import xenakis.sc.NumericalControlSpec
 import xenakis.sc.mapOnto
-import xenakis.ui.ToolSelector
+import xenakis.ui.actions.ToolSelector
 import xenakis.ui.impl.dist
 import xenakis.ui.impl.rootPane
 import xenakis.ui.impl.setupDragging

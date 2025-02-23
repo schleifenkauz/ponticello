@@ -9,6 +9,7 @@ import javafx.scene.layout.HBox
 import javafx.scene.paint.Color
 import javafx.scene.transform.Scale
 import javafx.scene.transform.Translate
+import org.kordamp.ikonli.material2.Material2AL
 import reaktive.Observer
 import reaktive.value.ReactiveValue
 import reaktive.value.forEach
@@ -17,11 +18,11 @@ import xenakis.impl.*
 import xenakis.model.obj.SampleObject
 import xenakis.model.score.*
 import xenakis.sc.view.ObjectSelectorControl
-import xenakis.ui.Icon
-import xenakis.ui.XenakisMainScreen
+import xenakis.ui.actions.button
 import xenakis.ui.controls.DetailPane
 import xenakis.ui.impl.centerChildren
 import xenakis.ui.impl.styleClass
+import xenakis.ui.launcher.XenakisMainScreen
 
 class SynthObjectView(
     instance: ScoreObjectInstance, override val obj: SynthObject
@@ -45,7 +46,6 @@ class SynthObjectView(
     override fun initialize(parent: ScorePane) {
         super.initialize(parent)
         obj.controls.addView(this)
-        addAction(Icon.Reverse, action = "Reverse") { obj.reverse() }
         sampleObserver = obj.sample.forEach { s ->
             sampleContentObserver?.kill()
             if (s != null) {
@@ -58,7 +58,7 @@ class SynthObjectView(
 
     override fun setupDetailPane(pane: DetailPane) {
         pane.addItem("Color:", this.colorPicker)
-        val viewBtn = Icon.View.button(action = "View SynthDef") {
+        val viewBtn = Material2AL.CODE.button(action = "View SynthDef") {
             context[XenakisMainScreen].instrumentsPane.editInstrument(obj.synthDef)
         }
         val box = ObjectSelectorControl(obj.synthDefSelector, createBundle())

@@ -6,6 +6,7 @@ import hextant.fx.registerShortcuts
 import hextant.serial.makeRoot
 import javafx.scene.layout.HBox
 import javafx.scene.paint.Color.BLACK
+import org.kordamp.ikonli.material2.Material2MZ
 import reaktive.value.now
 import xenakis.model.Logger
 import xenakis.model.Logger.Category
@@ -14,7 +15,7 @@ import xenakis.model.registry.GlobalControls
 import xenakis.sc.Identifier
 import xenakis.sc.NumericalControlSpec
 import xenakis.sc.editor.ControlSpecEditor
-import xenakis.ui.Icon
+import xenakis.ui.actions.button
 import xenakis.ui.controls.Knob
 import xenakis.ui.impl.SubWindow
 import xenakis.ui.impl.styleClass
@@ -26,7 +27,7 @@ class GlobalControlsPane(
     private val context: Context
 ) : HBox(), GlobalControlsView {
     init {
-        children.add(Icon.Add.button(radius = 32.0, action = "Add global control") { addControl() })
+        children.add(Material2MZ.PLUS.button(action = "Add global control") { addControl() })
         controls.addView(this)
         styleClass("global-controls")
         registerShortcuts {

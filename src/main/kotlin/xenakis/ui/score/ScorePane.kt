@@ -33,16 +33,16 @@ import xenakis.model.score.Score.Companion.rootScore
 import xenakis.sc.Identifier
 import xenakis.sc.editor.EventDictionaryEditor
 import xenakis.sc.editor.ScFunctionEditor
-import xenakis.ui.ToolSelector.Tool
-import xenakis.ui.ToolSelector.Tool.*
-import xenakis.ui.XenakisMainScreen
+import xenakis.ui.actions.ToolSelector.Tool
+import xenakis.ui.actions.ToolSelector.Tool.*
 import xenakis.ui.impl.hasFile
 import xenakis.ui.impl.rootPane
 import xenakis.ui.impl.setupDropArea
 import xenakis.ui.impl.styleClass
+import xenakis.ui.launcher.XenakisMainScreen
 import xenakis.ui.prompt.DecimalPrompt
 import xenakis.ui.prompt.NamePrompt
-import xenakis.ui.prompt.compoundInput
+import xenakis.ui.prompt.compoundPrompt
 import xenakis.ui.registry.SimpleSearchableRegistryView
 import kotlin.math.absoluteValue
 
@@ -423,7 +423,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
 
             ev.button == MouseButton.SECONDARY -> pasteFromSystemClipboard(ev)
 
-            this is ScoreView && !ui.playback.player.isPlaying -> {
+            this is ScoreView && !ui.playback.player.isPlaying.now -> {
                 if (ev.isControlDown) {
                     ui.playback.attachToMainScore()
                 }
@@ -487,7 +487,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
 
             PianoRoll -> {
                 val instr = context[InstrumentRegistry].selectedInstrument.now ?: return
-                compoundInput("Configure new object") {
+                compoundPrompt("Configure new object") {
                     val defaultName = context[ScoreObjectRegistry].availableName("piano_roll")
                     val nameField = TextField(defaultName) named "Object name"
                     val rootPitchSelector =

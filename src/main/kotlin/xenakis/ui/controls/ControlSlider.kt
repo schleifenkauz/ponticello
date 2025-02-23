@@ -22,7 +22,6 @@ import xenakis.model.score.ParameterizedScoreObject
 import xenakis.sc.DecimalLiteral
 import xenakis.sc.NumericalControlSpec
 import xenakis.sc.SpecTransformation
-import xenakis.ui.Icon
 import xenakis.ui.impl.centerChildren
 import xenakis.ui.impl.styleClass
 import xenakis.ui.prompt.YesNoPrompt
@@ -39,8 +38,6 @@ class ControlSlider(
     private var buttonReleased = false
     private var updating = false
     private val textInput = TextField().styleClass("control-input-text")
-    private val btnDec = Icon.Minus.button(radius = 12.0, action = "Decrement").styleClass("slider-adjust-button")
-    private val btnInc = Icon.Add.button(radius = 12.0, action = "Increment").styleClass("slider-adjust-button")
     private lateinit var valueObserver: Observer
     private val transform = SpecTransformation(spec, 0.0..1.0)
 
@@ -52,10 +49,6 @@ class ControlSlider(
         styleClass("control-slider")
         slider.min = 0.0
         slider.max = 1.0
-        btnInc.setOnMousePressed { startAdjust(spec.step.get()) }
-        btnInc.setOnMouseReleased { buttonReleased = true }
-        btnDec.setOnMousePressed { startAdjust(-spec.step.get()) }
-        btnDec.setOnMouseReleased { buttonReleased = true }
         textInput.registerShortcuts(eventType = KeyEvent.KEY_PRESSED) {
             on("Alt+PLUS") { adjust(spec.step.get()) }
             on("UP") { adjust(spec.step.get()) }
@@ -63,7 +56,7 @@ class ControlSlider(
             on("DOWN") { adjust(-spec.step.get()) }
             on("Ctrl+BACK_SPACE") { variable.now = spec.defaultValue.get() }
         }
-        children.addAll(textInput, /*btnDec, */slider /*btnInc*/)
+        children.addAll(textInput, slider)
         setHgrow(slider, Priority.ALWAYS)
         centerChildren()
         setupDataFlow()

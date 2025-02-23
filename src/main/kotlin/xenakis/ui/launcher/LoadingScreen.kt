@@ -4,11 +4,9 @@ import hextant.context.Context
 import javafx.application.Platform
 import javafx.scene.control.Label
 import javafx.scene.control.ProgressBar
-import javafx.scene.image.Image
 import javafx.scene.image.ImageView
 import javafx.scene.layout.StackPane
 import javafx.scene.layout.VBox
-import xenakis.ui.XenakisApp
 
 class LoadingScreen(override val context: Context): Activity(), ProgressIndicator {
     private val progressBar = ProgressBar()
@@ -43,9 +41,5 @@ class LoadingScreen(override val context: Context): Activity(), ProgressIndicato
 
     override fun increaseProgress(delta: Double, status: String) {
         displayProgress(progressBar.progress + delta, status)
-    }
-
-    companion object {
-        private val APP_ICON = Image(XenakisApp::class.java.getResource("/xenakis/ui/icons/appicon.png")!!.toExternalForm())
     }
 }

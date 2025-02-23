@@ -9,8 +9,8 @@ import javafx.scene.Cursor
 import javafx.scene.Node
 import javafx.scene.input.MouseEvent
 import javafx.scene.layout.Region
-import xenakis.ui.ToolSelector.Tool
-import xenakis.ui.XenakisMainScreen
+import xenakis.ui.actions.ToolSelector.Tool
+import xenakis.ui.launcher.XenakisMainScreen
 import kotlin.math.absoluteValue
 
 fun Node.setupDragging(

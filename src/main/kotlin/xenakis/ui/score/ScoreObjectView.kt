@@ -29,14 +29,14 @@ import xenakis.model.InteractionSettings.SnapOption
 import xenakis.model.player.PlaybackManager
 import xenakis.model.score.*
 import xenakis.model.score.Score.Companion.rootScore
-import xenakis.ui.Icon
-import xenakis.ui.ToolSelector.Tool
-import xenakis.ui.XenakisMainScreen
+import xenakis.ui.actions.ToolSelector.Tool
 import xenakis.ui.controls.DetailPane
 import xenakis.ui.controls.NameControl
 import xenakis.ui.impl.*
 import xenakis.ui.launcher.XenakisLauncher.Companion.currentProject
-import xenakis.ui.prompt.compoundInput
+import xenakis.ui.launcher.XenakisMainScreen
+import xenakis.ui.prompt.CompoundPrompt
+import xenakis.ui.prompt.compoundPrompt
 
 abstract class ScoreObjectView(
     val instance: ScoreObjectInstance
@@ -78,8 +78,6 @@ abstract class ScoreObjectView(
 
     override fun getX(time: Decimal): Double = getWidth(time)
 
-    protected open val supportedActions get() = listOf(Icon.Delete, Icon.Mute, Icon.Repeat)
-
     fun getDetailPane() = DetailPane().apply {
         addItem("Name: ", nameEditor)
         setupDetailPane(this)
@@ -87,47 +85,13 @@ abstract class ScoreObjectView(
 
     protected open fun setupDetailPane(pane: DetailPane) {}
 
-    private fun setupActions() {
-        if (Icon.Repeat in supportedActions) addAction(Icon.Repeat, "Loop this object", ::createLoop)
-        if (Icon.Mute in supportedActions) {
-            val icon = if (instance.muted) Icon.Mute else Icon.Unmute
-            muteUnmuteBtn = addAction(icon, "Toggle mute") {
-                instance.toggleMuted()
-            }
-        }
-        if (Icon.Delete in supportedActions) addAction(Icon.Delete, "Delete this object", ::delete)
-    }
-
-    fun createLoop() {
+    fun askForLoopConfig(): LoopConfig? {
         val settings = context[currentProject].settings
         val grid = pane.getNearestGrid(instance.position)?.obj
             .takeIf { settings.snapEnabled.now } as TempoGridObject?
         val periodUnit = if (grid == null) null else settings.snapOption.now
-        compoundInput<Unit>("Configure loop of object ${instance.obj.name.now}") {
-            val periodInput = when (periodUnit) {
-                null -> TextField(instance.duration.toString())
-                else -> {
-                    val default = (instance.duration / grid!!.getDuration(periodUnit) + 0.95).toInt()
-                    Spinner<Int>(1, Int.MAX_VALUE, default)
-                }
-            } named "Loop period ($periodUnit)"
-            val repetitionsInput = Spinner<Int>(1, 1000, 1, 1) named "Number of repetitions"
-            if (periodInput is TextField) {
-                confirmButton.disableProperty().bind(periodInput.textProperty().map { txt ->
-                    val v = txt.toDoubleOrNull()
-                    v == null || v == 0.0
-                })
-            }
-            onConfirm {
-                val period = when (periodInput) {
-                    is Spinner<*> -> periodInput.value as Int * grid!!.getDuration(periodUnit ?: SnapOption.Seconds)
-                    is TextField -> periodInput.text.parseDecimal()!!
-                    else -> error("Invalid period input control: $periodInput")
-                }
-                val repetitions = repetitionsInput.value
-                pane.score.loop(instance, period, repetitions)
-            }
-        }.showDialog(context, anchorNode = this)
+        val prompt = makeLoopConfigPrompt(periodUnit, grid, instance)
+        return prompt.showDialog(context, anchorNode = this)
     }
 
     open fun initialize(parent: ScorePane) {
@@ -145,7 +109,6 @@ abstract class ScoreObjectView(
         )
         setBackground()
         addMouseActions()
-        setupActions()
         instance.addListener(this)
         instance.obj.addListener(this)
         isInitialized = true
@@ -162,14 +125,6 @@ abstract class ScoreObjectView(
         setPrefSize(getDisplayWidth(), getDisplayHeight())
     }
 
-    protected fun addAction(icon: Icon, action: String?, onAction: () -> Unit): Button {
-        val button = icon.button(action = action)
-        button.styleClass("score-object-btn")
-        button.setOnAction { onAction() }
-        actions.children.add(button)
-        return button
-    }
-
     private fun setBackground() {
         backgroundProperty().bind(backgroundColor.map { color ->
             Background(BackgroundFill(color, CornerRadii.EMPTY, null))
@@ -184,10 +139,7 @@ abstract class ScoreObjectView(
     }
 
     override fun toggledMute(muted: Boolean) {
-        if (Icon.Mute in supportedActions) {
-            muteUnmuteBtn.graphic = if (instance.muted) Icon.Mute.getGraphic() else Icon.Unmute.getGraphic()
-            opacity = if (muted) 0.5 else 1.0
-        }
+        opacity = if (muted) 0.5 else 1.0
     }
 
     private fun addMouseActions() {
@@ -211,7 +163,7 @@ abstract class ScoreObjectView(
 
                 Tool.Pointer, Tool.Resize -> {
                     val playback = context[PlaybackManager]
-                    if (!playback.player.isPlaying) {
+                    if (!playback.player.isPlaying.now) {
                         if (ev.isControlDown) {
                             playback.attachToView(this)
                         }
@@ -231,8 +183,8 @@ abstract class ScoreObjectView(
             for (inst in context[rootScore].instancesOf(instance.obj).toList()) {
                 val score = inst.score
                 score!!.removeObject(inst)
-                val inst1 = ScoreObjectInstance(half1, inst.position, inst.muted)
-                val inst2 = ScoreObjectInstance(half2, inst.position + relativePosition, inst.muted)
+                val inst1 = ScoreObjectInstance(half1, inst.position, inst.muted.copy())
+                val inst2 = ScoreObjectInstance(half2, inst.position + relativePosition, inst.muted.copy())
                 score.addObject(inst1)
                 score.addObject(inst2)
             }
@@ -403,5 +355,37 @@ abstract class ScoreObjectView(
     companion object {
         private const val BORDER_WIDTH = 3.0
         private const val BORDER_RADIUS = 2.0
+        private fun makeLoopConfigPrompt(
+            periodUnit: SnapOption?,
+            grid: TempoGridObject?,
+            inst: ScoreObjectInstance
+        ): CompoundPrompt<LoopConfig> {
+            val prompt = compoundPrompt("Configure loop of object ${inst.obj.name.now}") {
+                val periodInput = when (periodUnit) {
+                    null -> TextField(inst.duration.toString())
+                    else -> {
+                        val default = (inst.duration / grid!!.getDuration(periodUnit) + 0.95).toInt()
+                        Spinner<Int>(1, Int.MAX_VALUE, default)
+                    }
+                } named "Loop period ($periodUnit)"
+                val repetitionsInput = Spinner<Int>(1, 1000, 1, 1) named "Number of repetitions"
+                if (periodInput is TextField) {
+                    confirmButton.disableProperty().bind(periodInput.textProperty().map { txt ->
+                        val v = txt.toDoubleOrNull()
+                        v == null || v == 0.0
+                    })
+                }
+                onConfirm {
+                    val period = when (periodInput) {
+                        is Spinner<*> -> periodInput.value as Int * grid!!.getDuration(periodUnit ?: SnapOption.Seconds)
+                        is TextField -> periodInput.text.parseDecimal()!!
+                        else -> error("Invalid period input control: $periodInput")
+                    }
+                    val repetitions = repetitionsInput.value
+                    LoopConfig(period, repetitions)
+                }
+            }
+            return prompt
+        }
     }
 }

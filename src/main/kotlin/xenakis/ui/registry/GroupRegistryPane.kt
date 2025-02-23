@@ -2,10 +2,10 @@ package xenakis.ui.registry
 
 import hextant.fx.registerShortcuts
 import javafx.scene.control.Button
+import org.kordamp.ikonli.materialdesign2.MaterialDesignA
 import reaktive.value.reactiveVariable
 import xenakis.model.obj.GroupObject
 import xenakis.model.registry.GroupRegistry
-import xenakis.ui.Icon
 
 class GroupRegistryPane(
     override val registry: GroupRegistry
@@ -34,8 +34,8 @@ class GroupRegistryPane(
     }
 
     override fun ObjectBox<GroupObject>.configureObjectBox() {
-        addAction(Icon.Down, "Move down") { registry.moveGroup(obj, deltaIndex = +1) }
-        addAction(Icon.Up, "Move up") { registry.moveGroup(obj, deltaIndex = -1) }
+        addAction(MaterialDesignA.ARROW_DOWN, "Move down") { registry.moveGroup(obj, deltaIndex = +1) }
+        addAction(MaterialDesignA.ARROW_UP, "Move up") { registry.moveGroup(obj, deltaIndex = -1) }
         registerShortcuts {
             on("UP") { shiftFocus(obj, -1) }
             on("DOWN") { shiftFocus(obj, +1) }

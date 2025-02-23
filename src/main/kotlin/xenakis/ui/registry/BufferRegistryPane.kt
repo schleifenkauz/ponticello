@@ -3,16 +3,16 @@ package xenakis.ui.registry
 import javafx.scene.control.Label
 import javafx.scene.control.Spinner
 import javafx.scene.control.TextField
+import org.kordamp.ikonli.evaicons.Evaicons
+import org.kordamp.ikonli.material2.Material2MZ
 import reaktive.value.fx.asProperty
 import reaktive.value.now
 import xenakis.model.Logger
 import xenakis.model.obj.BufferObject
 import xenakis.model.registry.BufferRegistry
 import xenakis.sc.client.SuperColliderClient
-import xenakis.ui.Icon
 import xenakis.ui.impl.setFixedWidth
-import xenakis.ui.launcher.XenakisLauncher
-import xenakis.ui.prompt.compoundInput
+import xenakis.ui.prompt.compoundPrompt
 
 class BufferRegistryPane(
     private val buffers: BufferRegistry,
@@ -22,7 +22,7 @@ class BufferRegistryPane(
     }
 
     override fun addObject(name: String): BufferObject? {
-        return compoundInput("Configure buffer $name") {
+        return compoundPrompt("Configure buffer $name") {
             val channelsSpinner = Spinner<Int>(1, 12, 2) named "Channels"
             val framesField = TextField() named "Frames"
             onConfirm {
@@ -34,10 +34,10 @@ class BufferRegistryPane(
     }
 
     override fun ObjectBox<BufferObject>.configureObjectBox() {
-        addAction(Icon.View, description = "View buffer contents") {
+        addAction(Evaicons.ACTIVITY, description = "View buffer contents") {
             buffers.context[SuperColliderClient].run("${obj.superColliderName}.plot('${obj.name.now}')")
         }
-        addAction(Icon.Repeat, "Sync with server") { sync(obj) }
+        addAction(Material2MZ.SYNC, "Sync with server") { sync(obj) }
         val channelsSpinner = Spinner<Int>(1, 12, obj.channels.now).setFixedWidth(70.0)
         channelsSpinner.valueFactory.valueProperty().bindBidirectional(obj.channels.asProperty())
         val framesInput = TextField(obj.frames.now.toString())

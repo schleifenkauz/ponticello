@@ -7,7 +7,7 @@ import xenakis.model.obj.SynthDefObject
 import xenakis.model.registry.InstrumentRegistry
 import xenakis.model.registry.ObjectReference
 import xenakis.model.registry.ObjectRegistry
-import xenakis.ui.XenakisMainScreen
+import xenakis.ui.launcher.XenakisMainScreen
 import kotlin.reflect.KClass
 
 class SynthDefSelector(

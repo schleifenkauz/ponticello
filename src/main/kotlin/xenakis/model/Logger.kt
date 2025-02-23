@@ -1,7 +1,11 @@
 package xenakis.model
 
 import hextant.core.editor.ListenerManager
-import xenakis.ui.Icon
+import org.kordamp.ikonli.Ikon
+import org.kordamp.ikonli.materialdesign2.MaterialDesignA
+import org.kordamp.ikonli.materialdesign2.MaterialDesignB
+import org.kordamp.ikonli.materialdesign2.MaterialDesignC
+import org.kordamp.ikonli.materialdesign2.MaterialDesignI
 
 object Logger {
     private val views = ListenerManager.createWeakListenerManager<View>()
@@ -72,12 +76,12 @@ object Logger {
         Fine, Info, Confirmation, Warning, Error;
 
         val icon
-            get() = when (this) {
-                Fine -> Icon.Debug
-                Info -> Icon.Info
-                Confirmation -> Icon.Confirmation
-                Warning -> Icon.Warning
-                Error -> Icon.Error
+            get(): Ikon = when (this) {
+                Fine -> MaterialDesignB.BUG
+                Info -> MaterialDesignI.INFORMATION
+                Confirmation -> MaterialDesignC.CHECK_CIRCLE
+                Warning -> MaterialDesignA.ALERT
+                Error -> MaterialDesignA.ALERT_OCTAGON
             }
     }
 

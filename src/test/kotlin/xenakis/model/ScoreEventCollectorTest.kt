@@ -2,6 +2,7 @@ package xenakis.model
 
 import org.junit.jupiter.api.Assertions.assertArrayEquals
 import org.junit.jupiter.api.Test
+import reaktive.value.now
 import reaktive.value.reactiveVariable
 import xenakis.impl.asTime
 import xenakis.impl.asY
@@ -35,7 +36,7 @@ class ScoreEventCollectorTest {
                     val time = rnd.nextDouble(100.0).asTime
                     val y = rnd.nextDouble(100.0).asY
                     val muted = rnd.nextDouble() <= 0.2
-                    val inst = ScoreObjectInstance(obj, time, y, muted)
+                    val inst = ScoreObjectInstance(obj, time, y, reactiveVariable(muted))
                     parentScore.addObject(inst)
                     println("Add $inst")
                 }
@@ -81,7 +82,7 @@ class ScoreEventCollectorTest {
     private fun expectedEvents(score: Score, scorePosition: ObjectPosition = ObjectPosition(0.0, 0.0)): List<Event> =
         score.objectInstances.flatMap { inst ->
             val obj = inst.obj
-            if (inst.muted) emptyList()
+            if (inst.muted.now) emptyList()
             else if (obj is ScoreObjectGroup) expectedEvents(obj.score, scorePosition + inst.position)
             else {
                 val startPos = inst.position + scorePosition

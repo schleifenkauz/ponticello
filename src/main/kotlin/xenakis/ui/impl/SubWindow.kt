@@ -10,7 +10,7 @@ import javafx.stage.Modality
 import javafx.stage.Stage
 import javafx.stage.StageStyle
 import javafx.stage.Window
-import xenakis.ui.XenakisApp.Companion.primaryStage
+import xenakis.ui.launcher.XenakisApp.Companion.primaryStage
 
 class SubWindow(
     private val root: Parent,

@@ -20,7 +20,6 @@ import javafx.scene.control.Label
 import javafx.scene.input.*
 import javafx.scene.layout.Pane
 import reaktive.value.now
-import xenakis.impl.Arrow
 import xenakis.model.Logger
 import xenakis.model.obj.BusObject
 import xenakis.model.registry.AudioFlowGraph

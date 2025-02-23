@@ -38,14 +38,18 @@ javafx {
 }
 
 application {
-    mainClassName = "xenakis.ui.XenakisApp"
+    mainClassName = "xenakis.ui.main.XenakisApp"
 }
 
 dependencies {
     implementation 'org.controlsfx:controlsfx:11.1.2'
     implementation 'com.pixelduke:fxthemes:1.5.1'
+
     implementation 'org.kordamp.ikonli:ikonli-javafx:12.3.1'
     implementation 'org.kordamp.ikonli:ikonli-materialdesign2-pack:12.3.1'
+    implementation 'org.kordamp.ikonli:ikonli-codicons-pack:12.3.1'
+    implementation 'org.kordamp.ikonli:ikonli-evaicons-pack:12.3.1'
+    implementation 'org.kordamp.ikonli:ikonli-material2-pack:12.3.1'
 
     implementation 'org.jetbrains.kotlinx:kotlinx-serialization-core:1.6.3'
     implementation 'org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3'

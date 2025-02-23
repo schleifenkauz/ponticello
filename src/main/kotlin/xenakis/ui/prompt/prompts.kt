@@ -24,7 +24,7 @@ fun <T : Any> showSelectorDialog(
     anchorNode: Node? = null, stringConverter: (T) -> String = { it.toString() }
 ): T? = showSelectorDialog(context, title, items, initialValue, anchorNode?.localToScreen(0.0, 0.0), stringConverter)
 
-fun <R : Any> compoundInput(title: String, body: CompoundPrompt<R>.() -> Unit): CompoundPrompt<R> {
+fun <R : Any> compoundPrompt(title: String, body: CompoundPrompt<R>.() -> Unit): CompoundPrompt<R> {
     val input = CompoundPrompt<R>(title)
     input.body()
     return input

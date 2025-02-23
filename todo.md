@@ -148,6 +148,10 @@
 - selection based region display is not quite right
 - renaming controls doesn't work
 - creating custom parameters doesn't work
+- crash when moving the border between ScoreView and DetailPane (probably memory issue)
+- SynthDef detail windows cannot be reopened
+- creating memos doesn't work 
+- recording doesn't work
 
 ### Namen überlegen
 

@@ -19,10 +19,8 @@ import xenakis.model.XenakisProject
 import xenakis.model.registry.GlobalSynthDefLib
 import xenakis.sc.client.OSCSuperColliderClient
 import xenakis.sc.client.SuperColliderClient
-import xenakis.ui.XenakisApp.Companion.primaryStage
-import xenakis.ui.XenakisHextantPlugin
-import xenakis.ui.XenakisMainScreen
 import xenakis.ui.impl.tryWithAlert
+import xenakis.ui.launcher.XenakisApp.Companion.primaryStage
 import xenakis.ui.prompt.PredicateTextPrompt
 import xenakis.ui.prompt.YesNoPrompt
 import java.io.File

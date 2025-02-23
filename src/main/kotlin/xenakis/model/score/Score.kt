@@ -159,7 +159,7 @@ class Score(
     fun instancesOf(obj: ScoreObject, filterMuted: Boolean = false): Sequence<ScoreObjectInstance> = sequence {
         for (inst in objectInstances) {
             val o = inst.obj
-            if (filterMuted && inst.muted) continue
+            if (filterMuted && inst.muted.now) continue
             if (o == obj) yield(inst)
             else if (o is ScoreObjectGroup) yieldAll(o.score.instancesOf(obj, filterMuted))
         }

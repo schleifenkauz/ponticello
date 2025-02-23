@@ -12,11 +12,12 @@ import javafx.scene.input.MouseButton
 import javafx.scene.layout.VBox
 import javafx.stage.Window
 import org.controlsfx.control.textfield.CustomTextField
+import org.kordamp.ikonli.javafx.FontIcon
+import org.kordamp.ikonli.material2.Material2MZ
 import reaktive.event.event
 import reaktive.value.ReactiveVariable
 import reaktive.value.binding.map
 import reaktive.value.fx.asObservableValue
-import xenakis.ui.Icon
 import xenakis.ui.impl.SubWindow
 import xenakis.ui.impl.button
 import xenakis.ui.impl.styleClass
@@ -44,7 +45,7 @@ abstract class SearchableListView<E>(private val title: String) : VBox() {
     init {
         styleClass("searchable-list")
         searchText.promptText = "$title..."
-        searchText.left = Icon.Search.getGraphic()
+        searchText.left = FontIcon(Material2MZ.SEARCH)
         optionsBox.setMaxSize(300.0, 500.0)
         children.addAll(searchText, optionsBox)
         registerShortcuts()

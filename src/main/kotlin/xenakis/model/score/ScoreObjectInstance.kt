@@ -10,8 +10,12 @@ import javafx.geometry.HorizontalDirection
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
+import reaktive.value.ReactiveBoolean
+import reaktive.value.ReactiveVariable
 import reaktive.value.now
+import reaktive.value.reactiveVariable
 import xenakis.impl.Decimal
+import xenakis.impl.copy
 import xenakis.impl.withPrecision
 import xenakis.model.registry.ObjectReference
 import xenakis.model.registry.ScoreObjectRegistry
@@ -22,14 +26,14 @@ class ScoreObjectInstance(
     @SerialName("object") private var objectRef: ObjectReference,
     @SerialName("time") private var _time: Decimal,
     @SerialName("y") private var _y: Decimal,
-    @SerialName("muted") private var _muted: Boolean = false
+    @SerialName("muted") private var _muted: ReactiveVariable<Boolean> = reactiveVariable(false)
 ) {
     constructor(
-        obj: ScoreObject, time: Decimal, y: Decimal, muted: Boolean = false
+        obj: ScoreObject, time: Decimal, y: Decimal, muted: ReactiveVariable<Boolean> = reactiveVariable(false)
     ) : this(obj.createReference(), time, y, muted)
 
     constructor(
-        obj: ScoreObject, position: ObjectPosition, muted: Boolean = false
+        obj: ScoreObject, position: ObjectPosition, muted: ReactiveVariable<Boolean> = reactiveVariable(false)
     ) : this(obj, position.time, position.y, muted)
 
     @Transient
@@ -46,7 +50,7 @@ class ScoreObjectInstance(
     val y get() = _y
     val position get() = ObjectPosition(start, y)
 
-    val muted get() = _muted
+    val muted: ReactiveBoolean get() = _muted
 
     val duration get() = obj.duration
     val height get() = obj.height
@@ -97,7 +101,7 @@ class ScoreObjectInstance(
 
     fun addListener(listener: Listener) {
         viewManager.addListener(listener)
-        listener.toggledMute(muted)
+        listener.toggledMute(muted.now)
     }
 
     fun removeListener(listener: Listener) {
@@ -152,10 +156,10 @@ class ScoreObjectInstance(
 
     fun toggleMuted() {
         if (obj.canMute) {
-            _muted = !_muted
+            _muted.now = !muted.now
             context[UndoManager].record(ToggleMute(this))
-            viewManager.notifyListeners { toggledMute(_muted) }
-            score?.toggledMute(this, muted)
+            viewManager.notifyListeners { toggledMute(muted.now) }
+            score?.toggledMute(this, muted.now)
         }
     }
 
@@ -177,7 +181,7 @@ class ScoreObjectInstance(
         val name = "${obj.name.now}_" + (if (whichHalf == HorizontalDirection.LEFT) "left" else "right")
         val time = if (whichHalf == HorizontalDirection.LEFT) start else start + position
         val half = obj.cut(position, whichHalf, name) ?: return null
-        return ScoreObjectInstance(half, time, y, muted)
+        return ScoreObjectInstance(half, time, y, muted.copy())
     }
 
     fun cut(position: Decimal): Pair<ScoreObjectInstance, ScoreObjectInstance>? {

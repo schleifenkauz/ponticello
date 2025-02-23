@@ -9,7 +9,9 @@ import javafx.scene.layout.HBox
 import javafx.scene.layout.VBox
 import javafx.scene.paint.Color
 import org.controlsfx.control.textfield.CustomTextField
-import xenakis.ui.Icon
+import org.kordamp.ikonli.javafx.FontIcon
+import org.kordamp.ikonli.material2.Material2MZ
+import xenakis.ui.actions.button
 import xenakis.ui.impl.button
 import xenakis.ui.impl.infiniteSpace
 import xenakis.ui.impl.styleClass
@@ -21,7 +23,7 @@ class LauncherScreen(private val launcher: XenakisLauncher): Activity() {
         get() = launcher.rootContext
     private val searchField = CustomTextField().apply {
         styleClass("sleek-text-field", "search-field")
-        left = Icon.Search.getView()
+        left = FontIcon(Material2MZ.SEARCH)
         promptText = "Search for project..."
     }
 
@@ -62,14 +64,14 @@ class LauncherScreen(private val launcher: XenakisLauncher): Activity() {
             path.textFill = Color.RED
         }
         val box = HBox(vertical).styleClass("project-box")
-        vertical.setOnMouseClicked {
+        box.setOnMouseClicked {
             if (proj.isDirectory) {
                 launcher.openProject(proj)
             } else {
                 removeFromRecentProjects("Project file does not exist. Remove from list?", proj, box)
             }
         }
-        val removeBtn = Icon.Close.button(action = "Remove from list of recent projects") {
+        val removeBtn = Material2MZ.SAVE.button(action = "Remove from list of recent projects") {
             removeFromRecentProjects("Remove project from list of recent projects?", proj, box)
         }
         val space = infiniteSpace()

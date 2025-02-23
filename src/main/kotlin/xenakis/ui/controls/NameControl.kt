@@ -1,32 +1,33 @@
 package xenakis.ui.controls
 
-import hextant.fx.setRoot
 import hextant.fx.shortcut
-import javafx.scene.control.Control
 import javafx.scene.control.TextField
 import javafx.scene.input.KeyEvent
 import javafx.scene.layout.HBox
+import org.kordamp.ikonli.material2.Material2AL
 import reaktive.Observer
+import reaktive.value.binding.not
+import reaktive.value.fx.asReactiveValue
 import reaktive.value.now
 import xenakis.model.obj.RenamableObject
 import xenakis.sc.Identifier
-import xenakis.ui.Icon
+import xenakis.ui.actions.ActionBar
+import xenakis.ui.actions.collectActions
 import xenakis.ui.impl.alwaysHGrow
 import xenakis.ui.impl.styleClass
 
-class NameControl(val obj: RenamableObject) : Control() {
+class NameControl(val obj: RenamableObject) : HBox() {
     private val field = TextField(obj.name.now).alwaysHGrow()
-    private val btnEdit = Icon.Edit.button(action = "Edit name") { startEdit() }
-    private val btnCommit = Icon.Check.button(action = "Commit change") { commitEdit() }
-    private val root = HBox(field, btnEdit)
     private val observer: Observer
 
+    val isEditing = field.editableProperty().asReactiveValue()
+
     init {
-        root styleClass "name"
+        styleClass("name")
         field styleClass "name-field"
-        setRoot(root)
+        val toolbar = ActionBar(actions.withContext(this))
+        children.addAll(field, toolbar)
         field.isEditable = false
-        btnCommit.isFocusTraversable = false
         field.addEventFilter(KeyEvent.KEY_PRESSED) { ev ->
             if ("ENTER".shortcut.matches(ev)) {
                 commitEdit()
@@ -54,7 +55,6 @@ class NameControl(val obj: RenamableObject) : Control() {
     fun startEdit() {
         if (field.isEditable) return
         field.isEditable = true
-        root.children[1] = btnCommit
         field.requestFocus()
     }
 
@@ -64,7 +64,6 @@ class NameControl(val obj: RenamableObject) : Control() {
         if (Identifier.isValid(name) && obj.canRenameTo(name)) {
             field.isEditable = false
             val old = obj.name.now
-            root.children[1] = btnEdit
             if (name != old) {
                 obj.rename(name)
             }
@@ -75,6 +74,20 @@ class NameControl(val obj: RenamableObject) : Control() {
         if (!field.isEditable) return
         field.isEditable = false
         field.text = obj.name.now
-        root.children[1] = btnEdit
+    }
+
+    companion object {
+        private val actions = collectActions<NameControl> {
+            addAction("Edit name") {
+                applicableIf { ctrl -> ctrl.isEditing.not() }
+                icon(Material2AL.EDIT)
+                execute(NameControl::startEdit)
+            }
+            addAction("Commit change") {
+                applicableIf { ctrl -> ctrl.isEditing }
+                icon(Material2AL.CHECK)
+                execute(NameControl::commitEdit)
+            }
+        }
     }
 }

@@ -1,5 +1,5 @@
 .root {
-    -fx-accent: green;
+    -fx-accent: #06b806;
     -fx-focus-color: -fx-accent;
     -fx-base: #1d1d20;
     -fx-control-inner-background: derive(-fx-base, 35%);
@@ -75,7 +75,7 @@ Slider.control-detail-editor {
 }
 
 .icon-button FontIcon {
-    -fx-icon-size: 24px;
+    -fx-icon-size: 26px;
     -fx-icon-color: -fx-accent;
 }
 
