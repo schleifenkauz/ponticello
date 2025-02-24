@@ -25,7 +25,7 @@ class NameControl(val obj: RenamableObject) : HBox() {
     init {
         styleClass("name")
         field styleClass "name-field"
-        val toolbar = ActionBar(actions.withContext(this))
+        val toolbar = ActionBar(actions.withContext(this), style = false)
         children.addAll(field, toolbar)
         field.isEditable = false
         field.addEventFilter(KeyEvent.KEY_PRESSED) { ev ->
@@ -81,12 +81,12 @@ class NameControl(val obj: RenamableObject) : HBox() {
             addAction("Edit name") {
                 applicableIf { ctrl -> ctrl.isEditing.not() }
                 icon(Material2AL.EDIT)
-                execute(NameControl::startEdit)
+                executes(NameControl::startEdit)
             }
             addAction("Commit change") {
                 applicableIf { ctrl -> ctrl.isEditing }
                 icon(Material2AL.CHECK)
-                execute(NameControl::commitEdit)
+                executes(NameControl::commitEdit)
             }
         }
     }

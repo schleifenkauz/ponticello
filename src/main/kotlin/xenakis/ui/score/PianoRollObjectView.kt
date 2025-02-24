@@ -31,10 +31,10 @@ import xenakis.model.score.ScoreObject
 import xenakis.model.score.ScoreObjectInstance
 import xenakis.sc.editor.EventDictionaryEditor
 import xenakis.sc.view.ObjectSelectorControl
-import xenakis.ui.actions.ToolSelector
+import xenakis.ui.actions.Tool
 import xenakis.ui.controls.DetailPane
 import xenakis.ui.impl.*
-import xenakis.ui.launcher.XenakisMainScreen
+import xenakis.ui.launcher.XenakisMainActivity
 import xenakis.ui.prompt.DecimalPrompt
 import xenakis.ui.prompt.IntegerPrompt
 import kotlin.math.roundToInt
@@ -46,7 +46,7 @@ class PianoRollObjectView(inst: ScoreObjectInstance, private val obj: PianoRollO
     private val pixelsPerPitch get() = prefHeight / (obj.highestPitch - obj.lowestPitch + 1)
     private val cursor = Rectangle(10.0, pixelsPerPitch) styleClass "note-cursor"
     private val cursorOpacity = reactiveVariable(CURSOR_OPACITY)
-    private val selectedTool get() = context[XenakisMainScreen].toolSelector.selected
+    private val selectedTool get() = context[XenakisMainActivity].toolSelector.selectedOption
 
     private fun getY(pitch: Int) = (obj.highestPitch - pitch) * pixelsPerPitch
 
@@ -56,16 +56,16 @@ class PianoRollObjectView(inst: ScoreObjectInstance, private val obj: PianoRollO
         val rect = BorderPane() styleClass "note-object"
         rect.backgroundProperty().bind(Bindings.createObjectBinding({
             val background = backgroundColor.now
-            if (rect.isFocused && selectedTool.value == ToolSelector.Tool.PianoRoll)
+            if (rect.isFocused && selectedTool.now == Tool.PianoRoll)
                 background(background.interpolate(background.invert(), 0.8))
             else background(background.invert())
-        }, backgroundColor.asObservableValue(), rect.focusedProperty(), selectedTool))
+        }, backgroundColor.asObservableValue(), rect.focusedProperty(), selectedTool.asObservableValue()))
         rect.borderProperty().bind(Bindings.createObjectBinding({
-            if (rect.isHover && selectedTool.value == ToolSelector.Tool.PianoRoll) {
+            if (rect.isHover && selectedTool.now == Tool.PianoRoll) {
                 val background = backgroundColor.now.invert()
                 solidBorder(background.darker(), 2.0)
             } else solidBorder(Color.TRANSPARENT, 2.0)
-        }, backgroundColor.asObservableValue(), rect.hoverProperty(), selectedTool))
+        }, backgroundColor.asObservableValue(), rect.hoverProperty(), selectedTool.asObservableValue()))
         noteRects[note] = rect
         setupNoteObjectEvents(rect, note)
         updateNoteDisplay(rect, note)
@@ -89,8 +89,8 @@ class PianoRollObjectView(inst: ScoreObjectInstance, private val obj: PianoRollO
         rect.setupDraggingAndResizing(
             context = pane.context,
             canUserChangeWidth = true, canUserChangeHeight = false,
-            moveTool = ToolSelector.Tool.PianoRoll,
-            resizeTool = ToolSelector.Tool.PianoRoll,
+            moveTool = Tool.PianoRoll,
+            resizeTool = Tool.PianoRoll,
             drag = { toX, toY ->
                 val t = snapToGrid(toX, toY)
                 note.onset = t.coerceIn(zero, obj.duration - note.duration)
@@ -113,7 +113,7 @@ class PianoRollObjectView(inst: ScoreObjectInstance, private val obj: PianoRollO
             },
         )
         rect.addEventHandler(MouseEvent.ANY) { ev ->
-            if (selectedTool.value != ToolSelector.Tool.PianoRoll) return@addEventHandler
+            if (selectedTool.now != Tool.PianoRoll) return@addEventHandler
             when (ev.eventType) {
                 MouseEvent.MOUSE_ENTERED -> children.remove(cursor)
                 MouseEvent.MOUSE_EXITED -> if (cursor !in children && !ev.isPrimaryButtonDown && !ev.isSecondaryButtonDown) {
@@ -236,8 +236,8 @@ class PianoRollObjectView(inst: ScoreObjectInstance, private val obj: PianoRollO
             background.invert().deriveColor(0.0, 1.0, 1.0, opacity)
         }.asObservableValue())
         addEventHandler(MouseEvent.ANY) { ev ->
-            val selectedTool = selectedTool.value
-            if (selectedTool == ToolSelector.Tool.AddTime && ev.eventType == MouseEvent.MOUSE_CLICKED) {
+            val selectedTool = selectedTool.now
+            if (selectedTool == Tool.AddTime && ev.eventType == MouseEvent.MOUSE_CLICKED) {
                 val t = snapToGrid(ev.x, ev.y)
                 val amount = DecimalPrompt(
                     "How much time to add", precision = ObjectPosition.TIME_PRECISION,
@@ -246,7 +246,7 @@ class PianoRollObjectView(inst: ScoreObjectInstance, private val obj: PianoRollO
                     ?: return@addEventHandler
                 obj.addTime(t, amount)
             }
-            if (selectedTool != ToolSelector.Tool.PianoRoll) {
+            if (selectedTool != Tool.PianoRoll) {
                 children.remove(cursor)
                 return@addEventHandler
             }

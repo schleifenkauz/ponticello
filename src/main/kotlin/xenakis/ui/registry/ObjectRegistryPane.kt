@@ -61,7 +61,7 @@ abstract class ObjectRegistryPane<O : NamedObject>(
         val type = registry.objectType
         val label = Label(plural(type)).styleClass("heading")
         val space = infiniteSpace()
-        val actionBar = ActionBar(actions.withContext(this))
+        val actionBar = ActionBar(actions.withContext(this), style = false)
         return HBox(label, searchText, space, actionBar).styleClass("tool-pane-header")
     }
 
@@ -179,13 +179,13 @@ abstract class ObjectRegistryPane<O : NamedObject>(
                 description { p -> reactiveValue("Create new ${p.registry.objectType}") }
                 shortcut("Ctrl+PLUS")
                 icon(MaterialDesignP.PLUS)
-                execute { p -> p.addObject() }
+                executes { p -> p.addObject() }
             }
             addAction("Sync registry") {
                 description { p -> reactiveValue("Sync ${plural(p.registry.objectType)}") }
                 shortcut("Ctrl+Shift+S")
                 icon(MaterialDesignS.SYNC)
-                execute { p ->
+                executes { p ->
                     p.sync()
                     Logger.confirm("Synchronized ${plural(p.registry.objectType)} with server", Logger.Category.Registries)
                 }

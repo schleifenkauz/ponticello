@@ -33,13 +33,13 @@ import xenakis.model.score.Score.Companion.rootScore
 import xenakis.sc.Identifier
 import xenakis.sc.editor.EventDictionaryEditor
 import xenakis.sc.editor.ScFunctionEditor
-import xenakis.ui.actions.ToolSelector.Tool
-import xenakis.ui.actions.ToolSelector.Tool.*
+import xenakis.ui.actions.Tool
+import xenakis.ui.actions.Tool.*
 import xenakis.ui.impl.hasFile
 import xenakis.ui.impl.rootPane
 import xenakis.ui.impl.setupDropArea
 import xenakis.ui.impl.styleClass
-import xenakis.ui.launcher.XenakisMainScreen
+import xenakis.ui.launcher.XenakisMainActivity
 import xenakis.ui.prompt.DecimalPrompt
 import xenakis.ui.prompt.NamePrompt
 import xenakis.ui.prompt.compoundPrompt
@@ -53,8 +53,8 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
     private val views = mutableMapOf<ScoreObjectInstance, ScoreObjectView>()
     val allViews: Collection<ScoreObjectView> get() = views.values
 
-    protected val ui get() = context[XenakisMainScreen]
-    private val selectedTool get() = ui.toolSelector.selected.value!!
+    protected val ui get() = context[XenakisMainActivity]
+    private val selectedTool get() = ui.toolSelector.selected
 
     val selector: ScoreObjectSelectionManager get() = context[ScoreObjectSelectionManager]
 
@@ -226,7 +226,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
 
     private fun mousePressed(ev: MouseEvent) {
         ev.consume()
-        val selectedTool = ui.toolSelector.selected.value!!
+        val selectedTool = ui.toolSelector.selected
         if (newObject != null) return
         clearRegionSelection()
         val pos = snapToGrid(ev.x, ev.y)
@@ -328,9 +328,9 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
         if (score == context[rootScore] && !ev.isShiftDown) selector.deselectAll()
         val newObj = newObject
         val selection = selectedArea
-        val tool = ui.toolSelector.selected.value
+        val tool = ui.toolSelector.selected
         val (t, y) = snapToGrid(ev.x, ev.y)
-        val scoreView = context[XenakisMainScreen].scoreView
+        val scoreView = context[XenakisMainActivity].scoreView
         when {
             tool == AddTime -> {
                 val amount = DecimalPrompt(

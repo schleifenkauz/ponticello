@@ -22,7 +22,7 @@ import xenakis.ui.actions.button
 import xenakis.ui.controls.DetailPane
 import xenakis.ui.impl.centerChildren
 import xenakis.ui.impl.styleClass
-import xenakis.ui.launcher.XenakisMainScreen
+import xenakis.ui.launcher.XenakisMainActivity
 
 class SynthObjectView(
     instance: ScoreObjectInstance, override val obj: SynthObject
@@ -59,7 +59,7 @@ class SynthObjectView(
     override fun setupDetailPane(pane: DetailPane) {
         pane.addItem("Color:", this.colorPicker)
         val viewBtn = Material2AL.CODE.button(action = "View SynthDef") {
-            context[XenakisMainScreen].instrumentsPane.editInstrument(obj.synthDef)
+            context[XenakisMainActivity].instrumentsPane.editInstrument(obj.synthDef)
         }
         val box = ObjectSelectorControl(obj.synthDefSelector, createBundle())
         pane.addItem("SynthDef: ", HBox(5.0, box, viewBtn).centerChildren())

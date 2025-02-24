@@ -11,12 +11,14 @@ import javafx.scene.input.KeyEvent
 import javafx.scene.input.MouseEvent
 import org.kordamp.ikonli.Ikon
 import org.kordamp.ikonli.javafx.FontIcon
-import reaktive.value.*
 import reaktive.value.binding.and
 import reaktive.value.binding.map
 import reaktive.value.binding.not
 import reaktive.value.binding.notEqualTo
+import reaktive.value.forEach
 import reaktive.value.fx.asObservableValue
+import reaktive.value.now
+import xenakis.ui.impl.SelectorBar
 import xenakis.ui.impl.neverHGrow
 import xenakis.ui.impl.styleClass
 import xenakis.ui.score.ScoreObjectView
@@ -25,9 +27,11 @@ fun <C> collectActions(body: Action.Collector<C>.() -> Unit): Action.Collector<C
 
 fun KeyEventHandlerBody<*>.registerActions(actions: List<ContextualizedAction>) {
     for (action in actions) {
-        on(action.wrapped.shortcut) { ev ->
-            if (action.isApplicable().now) {
-                action.execute(ev)
+        for (shortcut in action.wrapped.shortcuts) {
+            on(shortcut) { ev ->
+                if (action.isApplicable().now) {
+                    action.execute(ev)
+                }
             }
         }
     }
@@ -56,10 +60,10 @@ inline fun Action.Collector<ObjectActionContext>.addObjectAction(
 }
 
 fun Action.Builder<ObjectActionContext>.executeMultiAction(action: (ScoreObjectView, Event?) -> Unit) {
-    execute { ctx, ev ->
+    executes { ctx, ev ->
         val selected = ctx.selectedViews
         when {
-            selected.isEmpty() -> return@execute
+            selected.isEmpty() -> return@executes
             selected.size == 1 -> action(selected.single(), ev)
             else -> ctx.context.compoundEdit(name) {
                 for (view in ctx.selectedViews) {
@@ -79,19 +83,26 @@ inline fun <reified V> Action.Builder<ObjectActionContext>.applicableOn() {
 }
 
 fun Action.Builder<ObjectActionContext>.executeSingle(action: (ScoreObjectView, Event?) -> Unit) {
-    execute { ctx, ev -> ctx.focusedView.now?.let { action(it, ev) } }
+    executes { ctx, ev -> ctx.focusedView.now?.let { action(it, ev) } }
 }
 
 val Event?.isTargetTextInput get() = this is KeyEvent && (target is TextInputControl || target is Spinner<*>)
 
 const val DEFAULT_RADIUS: Double = 16.0
 
-fun configureButton(button: ButtonBase, action: ContextualizedAction) {
-    button.userData = action.icon.forEach { icon ->
+private fun configureButton(button: ButtonBase, action: ContextualizedAction) {
+    val iconObserver = action.icon.forEach { icon ->
         Platform.runLater {
             button.graphic = FontIcon(icon)
         }
     }
+    val toggleState = action.toggleState()
+    button.userData = if (button is ToggleButton) {
+        val toggleStateObserver = toggleState!!.forEach { active ->
+            Platform.runLater { button.isSelected = active }
+        }
+        iconObserver and toggleStateObserver
+    } else iconObserver
     val iconAvailable = action.icon.notEqualTo(Action.NO_ICON)
     val applicable = action.isApplicable()
     if (action.wrapped.ifNotApplicable == Action.IfNotApplicable.Disable) {
@@ -101,9 +112,13 @@ fun configureButton(button: ButtonBase, action: ContextualizedAction) {
         button.visibleProperty().bind(iconAvailable.and(applicable).asObservableValue())
     }
     button.tooltip = Tooltip().also { tooltip ->
+        val shortcutInfo = action.wrapped.shortcuts
+            .firstOrNull()
+            ?.let { shortcut -> " ($shortcut)" }
+            .orEmpty()
         tooltip.userData = action.getDescription().forEach { desc ->
             Platform.runLater {
-                tooltip.text = "$desc (${action.wrapped.shortcut})"
+                tooltip.text = "$desc $shortcutInfo"
             }
         }
     }
@@ -114,19 +129,14 @@ fun configureButton(button: ButtonBase, action: ContextualizedAction) {
     button.setOnMouseClicked { ev -> action.execute(ev) }
 }
 
-fun ContextualizedAction.makeToggleButton(variable: ReactiveValue<Boolean>): ToggleButton {
-    val button = ToggleButton()
+fun ContextualizedAction.makeButton(): ButtonBase {
+    val toggleState = toggleState()
+    val button = if (toggleState == null) Button() else ToggleButton()
     configureButton(button, this)
-    button.userData = variable.observe { _, v -> button.isSelected = v }
     return button
 }
 
-fun <C> Action.Builder<C>.toggles(variable: (C) -> ReactiveVariable<Boolean>) {
-    execute { ctx ->
-        val v = variable(ctx)
-        v.now = !v.now
-    }
-}
+fun <C> Action.Collector<C>.actionBar(context: C) = ActionBar(withContext(context))
 
 private fun ButtonBase.makeIconButton(ikon: Ikon, description: String) {
     styleClass("icon-button")
@@ -145,8 +155,8 @@ fun Ikon.button(action: String, execute: () -> Unit = {}): Button {
     return button
 }
 
-fun Ikon.toggleButton(description: String): ToggleButton {
-    val button = ToggleButton()
-    button.makeIconButton(this, description)
-    return button
+fun <C> action(name: String, config: Action.Builder<C>.() -> Unit) = Action.Builder<C>(name).apply(config).build()
+
+fun <T : SelectorBar.Option<T>> Action.Builder<SelectorBar<T>>.selects(value: T) {
+    selects(value) { bar -> bar.selectedOption }
 }

@@ -6,28 +6,19 @@ import hextant.fx.shortcut
 import javafx.event.Event
 import org.kordamp.ikonli.Ikon
 import org.kordamp.ikonli.materialdesign2.MaterialDesignP
-import reaktive.value.ReactiveBoolean
-import reaktive.value.ReactiveString
-import reaktive.value.ReactiveValue
-import reaktive.value.reactiveValue
+import reaktive.value.*
+import reaktive.value.binding.equalTo
 
 class Action<in C> private constructor(
     val name: String,
     val category: Category,
     private val description: (C) -> ReactiveString,
-    val shortcut: Shortcut, val icon: (C) -> ReactiveValue<Ikon>,
+    val shortcuts: List<Shortcut>, val icon: (C) -> ReactiveValue<Ikon>,
     private val applicability: (C) -> ReactiveBoolean,
     val ifNotApplicable: IfNotApplicable,
+    val toggleState: (C) -> ReactiveValue<Boolean>?,
     private val execute: (C, Event?) -> Unit
 ) {
-    fun execute(context: C, event: Event?) {
-        execute.invoke(context, event)
-    }
-
-    fun getDescription(context: C): ReactiveString = description.invoke(context)
-
-    fun isApplicable(context: C): ReactiveBoolean = applicability(context)
-
     fun withContext(context: C): ContextualizedAction = Contextualized(this, context)
 
     enum class Category {
@@ -38,10 +29,11 @@ class Action<in C> private constructor(
         val name: String,
         var category: Category = Category.Unknown,
         private var description: (C) -> ReactiveString = { _ -> reactiveValue(name) },
-        private var shortcut: Shortcut = NO_SHORTCUT,
+        private val shortcuts: MutableList<Shortcut> = mutableListOf(),
         private var icon: (C) -> ReactiveValue<Ikon> = { reactiveValue(NO_ICON) },
         private var applicability: (C) -> ReactiveBoolean = { reactiveValue(true) },
         private var ifNotApplicable: IfNotApplicable = IfNotApplicable.Hide,
+        private var toggleState: (C) -> ReactiveValue<Boolean>? = { null },
         private var execute: (C, ev: Event?) -> Unit = { _, _ -> }
     ) {
         fun description(desc: String) {
@@ -53,7 +45,13 @@ class Action<in C> private constructor(
         }
 
         fun shortcut(literal: String) {
-            shortcut = literal.shortcut
+            shortcuts.add(literal.shortcut)
+        }
+
+        fun shortcuts(vararg literals: String) {
+            for (literal in literals) {
+                shortcut(literal)
+            }
         }
 
         fun icon(ikon: Ikon) {
@@ -64,12 +62,28 @@ class Action<in C> private constructor(
             icon = react
         }
 
-        fun execute(body: (C, ev: Event?) -> Unit) {
+        fun executes(body: (C, ev: Event?) -> Unit) {
             execute = body
         }
 
-        fun execute(body: (C) -> Unit) {
+        fun executes(body: (C) -> Unit) {
             execute = { ctx, _ -> body(ctx) }
+        }
+
+        fun toggles(variable: (C) -> ReactiveVariable<Boolean>) {
+            toggleState = variable
+            executes { ctx ->
+                val v = variable(ctx)
+                v.now = !v.now
+            }
+        }
+
+        fun <T> selects(value: T, variable: (C) -> ReactiveVariable<T>) {
+            toggleState = { ctx -> variable(ctx).equalTo(value) }
+            executes { ctx ->
+                val v = variable(ctx)
+                v.set(value)
+            }
         }
 
         fun applicableIf(predicate: (C) -> ReactiveBoolean) {
@@ -82,15 +96,19 @@ class Action<in C> private constructor(
 
         fun build(): Action<C> = Action(
             name, category, description,
-            shortcut, icon,
-            applicability, ifNotApplicable, execute
+            shortcuts, icon,
+            applicability, ifNotApplicable, toggleState, execute
         )
     }
 
-    class Collector<C> {
+    open class Collector<C>() {
         private val actions = mutableListOf<Action<C>>()
 
         var category: Category = Category.Unknown
+
+        constructor(collect: Collector<C>.() -> Unit): this() {
+            collect()
+        }
 
         fun add(action: Action<C>) {
             actions.add(action)
@@ -118,10 +136,12 @@ class Action<in C> private constructor(
 
         override fun getDescription(): ReactiveString = wrapped.description(context)
 
-        override fun isApplicable(): ReactiveBoolean = wrapped.isApplicable(context)
+        override fun isApplicable(): ReactiveBoolean = wrapped.applicability(context)
+
+        override fun toggleState(): ReactiveBoolean? = wrapped.toggleState(context)
 
         override fun execute(ev: Event?) {
-            wrapped.execute(context, ev)
+            wrapped.execute.invoke(context, ev)
         }
     }
 

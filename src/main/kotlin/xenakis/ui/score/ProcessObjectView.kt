@@ -12,7 +12,7 @@ import xenakis.sc.view.ObjectSelectorControl
 import xenakis.ui.actions.button
 import xenakis.ui.controls.DetailPane
 import xenakis.ui.impl.centerChildren
-import xenakis.ui.launcher.XenakisMainScreen
+import xenakis.ui.launcher.XenakisMainActivity
 
 class ProcessObjectView(
     instance: ScoreObjectInstance, override val obj: ProcessObject
@@ -23,7 +23,7 @@ class ProcessObjectView(
     override fun setupDetailPane(pane: DetailPane) {
         pane.addItem("Color:", this.colorPicker)
         val viewBtn = Material2AL.CODE.button(action = "View SynthDef") {
-            context[XenakisMainScreen].processDefsPane.editProcessDef(obj.processDef)
+            context[XenakisMainActivity].processDefsPane.editProcessDef(obj.processDef)
         }
         val selector = ProcessDefSelector(context, obj.processDefRef)
         val box = ObjectSelectorControl(selector, createBundle())

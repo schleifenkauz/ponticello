@@ -17,7 +17,7 @@ import xenakis.ui.impl.hasFiles
 import xenakis.ui.impl.setupDropArea
 import xenakis.ui.launcher.XenakisFiles
 import xenakis.ui.launcher.XenakisLauncher.Companion.currentProject
-import xenakis.ui.launcher.XenakisMainScreen
+import xenakis.ui.launcher.XenakisMainActivity
 import java.io.File
 
 class SampleRegistryPane(
@@ -58,7 +58,7 @@ class SampleRegistryPane(
             obj.loadFile(newFile)
         }
         addGrabber(SampleObject.DATA_FORMAT, TransferMode.COPY) {
-            val scoreView = samples.context[XenakisMainScreen].scoreView
+            val scoreView = samples.context[XenakisMainActivity].scoreView
             val width = scoreView.getWidth(obj.duration)
             val height = scoreView.getPaneY(0.02.asY)
             dragView = Image(obj.spectrogramFile.inputStream(), width, height, false, false)

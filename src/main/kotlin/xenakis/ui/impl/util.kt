@@ -34,7 +34,7 @@ import xenakis.model.obj.SuperColliderObject
 import xenakis.model.score.ScoreObject
 import xenakis.model.score.ScoreObjectInstance
 import xenakis.sc.editor.CodeBlockEditor
-import xenakis.ui.launcher.XenakisMainScreen
+import xenakis.ui.launcher.XenakisMainActivity
 import kotlin.math.pow
 import kotlin.math.sqrt
 
@@ -205,7 +205,7 @@ private fun resizeType(shift: Boolean, alt: Boolean) = when {
     else -> ScoreObject.ResizeType.Regular
 }
 
-val Context.rootPane get() = get(XenakisMainScreen).scoreView
+val Context.rootPane get() = get(XenakisMainActivity).scoreView
 
 fun SubWindow.registerSyncShortcuts(obj: SuperColliderObject, code: EditorRoot<CodeBlockEditor>) {
     scene.registerShortcuts {

@@ -74,13 +74,13 @@ class XenakisLauncher {
     private fun getOrLaunchLoadingScreen() =
         currentActivity as? LoadingScreen ?: LoadingScreen(rootContext).also(::launchActivity)
 
-    fun getActiveProject(): XenakisProject? = (currentActivity as? XenakisMainScreen)?.project
+    fun getActiveProject(): XenakisProject? = (currentActivity as? XenakisMainActivity)?.project
 
     private fun openProject(project: XenakisProject) {
         rootContext[UndoManager].reset()
         rootContext[currentProject] = project
         recentProjects.push(project.projectDirectory)
-        launchActivity(XenakisMainScreen(project))
+        launchActivity(XenakisMainActivity(project))
     }
 
     fun closeProject() {

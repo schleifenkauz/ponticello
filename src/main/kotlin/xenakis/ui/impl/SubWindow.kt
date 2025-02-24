@@ -27,7 +27,7 @@ class SubWindow(
         initWindowType()
         registerShortcuts()
         setOnShowing {
-            initOwner(customOwnerWindow ?: context[primaryStage])
+            if (owner != null) initOwner(customOwnerWindow ?: context[primaryStage])
             root.requestFocus()
         }
     }

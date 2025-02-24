@@ -48,7 +48,6 @@
 
 ### Action system to have a better shortcut architecture
 
-- also integrate StreamDeck
 - recognize transport shortcuts from all windows
 
 ### Improve zooming functionality
@@ -78,7 +77,6 @@
 - object insertion with INSERT
 - live updates for envelopes
 - ability to copy and paste whole time ranges
-- maybe use material icons instead of image files... (better resolution)
 - modularize and cleanup stylesheets
 - option to copy samples to project directory
 
@@ -152,6 +150,7 @@
 - SynthDef detail windows cannot be reopened
 - creating memos doesn't work 
 - recording doesn't work
+- extending groups doesn't work
 
 ### Namen überlegen
 

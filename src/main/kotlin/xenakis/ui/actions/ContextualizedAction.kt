@@ -15,5 +15,7 @@ interface ContextualizedAction {
 
     fun isApplicable(): ReactiveBoolean
 
+    fun toggleState(): ReactiveBoolean?
+
     val icon: ReactiveValue<Ikon>
 }

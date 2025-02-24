@@ -22,7 +22,7 @@ import xenakis.model.score.*
 import xenakis.model.score.Envelope.EnvelopePoint
 import xenakis.sc.NumericalControlSpec
 import xenakis.sc.mapOnto
-import xenakis.ui.actions.ToolSelector
+import xenakis.ui.actions.Tool
 import xenakis.ui.impl.dist
 import xenakis.ui.impl.rootPane
 import xenakis.ui.impl.setupDragging
@@ -74,7 +74,7 @@ class EnvelopeEditor(
     private fun setupLineDragging() {
         var draggingSegment = false
         line.setupDragging(
-            context, dragTool = ToolSelector.Tool.Pointer,
+            context, dragTool = Tool.Pointer,
             defaultCursor = Cursor.CROSSHAIR, dragCursor = Cursor.V_RESIZE,
             onPressed = { ev ->
                 val t = transformXToTime(ev.x)
@@ -252,7 +252,7 @@ class EnvelopeEditor(
         handle.setupDragging(
             context,
             defaultCursor = Cursor.CROSSHAIR, dragCursor = Cursor.MOVE,
-            dragTool = ToolSelector.Tool.Pointer,
+            dragTool = Tool.Pointer,
             onPressed = { envelope.beginPointEdit(handles.indexOf(handle)) },
             onReleased = { envelope.finishEdit() }
         ) { _, _, old, dx, dy ->

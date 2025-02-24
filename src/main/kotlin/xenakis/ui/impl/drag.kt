@@ -9,8 +9,8 @@ import javafx.scene.Cursor
 import javafx.scene.Node
 import javafx.scene.input.MouseEvent
 import javafx.scene.layout.Region
-import xenakis.ui.actions.ToolSelector.Tool
-import xenakis.ui.launcher.XenakisMainScreen
+import xenakis.ui.actions.Tool
+import xenakis.ui.launcher.XenakisMainActivity
 import kotlin.math.absoluteValue
 
 fun Node.setupDragging(
@@ -23,10 +23,10 @@ fun Node.setupDragging(
     var dragStart: Point2D? = null
     var localStart: Point2D? = null
     var oldBounds: Bounds? = null
-    val toolSelector = context[XenakisMainScreen].toolSelector
+    val toolSelector = context[XenakisMainActivity].toolSelector
     cursor = defaultCursor
     addEventHandler(MouseEvent.ANY) { ev ->
-        if (toolSelector.selected.value != dragTool) return@addEventHandler
+        if (toolSelector.selected != dragTool) return@addEventHandler
         when (ev.eventType) {
             MouseEvent.MOUSE_PRESSED -> {
                 cursor = dragCursor
@@ -70,11 +70,11 @@ fun Region.setupDraggingAndResizing(
     finishDrag: (MouseEvent, Cursor) -> Unit = { _, _ -> }
 ) {
     cursor = Cursor.OPEN_HAND
-    val toolSelector = context[XenakisMainScreen].toolSelector
+    val toolSelector = context[XenakisMainActivity].toolSelector
     var dragStart: Point2D? = null
     var oldBounds: Bounds? = null
     addEventHandler(MouseEvent.ANY) { ev ->
-        if (toolSelector.selected.value !in setOf(moveTool, resizeTool)) return@addEventHandler
+        if (toolSelector.selected !in setOf(moveTool, resizeTool)) return@addEventHandler
         when (ev.eventType) {
             MouseEvent.MOUSE_PRESSED -> {
                 if (dragStart == null && cursor != null) {
@@ -104,7 +104,7 @@ fun Region.setupDraggingAndResizing(
 
             MouseEvent.MOUSE_MOVED -> {
                 cursor = getCursor(
-                    toolSelector.selected.value, moveTool, resizeTool,
+                    toolSelector.selected, moveTool, resizeTool,
                     ev, canUserChangeWidth, canUserChangeHeight, ev.isPrimaryButtonDown
                 )
                 return@addEventHandler

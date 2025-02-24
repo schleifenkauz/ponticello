@@ -53,7 +53,7 @@ class ControlAssignmentEditor(
     private val detailEditors = mutableMapOf<ControlType<*>, Node>()
     private val spec
         get() = obj.getSpec(parameter) ?: error("Parameter $parameter not found in $obj")
-    private val actionBar: ActionBar = ActionBar(actions.withContext(this))
+    private val actionBar: ActionBar = ActionBar(actions.withContext(this), style = false)
     private var settingControl = false
     private var detailEditor: Node? = null
         set(value) {
@@ -362,19 +362,19 @@ class ControlAssignmentEditor(
 
     companion object {
         private val actions = collectActions<ControlAssignmentEditor> {
-            addAction("Remove") {
-                shortcut("Ctrl+DELETE")
-                icon(Material2AL.DELETE)
-                execute { editor -> editor.obj.controls.removeControl(editor.parameter) }
-            }
             addAction("Edit spec") {
                 shortcut("Ctrl+P")
                 applicableIf { editor -> reactiveValue(editor.spec is NumericalControlSpec) }
                 //editor.obj.def.getParameter(editor.parameter)!!.spec.map { s -> s is NumericalControlSpec }
                 icon(Codicons.SYMBOL_PROPERTY)
-                execute { editor: ControlAssignmentEditor -> ControlSpecPrompt(editor.obj, editor.parameter, editor.spec)
+                executes { editor: ControlAssignmentEditor -> ControlSpecPrompt(editor.obj, editor.parameter, editor.spec)
                     .showDialog(editor.obj.context, editor.actionBar)
                 }
+            }
+            addAction("Remove") {
+                shortcut("Ctrl+DELETE")
+                icon(Material2AL.DELETE)
+                executes { editor -> editor.obj.controls.removeControl(editor.parameter) }
             }
         }
     }

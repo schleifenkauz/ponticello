@@ -44,12 +44,12 @@ class CollapsablePane(
             addAction("Collapse") {
                 icon(MaterialDesignC.CHEVRON_UP)
                 applicableIf { p -> p.expanded }
-                execute { p -> p.collapse() }
+                executes { p -> p.collapse() }
             }
             addAction("Expand") {
                 icon(MaterialDesignC.CHEVRON_DOWN)
                 applicableIf { p -> p.expanded }
-                execute { p -> p.expand() }
+                executes { p -> p.expand() }
             }
         }
     }

@@ -29,12 +29,12 @@ import xenakis.model.InteractionSettings.SnapOption
 import xenakis.model.player.PlaybackManager
 import xenakis.model.score.*
 import xenakis.model.score.Score.Companion.rootScore
-import xenakis.ui.actions.ToolSelector.Tool
+import xenakis.ui.actions.Tool
 import xenakis.ui.controls.DetailPane
 import xenakis.ui.controls.NameControl
 import xenakis.ui.impl.*
 import xenakis.ui.launcher.XenakisLauncher.Companion.currentProject
-import xenakis.ui.launcher.XenakisMainScreen
+import xenakis.ui.launcher.XenakisMainActivity
 import xenakis.ui.prompt.CompoundPrompt
 import xenakis.ui.prompt.compoundPrompt
 
@@ -145,7 +145,7 @@ abstract class ScoreObjectView(
     private fun addMouseActions() {
         addEventHandler(MouseEvent.MOUSE_CLICKED) { ev ->
             ev.consume()
-            val tool = context[XenakisMainScreen].toolSelector.selected.value
+            val tool = context[XenakisMainActivity].toolSelector.selected
             when (tool) {
                 Tool.Cut -> {
                     val obj = instance.obj
