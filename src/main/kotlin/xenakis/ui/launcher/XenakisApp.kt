@@ -28,10 +28,6 @@ class XenakisApp : Application() {
         Logger.addView(NotificationView)
     }
 
-    override fun stop() {
-        launcher.quitApplication()
-    }
-
     companion object {
         val primaryStage = publicProperty<Stage>("primary-stage")
 

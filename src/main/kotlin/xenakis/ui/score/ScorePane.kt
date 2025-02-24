@@ -53,8 +53,8 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
     private val views = mutableMapOf<ScoreObjectInstance, ScoreObjectView>()
     val allViews: Collection<ScoreObjectView> get() = views.values
 
-    protected val ui get() = context[XenakisMainActivity]
-    private val selectedTool get() = ui.toolSelector.selected
+    protected val activity get() = context[XenakisMainActivity]
+    private val selectedTool get() = activity.toolSelector.selected
 
     val selector: ScoreObjectSelectionManager get() = context[ScoreObjectSelectionManager]
 
@@ -133,6 +133,12 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
                 MouseEvent.MOUSE_DRAGGED -> pane.mouseDragged(e)
                 MouseEvent.MOUSE_RELEASED -> pane.mouseReleased(e)
             }
+        }
+        setOnMouseClicked { ev ->
+            if (ev.clickCount >= 2) {
+                doubleClicked(ev)
+            }
+
         }
         addPlayBufOnDrop()
     }
@@ -226,7 +232,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
 
     private fun mousePressed(ev: MouseEvent) {
         ev.consume()
-        val selectedTool = ui.toolSelector.selected
+        val selectedTool = activity.toolSelector.selected
         if (newObject != null) return
         clearRegionSelection()
         val pos = snapToGrid(ev.x, ev.y)
@@ -322,13 +328,46 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
         }
     }
 
+    private fun doubleClicked(ev: MouseEvent) {
+        val tool = activity.toolSelector.selected
+        if (tool in setOf(Task, Memo)) {
+            ev.consume()
+            val (t, y) = snapToGrid(ev.x, ev.y)
+            val obj = when (tool) {
+                Task -> {
+                    val defaultName = context[ScoreObjectRegistry].availableName("task")
+                    val name = NamePrompt(context[ScoreObjectRegistry], "Task name", defaultName)
+                        .showDialog(context) ?: return
+                    val code = EditorRoot.create(ScFunctionEditor(context))
+                    TaskObject(reactiveVariable(name), code)
+                }
+
+                Memo -> {
+                    val defaultName = context[ScoreObjectRegistry].availableName("memo")
+                    MemoObject(reactiveVariable(defaultName), "")
+                }
+
+                else -> throw AssertionError()
+            }
+            val inst = ScoreObjectInstance(obj, t, y)
+            score.addObject(inst)
+            if (obj is MemoObject) {
+                val view = getObjectView(inst) as MemoObjectView
+                runFXWithTimeout {
+                    view.enterEdit()
+                }
+            }
+        }
+
+    }
+
     private fun mouseReleased(ev: MouseEvent) {
         if (ev.target != this) return
         ev.consume()
         if (score == context[rootScore] && !ev.isShiftDown) selector.deselectAll()
         val newObj = newObject
         val selection = selectedArea
-        val tool = ui.toolSelector.selected
+        val tool = activity.toolSelector.selected
         val (t, y) = snapToGrid(ev.x, ev.y)
         val scoreView = context[XenakisMainActivity].scoreView
         when {
@@ -338,33 +377,6 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
                     precision = 2, initialValue = 10.0, 0.0..1000.0
                 ).showDialog(context) ?: return
                 addTime(t, amount)
-            }
-
-            tool in setOf(Task, Memo) && ev.clickCount >= 2 -> {
-                val obj = when (tool) {
-                    Task -> {
-                        val defaultName = context[ScoreObjectRegistry].availableName("task")
-                        val name = NamePrompt(context[ScoreObjectRegistry], "Task name", defaultName)
-                            .showDialog(context) ?: return
-                        val code = EditorRoot.create(ScFunctionEditor(context))
-                        TaskObject(reactiveVariable(name), code)
-                    }
-
-                    Memo -> {
-                        val defaultName = context[ScoreObjectRegistry].availableName("memo")
-                        MemoObject(reactiveVariable(defaultName), "")
-                    }
-
-                    else -> throw AssertionError()
-                }
-                val inst = ScoreObjectInstance(obj, t, y)
-                score.addObject(inst)
-                if (obj is MemoObject) {
-                    val view = getObjectView(inst) as MemoObjectView
-                    runFXWithTimeout {
-                        view.enterEdit()
-                    }
-                }
             }
 
             newObj != null -> {
@@ -423,12 +435,12 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
 
             ev.button == MouseButton.SECONDARY -> pasteFromSystemClipboard(ev)
 
-            this is ScoreView && !ui.playback.player.isPlaying.now -> {
+            this is ScoreView && !activity.playback.player.isPlaying.now -> {
                 if (ev.isControlDown) {
-                    ui.playback.attachToMainScore()
+                    activity.playback.attachToMainScore()
                 }
-                if (ui.playback.isAttachedTo(this)) {
-                    ui.playback.playHead.movePlayHead(t)
+                if (activity.playback.isAttachedTo(this)) {
+                    activity.playback.playHead.movePlayHead(t)
                 }
             }
 

@@ -3,11 +3,12 @@ package xenakis.ui.misc
 import hextant.fx.KeyEventHandlerBody
 import javafx.collections.FXCollections
 import javafx.scene.control.ComboBox
-import javafx.scene.control.ToggleButton
 import javafx.scene.layout.HBox
 import org.kordamp.ikonli.material2.Material2AL
 import org.kordamp.ikonli.materialdesign2.MaterialDesignM
 import reaktive.value.binding.map
+import reaktive.value.binding.not
+import reaktive.value.fx.asObservableValue
 import reaktive.value.fx.asProperty
 import reaktive.value.now
 import xenakis.model.InteractionSettings
@@ -18,14 +19,14 @@ import xenakis.ui.actions.makeButton
 import xenakis.ui.impl.styleClass
 
 class InteractionConfig(settings: InteractionSettings) : HBox() {
-    private val snapToggle = toggleSnap.withContext(settings).makeButton() as ToggleButton
+    private val snapToggle = toggleSnap.withContext(settings).makeButton()
     private val gridToggle = toggleGrid.withContext(settings).makeButton()
 
     private val snapOption = ComboBox(FXCollections.observableList(SnapOption.entries))
 
     init {
         styleClass("toolbar-part")
-        snapOption.disableProperty().bind(snapToggle.selectedProperty().not())
+        snapOption.disableProperty().bind(settings.snapEnabled.not().asObservableValue())
         snapOption.valueProperty().bindBidirectional(settings.snapOption.asProperty())
         children.addAll(snapToggle, gridToggle, snapOption)
     }

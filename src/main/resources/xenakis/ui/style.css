@@ -361,7 +361,7 @@ Slider.control-detail-editor {
 }
 
 Label.memo-area {
-    -fx-padding: 7px;
+    -fx-padding: 5px 5px 5px 8px;
 }
 
 .task-label {

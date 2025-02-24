@@ -111,6 +111,8 @@
 
 ### Different curvatures for envelopes
 
+### Is vertical zoom needed?
+
 ### Ability to execute commands using a query/update language
 
 ### Ability to show score objects in resizable/movable floating window (with detail pane)
@@ -147,8 +149,6 @@
 - renaming controls doesn't work
 - creating custom parameters doesn't work
 - crash when moving the border between ScoreView and DetailPane (probably memory issue)
-- SynthDef detail windows cannot be reopened
-- creating memos doesn't work 
 - recording doesn't work
 - extending groups doesn't work
 

@@ -20,6 +20,7 @@ import reaktive.value.fx.asObservableValue
 import reaktive.value.now
 import xenakis.ui.impl.SelectorBar
 import xenakis.ui.impl.neverHGrow
+import xenakis.ui.impl.setPseudoClassState
 import xenakis.ui.impl.styleClass
 import xenakis.ui.score.ScoreObjectView
 
@@ -90,33 +91,34 @@ val Event?.isTargetTextInput get() = this is KeyEvent && (target is TextInputCon
 
 const val DEFAULT_RADIUS: Double = 16.0
 
-private fun configureButton(button: ButtonBase, action: ContextualizedAction) {
-    val iconObserver = action.icon.forEach { icon ->
+fun ContextualizedAction.makeButton(): ButtonBase {
+    val button = Button()
+    val iconObserver = this.icon.forEach { icon ->
         Platform.runLater {
             button.graphic = FontIcon(icon)
         }
     }
-    val toggleState = action.toggleState()
-    button.userData = if (button is ToggleButton) {
-        val toggleStateObserver = toggleState!!.forEach { active ->
-            Platform.runLater { button.isSelected = active }
+    val toggleState = this.toggleState()
+    button.userData = if (toggleState != null) {
+        val toggleStateObserver = toggleState.forEach { active ->
+            Platform.runLater { button.setPseudoClassState("selected", active) }
         }
         iconObserver and toggleStateObserver
     } else iconObserver
-    val iconAvailable = action.icon.notEqualTo(Action.NO_ICON)
-    val applicable = action.isApplicable()
-    if (action.wrapped.ifNotApplicable == Action.IfNotApplicable.Disable) {
+    val iconAvailable = this.icon.notEqualTo(Action.NO_ICON)
+    val applicable = this.isApplicable()
+    if (this.wrapped.ifNotApplicable == Action.IfNotApplicable.Disable) {
         button.visibleProperty().bind(iconAvailable.asObservableValue())
         button.disableProperty().bind(applicable.not().asObservableValue())
     } else {
         button.visibleProperty().bind(iconAvailable.and(applicable).asObservableValue())
     }
     button.tooltip = Tooltip().also { tooltip ->
-        val shortcutInfo = action.wrapped.shortcuts
+        val shortcutInfo = this.wrapped.shortcuts
             .firstOrNull()
             ?.let { shortcut -> " ($shortcut)" }
             .orEmpty()
-        tooltip.userData = action.getDescription().forEach { desc ->
+        tooltip.userData = this.getDescription().forEach { desc ->
             Platform.runLater {
                 tooltip.text = "$desc $shortcutInfo"
             }
@@ -124,15 +126,9 @@ private fun configureButton(button: ButtonBase, action: ContextualizedAction) {
     }
     button.setMinSize(DEFAULT_RADIUS * 2, DEFAULT_RADIUS * 2)
     button.setMaxSize(DEFAULT_RADIUS * 2, DEFAULT_RADIUS * 2)
-    button.neverHGrow()
-    button.styleClass("icon-button")
-    button.setOnMouseClicked { ev -> action.execute(ev) }
-}
-
-fun ContextualizedAction.makeButton(): ButtonBase {
-    val toggleState = toggleState()
-    val button = if (toggleState == null) Button() else ToggleButton()
-    configureButton(button, this)
+    button.neverHGrow<ButtonBase>()
+    button.styleClass<ButtonBase>("icon-button")
+    button.setOnMouseClicked { ev -> this.execute(ev) }
     return button
 }
 

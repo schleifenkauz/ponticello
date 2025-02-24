@@ -144,10 +144,11 @@ class XenakisLauncher {
             return
         }
         //TODO check if any edits have been made since the last save
-        val save = YesNoPrompt("Save project before exiting?", cancellable = true, default = true)
+        val save = YesNoPrompt("Save project before exiting?", cancellable = true, default = null)
             .showDialog(rootContext) ?: return
         if (save) saveProject()
         currentActivity.hide()
+        quitApplication()
     }
 
     fun quitApplication() {

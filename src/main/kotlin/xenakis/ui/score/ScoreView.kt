@@ -124,9 +124,9 @@ class ScoreView(score: Score, context: Context) : ScorePane(score, context) {
     override fun markT(t: Decimal) {
         val grids = allViews
             .filterIsInstance<TempoGridObjectView>()
-            .filter { v -> t in v.instance.timeRange }
         for (g in grids) {
-            g.mark(t - g.instance.start)
+            if (t in g.instance.timeRange) g.mark(t - g.instance.start)
+            else g.unmark()
         }
         positionTracker.layoutX = getX(t)
     }
@@ -185,7 +185,7 @@ class ScoreView(score: Score, context: Context) : ScorePane(score, context) {
         repositionEnvelopeMagnifier()
         if (clipboardObjectView !in children) children.add(clipboardObjectView)
         if (positionTracker !in children) children.add(positionTracker)
-        ui.playback.playHead.updatePosition()
+        activity.playback.playHead.updatePosition()
         displayTimeGrid()
     }
 
