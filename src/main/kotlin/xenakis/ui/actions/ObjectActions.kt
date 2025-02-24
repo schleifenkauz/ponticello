@@ -106,7 +106,7 @@ object ObjectActions {
         }
 
         addObjectAction("Extend object group") {
-            shortcut("Ctrl+E")
+            shortcut("E")
             applicableOn<ScoreObjectGroupView>()
             executeSingle { view, _ ->
                 val obj = view.instance.obj as? ScoreObjectGroup ?: return@executeSingle

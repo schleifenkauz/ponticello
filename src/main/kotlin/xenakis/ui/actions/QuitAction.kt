@@ -14,5 +14,4 @@ object QuitAction: Action.Collector<XenakisLauncher>({
             } else launcher.closeRequest()
         }
     }
-
 })

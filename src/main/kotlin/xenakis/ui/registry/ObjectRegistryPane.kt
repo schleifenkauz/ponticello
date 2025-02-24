@@ -61,7 +61,7 @@ abstract class ObjectRegistryPane<O : NamedObject>(
         val type = registry.objectType
         val label = Label(plural(type)).styleClass("heading")
         val space = infiniteSpace()
-        val actionBar = ActionBar(actions.withContext(this), style = false)
+        val actionBar = ActionBar(actions.withContext(this), border = false)
         return HBox(label, searchText, space, actionBar).styleClass("tool-pane-header")
     }
 

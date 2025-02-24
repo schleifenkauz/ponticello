@@ -11,6 +11,7 @@ object UndoRedoActions: Action.Collector<UndoManager>({
         ifNotApplicable(Action.IfNotApplicable.Disable)
         icon(MaterialDesignU.UNDO)
         applicableIf { manager -> manager.canUndo }
+        executes { manager -> manager.undo() }
     }
     addAction("Undo") {
         shortcut("Ctrl+Shift+Z")
@@ -18,5 +19,6 @@ object UndoRedoActions: Action.Collector<UndoManager>({
         ifNotApplicable(Action.IfNotApplicable.Disable)
         icon(MaterialDesignR.REDO)
         applicableIf { manager -> manager.canRedo }
+        executes { manager -> manager.redo() }
     }
 })

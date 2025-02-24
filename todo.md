@@ -79,6 +79,8 @@
 - ability to copy and paste whole time ranges
 - modularize and cleanup stylesheets
 - option to copy samples to project directory
+- searching and selecting object details
+  - better text search implementation
 
 ## Long term ideas
 

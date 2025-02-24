@@ -72,6 +72,7 @@ Slider.control-detail-editor {
     -fx-border-radius: 6px;
     -fx-border-color: transparent;
     -fx-border-width: 2px;
+    -fx-focus-traversable: false;
 }
 
 .icon-button FontIcon {
@@ -128,10 +129,15 @@ Slider.control-detail-editor {
 
 .project-box {
     -fx-padding: 5px;
+    -fx-alignment: center-left;
 }
 
 .project-box:hover {
-    -fx-background-color: #351919;
+    -fx-background-color: rgba(6, 184, 6, 0.3);
+}
+
+.project-box:focused {
+    -fx-background-color: rgba(53, 25, 25, 0.5);
 }
 
 .project-name {
@@ -150,6 +156,7 @@ Slider.control-detail-editor {
 }
 
 .startup-screen {
+    -fx-min-width: 500px;
     -fx-padding: 5px;
 }
 

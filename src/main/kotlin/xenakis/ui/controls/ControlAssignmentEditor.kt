@@ -53,7 +53,7 @@ class ControlAssignmentEditor(
     private val detailEditors = mutableMapOf<ControlType<*>, Node>()
     private val spec
         get() = obj.getSpec(parameter) ?: error("Parameter $parameter not found in $obj")
-    private val actionBar: ActionBar = ActionBar(actions.withContext(this), style = false)
+    private val actionBar: ActionBar = ActionBar(actions.withContext(this), border = false)
     private var settingControl = false
     private var detailEditor: Node? = null
         set(value) {

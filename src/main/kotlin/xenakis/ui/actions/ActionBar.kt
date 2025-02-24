@@ -8,7 +8,7 @@ import xenakis.ui.impl.neverHGrow
 open class ActionBar(style: Boolean = true) : HBox() {
     private val indices = mutableMapOf<ButtonBase, Int>()
 
-    constructor(actions: List<ContextualizedAction>, style: Boolean = true) : this(style) {
+    constructor(actions: List<ContextualizedAction>, border: Boolean = true) : this(border) {
         addActions(actions)
     }
 

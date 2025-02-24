@@ -114,6 +114,10 @@ class Action<in C> private constructor(
             actions.add(action)
         }
 
+        fun addAll(collector: Collector<C>) {
+            actions.addAll(collector.actions)
+        }
+
         inline fun addAction(name: String, configure: Builder<C>.() -> Unit) {
             val builder = Builder<C>(name, category = category)
             builder.configure()

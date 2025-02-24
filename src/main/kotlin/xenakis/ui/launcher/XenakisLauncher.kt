@@ -56,25 +56,21 @@ class XenakisLauncher {
         openProject(file.parentFile)
     }
 
-    fun openProject(folder: File): Boolean {
-        val loadingScreen = getOrLaunchLoadingScreen()
-        tryWithAlert("Opening project", category = Logger.Category.Project) {
-            Logger.clear()
-            val context = setupProjectContext(loadingScreen)
-            context[SuperColliderClient].bootServer(loadingScreen) {
-                val project = XenakisProject.loadFrom(folder, context, loadingScreen)
-                Platform.runLater {
-                    openProject(project)
-                }
+    fun openProject(folder: File) {
+        setupProjectContext(
+            whenReady = { context ->
+                val project = XenakisProject.loadFrom(folder, context, getOrLaunchLoadingScreen())
+                openProject(project)
+            }, onError = {
+                recentProjects.clearActiveProject()
             }
-        } ?: return false
-        return true
+        )
     }
 
     private fun getOrLaunchLoadingScreen() =
         currentActivity as? LoadingScreen ?: LoadingScreen(rootContext).also(::launchActivity)
 
-    fun getActiveProject(): XenakisProject? = (currentActivity as? XenakisMainActivity)?.project
+    private fun getActiveProject(): XenakisProject? = (currentActivity as? XenakisMainActivity)?.project
 
     private fun openProject(project: XenakisProject) {
         rootContext[UndoManager].reset()
@@ -95,10 +91,15 @@ class XenakisLauncher {
             .resolve(name) //TODO introduce option for projects location
         location.mkdir()
         location.resolve("project.xen").writeText(location.name)
-        val context = setupProjectContext(getOrLaunchLoadingScreen())
-        val project = XenakisProject.create(location, context)
-        save(project, location)
-        openProject(project)
+        createNewProject(location)
+    }
+
+    private fun createNewProject(location: File) {
+        setupProjectContext { context ->
+            val project = XenakisProject.create(location, context)
+            save(project, location)
+            openProject(project)
+        }
     }
 
     fun saveProject() {
@@ -119,22 +120,31 @@ class XenakisLauncher {
         currentActivity.show(primaryStage)
         val file = recentProjects.activeProject()
         if (file != null) {
-            if (!file.exists() || !openProject(file)) {
-                recentProjects.removeFromRecentProjects(file)
-                launchActivity(LauncherScreen(this))
-            }
+            openProject(file)
         } else {
             launchActivity(LauncherScreen(this))
         }
     }
 
-    private fun setupProjectContext(indicator: ProgressIndicator): Context {
+    private fun setupProjectContext(onError: () -> Unit = {}, whenReady: (Context) -> Unit) {
+        val indicator = getOrLaunchLoadingScreen()
         indicator.displayProgress(0.0, "Starting SuperCollider")
-        val context = rootContext.extend {
-            set(SuperColliderClient, OSCSuperColliderClient.create())
+        try {
+            val context = rootContext.extend {
+                set(SuperColliderClient, OSCSuperColliderClient.create())
+            }
+            SnapshotAware.Serializer.reconstructionContext = context
+            context[SuperColliderClient].bootServer(indicator) {
+                Platform.runLater {
+                    whenReady(context)
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Logger.error("Error starting SuperCollider", Logger.Category.Project, e.message)
+            onError()
+            launchActivity(LauncherScreen(this))
         }
-        SnapshotAware.Serializer.reconstructionContext = context
-        return context
     }
 
 
