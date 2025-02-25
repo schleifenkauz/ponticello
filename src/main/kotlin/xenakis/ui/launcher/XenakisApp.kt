@@ -27,7 +27,7 @@ class XenakisApp : Application() {
             while (true) {
                 System.gc()
                 val period = launcher.rootContext[Settings].garbageCollectionPeriod.now.toLong()
-                Thread.sleep(period)
+                Thread.sleep(period * 1000)
             }
         }
     }

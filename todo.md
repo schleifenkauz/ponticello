@@ -81,6 +81,7 @@
 - option to copy samples to project directory
 - searching and selecting object details
   - better text search implementation
+- improve the timeline
 
 ## Long term ideas
 

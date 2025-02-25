@@ -250,7 +250,7 @@ class ScoreView(score: Score, context: Context) : ScorePane(score, context) {
         }
     }
 
-    private fun zoom(amount: Double, evX: Double) {
+    fun zoom(amount: Double, evX: Double) {
         val newIntervalSize = (displayEnd - displayStart) * amount
         val oldIntervalCenter = (displayEnd + displayStart) / 2
         val newIntervalCenter = (getTime(evX) + oldIntervalCenter * 3) / 4

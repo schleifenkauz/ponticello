@@ -4,6 +4,7 @@ import org.kordamp.ikonli.material2.Material2MZ
 import reaktive.value.now
 import xenakis.impl.asTime
 import xenakis.model.player.PlaybackManager
+import xenakis.ui.impl.mouseX
 import xenakis.ui.score.ScoreView
 
 object ScoreNavigationActions : Action.Collector<ScoreView>({
@@ -13,7 +14,7 @@ object ScoreNavigationActions : Action.Collector<ScoreView>({
         executes { view -> view.display(0.0.asTime, view.displayedDuration) }
     }
     addAction("Display Whole Score") {
-        shortcut("HOME")
+        shortcut("Ctrl+HOME")
         executes { view -> view.displayWholeScore() }
     }
     addAction("Move to Cursor") {
@@ -36,6 +37,20 @@ object ScoreNavigationActions : Action.Collector<ScoreView>({
                 playback.attachToMainScore()
             }
             playback.movePlayHeadToStart()
+        }
+    }
+    addAction("Zoom in") {
+        shortcut("Ctrl+PLUS")
+        icon(Material2MZ.ZOOM_IN)
+        executes { view ->
+            view.zoom(1 / 1.2, view.mouseX)
+        }
+    }
+    addAction("Zoom out") {
+        shortcut("Ctrl+MINUS")
+        icon(Material2MZ.ZOOM_OUT)
+        executes { view ->
+            view.zoom(1.2, view.mouseX)
         }
     }
 })

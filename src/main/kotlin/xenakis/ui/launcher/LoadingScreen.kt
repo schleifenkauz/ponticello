@@ -7,6 +7,7 @@ import javafx.scene.control.ProgressBar
 import javafx.scene.image.ImageView
 import javafx.scene.layout.StackPane
 import javafx.scene.layout.VBox
+import javafx.stage.StageStyle
 
 class LoadingScreen(override val context: Context): Activity(), ProgressIndicator {
     private val progressBar = ProgressBar()
@@ -23,8 +24,8 @@ class LoadingScreen(override val context: Context): Activity(), ProgressIndicato
 
     override fun beforeShowing() {
         stage.sizeToScene()
-        stage.show()
         stage.titleProperty().bind(statusText.textProperty())
+        stage.initStyle(StageStyle.UNDECORATED)
     }
 
     override fun initialStatus(status: String) {

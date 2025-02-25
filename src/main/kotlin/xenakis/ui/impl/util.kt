@@ -20,6 +20,7 @@ import javafx.scene.control.*
 import javafx.scene.input.*
 import javafx.scene.layout.*
 import javafx.scene.paint.Color
+import javafx.scene.robot.Robot
 import javafx.stage.Popup
 import javafx.stage.Window
 import org.controlsfx.glyphfont.FontAwesome
@@ -221,3 +222,9 @@ fun SubWindow.registerSyncShortcuts(obj: SuperColliderObject, code: EditorRoot<C
         }
     }
 }
+
+private val robot by lazy { Robot() }
+
+val Node.mousePosition: Point2D get() = screenToLocal(robot.mousePosition)
+val Node.mouseX get() = mousePosition.x
+val Node.mouseY get() = mousePosition.y
