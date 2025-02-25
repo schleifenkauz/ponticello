@@ -76,10 +76,12 @@ class XenakisLauncher {
         rootContext[UndoManager].reset()
         rootContext[currentProject] = project
         recentProjects.push(project.projectDirectory)
-        launchActivity(XenakisMainActivity(project))
+        Platform.runLater { launchActivity(XenakisMainActivity(project)) }
     }
 
     fun closeProject() {
+        val save = askIfUserWantsToSave() ?: return
+        if (save) saveProject()
         recentProjects.clearActiveProject()
         launchActivity(LauncherScreen(this))
     }
@@ -135,9 +137,7 @@ class XenakisLauncher {
             }
             SnapshotAware.Serializer.reconstructionContext = context
             context[SuperColliderClient].bootServer(indicator) {
-                Platform.runLater {
-                    whenReady(context)
-                }
+                whenReady(context)
             }
         } catch (e: Exception) {
             e.printStackTrace()
@@ -154,12 +154,15 @@ class XenakisLauncher {
             return
         }
         //TODO check if any edits have been made since the last save
-        val save = YesNoPrompt("Save project before exiting?", cancellable = true, default = null)
-            .showDialog(rootContext) ?: return
+        val save = askIfUserWantsToSave() ?: return
         if (save) saveProject()
         currentActivity.hide()
         quitApplication()
     }
+
+    private fun askIfUserWantsToSave() =
+        YesNoPrompt("Save project before exiting?", cancellable = true, default = null)
+            .showDialog(rootContext)
 
     fun quitApplication() {
         rootContext[XenakisFiles].resolve("settings.json").writeJson(rootContext[Settings])
