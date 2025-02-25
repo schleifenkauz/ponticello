@@ -17,7 +17,8 @@ import xenakis.model.obj.ParameterDefObject
 class Settings(
     val defaultParametersDefs: MutableReactiveList<ParameterDefObject> = reactiveList(),
     val scLangLatency: ReactiveVariable<Decimal> = reactiveVariable(0.1.withPrecision(2)),
-    val serverLatency: ReactiveVariable<Decimal> = reactiveVariable(0.1.withPrecision(2))
+    val serverLatency: ReactiveVariable<Decimal> = reactiveVariable(0.1.withPrecision(2)),
+    val garbageCollectionPeriod: ReactiveVariable<Decimal> = reactiveVariable(60.0.withPrecision(0)),
 ) {
     fun getDefaultControlSpec(name: String) = defaultParametersDefs.now.find { p -> p.name.now == name }?.spec?.now
 

@@ -38,6 +38,12 @@ class SettingsPane(settings: Settings, context: Context) : VBox(5.0) {
                             NumericalControlSpec(0.1, 0.01, 1.0, 0.01.toDecimal()), context = context
                         )
                     )
+                    +hbox(
+                        Knob(
+                            "Forced Garbage collection period", KnobControl(settings.garbageCollectionPeriod),
+                            NumericalControlSpec(60.0, 10.0, 240.0, 10.0.toDecimal()), context = context
+                        )
+                    )
                 }
             }
         }

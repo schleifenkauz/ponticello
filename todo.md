@@ -152,7 +152,6 @@
 - creating custom parameters doesn't work
 - crash when moving the border between ScoreView and DetailPane (probably memory issue)
 - recording doesn't work
-- extending groups doesn't work
 
 ### Namen überlegen
 

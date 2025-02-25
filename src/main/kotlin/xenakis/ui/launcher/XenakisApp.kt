@@ -4,9 +4,12 @@ import bundles.publicProperty
 import com.pixelduke.window.ThemeWindowManagerFactory
 import javafx.application.Application
 import javafx.stage.Stage
+import reaktive.value.now
 import xenakis.model.Logger
+import xenakis.model.Settings
 import xenakis.ui.impl.NotificationView
 import xenakis.ui.impl.stackTraceString
+import kotlin.concurrent.thread
 
 class XenakisApp : Application() {
     private lateinit var launcher: XenakisLauncher
@@ -16,6 +19,17 @@ class XenakisApp : Application() {
         ThemeWindowManagerFactory.create().setDarkModeForWindowFrame(stage, true)
         launcher = XenakisLauncher()
         launcher.launchXenakis(stage)
+        periodicGC()
+    }
+
+    private fun periodicGC() {
+        thread(isDaemon = true) {
+            while (true) {
+                System.gc()
+                val period = launcher.rootContext[Settings].garbageCollectionPeriod.now.toLong()
+                Thread.sleep(period)
+            }
+        }
     }
 
     private fun setupLogging() {
