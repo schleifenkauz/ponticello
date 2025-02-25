@@ -1,7 +1,6 @@
 package xenakis.ui.actions
 
 import hextant.fx.Shortcut
-import hextant.fx.never
 import hextant.fx.shortcut
 import javafx.event.Event
 import org.kordamp.ikonli.Ikon
@@ -135,14 +134,13 @@ class Action<in C> private constructor(
         override val wrapped: Action<C>,
         private val context: C
     ) : ContextualizedAction {
-        override val icon: ReactiveValue<Ikon>
-            get() = wrapped.icon(context)
+        override val icon: ReactiveValue<Ikon> = wrapped.icon(context)
 
-        override fun getDescription(): ReactiveString = wrapped.description(context)
+        override val description: ReactiveString = wrapped.description(context)
 
-        override fun isApplicable(): ReactiveBoolean = wrapped.applicability(context)
+        override val isApplicable: ReactiveBoolean = wrapped.applicability(context)
 
-        override fun toggleState(): ReactiveBoolean? = wrapped.toggleState(context)
+        override val toggleState: ReactiveBoolean? = wrapped.toggleState(context)
 
         override fun execute(ev: Event?) {
             wrapped.execute.invoke(context, ev)
@@ -154,7 +152,6 @@ class Action<in C> private constructor(
     }
 
     companion object {
-        val NO_SHORTCUT = never()
         val NO_ICON = MaterialDesignP.PROGRESS_QUESTION
     }
 }

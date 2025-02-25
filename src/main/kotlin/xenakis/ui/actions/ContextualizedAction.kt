@@ -11,11 +11,11 @@ interface ContextualizedAction {
 
     fun execute(ev: Event?)
 
-    fun getDescription(): ReactiveString
+    val description: ReactiveString
 
-    fun isApplicable(): ReactiveBoolean
+    val isApplicable: ReactiveBoolean
 
-    fun toggleState(): ReactiveBoolean?
+    val toggleState: ReactiveBoolean?
 
     val icon: ReactiveValue<Ikon>
 }

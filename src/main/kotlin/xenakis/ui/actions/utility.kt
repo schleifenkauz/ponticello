@@ -30,7 +30,7 @@ fun KeyEventHandlerBody<*>.registerActions(actions: List<ContextualizedAction>) 
     for (action in actions) {
         for (shortcut in action.wrapped.shortcuts) {
             on(shortcut) { ev ->
-                if (action.isApplicable().now) {
+                if (action.isApplicable.now) {
                     action.execute(ev)
                 }
             }
@@ -98,7 +98,7 @@ fun ContextualizedAction.makeButton(): ButtonBase {
             button.graphic = FontIcon(icon)
         }
     }
-    val toggleState = this.toggleState()
+    val toggleState = this.toggleState
     button.userData = if (toggleState != null) {
         val toggleStateObserver = toggleState.forEach { active ->
             Platform.runLater { button.setPseudoClassState("selected", active) }
@@ -106,7 +106,7 @@ fun ContextualizedAction.makeButton(): ButtonBase {
         iconObserver and toggleStateObserver
     } else iconObserver
     val iconAvailable = this.icon.notEqualTo(Action.NO_ICON)
-    val applicable = this.isApplicable()
+    val applicable = this.isApplicable
     if (this.wrapped.ifNotApplicable == Action.IfNotApplicable.Disable) {
         button.visibleProperty().bind(iconAvailable.asObservableValue())
         button.disableProperty().bind(applicable.not().asObservableValue())
@@ -118,7 +118,7 @@ fun ContextualizedAction.makeButton(): ButtonBase {
             .firstOrNull()
             ?.let { shortcut -> " ($shortcut)" }
             .orEmpty()
-        tooltip.userData = this.getDescription().forEach { desc ->
+        tooltip.userData = this.description.forEach { desc ->
             Platform.runLater {
                 tooltip.text = "$desc $shortcutInfo"
             }
