@@ -2,6 +2,7 @@ package xenakis.ui.score
 
 import hextant.context.Context
 import hextant.fx.registerShortcuts
+import javafx.application.Platform
 import javafx.geometry.Rectangle2D
 import javafx.scene.Node
 import javafx.scene.SnapshotParameters
@@ -22,6 +23,8 @@ import xenakis.ui.impl.SubWindow
 import xenakis.ui.impl.styleClass
 import xenakis.ui.impl.verticalDist
 import xenakis.ui.launcher.XenakisLauncher.Companion.currentProject
+import java.util.concurrent.CompletableFuture
+import kotlin.concurrent.thread
 import kotlin.math.exp
 
 class ScoreView(score: Score, context: Context) : ScorePane(score, context) {
@@ -32,6 +35,8 @@ class ScoreView(score: Score, context: Context) : ScorePane(score, context) {
         private set
     private val clipboardObjectView: ImageView = ImageView().also { v -> v.isVisible = false }
     private val timeGridObjects = mutableListOf<Node>()
+
+    private var latestRepaintTrigger = 0L
 
     private var timeGrid: Double = 0.1
     val xAccuracy: Int
@@ -181,12 +186,29 @@ class ScoreView(score: Score, context: Context) : ScorePane(score, context) {
     }
 
     override fun repaint() {
-        super.repaint()
+        latestRepaintTrigger = System.currentTimeMillis()
+        layoutObjects()
         repositionEnvelopeMagnifier()
         if (clipboardObjectView !in children) children.add(clipboardObjectView)
         if (positionTracker !in children) children.add(positionTracker)
         activity.playback.playHead.updatePosition()
         displayTimeGrid()
+    }
+
+    private fun layoutObjects() {
+        val repaintTrigger = latestRepaintTrigger
+        val maxTime = 25L //determines how much time is spent consecutively on the Application Thread
+        val itr = views.iterator()
+        thread {
+            while (itr.hasNext()) {
+                if (repaintTrigger != latestRepaintTrigger) {
+                    break
+                }
+                val job = CompletableFuture<Unit>()
+                Platform.runLater { layoutObjects(itr, maxTime, job) }
+                job.join()
+            }
+        }
     }
 
     private fun displayTimeGrid() {

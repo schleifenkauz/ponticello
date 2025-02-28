@@ -44,13 +44,14 @@ import xenakis.ui.prompt.DecimalPrompt
 import xenakis.ui.prompt.NamePrompt
 import xenakis.ui.prompt.compoundPrompt
 import xenakis.ui.registry.SimpleSearchableRegistryView
+import java.util.concurrent.CompletableFuture
 import kotlin.math.absoluteValue
 
 abstract class ScorePane(val score: Score, val context: Context) : Pane(), ScoreListener, TimeBlock {
     private var newObject: RectangleSelection? = null
     protected var selectedArea: RectangleSelection? = null
 
-    private val views = mutableMapOf<ScoreObjectInstance, ScoreObjectView>()
+    protected val views = mutableMapOf<ScoreObjectInstance, ScoreObjectView>()
     val allViews: Collection<ScoreObjectView> get() = views.values
 
     protected val activity get() = context[XenakisMainActivity]
@@ -100,24 +101,34 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
     }
 
     open fun repaint() {
-        layoutObjects()
+        layoutObjects(views.iterator(), Long.MAX_VALUE, CompletableFuture())
     }
 
-    private fun layoutObjects() {
-        for ((inst, view) in views) {
+    protected fun layoutObjects(
+        itr: Iterator<Map.Entry<ScoreObjectInstance, ScoreObjectView>>,
+        maxTime: Long,
+        job: CompletableFuture<Unit>
+    ) {
+        val tStart = System.currentTimeMillis()
+        while (itr.hasNext()) {
+            val (inst, view) = itr.next()
             if (inst.start > displayEnd || inst.start + inst.duration < displayStart) {
                 children.remove(view)
                 continue
             }
             val resizeHorizontal = (view.getDisplayWidth() - view.prefWidth).absoluteValue > 0.01
             val resizeVertical = (view.getDisplayHeight() - view.prefHeight).absoluteValue > 0.01
-            if (resizeHorizontal || resizeVertical) {
+            if (resizeHorizontal || resizeVertical) Platform.runLater {
                 view.setPrefSize(view.getDisplayWidth(), view.getDisplayHeight())
                 view.rescale()
             }
             view.relocate(getX(inst.start), getPaneY(inst.y))
             if (view !in children) children.add(view)
+            if (System.currentTimeMillis() - tStart > maxTime) {
+                break
+            }
         }
+        job.complete(Unit)
     }
 
     protected open fun listenForEvents() {

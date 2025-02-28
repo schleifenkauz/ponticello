@@ -21,7 +21,7 @@ object ArrowKeys {
         scene.addEventFilter(KeyEvent.KEY_PRESSED) { ev ->
             if (ev.isTargetTextInput) return@addEventFilter
             if (ev.code in setOf(KeyCode.PAGE_UP, KeyCode.PAGE_DOWN)) {
-                val delta = if (ev.code == KeyCode.PAGE_UP) 100.0 else -100.0
+                val delta = if (ev.code == KeyCode.PAGE_DOWN) 100.0 else -100.0
                 scoreView.scroll(delta / scoreView.pixelsPerSecond)
             }
             if (ev.target !is ScoreObjectView) return@addEventFilter

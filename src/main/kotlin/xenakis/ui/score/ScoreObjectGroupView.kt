@@ -25,8 +25,6 @@ class ScoreObjectGroupView(private val inst: ScoreObjectInstance, val obj: Score
         children.add(scorePane)
         scorePane.prefWidthProperty().bind(widthProperty())
         scorePane.prefHeightProperty().bind(heightProperty())
-        widthProperty().addListener { _ -> rescale() }
-        heightProperty().addListener { _ -> rescale() }
         scorePane.repaint()
     }
 
