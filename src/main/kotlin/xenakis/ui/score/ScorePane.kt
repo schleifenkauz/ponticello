@@ -184,13 +184,13 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
                 return
             }
             val controls = getDefaultControls(synthDef)
-            val synthDefRef = reactiveVariable(synthDef.createReference())
+            val synthDefRef = reactiveVariable(synthDef.reference())
             val name = context[ScoreObjectRegistry].availableName(sample.name.now)
             val obj = SynthObject(reactiveVariable(name), synthDefRef, controls)
             obj.setInitialSize(sample.duration, 0.02.withPrecision(ObjectPosition.Y_PRECISION))
             val inst = ScoreObjectInstance(obj, pos)
             score.addObject(inst)
-            controls.reassignControl("buf", BufferControl(reactiveVariable(sample.createReference())))
+            controls.reassignControl("buf", BufferControl(reactiveVariable(sample.reference())))
         }
 
     private fun getDefaultControls(def: ParameterizedObjectDef): ParameterControls {
@@ -478,7 +478,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
                 val initialName = context[ScoreObjectRegistry].availableName(def.name.now)
                 val name = NamePrompt(context[ScoreObjectRegistry], "Name for new Synth object", initialName)
                     .showDialog(context) ?: return
-                val ref = reactiveVariable(def.createReference())
+                val ref = reactiveVariable(def.reference())
                 val controls = getDefaultControls(def)
                 SynthObject(reactiveVariable(name), ref, controls)
             }
@@ -488,7 +488,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
                 val initialName = context[ScoreObjectRegistry].availableName(def.name.now)
                 val name = NamePrompt(context[ScoreObjectRegistry], "Name for new Synth object", initialName)
                     .showDialog(context) ?: return
-                val ref = reactiveVariable(def.createReference())
+                val ref = reactiveVariable(def.reference())
                 val controls = getDefaultControls(def)
                 ProcessObject(reactiveVariable(name), ref, controls)
             }
@@ -527,7 +527,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
                         val eventDictionary = EditorRoot.create(EventDictionaryEditor(context))
                         PianoRollObject(
                             reactiveVariable(name),
-                            reactiveVariable(instr.createReference()),
+                            reactiveVariable(instr.reference()),
                             lowestPitch,
                             highestPitch,
                             eventDictionary,

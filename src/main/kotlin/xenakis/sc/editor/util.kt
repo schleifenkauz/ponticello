@@ -24,7 +24,7 @@ fun simpleText(context: Context, text: String) = ScExprExpander(context, text)
 
 fun out(context: Context, outputBus: BusObject, snd: ScExprExpander): ScExprExpander {
     val editor = OutExprEditor(context, channelsArray = snd)
-    editor.busSelector.select(outputBus.createReference())
+    editor.busSelector.select(outputBus.reference())
     return editor.exp()
 }
 
@@ -45,7 +45,7 @@ fun out(
 ).exp()
 
 fun `in`(context: Context, inputBus: BusObject): ScExprExpander =
-    InExprEditor(context).apply { busSelector.select(inputBus.createReference()) }.exp()
+    InExprEditor(context).apply { busSelector.select(inputBus.reference()) }.exp()
 
 fun `in`(context: Context, bus: ScExprExpander, rate: Rate, channels: Int) = ScExprExpander(
     context, MessageSendEditor(

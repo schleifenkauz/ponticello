@@ -13,9 +13,11 @@ import reaktive.value.reactiveValue
 import reaktive.value.reactiveVariable
 import xenakis.impl.*
 import xenakis.model.Logger
+import xenakis.model.flow.FlowType
 import xenakis.sc.BufferControlSpec
 import xenakis.sc.BusControlSpec
 import xenakis.sc.NumericalControlSpec
+import xenakis.sc.Rate
 import xenakis.sc.client.ScWriter
 import xenakis.sc.client.SuperColliderClient
 
@@ -23,12 +25,9 @@ import xenakis.sc.client.SuperColliderClient
 class ReferencedSynthDefObject(
     private val _name: String,
     override val color: ReactiveVariable<@Serializable(with = ColorSerializer::class) Color>
-) : SynthDefObject, InstrumentObject {
+) : SynthDefObject, InstrumentObject, AbstractContextualObject() {
     @Transient
     private var _parameters: MutableReactiveList<ParameterDefObject> = reactiveList()
-
-    @Transient
-    private lateinit var context: Context
 
     override val canCopy: Boolean
         get() = false
@@ -38,7 +37,7 @@ class ReferencedSynthDefObject(
     override fun onAdded(context: Context) {}
 
     override fun initialize(context: Context) {
-        this.context = context
+        super.initialize(context)
         updateParameters()
     }
 
@@ -85,7 +84,9 @@ class ReferencedSynthDefObject(
                 if (paramName == "duration") continue
                 val default = send("controlDefault", controlRef).get()
                 val spec = when (paramName) {
-                    in setOf("in", "out", "bus") -> BusControlSpec()
+                    "in" -> BusControlSpec(Rate.Audio, FlowType.In)
+                    "out" -> BusControlSpec(Rate.Audio, FlowType.Out)
+                    "bus" -> BusControlSpec(Rate.Audio, FlowType.InOut)
                     "buf" -> BufferControlSpec()
                     else -> {
                         val min = send("controlMinval", listOf(name, paramName)).get().toDouble()
@@ -104,10 +105,11 @@ class ReferencedSynthDefObject(
     override fun toString(): String = "ReferencedSynthDef #$name"
 
     companion object {
-        fun loadFromSynthDescLib(name: String): SynthDefObject {
+        private val instances = mutableMapOf<String, ReferencedSynthDefObject>()
+
+        fun get(name: String): SynthDefObject = instances.getOrPut(name) {
             val associatedColor = reactiveVariable(randomColor())
             return ReferencedSynthDefObject(name, associatedColor)
         }
-
     }
 }

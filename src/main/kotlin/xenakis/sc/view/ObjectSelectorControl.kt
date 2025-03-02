@@ -41,7 +41,7 @@ class ObjectSelectorControl<O : NamedObject, R : ObjectReference?>(
         val initialOption = editor.selected.now?.get<NamedObject>() as O?
         listView.showPopup(context, anchorNode = button, initialOption) { option ->
             @Suppress("UNCHECKED_CAST")
-            editor.select(option.createReference() as R)
+            editor.select(option.reference() as R)
         }
     }
 

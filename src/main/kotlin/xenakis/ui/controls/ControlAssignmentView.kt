@@ -4,13 +4,13 @@ import hextant.fx.shortcut
 import javafx.scene.input.KeyCode
 import javafx.scene.input.KeyEvent
 import javafx.scene.layout.VBox
+import xenakis.model.obj.ParameterizedObject
 import xenakis.model.score.ParameterControl
 import xenakis.model.score.ParameterControls
-import xenakis.model.score.ParameterizedScoreObject
 import xenakis.sc.ControlSpec
 import xenakis.ui.launcher.XenakisApp.Companion.primaryStage
 
-class ControlAssignmentView(private val obj: ParameterizedScoreObject) : VBox(), ParameterControls.View {
+class ControlAssignmentView(private val obj: ParameterizedObject) : VBox(), ParameterControls.View {
     private val editorByParameter = mutableMapOf<String, ControlAssignmentEditor>()
     private val editors = mutableListOf<ControlAssignmentEditor>()
 

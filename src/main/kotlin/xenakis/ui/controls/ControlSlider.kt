@@ -18,7 +18,7 @@ import xenakis.impl.Decimal
 import xenakis.impl.parseDecimal
 import xenakis.impl.snap
 import xenakis.impl.unaryMinus
-import xenakis.model.score.ParameterizedScoreObject
+import xenakis.model.obj.ParameterizedObject
 import xenakis.sc.DecimalLiteral
 import xenakis.sc.NumericalControlSpec
 import xenakis.sc.SpecTransformation
@@ -28,7 +28,7 @@ import xenakis.ui.prompt.YesNoPrompt
 import kotlin.concurrent.thread
 
 class ControlSlider(
-    private val obj: ParameterizedScoreObject,
+    private val obj: ParameterizedObject,
     private val parameter: String,
     private val variable: ReactiveVariable<Decimal>,
 ) : HBox(5.0) {

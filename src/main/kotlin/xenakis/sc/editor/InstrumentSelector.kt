@@ -16,7 +16,7 @@ class InstrumentSelector<R : ObjectReference?>(
 ) : ObjectSelector<InstrumentObject, R>(context, selected) {
     @Suppress("UNCHECKED_CAST")
     constructor(context: Context) : this(
-        context, reactiveVariable<R>(context[InstrumentRegistry].getDefault().createReference() as R)
+        context, reactiveVariable<R>(context[InstrumentRegistry].getDefault().reference() as R)
     )
 
     override fun getRegistry(context: Context): ObjectRegistry<*> = context[InstrumentRegistry]

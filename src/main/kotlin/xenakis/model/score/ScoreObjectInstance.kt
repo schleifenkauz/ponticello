@@ -30,7 +30,7 @@ class ScoreObjectInstance(
 ) {
     constructor(
         obj: ScoreObject, time: Decimal, y: Decimal, muted: ReactiveVariable<Boolean> = reactiveVariable(false)
-    ) : this(obj.createReference(), time, y, muted)
+    ) : this(obj.reference(), time, y, muted)
 
     constructor(
         obj: ScoreObject, position: ObjectPosition, muted: ReactiveVariable<Boolean> = reactiveVariable(false)

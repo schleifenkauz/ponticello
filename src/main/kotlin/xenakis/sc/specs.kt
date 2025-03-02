@@ -10,6 +10,7 @@ import javafx.scene.paint.Color
 import kotlinx.serialization.Serializable
 import reaktive.value.reactiveVariable
 import xenakis.impl.*
+import xenakis.model.flow.FlowType
 import xenakis.model.registry.BusRegistry
 import xenakis.model.registry.GroupRegistry
 import xenakis.model.registry.ObjectReference
@@ -41,11 +42,11 @@ sealed interface ControlSpec {
 fun ControlSpec.defaultControl(context: Context, defaultBus: ObjectReference?) = when (this) {
     is BufferControlSpec -> BufferControl(reactiveVariable(null))
     is BusControlSpec -> {
-        val bus = defaultBus ?: context[BusRegistry].getDefault().createReference()
+        val bus = defaultBus ?: context[BusRegistry].getDefault().reference()
         BusControl(reactiveVariable(bus))
     }
     is NumericalControlSpec -> ConstantControl(reactiveVariable(defaultValue.get()))
-    is GroupControlSpec -> GroupControl(reactiveVariable(context[GroupRegistry].getDefault().createReference()))
+    is GroupControlSpec -> GroupControl(reactiveVariable(context[GroupRegistry].getDefault().reference()))
 }
 
 @Serializable
@@ -93,18 +94,19 @@ data class NumericalControlSpec(
 
 @Compound(serializable = true)
 @Serializable
-class BusControlSpec : ControlSpec {
+class BusControlSpec(val rate: Rate, val flow: FlowType) : ControlSpec {
     override val type: ParameterType
         get() = ParameterType.Bus
 
     override val code: String
-        get() = "kr"
+        get() = rate.toString()
 
     override fun equals(other: Any?): Boolean = other is BusControlSpec
 
     override fun hashCode(): Int = -2
 
     override fun toString(): String = "bus"
+
 }
 
 @Serializable

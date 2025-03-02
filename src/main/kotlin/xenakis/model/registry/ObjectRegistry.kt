@@ -8,10 +8,11 @@ import kotlinx.serialization.Transient
 import reaktive.value.now
 import xenakis.model.Logger
 import xenakis.model.XenakisProject
+import xenakis.model.obj.AbstractContextualObject
 import xenakis.ui.impl.plural
 import xenakis.ui.launcher.XenakisLauncher.Companion.currentProject
 
-abstract class ObjectRegistry<O : NamedObject> : XenakisProject.ProjectComponent {
+abstract class ObjectRegistry<O : NamedObject> : XenakisProject.ProjectComponent, AbstractContextualObject() {
     protected abstract val objects: MutableList<O>
 
     abstract val objectType: String
@@ -22,12 +23,8 @@ abstract class ObjectRegistry<O : NamedObject> : XenakisProject.ProjectComponent
     @Transient
     val views: ListenerManager<out Listener<O>> = ListenerManager.createWeakListenerManager()
 
-    @Transient
-    lateinit var context: Context
-        private set
-
-    open fun initialize(context: Context) {
-        this.context = context
+    override fun initialize(context: Context) {
+        super.initialize(context)
         for (obj in objects) {
             obj.initialize(context)
         }

@@ -27,8 +27,8 @@ class Knob(
     val parameter: String,
     val control: KnobControl,
     private val spec: NumericalControlSpec,
-    private val radius: Double = DEFAULT_RADIUS,
-    private val context: Context
+    private val context: Context,
+    private val radius: Double = DEFAULT_RADIUS
 ) : Control() {
     private val knobDots = mutableListOf<Circle>()
     private val knob = Circle(radius, radius, radius - 10) styleClass "knob-mass"

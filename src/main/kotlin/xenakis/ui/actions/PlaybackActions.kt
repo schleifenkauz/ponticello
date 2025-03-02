@@ -59,7 +59,7 @@ object PlaybackActions : Action.Collector<PlaybackManager>({
                     context,
                     anchorNode = ev?.source as Node,
                     initialOption = currentSelected
-                ) { bus -> project.serverOptions.recordedBus = bus.createReference() }
+                ) { bus -> project.serverOptions.recordedBus = bus.reference() }
             } else playback.recorder.toggleIsActive()
         }
     }

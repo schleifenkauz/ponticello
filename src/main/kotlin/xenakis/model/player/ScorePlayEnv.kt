@@ -5,31 +5,37 @@ import xenakis.impl.Decimal
 import xenakis.impl.toDecimal
 import xenakis.model.Logger
 import xenakis.model.Settings
-import xenakis.model.obj.GroupObject
-import xenakis.model.registry.ObjectReference
+import xenakis.model.flow.SynthOrder
 import xenakis.model.score.ObjectPosition
 import xenakis.model.score.ScoreObject
 import xenakis.model.score.ScoreObjectInstance
 import xenakis.model.score.SynthObject
 
 class ScorePlayEnv(private val settings: Settings) {
-    private val activeInstances = mutableMapOf<ActiveInstance, Int>()
+    private val activeInstances = mutableMapOf<ActiveSynth, Int>()
     private val suffixes = mutableMapOf<ScoreObject, MutableSet<Int>>()
 
     val serverLatency: Decimal get() = settings.serverLatency.now
     val scLangLatency: Decimal get() = settings.scLangLatency.now
     val lookAhead: Decimal get() = scLangLatency + serverLatency
 
-    private fun suffixes(obj: ScoreObject) = suffixes.getOrPut(obj) { mutableSetOf() }
+    private fun suffixes(obj: ScoreObject?) =
+        if (obj != null) suffixes.getOrPut(obj) { mutableSetOf() }
+        else mutableSetOf()
 
     @Synchronized
-    fun markStart(inst: ScoreObjectInstance, position: ObjectPosition): String {
-        val obj = inst.obj
+    fun markStart(inst: ScoreObjectInstance?, position: ObjectPosition): String {
+        val obj = inst?.obj
         val suffixes = suffixes(obj)
         val suffix = (0..Int.MAX_VALUE).first { n -> n !in suffixes }
         suffixes.add(suffix)
-        val name = if (suffix == 0) obj.name.now else "${obj.name.now}_$suffix"
-        activeInstances[ActiveInstance(inst, position, name)] = suffix
+        val name = when {
+            obj == null -> "???" //TODO
+            suffix == 0 -> obj.name.now
+            else -> "${obj.name.now}_$suffix"
+        }
+        val instance = ActiveSynth(inst, position, name)
+        activeInstances[instance] = suffix
         Logger.fine("marked start for $obj, suffix = $suffix", Logger.Category.Playback)
         return name
     }
@@ -37,7 +43,7 @@ class ScorePlayEnv(private val settings: Settings) {
     @Synchronized
     fun markEnd(inst: ScoreObjectInstance, position: ObjectPosition) {
         val obj = inst.obj
-        val element = ActiveInstance(inst, position, "<dummy>")
+        val element = ActiveSynth(inst, position, "<dummy>")
         val suffix = activeInstances.remove(element)
         if (suffix == null) {
             Logger.warn("could not remove $element", Logger.Category.Playback)
@@ -48,13 +54,13 @@ class ScorePlayEnv(private val settings: Settings) {
     }
 
     @Synchronized
-    fun getSynthOrderFor(group: ObjectReference, position: ObjectPosition): SynthOrder {
+    fun getSynthOrderFor(position: ObjectPosition): SynthOrder {
         val relevant = activeInstances.keys
             .filter { s ->
-                val obj = s.inst.obj
-                obj is SynthObject && obj.group.now == group
+                val obj = s.associatedInstance!!.obj
+                obj is SynthObject// && obj.group.now == group
                         && s.absolutePosition.time < position.time
-                        && s.absolutePosition.time + s.inst.obj.duration > position.time + 0.1.toDecimal()
+                        && s.absolutePosition.time + s.associatedInstance.obj.duration > position.time + 0.1.toDecimal()
             }
         val runBefore = relevant
             .filter { (_, pos) -> pos.y > position.y }
@@ -65,7 +71,7 @@ class ScorePlayEnv(private val settings: Settings) {
         return when {
             runAfter != null -> SynthOrder("'addAfter'", "~synths['${runAfter.uniqueName}']")
             runBefore != null -> SynthOrder("'addBefore'", "~synths['${runBefore.uniqueName}']")
-            else -> SynthOrder("'addToHead'", group.get<GroupObject>().superColliderName)
+            else -> SynthOrder("'addToHead'", "s.defaultGroup")
         }
     }
 
@@ -75,29 +81,28 @@ class ScorePlayEnv(private val settings: Settings) {
         suffixes.clear()
     }
 
-    fun activeInstances(inst: ScoreObjectInstance) = activeInstances.keys.filter { act -> act.inst == inst }
+    fun activeInstances(inst: ScoreObjectInstance) =
+        activeInstances.keys.filter { act -> act.associatedInstance == inst }
 
-    fun activeInstances(obj: ScoreObject) = activeInstances.keys.filter { act -> act.inst.obj == obj }
+    fun activeInstances(obj: ScoreObject) = activeInstances.keys.filter { act -> act.associatedInstance!!.obj == obj }
 
-    data class SynthOrder(val addAction: String, val target: String)
-
-    data class ActiveInstance(
-        val inst: ScoreObjectInstance,
+    data class ActiveSynth(
+        val associatedInstance: ScoreObjectInstance?,
         val absolutePosition: ObjectPosition,
         val uniqueName: String
     ) {
         override fun equals(other: Any?): Boolean {
             if (this === other) return true
-            if (other !is ActiveInstance) return false
+            if (other !is ActiveSynth) return false
 
-            if (inst.obj != other.inst.obj) return false
+            if (associatedInstance?.obj != other.associatedInstance?.obj) return false
             if (absolutePosition != other.absolutePosition) return false
 
             return true
         }
 
         override fun hashCode(): Int {
-            var result = inst.obj.hashCode()
+            var result = associatedInstance?.obj.hashCode()
             result = 31 * result + absolutePosition.hashCode()
             return result
         }

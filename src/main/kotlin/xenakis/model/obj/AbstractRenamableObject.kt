@@ -1,31 +1,16 @@
 package xenakis.model.obj
 
 import hextant.context.Context
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.Transient
 import reaktive.value.ReactiveValue
 import reaktive.value.ReactiveVariable
 import reaktive.value.now
 
-@Serializable
-abstract class AbstractRenamableObject : RenamableObject {
-    @Transient
-    protected var initialized = false
-
+abstract class AbstractRenamableObject : RenamableObject, AbstractContextualObject() {
     protected abstract val mutableName: ReactiveVariable<String>
 
     final override val name: ReactiveValue<String>
         get() = mutableName
 
-    @Transient
-    lateinit var context: Context
-        private set
-
-    override fun initialize(context: Context) {
-        if (initialized) return
-        initialized = true
-        this.context = context
-    }
 
     override fun onAdded(context: Context) {}
 

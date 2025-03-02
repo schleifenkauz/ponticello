@@ -26,7 +26,7 @@ class ParameterDefObject(
     fun defaultControl(context: Context, defaultBus: ObjectReference? = null) =
         spec.now.defaultControl(context, defaultBus)
 
-    override fun createReference(): Nothing = throw UnsupportedOperationException()
+    override fun reference(): Nothing = throw UnsupportedOperationException()
 
     override fun toString(): String = "${name.now}: ${spec.now}"
 

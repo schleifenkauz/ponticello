@@ -18,7 +18,7 @@ class GroupSelector(
     selected: ReactiveVariable<ObjectReference?>,
 ) : ObjectSelector<GroupObject, ObjectReference?>(context, selected) {
     constructor(context: Context) : this(
-        context, reactiveVariable(context[GroupRegistry].getDefault().createReference())
+        context, reactiveVariable(context[GroupRegistry].getDefault().reference())
     )
 
     override fun getRegistry(context: Context): ObjectRegistry<*> = context[GroupRegistry]

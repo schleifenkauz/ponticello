@@ -31,6 +31,7 @@ import xenakis.model.obj.SuperColliderObject
 import xenakis.model.player.PlaybackManager
 import xenakis.sc.client.SuperColliderClient
 import xenakis.ui.actions.*
+import xenakis.ui.flow.AudioFlowGraphPane
 import xenakis.ui.impl.*
 import xenakis.ui.launcher.XenakisApp.Companion.primaryStage
 import xenakis.ui.misc.*

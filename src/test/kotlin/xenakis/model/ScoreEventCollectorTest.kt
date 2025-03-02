@@ -109,13 +109,13 @@ class ScoreEventCollectorTest {
         val subScore = Score()
         val subObj = ScoreObjectGroup(reactiveVariable("sub_score"), subScore)
         val subInst =
-            ScoreObjectInstance(subObj.createReference(), 10.0.asTime, 100.0.withPrecision(ObjectPosition.Y_PRECISION))
+            ScoreObjectInstance(subObj.reference(), 10.0.asTime, 100.0.withPrecision(ObjectPosition.Y_PRECISION))
         rootScore.addObject(subInst)
         val obj = Utils.createDummyObject("obj1")
         subInst.toggleMuted()
         subScore.addObject(
             ScoreObjectInstance(
-                obj.createReference(),
+                obj.reference(),
                 10.0.asTime,
                 10.0.asY
             )

@@ -1,5 +1,6 @@
 package xenakis.ui.score
 
+import hextant.context.Context
 import javafx.geometry.Point2D
 import javafx.scene.Node
 import javafx.scene.control.Label
@@ -11,6 +12,7 @@ import reaktive.Observer
 import reaktive.value.now
 import reaktive.value.reactiveVariable
 import xenakis.model.Settings
+import xenakis.model.obj.ParameterizedObject
 import xenakis.model.score.*
 import xenakis.sc.ControlSpec
 import xenakis.sc.NumericalControlSpec
@@ -33,51 +35,12 @@ abstract class ParameterizedScoreObjectView(
     abstract val obj: ParameterizedScoreObject
 
     override fun setupDetailPane(pane: DetailPane) {
-        val addButton = Material2MZ.PLUS.button(action = "Add control")
-        val header = HBox(
-            5.0,
-            Label("Synth controls").styleClass("heading"),
-            infiniteSpace(),
-            addButton
-        ) styleClass "tool-pane-header"
-        addButton.setOnMouseClicked { ev ->
-            if (ev.isShiftDown) {
-                addControlsForAllObjectParameters()
-            } else {
-                addNewControl(addButton)
-            }
-        }
-        pane.children.addAll(header, ControlAssignmentView(obj))
+        setupSynthDetailPane(pane, obj)
     }
 
     override fun initialize(parent: ScorePane) {
         super.initialize(parent)
         listenForMouseEvents()
-    }
-
-    private fun addControlsForAllObjectParameters() {
-        for (param in obj.def.parameters.now) {
-            val name = param.name.now
-            if (name !in obj.controls.controlMap) {
-                obj.controls.addControl(name, param.defaultControl(context))
-            }
-        }
-    }
-
-    private fun addNewControl(anchorNode: Node) {
-        val defaultParameters = context[Settings].defaultParametersDefs.now
-        val synthParameters = obj.def.parameters.now
-        val unassignedParameters = (synthParameters + defaultParameters)
-            .filter { param -> param.name.now !in obj.controls.controlMap }
-            .filter { param -> !(param in defaultParameters && synthParameters.any { p -> p.name.now == param.name.now }) }
-        val listView = SearchableParameterListView(context, "Add new control", obj, unassignedParameters)
-        listView.showPopup(context, anchorNode = anchorNode) { option ->
-            val parameter = option.name.now
-            if (!obj.def.hasParameter(parameter)) {
-                obj.controls.setExtraSpec(parameter, option.spec.now)
-            }
-            obj.controls.addControl(parameter, option.defaultControl(context))
-        }
     }
 
     private fun listenForMouseEvents() {
@@ -189,7 +152,59 @@ abstract class ParameterizedScoreObjectView(
 
     private fun displayKnob(parameter: String, control: KnobControl) {
         val spec = instance.obj.getSpec(parameter) as NumericalControlSpec
-        val knob = Knob(parameter, control, spec, radius = 24.0, context)
+        val knob = Knob(parameter, control, spec, context, radius = 24.0)
         knobControls.children.add(knob)
+    }
+
+    companion object {
+        fun setupSynthDetailPane(pane: DetailPane, obj: ParameterizedObject) {
+            val addButton = Material2MZ.PLUS.button(action = "Add control")
+            val header = HBox(
+                5.0,
+                Label("Synth controls").styleClass("heading"),
+                infiniteSpace(),
+                addButton
+            ) styleClass "tool-pane-header"
+            addButton.setOnMouseClicked { ev ->
+                if (ev.isShiftDown) {
+                    addControlsForAllObjectParameters(obj, obj.context)
+                } else {
+                    addNewControl(addButton, obj.context, obj)
+                }
+            }
+            pane.children.addAll(header, ControlAssignmentView(obj))
+        }
+
+        private fun addControlsForAllObjectParameters(obj: ParameterizedObject, context: Context) {
+            for (param in obj.def.parameters.now) {
+                val name = param.name.now
+                if (name !in obj.controls.controlMap) {
+                    obj.controls.addControl(name, param.defaultControl(context))
+                }
+            }
+        }
+
+        private fun addNewControl(anchorNode: Node, context: Context, obj: ParameterizedObject) {
+            val defaultParameters = context[Settings].defaultParametersDefs.now
+            val synthParameters = obj.def.parameters.now
+            val unassignedParameters = (synthParameters + defaultParameters)
+                .filter { param -> param.name.now !in obj.controls.controlMap }
+                .filter { param -> !(param in defaultParameters && synthParameters.any { p -> p.name.now == param.name.now }) }
+            val listView = SearchableParameterListView(
+                context, "Add new control",
+                obj, unassignedParameters
+            )
+            listView.showPopup(context, anchorNode = anchorNode) { option ->
+                val parameter = option.name.now
+                if (!obj.def.hasParameter(parameter)) {
+                    obj.controls.setExtraSpec(parameter, option.spec.now)
+                }
+                obj.controls.addControl(
+                    parameter, option.defaultControl(
+                        context
+                    )
+                )
+            }
+        }
     }
 }

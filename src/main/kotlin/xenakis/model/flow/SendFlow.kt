@@ -1,0 +1,65 @@
+package xenakis.model.flow
+
+import hextant.context.Context
+import reaktive.value.*
+import reaktive.value.binding.binding
+import reaktive.value.binding.flatMap
+import reaktive.value.binding.map
+import xenakis.impl.Decimal
+import xenakis.impl.copy
+import xenakis.model.obj.BusObject
+import xenakis.model.obj.ReferencedSynthDefObject
+import xenakis.model.registry.BusRegistry
+import xenakis.model.registry.ObjectReference
+import xenakis.model.score.BusControl
+import xenakis.model.score.ConstantControl
+import xenakis.model.score.ParameterControls
+import xenakis.sc.client.ScWriter
+import xenakis.sc.writeSynthCode
+
+class SendFlow(
+    val busRef: ObjectReference,
+    val targetRef: ReactiveVariable<ObjectReference>,
+    val amount: ReactiveVariable<Decimal>,
+) : AudioFlow() {
+    lateinit var targetBus: ReactiveValue<BusObject>
+        private set
+
+    override lateinit var associatedBus: BusObject
+        private set
+
+    override lateinit var name: ReactiveString
+        private set
+
+    override fun initialize(context: Context) {
+        super.initialize(context)
+        targetRef.now.resolve(context[BusRegistry])
+        targetBus = targetRef.map { ref -> ref.get() }
+        busRef.resolve(context[BusRegistry])
+        associatedBus = busRef.get()
+        name = targetBus.flatMap { target -> binding(associatedBus.name, target.name) { a, t -> "send_${a}_${t}" } }
+    }
+
+    override fun copyFor(associatedBus: BusObject): AudioFlow =
+        SendFlow(associatedBus.reference(), targetRef.copy(), amount.copy())
+
+    override fun ScWriter.writeCode(synthName: String, order: SynthOrder) {
+        val controls = ParameterControls(
+            mutableMapOf(
+                "in" to BusControl(reactiveVariable(busRef)),
+                "out" to BusControl(reactiveVariable(targetRef.now)),
+                "volume" to ConstantControl(amount),
+            ),
+        )
+        writeSynthCode(
+            synthName, ReferencedSynthDefObject.get("send"), controls,
+            context, order, duration = null
+        )
+    }
+
+    override fun getConnectedBusses(vararg flowType: FlowType): Set<BusObject> = when {
+        FlowType.In in flowType -> setOf(associatedBus)
+        FlowType.Out in flowType -> setOf(targetBus.now)
+        else -> emptySet()
+    }
+}

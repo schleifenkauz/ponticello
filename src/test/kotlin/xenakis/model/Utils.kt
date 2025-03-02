@@ -17,7 +17,7 @@ import xenakis.model.score.ScoreObject
 import xenakis.model.score.SynthObject
 
 object Utils {
-    val defaultGroup = GroupObject.DEFAULT.createReference()
+    val defaultGroup = GroupObject.DEFAULT.reference()
 
     fun createDummyObject(name: String): ScoreObject {
         val dummy1 = SynthObject(

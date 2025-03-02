@@ -47,7 +47,7 @@ class InstrumentRegistry(
         selectedInstrument.now ?: error("No default SynthDefObject available")
 
     fun select(instrument: InstrumentObject?) {
-        selectedInstrumentRef.now = instrument?.createReference()
+        selectedInstrumentRef.now = instrument?.reference()
         views.notifyListeners { if (this is Listener) this.selected(instrument) }
     }
 

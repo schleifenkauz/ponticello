@@ -130,7 +130,7 @@ class InstrumentRegistryPane(
                             "Import SynthDef '$name' from SynthDescLib? A new SynthDef will be created otherwise.",
                     default = true
                 ).showDialog(registry.context, this) ?: return null
-                return if (reference) ReferencedSynthDefObject.loadFromSynthDescLib(name)
+                return if (reference) ReferencedSynthDefObject.get(name)
                 else CustomizableSynthDefObject.create(name, registry.context)
             }
 

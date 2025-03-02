@@ -28,7 +28,7 @@ interface SynthDefObject : ParameterizedObjectDef, InstrumentObject {
         context: Context, defaultGroup: ObjectReference?, defaultBus: ObjectReference?
     ): ParameterControls {
         val controls = super.defaultControls(context, defaultGroup, defaultBus)
-        val group = defaultGroup ?: context[GroupRegistry].getDefault().createReference()
+        val group = defaultGroup ?: context[GroupRegistry].getDefault().reference()
         controls.controlMap["group"] = GroupControl(reactiveVariable(group))
         return controls
     }

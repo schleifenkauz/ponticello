@@ -10,16 +10,17 @@ import javafx.scene.paint.Color
 import org.controlsfx.control.SegmentedButton
 import reaktive.value.now
 import xenakis.impl.parseDecimal
+import xenakis.model.flow.FlowType
 import xenakis.model.obj.ConfigurableParameterizedObjectDef
 import xenakis.model.obj.ParameterDefObject
-import xenakis.model.score.ParameterizedScoreObject
+import xenakis.model.obj.ParameterizedObject
 import xenakis.sc.*
 import xenakis.sc.ParameterType.*
 import xenakis.ui.impl.button
 import xenakis.ui.impl.textField
 
 class ControlSpecPrompt(
-    private val obj: ParameterizedScoreObject, private val parameter: String,
+    private val obj: ParameterizedObject, private val parameter: String,
     initialSpec: ControlSpec
 ) : CompoundPrompt<ParameterDefObject>("Control spec for parameter $parameter of synth ${obj.name.now}") {
     private var currentSpecType = initialSpec.type
@@ -129,7 +130,7 @@ class ControlSpecPrompt(
 
     private fun makeSpec() = when (currentSpecType) {
         Numerical -> NumericalControlSpec(default!!, min!!, max!!, step!!, warp, associatedColor.value)
-        Bus -> BusControlSpec()
+        Bus -> BusControlSpec(Rate.Audio, FlowType.Out) //TODO
         Buffer -> BufferControlSpec()
         Group -> GroupControlSpec()
     }

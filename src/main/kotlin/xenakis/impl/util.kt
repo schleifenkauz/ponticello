@@ -92,3 +92,4 @@ val canSuperColliderTalkToMe get() = true
 
 fun String.replacePrefix(prefix: String, replacement: String) =
     if (startsWith(prefix)) replacement + drop(prefix.length) else this
+

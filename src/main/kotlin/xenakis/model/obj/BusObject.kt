@@ -8,6 +8,7 @@ import reaktive.Observer
 import reaktive.value.ReactiveVariable
 import reaktive.value.now
 import reaktive.value.reactiveVariable
+import xenakis.impl.Point
 import xenakis.model.obj.SuperColliderObject.LiveCycleType
 import xenakis.sc.Rate
 import xenakis.sc.client.ScWriter
@@ -18,7 +19,8 @@ class BusObject(
     override val mutableName: ReactiveVariable<String>,
     val rate: ReactiveVariable<Rate>,
     val channels: ReactiveVariable<Int>,
-    val type: Type = Type.Regular
+    val type: Type = Type.Regular,
+    val positionInGraph: ReactiveVariable<Point>
 ) : AbstractSuperColliderObject() {
     override val superColliderName
         get() = when (type) {
@@ -69,18 +71,26 @@ class BusObject(
             reactiveVariable("input"),
             reactiveVariable(Rate.Audio),
             reactiveVariable(2),
-            type = Type.Input
+            type = Type.Input,
+            reactiveVariable(Point(0.0, 0.0))
         )
 
         val output = BusObject(
             reactiveVariable("output"),
             reactiveVariable(Rate.Audio),
             reactiveVariable(2),
-            type = Type.Output
+            type = Type.Output,
+            reactiveVariable(Point(0.0, 0.0)) //TODO
         )
 
-        fun create(name: String, rate: Rate = Rate.Audio, channels: Int = 2) =
-            BusObject(reactiveVariable(name), reactiveVariable(rate), reactiveVariable(channels))
+        fun create(name: String, rate: Rate = Rate.Audio, channels: Int = 2, positionInGraph: Point = Point(0.0, 0.0)) =
+            BusObject(
+                reactiveVariable(name),
+                reactiveVariable(rate),
+                reactiveVariable(channels),
+                Type.Regular,
+                reactiveVariable(positionInGraph)
+            )
 
         val DATA_FORMAT = DataFormat("bus")
     }

@@ -16,11 +16,10 @@ import xenakis.model.obj.SynthDefObject
 import xenakis.model.player.PlaybackManager
 import xenakis.model.player.ScorePlayEnv
 import xenakis.model.registry.ObjectReference
-import xenakis.sc.Identifier
 import xenakis.sc.client.ScWriter
 import xenakis.sc.client.SuperColliderClient
 import xenakis.sc.editor.SynthDefSelector
-import xenakis.sc.transform
+import xenakis.sc.writeSynthCode
 import xenakis.ui.impl.Direction
 
 @Serializable
@@ -169,69 +168,6 @@ class SynthObject(
     }
 
     override fun writeCode(name: String, position: ObjectPosition, env: ScorePlayEnv): String = code {
-        appendBlock("s.makeBundle(${env.serverLatency})") {
-            val constantArguments = controls.controlMap.mapNotNull { (param, control) ->
-                if (!synthDef.hasParameter(param)) null
-                else when (control) {
-                    is BufferControl -> param to (control.sample.now?.get<SampleObject>()?.superColliderName ?: "0")
-                    is BusControl -> param to control.bus.now.get<BusObject>().superColliderName
-                    is ConstantControl -> param to control.value.now.toString()
-                    is KnobControl -> param to control.get().toString()
-                    is EnvelopeControl -> param to control.envelope.points[0].value.toString()
-                    is SingleBusValueControl -> {
-                        val bus = control.bus.now.get<BusObject>().superColliderName
-                        param to "$bus.getSynchronous"
-                    }
-                    else -> null
-                }
-            }.joinToString { (param, value) -> "$param: $value" } + ", duration: $duration"
-            val synthVar = "~synths['$name']"
-            val group = group.now
-            val synthDefName = synthDef.name.now
-            val (addAction, target) = env.getSynthOrderFor(group, position)
-            +"$synthVar = Synth(\\$synthDefName, [$constantArguments], target: $target, addAction: $addAction)"
-            +"$synthVar.register"
-            for ((param, control) in controls.controlMap) {
-                when (control) {
-                    is EnvelopeControl -> {
-                        val envelopeCode = control.envelope.code()
-                        val busName = "~auxil_${name}_${param}"
-                        +"$busName  = Bus.control(s, 1)"
-                        +"{ $envelopeCode }.play(s, $busName)"
-                        +"${synthVar}.map(\\$param, $busName)"
-                    }
-
-                    is BusValueControl -> {
-                        val bus = control.bus.now.get<BusObject>().superColliderName
-                        +"${synthVar}.map(\\$param, $bus)"
-                    }
-
-                    /*
-                                        is SingleBusValueControl -> {
-                                            val bus = control.bus.now.get<BusObject>().superColliderName
-                                            +"$bus.postln"
-                                            +"${synthVar}.set(\\$param, $bus.value)"
-                                        }
-                    */
-
-                    is CustomControl -> {
-                        val code = controls.controlMap.entries
-                            .associate { (name, control) -> "~ctrl_$name" to control.makeExpr() }
-                        val expr = control.expr.editor.result.now
-                            .transform<Identifier> { e -> code[e.text] ?: e }
-                        val busName = "~auxil_${name}_${param}"
-                        +"$busName = Bus.control(s, 1)"
-                        appendBlock("", endLine = false) {
-                            +"Env.new(levels: [0, 0], times: [$duration]).kr(Done.freeSelf)"
-                            expr.code(writer, context)
-                        }
-                        +".play(s, $busName)"
-                        +"${synthVar}.map(\\$param, $busName)"
-                    }
-
-                    else -> {} //already handled in constantArguments
-                }
-            }
-        }
+        writeSynthCode(name, synthDef, controls, context, TODO(), duration)
     }
 }

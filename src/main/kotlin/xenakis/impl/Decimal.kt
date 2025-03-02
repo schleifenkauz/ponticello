@@ -45,8 +45,13 @@ class Decimal(val value: Double, val precision: Int) : Number(), Comparable<Deci
     fun pow(exponent: Double): Decimal = Decimal(value.pow(exponent), precision)
 
     override fun toString(): String =
-        if (precision == 0) value.toLong().toString()
-        else value.format(precision)
+        when {
+            isNaN() -> "NaN"
+            value == Double.NEGATIVE_INFINITY -> "-inf"
+            value == Double.POSITIVE_INFINITY -> "inf"
+            precision == 0 -> value.toLong().toString()
+            else -> value.format(precision)
+        }
 
     fun toCanonicalString() = toString().canonicalizeDecimal()
 
@@ -66,6 +71,7 @@ class Decimal(val value: Double, val precision: Int) : Number(), Comparable<Deci
         val NaN get() = Decimal(Double.NaN, 0)
 
         val INF get() = Decimal(Double.POSITIVE_INFINITY, 0)
+        val NINF get() = Decimal(Double.NEGATIVE_INFINITY, 0)
 
         private fun Double.format(precision: Int) = String.format(Locale.US, "%.${precision}f", this)
     }

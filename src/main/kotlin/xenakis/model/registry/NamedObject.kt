@@ -2,15 +2,14 @@ package xenakis.model.registry
 
 import hextant.context.Context
 import reaktive.value.ReactiveValue
+import xenakis.model.obj.ContextualObject
 
-interface NamedObject {
+interface NamedObject: ContextualObject {
     val name: ReactiveValue<String>
 
-    fun onAdded(context: Context)
+    fun onAdded(context: Context) {}
 
-    fun initialize(context: Context)
+    fun onRemoved() {}
 
-    fun onRemoved()
-
-    fun createReference(): ObjectReference = ObjectReference(this)
+    fun reference(): ObjectReference = ObjectReference(this)
 }

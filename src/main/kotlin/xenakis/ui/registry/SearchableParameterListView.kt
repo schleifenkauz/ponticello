@@ -4,13 +4,13 @@ import hextant.context.Context
 import reaktive.value.now
 import xenakis.model.Settings
 import xenakis.model.obj.ParameterDefObject
-import xenakis.model.score.ParameterizedScoreObject
+import xenakis.model.obj.ParameterizedObject
 import xenakis.sc.*
 
 class SearchableParameterListView(
     private val context: Context,
     title: String,
-    val obj: ParameterizedScoreObject,
+    val obj: ParameterizedObject,
     val parameters: List<ParameterDefObject>
 ) : SimpleSearchableListView<ParameterDefObject>(parameters, title) {
     override fun extractText(option: ParameterDefObject): String = option.name.now

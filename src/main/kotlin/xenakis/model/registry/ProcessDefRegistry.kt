@@ -27,7 +27,7 @@ class ProcessDefRegistry(
     val selectedDef: ProcessDefObject? get() = selected?.get()
 
     fun select(def: ProcessDefObject) {
-        selected = def.createReference()
+        selected = def.reference()
     }
 
     override fun getDefault(name: String?): ProcessDefObject = error("No default Process object available")

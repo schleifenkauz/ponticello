@@ -5,6 +5,7 @@ import hextant.serial.SnapshotAware
 import kotlinx.serialization.Serializable
 import reaktive.value.*
 import reaktive.value.binding.binding
+import xenakis.impl.Point
 import xenakis.model.obj.BusObject
 import xenakis.model.registry.BusRegistry
 import xenakis.model.registry.ObjectReference
@@ -29,7 +30,7 @@ class BusSelector(
     override fun createNewObject(name: String): BusObject {
         val channels = preferredChannels.takeIf { it != -1 } ?: 2
         val rate = preferredRate ?: Rate.Audio
-        return BusObject.create(name, rate, channels)
+        return BusObject.create(name, rate, channels, Point(0.0, 0.0))
     }
 
     override fun canSelect(choice: BusObject): ReactiveBoolean =
@@ -51,7 +52,7 @@ class BusSelector(
             val registry = context[BusRegistry]
             val adequate = registry.filter(preferredRate, preferredChannels).firstOrNull()
             val bus = adequate ?: registry.getDefault()
-            return bus.createReference()
+            return bus.reference()
         }
     }
 }

@@ -1,0 +1,34 @@
+package xenakis.model.obj
+
+import reaktive.value.now
+import xenakis.model.flow.Flow
+import xenakis.model.flow.FlowType
+import xenakis.model.registry.NamedObject
+import xenakis.model.score.BusControl
+import xenakis.model.score.ParameterControls
+import xenakis.sc.BusControlSpec
+import xenakis.sc.ControlSpec
+
+interface ParameterizedObject: NamedObject, Flow {
+    val def: ParameterizedObjectDef
+    val controls: ParameterControls
+
+    val parameters
+        get() = controls.extraParameters + def.parameters.now
+            .filter { param -> controls.getExtraSpec(param.name.now) == null }
+
+    fun getSpec(parameter: String): ControlSpec? =
+        controls.getExtraSpec(parameter) ?: def.getParameter(parameter)?.spec?.now
+
+    override fun getConnectedBusses(vararg flowType: FlowType): Set<BusObject> = buildSet {
+        for (parameter in parameters) {
+            val spec = parameter.spec.now
+            val name = parameter.name.now
+            if (spec !is BusControlSpec) continue
+            if (spec.flow in flowType) {
+                val ctrl = controls.controlMap[name] as? BusControl ?: continue
+                add(ctrl.bus.now.get())
+            }
+        }
+    }
+}

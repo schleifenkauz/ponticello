@@ -16,7 +16,7 @@ import xenakis.sc.ControlSpec
 
 @Serializable
 class ParameterControls(
-    private val map: MutableMap<String, ParameterControl>,
+    private val map: MutableMap<String, ParameterControl> = mutableMapOf(),
     private val extraSpecs: MutableMap<String, ControlSpec> = mutableMapOf()
 ) {
     val extraParameters: Collection<ParameterDefObject>

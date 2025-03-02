@@ -45,11 +45,8 @@ class ObjectReference(private var name: String) {
         if (this === other) return true
         if (other !is ObjectReference) return false
 
-        if (obj != null) {
-            if (other.obj != obj) return false
-        } else if (name != other.name) return false
-
-        return true
+        if (obj != null) return obj == other.obj
+        else return name == other.name
     }
 
     override fun hashCode(): Int {

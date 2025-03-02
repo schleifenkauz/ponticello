@@ -193,7 +193,9 @@ class ScoreEventCollector(
             val player = player
             if (player != null && env != null && player.isPlaying.now) {
                 for ((activeInstance, pos, name) in env.activeInstances(inst)) {
-                    if (pos == position) player.stopPlayBackInstantly(activeInstance, pos, name)
+                    if (activeInstance != null && pos == position) {
+                        player.stopPlayBackInstantly(activeInstance, pos, name)
+                    }
                 }
             }
         }

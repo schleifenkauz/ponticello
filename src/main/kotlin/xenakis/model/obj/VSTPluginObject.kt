@@ -59,7 +59,7 @@ class VSTPluginObject private constructor(
         if (initialized) return
         outputSelector = BusSelector(context, Rate.Audio, 2, reactiveVariable(output))
         outputSelectorObserver = outputSelector.selected.observe { _, _, newOutput ->
-            output = newOutput ?: context[BusRegistry].getOutput().createReference()
+            output = newOutput ?: context[BusRegistry].getOutput().reference()
             val bus = output.get<BusObject>().superColliderName
             client.run("if (s.serverRunning) { $superColliderName.synth.set(\\out, $bus) };")
         }
@@ -118,7 +118,7 @@ class VSTPluginObject private constructor(
         fun create(context: Context, name: String, pluginName: String): VSTPluginObject {
             val presetName = "${System.currentTimeMillis()}"
             val color = randomColor()
-            val output = context[BusRegistry].getDefault().createReference()
+            val output = context[BusRegistry].getDefault().reference()
             return VSTPluginObject(reactiveVariable(name), pluginName, presetName, output, reactiveVariable(color))
         }
 

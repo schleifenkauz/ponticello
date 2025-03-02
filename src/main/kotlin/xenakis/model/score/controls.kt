@@ -11,6 +11,7 @@ import reaktive.value.reactiveVariable
 import xenakis.impl.ColorSerializer
 import xenakis.impl.Decimal
 import xenakis.impl.copy
+import xenakis.model.obj.AbstractContextualObject
 import xenakis.model.obj.BusObject
 import xenakis.model.obj.GroupObject
 import xenakis.model.obj.SampleObject
@@ -22,12 +23,10 @@ import xenakis.sc.*
 import xenakis.sc.editor.ScExprExpander
 
 @Serializable
-sealed class ParameterControl {
+sealed class ParameterControl: AbstractContextualObject() {
     open fun copy(): ParameterControl = this
 
     open fun cut(cutPos: Decimal, whichHalve: HorizontalDirection) = this
-
-    open fun initialize(context: Context) {}
 }
 
 @Serializable

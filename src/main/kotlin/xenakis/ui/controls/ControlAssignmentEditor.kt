@@ -22,7 +22,9 @@ import reaktive.value.fx.asProperty
 import reaktive.value.now
 import reaktive.value.reactiveValue
 import reaktive.value.reactiveVariable
+import xenakis.impl.asTime
 import xenakis.model.obj.BusObject
+import xenakis.model.obj.ParameterizedObject
 import xenakis.model.obj.SampleObject
 import xenakis.model.registry.BusRegistry
 import xenakis.model.registry.GroupRegistry
@@ -44,7 +46,7 @@ import xenakis.ui.prompt.ControlSpecPrompt
 import xenakis.ui.registry.SimpleSearchableListView
 
 class ControlAssignmentEditor(
-    private val obj: ParameterizedScoreObject,
+    private val obj: ParameterizedObject,
     val parameter: String,
 ) : HBox(5.0) {
     private val nameLabel = Label(parameter)
@@ -84,7 +86,7 @@ class ControlAssignmentEditor(
             else if (db.hasContent(SampleObject.DATA_FORMAT)) samples.get(db.getContent(SampleObject.DATA_FORMAT) as String)
             else return
         val ctrl = obj.controls[parameter] as BufferControl
-        ctrl.sample.set(sample.createReference())
+        ctrl.sample.set(sample.reference())
     }
 
     private fun canDrop(db: Dragboard): Boolean {
@@ -134,13 +136,13 @@ class ControlAssignmentEditor(
 
     sealed class ControlType<C : ParameterControl> {
         abstract fun createDetailInput(
-            obj: ParameterizedScoreObject,
+            obj: ParameterizedObject,
             parameter: String,
             spec: ControlSpec,
             control: C
         ): Node
 
-        abstract fun createDefaultControl(obj: ScoreObject, spec: ControlSpec, oldControl: ParameterControl): C
+        abstract fun createDefaultControl(obj: ParameterizedObject, spec: ControlSpec, oldControl: ParameterControl): C
 
         override fun toString(): String = when (this) {
             Buffer -> "Buffer"
@@ -155,14 +157,14 @@ class ControlAssignmentEditor(
 
         object Value : ControlType<ConstantControl>() {
             override fun createDetailInput(
-                obj: ParameterizedScoreObject,
+                obj: ParameterizedObject,
                 parameter: String,
                 spec: ControlSpec,
                 control: ConstantControl
             ): Node = ControlSlider(obj, parameter, control.value)
 
             override fun createDefaultControl(
-                obj: ScoreObject, spec: ControlSpec, oldControl: ParameterControl
+                obj: ParameterizedObject, spec: ControlSpec, oldControl: ParameterControl
             ): ConstantControl {
                 spec as NumericalControlSpec
                 return ConstantControl(reactiveVariable(oldControl.getNumericalValue() ?: spec.defaultValue.get()))
@@ -171,7 +173,7 @@ class ControlAssignmentEditor(
 
         object Envelope : ControlType<EnvelopeControl>() {
             override fun createDetailInput(
-                obj: ParameterizedScoreObject,
+                obj: ParameterizedObject,
                 parameter: String,
                 spec: ControlSpec,
                 control: EnvelopeControl
@@ -186,13 +188,14 @@ class ControlAssignmentEditor(
             }
 
             override fun createDefaultControl(
-                obj: ScoreObject,
+                obj: ParameterizedObject,
                 spec: ControlSpec,
                 oldControl: ParameterControl
             ): EnvelopeControl {
                 spec as NumericalControlSpec
                 val value = oldControl.getNumericalValue() ?: spec.defaultValue.get()
-                val env = xenakis.model.score.Envelope.constant(value, obj.duration, spec.warp)
+                val duration = (obj as? ScoreObject)?.duration ?: 1.0.asTime
+                val env = xenakis.model.score.Envelope.constant(value, duration, spec.warp)
                 val displayColor = reactiveVariable(spec.associatedColor)
                 val display = reactiveVariable(true)
                 return EnvelopeControl(env, displayColor, display)
@@ -201,7 +204,7 @@ class ControlAssignmentEditor(
 
         object LFO : ControlType<CustomControl>() {
             override fun createDetailInput(
-                obj: ParameterizedScoreObject,
+                obj: ParameterizedObject,
                 parameter: String,
                 spec: ControlSpec,
                 control: CustomControl
@@ -214,7 +217,7 @@ class ControlAssignmentEditor(
             }
 
             override fun createDefaultControl(
-                obj: ScoreObject,
+                obj: ParameterizedObject,
                 spec: ControlSpec,
                 oldControl: ParameterControl
             ): CustomControl {
@@ -229,36 +232,36 @@ class ControlAssignmentEditor(
 
         object Bus : ControlType<BusControl>() {
             override fun createDetailInput(
-                obj: ParameterizedScoreObject,
+                obj: ParameterizedObject,
                 parameter: String,
                 spec: ControlSpec,
                 control: BusControl
             ): Node = busSelector(obj.context, control.bus)
 
             override fun createDefaultControl(
-                obj: ScoreObject,
+                obj: ParameterizedObject,
                 spec: ControlSpec,
                 oldControl: ParameterControl
             ): BusControl {
-                val initial = oldControl.getBus() ?: obj.context[BusRegistry].getDefault().createReference()
+                val initial = oldControl.getBus() ?: obj.context[BusRegistry].getDefault().reference()
                 return BusControl(reactiveVariable(initial))
             }
         }
 
         object BusValue : ControlType<BusValueControl>() {
             override fun createDetailInput(
-                obj: ParameterizedScoreObject,
+                obj: ParameterizedObject,
                 parameter: String,
                 spec: ControlSpec,
                 control: BusValueControl
             ): Node = busSelector(obj.context, control.bus)
 
             override fun createDefaultControl(
-                obj: ScoreObject,
+                obj: ParameterizedObject,
                 spec: ControlSpec,
                 oldControl: ParameterControl
             ): BusValueControl {
-                val initial = oldControl.getBus() ?: obj.context[BusRegistry].getDefault().createReference()
+                val initial = oldControl.getBus() ?: obj.context[BusRegistry].getDefault().reference()
                 return BusValueControl(reactiveVariable(initial))
             }
         }
@@ -266,16 +269,16 @@ class ControlAssignmentEditor(
         object SingleBusValue :
             ControlType<SingleBusValueControl>() {
             override fun createDetailInput(
-                obj: ParameterizedScoreObject,
+                obj: ParameterizedObject,
                 parameter: String,
                 spec: ControlSpec,
                 control: SingleBusValueControl
             ): Node = busSelector(obj.context, control.bus)
 
             override fun createDefaultControl(
-                obj: ScoreObject, spec: ControlSpec, oldControl: ParameterControl
+                obj: ParameterizedObject, spec: ControlSpec, oldControl: ParameterControl
             ): SingleBusValueControl {
-                val initial = oldControl.getBus() ?: obj.context[BusRegistry].getDefault().createReference()
+                val initial = oldControl.getBus() ?: obj.context[BusRegistry].getDefault().reference()
                 return SingleBusValueControl(reactiveVariable(initial))
             }
 
@@ -283,7 +286,7 @@ class ControlAssignmentEditor(
 
         object Buffer : ControlType<BufferControl>() {
             override fun createDetailInput(
-                obj: ParameterizedScoreObject,
+                obj: ParameterizedObject,
                 parameter: String,
                 spec: ControlSpec,
                 control: BufferControl
@@ -298,7 +301,7 @@ class ControlAssignmentEditor(
             }
 
             override fun createDefaultControl(
-                obj: ScoreObject,
+                obj: ParameterizedObject,
                 spec: ControlSpec,
                 oldControl: ParameterControl
             ): BufferControl {
@@ -311,7 +314,7 @@ class ControlAssignmentEditor(
 
         object Group : ControlType<GroupControl>() {
             override fun createDetailInput(
-                obj: ParameterizedScoreObject,
+                obj: ParameterizedObject,
                 parameter: String,
                 spec: ControlSpec,
                 control: GroupControl
@@ -322,11 +325,11 @@ class ControlAssignmentEditor(
             }
 
             override fun createDefaultControl(
-                obj: ScoreObject,
+                obj: ParameterizedObject,
                 spec: ControlSpec,
                 oldControl: ParameterControl
             ): GroupControl =
-                GroupControl(reactiveVariable(obj.context[GroupRegistry].getDefault().createReference()))
+                GroupControl(reactiveVariable(obj.context[GroupRegistry].getDefault().reference()))
         }
 
         companion object {

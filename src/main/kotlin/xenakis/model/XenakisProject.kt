@@ -12,6 +12,7 @@ import kotlinx.serialization.Transient
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.serializer
 import reaktive.value.now
+import xenakis.model.flow.AudioFlows
 import xenakis.model.obj.SuperColliderObject.LiveCycleType
 import xenakis.model.registry.*
 import xenakis.model.score.Score
@@ -28,7 +29,7 @@ class XenakisProject private constructor(
     val buffers: BufferRegistry,
     val samples: SampleRegistry,
     val instruments: InstrumentRegistry,
-    val flowGraph: AudioFlowGraph,
+    val flowGraph: AudioFlows,
     val globalControls: GlobalControls,
     val processDefs: ProcessDefRegistry,
     val setupCode: SetupCode,
@@ -106,7 +107,7 @@ class XenakisProject private constructor(
         buffers.syncAll(writer)
         busses.syncAll(writer)
         samples.syncAll(writer)
-        flowGraph.redefineAudioFlow(writer)
+        //flowGraph.redefineAudioFlow(writer) TODO
         globalControls.setBusValues(writer)
         Logger.confirm("Synchronized with SuperCollider", Logger.Category.Project)
     }
@@ -146,7 +147,7 @@ class XenakisProject private constructor(
                 val instruments = data.resolve("instruments.json").readJson<InstrumentRegistry>()
                 instruments.initialize(context)
                 indicator.displayProgress(0.65, "Loading audio flow graph")
-                val flowGraph = data.resolve("flow_graph.json").readJson<AudioFlowGraph>()
+                val flowGraph = data.resolve("flow_graph.json").readJson<AudioFlows>()
                 flowGraph.initialize(context)
                 indicator.displayProgress(0.7, "Loading global controls")
                 val globalControls = data.resolve("global_controls.json").readJson<GlobalControls>()
@@ -188,7 +189,7 @@ class XenakisProject private constructor(
             buffers = BufferRegistry(mutableListOf()).also { r -> r.initialize(context) },
             samples = SampleRegistry(mutableListOf()).also { r -> r.initialize(context) },
             instruments = InstrumentRegistry.createDefault().also { r -> r.initialize(context) },
-            flowGraph = AudioFlowGraph.createDefault().also { g -> g.initialize(context) },
+            flowGraph = AudioFlows.createDefault().also { g -> g.initialize(context) },
             globalControls = GlobalControls(mutableListOf()).also { c -> c.initialize(context) },
             processDefs = ProcessDefRegistry(mutableListOf()).also { r -> r.initialize(context) },
             setupCode = SetupCode.default(context), serverOptions = ServerOptions(),
