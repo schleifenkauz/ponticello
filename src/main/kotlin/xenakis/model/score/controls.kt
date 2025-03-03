@@ -23,7 +23,7 @@ import xenakis.sc.*
 import xenakis.sc.editor.ScExprExpander
 
 @Serializable
-sealed class ParameterControl: AbstractContextualObject() {
+sealed class ParameterControl : AbstractContextualObject() {
     open fun copy(): ParameterControl = this
 
     open fun cut(cutPos: Decimal, whichHalve: HorizontalDirection) = this
@@ -60,6 +60,10 @@ class BusControl(val bus: ReactiveVariable<ObjectReference>) : ParameterControl(
     }
 
     override fun copy(): ParameterControl = BusControl(bus.copy())
+
+    companion object {
+        fun create(bus: BusObject) = BusControl(reactiveVariable(bus.reference()))
+    }
 }
 
 @Serializable

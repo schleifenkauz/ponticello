@@ -1,11 +1,10 @@
 package xenakis.model.flow
 
 import reaktive.value.now
-import xenakis.model.player.ScorePlayEnv
 import xenakis.sc.client.ScWriter
 import xenakis.sc.client.SuperColliderClient
 
-class NodeTree(private val client: SuperColliderClient, private val flows: AudioFlows) {
+class NodeTree(private val client: SuperColliderClient) {
     private fun ScWriter.clearAudioFlow() {
         +"ServerTree.remove(~setup_flow)"
 //        for (flow in flows.all()) {
@@ -27,16 +26,6 @@ class NodeTree(private val client: SuperColliderClient, private val flows: Audio
     fun redefineAudioFlow(writer: ScWriter) {
         writer.clearAudioFlow()
         writer.defineAudioFlow()
-    }
-
-    private fun ScWriter.setupAudioFlow(order: List<ScorePlayEnv.ActiveSynth>) {
-        for (node in order) {
-//            var prev = group.superColliderName
-//            val synth = flow.synth.editor.result.now
-//            val addAction = if (prev.startsWith("~grp")) "'addToHead'" else "'addAfter'"
-//            synth.writeCode(writer, registry.context, flow.synthName, prev, addAction, wrapInTask = true)
-//            prev = flow.synthName
-        }
     }
 
     fun moveAfter(node: ServerNode, target: ServerNode) {
@@ -78,6 +67,16 @@ class NodeTree(private val client: SuperColliderClient, private val flows: Audio
         client.run {
             +"$newName = $oldName"
             +"$oldName = nil"
+        }
+    }
+
+    fun addFlow(flow: AudioFlow, placement: NodePlacement) {
+        TODO("Not yet implemented")
+    }
+
+    fun removeFlow(flow: AudioFlow) {
+        client.run {
+            free(flow.superColliderName.now)
         }
     }
 }

@@ -1,20 +1,18 @@
 package xenakis.model
 
 import bundles.set
-import hextant.context.Context
-import hextant.undo.UndoManager
+import hextant.core.HextantCore
+import io.mockk.mockk
 import reaktive.value.reactiveVariable
 import xenakis.impl.asTime
 import xenakis.impl.toDecimal
 import xenakis.model.obj.GroupObject
-import xenakis.model.registry.GroupRegistry
-import xenakis.model.registry.InstrumentRegistry
-import xenakis.model.registry.ObjectReference
-import xenakis.model.registry.ScoreObjectRegistry
+import xenakis.model.registry.*
 import xenakis.model.score.GroupControl
 import xenakis.model.score.ParameterControls
 import xenakis.model.score.ScoreObject
 import xenakis.model.score.SynthObject
+import xenakis.sc.client.SuperColliderClient
 
 object Utils {
     val defaultGroup = GroupObject.DEFAULT.reference()
@@ -29,13 +27,17 @@ object Utils {
         return dummy1
     }
 
-    fun createContext() = Context.create {
-        set(UndoManager, UndoManager.newInstance())
-        set(ScoreObjectRegistry, ScoreObjectRegistry(mutableListOf()).also { it.initialize(this) })
+    fun createContext() = HextantCore.defaultContext().apply {
+        set(SuperColliderClient, mockk<SuperColliderClient>(relaxed = true))
+        set(
+            ScoreObjectRegistry,
+            ScoreObjectRegistry(mutableListOf()).also { it.initialize(this) })
         set(
             InstrumentRegistry,
-            InstrumentRegistry(mutableListOf(InstrumentRegistry.defaultInstrument()), reactiveVariable(null))
+            InstrumentRegistry(mutableListOf(/*InstrumentRegistry.defaultInstrument()*/), reactiveVariable(null))
+                .also { it.initialize(this) }
         )
-        set(GroupRegistry, GroupRegistry.createDefault())
+        set(GroupRegistry, GroupRegistry.createDefault().also { it.initialize(this) })
+        set(BusRegistry, BusRegistry.createDefault().also { it.initialize(this) })
     }
 }

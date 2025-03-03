@@ -18,19 +18,19 @@ class CodeFlow(
     override lateinit var associatedBus: BusObject
         private set
 
-    override lateinit var name: ReactiveString
+    override lateinit var superColliderName: ReactiveString
         private set
 
     override fun initialize(context: Context) {
         super.initialize(context)
         busRef.resolve(context[BusRegistry])
         associatedBus = busRef.get()
-        name = associatedBus.name.map { n -> "${n}_code" }
+        superColliderName = associatedBus.name.map { n -> "~flow_${n}_code" }
     }
 
     override fun copyFor(associatedBus: BusObject): AudioFlow = CodeFlow(associatedBus.reference(), codeEditor.clone())
 
-    override fun ScWriter.writeCode(synthName: String, order: SynthOrder) {
+    override fun ScWriter.writeCode(synthName: String, order: ScoreObjectInfo) {
         val code = codeEditor.editor.result.now
         appendBlock(endLine = false) {
             //TODO maybe read associatedBus into 'snd' variable here

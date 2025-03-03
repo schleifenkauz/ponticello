@@ -1,6 +1,7 @@
 package xenakis.model.flow
 
 import hextant.context.Context
+import kotlinx.serialization.Serializable
 import reaktive.value.*
 import reaktive.value.binding.binding
 import reaktive.value.binding.flatMap
@@ -17,6 +18,7 @@ import xenakis.model.score.ParameterControls
 import xenakis.sc.client.ScWriter
 import xenakis.sc.writeSynthCode
 
+@Serializable
 class SendFlow(
     val busRef: ObjectReference,
     val targetRef: ReactiveVariable<ObjectReference>,
@@ -28,7 +30,7 @@ class SendFlow(
     override lateinit var associatedBus: BusObject
         private set
 
-    override lateinit var name: ReactiveString
+    override lateinit var superColliderName: ReactiveString
         private set
 
     override fun initialize(context: Context) {
@@ -37,13 +39,13 @@ class SendFlow(
         targetBus = targetRef.map { ref -> ref.get() }
         busRef.resolve(context[BusRegistry])
         associatedBus = busRef.get()
-        name = targetBus.flatMap { target -> binding(associatedBus.name, target.name) { a, t -> "send_${a}_${t}" } }
+        superColliderName = targetBus.flatMap { target -> binding(associatedBus.name, target.name) { a, t -> "~send_${a}_${t}" } }
     }
 
     override fun copyFor(associatedBus: BusObject): AudioFlow =
         SendFlow(associatedBus.reference(), targetRef.copy(), amount.copy())
 
-    override fun ScWriter.writeCode(synthName: String, order: SynthOrder) {
+    override fun ScWriter.writeCode(synthName: String, order: ScoreObjectInfo) {
         val controls = ParameterControls(
             mutableMapOf(
                 "in" to BusControl(reactiveVariable(busRef)),

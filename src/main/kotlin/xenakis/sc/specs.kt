@@ -19,6 +19,7 @@ import xenakis.model.score.BusControl
 import xenakis.model.score.ConstantControl
 import xenakis.model.score.GroupControl
 import xenakis.sc.editor.ControlSpecEditor
+import xenakis.sc.editor.SimpleIntegerEditor
 
 enum class ParameterType {
     Bus, Buffer, Numerical, Group;
@@ -45,6 +46,7 @@ fun ControlSpec.defaultControl(context: Context, defaultBus: ObjectReference?) =
         val bus = defaultBus ?: context[BusRegistry].getDefault().reference()
         BusControl(reactiveVariable(bus))
     }
+
     is NumericalControlSpec -> ConstantControl(reactiveVariable(defaultValue.get()))
     is GroupControlSpec -> GroupControl(reactiveVariable(context[GroupRegistry].getDefault().reference()))
 }
@@ -94,7 +96,11 @@ data class NumericalControlSpec(
 
 @Compound(serializable = true)
 @Serializable
-class BusControlSpec(val rate: Rate, val flow: FlowType) : ControlSpec {
+class BusControlSpec(
+    val rate: Rate,
+    @Component(editor = SimpleIntegerEditor::class) val channels: Int,
+    val flow: FlowType
+) : ControlSpec {
     override val type: ParameterType
         get() = ParameterType.Bus
 

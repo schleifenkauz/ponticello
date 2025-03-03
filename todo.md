@@ -3,12 +3,10 @@
 ### completion
 
 - buffer refs
-- bus refs
 - variables
 - global variables
 - classes
 - SynthDefs
-- common parameter definitions
 
 ### Stretching time regions
 
@@ -18,7 +16,6 @@
 ### UI niceties
 
 - save main window size/position and arrangement of utility panes
-- integrate close, maximize, minimize into top toolbar and remove window decoration
 - better positioning of flow graph arrows
 
 ### Support for patterns
@@ -26,11 +23,6 @@
 - as synth arguments (must be delta-patterns)
 - as standalone objects (`pbind`)
 - attaching to a synth in the score (`pmono`)
-
-### Reorganize startup and project opening
-
-- don't start sclang.exe on startup
-- start new sclang instance when opening a project and kill the process when closing the project
 
 ### Unclutter the Json serialization of Hextant editors
 
@@ -46,17 +38,14 @@
 - track view, where the different buses are listed horizontally and associated transformations are ordered vertically
 - or open transformation chain by clicking on bus in the flow graph
 
-### Action system to have a better shortcut architecture
-
-- recognize transport shortcuts from all windows
-
 ### Improve zooming functionality
 
 - zoom tool: (selectable with `Z`)
-- zoom with `Ctrl+MINUS` and `Ctrl+PLUS`
 
 ### Minor
 
+
+- recognize transport shortcuts from all windows
 - specify expected channels (and ar/kr) for bus and buffer parameters
 - lhs of assignments can be compound expressions
 - re-enable allocated buffers (can be used with WrBuf/RdBuf SynthDefs)
@@ -114,7 +103,7 @@
 
 ### Different curvatures for envelopes
 
-### Is vertical zoom needed?
+### Is vertical scroll/zoom needed?
 
 ### Ability to execute commands using a query/update language
 
@@ -125,7 +114,7 @@
 - for example a little overview pane at the bottom (like in VSCode)
 - is arrow key navigation inside the score somehow possible?
 
-### Ability to take snapshots of the main score (basic version control)
+### Ability to take snapshots of the score (basic version control)
 
 ### Divide the score into multiple tracks
 

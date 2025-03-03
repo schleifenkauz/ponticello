@@ -21,12 +21,13 @@ sealed class ServerNode : Comparable<ServerNode>, Flow {
 
         override fun getConnectedBusses(vararg flowType: FlowType): Set<BusObject> {
             val busses = flows().flatMapTo(mutableSetOf()) { f -> f.getConnectedBusses(*flowType) }
-            if (FlowType.InOut in flowType) busses.add(associatedBus)
-            else busses.remove(associatedBus)
+            busses.add(associatedBus)
             return busses
         }
 
         fun flows() = flows.associatedFlows(associatedBus)
+
+        override fun toString(): String = superColliderName
     }
 
     data class ActiveSynth(
@@ -46,5 +47,7 @@ sealed class ServerNode : Comparable<ServerNode>, Flow {
             is ActiveSynth -> absolutePosition.y.compareTo(other.absolutePosition.y)
             is FlowGroup -> -1
         }
+
+        override fun toString(): String = superColliderName
     }
 }

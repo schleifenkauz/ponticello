@@ -32,7 +32,7 @@ class SynthFlow(
     override lateinit var associatedBus: BusObject
         private set
 
-    override lateinit var name: ReactiveValue<String>
+    override lateinit var superColliderName: ReactiveValue<String>
         private set
 
     override fun initialize(context: Context) {
@@ -41,7 +41,7 @@ class SynthFlow(
         controls.initialize(context, synthDef)
         val mainBusParameter = getMainBusParameter()
         associatedBus = controls[mainBusParameter].getBus()!!.get()
-        name = binding(associatedBus.name, synthDef.name) { b, s -> "${b}_$s" }
+        superColliderName = binding(associatedBus.name, synthDef.name) { b, s -> "~flow_${b}_$s" }
     }
 
     fun getMainBusParameter() = synthDef.parameters.now.first { p -> p.spec.now is BusControlSpec }.name.now
@@ -52,7 +52,7 @@ class SynthFlow(
         return SynthFlow(defRef, ctrls)
     }
 
-    override fun ScWriter.writeCode(synthName: String, order: SynthOrder) {
+    override fun ScWriter.writeCode(synthName: String, order: ScoreObjectInfo) {
         writeSynthCode(
             synthName, synthDef, controls,
             context, order, duration = null

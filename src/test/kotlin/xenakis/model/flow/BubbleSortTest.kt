@@ -9,7 +9,7 @@ class BubbleSortTest {
     fun automatedSortTest() {
         val r = Random(1000)
         for (n in 2..500) {
-            val list = MutableList(n) { r.nextInt(n) }
+            val list = (0..n * 3).shuffled(r).toMutableList()
             val sorted = list.sorted()
             BubbleSort.sort(list, Comparator.naturalOrder())
             assertEquals(sorted, list)

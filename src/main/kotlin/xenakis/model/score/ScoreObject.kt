@@ -17,8 +17,8 @@ import xenakis.impl.ColorSerializer
 import xenakis.impl.Decimal
 import xenakis.impl.withPrecision
 import xenakis.impl.zero
+import xenakis.model.flow.ScoreObjectInfo
 import xenakis.model.obj.AbstractRenamableObject
-import xenakis.model.player.ScorePlayEnv
 import xenakis.model.registry.ScoreObjectRegistry
 import xenakis.model.score.Score.Companion.rootScore
 import xenakis.sc.ControlSpec
@@ -65,7 +65,7 @@ sealed class ScoreObject : AbstractRenamableObject() {
         height = height.withPrecision(ObjectPosition.Y_PRECISION)
     }
 
-    abstract fun writeCode(name: String, position: ObjectPosition, env: ScorePlayEnv): String
+    abstract fun writeCode(info: ScoreObjectInfo): String
 
     protected fun recordEdit(edit: Edit) {
         if (initialized) {
@@ -262,7 +262,7 @@ sealed class ScoreObject : AbstractRenamableObject() {
         override val type: String
             get() = "none"
 
-        override fun writeCode(name: String, position: ObjectPosition, env: ScorePlayEnv): String = ""
+        override fun writeCode(info: ScoreObjectInfo): String = ""
 
         override fun doClone(newName: String): ScoreObject = this
     }

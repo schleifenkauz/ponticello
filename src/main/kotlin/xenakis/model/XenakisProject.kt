@@ -29,7 +29,7 @@ class XenakisProject private constructor(
     val buffers: BufferRegistry,
     val samples: SampleRegistry,
     val instruments: InstrumentRegistry,
-    val flowGraph: AudioFlows,
+    val flows: AudioFlows,
     val globalControls: GlobalControls,
     val processDefs: ProcessDefRegistry,
     val setupCode: SetupCode,
@@ -57,7 +57,7 @@ class XenakisProject private constructor(
         get() = listOf(
             settings,
             groups, busses, buffers, samples, instruments, processDefs,
-            flowGraph, globalControls, objects, setupCode, serverOptions,
+            flows, globalControls, objects, setupCode, serverOptions,
             score
         )
 
@@ -189,7 +189,7 @@ class XenakisProject private constructor(
             buffers = BufferRegistry(mutableListOf()).also { r -> r.initialize(context) },
             samples = SampleRegistry(mutableListOf()).also { r -> r.initialize(context) },
             instruments = InstrumentRegistry.createDefault().also { r -> r.initialize(context) },
-            flowGraph = AudioFlows.createDefault().also { g -> g.initialize(context) },
+            flows = AudioFlows.createDefault().also { g -> g.initialize(context) },
             globalControls = GlobalControls(mutableListOf()).also { c -> c.initialize(context) },
             processDefs = ProcessDefRegistry(mutableListOf()).also { r -> r.initialize(context) },
             setupCode = SetupCode.default(context), serverOptions = ServerOptions(),

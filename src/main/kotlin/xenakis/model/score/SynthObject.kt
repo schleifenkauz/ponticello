@@ -9,12 +9,12 @@ import kotlinx.serialization.Transient
 import reaktive.Observer
 import reaktive.value.*
 import xenakis.impl.*
+import xenakis.model.flow.ScoreObjectInfo
 import xenakis.model.obj.BusObject
 import xenakis.model.obj.ParameterizedObjectDef
 import xenakis.model.obj.SampleObject
 import xenakis.model.obj.SynthDefObject
 import xenakis.model.player.PlaybackManager
-import xenakis.model.player.ScorePlayEnv
 import xenakis.model.registry.ObjectReference
 import xenakis.sc.client.ScWriter
 import xenakis.sc.client.SuperColliderClient
@@ -132,7 +132,7 @@ class SynthObject(
     private fun runOnActiveSynths(action: ScWriter.() -> Unit) {
         if (!context.hasProperty(PlaybackManager) || !context[PlaybackManager].player.isPlaying.now) return
         context[SuperColliderClient].run {
-            for ((_, _, name) in context[PlaybackManager].env.activeInstances(this@SynthObject)) {
+            for ((_, _, name) in context[PlaybackManager].graph.activeInstances(this@SynthObject)) {
                 appendBlock("if (~synths != nil && ~synths['$name'] != nil && ~synths['$name'].isRunning)") {
                     append("~synths['$name'].")
                     action()
@@ -167,7 +167,13 @@ class SynthObject(
         controlObservers.remove(control)?.kill()
     }
 
-    override fun writeCode(name: String, position: ObjectPosition, env: ScorePlayEnv): String = code {
-        writeSynthCode(name, synthDef, controls, context, TODO(), duration)
+    override fun writeCode(info: ScoreObjectInfo): String = code {
+        writeSynthCode(info.superColliderName, synthDef, controls, context, info, duration)
+    }
+
+    companion object {
+        fun create(name: String, def: SynthDefObject, controls: ParameterControls = ParameterControls()): SynthObject {
+            return SynthObject(reactiveVariable(name), reactiveVariable(def.reference()), controls)
+        }
     }
 }

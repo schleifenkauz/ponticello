@@ -11,7 +11,7 @@ import xenakis.sc.client.SuperColliderClient
 import xenakis.ui.misc.PlayHead
 import kotlin.concurrent.thread
 
-abstract class AbstractPlayer(private val deltaT: Decimal) : Thread() {
+abstract class AbstractPlayer(private val deltaT: Decimal, private val lookAhead: Decimal) : Thread() {
     private val _isPlaying = reactiveVariable(false)
 
     val isPlaying: ReactiveValue<Boolean> = _isPlaying
@@ -21,8 +21,6 @@ abstract class AbstractPlayer(private val deltaT: Decimal) : Thread() {
     val currentTime get() = playHead.currentTime
 
     protected abstract val client: SuperColliderClient
-
-    protected abstract val lookAhead: Decimal
 
     protected abstract val maxTime: Decimal
 

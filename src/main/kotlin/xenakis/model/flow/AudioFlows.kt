@@ -14,6 +14,7 @@ import reaktive.value.reactiveVariable
 import xenakis.impl.Point
 import xenakis.impl.zero
 import xenakis.model.XenakisProject
+import xenakis.model.obj.AbstractContextualObject
 import xenakis.model.obj.BusObject
 import xenakis.model.registry.BusRegistry
 import xenakis.model.registry.ObjectRegistry
@@ -23,18 +24,17 @@ import xenakis.sc.editor.assign
 import xenakis.sc.editor.`in`
 
 @Serializable
-class AudioFlows(private val _flows: MutableList<AudioFlow>) :
-    ObjectRegistry.Listener<BusObject>, XenakisProject.ProjectComponent {
+class AudioFlows(
+    private val _flows: MutableList<AudioFlow>
+) : ObjectRegistry.Listener<BusObject>, XenakisProject.ProjectComponent, AbstractContextualObject() {
     @Transient
     private lateinit var registry: BusRegistry
-
-    val context get() = registry.context
 
     @Transient
     private lateinit var undoManager: UndoManager
 
     @Transient
-    val views = ListenerManager.createWeakListenerManager<View>()
+    val listeners = ListenerManager.createWeakListenerManager<Listener>()
 
     @Transient
     private val nodeNameObservers = mutableMapOf<BusObject, Observer>()
@@ -46,9 +46,8 @@ class AudioFlows(private val _flows: MutableList<AudioFlow>) :
 
     fun all() = flows
 
-    fun flowsAssociatedWith(bus: BusObject) = flows.filter { f -> f.associatedBus == bus }
-
-    fun initialize(context: Context) {
+    override fun initialize(context: Context) {
+        super.initialize(context)
         registry = context[BusRegistry]
         registry.addListener(this)
         undoManager = context[UndoManager]
@@ -56,6 +55,19 @@ class AudioFlows(private val _flows: MutableList<AudioFlow>) :
             flow.initialize(context)
         }
     }
+
+    fun addListener(listener: Listener) {
+        listeners.addListener(listener)
+        for (flow in flows) {
+            listener.addedFlow(flow)
+            if (flow.isActive.now) listener.activatedFlow(flow)
+        }
+    }
+
+    fun flowsFromAndTo(bus: BusObject) =
+        flows.filter { f -> bus in f.getConnectedBusses(*FlowType.all) }
+
+    fun associatedFlows(bus: BusObject) = flows.filter { f -> f.associatedBus == bus }.sortedBy { f -> f.index }
 
     fun anyBusSoloed() = flows.any { f -> f is UtilityFlow && f.isActive.now && f.solo.now }
 
@@ -77,52 +89,43 @@ class AudioFlows(private val _flows: MutableList<AudioFlow>) :
     }
 
     fun addFlow(flow: AudioFlow): Boolean {
+        flow.initialize(context)
         _flows.add(flow)
         undoManager.record(Edit.AddFlow(this, flow))
-        views.notifyListeners { addedFlow(flow) }
+        listeners.notifyListeners {
+            addedFlow(flow)
+            if (flow.isActive.now) activatedFlow(flow)
+        }
         return true
     }
 
     fun removeFlow(flow: AudioFlow) {
         _flows.remove(flow)
-//        client.run {
-//            +"${flow.synthName}.free"
-//            +"${flow.synthName} = nil"
-//            redefineAudioFlow(this)
-//        }
         undoManager.record(Edit.RemoveFlow(this, flow))
-        views.notifyListeners { removedFlow(flow) }
+        listeners.notifyListeners {
+            removedFlow(flow)
+            if (flow.isActive.now) deactivatedFlow(flow)
+        }
     }
-
-    fun updateFlow() {
-//        client.run { redefineAudioFlow(this) }
-    }
-
-
 
     override fun added(obj: BusObject, idx: Int) {
 //        nodeNameObservers[obj] = obj.name.observe { _, oldName, _ -> renamedNode(obj, oldName) }
     }
 
-    private fun getPositionForNew(bus: BusObject): Point = TODO()
-
     override fun removed(obj: BusObject, idx: Int) {
         //TODO what todo when a bus object is removed???
     }
-
-
 
     fun move(node: BusObject, position: Point) {
         val oldPosition = node.positionInGraph.now
         undoManager.record(Edit.MoveNode(this, node, oldPosition, position))
         node.positionInGraph.now = position
-        views.notifyListeners { movedNode(node) }
+        listeners.notifyListeners { movedNode(node) }
     }
 
-    fun flowsFromAndTo(bus: BusObject) =
-        flows.filter { f -> bus in f.getConnectedBusses(*FlowType.all) }
-
-    fun associatedFlows(bus: BusObject) = flows.filter { f -> f.associatedBus == bus }.sortedBy { f -> f.index }
+    fun forceSync() {
+        TODO("Not yet implemented")
+    }
 
     companion object {
         fun createDefault(): AudioFlows = AudioFlows(mutableListOf())
@@ -179,14 +182,16 @@ class AudioFlows(private val _flows: MutableList<AudioFlow>) :
         }
     }
 
-    interface View {
-        fun addedNode(node: BusObject) {}
+    interface Listener {
+        fun addedFlow(flow: AudioFlow) {}
 
-        fun removedNode(node: BusObject) {}
+        fun removedFlow(flow: AudioFlow) {}
 
-        fun addedFlow(flow: AudioFlow)
+        fun activatedFlow(flow: AudioFlow) {}
 
-        fun removedFlow(flow: AudioFlow)
+        fun deactivatedFlow(flow: AudioFlow) {}
+
+        fun movedFlow(flow: AudioFlow) {}
 
         fun movedNode(node: BusObject) {}
     }

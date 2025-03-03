@@ -16,9 +16,9 @@ sealed class AudioFlow : AbstractContextualObject(), Flow {
 
     abstract val associatedBus: BusObject
 
-    abstract val name: ReactiveString
+    abstract val superColliderName: ReactiveString
 
     abstract fun copyFor(associatedBus: BusObject): AudioFlow
 
-    abstract fun ScWriter.writeCode(synthName: String, order: SynthOrder)
+    abstract fun ScWriter.writeCode(synthName: String, order: ScoreObjectInfo)
 }

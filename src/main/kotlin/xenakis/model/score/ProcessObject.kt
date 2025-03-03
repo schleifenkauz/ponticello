@@ -7,9 +7,9 @@ import reaktive.value.reactiveVariable
 import xenakis.impl.code
 import xenakis.impl.copy
 import xenakis.model.Settings
+import xenakis.model.flow.ScoreObjectInfo
 import xenakis.model.obj.ParameterizedObjectDef
 import xenakis.model.obj.ProcessDefObject
-import xenakis.model.player.ScorePlayEnv
 import xenakis.model.registry.ObjectReference
 
 class ProcessObject(
@@ -25,7 +25,7 @@ class ProcessObject(
     override val def: ParameterizedObjectDef
         get() = processDef
 
-    override fun writeCode(name: String, position: ObjectPosition, env: ScorePlayEnv): String = code {
+    override fun writeCode(info: ScoreObjectInfo): String = code {
         appendBlock("Task", endLine = false) {
             val latency = context[Settings].serverLatency.get()
             +"$latency.wait"

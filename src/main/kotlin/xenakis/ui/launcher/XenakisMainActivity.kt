@@ -100,7 +100,7 @@ class XenakisMainActivity(val project: XenakisProject) : Activity() {
         project.context[ScoreObjectSelectionManager] = ScoreObjectSelectionManager(project.context, scoreView)
         scoreView.initialize()
 
-        val flowGraphEditor = AudioFlowGraphPane(project.flowGraph, context)
+        val flowGraphEditor = AudioFlowGraphPane(project.flows, context)
         flowGraphEditor.setPrefSize(1000.0, 1000.0)
         flowGraphWindow = SubWindow(flowGraphEditor, "Audio flow graph", context)
 
@@ -128,7 +128,7 @@ class XenakisMainActivity(val project: XenakisProject) : Activity() {
         }
         serverTreeCodeWindow.resize(500.0, 500.0)
 
-        playback = PlaybackManager(scoreView)
+        playback = PlaybackManager(scoreView, project.flows)
         context[PlaybackManager] = playback
 
         observer = scoreView.selector.focusedView.observe { _, _, focusedView ->

@@ -5,6 +5,9 @@ import bundles.publicProperty
 import javafx.scene.layout.Pane
 import reaktive.value.now
 import xenakis.model.Settings
+import xenakis.model.flow.AudioFlowGraph
+import xenakis.model.flow.AudioFlows
+import xenakis.model.flow.NodeTree
 import xenakis.model.score.ObjectPosition
 import xenakis.model.score.Score
 import xenakis.model.score.ScoreObject
@@ -15,10 +18,11 @@ import xenakis.ui.score.ScoreObjectGroupView
 import xenakis.ui.score.ScoreObjectView
 import xenakis.ui.score.ScoreView
 
-class PlaybackManager(private val scoreView: ScoreView) {
-    val env: ScorePlayEnv = ScorePlayEnv(scoreView.context[Settings])
+class PlaybackManager(private val scoreView: ScoreView, private val flows: AudioFlows) {
     val playHead = PlayHead()
     val recorder = Recorder(scoreView.context)
+    val nodeTree = NodeTree(scoreView.context[SuperColliderClient])
+    val graph = AudioFlowGraph(flows, nodeTree)
     lateinit var player: ScorePlayer
         private set
     private lateinit var events: ScoreEventCollector
@@ -52,8 +56,9 @@ class PlaybackManager(private val scoreView: ScoreView) {
 
     private fun attachTo(score: Score) {
         detach()
-        events = ScoreEventCollector(score, env)
-        player = ScorePlayer(score, playHead, scoreView.context[SuperColliderClient], env, events, recorder)
+        val settings = context[Settings]
+        events = ScoreEventCollector(score, graph, settings)
+        player = ScorePlayer(score, playHead, scoreView.context[SuperColliderClient], graph, settings, events, recorder)
         events.player = player
         isAttached = true
     }

@@ -3,20 +3,19 @@ package xenakis.sc
 import hextant.context.Context
 import reaktive.value.now
 import xenakis.impl.Decimal
-import xenakis.model.flow.SynthOrder
+import xenakis.model.Settings
+import xenakis.model.flow.ScoreObjectInfo
 import xenakis.model.obj.BusObject
 import xenakis.model.obj.SampleObject
 import xenakis.model.obj.SynthDefObject
-import xenakis.model.player.PlaybackManager
 import xenakis.model.score.*
 import xenakis.sc.client.ScWriter
 
 fun ScWriter.writeSynthCode(
     name: String, def: SynthDefObject, controls: ParameterControls,
-    context: Context, synthOrder: SynthOrder, duration: Decimal?
+    context: Context, synthInfo: ScoreObjectInfo, duration: Decimal?
 ) {
-    val env = context[PlaybackManager].env
-    appendBlock("s.makeBundle(${env.serverLatency})") {
+    appendBlock("s.makeBundle(${context[Settings].serverLatency})") {
         val constantArguments = controls.controlMap.mapNotNull { (param, control) ->
             if (!def.hasParameter(param)) null
             else when (control) {
@@ -35,7 +34,7 @@ fun ScWriter.writeSynthCode(
         }.joinToString { (param, value) -> "$param: $value" } + duration?.let { dur -> ", duration: $dur" }.orEmpty()
         val synthVar = "~synths['$name']"
         val synthDefName = def.name.now
-        val (addAction, target) = synthOrder
+        val (_, _, addAction, target) = synthInfo
         +"$synthVar = Synth(\\$synthDefName, [$constantArguments], target: $target, addAction: $addAction)"
         +"$synthVar.register"
         for ((param, control) in controls.controlMap) {

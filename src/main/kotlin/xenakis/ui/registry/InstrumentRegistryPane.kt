@@ -3,6 +3,7 @@ package xenakis.ui.registry
 import bundles.createBundle
 import hextant.fx.initHextantScene
 import javafx.application.Platform
+import javafx.scene.control.Label
 import javafx.scene.layout.VBox
 import org.kordamp.ikonli.material2.Material2AL
 import org.kordamp.ikonli.material2.Material2MZ
@@ -202,13 +203,13 @@ class InstrumentRegistryPane(
             if (obj is CustomizableSynthDefObject) {
                 val pane = VBox(
                     CollapsablePane("Parameters", ParameterDefsPane(registry.context, obj.parameters)),
-                    obj.ugenGraph.control
+                    obj.ugenGraph?.control ?: Label("No code")
                 ) styleClass "synth-def-pane"
                 SubWindow(pane, "", registry.context).apply {
                     titleProperty().bind(obj.name.map { name -> "SynthDef $name" }.asObservableValue())
                     resize(900.0, 800.0)
                     scene.initHextantScene(registry.context, applyStyle = false)
-                    registerSyncShortcuts(obj, obj.ugenGraph)
+                    if (obj.ugenGraph != null) registerSyncShortcuts(obj, obj.ugenGraph)
                 }
             } else {
                 val pane = ParameterInfoPane(obj.parameters)

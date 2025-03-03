@@ -16,10 +16,10 @@ import reaktive.value.ReactiveVariable
 import reaktive.value.now
 import reaktive.value.reactiveVariable
 import xenakis.impl.*
+import xenakis.model.flow.ScoreObjectInfo
 import xenakis.model.obj.InstrumentObject
 import xenakis.model.obj.SynthDefObject
 import xenakis.model.obj.VSTPluginObject
-import xenakis.model.player.ScorePlayEnv
 import xenakis.model.registry.ObjectReference
 import xenakis.sc.code
 import xenakis.sc.editor.*
@@ -206,9 +206,7 @@ class PianoRollObject(
     }
 
     override fun writeCode(
-        name: String,
-        position: ObjectPosition,
-        env: ScorePlayEnv
+        info: ScoreObjectInfo
     ): String = code {
         val generalEventDict = eventDictionary.editor.result.now
         for ((idx, n) in notes.withIndex()) {

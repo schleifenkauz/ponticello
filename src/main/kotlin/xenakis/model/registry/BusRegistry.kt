@@ -27,6 +27,9 @@ class BusRegistry(private val busses: MutableList<BusObject>) : SuperColliderObj
     fun getOutput() = busses.find { b -> b.type == BusObject.Type.Output }
         ?: error("No output bus found in registry")
 
+    fun getInput() = busses.find { b -> b.type == BusObject.Type.Input }
+        ?: error("No output bus found in registry")
+
     fun filter(rate: Rate?, channels: Int): List<BusObject> = busses.filter { b ->
         (rate == null || b.rate.now == rate) && (channels == -1 || b.channels.now == channels)
     }

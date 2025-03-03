@@ -84,9 +84,9 @@ class ReferencedSynthDefObject(
                 if (paramName == "duration") continue
                 val default = send("controlDefault", controlRef).get()
                 val spec = when (paramName) {
-                    "in" -> BusControlSpec(Rate.Audio, FlowType.In)
-                    "out" -> BusControlSpec(Rate.Audio, FlowType.Out)
-                    "bus" -> BusControlSpec(Rate.Audio, FlowType.InOut)
+                    "in" -> BusControlSpec(Rate.Audio, 2, FlowType.In)
+                    "out" -> BusControlSpec(Rate.Audio, 2, FlowType.Out)
+                    "bus" -> BusControlSpec(Rate.Audio, 2, FlowType.InOut)
                     "buf" -> BufferControlSpec()
                     else -> {
                         val min = send("controlMinval", listOf(name, paramName)).get().toDouble()

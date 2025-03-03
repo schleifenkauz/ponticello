@@ -19,7 +19,7 @@ class GlobalSynthDefLib(private val context: Context, private val file: File) {
         if (file.lastModified() < lastReloaded) return
         collection =
             if (file.exists()) context.withoutUndo { file.readJson<MutableList<CustomizableSynthDefObject>>() }
-            else mutableListOf(CustomizableSynthDefObject.sine(context))
+            else mutableListOf(CustomizableSynthDefObject.sine())
         lastReloaded = System.currentTimeMillis()
     }
 

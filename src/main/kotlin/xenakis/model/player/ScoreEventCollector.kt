@@ -5,13 +5,16 @@ import xenakis.impl.Decimal
 import xenakis.impl.unaryMinus
 import xenakis.impl.zero
 import xenakis.model.Logger
+import xenakis.model.Settings
+import xenakis.model.flow.AudioFlowGraph
 import xenakis.model.score.*
 import xenakis.ui.impl.Direction
 import java.util.*
 
 class ScoreEventCollector(
     private val rootScore: Score,
-    private val env: ScorePlayEnv?
+    private val graph: AudioFlowGraph?,
+    private val settings: Settings,
 ) : ScoreListener, ScoreObject.Listener {
     private val events = TreeMap<ObjectPosition, MutableSet<Event>>()
     private val scoreInstances = mutableMapOf<Score, MutableSet<ScoreObjectInstance>>()
@@ -168,8 +171,8 @@ class ScoreEventCollector(
             val posEnd = position + ObjectPosition(obj.duration, zero)
             val player = player
             if (
-                player != null && env != null && player.isPlaying.now
-                && player.currentTime in position.time - env.lookAhead..posEnd.time
+                player != null && graph != null && player.isPlaying.now
+                && player.currentTime in position.time - settings.lookAhead..posEnd.time
             ) {
                 player.scheduleInstantly(inst, position)
             }
@@ -191,10 +194,10 @@ class ScoreEventCollector(
             removeEvent(Event(Event.Type.ObjectStart, position, inst))
             removeEvent(Event(Event.Type.ObjectEnd, posEnd, inst))
             val player = player
-            if (player != null && env != null && player.isPlaying.now) {
-                for ((activeInstance, pos, name) in env.activeInstances(inst)) {
-                    if (activeInstance != null && pos == position) {
-                        player.stopPlayBackInstantly(activeInstance, pos, name)
+            if (player != null && graph != null && player.isPlaying.now) {
+                for (node in graph.activeInstances(obj)) {
+                    if (node.absolutePosition == position) {
+                        player.stopPlayBackInstantly(obj, node.absolutePosition, node.superColliderName)
                     }
                 }
             }

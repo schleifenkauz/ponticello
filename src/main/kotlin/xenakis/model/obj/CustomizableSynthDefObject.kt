@@ -16,6 +16,7 @@ import xenakis.impl.ColorSerializer
 import xenakis.impl.copy
 import xenakis.impl.randomColor
 import xenakis.model.Logger
+import xenakis.model.flow.FlowType
 import xenakis.model.registry.InstrumentRegistry
 import xenakis.sc.*
 import xenakis.sc.client.ScWriter
@@ -25,17 +26,18 @@ import xenakis.sc.editor.CodeBlockEditor
 @Serializable
 class CustomizableSynthDefObject(
     override val mutableName: ReactiveVariable<String>,
-    override val color: ReactiveVariable<@Serializable(with = ColorSerializer::class) Color>,
     override val parameters: MutableReactiveList<ParameterDefObject>,
-    val ugenGraph: EditorRoot<CodeBlockEditor>
+    override val color: ReactiveVariable<@Serializable(with = ColorSerializer::class) Color> = reactiveVariable(Color.WHITE),
+    val ugenGraph: EditorRoot<CodeBlockEditor>? = null
 ) : SynthDefObject, AbstractRenamableObject(), ConfigurableParameterizedObjectDef, InstrumentObject {
     @Transient
-    private val editor = SynthDefEditor(ugenGraph.editor.context, this)
+    private val editor = if (ugenGraph != null) SynthDefEditor(ugenGraph.editor.context, this) else null
 
     override fun copy(name: String): SynthDefObject = CustomizableSynthDefObject(
-        reactiveVariable(name), color.copy(),
+        reactiveVariable(name),
         parameters.now.map { p -> p.copy() }.toReactiveList(),
-        context.withoutUndo { ugenGraph.clone() }
+        color.copy(),
+        context.withoutUndo { ugenGraph?.clone() }
     )
 
     override fun sync(writer: ScWriter) {
@@ -56,9 +58,11 @@ class CustomizableSynthDefObject(
         }
         val getDuration = RawScExpr("duration = \\duration.ir")
         val freeAfterDuration = RawScExpr("Env.new(levels: [0, 0], times: [duration]).kr(Done.freeSelf)")
+        val variables = ugenGraph?.editor?.result?.now?.variables.orEmpty()
+        val statements = ugenGraph?.editor?.result?.now?.statements.orEmpty()
         val block = CodeBlock(
-            variables = parameterVariables + ugenGraph.editor.result.now.variables + Identifier("duration"),
-            statements = parameterAssignments + getDuration + ugenGraph.editor.result.now.statements + freeAfterDuration
+            variables = parameterVariables + variables + Identifier("duration"),
+            statements = parameterAssignments + getDuration + statements + freeAfterDuration
         )
         val graphFunc = ScFunction(emptyList(), block)
         graphFunc.code(this, context)
@@ -96,7 +100,7 @@ class CustomizableSynthDefObject(
             get() = reactiveValue(obj)
 
         init {
-            addChild(obj.ugenGraph.editor)
+            if (obj.ugenGraph != null) addChild(obj.ugenGraph.editor)
         }
     }
 
@@ -108,13 +112,17 @@ class CustomizableSynthDefObject(
             ugenGraph = EditorRoot.create(CodeBlockEditor(context))
         )
 
-        fun sine(context: Context) = CustomizableSynthDefObject(
-            mutableName = reactiveVariable("sine"),
-            color = reactiveVariable(Color.WHITE),
-            parameters = reactiveList(
+        fun create(name: String, vararg parameters: ParameterDefObject) =
+            CustomizableSynthDefObject(reactiveVariable(name), reactiveList(*parameters))
 
-            ),
-            ugenGraph = EditorRoot.create(CodeBlockEditor(context = context))
+        fun sine() = create(
+            name = "sine",
+            ParameterDefObject("out", BusControlSpec(Rate.Audio, 2, FlowType.Out))
+        )
+
+        fun lpf() = create(
+            name = "lpf",
+            ParameterDefObject("bus", BusControlSpec(Rate.Audio, 2, FlowType.In))
         )
     }
 }

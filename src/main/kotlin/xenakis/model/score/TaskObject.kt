@@ -7,7 +7,8 @@ import reaktive.value.ReactiveVariable
 import reaktive.value.now
 import reaktive.value.reactiveVariable
 import xenakis.impl.code
-import xenakis.model.player.ScorePlayEnv
+import xenakis.model.Settings
+import xenakis.model.flow.ScoreObjectInfo
 import xenakis.sc.editor.ScFunctionEditor
 
 @Serializable
@@ -23,9 +24,9 @@ class TaskObject(
 
     override fun doClone(newName: String): ScoreObject = TaskObject(reactiveVariable(newName), code.clone())
 
-    override fun writeCode(name: String, position: ObjectPosition, env: ScorePlayEnv): String = code {
+    override fun writeCode(info: ScoreObjectInfo): String = code {
         appendBlock("~tasks['$name'] = Task", endLine = false) {
-            +"${env.serverLatency}.wait"
+            +"${context[Settings].serverLatency.now}.wait"
             val function = code.editor.result.now
             function.code(writer, context)
             appendLine(".value()")

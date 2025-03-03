@@ -38,7 +38,7 @@ import xenakis.ui.impl.styleClass
 import xenakis.ui.launcher.XenakisLauncher.Companion.currentProject
 import xenakis.ui.score.ParameterizedScoreObjectView
 
-class FlowPane(private val flowGraph: AudioFlows) : ScrollPane(), AudioFlows.View,
+class FlowPane(private val flowGraph: AudioFlows) : ScrollPane(), AudioFlows.Listener,
     ObjectRegistry.Listener<BusObject> {
     private val hbox = HBox()
     private val boxes = mutableMapOf<BusObject, BusBox>()
@@ -48,7 +48,7 @@ class FlowPane(private val flowGraph: AudioFlows) : ScrollPane(), AudioFlows.Vie
         styleClass.add("flow-pane")
         vbarPolicy = ScrollBarPolicy.NEVER
         content = hbox
-        flowGraph.views.addListener(this)
+        flowGraph.listeners.addListener(this)
         for ((index, bus) in buses.all().withIndex()) added(bus, index)
         for (flow in flowGraph.flows.sortedBy { f -> f.index }) addedFlow(flow)
     }
@@ -141,7 +141,7 @@ class FlowPane(private val flowGraph: AudioFlows) : ScrollPane(), AudioFlows.Vie
                     icon(Material2MZ.REMOVE)
                     shortcuts("Ctrl+DELETE")
                     executes { flow ->
-                        flow.context[currentProject].flowGraph.removeFlow(flow)
+                        flow.context[currentProject].flows.removeFlow(flow)
                     }
                 }
             }

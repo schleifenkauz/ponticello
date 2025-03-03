@@ -1,6 +1,7 @@
 package xenakis.model.flow
 
 import hextant.context.Context
+import kotlinx.serialization.Serializable
 import reaktive.value.ReactiveString
 import reaktive.value.ReactiveVariable
 import reaktive.value.binding.map
@@ -19,6 +20,7 @@ import xenakis.model.score.ParameterControls
 import xenakis.sc.client.ScWriter
 import xenakis.sc.writeSynthCode
 
+@Serializable
 class UtilityFlow(
     private val busRef: ObjectReference,
     private val volumeDb: ReactiveVariable<Decimal>,
@@ -31,17 +33,17 @@ class UtilityFlow(
     override fun copyFor(associatedBus: BusObject): AudioFlow =
         UtilityFlow(busRef, volumeDb.copy(), muted.copy(), solo.copy())
 
-    override lateinit var name: ReactiveString
+    override lateinit var superColliderName: ReactiveString
         private set
 
     override fun initialize(context: Context) {
         super.initialize(context)
         busRef.resolve(context[BusRegistry])
         associatedBus = busRef.get()
-        name = associatedBus.name.map { name -> "utility_$name" }
+        superColliderName = associatedBus.name.map { name -> "~flow_${name}_utility" }
     }
 
-    override fun ScWriter.writeCode(synthName: String, order: SynthOrder) {
+    override fun ScWriter.writeCode(synthName: String, order: ScoreObjectInfo) {
         //TODO we need a way to mute other buses when something is soloed
         val volume = when {
             muted.now -> Decimal.NINF

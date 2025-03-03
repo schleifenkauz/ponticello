@@ -20,6 +20,8 @@ class Settings(
     val serverLatency: ReactiveVariable<Decimal> = reactiveVariable(0.1.withPrecision(2)),
     val garbageCollectionPeriod: ReactiveVariable<Decimal> = reactiveVariable(60.0.withPrecision(0)),
 ) {
+    val lookAhead get() = scLangLatency.now + serverLatency.now
+
     fun getDefaultControlSpec(name: String) = defaultParametersDefs.now.find { p -> p.name.now == name }?.spec?.now
 
     companion object : PublicProperty<Settings> by publicProperty("SETTINGS") {

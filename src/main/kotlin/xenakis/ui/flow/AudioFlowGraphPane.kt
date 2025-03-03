@@ -26,6 +26,7 @@ import xenakis.model.flow.AudioFlows
 import xenakis.model.flow.FlowType
 import xenakis.model.obj.BusObject
 import xenakis.model.registry.BusRegistry
+import xenakis.model.registry.ObjectRegistry
 import xenakis.ui.impl.*
 import xenakis.ui.launcher.XenakisLauncher.Companion.currentProject
 import xenakis.ui.prompt.NamePrompt
@@ -35,20 +36,17 @@ import kotlin.math.sign
 class AudioFlowGraphPane(
     private val graph: AudioFlows,
     private val context: Context
-) : Pane(), AudioFlows.View {
+) : Pane(), AudioFlows.Listener, ObjectRegistry.Listener<BusObject> {
     private var sourceBus: BusObject? = null
     private var flowArrow: Arrow? = null
     private var dragStart: Point2D? = null
     private var oldBounds: Bounds? = null
     private val busLabels = mutableListOf<Label>()
     private val flowArrows = mutableListOf<Pair<AudioFlow, Arrow>>()
-    private val flowDetailWindows = mutableMapOf<AudioFlow, SubWindow>()
 
     init {
         context[AudioFlowGraphPane] = this
         styleClass("audio-flow-graph")
-        for (obj in graph.context[BusRegistry].all()) addedNode(obj)
-        for (flow in graph.flows) addedFlow(flow)
         sceneProperty().addListener { _, _, sc ->
             sc?.windowProperty()?.addListener { _, _, window ->
                 window.setOnShown {
@@ -60,7 +58,8 @@ class AudioFlowGraphPane(
         registerShortcuts()
         newFlowArrowFollowMouse()
         allowDroppingBusObjects()
-        graph.views.addListener(this)
+        graph.addListener(this)
+        graph.context[BusRegistry].addListener(this)
     }
 
     /*
@@ -125,19 +124,19 @@ class AudioFlowGraphPane(
         }
     }
 
-    override fun addedNode(node: BusObject) {
-        val label = label(node.name).styleClass("bus-node")
+    override fun added(obj: BusObject, idx: Int) {
+        val label = label(obj.name).styleClass("bus-node")
         label.isFocusTraversable = true
         label.registerShortcuts {
             on("F2") {
-                val name = NamePrompt(context[BusRegistry], "Rename bus", node.name.now)
+                val name = NamePrompt(context[BusRegistry], "Rename bus", obj.name.now)
                     .showDialog(context, label) ?: return@on
-                node.rename(name)
+                obj.rename(name)
             }
         }
-        val position = node.positionInGraph.now
+        val position = obj.positionInGraph.now
         label.relocate(position.x, position.y)
-        setupEvents(node, label)
+        setupEvents(obj, label)
         children.add(label)
         busLabels.add(label)
     }
@@ -276,8 +275,8 @@ class AudioFlowGraphPane(
         }
     }
 
-    override fun removedNode(node: BusObject) {
-        val label = getLabel(node)
+    override fun removed(obj: BusObject, idx: Int) {
+        val label = getLabel(obj)
         busLabels.remove(label)
         children.remove(label)
     }
@@ -289,7 +288,7 @@ class AudioFlowGraphPane(
     }
 
     private fun sync() {
-        graph.updateFlow()
+        graph.forceSync()
         context[currentProject].save(graph)
         Logger.confirm("Updated Audio flow graph", Logger.Category.AudioFlow)
     }

@@ -9,7 +9,7 @@ import reaktive.value.now
 import reaktive.value.reactiveVariable
 import xenakis.impl.*
 import xenakis.model.InteractionSettings.SnapOption
-import xenakis.model.player.ScorePlayEnv
+import xenakis.model.flow.ScoreObjectInfo
 import xenakis.ui.score.TempoGridObjectView
 
 @Serializable
@@ -58,9 +58,7 @@ class TempoGridObject(
     }
 
     override fun writeCode(
-        name: String,
-        position: ObjectPosition,
-        env: ScorePlayEnv
+        info: ScoreObjectInfo
     ): String = ""
 
     companion object {
