@@ -57,6 +57,11 @@ object ToolWindowActions : Action.Collector<XenakisMainActivity>({
         icon(MaterialDesignG.GRAPH)
         executes { screen -> screen.flowGraphWindow.show() }
     }
+    addAction("Show audio flows") {
+        shortcut("Ctrl+Alt+F")
+        icon(MaterialDesignT.TUNE)
+        executes { screen -> screen.flowPaneWindow.show() }
+    }
     addAction("Edit settings") {
         shortcut("Ctrl+Alt+S")
         icon(MaterialDesignC.COG)

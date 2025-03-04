@@ -34,7 +34,7 @@ fun ScWriter.writeSynthCode(
         }.joinToString { (param, value) -> "$param: $value" } + duration?.let { dur -> ", duration: $dur" }.orEmpty()
         val synthVar = "~synths['$name']"
         val synthDefName = def.name.now
-        val (_, _, addAction, target) = synthInfo
+        val (addAction, target) = synthInfo.placement ?: error("No placement specified for $this")
         +"$synthVar = Synth(\\$synthDefName, [$constantArguments], target: $target, addAction: $addAction)"
         +"$synthVar.register"
         for ((param, control) in controls.controlMap) {

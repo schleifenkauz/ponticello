@@ -30,7 +30,7 @@ class NodeTree(private val client: SuperColliderClient) {
 
     fun moveAfter(node: ServerNode, target: ServerNode) {
         client.run {
-            +"~${node.superColliderName}.moveAfter(~${target.superColliderName})"
+            //+"${node.superColliderName}.moveAfter(${target.superColliderName})"
         }
     }
 
@@ -71,7 +71,7 @@ class NodeTree(private val client: SuperColliderClient) {
     }
 
     fun addFlow(flow: AudioFlow, placement: NodePlacement) {
-        TODO("Not yet implemented")
+        //TODO
     }
 
     fun removeFlow(flow: AudioFlow) {

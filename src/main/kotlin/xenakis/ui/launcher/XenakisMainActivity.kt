@@ -32,6 +32,7 @@ import xenakis.model.player.PlaybackManager
 import xenakis.sc.client.SuperColliderClient
 import xenakis.ui.actions.*
 import xenakis.ui.flow.AudioFlowGraphPane
+import xenakis.ui.flow.FlowPane
 import xenakis.ui.impl.*
 import xenakis.ui.launcher.XenakisApp.Companion.primaryStage
 import xenakis.ui.misc.*
@@ -62,6 +63,7 @@ class XenakisMainActivity(val project: XenakisProject) : Activity() {
     val settingsWindow = SubWindow(SettingsPane(context[Settings], context), "Settings", context)
 
     val flowGraphWindow: SubWindow
+    val flowPaneWindow: SubWindow
     val globalControlsWindow: SubWindow
     val serverTreeCodeWindow: SubWindow
 
@@ -103,6 +105,10 @@ class XenakisMainActivity(val project: XenakisProject) : Activity() {
         val flowGraphEditor = AudioFlowGraphPane(project.flows, context)
         flowGraphEditor.setPrefSize(1000.0, 1000.0)
         flowGraphWindow = SubWindow(flowGraphEditor, "Audio flow graph", context)
+
+        val flowPane = FlowPane(project.flows)
+        flowPane.setPrefSize(1000.0, 1000.0)
+        flowPaneWindow = SubWindow(flowPane, "Audio flows", context)
 
         val globalControlsPane = GlobalControlsPane(project.globalControls, context)
         globalControlsWindow = SubWindow(globalControlsPane, "Global controls", context)

@@ -41,4 +41,8 @@ class CodeFlow(
 
     override fun getConnectedBusses(vararg flowType: FlowType): Set<BusObject> =
         if (FlowType.InOut in flowType) setOf(associatedBus) else emptySet()
+
+    companion object {
+        fun createFor(bus: BusObject) = CodeFlow(bus.reference(), EditorRoot.create(CodeBlockEditor(bus.context)))
+    }
 }

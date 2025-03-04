@@ -1,4 +1,4 @@
-package xenakis.model.flow
+package xenakis.impl
 
 object BubbleSort {
     fun <V> sort(list: MutableList<V>, comparator: Comparator<V>, moveAfter: (V, V) -> Unit = { _, _ -> }) {

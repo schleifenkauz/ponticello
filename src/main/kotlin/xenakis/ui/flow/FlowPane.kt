@@ -5,10 +5,12 @@ import javafx.geometry.Orientation
 import javafx.scene.Node
 import javafx.scene.control.ScrollPane
 import javafx.scene.control.Slider
+import javafx.scene.layout.BorderPane
 import javafx.scene.layout.HBox
 import javafx.scene.layout.VBox
 import org.kordamp.ikonli.material2.Material2MZ
 import org.kordamp.ikonli.materialdesign2.MaterialDesignC
+import org.kordamp.ikonli.materialdesign2.MaterialDesignP
 import org.kordamp.ikonli.materialdesign2.MaterialDesignR
 import reaktive.value.ReactiveString
 import reaktive.value.ReactiveVariable
@@ -36,21 +38,22 @@ import xenakis.ui.impl.infiniteSpace
 import xenakis.ui.impl.label
 import xenakis.ui.impl.styleClass
 import xenakis.ui.launcher.XenakisLauncher.Companion.currentProject
+import xenakis.ui.registry.SimpleSearchableListView
 import xenakis.ui.score.ParameterizedScoreObjectView
 
-class FlowPane(private val flowGraph: AudioFlows) : ScrollPane(), AudioFlows.Listener,
-    ObjectRegistry.Listener<BusObject> {
+class FlowPane(
+    private val flows: AudioFlows
+) : ScrollPane(), AudioFlows.Listener, ObjectRegistry.Listener<BusObject> {
     private val hbox = HBox()
     private val boxes = mutableMapOf<BusObject, BusBox>()
-    private val buses = flowGraph.context[BusRegistry]
+    private val buses = flows.context[BusRegistry]
 
     init {
         styleClass.add("flow-pane")
         vbarPolicy = ScrollBarPolicy.NEVER
         content = hbox
-        flowGraph.listeners.addListener(this)
-        for ((index, bus) in buses.all().withIndex()) added(bus, index)
-        for (flow in flowGraph.flows.sortedBy { f -> f.index }) addedFlow(flow)
+        flows.addListener(this)
+        buses.addListener(this)
     }
 
     override fun addedFlow(flow: AudioFlow) {
@@ -64,7 +67,7 @@ class FlowPane(private val flowGraph: AudioFlows) : ScrollPane(), AudioFlows.Lis
     }
 
     override fun added(obj: BusObject, idx: Int) {
-        val box = BusBox(obj)
+        val box = BusBox(flows, obj)
         boxes[obj] = box
         hbox.children.add(box)
     }
@@ -74,7 +77,10 @@ class FlowPane(private val flowGraph: AudioFlows) : ScrollPane(), AudioFlows.Lis
         hbox.children.remove(box)
     }
 
-    private class BusBox(private val bus: BusObject) : ScrollPane() {
+    private class BusBox(
+        private val flows: AudioFlows,
+        private val bus: BusObject
+    ) : ScrollPane() {
         private val vbox = VBox()
         private val label = label(bus.name)
         private val boxes = mutableListOf<FlowBox<*>>()
@@ -83,6 +89,22 @@ class FlowPane(private val flowGraph: AudioFlows) : ScrollPane(), AudioFlows.Lis
             styleClass.add("bus-box")
             vbarPolicy = ScrollBarPolicy.NEVER
             content = VBox(vbox, label)
+            addCreateFlowButton(0)
+        }
+
+        private fun addCreateFlowButton(index: Int) {
+            val btn = MaterialDesignP.PLUS.button("Add flow")
+            val pane = BorderPane(btn)
+            btn.setOnMouseClicked {
+                val options = FlowOption.getOptions(flows.context)
+                SimpleSearchableListView(options, "Add flow").showPopup(flows.context, anchorNode = btn) { option ->
+                    option.createFlow(flows.context, btn, bus) { flow ->
+                        flow.index = vbox.children.indexOf(pane) / 2
+                        flows.addFlow(flow)
+                    }
+                }
+            }
+            vbox.children.add(index, pane)
         }
 
         fun addedFlow(flow: AudioFlow) {
@@ -91,16 +113,19 @@ class FlowPane(private val flowGraph: AudioFlows) : ScrollPane(), AudioFlows.Lis
                 is SynthFlow -> SynthFlowBox(flow)
                 is UtilityFlow -> UtilityFlowBox(flow)
                 is SendFlow -> SendUtilityBox(flow)
+                is ScoreObjectPlaceholder -> PlaceholderBox(flow)
             }
             box.initialize()
             boxes.add(flow.index, box)
-            vbox.children.add(flow.index, box)
+            vbox.children.add(flow.index * 2 + 1, box)
+            addCreateFlowButton(flow.index * 2 + 2)
         }
 
         fun removedFlow(flow: AudioFlow) {
             val index = boxes.indexOfFirst { b -> b.flow == flow }
             boxes.removeAt(index)
-            vbox.children.removeAt(index)
+            vbox.children.removeAt(index * 2 + 1)
+            vbox.children.removeAt(index * 2 + 2)
         }
     }
 
@@ -180,8 +205,8 @@ class FlowPane(private val flowGraph: AudioFlows) : ScrollPane(), AudioFlows.Lis
 
     private class SendUtilityBox(flow: SendFlow) : FlowBox<SendFlow>(flow) {
         override fun getContent(flow: SendFlow): Node {
-            val ctrl = KnobControl(flow.amount)
-            val spec = NumericalControlSpec(1.0, 0.0, 1.0, 0.1.toDecimal(), Warp.Linear)
+            val ctrl = KnobControl(flow.amountPercent)
+            val spec = NumericalControlSpec(100.0, 0.0, 100.0, 1.toDecimal(), Warp.Linear)
             val knob = Knob("Amount", ctrl, spec, flow.context)
             val targetBusSelector = BusSelector(
                 flow.context,
@@ -194,5 +219,11 @@ class FlowPane(private val flowGraph: AudioFlows) : ScrollPane(), AudioFlows.Lis
         }
 
         override fun getTitle(flow: SendFlow): ReactiveString = reactiveValue("Send")
+    }
+
+    private class PlaceholderBox(placeholder: ScoreObjectPlaceholder) : FlowBox<ScoreObjectPlaceholder>(placeholder) {
+        override fun getContent(flow: ScoreObjectPlaceholder): Node = label(flow.group.name)
+
+        override fun getTitle(flow: ScoreObjectPlaceholder): ReactiveString = reactiveValue("Placeholder")
     }
 }

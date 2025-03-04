@@ -3,6 +3,7 @@ package xenakis.model.flow
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
+import xenakis.impl.ReachabilityGraph
 import kotlin.random.Random
 
 class ReachabilityGraphTest {

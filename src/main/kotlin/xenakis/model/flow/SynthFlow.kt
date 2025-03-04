@@ -5,6 +5,7 @@ import kotlinx.serialization.Serializable
 import reaktive.value.ReactiveValue
 import reaktive.value.binding.binding
 import reaktive.value.now
+import reaktive.value.reactiveValue
 import reaktive.value.reactiveVariable
 import xenakis.model.obj.BusObject
 import xenakis.model.obj.ParameterizedObject
@@ -35,6 +36,9 @@ class SynthFlow(
     override lateinit var superColliderName: ReactiveValue<String>
         private set
 
+    override val name: ReactiveValue<String>
+        get() = reactiveValue("Synth Flow")
+
     override fun initialize(context: Context) {
         super.initialize(context)
         defRef.resolve(context[InstrumentRegistry])
@@ -61,4 +65,12 @@ class SynthFlow(
 
     override fun getConnectedBusses(vararg flowType: FlowType): Set<BusObject> =
         super.getConnectedBusses(*flowType)
+
+    companion object {
+        fun createFor(associatedBus: BusObject, def: SynthDefObject, context: Context): SynthFlow {
+            val bus = associatedBus.reference()
+            val controls = def.defaultControls(context, defaultGroup = null, defaultBus = bus)
+            return SynthFlow(bus, controls)
+        }
+    }
 }

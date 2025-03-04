@@ -3,6 +3,8 @@ package xenakis.model.flow
 import bundles.PublicProperty
 import bundles.publicProperty
 import reaktive.value.now
+import xenakis.impl.BubbleSort
+import xenakis.impl.ReachabilityGraph
 import xenakis.model.Logger
 import xenakis.model.flow.NodePlacement.AddAction
 import xenakis.model.obj.BusObject

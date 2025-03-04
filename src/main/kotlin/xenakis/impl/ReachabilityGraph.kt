@@ -1,4 +1,4 @@
-package xenakis.model.flow
+package xenakis.impl
 
 import java.util.*
 

@@ -8,6 +8,7 @@ import reaktive.value.binding.flatMap
 import reaktive.value.binding.map
 import xenakis.impl.Decimal
 import xenakis.impl.copy
+import xenakis.impl.toDecimal
 import xenakis.model.obj.BusObject
 import xenakis.model.obj.ReferencedSynthDefObject
 import xenakis.model.registry.BusRegistry
@@ -22,7 +23,7 @@ import xenakis.sc.writeSynthCode
 class SendFlow(
     val busRef: ObjectReference,
     val targetRef: ReactiveVariable<ObjectReference>,
-    val amount: ReactiveVariable<Decimal>,
+    val amountPercent: ReactiveVariable<Decimal>,
 ) : AudioFlow() {
     lateinit var targetBus: ReactiveValue<BusObject>
         private set
@@ -39,18 +40,19 @@ class SendFlow(
         targetBus = targetRef.map { ref -> ref.get() }
         busRef.resolve(context[BusRegistry])
         associatedBus = busRef.get()
-        superColliderName = targetBus.flatMap { target -> binding(associatedBus.name, target.name) { a, t -> "~send_${a}_${t}" } }
+        superColliderName =
+            targetBus.flatMap { target -> binding(associatedBus.name, target.name) { a, t -> "~send_${a}_${t}" } }
     }
 
     override fun copyFor(associatedBus: BusObject): AudioFlow =
-        SendFlow(associatedBus.reference(), targetRef.copy(), amount.copy())
+        SendFlow(associatedBus.reference(), targetRef.copy(), amountPercent.copy())
 
     override fun ScWriter.writeCode(synthName: String, order: ScoreObjectInfo) {
         val controls = ParameterControls(
             mutableMapOf(
                 "in" to BusControl(reactiveVariable(busRef)),
                 "out" to BusControl(reactiveVariable(targetRef.now)),
-                "volume" to ConstantControl(amount),
+                "volume" to ConstantControl(reactiveVariable(amountPercent.now * 0.01.toDecimal())),
             ),
         )
         writeSynthCode(
@@ -63,5 +65,14 @@ class SendFlow(
         FlowType.In in flowType -> setOf(associatedBus)
         FlowType.Out in flowType -> setOf(targetBus.now)
         else -> emptySet()
+    }
+
+    companion object {
+        fun createFor(bus: BusObject, target: BusObject) =
+            SendFlow(
+                bus.reference(),
+                reactiveVariable(target.reference()),
+                reactiveVariable(Decimal(100.0, 0))
+            )
     }
 }

@@ -2,6 +2,7 @@ package xenakis.model.flow
 
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
+import xenakis.impl.BubbleSort
 import kotlin.random.Random
 
 class BubbleSortTest {

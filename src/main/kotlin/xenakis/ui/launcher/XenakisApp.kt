@@ -1,7 +1,6 @@
 package xenakis.ui.launcher
 
 import bundles.publicProperty
-import com.pixelduke.window.ThemeWindowManagerFactory
 import javafx.application.Application
 import javafx.stage.Stage
 import reaktive.value.now
@@ -16,7 +15,7 @@ class XenakisApp : Application() {
 
     override fun start(stage: Stage) {
         setupLogging()
-        ThemeWindowManagerFactory.create().setDarkModeForWindowFrame(stage, true)
+        /*ThemeWindowManagerFactory.create().setDarkModeForWindowFrame(stage, true)*/
         launcher = XenakisLauncher()
         launcher.launchXenakis(stage)
         periodicGC()
