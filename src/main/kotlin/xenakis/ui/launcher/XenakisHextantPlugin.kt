@@ -25,7 +25,17 @@ import xenakis.ui.launcher.XenakisHextantPlugin.singleLineCommand
 import xenakis.ui.prompt.PredicateTextPrompt
 
 object XenakisHextantPlugin : PluginInitializer({
-    stylesheet("xenakis/ui/style.css")
+    stylesheet("xenakis/ui/style/flow.css")
+    stylesheet("xenakis/ui/style/controls.css")
+    stylesheet("xenakis/ui/style/tool-panes.css")
+    stylesheet("xenakis/ui/style/launcher.css")
+    stylesheet("xenakis/ui/style/toolbar.css")
+    stylesheet("xenakis/ui/style/knob.css")
+    stylesheet("xenakis/ui/style/general.css")
+    stylesheet("xenakis/ui/style/score.css")
+    stylesheet("xenakis/ui/style/search-list.css")
+    stylesheet("xenakis/ui/style/prompt.css")
+    stylesheet("xenakis/ui/style/syntax.css")
     on(PluginBuilder.Phase.Initialize) { ctx ->
         ctx[Aspects].implement(ControlFactory::class, ScExprExpander::class, ScExprExpanderControlFactory)
     }

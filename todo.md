@@ -28,9 +28,7 @@
 
 ### Attach transformations to buses not to flows
 
-- flow graph only for managing the order of execution
-  - ability to reroute arrows in flow graph
-- how to mute?
+- how to mute
   - disable flow graph arrows
   - or mute individual buses
 - graphical tools for EQ, compression (multi-band), reverb, etc.
@@ -43,7 +41,6 @@
 - zoom tool: (selectable with `Z`)
 
 ### Minor
-
 
 - recognize transport shortcuts from all windows
 - specify expected channels (and ar/kr) for bus and buffer parameters
@@ -66,7 +63,6 @@
 - object insertion with INSERT
 - live updates for envelopes
 - ability to copy and paste whole time ranges
-- modularize and cleanup stylesheets
 - option to copy samples to project directory
 - searching and selecting object details
   - better text search implementation

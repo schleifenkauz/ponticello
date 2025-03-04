@@ -1,0 +1,43 @@
+.icon-button {
+    -fx-background-color: transparent;
+    -fx-background-radius: 6px;
+    -fx-border-radius: 6px;
+    -fx-border-color: transparent;
+    -fx-border-width: 2px;
+    -fx-focus-traversable: false;
+}
+
+.icon-button FontIcon {
+    -fx-icon-size: 26px;
+    -fx-icon-color: -fx-accent;
+}
+
+.icon-button:hover {
+    -fx-background-color: #351919;
+}
+
+.icon-button:selected {
+    -fx-border-color: black;
+    -fx-background-color: #351919 !important;
+}
+
+.toolbar-part {
+    -fx-border-color: gray;
+    -fx-border-width: 1px;
+    -fx-border-radius: 5px;
+    -fx-spacing: 3px;
+    -fx-padding: 0px 10px 0px 10px;
+    -fx-pref-height: 50px;
+    -fx-alignment: center-left;
+    -fx-background-color: rgba(0, 0, 0, 0.15);
+    -fx-background-radius: 5px;
+}
+
+.toolbar-part:hover {
+    -fx-background-color: rgba(0, 0, 0, 0.25);
+}
+
+.toolbar {
+    -fx-background-color: #2e2f33;
+    -fx-padding: 1px;
+}

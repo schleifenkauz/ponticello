@@ -1,0 +1,59 @@
+.knob-indicator {
+    -fx-stroke-width: 2px;
+}
+
+.knob-mass {
+    -fx-fill: black;
+}
+
+.knob-mass:hover {
+    -fx-border-width: 2px;
+    -fx-border-color: green;
+}
+
+.knob-dot {
+    -fx-fill: black;
+}
+
+.knob-dot:hover {
+    -fx-border-width: 2px;
+    -fx-border-color: green;
+}
+
+.control-knob {
+    -fx-background-radius: 6px;
+    -fx-border-radius: 6px;
+    -fx-background-color: transparent;
+}
+
+.control-knob:hover {
+    -fx-background-color: #351919;
+}
+
+.control-knob:focused {
+    -fx-border-width: 2px;
+    -fx-border-color: black;
+}
+
+.knob-arc {
+    -fx-stroke: black;
+    -fx-fill: transparent;
+    -fx-stroke-width: 3px;
+}
+
+.knob-value {
+    -fx-font-size: 10px;
+    -fx-text-fill: white;
+}
+
+
+.global-controls {
+    -fx-background-color: #2e2f33;
+    -fx-spacing: 5px;
+    -fx-padding: 5px;
+    -fx-border-color: gray;
+    -fx-border-width: 2px;
+    -fx-border-radius: 5px;
+    -fx-background-radius: 5px;
+    -fx-pref-height: 64px;
+}

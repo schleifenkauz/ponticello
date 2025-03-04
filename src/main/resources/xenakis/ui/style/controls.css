@@ -1,0 +1,36 @@
+.control-input-text {
+    -fx-background-color: transparent;
+    -fx-min-width: 90px;
+    -fx-pref-width: 90px !important;
+    -fx-border-color: rgba(67, 67, 67, 0.5);
+    -fx-border-radius: 3px;
+}
+
+.slider-adjust-button {
+    -fx-border-width: 3px !important;
+}
+
+.slider-adjust-button:hover {
+    -fx-border-color: black;
+}
+
+.detail-item {
+    -fx-border-width: 1;
+    -fx-border-radius: 3px;
+    -fx-border-color: black;
+    -fx-padding: 5px;
+    -fx-alignment: center-left;
+}
+
+.detail-item:hover {
+    -fx-background-color: rgba(100, 0, 0, 0.1);
+}
+
+
+.detail-item:drop-possible {
+    -fx-background-color: #222720;
+}
+
+Slider.control-detail-editor {
+    -fx-padding: 6px;
+}

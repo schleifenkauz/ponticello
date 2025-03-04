@@ -1,0 +1,59 @@
+
+.log-record {
+    -fx-alignment: center-left;
+    -fx-padding: 3px;
+}
+
+.log-record:hover {
+    -fx-background-color: #351919;
+}
+
+.log-record:focused {
+    -fx-background-color: #501717;
+}
+
+.tool-pane-header {
+    -fx-padding: 5px;
+    -fx-alignment: center-left;
+    -fx-spacing: 5px;
+}
+
+.heading {
+    -fx-font-size: 16px;
+}
+
+.tool-pane {
+    -fx-border-color: green;
+    -fx-border-width: 2px;
+    -fx-border-radius: 5px;
+    -fx-background-radius: 5px;
+    -fx-padding: 5px;
+    -fx-background-color: #1e1f22;
+}
+
+.tool-pane:drop-possible {
+    -fx-background-color: #222720;
+}
+
+.object-box {
+    -fx-border-color: black;
+    -fx-border-width: 2px;
+    -fx-border-radius: 5px;
+    -fx-background-radius: 5px;
+    -fx-padding: 2px;
+    /*-fx-background-color: rgba(0, 0, 0, 0.33)*/;
+    -fx-spacing: 5px;
+    -fx-alignment: center-left;
+}
+
+.object-box:hover {
+    -fx-background-color: rgba(100, 0, 0, 0.1);
+}
+
+.settings-pane {
+    -fx-background-color: #1e1f22;
+}
+
+.command-history-label:focused {
+    -fx-background-color: gray;
+}

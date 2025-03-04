@@ -1,0 +1,36 @@
+.recent-projects-list {
+    -fx-padding: 5px;
+}
+
+.project-box {
+    -fx-padding: 5px;
+    -fx-alignment: center-left;
+}
+
+.project-box:hover {
+    -fx-background-color: rgba(6, 184, 6, 0.3);
+}
+
+.project-box:focused {
+    -fx-background-color: rgba(53, 25, 25, 0.5);
+}
+
+.project-name {
+    -fx-text-fill: white;
+    -fx-font-size: 14px;
+}
+
+.project-path {
+    -fx-text-fill: gray;
+    -fx-font-size: 12px;
+}
+
+.startup-screen-top-bar {
+    -fx-padding: 10px;
+    -fx-spacing: 10px;
+}
+
+.startup-screen {
+    -fx-min-width: 500px;
+    -fx-padding: 5px;
+}

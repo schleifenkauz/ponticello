@@ -1,0 +1,127 @@
+.score-view {
+    -fx-background-color: #1d1d20;
+}
+
+.selection-rect {
+    -fx-stroke: gray;
+    -fx-fill: rgba(0, 0, 0, 0.2);
+}
+
+.selection-rect:focused {
+    -fx-fill: rgba(0, 0, 0, 0.3);
+    -fx-stroke: green;
+}
+
+.mouse-tracker-line {
+    -fx-stroke-width: 1px;
+    -fx-stroke: gray;
+}
+
+.waveform-line {
+    -fx-stroke: green;
+}
+
+.channel-separator-line {
+    -fx-stroke: white;
+}
+
+.memo-area {
+    -fx-background-color: transparent;
+    -fx-text-fill: white;
+    -fx-alignment: center;
+}
+
+Label.memo-area {
+    -fx-padding: 5px 5px 5px 8px;
+}
+
+.task-label {
+    -fx-padding: 5px;
+}
+
+.grid-line {
+    -fx-stroke: green;
+}
+
+.play-head {
+    -fx-stroke: green;
+    -fx-stroke-width: 2px;
+}
+
+.grid-time-code {
+    -fx-stroke: green;
+    -fx-font-size: 10;
+}
+
+.score-object {
+    -fx-border-width: 1px;
+    -fx-border-color: white;
+    -fx-border-radius: 2px;
+}
+
+.envelope-sub-window {
+    -fx-border-color: grey;
+    -fx-border-width: 1px;
+    -fx-border-radius: 3px;
+}
+
+.pitch-line {
+    -fx-stroke: black;
+}
+
+.note-object {
+    -fx-border-width: 2px;
+    -fx-border-color: transparent;
+}
+
+.note-object:hover {
+    -fx-border-color: gray;
+}
+
+.note-object:focused {
+    -fx-border-color: white;
+}
+
+.tempo-line {
+    -fx-stroke: green;
+}
+
+.bar-line {
+    -fx-stroke-width: 3px;
+}
+
+.beat-line {
+    -fx-stroke-width: 2px;
+}
+
+.tick-line {
+    -fx-stroke-width: 1px;
+}
+
+.bar-number {
+    -fx-font-size: 12px;
+    -fx-fill: green;
+    -fx-font-weight: 300;
+}
+
+.grid-marker-line {
+    -fx-stroke: white;
+    -fx-stroke-width: 3px;
+}
+
+.coordinate-info {
+    -fx-text-fill: white;
+    -fx-font-size: 14;
+}
+
+.envelope-line {
+    -fx-stroke-width: 4px;
+}
+
+.envelope-line:hover {
+    -fx-stroke-width: 5px;
+}
+
+.score-pane:drop-possible {
+    -fx-background-color: #222720;
+}

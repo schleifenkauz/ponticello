@@ -1,0 +1,56 @@
+/*
+* Audio Flow Graph
+*/
+
+.audio-flow-graph {
+    -fx-background-color: #1e1f22;
+}
+
+.audio-flow-graph:drop-possible {
+    -fx-background-color: #222720;
+}
+
+.bus-node {
+    -fx-background-color: #232328;
+    -fx-background-radius: 5px;
+    -fx-border-color: black;
+    -fx-border-width: 2px;
+    -fx-border-radius: 6px;
+    -fx-padding: 3px;
+    -fx-font-size: 16px;
+}
+
+.bus-node:hover {
+    -fx-border-color: white;
+}
+
+.bus-node:focused {
+    -fx-background-color: #4e0303;
+}
+
+.flow-arrow {
+    -fx-stroke-width: 2.5;
+}
+
+.flow-arrow:hover {
+    -fx-stroke-width: 4;
+}
+
+/*
+* Flow Pane
+*/
+
+.bus-box {
+    -fx-border-color: gray;
+    -fx-border-width: 0px 1px 0px 1px;
+    -fx-padding: 3px;
+    -fx-pref-width: 250px;
+}
+
+.flow-box {
+    -fx-border-color: gray;
+    -fx-border-width: 1px;
+    -fx-border-radius: 3px;
+    -fx-padding: 3px;
+    -fx-pref-width: 250px;
+}

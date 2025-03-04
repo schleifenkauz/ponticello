@@ -1,0 +1,81 @@
+.number {
+    -fx-text-fill: #7d00ff !important;
+}
+
+.variable-ref {
+    -fx-text-fill: white !important;
+}
+
+.class-ref {
+    -fx-text-fill: turquoise !important;
+}
+
+.env-ref {
+    -fx-text-fill: #ff7300;
+}
+
+.keyword {
+    -fx-text-fill: orange !important;
+}
+
+.unrecognized {
+    -fx-text-fill: #810000 !important;
+    -fx-underline: true;
+}
+
+.compound-expr {
+    -fx-border-width: 2px !important;
+    -fx-border-radius: 5px !important;
+    -fx-background-radius: 5px !important;
+    -fx-padding: 2px !important;
+    -fx-border-color: gray;
+    -fx-alignment: center-left;
+}
+
+.new-object {
+    -fx-border-color: green !important;
+}
+
+.message-send {
+    -fx-border-color: blue !important;
+}
+
+.array {
+    -fx-border-color: indigo !important;
+    -fx-alignment: center-left;
+}
+
+.literal-array {
+    -fx-border-color: chocolate !important;
+    -fx-alignment: center-left;
+}
+
+.tuple {
+    -fx-border-color: darkolivegreen !important;
+    -fx-alignment: center-left;
+}
+
+.function {
+    -fx-border-color: purple !important;
+}
+
+.code-block {
+    -fx-border-color: cyan !important;
+}
+
+.hextant-text.symbol {
+    -fx-text-fill: green;
+}
+
+.hextant-text.string {
+    -fx-text-fill: green;
+}
+
+.parameter-def .hextant-text {
+    -fx-font-size: 11px;
+}
+
+.plugin {
+    -fx-border-color: white;
+    -fx-padding: 5px;
+}

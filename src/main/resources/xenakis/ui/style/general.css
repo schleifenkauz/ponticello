@@ -1,0 +1,96 @@
+.root {
+    -fx-accent: #06b806;
+    -fx-focus-color: -fx-accent;
+    -fx-base: #1d1d20;
+    -fx-control-inner-background: derive(-fx-base, 35%);
+    -fx-control-inner-background-alt: -fx-control-inner-background;
+    -fx-background-color: -fx-base;
+}
+
+/*
+* Scroll Pane
+*/
+
+.scroll-pane {
+    -fx-background-color: transparent !important;
+}
+
+.scroll-pane .viewport {
+    -fx-background-color: transparent !important;
+}
+
+.scroll-pane .content {
+    -fx-background-color: transparent !important;
+}
+
+/*
+* Buttons
+*/
+
+Button.sleek-button {
+    -fx-padding: 3px !important;
+    -fx-background-color: black !important;
+    -fx-border-width: 2px;
+    -fx-border-color: rgba(128, 128, 128, 0.3) !important;
+    -fx-background-radius: 5px !important;
+    -fx-border-radius: 5px !important;
+}
+
+Button.sleek-button:hover {
+    -fx-background-color: #351919 !important;
+}
+
+Button.sleek-button:focused {
+    -fx-border-color: #501717 !important;
+}
+
+
+.progress-bar > .bar {
+    -fx-background-insets: 1 1 2 1;
+    -fx-padding: 0.35em;
+}
+
+/*
+* Text fields
+*/
+
+.sleek-text-field {
+    -fx-prompt-text-fill: gray;
+    -fx-font-size: 12px;
+    -fx-background-color: transparent;
+    -fx-border-color: grey;
+    -fx-border-radius: 0px;
+    -fx-padding: 5px 5px 5px 5px;
+    -fx-max-width: 1000;
+}
+
+.search-field {
+    -fx-border-width: 0px 0px 1px 0px;
+}
+
+.search-field FontIcon {
+    -fx-icon-size: 16px;
+    -fx-icon-color: -fx-accent;
+}
+
+.toggle-switch {
+    -fx-background-color: transparent !important;
+}
+
+.name {
+    -fx-spacing: 5px;
+    -fx-padding: 0px 5px 0px 5px;
+    -fx-alignment: center-left;
+    -fx-border-width: 2px;
+    -fx-border-radius: 3px;
+    -fx-border-color: black;
+}
+
+.name-field {
+    -fx-font-size: 14px;
+    -fx-background-color: transparent;
+    -fx-background-radius: 0;
+    -fx-border-width: 0;
+    -fx-padding: 0;
+}
+
