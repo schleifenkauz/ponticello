@@ -1,12 +1,13 @@
 package xenakis.ui.actions
 
 import javafx.beans.binding.Bindings
-import javafx.scene.control.ButtonBase
+import javafx.scene.control.Button
 import javafx.scene.layout.HBox
 import xenakis.ui.impl.neverHGrow
 
 open class ActionBar(border: Boolean = true, private val buttonStyle: String = "tool-button") : HBox() {
-    private val indices = mutableMapOf<ButtonBase, Int>()
+    private val indices = mutableMapOf<Button, Int>()
+    private val buttons = mutableMapOf<Action<*>, Button>()
 
     constructor(
         actions: List<ContextualizedAction>, border: Boolean = true, buttonStyle: String = "tool-button",
@@ -24,6 +25,7 @@ open class ActionBar(border: Boolean = true, private val buttonStyle: String = "
         for ((idx, action) in actions.withIndex()) {
             val button = action.makeButton(buttonStyle)
             indices[button] = idx
+            buttons[action.wrapped] = button
             if (button.isVisible) children.add(button)
             button.visibleProperty().addListener { _, _, visible ->
                 if (visible) {
@@ -35,4 +37,6 @@ open class ActionBar(border: Boolean = true, private val buttonStyle: String = "
             }
         }
     }
+
+    fun getButton(action: Action<*>) = buttons.getValue(action)
 }

@@ -4,6 +4,7 @@ import bundles.createBundle
 import hextant.fx.initHextantScene
 import javafx.application.Platform
 import javafx.scene.control.Label
+import javafx.scene.input.TransferMode
 import javafx.scene.layout.VBox
 import org.kordamp.ikonli.material2.Material2AL
 import org.kordamp.ikonli.material2.Material2MZ
@@ -160,6 +161,9 @@ class InstrumentRegistryPane(
             val outSelectorControl = ObjectSelectorControl(obj.outputSelector, createBundle())
             addExtraControl(outSelectorControl)
             addAction(Material2MZ.SAVE, description = "Save VST plugin configuration") { obj.saveConfiguration() }
+        }
+        if (obj is SynthDefObject) {
+            addGrabber(SynthDefObject.DATA_FORMAT, TransferMode.COPY)
         }
         if (obj is CustomizableSynthDefObject) {
             val globalLib = registry.context[GlobalSynthDefLib]

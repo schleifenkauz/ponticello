@@ -94,11 +94,11 @@
 }
 
 .add-flow-button FontIcon {
-    -fx-icon-size: 12px;
+    -fx-icon-size: 30px;
 }
 
 .add-flow-button {
-    -fx-background-radius: 3px;
+    -fx-background-radius: 5px;
 }
 
 .add-flow-button:hover {

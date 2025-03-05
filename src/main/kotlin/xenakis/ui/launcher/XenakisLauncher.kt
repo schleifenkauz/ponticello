@@ -42,13 +42,22 @@ class XenakisLauncher {
 
     private lateinit var currentActivity: Activity
 
-    private fun launchActivity(activity: Activity) {
-        currentActivity.hide()
-        currentActivity = activity
+    private fun <A : Activity> launchActivity(description: String, createActivity: () -> A): A? {
         val stage = Stage()
         stage.setOnCloseRequest { closeRequest() }
         rootContext[primaryStage] = stage
+        val activity = try {
+            createActivity()
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Logger.error("Error $description")
+            showLauncher()
+            return null
+        }
+        currentActivity.hide()
+        currentActivity = activity
         activity.show(stage)
+        return activity
     }
 
     fun openProject() {
@@ -58,6 +67,7 @@ class XenakisLauncher {
 
     fun openProject(folder: File) {
         setupProjectContext(
+            "opening project",
             whenReady = { context ->
                 val project = XenakisProject.loadFrom(folder, context, getOrLaunchLoadingScreen())
                 openProject(project)
@@ -68,7 +78,7 @@ class XenakisLauncher {
     }
 
     private fun getOrLaunchLoadingScreen() =
-        currentActivity as? LoadingScreen ?: LoadingScreen(rootContext).also(::launchActivity)
+        currentActivity as? LoadingScreen ?: launchActivity("Showing loading screen") { LoadingScreen(rootContext) }!!
 
     private fun getActiveProject(): XenakisProject? = (currentActivity as? XenakisMainActivity)?.project
 
@@ -76,14 +86,19 @@ class XenakisLauncher {
         rootContext[UndoManager].reset()
         rootContext[currentProject] = project
         recentProjects.push(project.projectDirectory)
-        Platform.runLater { launchActivity(XenakisMainActivity(project)) }
+        Platform.runLater {
+            val activity = launchActivity("Open project ${project.name}") { XenakisMainActivity(project) }
+            if (activity == null) {
+                project.client.quit()
+            }
+        }
     }
 
     fun closeProject() {
         val save = askIfUserWantsToSave() ?: return
         if (save) saveProject()
         recentProjects.clearActiveProject()
-        launchActivity(LauncherScreen(this))
+        showLauncher()
     }
 
     fun createNewProject() {
@@ -97,7 +112,7 @@ class XenakisLauncher {
     }
 
     private fun createNewProject(location: File) {
-        setupProjectContext { context ->
+        setupProjectContext("creating new project") { context ->
             val project = XenakisProject.create(location, context)
             save(project, location)
             openProject(project)
@@ -124,29 +139,40 @@ class XenakisLauncher {
         if (file != null) {
             openProject(file)
         } else {
-            launchActivity(LauncherScreen(this))
+            showLauncher()
         }
     }
 
-    private fun setupProjectContext(onError: () -> Unit = {}, whenReady: (Context) -> Unit) {
+    private fun setupProjectContext(description: String, onError: () -> Unit = {}, whenReady: (Context) -> Unit) {
         val indicator = getOrLaunchLoadingScreen()
         indicator.displayProgress(0.0, "Starting SuperCollider")
         try {
+            val client = OSCSuperColliderClient.create()
             val context = rootContext.extend {
-                set(SuperColliderClient, OSCSuperColliderClient.create())
+                set(SuperColliderClient, client)
             }
             SnapshotAware.Serializer.reconstructionContext = context
             context[SuperColliderClient].bootServer(indicator) {
-                whenReady(context)
+                try {
+                    whenReady(context)
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    Logger.error("Error $description")
+                    client.quit()
+                    onError()
+                    showLauncher()
+                }
             }
         } catch (e: Exception) {
             e.printStackTrace()
             Logger.error("Error starting SuperCollider", Logger.Category.Project, e.message)
-            onError()
-            launchActivity(LauncherScreen(this))
+            showLauncher()
         }
     }
 
+    private fun showLauncher() {
+        launchActivity("Show Xenakis launcher") { LauncherActivity(this) }
+    }
 
     fun closeRequest() {
         if (getActiveProject() == null) {

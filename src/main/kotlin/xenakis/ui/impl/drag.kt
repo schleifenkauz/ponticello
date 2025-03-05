@@ -7,14 +7,16 @@ import javafx.geometry.Bounds
 import javafx.geometry.Point2D
 import javafx.scene.Cursor
 import javafx.scene.Node
+import javafx.scene.control.Button
 import javafx.scene.input.MouseEvent
 import javafx.scene.layout.Region
+import javafx.stage.Window
 import xenakis.ui.actions.Tool
 import xenakis.ui.launcher.XenakisMainActivity
 import kotlin.math.absoluteValue
 
 fun Node.setupDragging(
-    context: Context, dragTool: Tool,
+    context: Context, dragTool: Tool?,
     defaultCursor: Cursor = Cursor.OPEN_HAND, dragCursor: Cursor = Cursor.CLOSED_HAND,
     onPressed: (ev: MouseEvent) -> Unit = {},
     onReleased: (ev: MouseEvent) -> Unit = {},
@@ -26,7 +28,7 @@ fun Node.setupDragging(
     val toolSelector = context[XenakisMainActivity].toolSelector
     cursor = defaultCursor
     addEventHandler(MouseEvent.ANY) { ev ->
-        if (toolSelector.selected != dragTool) return@addEventHandler
+        if (dragTool != null && toolSelector.selected != dragTool) return@addEventHandler
         when (ev.eventType) {
             MouseEvent.MOUSE_PRESSED -> {
                 cursor = dragCursor
@@ -154,3 +156,14 @@ private fun Region.getCursor(
 }
 
 private fun isResizeCursor(cursor: Cursor?) = cursor.toString().endsWith("RESIZE")
+
+fun Button.setupWindowDragButton(context: Context, window: () -> Window) {
+    var startCords = Point2D(0.0, 0.0)
+    setupDragging(
+        context, null,
+        onPressed = { startCords = Point2D(window().x, window().x) },
+        relocateBy = { _, _, _, dx, dy ->
+            window().x = startCords.x + dx
+            window().y = startCords.y + dy
+        })
+}

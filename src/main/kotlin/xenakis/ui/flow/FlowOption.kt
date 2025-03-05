@@ -47,7 +47,7 @@ sealed interface FlowOption {
             anchor: Region,
             associatedBus: BusObject,
             onCreate: (AudioFlow) -> Unit
-        ) = onCreate(CodeFlow.createFor(associatedBus))
+        ) = onCreate(CodeFlow.createFor(associatedBus, associatedBus.context))
     }
 
     data object Placeholder : FlowOption {

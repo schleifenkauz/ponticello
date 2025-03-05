@@ -6,6 +6,7 @@ import javafx.geometry.Bounds
 import javafx.scene.Node
 import javafx.scene.control.ScrollPane
 import javafx.scene.control.Slider
+import javafx.scene.input.DragEvent
 import javafx.scene.layout.BorderPane
 import javafx.scene.layout.HBox
 import javafx.scene.layout.Priority
@@ -18,12 +19,15 @@ import org.kordamp.ikonli.materialdesign2.MaterialDesignR
 import reaktive.value.ReactiveString
 import reaktive.value.ReactiveVariable
 import reaktive.value.binding.map
+import reaktive.value.binding.notEqualTo
 import reaktive.value.now
 import reaktive.value.reactiveValue
 import xenakis.impl.toDecimal
 import xenakis.model.flow.*
 import xenakis.model.obj.BusObject
+import xenakis.model.obj.SynthDefObject
 import xenakis.model.registry.BusRegistry
+import xenakis.model.registry.InstrumentRegistry
 import xenakis.model.registry.ObjectReference
 import xenakis.model.registry.ObjectRegistry
 import xenakis.model.score.KnobControl
@@ -34,12 +38,10 @@ import xenakis.sc.view.ObjectSelectorControl
 import xenakis.ui.actions.ActionBar
 import xenakis.ui.actions.button
 import xenakis.ui.actions.collectActions
+import xenakis.ui.actions.registerShortcuts
 import xenakis.ui.controls.DetailPane
 import xenakis.ui.controls.Knob
-import xenakis.ui.impl.centerChildren
-import xenakis.ui.impl.infiniteSpace
-import xenakis.ui.impl.label
-import xenakis.ui.impl.styleClass
+import xenakis.ui.impl.*
 import xenakis.ui.launcher.XenakisLauncher.Companion.currentProject
 import xenakis.ui.registry.SimpleSearchableListView
 import xenakis.ui.score.ParameterizedScoreObjectView
@@ -61,13 +63,17 @@ class FlowPane(
     }
 
     override fun addedFlow(flow: AudioFlow) {
-        val box = boxes[flow.associatedBus] ?: error("No box found for ${flow.associatedBus}")
+        val box = boxes.getValue(flow.associatedBus)
         box.addedFlow(flow)
     }
 
     override fun removedFlow(flow: AudioFlow) {
-        val box = boxes[flow.associatedBus] ?: error("No box found for ${flow.associatedBus}")
+        val box = boxes.getValue(flow.associatedBus)
         box.removedFlow(flow)
+    }
+
+    override fun movedFlow(flow: AudioFlow, oldIndex: Int) {
+        boxes.getValue(flow.associatedBus).movedFlow(flow, oldIndex)
     }
 
     override fun added(obj: BusObject, idx: Int) {
@@ -86,35 +92,45 @@ class FlowPane(
         private val flows: AudioFlows,
         private val bus: BusObject
     ) : ScrollPane() {
-        private val vbox = VBox(5.0)
+        val vbox = VBox(5.0)
         private val label = label(bus.name) styleClass "bus-label"
-        private val boxes = mutableListOf<FlowBox<*>>()
+        private val boxes = mutableMapOf<AudioFlow, FlowBox<*>>()
 
         init {
             styleClass.add("bus-box")
-            val layout = VBox(vbox, BorderPane(label) styleClass "bus-label-box")
-            VBox.setVgrow(vbox, Priority.ALWAYS)
-            vbox.setBackground(Color.BLACK)
+            val addFlowRegion = makeAddFlowButton()
+            val layout = VBox(vbox, addFlowRegion, BorderPane(label) styleClass "bus-label-box")
+            VBox.setVgrow(addFlowRegion, Priority.ALWAYS)
+            layout.setBackground(Color.BLACK)
             layout.minHeightProperty().bind(viewportBoundsProperty().map(Bounds::getHeight))
+            setupDropArea({ db -> db.hasContent(AudioFlow.DATA_FORMAT) }, ::onDrop)
             content = layout
-            addCreateFlowButton(0)
         }
 
-        private fun addCreateFlowButton(index: Int) {
-            //TODO ability to drop SynthDefs here
-            val btn = MaterialDesignP.PLUS.button("Add flow").styleClass("add-flow-button")
-            val pane = VBox(btn).centerChildren()
+        private fun onDrop(ev: DragEvent) {
+
+        }
+
+        private fun makeAddFlowButton(): BorderPane {
+            val btn = MaterialDesignP.PLUS.button("Add flow").styleClass("tool-button")
+            val pane = BorderPane(btn)
+            pane.setupDropArea({ db -> db.hasContent(SynthDefObject.DATA_FORMAT) }) { ev ->
+                val registry = flows.context[InstrumentRegistry]
+                val def = ObjectReference(ev.dragboard.getFrom(registry, SynthDefObject.DATA_FORMAT) as SynthDefObject)
+                val flow = SynthFlow.createFor(bus, def.get(), flows.context)
+                flow.index.now = vbox.children.size
+                flows.addFlow(flow)
+            }
             btn.setOnMouseClicked {
                 val options = FlowOption.getOptions(flows.context)
                 SimpleSearchableListView(options, "Add flow").showPopup(flows.context, anchorNode = btn) { option ->
                     option.createFlow(flows.context, btn, bus) { flow ->
-                        flow.index = vbox.children.indexOf(pane) / 2
+                        flow.index.now = vbox.children.size
                         flows.addFlow(flow)
                     }
                 }
             }
-            btn.visibleProperty().bind(pane.hoverProperty())
-            vbox.children.add(index, pane)
+            return pane
         }
 
         fun addedFlow(flow: AudioFlow) {
@@ -125,24 +141,23 @@ class FlowPane(
                 is SendFlow -> SendUtilityBox(flow)
                 is ScoreObjectPlaceholder -> PlaceholderBox(flow)
             }
-            box.initialize()
-            boxes.add(flow.index, box)
-            vbox.children.add(flow.index * 2 + 1, box)
-            addCreateFlowButton(flow.index * 2 + 2)
+            box.initialize(this)
+            boxes[flow] = box
+            vbox.children.add(flow.index.now, box)
         }
 
         fun removedFlow(flow: AudioFlow) {
-            val index = boxes.indexOfFirst { b -> b.flow == flow }
-            boxes.removeAt(index)
-            vbox.children.removeAt(index * 2 + 2)
-            vbox.children.removeAt(index * 2 + 1)
+            val box = boxes.remove(flow)
+            vbox.children.remove(box)
+        }
+
+        fun movedFlow(flow: AudioFlow, oldIndex: Int) {
+            val box = vbox.children.removeAt(oldIndex)
+            vbox.children.add(flow.index.now, box)
         }
     }
 
     private abstract class FlowBox<F : AudioFlow>(val flow: F) : VBox() {
-        private val header = HBox()
-        private val grabber = MaterialDesignC.CURSOR_POINTER.button("Move flow")
-
         abstract fun getContent(flow: F): Node
 
         abstract fun getTitle(flow: F): ReactiveString
@@ -150,19 +165,66 @@ class FlowPane(
         init {
             styleClass.add("flow-box")
             setOnMouseClicked { requestFocus() }
+            registerShortcuts(actions.withContext(flow))
+            /*grabber.setOnDragDetected { ev ->
+                val mode = if (ev.isControlDown) TransferMode.COPY else TransferMode.MOVE
+                val db = startDragAndDrop(mode)
+                val referenceIndex = flow.context[currentProject].flows.referenceIndex(flow)
+                db.setContent(mapOf(AudioFlow.DATA_FORMAT to referenceIndex))
+                ev.consume()
+            }*/
         }
 
-        fun initialize() {
+        fun initialize(parent: BusBox) {
+            val actionBar = ActionBar(actions.withContext(flow), border = false, buttonStyle = "flow-action-button")
             val header = HBox(
                 label(getTitle(flow)),
                 infiniteSpace(),
-                ActionBar(actions.withContext(flow), border = false, buttonStyle = "flow-action-button")
+                actionBar
             ) styleClass "flow-box-header"
+            val grabber = actionBar.getButton(actions.getAction("Drag flow"))
+            grabber.setupDragging(flow.context, null,
+                onPressed = { viewOrder = -100.0 },
+                relocateBy = { _, _, _, _, dy -> translateY = dy },
+                onReleased = {
+                    viewOrder = 0.0
+                    try {
+                        val y = translateY + layoutY
+                        var newIndex = parent.vbox.children.binarySearchBy(y) { n -> n.layoutY }
+                        if (newIndex < 0) newIndex = -(newIndex + 1)
+                        flow.context[currentProject].flows.moveFlow(flow, newIndex)
+                    } finally {
+                        translateY = 0.0
+                    }
+                }
+            )
             children.addAll(header, getContent(flow))
         }
 
         companion object {
             private val actions = collectActions<AudioFlow> {
+                addAction("Move up") {
+                    applicableIf { flow -> flow.index.notEqualTo(0) }
+                    shortcut("Ctrl+UP")
+                    icon(Material2AL.ARROW_UPWARD)
+                    executes { flow ->
+                        val flows = flow.context[currentProject].flows
+                        flows.moveFlow(flow, flow.index.now - 1)
+                    }
+                }
+                addAction("Move down") {
+                    applicableIf { flow ->
+                        val flows = flow.context[currentProject].flows
+                        val lastFlowIndex = flows.numberOfFlows(flow.associatedBus).map { s -> s - 1 }
+                        flow.index.notEqualTo(lastFlowIndex)
+                    }
+                    shortcut("Ctrl+DOWN")
+                    icon(Material2AL.ARROW_DOWNWARD)
+                    executes { flow ->
+                        val flows = flow.context[currentProject]
+                        flows.context[currentProject].flows.moveFlow(flow, flow.index.now + 1)
+                    }
+                }
                 addAction("Toggle activated") {
                     icon { flow ->
                         flow.isActive.map { active ->
@@ -174,11 +236,15 @@ class FlowPane(
                     executes { flow -> flow.isActive.now = !flow.isActive.now }
                 }
                 addAction("Remove flow") {
-                    icon(Material2AL.CLOSE)
+                    icon(MaterialDesignC.CLOSE_BOX)
                     shortcuts("Ctrl+DELETE")
                     executes { flow ->
-                        flow.context[currentProject].flows.removeFlow(flow)
+                        val flows = flow.context[currentProject].flows
+                        flows.removeFlow(flow)
                     }
+                }
+                addAction("Drag flow") {
+                    icon(MaterialDesignC.CURSOR_POINTER)
                 }
             }
         }

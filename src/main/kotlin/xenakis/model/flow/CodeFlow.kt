@@ -1,6 +1,7 @@
 package xenakis.model.flow
 
 import hextant.context.Context
+import hextant.context.withoutUndo
 import hextant.serial.EditorRoot
 import reaktive.value.ReactiveString
 import reaktive.value.binding.map
@@ -10,6 +11,9 @@ import xenakis.model.registry.BusRegistry
 import xenakis.model.registry.ObjectReference
 import xenakis.sc.client.ScWriter
 import xenakis.sc.editor.CodeBlockEditor
+import xenakis.sc.editor.IdentifierEditor
+import xenakis.sc.editor.assign
+import xenakis.sc.editor.`in`
 
 class CodeFlow(
     private val busRef: ObjectReference,
@@ -43,6 +47,13 @@ class CodeFlow(
         if (FlowType.InOut in flowType) setOf(associatedBus) else emptySet()
 
     companion object {
-        fun createFor(bus: BusObject) = CodeFlow(bus.reference(), EditorRoot.create(CodeBlockEditor(bus.context)))
+        fun createFor(bus: BusObject, context: Context): CodeFlow {
+            val editor = CodeBlockEditor(context)
+            context.withoutUndo {
+                editor.variables.addLast(IdentifierEditor(context, "snd"))
+                editor.statements.addLast(assign("snd", `in`(context, bus)))
+            }
+            return CodeFlow(bus.reference(), EditorRoot.create(editor))
+        }
     }
 }

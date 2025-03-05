@@ -41,6 +41,10 @@ import xenakis.ui.score.ScoreObjectSelectionManager
 import xenakis.ui.score.ScoreView
 
 class XenakisMainActivity(val project: XenakisProject) : Activity() {
+    init {
+        project.context[XenakisMainActivity] = this
+    }
+
     val toolSelector = SelectorBar(context, Tool.entries, Tool.Pointer)
 
     val instrumentsPane = InstrumentRegistryPane(project.instruments)
@@ -108,7 +112,7 @@ class XenakisMainActivity(val project: XenakisProject) : Activity() {
 
         val flowPane = FlowPane(project.flows)
         flowPane.setPrefSize(1000.0, 1000.0)
-        flowPaneWindow = SubWindow(flowPane, "Audio flows", context, SubWindow.Type.Undecorated)
+        flowPaneWindow = SubWindow(flowPane, "Audio flows", context)
 
         val globalControlsPane = GlobalControlsPane(project.globalControls, context)
         globalControlsWindow = SubWindow(globalControlsPane, "Global controls", context)

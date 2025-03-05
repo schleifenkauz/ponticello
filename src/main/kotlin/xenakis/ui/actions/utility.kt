@@ -91,7 +91,7 @@ val Event?.isTargetTextInput get() = this is KeyEvent && (target is TextInputCon
 
 const val DEFAULT_RADIUS: Double = 16.0
 
-fun ContextualizedAction.makeButton(style: String = "tool-button"): ButtonBase {
+fun ContextualizedAction.makeButton(style: String = "tool-button"): Button {
     val button = Button()
     val iconObserver = this.icon.forEach { icon ->
         Platform.runLater {

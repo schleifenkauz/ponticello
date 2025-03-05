@@ -18,7 +18,7 @@ import xenakis.ui.impl.styleClass
 import xenakis.ui.prompt.YesNoPrompt
 import java.io.File
 
-class LauncherScreen(private val launcher: XenakisLauncher) : Activity() {
+class LauncherActivity(private val launcher: XenakisLauncher) : Activity() {
     override val context: Context
         get() = launcher.rootContext
     private val searchField = CustomTextField().apply {
@@ -71,7 +71,7 @@ class LauncherScreen(private val launcher: XenakisLauncher) : Activity() {
         stage.scene.root.registerShortcuts(launcherActions.withContext(launcher) + QuitAction.withContext(launcher))
     }
 
-    private class ProjectBox(val activity: LauncherScreen, val projectFile: File) : HBox() {
+    private class ProjectBox(val activity: LauncherActivity, val projectFile: File) : HBox() {
         private val name = label(projectFile.nameWithoutExtension).styleClass("project-name")
         private val path = label(projectFile.absolutePath).styleClass("project-path")
 

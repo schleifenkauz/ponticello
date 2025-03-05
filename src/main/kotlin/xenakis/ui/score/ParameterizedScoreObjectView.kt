@@ -158,7 +158,7 @@ abstract class ParameterizedScoreObjectView(
 
     companion object {
         fun setupSynthDetailPane(pane: DetailPane, obj: ParameterizedObject) {
-            val addButton = Material2MZ.PLUS.button(action = "Add control")
+            val addButton = Material2MZ.PLUS.button(action = "Add control").styleClass("tool-button")
             val header = HBox(
                 5.0,
                 Label("Synth controls").styleClass("heading"),

@@ -15,7 +15,6 @@ class XenakisApp : Application() {
 
     override fun start(stage: Stage) {
         setupLogging()
-        /*ThemeWindowManagerFactory.create().setDarkModeForWindowFrame(stage, true)*/
         launcher = XenakisLauncher()
         launcher.launchXenakis(stage)
         periodicGC()

@@ -7,6 +7,7 @@ import hextant.context.withoutUndo
 import hextant.fx.registerShortcuts
 import hextant.serial.EditorRoot
 import hextant.serial.snapshot
+import javafx.application.Platform
 import javafx.beans.binding.Bindings
 import javafx.beans.value.ObservableValue
 import javafx.css.PseudoClass
@@ -16,7 +17,10 @@ import javafx.geometry.Insets
 import javafx.geometry.Point2D
 import javafx.geometry.Pos
 import javafx.scene.Node
-import javafx.scene.control.*
+import javafx.scene.control.Button
+import javafx.scene.control.ColorPicker
+import javafx.scene.control.Label
+import javafx.scene.control.TextField
 import javafx.scene.input.*
 import javafx.scene.layout.*
 import javafx.scene.paint.Color
@@ -32,10 +36,13 @@ import reaktive.value.now
 import xenakis.impl.Decimal
 import xenakis.impl.asY
 import xenakis.model.obj.SuperColliderObject
+import xenakis.model.registry.NamedObject
+import xenakis.model.registry.ObjectRegistry
 import xenakis.model.score.ScoreObject
 import xenakis.model.score.ScoreObjectInstance
 import xenakis.sc.editor.CodeBlockEditor
 import xenakis.ui.launcher.XenakisMainActivity
+import java.util.concurrent.CompletableFuture
 import kotlin.math.pow
 import kotlin.math.sqrt
 
@@ -70,12 +77,6 @@ inline fun popup(node: Node, block: Popup.() -> Unit = {}) = Popup().apply {
     content.add(node)
     isAutoHide = true
     block()
-}
-
-fun ToggleGroup.dontDeselectAll() {
-    selectedToggleProperty().addListener { _, old, new ->
-        if (new == null) old.isSelected = true
-    }
 }
 
 fun <T, F> ObservableValue<out T>.map(f: (T) -> F): ObservableValue<F> =
@@ -142,6 +143,20 @@ fun Dragboard.hasFiles(extension: String) =
     hasFiles() && files.all { f -> f.extension.equals(extension, ignoreCase = true) }
 
 fun Dragboard.hasFile(extension: String): Boolean = hasFiles(extension) && files.size == 1
+
+fun <T : NamedObject> Dragboard.getFrom(registry: ObjectRegistry<T>, format: DataFormat): T {
+    val name = getContent(format) as String
+    return registry.get(name)
+}
+
+fun <T> runOnApplicationThread(action: () -> T): T {
+    val future = CompletableFuture<T>()
+    Platform.runLater {
+        val result = action()
+        future.complete(result)
+    }
+    return future.get()
+}
 
 fun solidBorder(fill: Color, width: Double = 1.0, radius: Double = 0.0) =
     Border(BorderStroke(fill, BorderStrokeStyle.SOLID, CornerRadii(radius), BorderWidths(width), Insets(-width)))

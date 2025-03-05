@@ -1,5 +1,6 @@
 package xenakis.model.flow
 
+import javafx.scene.input.DataFormat
 import kotlinx.serialization.Serializable
 import reaktive.value.ReactiveString
 import reaktive.value.ReactiveVariable
@@ -12,7 +13,7 @@ import xenakis.sc.client.ScWriter
 sealed class AudioFlow : AbstractContextualObject(), Flow {
     val isActive: ReactiveVariable<Boolean> = reactiveVariable(true)
 
-    var index: Int = 0
+    val index: ReactiveVariable<Int> = reactiveVariable(0)
 
     abstract val associatedBus: BusObject
 
@@ -21,4 +22,8 @@ sealed class AudioFlow : AbstractContextualObject(), Flow {
     abstract fun copyFor(associatedBus: BusObject): AudioFlow
 
     abstract fun ScWriter.writeCode(synthName: String, order: ScoreObjectInfo)
+
+    companion object {
+        val DATA_FORMAT = DataFormat("audio-flow")
+    }
 }

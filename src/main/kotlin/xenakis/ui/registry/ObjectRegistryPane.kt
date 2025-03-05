@@ -62,6 +62,8 @@ abstract class ObjectRegistryPane<O : NamedObject>(
         val label = Label(plural(type)).styleClass("heading")
         val space = infiniteSpace()
         val actionBar = ActionBar(actions.withContext(this), border = false)
+        val moveBtn = actionBar.getButton(actions.getAction("Move window"))
+        moveBtn.setupWindowDragButton(registry.context) { scene.window }
         return HBox(label, searchText, space, actionBar).styleClass("tool-pane-header")
     }
 
@@ -194,6 +196,14 @@ abstract class ObjectRegistryPane<O : NamedObject>(
                         Logger.Category.Registries
                     )
                 }
+            }
+            addAction("Move window") {
+                icon(MaterialDesignC.CURSOR_MOVE)
+            }
+            addAction("Close window") {
+                shortcut("Ctrl+W")
+                icon(MaterialDesignC.CLOSE)
+                executes { p -> p.scene.window.hide() }
             }
         }
     }

@@ -1,6 +1,7 @@
 package xenakis.model.obj
 
 import hextant.context.Context
+import javafx.scene.input.DataFormat
 import reaktive.value.now
 import reaktive.value.reactiveVariable
 import xenakis.model.obj.SuperColliderObject.LiveCycleType
@@ -38,4 +39,8 @@ interface SynthDefObject : ParameterizedObjectDef, InstrumentObject {
     }
 
     override fun copy(name: String): SynthDefObject
+
+    companion object {
+        val DATA_FORMAT = DataFormat("synth-def")
+    }
 }
