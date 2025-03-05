@@ -24,7 +24,7 @@ class HelpBrowser(context: Context) {
     }
 
     fun show() {
-        window.show()
+        window.showOrBringToFront()
     }
 
     fun showClassDocumentation(target: ScExprEditor<*>, bounds: Bounds) {

@@ -10,7 +10,6 @@ import javafx.scene.control.ScrollPane
 import javafx.scene.control.TextArea
 import javafx.scene.control.TextField
 import javafx.scene.layout.VBox
-import javafx.stage.Stage
 import xenakis.sc.client.ConsoleMonitor
 import xenakis.sc.client.SuperColliderClient
 import xenakis.sc.client.SuperColliderException
@@ -76,7 +75,7 @@ class SuperColliderShellController(private val client: SuperColliderClient) : Co
     }
 
     companion object {
-        fun createShellWindow(context: Context): Stage {
+        fun createShellWindow(context: Context): SubWindow {
             val client = context[SuperColliderClient]
             val controller = SuperColliderShellController(client)
             val loader = FXMLLoader()

@@ -91,7 +91,7 @@ val Event?.isTargetTextInput get() = this is KeyEvent && (target is TextInputCon
 
 const val DEFAULT_RADIUS: Double = 16.0
 
-fun ContextualizedAction.makeButton(): ButtonBase {
+fun ContextualizedAction.makeButton(style: String = "tool-button"): ButtonBase {
     val button = Button()
     val iconObserver = this.icon.forEach { icon ->
         Platform.runLater {
@@ -126,8 +126,8 @@ fun ContextualizedAction.makeButton(): ButtonBase {
     }
     button.setMinSize(DEFAULT_RADIUS * 2, DEFAULT_RADIUS * 2)
     button.setMaxSize(DEFAULT_RADIUS * 2, DEFAULT_RADIUS * 2)
-    button.neverHGrow<ButtonBase>()
-    button.styleClass<ButtonBase>("icon-button")
+    button.neverHGrow()
+    button.styleClass.addAll(style, "icon-button")
     button.setOnMouseClicked { ev -> this.execute(ev) }
     return button
 }
@@ -138,8 +138,6 @@ private fun ButtonBase.makeIconButton(ikon: Ikon, description: String) {
     styleClass("icon-button")
     graphic = FontIcon(ikon)
     tooltip = Tooltip(description)
-    setMinSize(DEFAULT_RADIUS * 2, DEFAULT_RADIUS * 2)
-    setMaxSize(DEFAULT_RADIUS * 2, DEFAULT_RADIUS * 2)
     neverHGrow()
 }
 

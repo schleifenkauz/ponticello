@@ -5,22 +5,24 @@ import javafx.scene.control.ButtonBase
 import javafx.scene.layout.HBox
 import xenakis.ui.impl.neverHGrow
 
-open class ActionBar(style: Boolean = true) : HBox() {
+open class ActionBar(border: Boolean = true, private val buttonStyle: String = "tool-button") : HBox() {
     private val indices = mutableMapOf<ButtonBase, Int>()
 
-    constructor(actions: List<ContextualizedAction>, border: Boolean = true) : this(border) {
+    constructor(
+        actions: List<ContextualizedAction>, border: Boolean = true, buttonStyle: String = "tool-button",
+    ) : this(border, buttonStyle) {
         addActions(actions)
     }
 
     init {
-        if (style) styleClass.add("toolbar-part")
+        if (border) styleClass.add("toolbar-part")
         visibleProperty().bind(Bindings.isEmpty(children).not())
         neverHGrow()
     }
 
     fun addActions(actions: List<ContextualizedAction>) {
         for ((idx, action) in actions.withIndex()) {
-            val button = action.makeButton()
+            val button = action.makeButton(buttonStyle)
             indices[button] = idx
             if (button.isVisible) children.add(button)
             button.visibleProperty().addListener { _, _, visible ->

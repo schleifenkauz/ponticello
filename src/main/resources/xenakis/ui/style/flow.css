@@ -40,17 +40,74 @@
 * Flow Pane
 */
 
+.flow-pane {
+    -fx-vbar-policy: never;
+}
+
 .bus-box {
-    -fx-border-color: gray;
-    -fx-border-width: 0px 1px 0px 1px;
+    -fx-hbar-policy: never;
+}
+
+.bus-label {
+    -fx-font-size: 15px;
     -fx-padding: 3px;
+}
+
+.bus-label-box {
+    -fx-border-color: black;
+    -fx-border-width: 1px;
+    -fx-border-radius: 3px;
     -fx-pref-width: 250px;
 }
 
 .flow-box {
-    -fx-border-color: gray;
-    -fx-border-width: 1px;
+    -fx-border-color: black;
+    -fx-border-width: 1px !important;
     -fx-border-radius: 3px;
     -fx-padding: 3px;
     -fx-pref-width: 250px;
+    -fx-focus-traversable: true;
+    -fx-background-color: #1d1d20;
+}
+
+.flow-box:hover {
+    -fx-border-color: #4e0303;
+}
+
+.flow-box:focused {
+    -fx-background-color: #2c1010;
+}
+
+.flow-box-header {
+    -fx-border-color: black;
+    -fx-border-width: 0px 0px 1px 0px;
+    -fx-alignment: center;
+}
+
+.flow-action-button FontIcon {
+    -fx-icon-size: 13px;
+    -fx-icon-color: white;
+}
+
+.flow-action-button:hover FontIcon {
+    -fx-icon-color: -fx-accent;
+}
+
+.add-flow-button FontIcon {
+    -fx-icon-size: 12px;
+}
+
+.add-flow-button {
+    -fx-background-radius: 3px;
+}
+
+.add-flow-button:hover {
+    -fx-background-color: #4e0303;
+}
+
+.volume-fader {
+    -fx-minor-tick-count: 6;
+    -fx-major-tick-unit: 6;
+    -fx-snap-to-ticks: true;
+    -fx-pref-width: 150px;
 }

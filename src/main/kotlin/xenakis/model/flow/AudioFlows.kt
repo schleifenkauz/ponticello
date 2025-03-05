@@ -58,7 +58,7 @@ class AudioFlows(
 
     fun addListener(listener: Listener) {
         listeners.addListener(listener)
-        for (flow in flows) {
+        for (flow in flows.sortedBy(AudioFlow::index)) {
             listener.addedFlow(flow)
             if (flow.isActive.now) listener.activatedFlow(flow)
         }
@@ -96,12 +96,14 @@ class AudioFlows(
             addedFlow(flow)
             if (flow.isActive.now) activatedFlow(flow)
         }
+        //TODO update indices
         return true
     }
 
     fun removeFlow(flow: AudioFlow) {
         _flows.remove(flow)
         undoManager.record(Edit.RemoveFlow(this, flow))
+        //TODO update indices
         listeners.notifyListeners {
             removedFlow(flow)
             if (flow.isActive.now) deactivatedFlow(flow)

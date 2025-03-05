@@ -1,7 +1,7 @@
 package xenakis.ui.flow
 
 import hextant.context.Context
-import javafx.scene.Node
+import javafx.scene.layout.Region
 import reaktive.value.now
 import reaktive.value.reactiveVariable
 import xenakis.model.flow.*
@@ -15,12 +15,12 @@ import xenakis.ui.prompt.NamePrompt
 import xenakis.ui.registry.SimpleSearchableRegistryView
 
 sealed interface FlowOption {
-    fun createFlow(context: Context, anchor: Node, associatedBus: BusObject, onCreate: (AudioFlow) -> Unit)
+    fun createFlow(context: Context, anchor: Region, associatedBus: BusObject, onCreate: (AudioFlow) -> Unit)
 
     data object Send : FlowOption {
         override fun createFlow(
             context: Context,
-            anchor: Node,
+            anchor: Region,
             associatedBus: BusObject,
             onCreate: (AudioFlow) -> Unit
         ) {
@@ -35,7 +35,7 @@ sealed interface FlowOption {
     data object Utility : FlowOption {
         override fun createFlow(
             context: Context,
-            anchor: Node,
+            anchor: Region,
             associatedBus: BusObject,
             onCreate: (AudioFlow) -> Unit
         ) = onCreate(UtilityFlow.createFor(associatedBus))
@@ -44,7 +44,7 @@ sealed interface FlowOption {
     data object Code : FlowOption {
         override fun createFlow(
             context: Context,
-            anchor: Node,
+            anchor: Region,
             associatedBus: BusObject,
             onCreate: (AudioFlow) -> Unit
         ) = onCreate(CodeFlow.createFor(associatedBus))
@@ -53,7 +53,7 @@ sealed interface FlowOption {
     data object Placeholder : FlowOption {
         override fun createFlow(
             context: Context,
-            anchor: Node,
+            anchor: Region,
             associatedBus: BusObject,
             onCreate: (AudioFlow) -> Unit
         ) {
@@ -68,7 +68,7 @@ sealed interface FlowOption {
     data class Synth(val def: SynthDefObject) : FlowOption {
         override fun createFlow(
             context: Context,
-            anchor: Node,
+            anchor: Region,
             associatedBus: BusObject,
             onCreate: (AudioFlow) -> Unit
         ) = onCreate(SynthFlow.createFor(associatedBus, def, context))

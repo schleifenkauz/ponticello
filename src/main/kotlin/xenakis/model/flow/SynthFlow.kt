@@ -68,9 +68,8 @@ class SynthFlow(
 
     companion object {
         fun createFor(associatedBus: BusObject, def: SynthDefObject, context: Context): SynthFlow {
-            val bus = associatedBus.reference()
-            val controls = def.defaultControls(context, defaultGroup = null, defaultBus = bus)
-            return SynthFlow(bus, controls)
+            val controls = def.defaultControls(context, defaultGroup = null, defaultBus = associatedBus.reference())
+            return SynthFlow(def.reference(), controls)
         }
     }
 }

@@ -2,11 +2,11 @@ package xenakis.ui.score
 
 import hextant.context.Context
 import javafx.geometry.Point2D
-import javafx.scene.Node
 import javafx.scene.control.Label
 import javafx.scene.input.MouseEvent
 import javafx.scene.layout.FlowPane
 import javafx.scene.layout.HBox
+import javafx.scene.layout.Region
 import org.kordamp.ikonli.material2.Material2MZ
 import reaktive.Observer
 import reaktive.value.now
@@ -184,7 +184,7 @@ abstract class ParameterizedScoreObjectView(
             }
         }
 
-        private fun addNewControl(anchorNode: Node, context: Context, obj: ParameterizedObject) {
+        private fun addNewControl(anchorNode: Region, context: Context, obj: ParameterizedObject) {
             val defaultParameters = context[Settings].defaultParametersDefs.now
             val synthParameters = obj.def.parameters.now
             val unassignedParameters = (synthParameters + defaultParameters)

@@ -1,14 +1,17 @@
 package xenakis.ui.flow
 
 import bundles.createBundle
-import javafx.geometry.Orientation
+import hextant.fx.setBackground
+import javafx.geometry.Bounds
 import javafx.scene.Node
 import javafx.scene.control.ScrollPane
 import javafx.scene.control.Slider
 import javafx.scene.layout.BorderPane
 import javafx.scene.layout.HBox
+import javafx.scene.layout.Priority
 import javafx.scene.layout.VBox
-import org.kordamp.ikonli.material2.Material2MZ
+import javafx.scene.paint.Color
+import org.kordamp.ikonli.material2.Material2AL
 import org.kordamp.ikonli.materialdesign2.MaterialDesignC
 import org.kordamp.ikonli.materialdesign2.MaterialDesignP
 import org.kordamp.ikonli.materialdesign2.MaterialDesignR
@@ -44,16 +47,17 @@ import xenakis.ui.score.ParameterizedScoreObjectView
 class FlowPane(
     private val flows: AudioFlows
 ) : ScrollPane(), AudioFlows.Listener, ObjectRegistry.Listener<BusObject> {
-    private val hbox = HBox()
+    private val hbox = HBox(5.0)
     private val boxes = mutableMapOf<BusObject, BusBox>()
     private val buses = flows.context[BusRegistry]
 
     init {
         styleClass.add("flow-pane")
+        hbox.setBackground(Color.web("#1d1d1e"))
         vbarPolicy = ScrollBarPolicy.NEVER
         content = hbox
-        flows.addListener(this)
         buses.addListener(this)
+        flows.addListener(this)
     }
 
     override fun addedFlow(flow: AudioFlow) {
@@ -70,6 +74,7 @@ class FlowPane(
         val box = BusBox(flows, obj)
         boxes[obj] = box
         hbox.children.add(box)
+        box.prefHeightProperty().bind(heightProperty())
     }
 
     override fun removed(obj: BusObject, idx: Int) {
@@ -81,20 +86,24 @@ class FlowPane(
         private val flows: AudioFlows,
         private val bus: BusObject
     ) : ScrollPane() {
-        private val vbox = VBox()
-        private val label = label(bus.name)
+        private val vbox = VBox(5.0)
+        private val label = label(bus.name) styleClass "bus-label"
         private val boxes = mutableListOf<FlowBox<*>>()
 
         init {
             styleClass.add("bus-box")
-            vbarPolicy = ScrollBarPolicy.NEVER
-            content = VBox(vbox, label)
+            val layout = VBox(vbox, BorderPane(label) styleClass "bus-label-box")
+            VBox.setVgrow(vbox, Priority.ALWAYS)
+            vbox.setBackground(Color.BLACK)
+            layout.minHeightProperty().bind(viewportBoundsProperty().map(Bounds::getHeight))
+            content = layout
             addCreateFlowButton(0)
         }
 
         private fun addCreateFlowButton(index: Int) {
-            val btn = MaterialDesignP.PLUS.button("Add flow")
-            val pane = BorderPane(btn)
+            //TODO ability to drop SynthDefs here
+            val btn = MaterialDesignP.PLUS.button("Add flow").styleClass("add-flow-button")
+            val pane = VBox(btn).centerChildren()
             btn.setOnMouseClicked {
                 val options = FlowOption.getOptions(flows.context)
                 SimpleSearchableListView(options, "Add flow").showPopup(flows.context, anchorNode = btn) { option ->
@@ -104,6 +113,7 @@ class FlowPane(
                     }
                 }
             }
+            btn.visibleProperty().bind(pane.hoverProperty())
             vbox.children.add(index, pane)
         }
 
@@ -124,8 +134,8 @@ class FlowPane(
         fun removedFlow(flow: AudioFlow) {
             val index = boxes.indexOfFirst { b -> b.flow == flow }
             boxes.removeAt(index)
-            vbox.children.removeAt(index * 2 + 1)
             vbox.children.removeAt(index * 2 + 2)
+            vbox.children.removeAt(index * 2 + 1)
         }
     }
 
@@ -139,14 +149,15 @@ class FlowPane(
 
         init {
             styleClass.add("flow-box")
+            setOnMouseClicked { requestFocus() }
         }
 
         fun initialize() {
             val header = HBox(
                 label(getTitle(flow)),
                 infiniteSpace(),
-                ActionBar(actions.withContext(flow), border = false)
-            )
+                ActionBar(actions.withContext(flow), border = false, buttonStyle = "flow-action-button")
+            ) styleClass "flow-box-header"
             children.addAll(header, getContent(flow))
         }
 
@@ -163,7 +174,7 @@ class FlowPane(
                     executes { flow -> flow.isActive.now = !flow.isActive.now }
                 }
                 addAction("Remove flow") {
-                    icon(Material2MZ.REMOVE)
+                    icon(Material2AL.CLOSE)
                     shortcuts("Ctrl+DELETE")
                     executes { flow ->
                         flow.context[currentProject].flows.removeFlow(flow)
@@ -192,11 +203,6 @@ class FlowPane(
     private class UtilityFlowBox(flow: UtilityFlow) : FlowBox<UtilityFlow>(flow) {
         override fun getContent(flow: UtilityFlow): Node {
             val slider = Slider(-61.0, +6.0, 0.0) styleClass "volume-fader"
-            slider.orientation = Orientation.VERTICAL
-            slider.minorTickCount = 6
-            slider.majorTickUnit = 6.0
-            slider.isSnapToTicks = true
-            slider.prefHeight = 150.0
             return HBox(slider)
         }
 

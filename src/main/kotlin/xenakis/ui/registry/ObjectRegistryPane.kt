@@ -149,11 +149,13 @@ abstract class ObjectRegistryPane<O : NamedObject>(
             setHgrow(nameDisplay, Priority.ALWAYS)
             maxWidth = Double.MAX_VALUE
             children.addAll(nameDisplay, extraControls, actions)
-            addAction(Material2AL.DELETE, "Remove object") { pane.registry.remove(obj) }.isDisable = !pane.canDelete(obj)
+            addAction(Material2AL.DELETE, "Remove object") { pane.registry.remove(obj) }.isDisable =
+                !pane.canDelete(obj)
         }
 
         fun addAction(icon: Ikon, description: String, action: () -> Unit): Button {
             val button = icon.button(action = description) { action() }
+            button.styleClass("object-action-button")
             actions.children.add(0, button)
             return button
         }
@@ -187,7 +189,10 @@ abstract class ObjectRegistryPane<O : NamedObject>(
                 icon(MaterialDesignS.SYNC)
                 executes { p ->
                     p.sync()
-                    Logger.confirm("Synchronized ${plural(p.registry.objectType)} with server", Logger.Category.Registries)
+                    Logger.confirm(
+                        "Synchronized ${plural(p.registry.objectType)} with server",
+                        Logger.Category.Registries
+                    )
                 }
             }
         }

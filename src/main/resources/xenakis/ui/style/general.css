@@ -4,23 +4,20 @@
     -fx-base: #1d1d20;
     -fx-control-inner-background: derive(-fx-base, 35%);
     -fx-control-inner-background-alt: -fx-control-inner-background;
-    -fx-background-color: -fx-base;
 }
 
 /*
 * Scroll Pane
 */
 
-.scroll-pane {
+ScrollPane {
     -fx-background-color: transparent !important;
+    -fx-border-color: transparent !important;
 }
 
-.scroll-pane .viewport {
+ScrollPane .viewport {
     -fx-background-color: transparent !important;
-}
-
-.scroll-pane .content {
-    -fx-background-color: transparent !important;
+    -fx-border-color: transparent !important
 }
 
 /*
@@ -43,7 +40,6 @@ Button.sleek-button:hover {
 Button.sleek-button:focused {
     -fx-border-color: #501717 !important;
 }
-
 
 .progress-bar > .bar {
     -fx-background-insets: 1 1 2 1;

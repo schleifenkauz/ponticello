@@ -1,24 +1,31 @@
-.icon-button {
-    -fx-background-color: transparent;
-    -fx-background-radius: 6px;
-    -fx-border-radius: 6px;
-    -fx-border-color: transparent;
-    -fx-border-width: 2px;
-    -fx-focus-traversable: false;
-}
-
-.icon-button FontIcon {
-    -fx-icon-size: 26px;
+FontIcon {
     -fx-icon-color: -fx-accent;
 }
 
-.icon-button:hover {
-    -fx-background-color: #351919;
+.tool-button FontIcon {
+    -fx-icon-size: 26px;
+}
+
+.icon-button {
+    -fx-background-color: transparent;
+    -fx-focus-traversable: false;
+    -fx-border-color: transparent;
+    -fx-border-width: 2px;
+    -fx-padding: 0px !important;
 }
 
 .icon-button:selected {
     -fx-border-color: black;
     -fx-background-color: #351919 !important;
+}
+
+.tool-button {
+    -fx-background-radius: 6px;
+    -fx-border-radius: 6px;
+}
+
+.tool-button:hover {
+    -fx-background-color: #351919;
 }
 
 .toolbar-part {

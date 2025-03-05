@@ -9,6 +9,7 @@ import javafx.scene.Node
 import javafx.scene.control.Button
 import javafx.scene.input.KeyEvent
 import javafx.scene.input.MouseButton
+import javafx.scene.layout.Region
 import javafx.scene.layout.VBox
 import javafx.stage.Window
 import org.controlsfx.control.textfield.CustomTextField
@@ -162,8 +163,8 @@ abstract class SearchableListView<E>(private val title: String) : VBox() {
         window!!.showAndWait()
     }
 
-    fun showPopup(context: Context, anchorNode: Node, initialOption: E? = null, onConfirm: (E) -> Unit) {
-        val anchor = anchorNode.localToScreen(0.0, 0.0)
+    fun showPopup(context: Context, anchorNode: Region, initialOption: E? = null, onConfirm: (E) -> Unit) {
+        val anchor = anchorNode.localToScreen(0.0, anchorNode.height)
         showPopup(context, anchor, anchorNode.scene?.window, initialOption, onConfirm)
     }
 

@@ -58,8 +58,8 @@ class AudioFlowGraphPane(
         registerShortcuts()
         newFlowArrowFollowMouse()
         allowDroppingBusObjects()
-        graph.addListener(this)
         graph.context[BusRegistry].addListener(this)
+        graph.addListener(this)
     }
 
     /*

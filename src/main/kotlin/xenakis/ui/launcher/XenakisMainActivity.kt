@@ -108,7 +108,7 @@ class XenakisMainActivity(val project: XenakisProject) : Activity() {
 
         val flowPane = FlowPane(project.flows)
         flowPane.setPrefSize(1000.0, 1000.0)
-        flowPaneWindow = SubWindow(flowPane, "Audio flows", context)
+        flowPaneWindow = SubWindow(flowPane, "Audio flows", context, SubWindow.Type.Undecorated)
 
         val globalControlsPane = GlobalControlsPane(project.globalControls, context)
         globalControlsWindow = SubWindow(globalControlsPane, "Global controls", context)

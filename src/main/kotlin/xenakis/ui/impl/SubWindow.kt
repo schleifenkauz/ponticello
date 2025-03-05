@@ -76,6 +76,11 @@ class SubWindow(
         isResizable = false
     }
 
+    fun showOrBringToFront() {
+        if (!isShowing) show()
+        else toFront()
+    }
+
     enum class Type {
         Popup, Undecorated, ToolWindow, Prompt;
     }

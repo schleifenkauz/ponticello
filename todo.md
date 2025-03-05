@@ -67,6 +67,8 @@
 - searching and selecting object details
   - better text search implementation
 - improve the timeline
+- make the controls slider nicer by using progress bar
+- retrieve global SynthDefs from `compositions` directory
 
 ## Long term ideas
 

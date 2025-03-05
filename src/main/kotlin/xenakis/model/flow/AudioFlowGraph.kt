@@ -32,8 +32,8 @@ class AudioFlowGraph(
     private val placeholderContents = mutableMapOf<GroupObject, MutableList<ServerNode.ActiveSynth>>()
 
     init {
-        flows.addListener(this)
         flows.context[BusRegistry].addListener(this)
+        flows.addListener(this)
     }
 
     override fun added(obj: BusObject, idx: Int) {

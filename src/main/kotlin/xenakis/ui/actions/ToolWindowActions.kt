@@ -1,6 +1,6 @@
 package xenakis.ui.actions
 
-import javafx.scene.Node
+import javafx.scene.layout.Region
 import org.kordamp.ikonli.material2.Material2AL
 import org.kordamp.ikonli.materialdesign2.*
 import xenakis.model.Logger
@@ -14,7 +14,7 @@ object ToolWindowActions : Action.Collector<XenakisMainActivity>({
     addAction("Open console") {
         shortcut("Ctrl+T")
         icon(MaterialDesignC.CONSOLE)
-        executes { screen -> screen.shellWindow.show() }
+        executes { screen -> screen.shellWindow.showOrBringToFront() }
     }
     addAction("Show log window") {
         shortcut("Ctrl+L")
@@ -23,19 +23,19 @@ object ToolWindowActions : Action.Collector<XenakisMainActivity>({
             if (ev.isShiftDown()) {
                 SimpleSearchableListView(Logger.Level.entries, "Select notification level").showPopup(
                     screen.context,
-                    ev?.source as Node,
+                    ev?.source as Region,
                     NotificationView.level
                 ) { lvl ->
                     NotificationView.level = lvl
                 }
-            } else screen.logWindow.show()
+            } else screen.logWindow.showOrBringToFront()
         }
     }
     addAction("Edit setup code") {
         icon(MaterialDesignF.FILE_COG)
         executes { screen, ev ->
-            if (ev.isShiftDown()) screen.serverSetupCodeWindow.show()
-            else screen.serverTreeCodeWindow.show()
+            if (ev.isShiftDown()) screen.serverSetupCodeWindow.showOrBringToFront()
+            else screen.serverTreeCodeWindow.showOrBringToFront()
         }
     }
     addAction("Open help browser") {
@@ -55,36 +55,36 @@ object ToolWindowActions : Action.Collector<XenakisMainActivity>({
     addAction("Edit audio flow graph") {
         shortcut("Ctrl+Shift+F")
         icon(MaterialDesignG.GRAPH)
-        executes { screen -> screen.flowGraphWindow.show() }
+        executes { screen -> screen.flowGraphWindow.showOrBringToFront() }
     }
     addAction("Show audio flows") {
         shortcut("Ctrl+Alt+F")
         icon(MaterialDesignT.TUNE)
-        executes { screen -> screen.flowPaneWindow.show() }
+        executes { screen -> screen.flowPaneWindow.showOrBringToFront() }
     }
     addAction("Edit settings") {
         shortcut("Ctrl+Alt+S")
         icon(MaterialDesignC.COG)
-        executes { screen -> screen.settingsWindow.show() }
+        executes { screen -> screen.settingsWindow.showOrBringToFront() }
     }
     addAction("Show samples") {
         shortcut("Ctrl+F")
         icon(Material2AL.LIBRARY_MUSIC)
-        executes { screen -> screen.samplesWindow.show() }
+        executes { screen -> screen.samplesWindow.showOrBringToFront() }
     }
     addAction("Show global controls") {
         shortcut("Ctrl+Shift+G")
         icon(Material2AL.GRAIN)
-        executes { screen -> screen.globalControlsWindow.show() }
+        executes { screen -> screen.globalControlsWindow.showOrBringToFront() }
     }
     addAction("Show groups") {
         shortcut("Ctrl+G")
         icon(Material2AL.IMPORT_EXPORT)
-        executes { screen -> screen.groupsWindow.show() }
+        executes { screen -> screen.groupsWindow.showOrBringToFront() }
     }
     addAction("Show buses") {
         shortcut("Ctrl+B")
         icon(Material2AL.GRAPHIC_EQ)
-        executes { screen -> screen.busesWindow.show() }
+        executes { screen -> screen.busesWindow.showOrBringToFront() }
     }
 })

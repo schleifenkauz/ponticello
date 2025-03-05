@@ -1,6 +1,6 @@
 package xenakis.ui.actions
 
-import javafx.scene.Node
+import javafx.scene.layout.Region
 import org.kordamp.ikonli.material2.Material2MZ
 import org.kordamp.ikonli.materialdesign2.MaterialDesignM
 import reaktive.value.binding.map
@@ -57,7 +57,7 @@ object PlaybackActions : Action.Collector<PlaybackManager>({
                     project.serverOptions.recordedBus?.get<BusObject>() ?: context[BusRegistry].getDefault()
                 SearchableBusListView(context[BusRegistry], "Select bus to record to", rate = Rate.Audio).showPopup(
                     context,
-                    anchorNode = ev?.source as Node,
+                    anchorNode = ev?.source as Region,
                     initialOption = currentSelected
                 ) { bus -> project.serverOptions.recordedBus = bus.reference() }
             } else playback.recorder.toggleIsActive()

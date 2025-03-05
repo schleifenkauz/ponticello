@@ -1,5 +1,5 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="MainKt" type="JetRunConfigurationType" nameIsGenerated="true">
+  <configuration default="false" name="Xenakis" type="JetRunConfigurationType">
     <option name="MAIN_CLASS_NAME" value="xenakis.MainKt" />
     <module name="xenakis.main" />
     <shortenClasspath name="NONE" />
