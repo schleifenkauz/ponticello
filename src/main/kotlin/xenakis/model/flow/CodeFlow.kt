@@ -36,7 +36,7 @@ class CodeFlow(
 
     override fun copyFor(associatedBus: BusObject): AudioFlow = CodeFlow(associatedBus.reference(), codeEditor.clone())
 
-    override fun ScWriter.writeCode(synthName: String, order: ScoreObjectInfo) {
+    override fun ScWriter.writeCode(placement: NodePlacement) {
         val code = codeEditor.editor.result.now
         appendBlock(endLine = false) {
             //TODO maybe read associatedBus into 'snd' variable here

@@ -1,5 +1,6 @@
 package xenakis.ui.launcher
 
+import fxutils.registerShortcuts
 import hextant.context.Context
 import javafx.application.Platform
 import javafx.scene.control.Label
@@ -8,6 +9,7 @@ import javafx.scene.image.ImageView
 import javafx.scene.layout.StackPane
 import javafx.scene.layout.VBox
 import javafx.stage.StageStyle
+import xenakis.sc.client.SuperColliderClient
 
 class LoadingScreen(override val context: Context): Activity(), ProgressIndicator {
     private val progressBar = ProgressBar()
@@ -26,6 +28,12 @@ class LoadingScreen(override val context: Context): Activity(), ProgressIndicato
         stage.sizeToScene()
         stage.titleProperty().bind(statusText.textProperty())
         stage.initStyle(StageStyle.UNDECORATED)
+        stage.scene.registerShortcuts {
+            on("Ctrl+Q") {
+                if (context.hasProperty(SuperColliderClient)) context[SuperColliderClient].quit()
+                context[XenakisLauncher].quitApplication()
+            }
+        }
     }
 
     override fun initialStatus(status: String) {

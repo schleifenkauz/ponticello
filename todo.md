@@ -33,8 +33,11 @@
   - or mute individual buses
 - graphical tools for EQ, compression (multi-band), reverb, etc.
   - integrate as special editors?
-- track view, where the different buses are listed horizontally and associated transformations are ordered vertically
 - or open transformation chain by clicking on bus in the flow graph
+- work on positioning of the bus nodes in the flow graph pane
+- react to changes of flow buses
+- how to handle loops in the ReachabilityGraph?
+- hide the first bus parameter control of SynthFlows
 
 ### Improve zooming functionality
 
@@ -43,7 +46,7 @@
 ### Minor
 
 - recognize transport shortcuts from all windows
-- specify expected channels (and ar/kr) for bus and buffer parameters
+- specify expected channels for buffer parameters
 - lhs of assignments can be compound expressions
 - re-enable allocated buffers (can be used with WrBuf/RdBuf SynthDefs)
 - ability to specify numerical parameter as envelope only/constant only

@@ -5,15 +5,19 @@ import hextant.core.editor.ListenerManager
 import hextant.undo.UndoManager
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
+import reaktive.Observer
 import reaktive.value.ReactiveInt
 import reaktive.value.ReactiveVariable
 import reaktive.value.now
 import reaktive.value.reactiveVariable
 import xenakis.impl.Point
+import xenakis.model.Logger
 import xenakis.model.XenakisProject
 import xenakis.model.obj.AbstractContextualObject
 import xenakis.model.obj.BusObject
+import xenakis.model.obj.GroupObject
 import xenakis.model.registry.BusRegistry
+import xenakis.model.registry.GroupRegistry
 import xenakis.model.registry.ObjectRegistry
 
 @Serializable
@@ -32,6 +36,12 @@ class AudioFlows(
     @Transient
     private val numFlows = mutableMapOf<BusObject, ReactiveVariable<Int>>()
 
+    @Transient
+    private val placeholders = mutableMapOf<GroupObject, ScoreObjectPlaceholder>()
+
+    @Transient
+    private val activationObservers = mutableMapOf<AudioFlow, Observer>()
+
     override val componentName: String
         get() = "flow_graph"
 
@@ -45,8 +55,7 @@ class AudioFlows(
         registry.addListener(this)
         undoManager = context[UndoManager]
         for (flow in flows) {
-            flow.initialize(context)
-            numFlows.getOrPut(flow.associatedBus) { reactiveVariable(0) }.now++
+            onAddFlow(flow)
         }
     }
 
@@ -81,19 +90,28 @@ class AudioFlows(
     }
 
     fun addFlow(flow: AudioFlow) {
-        flow.initialize(context)
         _flows.add(flow)
-        for (f in associatedFlows(flow.associatedBus)) {
-            if (f.index.now > flow.index.now) {
-                f.index.now++
-            }
-        }
-        numFlows.getValue(flow.associatedBus).now++
+        onAddFlow(flow)
         undoManager.record(AudioFlowsEdit.AddFlow(this, flow))
         listeners.notifyListeners {
             addedFlow(flow)
             if (flow.isActive.now) activatedFlow(flow)
         }
+    }
+
+    private fun onAddFlow(flow: AudioFlow) {
+        flow.initialize(context)
+        for (f in associatedFlows(flow.associatedBus)) {
+            if (f.index.now > flow.index.now) {
+                f.index.now++
+            }
+        }
+        numFlows.getOrPut(flow.associatedBus) { reactiveVariable(0) }.now++
+        activationObservers[flow] = flow.isActive.observe { _, _, active ->
+            if (active) listeners.notifyListeners { activatedFlow(flow) }
+            else listeners.notifyListeners { deactivatedFlow(flow) }
+        }
+        if (flow is ScoreObjectPlaceholder) placeholders[flow.group] = flow
     }
 
     fun removeFlow(flow: AudioFlow) {
@@ -104,7 +122,14 @@ class AudioFlows(
             }
         }
         numFlows.getValue(flow.associatedBus).now--
+        val obs = activationObservers.remove(flow)
+        if (obs == null) Logger.warn("Couldn't kill activation observer of $flow", Logger.Category.AudioFlow)
+        else obs.kill()
         undoManager.record(AudioFlowsEdit.RemoveFlow(this, flow))
+        if (flow is ScoreObjectPlaceholder) {
+            placeholders.remove(flow.group)
+            context[GroupRegistry].remove(flow.group)
+        }
         listeners.notifyListeners {
             removedFlow(flow)
             if (flow.isActive.now) deactivatedFlow(flow)
@@ -142,6 +167,8 @@ class AudioFlows(
     }
 
     fun referenceIndex(flow: AudioFlow) = flows.indexOf(flow)
+
+    fun getPlaceholderNode(group: GroupObject): ScoreObjectPlaceholder = placeholders.getValue(group)
 
     fun numberOfFlows(associatedBus: BusObject): ReactiveInt = numFlows.getValue(associatedBus)
 

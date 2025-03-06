@@ -15,6 +15,7 @@ import xenakis.model.registry.BusRegistry
 import xenakis.model.registry.ObjectReference
 import xenakis.model.score.BusControl
 import xenakis.model.score.ConstantControl
+import xenakis.model.score.ObjectPosition
 import xenakis.model.score.ParameterControls
 import xenakis.sc.client.ScWriter
 import xenakis.sc.writeSynthCode
@@ -47,17 +48,19 @@ class SendFlow(
     override fun copyFor(associatedBus: BusObject): AudioFlow =
         SendFlow(associatedBus.reference(), targetRef.copy(), amountPercent.copy())
 
-    override fun ScWriter.writeCode(synthName: String, order: ScoreObjectInfo) {
+    override fun ScWriter.writeCode(placement: NodePlacement) {
         val controls = ParameterControls(
             mutableMapOf(
                 "in" to BusControl(reactiveVariable(busRef)),
                 "out" to BusControl(reactiveVariable(targetRef.now)),
-                "volume" to ConstantControl(reactiveVariable(amountPercent.now * 0.01.toDecimal())),
+                "amp" to ConstantControl(reactiveVariable(amountPercent.now * 0.01.toDecimal())),
             ),
         )
+        val synthVar = superColliderName.now
+        val info = ScoreObjectInfo(ObjectPosition.ZERO, synthVar.removePrefix("~"), synthVar, placement)
         writeSynthCode(
-            synthName, ReferencedSynthDefObject.get("send"), controls,
-            context, order, duration = null
+            ReferencedSynthDefObject.get("send"), controls,
+            context, info, duration = null
         )
     }
 

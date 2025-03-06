@@ -2,6 +2,7 @@ package xenakis.sc.client
 
 import bundles.PublicProperty
 import bundles.publicProperty
+import reaktive.event.EventStream
 import xenakis.impl.canSuperColliderTalkToMe
 import xenakis.impl.code
 import xenakis.model.Logger
@@ -14,6 +15,9 @@ import java.util.concurrent.Future
 
 interface SuperColliderClient : SuperColliderContext {
     val statusListener: StatusListener
+
+    val serverRebooted: EventStream<Unit>
+    val treeCleared: EventStream<Unit>
 
     fun sendAsync(address: String, arguments: List<Any> = emptyList())
 

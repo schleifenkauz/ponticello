@@ -197,7 +197,7 @@ class ScoreEventCollector(
             if (player != null && graph != null && player.isPlaying.now) {
                 for (node in graph.activeInstances(obj)) {
                     if (node.absolutePosition == position) {
-                        player.stopPlayBackInstantly(obj, node.absolutePosition, node.superColliderName)
+                        player.stopPlayBackInstantly(obj, node.absolutePosition, node.superColliderName.now)
                     }
                 }
             }

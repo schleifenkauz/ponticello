@@ -1,7 +1,6 @@
 package xenakis.model.obj
 
 import reaktive.value.now
-import xenakis.model.flow.Flow
 import xenakis.model.flow.FlowType
 import xenakis.model.registry.NamedObject
 import xenakis.model.score.BusControl
@@ -9,7 +8,7 @@ import xenakis.model.score.ParameterControls
 import xenakis.sc.BusControlSpec
 import xenakis.sc.ControlSpec
 
-interface ParameterizedObject: NamedObject, Flow {
+interface ParameterizedObject : NamedObject {
     val def: ParameterizedObjectDef
     val controls: ParameterControls
 
@@ -20,7 +19,7 @@ interface ParameterizedObject: NamedObject, Flow {
     fun getSpec(parameter: String): ControlSpec? =
         controls.getExtraSpec(parameter) ?: def.getParameter(parameter)?.spec?.now
 
-    override fun getConnectedBusses(vararg flowType: FlowType): Set<BusObject> = buildSet {
+    fun getConnectedBusses(vararg flowType: FlowType): Set<BusObject> = buildSet {
         for (parameter in parameters) {
             val spec = parameter.spec.now
             val name = parameter.name.now

@@ -9,6 +9,7 @@ import kotlinx.serialization.Transient
 import reaktive.Observer
 import reaktive.value.*
 import xenakis.impl.*
+import xenakis.model.Settings
 import xenakis.model.flow.ScoreObjectInfo
 import xenakis.model.obj.BusObject
 import xenakis.model.obj.ParameterizedObjectDef
@@ -168,7 +169,9 @@ class SynthObject(
     }
 
     override fun writeCode(info: ScoreObjectInfo): String = code {
-        writeSynthCode(info.superColliderName, synthDef, controls, context, info, duration)
+        appendBlock("s.makeBundle(${context[Settings].serverLatency.now})") {
+            writeSynthCode(synthDef, controls, context, info, duration)
+        }
     }
 
     companion object {

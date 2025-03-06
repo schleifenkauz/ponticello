@@ -14,6 +14,7 @@ import xenakis.model.obj.SynthDefObject
 import xenakis.model.registry.InstrumentRegistry
 import xenakis.model.registry.ObjectReference
 import xenakis.model.score.BusControl
+import xenakis.model.score.ObjectPosition
 import xenakis.model.score.ParameterControls
 import xenakis.model.score.getBus
 import xenakis.sc.BusControlSpec
@@ -56,10 +57,12 @@ class SynthFlow(
         return SynthFlow(defRef, ctrls)
     }
 
-    override fun ScWriter.writeCode(synthName: String, order: ScoreObjectInfo) {
+    override fun ScWriter.writeCode(placement: NodePlacement) {
+        val synthVar = superColliderName.now
+        val info = ScoreObjectInfo(ObjectPosition.ZERO, synthVar.removePrefix("~"), synthVar, placement)
         writeSynthCode(
-            synthName, synthDef, controls,
-            context, order, duration = null
+            synthDef, controls,
+            context, info, duration = null
         )
     }
 

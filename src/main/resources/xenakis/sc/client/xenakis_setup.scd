@@ -1,36 +1,35 @@
 (
+~xenakis_addr = NetAddr("localhost", 7772);
+
 SynthDef(\vst_instrument, {
 	arg out = 0;
 	var snd;
 	snd = VSTPlugin.ar(nil, 2);
 	Out.ar(out, snd);
 }).add;
-SynthDef(\diskout, {
-	arg bus = 0, buf;
-	DiskOut.ar(buf, In.ar(bus, 2));
+SynthDef(\utility, {
+    arg bus, volume, pan;
+    var snd = In.ar(bus, 2);
+    snd = snd * volume.dbamp;
+    Out.ar(bus, snd);
 }).add;
-SynthDef(\playbuf, {
-    var buf, amp, rate, startPos, out, snd, duration;
-    buf = \buf.kr;
-    amp = \amp.kr(0.1, spec: [0.0, 1.0, 'lin', 0.01]);
-    rate = \rate.kr(1.0, spec: [0.01, 5.0, 'lin', 0.01]);
-    startPos = \startPos.kr(0.0, spec: [0.0, 10000.0, 'lin', 0.01]);
-    out = \out.kr;
-    duration = \duration.ir;
-    snd = PlayBuf.ar(2, buf, rate: (BufRateScale.kr(buf) * rate), startPos: (startPos * BufSampleRate.kr(buf)), loop:  1);
-    snd = (snd * amp);
+SynthDef(\send, {
+    arg in, out, amp;
+    var snd = In.ar(in, 2);
+    snd = snd * amp;
     Out.ar(out, snd);
-    Env.new(levels: [0, 0], times: [duration]).kr(Done.freeSelf);
-  }).add;
+}).add;
 
 ServerBoot.add {
+    ~xenakis_addr.sendMsg('/server_boot');
 	Task {
 		1.wait;
 		VSTPlugin.search;
 	}.play;
 };
-
-~xenakis_addr = NetAddr("localhost", 7772);
+ServerTree.add {
+    ~xenakis_addr.sendMsg('/server_tree');
+};
 
 ~setupHandler = { arg address, handler;
 	OSCdef(address, {
@@ -50,6 +49,7 @@ OSCdef('eval', {
 	arg msg, time, addr, recvPort;
 	var id = msg[1], code = msg[2], fct, answer;
 	fct = this.compile(code.asString);
+	code.postln;
     if (fct == nil) { ~xenakis_addr.sendMsg('error', id, "Compilation error") } {
         AppClock.sched(0) {
             try {

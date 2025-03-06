@@ -16,86 +16,137 @@ import xenakis.model.registry.ObjectRegistry
 import xenakis.model.score.ObjectPosition
 import xenakis.model.score.ScoreObject
 import xenakis.model.score.SynthObject
+import xenakis.sc.client.SuperColliderClient
 import java.util.*
 
 class AudioFlowGraph(
     private val flows: AudioFlows,
     private val nodeTree: NodeTree
 ) : ObjectRegistry.Listener<BusObject>, AudioFlows.Listener {
-    private val activeSynthObjects = mutableMapOf<SynthObject, MutableSet<ServerNode.ActiveSynth>>()
+    private val activeSynthObjects = mutableMapOf<SynthObject, MutableSet<ActiveSynth>>()
     private val takenSuffixes = mutableMapOf<String, MutableSet<Int>>()
     private val suffixes = mutableMapOf<Pair<ScoreObject, ObjectPosition>, Int>()
-    private val flowGroups = mutableMapOf<BusObject, ServerNode.FlowGroup>()
-    private val order = LinkedList<ServerNode>()
-    private val readFrom = mutableMapOf<BusObject, Counter<ServerNode>>()
-    private val writeTo = mutableMapOf<BusObject, Counter<ServerNode>>()
-    private val graph = ReachabilityGraph<ServerNode>()
-    private val placeholderContents = mutableMapOf<GroupObject, MutableList<ServerNode.ActiveSynth>>()
+    private val flowGroups = mutableMapOf<BusObject, FlowGroup>()
+    private val order = LinkedList<AudioNode>()
+    private val readFrom = mutableMapOf<BusObject, Counter<AudioNode>>()
+    private val writeTo = mutableMapOf<BusObject, Counter<AudioNode>>()
+    private val graph = ReachabilityGraph<AudioNode>()
+    private val placeholderContents = mutableMapOf<GroupObject, MutableList<ActiveSynth>>()
 
     init {
         flows.context[BusRegistry].addListener(this)
         flows.addListener(this)
+        flows.context[SuperColliderClient].treeCleared.observe { _ ->
+            rebuildFlowGraph()
+        }
+    }
+
+    private fun rebuildFlowGraph() {
+        reorderNodeTree()
+        for (o in order) {
+            nodeTree.addNode(o, NodePlacement(AddAction.AddToTail, "s.defaultGroup"))
+            if (o is FlowGroup) {
+                for (flow in o.flows()) {
+                    nodeTree.addNode(flow, NodePlacement(AddAction.AddToTail, o.superColliderName.now))
+                }
+            }
+        }
     }
 
     override fun added(obj: BusObject, idx: Int) {
-        val node = ServerNode.FlowGroup(obj, flows)
+        val node = FlowGroup(obj, flows)
         flowGroups[obj] = node
         addNode(node)
         reorderNodeTree()
+        val placement = getPlacementFor(node)
+        nodeTree.addNode(node, placement)
     }
 
     override fun removed(obj: BusObject, idx: Int) {
         val node = flowGroups.remove(obj) ?: error("No active flows for bus $obj")
         removeNode(node)
-        nodeTree.free(node)
+        nodeTree.removeNode(node)
         reorderNodeTree()
     }
 
     override fun activatedFlow(flow: AudioFlow) {
-        val bus = flow.associatedBus
-        val node = flowGroups.getValue(bus)
-        addFlowToNode(node, flow)
+        val node = flowGroup(flow.associatedBus)
+        addChildNode(node, flow)
         reorderNodeTree()
         val placement = getPlacementFor(flow)
-        nodeTree.addFlow(flow, placement)
-    }
-
-    private fun getPlacementFor(flow: AudioFlow): NodePlacement {
-        val group = flowGroup(flow.associatedBus)
-        val flows = group.flows()
-        val i = flows.indexOf(flow)
-        return if (i == 0) NodePlacement(AddAction.AddToHead, group.superColliderName)
-        else NodePlacement(AddAction.AddAfter, flows[i - 1].superColliderName.now)
+        nodeTree.addNode(flow, placement)
     }
 
     override fun deactivatedFlow(flow: AudioFlow) {
-        val node = flowGroups.getValue(flow.associatedBus)
-        removeFlowFromNode(node, flow)
+        val node = flowGroup(flow.associatedBus)
+        removeChildNode(node, flow)
         reorderNodeTree()
-        nodeTree.removeFlow(flow)
+        nodeTree.removeNode(flow)
+    }
+
+    override fun movedFlow(flow: AudioFlow, oldIndex: Int) {
+        if (flow.isActive.now) {
+            val group = flowGroup(flow.associatedBus)
+            val idx = flow.index.now
+            if (idx == 0) nodeTree.moveToHead(group, flow)
+            else nodeTree.moveAfter(group.flows()[idx - 1], flow)
+        }
+    }
+
+    private fun getPlacementInOrder(node: AudioNode): NodePlacement {
+        val idx = order.indexOf(node)
+        return if (idx == 0) NodePlacement(AddAction.AddToHead, "s.defaultGroup")
+        else NodePlacement(AddAction.AddAfter, order[idx - 1].superColliderName.now)
+    }
+
+    private fun getPlacementFor(node: AudioNode): NodePlacement = when (node) {
+        is AudioFlow -> {
+            val group = flowGroup(node.associatedBus)
+            val flows = group.flows()
+            val i = flows.indexOf(node)
+            if (i == 0) NodePlacement(AddAction.AddToHead, group.superColliderName.now)
+            else NodePlacement(AddAction.AddAfter, flows[i - 1].superColliderName.now)
+        }
+
+        is ActiveSynth -> {
+            val group = node.obj.group.now.get<GroupObject>()
+            if (group.isDefault) {
+                getPlacementInOrder(node)
+            } else {
+                val synths = placeholderContents.getValue(group)
+                BubbleSort.sort(synths, compareBy { s -> s.absolutePosition.y })
+                var i = synths.binarySearchBy(node.absolutePosition.y) { s -> s.absolutePosition.y }
+                if (i < 0) i = -(i + 1)
+                synths.add(i, node)
+                if (i == 0) NodePlacement(AddAction.AddToHead, group.superColliderName)
+                else NodePlacement(AddAction.AddAfter, synths[i - 1].superColliderName.now)
+            }
+        }
+
+        is FlowGroup -> getPlacementInOrder(node)
     }
 
     private fun reorderNodeTree() {
         BubbleSort.sort(order, Comparator(::comparisonFunction), nodeTree::moveAfter)
     }
 
-    private fun comparisonFunction(v: ServerNode, u: ServerNode): Int = when {
+    private fun comparisonFunction(v: AudioNode, u: AudioNode): Int = when {
         graph.reachable(u, v) -> +1
         graph.reachable(v, u) -> -1
-        v is ServerNode.ActiveSynth && u is ServerNode.ActiveSynth -> v.absolutePosition.y.compareTo(u.absolutePosition.y)
-        v is ServerNode.ActiveSynth && u is ServerNode.FlowGroup -> -1
-        v is ServerNode.FlowGroup && u is ServerNode.ActiveSynth -> +1
+        v is ActiveSynth && u is ActiveSynth -> v.absolutePosition.y.compareTo(u.absolutePosition.y)
+        v is ActiveSynth && u is FlowGroup -> -1
+        v is FlowGroup && u is ActiveSynth -> +1
         else -> 0
     }
 
-    private fun addFlowToNode(node: ServerNode, flow: Flow) {
-        for (input in flow.getConnectedBusses(FlowType.In)) {
+    private fun addChildNode(node: AudioNode, child: AudioNode) {
+        for (input in child.getConnectedBusses(FlowType.In)) {
             readFrom.getOrPut(input, ::Counter).add(node)
             for (writer in writeTo[input]?.asSet().orEmpty()) {
                 graph.addEdge(writer, node)
             }
         }
-        for (output in flow.getConnectedBusses(FlowType.Out)) {
+        for (output in child.getConnectedBusses(FlowType.Out)) {
             writeTo.getOrPut(output, ::Counter).add(node)
             for (reader in readFrom[output]?.asSet().orEmpty()) {
                 graph.addEdge(node, reader)
@@ -107,38 +158,23 @@ class AudioFlowGraph(
         val takenSuffixes = takenSuffixes[obj.name.now].orEmpty()
         val suffix = (0..Int.MAX_VALUE).first { n -> n !in takenSuffixes }
         suffixes[obj to absolutePosition] = suffix
-        val name = if (suffix == 0) "~${obj.name.now}" else "~${obj.name.now}_$suffix"
-        var node: ServerNode.ActiveSynth? = null
+        val name = if (suffix == 0) obj.name.now else "${obj.name.now}_$suffix"
         lateinit var group: GroupObject
         val defaultGroup = obj.context[GroupRegistry].getDefaultGroup()
+        Logger.fine("mark start for $obj at $absolutePosition, suffix = $suffix", Logger.Category.Playback)
         if (obj is SynthObject) {
-            node = ServerNode.ActiveSynth(obj, absolutePosition, suffix)
+            val node = ActiveSynth(obj, absolutePosition, suffix)
             activeSynthObjects.getOrPut(obj, ::mutableSetOf).add(node)
             group = node.obj.group.now.get<GroupObject>()
             if (group == defaultGroup) {
                 addNode(node)
                 reorderNodeTree()
             }
-        }
-        Logger.fine("marked start for $obj at $absolutePosition, suffix = $suffix", Logger.Category.Playback)
-        return when {
-            node == null -> ScoreObjectInfo(absolutePosition, name, null)
-            group != defaultGroup -> {
-                val objects = placeholderContents.getOrPut(group, ::mutableListOf)
-                var i = objects.binarySearchBy(absolutePosition.y) { s -> s.absolutePosition.y }
-                if (i < 0) i = -(i + 1)
-                objects.add(i, node)
-                ScoreObjectInfo(absolutePosition, name, NodePlacement(AddAction.AddToHead, group.superColliderName))
-            }
-
-            else -> {
-                val placement = when (val index = order.indexOf(node)) {
-                    0 -> NodePlacement(AddAction.AddToHead, "s.defaultGroup")
-                    else -> NodePlacement(AddAction.AddAfter, "~${order[index - 1].superColliderName}")
-                }
-                ScoreObjectInfo(absolutePosition, name, placement)
-            }
-        }
+            val placement = getPlacementFor(node)
+            val synthVar = "~synths['$name']"
+            val info = ScoreObjectInfo(absolutePosition, name, synthVar, placement)
+            return info
+        } else return ScoreObjectInfo(absolutePosition, name, "<no name>", null)
     }
 
     fun remove(obj: ScoreObject, absolutePosition: ObjectPosition) {
@@ -147,7 +183,7 @@ class AudioFlowGraph(
             Logger.warn("could not remove $obj at $absolutePosition", Logger.Category.Playback)
         } else {
             if (obj is SynthObject) {
-                val node = ServerNode.ActiveSynth(obj, absolutePosition, suffix)
+                val node = ActiveSynth(obj, absolutePosition, suffix)
                 activeSynthObjects.getValue(obj).remove(node)
                 removeNode(node)
                 reorderNodeTree()
@@ -156,20 +192,20 @@ class AudioFlowGraph(
         }
     }
 
-    private fun addNode(node: ServerNode) {
+    private fun addNode(node: AudioNode) {
         graph.addVertex(node)
         order.add(node)
-        addFlowToNode(node, node)
+        addChildNode(node, node)
     }
 
-    private fun removeNode(node: ServerNode) {
+    private fun removeNode(node: AudioNode) {
         graph.removeVertex(node)
         order.remove(node)
-        removeFlowFromNode(node, node)
+        removeChildNode(node, node)
     }
 
-    private fun removeFlowFromNode(node: ServerNode, flow: Flow) {
-        for (input in flow.getConnectedBusses(FlowType.In)) {
+    private fun removeChildNode(node: AudioNode, child: AudioNode) {
+        for (input in child.getConnectedBusses(FlowType.In)) {
             if (!readFrom.getValue(input).remove(node)) {
                 Logger.warn("Could not remove $node from readers from $input", Logger.Category.AudioFlow)
             }
@@ -177,7 +213,7 @@ class AudioFlowGraph(
                 graph.removeEdge(writer, node)
             }
         }
-        for (output in flow.getConnectedBusses(FlowType.InOut, FlowType.Out)) {
+        for (output in child.getConnectedBusses(FlowType.InOut, FlowType.Out)) {
             if (!writeTo.getValue(output).remove(node)) {
                 Logger.warn("Could not remove $node from readers from $output", Logger.Category.AudioFlow)
             }
@@ -187,7 +223,7 @@ class AudioFlowGraph(
         }
     }
 
-    fun activeInstances(obj: ScoreObject): Set<ServerNode.ActiveSynth> =
+    fun activeInstances(obj: ScoreObject): Set<ActiveSynth> =
         if (obj is SynthObject) activeSynthObjects[obj].orEmpty() else emptySet()
 
     fun clear() {
@@ -197,9 +233,9 @@ class AudioFlowGraph(
         activeSynthObjects.clear()
     }
 
-    fun flowGroup(bus: BusObject): ServerNode.FlowGroup = flowGroups.getValue(bus)
+    fun flowGroup(bus: BusObject): FlowGroup = flowGroups.getValue(bus)
 
-    fun getOrder(): List<ServerNode> = order
+    fun getOrder(): List<AudioNode> = order
 
     companion object : PublicProperty<AudioFlowGraph> by publicProperty("AudioFlowGraph")
 }

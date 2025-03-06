@@ -7,11 +7,11 @@ object BubbleSort {
             val j = list.drop(i + 1).indexOfLast { u ->
                 val x = comparator.compare(v, u)
                 x > 0
-            } + (i + 1)
+            }
             if (j == -1) continue
-            val u = list[j]
+            val u = list[j + i + 1]
             moveAfter(u, v)
-            list.add(j + 1, v)
+            list.add(j + i + 2, v)
             list.removeAt(i)
         }
         return

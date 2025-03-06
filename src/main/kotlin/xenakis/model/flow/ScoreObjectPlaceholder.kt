@@ -28,7 +28,7 @@ class ScoreObjectPlaceholder(
 
     override fun copyFor(associatedBus: BusObject): AudioFlow = ScoreObjectPlaceholder(busRef, group)
 
-    override fun ScWriter.writeCode(synthName: String, order: ScoreObjectInfo) {
+    override fun ScWriter.writeCode(placement: NodePlacement) {
         //+"$superColliderName = Group.new(${order.target!!}, ${order.addAction!!})" TODO move group to right place
     }
 

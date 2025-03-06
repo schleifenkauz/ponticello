@@ -16,6 +16,7 @@ import xenakis.model.registry.BusRegistry
 import xenakis.model.registry.ObjectReference
 import xenakis.model.score.BusControl
 import xenakis.model.score.ConstantControl
+import xenakis.model.score.ObjectPosition
 import xenakis.model.score.ParameterControls
 import xenakis.sc.client.ScWriter
 import xenakis.sc.writeSynthCode
@@ -43,7 +44,7 @@ class UtilityFlow(
         superColliderName = associatedBus.name.map { name -> "~flow_${name}_utility" }
     }
 
-    override fun ScWriter.writeCode(synthName: String, order: ScoreObjectInfo) {
+    override fun ScWriter.writeCode(placement: NodePlacement) {
         //TODO we need a way to mute other buses when something is soloed
         val volume = when {
             muted.now -> Decimal.NINF
@@ -55,9 +56,11 @@ class UtilityFlow(
                 "volume" to ConstantControl(reactiveVariable(volume)),
             ),
         )
+        val synthVar = superColliderName.now
+        val info = ScoreObjectInfo(ObjectPosition.ZERO, synthVar.removePrefix("~"), synthVar, placement)
         writeSynthCode(
-            synthName, ReferencedSynthDefObject.get("utility"), controls,
-            context, order, duration = null
+            ReferencedSynthDefObject.get("utility"), controls,
+            context, info, duration = null
         )
     }
 

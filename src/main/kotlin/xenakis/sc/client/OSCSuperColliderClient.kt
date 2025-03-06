@@ -3,13 +3,12 @@ package xenakis.sc.client
 import com.illposed.osc.OSCMessage
 import com.illposed.osc.transport.OSCPortOut
 import com.illposed.osc.transport.OSCPortOutBuilder
+import reaktive.event.EventStream
+import reaktive.event.unitEvent
 import xenakis.impl.superColliderPath
 import xenakis.model.Logger
 import xenakis.sc.client.StatusListener.StatusUpdate
-import java.net.DatagramPacket
-import java.net.DatagramSocket
-import java.net.InetAddress
-import java.net.InetSocketAddress
+import java.net.*
 import java.nio.ByteBuffer
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Future
@@ -27,6 +26,14 @@ class OSCSuperColliderClient(
 
     override val consoleMonitor: ConsoleMonitor = ConsoleMonitor(process)
     override val statusListener: StatusListener = StatusListener(consoleMonitor)
+
+    private val serverReboot = unitEvent()
+    private val treeClear = unitEvent()
+
+    override val serverRebooted: EventStream<Unit>
+        get() = serverReboot.stream
+    override val treeCleared: EventStream<Unit>
+        get() = treeClear.stream
 
     init {
         consoleMonitor.start()
@@ -55,12 +62,26 @@ class OSCSuperColliderClient(
     }
 
     override fun run() {
-        while (!interrupted()) {
+        while (!interrupted() && !receiver.isClosed) {
             val buf = ByteArray(4096)
             val packet = DatagramPacket(buf, buf.size)
-            receiver.receive(packet)
+            try {
+                receiver.receive(packet)
+            } catch (e: SocketException) {
+                if (e.message == "Socket closed") {
+                    println("Closed receiver socket")
+                    break
+                } else {
+                    e.printStackTrace()
+                    continue
+                }
+            }
             val path = String(buf, 0, 8)
             when {
+                path.startsWith("/reboot") -> serverReboot.fire()
+
+                path.startsWith("/cleared") -> treeClear.fire()
+
                 path.startsWith("/reply") -> {
                     val result = getContentString(buf)
                     val id = getId(buf)
@@ -111,8 +132,10 @@ class OSCSuperColliderClient(
         consoleMonitor.interrupt()
         run("s.quit;")
         run("0.exit;")
-        sender.disconnect()
+        sleep(100)
         interrupt()
+        sender.disconnect()
+        receiver.close()
         statusListener.status = StatusUpdate.Exited
     }
 
