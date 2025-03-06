@@ -1,5 +1,7 @@
 package xenakis.ui.actions
 
+import fxutils.actions.Action
+import fxutils.actions.action
 import org.kordamp.ikonli.codicons.Codicons
 import org.kordamp.ikonli.material2.Material2MZ
 import org.kordamp.ikonli.material2.Material2OutlinedAL

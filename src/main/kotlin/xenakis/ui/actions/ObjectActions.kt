@@ -1,6 +1,8 @@
 package xenakis.ui.actions
 
 import fxutils.SubWindow
+import fxutils.actions.collectActions
+import fxutils.actions.isTargetTextInput
 import fxutils.prompt.IntegerPrompt
 import hextant.context.Context
 import hextant.undo.compoundEdit

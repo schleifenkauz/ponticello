@@ -31,7 +31,7 @@ class UtilityFlow(
         private set
 
     override fun copyFor(associatedBus: BusObject): AudioFlow =
-        UtilityFlow(busRef, volumeDb.copy(), muted.copy(), solo.copy())
+        UtilityFlow(associatedBus.reference(), volumeDb.copy(), muted.copy(), solo.copy())
 
     override lateinit var superColliderName: ReactiveString
         private set

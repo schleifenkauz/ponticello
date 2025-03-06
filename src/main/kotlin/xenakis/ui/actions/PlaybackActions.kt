@@ -1,5 +1,7 @@
 package xenakis.ui.actions
 
+import fxutils.actions.Action
+import fxutils.actions.isShiftDown
 import javafx.scene.layout.Region
 import org.kordamp.ikonli.material2.Material2MZ
 import org.kordamp.ikonli.materialdesign2.MaterialDesignM

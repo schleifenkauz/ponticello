@@ -1,6 +1,7 @@
 package xenakis.ui.actions
 
 import fxutils.KeyEventHandlerBody
+import fxutils.actions.isTargetTextInput
 import fxutils.runFXWithTimeout
 import hextant.undo.compoundEdit
 import reaktive.value.now

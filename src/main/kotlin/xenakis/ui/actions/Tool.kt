@@ -1,5 +1,7 @@
 package xenakis.ui.actions
 
+import fxutils.actions.*
+import hextant.context.Context
 import javafx.scene.input.KeyEvent
 import javafx.scene.input.MouseEvent
 import org.kordamp.ikonli.codicons.Codicons
@@ -8,11 +10,10 @@ import org.kordamp.ikonli.materialdesign2.*
 import reaktive.value.now
 import xenakis.model.registry.InstrumentRegistry
 import xenakis.model.registry.ProcessDefRegistry
-import xenakis.ui.impl.SelectorBar
 import xenakis.ui.launcher.XenakisMainActivity
 import xenakis.ui.registry.SimpleSearchableRegistryView
 
-enum class Tool(config: Action.Builder<SelectorBar<Tool>>.() -> Unit) : SelectorBar.Option<Tool> {
+enum class Tool(config: Action.Builder<SelectorBar<Tool, Context>>.() -> Unit) : SelectorBar.Option<Context, Tool> {
     Pointer({
         shortcut("ESCAPE")
         icon(MaterialDesignC.CURSOR_DEFAULT_OUTLINE)
@@ -89,7 +90,7 @@ enum class Tool(config: Action.Builder<SelectorBar<Tool>>.() -> Unit) : Selector
         description("Select add time tool")
     });
 
-    override val action: Action<SelectorBar<Tool>> = action("Select $name tool") {
+    override val action: Action<SelectorBar<Tool, Context>> = action("Select $name tool") {
         selects(this@Tool)
         config()
     }

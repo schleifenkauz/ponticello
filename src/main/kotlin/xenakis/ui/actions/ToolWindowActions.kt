@@ -1,5 +1,7 @@
 package xenakis.ui.actions
 
+import fxutils.actions.Action
+import fxutils.actions.isShiftDown
 import fxutils.prompt.SimpleSearchableListView
 import fxutils.prompt.SimpleTextPrompt
 import javafx.scene.layout.Region

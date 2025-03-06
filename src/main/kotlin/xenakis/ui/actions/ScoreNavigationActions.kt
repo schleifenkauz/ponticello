@@ -1,5 +1,7 @@
 package xenakis.ui.actions
 
+import fxutils.actions.Action
+import fxutils.actions.isShiftDown
 import fxutils.mouseX
 import org.kordamp.ikonli.material2.Material2MZ
 import reaktive.value.now

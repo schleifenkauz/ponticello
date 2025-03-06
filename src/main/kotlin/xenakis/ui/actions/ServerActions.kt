@@ -1,5 +1,7 @@
 package xenakis.ui.actions
 
+import fxutils.actions.Action
+import fxutils.actions.isShiftDown
 import org.kordamp.ikonli.materialdesign2.MaterialDesignR
 import xenakis.model.XenakisProject
 import xenakis.ui.impl.showDialog

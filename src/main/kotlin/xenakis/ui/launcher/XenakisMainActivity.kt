@@ -5,6 +5,10 @@ import bundles.createBundle
 import bundles.publicProperty
 import bundles.set
 import fxutils.*
+import fxutils.actions.ActionBar
+import fxutils.actions.ContextualizedAction
+import fxutils.actions.SelectorBar
+import fxutils.actions.registerActions
 import hextant.command.line.CommandLineControl
 import hextant.command.line.CommandLinePopup
 import hextant.context.Properties
@@ -32,7 +36,6 @@ import xenakis.sc.client.SuperColliderClient
 import xenakis.ui.actions.*
 import xenakis.ui.flow.AudioFlowGraphPane
 import xenakis.ui.flow.FlowPane
-import xenakis.ui.impl.SelectorBar
 import xenakis.ui.launcher.XenakisApp.Companion.primaryStage
 import xenakis.ui.misc.*
 import xenakis.ui.registry.*
@@ -44,7 +47,8 @@ class XenakisMainActivity(val project: XenakisProject) : Activity() {
         project.context[XenakisMainActivity] = this
     }
 
-    val toolSelector = SelectorBar(context, Tool.entries, Tool.Pointer)
+    val toolSelector = SelectorBar(project.context, Tool.entries, Tool.Pointer, "large-icon-button")
+        .styleClass("toolbar-part")
 
     val instrumentsPane = InstrumentRegistryPane(project.instruments)
     val instrumentsWindow = SubWindow(instrumentsPane, "Instruments", SubWindow.Type.Undecorated)
@@ -211,16 +215,19 @@ class XenakisMainActivity(val project: XenakisProject) : Activity() {
         val context = ObjectActionContext.SingleObjectContext(selector)
         val actions = ObjectActions.singleObjectActions.withContext(context) +
                 ObjectActions.multiObjectActions.withContext(context)
-        return ActionBar(actions)
+        return toolbarPart(actions)
     }
+
+    private fun toolbarPart(actions: List<ContextualizedAction>) =
+        ActionBar(actions, buttonStyle = "large-icon-button").styleClass("toolbar-part")
 
     private fun createToolbar(): Pane {
         return BorderPane().apply {
             left = HBox(
                 10.0,
-                ActionBar(ProjectActions.withContext(launcher)),
-                ActionBar(UndoRedoActions.withContext(context[UndoManager])),
-                ActionBar(PlaybackActions.withContext(playback)),
+                toolbarPart(ProjectActions.withContext(launcher)),
+                toolbarPart(UndoRedoActions.withContext(context[UndoManager])),
+                toolbarPart(PlaybackActions.withContext(playback)),
                 InteractionConfig(project.settings),
                 toolSelector,
             )
@@ -228,9 +235,9 @@ class XenakisMainActivity(val project: XenakisProject) : Activity() {
             val toolWindowActions = ToolWindowActions.withContext(this@XenakisMainActivity)
             val serverActions = ServerActions.withContext(project)
             right = HBox(
-                ActionBar(toolWindowActions + serverActions),
+                toolbarPart(toolWindowActions + serverActions),
                 hspace(50.0),
-                ActionBar(QuitAction.withContext(launcher))
+                toolbarPart(QuitAction.withContext(launcher))
             )
         } styleClass "toolbar"
     }

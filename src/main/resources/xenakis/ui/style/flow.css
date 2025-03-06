@@ -97,18 +97,6 @@
     -fx-icon-color: gray;
 }
 
-.add-flow-button FontIcon {
-    -fx-icon-size: 30px;
-}
-
-.add-flow-button {
-    -fx-background-radius: 5px;
-}
-
-.add-flow-button:hover {
-    -fx-background-color: #4e0303;
-}
-
 .volume-fader {
     -fx-minor-tick-count: 6;
     -fx-major-tick-unit: 6;

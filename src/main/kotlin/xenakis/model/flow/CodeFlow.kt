@@ -3,6 +3,7 @@ package xenakis.model.flow
 import hextant.context.Context
 import hextant.context.withoutUndo
 import hextant.serial.EditorRoot
+import kotlinx.serialization.Serializable
 import reaktive.value.ReactiveString
 import reaktive.value.binding.map
 import reaktive.value.now
@@ -15,6 +16,7 @@ import xenakis.sc.editor.IdentifierEditor
 import xenakis.sc.editor.assign
 import xenakis.sc.editor.`in`
 
+@Serializable
 class CodeFlow(
     private val busRef: ObjectReference,
     val codeEditor: EditorRoot<CodeBlockEditor>,

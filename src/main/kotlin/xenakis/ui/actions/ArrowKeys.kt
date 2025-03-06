@@ -1,5 +1,6 @@
 package xenakis.ui.actions
 
+import fxutils.actions.isTargetTextInput
 import fxutils.runFXWithTimeout
 import javafx.geometry.HorizontalDirection
 import javafx.geometry.HorizontalDirection.RIGHT
