@@ -1,6 +1,10 @@
 package xenakis.ui.registry
 
 import fxutils.*
+import fxutils.actions.ActionBar
+import fxutils.actions.button
+import fxutils.actions.collectActions
+import fxutils.actions.registerShortcuts
 import javafx.collections.FXCollections
 import javafx.scene.Node
 import javafx.scene.control.*
@@ -26,10 +30,6 @@ import xenakis.model.obj.RenamableObject
 import xenakis.model.registry.NamedObject
 import xenakis.model.registry.ObjectRegistry
 import xenakis.sc.Identifier
-import xenakis.ui.actions.ActionBar
-import xenakis.ui.actions.button
-import xenakis.ui.actions.collectActions
-import xenakis.ui.actions.registerShortcuts
 import xenakis.ui.controls.NameControl
 import xenakis.ui.controls.NamePrompt
 import xenakis.ui.impl.label
@@ -61,7 +61,7 @@ abstract class ObjectRegistryPane<O : NamedObject>(
         val type = registry.objectType
         val label = Label(plural(type)).styleClass("heading")
         val space = infiniteSpace()
-        val actionBar = ActionBar(actions.withContext(this), border = false)
+        val actionBar = ActionBar(actions.withContext(this), buttonStyle = "medium-icon-button")
         val moveBtn = actionBar.getButton(actions.getAction("Move window"))
         moveBtn.setupWindowDragButton { scene.window }
         return HBox(label, searchText, space, actionBar).styleClass("tool-pane-header")
@@ -76,7 +76,7 @@ abstract class ObjectRegistryPane<O : NamedObject>(
         typeSelector.value = default
         val nameInput = TextField() styleClass "prompt-text-field"
         nameInput.promptText = "${registry.objectType} name"
-        val ok = Material2AL.CHECK.button(action = "Confirm")
+        val ok = Material2AL.CHECK.button(action = "Confirm").styleClass("medium-icon-button")
         val layout = HBox(typeSelector, nameInput).centerChildren() styleClass "prompt"
         val window = SubWindow(
             layout, "Create new ${registry.objectType}",
@@ -140,7 +140,7 @@ abstract class ObjectRegistryPane<O : NamedObject>(
     fun box(idx: Int): ObjectBox<O> = boxes[idx]
 
     class ObjectBox<O : NamedObject>(private val pane: ObjectRegistryPane<O>, val obj: O) : HBox() {
-        val actions = HBox().centerChildren()
+        val actions = HBox(3.0).centerChildren()
 
         private val extraControls = HBox(5.0).centerChildren()
 

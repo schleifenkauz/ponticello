@@ -1,9 +1,12 @@
 package xenakis.ui.flow
 
+import fxutils.actions.Action
+import fxutils.actions.ActionBar
+import fxutils.actions.collectActions
+import fxutils.actions.registerShortcuts
 import fxutils.infiniteSpace
 import fxutils.styleClass
 import javafx.scene.Node
-import javafx.scene.control.Button
 import javafx.scene.input.TransferMode
 import javafx.scene.layout.HBox
 import javafx.scene.layout.VBox
@@ -15,12 +18,7 @@ import reaktive.value.binding.map
 import reaktive.value.binding.notEqualTo
 import reaktive.value.now
 import xenakis.model.flow.AudioFlow
-import xenakis.ui.actions.Action
-import xenakis.ui.actions.ActionBar
-import xenakis.ui.actions.collectActions
-import xenakis.ui.actions.registerShortcuts
 import xenakis.ui.impl.label
-import xenakis.ui.impl.setupDragging
 import xenakis.ui.launcher.XenakisLauncher.Companion.currentProject
 
 abstract class FlowBox<F : AudioFlow>(val flow: F) : VBox() {
@@ -34,15 +32,14 @@ abstract class FlowBox<F : AudioFlow>(val flow: F) : VBox() {
         registerShortcuts(actions.withContext(flow))
     }
 
-    fun initialize(parent: VerticalFlowsBox) {
-        val actionBar = ActionBar(actions.withContext(flow), border = false, buttonStyle = "flow-action-button")
+    fun initialize() {
+        val actionBar = ActionBar(actions.withContext(flow), buttonStyle = "flow-action-button")
         val header = HBox(
             label(getTitle(flow)),
             infiniteSpace(),
             actionBar
         ) styleClass "flow-box-header"
         val grabber = actionBar.getButton(actions.getAction("Drag flow"))
-        //setupVerticalDragging(grabber, parent)
         grabber.setOnDragDetected { ev ->
             val mode = if (ev.isControlDown) TransferMode.COPY else TransferMode.MOVE
             val db = startDragAndDrop(mode)
@@ -51,24 +48,6 @@ abstract class FlowBox<F : AudioFlow>(val flow: F) : VBox() {
             ev.consume()
         }
         children.addAll(header, getContent(flow))
-    }
-
-    private fun setupVerticalDragging(grabber: Button, parent: VerticalFlowsBox) {
-        grabber.setupDragging(flow.context, null,
-            onPressed = { viewOrder = -100.0 },
-            relocateBy = { _, _, _, _, dy -> translateY = dy },
-            onReleased = {
-                viewOrder = 0.0
-                try {
-                    val y = translateY + layoutY
-                    var newIndex = parent.vbox.children.binarySearchBy(y) { n -> n.layoutY }
-                    if (newIndex < 0) newIndex = -(newIndex + 1)
-                    flow.context[currentProject].flows.moveFlow(flow, newIndex)
-                } finally {
-                    translateY = 0.0
-                }
-            }
-        )
     }
 
     companion object {

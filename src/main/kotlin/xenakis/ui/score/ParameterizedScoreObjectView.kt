@@ -1,5 +1,6 @@
 package xenakis.ui.score
 
+import fxutils.actions.button
 import fxutils.centerChildren
 import fxutils.infiniteSpace
 import fxutils.prompt.DetailPane
@@ -20,7 +21,6 @@ import xenakis.model.obj.ParameterizedObject
 import xenakis.model.score.*
 import xenakis.sc.ControlSpec
 import xenakis.sc.NumericalControlSpec
-import xenakis.ui.actions.button
 import xenakis.ui.controls.ControlAssignmentView
 import xenakis.ui.controls.Knob
 import xenakis.ui.registry.SearchableParameterListView
@@ -158,7 +158,8 @@ abstract class ParameterizedScoreObjectView(
 
     companion object {
         fun setupSynthDetailPane(pane: DetailPane, obj: ParameterizedObject) {
-            val addButton = Material2MZ.PLUS.button(action = "Add control").styleClass("tool-button")
+            val addButton = Material2MZ.PLUS.button(action = "Add control")
+                .styleClass("large-icon-button")
             val header = HBox(
                 5.0,
                 Label("Synth controls").styleClass("heading"),

@@ -1,6 +1,8 @@
 package xenakis.ui.misc
 
 import fxutils.KeyEventHandlerBody
+import fxutils.actions.action
+import fxutils.actions.makeButton
 import fxutils.styleClass
 import javafx.collections.FXCollections
 import javafx.scene.control.ComboBox
@@ -15,12 +17,10 @@ import reaktive.value.now
 import xenakis.model.InteractionSettings
 import xenakis.model.InteractionSettings.SnapOption
 import xenakis.model.XenakisProject
-import xenakis.ui.actions.action
-import xenakis.ui.actions.makeButton
 
 class InteractionConfig(settings: InteractionSettings) : HBox() {
-    private val snapToggle = toggleSnap.withContext(settings).makeButton()
-    private val gridToggle = toggleGrid.withContext(settings).makeButton()
+    private val snapToggle = toggleSnap.withContext(settings).makeButton("large-icon-button")
+    private val gridToggle = toggleGrid.withContext(settings).makeButton("large-icon-button")
 
     private val snapOption = ComboBox(FXCollections.observableList(SnapOption.entries))
 

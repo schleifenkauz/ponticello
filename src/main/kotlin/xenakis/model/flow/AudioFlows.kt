@@ -46,6 +46,7 @@ class AudioFlows(
         undoManager = context[UndoManager]
         for (flow in flows) {
             flow.initialize(context)
+            numFlows.getOrPut(flow.associatedBus) { reactiveVariable(0) }.now++
         }
     }
 
@@ -72,7 +73,7 @@ class AudioFlows(
     }
 
     override fun added(obj: BusObject, idx: Int) {
-        numFlows[obj] = reactiveVariable(0)
+        if (obj !in numFlows) numFlows[obj] = reactiveVariable(0)
     }
 
     override fun removed(obj: BusObject, idx: Int) {

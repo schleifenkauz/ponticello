@@ -14,11 +14,6 @@ import java.nio.ByteBuffer
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Future
 import java.util.concurrent.TimeUnit
-import kotlin.collections.List
-import kotlin.collections.listOf
-import kotlin.collections.mutableListOf
-import kotlin.collections.mutableMapOf
-import kotlin.collections.plus
 import kotlin.collections.set
 import kotlin.io.path.toPath
 
@@ -51,7 +46,11 @@ class OSCSuperColliderClient(
         val adr = if (!address.startsWith('/')) "/$address" else address
         val msg = OSCMessage(adr, listOf(id) + arguments)
         waitingForReply[id] = future
-        sender.send(msg)
+        try {
+            sender.send(msg)
+        } catch (e: Exception) {
+            future.completeExceptionally(e)
+        }
         return future.orTimeout(1, TimeUnit.SECONDS)
     }
 

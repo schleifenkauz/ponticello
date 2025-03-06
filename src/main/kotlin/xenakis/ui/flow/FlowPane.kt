@@ -13,7 +13,7 @@ import xenakis.model.registry.ObjectRegistry
 class FlowPane(
     private val flows: AudioFlows
 ) : ScrollPane(), AudioFlows.Listener, ObjectRegistry.Listener<BusObject> {
-    private val hbox = HBox(5.0)
+    private val hbox = HBox(4.0)
     private val boxes = mutableMapOf<BusObject, VerticalFlowsBox>()
     private val buses = flows.context[BusRegistry]
 

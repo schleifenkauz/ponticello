@@ -3,11 +3,13 @@ package xenakis.ui.launcher
 import bundles.PublicProperty
 import bundles.publicProperty
 import bundles.set
+import fxutils.SubWindow
 import fxutils.prompt.PredicateTextPrompt
 import fxutils.prompt.YesNoPrompt
 import hextant.context.Context
 import hextant.context.extend
 import hextant.core.HextantCore
+import hextant.fx.Stylesheets
 import hextant.plugins.PluginBuilder
 import hextant.serial.SnapshotAware
 import hextant.serial.writeJson
@@ -39,6 +41,7 @@ class XenakisLauncher {
         registerImplementationsFromClasspath()
         HextantCore.apply(this, PluginBuilder.Phase.Initialize, null)
         XenakisHextantPlugin.apply(this, PluginBuilder.Phase.Initialize, null)
+        SubWindow.globalStylesheets.addAll(get(Stylesheets).all())
     }
 
     private lateinit var currentActivity: Activity
@@ -171,7 +174,7 @@ class XenakisLauncher {
         }
     }
 
-    private fun showLauncher() {
+    private fun showLauncher() = Platform.runLater {
         launchActivity("Show Xenakis launcher") { LauncherActivity(this) }
     }
 

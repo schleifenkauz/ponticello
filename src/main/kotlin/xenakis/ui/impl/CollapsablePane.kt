@@ -1,5 +1,7 @@
 package xenakis.ui.impl
 
+import fxutils.actions.action
+import fxutils.actions.makeButton
 import fxutils.centerChildren
 import fxutils.infiniteSpace
 import fxutils.styleClass
@@ -11,8 +13,6 @@ import org.kordamp.ikonli.materialdesign2.MaterialDesignC
 import reaktive.value.binding.map
 import reaktive.value.now
 import reaktive.value.reactiveVariable
-import xenakis.ui.actions.action
-import xenakis.ui.actions.makeButton
 
 class CollapsablePane(
     title: String,
@@ -21,7 +21,7 @@ class CollapsablePane(
 ) : VBox() {
     private val heading = Label(title) styleClass "heading"
     private val expanded = reactiveVariable(initiallyExpanded)
-    private val actionBar = expandCollapseAction.withContext(this).makeButton()
+    private val actionBar = expandCollapseAction.withContext(this).makeButton("medium-icon-button")
     private val header = HBox(heading, infiniteSpace(), actionBar).centerChildren()
 
     init {

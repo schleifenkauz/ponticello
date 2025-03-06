@@ -1,5 +1,6 @@
 package xenakis.ui.flow
 
+import fxutils.actions.button
 import fxutils.prompt.SimpleSearchableListView
 import fxutils.setBackground
 import fxutils.setupDropArea
@@ -19,7 +20,6 @@ import xenakis.model.obj.BusObject
 import xenakis.model.obj.SynthDefObject
 import xenakis.model.registry.InstrumentRegistry
 import xenakis.model.registry.ObjectReference
-import xenakis.ui.actions.button
 import xenakis.ui.impl.getFrom
 import xenakis.ui.impl.label
 import xenakis.ui.launcher.XenakisLauncher
@@ -50,6 +50,7 @@ class VerticalFlowsBox(
         if (newIndex < 0) newIndex = -(newIndex + 1)
         if (flow.associatedBus != associatedBus) {
             val copy = flow.copyFor(associatedBus)
+            copy.index.now = newIndex
             flows.addFlow(copy)
             if (TransferMode.COPY !in ev.dragboard.transferModes) {
                 flows.removeFlow(flow)
@@ -61,7 +62,7 @@ class VerticalFlowsBox(
     }
 
     private fun makeAddFlowButton(): BorderPane {
-        val btn = MaterialDesignP.PLUS.button("Add flow").styleClass("tool-button")
+        val btn = MaterialDesignP.PLUS.button("Add flow").styleClass("large-icon-button")
         val pane = BorderPane(btn)
         pane.setupDropArea({ db -> db.hasContent(SynthDefObject.DATA_FORMAT) }) { ev ->
             val registry = flows.context[InstrumentRegistry]
@@ -90,7 +91,7 @@ class VerticalFlowsBox(
             is SendFlow -> SendUtilityBox(flow)
             is ScoreObjectPlaceholder -> PlaceholderBox(flow)
         }
-        box.initialize(this)
+        box.initialize()
         boxes[flow] = box
         vbox.children.add(flow.index.now, box)
     }

@@ -2,10 +2,6 @@ FontIcon {
     -fx-icon-color: -fx-accent;
 }
 
-.tool-button FontIcon {
-    -fx-icon-size: 26px;
-}
-
 .icon-button {
     -fx-background-color: transparent;
     -fx-focus-traversable: false;
@@ -19,12 +15,29 @@ FontIcon {
     -fx-background-color: #351919 !important;
 }
 
-.tool-button {
+.large-icon-button FontIcon {
+    -fx-icon-size: 26px;
+}
+
+.large-icon-button {
     -fx-background-radius: 6px;
     -fx-border-radius: 6px;
 }
 
-.tool-button:hover {
+.large-icon-button:hover {
+    -fx-background-color: #351919;
+}
+
+.medium-icon-button FontIcon {
+    -fx-icon-size: 18px;
+}
+
+.medium-icon-button {
+    -fx-background-radius: 3px;
+    -fx-border-radius: 3px;
+}
+
+.medium-icon-button:hover {
     -fx-background-color: #351919;
 }
 

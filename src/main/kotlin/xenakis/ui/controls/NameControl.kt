@@ -1,5 +1,7 @@
 package xenakis.ui.controls
 
+import fxutils.actions.ActionBar
+import fxutils.actions.collectActions
 import fxutils.alwaysHGrow
 import fxutils.shortcut
 import fxutils.styleClass
@@ -13,8 +15,6 @@ import reaktive.value.fx.asReactiveValue
 import reaktive.value.now
 import xenakis.model.obj.RenamableObject
 import xenakis.sc.Identifier
-import xenakis.ui.actions.ActionBar
-import xenakis.ui.actions.collectActions
 
 class NameControl(val obj: RenamableObject) : HBox() {
     private val field = TextField(obj.name.now).alwaysHGrow()
@@ -25,7 +25,7 @@ class NameControl(val obj: RenamableObject) : HBox() {
     init {
         styleClass("name")
         field styleClass "name-field"
-        val toolbar = ActionBar(actions.withContext(this), border = false)
+        val toolbar = ActionBar(actions.withContext(this), buttonStyle = "medium-icon-button")
         children.addAll(field, toolbar)
         field.isEditable = false
         field.addEventFilter(KeyEvent.KEY_PRESSED) { ev ->

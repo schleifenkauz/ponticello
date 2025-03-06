@@ -1,6 +1,7 @@
 package xenakis.ui.score
 
 import bundles.createBundle
+import fxutils.actions.button
 import fxutils.centerChildren
 import fxutils.prompt.DetailPane
 import fxutils.styleClass
@@ -21,7 +22,6 @@ import xenakis.impl.*
 import xenakis.model.obj.SampleObject
 import xenakis.model.score.*
 import xenakis.sc.view.ObjectSelectorControl
-import xenakis.ui.actions.button
 import xenakis.ui.launcher.XenakisMainActivity
 
 class SynthObjectView(
@@ -60,7 +60,7 @@ class SynthObjectView(
         pane.addItem("Color:", this.colorPicker)
         val viewBtn = Material2AL.CODE.button(action = "View SynthDef") {
             context[XenakisMainActivity].instrumentsPane.editInstrument(obj.synthDef)
-        }
+        }.styleClass("medium-icon-button")
         val box = ObjectSelectorControl(obj.synthDefSelector, createBundle())
         pane.addItem("SynthDef: ", HBox(5.0, box, viewBtn).centerChildren())
         super.setupDetailPane(pane)

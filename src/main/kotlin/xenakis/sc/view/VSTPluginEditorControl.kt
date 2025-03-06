@@ -2,8 +2,10 @@ package xenakis.sc.view
 
 import bundles.Bundle
 import bundles.set
+import fxutils.actions.button
 import fxutils.centerChildren
 import fxutils.setFixedWidth
+import fxutils.styleClass
 import hextant.codegen.ProvideImplementation
 import hextant.context.ControlFactory
 import hextant.core.view.CompoundEditorControl
@@ -11,7 +13,6 @@ import hextant.fx.view
 import org.kordamp.ikonli.material2.Material2MZ
 import org.kordamp.ikonli.materialdesign2.MaterialDesignE
 import xenakis.sc.editor.VSTPluginEditor
-import xenakis.ui.actions.button
 
 class VSTPluginEditorControl @ProvideImplementation(ControlFactory::class) constructor(
     private val editor: VSTPluginEditor,
@@ -33,11 +34,11 @@ class VSTPluginEditorControl @ProvideImplementation(ControlFactory::class) const
         space()
         add(MaterialDesignE.EYE.button(action = "Configure plugin") {
             editor.configurePlugin()
-        })
+        }.styleClass("medium-icon-button"))
         space()
         add(Material2MZ.SAVE.button(action = "Save configuration") {
             editor.saveConfiguration()
-        })
+        }.styleClass("medium-icon-button"))
         root.centerChildren()
     }
 }

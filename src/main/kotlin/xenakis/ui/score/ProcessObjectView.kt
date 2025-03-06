@@ -1,8 +1,10 @@
 package xenakis.ui.score
 
 import bundles.createBundle
+import fxutils.actions.button
 import fxutils.centerChildren
 import fxutils.prompt.DetailPane
+import fxutils.styleClass
 import javafx.scene.layout.HBox
 import javafx.scene.paint.Color
 import org.kordamp.ikonli.material2.Material2AL
@@ -11,7 +13,6 @@ import xenakis.model.score.ProcessObject
 import xenakis.model.score.ScoreObjectInstance
 import xenakis.sc.editor.ProcessDefSelector
 import xenakis.sc.view.ObjectSelectorControl
-import xenakis.ui.actions.button
 import xenakis.ui.launcher.XenakisMainActivity
 
 class ProcessObjectView(
@@ -24,7 +25,7 @@ class ProcessObjectView(
         pane.addItem("Color:", this.colorPicker)
         val viewBtn = Material2AL.CODE.button(action = "View SynthDef") {
             context[XenakisMainActivity].processDefsPane.editProcessDef(obj.processDef)
-        }
+        }.styleClass("medium-icon-button")
         val selector = ProcessDefSelector(context, obj.processDefRef)
         val box = ObjectSelectorControl(selector, createBundle())
         pane.addItem("ProcessDef: ", HBox(5.0, box, viewBtn).centerChildren())

@@ -1,6 +1,7 @@
 package xenakis.ui.registry
 
 import fxutils.SubWindow
+import fxutils.actions.button
 import fxutils.prompt.PredicateTextPrompt
 import fxutils.registerShortcuts
 import fxutils.styleClass
@@ -18,7 +19,6 @@ import xenakis.model.registry.GlobalControls
 import xenakis.sc.Identifier
 import xenakis.sc.NumericalControlSpec
 import xenakis.sc.editor.ControlSpecEditor
-import xenakis.ui.actions.button
 import xenakis.ui.controls.Knob
 import xenakis.ui.impl.makeSubWindow
 import xenakis.ui.launcher.XenakisLauncher.Companion.currentProject
@@ -28,7 +28,8 @@ class GlobalControlsPane(
     private val context: Context
 ) : HBox(), GlobalControlsView {
     init {
-        children.add(Material2MZ.PLUS.button(action = "Add global control") { addControl() })
+        children.add(Material2MZ.PLUS.button(action = "Add global control") { addControl() }
+            .styleClass("large-icon-button"))
         controls.addView(this)
         styleClass("global-controls")
         registerShortcuts {

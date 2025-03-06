@@ -1,6 +1,7 @@
 package xenakis.ui.misc
 
 import fxutils.*
+import fxutils.actions.button
 import fxutils.prompt.SimpleSearchableListView
 import javafx.application.Platform
 import javafx.scene.control.Label
@@ -16,7 +17,6 @@ import org.kordamp.ikonli.javafx.FontIcon
 import org.kordamp.ikonli.material2.Material2MZ
 import org.kordamp.ikonli.materialdesign2.MaterialDesignE
 import xenakis.model.Logger
-import xenakis.ui.actions.button
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneId
@@ -113,7 +113,7 @@ class LogPane(private val logger: Logger) : VBox(), Logger.View {
                 window.initOwner(scene.window)
                 window.sizeToScene()
                 window.show()
-            }
+            }.styleClass("medium-icon-button")
             box.children.addAll(infiniteSpace(), viewBtn)
         }
         box.setOnMouseClicked { box.requestFocus() }

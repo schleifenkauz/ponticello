@@ -1,5 +1,9 @@
 package xenakis.ui.launcher
 
+import fxutils.actions.ActionBar
+import fxutils.actions.collectActions
+import fxutils.actions.makeButton
+import fxutils.actions.registerShortcuts
 import fxutils.infiniteSpace
 import fxutils.label
 import fxutils.prompt.YesNoPrompt
@@ -15,7 +19,8 @@ import org.controlsfx.control.textfield.CustomTextField
 import org.kordamp.ikonli.javafx.FontIcon
 import org.kordamp.ikonli.material2.Material2AL
 import org.kordamp.ikonli.material2.Material2MZ
-import xenakis.ui.actions.*
+import xenakis.ui.actions.ProjectActions
+import xenakis.ui.actions.QuitAction
 import xenakis.ui.impl.showDialog
 import java.io.File
 
@@ -32,9 +37,9 @@ class LauncherActivity(private val launcher: XenakisLauncher) : Activity() {
     private val boxes = mutableListOf<ProjectBox>()
     private val recentProjects = VBox().styleClass("recent-projects-list")
 
-    private val openBtn = ProjectActions.openProject.withContext(launcher).makeButton()
-    private val createBtn = ProjectActions.newProject.withContext(launcher).makeButton()
-    private val quitBtn = ActionBar(QuitAction.withContext(launcher), border = false)
+    private val openBtn = ProjectActions.openProject.withContext(launcher).makeButton("large-icon-button")
+    private val createBtn = ProjectActions.newProject.withContext(launcher).makeButton("large-icon-button")
+    private val quitBtn = ActionBar(QuitAction.withContext(launcher), buttonStyle = "large-icon-button")
     private val header = HBox(searchField, openBtn, createBtn, infiniteSpace(), quitBtn)
         .styleClass("startup-screen-top-bar")
 
@@ -81,7 +86,7 @@ class LauncherActivity(private val launcher: XenakisLauncher) : Activity() {
             children.addAll(
                 VBox(name, path),
                 infiniteSpace(),
-                ActionBar(projectActions.withContext(this), border = false)
+                ActionBar(projectActions.withContext(this), "large-icon-button")
             )
             isFocusTraversable = true
             setOnMouseClicked { ev ->

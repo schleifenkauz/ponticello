@@ -1,5 +1,6 @@
 package xenakis.ui.registry
 
+import fxutils.actions.button
 import fxutils.button
 import fxutils.infiniteSpace
 import fxutils.prompt.PredicateTextPrompt
@@ -20,7 +21,6 @@ import xenakis.model.obj.ParameterDefObject
 import xenakis.sc.Identifier
 import xenakis.sc.NumericalControlSpec
 import xenakis.sc.editor.ControlSpecEditor
-import xenakis.ui.actions.button
 import xenakis.ui.controls.NameControl
 
 class ParameterDefsPane(
@@ -68,7 +68,7 @@ class ParameterDefsPane(
         val specControl = context.createControl(editor)
         val removeBtn = Material2AL.DELETE.button(action = "Remove parameter") {
             parameters.now.remove(parameter)
-        }.styleClass("tool-button")
+        }.styleClass("medium-icon-button")
         val box = HBox(nameDisplay, specControl, infiniteSpace(), removeBtn) styleClass "object-box"
         children.add(index, box)
     }

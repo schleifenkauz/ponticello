@@ -55,7 +55,7 @@
 }
 
 .object-action-button FontIcon {
-    -fx-icon-size: 20px;
+    -fx-icon-size: 18px;
 }
 
 .object-action-button:hover {
