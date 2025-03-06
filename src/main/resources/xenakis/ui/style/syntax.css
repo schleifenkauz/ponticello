@@ -71,8 +71,12 @@
     -fx-text-fill: green;
 }
 
-.parameter-def .hextant-text {
-    -fx-font-size: 11px;
+.numerical-control-spec .hextant-text {
+    -fx-font-size: 13px !important;
+}
+
+.horizontal-choice-editor {
+    -fx-alignment: center-left;
 }
 
 .plugin {

@@ -1,10 +1,10 @@
 package xenakis.ui.actions
 
+import fxutils.mouseX
 import org.kordamp.ikonli.material2.Material2MZ
 import reaktive.value.now
 import xenakis.impl.asTime
 import xenakis.model.player.PlaybackManager
-import xenakis.ui.impl.mouseX
 import xenakis.ui.score.ScoreView
 
 object ScoreNavigationActions : Action.Collector<ScoreView>({

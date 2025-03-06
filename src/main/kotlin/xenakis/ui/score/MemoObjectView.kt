@@ -1,5 +1,8 @@
 package xenakis.ui.score
 
+import fxutils.centerChildren
+import fxutils.prompt.DetailPane
+import fxutils.styleClass
 import javafx.scene.control.Label
 import javafx.scene.control.TextArea
 import javafx.scene.input.KeyCode
@@ -9,9 +12,6 @@ import javafx.scene.layout.HBox
 import javafx.scene.text.Text
 import xenakis.model.score.MemoObject
 import xenakis.model.score.ScoreObjectInstance
-import xenakis.ui.controls.DetailPane
-import xenakis.ui.impl.centerChildren
-import xenakis.ui.impl.styleClass
 
 class MemoObjectView(inst: ScoreObjectInstance, val obj: MemoObject) : ScoreObjectView(inst) {
     private val edit = TextArea(obj.text) styleClass "memo-area"

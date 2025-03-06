@@ -11,7 +11,7 @@ import xenakis.model.obj.SynthDefObject
 import xenakis.model.registry.BusRegistry
 import xenakis.model.registry.GroupRegistry
 import xenakis.model.registry.InstrumentRegistry
-import xenakis.ui.prompt.NamePrompt
+import xenakis.ui.controls.NamePrompt
 import xenakis.ui.registry.SimpleSearchableRegistryView
 
 sealed interface FlowOption {
@@ -25,7 +25,7 @@ sealed interface FlowOption {
             onCreate: (AudioFlow) -> Unit
         ) {
             SimpleSearchableRegistryView(context[BusRegistry], "Target bus")
-                .showPopup(context, anchor) { selected ->
+                .showPopup(anchor) { selected ->
                     onCreate(SendFlow.createFor(associatedBus, selected))
                 }
 
@@ -58,7 +58,7 @@ sealed interface FlowOption {
             onCreate: (AudioFlow) -> Unit
         ) {
             val groupName = NamePrompt(context[GroupRegistry], "Group name", "")
-                .showDialog(context, anchor) ?: return
+                .showDialog(anchor) ?: return
             val group = GroupObject(reactiveVariable(groupName))
             context[GroupRegistry].add(group)
             onCreate(ScoreObjectPlaceholder(associatedBus.reference(), group))

@@ -1,8 +1,11 @@
 package xenakis.ui.registry
 
+import fxutils.SubWindow
+import fxutils.prompt.PredicateTextPrompt
+import fxutils.registerShortcuts
+import fxutils.styleClass
 import hextant.context.Context
 import hextant.context.createControl
-import hextant.fx.registerShortcuts
 import hextant.serial.makeRoot
 import javafx.scene.layout.HBox
 import javafx.scene.paint.Color.BLACK
@@ -17,10 +20,8 @@ import xenakis.sc.NumericalControlSpec
 import xenakis.sc.editor.ControlSpecEditor
 import xenakis.ui.actions.button
 import xenakis.ui.controls.Knob
-import xenakis.ui.impl.SubWindow
-import xenakis.ui.impl.styleClass
+import xenakis.ui.impl.makeSubWindow
 import xenakis.ui.launcher.XenakisLauncher.Companion.currentProject
-import xenakis.ui.prompt.PredicateTextPrompt
 
 class GlobalControlsPane(
     private val controls: GlobalControls,
@@ -43,7 +44,7 @@ class GlobalControlsPane(
                 context[currentProject].busses.has("global_$name") -> false
                 else -> true
             }
-        }.showDialog(context, this) ?: return
+        }.showDialog(anchorNode = this) ?: return
         val editor = ControlSpecEditor(context)
         val defaultControlSpec = context[Settings].getDefaultControlSpec(name)
         editor.makeRoot()
@@ -51,7 +52,8 @@ class GlobalControlsPane(
             editor.setResult(defaultControlSpec)
         }
         val control = context.createControl(editor)
-        val window = SubWindow(control, "Configure global control", context, SubWindow.Type.Popup, customOwnerWindow = scene.window)
+        val window = makeSubWindow(SubWindow.Type.Popup, control, "Configure global control", context)
+        window.initOwner(scene.window)
         window.scene.fill = BLACK
         window.width = 800.0
         control.registerShortcuts {

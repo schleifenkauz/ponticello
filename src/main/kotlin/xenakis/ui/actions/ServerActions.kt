@@ -2,6 +2,7 @@ package xenakis.ui.actions
 
 import org.kordamp.ikonli.materialdesign2.MaterialDesignR
 import xenakis.model.XenakisProject
+import xenakis.ui.impl.showDialog
 import xenakis.ui.misc.ServerOptionsPane
 
 object ServerActions : Action.Collector<XenakisProject>({

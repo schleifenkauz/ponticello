@@ -1,5 +1,7 @@
 package xenakis.ui.registry
 
+import fxutils.prompt.compoundPrompt
+import fxutils.setFixedWidth
 import javafx.scene.control.Label
 import javafx.scene.control.Spinner
 import javafx.scene.control.TextField
@@ -11,8 +13,6 @@ import xenakis.model.Logger
 import xenakis.model.obj.BufferObject
 import xenakis.model.registry.BufferRegistry
 import xenakis.sc.client.SuperColliderClient
-import xenakis.ui.impl.setFixedWidth
-import xenakis.ui.prompt.compoundPrompt
 
 class BufferRegistryPane(
     private val buffers: BufferRegistry,
@@ -30,7 +30,7 @@ class BufferRegistryPane(
                 val frames = framesField.text.toIntOrNull() ?: return@onConfirm null
                 BufferObject.create(name, channels, frames)
             }
-        }.showDialog(registry.context, this)
+        }.showDialog(this)
     }
 
     override fun ObjectBox<BufferObject>.configureObjectBox() {

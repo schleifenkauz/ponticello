@@ -1,7 +1,7 @@
 package xenakis.ui.registry
 
-import hextant.fx.add
-import hextant.fx.hbox
+import fxutils.add
+import fxutils.hbox
 import javafx.scene.control.Label
 import javafx.scene.control.ListCell
 import javafx.scene.control.ListView

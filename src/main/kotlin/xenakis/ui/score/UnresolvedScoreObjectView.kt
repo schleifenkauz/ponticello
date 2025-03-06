@@ -1,5 +1,7 @@
 package xenakis.ui.score
 
+import fxutils.button
+import fxutils.prompt.DetailPane
 import hextant.undo.compoundEdit
 import javafx.scene.paint.Color
 import reaktive.value.ReactiveValue
@@ -11,8 +13,6 @@ import xenakis.model.registry.ScoreObjectRegistry
 import xenakis.model.score.Score.Companion.rootScore
 import xenakis.model.score.ScoreObject
 import xenakis.model.score.ScoreObjectInstance
-import xenakis.ui.controls.DetailPane
-import xenakis.ui.impl.button
 import xenakis.ui.registry.SimpleSearchableRegistryView
 
 class UnresolvedScoreObjectView(
@@ -25,7 +25,7 @@ class UnresolvedScoreObjectView(
         val btn = button("Select object reference")
         btn.setOnMouseClicked {
             SimpleSearchableRegistryView(context[ScoreObjectRegistry], "Resolve object")
-                .showPopup(context, anchorNode = btn) { obj ->
+                .showPopup(anchorNode = btn) { obj ->
                     val instances = context[rootScore].allInstances().filterTo(mutableSetOf()) { inst ->
                         inst.obj is ScoreObject.Unresolved && inst.obj.name.now == this.obj.name.now
                     }

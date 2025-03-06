@@ -4,6 +4,7 @@ import bundles.PublicProperty
 import bundles.createBundle
 import bundles.publicProperty
 import bundles.set
+import fxutils.*
 import hextant.command.line.CommandLineControl
 import hextant.command.line.CommandLinePopup
 import hextant.context.Properties
@@ -11,8 +12,6 @@ import hextant.context.SelectionDistributor
 import hextant.core.view.EditorControl
 import hextant.fx.handleCommands
 import hextant.fx.initHextantScene
-import hextant.fx.registerShortcuts
-import hextant.fx.runFXWithTimeout
 import hextant.undo.UndoManager
 import hextant.undo.historyShortcuts
 import javafx.application.Platform
@@ -33,7 +32,7 @@ import xenakis.sc.client.SuperColliderClient
 import xenakis.ui.actions.*
 import xenakis.ui.flow.AudioFlowGraphPane
 import xenakis.ui.flow.FlowPane
-import xenakis.ui.impl.*
+import xenakis.ui.impl.SelectorBar
 import xenakis.ui.launcher.XenakisApp.Companion.primaryStage
 import xenakis.ui.misc.*
 import xenakis.ui.registry.*
@@ -48,23 +47,23 @@ class XenakisMainActivity(val project: XenakisProject) : Activity() {
     val toolSelector = SelectorBar(context, Tool.entries, Tool.Pointer)
 
     val instrumentsPane = InstrumentRegistryPane(project.instruments)
-    val instrumentsWindow = SubWindow(instrumentsPane, "Instruments", context, SubWindow.Type.Undecorated)
+    val instrumentsWindow = SubWindow(instrumentsPane, "Instruments", SubWindow.Type.Undecorated)
 
     val processDefsPane = ProcessDefRegistryPane(project.processDefs)
-    val processDefsWindow = SubWindow(processDefsPane, "Process Definitions", context, SubWindow.Type.Undecorated)
+    val processDefsWindow = SubWindow(processDefsPane, "Process Definitions", SubWindow.Type.Undecorated)
 
     private val busRegistryPane = BusRegistryPane(project.busses)
-    val busesWindow = SubWindow(busRegistryPane, "Busses", context, SubWindow.Type.Undecorated)
+    val busesWindow = SubWindow(busRegistryPane, "Busses", SubWindow.Type.Undecorated)
 
     private val samplesPane = SampleRegistryPane(project.samples)
-    val samplesWindow = SubWindow(samplesPane, "Samples", context, SubWindow.Type.Undecorated)
+    val samplesWindow = SubWindow(samplesPane, "Samples", SubWindow.Type.Undecorated)
 
     private val groupsPane = GroupRegistryPane(project.groups)
-    val groupsWindow = SubWindow(groupsPane, "Groups", context, SubWindow.Type.Undecorated)
+    val groupsWindow = SubWindow(groupsPane, "Groups", SubWindow.Type.Undecorated)
 
-    val logWindow = SubWindow(LogPane(context, Logger), "Log", context, SubWindow.Type.Undecorated)
+    val logWindow = SubWindow(LogPane(Logger), "Log", SubWindow.Type.Undecorated)
 
-    val settingsWindow = SubWindow(SettingsPane(context[Settings], context), "Settings", context)
+    val settingsWindow = SubWindow(SettingsPane(context[Settings], context), "Settings")
 
     val flowGraphWindow: SubWindow
     val flowPaneWindow: SubWindow
@@ -108,18 +107,18 @@ class XenakisMainActivity(val project: XenakisProject) : Activity() {
 
         val flowGraphEditor = AudioFlowGraphPane(project.flows, context)
         flowGraphEditor.setPrefSize(1000.0, 1000.0)
-        flowGraphWindow = SubWindow(flowGraphEditor, "Audio flow graph", context)
+        flowGraphWindow = SubWindow(flowGraphEditor, "Audio flow graph")
 
         val flowPane = FlowPane(project.flows)
         flowPane.setPrefSize(1000.0, 1000.0)
-        flowPaneWindow = SubWindow(flowPane, "Audio flows", context)
+        flowPaneWindow = SubWindow(flowPane, "Audio flows")
 
         val globalControlsPane = GlobalControlsPane(project.globalControls, context)
-        globalControlsWindow = SubWindow(globalControlsPane, "Global controls", context)
+        globalControlsWindow = SubWindow(globalControlsPane, "Global controls")
         globalControlsWindow.width = 500.0
 
         val (serverSetup, serverTree) = project.setupCode
-        serverSetupCodeWindow = SubWindow(serverSetup.control, "ServerSetup", context)
+        serverSetupCodeWindow = SubWindow(serverSetup.control, "ServerSetup")
         serverSetupCodeWindow.scene.registerShortcuts {
             on("Ctrl+S") {
                 val setupCode = serverSetup.editor.result.now
@@ -128,7 +127,7 @@ class XenakisMainActivity(val project: XenakisProject) : Activity() {
             }
         }
         serverSetupCodeWindow.resize(500.0, 500.0)
-        serverTreeCodeWindow = SubWindow(serverTree.control, "ServerTree", context)
+        serverTreeCodeWindow = SubWindow(serverTree.control, "ServerTree")
         serverTreeCodeWindow.scene.registerShortcuts {
             on("Ctrl+S") {
                 val serverTreeCode = serverTree.editor.result.now

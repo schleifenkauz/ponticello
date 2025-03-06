@@ -1,11 +1,11 @@
 package xenakis.sc.view
 
 import bundles.Bundle
+import fxutils.runFXWithTimeout
 import hextant.core.Editor
 import hextant.core.view.CompoundEditorControl
 import hextant.core.view.EditorControl
 import hextant.core.view.ExpanderControl
-import hextant.fx.runFXWithTimeout
 import xenakis.sc.editor.BusExprEditor
 import xenakis.sc.editor.ScExprExpander
 

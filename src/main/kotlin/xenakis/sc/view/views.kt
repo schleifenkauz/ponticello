@@ -4,17 +4,17 @@ import bundles.Bundle
 import bundles.createBundle
 import bundles.publicProperty
 import bundles.set
+import fxutils.button
+import fxutils.centerChildren
+import fxutils.keyword
+import fxutils.styleClass
 import hextant.codegen.ProvideImplementation
 import hextant.completion.NoCompleter
 import hextant.context.ControlFactory
 import hextant.core.view.*
 import hextant.core.view.ListEditorControl.Companion.EMPTY_DISPLAY
 import hextant.core.view.ListEditorControl.Companion.ORIENTATION
-import hextant.fx.keyword
 import hextant.fx.view
-import xenakis.ui.impl.button
-import xenakis.ui.impl.centerChildren
-import xenakis.ui.impl.styleClass
 
 val MULTILINE = publicProperty("MULTILINE_ARGUMENTS", false)
 
@@ -124,7 +124,22 @@ fun createControl(editor: xenakis.sc.editor.OperatorEditor, arguments: Bundle): 
 
 @ProvideImplementation(ControlFactory::class)
 fun createControl(editor: xenakis.sc.editor.BusControlSpecEditor, arguments: Bundle) =
-    CompoundEditorControl(editor, arguments) { horizontal { } }
+    CompoundEditorControl(editor, arguments) {
+        horizontal {
+            space()
+            view(editor.flow)
+            space()
+            keyword("Rate: ")
+            view(editor.rate)
+            space()
+            keyword("Channels: ")
+            view(editor.channels) {
+                set(IntSpinnerControl.MIN, 1)
+                set(IntSpinnerControl.MAX, 256)
+            }.maxWidth = 50.0
+            root.centerChildren()
+        }
+    }
 
 @ProvideImplementation(ControlFactory::class)
 fun createControl(editor: xenakis.sc.editor.BufferControlSpecEditor, arguments: Bundle) =

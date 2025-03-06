@@ -1,7 +1,11 @@
 package xenakis.ui.score
 
+import fxutils.hasFile
+import fxutils.prompt.compoundPrompt
+import fxutils.runFXWithTimeout
+import fxutils.setupDropArea
+import fxutils.styleClass
 import hextant.context.Context
-import hextant.fx.runFXWithTimeout
 import hextant.serial.EditorRoot
 import hextant.undo.compoundEdit
 import javafx.application.Platform
@@ -35,14 +39,11 @@ import xenakis.sc.editor.EventDictionaryEditor
 import xenakis.sc.editor.ScFunctionEditor
 import xenakis.ui.actions.Tool
 import xenakis.ui.actions.Tool.*
-import xenakis.ui.impl.hasFile
+import xenakis.ui.controls.DecimalPrompt
+import xenakis.ui.controls.NamePrompt
 import xenakis.ui.impl.rootPane
-import xenakis.ui.impl.setupDropArea
-import xenakis.ui.impl.styleClass
+import xenakis.ui.impl.showDialog
 import xenakis.ui.launcher.XenakisMainActivity
-import xenakis.ui.prompt.DecimalPrompt
-import xenakis.ui.prompt.NamePrompt
-import xenakis.ui.prompt.compoundPrompt
 import xenakis.ui.registry.SimpleSearchableRegistryView
 import java.util.concurrent.CompletableFuture
 import kotlin.math.absoluteValue
@@ -400,7 +401,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
             ev.button == MouseButton.PRIMARY && ev.isAltDown && ev.isShiftDown -> {
                 val popup = SimpleSearchableRegistryView(context[ScoreObjectRegistry], "Add object instance")
                 val anchor = localToScreen(ev.x, ev.y)
-                popup.showPopup(context, anchor, scene.window) { obj ->
+                popup.showPopup(anchor, scene.window) { obj ->
                     val pos = snapToGrid(ev.x, ev.y)
                     val inst = ScoreObjectInstance(obj, pos)
                     score.addObject(inst)
@@ -410,7 +411,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
             ev.button == MouseButton.PRIMARY && ev.isAltDown -> {
                 val popup = SimpleSearchableRegistryView(context[SampleRegistry], "Place sample")
                 val anchor = localToScreen(ev.x, ev.y)
-                popup.showPopup(context, anchor, scene.window) { sample ->
+                popup.showPopup(anchor, scene.window) { sample ->
                     val pos = snapToGrid(ev.x, ev.y)
                     createPlayBufObject(sample, pos)
                 }

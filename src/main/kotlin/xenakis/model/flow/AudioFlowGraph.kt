@@ -2,6 +2,7 @@ package xenakis.model.flow
 
 import bundles.PublicProperty
 import bundles.publicProperty
+import kollektion.Counter
 import reaktive.value.now
 import xenakis.impl.BubbleSort
 import xenakis.impl.ReachabilityGraph
@@ -26,8 +27,8 @@ class AudioFlowGraph(
     private val suffixes = mutableMapOf<Pair<ScoreObject, ObjectPosition>, Int>()
     private val flowGroups = mutableMapOf<BusObject, ServerNode.FlowGroup>()
     private val order = LinkedList<ServerNode>()
-    private val readFrom = mutableMapOf<BusObject, MutableSet<ServerNode>>()
-    private val writeTo = mutableMapOf<BusObject, MutableSet<ServerNode>>()
+    private val readFrom = mutableMapOf<BusObject, Counter<ServerNode>>()
+    private val writeTo = mutableMapOf<BusObject, Counter<ServerNode>>()
     private val graph = ReachabilityGraph<ServerNode>()
     private val placeholderContents = mutableMapOf<GroupObject, MutableList<ServerNode.ActiveSynth>>()
 
@@ -89,14 +90,14 @@ class AudioFlowGraph(
 
     private fun addFlowToNode(node: ServerNode, flow: Flow) {
         for (input in flow.getConnectedBusses(FlowType.In)) {
-            readFrom.getOrPut(input, ::mutableSetOf).add(node)
-            for (writer in writeTo[input].orEmpty()) {
+            readFrom.getOrPut(input, ::Counter).add(node)
+            for (writer in writeTo[input]?.asSet().orEmpty()) {
                 graph.addEdge(writer, node)
             }
         }
         for (output in flow.getConnectedBusses(FlowType.Out)) {
-            writeTo.getOrPut(output, ::mutableSetOf).add(node)
-            for (reader in readFrom[output].orEmpty()) {
+            writeTo.getOrPut(output, ::Counter).add(node)
+            for (reader in readFrom[output]?.asSet().orEmpty()) {
                 graph.addEdge(node, reader)
             }
         }
@@ -169,14 +170,18 @@ class AudioFlowGraph(
 
     private fun removeFlowFromNode(node: ServerNode, flow: Flow) {
         for (input in flow.getConnectedBusses(FlowType.In)) {
-            check(readFrom.getValue(input).remove(node)) { "Could not remove $node from readers from $input" }
-            for (writer in writeTo[input].orEmpty()) {
+            if (!readFrom.getValue(input).remove(node)) {
+                Logger.warn("Could not remove $node from readers from $input", Logger.Category.AudioFlow)
+            }
+            for (writer in writeTo[input]?.asSet().orEmpty()) {
                 graph.removeEdge(writer, node)
             }
         }
         for (output in flow.getConnectedBusses(FlowType.InOut, FlowType.Out)) {
-            check(writeTo.getValue(output).remove(node)) { "Could not remove $node from writers to $output" }
-            for (reader in readFrom[output].orEmpty()) {
+            if (!writeTo.getValue(output).remove(node)) {
+                Logger.warn("Could not remove $node from readers from $output", Logger.Category.AudioFlow)
+            }
+            for (reader in readFrom[output]?.asSet().orEmpty()) {
                 graph.removeEdge(node, reader)
             }
         }

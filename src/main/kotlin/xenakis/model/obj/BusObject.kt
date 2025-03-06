@@ -10,6 +10,7 @@ import reaktive.value.now
 import reaktive.value.reactiveVariable
 import xenakis.impl.Point
 import xenakis.model.obj.SuperColliderObject.LiveCycleType
+import xenakis.sc.DecimalLiteral
 import xenakis.sc.Rate
 import xenakis.sc.client.ScWriter
 import xenakis.ui.launcher.XenakisLauncher
@@ -20,7 +21,8 @@ class BusObject(
     val rate: ReactiveVariable<Rate>,
     val channels: ReactiveVariable<Int>,
     val type: Type = Type.Regular,
-    val positionInGraph: ReactiveVariable<Point>
+    val positionInGraph: ReactiveVariable<Point>,
+    val defaultValue: ReactiveVariable<DecimalLiteral?> = reactiveVariable(null)
 ) : AbstractSuperColliderObject() {
     override val superColliderName
         get() = when (type) {
@@ -46,7 +48,18 @@ class BusObject(
         when (type) {
             Type.Input -> {}
             Type.Output -> {}
-            Type.Regular -> +"$superColliderName = Bus.${rate.now.name.lowercase()}(s, ${channels.now})"
+            Type.Regular -> {
+                +"$superColliderName = Bus.${rate.now.name.lowercase()}(s, ${channels.now})"
+                setDefaultValue()
+            }
+        }
+    }
+
+    private fun ScWriter.setDefaultValue() {
+        val defaultValue = defaultValue.now?.valueOrNull
+        if (rate.now == Rate.Control && defaultValue != null) {
+            val valueList = List(channels.now) { defaultValue }.joinToString()
+            +"$superColliderName.set($valueList)"
         }
     }
 
@@ -58,7 +71,9 @@ class BusObject(
         if (initialized) return
         super.initialize(context)
         if (type == Type.Regular) {
-            observer = rate.observe { _ -> redefine() } and channels.observe { _ -> redefine() }
+            observer = rate.observe { _ -> redefine() } and
+                    channels.observe { _ -> redefine() } and
+                    defaultValue.observe { _ -> client.run { setDefaultValue() } }
         }
     }
 

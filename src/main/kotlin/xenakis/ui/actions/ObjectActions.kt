@@ -1,5 +1,7 @@
 package xenakis.ui.actions
 
+import fxutils.SubWindow
+import fxutils.prompt.IntegerPrompt
 import hextant.context.Context
 import hextant.undo.compoundEdit
 import javafx.geometry.HorizontalDirection.RIGHT
@@ -18,12 +20,11 @@ import xenakis.model.registry.ScoreObjectRegistry
 import xenakis.model.score.ObjectPosition
 import xenakis.model.score.ScoreObject
 import xenakis.model.score.ScoreObjectGroup
+import xenakis.ui.controls.NamePrompt
 import xenakis.ui.impl.Direction
-import xenakis.ui.impl.SubWindow
+import xenakis.ui.impl.showDialog
 import xenakis.ui.launcher.XenakisMainActivity
 import xenakis.ui.launcher.XenakisMainActivity.Mode
-import xenakis.ui.prompt.IntegerPrompt
-import xenakis.ui.prompt.NamePrompt
 import xenakis.ui.score.*
 
 object ObjectActions {
@@ -56,6 +57,7 @@ object ObjectActions {
             }
         }
     }
+
 
     val singleObjectActions = collectActions {
         addObjectAction("Create loop") {
@@ -169,7 +171,7 @@ object ObjectActions {
             executeSingle { view, _ ->
                 val pane = view.getDetailPane()
                 val name = view.instance.obj.name.now
-                val window = SubWindow(pane, "Configure $name", view.context, type = SubWindow.Type.Undecorated)
+                val window = SubWindow(pane, "Configure $name", type = SubWindow.Type.Undecorated)
                 window.show()
             }
         }
@@ -203,3 +205,6 @@ object ObjectActions {
         }
     }
 }
+
+/*
+* */

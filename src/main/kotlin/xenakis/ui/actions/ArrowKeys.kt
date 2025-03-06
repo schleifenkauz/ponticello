@@ -1,6 +1,6 @@
 package xenakis.ui.actions
 
-import hextant.fx.runFXWithTimeout
+import fxutils.runFXWithTimeout
 import javafx.geometry.HorizontalDirection
 import javafx.geometry.HorizontalDirection.RIGHT
 import javafx.geometry.VerticalDirection

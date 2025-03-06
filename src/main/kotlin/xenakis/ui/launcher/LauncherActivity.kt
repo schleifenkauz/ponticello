@@ -1,8 +1,11 @@
 package xenakis.ui.launcher
 
+import fxutils.infiniteSpace
+import fxutils.label
+import fxutils.prompt.YesNoPrompt
+import fxutils.runFXWithTimeout
+import fxutils.styleClass
 import hextant.context.Context
-import hextant.fx.label
-import hextant.fx.runFXWithTimeout
 import javafx.scene.Parent
 import javafx.scene.layout.HBox
 import javafx.scene.layout.VBox
@@ -13,9 +16,7 @@ import org.kordamp.ikonli.javafx.FontIcon
 import org.kordamp.ikonli.material2.Material2AL
 import org.kordamp.ikonli.material2.Material2MZ
 import xenakis.ui.actions.*
-import xenakis.ui.impl.infiniteSpace
-import xenakis.ui.impl.styleClass
-import xenakis.ui.prompt.YesNoPrompt
+import xenakis.ui.impl.showDialog
 import java.io.File
 
 class LauncherActivity(private val launcher: XenakisLauncher) : Activity() {

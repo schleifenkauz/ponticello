@@ -2,6 +2,8 @@ package xenakis.sc.view
 
 import bundles.Bundle
 import bundles.set
+import fxutils.centerChildren
+import fxutils.setFixedWidth
 import hextant.codegen.ProvideImplementation
 import hextant.context.ControlFactory
 import hextant.core.view.CompoundEditorControl
@@ -10,8 +12,6 @@ import org.kordamp.ikonli.material2.Material2MZ
 import org.kordamp.ikonli.materialdesign2.MaterialDesignE
 import xenakis.sc.editor.VSTPluginEditor
 import xenakis.ui.actions.button
-import xenakis.ui.impl.centerChildren
-import xenakis.ui.impl.setFixedWidth
 
 class VSTPluginEditorControl @ProvideImplementation(ControlFactory::class) constructor(
     private val editor: VSTPluginEditor,

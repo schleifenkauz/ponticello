@@ -2,6 +2,9 @@ package xenakis.sc.view
 
 import bundles.Bundle
 import bundles.set
+import fxutils.centerChildren
+import fxutils.registerShortcuts
+import fxutils.styleClass
 import hextant.codegen.ProvideImplementation
 import hextant.context.ControlFactory
 import hextant.core.view.CompoundEditorControl
@@ -11,12 +14,9 @@ import hextant.core.view.ListEditorControl.Companion.CELL_FACTORY
 import hextant.core.view.ListEditorControl.Companion.ORIENTATION
 import hextant.core.view.ListEditorControl.Orientation
 import hextant.core.view.ListEditorControl.SeparatorCell
-import hextant.fx.registerShortcuts
 import hextant.fx.view
 import reaktive.collection.binding.isNotEmpty
 import reaktive.value.now
-import xenakis.ui.impl.centerChildren
-import xenakis.ui.impl.styleClass
 import xenakis.ui.misc.HelpBrowser
 
 class MessageSendEditorControl @ProvideImplementation(ControlFactory::class) constructor(

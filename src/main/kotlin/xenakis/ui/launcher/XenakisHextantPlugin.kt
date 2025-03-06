@@ -1,6 +1,7 @@
 package xenakis.ui.launcher
 
 import bundles.set
+import fxutils.prompt.PredicateTextPrompt
 import hextant.context.ControlFactory
 import hextant.context.SelectionDistributor
 import hextant.core.editor.getParent
@@ -20,9 +21,9 @@ import xenakis.sc.Warp
 import xenakis.sc.editor.ScExprExpander
 import xenakis.sc.view.*
 import xenakis.sc.view.ScFunctionEditorControl.Companion.SINGLE_LINE_FUNCTION
+import xenakis.ui.impl.showDialog
 import xenakis.ui.launcher.XenakisHextantPlugin.multilineCommand
 import xenakis.ui.launcher.XenakisHextantPlugin.singleLineCommand
-import xenakis.ui.prompt.PredicateTextPrompt
 
 object XenakisHextantPlugin : PluginInitializer({
     stylesheet("xenakis/ui/style/flow.css")
@@ -33,7 +34,7 @@ object XenakisHextantPlugin : PluginInitializer({
     stylesheet("xenakis/ui/style/knob.css")
     stylesheet("xenakis/ui/style/general.css")
     stylesheet("xenakis/ui/style/score.css")
-    stylesheet("xenakis/ui/style/search-list.css")
+    stylesheet("fxutils/style.css")
     stylesheet("xenakis/ui/style/prompt.css")
     stylesheet("xenakis/ui/style/syntax.css")
     on(PluginBuilder.Phase.Initialize) { ctx ->

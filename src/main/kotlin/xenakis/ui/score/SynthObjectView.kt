@@ -1,6 +1,9 @@
 package xenakis.ui.score
 
 import bundles.createBundle
+import fxutils.centerChildren
+import fxutils.prompt.DetailPane
+import fxutils.styleClass
 import javafx.application.Platform
 import javafx.geometry.Rectangle2D
 import javafx.scene.image.Image
@@ -19,9 +22,6 @@ import xenakis.model.obj.SampleObject
 import xenakis.model.score.*
 import xenakis.sc.view.ObjectSelectorControl
 import xenakis.ui.actions.button
-import xenakis.ui.controls.DetailPane
-import xenakis.ui.impl.centerChildren
-import xenakis.ui.impl.styleClass
 import xenakis.ui.launcher.XenakisMainActivity
 
 class SynthObjectView(

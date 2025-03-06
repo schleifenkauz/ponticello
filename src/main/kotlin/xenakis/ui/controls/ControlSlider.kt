@@ -1,6 +1,9 @@
 package xenakis.ui.controls
 
-import hextant.fx.registerShortcuts
+import fxutils.centerChildren
+import fxutils.prompt.YesNoPrompt
+import fxutils.registerShortcuts
+import fxutils.styleClass
 import hextant.undo.AbstractEdit
 import hextant.undo.Edit
 import hextant.undo.UndoManager
@@ -22,9 +25,7 @@ import xenakis.model.obj.ParameterizedObject
 import xenakis.sc.DecimalLiteral
 import xenakis.sc.NumericalControlSpec
 import xenakis.sc.SpecTransformation
-import xenakis.ui.impl.centerChildren
-import xenakis.ui.impl.styleClass
-import xenakis.ui.prompt.YesNoPrompt
+import xenakis.ui.impl.showDialog
 import kotlin.concurrent.thread
 
 class ControlSlider(

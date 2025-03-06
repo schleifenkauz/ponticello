@@ -1,6 +1,8 @@
 package xenakis.ui.score
 
 import bundles.createBundle
+import fxutils.centerChildren
+import fxutils.prompt.DetailPane
 import javafx.scene.layout.HBox
 import javafx.scene.paint.Color
 import org.kordamp.ikonli.material2.Material2AL
@@ -10,8 +12,6 @@ import xenakis.model.score.ScoreObjectInstance
 import xenakis.sc.editor.ProcessDefSelector
 import xenakis.sc.view.ObjectSelectorControl
 import xenakis.ui.actions.button
-import xenakis.ui.controls.DetailPane
-import xenakis.ui.impl.centerChildren
 import xenakis.ui.launcher.XenakisMainActivity
 
 class ProcessObjectView(

@@ -24,23 +24,6 @@ ScrollPane .viewport {
 * Buttons
 */
 
-Button.sleek-button {
-    -fx-padding: 3px !important;
-    -fx-background-color: black !important;
-    -fx-border-width: 2px;
-    -fx-border-color: rgba(128, 128, 128, 0.3) !important;
-    -fx-background-radius: 5px !important;
-    -fx-border-radius: 5px !important;
-}
-
-Button.sleek-button:hover {
-    -fx-background-color: #351919 !important;
-}
-
-Button.sleek-button:focused {
-    -fx-border-color: #501717 !important;
-}
-
 .progress-bar > .bar {
     -fx-background-insets: 1 1 2 1;
     -fx-padding: 0.35em;

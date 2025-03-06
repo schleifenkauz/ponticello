@@ -1,12 +1,12 @@
 package xenakis.ui.score
 
 import bundles.createBundle
+import fxutils.prompt.DetailPane
+import fxutils.styleClass
 import javafx.scene.paint.Color
 import xenakis.model.score.ScoreObjectGroup
 import xenakis.model.score.ScoreObjectInstance
 import xenakis.sc.view.ObjectSelectorControl
-import xenakis.ui.controls.DetailPane
-import xenakis.ui.impl.styleClass
 
 class ScoreObjectGroupView(private val inst: ScoreObjectInstance, val obj: ScoreObjectGroup) : ScoreObjectView(inst) {
     lateinit var scorePane: ScorePane

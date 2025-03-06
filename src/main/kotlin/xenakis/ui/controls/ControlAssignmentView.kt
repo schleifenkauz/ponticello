@@ -1,6 +1,6 @@
 package xenakis.ui.controls
 
-import hextant.fx.shortcut
+import fxutils.shortcut
 import javafx.scene.input.KeyCode
 import javafx.scene.input.KeyEvent
 import javafx.scene.layout.VBox

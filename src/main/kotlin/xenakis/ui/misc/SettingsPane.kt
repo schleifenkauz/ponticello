@@ -1,8 +1,10 @@
 package xenakis.ui.misc
 
+import fxutils.centerChildren
+import fxutils.children
+import fxutils.hbox
+import fxutils.styleClass
 import hextant.context.Context
-import hextant.fx.children
-import hextant.fx.hbox
 import javafx.scene.control.Label
 import javafx.scene.layout.VBox
 import xenakis.impl.toDecimal
@@ -10,8 +12,6 @@ import xenakis.model.Settings
 import xenakis.model.score.KnobControl
 import xenakis.sc.NumericalControlSpec
 import xenakis.ui.controls.Knob
-import xenakis.ui.impl.centerChildren
-import xenakis.ui.impl.styleClass
 import xenakis.ui.registry.ParameterDefsPane
 
 class SettingsPane(settings: Settings, context: Context) : VBox(5.0) {

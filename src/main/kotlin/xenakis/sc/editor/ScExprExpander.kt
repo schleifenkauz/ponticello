@@ -1,5 +1,6 @@
 package xenakis.sc.editor
 
+import fxutils.prompt.showSelectorDialog
 import hextant.command.Command
 import hextant.command.meta.ProvideCommand
 import hextant.context.Context
@@ -13,7 +14,6 @@ import kotlinx.serialization.Serializable
 import reaktive.value.now
 import xenakis.model.obj.VSTPluginObject
 import xenakis.sc.*
-import xenakis.ui.prompt.showSelectorDialog
 
 @Suppress("SERIALIZER_TYPE_INCOMPATIBLE")
 @Serializable(with = SnapshotAware.Serializer::class)
@@ -129,7 +129,7 @@ class ScExprExpander(context: Context) : ConfiguredExpander<ScExpr, ScExprEditor
             "group" expand { ctx -> GroupSelector(ctx) }
             "plugin" expand { ctx ->
                 val availablePlugins = VSTPluginObject.availablePlugins(ctx).toList()
-                val pluginName = showSelectorDialog(ctx, "Plugin", availablePlugins, null, anchor = null)
+                val pluginName = showSelectorDialog("Plugin", availablePlugins, null, anchor = null)
                     ?: return@expand null
                 VSTPluginEditor(ctx, pluginName)
             }

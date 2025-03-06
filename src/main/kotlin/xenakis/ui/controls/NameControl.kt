@@ -1,6 +1,8 @@
 package xenakis.ui.controls
 
-import hextant.fx.shortcut
+import fxutils.alwaysHGrow
+import fxutils.shortcut
+import fxutils.styleClass
 import javafx.scene.control.TextField
 import javafx.scene.input.KeyEvent
 import javafx.scene.layout.HBox
@@ -13,8 +15,6 @@ import xenakis.model.obj.RenamableObject
 import xenakis.sc.Identifier
 import xenakis.ui.actions.ActionBar
 import xenakis.ui.actions.collectActions
-import xenakis.ui.impl.alwaysHGrow
-import xenakis.ui.impl.styleClass
 
 class NameControl(val obj: RenamableObject) : HBox() {
     private val field = TextField(obj.name.now).alwaysHGrow()

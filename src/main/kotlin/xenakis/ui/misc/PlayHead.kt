@@ -1,12 +1,12 @@
 package xenakis.ui.misc
 
+import fxutils.styleClass
 import javafx.application.Platform
 import javafx.scene.layout.Pane
 import javafx.scene.shape.Line
 import xenakis.impl.Decimal
 import xenakis.impl.zero
 import xenakis.model.score.ObjectPosition
-import xenakis.ui.impl.styleClass
 import xenakis.ui.score.TimeBlock
 
 class PlayHead {

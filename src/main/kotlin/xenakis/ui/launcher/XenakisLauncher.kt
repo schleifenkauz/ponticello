@@ -3,6 +3,8 @@ package xenakis.ui.launcher
 import bundles.PublicProperty
 import bundles.publicProperty
 import bundles.set
+import fxutils.prompt.PredicateTextPrompt
+import fxutils.prompt.YesNoPrompt
 import hextant.context.Context
 import hextant.context.extend
 import hextant.core.HextantCore
@@ -19,10 +21,9 @@ import xenakis.model.XenakisProject
 import xenakis.model.registry.GlobalSynthDefLib
 import xenakis.sc.client.OSCSuperColliderClient
 import xenakis.sc.client.SuperColliderClient
+import xenakis.ui.impl.showDialog
 import xenakis.ui.impl.tryWithAlert
 import xenakis.ui.launcher.XenakisApp.Companion.primaryStage
-import xenakis.ui.prompt.PredicateTextPrompt
-import xenakis.ui.prompt.YesNoPrompt
 import java.io.File
 import kotlin.system.exitProcess
 

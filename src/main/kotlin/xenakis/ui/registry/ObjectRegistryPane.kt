@@ -1,6 +1,6 @@
 package xenakis.ui.registry
 
-import hextant.fx.registerShortcuts
+import fxutils.*
 import javafx.collections.FXCollections
 import javafx.scene.Node
 import javafx.scene.control.*
@@ -31,8 +31,8 @@ import xenakis.ui.actions.button
 import xenakis.ui.actions.collectActions
 import xenakis.ui.actions.registerShortcuts
 import xenakis.ui.controls.NameControl
-import xenakis.ui.impl.*
-import xenakis.ui.prompt.NamePrompt
+import xenakis.ui.controls.NamePrompt
+import xenakis.ui.impl.label
 
 abstract class ObjectRegistryPane<O : NamedObject>(
     private val registry: ObjectRegistry<O>
@@ -63,7 +63,7 @@ abstract class ObjectRegistryPane<O : NamedObject>(
         val space = infiniteSpace()
         val actionBar = ActionBar(actions.withContext(this), border = false)
         val moveBtn = actionBar.getButton(actions.getAction("Move window"))
-        moveBtn.setupWindowDragButton(registry.context) { scene.window }
+        moveBtn.setupWindowDragButton { scene.window }
         return HBox(label, searchText, space, actionBar).styleClass("tool-pane-header")
     }
 
@@ -79,9 +79,10 @@ abstract class ObjectRegistryPane<O : NamedObject>(
         val ok = Material2AL.CHECK.button(action = "Confirm")
         val layout = HBox(typeSelector, nameInput).centerChildren() styleClass "prompt"
         val window = SubWindow(
-            layout, "Create new ${registry.objectType}", registry.context,
-            type = SubWindow.Type.Popup, customOwnerWindow = scene.window
+            layout, "Create new ${registry.objectType}",
+            type = SubWindow.Type.Popup
         )
+        window.initOwner(scene.window)
         window.setOnShown { nameInput.requestFocus() }
         fun commit() {
             val type = typeSelector.value ?: return
@@ -111,7 +112,7 @@ abstract class ObjectRegistryPane<O : NamedObject>(
 
     protected open fun addObject() {
         val name = NamePrompt(registry, "Name for new ${registry.objectType}", initialName = searchText.text)
-            .showDialog(registry.context, this) ?: return
+            .showDialog(anchorNode = this) ?: return
         addObject(name)
     }
 

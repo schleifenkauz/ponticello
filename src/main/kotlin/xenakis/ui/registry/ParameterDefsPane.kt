@@ -1,5 +1,9 @@
 package xenakis.ui.registry
 
+import fxutils.button
+import fxutils.infiniteSpace
+import fxutils.prompt.PredicateTextPrompt
+import fxutils.styleClass
 import hextant.context.Context
 import hextant.context.createControl
 import hextant.context.withoutUndo
@@ -18,10 +22,6 @@ import xenakis.sc.NumericalControlSpec
 import xenakis.sc.editor.ControlSpecEditor
 import xenakis.ui.actions.button
 import xenakis.ui.controls.NameControl
-import xenakis.ui.impl.button
-import xenakis.ui.impl.infiniteSpace
-import xenakis.ui.impl.styleClass
-import xenakis.ui.prompt.PredicateTextPrompt
 
 class ParameterDefsPane(
     private val context: Context,
@@ -43,7 +43,7 @@ class ParameterDefsPane(
     private fun addParameter() {
         val name = PredicateTextPrompt("Parameter name", "") { name ->
             Identifier.isValid(name) && parameters.now.none { p -> p.name.now == name }
-        }.showDialog(context, this) ?: return
+        }.showDialog(anchorNode = this) ?: return
         val spec = context[Settings].getDefaultControlSpec(name) ?: NumericalControlSpec.DEFAULT
         val parameter = ParameterDefObject(name, spec)
         parameters.now.add(parameter)
@@ -66,7 +66,9 @@ class ParameterDefsPane(
                 if (new != parameter.spec.now) parameter.spec.now = new
             }
         val specControl = context.createControl(editor)
-        val removeBtn = Material2AL.DELETE.button(action = "Remove parameter") { parameters.now.remove(parameter) }
+        val removeBtn = Material2AL.DELETE.button(action = "Remove parameter") {
+            parameters.now.remove(parameter)
+        }.styleClass("tool-button")
         val box = HBox(nameDisplay, specControl, infiniteSpace(), removeBtn) styleClass "object-box"
         children.add(index, box)
     }

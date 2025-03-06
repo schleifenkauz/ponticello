@@ -1,5 +1,6 @@
 package xenakis.ui.misc
 
+import fxutils.SubWindow
 import hextant.context.Context
 import javafx.application.Platform
 import javafx.fxml.FXML
@@ -13,7 +14,6 @@ import javafx.scene.layout.VBox
 import xenakis.sc.client.ConsoleMonitor
 import xenakis.sc.client.SuperColliderClient
 import xenakis.sc.client.SuperColliderException
-import xenakis.ui.impl.SubWindow
 import kotlin.concurrent.thread
 
 class SuperColliderShellController(private val client: SuperColliderClient) : ConsoleMonitor.Listener {
@@ -82,7 +82,7 @@ class SuperColliderShellController(private val client: SuperColliderClient) : Co
             loader.location = controller.javaClass.getResource("shell.fxml")
             loader.setController(controller)
             val shell = loader.load<Parent>()
-            val window = SubWindow(shell, "SuperCollider shell", context, SubWindow.Type.ToolWindow)
+            val window = SubWindow(shell, "SuperCollider shell", SubWindow.Type.ToolWindow)
             window.setOnShown {
                 controller.commandField.requestFocus()
             }

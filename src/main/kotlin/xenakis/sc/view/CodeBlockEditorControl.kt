@@ -5,6 +5,7 @@ package xenakis.sc.view
 import bundles.Bundle
 import bundles.createBundle
 import bundles.set
+import fxutils.button
 import hextant.codegen.ProvideImplementation
 import hextant.context.ControlFactory
 import hextant.core.view.CompoundEditorControl
@@ -16,7 +17,6 @@ import hextant.core.view.ListEditorControl.Companion.ORIENTATION
 import hextant.core.view.ListEditorControl.Orientation.Horizontal
 import hextant.core.view.ListEditorControl.Orientation.Vertical
 import hextant.core.view.ListEditorControl.SeparatorCell
-import hextant.fx.button
 import hextant.fx.view
 import hextant.serial.SnapshotAware
 import javafx.scene.layout.HBox

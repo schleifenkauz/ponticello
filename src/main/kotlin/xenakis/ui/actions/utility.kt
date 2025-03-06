@@ -1,7 +1,6 @@
 package xenakis.ui.actions
 
-import hextant.fx.KeyEventHandlerBody
-import hextant.fx.registerShortcuts
+import fxutils.*
 import hextant.undo.compoundEdit
 import javafx.application.Platform
 import javafx.event.Event
@@ -19,9 +18,6 @@ import reaktive.value.forEach
 import reaktive.value.fx.asObservableValue
 import reaktive.value.now
 import xenakis.ui.impl.SelectorBar
-import xenakis.ui.impl.neverHGrow
-import xenakis.ui.impl.setPseudoClassState
-import xenakis.ui.impl.styleClass
 import xenakis.ui.score.ScoreObjectView
 
 fun <C> collectActions(body: Action.Collector<C>.() -> Unit): Action.Collector<C> = Action.Collector<C>().apply(body)

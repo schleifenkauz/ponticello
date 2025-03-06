@@ -1,6 +1,8 @@
 package xenakis.ui.score
 
-import hextant.fx.registerShortcuts
+import fxutils.dist
+import fxutils.registerShortcuts
+import fxutils.styleClass
 import javafx.beans.binding.Bindings
 import javafx.geometry.HorizontalDirection
 import javafx.geometry.Point2D
@@ -23,12 +25,10 @@ import xenakis.model.score.Envelope.EnvelopePoint
 import xenakis.sc.NumericalControlSpec
 import xenakis.sc.mapOnto
 import xenakis.ui.actions.Tool
-import xenakis.ui.impl.dist
+import xenakis.ui.controls.ControlSpecPrompt
+import xenakis.ui.controls.DecimalPrompt
 import xenakis.ui.impl.rootPane
 import xenakis.ui.impl.setupDragging
-import xenakis.ui.impl.styleClass
-import xenakis.ui.prompt.ControlSpecPrompt
-import xenakis.ui.prompt.DecimalPrompt
 
 class EnvelopeEditor(
     val parameterName: String, val envelope: Envelope,
@@ -118,14 +118,14 @@ class EnvelopeEditor(
                     if (ev.isShiftDown) {
                         val obj = objectView.instance.obj
                         if (obj is SynthObject) {
-                            ControlSpecPrompt(obj, parameterName, spec).showDialog(objectView.context, pane)
+                            ControlSpecPrompt(obj, parameterName, spec).showDialog(pane)
                         }
                     } else objectView.pane.context.rootPane.magnifyEnvelope(this)
                 }
 
                 ev.button == PRIMARY && ev.isShiftDown && associatedObject is ParameterizedScoreObject -> {
                     val prompt = ControlSpecPrompt(associatedObject as ParameterizedScoreObject, parameterName, spec)
-                    prompt.showDialog(associatedObject.context, anchorNode = pane)
+                    prompt.showDialog(anchorNode = pane)
                 }
 
                 ev.button == PRIMARY -> bringToFront()
@@ -336,7 +336,7 @@ class EnvelopeEditor(
     private fun showPromptFor(idx: Int) {
         val point = envelope.points[idx]
         val value = DecimalPrompt("Value for $parameterName", point.value, spec.range)
-            .showDialog(context, handles[idx]) ?: return
+            .showDialog(handles[idx]) ?: return
         envelope.editPoint(idx, value.value.snap(valueGrid))
     }
 

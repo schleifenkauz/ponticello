@@ -1,7 +1,7 @@
 package xenakis.ui.misc
 
-import hextant.context.Context
-import hextant.fx.setPadding
+import fxutils.*
+import fxutils.prompt.SimpleSearchableListView
 import javafx.application.Platform
 import javafx.scene.control.Label
 import javafx.scene.control.ScrollPane
@@ -17,15 +17,13 @@ import org.kordamp.ikonli.material2.Material2MZ
 import org.kordamp.ikonli.materialdesign2.MaterialDesignE
 import xenakis.model.Logger
 import xenakis.ui.actions.button
-import xenakis.ui.impl.*
-import xenakis.ui.registry.SimpleSearchableListView
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 
-class LogPane(private val context: Context, private val logger: Logger) : VBox(), Logger.View {
+class LogPane(private val logger: Logger) : VBox(), Logger.View {
     private val boxes = VBox() styleClass "log-records"
     private val scrollPane = ScrollPane(boxes)
     private val searchField = CustomTextField().styleClass("sleek-text-field", "search-field")
@@ -49,9 +47,9 @@ class LogPane(private val context: Context, private val logger: Logger) : VBox()
         searchField.textProperty().addListener { _ -> displayFilteredRecords() }
         val heading = Label("Log") styleClass "heading"
         val levelSelector = SimpleSearchableListView(Logger.Level.entries, "Select level")
-            .selectorButton(this::level, context) { lvl -> "Level: $lvl" }
+            .selectorButton(this::level) { lvl -> "Level: $lvl" }
         val categorySelector = SimpleSearchableListView(Logger.Category.values(), "Select category")
-            .selectorButton(this::category, context) { cat -> "Category: $cat" }
+            .selectorButton(this::category) { cat -> "Category: $cat" }
         val buttonClear = button("Clear log") { logger.clear() }
         val header = HBox(
             heading, searchField,
@@ -111,7 +109,8 @@ class LogPane(private val context: Context, private val logger: Logger) : VBox()
                 pane.setMaxSize(1000.0, 1000.0)
                 pane.border = solidBorder(Color.GRAY)
                 pane.setPadding(5.0)
-                val window = SubWindow(pane, "Details", context, SubWindow.Type.Popup, customOwnerWindow = scene.window)
+                val window = SubWindow(pane, "Details", SubWindow.Type.Popup)
+                window.initOwner(scene.window)
                 window.sizeToScene()
                 window.show()
             }

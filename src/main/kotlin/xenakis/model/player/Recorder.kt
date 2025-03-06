@@ -1,5 +1,6 @@
 package xenakis.model.player
 
+import fxutils.prompt.YesNoPrompt
 import hextant.context.Context
 import reaktive.value.ReactiveBoolean
 import reaktive.value.now
@@ -12,9 +13,9 @@ import xenakis.model.obj.SampleObject
 import xenakis.model.registry.BusRegistry
 import xenakis.model.registry.SampleRegistry
 import xenakis.sc.client.SuperColliderClient
+import xenakis.ui.controls.NamePrompt
+import xenakis.ui.impl.showDialog
 import xenakis.ui.launcher.XenakisLauncher.Companion.currentProject
-import xenakis.ui.prompt.NamePrompt
-import xenakis.ui.prompt.YesNoPrompt
 import java.io.File
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter

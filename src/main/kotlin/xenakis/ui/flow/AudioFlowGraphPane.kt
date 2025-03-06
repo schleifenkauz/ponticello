@@ -3,8 +3,11 @@ package xenakis.ui.flow
 import bundles.PublicProperty
 import bundles.publicProperty
 import bundles.set
+import fxutils.middleX
+import fxutils.middleY
+import fxutils.registerShortcuts
+import fxutils.styleClass
 import hextant.context.Context
-import hextant.fx.registerShortcuts
 import hextant.undo.UndoManager
 import javafx.geometry.Bounds
 import javafx.geometry.HorizontalDirection
@@ -27,9 +30,11 @@ import xenakis.model.flow.FlowType
 import xenakis.model.obj.BusObject
 import xenakis.model.registry.BusRegistry
 import xenakis.model.registry.ObjectRegistry
-import xenakis.ui.impl.*
+import xenakis.ui.controls.NamePrompt
+import xenakis.ui.impl.Arrow
+import xenakis.ui.impl.invert
+import xenakis.ui.impl.label
 import xenakis.ui.launcher.XenakisLauncher.Companion.currentProject
-import xenakis.ui.prompt.NamePrompt
 import kotlin.math.absoluteValue
 import kotlin.math.sign
 
@@ -130,7 +135,7 @@ class AudioFlowGraphPane(
         label.registerShortcuts {
             on("F2") {
                 val name = NamePrompt(context[BusRegistry], "Rename bus", obj.name.now)
-                    .showDialog(context, label) ?: return@on
+                    .showDialog(label) ?: return@on
                 obj.rename(name)
             }
         }
@@ -266,13 +271,7 @@ class AudioFlowGraphPane(
         children.remove(arrow)
         sourceBus = null
         flowArrow = null
-        val flow = graph.addSendFlow(source, target)
-        if (flow == null) {
-            val sourceName = source.name.now
-            val targetName = target.name.now
-            Logger.error("Cannot add flow from $sourceName to $targetName", Logger.Category.AudioFlow)
-            return
-        }
+        graph.addSendFlow(source, target)
     }
 
     override fun removed(obj: BusObject, idx: Int) {

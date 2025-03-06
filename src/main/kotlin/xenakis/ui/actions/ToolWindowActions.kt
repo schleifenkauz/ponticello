@@ -1,14 +1,15 @@
 package xenakis.ui.actions
 
+import fxutils.prompt.SimpleSearchableListView
+import fxutils.prompt.SimpleTextPrompt
 import javafx.scene.layout.Region
 import org.kordamp.ikonli.material2.Material2AL
 import org.kordamp.ikonli.materialdesign2.*
 import xenakis.model.Logger
 import xenakis.ui.impl.NotificationView
+import xenakis.ui.impl.showDialog
 import xenakis.ui.launcher.XenakisMainActivity
 import xenakis.ui.misc.HelpBrowser
-import xenakis.ui.prompt.SimpleTextPrompt
-import xenakis.ui.registry.SimpleSearchableListView
 
 object ToolWindowActions : Action.Collector<XenakisMainActivity>({
     addAction("Open console") {
@@ -22,7 +23,6 @@ object ToolWindowActions : Action.Collector<XenakisMainActivity>({
         executes { screen, ev ->
             if (ev.isShiftDown()) {
                 SimpleSearchableListView(Logger.Level.entries, "Select notification level").showPopup(
-                    screen.context,
                     ev?.source as Region,
                     NotificationView.level
                 ) { lvl ->

@@ -2,12 +2,12 @@ package xenakis.sc.view
 
 import bundles.Bundle
 import bundles.set
+import fxutils.registerShortcuts
 import hextant.codegen.ProvideImplementation
 import hextant.completion.CompletionStrategy
 import hextant.completion.CompoundCompleter
 import hextant.context.ControlFactory
 import hextant.core.view.ExpanderControl
-import hextant.fx.registerShortcuts
 import reaktive.value.forEach
 import xenakis.sc.*
 import xenakis.sc.editor.ReferenceCompleter

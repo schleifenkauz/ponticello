@@ -56,7 +56,6 @@ object PlaybackActions : Action.Collector<PlaybackManager>({
                 val currentSelected =
                     project.serverOptions.recordedBus?.get<BusObject>() ?: context[BusRegistry].getDefault()
                 SearchableBusListView(context[BusRegistry], "Select bus to record to", rate = Rate.Audio).showPopup(
-                    context,
                     anchorNode = ev?.source as Region,
                     initialOption = currentSelected
                 ) { bus -> project.serverOptions.recordedBus = bus.reference() }

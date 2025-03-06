@@ -1,11 +1,11 @@
 package xenakis.ui.score
 
+import fxutils.prompt.DetailPane
+import fxutils.styleClass
 import javafx.scene.control.ScrollPane
 import xenakis.model.score.ScoreObjectInstance
 import xenakis.model.score.TaskObject
-import xenakis.ui.controls.DetailPane
 import xenakis.ui.impl.label
-import xenakis.ui.impl.styleClass
 
 class TaskObjectView(inst: ScoreObjectInstance, val obj: TaskObject) : ScoreObjectView(inst) {
     private val nameLabel = label(obj.name) styleClass "task-label"

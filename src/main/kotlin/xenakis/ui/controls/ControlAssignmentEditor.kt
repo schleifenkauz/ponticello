@@ -1,6 +1,9 @@
 package xenakis.ui.controls
 
 import bundles.createBundle
+import fxutils.*
+import fxutils.prompt.DetailPane
+import fxutils.prompt.SimpleSearchableListView
 import hextant.context.Context
 import hextant.fx.initHextantScene
 import hextant.serial.EditorRoot
@@ -41,9 +44,7 @@ import xenakis.sc.editor.ScExprExpander
 import xenakis.sc.view.ObjectSelectorControl
 import xenakis.ui.actions.ActionBar
 import xenakis.ui.actions.collectActions
-import xenakis.ui.impl.*
-import xenakis.ui.prompt.ControlSpecPrompt
-import xenakis.ui.registry.SimpleSearchableListView
+import xenakis.ui.impl.colorPicker
 
 class ControlAssignmentEditor(
     private val obj: ParameterizedObject,
@@ -97,7 +98,7 @@ class ControlAssignmentEditor(
     private fun showOptionPopup() {
         val listView = SimpleSearchableListView(ControlType.all, "Select control type")
         listView.showPopup(
-            obj.context, anchorNode = optionButton,
+            anchorNode = optionButton,
             initialOption = selectedOption
         ) { option ->
             updateControlType(option)
@@ -210,7 +211,7 @@ class ControlAssignmentEditor(
                 control: CustomControl
             ): Node {
                 val pane = ScrollPane(control.expr.control)
-                val window = SubWindow(BorderPane(pane), "LFO for $parameter", obj.context)
+                val window = SubWindow(BorderPane(pane), "LFO for $parameter")
                 window.scene.initHextantScene(obj.context)
                 window.resize(500.0, 200.0)
                 return button("Code") { window.show() }
@@ -371,7 +372,7 @@ class ControlAssignmentEditor(
                 //editor.obj.def.getParameter(editor.parameter)!!.spec.map { s -> s is NumericalControlSpec }
                 icon(Codicons.SYMBOL_PROPERTY)
                 executes { editor: ControlAssignmentEditor -> ControlSpecPrompt(editor.obj, editor.parameter, editor.spec)
-                    .showDialog(editor.obj.context, editor.actionBar)
+                    .showDialog(editor.actionBar)
                 }
             }
             addAction("Remove") {

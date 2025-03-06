@@ -1,7 +1,9 @@
 package xenakis.ui.controls
 
+import fxutils.centerHorizontally
+import fxutils.setRoot
+import fxutils.styleClass
 import hextant.context.Context
-import hextant.fx.setRoot
 import javafx.geometry.Point2D
 import javafx.scene.control.Control
 import javafx.scene.control.Label
@@ -18,9 +20,6 @@ import xenakis.impl.*
 import xenakis.model.score.KnobControl
 import xenakis.sc.NumericalControlSpec
 import xenakis.sc.SpecTransformation
-import xenakis.ui.impl.centerHorizontally
-import xenakis.ui.impl.styleClass
-import xenakis.ui.prompt.DecimalPrompt
 import kotlin.math.*
 
 class Knob(
@@ -83,7 +82,7 @@ class Knob(
 
     private fun showValueInput() {
         val range = spec.min.get()..spec.max.get()
-        val v = DecimalPrompt("$parameter ($range)", control.get(), range).showDialog(context, this) ?: return
+        val v = DecimalPrompt("$parameter ($range)", control.get(), range).showDialog(anchorNode = this) ?: return
         control.value.set(v.withPrecision(spec.precision))
     }
 

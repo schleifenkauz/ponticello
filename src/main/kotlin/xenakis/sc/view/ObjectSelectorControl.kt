@@ -1,6 +1,7 @@
 package xenakis.sc.view
 
 import bundles.Bundle
+import fxutils.styleClass
 import hextant.core.view.EditorControl
 import javafx.scene.Node
 import javafx.scene.control.Button
@@ -10,7 +11,6 @@ import xenakis.model.registry.NamedObject
 import xenakis.model.registry.ObjectReference
 import xenakis.model.registry.ObjectRegistry
 import xenakis.sc.editor.ObjectSelector
-import xenakis.ui.impl.styleClass
 import xenakis.ui.registry.SearchableRegistryView
 
 class ObjectSelectorControl<O : NamedObject, R : ObjectReference?>(
@@ -39,7 +39,7 @@ class ObjectSelectorControl<O : NamedObject, R : ObjectReference?>(
     fun showSelectorPopup() {
         @Suppress("UNCHECKED_CAST")
         val initialOption = editor.selected.now?.get<NamedObject>() as O?
-        listView.showPopup(context, anchorNode = button, initialOption) { option ->
+        listView.showPopup(anchorNode = button, initialOption) { option ->
             @Suppress("UNCHECKED_CAST")
             editor.select(option.reference() as R)
         }

@@ -93,6 +93,10 @@
     -fx-icon-color: -fx-accent;
 }
 
+.flow-action-button:disabled FontIcon {
+    -fx-icon-color: gray;
+}
+
 .add-flow-button FontIcon {
     -fx-icon-size: 30px;
 }

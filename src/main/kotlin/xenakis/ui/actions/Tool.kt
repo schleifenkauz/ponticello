@@ -31,7 +31,7 @@ enum class Tool(config: Action.Builder<SelectorBar<Tool>>.() -> Unit) : Selector
                 (ev is MouseEvent && ev.clickCount >= 2) || (ev is KeyEvent && ev.isShiftDown) -> {
                     val instruments = context[InstrumentRegistry]
                     SimpleSearchableRegistryView(instruments, "Selected instrument def").showPopup( //TODO better placement
-                        context, anchorNode = bar,
+                        anchorNode = bar,
                         initialOption = instruments.selectedInstrument.now
                     ) { def -> instruments.select(def) }
                 }
@@ -49,7 +49,7 @@ enum class Tool(config: Action.Builder<SelectorBar<Tool>>.() -> Unit) : Selector
                 (ev is MouseEvent && ev.clickCount >= 2) || (ev is KeyEvent && ev.isShiftDown) -> {
                     val processDefs = bar.context[ProcessDefRegistry]
                     SimpleSearchableRegistryView(processDefs, "Selected process def").showPopup(
-                        bar.context, anchorNode = bar,
+                        anchorNode = bar,
                         initialOption = processDefs.selectedDef
                     ) { def -> processDefs.select(def) }
                 }

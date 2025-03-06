@@ -29,6 +29,7 @@ class AudioFlows(
     @Transient
     val listeners = ListenerManager.createWeakListenerManager<Listener>()
 
+    @Transient
     private val numFlows = mutableMapOf<BusObject, ReactiveVariable<Int>>()
 
     override val componentName: String

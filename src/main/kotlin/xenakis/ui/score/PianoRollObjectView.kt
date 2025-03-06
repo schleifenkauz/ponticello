@@ -1,8 +1,10 @@
 package xenakis.ui.score
 
 import bundles.createBundle
+import fxutils.*
+import fxutils.prompt.DetailPane
+import fxutils.prompt.IntegerPrompt
 import hextant.fx.initHextantScene
-import hextant.fx.registerShortcuts
 import hextant.serial.EditorRoot
 import javafx.beans.binding.Bindings
 import javafx.geometry.HorizontalDirection
@@ -32,11 +34,11 @@ import xenakis.model.score.ScoreObjectInstance
 import xenakis.sc.editor.EventDictionaryEditor
 import xenakis.sc.view.ObjectSelectorControl
 import xenakis.ui.actions.Tool
-import xenakis.ui.controls.DetailPane
-import xenakis.ui.impl.*
+import xenakis.ui.controls.DecimalPrompt
+import xenakis.ui.impl.rootPane
+import xenakis.ui.impl.setupDraggingAndResizing
+import xenakis.ui.impl.showDialog
 import xenakis.ui.launcher.XenakisMainActivity
-import xenakis.ui.prompt.DecimalPrompt
-import xenakis.ui.prompt.IntegerPrompt
 import kotlin.math.roundToInt
 
 class PianoRollObjectView(inst: ScoreObjectInstance, private val obj: PianoRollObject) : ScoreObjectView(inst) {
@@ -155,7 +157,7 @@ class PianoRollObjectView(inst: ScoreObjectInstance, private val obj: PianoRollO
 
     private fun showEventDictionaryEditor(dictionary: EditorRoot<EventDictionaryEditor>) {
         val control = dictionary.control
-        val window = SubWindow(control, "Note properties", context, type = SubWindow.Type.ToolWindow)
+        val window = SubWindow(control, "Note properties", type = SubWindow.Type.ToolWindow)
         window.scene.initHextantScene(context, applyStyle = false)
         window.resize(300.0, 200.0)
         window.show()

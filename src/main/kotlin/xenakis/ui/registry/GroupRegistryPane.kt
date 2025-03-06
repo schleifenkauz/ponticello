@@ -1,6 +1,6 @@
 package xenakis.ui.registry
 
-import hextant.fx.registerShortcuts
+import fxutils.registerShortcuts
 import javafx.scene.control.Button
 import org.kordamp.ikonli.materialdesign2.MaterialDesignA
 import reaktive.value.reactiveVariable

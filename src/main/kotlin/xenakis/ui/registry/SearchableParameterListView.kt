@@ -1,5 +1,6 @@
 package xenakis.ui.registry
 
+import fxutils.prompt.SimpleSearchableListView
 import hextant.context.Context
 import reaktive.value.now
 import xenakis.model.Settings

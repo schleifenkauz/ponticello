@@ -1,12 +1,12 @@
 package xenakis.ui.misc
 
+import fxutils.prompt.CompoundPrompt
+import fxutils.textField
 import hextant.context.Context
 import javafx.collections.FXCollections.observableList
 import javafx.scene.control.ComboBox
 import javafx.scene.control.Spinner
 import xenakis.model.ServerOptions
-import xenakis.ui.impl.textField
-import xenakis.ui.prompt.CompoundPrompt
 
 class ServerOptionsPane(
     private val context: Context,

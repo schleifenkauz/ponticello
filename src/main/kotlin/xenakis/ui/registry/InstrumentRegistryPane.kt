@@ -1,6 +1,11 @@
 package xenakis.ui.registry
 
 import bundles.createBundle
+import fxutils.SubWindow
+import fxutils.prompt.SimpleSearchableListView
+import fxutils.prompt.YesNoPrompt
+import fxutils.setFixedWidth
+import fxutils.styleClass
 import hextant.fx.initHextantScene
 import javafx.application.Platform
 import javafx.scene.control.Label
@@ -21,9 +26,10 @@ import xenakis.model.registry.GlobalSynthDefLib
 import xenakis.model.registry.InstrumentRegistry
 import xenakis.sc.Identifier
 import xenakis.sc.view.ObjectSelectorControl
-import xenakis.ui.impl.*
-import xenakis.ui.prompt.NamePrompt
-import xenakis.ui.prompt.YesNoPrompt
+import xenakis.ui.controls.NamePrompt
+import xenakis.ui.impl.CollapsablePane
+import xenakis.ui.impl.colorPicker
+import xenakis.ui.impl.registerSyncShortcuts
 
 class InstrumentRegistryPane(
     private val registry: InstrumentRegistry,
@@ -49,7 +55,7 @@ class InstrumentRegistryPane(
         val options: List<AddInstrumentOption> = synthDefsFromGlobal + availablePlugins
         val searchableList = AddInstrumentOptionListView(options)
         searchableList.enterText(searchText.text)
-        searchableList.showPopup(registry.context, anchorNode = this) { option ->
+        searchableList.showPopup(anchorNode = this) { option ->
             createObject(option)
         }
     }
@@ -96,7 +102,7 @@ class InstrumentRegistryPane(
                 val name = option.instrument.name.now
                 if (registry.has(name)) {
                     Platform.runLater {
-                        if (YesNoPrompt("Overwrite SynthDef $name?").showDialog(registry.context, this) == true) {
+                        if (YesNoPrompt("Overwrite SynthDef $name?").showDialog(anchorNode = this) == true) {
                             registry.overwrite(option.instrument)
                             option.instrument.sync()
                         }
@@ -110,7 +116,7 @@ class InstrumentRegistryPane(
             is AddInstrumentOption.VSTPlugin -> {
                 Platform.runLater {
                     val name = NamePrompt(registry, "Name for new VSTPlugin instance", option.pluginName)
-                        .showDialog(registry.context, this) ?: return@runLater
+                        .showDialog(anchorNode = this) ?: return@runLater
                     val plugin = VSTPluginObject.create(registry.context, name, option.pluginName)
                     registry.add(plugin)
                 }
@@ -131,7 +137,7 @@ class InstrumentRegistryPane(
                     "SynthDef '$name' is already defined in the global SynthDescLib. " +
                             "Import SynthDef '$name' from SynthDescLib? A new SynthDef will be created otherwise.",
                     default = true
-                ).showDialog(registry.context, this) ?: return null
+                ).showDialog(anchorNode = this) ?: return null
                 return if (reference) ReferencedSynthDefObject.get(name)
                 else CustomizableSynthDefObject.create(name, registry.context)
             }
@@ -152,7 +158,7 @@ class InstrumentRegistryPane(
             addAction(MaterialDesignC.CONTENT_DUPLICATE, "Duplicate SynthDef") {
                 val initialName = obj.name.now + "_copy"
                 val name = NamePrompt(registry, "Name for new duplicate instrument", initialName)
-                    .showDialog(registry.context, this) ?: return@addAction
+                    .showDialog(anchorNode = this) ?: return@addAction
                 val copy = obj.copy(name)
                 registry.add(copy)
             }
@@ -177,7 +183,7 @@ class InstrumentRegistryPane(
                                 YesNoPrompt(
                                     "Overwrite SynthDef $name in global library?",
                                     default = true
-                                ).showDialog(registry.context, anchorNode = this) == true
+                                ).showDialog(anchorNode = this) == true
                             ) {
                                 globalLib.push(obj)
                                 Logger.confirm(
@@ -208,8 +214,8 @@ class InstrumentRegistryPane(
                 val pane = VBox(
                     CollapsablePane("Parameters", ParameterDefsPane(registry.context, obj.parameters)),
                     obj.ugenGraph?.control ?: Label("No code")
-                ) styleClass "synth-def-pane"
-                SubWindow(pane, "", registry.context).apply {
+                ).styleClass("synth-def-pane")
+                SubWindow(pane, "").apply {
                     titleProperty().bind(obj.name.map { name -> "SynthDef $name" }.asObservableValue())
                     resize(900.0, 800.0)
                     scene.initHextantScene(registry.context, applyStyle = false)
@@ -220,10 +226,9 @@ class InstrumentRegistryPane(
                 SubWindow(
                     pane,
                     obj.name.now,
-                    registry.context,
                     type = SubWindow.Type.Popup,
-                    customOwnerWindow = scene.window
                 ).apply {
+                    initOwner(scene.window)
                     resize(800.0, 300.0)
                 }
             }

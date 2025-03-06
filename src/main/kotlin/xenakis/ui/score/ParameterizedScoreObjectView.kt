@@ -1,5 +1,9 @@
 package xenakis.ui.score
 
+import fxutils.centerChildren
+import fxutils.infiniteSpace
+import fxutils.prompt.DetailPane
+import fxutils.styleClass
 import hextant.context.Context
 import javafx.geometry.Point2D
 import javafx.scene.control.Label
@@ -18,11 +22,7 @@ import xenakis.sc.ControlSpec
 import xenakis.sc.NumericalControlSpec
 import xenakis.ui.actions.button
 import xenakis.ui.controls.ControlAssignmentView
-import xenakis.ui.controls.DetailPane
 import xenakis.ui.controls.Knob
-import xenakis.ui.impl.centerChildren
-import xenakis.ui.impl.infiniteSpace
-import xenakis.ui.impl.styleClass
 import xenakis.ui.registry.SearchableParameterListView
 
 abstract class ParameterizedScoreObjectView(
@@ -61,7 +61,7 @@ abstract class ParameterizedScoreObjectView(
                 control !is EnvelopeControl || !control.display.now
             }
         val listView = SearchableParameterListView(context, "Add new envelope", obj, possibleParameters)
-        listView.showPopup(context, point) { param ->
+        listView.showPopup(point) { param ->
             val name = param.name.now
             val spec = param.spec.now as NumericalControlSpec
             val initialValue = obj.controls.controlMap[name]?.getNumericalValue() ?: spec.defaultValue.get()
@@ -194,7 +194,7 @@ abstract class ParameterizedScoreObjectView(
                 context, "Add new control",
                 obj, unassignedParameters
             )
-            listView.showPopup(context, anchorNode = anchorNode) { option ->
+            listView.showPopup(anchorNode = anchorNode) { option ->
                 val parameter = option.name.now
                 if (!obj.def.hasParameter(parameter)) {
                     obj.controls.setExtraSpec(parameter, option.spec.now)

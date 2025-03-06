@@ -1,5 +1,12 @@
 package xenakis.ui.score
 
+import fxutils.centerChildren
+import fxutils.prompt.CompoundPrompt
+import fxutils.prompt.DetailPane
+import fxutils.prompt.compoundPrompt
+import fxutils.setFixedWidth
+import fxutils.solidBorder
+import fxutils.styleClass
 import hextant.context.Context
 import hextant.undo.UndoManager
 import hextant.undo.compoundEdit
@@ -30,13 +37,10 @@ import xenakis.model.player.PlaybackManager
 import xenakis.model.score.*
 import xenakis.model.score.Score.Companion.rootScore
 import xenakis.ui.actions.Tool
-import xenakis.ui.controls.DetailPane
 import xenakis.ui.controls.NameControl
 import xenakis.ui.impl.*
 import xenakis.ui.launcher.XenakisLauncher.Companion.currentProject
 import xenakis.ui.launcher.XenakisMainActivity
-import xenakis.ui.prompt.CompoundPrompt
-import xenakis.ui.prompt.compoundPrompt
 
 abstract class ScoreObjectView(
     val instance: ScoreObjectInstance
@@ -91,7 +95,7 @@ abstract class ScoreObjectView(
             .takeIf { settings.snapEnabled.now } as TempoGridObject?
         val periodUnit = if (grid == null) null else settings.snapOption.now
         val prompt = makeLoopConfigPrompt(periodUnit, grid, instance)
-        return prompt.showDialog(context, anchorNode = this)
+        return prompt.showDialog(anchorNode = this)
     }
 
     open fun initialize(parent: ScorePane) {

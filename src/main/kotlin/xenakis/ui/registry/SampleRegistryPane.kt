@@ -3,6 +3,8 @@ package xenakis.ui.registry
 import bundles.PublicProperty
 import bundles.publicProperty
 import bundles.set
+import fxutils.hasFiles
+import fxutils.setupDropArea
 import javafx.scene.image.Image
 import javafx.scene.input.TransferMode
 import org.kordamp.ikonli.evaicons.Evaicons
@@ -13,8 +15,6 @@ import xenakis.impl.asY
 import xenakis.model.obj.SampleObject
 import xenakis.model.registry.SampleRegistry
 import xenakis.sc.Identifier
-import xenakis.ui.impl.hasFiles
-import xenakis.ui.impl.setupDropArea
 import xenakis.ui.launcher.XenakisFiles
 import xenakis.ui.launcher.XenakisLauncher.Companion.currentProject
 import xenakis.ui.launcher.XenakisMainActivity

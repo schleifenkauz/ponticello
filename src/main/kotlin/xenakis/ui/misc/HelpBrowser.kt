@@ -2,6 +2,7 @@ package xenakis.ui.misc
 
 import bundles.PublicProperty
 import bundles.publicProperty
+import fxutils.SubWindow
 import hextant.context.Context
 import javafx.geometry.Bounds
 import javafx.scene.web.WebView
@@ -10,12 +11,11 @@ import xenakis.sc.Identifier
 import xenakis.sc.MessageSend
 import xenakis.sc.editor.IdentifierEditor
 import xenakis.sc.editor.ScExprEditor
-import xenakis.ui.impl.SubWindow
 
 class HelpBrowser(context: Context) {
     private val webView: WebView = WebView()
 
-    private val window = SubWindow(webView, "Help Browser", context, type = SubWindow.Type.Popup)
+    private val window = SubWindow(webView, "Help Browser", type = SubWindow.Type.Popup)
 
     init {
         webView.setPrefSize(600.0, 800.0)

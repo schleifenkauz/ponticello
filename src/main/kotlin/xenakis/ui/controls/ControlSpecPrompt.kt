@@ -1,5 +1,8 @@
-package xenakis.ui.prompt
+package xenakis.ui.controls
 
+import fxutils.button
+import fxutils.prompt.CompoundPrompt
+import fxutils.textField
 import javafx.beans.binding.Bindings
 import javafx.collections.FXCollections.observableList
 import javafx.scene.control.Button
@@ -16,8 +19,6 @@ import xenakis.model.obj.ParameterDefObject
 import xenakis.model.obj.ParameterizedObject
 import xenakis.sc.*
 import xenakis.sc.ParameterType.*
-import xenakis.ui.impl.button
-import xenakis.ui.impl.textField
 
 class ControlSpecPrompt(
     private val obj: ParameterizedObject, private val parameter: String,

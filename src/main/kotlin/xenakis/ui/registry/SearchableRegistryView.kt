@@ -1,7 +1,9 @@
 package xenakis.ui.registry
 
-import hextant.fx.registerShortcuts
-import hextant.fx.runFXWithTimeout
+import fxutils.prompt.SearchableListView
+import fxutils.prompt.YesNoPrompt
+import fxutils.registerShortcuts
+import fxutils.runFXWithTimeout
 import javafx.scene.Node
 import javafx.scene.control.Label
 import javafx.scene.layout.HBox
@@ -10,8 +12,7 @@ import xenakis.model.obj.RenamableObject
 import xenakis.model.registry.NamedObject
 import xenakis.model.registry.ObjectRegistry
 import xenakis.sc.Identifier
-import xenakis.ui.prompt.NamePrompt
-import xenakis.ui.prompt.YesNoPrompt
+import xenakis.ui.controls.NamePrompt
 
 abstract class SearchableRegistryView<O : NamedObject>(
     val registry: ObjectRegistry<O>, title: String
@@ -27,7 +28,7 @@ abstract class SearchableRegistryView<O : NamedObject>(
                             registry,
                             "Rename ${registry.objectType} ${obj.name.now}",
                             initialName = obj.name.now
-                        ).showDialog(registry.context, anchorNode = getBox(obj)) ?: return@runFXWithTimeout
+                        ).showDialog(anchorNode = getBox(obj)) ?: return@runFXWithTimeout
                         obj.rename(newName)
                     }
                 }
@@ -37,7 +38,7 @@ abstract class SearchableRegistryView<O : NamedObject>(
                     hide()
                     runFXWithTimeout(25) {
                         val question = "Delete ${registry.objectType} ${obj.name.now}?"
-                        val really = YesNoPrompt(question).showDialog(registry.context, anchorNode = getBox(obj))
+                        val really = YesNoPrompt(question).showDialog(anchorNode = getBox(obj))
                         if (really == true) registry.remove(obj)
                     }
                 }

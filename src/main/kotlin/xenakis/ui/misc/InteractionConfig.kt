@@ -1,6 +1,7 @@
 package xenakis.ui.misc
 
-import hextant.fx.KeyEventHandlerBody
+import fxutils.KeyEventHandlerBody
+import fxutils.styleClass
 import javafx.collections.FXCollections
 import javafx.scene.control.ComboBox
 import javafx.scene.layout.HBox
@@ -16,7 +17,6 @@ import xenakis.model.InteractionSettings.SnapOption
 import xenakis.model.XenakisProject
 import xenakis.ui.actions.action
 import xenakis.ui.actions.makeButton
-import xenakis.ui.impl.styleClass
 
 class InteractionConfig(settings: InteractionSettings) : HBox() {
     private val snapToggle = toggleSnap.withContext(settings).makeButton()

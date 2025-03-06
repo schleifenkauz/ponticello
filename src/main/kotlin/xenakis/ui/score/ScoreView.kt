@@ -1,7 +1,9 @@
 package xenakis.ui.score
 
+import fxutils.SubWindow
+import fxutils.registerShortcuts
+import fxutils.styleClass
 import hextant.context.Context
-import hextant.fx.registerShortcuts
 import javafx.application.Platform
 import javafx.geometry.Rectangle2D
 import javafx.scene.Node
@@ -19,8 +21,6 @@ import xenakis.impl.*
 import xenakis.model.InteractionSettings.SnapOption
 import xenakis.model.Logger
 import xenakis.model.score.*
-import xenakis.ui.impl.SubWindow
-import xenakis.ui.impl.styleClass
 import xenakis.ui.impl.verticalDist
 import xenakis.ui.launcher.XenakisLauncher.Companion.currentProject
 import java.util.concurrent.CompletableFuture
@@ -151,7 +151,7 @@ class ScoreView(score: Score, context: Context) : ScorePane(score, context) {
         val objName = editor.objectView.instance.obj.name.now
         val title = "Envelope for ${editor.parameterName} of $objName"
         magnifierWindow?.hide()
-        magnifierWindow = SubWindow(pane, title, editor.objectView.context, SubWindow.Type.Popup)
+        magnifierWindow = SubWindow(pane, title, SubWindow.Type.Popup)
         repositionEnvelopeMagnifier()
         magnifierWindow!!.show()
     }

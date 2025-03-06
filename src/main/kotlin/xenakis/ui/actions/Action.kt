@@ -1,7 +1,7 @@
 package xenakis.ui.actions
 
-import hextant.fx.Shortcut
-import hextant.fx.shortcut
+import fxutils.Shortcut
+import fxutils.shortcut
 import javafx.event.Event
 import org.kordamp.ikonli.Ikon
 import org.kordamp.ikonli.materialdesign2.MaterialDesignP

@@ -1,7 +1,7 @@
 package xenakis.ui.actions
 
-import hextant.fx.KeyEventHandlerBody
-import hextant.fx.runFXWithTimeout
+import fxutils.KeyEventHandlerBody
+import fxutils.runFXWithTimeout
 import hextant.undo.compoundEdit
 import reaktive.value.now
 import reaktive.value.reactiveVariable

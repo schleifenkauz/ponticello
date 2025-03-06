@@ -1,5 +1,8 @@
 package xenakis.ui.impl
 
+import fxutils.centerChildren
+import fxutils.infiniteSpace
+import fxutils.styleClass
 import javafx.scene.Node
 import javafx.scene.control.Label
 import javafx.scene.layout.HBox

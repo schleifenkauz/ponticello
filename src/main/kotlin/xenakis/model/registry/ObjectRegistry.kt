@@ -1,5 +1,6 @@
 package xenakis.model.registry
 
+import fxutils.plural
 import hextant.context.Context
 import hextant.core.editor.ListenerManager
 import hextant.undo.AbstractEdit
@@ -9,7 +10,6 @@ import reaktive.value.now
 import xenakis.model.Logger
 import xenakis.model.XenakisProject
 import xenakis.model.obj.AbstractContextualObject
-import xenakis.ui.impl.plural
 import xenakis.ui.launcher.XenakisLauncher.Companion.currentProject
 
 abstract class ObjectRegistry<O : NamedObject> : XenakisProject.ProjectComponent, AbstractContextualObject() {

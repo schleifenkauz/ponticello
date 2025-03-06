@@ -2,6 +2,8 @@ package xenakis.sc.view
 
 import bundles.Bundle
 import bundles.set
+import fxutils.centerChildren
+import fxutils.styleClass
 import hextant.codegen.ProvideImplementation
 import hextant.context.ControlFactory
 import hextant.core.view.CompoundEditorControl
@@ -15,8 +17,6 @@ import hextant.fx.view
 import javafx.scene.layout.HBox
 import reaktive.collection.binding.isNotEmpty
 import reaktive.value.now
-import xenakis.ui.impl.centerChildren
-import xenakis.ui.impl.styleClass
 
 class NewObjectEditorControl @ProvideImplementation(ControlFactory::class) constructor(
     private val editor: xenakis.sc.editor.NewObjectEditor,

@@ -1,9 +1,9 @@
 package xenakis.ui.actions
 
+import fxutils.neverHGrow
 import javafx.beans.binding.Bindings
 import javafx.scene.control.Button
 import javafx.scene.layout.HBox
-import xenakis.ui.impl.neverHGrow
 
 open class ActionBar(border: Boolean = true, private val buttonStyle: String = "tool-button") : HBox() {
     private val indices = mutableMapOf<Button, Int>()
