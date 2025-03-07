@@ -30,4 +30,13 @@ interface ParameterizedObject : NamedObject {
             }
         }
     }
+
+    fun addControlsForAllObjectParameters() {
+        for (param in def.parameters.now) {
+            val name = param.name.now
+            if (name !in controls.controlMap) {
+                controls.addControl(name, param.defaultControl(context))
+            }
+        }
+    }
 }

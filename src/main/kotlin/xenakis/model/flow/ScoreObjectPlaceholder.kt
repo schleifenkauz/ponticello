@@ -19,6 +19,9 @@ class ScoreObjectPlaceholder(
     override lateinit var superColliderName: ReactiveString
         private set
 
+    override val canDeactivate: Boolean
+        get() = false
+
     override fun initialize(context: Context) {
         super.initialize(context)
         busRef.resolve(context[BusRegistry])

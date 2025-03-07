@@ -22,6 +22,7 @@ import xenakis.impl.*
 import xenakis.model.obj.SampleObject
 import xenakis.model.score.*
 import xenakis.sc.view.ObjectSelectorControl
+import xenakis.ui.controls.ControlAssignmentView
 import xenakis.ui.launcher.XenakisMainActivity
 
 class SynthObjectView(
@@ -63,7 +64,8 @@ class SynthObjectView(
         }.styleClass("medium-icon-button")
         val box = ObjectSelectorControl(obj.synthDefSelector, createBundle())
         pane.addItem("SynthDef: ", HBox(5.0, box, viewBtn).centerChildren())
-        super.setupDetailPane(pane)
+        pane.children.add(createDetailsHeader(obj, "Synth controls"))
+        pane.children.add(ControlAssignmentView(obj))
     }
 
     override fun removedControl(parameter: String, control: ParameterControl) {

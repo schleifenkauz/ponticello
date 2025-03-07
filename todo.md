@@ -35,9 +35,9 @@
   - integrate as special editors?
 - or open transformation chain by clicking on bus in the flow graph
 - work on positioning of the bus nodes in the flow graph pane
+  - is the flow graph pane even needed?
 - react to changes of flow buses
 - how to handle loops in the ReachabilityGraph?
-- hide the first bus parameter control of SynthFlows
 
 ### Improve zooming functionality
 

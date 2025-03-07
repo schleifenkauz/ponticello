@@ -1,9 +1,6 @@
 package xenakis.ui.flow
 
-import fxutils.actions.Action
-import fxutils.actions.ActionBar
-import fxutils.actions.collectActions
-import fxutils.actions.registerShortcuts
+import fxutils.actions.*
 import fxutils.infiniteSpace
 import fxutils.styleClass
 import javafx.scene.Node
@@ -13,18 +10,23 @@ import javafx.scene.layout.VBox
 import org.kordamp.ikonli.material2.Material2AL
 import org.kordamp.ikonli.materialdesign2.MaterialDesignC
 import org.kordamp.ikonli.materialdesign2.MaterialDesignR
-import reaktive.value.ReactiveString
 import reaktive.value.binding.map
 import reaktive.value.binding.notEqualTo
 import reaktive.value.now
+import reaktive.value.reactiveValue
 import xenakis.model.flow.AudioFlow
-import xenakis.ui.impl.label
 import xenakis.ui.launcher.XenakisLauncher.Companion.currentProject
 
 abstract class FlowBox<F : AudioFlow>(val flow: F) : VBox() {
-    abstract fun getContent(flow: F): Node
+    protected open val extraActions: List<ContextualizedAction>
+        get() = emptyList()
 
-    abstract fun getTitle(flow: F): ReactiveString
+    lateinit var header: HBox
+        private set
+
+    protected abstract fun getContent(flow: F): Node
+
+    protected abstract fun getTitle(flow: F): Node
 
     init {
         styleClass.add("flow-box")
@@ -33,14 +35,14 @@ abstract class FlowBox<F : AudioFlow>(val flow: F) : VBox() {
     }
 
     fun initialize() {
-        val actionBar = ActionBar(actions.withContext(flow), buttonStyle = "flow-action-button")
-        val header = HBox(
-            label(getTitle(flow)),
+        val actions = extraActions + FlowBox.actions.withContext(flow)
+        val actionBar = ActionBar(actions, buttonStyle = "flow-action-button")
+        header = HBox(
+            getTitle(flow),
             infiniteSpace(),
             actionBar
         ) styleClass "flow-box-header"
-        val grabber = actionBar.getButton(actions.getAction("Drag flow"))
-        grabber.setOnDragDetected { ev ->
+        header.setOnDragDetected { ev ->
             val mode = if (ev.isControlDown) TransferMode.COPY else TransferMode.MOVE
             val db = startDragAndDrop(mode)
             val referenceIndex = flow.context[currentProject].flows.referenceIndex(flow)
@@ -83,6 +85,7 @@ abstract class FlowBox<F : AudioFlow>(val flow: F) : VBox() {
                         else MaterialDesignR.RADIOBOX_BLANK
                     }
                 }
+                applicableIf { flow -> reactiveValue(flow.canDeactivate) }
                 shortcut("Ctrl+T")
                 executes { flow -> flow.isActive.now = !flow.isActive.now }
             }
@@ -93,9 +96,6 @@ abstract class FlowBox<F : AudioFlow>(val flow: F) : VBox() {
                     val flows = flow.context[currentProject].flows
                     flows.removeFlow(flow)
                 }
-            }
-            addAction("Drag flow") {
-                icon(MaterialDesignC.CURSOR_POINTER)
             }
         }
     }

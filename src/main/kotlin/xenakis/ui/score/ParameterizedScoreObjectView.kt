@@ -3,10 +3,9 @@ package xenakis.ui.score
 import fxutils.actions.button
 import fxutils.centerChildren
 import fxutils.infiniteSpace
-import fxutils.prompt.DetailPane
 import fxutils.styleClass
-import hextant.context.Context
 import javafx.geometry.Point2D
+import javafx.scene.control.Button
 import javafx.scene.control.Label
 import javafx.scene.input.MouseEvent
 import javafx.scene.layout.FlowPane
@@ -21,7 +20,6 @@ import xenakis.model.obj.ParameterizedObject
 import xenakis.model.score.*
 import xenakis.sc.ControlSpec
 import xenakis.sc.NumericalControlSpec
-import xenakis.ui.controls.ControlAssignmentView
 import xenakis.ui.controls.Knob
 import xenakis.ui.registry.SearchableParameterListView
 
@@ -33,10 +31,6 @@ abstract class ParameterizedScoreObjectView(
     private val envelopeEditors = mutableListOf<EnvelopeEditor>()
 
     abstract val obj: ParameterizedScoreObject
-
-    override fun setupDetailPane(pane: DetailPane) {
-        setupSynthDetailPane(pane, obj)
-    }
 
     override fun initialize(parent: ScorePane) {
         super.initialize(parent)
@@ -157,35 +151,32 @@ abstract class ParameterizedScoreObjectView(
     }
 
     companion object {
-        fun setupSynthDetailPane(pane: DetailPane, obj: ParameterizedObject) {
-            val addButton = Material2MZ.PLUS.button(action = "Add control")
-                .styleClass("large-icon-button")
+        fun createDetailsHeader(obj: ParameterizedObject, heading: String): HBox {
+            val addButton = createAddParameterButton(obj)
             val header = HBox(
                 5.0,
-                Label("Synth controls").styleClass("heading"),
+                Label(heading).styleClass("heading"),
                 infiniteSpace(),
                 addButton
             ) styleClass "tool-pane-header"
+            return header
+        }
+
+        private fun createAddParameterButton(obj: ParameterizedObject): Button {
+            val addButton = Material2MZ.PLUS.button(action = "Add control")
+                .styleClass("medium-icon-button")
             addButton.setOnMouseClicked { ev ->
                 if (ev.isShiftDown) {
-                    addControlsForAllObjectParameters(obj, obj.context)
+                    obj.addControlsForAllObjectParameters()
                 } else {
-                    addNewControl(addButton, obj.context, obj)
+                    addNewControl(obj, addButton)
                 }
             }
-            pane.children.addAll(header, ControlAssignmentView(obj))
+            return addButton
         }
 
-        private fun addControlsForAllObjectParameters(obj: ParameterizedObject, context: Context) {
-            for (param in obj.def.parameters.now) {
-                val name = param.name.now
-                if (name !in obj.controls.controlMap) {
-                    obj.controls.addControl(name, param.defaultControl(context))
-                }
-            }
-        }
-
-        private fun addNewControl(anchorNode: Region, context: Context, obj: ParameterizedObject) {
+        fun addNewControl(obj: ParameterizedObject, anchorNode: Region) {
+            val context = obj.context
             val defaultParameters = context[Settings].defaultParametersDefs.now
             val synthParameters = obj.def.parameters.now
             val unassignedParameters = (synthParameters + defaultParameters)

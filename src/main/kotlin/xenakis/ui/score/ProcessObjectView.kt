@@ -13,6 +13,7 @@ import xenakis.model.score.ProcessObject
 import xenakis.model.score.ScoreObjectInstance
 import xenakis.sc.editor.ProcessDefSelector
 import xenakis.sc.view.ObjectSelectorControl
+import xenakis.ui.controls.ControlAssignmentView
 import xenakis.ui.launcher.XenakisMainActivity
 
 class ProcessObjectView(
@@ -23,12 +24,13 @@ class ProcessObjectView(
 
     override fun setupDetailPane(pane: DetailPane) {
         pane.addItem("Color:", this.colorPicker)
-        val viewBtn = Material2AL.CODE.button(action = "View SynthDef") {
+        val viewBtn = Material2AL.CODE.button(action = "View ProcessDef") {
             context[XenakisMainActivity].processDefsPane.editProcessDef(obj.processDef)
         }.styleClass("medium-icon-button")
         val selector = ProcessDefSelector(context, obj.processDefRef)
         val box = ObjectSelectorControl(selector, createBundle())
         pane.addItem("ProcessDef: ", HBox(5.0, box, viewBtn).centerChildren())
-        super.setupDetailPane(pane)
+        pane.children.add(createDetailsHeader(obj, "Process controls"))
+        pane.children.add(ControlAssignmentView(obj))
     }
 }

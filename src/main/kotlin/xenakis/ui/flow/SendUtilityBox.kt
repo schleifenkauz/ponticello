@@ -3,11 +3,10 @@ package xenakis.ui.flow
 import bundles.createBundle
 import fxutils.centerChildren
 import javafx.scene.Node
+import javafx.scene.control.Label
 import javafx.scene.layout.HBox
-import reaktive.value.ReactiveString
 import reaktive.value.ReactiveVariable
 import reaktive.value.now
-import reaktive.value.reactiveValue
 import xenakis.impl.toDecimal
 import xenakis.model.flow.SendFlow
 import xenakis.model.registry.ObjectReference
@@ -33,5 +32,5 @@ class SendUtilityBox(flow: SendFlow) : FlowBox<SendFlow>(flow) {
         return HBox(10.0, knob, selectorControl).centerChildren()
     }
 
-    override fun getTitle(flow: SendFlow): ReactiveString = reactiveValue("Send")
+    override fun getTitle(flow: SendFlow): Node = Label("Send")
 }

@@ -16,6 +16,8 @@ sealed class AudioFlow : AbstractContextualObject(), AudioNode {
 
     abstract val associatedBus: BusObject
 
+    open val canDeactivate: Boolean get() = true
+
     abstract override val superColliderName: ReactiveString
 
     abstract fun copyFor(associatedBus: BusObject): AudioFlow

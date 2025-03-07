@@ -2,10 +2,9 @@ package xenakis.ui.flow
 
 import fxutils.styleClass
 import javafx.scene.Node
+import javafx.scene.control.Label
 import javafx.scene.control.Slider
 import javafx.scene.layout.HBox
-import reaktive.value.ReactiveString
-import reaktive.value.reactiveValue
 import xenakis.model.flow.UtilityFlow
 
 class UtilityFlowBox(flow: UtilityFlow) : FlowBox<UtilityFlow>(flow) {
@@ -14,5 +13,5 @@ class UtilityFlowBox(flow: UtilityFlow) : FlowBox<UtilityFlow>(flow) {
         return HBox(slider)
     }
 
-    override fun getTitle(flow: UtilityFlow): ReactiveString = reactiveValue("Utility")
+    override fun getTitle(flow: UtilityFlow): Node = Label("Utility")
 }

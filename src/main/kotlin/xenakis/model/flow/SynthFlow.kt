@@ -2,16 +2,13 @@ package xenakis.model.flow
 
 import hextant.context.Context
 import kotlinx.serialization.Serializable
-import reaktive.value.ReactiveValue
+import kotlinx.serialization.Transient
+import reaktive.value.*
 import reaktive.value.binding.binding
-import reaktive.value.now
-import reaktive.value.reactiveValue
-import reaktive.value.reactiveVariable
 import xenakis.model.obj.BusObject
 import xenakis.model.obj.ParameterizedObject
 import xenakis.model.obj.ParameterizedObjectDef
 import xenakis.model.obj.SynthDefObject
-import xenakis.model.registry.InstrumentRegistry
 import xenakis.model.registry.ObjectReference
 import xenakis.model.score.BusControl
 import xenakis.model.score.ObjectPosition
@@ -19,14 +16,19 @@ import xenakis.model.score.ParameterControls
 import xenakis.model.score.getBus
 import xenakis.sc.BusControlSpec
 import xenakis.sc.client.ScWriter
+import xenakis.sc.editor.SynthDefSelector
 import xenakis.sc.writeSynthCode
 
 @Serializable
 class SynthFlow(
-    private var defRef: ObjectReference,
+    private var defRef: ReactiveVariable<ObjectReference>,
     override val controls: ParameterControls,
 ) : AudioFlow(), ParameterizedObject {
-    val synthDef get() = defRef.get<SynthDefObject>()
+    @Transient
+    lateinit var synthDefSelector: SynthDefSelector
+        private set
+
+    val synthDef get() = defRef.now.get<SynthDefObject>()
 
     override val def: ParameterizedObjectDef
         get() = synthDef
@@ -42,7 +44,7 @@ class SynthFlow(
 
     override fun initialize(context: Context) {
         super.initialize(context)
-        defRef.resolve(context[InstrumentRegistry])
+        synthDefSelector = SynthDefSelector(context, defRef)
         controls.initialize(context, synthDef)
         val mainBusParameter = getMainBusParameter()
         associatedBus = controls[mainBusParameter].getBus()!!.get()
@@ -72,7 +74,7 @@ class SynthFlow(
     companion object {
         fun createFor(associatedBus: BusObject, def: SynthDefObject, context: Context): SynthFlow {
             val controls = def.defaultControls(context, defaultGroup = null, defaultBus = associatedBus.reference())
-            return SynthFlow(def.reference(), controls)
+            return SynthFlow(reactiveVariable(def.reference()), controls)
         }
     }
 }

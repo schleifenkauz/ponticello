@@ -93,7 +93,7 @@ class VerticalFlowsBox(
         }
         box.initialize()
         boxes[flow] = box
-        vbox.children.add(flow.index.now, box)
+        vbox.children.add(flow.index.now.coerceAtMost(vbox.children.size), box) //TODO why are there invalid indices???
     }
 
     fun removedFlow(flow: AudioFlow) {
