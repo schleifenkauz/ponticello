@@ -10,10 +10,7 @@ object QuitAction: Action.Collector<XenakisLauncher>({
         shortcut("Ctrl+Shift?+Q")
         icon(Material2AL.CLOSE)
         executes { launcher, ev ->
-            if (ev.isShiftDown()) {
-                launcher.saveProject()
-                launcher.quitApplication()
-            } else launcher.closeRequest()
+            launcher.closeRequest(automaticallySave = ev.isShiftDown())
         }
     }
 })

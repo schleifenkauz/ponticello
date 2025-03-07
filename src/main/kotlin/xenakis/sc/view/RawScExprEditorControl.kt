@@ -1,12 +1,12 @@
 package xenakis.sc.view
 
 import bundles.Bundle
+import fxutils.label
 import hextant.codegen.ProvideImplementation
 import hextant.context.ControlFactory
 import hextant.core.view.EditorControl
 import javafx.scene.control.Label
 import xenakis.sc.editor.RawScExprEditor
-import xenakis.ui.impl.label
 
 class RawScExprEditorControl @ProvideImplementation(ControlFactory::class) constructor(
     private val editor: RawScExprEditor, arguments: Bundle

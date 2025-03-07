@@ -65,7 +65,6 @@
     -fx-border-width: 1px !important;
     -fx-border-radius: 3px;
     -fx-padding: 3px;
-    -fx-pref-width: 250px;
     -fx-focus-traversable: true;
     -fx-background-color: #1d1d20;
 }
@@ -101,5 +100,7 @@
     -fx-minor-tick-count: 6;
     -fx-major-tick-unit: 6;
     -fx-snap-to-ticks: true;
-    -fx-pref-width: 150px;
+    -fx-pref-width: 100px;
+    -fx-orientation: vertical;
+    -fx-show-tick-labels: true;
 }

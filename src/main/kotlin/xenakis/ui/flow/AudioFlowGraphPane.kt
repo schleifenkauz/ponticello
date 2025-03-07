@@ -3,10 +3,7 @@ package xenakis.ui.flow
 import bundles.PublicProperty
 import bundles.publicProperty
 import bundles.set
-import fxutils.middleX
-import fxutils.middleY
-import fxutils.registerShortcuts
-import fxutils.styleClass
+import fxutils.*
 import hextant.context.Context
 import hextant.undo.UndoManager
 import javafx.geometry.Bounds
@@ -33,7 +30,6 @@ import xenakis.model.registry.ObjectRegistry
 import xenakis.ui.controls.NamePrompt
 import xenakis.ui.impl.Arrow
 import xenakis.ui.impl.invert
-import xenakis.ui.impl.label
 import xenakis.ui.launcher.XenakisLauncher.Companion.currentProject
 import kotlin.math.absoluteValue
 import kotlin.math.sign

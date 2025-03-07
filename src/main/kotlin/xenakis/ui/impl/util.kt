@@ -12,15 +12,12 @@ import hextant.serial.EditorRoot
 import hextant.serial.snapshot
 import javafx.scene.Parent
 import javafx.scene.control.ColorPicker
-import javafx.scene.control.Label
 import javafx.scene.input.DataFormat
 import javafx.scene.input.Dragboard
 import javafx.scene.input.KeyEvent
 import javafx.scene.input.MouseEvent
 import javafx.scene.paint.Color
-import reaktive.value.ReactiveValue
 import reaktive.value.ReactiveVariable
-import reaktive.value.fx.asObservableValue
 import reaktive.value.now
 import xenakis.impl.Decimal
 import xenakis.impl.asY
@@ -80,12 +77,6 @@ fun colorPicker(controlledVar: ReactiveVariable<Color>): ColorPicker {
     picker.userData = controlledVar.observe { _, _, newColor -> picker.value = newColor }
     picker.valueProperty().addListener { _, _, newColor -> controlledVar.set(newColor) }
     return picker
-}
-
-fun label(text: ReactiveValue<String>): Label {
-    val label = Label()
-    label.textProperty().bind(text.asObservableValue())
-    return label
 }
 
 fun <R> Prompt<R, *>.showDialog(context: Context) = showDialog(null, owner = context[primaryStage])

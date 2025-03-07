@@ -1,6 +1,7 @@
 package xenakis.ui.flow
 
 import fxutils.actions.button
+import fxutils.label
 import fxutils.prompt.SimpleSearchableListView
 import fxutils.setBackground
 import fxutils.setupDropArea
@@ -21,7 +22,6 @@ import xenakis.model.obj.SynthDefObject
 import xenakis.model.registry.InstrumentRegistry
 import xenakis.model.registry.ObjectReference
 import xenakis.ui.impl.getFrom
-import xenakis.ui.impl.label
 import xenakis.ui.launcher.XenakisLauncher
 
 class VerticalFlowsBox(

@@ -32,7 +32,6 @@ import xenakis.model.registry.ObjectRegistry
 import xenakis.sc.Identifier
 import xenakis.ui.controls.NameControl
 import xenakis.ui.controls.NamePrompt
-import xenakis.ui.impl.label
 
 abstract class ObjectRegistryPane<O : NamedObject>(
     private val registry: ObjectRegistry<O>

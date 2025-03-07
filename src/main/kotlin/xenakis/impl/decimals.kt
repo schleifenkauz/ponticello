@@ -1,7 +1,6 @@
 package xenakis.impl
 
 import xenakis.model.score.ObjectPosition
-import java.util.*
 import kotlin.math.*
 
 typealias DoubleRange = ClosedFloatingPointRange<Double>
@@ -89,11 +88,6 @@ fun Decimal.withPrecision(precision: Int) = Decimal(value, precision)
 
 fun Decimal.round(precision: Int) = Decimal(value.round(precision), precision)
 
-fun String.canonicalizeDecimal(): String {
-    if ('.' !in this) return this
-    return dropLastWhile { c -> c == '0' }.removeSuffix(".")
-}
-
 fun String.parseDecimal(): Decimal? {
     val precision = when (val decimalPointIndex = indexOf('.')) {
         -1 -> 0
@@ -140,8 +134,6 @@ fun timeCode(t: Decimal, accuracy: Int): String {
 fun DoubleRange.reverseIfEmpty() = if (start > endInclusive) endInclusive..start else this
 
 fun accuracy(delta: Double) = ceil(-log10(delta).coerceAtMost(0.0)).toInt()
-
-fun Double.format(accuracy: Int) = String.format(Locale.US, "%.${accuracy}f", this).canonicalizeDecimal()
 
 fun Double.round(accuracy: Int): Double {
     val factor = 10.0.pow(accuracy)

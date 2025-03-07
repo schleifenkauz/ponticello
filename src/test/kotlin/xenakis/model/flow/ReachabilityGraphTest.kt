@@ -22,11 +22,7 @@ class ReachabilityGraphTest {
                 val v = r.nextInt(N)
                 val u = r.nextInt(N)
                 //println("add edge $v -> $u")
-                try {
-                    g.addEdge(v, u)
-                } catch (e: ReachabilityGraph.LoopException) {
-                    System.err.println("LOOP")
-                }
+                g.addEdge(v, u)
             }
             for (v in 0 until N) {
                 for (u in 0 until N) {
@@ -52,9 +48,9 @@ class ReachabilityGraphTest {
         assertEquals(true, g.reachable(3, 0))
         g.removeEdge(3, 4)
         assertEquals(false, g.reachable(3, 0))
-
-
     }
+
+    //TODO test loop detection
 
     companion object {
         private const val N = 50

@@ -22,6 +22,8 @@ class SendUtilityBox(flow: SendFlow) : FlowBox<SendFlow>(flow) {
         val ctrl = KnobControl(flow.amountPercent)
         val spec = NumericalControlSpec(100.0, 0.0, 100.0, 1.toDecimal(), Warp.Linear)
         val knob = Knob("Amount", ctrl, spec, flow.context)
+
+        @Suppress("UNCHECKED_CAST") //this is ok: ObjectSelectorControl never selects null values
         val targetBusSelector = BusSelector(
             flow.context,
             preferredRate = flow.associatedBus.rate.now,

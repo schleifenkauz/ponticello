@@ -1,6 +1,7 @@
 package xenakis.ui.launcher
 
 import fxutils.registerShortcuts
+import fxutils.styleClass
 import hextant.context.Context
 import javafx.application.Platform
 import javafx.scene.control.Label
@@ -12,7 +13,7 @@ import javafx.stage.StageStyle
 import xenakis.sc.client.SuperColliderClient
 
 class LoadingScreen(override val context: Context): Activity(), ProgressIndicator {
-    private val progressBar = ProgressBar()
+    private val progressBar = ProgressBar() styleClass "loading-screen-bar"
     private val statusText = Label()
     private val logo = ImageView(APP_ICON)
 

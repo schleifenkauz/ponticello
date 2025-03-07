@@ -4,11 +4,13 @@ import bundles.createBundle
 import fxutils.*
 import fxutils.actions.ActionBar
 import fxutils.actions.collectActions
+import fxutils.controls.SliderBar
 import fxutils.prompt.DetailPane
 import fxutils.prompt.SimpleSearchableListView
 import hextant.context.Context
 import hextant.fx.initHextantScene
 import hextant.serial.EditorRoot
+import javafx.geometry.Insets
 import javafx.geometry.Pos
 import javafx.scene.Node
 import javafx.scene.control.Button
@@ -49,7 +51,7 @@ import xenakis.ui.impl.colorPicker
 class ControlAssignmentEditor(
     private val obj: ParameterizedObject,
     val parameter: String,
-) : HBox(5.0) {
+) : BorderPane() {
     private val nameLabel = Label(parameter)
     private var selectedOption: ControlType<*>? = null
     private val optionButton = Button() styleClass "sleek-button"
@@ -62,12 +64,11 @@ class ControlAssignmentEditor(
         set(value) {
             field = value!!
             value.styleClass?.add("control-detail-editor")
-            if (spec is NumericalControlSpec) {
-                children.setAll(nameLabel, optionButton, detailEditor, infiniteSpace(), actionBar)
-            } else {
-                children.setAll(nameLabel, detailEditor, infiniteSpace(), actionBar)
-            }
-            setHgrow(value, Priority.ALWAYS)
+            center = HBox(detailEditor).also { it.padding = Insets(0.0, 5.0, 0.0, 5.0) }
+            HBox.setHgrow(detailEditor, Priority.ALWAYS)
+            val box = HBox(nameLabel).centerChildren()
+            if (spec is NumericalControlSpec) box.children.add(optionButton)
+            left = box
         }
 
     init {
@@ -76,6 +77,7 @@ class ControlAssignmentEditor(
         optionButton.setOnMouseClicked { showOptionPopup() }
         optionButton.minWidth = 85.0
         nameLabel.minWidth = DetailPane.LABEL_WIDTH - 5.0
+        right = actionBar
         setupDropArea(this::canDrop, ::onDrop)
     }
 
@@ -159,10 +161,18 @@ class ControlAssignmentEditor(
         object Value : ControlType<ConstantControl>() {
             override fun createDetailInput(
                 obj: ParameterizedObject,
-                parameter: String,
+                parameter: String, //TODO make parameter reactive
                 spec: ControlSpec,
                 control: ConstantControl
-            ): Node = ControlSlider(obj, parameter, control.value)
+            ): Node {
+                val converter = (spec as NumericalControlSpec).converter()
+                val sliderBar = SliderBar(
+                    control.value, reactiveValue(parameter), converter,
+                    style = SliderBar.Style.AlwaysValue
+                )
+                sliderBar.prefWidth = 80.0
+                return sliderBar
+            }
 
             override fun createDefaultControl(
                 obj: ParameterizedObject, spec: ControlSpec, oldControl: ParameterControl
@@ -371,8 +381,9 @@ class ControlAssignmentEditor(
                 applicableIf { editor -> reactiveValue(editor.spec is NumericalControlSpec) }
                 //editor.obj.def.getParameter(editor.parameter)!!.spec.map { s -> s is NumericalControlSpec }
                 icon(Codicons.SYMBOL_PROPERTY)
-                executes { editor: ControlAssignmentEditor -> ControlSpecPrompt(editor.obj, editor.parameter, editor.spec)
-                    .showDialog(editor.actionBar)
+                executes { editor: ControlAssignmentEditor ->
+                    ControlSpecPrompt(editor.obj, editor.parameter, editor.spec)
+                        .showDialog(editor.actionBar)
                 }
             }
             addAction("Remove") {

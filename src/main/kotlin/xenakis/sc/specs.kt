@@ -1,5 +1,6 @@
 package xenakis.sc
 
+import fxutils.controls.SliderBar
 import hextant.codegen.Choice
 import hextant.codegen.Component
 import hextant.codegen.Compound
@@ -88,6 +89,22 @@ data class NumericalControlSpec(
 
     override fun toString(): String =
         "default: ${defaultValue.text}, range: ${min.text}..${max.text}, warp: $warp, step: ${step.text}"
+
+    fun converter(): SliderBar.Converter<Decimal> = Converter(this)
+
+    private class Converter(spec: NumericalControlSpec) : SliderBar.Converter<Decimal> {
+        private val defaultTransformation = SpecTransformation(spec, 0.0..1.0)
+
+        private val precision = spec.precision
+
+        override fun fromDouble(value: Double): Decimal = Decimal(defaultTransformation.unmap(value), precision)
+
+        override fun fromLiteral(value: String): Decimal? = value.parseDecimal()?.withPrecision(precision)
+
+        override fun toDouble(value: Decimal): Double = defaultTransformation.map(value.toDouble())
+
+        override fun toString(value: Decimal): String = value.toCanonicalString()
+    }
 
     companion object {
         val DEFAULT = NumericalControlSpec(zero, zero, one, 0.01.toDecimal(), Warp.Linear, Color.WHITE)

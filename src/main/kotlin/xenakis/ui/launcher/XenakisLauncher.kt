@@ -178,13 +178,13 @@ class XenakisLauncher {
         launchActivity("Show Xenakis launcher") { LauncherActivity(this) }
     }
 
-    fun closeRequest() {
+    fun closeRequest(automaticallySave: Boolean = false) {
         if (getActiveProject() == null) {
             currentActivity.hide()
             return
         }
         //TODO check if any edits have been made since the last save
-        val save = askIfUserWantsToSave() ?: return
+        val save = automaticallySave || askIfUserWantsToSave() ?: return
         if (save) saveProject()
         currentActivity.hide()
         quitApplication()

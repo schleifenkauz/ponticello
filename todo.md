@@ -58,7 +58,6 @@
 - ability to specify added time in beats/bars/ticks
 - make floating windows movable/resizable
 - option to create external automation (adding a kr-write `SynthObject`) for numerical parameter
-- shortcut for selecting all instances of the selected object (for example `Ctrl+Shift+A`)
 - select new objects after unlinking
 - specifying default value for control busses
 - make pasting with shortcut (V and Shift+V)
@@ -70,7 +69,6 @@
 - searching and selecting object details
   - better text search implementation
 - improve the timeline
-- make the controls slider nicer by using progress bar
 - retrieve global SynthDefs from `compositions` directory
 
 ## Long term ideas

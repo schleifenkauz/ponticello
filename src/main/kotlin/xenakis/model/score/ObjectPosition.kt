@@ -1,7 +1,7 @@
 package xenakis.model.score
 
+import fxutils.format
 import xenakis.impl.Decimal
-import xenakis.impl.format
 import xenakis.impl.unaryMinus
 import xenakis.impl.withPrecision
 

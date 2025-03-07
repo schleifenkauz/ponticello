@@ -111,6 +111,4 @@ class ReachabilityGraph<V> {
             appendLine("$v -> $edges")
         }
     }
-
-    class LoopException: Exception("There is a loop in the graph!")
 }
