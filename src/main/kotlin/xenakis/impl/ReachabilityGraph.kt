@@ -1,5 +1,8 @@
 package xenakis.impl
 
+import reaktive.value.ReactiveBoolean
+import reaktive.value.now
+import reaktive.value.reactiveVariable
 import java.util.*
 
 class ReachabilityGraph<V> {
@@ -7,6 +10,10 @@ class ReachabilityGraph<V> {
     private val edgesFrom = mutableMapOf<V, MutableSet<V>>()
     private val backEdges = mutableMapOf<V, MutableSet<V>>()
     private val reaches = mutableMapOf<V, MutableSet<V>>()
+    private val loopEdges = mutableSetOf<Pair<V, V>>()
+    private val _hasLoop = reactiveVariable(false)
+
+    val hasLoop: ReactiveBoolean get() = _hasLoop
 
     fun edges(): Set<Pair<V, V>> = edges
 
@@ -36,7 +43,10 @@ class ReachabilityGraph<V> {
 
     fun addEdge(from: V, target: V) {
         if (from == target) return
-        if (reachable(target, from)) throw LoopException()
+        if (reachable(target, from)) {
+            loopEdges.add(from to target)
+            _hasLoop.now = true
+        }
         if (edgesFrom(from).add(target)) {
             backEdges.getValue(target).add(from)
             edges.add(from to target)
@@ -66,12 +76,20 @@ class ReachabilityGraph<V> {
     private fun propagateRemove(v: V, set: Set<V>) {
         val s = set.toMutableSet()
         for (u in backEdges.getValue(v)) {
-            s.removeIf(reaches.getValue(u)::contains) //TODO doesn't work if there are loops
+            s.removeIf(reaches.getValue(u)::contains)
         }
         s.removeIf { w -> w !in reaches.getValue(v) }
         s.remove(v)
         if (s.isNotEmpty()) {
-            reaches.getValue(v).removeAll(s)
+            for (u in s) {
+                reaches.getValue(v).remove(u)
+                if (loopEdges.remove(v to u)) {
+                    addEdge(v, u)
+                    if (loopEdges.isEmpty()) {
+                        _hasLoop.now = false
+                    }
+                }
+            }
             for (u in edgesFrom(v)) {
                 propagateRemove(u, s)
             }

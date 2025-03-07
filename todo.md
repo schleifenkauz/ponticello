@@ -37,7 +37,7 @@
 - work on positioning of the bus nodes in the flow graph pane
   - is the flow graph pane even needed?
 - react to changes of flow buses
-- how to handle loops in the ReachabilityGraph?
+- how to notify user about loops in the flow graph
 
 ### Improve zooming functionality
 
