@@ -26,7 +26,7 @@ sealed interface FlowOption {
         ) {
             SimpleSearchableRegistryView(context[BusRegistry], "Target bus")
                 .showPopup(anchor) { selected ->
-                    onCreate(SendFlow.createFor(associatedBus, selected))
+                    onCreate(SendFlow.createFor(associatedBus, selected, context))
                 }
 
         }
@@ -38,7 +38,7 @@ sealed interface FlowOption {
             anchor: Region,
             associatedBus: BusObject,
             onCreate: (AudioFlow) -> Unit
-        ) = onCreate(UtilityFlow.createFor(associatedBus))
+        ) = onCreate(UtilityFlow())
     }
 
     data object Code : FlowOption {
@@ -47,7 +47,7 @@ sealed interface FlowOption {
             anchor: Region,
             associatedBus: BusObject,
             onCreate: (AudioFlow) -> Unit
-        ) = onCreate(CodeFlow.createFor(associatedBus, associatedBus.context))
+        ) = onCreate(CodeFlow.createFor(associatedBus, context))
     }
 
     data object Placeholder : FlowOption {
@@ -60,7 +60,7 @@ sealed interface FlowOption {
             val groupName = NamePrompt(context[GroupRegistry], "Group name", "").showDialog(anchor) ?: return
             val group = GroupObject(reactiveVariable(groupName))
             context[GroupRegistry].add(group)
-            onCreate(ScoreObjectPlaceholder(associatedBus.reference(), group))
+            onCreate(ScoreObjectPlaceholder(group.reference()))
         }
     }
 

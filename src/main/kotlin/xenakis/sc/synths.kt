@@ -11,10 +11,11 @@ import xenakis.model.score.*
 import xenakis.sc.client.ScWriter
 
 fun ScWriter.writeSynthCode(
-    def: SynthDefObject, controls: ParameterControls,
-    context: Context, info: ScoreObjectInfo, duration: Decimal?
+    def: SynthDefObject, context: Context,
+    info: ScoreObjectInfo, duration: Decimal?,
+    controlMap: Map<String, ParameterControl>
 ) {
-    val constantArguments = controls.controlMap.mapNotNull { (param, control) ->
+    val constantArguments = controlMap.mapNotNull { (param, control) ->
         if (!def.hasParameter(param)) null
         else when (control) {
             is BufferControl -> param to (control.sample.now?.get<SampleObject>()?.superColliderName ?: "0")
@@ -36,7 +37,7 @@ fun ScWriter.writeSynthCode(
     val synthVar = info.superColliderName
     +"$synthVar = Synth(\\$synthDefName, [$constantArguments], target: $target, addAction: $addAction)"
     +"$synthVar.register"
-    for ((param, control) in controls.controlMap) {
+    for ((param, control) in controlMap) {
         when (control) {
             is EnvelopeControl -> {
                 val envelopeCode = control.envelope.code()
@@ -60,7 +61,7 @@ fun ScWriter.writeSynthCode(
             */
 
             is CustomControl -> {
-                val code = controls.controlMap.entries
+                val code = controlMap.entries
                     .associate { (name, control) -> "~ctrl_$name" to control.makeExpr() }
                 val expr = control.expr.editor.result.now
                     .transform<Identifier> { e -> code[e.text] ?: e }

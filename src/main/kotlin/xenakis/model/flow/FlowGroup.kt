@@ -16,9 +16,11 @@ class FlowGroup(
         +"${superColliderName.now} = Group.new(${placement.target}, ${placement.addAction})"
     }
 
-    override fun getConnectedBusses(vararg flowType: FlowType): Set<BusObject> = buildSet {
-        if (FlowType.In in flowType) add(associatedBus)
-        if (FlowType.Out in flowType) add(associatedBus)
+    override fun getInputs(): Collection<BusObject> = setOf(associatedBus)
+
+    override fun getOutputs(): Collection<BusObject> = setOf(associatedBus)
+
+    override fun addListener(listener: AudioNode.Listener) {
     }
 
     fun flows() = flows.associatedFlows(associatedBus)

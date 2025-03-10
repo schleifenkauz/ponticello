@@ -22,6 +22,9 @@ class GroupObject(
     override val liveCycleType: LiveCycleType
         get() = LiveCycleType.ServerTree
 
+    override val canDelete: Boolean
+        get() = !isDefault
+
     @Transient
     var previous: GroupObject? = null
         set(prev) {

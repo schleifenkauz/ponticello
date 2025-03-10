@@ -12,7 +12,7 @@ import xenakis.model.obj.RenamableObject
 import xenakis.model.registry.NamedObject
 import xenakis.model.registry.ObjectRegistry
 import xenakis.sc.Identifier
-import xenakis.ui.controls.NamePrompt
+import xenakis.ui.controls.RenamePrompt
 
 abstract class SearchableRegistryView<O : NamedObject>(
     val registry: ObjectRegistry<O>, title: String
@@ -24,12 +24,10 @@ abstract class SearchableRegistryView<O : NamedObject>(
                 on("F2") {
                     hide()
                     runFXWithTimeout {
-                        val newName = NamePrompt(
-                            registry,
+                        RenamePrompt(
+                            obj,
                             "Rename ${registry.objectType} ${obj.name.now}",
-                            initialName = obj.name.now
-                        ).showDialog(anchorNode = getBox(obj)!!) ?: return@runFXWithTimeout
-                        obj.rename(newName)
+                        ).showDialog(anchorNode = getBox(obj)!!)
                     }
                 }
             }

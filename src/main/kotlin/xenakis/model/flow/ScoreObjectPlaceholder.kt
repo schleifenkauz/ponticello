@@ -2,38 +2,34 @@ package xenakis.model.flow
 
 import hextant.context.Context
 import kotlinx.serialization.Serializable
-import reaktive.value.ReactiveString
-import reaktive.value.binding.map
 import xenakis.model.obj.BusObject
-import xenakis.model.obj.GroupObject
-import xenakis.model.registry.BusRegistry
+import xenakis.model.registry.GroupRegistry
 import xenakis.model.registry.ObjectReference
 import xenakis.sc.client.ScWriter
 
 @Serializable
-class ScoreObjectPlaceholder(
-    private val busRef: ObjectReference, val group: GroupObject
-) : AudioFlow() {
-    override lateinit var associatedBus: BusObject
-        private set
-    override lateinit var superColliderName: ReactiveString
-        private set
-
+class ScoreObjectPlaceholder(val group: ObjectReference) : AudioFlow() {
     override val canDeactivate: Boolean
         get() = false
 
-    override fun initialize(context: Context) {
-        super.initialize(context)
-        busRef.resolve(context[BusRegistry])
-        associatedBus = busRef.get()
-        superColliderName = group.name.map { n -> "~placeholder_$n" }
+    override fun initialize(context: Context, bus: BusObject) {
+        super.initialize(context, bus)
+        group.resolve(context[GroupRegistry])
     }
 
-    override fun copyFor(associatedBus: BusObject): AudioFlow = ScoreObjectPlaceholder(busRef, group)
+    override fun copy(): AudioFlow = ScoreObjectPlaceholder(group)
 
     override fun ScWriter.writeCode(placement: NodePlacement) {
-        //+"$superColliderName = Group.new(${order.target!!}, ${order.addAction!!})" TODO move group to right place
+        +"$superColliderName = Group.new(${placement.target}, ${placement.addAction})"
     }
 
-    override fun getConnectedBusses(vararg flowType: FlowType): Set<BusObject> = emptySet()
+    override fun getDefaultName(): String = "Group ${group.getName()}"
+
+    override fun getInputs(): Collection<BusObject> = emptySet()
+
+    override fun getOutputs(): Collection<BusObject> = emptySet()
+
+    override fun addListener(listener: AudioNode.Listener) {
+
+    }
 }

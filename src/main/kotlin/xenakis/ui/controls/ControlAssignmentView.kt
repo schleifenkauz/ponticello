@@ -15,12 +15,12 @@ import xenakis.ui.launcher.XenakisApp.Companion.primaryStage
 class ControlAssignmentView(
     private val obj: ParameterizedObject,
     private val hiddenParameters: Set<ParameterDefObject> = emptySet()
-) : VBox(), ParameterControls.View {
+) : VBox(), ParameterControls.Listener {
     private val editorByParameter = mutableMapOf<String, ControlAssignmentEditor>()
     private val editors = mutableListOf<ControlAssignmentEditor>()
 
     init {
-        obj.controls.addView(this)
+        obj.controls.addListener(this)
         prefWidth = 500.0
     }
 

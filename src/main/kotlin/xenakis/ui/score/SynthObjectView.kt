@@ -27,7 +27,7 @@ import xenakis.ui.launcher.XenakisMainActivity
 
 class SynthObjectView(
     instance: ScoreObjectInstance, override val obj: SynthObject
-) : ParameterizedScoreObjectView(instance), ParameterControls.View {
+) : ParameterizedScoreObjectView<SynthObject>(instance), ParameterControls.Listener {
     private var spectrogramImage: Image? = null
     private val spectrogramViews = mutableListOf<ImageView>()
 
@@ -46,7 +46,7 @@ class SynthObjectView(
 
     override fun initialize(parent: ScorePane) {
         super.initialize(parent)
-        obj.controls.addView(this)
+        obj.controls.addListener(this)
         sampleObserver = obj.sample.forEach { s ->
             sampleContentObserver?.kill()
             if (s != null) {

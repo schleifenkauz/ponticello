@@ -10,12 +10,13 @@
 * Scroll Pane
 */
 
-ScrollPane {
+.scroll-pane {
     -fx-background-color: transparent !important;
+    -fx-control-inner-background: transparent !important;
     -fx-border-color: transparent !important;
 }
 
-ScrollPane .viewport {
+.scroll-pane .viewport {
     -fx-background-color: transparent !important;
     -fx-border-color: transparent !important
 }

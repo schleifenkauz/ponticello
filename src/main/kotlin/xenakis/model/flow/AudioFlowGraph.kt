@@ -84,12 +84,11 @@ class AudioFlowGraph(
         nodeTree.removeNode(flow)
     }
 
-    override fun movedFlow(flow: AudioFlow, oldIndex: Int) {
+    override fun movedFlow(flow: AudioFlow, oldIndex: Int, newIndex: Int) {
         if (flow.isActive.now) {
             val group = flowGroup(flow.associatedBus)
-            val idx = flow.index.now
-            if (idx == 0) nodeTree.moveToHead(group, flow)
-            else nodeTree.moveAfter(group.flows()[idx - 1], flow)
+            if (newIndex == 0) nodeTree.moveToHead(group, flow)
+            else nodeTree.moveAfter(group.flows()[newIndex - 1], flow)
         }
     }
 
@@ -140,13 +139,13 @@ class AudioFlowGraph(
     }
 
     private fun addChildNode(node: AudioNode, child: AudioNode) {
-        for (input in child.getConnectedBusses(FlowType.In)) {
+        for (input in child.getInputs()) {
             readFrom.getOrPut(input, ::Counter).add(node)
             for (writer in writeTo[input]?.asSet().orEmpty()) {
                 graph.addEdge(writer, node)
             }
         }
-        for (output in child.getConnectedBusses(FlowType.Out)) {
+        for (output in child.getOutputs()) {
             writeTo.getOrPut(output, ::Counter).add(node)
             for (reader in readFrom[output]?.asSet().orEmpty()) {
                 graph.addEdge(node, reader)
@@ -205,7 +204,7 @@ class AudioFlowGraph(
     }
 
     private fun removeChildNode(node: AudioNode, child: AudioNode) {
-        for (input in child.getConnectedBusses(FlowType.In)) {
+        for (input in child.getInputs()) {
             if (!readFrom.getValue(input).remove(node)) {
                 Logger.warn("Could not remove $node from readers from $input", Logger.Category.AudioFlow)
             }
@@ -213,7 +212,7 @@ class AudioFlowGraph(
                 graph.removeEdge(writer, node)
             }
         }
-        for (output in child.getConnectedBusses(FlowType.InOut, FlowType.Out)) {
+        for (output in child.getOutputs()) {
             if (!writeTo.getValue(output).remove(node)) {
                 Logger.warn("Could not remove $node from readers from $output", Logger.Category.AudioFlow)
             }

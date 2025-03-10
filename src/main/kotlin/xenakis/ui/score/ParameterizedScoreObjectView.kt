@@ -23,14 +23,14 @@ import xenakis.sc.NumericalControlSpec
 import xenakis.ui.controls.Knob
 import xenakis.ui.registry.SearchableParameterListView
 
-abstract class ParameterizedScoreObjectView(
+abstract class ParameterizedScoreObjectView<O>(
     instance: ScoreObjectInstance
-) : ScoreObjectView(instance), ParameterControls.View {
+) : ScoreObjectView(instance), ParameterControls.Listener where O : ScoreObject, O : ParameterizedObject {
     private val envelopeDisplayObservers = mutableMapOf<String, Observer>()
     private val knobControls = FlowPane().centerChildren() styleClass "knobs" //TODO remove
     private val envelopeEditors = mutableListOf<EnvelopeEditor>()
 
-    abstract val obj: ParameterizedScoreObject
+    abstract val obj: O
 
     override fun initialize(parent: ScorePane) {
         super.initialize(parent)

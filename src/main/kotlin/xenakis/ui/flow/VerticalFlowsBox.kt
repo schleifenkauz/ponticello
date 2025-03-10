@@ -1,21 +1,17 @@
 package xenakis.ui.flow
 
 import fxutils.actions.button
-import fxutils.label
 import fxutils.prompt.SimpleSearchableListView
-import fxutils.setBackground
 import fxutils.setupDropArea
 import fxutils.styleClass
-import javafx.geometry.Bounds
 import javafx.scene.control.ScrollPane
+import javafx.scene.control.ScrollPane.ScrollBarPolicy
 import javafx.scene.input.DragEvent
 import javafx.scene.input.TransferMode
 import javafx.scene.layout.BorderPane
 import javafx.scene.layout.Priority
 import javafx.scene.layout.VBox
-import javafx.scene.paint.Color
 import org.kordamp.ikonli.materialdesign2.MaterialDesignP
-import reaktive.value.now
 import xenakis.model.flow.*
 import xenakis.model.obj.BusObject
 import xenakis.model.obj.SynthDefObject
@@ -27,31 +23,31 @@ import xenakis.ui.launcher.XenakisLauncher
 class VerticalFlowsBox(
     private val flows: AudioFlows,
     private val associatedBus: BusObject
-) : ScrollPane() {
+) : VBox(5.0) {
     val vbox = VBox(5.0)
-    private val label = label(associatedBus.name) styleClass "bus-label"
-    private val boxes = mutableMapOf<AudioFlow, FlowBox<*>>()
+    private val busBox = BusObjectBox(associatedBus)
+
+    private val flowBoxes = mutableMapOf<AudioFlow, FlowBox<*>>()
 
     init {
-        styleClass.add("bus-box")
         val addFlowRegion = makeAddFlowButton()
-        val layout = VBox(vbox, addFlowRegion, BorderPane(label) styleClass "bus-label-box")
-        VBox.setVgrow(addFlowRegion, Priority.ALWAYS)
-        layout.setBackground(Color.BLACK)
-        layout.minHeightProperty().bind(viewportBoundsProperty().map(Bounds::getHeight))
+        val scrollPane = ScrollPane(vbox)
+        scrollPane.isFitToWidth = true
+        scrollPane.hbarPolicy = ScrollBarPolicy.NEVER
+        children.addAll(scrollPane, addFlowRegion, busBox)
+        setVgrow(addFlowRegion, Priority.ALWAYS)
         setupDropArea({ db -> db.hasContent(AudioFlow.DATA_FORMAT) }, ::onDrop)
-        content = layout
     }
 
     private fun onDrop(ev: DragEvent) {
-        val referenceIndex = ev.dragboard.getContent(AudioFlow.DATA_FORMAT) as Int
-        val flow = flows.getFlow(referenceIndex)
+        val reference = ev.dragboard.getContent(AudioFlow.DATA_FORMAT) as AudioFlows.FlowReference
+        val flow = reference.getFrom(flows)
         var newIndex = vbox.children.binarySearchBy(ev.y) { n -> n.layoutY }
         if (newIndex < 0) newIndex = -(newIndex + 1)
         if (flow.associatedBus != associatedBus) {
-            val copy = flow.copyFor(associatedBus)
-            copy.index.now = newIndex
-            flows.addFlow(copy)
+            val copy = flow.copy()
+            copy.initialize(flows.context, associatedBus)
+            flows.addFlow(copy, newIndex)
             if (TransferMode.COPY !in ev.dragboard.transferModes) {
                 flows.removeFlow(flow)
             }
@@ -68,14 +64,13 @@ class VerticalFlowsBox(
             val registry = flows.context[InstrumentRegistry]
             val def = ObjectReference(ev.dragboard.getFrom(registry, SynthDefObject.DATA_FORMAT) as SynthDefObject)
             val flow = SynthFlow.createFor(associatedBus, def.get(), flows.context)
-            flow.index.now = vbox.children.size
             flows.addFlow(flow)
         }
         btn.setOnMouseClicked {
             val options = FlowOption.getOptions(flows.context)
             SimpleSearchableListView(options, "Add flow").showPopup(anchorNode = btn) { option ->
                 option.createFlow(flows.context, btn, associatedBus) { flow ->
-                    flow.index.now = vbox.children.size
+                    flow.initialize(flows.context, associatedBus)
                     flows.addFlow(flow)
                 }
             }
@@ -83,7 +78,7 @@ class VerticalFlowsBox(
         return pane
     }
 
-    fun addedFlow(flow: AudioFlow) {
+    fun addedFlow(flow: AudioFlow, index: Int) {
         val box = when (flow) {
             is CodeFlow -> CodeFlowBox(flow)
             is SynthFlow -> SynthFlowBox(flow)
@@ -92,17 +87,17 @@ class VerticalFlowsBox(
             is ScoreObjectPlaceholder -> PlaceholderBox(flow)
         }
         box.initialize()
-        boxes[flow] = box
-        vbox.children.add(flow.index.now.coerceAtMost(vbox.children.size), box) //TODO why are there invalid indices???
+        flowBoxes[flow] = box
+        vbox.children.add(index, box)
     }
 
     fun removedFlow(flow: AudioFlow) {
-        val box = boxes.remove(flow)
+        val box = flowBoxes.remove(flow)
         vbox.children.remove(box)
     }
 
-    fun movedFlow(flow: AudioFlow, oldIndex: Int) {
+    fun movedFlow(oldIndex: Int, newIndex: Int) {
         val box = vbox.children.removeAt(oldIndex)
-        vbox.children.add(flow.index.now, box)
+        vbox.children.add(newIndex, box)
     }
 }

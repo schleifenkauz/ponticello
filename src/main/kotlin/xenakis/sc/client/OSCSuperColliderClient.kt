@@ -132,7 +132,6 @@ class OSCSuperColliderClient(
         consoleMonitor.interrupt()
         run("s.quit;")
         run("0.exit;")
-        sleep(100)
         interrupt()
         sender.disconnect()
         receiver.close()

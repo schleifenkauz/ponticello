@@ -16,7 +16,7 @@ class AudioFlowGraphTest {
     fun test() {
         val context = Utils.createContext()
         val buses = context[BusRegistry]
-        val flows = AudioFlows(mutableListOf())
+        val flows = AudioFlows(mutableMapOf())
         flows.initialize(context)
         val nodeTree = mockk<NodeTree>(relaxed = true)
         val graph = AudioFlowGraph(flows, nodeTree)

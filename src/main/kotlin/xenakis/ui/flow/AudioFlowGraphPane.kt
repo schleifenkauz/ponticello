@@ -23,7 +23,6 @@ import xenakis.impl.Point
 import xenakis.model.Logger
 import xenakis.model.flow.AudioFlow
 import xenakis.model.flow.AudioFlows
-import xenakis.model.flow.FlowType
 import xenakis.model.obj.BusObject
 import xenakis.model.registry.BusRegistry
 import xenakis.model.registry.ObjectRegistry
@@ -142,7 +141,7 @@ class AudioFlowGraphPane(
         busLabels.add(label)
     }
 
-    override fun addedFlow(flow: AudioFlow) {
+    override fun addedFlow(flow: AudioFlow, index: Int) {
         val arrow = Arrow() styleClass "flow-arrow"
         arrow.setOnMouseClicked { ev ->
             if (ev.button == MouseButton.SECONDARY) {
@@ -166,8 +165,8 @@ class AudioFlowGraphPane(
     }
 
     private fun repositionArrow(arrow: Arrow, flow: AudioFlow) {
-        for (source in flow.getConnectedBusses(FlowType.In)) {
-            for (sink in flow.getConnectedBusses(FlowType.Out)) {
+        for (source in flow.getInputs()) {
+            for (sink in flow.getOutputs()) {
                 val sourceLbl = getLabel(source)
                 val targetLbl = getLabel(sink)
                 val targetPos = sink.positionInGraph.now

@@ -4,12 +4,8 @@ import hextant.context.Context
 import hextant.context.withoutUndo
 import hextant.serial.EditorRoot
 import kotlinx.serialization.Serializable
-import reaktive.value.ReactiveString
-import reaktive.value.binding.map
 import reaktive.value.now
 import xenakis.model.obj.BusObject
-import xenakis.model.registry.BusRegistry
-import xenakis.model.registry.ObjectReference
 import xenakis.sc.client.ScWriter
 import xenakis.sc.editor.CodeBlockEditor
 import xenakis.sc.editor.IdentifierEditor
@@ -17,24 +13,20 @@ import xenakis.sc.editor.assign
 import xenakis.sc.editor.`in`
 
 @Serializable
-class CodeFlow(
-    private val busRef: ObjectReference,
-    val codeEditor: EditorRoot<CodeBlockEditor>,
-) : AudioFlow() {
-    override lateinit var associatedBus: BusObject
-        private set
-
-    override lateinit var superColliderName: ReactiveString
-        private set
-
-    override fun initialize(context: Context) {
+class CodeFlow(val codeEditor: EditorRoot<CodeBlockEditor>) : AudioFlow() {
+    override fun initialize(context: Context, bus: BusObject) {
         super.initialize(context)
-        busRef.resolve(context[BusRegistry])
-        associatedBus = busRef.get()
-        superColliderName = associatedBus.name.map { n -> "~flow_${n}_code" }
     }
 
-    override fun copyFor(associatedBus: BusObject): AudioFlow = CodeFlow(associatedBus.reference(), codeEditor.clone())
+    override fun copy(): AudioFlow = CodeFlow(codeEditor.clone())
+
+    override fun getInputs(): Collection<BusObject> = emptySet()
+
+    override fun getOutputs(): Collection<BusObject> = emptySet() //TODO make input ands output configurable
+
+    override fun addListener(listener: AudioNode.Listener) {
+
+    }
 
     override fun ScWriter.writeCode(placement: NodePlacement) {
         val code = codeEditor.editor.result.now
@@ -45,8 +37,7 @@ class CodeFlow(
         +".play"
     }
 
-    override fun getConnectedBusses(vararg flowType: FlowType): Set<BusObject> =
-        if (FlowType.InOut in flowType) setOf(associatedBus) else emptySet()
+    override fun getDefaultName(): String = "Code"
 
     companion object {
         fun createFor(bus: BusObject, context: Context): CodeFlow {
@@ -55,7 +46,7 @@ class CodeFlow(
                 editor.variables.addLast(IdentifierEditor(context, "snd"))
                 editor.statements.addLast(assign("snd", `in`(context, bus)))
             }
-            return CodeFlow(bus.reference(), EditorRoot.create(editor))
+            return CodeFlow(EditorRoot.create(editor))
         }
     }
 }

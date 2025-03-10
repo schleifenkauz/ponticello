@@ -6,18 +6,21 @@ import javafx.geometry.HorizontalDirection.RIGHT
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
-import reaktive.Observer
-import reaktive.value.*
+import reaktive.value.ReactiveValue
+import reaktive.value.ReactiveVariable
+import reaktive.value.now
+import reaktive.value.reactiveVariable
 import xenakis.impl.*
 import xenakis.model.Settings
 import xenakis.model.flow.ScoreObjectInfo
-import xenakis.model.obj.BusObject
+import xenakis.model.obj.ParameterizedObject
 import xenakis.model.obj.ParameterizedObjectDef
 import xenakis.model.obj.SampleObject
 import xenakis.model.obj.SynthDefObject
+import xenakis.model.player.ParameterControlLiveUpdater
 import xenakis.model.player.PlaybackManager
 import xenakis.model.registry.ObjectReference
-import xenakis.sc.client.ScWriter
+import xenakis.sc.ControlSpec
 import xenakis.sc.client.SuperColliderClient
 import xenakis.sc.editor.SynthDefSelector
 import xenakis.sc.writeSynthCode
@@ -28,12 +31,9 @@ class SynthObject(
     @SerialName("name") override val mutableName: ReactiveVariable<String>,
     @SerialName("synthDef") private val synthDefRef: ReactiveVariable<ObjectReference>,
     override val controls: ParameterControls
-) : ParameterizedScoreObject(), ParameterControls.View {
+) : ScoreObject(), ParameterizedObject {
     override val type: String
         get() = "synth"
-
-    @Transient
-    private val controlObservers = mutableMapOf<ParameterControl, Observer>()
 
     @Transient
     lateinit var synthDefSelector: SynthDefSelector
@@ -41,6 +41,14 @@ class SynthObject(
 
     @Transient
     private var playBufRateBeforeResize = zero
+
+    @Transient
+    private lateinit var listener: ParameterControlLiveUpdater
+
+    override val associatedControls: Map<String, ParameterControl>
+        get() = controls.controlMap
+
+    override fun getSpec(parameter: String): ControlSpec? = super<ParameterizedObject>.getSpec(parameter)
 
     val synthDef: SynthDefObject get() = synthDefRef.now.get()
 
@@ -127,50 +135,19 @@ class SynthObject(
         super.initialize(context)
         synthDefSelector = SynthDefSelector(context, synthDefRef)
         controls.initialize(context, synthDef)
-        controls.addView(this)
+        listener = ParameterControlLiveUpdater(context[SuperColliderClient], ::getActiveSynths)
+        listener.listen(controls)
     }
 
-    private fun runOnActiveSynths(action: ScWriter.() -> Unit) {
-        if (!context.hasProperty(PlaybackManager) || !context[PlaybackManager].player.isPlaying.now) return
-        context[SuperColliderClient].run {
-            for ((_, _, name) in context[PlaybackManager].graph.activeInstances(this@SynthObject)) {
-                appendBlock("if (~synths != nil && ~synths['$name'] != nil && ~synths['$name'].isRunning)") {
-                    append("~synths['$name'].")
-                    action()
-                }
-            }
-        }
-    }
-
-    override fun addedControl(parameter: String, control: ParameterControl) {
-        when (control) {
-            is BusControl -> controlObservers[control] = control.bus.forEach { bus ->
-                runOnActiveSynths { +"set('$parameter', ${bus.get<BusObject>().superColliderName})" }
-            }
-
-            is BusValueControl -> controlObservers[control] = control.bus.forEach { bus ->
-                runOnActiveSynths { +"map('$parameter', ${bus.get<BusObject>().superColliderName})" }
-            }
-
-            is ConstantControl -> controlObservers[control] = control.value.forEach { value ->
-                runOnActiveSynths { +"set('$parameter', $value)" }
-            }
-
-            is KnobControl -> controlObservers[control] = control.value.forEach { value ->
-                runOnActiveSynths { +"set('$parameter', $value)" }
-            }
-
-            else -> {} //no realtime updates possible
-        }
-    }
-
-    override fun removedControl(parameter: String, control: ParameterControl) {
-        controlObservers.remove(control)?.kill()
+    private fun getActiveSynths(): List<String> {
+        if (!context.hasProperty(PlaybackManager) || !context[PlaybackManager].player.isPlaying.now) return emptyList()
+        val activeInstances = context[PlaybackManager].graph.activeInstances(this@SynthObject)
+        return activeInstances.map { i -> "~synths['${i.superColliderName.now}']" }
     }
 
     override fun writeCode(info: ScoreObjectInfo): String = code {
         appendBlock("s.makeBundle(${context[Settings].serverLatency.now})") {
-            writeSynthCode(synthDef, controls, context, info, duration)
+            writeSynthCode(synthDef, context, info, duration, controls.controlMap)
         }
     }
 

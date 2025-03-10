@@ -41,6 +41,12 @@ class BusObject(
     override val liveCycleType: LiveCycleType
         get() = LiveCycleType.ServerBoot
 
+    override val canRename: Boolean
+        get() = type == Type.Regular
+
+    override val canDelete: Boolean
+        get() = type == Type.Regular
+
     @Transient
     private lateinit var observer: Observer
 

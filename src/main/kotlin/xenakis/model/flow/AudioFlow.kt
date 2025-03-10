@@ -1,28 +1,62 @@
 package xenakis.model.flow
 
+import hextant.context.Context
 import javafx.scene.input.DataFormat
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 import reaktive.value.ReactiveString
 import reaktive.value.ReactiveVariable
+import reaktive.value.binding.map
+import reaktive.value.now
 import reaktive.value.reactiveVariable
-import xenakis.model.obj.AbstractContextualObject
+import xenakis.model.obj.AbstractRenamableObject
 import xenakis.model.obj.BusObject
+import xenakis.ui.launcher.XenakisLauncher.Companion.currentProject
 
 @Serializable
-sealed class AudioFlow : AbstractContextualObject(), AudioNode {
+sealed class AudioFlow : AbstractRenamableObject(), AudioNode {
     val isActive: ReactiveVariable<Boolean> = reactiveVariable(true)
 
-    val index: ReactiveVariable<Int> = reactiveVariable(0)
+    @Transient
+    val isFirst = reactiveVariable(false)
 
-    abstract val associatedBus: BusObject
+    @Transient
+    val isLast = reactiveVariable(false)
+
+    @Transient
+    lateinit var associatedBus: BusObject
+        private set
+
+    override var mutableName = reactiveVariable(NO_NAME)
+
+    @Transient
+    final override lateinit var superColliderName: ReactiveString
+        private set
+
+    open fun initialize(context: Context, bus: BusObject) {
+        associatedBus = bus
+        superColliderName = name.map { n -> if (n == NO_NAME) "~flow_${hashCode()}" else "~flow_$n" }
+        super.initialize(context)
+    }
 
     open val canDeactivate: Boolean get() = true
 
-    abstract override val superColliderName: ReactiveString
+    override val canRename: Boolean
+        get() = false
 
-    abstract fun copyFor(associatedBus: BusObject): AudioFlow
+    abstract fun getDefaultName(): String
+
+    override fun canRenameTo(newName: String): Boolean =
+        context[currentProject].flows.all().none { f -> f.name.now == newName }
+
+    abstract fun copy(): AudioFlow
+
+    final override fun hashCode(): Int = super.hashCode()
+
+    final override fun equals(other: Any?): Boolean = super.equals(other)
 
     companion object {
         val DATA_FORMAT = DataFormat("audio-flow")
+        const val NO_NAME = "<no name>"
     }
 }

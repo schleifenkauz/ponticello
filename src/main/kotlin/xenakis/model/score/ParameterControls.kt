@@ -34,7 +34,7 @@ class ParameterControls(
     val controlMap: MutableMap<String, ParameterControl> get() = map
 
     @Transient
-    private val viewManager = ListenerManager.createWeakListenerManager<View>()
+    private val listenerManager = ListenerManager.createWeakListenerManager<Listener>()
 
     fun initialize(context: Context, synthDefObject: SynthDefObject) {
         this.context = context
@@ -52,7 +52,7 @@ class ParameterControls(
                 addControl(newName, control)
             } and p.spec.observe { _, _, newSpec ->
                 if (p.name.now !in extraSpecs) {
-                    viewManager.notifyListeners { changedSpec(p.name.now, newSpec) }
+                    listenerManager.notifyListeners { changedSpec(p.name.now, newSpec) }
                 }
             }
         }
@@ -71,14 +71,14 @@ class ParameterControls(
         control.initialize(context)
         map[parameter] = control
         context[UndoManager].record(Edit.ReassignControl(this, parameter, oldControl, control))
-        viewManager.notifyListeners { reassignedControl(parameter, oldControl, control) }
+        listenerManager.notifyListeners { reassignedControl(parameter, oldControl, control) }
     }
 
     fun addControl(parameter: String, control: ParameterControl) {
         control.initialize(context)
         map[parameter] = control
         context[UndoManager].record(Edit.AddControl(this, parameter, control))
-        viewManager.notifyListeners { addedControl(parameter, control) }
+        listenerManager.notifyListeners { addedControl(parameter, control) }
     }
 
     fun setExtraSpec(parameter: String, spec: ControlSpec?) {
@@ -93,7 +93,7 @@ class ParameterControls(
         context[UndoManager].record(Edit.EditExtraSpec(this, parameter, before, after))
         val newSpec = after ?: def.getParameter(parameter)?.spec?.now
         ?: error("Cannot remove extra spec for parameter $parameter because is is not specified in $def")
-        viewManager.notifyListeners { changedSpec(parameter, newSpec) }
+        listenerManager.notifyListeners { changedSpec(parameter, newSpec) }
     }
 
     fun removeExtraSpec(parameter: String) {
@@ -101,14 +101,14 @@ class ParameterControls(
         context[UndoManager].record(Edit.EditExtraSpec(this, parameter, before, extraSpecAfter = null))
         val defParameter = def.getParameter(parameter)!!
         val synthDefSpec = defParameter.spec.now
-        viewManager.notifyListeners { changedSpec(parameter, synthDefSpec) }
+        listenerManager.notifyListeners { changedSpec(parameter, synthDefSpec) }
     }
 
     fun removeControl(parameter: String) {
         val control = map.remove(parameter) ?: error("Parameter $parameter not found in controls")
         extraSpecs.remove(parameter)
         context[UndoManager].record(Edit.RemoveControl(this, parameter, control, extraSpecs[parameter]))
-        viewManager.notifyListeners { removedControl(parameter, control) }
+        listenerManager.notifyListeners { removedControl(parameter, control) }
     }
 
     fun transformControls(f: (String, ParameterControl) -> ParameterControl) =
@@ -116,11 +116,13 @@ class ParameterControls(
 
     fun copy() = ParameterControls(map.mapValuesTo(mutableMapOf()) { (_, c) -> c.copy() }, extraSpecs.toMutableMap())
 
-    fun addView(view: View) {
-        for ((name, control) in controlMap) {
-            view.addedControl(name, control)
+    fun addListener(listener: Listener, initialize: Boolean = true) {
+        listenerManager.addListener(listener)
+        if (initialize) {
+            for ((name, control) in controlMap) {
+                listener.addedControl(name, control)
+            }
         }
-        viewManager.addListener(view)
     }
 
     fun renameControl(parameter: String, newName: String) {
@@ -212,7 +214,7 @@ class ParameterControls(
         }
     }
 
-    interface View {
+    interface Listener {
         fun addedControl(parameter: String, control: ParameterControl)
         fun removedControl(parameter: String, control: ParameterControl)
         fun reassignedControl(parameter: String, oldControl: ParameterControl, control: ParameterControl) {

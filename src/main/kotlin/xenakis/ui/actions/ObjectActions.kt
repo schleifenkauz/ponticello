@@ -18,11 +18,10 @@ import reaktive.value.now
 import reaktive.value.reactiveValue
 import xenakis.impl.times
 import xenakis.impl.zero
-import xenakis.model.registry.ScoreObjectRegistry
 import xenakis.model.score.ObjectPosition
 import xenakis.model.score.ScoreObject
 import xenakis.model.score.ScoreObjectGroup
-import xenakis.ui.controls.NamePrompt
+import xenakis.ui.controls.RenamePrompt
 import xenakis.ui.impl.Direction
 import xenakis.ui.impl.showDialog
 import xenakis.ui.launcher.XenakisMainActivity
@@ -103,9 +102,7 @@ object ObjectActions {
             shortcut("F2")
             executeSingle { view, _ ->
                 val obj = view.instance.obj
-                val name = NamePrompt(view.context[ScoreObjectRegistry], "New name for object", obj.name.now)
-                    .showDialog(view.context) ?: return@executeSingle
-                obj.rename(name)
+                RenamePrompt(obj, "New name for object").showDialog(view.context)
             }
         }
 

@@ -1,10 +1,7 @@
 package xenakis.model.flow
 
-import hextant.context.Context
 import kotlinx.serialization.Serializable
-import reaktive.value.ReactiveString
 import reaktive.value.ReactiveVariable
-import reaktive.value.binding.map
 import reaktive.value.now
 import reaktive.value.reactiveVariable
 import xenakis.impl.Decimal
@@ -12,8 +9,6 @@ import xenakis.impl.copy
 import xenakis.impl.zero
 import xenakis.model.obj.BusObject
 import xenakis.model.obj.ReferencedSynthDefObject
-import xenakis.model.registry.BusRegistry
-import xenakis.model.registry.ObjectReference
 import xenakis.model.score.BusControl
 import xenakis.model.score.ConstantControl
 import xenakis.model.score.ObjectPosition
@@ -23,26 +18,12 @@ import xenakis.sc.writeSynthCode
 
 @Serializable
 class UtilityFlow(
-    private val busRef: ObjectReference,
-    private val volumeDb: ReactiveVariable<Decimal>,
-    private val muted: ReactiveVariable<Boolean>,
-    val solo: ReactiveVariable<Boolean>,
+    private val volumeDb: ReactiveVariable<Decimal> = reactiveVariable(zero),
+    private val muted: ReactiveVariable<Boolean> = reactiveVariable(false),
+    val solo: ReactiveVariable<Boolean> = reactiveVariable(false),
 ) : AudioFlow() {
-    override lateinit var associatedBus: BusObject
-        private set
-
-    override fun copyFor(associatedBus: BusObject): AudioFlow =
-        UtilityFlow(associatedBus.reference(), volumeDb.copy(), muted.copy(), solo.copy())
-
-    override lateinit var superColliderName: ReactiveString
-        private set
-
-    override fun initialize(context: Context) {
-        super.initialize(context)
-        busRef.resolve(context[BusRegistry])
-        associatedBus = busRef.get()
-        superColliderName = associatedBus.name.map { name -> "~flow_${name}_utility" }
-    }
+    override fun copy(): AudioFlow =
+        UtilityFlow(volumeDb.copy(), muted.copy(), solo.copy())
 
     override fun ScWriter.writeCode(placement: NodePlacement) {
         //TODO we need a way to mute other buses when something is soloed
@@ -59,20 +40,17 @@ class UtilityFlow(
         val synthVar = superColliderName.now
         val info = ScoreObjectInfo(ObjectPosition.ZERO, synthVar.removePrefix("~"), synthVar, placement)
         writeSynthCode(
-            ReferencedSynthDefObject.get("utility"), controls,
-            context, info, duration = null
+            ReferencedSynthDefObject.get("utility"), context,
+            info, duration = null, controls.controlMap
         )
     }
 
-    override fun getConnectedBusses(vararg flowType: FlowType): Set<BusObject> =
-        if (FlowType.InOut in flowType) setOf(associatedBus) else emptySet()
+    override fun getDefaultName(): String = "Utility"
 
-    companion object {
-        fun createFor(bus: BusObject) = UtilityFlow(
-            bus.reference(),
-            volumeDb = reactiveVariable(zero(precision = 1)),
-            muted = reactiveVariable(false),
-            solo = reactiveVariable(false)
-        )
+    override fun getInputs(): Collection<BusObject> = emptySet()
+
+    override fun getOutputs(): Collection<BusObject> = emptySet()
+
+    override fun addListener(listener: AudioNode.Listener) {
     }
 }

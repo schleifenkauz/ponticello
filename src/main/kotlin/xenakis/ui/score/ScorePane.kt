@@ -487,7 +487,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
             Process -> {
                 val def = context[ProcessDefRegistry].selectedDef ?: return
                 val initialName = context[ScoreObjectRegistry].availableName(def.name.now)
-                val name = NamePrompt(context[ScoreObjectRegistry], "Name for new Synth object", initialName)
+                val name = NamePrompt(context[ScoreObjectRegistry], "Name for new Process object", initialName)
                     .showDialog(context) ?: return
                 val ref = reactiveVariable(def.reference())
                 val controls = getDefaultControls(def)

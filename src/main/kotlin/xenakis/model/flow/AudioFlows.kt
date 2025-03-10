@@ -18,14 +18,15 @@ import xenakis.model.obj.BusObject
 import xenakis.model.obj.GroupObject
 import xenakis.model.registry.BusRegistry
 import xenakis.model.registry.GroupRegistry
+import xenakis.model.registry.ObjectReference
 import xenakis.model.registry.ObjectRegistry
 
 @Serializable
 class AudioFlows(
-    private val _flows: MutableList<AudioFlow>
+    private val _flows: MutableMap<ObjectReference, MutableList<AudioFlow>>
 ) : ObjectRegistry.Listener<BusObject>, XenakisProject.ProjectComponent, AbstractContextualObject() {
     @Transient
-    private lateinit var registry: BusRegistry
+    private lateinit var busRegistry: BusRegistry
 
     @Transient
     private lateinit var undoManager: UndoManager
@@ -45,38 +46,45 @@ class AudioFlows(
     override val componentName: String
         get() = "flow_graph"
 
-    val flows: List<AudioFlow> get() = _flows
+    @Transient
+    private val flowMap = mutableMapOf<BusObject, MutableList<AudioFlow>>()
 
-    fun all() = flows
+    private val flows: Map<BusObject, List<AudioFlow>> get() = flowMap
+
+    fun all(): List<AudioFlow> = flows.values.flatten()
 
     override fun initialize(context: Context) {
         super.initialize(context)
-        registry = context[BusRegistry]
-        registry.addListener(this)
+        busRegistry = context[BusRegistry]
+        busRegistry.addListener(this)
         undoManager = context[UndoManager]
-        for (flow in flows) {
-            onAddFlow(flow)
+        for ((busRef, flows) in _flows) {
+            busRef.resolve(context[BusRegistry])
+            val bus = busRef.get<BusObject>()
+            flowMap[bus] = flows //not a copy, but a reference to the list so it only has to be modified once!
+            for (flow in flows) {
+                flow.initialize(context, bus)
+                onAddFlow(flow)
+            }
         }
     }
 
     fun addListener(listener: Listener) {
         listeners.addListener(listener)
-        for (flow in flows.sortedBy { f -> f.index.now }) {
-            listener.addedFlow(flow)
+        for ((index, flow) in all().withIndex()) {
+            listener.addedFlow(flow, index)
             if (flow.isActive.now) listener.activatedFlow(flow)
         }
     }
 
-    fun flowsFromAndTo(bus: BusObject) =
-        flows.filter { f -> bus in f.getConnectedBusses(*FlowType.all) }
+    fun flowsFromAndTo(bus: BusObject) = all().filter { f -> bus in f.getOutputs() || bus in f.getInputs() }
 
-    fun associatedFlows(bus: BusObject) = flows.filter { f -> f.associatedBus == bus }.sortedBy { f -> f.index.now }
+    fun associatedFlows(bus: BusObject): List<AudioFlow> = flows.getValue(bus)
 
-    fun anyBusSoloed() = flows.any { f -> f is UtilityFlow && f.isActive.now && f.solo.now }
+    fun indexOf(flow: AudioFlow) = associatedFlows(flow.associatedBus).indexOf(flow)
 
     fun addSendFlow(source: BusObject, target: BusObject): AudioFlow {
-        val flow = SendFlow.createFor(source, target)
-        flow.index.now = associatedFlows(flow.associatedBus).size
+        val flow = SendFlow.createFor(source, target, context)
         addFlow(flow)
         return flow
     }
@@ -89,46 +97,37 @@ class AudioFlows(
         numFlows.remove(obj)
     }
 
-    fun addFlow(flow: AudioFlow) {
-        _flows.add(flow)
+    fun addFlow(flow: AudioFlow, index: Int = numFlows.getValue(flow.associatedBus).now) {
+        flowMap.getOrPut(flow.associatedBus, ::mutableListOf).add(index, flow)
         onAddFlow(flow)
         undoManager.record(AudioFlowsEdit.AddFlow(this, flow))
         listeners.notifyListeners {
-            addedFlow(flow)
+            addedFlow(flow, index)
             if (flow.isActive.now) activatedFlow(flow)
         }
     }
 
     private fun onAddFlow(flow: AudioFlow) {
-        flow.initialize(context)
-        for (f in associatedFlows(flow.associatedBus)) {
-            if (f.index.now > flow.index.now) {
-                f.index.now++
-            }
-        }
+        flow.isFirst.now = flow == associatedFlows(flow.associatedBus).first()
+        flow.isLast.now = flow == associatedFlows(flow.associatedBus).last()
         numFlows.getOrPut(flow.associatedBus) { reactiveVariable(0) }.now++
         activationObservers[flow] = flow.isActive.observe { _, _, active ->
             if (active) listeners.notifyListeners { activatedFlow(flow) }
             else listeners.notifyListeners { deactivatedFlow(flow) }
         }
-        if (flow is ScoreObjectPlaceholder) placeholders[flow.group] = flow
+        if (flow is ScoreObjectPlaceholder) placeholders[flow.group.get<GroupObject>()] = flow
     }
 
     fun removeFlow(flow: AudioFlow) {
-        _flows.remove(flow)
-        for (f in associatedFlows(flow.associatedBus)) {
-            if (f.index.now > flow.index.now) {
-                f.index.now--
-            }
-        }
+        flowMap.getValue(flow.associatedBus).remove(flow)
         numFlows.getValue(flow.associatedBus).now--
         val obs = activationObservers.remove(flow)
         if (obs == null) Logger.warn("Couldn't kill activation observer of $flow", Logger.Category.AudioFlow)
         else obs.kill()
         undoManager.record(AudioFlowsEdit.RemoveFlow(this, flow))
         if (flow is ScoreObjectPlaceholder) {
-            placeholders.remove(flow.group)
-            context[GroupRegistry].remove(flow.group)
+            placeholders.remove(flow.group.get())
+            context[GroupRegistry].remove(flow.group.get())
         }
         listeners.notifyListeners {
             removedFlow(flow)
@@ -148,38 +147,41 @@ class AudioFlows(
     }
 
     fun moveFlow(flow: AudioFlow, index: Int) {
-        val associatedFlows = associatedFlows(flow.associatedBus)
+        val associatedFlows = flowMap.getValue(flow.associatedBus)
         check(index in associatedFlows.indices) { "Invalid index $index ($flow)" }
-        val oldIndex = flow.index.now
+        val oldIndex = associatedFlows.indexOf(flow)
         if (index == oldIndex) return
-        if (index > oldIndex) {
-            for (i in oldIndex + 1..index) {
-                associatedFlows[i].index.now--
-            }
-        } else {
-            for (i in index until oldIndex) {
-                associatedFlows[i].index.now++
-            }
-        }
-        flow.index.now = index
+        associatedFlows.removeAt(oldIndex)
+        associatedFlows.add(index, flow)
+        flow.isFirst.now = index == 0
+        flow.isLast.now = index == associatedFlows.size - 1
         undoManager.record(AudioFlowsEdit.MoveFlow(this, flow, oldIndex, index))
-        listeners.notifyListeners { movedFlow(flow, oldIndex) }
+        listeners.notifyListeners { movedFlow(flow, oldIndex, index) }
     }
 
-    fun referenceIndex(flow: AudioFlow) = flows.indexOf(flow)
+    class FlowReference(private val busReference: ObjectReference, private val index: Int) : java.io.Serializable {
+        fun getFrom(flows: AudioFlows): AudioFlow {
+            busReference.resolve(flows.busRegistry)
+            return flows.flows.getValue(busReference.get())[index]
+        }
+    }
+
+    fun referenceIndex(flow: AudioFlow): FlowReference {
+        val bus = flow.associatedBus
+        val index = associatedFlows(bus).indexOf(flow)
+        return FlowReference(bus.reference(), index)
+    }
 
     fun getPlaceholderNode(group: GroupObject): ScoreObjectPlaceholder = placeholders.getValue(group)
 
     fun numberOfFlows(associatedBus: BusObject): ReactiveInt = numFlows.getValue(associatedBus)
 
-    fun getFlow(referenceIndex: Int) = flows[referenceIndex]
-
     companion object {
-        fun createDefault(): AudioFlows = AudioFlows(mutableListOf())
+        fun createDefault(): AudioFlows = AudioFlows(mutableMapOf())
     }
 
     interface Listener {
-        fun addedFlow(flow: AudioFlow) {}
+        fun addedFlow(flow: AudioFlow, index: Int) {}
 
         fun removedFlow(flow: AudioFlow) {}
 
@@ -187,7 +189,7 @@ class AudioFlows(
 
         fun deactivatedFlow(flow: AudioFlow) {}
 
-        fun movedFlow(flow: AudioFlow, oldIndex: Int) {}
+        fun movedFlow(flow: AudioFlow, oldIndex: Int, newIndex: Int) {}
 
         fun movedNode(node: BusObject) {}
     }

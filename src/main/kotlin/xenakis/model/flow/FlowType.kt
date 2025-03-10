@@ -2,14 +2,13 @@ package xenakis.model.flow
 
 import hextant.codegen.Choice
 
-@Choice(defaultValue = "FlowType.InOut")
+@Choice(defaultValue = "FlowType.Out")
 enum class FlowType {
-    In, Out, InOut;
+    In, Out;
 
     override fun toString(): String = when (this) {
         In -> "in"
         Out -> "out"
-        InOut -> "eff"
     }
 
     companion object {

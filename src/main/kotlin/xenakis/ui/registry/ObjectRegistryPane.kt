@@ -151,8 +151,8 @@ abstract class ObjectRegistryPane<O : NamedObject>(
             setHgrow(nameDisplay, Priority.ALWAYS)
             maxWidth = Double.MAX_VALUE
             children.addAll(nameDisplay, extraControls, actions)
-            addAction(Material2AL.DELETE, "Remove object") { pane.registry.remove(obj) }.isDisable =
-                !pane.canDelete(obj)
+            addAction(Material2AL.DELETE, "Remove object") { pane.registry.remove(obj) }
+                .isDisable = !pane.canDelete(obj)
         }
 
         fun addAction(icon: Ikon, description: String, action: () -> Unit): Button {

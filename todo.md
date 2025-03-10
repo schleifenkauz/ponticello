@@ -36,7 +36,6 @@
 - or open transformation chain by clicking on bus in the flow graph
 - work on positioning of the bus nodes in the flow graph pane
   - is the flow graph pane even needed?
-- react to changes of flow buses
 - how to notify user about loops in the flow graph
 
 ### Improve zooming functionality
@@ -70,6 +69,7 @@
   - better text search implementation
 - improve the timeline
 - retrieve global SynthDefs from `compositions` directory
+- use the global ServerTree/ServerBoot callback to manage SuperCollider object registries
 
 ## Long term ideas
 

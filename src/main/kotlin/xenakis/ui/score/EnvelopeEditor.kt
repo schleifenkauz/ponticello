@@ -20,8 +20,12 @@ import reaktive.value.binding.map
 import reaktive.value.fx.asObservableValue
 import reaktive.value.now
 import xenakis.impl.*
-import xenakis.model.score.*
+import xenakis.model.obj.ParameterizedObject
+import xenakis.model.score.Envelope
 import xenakis.model.score.Envelope.EnvelopePoint
+import xenakis.model.score.EnvelopeControl
+import xenakis.model.score.ObjectPosition
+import xenakis.model.score.SynthObject
 import xenakis.sc.NumericalControlSpec
 import xenakis.sc.mapOnto
 import xenakis.ui.actions.Tool
@@ -123,8 +127,8 @@ class EnvelopeEditor(
                     } else objectView.pane.context.rootPane.magnifyEnvelope(this)
                 }
 
-                ev.button == PRIMARY && ev.isShiftDown && associatedObject is ParameterizedScoreObject -> {
-                    val prompt = ControlSpecPrompt(associatedObject as ParameterizedScoreObject, parameterName, spec)
+                ev.button == PRIMARY && ev.isShiftDown && associatedObject is ParameterizedObject -> {
+                    val prompt = ControlSpecPrompt(associatedObject as ParameterizedObject, parameterName, spec)
                     prompt.showDialog(anchorNode = pane)
                 }
 

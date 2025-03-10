@@ -18,7 +18,7 @@ import xenakis.ui.launcher.XenakisMainActivity
 
 class ProcessObjectView(
     instance: ScoreObjectInstance, override val obj: ProcessObject
-) : ParameterizedScoreObjectView(instance) {
+) : ParameterizedScoreObjectView<ProcessObject>(instance) {
     override val defaultBackgroundColor: ReactiveValue<Color>
         get() = obj.processDef.color
 

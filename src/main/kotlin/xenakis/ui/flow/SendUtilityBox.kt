@@ -3,7 +3,6 @@ package xenakis.ui.flow
 import bundles.createBundle
 import fxutils.centerChildren
 import javafx.scene.Node
-import javafx.scene.control.Label
 import javafx.scene.layout.HBox
 import reaktive.value.ReactiveVariable
 import reaktive.value.now
@@ -18,7 +17,7 @@ import xenakis.sc.view.ObjectSelectorControl
 import xenakis.ui.controls.Knob
 
 class SendUtilityBox(flow: SendFlow) : FlowBox<SendFlow>(flow) {
-    override fun getContent(flow: SendFlow): Node {
+    override fun getContent(): Node {
         val ctrl = KnobControl(flow.amountPercent)
         val spec = NumericalControlSpec(100.0, 0.0, 100.0, 1.toDecimal(), Warp.Linear)
         val knob = Knob("Amount", ctrl, spec, flow.context)
@@ -33,6 +32,4 @@ class SendUtilityBox(flow: SendFlow) : FlowBox<SendFlow>(flow) {
         val selectorControl = ObjectSelectorControl(targetBusSelector, createBundle())
         return HBox(10.0, knob, selectorControl).centerChildren()
     }
-
-    override fun getTitle(flow: SendFlow): Node = Label("Send")
 }
