@@ -17,13 +17,14 @@ import java.util.*
 import kotlin.math.max
 import kotlin.math.pow
 
+//TODO some of this can't be right
 @Serializable(with = Decimal.Serializer::class)
 class Decimal(val value: Double, val precision: Int) : Number(), Comparable<Decimal> {
     override fun toByte(): Byte = value.toInt().toByte()
 
-    override fun toDouble(): Double = value
+    override fun toDouble(): Double = if (isNaN()) Double.NaN else value.round(precision)
 
-    override fun toFloat(): Float = value.toFloat()
+    override fun toFloat(): Float = toDouble().toFloat()
 
     override fun toInt(): Int = value.toInt()
 
@@ -31,7 +32,8 @@ class Decimal(val value: Double, val precision: Int) : Number(), Comparable<Deci
 
     override fun toShort(): Short = value.toInt().toShort()
 
-    override fun compareTo(other: Decimal): Int = if (this == other) 0 else value.compareTo(other.value)
+    override fun compareTo(other: Decimal): Int =
+        if (this == other) 0 else toCanonicalString().compareTo(other.toCanonicalString())
 
     operator fun plus(other: Decimal): Decimal = Decimal(value + other.value, max(precision, other.precision))
 

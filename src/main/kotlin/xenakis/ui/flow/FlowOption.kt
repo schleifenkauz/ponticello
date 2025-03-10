@@ -57,8 +57,7 @@ sealed interface FlowOption {
             associatedBus: BusObject,
             onCreate: (AudioFlow) -> Unit
         ) {
-            val groupName = NamePrompt(context[GroupRegistry], "Group name", "")
-                .showDialog(anchor) ?: return
+            val groupName = NamePrompt(context[GroupRegistry], "Group name", "").showDialog(anchor) ?: return
             val group = GroupObject(reactiveVariable(groupName))
             context[GroupRegistry].add(group)
             onCreate(ScoreObjectPlaceholder(associatedBus.reference(), group))

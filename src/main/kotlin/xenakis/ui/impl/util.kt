@@ -79,7 +79,7 @@ fun colorPicker(controlledVar: ReactiveVariable<Color>): ColorPicker {
     return picker
 }
 
-fun <R> Prompt<R, *>.showDialog(context: Context) = showDialog(null, owner = context[primaryStage])
+fun <R> Prompt<R, *>.showDialog(context: Context) = showDialog(owner = context[primaryStage])
 
 fun makeSubWindow(type: SubWindow.Type, root: Parent, title: String, context: Context): SubWindow {
     val w = SubWindow(root, title, type)

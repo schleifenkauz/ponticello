@@ -336,7 +336,7 @@ class EnvelopeEditor(
     private fun showPromptFor(idx: Int) {
         val point = envelope.points[idx]
         val value = DecimalPrompt("Value for $parameterName", point.value, spec.range)
-            .showDialog(handles[idx]) ?: return
+            .showDialog(pane) ?: return //TODO where to show dialog?
         envelope.editPoint(idx, value.value.snap(valueGrid))
     }
 

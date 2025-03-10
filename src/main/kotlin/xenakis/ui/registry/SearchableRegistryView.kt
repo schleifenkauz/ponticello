@@ -4,9 +4,9 @@ import fxutils.prompt.SearchableListView
 import fxutils.prompt.YesNoPrompt
 import fxutils.registerShortcuts
 import fxutils.runFXWithTimeout
-import javafx.scene.Node
 import javafx.scene.control.Label
 import javafx.scene.layout.HBox
+import javafx.scene.layout.Region
 import reaktive.value.now
 import xenakis.model.obj.RenamableObject
 import xenakis.model.registry.NamedObject
@@ -28,7 +28,7 @@ abstract class SearchableRegistryView<O : NamedObject>(
                             registry,
                             "Rename ${registry.objectType} ${obj.name.now}",
                             initialName = obj.name.now
-                        ).showDialog(anchorNode = getBox(obj)) ?: return@runFXWithTimeout
+                        ).showDialog(anchorNode = getBox(obj)!!) ?: return@runFXWithTimeout
                         obj.rename(newName)
                     }
                 }
@@ -38,7 +38,7 @@ abstract class SearchableRegistryView<O : NamedObject>(
                     hide()
                     runFXWithTimeout(25) {
                         val question = "Delete ${registry.objectType} ${obj.name.now}?"
-                        val really = YesNoPrompt(question).showDialog(anchorNode = getBox(obj))
+                        val really = YesNoPrompt(question).showDialog(anchorNode = getBox(obj)!!)
                         if (really == true) registry.remove(obj)
                     }
                 }
@@ -48,7 +48,7 @@ abstract class SearchableRegistryView<O : NamedObject>(
 
     override fun options(): List<O> = registry.all()
 
-    override fun createCell(option: O): Node {
+    override fun createCell(option: O): Region {
         val label = Label(displayText(option))
         val box = HBox(label)
         return box

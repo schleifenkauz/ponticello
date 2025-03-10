@@ -127,16 +127,6 @@ class ControlAssignmentEditor(
         return detailEditor != null
     }
 
-    private enum class Option {
-        Delete, Rename, EditSpec;
-
-        override fun toString(): String = when (this) {
-            Delete -> "delete"
-            Rename -> "rename"
-            EditSpec -> "edit spec"
-        }
-    }
-
     sealed class ControlType<C : ParameterControl> {
         abstract fun createDetailInput(
             obj: ParameterizedObject,
@@ -383,7 +373,7 @@ class ControlAssignmentEditor(
                 icon(Codicons.SYMBOL_PROPERTY)
                 executes { editor: ControlAssignmentEditor ->
                     ControlSpecPrompt(editor.obj, editor.parameter, editor.spec)
-                        .showDialog(editor.actionBar)
+                        .showDialog(anchorNode = editor)
                 }
             }
             addAction("Remove") {
