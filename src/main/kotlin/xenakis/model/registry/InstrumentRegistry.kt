@@ -57,7 +57,7 @@ class InstrumentRegistry(
     }
 
     fun addView(view: Listener) {
-        super.addListener(view)
+        super.addListener(view, initialize = true)
         view.selected(selectedInstrument.now)
     }
 

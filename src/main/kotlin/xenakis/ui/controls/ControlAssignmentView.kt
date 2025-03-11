@@ -21,7 +21,6 @@ class ControlAssignmentView(
 
     init {
         obj.controls.addListener(this)
-        prefWidth = 500.0
     }
 
     override fun addedControl(parameter: String, control: ParameterControl) {

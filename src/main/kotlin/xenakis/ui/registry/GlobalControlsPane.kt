@@ -53,7 +53,7 @@ class GlobalControlsPane(
             editor.setResult(defaultControlSpec)
         }
         val control = context.createControl(editor)
-        val window = makeSubWindow(SubWindow.Type.Popup, control, "Configure global control", context)
+        val window = makeSubWindow(control, "Configure global control", context, SubWindow.Type.Popup)
         window.initOwner(scene.window)
         window.scene.fill = BLACK
         window.width = 800.0

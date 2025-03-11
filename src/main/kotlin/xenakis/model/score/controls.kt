@@ -113,6 +113,10 @@ data class CustomControl(val expr: EditorRoot<ScExprExpander>) : ParameterContro
 @Serializable
 data class ConstantControl(val value: ReactiveVariable<Decimal>) : ParameterControl() {
     override fun copy(): ParameterControl = ConstantControl(value.copy())
+
+    companion object {
+        fun create(value: Decimal) = ConstantControl(reactiveVariable(value))
+    }
 }
 
 fun ParameterControl.makeExpr(): ScExpr = when (this) {

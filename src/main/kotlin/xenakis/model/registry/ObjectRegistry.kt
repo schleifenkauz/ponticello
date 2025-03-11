@@ -120,11 +120,13 @@ abstract class ObjectRegistry<O : NamedObject> : XenakisProject.ProjectComponent
         }
     }
 
-    fun addListener(listener: Listener<O>) {
+    fun addListener(listener: Listener<O>, initialize: Boolean = true) {
         @Suppress("UNCHECKED_CAST") val unsafe = views as ListenerManager<Listener<O>>
         unsafe.addListener(listener)
-        for ((idx, bus) in objects.withIndex()) {
-            listener.added(bus, idx)
+        if (initialize) {
+            for ((idx, bus) in objects.withIndex()) {
+                listener.added(bus, idx)
+            }
         }
     }
 

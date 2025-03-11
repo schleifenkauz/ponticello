@@ -6,6 +6,7 @@ import kotlinx.serialization.Transient
 import reaktive.value.ReactiveVariable
 import reaktive.value.now
 import reaktive.value.reactiveVariable
+import xenakis.impl.zero
 import xenakis.model.obj.BusObject
 import xenakis.model.obj.ParameterizedObject
 import xenakis.model.obj.ParameterizedObjectDef
@@ -13,6 +14,7 @@ import xenakis.model.obj.SynthDefObject
 import xenakis.model.player.ParameterControlLiveUpdater
 import xenakis.model.registry.ObjectReference
 import xenakis.model.score.BusControl
+import xenakis.model.score.ConstantControl
 import xenakis.model.score.ObjectPosition
 import xenakis.model.score.ParameterControls
 import xenakis.sc.BusControlSpec
@@ -46,19 +48,17 @@ class SynthFlow(
         listener.listen(controls)
     }
 
-    override fun copy(): AudioFlow {
-        val ctrls = controls.copy()
-        return SynthFlow(defRef, ctrls)
-    }
+    override fun copy(): AudioFlow = SynthFlow(defRef, controls.copy())
 
     override fun ScWriter.writeCode(placement: NodePlacement) {
         val synthVar = superColliderName.now
         val info = ScoreObjectInfo(ObjectPosition.ZERO, synthVar.removePrefix("~"), synthVar, placement)
         val mainBusControl = getMainBusParameter(synthDef)!! to BusControl.create(associatedBus)
+        val withoutDuration = "afterDuration" to ConstantControl.create(zero) //no free after duration
         writeSynthCode(
             synthDef, context,
             info, duration = null,
-            controls.controlMap + mainBusControl
+            controls.controlMap + mainBusControl + withoutDuration
         )
     }
 

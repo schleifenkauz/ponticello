@@ -10,13 +10,15 @@ import xenakis.model.obj.SynthDefObject
 import xenakis.model.score.*
 import xenakis.sc.client.ScWriter
 
+private val SPECIAL_PARAMETERS = setOf("afterDuration")
+
 fun ScWriter.writeSynthCode(
     def: SynthDefObject, context: Context,
     info: ScoreObjectInfo, duration: Decimal?,
     controlMap: Map<String, ParameterControl>
 ) {
     val constantArguments = controlMap.mapNotNull { (param, control) ->
-        if (!def.hasParameter(param)) null
+        if (param !in SPECIAL_PARAMETERS && !def.hasParameter(param)) null
         else when (control) {
             is BufferControl -> param to (control.sample.now?.get<SampleObject>()?.superColliderName ?: "0")
             is BusControl -> param to control.bus.now.get<BusObject>().superColliderName

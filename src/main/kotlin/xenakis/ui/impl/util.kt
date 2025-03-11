@@ -7,7 +7,6 @@ import fxutils.prompt.Prompt
 import fxutils.registerShortcuts
 import hextant.context.Context
 import hextant.context.withoutUndo
-import hextant.fx.Stylesheets
 import hextant.serial.EditorRoot
 import hextant.serial.snapshot
 import javafx.scene.Parent
@@ -81,9 +80,11 @@ fun colorPicker(controlledVar: ReactiveVariable<Color>): ColorPicker {
 
 fun <R> Prompt<R, *>.showDialog(context: Context) = showDialog(owner = context[primaryStage])
 
-fun makeSubWindow(type: SubWindow.Type, root: Parent, title: String, context: Context): SubWindow {
+fun makeSubWindow(
+    root: Parent, title: String,
+    context: Context, type: SubWindow.Type = SubWindow.Type.ToolWindow
+): SubWindow {
     val w = SubWindow(root, title, type)
     w.initOwner(context[primaryStage])
-    context[Stylesheets].manage(w.scene)
     return w
 }

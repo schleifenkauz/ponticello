@@ -36,6 +36,7 @@ import xenakis.sc.client.SuperColliderClient
 import xenakis.ui.actions.*
 import xenakis.ui.flow.AudioFlowGraphPane
 import xenakis.ui.flow.FlowPane
+import xenakis.ui.impl.makeSubWindow
 import xenakis.ui.launcher.XenakisApp.Companion.primaryStage
 import xenakis.ui.misc.*
 import xenakis.ui.registry.*
@@ -111,18 +112,18 @@ class XenakisMainActivity(val project: XenakisProject) : Activity() {
 
         val flowGraphEditor = AudioFlowGraphPane(project.flows, context)
         flowGraphEditor.setPrefSize(1000.0, 1000.0)
-        flowGraphWindow = SubWindow(flowGraphEditor, "Audio flow graph")
+        flowGraphWindow = makeSubWindow(flowGraphEditor, "Audio flow graph", context)
 
         val flowPane = FlowPane(project.flows)
         flowPane.setPrefSize(1000.0, 1000.0)
-        flowPaneWindow = SubWindow(flowPane, "Audio flows")
+        flowPaneWindow = makeSubWindow(flowPane, "Audio flows", context)
 
         val globalControlsPane = GlobalControlsPane(project.globalControls, context)
-        globalControlsWindow = SubWindow(globalControlsPane, "Global controls")
+        globalControlsWindow = makeSubWindow(globalControlsPane, "Global controls", context)
         globalControlsWindow.width = 500.0
 
         val (serverSetup, serverTree) = project.setupCode
-        serverSetupCodeWindow = SubWindow(serverSetup.control, "ServerSetup")
+        serverSetupCodeWindow = makeSubWindow(serverSetup.control, "ServerSetup", context)
         serverSetupCodeWindow.scene.registerShortcuts {
             on("Ctrl+S") {
                 val setupCode = serverSetup.editor.result.now
@@ -131,7 +132,7 @@ class XenakisMainActivity(val project: XenakisProject) : Activity() {
             }
         }
         serverSetupCodeWindow.resize(500.0, 500.0)
-        serverTreeCodeWindow = SubWindow(serverTree.control, "ServerTree")
+        serverTreeCodeWindow = makeSubWindow(serverTree.control, "ServerTree", context)
         serverTreeCodeWindow.scene.registerShortcuts {
             on("Ctrl+S") {
                 val serverTreeCode = serverTree.editor.result.now

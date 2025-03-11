@@ -56,13 +56,13 @@ class CustomizableSynthDefObject(
             val parameterCode = RawScExpr("\\${p.name.now}.${p.spec.now.code}")
             Assignment(Identifier(p.name.now), parameterCode)
         }
-        val getDuration = RawScExpr("duration = \\duration.ir")
-        val freeAfterDuration = RawScExpr("Env.new(levels: [0, 0], times: [duration]).kr(Done.freeSelf)")
+        val freeAfterDuration =
+            RawScExpr("Env.new(levels: [0, 0], times: [\\duration.ir]).kr(\\afterDuration.ir(Done.freeSelf))")
         val variables = ugenGraph?.editor?.result?.now?.variables.orEmpty()
         val statements = ugenGraph?.editor?.result?.now?.statements.orEmpty()
         val block = CodeBlock(
             variables = parameterVariables + variables + Identifier("duration"),
-            statements = parameterAssignments + getDuration + statements + freeAfterDuration
+            statements = parameterAssignments + statements + freeAfterDuration
         )
         val graphFunc = ScFunction(emptyList(), block)
         graphFunc.code(this, context)

@@ -9,6 +9,7 @@ import hextant.context.withoutUndo
 import hextant.core.view.EditorControl
 import javafx.scene.control.Spinner
 import javafx.scene.layout.HBox
+import org.kordamp.ikonli.evaicons.Evaicons
 import reaktive.value.binding.equalTo
 import reaktive.value.forEach
 import reaktive.value.fx.asObservableValue
@@ -62,6 +63,8 @@ class BusObjectBox(private val obj: BusObject) : HBox() {
     companion object {
         private val actions = collectActions<BusObject> {
             addAction("Monitor bus") {
+                icon(Evaicons.ACTIVITY)
+                shortcut("Ctrl+M")
                 executes { bus ->
                     bus.context[SuperColliderClient].run("${bus.superColliderName}.scope;")
                 }
