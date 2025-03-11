@@ -6,6 +6,7 @@ import bundles.set
 import hextant.context.Context
 import kotlinx.serialization.Serializable
 import xenakis.model.obj.ProcessDefObject
+import xenakis.model.obj.SuperColliderObject
 
 @Serializable
 class ProcessDefRegistry(
@@ -14,6 +15,9 @@ class ProcessDefRegistry(
 ) : SuperColliderObjectRegistry<ProcessDefObject>() {
     override val objectType: String
         get() = "ProcessDef"
+
+    override val liveCycleType: SuperColliderObject.LiveCycleType
+        get() = SuperColliderObject.LiveCycleType.InterpreterBoot
 
     override val componentName: String
         get() = "process_defs"

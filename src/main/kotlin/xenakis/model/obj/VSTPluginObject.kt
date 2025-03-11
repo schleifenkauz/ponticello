@@ -12,7 +12,6 @@ import xenakis.impl.ColorSerializer
 import xenakis.impl.randomColor
 import xenakis.impl.superColliderPath
 import xenakis.model.XenakisProject.Companion.projectDirectory
-import xenakis.model.obj.SuperColliderObject.LiveCycleType
 import xenakis.model.registry.BusRegistry
 import xenakis.model.registry.InstrumentRegistry
 import xenakis.model.registry.ObjectReference
@@ -30,9 +29,6 @@ class VSTPluginObject private constructor(
     override val color: ReactiveVariable<@Serializable(with = ColorSerializer::class) Color>
 ) : InstrumentObject, AbstractSuperColliderObject() {
     override val superColliderName get() = "~plugin_${name.now}"
-
-    override val liveCycleType: LiveCycleType
-        get() = LiveCycleType.ServerTree
 
     @Transient
     lateinit var outputSelector: BusSelector
@@ -66,7 +62,7 @@ class VSTPluginObject private constructor(
         super.initialize(context)
     }
 
-    override fun ScWriter.allocateServerObject() {
+    override fun ScWriter.createObject() {
         appendBlock("Task", endLine = false) {
             val info = controllerInfo
             if (info != null) {
@@ -90,13 +86,8 @@ class VSTPluginObject private constructor(
         appendLine(".play;")
     }
 
-    override fun ScWriter.freeServerObject() {
+    override fun ScWriter.freeObject() {
         +"$superColliderName.close; $superColliderName.synth.free; $superColliderName = nil"
-    }
-
-    override fun ScWriter.removeFromServer() {
-        freeServerObject()
-        +"$superColliderName = nil"
     }
 
     override fun canRenameTo(newName: String): Boolean =

@@ -69,7 +69,7 @@
   - better text search implementation
 - improve the timeline
 - retrieve global SynthDefs from `compositions` directory
-- use the global ServerTree/ServerBoot callback to manage SuperCollider object registries
+- merge the `GlobalControlsPane` with the registry pane for control buses
 
 ## Long term ideas
 

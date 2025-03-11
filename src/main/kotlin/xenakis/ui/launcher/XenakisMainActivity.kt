@@ -63,9 +63,6 @@ class XenakisMainActivity(val project: XenakisProject) : Activity() {
     private val samplesPane = SampleRegistryPane(project.samples)
     val samplesWindow = SubWindow(samplesPane, "Samples", SubWindow.Type.Undecorated)
 
-    private val groupsPane = GroupRegistryPane(project.groups)
-    val groupsWindow = SubWindow(groupsPane, "Groups", SubWindow.Type.Undecorated)
-
     val logWindow = SubWindow(LogPane(Logger), "Log", SubWindow.Type.Undecorated)
 
     val settingsWindow = SubWindow(SettingsPane(context[Settings], context), "Settings")

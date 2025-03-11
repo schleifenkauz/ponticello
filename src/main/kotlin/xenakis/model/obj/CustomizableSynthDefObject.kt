@@ -40,16 +40,16 @@ class CustomizableSynthDefObject(
         context.withoutUndo { ugenGraph?.clone() }
     )
 
-    override fun sync(writer: ScWriter) {
-        writer.allocateServerObject()
+    override fun ScWriter.sync() {
+        createObject()
     }
 
     override fun sync() {
-        context[SuperColliderClient].run { sync(writer) }
+        context[SuperColliderClient].run { sync() }
         Logger.confirm("Synchronized SynthDef '${name.now}'", Logger.Category.Instruments)
     }
 
-    override fun ScWriter.allocateServerObject() {
+    override fun ScWriter.createObject() {
         append("SynthDef(\\${name.now}, ")
         val parameterVariables = parameters.now.map { p -> Identifier(p.name.now) }
         val parameterAssignments = parameters.now.map { p ->
@@ -69,7 +69,7 @@ class CustomizableSynthDefObject(
         appendLine(").add;")
     }
 
-    override fun ScWriter.freeServerObject() {
+    override fun ScWriter.freeObject() {
         onRemoved()
     }
 
@@ -90,7 +90,7 @@ class CustomizableSynthDefObject(
     override fun rename(newName: String) {
         onRemoved()
         super.rename(newName)
-        context[SuperColliderClient].run { sync(this) }
+        context[SuperColliderClient].run { this.sync() }
     }
 
     class SynthDefEditor(

@@ -124,7 +124,7 @@ class AudioFlows(
             if (active) listeners.notifyListeners { activatedFlow(flow) }
             else listeners.notifyListeners { deactivatedFlow(flow) }
         }
-        if (flow is ScoreObjectPlaceholder) placeholders[flow.group.get<GroupObject>()] = flow
+        if (flow is ScoreObjectPlaceholder) placeholders[flow.groupRef.get<GroupObject>()] = flow
     }
 
     fun removeFlow(flow: AudioFlow) {
@@ -135,8 +135,8 @@ class AudioFlows(
         else obs.kill()
         undoManager.record(AudioFlowsEdit.RemoveFlow(this, flow))
         if (flow is ScoreObjectPlaceholder) {
-            placeholders.remove(flow.group.get())
-            context[GroupRegistry].remove(flow.group.get())
+            placeholders.remove(flow.groupRef.get())
+            context[GroupRegistry].remove(flow.groupRef.get())
         }
         listeners.notifyListeners {
             removedFlow(flow)
@@ -151,7 +151,7 @@ class AudioFlows(
         listeners.notifyListeners { movedNode(node) }
     }
 
-    fun forceSync() {
+    fun syncAll() {
         TODO("Not yet implemented")
     }
 

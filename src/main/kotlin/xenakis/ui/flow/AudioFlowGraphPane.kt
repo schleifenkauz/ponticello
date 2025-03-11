@@ -282,7 +282,7 @@ class AudioFlowGraphPane(
     }
 
     private fun sync() {
-        graph.forceSync()
+        graph.syncAll()
         context[currentProject].save(graph)
         Logger.confirm("Updated Audio flow graph", Logger.Category.AudioFlow)
     }

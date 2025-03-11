@@ -7,6 +7,7 @@ import hextant.context.Context
 import kotlinx.serialization.Serializable
 import reaktive.value.reactiveVariable
 import xenakis.model.obj.SampleObject
+import xenakis.model.obj.SuperColliderObject
 import xenakis.sc.Identifier
 import xenakis.ui.launcher.XenakisLauncher.Companion.currentProject
 import java.io.File
@@ -17,6 +18,8 @@ class SampleRegistry(private val samples: MutableList<SampleObject>) : SuperColl
         get() = samples
     override val objectType: String
         get() = "Sample"
+    override val liveCycleType: SuperColliderObject.LiveCycleType
+        get() = SuperColliderObject.LiveCycleType.ServerBoot
 
     override fun initialize(context: Context) {
         context[SampleRegistry] = this

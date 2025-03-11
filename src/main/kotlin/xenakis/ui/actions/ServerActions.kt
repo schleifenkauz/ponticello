@@ -20,7 +20,7 @@ object ServerActions : Action.Collector<XenakisProject>({
         }
     }
     addAction("Sync with SuperCollider") {
-        shortcut("Ctrl+Shift+S")
+        shortcut("Ctrl+F5")
         executes { project -> project.syncWithSuperCollider() }
     }
     addAction("Plot Server Tree") {

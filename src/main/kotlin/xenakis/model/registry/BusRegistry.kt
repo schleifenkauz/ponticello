@@ -7,6 +7,7 @@ import hextant.context.Context
 import kotlinx.serialization.Serializable
 import reaktive.value.now
 import xenakis.model.obj.BusObject
+import xenakis.model.obj.SuperColliderObject
 import xenakis.sc.Rate
 
 @Serializable
@@ -16,6 +17,9 @@ class BusRegistry(private val busses: MutableList<BusObject>) : SuperColliderObj
 
     override val objectType: String
         get() = "Bus"
+
+    override val liveCycleType: SuperColliderObject.LiveCycleType
+        get() = SuperColliderObject.LiveCycleType.ServerBoot
 
     override fun initialize(context: Context) {
         super.initialize(context)

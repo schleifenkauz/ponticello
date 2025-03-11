@@ -60,7 +60,7 @@ object ToolWindowActions : Action.Collector<XenakisMainActivity>({
         executes { screen -> screen.flowGraphWindow.showOrBringToFront() }
     }
     addAction("Show audio flows") {
-        shortcut("Ctrl+Alt+F")
+        shortcut("Ctrl+F")
         icon(MaterialDesignT.TUNE)
         executes { screen -> screen.flowPaneWindow.showOrBringToFront() }
     }
@@ -70,7 +70,7 @@ object ToolWindowActions : Action.Collector<XenakisMainActivity>({
         executes { screen -> screen.settingsWindow.showOrBringToFront() }
     }
     addAction("Show samples") {
-        shortcut("Ctrl+F")
+        shortcut("Ctrl+Shift+S")
         icon(Material2AL.LIBRARY_MUSIC)
         executes { screen -> screen.samplesWindow.showOrBringToFront() }
     }
@@ -79,12 +79,7 @@ object ToolWindowActions : Action.Collector<XenakisMainActivity>({
         icon(Material2AL.GRAIN)
         executes { screen -> screen.globalControlsWindow.showOrBringToFront() }
     }
-    addAction("Show groups") {
-        shortcut("Ctrl+G")
-        icon(Material2AL.IMPORT_EXPORT)
-        executes { screen -> screen.groupsWindow.showOrBringToFront() }
-    }
-    addAction("Show buses") {
+    addAction("Show control buses") {
         shortcut("Ctrl+B")
         icon(Material2AL.GRAPHIC_EQ)
         executes { screen -> screen.busesWindow.showOrBringToFront() }

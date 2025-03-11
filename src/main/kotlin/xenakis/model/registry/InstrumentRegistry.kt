@@ -15,6 +15,7 @@ import reaktive.value.now
 import reaktive.value.reactiveVariable
 import xenakis.model.obj.InstrumentObject
 import xenakis.model.obj.ReferencedSynthDefObject
+import xenakis.model.obj.SuperColliderObject
 import xenakis.sc.client.SuperColliderClient
 
 @Serializable
@@ -24,6 +25,9 @@ class InstrumentRegistry(
 ) : SuperColliderObjectRegistry<InstrumentObject>() {
     override val objects: MutableList<InstrumentObject>
         get() = instruments
+
+    override val liveCycleType: SuperColliderObject.LiveCycleType
+        get() = SuperColliderObject.LiveCycleType.InterpreterBoot //TODO this doesn't work for VSTPlugins
 
     override val objectType: String
         get() = "Instrument"

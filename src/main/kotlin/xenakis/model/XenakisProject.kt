@@ -102,12 +102,11 @@ class XenakisProject private constructor(
     }
 
     fun syncWithSuperCollider() = client.run {
-        groups.syncAll(writer)
-        instruments.syncAll(writer)
-        buffers.syncAll(writer)
-        busses.syncAll(writer)
-        samples.syncAll(writer)
-        //flowGraph.redefineAudioFlow(writer) TODO
+        instruments.syncAll()
+        buffers.syncAll()
+        busses.syncAll()
+        samples.syncAll()
+        flows.syncAll()
         globalControls.setBusValues(writer)
         Logger.confirm("Synchronized with SuperCollider", Logger.Category.Project)
     }

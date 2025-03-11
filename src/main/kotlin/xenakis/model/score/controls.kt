@@ -126,7 +126,7 @@ fun ParameterControl.makeExpr(): ScExpr = when (this) {
     is ConstantControl -> DecimalLiteral(value.now)
     is CustomControl -> expr.editor.result.now
     is EnvelopeControl -> RawScExpr(envelope.code())
-    is GroupControl -> group.now.get<GroupObject>().superColliderExpr
+    is GroupControl -> Identifier(group.now.get<GroupObject>().superColliderName)
     is KnobControl -> DecimalLiteral(value.now)
     is SingleBusValueControl -> bus.now.get<BusObject>().superColliderExpr.send("getSynchronous")
 }

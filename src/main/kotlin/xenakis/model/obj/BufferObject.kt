@@ -4,7 +4,6 @@ import kotlinx.serialization.Serializable
 import reaktive.value.ReactiveVariable
 import reaktive.value.now
 import reaktive.value.reactiveVariable
-import xenakis.model.obj.SuperColliderObject.LiveCycleType
 import xenakis.model.registry.BufferRegistry
 import xenakis.sc.client.ScWriter
 
@@ -15,10 +14,7 @@ class BufferObject(
 ) : AbstractSuperColliderObject() {
     override val superColliderName get() = "~buf_${name.now}"
 
-    override val liveCycleType: LiveCycleType
-        get() = LiveCycleType.ServerBoot
-
-    override fun ScWriter.allocateServerObject() {
+    override fun ScWriter.createObject() {
         +"$superColliderName = Buffer.alloc(s, ${frames.now}, ${channels.now})"
     }
 

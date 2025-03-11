@@ -32,12 +32,9 @@ class ProcessDefObject(
     override val superColliderName: String
         get() = "~proc_${name.now}"
 
-    override val liveCycleType: SuperColliderObject.LiveCycleType
-        get() = SuperColliderObject.LiveCycleType.InterpreterBoot
-
     override fun canRenameTo(newName: String): Boolean = !context[ProcessDefRegistry].has(newName)
 
-    override fun ScWriter.allocateServerObject() {
+    override fun ScWriter.createObject() {
         appendBlock("$superColliderName = ") {
             if (parameters.now.any()) +"arg ${parameters.now.joinToString(", ") { p -> p.name.now }}"
             +"var t = 0.0"
@@ -51,11 +48,11 @@ class ProcessDefObject(
     }
 
     override fun sync() {
-        context[SuperColliderClient].run { sync(writer) }
+        context[SuperColliderClient].run { writer.sync() }
         Logger.confirm("Synchronized SynthDef '${name.now}'", Logger.Category.Instruments)
     }
 
-    override fun ScWriter.freeServerObject() {
+    override fun ScWriter.freeObject() {
         +"$superColliderName = nil"
     }
 

@@ -1,35 +1,41 @@
 package xenakis.model.registry
 
 import hextant.context.Context
+import reaktive.Observer
 import xenakis.model.obj.SuperColliderObject
-import xenakis.sc.client.ScWriter
 import xenakis.sc.client.SuperColliderClient
 
 abstract class SuperColliderObjectRegistry<O : SuperColliderObject> : ObjectRegistry<O>() {
+    @Transient
+    private lateinit var client: SuperColliderClient
+
+    protected abstract val liveCycleType: SuperColliderObject.LiveCycleType
+    private var liveCycleObserver: Observer? = null
+
     override fun initialize(context: Context) {
         super.initialize(context)
-        context[SuperColliderClient].run {
+        client = context[SuperColliderClient]
+        createAll()
+        liveCycleObserver = when (liveCycleType) {
+            SuperColliderObject.LiveCycleType.InterpreterBoot -> null
+            SuperColliderObject.LiveCycleType.ServerBoot -> client.serverRebooted.observe { _ -> createAll() }
+            SuperColliderObject.LiveCycleType.ServerTree -> client.treeCleared.observe { _ -> createAll() }
+        }
+    }
+
+    private fun createAll() {
+        client.run {
             for (obj in objects) {
-                obj.run { addToServer() }
+                obj.run { createObject() }
             }
         }
     }
 
     open fun syncAll() {
-        context[SuperColliderClient].run {
-            syncAll(this)
-        }
-    }
-
-    fun syncAll(writer: ScWriter) {
-        for (obj in objects) {
-            obj.sync(writer)
-        }
-    }
-
-    fun ScWriter.allocateAll() {
-        for (obj in objects) {
-            obj.run { allocateServerObject() }
+        client.run {
+            for (obj in objects) {
+                obj.run { sync() }
+            }
         }
     }
 }

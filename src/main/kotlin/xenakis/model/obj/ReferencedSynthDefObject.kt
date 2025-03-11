@@ -43,9 +43,9 @@ class ReferencedSynthDefObject(
 
     override fun onRemoved() {}
 
-    override fun ScWriter.allocateServerObject() {}
+    override fun ScWriter.createObject() {}
 
-    override fun ScWriter.freeServerObject() {}
+    override fun ScWriter.freeObject() {}
 
     override val name: ReactiveValue<String>
         get() = reactiveValue(_name)
@@ -53,7 +53,7 @@ class ReferencedSynthDefObject(
     override val parameters: ReactiveList<ParameterDefObject>
         get() = _parameters
 
-    override fun sync(writer: ScWriter) {
+    override fun ScWriter.sync() {
         updateParameters()
     }
 

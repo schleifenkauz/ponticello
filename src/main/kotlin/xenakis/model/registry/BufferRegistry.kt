@@ -6,6 +6,7 @@ import bundles.set
 import hextant.context.Context
 import kotlinx.serialization.Serializable
 import xenakis.model.obj.BufferObject
+import xenakis.model.obj.SuperColliderObject
 
 @Serializable
 class BufferRegistry(
@@ -15,6 +16,9 @@ class BufferRegistry(
 
     override val objectType: String
         get() = "Buffer"
+
+    override val liveCycleType: SuperColliderObject.LiveCycleType
+        get() = SuperColliderObject.LiveCycleType.ServerBoot
 
     override val objects: MutableList<BufferObject>
         get() = _buffers

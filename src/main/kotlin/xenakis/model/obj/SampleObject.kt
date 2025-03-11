@@ -12,7 +12,6 @@ import xenakis.impl.*
 import xenakis.model.Logger
 import xenakis.model.XenakisProject
 import xenakis.model.XenakisProject.Companion.projectDirectory
-import xenakis.model.obj.SuperColliderObject.LiveCycleType
 import xenakis.model.registry.SampleRegistry
 import xenakis.model.score.ObjectPosition
 import xenakis.sc.client.ScWriter
@@ -63,9 +62,6 @@ class SampleObject private constructor(
 
     val contentsChanged get() = contentChange.stream
 
-    override val liveCycleType: LiveCycleType
-        get() = LiveCycleType.ServerBoot
-
     private fun <T> useAudioStream(block: (AudioInputStream) -> T): T? {
         if (!audioFile.isFile) {
             Logger.severe("No audio stream found for sample ${name.now}: $referencedFile")
@@ -113,7 +109,7 @@ class SampleObject private constructor(
         if (oldSpectrogramFile.isFile) oldSpectrogramFile.renameTo(spectrogramFile)
     }
 
-    override fun ScWriter.allocateServerObject() {
+    override fun ScWriter.createObject() {
         +"$superColliderName = Buffer.read(s, ${audioFile.superColliderPath})"
     }
 
@@ -133,11 +129,11 @@ class SampleObject private constructor(
             }
     }
 
-    override fun sync(writer: ScWriter) {
+    override fun ScWriter.sync() {
         updateSpectrogram()
         updateInfos()
         contentChange.fire()
-        super.sync(writer)
+        super.sync()
     }
 
     private fun updateSpectrogram() {

@@ -3,6 +3,7 @@ package xenakis.model.flow
 import bundles.PublicProperty
 import bundles.publicProperty
 import kollektion.Counter
+import reaktive.Observer
 import reaktive.value.now
 import xenakis.impl.BubbleSort
 import xenakis.impl.ReachabilityGraph
@@ -32,11 +33,12 @@ class AudioFlowGraph(
     private val writeTo = mutableMapOf<BusObject, Counter<AudioNode>>()
     private val graph = ReachabilityGraph<AudioNode>()
     private val placeholderContents = mutableMapOf<GroupObject, MutableList<ActiveSynth>>()
+    private val serverClearObserver: Observer
 
     init {
         flows.context[BusRegistry].addListener(this)
         flows.addListener(this)
-        flows.context[SuperColliderClient].treeCleared.observe { _ ->
+        serverClearObserver = flows.context[SuperColliderClient].treeCleared.observe { _ ->
             rebuildFlowGraph()
         }
     }

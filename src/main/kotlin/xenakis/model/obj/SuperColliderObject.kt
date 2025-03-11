@@ -9,15 +9,14 @@ interface SuperColliderObject : NamedObject {
 
     val superColliderExpr get() = Identifier(superColliderName)
 
-    val liveCycleType: LiveCycleType
+    fun ScWriter.createObject()
 
-    fun ScWriter.allocateServerObject()
+    fun ScWriter.freeObject()
 
-    fun ScWriter.freeServerObject()
-
-    fun ScWriter.addToServer()
-
-    fun sync(writer: ScWriter)
+    fun ScWriter.sync() {
+        freeObject()
+        createObject()
+    }
 
     fun sync()
 

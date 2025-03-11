@@ -29,16 +29,18 @@ class ObjectReference(private var name: String) {
 
     inline fun <reified O : NamedObject> get(): O = get(O::class)
 
-    fun getName() = name
+    fun getName() = obj?.name?.now ?: name
 
-    fun <O : NamedObject> resolve(registry: ObjectRegistry<O>) {
-        if (obj != null) return
+    @Suppress("UNCHECKED_CAST")
+    fun <O : NamedObject> resolve(registry: ObjectRegistry<O>): O {
+        if (obj != null) return obj as O
         try {
             obj = registry.get(name)
         } catch (ex: NoSuchElementException) {
             Logger.severe("${registry.objectType} '$name' not found", Logger.Category.Registries)
             obj = registry.getDefault(name)
         }
+        return obj as O
     }
 
     override fun equals(other: Any?): Boolean {

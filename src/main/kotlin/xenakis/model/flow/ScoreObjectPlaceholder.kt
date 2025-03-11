@@ -1,29 +1,47 @@
 package xenakis.model.flow
 
 import hextant.context.Context
+import hextant.context.withoutUndo
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
+import reaktive.value.now
 import xenakis.model.obj.BusObject
+import xenakis.model.obj.GroupObject
 import xenakis.model.registry.GroupRegistry
 import xenakis.model.registry.ObjectReference
 import xenakis.sc.client.ScWriter
 
 @Serializable
-class ScoreObjectPlaceholder(val group: ObjectReference) : AudioFlow() {
+class ScoreObjectPlaceholder(@SerialName("group") val groupRef: ObjectReference) : AudioFlow() {
     override val canDeactivate: Boolean
         get() = false
 
+    @Transient
+    private lateinit var group: GroupObject
+
+    override fun getSuperColliderName(name: String): String = group.superColliderName
+
     override fun initialize(context: Context, bus: BusObject) {
         super.initialize(context, bus)
-        group.resolve(context[GroupRegistry])
+        group = groupRef.resolve(context[GroupRegistry])
+        mutableName.set(group.name.now)
     }
 
-    override fun copy(): AudioFlow = ScoreObjectPlaceholder(group)
+    override fun rename(newName: String) {
+        context.withoutUndo {
+            group.rename(newName)
+        }
+        super.rename(newName)
+    }
+
+    override fun copy(): AudioFlow = ScoreObjectPlaceholder(groupRef)
 
     override fun ScWriter.writeCode(placement: NodePlacement) {
-        +"$superColliderName = Group.new(${placement.target}, ${placement.addAction})"
+        +"${group.superColliderName} = Group.new(${placement.target}, ${placement.addAction})"
     }
 
-    override fun getDefaultName(): String = "Group ${group.getName()}"
+    override fun getDefaultName(): String = "Group ${groupRef.getName()}"
 
     override fun getInputs(): Collection<BusObject> = emptySet()
 

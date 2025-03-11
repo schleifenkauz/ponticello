@@ -9,7 +9,6 @@ import reaktive.value.ReactiveVariable
 import reaktive.value.now
 import reaktive.value.reactiveVariable
 import xenakis.impl.Point
-import xenakis.model.obj.SuperColliderObject.LiveCycleType
 import xenakis.sc.DecimalLiteral
 import xenakis.sc.Rate
 import xenakis.sc.client.ScWriter
@@ -31,16 +30,6 @@ class BusObject(
             Type.Regular -> "~bus_${name.now}"
         }
 
-    override val functionName
-        get() = when (type) {
-            Type.Output -> "~output_bus_init"
-            Type.Input -> "~input_bus_init"
-            Type.Regular -> "~bus_${name.now}"
-        }
-
-    override val liveCycleType: LiveCycleType
-        get() = LiveCycleType.ServerBoot
-
     override val canRename: Boolean
         get() = type == Type.Regular
 
@@ -50,7 +39,7 @@ class BusObject(
     @Transient
     private lateinit var observer: Observer
 
-    override fun ScWriter.allocateServerObject() {
+    override fun ScWriter.createObject() {
         when (type) {
             Type.Input -> {}
             Type.Output -> {}

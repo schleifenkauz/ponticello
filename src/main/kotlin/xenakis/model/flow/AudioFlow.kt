@@ -35,9 +35,12 @@ sealed class AudioFlow : AbstractRenamableObject(), AudioNode {
 
     open fun initialize(context: Context, bus: BusObject) {
         associatedBus = bus
-        superColliderName = name.map { n -> if (n == NO_NAME) "~flow_${hashCode()}" else "~flow_$n" }
+        superColliderName = name.map(::getSuperColliderName)
         super.initialize(context)
     }
+
+    protected open fun getSuperColliderName(name: String) =
+        if (name == NO_NAME) "~flow_${hashCode()}" else "~flow_$name"
 
     open val canDeactivate: Boolean get() = true
 
