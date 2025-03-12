@@ -9,9 +9,7 @@ import javafx.scene.Node
 import javafx.scene.layout.HBox
 import org.kordamp.ikonli.material2.Material2AL
 import org.kordamp.ikonli.material2.Material2MZ
-import reaktive.value.now
 import xenakis.model.flow.SynthFlow
-import xenakis.sc.BusControlSpec
 import xenakis.sc.view.ObjectSelectorControl
 import xenakis.ui.controls.ControlAssignmentView
 import xenakis.ui.launcher.XenakisMainActivity
@@ -19,9 +17,7 @@ import xenakis.ui.score.ParameterizedScoreObjectView
 
 class SynthFlowBox(flow: SynthFlow) : FlowBox<SynthFlow>(flow) {
     override fun getContent(): Node {
-        val associatedBusParameter = flow.synthDef.parameters.now.firstOrNull { p -> p.spec.now is BusControlSpec }
-        val hiddenParameters = if (associatedBusParameter != null) setOf(associatedBusParameter) else emptySet()
-        return ControlAssignmentView(flow, emptySet())
+        return ControlAssignmentView(flow)
     }
 
     override fun getHeader(): Node = HBox(

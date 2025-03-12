@@ -64,7 +64,7 @@ class ControlAssignmentEditor(
         set(value) {
             field = value!!
             value.styleClass?.add("control-detail-editor")
-            center = HBox(detailEditor).also { it.padding = Insets(0.0, 5.0, 0.0, 5.0) }
+            center = HBox(detailEditor).also { it.padding = Insets(0.0, 5.0, 0.0, 5.0) }.centerChildren()
             HBox.setHgrow(detailEditor, Priority.ALWAYS)
             val box = HBox(nameLabel).centerChildren()
             if (spec is NumericalControlSpec) box.children.add(optionButton)
@@ -73,6 +73,7 @@ class ControlAssignmentEditor(
 
     init {
         styleClass.add("detail-item")
+
         optionButton.isFocusTraversable = false
         optionButton.setOnMouseClicked { showOptionPopup() }
         optionButton.minWidth = 85.0

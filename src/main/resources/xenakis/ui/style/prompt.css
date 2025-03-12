@@ -10,8 +10,8 @@
 .prompt-text-field {
     -fx-background-color: transparent;
     -fx-border-width: 0px;
-    -fx-pref-width: 200px;
-    -fx-font-size: 14px;
+    -fx-pref-width: 150px;
+    -fx-font-size: 12px;
     -fx-prompt-text-fill: gray;
     -fx-text-fill: white;
 }

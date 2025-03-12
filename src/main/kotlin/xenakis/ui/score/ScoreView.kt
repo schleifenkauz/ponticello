@@ -65,7 +65,10 @@ class ScoreView(score: Score, context: Context) : ScorePane(score, context) {
         isFocusTraversable = true
         listenForEvents()
         heightProperty().addListener { _ -> repaint() }
-        widthProperty().addListener { _ -> repaint() }
+        widthProperty().addListener { _, oldWidth, newWidth ->
+            //displayEnd = displayStart + (displayedDuration * newWidth.toDouble() / oldWidth.toDouble())
+            repaint()
+        }
     }
 
     fun initialize() {

@@ -18,7 +18,7 @@
     -fx-border-width: 1;
     -fx-border-radius: 3px;
     -fx-border-color: black;
-    -fx-padding: 5px;
+    -fx-padding: 2px;
     -fx-alignment: center-left;
 }
 
@@ -29,8 +29,4 @@
 
 .detail-item:drop-possible {
     -fx-background-color: #222720;
-}
-
-Slider.control-detail-editor {
-    -fx-padding: 6px;
 }

@@ -34,9 +34,9 @@ sealed class AudioFlow : AbstractRenamableObject(), AudioNode {
         private set
 
     open fun initialize(context: Context, bus: BusObject) {
+        super.initialize(context)
         associatedBus = bus
         superColliderName = name.map(::getSuperColliderName)
-        super.initialize(context)
     }
 
     protected open fun getSuperColliderName(name: String) =

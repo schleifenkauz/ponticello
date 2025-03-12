@@ -23,9 +23,9 @@ class ScoreObjectPlaceholder(@SerialName("group") val groupRef: ObjectReference)
     override fun getSuperColliderName(name: String): String = group.superColliderName
 
     override fun initialize(context: Context, bus: BusObject) {
-        super.initialize(context, bus)
         group = groupRef.resolve(context[GroupRegistry])
         mutableName.set(group.name.now)
+        super.initialize(context, bus)
     }
 
     override fun rename(newName: String) {

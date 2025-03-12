@@ -1,6 +1,6 @@
 .loading-screen-bar > .bar {
     -fx-background-insets: 1 1 2 1;
-    -fx-padding: 0.5em;
+    -fx-padding: 0.6em;
 }
 
 .recent-projects-list {

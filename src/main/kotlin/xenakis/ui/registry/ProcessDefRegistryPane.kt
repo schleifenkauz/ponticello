@@ -2,8 +2,8 @@ package xenakis.ui.registry
 
 import fxutils.SubWindow
 import fxutils.setFixedWidth
-import fxutils.styleClass
 import hextant.fx.initHextantScene
+import javafx.scene.control.ScrollPane
 import javafx.scene.layout.VBox
 import org.kordamp.ikonli.material2.Material2AL
 import org.kordamp.ikonli.materialdesign2.MaterialDesignC
@@ -13,7 +13,6 @@ import reaktive.value.now
 import xenakis.model.obj.ProcessDefObject
 import xenakis.model.registry.ProcessDefRegistry
 import xenakis.ui.controls.NamePrompt
-import xenakis.ui.impl.CollapsablePane
 import xenakis.ui.impl.colorPicker
 import xenakis.ui.impl.registerSyncShortcuts
 
@@ -48,10 +47,12 @@ class ProcessDefRegistryPane(
 
     fun editProcessDef(obj: ProcessDefObject) {
         val window = subWindows.getOrPut(obj) {
-            val pane = VBox(
-                CollapsablePane("Parameters", ParameterDefsPane(registry.context, obj.parameters)),
-                obj.processCode.control
-            ) styleClass "synth-def-pane"
+            val pane = ScrollPane(
+                VBox(
+                    ParameterDefsPane(registry.context, obj.parameters),
+                    obj.processCode.control
+                )
+            )
             SubWindow(pane, "").apply {
                 initOwner(scene.window)
                 titleProperty().bind(obj.name.map { name -> "ProcessDef $name" }.asObservableValue())

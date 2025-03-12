@@ -75,6 +75,14 @@
     -fx-font-size: 13px !important;
 }
 
+.control-spec .keyword {
+    -fx-font-size: 13px !important;
+}
+
+.bus-control-spec .keyword {
+    -fx-font-size: 13px !important;
+}
+
 .horizontal-choice-editor {
     -fx-alignment: center-left;
 }

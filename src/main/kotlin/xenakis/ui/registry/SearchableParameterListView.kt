@@ -6,7 +6,8 @@ import reaktive.value.now
 import xenakis.model.Settings
 import xenakis.model.obj.ParameterDefObject
 import xenakis.model.obj.ParameterizedObject
-import xenakis.sc.*
+import xenakis.sc.Identifier
+import xenakis.sc.NumericalControlSpec
 
 class SearchableParameterListView(
     private val context: Context,
@@ -16,15 +17,7 @@ class SearchableParameterListView(
 ) : SimpleSearchableListView<ParameterDefObject>(parameters, title) {
     override fun extractText(option: ParameterDefObject): String = option.name.now
 
-    override fun displayText(option: ParameterDefObject): String {
-        val type = when (option.spec.now) {
-            is NumericalControlSpec -> "num"
-            is BufferControlSpec -> "buf"
-            is BusControlSpec -> "bus"
-            is GroupControlSpec -> "group"
-        }
-        return "${option.name.now} ($type)"
-    }
+    override fun displayText(option: ParameterDefObject): String = option.simpleString()
 
     override fun makeOption(text: String): ParameterDefObject? {
         if (!Identifier.isValid(text)) return null

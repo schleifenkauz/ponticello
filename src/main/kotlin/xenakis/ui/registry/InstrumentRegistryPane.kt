@@ -2,15 +2,18 @@ package xenakis.ui.registry
 
 import bundles.createBundle
 import fxutils.SubWindow
+import fxutils.letContentFillViewPort
 import fxutils.prompt.SimpleSearchableListView
 import fxutils.prompt.YesNoPrompt
+import fxutils.resize
 import fxutils.setFixedWidth
-import fxutils.styleClass
 import hextant.fx.initHextantScene
 import javafx.application.Platform
 import javafx.scene.control.Label
+import javafx.scene.control.ScrollPane
 import javafx.scene.input.TransferMode
 import javafx.scene.layout.VBox
+import javafx.scene.paint.Color
 import org.kordamp.ikonli.material2.Material2AL
 import org.kordamp.ikonli.material2.Material2MZ
 import org.kordamp.ikonli.materialdesign2.MaterialDesignC
@@ -27,8 +30,8 @@ import xenakis.model.registry.InstrumentRegistry
 import xenakis.sc.Identifier
 import xenakis.sc.view.ObjectSelectorControl
 import xenakis.ui.controls.NamePrompt
-import xenakis.ui.impl.CollapsablePane
 import xenakis.ui.impl.colorPicker
+import xenakis.ui.impl.makeSubWindow
 import xenakis.ui.impl.registerSyncShortcuts
 
 class InstrumentRegistryPane(
@@ -211,25 +214,24 @@ class InstrumentRegistryPane(
         obj as SynthDefObject
         val window = subWindows.getOrPut(obj) {
             if (obj is CustomizableSynthDefObject) {
-                val pane = VBox(
-                    CollapsablePane("Parameters", ParameterDefsPane(registry.context, obj.parameters)),
-                    obj.ugenGraph?.control ?: Label("No code")
-                ).styleClass("synth-def-pane")
-                SubWindow(pane, "").apply {
-                    titleProperty().bind(obj.name.map { name -> "SynthDef $name" }.asObservableValue())
-                    resize(900.0, 800.0)
-                    scene.initHextantScene(registry.context, applyStyle = false)
-                    if (obj.ugenGraph != null) registerSyncShortcuts(obj, obj.ugenGraph)
-                }
+                val pane = ScrollPane(
+                    VBox(
+                        ParameterDefsPane(registry.context, obj.parameters),
+                        obj.ugenGraph?.control ?: Label("No code")
+                    )
+                ).letContentFillViewPort()
+                val w = makeSubWindow(pane, "", registry.context)
+                w.titleProperty().bind(obj.name.map { name -> "SynthDef $name" }.asObservableValue())
+                w.scene.initHextantScene(registry.context, applyStyle = false)
+                w.scene.fill = Color.web("#1e1f22")
+                w.resize(800.0, 800.0)
+                if (obj.ugenGraph != null) w.registerSyncShortcuts(obj, obj.ugenGraph)
+                w
             } else {
                 val pane = ParameterInfoPane(obj.parameters)
-                SubWindow(
-                    pane,
-                    obj.name.now,
-                    type = SubWindow.Type.Popup,
-                ).apply {
+                makeSubWindow(pane, obj.name.now, registry.context, type = SubWindow.Type.Popup).apply {
                     initOwner(scene.window)
-                    resize(800.0, 300.0)
+                    this.resize(800.0, 300.0)
                 }
             }
         }

@@ -3,7 +3,6 @@ package xenakis.ui.misc
 import bundles.PublicProperty
 import bundles.publicProperty
 import fxutils.SubWindow
-import hextant.context.Context
 import javafx.geometry.Bounds
 import javafx.scene.web.WebView
 import reaktive.value.now
@@ -12,7 +11,7 @@ import xenakis.sc.MessageSend
 import xenakis.sc.editor.IdentifierEditor
 import xenakis.sc.editor.ScExprEditor
 
-class HelpBrowser(context: Context) {
+class HelpBrowser {
     private val webView: WebView = WebView()
 
     private val window = SubWindow(webView, "Help Browser", type = SubWindow.Type.Popup)

@@ -4,18 +4,13 @@ import fxutils.shortcut
 import javafx.scene.input.KeyCode
 import javafx.scene.input.KeyEvent
 import javafx.scene.layout.VBox
-import reaktive.value.now
-import xenakis.model.obj.ParameterDefObject
 import xenakis.model.obj.ParameterizedObject
 import xenakis.model.score.ParameterControl
 import xenakis.model.score.ParameterControls
 import xenakis.sc.ControlSpec
 import xenakis.ui.launcher.XenakisApp.Companion.primaryStage
 
-class ControlAssignmentView(
-    private val obj: ParameterizedObject,
-    private val hiddenParameters: Set<ParameterDefObject> = emptySet()
-) : VBox(), ParameterControls.Listener {
+class ControlAssignmentView(private val obj: ParameterizedObject) : VBox(), ParameterControls.Listener {
     private val editorByParameter = mutableMapOf<String, ControlAssignmentEditor>()
     private val editors = mutableListOf<ControlAssignmentEditor>()
 
@@ -24,7 +19,7 @@ class ControlAssignmentView(
     }
 
     override fun addedControl(parameter: String, control: ParameterControl) {
-        if (obj.getSpec(parameter) == null || parameter in hiddenParameters.map { p -> p.name.now }) return
+        if (obj.getSpec(parameter) == null) return
         val editor = ControlAssignmentEditor(obj, parameter)
         editor.setControl(control)
         editors.add(editor)

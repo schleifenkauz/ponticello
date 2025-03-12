@@ -37,16 +37,19 @@
 .object-box {
     -fx-border-color: black;
     -fx-border-width: 2px;
-    -fx-border-radius: 5px;
-    -fx-background-radius: 5px;
+    -fx-border-radius: 3px;
+    -fx-background-radius: 3px;
     -fx-padding: 2px;
-    /*-fx-background-color: rgba(0, 0, 0, 0.33)*/;
     -fx-spacing: 5px;
     -fx-alignment: center-left;
 }
 
 .object-box:hover {
     -fx-background-color: rgba(100, 0, 0, 0.1);
+}
+
+.object-box:selected {
+    -fx-background-color: rgba(100, 0, 0, 0.35) !important;
 }
 
 .object-action-button {

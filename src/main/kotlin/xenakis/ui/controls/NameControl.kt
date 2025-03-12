@@ -23,9 +23,9 @@ class NameControl(val obj: RenamableObject) : HBox() {
     val isEditing = field.editableProperty().asReactiveValue()
 
     init {
-        styleClass("name")
+        styleClass("name-control")
         field styleClass "name-field"
-        val toolbar = ActionBar(actions.withContext(this), buttonStyle = "medium-icon-button")
+        val toolbar = ActionBar(actions.withContext(this), buttonStyle = "small-icon-button")
         children.addAll(field, toolbar)
         field.isEditable = false
         field.addEventFilter(KeyEvent.KEY_PRESSED) { ev ->

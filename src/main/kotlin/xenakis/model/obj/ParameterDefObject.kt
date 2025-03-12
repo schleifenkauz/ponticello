@@ -9,10 +9,7 @@ import reaktive.value.reactiveVariable
 import xenakis.impl.copy
 import xenakis.impl.toDecimal
 import xenakis.model.registry.ObjectReference
-import xenakis.sc.ControlSpec
-import xenakis.sc.NumericalControlSpec
-import xenakis.sc.Warp
-import xenakis.sc.defaultControl
+import xenakis.sc.*
 
 @Serializable
 class ParameterDefObject(
@@ -29,6 +26,16 @@ class ParameterDefObject(
     override fun reference(): Nothing = throw UnsupportedOperationException()
 
     override fun toString(): String = "${name.now}: ${spec.now}"
+
+    fun simpleString(): String {
+        val type = when (spec.now) {
+            is NumericalControlSpec -> "num"
+            is BufferControlSpec -> "buf"
+            is BusControlSpec -> "bus"
+            is GroupControlSpec -> "group"
+        }
+        return "${name.now} ($type)"
+    }
 
     fun copy() = ParameterDefObject(mutableName.copy(), spec.copy())
 

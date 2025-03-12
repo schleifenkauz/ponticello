@@ -44,21 +44,18 @@
 
 ### Minor
 
-- recognize transport shortcuts from all windows
+- recognize transport shortcuts from all windows (?)
 - specify expected channels for buffer parameters
 - lhs of assignments can be compound expressions
 - re-enable allocated buffers (can be used with WrBuf/RdBuf SynthDefs)
-- ability to specify numerical parameter as envelope only/constant only
 - new parameter type: buffer position (range depends on supplied buffer)
   - or use 0..1 range and scale to buffer duration
-- reordering parameters and controls
+- reordering controls
 - ability to rename controls?
 - ability to specify value for horizontal envelope lines via input prompt (how? double click displays )
 - ability to specify added time in beats/bars/ticks
-- make floating windows movable/resizable
 - option to create external automation (adding a kr-write `SynthObject`) for numerical parameter
 - select new objects after unlinking
-- specifying default value for control busses
 - make pasting with shortcut (V and Shift+V)
   - how to query mouse position (`javafx.scene.robot.Robot.mousePosition`)
 - object insertion with INSERT
@@ -115,6 +112,8 @@
 
 ### Ability to take snapshots of the score (basic version control)
 
+- could also be just done in git...
+
 ### Divide the score into multiple tracks
 
 - vertical sections (like JavaFX `SplitPane`)
@@ -133,13 +132,11 @@
 - something is not quite right yet in `ScoreEventCollector` (especially when resizing objects...)
 - moving objects to sub score parent is buggy
 - wait for synth to be allocated before applying envelopes
-- flow graph doesn't react to change of group for flow (only after reopening the project)
 - sub-objects get buggy after unlinking group objects
   - the new objects don't get added to the `ScoreEventCollector`
 - selection based region display is not quite right
 - renaming controls doesn't work
 - creating custom parameters doesn't work
-- crash when moving the border between ScoreView and DetailPane (probably memory issue)
 - recording doesn't work
 
 ### Namen überlegen

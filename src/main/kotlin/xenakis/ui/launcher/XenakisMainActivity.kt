@@ -99,7 +99,7 @@ class XenakisMainActivity(val project: XenakisProject) : Activity() {
         mode = if (largeScreenAvailable) Mode.Desktop else Mode.Laptop
 
         context[XenakisMainActivity] = this
-        context[HelpBrowser] = HelpBrowser(context)
+        context[HelpBrowser] = HelpBrowser()
         settingsWindow.width = 1000.0
         settingsWindow.height = 1000.0
 
