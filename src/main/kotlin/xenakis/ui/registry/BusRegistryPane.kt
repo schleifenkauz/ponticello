@@ -1,14 +1,15 @@
 package xenakis.ui.registry
 
+import fxutils.actions.ContextualizedAction
+import fxutils.actions.collectActions
 import fxutils.setFixedWidth
 import hextant.context.createControl
 import hextant.context.withoutUndo
 import javafx.collections.FXCollections
+import javafx.scene.Node
 import javafx.scene.control.ComboBox
 import javafx.scene.control.Spinner
-import javafx.scene.input.TransferMode
 import org.kordamp.ikonli.evaicons.Evaicons
-import reaktive.value.binding.equalTo
 import reaktive.value.forEach
 import reaktive.value.fx.asObservableValue
 import reaktive.value.fx.asProperty
@@ -30,9 +31,7 @@ class BusRegistryPane(private val busses: BusRegistry) : SuperColliderObjectRegi
         return bus
     }
 
-    override fun canDelete(obj: BusObject): Boolean = obj.type == BusObject.Type.Regular
-
-    override fun ObjectBox<BusObject>.configureObjectBox() {
+    override fun getContent(obj: BusObject): List<Node> {
         val rateSelector = ComboBox(FXCollections.observableList(Rate.entries))
         rateSelector.minWidth = USE_PREF_SIZE
         val channelsSpinner = Spinner<Int>(0, 12, 2).setFixedWidth(50.0)
@@ -56,11 +55,18 @@ class BusRegistryPane(private val busses: BusRegistry) : SuperColliderObjectRegi
         } and defaultValue.result.observe { _, _, newDefault ->
             if (newDefault != obj.defaultValue.now) obj.defaultValue.now = newDefault
         }
-        defaultValueCtrl.visibleProperty().bind(obj.rate.equalTo(Rate.Control).asObservableValue())
-        addGrabber(BusObject.DATA_FORMAT, transferMode = TransferMode.LINK)
-        addAction(Evaicons.ACTIVITY, "Monitor bus") {
-            registry.context[SuperColliderClient].run("${obj.superColliderName}.scope;")
+        return listOf(rateSelector, channelsSpinner, defaultValueCtrl)
+    }
+
+    override fun getActions(obj: BusObject): List<ContextualizedAction> = actions.withContext(obj)
+
+    companion object {
+        private val actions = collectActions<BusObject> {
+            addAction("Monitor bus") {
+                icon(Evaicons.ACTIVITY)
+                shortcut("Ctrl+M")
+                executes { bus -> bus.context[SuperColliderClient].run("${bus.superColliderName}.scope;") }
+            }
         }
-        addExtraControl(defaultValueCtrl, rateSelector, channelsSpinner)
     }
 }

@@ -1,74 +1,79 @@
 package xenakis.ui.registry
 
 import fxutils.*
-import fxutils.actions.ActionBar
+import fxutils.actions.ContextualizedAction
 import fxutils.actions.button
 import fxutils.actions.collectActions
-import fxutils.actions.registerShortcuts
 import javafx.collections.FXCollections
 import javafx.scene.Node
-import javafx.scene.control.*
-import javafx.scene.input.DataFormat
-import javafx.scene.input.Dragboard
-import javafx.scene.input.TransferMode
+import javafx.scene.control.TextField
 import javafx.scene.layout.HBox
 import javafx.scene.layout.Priority
-import javafx.scene.layout.VBox
 import org.controlsfx.control.SearchableComboBox
 import org.controlsfx.control.textfield.CustomTextField
-import org.kordamp.ikonli.Ikon
 import org.kordamp.ikonli.javafx.FontIcon
 import org.kordamp.ikonli.material2.Material2AL
 import org.kordamp.ikonli.material2.Material2MZ
-import org.kordamp.ikonli.materialdesign2.MaterialDesignC
 import org.kordamp.ikonli.materialdesign2.MaterialDesignP
 import org.kordamp.ikonli.materialdesign2.MaterialDesignS
+import reaktive.value.ReactiveString
 import reaktive.value.now
 import reaktive.value.reactiveValue
 import xenakis.model.Logger
-import xenakis.model.obj.RenamableObject
 import xenakis.model.registry.NamedObject
 import xenakis.model.registry.ObjectRegistry
 import xenakis.sc.Identifier
-import xenakis.ui.controls.NameControl
 import xenakis.ui.controls.NamePrompt
 
 abstract class ObjectRegistryPane<O : NamedObject>(
     private val registry: ObjectRegistry<O>
-) : VBox(), ObjectRegistry.Listener<O> {
-    protected val layout = VBox()
-    private val boxes = mutableListOf<ObjectBox<O>>()
+) : ToolPane(), ObjectRegistry.Listener<O>, ObjectBoxType<O> {
     protected val searchText = CustomTextField().styleClass("sleek-text-field", "search-field")
-    private val header = createHeader()
+    protected val boxList: ObjectBoxList<O> = ObjectBoxList(registry.all(), this)
 
     init {
-        maxHeight = 1000.0
-        styleClass.add("tool-pane")
-        val scrollPane = ScrollPane(layout)
-        scrollPane.isFitToWidth = true
-        children.addAll(header, scrollPane)
-        SplitPane.setResizableWithParent(this, false)
-        HBox.setHgrow(searchText, Priority.ALWAYS)
+        setupSearchField()
+    }
+
+    private fun setupSearchField() {
+        boxList.setFilter(::matchesSearch)
         searchText.promptText = "Search..."
         searchText.left = FontIcon(Material2MZ.SEARCH)
-        searchText.textProperty().addListener { _, _, _ -> layoutBoxes() }
-        registerShortcuts(actions.withContext(this))
-        layoutBoxes()
+        searchText.textProperty().addListener { _, _, _ -> boxList.layoutBoxes() }
+        HBox.setHgrow(searchText, Priority.ALWAYS)
     }
 
-    private fun createHeader(): HBox {
-        val type = registry.objectType
-        val label = Label(plural(type)).styleClass("heading")
-        val space = infiniteSpace()
-        val actionBar = ActionBar(actions.withContext(this), buttonStyle = "medium-icon-button")
-        val moveBtn = actionBar.getButton(actions.getAction("Move window"))
-        moveBtn.setupWindowDragButton { scene.window }
-        return HBox(label, searchText, space, actionBar).styleClass("tool-pane-header")
+    override fun getTitle(): ReactiveString = reactiveValue(plural(registry.objectType))
+
+    override fun getHeaderActions(): List<ContextualizedAction> = actions.withContext(this)
+
+    override fun getHeaderContent(): Node = searchText
+
+    override fun getContent(): Node = boxList
+
+    override fun deleteObject(obj: O) {
+        registry.remove(obj)
     }
 
-    override fun requestFocus() {
-        searchText.requestFocus()
+    protected abstract fun sync()
+
+    protected open fun addObject() {
+        val name = NamePrompt(registry, "Name for new ${registry.objectType}", initialName = searchText.text)
+            .showDialog(anchorNode = this) ?: return
+        addObject(name)
     }
+
+    private fun matchesSearch(obj: O) = obj.name.now.contains(searchText.text, ignoreCase = true)
+
+    override fun added(obj: O, idx: Int) {
+        boxList.add(idx, obj)
+    }
+
+    override fun removed(obj: O, idx: Int) {
+        boxList.remove(obj)
+    }
+
+    protected abstract fun addObject(name: String): O?
 
     protected fun <T : Any> showCreateNewDialog(options: List<T>, default: T, createObject: (T, String) -> O?) {
         val typeSelector = SearchableComboBox(FXCollections.observableList(options))
@@ -99,84 +104,6 @@ abstract class ObjectRegistryPane<O : NamedObject>(
         window.show()
     }
 
-    private fun layoutBoxes() {
-        layout.children.clear()
-        for (box in boxes) {
-            if (matchesSearch(box.obj)) layout.children.add(box)
-        }
-        if (scene != null) scene.window.sizeToScene()
-    }
-
-    protected abstract fun sync()
-
-    protected open fun addObject() {
-        val name = NamePrompt(registry, "Name for new ${registry.objectType}", initialName = searchText.text)
-            .showDialog(anchorNode = this) ?: return
-        addObject(name)
-    }
-
-    protected abstract fun addObject(name: String): O?
-
-    protected open fun canDelete(obj: O): Boolean = true
-
-    protected open fun ObjectBox<O>.configureObjectBox() {}
-
-    private fun matchesSearch(obj: O) = obj.name.now.contains(searchText.text, ignoreCase = true)
-
-    override fun added(obj: O, idx: Int) {
-        val box = ObjectBox(this, obj)
-        box.configureObjectBox()
-        boxes.add(box)
-        layoutBoxes()
-    }
-
-    override fun removed(obj: O, idx: Int) {
-        val box = boxes.removeAt(idx)
-        layout.children.remove(box)
-        if (scene != null) scene.window.sizeToScene()
-    }
-
-    fun box(idx: Int): ObjectBox<O> = boxes[idx]
-
-    class ObjectBox<O : NamedObject>(private val pane: ObjectRegistryPane<O>, val obj: O) : HBox() {
-        val actions = HBox(3.0).centerChildren()
-
-        private val extraControls = HBox(5.0).centerChildren()
-
-        init {
-            styleClass("object-box")
-            val nameDisplay =
-                if (obj is RenamableObject) NameControl(obj)
-                else HBox(label(obj.name).styleClass("name-field")).styleClass("name")
-            setHgrow(nameDisplay, Priority.ALWAYS)
-            maxWidth = Double.MAX_VALUE
-            children.addAll(nameDisplay, extraControls, actions)
-            addAction(Material2AL.DELETE, "Remove object") { pane.registry.remove(obj) }
-                .isDisable = !pane.canDelete(obj)
-        }
-
-        fun addAction(icon: Ikon, description: String, action: () -> Unit): Button {
-            val button = icon.button(action = description) { action() }
-            button.styleClass("object-action-button")
-            actions.children.add(0, button)
-            return button
-        }
-
-        fun addGrabber(dataFormat: DataFormat, transferMode: TransferMode, extraConfig: Dragboard.() -> Unit = {}) {
-            val btn = addAction(MaterialDesignC.CURSOR_POINTER, "Grab object") { }
-            btn.setOnDragDetected { ev ->
-                val db = startDragAndDrop(transferMode)
-                db.setContent(mapOf(dataFormat to obj.name.now))
-                db.extraConfig()
-                ev.consume()
-            }
-        }
-
-        fun addExtraControl(vararg node: Node) {
-            extraControls.children.addAll(*node)
-        }
-    }
-
     companion object {
         private val actions = collectActions<ObjectRegistryPane<*>> {
             addAction("Create object") {
@@ -196,14 +123,6 @@ abstract class ObjectRegistryPane<O : NamedObject>(
                         Logger.Category.Registries
                     )
                 }
-            }
-            addAction("Move window") {
-                icon(MaterialDesignC.CURSOR_MOVE)
-            }
-            addAction("Close window") {
-                shortcut("Ctrl+W")
-                icon(MaterialDesignC.CLOSE)
-                executes { p -> p.scene.window.hide() }
             }
         }
     }
