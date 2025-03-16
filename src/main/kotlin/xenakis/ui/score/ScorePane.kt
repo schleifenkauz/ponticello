@@ -28,10 +28,7 @@ import xenakis.model.Logger.Category
 import xenakis.model.obj.ParameterizedObjectDef
 import xenakis.model.obj.SampleObject
 import xenakis.model.obj.SynthDefObject
-import xenakis.model.registry.InstrumentRegistry
-import xenakis.model.registry.ProcessDefRegistry
-import xenakis.model.registry.SampleRegistry
-import xenakis.model.registry.ScoreObjectRegistry
+import xenakis.model.registry.*
 import xenakis.model.score.*
 import xenakis.model.score.Score.Companion.rootScore
 import xenakis.sc.Identifier
@@ -205,7 +202,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
     * Score object view management
     * +*/
 
-    fun getObjectView(inst: ScoreObjectInstance) = views[inst] ?: error("No view found for ${inst.obj.name.now}")
+    fun getObjectView(inst: ScoreObjectInstance) = views[inst] ?: error("No view found for ${inst.ref.getName()}")
 
     private fun createObjectView(inst: ScoreObjectInstance): ScoreObjectView = when (val obj = inst.obj) {
         is SynthObject -> SynthObjectView(inst, obj)
@@ -215,7 +212,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
         is ScoreObjectGroup -> ScoreObjectGroupView(inst, obj)
         is PianoRollObject -> PianoRollObjectView(inst, obj)
         is TempoGridObject -> TempoGridObjectView(inst, obj)
-        is ScoreObject.Unresolved -> UnresolvedScoreObjectView(obj, inst)
+        is ScoreObject.Unresolved -> UnresolvedScoreObjectView(inst)
     }
 
     /*
@@ -350,7 +347,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
                     val defaultName = context[ScoreObjectRegistry].availableName("task")
                     val name = NamePrompt(context[ScoreObjectRegistry], "Task name", defaultName)
                         .showDialog(context) ?: return
-                    val code = EditorRoot.create(ScFunctionEditor(context))
+                    val code = EditorRoot.create(ScFunctionEditor(), context)
                     TaskObject(reactiveVariable(name), code)
                 }
 
@@ -525,7 +522,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
                         val lowestPitch = rootPitchSelector.value.step + 12 * registerSpinner.value
                         val highestPitch = lowestPitch + 12 * octaves.value
                         val notes = mutableListOf<PianoRollObject.Note>()
-                        val eventDictionary = EditorRoot.create(EventDictionaryEditor(context))
+                        val eventDictionary = EditorRoot.create(EventDictionaryEditor(), context)
                         PianoRollObject(
                             reactiveVariable(name),
                             reactiveVariable(instr.reference()),

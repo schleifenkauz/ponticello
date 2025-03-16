@@ -34,7 +34,6 @@ import xenakis.model.obj.SuperColliderObject
 import xenakis.model.player.PlaybackManager
 import xenakis.sc.client.SuperColliderClient
 import xenakis.ui.actions.*
-import xenakis.ui.flow.AudioFlowGraphPane
 import xenakis.ui.flow.FlowPane
 import xenakis.ui.impl.makeSubWindow
 import xenakis.ui.launcher.XenakisApp.Companion.primaryStage
@@ -57,7 +56,7 @@ class XenakisMainActivity(val project: XenakisProject) : Activity() {
     val processDefsPane = ProcessDefRegistryPane(project.processDefs)
     val processDefsWindow = SubWindow(processDefsPane, "Process Definitions", SubWindow.Type.Undecorated)
 
-    private val busRegistryPane = BusRegistryPane(project.busses)
+    private val busRegistryPane = ControlBusRegistryPane(project.busses)
     val busesWindow = SubWindow(busRegistryPane, "Busses", SubWindow.Type.Undecorated)
 
     private val samplesPane = SampleRegistryPane(project.samples)
@@ -67,7 +66,6 @@ class XenakisMainActivity(val project: XenakisProject) : Activity() {
 
     val settingsWindow = SubWindow(SettingsPane(context[Settings], context), "Settings")
 
-    val flowGraphWindow: SubWindow
     val flowPaneWindow: SubWindow
     val globalControlsWindow: SubWindow
     val serverTreeCodeWindow: SubWindow
@@ -106,10 +104,6 @@ class XenakisMainActivity(val project: XenakisProject) : Activity() {
         scoreView = ScoreView(project.score, project.context)
         project.context[ScoreObjectSelectionManager] = ScoreObjectSelectionManager(project.context, scoreView)
         scoreView.initialize()
-
-        val flowGraphEditor = AudioFlowGraphPane(project.flows, context)
-        flowGraphEditor.setPrefSize(1000.0, 1000.0)
-        flowGraphWindow = makeSubWindow(flowGraphEditor, "Audio flow graph", context)
 
         val flowPane = FlowPane(project.flows)
         flowPane.setPrefSize(1000.0, 1000.0)

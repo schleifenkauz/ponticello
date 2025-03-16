@@ -26,7 +26,7 @@ class BusRegistry(private val busses: MutableList<BusObject>) : SuperColliderObj
         context[BusRegistry] = this
     }
 
-    override fun getDefault(name: String?) = getOutput()
+    override fun getDefault(): BusObject = getOutput()
 
     fun getOutput() = busses.find { b -> b.type == BusObject.Type.Output }
         ?: error("No output bus found in registry")
@@ -34,8 +34,8 @@ class BusRegistry(private val busses: MutableList<BusObject>) : SuperColliderObj
     fun getInput() = busses.find { b -> b.type == BusObject.Type.Input }
         ?: error("No output bus found in registry")
 
-    fun filter(rate: Rate?, channels: Int): List<BusObject> = busses.filter { b ->
-        (rate == null || b.rate.now == rate) && (channels == -1 || b.channels.now == channels)
+    fun filter(rate: Rate, channels: Int): List<BusObject> = busses.filter { b ->
+        b.rate == rate && b.channels.now == channels
     }
 
     companion object : PublicProperty<BusRegistry> by publicProperty("BusRegistry") {

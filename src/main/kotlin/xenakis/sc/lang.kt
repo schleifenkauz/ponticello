@@ -16,9 +16,9 @@ import xenakis.impl.Decimal
 import xenakis.impl.parseDecimal
 import xenakis.impl.superColliderPath
 import xenakis.impl.zero
-import xenakis.model.ObjectReferenceExpr
 import xenakis.model.XenakisProject.Companion.projectDirectory
 import xenakis.model.obj.GroupObject
+import xenakis.model.obj.GroupReference
 import xenakis.sc.client.ScWriter
 import xenakis.sc.editor.*
 import java.io.StringWriter
@@ -41,7 +41,7 @@ fun ScElement.code(context: Context): String {
 
 @EditorInterface(ScExprEditor::class)
 @UseEditor(ScExprExpander::class)
-@ListEditor(serializable = true)
+@ListEditor
 interface ScExpr : ScElement
 
 @Serializable
@@ -65,7 +65,7 @@ abstract class SimpleScElement(val code: String) : ScElement {
 @Serializable
 @EditorInterface(LiteralEditor::class)
 @UseEditor(LiteralExpander::class)
-@ListEditor(serializable = true)
+@ListEditor
 sealed interface Literal : ScExpr {
     companion object : TokenType<Literal> {
         override fun compile(token: String): Literal {
@@ -102,7 +102,7 @@ data class BooleanLiteral(val value: Boolean) : Literal, SimpleScElement("$value
 @Serializable
 object Nil : Literal, SimpleScElement("nil")
 
-@Token(serializable = true)
+@Token
 @Serializable(with = DecimalLiteral.Serializer::class)
 @SerialName("DoubleLiteral") //backward compatibility
 data class DecimalLiteral(val text: String, val valueOrNull: Decimal?) : Literal, SimpleScElement(text) {
@@ -134,7 +134,7 @@ data class SymbolLiteral(val name: String) : Literal, SimpleScElement("'$name'")
 data class StringLiteral(val value: String) : Literal, SimpleScElement("\"$value\"")
 
 @Serializable
-@Compound(nodeType = ScExpr::class, serializable = true)
+@Compound(nodeType = ScExpr::class)
 data class ArrayExpr(val elements: List<ScExpr>) : ScExpr {
     override val isValid: Boolean
         get() = elements.all { it.isValid }
@@ -150,8 +150,8 @@ data class ArrayExpr(val elements: List<ScExpr>) : ScExpr {
 }
 
 @Serializable
-@Compound(nodeType = ScExpr::class, serializable = true)
-@ListEditor(serializable = true)
+@Compound(nodeType = ScExpr::class)
+@ListEditor
 data class NamedExpr(val name: Identifier, val value: ScExpr) : ScExpr {
     override val isValid: Boolean
         get() = name.isValid && value.isValid
@@ -167,7 +167,7 @@ data class NamedExpr(val name: Identifier, val value: ScExpr) : ScExpr {
 }
 
 @Serializable
-@Compound(nodeType = ScExpr::class, serializable = true)
+@Compound(nodeType = ScExpr::class)
 data class TupleExpr(val elements: List<NamedExpr>) : Literal {
     override val isValid: Boolean
         get() = elements.all { it.isValid }
@@ -183,7 +183,7 @@ data class TupleExpr(val elements: List<NamedExpr>) : Literal {
 }
 
 @Serializable
-@Compound(nodeType = Literal::class, serializable = true)
+@Compound(nodeType = Literal::class)
 data class LiteralArray(val elements: List<Literal>) : Literal {
     override val isValid: Boolean
         get() = elements.all { it.isValid }
@@ -199,7 +199,7 @@ data class LiteralArray(val elements: List<Literal>) : Literal {
 }
 
 @Serializable
-@Token(nodeType = ScExpr::class, serializable = true)
+@Token(nodeType = ScExpr::class)
 @ListEditor
 data class Identifier(val text: String) : SimpleScElement(text), ScExpr {
     override val isValid: Boolean
@@ -251,7 +251,7 @@ data class CodeBlock(val variables: List<Identifier> = emptyList(), val statemen
 }
 
 @Serializable
-@Compound(nodeType = ScExpr::class, serializable = true)
+@Compound(nodeType = ScExpr::class)
 data class ScFunction(val parameters: List<Identifier> = emptyList(), val body: CodeBlock) : ScExpr {
     override val children: List<ScElement>
         get() = parameters + body
@@ -270,7 +270,7 @@ data class ScFunction(val parameters: List<Identifier> = emptyList(), val body: 
 }
 
 @Serializable
-@Compound(nodeType = ScExpr::class, serializable = true)
+@Compound(nodeType = ScExpr::class)
 data class Assignment(val variable: Identifier, val expression: ScExpr) : ScExpr {
     override val isValid: Boolean
         get() = variable.isValid && expression.isValid
@@ -288,7 +288,7 @@ data class Assignment(val variable: Identifier, val expression: ScExpr) : ScExpr
 sealed interface Selector
 
 @Serializable(Operator.Ser::class)
-@Token(serializable = true)
+@Token
 sealed class Operator(val code: String) : Selector, ScElement {
     override val isValid: Boolean
         get() = this !is Unrecognized
@@ -337,7 +337,7 @@ sealed class Operator(val code: String) : Selector, ScElement {
 }
 
 @Serializable
-@Compound(nodeType = ScExpr::class, serializable = true)
+@Compound(nodeType = ScExpr::class)
 data class MessageSend(val receiver: ScExpr, val method: Identifier, val arguments: List<ScExpr>) : ScExpr {
     override val isValid: Boolean
         get() = receiver.isValid && method.isValid && arguments.all { it.isValid }
@@ -363,7 +363,7 @@ fun ScExpr.send(message: String, vararg arguments: ScExpr) =
 fun lambda(expr: ScExpr) = ScFunction(emptyList(), CodeBlock(emptyList(), listOf(expr)))
 
 @Serializable
-@Compound(nodeType = ScExpr::class, serializable = true)
+@Compound(nodeType = ScExpr::class)
 data class OperatorExpr(val left: ScExpr, val operator: Operator, val right: ScExpr) : ScExpr {
     override val isValid: Boolean
         get() = left.isValid && operator.isValid && right.isValid
@@ -381,7 +381,7 @@ data class OperatorExpr(val left: ScExpr, val operator: Operator, val right: ScE
 }
 
 @Serializable
-@Compound(nodeType = ScExpr::class, serializable = true)
+@Compound(nodeType = ScExpr::class)
 data class NewObject(val className: Identifier, val arguments: List<ScExpr>) : ScExpr {
     override val isValid: Boolean
         get() = className.isValid && arguments.all { it.isValid }
@@ -398,7 +398,7 @@ data class NewObject(val className: Identifier, val arguments: List<ScExpr>) : S
 }
 
 @Serializable
-@Compound(nodeType = ScExpr::class, serializable = true)
+@Compound(nodeType = ScExpr::class)
 data class AccessKey(val receiver: ScExpr, val key: ScExpr) : ScExpr {
     override val isValid: Boolean
         get() = receiver.isValid && key.isValid
@@ -415,7 +415,7 @@ data class AccessKey(val receiver: ScExpr, val key: ScExpr) : ScExpr {
 }
 
 @Serializable
-@Compound(nodeType = ScExpr::class, serializable = true)
+@Compound(nodeType = ScExpr::class)
 data class SpreadArray(val array: ScExpr) : ScExpr {
     override val isValid: Boolean
         get() = array.isValid
@@ -430,7 +430,7 @@ data class SpreadArray(val array: ScExpr) : ScExpr {
 }
 
 @Serializable
-@Compound(serializable = true)
+@Compound
 data class EventDictionary(val entries: List<NamedExpr>)
 
 @Serializable
@@ -457,7 +457,7 @@ data class VSTPlugin(
 data class AdhocSynth(
     val name: Identifier,
     val block: CodeBlock,
-    @Component(GroupSelector::class) val group: ObjectReferenceExpr,
+    @Component(GroupSelector::class) val group: GroupReference,
 ) : ScExpr {
     override val isValid: Boolean
         get() = block.isValid
@@ -468,7 +468,7 @@ data class AdhocSynth(
     override fun code(writer: ScWriter, context: Context) = writeCode(
         writer, context,
         synthName = "~adhoc_${name.text}",
-        target = group.reference!!.get<GroupObject>().superColliderName,
+        target = group.get()?.superColliderName ?: "<none>", //TODO
         addAction = "addToHead",
         wrapInTask = false
     )

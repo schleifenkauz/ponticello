@@ -15,6 +15,7 @@ import xenakis.model.XenakisProject.Companion.projectDirectory
 import xenakis.model.registry.BusRegistry
 import xenakis.model.registry.InstrumentRegistry
 import xenakis.model.registry.ObjectReference
+import xenakis.model.registry.reference
 import xenakis.sc.Rate
 import xenakis.sc.client.ScWriter
 import xenakis.sc.client.SuperColliderClient
@@ -25,7 +26,7 @@ class VSTPluginObject private constructor(
     override val mutableName: ReactiveVariable<String>,
     private val pluginName: String,
     private val presetName: String,
-    private var output: ObjectReference,
+    private var output: ObjectReference<BusObject>,
     override val color: ReactiveVariable<@Serializable(with = ColorSerializer::class) Color>
 ) : InstrumentObject, AbstractSuperColliderObject() {
     override val superColliderName get() = "~plugin_${name.now}"
@@ -40,9 +41,6 @@ class VSTPluginObject private constructor(
     @Transient
     private var controllerInfo: ControllerInfo? = null
 
-    override val canCopy: Boolean
-        get() = false
-
     override fun copy(name: String): InstrumentObject =
         throw UnsupportedOperationException("Cannot copy $this")
 
@@ -53,11 +51,13 @@ class VSTPluginObject private constructor(
 
     override fun initialize(context: Context) {
         if (initialized) return
-        outputSelector = BusSelector(context, Rate.Audio, 2, reactiveVariable(output))
-        outputSelectorObserver = outputSelector.selected.observe { _, _, newOutput ->
-            output = newOutput ?: context[BusRegistry].getOutput().reference()
-            val bus = output.get<BusObject>().superColliderName
-            client.run("if (s.serverRunning) { $superColliderName.synth.set(\\out, $bus) };")
+        outputSelector = BusSelector()
+        outputSelector.setFilter(Rate.Audio, 2)
+        outputSelector.selectInitial(output)
+        outputSelectorObserver = outputSelector.result.observe { _, _, newOutput ->
+            output = newOutput
+            val bus = output.get()?.superColliderName
+            if (bus != null) client.run("if (s.serverRunning) { $superColliderName.synth.set(\\out, $bus) };")
         }
         super.initialize(context)
     }
@@ -71,7 +71,7 @@ class VSTPluginObject private constructor(
                 val synthName = "~tmp_synth"
                 +"s.sync"
                 +"2.wait"
-                +"$synthName = Synth(\\vst_instrument, [out: ${output.get<BusObject>().superColliderName}])"
+                +"$synthName = Synth(\\vst_instrument, [out: ${output.superColliderName}])"
                 +"s.sync"
                 +"0.5.wait"
                 +"$superColliderName = VSTPluginController($synthName)"

@@ -51,7 +51,7 @@ class Recorder(private val context: Context) {
 
     private fun getRecordedBus(): BusObject {
         val options = context[currentProject].serverOptions
-        return options.recordedBus?.get<BusObject>() ?: context[BusRegistry].getDefault()
+        return options.recordedBus.get() ?: context[BusRegistry].getDefault()
     }
 
     fun stopRecording() {

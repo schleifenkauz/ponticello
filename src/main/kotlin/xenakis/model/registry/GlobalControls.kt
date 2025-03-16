@@ -15,7 +15,6 @@ import xenakis.model.XenakisProject
 import xenakis.model.obj.BusObject
 import xenakis.model.score.KnobControl
 import xenakis.sc.NumericalControlSpec
-import xenakis.sc.Rate
 import xenakis.sc.client.ScWriter
 import xenakis.sc.client.SuperColliderClient
 import xenakis.sc.client.SuperColliderContext
@@ -101,7 +100,7 @@ class GlobalControls(private val controls: MutableList<GlobalControl>) : Xenakis
 
     @Serializable
     class GlobalControl(val parameter: String, val knobControl: KnobControl, val spec: NumericalControlSpec) {
-        val bus: BusObject = BusObject.create("global_$parameter", Rate.Control, 1)
+        val bus: BusObject = BusObject.audio("global_$parameter", 1)
 
         init {
             //this is only for needed when opening projects that were created before the decimal-precision update

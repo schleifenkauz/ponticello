@@ -3,55 +3,55 @@ package xenakis.sc.editor
 import fxutils.prompt.showSelectorDialog
 import hextant.command.Command
 import hextant.command.meta.ProvideCommand
-import hextant.context.Context
 import hextant.context.withoutUndo
 import hextant.core.editor.ConfiguredExpander
 import hextant.core.editor.ExpanderConfig
-import hextant.core.editor.copy
-import hextant.serial.SnapshotAware
-import hextant.undo.makeUndoableEdit
+import hextant.core.editor.makeUndoableEdit
+import hextant.core.editor.snapshot
 import kotlinx.serialization.Serializable
 import reaktive.value.now
 import xenakis.model.obj.VSTPluginObject
 import xenakis.sc.*
 
-@Suppress("SERIALIZER_TYPE_INCOMPATIBLE")
-@Serializable(with = SnapshotAware.Serializer::class)
-class ScExprExpander(context: Context) : ConfiguredExpander<ScExpr, ScExprEditor<*>>(config, context),
-    ScExprEditor<ScExpr> {
-    constructor(context: Context, text: String) : this(context) {
-        withoutUndo { setText(text) }
+@Serializable
+class ScExprExpander() : ConfiguredExpander<ScExpr, ScExprEditor<*>>(), ScExprEditor<ScExpr> {
+    constructor(text: String) : this() {
+        setInitialText(text)
     }
 
-    constructor(context: Context, editor: ScExprEditor<*>) : this(context) {
-        withoutUndo { expand(editor) }
+    constructor(editor: ScExprEditor<*>) : this() {
+        setInitialContent(editor)
+    }
+
+    init {
+
     }
 
     override fun defaultResult(): ScExpr = EmptyExpr
 
     override fun autoExpand(text: String): Boolean {
         val editor = when {
-            text in Operator.map -> OperatorExprEditor(context, operator = OperatorEditor(context, text))
+            text in Operator.map -> OperatorExprEditor(operator = OperatorEditor(text))
             text.endsWith(".") && text.dropLast(1).toIntOrNull() == null ->
-                MessageSendEditor(context, ScExprExpander(context, text.dropLast(1)))
+                MessageSendEditor(ScExprExpander(text.dropLast(1)))
 
-            text == "=" -> AssignmentEditor(context)
-            text == "." -> MessageSendEditor(context)
-            text == ":" -> NamedExprEditor(context)
+            text == "=" -> AssignmentEditor()
+            text == "." -> MessageSendEditor()
+            text == ":" -> NamedExprEditor()
 
             text.endsWith("=") && Identifier.isValid(text.dropLast(1)) ->
-                AssignmentEditor(context, IdentifierEditor(context, text.dropLast(1)))
+                AssignmentEditor(IdentifierEditor(text.dropLast(1)))
 
             text.endsWith(":") && Identifier.isValid(text.dropLast(1)) ->
-                NamedExprEditor(context, IdentifierEditor(context, text.dropLast(1)))
+                NamedExprEditor(IdentifierEditor(text.dropLast(1)))
 
             text.endsWith("(") && Identifier.isValid(text.dropLast(1)) ->
-                NewObjectEditor(context, IdentifierEditor(context, text.dropLast(1)))
+                NewObjectEditor(IdentifierEditor(text.dropLast(1)))
 
-            text == "\\" -> SymbolLiteralEditor(context)
-            text == "'" -> StringLiteralEditor(context)
-            text == "{" -> ScFunctionEditor(context)
-            text == "(" -> CodeBlockEditor(context)
+            text == "\\" -> SymbolLiteralEditor()
+            text == "'" -> StringLiteralEditor()
+            text == "{" -> ScFunctionEditor()
+            text == "(" -> CodeBlockEditor()
             else -> null
         }
         return if (editor != null) {
@@ -86,56 +86,56 @@ class ScExprExpander(context: Context) : ConfiguredExpander<ScExpr, ScExprEditor
 
     @ProvideCommand(shortName = "assign", type = Command.Type.SingleReceiver)
     fun assignToVariable() = makeUndoableEdit("Wrap in assignment") {
-        val value = withoutUndo { copy() }
-        val variable = IdentifierEditor(context)
-        val assignment = AssignmentEditor(context, variable, value)
+        val value = withoutUndo { snapshot() }
+        val variable = IdentifierEditor()
+        val assignment = AssignmentEditor(variable, value)
         expand(assignment)
         variable.notifyViews { focus() }
     }
 
     @ProvideCommand(shortName = "name", type = Command.Type.SingleReceiver)
     fun nameValue() = makeUndoableEdit("Wrap in named value") {
-        val value = withoutUndo { copy() }
-        val variable = IdentifierEditor(context)
-        val named = NamedExprEditor(context, variable, value)
+        val value = withoutUndo { snapshot() }
+        val variable = IdentifierEditor()
+        val named = NamedExprEditor(variable, value)
         expand(named)
         variable.notifyViews { focus() }
     }
 
     @ProvideCommand(shortName = "send", type = Command.Type.SingleReceiver)
     fun callMethod() = makeUndoableEdit("Wrap in method call") {
-        val receiver = withoutUndo { copy() }
-        val send = MessageSendEditor(context, receiver)
+        val receiver = withoutUndo { snapshot() }
+        val send = MessageSendEditor(receiver)
         expand(send)
         send.method.notifyViews { focus() }
     }
 
     companion object {
         val config = ExpanderConfig<ScExprEditor<*>>(fallback = LiteralExpander.config).apply {
-            "at" expand { ctx -> AccessKeyEditor(ctx) }
-            "array" expand { ctx -> ArrayExprEditor(ctx) }
-            "if" expand { ctx -> IfExprEditor(ctx) }
-            "while" expand { ctx -> WhileExprEditor(ctx) }
-            "assign" expand { ctx -> AssignmentEditor(ctx) }
-            "eq" expand { ctx -> OperatorExprEditor(ctx, operator = OperatorEditor(ctx, "==")) }
-            "concat" expand { ctx -> OperatorExprEditor(ctx, operator = OperatorEditor(ctx, "++")) }
-            "tuple" expand { ctx -> TupleExprEditor(ctx) }
-            "named" expand { ctx -> NamedExprEditor(ctx) }
-            "block" expand { ctx -> CodeBlockEditor(ctx) }
-            "function" expand { ctx -> ScFunctionEditor(ctx) }
-            "new" expand { ctx -> NewObjectEditor(ctx) }
-            "bus" expand { ctx -> BusSelector(ctx) }
-            "buffer" expand { ctx -> BufferSelector(ctx) }
-            "group" expand { ctx -> GroupSelector(ctx) }
+            "at" expand { AccessKeyEditor() }
+            "array" expand { ArrayExprEditor() }
+            "if" expand { IfExprEditor() }
+            "while" expand { WhileExprEditor() }
+            "assign" expand { AssignmentEditor() }
+            "eq" expand { OperatorExprEditor(operator = OperatorEditor("==")) }
+            "concat" expand { OperatorExprEditor(operator = OperatorEditor("++")) }
+            "tuple" expand { TupleExprEditor() }
+            "named" expand { NamedExprEditor() }
+            "block" expand { CodeBlockEditor() }
+            "function" expand { ScFunctionEditor() }
+            "new" expand { NewObjectEditor() }
+            "bus" expand { BusSelector() }
+            "buffer" expand { BufferSelector() }
+            "group" expand { GroupSelector() }
             "plugin" expand { ctx ->
                 val availablePlugins = VSTPluginObject.availablePlugins(ctx).toList()
                 val pluginName = showSelectorDialog("Plugin", availablePlugins, null, anchor = null)
                     ?: return@expand null
-                VSTPluginEditor(ctx, pluginName)
+                VSTPluginEditor(pluginName)
             }
-            "synth" expand { ctx -> AdhocSynthEditor(ctx) }
-            "in" expand { ctx -> InExprEditor(ctx) }
-            "out" expand { ctx -> OutExprEditor(ctx) }
+            "synth" expand { AdhocSynthEditor() }
+            "in" expand { InExprEditor() }
+            "out" expand { OutExprEditor() }
         }
     }
 }

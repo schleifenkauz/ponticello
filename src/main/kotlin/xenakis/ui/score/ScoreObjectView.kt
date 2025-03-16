@@ -24,13 +24,10 @@ import javafx.scene.input.MouseEvent
 import javafx.scene.layout.*
 import javafx.scene.paint.Color
 import javafx.scene.paint.Color.BLACK
-import reaktive.value.ReactiveValue
+import reaktive.value.*
 import reaktive.value.binding.map
 import reaktive.value.binding.orElse
-import reaktive.value.forEach
 import reaktive.value.fx.asObservableValue
-import reaktive.value.now
-import reaktive.value.reactiveVariable
 import xenakis.impl.*
 import xenakis.model.InteractionSettings.SnapOption
 import xenakis.model.player.PlaybackManager
@@ -51,7 +48,6 @@ abstract class ScoreObjectView(
         private set
     val context: Context get() = pane.context
 
-    private val nameEditor: NameControl = NameControl(instance.obj)
     private lateinit var muteUnmuteBtn: Button
 
     val actions = HBox().centerChildren() styleClass "actions"
@@ -83,7 +79,8 @@ abstract class ScoreObjectView(
     override fun getX(time: Decimal): Double = getWidth(time)
 
     fun getDetailPane() = DetailPane().apply {
-        addItem("Name: ", nameEditor)
+        val obj = instance.obj ?: return@apply
+        addItem("Name: ", NameControl(obj))
         setupDetailPane(this)
     }
 

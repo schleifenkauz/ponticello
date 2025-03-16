@@ -5,57 +5,53 @@ import fxutils.actions.collectActions
 import fxutils.setFixedWidth
 import hextant.context.createControl
 import hextant.context.withoutUndo
-import javafx.collections.FXCollections
 import javafx.scene.Node
-import javafx.scene.control.ComboBox
 import javafx.scene.control.Spinner
+import javafx.scene.paint.Color
 import org.kordamp.ikonli.evaicons.Evaicons
 import reaktive.value.forEach
-import reaktive.value.fx.asObservableValue
 import reaktive.value.fx.asProperty
 import reaktive.value.now
+import xenakis.impl.zero
 import xenakis.model.obj.BusObject
 import xenakis.model.registry.BusRegistry
-import xenakis.sc.Rate
+import xenakis.sc.NumericalControlSpec
+import xenakis.sc.Warp
 import xenakis.sc.client.SuperColliderClient
 import xenakis.sc.editor.DecimalLiteralEditor
 
-class BusRegistryPane(private val busses: BusRegistry) : SuperColliderObjectRegistryPane<BusObject>(busses) {
+class ControlBusRegistryPane(private val busses: BusRegistry) : SuperColliderObjectRegistryPane<BusObject>(busses) {
     init {
         busses.addListener(this)
     }
 
     override fun addObject(name: String): BusObject {
-        val bus = BusObject.create(name)
+        val bus = BusObject.audio(name)
         busses.add(bus)
         return bus
     }
 
+    override fun filter(obj: BusObject): Boolean = obj is BusObject.ControlBus
+
     override fun getContent(obj: BusObject): List<Node> {
-        val rateSelector = ComboBox(FXCollections.observableList(Rate.entries))
-        rateSelector.minWidth = USE_PREF_SIZE
+        obj as BusObject.ControlBus
         val channelsSpinner = Spinner<Int>(0, 12, 2).setFixedWidth(50.0)
-        if (obj.type != BusObject.Type.Regular) {
-            rateSelector.valueProperty().bind(obj.rate.asObservableValue())
-            rateSelector.isDisable = true
-            channelsSpinner.valueFactory.valueProperty().bind(obj.channels.asObservableValue())
-            channelsSpinner.isDisable = true
-        } else {
-            rateSelector.valueProperty().bindBidirectional(obj.rate.asProperty())
-            channelsSpinner.valueFactory.valueProperty().bindBidirectional(obj.channels.asProperty())
-        }
-        val defaultValue = DecimalLiteralEditor(obj.context)
-        obj.context.withoutUndo { defaultValue.setText(obj.defaultValue.now?.text ?: "0") }
+        channelsSpinner.valueFactory.valueProperty().bindBidirectional(obj.channels.asProperty())
+        val defaultValue = DecimalLiteralEditor() //TODO replace with ControlSlider
+        obj.context.withoutUndo { defaultValue.setText(obj.spec.now.defaultValue.text) }
         val defaultValueCtrl = obj.context.createControl(defaultValue)
-        defaultValueCtrl.userData = obj.defaultValue.forEach { v ->
-            val t = v?.text ?: "0"
+        defaultValueCtrl.userData = obj.spec.forEach { spec ->
+            val t = spec.defaultValue.text
             if (defaultValue.text.now != t) {
                 defaultValue.setText(t)
             }
         } and defaultValue.result.observe { _, _, newDefault ->
-            if (newDefault != obj.defaultValue.now) obj.defaultValue.now = newDefault
+            val value = newDefault.get()
+            if (value != obj.defaultValue.now) {
+                obj.spec.now = NumericalControlSpec(value, value, value, zero, Warp.Linear, Color.GRAY)
+            }
         }
-        return listOf(rateSelector, channelsSpinner, defaultValueCtrl)
+        return listOf(channelsSpinner, defaultValueCtrl)
     }
 
     override fun getActions(obj: BusObject): List<ContextualizedAction> = actions.withContext(obj)

@@ -7,9 +7,9 @@ import org.kordamp.ikonli.material2.Material2MZ
 import org.kordamp.ikonli.materialdesign2.MaterialDesignM
 import reaktive.value.binding.map
 import reaktive.value.now
-import xenakis.model.obj.BusObject
 import xenakis.model.player.PlaybackManager
 import xenakis.model.registry.BusRegistry
+import xenakis.model.registry.reference
 import xenakis.sc.Rate
 import xenakis.ui.launcher.XenakisLauncher.Companion.currentProject
 import xenakis.ui.registry.SearchableBusListView
@@ -56,7 +56,7 @@ object PlaybackActions : Action.Collector<PlaybackManager>({
                 val context = playback.context
                 val project = context[currentProject]
                 val currentSelected =
-                    project.serverOptions.recordedBus?.get<BusObject>() ?: context[BusRegistry].getDefault()
+                    project.serverOptions.recordedBus.get() ?: context[BusRegistry].getDefault()
                 SearchableBusListView(context[BusRegistry], "Select bus to record to", rate = Rate.Audio).showPopup(
                     anchorNode = ev?.source as Region,
                     initialOption = currentSelected

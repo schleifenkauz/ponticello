@@ -13,9 +13,11 @@ import xenakis.impl.Decimal
 import xenakis.impl.copy
 import xenakis.impl.toDecimal
 import xenakis.model.obj.BusObject
+import xenakis.model.obj.BusReference
 import xenakis.model.obj.ReferencedSynthDefObject
 import xenakis.model.registry.BusRegistry
 import xenakis.model.registry.ObjectReference
+import xenakis.model.registry.reference
 import xenakis.model.score.BusControl
 import xenakis.model.score.ConstantControl
 import xenakis.model.score.ObjectPosition
@@ -25,14 +27,14 @@ import xenakis.sc.writeSynthCode
 
 @Serializable
 class SendFlow(
-    val targetRef: ReactiveVariable<ObjectReference>,
+    val targetRef: ReactiveVariable<BusReference>,
     val amountPercent: ReactiveVariable<Decimal>,
 ) : AudioFlow() {
     @Transient
     private val observers = mutableListOf<Observer>()
 
     @Transient
-    lateinit var targetBus: ReactiveValue<BusObject>
+    lateinit var targetBus: ReactiveValue<BusObject?>
         private set
 
     override fun initialize(context: Context, bus: BusObject) {
@@ -60,16 +62,16 @@ class SendFlow(
         )
     }
 
-    override fun getDefaultName(): String = "Send ${associatedBus.name.now} to ${targetBus.now.name.now}"
+    override fun getDefaultName(): String = "Send ${associatedBus.name.now} to ${targetRef.now.getName()}"
 
     override fun getInputs(): Collection<BusObject> = setOf(associatedBus)
 
-    override fun getOutputs(): Collection<BusObject> = setOf(targetBus.now)
+    override fun getOutputs(): Collection<BusObject> = targetBus.now?.let(::setOf).orEmpty()
 
     override fun addListener(listener: AudioNode.Listener) {
         val obs = targetBus.observe { _, old, new ->
-            listener.removedBus(old, FlowType.Out)
-            listener.addedBus(new, FlowType.Out)
+            if (old != null) listener.removedBus(old, FlowType.Out)
+            if (new != null) listener.addedBus(new, FlowType.Out)
         }
         observers.add(obs)
     }

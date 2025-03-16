@@ -22,9 +22,7 @@ class GroupRegistry private constructor(
         context[GroupRegistry] = this
     }
 
-    fun getDefaultGroup() = objects.find { g -> g.isDefault }
-
-    override fun getDefault(name: String?): GroupObject = objects.find { it.isDefault } ?: GroupObject.DEFAULT
+    override fun getDefault(): GroupObject = objects.find { g -> g.isDefault } ?: error("Default group not found!")
 
     companion object : PublicProperty<GroupRegistry> by publicProperty("GroupRegistry") {
         fun createDefault() = GroupRegistry(mutableListOf(GroupObject.DEFAULT))

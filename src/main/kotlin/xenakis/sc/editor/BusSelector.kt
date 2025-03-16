@@ -1,58 +1,50 @@
 package xenakis.sc.editor
 
-import hextant.context.Context
-import hextant.serial.SnapshotAware
 import kotlinx.serialization.Serializable
-import reaktive.value.*
+import reaktive.value.ReactiveString
+import reaktive.value.ReactiveValue
 import reaktive.value.binding.binding
-import xenakis.impl.Point
+import reaktive.value.binding.flatMap
+import reaktive.value.now
+import reaktive.value.reactiveValue
 import xenakis.model.obj.BusObject
 import xenakis.model.registry.BusRegistry
 import xenakis.model.registry.ObjectReference
 import xenakis.model.registry.ObjectRegistry
 import xenakis.sc.Rate
-import kotlin.reflect.KClass
 
-@Suppress("SERIALIZER_TYPE_INCOMPATIBLE")
-@Serializable(with = SnapshotAware.Serializer::class)
-class BusSelector(
-    context: Context,
-    val preferredRate: Rate? = null,
-    val preferredChannels: Int = -1,
-    selected: ReactiveVariable<ObjectReference?> =
-        reactiveVariable(getDefaultBus(context, preferredRate, preferredChannels))
-) : ObjectSelector<BusObject, ObjectReference?>(context, selected) {
-    override fun getRegistry(context: Context): ObjectRegistry<*> = context[BusRegistry]
+@Serializable
+class BusSelector : ObjectSelector<BusObject>() {
+    override fun getRegistry(): ObjectRegistry<BusObject> = context[BusRegistry]
 
-    override val objectClass: KClass<BusObject>
-        get() = BusObject::class
+    private var expectedRate: ReactiveValue<Rate?> = reactiveValue(null)
+    private var expectedChannels: ReactiveValue<Int?> = reactiveValue(null)
 
-    override fun createNewObject(name: String): BusObject {
-        val channels = preferredChannels.takeIf { it != -1 } ?: 2
-        val rate = preferredRate ?: Rate.Audio
-        return BusObject.create(name, rate, channels, Point(0.0, 0.0))
+    fun setFilter(
+        rate: ReactiveValue<Rate?> = reactiveValue(null),
+        channels: ReactiveValue<Int?> = reactiveValue(null)
+    ) {
+        expectedRate = rate
+        expectedChannels = channels
     }
 
-    override fun canSelect(choice: BusObject): ReactiveBoolean =
-        binding(choice.rate, choice.channels) { rate, channels ->
-            (preferredRate == null || rate == preferredRate)
-                    && (preferredChannels == -1 || channels == preferredChannels)
-        }
+    fun setFilter(rate: Rate?, channels: Int?) {
+        setFilter(reactiveValue(rate), reactiveValue(channels))
+    }
 
-    override fun extractText(choice: BusObject?): ReactiveString =
-        if (choice == null) reactiveValue("<none>")
-        else binding(choice.name, choice.rate, choice.channels) { name, rate, channels -> "$name ($rate x $channels)" }
+    override fun filter(obj: BusObject): Boolean =
+        obj.rate == expectedRate.now && obj.channels.now == expectedChannels.now
 
-    companion object {
-        private fun getDefaultBus(
-            context: Context,
-            preferredRate: Rate?,
-            preferredChannels: Int
-        ): ObjectReference {
-            val registry = context[BusRegistry]
-            val adequate = registry.filter(preferredRate, preferredChannels).firstOrNull()
-            val bus = adequate ?: registry.getDefault()
-            return bus.reference()
-        }
+    override fun createNewObject(name: String): BusObject {
+        val rate = expectedRate.now ?: Rate.Audio
+        val channels = expectedChannels.now ?: if (rate == Rate.Audio) 2 else 1
+        return BusObject.create(rate, name, channels)
+    }
+
+    override fun toString(choice: ObjectReference<BusObject>): ReactiveString = choice.isResolved.flatMap { resolved ->
+        if (resolved) {
+            val obj = choice.get()!!
+            binding(choice.name, obj.channels) { name, channels -> "$name (${obj.rate} x $channels)" }
+        } else reactiveValue("")
     }
 }

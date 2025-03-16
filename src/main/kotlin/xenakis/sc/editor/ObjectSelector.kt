@@ -1,110 +1,45 @@
 package xenakis.sc.editor
 
-import hextant.context.Context
-import hextant.core.editor.AbstractEditor
-import hextant.serial.Snapshot
-import hextant.undo.AbstractEdit
-import hextant.undo.UndoManager
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.JsonObjectBuilder
-import kotlinx.serialization.json.put
-import reaktive.Observer
+import hextant.core.editor.SimpleChoiceEditor
 import reaktive.value.*
+import reaktive.value.binding.flatMap
 import reaktive.value.binding.map
-import xenakis.impl.getString
-import xenakis.model.ObjectReferenceExpr
 import xenakis.model.registry.NamedObject
 import xenakis.model.registry.ObjectReference
 import xenakis.model.registry.ObjectRegistry
-import xenakis.sc.view.ObjectSelectorView
-import kotlin.reflect.KClass
+import xenakis.model.registry.reference
 
-abstract class ObjectSelector<O : NamedObject, R : ObjectReference?>(
-    context: Context,
-    private val _selected: ReactiveVariable<R>
-) : AbstractEditor<ObjectReferenceExpr, ObjectSelectorView<O>>(context), ScExprEditor<ObjectReferenceExpr> {
-    abstract fun getRegistry(context: Context): ObjectRegistry<*>
+abstract class ObjectSelector<O : NamedObject> :
+    SimpleChoiceEditor<ObjectReference<O>>(), ScExprEditor<ObjectReference<O>> {
+    lateinit var isResolved: ReactiveBoolean
+        private set
 
-    abstract val objectClass: KClass<O>
+    abstract fun getRegistry(): ObjectRegistry<O>
 
-    val selected: ReactiveVariable<R> get() = _selected
-    private val observer: Observer
+    protected open fun filter(obj: O): Boolean = true
 
-    override val result: ReactiveValue<ObjectReferenceExpr>
-        get() = selected.map { ref -> ObjectReferenceExpr(ref) }
-
-    init {
-        selected.now?.resolve(this.getRegistry(context))
-        observer = selected.observe { _, _, value ->
-            notifyViews { selected(value?.get(objectClass)) }
-        }
+    fun selectInitial(value: O) {
+        selectInitial(value.reference())
     }
 
-    fun select(value: R) {
-        context[UndoManager].record(Edit(this, selected.now, value))
-        selected.set(value)
+    override fun doInitialize() {
+        super.doInitialize()
+        result.now.resolve(getRegistry())
+        isResolved = result.flatMap { ref -> ref.isResolved }
     }
 
-    fun selectInitial(value: R) {
-        if (value == null) return
-        value.resolve(getRegistry(context))
-        selected.set(value)
-    }
-
-    override fun viewAdded(view: ObjectSelectorView<O>) {
-        view.selected(selected.now?.get(objectClass))
-    }
+    override fun choices(): List<ObjectReference<O>> =
+        getRegistry().all().filter(::filter).map { obj -> obj.reference() }
 
     abstract fun createNewObject(name: String): O?
 
-    open fun canSelect(choice: O): ReactiveBoolean = reactiveValue(true)
-
-    open fun extractText(choice: O?): ReactiveString = choice?.name ?: reactiveValue("<none>")
-
-    override fun createSnapshot(): Snapshot<*> = Snap<O, R>()
-
-    private class Edit<O : NamedObject, R : ObjectReference?>(
-        private val selector: ObjectSelector<O, R>,
-        private val old: R,
-        private val new: R
-    ) : AbstractEdit() {
-        override val actionDescription: String
-            get() = "Select ${selector.getRegistry(selector.context).objectType}"
-
-        override fun doUndo() {
-            selector.select(old)
-        }
-
-        override fun doRedo() {
-            selector.select(new)
+    override fun toString(choice: ObjectReference<O>): ReactiveString = choice.isResolved.flatMap { resolved ->
+        when {
+            choice.getName() == ObjectReference.NONE -> reactiveValue("(none)")
+            !resolved -> choice.name.map { n -> "unresolved: $n" }
+            else -> toString(choice.get()!!)
         }
     }
 
-    protected class Snap<O : NamedObject, R : ObjectReference?> : Snapshot<ObjectSelector<O, R>>() {
-        private var selected: ObjectReference? = null
-        private var initialized = false
-
-        override fun doRecord(original: ObjectSelector<O, R>) {
-            initialized = true
-            selected = original.selected.now
-        }
-
-        @Suppress("UNCHECKED_CAST")
-        override fun reconstructObject(original: ObjectSelector<O, R>) {
-            check(initialized)
-            selected?.resolve(original.getRegistry(original.context))
-            original.selected.now = selected as R
-        }
-
-        override fun encode(builder: JsonObjectBuilder) {
-            check(initialized)
-            builder.put("selected", selected?.get<NamedObject>()?.name?.now)
-        }
-
-        override fun decode(element: JsonObject) {
-            val name = element.getString("selected")
-            selected = name?.let(::ObjectReference)
-            initialized = true
-        }
-    }
+    open fun toString(choice: NamedObject): ReactiveValue<String> = choice.name
 }

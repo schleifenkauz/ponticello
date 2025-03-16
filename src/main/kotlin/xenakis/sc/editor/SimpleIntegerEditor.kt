@@ -1,6 +1,12 @@
 package xenakis.sc.editor
 
-import hextant.context.Context
 import hextant.core.editor.SimpleEditor
+import kotlinx.serialization.Contextual
+import kotlinx.serialization.Serializable
 
-class SimpleIntegerEditor(context: Context, result: Int = 2) : SimpleEditor<Int>(context, result)
+//@Serializable TODO why does serializer fail
+class SimpleIntegerEditor() : SimpleEditor<Int>() {
+    constructor(value: Int): this() {
+        setInitialResult(value)
+    }
+}

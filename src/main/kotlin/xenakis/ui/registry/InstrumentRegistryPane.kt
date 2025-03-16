@@ -2,6 +2,8 @@ package xenakis.ui.registry
 
 import bundles.createBundle
 import fxutils.SubWindow
+import fxutils.actions.ContextualizedAction
+import fxutils.actions.collectActions
 import fxutils.letContentFillViewPort
 import fxutils.prompt.SimpleSearchableListView
 import fxutils.prompt.YesNoPrompt
@@ -9,18 +11,19 @@ import fxutils.resize
 import fxutils.setFixedWidth
 import hextant.fx.initHextantScene
 import javafx.application.Platform
+import javafx.scene.Node
 import javafx.scene.control.Label
 import javafx.scene.control.ScrollPane
-import javafx.scene.input.TransferMode
+import javafx.scene.input.DataFormat
 import javafx.scene.layout.VBox
 import javafx.scene.paint.Color
 import org.kordamp.ikonli.material2.Material2AL
 import org.kordamp.ikonli.material2.Material2MZ
-import org.kordamp.ikonli.materialdesign2.MaterialDesignC
 import org.kordamp.ikonli.materialdesign2.MaterialDesignE
 import reaktive.value.binding.map
 import reaktive.value.fx.asObservableValue
 import reaktive.value.now
+import reaktive.value.reactiveValue
 import xenakis.impl.async
 import xenakis.impl.canSuperColliderTalkToMe
 import xenakis.model.Logger
@@ -41,6 +44,51 @@ class InstrumentRegistryPane(
 
     init {
         registry.addView(this)
+    }
+
+    override fun dataFormat(obj: InstrumentObject): DataFormat? =
+        if (obj is SynthDefObject) SynthDefObject.DATA_FORMAT else null
+
+    private val actions = collectActions<InstrumentObject> {
+        addAction("Edit Instrument") {
+            icon { instr ->
+                if (instr is CustomizableSynthDefObject) reactiveValue(Material2AL.CODE)
+                else reactiveValue(MaterialDesignE.EYE)
+            }
+            executes { instr -> editInstrument(instr) }
+        }
+        addAction("Save VST plugin configuration") {
+            icon(Material2MZ.SAVE)
+            executesOn<VSTPluginObject> { obj -> obj.saveConfiguration() }
+        }
+        addAction("Save to global library") {
+            icon(MaterialDesignE.EXPORT_VARIANT)
+            executesOn<CustomizableSynthDefObject>(::saveToGlobalLibrary)
+        }
+    }
+
+    private fun saveToGlobalLibrary(obj: CustomizableSynthDefObject) {
+        val globalLib = registry.context[GlobalSynthDefLib]
+        async(timeLimit = 10000) {
+            synchronized(globalLib) {
+                globalLib.reload()
+                Platform.runLater {
+                    val name = obj.name.now
+                    if (!globalLib.has(name) ||
+                        YesNoPrompt(
+                            "Overwrite SynthDef $name in global library?",
+                            default = true
+                        ).showDialog(anchorNode = this) == true
+                    ) {
+                        globalLib.push(obj)
+                        Logger.confirm(
+                            "Saved SynthDef '${obj.name.now}' to global library.",
+                            Logger.Category.Instruments
+                        )
+                    }
+                }
+            }
+        }
     }
 
     override fun sync() {
@@ -152,54 +200,16 @@ class InstrumentRegistryPane(
     override fun selected(obj: InstrumentObject?) {
     }
 
-    override fun ObjectBox<InstrumentObject>.configureObjectBox() {
+    override fun getContent(obj: InstrumentObject): List<Node> = buildList {
         val colorPicker = colorPicker(obj.color)
         colorPicker.setFixedWidth(30.0)
-        addExtraControl(colorPicker)
-        addAction(Material2AL.CODE, "Edit SynthDef") { editInstrument(obj) }
-        if (obj.canCopy) {
-            addAction(MaterialDesignC.CONTENT_DUPLICATE, "Duplicate SynthDef") {
-                val initialName = obj.name.now + "_copy"
-                val name = NamePrompt(registry, "Name for new duplicate instrument", initialName)
-                    .showDialog(anchorNode = this) ?: return@addAction
-                val copy = obj.copy(name)
-                registry.add(copy)
-            }
-        }
+        add(colorPicker)
         if (obj is VSTPluginObject) {
-            val outSelectorControl = ObjectSelectorControl(obj.outputSelector, createBundle())
-            addExtraControl(outSelectorControl)
-            addAction(Material2MZ.SAVE, description = "Save VST plugin configuration") { obj.saveConfiguration() }
-        }
-        if (obj is SynthDefObject) {
-            addGrabber(SynthDefObject.DATA_FORMAT, TransferMode.COPY)
-        }
-        if (obj is CustomizableSynthDefObject) {
-            val globalLib = registry.context[GlobalSynthDefLib]
-            addAction(MaterialDesignE.EXPORT_VARIANT, description = "Save to global SynthDef library") {
-                async(timeLimit = 10000) {
-                    synchronized(globalLib) {
-                        globalLib.reload()
-                        Platform.runLater {
-                            val name = obj.name.now
-                            if (!globalLib.has(name) ||
-                                YesNoPrompt(
-                                    "Overwrite SynthDef $name in global library?",
-                                    default = true
-                                ).showDialog(anchorNode = this) == true
-                            ) {
-                                globalLib.push(obj)
-                                Logger.confirm(
-                                    "Saved SynthDef '${obj.name.now}' to global library.",
-                                    Logger.Category.Instruments
-                                )
-                            }
-                        }
-                    }
-                }
-            }
+            add(ObjectSelectorControl(obj.outputSelector, createBundle()))
         }
     }
+
+    override fun getActions(obj: InstrumentObject): List<ContextualizedAction> = actions.withContext(obj)
 
     override fun removed(obj: InstrumentObject, idx: Int) {
         super.removed(obj, idx)

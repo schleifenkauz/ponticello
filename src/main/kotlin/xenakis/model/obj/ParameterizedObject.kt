@@ -30,7 +30,10 @@ interface ParameterizedObject : NamedObject {
             if (spec !is BusControlSpec) continue
             if (spec.flow != flowType) {
                 val ctrl = controls.controlMap[name] as? BusControl ?: continue
-                add(ctrl.bus.now.get())
+                val bus = ctrl.bus.now.get()
+                if (bus != null) {
+                    add(bus)
+                }
             }
         }
     }

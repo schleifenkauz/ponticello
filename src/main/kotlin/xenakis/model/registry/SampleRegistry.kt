@@ -35,7 +35,5 @@ class SampleRegistry(private val samples: MutableList<SampleObject>) : SuperColl
         return sample
     }
 
-    override fun getDefault(name: String?): SampleObject = samples.first()
-
     companion object : PublicProperty<SampleRegistry> by publicProperty("SampleRegistry")
 }

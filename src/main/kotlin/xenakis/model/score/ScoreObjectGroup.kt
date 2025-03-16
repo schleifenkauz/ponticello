@@ -15,7 +15,10 @@ import xenakis.impl.Decimal
 import xenakis.impl.copy
 import xenakis.impl.zero
 import xenakis.model.flow.ScoreObjectInfo
+import xenakis.model.obj.BusReference
+import xenakis.model.obj.GroupReference
 import xenakis.model.registry.ObjectReference
+import xenakis.sc.Rate
 import xenakis.sc.client.SuperColliderContext
 import xenakis.sc.editor.BusSelector
 import xenakis.sc.editor.GroupSelector
@@ -25,8 +28,8 @@ import xenakis.ui.impl.Direction
 class ScoreObjectGroup(
     @SerialName("name") override val mutableName: ReactiveVariable<String>,
     val score: Score,
-    @SerialName("defaultGroup") val defaultGroupRef: ReactiveVariable<ObjectReference?> = reactiveVariable(null),
-    @SerialName("defaultBus") val defaultBusRef: ReactiveVariable<ObjectReference?> = reactiveVariable(null)
+    @SerialName("defaultGroup") val defaultGroupRef: ReactiveVariable<GroupReference> = reactiveVariable(ObjectReference.none()),
+    @SerialName("defaultBus") val defaultBusRef: ReactiveVariable<BusReference> = reactiveVariable(ObjectReference.none())
 ) : ScoreObject() {
     override val type: String
         get() = "compound"
@@ -42,8 +45,11 @@ class ScoreObjectGroup(
     override fun initialize(context: Context) {
         if (initialized) return
         super.initialize(context)
-        groupSelector = GroupSelector(context, defaultGroupRef)
-        busSelector = BusSelector(context, preferredRate = null, preferredChannels = -1, defaultBusRef)
+        groupSelector = GroupSelector()
+        groupSelector.syncWith(defaultGroupRef)
+        busSelector = BusSelector()
+        busSelector.syncWith(defaultBusRef)
+        busSelector.initialize(context)
         this.score.initialize(context, this)
     }
 
@@ -87,8 +93,8 @@ class ScoreObjectGroup(
         }
         val name1 = reactiveVariable(name.now + "_top")
         val name2 = reactiveVariable(name.now + "_bot")
-        val obj1 = ScoreObjectGroup(name1, Score(top), defaultBusRef.copy(), defaultGroupRef.copy())
-        val obj2 = ScoreObjectGroup(name2, Score(bottom), defaultBusRef.copy(), defaultGroupRef.copy())
+        val obj1 = ScoreObjectGroup(name1, Score(top), defaultGroupRef.copy(), defaultBusRef.copy())
+        val obj2 = ScoreObjectGroup(name2, Score(bottom), defaultGroupRef.copy(), defaultBusRef.copy())
         obj1.setInitialSize(duration, position)
         obj2.setInitialSize(duration, height - position)
         return Pair(obj1, obj2)

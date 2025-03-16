@@ -11,6 +11,8 @@ import xenakis.model.Logger
 import xenakis.model.XenakisProject
 import xenakis.model.obj.AbstractContextualObject
 import xenakis.ui.launcher.XenakisLauncher.Companion.currentProject
+import xenakis.ui.registry.ObjectBoxList
+import xenakis.ui.registry.ObjectBoxSource
 
 abstract class ObjectRegistry<O : NamedObject> : XenakisProject.ProjectComponent, AbstractContextualObject() {
     protected abstract val objects: MutableList<O>
@@ -34,7 +36,7 @@ abstract class ObjectRegistry<O : NamedObject> : XenakisProject.ProjectComponent
         context[currentProject].save(this)
     }
 
-    abstract fun getDefault(name: String? = null): O
+    open fun getDefault(): O? = null
 
     fun get(name: String): O = getOrNull(name) ?: throw NoSuchElementException("Object $name not found in $this")
 
@@ -42,7 +44,10 @@ abstract class ObjectRegistry<O : NamedObject> : XenakisProject.ProjectComponent
 
     fun all(): List<O> = objects
 
+    fun indexOf(obj: O): Int = objects.indexOf(obj)
+
     fun has(name: String) = objects.any { it.name.now == name }
+
     fun has(obj: O) = obj in objects
 
     fun overwrite(obj: O) {

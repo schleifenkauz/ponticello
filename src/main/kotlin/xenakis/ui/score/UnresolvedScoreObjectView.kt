@@ -15,9 +15,7 @@ import xenakis.model.score.ScoreObject
 import xenakis.model.score.ScoreObjectInstance
 import xenakis.ui.registry.SimpleSearchableRegistryView
 
-class UnresolvedScoreObjectView(
-    private val obj: ScoreObject.Unresolved, instance: ScoreObjectInstance
-) : ScoreObjectView(instance) {
+class UnresolvedScoreObjectView(instance: ScoreObjectInstance) : ScoreObjectView(instance) {
     override val defaultBackgroundColor: ReactiveValue<Color>
         get() = reactiveValue(Color.gray(0.5, 0.5))
 
@@ -27,7 +25,7 @@ class UnresolvedScoreObjectView(
             SimpleSearchableRegistryView(context[ScoreObjectRegistry], "Resolve object")
                 .showPopup(anchorNode = btn) { obj ->
                     val instances = context[rootScore].allInstances().filterTo(mutableSetOf()) { inst ->
-                        inst.obj is ScoreObject.Unresolved && inst.obj.name.now == this.obj.name.now
+                        !inst.ref.isResolved.now && inst.ref.getName() == this.instance.ref.getName()
                     }
                     context.compoundEdit("Select object for unresolved instance") {
                         for (inst in instances) {
@@ -36,7 +34,7 @@ class UnresolvedScoreObjectView(
                     }
                 }
         }
-        pane.addItem("Object #${obj.name.now} unresolved", btn)
+        pane.addItem("Object #${instance.ref.getName()} unresolved", btn)
     }
 
     override fun getDisplayHeight(): Double = pane.getPaneY(0.02.asY)

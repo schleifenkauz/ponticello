@@ -9,6 +9,7 @@ import xenakis.impl.copy
 import xenakis.impl.zero
 import xenakis.model.obj.BusObject
 import xenakis.model.obj.ReferencedSynthDefObject
+import xenakis.model.registry.reference
 import xenakis.model.score.BusControl
 import xenakis.model.score.ConstantControl
 import xenakis.model.score.ObjectPosition

@@ -14,6 +14,7 @@ import reaktive.value.binding.map
 import reaktive.value.now
 import reaktive.value.reactiveVariable
 import xenakis.model.obj.InstrumentObject
+import xenakis.model.obj.InstrumentReference
 import xenakis.model.obj.ReferencedSynthDefObject
 import xenakis.model.obj.SuperColliderObject
 import xenakis.sc.client.SuperColliderClient
@@ -21,7 +22,7 @@ import xenakis.sc.client.SuperColliderClient
 @Serializable
 class InstrumentRegistry(
     private val instruments: MutableList<InstrumentObject>,
-    @SerialName("selectedInstrument") private val selectedInstrumentRef: ReactiveVariable<ObjectReference?>
+    @SerialName("selectedInstrument") private val selectedInstrumentRef: ReactiveVariable<InstrumentReference>
 ) : SuperColliderObjectRegistry<InstrumentObject>() {
     override val objects: MutableList<InstrumentObject>
         get() = instruments
@@ -43,15 +44,12 @@ class InstrumentRegistry(
         super.initialize(context)
         context[InstrumentRegistry] = this
         client = context[SuperColliderClient]
-        selectedInstrumentRef.now?.resolve(this)
-        selectedInstrument = selectedInstrumentRef.map { ref -> ref?.get() }
+        selectedInstrumentRef.now.resolve(this)
+        selectedInstrument = selectedInstrumentRef.map { ref -> ref.get() }
     }
 
-    override fun getDefault(name: String?): InstrumentObject =
-        selectedInstrument.now ?: error("No default SynthDefObject available")
-
     fun select(instrument: InstrumentObject?) {
-        selectedInstrumentRef.now = instrument?.reference()
+        selectedInstrumentRef.now = instrument?.reference() ?: ObjectReference.none()
         views.notifyListeners { if (this is Listener) this.selected(instrument) }
     }
 
@@ -67,7 +65,7 @@ class InstrumentRegistry(
 
     companion object : PublicProperty<InstrumentRegistry> by publicProperty("InstrumentRegistry") {
         fun createDefault(): InstrumentRegistry =
-            InstrumentRegistry(mutableListOf(), reactiveVariable(null))
+            InstrumentRegistry(mutableListOf(), reactiveVariable(ObjectReference.none()))
 
         fun defaultInstrument() = ReferencedSynthDefObject("default", reactiveVariable(Color.WHEAT))
     }

@@ -14,16 +14,16 @@ import reaktive.value.ReactiveBoolean
 import reaktive.value.ReactiveVariable
 import reaktive.value.now
 import reaktive.value.reactiveVariable
-import xenakis.impl.Decimal
-import xenakis.impl.copy
-import xenakis.impl.withPrecision
+import xenakis.impl.*
+import xenakis.model.obj.ScoreObjectReference
 import xenakis.model.registry.ObjectReference
 import xenakis.model.registry.ScoreObjectRegistry
+import xenakis.model.registry.reference
 import xenakis.model.score.Score.Companion.rootScore
 
 @Serializable
 class ScoreObjectInstance(
-    @SerialName("object") private var objectRef: ObjectReference,
+    @SerialName("object") private var objectRef: ScoreObjectReference,
     @SerialName("time") private var _time: Decimal,
     @SerialName("y") private var _y: Decimal,
     @SerialName("muted") private var _muted: ReactiveVariable<Boolean> = reactiveVariable(false)
@@ -62,7 +62,9 @@ class ScoreObjectInstance(
     var positionBeforeMove = ObjectPosition.ZERO
         private set
 
-    val obj: ScoreObject get() = objectRef.get()
+    val ref get() = objectRef
+
+    val obj: ScoreObject get() = objectRef.get() ?: ScoreObject.Unresolved()
 
     fun addedToScore(score: Score) {
         this.score = score

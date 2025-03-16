@@ -6,6 +6,7 @@ import reaktive.value.now
 import reaktive.value.observe
 import xenakis.impl.Decimal
 import xenakis.model.obj.BusObject
+import xenakis.model.obj.BusReference
 import xenakis.model.registry.ObjectReference
 import xenakis.model.score.*
 import xenakis.sc.client.ScWriter
@@ -58,12 +59,14 @@ class ParameterControlLiveUpdater(
         runOnActiveSynths { +"set('$parameter', $value)" }
     }
 
-    private fun mapBus(parameter: String, bus: ObjectReference) {
-        runOnActiveSynths { +"map('$parameter', ${bus.get<BusObject>().superColliderName})" }
+    private fun mapBus(parameter: String, bus: BusReference) {
+        val superColliderName = bus.get()?.superColliderName ?: return
+        runOnActiveSynths { +"map('$parameter', $superColliderName)" }
     }
 
-    private fun setBus(parameter: String, bus: ObjectReference) {
-        runOnActiveSynths { +"set('$parameter', ${bus.get<BusObject>().superColliderName})" }
+    private fun setBus(parameter: String, bus: BusReference) {
+        val superColliderName = bus.get()?.superColliderName ?: return
+        runOnActiveSynths { +"set('$parameter', $superColliderName)" }
     }
 
     override fun removedControl(parameter: String, control: ParameterControl) {

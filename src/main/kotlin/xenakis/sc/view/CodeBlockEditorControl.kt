@@ -18,11 +18,8 @@ import hextant.core.view.ListEditorControl.Orientation.Horizontal
 import hextant.core.view.ListEditorControl.Orientation.Vertical
 import hextant.core.view.ListEditorControl.SeparatorCell
 import hextant.fx.view
-import hextant.serial.SnapshotAware
 import javafx.scene.layout.HBox
-import kotlinx.serialization.Serializable
 
-@Serializable(with = SnapshotAware.Serializer::class)
 class CodeBlockEditorControl @ProvideImplementation(ControlFactory::class) constructor(
     val editor: xenakis.sc.editor.CodeBlockEditor,
     arguments: Bundle

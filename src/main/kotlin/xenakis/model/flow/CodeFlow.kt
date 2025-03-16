@@ -1,7 +1,6 @@
 package xenakis.model.flow
 
 import hextant.context.Context
-import hextant.context.withoutUndo
 import hextant.serial.EditorRoot
 import kotlinx.serialization.Serializable
 import reaktive.value.now
@@ -18,7 +17,7 @@ class CodeFlow(val codeEditor: EditorRoot<CodeBlockEditor>) : AudioFlow() {
         super.initialize(context)
     }
 
-    override fun copy(): AudioFlow = CodeFlow(codeEditor.clone())
+    override fun copy(): AudioFlow = CodeFlow(codeEditor.clone(context))
 
     override fun getInputs(): Collection<BusObject> = emptySet()
 
@@ -41,12 +40,10 @@ class CodeFlow(val codeEditor: EditorRoot<CodeBlockEditor>) : AudioFlow() {
 
     companion object {
         fun createFor(bus: BusObject, context: Context): CodeFlow {
-            val editor = CodeBlockEditor(context)
-            context.withoutUndo {
-                editor.variables.addLast(IdentifierEditor(context, "snd"))
-                editor.statements.addLast(assign("snd", `in`(context, bus)))
-            }
-            return CodeFlow(EditorRoot.create(editor))
+            val editor = CodeBlockEditor()
+            editor.variables.setInitialEditors(IdentifierEditor("snd"))
+            editor.statements.setInitialEditors(assign("snd", `in`(bus)))
+            return CodeFlow(EditorRoot.create(editor, context))
         }
     }
 }

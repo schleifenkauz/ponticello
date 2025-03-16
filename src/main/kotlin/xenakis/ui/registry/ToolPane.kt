@@ -15,6 +15,8 @@ import org.kordamp.ikonli.materialdesign2.MaterialDesignC
 import reaktive.value.ReactiveString
 
 abstract class ToolPane : VBox() {
+    protected lateinit var header: HBox
+        private set
     private var headerContent: Node? = null
     private lateinit var actions: List<ContextualizedAction>
 
@@ -29,7 +31,8 @@ abstract class ToolPane : VBox() {
     fun initialize() {
         actions = ToolPane.actions.withContext(this) + getHeaderActions()
         headerContent = getHeaderContent()
-        children.addAll(createHeader(), getContent())
+        header = createHeader()
+        children.addAll(header, getContent())
         registerShortcuts(actions)
     }
 

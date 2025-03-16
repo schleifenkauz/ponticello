@@ -14,7 +14,7 @@ interface ParameterizedObjectDef {
     fun hasParameter(name: String): Boolean = parameters.now.any { it.name.now == name }
 
     fun defaultControls(
-        context: Context, defaultGroup: ObjectReference?, defaultBus: ObjectReference?
+        context: Context, defaultGroup: GroupReference?, defaultBus: BusReference?
     ): ParameterControls {
         val controls =
             parameters.now.associateTo(mutableMapOf()) { p ->

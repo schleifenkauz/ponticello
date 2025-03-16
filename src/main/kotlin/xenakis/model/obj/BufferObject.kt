@@ -5,6 +5,7 @@ import reaktive.value.ReactiveVariable
 import reaktive.value.now
 import reaktive.value.reactiveVariable
 import xenakis.model.registry.BufferRegistry
+import xenakis.model.registry.ObjectRegistry
 import xenakis.sc.client.ScWriter
 
 @Serializable
@@ -13,6 +14,9 @@ class BufferObject(
     val channels: ReactiveVariable<Int>, val frames: ReactiveVariable<Int>
 ) : AbstractSuperColliderObject() {
     override val superColliderName get() = "~buf_${name.now}"
+
+    override val registry: ObjectRegistry<*>
+        get() = context[BufferRegistry]
 
     override fun ScWriter.createObject() {
         +"$superColliderName = Buffer.alloc(s, ${frames.now}, ${channels.now})"

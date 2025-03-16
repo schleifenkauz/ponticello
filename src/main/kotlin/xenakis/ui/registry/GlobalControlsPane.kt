@@ -7,7 +7,6 @@ import fxutils.registerShortcuts
 import fxutils.styleClass
 import hextant.context.Context
 import hextant.context.createControl
-import hextant.serial.makeRoot
 import javafx.scene.layout.HBox
 import javafx.scene.paint.Color.BLACK
 import org.kordamp.ikonli.material2.Material2MZ
@@ -46,9 +45,9 @@ class GlobalControlsPane(
                 else -> true
             }
         }.showDialog(anchorNode = this) ?: return
-        val editor = ControlSpecEditor(context)
+        val editor = ControlSpecEditor()
         val defaultControlSpec = context[Settings].getDefaultControlSpec(name)
-        editor.makeRoot()
+        editor.initialize(context)
         if (defaultControlSpec != null) {
             editor.setResult(defaultControlSpec)
         }

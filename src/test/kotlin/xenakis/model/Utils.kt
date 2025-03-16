@@ -34,7 +34,11 @@ object Utils {
             ScoreObjectRegistry(mutableListOf()).also { it.initialize(this) })
         set(
             InstrumentRegistry,
-            InstrumentRegistry(mutableListOf(/*InstrumentRegistry.defaultInstrument()*/), reactiveVariable(null))
+            InstrumentRegistry(
+                mutableListOf(/*InstrumentRegistry.defaultInstrument()*/), reactiveVariable(
+                    ObjectReference.none()
+                )
+            )
                 .also { it.initialize(this) }
         )
         set(GroupRegistry, GroupRegistry.createDefault().also { it.initialize(this) })

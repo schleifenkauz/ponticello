@@ -110,7 +110,7 @@ class AudioFlowGraph(
         }
 
         is ActiveSynth -> {
-            val group = node.obj.group.now.get<GroupObject>()
+            val group = node.obj.group.now.get() ?: node.obj.context[GroupRegistry].getDefault()!!
             if (group.isDefault) {
                 getPlacementInOrder(node)
             } else {
@@ -161,12 +161,12 @@ class AudioFlowGraph(
         suffixes[obj to absolutePosition] = suffix
         val name = if (suffix == 0) obj.name.now else "${obj.name.now}_$suffix"
         lateinit var group: GroupObject
-        val defaultGroup = obj.context[GroupRegistry].getDefaultGroup()
+        val defaultGroup = obj.context[GroupRegistry].getDefault()
         Logger.fine("mark start for $obj at $absolutePosition, suffix = $suffix", Logger.Category.Playback)
         if (obj is SynthObject) {
             val node = ActiveSynth(obj, absolutePosition, suffix)
             activeSynthObjects.getOrPut(obj, ::mutableSetOf).add(node)
-            group = node.obj.group.now.get<GroupObject>()
+            group = node.obj.groupObj
             if (group == defaultGroup) {
                 addNode(node)
                 reorderNodeTree()

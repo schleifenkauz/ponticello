@@ -25,23 +25,14 @@ import xenakis.sc.client.SuperColliderClient
 class ReferencedSynthDefObject(
     private val _name: String,
     override val color: ReactiveVariable<@Serializable(with = ColorSerializer::class) Color>
-) : SynthDefObject, InstrumentObject, AbstractContextualObject() {
+) : SynthDefObject, InstrumentObject, AbstractNamedObject() {
     @Transient
     private var _parameters: MutableReactiveList<ParameterDefObject> = reactiveList()
-
-    override val canCopy: Boolean
-        get() = false
-
-    override fun copy(name: String): SynthDefObject = throw UnsupportedOperationException("Cannot copy $this")
-
-    override fun onAdded(context: Context) {}
 
     override fun initialize(context: Context) {
         super.initialize(context)
         updateParameters()
     }
-
-    override fun onRemoved() {}
 
     override fun ScWriter.createObject() {}
 

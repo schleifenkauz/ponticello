@@ -1,7 +1,6 @@
 package xenakis.model.obj
 
 import hextant.context.Context
-import hextant.context.withoutUndo
 import hextant.core.EditorView
 import hextant.core.editor.AbstractEditor
 import hextant.serial.EditorRoot
@@ -31,13 +30,16 @@ class CustomizableSynthDefObject(
     val ugenGraph: EditorRoot<CodeBlockEditor>? = null
 ) : SynthDefObject, AbstractRenamableObject(), ConfigurableParameterizedObjectDef, InstrumentObject {
     @Transient
-    private val editor = if (ugenGraph != null) SynthDefEditor(ugenGraph.editor.context, this) else null
+    private val editor = if (ugenGraph != null) SynthDefEditor(this) else null
+
+    override val canCopy: Boolean
+        get() = true
 
     override fun copy(name: String): SynthDefObject = CustomizableSynthDefObject(
         reactiveVariable(name),
         parameters.now.map { p -> p.copy() }.toReactiveList(),
         color.copy(),
-        context.withoutUndo { ugenGraph?.clone() }
+        ugenGraph?.clone(context)
     )
 
     override fun ScWriter.sync() {
@@ -94,8 +96,8 @@ class CustomizableSynthDefObject(
     }
 
     class SynthDefEditor(
-        context: Context, val obj: CustomizableSynthDefObject
-    ) : AbstractEditor<SynthDefObject, EditorView>(context) {
+        val obj: CustomizableSynthDefObject
+    ) : AbstractEditor<SynthDefObject, EditorView>() {
         override val result: ReactiveValue<SynthDefObject>
             get() = reactiveValue(obj)
 
@@ -109,7 +111,7 @@ class CustomizableSynthDefObject(
             mutableName = reactiveVariable(name),
             color = reactiveVariable(randomColor()),
             parameters = reactiveList(),
-            ugenGraph = EditorRoot.create(CodeBlockEditor(context))
+            ugenGraph = EditorRoot.create(CodeBlockEditor(), context)
         )
 
         fun create(name: String, vararg parameters: ParameterDefObject) =

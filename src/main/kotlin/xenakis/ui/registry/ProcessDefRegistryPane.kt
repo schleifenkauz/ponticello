@@ -1,8 +1,11 @@
 package xenakis.ui.registry
 
 import fxutils.SubWindow
+import fxutils.actions.ContextualizedAction
+import fxutils.actions.collectActions
 import fxutils.setFixedWidth
 import hextant.fx.initHextantScene
+import javafx.scene.Node
 import javafx.scene.control.ScrollPane
 import javafx.scene.layout.VBox
 import org.kordamp.ikonli.material2.Material2AL
@@ -31,19 +34,20 @@ class ProcessDefRegistryPane(
         return processDef
     }
 
-    override fun ObjectBox<ProcessDefObject>.configureObjectBox() {
+    override fun getContent(obj: ProcessDefObject): List<Node> {
         val colorPicker = colorPicker(obj.color)
         colorPicker.setFixedWidth(30.0)
-        addExtraControl(colorPicker)
-        addAction(MaterialDesignC.CONTENT_DUPLICATE, "Duplicate ProcessDef") {
-            val initialName = obj.name.now + "_copy"
-            val name = NamePrompt(registry, "Name for new duplicate instrument", initialName)
-                .showDialog(anchorNode = this) ?: return@addAction
-            val copy = obj.copy(name)
-            registry.add(copy)
-        }
-        addAction(Material2AL.CODE, "Edit ProcessDef") { editProcessDef(obj) }
+        return listOf(colorPicker)
     }
+
+    private val actions = collectActions {
+        addAction("Edit ProcessDef") {
+            icon(Material2AL.CODE)
+            executes { obj -> editProcessDef(obj) }
+        }
+    }
+
+    override fun getActions(obj: ProcessDefObject): List<ContextualizedAction> = actions.withContext(obj)
 
     fun editProcessDef(obj: ProcessDefObject) {
         val window = subWindows.getOrPut(obj) {

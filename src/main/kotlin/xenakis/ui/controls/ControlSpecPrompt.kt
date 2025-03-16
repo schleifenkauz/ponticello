@@ -61,7 +61,7 @@ class ControlSpecPrompt(
     private val maxTxt = textField(numericalSpec?.max?.text ?: "1")
     private val defaultTxt = textField(numericalSpec?.defaultValue?.text ?: "0")
     private val stepTxt = textField(numericalSpec?.step?.text ?: "0.1")
-    private val warpBox = ComboBox(observableList(Warp.values().asList()))
+    private val warpBox = ComboBox(observableList(Warp.entries))
     private val associatedColor = ColorPicker(numericalSpec?.associatedColor ?: Color.BLACK)
 
     private val min get() = minTxt.text.parseDecimal()

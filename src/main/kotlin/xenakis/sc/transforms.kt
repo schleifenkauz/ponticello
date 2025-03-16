@@ -8,7 +8,7 @@ import kotlin.math.ln
 import kotlin.math.pow
 
 @Serializable
-@Choice(defaultValue = "Warp.Linear")
+@Choice
 sealed class Warp {
     @Serializable
     object Linear : Warp() {
@@ -26,7 +26,7 @@ sealed class Warp {
     }
 
     companion object {
-        fun values() = arrayOf(Linear, Exponential, Monomial(2.0), Monomial(3.0))
+        val entries get() = listOf(Linear, Exponential, Monomial(2.0), Monomial(3.0))
     }
 }
 

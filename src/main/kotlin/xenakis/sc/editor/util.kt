@@ -1,78 +1,55 @@
 package xenakis.sc.editor
 
-import hextant.context.Context
 import hextant.core.editor.ColorEditor
-import reaktive.value.reactiveVariable
 import xenakis.model.obj.BusObject
+import xenakis.model.obj.BusReference
 import xenakis.model.registry.ObjectReference
+import xenakis.model.registry.reference
 import xenakis.sc.NumericalControlSpec
 import xenakis.sc.Rate
 
-fun NumericalControlSpec.createEditor(context: Context) = NumericalControlSpecEditor(
-    context,
-    defaultValue = DecimalLiteralEditor(context, defaultValue.text),
-    min = DecimalLiteralEditor(context, min.text),
-    max = DecimalLiteralEditor(context, max.text),
-    warp = WarpEditor(context, warp),
-    step = DecimalLiteralEditor(context, step.text),
-    associatedColor = ColorEditor(context, associatedColor)
+fun NumericalControlSpec.createEditor() = NumericalControlSpecEditor(
+    defaultValue = DecimalLiteralEditor(defaultValue.text),
+    min = DecimalLiteralEditor(min.text),
+    max = DecimalLiteralEditor(max.text),
+    warp = WarpEditor(warp),
+    step = DecimalLiteralEditor(step.text),
+    associatedColor = ColorEditor(associatedColor)
 )
 
-private fun ScExprEditor<*>.exp() = ScExprExpander(context, this)
+private fun ScExprEditor<*>.exp() = ScExprExpander(this)
 
-fun simpleText(context: Context, text: String) = ScExprExpander(context, text)
+fun simpleText(text: String) = ScExprExpander(text)
 
-fun out(context: Context, outputBus: BusObject, snd: ScExprExpander): ScExprExpander {
-    val editor = OutExprEditor(context, channelsArray = snd)
+fun out(outputBus: BusObject, snd: ScExprExpander): ScExprExpander {
+    val editor = OutExprEditor(channelsArray = snd)
     editor.busSelector.select(outputBus.reference())
     return editor.exp()
 }
 
 fun out(
-    context: Context,
     bus: ScExprExpander,
     snd: ScExprExpander,
     rate: Rate
 ) = MessageSendEditor(
-    context,
-    ScExprExpander(context, "Out"),
-    method = IdentifierEditor(context, rate.toString()),
-    arguments = ScExprListEditor(
-        context,
-        bus,
-        snd
-    )
+    ScExprExpander("Out"),
+    method = IdentifierEditor(rate.toString()),
+    arguments = ScExprListEditor(bus, snd)
 ).exp()
 
-fun `in`(context: Context, inputBus: BusObject): ScExprExpander =
-    InExprEditor(context).apply { busSelector.select(inputBus.reference()) }.exp()
+fun `in`(inputBus: BusObject): ScExprExpander =
+    InExprEditor().apply { busSelector.select(inputBus.reference()) }.exp()
 
-fun `in`(context: Context, bus: ScExprExpander, rate: Rate, channels: Int) = ScExprExpander(
-    context, MessageSendEditor(
-        context,
-        ScExprExpander(context, "In"),
-        IdentifierEditor(context, rate.toString()),
+fun `in`(bus: ScExprExpander, rate: Rate, channels: Int) = ScExprExpander(
+    MessageSendEditor(
+        ScExprExpander("In"),
+        IdentifierEditor(rate.toString()),
         ScExprListEditor(
-            context,
             bus,
-            ScExprExpander(context, channels.toString())
+            ScExprExpander(channels.toString())
         )
     )
 )
 
-fun selectSubBus(context: Context, busRef: ObjectReference, idx: Int): ScExprExpander = MessageSendEditor(
-    context, ScExprExpander(context, "Bus"),
-    method = IdentifierEditor(context, "newFrom"),
-    arguments = ScExprListEditor(
-        context,
-        ScExprExpander(
-            context,
-            BusSelector(context, selected = reactiveVariable(busRef))
-        ),
-        ScExprExpander(context, "${idx - 1}"),
-        ScExprExpander(context, "1")
-    )
-).exp()
-
 fun assign(name: String, expr: ScExprExpander) =
-    AssignmentEditor(expr.context, IdentifierEditor(expr.context, name), expr).exp()
+    AssignmentEditor(IdentifierEditor(name), expr).exp()

@@ -9,5 +9,5 @@ import xenakis.model.obj.GroupObject
 class PlaceholderBox(placeholder: ScoreObjectPlaceholder) : FlowBox<ScoreObjectPlaceholder>(placeholder) {
     override fun getHeader(): Node = Label("Group")
 
-    override fun getContent(): Node = label(flow.groupRef.get<GroupObject>().name)
+    override fun getContent(): Node = label(flow.groupRef.name)
 }

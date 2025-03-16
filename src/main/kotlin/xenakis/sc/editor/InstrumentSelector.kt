@@ -1,28 +1,12 @@
 package xenakis.sc.editor
 
-import hextant.context.Context
-import reaktive.value.ReactiveVariable
-import reaktive.value.reactiveVariable
 import xenakis.model.obj.InstrumentObject
 import xenakis.model.registry.InstrumentRegistry
-import xenakis.model.registry.ObjectReference
 import xenakis.model.registry.ObjectRegistry
 import xenakis.ui.launcher.XenakisMainActivity
-import kotlin.reflect.KClass
 
-class InstrumentSelector<R : ObjectReference?>(
-    context: Context,
-    selected: ReactiveVariable<R>,
-) : ObjectSelector<InstrumentObject, R>(context, selected) {
-    @Suppress("UNCHECKED_CAST")
-    constructor(context: Context) : this(
-        context, reactiveVariable<R>(context[InstrumentRegistry].getDefault().reference() as R)
-    )
-
-    override fun getRegistry(context: Context): ObjectRegistry<*> = context[InstrumentRegistry]
-
-    override val objectClass: KClass<InstrumentObject>
-        get() = InstrumentObject::class
+class InstrumentSelector : ObjectSelector<InstrumentObject>() {
+    override fun getRegistry(): ObjectRegistry<InstrumentObject> = context[InstrumentRegistry]
 
     override fun createNewObject(name: String): InstrumentObject? =
         context[XenakisMainActivity].instrumentsPane.createSynthDef(name)

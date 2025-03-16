@@ -22,7 +22,7 @@ class TaskObject(
     override val canResize: Boolean
         get() = false
 
-    override fun doClone(newName: String): ScoreObject = TaskObject(reactiveVariable(newName), code.clone())
+    override fun doClone(newName: String): ScoreObject = TaskObject(reactiveVariable(newName), code.clone(context))
 
     override fun writeCode(info: ScoreObjectInfo): String = code {
         appendBlock("~tasks['$name'] = Task", endLine = false) {

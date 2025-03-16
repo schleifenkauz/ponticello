@@ -12,6 +12,7 @@ import xenakis.impl.*
 import xenakis.model.Logger
 import xenakis.model.XenakisProject
 import xenakis.model.XenakisProject.Companion.projectDirectory
+import xenakis.model.registry.ObjectRegistry
 import xenakis.model.registry.SampleRegistry
 import xenakis.model.score.ObjectPosition
 import xenakis.sc.client.ScWriter
@@ -27,6 +28,9 @@ class SampleObject private constructor(
 ) : AbstractSuperColliderObject() {
     override val superColliderName: String
         get() = "~sample_${name.now}"
+
+    override val registry: ObjectRegistry<*>?
+        get() = context[SampleRegistry]
 
     private val samplesDir
         get() = context[projectDirectory].resolve("samples")

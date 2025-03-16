@@ -12,9 +12,11 @@ import kotlinx.serialization.Serializable
 import reaktive.value.reactiveVariable
 import xenakis.impl.*
 import xenakis.model.flow.FlowType
-import xenakis.model.registry.BusRegistry
+import xenakis.model.flow.editor.FlowTypeEditor
+import xenakis.model.obj.BusReference
 import xenakis.model.registry.GroupRegistry
 import xenakis.model.registry.ObjectReference
+import xenakis.model.registry.reference
 import xenakis.model.score.BufferControl
 import xenakis.model.score.BusControl
 import xenakis.model.score.ConstantControl
@@ -41,10 +43,10 @@ sealed interface ControlSpec {
     val code: String
 }
 
-fun ControlSpec.defaultControl(context: Context, defaultBus: ObjectReference?) = when (this) {
-    is BufferControlSpec -> BufferControl(reactiveVariable(null))
+fun ControlSpec.defaultControl(context: Context, defaultBus: BusReference?) = when (this) {
+    is BufferControlSpec -> BufferControl(reactiveVariable(ObjectReference.none()))
     is BusControlSpec -> {
-        val bus = defaultBus ?: context[BusRegistry].getDefault().reference()
+        val bus = defaultBus ?: ObjectReference.none()
         BusControl(reactiveVariable(bus))
     }
 
@@ -53,7 +55,7 @@ fun ControlSpec.defaultControl(context: Context, defaultBus: ObjectReference?) =
 }
 
 @Serializable
-@Compound(serializable = true)
+@Compound
 data class NumericalControlSpec(
     val defaultValue: DecimalLiteral,
     val min: DecimalLiteral,
@@ -111,12 +113,12 @@ data class NumericalControlSpec(
     }
 }
 
-@Compound(serializable = true)
+@Compound
 @Serializable
 class BusControlSpec(
     val rate: Rate,
     @Component(editor = SimpleIntegerEditor::class) val channels: Int,
-    val flow: FlowType
+    @Component(editor = FlowTypeEditor::class) val flow: FlowType
 ) : ControlSpec {
     override val type: ParameterType
         get() = ParameterType.Bus
@@ -133,7 +135,7 @@ class BusControlSpec(
 }
 
 @Serializable
-@Compound(serializable = true)
+@Compound
 class BufferControlSpec : ControlSpec {
     var isPlayBufSource: Boolean = true
 
@@ -167,7 +169,7 @@ class GroupControlSpec : ControlSpec {
 
 fun NumericalControlSpec.mapOnto(targetRange: DoubleRange) = SpecTransformation(this, targetRange)
 
-@Choice(defaultValue = "Rate.Audio")
+@Choice
 enum class Rate {
     Audio, Control;
 

@@ -60,10 +60,13 @@ class VerticalFlowsBox(
     private fun makeAddFlowButton(): BorderPane {
         val btn = MaterialDesignP.PLUS.button("Add flow").styleClass("large-icon-button")
         val pane = BorderPane(btn)
-        pane.setupDropArea({ db -> db.hasContent(SynthDefObject.DATA_FORMAT) }) { ev ->
-            val registry = flows.context[InstrumentRegistry]
-            val def = ObjectReference(ev.dragboard.getFrom(registry, SynthDefObject.DATA_FORMAT) as SynthDefObject)
-            val flow = SynthFlow.createFor(associatedBus, def.get(), flows.context)
+        val registry = flows.context[InstrumentRegistry]
+        pane.setupDropArea(condition = { db ->
+            db.hasContent(SynthDefObject.DATA_FORMAT) &&
+                    db.getFrom(registry, SynthDefObject.DATA_FORMAT) is SynthDefObject
+        }) { ev ->
+            val def = ev.dragboard.getFrom(registry, SynthDefObject.DATA_FORMAT) as SynthDefObject
+            val flow = SynthFlow.createFor(associatedBus, def, flows.context)
             flows.addFlow(flow)
         }
         btn.setOnMouseClicked {

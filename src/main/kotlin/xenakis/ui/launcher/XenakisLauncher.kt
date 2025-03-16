@@ -11,7 +11,6 @@ import hextant.context.extend
 import hextant.core.HextantCore
 import hextant.fx.Stylesheets
 import hextant.plugins.PluginBuilder
-import hextant.serial.SnapshotAware
 import hextant.serial.writeJson
 import hextant.undo.UndoManager
 import javafx.application.Platform
@@ -155,7 +154,6 @@ class XenakisLauncher {
             val context = rootContext.extend {
                 set(SuperColliderClient, client)
             }
-            SnapshotAware.Serializer.reconstructionContext = context
             context[SuperColliderClient].bootServer(indicator) {
                 try {
                     whenReady(context)

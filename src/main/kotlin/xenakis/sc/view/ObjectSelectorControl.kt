@@ -1,8 +1,12 @@
 package xenakis.sc.view
 
 import bundles.Bundle
+import fxutils.prompt.SearchableListView
 import fxutils.styleClass
+import hextant.core.editor.SimpleChoiceEditor
 import hextant.core.view.EditorControl
+import hextant.core.view.SimpleChoiceEditorControl
+import hextant.core.view.SimpleChoiceEditorView
 import javafx.scene.Node
 import javafx.scene.control.Button
 import reaktive.value.fx.asObservableValue
@@ -10,45 +14,23 @@ import reaktive.value.now
 import xenakis.model.registry.NamedObject
 import xenakis.model.registry.ObjectReference
 import xenakis.model.registry.ObjectRegistry
+import xenakis.model.registry.reference
 import xenakis.sc.editor.ObjectSelector
 import xenakis.ui.registry.SearchableRegistryView
 
-class ObjectSelectorControl<O : NamedObject, R : ObjectReference?>(
-    val editor: ObjectSelector<O, R>, arguments: Bundle
-) : EditorControl<Node>(editor, arguments), ObjectSelectorView<O> {
-    private val button = Button() styleClass "sleek-button"
+class ObjectSelectorControl<O : NamedObject>(
+    private val selector: ObjectSelector<O>, arguments: Bundle
+) : SimpleChoiceEditorControl<ObjectReference<O>>(selector, arguments) {
 
-    @Suppress("UNCHECKED_CAST")
-    private val listView: SearchableRegistryView<O>
-        get() {
-            val registry = editor.getRegistry(context) as ObjectRegistry<O>
-            return object : SearchableRegistryView<O>(registry, "Select ${registry.objectType}") {
-                override fun createObject(name: String): O? = editor.createNewObject(name)
+    public override fun showChoicePopup() {
+        val registry = selector.getRegistry()
+        val view = object : SearchableRegistryView<O>(registry, "Select ${registry.objectType}") {
+            override fun createObject(name: String): O? = selector.createNewObject(name)
 
-                override fun displayText(option: O): String = editor.extractText(option).now
-            }
+            override fun displayText(option: O): String = selector.toString(option).now
         }
-
-    init {
-        editor.addView(this)
-        button.setOnAction {
-            showSelectorPopup()
+        view.showPopup(anchorNode = this, initialOption = selector.result.now.get()) { option ->
+            selector.select(option.reference())
         }
     }
-
-    fun showSelectorPopup() {
-        @Suppress("UNCHECKED_CAST")
-        val initialOption = editor.selected.now?.get<NamedObject>() as O?
-        listView.showPopup(anchorNode = button, initialOption) { option ->
-            @Suppress("UNCHECKED_CAST")
-            editor.select(option.reference() as R)
-        }
-    }
-
-    override fun selected(obj: O?) {
-        button.textProperty().unbind()
-        button.textProperty().bind(editor.extractText(obj).asObservableValue())
-    }
-
-    override fun createDefaultRoot(): Node = button
 }

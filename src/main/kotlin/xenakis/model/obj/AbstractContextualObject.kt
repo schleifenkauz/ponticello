@@ -7,7 +7,6 @@ import xenakis.model.registry.NamedObject
 import xenakis.model.registry.ObjectReference
 import xenakis.model.registry.ObjectRegistry
 import kotlin.properties.ReadOnlyProperty
-import kotlin.reflect.KClass
 import kotlin.reflect.KProperty
 
 abstract class AbstractContextualObject : ContextualObject {
@@ -30,20 +29,15 @@ abstract class AbstractContextualObject : ContextualObject {
         }
     }
 
-    protected inline fun <reified T : NamedObject> (() -> ObjectReference).ref(
+    protected fun <T : NamedObject> (() -> ObjectReference<T>).ref(
         registry: PublicProperty<out ObjectRegistry<T>>
-    ): ReadOnlyProperty<Any?, T> = referencedObject(registry, T::class)
-
-    protected fun <T : NamedObject> (() -> ObjectReference).referencedObject(
-        registry: PublicProperty<out ObjectRegistry<T>>, cls: KClass<T>
-    ): ReadOnlyProperty<Any?, T> = ReferencedObject(this, cls, registry)
+    ): ReadOnlyProperty<Any?, T?> = ReferencedObject(this, registry)
 
     private class ReferencedObject<T : NamedObject>(
-        private val reference: () -> ObjectReference,
-        private val cls: KClass<T>,
+        private val reference: () -> ObjectReference<T>,
         private val registry: PublicProperty<out ObjectRegistry<T>>
-    ) : ReadOnlyProperty<Any?, T> {
-        override fun getValue(thisRef: Any?, property: KProperty<*>): T = reference().get(cls)
+    ) : ReadOnlyProperty<Any?, T?> {
+        override fun getValue(thisRef: Any?, property: KProperty<*>): T? = reference().get()
 
         fun resolve(context: Context) {
             reference().resolve(context[registry])

@@ -54,11 +54,6 @@ object ToolWindowActions : Action.Collector<XenakisMainActivity>({
         }
 
     }
-    addAction("Edit audio flow graph") {
-        shortcut("Ctrl+Shift+F")
-        icon(MaterialDesignG.GRAPH)
-        executes { screen -> screen.flowGraphWindow.showOrBringToFront() }
-    }
     addAction("Show audio flows") {
         shortcut("Ctrl+F")
         icon(MaterialDesignT.TUNE)

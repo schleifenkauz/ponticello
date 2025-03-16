@@ -1,30 +1,28 @@
 package xenakis.sc.editor
 
-import hextant.context.Context
 import hextant.core.editor.CompoundEditor
 import reaktive.value.ReactiveValue
 import reaktive.value.binding.binding
 import reaktive.value.binding.flatMap
+import reaktive.value.binding.map
 import reaktive.value.reactiveValue
 import xenakis.impl.zero
-import xenakis.model.obj.BusObject
 import xenakis.sc.DecimalLiteral
 import xenakis.sc.Identifier
 import xenakis.sc.ScExpr
 import xenakis.sc.send
 
 class OutExprEditor(
-    context: Context,
-    busSelector: BusSelector = BusSelector(context),
-    channelsArray: ScExprExpander = ScExprExpander(context)
-) : CompoundEditor<ScExpr>(context), BusExprEditor {
-    override val busSelector by child(busSelector)
-    val channelsArray by child(channelsArray)
+    override val busSelector: BusSelector = BusSelector(),
+    val channelsArray: ScExprExpander = ScExprExpander()
+) : CompoundEditor<ScExpr>(), BusExprEditor {
+
+
 
     override val result: ReactiveValue<ScExpr> = busSelector.result.flatMap { ref ->
-        val bus = ref.reference?.get<BusObject>() ?: return@flatMap reactiveValue(DecimalLiteral(zero))
-        binding(bus.rate, channelsArray.result) { rate, snd ->
-            Identifier("Out").send(rate.toString(), ref, snd)
+        val bus = ref.get() ?: return@flatMap reactiveValue(DecimalLiteral(zero))
+        channelsArray.result.map { snd ->
+            Identifier("Out").send(bus.rate.toString(), ref, snd)
         }
     }
 }

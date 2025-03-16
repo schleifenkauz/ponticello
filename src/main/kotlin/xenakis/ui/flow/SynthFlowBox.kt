@@ -1,6 +1,7 @@
 package xenakis.ui.flow
 
 import bundles.createBundle
+import fxutils.actions.Action
 import fxutils.actions.ContextualizedAction
 import fxutils.actions.collectActions
 import fxutils.actions.isShiftDown
@@ -33,9 +34,12 @@ class SynthFlowBox(flow: SynthFlow) : FlowBox<SynthFlow>(flow) {
             addAction("View SynthDef") {
                 icon(Material2AL.CODE)
                 shortcut("Ctrl+L")
+                applicableIf { box -> box.flow.synthDefSelector.isResolved }
+                ifNotApplicable(Action.IfNotApplicable.Disable)
                 executes { box ->
                     val instrumentsPane = box.flow.context[XenakisMainActivity].instrumentsPane
-                    instrumentsPane.editInstrument(box.flow.synthDef)
+
+                    instrumentsPane.editInstrument(box.flow.synthDef!!)
                 }
             }
             addAction("Add parameter") {

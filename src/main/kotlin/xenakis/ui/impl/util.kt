@@ -7,8 +7,8 @@ import fxutils.prompt.Prompt
 import fxutils.registerShortcuts
 import hextant.context.Context
 import hextant.context.withoutUndo
+import hextant.core.editor.snapshot
 import hextant.serial.EditorRoot
-import hextant.serial.snapshot
 import javafx.scene.Parent
 import javafx.scene.control.ColorPicker
 import javafx.scene.input.DataFormat
@@ -29,9 +29,9 @@ import xenakis.sc.editor.CodeBlockEditor
 import xenakis.ui.launcher.XenakisApp.Companion.primaryStage
 import xenakis.ui.launcher.XenakisMainActivity
 
-fun <T : NamedObject> Dragboard.getFrom(registry: ObjectRegistry<T>, format: DataFormat): T {
+fun <T : NamedObject> Dragboard.getFrom(registry: ObjectRegistry<T>, format: DataFormat): T? {
     val name = getContent(format) as String
-    return registry.get(name)
+    return registry.getOrNull(name)
 }
 
 fun ScoreObjectInstance.verticalDist(y: Decimal) = when {
@@ -58,9 +58,7 @@ val Context.rootPane get() = get(XenakisMainActivity).scoreView
 fun SubWindow.registerSyncShortcuts(obj: SuperColliderObject, code: EditorRoot<CodeBlockEditor>) {
     scene.registerShortcuts {
         on("Ctrl+S") {
-            code.editor.context.withoutUndo {
-                code.editor.snapshot().reconstructObject(code.editor)
-            }
+            //TODO rebuild code editor
             obj.sync()
         }
         on("Ctrl+Shift+S") {

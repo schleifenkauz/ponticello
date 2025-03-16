@@ -2,40 +2,40 @@ package xenakis.sc.editor
 
 import hextant.context.Context
 import hextant.core.editor.CompoundEditor
-import hextant.serial.Snapshot
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.JsonObjectBuilder
-import kotlinx.serialization.json.put
+import kotlinx.serialization.Serializable
 import reaktive.value.ReactiveValue
-import xenakis.impl.getString
 import xenakis.impl.superColliderPath
 import xenakis.model.Logger
 import xenakis.model.XenakisProject.Companion.projectDirectory
 import xenakis.sc.VSTPlugin
 import xenakis.sc.client.SuperColliderClient
 
-class VSTPluginEditor(context: Context) : CompoundEditor<VSTPlugin>(context), ScExprEditor<VSTPlugin> {
-    constructor(context: Context, pluginName: String) : this(context) {
+@Serializable
+class VSTPluginEditor() : CompoundEditor<VSTPlugin>(), ScExprEditor<VSTPlugin> {
+    constructor(pluginName: String) : this() {
         this.pluginName = pluginName
         this.presetName = System.currentTimeMillis().toString()
     }
 
-    val input by child(ScExprExpander(context, "nil"))
-    val channels by child(SimpleIntegerEditor(context, 2))
-    val id by child(IdentifierEditor(context, "vst"))
+    val input by child(ScExprExpander("nil"))
+    val channels by child(SimpleIntegerEditor(2))
+    val id by child(IdentifierEditor("vst"))
 
-    lateinit var pluginName: String
+    lateinit var pluginName: String //TODO store presets in project directory
         private set
 
     var presetName: String? = null
         private set
 
-    override val result: ReactiveValue<VSTPlugin>
-        get() = composeResult {
-            VSTPlugin(input.get(), channels.get(), pluginName, id.get().text, presetName ?: "<no preset>")
-        }
+    override lateinit var result: ReactiveValue<VSTPlugin>
 
     private val controllerVar get() = "~ctrl_$presetName"
+
+    override fun doInitialize() {
+        result = composeResult {
+            VSTPlugin(input.get(), channels.get(), pluginName, id.get().text, presetName ?: "<no preset>")
+        }
+    }
 
     fun configurePlugin() {
         if (!checkControllerVar()) return
@@ -57,39 +57,6 @@ class VSTPluginEditor(context: Context) : CompoundEditor<VSTPlugin>(context), Sc
         if (!presetFile.parentFile.isDirectory) presetFile.parentFile.mkdir()
         context[SuperColliderClient].run {
             +"~ctrl_$presetName.writeProgram(${presetFile.superColliderPath})"
-        }
-    }
-
-    override fun createSnapshot(): Snapshot<*> = Snap()
-
-    private class Snap : CompoundEditor.Snap() {
-        private var pluginName: String? = null
-        private var presetName: String? = null
-
-        override fun doRecord(original: CompoundEditor<*>) {
-            original as VSTPluginEditor
-            super.doRecord(original)
-            pluginName = original.pluginName
-            presetName = original.presetName
-        }
-
-        override fun reconstructObject(original: CompoundEditor<*>) {
-            original as VSTPluginEditor
-            super.reconstructObject(original)
-            original.pluginName = pluginName ?: error("invalid snap")
-            original.presetName = presetName ?: error("invalid snap")
-        }
-
-        override fun decode(element: JsonObject) {
-            super.decode(element)
-            pluginName = element.getString("_pluginName")
-            presetName = element.getString("_presetName")
-        }
-
-        override fun encode(builder: JsonObjectBuilder) {
-            super.encode(builder)
-            builder.put("_pluginName", pluginName)
-            builder.put("_presetName", presetName)
         }
     }
 }

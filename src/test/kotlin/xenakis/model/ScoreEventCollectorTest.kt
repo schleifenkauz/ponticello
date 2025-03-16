@@ -10,6 +10,7 @@ import xenakis.impl.withPrecision
 import xenakis.impl.zero
 import xenakis.model.player.ScoreEventCollector
 import xenakis.model.player.ScoreEventCollector.Event
+import xenakis.model.registry.reference
 import xenakis.model.score.*
 import kotlin.random.Random
 

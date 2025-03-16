@@ -2,6 +2,7 @@ package xenakis.model.score
 
 import hextant.context.Context
 import hextant.context.withoutUndo
+import hextant.core.editor.initialized
 import hextant.serial.EditorRoot
 import hextant.undo.AbstractEdit
 import hextant.undo.PropertyEdit
@@ -17,9 +18,7 @@ import reaktive.value.now
 import reaktive.value.reactiveVariable
 import xenakis.impl.*
 import xenakis.model.flow.ScoreObjectInfo
-import xenakis.model.obj.InstrumentObject
-import xenakis.model.obj.SynthDefObject
-import xenakis.model.obj.VSTPluginObject
+import xenakis.model.obj.*
 import xenakis.model.registry.ObjectReference
 import xenakis.sc.code
 import xenakis.sc.editor.*
@@ -29,7 +28,7 @@ import xenakis.ui.score.PianoRollObjectView
 @Serializable
 class PianoRollObject(
     @SerialName("name") override val mutableName: ReactiveVariable<String>,
-    @SerialName("instrument") private val mInstrument: ReactiveVariable<ObjectReference>,
+    @SerialName("instrument") private val mInstrument: ReactiveVariable<InstrumentReference>,
     @SerialName("lowestPitch") private var mLowestPitch: Int,
     @SerialName("highestPitch") private var mHighestPitch: Int,
     val eventDictionary: EditorRoot<EventDictionaryEditor>,
@@ -39,10 +38,10 @@ class PianoRollObject(
         get() = "piano-roll"
 
     @Transient
-    lateinit var instrumentSelector: InstrumentSelector<ObjectReference>
+    lateinit var instrumentSelector: InstrumentSelector
         private set
 
-    private val instrument get() = mInstrument.now.get<InstrumentObject>()
+    private val instrument get() = mInstrument.now.get() ?: NoSynthDef()
 
     var lowestPitch
         get() = mLowestPitch
@@ -66,7 +65,9 @@ class PianoRollObject(
     override fun initialize(context: Context) {
         if (initialized) return
         super.initialize(context)
-        instrumentSelector = InstrumentSelector(context, mInstrument)
+        instrumentSelector = InstrumentSelector()
+        instrumentSelector.syncWith(mInstrument)
+        instrumentSelector.initialize(context)
         for (note in notes) {
             note.parent = this
         }
@@ -189,7 +190,7 @@ class PianoRollObject(
 
     override fun doClone(newName: String): ScoreObject = PianoRollObject(
         reactiveVariable(newName), mInstrument.copy(), lowestPitch, highestPitch,
-        context.withoutUndo { eventDictionary.clone() },
+        context.withoutUndo { eventDictionary.clone(context) },
         notes.mapTo(mutableListOf()) { n -> n.copy() }
     )
 
@@ -201,7 +202,7 @@ class PianoRollObject(
         return PianoRollObject(
             reactiveVariable(newName), mInstrument,
             lowestPitch, highestPitch,
-            eventDictionary.clone(), notes
+            eventDictionary.clone(context), notes
         )
     }
 
@@ -341,23 +342,20 @@ class PianoRollObject(
 
         override fun toString(): String = "Note(start: $onset, dur: $duration, pitch: $midinote)"
 
-        fun copy() = Note(onset, duration, midinote,
-            eventDictionary.editor.context.withoutUndo { eventDictionary.clone() }
-        )
+        fun copy() = Note(onset, duration, midinote, eventDictionary.clone())
 
         companion object {
             fun create(context: Context, time: Decimal, duration: Decimal, midinote: Int): Note {
-                val eventDictionary = EventDictionaryEditor(context)
+                val eventDictionary = EventDictionaryEditor()
                 context.withoutUndo {
                     eventDictionary.entries.addLast(
                         NamedExprEditor(
-                            context,
-                            IdentifierEditor(context, "velocity"),
-                            ScExprExpander(context, "60")
+                            IdentifierEditor("velocity"),
+                            ScExprExpander("60")
                         )
                     )
                 }
-                return Note(time, duration, midinote, EditorRoot.create(eventDictionary))
+                return Note(time, duration, midinote, EditorRoot.create(eventDictionary, context))
             }
         }
     }

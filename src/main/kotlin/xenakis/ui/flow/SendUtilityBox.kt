@@ -4,11 +4,9 @@ import bundles.createBundle
 import fxutils.centerChildren
 import javafx.scene.Node
 import javafx.scene.layout.HBox
-import reaktive.value.ReactiveVariable
-import reaktive.value.now
+import reaktive.value.reactiveValue
 import xenakis.impl.toDecimal
 import xenakis.model.flow.SendFlow
-import xenakis.model.registry.ObjectReference
 import xenakis.model.score.KnobControl
 import xenakis.sc.NumericalControlSpec
 import xenakis.sc.Warp
@@ -22,13 +20,10 @@ class SendUtilityBox(flow: SendFlow) : FlowBox<SendFlow>(flow) {
         val spec = NumericalControlSpec(100.0, 0.0, 100.0, 1.toDecimal(), Warp.Linear)
         val knob = Knob("Amount", ctrl, spec, flow.context)
 
-        @Suppress("UNCHECKED_CAST") //this is ok: ObjectSelectorControl never selects null values
-        val targetBusSelector = BusSelector(
-            flow.context,
-            preferredRate = flow.associatedBus.rate.now,
-            preferredChannels = flow.associatedBus.channels.now,
-            flow.targetRef as ReactiveVariable<ObjectReference?>
-        )
+        val targetBusSelector = BusSelector()
+        targetBusSelector.setFilter(reactiveValue(flow.associatedBus.rate), flow.associatedBus.channels)
+        targetBusSelector.syncWith(flow.targetRef)
+        targetBusSelector.initialize(flow.context)
         val selectorControl = ObjectSelectorControl(targetBusSelector, createBundle())
         return HBox(10.0, knob, selectorControl).centerChildren()
     }

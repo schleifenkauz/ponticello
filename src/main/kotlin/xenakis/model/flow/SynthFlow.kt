@@ -1,18 +1,17 @@
 package xenakis.model.flow
 
 import hextant.context.Context
+import hextant.core.editor.initialized
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import reaktive.value.ReactiveVariable
 import reaktive.value.now
 import reaktive.value.reactiveVariable
 import xenakis.impl.zero
-import xenakis.model.obj.BusObject
-import xenakis.model.obj.ParameterizedObject
-import xenakis.model.obj.ParameterizedObjectDef
-import xenakis.model.obj.SynthDefObject
+import xenakis.model.obj.*
 import xenakis.model.player.ParameterControlLiveUpdater
 import xenakis.model.registry.ObjectReference
+import xenakis.model.registry.reference
 import xenakis.model.score.BusControl
 import xenakis.model.score.ConstantControl
 import xenakis.model.score.ObjectPosition
@@ -25,14 +24,14 @@ import xenakis.sc.writeSynthCode
 
 @Serializable
 class SynthFlow(
-    private var defRef: ReactiveVariable<ObjectReference>,
+    private var defRef: ReactiveVariable<SynthDefReference>,
     override val controls: ParameterControls,
 ) : AudioFlow(), ParameterizedObject {
     @Transient
     lateinit var synthDefSelector: SynthDefSelector
         private set
 
-    val synthDef get() = defRef.now.get<SynthDefObject>()
+    val synthDef get() = defRef.now.get() ?: NoSynthDef()
 
     @Transient
     private lateinit var listener: ParameterControlLiveUpdater
@@ -42,7 +41,9 @@ class SynthFlow(
 
     override fun initialize(context: Context, bus: BusObject) {
         super.initialize(context, bus)
-        synthDefSelector = SynthDefSelector(context, defRef)
+        synthDefSelector = SynthDefSelector()
+        synthDefSelector.syncWith(defRef)
+        synthDefSelector.initialize(context)
         controls.initialize(context, synthDef)
         listener = ParameterControlLiveUpdater(context[SuperColliderClient]) { listOf(superColliderName.now) }
         listener.listen(controls)

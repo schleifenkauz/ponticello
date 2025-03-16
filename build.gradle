@@ -1,10 +1,10 @@
 plugins {
     id 'java'
     id 'application'
-    id 'org.jetbrains.kotlin.jvm' version '1.9.25'
-    id 'org.jetbrains.kotlin.kapt' version '1.9.25'
+    id 'org.jetbrains.kotlin.jvm' version '2.1.10'
+    id 'org.jetbrains.kotlin.kapt' version '2.1.10'
     id 'org.openjfx.javafxplugin' version '0.1.0'
-    id 'org.jetbrains.kotlin.plugin.serialization' version '1.9.25'
+    id 'org.jetbrains.kotlin.plugin.serialization' version '2.1.0'
 }
 
 group 'com.github.nkb03'
@@ -51,8 +51,7 @@ dependencies {
     implementation 'org.kordamp.ikonli:ikonli-evaicons-pack:12.3.1'
     implementation 'org.kordamp.ikonli:ikonli-material2-pack:12.3.1'
 
-    implementation 'org.jetbrains.kotlinx:kotlinx-serialization-core:1.6.3'
-    implementation 'org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3'
+    implementation 'org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3'
 
     implementation 'de.schleifenkauz:hextant-core:1.1-SNAPSHOT'
     implementation 'de.schleifenkauz:hextant-codegen:1.0-SNAPSHOT'

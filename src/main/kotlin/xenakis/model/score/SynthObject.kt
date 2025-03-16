@@ -13,13 +13,11 @@ import reaktive.value.reactiveVariable
 import xenakis.impl.*
 import xenakis.model.Settings
 import xenakis.model.flow.ScoreObjectInfo
-import xenakis.model.obj.ParameterizedObject
-import xenakis.model.obj.ParameterizedObjectDef
-import xenakis.model.obj.SampleObject
-import xenakis.model.obj.SynthDefObject
+import xenakis.model.obj.*
 import xenakis.model.player.ParameterControlLiveUpdater
 import xenakis.model.player.PlaybackManager
-import xenakis.model.registry.ObjectReference
+import xenakis.model.registry.GroupRegistry
+import xenakis.model.registry.reference
 import xenakis.sc.ControlSpec
 import xenakis.sc.client.SuperColliderClient
 import xenakis.sc.editor.SynthDefSelector
@@ -29,7 +27,7 @@ import xenakis.ui.impl.Direction
 @Serializable
 class SynthObject(
     @SerialName("name") override val mutableName: ReactiveVariable<String>,
-    @SerialName("synthDef") private val synthDefRef: ReactiveVariable<ObjectReference>,
+    @SerialName("synthDef") private val synthDefRef: ReactiveVariable<SynthDefReference>,
     override val controls: ParameterControls
 ) : ScoreObject(), ParameterizedObject {
     override val type: String
@@ -50,16 +48,18 @@ class SynthObject(
 
     override fun getSpec(parameter: String): ControlSpec? = super<ParameterizedObject>.getSpec(parameter)
 
-    val synthDef: SynthDefObject get() = synthDefRef.now.get()
+    val synthDef: SynthDefObject get() = synthDefRef.now.get() ?: NoSynthDef()
 
     override val def: ParameterizedObjectDef
         get() = synthDef
 
-    val group: ReactiveValue<ObjectReference> get() = (controls["group"] as GroupControl).group
+    val group: ReactiveValue<GroupReference> get() = (controls["group"] as GroupControl).group
+
+    val groupObj get() = group.now.get() ?: context[GroupRegistry].getDefault()
 
     private val bufferControl get() = controls.controlMap["buf"] as? BufferControl
 
-    val sample: ReactiveValue<ObjectReference?> get() = bufferControl?.sample ?: reactiveVariable(null)
+    val sample: ReactiveValue<SampleReference?> get() = bufferControl?.sample ?: reactiveVariable(null)
 
     val displaySample: ReactiveValue<Boolean>? get() = bufferControl?.display
 
@@ -122,7 +122,7 @@ class SynthObject(
             }
         }
         if (sample.now != null && playBufRate != null && playbufStartPos != null) {
-            val sampleDur = sample.now!!.get<SampleObject>().duration
+            val sampleDur = sample.now!!.get()?.duration ?: 0.0.asTime
             playbufStartPos!!.now = (playbufStartPos!!.now + playBufRate!!.now * duration).wrapAt(sampleDur)
             while (playbufStartPos!!.now < zero) playbufStartPos!!.now += sampleDur
             playBufRate!!.now *= -1
@@ -133,7 +133,9 @@ class SynthObject(
     override fun initialize(context: Context) {
         if (initialized) return
         super.initialize(context)
-        synthDefSelector = SynthDefSelector(context, synthDefRef)
+        synthDefSelector = SynthDefSelector()
+        synthDefSelector.syncWith(synthDefRef)
+        synthDefSelector.initialize(context)
         controls.initialize(context, synthDef)
         listener = ParameterControlLiveUpdater(context[SuperColliderClient], ::getActiveSynths)
         listener.listen(controls)

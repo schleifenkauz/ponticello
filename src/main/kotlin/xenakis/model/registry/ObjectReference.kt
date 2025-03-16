@@ -1,74 +1,92 @@
 package xenakis.model.registry
 
+import hextant.context.Context
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.Transient
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.serialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
+import reaktive.value.ReactiveBoolean
 import reaktive.value.now
+import reaktive.value.reactiveValue
 import xenakis.model.Logger
-import kotlin.reflect.KClass
-import kotlin.reflect.cast
+import xenakis.model.obj.GroupObject
+import xenakis.model.obj.SuperColliderObject
+import xenakis.sc.ScExpr
+import xenakis.sc.client.ScWriter
 
-@Serializable(with = ObjectReference.Serializer::class)
-class ObjectReference(private var name: String) {
-    @Transient
-    private var obj: NamedObject? = null
+@Serializable(/*with = ObjectReference.Serializer::class*/) //TODO
+class ObjectReference<O : NamedObject>(private var _name: String) : ScExpr {
+    private var obj: O? = null
 
-    constructor(obj: NamedObject) : this(obj.name.now) {
+    lateinit var isResolved: ReactiveBoolean
+        private set
+
+    constructor(obj: O) : this(obj.name.now) {
+        resolve(obj)
+    }
+
+    private fun resolve(obj: O) {
         this.obj = obj
+        isResolved = obj.isAdded
     }
 
-    fun <O : NamedObject> get(cls: KClass<O>): O = when {
-        obj == null -> error("Object $name not resolved!")
-        !cls.isInstance(obj) -> error("Object $name was not resolved to an object of $cls")
-        else -> cls.cast(obj)
-    }
-
-    inline fun <reified O : NamedObject> get(): O = get(O::class)
-
-    fun getName() = obj?.name?.now ?: name
-
-    @Suppress("UNCHECKED_CAST")
-    fun <O : NamedObject> resolve(registry: ObjectRegistry<O>): O {
+    fun resolve(registry: ObjectRegistry<O>): O? {
         if (obj != null) return obj as O
+        if (_name == "<none>") return null
         try {
-            obj = registry.get(name)
+            resolve(registry.get(_name))
         } catch (ex: NoSuchElementException) {
-            Logger.severe("${registry.objectType} '$name' not found", Logger.Category.Registries)
-            obj = registry.getDefault(name)
+            Logger.severe("${registry.objectType} '$_name' not found", Logger.Category.Registries)
+            obj = null
+            isResolved = reactiveValue(false)
         }
-        return obj as O
+        return obj
     }
 
-    override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (other !is ObjectReference) return false
+    fun get(): O? = obj?.takeIf { isResolved.now }
 
-        return if (obj != null) obj == other.obj
-        else name == other.name
+    fun getName() = obj?.name?.now ?: _name
+
+    val name get() = obj?.name ?: reactiveValue(_name)
+
+    override fun toString(): String = if (_name == NONE) NONE else "#$_name"
+
+    val superColliderName: String
+        get() {
+            val obj = get()
+            return when {
+                _name == NONE -> "<none>"
+                obj == null -> "<unresolved: $_name>"
+                obj is SuperColliderObject -> obj.superColliderName
+                obj is GroupObject -> obj.superColliderName
+                else -> error("$obj has no SuperCollider name")
+            }
+        }
+
+    override fun code(writer: ScWriter, context: Context) {
+        writer.append(superColliderName)
     }
 
-    override fun hashCode(): Int {
-        return if (obj != null) obj.hashCode() else name.hashCode()
-    }
-
-    override fun toString(): String = "#$name"
-
-    class Serializer : KSerializer<ObjectReference> {
+    @Suppress("unused") //is needed because [ObjectReference] has type parameter <O>
+    class Serializer<O : NamedObject>(val serializer: KSerializer<O>) : KSerializer<ObjectReference<O>> {
         override val descriptor: SerialDescriptor
             get() = serialDescriptor<String>()
 
-        override fun serialize(encoder: Encoder, value: ObjectReference) {
-            val obj = value.get(NamedObject::class)
-            encoder.encodeString(obj.name.now)
+        override fun serialize(encoder: Encoder, value: ObjectReference<O>) {
+            encoder.encodeString(value.getName())
         }
 
-        override fun deserialize(decoder: Decoder): ObjectReference {
+        override fun deserialize(decoder: Decoder): ObjectReference<O> {
             val name = decoder.decodeString()
             return ObjectReference(name)
         }
+    }
+
+    companion object {
+        const val NONE = "<none>"
+
+        fun <O: NamedObject> none() = ObjectReference<O>(NONE)
     }
 }

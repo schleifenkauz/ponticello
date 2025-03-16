@@ -3,6 +3,7 @@ package xenakis.ui.score
 import bundles.createBundle
 import fxutils.actions.button
 import fxutils.centerChildren
+import fxutils.disableIf
 import fxutils.prompt.DetailPane
 import fxutils.styleClass
 import javafx.application.Platform
@@ -16,10 +17,12 @@ import javafx.scene.transform.Translate
 import org.kordamp.ikonli.material2.Material2AL
 import reaktive.Observer
 import reaktive.value.ReactiveValue
+import reaktive.value.binding.flatMap
+import reaktive.value.binding.not
 import reaktive.value.forEach
 import reaktive.value.now
+import reaktive.value.reactiveValue
 import xenakis.impl.*
-import xenakis.model.obj.SampleObject
 import xenakis.model.score.*
 import xenakis.sc.view.ObjectSelectorControl
 import xenakis.ui.controls.ControlAssignmentView
@@ -38,7 +41,7 @@ class SynthObjectView(
     private var sampleContentObserver: Observer? = null
 
     override val defaultBackgroundColor: ReactiveValue<Color>
-        get() = obj.synthDef.color
+        get() = obj.synthDefSelector.result.flatMap { ref -> ref.get()?.color ?: reactiveValue(Color.GRAY) }
 
     init {
         styleClass("synth-object")
@@ -50,7 +53,10 @@ class SynthObjectView(
         sampleObserver = obj.sample.forEach { s ->
             sampleContentObserver?.kill()
             if (s != null) {
-                sampleContentObserver = s.get<SampleObject>().contentsChanged.observe { _ -> updateSpectrogram() }
+                val sample = s.get()
+                if (sample != null) {
+                    sampleContentObserver = sample.contentsChanged.observe { _ -> updateSpectrogram() }
+                }
                 updateSpectrogram()
             }
         }
@@ -60,8 +66,8 @@ class SynthObjectView(
     override fun setupDetailPane(pane: DetailPane) {
         pane.addItem("Color:", this.colorPicker)
         val viewBtn = Material2AL.CODE.button(action = "View SynthDef") {
-            context[XenakisMainActivity].instrumentsPane.editInstrument(obj.synthDef)
-        }.styleClass("medium-icon-button")
+            context[XenakisMainActivity].instrumentsPane.editInstrument(obj.synthDef!!)
+        }.styleClass("medium-icon-button").disableIf(obj.synthDefSelector.isResolved.not())
         val box = ObjectSelectorControl(obj.synthDefSelector, createBundle())
         pane.addItem("SynthDef: ", HBox(5.0, box, viewBtn).centerChildren())
         pane.children.add(createDetailsHeader(obj, "Synth controls"))
@@ -103,7 +109,7 @@ class SynthObjectView(
             children.removeAll(spectrogramViews)
             spectrogramViews.clear()
             if (obj.displaySample?.now != true) return@runLater
-            val sample = obj.sample.now?.get<SampleObject>()
+            val sample = obj.sample.now?.get()
             spectrogramImage = sample?.spectrogramImage ?: return@runLater
             displaySpectrogram()
         }
@@ -114,7 +120,7 @@ class SynthObjectView(
         spectrogramViews.clear()
         if (obj.displaySample?.now != true) return
         if (spectrogramImage == null) return
-        val sample = obj.sample.now?.get<SampleObject>() ?: return
+        val sample = obj.sample.now?.get() ?: return
         val rate = obj.playBufRate?.now ?: one(precision = 3)
         if (rate == zero) return
         val defaultStartPos = if (rate < zero) sample.duration else zero

@@ -19,6 +19,7 @@ import xenakis.impl.withPrecision
 import xenakis.impl.zero
 import xenakis.model.flow.ScoreObjectInfo
 import xenakis.model.obj.AbstractRenamableObject
+import xenakis.model.registry.ObjectRegistry
 import xenakis.model.registry.ScoreObjectRegistry
 import xenakis.model.score.Score.Companion.rootScore
 import xenakis.sc.ControlSpec
@@ -58,6 +59,9 @@ sealed class ScoreObject : AbstractRenamableObject() {
 
     @Transient
     protected var resizeType: ResizeType = ResizeType.Regular
+
+    override val registry: ObjectRegistry<*>?
+        get() = context[ScoreObjectRegistry]
 
     init {
         //this is only for needed when opening projects that were created before the decimal-precision update
@@ -257,7 +261,8 @@ sealed class ScoreObject : AbstractRenamableObject() {
     }
 
     @Serializable
-    class Unresolved(override val mutableName: ReactiveVariable<String>) : ScoreObject() {
+    class Unresolved : ScoreObject() {
+        override val mutableName: ReactiveVariable<String> = reactiveVariable("<unresolved>")
 
         override val type: String
             get() = "none"

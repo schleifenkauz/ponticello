@@ -2,7 +2,9 @@ package xenakis.model.flow
 
 import reaktive.value.now
 import reaktive.value.reactiveValue
+import xenakis.model.Logger
 import xenakis.model.obj.BusObject
+import xenakis.model.obj.NoSynthDef
 import xenakis.model.score.ObjectPosition
 import xenakis.model.score.SynthObject
 import xenakis.sc.client.ScWriter
@@ -24,7 +26,12 @@ data class ActiveSynth(
         val name = superColliderName.now.removePrefix("~")
         val synthVar = "~synths[$name]"
         val info = ScoreObjectInfo(absolutePosition, name, synthVar, placement)
-        writeSynthCode(obj.synthDef, obj.context, info, obj.duration, obj.controls.controlMap)
+        val def = obj.synthDef
+        if (def is NoSynthDef) {
+            Logger.warn("SynthDef ${obj.synthDefSelector.result.now.getName()} is not resolved", Logger.Category.AudioFlow)
+        } else {
+            writeSynthCode(def, obj.context, info, obj.duration, obj.controls.controlMap)
+        }
     }
 
     override fun getInputs(): Collection<BusObject> = obj.getInputs()

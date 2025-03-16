@@ -11,18 +11,19 @@ import xenakis.model.flow.ScoreObjectInfo
 import xenakis.model.obj.ParameterizedObject
 import xenakis.model.obj.ParameterizedObjectDef
 import xenakis.model.obj.ProcessDefObject
+import xenakis.model.obj.ProcessDefReference
 import xenakis.model.registry.ObjectReference
 import xenakis.sc.ControlSpec
 
 class ProcessObject(
     @SerialName("name") override val mutableName: ReactiveVariable<String>,
-    @SerialName("processDef") val processDefRef: ReactiveVariable<ObjectReference>,
+    @SerialName("processDef") val processDefRef: ReactiveVariable<ProcessDefReference>,
     override val controls: ParameterControls
 ) : ScoreObject(), ParameterizedObject {
     override val type: String
         get() = "process"
 
-    val processDef get() = processDefRef.now.get<ProcessDefObject>()
+    val processDef get() = processDefRef.now.get() ?: ProcessDefObject.unresolved(context)
 
     override val def: ParameterizedObjectDef
         get() = processDef
@@ -36,7 +37,7 @@ class ProcessObject(
         appendBlock("Task", endLine = false) {
             val latency = context[Settings].serverLatency.get()
             +"$latency.wait"
-            +"${processDef.superColliderName}.value()"
+            +"${processDefRef.now.superColliderName}.value()"
         }
         +".play"
     }

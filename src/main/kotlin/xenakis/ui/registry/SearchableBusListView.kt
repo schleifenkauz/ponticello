@@ -11,13 +11,13 @@ class SearchableBusListView(
 ) : SearchableRegistryView<BusObject>(registry, title) {
     override fun options(): List<BusObject> = super.options()
         .filter { bus ->
-            (rate == null || bus.rate.now == rate) && (channels == null || bus.channels.now == channels)
+            (rate == null || bus.rate == rate) && (channels == null || bus.channels.now == channels)
         }
 
     override fun displayText(option: BusObject): String =
-        "${option.name.now}: ${option.channels.now} x ${option.rate.now}"
+        "${option.name.now}: ${option.channels.now} x ${option.rate}"
 
     override fun extractText(option: BusObject): String = option.name.now
 
-    override fun createObject(name: String): BusObject = BusObject.create(name)
+    override fun createObject(name: String): BusObject = BusObject.audio(name)
 }

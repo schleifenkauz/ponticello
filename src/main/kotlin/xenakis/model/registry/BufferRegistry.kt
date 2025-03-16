@@ -28,8 +28,6 @@ class BufferRegistry(
         context[BufferRegistry] = this
     }
 
-    override fun getDefault(name: String?): BufferObject = error("No default buffer")
-
     interface Listener : ObjectRegistry.Listener<BufferObject>
 
     companion object : PublicProperty<BufferRegistry> by publicProperty("BufferRegistry")

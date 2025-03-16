@@ -40,7 +40,7 @@ class FlowPane(
         val btn = MaterialDesignP.PLUS.button("Add flow") { ev ->
             val name = NamePrompt(flows.context[BusRegistry], "Name for new bus", "").showDialog(ev)
                 ?: return@button
-            val bus = BusObject.create(name)
+            val bus = BusObject.audio(name)
             buses.add(bus)
         }.styleClass("large-icon-button")
         val pane = BorderPane(btn)

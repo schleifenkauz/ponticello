@@ -20,10 +20,8 @@ class ParameterDefObject(
 
     override fun canRenameTo(newName: String): Boolean = true
 
-    fun defaultControl(context: Context, defaultBus: ObjectReference? = null) =
+    fun defaultControl(context: Context, defaultBus: BusReference? = null) =
         spec.now.defaultControl(context, defaultBus)
-
-    override fun reference(): Nothing = throw UnsupportedOperationException()
 
     override fun toString(): String = "${name.now}: ${spec.now}"
 

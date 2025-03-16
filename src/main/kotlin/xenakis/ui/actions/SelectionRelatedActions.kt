@@ -8,6 +8,7 @@ import reaktive.value.now
 import reaktive.value.reactiveVariable
 import xenakis.impl.copy
 import xenakis.impl.unaryMinus
+import xenakis.model.Logger
 import xenakis.model.registry.ScoreObjectRegistry
 import xenakis.model.score.ObjectPosition
 import xenakis.model.score.Score
@@ -42,7 +43,12 @@ object SelectionRelatedActions {
         }
         on("Ctrl+Shift+A") {
             val selected = scoreView.selector.focusedView.now ?: return@on
-            for (inst in selected.pane.score.instancesOf(selected.instance.obj)) {
+            val obj = selected.instance.obj
+            if (obj == null) {
+                Logger.warn("Object is not resolved", Logger.Category.Score)
+                return@on
+            }
+            for (inst in selected.pane.score.instancesOf(obj)) {
                 if (inst != selected.instance) {
                     val view = selected.pane.getObjectView(inst)
                     context[ScoreObjectSelectionManager].select(view, addToSelection = true)
@@ -52,8 +58,13 @@ object SelectionRelatedActions {
         on("C") { ev ->
             if (ev.isTargetTextInput) return@on
             val selected = scoreView.selector.focusedView.now ?: return@on
+            val obj = selected.instance.obj
+            if (obj == null) {
+                Logger.warn("Object is not resolved", Logger.Category.Score)
+                return@on
+            }
             activity.toolSelector.select(Tool.Pointer)
-            scoreView.setClipboard(selected.instance.obj, selected)
+            scoreView.setClipboard(obj, selected)
         }
         on("Ctrl+C") { ev ->
             if (ev.isTargetTextInput) return@on

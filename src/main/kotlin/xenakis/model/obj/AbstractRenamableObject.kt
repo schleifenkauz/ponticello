@@ -1,21 +1,16 @@
 package xenakis.model.obj
 
-import hextant.context.Context
 import hextant.undo.AbstractEdit
 import hextant.undo.UndoManager
 import reaktive.value.ReactiveValue
 import reaktive.value.ReactiveVariable
 import reaktive.value.now
 
-abstract class AbstractRenamableObject : RenamableObject, AbstractContextualObject() {
+abstract class AbstractRenamableObject : RenamableObject, AbstractNamedObject() {
     protected abstract val mutableName: ReactiveVariable<String>
 
     final override val name: ReactiveValue<String>
         get() = mutableName
-
-    override fun onAdded(context: Context) {}
-
-    override fun onRemoved() {}
 
     override fun rename(newName: String) {
         context[UndoManager].record(RenameEdit(this, name.now, newName))

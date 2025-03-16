@@ -7,7 +7,6 @@ import fxutils.actions.collectActions
 import fxutils.controls.SliderBar
 import fxutils.prompt.DetailPane
 import fxutils.prompt.SimpleSearchableListView
-import hextant.context.Context
 import hextant.fx.initHextantScene
 import hextant.serial.EditorRoot
 import javafx.geometry.Insets
@@ -23,20 +22,13 @@ import javafx.scene.layout.HBox
 import javafx.scene.layout.Priority
 import org.controlsfx.control.ToggleSwitch
 import org.kordamp.ikonli.codicons.Codicons
-import org.kordamp.ikonli.material2.Material2AL
 import reaktive.value.ReactiveVariable
 import reaktive.value.fx.asProperty
-import reaktive.value.now
 import reaktive.value.reactiveValue
 import reaktive.value.reactiveVariable
 import xenakis.impl.asTime
-import xenakis.model.obj.BusObject
-import xenakis.model.obj.ParameterizedObject
-import xenakis.model.obj.SampleObject
-import xenakis.model.registry.BusRegistry
-import xenakis.model.registry.GroupRegistry
-import xenakis.model.registry.ObjectReference
-import xenakis.model.registry.SampleRegistry
+import xenakis.model.obj.*
+import xenakis.model.registry.*
 import xenakis.model.score.*
 import xenakis.sc.BufferControlSpec
 import xenakis.sc.ControlSpec
@@ -73,7 +65,6 @@ class ControlAssignmentEditor(
 
     init {
         styleClass.add("detail-item")
-
         optionButton.isFocusTraversable = false
         optionButton.setOnMouseClicked { showOptionPopup() }
         optionButton.minWidth = 85.0
@@ -223,8 +214,8 @@ class ControlAssignmentEditor(
                 spec: ControlSpec,
                 oldControl: ParameterControl
             ): CustomControl {
-                val editor = ScExprExpander(obj.context)
-                val root = EditorRoot.create(editor)
+                val editor = ScExprExpander()
+                val root = EditorRoot.create(editor, obj.context)
                 if (oldControl.getNumericalValue() != null) {
                     editor.setText(oldControl.getNumericalValue().toString())
                 }
@@ -238,7 +229,7 @@ class ControlAssignmentEditor(
                 parameter: String,
                 spec: ControlSpec,
                 control: BusControl
-            ): Node = busSelector(obj.context, control.bus)
+            ): Node = busSelector(control.bus)
 
             override fun createDefaultControl(
                 obj: ParameterizedObject,
@@ -256,7 +247,7 @@ class ControlAssignmentEditor(
                 parameter: String,
                 spec: ControlSpec,
                 control: BusValueControl
-            ): Node = busSelector(obj.context, control.bus)
+            ): Node = busSelector(control.bus)
 
             override fun createDefaultControl(
                 obj: ParameterizedObject,
@@ -275,7 +266,7 @@ class ControlAssignmentEditor(
                 parameter: String,
                 spec: ControlSpec,
                 control: SingleBusValueControl
-            ): Node = busSelector(obj.context, control.bus)
+            ): Node = busSelector(control.bus)
 
             override fun createDefaultControl(
                 obj: ParameterizedObject, spec: ControlSpec, oldControl: ParameterControl
@@ -293,8 +284,8 @@ class ControlAssignmentEditor(
                 spec: ControlSpec,
                 control: BufferControl
             ): Node {
-                val initialValue = control.sample
-                val editor = SampleSelector(obj.context, initialValue)
+                val editor = SampleSelector()
+                editor.syncWith(control.sample)
                 val selectorControl = ObjectSelectorControl(editor, createBundle())
                 val displaySwitch = ToggleSwitch("Display: ")
                 spec as BufferControlSpec
@@ -309,7 +300,7 @@ class ControlAssignmentEditor(
             ): BufferControl {
                 spec as BufferControlSpec
                 val display = reactiveVariable(spec.isPlayBufSource)
-                val sample: ReactiveVariable<ObjectReference?> = reactiveVariable(null)
+                val sample: ReactiveVariable<SampleReference> = reactiveVariable(ObjectReference.none())
                 return BufferControl(sample, display)
             }
         }
@@ -321,8 +312,8 @@ class ControlAssignmentEditor(
                 spec: ControlSpec,
                 control: GroupControl
             ): Node {
-                @Suppress("UNCHECKED_CAST")
-                val selector = GroupSelector(obj.context, control.group as ReactiveVariable<ObjectReference?>)
+                val selector = GroupSelector()
+                selector.syncWith(control.group)
                 return ObjectSelectorControl(selector, createBundle())
             }
 
@@ -350,16 +341,9 @@ class ControlAssignmentEditor(
                 else -> throw AssertionError()
             } as ControlType<O>
 
-            private fun busSelector(
-                context: Context,
-                ref: ReactiveVariable<ObjectReference>
-            ): ObjectSelectorControl<BusObject, ObjectReference?> {
-                val bus = ref.now.get<BusObject>()
-
-                @Suppress("UNCHECKED_CAST") // this is fine because BusSelector never chooses the null value
-                val nullableRef = ref as ReactiveVariable<ObjectReference?>
-                val editor = BusSelector(context, bus.rate.now, bus.channels.now, nullableRef)
-
+            private fun busSelector(control: ReactiveVariable<BusReference>): ObjectSelectorControl<BusObject> {
+                val editor = BusSelector()
+                editor.syncWith(control)
                 return ObjectSelectorControl(editor, createBundle())
             }
         }
@@ -376,11 +360,6 @@ class ControlAssignmentEditor(
                     ControlSpecPrompt(editor.obj, editor.parameter, editor.spec)
                         .showDialog(anchorNode = editor)
                 }
-            }
-            addAction("Remove") {
-                shortcut("Ctrl+DELETE")
-                icon(Material2AL.DELETE)
-                executes { editor -> editor.obj.controls.removeControl(editor.parameter) }
             }
         }
     }

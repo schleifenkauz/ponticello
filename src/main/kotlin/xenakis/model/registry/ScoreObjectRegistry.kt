@@ -6,15 +6,12 @@ import bundles.set
 import hextant.context.Context
 import kotlinx.serialization.Serializable
 import reaktive.value.now
-import reaktive.value.reactiveVariable
 import xenakis.model.score.ScoreObject
 
 @Serializable
 class ScoreObjectRegistry(override val objects: MutableList<ScoreObject>) : ObjectRegistry<ScoreObject>() {
     override val objectType: String
         get() = "score_object"
-
-    override fun getDefault(name: String?): ScoreObject = ScoreObject.Unresolved(reactiveVariable(name ?: "?"))
 
     override fun initialize(context: Context) {
         context[ScoreObjectRegistry] = this

@@ -20,7 +20,7 @@ class AudioFlowGraphTest {
         flows.initialize(context)
         val nodeTree = mockk<NodeTree>(relaxed = true)
         val graph = AudioFlowGraph(flows, nodeTree)
-        val perc = BusObject.create("perc")
+        val perc = BusObject.audio("perc")
         buses.add(perc)
         flows.addSendFlow(buses.getInput(), perc)
         flows.addSendFlow(perc, buses.getOutput())

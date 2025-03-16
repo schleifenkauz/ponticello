@@ -5,6 +5,7 @@ import reaktive.value.ReactiveVariable
 import reaktive.value.now
 import reaktive.value.reactiveVariable
 import xenakis.model.registry.GroupRegistry
+import xenakis.model.registry.ObjectRegistry
 
 @Serializable
 class GroupObject(
@@ -12,6 +13,9 @@ class GroupObject(
     val isDefault: Boolean = false
 ) : AbstractRenamableObject() {
     val superColliderName: String get() = if (isDefault) "s.defaultGroup" else "~grp_${name.now}"
+
+    override val registry: ObjectRegistry<*>
+        get() = context[GroupRegistry]
 
     override fun canRenameTo(newName: String): Boolean = !context[GroupRegistry].has(newName)
 

@@ -4,9 +4,8 @@ import fxutils.*
 import fxutils.actions.ActionBar
 import fxutils.actions.collectActions
 import fxutils.actions.isShiftDown
+import fxutils.actions.registerShortcuts
 import javafx.scene.control.ScrollPane
-import javafx.scene.input.DataFormat
-import javafx.scene.input.Dragboard
 import javafx.scene.input.MouseEvent
 import javafx.scene.input.TransferMode
 import javafx.scene.layout.HBox
@@ -16,67 +15,55 @@ import org.kordamp.ikonli.materialdesign2.MaterialDesignC
 import org.kordamp.ikonli.materialdesign2.MaterialDesignR
 import reaktive.value.now
 import reaktive.value.reactiveValue
-import reaktive.value.reactiveVariable
 import xenakis.model.obj.RenamableObject
 import xenakis.model.registry.NamedObject
+import xenakis.model.registry.ObjectRegistry
 import xenakis.ui.controls.NameControl
+import xenakis.ui.controls.NamePrompt
 
-class ObjectBoxList<O : NamedObject>(items: Collection<O>, val type: ObjectBoxType<O>) : ScrollPane() {
+class ObjectBoxList<O : NamedObject>(
+    private val config: ObjectBoxSource<O>
+) : ScrollPane() {
     private val layout = VBox()
-    private val boxes = items.mapTo(mutableListOf(), ::ObjectBox)
-    private val draggingEnabled = reactiveVariable(false)
-    private val reorderingEnabled = reactiveVariable(false)
+    private val boxes = config.items.mapTo(mutableListOf(), ::ObjectBox)
     private var selectedBox: ObjectBox? = null
 
     private var filter: (O) -> Boolean = { true }
-
-    private val actions = collectActions<ObjectBoxList<O>> {
-        addAction("Delete selected") {
-            shortcut("Ctrl+DELETE")
-            executes { pane ->
-                remove()
-            }
-        }
-        addAction("Navigate") {
-            shortcut("Shift?+TAB")
-            executes { list, ev ->
-                val boxes = list.boxes
-                if (list.selectedBox != null) {
-                    val idx = boxes.indexOf(list.selectedBox)
-                    val newIdx = when {
-                        idx == 0 && ev.isShiftDown() -> boxes.indices.last
-                        idx == boxes.indices.last && !ev.isShiftDown() -> 0
-                        ev.isShiftDown() -> idx - 1
-                        else -> idx + 1
-                    }
-                    list.select(boxes[newIdx])
-                } else if (boxes.isNotEmpty()) {
-                    list.select(if (ev.isShiftDown()) boxes.last() else boxes.first())
-                }
-            }
-        }
-    }
 
     private val objectActions = collectActions<O> {
         addAction("Delete object") {
             icon(Material2AL.DELETE)
             shortcuts("Ctrl+DELETE")
             applicableIf { obj -> reactiveValue(obj.canDelete) }
-            executes { obj -> type.deleteObject(obj) }
+            executes { obj -> config.deleteObject(obj) }
         }
         addAction("Grabber") {
             icon(MaterialDesignC.CURSOR_POINTER)
-            applicableIf { draggingEnabled }
+            applicableIf { obj -> reactiveValue(config.dataFormat(obj) != null) }
         }
         addAction("Reorder") {
             icon(MaterialDesignR.REORDER_HORIZONTAL)
-            applicableIf { reorderingEnabled }
+            applicableIf { reactiveValue(config.enableReordering) }
+        }
+        @Suppress("UNCHECKED_CAST")
+        addAction("Duplicate object") {
+            applicableIf { obj -> reactiveValue(obj.canCopy && obj.registry != null) }
+            executes { obj, ev ->
+                description { o -> reactiveValue(o.registry?.objectType ?: "object") }
+                val registry = obj.registry as ObjectRegistry<O>
+                val initialName = obj.name.now + "_copy"
+                val name = NamePrompt(registry, "Name for new duplicate instrument", initialName)
+                    .showDialog(ev) ?: return@executes
+                val copy = obj.copy(name) as O
+                registry.add(copy, registry.indexOf(obj))
+            }
         }
     }
 
     init {
         isFitToWidth = true
         layoutBoxes()
+        registerShortcuts(listActions<O>().withContext(this))
     }
 
     fun add(idx: Int, obj: O) {
@@ -115,41 +102,35 @@ class ObjectBoxList<O : NamedObject>(items: Collection<O>, val type: ObjectBoxTy
         select(box)
     }
 
-    fun enableDragging(
-        box: ObjectBoxList<O>.ObjectBox,
-        dataFormat: DataFormat,
-        extraConfig: Dragboard.() -> Unit = {}
-    ) {
-        draggingEnabled.set(true)
-        val btn = box.actionBar.getButton(objectActions.getAction("Grabber"))
-        btn.setOnDragDetected { ev ->
-            val db = startDragAndDrop(TransferMode.COPY)
-            db.setContent(mapOf(dataFormat to box.obj.name.now))
-            db.extraConfig()
-            ev.consume()
-        }
-    }
-
-    fun enableReordering() {
-        reorderingEnabled.set(true)
-    }
-
     inner class ObjectBox(val obj: O) : HBox() {
-        val nameDisplay =
+        private val nameDisplay =
             if (obj is RenamableObject) NameControl(obj)
             else HBox(label(obj.name).styleClass("name-field")).styleClass("name")
-        private val content = type.getContent(obj)
-        val actionBar = ActionBar(type.getActions(obj), buttonStyle = "medium-icon-button")
+        private val content = config.getContent(obj)
+        private val actionBar = ActionBar(
+            config.getActions(obj) + objectActions.withContext(obj),
+            buttonStyle = "medium-icon-button"
+        )
 
         init {
             styleClass("object-box")
             children.addAll(nameDisplay, *content.toTypedArray(), infiniteSpace(), actionBar)
             addEventFilter(MouseEvent.MOUSE_CLICKED) { select(this) }
-            setupReordering()
+            if (config.enableReordering) setupReordering()
+            if (config.dataFormat(obj) != null) setupDragging()
+        }
+
+        private fun setupDragging() {
+            val btn = actionBar.getButton(objectActions.getAction("Grabber"))
+            btn.setOnDragDetected { ev ->
+                val db = startDragAndDrop(TransferMode.COPY)
+                db.setContent(mapOf(config.dataFormat(obj) to obj.name.now))
+                ev.consume()
+            }
         }
 
         private fun setupReordering() {
-            actionBar.getButton(actions.getAction("Reorder")).setupDragging(
+            actionBar.getButton(objectActions.getAction("Reorder")).setupDragging(
                 onPressed = { viewOrder = 100.0 },
                 relocateBy = { _, _, _, _, dy -> translateY = dy },
                 onReleased = {
@@ -164,6 +145,36 @@ class ObjectBoxList<O : NamedObject>(items: Collection<O>, val type: ObjectBoxTy
                     translateY = 0.0
                 }
             )
+        }
+    }
+
+    companion object {
+        private fun <O : NamedObject> listActions() = collectActions<ObjectBoxList<O>> {
+            addAction("Delete selected") {
+                shortcut("Ctrl+DELETE")
+                executes { list ->
+                    val selected = list.selectedBox?.obj ?: return@executes
+                    if (selected.canDelete) list.config.deleteObject(selected)
+                }
+            }
+            addAction("Navigate") {
+                shortcut("Shift?+TAB")
+                executes { list, ev ->
+                    val boxes = list.boxes
+                    if (list.selectedBox != null) {
+                        val idx = boxes.indexOf(list.selectedBox)
+                        val newIdx = when {
+                            idx == 0 && ev.isShiftDown() -> boxes.indices.last
+                            idx == boxes.indices.last && !ev.isShiftDown() -> 0
+                            ev.isShiftDown() -> idx - 1
+                            else -> idx + 1
+                        }
+                        list.select(boxes[newIdx])
+                    } else if (boxes.isNotEmpty()) {
+                        list.select(if (ev.isShiftDown()) boxes.last() else boxes.first())
+                    }
+                }
+            }
         }
     }
 }

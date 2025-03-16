@@ -1,8 +1,10 @@
 package xenakis.model.flow
 
 import hextant.codegen.Choice
+import kotlinx.serialization.Serializable
 
-@Choice(defaultValue = "FlowType.Out")
+@Serializable
+@Choice
 enum class FlowType {
     In, Out;
 

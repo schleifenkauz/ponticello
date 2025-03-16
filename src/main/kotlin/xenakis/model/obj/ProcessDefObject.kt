@@ -14,6 +14,7 @@ import xenakis.impl.ColorSerializer
 import xenakis.impl.copy
 import xenakis.impl.randomColor
 import xenakis.model.Logger
+import xenakis.model.registry.ObjectRegistry
 import xenakis.model.registry.ProcessDefRegistry
 import xenakis.sc.CodeBlock
 import xenakis.sc.RawScExpr
@@ -31,6 +32,19 @@ class ProcessDefObject(
 ) : ConfigurableParameterizedObjectDef, AbstractSuperColliderObject() {
     override val superColliderName: String
         get() = "~proc_${name.now}"
+
+    override val registry: ObjectRegistry<*>
+        get() = context[ProcessDefRegistry]
+
+    override val canCopy: Boolean
+        get() = true
+
+    override fun copy(name: String): ProcessDefObject = ProcessDefObject(
+        reactiveVariable(name),
+        color.copy(),
+        parameters.now.map { p -> p.copy() }.toReactiveList(),
+        processCode.clone(context)
+    )
 
     override fun canRenameTo(newName: String): Boolean = !context[ProcessDefRegistry].has(newName)
 
@@ -69,19 +83,14 @@ class ProcessDefObject(
         sync()
     }
 
-    fun copy(name: String): ProcessDefObject = ProcessDefObject(
-        reactiveVariable(name),
-        color.copy(),
-        parameters.now.map { p -> p.copy() }.toReactiveList(),
-        processCode.clone()
-    )
-
     companion object {
         fun newEmpty(name: String, context: Context) = ProcessDefObject(
             mutableName = reactiveVariable(name),
             color = reactiveVariable(randomColor()),
             parameters = reactiveList(),
-            processCode = EditorRoot.create(CodeBlockEditor(context))
+            processCode = EditorRoot.create(CodeBlockEditor(), context)
         )
+        
+        fun unresolved(context: Context) = newEmpty("<unresolved>", context)
     }
 }

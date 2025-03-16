@@ -13,13 +13,13 @@ class ExprExpanderControl(expander: ScExprExpander, args: Bundle) : ExpanderCont
     override fun onExpansion(editor: Editor<*>, control: EditorControl<*>) {
         if (control.scene == null) return
         runFXWithTimeout {
-            if (control is ObjectSelectorControl<*, *>) {
-                control.showSelectorPopup()
+            if (control is ObjectSelectorControl<*>) {
+                control.showChoicePopup()
             }
             if (editor is BusExprEditor && control is CompoundEditorControl) {
                 val selectorCtrl =
-                    control.getSubControl(editor.busSelector) as? ObjectSelectorControl<*, *> ?: return@runFXWithTimeout
-                selectorCtrl.showSelectorPopup()
+                    control.getSubControl(editor.busSelector) as? ObjectSelectorControl<*> ?: return@runFXWithTimeout
+                selectorCtrl.showChoicePopup()
             }
         }
     }

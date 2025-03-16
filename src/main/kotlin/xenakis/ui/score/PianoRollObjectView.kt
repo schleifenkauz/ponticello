@@ -23,6 +23,7 @@ import reaktive.value.binding.binding
 import reaktive.value.binding.flatMap
 import reaktive.value.fx.asObservableValue
 import reaktive.value.now
+import reaktive.value.reactiveValue
 import reaktive.value.reactiveVariable
 import xenakis.impl.*
 import xenakis.model.Logger
@@ -303,7 +304,7 @@ class PianoRollObjectView(inst: ScoreObjectInstance, private val obj: PianoRollO
     }
 
     override val defaultBackgroundColor: ReactiveValue<Color>
-        get() = obj.instrumentSelector.selected.flatMap { instr -> instr.get<InstrumentObject>().color }
+        get() = obj.instrumentSelector.result.flatMap { ref -> ref.get()?.color ?: reactiveValue(Color.GRAY) }
 
     companion object {
         private const val CURSOR_OPACITY = 0.6

@@ -3,10 +3,13 @@ package xenakis.ui.registry
 import bundles.PublicProperty
 import bundles.publicProperty
 import bundles.set
+import fxutils.actions.ContextualizedAction
+import fxutils.actions.collectActions
 import fxutils.hasFiles
 import fxutils.setupDropArea
 import javafx.scene.image.Image
-import javafx.scene.input.TransferMode
+import javafx.scene.input.DataFormat
+import javafx.scene.input.Dragboard
 import org.kordamp.ikonli.evaicons.Evaicons
 import org.kordamp.ikonli.material2.Material2MZ
 import org.kordamp.ikonli.materialdesign2.MaterialDesignF
@@ -47,23 +50,39 @@ class SampleRegistryPane(
 
     public override fun addObject(name: String): SampleObject? = addSample { _ -> name }
 
-    override fun ObjectBox<SampleObject>.configureObjectBox() {
-        addAction(Evaicons.ACTIVITY, description = "View sample") {
-            Runtime.getRuntime().exec(arrayOf("xdg-open", obj.spectrogramFile.absolutePath))
-        }
-        addAction(Material2MZ.SYNC, "Reload sample and sync with server") { obj.sync() }
-        addAction(MaterialDesignF.FILE_MUSIC_OUTLINE, description = "Replace sample contents") {
-            val newFile = samples.context[XenakisFiles].showOpenDialog("*.wav") ?: return@addAction
-            if (samples.getSample(newFile) != null) return@addAction
-            obj.loadFile(newFile)
-        }
-        addGrabber(SampleObject.DATA_FORMAT, TransferMode.COPY) {
-            val scoreView = samples.context[XenakisMainActivity].scoreView
-            val width = scoreView.getWidth(obj.duration)
-            val height = scoreView.getPaneY(0.02.asY)
-            dragView = Image(obj.spectrogramFile.inputStream(), width, height, false, false)
-        }
+    override fun getActions(obj: SampleObject): List<ContextualizedAction> = actions.withContext(obj)
+
+    override fun configureDragboard(obj: SampleObject, dragboard: Dragboard) {
+        val scoreView = samples.context[XenakisMainActivity].scoreView
+        val width = scoreView.getWidth(obj.duration)
+        val height = scoreView.getPaneY(0.02.asY)
+        dragboard.dragView = Image(obj.spectrogramFile.inputStream(), width, height, false, false)
     }
 
-    companion object : PublicProperty<SampleRegistryPane> by publicProperty("SampleRegistryPane")
+    override fun dataFormat(obj: SampleObject): DataFormat = SampleObject.DATA_FORMAT
+
+    companion object : PublicProperty<SampleRegistryPane> by publicProperty("SampleRegistryPane") {
+        private val actions = collectActions<SampleObject> {
+            addAction("View sample") {
+                icon(Evaicons.ACTIVITY)
+                shortcut("Ctrl+Shift+O")
+                executes {  obj -> Runtime.getRuntime().exec(arrayOf("xdg-open", obj.spectrogramFile.absolutePath))}
+            }
+            addAction("Reload") {
+                icon(Material2MZ.SYNC)
+                description("Reload from file system")
+                shortcut("Shift+Alt+S")
+                executes(SampleObject::sync)
+            }
+            addAction("Replace sample contents") {
+                icon(MaterialDesignF.FILE_MUSIC_OUTLINE)
+                executes { obj ->
+                    val samples = obj.context[currentProject].samples
+                    val newFile = samples.context[XenakisFiles].showOpenDialog("*.wav") ?: return@executes
+                    if (samples.getSample(newFile) != null) return@executes
+                    obj.loadFile(newFile)
+                }
+            }
+        }
+    }
 }

@@ -10,20 +10,20 @@ import reaktive.value.ReactiveInt
 import reaktive.value.ReactiveVariable
 import reaktive.value.now
 import reaktive.value.reactiveVariable
-import xenakis.impl.Point
 import xenakis.model.Logger
 import xenakis.model.XenakisProject
 import xenakis.model.obj.AbstractContextualObject
 import xenakis.model.obj.BusObject
+import xenakis.model.obj.BusReference
 import xenakis.model.obj.GroupObject
 import xenakis.model.registry.BusRegistry
 import xenakis.model.registry.GroupRegistry
-import xenakis.model.registry.ObjectReference
 import xenakis.model.registry.ObjectRegistry
+import xenakis.model.registry.reference
 
 @Serializable
 class AudioFlows(
-    private var _flows: MutableMap<ObjectReference, MutableList<AudioFlow>>
+    private var _flows: MutableMap<BusReference, MutableList<AudioFlow>>
 ) : ObjectRegistry.Listener<BusObject>, XenakisProject.ProjectComponent, AbstractContextualObject() {
     @Transient
     private lateinit var busRegistry: BusRegistry
@@ -46,7 +46,7 @@ class AudioFlows(
     override val componentName: String
         get() = "flow_graph"
 
-    private val flows: Map<ObjectReference, List<AudioFlow>> get() = _flows
+    private val flows: Map<BusReference, List<AudioFlow>> get() = _flows
 
     fun all(): List<AudioFlow> = flows.values.flatten()
 
@@ -70,7 +70,7 @@ class AudioFlows(
             flows.first().isFirst.set(true)
             flows.last().isLast.set(true)
             for (flow in flows) {
-                flow.initialize(context, bus.get())
+                flow.initialize(context, bus.get()!!) //TODO is it guaranteed that the bus is resolved
                 onAddFlow(flow)
             }
         }
@@ -124,7 +124,7 @@ class AudioFlows(
             if (active) listeners.notifyListeners { activatedFlow(flow) }
             else listeners.notifyListeners { deactivatedFlow(flow) }
         }
-        if (flow is ScoreObjectPlaceholder) placeholders[flow.groupRef.get<GroupObject>()] = flow
+        if (flow is ScoreObjectPlaceholder) placeholders[flow.group] = flow
     }
 
     fun removeFlow(flow: AudioFlow) {
@@ -136,19 +136,12 @@ class AudioFlows(
         undoManager.record(AudioFlowsEdit.RemoveFlow(this, flow))
         if (flow is ScoreObjectPlaceholder) {
             placeholders.remove(flow.groupRef.get())
-            context[GroupRegistry].remove(flow.groupRef.get())
+            context[GroupRegistry].remove(flow.group)
         }
         listeners.notifyListeners {
             removedFlow(flow)
             if (flow.isActive.now) deactivatedFlow(flow)
         }
-    }
-
-    fun move(node: BusObject, position: Point) {
-        val oldPosition = node.positionInGraph.now
-        undoManager.record(AudioFlowsEdit.MoveBusNode(this, node, oldPosition, position))
-        node.positionInGraph.now = position
-        listeners.notifyListeners { movedNode(node) }
     }
 
     fun syncAll() {
@@ -176,7 +169,7 @@ class AudioFlows(
         associatedFlows.last().isLast.now = true
     }
 
-    class FlowReference(private val busReference: ObjectReference, private val index: Int) : java.io.Serializable {
+    class FlowReference(private val busReference: BusReference, private val index: Int) : java.io.Serializable {
         fun getFrom(flows: AudioFlows): AudioFlow {
             busReference.resolve(flows.busRegistry)
             return flows.flows.getValue(busReference)[index]

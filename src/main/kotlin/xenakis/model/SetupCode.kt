@@ -14,7 +14,9 @@ data class SetupCode(
         get() = "setup_code"
 
     companion object {
-        fun default(context: Context) =
-            SetupCode(EditorRoot.create(CodeBlockEditor(context)), EditorRoot.create(CodeBlockEditor(context)))
+        fun default(context: Context) = SetupCode(
+            EditorRoot.create(CodeBlockEditor(), context),
+            EditorRoot.create(CodeBlockEditor(), context)
+        )
     }
 }

@@ -8,22 +8,24 @@ import kotlinx.serialization.Transient
 import reaktive.value.now
 import xenakis.model.obj.BusObject
 import xenakis.model.obj.GroupObject
+import xenakis.model.obj.GroupReference
 import xenakis.model.registry.GroupRegistry
 import xenakis.model.registry.ObjectReference
 import xenakis.sc.client.ScWriter
 
 @Serializable
-class ScoreObjectPlaceholder(@SerialName("group") val groupRef: ObjectReference) : AudioFlow() {
+class ScoreObjectPlaceholder(@SerialName("group") val groupRef: GroupReference) : AudioFlow() {
     override val canDeactivate: Boolean
         get() = false
 
     @Transient
-    private lateinit var group: GroupObject
+    lateinit var group: GroupObject
+        private set
 
     override fun getSuperColliderName(name: String): String = group.superColliderName
 
     override fun initialize(context: Context, bus: BusObject) {
-        group = groupRef.resolve(context[GroupRegistry])
+        group = groupRef.resolve(context[GroupRegistry]) ?: context[GroupRegistry].getDefault()
         mutableName.set(group.name.now)
         super.initialize(context, bus)
     }
