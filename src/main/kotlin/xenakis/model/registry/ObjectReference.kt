@@ -16,7 +16,7 @@ import xenakis.model.obj.SuperColliderObject
 import xenakis.sc.ScExpr
 import xenakis.sc.client.ScWriter
 
-@Serializable(/*with = ObjectReference.Serializer::class*/) //TODO
+@Serializable(with = ObjectReference.Serializer::class)
 class ObjectReference<O : NamedObject>(private var _name: String) : ScExpr {
     private var obj: O? = null
 
@@ -69,18 +69,17 @@ class ObjectReference<O : NamedObject>(private var _name: String) : ScExpr {
         writer.append(superColliderName)
     }
 
-    @Suppress("unused") //is needed because [ObjectReference] has type parameter <O>
-    class Serializer<O : NamedObject>(val serializer: KSerializer<O>) : KSerializer<ObjectReference<O>> {
+    object Serializer : KSerializer<ObjectReference<*>> {
         override val descriptor: SerialDescriptor
             get() = serialDescriptor<String>()
 
-        override fun serialize(encoder: Encoder, value: ObjectReference<O>) {
+        override fun serialize(encoder: Encoder, value: ObjectReference<*>) {
             encoder.encodeString(value.getName())
         }
 
-        override fun deserialize(decoder: Decoder): ObjectReference<O> {
+        override fun deserialize(decoder: Decoder): ObjectReference<*> {
             val name = decoder.decodeString()
-            return ObjectReference(name)
+            return ObjectReference<NamedObject>(name)
         }
     }
 

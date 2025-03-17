@@ -3,6 +3,7 @@ package xenakis.model.obj
 import hextant.context.Context
 import hextant.serial.EditorRoot
 import javafx.scene.paint.Color
+import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
 import reaktive.list.MutableReactiveList
 import reaktive.list.reactiveList
@@ -28,7 +29,7 @@ class ProcessDefObject(
     override val mutableName: ReactiveVariable<String>,
     val color: ReactiveVariable<@Serializable(with = ColorSerializer::class) Color>,
     override val parameters: MutableReactiveList<ParameterDefObject>,
-    val processCode: EditorRoot<CodeBlockEditor>
+    val processCode: EditorRoot<@Contextual CodeBlockEditor>
 ) : ConfigurableParameterizedObjectDef, AbstractSuperColliderObject() {
     override val superColliderName: String
         get() = "~proc_${name.now}"

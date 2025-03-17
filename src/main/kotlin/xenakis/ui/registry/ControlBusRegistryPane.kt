@@ -34,7 +34,7 @@ class ControlBusRegistryPane(private val busses: BusRegistry) : SuperColliderObj
     override fun filter(obj: BusObject): Boolean = obj is BusObject.ControlBus
 
     override fun getContent(obj: BusObject): List<Node> {
-        obj as BusObject.ControlBus
+        if (obj !is BusObject.ControlBus) return emptyList()
         val channelsSpinner = Spinner<Int>(0, 12, 2).setFixedWidth(50.0)
         channelsSpinner.valueFactory.valueProperty().bindBidirectional(obj.channels.asProperty())
         val defaultValue = DecimalLiteralEditor() //TODO replace with ControlSlider

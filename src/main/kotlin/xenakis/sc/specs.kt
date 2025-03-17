@@ -24,6 +24,7 @@ import xenakis.model.score.GroupControl
 import xenakis.sc.editor.ControlSpecEditor
 import xenakis.sc.editor.SimpleIntegerEditor
 
+@Serializable
 enum class ParameterType {
     Bus, Buffer, Numerical, Group;
 

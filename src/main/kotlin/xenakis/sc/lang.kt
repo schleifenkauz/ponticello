@@ -225,7 +225,7 @@ data class RawScExpr(val code: String) : ScExpr {
 }
 
 @Serializable
-@Compound(serializable = true, nodeType = ScExpr::class)
+@Compound(nodeType = ScExpr::class)
 data class CodeBlock(val variables: List<Identifier> = emptyList(), val statements: List<ScExpr>) : ScExpr {
     override val isValid: Boolean
         get() = variables.all { it.isValid } && statements.all { it.isValid }
@@ -452,7 +452,7 @@ data class VSTPlugin(
     }
 }
 
-@Compound(serializable = true, nodeType = ScExpr::class)
+@Compound(nodeType = ScExpr::class)
 @Serializable
 data class AdhocSynth(
     val name: Identifier,

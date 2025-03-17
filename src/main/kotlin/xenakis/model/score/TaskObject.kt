@@ -1,6 +1,7 @@
 package xenakis.model.score
 
 import hextant.serial.EditorRoot
+import kotlinx.serialization.Contextual
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import reaktive.value.ReactiveVariable
@@ -14,7 +15,7 @@ import xenakis.sc.editor.ScFunctionEditor
 @Serializable
 class TaskObject(
     @SerialName("name") override val mutableName: ReactiveVariable<String>,
-    val code: EditorRoot<ScFunctionEditor>,
+    val code: EditorRoot<@Contextual ScFunctionEditor>,
 ) : ScoreObject() {
     override val type: String
         get() = "task"

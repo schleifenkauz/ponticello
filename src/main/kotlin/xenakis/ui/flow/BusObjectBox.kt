@@ -19,7 +19,7 @@ class BusObjectBox(obj: BusObject) : HBox() {
 
     init {
         styleClass("bus-box")
-        if (obj.type != BusObject.Type.Regular) {
+        if (obj.busType != BusObject.Type.Regular) {
             channelsSpinner.valueFactory.valueProperty().bind(obj.channels.asObservableValue())
             channelsSpinner.isDisable = true
         } else {

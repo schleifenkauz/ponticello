@@ -10,6 +10,7 @@ import hextant.undo.UndoManager
 import javafx.geometry.HorizontalDirection
 import javafx.geometry.HorizontalDirection.LEFT
 import javafx.geometry.HorizontalDirection.RIGHT
+import kotlinx.serialization.Contextual
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
@@ -31,7 +32,7 @@ class PianoRollObject(
     @SerialName("instrument") private val mInstrument: ReactiveVariable<InstrumentReference>,
     @SerialName("lowestPitch") private var mLowestPitch: Int,
     @SerialName("highestPitch") private var mHighestPitch: Int,
-    val eventDictionary: EditorRoot<EventDictionaryEditor>,
+    val eventDictionary: EditorRoot<@Contextual EventDictionaryEditor>,
     private val notes: MutableList<Note>
 ) : ScoreObject() {
     override val type: String
@@ -322,7 +323,7 @@ class PianoRollObject(
         private var _time: Decimal,
         private var _duration: Decimal,
         private var _midinote: Int,
-        val eventDictionary: EditorRoot<EventDictionaryEditor>
+        val eventDictionary: EditorRoot<@Contextual EventDictionaryEditor>
     ) {
         @Transient
         lateinit var parent: PianoRollObject

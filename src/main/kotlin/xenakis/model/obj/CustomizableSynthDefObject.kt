@@ -5,6 +5,7 @@ import hextant.core.EditorView
 import hextant.core.editor.AbstractEditor
 import hextant.serial.EditorRoot
 import javafx.scene.paint.Color
+import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import reaktive.list.MutableReactiveList
@@ -27,7 +28,7 @@ class CustomizableSynthDefObject(
     override val mutableName: ReactiveVariable<String>,
     override val parameters: MutableReactiveList<ParameterDefObject>,
     override val color: ReactiveVariable<@Serializable(with = ColorSerializer::class) Color> = reactiveVariable(Color.WHITE),
-    val ugenGraph: EditorRoot<CodeBlockEditor>? = null
+    val ugenGraph: EditorRoot<@Contextual CodeBlockEditor>? = null
 ) : SynthDefObject, AbstractRenamableObject(), ConfigurableParameterizedObjectDef, InstrumentObject {
     @Transient
     private val editor = if (ugenGraph != null) SynthDefEditor(this) else null

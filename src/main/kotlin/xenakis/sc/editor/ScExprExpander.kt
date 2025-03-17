@@ -13,7 +13,6 @@ import reaktive.value.now
 import xenakis.model.obj.VSTPluginObject
 import xenakis.sc.*
 
-@Serializable
 class ScExprExpander() : ConfiguredExpander<ScExpr, ScExprEditor<*>>(), ScExprEditor<ScExpr> {
     constructor(text: String) : this() {
         setInitialText(text)

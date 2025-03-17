@@ -40,6 +40,7 @@ import xenakis.ui.controls.DecimalPrompt
 import xenakis.ui.controls.NamePrompt
 import xenakis.ui.impl.rootPane
 import xenakis.ui.impl.showDialog
+import xenakis.ui.launcher.XenakisLauncher.Companion.currentProject
 import xenakis.ui.launcher.XenakisMainActivity
 import xenakis.ui.registry.SimpleSearchableRegistryView
 import java.util.concurrent.CompletableFuture
@@ -373,7 +374,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
     private fun mouseReleased(ev: MouseEvent) {
         if (ev.target != this) return
         ev.consume()
-        if (score == context[rootScore] && !ev.isShiftDown) selector.deselectAll()
+        if (score == context[currentProject].score && !ev.isShiftDown) selector.deselectAll()
         val newObj = newObject
         val selection = selectedArea
         val tool = activity.toolSelector.selected

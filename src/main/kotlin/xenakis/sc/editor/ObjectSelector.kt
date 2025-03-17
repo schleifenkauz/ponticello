@@ -1,6 +1,10 @@
 package xenakis.sc.editor
 
 import hextant.core.editor.SimpleChoiceEditor
+import hextant.serial.string
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.jsonPrimitive
 import reaktive.value.*
 import reaktive.value.binding.flatMap
 import reaktive.value.binding.map
@@ -42,4 +46,8 @@ abstract class ObjectSelector<O : NamedObject> :
     }
 
     open fun toString(choice: NamedObject): ReactiveValue<String> = choice.name
+
+    override fun fromJson(value: JsonElement): ObjectReference<O> = ObjectReference<O>(value.string)
+
+    override fun toJson(value: ObjectReference<O>): JsonElement = JsonPrimitive(value.getName())
 }

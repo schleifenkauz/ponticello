@@ -191,7 +191,8 @@ class XenakisProject private constructor(
             flows = AudioFlows.createDefault().also { g -> g.initialize(context) },
             globalControls = GlobalControls(mutableListOf()).also { c -> c.initialize(context) },
             processDefs = ProcessDefRegistry(mutableListOf()).also { r -> r.initialize(context) },
-            setupCode = SetupCode.default(context), serverOptions = ServerOptions.default(context),
+            setupCode = SetupCode.default(context),
+            serverOptions = ServerOptions.default(context),
             objects = ScoreObjectRegistry(mutableListOf()).also { r -> r.initialize(context) },
             score = Score().also { score -> score.initialize(context, null) },
         ).also { project ->

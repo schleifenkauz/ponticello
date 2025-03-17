@@ -4,6 +4,7 @@ import hextant.context.Context
 import hextant.serial.EditorRoot
 import javafx.geometry.HorizontalDirection
 import javafx.scene.paint.Color
+import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
 import reaktive.value.ReactiveVariable
 import reaktive.value.now
@@ -103,7 +104,7 @@ data class GroupControl(val group: ReactiveVariable<GroupReference>) : Parameter
 }
 
 @Serializable
-data class CustomControl(val expr: EditorRoot<ScExprExpander>) : ParameterControl() {
+data class CustomControl(val expr: EditorRoot<@Contextual ScExprExpander>) : ParameterControl() {
     override fun copy(): ParameterControl = CustomControl(expr.clone(context))
 }
 

@@ -24,12 +24,6 @@ import xenakis.ui.controls.NamePrompt
 class ObjectBoxList<O : NamedObject>(
     private val config: ObjectBoxSource<O>
 ) : ScrollPane() {
-    private val layout = VBox()
-    private val boxes = config.items.mapTo(mutableListOf(), ::ObjectBox)
-    private var selectedBox: ObjectBox? = null
-
-    private var filter: (O) -> Boolean = { true }
-
     private val objectActions = collectActions<O> {
         addAction("Delete object") {
             icon(Material2AL.DELETE)
@@ -59,6 +53,12 @@ class ObjectBoxList<O : NamedObject>(
             }
         }
     }
+
+    private val layout = VBox()
+    private val boxes = config.items.mapTo(mutableListOf(), ::ObjectBox)
+    private var selectedBox: ObjectBox? = null
+
+    private var filter: (O) -> Boolean = { true }
 
     init {
         isFitToWidth = true

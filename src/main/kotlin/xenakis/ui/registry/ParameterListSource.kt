@@ -9,7 +9,9 @@ import reaktive.list.MutableReactiveList
 import reaktive.value.forEach
 import reaktive.value.now
 import xenakis.model.obj.ParameterDefObject
+import xenakis.sc.ParameterType
 import xenakis.sc.editor.ControlSpecEditor
+import xenakis.sc.editor.NumericalControlSpecEditor
 
 class ParameterListSource(
     private val context: Context,
@@ -30,6 +32,7 @@ class ParameterListSource(
 
     private fun makeControlSpecEditor(parameter: ParameterDefObject): ControlSpecEditor {
         val editor = ControlSpecEditor()
+        editor.selectInitial(ParameterType.Numerical)
         editor.initialize(context)
         context.withoutUndo { editor.setResult(parameter.spec.now) }
         return editor

@@ -25,20 +25,20 @@ import xenakis.ui.launcher.XenakisLauncher
 sealed class BusObject : AbstractSuperColliderObject() {
     abstract val rate: Rate
     abstract val channels: ReactiveVariable<Int>
-    abstract val type: Type
+    abstract val busType: Type
 
     override val superColliderName
-        get() = when (type) {
+        get() = when (busType) {
             Type.Input -> "s.inputBus"
             Type.Output -> "s.outputBus"
             Type.Regular -> "~bus_${name.now}"
         }
 
     override val canRename: Boolean
-        get() = type == Type.Regular
+        get() = busType == Type.Regular
 
     override val canDelete: Boolean
-        get() = type == Type.Regular
+        get() = busType == Type.Regular
 
     override val registry: ObjectRegistry<*>?
         get() = context[BusRegistry]
@@ -55,7 +55,7 @@ sealed class BusObject : AbstractSuperColliderObject() {
     override fun initialize(context: Context) {
         if (initialized) return
         super.initialize(context)
-        if (type == Type.Regular) {
+        if (busType == Type.Regular) {
             observer = channels.observe { _ -> redefine() }
         }
     }
@@ -65,15 +65,16 @@ sealed class BusObject : AbstractSuperColliderObject() {
     }
 
     @SerialName("AudioBus")
+    @Serializable
     class AudioBus(
         override val mutableName: ReactiveVariable<String>,
         override val channels: ReactiveVariable<Int>,
-        override val type: Type
+        override val busType: Type
     ) : BusObject() {
         override val rate: Rate = Audio
 
         override fun ScWriter.createObject() {
-            when (type) {
+            when (busType) {
                 Type.Input -> {}
                 Type.Output -> {}
                 Type.Regular -> {
@@ -93,7 +94,7 @@ sealed class BusObject : AbstractSuperColliderObject() {
         val spec: ReactiveVariable<NumericalControlSpec>,
     ) : BusObject() {
         override val rate: Rate = Control
-        override val type: Type
+        override val busType: Type
             get() = Type.Regular
         val defaultValue = spec.map { s -> s.defaultValue.get() }
 
@@ -112,13 +113,13 @@ sealed class BusObject : AbstractSuperColliderObject() {
         val input = AudioBus(
             reactiveVariable("input"),
             reactiveVariable(2),
-            type = Type.Input,
+            busType = Type.Input,
         )
 
         val output = AudioBus(
             reactiveVariable("output"),
             reactiveVariable(2),
-            type = Type.Output,
+            busType = Type.Output,
         )
 
         fun audio(name: String, channels: Int = 2) = AudioBus(

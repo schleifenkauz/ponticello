@@ -20,6 +20,7 @@ import xenakis.model.registry.ObjectReference
 import xenakis.model.registry.ScoreObjectRegistry
 import xenakis.model.registry.reference
 import xenakis.model.score.Score.Companion.rootScore
+import xenakis.ui.launcher.XenakisLauncher.Companion.currentProject
 
 @Serializable
 class ScoreObjectInstance(
@@ -83,7 +84,8 @@ class ScoreObjectInstance(
     fun removedFromScore() {
         score = null
         val o = obj
-        if (!context[rootScore].hasInstancesOf(o) && context[ScoreObjectRegistry].has(o)) {
+        //TODO do we really want to remove objects when they have no instances
+        if (!context[currentProject].score.hasInstancesOf(o) && context[ScoreObjectRegistry].has(o)) {
             context.withoutUndo { context[ScoreObjectRegistry].remove(o) }
             if (o is ScoreObjectGroup) {
                 for (subInst in o.score.objectInstances) {

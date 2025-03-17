@@ -2,6 +2,7 @@ package xenakis.model.flow
 
 import hextant.context.Context
 import hextant.serial.EditorRoot
+import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
 import reaktive.value.now
 import xenakis.model.obj.BusObject
@@ -12,7 +13,7 @@ import xenakis.sc.editor.assign
 import xenakis.sc.editor.`in`
 
 @Serializable
-class CodeFlow(val codeEditor: EditorRoot<CodeBlockEditor>) : AudioFlow() {
+class CodeFlow(val codeEditor: EditorRoot<@Contextual CodeBlockEditor>) : AudioFlow() {
     override fun initialize(context: Context, bus: BusObject) {
         super.initialize(context)
     }

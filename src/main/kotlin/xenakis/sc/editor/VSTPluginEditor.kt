@@ -10,7 +10,6 @@ import xenakis.model.XenakisProject.Companion.projectDirectory
 import xenakis.sc.VSTPlugin
 import xenakis.sc.client.SuperColliderClient
 
-@Serializable
 class VSTPluginEditor() : CompoundEditor<VSTPlugin>(), ScExprEditor<VSTPlugin> {
     constructor(pluginName: String) : this() {
         this.pluginName = pluginName

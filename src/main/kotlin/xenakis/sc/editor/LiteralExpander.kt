@@ -5,7 +5,6 @@ import hextant.core.editor.ExpanderConfig
 import kotlinx.serialization.Serializable
 import xenakis.sc.Literal
 
-@Serializable
 class LiteralExpander : ConfiguredExpander<Literal, LiteralEditor<*>>() {
     init {
         configure(config)

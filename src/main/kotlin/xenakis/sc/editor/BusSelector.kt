@@ -1,6 +1,5 @@
 package xenakis.sc.editor
 
-import kotlinx.serialization.Serializable
 import reaktive.value.ReactiveString
 import reaktive.value.ReactiveValue
 import reaktive.value.binding.binding
@@ -13,7 +12,6 @@ import xenakis.model.registry.ObjectReference
 import xenakis.model.registry.ObjectRegistry
 import xenakis.sc.Rate
 
-@Serializable
 class BusSelector : ObjectSelector<BusObject>() {
     override fun getRegistry(): ObjectRegistry<BusObject> = context[BusRegistry]
 
