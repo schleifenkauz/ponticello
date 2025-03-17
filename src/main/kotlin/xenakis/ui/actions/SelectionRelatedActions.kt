@@ -10,10 +10,7 @@ import xenakis.impl.copy
 import xenakis.impl.unaryMinus
 import xenakis.model.Logger
 import xenakis.model.registry.ScoreObjectRegistry
-import xenakis.model.score.ObjectPosition
-import xenakis.model.score.Score
-import xenakis.model.score.ScoreObjectGroup
-import xenakis.model.score.ScoreObjectInstance
+import xenakis.model.score.*
 import xenakis.ui.launcher.XenakisMainActivity
 import xenakis.ui.score.ScoreObjectSelectionManager
 import xenakis.ui.score.ScoreObjectView
@@ -44,7 +41,7 @@ object SelectionRelatedActions {
         on("Ctrl+Shift+A") {
             val selected = scoreView.selector.focusedView.now ?: return@on
             val obj = selected.instance.obj
-            if (obj == null) {
+            if (obj is ScoreObject.Unresolved) {
                 Logger.warn("Object is not resolved", Logger.Category.Score)
                 return@on
             }
@@ -59,7 +56,7 @@ object SelectionRelatedActions {
             if (ev.isTargetTextInput) return@on
             val selected = scoreView.selector.focusedView.now ?: return@on
             val obj = selected.instance.obj
-            if (obj == null) {
+            if (obj is ScoreObject.Unresolved) {
                 Logger.warn("Object is not resolved", Logger.Category.Score)
                 return@on
             }
