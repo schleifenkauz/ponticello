@@ -164,6 +164,7 @@ class AudioFlows(
 
     private inline fun changeFlows(bus: BusObject, action: MutableList<AudioFlow>.() -> Unit) {
         val associatedFlows = _flows.getValue(bus.reference())
+        if (associatedFlows.isEmpty()) return
         associatedFlows.first().isFirst.now = false
         associatedFlows.last().isLast.now = false
         associatedFlows.action()

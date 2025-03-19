@@ -55,19 +55,6 @@ private fun resizeType(shift: Boolean, alt: Boolean) = when {
 
 val Context.rootPane get() = get(XenakisMainActivity).scoreView
 
-fun SubWindow.registerSyncShortcuts(obj: SuperColliderObject, code: EditorRoot<CodeBlockEditor>) {
-    scene.registerShortcuts {
-        on("Ctrl+S") {
-            //TODO rebuild code editor
-            obj.sync()
-        }
-        on("Ctrl+Shift+S") {
-            obj.sync()
-            hide()
-        }
-    }
-}
-
 fun colorPicker(controlledVar: ReactiveVariable<Color>): ColorPicker {
     val picker = ColorPicker(controlledVar.now)
     picker.styleClass.add("button")

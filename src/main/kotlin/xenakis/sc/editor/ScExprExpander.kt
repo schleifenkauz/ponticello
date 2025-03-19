@@ -4,15 +4,16 @@ import fxutils.prompt.showSelectorDialog
 import hextant.command.Command
 import hextant.command.meta.ProvideCommand
 import hextant.context.withoutUndo
-import hextant.core.editor.ConfiguredExpander
-import hextant.core.editor.ExpanderConfig
-import hextant.core.editor.makeUndoableEdit
-import hextant.core.editor.snapshot
+import hextant.core.editor.*
 import reaktive.value.now
 import xenakis.model.obj.VSTPluginObject
 import xenakis.sc.*
 
 class ScExprExpander() : ConfiguredExpander<ScExpr, ScExprEditor<*>>(), ScExprEditor<ScExpr> {
+    init {
+        configure(config)
+    }
+
     constructor(text: String) : this() {
         setInitialText(text)
     }
@@ -25,27 +26,42 @@ class ScExprExpander() : ConfiguredExpander<ScExpr, ScExprEditor<*>>(), ScExprEd
 
     override fun autoExpand(text: String): Boolean {
         val editor = when {
-            text in Operator.map -> OperatorExprEditor(operator = OperatorEditor(text))
+            text in Operator.map -> OperatorExprEditor(
+                operator = OperatorEditor(text),
+                left = ScExprExpander().defaultState(),
+                right = ScExprExpander().defaultState()
+            )
+
             text.endsWith(".") && text.dropLast(1).toIntOrNull() == null ->
-                MessageSendEditor(ScExprExpander(text.dropLast(1)))
+                MessageSendEditor(
+                    ScExprExpander(text.dropLast(1)),
+                    IdentifierEditor().defaultState(),
+                    ScExprListEditor().defaultState()
+                )
 
-            text == "=" -> AssignmentEditor()
-            text == "." -> MessageSendEditor()
-            text == ":" -> NamedExprEditor()
+            text == "=" -> AssignmentEditor().defaultState()
+            text == "." -> MessageSendEditor().defaultState()
+            text == ":" -> NamedExprEditor().defaultState()
 
-            text.endsWith("=") && Identifier.isValid(text.dropLast(1)) ->
-                AssignmentEditor(IdentifierEditor(text.dropLast(1)))
+            text.endsWith("=") && Identifier.isValid(text.dropLast(1)) -> AssignmentEditor(
+                IdentifierEditor(text.dropLast(1)),
+                ScExprExpander().defaultState()
+            )
 
-            text.endsWith(":") && Identifier.isValid(text.dropLast(1)) ->
-                NamedExprEditor(IdentifierEditor(text.dropLast(1)))
+            text.endsWith(":") && Identifier.isValid(text.dropLast(1)) -> NamedExprEditor(
+                IdentifierEditor(text.dropLast(1)),
+                ScExprExpander().defaultState()
+            )
 
-            text.endsWith("(") && Identifier.isValid(text.dropLast(1)) ->
-                NewObjectEditor(IdentifierEditor(text.dropLast(1)))
+            text.endsWith("(") && Identifier.isValid(text.dropLast(1)) -> NewObjectEditor(
+                IdentifierEditor(text.dropLast(1)),
+                arguments = ScExprListEditor().defaultState(),
+            )
 
-            text == "\\" -> SymbolLiteralEditor()
-            text == "'" -> StringLiteralEditor()
-            text == "{" -> ScFunctionEditor()
-            text == "(" -> CodeBlockEditor()
+            text == "\\" -> SymbolLiteralEditor().defaultState()
+            text == "'" -> StringLiteralEditor().defaultState()
+            text == "{" -> ScFunctionEditor().defaultState()
+            text == "(" -> CodeBlockEditor().defaultState()
             else -> null
         }
         return if (editor != null) {
@@ -106,30 +122,36 @@ class ScExprExpander() : ConfiguredExpander<ScExpr, ScExprEditor<*>>(), ScExprEd
 
     companion object {
         val config = ExpanderConfig<ScExprEditor<*>>(fallback = LiteralExpander.config).apply {
-            "at" expand { AccessKeyEditor() }
-            "array" expand { ArrayExprEditor() }
-            "if" expand { IfExprEditor() }
-            "while" expand { WhileExprEditor() }
-            "assign" expand { AssignmentEditor() }
-            "eq" expand { OperatorExprEditor(operator = OperatorEditor("==")) }
+            "at" expand { AccessKeyEditor().defaultState() }
+            "array" expand { ArrayExprEditor().defaultState() }
+            "if" expand { IfExprEditor().defaultState() }
+            "while" expand { WhileExprEditor().defaultState() }
+            "assign" expand { AssignmentEditor().defaultState() }
+            "eq" expand {
+                OperatorExprEditor(
+                    ScExprExpander().defaultState(),
+                    operator = OperatorEditor("=="),
+                    ScExprExpander().defaultState()
+                )
+            }
             "concat" expand { OperatorExprEditor(operator = OperatorEditor("++")) }
-            "tuple" expand { TupleExprEditor() }
-            "named" expand { NamedExprEditor() }
-            "block" expand { CodeBlockEditor() }
-            "function" expand { ScFunctionEditor() }
-            "new" expand { NewObjectEditor() }
-            "bus" expand { BusSelector() }
-            "buffer" expand { BufferSelector() }
-            "group" expand { GroupSelector() }
+            "tuple" expand { TupleExprEditor().defaultState() }
+            "named" expand { NamedExprEditor().defaultState() }
+            "block" expand { CodeBlockEditor().defaultState() }
+            "function" expand { ScFunctionEditor().defaultState() }
+            "new" expand { NewObjectEditor().defaultState() }
+            "bus" expand { BusSelector().defaultState() }
+            "buffer" expand { BufferSelector().defaultState() }
+            "group" expand { GroupSelector().defaultState() }
             "plugin" expand { ctx ->
                 val availablePlugins = VSTPluginObject.availablePlugins(ctx).toList()
                 val pluginName = showSelectorDialog("Plugin", availablePlugins, null, anchor = null)
                     ?: return@expand null
-                VSTPluginEditor(pluginName)
+                VSTPluginEditor(pluginName).defaultState()
             }
             "synth" expand { AdhocSynthEditor() }
-            "in" expand { InExprEditor() }
-            "out" expand { OutExprEditor() }
+            "in" expand { InExprEditor().defaultState() }
+            "out" expand { OutExprEditor().defaultState() }
         }
     }
 }

@@ -9,6 +9,7 @@ import hextant.context.Context
 import hextant.core.editor.ColorEditor
 import javafx.scene.paint.Color
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.SerialName
 import reaktive.value.reactiveVariable
 import xenakis.impl.*
 import xenakis.model.flow.FlowType
@@ -57,6 +58,7 @@ fun ControlSpec.defaultControl(context: Context, defaultBus: BusReference?) = wh
 
 @Serializable
 @Compound
+@SerialName("numerical")
 data class NumericalControlSpec(
     val defaultValue: DecimalLiteral,
     val min: DecimalLiteral,
@@ -116,6 +118,7 @@ data class NumericalControlSpec(
 
 @Compound
 @Serializable
+@SerialName("bus")
 class BusControlSpec(
     val rate: Rate,
     @Component(editor = SimpleIntegerEditor::class) val channels: Int,
@@ -137,6 +140,7 @@ class BusControlSpec(
 
 @Serializable
 @Compound
+@SerialName("buffer")
 class BufferControlSpec : ControlSpec {
     var isPlayBufSource: Boolean = true
 
@@ -154,6 +158,7 @@ class BufferControlSpec : ControlSpec {
 }
 
 @Serializable
+@SerialName("group")
 class GroupControlSpec : ControlSpec {
     override val type: ParameterType
         get() = ParameterType.Group

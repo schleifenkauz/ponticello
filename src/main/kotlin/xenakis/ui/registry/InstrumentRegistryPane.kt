@@ -37,7 +37,6 @@ import xenakis.sc.Identifier
 import xenakis.sc.view.ObjectSelectorControl
 import xenakis.ui.controls.NamePrompt
 import xenakis.ui.impl.colorPicker
-import xenakis.ui.impl.registerSyncShortcuts
 
 class InstrumentRegistryPane(
     private val registry: InstrumentRegistry,
@@ -230,15 +229,11 @@ class InstrumentRegistryPane(
     private fun makeWindow(obj: SynthDefObject): SubWindow = when (obj) {
         is CustomizableSynthDefObject -> {
             val title = obj.name.map { n -> "SynthDef $n" }
-            val pane = ScrollPane(
-                ParameterizedObjectDefPane(registry.context, title, obj.parameters, obj.ugenGraph!!)
-            ).letContentFillViewPort()
+            val pane = ParameterizedObjectDefPane(registry.context, title, obj.parameters, obj.ugenGraph!!, obj::sync)
             undecoratedSubWindow(pane).apply {
                 this.scene.initHextantScene(this@InstrumentRegistryPane.registry.context, applyStyle = false)
                 this.scene.fill = Color.BLACK
                 this.resize(800.0, 800.0)
-                registerSyncShortcuts(obj, obj.ugenGraph)
-
             }
         }
 

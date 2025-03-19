@@ -4,17 +4,15 @@ import fxutils.SubWindow
 import fxutils.actions.ContextualizedAction
 import fxutils.actions.collectActions
 import fxutils.setFixedWidth
+import fxutils.showRightOf
+import fxutils.undecoratedSubWindow
 import hextant.fx.initHextantScene
 import javafx.scene.Node
-import javafx.scene.control.ScrollPane
-import javafx.scene.layout.VBox
 import org.kordamp.ikonli.material2.Material2AL
 import reaktive.value.binding.map
-import reaktive.value.fx.asObservableValue
 import xenakis.model.obj.ProcessDefObject
 import xenakis.model.registry.ProcessDefRegistry
 import xenakis.ui.impl.colorPicker
-import xenakis.ui.impl.registerSyncShortcuts
 
 class ProcessDefRegistryPane(
     registry: ProcessDefRegistry
@@ -48,20 +46,15 @@ class ProcessDefRegistryPane(
 
     fun editProcessDef(obj: ProcessDefObject) {
         val window = subWindows.getOrPut(obj) {
-            val pane = ScrollPane(
-                VBox(
-                    ParameterDefsPane(registry.context, obj.parameters),
-                    obj.processCode.control
-                )
-            )
-            SubWindow(pane, "").apply {
+            val title = obj.name.map { n -> "ProcessDef $n" }
+            val pane = ParameterizedObjectDefPane(registry.context, title, obj.parameters, obj.processCode, obj::sync)
+            undecoratedSubWindow(pane).apply {
                 initOwner(scene.window)
-                titleProperty().bind(obj.name.map { name -> "ProcessDef $name" }.asObservableValue())
                 resize(900.0, 800.0)
                 scene.initHextantScene(registry.context, applyStyle = false)
-                registerSyncShortcuts(obj, obj.processCode)
             }
         }
-        window.show()
+        if (window.isShowing) window.toFront()
+        else window.showRightOf(this)
     }
 }

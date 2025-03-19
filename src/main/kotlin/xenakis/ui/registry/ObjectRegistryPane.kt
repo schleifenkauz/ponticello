@@ -2,6 +2,7 @@ package xenakis.ui.registry
 
 import fxutils.*
 import fxutils.actions.collectActions
+import fxutils.actions.registerShortcuts
 import javafx.scene.layout.HBox
 import javafx.scene.layout.Priority
 import org.controlsfx.control.textfield.CustomTextField
@@ -30,14 +31,16 @@ abstract class ObjectRegistryPane<O : NamedObject>(
             content = boxList, headerContent = searchText,
             actions.withContext(this)
         )
+        registerShortcuts(boxList.actions)
     }
 
     private fun setupSearchField() {
         boxList.setFilter { obj -> filter(obj) && matchesSearch(obj) }
         searchText.promptText = "Search..."
         searchText.left = FontIcon(Material2MZ.SEARCH)
-        searchText.textProperty().addListener { _, _, _ -> boxList.layoutBoxes() }
+        searchText.textProperty().addListener { _, _, _ -> boxList.refilter() }
         HBox.setHgrow(searchText, Priority.ALWAYS)
+
     }
 
     override val items: List<O>

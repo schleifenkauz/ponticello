@@ -34,7 +34,10 @@ class ObjectReference<O : NamedObject>(private var _name: String) : ScExpr {
 
     fun resolve(registry: ObjectRegistry<O>): O? {
         if (obj != null) return obj as O
-        if (_name == "<none>") return null
+        if (_name == "<none>") {
+            isResolved = reactiveValue(false)
+            return null
+        }
         try {
             resolve(registry.get(_name))
         } catch (ex: NoSuchElementException) {

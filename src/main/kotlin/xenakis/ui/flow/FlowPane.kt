@@ -16,10 +16,11 @@ import xenakis.model.obj.BusObject
 import xenakis.model.registry.BusRegistry
 import xenakis.model.registry.ObjectRegistry
 import xenakis.ui.controls.NamePrompt
+import xenakis.ui.registry.ToolPane
 
 class FlowPane(
     private val flows: AudioFlows
-) : HBox(), AudioFlows.Listener, ObjectRegistry.Listener<BusObject> {
+) : ToolPane(), AudioFlows.Listener, ObjectRegistry.Listener<BusObject> {
     private val hbox = HBox(4.0)
     private val verticalBoxes = mutableMapOf<BusObject, VerticalFlowsBox>()
     private val buses = flows.context[BusRegistry]
@@ -31,7 +32,7 @@ class FlowPane(
             vbarPolicy = ScrollBarPolicy.NEVER
             isFitToHeight = true
         }
-        children.addAll(scrollPane, makeAddBusButton())
+        setup("Audio Flows", content = HBox(scrollPane, makeAddBusButton()))
         buses.addListener(this)
         flows.addListener(this)
     }
@@ -44,7 +45,7 @@ class FlowPane(
             buses.add(bus)
         }.styleClass("large-icon-button")
         val pane = BorderPane(btn)
-        setHgrow(pane, Priority.ALWAYS)
+        HBox.setHgrow(pane, Priority.ALWAYS)
         return pane
     }
 
@@ -63,6 +64,7 @@ class FlowPane(
     }
 
     override fun added(obj: BusObject, idx: Int) {
+        if (obj !is BusObject.AudioBus) return
         val box = VerticalFlowsBox(flows, obj)
         verticalBoxes[obj] = box
         hbox.children.add(box)
@@ -70,6 +72,7 @@ class FlowPane(
     }
 
     override fun removed(obj: BusObject, idx: Int) {
+        if (obj !is BusObject.AudioBus) return
         val box = verticalBoxes.remove(obj) ?: error("No box found for $obj")
         hbox.children.remove(box)
     }

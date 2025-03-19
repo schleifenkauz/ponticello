@@ -35,8 +35,8 @@
 }
 
 .object-box {
-    -fx-border-color: black;
-    -fx-border-width: 2px;
+    -fx-border-color: gray;
+    -fx-border-width: 1px;
     -fx-border-radius: 3px;
     -fx-background-radius: 3px;
     -fx-padding: 2px;
@@ -45,7 +45,7 @@
 }
 
 .object-box:hover {
-    -fx-background-color: rgba(100, 0, 0, 0.1);
+    -fx-background-color: rgba(0, 1000, 0, 0.1);
 }
 
 .object-box:selected {

@@ -4,7 +4,6 @@ import hextant.core.editor.SimpleChoiceEditor
 import hextant.serial.string
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonPrimitive
-import kotlinx.serialization.json.jsonPrimitive
 import reaktive.value.*
 import reaktive.value.binding.flatMap
 import reaktive.value.binding.map
@@ -30,6 +29,10 @@ abstract class ObjectSelector<O : NamedObject> :
         super.doInitialize()
         result.now.resolve(getRegistry())
         isResolved = result.flatMap { ref -> ref.isResolved }
+    }
+
+    override fun setupDefaultState() {
+        selectInitial(ObjectReference.none())
     }
 
     override fun choices(): List<ObjectReference<O>> =

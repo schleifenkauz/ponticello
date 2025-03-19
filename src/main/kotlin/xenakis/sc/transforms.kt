@@ -1,32 +1,66 @@
 package xenakis.sc
 
 import hextant.codegen.Choice
+import hextant.context.Context
+import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.descriptors.serialDescriptor
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
 import xenakis.impl.*
+import xenakis.sc.client.ScWriter
 import kotlin.math.exp
 import kotlin.math.ln
 import kotlin.math.pow
 
-@Serializable
+@Serializable(with = Warp.Serializer::class)
 @Choice(initialValue = "Warp.Linear")
-sealed class Warp {
-    @Serializable
+sealed class Warp : ScExpr {
     object Linear : Warp() {
-        override fun toString(): String = "'lin'"
+        override fun toString(): String = "\\lin"
+
+        override fun code(writer: ScWriter, context: Context) {
+            writer.append("\\lin")
+        }
     }
 
-    @Serializable
     object Exponential : Warp() {
-        override fun toString(): String = "'exp'"
+        override fun toString(): String = "\\exp"
+        override fun code(writer: ScWriter, context: Context) {
+            writer.append("\\exp")
+        }
     }
 
-    @Serializable
-    data class Monomial(val exponent: Double) : Warp() {
-        override fun toString(): String = "x^$exponent"
+    data class Monomial(val exponent: Decimal) : Warp() {
+        override fun toString(): String = "$exponent"
+
+        override fun code(writer: ScWriter, context: Context) {
+            writer.append(exponent.toString())
+        }
     }
 
     companion object {
-        val entries get() = listOf(Linear, Exponential, Monomial(2.0), Monomial(3.0))
+        val entries get() = listOf(Linear, Exponential, Monomial(2.0.toDecimal()), Monomial(3.0.toDecimal()))
+    }
+
+    object Serializer : KSerializer<Warp> {
+        override val descriptor: SerialDescriptor
+            get() = serialDescriptor<String>()
+
+        override fun serialize(encoder: Encoder, value: Warp) {
+            encoder.encodeString(value.toString())
+        }
+
+        override fun deserialize(decoder: Decoder): Warp {
+            val str = decoder.decodeString()
+            return when {
+                str == "\\lin" -> Linear
+                str == "\\exp" -> Exponential
+                str.startsWith("x^") -> Monomial(str.drop(2).parseDecimal()!!)
+                else -> throw IllegalArgumentException("Invalid warp string $str")
+            }
+        }
     }
 }
 
@@ -34,14 +68,14 @@ val Warp.map
     get(): (Double) -> Double = when (this) {
         Warp.Linear -> { x -> x }
         Warp.Exponential -> { x -> ln(x) }
-        is Warp.Monomial -> { x -> x.pow(1 / exponent) }
+        is Warp.Monomial -> { x -> x.pow(1 / exponent.toDouble()) }
     }
 
 val Warp.unmap
     get(): (Double) -> Double = when (this) {
         Warp.Linear -> { x -> x }
         Warp.Exponential -> { x -> exp(x) }
-        is Warp.Monomial -> { x -> x.pow(exponent) }
+        is Warp.Monomial -> { x -> x.pow(exponent.toDouble()) }
     }
 
 interface Transformation {

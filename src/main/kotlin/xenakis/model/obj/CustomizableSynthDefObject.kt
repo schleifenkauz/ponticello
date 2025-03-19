@@ -4,6 +4,7 @@ import bundles.publicProperty
 import bundles.set
 import hextant.context.Context
 import hextant.context.extend
+import hextant.core.editor.defaultState
 import hextant.serial.EditorRoot
 import javafx.scene.paint.Color
 import kotlinx.serialization.Contextual
@@ -106,7 +107,7 @@ class CustomizableSynthDefObject(
             mutableName = reactiveVariable(name),
             color = reactiveVariable(randomColor()),
             parameters = reactiveList(),
-            ugenGraph = EditorRoot(CodeBlockEditor())
+            ugenGraph = EditorRoot(CodeBlockEditor().defaultState())
         )
 
         fun create(name: String, vararg parameters: ParameterDefObject) =
