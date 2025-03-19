@@ -1,17 +1,20 @@
 package xenakis.model.obj
 
+import bundles.publicProperty
+import bundles.set
 import hextant.context.Context
-import hextant.core.EditorView
-import hextant.core.editor.AbstractEditor
+import hextant.context.extend
 import hextant.serial.EditorRoot
 import javafx.scene.paint.Color
 import kotlinx.serialization.Contextual
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.Transient
 import reaktive.list.MutableReactiveList
 import reaktive.list.reactiveList
 import reaktive.list.toReactiveList
-import reaktive.value.*
+import reaktive.value.ReactiveVariable
+import reaktive.value.now
+import reaktive.value.reactiveVariable
 import xenakis.impl.ColorSerializer
 import xenakis.impl.copy
 import xenakis.impl.randomColor
@@ -25,14 +28,11 @@ import xenakis.sc.editor.CodeBlockEditor
 
 @Serializable
 class CustomizableSynthDefObject(
-    override val mutableName: ReactiveVariable<String>,
+    @SerialName("name") override val mutableName: ReactiveVariable<String>,
     override val parameters: MutableReactiveList<ParameterDefObject>,
     override val color: ReactiveVariable<@Serializable(with = ColorSerializer::class) Color> = reactiveVariable(Color.WHITE),
     val ugenGraph: EditorRoot<@Contextual CodeBlockEditor>? = null
 ) : SynthDefObject, AbstractRenamableObject(), ConfigurableParameterizedObjectDef, InstrumentObject {
-    @Transient
-    private val editor = if (ugenGraph != null) SynthDefEditor(this) else null
-
     override val canCopy: Boolean
         get() = true
 
@@ -86,6 +86,9 @@ class CustomizableSynthDefObject(
         for (parameter in parameters.now) {
             parameter.initialize(context)
         }
+        ugenGraph?.initialize(context.extend {
+            set(editedSynthDef, this@CustomizableSynthDefObject)
+        })
     }
 
     override fun canRenameTo(newName: String): Boolean = !context[InstrumentRegistry].has(newName)
@@ -96,23 +99,14 @@ class CustomizableSynthDefObject(
         context[SuperColliderClient].run { this.sync() }
     }
 
-    class SynthDefEditor(
-        val obj: CustomizableSynthDefObject
-    ) : AbstractEditor<SynthDefObject, EditorView>() {
-        override val result: ReactiveValue<SynthDefObject>
-            get() = reactiveValue(obj)
-
-        init {
-            if (obj.ugenGraph != null) addChild(obj.ugenGraph.editor)
-        }
-    }
-
     companion object {
-        fun create(name: String, context: Context) = CustomizableSynthDefObject(
+        val editedSynthDef = publicProperty<CustomizableSynthDefObject>("edited synth def")
+
+        fun create(name: String) = CustomizableSynthDefObject(
             mutableName = reactiveVariable(name),
             color = reactiveVariable(randomColor()),
             parameters = reactiveList(),
-            ugenGraph = EditorRoot.create(CodeBlockEditor(), context)
+            ugenGraph = EditorRoot(CodeBlockEditor())
         )
 
         fun create(name: String, vararg parameters: ParameterDefObject) =

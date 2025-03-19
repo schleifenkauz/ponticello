@@ -215,7 +215,7 @@ class ControlAssignmentEditor(
                 oldControl: ParameterControl
             ): CustomControl {
                 val editor = ScExprExpander()
-                val root = EditorRoot.create(editor, obj.context)
+                val root = EditorRoot(editor)
                 if (oldControl.getNumericalValue() != null) {
                     editor.setText(oldControl.getNumericalValue().toString())
                 }

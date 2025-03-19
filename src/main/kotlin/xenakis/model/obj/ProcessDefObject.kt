@@ -4,6 +4,7 @@ import hextant.context.Context
 import hextant.serial.EditorRoot
 import javafx.scene.paint.Color
 import kotlinx.serialization.Contextual
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import reaktive.list.MutableReactiveList
 import reaktive.list.reactiveList
@@ -26,7 +27,7 @@ import xenakis.sc.substitute
 
 @Serializable
 class ProcessDefObject(
-    override val mutableName: ReactiveVariable<String>,
+    @SerialName("name") override val mutableName: ReactiveVariable<String>,
     val color: ReactiveVariable<@Serializable(with = ColorSerializer::class) Color>,
     override val parameters: MutableReactiveList<ParameterDefObject>,
     val processCode: EditorRoot<@Contextual CodeBlockEditor>
@@ -74,6 +75,7 @@ class ProcessDefObject(
     override fun initialize(context: Context) {
         if (initialized) return
         super.initialize(context)
+        processCode.initialize(context)
         for (parameter in parameters.now) {
             parameter.initialize(context)
         }
@@ -85,13 +87,13 @@ class ProcessDefObject(
     }
 
     companion object {
-        fun newEmpty(name: String, context: Context) = ProcessDefObject(
+        fun newEmpty(name: String) = ProcessDefObject(
             mutableName = reactiveVariable(name),
             color = reactiveVariable(randomColor()),
             parameters = reactiveList(),
-            processCode = EditorRoot.create(CodeBlockEditor(), context)
+            processCode = EditorRoot(CodeBlockEditor())
         )
         
-        fun unresolved(context: Context) = newEmpty("<unresolved>", context)
+        fun unresolved(context: Context) = newEmpty("<unresolved>")
     }
 }

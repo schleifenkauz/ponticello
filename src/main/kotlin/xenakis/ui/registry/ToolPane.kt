@@ -6,53 +6,57 @@ import fxutils.actions.collectActions
 import fxutils.actions.registerShortcuts
 import fxutils.infiniteSpace
 import fxutils.label
-import fxutils.setupWindowDragButton
+import fxutils.setupWindowDragging
 import fxutils.styleClass
 import javafx.scene.Node
 import javafx.scene.layout.HBox
+import javafx.scene.layout.Region
 import javafx.scene.layout.VBox
 import org.kordamp.ikonli.materialdesign2.MaterialDesignC
 import reaktive.value.ReactiveString
+import reaktive.value.reactiveValue
 
 abstract class ToolPane : VBox() {
-    protected lateinit var header: HBox
-        private set
+    private lateinit var content: Node
     private var headerContent: Node? = null
-    private lateinit var actions: List<ContextualizedAction>
+    protected lateinit var header: Region
+        private set
 
-    protected abstract fun getTitle(): ReactiveString
+    fun setup(
+        title: ReactiveString, content: Node,
+        headerContent: Node? = null, actions: List<ContextualizedAction> = emptyList()
+    ) {
+        val headerActions = actions + ToolPane.actions.withContext(this)
+        this.headerContent = headerContent
+        this.content = content
+        header = createHeader(title, headerActions)
+        children.addAll(header, content)
+        registerShortcuts(headerActions)
+    }
 
-    protected open fun getHeaderContent(): Node? = null
-
-    protected open fun getHeaderActions(): List<ContextualizedAction> = emptyList()
-
-    protected abstract fun getContent(): Node
-
-    fun initialize() {
-        actions = ToolPane.actions.withContext(this) + getHeaderActions()
-        headerContent = getHeaderContent()
-        header = createHeader()
-        children.addAll(header, getContent())
-        registerShortcuts(actions)
+    fun setup(
+        title: String, content: Node,
+        headerContent: Node? = null, actions: List<ContextualizedAction> = emptyList()
+    ) {
+        setup(reactiveValue(title), content, headerContent, actions)
     }
 
     override fun requestFocus() {
-        headerContent?.requestFocus()
+        headerContent?.requestFocus() ?: content.requestFocus()
     }
 
-    private fun createHeader(): HBox {
-        val label = label(getTitle()).styleClass("heading")
-        val actionBar = ActionBar(actions, buttonStyle = "medium-icon-button")
-        val moveBtn = actionBar.getButton(ToolPane.actions.getAction("Move window"))
-        moveBtn.setupWindowDragButton { scene.window }
-        return HBox(label, headerContent, infiniteSpace(), actionBar).styleClass("tool-pane-header")
+    private fun createHeader(title: ReactiveString, headerActions: List<ContextualizedAction>): HBox {
+        val label = label(title).styleClass("heading")
+        val actionBar = ActionBar(headerActions, buttonStyle = "medium-icon-button")
+        val box = HBox(label, infiniteSpace(), actionBar).styleClass("tool-pane-header")
+        box.setupWindowDragging { scene.window }
+        label.setupWindowDragging { scene.window }
+        if (headerContent != null) box.children.add(1, headerContent)
+        return box
     }
 
     companion object {
         private val actions = collectActions<ToolPane> {
-            addAction("Move window") {
-                icon(MaterialDesignC.CURSOR_MOVE)
-            }
             addAction("Close window") {
                 shortcut("Ctrl+W")
                 icon(MaterialDesignC.CLOSE)

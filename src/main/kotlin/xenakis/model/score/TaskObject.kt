@@ -1,5 +1,6 @@
 package xenakis.model.score
 
+import hextant.context.Context
 import hextant.serial.EditorRoot
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.SerialName
@@ -24,6 +25,10 @@ class TaskObject(
         get() = false
 
     override fun doClone(newName: String): ScoreObject = TaskObject(reactiveVariable(newName), code.clone(context))
+
+    override fun initialize(context: Context) {
+        code.initialize(context)
+    }
 
     override fun writeCode(info: ScoreObjectInfo): String = code {
         appendBlock("~tasks['$name'] = Task", endLine = false) {

@@ -14,10 +14,15 @@ data class SetupCode(
     override val componentName: String
         get() = "setup_code"
 
+    fun initialize(context: Context) {
+        serverSetup.initialize(context)
+        serverTree.initialize(context)
+    }
+
     companion object {
-        fun default(context: Context) = SetupCode(
-            EditorRoot.create(CodeBlockEditor(), context),
-            EditorRoot.create(CodeBlockEditor(), context)
+        fun default() = SetupCode(
+            EditorRoot(CodeBlockEditor()),
+            EditorRoot(CodeBlockEditor())
         )
     }
 }

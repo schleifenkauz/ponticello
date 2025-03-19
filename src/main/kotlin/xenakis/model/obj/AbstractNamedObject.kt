@@ -14,6 +14,10 @@ abstract class AbstractNamedObject : AbstractContextualObject(), NamedObject {
     override val isAdded: ReactiveBoolean
         get() = _isAdded
 
+    final override fun onLoadedIntoRegistry() {
+        _isAdded.now = true
+    }
+
     override fun onAdded(context: Context) {
         _isAdded.now = true
     }

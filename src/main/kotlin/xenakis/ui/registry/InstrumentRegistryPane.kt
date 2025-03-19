@@ -9,32 +9,34 @@ import fxutils.prompt.SimpleSearchableListView
 import fxutils.prompt.YesNoPrompt
 import fxutils.resize
 import fxutils.setFixedWidth
+import fxutils.showBelow
+import fxutils.showRightOf
+import fxutils.undecoratedSubWindow
 import hextant.fx.initHextantScene
 import javafx.application.Platform
 import javafx.scene.Node
-import javafx.scene.control.Label
 import javafx.scene.control.ScrollPane
 import javafx.scene.input.DataFormat
-import javafx.scene.layout.VBox
 import javafx.scene.paint.Color
 import org.kordamp.ikonli.material2.Material2AL
 import org.kordamp.ikonli.material2.Material2MZ
 import org.kordamp.ikonli.materialdesign2.MaterialDesignE
 import reaktive.value.binding.map
-import reaktive.value.fx.asObservableValue
 import reaktive.value.now
 import reaktive.value.reactiveValue
 import xenakis.impl.async
 import xenakis.impl.canSuperColliderTalkToMe
 import xenakis.model.Logger
 import xenakis.model.obj.*
+import xenakis.model.obj.CustomizableSynthDefObject
+import xenakis.model.obj.InstrumentObject
+import xenakis.model.obj.VSTPluginObject
 import xenakis.model.registry.GlobalSynthDefLib
 import xenakis.model.registry.InstrumentRegistry
 import xenakis.sc.Identifier
 import xenakis.sc.view.ObjectSelectorControl
 import xenakis.ui.controls.NamePrompt
 import xenakis.ui.impl.colorPicker
-import xenakis.ui.impl.makeSubWindow
 import xenakis.ui.impl.registerSyncShortcuts
 
 class InstrumentRegistryPane(
@@ -48,24 +50,6 @@ class InstrumentRegistryPane(
 
     override fun dataFormat(obj: InstrumentObject): DataFormat? =
         if (obj is SynthDefObject) SynthDefObject.DATA_FORMAT else null
-
-    private val actions = collectActions<InstrumentObject> {
-        addAction("Edit Instrument") {
-            icon { instr ->
-                if (instr is CustomizableSynthDefObject) reactiveValue(Material2AL.CODE)
-                else reactiveValue(MaterialDesignE.EYE)
-            }
-            executes { instr -> editInstrument(instr) }
-        }
-        addAction("Save VST plugin configuration") {
-            icon(Material2MZ.SAVE)
-            executesOn<VSTPluginObject> { obj -> obj.saveConfiguration() }
-        }
-        addAction("Save to global library") {
-            icon(MaterialDesignE.EXPORT_VARIANT)
-            executesOn<CustomizableSynthDefObject>(::saveToGlobalLibrary)
-        }
-    }
 
     private fun saveToGlobalLibrary(obj: CustomizableSynthDefObject) {
         val globalLib = registry.context[GlobalSynthDefLib]
@@ -190,10 +174,10 @@ class InstrumentRegistryPane(
                     default = true
                 ).showDialog(anchorNode = this) ?: return null
                 return if (reference) ReferencedSynthDefObject.get(name)
-                else CustomizableSynthDefObject.create(name, registry.context)
+                else CustomizableSynthDefObject.create(name)
             }
 
-            else -> return CustomizableSynthDefObject.create(name, registry.context)
+            else -> return CustomizableSynthDefObject.create(name)
         }
     }
 
@@ -209,7 +193,23 @@ class InstrumentRegistryPane(
         }
     }
 
-    override fun getActions(obj: InstrumentObject): List<ContextualizedAction> = actions.withContext(obj)
+    override fun getActions(obj: InstrumentObject): List<ContextualizedAction> = collectActions<InstrumentObject> {
+        addAction("Edit Instrument") {
+            icon { instr ->
+                if (instr is CustomizableSynthDefObject) reactiveValue(Material2AL.CODE)
+                else reactiveValue(MaterialDesignE.EYE)
+            }
+            executes { instr -> this@InstrumentRegistryPane.editInstrument(instr) }
+        }
+        addAction("Save VST plugin configuration") {
+            icon(Material2MZ.SAVE)
+            executesOn<VSTPluginObject> { obj -> obj.saveConfiguration() }
+        }
+        addAction("Save to global library") {
+            icon(MaterialDesignE.EXPORT_VARIANT)
+            executesOn(::saveToGlobalLibrary)
+        }
+    }.withContext(obj)
 
     override fun removed(obj: InstrumentObject, idx: Int) {
         super.removed(obj, idx)
@@ -222,29 +222,31 @@ class InstrumentRegistryPane(
             return
         }
         obj as SynthDefObject
-        val window = subWindows.getOrPut(obj) {
-            if (obj is CustomizableSynthDefObject) {
-                val pane = ScrollPane(
-                    VBox(
-                        ParameterDefsPane(registry.context, obj.parameters),
-                        obj.ugenGraph?.control ?: Label("No code")
-                    )
-                ).letContentFillViewPort()
-                val w = makeSubWindow(pane, "", registry.context)
-                w.titleProperty().bind(obj.name.map { name -> "SynthDef $name" }.asObservableValue())
-                w.scene.initHextantScene(registry.context, applyStyle = false)
-                w.scene.fill = Color.web("#1e1f22")
-                w.resize(800.0, 800.0)
-                if (obj.ugenGraph != null) w.registerSyncShortcuts(obj, obj.ugenGraph)
-                w
-            } else {
-                val pane = ParameterInfoPane(obj.parameters)
-                makeSubWindow(pane, obj.name.now, registry.context, type = SubWindow.Type.Popup).apply {
-                    initOwner(scene.window)
-                    this.resize(800.0, 300.0)
-                }
+        val window = subWindows.getOrPut(obj) { makeWindow(obj) }
+        if (window.isShowing) window.toFront()
+        else window.showRightOf(this)
+    }
+
+    private fun makeWindow(obj: SynthDefObject): SubWindow = when (obj) {
+        is CustomizableSynthDefObject -> {
+            val title = obj.name.map { n -> "SynthDef $n" }
+            val pane = ScrollPane(
+                ParameterizedObjectDefPane(registry.context, title, obj.parameters, obj.ugenGraph!!)
+            ).letContentFillViewPort()
+            undecoratedSubWindow(pane).apply {
+                this.scene.initHextantScene(this@InstrumentRegistryPane.registry.context, applyStyle = false)
+                this.scene.fill = Color.BLACK
+                this.resize(800.0, 800.0)
+                registerSyncShortcuts(obj, obj.ugenGraph)
+
             }
         }
-        window.show()
+
+        else -> {
+            val pane = ParameterInfoPane(obj.parameters)
+            undecoratedSubWindow(pane).apply {
+                this.resize(800.0, 300.0)
+            }
+        }
     }
 }

@@ -1,10 +1,8 @@
 package xenakis.ui.registry
 
 import fxutils.actions.collectActions
-import fxutils.actions.registerShortcuts
 import hextant.context.Context
 import hextant.serial.EditorRoot
-import javafx.scene.Node
 import javafx.scene.layout.VBox
 import org.kordamp.ikonli.material2.Material2MZ
 import reaktive.list.MutableReactiveList
@@ -15,21 +13,20 @@ import xenakis.sc.editor.CodeBlockEditor
 
 class ParameterizedObjectDefPane(
     private val context: Context,
-    private val title: ReactiveString,
+    title: ReactiveString,
     private val parameters: MutableReactiveList<ParameterDefObject>,
-    private val code: EditorRoot<CodeBlockEditor>
+    code: EditorRoot<CodeBlockEditor>
 ) : ToolPane() {
     private val config = ParameterListSource(context, parameters)
     private val parametersList = ObjectBoxList(config)
 
     init {
         config.syncWithBoxList(parametersList)
-        registerShortcuts(actions.withContext(this))
+        setup(
+            title, content = VBox(parametersList, code.control),
+            actions = actions.withContext(this)
+        )
     }
-
-    override fun getTitle(): ReactiveString = title
-
-    override fun getContent(): Node = VBox(parametersList, code.control)
 
     fun addParameter() {
         val defaultParameters = context[Settings].defaultParametersDefs.now

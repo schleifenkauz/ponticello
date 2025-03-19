@@ -8,7 +8,7 @@ import kotlin.math.ln
 import kotlin.math.pow
 
 @Serializable
-@Choice
+@Choice(initialValue = "Warp.Linear")
 sealed class Warp {
     @Serializable
     object Linear : Warp() {

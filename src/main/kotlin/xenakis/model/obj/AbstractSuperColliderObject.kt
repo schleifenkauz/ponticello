@@ -8,7 +8,6 @@ abstract class AbstractSuperColliderObject : AbstractRenamableObject(), SuperCol
     protected val client get() = context[SuperColliderClient]
 
     override fun initialize(context: Context) {
-        if (initialized) return
         super.initialize(context)
     }
 
@@ -28,6 +27,7 @@ abstract class AbstractSuperColliderObject : AbstractRenamableObject(), SuperCol
     }
 
     override fun onAdded(context: Context) {
+        super<AbstractRenamableObject>.onAdded(context)
         client.run { createObject() }
     }
 

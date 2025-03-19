@@ -3,6 +3,7 @@ package xenakis.model.obj
 import hextant.context.Context
 import javafx.scene.image.Image
 import javafx.scene.input.DataFormat
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import reaktive.event.unitEvent
@@ -23,7 +24,7 @@ import javax.sound.sampled.AudioSystem
 
 @Serializable
 class SampleObject private constructor(
-    override val mutableName: ReactiveVariable<String>,
+    @SerialName("name") override val mutableName: ReactiveVariable<String>,
     private var referencedFile: String
 ) : AbstractSuperColliderObject() {
     override val superColliderName: String
@@ -84,8 +85,8 @@ class SampleObject private constructor(
     }
 
     override fun onAdded(context: Context) {
-        updateSpectrogram()
         super.onAdded(context)
+        updateSpectrogram()
     }
 
     override fun initialize(context: Context) {

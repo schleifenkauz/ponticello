@@ -13,20 +13,16 @@ abstract class AbstractContextualObject : ContextualObject {
     @Transient
     protected var initialized = false
 
-    private val references = mutableSetOf<ReferencedObject<*>>()
-
     @Transient
     private lateinit var _context: Context
 
     final override val context: Context get() = _context
 
     override fun initialize(context: Context) {
+        //check(initialized) { "$this already initialized!" }
         if (initialized) return
         initialized = true
         _context = context
-        for (reference in references) {
-            reference.resolve(context)
-        }
     }
 
     protected fun <T : NamedObject> (() -> ObjectReference<T>).ref(

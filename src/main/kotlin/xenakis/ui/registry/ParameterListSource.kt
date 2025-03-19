@@ -11,17 +11,13 @@ import reaktive.value.now
 import xenakis.model.obj.ParameterDefObject
 import xenakis.sc.ParameterType
 import xenakis.sc.editor.ControlSpecEditor
-import xenakis.sc.editor.NumericalControlSpecEditor
 
 class ParameterListSource(
     private val context: Context,
-    private val parameters: MutableReactiveList<ParameterDefObject>
-) : ObjectBoxSource<ParameterDefObject> {
+    objects: MutableReactiveList<ParameterDefObject>
+) : ReactiveListSource<ParameterDefObject>(objects) {
     private val observers = mutableMapOf<ParameterDefObject, Observer>()
     private lateinit var observer: Observer
-
-    override val items: List<ParameterDefObject>
-        get() = parameters.now
 
     override fun getContent(obj: ParameterDefObject): List<Node> {
         val editor = makeControlSpecEditor(obj)
@@ -47,12 +43,8 @@ class ParameterListSource(
             }
     }
 
-    override fun deleteObject(obj: ParameterDefObject) {
-        parameters.now.remove(obj)
-    }
-
     fun syncWithBoxList(parametersList: ObjectBoxList<ParameterDefObject>) {
-        observer = parameters.observeList { ch ->
+        observer = objects.observeList { ch ->
             if (ch.wasAdded) parametersList.add(ch.index, ch.added)
             if (ch.wasRemoved) {
                 parametersList.remove(ch.removed)

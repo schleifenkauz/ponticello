@@ -6,7 +6,6 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import reaktive.Observer
-import reaktive.Reactive
 import reaktive.value.ReactiveVariable
 import reaktive.value.binding.map
 import reaktive.value.now
@@ -34,6 +33,9 @@ sealed class BusObject : AbstractSuperColliderObject() {
             Type.Regular -> "~bus_${name.now}"
         }
 
+    @Transient
+    private lateinit var observer: Observer
+
     override val canRename: Boolean
         get() = busType == Type.Regular
 
@@ -43,17 +45,11 @@ sealed class BusObject : AbstractSuperColliderObject() {
     override val registry: ObjectRegistry<*>?
         get() = context[BusRegistry]
 
-    @Transient
-    private lateinit var observer: Observer
-
-    protected abstract fun observables(): Collection<Reactive>
-
     override fun canRenameTo(newName: String): Boolean =
         name.now.startsWith("global_") == newName.startsWith("global_") &&
                 !context[XenakisLauncher.currentProject].busses.has(newName)
 
     override fun initialize(context: Context) {
-        if (initialized) return
         super.initialize(context)
         if (busType == Type.Regular) {
             observer = channels.observe { _ -> redefine() }
@@ -67,46 +63,60 @@ sealed class BusObject : AbstractSuperColliderObject() {
     @SerialName("AudioBus")
     @Serializable
     class AudioBus(
-        override val mutableName: ReactiveVariable<String>,
+        @SerialName("name") override val mutableName: ReactiveVariable<String>,
         override val channels: ReactiveVariable<Int>,
         override val busType: Type
     ) : BusObject() {
-        override val rate: Rate = Audio
+        override val rate: Rate get() = Audio
 
         override fun ScWriter.createObject() {
             when (busType) {
                 Type.Input -> {}
                 Type.Output -> {}
                 Type.Regular -> {
-                    +"$superColliderName = Bus.ar(s, $channels.now)}"
+                    +"$superColliderName = Bus.audio(s, ${channels.now})"
                 }
             }
         }
-
-        override fun observables(): Collection<Reactive> = listOf(channels)
     }
 
     @Serializable
     @SerialName("ControlBus")
     class ControlBus(
-        override val mutableName: ReactiveVariable<String>,
+        @SerialName("name") override val mutableName: ReactiveVariable<String>,
         override val channels: ReactiveVariable<Int>,
         val spec: ReactiveVariable<NumericalControlSpec>,
     ) : BusObject() {
-        override val rate: Rate = Control
+        override val rate: Rate get() = Control
         override val busType: Type
             get() = Type.Regular
+
+        @Transient
         val defaultValue = spec.map { s -> s.defaultValue.get() }
 
+        @Transient
+        private lateinit var defaultValueObserver: Observer
+
+        override fun initialize(context: Context) {
+            super.initialize(context)
+            defaultValueObserver = defaultValue.observe { _ ->
+                client.run {
+                    setDefaultValue(skipIfZero = false)
+                }
+            }
+        }
+
         override fun ScWriter.createObject() {
-            +"$superColliderName = Bus.kr(s, ${channels.now})"
+            +"$superColliderName = Bus.control(s, ${channels.now})"
+            setDefaultValue(skipIfZero = true)
+        }
+
+        private fun ScWriter.setDefaultValue(skipIfZero: Boolean) {
             val value = defaultValue.now
-            if (value == zero) return
+            if (skipIfZero && value == zero) return
             val valueList = List(channels.now) { value }.joinToString()
             +"$superColliderName.set($valueList)"
         }
-
-        override fun observables(): Collection<Reactive> = listOf(channels, defaultValue)
     }
 
     companion object {
@@ -128,16 +138,17 @@ sealed class BusObject : AbstractSuperColliderObject() {
             Type.Regular
         )
 
-        fun control(name: String, channels: Int = 1, spec: ReactiveVariable<NumericalControlSpec>) = ControlBus(
+        fun control(name: String, channels: Int = 1, spec: NumericalControlSpec) = ControlBus(
             reactiveVariable(name),
             reactiveVariable(channels),
-            spec
+            reactiveVariable(spec)
         )
 
-        fun create(rate: Rate, name: String, channels: Int, spec: NumericalControlSpec? = null): BusObject = when (rate) {
-            Audio -> audio(name, channels)
-            Control -> control(name, channels, reactiveVariable(spec!!))
-        }
+        fun create(rate: Rate, name: String, channels: Int, spec: NumericalControlSpec? = null): BusObject =
+            when (rate) {
+                Audio -> audio(name, channels)
+                Control -> control(name, channels, spec!!)
+            }
 
         val DATA_FORMAT = DataFormat("bus")
     }

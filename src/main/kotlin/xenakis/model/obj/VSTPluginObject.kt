@@ -2,6 +2,7 @@ package xenakis.model.obj
 
 import hextant.context.Context
 import javafx.scene.paint.Color
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import reaktive.Observer
@@ -23,7 +24,7 @@ import xenakis.sc.editor.BusSelector
 
 @Serializable
 class VSTPluginObject private constructor(
-    override val mutableName: ReactiveVariable<String>,
+    @SerialName("name") override val mutableName: ReactiveVariable<String>,
     private val pluginName: String,
     private val presetName: String,
     private var output: ObjectReference<BusObject>,

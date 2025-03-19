@@ -16,6 +16,7 @@ import xenakis.sc.editor.`in`
 class CodeFlow(val codeEditor: EditorRoot<@Contextual CodeBlockEditor>) : AudioFlow() {
     override fun initialize(context: Context, bus: BusObject) {
         super.initialize(context)
+        codeEditor.initialize(context)
     }
 
     override fun copy(): AudioFlow = CodeFlow(codeEditor.clone(context))
@@ -40,11 +41,11 @@ class CodeFlow(val codeEditor: EditorRoot<@Contextual CodeBlockEditor>) : AudioF
     override fun getDefaultName(): String = "Code"
 
     companion object {
-        fun createFor(bus: BusObject, context: Context): CodeFlow {
+        fun createFor(bus: BusObject): CodeFlow {
             val editor = CodeBlockEditor()
             editor.variables.setInitialEditors(IdentifierEditor("snd"))
             editor.statements.setInitialEditors(assign("snd", `in`(bus)))
-            return CodeFlow(EditorRoot.create(editor, context))
+            return CodeFlow(EditorRoot(editor))
         }
     }
 }

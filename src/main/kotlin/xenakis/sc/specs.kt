@@ -170,7 +170,7 @@ class GroupControlSpec : ControlSpec {
 
 fun NumericalControlSpec.mapOnto(targetRange: DoubleRange) = SpecTransformation(this, targetRange)
 
-@Choice
+@Choice(initialValue = "Rate.Audio")
 enum class Rate {
     Audio, Control;
 

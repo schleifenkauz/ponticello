@@ -6,6 +6,8 @@ import hextant.core.editor.ColorEditor
 import hextant.serial.JsonSerializer
 import hextant.serial.KJsonSerializer
 import xenakis.impl.randomColor
+import xenakis.model.flow.FlowType
+import xenakis.model.flow.editor.FlowTypeEditor
 import xenakis.sc.*
 
 class ControlSpecEditor() : ChoiceEditor<ParameterType, ControlSpec, Editor<ControlSpec>>(),
@@ -18,21 +20,21 @@ class ControlSpecEditor() : ChoiceEditor<ParameterType, ControlSpec, Editor<Cont
             is BufferControlSpec -> {
                 val specEditor = BufferControlSpecEditor()
                 specEditor.setupDefaultState()
-                specEditor.initialize(context)
                 select(ParameterType.Buffer, specEditor)
             }
 
             is BusControlSpec -> {
-                val specEditor = BusControlSpecEditor()
+                val specEditor = BusControlSpecEditor(
+                    RateEditor(spec.rate),
+                    SimpleIntegerEditor(spec.channels),
+                    FlowTypeEditor(spec.flow)
+                )
                 specEditor.setupDefaultState()
-                specEditor.initialize(context)
                 select(ParameterType.Bus, specEditor)
             }
 
             is NumericalControlSpec -> {
                 val specEditor = spec.createEditor()
-                specEditor.setupDefaultState()
-                specEditor.initialize(context)
                 select(ParameterType.Numerical, specEditor)
             }
 
@@ -41,7 +43,11 @@ class ControlSpecEditor() : ChoiceEditor<ParameterType, ControlSpec, Editor<Cont
     }
 
     override fun createEditor(choice: ParameterType): Editor<ControlSpec> = when (choice) {
-        ParameterType.Bus -> BusControlSpecEditor()
+        ParameterType.Bus -> BusControlSpecEditor(
+            RateEditor(Rate.Audio),
+            SimpleIntegerEditor(2),
+            FlowTypeEditor(FlowType.Out)
+        )
         ParameterType.Buffer -> BufferControlSpecEditor()
         ParameterType.Numerical -> NumericalControlSpecEditor(
             defaultValue = DecimalLiteralEditor("0"),

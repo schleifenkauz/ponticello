@@ -4,7 +4,7 @@ import hextant.codegen.Choice
 import kotlinx.serialization.Serializable
 
 @Serializable
-@Choice
+@Choice(initialValue = "FlowType.Out")
 enum class FlowType {
     In, Out;
 

@@ -8,7 +8,6 @@ import hextant.core.editor.ConfiguredExpander
 import hextant.core.editor.ExpanderConfig
 import hextant.core.editor.makeUndoableEdit
 import hextant.core.editor.snapshot
-import kotlinx.serialization.Serializable
 import reaktive.value.now
 import xenakis.model.obj.VSTPluginObject
 import xenakis.sc.*
@@ -20,10 +19,6 @@ class ScExprExpander() : ConfiguredExpander<ScExpr, ScExprEditor<*>>(), ScExprEd
 
     constructor(editor: ScExprEditor<*>) : this() {
         setInitialContent(editor)
-    }
-
-    init {
-
     }
 
     override fun defaultResult(): ScExpr = EmptyExpr

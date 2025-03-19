@@ -11,8 +11,6 @@ import xenakis.model.Logger
 import xenakis.model.XenakisProject
 import xenakis.model.obj.AbstractContextualObject
 import xenakis.ui.launcher.XenakisLauncher.Companion.currentProject
-import xenakis.ui.registry.ObjectBoxList
-import xenakis.ui.registry.ObjectBoxSource
 
 abstract class ObjectRegistry<O : NamedObject> : XenakisProject.ProjectComponent, AbstractContextualObject() {
     protected abstract val objects: MutableList<O>
@@ -29,6 +27,7 @@ abstract class ObjectRegistry<O : NamedObject> : XenakisProject.ProjectComponent
         super.initialize(context)
         for (obj in objects) {
             obj.initialize(context)
+            obj.onLoadedIntoRegistry()
         }
     }
 

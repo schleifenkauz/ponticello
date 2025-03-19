@@ -32,6 +32,6 @@ object RegistryObjectActions {
 
     fun <O : NamedObject> all(registry: PublicProperty<out ObjectRegistry<O>>) = collectActions<O> {
         add(renameAction { o -> o.context[registry].objectType })
-        deleteAction(registry)
+        add(deleteAction(registry))
     }
 }

@@ -33,7 +33,7 @@ enum class Tool(config: Action.Builder<SelectorBar<Tool, Context>>.() -> Unit) :
                     val instruments = context[InstrumentRegistry]
                     SimpleSearchableRegistryView(instruments, "Selected instrument def").showPopup( //TODO better placement
                         anchorNode = bar,
-                        initialOption = instruments.selectedInstrument.now
+                        initialOption = instruments.selectedInstrument
                     ) { def -> instruments.select(def) }
                 }
 

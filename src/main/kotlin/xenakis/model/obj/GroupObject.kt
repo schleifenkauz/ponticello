@@ -1,5 +1,6 @@
 package xenakis.model.obj
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import reaktive.value.ReactiveVariable
 import reaktive.value.now
@@ -9,7 +10,7 @@ import xenakis.model.registry.ObjectRegistry
 
 @Serializable
 class GroupObject(
-    override val mutableName: ReactiveVariable<String>,
+    @SerialName("name") override val mutableName: ReactiveVariable<String>,
     val isDefault: Boolean = false
 ) : AbstractRenamableObject() {
     val superColliderName: String get() = if (isDefault) "s.defaultGroup" else "~grp_${name.now}"

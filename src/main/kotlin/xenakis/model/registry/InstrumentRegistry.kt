@@ -8,9 +8,7 @@ import javafx.scene.paint.Color
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
-import reaktive.value.ReactiveValue
 import reaktive.value.ReactiveVariable
-import reaktive.value.binding.map
 import reaktive.value.now
 import reaktive.value.reactiveVariable
 import xenakis.model.obj.InstrumentObject
@@ -36,16 +34,14 @@ class InstrumentRegistry(
     @Transient
     private lateinit var client: SuperColliderClient
 
-    @Transient
-    lateinit var selectedInstrument: ReactiveValue<InstrumentObject?>
-        private set
+    val selectedInstrument: InstrumentObject?
+        get() = selectedInstrumentRef.now.get()
 
     override fun initialize(context: Context) {
         super.initialize(context)
         context[InstrumentRegistry] = this
         client = context[SuperColliderClient]
         selectedInstrumentRef.now.resolve(this)
-        selectedInstrument = selectedInstrumentRef.map { ref -> ref.get() }
     }
 
     fun select(instrument: InstrumentObject?) {
@@ -59,8 +55,8 @@ class InstrumentRegistry(
     }
 
     fun addView(view: Listener) {
-        super.addListener(view, initialize = true)
-        view.selected(selectedInstrument.now)
+        super.addListener(view, initialize = false)
+        view.selected(selectedInstrument)
     }
 
     companion object : PublicProperty<InstrumentRegistry> by publicProperty("InstrumentRegistry") {

@@ -56,6 +56,7 @@ class AudioFlowGraph(
     }
 
     override fun added(obj: BusObject, idx: Int) {
+        if (obj !is BusObject.AudioBus) return
         val node = FlowGroup(obj, flows)
         flowGroups[obj] = node
         addNode(node)
@@ -65,6 +66,7 @@ class AudioFlowGraph(
     }
 
     override fun removed(obj: BusObject, idx: Int) {
+        if (obj !is BusObject.AudioBus) return
         val node = flowGroups.remove(obj) ?: error("No active flows for bus $obj")
         removeNode(node)
         nodeTree.removeNode(node)

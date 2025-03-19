@@ -2,6 +2,7 @@ package xenakis.model.flow
 
 import hextant.context.Context
 import javafx.scene.input.DataFormat
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import reaktive.value.ReactiveString
@@ -27,6 +28,7 @@ sealed class AudioFlow : AbstractRenamableObject(), AudioNode {
     lateinit var associatedBus: BusObject
         private set
 
+    @SerialName("name")
     override var mutableName = reactiveVariable(NO_NAME)
 
     @Transient

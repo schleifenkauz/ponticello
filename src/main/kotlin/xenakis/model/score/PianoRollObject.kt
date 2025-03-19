@@ -2,7 +2,6 @@ package xenakis.model.score
 
 import hextant.context.Context
 import hextant.context.withoutUndo
-import hextant.core.editor.initialized
 import hextant.serial.EditorRoot
 import hextant.undo.AbstractEdit
 import hextant.undo.PropertyEdit
@@ -19,8 +18,10 @@ import reaktive.value.now
 import reaktive.value.reactiveVariable
 import xenakis.impl.*
 import xenakis.model.flow.ScoreObjectInfo
-import xenakis.model.obj.*
-import xenakis.model.registry.ObjectReference
+import xenakis.model.obj.InstrumentReference
+import xenakis.model.obj.NoSynthDef
+import xenakis.model.obj.SynthDefObject
+import xenakis.model.obj.VSTPluginObject
 import xenakis.sc.code
 import xenakis.sc.editor.*
 import xenakis.ui.impl.Direction
@@ -69,8 +70,10 @@ class PianoRollObject(
         instrumentSelector = InstrumentSelector()
         instrumentSelector.syncWith(mInstrument)
         instrumentSelector.initialize(context)
+        eventDictionary.initialize(context)
         for (note in notes) {
             note.parent = this
+            note.eventDictionary.initialize(context)
         }
     }
 
@@ -356,7 +359,7 @@ class PianoRollObject(
                         )
                     )
                 }
-                return Note(time, duration, midinote, EditorRoot.create(eventDictionary, context))
+                return Note(time, duration, midinote, EditorRoot(eventDictionary))
             }
         }
     }

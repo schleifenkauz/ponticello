@@ -99,13 +99,15 @@ class AudioFlows(
     }
 
     override fun added(obj: BusObject, idx: Int) {
+        if (obj !is BusObject.AudioBus) return
         numFlows[obj] = reactiveVariable(0)
         _flows[obj.reference()] = mutableListOf()
     }
 
     override fun removed(obj: BusObject, idx: Int) {
-        numFlows.remove(obj)
-        _flows.remove(obj.reference())
+        if (obj !is BusObject.AudioBus) return
+        numFlows.remove(obj)!!
+        _flows.remove(obj.reference())!!
     }
 
     fun addFlow(flow: AudioFlow, index: Int = numFlows.getValue(flow.associatedBus).now) {

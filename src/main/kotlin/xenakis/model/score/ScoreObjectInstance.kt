@@ -14,12 +14,12 @@ import reaktive.value.ReactiveBoolean
 import reaktive.value.ReactiveVariable
 import reaktive.value.now
 import reaktive.value.reactiveVariable
-import xenakis.impl.*
+import xenakis.impl.Decimal
+import xenakis.impl.copy
+import xenakis.impl.rangeTo
 import xenakis.model.obj.ScoreObjectReference
-import xenakis.model.registry.ObjectReference
 import xenakis.model.registry.ScoreObjectRegistry
 import xenakis.model.registry.reference
-import xenakis.model.score.Score.Companion.rootScore
 import xenakis.ui.launcher.XenakisLauncher.Companion.currentProject
 
 @Serializable
@@ -98,9 +98,6 @@ class ScoreObjectInstance(
     fun initialize(context: Context) {
         this.context = context
         objectRef.resolve(context[ScoreObjectRegistry])
-        //this is only for needed when opening projects that were created before the decimal-precision update
-        _time = _time.withPrecision(ObjectPosition.TIME_PRECISION)
-        _y = _y.withPrecision(ObjectPosition.Y_PRECISION)
     }
 
     fun addListener(listener: Listener) {

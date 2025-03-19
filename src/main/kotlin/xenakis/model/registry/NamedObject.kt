@@ -20,5 +20,7 @@ interface NamedObject : ContextualObject {
 
     fun onAdded(context: Context) {}
 
+    fun onLoadedIntoRegistry() {}
+
     fun onRemoved() {}
 }

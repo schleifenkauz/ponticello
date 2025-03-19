@@ -1,9 +1,7 @@
 package xenakis.ui.registry
 
 import fxutils.*
-import fxutils.actions.ContextualizedAction
 import fxutils.actions.collectActions
-import javafx.scene.Node
 import javafx.scene.layout.HBox
 import javafx.scene.layout.Priority
 import org.controlsfx.control.textfield.CustomTextField
@@ -11,7 +9,6 @@ import org.kordamp.ikonli.javafx.FontIcon
 import org.kordamp.ikonli.material2.Material2MZ
 import org.kordamp.ikonli.materialdesign2.MaterialDesignP
 import org.kordamp.ikonli.materialdesign2.MaterialDesignS
-import reaktive.value.ReactiveString
 import reaktive.value.now
 import reaktive.value.reactiveValue
 import xenakis.model.Logger
@@ -27,6 +24,12 @@ abstract class ObjectRegistryPane<O : NamedObject>(
 
     init {
         setupSearchField()
+        boxList.autoResizeScene = true
+        setup(
+            title = plural(registry.objectType),
+            content = boxList, headerContent = searchText,
+            actions.withContext(this)
+        )
     }
 
     private fun setupSearchField() {
@@ -40,16 +43,12 @@ abstract class ObjectRegistryPane<O : NamedObject>(
     override val items: List<O>
         get() = registry.all()
 
-    override fun getTitle(): ReactiveString = reactiveValue(plural(registry.objectType))
-
-    override fun getHeaderActions(): List<ContextualizedAction> = actions.withContext(this)
-
-    override fun getHeaderContent(): Node = searchText
-
-    override fun getContent(): Node = boxList
-
     override fun deleteObject(obj: O) {
         registry.remove(obj)
+    }
+
+    override fun addObject(obj: O, idx: Int) {
+        registry.add(obj, idx)
     }
 
     protected abstract fun sync()
@@ -57,8 +56,10 @@ abstract class ObjectRegistryPane<O : NamedObject>(
     protected open fun filter(obj: O): Boolean = true
 
     protected open fun addObject() {
-        val name = NamePrompt(registry, "Name for new ${registry.objectType}", initialName = searchText.text)
-            .showDialog(anchorNode = this) ?: return
+        val name = NamePrompt(
+            registry, "Name for new ${registry.objectType}",
+            initialName = ""
+        ).showDialog(anchorNode = this) ?: return
         addObject(name)
     }
 

@@ -9,13 +9,10 @@ import javafx.scene.Node
 import javafx.scene.control.ScrollPane
 import javafx.scene.layout.VBox
 import org.kordamp.ikonli.material2.Material2AL
-import org.kordamp.ikonli.materialdesign2.MaterialDesignC
 import reaktive.value.binding.map
 import reaktive.value.fx.asObservableValue
-import reaktive.value.now
 import xenakis.model.obj.ProcessDefObject
 import xenakis.model.registry.ProcessDefRegistry
-import xenakis.ui.controls.NamePrompt
 import xenakis.ui.impl.colorPicker
 import xenakis.ui.impl.registerSyncShortcuts
 
@@ -29,7 +26,7 @@ class ProcessDefRegistryPane(
     }
 
     override fun addObject(name: String): ProcessDefObject {
-        val processDef = ProcessDefObject.newEmpty(name, registry.context)
+        val processDef = ProcessDefObject.newEmpty(name)
         registry.add(processDef)
         return processDef
     }

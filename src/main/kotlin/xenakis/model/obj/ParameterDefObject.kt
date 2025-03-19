@@ -2,18 +2,18 @@ package xenakis.model.obj
 
 import hextant.context.Context
 import javafx.scene.paint.Color
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import reaktive.value.ReactiveVariable
 import reaktive.value.now
 import reaktive.value.reactiveVariable
 import xenakis.impl.copy
 import xenakis.impl.toDecimal
-import xenakis.model.registry.ObjectReference
 import xenakis.sc.*
 
 @Serializable
 class ParameterDefObject(
-    override val mutableName: ReactiveVariable<String>,
+    @SerialName("name") override val mutableName: ReactiveVariable<String>,
     val spec: ReactiveVariable<ControlSpec>
 ) : AbstractRenamableObject() {
     constructor(name: String, spec: ControlSpec) : this(reactiveVariable(name), reactiveVariable(spec))

@@ -12,7 +12,7 @@ import reaktive.value.now
 import xenakis.impl.one
 import xenakis.impl.randomColor
 import xenakis.model.Logger
-import xenakis.model.obj.CustomizableSynthDefObject.SynthDefEditor
+import xenakis.model.obj.CustomizableSynthDefObject
 import xenakis.model.obj.ParameterDefObject
 import xenakis.sc.DecimalLiteral
 import xenakis.sc.Identifier
@@ -68,17 +68,13 @@ object XenakisHextantPlugin : PluginInitializer({
         shortName = "extract-param"
         name = "Extract parameter"
         applicableIf { ed ->
-            ed.result.now is DecimalLiteral && ed.getParent<SynthDefEditor>() != null
+            ed.result.now is DecimalLiteral && ed.context.hasProperty(CustomizableSynthDefObject.editedSynthDef)
         }
         executing { editor ->
             val name = PredicateTextPrompt("Parameter name", "") { name -> Identifier.isValid(name) }
                 .showDialog(editor.context) ?: return@executing
-            val def = editor.getParent<SynthDefEditor>()
-            if (def == null) {
-                Logger.error("Could not get SynthDefEditor for extracted parameter.")
-                return@executing
-            }
-            val parameters = def.obj.parameters
+            val def = editor.context[CustomizableSynthDefObject.editedSynthDef]
+            val parameters = def.parameters
             val defaultValue = editor.result.now
             if (defaultValue !is DecimalLiteral) {
                 Logger.error("Could not extract parameter default value.")

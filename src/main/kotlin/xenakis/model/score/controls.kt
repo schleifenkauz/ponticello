@@ -106,6 +106,10 @@ data class GroupControl(val group: ReactiveVariable<GroupReference>) : Parameter
 @Serializable
 data class CustomControl(val expr: EditorRoot<@Contextual ScExprExpander>) : ParameterControl() {
     override fun copy(): ParameterControl = CustomControl(expr.clone(context))
+
+    override fun initialize(context: Context) {
+        expr.initialize(context)
+    }
 }
 
 @Serializable

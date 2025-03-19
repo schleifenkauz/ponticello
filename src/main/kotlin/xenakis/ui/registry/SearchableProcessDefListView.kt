@@ -7,7 +7,7 @@ class SearchableProcessDefListView(
     registry: ProcessDefRegistry, title: String
 ) : SearchableRegistryView<ProcessDefObject>(registry, title) {
     override fun createObject(name: String): ProcessDefObject {
-        val obj = ProcessDefObject.newEmpty(name, registry.context)
+        val obj = ProcessDefObject.newEmpty(name)
         registry.add(obj)
         return obj
     }

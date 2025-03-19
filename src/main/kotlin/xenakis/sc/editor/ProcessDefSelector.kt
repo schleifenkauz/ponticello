@@ -7,5 +7,5 @@ import xenakis.model.registry.ProcessDefRegistry
 class ProcessDefSelector : ObjectSelector<ProcessDefObject>() {
     override fun getRegistry(): ObjectRegistry<ProcessDefObject> = context[ProcessDefRegistry]
 
-    override fun createNewObject(name: String): ProcessDefObject = ProcessDefObject.newEmpty(name, context)
+    override fun createNewObject(name: String): ProcessDefObject = ProcessDefObject.newEmpty(name)
 }

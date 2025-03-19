@@ -21,6 +21,10 @@ class NoSynthDef : SynthDefObject, AbstractContextualObject() {
     override val name: ReactiveValue<String>
         get() = reactiveValue("<none>")
 
+    override fun onLoadedIntoRegistry() {
+        throw IllegalStateException()
+    }
+
     override fun ScWriter.createObject() {
     }
 

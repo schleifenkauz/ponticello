@@ -51,20 +51,20 @@ class XenakisMainActivity(val project: XenakisProject) : Activity() {
         .styleClass("toolbar-part")
 
     val instrumentsPane = InstrumentRegistryPane(project.instruments)
-    val instrumentsWindow = SubWindow(instrumentsPane, "Instruments", SubWindow.Type.Undecorated)
+    val instrumentsWindow = makeSubWindow(instrumentsPane, "Instruments", context, SubWindow.Type.Undecorated)
 
     val processDefsPane = ProcessDefRegistryPane(project.processDefs)
-    val processDefsWindow = SubWindow(processDefsPane, "Process Definitions", SubWindow.Type.Undecorated)
+    val processDefsWindow = makeSubWindow(processDefsPane, "Process Definitions", context, SubWindow.Type.Undecorated)
 
     private val busRegistryPane = ControlBusRegistryPane(project.busses)
-    val busesWindow = SubWindow(busRegistryPane, "Busses", SubWindow.Type.Undecorated)
+    val busesWindow = makeSubWindow(busRegistryPane, "Busses", context, SubWindow.Type.Undecorated)
 
     private val samplesPane = SampleRegistryPane(project.samples)
-    val samplesWindow = SubWindow(samplesPane, "Samples", SubWindow.Type.Undecorated)
+    val samplesWindow = makeSubWindow(samplesPane, "Samples", context, SubWindow.Type.Undecorated)
 
-    val logWindow = SubWindow(LogPane(Logger), "Log", SubWindow.Type.Undecorated)
+    val logWindow = makeSubWindow(LogPane(Logger), "Log", context, SubWindow.Type.Undecorated)
 
-    val settingsWindow = SubWindow(SettingsPane(context[Settings], context), "Settings")
+    val settingsWindow = makeSubWindow(SettingsPane(context[Settings], context), "Settings", context)
 
     val flowPaneWindow: SubWindow
     val globalControlsWindow: SubWindow

@@ -1,5 +1,6 @@
 package xenakis.model.obj
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import reaktive.value.ReactiveVariable
 import reaktive.value.now
@@ -10,7 +11,7 @@ import xenakis.sc.client.ScWriter
 
 @Serializable
 class BufferObject(
-    override val mutableName: ReactiveVariable<String>,
+    @SerialName("name") override val mutableName: ReactiveVariable<String>,
     val channels: ReactiveVariable<Int>, val frames: ReactiveVariable<Int>
 ) : AbstractSuperColliderObject() {
     override val superColliderName get() = "~buf_${name.now}"

@@ -1,6 +1,7 @@
 package xenakis.ui.registry
 
 import fxutils.actions.ContextualizedAction
+import javafx.geometry.Orientation
 import javafx.scene.Node
 import javafx.scene.input.DataFormat
 import javafx.scene.input.Dragboard
@@ -17,13 +18,17 @@ interface ObjectBoxSource<O : NamedObject> {
         throw UnsupportedOperationException()
     }
 
-    fun addObject(obj: O) {
+    fun addObject(obj: O, idx: Int) {
         throw UnsupportedOperationException()
     }
 
     fun configureDragboard(obj: O, dragboard: Dragboard) {}
 
     fun dataFormat(obj: O): DataFormat? = null
+
+    val buttonStyle: String get() = "medium-icon-button"
+
+    val orientation: Orientation get() = Orientation.HORIZONTAL
 
     val enableReordering: Boolean get() = false
 }

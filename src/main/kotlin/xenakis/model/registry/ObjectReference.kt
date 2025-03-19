@@ -69,6 +69,17 @@ class ObjectReference<O : NamedObject>(private var _name: String) : ScExpr {
         writer.append(superColliderName)
     }
 
+    override fun equals(other: Any?): Boolean = when {
+        other !is ObjectReference<*> -> false
+        obj != null -> obj == other.obj
+        else -> _name == other._name
+    }
+
+    override fun hashCode(): Int = when {
+        obj != null -> obj.hashCode()
+        else -> _name.hashCode()
+    }
+
     object Serializer : KSerializer<ObjectReference<*>> {
         override val descriptor: SerialDescriptor
             get() = serialDescriptor<String>()
