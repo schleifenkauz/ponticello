@@ -18,7 +18,7 @@ interface ObjectBoxSource<O : NamedObject> {
         throw UnsupportedOperationException()
     }
 
-    fun addObject(obj: O, idx: Int) {
+    fun addObject(obj: O, idx: Int = items.size) {
         throw UnsupportedOperationException()
     }
 

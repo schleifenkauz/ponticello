@@ -54,5 +54,5 @@ class ParameterListSource(
     }
 
     override val enableReordering: Boolean
-        get() = super.enableReordering
+        get() = true
 }

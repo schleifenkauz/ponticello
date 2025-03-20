@@ -1,5 +1,6 @@
 package xenakis.model.score
 
+import fxutils.prompt.YesNoPrompt
 import hextant.context.Context
 import hextant.context.withoutUndo
 import hextant.core.editor.ListenerManager
@@ -21,6 +22,7 @@ import xenakis.model.obj.ScoreObjectReference
 import xenakis.model.project.score
 import xenakis.model.registry.ScoreObjectRegistry
 import xenakis.model.registry.reference
+import xenakis.ui.launcher.XenakisApp.Companion.primaryStage
 import xenakis.ui.launcher.XenakisLauncher.Companion.currentProject
 
 @Serializable
@@ -83,8 +85,13 @@ class ScoreObjectInstance(
     fun removedFromScore() {
         score = null
         val o = obj
-        //TODO do we really want to remove objects when they have no instances
         if (!context[currentProject].score.hasInstancesOf(o) && context[ScoreObjectRegistry].has(o)) {
+            val remove = YesNoPrompt(
+                "Score has no instances of object ${o.name.now} anymore. Remove it from the registry?",
+                cancellable = false,
+                default = false
+            ).showDialog(owner = context[primaryStage])
+            if (remove != true) return
             context.withoutUndo { context[ScoreObjectRegistry].remove(o) }
             if (o is ScoreObjectGroup) {
                 for (subInst in o.score.objectInstances) {

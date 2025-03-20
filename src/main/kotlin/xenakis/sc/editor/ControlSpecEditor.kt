@@ -12,8 +12,7 @@ import xenakis.sc.*
 
 class ControlSpecEditor() : ChoiceEditor<ParameterType, ControlSpec, Editor<ControlSpec>>(),
     JsonSerializer<ParameterType> by KJsonSerializer.get() {
-    override fun choices(): List<ParameterType> =
-        listOf(ParameterType.Bus, ParameterType.Buffer, ParameterType.Numerical)
+    override fun choices(): List<ParameterType> = ParameterType.regularTypes
 
     fun setResult(spec: ControlSpec) {
         when (spec) {

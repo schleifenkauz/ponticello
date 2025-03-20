@@ -77,8 +77,8 @@ class XenakisMainActivity(val project: XenakisProject) : Activity() {
     val settingsWindow = makeSubWindow(SettingsPane(context[Settings], context), "Settings", context)
 
     val flowPaneWindow: SubWindow
-    val serverTreeCodeWindow: SubWindow
 
+    val serverTreeCodeWindow: SubWindow
     val serverSetupCodeWindow: SubWindow
 
     val scoreView: ScoreView
@@ -128,8 +128,12 @@ class XenakisMainActivity(val project: XenakisProject) : Activity() {
         context[PlaybackManager] = playback
 
         observer = scoreView.selector.focusedView.observe { _, _, focusedView ->
-            if (detailPane.children.size == 2) detailPane.children.removeAt(1)
-            if (focusedView != null) detailPane.children.add(focusedView.getDetailPane())
+            if (detailPane.children.size == 2) {
+                detailPane.children.removeAt(1)
+            }
+            if (focusedView != null) {
+                detailPane.children.add(focusedView.getDetailPane())
+            }
         }
     }
 
@@ -161,13 +165,7 @@ class XenakisMainActivity(val project: XenakisProject) : Activity() {
         var mainView: Region = scoreView
         if (mode == Mode.Desktop) {
             val horizontalSplitter = SplitPane(scoreView, detailPane)
-            horizontalSplitter.sceneProperty().addListener { _, _, sc ->
-                if (sc != null && sc.window != null) {
-                    runFXWithTimeout(100) {
-                        horizontalSplitter.setDividerPositions(0.82)
-                    }
-                }
-            }
+            horizontalSplitter.setDividerPositions(0.8)
             mainView = horizontalSplitter
         }
         val toolbar = createToolbar()

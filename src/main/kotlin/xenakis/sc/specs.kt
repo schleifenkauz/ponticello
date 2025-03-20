@@ -35,6 +35,17 @@ enum class ParameterType {
         Numerical -> "num"
         Group -> "group"
     }
+
+    companion object {
+        val regularTypes = listOf(ParameterType.Bus, ParameterType.Buffer, ParameterType.Numerical)
+    }
+}
+
+fun ParameterType.defaultControlSpec(): ControlSpec = when (this) {
+    ParameterType.Bus -> BusControlSpec(Rate.Audio, 2, FlowType.Out)
+    ParameterType.Buffer -> BufferControlSpec(channels = 2)
+    ParameterType.Numerical -> NumericalControlSpec.DEFAULT
+    ParameterType.Group -> GroupControlSpec()
 }
 
 @Serializable
@@ -141,7 +152,7 @@ class BusControlSpec(
 @Serializable
 @Compound
 @SerialName("buffer")
-class BufferControlSpec : ControlSpec {
+class BufferControlSpec(@Component(editor = SimpleIntegerEditor::class) val channels: Int) : ControlSpec {
     var isPlayBufSource: Boolean = true
 
     override val type: ParameterType

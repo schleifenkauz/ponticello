@@ -1,16 +1,48 @@
 package xenakis.ui.registry
 
+import fxutils.actions.collectActions
+import fxutils.prompt.PredicateTextPrompt
+import fxutils.prompt.SimpleSearchableListView
 import hextant.context.Context
+import org.kordamp.ikonli.material2.Material2MZ
 import reaktive.list.MutableReactiveList
+import reaktive.value.now
+import xenakis.model.flow.FlowType
 import xenakis.model.obj.ParameterDefObject
+import xenakis.sc.*
 
-class ParameterDefsPane(context: Context, parameters: MutableReactiveList<ParameterDefObject>) : ToolPane() {
+class ParameterDefsPane(
+    parameters: MutableReactiveList<ParameterDefObject>,
+    context: Context, title: String
+) : ToolPane() {
     private val config = ParameterListSource(context, parameters)
 
     private val objectBoxList: ObjectBoxList<ParameterDefObject> = ObjectBoxList(config)
 
     init {
         config.syncWithBoxList(objectBoxList)
-        setup(title = "Parameters", content = objectBoxList)
+        setup(title = title, content = objectBoxList, actions = actions.withContext(this))
+    }
+
+    private fun addParameter() {
+        val name = PredicateTextPrompt("Parameter name", initialText = "", check = { txt ->
+            Identifier.isValid(txt) && config.items.none { p -> p.name.now == txt }
+        }).showDialog(header) ?: return
+        SimpleSearchableListView<ParameterType>(ParameterType.regularTypes, "Parameter type")
+            .showPopup(header, initialOption = ParameterType.Numerical) { type ->
+                val spec = type.defaultControlSpec()
+                val param = ParameterDefObject(name, spec)
+                config.addObject(param)
+            }
+    }
+
+    companion object {
+        private val actions = collectActions<ParameterDefsPane> {
+            addAction("Add parameter") {
+                icon(Material2MZ.PLUS)
+                shortcut("Ctrl+PLUS")
+                executes { pane -> pane.addParameter() }
+            }
+        }
     }
 }

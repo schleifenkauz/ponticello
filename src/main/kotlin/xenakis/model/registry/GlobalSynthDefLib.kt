@@ -5,9 +5,11 @@ import bundles.publicProperty
 import hextant.context.Context
 import hextant.context.withoutUndo
 import hextant.serial.readJson
-import hextant.serial.writeJson
+import kotlinx.serialization.json.encodeToStream
 import reaktive.value.now
+import xenakis.impl.Logger
 import xenakis.impl.async
+import xenakis.impl.json
 import xenakis.model.obj.CustomizableSynthDefObject
 import java.io.File
 
@@ -33,7 +35,17 @@ class GlobalSynthDefLib(private val context: Context, private val file: File) {
         defs.removeIf { def -> def.name.now == synthDef.name.now }
         defs.add(synthDef)
         async {
-            file.writeJson(defs)
+            val stream = file.outputStream().buffered()
+            try {
+                json.encodeToStream(defs, stream)
+            } catch (ex: Exception) {
+                Logger.severe(
+                    "Error while saving SynthDefLib: ${ex.message}",
+                    Logger.Category.Registries, ex.stackTraceToString()
+                )
+            } finally {
+                stream.close()
+            }
         }
     }
 

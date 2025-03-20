@@ -48,7 +48,7 @@ class ObjectReference<O : NamedObject>(private var _name: String) : ScExpr {
         return obj
     }
 
-    fun get(): O? = obj?.takeIf { isResolved.now }
+    fun get(): O? = obj?.takeIf { isResolved.now } //TODO really return null if not resolved!?
 
     fun getName() = obj?.name?.now ?: _name
 

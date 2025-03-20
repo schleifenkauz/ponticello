@@ -2,9 +2,11 @@ package xenakis.model.project
 
 import bundles.set
 import hextant.context.Context
+import kotlinx.serialization.KSerializer
 import kotlinx.serialization.json.decodeFromStream
 import kotlinx.serialization.json.encodeToStream
 import xenakis.impl.Logger
+import xenakis.impl.json
 import xenakis.model.obj.ContextualObject
 import xenakis.sc.client.SuperColliderClient
 import java.io.File
@@ -48,15 +50,17 @@ class XenakisProject private constructor(val components: Map<Component<out Conte
         }
     }
 
-    fun save(component: Component<*>) {
+    fun save(component: Component<out  ContextualObject>) {
         val file = dataDir.resolve("${component.name}.json")
         val stream = file.outputStream().buffered()
-        val value = components[component]
+        val value = components.getValue(component)
         try {
-            json.encodeToStream(value, stream)
+            json.encodeToStream(component.serializer as KSerializer<ContextualObject>, value, stream)
         } catch (e: Exception) {
             Logger.error("Error while saving ${component.name} to $file!")
             e.printStackTrace()
+        } finally {
+            stream.close()
         }
     }
 
@@ -81,10 +85,6 @@ class XenakisProject private constructor(val components: Map<Component<out Conte
     }
 
     companion object {
-        val json = kotlinx.serialization.json.Json {
-            prettyPrint = true
-        }
-
         val projectDirectory = bundles.publicProperty<File>("Project directory")
 
         fun loadFrom(
@@ -104,6 +104,8 @@ class XenakisProject private constructor(val components: Map<Component<out Conte
                         Logger.error("Error while reading component $name from $file!")
                         e.printStackTrace()
                         default()
+                    } finally {
+                        stream.close()
                     }
                 } else default()
             }

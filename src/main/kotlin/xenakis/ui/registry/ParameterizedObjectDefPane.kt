@@ -32,7 +32,7 @@ class ParameterizedObjectDefPane(
         parametersList.registerShortcuts(parametersList.actions)
     }
 
-    fun addParameter() {
+    private fun addParameter() {
         val defaultParameters = context[Settings].defaultParametersDefs.now
         val listView = SearchableParameterDefListView(defaultParameters, "New parameter")
         listView.showPopup(header) { newParam ->
@@ -46,7 +46,7 @@ class ParameterizedObjectDefPane(
         private val actions = collectActions<ParameterizedObjectDefPane> {
             addAction("Add parameter") {
                 icon(Material2MZ.PLUS)
-                shortcuts("Ctrl+PLUS")
+                shortcuts("Ctrl+P")
                 executes { pane -> pane.addParameter() }
             }
             addAction("Update SuperCollider object") {

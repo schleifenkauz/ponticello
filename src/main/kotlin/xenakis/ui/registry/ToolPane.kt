@@ -19,7 +19,7 @@ import reaktive.value.reactiveValue
 abstract class ToolPane : VBox() {
     private lateinit var content: Node
     private var headerContent: Node? = null
-    protected lateinit var header: Region
+    lateinit var header: Region
         private set
 
     fun setup(

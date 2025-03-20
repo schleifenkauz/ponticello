@@ -89,7 +89,7 @@ class ObjectBoxList<O : NamedObject>(private val source: ObjectBoxSource<O>) : S
         var i = 0
         val items = source.items
         for (b in boxes) {
-            while (b != items[i]) i++
+            while (i < items.size && b != items[i]) i++
             sourceIndices.add(i)
         }
         var j = -(sourceIndices.binarySearch(idx) + 1)

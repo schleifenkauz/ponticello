@@ -31,7 +31,8 @@ class BusSelector : ObjectSelector<BusObject>() {
     }
 
     override fun filter(obj: BusObject): Boolean =
-        obj.rate == expectedRate.now && obj.channels.now == expectedChannels.now
+        (expectedRate.now == null || obj.rate == expectedRate.now) &&
+                (expectedChannels.now == null || obj.channels.now == expectedChannels.now)
 
     override fun createNewObject(name: String): BusObject {
         val rate = expectedRate.now ?: Rate.Audio

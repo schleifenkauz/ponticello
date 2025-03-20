@@ -16,3 +16,7 @@ inline fun <reified T> JsonObject.getSerializableValue(name: String) =
 inline fun <reified T> JsonObjectBuilder.putSerializableValue(name: String, value: T) {
     put(name, Json.encodeToJsonElement(value))
 }
+
+val json = Json {
+    prettyPrint = true
+}

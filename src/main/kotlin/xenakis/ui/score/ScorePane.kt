@@ -498,8 +498,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
                 context.compoundEdit("Add object group") {
                     val subScore = Score(mutableListOf())
                     val groupObj = ScoreObjectGroup(reactiveVariable(name), subScore)
-                    val inst = rect.createInstance(groupObj)
-                    addObject(inst)
+                    val inst = addObject(groupObj, rect)
                     val relativePosition = -inst.position
                     for (view in viewsInside(rect.rect.boundsInParent)) {
                         view.instance.moveInto(subScore, relativePosition, recurse = ev.isShiftDown)
@@ -547,13 +546,16 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
                 return
             }
         }
-        val inst = rect.createInstance(obj)
-        addObject(inst)
+        addObject(obj, rect)
     }
 
-    private fun addObject(inst: ScoreObjectInstance) {
+    private fun addObject(obj: ScoreObject, rect: RectangleSelection): ScoreObjectInstance {
+        val registry = context[ScoreObjectRegistry]
+        if (!registry.has(obj)) registry.add(obj)
+        val inst = rect.createInstance(obj)
         score.addObject(inst)
         selector.select(getObjectView(inst), addToSelection = false)
+        return inst
     }
 
     private fun beginNewObject(position: ObjectPosition, s: Rectangle) {

@@ -83,9 +83,12 @@ abstract class ScoreObjectView(
 
     fun getDetailPane() = DetailPane().apply {
         val obj = instance.obj
-        if (obj is ScoreObject.Unresolved) return@apply
-        addItem("Name: ", NameControl(obj))
-        setupDetailPane(this)
+        if (obj is ScoreObject.Unresolved) {
+            return@apply
+        } else {
+            addItem("Name: ", NameControl(obj))
+            setupDetailPane(this)
+        }
     }
 
     protected open fun setupDetailPane(pane: DetailPane) {}

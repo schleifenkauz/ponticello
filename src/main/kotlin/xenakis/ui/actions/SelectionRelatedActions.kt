@@ -15,7 +15,6 @@ import xenakis.ui.launcher.XenakisMainActivity
 import xenakis.ui.score.ScoreObjectSelectionManager
 import xenakis.ui.score.ScoreObjectView
 
-//TODO use action system
 object SelectionRelatedActions {
     fun addShortcuts(handler: KeyEventHandlerBody<*>, activity: XenakisMainActivity) = with(handler){
         val playback = activity.playback

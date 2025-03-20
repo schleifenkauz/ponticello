@@ -132,7 +132,7 @@ class ControlSpecPrompt(
     private fun makeSpec() = when (currentSpecType) {
         Numerical -> NumericalControlSpec(default!!, min!!, max!!, step!!, warp, associatedColor.value)
         Bus -> BusControlSpec(Rate.Audio, 2, FlowType.Out) //TODO
-        Buffer -> BufferControlSpec()
+        Buffer -> BufferControlSpec(2)
         Group -> GroupControlSpec()
     }
 }

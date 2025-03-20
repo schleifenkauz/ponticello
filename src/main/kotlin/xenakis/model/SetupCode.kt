@@ -1,6 +1,7 @@
 package xenakis.model
 
 import hextant.context.Context
+import hextant.core.editor.defaultState
 import hextant.serial.EditorRoot
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
@@ -37,8 +38,8 @@ data class SetupCode(
 
     companion object {
         fun default() = SetupCode(
-            EditorRoot(CodeBlockEditor()),
-            EditorRoot(CodeBlockEditor())
+            EditorRoot(CodeBlockEditor().defaultState()),
+            EditorRoot(CodeBlockEditor().defaultState())
         )
     }
 }

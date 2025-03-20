@@ -77,7 +77,7 @@ class ReferencedSynthDefObject(
                     "in" -> BusControlSpec(Rate.Audio, 2, FlowType.In)
                     "out" -> BusControlSpec(Rate.Audio, 2, FlowType.Out)
                     "bus" -> BusControlSpec(Rate.Audio, 2, FlowType.Out)
-                    "buf" -> BufferControlSpec()
+                    "buf" -> BufferControlSpec(2)
                     else -> {
                         val min = send("controlMinval", listOf(name, paramName)).get().toDouble()
                         val max = send("controlMaxval", listOf(name, paramName)).get().toDouble()
