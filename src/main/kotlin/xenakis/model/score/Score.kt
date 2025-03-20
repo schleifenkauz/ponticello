@@ -1,6 +1,7 @@
 package xenakis.model.score
 
 import bundles.publicProperty
+import bundles.set
 import hextant.context.Context
 import hextant.context.withoutUndo
 import hextant.core.editor.ListenerManager
@@ -11,14 +12,13 @@ import reaktive.value.ReactiveString
 import reaktive.value.now
 import reaktive.value.reactiveValue
 import xenakis.impl.*
-import xenakis.model.Logger
-import xenakis.model.XenakisProject
+import xenakis.model.obj.AbstractContextualObject
 import xenakis.model.registry.ScoreObjectRegistry
 
 @Serializable
 class Score(
     private val instances: MutableList<ScoreObjectInstance> = mutableListOf()
-) : XenakisProject.ProjectComponent {
+) : AbstractContextualObject() {
     val objectInstances: List<ScoreObjectInstance> get() = instances
 
     val objects get() = objectInstances.mapTo(mutableSetOf()) { inst -> inst.obj }
@@ -27,14 +27,8 @@ class Score(
         private set
 
     @Transient
-    lateinit var context: Context
-
-    @Transient
     var parentObject: ScoreObjectGroup? = null
         private set
-
-    @Transient
-    private var initialized = false
 
     @Transient
     private val views = ListenerManager.createWeakListenerManager<ScoreListener>()
@@ -44,16 +38,20 @@ class Score(
     val maxTime get() = parentObject?.duration ?: Decimal.INF
     val maxY get() = parentObject?.height ?: one(ObjectPosition.Y_PRECISION)
 
-    override val componentName: String
-        get() = if (scoreName.now == "<root>") "score" else throw AssertionError()
-
     fun initialize(context: Context, parentObject: ScoreObjectGroup?) {
-        if (initialized) return
-        this.context = context
+        super.initialize(context)
         this.parentObject = parentObject
         this.scoreName = parentObject?.name ?: reactiveValue(ROOT_SCORE_NAME)
+        context[rootScore] = this
         for (inst in objectInstances) {
             inst.initialize(context)
+        }
+    }
+
+    override fun initialize(context: Context) {
+        initialize(context, parentObject = null)
+        for (inst in objectInstances) {
+            inst.addedToScore(this)
         }
     }
 

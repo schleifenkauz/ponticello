@@ -30,5 +30,7 @@ class BufferRegistry(
 
     interface Listener : ObjectRegistry.Listener<BufferObject>
 
-    companion object : PublicProperty<BufferRegistry> by publicProperty("BufferRegistry")
+    companion object : PublicProperty<BufferRegistry> by publicProperty("BufferRegistry") {
+        fun createDefault() = BufferRegistry()
+    }
 }

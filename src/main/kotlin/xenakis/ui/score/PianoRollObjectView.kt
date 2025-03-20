@@ -26,7 +26,7 @@ import reaktive.value.now
 import reaktive.value.reactiveValue
 import reaktive.value.reactiveVariable
 import xenakis.impl.*
-import xenakis.model.Logger
+import xenakis.impl.Logger
 import xenakis.model.obj.InstrumentObject
 import xenakis.model.score.ObjectPosition
 import xenakis.model.score.PianoRollObject

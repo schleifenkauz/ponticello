@@ -23,11 +23,12 @@ import javafx.scene.shape.Rectangle
 import reaktive.value.now
 import reaktive.value.reactiveVariable
 import xenakis.impl.*
-import xenakis.model.Logger
-import xenakis.model.Logger.Category
+import xenakis.impl.Logger
+import xenakis.impl.Logger.Category
 import xenakis.model.obj.ParameterizedObjectDef
 import xenakis.model.obj.SampleObject
 import xenakis.model.obj.SynthDefObject
+import xenakis.model.project.score
 import xenakis.model.registry.*
 import xenakis.model.score.*
 import xenakis.model.score.Score.Companion.rootScore

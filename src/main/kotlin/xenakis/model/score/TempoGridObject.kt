@@ -8,8 +8,8 @@ import reaktive.value.ReactiveVariable
 import reaktive.value.now
 import reaktive.value.reactiveVariable
 import xenakis.impl.*
-import xenakis.model.InteractionSettings.SnapOption
 import xenakis.model.flow.ScoreObjectInfo
+import xenakis.model.project.InteractionSettings.SnapOption
 import xenakis.ui.score.TempoGridObjectView
 
 @Serializable

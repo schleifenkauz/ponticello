@@ -11,9 +11,10 @@ import javafx.scene.layout.HBox
 import javafx.scene.paint.Color.BLACK
 import org.kordamp.ikonli.material2.Material2MZ
 import reaktive.value.now
-import xenakis.model.Logger
-import xenakis.model.Logger.Category
+import xenakis.impl.Logger
+import xenakis.impl.Logger.Category
 import xenakis.model.Settings
+import xenakis.model.project.busses
 import xenakis.model.registry.GlobalControls
 import xenakis.sc.Identifier
 import xenakis.sc.NumericalControlSpec

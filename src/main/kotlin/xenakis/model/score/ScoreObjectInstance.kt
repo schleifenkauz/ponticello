@@ -18,6 +18,7 @@ import xenakis.impl.Decimal
 import xenakis.impl.copy
 import xenakis.impl.rangeTo
 import xenakis.model.obj.ScoreObjectReference
+import xenakis.model.project.score
 import xenakis.model.registry.ScoreObjectRegistry
 import xenakis.model.registry.reference
 import xenakis.ui.launcher.XenakisLauncher.Companion.currentProject
@@ -71,9 +72,7 @@ class ScoreObjectInstance(
         this.score = score
         val registry = context[ScoreObjectRegistry]
         val o = obj
-        if (!registry.has(o.name.now)) {
-            context.withoutUndo { registry.add(o) }
-        }
+        if (!registry.has(o.name.now)) context.withoutUndo { registry.add(o) }
         if (o is ScoreObjectGroup) {
             for (inst in o.score.objectInstances) {
                 inst.addedToScore(o.score)

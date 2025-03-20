@@ -3,7 +3,7 @@ package xenakis.sc
 import hextant.context.Context
 import reaktive.value.now
 import xenakis.impl.Decimal
-import xenakis.model.Logger
+import xenakis.impl.Logger
 import xenakis.model.flow.ScoreObjectInfo
 import xenakis.model.obj.SynthDefObject
 import xenakis.model.registry.ObjectReference

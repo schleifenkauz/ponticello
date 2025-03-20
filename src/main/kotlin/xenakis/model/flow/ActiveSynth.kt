@@ -2,7 +2,7 @@ package xenakis.model.flow
 
 import reaktive.value.now
 import reaktive.value.reactiveValue
-import xenakis.model.Logger
+import xenakis.impl.Logger
 import xenakis.model.obj.BusObject
 import xenakis.model.obj.NoSynthDef
 import xenakis.model.score.ObjectPosition

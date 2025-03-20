@@ -16,9 +16,9 @@ import hextant.undo.UndoManager
 import javafx.application.Platform
 import javafx.stage.Stage
 import xenakis.impl.registerImplementationsFromClasspath
-import xenakis.model.Logger
+import xenakis.impl.Logger
 import xenakis.model.Settings
-import xenakis.model.XenakisProject
+import xenakis.model.project.XenakisProject
 import xenakis.model.registry.GlobalSynthDefLib
 import xenakis.sc.client.OSCSuperColliderClient
 import xenakis.sc.client.SuperColliderClient

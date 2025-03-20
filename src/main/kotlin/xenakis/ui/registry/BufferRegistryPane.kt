@@ -12,7 +12,7 @@ import org.kordamp.ikonli.evaicons.Evaicons
 import org.kordamp.ikonli.material2.Material2MZ
 import reaktive.value.fx.asProperty
 import reaktive.value.now
-import xenakis.model.Logger
+import xenakis.impl.Logger
 import xenakis.model.obj.BufferObject
 import xenakis.model.registry.BufferRegistry
 import xenakis.sc.client.SuperColliderClient

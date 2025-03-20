@@ -7,7 +7,7 @@ import fxutils.prompt.SimpleTextPrompt
 import javafx.scene.layout.Region
 import org.kordamp.ikonli.material2.Material2AL
 import org.kordamp.ikonli.materialdesign2.*
-import xenakis.model.Logger
+import xenakis.impl.Logger
 import xenakis.ui.impl.NotificationView
 import xenakis.ui.impl.showDialog
 import xenakis.ui.launcher.XenakisMainActivity
@@ -68,11 +68,6 @@ object ToolWindowActions : Action.Collector<XenakisMainActivity>({
         shortcut("Ctrl+Shift+S")
         icon(Material2AL.LIBRARY_MUSIC)
         executes { screen -> screen.samplesWindow.showOrBringToFront() }
-    }
-    addAction("Show global controls") {
-        shortcut("Ctrl+Shift+G")
-        icon(Material2AL.GRAIN)
-        executes { screen -> screen.globalControlsWindow.showOrBringToFront() }
     }
     addAction("Show control buses") {
         shortcut("Ctrl+B")

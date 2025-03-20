@@ -6,8 +6,8 @@ import kollektion.Counter
 import reaktive.Observer
 import reaktive.value.now
 import xenakis.impl.BubbleSort
+import xenakis.impl.Logger
 import xenakis.impl.ReachabilityGraph
-import xenakis.model.Logger
 import xenakis.model.flow.NodePlacement.AddAction
 import xenakis.model.obj.BusObject
 import xenakis.model.obj.GroupObject

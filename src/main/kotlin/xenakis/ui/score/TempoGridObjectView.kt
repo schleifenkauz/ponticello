@@ -14,6 +14,7 @@ import reaktive.value.fx.asProperty
 import reaktive.value.now
 import reaktive.value.reactiveValue
 import xenakis.impl.*
+import xenakis.model.project.settings
 import xenakis.model.score.ScoreObjectInstance
 import xenakis.model.score.TempoGridObject
 import xenakis.ui.impl.rootPane

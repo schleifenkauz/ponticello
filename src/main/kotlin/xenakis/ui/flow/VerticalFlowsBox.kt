@@ -28,6 +28,7 @@ import xenakis.impl.toDecimal
 import xenakis.model.flow.*
 import xenakis.model.obj.BusObject
 import xenakis.model.obj.SynthDefObject
+import xenakis.model.project.flows
 import xenakis.model.registry.InstrumentRegistry
 import xenakis.model.score.KnobControl
 import xenakis.sc.NumericalControlSpec

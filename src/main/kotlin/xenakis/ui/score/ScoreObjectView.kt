@@ -29,8 +29,11 @@ import reaktive.value.binding.map
 import reaktive.value.binding.orElse
 import reaktive.value.fx.asObservableValue
 import xenakis.impl.*
-import xenakis.model.InteractionSettings.SnapOption
+import xenakis.model.project.InteractionSettings.SnapOption
 import xenakis.model.player.PlaybackManager
+import xenakis.model.project.SETTINGS
+import xenakis.model.project.get
+import xenakis.model.project.settings
 import xenakis.model.score.*
 import xenakis.model.score.Score.Companion.rootScore
 import xenakis.ui.actions.Tool
@@ -79,7 +82,8 @@ abstract class ScoreObjectView(
     override fun getX(time: Decimal): Double = getWidth(time)
 
     fun getDetailPane() = DetailPane().apply {
-        val obj = instance.obj ?: return@apply
+        val obj = instance.obj
+        if (obj is ScoreObject.Unresolved) return@apply
         addItem("Name: ", NameControl(obj))
         setupDetailPane(this)
     }

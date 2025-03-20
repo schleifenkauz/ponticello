@@ -12,7 +12,7 @@ import reaktive.value.reactiveVariable
 import xenakis.impl.ColorSerializer
 import xenakis.impl.randomColor
 import xenakis.impl.superColliderPath
-import xenakis.model.XenakisProject.Companion.projectDirectory
+import xenakis.model.project.XenakisProject.Companion.projectDirectory
 import xenakis.model.registry.BusRegistry
 import xenakis.model.registry.InstrumentRegistry
 import xenakis.model.registry.ObjectReference

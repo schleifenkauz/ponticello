@@ -17,9 +17,9 @@ import reaktive.value.ReactiveVariable
 import reaktive.value.now
 import reaktive.value.reactiveVariable
 import xenakis.impl.ColorSerializer
+import xenakis.impl.Logger
 import xenakis.impl.copy
 import xenakis.impl.randomColor
-import xenakis.model.Logger
 import xenakis.model.flow.FlowType
 import xenakis.model.registry.InstrumentRegistry
 import xenakis.sc.*

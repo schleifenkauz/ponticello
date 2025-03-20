@@ -11,7 +11,7 @@ import hextant.undo.compoundEdit
 import reaktive.value.now
 import xenakis.impl.one
 import xenakis.impl.randomColor
-import xenakis.model.Logger
+import xenakis.impl.Logger
 import xenakis.model.obj.CustomizableSynthDefObject
 import xenakis.model.obj.ParameterDefObject
 import xenakis.sc.DecimalLiteral

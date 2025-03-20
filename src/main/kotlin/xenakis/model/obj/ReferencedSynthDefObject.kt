@@ -12,7 +12,6 @@ import reaktive.value.ReactiveVariable
 import reaktive.value.reactiveValue
 import reaktive.value.reactiveVariable
 import xenakis.impl.*
-import xenakis.model.Logger
 import xenakis.model.flow.FlowType
 import xenakis.sc.BufferControlSpec
 import xenakis.sc.BusControlSpec

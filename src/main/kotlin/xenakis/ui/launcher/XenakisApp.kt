@@ -4,7 +4,7 @@ import bundles.publicProperty
 import javafx.application.Application
 import javafx.stage.Stage
 import reaktive.value.now
-import xenakis.model.Logger
+import xenakis.impl.Logger
 import xenakis.model.Settings
 import xenakis.ui.impl.NotificationView
 import xenakis.ui.impl.stackTraceString

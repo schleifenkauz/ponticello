@@ -5,15 +5,14 @@ import com.illposed.osc.transport.OSCPortOut
 import com.illposed.osc.transport.OSCPortOutBuilder
 import reaktive.event.EventStream
 import reaktive.event.unitEvent
+import xenakis.impl.Logger
 import xenakis.impl.superColliderPath
-import xenakis.model.Logger
 import xenakis.sc.client.StatusListener.StatusUpdate
 import java.net.*
 import java.nio.ByteBuffer
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Future
 import java.util.concurrent.TimeUnit
-import kotlin.collections.set
 import kotlin.io.path.toPath
 
 class OSCSuperColliderClient(

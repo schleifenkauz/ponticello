@@ -1,0 +1,46 @@
+package xenakis.model.project
+
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.serializer
+import xenakis.model.ServerOptions
+import xenakis.model.SetupCode
+import xenakis.model.flow.AudioFlows
+import xenakis.model.obj.ContextualObject
+import xenakis.model.registry.*
+import xenakis.model.score.Score
+
+data class Component<T>(val name: String, val serializer: KSerializer<T>, val default: () -> T)
+
+inline fun <reified T> component(name: String, noinline default: () -> T) = Component(name, serializer<T>(), default)
+
+val SETTINGS = component<InteractionSettings>("settings", InteractionSettings::default)
+val GROUPS = component<GroupRegistry>("groups", GroupRegistry::createDefault)
+val BUSSES = component<BusRegistry>("busses", BusRegistry::createDefault)
+val BUFFERS = component<BufferRegistry>("buffers", BufferRegistry::createDefault)
+val SAMPLES = component<SampleRegistry>("samples", SampleRegistry::createDefault)
+val PATTERNS = component<GlobalPatternRegistry>("patterns", GlobalPatternRegistry::createDefault)
+val INSTRUMENTS = component<InstrumentRegistry>("instruments", InstrumentRegistry::createDefault)
+val FLOWS = component<AudioFlows>("flows", AudioFlows::createDefault)
+val PROCESS_DEFS = component<ProcessDefRegistry>("processDefs", ProcessDefRegistry::createDefault)
+val SETUP_CODE = component<SetupCode>("setup_code", SetupCode::default)
+val SERVER_OPTIONS = component<ServerOptions>("server_options", ServerOptions::default)
+val OBJECTS = component<ScoreObjectRegistry>("objects", ScoreObjectRegistry::createDefault)
+val SCORE = component<Score>("score", ::Score)
+
+val allComponents = listOf<Component<out ContextualObject>>(
+    SETTINGS,
+    GROUPS, BUSSES, SAMPLES, BUFFERS, SCORE,
+    PATTERNS, INSTRUMENTS, PROCESS_DEFS,
+    FLOWS, SETUP_CODE, SERVER_OPTIONS,
+    OBJECTS, SCORE
+)
+
+inline operator fun <reified T: ContextualObject> XenakisProject.get(component: Component<T>) = components[component] as T
+
+val XenakisProject.score get() = get(SCORE)
+val XenakisProject.busses get() = get(BUSSES)
+val XenakisProject.samples get() = get(SAMPLES)
+val XenakisProject.instruments get() = get(INSTRUMENTS)
+val XenakisProject.objects get() = get(OBJECTS)
+val XenakisProject.flows get() = get(FLOWS)
+val XenakisProject.settings get() = get(SETTINGS)

@@ -8,7 +8,7 @@ import reaktive.value.now
 import reaktive.value.reactiveVariable
 import xenakis.impl.copy
 import xenakis.impl.unaryMinus
-import xenakis.model.Logger
+import xenakis.impl.Logger
 import xenakis.model.registry.ScoreObjectRegistry
 import xenakis.model.score.*
 import xenakis.ui.launcher.XenakisMainActivity

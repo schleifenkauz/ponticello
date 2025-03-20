@@ -3,7 +3,9 @@ package xenakis.ui.actions
 import fxutils.actions.Action
 import fxutils.actions.isShiftDown
 import org.kordamp.ikonli.materialdesign2.MaterialDesignR
-import xenakis.model.XenakisProject
+import xenakis.model.project.SERVER_OPTIONS
+import xenakis.model.project.XenakisProject
+import xenakis.model.project.get
 import xenakis.ui.impl.showDialog
 import xenakis.ui.misc.ServerOptionsPane
 
@@ -13,7 +15,7 @@ object ServerActions : Action.Collector<XenakisProject>({
         icon(MaterialDesignR.RESTART)
         executes { project, ev ->
             if (ev.isShiftDown()) {
-                ServerOptionsPane(project.context, project.serverOptions).showDialog(project.context)
+                ServerOptionsPane(project.context, project[SERVER_OPTIONS]).showDialog(project.context)
             } else {
                 project.rebootServer()
             }
@@ -34,8 +36,8 @@ object ServerActions : Action.Collector<XenakisProject>({
     addAction("Show ServerMeter") {
         shortcut("Ctrl+M")
         executes { project ->
-            val numIns = project.serverOptions.numInputChannels
-            val numOuts = project.serverOptions.numOutputChannels
+            val numIns = project[SERVER_OPTIONS].numInputChannels
+            val numOuts = project[SERVER_OPTIONS].numOutputChannels
             project.client.run("ServerMeter.new(s, $numIns, $numOuts)")
         }
     }

@@ -12,6 +12,7 @@ import reaktive.value.now
 import reaktive.value.reactiveVariable
 import xenakis.model.obj.AbstractRenamableObject
 import xenakis.model.obj.BusObject
+import xenakis.model.project.flows
 import xenakis.ui.launcher.XenakisLauncher.Companion.currentProject
 
 @Serializable

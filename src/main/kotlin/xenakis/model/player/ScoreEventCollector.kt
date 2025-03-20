@@ -2,9 +2,9 @@ package xenakis.model.player
 
 import reaktive.value.now
 import xenakis.impl.Decimal
+import xenakis.impl.Logger
 import xenakis.impl.unaryMinus
 import xenakis.impl.zero
-import xenakis.model.Logger
 import xenakis.model.Settings
 import xenakis.model.flow.AudioFlowGraph
 import xenakis.model.score.*

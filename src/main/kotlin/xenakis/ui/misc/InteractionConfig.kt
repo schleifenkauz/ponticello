@@ -14,9 +14,12 @@ import reaktive.value.binding.not
 import reaktive.value.fx.asObservableValue
 import reaktive.value.fx.asProperty
 import reaktive.value.now
-import xenakis.model.InteractionSettings
-import xenakis.model.InteractionSettings.SnapOption
-import xenakis.model.XenakisProject
+import xenakis.model.project.InteractionSettings
+import xenakis.model.project.InteractionSettings.SnapOption
+import xenakis.model.project.SETTINGS
+import xenakis.model.project.XenakisProject
+import xenakis.model.project.get
+import xenakis.model.project.settings
 
 class InteractionConfig(settings: InteractionSettings) : HBox() {
     private val snapToggle = toggleSnap.withContext(settings).makeButton("large-icon-button")
@@ -36,7 +39,7 @@ class InteractionConfig(settings: InteractionSettings) : HBox() {
             shortcut("Q")
             icon { settings ->
                 settings.snapEnabled.map { enabled ->
-                    if (enabled) MaterialDesignM.MAGNET_ON //TODO why doesn't it update the icon?
+                    if (enabled) MaterialDesignM.MAGNET_ON
                     else MaterialDesignM.MAGNET
                 }
             }

@@ -16,7 +16,7 @@ import org.controlsfx.control.textfield.CustomTextField
 import org.kordamp.ikonli.javafx.FontIcon
 import org.kordamp.ikonli.material2.Material2MZ
 import org.kordamp.ikonli.materialdesign2.MaterialDesignE
-import xenakis.model.Logger
+import xenakis.impl.Logger
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneId

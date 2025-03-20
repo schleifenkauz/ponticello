@@ -3,10 +3,10 @@ package xenakis.sc.client
 import bundles.PublicProperty
 import bundles.publicProperty
 import reaktive.event.EventStream
+import xenakis.impl.Logger
+import xenakis.impl.Logger.Category
 import xenakis.impl.canSuperColliderTalkToMe
 import xenakis.impl.code
-import xenakis.model.Logger
-import xenakis.model.Logger.Category
 import xenakis.sc.client.StatusListener.StatusUpdate
 import xenakis.ui.launcher.ProgressIndicator
 import java.lang.Thread.sleep

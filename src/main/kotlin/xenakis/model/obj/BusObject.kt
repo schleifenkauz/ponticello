@@ -11,6 +11,7 @@ import reaktive.value.binding.map
 import reaktive.value.now
 import reaktive.value.reactiveVariable
 import xenakis.impl.zero
+import xenakis.model.project.busses
 import xenakis.model.registry.BusRegistry
 import xenakis.model.registry.ObjectRegistry
 import xenakis.sc.NumericalControlSpec
@@ -99,7 +100,7 @@ sealed class BusObject : AbstractSuperColliderObject() {
 
         override fun initialize(context: Context) {
             super.initialize(context)
-            defaultValueObserver = defaultValue.observe { _ ->
+            defaultValueObserver = defaultValue.observe { _, _, v ->
                 client.run {
                     setDefaultValue(skipIfZero = false)
                 }
@@ -111,7 +112,7 @@ sealed class BusObject : AbstractSuperColliderObject() {
             setDefaultValue(skipIfZero = true)
         }
 
-        private fun ScWriter.setDefaultValue(skipIfZero: Boolean) {
+        fun ScWriter.setDefaultValue(skipIfZero: Boolean) {
             val value = defaultValue.now
             if (skipIfZero && value == zero) return
             val valueList = List(channels.now) { value }.joinToString()

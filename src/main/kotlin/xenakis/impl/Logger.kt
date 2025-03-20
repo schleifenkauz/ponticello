@@ -1,4 +1,4 @@
-package xenakis.model
+package xenakis.impl
 
 import hextant.core.editor.ListenerManager
 import org.kordamp.ikonli.Ikon
@@ -8,7 +8,7 @@ import org.kordamp.ikonli.materialdesign2.MaterialDesignC
 import org.kordamp.ikonli.materialdesign2.MaterialDesignI
 
 object Logger {
-    private val views = ListenerManager.createWeakListenerManager<View>()
+    private val views = ListenerManager.Companion.createWeakListenerManager<View>()
     private val records = mutableListOf<Record>()
 
     var level: Level = Level.Info

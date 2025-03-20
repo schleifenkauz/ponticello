@@ -27,11 +27,21 @@ import javafx.stage.Screen
 import javafx.stage.StageStyle
 import reaktive.Observer
 import reaktive.value.now
-import xenakis.model.Logger
+import xenakis.impl.Logger
 import xenakis.model.Settings
-import xenakis.model.XenakisProject
+import xenakis.model.project.XenakisProject
 import xenakis.model.obj.SuperColliderObject
 import xenakis.model.player.PlaybackManager
+import xenakis.model.project.PROCESS_DEFS
+import xenakis.model.project.SETTINGS
+import xenakis.model.project.SETUP_CODE
+import xenakis.model.project.busses
+import xenakis.model.project.flows
+import xenakis.model.project.get
+import xenakis.model.project.instruments
+import xenakis.model.project.samples
+import xenakis.model.project.score
+import xenakis.model.project.settings
 import xenakis.sc.client.SuperColliderClient
 import xenakis.ui.actions.*
 import xenakis.ui.flow.FlowPane
@@ -53,7 +63,7 @@ class XenakisMainActivity(val project: XenakisProject) : Activity() {
     val instrumentsPane = InstrumentRegistryPane(project.instruments)
     val instrumentsWindow = makeSubWindow(instrumentsPane, "Instruments", context, SubWindow.Type.Undecorated)
 
-    val processDefsPane = ProcessDefRegistryPane(project.processDefs)
+    val processDefsPane = ProcessDefRegistryPane(project.get(PROCESS_DEFS))
     val processDefsWindow = makeSubWindow(processDefsPane, "Process Definitions", context, SubWindow.Type.Undecorated)
 
     private val busRegistryPane = ControlBusRegistryPane(project.busses)
@@ -67,7 +77,6 @@ class XenakisMainActivity(val project: XenakisProject) : Activity() {
     val settingsWindow = makeSubWindow(SettingsPane(context[Settings], context), "Settings", context)
 
     val flowPaneWindow: SubWindow
-    val globalControlsWindow: SubWindow
     val serverTreeCodeWindow: SubWindow
 
     val serverSetupCodeWindow: SubWindow
@@ -109,28 +118,10 @@ class XenakisMainActivity(val project: XenakisProject) : Activity() {
         flowPane.setPrefSize(1000.0, 1000.0)
         flowPaneWindow = makeSubWindow(flowPane, "Audio flows", context)
 
-        val globalControlsPane = GlobalControlsPane(project.globalControls, context)
-        globalControlsWindow = makeSubWindow(globalControlsPane, "Global controls", context)
-        globalControlsWindow.width = 500.0
-
-        val (serverSetup, serverTree) = project.setupCode
+        val (serverSetup, serverTree) = project[SETUP_CODE]
         serverSetupCodeWindow = makeSubWindow(serverSetup.control, "ServerSetup", context)
-        serverSetupCodeWindow.scene.registerShortcuts {
-            on("Ctrl+S") {
-                val setupCode = serverSetup.editor.result.now
-                project.updateSetupCode(setupCode, SuperColliderObject.LiveCycleType.ServerBoot)
-                Logger.confirm("ServerSetup updated", Logger.Category.All)
-            }
-        }
         serverSetupCodeWindow.resize(500.0, 500.0)
         serverTreeCodeWindow = makeSubWindow(serverTree.control, "ServerTree", context)
-        serverTreeCodeWindow.scene.registerShortcuts {
-            on("Ctrl+S") {
-                val serverTreeCode = serverTree.editor.result.now
-                project.updateSetupCode(serverTreeCode, SuperColliderObject.LiveCycleType.ServerTree)
-                Logger.confirm("ServerTree updated", Logger.Category.All)
-            }
-        }
         serverTreeCodeWindow.resize(500.0, 500.0)
 
         playback = PlaybackManager(scoreView, project.flows)

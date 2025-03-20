@@ -3,7 +3,6 @@ package xenakis.model.player
 import javafx.geometry.HorizontalDirection
 import reaktive.value.now
 import xenakis.impl.*
-import xenakis.model.Logger
 import xenakis.model.Settings
 import xenakis.model.flow.AudioFlowGraph
 import xenakis.model.flow.ScoreObjectInfo

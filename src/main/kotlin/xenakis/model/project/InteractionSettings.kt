@@ -1,18 +1,16 @@
-package xenakis.model
+package xenakis.model.project
 
 import kotlinx.serialization.Serializable
 import reaktive.value.ReactiveVariable
 import reaktive.value.reactiveVariable
+import xenakis.model.obj.AbstractContextualObject
 
 @Serializable
 class InteractionSettings(
     val snapEnabled: ReactiveVariable<Boolean>,
     val snapOption: ReactiveVariable<SnapOption>,
     val displayTimeGrid: ReactiveVariable<Boolean>
-) : XenakisProject.ProjectComponent {
-    override val componentName: String
-        get() = "settings"
-
+) : AbstractContextualObject() {
     enum class SnapOption {
         Seconds, Bars, Beats, Ticks;
     }

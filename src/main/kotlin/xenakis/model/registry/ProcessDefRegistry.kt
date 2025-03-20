@@ -20,9 +20,6 @@ class ProcessDefRegistry(
     override val liveCycleType: SuperColliderObject.LiveCycleType
         get() = SuperColliderObject.LiveCycleType.InterpreterBoot
 
-    override val componentName: String
-        get() = "process_defs"
-
     override fun initialize(context: Context) {
         super.initialize(context)
         selected.resolve(this)
@@ -35,5 +32,7 @@ class ProcessDefRegistry(
         selected = def.reference()
     }
 
-    companion object : PublicProperty<ProcessDefRegistry> by publicProperty("ProcessDefRegistry")
+    companion object : PublicProperty<ProcessDefRegistry> by publicProperty("ProcessDefRegistry") {
+        fun createDefault() = ProcessDefRegistry()
+    }
 }

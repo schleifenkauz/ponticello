@@ -32,5 +32,7 @@ class ScoreObjectRegistry(override val objects: MutableList<ScoreObject>) : Obje
         return availableName(prefix)
     }
 
-    companion object : PublicProperty<ScoreObjectRegistry> by publicProperty("ScoreObjectRegistry")
+    companion object : PublicProperty<ScoreObjectRegistry> by publicProperty("ScoreObjectRegistry") {
+        fun createDefault() = ScoreObjectRegistry(mutableListOf())
+    }
 }

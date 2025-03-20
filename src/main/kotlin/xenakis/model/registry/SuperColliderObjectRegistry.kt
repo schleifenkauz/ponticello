@@ -7,7 +7,8 @@ import xenakis.sc.client.SuperColliderClient
 
 abstract class SuperColliderObjectRegistry<O : SuperColliderObject> : ObjectRegistry<O>() {
     @Transient
-    private lateinit var client: SuperColliderClient
+    lateinit var client: SuperColliderClient
+        private set
 
     protected abstract val liveCycleType: SuperColliderObject.LiveCycleType
     private var liveCycleObserver: Observer? = null

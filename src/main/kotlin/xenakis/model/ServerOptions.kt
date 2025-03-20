@@ -4,8 +4,11 @@ import hextant.context.Context
 import kotlinx.serialization.Serializable
 import reaktive.value.now
 import xenakis.impl.isWindows
+import xenakis.model.obj.AbstractContextualObject
+import xenakis.model.obj.BusObject
 import xenakis.model.obj.BusReference
 import xenakis.model.registry.BusRegistry
+import xenakis.model.registry.ObjectReference
 import xenakis.model.registry.reference
 import xenakis.sc.client.SuperColliderClient
 
@@ -14,12 +17,13 @@ data class ServerOptions(
     var device: String = "",
     var numInputChannels: Int = 2, var numOutputChannels: Int = 2,
     var memSize: Int = 8192, var sampleRate: Int = 44100, var numWireBufs: Int = 8192,
-    var recordedBus: BusReference
-) : XenakisProject.ProjectComponent {
-    override val componentName: String
-        get() = "server_options"
-
-    fun initialize(context: Context) {
+    var recordedBus: BusReference = ObjectReference.none()
+) : AbstractContextualObject() {
+    override fun initialize(context: Context) {
+        super.initialize(context)
+        if (recordedBus == ObjectReference.none<BusObject>()) {
+            recordedBus = context[BusRegistry].getOutput().reference()
+        }
         recordedBus.resolve(context[BusRegistry])
     }
 
@@ -41,6 +45,6 @@ data class ServerOptions(
     }
 
     companion object {
-        fun default(context: Context) = ServerOptions(recordedBus = context[BusRegistry].getDefault().reference())
+        fun default() = ServerOptions()
     }
 }

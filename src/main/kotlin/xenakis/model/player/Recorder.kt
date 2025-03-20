@@ -10,6 +10,8 @@ import xenakis.impl.superColliderPath
 import xenakis.model.Settings
 import xenakis.model.obj.BusObject
 import xenakis.model.obj.SampleObject
+import xenakis.model.project.SERVER_OPTIONS
+import xenakis.model.project.get
 import xenakis.model.registry.BusRegistry
 import xenakis.model.registry.SampleRegistry
 import xenakis.sc.client.SuperColliderClient
@@ -50,7 +52,7 @@ class Recorder(private val context: Context) {
     }
 
     private fun getRecordedBus(): BusObject {
-        val options = context[currentProject].serverOptions
+        val options = context[currentProject][SERVER_OPTIONS]
         return options.recordedBus.get() ?: context[BusRegistry].getDefault()
     }
 

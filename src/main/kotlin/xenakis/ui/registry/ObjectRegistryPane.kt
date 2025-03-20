@@ -12,7 +12,7 @@ import org.kordamp.ikonli.materialdesign2.MaterialDesignP
 import org.kordamp.ikonli.materialdesign2.MaterialDesignS
 import reaktive.value.now
 import reaktive.value.reactiveValue
-import xenakis.model.Logger
+import xenakis.impl.Logger
 import xenakis.model.registry.NamedObject
 import xenakis.model.registry.ObjectRegistry
 import xenakis.ui.controls.NamePrompt

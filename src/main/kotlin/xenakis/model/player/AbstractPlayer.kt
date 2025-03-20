@@ -4,9 +4,9 @@ import reaktive.value.ReactiveValue
 import reaktive.value.now
 import reaktive.value.reactiveVariable
 import xenakis.impl.Decimal
+import xenakis.impl.Logger
 import xenakis.impl.asTime
 import xenakis.impl.times
-import xenakis.model.Logger
 import xenakis.sc.client.SuperColliderClient
 import xenakis.ui.misc.PlayHead
 import kotlin.concurrent.thread

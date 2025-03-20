@@ -16,6 +16,7 @@ import org.kordamp.ikonli.materialdesign2.MaterialDesignF
 import reaktive.value.reactiveVariable
 import xenakis.impl.asY
 import xenakis.model.obj.SampleObject
+import xenakis.model.project.samples
 import xenakis.model.registry.SampleRegistry
 import xenakis.sc.Identifier
 import xenakis.ui.launcher.XenakisFiles

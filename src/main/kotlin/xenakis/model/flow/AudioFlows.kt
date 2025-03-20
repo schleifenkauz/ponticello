@@ -10,8 +10,7 @@ import reaktive.value.ReactiveInt
 import reaktive.value.ReactiveVariable
 import reaktive.value.now
 import reaktive.value.reactiveVariable
-import xenakis.model.Logger
-import xenakis.model.XenakisProject
+import xenakis.impl.Logger
 import xenakis.model.obj.AbstractContextualObject
 import xenakis.model.obj.BusObject
 import xenakis.model.obj.BusReference
@@ -24,7 +23,7 @@ import xenakis.model.registry.reference
 @Serializable
 class AudioFlows(
     private var _flows: MutableMap<BusReference, MutableList<AudioFlow>>
-) : ObjectRegistry.Listener<BusObject>, XenakisProject.ProjectComponent, AbstractContextualObject() {
+) : ObjectRegistry.Listener<BusObject>, AbstractContextualObject() {
     @Transient
     private lateinit var busRegistry: BusRegistry
 
@@ -42,9 +41,6 @@ class AudioFlows(
 
     @Transient
     private val activationObservers = mutableMapOf<AudioFlow, Observer>()
-
-    override val componentName: String
-        get() = "flow_graph"
 
     private val flows: Map<BusReference, List<AudioFlow>> get() = _flows
 

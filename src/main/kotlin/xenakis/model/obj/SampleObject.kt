@@ -10,9 +10,8 @@ import reaktive.event.unitEvent
 import reaktive.value.ReactiveVariable
 import reaktive.value.now
 import xenakis.impl.*
-import xenakis.model.Logger
-import xenakis.model.XenakisProject
-import xenakis.model.XenakisProject.Companion.projectDirectory
+import xenakis.model.project.XenakisProject
+import xenakis.model.project.XenakisProject.Companion.projectDirectory
 import xenakis.model.registry.ObjectRegistry
 import xenakis.model.registry.SampleRegistry
 import xenakis.model.score.ObjectPosition

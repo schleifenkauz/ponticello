@@ -11,7 +11,6 @@ import reaktive.value.reactiveVariable
 import xenakis.impl.Decimal
 import xenakis.impl.parseDecimal
 import xenakis.impl.withPrecision
-import xenakis.model.XenakisProject
 import xenakis.model.obj.BusObject
 import xenakis.model.score.KnobControl
 import xenakis.sc.NumericalControlSpec
@@ -21,7 +20,7 @@ import xenakis.sc.client.SuperColliderContext
 import xenakis.ui.registry.GlobalControlsView
 
 @Serializable
-class GlobalControls(private val controls: MutableList<GlobalControl>) : XenakisProject.ProjectComponent {
+class GlobalControls(private val controls: MutableList<GlobalControl>) {
     @Transient
     val views = ListenerManager.createWeakListenerManager<GlobalControlsView>()
 
@@ -30,9 +29,6 @@ class GlobalControls(private val controls: MutableList<GlobalControl>) : Xenakis
 
     @Transient
     private lateinit var context: Context
-
-    override val componentName: String
-        get() = "global_controls"
 
     fun initialize(context: Context) {
         this.context = context

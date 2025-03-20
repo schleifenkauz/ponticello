@@ -2,8 +2,8 @@ package xenakis.ui.impl
 
 import javafx.application.Platform
 import org.controlsfx.control.Notifications
-import xenakis.model.Logger
-import xenakis.model.Logger.Level.*
+import xenakis.impl.Logger
+import xenakis.impl.Logger.Level.*
 import java.io.PrintWriter
 import java.io.StringWriter
 

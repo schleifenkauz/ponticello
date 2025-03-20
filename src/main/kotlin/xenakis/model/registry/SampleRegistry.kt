@@ -35,5 +35,7 @@ class SampleRegistry(private val samples: MutableList<SampleObject>) : SuperColl
         return sample
     }
 
-    companion object : PublicProperty<SampleRegistry> by publicProperty("SampleRegistry")
+    companion object : PublicProperty<SampleRegistry> by publicProperty("SampleRegistry") {
+        fun createDefault() = SampleRegistry(mutableListOf())
+    }
 }

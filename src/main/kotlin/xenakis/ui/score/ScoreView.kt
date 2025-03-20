@@ -18,8 +18,9 @@ import javafx.scene.text.Text
 import reaktive.value.fx.asObservableValue
 import reaktive.value.now
 import xenakis.impl.*
-import xenakis.model.InteractionSettings.SnapOption
-import xenakis.model.Logger
+import xenakis.model.project.InteractionSettings.SnapOption
+import xenakis.impl.Logger
+import xenakis.model.project.settings
 import xenakis.model.score.*
 import xenakis.ui.impl.verticalDist
 import xenakis.ui.launcher.XenakisLauncher.Companion.currentProject

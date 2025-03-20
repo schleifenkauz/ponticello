@@ -1,24 +1,19 @@
 package xenakis.model.registry
 
-import fxutils.plural
 import hextant.context.Context
 import hextant.core.editor.ListenerManager
 import hextant.undo.AbstractEdit
 import hextant.undo.UndoManager
 import kotlinx.serialization.Transient
 import reaktive.value.now
-import xenakis.model.Logger
-import xenakis.model.XenakisProject
+import xenakis.impl.Logger
 import xenakis.model.obj.AbstractContextualObject
 import xenakis.ui.launcher.XenakisLauncher.Companion.currentProject
 
-abstract class ObjectRegistry<O : NamedObject> : XenakisProject.ProjectComponent, AbstractContextualObject() {
+abstract class ObjectRegistry<O : NamedObject>: AbstractContextualObject() {
     protected abstract val objects: MutableList<O>
 
     abstract val objectType: String
-
-    override val componentName: String
-        get() = plural(objectType).lowercase()
 
     @Transient
     val views: ListenerManager<out Listener<O>> = ListenerManager.createWeakListenerManager()

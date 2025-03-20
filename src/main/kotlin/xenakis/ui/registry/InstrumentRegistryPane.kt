@@ -26,7 +26,7 @@ import reaktive.value.now
 import reaktive.value.reactiveValue
 import xenakis.impl.async
 import xenakis.impl.canSuperColliderTalkToMe
-import xenakis.model.Logger
+import xenakis.impl.Logger
 import xenakis.model.obj.*
 import xenakis.model.obj.CustomizableSynthDefObject
 import xenakis.model.obj.InstrumentObject

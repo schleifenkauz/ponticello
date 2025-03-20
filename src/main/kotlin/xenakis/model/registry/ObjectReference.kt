@@ -10,7 +10,7 @@ import kotlinx.serialization.encoding.Encoder
 import reaktive.value.ReactiveBoolean
 import reaktive.value.now
 import reaktive.value.reactiveValue
-import xenakis.model.Logger
+import xenakis.impl.Logger
 import xenakis.model.obj.GroupObject
 import xenakis.model.obj.SuperColliderObject
 import xenakis.sc.ScExpr

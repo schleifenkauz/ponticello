@@ -16,7 +16,7 @@ import xenakis.impl.Decimal
 import xenakis.impl.parseDecimal
 import xenakis.impl.superColliderPath
 import xenakis.impl.zero
-import xenakis.model.XenakisProject.Companion.projectDirectory
+import xenakis.model.project.XenakisProject.Companion.projectDirectory
 import xenakis.model.obj.GroupObject
 import xenakis.model.obj.GroupReference
 import xenakis.sc.client.ScWriter

@@ -19,7 +19,7 @@ import reaktive.value.now
 import reaktive.value.reactiveValue
 import xenakis.impl.times
 import xenakis.impl.zero
-import xenakis.model.Logger
+import xenakis.impl.Logger
 import xenakis.model.obj.NoSynthDef
 import xenakis.model.obj.ProcessDefObject
 import xenakis.model.obj.ProcessDefReference

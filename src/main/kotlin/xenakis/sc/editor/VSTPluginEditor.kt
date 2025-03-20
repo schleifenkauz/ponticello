@@ -1,12 +1,10 @@
 package xenakis.sc.editor
 
-import hextant.context.Context
 import hextant.core.editor.CompoundEditor
-import kotlinx.serialization.Serializable
 import reaktive.value.ReactiveValue
+import xenakis.impl.Logger
 import xenakis.impl.superColliderPath
-import xenakis.model.Logger
-import xenakis.model.XenakisProject.Companion.projectDirectory
+import xenakis.model.project.XenakisProject.Companion.projectDirectory
 import xenakis.sc.VSTPlugin
 import xenakis.sc.client.SuperColliderClient
 

@@ -7,7 +7,6 @@ import hextant.context.Context
 import javafx.scene.paint.Color
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.Transient
 import reaktive.value.ReactiveVariable
 import reaktive.value.now
 import reaktive.value.reactiveVariable
@@ -15,7 +14,6 @@ import xenakis.model.obj.InstrumentObject
 import xenakis.model.obj.InstrumentReference
 import xenakis.model.obj.ReferencedSynthDefObject
 import xenakis.model.obj.SuperColliderObject
-import xenakis.sc.client.SuperColliderClient
 
 @Serializable
 class InstrumentRegistry(
@@ -31,16 +29,12 @@ class InstrumentRegistry(
     override val objectType: String
         get() = "Instrument"
 
-    @Transient
-    private lateinit var client: SuperColliderClient
-
     val selectedInstrument: InstrumentObject?
         get() = selectedInstrumentRef.now.get()
 
     override fun initialize(context: Context) {
         super.initialize(context)
         context[InstrumentRegistry] = this
-        client = context[SuperColliderClient]
         selectedInstrumentRef.now.resolve(this)
     }
 
