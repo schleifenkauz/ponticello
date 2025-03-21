@@ -38,6 +38,8 @@ import xenakis.ui.controls.ParameterControlList
 import xenakis.ui.impl.getFrom
 import xenakis.ui.launcher.XenakisLauncher.Companion.currentProject
 import xenakis.ui.launcher.XenakisMainActivity
+import xenakis.ui.midi.ContextualMidiReceiver
+import xenakis.ui.midi.ParameterControlsMidiContext
 import xenakis.ui.registry.ObjectBoxList
 import xenakis.ui.registry.ObjectBoxSource
 import xenakis.ui.score.ParameterizedScoreObjectView
@@ -110,6 +112,18 @@ class VerticalFlowsBox(
 
     override fun addObject(obj: AudioFlow, idx: Int) {
         flows.addFlow(obj)
+    }
+
+    override fun onSelected(obj: AudioFlow) {
+        when (obj) {
+            is SynthFlow -> {
+                val receiver = obj.context[ContextualMidiReceiver]
+                val context = ParameterControlsMidiContext(obj.controls)
+                receiver.setContext(context)
+            }
+            is UtilityFlow -> {} //TODO for the volume fader a motorized fader could be integrated...!
+            else -> {}
+        }
     }
 
     override fun dataFormat(obj: AudioFlow): DataFormat? = AudioFlow.DATA_FORMAT

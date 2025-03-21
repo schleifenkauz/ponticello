@@ -10,6 +10,12 @@ import xenakis.model.registry.NamedObject
 interface ObjectBoxSource<O : NamedObject> {
     val items: List<O>
 
+    val enableReordering: Boolean get() = false
+
+    val orientation: Orientation get() = Orientation.HORIZONTAL
+
+    val buttonStyle: String get() = "medium-icon-button"
+
     fun getContent(obj: O): List<Node> = emptyList()
 
     fun getActions(obj: O): List<ContextualizedAction> = emptyList()
@@ -31,9 +37,5 @@ interface ObjectBoxSource<O : NamedObject> {
 
     fun dataFormat(obj: O): DataFormat? = null
 
-    val buttonStyle: String get() = "medium-icon-button"
-
-    val orientation: Orientation get() = Orientation.HORIZONTAL
-
-    val enableReordering: Boolean get() = false
+    fun onSelected(obj: O) {}
 }

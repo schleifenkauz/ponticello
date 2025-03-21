@@ -130,6 +130,7 @@ class ObjectBoxList<O : NamedObject>(private val source: ObjectBoxSource<O>) : S
         selectedBox?.layout?.pseudoClassStateChanged(PseudoClasses.SELECTED, false)
         selectedBox = box
         box.layout.pseudoClassStateChanged(PseudoClasses.SELECTED, true)
+        source.onSelected(box.obj)
     }
 
     fun select(idx: Int) {

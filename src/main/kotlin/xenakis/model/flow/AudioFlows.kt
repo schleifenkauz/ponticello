@@ -72,8 +72,9 @@ class AudioFlows(
         }
     }
 
-    fun addListener(listener: Listener) {
+    fun addListener(listener: Listener, initialize: Boolean = true) {
         listeners.addListener(listener)
+        if (!initialize) return
         for ((_, flows) in flows) {
             for ((index, flow) in flows.withIndex()) {
                 listener.addedFlow(flow, index)
@@ -158,12 +159,15 @@ class AudioFlows(
 
     private inline fun changeFlows(bus: BusObject, action: MutableList<AudioFlow>.() -> Unit) {
         val associatedFlows = _flows.getValue(bus.reference())
-        if (associatedFlows.isEmpty()) return
-        associatedFlows.first().isFirst.now = false
-        associatedFlows.last().isLast.now = false
+        if (!associatedFlows.isEmpty()) {
+            associatedFlows.first().isFirst.now = false
+            associatedFlows.last().isLast.now = false
+        }
         associatedFlows.action()
-        associatedFlows.first().isFirst.now = true
-        associatedFlows.last().isLast.now = true
+        if (!associatedFlows.isEmpty()) {
+            associatedFlows.first().isFirst.now = true
+            associatedFlows.last().isLast.now = true
+        }
     }
 
     class FlowReference(private val busReference: BusReference, private val index: Int) : java.io.Serializable {

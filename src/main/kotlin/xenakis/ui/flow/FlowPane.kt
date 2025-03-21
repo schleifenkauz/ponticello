@@ -34,7 +34,7 @@ class FlowPane(
         }
         setup("Audio Flows", content = HBox(scrollPane, makeAddBusButton()))
         buses.addListener(this)
-        flows.addListener(this)
+        flows.addListener(this, initialize = false)
     }
 
     private fun makeAddBusButton(): BorderPane {

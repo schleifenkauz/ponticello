@@ -33,7 +33,7 @@ class Decimal(val value: Double, val precision: Int) : Number(), Comparable<Deci
     override fun toShort(): Short = value.toInt().toShort()
 
     override fun compareTo(other: Decimal): Int =
-        if (this == other) 0 else toCanonicalString().compareTo(other.toCanonicalString())
+        if (this == other) 0 else value.compareTo(other.value)
 
     operator fun plus(other: Decimal): Decimal = Decimal(value + other.value, max(precision, other.precision))
 

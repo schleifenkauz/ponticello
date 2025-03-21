@@ -29,26 +29,21 @@ import reaktive.Observer
 import reaktive.value.now
 import xenakis.impl.Logger
 import xenakis.model.Settings
-import xenakis.model.project.XenakisProject
-import xenakis.model.obj.SuperColliderObject
+import xenakis.model.obj.ParameterizedObject
 import xenakis.model.player.PlaybackManager
-import xenakis.model.project.PROCESS_DEFS
-import xenakis.model.project.SETTINGS
-import xenakis.model.project.SETUP_CODE
-import xenakis.model.project.busses
-import xenakis.model.project.flows
-import xenakis.model.project.get
-import xenakis.model.project.instruments
-import xenakis.model.project.samples
-import xenakis.model.project.score
-import xenakis.model.project.settings
+import xenakis.model.project.*
 import xenakis.sc.client.SuperColliderClient
 import xenakis.ui.actions.*
 import xenakis.ui.flow.FlowPane
 import xenakis.ui.impl.makeSubWindow
 import xenakis.ui.launcher.XenakisApp.Companion.primaryStage
+import xenakis.ui.midi.ContextualMidiReceiver
+import xenakis.ui.midi.ParameterControlsMidiContext
 import xenakis.ui.misc.*
-import xenakis.ui.registry.*
+import xenakis.ui.registry.ControlBusRegistryPane
+import xenakis.ui.registry.InstrumentRegistryPane
+import xenakis.ui.registry.ProcessDefRegistryPane
+import xenakis.ui.registry.SampleRegistryPane
 import xenakis.ui.score.ScoreObjectSelectionManager
 import xenakis.ui.score.ScoreView
 
@@ -90,8 +85,9 @@ class XenakisMainActivity(val project: XenakisProject) : Activity() {
         children.add(Label("Object details") styleClass "heading")
     }
 
-    var playback: PlaybackManager
-        private set
+    val playback: PlaybackManager
+
+    val midiReceiver: ContextualMidiReceiver = ContextualMidiReceiver()
 
     val shellWindow = SuperColliderShellController.createShellWindow(context)
 
@@ -126,6 +122,7 @@ class XenakisMainActivity(val project: XenakisProject) : Activity() {
 
         playback = PlaybackManager(scoreView, project.flows)
         context[PlaybackManager] = playback
+        midiReceiver.initialize(context)
 
         observer = scoreView.selector.focusedView.observe { _, _, focusedView ->
             if (detailPane.children.size == 2) {
@@ -133,6 +130,10 @@ class XenakisMainActivity(val project: XenakisProject) : Activity() {
             }
             if (focusedView != null) {
                 detailPane.children.add(focusedView.getDetailPane())
+                val obj = focusedView.instance.obj
+                if (obj is ParameterizedObject) {
+                    midiReceiver.setContext(ParameterControlsMidiContext(obj.controls))
+                }
             }
         }
     }

@@ -54,6 +54,8 @@ operator fun Decimal.times(other: Int) = Decimal(value * other, precision)
 
 operator fun Decimal.div(other: Int) = Decimal(value / other, precision)
 
+infix fun Decimal.exp(exponent: Int) = Decimal(value.pow(exponent), precision)
+
 operator fun Double.plus(other: Decimal) = Decimal(this + other.value, other.precision)
 
 operator fun Double.minus(other: Decimal) = Decimal(this - other.value, other.precision)
