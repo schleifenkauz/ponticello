@@ -5,9 +5,7 @@ import reaktive.Observer
 import reaktive.value.now
 import reaktive.value.observe
 import xenakis.impl.Decimal
-import xenakis.model.obj.BusObject
 import xenakis.model.obj.BusReference
-import xenakis.model.registry.ObjectReference
 import xenakis.model.score.*
 import xenakis.sc.client.ScWriter
 import xenakis.sc.client.SuperColliderClient
@@ -30,13 +28,19 @@ class ParameterControlLiveUpdater(
         }
     }
 
-    override fun addedControl(parameter: String, control: ParameterControl) {
-        observeControl(parameter, control)
-        when (control) {
-            is BusControl -> setBus(parameter, control.bus.now)
-            is BusValueControl -> mapBus(parameter, control.bus.now)
-            is ConstantControl -> setValue(parameter, control.value.now)
-            is KnobControl -> setValue(parameter, control.value.now)
+    override fun addedControl(control: ParameterControls.NamedParameterControl, idx: Int) {
+        val parameter = control.name.now
+        val ctrl = control.now
+        addedControl(parameter, ctrl)
+    }
+
+    private fun addedControl(parameter: String, ctrl: ParameterControl) {
+        observeControl(parameter, ctrl)
+        when (ctrl) {
+            is BusControl -> setBus(parameter, ctrl.bus.now)
+            is BusValueControl -> mapBus(parameter, ctrl.bus.now)
+            is ConstantControl -> setValue(parameter, ctrl.value.now)
+            is KnobControl -> setValue(parameter, ctrl.value.now)
             else -> {} //no realtime updates possible
         }
     }
@@ -69,8 +73,17 @@ class ParameterControlLiveUpdater(
         runOnActiveSynths { +"set('$parameter', $superColliderName)" }
     }
 
-    override fun removedControl(parameter: String, control: ParameterControl) {
-        controlObservers.remove(control)?.kill()
+    override fun removedControl(control: ParameterControls.NamedParameterControl) {
+        controlObservers.remove(control.now)?.kill()
+    }
+
+    override fun reassignedControl(
+        namedControl: ParameterControls.NamedParameterControl,
+        oldControl: ParameterControl,
+        control: ParameterControl
+    ) {
+        controlObservers.remove(oldControl)?.kill()
+        addedControl(namedControl.name.now, control)
     }
 
     fun listen(controls: ParameterControls) {

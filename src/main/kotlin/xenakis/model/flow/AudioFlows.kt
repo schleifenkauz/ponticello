@@ -110,10 +110,8 @@ class AudioFlows(
         changeFlows(flow.associatedBus) { add(index, flow) }
         onAddFlow(flow)
         undoManager.record(AudioFlowsEdit.AddFlow(this, flow))
-        listeners.notifyListeners {
-            addedFlow(flow, index)
-            if (flow.isActive.now) activatedFlow(flow)
-        }
+        listeners.notifyListeners { addedFlow(flow, index) }
+        if (flow.isActive.now) listeners.notifyListeners { activatedFlow(flow) }
     }
 
     private fun onAddFlow(flow: AudioFlow) {

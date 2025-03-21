@@ -17,11 +17,9 @@ import javafx.scene.input.TransferMode
 import javafx.scene.layout.*
 import org.kordamp.ikonli.material2.Material2AL
 import org.kordamp.ikonli.material2.Material2MZ
-import org.kordamp.ikonli.materialdesign2.MaterialDesignC
 import org.kordamp.ikonli.materialdesign2.MaterialDesignP
 import org.kordamp.ikonli.materialdesign2.MaterialDesignR
 import reaktive.value.binding.map
-import reaktive.value.binding.not
 import reaktive.value.now
 import reaktive.value.reactiveValue
 import xenakis.impl.toDecimal
@@ -35,10 +33,9 @@ import xenakis.sc.NumericalControlSpec
 import xenakis.sc.Warp
 import xenakis.sc.editor.BusSelector
 import xenakis.sc.view.ObjectSelectorControl
-import xenakis.ui.controls.ControlAssignmentView
 import xenakis.ui.controls.Knob
+import xenakis.ui.controls.ParameterControlList
 import xenakis.ui.impl.getFrom
-import xenakis.ui.launcher.XenakisLauncher
 import xenakis.ui.launcher.XenakisLauncher.Companion.currentProject
 import xenakis.ui.launcher.XenakisMainActivity
 import xenakis.ui.registry.ObjectBoxList
@@ -89,7 +86,11 @@ class VerticalFlowsBox(
                 HBox(10.0, knob, selectorControl).centerChildren()
             }
 
-            is SynthFlow -> ControlAssignmentView(obj)
+            is SynthFlow -> {
+                val controlList = ParameterControlList(obj.controls)
+                controlList.addShortcutsTo(controlList.getContent())
+                controlList.getContent()
+            }
             is UtilityFlow -> Slider(-60.0, +6.0, 0.0) styleClass "volume-fader"
         }
         return listOf(content)
@@ -103,7 +104,7 @@ class VerticalFlowsBox(
         return extraActions + defaultActions.withContext(obj)
     }
 
-    override fun deleteObject(obj: AudioFlow) {
+    override fun removeObject(obj: AudioFlow) {
         flows.removeFlow(obj)
     }
 
@@ -156,43 +157,21 @@ class VerticalFlowsBox(
     }
 
     fun addedFlow(flow: AudioFlow, index: Int) {
-        flowsList.add(index, flow)
+        flowsList.added(index, flow)
     }
 
     fun removedFlow(flow: AudioFlow) {
-        flowsList.remove(flow)
+        flowsList.removed(flow)
     }
 
     fun movedFlow(oldIndex: Int, newIndex: Int) {
         val flow = flows.associatedFlows(associatedBus)[oldIndex]
-        flowsList.remove(flow)
-        flowsList.add(newIndex, flow)
+        flowsList.removed(flow)
+        flowsList.added(newIndex, flow)
     }
 
     companion object {
         private val defaultActions = collectActions<AudioFlow> {
-            addAction("Move up") {
-                applicableIf { flow -> flow.isFirst.not() }
-                ifNotApplicable(Action.IfNotApplicable.Disable)
-                shortcut("Ctrl+UP")
-                icon(Material2AL.ARROW_UPWARD)
-                executes { flow ->
-                    val flows = flow.context[currentProject].flows
-                    val index = flows.indexOf(flow)
-                    flows.moveFlow(flow, index - 1)
-                }
-            }
-            addAction("Move down") {
-                applicableIf { flow -> flow.isLast.not() }
-                ifNotApplicable(Action.IfNotApplicable.Disable)
-                shortcut("Ctrl+DOWN")
-                icon(Material2AL.ARROW_DOWNWARD)
-                executes { flow ->
-                    val flows = flow.context[currentProject].flows
-                    val index = flows.indexOf(flow)
-                    flows.moveFlow(flow, index + 1)
-                }
-            }
             addAction("Toggle activated") {
                 icon { flow ->
                     flow.isActive.map { active ->
@@ -203,14 +182,6 @@ class VerticalFlowsBox(
                 applicableIf { flow -> reactiveValue(flow.canDeactivate) }
                 shortcut("Ctrl+T")
                 executes { flow -> flow.isActive.now = !flow.isActive.now }
-            }
-            addAction("Remove flow") {
-                icon(MaterialDesignC.CLOSE_BOX)
-                shortcuts("Ctrl+DELETE")
-                executes { flow ->
-                    val flows = flow.context[currentProject].flows
-                    flows.removeFlow(flow)
-                }
             }
         }
 

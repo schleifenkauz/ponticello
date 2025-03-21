@@ -7,7 +7,7 @@ abstract class ReactiveListSource<O: NamedObject>(protected val objects: Mutable
     final override val items: List<O>
         get() = objects.now
 
-    final override fun deleteObject(obj: O) {
+    final override fun removeObject(obj: O) {
         objects.now.remove(obj)
     }
 

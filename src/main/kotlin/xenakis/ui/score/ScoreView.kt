@@ -19,7 +19,6 @@ import reaktive.value.fx.asObservableValue
 import reaktive.value.now
 import xenakis.impl.*
 import xenakis.model.project.InteractionSettings.SnapOption
-import xenakis.impl.Logger
 import xenakis.model.project.settings
 import xenakis.model.score.*
 import xenakis.ui.impl.verticalDist
@@ -151,7 +150,7 @@ class ScoreView(score: Score, context: Context) : ScorePane(score, context) {
         val pane = Pane() styleClass "envelope-sub-window"
         val semitransparent = editor.objectView.backgroundColor.now.deriveColor(1.0, 1.0, 1.0, 0.3)
         pane.style = "-fx-background-color: ${semitransparent.toString().replacePrefix("0x", "#")};"
-        magnifiedEnvelope = EnvelopeEditor(editor.parameterName, editor.envelope, editor.objectView, pane)
+        magnifiedEnvelope = EnvelopeEditor(editor.namedControl, editor.envelope, editor.objectView, pane)
         val objName = editor.objectView.instance.obj.name.now
         val title = "Envelope for ${editor.parameterName} of $objName"
         magnifierWindow?.hide()

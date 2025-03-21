@@ -25,7 +25,7 @@ import xenakis.model.score.Envelope
 import xenakis.model.score.Envelope.EnvelopePoint
 import xenakis.model.score.EnvelopeControl
 import xenakis.model.score.ObjectPosition
-import xenakis.model.score.SynthObject
+import xenakis.model.score.ParameterControls.NamedParameterControl
 import xenakis.sc.NumericalControlSpec
 import xenakis.sc.mapOnto
 import xenakis.ui.actions.Tool
@@ -33,20 +33,23 @@ import xenakis.ui.controls.ControlSpecPrompt
 import xenakis.ui.controls.DecimalPrompt
 import xenakis.ui.impl.rootPane
 import xenakis.ui.impl.setupDragging
+import kotlin.math.pow
 
 class EnvelopeEditor(
-    val parameterName: String, val envelope: Envelope,
+    val namedControl: NamedParameterControl, val envelope: Envelope,
     val objectView: ScoreObjectView, val pane: Pane
 ) : EnvelopeView {
     private val context get() = parentPane.context
+
+    private val control get() = namedControl.now as EnvelopeControl
+    
+    val parameterName get() = namedControl.name.now
 
     private val color get() = control.displayColor
     private val parentPane get() = objectView.pane
     private val associatedObject get() = objectView.instance.obj
 
-    private val control
-        get() = associatedObject.associatedControls.getValue(parameterName) as EnvelopeControl
-    private val spec get() = associatedObject.getSpec(parameterName) as NumericalControlSpec
+    private val spec get() = namedControl.spec.now as NumericalControlSpec
     private val yTransform get() = spec.mapOnto(pane.prefHeight..0.0)
 
     private val valueGrid get() = spec.step.get()
@@ -118,25 +121,34 @@ class EnvelopeEditor(
         }
         line.setOnMouseClicked { ev ->
             when {
-                ev.button == PRIMARY && ev.clickCount == 2 -> {
-                    if (ev.isShiftDown) {
-                        val obj = objectView.instance.obj
-                        if (obj is SynthObject) {
-                            ControlSpecPrompt(obj, parameterName, spec).showDialog(pane)
-                        }
-                    } else objectView.pane.context.rootPane.magnifyEnvelope(this)
-                }
+                ev.button == PRIMARY && ev.isControlDown -> objectView.pane.context.rootPane.magnifyEnvelope(this)
 
-                ev.button == PRIMARY && ev.isShiftDown && associatedObject is ParameterizedObject -> {
-                    val prompt = ControlSpecPrompt(associatedObject as ParameterizedObject, parameterName, spec)
-                    prompt.showDialog(anchorNode = pane)
-                }
+                ev.button == PRIMARY && ev.isShiftDown && associatedObject is ParameterizedObject ->
+                    ControlSpecPrompt(namedControl).showDialog(anchorNode = pane)
 
+                ev.button == PRIMARY && ev.clickCount == 2 -> setSegmentValueFromPrompt(ev)
                 ev.button == PRIMARY -> bringToFront()
                 ev.button == SECONDARY -> createNewPoint(ev, interpolate = true)
                 else -> {}
             }
             ev.consume()
+        }
+    }
+
+    private fun setSegmentValueFromPrompt(ev: MouseEvent) {
+        val t = transformXToTime(ev.x)
+        var idx = envelope.points.map(EnvelopePoint::time).binarySearch(t)
+        if (idx >= 0) return
+        idx = -(idx + 1)
+        if (idx == 0 || idx == envelope.points.size - 1) return
+        val v1 = envelope.points[idx - 1].value
+        val v2 = envelope.points[idx].value
+        if ((v1 - v2).absoluteValue < 0.1.pow(spec.precision)) {
+            val v = DecimalPrompt("Value for envelope segment", spec.precision, v1, spec.range)
+                .showDialog(ev) ?: return
+            envelope.beginSegmentEdit(idx - 1)
+            envelope.editSegment(v)
+            envelope.finishEdit()
         }
     }
 
@@ -189,7 +201,7 @@ class EnvelopeEditor(
 
     private fun displayPosition(t: Decimal, v: Decimal) {
         val x = parentPane.getWidth(t)
-        mouseInfo.text = "$parameterName: ${v.toCanonicalString()}"
+        mouseInfo.text = "${parameterName}: ${v.toCanonicalString()}"
         var y = yTransform.map(v.toDouble())
         val infoHeight = mouseInfo.prefHeight(-1.0)
         val infoWidth = mouseInfo.prefWidth(-1.0)

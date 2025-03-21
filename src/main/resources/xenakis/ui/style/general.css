@@ -55,7 +55,7 @@
     -fx-border-width: 0px;
     -fx-border-radius: 3px;
     -fx-border-color: black;
-    -fx-min-width: 80px;
+    -fx-min-width: 50px;
 }
 
 .name-field {

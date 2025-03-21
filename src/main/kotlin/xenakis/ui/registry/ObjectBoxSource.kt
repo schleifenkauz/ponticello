@@ -14,12 +14,17 @@ interface ObjectBoxSource<O : NamedObject> {
 
     fun getActions(obj: O): List<ContextualizedAction> = emptyList()
 
-    fun deleteObject(obj: O) {
+    fun removeObject(obj: O) {
         throw UnsupportedOperationException()
     }
 
     fun addObject(obj: O, idx: Int = items.size) {
         throw UnsupportedOperationException()
+    }
+
+    fun moveObject(obj: O, idx: Int) {
+        removeObject(obj)
+        addObject(obj, idx)
     }
 
     fun configureDragboard(obj: O, dragboard: Dragboard) {}

@@ -42,7 +42,7 @@ abstract class ObjectSelector<O : NamedObject> :
 
     override fun toString(choice: ObjectReference<O>): ReactiveString = choice.isResolved.flatMap { resolved ->
         when {
-            choice.getName() == ObjectReference.NONE -> reactiveValue("(none)")
+            choice.getName() == ObjectReference.NONE -> reactiveValue("<none>")
             !resolved -> choice.name.map { n -> "unresolved: $n" }
             else -> toString(choice.get()!!)
         }

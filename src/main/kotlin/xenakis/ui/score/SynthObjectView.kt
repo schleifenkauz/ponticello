@@ -25,7 +25,7 @@ import reaktive.value.reactiveValue
 import xenakis.impl.*
 import xenakis.model.score.*
 import xenakis.sc.view.ObjectSelectorControl
-import xenakis.ui.controls.ControlAssignmentView
+import xenakis.ui.controls.ParameterControlList
 import xenakis.ui.launcher.XenakisMainActivity
 
 class SynthObjectView(
@@ -71,13 +71,15 @@ class SynthObjectView(
         val box = ObjectSelectorControl(obj.synthDefSelector, createBundle())
         pane.addItem("SynthDef: ", HBox(5.0, box, viewBtn).centerChildren())
         pane.children.add(createDetailsHeader(obj, "Synth controls"))
-        pane.children.add(ControlAssignmentView(obj))
+        val controlList = ParameterControlList(obj.controls)
+        controlList.addShortcutsTo(pane)
+        pane.children.add(controlList.getContent())
     }
 
-    override fun removedControl(parameter: String, control: ParameterControl) {
-        super.removedControl(parameter, control)
-        if (control !is ConstantControl) return
-        when (parameter) {
+    override fun removedControl(control: ParameterControls.NamedParameterControl) {
+        super.removedControl(control)
+        if (control.now !is ConstantControl) return
+        when (control.name.now) {
             "startPos" -> {
                 startPosObserver?.kill()
                 displaySpectrogram()
@@ -90,13 +92,22 @@ class SynthObjectView(
         }
     }
 
-    override fun addedControl(parameter: String, control: ParameterControl) {
-        super.addedControl(parameter, control)
-        if (control !is ConstantControl) return
-        when (parameter) {
-            "startPos" -> startPosObserver = control.value.forEach { _ -> displaySpectrogram() }
-            "rate" -> rateObserver = control.value.forEach { _ -> displaySpectrogram() }
+    override fun addedControl(control: ParameterControls.NamedParameterControl, idx: Int) {
+        super.addedControl(control, idx)
+        val ctrl = control.now
+        if (ctrl !is ConstantControl) return
+        when (control.name.now) {
+            "startPos" -> startPosObserver = ctrl.value.forEach { _ -> displaySpectrogram() }
+            "rate" -> rateObserver = ctrl.value.forEach { _ -> displaySpectrogram() }
         }
+    }
+
+    override fun reassignedControl(
+        namedControl: ParameterControls.NamedParameterControl,
+        oldControl: ParameterControl,
+        control: ParameterControl
+    ) {
+
     }
 
     override fun rescale() {

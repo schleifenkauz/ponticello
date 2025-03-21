@@ -12,24 +12,19 @@ interface ParameterizedObject : NamedObject {
     val def: ParameterizedObjectDef
     val controls: ParameterControls
 
-    val parameters
-        get() = controls.extraParameters + def.parameters.now
-            .filter { param -> controls.getExtraSpec(param.name.now) == null }
-
-    fun getSpec(parameter: String): ControlSpec? =
-        controls.getExtraSpec(parameter) ?: def.getParameter(parameter)?.spec?.now
+    fun getSpec(parameter: String): ControlSpec? = controls[parameter]?.spec?.now
 
     fun getInputs(): Collection<BusObject> = getConnectedBusses(FlowType.In)
 
     fun getOutputs(): Collection<BusObject> = getConnectedBusses(FlowType.Out)
 
     private fun getConnectedBusses(flowType: FlowType): Set<BusObject> = buildSet {
-        for (parameter in parameters) {
-            val spec = parameter.spec.now
-            val name = parameter.name.now
-            if (spec !is BusControlSpec) continue
+        for (ctrl in controls.all()) {
+            val spec = ctrl.spec.now
+            val value = ctrl.now
+            if (value is BusControl || spec !is BusControlSpec) continue
             if (spec.flow != flowType) {
-                val ctrl = controls.controlMap[name] as? BusControl ?: continue
+                val ctrl = ctrl.now as? BusControl ?: continue
                 val bus = ctrl.bus.now.get()
                 if (bus != null) {
                     add(bus)

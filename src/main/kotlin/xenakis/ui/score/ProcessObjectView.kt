@@ -16,7 +16,7 @@ import xenakis.model.score.ProcessObject
 import xenakis.model.score.ScoreObjectInstance
 import xenakis.sc.editor.ProcessDefSelector
 import xenakis.sc.view.ObjectSelectorControl
-import xenakis.ui.controls.ControlAssignmentView
+import xenakis.ui.controls.ParameterControlList
 import xenakis.ui.launcher.XenakisMainActivity
 
 class ProcessObjectView(
@@ -35,6 +35,8 @@ class ProcessObjectView(
         val box = ObjectSelectorControl(selector, createBundle())
         pane.addItem("ProcessDef: ", HBox(5.0, box, viewBtn).centerChildren())
         pane.children.add(createDetailsHeader(obj, "Process controls"))
-        pane.children.add(ControlAssignmentView(obj))
+        val controlList = ParameterControlList(obj.controls)
+        controlList.addShortcutsTo(pane)
+        pane.children.add(controlList.getContent())
     }
 }

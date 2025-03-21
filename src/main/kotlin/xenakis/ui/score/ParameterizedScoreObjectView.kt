@@ -1,14 +1,12 @@
 package xenakis.ui.score
 
 import fxutils.actions.button
-import fxutils.centerChildren
 import fxutils.infiniteSpace
 import fxutils.styleClass
 import javafx.geometry.Point2D
 import javafx.scene.control.Button
 import javafx.scene.control.Label
 import javafx.scene.input.MouseEvent
-import javafx.scene.layout.FlowPane
 import javafx.scene.layout.HBox
 import javafx.scene.layout.Region
 import org.kordamp.ikonli.material2.Material2MZ
@@ -18,16 +16,15 @@ import reaktive.value.reactiveVariable
 import xenakis.model.Settings
 import xenakis.model.obj.ParameterizedObject
 import xenakis.model.score.*
+import xenakis.model.score.ParameterControls.NamedParameterControl
 import xenakis.sc.ControlSpec
 import xenakis.sc.NumericalControlSpec
-import xenakis.ui.controls.Knob
 import xenakis.ui.registry.SearchableParameterListView
 
 abstract class ParameterizedScoreObjectView<O>(
     instance: ScoreObjectInstance
 ) : ScoreObjectView(instance), ParameterControls.Listener where O : ScoreObject, O : ParameterizedObject {
-    private val envelopeDisplayObservers = mutableMapOf<String, Observer>()
-    private val knobControls = FlowPane().centerChildren() styleClass "knobs" //TODO remove
+    private val envelopeDisplayObservers = mutableMapOf<EnvelopeControl, Observer>()
     private val envelopeEditors = mutableListOf<EnvelopeEditor>()
 
     abstract val obj: O
@@ -48,7 +45,7 @@ abstract class ParameterizedScoreObjectView<O>(
     }
 
     private fun showNewEnvelopePopup(point: Point2D) {
-        val possibleParameters = obj.parameters
+        val possibleParameters = obj.def.parameters.now
             .filter { p -> p.spec.now is NumericalControlSpec }
             .filter { p ->
                 val control = obj.controls.controlMap[p.name.now]
@@ -60,94 +57,80 @@ abstract class ParameterizedScoreObjectView<O>(
             val spec = param.spec.now as NumericalControlSpec
             val initialValue = obj.controls.controlMap[name]?.getNumericalValue() ?: spec.defaultValue.get()
             val env = Envelope.constant(initialValue, obj.duration, spec.warp)
-            val control = EnvelopeControl(
+            val envControl = EnvelopeControl(
                 env, reactiveVariable(spec.associatedColor),
                 display = reactiveVariable(true)
             )
-            val extraSpec = param.spec.now.takeIf {
-                name !in obj.def.parameters.now.map { p -> p.name.now }
+            val customSpec = spec.takeIf {
+                it != obj.def.getSpec(param.name.now)?.now
             }
-            if (!obj.def.hasParameter(name)) {
-                obj.controls.setExtraSpec(name, extraSpec)
-            }
-            if (name !in obj.controls.controlMap) obj.controls.addControl(name, control)
-            else obj.controls.reassignControl(name, control)
+            val control = NamedParameterControl(name, envControl, customSpec)
+            if (name !in obj.controls.controlMap) obj.controls.addControl(control)
+            else obj.controls.reassignControl(name, envControl)
         }
     }
 
-    override fun removedControl(parameter: String, control: ParameterControl) {
-        when (control) {
-            is EnvelopeControl -> removedEnvelopeControl(parameter)
-            is KnobControl -> removeKnob(parameter)
+    override fun addedControl(control: NamedParameterControl, idx: Int) {
+        when (val ctrl = control.now) {
+            is EnvelopeControl -> addedEnvelopeControl(control, ctrl)
             else -> {}
         }
     }
 
-    private fun removedEnvelopeControl(parameter: String) {
-        removeEnvelope(parameter)
-        envelopeDisplayObservers.remove(parameter)!!.kill()
+    private fun addedEnvelopeControl(control: NamedParameterControl, env: EnvelopeControl) {
+        if (env.display.now) displayEnvelope(control, env.envelope)
+        envelopeDisplayObservers[env] = env.display.observe { _, _, display ->
+            if (display) displayEnvelope(control, env.envelope)
+            else removeEnvelope(control)
+        }
     }
 
-    override fun addedControl(parameter: String, control: ParameterControl) {
-        when (control) {
-            is EnvelopeControl -> addedDisplayControl(control, parameter)
-            is KnobControl -> displayKnob(parameter, control)
+    override fun removedControl(control: NamedParameterControl) {
+        when (val ctrl = control.now) {
+            is EnvelopeControl -> removedEnvelopeControl(control, ctrl)
             else -> {}
         }
     }
 
-    override fun changedSpec(parameter: String, newSpec: ControlSpec) {
-        envelopeEditors.find { ed -> ed.parameterName == parameter }?.repaint()
+    override fun reassignedControl(
+        namedControl: NamedParameterControl,
+        oldControl: ParameterControl,
+        control: ParameterControl
+    ) {
+        if (oldControl is EnvelopeControl) removedEnvelopeControl(namedControl, oldControl)
+        if (control is EnvelopeControl) addedEnvelopeControl(namedControl, control)
     }
 
-    private fun removeEnvelope(parameter: String) {
-        val ed = envelopeEditors.find { ed -> ed.parameterName == parameter }
-            ?: error("envelope editor for $parameter not found")
+    private fun removedEnvelopeControl(control: NamedParameterControl, env: EnvelopeControl) {
+        removeEnvelope(control)
+        envelopeDisplayObservers.remove(env)!!.kill()
+    }
+
+    override fun changedSpec(control: NamedParameterControl, oldSpec: ControlSpec?, newSpec: ControlSpec?) {
+        envelopeEditors.find { ed -> ed.namedControl == control }?.repaint()
+    }
+
+    private fun removeEnvelope(control: NamedParameterControl) {
+        val ed = envelopeEditors.find { ed -> ed.namedControl == control }
+            ?: error("envelope editor for $control not found")
         ed.dispose()
         envelopeEditors.remove(ed)
     }
 
-    private fun addedDisplayControl(control: EnvelopeControl, parameter: String) {
-        if (control.display.now) displayEnvelope(parameter, control)
-        envelopeDisplayObservers[parameter] = control.display.observe { _, _, display ->
-            if (display) displayEnvelope(parameter, control)
-            else removeEnvelope(parameter)
-        }
-    }
-
-    private fun displayEnvelope(parameter: String, control: EnvelopeControl) {
-        val envelope = control.envelope
-        if (obj.getSpec(parameter) is NumericalControlSpec) {
-            val e = EnvelopeEditor(parameter, envelope, this, pane = this)
+    private fun displayEnvelope(control: NamedParameterControl, envelope: Envelope) {
+        if (control.spec.now is NumericalControlSpec) {
+            val e = EnvelopeEditor(control, envelope, this, pane = this)
             e.repaint()
             envelopeEditors.add(e)
         }
     }
 
-    private fun removeKnob(parameter: String) {
-        knobControls.children.removeIf { k -> k is Knob && k.parameter == parameter }
-    }
-
-    private fun displayKnobs() {
-        knobControls.children.clear()
-        for ((parameter, control) in instance.obj.associatedControls) {
-            if (control !is KnobControl) continue
-            displayKnob(parameter, control)
-        }
-    }
-
     override fun rescale() {
         for (e in envelopeEditors) {
-            if (obj.getSpec(e.parameterName) is NumericalControlSpec) {
+            if (e.namedControl.spec.now is NumericalControlSpec) {
                 e.repaint()
             }
         }
-    }
-
-    private fun displayKnob(parameter: String, control: KnobControl) {
-        val spec = instance.obj.getSpec(parameter) as NumericalControlSpec
-        val knob = Knob(parameter, control, spec, context, radius = 24.0)
-        knobControls.children.add(knob)
     }
 
     companion object {
@@ -188,14 +171,9 @@ abstract class ParameterizedScoreObjectView<O>(
             )
             listView.showPopup(anchorNode = anchorNode) { option ->
                 val parameter = option.name.now
-                if (!obj.def.hasParameter(parameter)) {
-                    obj.controls.setExtraSpec(parameter, option.spec.now)
-                }
-                obj.controls.addControl(
-                    parameter, option.defaultControl(
-                        context
-                    )
-                )
+                val customSpec = option.spec.now.takeIf { !obj.def.hasParameter(parameter) }
+                val control = option.defaultControl(context)
+                obj.controls.addControl(parameter, control, customSpec)
             }
         }
     }

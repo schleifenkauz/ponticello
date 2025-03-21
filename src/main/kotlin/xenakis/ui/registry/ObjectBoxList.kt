@@ -3,7 +3,8 @@ package xenakis.ui.registry
 import fxutils.*
 import fxutils.actions.ActionBar
 import fxutils.actions.collectActions
-import javafx.geometry.Orientation.*
+import javafx.geometry.Orientation.HORIZONTAL
+import javafx.geometry.Orientation.VERTICAL
 import javafx.scene.control.ScrollPane
 import javafx.scene.input.Clipboard
 import javafx.scene.input.MouseEvent
@@ -30,7 +31,7 @@ class ObjectBoxList<O : NamedObject>(private val source: ObjectBoxSource<O>) : S
             icon(Material2AL.DELETE)
             shortcuts("Ctrl+DELETE")
             applicableIf { obj -> reactiveValue(obj.canDelete) }
-            executes { obj -> source.deleteObject(obj) }
+            executes { obj -> source.removeObject(obj) }
         }
         addAction("Grabber") {
             icon(MaterialDesignC.CURSOR_POINTER)
@@ -67,6 +68,8 @@ class ObjectBoxList<O : NamedObject>(private val source: ObjectBoxSource<O>) : S
 
     val children get() = boxes.map { b -> b.layout }
 
+
+
     init {
         isFitToWidth = true
         setupInitialBoxes()
@@ -83,7 +86,7 @@ class ObjectBoxList<O : NamedObject>(private val source: ObjectBoxSource<O>) : S
         }
     }
 
-    fun add(idx: Int, obj: O) {
+    fun added(idx: Int, obj: O) {
         if (!filter(obj)) return
         val sourceIndices = mutableListOf<Int>()
         var i = 0
@@ -99,10 +102,15 @@ class ObjectBoxList<O : NamedObject>(private val source: ObjectBoxSource<O>) : S
         layout.children.add(j, box.layout)
     }
 
-    fun remove(obj: O) {
+    fun removed(obj: O) {
         val box = getBox(obj)
         boxes.remove(box)
         layout.children.remove(box.layout)
+    }
+
+    fun moved(obj: O, idx: Int) {
+        removed(obj)
+        added(idx, obj)
     }
 
     fun setFilter(predicate: (O) -> Boolean) {
@@ -149,7 +157,7 @@ class ObjectBoxList<O : NamedObject>(private val source: ObjectBoxSource<O>) : S
         val idx = boxes.indexOf(selected)
         val newIdx = idx + deltaIdx
         if (newIdx !in layout.children.indices) return
-        source.deleteObject(selected.obj)
+        source.removeObject(selected.obj)
         source.addObject(selected.obj, idx)
     }
 
@@ -211,11 +219,13 @@ class ObjectBoxList<O : NamedObject>(private val source: ObjectBoxSource<O>) : S
                     var idx = parent.boxes.binarySearchBy(layout.layoutY + layout.translateY) { b -> b.layout.layoutY }
                     if (idx < 0) idx = -(idx + 1)
                     val oldIndex = layout.children.indexOf(this.layout)
-                    if (idx != oldIndex) {
-                        config.deleteObject(obj)
-                        config.addObject(obj, idx)
+                    try {
+                        if (idx != oldIndex) {
+                            config.moveObject(obj, idx)
+                        }
+                    } finally {
+                        layout.translateY = 0.0
                     }
-                    layout.translateY = 0.0
                 }
             )
         }
@@ -231,7 +241,7 @@ class ObjectBoxList<O : NamedObject>(private val source: ObjectBoxSource<O>) : S
                 shortcut("Ctrl+DELETE")
                 executes { list ->
                     val selected = list.selectedBox?.obj ?: return@executes
-                    if (selected.canDelete) list.source.deleteObject(selected)
+                    if (selected.canDelete) list.source.removeObject(selected)
                 }
             }
             addAction("Select previous") {

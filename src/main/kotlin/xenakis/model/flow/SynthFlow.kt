@@ -1,7 +1,6 @@
 package xenakis.model.flow
 
 import hextant.context.Context
-import hextant.core.editor.initialized
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import reaktive.value.ReactiveVariable
@@ -10,7 +9,6 @@ import reaktive.value.reactiveVariable
 import xenakis.impl.zero
 import xenakis.model.obj.*
 import xenakis.model.player.ParameterControlLiveUpdater
-import xenakis.model.registry.ObjectReference
 import xenakis.model.registry.reference
 import xenakis.model.score.BusControl
 import xenakis.model.score.ConstantControl
@@ -44,7 +42,7 @@ class SynthFlow(
         synthDefSelector = SynthDefSelector()
         synthDefSelector.syncWith(defRef)
         synthDefSelector.initialize(context)
-        controls.initialize(context, synthDef)
+        controls.initialize(context, this)
         listener = ParameterControlLiveUpdater(context[SuperColliderClient]) { listOf(superColliderName.now) }
         listener.listen(controls)
     }
@@ -68,7 +66,7 @@ class SynthFlow(
     override fun getOutputs(): Collection<BusObject> = super.getOutputs()
 
     override fun addListener(listener: AudioNode.Listener) {
-        controls.addListener(ControlsListener(this, listener))
+        controls.addListener(AudioNodeBusControlsListener(listener))
     }
 
     override fun getDefaultName(): String = "Synth"
@@ -76,10 +74,9 @@ class SynthFlow(
     companion object {
         fun createFor(associatedBus: BusObject, def: SynthDefObject, context: Context): SynthFlow {
             val controls = def.defaultControls(context, defaultGroup = null, defaultBus = associatedBus.reference())
-            controls.controlMap.remove("group")
             val mainBusParam = getMainBusParameter(def)
-            if (mainBusParam != null) controls.controlMap.remove(mainBusParam)
-            val flow = SynthFlow(reactiveVariable(def.reference()), controls)
+            controls.removeIf { (name, _) -> name == "group" || name == mainBusParam }
+            val flow = SynthFlow(reactiveVariable(def.reference()), ParameterControls.from(controls))
             return flow
         }
 

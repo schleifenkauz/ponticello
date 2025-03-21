@@ -21,7 +21,7 @@ import xenakis.impl.Decimal
 import xenakis.impl.parseDecimal
 import xenakis.impl.snap
 import xenakis.impl.unaryMinus
-import xenakis.model.obj.ParameterizedObject
+import xenakis.model.score.ParameterControls.NamedParameterControl
 import xenakis.sc.DecimalLiteral
 import xenakis.sc.NumericalControlSpec
 import xenakis.sc.SpecTransformation
@@ -29,11 +29,11 @@ import xenakis.ui.impl.showDialog
 import kotlin.concurrent.thread
 
 class ControlSlider(
-    private val obj: ParameterizedObject,
-    private val parameter: String,
+    private val control: NamedParameterControl,
     private val variable: ReactiveVariable<Decimal>,
 ) : HBox(5.0) {
-    private val spec get() = obj.getSpec(parameter) as NumericalControlSpec
+    private val parameter get() = control.name.now
+    private val spec get() = control.spec.now as NumericalControlSpec
 
     private val slider = Slider()
     private var buttonReleased = false
@@ -85,8 +85,8 @@ class ControlSlider(
             slider.value = mapped
         }
         slider.valueChangingProperty().addListener { _, _, changing ->
-            if (changing) obj.context[UndoManager].beginCompoundEdit("Adjust $parameter")
-            else obj.context[UndoManager].finishCompoundEdit("Adjust $parameter")
+            if (changing) control.context[UndoManager].beginCompoundEdit("Adjust $parameter")
+            else control.context[UndoManager].finishCompoundEdit("Adjust $parameter")
         }
         slider.valueProperty().addListener { _, _, v ->
             if (updating) return@addListener
@@ -99,12 +99,12 @@ class ControlSlider(
             if (v !in spec.range) {
                 val extendRange = YesNoPrompt(
                     "Value is outside of range ${spec.range}. Do you want to extend the range of this parameter?"
-                ).showDialog(obj.context)
+                ).showDialog(control.context)
                 if (extendRange == true) {
                     val newSpec =
                         if (v < spec.min.get()) spec.copy(min = DecimalLiteral(v))
                         else spec.copy(max = DecimalLiteral(v))
-                    obj.controls.setExtraSpec(parameter, newSpec)
+                    control.setCustomSpec(newSpec)
                 } else {
                     v = v.coerceIn(spec.range)
                 }
@@ -121,7 +121,7 @@ class ControlSlider(
         updating = true
         val oldValue = variable.get()
         variable.set(newValue)
-        obj.context[UndoManager].record(UpdateValue(variable, parameter, oldValue, newValue))
+        control.context[UndoManager].record(UpdateValue(variable, parameter, oldValue, newValue))
         updating = false
     }
 

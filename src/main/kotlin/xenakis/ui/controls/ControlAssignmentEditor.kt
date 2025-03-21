@@ -2,18 +2,14 @@ package xenakis.ui.controls
 
 import bundles.createBundle
 import fxutils.*
-import fxutils.actions.ActionBar
-import fxutils.actions.collectActions
 import fxutils.controls.SliderBar
-import fxutils.prompt.DetailPane
 import fxutils.prompt.SimpleSearchableListView
+import hextant.context.Context
 import hextant.fx.initHextantScene
 import hextant.serial.EditorRoot
-import javafx.geometry.Insets
 import javafx.geometry.Pos
 import javafx.scene.Node
 import javafx.scene.control.Button
-import javafx.scene.control.Label
 import javafx.scene.control.ScrollPane
 import javafx.scene.input.DragEvent
 import javafx.scene.input.Dragboard
@@ -21,18 +17,16 @@ import javafx.scene.layout.BorderPane
 import javafx.scene.layout.HBox
 import javafx.scene.layout.Priority
 import org.controlsfx.control.ToggleSwitch
-import org.kordamp.ikonli.codicons.Codicons
 import reaktive.value.ReactiveVariable
 import reaktive.value.fx.asProperty
+import reaktive.value.now
 import reaktive.value.reactiveValue
 import reaktive.value.reactiveVariable
 import xenakis.impl.asTime
 import xenakis.model.obj.*
 import xenakis.model.registry.*
 import xenakis.model.score.*
-import xenakis.sc.BufferControlSpec
-import xenakis.sc.ControlSpec
-import xenakis.sc.NumericalControlSpec
+import xenakis.sc.*
 import xenakis.sc.editor.BusSelector
 import xenakis.sc.editor.GroupSelector
 import xenakis.sc.editor.SampleSelector
@@ -41,51 +35,43 @@ import xenakis.sc.view.ObjectSelectorControl
 import xenakis.ui.impl.colorPicker
 
 class ControlAssignmentEditor(
-    private val obj: ParameterizedObject,
-    val parameter: String,
-) : BorderPane() {
-    private val nameLabel = Label(parameter)
+    val control: ParameterControls.NamedParameterControl
+) : HBox() {
     private var selectedOption: ControlType<*>? = null
     private val optionButton = Button() styleClass "sleek-button"
     private val detailEditors = mutableMapOf<ControlType<*>, Node>()
-    private val spec
-        get() = obj.getSpec(parameter) ?: error("Parameter $parameter not found in $obj")
-    private val actionBar: ActionBar = ActionBar(actions.withContext(this), buttonStyle = "medium-icon-button")
+    private val spec get() = control.spec.now
     private var settingControl = false
     private var detailEditor: Node? = null
         set(value) {
             field = value!!
-            value.styleClass?.add("control-detail-editor")
-            center = HBox(detailEditor).also { it.padding = Insets(0.0, 5.0, 0.0, 5.0) }.centerChildren()
-            HBox.setHgrow(detailEditor, Priority.ALWAYS)
-            val box = HBox(nameLabel).centerChildren()
-            if (spec is NumericalControlSpec) box.children.add(optionButton)
-            left = box
+            children.clear()
+            setHgrow(detailEditor, Priority.ALWAYS)
+            if (spec is NumericalControlSpec) children.add(optionButton)
+            children.add(detailEditor)
         }
 
     init {
-        styleClass.add("detail-item")
         optionButton.isFocusTraversable = false
         optionButton.setOnMouseClicked { showOptionPopup() }
         optionButton.minWidth = 85.0
-        nameLabel.minWidth = DetailPane.LABEL_WIDTH - 5.0
-        right = actionBar
         setupDropArea(this::canDrop, ::onDrop)
+        styleClass("control-detail-editor")
     }
 
     private fun onDrop(ev: DragEvent) {
         val db = ev.dragboard
-        val samples = obj.context[SampleRegistry]
+        val samples = control.context[SampleRegistry]
         val sample =
             if (db.hasFile("wav")) samples.getOrAdd(db.files[0])
             else if (db.hasContent(SampleObject.DATA_FORMAT)) samples.get(db.getContent(SampleObject.DATA_FORMAT) as String)
             else return
-        val ctrl = obj.controls[parameter] as BufferControl
+        val ctrl = control.now as BufferControl
         ctrl.sample.set(sample.reference())
     }
 
     private fun canDrop(db: Dragboard): Boolean {
-        if (obj.controls[parameter] !is BufferControl) return false
+        if (control.now !is BufferControl) return false
         return db.hasFile("wav") || db.hasContent(SampleObject.DATA_FORMAT)
     }
 
@@ -100,16 +86,16 @@ class ControlAssignmentEditor(
     }
 
     private fun updateControlType(t: ControlType<*>) {
-        val oldControl = obj.controls[parameter]
-        val control = t.createDefaultControl(obj, spec, oldControl)
-        obj.controls.reassignControl(parameter, control)
+        val oldControl = control.now
+        val newControl = t.createDefaultControl(control.parentObject, spec, oldControl)
+        control.reassign(newControl)
     }
 
-    fun setControl(control: ParameterControl) {
-        val type = ControlType.getType(control)
+    fun setControl(newControl: ParameterControl) {
+        val type = ControlType.getType(newControl)
         settingControl = true
         optionButton.text = type.toString()
-        detailEditor = type.createDetailInput(obj, parameter, spec, control)
+        detailEditor = type.createDetailInput(control.parentObject, control.name.now, spec, newControl)
         detailEditors[type] = detailEditor!!
         settingControl = false
     }
@@ -123,11 +109,11 @@ class ControlAssignmentEditor(
         abstract fun createDetailInput(
             obj: ParameterizedObject,
             parameter: String,
-            spec: ControlSpec,
+            spec: ControlSpec?,
             control: C
         ): Node
 
-        abstract fun createDefaultControl(obj: ParameterizedObject, spec: ControlSpec, oldControl: ParameterControl): C
+        abstract fun createDefaultControl(obj: ParameterizedObject, spec: ControlSpec?, oldControl: ParameterControl): C
 
         override fun toString(): String = when (this) {
             Buffer -> "Buffer"
@@ -144,7 +130,7 @@ class ControlAssignmentEditor(
             override fun createDetailInput(
                 obj: ParameterizedObject,
                 parameter: String, //TODO make parameter reactive
-                spec: ControlSpec,
+                spec: ControlSpec?,
                 control: ConstantControl
             ): Node {
                 val converter = (spec as NumericalControlSpec).converter()
@@ -152,12 +138,12 @@ class ControlAssignmentEditor(
                     control.value, reactiveValue(parameter), converter,
                     style = SliderBar.Style.AlwaysValue
                 )
-                sliderBar.prefWidth = 80.0
+                sliderBar.prefWidth = 150.0
                 return sliderBar
             }
 
             override fun createDefaultControl(
-                obj: ParameterizedObject, spec: ControlSpec, oldControl: ParameterControl
+                obj: ParameterizedObject, spec: ControlSpec?, oldControl: ParameterControl
             ): ConstantControl {
                 spec as NumericalControlSpec
                 return ConstantControl(reactiveVariable(oldControl.getNumericalValue() ?: spec.defaultValue.get()))
@@ -168,7 +154,7 @@ class ControlAssignmentEditor(
             override fun createDetailInput(
                 obj: ParameterizedObject,
                 parameter: String,
-                spec: ControlSpec,
+                spec: ControlSpec?,
                 control: EnvelopeControl
             ): Node {
                 val colorPicker = colorPicker(control.displayColor)
@@ -182,7 +168,7 @@ class ControlAssignmentEditor(
 
             override fun createDefaultControl(
                 obj: ParameterizedObject,
-                spec: ControlSpec,
+                spec: ControlSpec?,
                 oldControl: ParameterControl
             ): EnvelopeControl {
                 spec as NumericalControlSpec
@@ -199,7 +185,7 @@ class ControlAssignmentEditor(
             override fun createDetailInput(
                 obj: ParameterizedObject,
                 parameter: String,
-                spec: ControlSpec,
+                spec: ControlSpec?,
                 control: CustomControl
             ): Node {
                 val pane = ScrollPane(control.expr.control)
@@ -211,7 +197,7 @@ class ControlAssignmentEditor(
 
             override fun createDefaultControl(
                 obj: ParameterizedObject,
-                spec: ControlSpec,
+                spec: ControlSpec?,
                 oldControl: ParameterControl
             ): CustomControl {
                 val editor = ScExprExpander()
@@ -227,13 +213,13 @@ class ControlAssignmentEditor(
             override fun createDetailInput(
                 obj: ParameterizedObject,
                 parameter: String,
-                spec: ControlSpec,
+                spec: ControlSpec?,
                 control: BusControl
-            ): Node = busSelector(control.bus)
+            ): Node = busSelector(control.bus, spec, obj.context)
 
             override fun createDefaultControl(
                 obj: ParameterizedObject,
-                spec: ControlSpec,
+                spec: ControlSpec?,
                 oldControl: ParameterControl
             ): BusControl {
                 val initial = oldControl.getBus() ?: obj.context[BusRegistry].getDefault().reference()
@@ -245,13 +231,13 @@ class ControlAssignmentEditor(
             override fun createDetailInput(
                 obj: ParameterizedObject,
                 parameter: String,
-                spec: ControlSpec,
+                spec: ControlSpec?,
                 control: BusValueControl
-            ): Node = busSelector(control.bus)
+            ): Node = busSelector(control.bus, spec, obj.context)
 
             override fun createDefaultControl(
                 obj: ParameterizedObject,
-                spec: ControlSpec,
+                spec: ControlSpec?,
                 oldControl: ParameterControl
             ): BusValueControl {
                 val initial = oldControl.getBus() ?: obj.context[BusRegistry].getDefault().reference()
@@ -264,12 +250,12 @@ class ControlAssignmentEditor(
             override fun createDetailInput(
                 obj: ParameterizedObject,
                 parameter: String,
-                spec: ControlSpec,
+                spec: ControlSpec?,
                 control: SingleBusValueControl
-            ): Node = busSelector(control.bus)
+            ): Node = busSelector(control.bus, spec, obj.context)
 
             override fun createDefaultControl(
-                obj: ParameterizedObject, spec: ControlSpec, oldControl: ParameterControl
+                obj: ParameterizedObject, spec: ControlSpec?, oldControl: ParameterControl
             ): SingleBusValueControl {
                 val initial = oldControl.getBus() ?: obj.context[BusRegistry].getDefault().reference()
                 return SingleBusValueControl(reactiveVariable(initial))
@@ -281,21 +267,23 @@ class ControlAssignmentEditor(
             override fun createDetailInput(
                 obj: ParameterizedObject,
                 parameter: String,
-                spec: ControlSpec,
+                spec: ControlSpec?,
                 control: BufferControl
             ): Node {
                 val editor = SampleSelector()
+                spec as BufferControlSpec
+                editor.setFilter(spec.channels)
                 editor.syncWith(control.sample)
+                editor.initialize(obj.context)
                 val selectorControl = ObjectSelectorControl(editor, createBundle())
                 val displaySwitch = ToggleSwitch("Display: ")
-                spec as BufferControlSpec
                 displaySwitch.selectedProperty().bindBidirectional(control.display.asProperty())
                 return HBox(selectorControl, infiniteSpace(), displaySwitch).centerChildren()
             }
 
             override fun createDefaultControl(
                 obj: ParameterizedObject,
-                spec: ControlSpec,
+                spec: ControlSpec?,
                 oldControl: ParameterControl
             ): BufferControl {
                 spec as BufferControlSpec
@@ -309,17 +297,18 @@ class ControlAssignmentEditor(
             override fun createDetailInput(
                 obj: ParameterizedObject,
                 parameter: String,
-                spec: ControlSpec,
+                spec: ControlSpec?,
                 control: GroupControl
             ): Node {
                 val selector = GroupSelector()
                 selector.syncWith(control.group)
+                selector.initialize(obj.context)
                 return ObjectSelectorControl(selector, createBundle())
             }
 
             override fun createDefaultControl(
                 obj: ParameterizedObject,
-                spec: ControlSpec,
+                spec: ControlSpec?,
                 oldControl: ParameterControl
             ): GroupControl =
                 GroupControl(reactiveVariable(obj.context[GroupRegistry].getDefault().reference()))
@@ -341,25 +330,16 @@ class ControlAssignmentEditor(
                 else -> throw AssertionError()
             } as ControlType<O>
 
-            private fun busSelector(control: ReactiveVariable<BusReference>): ObjectSelectorControl<BusObject> {
+            private fun busSelector(
+                control: ReactiveVariable<BusReference>,
+                spec: ControlSpec?, context: Context
+            ): ObjectSelectorControl<BusObject> {
                 val editor = BusSelector()
+                if (spec is BusControlSpec) editor.setFilter(spec.rate, spec.channels)
+                else editor.setFilter(rate = Rate.Control, channels = 1)
                 editor.syncWith(control)
+                editor.initialize(context)
                 return ObjectSelectorControl(editor, createBundle())
-            }
-        }
-    }
-
-    companion object {
-        private val actions = collectActions<ControlAssignmentEditor> {
-            addAction("Edit spec") {
-                shortcut("Ctrl+P")
-                applicableIf { editor -> reactiveValue(editor.spec is NumericalControlSpec) }
-                //editor.obj.def.getParameter(editor.parameter)!!.spec.map { s -> s is NumericalControlSpec }
-                icon(Codicons.SYMBOL_PROPERTY)
-                executes { editor: ControlAssignmentEditor ->
-                    ControlSpecPrompt(editor.obj, editor.parameter, editor.spec)
-                        .showDialog(anchorNode = editor)
-                }
             }
         }
     }

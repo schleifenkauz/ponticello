@@ -29,13 +29,14 @@ val SCORE = component<Score>("score", ::Score)
 
 val allComponents = listOf<Component<out ContextualObject>>(
     SETTINGS,
-    GROUPS, BUSSES, SAMPLES, BUFFERS, SCORE,
+    GROUPS, BUSSES, SAMPLES, BUFFERS,
     PATTERNS, INSTRUMENTS, PROCESS_DEFS,
     FLOWS, SETUP_CODE, SERVER_OPTIONS,
     OBJECTS, SCORE
 )
 
-inline operator fun <reified T: ContextualObject> XenakisProject.get(component: Component<T>) = components[component] as T
+inline operator fun <reified T : ContextualObject> XenakisProject.get(component: Component<out T>) =
+    components[component] as T
 
 val XenakisProject.score get() = get(SCORE)
 val XenakisProject.busses get() = get(BUSSES)

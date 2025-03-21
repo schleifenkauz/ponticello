@@ -16,14 +16,17 @@ import xenakis.impl.parseDecimal
 import xenakis.model.flow.FlowType
 import xenakis.model.obj.ConfigurableParameterizedObjectDef
 import xenakis.model.obj.ParameterDefObject
-import xenakis.model.obj.ParameterizedObject
+import xenakis.model.score.ParameterControls.NamedParameterControl
 import xenakis.sc.*
 import xenakis.sc.ParameterType.*
 
-class ControlSpecPrompt(
-    private val obj: ParameterizedObject, private val parameter: String,
-    initialSpec: ControlSpec
-) : CompoundPrompt<ParameterDefObject>("Control spec for parameter $parameter of synth ${obj.name.now}") {
+class ControlSpecPrompt(private val control: NamedParameterControl) : CompoundPrompt<ParameterDefObject>(
+    "Control spec for parameter ${control.name.now} of synth ${control.parentObject.name.now}"
+) {
+    private val initialSpec = control.spec.now!!
+
+    private val parameterName = control.name.now
+
     private var currentSpecType = initialSpec.type
         set(value) {
             if (field == value) return
@@ -72,7 +75,7 @@ class ControlSpecPrompt(
 
     init {
         warpBox.value = numericalSpec?.warp ?: Warp.Linear
-        if (parameter !in obj.controls.controlMap) specTypeButtonBar named "Parameter type"
+        if (parameterName !in control.controls.controlMap) specTypeButtonBar named "Parameter type"
         if (currentSpecType == Numerical) addNumericalSpecInputs()
         val isValid = Bindings.createBooleanBinding({
             when {
@@ -100,33 +103,32 @@ class ControlSpecPrompt(
     }
 
     override fun extraButtons(): List<Button> = when {
-        obj.def !is ConfigurableParameterizedObjectDef -> emptyList()
-        obj.def.hasParameter(parameter) -> listOf(confirmAndSyncBtn, resetBtn)
+        control.parentObject.def !is ConfigurableParameterizedObjectDef -> emptyList()
+        control.parentObject.def.hasParameter(parameterName) -> listOf(confirmAndSyncBtn, resetBtn)
         else -> listOf(confirmAndAddBtn)
     }
 
     private fun reset() {
-        obj.controls.setExtraSpec(parameter, null)
+        control.setCustomSpec(null)
     }
 
     private fun confirmAndSync() {
         val param = confirm()
-        val defParameter = obj.def.getParameter(parameter)!!
-        defParameter.spec.now = param.spec.now
+        control.parentObject.def.setSpec(parameterName, param.spec.now)
     }
 
     private fun confirmAndAdd() {
         val param = confirm()
-        val def = obj.def as ConfigurableParameterizedObjectDef
+        val def = control.parentObject.def as ConfigurableParameterizedObjectDef
         def.parameters.now.add(param)
     }
 
     override fun confirm(): ParameterDefObject {
         val spec = makeSpec()
-        if (parameter in obj.controls.controlMap) {
-            obj.controls.setExtraSpec(parameter, spec)
+        if (parameterName in control.parentObject.controls.controlMap) {
+            control.setCustomSpec(spec)
         }
-        return ParameterDefObject(parameter, spec)
+        return ParameterDefObject(parameterName, spec)
     }
 
     private fun makeSpec() = when (currentSpecType) {

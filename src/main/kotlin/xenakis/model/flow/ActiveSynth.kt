@@ -39,7 +39,7 @@ data class ActiveSynth(
     override fun getOutputs(): Collection<BusObject> = obj.getOutputs()
 
     override fun addListener(listener: AudioNode.Listener) {
-        obj.controls.addListener(ControlsListener(obj, listener))
+        obj.controls.addListener(AudioNodeBusControlsListener(listener))
     }
 
     override fun toString(): String = superColliderName.now

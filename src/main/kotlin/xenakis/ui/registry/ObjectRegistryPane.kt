@@ -1,8 +1,9 @@
 package xenakis.ui.registry
 
-import fxutils.*
 import fxutils.actions.collectActions
 import fxutils.actions.registerShortcuts
+import fxutils.plural
+import fxutils.styleClass
 import javafx.scene.layout.HBox
 import javafx.scene.layout.Priority
 import org.controlsfx.control.textfield.CustomTextField
@@ -46,12 +47,16 @@ abstract class ObjectRegistryPane<O : NamedObject>(
     override val items: List<O>
         get() = registry.all()
 
-    override fun deleteObject(obj: O) {
+    override fun removeObject(obj: O) {
         registry.remove(obj)
     }
 
     override fun addObject(obj: O, idx: Int) {
         registry.add(obj, idx)
+    }
+
+    override fun moveObject(obj: O, idx: Int) {
+        registry.move(obj, idx)
     }
 
     protected abstract fun sync()
@@ -69,11 +74,15 @@ abstract class ObjectRegistryPane<O : NamedObject>(
     private fun matchesSearch(obj: O) = obj.name.now.contains(searchText.text, ignoreCase = true)
 
     override fun added(obj: O, idx: Int) {
-        boxList.add(idx, obj)
+        boxList.added(idx, obj)
     }
 
     override fun removed(obj: O, idx: Int) {
-        boxList.remove(obj)
+        boxList.removed(obj)
+    }
+
+    override fun moved(obj: O, idx: Int) {
+        boxList.moved(obj, idx)
     }
 
     protected abstract fun addObject(name: String): O?

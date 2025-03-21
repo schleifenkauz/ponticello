@@ -136,7 +136,7 @@ class SynthObject(
         synthDefSelector = SynthDefSelector()
         synthDefSelector.syncWith(synthDefRef)
         synthDefSelector.initialize(context)
-        controls.initialize(context, synthDef)
+        controls.initialize(context, this)
         listener = ParameterControlLiveUpdater(context[SuperColliderClient], ::getActiveSynths)
         listener.listen(controls)
     }
@@ -154,7 +154,10 @@ class SynthObject(
     }
 
     companion object {
-        fun create(name: String, def: SynthDefObject, controls: ParameterControls = ParameterControls()): SynthObject {
+        fun create(
+            name: String, def: SynthDefObject,
+            controls: ParameterControls = ParameterControls.empty()
+        ): SynthObject {
             return SynthObject(reactiveVariable(name), reactiveVariable(def.reference()), controls)
         }
     }

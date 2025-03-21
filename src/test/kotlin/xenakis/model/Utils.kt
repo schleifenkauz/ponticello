@@ -21,7 +21,7 @@ object Utils {
         val dummy1 = SynthObject(
             mutableName = reactiveVariable(name),
             synthDefRef = reactiveVariable(ObjectReference("default")),
-            controls = ParameterControls(mutableMapOf("group" to GroupControl(reactiveVariable(defaultGroup))))
+            controls = ParameterControls.create("group" to GroupControl(reactiveVariable(defaultGroup)))
         )
         dummy1.setInitialSize(10.0.asTime, 100.0.toDecimal())
         return dummy1

@@ -45,9 +45,9 @@ class ParameterListSource(
 
     fun syncWithBoxList(parametersList: ObjectBoxList<ParameterDefObject>) {
         observer = objects.observeList { ch ->
-            if (ch.wasAdded) parametersList.add(ch.index, ch.added)
+            if (ch.wasAdded) parametersList.added(ch.index, ch.added)
             if (ch.wasRemoved) {
-                parametersList.remove(ch.removed)
+                parametersList.removed(ch.removed)
                 observers.remove(ch.removed)!!.kill()
             }
         }

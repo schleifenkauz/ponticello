@@ -79,11 +79,18 @@ abstract class ObjectRegistry<O : NamedObject>: AbstractContextualObject() {
         views.notifyListeners { removed(obj, idx) }
     }
 
+    fun move(obj: O, idx: Int) {
+        Logger.info("Moving $obj to $idx", Logger.Category.Registries)
+        check(objects.remove(obj)) { error("Object $obj not found in $this") }
+        objects.add(idx, obj)
+        views.notifyListeners { moved(obj, idx) }
+    }
+
     protected open fun onAdded(obj: O, idx: Int) {}
 
     protected open fun onRemoved(obj: O, idx: Int) {}
 
-    private sealed class Edit<O : NamedObject>(protected val registry: ObjectRegistry<O>) : AbstractEdit() {
+    private sealed class Edit<O : NamedObject>(val registry: ObjectRegistry<O>) : AbstractEdit() {
         class AddObject<O : NamedObject>(
             registry: ObjectRegistry<O>,
             private val obj: O,
@@ -117,6 +124,24 @@ abstract class ObjectRegistry<O : NamedObject>: AbstractContextualObject() {
                 registry.remove(obj)
             }
         }
+
+        class MoveObject<O : NamedObject>(
+            registry: ObjectRegistry<O>,
+            private val obj: O,
+            private val fromIdx: Int,
+            private val toIdx: Int
+        ) : Edit<O>(registry) {
+            override val actionDescription: String
+                get() = "Move ${registry.objectType}"
+
+            override fun doRedo() {
+                registry.move(obj, toIdx)
+            }
+
+            override fun doUndo() {
+                registry.move(obj, fromIdx)
+            }
+        }
     }
 
     fun addListener(listener: Listener<O>, initialize: Boolean = true) {
@@ -137,5 +162,8 @@ abstract class ObjectRegistry<O : NamedObject>: AbstractContextualObject() {
     interface Listener<in O : NamedObject> {
         fun added(obj: O, idx: Int)
         fun removed(obj: O, idx: Int)
+        fun moved(obj: O, idx: Int) {
+
+        }
     }
 }

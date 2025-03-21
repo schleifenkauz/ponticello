@@ -31,8 +31,8 @@ class XenakisProject private constructor(val components: Map<Component<out Conte
     fun initialize(context: Context) {
         this.context = context
         client = context[SuperColliderClient]
-        for ((_, component) in components) {
-            component.initialize(context)
+        for (comp in allComponents) {
+            get(comp).initialize(context)
         }
     }
 

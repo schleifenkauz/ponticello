@@ -4,224 +4,295 @@ import hextant.context.Context
 import hextant.core.editor.ListenerManager
 import hextant.undo.AbstractEdit
 import hextant.undo.UndoManager
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import reaktive.Observer
-import reaktive.list.observeEach
-import reaktive.value.now
-import xenakis.model.obj.ParameterDefObject
+import reaktive.value.*
+import reaktive.value.binding.orElse
+import xenakis.impl.Logger
+import xenakis.model.obj.AbstractContextualObject
+import xenakis.model.obj.AbstractRenamableObject
+import xenakis.model.obj.ParameterizedObject
 import xenakis.model.obj.ParameterizedObjectDef
-import xenakis.model.obj.SynthDefObject
 import xenakis.sc.ControlSpec
 
 @Serializable
-class ParameterControls(
-    private val map: MutableMap<String, ParameterControl> = mutableMapOf(),
-    private val extraSpecs: MutableMap<String, ControlSpec> = mutableMapOf()
-) {
-    val extraParameters: Collection<ParameterDefObject>
-        get() = extraSpecs.map { (name, spec) -> ParameterDefObject(name, spec) }
-
+class ParameterControls(private val controls: MutableList<NamedParameterControl>) : AbstractContextualObject() {
     @Transient
-    private lateinit var parameterNameObserver: Observer
+    private lateinit var associatedObject: ParameterizedObject
 
-    @Transient
-    private lateinit var context: Context
+    private val def: ParameterizedObjectDef get() = associatedObject.def
 
-    @Transient
-    private lateinit var def: ParameterizedObjectDef
-
-    val controlMap: MutableMap<String, ParameterControl> get() = map
+    val controlMap: Map<String, ParameterControl> get() = controls.associate { c -> c.name.now to c.now }
 
     @Transient
     private val listenerManager = ListenerManager.createWeakListenerManager<Listener>()
 
-    fun initialize(context: Context, synthDefObject: SynthDefObject) {
-        this.context = context
-        def = synthDefObject
-        for ((_, ctrl) in map) ctrl.initialize(context)
-        parameterNameObserver = def.parameters.observeEach { _, p ->
-            p.name.observe { _, oldName, newName ->
-                val control = controlMap[oldName] ?: return@observe
-                val extraSpec = getExtraSpec(oldName)
-                if (extraSpec != null) {
-                    extraSpecs.remove(oldName)
-                    extraSpecs[newName] = extraSpec
-                }
-                removeControl(oldName)
-                addControl(newName, control)
-            } and p.spec.observe { _, _, newSpec ->
-                if (p.name.now !in extraSpecs) {
-                    listenerManager.notifyListeners { changedSpec(p.name.now, newSpec) }
-                }
+    fun has(parameter: String): Boolean = controls.any { c -> c.name.now == parameter }
+
+    @Serializable
+    class NamedParameterControl(
+        @SerialName("name") override val mutableName: ReactiveVariable<String>,
+        private var value: ParameterControl,
+        private val customSpec: ReactiveVariable<ControlSpec?> = reactiveVariable(null)
+    ) : AbstractRenamableObject() {
+        constructor(name: String, value: ParameterControl, customSpec: ControlSpec? = null) : this(
+            reactiveVariable(name), value, reactiveVariable(customSpec)
+        )
+
+        @Transient
+        lateinit var spec: ReactiveValue<ControlSpec?>
+            private set
+
+        @Transient
+        lateinit var controls: ParameterControls
+            private set
+
+        val parentObject get() = controls.associatedObject
+
+        fun customSpec(): ControlSpec? = customSpec.now
+
+        @Transient
+        private lateinit var observer: Observer
+
+        val now get() = value
+
+        override fun copy(name: String): NamedParameterControl = NamedParameterControl(name, value, customSpec.now)
+
+        fun copy(value: ParameterControl = now): NamedParameterControl =
+            NamedParameterControl(name.now, value, customSpec.now)
+
+        override val canCopy: Boolean get() = true
+
+        fun initialize(controls: ParameterControls) {
+            this.controls = controls
+            super.initialize(controls.context)
+            value.initialize(context)
+            spec = customSpec.orElse(controls.def.getSpec(name.now) ?: reactiveValue(null))
+            observer = spec.observe { _, oldSpec, newSpec ->
+                controls.notifyListeners { changedSpec(this@NamedParameterControl, oldSpec, newSpec) }
             }
         }
+
+        fun setCustomSpec(custom: ControlSpec?) {
+            val before = customSpec.now
+            customSpec.set(custom)
+            context[UndoManager].record(Edit.EditCustomSpec(this, before, custom))
+        }
+
+        fun reassign(newControl: ParameterControl) {
+            val oldControl = value
+            newControl.initialize(context)
+            value = newControl
+            context[UndoManager].record(Edit.ReassignControl(this, oldControl, newControl))
+            controls.notifyListeners { reassignedControl(this@NamedParameterControl, oldControl, newControl) }
+        }
+
+        override fun canRenameTo(newName: String): Boolean = !controls.has(newName)
+
+        override fun rename(newName: String) {
+            val oldName = name.now
+            super.rename(newName)
+            controls.notifyListeners { renamedControl(this@NamedParameterControl, oldName, newName) }
+        }
     }
 
-    operator fun get(name: String) = map.getValue(name)
+    private fun notifyListeners(action: Listener.() -> Unit) {
+        listenerManager.notifyListeners(action)
+    }
 
-    fun getExtraSpec(parameter: String): ControlSpec? = extraSpecs[parameter]
+    fun initialize(context: Context, associatedObject: ParameterizedObject) {
+        super.initialize(context)
+        this.associatedObject = associatedObject
+        for (ctrl in controls) ctrl.initialize(this)
+    }
+
+    operator fun get(name: String) = controls.find { c -> c.name.now == name }
+
+    fun getControl(name: String) = get(name)?.now
+
+    fun getCustomSpec(parameter: String): ControlSpec? = get(parameter)?.customSpec()
 
     fun reassignControl(parameter: String, control: ParameterControl) {
-        if (parameter !in map) {
-            addControl(parameter, control)
+        val named = get(parameter)
+        if (named == null) {
+            Logger.error("Parameter '$parameter' was not defined in $this")
             return
         }
-        val oldControl = map[parameter]!!
-        control.initialize(context)
-        map[parameter] = control
-        context[UndoManager].record(Edit.ReassignControl(this, parameter, oldControl, control))
-        listenerManager.notifyListeners { reassignedControl(parameter, oldControl, control) }
+        named.reassign(control)
     }
 
-    fun addControl(parameter: String, control: ParameterControl) {
-        control.initialize(context)
-        map[parameter] = control
-        context[UndoManager].record(Edit.AddControl(this, parameter, control))
-        listenerManager.notifyListeners { addedControl(parameter, control) }
+    fun addControl(parameter: String, control: ParameterControl, customSpec: ControlSpec? = null) {
+        val named = NamedParameterControl(parameter, control, customSpec)
+        addControl(named, idx = controls.size)
     }
 
-    fun setExtraSpec(parameter: String, spec: ControlSpec?) {
-        val before = extraSpecs[parameter]
-        if (before == spec) return
-        if (spec == null || (before == null && spec == def.getParameter(parameter)?.spec)) {
-            extraSpecs.remove(parameter)
-        } else {
-            extraSpecs[parameter] = spec
-        }
-        val after = extraSpecs[parameter]
-        context[UndoManager].record(Edit.EditExtraSpec(this, parameter, before, after))
-        val newSpec = after ?: def.getParameter(parameter)?.spec?.now
-        ?: error("Cannot remove extra spec for parameter $parameter because is is not specified in $def")
-        listenerManager.notifyListeners { changedSpec(parameter, newSpec) }
+    fun addControl(named: NamedParameterControl, idx: Int = controls.size) {
+        controls.add(idx, named)
+        context[UndoManager].record(Edit.AddControl(this, idx, named))
+        listenerManager.notifyListeners { addedControl(named, idx) }
     }
 
-    fun removeExtraSpec(parameter: String) {
-        val before = extraSpecs.remove(parameter)
-        context[UndoManager].record(Edit.EditExtraSpec(this, parameter, before, extraSpecAfter = null))
-        val defParameter = def.getParameter(parameter)!!
-        val synthDefSpec = defParameter.spec.now
-        listenerManager.notifyListeners { changedSpec(parameter, synthDefSpec) }
-    }
+    fun all(): List<NamedParameterControl> = controls
 
     fun removeControl(parameter: String) {
-        val control = map.remove(parameter) ?: error("Parameter $parameter not found in controls")
-        extraSpecs.remove(parameter)
-        context[UndoManager].record(Edit.RemoveControl(this, parameter, control, extraSpecs[parameter]))
-        listenerManager.notifyListeners { removedControl(parameter, control) }
+        val control = get(parameter) ?: error("Parameter $parameter not found in controls")
+        removeControl(control)
+    }
+
+    fun removeControl(control: NamedParameterControl) {
+        val idx = controls.indexOf(control)
+        if (idx == -1) error("Parameter $control not found in $this")
+        controls.remove(control)
+        context[UndoManager].record(Edit.RemoveControl(this, idx, control))
+        listenerManager.notifyListeners { removedControl(control) }
+    }
+
+    fun moveControl(control: NamedParameterControl, idx: Int) {
+        val oldIdx = controls.indexOf(control)
+        if (oldIdx == -1) error("Parameter $control not found in $this")
+        if (oldIdx == idx) return
+        controls.add(idx, control)
+        controls.remove(control)
+        context[UndoManager].record(Edit.MoveControl(this, control, oldIdx, idx))
+        listenerManager.notifyListeners { movedControl(control, oldIdx, idx) }
     }
 
     fun transformControls(f: (String, ParameterControl) -> ParameterControl) =
-        ParameterControls(map.mapValuesTo(mutableMapOf()) { (name, ctrl) -> f(name, ctrl) }, extraSpecs.toMutableMap())
+        ParameterControls(controls.mapTo(mutableListOf()) { p -> p.copy(f(p.name.now, p.now)) })
 
-    fun copy() = ParameterControls(map.mapValuesTo(mutableMapOf()) { (_, c) -> c.copy() }, extraSpecs.toMutableMap())
+    fun copy() = ParameterControls(controls.mapTo(mutableListOf()) { it.copy() })
 
     fun addListener(listener: Listener, initialize: Boolean = true) {
         listenerManager.addListener(listener)
         if (initialize) {
-            for ((name, control) in controlMap) {
-                listener.addedControl(name, control)
+            for ((idx, control) in controls.withIndex()) {
+                listener.addedControl(control, idx)
             }
         }
     }
 
-    fun renameControl(parameter: String, newName: String) {
-        check(parameter in controlMap) { "No parameter with name '$parameter'" }
-        check(newName !in controlMap) { "Parameter with name '$newName' already exists" }
-        val control = get(parameter)
-        val spec = extraSpecs.remove(parameter)
-        if (spec != null) extraSpecs[newName] = spec
-        removeControl(parameter)
-        addControl(newName, control)
-    }
-
     abstract class Edit(protected val controls: ParameterControls) : AbstractEdit() {
         class ReassignControl(
-            controls: ParameterControls,
-            private val parameter: String,
+            private val control: NamedParameterControl,
             private val oldControl: ParameterControl,
-            private val newControl: ParameterControl,
-        ) : Edit(controls) {
+            private val newControl: ParameterControl
+        ) : AbstractEdit() {
             override val actionDescription: String
                 get() = "Reassign controls"
 
             override fun doUndo() {
-                controls.reassignControl(parameter, oldControl)
+                control.reassign(oldControl)
             }
 
             override fun doRedo() {
-                controls.reassignControl(parameter, newControl)
+                control.reassign(newControl)
             }
         }
 
         class AddControl(
             controls: ParameterControls,
-            private val parameter: String,
-            private val control: ParameterControl,
+            private val idx: Int,
+            private val control: NamedParameterControl
         ) : Edit(controls) {
             override val actionDescription: String
                 get() = "Add control"
 
             override fun doUndo() {
-                controls.removeControl(parameter)
+                controls.removeControl(control)
             }
 
             override fun doRedo() {
-                controls.addControl(parameter, control)
+                controls.addControl(control, idx)
             }
         }
 
         class RemoveControl(
             controls: ParameterControls,
-            private val parameter: String,
-            private val control: ParameterControl,
-            private val extraSpec: ControlSpec?,
+            private val index: Int,
+            private val control: NamedParameterControl,
         ) : Edit(controls) {
             override val actionDescription: String
                 get() = "Remove control"
 
             override fun doUndo() {
-                controls.setExtraSpec(parameter, extraSpec)
-                controls.addControl(parameter, control)
+                controls.addControl(control, index)
             }
 
             override fun doRedo() {
-                if (extraSpec != null) controls.setExtraSpec(parameter, null)
-                controls.removeControl(parameter)
+                controls.removeControl(control)
             }
         }
 
-        class EditExtraSpec(
+        class MoveControl(
             controls: ParameterControls,
-            private val parameter: String,
+            private val control: NamedParameterControl,
+            private val fromIdx: Int,
+            private val toIdx: Int
+        ) : Edit(controls) {
+            override val actionDescription: String
+                get() = "Move parameter control"
+
+            override fun doRedo() {
+                controls.moveControl(control, toIdx)
+            }
+
+            override fun doUndo() {
+                controls.moveControl(control, fromIdx)
+            }
+        }
+
+        class EditCustomSpec(
+            private val control: NamedParameterControl,
             private val extraSpecBefore: ControlSpec?,
             private val extraSpecAfter: ControlSpec?
-        ) : Edit(controls) {
+        ) : AbstractEdit() {
             override val actionDescription: String
                 get() = when {
                     extraSpecBefore != null && extraSpecAfter == null -> "Reset parameter spec"
-                    extraSpecBefore == null && extraSpecAfter != null -> "Add extra parameter spec"
+                    extraSpecBefore == null && extraSpecAfter != null -> "Add custom parameter spec"
                     else -> "Modify extra spec"
                 }
 
             override fun doUndo() {
-                controls.setExtraSpec(parameter, extraSpecBefore)
+                control.setCustomSpec(extraSpecBefore)
             }
 
             override fun doRedo() {
-                controls.setExtraSpec(parameter, extraSpecAfter)
+                control.setCustomSpec(extraSpecAfter)
             }
         }
+
     }
 
     interface Listener {
-        fun addedControl(parameter: String, control: ParameterControl)
-        fun removedControl(parameter: String, control: ParameterControl)
-        fun reassignedControl(parameter: String, oldControl: ParameterControl, control: ParameterControl) {
-            removedControl(parameter, oldControl)
-            addedControl(parameter, control)
+        fun renamedControl(controls: NamedParameterControl, oldName: String, newName: String) {
         }
 
-        fun changedSpec(parameter: String, newSpec: ControlSpec) {}
+        fun addedControl(control: NamedParameterControl, idx: Int)
+
+        fun removedControl(control: NamedParameterControl)
+
+        fun movedControl(control: NamedParameterControl, fromIdx: Int, toIdx: Int) {}
+
+        fun reassignedControl(
+            namedControl: NamedParameterControl,
+            oldControl: ParameterControl,
+            control: ParameterControl
+        )
+
+        fun changedSpec(control: NamedParameterControl, oldSpec: ControlSpec?, newSpec: ControlSpec?) {}
+    }
+
+    companion object {
+        fun empty() = ParameterControls(mutableListOf())
+
+        fun create(vararg entries: Pair<String, ParameterControl>): ParameterControls = from(entries.asList())
+
+        fun from(controls: List<Pair<String, ParameterControl>>): ParameterControls {
+            val controls = controls.mapTo(mutableListOf()) { (name, control) -> NamedParameterControl(name, control) }
+            return ParameterControls(controls)
+        }
     }
 }

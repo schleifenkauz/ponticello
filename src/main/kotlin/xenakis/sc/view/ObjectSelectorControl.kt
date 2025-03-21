@@ -1,19 +1,10 @@
 package xenakis.sc.view
 
 import bundles.Bundle
-import fxutils.prompt.SearchableListView
-import fxutils.styleClass
-import hextant.core.editor.SimpleChoiceEditor
-import hextant.core.view.EditorControl
 import hextant.core.view.SimpleChoiceEditorControl
-import hextant.core.view.SimpleChoiceEditorView
-import javafx.scene.Node
-import javafx.scene.control.Button
-import reaktive.value.fx.asObservableValue
 import reaktive.value.now
 import xenakis.model.registry.NamedObject
 import xenakis.model.registry.ObjectReference
-import xenakis.model.registry.ObjectRegistry
 import xenakis.model.registry.reference
 import xenakis.sc.editor.ObjectSelector
 import xenakis.ui.registry.SearchableRegistryView
@@ -21,7 +12,6 @@ import xenakis.ui.registry.SearchableRegistryView
 class ObjectSelectorControl<O : NamedObject>(
     private val selector: ObjectSelector<O>, arguments: Bundle
 ) : SimpleChoiceEditorControl<ObjectReference<O>>(selector, arguments) {
-
     public override fun showChoicePopup() {
         val registry = selector.getRegistry()
         val view = object : SearchableRegistryView<O>(registry, "Select ${registry.objectType}") {

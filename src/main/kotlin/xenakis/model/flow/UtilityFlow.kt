@@ -32,11 +32,9 @@ class UtilityFlow(
             muted.now -> Decimal.NINF
             else -> volumeDb.now
         }
-        val controls = ParameterControls(
-            mutableMapOf(
-                "bus" to BusControl(reactiveVariable(associatedBus.reference())),
-                "volume" to ConstantControl(reactiveVariable(volume)),
-            ),
+        val controls = ParameterControls.create(
+            "bus" to BusControl(reactiveVariable(associatedBus.reference())),
+            "volume" to ConstantControl(reactiveVariable(volume)),
         )
         val synthVar = superColliderName.now
         val info = ScoreObjectInfo(ObjectPosition.ZERO, synthVar.removePrefix("~"), synthVar, placement)

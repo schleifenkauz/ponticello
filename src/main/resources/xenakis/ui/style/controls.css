@@ -26,7 +26,11 @@
     -fx-background-color: rgba(100, 0, 0, 0.1);
 }
 
-
 .detail-item:drop-possible {
     -fx-background-color: #222720;
+}
+
+.control-detail-editor {
+    -fx-alignment: center-left;
+    -fx-spacing: 5px;
 }

@@ -16,7 +16,6 @@ import xenakis.model.obj.BusObject
 import xenakis.model.obj.BusReference
 import xenakis.model.obj.ReferencedSynthDefObject
 import xenakis.model.registry.BusRegistry
-import xenakis.model.registry.ObjectReference
 import xenakis.model.registry.reference
 import xenakis.model.score.BusControl
 import xenakis.model.score.ConstantControl
@@ -47,12 +46,10 @@ class SendFlow(
         SendFlow(targetRef.copy(), amountPercent.copy())
 
     override fun ScWriter.writeCode(placement: NodePlacement) {
-        val controls = ParameterControls(
-            mutableMapOf(
-                "in" to BusControl(reactiveVariable(associatedBus.reference())),
-                "out" to BusControl(reactiveVariable(targetRef.now)),
-                "amp" to ConstantControl(reactiveVariable(amountPercent.now * 0.01.toDecimal())),
-            ),
+        val controls = ParameterControls.create(
+            "in" to BusControl(reactiveVariable(associatedBus.reference())),
+            "out" to BusControl(reactiveVariable(targetRef.now)),
+            "amp" to ConstantControl(reactiveVariable(amountPercent.now * 0.01.toDecimal())),
         )
         val synthVar = superColliderName.now
         val info = ScoreObjectInfo(ObjectPosition.ZERO, synthVar.removePrefix("~"), synthVar, placement)

@@ -83,10 +83,15 @@ class NameControl(val obj: RenamableObject) : HBox() {
                 icon(Material2AL.EDIT)
                 executes(NameControl::startEdit)
             }
-            addAction("Commit change") {
+            addAction("Commit edit") {
                 applicableIf { ctrl -> ctrl.isEditing }
                 icon(Material2AL.CHECK)
                 executes(NameControl::commitEdit)
+            }
+            addAction("Abandon edit") {
+                applicableIf { ctrl -> ctrl.isEditing }
+                icon(Material2AL.CLOSE)
+                executes(NameControl::abandonEdit)
             }
         }
     }

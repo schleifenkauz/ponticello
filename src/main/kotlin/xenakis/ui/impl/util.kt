@@ -4,11 +4,7 @@ package xenakis.ui.impl
 
 import fxutils.SubWindow
 import fxutils.prompt.Prompt
-import fxutils.registerShortcuts
 import hextant.context.Context
-import hextant.context.withoutUndo
-import hextant.core.editor.snapshot
-import hextant.serial.EditorRoot
 import javafx.scene.Parent
 import javafx.scene.control.ColorPicker
 import javafx.scene.input.DataFormat
@@ -20,12 +16,10 @@ import reaktive.value.ReactiveVariable
 import reaktive.value.now
 import xenakis.impl.Decimal
 import xenakis.impl.asY
-import xenakis.model.obj.SuperColliderObject
 import xenakis.model.registry.NamedObject
 import xenakis.model.registry.ObjectRegistry
 import xenakis.model.score.ScoreObject
 import xenakis.model.score.ScoreObjectInstance
-import xenakis.sc.editor.CodeBlockEditor
 import xenakis.ui.launcher.XenakisApp.Companion.primaryStage
 import xenakis.ui.launcher.XenakisMainActivity
 
@@ -67,7 +61,7 @@ fun <R> Prompt<R, *>.showDialog(context: Context) = showDialog(owner = context[p
 
 fun makeSubWindow(
     root: Parent, title: String,
-    context: Context, type: SubWindow.Type = SubWindow.Type.ToolWindow
+    context: Context, type: SubWindow.Type = SubWindow.Type.Undecorated
 ): SubWindow {
     val w = SubWindow(root, title, type)
     w.initOwner(context[primaryStage])
