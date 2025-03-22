@@ -140,12 +140,12 @@ class EnvelopeEditor(
         var idx = envelope.points.map(EnvelopePoint::time).binarySearch(t)
         if (idx >= 0) return
         idx = -(idx + 1)
-        if (idx == 0 || idx == envelope.points.size - 1) return
+        if (idx == 0 || idx == envelope.points.size) return
         val v1 = envelope.points[idx - 1].value
         val v2 = envelope.points[idx].value
         if ((v1 - v2).absoluteValue < 0.1.pow(spec.precision)) {
             val v = DecimalPrompt("Value for envelope segment", spec.precision, v1, spec.range)
-                .showDialog(ev) ?: return
+                .showDialog(pane.scene.window, Point2D(ev.screenX, ev.screenY)) ?: return
             envelope.beginSegmentEdit(idx - 1)
             envelope.editSegment(v)
             envelope.finishEdit()

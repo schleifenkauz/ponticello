@@ -5,34 +5,30 @@ import fxutils.prompt.PredicateTextPrompt
 import fxutils.prompt.SimpleSearchableListView
 import hextant.context.Context
 import org.kordamp.ikonli.material2.Material2MZ
-import reaktive.list.MutableReactiveList
 import reaktive.value.now
-import xenakis.model.flow.FlowType
 import xenakis.model.obj.ParameterDefObject
-import xenakis.sc.*
+import xenakis.sc.Identifier
+import xenakis.sc.ParameterType
+import xenakis.sc.defaultControlSpec
 
-class ParameterDefsPane(
-    parameters: MutableReactiveList<ParameterDefObject>,
-    context: Context, title: String
-) : ToolPane() {
-    private val config = ParameterListSource(context, parameters)
+class ParameterDefsPane(private val parameters: ParameterDefList, context: Context, title: String) : ToolPane() {
+    private val config = ParameterListConfig(context)
 
-    private val objectBoxList: ObjectBoxList<ParameterDefObject> = ObjectBoxList(config)
+    private val objectBoxList = NamedObjectListView(parameters, config)
 
     init {
-        config.syncWithBoxList(objectBoxList)
         setup(title = title, content = objectBoxList, actions = actions.withContext(this))
     }
 
     private fun addParameter() {
         val name = PredicateTextPrompt("Parameter name", initialText = "", check = { txt ->
-            Identifier.isValid(txt) && config.items.none { p -> p.name.now == txt }
+            Identifier.isValid(txt) && parameters.none { p -> p.name.now == txt }
         }).showDialog(header) ?: return
         SimpleSearchableListView<ParameterType>(ParameterType.regularTypes, "Parameter type")
             .showPopup(header, initialOption = ParameterType.Numerical) { type ->
                 val spec = type.defaultControlSpec()
                 val param = ParameterDefObject(name, spec)
-                config.addObject(param)
+                parameters.add(param)
             }
     }
 

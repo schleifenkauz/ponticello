@@ -25,7 +25,7 @@ import reaktive.value.reactiveValue
 import xenakis.impl.*
 import xenakis.model.score.*
 import xenakis.sc.view.ObjectSelectorControl
-import xenakis.ui.controls.ParameterControlList
+import xenakis.ui.controls.ParameterControlListConfig
 import xenakis.ui.launcher.XenakisMainActivity
 
 class SynthObjectView(
@@ -49,7 +49,6 @@ class SynthObjectView(
 
     override fun initialize(parent: ScorePane) {
         super.initialize(parent)
-        obj.controls.addListener(this)
         sampleObserver = obj.sample.forEach { s ->
             sampleContentObserver?.kill()
             if (s != null) {
@@ -71,14 +70,33 @@ class SynthObjectView(
         val box = ObjectSelectorControl(obj.synthDefSelector, createBundle())
         pane.addItem("SynthDef: ", HBox(5.0, box, viewBtn).centerChildren())
         pane.children.add(createDetailsHeader(obj, "Synth controls"))
-        val controlList = ParameterControlList(obj.controls)
-        controlList.addShortcutsTo(pane)
-        pane.children.add(controlList.getContent())
+        pane.children.add(ParameterControlListConfig.makeControlListView(obj.controls))
     }
 
-    override fun removedControl(control: ParameterControls.NamedParameterControl) {
-        super.removedControl(control)
+    override fun added(control: ParameterControls.NamedParameterControl, idx: Int) {
+        super<ParameterizedScoreObjectView>.added(control, idx)
+        val ctrl = control.now
+        if (ctrl !is ConstantControl) return
+        addedConstantControl(control, ctrl)
+    }
+
+    private fun addedConstantControl(
+        control: ParameterControls.NamedParameterControl,
+        ctrl: ConstantControl
+    ) {
+        when (control.name.now) {
+            "startPos" -> startPosObserver = ctrl.value.forEach { _ -> displaySpectrogram() }
+            "rate" -> rateObserver = ctrl.value.forEach { _ -> displaySpectrogram() }
+        }
+    }
+
+    override fun removed(control: ParameterControls.NamedParameterControl) {
+        super<ParameterizedScoreObjectView>.removed(control)
         if (control.now !is ConstantControl) return
+        removedConstantControl(control)
+    }
+
+    private fun removedConstantControl(control: ParameterControls.NamedParameterControl) {
         when (control.name.now) {
             "startPos" -> {
                 startPosObserver?.kill()
@@ -92,22 +110,19 @@ class SynthObjectView(
         }
     }
 
-    override fun addedControl(control: ParameterControls.NamedParameterControl, idx: Int) {
-        super.addedControl(control, idx)
-        val ctrl = control.now
-        if (ctrl !is ConstantControl) return
-        when (control.name.now) {
-            "startPos" -> startPosObserver = ctrl.value.forEach { _ -> displaySpectrogram() }
-            "rate" -> rateObserver = ctrl.value.forEach { _ -> displaySpectrogram() }
-        }
-    }
-
     override fun reassignedControl(
         namedControl: ParameterControls.NamedParameterControl,
         oldControl: ParameterControl,
         control: ParameterControl
     ) {
-
+        super.reassignedControl(namedControl, oldControl, control)
+        if (oldControl is ConstantControl) {
+            when (namedControl.name.now) {
+                "startPos" -> startPosObserver?.kill()
+                "rate" -> rateObserver?.kill()
+            }
+        }
+        if (control is ConstantControl) addedConstantControl(namedControl, control)
     }
 
     override fun rescale() {

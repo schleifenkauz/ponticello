@@ -11,20 +11,42 @@ import xenakis.model.score.Score
 
 data class Component<T>(val name: String, val serializer: KSerializer<T>, val default: () -> T)
 
-inline fun <reified T> component(name: String, noinline default: () -> T) = Component(name, serializer<T>(), default)
+inline fun <reified T> component(
+    name: String,
+    noinline default: () -> T,
+    serializer: KSerializer<T> = serializer<T>()
+) = Component(name, serializer, default)
 
 val SETTINGS = component<InteractionSettings>("settings", InteractionSettings::default)
-val GROUPS = component<GroupRegistry>("groups", GroupRegistry::createDefault)
-val BUSSES = component<BusRegistry>("busses", BusRegistry::createDefault)
-val BUFFERS = component<BufferRegistry>("buffers", BufferRegistry::createDefault)
-val SAMPLES = component<SampleRegistry>("samples", SampleRegistry::createDefault)
-val PATTERNS = component<GlobalPatternRegistry>("patterns", GlobalPatternRegistry::createDefault)
+val GROUPS = component<GroupRegistry>(
+    "groups", GroupRegistry::createDefault,
+    NamedObjectListSerializer(serializer(), ::GroupRegistry)
+)
+val BUSSES = component<BusRegistry>(
+    "busses", BusRegistry::createDefault,
+    NamedObjectListSerializer(serializer(), ::BusRegistry)
+)
+val BUFFERS = component<BufferRegistry>(
+    "buffers", BufferRegistry::createDefault,
+    NamedObjectListSerializer(serializer(), ::BufferRegistry)
+)
+val SAMPLES = component<SampleRegistry>(
+    "samples", SampleRegistry::createDefault,
+    NamedObjectListSerializer(serializer(), ::SampleRegistry)
+)
+val PATTERNS = component<GlobalPatternRegistry>(
+    "patterns", GlobalPatternRegistry::createDefault,
+    NamedObjectListSerializer(serializer(), ::GlobalPatternRegistry)
+)
 val INSTRUMENTS = component<InstrumentRegistry>("instruments", InstrumentRegistry::createDefault)
 val FLOWS = component<AudioFlows>("flows", AudioFlows::createDefault)
 val PROCESS_DEFS = component<ProcessDefRegistry>("processDefs", ProcessDefRegistry::createDefault)
 val SETUP_CODE = component<SetupCode>("setup_code", SetupCode::default)
 val SERVER_OPTIONS = component<ServerOptions>("server_options", ServerOptions::default)
-val OBJECTS = component<ScoreObjectRegistry>("objects", ScoreObjectRegistry::createDefault)
+val OBJECTS = component<ScoreObjectRegistry>(
+    "objects", ScoreObjectRegistry::createDefault,
+    NamedObjectListSerializer(serializer(), ::ScoreObjectRegistry)
+)
 val SCORE = component<Score>("score", ::Score)
 
 val allComponents = listOf<Component<out ContextualObject>>(

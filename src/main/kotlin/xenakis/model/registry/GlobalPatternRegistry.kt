@@ -7,13 +7,10 @@ import xenakis.model.obj.SuperColliderObject
 
 @Serializable
 class GlobalPatternRegistry(
-    private val patterns: MutableList<GlobalPatternObject>
+    override val objects: MutableList<GlobalPatternObject> = mutableListOf()
 ) : SuperColliderObjectRegistry<GlobalPatternObject>() {
     override val liveCycleType: SuperColliderObject.LiveCycleType
         get() = SuperColliderObject.LiveCycleType.InterpreterBoot
-
-    override val objects: MutableList<GlobalPatternObject>
-        get() = patterns
 
     override val objectType: String
         get() = "Pattern"
@@ -23,6 +20,6 @@ class GlobalPatternRegistry(
     }
 
     companion object {
-        fun createDefault() = GlobalPatternRegistry(mutableListOf())
+        fun createDefault() = GlobalPatternRegistry()
     }
 }

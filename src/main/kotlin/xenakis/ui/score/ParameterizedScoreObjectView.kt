@@ -32,6 +32,7 @@ abstract class ParameterizedScoreObjectView<O>(
     override fun initialize(parent: ScorePane) {
         super.initialize(parent)
         listenForMouseEvents()
+        obj.controls.addListener(this)
     }
 
     private fun listenForMouseEvents() {
@@ -45,7 +46,7 @@ abstract class ParameterizedScoreObjectView<O>(
     }
 
     private fun showNewEnvelopePopup(point: Point2D) {
-        val possibleParameters = obj.def.parameters.now
+        val possibleParameters = obj.def.parameters
             .filter { p -> p.spec.now is NumericalControlSpec }
             .filter { p ->
                 val control = obj.controls.controlMap[p.name.now]
@@ -57,20 +58,19 @@ abstract class ParameterizedScoreObjectView<O>(
             val spec = param.spec.now as NumericalControlSpec
             val initialValue = obj.controls.controlMap[name]?.getNumericalValue() ?: spec.defaultValue.get()
             val env = Envelope.constant(initialValue, obj.duration, spec.warp)
-            val envControl = EnvelopeControl(
+            val control = EnvelopeControl(
                 env, reactiveVariable(spec.associatedColor),
                 display = reactiveVariable(true)
             )
             val customSpec = spec.takeIf {
                 it != obj.def.getSpec(param.name.now)?.now
             }
-            val control = NamedParameterControl(name, envControl, customSpec)
-            if (name !in obj.controls.controlMap) obj.controls.addControl(control)
-            else obj.controls.reassignControl(name, envControl)
+            if (name !in obj.controls.controlMap) obj.controls.addControl(name, control, customSpec)
+            else obj.controls.reassignControl(name, control)
         }
     }
 
-    override fun addedControl(control: NamedParameterControl, idx: Int) {
+    override fun added(control: NamedParameterControl, idx: Int) {
         when (val ctrl = control.now) {
             is EnvelopeControl -> addedEnvelopeControl(control, ctrl)
             else -> {}
@@ -85,7 +85,7 @@ abstract class ParameterizedScoreObjectView<O>(
         }
     }
 
-    override fun removedControl(control: NamedParameterControl) {
+    override fun removed(control: NamedParameterControl) {
         when (val ctrl = control.now) {
             is EnvelopeControl -> removedEnvelopeControl(control, ctrl)
             else -> {}
@@ -160,8 +160,8 @@ abstract class ParameterizedScoreObjectView<O>(
 
         fun addNewControl(obj: ParameterizedObject, anchorNode: Region) {
             val context = obj.context
-            val defaultParameters = context[Settings].defaultParametersDefs.now
-            val synthParameters = obj.def.parameters.now
+            val defaultParameters = context[Settings].defaultParametersDefs
+            val synthParameters = obj.def.parameters
             val unassignedParameters = (synthParameters + defaultParameters)
                 .filter { param -> param.name.now !in obj.controls.controlMap }
                 .filter { param -> !(param in defaultParameters && synthParameters.any { p -> p.name.now == param.name.now }) }

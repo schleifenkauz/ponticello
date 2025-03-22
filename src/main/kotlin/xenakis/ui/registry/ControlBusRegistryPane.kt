@@ -4,7 +4,6 @@ import fxutils.actions.ContextualizedAction
 import fxutils.actions.collectActions
 import fxutils.setFixedWidth
 import hextant.context.createControl
-import hextant.context.withoutUndo
 import javafx.scene.Node
 import javafx.scene.control.Spinner
 import javafx.scene.paint.Color
@@ -12,7 +11,6 @@ import org.kordamp.ikonli.evaicons.Evaicons
 import reaktive.value.forEach
 import reaktive.value.fx.asProperty
 import reaktive.value.now
-import reaktive.value.reactiveVariable
 import xenakis.impl.toDecimal
 import xenakis.impl.zero
 import xenakis.model.obj.BusObject
@@ -23,10 +21,6 @@ import xenakis.sc.client.SuperColliderClient
 import xenakis.sc.editor.DecimalLiteralEditor
 
 class ControlBusRegistryPane(private val busses: BusRegistry) : SuperColliderObjectRegistryPane<BusObject>(busses) {
-    init {
-        busses.addListener(this, initialize = false)
-    }
-
     override fun addObject(name: String): BusObject {
         val spec = NumericalControlSpec(0.0, 0.0, 1.0, 0.01.toDecimal(), Warp.Linear)
         val bus = BusObject.control(name, 1, spec)

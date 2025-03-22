@@ -6,12 +6,14 @@ import xenakis.sc.client.SuperColliderClient
 
 class NodeTree(private val client: SuperColliderClient) {
     private val nameObserver = mutableMapOf<AudioNode, Observer>()
+    private val activeNodes = mutableSetOf<AudioNode>()
 
     fun addNode(node: AudioNode, placement: NodePlacement) {
         client.run {
             node.run { writeCode(placement) }
         }
         nameObserver[node] = node.superColliderName.observe { _, old, new -> rename(old, new) }
+        activeNodes.add(node)
     }
 
     fun removeNode(node: AudioNode) {
@@ -20,7 +22,10 @@ class NodeTree(private val client: SuperColliderClient) {
             +"${node.superColliderName.now} = nil"
         }
         nameObserver.remove(node)
+        activeNodes.remove(node)
     }
+
+    fun isActive(node: AudioNode) = node in activeNodes
 
     fun moveAfter(target: AudioNode, node: AudioNode) {
         client.run {

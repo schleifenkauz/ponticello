@@ -5,7 +5,6 @@ import javafx.scene.paint.Color
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import reaktive.list.MutableReactiveList
-import reaktive.list.ReactiveList
 import reaktive.list.reactiveList
 import reaktive.value.ReactiveValue
 import reaktive.value.ReactiveVariable
@@ -40,8 +39,8 @@ class ReferencedSynthDefObject(
     override val name: ReactiveValue<String>
         get() = reactiveValue(_name)
 
-    override val parameters: ReactiveList<ParameterDefObject>
-        get() = _parameters
+    override val parameters: List<ParameterDefObject>
+        get() = _parameters.now
 
     override fun ScWriter.sync() {
         updateParameters()

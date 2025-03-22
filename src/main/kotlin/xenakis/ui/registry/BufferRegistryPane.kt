@@ -18,12 +18,8 @@ import xenakis.model.registry.BufferRegistry
 import xenakis.sc.client.SuperColliderClient
 
 class BufferRegistryPane(
-    private val buffers: BufferRegistry,
+    buffers: BufferRegistry,
 ) : SuperColliderObjectRegistryPane<BufferObject>(buffers) {
-    init {
-        buffers.addListener(this)
-    }
-
     private val actions = collectActions<BufferObject> {
         addAction("View buffer contents") {
             icon(Evaicons.ACTIVITY)
@@ -73,6 +69,5 @@ class BufferRegistryPane(
         obj.sync()
     }
 
-    companion object {
-    }
+    companion object
 }

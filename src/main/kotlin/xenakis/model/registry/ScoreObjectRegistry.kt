@@ -9,7 +9,9 @@ import reaktive.value.now
 import xenakis.model.score.ScoreObject
 
 @Serializable
-class ScoreObjectRegistry(override val objects: MutableList<ScoreObject>) : ObjectRegistry<ScoreObject>() {
+class ScoreObjectRegistry(
+    override val objects: MutableList<ScoreObject> = mutableListOf(),
+) : ObjectRegistry<ScoreObject>() {
     override val objectType: String
         get() = "score_object"
 
@@ -33,6 +35,6 @@ class ScoreObjectRegistry(override val objects: MutableList<ScoreObject>) : Obje
     }
 
     companion object : PublicProperty<ScoreObjectRegistry> by publicProperty("ScoreObjectRegistry") {
-        fun createDefault() = ScoreObjectRegistry(mutableListOf())
+        fun createDefault() = ScoreObjectRegistry()
     }
 }

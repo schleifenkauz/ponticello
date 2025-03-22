@@ -85,7 +85,7 @@ class ScoreObjectInstance(
     fun removedFromScore() {
         score = null
         val o = obj
-        if (!context[currentProject].score.hasInstancesOf(o) && context[ScoreObjectRegistry].has(o)) {
+        if (!context[currentProject].score.hasInstancesOf(o) && o in context[ScoreObjectRegistry]) {
             val remove = YesNoPrompt(
                 "Score has no instances of object ${o.name.now} anymore. Remove it from the registry?",
                 cancellable = false,

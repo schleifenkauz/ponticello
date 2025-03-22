@@ -35,11 +35,9 @@ object Utils {
         set(
             InstrumentRegistry,
             InstrumentRegistry(
-                mutableListOf(/*InstrumentRegistry.defaultInstrument()*/), reactiveVariable(
-                    ObjectReference.none()
-                )
-            )
-                .also { it.initialize(this) }
+                reactiveVariable(ObjectReference.none()),
+                mutableListOf(/*InstrumentRegistry.defaultInstrument()*/)
+            ).also { it.initialize(this) }
         )
         set(GroupRegistry, GroupRegistry.createDefault().also { it.initialize(this) })
         set(BusRegistry, BusRegistry.createDefault().also { it.initialize(this) })

@@ -17,6 +17,7 @@ class ParameterControlsMidiContext(private val controls: ParameterControls) : Mi
         val control = numericalControls[index - 20]
         val spec = control.spec.now as? NumericalControlSpec ?: return
         val variable = (control.now as ConstantControl).value
+        //TODO make sensitivity dependent on ratio of range to step
         if (value >= 64) {
             variable.now = (variable.now - spec.step.get() * (128.0 - value).pow(knobSensitivity)).coerceIn(spec.range)
         } else {

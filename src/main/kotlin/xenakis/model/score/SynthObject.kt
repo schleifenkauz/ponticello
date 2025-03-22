@@ -53,7 +53,7 @@ class SynthObject(
     override val def: ParameterizedObjectDef
         get() = synthDef
 
-    val group: ReactiveValue<GroupReference> get() = (controls["group"] as GroupControl).group
+    val group: ReactiveValue<GroupReference> get() = (controls.controlMap["group"] as GroupControl).group
 
     val groupObj get() = group.now.get() ?: context[GroupRegistry].getDefault()
 
@@ -144,7 +144,7 @@ class SynthObject(
     private fun getActiveSynths(): List<String> {
         if (!context.hasProperty(PlaybackManager) || !context[PlaybackManager].player.isPlaying.now) return emptyList()
         val activeInstances = context[PlaybackManager].graph.activeInstances(this@SynthObject)
-        return activeInstances.map { i -> "~synths['${i.superColliderName.now}']" }
+        return activeInstances.map { i -> "~synths['${i.superColliderName.now.removePrefix("~")}']" }
     }
 
     override fun writeCode(info: ScoreObjectInfo): String = code {

@@ -26,6 +26,7 @@ import xenakis.impl.asTime
 import xenakis.model.obj.*
 import xenakis.model.registry.*
 import xenakis.model.score.*
+import xenakis.model.score.ParameterControls.NamedParameterControl
 import xenakis.sc.*
 import xenakis.sc.editor.BusSelector
 import xenakis.sc.editor.GroupSelector
@@ -34,9 +35,7 @@ import xenakis.sc.editor.ScExprExpander
 import xenakis.sc.view.ObjectSelectorControl
 import xenakis.ui.impl.colorPicker
 
-class ControlAssignmentEditor(
-    val control: ParameterControls.NamedParameterControl
-) : HBox() {
+class ControlAssignmentEditor(val control: NamedParameterControl) : HBox() {
     private var selectedOption: ControlType<*>? = null
     private val optionButton = Button() styleClass "sleek-button"
     private val detailEditors = mutableMapOf<ControlType<*>, Node>()
@@ -86,6 +85,7 @@ class ControlAssignmentEditor(
     }
 
     private fun updateControlType(t: ControlType<*>) {
+        selectedOption = t
         val oldControl = control.now
         val newControl = t.createDefaultControl(control.parentObject, spec, oldControl)
         control.reassign(newControl)
@@ -203,8 +203,8 @@ class ControlAssignmentEditor(
                 val editor = ScExprExpander()
                 val root = EditorRoot(editor)
                 if (oldControl.getNumericalValue() != null) {
-                    editor.setText(oldControl.getNumericalValue().toString())
-                }
+                    editor.setInitialText(oldControl.getNumericalValue().toString())
+                } else editor.setInitialText("")
                 return CustomControl(root)
             }
         }

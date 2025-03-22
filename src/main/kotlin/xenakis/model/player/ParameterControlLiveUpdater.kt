@@ -28,7 +28,7 @@ class ParameterControlLiveUpdater(
         }
     }
 
-    override fun addedControl(control: ParameterControls.NamedParameterControl, idx: Int) {
+    override fun added(control: ParameterControls.NamedParameterControl, idx: Int) {
         val parameter = control.name.now
         val ctrl = control.now
         addedControl(parameter, ctrl)
@@ -73,7 +73,7 @@ class ParameterControlLiveUpdater(
         runOnActiveSynths { +"set('$parameter', $superColliderName)" }
     }
 
-    override fun removedControl(control: ParameterControls.NamedParameterControl) {
+    override fun removed(control: ParameterControls.NamedParameterControl) {
         controlObservers.remove(control.now)?.kill()
     }
 

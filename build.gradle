@@ -1,8 +1,8 @@
 plugins {
     id 'java'
     id 'application'
-    id 'org.jetbrains.kotlin.jvm' version '2.1.10'
-    id 'org.jetbrains.kotlin.kapt' version '2.1.10'
+    id 'org.jetbrains.kotlin.jvm' version '2.1.20'
+    id 'org.jetbrains.kotlin.kapt' version '2.1.20'
     id 'org.openjfx.javafxplugin' version '0.1.0'
     id 'org.jetbrains.kotlin.plugin.serialization' version '2.1.0'
 }

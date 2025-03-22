@@ -12,7 +12,7 @@ interface ParameterizedObject : NamedObject {
     val def: ParameterizedObjectDef
     val controls: ParameterControls
 
-    fun getSpec(parameter: String): ControlSpec? = controls[parameter]?.spec?.now
+    fun getSpec(parameter: String): ControlSpec? = controls.getOrNull(parameter)?.spec?.now
 
     fun getInputs(): Collection<BusObject> = getConnectedBusses(FlowType.In)
 
@@ -34,7 +34,7 @@ interface ParameterizedObject : NamedObject {
     }
 
     fun addControlsForAllObjectParameters() {
-        for (param in def.parameters.now) {
+        for (param in def.parameters) {
             val name = param.name.now
             if (name !in controls.controlMap) {
                 controls.addControl(name, param.defaultControl(context))

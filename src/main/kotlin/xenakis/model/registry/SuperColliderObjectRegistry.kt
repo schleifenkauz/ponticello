@@ -26,7 +26,7 @@ abstract class SuperColliderObjectRegistry<O : SuperColliderObject> : ObjectRegi
 
     private fun createAll() {
         client.run {
-            for (obj in objects) {
+            for (obj in all()) {
                 obj.run { createObject() }
             }
         }
@@ -34,7 +34,7 @@ abstract class SuperColliderObjectRegistry<O : SuperColliderObject> : ObjectRegi
 
     open fun syncAll() {
         client.run {
-            for (obj in objects) {
+            for (obj in all()) {
                 obj.run { sync() }
             }
         }

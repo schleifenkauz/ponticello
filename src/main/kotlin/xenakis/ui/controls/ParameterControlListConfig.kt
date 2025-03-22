@@ -4,54 +4,21 @@ import fxutils.actions.ContextualizedAction
 import fxutils.actions.collectActions
 import fxutils.actions.registerShortcuts
 import javafx.scene.Node
-import javafx.scene.layout.Region
 import org.kordamp.ikonli.codicons.Codicons
 import reaktive.value.binding.map
-import reaktive.value.now
 import xenakis.model.score.ParameterControl
 import xenakis.model.score.ParameterControls
 import xenakis.model.score.ParameterControls.NamedParameterControl
 import xenakis.sc.ControlSpec
 import xenakis.sc.NumericalControlSpec
-import xenakis.ui.registry.ObjectBoxList
-import xenakis.ui.registry.ObjectBoxSource
+import xenakis.ui.registry.NamedObjectListView
+import xenakis.ui.registry.ObjectBoxConfig
 
-class ParameterControlList(
-    private val controls: ParameterControls
-) : ParameterControls.Listener, ObjectBoxSource<NamedParameterControl> {
-    override val items: List<NamedParameterControl> get() = controls.all()
-
+class ParameterControlListConfig() : ObjectBoxConfig<NamedParameterControl>, ParameterControls.Listener {
     private val editors = mutableMapOf<NamedParameterControl, ControlAssignmentEditor>()
-    private val list = ObjectBoxList(this)
 
     override val enableReordering: Boolean
         get() = true
-
-    init {
-        controls.addListener(this, initialize = false)
-        list.userData = this //avoid garbage collection, [addListener] stores as weak reference
-    }
-
-    fun getContent(): Region = list
-
-    fun addShortcutsTo(node: Node) {
-        node.registerShortcuts(list.actions)
-    }
-
-    override fun addedControl(control: NamedParameterControl, idx: Int) {
-        if (control.spec.now == null) return
-        val editor = ControlAssignmentEditor(control)
-        editor.setControl(control.now)
-        list.added(idx, control)
-    }
-
-    override fun removedControl(control: NamedParameterControl) {
-        list.removed(control)
-    }
-
-    override fun movedControl(control: NamedParameterControl, fromIdx: Int, toIdx: Int) {
-        list.moved(control, toIdx)
-    }
 
     override fun reassignedControl(
         namedControl: NamedParameterControl,
@@ -60,10 +27,6 @@ class ParameterControlList(
     ) {
         val editor = editors.getValue(namedControl)
         editor.setControl(control)
-    }
-
-    override fun moveObject(obj: NamedParameterControl, idx: Int) {
-        obj.controls.moveControl(obj, idx)
     }
 
     override fun changedSpec(control: NamedParameterControl, oldSpec: ControlSpec?, newSpec: ControlSpec?) {
@@ -79,14 +42,6 @@ class ParameterControlList(
 
     override fun getActions(obj: NamedParameterControl): List<ContextualizedAction> = actions.withContext(obj)
 
-    override fun removeObject(obj: NamedParameterControl) {
-        controls.removeControl(obj.name.now)
-    }
-
-    override fun addObject(obj: NamedParameterControl, idx: Int) {
-        controls.addControl(obj, idx)
-    }
-
     companion object {
         private val actions = collectActions<NamedParameterControl> {
             addAction("Edit spec") {
@@ -98,6 +53,15 @@ class ParameterControlList(
                     ControlSpecPrompt(control).showDialog(ev)
                 }
             }
+        }
+
+        fun makeControlListView(controls: ParameterControls): NamedObjectListView<NamedParameterControl> {
+            val config = ParameterControlListConfig()
+            val listView = NamedObjectListView(controls, config)
+            controls.addListener(config)
+            listView.userData = config
+            listView.registerShortcuts(listView.actions)
+            return listView
         }
     }
 }

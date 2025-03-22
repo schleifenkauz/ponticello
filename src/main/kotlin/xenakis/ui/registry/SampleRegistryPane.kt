@@ -33,7 +33,6 @@ class SampleRegistryPane(
                 samples.getOrAdd(file)
             }
         })
-        samples.addListener(this)
         samples.context[SampleRegistryPane] = this
     }
 

@@ -4,14 +4,13 @@ import bundles.set
 import fxutils.prompt.PredicateTextPrompt
 import hextant.context.ControlFactory
 import hextant.context.SelectionDistributor
-import hextant.core.editor.getParent
 import hextant.core.view.EditorControl
 import hextant.plugins.*
 import hextant.undo.compoundEdit
 import reaktive.value.now
+import xenakis.impl.Logger
 import xenakis.impl.one
 import xenakis.impl.randomColor
-import xenakis.impl.Logger
 import xenakis.model.obj.CustomizableSynthDefObject
 import xenakis.model.obj.ParameterDefObject
 import xenakis.sc.DecimalLiteral
@@ -86,7 +85,7 @@ object XenakisHextantPlugin : PluginInitializer({
             )
             val param = ParameterDefObject(name, spec)
             editor.context.compoundEdit("Extract parameter") {
-                parameters.now.add(param)
+                parameters.add(param)
                 editor.setText(name)
             }
         }

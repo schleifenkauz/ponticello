@@ -34,26 +34,23 @@ import xenakis.sc.Warp
 import xenakis.sc.editor.BusSelector
 import xenakis.sc.view.ObjectSelectorControl
 import xenakis.ui.controls.Knob
-import xenakis.ui.controls.ParameterControlList
+import xenakis.ui.controls.ParameterControlListConfig
 import xenakis.ui.impl.getFrom
 import xenakis.ui.launcher.XenakisLauncher.Companion.currentProject
 import xenakis.ui.launcher.XenakisMainActivity
 import xenakis.ui.midi.ContextualMidiReceiver
 import xenakis.ui.midi.ParameterControlsMidiContext
-import xenakis.ui.registry.ObjectBoxList
-import xenakis.ui.registry.ObjectBoxSource
+import xenakis.ui.registry.NamedObjectListView
+import xenakis.ui.registry.ObjectBoxConfig
 import xenakis.ui.score.ParameterizedScoreObjectView
 
-class VerticalFlowsBox(
+class FlowChainView(
     private val flows: AudioFlows,
     private val associatedBus: BusObject
-) : VBox(5.0), ObjectBoxSource<AudioFlow> {
+) : VBox(5.0), ObjectBoxConfig<AudioFlow> {
     private val busBox = BusObjectBox(associatedBus)
 
-    val flowsList = ObjectBoxList(this)
-
-    override val items: List<AudioFlow>
-        get() = flows.associatedFlows(associatedBus)
+    val flowsList = NamedObjectListView(flows.associatedFlows(associatedBus), this)
 
     override val buttonStyle: String
         get() = "flow-action-button"
@@ -88,11 +85,7 @@ class VerticalFlowsBox(
                 HBox(10.0, knob, selectorControl).centerChildren()
             }
 
-            is SynthFlow -> {
-                val controlList = ParameterControlList(obj.controls)
-                controlList.addShortcutsTo(controlList.getContent())
-                controlList.getContent()
-            }
+            is SynthFlow -> ParameterControlListConfig.makeControlListView(obj.controls)
             is UtilityFlow -> Slider(-60.0, +6.0, 0.0) styleClass "volume-fader"
         }
         return listOf(content)
@@ -104,14 +97,6 @@ class VerticalFlowsBox(
             else -> emptyList()
         }
         return extraActions + defaultActions.withContext(obj)
-    }
-
-    override fun removeObject(obj: AudioFlow) {
-        flows.removeFlow(obj)
-    }
-
-    override fun addObject(obj: AudioFlow, idx: Int) {
-        flows.addFlow(obj)
     }
 
     override fun onSelected(obj: AudioFlow) {
@@ -170,20 +155,6 @@ class VerticalFlowsBox(
         return pane
     }
 
-    fun addedFlow(flow: AudioFlow, index: Int) {
-        flowsList.added(index, flow)
-    }
-
-    fun removedFlow(flow: AudioFlow) {
-        flowsList.removed(flow)
-    }
-
-    fun movedFlow(oldIndex: Int, newIndex: Int) {
-        val flow = flows.associatedFlows(associatedBus)[oldIndex]
-        flowsList.removed(flow)
-        flowsList.added(newIndex, flow)
-    }
-
     companion object {
         private val defaultActions = collectActions<AudioFlow> {
             addAction("Toggle activated") {
@@ -198,7 +169,6 @@ class VerticalFlowsBox(
                 executes { flow -> flow.isActive.now = !flow.isActive.now }
             }
         }
-
 
         private val synthFlowActions = collectActions<SynthFlow> {
             addAction("View SynthDef") {
@@ -218,7 +188,7 @@ class VerticalFlowsBox(
                     if (ev.isShiftDown()) {
                         flow.addControlsForAllObjectParameters()
                     } else {
-                        ParameterizedScoreObjectView.addNewControl(flow, ev!!.target as Region)
+                        ParameterizedScoreObjectView.addNewControl(flow, ev!!.target as Region) //TODO
                     }
                 }
             }

@@ -19,10 +19,6 @@ class ProcessDefRegistryPane(
 ) : SuperColliderObjectRegistryPane<ProcessDefObject>(registry) {
     private val subWindows = mutableMapOf<ProcessDefObject, SubWindow>()
 
-    init {
-        registry.addListener(this)
-    }
-
     override fun addObject(name: String): ProcessDefObject {
         val processDef = ProcessDefObject.newEmpty(name)
         registry.add(processDef)

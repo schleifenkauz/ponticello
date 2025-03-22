@@ -10,9 +10,6 @@ import javafx.scene.paint.Color
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import reaktive.list.MutableReactiveList
-import reaktive.list.reactiveList
-import reaktive.list.toReactiveList
 import reaktive.value.ReactiveVariable
 import reaktive.value.now
 import reaktive.value.reactiveVariable
@@ -26,11 +23,12 @@ import xenakis.sc.*
 import xenakis.sc.client.ScWriter
 import xenakis.sc.client.SuperColliderClient
 import xenakis.sc.editor.CodeBlockEditor
+import xenakis.ui.registry.ParameterDefList
 
 @Serializable
 class CustomizableSynthDefObject(
     @SerialName("name") override val mutableName: ReactiveVariable<String>,
-    override val parameters: MutableReactiveList<ParameterDefObject>,
+    override val parameters: ParameterDefList,
     override val color: ReactiveVariable<@Serializable(with = ColorSerializer::class) Color> = reactiveVariable(Color.WHITE),
     val ugenGraph: EditorRoot<@Contextual CodeBlockEditor>? = null
 ) : SynthDefObject, AbstractRenamableObject(), ConfigurableParameterizedObjectDef, InstrumentObject {
@@ -39,7 +37,7 @@ class CustomizableSynthDefObject(
 
     override fun copy(name: String): SynthDefObject = CustomizableSynthDefObject(
         reactiveVariable(name),
-        parameters.now.map { p -> p.copy() }.toReactiveList(),
+        ParameterDefList(parameters.mapTo(mutableListOf()) { p -> p.copy() }),
         color.copy(),
         ugenGraph?.clone(context)
     )
@@ -55,8 +53,8 @@ class CustomizableSynthDefObject(
 
     override fun ScWriter.createObject() {
         append("SynthDef(\\${name.now}, ")
-        val parameterVariables = parameters.now.map { p -> Identifier(p.name.now) }
-        val parameterAssignments = parameters.now.map { p ->
+        val parameterVariables = parameters.map { p -> Identifier(p.name.now) }
+        val parameterAssignments = parameters.map { p ->
             val parameterCode = RawScExpr("\\${p.name.now}.${p.spec.now.code}")
             Assignment(Identifier(p.name.now), parameterCode)
         }
@@ -84,7 +82,7 @@ class CustomizableSynthDefObject(
     override fun initialize(context: Context) {
         if (initialized) return
         super.initialize(context)
-        for (parameter in parameters.now) {
+        for (parameter in parameters) {
             parameter.initialize(context)
         }
         ugenGraph?.initialize(context.extend {
@@ -106,12 +104,12 @@ class CustomizableSynthDefObject(
         fun create(name: String) = CustomizableSynthDefObject(
             mutableName = reactiveVariable(name),
             color = reactiveVariable(randomColor()),
-            parameters = reactiveList(),
+            parameters = ParameterDefList(),
             ugenGraph = EditorRoot(CodeBlockEditor().defaultState())
         )
 
         fun create(name: String, vararg parameters: ParameterDefObject) =
-            CustomizableSynthDefObject(reactiveVariable(name), reactiveList(*parameters))
+            CustomizableSynthDefObject(reactiveVariable(name), ParameterDefList(parameters.toMutableList()))
 
         fun sine() = create(
             name = "sine",

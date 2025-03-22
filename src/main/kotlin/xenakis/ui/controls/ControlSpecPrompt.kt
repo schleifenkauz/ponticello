@@ -120,7 +120,7 @@ class ControlSpecPrompt(private val control: NamedParameterControl) : CompoundPr
     private fun confirmAndAdd() {
         val param = confirm()
         val def = control.parentObject.def as ConfigurableParameterizedObjectDef
-        def.parameters.now.add(param)
+        def.parameters.add(param)
     }
 
     override fun confirm(): ParameterDefObject {

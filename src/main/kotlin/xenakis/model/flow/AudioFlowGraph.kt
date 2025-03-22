@@ -13,7 +13,7 @@ import xenakis.model.obj.BusObject
 import xenakis.model.obj.GroupObject
 import xenakis.model.registry.BusRegistry
 import xenakis.model.registry.GroupRegistry
-import xenakis.model.registry.ObjectRegistry
+import xenakis.model.registry.NamedObjectList
 import xenakis.model.score.ObjectPosition
 import xenakis.model.score.ScoreObject
 import xenakis.model.score.SynthObject
@@ -23,7 +23,7 @@ import java.util.*
 class AudioFlowGraph(
     private val flows: AudioFlows,
     private val nodeTree: NodeTree
-) : ObjectRegistry.Listener<BusObject>, AudioFlows.Listener {
+) : NamedObjectList.Listener<BusObject>, AudioFlows.Listener {
     private val activeSynthObjects = mutableMapOf<SynthObject, MutableSet<ActiveSynth>>()
     private val takenSuffixes = mutableMapOf<String, MutableSet<Int>>()
     private val suffixes = mutableMapOf<Pair<ScoreObject, ObjectPosition>, Int>()
@@ -65,7 +65,7 @@ class AudioFlowGraph(
         nodeTree.addNode(node, placement)
     }
 
-    override fun removed(obj: BusObject, idx: Int) {
+    override fun removed(obj: BusObject) {
         if (obj !is BusObject.AudioBus) return
         val node = flowGroups.remove(obj) ?: error("No active flows for bus $obj")
         removeNode(node)
@@ -130,7 +130,11 @@ class AudioFlowGraph(
     }
 
     private fun reorderNodeTree() {
-        BubbleSort.sort(order, Comparator(::comparisonFunction), nodeTree::moveAfter)
+        BubbleSort.sort(order, Comparator(::comparisonFunction)) { target, node ->
+            if (nodeTree.isActive(target) && nodeTree.isActive(node)) {
+                nodeTree.moveAfter(target, node)
+            }
+        }
     }
 
     private fun comparisonFunction(v: AudioNode, u: AudioNode): Int = when {

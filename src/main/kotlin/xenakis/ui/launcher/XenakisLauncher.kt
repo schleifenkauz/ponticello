@@ -15,8 +15,8 @@ import hextant.serial.writeJson
 import hextant.undo.UndoManager
 import javafx.application.Platform
 import javafx.stage.Stage
-import xenakis.impl.registerImplementationsFromClasspath
 import xenakis.impl.Logger
+import xenakis.impl.registerImplementationsFromClasspath
 import xenakis.model.Settings
 import xenakis.model.project.XenakisProject
 import xenakis.model.registry.GlobalSynthDefLib
@@ -52,8 +52,7 @@ class XenakisLauncher {
         val activity = try {
             createActivity()
         } catch (e: Exception) {
-            e.printStackTrace()
-            Logger.error("Error $description")
+            Logger.error("Error $description", detailMessage = e.message)
             showLauncher()
             return null
         }

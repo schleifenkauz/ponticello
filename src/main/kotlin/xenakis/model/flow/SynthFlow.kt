@@ -81,6 +81,6 @@ class SynthFlow(
         }
 
         fun getMainBusParameter(def: SynthDefObject) =
-            def.parameters.now.firstOrNull { p -> p.spec.now is BusControlSpec }?.name?.now
+            def.parameters.firstOrNull { p -> p.spec.now is BusControlSpec }?.name?.now
     }
 }

@@ -6,9 +6,6 @@ import javafx.scene.paint.Color
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import reaktive.list.MutableReactiveList
-import reaktive.list.reactiveList
-import reaktive.list.toReactiveList
 import reaktive.value.ReactiveVariable
 import reaktive.value.now
 import reaktive.value.reactiveVariable
@@ -24,12 +21,13 @@ import xenakis.sc.client.ScWriter
 import xenakis.sc.client.SuperColliderClient
 import xenakis.sc.editor.CodeBlockEditor
 import xenakis.sc.substitute
+import xenakis.ui.registry.ParameterDefList
 
 @Serializable
 class ProcessDefObject(
     @SerialName("name") override val mutableName: ReactiveVariable<String>,
     val color: ReactiveVariable<@Serializable(with = ColorSerializer::class) Color>,
-    override val parameters: MutableReactiveList<ParameterDefObject>,
+    override val parameters: ParameterDefList,
     val processCode: EditorRoot<@Contextual CodeBlockEditor>
 ) : ConfigurableParameterizedObjectDef, AbstractSuperColliderObject() {
     override val superColliderName: String
@@ -44,7 +42,7 @@ class ProcessDefObject(
     override fun copy(name: String): ProcessDefObject = ProcessDefObject(
         reactiveVariable(name),
         color.copy(),
-        parameters.now.map { p -> p.copy() }.toReactiveList(),
+        ParameterDefList(parameters.mapTo(mutableListOf()) { p -> p.copy() }),
         processCode.clone(context)
     )
 
@@ -52,9 +50,9 @@ class ProcessDefObject(
 
     override fun ScWriter.createObject() {
         appendBlock("$superColliderName = ") {
-            if (parameters.now.any()) +"arg ${parameters.now.joinToString(", ") { p -> p.name.now }}"
+            if (parameters.any()) +"arg ${parameters.joinToString(", ") { p -> p.name.now }}"
             +"var t = 0.0"
-            val argumentSubstitution = parameters.now.associate { p ->
+            val argumentSubstitution = parameters.associate { p ->
                 val name = p.name.now
                 name to RawScExpr("$name.value(t)")
             }
@@ -76,7 +74,7 @@ class ProcessDefObject(
         if (initialized) return
         super.initialize(context)
         processCode.initialize(context)
-        for (parameter in parameters.now) {
+        for (parameter in parameters) {
             parameter.initialize(context)
         }
     }
@@ -90,7 +88,7 @@ class ProcessDefObject(
         fun newEmpty(name: String) = ProcessDefObject(
             mutableName = reactiveVariable(name),
             color = reactiveVariable(randomColor()),
-            parameters = reactiveList(),
+            parameters = ParameterDefList(),
             processCode = EditorRoot(CodeBlockEditor())
         )
         

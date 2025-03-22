@@ -11,35 +11,45 @@ import javafx.scene.input.MouseEvent
 import javafx.scene.input.TransferMode
 import javafx.scene.layout.HBox
 import javafx.scene.layout.Pane
+import javafx.scene.layout.Region
 import javafx.scene.layout.VBox
 import org.kordamp.ikonli.material2.Material2AL
-import org.kordamp.ikonli.materialdesign2.MaterialDesignC
 import org.kordamp.ikonli.materialdesign2.MaterialDesignR
 import reaktive.value.now
 import reaktive.value.reactiveValue
 import xenakis.model.obj.RenamableObject
 import xenakis.model.registry.NamedObject
+import xenakis.model.registry.NamedObjectList
 import xenakis.model.registry.ObjectRegistry
 import xenakis.ui.controls.NameControl
 import xenakis.ui.controls.NamePrompt
 
-class ObjectBoxList<O : NamedObject>(private val source: ObjectBoxSource<O>) : ScrollPane() {
+class NamedObjectListView<O : NamedObject>(
+    private val source: NamedObjectList<O>,
+    private val config: ObjectBoxConfig<O>
+) : ScrollPane(), NamedObjectList.Listener<O> {
     var autoResizeScene = false
+
+    private val layout = VBox()
+    private val boxesCache = mutableMapOf<O, ObjectBox<O>>()
+    private fun getBox(obj: O) = boxesCache.getOrPut(obj) { ObjectBox(this, obj) }
+    private val boxes = mutableListOf<ObjectBox<O>>()
+    private var selectedBox: ObjectBox<O>? = null
+
+    private var filter: (O) -> Boolean = { true }
+
+    val actions = listActions<O>().withContext(this)
 
     private val objectActions = collectActions<O> {
         addAction("Delete object") {
             icon(Material2AL.DELETE)
             shortcuts("Ctrl+DELETE")
             applicableIf { obj -> reactiveValue(obj.canDelete) }
-            executes { obj -> source.removeObject(obj) }
-        }
-        addAction("Grabber") {
-            icon(MaterialDesignC.CURSOR_POINTER)
-            applicableIf { obj -> reactiveValue(source.dataFormat(obj) != null) }
+            executes { obj -> source.remove(obj) }
         }
         addAction("Reorder") {
             icon(MaterialDesignR.REORDER_HORIZONTAL)
-            applicableIf { reactiveValue(source.enableReordering) }
+            applicableIf { reactiveValue(config.enableReordering) }
         }
         @Suppress("UNCHECKED_CAST")
         addAction("Duplicate object") {
@@ -56,61 +66,51 @@ class ObjectBoxList<O : NamedObject>(private val source: ObjectBoxSource<O>) : S
         }
     }
 
-    private val layout = VBox()
-    private val boxesCache = mutableMapOf<O, ObjectBox<O>>()
-    private fun getBox(obj: O) = boxesCache.getOrPut(obj) { ObjectBox(this, obj) }
-    private val boxes = mutableListOf<ObjectBox<O>>()
-    private var selectedBox: ObjectBox<O>? = null
-
-    private var filter: (O) -> Boolean = { true }
-
-    val actions = listActions<O>().withContext(this)
 
     val children get() = boxes.map { b -> b.layout }
 
-
-
     init {
+        source.addListener(this, initialize = false)
+        for (obj in source) {
+            if (!filter(obj)) continue
+            val box = getBox(obj)
+            boxes.add(box)
+            layout.children.add(box.layout)
+        }
         isFitToWidth = true
-        setupInitialBoxes()
         content = layout
     }
 
-    private fun setupInitialBoxes() {
-        for (obj in source.items) {
-            if (filter(obj)) {
-                val box = getBox(obj)
-                boxes.add(box)
-                layout.children.add(box.layout)
-            }
-        }
-    }
-
-    fun added(idx: Int, obj: O) {
+    override fun added(obj: O, idx: Int) {
         if (!filter(obj)) return
-        val sourceIndices = mutableListOf<Int>()
-        var i = 0
-        val items = source.items
-        for (b in boxes) {
-            while (i < items.size && b != items[i]) i++
-            sourceIndices.add(i)
-        }
-        var j = -(sourceIndices.binarySearch(idx) + 1)
-        check(j >= 0)
+        val j = getInsertionIndex(idx)
         val box = getBox(obj)
         boxes.add(j, box)
         layout.children.add(j, box.layout)
     }
 
-    fun removed(obj: O) {
+    private fun getInsertionIndex(idx: Int): Int {
+        if (boxes.size == source.size - 1) return idx
+        val sourceIndices = mutableListOf<Int>()
+        var i = 0
+        for (b in boxes) {
+            while (i < source.size && b != source[i]) i++
+            sourceIndices.add(i)
+        }
+        val j = sourceIndices.binarySearch(idx)
+        check(j < 0) { "Already inserted box for index $idx" }
+        return -(j + 1)
+    }
+
+    override fun removed(obj: O) {
         val box = getBox(obj)
         boxes.remove(box)
         layout.children.remove(box.layout)
     }
 
-    fun moved(obj: O, idx: Int) {
+    override fun moved(obj: O, idx: Int) {
         removed(obj)
-        added(idx, obj)
+        added(obj, idx)
     }
 
     fun setFilter(predicate: (O) -> Boolean) {
@@ -120,7 +120,7 @@ class ObjectBoxList<O : NamedObject>(private val source: ObjectBoxSource<O>) : S
 
     fun refilter() {
         boxes.clear()
-        source.items.filter(filter).mapTo(boxes) { obj -> ObjectBox(this, obj) }
+        source.filter(filter).mapTo(boxes) { obj -> ObjectBox(this, obj) }
         layout.children.setAll(boxes.map { box -> box.layout })
         if (boxes.isNotEmpty()) select(0)
         if (autoResizeScene && scene != null) scene.window.sizeToScene()
@@ -130,7 +130,7 @@ class ObjectBoxList<O : NamedObject>(private val source: ObjectBoxSource<O>) : S
         selectedBox?.layout?.pseudoClassStateChanged(PseudoClasses.SELECTED, false)
         selectedBox = box
         box.layout.pseudoClassStateChanged(PseudoClasses.SELECTED, true)
-        source.onSelected(box.obj)
+        config.onSelected(box.obj)
     }
 
     fun select(idx: Int) {
@@ -157,14 +157,13 @@ class ObjectBoxList<O : NamedObject>(private val source: ObjectBoxSource<O>) : S
         val selected = selectedBox ?: return
         val idx = boxes.indexOf(selected)
         val newIdx = idx + deltaIdx
-        if (newIdx !in layout.children.indices) return
-        source.removeObject(selected.obj)
-        source.addObject(selected.obj, idx)
+        if (newIdx !in boxes.indices) return
+        source.move(selected.obj, newIdx)
     }
 
     private fun copySelected() {
         val selected = selectedBox ?: return
-        val format = source.dataFormat(selected.obj)
+        val format = config.dataFormat(selected.obj)
         val content = mapOf(format to selected.obj)
         val clipboard = Clipboard.getSystemClipboard()
         clipboard.setContent(content)
@@ -175,8 +174,8 @@ class ObjectBoxList<O : NamedObject>(private val source: ObjectBoxSource<O>) : S
         selected.nameControl?.startEdit()
     }
 
-    class ObjectBox<O : NamedObject>(val parent: ObjectBoxList<O>, val obj: O) {
-        val config get() = parent.source
+    class ObjectBox<O : NamedObject>(val parent: NamedObjectListView<O>, val obj: O) {
+        val config get() = parent.config
 
         val nameControl = if (obj is RenamableObject) NameControl(obj) else null
 
@@ -188,10 +187,12 @@ class ObjectBoxList<O : NamedObject>(private val source: ObjectBoxSource<O>) : S
             config.buttonStyle
         )
 
+        private var header: Region? = null
+
         val layout: Pane = when (config.orientation) {
             HORIZONTAL -> HBox(nameDisplay, *content.toTypedArray(), infiniteSpace(), actionBar)
             VERTICAL -> VBox(
-                HBox(nameDisplay, infiniteSpace(), actionBar),
+                HBox(nameDisplay, infiniteSpace(), actionBar).also { header = it },
                 *content.toTypedArray()
             )
         }.styleClass("object-box")
@@ -203,16 +204,19 @@ class ObjectBoxList<O : NamedObject>(private val source: ObjectBoxSource<O>) : S
         }
 
         private fun setupDragging() {
-            val btn = actionBar.getButton(parent.objectActions.getAction("Grabber"))
-            btn.setOnDragDetected { ev ->
-                val db = btn.startDragAndDrop(TransferMode.COPY)
-                db.setContent(mapOf(config.dataFormat(obj) to obj.name.now))
-                ev.consume()
+            val dragTarget = header ?: layout
+            dragTarget.setOnDragDetected { ev ->
+                if (ev.isControlDown) {
+                    val db = dragTarget.startDragAndDrop(TransferMode.COPY)
+                    db.setContent(mapOf(config.dataFormat(obj) to obj.name.now))
+                    ev.consume()
+                }
             }
         }
 
         private fun setupReordering() {
-            actionBar.getButton(parent.objectActions.getAction("Reorder")).setupDragging(
+            val dragTarget = header ?: layout
+            dragTarget.setupDragging(
                 onPressed = { layout.viewOrder = 100.0 },
                 relocateBy = { _, _, _, _, dy -> layout.translateY = dy },
                 onReleased = {
@@ -222,7 +226,7 @@ class ObjectBoxList<O : NamedObject>(private val source: ObjectBoxSource<O>) : S
                     val oldIndex = layout.children.indexOf(this.layout)
                     try {
                         if (idx != oldIndex) {
-                            config.moveObject(obj, idx)
+                            parent.source.move(obj, idx)
                         }
                     } finally {
                         layout.translateY = 0.0
@@ -233,7 +237,7 @@ class ObjectBoxList<O : NamedObject>(private val source: ObjectBoxSource<O>) : S
     }
 
     companion object {
-        internal fun <O : NamedObject> listActions() = collectActions<ObjectBoxList<O>> {
+        internal fun <O : NamedObject> listActions() = collectActions<NamedObjectListView<O>> {
             addAction("Rename selected") {
                 shortcut("F2")
                 executes { list -> list.renameSelected() }
@@ -242,7 +246,7 @@ class ObjectBoxList<O : NamedObject>(private val source: ObjectBoxSource<O>) : S
                 shortcut("Ctrl+DELETE")
                 executes { list ->
                     val selected = list.selectedBox?.obj ?: return@executes
-                    if (selected.canDelete) list.source.removeObject(selected)
+                    if (selected.canDelete) list.source.remove(selected)
                 }
             }
             addAction("Select previous") {
@@ -255,12 +259,12 @@ class ObjectBoxList<O : NamedObject>(private val source: ObjectBoxSource<O>) : S
             }
             addAction("Move up") {
                 shortcut("Ctrl+UP")
-                applicableIf { list -> reactiveValue(list.source.enableReordering) }
+                applicableIf { list -> reactiveValue(list.config.enableReordering) }
                 executes { list -> list.moveSelected(-1) }
             }
             addAction("Move down") {
                 shortcut("Ctrl+DOWN")
-                applicableIf { list -> reactiveValue(list.source.enableReordering) }
+                applicableIf { list -> reactiveValue(list.config.enableReordering) }
                 executes { list -> list.moveSelected(+1) }
             }
             addAction("Copy item") {

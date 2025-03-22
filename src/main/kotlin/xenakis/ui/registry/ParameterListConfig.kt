@@ -5,19 +5,17 @@ import hextant.context.createControl
 import hextant.context.withoutUndo
 import javafx.scene.Node
 import reaktive.Observer
-import reaktive.list.MutableReactiveList
 import reaktive.value.forEach
 import reaktive.value.now
 import xenakis.model.obj.ParameterDefObject
 import xenakis.sc.ParameterType
 import xenakis.sc.editor.ControlSpecEditor
 
-class ParameterListSource(
-    private val context: Context,
-    objects: MutableReactiveList<ParameterDefObject>
-) : ReactiveListSource<ParameterDefObject>(objects) {
+class ParameterListConfig(private val context: Context) : ObjectBoxConfig<ParameterDefObject> {
     private val observers = mutableMapOf<ParameterDefObject, Observer>()
-    private lateinit var observer: Observer
+
+    override val enableReordering: Boolean
+        get() = true
 
     override fun getContent(obj: ParameterDefObject): List<Node> {
         val editor = makeControlSpecEditor(obj)
@@ -43,16 +41,7 @@ class ParameterListSource(
             }
     }
 
-    fun syncWithBoxList(parametersList: ObjectBoxList<ParameterDefObject>) {
-        observer = objects.observeList { ch ->
-            if (ch.wasAdded) parametersList.added(ch.index, ch.added)
-            if (ch.wasRemoved) {
-                parametersList.removed(ch.removed)
-                observers.remove(ch.removed)!!.kill()
-            }
-        }
+    override fun onRemoved(obj: ParameterDefObject) {
+        observers.remove(obj)?.kill()
     }
-
-    override val enableReordering: Boolean
-        get() = true
 }

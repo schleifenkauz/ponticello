@@ -8,12 +8,10 @@ import kotlinx.serialization.Serializable
 import xenakis.model.obj.GroupObject
 
 @Serializable
-class GroupRegistry private constructor(
-    private val order: MutableList<GroupObject>
-) : ObjectRegistry<GroupObject>() {
+class GroupRegistry(
     override val objects: MutableList<GroupObject>
-        get() = order
-
+) : ObjectRegistry<GroupObject>(),
+    List<GroupObject> by objects {
     override val objectType: String
         get() = "Group"
 
@@ -22,7 +20,7 @@ class GroupRegistry private constructor(
         context[GroupRegistry] = this
     }
 
-    override fun getDefault(): GroupObject = objects.find { g -> g.isDefault } ?: error("Default group not found!")
+    override fun getDefault(): GroupObject = find { g -> g.isDefault } ?: error("Default group not found!")
 
     companion object : PublicProperty<GroupRegistry> by publicProperty("GroupRegistry") {
         fun createDefault() = GroupRegistry(mutableListOf(GroupObject.DEFAULT))

@@ -17,12 +17,9 @@ import xenakis.model.obj.SuperColliderObject
 
 @Serializable
 class InstrumentRegistry(
-    private val instruments: MutableList<InstrumentObject>,
-    @SerialName("selectedInstrument") private val selectedInstrumentRef: ReactiveVariable<InstrumentReference>
-) : SuperColliderObjectRegistry<InstrumentObject>() {
+    @SerialName("selectedInstrument") private val selectedInstrumentRef: ReactiveVariable<InstrumentReference>,
     override val objects: MutableList<InstrumentObject>
-        get() = instruments
-
+) : SuperColliderObjectRegistry<InstrumentObject>() {
     override val liveCycleType: SuperColliderObject.LiveCycleType
         get() = SuperColliderObject.LiveCycleType.InterpreterBoot //TODO this doesn't work for VSTPlugins
 
@@ -40,7 +37,6 @@ class InstrumentRegistry(
 
     fun select(instrument: InstrumentObject?) {
         selectedInstrumentRef.now = instrument?.reference() ?: ObjectReference.none()
-        views.notifyListeners { if (this is Listener) this.selected(instrument) }
     }
 
     fun synthDescLibContains(name: String): Boolean {
@@ -48,19 +44,10 @@ class InstrumentRegistry(
         return answer.get().toBoolean()
     }
 
-    fun addView(view: Listener) {
-        super.addListener(view, initialize = false)
-        view.selected(selectedInstrument)
-    }
-
     companion object : PublicProperty<InstrumentRegistry> by publicProperty("InstrumentRegistry") {
         fun createDefault(): InstrumentRegistry =
-            InstrumentRegistry(mutableListOf(), reactiveVariable(ObjectReference.none()))
+            InstrumentRegistry(reactiveVariable(ObjectReference.none()), mutableListOf())
 
         fun defaultInstrument() = ReferencedSynthDefObject("default", reactiveVariable(Color.WHEAT))
-    }
-
-    interface Listener : ObjectRegistry.Listener<InstrumentObject> {
-        fun selected(obj: InstrumentObject?)
     }
 }

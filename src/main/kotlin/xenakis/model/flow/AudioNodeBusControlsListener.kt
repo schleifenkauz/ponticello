@@ -12,7 +12,7 @@ import xenakis.sc.ControlSpec
 class AudioNodeBusControlsListener(private val wrapped: AudioNode.Listener) : ParameterControls.Listener {
     private val observers = mutableMapOf<BusControl, Observer>()
 
-    override fun addedControl(control: NamedParameterControl, idx: Int) {
+    override fun added(control: NamedParameterControl, idx: Int) {
         val spec = control.spec.now ?: return
         val ctrl = control.now
         if (spec is BusControlSpec && ctrl is BusControl) {
@@ -20,7 +20,7 @@ class AudioNodeBusControlsListener(private val wrapped: AudioNode.Listener) : Pa
         }
     }
 
-    override fun removedControl(control: NamedParameterControl) {
+    override fun removed(control: NamedParameterControl) {
         val spec = control.spec.now ?: return
         val ctrl = control.now
         if (spec is BusControlSpec && ctrl is BusControl) {

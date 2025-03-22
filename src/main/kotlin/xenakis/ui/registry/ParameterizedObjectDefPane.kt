@@ -9,35 +9,32 @@ import hextant.serial.EditorRoot
 import javafx.scene.control.ScrollPane
 import javafx.scene.layout.VBox
 import org.kordamp.ikonli.material2.Material2MZ
-import reaktive.list.MutableReactiveList
 import reaktive.value.ReactiveString
 import xenakis.model.Settings
-import xenakis.model.obj.ParameterDefObject
 import xenakis.sc.editor.CodeBlockEditor
 
 class ParameterizedObjectDefPane(
     private val context: Context,
     title: ReactiveString,
-    private val parameters: MutableReactiveList<ParameterDefObject>,
+    private val parameters: ParameterDefList,
     code: EditorRoot<CodeBlockEditor>,
     private val update: () -> Unit
 ) : ToolPane() {
-    private val config = ParameterListSource(context, parameters)
-    private val parametersList = ObjectBoxList(config)
+    private val config = ParameterListConfig(context)
+    private val parametersList = NamedObjectListView(parameters, config)
 
     init {
-        config.syncWithBoxList(parametersList)
         val content = ScrollPane(VBox(parametersList, code.control)).letContentFillViewPort()
         setup(title, content, actions = actions.withContext(this))
         parametersList.registerShortcuts(parametersList.actions)
     }
 
     private fun addParameter() {
-        val defaultParameters = context[Settings].defaultParametersDefs.now
+        val defaultParameters = context[Settings].defaultParametersDefs
         val listView = SearchableParameterDefListView(defaultParameters, "New parameter")
         listView.showPopup(header) { newParam ->
-            parameters.now.add(newParam)
-            val idx = parameters.now.indices.last
+            parameters.add(newParam)
+            val idx = parameters.indices.last
             parametersList.select(idx)
         }
     }

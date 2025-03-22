@@ -549,7 +549,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
 
     private fun addObject(obj: ScoreObject, rect: RectangleSelection): ScoreObjectInstance {
         val registry = context[ScoreObjectRegistry]
-        if (!registry.has(obj)) registry.add(obj)
+        if (obj in registry) registry.add(obj)
         val inst = rect.createInstance(obj)
         score.addObject(inst)
         selector.select(getObjectView(inst), addToSelection = false)

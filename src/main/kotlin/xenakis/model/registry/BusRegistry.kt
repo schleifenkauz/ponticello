@@ -13,10 +13,9 @@ import xenakis.model.obj.SuperColliderObject
 import xenakis.sc.Rate
 
 @Serializable
-class BusRegistry(private val busses: MutableList<BusObject>) : SuperColliderObjectRegistry<BusObject>() {
+class BusRegistry(
     override val objects: MutableList<BusObject>
-        get() = busses
-
+) : SuperColliderObjectRegistry<BusObject>() {
     override val objectType: String
         get() = "Bus"
 
@@ -31,7 +30,7 @@ class BusRegistry(private val busses: MutableList<BusObject>) : SuperColliderObj
         context[BusRegistry] = this
         defaultValueRestore = client.treeCleared.observe {
             client.run {
-                for (bus in busses) {
+                for (bus in all()) {
                     if (bus !is BusObject.ControlBus) continue
                     bus.run { setDefaultValue(skipIfZero = false) }
                 }
@@ -41,13 +40,13 @@ class BusRegistry(private val busses: MutableList<BusObject>) : SuperColliderObj
 
     override fun getDefault(): BusObject = getOutput()
 
-    fun getOutput() = busses.find { b -> b.busType == BusObject.Type.Output }
+    fun getOutput() = find { b -> b.busType == BusObject.Type.Output }
         ?: error("No output bus found in registry")
 
-    fun getInput() = busses.find { b -> b.busType == BusObject.Type.Input }
+    fun getInput() = find { b -> b.busType == BusObject.Type.Input }
         ?: error("No output bus found in registry")
 
-    fun filter(rate: Rate, channels: Int): List<BusObject> = busses.filter { b ->
+    fun filter(rate: Rate, channels: Int): List<BusObject> = filter { b ->
         b.rate == rate && b.channels.now == channels
     }
 

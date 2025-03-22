@@ -17,13 +17,13 @@ import xenakis.model.obj.BusReference
 import xenakis.model.obj.GroupObject
 import xenakis.model.registry.BusRegistry
 import xenakis.model.registry.GroupRegistry
-import xenakis.model.registry.ObjectRegistry
+import xenakis.model.registry.NamedObjectList
 import xenakis.model.registry.reference
 
 @Serializable
 class AudioFlows(
-    private var _flows: MutableMap<BusReference, MutableList<AudioFlow>>
-) : ObjectRegistry.Listener<BusObject>, AbstractContextualObject() {
+    private var _flows: MutableMap<BusReference, AudioFlowList>
+) : NamedObjectList.Listener<BusObject>, AbstractContextualObject() {
     @Transient
     private lateinit var busRegistry: BusRegistry
 
@@ -42,7 +42,7 @@ class AudioFlows(
     @Transient
     private val activationObservers = mutableMapOf<AudioFlow, Observer>()
 
-    private val flows: Map<BusReference, List<AudioFlow>> get() = _flows
+    private val flows: Map<BusReference, AudioFlowList> get() = _flows
 
     fun all(): List<AudioFlow> = flows.values.flatten()
 
@@ -55,11 +55,11 @@ class AudioFlows(
     }
 
     private fun setupDatastructures() {
-        for (busRef in _flows.keys) busRef.resolve(busRegistry)
         _flows = _flows.mapKeysTo(mutableMapOf()) { (ref, _) -> ref.resolve(busRegistry); ref }
-        for (bus in busRegistry.all()) {
+        for (bus in busRegistry) {
             numFlows[bus] = reactiveVariable(0)
-            if (bus.reference() !in _flows) _flows[bus.reference()] = mutableListOf()
+            if (bus.reference() !in _flows) _flows[bus.reference()] = AudioFlowList()
+            _flows.getValue(bus.reference()).initialize(context)
         }
         for ((bus, flows) in _flows) {
             if (flows.isEmpty()) continue
@@ -85,7 +85,7 @@ class AudioFlows(
 
     fun flowsFromAndTo(bus: BusObject) = all().filter { f -> bus in f.getOutputs() || bus in f.getInputs() }
 
-    fun associatedFlows(bus: BusObject): List<AudioFlow> = flows.getValue(bus.reference())
+    fun associatedFlows(bus: BusObject): AudioFlowList = flows.getValue(bus.reference())
 
     fun indexOf(flow: AudioFlow) = associatedFlows(flow.associatedBus).indexOf(flow)
 
@@ -98,17 +98,17 @@ class AudioFlows(
     override fun added(obj: BusObject, idx: Int) {
         if (obj !is BusObject.AudioBus) return
         numFlows[obj] = reactiveVariable(0)
-        _flows[obj.reference()] = mutableListOf()
+        _flows[obj.reference()] = AudioFlowList().also { it.initialize(context) }
     }
 
-    override fun removed(obj: BusObject, idx: Int) {
+    override fun removed(obj: BusObject) {
         if (obj !is BusObject.AudioBus) return
         numFlows.remove(obj)!!
         _flows.remove(obj.reference())!!
     }
 
-    fun addFlow(flow: AudioFlow, index: Int = numFlows.getValue(flow.associatedBus).now) {
-        changeFlows(flow.associatedBus) { add(index, flow) }
+    fun addFlow(flow: AudioFlow, index: Int = associatedFlows(flow.associatedBus).size) {
+        changeFlows(flow.associatedBus) { add(flow, index) }
         onAddFlow(flow)
         undoManager.record(AudioFlowsEdit.AddFlow(this, flow))
         listeners.notifyListeners { addedFlow(flow, index) }
@@ -150,14 +150,14 @@ class AudioFlows(
             check(index in indices) { "Invalid index $index ($flow)" }
             val oldIndex = indexOf(flow)
             if (index == oldIndex) return
-            removeAt(oldIndex)
-            add(index, flow)
+            remove(flow)
+            add(flow, index)
             undoManager.record(AudioFlowsEdit.MoveFlow(this@AudioFlows, flow, oldIndex, index))
             listeners.notifyListeners { movedFlow(flow, oldIndex, index) }
         }
     }
 
-    private inline fun changeFlows(bus: BusObject, action: MutableList<AudioFlow>.() -> Unit) {
+    private inline fun changeFlows(bus: BusObject, action: AudioFlowList.() -> Unit) {
         val associatedFlows = _flows.getValue(bus.reference())
         if (!associatedFlows.isEmpty()) {
             associatedFlows.first().isFirst.now = false

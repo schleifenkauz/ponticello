@@ -13,9 +13,9 @@ import xenakis.ui.launcher.XenakisLauncher.Companion.currentProject
 import java.io.File
 
 @Serializable
-class SampleRegistry(private val samples: MutableList<SampleObject>) : SuperColliderObjectRegistry<SampleObject>() {
-    override val objects: MutableList<SampleObject>
-        get() = samples
+class SampleRegistry(
+    override val objects: MutableList<SampleObject> = mutableListOf(),
+) : SuperColliderObjectRegistry<SampleObject>() {
     override val objectType: String
         get() = "Sample"
     override val liveCycleType: SuperColliderObject.LiveCycleType
@@ -26,7 +26,7 @@ class SampleRegistry(private val samples: MutableList<SampleObject>) : SuperColl
         super.initialize(context)
     }
 
-    fun getSample(file: File): SampleObject? = objects.find { o -> o.audioFile == file }
+    fun getSample(file: File): SampleObject? = find { o -> o.audioFile == file }
 
     fun getOrAdd(file: File): SampleObject = getSample(file) ?: run {
         val name = reactiveVariable(Identifier.truncate(file.nameWithoutExtension))
@@ -36,6 +36,6 @@ class SampleRegistry(private val samples: MutableList<SampleObject>) : SuperColl
     }
 
     companion object : PublicProperty<SampleRegistry> by publicProperty("SampleRegistry") {
-        fun createDefault() = SampleRegistry(mutableListOf())
+        fun createDefault() = SampleRegistry()
     }
 }

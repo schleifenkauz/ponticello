@@ -20,9 +20,9 @@ import xenakis.ui.controls.NamePrompt
 
 abstract class ObjectRegistryPane<O : NamedObject>(
     private val registry: ObjectRegistry<O>
-) : ToolPane(), ObjectRegistry.Listener<O>, ObjectBoxSource<O> {
+) : ToolPane(), ObjectBoxConfig<O> {
     protected val searchText = CustomTextField().styleClass("sleek-text-field", "search-field")
-    protected val boxList: ObjectBoxList<O> = ObjectBoxList(this)
+    protected val boxList: NamedObjectListView<O> = NamedObjectListView(registry, this)
 
     init {
         setupSearchField()
@@ -44,21 +44,6 @@ abstract class ObjectRegistryPane<O : NamedObject>(
 
     }
 
-    override val items: List<O>
-        get() = registry.all()
-
-    override fun removeObject(obj: O) {
-        registry.remove(obj)
-    }
-
-    override fun addObject(obj: O, idx: Int) {
-        registry.add(obj, idx)
-    }
-
-    override fun moveObject(obj: O, idx: Int) {
-        registry.move(obj, idx)
-    }
-
     protected abstract fun sync()
 
     protected open fun filter(obj: O): Boolean = true
@@ -72,18 +57,6 @@ abstract class ObjectRegistryPane<O : NamedObject>(
     }
 
     private fun matchesSearch(obj: O) = obj.name.now.contains(searchText.text, ignoreCase = true)
-
-    override fun added(obj: O, idx: Int) {
-        boxList.added(idx, obj)
-    }
-
-    override fun removed(obj: O, idx: Int) {
-        boxList.removed(obj)
-    }
-
-    override fun moved(obj: O, idx: Int) {
-        boxList.moved(obj, idx)
-    }
 
     protected abstract fun addObject(name: String): O?
 

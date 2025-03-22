@@ -10,19 +10,18 @@ import javafx.scene.layout.HBox
 import javafx.scene.layout.Priority
 import javafx.scene.paint.Color
 import org.kordamp.ikonli.materialdesign2.MaterialDesignP
-import xenakis.model.flow.AudioFlow
 import xenakis.model.flow.AudioFlows
 import xenakis.model.obj.BusObject
 import xenakis.model.registry.BusRegistry
-import xenakis.model.registry.ObjectRegistry
+import xenakis.model.registry.NamedObjectList
 import xenakis.ui.controls.NamePrompt
 import xenakis.ui.registry.ToolPane
 
 class FlowPane(
     private val flows: AudioFlows
-) : ToolPane(), AudioFlows.Listener, ObjectRegistry.Listener<BusObject> {
+) : ToolPane(), NamedObjectList.Listener<BusObject> {
     private val hbox = HBox(4.0)
-    private val verticalBoxes = mutableMapOf<BusObject, VerticalFlowsBox>()
+    private val verticalBoxes = mutableMapOf<BusObject, FlowChainView>()
     private val buses = flows.context[BusRegistry]
 
     init {
@@ -34,7 +33,6 @@ class FlowPane(
         }
         setup("Audio Flows", content = HBox(scrollPane, makeAddBusButton()))
         buses.addListener(this)
-        flows.addListener(this, initialize = false)
     }
 
     private fun makeAddBusButton(): BorderPane {
@@ -49,29 +47,15 @@ class FlowPane(
         return pane
     }
 
-    override fun addedFlow(flow: AudioFlow, index: Int) {
-        val box = verticalBoxes.getValue(flow.associatedBus)
-        box.addedFlow(flow, index)
-    }
-
-    override fun removedFlow(flow: AudioFlow) {
-        val box = verticalBoxes.getValue(flow.associatedBus)
-        box.removedFlow(flow)
-    }
-
-    override fun movedFlow(flow: AudioFlow, oldIndex: Int, newIndex: Int) {
-        verticalBoxes.getValue(flow.associatedBus).movedFlow(oldIndex, newIndex)
-    }
-
     override fun added(obj: BusObject, idx: Int) {
         if (obj !is BusObject.AudioBus) return
-        val box = VerticalFlowsBox(flows, obj)
+        val box = FlowChainView(flows, obj)
         verticalBoxes[obj] = box
         hbox.children.add(box)
         box.prefHeightProperty().bind(heightProperty())
     }
 
-    override fun removed(obj: BusObject, idx: Int) {
+    override fun removed(obj: BusObject) {
         if (obj !is BusObject.AudioBus) return
         val box = verticalBoxes.remove(obj) ?: error("No box found for $obj")
         hbox.children.remove(box)

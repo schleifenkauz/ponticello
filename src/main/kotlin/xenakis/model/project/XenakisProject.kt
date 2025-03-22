@@ -38,7 +38,7 @@ class XenakisProject private constructor(val components: Map<Component<out Conte
 
     fun saveTo(projectDirectory: File) {
         for (inst in score.allInstances()) {
-            if (!objects.has(inst.obj)) {
+            if (inst.obj !in objects) {
                 Logger.warn("Had to readd object for $inst", Logger.Category.Project)
                 objects.add(inst.obj)
             }
@@ -101,8 +101,7 @@ class XenakisProject private constructor(val components: Map<Component<out Conte
                     try {
                         json.decodeFromStream(serializer, stream)
                     } catch (e: Exception) {
-                        Logger.error("Error while reading component $name from $file!")
-                        e.printStackTrace()
+                        Logger.error("Error while reading component $name from $file!", detailMessage = e.message)
                         default()
                     } finally {
                         stream.close()

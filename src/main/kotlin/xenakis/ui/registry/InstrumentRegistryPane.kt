@@ -1,36 +1,27 @@
 package xenakis.ui.registry
 
 import bundles.createBundle
-import fxutils.SubWindow
+import fxutils.*
 import fxutils.actions.ContextualizedAction
 import fxutils.actions.collectActions
-import fxutils.letContentFillViewPort
 import fxutils.prompt.SimpleSearchableListView
 import fxutils.prompt.YesNoPrompt
-import fxutils.resize
-import fxutils.setFixedWidth
-import fxutils.showBelow
-import fxutils.showRightOf
-import fxutils.undecoratedSubWindow
 import hextant.fx.initHextantScene
 import javafx.application.Platform
 import javafx.scene.Node
-import javafx.scene.control.ScrollPane
 import javafx.scene.input.DataFormat
 import javafx.scene.paint.Color
 import org.kordamp.ikonli.material2.Material2AL
 import org.kordamp.ikonli.material2.Material2MZ
 import org.kordamp.ikonli.materialdesign2.MaterialDesignE
+import reaktive.list.toReactiveList
 import reaktive.value.binding.map
 import reaktive.value.now
 import reaktive.value.reactiveValue
+import xenakis.impl.Logger
 import xenakis.impl.async
 import xenakis.impl.canSuperColliderTalkToMe
-import xenakis.impl.Logger
 import xenakis.model.obj.*
-import xenakis.model.obj.CustomizableSynthDefObject
-import xenakis.model.obj.InstrumentObject
-import xenakis.model.obj.VSTPluginObject
 import xenakis.model.registry.GlobalSynthDefLib
 import xenakis.model.registry.InstrumentRegistry
 import xenakis.sc.Identifier
@@ -40,12 +31,8 @@ import xenakis.ui.impl.colorPicker
 
 class InstrumentRegistryPane(
     private val registry: InstrumentRegistry,
-) : InstrumentRegistry.Listener, ObjectRegistryPane<InstrumentObject>(registry) {
+): ObjectRegistryPane<InstrumentObject>(registry) {
     private val subWindows = mutableMapOf<SynthDefObject, SubWindow>()
-
-    init {
-        registry.addView(this)
-    }
 
     override fun dataFormat(obj: InstrumentObject): DataFormat? =
         if (obj is SynthDefObject) SynthDefObject.DATA_FORMAT else null
@@ -180,9 +167,6 @@ class InstrumentRegistryPane(
         }
     }
 
-    override fun selected(obj: InstrumentObject?) {
-    }
-
     override fun getContent(obj: InstrumentObject): List<Node> = buildList {
         val colorPicker = colorPicker(obj.color)
         colorPicker.setFixedWidth(30.0)
@@ -210,8 +194,7 @@ class InstrumentRegistryPane(
         }
     }.withContext(obj)
 
-    override fun removed(obj: InstrumentObject, idx: Int) {
-        super.removed(obj, idx)
+    override fun onRemoved(obj: InstrumentObject) {
         subWindows.remove(obj)?.hide()
     }
 
@@ -238,7 +221,7 @@ class InstrumentRegistryPane(
         }
 
         else -> {
-            val pane = ParameterInfoPane(obj.parameters)
+            val pane = ParameterInfoPane(obj.parameters.toReactiveList()) //TODO
             undecoratedSubWindow(pane).apply {
                 this.resize(800.0, 300.0)
             }

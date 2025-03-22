@@ -7,9 +7,7 @@ import javafx.scene.input.DataFormat
 import javafx.scene.input.Dragboard
 import xenakis.model.registry.NamedObject
 
-interface ObjectBoxSource<O : NamedObject> {
-    val items: List<O>
-
+interface ObjectBoxConfig<O : NamedObject> {
     val enableReordering: Boolean get() = false
 
     val orientation: Orientation get() = Orientation.HORIZONTAL
@@ -20,22 +18,11 @@ interface ObjectBoxSource<O : NamedObject> {
 
     fun getActions(obj: O): List<ContextualizedAction> = emptyList()
 
-    fun removeObject(obj: O) {
-        throw UnsupportedOperationException()
-    }
-
-    fun addObject(obj: O, idx: Int = items.size) {
-        throw UnsupportedOperationException()
-    }
-
-    fun moveObject(obj: O, idx: Int) {
-        removeObject(obj)
-        addObject(obj, idx)
-    }
-
     fun configureDragboard(obj: O, dragboard: Dragboard) {}
 
     fun dataFormat(obj: O): DataFormat? = null
 
     fun onSelected(obj: O) {}
+
+    fun onRemoved(obj: O) {}
 }

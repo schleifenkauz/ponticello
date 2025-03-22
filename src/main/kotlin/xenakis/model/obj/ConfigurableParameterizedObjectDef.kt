@@ -1,7 +1,7 @@
 package xenakis.model.obj
 
-import reaktive.list.MutableReactiveList
+import xenakis.ui.registry.ParameterDefList
 
 interface ConfigurableParameterizedObjectDef : ParameterizedObjectDef {
-    override val parameters: MutableReactiveList<ParameterDefObject>
+    override val parameters: ParameterDefList
 }

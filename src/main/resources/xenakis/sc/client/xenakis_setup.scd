@@ -88,6 +88,8 @@ OSCdef('schedule', {
 	var time = msg[2].asFloat, code = msg[3], fct, my_play_start = ~play_start;
 	fct = this.compile(code.asString);
 	if (fct == nil) { "Compilation error".throw };
+	'SCHEDULE: '.postln;
+	code.postln;
 	TempoClock.schedAbs(max(~play_start + time, TempoClock.beats)) {
 	    if (my_play_start == ~play_start) {
 		    try { fct.value } { |error|
