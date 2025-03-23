@@ -23,6 +23,7 @@ import xenakis.model.score.BusControl
 import xenakis.model.score.ValueControl
 import xenakis.model.score.GroupControl
 import xenakis.sc.editor.ControlSpecEditor
+import xenakis.sc.editor.SimpleColorEditor
 import xenakis.sc.editor.SimpleIntegerEditor
 
 @Serializable

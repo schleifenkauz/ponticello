@@ -58,8 +58,6 @@
 - improve the timeline
 - retrieve global SynthDefs from `compositions` directory
 - merge the `GlobalControlsPane` with the registry pane for control buses
-- allow parameter specification when adding custom parameters
-  - differentiate visually between parameters from Def and standard parameters
 - make undecorated windows resizable
 - own editor type for control references
 - what to do when user selects a new `SynthDef` for a synth object

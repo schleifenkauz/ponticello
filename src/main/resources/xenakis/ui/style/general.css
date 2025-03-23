@@ -62,7 +62,7 @@
 .search-field {
     -fx-border-width: 0px 0px 1px 0px;
     -fx-pref-width: 150px;
-    -fx-max-width: 100px;
+    -fx-max-width: 150px;
 }
 
 .search-field FontIcon {

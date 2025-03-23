@@ -1,21 +1,23 @@
 package xenakis.ui.score
 
+import fxutils.registerShortcuts
 import javafx.geometry.Point2D
 import javafx.scene.input.MouseEvent
-import javafx.scene.layout.Region
+import javafx.scene.robot.Robot
 import reaktive.Observer
 import reaktive.value.now
 import reaktive.value.reactiveVariable
-import xenakis.model.Settings
 import xenakis.model.obj.ParameterizedObject
 import xenakis.model.score.*
 import xenakis.model.score.ParameterControlList.NamedParameterControl
 import xenakis.sc.ControlSpec
 import xenakis.sc.NumericalControlSpec
-import xenakis.ui.registry.SearchableParameterListView
+import xenakis.sc.ParameterType
+import xenakis.ui.launcher.XenakisApp.Companion.primaryStage
+import xenakis.ui.registry.SearchableParameterDefListView
 
 abstract class ParameterizedScoreObjectView<O>(
-    instance: ScoreObjectInstance
+    instance: ScoreObjectInstance,
 ) : ScoreObjectView(instance), ParameterControlList.Listener where O : ScoreObject, O : ParameterizedObject {
     private val envelopeDisplayObservers = mutableMapOf<EnvelopeControl, Observer>()
     private val envelopeEditors = mutableListOf<EnvelopeEditor>()
@@ -45,22 +47,25 @@ abstract class ParameterizedScoreObjectView<O>(
                 val control = obj.controls.controlMap[p.name.now]
                 control !is EnvelopeControl || !control.display.now
             }
-        val listView = SearchableParameterListView(context, "Add new envelope", obj, possibleParameters)
-        listView.showPopup(point) { param ->
-            val name = param.name.now
-            val spec = param.spec.now as NumericalControlSpec
-            val initialValue = obj.controls.controlMap[name]?.getNumericalValue() ?: spec.defaultValue.get()
-            val env = Envelope.constant(initialValue, obj.duration, spec.warp)
-            val control = EnvelopeControl(
-                env, reactiveVariable(spec.associatedColor),
-                display = reactiveVariable(true)
-            )
-            val customSpec = spec.takeIf {
-                it != obj.def.getSpec(param.name.now)?.now
-            }
-            if (name !in obj.controls.controlMap) obj.controls.addControl(name, control, customSpec)
-            else obj.controls.reassignControl(name, control)
+        val listView = SearchableParameterDefListView(
+            possibleParameters, "New parameter", obj,
+            context[primaryStage], point, fixedParameterType = ParameterType.Numerical
+        )
+        val param = listView.showPopup() ?: return
+        val name = param.name.now
+        val spec = param.spec.now as NumericalControlSpec
+        val initialValue = obj.controls.controlMap[name]?.getNumericalValue() ?: spec.defaultValue.get()
+        val env = Envelope.constant(initialValue, obj.duration, spec.warp)
+        val control = EnvelopeControl(
+            env, reactiveVariable(spec.associatedColor),
+            display = reactiveVariable(true)
+        )
+        val customSpec = spec.takeIf {
+            it != obj.def.getSpec(param.name.now)?.now
         }
+        if (name !in obj.controls.controlMap) obj.controls.addControl(name, control, customSpec)
+        else obj.controls.reassignControl(name, control)
+
     }
 
     override fun added(control: NamedParameterControl, idx: Int) {
@@ -88,7 +93,7 @@ abstract class ParameterizedScoreObjectView<O>(
     override fun reassignedControl(
         namedControl: NamedParameterControl,
         oldControl: ParameterControl,
-        control: ParameterControl
+        control: ParameterControl,
     ) {
         if (oldControl is EnvelopeControl) removedEnvelopeControl(namedControl, oldControl)
         if (control is EnvelopeControl) addedEnvelopeControl(namedControl, control)
@@ -122,27 +127,6 @@ abstract class ParameterizedScoreObjectView<O>(
         for (e in envelopeEditors) {
             if (e.namedControl.spec.now is NumericalControlSpec) {
                 e.repaint()
-            }
-        }
-    }
-
-    companion object {
-        fun addNewControl(obj: ParameterizedObject, anchorNode: Region) {
-            val context = obj.context
-            val defaultParameters = context[Settings].defaultParametersDefs
-            val synthParameters = obj.def.parameters
-            val unassignedParameters = (synthParameters + defaultParameters)
-                .filter { param -> param.name.now !in obj.controls.controlMap }
-                .filter { param -> !(param in defaultParameters && synthParameters.any { p -> p.name.now == param.name.now }) }
-            val listView = SearchableParameterListView(
-                context, "Add new control",
-                obj, unassignedParameters
-            )
-            listView.showPopup(anchorNode = anchorNode) { option ->
-                val parameter = option.name.now
-                val customSpec = option.spec.now.takeIf { !obj.def.hasParameter(parameter) }
-                val control = option.defaultControl(context)
-                obj.controls.addControl(parameter, control, customSpec)
             }
         }
     }

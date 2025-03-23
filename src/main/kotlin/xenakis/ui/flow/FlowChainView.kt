@@ -140,11 +140,10 @@ class FlowChainView(
         }
         btn.setOnMouseClicked {
             val options = FlowOption.getOptions(flows.context)
-            SimpleSearchableListView(options, "Add flow").showPopup(anchorNode = btn) { option ->
-                option.createFlow(flows.context, btn, associatedBus) { flow ->
-                    flow.initialize(flows.context, associatedBus)
-                    flows.addFlow(flow)
-                }
+            val option = SimpleSearchableListView(options, "Add flow").showPopup(anchorNode = btn) ?: return@setOnMouseClicked
+            option.createFlow(flows.context, btn, associatedBus) { flow ->
+                flow.initialize(flows.context, associatedBus)
+                flows.addFlow(flow)
             }
         }
         return pane
@@ -174,17 +173,6 @@ class FlowChainView(
                 executes { flow ->
                     val pane = flow.context[XenakisMainActivity].synthDefsPane
                     pane.listView.showContent(flow.synthDef)
-                }
-            }
-            addAction("Add parameter") {
-                icon(Material2MZ.PLUS)
-                shortcut("Ctrl+INSERT")
-                executes { flow, ev ->
-                    if (ev.isShiftDown()) {
-                        flow.addControlsForAllObjectParameters()
-                    } else {
-                        ParameterizedScoreObjectView.addNewControl(flow, ev!!.target as Region) //TODO
-                    }
                 }
             }
         }

@@ -11,6 +11,7 @@ import javafx.scene.input.Clipboard
 import javafx.scene.input.MouseEvent
 import javafx.scene.input.TransferMode
 import javafx.scene.layout.HBox
+import javafx.scene.layout.Priority
 import javafx.scene.layout.Region
 import javafx.scene.layout.VBox
 import org.kordamp.ikonli.material2.Material2AL
@@ -74,6 +75,9 @@ class NamedObjectListView<O : NamedObject>(
         for (box in boxes) box.setContentDisplay(mode)
         if (mode == ContentDisplay.DetailsPane) {
             displayContent(selectedBox)
+            setHgrow(itemsScrollPane, Priority.ALWAYS)
+        } else {
+            setHgrow(itemsScrollPane, Priority.SOMETIMES)
         }
         autoResize()
     }
@@ -148,7 +152,7 @@ class NamedObjectListView<O : NamedObject>(
         selectedBox = box
         box.pseudoClassStateChanged(PseudoClasses.SELECTED, true)
         children.remove(displayedContent)
-        displayContent(box)
+        if (mode.now == ContentDisplay.DetailsPane) displayContent(box)
         config.onSelected(box.obj)
     }
 

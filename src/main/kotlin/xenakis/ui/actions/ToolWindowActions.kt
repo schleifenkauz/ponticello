@@ -24,12 +24,11 @@ object ToolWindowActions : Action.Collector<XenakisMainActivity>({
         icon(MaterialDesignB.BELL)
         executes { screen, ev ->
             if (ev.isShiftDown()) {
-                SimpleSearchableListView(Logger.Level.entries, "Select notification level").showPopup(
+                val lvl = SimpleSearchableListView(Logger.Level.entries, "Select notification level").showPopup(
                     ev?.source as Region,
                     NotificationView.level
-                ) { lvl ->
-                    NotificationView.level = lvl
-                }
+                )
+                if (lvl != null) NotificationView.level = lvl
             } else screen.logWindow.showOrBringToFront()
         }
     }

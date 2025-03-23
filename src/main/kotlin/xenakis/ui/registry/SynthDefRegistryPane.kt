@@ -96,9 +96,8 @@ class SynthDefRegistryPane(
             .map { instr -> AddInstrumentOption.SynthDefFromGlobalLib(instr) }
         val searchableList = AddInstrumentOptionListView(synthDefsFromGlobal)
         searchableList.enterText(searchText.text)
-        searchableList.showPopup(anchorNode = this) { option ->
-            createObject(option)
-        }
+        val option = searchableList.showPopup(anchorNode = this) ?: return
+        createObject(option)
     }
 
     sealed interface AddInstrumentOption {

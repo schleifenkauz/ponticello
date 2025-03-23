@@ -12,13 +12,14 @@ import org.kordamp.ikonli.material2.Material2MZ
 import reaktive.value.ReactiveString
 import xenakis.model.Settings
 import xenakis.sc.editor.CodeBlockEditor
+import xenakis.ui.launcher.XenakisApp.Companion.primaryStage
 
 class ParameterizedObjectDefPane(
     private val context: Context,
     title: ReactiveString,
     private val parameters: ParameterDefList,
     code: EditorRoot<CodeBlockEditor>,
-    private val update: () -> Unit
+    private val update: () -> Unit,
 ) : ToolPane() {
     private val config = ParameterListConfig(context)
     private val parametersList = NamedObjectListView(parameters, config)
@@ -31,12 +32,14 @@ class ParameterizedObjectDefPane(
 
     private fun addParameter() {
         val defaultParameters = context[Settings].defaultParametersDefs
-        val listView = SearchableParameterDefListView(defaultParameters, "New parameter")
-        listView.showPopup(header) { newParam ->
-            parameters.add(newParam)
-            val idx = parameters.indices.last
-            parametersList.select(idx)
-        }
+        val listView = SearchableParameterDefListView(
+            defaultParameters, "New parameter", null,
+            context[primaryStage], localToScreen(0.0, height)
+        )
+        val newParam = listView.showPopup() ?: return
+        parameters.add(newParam)
+        val idx = parameters.indices.last
+        parametersList.select(idx)
     }
 
     companion object {

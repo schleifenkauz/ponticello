@@ -76,12 +76,11 @@ class ControlAssignmentEditor(val control: NamedParameterControl) : HBox() {
 
     private fun showOptionPopup() {
         val listView = SimpleSearchableListView(ControlType.all, "Select control type")
-        listView.showPopup(
+        val option = listView.showPopup(
             anchorNode = optionButton,
             initialOption = selectedOption
-        ) { option ->
-            updateControlType(option)
-        }
+        ) ?: return
+        updateControlType(option)
     }
 
     private fun updateControlType(t: ControlType<*>) {

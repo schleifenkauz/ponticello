@@ -10,7 +10,7 @@ import xenakis.sc.editor.ObjectSelector
 import xenakis.ui.registry.SearchableRegistryView
 
 class ObjectSelectorControl<O : NamedObject>(
-    private val selector: ObjectSelector<O>, arguments: Bundle
+    private val selector: ObjectSelector<O>, arguments: Bundle,
 ) : SimpleChoiceEditorControl<ObjectReference<O>>(selector, arguments) {
     public override fun showChoicePopup() {
         val registry = selector.getRegistry()
@@ -19,8 +19,7 @@ class ObjectSelectorControl<O : NamedObject>(
 
             override fun displayText(option: O): String = selector.toString(option).now
         }
-        view.showPopup(anchorNode = this, initialOption = selector.result.now.get()) { option ->
-            selector.select(option.reference())
-        }
+        val option = view.showPopup(anchorNode = this, initialOption = selector.result.now.get())
+        if (option != null) selector.select(option.reference())
     }
 }

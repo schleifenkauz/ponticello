@@ -2,8 +2,6 @@ package xenakis.sc.editor
 
 import hextant.core.editor.ColorEditor
 import xenakis.model.obj.BusObject
-import xenakis.model.obj.BusReference
-import xenakis.model.registry.ObjectReference
 import xenakis.model.registry.reference
 import xenakis.sc.NumericalControlSpec
 import xenakis.sc.Rate

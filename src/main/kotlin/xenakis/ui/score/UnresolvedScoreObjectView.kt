@@ -22,17 +22,16 @@ class UnresolvedScoreObjectView(instance: ScoreObjectInstance) : ScoreObjectView
     override fun setupDetailPane(pane: DetailPane) {
         val btn = button("Select object reference")
         btn.setOnMouseClicked {
-            SimpleSearchableRegistryView(context[ScoreObjectRegistry], "Resolve object")
-                .showPopup(anchorNode = btn) { obj ->
-                    val instances = context[rootScore].allInstances().filterTo(mutableSetOf()) { inst ->
-                        !inst.ref.isResolved.now && inst.ref.getName() == this.instance.ref.getName()
-                    }
-                    context.compoundEdit("Select object for unresolved instance") {
-                        for (inst in instances) {
-                            inst.replaceWith(obj)
-                        }
-                    }
+            val obj = SimpleSearchableRegistryView(context[ScoreObjectRegistry], "Resolve object")
+                .showPopup(anchorNode = btn) ?: return@setOnMouseClicked
+            val instances = context[rootScore].allInstances().filterTo(mutableSetOf()) { inst ->
+                !inst.ref.isResolved.now && inst.ref.getName() == this.instance.ref.getName()
+            }
+            context.compoundEdit("Select object for unresolved instance") {
+                for (inst in instances) {
+                    inst.replaceWith(obj)
                 }
+            }
         }
         pane.addItem("Object #${instance.ref.getName()} unresolved", btn)
     }

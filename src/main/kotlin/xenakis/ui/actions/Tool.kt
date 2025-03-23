@@ -30,10 +30,11 @@ enum class Tool(config: Action.Builder<SelectorBar<Tool, Context>>.() -> Unit) :
                 ev.isControlDown() -> context[XenakisMainActivity].synthDefsWindow.show()
                 (ev is MouseEvent && ev.clickCount >= 2) || (ev is KeyEvent && ev.isShiftDown) -> {
                     val instruments = context[SynthDefRegistry]
-                    SimpleSearchableRegistryView(instruments, "Selected instrument def").showPopup( //TODO better placement
+                    val def = SimpleSearchableRegistryView(instruments, "Selected instrument def").showPopup( //TODO better placement
                         anchorNode = bar,
                         initialOption = instruments.selectedInstrument
-                    ) { def -> instruments.select(def) }
+                    )
+                    if (def != null) instruments.select(def)
                 }
 
                 else -> bar.select(Synth)
@@ -48,10 +49,9 @@ enum class Tool(config: Action.Builder<SelectorBar<Tool, Context>>.() -> Unit) :
                 ev.isControlDown() -> bar.context[XenakisMainActivity].processDefsWindow.show()
                 (ev is MouseEvent && ev.clickCount >= 2) || (ev is KeyEvent && ev.isShiftDown) -> {
                     val processDefs = bar.context[ProcessDefRegistry]
-                    SimpleSearchableRegistryView(processDefs, "Selected process def").showPopup(
-                        anchorNode = bar,
-                        initialOption = processDefs.selectedDef
-                    ) { def -> processDefs.select(def) }
+                    val def = SimpleSearchableRegistryView(processDefs, "Selected process def")
+                        .showPopup(anchorNode = bar, initialOption = processDefs.selectedDef) ?: return@executes
+                    processDefs.select(def)
                 }
 
                 else -> bar.select(Process)

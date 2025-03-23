@@ -32,7 +32,7 @@
 
 .object-registry-pane {
     -fx-border-color: black;
-    -fx-border-width: 2px;
+    -fx-border-width: 3px;
     -fx-border-radius: 5px;
 }
 

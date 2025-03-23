@@ -25,10 +25,9 @@ sealed interface FlowOption {
             associatedBus: BusObject,
             onCreate: (AudioFlow) -> Unit
         ) {
-            SimpleSearchableRegistryView(context[BusRegistry], "Target bus")
-                .showPopup(anchor) { selected ->
-                    onCreate(SendFlow.createFor(associatedBus, selected, context))
-                }
+            val selected = SimpleSearchableRegistryView(context[BusRegistry], "Target bus")
+                .showPopup(anchor) ?: return
+            onCreate(SendFlow.createFor(associatedBus, selected, context))
 
         }
     }

@@ -105,7 +105,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
     protected fun layoutObjects(
         itr: Iterator<Map.Entry<ScoreObjectInstance, ScoreObjectView>>,
         maxTime: Long,
-        job: CompletableFuture<Unit>
+        job: CompletableFuture<Unit>,
     ) {
         val tStart = System.currentTimeMillis()
         while (itr.hasNext()) {
@@ -398,20 +398,18 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
             ev.button == MouseButton.PRIMARY && ev.isAltDown && ev.isShiftDown -> {
                 val popup = SimpleSearchableRegistryView(context[ScoreObjectRegistry], "Add object instance")
                 val anchor = localToScreen(ev.x, ev.y)
-                popup.showPopup(anchor, scene.window) { obj ->
-                    val pos = snapToGrid(ev.x, ev.y)
-                    val inst = ScoreObjectInstance(obj, pos)
-                    score.addObject(inst)
-                }
+                val obj = popup.showPopup(anchor, scene.window) ?: return
+                val pos = snapToGrid(ev.x, ev.y)
+                val inst = ScoreObjectInstance(obj, pos)
+                score.addObject(inst)
             }
 
             ev.button == MouseButton.PRIMARY && ev.isAltDown -> {
                 val popup = SimpleSearchableRegistryView(context[SampleRegistry], "Place sample")
                 val anchor = localToScreen(ev.x, ev.y)
-                popup.showPopup(anchor, scene.window) { sample ->
-                    val pos = snapToGrid(ev.x, ev.y)
-                    createPlayBufObject(sample, pos)
-                }
+                val sample = popup.showPopup(anchor, scene.window) ?: return
+                val pos = snapToGrid(ev.x, ev.y)
+                createPlayBufObject(sample, pos)
             }
 
             ev.button == MouseButton.PRIMARY && scoreView.isInDuplicateMode() -> {

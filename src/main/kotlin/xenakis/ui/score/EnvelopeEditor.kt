@@ -30,6 +30,7 @@ import xenakis.sc.NumericalControlSpec
 import xenakis.sc.mapOnto
 import xenakis.ui.actions.Tool
 import xenakis.ui.controls.ControlSpecPrompt
+import xenakis.ui.controls.NumericalControlSpecPrompt
 import xenakis.ui.controls.DecimalPrompt
 import xenakis.ui.impl.rootPane
 import xenakis.ui.impl.setupDragging
@@ -123,8 +124,14 @@ class EnvelopeEditor(
             when {
                 ev.button == PRIMARY && ev.isControlDown -> objectView.pane.context.rootPane.magnifyEnvelope(this)
 
-                ev.button == PRIMARY && ev.isShiftDown && associatedObject is ParameterizedObject ->
-                    ControlSpecPrompt(namedControl).showDialog(anchorNode = pane)
+                ev.button == PRIMARY && ev.isShiftDown && associatedObject is ParameterizedObject -> {
+                    val parentObject = objectView.instance.obj as ParameterizedObject
+                    ControlSpecPrompt.create(
+                        parameterName,
+                        parentObject,
+                        spec,
+                    )?.showDialog(anchorNode = pane)
+                }
 
                 ev.button == PRIMARY && ev.clickCount == 2 -> setSegmentValueFromPrompt(ev)
                 ev.button == PRIMARY -> bringToFront()

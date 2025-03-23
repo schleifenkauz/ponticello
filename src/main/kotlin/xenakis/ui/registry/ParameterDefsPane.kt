@@ -24,12 +24,11 @@ class ParameterDefsPane(private val parameters: ParameterDefList, context: Conte
         val name = PredicateTextPrompt("Parameter name", initialText = "", check = { txt ->
             Identifier.isValid(txt) && parameters.none { p -> p.name.now == txt }
         }).showDialog(header) ?: return
-        SimpleSearchableListView<ParameterType>(ParameterType.regularTypes, "Parameter type")
-            .showPopup(header, initialOption = ParameterType.Numerical) { type ->
-                val spec = type.defaultControlSpec()
-                val param = ParameterDefObject(name, spec)
-                parameters.add(param)
-            }
+        val type = SimpleSearchableListView<ParameterType>(ParameterType.regularTypes, "Parameter type")
+            .showPopup(header, initialOption = ParameterType.Numerical) ?: return
+        val spec = type.defaultControlSpec()
+        val param = ParameterDefObject(name, spec)
+        parameters.add(param)
     }
 
     companion object {

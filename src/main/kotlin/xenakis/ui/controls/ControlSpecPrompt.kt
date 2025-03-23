@@ -1,140 +1,109 @@
 package xenakis.ui.controls
 
 import fxutils.button
-import fxutils.prompt.CompoundPrompt
-import fxutils.textField
-import javafx.beans.binding.Bindings
-import javafx.collections.FXCollections.observableList
+import fxutils.prompt.ConfirmablePrompt
+import javafx.beans.binding.BooleanBinding
+import javafx.scene.Node
 import javafx.scene.control.Button
-import javafx.scene.control.ColorPicker
-import javafx.scene.control.ComboBox
-import javafx.scene.control.ToggleButton
-import javafx.scene.paint.Color
-import org.controlsfx.control.SegmentedButton
+import javafx.scene.layout.Region
 import reaktive.value.now
-import xenakis.impl.parseDecimal
 import xenakis.model.flow.FlowType
 import xenakis.model.obj.ConfigurableParameterizedObjectDef
 import xenakis.model.obj.ParameterDefObject
-import xenakis.model.score.ParameterControlList.NamedParameterControl
-import xenakis.sc.*
-import xenakis.sc.ParameterType.*
+import xenakis.model.obj.ParameterizedObject
+import xenakis.sc.BufferControlSpec
+import xenakis.sc.BusControlSpec
+import xenakis.sc.ControlSpec
+import xenakis.sc.GroupControlSpec
+import xenakis.sc.NumericalControlSpec
+import xenakis.sc.ParameterType
+import xenakis.sc.Rate
 
-class ControlSpecPrompt(private val control: NamedParameterControl) : CompoundPrompt<ParameterDefObject>(
-    "Control spec for parameter ${control.name.now} of synth ${control.parentObject.name.now}"
-) {
-    private val initialSpec = control.spec.now!!
-
-    private val parameterName = control.name.now
-
-    private var currentSpecType = initialSpec.type
-        set(value) {
-            if (field == value) return
-            field = value
-            content.clear()
-            specTypeButtonBar named "Parameter type"
-            if (value == Numerical) addNumericalSpecInputs()
-        }
-    private val numericalSpec = initialSpec as? NumericalControlSpec
-    private val specTypeButtonBar = SegmentedButton(*entries.map { type ->
-        val btn = ToggleButton(type.name)
-        if (type == currentSpecType) btn.isSelected = true
-        btn.selectedProperty().addListener { _, _, selected ->
-            if (selected) currentSpecType = type
-        }
-        btn
-    }.toTypedArray())
-
+abstract class ControlSpecPrompt<S : ControlSpec, N : Node>(
+    private val parameterName: String,
+    protected val parentObject: ParameterizedObject?,
+    title: String,
+) : ConfirmablePrompt<S, N>(title) {
     private val resetBtn = button("Reset") {
         reset()
-        window.hide()
     }
 
     private val confirmAndSyncBtn = button("Confirm and sync") {
         confirmAndSync()
-        window.hide()
     }
 
     private val confirmAndAddBtn = button("Confirm and add to SynthDef") {
         confirmAndAdd()
-        window.hide()
     }
 
-    private val minTxt = textField(numericalSpec?.min?.text ?: "0")
-    private val maxTxt = textField(numericalSpec?.max?.text ?: "1")
-    private val defaultTxt = textField(numericalSpec?.defaultValue?.text ?: "0")
-    private val stepTxt = textField(numericalSpec?.step?.text ?: "0.1")
-    private val warpBox = ComboBox(observableList(Warp.entries))
-    private val associatedColor = ColorPicker(numericalSpec?.associatedColor ?: Color.BLACK)
+    private fun reset() {
+        parentObject!!.controls.get(parameterName).setCustomSpec(null)
+        commit(null)
+    }
 
-    private val min get() = minTxt.text.parseDecimal()
-    private val max get() = maxTxt.text.parseDecimal()
-    private val default get() = defaultTxt.text.parseDecimal()
-    private val step get() = stepTxt.text.parseDecimal()
-    private val warp get() = warpBox.value
+    private fun confirmAndSync() {
+        val spec = confirm()
+        parentObject!!.def.setSpec(parameterName, spec)
+        parentObject.controls.get(parameterName).setCustomSpec(null)
+        commit(spec)
+    }
 
-    init {
-        warpBox.value = numericalSpec?.warp ?: Warp.Linear
-        if (parameterName !in control.controls.controlMap) specTypeButtonBar named "Parameter type"
-        if (currentSpecType == Numerical) addNumericalSpecInputs()
-        val isValid = Bindings.createBooleanBinding({
-            when {
-                currentSpecType != Numerical -> true
-                min == null -> false
-                max == null -> false
-                default == null -> true
-                step == null -> false
-                default!! < min!! -> false
-                default!! > max!! -> false
-                else -> true
-            }
-        }, minTxt.textProperty(), maxTxt.textProperty(), defaultTxt.textProperty(), stepTxt.textProperty())
+    private fun confirmAndAdd() {
+        val spec = confirm()
+        val param = ParameterDefObject(parameterName, spec)
+        val def = parentObject!!.def as ConfigurableParameterizedObjectDef
+        def.parameters.add(param)
+        commit(spec)
+    }
+
+    protected fun validate(isValid: BooleanBinding) {
         confirmButton.disableProperty().bind(isValid.not())
         confirmAndSyncBtn.disableProperty().bind(isValid.not())
     }
 
-    private fun addNumericalSpecInputs() {
-        minTxt named "Minimum"
-        maxTxt named "Maximum"
-        defaultTxt named "Default"
-        stepTxt named "Step"
-        warpBox named "Warp"
-        associatedColor named "Color"
-    }
+    protected abstract fun makeSpec(): S
 
     override fun extraButtons(): List<Button> = when {
-        control.parentObject.def !is ConfigurableParameterizedObjectDef -> emptyList()
-        control.parentObject.def.hasParameter(parameterName) -> listOf(confirmAndSyncBtn, resetBtn)
+        parentObject == null -> emptyList()
+        parentObject.def !is ConfigurableParameterizedObjectDef -> emptyList()
+        parentObject.def.hasParameter(parameterName) -> listOf(confirmAndSyncBtn, resetBtn)
         else -> listOf(confirmAndAddBtn)
     }
 
-    private fun reset() {
-        control.setCustomSpec(null)
-    }
-
-    private fun confirmAndSync() {
-        val param = confirm()
-        control.parentObject.def.setSpec(parameterName, param.spec.now)
-    }
-
-    private fun confirmAndAdd() {
-        val param = confirm()
-        val def = control.parentObject.def as ConfigurableParameterizedObjectDef
-        def.parameters.add(param)
-    }
-
-    override fun confirm(): ParameterDefObject {
+    override fun confirm(): S {
         val spec = makeSpec()
-        if (parameterName in control.parentObject.controls.controlMap) {
-            control.setCustomSpec(spec)
+        if (parentObject != null && parameterName in parentObject.controls.controlMap) {
+            parentObject.controls.get(parameterName).setCustomSpec(spec)
         }
-        return ParameterDefObject(parameterName, spec)
+        return spec
     }
 
-    private fun makeSpec() = when (currentSpecType) {
-        Numerical -> NumericalControlSpec(default!!, min!!, max!!, step!!, warp, associatedColor.value)
-        Bus -> BusControlSpec(Rate.Audio, 2, FlowType.Out) //TODO
-        Buffer -> BufferControlSpec(2)
-        Group -> GroupControlSpec()
+    companion object {
+        fun create(
+            parameterName: String,
+            parentObject: ParameterizedObject?,
+            initialSpec: ControlSpec,
+        ): ControlSpecPrompt<*, *>? {
+            val title =
+                if (parentObject != null) "Control spec for parameter $parameterName of ${parentObject.name.now}"
+                else "Control spec for new parameter $parameterName"
+            return when (initialSpec) {
+                is BufferControlSpec -> BufferControlSpecPrompt(parameterName, parentObject, title, initialSpec)
+                is BusControlSpec -> BusControlSpecPrompt(parameterName, parentObject, title, initialSpec)
+                is GroupControlSpec -> null
+                is NumericalControlSpec -> NumericalControlSpecPrompt(parameterName, parentObject, initialSpec, title)
+            }
+        }
+
+        fun create(
+            parameterName: String,
+            parentObject: ParameterizedObject?,
+            parameterType: ParameterType,
+        ): ControlSpecPrompt<*, *>? = when (parameterType) {
+            ParameterType.Bus -> create(parameterName, parentObject, BusControlSpec(Rate.Audio, 2, FlowType.Out))
+            ParameterType.Buffer -> create(parameterName, parentObject, BufferControlSpec(2))
+            ParameterType.Numerical -> create(parameterName, parentObject, NumericalControlSpec.DEFAULT)
+            ParameterType.Group -> null
+        }
     }
 }

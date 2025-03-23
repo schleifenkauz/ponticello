@@ -17,7 +17,7 @@ class ControlSpecEditor() : ChoiceEditor<ParameterType, ControlSpec, Editor<Cont
     fun setResult(spec: ControlSpec) {
         when (spec) {
             is BufferControlSpec -> {
-                val specEditor = BufferControlSpecEditor()
+                val specEditor = BufferControlSpecEditor(channels = SimpleIntegerEditor(spec.channels))
                 specEditor.setupDefaultState()
                 select(ParameterType.Buffer, specEditor)
             }
