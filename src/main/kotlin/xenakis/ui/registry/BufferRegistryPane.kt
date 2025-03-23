@@ -20,18 +20,8 @@ import xenakis.sc.client.SuperColliderClient
 class BufferRegistryPane(
     buffers: BufferRegistry,
 ) : SuperColliderObjectRegistryPane<BufferObject>(buffers) {
-    private val actions = collectActions<BufferObject> {
-        addAction("View buffer contents") {
-            icon(Evaicons.ACTIVITY)
-            executes { buf ->
-                val client = buf.context[SuperColliderClient]
-                client.run("${buf.superColliderName}.plot('${buf.name.now}')")
-            }
-        }
-        addAction("Sync with server") {
-            icon(Material2MZ.SYNC)
-            executes { buf -> sync(buf) }
-        }
+    init {
+        setup()
     }
 
     override fun addObject(name: String): BufferObject? {
@@ -56,18 +46,33 @@ class BufferRegistryPane(
         return listOf(channelsSpinner, xLabel, framesInput)
     }
 
-    override fun getActions(obj: BufferObject): List<ContextualizedAction> = actions.withContext(obj)
+    override fun getActions(box: ObjectBox<BufferObject>): List<ContextualizedAction> = actions.withContext(box)
 
-    private fun sync(obj: BufferObject) {
-        val framesInput = lookup("#frames-input") as TextField
-        val n = framesInput.text.toIntOrNull()
-        if (n == null) {
-            Logger.error("Not a valid number of frames specified.", Logger.Category.Buffers)
-            return
+    companion object {
+        private val actions = collectActions<ObjectBox<BufferObject>> {
+            addAction("View buffer contents") {
+                icon(Evaicons.ACTIVITY)
+                executes { box ->
+                    val buf = box.obj
+                    val client = buf.context[SuperColliderClient]
+                    client.run("${buf.superColliderName}.plot('${buf.name.now}')")
+                }
+            }
+            addAction("Sync with server") {
+                icon(Material2MZ.SYNC)
+                executes { buf -> sync(buf) }
+            }
         }
-        obj.frames.set(n)
-        obj.sync()
-    }
 
-    companion object
+        private fun sync(box: ObjectBox<BufferObject>) {
+            val framesInput = box.lookup("#frames-input") as TextField
+            val n = framesInput.text.toIntOrNull()
+            if (n == null) {
+                Logger.error("Not a valid number of frames specified.", Logger.Category.Buffers)
+                return
+            }
+            box.obj.frames.set(n)
+            box.obj.sync()
+        }
+    }
 }

@@ -8,6 +8,7 @@ import fxutils.prompt.YesNoPrompt
 import fxutils.setFixedWidth
 import hextant.fx.initHextantScene
 import javafx.application.Platform
+import javafx.geometry.Point2D
 import javafx.scene.Node
 import javafx.scene.Parent
 import javafx.scene.input.DataFormat
@@ -18,6 +19,7 @@ import org.kordamp.ikonli.materialdesign2.MaterialDesignE
 import reaktive.list.toReactiveList
 import reaktive.value.binding.map
 import reaktive.value.now
+import reaktive.value.reactiveValue
 import xenakis.impl.Logger
 import xenakis.impl.async
 import xenakis.impl.canSuperColliderTalkToMe
@@ -37,6 +39,10 @@ class SynthDefRegistryPane(
     override val supportedModes: Set<ContentDisplay>
         get() = setOf(ContentDisplay.DetailsPane, ContentDisplay.SubWindow)
 
+    init {
+        setup()
+    }
+
     override fun detailWindowIcon(obj: SynthDefObject): Ikon =
         if (obj is CustomizableSynthDefObject) Material2AL.CODE
         else MaterialDesignE.EYE
@@ -46,9 +52,11 @@ class SynthDefRegistryPane(
             val title = obj.name.map { n -> "SynthDef $n" }
             ParameterizedObjectDefPane(registry.context, title, obj.parameters, obj.ugenGraph!!, obj::sync)
         }
+
         is ReferencedSynthDefObject -> {
             ParameterInfoPane(obj.parameters.toReactiveList())
         }
+
         is NoSynthDef -> null
     }
 
@@ -58,31 +66,6 @@ class SynthDefRegistryPane(
         window.scene.initHextantScene(registry.context, applyStyle = false)
         window.scene.fill = Color.BLACK
     }
-
-    private fun saveToGlobalLibrary(obj: CustomizableSynthDefObject) {
-        val globalLib = registry.context[GlobalSynthDefLib]
-        async(timeLimit = 10000) {
-            synchronized(globalLib) {
-                globalLib.reload()
-                Platform.runLater {
-                    val name = obj.name.now
-                    if (!globalLib.has(name) ||
-                        YesNoPrompt(
-                            "Overwrite SynthDef $name in global library?",
-                            default = true
-                        ).showDialog(anchorNode = this) == true
-                    ) {
-                        globalLib.push(obj)
-                        Logger.confirm(
-                            "Saved SynthDef '${obj.name.now}' to global library.",
-                            Logger.Category.Instruments
-                        )
-                    }
-                }
-            }
-        }
-    }
-
 
     override fun sync() {
         synthDefs.syncAll()
@@ -179,10 +162,41 @@ class SynthDefRegistryPane(
         add(colorPicker)
     }
 
-    override fun getActions(obj: SynthDefObject): List<ContextualizedAction> = collectActions<SynthDefObject> {
-        addAction("Save to global library") {
-            icon(MaterialDesignE.EXPORT_VARIANT)
-            executesOn(::saveToGlobalLibrary)
+    override fun getActions(box: ObjectBox<SynthDefObject>): List<ContextualizedAction> = actions.withContext(box)
+
+    companion object {
+        private val actions = collectActions<ObjectBox<SynthDefObject>> {
+            addAction("Save to global library") {
+                icon(MaterialDesignE.EXPORT_VARIANT)
+                applicableIf { box -> reactiveValue(box.obj is CustomizableSynthDefObject) }
+                executes { box ->
+                    saveToGlobalLibrary(box.obj as CustomizableSynthDefObject, box)
+                }
+            }
         }
-    }.withContext(obj)
+
+        private fun saveToGlobalLibrary(obj: CustomizableSynthDefObject, anchorNode: ObjectBox<SynthDefObject>) {
+            val globalLib = obj.context[GlobalSynthDefLib]
+            async(timeLimit = 10000) {
+                synchronized(globalLib) {
+                    globalLib.reload()
+                    Platform.runLater {
+                        val name = obj.name.now
+                        if (!globalLib.has(name) ||
+                            YesNoPrompt(
+                                "Overwrite SynthDef $name in global library?",
+                                default = true
+                            ).showDialog(anchorNode, offset = Point2D(anchorNode.width, 0.0)) == true
+                        ) {
+                            globalLib.push(obj)
+                            Logger.confirm(
+                                "Saved SynthDef '${obj.name.now}' to global library.",
+                                Logger.Category.Instruments
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
 }

@@ -36,7 +36,7 @@ interface SuperColliderClient : SuperColliderContext {
         if (command == "(\n)\n") return
         Logger.fine("run: $command", Category.SuperCollider)
         try {
-            send("eval", listOf(command)).get()
+            send("eval", listOf(command))
         } catch (e: Exception) {
             System.err.println("Exception while running $command")
             e.printStackTrace()
@@ -62,11 +62,11 @@ interface SuperColliderClient : SuperColliderContext {
         statusListener.on(StatusUpdate.OSCReady) {
             indicator.displayProgress(0.3, "OSC connected, booting server")
             sleep(500)
+            onReady()
             run("s.boot;")
         }
         statusListener.on(StatusUpdate.ServerBooted) {
-            indicator.displayProgress(0.4, "Server booted")
-            onReady()
+            indicator.displayProgress(0.9, "Server booted")
             statusListener.remove()
         }
     }

@@ -19,17 +19,21 @@ import xenakis.impl.Logger
 import xenakis.impl.registerImplementationsFromClasspath
 import xenakis.model.Settings
 import xenakis.model.project.XenakisProject
+import xenakis.model.project.XenakisProject.Companion.projectDirectory
 import xenakis.model.registry.GlobalSynthDefLib
 import xenakis.sc.client.OSCSuperColliderClient
 import xenakis.sc.client.SuperColliderClient
 import xenakis.ui.impl.showDialog
 import xenakis.ui.impl.tryWithAlert
 import xenakis.ui.launcher.XenakisApp.Companion.primaryStage
+import xenakis.ui.midi.ContextualMidiReceiver
 import java.io.File
 import kotlin.system.exitProcess
 
 class XenakisLauncher {
     val recentProjects = RecentProjects()
+
+
 
     val rootContext: Context = HextantCore.defaultContext().apply {
         set(XenakisLauncher, this@XenakisLauncher)
@@ -41,6 +45,9 @@ class XenakisLauncher {
         HextantCore.apply(this, PluginBuilder.Phase.Initialize, null)
         XenakisHextantPlugin.apply(this, PluginBuilder.Phase.Initialize, null)
         SubWindow.globalStylesheets.addAll(get(Stylesheets).all())
+        val midiReceiver = ContextualMidiReceiver()
+        midiReceiver.initialize("Xjam")
+        set(ContextualMidiReceiver, midiReceiver)
     }
 
     private lateinit var currentActivity: Activity
@@ -72,7 +79,9 @@ class XenakisLauncher {
         setupProjectContext(
             "opening project",
             whenReady = { context ->
-                val project = XenakisProject.loadFrom(folder, context, getOrLaunchLoadingScreen())
+                context[projectDirectory] = folder
+                val project = XenakisProject.loadFrom(folder, getOrLaunchLoadingScreen())
+                project.initialize(context)
                 openProject(project)
             }, onError = {
                 recentProjects.clearActiveProject()

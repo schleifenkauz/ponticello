@@ -16,9 +16,11 @@ abstract class SuperColliderObjectRegistry<O : SuperColliderObject> : ObjectRegi
     override fun initialize(context: Context) {
         super.initialize(context)
         client = context[SuperColliderClient]
-        createAll()
         liveCycleObserver = when (liveCycleType) {
-            SuperColliderObject.LiveCycleType.InterpreterBoot -> null
+            SuperColliderObject.LiveCycleType.InterpreterBoot -> {
+                createAll()
+                null
+            }
             SuperColliderObject.LiveCycleType.ServerBoot -> client.serverRebooted.observe { _ -> createAll() }
             SuperColliderObject.LiveCycleType.ServerTree -> client.treeCleared.observe { _ -> createAll() }
         }

@@ -43,7 +43,7 @@ abstract class ToolPane : VBox() {
         header = createHeader(title, headerActions)
         children.addAll(header, content)
         setVgrow(content, ALWAYS)
-        content.registerShortcuts(headerActions)
+        registerShortcuts(headerActions)
     }
 
     fun setup(

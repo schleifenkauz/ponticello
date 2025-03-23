@@ -22,7 +22,7 @@ import java.util.*
 
 class AudioFlowGraph(
     private val flows: AudioFlows,
-    private val nodeTree: NodeTree
+    private val nodeTree: NodeTree,
 ) : NamedObjectList.Listener<BusObject>, AudioFlows.Listener {
     private val activeSynthObjects = mutableMapOf<SynthObject, MutableSet<ActiveSynth>>()
     private val takenSuffixes = mutableMapOf<String, MutableSet<Int>>()
@@ -34,11 +34,13 @@ class AudioFlowGraph(
     private val graph = ReachabilityGraph<AudioNode>()
     private val placeholderContents = mutableMapOf<GroupObject, MutableList<ActiveSynth>>()
     private val treeClearObserver: Observer
+    private var serverRunning = false
 
     init {
         flows.context[BusRegistry].addListener(this)
         flows.addListener(this)
         treeClearObserver = flows.context[SuperColliderClient].treeCleared.observe { _ ->
+            serverRunning = true
             rebuildFlowGraph()
         }
     }
@@ -79,15 +81,19 @@ class AudioFlowGraph(
         val node = flowGroup(flow.associatedBus)
         addChildNode(node, flow)
         reorderNodeTree()
-        val placement = getPlacementFor(flow)
-        nodeTree.addNode(flow, placement)
+        if (serverRunning) {
+            val placement = getPlacementFor(flow)
+            nodeTree.addNode(flow, placement)
+        }
     }
 
     override fun deactivatedFlow(flow: AudioFlow) {
         val node = flowGroup(flow.associatedBus)
         removeChildNode(node, flow)
         reorderNodeTree()
-        nodeTree.removeNode(flow)
+        if (serverRunning) {
+            nodeTree.removeNode(flow)
+        }
     }
 
     override fun movedFlow(flow: AudioFlow, oldIndex: Int, newIndex: Int) {

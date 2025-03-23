@@ -25,7 +25,7 @@ import xenakis.ui.launcher.XenakisMainActivity
 import java.io.File
 
 class SampleRegistryPane(
-    private val samples: SampleRegistry
+    private val samples: SampleRegistry,
 ) : SuperColliderObjectRegistryPane<SampleObject>(samples) {
     init {
         setupDropArea({ db -> db.hasFiles("wav") }, { ev ->
@@ -34,6 +34,7 @@ class SampleRegistryPane(
             }
         })
         samples.context[SampleRegistryPane] = this
+        setup()
     }
 
     override fun addObject() {
@@ -50,7 +51,7 @@ class SampleRegistryPane(
 
     public override fun addObject(name: String): SampleObject? = addSample { _ -> name }
 
-    override fun getActions(obj: SampleObject): List<ContextualizedAction> = actions.withContext(obj)
+    override fun getActions(box: ObjectBox<SampleObject>): List<ContextualizedAction> = actions.withContext(box.obj)
 
     override fun configureDragboard(obj: SampleObject, dragboard: Dragboard) {
         val scoreView = samples.context[XenakisMainActivity].scoreView
@@ -66,7 +67,7 @@ class SampleRegistryPane(
             addAction("View sample") {
                 icon(Evaicons.ACTIVITY)
                 shortcut("Ctrl+Shift+O")
-                executes {  obj -> Runtime.getRuntime().exec(arrayOf("xdg-open", obj.spectrogramFile.absolutePath))}
+                executes { obj -> Runtime.getRuntime().exec(arrayOf("xdg-open", obj.spectrogramFile.absolutePath)) }
             }
             addAction("Reload") {
                 icon(Material2MZ.SYNC)

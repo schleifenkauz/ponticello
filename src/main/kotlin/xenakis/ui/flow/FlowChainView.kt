@@ -11,9 +11,11 @@ import javafx.scene.control.Slider
 import javafx.scene.input.DataFormat
 import javafx.scene.input.DragEvent
 import javafx.scene.input.TransferMode
-import javafx.scene.layout.*
+import javafx.scene.layout.BorderPane
+import javafx.scene.layout.HBox
+import javafx.scene.layout.Priority
+import javafx.scene.layout.VBox
 import org.kordamp.ikonli.material2.Material2AL
-import org.kordamp.ikonli.material2.Material2MZ
 import org.kordamp.ikonli.materialdesign2.MaterialDesignP
 import org.kordamp.ikonli.materialdesign2.MaterialDesignR
 import reaktive.value.ReactiveString
@@ -38,9 +40,9 @@ import xenakis.ui.midi.ContextualMidiReceiver
 import xenakis.ui.midi.ParameterControlsMidiContext
 import xenakis.ui.registry.NamedObjectListView
 import xenakis.ui.registry.NamedObjectListView.ContentDisplay
+import xenakis.ui.registry.ObjectBox
 import xenakis.ui.registry.ObjectBoxConfig
 import xenakis.ui.score.ParameterControlsPane
-import xenakis.ui.score.ParameterizedScoreObjectView
 
 class FlowChainView(
     private val flows: AudioFlows,
@@ -84,12 +86,12 @@ class FlowChainView(
         is UtilityFlow -> Slider(-60.0, +6.0, 0.0) styleClass "volume-fader"
     }
 
-    override fun getActions(obj: AudioFlow): List<ContextualizedAction> {
-        val extraActions = when (obj) {
-            is SynthFlow -> synthFlowActions.withContext(obj)
+    override fun getActions(box: ObjectBox<AudioFlow>): List<ContextualizedAction> {
+        val extraActions = when (box.obj) {
+            is SynthFlow -> synthFlowActions.withContext(box.obj)
             else -> emptyList()
         }
-        return extraActions + defaultActions.withContext(obj)
+        return extraActions + defaultActions.withContext(box.obj)
     }
 
     override fun onSelected(obj: AudioFlow) {

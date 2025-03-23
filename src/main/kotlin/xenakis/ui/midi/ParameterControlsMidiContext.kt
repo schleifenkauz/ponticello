@@ -1,27 +1,17 @@
 package xenakis.ui.midi
 
 import reaktive.value.now
-import xenakis.impl.times
-import xenakis.model.Settings
 import xenakis.model.score.ParameterControlList
 import xenakis.model.score.ValueControl
 import xenakis.sc.NumericalControlSpec
-import kotlin.math.pow
 
-class ParameterControlsMidiContext(private val controls: ParameterControlList) : MidiContext {
-    val knobSensitivity get() = controls.context[Settings].knobSensitivity.now.toDouble()
-
+class ParameterControlsMidiContext(private val controls: ParameterControlList) : AbstractMidiContext(controls.context) {
     override fun cc(channel: Int, index: Int, value: Int) {
         val numericalControls = controls.all().filter { ctrl -> ctrl.now is ValueControl }
-        if (index - 20 !in numericalControls.indices) return
-        val control = numericalControls[index - 20]
+        if (index !in numericalControls.indices) return
+        val control = numericalControls[index]
         val spec = control.spec.now as? NumericalControlSpec ?: return
         val variable = (control.now as ValueControl).value
-        //TODO make sensitivity dependent on ratio of range to step
-        if (value >= 64) {
-            variable.now = (variable.now - spec.step.get() * (128.0 - value).pow(knobSensitivity)).coerceIn(spec.range)
-        } else {
-            variable.now = (variable.now + spec.step.get() * value.toDouble().pow(knobSensitivity)).coerceIn(spec.range)
-        }
+        variable.now = adjustValue(variable.now, spec, value)
     }
 }

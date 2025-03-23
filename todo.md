@@ -63,6 +63,8 @@
 - what to do when user selects a new `SynthDef` for a synth object
   - re-sync parameter controls in some way...
 - highlight unresolved references of object selectors
+- unify window positioning
+- more adequate midi contexts 
 
 ## Long term ideas
 

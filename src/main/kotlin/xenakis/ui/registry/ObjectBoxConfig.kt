@@ -26,7 +26,7 @@ interface ObjectBoxConfig<O : NamedObject> {
 
     fun getContent(obj: O): Parent? = null
 
-    fun getActions(obj: O): List<ContextualizedAction> = emptyList()
+    fun getActions(box: ObjectBox<O>): List<ContextualizedAction> = emptyList()
 
     fun configureDragboard(obj: O, dragboard: Dragboard) {}
 

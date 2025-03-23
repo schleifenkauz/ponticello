@@ -87,8 +87,6 @@ class XenakisMainActivity(val project: XenakisProject) : Activity() {
 
     val playback: PlaybackManager
 
-    val midiReceiver: ContextualMidiReceiver = ContextualMidiReceiver()
-
     val shellWindow = SuperColliderShellController.createShellWindow(context)
 
     override val context get() = project.context
@@ -122,7 +120,6 @@ class XenakisMainActivity(val project: XenakisProject) : Activity() {
 
         playback = PlaybackManager(scoreView, project.flows)
         context[PlaybackManager] = playback
-        midiReceiver.initialize(context)
 
         observer = scoreView.selector.focusedView.observe { _, _, focusedView ->
             if (detailPane.children.size == 2) {
@@ -130,10 +127,12 @@ class XenakisMainActivity(val project: XenakisProject) : Activity() {
             }
             if (focusedView != null) {
                 detailPane.children.add(focusedView.getDetailPane())
-                val obj = focusedView.instance.obj
-                if (obj is ParameterizedObject) {
-                    midiReceiver.setContext(ParameterControlsMidiContext(obj.controls))
-                }
+            }
+            val obj = focusedView?.instance?.obj
+            if (obj is ParameterizedObject) {
+                context[ContextualMidiReceiver].setContext(ParameterControlsMidiContext(obj.controls))
+            } else {
+                context[ContextualMidiReceiver].setContext(null)
             }
         }
     }

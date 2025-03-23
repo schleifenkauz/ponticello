@@ -4,6 +4,7 @@ import fxutils.actions.collectActions
 import fxutils.actions.registerShortcuts
 import fxutils.plural
 import fxutils.styleClass
+import javafx.geometry.Point2D
 import org.kordamp.ikonli.materialdesign2.MaterialDesignP
 import org.kordamp.ikonli.materialdesign2.MaterialDesignS
 import reaktive.value.reactiveValue
@@ -17,7 +18,10 @@ abstract class ObjectRegistryPane<O : NamedObject>(
 ) : SearchableToolPane<O>() {
     init {
         styleClass("object-registry-pane")
-        setup(title = plural(registry.objectType), registry) { actions.withContext(this) }
+    }
+
+    protected fun setup() {
+        setup(title = plural(registry.objectType), registry) { headerActions.withContext(this) }
         listView.autoResizeScene = true
         registerShortcuts(listView.actions)
     }
@@ -28,14 +32,14 @@ abstract class ObjectRegistryPane<O : NamedObject>(
         val name = NamePrompt(
             registry, "Name for new ${registry.objectType}",
             initialName = ""
-        ).showDialog(anchorNode = this) ?: return
+        ).showDialog(this, offset = Point2D(0.0, height)) ?: return
         addObject(name)
     }
 
     protected abstract fun addObject(name: String): O?
 
     companion object {
-        private val actions = collectActions<ObjectRegistryPane<*>> {
+        private val headerActions = collectActions<ObjectRegistryPane<*>> {
             addAction("Create object") {
                 description { p -> reactiveValue("Create new ${p.registry.objectType}") }
                 shortcut("Ctrl+PLUS")

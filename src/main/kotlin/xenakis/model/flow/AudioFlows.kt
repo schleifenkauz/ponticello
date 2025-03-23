@@ -66,7 +66,7 @@ class AudioFlows(
             flows.first().isFirst.set(true)
             flows.last().isLast.set(true)
             for (flow in flows) {
-                flow.initialize(context, bus.get()!!) //TODO is it guaranteed that the bus is resolved
+                flow.initialize(context, bus.get()!!) //TODO is it guaranteed that the bus is resolved?
                 onAddFlow(flow)
             }
         }

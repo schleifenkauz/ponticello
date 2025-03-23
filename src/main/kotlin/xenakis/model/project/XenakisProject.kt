@@ -90,10 +90,8 @@ class XenakisProject private constructor(val components: Map<Component<out Conte
 
         fun loadFrom(
             folder: File,
-            context: Context,
             indicator: xenakis.ui.launcher.ProgressIndicator
         ): XenakisProject {
-            context[projectDirectory] = folder
             val data = folder.resolve("xenakis_data")
             val components = allComponents.associateWith { (name, serializer, default) ->
                 val file = data.resolve("$name.json")
@@ -113,7 +111,6 @@ class XenakisProject private constructor(val components: Map<Component<out Conte
             //TODO update indicator while reading
             val project = XenakisProject(components)
             project.projectDirectory = folder
-            project.initialize(context)
             return project
         }
 

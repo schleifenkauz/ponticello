@@ -26,7 +26,7 @@ class ConsoleMonitor(private val process: Process) : Thread() {
             for (line in lines) {
                 if (interrupted()) break
                 synchronized(this) {
-                    consoleMonitors.forEach { m -> m.process(line + "\n") }
+                    consoleMonitors.toList().forEach { m -> m.process(line + "\n") }
                     consoleUntilNow.appendLine(line)
                 }
             }

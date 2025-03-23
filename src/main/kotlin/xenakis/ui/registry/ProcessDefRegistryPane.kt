@@ -19,6 +19,10 @@ class ProcessDefRegistryPane(
 ) : SuperColliderObjectRegistryPane<ProcessDefObject>(registry) {
     override val supportedModes: Set<ContentDisplay> get() = setOf(ContentDisplay.DetailsPane, ContentDisplay.SubWindow)
 
+    init {
+        setup()
+    }
+
     override fun detailWindowIcon(obj: ProcessDefObject): Ikon = Material2AL.CODE
 
     override fun getItemContent(obj: ProcessDefObject): List<Node> {

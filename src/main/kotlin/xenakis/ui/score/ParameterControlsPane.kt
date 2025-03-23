@@ -6,8 +6,6 @@ import fxutils.actions.isShiftDown
 import fxutils.actions.registerShortcuts
 import javafx.geometry.Point2D
 import javafx.scene.Node
-import javafx.scene.layout.Region
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle.header
 import org.kordamp.ikonli.codicons.Codicons
 import org.kordamp.ikonli.material2.Material2MZ
 import reaktive.value.binding.map
@@ -23,6 +21,7 @@ import xenakis.ui.controls.ControlAssignmentEditor
 import xenakis.ui.controls.ControlSpecPrompt
 import xenakis.ui.launcher.XenakisApp.Companion.primaryStage
 import xenakis.ui.registry.NamedObjectListView.ContentDisplay
+import xenakis.ui.registry.ObjectBox
 import xenakis.ui.registry.SearchableParameterDefListView
 import xenakis.ui.registry.SearchableToolPane
 
@@ -63,7 +62,7 @@ class ParameterControlsPane(
         return listOf(editor)
     }
 
-    override fun getActions(obj: NamedParameterControl): List<ContextualizedAction> = actions.withContext(obj)
+    override fun getActions(box: ObjectBox<NamedParameterControl>): List<ContextualizedAction> = actions.withContext(box)
 
     companion object {
         private val headerActions = collectActions<ParameterControlsPane> {
@@ -80,16 +79,17 @@ class ParameterControlsPane(
             }
         }
 
-        private val actions = collectActions<NamedParameterControl> {
+        private val actions = collectActions<ObjectBox<NamedParameterControl>> {
             addAction("Edit spec") {
                 shortcut("Ctrl+K")
-                applicableIf { control -> control.spec.map { s -> s != null && s !is GroupControlSpec } }
+                applicableIf { box ->  box.obj.spec.map { s -> s != null && s !is GroupControlSpec } }
                 icon(Codicons.SYMBOL_PROPERTY)
-                executes { control: NamedParameterControl, ev ->
+                executes { box ->
+                    val control = box.obj
                     val initialSpec = control.spec.now ?: return@executes
                     ControlSpecPrompt.create(
-                        control.name.now, control.parentObject, initialSpec,
-                    )?.showDialog(ev)
+                        control.name.now, control.parentObject, initialSpec
+                    )?.showDialog(box, offset = Point2D(box.width, 0.0))
                 }
             }
         }
