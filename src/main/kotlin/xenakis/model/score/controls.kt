@@ -5,6 +5,7 @@ import hextant.serial.EditorRoot
 import javafx.geometry.HorizontalDirection
 import javafx.scene.paint.Color
 import kotlinx.serialization.Contextual
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import reaktive.value.ReactiveVariable
 import reaktive.value.now
@@ -28,13 +29,7 @@ sealed class ParameterControl : AbstractContextualObject() {
 }
 
 @Serializable
-class KnobControl(val value: ReactiveVariable<Decimal>) : ParameterControl() {
-    override fun copy(): ParameterControl = KnobControl(value.copy())
-
-    fun get() = value.now
-}
-
-@Serializable
+@SerialName("Envelope")
 class EnvelopeControl(
     val envelope: Envelope,
     val displayColor: ReactiveVariable<@Serializable(with = ColorSerializer::class) Color>,
@@ -52,6 +47,7 @@ class EnvelopeControl(
 }
 
 @Serializable
+@SerialName("Bus")
 class BusControl(val bus: ReactiveVariable<BusReference>) : ParameterControl() {
     override fun initialize(context: Context) {
         bus.now.resolve(context[BusRegistry])
@@ -65,6 +61,7 @@ class BusControl(val bus: ReactiveVariable<BusReference>) : ParameterControl() {
 }
 
 @Serializable
+@SerialName("BusValue")
 class BusValueControl(val bus: ReactiveVariable<BusReference>) : ParameterControl() {
     override fun initialize(context: Context) {
         bus.now.resolve(context[BusRegistry])
@@ -74,6 +71,7 @@ class BusValueControl(val bus: ReactiveVariable<BusReference>) : ParameterContro
 }
 
 @Serializable
+@SerialName("SingleBusValue")
 data class SingleBusValueControl(val bus: ReactiveVariable<BusReference>) : ParameterControl() {
     override fun initialize(context: Context) {
         bus.now.resolve(context[BusRegistry])
@@ -83,6 +81,7 @@ data class SingleBusValueControl(val bus: ReactiveVariable<BusReference>) : Para
 }
 
 @Serializable
+@SerialName("Buffer")
 data class BufferControl(
     val sample: ReactiveVariable<SampleReference>,
     val display: ReactiveVariable<Boolean> = reactiveVariable(true)
@@ -95,6 +94,7 @@ data class BufferControl(
 }
 
 @Serializable
+@SerialName("Group")
 data class GroupControl(val group: ReactiveVariable<GroupReference>) : ParameterControl() {
     override fun initialize(context: Context) {
         group.now.resolve(context[GroupRegistry])
@@ -104,6 +104,7 @@ data class GroupControl(val group: ReactiveVariable<GroupReference>) : Parameter
 }
 
 @Serializable
+@SerialName("Custom")
 data class CustomControl(val expr: EditorRoot<@Contextual ScExprExpander>) : ParameterControl() {
     override fun copy(): ParameterControl = CustomControl(expr.clone(context))
 
@@ -113,11 +114,12 @@ data class CustomControl(val expr: EditorRoot<@Contextual ScExprExpander>) : Par
 }
 
 @Serializable
-data class ConstantControl(val value: ReactiveVariable<Decimal>) : ParameterControl() {
-    override fun copy(): ParameterControl = ConstantControl(value.copy())
+@SerialName("Value")
+data class ValueControl(val value: ReactiveVariable<Decimal>) : ParameterControl() {
+    override fun copy(): ParameterControl = ValueControl(value.copy())
 
     companion object {
-        fun create(value: Decimal) = ConstantControl(reactiveVariable(value))
+        fun create(value: Decimal) = ValueControl(reactiveVariable(value))
     }
 }
 
@@ -130,18 +132,16 @@ fun ParameterControl.makeExpr(): ScExpr? {
             RawScExpr("In.ar(${busObject.superColliderName})")
         }
 
-        is ConstantControl -> DecimalLiteral(value.now)
+        is ValueControl -> DecimalLiteral(value.now)
         is CustomControl -> expr.editor.result.now
         is EnvelopeControl -> RawScExpr(envelope.code())
         is GroupControl -> group.now.get()?.let { grp -> Identifier(grp.superColliderName) }
-        is KnobControl -> DecimalLiteral(value.now)
         is SingleBusValueControl -> bus.now.get()?.superColliderExpr?.send("getSynchronous")
     }
 }
 
 fun ParameterControl.getNumericalValue() = when (this) {
-    is ConstantControl -> value.now
-    is KnobControl -> get()
+    is ValueControl -> value.now
     is EnvelopeControl -> envelope.points.first().value
     else -> null
 }

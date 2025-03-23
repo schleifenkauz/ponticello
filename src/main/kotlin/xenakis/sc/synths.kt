@@ -26,8 +26,7 @@ fun ScWriter.writeSynthCode(
             is BusControl -> param to (control.bus.now.get()?.superColliderName
                 ?: return unresolvedReference("Bus", control.bus.now))
 
-            is ConstantControl -> param to control.value.now.toString()
-            is KnobControl -> param to control.get().toString()
+            is ValueControl -> param to control.value.now.toString()
             is EnvelopeControl -> param to control.envelope.points[0].value.toString()
             is SingleBusValueControl -> {
                 val bus = control.bus.now.get()?.superColliderName ?: return unresolvedReference("Bus", control.bus.now)

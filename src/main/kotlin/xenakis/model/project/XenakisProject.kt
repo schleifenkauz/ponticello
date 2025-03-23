@@ -7,6 +7,7 @@ import kotlinx.serialization.json.decodeFromStream
 import kotlinx.serialization.json.encodeToStream
 import xenakis.impl.Logger
 import xenakis.impl.json
+import xenakis.model.flow.AudioFlowGraph
 import xenakis.model.obj.ContextualObject
 import xenakis.sc.client.SuperColliderClient
 import java.io.File
@@ -76,7 +77,7 @@ class XenakisProject private constructor(val components: Map<Component<out Conte
         get(BUFFERS).syncAll()
         busses.syncAll()
         samples.syncAll()
-        get(FLOWS).syncAll()
+        context[AudioFlowGraph].syncAll()
         Logger.confirm("Synchronized with SuperCollider", Logger.Category.Project)
     }
 
@@ -102,6 +103,7 @@ class XenakisProject private constructor(val components: Map<Component<out Conte
                         json.decodeFromStream(serializer, stream)
                     } catch (e: Exception) {
                         Logger.error("Error while reading component $name from $file!", detailMessage = e.message)
+                        e.printStackTrace()
                         default()
                     } finally {
                         stream.close()

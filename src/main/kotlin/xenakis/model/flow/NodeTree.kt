@@ -17,12 +17,12 @@ class NodeTree(private val client: SuperColliderClient) {
     }
 
     fun removeNode(node: AudioNode) {
+        if (!(activeNodes.remove(node))) return
         client.run {
             +"${node.superColliderName.now}.free"
             +"${node.superColliderName.now} = nil"
         }
-        nameObserver.remove(node)
-        activeNodes.remove(node)
+        nameObserver.remove(node)!!.kill()
     }
 
     fun isActive(node: AudioNode) = node in activeNodes

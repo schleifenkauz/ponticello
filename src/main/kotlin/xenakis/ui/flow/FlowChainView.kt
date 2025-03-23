@@ -19,6 +19,7 @@ import org.kordamp.ikonli.material2.Material2AL
 import org.kordamp.ikonli.material2.Material2MZ
 import org.kordamp.ikonli.materialdesign2.MaterialDesignP
 import org.kordamp.ikonli.materialdesign2.MaterialDesignR
+import reaktive.value.ReactiveString
 import reaktive.value.binding.map
 import reaktive.value.now
 import reaktive.value.reactiveValue
@@ -28,7 +29,6 @@ import xenakis.model.obj.BusObject
 import xenakis.model.obj.SynthDefObject
 import xenakis.model.project.flows
 import xenakis.model.registry.InstrumentRegistry
-import xenakis.model.score.KnobControl
 import xenakis.sc.NumericalControlSpec
 import xenakis.sc.Warp
 import xenakis.sc.editor.BusSelector
@@ -74,9 +74,8 @@ class FlowChainView(
             is CodeFlow -> obj.codeEditor.control
             is ScoreObjectPlaceholder -> label(obj.group.name.map { "" })
             is SendFlow -> {
-                val ctrl = KnobControl(obj.amountPercent)
                 val spec = NumericalControlSpec(100.0, 0.0, 100.0, 1.toDecimal(), Warp.Linear)
-                val knob = Knob("Amount", ctrl, spec, obj.context)
+                val knob = Knob("Amount", (obj.amountPercent), spec)
                 val targetBusSelector = BusSelector()
                 targetBusSelector.setFilter(reactiveValue(obj.associatedBus.rate), obj.associatedBus.channels)
                 targetBusSelector.syncWith(obj.targetRef)
@@ -112,6 +111,8 @@ class FlowChainView(
     }
 
     override fun dataFormat(obj: AudioFlow): DataFormat? = AudioFlow.DATA_FORMAT
+
+    override fun getDefaultDisplayName(obj: AudioFlow): ReactiveString = obj.getDefaultName()
 
     private fun onDrop(ev: DragEvent) {
         val reference = ev.dragboard.getContent(AudioFlow.DATA_FORMAT) as AudioFlows.FlowReference

@@ -72,7 +72,7 @@ class GlobalControlsPane(
     }
 
     override fun addedControl(control: GlobalControls.GlobalControl) {
-        val knob = Knob(control.parameter, control.knobControl, control.spec, context, radius = 32.0)
+        val knob = Knob(control.parameter, control.value, control.spec, radius = 32.0)
         knob.registerShortcuts {
             on("DELETE") { controls.removeControl(control) }
             on("F5") { controls.updateControlFromServer(control) }
@@ -81,6 +81,6 @@ class GlobalControlsPane(
     }
 
     override fun removedControl(control: GlobalControls.GlobalControl) {
-        children.removeIf { c -> c is Knob && c.control == control.knobControl }
+        children.removeIf { c -> c is Knob && c.variable == control }
     }
 }

@@ -23,4 +23,8 @@ interface NamedObject : ContextualObject {
     fun onLoadedIntoRegistry() {}
 
     fun onRemoved() {}
+
+    companion object {
+        const val NO_NAME = "<no name>"
+    }
 }

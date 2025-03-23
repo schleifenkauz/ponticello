@@ -177,7 +177,7 @@ class NamedObjectListView<O : NamedObject>(
     class ObjectBox<O : NamedObject>(val parent: NamedObjectListView<O>, val obj: O) {
         val config get() = parent.config
 
-        val nameControl = if (obj is RenamableObject) NameControl(obj) else null
+        val nameControl = if (obj is RenamableObject) NameControl(obj, config.getDefaultDisplayName(obj)) else null
 
         private val nameDisplay =
             nameControl ?: HBox(label(obj.name).styleClass("name-field")).styleClass("name")
@@ -189,15 +189,18 @@ class NamedObjectListView<O : NamedObject>(
 
         private var header: Region? = null
 
+        private val space = infiniteSpace()
+
         val layout: Pane = when (config.orientation) {
-            HORIZONTAL -> HBox(nameDisplay, *content.toTypedArray(), infiniteSpace(), actionBar)
+            HORIZONTAL -> HBox(nameDisplay, *content.toTypedArray(), space, actionBar)
             VERTICAL -> VBox(
-                HBox(nameDisplay, infiniteSpace(), actionBar).also { header = it },
+                HBox(nameDisplay, space, actionBar).also { header = it },
                 *content.toTypedArray()
             )
         }.styleClass("object-box")
 
         init {
+            space.setOnMousePressed { parent.select(this) }
             layout.addEventFilter(MouseEvent.MOUSE_CLICKED) { parent.select(this) }
             if (config.enableReordering) setupReordering()
             if (config.dataFormat(obj) != null) setupDragging()
@@ -215,7 +218,7 @@ class NamedObjectListView<O : NamedObject>(
         }
 
         private fun setupReordering() {
-            val dragTarget = header ?: layout
+            val dragTarget = actionBar.getButton(parent.objectActions.getAction("Reorder"))
             dragTarget.setupDragging(
                 onPressed = { layout.viewOrder = 100.0 },
                 relocateBy = { _, _, _, _, dy -> layout.translateY = dy },

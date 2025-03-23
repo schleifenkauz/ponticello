@@ -21,14 +21,14 @@ SynthDef(\send, {
 }).add;
 
 ServerBoot.add {
-    ~xenakis_addr.sendMsg('/server_boot');
+    ~xenakis_addr.sendMsg('/booted');
 	Task {
 		1.wait;
 		VSTPlugin.search;
 	}.play;
 };
 ServerTree.add {
-    ~xenakis_addr.sendMsg('/server_tree');
+    ~xenakis_addr.sendMsg('/cleared');
 };
 
 ~setupHandler = { arg address, handler;

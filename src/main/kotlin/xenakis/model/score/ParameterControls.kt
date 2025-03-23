@@ -7,10 +7,12 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import reaktive.Observer
-import reaktive.value.*
-import reaktive.value.binding.orElse
+import reaktive.value.ReactiveVariable
+import reaktive.value.now
+import reaktive.value.reactiveVariable
 import xenakis.impl.Logger
 import xenakis.model.obj.AbstractRenamableObject
+import xenakis.model.obj.ParameterDefObject
 import xenakis.model.obj.ParameterizedObject
 import xenakis.model.obj.ParameterizedObjectDef
 import xenakis.model.registry.NamedObjectList
@@ -20,8 +22,7 @@ import xenakis.sc.ControlSpec
 @Serializable(with = ParameterControls.Serializer::class)
 class ParameterControls(
     override val objects: MutableList<NamedParameterControl> = mutableListOf(),
-) : NamedObjectList<ParameterControls.NamedParameterControl>(),
-    List<ParameterControls.NamedParameterControl> by objects {
+) : NamedObjectList<ParameterControls.NamedParameterControl>(), NamedObjectList.Listener<ParameterDefObject> {
     override val objectType: String
         get() = "Parameter control"
 
@@ -30,20 +31,22 @@ class ParameterControls(
 
     private val def: ParameterizedObjectDef get() = associatedObject.def
 
+    private val parameterObservers = mutableMapOf<ParameterDefObject, Observer>()
+
     val controlMap: Map<String, ParameterControl> get() = associate { c -> c.name.now to c.now }
 
     @Serializable
     class NamedParameterControl(
         @SerialName("name") override val mutableName: ReactiveVariable<String>,
         private var value: ParameterControl,
-        private val customSpec: ReactiveVariable<ControlSpec?> = reactiveVariable(null)
+        private var customSpec: ControlSpec? = null
     ) : AbstractRenamableObject() {
         constructor(name: String, value: ParameterControl, customSpec: ControlSpec? = null) : this(
-            reactiveVariable(name), value, reactiveVariable(customSpec)
+            reactiveVariable(name), value, customSpec
         )
 
         @Transient
-        lateinit var spec: ReactiveValue<ControlSpec?>
+        lateinit var spec: ReactiveVariable<ControlSpec?>
             private set
 
         @Transient
@@ -52,17 +55,12 @@ class ParameterControls(
 
         val parentObject get() = controls.associatedObject
 
-        fun customSpec(): ControlSpec? = customSpec.now
-
-        @Transient
-        private lateinit var observer: Observer
-
         val now get() = value
 
-        override fun copy(name: String): NamedParameterControl = NamedParameterControl(name, value, customSpec.now)
+        override fun copy(name: String): NamedParameterControl = NamedParameterControl(name, value, customSpec)
 
         fun copy(value: ParameterControl = now): NamedParameterControl =
-            NamedParameterControl(name.now, value, customSpec.now)
+            NamedParameterControl(name.now, value, customSpec)
 
         override val canCopy: Boolean get() = true
 
@@ -70,16 +68,31 @@ class ParameterControls(
             this.controls = controls
             super.initialize(controls.context)
             value.initialize(context)
-            spec = customSpec.orElse(controls.def.getSpec(name.now) ?: reactiveValue(null))
-            observer = spec.observe { _, oldSpec, newSpec ->
-                controls.notifyListeners<Listener> { changedSpec(this@NamedParameterControl, oldSpec, newSpec) }
-            }
+            spec = reactiveVariable(customSpec ?: controls.getDefaultSpec(this))
         }
 
         fun setCustomSpec(custom: ControlSpec?) {
-            val before = customSpec.now
-            customSpec.set(custom)
+            val before = customSpec
+            customSpec = custom
             context[UndoManager].record(EditCustomSpec(this, before, custom))
+            val defaultSpec = controls.getDefaultSpec(this)
+            val oldSpec = before ?: defaultSpec
+            spec.now = custom ?: defaultSpec
+            controls.notifyListeners<Listener> { changedSpec(this@NamedParameterControl, oldSpec, spec.now) }
+        }
+
+        fun customSpec() = customSpec
+
+        fun parameterNameChanged(newName: String) {
+            mutableName.now = newName
+        }
+
+        fun parameterSpecChanged(newSpec: ControlSpec) {
+            if (customSpec == null) {
+                val oldSpec = spec.now
+                spec.now = newSpec
+                controls.notifyListeners<Listener> { changedSpec(this@NamedParameterControl, oldSpec, spec.now) }
+            }
         }
 
         fun reassign(newControl: ParameterControl) {
@@ -97,6 +110,31 @@ class ParameterControls(
         super.initialize(context)
         this.associatedObject = associatedObject
         for (ctrl in this) ctrl.initialize(this)
+        def.parameters.addListener(this)
+    }
+
+    private fun getDefaultSpec(ctrl: NamedParameterControl) = def.getSpec(ctrl.name.now)?.now
+
+    override fun added(obj: ParameterDefObject, idx: Int) {
+        parameterObservers[obj] = obj.name.observe { _, oldName, newName ->
+            val ctrl = getOrNull(oldName) ?: return@observe
+            ctrl.parameterNameChanged(newName)
+        } and obj.spec.observe { _, oldSpec, newSpec ->
+            val ctrl = getOrNull(obj.name.now) ?: return@observe
+            ctrl.parameterSpecChanged(newSpec)
+        }
+        val ctrl = getOrNull(obj.name.now) ?: return
+        if (ctrl.customSpec() == obj.spec.now) {
+            ctrl.setCustomSpec(null)
+        }
+    }
+
+    override fun removed(obj: ParameterDefObject) {
+        parameterObservers.remove(obj)!!.kill()
+        val ctrl = getOrNull(obj.name.now) ?: return
+        if (ctrl.customSpec() == null) {
+            ctrl.setCustomSpec(obj.spec.now) //remember spec
+        }
     }
 
     fun getControl(name: String) = getOrNull(name)?.now
@@ -115,6 +153,10 @@ class ParameterControls(
     fun addControl(parameter: String, control: ParameterControl, customSpec: ControlSpec? = null) {
         val named = NamedParameterControl(parameter, control, customSpec)
         add(named)
+    }
+
+    override fun onAdded(obj: NamedParameterControl, idx: Int) {
+        obj.initialize(this)
     }
 
     fun transformControls(f: (String, ParameterControl) -> ParameterControl) =

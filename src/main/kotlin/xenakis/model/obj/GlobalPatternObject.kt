@@ -5,6 +5,7 @@ import kotlinx.serialization.Contextual
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import reaktive.value.ReactiveVariable
+import reaktive.value.now
 import xenakis.model.project.busses
 import xenakis.sc.client.ScWriter
 import xenakis.sc.editor.CodeBlockEditor
@@ -18,9 +19,12 @@ class GlobalPatternObject(
     override fun canRenameTo(newName: String): Boolean = !context[XenakisLauncher.currentProject].busses.has(newName)
 
     override val superColliderName: String
-        get() = TODO("Not yet implemented")
+        get() = "~pattern_${name.now}"
 
     override fun ScWriter.createObject() {
-        TODO("Not yet implemented")
+        val code = patternCode.editor.result.now
+        append("$superColliderName = (")
+        code.code(writer, context)
+        appendLine(").asStream;")
     }
 }

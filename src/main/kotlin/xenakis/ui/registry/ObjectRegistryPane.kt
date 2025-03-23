@@ -41,7 +41,6 @@ abstract class ObjectRegistryPane<O : NamedObject>(
         searchText.left = FontIcon(Material2MZ.SEARCH)
         searchText.textProperty().addListener { _, _, _ -> boxList.refilter() }
         HBox.setHgrow(searchText, Priority.ALWAYS)
-
     }
 
     protected abstract fun sync()

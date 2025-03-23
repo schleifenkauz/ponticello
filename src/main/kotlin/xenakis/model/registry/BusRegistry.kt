@@ -30,8 +30,7 @@ class BusRegistry(
         context[BusRegistry] = this
         defaultValueRestore = client.treeCleared.observe {
             client.run {
-                for (bus in all()) {
-                    if (bus !is BusObject.ControlBus) continue
+                for (bus in all().filterIsInstance<BusObject.ControlBus>()) {
                     bus.run { setDefaultValue(skipIfZero = false) }
                 }
             }

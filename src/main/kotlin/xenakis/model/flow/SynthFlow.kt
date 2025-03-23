@@ -3,7 +3,9 @@ package xenakis.model.flow
 import hextant.context.Context
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
+import reaktive.value.ReactiveString
 import reaktive.value.ReactiveVariable
+import reaktive.value.binding.flatMap
 import reaktive.value.now
 import reaktive.value.reactiveVariable
 import xenakis.impl.zero
@@ -11,9 +13,9 @@ import xenakis.model.obj.*
 import xenakis.model.player.ParameterControlLiveUpdater
 import xenakis.model.registry.reference
 import xenakis.model.score.BusControl
-import xenakis.model.score.ConstantControl
 import xenakis.model.score.ObjectPosition
 import xenakis.model.score.ParameterControls
+import xenakis.model.score.ValueControl
 import xenakis.sc.BusControlSpec
 import xenakis.sc.client.ScWriter
 import xenakis.sc.client.SuperColliderClient
@@ -53,7 +55,7 @@ class SynthFlow(
         val synthVar = superColliderName.now
         val info = ScoreObjectInfo(ObjectPosition.ZERO, synthVar.removePrefix("~"), synthVar, placement)
         val mainBusControl = getMainBusParameter(synthDef)!! to BusControl.create(associatedBus)
-        val withoutDuration = "afterDuration" to ConstantControl.create(zero) //no free after duration
+        val withoutDuration = "afterDuration" to ValueControl.create(zero) //no free after duration
         writeSynthCode(
             synthDef, context,
             info, duration = null,
@@ -69,7 +71,7 @@ class SynthFlow(
         controls.addListener(AudioNodeBusControlsListener(listener))
     }
 
-    override fun getDefaultName(): String = "Synth"
+    override fun getDefaultName(): ReactiveString = defRef.flatMap { ref -> ref.name }
 
     companion object {
         fun createFor(associatedBus: BusObject, def: SynthDefObject, context: Context): SynthFlow {

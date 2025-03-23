@@ -13,6 +13,7 @@ import reaktive.value.reactiveVariable
 import xenakis.model.obj.AbstractRenamableObject
 import xenakis.model.obj.BusObject
 import xenakis.model.project.flows
+import xenakis.model.registry.NamedObject.Companion.NO_NAME
 import xenakis.ui.launcher.XenakisLauncher.Companion.currentProject
 
 @Serializable
@@ -50,7 +51,7 @@ sealed class AudioFlow : AbstractRenamableObject(), AudioNode {
     override val canRename: Boolean
         get() = false
 
-    abstract fun getDefaultName(): String
+    abstract fun getDefaultName(): ReactiveString
 
     override fun canRenameTo(newName: String): Boolean =
         context[currentProject].flows.all().none { f -> f.name.now == newName }
@@ -63,6 +64,5 @@ sealed class AudioFlow : AbstractRenamableObject(), AudioNode {
 
     companion object {
         val DATA_FORMAT = DataFormat("audio-flow")
-        const val NO_NAME = "<no name>"
     }
 }

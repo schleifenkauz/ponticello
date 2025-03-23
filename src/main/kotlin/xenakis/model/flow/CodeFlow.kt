@@ -4,7 +4,9 @@ import hextant.context.Context
 import hextant.serial.EditorRoot
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
+import reaktive.value.ReactiveString
 import reaktive.value.now
+import reaktive.value.reactiveValue
 import xenakis.model.obj.BusObject
 import xenakis.sc.client.ScWriter
 import xenakis.sc.editor.CodeBlockEditor
@@ -38,7 +40,7 @@ class CodeFlow(val codeEditor: EditorRoot<@Contextual CodeBlockEditor>) : AudioF
         +".play"
     }
 
-    override fun getDefaultName(): String = "Code"
+    override fun getDefaultName(): ReactiveString = reactiveValue("Code")
 
     companion object {
         fun createFor(bus: BusObject): CodeFlow {

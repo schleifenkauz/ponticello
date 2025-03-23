@@ -5,6 +5,7 @@ import hextant.core.editor.ListenerManager
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import reaktive.Observer
+import reaktive.value.ReactiveVariable
 import reaktive.value.forEach
 import reaktive.value.now
 import reaktive.value.reactiveVariable
@@ -12,7 +13,6 @@ import xenakis.impl.Decimal
 import xenakis.impl.parseDecimal
 import xenakis.impl.withPrecision
 import xenakis.model.obj.BusObject
-import xenakis.model.score.KnobControl
 import xenakis.sc.NumericalControlSpec
 import xenakis.sc.client.ScWriter
 import xenakis.sc.client.SuperColliderClient
@@ -33,7 +33,7 @@ class GlobalControls(private val controls: MutableList<GlobalControl>) {
     fun initialize(context: Context) {
         this.context = context
         for (ctrl in controls) {
-            valueObservers[ctrl] = ctrl.knobControl.value.forEach { value -> updatedValue(ctrl, value) }
+            valueObservers[ctrl] = ctrl.value.forEach { value -> updatedValue(ctrl, value) }
         }
         context[SuperColliderClient].run { setBusValues(writer) }
     }
@@ -52,18 +52,18 @@ class GlobalControls(private val controls: MutableList<GlobalControl>) {
     private fun SuperColliderContext.setupBus(control: GlobalControl) {
         val bus = control.bus
         val varName = bus.superColliderName
-        val value = control.knobControl.get()
+        val value = control.value.get()
         run("$varName.set($value);")
     }
 
     fun addControl(parameter: String, spec: NumericalControlSpec) {
-        val knobControl = KnobControl(reactiveVariable(spec.defaultValue.get()))
-        val control = GlobalControl(parameter, knobControl, spec)
+        val value = (reactiveVariable(spec.defaultValue.get()))
+        val control = GlobalControl(parameter, value, spec)
         context[BusRegistry].add(control.bus)
         controls.add(control)
         context[SuperColliderClient].setupBus(control)
         views.notifyListeners { addedControl(control) }
-        valueObservers[control] = control.knobControl.value.forEach { value -> updatedValue(control, value) }
+        valueObservers[control] = control.value.forEach { value -> updatedValue(control, value) }
     }
 
     fun removeControl(control: GlobalControl) {
@@ -89,18 +89,13 @@ class GlobalControls(private val controls: MutableList<GlobalControl>) {
     fun updateControlFromServer(control: GlobalControl) {
         val code = "${control.bus.superColliderName}.getSynchronous"
         val value = context[SuperColliderClient].eval(code).get().parseDecimal() ?: return
-        control.knobControl.value.now = value.withPrecision(control.spec.precision)
+        control.value.now = value.withPrecision(control.spec.precision)
     }
 
     fun hasControl(name: String): Boolean = controls.any { ctrl -> ctrl.parameter == name }
 
     @Serializable
-    class GlobalControl(val parameter: String, val knobControl: KnobControl, val spec: NumericalControlSpec) {
+    class GlobalControl(val parameter: String, val value: ReactiveVariable<Decimal>, val spec: NumericalControlSpec) {
         val bus: BusObject = BusObject.audio("global_$parameter", 1)
-
-        init {
-            //this is only for needed when opening projects that were created before the decimal-precision update
-            knobControl.value.now = knobControl.value.now.withPrecision(spec.precision)
-        }
     }
 }

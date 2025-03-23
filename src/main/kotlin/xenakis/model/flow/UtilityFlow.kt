@@ -1,9 +1,7 @@
 package xenakis.model.flow
 
 import kotlinx.serialization.Serializable
-import reaktive.value.ReactiveVariable
-import reaktive.value.now
-import reaktive.value.reactiveVariable
+import reaktive.value.*
 import xenakis.impl.Decimal
 import xenakis.impl.copy
 import xenakis.impl.zero
@@ -11,9 +9,9 @@ import xenakis.model.obj.BusObject
 import xenakis.model.obj.ReferencedSynthDefObject
 import xenakis.model.registry.reference
 import xenakis.model.score.BusControl
-import xenakis.model.score.ConstantControl
 import xenakis.model.score.ObjectPosition
 import xenakis.model.score.ParameterControls
+import xenakis.model.score.ValueControl
 import xenakis.sc.client.ScWriter
 import xenakis.sc.writeSynthCode
 
@@ -34,7 +32,7 @@ class UtilityFlow(
         }
         val controls = ParameterControls.create(
             "bus" to BusControl(reactiveVariable(associatedBus.reference())),
-            "volume" to ConstantControl(reactiveVariable(volume)),
+            "volume" to ValueControl(reactiveVariable(volume)),
         )
         val synthVar = superColliderName.now
         val info = ScoreObjectInfo(ObjectPosition.ZERO, synthVar.removePrefix("~"), synthVar, placement)
@@ -44,7 +42,7 @@ class UtilityFlow(
         )
     }
 
-    override fun getDefaultName(): String = "Utility"
+    override fun getDefaultName(): ReactiveString = reactiveValue("Utility")
 
     override fun getInputs(): Collection<BusObject> = emptySet()
 

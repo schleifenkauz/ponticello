@@ -126,12 +126,12 @@ class ControlAssignmentEditor(val control: NamedParameterControl) : HBox() {
             SingleBusValue -> "Bus Value"
         }
 
-        object Value : ControlType<ConstantControl>() {
+        object Value : ControlType<ValueControl>() {
             override fun createDetailInput(
                 obj: ParameterizedObject,
                 parameter: String, //TODO make parameter reactive
                 spec: ControlSpec?,
-                control: ConstantControl
+                control: ValueControl
             ): Node {
                 val converter = (spec as NumericalControlSpec).converter()
                 val sliderBar = SliderBar(
@@ -144,9 +144,9 @@ class ControlAssignmentEditor(val control: NamedParameterControl) : HBox() {
 
             override fun createDefaultControl(
                 obj: ParameterizedObject, spec: ControlSpec?, oldControl: ParameterControl
-            ): ConstantControl {
+            ): ValueControl {
                 spec as NumericalControlSpec
-                return ConstantControl(reactiveVariable(oldControl.getNumericalValue() ?: spec.defaultValue.get()))
+                return ValueControl(reactiveVariable(oldControl.getNumericalValue() ?: spec.defaultValue.get()))
             }
         }
 
@@ -161,7 +161,7 @@ class ControlAssignmentEditor(val control: NamedParameterControl) : HBox() {
                 colorPicker.setFixedWidth(30.0)
                 val toggle = ToggleSwitch("Display: ")
                 toggle.selectedProperty().bindBidirectional(control.display.asProperty())
-                val box = HBox(colorPicker, infiniteSpace(), toggle)
+                val box = HBox(5.0, colorPicker, toggle)
                 box.alignment = Pos.CENTER_LEFT
                 return box
             }
@@ -319,7 +319,7 @@ class ControlAssignmentEditor(val control: NamedParameterControl) : HBox() {
 
             @Suppress("UNCHECKED_CAST")
             fun <O : ParameterControl> getType(option: O) = when (option) {
-                is ConstantControl -> Value
+                is ValueControl -> Value
                 is CustomControl -> LFO
                 is EnvelopeControl -> Envelope
                 is BusControl -> Bus

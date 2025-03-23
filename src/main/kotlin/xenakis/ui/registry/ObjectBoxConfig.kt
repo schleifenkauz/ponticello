@@ -5,7 +5,10 @@ import javafx.geometry.Orientation
 import javafx.scene.Node
 import javafx.scene.input.DataFormat
 import javafx.scene.input.Dragboard
+import reaktive.value.ReactiveString
+import reaktive.value.reactiveValue
 import xenakis.model.registry.NamedObject
+import xenakis.model.registry.NamedObject.Companion.NO_NAME
 
 interface ObjectBoxConfig<O : NamedObject> {
     val enableReordering: Boolean get() = false
@@ -21,6 +24,8 @@ interface ObjectBoxConfig<O : NamedObject> {
     fun configureDragboard(obj: O, dragboard: Dragboard) {}
 
     fun dataFormat(obj: O): DataFormat? = null
+
+    fun getDefaultDisplayName(obj: O): ReactiveString = reactiveValue(NO_NAME)
 
     fun onSelected(obj: O) {}
 

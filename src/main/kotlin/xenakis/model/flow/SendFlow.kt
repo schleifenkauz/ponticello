@@ -4,11 +4,9 @@ import hextant.context.Context
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import reaktive.Observer
-import reaktive.value.ReactiveValue
-import reaktive.value.ReactiveVariable
+import reaktive.value.*
+import reaktive.value.binding.flatMap
 import reaktive.value.binding.map
-import reaktive.value.now
-import reaktive.value.reactiveVariable
 import xenakis.impl.Decimal
 import xenakis.impl.copy
 import xenakis.impl.toDecimal
@@ -18,9 +16,9 @@ import xenakis.model.obj.ReferencedSynthDefObject
 import xenakis.model.registry.BusRegistry
 import xenakis.model.registry.reference
 import xenakis.model.score.BusControl
-import xenakis.model.score.ConstantControl
 import xenakis.model.score.ObjectPosition
 import xenakis.model.score.ParameterControls
+import xenakis.model.score.ValueControl
 import xenakis.sc.client.ScWriter
 import xenakis.sc.writeSynthCode
 
@@ -49,7 +47,7 @@ class SendFlow(
         val controls = ParameterControls.create(
             "in" to BusControl(reactiveVariable(associatedBus.reference())),
             "out" to BusControl(reactiveVariable(targetRef.now)),
-            "amp" to ConstantControl(reactiveVariable(amountPercent.now * 0.01.toDecimal())),
+            "amp" to ValueControl(reactiveVariable(amountPercent.now * 0.01.toDecimal())),
         )
         val synthVar = superColliderName.now
         val info = ScoreObjectInfo(ObjectPosition.ZERO, synthVar.removePrefix("~"), synthVar, placement)
@@ -59,7 +57,8 @@ class SendFlow(
         )
     }
 
-    override fun getDefaultName(): String = "Send ${associatedBus.name.now} to ${targetRef.now.getName()}"
+    override fun getDefaultName(): ReactiveString =
+        targetRef.flatMap { target -> target.name.map { name -> "Send to $name" } }
 
     override fun getInputs(): Collection<BusObject> = setOf(associatedBus)
 

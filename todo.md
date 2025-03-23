@@ -2,11 +2,9 @@
 
 ### completion
 
-- buffer refs
 - variables
 - global variables
 - classes
-- SynthDefs
 
 ### Stretching time regions
 
@@ -16,15 +14,12 @@
 ### UI niceties
 
 - save main window size/position and arrangement of utility panes
-- better positioning of flow graph arrows
 
 ### Support for patterns
 
 - as synth arguments (must be delta-patterns)
 - as standalone objects (`pbind`)
 - attaching to a synth in the score (`pmono`)
-
-### Unclutter the Json serialization of Hextant editors
 
 ### Attach transformations to buses not to flows
 
@@ -34,25 +29,15 @@
 - graphical tools for EQ, compression (multi-band), reverb, etc.
   - integrate as special editors?
 - or open transformation chain by clicking on bus in the flow graph
-- work on positioning of the bus nodes in the flow graph pane
-  - is the flow graph pane even needed?
 - how to notify user about loops in the flow graph
-
-### Improve zooming functionality
-
-- zoom tool: (selectable with `Z`)
 
 ### Minor
 
 - recognize transport shortcuts from all windows (?)
-- specify expected channels for buffer parameters
 - lhs of assignments can be compound expressions
 - re-enable allocated buffers (can be used with WrBuf/RdBuf SynthDefs)
 - new parameter type: buffer position (range depends on supplied buffer)
   - or use 0..1 range and scale to buffer duration
-- reordering controls
-- ability to rename controls?
-- ability to specify value for horizontal envelope lines via input prompt (how? double click displays )
 - ability to specify added time in beats/bars/ticks
 - option to create external automation (adding a kr-write `SynthObject`) for numerical parameter
 - select new objects after unlinking
@@ -67,6 +52,10 @@
 - improve the timeline
 - retrieve global SynthDefs from `compositions` directory
 - merge the `GlobalControlsPane` with the registry pane for control buses
+- allow parameter specification when adding custom parameters
+- add detail editing region to `ObjectRegistryPane`, allow switching between modes (some registries only support one mode)
+  1. all details in object boxes
+  2. details in separate pane to the right
 
 ## Long term ideas
 
@@ -101,8 +90,6 @@
 
 ### Is vertical scroll/zoom needed?
 
-### Ability to execute commands using a query/update language
-
 ### Ability to show score objects in resizable/movable floating window (with detail pane)
 
 ### Are there better methods of navigating through the score?
@@ -135,9 +122,8 @@
 - sub-objects get buggy after unlinking group objects
   - the new objects don't get added to the `ScoreEventCollector`
 - selection based region display is not quite right
-- renaming controls doesn't work
-- creating custom parameters doesn't work
 - recording doesn't work
+- cutting doesn't work
 
 ### Namen überlegen
 

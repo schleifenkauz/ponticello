@@ -7,7 +7,6 @@ import reaktive.value.ReactiveVariable
 import xenakis.impl.Decimal
 import xenakis.impl.toDecimal
 import xenakis.model.Settings
-import xenakis.model.score.KnobControl
 import xenakis.sc.NumericalControlSpec
 import xenakis.sc.Warp
 import xenakis.ui.controls.Knob
@@ -23,12 +22,12 @@ class SettingsPane(settings: Settings, private val context: Context) : ToolPane(
                 +Label("Playback options").styleClass("heading")
                 item("Latency: ") {
                     +Knob(
-                        "Latency (sclang) in ms", KnobControl(settings.scLangLatency),
-                        NumericalControlSpec(0.1, 0.01, 1.0, 0.01.toDecimal()), context = context
+                        "Latency (sclang) in ms", settings.scLangLatency,
+                        NumericalControlSpec(0.1, 0.01, 1.0, 0.01.toDecimal())
                     )
                     +Knob(
-                        "Latency (scsynth) in ms", KnobControl(settings.serverLatency),
-                        NumericalControlSpec(0.1, 0.01, 1.0, 0.01.toDecimal()), context = context
+                        "Latency (scsynth) in ms", settings.serverLatency,
+                        NumericalControlSpec(0.1, 0.01, 1.0, 0.01.toDecimal())
                     )
                 }
                 knobItem(
@@ -56,7 +55,7 @@ class SettingsPane(settings: Settings, private val context: Context) : ToolPane(
 
     private fun ChildrenAdder.knobItem(name: String, variable: ReactiveVariable<Decimal>, spec: NumericalControlSpec) {
         item(name) {
-            +Knob(name, KnobControl(variable), spec, context)
+            +Knob(name, variable, spec)
         }
     }
 }

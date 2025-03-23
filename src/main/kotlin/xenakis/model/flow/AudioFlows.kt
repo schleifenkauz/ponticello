@@ -141,10 +141,6 @@ class AudioFlows(
         }
     }
 
-    fun syncAll() {
-        TODO("Not yet implemented")
-    }
-
     fun moveFlow(flow: AudioFlow, index: Int) {
         changeFlows(flow.associatedBus) {
             check(index in indices) { "Invalid index $index ($flow)" }

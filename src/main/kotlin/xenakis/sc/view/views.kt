@@ -173,7 +173,10 @@ fun createControl(editor: xenakis.sc.editor.NumericalControlSpecEditor, argument
 
 @ProvideImplementation(ControlFactory::class)
 fun createControl(editor: xenakis.sc.editor.ControlSpecEditor, arguments: Bundle) =
-    ChoiceEditorControl(editor, arguments).styleClass("control-spec")
+    ChoiceEditorControl(editor, arguments).apply {
+        styleClass("control-spec")
+        button.isDisable = true // don't allow changing parameter types
+    }
 
 @ProvideImplementation(ControlFactory::class)
 fun createControl(editor: xenakis.sc.editor.DecimalLiteralEditor, arguments: Bundle) =

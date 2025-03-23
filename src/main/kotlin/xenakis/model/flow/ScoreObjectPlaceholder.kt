@@ -5,12 +5,12 @@ import hextant.context.withoutUndo
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
+import reaktive.value.ReactiveString
 import reaktive.value.now
 import xenakis.model.obj.BusObject
 import xenakis.model.obj.GroupObject
 import xenakis.model.obj.GroupReference
 import xenakis.model.registry.GroupRegistry
-import xenakis.model.registry.ObjectReference
 import xenakis.sc.client.ScWriter
 
 @Serializable
@@ -43,7 +43,7 @@ class ScoreObjectPlaceholder(@SerialName("group") val groupRef: GroupReference) 
         +"${group.superColliderName} = Group.new(${placement.target}, ${placement.addAction})"
     }
 
-    override fun getDefaultName(): String = "Group ${groupRef.getName()}"
+    override fun getDefaultName(): ReactiveString = groupRef.name
 
     override fun getInputs(): Collection<BusObject> = emptySet()
 

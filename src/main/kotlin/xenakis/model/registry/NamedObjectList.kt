@@ -95,11 +95,13 @@ abstract class NamedObjectList<O : NamedObject>() : List<O>, AbstractContextualO
     }
 
     fun move(obj: O, idx: Int) {
-        Logger.info("Moving $obj to $idx", Logger.Category.Registries)
         val oldIdx = objects.indexOf(obj)
+        if (oldIdx == idx) return
+        Logger.info("Moving $obj to $idx", Logger.Category.Registries)
         if (oldIdx == -1) error("Object $obj not found in $this")
-        objects.add(idx, obj)
         objects.removeAt(oldIdx)
+        if (oldIdx < idx) objects.add(idx - 1, obj) //TODO something is not right here
+        else objects.add(idx, obj)
         context[UndoManager].record(ListEdit.MoveObject(this@NamedObjectList, obj, oldIdx, idx))
         listeners.notifyListeners { moved(obj, idx) }
     }

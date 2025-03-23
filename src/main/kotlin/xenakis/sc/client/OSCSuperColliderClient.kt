@@ -77,7 +77,7 @@ class OSCSuperColliderClient(
             }
             val path = String(buf, 0, 8)
             when {
-                path.startsWith("/reboot") -> serverReboot.fire()
+                path.startsWith("/booted") -> serverReboot.fire()
 
                 path.startsWith("/cleared") -> treeClear.fire()
 

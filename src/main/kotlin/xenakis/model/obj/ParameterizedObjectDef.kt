@@ -5,9 +5,10 @@ import reaktive.value.ReactiveVariable
 import reaktive.value.now
 import xenakis.model.score.ParameterControl
 import xenakis.sc.ControlSpec
+import xenakis.ui.registry.ParameterDefList
 
 interface ParameterizedObjectDef {
-    val parameters: List<ParameterDefObject>
+    val parameters: ParameterDefList
 
     fun getParameter(name: String): ParameterDefObject? = parameters.find { it.name.now == name }
 

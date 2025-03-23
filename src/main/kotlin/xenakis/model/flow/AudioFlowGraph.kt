@@ -33,12 +33,12 @@ class AudioFlowGraph(
     private val writeTo = mutableMapOf<BusObject, Counter<AudioNode>>()
     private val graph = ReachabilityGraph<AudioNode>()
     private val placeholderContents = mutableMapOf<GroupObject, MutableList<ActiveSynth>>()
-    private val serverClearObserver: Observer
+    private val treeClearObserver: Observer
 
     init {
         flows.context[BusRegistry].addListener(this)
         flows.addListener(this)
-        serverClearObserver = flows.context[SuperColliderClient].treeCleared.observe { _ ->
+        treeClearObserver = flows.context[SuperColliderClient].treeCleared.observe { _ ->
             rebuildFlowGraph()
         }
     }
@@ -46,8 +46,8 @@ class AudioFlowGraph(
     private fun rebuildFlowGraph() {
         reorderNodeTree()
         for (o in order) {
-            nodeTree.addNode(o, NodePlacement(AddAction.AddToTail, "s.defaultGroup"))
-            if (o is FlowGroup) {
+            if (o is FlowGroup && o.associatedBus is BusObject.AudioBus) {
+                nodeTree.addNode(o, NodePlacement(AddAction.AddToTail, "s"))
                 for (flow in o.flows()) {
                     nodeTree.addNode(flow, NodePlacement(AddAction.AddToTail, o.superColliderName.now))
                 }
@@ -56,21 +56,23 @@ class AudioFlowGraph(
     }
 
     override fun added(obj: BusObject, idx: Int) {
-        if (obj !is BusObject.AudioBus) return
         val node = FlowGroup(obj, flows)
         flowGroups[obj] = node
         addNode(node)
         reorderNodeTree()
-        val placement = getPlacementFor(node)
-        nodeTree.addNode(node, placement)
+        if (obj is BusObject.AudioBus) {
+            val placement = getPlacementFor(node)
+            nodeTree.addNode(node, placement)
+        }
     }
 
     override fun removed(obj: BusObject) {
-        if (obj !is BusObject.AudioBus) return
         val node = flowGroups.remove(obj) ?: error("No active flows for bus $obj")
         removeNode(node)
-        nodeTree.removeNode(node)
         reorderNodeTree()
+        if (obj is BusObject.AudioBus) {
+            nodeTree.removeNode(node)
+        }
     }
 
     override fun activatedFlow(flow: AudioFlow) {
@@ -98,8 +100,10 @@ class AudioFlowGraph(
 
     private fun getPlacementInOrder(node: AudioNode): NodePlacement {
         val idx = order.indexOf(node)
-        return if (idx == 0) NodePlacement(AddAction.AddToHead, "s.defaultGroup")
-        else NodePlacement(AddAction.AddAfter, order[idx - 1].superColliderName.now)
+        return when (idx) {
+            0 -> NodePlacement(AddAction.AddToHead, "s.defaultGroup")
+            else -> NodePlacement(AddAction.AddAfter, order[idx - 1].superColliderName.now)
+        }
     }
 
     private fun getPlacementFor(node: AudioNode): NodePlacement = when (node) {
@@ -112,7 +116,7 @@ class AudioFlowGraph(
         }
 
         is ActiveSynth -> {
-            val group = node.obj.group.now.get() ?: node.obj.context[GroupRegistry].getDefault()!!
+            val group = node.obj.group.now.get() ?: node.obj.context[GroupRegistry].getDefault()
             if (group.isDefault) {
                 getPlacementInOrder(node)
             } else {
@@ -243,6 +247,33 @@ class AudioFlowGraph(
     fun flowGroup(bus: BusObject): FlowGroup = flowGroups.getValue(bus)
 
     fun getOrder(): List<AudioNode> = order
+
+    fun syncAll() {
+        removeAllFlows()
+        addFlowsToNodeTree()
+    }
+
+    private fun addFlowsToNodeTree() {
+        for (group in flowGroups.values) {
+            val placement = getPlacementFor(group)
+            nodeTree.addNode(group, placement)
+        }
+        for (flow in order.filterIsInstance<AudioFlow>()) {
+            val placement = getPlacementFor(flow)
+            nodeTree.addNode(flow, placement)
+        }
+    }
+
+    private fun removeAllFlows() {
+        for (flow in flows.all()) {
+            nodeTree.removeNode(flow)
+        }
+        for ((bus, group) in flowGroups) {
+            if (bus is BusObject.AudioBus) {
+                nodeTree.removeNode(group)
+            }
+        }
+    }
 
     companion object : PublicProperty<AudioFlowGraph> by publicProperty("AudioFlowGraph")
 }

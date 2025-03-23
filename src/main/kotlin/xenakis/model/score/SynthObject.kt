@@ -64,10 +64,10 @@ class SynthObject(
     val displaySample: ReactiveValue<Boolean>? get() = bufferControl?.display
 
     val playbufStartPos: ReactiveVariable<Decimal>?
-        get() = (controls.controlMap["startPos"] as? ConstantControl)?.value?.takeIf { bufferControl != null }
+        get() = (controls.controlMap["startPos"] as? ValueControl)?.value?.takeIf { bufferControl != null }
 
     val playBufRate: ReactiveVariable<Decimal>?
-        get() = (controls.controlMap["rate"] as? ConstantControl)?.value?.takeIf { bufferControl != null }
+        get() = (controls.controlMap["rate"] as? ValueControl)?.value?.takeIf { bufferControl != null }
 
     override fun doClone(newName: String): ScoreObject = SynthObject(
         reactiveVariable(newName), synthDefRef.copy(),
@@ -78,8 +78,8 @@ class SynthObject(
         reactiveVariable(newName), synthDefRef.copy(),
         controls = controls.transformControls { name, c ->
             when {
-                name == "startPos" && c is ConstantControl && whichHalf == RIGHT ->
-                    ConstantControl(reactiveVariable(c.value.now + position * (playBufRate?.now ?: one(3))))
+                name == "startPos" && c is ValueControl && whichHalf == RIGHT ->
+                    ValueControl(reactiveVariable(c.value.now + position * (playBufRate?.now ?: one(3))))
 
                 else -> c.cut(position, whichHalf)
             }

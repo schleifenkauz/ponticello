@@ -3,6 +3,8 @@ package xenakis.model.obj
 import javafx.scene.paint.Color
 import reaktive.value.*
 import xenakis.sc.client.ScWriter
+import xenakis.ui.registry.ParameterDefList
+import java.util.*
 
 class NoSynthDef : SynthDefObject, AbstractContextualObject() {
     override val isAdded: ReactiveBoolean
@@ -13,7 +15,7 @@ class NoSynthDef : SynthDefObject, AbstractContextualObject() {
 
     override fun copy(name: String): SynthDefObject = NoSynthDef()
 
-    override val parameters: List<ParameterDefObject> get() = emptyList()
+    override val parameters: ParameterDefList get() = ParameterDefList(Collections.unmodifiableList(emptyList()))
 
     override val name: ReactiveValue<String>
         get() = reactiveValue("<none>")

@@ -3,7 +3,6 @@ package xenakis.ui.controls
 import fxutils.centerHorizontally
 import fxutils.setRoot
 import fxutils.styleClass
-import hextant.context.Context
 import javafx.geometry.Point2D
 import javafx.scene.control.Control
 import javafx.scene.control.Label
@@ -15,18 +14,17 @@ import javafx.scene.shape.Arc
 import javafx.scene.shape.Circle
 import javafx.scene.shape.Line
 import reaktive.Observer
+import reaktive.value.ReactiveVariable
 import reaktive.value.forEach
 import xenakis.impl.*
-import xenakis.model.score.KnobControl
 import xenakis.sc.NumericalControlSpec
 import xenakis.sc.SpecTransformation
 import kotlin.math.*
 
 class Knob(
     val parameter: String,
-    val control: KnobControl,
+    val variable: ReactiveVariable<Decimal>,
     private val spec: NumericalControlSpec,
-    private val context: Context,
     private val radius: Double = DEFAULT_RADIUS
 ) : Control() {
     private val knobDots = mutableListOf<Circle>()
@@ -48,7 +46,7 @@ class Knob(
         isFocusTraversable = true
         setPrefSize(radius * 2, radius * 2)
         setMinSize(radius * 2, radius * 2)
-        valueObserver = control.value.forEach { value -> updatedValue(value) }
+        valueObserver = variable.forEach { value -> updatedValue(value) }
         indicator.stroke = spec.associatedColor
         valueLabel.centerHorizontally(this)
         valueLabel.layoutY = radius * 1.4
@@ -82,8 +80,8 @@ class Knob(
 
     private fun showValueInput() {
         val range = spec.min.get()..spec.max.get()
-        val v = DecimalPrompt("$parameter ($range)", control.get(), range).showDialog(anchorNode = this) ?: return
-        control.value.set(v.withPrecision(spec.precision))
+        val v = DecimalPrompt("$parameter ($range)", variable.get(), range).showDialog(anchorNode = this) ?: return
+        variable.set(v.withPrecision(spec.precision))
     }
 
     private fun addShortcuts() = addEventHandler(KeyEvent.KEY_PRESSED) { ev ->
@@ -96,13 +94,13 @@ class Knob(
     }
 
     private fun increase() {
-        val newValue = control.get() + spec.step.get()
-        control.value.set(newValue.coerceIn(spec.range))
+        val newValue = variable.get() + spec.step.get()
+        variable.set(newValue.coerceIn(spec.range))
     }
 
     private fun decrease() {
-        val newValue = (control.get() - spec.step.get())
-        control.value.set(newValue.coerceIn(spec.range))
+        val newValue = (variable.get() - spec.step.get())
+        variable.set(newValue.coerceIn(spec.range))
     }
 
     private fun setValueFromMouse(x: Double, y: Double) {
@@ -112,7 +110,7 @@ class Knob(
         if (phi < 1.0 / 3 * PI) phi += 2 * PI
         phi = phi.coerceIn(MAX_ANGLE..MIN_ANGLE)
         val value = transform.unmap(phi).snap(spec.step.get())
-        control.value.set(value)
+        variable.set(value)
     }
 
     private fun getPoint(value: Decimal, r: Double): Point2D {

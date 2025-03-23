@@ -10,14 +10,21 @@ import javafx.scene.input.KeyEvent
 import javafx.scene.layout.HBox
 import org.kordamp.ikonli.material2.Material2AL
 import reaktive.Observer
+import reaktive.value.ReactiveString
 import reaktive.value.binding.not
 import reaktive.value.fx.asReactiveValue
 import reaktive.value.now
+import reaktive.value.observe
+import reaktive.value.reactiveValue
 import xenakis.model.obj.RenamableObject
+import xenakis.model.registry.NamedObject.Companion.NO_NAME
 import xenakis.sc.Identifier
 
-class NameControl(val obj: RenamableObject) : HBox() {
-    private val field = TextField(obj.name.now).alwaysHGrow()
+class NameControl(
+    val obj: RenamableObject,
+    private val defaultDisplayName: ReactiveString = reactiveValue(NO_NAME)
+) : HBox() {
+    private val field = TextField(obj.name.now.takeIf { it != NO_NAME } ?: defaultDisplayName.now).alwaysHGrow()
     private val observer: Observer
 
     val isEditing = field.editableProperty().asReactiveValue()
@@ -45,7 +52,11 @@ class NameControl(val obj: RenamableObject) : HBox() {
                 abandonEdit()
             }
         }
-        observer = obj.name.observe { _, _, newName -> field.text = newName }
+        observer = obj.name.observe { _, _, newName ->
+            field.text = newName.takeIf { it != NO_NAME } ?: defaultDisplayName.now
+        } and defaultDisplayName.observe { _, _, defaultName ->
+            if (obj.name.now == NO_NAME) field.text = defaultName
+        }
     }
 
     override fun requestFocus() {

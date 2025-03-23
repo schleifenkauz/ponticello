@@ -1,8 +1,10 @@
 package xenakis.ui.registry
 
+import bundles.createBundle
 import hextant.context.Context
 import hextant.context.createControl
 import hextant.context.withoutUndo
+import hextant.core.view.ChoiceEditorControl
 import javafx.scene.Node
 import reaktive.Observer
 import reaktive.value.forEach
@@ -20,7 +22,8 @@ class ParameterListConfig(private val context: Context) : ObjectBoxConfig<Parame
     override fun getContent(obj: ParameterDefObject): List<Node> {
         val editor = makeControlSpecEditor(obj)
         syncSpecWithEditor(obj, editor)
-        val specControl = context.createControl(editor)
+        val specControl = ChoiceEditorControl(editor, createBundle())
+        specControl.canChoose = false
         return listOf(specControl)
     }
 

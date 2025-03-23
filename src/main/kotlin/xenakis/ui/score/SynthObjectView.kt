@@ -76,13 +76,13 @@ class SynthObjectView(
     override fun added(control: ParameterControls.NamedParameterControl, idx: Int) {
         super<ParameterizedScoreObjectView>.added(control, idx)
         val ctrl = control.now
-        if (ctrl !is ConstantControl) return
+        if (ctrl !is ValueControl) return
         addedConstantControl(control, ctrl)
     }
 
     private fun addedConstantControl(
         control: ParameterControls.NamedParameterControl,
-        ctrl: ConstantControl
+        ctrl: ValueControl
     ) {
         when (control.name.now) {
             "startPos" -> startPosObserver = ctrl.value.forEach { _ -> displaySpectrogram() }
@@ -92,7 +92,7 @@ class SynthObjectView(
 
     override fun removed(control: ParameterControls.NamedParameterControl) {
         super<ParameterizedScoreObjectView>.removed(control)
-        if (control.now !is ConstantControl) return
+        if (control.now !is ValueControl) return
         removedConstantControl(control)
     }
 
@@ -116,13 +116,13 @@ class SynthObjectView(
         control: ParameterControl
     ) {
         super.reassignedControl(namedControl, oldControl, control)
-        if (oldControl is ConstantControl) {
+        if (oldControl is ValueControl) {
             when (namedControl.name.now) {
                 "startPos" -> startPosObserver?.kill()
                 "rate" -> rateObserver?.kill()
             }
         }
-        if (control is ConstantControl) addedConstantControl(namedControl, control)
+        if (control is ValueControl) addedConstantControl(namedControl, control)
     }
 
     override fun rescale() {

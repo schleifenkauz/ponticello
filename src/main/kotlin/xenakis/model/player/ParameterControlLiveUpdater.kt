@@ -39,8 +39,7 @@ class ParameterControlLiveUpdater(
         when (ctrl) {
             is BusControl -> setBus(parameter, ctrl.bus.now)
             is BusValueControl -> mapBus(parameter, ctrl.bus.now)
-            is ConstantControl -> setValue(parameter, ctrl.value.now)
-            is KnobControl -> setValue(parameter, ctrl.value.now)
+            is ValueControl -> setValue(parameter, ctrl.value.now)
             else -> {} //no realtime updates possible
         }
     }
@@ -49,10 +48,7 @@ class ParameterControlLiveUpdater(
         when (control) {
             is BusControl -> controlObservers[control] = control.bus.observe { _, bus -> setBus(parameter, bus) }
             is BusValueControl -> controlObservers[control] = control.bus.observe { _, bus -> mapBus(parameter, bus) }
-            is ConstantControl -> controlObservers[control] =
-                control.value.observe { _, value -> setValue(parameter, value) }
-
-            is KnobControl -> controlObservers[control] =
+            is ValueControl -> controlObservers[control] =
                 control.value.observe { _, value -> setValue(parameter, value) }
 
             else -> {} //no realtime updates possible

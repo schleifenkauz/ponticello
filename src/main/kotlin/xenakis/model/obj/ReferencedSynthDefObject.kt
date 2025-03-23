@@ -4,8 +4,6 @@ import hextant.context.Context
 import javafx.scene.paint.Color
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
-import reaktive.list.MutableReactiveList
-import reaktive.list.reactiveList
 import reaktive.value.ReactiveValue
 import reaktive.value.ReactiveVariable
 import reaktive.value.reactiveValue
@@ -18,6 +16,8 @@ import xenakis.sc.NumericalControlSpec
 import xenakis.sc.Rate
 import xenakis.sc.client.ScWriter
 import xenakis.sc.client.SuperColliderClient
+import xenakis.ui.registry.ParameterDefList
+import java.util.*
 
 @Serializable
 class ReferencedSynthDefObject(
@@ -25,7 +25,7 @@ class ReferencedSynthDefObject(
     override val color: ReactiveVariable<@Serializable(with = ColorSerializer::class) Color>
 ) : SynthDefObject, InstrumentObject, AbstractNamedObject() {
     @Transient
-    private var _parameters: MutableReactiveList<ParameterDefObject> = reactiveList()
+    private var _parameters: ParameterDefList = ParameterDefList()
 
     override fun initialize(context: Context) {
         super.initialize(context)
@@ -39,8 +39,7 @@ class ReferencedSynthDefObject(
     override val name: ReactiveValue<String>
         get() = reactiveValue(_name)
 
-    override val parameters: List<ParameterDefObject>
-        get() = _parameters.now
+    override val parameters: ParameterDefList = ParameterDefList(Collections.unmodifiableList(_parameters))
 
     override fun ScWriter.sync() {
         updateParameters()
@@ -55,12 +54,14 @@ class ReferencedSynthDefObject(
             Logger.error("SuperCollider cannot send data to me")
             return
         }
-        val parameters = getSynthDefParameters(_name)
-        _parameters.now.clear()
-        _parameters.now.addAll(parameters)
-        for (param in parameters) {
-            param.initialize(context)
+        val newParameters = getSynthDefParameters(_name)
+        for (param in _parameters.toList()) {
+            _parameters.remove(param)
         }
+        for (param in newParameters) {
+            param.initialize(context)
+            _parameters.add(param)
+        } //TODO modify based on diff
     }
 
     private fun getSynthDefParameters(name: String): MutableList<ParameterDefObject> =
