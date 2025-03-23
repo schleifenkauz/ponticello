@@ -3,6 +3,7 @@ package xenakis.ui.registry
 import fxutils.actions.collectActions
 import fxutils.actions.registerShortcuts
 import fxutils.plural
+import fxutils.styleClass
 import org.kordamp.ikonli.materialdesign2.MaterialDesignP
 import org.kordamp.ikonli.materialdesign2.MaterialDesignS
 import reaktive.value.reactiveValue
@@ -15,6 +16,7 @@ abstract class ObjectRegistryPane<O : NamedObject>(
     val registry: ObjectRegistry<O>,
 ) : SearchableToolPane<O>() {
     init {
+        styleClass("object-registry-pane")
         setup(title = plural(registry.objectType), registry) { actions.withContext(this) }
         listView.autoResizeScene = true
         registerShortcuts(listView.actions)

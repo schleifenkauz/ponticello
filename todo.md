@@ -17,8 +17,11 @@
 
 ### Support for patterns
 
-- as synth arguments (must be delta-patterns)
+- as synth arguments 
+  - either delta patterns -> `Pmono` for all the delta pattern arguments
+  - or global pattern streams -> simply get `<stream>.next`
 - as standalone objects (`pbind`)
+  - this can be done with tasks and a special expression editor for `PLbindef`s 
 - attaching to a synth in the score (`pmono`)
 
 ### Attach transformations to buses not to flows
@@ -30,6 +33,11 @@
   - integrate as special editors?
 - or open transformation chain by clicking on bus in the flow graph
 - how to notify user about loops in the flow graph
+
+### More efficient communication with SC
+
+- add score objects as functions in sc 
+  - what about object groups
 
 ### Minor
 
@@ -47,16 +55,16 @@
 - live updates for envelopes
 - ability to copy and paste whole time ranges
 - option to copy samples to project directory
-- searching and selecting object details
-  - better text search implementation
 - improve the timeline
 - retrieve global SynthDefs from `compositions` directory
 - merge the `GlobalControlsPane` with the registry pane for control buses
 - allow parameter specification when adding custom parameters
-- add detail editing region to `ObjectRegistryPane`, allow switching between modes (some registries only support one mode)
-  1. all details in object boxes
-  2. details in separate pane to the right
+  - differentiate visually between parameters from Def and standard parameters
 - make undecorated windows resizable
+- own editor type for control references
+- what to do when user selects a new `SynthDef` for a synth object
+  - re-sync parameter controls in some way...
+- highlight unresolved references of object selectors
 
 ## Long term ideas
 
@@ -102,6 +110,8 @@
 
 - could also be just done in git...
 
+### Drum sequencer objects
+
 ### Divide the score into multiple tracks
 
 - vertical sections (like JavaFX `SplitPane`)
@@ -125,6 +135,12 @@
 - selection based region display is not quite right
 - recording doesn't work
 - cutting doesn't work
+
+## Was unterscheidet Ponticello von anderen DAWs?
+- Möglichkeit beliebig komplexe SynthDefs zu bauen.
+- Unterstützung des Pattern-Systems von SuperCollider (bald)
+- Möglichkeit Programmschnipsel in die Partitur einzubinden.
+- geschachteltes Objektsystem
 
 ### Namen überlegen
 

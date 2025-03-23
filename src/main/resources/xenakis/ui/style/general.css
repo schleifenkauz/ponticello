@@ -21,6 +21,26 @@
     -fx-border-color: transparent;
 }
 
+.scroll-bar {
+    -fx-font-size: 6px !important;
+}
+
+.scroll-pane :vertical .thumb,
+.scroll-pane :horizontal .thumb {
+    -fx-background-color: rgba(0, 128, 0, 0.3);
+    -fx-background-radius: 4px;
+}
+
+.scroll-pane .thumb:hover {
+    -fx-background-color: rgba(0, 128, 0, 0.7) !important;
+}
+
+.scroll-pane > .corner {
+    -fx-background-color: transparent;
+    -fx-pref-width: 0px;
+    -fx-pref-height: 0px;
+}
+
 .split-pane {
     -fx-background-color: transparent;
 }
@@ -42,7 +62,7 @@
 .search-field {
     -fx-border-width: 0px 0px 1px 0px;
     -fx-pref-width: 150px;
-    -fx-max-width: 150px;
+    -fx-max-width: 100px;
 }
 
 .search-field FontIcon {

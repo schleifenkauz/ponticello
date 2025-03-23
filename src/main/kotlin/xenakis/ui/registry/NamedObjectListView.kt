@@ -5,8 +5,8 @@ import fxutils.actions.Action
 import fxutils.actions.ActionBar
 import fxutils.actions.collectActions
 import javafx.scene.Node
+import javafx.scene.Parent
 import javafx.scene.control.ScrollPane
-import javafx.scene.control.SplitPane
 import javafx.scene.input.Clipboard
 import javafx.scene.input.MouseEvent
 import javafx.scene.input.TransferMode
@@ -14,9 +14,9 @@ import javafx.scene.layout.HBox
 import javafx.scene.layout.Region
 import javafx.scene.layout.VBox
 import org.kordamp.ikonli.material2.Material2AL
+import org.kordamp.ikonli.materialdesign2.MaterialDesignD
 import org.kordamp.ikonli.materialdesign2.MaterialDesignR
 import org.kordamp.ikonli.materialdesign2.MaterialDesignV
-import org.kordamp.ikonli.materialdesign2.MaterialDesignW
 import reaktive.value.*
 import reaktive.value.binding.equalTo
 import reaktive.value.binding.notEqualTo
@@ -32,7 +32,7 @@ class NamedObjectListView<O : NamedObject>(
     private val source: NamedObjectList<O>,
     val config: ObjectBoxConfig<O>,
     private val contentDisplay: ReactiveVariable<ContentDisplay>,
-) : SplitPane(), NamedObjectList.Listener<O> {
+) : HBox(), NamedObjectList.Listener<O> {
     constructor(
         source: NamedObjectList<O>, config: ObjectBoxConfig<O>,
         contentDisplay: ContentDisplay = config.supportedModes.first(),
@@ -47,7 +47,7 @@ class NamedObjectListView<O : NamedObject>(
 
     private val vbox = VBox()
     private val itemsScrollPane = ScrollPane(vbox).letContentFillViewPort().styleClass("items-scroll-bar")
-    private val contentScrollPane = ScrollPane()
+    private var displayedContent: Parent? = null
 
     private var filter: (O) -> Boolean = { true }
 
@@ -70,33 +70,24 @@ class NamedObjectListView<O : NamedObject>(
 
     fun setMode(mode: ContentDisplay) {
         contentDisplay.now = mode
-        if (mode == ContentDisplay.Inline || mode == ContentDisplay.SubWindow) {
-            contentScrollPane.content = null
-            items.setAll(itemsScrollPane)
-        }
+        children.setAll(itemsScrollPane)
         for (box in boxes) box.setContentDisplay(mode)
         if (mode == ContentDisplay.DetailsPane) {
-            contentScrollPane.content = selectedBox?.content
-            items.setAll(itemsScrollPane, contentScrollPane)
+            displayContent(selectedBox)
         }
         autoResize()
     }
 
+    private fun displayContent(box: ObjectBox<O>?) {
+        val content = box?.content ?: return
+        displayedContent = content.let { content ->
+            content as? ToolPane ?: ScrollPane(content)
+        }
+        children.add(content)
+    }
+
     private fun autoResize() {
-        var prefWidth = itemsScrollPane.prefWidth(-1.0)
-        val detailsPane = contentScrollPane.content
-        var prefHeight = itemsScrollPane.prefHeight(-1.0)
-        if (detailsPane != null) {
-            prefWidth += detailsPane.prefWidth(-1.0) + 20.0
-            prefHeight = maxOf(prefHeight, detailsPane.prefHeight(-1.0))
-        }
-        setPrefSize(prefWidth, prefHeight + 5.0)
-        if (mode.now == ContentDisplay.DetailsPane) {
-            val itemsWidth = itemsScrollPane.prefWidth(-1.0)
-            val totalWidth = prefWidth
-            setDividerPositions(itemsWidth / totalWidth)
-        }
-        if (autoResizeScene && scene != null) {
+        if (autoResizeScene && scene?.window != null) {
             scene.window.sizeToScene()
         }
     }
@@ -129,7 +120,7 @@ class NamedObjectListView<O : NamedObject>(
         boxes.remove(box)
         vbox.children.remove(box)
         box.subWindow?.hide()
-        if (contentScrollPane.content == box.content) contentScrollPane.content = null
+        if (displayedContent == box.content) children.remove(displayedContent)
         if (mode.now != ContentDisplay.DetailsPane) autoResize()
     }
 
@@ -156,8 +147,8 @@ class NamedObjectListView<O : NamedObject>(
         selectedBox?.pseudoClassStateChanged(PseudoClasses.SELECTED, false)
         selectedBox = box
         box.pseudoClassStateChanged(PseudoClasses.SELECTED, true)
-        contentScrollPane.content = box.content
-        contentScrollPane.letContentFillViewPort()
+        children.remove(displayedContent)
+        displayContent(box)
         config.onSelected(box.obj)
     }
 
@@ -408,7 +399,7 @@ class NamedObjectListView<O : NamedObject>(
                     modeChange(ContentDisplay.Inline)
                 }
                 addAction("Display content in Sub-Window") {
-                    icon(MaterialDesignW.WINDOW_RESTORE)
+                    icon(MaterialDesignD.DOCK_WINDOW)
                     modeChange(ContentDisplay.SubWindow)
                 }
                 addAction("Display content in side bar") {

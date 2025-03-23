@@ -30,6 +30,12 @@
     -fx-background-color: #1e1f22;
 }
 
+.object-registry-pane {
+    -fx-border-color: black;
+    -fx-border-width: 2px;
+    -fx-border-radius: 5px;
+}
+
 .tool-pane:drop-possible {
     -fx-background-color: green;
 }
