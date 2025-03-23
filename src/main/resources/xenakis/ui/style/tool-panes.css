@@ -22,16 +22,22 @@
 }
 
 .tool-pane {
-    -fx-border-color: green;
+/*    -fx-border-color: green;
     -fx-border-width: 2px;
     -fx-border-radius: 5px;
     -fx-background-radius: 5px;
-    -fx-padding: 5px;
+    -fx-padding: 5px;*/
     -fx-background-color: #1e1f22;
 }
 
 .tool-pane:drop-possible {
-    -fx-background-color: #222720;
+    -fx-background-color: green;
+}
+
+.object-box-header {
+    -fx-spacing: 5px;
+    -fx-alignment: center-left;
+    -fx-background-color: transparent;
 }
 
 .object-box {
@@ -40,8 +46,6 @@
     -fx-border-radius: 3px;
     -fx-background-radius: 3px;
     -fx-padding: 2px;
-    -fx-spacing: 5px;
-    -fx-alignment: center-left;
 }
 
 .object-box:hover {
@@ -71,4 +75,8 @@
 
 .command-history-label:focused {
     -fx-background-color: gray;
+}
+
+.items-scroll-bar {
+    -fx-hbar-policy: never;
 }

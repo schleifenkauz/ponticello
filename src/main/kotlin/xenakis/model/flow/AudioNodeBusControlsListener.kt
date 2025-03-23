@@ -4,12 +4,12 @@ import reaktive.Observer
 import reaktive.value.now
 import xenakis.model.score.BusControl
 import xenakis.model.score.ParameterControl
-import xenakis.model.score.ParameterControls
-import xenakis.model.score.ParameterControls.NamedParameterControl
+import xenakis.model.score.ParameterControlList
+import xenakis.model.score.ParameterControlList.NamedParameterControl
 import xenakis.sc.BusControlSpec
 import xenakis.sc.ControlSpec
 
-class AudioNodeBusControlsListener(private val wrapped: AudioNode.Listener) : ParameterControls.Listener {
+class AudioNodeBusControlsListener(private val wrapped: AudioNode.Listener) : ParameterControlList.Listener {
     private val observers = mutableMapOf<BusControl, Observer>()
 
     override fun added(control: NamedParameterControl, idx: Int) {

@@ -175,7 +175,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
 
     private fun createPlayBufObject(sample: SampleObject, pos: ObjectPosition) =
         context.compoundEdit("Add sample to score") {
-            val instruments = context[InstrumentRegistry]
+            val instruments = context[SynthDefRegistry]
             val synthDef = instruments.selectedInstrument
             if (synthDef !is SynthDefObject) {
                 Logger.error("A SynthDef should be selected for sample playback to work", Category.Buffers)
@@ -191,11 +191,11 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
             controls.reassignControl("buf", BufferControl(reactiveVariable(sample.reference())))
         }
 
-    private fun getDefaultControls(def: ParameterizedObjectDef): ParameterControls {
+    private fun getDefaultControls(def: ParameterizedObjectDef): ParameterControlList {
         val defaultGroup = associatedObject?.defaultGroupRef?.now
         val defaultBus = associatedObject?.defaultBusRef?.now
         val controls = def.defaultControls(context, defaultGroup, defaultBus)
-        return ParameterControls.from(controls)
+        return ParameterControlList.from(controls)
     }
 
     /*
@@ -249,7 +249,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
         val rect = Rectangle(getX(t), getPaneY(y), 0.0, 0.0)
         when (selectedTool) {
             Synth -> {
-                val synthDef = context[InstrumentRegistry].selectedInstrument
+                val synthDef = context[SynthDefRegistry].selectedInstrument
                 if (synthDef !is SynthDefObject) return
                 rect.fill = synthDef.color.now
             }
@@ -266,7 +266,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
                 rect.fill = rgb(0, 0, 0, 0.3)
             }
 
-            PianoRoll -> rect.fill = context[InstrumentRegistry].selectedInstrument?.color?.now ?: return
+            PianoRoll -> rect.fill = context[SynthDefRegistry].selectedInstrument?.color?.now ?: return
 
             TempoGrid -> {
                 rect.fill = TRANSPARENT
@@ -471,7 +471,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
     private fun createNewObject(tool: Tool, rect: RectangleSelection, ev: MouseEvent) {
         val obj = when (tool) {
             Synth -> {
-                val def = context[InstrumentRegistry].selectedInstrument
+                val def = context[SynthDefRegistry].selectedInstrument
                 if (def !is SynthDefObject) return
                 val initialName = context[ScoreObjectRegistry].availableName(def.name.now)
                 val name = NamePrompt(context[ScoreObjectRegistry], "Name for new Synth object", initialName)
@@ -506,7 +506,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
             }
 
             PianoRoll -> {
-                val instr = context[InstrumentRegistry].selectedInstrument ?: return
+                val instr = context[SynthDefRegistry].selectedInstrument ?: return
                 compoundPrompt("Configure new object") {
                     val defaultName = context[ScoreObjectRegistry].availableName("piano_roll")
                     val nameField = TextField(defaultName) named "Object name"

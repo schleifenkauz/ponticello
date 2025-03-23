@@ -21,6 +21,10 @@
     -fx-border-color: transparent;
 }
 
+.split-pane {
+    -fx-background-color: transparent;
+}
+
 /*
 * Text fields
 */
@@ -37,6 +41,8 @@
 
 .search-field {
     -fx-border-width: 0px 0px 1px 0px;
+    -fx-pref-width: 150px;
+    -fx-max-width: 150px;
 }
 
 .search-field FontIcon {
@@ -64,5 +70,7 @@
     -fx-background-radius: 0;
     -fx-border-width: 0;
     -fx-padding: 0;
+    -fx-pref-width: 150px;
+    -fx-max-width: 150px;
 }
 

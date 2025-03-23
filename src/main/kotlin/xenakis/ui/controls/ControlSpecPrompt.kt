@@ -16,7 +16,7 @@ import xenakis.impl.parseDecimal
 import xenakis.model.flow.FlowType
 import xenakis.model.obj.ConfigurableParameterizedObjectDef
 import xenakis.model.obj.ParameterDefObject
-import xenakis.model.score.ParameterControls.NamedParameterControl
+import xenakis.model.score.ParameterControlList.NamedParameterControl
 import xenakis.sc.*
 import xenakis.sc.ParameterType.*
 

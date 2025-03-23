@@ -46,7 +46,7 @@ class BufferRegistryPane(
         }.showDialog(this)
     }
 
-    override fun getContent(obj: BufferObject): List<Node> {
+    override fun getItemContent(obj: BufferObject): List<Node> {
         val channelsSpinner = Spinner<Int>(1, 12, obj.channels.now).setFixedWidth(70.0)
         channelsSpinner.valueFactory.valueProperty().bindBidirectional(obj.channels.asProperty())
         val framesInput = TextField(obj.frames.now.toString())

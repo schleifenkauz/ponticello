@@ -14,7 +14,7 @@ import xenakis.model.player.ParameterControlLiveUpdater
 import xenakis.model.registry.reference
 import xenakis.model.score.BusControl
 import xenakis.model.score.ObjectPosition
-import xenakis.model.score.ParameterControls
+import xenakis.model.score.ParameterControlList
 import xenakis.model.score.ValueControl
 import xenakis.sc.BusControlSpec
 import xenakis.sc.client.ScWriter
@@ -25,7 +25,7 @@ import xenakis.sc.writeSynthCode
 @Serializable
 class SynthFlow(
     private var defRef: ReactiveVariable<SynthDefReference>,
-    override val controls: ParameterControls,
+    override val controls: ParameterControlList,
 ) : AudioFlow(), ParameterizedObject {
     @Transient
     lateinit var synthDefSelector: SynthDefSelector
@@ -78,7 +78,7 @@ class SynthFlow(
             val controls = def.defaultControls(context, defaultGroup = null, defaultBus = associatedBus.reference())
             val mainBusParam = getMainBusParameter(def)
             controls.removeIf { (name, _) -> name == "group" || name == mainBusParam }
-            val flow = SynthFlow(reactiveVariable(def.reference()), ParameterControls.from(controls))
+            val flow = SynthFlow(reactiveVariable(def.reference()), ParameterControlList.from(controls))
             return flow
         }
 

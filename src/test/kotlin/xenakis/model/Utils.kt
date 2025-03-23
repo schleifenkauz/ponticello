@@ -9,7 +9,7 @@ import xenakis.impl.toDecimal
 import xenakis.model.obj.GroupObject
 import xenakis.model.registry.*
 import xenakis.model.score.GroupControl
-import xenakis.model.score.ParameterControls
+import xenakis.model.score.ParameterControlList
 import xenakis.model.score.ScoreObject
 import xenakis.model.score.SynthObject
 import xenakis.sc.client.SuperColliderClient
@@ -21,7 +21,7 @@ object Utils {
         val dummy1 = SynthObject(
             mutableName = reactiveVariable(name),
             synthDefRef = reactiveVariable(ObjectReference("default")),
-            controls = ParameterControls.create("group" to GroupControl(reactiveVariable(defaultGroup)))
+            controls = ParameterControlList.create("group" to GroupControl(reactiveVariable(defaultGroup)))
         )
         dummy1.setInitialSize(10.0.asTime, 100.0.toDecimal())
         return dummy1
@@ -33,8 +33,8 @@ object Utils {
             ScoreObjectRegistry,
             ScoreObjectRegistry(mutableListOf()).also { it.initialize(this) })
         set(
-            InstrumentRegistry,
-            InstrumentRegistry(
+            SynthDefRegistry,
+            SynthDefRegistry(
                 reactiveVariable(ObjectReference.none()),
                 mutableListOf(/*InstrumentRegistry.defaultInstrument()*/)
             ).also { it.initialize(this) }

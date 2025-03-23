@@ -2,14 +2,25 @@ package xenakis.model.obj
 
 import hextant.context.Context
 import javafx.scene.input.DataFormat
+import javafx.scene.paint.Color
+import kotlinx.serialization.Serializable
+import reaktive.value.ReactiveVariable
 import reaktive.value.now
 import reaktive.value.reactiveVariable
 import xenakis.model.registry.ObjectReference
+import xenakis.model.registry.ObjectRegistry
+import xenakis.model.registry.SynthDefRegistry
 import xenakis.model.score.GroupControl
 import xenakis.model.score.ParameterControl
 import xenakis.sc.GroupControlSpec
 
-interface SynthDefObject : ParameterizedObjectDef, InstrumentObject {
+@Serializable
+sealed interface SynthDefObject : ParameterizedObjectDef, SuperColliderObject {
+    val color: ReactiveVariable<Color>
+
+    override val registry: ObjectRegistry<*>?
+        get() = context[SynthDefRegistry]
+
     override val superColliderName: String
         get() = "\\${name.now}"
 

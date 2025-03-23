@@ -38,7 +38,7 @@ val PATTERNS = component<GlobalPatternRegistry>(
     "patterns", GlobalPatternRegistry::createDefault,
     NamedObjectListSerializer(serializer(), ::GlobalPatternRegistry)
 )
-val INSTRUMENTS = component<InstrumentRegistry>("instruments", InstrumentRegistry::createDefault)
+val INSTRUMENTS = component<SynthDefRegistry>("instruments", SynthDefRegistry::createDefault)
 val FLOWS = component<AudioFlows>("flows", AudioFlows::createDefault)
 val PROCESS_DEFS = component<ProcessDefRegistry>("processDefs", ProcessDefRegistry::createDefault)
 val SETUP_CODE = component<SetupCode>("setup_code", SetupCode::default)

@@ -1,29 +1,22 @@
 package xenakis.ui.score
 
-import fxutils.actions.button
-import fxutils.infiniteSpace
-import fxutils.styleClass
 import javafx.geometry.Point2D
-import javafx.scene.control.Button
-import javafx.scene.control.Label
 import javafx.scene.input.MouseEvent
-import javafx.scene.layout.HBox
 import javafx.scene.layout.Region
-import org.kordamp.ikonli.material2.Material2MZ
 import reaktive.Observer
 import reaktive.value.now
 import reaktive.value.reactiveVariable
 import xenakis.model.Settings
 import xenakis.model.obj.ParameterizedObject
 import xenakis.model.score.*
-import xenakis.model.score.ParameterControls.NamedParameterControl
+import xenakis.model.score.ParameterControlList.NamedParameterControl
 import xenakis.sc.ControlSpec
 import xenakis.sc.NumericalControlSpec
 import xenakis.ui.registry.SearchableParameterListView
 
 abstract class ParameterizedScoreObjectView<O>(
     instance: ScoreObjectInstance
-) : ScoreObjectView(instance), ParameterControls.Listener where O : ScoreObject, O : ParameterizedObject {
+) : ScoreObjectView(instance), ParameterControlList.Listener where O : ScoreObject, O : ParameterizedObject {
     private val envelopeDisplayObservers = mutableMapOf<EnvelopeControl, Observer>()
     private val envelopeEditors = mutableListOf<EnvelopeEditor>()
 
@@ -134,30 +127,6 @@ abstract class ParameterizedScoreObjectView<O>(
     }
 
     companion object {
-        fun createDetailsHeader(obj: ParameterizedObject, heading: String): HBox {
-            val addButton = createAddParameterButton(obj)
-            val header = HBox(
-                5.0,
-                Label(heading).styleClass("heading"),
-                infiniteSpace(),
-                addButton
-            ) styleClass "tool-pane-header"
-            return header
-        }
-
-        private fun createAddParameterButton(obj: ParameterizedObject): Button {
-            val addButton = Material2MZ.PLUS.button(action = "Add control")
-                .styleClass("medium-icon-button")
-            addButton.setOnMouseClicked { ev ->
-                if (ev.isShiftDown) {
-                    obj.addControlsForAllObjectParameters()
-                } else {
-                    addNewControl(obj, addButton)
-                }
-            }
-            return addButton
-        }
-
         fun addNewControl(obj: ParameterizedObject, anchorNode: Region) {
             val context = obj.context
             val defaultParameters = context[Settings].defaultParametersDefs

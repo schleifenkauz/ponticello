@@ -56,6 +56,7 @@
 - add detail editing region to `ObjectRegistryPane`, allow switching between modes (some registries only support one mode)
   1. all details in object boxes
   2. details in separate pane to the right
+- make undecorated windows resizable
 
 ## Long term ideas
 

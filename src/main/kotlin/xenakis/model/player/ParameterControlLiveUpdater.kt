@@ -13,7 +13,7 @@ import xenakis.sc.client.SuperColliderClient
 class ParameterControlLiveUpdater(
     private val client: SuperColliderClient,
     private val activeSynths: () -> List<String>
-) : ParameterControls.Listener {
+) : ParameterControlList.Listener {
     @Transient
     private val controlObservers = mutableMapOf<ParameterControl, Observer>()
 
@@ -28,7 +28,7 @@ class ParameterControlLiveUpdater(
         }
     }
 
-    override fun added(control: ParameterControls.NamedParameterControl, idx: Int) {
+    override fun added(control: ParameterControlList.NamedParameterControl, idx: Int) {
         val parameter = control.name.now
         val ctrl = control.now
         addedControl(parameter, ctrl)
@@ -69,12 +69,12 @@ class ParameterControlLiveUpdater(
         runOnActiveSynths { +"set('$parameter', $superColliderName)" }
     }
 
-    override fun removed(control: ParameterControls.NamedParameterControl) {
+    override fun removed(control: ParameterControlList.NamedParameterControl) {
         controlObservers.remove(control.now)?.kill()
     }
 
     override fun reassignedControl(
-        namedControl: ParameterControls.NamedParameterControl,
+        namedControl: ParameterControlList.NamedParameterControl,
         oldControl: ParameterControl,
         control: ParameterControl
     ) {
@@ -82,7 +82,7 @@ class ParameterControlLiveUpdater(
         addedControl(namedControl.name.now, control)
     }
 
-    fun listen(controls: ParameterControls) {
+    fun listen(controls: ParameterControlList) {
         controls.addListener(this, initialize = false)
         for ((param, control) in controls.controlMap) {
             observeControl(param, control)

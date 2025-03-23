@@ -19,10 +19,10 @@ import xenakis.model.registry.NamedObjectList
 import xenakis.model.registry.NamedObjectListSerializer
 import xenakis.sc.ControlSpec
 
-@Serializable(with = ParameterControls.Serializer::class)
-class ParameterControls(
+@Serializable(with = ParameterControlList.Serializer::class)
+class ParameterControlList(
     override val objects: MutableList<NamedParameterControl> = mutableListOf(),
-) : NamedObjectList<ParameterControls.NamedParameterControl>(), NamedObjectList.Listener<ParameterDefObject> {
+) : NamedObjectList<ParameterControlList.NamedParameterControl>(), NamedObjectList.Listener<ParameterDefObject> {
     override val objectType: String
         get() = "Parameter control"
 
@@ -50,7 +50,7 @@ class ParameterControls(
             private set
 
         @Transient
-        lateinit var controls: ParameterControls
+        lateinit var controls: ParameterControlList
             private set
 
         val parentObject get() = controls.associatedObject
@@ -64,7 +64,7 @@ class ParameterControls(
 
         override val canCopy: Boolean get() = true
 
-        fun initialize(controls: ParameterControls) {
+        fun initialize(controls: ParameterControlList) {
             this.controls = controls
             super.initialize(controls.context)
             value.initialize(context)
@@ -160,9 +160,9 @@ class ParameterControls(
     }
 
     fun transformControls(f: (String, ParameterControl) -> ParameterControl) =
-        ParameterControls(mapTo(mutableListOf()) { p -> p.copy(f(p.name.now, p.now)) })
+        ParameterControlList(mapTo(mutableListOf()) { p -> p.copy(f(p.name.now, p.now)) })
 
-    fun copy() = ParameterControls(mapTo(mutableListOf()) { it.copy() })
+    fun copy() = ParameterControlList(mapTo(mutableListOf()) { it.copy() })
 
     class ReassignControl(
         private val control: NamedParameterControl,
@@ -218,17 +218,17 @@ class ParameterControls(
         fun changedSpec(control: NamedParameterControl, oldSpec: ControlSpec?, newSpec: ControlSpec?) {}
     }
 
-    object Serializer : NamedObjectListSerializer<NamedParameterControl, ParameterControls>(
-        kotlinx.serialization.serializer(), ::ParameterControls
+    object Serializer : NamedObjectListSerializer<NamedParameterControl, ParameterControlList>(
+        kotlinx.serialization.serializer(), ::ParameterControlList
     )
 
     companion object {
-        fun empty() = ParameterControls()
+        fun empty() = ParameterControlList()
 
-        fun create(vararg entries: Pair<String, ParameterControl>): ParameterControls = from(entries.asList())
+        fun create(vararg entries: Pair<String, ParameterControl>): ParameterControlList = from(entries.asList())
 
-        fun from(controls: List<Pair<String, ParameterControl>>): ParameterControls =
-            ParameterControls(controls.mapTo(mutableListOf<NamedParameterControl>()) { (name, control) ->
+        fun from(controls: List<Pair<String, ParameterControl>>): ParameterControlList =
+            ParameterControlList(controls.mapTo(mutableListOf<NamedParameterControl>()) { (name, control) ->
                 NamedParameterControl(name, control)
             })
     }

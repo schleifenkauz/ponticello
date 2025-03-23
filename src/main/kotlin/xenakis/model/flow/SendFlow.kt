@@ -17,7 +17,7 @@ import xenakis.model.registry.BusRegistry
 import xenakis.model.registry.reference
 import xenakis.model.score.BusControl
 import xenakis.model.score.ObjectPosition
-import xenakis.model.score.ParameterControls
+import xenakis.model.score.ParameterControlList
 import xenakis.model.score.ValueControl
 import xenakis.sc.client.ScWriter
 import xenakis.sc.writeSynthCode
@@ -44,7 +44,7 @@ class SendFlow(
         SendFlow(targetRef.copy(), amountPercent.copy())
 
     override fun ScWriter.writeCode(placement: NodePlacement) {
-        val controls = ParameterControls.create(
+        val controls = ParameterControlList.create(
             "in" to BusControl(reactiveVariable(associatedBus.reference())),
             "out" to BusControl(reactiveVariable(targetRef.now)),
             "amp" to ValueControl(reactiveVariable(amountPercent.now * 0.01.toDecimal())),

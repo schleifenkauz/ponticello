@@ -25,12 +25,11 @@ import reaktive.value.reactiveValue
 import xenakis.impl.*
 import xenakis.model.score.*
 import xenakis.sc.view.ObjectSelectorControl
-import xenakis.ui.controls.ParameterControlListConfig
 import xenakis.ui.launcher.XenakisMainActivity
 
 class SynthObjectView(
     instance: ScoreObjectInstance, override val obj: SynthObject
-) : ParameterizedScoreObjectView<SynthObject>(instance), ParameterControls.Listener {
+) : ParameterizedScoreObjectView<SynthObject>(instance), ParameterControlList.Listener {
     private var spectrogramImage: Image? = null
     private val spectrogramViews = mutableListOf<ImageView>()
 
@@ -65,15 +64,14 @@ class SynthObjectView(
     override fun setupDetailPane(pane: DetailPane) {
         pane.addItem("Color:", this.colorPicker)
         val viewBtn = Material2AL.CODE.button(action = "View SynthDef") {
-            context[XenakisMainActivity].instrumentsPane.editInstrument(obj.synthDef!!)
+            context[XenakisMainActivity].synthDefsPane.listView.showContent(obj.synthDef)
         }.styleClass("medium-icon-button").disableIf(obj.synthDefSelector.isResolved.not())
         val box = ObjectSelectorControl(obj.synthDefSelector, createBundle())
         pane.addItem("SynthDef: ", HBox(5.0, box, viewBtn).centerChildren())
-        pane.children.add(createDetailsHeader(obj, "Synth controls"))
-        pane.children.add(ParameterControlListConfig.makeControlListView(obj.controls))
+        pane.children.add(ParameterControlsPane(obj, "Synth controls"))
     }
 
-    override fun added(control: ParameterControls.NamedParameterControl, idx: Int) {
+    override fun added(control: ParameterControlList.NamedParameterControl, idx: Int) {
         super<ParameterizedScoreObjectView>.added(control, idx)
         val ctrl = control.now
         if (ctrl !is ValueControl) return
@@ -81,7 +79,7 @@ class SynthObjectView(
     }
 
     private fun addedConstantControl(
-        control: ParameterControls.NamedParameterControl,
+        control: ParameterControlList.NamedParameterControl,
         ctrl: ValueControl
     ) {
         when (control.name.now) {
@@ -90,13 +88,13 @@ class SynthObjectView(
         }
     }
 
-    override fun removed(control: ParameterControls.NamedParameterControl) {
+    override fun removed(control: ParameterControlList.NamedParameterControl) {
         super<ParameterizedScoreObjectView>.removed(control)
         if (control.now !is ValueControl) return
         removedConstantControl(control)
     }
 
-    private fun removedConstantControl(control: ParameterControls.NamedParameterControl) {
+    private fun removedConstantControl(control: ParameterControlList.NamedParameterControl) {
         when (control.name.now) {
             "startPos" -> {
                 startPosObserver?.kill()
@@ -111,7 +109,7 @@ class SynthObjectView(
     }
 
     override fun reassignedControl(
-        namedControl: ParameterControls.NamedParameterControl,
+        namedControl: ParameterControlList.NamedParameterControl,
         oldControl: ParameterControl,
         control: ParameterControl
     ) {

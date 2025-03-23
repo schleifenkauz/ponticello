@@ -4,10 +4,10 @@ import xenakis.model.obj.AbstractSuperColliderObject
 import xenakis.model.registry.SuperColliderObjectRegistry
 
 abstract class SuperColliderObjectRegistryPane<O : AbstractSuperColliderObject>(
-    protected open val registry: SuperColliderObjectRegistry<O>
-) : ObjectRegistryPane<O>(registry) {
+    private val objectRegistry: SuperColliderObjectRegistry<O>
+) : ObjectRegistryPane<O>(objectRegistry) {
     override fun sync() {
-        registry.syncAll()
-        registry.save()
+        objectRegistry.syncAll()
+        objectRegistry.save()
     }
 }

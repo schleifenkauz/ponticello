@@ -28,7 +28,7 @@ import xenakis.ui.impl.Direction
 class SynthObject(
     @SerialName("name") override val mutableName: ReactiveVariable<String>,
     @SerialName("synthDef") private val synthDefRef: ReactiveVariable<SynthDefReference>,
-    override val controls: ParameterControls
+    override val controls: ParameterControlList
 ) : ScoreObject(), ParameterizedObject {
     override val type: String
         get() = "synth"
@@ -156,7 +156,7 @@ class SynthObject(
     companion object {
         fun create(
             name: String, def: SynthDefObject,
-            controls: ParameterControls = ParameterControls.empty()
+            controls: ParameterControlList = ParameterControlList.empty()
         ): SynthObject {
             return SynthObject(reactiveVariable(name), reactiveVariable(def.reference()), controls)
         }

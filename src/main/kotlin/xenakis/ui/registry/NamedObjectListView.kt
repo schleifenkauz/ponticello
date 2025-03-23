@@ -1,73 +1,59 @@
 package xenakis.ui.registry
 
 import fxutils.*
+import fxutils.actions.Action
 import fxutils.actions.ActionBar
 import fxutils.actions.collectActions
-import javafx.geometry.Orientation.HORIZONTAL
-import javafx.geometry.Orientation.VERTICAL
+import javafx.scene.Node
 import javafx.scene.control.ScrollPane
+import javafx.scene.control.SplitPane
 import javafx.scene.input.Clipboard
 import javafx.scene.input.MouseEvent
 import javafx.scene.input.TransferMode
 import javafx.scene.layout.HBox
-import javafx.scene.layout.Pane
 import javafx.scene.layout.Region
 import javafx.scene.layout.VBox
 import org.kordamp.ikonli.material2.Material2AL
 import org.kordamp.ikonli.materialdesign2.MaterialDesignR
-import reaktive.value.now
-import reaktive.value.reactiveValue
+import org.kordamp.ikonli.materialdesign2.MaterialDesignV
+import org.kordamp.ikonli.materialdesign2.MaterialDesignW
+import reaktive.value.*
+import reaktive.value.binding.equalTo
+import reaktive.value.binding.notEqualTo
 import xenakis.model.obj.RenamableObject
 import xenakis.model.registry.NamedObject
 import xenakis.model.registry.NamedObjectList
 import xenakis.model.registry.ObjectRegistry
 import xenakis.ui.controls.NameControl
 import xenakis.ui.controls.NamePrompt
+import xenakis.ui.launcher.XenakisApp.Companion.primaryStage
 
 class NamedObjectListView<O : NamedObject>(
     private val source: NamedObjectList<O>,
-    private val config: ObjectBoxConfig<O>
-) : ScrollPane(), NamedObjectList.Listener<O> {
+    val config: ObjectBoxConfig<O>,
+    private val contentDisplay: ReactiveVariable<ContentDisplay>,
+) : SplitPane(), NamedObjectList.Listener<O> {
+    constructor(
+        source: NamedObjectList<O>, config: ObjectBoxConfig<O>,
+        contentDisplay: ContentDisplay = config.supportedModes.first(),
+    ) : this(source, config, reactiveVariable(contentDisplay))
+
     var autoResizeScene = false
 
-    private val layout = VBox()
+    private val boxes = mutableListOf<ObjectBox<O>>()
     private val boxesCache = mutableMapOf<O, ObjectBox<O>>()
     private fun getBox(obj: O) = boxesCache.getOrPut(obj) { ObjectBox(this, obj) }
-    private val boxes = mutableListOf<ObjectBox<O>>()
     private var selectedBox: ObjectBox<O>? = null
+
+    private val vbox = VBox()
+    private val itemsScrollPane = ScrollPane(vbox).letContentFillViewPort().styleClass("items-scroll-bar")
+    private val contentScrollPane = ScrollPane()
 
     private var filter: (O) -> Boolean = { true }
 
-    val actions = listActions<O>().withContext(this)
+    val actions = listActions.withContext(this)
 
-    private val objectActions = collectActions<O> {
-        addAction("Delete object") {
-            icon(Material2AL.DELETE)
-            shortcuts("Ctrl+DELETE")
-            applicableIf { obj -> reactiveValue(obj.canDelete) }
-            executes { obj -> source.remove(obj) }
-        }
-        addAction("Reorder") {
-            icon(MaterialDesignR.REORDER_HORIZONTAL)
-            applicableIf { reactiveValue(config.enableReordering) }
-        }
-        @Suppress("UNCHECKED_CAST")
-        addAction("Duplicate object") {
-            applicableIf { obj -> reactiveValue(obj.canCopy && obj.registry != null) }
-            executes { obj, ev ->
-                description { o -> reactiveValue(o.registry?.objectType ?: "object") }
-                val registry = obj.registry as ObjectRegistry<O>
-                val initialName = obj.name.now + "_copy"
-                val name = NamePrompt(registry, "Name for new duplicate instrument", initialName)
-                    .showDialog(ev) ?: return@executes
-                val copy = obj.copy(name) as O
-                registry.add(copy, registry.indexOf(obj))
-            }
-        }
-    }
-
-
-    val children get() = boxes.map { b -> b.layout }
+    fun getBoxes(): List<Node> = boxes
 
     init {
         source.addListener(this, initialize = false)
@@ -75,10 +61,44 @@ class NamedObjectListView<O : NamedObject>(
             if (!filter(obj)) continue
             val box = getBox(obj)
             boxes.add(box)
-            layout.children.add(box.layout)
         }
-        isFitToWidth = true
-        content = layout
+        vbox.children.addAll(boxes)
+        setMode(contentDisplay.now)
+    }
+
+    val mode: ReactiveValue<ContentDisplay> get() = contentDisplay
+
+    fun setMode(mode: ContentDisplay) {
+        contentDisplay.now = mode
+        if (mode == ContentDisplay.Inline || mode == ContentDisplay.SubWindow) {
+            contentScrollPane.content = null
+            items.setAll(itemsScrollPane)
+        }
+        for (box in boxes) box.setContentDisplay(mode)
+        if (mode == ContentDisplay.DetailsPane) {
+            contentScrollPane.content = selectedBox?.content
+            items.setAll(itemsScrollPane, contentScrollPane)
+        }
+        autoResize()
+    }
+
+    private fun autoResize() {
+        var prefWidth = itemsScrollPane.prefWidth(-1.0)
+        val detailsPane = contentScrollPane.content
+        var prefHeight = itemsScrollPane.prefHeight(-1.0)
+        if (detailsPane != null) {
+            prefWidth += detailsPane.prefWidth(-1.0) + 20.0
+            prefHeight = maxOf(prefHeight, detailsPane.prefHeight(-1.0))
+        }
+        setPrefSize(prefWidth, prefHeight + 5.0)
+        if (mode.now == ContentDisplay.DetailsPane) {
+            val itemsWidth = itemsScrollPane.prefWidth(-1.0)
+            val totalWidth = prefWidth
+            setDividerPositions(itemsWidth / totalWidth)
+        }
+        if (autoResizeScene && scene != null) {
+            scene.window.sizeToScene()
+        }
     }
 
     override fun added(obj: O, idx: Int) {
@@ -86,7 +106,9 @@ class NamedObjectListView<O : NamedObject>(
         val j = getInsertionIndex(idx)
         val box = getBox(obj)
         boxes.add(j, box)
-        layout.children.add(j, box.layout)
+        vbox.children.add(j, box)
+        select(obj)
+        if (mode.now != ContentDisplay.DetailsPane) autoResize()
     }
 
     private fun getInsertionIndex(idx: Int): Int {
@@ -103,9 +125,12 @@ class NamedObjectListView<O : NamedObject>(
     }
 
     override fun removed(obj: O) {
-        val box = getBox(obj)
+        val box = boxesCache.getValue(obj)
         boxes.remove(box)
-        layout.children.remove(box.layout)
+        vbox.children.remove(box)
+        box.subWindow?.hide()
+        if (contentScrollPane.content == box.content) contentScrollPane.content = null
+        if (mode.now != ContentDisplay.DetailsPane) autoResize()
     }
 
     override fun moved(obj: O, idx: Int) {
@@ -120,16 +145,19 @@ class NamedObjectListView<O : NamedObject>(
 
     fun refilter() {
         boxes.clear()
-        source.filter(filter).mapTo(boxes) { obj -> ObjectBox(this, obj) }
-        layout.children.setAll(boxes.map { box -> box.layout })
+        source.filter(filter).mapTo(boxes) { obj -> getBox(obj) }
+        vbox.children.setAll(boxes)
         if (boxes.isNotEmpty()) select(0)
-        if (autoResizeScene && scene != null) scene.window.sizeToScene()
+        autoResize()
     }
 
     private fun select(box: ObjectBox<O>) {
-        selectedBox?.layout?.pseudoClassStateChanged(PseudoClasses.SELECTED, false)
+        if (selectedBox == box) return
+        selectedBox?.pseudoClassStateChanged(PseudoClasses.SELECTED, false)
         selectedBox = box
-        box.layout.pseudoClassStateChanged(PseudoClasses.SELECTED, true)
+        box.pseudoClassStateChanged(PseudoClasses.SELECTED, true)
+        contentScrollPane.content = box.content
+        contentScrollPane.letContentFillViewPort()
         config.onSelected(box.obj)
     }
 
@@ -174,40 +202,85 @@ class NamedObjectListView<O : NamedObject>(
         selected.nameControl?.startEdit()
     }
 
-    class ObjectBox<O : NamedObject>(val parent: NamedObjectListView<O>, val obj: O) {
+    fun showContent(obj: O) {
+        select(obj)
+        if (mode.now == ContentDisplay.SubWindow) {
+            getBox(obj).showSubWindow()
+        } else {
+            val window = scene.window as SubWindow
+            window.showOrBringToFront()
+        }
+    }
+
+    enum class ContentDisplay {
+        Inline, SubWindow, DetailsPane;
+
+        companion object {
+            val all = entries.toSet()
+        }
+    }
+
+    private class ObjectBox<O : NamedObject>(val parent: NamedObjectListView<O>, val obj: O) : VBox() {
+        var subWindow: SubWindow? = null
+            private set
+
         val config get() = parent.config
 
         val nameControl = if (obj is RenamableObject) NameControl(obj, config.getDefaultDisplayName(obj)) else null
 
         private val nameDisplay =
             nameControl ?: HBox(label(obj.name).styleClass("name-field")).styleClass("name")
-        private val content = config.getContent(obj)
+
         private val actionBar = ActionBar(
-            config.getActions(obj) + parent.objectActions.withContext(obj),
+            config.getActions(obj) + objectActions.withContext(this),
             config.buttonStyle
         )
 
-        private var header: Region? = null
-
         private val space = infiniteSpace()
 
-        val layout: Pane = when (config.orientation) {
-            HORIZONTAL -> HBox(nameDisplay, *content.toTypedArray(), space, actionBar)
-            VERTICAL -> VBox(
-                HBox(nameDisplay, space, actionBar).also { header = it },
-                *content.toTypedArray()
-            )
-        }.styleClass("object-box")
+        private val header = HBox(nameDisplay, *config.getItemContent(obj).toTypedArray(), space, actionBar)
+
+        val content = config.getContent(obj)
 
         init {
             space.setOnMousePressed { parent.select(this) }
-            layout.addEventFilter(MouseEvent.MOUSE_CLICKED) { parent.select(this) }
+            addEventFilter(MouseEvent.MOUSE_PRESSED) { parent.select(this) }
+            styleClass("object-box")
+            children.add(header.styleClass("object-box-header"))
             if (config.enableReordering) setupReordering()
             if (config.dataFormat(obj) != null) setupDragging()
         }
 
+        fun setContentDisplay(option: ContentDisplay) {
+            if (content == null) return
+            if (option != ContentDisplay.SubWindow) {
+                subWindow?.let { w ->
+                    w.hide()
+                    w.scene.root = Region()
+                    subWindow = null
+                }
+            }
+            if (option != ContentDisplay.Inline && content in children) {
+                children.remove(content)
+            }
+            if (option == ContentDisplay.SubWindow) {
+                subWindow = undecoratedSubWindow(content).also { w ->
+                    config.configureSubWindow(w)
+                    if (w.owner == null) w.initOwner(obj.context[primaryStage])
+                }
+            }
+            if (option == ContentDisplay.Inline) {
+                children.add(content)
+            }
+        }
+
+        fun showSubWindow() {
+            val w = this.subWindow ?: return
+            w.showOrBringToFront()
+        }
+
         private fun setupDragging() {
-            val dragTarget = header ?: layout
+            val dragTarget = space
             dragTarget.setOnDragDetected { ev ->
                 if (ev.isControlDown) {
                     val db = dragTarget.startDragAndDrop(TransferMode.COPY)
@@ -218,21 +291,21 @@ class NamedObjectListView<O : NamedObject>(
         }
 
         private fun setupReordering() {
-            val dragTarget = actionBar.getButton(parent.objectActions.getAction("Reorder"))
+            val dragTarget = actionBar.getButton(objectActions.getAction("Reorder"))
             dragTarget.setupDragging(
-                onPressed = { layout.viewOrder = 100.0 },
-                relocateBy = { _, _, _, _, dy -> layout.translateY = dy },
+                onPressed = { viewOrder = 100.0 },
+                relocateBy = { _, _, _, _, dy -> translateY = dy },
                 onReleased = {
-                    layout.viewOrder = 0.0
-                    var idx = parent.boxes.binarySearchBy(layout.layoutY + layout.translateY) { b -> b.layout.layoutY }
+                    viewOrder = 0.0
+                    var idx = parent.boxes.binarySearchBy(layoutY + translateY) { b -> b.layoutY }
                     if (idx < 0) idx = -(idx + 1)
-                    val oldIndex = layout.children.indexOf(this.layout)
+                    val oldIndex = parent.boxes.indexOf(this)
                     try {
                         if (idx != oldIndex) {
                             parent.source.move(obj, idx)
                         }
                     } finally {
-                        layout.translateY = 0.0
+                        translateY = 0.0
                     }
                 }
             )
@@ -240,7 +313,7 @@ class NamedObjectListView<O : NamedObject>(
     }
 
     companion object {
-        internal fun <O : NamedObject> listActions() = collectActions<NamedObjectListView<O>> {
+        val listActions = collectActions<NamedObjectListView<*>> {
             addAction("Rename selected") {
                 shortcut("F2")
                 executes { list -> list.renameSelected() }
@@ -249,7 +322,10 @@ class NamedObjectListView<O : NamedObject>(
                 shortcut("Ctrl+DELETE")
                 executes { list ->
                     val selected = list.selectedBox?.obj ?: return@executes
-                    if (selected.canDelete) list.source.remove(selected)
+                    if (selected.canDelete) {
+                        val source = list.source as NamedObjectList<NamedObject>
+                        source.remove(selected)
+                    }
                 }
             }
             addAction("Select previous") {
@@ -275,5 +351,70 @@ class NamedObjectListView<O : NamedObject>(
                 executes { list -> list.copySelected() }
             }
         }
+
+        private val objectActions = collectActions<ObjectBox<*>> {
+            addAction("Edit object details") {
+                icon { box ->
+                    val config = box.config as ObjectBoxConfig<NamedObject>
+                    reactiveValue(config.detailWindowIcon(box.obj))
+                }
+                shortcuts("Ctrl+E")
+                applicableIf { box -> box.parent.contentDisplay.equalTo(ContentDisplay.SubWindow) }
+                executes { box, ev ->
+                    box.showSubWindow()
+                }
+            }
+            @Suppress("UNCHECKED_CAST")
+            addAction("Duplicate object") {
+                applicableIf { box -> reactiveValue(box.obj.canCopy && box.obj.registry != null) }
+                description { box -> reactiveValue(box.parent.source.objectType) }
+                executes { box, ev ->
+                    val obj = box.obj
+                    val list = box.parent.source as ObjectRegistry<NamedObject>
+                    val initialName = obj.name.now + "_copy"
+                    val name = NamePrompt(list, "Name for new duplicate instrument", initialName)
+                        .showDialog(ev) ?: return@executes
+                    val copy = obj.copy(name)
+                    list.add(copy, list.indexOf(obj))
+                }
+            }
+            addAction("Reorder") {
+                icon(MaterialDesignR.REORDER_HORIZONTAL)
+                applicableIf { box -> reactiveValue(box.config.enableReordering) }
+            }
+            addAction("Delete object") {
+                icon(Material2AL.DELETE)
+                shortcuts("Ctrl+DELETE")
+                applicableIf { box -> reactiveValue(box.obj.canDelete) }
+                executes { box ->
+                    val source = box.parent.source as NamedObjectList<NamedObject>
+                    source.remove(box.obj)
+                }
+            }
+        }
+
+        private fun Action.Builder<NamedObjectListView<*>>.modeChange(mode: ContentDisplay) {
+            applicableIf { view ->
+                if (mode in view.config.supportedModes) view.mode.notEqualTo(mode)
+                else reactiveValue(false)
+            }
+            executes { view -> view.setMode(mode) }
+        }
+
+        val modeChangeActions
+            get() = collectActions<NamedObjectListView<*>> {
+                addAction("Display content inline") {
+                    icon(MaterialDesignV.VIEW_SEQUENTIAL)
+                    modeChange(ContentDisplay.Inline)
+                }
+                addAction("Display content in Sub-Window") {
+                    icon(MaterialDesignW.WINDOW_RESTORE)
+                    modeChange(ContentDisplay.SubWindow)
+                }
+                addAction("Display content in side bar") {
+                    icon(MaterialDesignV.VIEW_SPLIT_VERTICAL)
+                    modeChange(ContentDisplay.DetailsPane)
+                }
+            }
     }
 }

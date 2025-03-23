@@ -7,9 +7,8 @@ import javafx.scene.input.MouseEvent
 import org.kordamp.ikonli.codicons.Codicons
 import org.kordamp.ikonli.evaicons.Evaicons
 import org.kordamp.ikonli.materialdesign2.*
-import reaktive.value.now
-import xenakis.model.registry.InstrumentRegistry
 import xenakis.model.registry.ProcessDefRegistry
+import xenakis.model.registry.SynthDefRegistry
 import xenakis.ui.launcher.XenakisMainActivity
 import xenakis.ui.registry.SimpleSearchableRegistryView
 
@@ -28,9 +27,9 @@ enum class Tool(config: Action.Builder<SelectorBar<Tool, Context>>.() -> Unit) :
         executes { bar, ev ->
             val context = bar.context
             when {
-                ev.isControlDown() -> context[XenakisMainActivity].instrumentsWindow.show()
+                ev.isControlDown() -> context[XenakisMainActivity].synthDefsWindow.show()
                 (ev is MouseEvent && ev.clickCount >= 2) || (ev is KeyEvent && ev.isShiftDown) -> {
-                    val instruments = context[InstrumentRegistry]
+                    val instruments = context[SynthDefRegistry]
                     SimpleSearchableRegistryView(instruments, "Selected instrument def").showPopup( //TODO better placement
                         anchorNode = bar,
                         initialOption = instruments.selectedInstrument

@@ -1,7 +1,6 @@
 package xenakis.model.obj
 
 import hextant.context.Context
-import javafx.scene.paint.Color
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
@@ -9,12 +8,10 @@ import reaktive.Observer
 import reaktive.value.ReactiveVariable
 import reaktive.value.now
 import reaktive.value.reactiveVariable
-import xenakis.impl.ColorSerializer
 import xenakis.impl.randomColor
 import xenakis.impl.superColliderPath
 import xenakis.model.project.XenakisProject.Companion.projectDirectory
 import xenakis.model.registry.BusRegistry
-import xenakis.model.registry.InstrumentRegistry
 import xenakis.model.registry.ObjectReference
 import xenakis.model.registry.reference
 import xenakis.sc.Rate
@@ -28,8 +25,7 @@ class VSTPluginObject private constructor(
     private val pluginName: String,
     private val presetName: String,
     private var output: ObjectReference<BusObject>,
-    override val color: ReactiveVariable<@Serializable(with = ColorSerializer::class) Color>
-) : InstrumentObject, AbstractSuperColliderObject() {
+) : AbstractSuperColliderObject() {
     override val superColliderName get() = "~plugin_${name.now}"
 
     @Transient
@@ -41,9 +37,6 @@ class VSTPluginObject private constructor(
 
     @Transient
     private var controllerInfo: ControllerInfo? = null
-
-    override fun copy(name: String): InstrumentObject =
-        throw UnsupportedOperationException("Cannot copy $this")
 
     fun initialize(context: Context, controllerInfo: ControllerInfo) {
         this.controllerInfo = controllerInfo
@@ -62,6 +55,8 @@ class VSTPluginObject private constructor(
         }
         super.initialize(context)
     }
+
+    override fun canRenameTo(newName: String): Boolean = true
 
     override fun ScWriter.createObject() {
         appendBlock("Task", endLine = false) {
@@ -91,9 +86,6 @@ class VSTPluginObject private constructor(
         +"$superColliderName.close; $superColliderName.synth.free; $superColliderName = nil"
     }
 
-    override fun canRenameTo(newName: String): Boolean =
-        (this in context[InstrumentRegistry] && context[InstrumentRegistry].has(newName))
-
     fun showEditor() {
         client.run("$superColliderName.editor;")
     }
@@ -109,9 +101,9 @@ class VSTPluginObject private constructor(
     companion object {
         fun create(context: Context, name: String, pluginName: String): VSTPluginObject {
             val presetName = "${System.currentTimeMillis()}"
-            val color = randomColor()
+            randomColor()
             val output = context[BusRegistry].getDefault().reference()
-            return VSTPluginObject(reactiveVariable(name), pluginName, presetName, output, reactiveVariable(color))
+            return VSTPluginObject(reactiveVariable(name), pluginName, presetName, output)
         }
 
         fun availablePlugins(context: Context) = context[SuperColliderClient]

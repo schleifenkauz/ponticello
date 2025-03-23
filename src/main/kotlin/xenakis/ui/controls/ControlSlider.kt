@@ -21,7 +21,7 @@ import xenakis.impl.Decimal
 import xenakis.impl.parseDecimal
 import xenakis.impl.snap
 import xenakis.impl.unaryMinus
-import xenakis.model.score.ParameterControls.NamedParameterControl
+import xenakis.model.score.ParameterControlList.NamedParameterControl
 import xenakis.sc.DecimalLiteral
 import xenakis.sc.NumericalControlSpec
 import xenakis.sc.SpecTransformation

@@ -18,7 +18,7 @@ import xenakis.impl.Logger
 import xenakis.impl.copy
 import xenakis.impl.randomColor
 import xenakis.model.flow.FlowType
-import xenakis.model.registry.InstrumentRegistry
+import xenakis.model.registry.SynthDefRegistry
 import xenakis.sc.*
 import xenakis.sc.client.ScWriter
 import xenakis.sc.client.SuperColliderClient
@@ -31,7 +31,7 @@ class CustomizableSynthDefObject(
     override val parameters: ParameterDefList,
     override val color: ReactiveVariable<@Serializable(with = ColorSerializer::class) Color> = reactiveVariable(Color.WHITE),
     val ugenGraph: EditorRoot<@Contextual CodeBlockEditor>? = null
-) : SynthDefObject, AbstractRenamableObject(), ConfigurableParameterizedObjectDef, InstrumentObject {
+) : SynthDefObject, AbstractRenamableObject(), ConfigurableParameterizedObjectDef {
     override val canCopy: Boolean
         get() = true
 
@@ -82,15 +82,13 @@ class CustomizableSynthDefObject(
     override fun initialize(context: Context) {
         if (initialized) return
         super.initialize(context)
-        for (parameter in parameters) {
-            parameter.initialize(context)
-        }
+        parameters.initialize(context)
         ugenGraph?.initialize(context.extend {
             set(editedSynthDef, this@CustomizableSynthDefObject)
         })
     }
 
-    override fun canRenameTo(newName: String): Boolean = !context[InstrumentRegistry].has(newName)
+    override fun canRenameTo(newName: String): Boolean = !context[SynthDefRegistry].has(newName)
 
     override fun rename(newName: String) {
         onRemoved()

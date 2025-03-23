@@ -14,6 +14,9 @@ import javafx.scene.layout.Region
 import javafx.scene.layout.VBox
 import org.kordamp.ikonli.materialdesign2.MaterialDesignC
 import reaktive.value.ReactiveString
+import reaktive.value.binding.equalTo
+import reaktive.value.binding.flatMap
+import reaktive.value.fx.asReactiveValue
 import reaktive.value.reactiveValue
 
 abstract class ToolPane : VBox() {
@@ -21,6 +24,10 @@ abstract class ToolPane : VBox() {
     private var headerContent: Node? = null
     lateinit var header: Region
         private set
+
+    init {
+        styleClass("tool-pane")
+    }
 
     fun setup(
         title: ReactiveString, content: Node,
@@ -59,6 +66,12 @@ abstract class ToolPane : VBox() {
         private val actions = collectActions<ToolPane> {
             addAction("Close window") {
                 shortcut("Ctrl+W")
+                applicableIf { p ->
+                    p.sceneProperty().asReactiveValue().flatMap { s ->
+                        if (s != null) s.rootProperty().asReactiveValue().equalTo(p)
+                        else reactiveValue(false)
+                    }
+                }
                 icon(MaterialDesignC.CLOSE)
                 executes { p -> p.scene.window.hide() }
             }

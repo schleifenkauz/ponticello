@@ -3,12 +3,12 @@ package xenakis.ui.midi
 import reaktive.value.now
 import xenakis.impl.times
 import xenakis.model.Settings
+import xenakis.model.score.ParameterControlList
 import xenakis.model.score.ValueControl
-import xenakis.model.score.ParameterControls
 import xenakis.sc.NumericalControlSpec
 import kotlin.math.pow
 
-class ParameterControlsMidiContext(private val controls: ParameterControls) : MidiContext {
+class ParameterControlsMidiContext(private val controls: ParameterControlList) : MidiContext {
     val knobSensitivity get() = controls.context[Settings].knobSensitivity.now.toDouble()
 
     override fun cc(channel: Int, index: Int, value: Int) {

@@ -14,7 +14,6 @@ import reaktive.value.ReactiveString
 import reaktive.value.binding.not
 import reaktive.value.fx.asReactiveValue
 import reaktive.value.now
-import reaktive.value.observe
 import reaktive.value.reactiveValue
 import xenakis.model.obj.RenamableObject
 import xenakis.model.registry.NamedObject.Companion.NO_NAME
@@ -22,16 +21,17 @@ import xenakis.sc.Identifier
 
 class NameControl(
     val obj: RenamableObject,
-    private val defaultDisplayName: ReactiveString = reactiveValue(NO_NAME)
+    private val defaultDisplayName: ReactiveString = reactiveValue(NO_NAME),
 ) : HBox() {
-    private val field = TextField(obj.name.now.takeIf { it != NO_NAME } ?: defaultDisplayName.now).alwaysHGrow()
+    private val field = TextField().alwaysHGrow() styleClass "name-field"
+
     private val observer: Observer
 
     val isEditing = field.editableProperty().asReactiveValue()
 
     init {
         styleClass("name-control")
-        field styleClass "name-field"
+        field.text = obj.name.now.takeIf { it != NO_NAME } ?: defaultDisplayName.now
         val toolbar = ActionBar(actions.withContext(this), buttonStyle = "small-icon-button")
         children.addAll(field, toolbar)
         field.isEditable = false

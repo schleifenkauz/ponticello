@@ -1,41 +1,63 @@
 package xenakis.ui.registry
 
-import bundles.createBundle
-import fxutils.*
+import fxutils.SubWindow
 import fxutils.actions.ContextualizedAction
 import fxutils.actions.collectActions
 import fxutils.prompt.SimpleSearchableListView
 import fxutils.prompt.YesNoPrompt
+import fxutils.setFixedWidth
 import hextant.fx.initHextantScene
 import javafx.application.Platform
 import javafx.scene.Node
+import javafx.scene.Parent
 import javafx.scene.input.DataFormat
 import javafx.scene.paint.Color
+import org.kordamp.ikonli.Ikon
 import org.kordamp.ikonli.material2.Material2AL
-import org.kordamp.ikonli.material2.Material2MZ
 import org.kordamp.ikonli.materialdesign2.MaterialDesignE
 import reaktive.list.toReactiveList
 import reaktive.value.binding.map
 import reaktive.value.now
-import reaktive.value.reactiveValue
 import xenakis.impl.Logger
 import xenakis.impl.async
 import xenakis.impl.canSuperColliderTalkToMe
-import xenakis.model.obj.*
+import xenakis.model.obj.CustomizableSynthDefObject
+import xenakis.model.obj.NoSynthDef
+import xenakis.model.obj.ReferencedSynthDefObject
+import xenakis.model.obj.SynthDefObject
 import xenakis.model.registry.GlobalSynthDefLib
-import xenakis.model.registry.InstrumentRegistry
+import xenakis.model.registry.SynthDefRegistry
 import xenakis.sc.Identifier
-import xenakis.sc.view.ObjectSelectorControl
-import xenakis.ui.controls.NamePrompt
 import xenakis.ui.impl.colorPicker
+import xenakis.ui.registry.NamedObjectListView.ContentDisplay
 
-class InstrumentRegistryPane(
-    private val registry: InstrumentRegistry,
-): ObjectRegistryPane<InstrumentObject>(registry) {
-    private val subWindows = mutableMapOf<SynthDefObject, SubWindow>()
+class SynthDefRegistryPane(
+    private val synthDefs: SynthDefRegistry,
+) : ObjectRegistryPane<SynthDefObject>(synthDefs) {
+    override val supportedModes: Set<ContentDisplay>
+        get() = setOf(ContentDisplay.DetailsPane, ContentDisplay.SubWindow)
 
-    override fun dataFormat(obj: InstrumentObject): DataFormat? =
-        if (obj is SynthDefObject) SynthDefObject.DATA_FORMAT else null
+    override fun detailWindowIcon(obj: SynthDefObject): Ikon =
+        if (obj is CustomizableSynthDefObject) Material2AL.CODE
+        else MaterialDesignE.EYE
+
+    override fun getContent(obj: SynthDefObject): Parent? = when (obj) {
+        is CustomizableSynthDefObject -> {
+            val title = obj.name.map { n -> "SynthDef $n" }
+            ParameterizedObjectDefPane(registry.context, title, obj.parameters, obj.ugenGraph!!, obj::sync)
+        }
+        is ReferencedSynthDefObject -> {
+            ParameterInfoPane(obj.parameters.toReactiveList())
+        }
+        is NoSynthDef -> null
+    }
+
+    override fun dataFormat(obj: SynthDefObject): DataFormat? = SynthDefObject.DATA_FORMAT
+
+    override fun configureSubWindow(window: SubWindow) {
+        window.scene.initHextantScene(registry.context, applyStyle = false)
+        window.scene.fill = Color.BLACK
+    }
 
     private fun saveToGlobalLibrary(obj: CustomizableSynthDefObject) {
         val globalLib = registry.context[GlobalSynthDefLib]
@@ -61,20 +83,18 @@ class InstrumentRegistryPane(
         }
     }
 
+
     override fun sync() {
-        registry.syncAll()
+        synthDefs.syncAll()
         registry.save()
     }
 
     override fun addObject() {
-        val availablePlugins = VSTPluginObject.availablePlugins(registry.context)
-            .map { name -> AddInstrumentOption.VSTPlugin(name) }
         val globalLib = registry.context[GlobalSynthDefLib]
         globalLib.reload()
         val synthDefsFromGlobal = globalLib.get()
             .map { instr -> AddInstrumentOption.SynthDefFromGlobalLib(instr) }
-        val options: List<AddInstrumentOption> = synthDefsFromGlobal + availablePlugins
-        val searchableList = AddInstrumentOptionListView(options)
+        val searchableList = AddInstrumentOptionListView(synthDefsFromGlobal)
         searchableList.enterText(searchText.text)
         searchableList.showPopup(anchorNode = this) { option ->
             createObject(option)
@@ -85,12 +105,10 @@ class InstrumentRegistryPane(
         data class NewSynthDef(val name: String) : AddInstrumentOption
 
         data class SynthDefFromGlobalLib(val instrument: SynthDefObject) : AddInstrumentOption
-
-        data class VSTPlugin(val pluginName: String) : AddInstrumentOption
     }
 
     private inner class AddInstrumentOptionListView(
-        options: List<AddInstrumentOption>
+        options: List<AddInstrumentOption>,
     ) : SimpleSearchableListView<AddInstrumentOption>(options, "Add instrument") {
         override fun makeOption(text: String): AddInstrumentOption? {
             return if (Identifier.isValid(text) && !registry.has(text)) AddInstrumentOption.NewSynthDef(text)
@@ -99,14 +117,12 @@ class InstrumentRegistryPane(
 
         override fun displayText(option: AddInstrumentOption): String = when (option) {
             is AddInstrumentOption.SynthDefFromGlobalLib -> "SynthDef: ${option.instrument.name.now}"
-            is AddInstrumentOption.VSTPlugin -> "VSTPlugin: ${option.pluginName}"
             else -> "<invalid>"
         }
 
         override fun extractText(option: AddInstrumentOption): String = when (option) {
             is AddInstrumentOption.NewSynthDef -> option.name
             is AddInstrumentOption.SynthDefFromGlobalLib -> option.instrument.name.now
-            is AddInstrumentOption.VSTPlugin -> option.pluginName
         }
     }
 
@@ -115,7 +131,7 @@ class InstrumentRegistryPane(
             is AddInstrumentOption.NewSynthDef -> {
                 createSynthDef(option.name)?.let { def ->
                     registry.add(def)
-                    editInstrument(def)
+                    listView.showContent(def)
                 }
             }
 
@@ -133,15 +149,6 @@ class InstrumentRegistryPane(
                     option.instrument.sync()
                 }
             }
-
-            is AddInstrumentOption.VSTPlugin -> {
-                Platform.runLater {
-                    val name = NamePrompt(registry, "Name for new VSTPlugin instance", option.pluginName)
-                        .showDialog(anchorNode = this) ?: return@runLater
-                    val plugin = VSTPluginObject.create(registry.context, name, option.pluginName)
-                    registry.add(plugin)
-                }
-            }
         }
     }
 
@@ -153,7 +160,7 @@ class InstrumentRegistryPane(
 
     fun createSynthDef(name: String): SynthDefObject? {
         when {
-            canSuperColliderTalkToMe && registry.synthDescLibContains(name) -> {
+            canSuperColliderTalkToMe && synthDefs.synthDescLibContains(name) -> {
                 val reference = YesNoPrompt(
                     "SynthDef '$name' is already defined in the global SynthDescLib. " +
                             "Import SynthDef '$name' from SynthDescLib? A new SynthDef will be created otherwise.",
@@ -167,64 +174,16 @@ class InstrumentRegistryPane(
         }
     }
 
-    override fun getContent(obj: InstrumentObject): List<Node> = buildList {
+    override fun getItemContent(obj: SynthDefObject): List<Node> = buildList {
         val colorPicker = colorPicker(obj.color)
         colorPicker.setFixedWidth(30.0)
         add(colorPicker)
-        if (obj is VSTPluginObject) {
-            add(ObjectSelectorControl(obj.outputSelector, createBundle()))
-        }
     }
 
-    override fun getActions(obj: InstrumentObject): List<ContextualizedAction> = collectActions<InstrumentObject> {
-        addAction("Edit Instrument") {
-            icon { instr ->
-                if (instr is CustomizableSynthDefObject) reactiveValue(Material2AL.CODE)
-                else reactiveValue(MaterialDesignE.EYE)
-            }
-            executes { instr -> this@InstrumentRegistryPane.editInstrument(instr) }
-        }
-        addAction("Save VST plugin configuration") {
-            icon(Material2MZ.SAVE)
-            executesOn<VSTPluginObject> { obj -> obj.saveConfiguration() }
-        }
+    override fun getActions(obj: SynthDefObject): List<ContextualizedAction> = collectActions<SynthDefObject> {
         addAction("Save to global library") {
             icon(MaterialDesignE.EXPORT_VARIANT)
             executesOn(::saveToGlobalLibrary)
         }
     }.withContext(obj)
-
-    override fun onRemoved(obj: InstrumentObject) {
-        subWindows.remove(obj)?.hide()
-    }
-
-    fun editInstrument(obj: InstrumentObject) {
-        if (obj is VSTPluginObject) {
-            obj.showEditor()
-            return
-        }
-        obj as SynthDefObject
-        val window = subWindows.getOrPut(obj) { makeWindow(obj) }
-        if (window.isShowing) window.toFront()
-        else window.showRightOf(this)
-    }
-
-    private fun makeWindow(obj: SynthDefObject): SubWindow = when (obj) {
-        is CustomizableSynthDefObject -> {
-            val title = obj.name.map { n -> "SynthDef $n" }
-            val pane = ParameterizedObjectDefPane(registry.context, title, obj.parameters, obj.ugenGraph!!, obj::sync)
-            undecoratedSubWindow(pane).apply {
-                this.scene.initHextantScene(this@InstrumentRegistryPane.registry.context, applyStyle = false)
-                this.scene.fill = Color.BLACK
-                this.resize(800.0, 800.0)
-            }
-        }
-
-        else -> {
-            val pane = ParameterInfoPane(obj.parameters.toReactiveList()) //TODO
-            undecoratedSubWindow(pane).apply {
-                this.resize(800.0, 300.0)
-            }
-        }
-    }
 }

@@ -14,8 +14,9 @@ import xenakis.sc.BusControlSpec
 import xenakis.sc.GroupControlSpec
 import xenakis.sc.NumericalControlSpec
 
-class ParameterInfoPane(parameters: ReactiveList<ParameterDefObject>) :
-    ListView<ParameterDefObject>(parameters.asObservableList()) {
+class ParameterInfoPane(
+    parameters: ReactiveList<ParameterDefObject>,
+) : ListView<ParameterDefObject>(parameters.asObservableList()) {
     init {
         setCellFactory { _ -> ParameterCell() }
     }

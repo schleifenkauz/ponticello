@@ -53,6 +53,7 @@ class XenakisLauncher {
             createActivity()
         } catch (e: Exception) {
             Logger.error("Error $description", detailMessage = e.message)
+            e.printStackTrace()
             showLauncher()
             return null
         }

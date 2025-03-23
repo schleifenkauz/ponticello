@@ -4,13 +4,13 @@ import reaktive.value.now
 import xenakis.model.flow.FlowType
 import xenakis.model.registry.NamedObject
 import xenakis.model.score.BusControl
-import xenakis.model.score.ParameterControls
+import xenakis.model.score.ParameterControlList
 import xenakis.sc.BusControlSpec
 import xenakis.sc.ControlSpec
 
 interface ParameterizedObject : NamedObject {
     val def: ParameterizedObjectDef
-    val controls: ParameterControls
+    val controls: ParameterControlList
 
     fun getSpec(parameter: String): ControlSpec? = controls.getOrNull(parameter)?.spec?.now
 

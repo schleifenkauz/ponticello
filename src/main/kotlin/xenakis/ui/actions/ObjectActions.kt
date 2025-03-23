@@ -14,15 +14,12 @@ import org.kordamp.ikonli.materialdesign2.MaterialDesignR
 import org.kordamp.ikonli.materialdesign2.MaterialDesignV
 import reaktive.value.binding.flatMap
 import reaktive.value.binding.map
-import reaktive.value.binding.not
 import reaktive.value.now
 import reaktive.value.reactiveValue
+import xenakis.impl.Logger
 import xenakis.impl.times
 import xenakis.impl.zero
-import xenakis.impl.Logger
 import xenakis.model.obj.NoSynthDef
-import xenakis.model.obj.ProcessDefObject
-import xenakis.model.obj.ProcessDefReference
 import xenakis.model.score.ObjectPosition
 import xenakis.model.score.ScoreObject
 import xenakis.model.score.ScoreObjectGroup
@@ -101,11 +98,11 @@ object ObjectActions {
                             Logger.warn("Instrument is not resolved", Logger.Category.Score)
                             return@executeSingle
                         }
-                        mainScreen.instrumentsPane.editInstrument(def)
+                        mainScreen.synthDefsPane.listView.showContent(def)
                     } else if (view is ProcessObjectView) {
                         if (view.obj.processDefRef.now.isResolved.now) {
                             val obj = view.obj.processDef
-                            mainScreen.processDefsPane.editProcessDef(obj)
+                            mainScreen.processDefsPane.listView.showContent(obj)
                         } else {
                             Logger.warn("ProcessDef is not resolved", Logger.Category.Score)
                         }

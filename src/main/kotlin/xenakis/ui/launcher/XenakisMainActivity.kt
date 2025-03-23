@@ -41,9 +41,9 @@ import xenakis.ui.midi.ContextualMidiReceiver
 import xenakis.ui.midi.ParameterControlsMidiContext
 import xenakis.ui.misc.*
 import xenakis.ui.registry.ControlBusRegistryPane
-import xenakis.ui.registry.InstrumentRegistryPane
 import xenakis.ui.registry.ProcessDefRegistryPane
 import xenakis.ui.registry.SampleRegistryPane
+import xenakis.ui.registry.SynthDefRegistryPane
 import xenakis.ui.score.ScoreObjectSelectionManager
 import xenakis.ui.score.ScoreView
 
@@ -55,8 +55,8 @@ class XenakisMainActivity(val project: XenakisProject) : Activity() {
     val toolSelector = SelectorBar(project.context, Tool.entries, Tool.Pointer, "large-icon-button")
         .styleClass("toolbar-part")
 
-    val instrumentsPane = InstrumentRegistryPane(project.instruments)
-    val instrumentsWindow = makeSubWindow(instrumentsPane, "Instruments", context, SubWindow.Type.Undecorated)
+    val synthDefsPane = SynthDefRegistryPane(project.instruments)
+    val synthDefsWindow = makeSubWindow(synthDefsPane, "Instruments", context, SubWindow.Type.Undecorated)
 
     val processDefsPane = ProcessDefRegistryPane(project.get(PROCESS_DEFS))
     val processDefsWindow = makeSubWindow(processDefsPane, "Process Definitions", context, SubWindow.Type.Undecorated)

@@ -30,7 +30,7 @@ class ControlBusRegistryPane(private val busses: BusRegistry) : SuperColliderObj
 
     override fun filter(obj: BusObject): Boolean = obj is BusObject.ControlBus
 
-    override fun getContent(obj: BusObject): List<Node> {
+    override fun getItemContent(obj: BusObject): List<Node> {
         if (obj !is BusObject.ControlBus) return emptyList()
         val channelsSpinner = Spinner<Int>(1, 12, 2).setFixedWidth(60.0)
         channelsSpinner.valueFactory.valueProperty().bindBidirectional(obj.channels.asProperty())

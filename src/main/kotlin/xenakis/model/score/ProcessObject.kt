@@ -12,13 +12,12 @@ import xenakis.model.obj.ParameterizedObject
 import xenakis.model.obj.ParameterizedObjectDef
 import xenakis.model.obj.ProcessDefObject
 import xenakis.model.obj.ProcessDefReference
-import xenakis.model.registry.ObjectReference
 import xenakis.sc.ControlSpec
 
 class ProcessObject(
     @SerialName("name") override val mutableName: ReactiveVariable<String>,
     @SerialName("processDef") val processDefRef: ReactiveVariable<ProcessDefReference>,
-    override val controls: ParameterControls
+    override val controls: ParameterControlList
 ) : ScoreObject(), ParameterizedObject {
     override val type: String
         get() = "process"

@@ -18,10 +18,8 @@ import reaktive.value.now
 import reaktive.value.reactiveVariable
 import xenakis.impl.*
 import xenakis.model.flow.ScoreObjectInfo
-import xenakis.model.obj.InstrumentReference
 import xenakis.model.obj.NoSynthDef
-import xenakis.model.obj.SynthDefObject
-import xenakis.model.obj.VSTPluginObject
+import xenakis.model.obj.SynthDefReference
 import xenakis.sc.code
 import xenakis.sc.editor.*
 import xenakis.ui.impl.Direction
@@ -30,7 +28,7 @@ import xenakis.ui.score.PianoRollObjectView
 @Serializable
 class PianoRollObject(
     @SerialName("name") override val mutableName: ReactiveVariable<String>,
-    @SerialName("instrument") private val mInstrument: ReactiveVariable<InstrumentReference>,
+    @SerialName("instrument") private val mInstrument: ReactiveVariable<SynthDefReference>,
     @SerialName("lowestPitch") private var mLowestPitch: Int,
     @SerialName("highestPitch") private var mHighestPitch: Int,
     val eventDictionary: EditorRoot<@Contextual EventDictionaryEditor>,
@@ -40,7 +38,7 @@ class PianoRollObject(
         get() = "piano-roll"
 
     @Transient
-    lateinit var instrumentSelector: InstrumentSelector
+    lateinit var instrumentSelector: SynthDefSelector
         private set
 
     private val instrument get() = mInstrument.now.get() ?: NoSynthDef()
@@ -67,7 +65,7 @@ class PianoRollObject(
     override fun initialize(context: Context) {
         if (initialized) return
         super.initialize(context)
-        instrumentSelector = InstrumentSelector()
+        instrumentSelector = SynthDefSelector()
         instrumentSelector.syncWith(mInstrument)
         instrumentSelector.initialize(context)
         eventDictionary.initialize(context)
@@ -224,27 +222,12 @@ class PianoRollObject(
             eventMap["duration"] = dur.toString()
             for ((key, value) in eventDict.entries) eventMap[key.text] = value.code(context)
             for ((key, value) in generalEventDict.entries) eventMap[key.text] = value.code(context)
-            val playNote = when (val instr = instrument) {
-                is SynthDefObject -> {
-                    eventMap["freq"] = "$midinote.midicps + ${eventMap["detune"] ?: 0}.midiratio"
-                    eventMap.remove("detune")
-                    val namedValues = eventMap.entries.joinToString { (name, value) -> "$name: $value" }
-                    val synthName = "~synths['${name}_${idx}']"
-                    "$synthName = Synth(\\${instr.name.now}, [${namedValues}])"
-                }
-
-                is VSTPluginObject -> {
-                    eventMap["midinote"] = midinote.toString()
-                    eventMap["type"] = "\\vst_midi"
-                    eventMap["vst"] = instr.superColliderName
-                    val namedValues = eventMap.entries.joinToString { (name, value) -> "$name: $value" }
-                    "(type: \\vst_midi, vst: ${instr.superColliderName}, $namedValues).play"
-                }
-
-                else -> error("Unknown instrument type $instr")
-            }
+            eventMap["freq"] = "$midinote.midicps + ${eventMap["detune"] ?: 0}.midiratio"
+            eventMap.remove("detune")
+            val namedValues = eventMap.entries.joinToString { (name, value) -> "$name: $value" }
+            val synthName = "~synths['${name}_${idx}']"
             appendBlock("TempoClock.sched(${t.coerceAtLeast(zero)})") {
-                +playNote
+                +"$synthName = Synth(\\${instrument.name.now}, [${namedValues}])"
             }
         }
     }

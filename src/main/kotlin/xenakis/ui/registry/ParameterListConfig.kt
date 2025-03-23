@@ -2,7 +2,6 @@ package xenakis.ui.registry
 
 import bundles.createBundle
 import hextant.context.Context
-import hextant.context.createControl
 import hextant.context.withoutUndo
 import hextant.core.view.ChoiceEditorControl
 import javafx.scene.Node
@@ -19,7 +18,7 @@ class ParameterListConfig(private val context: Context) : ObjectBoxConfig<Parame
     override val enableReordering: Boolean
         get() = true
 
-    override fun getContent(obj: ParameterDefObject): List<Node> {
+    override fun getItemContent(obj: ParameterDefObject): List<Node> {
         val editor = makeControlSpecEditor(obj)
         syncSpecWithEditor(obj, editor)
         val specControl = ChoiceEditorControl(editor, createBundle())

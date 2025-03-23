@@ -10,8 +10,7 @@ import xenakis.model.obj.GroupObject
 @Serializable
 class GroupRegistry(
     override val objects: MutableList<GroupObject>
-) : ObjectRegistry<GroupObject>(),
-    List<GroupObject> by objects {
+) : ObjectRegistry<GroupObject>() {
     override val objectType: String
         get() = "Group"
 

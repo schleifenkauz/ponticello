@@ -23,7 +23,7 @@ import java.util.*
 class ReferencedSynthDefObject(
     private val _name: String,
     override val color: ReactiveVariable<@Serializable(with = ColorSerializer::class) Color>
-) : SynthDefObject, InstrumentObject, AbstractNamedObject() {
+) : SynthDefObject, AbstractNamedObject() {
     @Transient
     private var _parameters: ParameterDefList = ParameterDefList()
 

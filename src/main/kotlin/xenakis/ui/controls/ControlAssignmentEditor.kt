@@ -26,7 +26,7 @@ import xenakis.impl.asTime
 import xenakis.model.obj.*
 import xenakis.model.registry.*
 import xenakis.model.score.*
-import xenakis.model.score.ParameterControls.NamedParameterControl
+import xenakis.model.score.ParameterControlList.NamedParameterControl
 import xenakis.sc.*
 import xenakis.sc.editor.BusSelector
 import xenakis.sc.editor.GroupSelector
@@ -327,7 +327,6 @@ class ControlAssignmentEditor(val control: NamedParameterControl) : HBox() {
                 is SingleBusValueControl -> SingleBusValue
                 is BufferControl -> Buffer
                 is GroupControl -> Group
-                else -> throw AssertionError()
             } as ControlType<O>
 
             private fun busSelector(

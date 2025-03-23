@@ -16,7 +16,6 @@ import xenakis.model.score.ProcessObject
 import xenakis.model.score.ScoreObjectInstance
 import xenakis.sc.editor.ProcessDefSelector
 import xenakis.sc.view.ObjectSelectorControl
-import xenakis.ui.controls.ParameterControlListConfig
 import xenakis.ui.launcher.XenakisMainActivity
 
 class ProcessObjectView(
@@ -30,11 +29,10 @@ class ProcessObjectView(
         val selector = ProcessDefSelector()
         selector.syncWith(obj.processDefRef)
         val viewBtn = Material2AL.CODE.button(action = "View ProcessDef") {
-            context[XenakisMainActivity].processDefsPane.editProcessDef(obj.processDef!!)
+            context[XenakisMainActivity].processDefsPane.listView.showContent(obj.processDef)
         }.styleClass("medium-icon-button").disableIf(selector.isResolved)
         val box = ObjectSelectorControl(selector, createBundle())
         pane.addItem("ProcessDef: ", HBox(5.0, box, viewBtn).centerChildren())
-        pane.children.add(createDetailsHeader(obj, "Process controls"))
-        pane.children.add(ParameterControlListConfig.makeControlListView(obj.controls))
+        pane.children.add(ParameterControlsPane(obj, "Process controls"))
     }
 }

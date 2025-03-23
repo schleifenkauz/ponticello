@@ -10,7 +10,7 @@ import xenakis.model.obj.GroupObject
 import xenakis.model.obj.SynthDefObject
 import xenakis.model.registry.BusRegistry
 import xenakis.model.registry.GroupRegistry
-import xenakis.model.registry.InstrumentRegistry
+import xenakis.model.registry.SynthDefRegistry
 import xenakis.model.registry.reference
 import xenakis.ui.controls.NamePrompt
 import xenakis.ui.registry.SimpleSearchableRegistryView
@@ -80,6 +80,6 @@ sealed interface FlowOption {
         private val simpleOptions = listOf(Code, Send, Utility, Placeholder)
 
         fun getOptions(context: Context) =
-            simpleOptions + context[InstrumentRegistry].all().filterIsInstance<SynthDefObject>().map(::Synth)
+            simpleOptions + context[SynthDefRegistry].all().filterIsInstance<SynthDefObject>().map(::Synth)
     }
 }
