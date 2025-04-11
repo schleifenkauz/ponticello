@@ -59,6 +59,7 @@ class SynthFlow(
         writeSynthCode(
             synthDef, context,
             info, duration = null,
+            controls,
             controls.controlMap + mainBusControl + withoutDuration
         )
     }

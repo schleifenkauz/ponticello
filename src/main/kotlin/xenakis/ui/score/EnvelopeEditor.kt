@@ -30,7 +30,6 @@ import xenakis.sc.NumericalControlSpec
 import xenakis.sc.mapOnto
 import xenakis.ui.actions.Tool
 import xenakis.ui.controls.ControlSpecPrompt
-import xenakis.ui.controls.NumericalControlSpecPrompt
 import xenakis.ui.controls.DecimalPrompt
 import xenakis.ui.impl.rootPane
 import xenakis.ui.impl.setupDragging
@@ -74,7 +73,7 @@ class EnvelopeEditor(
         line.setOnMouseExited { mouseInfo.isVisible = false }
         line.setOnMouseMoved { ev ->
             val t = parentPane.getDuration(ev.x)
-            val v = envelope.interpolateValueAt(t)
+            val v = envelope.interpolateValueAt(t, spec.warp)
             displayPosition(t, v)
         }
     }
@@ -161,7 +160,7 @@ class EnvelopeEditor(
 
     private fun createNewPoint(ev: MouseEvent, interpolate: Boolean) {
         val t = transformXToTime(ev.x)
-        val v = if (interpolate) envelope.interpolateValueAt(t) else transformYToValue(ev.y)
+        val v = if (interpolate) envelope.interpolateValueAt(t, spec.warp) else transformYToValue(ev.y)
         val newPoint = EnvelopePoint(t, v)
         var idx = envelope.points.binarySearch(newPoint, compareBy(EnvelopePoint::time))
         if (idx >= 0) return //no duplicates allowed!

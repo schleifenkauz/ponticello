@@ -1,9 +1,7 @@
 package xenakis.ui.score
 
-import fxutils.registerShortcuts
 import javafx.geometry.Point2D
 import javafx.scene.input.MouseEvent
-import javafx.scene.robot.Robot
 import reaktive.Observer
 import reaktive.value.now
 import reaktive.value.reactiveVariable
@@ -55,7 +53,7 @@ abstract class ParameterizedScoreObjectView<O>(
         val name = param.name.now
         val spec = param.spec.now as NumericalControlSpec
         val initialValue = obj.controls.controlMap[name]?.getNumericalValue() ?: spec.defaultValue.get()
-        val env = Envelope.constant(initialValue, obj.duration, spec.warp)
+        val env = Envelope.constant(initialValue, obj.duration)
         val control = EnvelopeControl(
             env, reactiveVariable(spec.associatedColor),
             display = reactiveVariable(true)
@@ -76,9 +74,9 @@ abstract class ParameterizedScoreObjectView<O>(
     }
 
     private fun addedEnvelopeControl(control: NamedParameterControl, env: EnvelopeControl) {
-        if (env.display.now) displayEnvelope(control, env.envelope)
+        if (env.display.now) displayEnvelope(control, env.points)
         envelopeDisplayObservers[env] = env.display.observe { _, _, display ->
-            if (display) displayEnvelope(control, env.envelope)
+            if (display) displayEnvelope(control, env.points)
             else removeEnvelope(control)
         }
     }

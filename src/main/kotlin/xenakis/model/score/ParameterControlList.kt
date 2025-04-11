@@ -159,8 +159,8 @@ class ParameterControlList(
         obj.initialize(this)
     }
 
-    fun transformControls(f: (String, ParameterControl) -> ParameterControl) =
-        ParameterControlList(mapTo(mutableListOf()) { p -> p.copy(f(p.name.now, p.now)) })
+    fun transformControls(f: (NamedParameterControl) -> ParameterControl) =
+        ParameterControlList(mapTo(mutableListOf()) { p -> p.copy(f(p)) })
 
     fun copy() = ParameterControlList(mapTo(mutableListOf()) { it.copy() })
 

@@ -10,6 +10,7 @@ import hextant.serial.EditorRoot
 import javafx.geometry.Pos
 import javafx.scene.Node
 import javafx.scene.control.Button
+import javafx.scene.control.Label
 import javafx.scene.control.ScrollPane
 import javafx.scene.input.DragEvent
 import javafx.scene.input.Dragboard
@@ -132,7 +133,8 @@ class ControlAssignmentEditor(val control: NamedParameterControl) : HBox() {
                 spec: ControlSpec?,
                 control: ValueControl
             ): Node {
-                val converter = (spec as NumericalControlSpec).converter()
+                if (spec !is NumericalControlSpec) return Label("No spec found")
+                val converter = spec.converter()
                 val sliderBar = SliderBar(
                     control.value, reactiveValue(parameter), converter,
                     style = SliderBar.Style.AlwaysValue
@@ -173,7 +175,7 @@ class ControlAssignmentEditor(val control: NamedParameterControl) : HBox() {
                 spec as NumericalControlSpec
                 val value = oldControl.getNumericalValue() ?: spec.defaultValue.get()
                 val duration = (obj as? ScoreObject)?.duration ?: 1.0.asTime
-                val env = xenakis.model.score.Envelope.constant(value, duration, spec.warp)
+                val env = xenakis.model.score.Envelope.constant(value, duration)
                 val displayColor = reactiveVariable(spec.associatedColor)
                 val display = reactiveVariable(true)
                 return EnvelopeControl(env, displayColor, display)

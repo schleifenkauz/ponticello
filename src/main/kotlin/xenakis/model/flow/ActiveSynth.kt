@@ -13,7 +13,7 @@ import xenakis.sc.writeSynthCode
 data class ActiveSynth(
     val obj: SynthObject,
     val absolutePosition: ObjectPosition,
-    val suffix: Int
+    val suffix: Int,
 ) : AudioNode {
     override val superColliderName = reactiveValue(
         when (suffix) {
@@ -28,9 +28,12 @@ data class ActiveSynth(
         val info = ScoreObjectInfo(absolutePosition, name, synthVar, placement)
         val def = obj.synthDef
         if (def is NoSynthDef) {
-            Logger.warn("SynthDef ${obj.synthDefSelector.result.now.getName()} is not resolved", Logger.Category.AudioFlow)
+            Logger.warn(
+                "SynthDef ${obj.synthDefSelector.result.now.getName()} is not resolved",
+                Logger.Category.AudioFlow
+            )
         } else {
-            writeSynthCode(def, obj.context, info, obj.duration, obj.controls.controlMap)
+            writeSynthCode(def, obj.context, info, obj.duration, obj.controls)
         }
     }
 

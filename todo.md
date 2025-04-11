@@ -55,9 +55,9 @@
 - live updates for envelopes
 - ability to copy and paste whole time ranges
 - option to copy samples to project directory
-- improve the timeline
+- improve the timeline 
+  - maybe only move playback cursor on timeline?
 - retrieve global SynthDefs from `compositions` directory
-- merge the `GlobalControlsPane` with the registry pane for control buses
 - make undecorated windows resizable
 - own editor type for control references
 - what to do when user selects a new `SynthDef` for a synth object
@@ -135,6 +135,7 @@
 - selection based region display is not quite right
 - recording doesn't work
 - cutting doesn't work
+- the `Unresolved` ScoreObject should not be saved in the `ScoreObjectRegistry`
 
 ## Was unterscheidet Ponticello von anderen DAWs?
 - Möglichkeit beliebig komplexe SynthDefs zu bauen.

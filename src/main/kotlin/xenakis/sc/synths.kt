@@ -15,7 +15,8 @@ private val SPECIAL_PARAMETERS = setOf("afterDuration")
 fun ScWriter.writeSynthCode(
     def: SynthDefObject, context: Context,
     info: ScoreObjectInfo, duration: Decimal?,
-    controlMap: Map<String, ParameterControl>
+    controls: ParameterControlList,
+    controlMap: Map<String, ParameterControl> = controls.controlMap,
 ) {
     val constantArguments = controlMap.mapNotNull { (param, control) ->
         if (param !in SPECIAL_PARAMETERS && !def.hasParameter(param)) null
@@ -27,7 +28,7 @@ fun ScWriter.writeSynthCode(
                 ?: return unresolvedReference("Bus", control.bus.now))
 
             is ValueControl -> param to control.value.now.toString()
-            is EnvelopeControl -> param to control.envelope.points[0].value.toString()
+            is EnvelopeControl -> param to control.points.points[0].value.toString()
             is SingleBusValueControl -> {
                 val bus = control.bus.now.get()?.superColliderName ?: return unresolvedReference("Bus", control.bus.now)
                 param to "$bus.getSynchronous"
@@ -45,7 +46,9 @@ fun ScWriter.writeSynthCode(
     for ((param, control) in controlMap) {
         when (control) {
             is EnvelopeControl -> {
-                val envelopeCode = control.envelope.code()
+                val spec = controls.get(param).spec.now as? NumericalControlSpec
+                    ?: error("No numerical control spec provided for $param")
+                val envelopeCode = control.points.code(warp = spec.warp)
                 val busName = "~auxil_${name}_${param}"
                 +"$busName  = Bus.control(s, 1)"
                 +"{ $envelopeCode }.play(s, $busName)"
@@ -66,8 +69,10 @@ fun ScWriter.writeSynthCode(
             */
 
             is CustomControl -> {
+                val spec = controls.get(param).spec.now as? NumericalControlSpec
+                    ?: error("No numerical control spec provided for $param")
                 val code = controlMap.entries
-                    .associate { (name, control) -> "~ctrl_$name" to control.makeExpr() }
+                    .associate { (name, control) -> "~ctrl_$name" to control.makeExpr(spec) }
                 val expr = control.expr.editor.result.now
                     .transform<Identifier> { e -> code[e.text] ?: e }
                 val busName = "~auxil_${name}_${param}"

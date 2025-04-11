@@ -25,24 +25,26 @@ import xenakis.sc.editor.ScExprExpander
 sealed class ParameterControl : AbstractContextualObject() {
     open fun copy(): ParameterControl = this
 
-    open fun cut(cutPos: Decimal, whichHalve: HorizontalDirection) = this
+    open fun cut(cutPos: Decimal, whichHalve: HorizontalDirection, spec: NumericalControlSpec?) = this
 }
 
 @Serializable
 @SerialName("Envelope")
 class EnvelopeControl(
-    val envelope: Envelope,
-    val displayColor: ReactiveVariable<@Serializable(with = ColorSerializer::class) Color>,
-    val display: ReactiveVariable<Boolean>
+    val points: Envelope,
+    val displayColor: ReactiveVariable<@Serializable(with = ColorSerializer::class) Color> = reactiveVariable(Color.BLACK),
+    val display: ReactiveVariable<Boolean> = reactiveVariable(true)
 ) : ParameterControl() {
     override fun copy(): ParameterControl =
-        EnvelopeControl(envelope = envelope.copy(), displayColor, display)
+        EnvelopeControl(points = points.copy(), displayColor, display)
 
-    override fun cut(cutPos: Decimal, whichHalve: HorizontalDirection): ParameterControl =
-        EnvelopeControl(envelope.cut(cutPos, whichHalve), displayColor, display)
+    override fun cut(cutPos: Decimal, whichHalve: HorizontalDirection, spec: NumericalControlSpec?): ParameterControl {
+        val warp = spec?.warp ?: error("No spec provided")
+        return EnvelopeControl(points.cut(cutPos, whichHalve, warp), displayColor, display)
+    }
 
     override fun initialize(context: Context) {
-        envelope.initialize(context)
+        points.initialize(context)
     }
 }
 
@@ -123,7 +125,7 @@ data class ValueControl(val value: ReactiveVariable<Decimal>) : ParameterControl
     }
 }
 
-fun ParameterControl.makeExpr(): ScExpr? {
+fun ParameterControl.makeExpr(spec: NumericalControlSpec?): ScExpr? {
     return when (this) {
         is BufferControl -> sample.now.get()?.superColliderExpr
         is BusControl -> bus.now.get()?.superColliderExpr
@@ -134,7 +136,10 @@ fun ParameterControl.makeExpr(): ScExpr? {
 
         is ValueControl -> DecimalLiteral(value.now)
         is CustomControl -> expr.editor.result.now
-        is EnvelopeControl -> RawScExpr(envelope.code())
+        is EnvelopeControl -> {
+            val warp = spec?.warp ?: error("No spec provided")
+            RawScExpr(points.code(warp = warp))
+        }
         is GroupControl -> group.now.get()?.let { grp -> Identifier(grp.superColliderName) }
         is SingleBusValueControl -> bus.now.get()?.superColliderExpr?.send("getSynchronous")
     }
@@ -142,7 +147,7 @@ fun ParameterControl.makeExpr(): ScExpr? {
 
 fun ParameterControl.getNumericalValue() = when (this) {
     is ValueControl -> value.now
-    is EnvelopeControl -> envelope.points.first().value
+    is EnvelopeControl -> points.points.first().value
     else -> null
 }
 

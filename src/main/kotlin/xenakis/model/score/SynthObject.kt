@@ -19,6 +19,7 @@ import xenakis.model.player.PlaybackManager
 import xenakis.model.registry.GroupRegistry
 import xenakis.model.registry.reference
 import xenakis.sc.ControlSpec
+import xenakis.sc.NumericalControlSpec
 import xenakis.sc.client.SuperColliderClient
 import xenakis.sc.editor.SynthDefSelector
 import xenakis.sc.writeSynthCode
@@ -76,12 +77,14 @@ class SynthObject(
 
     override fun doCut(position: Decimal, whichHalf: HorizontalDirection, newName: String): ScoreObject = SynthObject(
         reactiveVariable(newName), synthDefRef.copy(),
-        controls = controls.transformControls { name, c ->
+        controls = controls.transformControls { ctrl ->
+            val c = ctrl.now
+            val name = ctrl.name.now
             when {
                 name == "startPos" && c is ValueControl && whichHalf == RIGHT ->
                     ValueControl(reactiveVariable(c.value.now + position * (playBufRate?.now ?: one(3))))
 
-                else -> c.cut(position, whichHalf)
+                else -> c.cut(position, whichHalf, ctrl.spec.now as NumericalControlSpec)
             }
         }
     )
@@ -118,7 +121,7 @@ class SynthObject(
     fun reverse() {
         for (ctrl in controls.controlMap.values) {
             if (ctrl is EnvelopeControl) {
-                ctrl.envelope.reverse()
+                ctrl.points.reverse()
             }
         }
         if (sample.now != null && playBufRate != null && playbufStartPos != null) {
@@ -149,7 +152,7 @@ class SynthObject(
 
     override fun writeCode(info: ScoreObjectInfo): String = code {
         appendBlock("s.makeBundle(${context[Settings].serverLatency.now})") {
-            writeSynthCode(synthDef, context, info, duration, controls.controlMap)
+            writeSynthCode(synthDef, context, info, duration, controls, controls.controlMap)
         }
     }
 

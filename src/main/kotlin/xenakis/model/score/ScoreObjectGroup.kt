@@ -18,7 +18,6 @@ import xenakis.model.flow.ScoreObjectInfo
 import xenakis.model.obj.BusReference
 import xenakis.model.obj.GroupReference
 import xenakis.model.registry.ObjectReference
-import xenakis.sc.Rate
 import xenakis.sc.client.SuperColliderContext
 import xenakis.sc.editor.BusSelector
 import xenakis.sc.editor.GroupSelector

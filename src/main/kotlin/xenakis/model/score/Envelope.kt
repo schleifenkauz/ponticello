@@ -8,9 +8,15 @@ import hextant.undo.UndoManager
 import javafx.geometry.HorizontalDirection
 import javafx.geometry.HorizontalDirection.LEFT
 import javafx.geometry.HorizontalDirection.RIGHT
+import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
+import kotlinx.serialization.builtins.ListSerializer
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.descriptors.listSerialDescriptor
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
 import xenakis.impl.*
 import xenakis.sc.NumericalControlSpec
 import xenakis.sc.Warp
@@ -19,8 +25,8 @@ import xenakis.sc.unmap
 import xenakis.ui.score.EnvelopeView
 import kotlin.math.max
 
-@Serializable
-class Envelope(private val _points: MutableList<EnvelopePoint>, private val curve: Warp) {
+@Serializable(Envelope.Serializer::class)
+class Envelope(@SerialName("points") private val _points: MutableList<EnvelopePoint>) {
     @Transient
     private val viewManager = ListenerManager.createWeakListenerManager<EnvelopeView>()
 
@@ -54,26 +60,26 @@ class Envelope(private val _points: MutableList<EnvelopePoint>, private val curv
         }
     }
 
-    fun code(doneAction: String = "Done.freeSelf"): String {
+    fun code(doneAction: String = "Done.freeSelf", warp: Warp): String {
         val levels = points.map { (_, y) -> y.toString() }
         val times = points.zipWithNext { a, b -> (b.time - a.time).toString() }
-        return "EnvGen.kr(Env.new(levels: $levels, times: $times, curve: $curve), doneAction: $doneAction)"
+        return "EnvGen.kr(Env.new(levels: $levels, times: $times, curve: $warp), doneAction: $doneAction)"
     }
 
-    fun interpolateValueAt(t: Decimal): Decimal {
+    fun interpolateValueAt(t: Decimal, warp: Warp): Decimal {
         var i = points.binarySearch(EnvelopePoint(t, zero))
         if (i >= 0) return points[i].value
         i = -(i + 1)
         val (x1, y1) = if (i == 0) points[1] else points[i - 1]
         val (x2, y2) = if (i == points.size) points[i - 2] else points[i]
         val precision = max(y1.precision, y2.precision)
-        val slope = (curve.map(y2.value) - curve.map(y1.value)) / (x2 - x1)
+        val slope = (warp.map(y2.value) - warp.map(y1.value)) / (x2 - x1)
         val dx = t - x1
         val dy = slope * dx
-        return curve.unmap((curve.map(y1.toDouble()) + dy).toDouble()).withPrecision(precision)
+        return warp.unmap((warp.map(y1.toDouble()) + dy).toDouble()).withPrecision(precision)
     }
 
-    fun copy() = Envelope(_points.toMutableList(), curve)
+    fun copy() = Envelope(_points.toMutableList())
 
     fun addPoint(idx: Int, point: EnvelopePoint, undoable: Boolean = false) {
         _points.add(idx, point)
@@ -165,20 +171,20 @@ class Envelope(private val _points: MutableList<EnvelopePoint>, private val curv
         viewManager.removeListener(view)
     }
 
-    fun cut(position: Decimal, whichHalf: HorizontalDirection): Envelope {
+    fun cut(position: Decimal, whichHalf: HorizontalDirection, warp: Warp): Envelope {
         var i = points.binarySearch(EnvelopePoint(position, zero(0)))
         if (i < 0) i = -(i + 1)
-        val valueAtPos = interpolateValueAt(position)
+        val valueAtPos = interpolateValueAt(position, warp)
         val pivot = EnvelopePoint(position, valueAtPos)
         return when (whichHalf) {
             LEFT -> {
                 val left = points.take(i) + pivot
-                Envelope(left.toMutableList(), curve)
+                Envelope(left.toMutableList())
             }
 
             RIGHT -> {
                 val right = listOf(pivot) + points.drop(i)
-                Envelope(right.mapTo(mutableListOf()) { (x, y) -> EnvelopePoint((x - position), y) }, curve)
+                Envelope(right.mapTo(mutableListOf()) { (x, y) -> EnvelopePoint((x - position), y) })
             }
         }
     }
@@ -192,13 +198,13 @@ class Envelope(private val _points: MutableList<EnvelopePoint>, private val curv
         when {
             newDur == duration -> return
             dir == LEFT && newDur > duration -> {
-                val y = interpolateValueAt(duration - newDur).coerceIn(spec.range)
+                val y = interpolateValueAt(duration - newDur, spec.warp).coerceIn(spec.range)
                 shiftAll(points.withIndex().drop(1), deltaDur)
                 modifyPoint(0, EnvelopePoint(time = zero, value = y))
             }
 
             dir == LEFT && newDur < duration -> {
-                val y = interpolateValueAt(zero).coerceIn(spec.range)
+                val y = interpolateValueAt(zero, spec.warp).coerceIn(spec.range)
                 for ((i, p) in points.toList().withIndex()) {
                     if (p.time < (duration - newDur)) removePoint(i, undoable = false)
                 }
@@ -211,12 +217,12 @@ class Envelope(private val _points: MutableList<EnvelopePoint>, private val curv
             }
 
             dir == RIGHT && newDur > duration -> {
-                val y = interpolateValueAt(newDur).coerceIn(spec.range)
+                val y = interpolateValueAt(newDur, spec.warp).coerceIn(spec.range)
                 modifyPoint(points.size - 1, EnvelopePoint(newDur, y))
             }
 
             dir == RIGHT && newDur < duration -> {
-                val y = interpolateValueAt(newDur).coerceIn(spec.range)
+                val y = interpolateValueAt(newDur, spec.warp).coerceIn(spec.range)
                 for ((i, p) in points.withIndex().reversed()) {
                     if (p.time > newDur) removePoint(i, undoable = false)
                 }
@@ -274,7 +280,7 @@ class Envelope(private val _points: MutableList<EnvelopePoint>, private val curv
         private val idx: Int,
         private val oldValue: Decimal,
         private val newValue: Decimal,
-        private val envelope: Envelope
+        private val envelope: Envelope,
     ) : AbstractEdit() {
         override val actionDescription: String
             get() = "Edit envelope segment"
@@ -292,7 +298,7 @@ class Envelope(private val _points: MutableList<EnvelopePoint>, private val curv
         private val idx: Int,
         private val oldPoint: EnvelopePoint,
         private val newPoint: EnvelopePoint,
-        private val envelope: Envelope
+        private val envelope: Envelope,
     ) : AbstractEdit() {
         override val actionDescription: String
             get() = "Edit envelope point"
@@ -315,20 +321,32 @@ class Envelope(private val _points: MutableList<EnvelopePoint>, private val curv
 
     @Serializable
     data class EnvelopePoint(
-        @SerialName("x") val time: Decimal,
-        @SerialName("y") val value: Decimal
+        val time: Decimal,
+        val value: Decimal,
     ) : Comparable<EnvelopePoint> {
         override fun compareTo(other: EnvelopePoint): Int =
             compareValuesBy(this, other, EnvelopePoint::time, EnvelopePoint::value)
     }
 
-    companion object {
-        fun constant(value: Decimal, duration: Decimal, curve: Warp) =
-            Envelope(
-                mutableListOf(EnvelopePoint(zero(duration.precision), value), EnvelopePoint(duration, value)),
-                curve
-            )
+    object Serializer : KSerializer<Envelope> {
+        override val descriptor: SerialDescriptor
+            get() = listSerialDescriptor<EnvelopePoint>()
 
-        fun getDefault(spec: NumericalControlSpec) = constant(spec.min.get(), spec.max.get(), Warp.Linear)
+        override fun serialize(encoder: Encoder, value: Envelope) {
+            encoder.encodeSerializableValue(ListSerializer(EnvelopePoint.serializer()), value.points)
+        }
+
+        override fun deserialize(decoder: Decoder): Envelope {
+            val points = decoder.decodeSerializableValue(ListSerializer(EnvelopePoint.serializer()))
+            return Envelope(points as MutableList)
+        }
+    }
+
+    companion object {
+        fun constant(value: Decimal, duration: Decimal) = Envelope(
+            mutableListOf(EnvelopePoint(zero(duration.precision), value), EnvelopePoint(duration, value)),
+        )
+
+        fun getDefault(spec: NumericalControlSpec) = constant(spec.min.get(), spec.max.get())
     }
 }

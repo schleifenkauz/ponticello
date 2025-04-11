@@ -53,7 +53,7 @@ class SendFlow(
         val info = ScoreObjectInfo(ObjectPosition.ZERO, synthVar.removePrefix("~"), synthVar, placement)
         writeSynthCode(
             ReferencedSynthDefObject.get("send"), context,
-            info, duration = null, controls.controlMap
+            info, duration = null, controls
         )
     }
 
