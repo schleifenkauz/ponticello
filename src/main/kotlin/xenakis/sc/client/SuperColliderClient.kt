@@ -63,7 +63,6 @@ interface SuperColliderClient : SuperColliderContext {
             indicator.displayProgress(0.3, "OSC connected, booting server")
             sleep(500)
             onReady()
-            run("s.boot;")
         }
         statusListener.on(StatusUpdate.ServerBooted) {
             indicator.displayProgress(0.9, "Server booted")

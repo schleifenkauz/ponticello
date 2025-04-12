@@ -1,5 +1,6 @@
 package xenakis.ui.registry
 
+import fxutils.actions.ContextualizedAction
 import fxutils.actions.collectActions
 import fxutils.actions.registerShortcuts
 import fxutils.plural
@@ -20,8 +21,10 @@ abstract class ObjectRegistryPane<O : NamedObject>(
         styleClass("object-registry-pane")
     }
 
+    protected open fun headerActions(): List<ContextualizedAction> = emptyList()
+
     protected fun setup() {
-        setup(title = plural(registry.objectType), registry) { headerActions.withContext(this) }
+        setup(title = plural(registry.objectType), registry) { headerActions() + headerActions.withContext(this) }
         listView.autoResizeScene = true
         registerShortcuts(listView.actions)
     }

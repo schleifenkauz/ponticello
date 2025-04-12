@@ -100,8 +100,7 @@ class XenakisProject private constructor(val components: Map<Component<out Conte
                     try {
                         json.decodeFromStream(serializer, stream)
                     } catch (e: Exception) {
-                        Logger.error("Error while reading component $name from $file!", detailMessage = e.message)
-                        e.printStackTrace()
+                        Logger.error("Error while reading component $name from $file!", e)
                         default()
                     } finally {
                         stream.close()

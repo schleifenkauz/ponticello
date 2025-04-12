@@ -5,6 +5,9 @@ import bundles.publicProperty
 import bundles.set
 import hextant.context.Context
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
+import reaktive.Observer
+import reaktive.value.ReactiveVariable
 import reaktive.value.reactiveVariable
 import xenakis.model.obj.SampleObject
 import xenakis.model.obj.SuperColliderObject
@@ -15,11 +18,19 @@ import java.io.File
 @Serializable
 class SampleRegistry(
     override val objects: MutableList<SampleObject> = mutableListOf(),
+    val copyAudioFiles: ReactiveVariable<Boolean>
 ) : SuperColliderObjectRegistry<SampleObject>() {
     override val objectType: String
         get() = "Sample"
     override val liveCycleType: SuperColliderObject.LiveCycleType
         get() = SuperColliderObject.LiveCycleType.ServerBoot
+
+    @Transient
+    private val copyObserver: Observer = copyAudioFiles.observe { _, _, copy ->
+        for (obj in objects) {
+            obj.toggleCopyToSamplesDir(copy)
+        }
+    }
 
     override fun initialize(context: Context) {
         context[SampleRegistry] = this
@@ -36,6 +47,6 @@ class SampleRegistry(
     }
 
     companion object : PublicProperty<SampleRegistry> by publicProperty("SampleRegistry") {
-        fun createDefault() = SampleRegistry()
+        fun createDefault() = SampleRegistry(copyAudioFiles = reactiveVariable(true))
     }
 }

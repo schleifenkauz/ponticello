@@ -12,7 +12,6 @@ import reaktive.value.now
 import xenakis.impl.*
 import xenakis.model.project.XenakisProject
 import xenakis.model.project.XenakisProject.Companion.projectDirectory
-import xenakis.model.registry.ObjectRegistry
 import xenakis.model.registry.SampleRegistry
 import xenakis.model.score.ObjectPosition
 import xenakis.sc.client.ScWriter
@@ -24,12 +23,12 @@ import javax.sound.sampled.AudioSystem
 @Serializable
 class SampleObject private constructor(
     @SerialName("name") override val mutableName: ReactiveVariable<String>,
-    private var referencedFile: String
+    private var referencedFile: String,
 ) : AbstractSuperColliderObject() {
     override val superColliderName: String
         get() = "~sample_${name.now}"
 
-    override val registry: ObjectRegistry<*>?
+    override val registry: SampleRegistry
         get() = context[SampleRegistry]
 
     private val samplesDir
@@ -39,14 +38,6 @@ class SampleObject private constructor(
     @Transient
     lateinit var audioFile: File
         private set
-
-    private fun resolveAudioFile(base: File) {
-        audioFile = when {
-            referencedFile.startsWith("../") -> base.parentFile.resolve(referencedFile.drop(3))
-            referencedFile.startsWith("./") -> base.resolve(referencedFile.drop(2))
-            else -> File(referencedFile)
-        }.canonicalFile
-    }
 
     val spectrogramFile get() = samplesDir.resolve("${name.now}_spectrogram.png")
 
@@ -85,18 +76,68 @@ class SampleObject private constructor(
 
     override fun onAdded(context: Context) {
         super.onAdded(context)
+        if (registry.copyAudioFiles.now) {
+            copyReferencedFileToSamplesDir()
+            updateInfos()
+        }
         updateSpectrogram()
     }
 
+    private fun copyReferencedFileToSamplesDir() {
+        val file = referencedFile()
+        if (!file.isFile) {
+            Logger.error("Audio file referenced by sample '${name.now}' not found!", Logger.Category.Samples)
+            return
+        }
+        try {
+            file.copyTo(audioFileInSamplesDir(), overwrite = true)
+        } catch (e: Exception) {
+            Logger.error("Error while copying sample '${name.now}' [$file] to samples directory", e)
+        }
+    }
+
     override fun initialize(context: Context) {
-        resolveAudioFile(context[projectDirectory])
         super.initialize(context)
-        updateInfos()
+        resolveAudioFile()
+        if (!(registry.copyAudioFiles.now && !(audioFileInSamplesDir().isFile))) {
+            updateInfos()
+        }
+    }
+
+    private fun resolveAudioFile() {
+        audioFile = when (registry.copyAudioFiles.now) {
+            true -> audioFileInSamplesDir()
+            false -> referencedFile()
+        }
+    }
+
+    private fun audioFileInSamplesDir(): File = samplesDir.resolve("${name.now}.wav")
+
+    private fun referencedFile(): File {
+        val base = context[projectDirectory]
+        return when {
+            referencedFile.startsWith("../") -> base.parentFile.resolve(referencedFile.drop(3))
+            referencedFile.startsWith("./") -> base.resolve(referencedFile.drop(2))
+            else -> File(referencedFile)
+        }.canonicalFile
+    }
+
+    fun toggleCopyToSamplesDir(copy: Boolean) {
+        if (copy) {
+            copyReferencedFileToSamplesDir()
+            audioFile = audioFileInSamplesDir()
+        } else {
+            audioFileInSamplesDir().delete()
+            audioFile = referencedFile()
+        }
     }
 
     override fun onRemoved() {
         super.onRemoved()
         spectrogramFile.delete()
+        if (registry.copyAudioFiles.now) {
+            audioFileInSamplesDir().delete()
+        }
     }
 
     fun loadFile(file: File) {
@@ -135,6 +176,7 @@ class SampleObject private constructor(
 
     override fun ScWriter.sync() {
         updateSpectrogram()
+        copyReferencedFileToSamplesDir()
         updateInfos()
         contentChange.fire()
         super.sync()
@@ -142,9 +184,6 @@ class SampleObject private constructor(
 
     private fun updateSpectrogram() {
         if (audioFile.isFile) {
-            //if (referencedFile.absolutePath != wavFile.absolutePath) {
-            //referencedFile.copyTo(wavFile, overwrite = true)
-            //}
             createSpectrogram().join()
             Thread.sleep(10)
         }

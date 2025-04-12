@@ -55,7 +55,6 @@
   - how to lookup which score pane is hovered?
 - live updates for envelopes
 - ability to copy and paste whole time ranges
-- option to copy samples to project directory
 - improve the timeline 
   - maybe only move playback cursor on timeline?
 - retrieve global SynthDefs from `compositions` directory
@@ -142,6 +141,7 @@
 - cutting doesn't work
 - the `Unresolved` ScoreObject should not be saved in the `ScoreObjectRegistry`
 - weird window sizing issue with tool pane windows
+- have to initialize buses before SynthDefs!
 
 ## Was unterscheidet Ponticello von anderen DAWs?
 - Möglichkeit beliebig komplexe SynthDefs zu bauen.

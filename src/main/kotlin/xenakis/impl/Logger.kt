@@ -6,6 +6,7 @@ import org.kordamp.ikonli.materialdesign2.MaterialDesignA
 import org.kordamp.ikonli.materialdesign2.MaterialDesignB
 import org.kordamp.ikonli.materialdesign2.MaterialDesignC
 import org.kordamp.ikonli.materialdesign2.MaterialDesignI
+import xenakis.ui.impl.stackTraceString
 
 object Logger {
     private val views = ListenerManager.Companion.createWeakListenerManager<View>()
@@ -13,15 +14,18 @@ object Logger {
 
     var level: Level = Level.Info
 
-    fun log(level: Level, category: Category? = null, message: String, detailMessage: String? = null) {
+    fun log(
+        level: Level, category: Category? = null, message: String,
+        detailMessage: String? = null, exception: Throwable? = null,
+    ) {
         if (level < this.level) return
         val timestamp = System.currentTimeMillis()
-        val record = Record(timestamp, level, category, message, detailMessage)
+        val record = Record(timestamp, level, category, message, detailMessage ?: exception?.message)
         records.add(record)
         if (level == Level.Error) {
             System.err.println("Error: $message")
-            if (detailMessage != null && detailMessage != message) {
-                System.err.println("$detailMessage")
+            if (exception != null) {
+                exception.printStackTrace()
             } else {
                 Thread.dumpStack()
             }
@@ -37,6 +41,10 @@ object Logger {
     fun warn(message: String, category: Category) = log(Level.Warning, category, message)
     fun error(message: String, category: Category? = null, detailMessage: String? = null) =
         log(Level.Error, category, message, detailMessage)
+
+    fun error(message: String, exception: Throwable, category: Category? = null) {
+        log(Level.Error, category, message, exception.stackTraceString(), exception)
+    }
 
     fun severe(message: String, category: Category? = null, detailMessage: String? = null) =
         error(message, category, detailMessage)
@@ -58,7 +66,7 @@ object Logger {
         val level: Level,
         val category: Category?,
         val message: String,
-        val detailMessage: String?
+        val detailMessage: String?,
     )
 
     data class Filter(val level: Level, val category: Category, val searchText: String) {

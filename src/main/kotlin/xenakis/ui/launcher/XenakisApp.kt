@@ -7,7 +7,6 @@ import reaktive.value.now
 import xenakis.impl.Logger
 import xenakis.model.Settings
 import xenakis.ui.impl.NotificationView
-import xenakis.ui.impl.stackTraceString
 import kotlin.concurrent.thread
 
 class XenakisApp : Application() {
@@ -33,7 +32,7 @@ class XenakisApp : Application() {
     private fun setupLogging() {
         Thread.currentThread().setUncaughtExceptionHandler { _, e ->
             e.printStackTrace()
-            Logger.error(e.message ?: "<no message>", null, detailMessage = e.stackTraceString())
+            Logger.error(e.message ?: "<no message>", e)
         }
         Logger.level = Logger.Level.Fine
         NotificationView.level = Logger.Level.Confirmation

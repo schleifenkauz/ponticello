@@ -2,6 +2,7 @@ package xenakis.model.registry
 
 import hextant.context.Context
 import hextant.serial.EditorRoot
+import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import reaktive.value.reactiveVariable
 import xenakis.model.obj.GlobalPatternObject
@@ -22,19 +23,18 @@ class GlobalPatternRegistry(
         super.initialize(context)
     }
 
-    object Serializer :
-        CustomNamedObjectListSerializer<GlobalPatternObject, EditorRoot<CodeBlockEditor>, GlobalPatternRegistry>(
-            kotlinx.serialization.serializer()
-        ) {
+    @Suppress("UNCHECKED_CAST")
+    object Serializer : CustomNamedObjectListSerializer<GlobalPatternObject,
+            EditorRoot<CodeBlockEditor>,
+            GlobalPatternRegistry
+            >(EditorRoot.Serializer as KSerializer<EditorRoot<CodeBlockEditor>>,) {
         override fun createList(elements: MutableList<GlobalPatternObject>): GlobalPatternRegistry =
             GlobalPatternRegistry(elements)
 
         override fun getContent(obj: GlobalPatternObject): EditorRoot<CodeBlockEditor> = obj.patternCode
 
-        override fun createObject(
-            name: String,
-            content: EditorRoot<CodeBlockEditor>,
-        ): GlobalPatternObject = GlobalPatternObject(reactiveVariable(name), content)
+        override fun createObject(name: String, content: EditorRoot<CodeBlockEditor>): GlobalPatternObject =
+            GlobalPatternObject(reactiveVariable(name), content)
     }
 
     companion object {

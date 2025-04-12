@@ -18,8 +18,10 @@ import javafx.stage.Stage
 import xenakis.impl.Logger
 import xenakis.impl.registerImplementationsFromClasspath
 import xenakis.model.Settings
+import xenakis.model.project.SERVER_OPTIONS
 import xenakis.model.project.XenakisProject
 import xenakis.model.project.XenakisProject.Companion.projectDirectory
+import xenakis.model.project.get
 import xenakis.model.registry.GlobalSynthDefLib
 import xenakis.sc.client.OSCSuperColliderClient
 import xenakis.sc.client.SuperColliderClient
@@ -60,7 +62,7 @@ class XenakisLauncher {
         val activity = try {
             createActivity()
         } catch (e: Exception) {
-            Logger.error("Error $description", detailMessage = e.message)
+            Logger.error("Error $description", e)
             e.printStackTrace()
             showLauncher()
             return null
@@ -96,6 +98,7 @@ class XenakisLauncher {
     private fun getActiveProject(): XenakisProject? = (currentActivity as? XenakisMainActivity)?.project
 
     private fun openProject(project: XenakisProject) {
+        project[SERVER_OPTIONS].reboot(project.context)
         rootContext[UndoManager].reset()
         rootContext[currentProject] = project
         recentProjects.push(project.projectDirectory)
@@ -176,8 +179,7 @@ class XenakisLauncher {
                 }
             }
         } catch (e: Exception) {
-            e.printStackTrace()
-            Logger.error("Error starting SuperCollider", Logger.Category.Project, e.message)
+            Logger.error("Error starting SuperCollider", e, Logger.Category.Project)
             showLauncher()
         }
     }

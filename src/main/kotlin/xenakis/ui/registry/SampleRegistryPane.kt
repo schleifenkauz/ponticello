@@ -3,16 +3,22 @@ package xenakis.ui.registry
 import bundles.PublicProperty
 import bundles.publicProperty
 import bundles.set
+import fxutils.SubWindow
 import fxutils.actions.ContextualizedAction
 import fxutils.actions.collectActions
 import fxutils.hasFiles
+import fxutils.prompt.YesNoPrompt
 import fxutils.setupDropArea
+import javafx.scene.control.ScrollPane
 import javafx.scene.image.Image
+import javafx.scene.image.ImageView
 import javafx.scene.input.DataFormat
 import javafx.scene.input.Dragboard
 import org.kordamp.ikonli.evaicons.Evaicons
 import org.kordamp.ikonli.material2.Material2MZ
 import org.kordamp.ikonli.materialdesign2.MaterialDesignF
+import org.kordamp.ikonli.materialdesign2.MaterialDesignP
+import reaktive.value.now
 import reaktive.value.reactiveVariable
 import xenakis.impl.asY
 import xenakis.model.obj.SampleObject
@@ -53,6 +59,8 @@ class SampleRegistryPane(
 
     override fun getActions(box: ObjectBox<SampleObject>): List<ContextualizedAction> = actions.withContext(box.obj)
 
+    override fun headerActions(): List<ContextualizedAction> = headerActions.withContext(samples)
+
     override fun configureDragboard(obj: SampleObject, dragboard: Dragboard) {
         val scoreView = samples.context[XenakisMainActivity].scoreView
         val width = scoreView.getWidth(obj.duration)
@@ -63,11 +71,33 @@ class SampleRegistryPane(
     override fun dataFormat(obj: SampleObject): DataFormat = SampleObject.DATA_FORMAT
 
     companion object : PublicProperty<SampleRegistryPane> by publicProperty("SampleRegistryPane") {
+        private val headerActions = collectActions<SampleRegistry> {
+            addAction("Toggle copy to samples dir") {
+                toggles(
+                    { registry -> registry.copyAudioFiles },
+                    toggle = { ev, ctx, now ->
+                        when {
+                            ctx.isEmpty() -> !now
+                            now -> YesNoPrompt("Really delete samples from project directory?").showDialog(ev) != true
+                            else -> YesNoPrompt("Really copy all samples to project directory?").showDialog(ev) == true
+                        }
+                    },
+                    whenTrue = MaterialDesignP.PACKAGE_VARIANT_CLOSED,
+                    whenFalse = MaterialDesignP.PACKAGE_VARIANT
+                )
+            }
+        }
+
         private val actions = collectActions<SampleObject> {
             addAction("View sample") {
                 icon(Evaicons.ACTIVITY)
                 shortcut("Ctrl+Shift+O")
-                executes { obj -> Runtime.getRuntime().exec(arrayOf("xdg-open", obj.spectrogramFile.absolutePath)) }
+                executes { obj ->
+                    val image = ImageView(obj.spectrogramImage)
+                    val scrollPane = ScrollPane(image)
+                    val window = SubWindow(scrollPane, "Spectrogram of sample '${obj.name.now}'")
+                    window.show()
+                }
             }
             addAction("Reload") {
                 icon(Material2MZ.SYNC)

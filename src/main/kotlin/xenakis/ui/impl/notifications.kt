@@ -34,8 +34,7 @@ object NotificationView : Logger.View {
 fun <T : Any> tryWithAlert(actionDescription: String, category: Logger.Category? = null, action: () -> T): T? = try {
     action()
 } catch (e: Exception) {
-    val stackTrace = e.stackTraceString()
-    Logger.error("Exception while $actionDescription: ${e.message}", category, detailMessage = stackTrace)
+    Logger.error("Exception while $actionDescription: ${e.message}", e, category)
     null
 }
 
