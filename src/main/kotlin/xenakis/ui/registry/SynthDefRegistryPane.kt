@@ -74,37 +74,35 @@ class SynthDefRegistryPane(
 
     override fun addObject() {
         val globalLib = registry.context[GlobalSynthDefLib]
-        globalLib.reload()
-        val synthDefsFromGlobal = globalLib.get()
-            .map { instr -> AddInstrumentOption.SynthDefFromGlobalLib(instr) }
+        val synthDefsFromGlobal = globalLib.getNames().map(AddInstrumentOption::SynthDefFromGlobalLib)
         val searchableList = AddInstrumentOptionListView(synthDefsFromGlobal)
         searchableList.enterText(searchText.text)
-        val option = searchableList.showPopup(anchorNode = this) ?: return
+        val option = searchableList.showPopup(anchorNode = actionBar) ?: return
         createObject(option)
     }
 
     sealed interface AddInstrumentOption {
         data class NewSynthDef(val name: String) : AddInstrumentOption
 
-        data class SynthDefFromGlobalLib(val instrument: SynthDefObject) : AddInstrumentOption
+        data class SynthDefFromGlobalLib(val synthDefName: String) : AddInstrumentOption
     }
 
     private inner class AddInstrumentOptionListView(
         options: List<AddInstrumentOption>,
-    ) : SimpleSearchableListView<AddInstrumentOption>(options, "Add instrument") {
+    ) : SimpleSearchableListView<AddInstrumentOption>(options, "Add SynthDef") {
         override fun makeOption(text: String): AddInstrumentOption? {
             return if (Identifier.isValid(text) && !registry.has(text)) AddInstrumentOption.NewSynthDef(text)
             else null
         }
 
         override fun displayText(option: AddInstrumentOption): String = when (option) {
-            is AddInstrumentOption.SynthDefFromGlobalLib -> "SynthDef: ${option.instrument.name.now}"
+            is AddInstrumentOption.SynthDefFromGlobalLib -> "SynthDef: ${option.synthDefName}"
             else -> "<invalid>"
         }
 
         override fun extractText(option: AddInstrumentOption): String = when (option) {
             is AddInstrumentOption.NewSynthDef -> option.name
-            is AddInstrumentOption.SynthDefFromGlobalLib -> option.instrument.name.now
+            is AddInstrumentOption.SynthDefFromGlobalLib -> option.synthDefName
         }
     }
 
@@ -118,17 +116,13 @@ class SynthDefRegistryPane(
             }
 
             is AddInstrumentOption.SynthDefFromGlobalLib -> {
-                val name = option.instrument.name.now
-                if (registry.has(name)) {
-                    Platform.runLater {
-                        if (YesNoPrompt("Overwrite SynthDef $name?").showDialog(anchorNode = this) == true) {
-                            registry.overwrite(option.instrument)
-                            option.instrument.sync()
-                        }
-                    }
-                } else {
-                    registry.add(option.instrument)
-                    option.instrument.sync()
+                val name = option.synthDefName
+                val synthDef = registry.context[GlobalSynthDefLib].get(name) ?: return
+                if (!registry.has(name) || YesNoPrompt("Overwrite SynthDef $name?")
+                        .showDialog(anchorNode = actionBar) == true
+                ) {
+                    registry.overwrite(synthDef)
+                    synthDef.sync()
                 }
             }
         }
@@ -177,23 +171,20 @@ class SynthDefRegistryPane(
 
         private fun saveToGlobalLibrary(obj: CustomizableSynthDefObject, anchorNode: ObjectBox<SynthDefObject>) {
             val globalLib = obj.context[GlobalSynthDefLib]
-            async(timeLimit = 10000) {
-                synchronized(globalLib) {
-                    globalLib.reload()
+            val name = obj.name.now
+            if (!globalLib.has(name) ||
+                YesNoPrompt(
+                    "Overwrite SynthDef $name in global library?",
+                    default = true
+                ).showDialog(anchorNode, offset = Point2D(anchorNode.width, 0.0)) == true
+            ) {
+                async {
+                    globalLib.push(obj)
                     Platform.runLater {
-                        val name = obj.name.now
-                        if (!globalLib.has(name) ||
-                            YesNoPrompt(
-                                "Overwrite SynthDef $name in global library?",
-                                default = true
-                            ).showDialog(anchorNode, offset = Point2D(anchorNode.width, 0.0)) == true
-                        ) {
-                            globalLib.push(obj)
-                            Logger.confirm(
-                                "Saved SynthDef '${obj.name.now}' to global library.",
-                                Logger.Category.Instruments
-                            )
-                        }
+                        Logger.confirm(
+                            "Saved SynthDef '${obj.name.now}' to global library.",
+                            Logger.Category.Instruments
+                        )
                     }
                 }
             }

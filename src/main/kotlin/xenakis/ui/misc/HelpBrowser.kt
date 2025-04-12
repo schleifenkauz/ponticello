@@ -46,8 +46,8 @@ class HelpBrowser {
     }
 
     private fun show(bounds: Bounds) {
-        window.x = bounds.maxX
-        window.y = bounds.minY
+        window.x = bounds.minX
+        window.y = bounds.maxY + 10.0
         show()
     }
 

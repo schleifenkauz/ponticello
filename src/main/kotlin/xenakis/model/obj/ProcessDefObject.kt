@@ -1,6 +1,7 @@
 package xenakis.model.obj
 
 import hextant.context.Context
+import hextant.core.editor.defaultState
 import hextant.serial.EditorRoot
 import javafx.scene.paint.Color
 import kotlinx.serialization.Contextual
@@ -74,9 +75,7 @@ class ProcessDefObject(
         if (initialized) return
         super.initialize(context)
         processCode.initialize(context)
-        for (parameter in parameters) {
-            parameter.initialize(context)
-        }
+        parameters.initialize(context)
     }
 
     override fun rename(newName: String) {
@@ -89,7 +88,7 @@ class ProcessDefObject(
             mutableName = reactiveVariable(name),
             color = reactiveVariable(randomColor()),
             parameters = ParameterDefList(),
-            processCode = EditorRoot(CodeBlockEditor())
+            processCode = EditorRoot(CodeBlockEditor().defaultState())
         )
         
         fun unresolved(context: Context) = newEmpty("<unresolved>")

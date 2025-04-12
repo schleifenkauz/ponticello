@@ -35,15 +35,13 @@ import kotlin.system.exitProcess
 class XenakisLauncher {
     val recentProjects = RecentProjects()
 
-
-
     val rootContext: Context = HextantCore.defaultContext().apply {
         set(XenakisLauncher, this@XenakisLauncher)
         val files = XenakisFiles(this)
         set(XenakisFiles, files)
         set(Settings, files.loadSettings())
         get(Settings).initialize(this)
-        set(GlobalSynthDefLib, GlobalSynthDefLib(this, files.resolve("synth-def-lib.json")))
+        set(GlobalSynthDefLib, GlobalSynthDefLib(files.resolve("synth-def-lib")))
         registerImplementationsFromClasspath()
         HextantCore.apply(this, PluginBuilder.Phase.Initialize, null)
         XenakisHextantPlugin.apply(this, PluginBuilder.Phase.Initialize, null)

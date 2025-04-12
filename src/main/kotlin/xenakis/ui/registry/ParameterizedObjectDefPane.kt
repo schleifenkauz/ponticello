@@ -34,7 +34,7 @@ class ParameterizedObjectDefPane(
         val defaultParameters = context[Settings].defaultParametersDefs
         val listView = SearchableParameterDefListView(
             defaultParameters, "New parameter", null,
-            context[primaryStage], localToScreen(0.0, height)
+            context[primaryStage], actionBar.localToScreen(0.0, actionBar.height)
         )
         val newParam = listView.showPopup() ?: return
         parameters.add(newParam)

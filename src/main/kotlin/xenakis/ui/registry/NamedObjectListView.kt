@@ -66,7 +66,7 @@ class NamedObjectListView<O : NamedObject>(
         for (box in boxes) box.setContentDisplay(mode)
         if (mode == ContentDisplay.DetailsPane) {
             displayContent(selectedBox)
-            setHgrow(itemsScrollPane, Priority.ALWAYS)
+            setHgrow(itemsScrollPane, Priority.NEVER)
         } else {
             setHgrow(itemsScrollPane, Priority.SOMETIMES)
         }

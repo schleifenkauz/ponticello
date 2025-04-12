@@ -2,9 +2,7 @@ package xenakis.model.registry
 
 import bundles.PublicProperty
 import bundles.publicProperty
-import hextant.context.Context
-import hextant.context.withoutUndo
-import hextant.serial.readJson
+import kotlinx.serialization.json.decodeFromStream
 import kotlinx.serialization.json.encodeToStream
 import reaktive.value.now
 import xenakis.impl.Logger
@@ -13,35 +11,35 @@ import xenakis.impl.json
 import xenakis.model.obj.CustomizableSynthDefObject
 import java.io.File
 
-class GlobalSynthDefLib(private val context: Context, private val file: File) {
-    private var collection = mutableListOf<CustomizableSynthDefObject>()
-    private var lastReloaded = 0L
-
-    fun reload() {
-        if (file.lastModified() < lastReloaded) return
-        collection =
-            if (file.exists()) context.withoutUndo { file.readJson<MutableList<CustomizableSynthDefObject>>() }
-            else mutableListOf(CustomizableSynthDefObject.sine())
-        lastReloaded = System.currentTimeMillis()
+@Suppress("OPT_IN_USAGE")
+class GlobalSynthDefLib(private val directory: File) {
+    init {
+        directory.mkdirs()
     }
 
-    fun get(): List<CustomizableSynthDefObject> = collection
+    fun getNames(): List<String> =
+        if (!(directory.isDirectory)) emptyList()
+        else directory.listFiles()!!.filter { it.endsWith(".json") }.map { it.nameWithoutExtension }
 
-    fun get(name: String) = get().find { instr -> instr.name.now == name }
+    fun get(name: String): CustomizableSynthDefObject? {
+        val file = jsonFile(name)
+        if (!file.isFile) return null
+        val stream = file.inputStream().buffered()
+        val def: CustomizableSynthDefObject = json.decodeFromStream(stream)
+        return def
+    }
 
     fun push(synthDef: CustomizableSynthDefObject) {
-        reload()
-        val defs = collection.toMutableList()
-        defs.removeIf { def -> def.name.now == synthDef.name.now }
-        defs.add(synthDef)
+        val name = synthDef.name.now
+        val file = jsonFile(name)
         async {
             val stream = file.outputStream().buffered()
             try {
-                json.encodeToStream(defs, stream)
+                json.encodeToStream(synthDef, stream)
             } catch (ex: Exception) {
-                Logger.severe(
-                    "Error while saving SynthDefLib: ${ex.message}",
-                    Logger.Category.Registries, ex.stackTraceToString()
+                Logger.error(
+                    "Error while saving SynthDef '$name' to global library",
+                    ex, Logger.Category.Registries
                 )
             } finally {
                 stream.close()
@@ -49,7 +47,9 @@ class GlobalSynthDefLib(private val context: Context, private val file: File) {
         }
     }
 
-    fun has(name: String): Boolean = collection.any { it.name.now == name }
+    fun has(name: String): Boolean = jsonFile(name).isFile
+
+    private fun jsonFile(name: String): File = directory.resolve("$name.json")
 
     companion object : PublicProperty<GlobalSynthDefLib> by publicProperty("GlobalSynthDefLib")
 }

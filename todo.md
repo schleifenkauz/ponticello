@@ -13,7 +13,12 @@
 
 ### UI niceties
 
+- option to put documentation browser into fixed window
 - save main window size/position and arrangement of utility panes
+
+### Better help popups for SuperCollider API
+
+- press Ctrl+P to show parameter info of current selected cell
 
 ### Support for patterns
 
@@ -69,6 +74,7 @@
 - make command popups more stylish
 - reconsider the bundle system
 - use TAB to navigate in editor hierarchy
+- add play button to samples
 
 ## Long term ideas
 
@@ -99,6 +105,13 @@
   - like goto statements
   - can have conditions (examples...?)
 
+### DJ functionality
+
+- split stems with demucs
+- do we need a global tempo?
+- a track is a sample with a tempo grid
+- when adding a track to the score, choose how to align it with the existing grids
+
 ### Different curvatures for envelopes
 
 ### Is vertical scroll/zoom needed?
@@ -109,10 +122,6 @@
 
 - for example a little overview pane at the bottom (like in VSCode)
 - is arrow key navigation inside the score somehow possible?
-
-### Ability to take snapshots of the score (basic version control)
-
-- could also be just done in git...
 
 ### Drum sequencer objects
 
@@ -139,7 +148,6 @@
 - selection based region display is not quite right
 - recording doesn't work
 - cutting doesn't work
-- the `Unresolved` ScoreObject should not be saved in the `ScoreObjectRegistry`
 - weird window sizing issue with tool pane windows
 - have to initialize buses before SynthDefs!
 

@@ -29,6 +29,9 @@ abstract class ToolPane : VBox() {
     lateinit var header: Region
         private set
 
+    protected lateinit var actionBar: ActionBar
+        private set
+
     init {
         styleClass("tool-pane")
     }
@@ -59,7 +62,7 @@ abstract class ToolPane : VBox() {
 
     private fun createHeader(title: ReactiveString, headerActions: List<ContextualizedAction>): HBox {
         val label = label(title).styleClass("heading")
-        val actionBar = ActionBar(headerActions, buttonStyle = "medium-icon-button")
+        actionBar = ActionBar(headerActions, buttonStyle = "medium-icon-button")
         val box = HBox(label, infiniteSpace(), actionBar).styleClass("tool-pane-header")
         box.setupWindowDragging { scene.window }
         label.setupWindowDragging { scene.window }
