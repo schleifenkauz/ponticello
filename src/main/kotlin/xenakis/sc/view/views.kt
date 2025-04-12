@@ -136,7 +136,7 @@ fun createControl(editor: xenakis.sc.editor.BusControlSpecEditor, arguments: Bun
             view(editor.channels) {
                 set(IntSpinnerControl.MIN, 1)
                 set(IntSpinnerControl.MAX, 256)
-            }.maxWidth = 50.0
+            }.maxWidth = 65.0
             root.centerChildren().styleClass("bus-control-spec")
         }
     }

@@ -6,9 +6,9 @@ import fxutils.runFXWithTimeout
 import hextant.undo.compoundEdit
 import reaktive.value.now
 import reaktive.value.reactiveVariable
+import xenakis.impl.Logger
 import xenakis.impl.copy
 import xenakis.impl.unaryMinus
-import xenakis.impl.Logger
 import xenakis.model.registry.ScoreObjectRegistry
 import xenakis.model.score.*
 import xenakis.ui.launcher.XenakisMainActivity
@@ -38,13 +38,8 @@ object SelectionRelatedActions {
             context[ScoreObjectSelectionManager].selectAll()
         }
         on("Ctrl+Shift+A") {
-            val selected = scoreView.selector.focusedView.now ?: return@on
-            val obj = selected.instance.obj
-            if (obj is ScoreObject.Unresolved) {
-                Logger.warn("Object is not resolved", Logger.Category.Score)
-                return@on
-            }
-            for (inst in selected.pane.score.instancesOf(obj)) {
+            val selected = resolveFocusedObject(scoreView.selector) ?: return@on
+            for (inst in selected.pane.score.instancesOf(selected.instance.obj)) {
                 if (inst != selected.instance) {
                     val view = selected.pane.getObjectView(inst)
                     context[ScoreObjectSelectionManager].select(view, addToSelection = true)
@@ -53,14 +48,9 @@ object SelectionRelatedActions {
         }
         on("C") { ev ->
             if (ev.isTargetTextInput) return@on
-            val selected = scoreView.selector.focusedView.now ?: return@on
-            val obj = selected.instance.obj
-            if (obj is ScoreObject.Unresolved) {
-                Logger.warn("Object is not resolved", Logger.Category.Score)
-                return@on
-            }
+            val selected = resolveFocusedObject(scoreView.selector) ?: return@on
             activity.toolSelector.select(Tool.Pointer)
-            scoreView.setClipboard(obj, selected)
+            scoreView.setClipboard(selected.instance.obj, selected)
         }
         on("Ctrl+C") { ev ->
             if (ev.isTargetTextInput) return@on
@@ -120,5 +110,15 @@ object SelectionRelatedActions {
             }
         }
 
+    }
+
+    private fun resolveFocusedObject(selector: ScoreObjectSelectionManager): ScoreObjectView? {
+        val selected = selector.focusedView.now ?: return null
+        val obj = selected.instance.obj
+        if (obj is ScoreObject.Unresolved) {
+            Logger.warn("Object is not resolved", Logger.Category.Score)
+            return null
+        }
+        return selected
     }
 }

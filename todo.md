@@ -52,6 +52,7 @@
 - make pasting with shortcut (V and Shift+V)
   - how to query mouse position (`javafx.scene.robot.Robot.mousePosition`)
 - object insertion with INSERT
+  - how to lookup which score pane is hovered?
 - live updates for envelopes
 - ability to copy and paste whole time ranges
 - option to copy samples to project directory
@@ -65,6 +66,10 @@
 - highlight unresolved references of object selectors
 - unify window positioning
 - more adequate midi contexts 
+  - based on focused window
+- make command popups more stylish
+- reconsider the bundle system
+- use TAB to navigate in editor hierarchy
 
 ## Long term ideas
 
@@ -136,6 +141,7 @@
 - recording doesn't work
 - cutting doesn't work
 - the `Unresolved` ScoreObject should not be saved in the `ScoreObjectRegistry`
+- weird window sizing issue with tool pane windows
 
 ## Was unterscheidet Ponticello von anderen DAWs?
 - Möglichkeit beliebig komplexe SynthDefs zu bauen.

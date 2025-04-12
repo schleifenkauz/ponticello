@@ -40,6 +40,7 @@ class XenakisLauncher {
         val files = XenakisFiles(this)
         set(XenakisFiles, files)
         set(Settings, files.loadSettings())
+        get(Settings).initialize(this)
         set(GlobalSynthDefLib, GlobalSynthDefLib(this, files.resolve("synth-def-lib.json")))
         registerImplementationsFromClasspath()
         HextantCore.apply(this, PluginBuilder.Phase.Initialize, null)

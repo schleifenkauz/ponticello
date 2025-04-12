@@ -78,7 +78,7 @@ data class NumericalControlSpec(
     val warp: Warp,
     val step: DecimalLiteral,
     @Serializable(with = ColorSerializer::class)
-    @Component(ColorEditor::class)
+    @Component(SimpleColorEditor::class)
     val associatedColor: Color = Color.WHITE
 ) : ControlSpec {
     val precision get() = step.get().precision

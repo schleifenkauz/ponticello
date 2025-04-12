@@ -2,7 +2,6 @@ package xenakis.sc.editor
 
 import hextant.core.Editor
 import hextant.core.editor.ChoiceEditor
-import hextant.core.editor.ColorEditor
 import hextant.serial.JsonSerializer
 import hextant.serial.KJsonSerializer
 import xenakis.impl.randomColor
@@ -54,7 +53,7 @@ class ControlSpecEditor() : ChoiceEditor<ParameterType, ControlSpec, Editor<Cont
             max = DecimalLiteralEditor("1"),
             warp = WarpEditor(Warp.Linear),
             step = DecimalLiteralEditor("0.1"),
-            associatedColor = ColorEditor(randomColor())
+            associatedColor = SimpleColorEditor(randomColor())
         )
 
         else -> throw AssertionError("unknown parameter type $choice")

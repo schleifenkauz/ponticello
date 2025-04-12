@@ -95,7 +95,7 @@ object XenakisHextantPlugin : PluginInitializer({
         registerCommand<C, Unit> {
             shortName = "multiline"
             name = "Put $itemType on multiple lines"
-            defaultShortcut("Alt?+V")
+            defaultShortcut("Alt+V")
             executing { ctrl, _ ->
                 val selectedBefore = ctrl.context[SelectionDistributor].focusedView.now
                 ctrl.arguments[MULTILINE] = true
@@ -107,7 +107,7 @@ object XenakisHextantPlugin : PluginInitializer({
         registerCommand<C, Unit> {
             shortName = "singleLine"
             name = "Put $itemType on single lines"
-            defaultShortcut("Alt?+H")
+            defaultShortcut("Alt+H")
             executing { ctrl, _ ->
                 val selectedBefore = ctrl.context[SelectionDistributor].focusedView.now
                 ctrl.arguments[MULTILINE] = false

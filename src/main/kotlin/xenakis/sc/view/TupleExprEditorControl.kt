@@ -2,6 +2,7 @@ package xenakis.sc.view
 
 import bundles.Bundle
 import bundles.set
+import bundles.withDefault
 import hextant.codegen.ProvideImplementation
 import hextant.context.ControlFactory
 import hextant.core.view.CompoundEditorControl
@@ -15,7 +16,7 @@ import hextant.fx.view
 class TupleExprEditorControl @ProvideImplementation(ControlFactory::class) constructor(
     private val editor: xenakis.sc.editor.TupleExprEditor,
     args: Bundle
-) : CompoundEditorControl(editor, args) {
+) : CompoundEditorControl(editor, args.withDefault(MULTILINE, false)) {
     override fun build(): Layout = vertical {
         styleClass("compound-expr", "tuple")
         view(editor.elements) {

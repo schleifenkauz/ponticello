@@ -2,6 +2,7 @@ package xenakis.sc.view
 
 import bundles.Bundle
 import bundles.set
+import bundles.withDefault
 import fxutils.centerChildren
 import fxutils.registerShortcuts
 import fxutils.styleClass
@@ -22,7 +23,7 @@ import xenakis.ui.misc.HelpBrowser
 class MessageSendEditorControl @ProvideImplementation(ControlFactory::class) constructor(
     private val editor: xenakis.sc.editor.MessageSendEditor,
     arguments: Bundle
-) : CompoundEditorControl(editor, arguments) {
+) : CompoundEditorControl(editor, arguments.withDefault(MULTILINE, false)) {
     private val hasArguments = editor.arguments.editors.isNotEmpty()
 
     override fun build(): Layout = vertical {

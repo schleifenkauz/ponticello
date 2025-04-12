@@ -15,7 +15,7 @@ import xenakis.ui.actions.RegistryObjectActions
 
 class BusObjectBox(obj: BusObject) : HBox() {
     private val label = label(obj.name) styleClass "bus-label"
-    private val channelsSpinner = Spinner<Int>(0, 128, 2).setFixedWidth(50.0)
+    private val channelsSpinner = Spinner<Int>(0, 128, 2).setFixedWidth(65.0)
 
     init {
         styleClass("bus-box")

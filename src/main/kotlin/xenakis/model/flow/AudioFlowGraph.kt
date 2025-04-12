@@ -122,7 +122,7 @@ class AudioFlowGraph(
         }
 
         is ActiveSynth -> {
-            val group = node.obj.group.now.get() ?: node.obj.context[GroupRegistry].getDefault()
+            val group = node.obj.groupObj
             if (group.isDefault) {
                 getPlacementInOrder(node)
             } else {

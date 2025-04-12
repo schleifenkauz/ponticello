@@ -54,9 +54,9 @@ class SynthObject(
     override val def: ParameterizedObjectDef
         get() = synthDef
 
-    val group: ReactiveValue<GroupReference> get() = (controls.controlMap["group"] as GroupControl).group
+    val group: ReactiveVariable<GroupReference>? get() = (controls.controlMap["group"] as GroupControl?)?.group
 
-    val groupObj get() = group.now.get() ?: context[GroupRegistry].getDefault()
+    val groupObj get() = group?.now?.get() ?: context[GroupRegistry].getDefault()
 
     private val bufferControl get() = controls.controlMap["buf"] as? BufferControl
 

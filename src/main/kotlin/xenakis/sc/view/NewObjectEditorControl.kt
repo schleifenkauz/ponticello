@@ -2,6 +2,7 @@ package xenakis.sc.view
 
 import bundles.Bundle
 import bundles.set
+import bundles.withDefault
 import fxutils.centerChildren
 import fxutils.styleClass
 import hextant.codegen.ProvideImplementation
@@ -21,7 +22,7 @@ import reaktive.value.now
 class NewObjectEditorControl @ProvideImplementation(ControlFactory::class) constructor(
     private val editor: xenakis.sc.editor.NewObjectEditor,
     arguments: Bundle
-) : CompoundEditorControl(editor, arguments) {
+) : CompoundEditorControl(editor, arguments.withDefault(MULTILINE, false)) {
     private val anyArguments = editor.arguments.editors.isNotEmpty()
 
     init {

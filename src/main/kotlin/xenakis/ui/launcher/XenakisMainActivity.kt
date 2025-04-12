@@ -58,7 +58,7 @@ class XenakisMainActivity(val project: XenakisProject) : Activity() {
     val synthDefsPane = SynthDefRegistryPane(project.instruments)
     val synthDefsWindow = makeSubWindow(synthDefsPane, "Instruments", context, SubWindow.Type.Undecorated)
 
-    val processDefsPane = ProcessDefRegistryPane(project.get(PROCESS_DEFS))
+    val processDefsPane = ProcessDefRegistryPane(project[PROCESS_DEFS])
     val processDefsWindow = makeSubWindow(processDefsPane, "Process Definitions", context, SubWindow.Type.Undecorated)
 
     private val busRegistryPane = ControlBusRegistryPane(project.busses)
@@ -112,10 +112,16 @@ class XenakisMainActivity(val project: XenakisProject) : Activity() {
         flowPane.setPrefSize(1000.0, 1000.0)
         flowPaneWindow = makeSubWindow(flowPane, "Audio flows", context)
 
+        synthDefsWindow.scene.initHextantScene(context)
+        processDefsWindow.scene.initHextantScene(context)
+
         val (serverSetup, serverTree) = project[SETUP_CODE]
         serverSetupCodeWindow = makeSubWindow(serverSetup.control, "ServerSetup", context)
+        serverSetupCodeWindow.scene.initHextantScene(context)
         serverSetupCodeWindow.resize(500.0, 500.0)
+
         serverTreeCodeWindow = makeSubWindow(serverTree.control, "ServerTree", context)
+        serverTreeCodeWindow.scene.initHextantScene(context)
         serverTreeCodeWindow.resize(500.0, 500.0)
 
         playback = PlaybackManager(scoreView, project.flows)
@@ -141,7 +147,6 @@ class XenakisMainActivity(val project: XenakisProject) : Activity() {
         stage.scene.addGlobalShortcuts()
         stage.initStyle(StageStyle.UNDECORATED)
         ArrowKeys.registerArrowKeys(stage.scene, this)
-        stage.scene.initHextantScene(context)
         stage.title = "Xenakis: ${project.name}"
         stage.isResizable = true
         Platform.runLater {

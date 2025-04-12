@@ -30,14 +30,8 @@ val BUFFERS = component<BufferRegistry>(
     "buffers", BufferRegistry::createDefault,
     NamedObjectListSerializer(serializer(), ::BufferRegistry)
 )
-val SAMPLES = component<SampleRegistry>(
-    "samples", SampleRegistry::createDefault,
-    NamedObjectListSerializer(serializer(), ::SampleRegistry)
-)
-val PATTERNS = component<GlobalPatternRegistry>(
-    "patterns", GlobalPatternRegistry::createDefault,
-    NamedObjectListSerializer(serializer(), ::GlobalPatternRegistry)
-)
+val SAMPLES = component<SampleRegistry>("samples", SampleRegistry::createDefault)
+val PATTERNS = component<GlobalPatternRegistry>("patterns", GlobalPatternRegistry::createDefault)
 val INSTRUMENTS = component<SynthDefRegistry>("instruments", SynthDefRegistry::createDefault)
 val FLOWS = component<AudioFlows>("flows", AudioFlows::createDefault)
 val PROCESS_DEFS = component<ProcessDefRegistry>("processDefs", ProcessDefRegistry::createDefault)

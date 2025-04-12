@@ -7,6 +7,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import reaktive.Observer
+import reaktive.value.ReactiveValue
 import reaktive.value.ReactiveVariable
 import reaktive.value.now
 import reaktive.value.reactiveVariable
@@ -46,8 +47,9 @@ class ParameterControlList(
         )
 
         @Transient
-        lateinit var spec: ReactiveVariable<ControlSpec?>
-            private set
+        private lateinit var _spec: ReactiveVariable<ControlSpec?>
+
+        val spec: ReactiveValue<ControlSpec?> get() = _spec
 
         @Transient
         lateinit var controls: ParameterControlList
@@ -68,7 +70,7 @@ class ParameterControlList(
             this.controls = controls
             super.initialize(controls.context)
             value.initialize(context)
-            spec = reactiveVariable(customSpec ?: controls.getDefaultSpec(this))
+            _spec = reactiveVariable(customSpec ?: controls.getDefaultSpec(this))
         }
 
         fun setCustomSpec(custom: ControlSpec?) {
@@ -77,8 +79,16 @@ class ParameterControlList(
             context[UndoManager].record(EditCustomSpec(this, before, custom))
             val defaultSpec = controls.getDefaultSpec(this)
             val oldSpec = before ?: defaultSpec
-            spec.now = custom ?: defaultSpec
+            _spec.now = custom ?: defaultSpec
             controls.notifyListeners<Listener> { changedSpec(this@NamedParameterControl, oldSpec, spec.now) }
+        }
+
+        fun useSpecFromDefinition(): Boolean {
+            check(spec.now == null) { "useSpecFromDefinition can only be used if current spec is null" }
+            val spec = controls.def.getSpec(name.now)?: return false
+            _spec.now = spec.now
+            controls.notifyListeners<Listener> { changedSpec(this@NamedParameterControl, null, spec.now) }
+            return true
         }
 
         fun customSpec() = customSpec
@@ -90,7 +100,7 @@ class ParameterControlList(
         fun parameterSpecChanged(newSpec: ControlSpec) {
             if (customSpec == null) {
                 val oldSpec = spec.now
-                spec.now = newSpec
+                _spec.now = newSpec
                 controls.notifyListeners<Listener> { changedSpec(this@NamedParameterControl, oldSpec, spec.now) }
             }
         }

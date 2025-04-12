@@ -2,6 +2,7 @@ package xenakis.model
 
 import bundles.PublicProperty
 import bundles.publicProperty
+import hextant.context.Context
 import kotlinx.serialization.Serializable
 import reaktive.value.ReactiveVariable
 import reaktive.value.now
@@ -22,6 +23,10 @@ class Settings(
     val lookAhead get() = scLangLatency.now + serverLatency.now
 
     fun getDefaultControlSpec(name: String) = defaultParametersDefs.find { p -> p.name.now == name }?.spec?.now
+
+    fun initialize(context: Context) {
+        defaultParametersDefs.initialize(context)
+    }
 
     companion object : PublicProperty<Settings> by publicProperty("SETTINGS") {
         fun createDefault(): Settings = Settings(

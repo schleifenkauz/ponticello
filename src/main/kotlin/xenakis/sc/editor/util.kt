@@ -1,6 +1,5 @@
 package xenakis.sc.editor
 
-import hextant.core.editor.ColorEditor
 import xenakis.model.obj.BusObject
 import xenakis.model.registry.reference
 import xenakis.sc.NumericalControlSpec
@@ -12,7 +11,7 @@ fun NumericalControlSpec.createEditor() = NumericalControlSpecEditor(
     max = DecimalLiteralEditor(max.text),
     warp = WarpEditor(warp),
     step = DecimalLiteralEditor(step.text),
-    associatedColor = ColorEditor(associatedColor)
+    associatedColor = SimpleColorEditor(associatedColor)
 )
 
 private fun ScExprEditor<*>.exp() = ScExprExpander(this)

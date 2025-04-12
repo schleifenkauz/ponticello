@@ -7,6 +7,7 @@ import hextant.context.Context
 import kotlinx.serialization.Serializable
 import reaktive.value.now
 import xenakis.model.score.ScoreObject
+import xenakis.model.score.ScoreObject.Unresolved
 
 @Serializable
 class ScoreObjectRegistry(
@@ -18,6 +19,13 @@ class ScoreObjectRegistry(
     override fun initialize(context: Context) {
         context[ScoreObjectRegistry] = this
         super.initialize(context)
+    }
+
+    override fun add(obj: ScoreObject, idx: Int) {
+        if (obj is Unresolved) {
+            throw IllegalStateException("Attempt to add Unresolved object to ScoreObjectRegistry")
+        }
+        super.add(obj, idx)
     }
 
     fun availableName(prefix: String): String {
