@@ -32,7 +32,7 @@ import java.io.File
 
 class SampleRegistryPane(
     private val samples: SampleRegistry,
-) : SuperColliderObjectRegistryPane<SampleObject>(samples) {
+) : ObjectRegistryPane<SampleObject>(samples) {
     init {
         setupDropArea({ db -> db.hasFiles("wav") }, { ev ->
             for (file in ev.dragboard.files) {
@@ -44,18 +44,18 @@ class SampleRegistryPane(
     }
 
     override fun addObject() {
-        addSample { file -> Identifier.truncate(file.nameWithoutExtension) }
+        val obj = loadNewSample { file -> Identifier.truncate(file.nameWithoutExtension) } ?: return
+        registry.add(obj)
     }
 
-    private fun addSample(name: (File) -> String): SampleObject? {
+    private fun loadNewSample(name: (File) -> String): SampleObject? {
         val file = samples.context[XenakisFiles].showOpenDialog("*.wav") ?: return null
         if (samples.getSample(file) != null) return null
         val sample = SampleObject.create(samples.context[currentProject], reactiveVariable(name(file)), file)
-        samples.add(sample)
         return sample
     }
 
-    public override fun addObject(name: String): SampleObject? = addSample { _ -> name }
+    public override fun createNewObject(name: String): SampleObject? = loadNewSample { _ -> name }
 
     override fun getActions(box: ObjectBox<SampleObject>): List<ContextualizedAction> = actions.withContext(box.obj)
 

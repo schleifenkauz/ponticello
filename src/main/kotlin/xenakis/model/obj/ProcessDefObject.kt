@@ -55,13 +55,15 @@ class ProcessDefObject(
 
     override fun ScWriter.createObject() {
         appendBlock("$superColliderName = ") {
-            +"arg t = 0, duration${
-                parameters.joinToString(prefix = ", ", separator = ", ") { p ->
-                    val defaultValue = p.spec.now.defaultValueExpr
-                    val name = p.name.now
-                    if (defaultValue != null) "$name = $defaultValue" else name
-                }
-            }"
+            append("arg t = 0, duration")
+            for (p in parameters) {
+                val defaultValue = p.spec.now.defaultValueExpr
+                val name = p.name.now
+                append(", ")
+                if (defaultValue != null) append("$name = $defaultValue")
+                else append(name)
+            }
+            appendLine(";")
             val argumentSubstitution = parameters.associate { p ->
                 val name = p.name.now
                 name to RawScExpr("$name.value(t)")

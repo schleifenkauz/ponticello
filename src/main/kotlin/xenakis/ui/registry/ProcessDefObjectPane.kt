@@ -18,8 +18,4 @@ class ProcessDefObjectPane(def: ProcessDefObject) : ParameterizedObjectDefPane<P
         }
         styleClass("code-pane")
     }
-
-    override fun update() {
-        def.sync()
-    }
 }

@@ -14,8 +14,7 @@ class ArrayExprEditorControl @ProvideImplementation(ControlFactory::class) const
     override fun build(): Layout = vertical {
         root.styleClass("compound-expr", "array")
         if (arguments[MULTILINE]) {
-            keyword("array")
-            operator("[")
+            horizontal { keyword("array"); operator("[") }
             indented {
                 viewVertical(editor.elements)
             }

@@ -9,8 +9,4 @@ class SynthDefObjectPane(def: CustomizableSynthDefObject) : ParameterizedObjectD
     def, def.name.map { n -> "SynthDef $n" }
 ) {
     override fun getContent(def: CustomizableSynthDefObject): Node = def.ugenGraph!!.control.styleClass("code-pane")
-
-    override fun update() {
-        def.sync()
-    }
 }

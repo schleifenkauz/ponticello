@@ -59,7 +59,7 @@ object Logger {
     }
 
     fun getRecords(filter: Filter? = null): List<Record> =
-        if (filter != null) records.filter { r -> filter.accepts(r) } else records
+        if (filter != null) records.filter { r -> filter.accepts(r) } else records.toList()
 
     data class Record(
         val timestamp: Long,

@@ -6,9 +6,8 @@ import xenakis.model.registry.SynthDefRegistry
 import xenakis.ui.launcher.XenakisMainActivity
 
 class SynthDefSelector : ObjectSelector<SynthDefObject>() {
-    override fun getRegistry(): ObjectRegistry<SynthDefObject> =
-        context[SynthDefRegistry] as ObjectRegistry<SynthDefObject> //TODO
+    override fun getRegistry(): ObjectRegistry<SynthDefObject> = context[SynthDefRegistry]
 
     override fun createNewObject(name: String): SynthDefObject? =
-        context[XenakisMainActivity].synthDefsPane.createSynthDef(name)
+        context[XenakisMainActivity].synthDefsPane.createNewObject(name)
 }

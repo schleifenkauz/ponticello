@@ -56,10 +56,10 @@ class XenakisMainActivity(val project: XenakisProject) : Activity() {
         .styleClass("toolbar-part")
 
     val synthDefsPane = SynthDefRegistryPane(project.instruments)
-    val synthDefsWindow = makeSubWindow(synthDefsPane, "Instruments", context, SubWindow.Type.Undecorated)
+    val synthDefsWindow = makeSubWindow(synthDefsPane, "Instruments", context, SubWindow.Type.ToolWindow)
 
     val processDefsPane = ProcessDefRegistryPane(project[PROCESS_DEFS])
-    val processDefsWindow = makeSubWindow(processDefsPane, "Process Definitions", context, SubWindow.Type.Undecorated)
+    val processDefsWindow = makeSubWindow(processDefsPane, "Process Definitions", context, SubWindow.Type.ToolWindow)
 
     private val busRegistryPane = ControlBusRegistryPane(project.busses)
     val busesWindow = makeSubWindow(busRegistryPane, "Busses", context, SubWindow.Type.Undecorated)

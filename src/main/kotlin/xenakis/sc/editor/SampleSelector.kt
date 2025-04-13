@@ -24,5 +24,5 @@ class SampleSelector : ObjectSelector<SampleObject>() {
     override fun filter(obj: SampleObject): Boolean =
         expectedChannels.now == null || obj.channels == expectedChannels.now
 
-    override fun createNewObject(name: String): SampleObject? = context[SampleRegistryPane].addObject(name)
+    override fun createNewObject(name: String): SampleObject? = context[SampleRegistryPane].createNewObject(name)
 }

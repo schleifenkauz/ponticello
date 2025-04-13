@@ -29,17 +29,16 @@ abstract class ObjectRegistryPane<O : NamedObject>(
         registerShortcuts(listView.actions)
     }
 
-    protected abstract fun sync()
-
     protected open fun addObject() {
         val name = NamePrompt(
             registry, "Name for new ${registry.objectType}",
             initialName = ""
         ).showDialog(actionBar, offset = Point2D(0.0, actionBar.height)) ?: return
-        addObject(name)
+        val obj = createNewObject(name) ?: return
+        registry.add(obj)
     }
 
-    protected abstract fun addObject(name: String): O?
+    protected abstract fun createNewObject(name: String): O?
 
     companion object {
         private val headerActions = collectActions<ObjectRegistryPane<*>> {
@@ -54,9 +53,10 @@ abstract class ObjectRegistryPane<O : NamedObject>(
                 shortcut("Ctrl+Shift+S")
                 icon(MaterialDesignS.SYNC)
                 executes { p ->
-                    p.sync()
+                    p.registry.syncAll()
+                    p.registry.save()
                     Logger.confirm(
-                        "Synchronized ${plural(p.registry.objectType)} with server",
+                        "Synchronized ${plural(p.registry.objectType)} with server and saved to project directory",
                         Logger.Category.Registries
                     )
                 }

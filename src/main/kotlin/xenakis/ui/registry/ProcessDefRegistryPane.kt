@@ -1,21 +1,22 @@
 package xenakis.ui.registry
 
-import fxutils.SubWindow
+import fxutils.actions.ContextualizedAction
+import fxutils.actions.collectActions
 import fxutils.setFixedWidth
-import hextant.fx.initHextantScene
 import javafx.scene.Node
 import javafx.scene.Parent
-import javafx.scene.paint.Color
 import org.kordamp.ikonli.Ikon
 import org.kordamp.ikonli.material2.Material2AL
+import org.kordamp.ikonli.materialdesign2.MaterialDesignE
 import xenakis.model.obj.ProcessDefObject
+import xenakis.model.registry.GlobalDefinitionLibrary
 import xenakis.model.registry.ProcessDefRegistry
 import xenakis.ui.impl.colorPicker
 import xenakis.ui.registry.NamedObjectListView.ContentDisplay
 
 class ProcessDefRegistryPane(
     registry: ProcessDefRegistry,
-) : SuperColliderObjectRegistryPane<ProcessDefObject>(registry) {
+) : ParameterizedObjectDefRegistryPane<ProcessDefObject>(registry, GlobalDefinitionLibrary.processDefs) {
     override val supportedModes: Set<ContentDisplay> get() = setOf(ContentDisplay.DetailsPane, ContentDisplay.SubWindow)
 
     init {
@@ -24,22 +25,23 @@ class ProcessDefRegistryPane(
 
     override fun detailWindowIcon(obj: ProcessDefObject): Ikon = Material2AL.CODE
 
-    override fun getItemContent(obj: ProcessDefObject): List<Node> {
-        val colorPicker = colorPicker(obj.color)
-        colorPicker.setFixedWidth(30.0)
-        return listOf(colorPicker)
-    }
+    override fun getItemContent(obj: ProcessDefObject): List<Node> = listOf(colorPicker(obj.color).setFixedWidth(30.0))
 
-    override fun addObject(name: String): ProcessDefObject {
-        val processDef = ProcessDefObject.newEmpty(name)
-        registry.add(processDef)
-        return processDef
-    }
+    override fun createNewObject(name: String): ProcessDefObject = ProcessDefObject.newEmpty(name)
 
     override fun getContent(obj: ProcessDefObject): Parent = ProcessDefObjectPane(obj)
 
-    override fun configureSubWindow(window: SubWindow) {
-        window.scene.initHextantScene(registry.context, applyStyle = false)
-        window.scene.fill = Color.BLACK
+    override fun getActions(box: ObjectBox<ProcessDefObject>): List<ContextualizedAction> = actions.withContext(box)
+
+    companion object {
+        private val actions = collectActions<ObjectBox<ProcessDefObject>> {
+            addAction("Save to global library") {
+                icon(MaterialDesignE.EXPORT_VARIANT)
+                executes { box ->
+                    val def = box.obj
+                    def.context[GlobalDefinitionLibrary.processDefs].saveToGlobalLib(def, anchorNode = box)
+                }
+            }
+        }
     }
 }

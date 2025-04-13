@@ -28,6 +28,7 @@ class ProcessObjectView(
         pane.addItem("Color:", this.colorPicker)
         val selector = ProcessDefSelector()
         selector.syncWith(obj.processDefRef)
+        selector.initialize(context)
         val viewBtn = Material2AL.CODE.button(action = "View ProcessDef") {
             context[XenakisMainActivity].processDefsPane.listView.showContent(obj.processDef)
         }.styleClass("medium-icon-button").disableIf(selector.isResolved)

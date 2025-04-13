@@ -29,18 +29,14 @@ import xenakis.sc.NumericalControlSpec
 import xenakis.sc.client.SuperColliderClient
 import xenakis.ui.controls.ControlSpecPrompt
 
-class ControlBusRegistryPane(private val busses: BusRegistry) : SuperColliderObjectRegistryPane<BusObject>(busses) {
+class ControlBusRegistryPane(busses: BusRegistry) : ObjectRegistryPane<BusObject>(busses) {
     private val specObservers = ObserverMap<BusObject.ControlBus>()
 
     init {
      setup()
     }
 
-    override fun addObject(name: String): BusObject {
-        val bus = BusObject.control(name, 1)
-        busses.add(bus)
-        return bus
-    }
+    override fun createNewObject(name: String): BusObject = BusObject.control(name, 1)
 
     override val enableReordering: Boolean
         get() = true

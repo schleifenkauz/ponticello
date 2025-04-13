@@ -15,6 +15,7 @@ import hextant.serial.writeJson
 import hextant.undo.UndoManager
 import javafx.application.Platform
 import javafx.stage.Stage
+import kotlinx.serialization.serializer
 import xenakis.impl.Logger
 import xenakis.impl.registerImplementationsFromClasspath
 import xenakis.model.Settings
@@ -22,7 +23,7 @@ import xenakis.model.project.SERVER_OPTIONS
 import xenakis.model.project.XenakisProject
 import xenakis.model.project.XenakisProject.Companion.projectDirectory
 import xenakis.model.project.get
-import xenakis.model.registry.GlobalSynthDefLib
+import xenakis.model.registry.GlobalDefinitionLibrary
 import xenakis.sc.client.OSCSuperColliderClient
 import xenakis.sc.client.SuperColliderClient
 import xenakis.ui.impl.showDialog
@@ -41,7 +42,18 @@ class XenakisLauncher {
         set(XenakisFiles, files)
         set(Settings, files.loadSettings())
         get(Settings).initialize(this)
-        set(GlobalSynthDefLib, GlobalSynthDefLib(files.resolve("synth-def-lib")))
+        set(
+            GlobalDefinitionLibrary.synthDefs, GlobalDefinitionLibrary(
+                files.resolve("synth-def-lib"),
+                serializer(), objectType = "SynthDef"
+            )
+        )
+        set(
+            GlobalDefinitionLibrary.processDefs, GlobalDefinitionLibrary(
+                files.resolve("process-def-lib"),
+                serializer(), objectType = "ProcessDef"
+            )
+        )
         registerImplementationsFromClasspath()
         HextantCore.apply(this, PluginBuilder.Phase.Initialize, null)
         XenakisHextantPlugin.apply(this, PluginBuilder.Phase.Initialize, null)

@@ -5,6 +5,7 @@ import fxutils.actions.collectActions
 import fxutils.alwaysHGrow
 import fxutils.shortcut
 import fxutils.styleClass
+import javafx.scene.Cursor
 import javafx.scene.control.TextField
 import javafx.scene.input.KeyEvent
 import javafx.scene.layout.HBox
@@ -35,6 +36,7 @@ class NameControl(
         val toolbar = ActionBar(actions.withContext(this), buttonStyle = "small-icon-button")
         children.addAll(field, toolbar)
         field.isEditable = false
+        field.cursorProperty().bind(field.editableProperty().map { editable -> if (editable) Cursor.TEXT else Cursor.DEFAULT })
         field.addEventFilter(KeyEvent.KEY_PRESSED) { ev ->
             if ("ENTER".shortcut.matches(ev)) {
                 commitEdit()
@@ -101,7 +103,7 @@ class NameControl(
             }
             addAction("Abandon edit") {
                 applicableIf { ctrl -> ctrl.isEditing }
-                icon(Material2AL.CLOSE)
+                //icon(Material2AL.CLOSE)
                 executes(NameControl::abandonEdit)
             }
         }

@@ -1,13 +1,11 @@
 package xenakis.ui.registry
 
-import fxutils.PseudoClasses
-import fxutils.SubWindow
+import fxutils.*
 import fxutils.actions.Action
 import fxutils.actions.collectActions
-import fxutils.letContentFillViewPort
-import fxutils.styleClass
 import javafx.scene.Node
 import javafx.scene.Parent
+import javafx.scene.control.Control
 import javafx.scene.control.ScrollPane
 import javafx.scene.input.Clipboard
 import javafx.scene.layout.HBox
@@ -24,7 +22,7 @@ class NamedObjectListView<O : NamedObject>(
     val source: NamedObjectList<O>,
     val config: ObjectBoxConfig<O>,
     private val contentDisplay: ReactiveVariable<ContentDisplay>,
-) : HBox(), NamedObjectList.Listener<O> {
+) : Control(), NamedObjectList.Listener<O> {
     constructor(
         source: NamedObjectList<O>, config: ObjectBoxConfig<O>,
         contentDisplay: ContentDisplay = config.supportedModes.first(),
@@ -62,13 +60,12 @@ class NamedObjectListView<O : NamedObject>(
 
     fun setMode(mode: ContentDisplay) {
         contentDisplay.now = mode
-        children.setAll(itemsScrollPane)
+        if (mode != ContentDisplay.DetailsPane) {
+            setRoot(itemsScrollPane)
+        }
         for (box in boxes) box.setContentDisplay(mode)
         if (mode == ContentDisplay.DetailsPane) {
             displayContent(selectedBox)
-            setHgrow(itemsScrollPane, Priority.NEVER)
-        } else {
-            setHgrow(itemsScrollPane, Priority.SOMETIMES)
         }
         autoResize()
     }
@@ -76,12 +73,13 @@ class NamedObjectListView<O : NamedObject>(
     private fun displayContent(box: ObjectBox<O>?) {
         val content = box?.content ?: return
         displayedContent = content as? ToolPane ?: ScrollPane(content)
-        children.add(content)
+        HBox.setHgrow(displayedContent, Priority.ALWAYS)
+        setRoot(HBox(itemsScrollPane, displayedContent))
     }
 
     private fun autoResize() {
         if (autoResizeScene && scene?.window != null) {
-
+            //TODO size...
         }
     }
 
@@ -113,7 +111,9 @@ class NamedObjectListView<O : NamedObject>(
         boxes.remove(box)
         vbox.children.remove(box)
         box.subWindow?.hide()
-        if (displayedContent == box.content) children.remove(displayedContent)
+        if (displayedContent == box.content) {
+            setRoot(itemsScrollPane)
+        }
         if (mode.now != ContentDisplay.DetailsPane) autoResize()
     }
 
@@ -140,8 +140,10 @@ class NamedObjectListView<O : NamedObject>(
         selectedBox?.pseudoClassStateChanged(PseudoClasses.SELECTED, false)
         selectedBox = box
         box.pseudoClassStateChanged(PseudoClasses.SELECTED, true)
-        children.remove(displayedContent)
-        if (mode.now == ContentDisplay.DetailsPane) displayContent(box)
+        setRoot(itemsScrollPane)
+        if (mode.now == ContentDisplay.DetailsPane) {
+            displayContent(box)
+        }
         config.onSelected(box.obj)
     }
 

@@ -19,12 +19,12 @@ import xenakis.sc.client.SuperColliderClient
 
 class BufferRegistryPane(
     buffers: BufferRegistry,
-) : SuperColliderObjectRegistryPane<BufferObject>(buffers) {
+) : ObjectRegistryPane<BufferObject>(buffers) {
     init {
         setup()
     }
 
-    override fun addObject(name: String): BufferObject? {
+    override fun createNewObject(name: String): BufferObject? {
         return compoundPrompt("Configure buffer $name") {
             val channelsSpinner = Spinner<Int>(1, 12, 2) named "Channels"
             val framesField = TextField() named "Frames"

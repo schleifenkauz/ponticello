@@ -34,7 +34,7 @@ abstract class SuperColliderObjectRegistry<O : SuperColliderObject> : ObjectRegi
         }
     }
 
-    open fun syncAll() {
+    override fun syncAll() {
         for (obj in all()) {
             client.run {
                 obj.run { sync() }

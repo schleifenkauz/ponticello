@@ -62,7 +62,6 @@
 - ability to copy and paste whole time ranges
 - improve the timeline 
   - maybe only move playback cursor on timeline?
-- retrieve global SynthDefs from `compositions` directory
 - make undecorated windows resizable
 - own editor type for control references
 - what to do when user selects a new `SynthDef` for a synth object
@@ -74,9 +73,9 @@
 - make command popups more stylish
 - use TAB to navigate in editor hierarchy
 - add play button to samples
-- process defs should also be possible to save globally
 - global variable in SuperCollider for list of all samples
 - undo managers for sub scenes 
+  - undo/redo actions on tool panes
 - move settings directory to cloud
 - clear temporary synths (and buses) when pausing
 
@@ -154,7 +153,6 @@
 - cutting doesn't work
 - weird window sizing issue with tool pane windows
 - have to initialize buses before SynthDefs!
-- copying SuperCollider expressions does not work
 
 ## Was unterscheidet Ponticello von anderen DAWs?
 - Möglichkeit beliebig komplexe SynthDefs zu bauen.

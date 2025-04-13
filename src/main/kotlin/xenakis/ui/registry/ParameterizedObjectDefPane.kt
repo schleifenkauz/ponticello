@@ -10,10 +10,10 @@ import javafx.scene.layout.VBox
 import org.kordamp.ikonli.material2.Material2MZ
 import reaktive.value.ReactiveString
 import xenakis.model.Settings
-import xenakis.model.obj.ParameterizedObjectDef
+import xenakis.model.obj.ConfigurableParameterizedObjectDef
 import xenakis.ui.launcher.XenakisApp.Companion.primaryStage
 
-abstract class ParameterizedObjectDefPane<T: ParameterizedObjectDef>(
+abstract class ParameterizedObjectDefPane<T: ConfigurableParameterizedObjectDef>(
     protected val def: T,
     title: ReactiveString,
 ) : ToolPane() {
@@ -22,14 +22,13 @@ abstract class ParameterizedObjectDefPane<T: ParameterizedObjectDef>(
 
     init {
         val content = this.getContent(def)
-        val scrollPane = ScrollPane(VBox(parametersList, content)).letContentFillViewPort()
+        val layout = VBox(parametersList, content)
+        val scrollPane = ScrollPane(layout).letContentFillViewPort()
         setup(title, scrollPane, actions = actions.withContext(this))
         parametersList.registerShortcuts(parametersList.actions)
     }
 
     protected abstract fun getContent(def: T): Node
-
-    protected abstract fun update()
 
     private fun addParameter() {
         val defaultParameters = def.context[Settings].defaultParametersDefs
@@ -54,7 +53,7 @@ abstract class ParameterizedObjectDefPane<T: ParameterizedObjectDef>(
                 icon(Material2MZ.SYNC)
                 shortcuts("Ctrl+Shift?+U")
                 executes { pane, ev ->
-                    pane.update()
+                    pane.def.sync()
                     if (ev.isShiftDown()) pane.scene.window.hide()
                 }
             }
