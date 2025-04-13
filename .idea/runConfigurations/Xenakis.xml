@@ -1,5 +1,8 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="Xenakis" type="JetRunConfigurationType">
+    <envs>
+      <env name="PONTICELLO_HOME" value="$USER_HOME$/cloud/.xenakis" />
+    </envs>
     <option name="MAIN_CLASS_NAME" value="xenakis.MainKt" />
     <module name="xenakis.main" />
     <shortenClasspath name="NONE" />

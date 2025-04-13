@@ -2,6 +2,7 @@ package xenakis.model.score
 
 import hextant.context.Context
 import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 import reaktive.value.ReactiveVariable
 import reaktive.value.now
 import reaktive.value.reactiveVariable
@@ -14,8 +15,10 @@ import xenakis.model.obj.ParameterizedObjectDef
 import xenakis.model.obj.ProcessDefObject
 import xenakis.model.obj.ProcessDefReference
 import xenakis.model.registry.GroupRegistry
+import xenakis.model.registry.ProcessDefRegistry
 import xenakis.sc.*
 
+@Serializable
 class ProcessObject(
     @SerialName("name") override val mutableName: ReactiveVariable<String>,
     @SerialName("processDef") val processDefRef: ReactiveVariable<ProcessDefReference>,
@@ -33,6 +36,12 @@ class ProcessObject(
         get() = controls.controlMap
 
     override fun getSpec(parameter: String): ControlSpec? = super<ParameterizedObject>.getSpec(parameter)
+
+    override fun initialize(context: Context) {
+        super.initialize(context)
+        processDefRef.now.resolve(context[ProcessDefRegistry])
+        controls.initialize(context, this)
+    }
 
     override fun writeCode(info: ScoreObjectInfo): String = code {
         //TODO validated before generating code

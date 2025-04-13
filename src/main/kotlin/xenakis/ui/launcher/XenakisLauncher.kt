@@ -130,7 +130,7 @@ class XenakisLauncher {
     fun createNewProject() {
         val name =
             PredicateTextPrompt("Project name", "") { name -> name.isNotBlank() }.showDialog(rootContext) ?: return
-        val location = rootContext[XenakisFiles].userHome.resolve("compositions")
+        val location = rootContext[XenakisFiles].projectsDir
             .resolve(name) //TODO introduce option for projects location
         location.mkdir()
         location.resolve("project.xen").writeText(location.name)

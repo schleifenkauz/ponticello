@@ -71,6 +71,7 @@
 - more adequate midi contexts 
   - based on focused window
 - make command popups more stylish
+  - also add adequate shortcut to show popup
 - use TAB to navigate in editor hierarchy
 - add play button to samples
 - global variable in SuperCollider for list of all samples

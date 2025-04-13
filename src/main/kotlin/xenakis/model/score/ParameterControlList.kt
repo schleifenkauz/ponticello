@@ -70,7 +70,7 @@ class ParameterControlList(
             this.controls = controls
             super.initialize(controls.context)
             value.initialize(context)
-            _spec = reactiveVariable(customSpec ?: controls.getDefaultSpec(this))
+            _spec = reactiveVariable(customSpec ?: parentObject.def.getSpec(name.now)?.now)
         }
 
         fun setCustomSpec(custom: ControlSpec?) {
