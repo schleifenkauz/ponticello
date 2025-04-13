@@ -75,15 +75,13 @@ class NamedObjectListView<O : NamedObject>(
 
     private fun displayContent(box: ObjectBox<O>?) {
         val content = box?.content ?: return
-        displayedContent = content.let { content ->
-            content as? ToolPane ?: ScrollPane(content)
-        }
+        displayedContent = content as? ToolPane ?: ScrollPane(content)
         children.add(content)
     }
 
     private fun autoResize() {
         if (autoResizeScene && scene?.window != null) {
-            scene.window.sizeToScene()
+
         }
     }
 

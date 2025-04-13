@@ -72,10 +72,13 @@
 - more adequate midi contexts 
   - based on focused window
 - make command popups more stylish
-- reconsider the bundle system
 - use TAB to navigate in editor hierarchy
 - add play button to samples
 - process defs should also be possible to save globally
+- global variable in SuperCollider for list of all samples
+- undo managers for sub scenes 
+- move settings directory to cloud
+- clear temporary synths (and buses) when pausing
 
 ## Long term ideas
 

@@ -14,7 +14,6 @@ import hextant.context.ControlFactory
 import hextant.core.view.*
 import hextant.core.view.ListEditorControl.Companion.EMPTY_DISPLAY
 import hextant.core.view.ListEditorControl.Companion.ORIENTATION
-import hextant.fx.view
 
 val MULTILINE = publicProperty("MULTILINE_ARGUMENTS", false)
 

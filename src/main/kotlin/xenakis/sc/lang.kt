@@ -16,9 +16,8 @@ import xenakis.impl.Decimal
 import xenakis.impl.parseDecimal
 import xenakis.impl.superColliderPath
 import xenakis.impl.zero
-import xenakis.model.project.XenakisProject.Companion.projectDirectory
-import xenakis.model.obj.GroupObject
 import xenakis.model.obj.GroupReference
+import xenakis.model.project.XenakisProject.Companion.projectDirectory
 import xenakis.sc.client.ScWriter
 import xenakis.sc.editor.*
 import java.io.StringWriter
@@ -360,7 +359,11 @@ data class MessageSend(val receiver: ScExpr, val method: Identifier, val argumen
 fun ScExpr.send(message: String, vararg arguments: ScExpr) =
     MessageSend(this, Identifier(message), arguments.asList())
 
-fun lambda(expr: ScExpr) = ScFunction(emptyList(), CodeBlock(emptyList(), listOf(expr)))
+fun lambda(parameters: List<Identifier>, expr: ScExpr) = ScFunction(parameters, CodeBlock(emptyList(), listOf(expr)))
+
+fun lambda(vararg parameters: String, expr: () -> ScExpr) = lambda(parameters.map(::Identifier), expr())
+
+fun lambda(expr: ScExpr) = lambda(emptyList(), expr)
 
 @Serializable
 @Compound(nodeType = ScExpr::class)

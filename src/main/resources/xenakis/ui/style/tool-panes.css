@@ -86,3 +86,7 @@
 .items-scroll-bar {
     -fx-hbar-policy: never;
 }
+
+.code-pane {
+    -fx-background-color: black;
+}

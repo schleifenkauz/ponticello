@@ -89,6 +89,7 @@ class SampleObject private constructor(
             Logger.error("Audio file referenced by sample '${name.now}' not found!", Logger.Category.Samples)
             return
         }
+        if (file.canonicalPath == audioFileInSamplesDir().canonicalPath) return
         try {
             file.copyTo(audioFileInSamplesDir(), overwrite = true)
         } catch (e: Exception) {

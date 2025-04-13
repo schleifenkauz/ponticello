@@ -17,7 +17,6 @@ import hextant.core.view.ListEditorControl.Companion.ORIENTATION
 import hextant.core.view.ListEditorControl.Orientation.Horizontal
 import hextant.core.view.ListEditorControl.Orientation.Vertical
 import hextant.core.view.ListEditorControl.SeparatorCell
-import hextant.fx.view
 import javafx.scene.layout.HBox
 
 class CodeBlockEditorControl @ProvideImplementation(ControlFactory::class) constructor(

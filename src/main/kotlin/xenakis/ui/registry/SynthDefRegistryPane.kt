@@ -17,7 +17,6 @@ import org.kordamp.ikonli.Ikon
 import org.kordamp.ikonli.material2.Material2AL
 import org.kordamp.ikonli.materialdesign2.MaterialDesignE
 import reaktive.list.toReactiveList
-import reaktive.value.binding.map
 import reaktive.value.now
 import reaktive.value.reactiveValue
 import xenakis.impl.Logger
@@ -48,19 +47,12 @@ class SynthDefRegistryPane(
         else MaterialDesignE.EYE
 
     override fun getContent(obj: SynthDefObject): Parent? = when (obj) {
-        is CustomizableSynthDefObject -> {
-            val title = obj.name.map { n -> "SynthDef $n" }
-            ParameterizedObjectDefPane(registry.context, title, obj.parameters, obj.ugenGraph!!, obj::sync)
-        }
-
-        is ReferencedSynthDefObject -> {
-            ParameterInfoPane(obj.parameters.toReactiveList())
-        }
-
+        is CustomizableSynthDefObject -> SynthDefObjectPane(obj)
+        is ReferencedSynthDefObject -> ParameterInfoPane(obj.parameters.toReactiveList())
         is NoSynthDef -> null
     }
 
-    override fun dataFormat(obj: SynthDefObject): DataFormat? = SynthDefObject.DATA_FORMAT
+    override fun dataFormat(obj: SynthDefObject): DataFormat = SynthDefObject.DATA_FORMAT
 
     override fun configureSubWindow(window: SubWindow) {
         window.scene.initHextantScene(registry.context, applyStyle = false)
@@ -121,7 +113,8 @@ class SynthDefRegistryPane(
                 if (!registry.has(name) || YesNoPrompt("Overwrite SynthDef $name?")
                         .showDialog(anchorNode = actionBar) == true
                 ) {
-                    registry.overwrite(synthDef)
+                   if (registry.has(name)) registry.overwrite(synthDef)
+                    else registry.add(synthDef)
                     synthDef.sync()
                 }
             }

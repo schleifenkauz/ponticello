@@ -107,8 +107,7 @@ abstract class ParameterizedScoreObjectView<O>(
     }
 
     private fun removeEnvelope(control: NamedParameterControl) {
-        val ed = envelopeEditors.find { ed -> ed.namedControl == control }
-            ?: error("envelope editor for $control not found")
+        val ed = envelopeEditors.find { ed -> ed.namedControl == control } ?: return
         ed.dispose()
         envelopeEditors.remove(ed)
     }

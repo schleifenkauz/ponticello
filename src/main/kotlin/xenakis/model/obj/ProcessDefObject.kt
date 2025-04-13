@@ -21,6 +21,7 @@ import xenakis.sc.RawScExpr
 import xenakis.sc.client.ScWriter
 import xenakis.sc.client.SuperColliderClient
 import xenakis.sc.editor.CodeBlockEditor
+import xenakis.sc.editor.ScExprExpander
 import xenakis.sc.substitute
 import xenakis.ui.registry.ParameterDefList
 
@@ -29,7 +30,9 @@ class ProcessDefObject(
     @SerialName("name") override val mutableName: ReactiveVariable<String>,
     val color: ReactiveVariable<@Serializable(with = ColorSerializer::class) Color>,
     override val parameters: ParameterDefList,
-    val processCode: EditorRoot<@Contextual CodeBlockEditor>
+    val setupBlock: EditorRoot<@Contextual CodeBlockEditor> = EditorRoot(CodeBlockEditor().defaultState()),
+    val loopBlock: EditorRoot<@Contextual CodeBlockEditor> = EditorRoot(CodeBlockEditor().defaultState()),
+    val deltaExpr: EditorRoot<@Contextual ScExprExpander> = EditorRoot(ScExprExpander().defaultState())
 ) : ConfigurableParameterizedObjectDef, AbstractSuperColliderObject() {
     override val superColliderName: String
         get() = "~proc_${name.now}"
@@ -44,21 +47,37 @@ class ProcessDefObject(
         reactiveVariable(name),
         color.copy(),
         ParameterDefList(parameters.mapTo(mutableListOf()) { p -> p.copy() }),
-        processCode.clone(context)
+        setupBlock.clone(context),
+        loopBlock.clone(context)
     )
 
     override fun canRenameTo(newName: String): Boolean = !context[ProcessDefRegistry].has(newName)
 
     override fun ScWriter.createObject() {
         appendBlock("$superColliderName = ") {
-            if (parameters.any()) +"arg ${parameters.joinToString(", ") { p -> p.name.now }}"
-            +"var t = 0.0"
+            +"arg t = 0, duration${
+                parameters.joinToString(prefix = ", ", separator = ", ") { p ->
+                    val defaultValue = p.spec.now.defaultValueExpr
+                    val name = p.name.now
+                    if (defaultValue != null) "$name = $defaultValue" else name
+                }
+            }"
             val argumentSubstitution = parameters.associate { p ->
                 val name = p.name.now
                 name to RawScExpr("$name.value(t)")
             }
-            val code = processCode.editor.result.now.substitute(argumentSubstitution) as CodeBlock
-            code.writeCode(writer, context)
+            val setup = setupBlock.editor.result.now.substitute(argumentSubstitution) as CodeBlock
+            val loop = loopBlock.editor.result.now.substitute(argumentSubstitution) as CodeBlock
+            val delta = deltaExpr.editor.result.now.substitute(argumentSubstitution)
+            setup.writeCode(writer, context)
+            appendBlock("while { t < duration }") {
+                appendBlock("var delta___ = ") {
+                    loop.writeCode(writer, context)
+                    delta.code(writer, context)
+                }
+                +"delta___.wait"
+                +"t = t + delta___"
+            }
         }
     }
 
@@ -74,8 +93,10 @@ class ProcessDefObject(
     override fun initialize(context: Context) {
         if (initialized) return
         super.initialize(context)
-        processCode.initialize(context)
         parameters.initialize(context)
+        setupBlock.initialize(context)
+        loopBlock.initialize(context)
+        deltaExpr.initialize(context)
     }
 
     override fun rename(newName: String) {
@@ -88,9 +109,10 @@ class ProcessDefObject(
             mutableName = reactiveVariable(name),
             color = reactiveVariable(randomColor()),
             parameters = ParameterDefList(),
-            processCode = EditorRoot(CodeBlockEditor().defaultState())
+            setupBlock = EditorRoot(CodeBlockEditor().defaultState()),
+            loopBlock = EditorRoot(CodeBlockEditor().defaultState())
         )
-        
+
         fun unresolved(context: Context) = newEmpty("<unresolved>")
     }
 }

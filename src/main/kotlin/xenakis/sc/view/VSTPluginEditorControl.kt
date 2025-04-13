@@ -9,7 +9,6 @@ import fxutils.styleClass
 import hextant.codegen.ProvideImplementation
 import hextant.context.ControlFactory
 import hextant.core.view.CompoundEditorControl
-import hextant.fx.view
 import org.kordamp.ikonli.material2.Material2MZ
 import org.kordamp.ikonli.materialdesign2.MaterialDesignE
 import xenakis.sc.editor.VSTPluginEditor

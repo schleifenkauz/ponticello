@@ -18,4 +18,4 @@ fun LoopExpr(block: CodeBlock): ScExpr = ScFunction(body = block).send("loop")
 
 @Compound(nodeType = ScExpr::class)
 fun SynthExpr(synthDef: Identifier, arguments: List<NamedExpr>): ScExpr =
-    Identifier("Synth").send("new", synthDef, ArrayExpr(arguments))
+    Identifier("Synth").send("new", SymbolLiteral(synthDef.text), ArrayExpr(arguments))

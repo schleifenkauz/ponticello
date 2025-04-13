@@ -4,7 +4,6 @@ import bundles.set
 import hextant.context.Context
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.json.decodeFromStream
-import kotlinx.serialization.json.encodeToStream
 import xenakis.impl.Logger
 import xenakis.impl.json
 import xenakis.model.flow.AudioFlowGraph
@@ -53,15 +52,13 @@ class XenakisProject private constructor(val components: Map<Component<out Conte
 
     fun save(component: Component<out  ContextualObject>) {
         val file = dataDir.resolve("${component.name}.json")
-        val stream = file.outputStream().buffered()
         val value = components.getValue(component)
         try {
-            json.encodeToStream(component.serializer as KSerializer<ContextualObject>, value, stream)
+            val str = json.encodeToString(component.serializer as KSerializer<ContextualObject>, value)
+            file.writeText(str)
         } catch (e: Exception) {
             Logger.error("Error while saving ${component.name} to $file!")
             e.printStackTrace()
-        } finally {
-            stream.close()
         }
     }
 

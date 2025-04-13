@@ -6,10 +6,9 @@ import hextant.codegen.Component
 import hextant.codegen.Compound
 import hextant.codegen.UseEditor
 import hextant.context.Context
-import hextant.core.editor.ColorEditor
 import javafx.scene.paint.Color
-import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 import reaktive.value.reactiveVariable
 import xenakis.impl.*
 import xenakis.model.flow.FlowType
@@ -20,8 +19,8 @@ import xenakis.model.registry.ObjectReference
 import xenakis.model.registry.reference
 import xenakis.model.score.BufferControl
 import xenakis.model.score.BusControl
-import xenakis.model.score.ValueControl
 import xenakis.model.score.GroupControl
+import xenakis.model.score.ValueControl
 import xenakis.sc.editor.ControlSpecEditor
 import xenakis.sc.editor.SimpleColorEditor
 import xenakis.sc.editor.SimpleIntegerEditor
@@ -38,7 +37,7 @@ enum class ParameterType {
     }
 
     companion object {
-        val regularTypes = listOf(ParameterType.Bus, ParameterType.Buffer, ParameterType.Numerical)
+        val regularTypes = listOf(Bus, Buffer, Numerical)
     }
 }
 
@@ -55,6 +54,8 @@ sealed interface ControlSpec {
     val type: ParameterType
 
     val code: String
+
+    val defaultValueExpr: String? get() = null
 }
 
 fun ControlSpec.defaultControl(context: Context, defaultBus: BusReference?) = when (this) {
@@ -79,13 +80,13 @@ data class NumericalControlSpec(
     val step: DecimalLiteral,
     @Serializable(with = ColorSerializer::class)
     @Component(SimpleColorEditor::class)
-    val associatedColor: Color = Color.WHITE
+    val associatedColor: Color = Color.WHITE,
 ) : ControlSpec {
     val precision get() = step.get().precision
 
     constructor(
         default: Double, min: Double, max: Double, step: Decimal,
-        warp: Warp = Warp.Linear, associatedColor: Color = Color.WHITE
+        warp: Warp = Warp.Linear, associatedColor: Color = Color.WHITE,
     ) : this(
         default.withPrecision(step.precision),
         min.withPrecision(step.precision), max.withPrecision(step.precision),
@@ -100,7 +101,10 @@ data class NumericalControlSpec(
         get() = ParameterType.Numerical
 
     override val code: String
-        get() = "kr(${defaultValue.get()}, spec: [${min.get()}, ${max.get()}, $warp, ${step.get()}])"
+        get() = "kr(${defaultValue.text}, spec: [${min.text}, ${max.text}, $warp, ${step.text}])"
+
+    override val defaultValueExpr: String
+        get() = defaultValue.text
 
     val range: DecimalRange get() = min.get()..max.get()
 
@@ -134,13 +138,13 @@ data class NumericalControlSpec(
 class BusControlSpec(
     val rate: Rate,
     @Component(editor = SimpleIntegerEditor::class) val channels: Int,
-    @Component(editor = FlowTypeEditor::class) val flow: FlowType
+    @Component(editor = FlowTypeEditor::class) val flow: FlowType,
 ) : ControlSpec {
     override val type: ParameterType
         get() = ParameterType.Bus
 
     override val code: String
-        get() = rate.toString()
+        get() = "kr"
 
     override fun equals(other: Any?): Boolean = other is BusControlSpec
 

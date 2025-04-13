@@ -3,7 +3,6 @@ package xenakis.model.registry
 import bundles.PublicProperty
 import bundles.publicProperty
 import kotlinx.serialization.json.decodeFromStream
-import kotlinx.serialization.json.encodeToStream
 import reaktive.value.now
 import xenakis.impl.Logger
 import xenakis.impl.async
@@ -19,7 +18,7 @@ class GlobalSynthDefLib(private val directory: File) {
 
     fun getNames(): List<String> =
         if (!(directory.isDirectory)) emptyList()
-        else directory.listFiles()!!.filter { it.endsWith(".json") }.map { it.nameWithoutExtension }
+        else directory.listFiles()!!.filter { it.extension == "json" }.map { it.nameWithoutExtension }
 
     fun get(name: String): CustomizableSynthDefObject? {
         val file = jsonFile(name)
@@ -33,18 +32,15 @@ class GlobalSynthDefLib(private val directory: File) {
         val name = synthDef.name.now
         val file = jsonFile(name)
         async {
-            val stream = file.outputStream().buffered()
             try {
-                json.encodeToStream(synthDef, stream)
+                val str = json.encodeToString(synthDef)
+                file.writeText(str)
             } catch (ex: Exception) {
                 Logger.error(
                     "Error while saving SynthDef '$name' to global library",
                     ex, Logger.Category.Registries
                 )
-            } finally {
-                stream.close()
-            }
-        }
+            }         }
     }
 
     fun has(name: String): Boolean = jsonFile(name).isFile

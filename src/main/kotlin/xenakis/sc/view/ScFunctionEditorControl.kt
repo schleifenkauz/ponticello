@@ -3,16 +3,9 @@ package xenakis.sc.view
 import bundles.Bundle
 import bundles.createBundle
 import bundles.publicProperty
-import bundles.set
 import hextant.codegen.ProvideImplementation
 import hextant.context.ControlFactory
 import hextant.core.view.CompoundEditorControl
-import hextant.core.view.ListEditorControl.Companion.ADD_WITH_COMMA
-import hextant.core.view.ListEditorControl.Companion.CELL_FACTORY
-import hextant.core.view.ListEditorControl.Companion.ORIENTATION
-import hextant.core.view.ListEditorControl.Orientation.Horizontal
-import hextant.core.view.ListEditorControl.SeparatorCell
-import hextant.fx.view
 import reaktive.collection.binding.isEmpty
 import reaktive.collection.binding.size
 import reaktive.value.binding.and
@@ -34,7 +27,7 @@ class ScFunctionEditorControl @ProvideImplementation(ControlFactory::class) cons
 
     override fun build(): Layout = if (arguments[SINGLE_LINE_FUNCTION] && canBeSingleLine.now) horizontal {
         styleClass("compound-expr", "function", "function-singleline")
-        viewParameters()
+        viewHorizontal(editor.parameters)
         operator(" -> ")
         view(editor.body.statements.editors.now[0])
     } else vertical {
@@ -42,17 +35,9 @@ class ScFunctionEditorControl @ProvideImplementation(ControlFactory::class) cons
         horizontal {
             keyword("arg")
             space()
-            viewParameters()
+            viewHorizontal(editor.parameters)
         }
         CodeBlockEditorControl.displayVarsAndStatements(this@vertical, editor.body)
-    }
-
-    private fun Horizontal.viewParameters() {
-        view(editor.parameters) {
-            set(ORIENTATION, Horizontal)
-            set(CELL_FACTORY) { SeparatorCell(", ") }
-            set(ADD_WITH_COMMA, true)
-        }
     }
 
     companion object {

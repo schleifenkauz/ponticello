@@ -12,12 +12,13 @@ import xenakis.model.obj.ParameterizedObject
 import xenakis.model.obj.ParameterizedObjectDef
 import xenakis.model.obj.ProcessDefObject
 import xenakis.model.obj.ProcessDefReference
-import xenakis.sc.ControlSpec
+import xenakis.model.registry.GroupRegistry
+import xenakis.sc.*
 
 class ProcessObject(
     @SerialName("name") override val mutableName: ReactiveVariable<String>,
     @SerialName("processDef") val processDefRef: ReactiveVariable<ProcessDefReference>,
-    override val controls: ParameterControlList
+    override val controls: ParameterControlList,
 ) : ScoreObject(), ParameterizedObject {
     override val type: String
         get() = "process"
@@ -33,10 +34,58 @@ class ProcessObject(
     override fun getSpec(parameter: String): ControlSpec? = super<ParameterizedObject>.getSpec(parameter)
 
     override fun writeCode(info: ScoreObjectInfo): String = code {
+        //TODO validated before generating code
+        val arguments = controls.joinToString(", ") { control ->
+            val name = control.name.now
+            val ctrl = control.now
+            val spec = control.spec.now
+            val timeParameter = listOf(Identifier("t"))
+            val expr = when (ctrl) {
+                is CustomControl -> {
+                    val expr = ctrl.expr.editor.result.now
+                    val body = expr as? CodeBlock ?: CodeBlock(emptyList(), listOf(expr))
+                    ScFunction(timeParameter, body)
+                }
+
+                is EnvelopeControl -> {
+                    spec as? NumericalControlSpec ?: error("No numerical control spec for argument $name")
+                    val varName = "env_$name"
+                    +"var $varName = ${ctrl.points.code(warp = spec.warp)}"
+                    lambda("t") { Identifier(varName).send("at", Identifier("t")) }
+                }
+
+                is GroupControl -> {
+                    val group = ctrl.group.now.get() ?: context[GroupRegistry].getDefault()
+                    Identifier(group.superColliderName)
+                }
+
+                is SingleBusValueControl -> {
+                    val bus = ctrl.bus.now.get() ?: error("Unresolved bus ${ctrl.bus.now}")
+                    lambda("t") { Identifier(bus.superColliderName).send("getSynchronous") }
+                }
+
+                is BusValueControl ->  {
+                    error("BusValueControl is not allowed on process objects")
+                }
+
+                is BufferControl -> {
+                    val buffer = ctrl.sample.now.get() ?: error("Unresolved sample ${ctrl.sample.now}")
+                    Identifier(buffer.superColliderName)
+                }
+
+                is BusControl -> {
+                    val bus = ctrl.bus.now.get() ?: error("Unresolved bus ${ctrl.bus.now}")
+                    Identifier(bus.superColliderName)
+                }
+
+                is ValueControl -> DecimalLiteral(ctrl.value.now)
+            }
+            "$name: ${expr.code(context)}"
+        }
         appendBlock("Task", endLine = false) {
             val latency = context[Settings].serverLatency.get()
             +"$latency.wait"
-            +"${processDefRef.now.superColliderName}.value()"
+            +"${processDefRef.now.superColliderName}.value(t: 0, duration: $duration, $arguments)"
         }
         +".play"
     }
