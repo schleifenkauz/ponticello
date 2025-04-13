@@ -27,7 +27,6 @@ fun ScExpr.transform(f: (ScExpr) -> ScExpr): ScExpr = when (this) {
     is Assignment -> f(Assignment(variable, expression.transform(f)))
     is MessageSend -> f(MessageSend(receiver.transform(f), method, arguments.map { a -> a.transform(f) }))
     is OperatorExpr -> f(OperatorExpr(left.transform(f), operator, right.transform(f)))
-    is NewObject -> f(NewObject(className, arguments.map { a -> a.transform(f) }))
     is AccessKey -> f(AccessKey(receiver.transform(f), key.transform(f)))
     is SpreadArray -> f(SpreadArray(array.transform(f)))
     is VSTPlugin -> f(VSTPlugin(input.transform(f), channels, pluginName, id, presetName))

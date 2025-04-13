@@ -18,6 +18,8 @@ import hextant.fx.view
 
 val MULTILINE = publicProperty("MULTILINE_ARGUMENTS", false)
 
+val HIDE_NEW_KEYWORD = publicProperty("HIDE_NEW_KEYWORD", true)
+
 val DISPLAY_BRACES = publicProperty("DISPLAY_BRACES", true)
 
 @ProvideImplementation(ControlFactory::class)
@@ -112,6 +114,18 @@ fun createControl(editor: xenakis.sc.editor.WhileExprEditor, arguments: Bundle) 
                 space()
                 view(editor.condition)
             }
+            indented {
+                view(editor.block)
+            }
+        }
+    }
+
+@ProvideImplementation(ControlFactory::class)
+fun createControl(editor: xenakis.sc.editor.LoopExprEditor, arguments: Bundle) =
+    CompoundEditorControl(editor, arguments) {
+        vertical {
+            styleClass("compound-expr", "loop-expr")
+            keyword("loop")
             indented {
                 view(editor.block)
             }

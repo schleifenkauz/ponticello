@@ -2,10 +2,15 @@ package xenakis.ui.launcher
 
 import bundles.set
 import fxutils.prompt.PredicateTextPrompt
+import fxutils.shortcut
 import hextant.context.ControlFactory
 import hextant.context.SelectionDistributor
+import hextant.core.editor.TokenEditor
 import hextant.core.view.EditorControl
+import hextant.core.view.ListEditorControl
+import hextant.core.view.TokenEditorControl
 import hextant.plugins.*
+import hextant.serial.PropertyAccessor
 import hextant.undo.compoundEdit
 import reaktive.value.now
 import xenakis.impl.Logger
@@ -17,7 +22,10 @@ import xenakis.sc.DecimalLiteral
 import xenakis.sc.Identifier
 import xenakis.sc.NumericalControlSpec
 import xenakis.sc.Warp
+import xenakis.sc.editor.IdentifierEditor
+import xenakis.sc.editor.MessageSendEditor
 import xenakis.sc.editor.ScExprExpander
+import xenakis.sc.editor.ScExprListEditor
 import xenakis.sc.view.*
 import xenakis.sc.view.ScFunctionEditorControl.Companion.SINGLE_LINE_FUNCTION
 import xenakis.ui.impl.showDialog
@@ -40,8 +48,6 @@ object XenakisHextantPlugin : PluginInitializer({
         ctx[Aspects].implement(ControlFactory::class, ScExprExpander::class, ScExprExpanderControlFactory)
     }
 
-    multilineCommand<NewObjectEditorControl>("arguments")
-    singleLineCommand<NewObjectEditorControl>("arguments")
     multilineCommand<MessageSendEditorControl>("arguments")
     singleLineCommand<MessageSendEditorControl>("arguments")
     multilineCommand<ArrayExprEditorControl>("elements")
@@ -50,6 +56,8 @@ object XenakisHextantPlugin : PluginInitializer({
     multilineCommand<LiteralArrayExprEditorControl>("elements")
     singleLineCommand<TupleExprEditorControl>("elements")
     multilineCommand<TupleExprEditorControl>("elements")
+    singleLineCommand<SynthExprEditorControl>("arguments")
+    multilineCommand<SynthExprEditorControl>("arguments")
 
     registerCommand<ScFunctionEditorControl, Unit> {
         shortName = "multiline"
@@ -61,6 +69,38 @@ object XenakisHextantPlugin : PluginInitializer({
         name = "Convert to single-line function"
         applicableIf { ctrl -> ctrl.canBeSingleLine.now }
         executing { ctrl -> ctrl.arguments[SINGLE_LINE_FUNCTION] = true }
+    }
+
+    registerCommand<MessageSendEditorControl, Unit> {
+        shortName = "toggle show 'new'-keyword"
+        name = "Toggle the visibility of the method name 'new'"
+        defaultShortcut("Alt+N")
+        applicableIf { ctrl -> ctrl.usesMethodNew.now }
+        executing { ctrl -> ctrl.arguments[HIDE_NEW_KEYWORD] = !ctrl.arguments[HIDE_NEW_KEYWORD] }
+    }
+
+    commandDelegation<EditorControl<*>> { ctrl ->
+        val parent = ctrl.editorParent
+        when {
+            parent !is MessageSendEditorControl -> null
+            !parent.usesMethodNew.now -> null
+            ctrl.target.accessor == PropertyAccessor(MessageSendEditor::receiver.name) -> parent
+            ctrl.target.accessor == PropertyAccessor(MessageSendEditor::method.name) -> parent
+            else -> parent
+        }
+    }
+
+    commandDelegation<ListEditorControl> { ctrl ->
+        if (ctrl.target !is ScExprListEditor) null
+        when (ctrl.editorParent) {
+            is MessageSendEditorControl,
+            is ArrayExprEditorControl,
+            is LiteralArrayExprEditorControl,
+            is TupleExprEditorControl,
+            is SynthExprEditorControl, -> ctrl.editorParent
+
+            else -> null
+        }
     }
 
     registerCommand<ScExprExpander, Unit> {
@@ -95,7 +135,8 @@ object XenakisHextantPlugin : PluginInitializer({
         registerCommand<C, Unit> {
             shortName = "multiline"
             name = "Put $itemType on multiple lines"
-            defaultShortcut("Alt+V")
+            defaultShortcut("Alt+L")
+            applicableIf { ctrl -> ctrl.arguments[MULTILINE] == false }
             executing { ctrl, _ ->
                 val selectedBefore = ctrl.context[SelectionDistributor].focusedView.now
                 ctrl.arguments[MULTILINE] = true
@@ -106,8 +147,9 @@ object XenakisHextantPlugin : PluginInitializer({
     private inline fun <reified C : EditorControl<*>> PluginBuilder.singleLineCommand(itemType: String) =
         registerCommand<C, Unit> {
             shortName = "singleLine"
-            name = "Put $itemType on single lines"
-            defaultShortcut("Alt+H")
+            name = "Put $itemType on single line"
+            defaultShortcut("Alt+L")
+            applicableIf { ctrl -> ctrl.arguments[MULTILINE] == true }
             executing { ctrl, _ ->
                 val selectedBefore = ctrl.context[SelectionDistributor].focusedView.now
                 ctrl.arguments[MULTILINE] = false

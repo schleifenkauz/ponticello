@@ -53,13 +53,14 @@ class ScExprExpander() : ConfiguredExpander<ScExpr, ScExprEditor<*>>(), ScExprEd
                 ScExprExpander().defaultState()
             )
 
-            text.endsWith("(") && Identifier.isValid(text.dropLast(1)) -> NewObjectEditor(
-                IdentifierEditor(text.dropLast(1)),
-                arguments = ScExprListEditor().defaultState(),
+            text == "new" -> MessageSendEditor(
+                receiver = ScExprExpander(IdentifierEditor("")),
+                method = IdentifierEditor("new"),
+                arguments = ScExprListEditor().defaultState()
             )
 
             text == "\\" -> SymbolLiteralEditor().defaultState()
-            text == "'" -> StringLiteralEditor().defaultState()
+            text == "\"" -> StringLiteralEditor().defaultState()
             text == "{" -> ScFunctionEditor().defaultState()
             text == "(" -> CodeBlockEditor().defaultState()
             else -> null
@@ -79,9 +80,6 @@ class ScExprExpander() : ConfiguredExpander<ScExpr, ScExprEditor<*>>(), ScExprEd
 
             editor is NamedExprEditor && editor.name.text.now != "" ->
                 editor.value.notifyViews { focus() }
-
-            editor is NewObjectEditor && editor.className.text.now != "" ->
-                editor.arguments.notifyViews { focus() }
         }
     }
 
@@ -126,6 +124,7 @@ class ScExprExpander() : ConfiguredExpander<ScExpr, ScExprEditor<*>>(), ScExprEd
             "array" expand { ArrayExprEditor().defaultState() }
             "if" expand { IfExprEditor().defaultState() }
             "while" expand { WhileExprEditor().defaultState() }
+            "loop" expand { LoopExprEditor().defaultState() }
             "assign" expand { AssignmentEditor().defaultState() }
             "eq" expand {
                 OperatorExprEditor(
@@ -134,12 +133,24 @@ class ScExprExpander() : ConfiguredExpander<ScExpr, ScExprEditor<*>>(), ScExprEd
                     ScExprExpander().defaultState()
                 )
             }
-            "concat" expand { OperatorExprEditor(operator = OperatorEditor("++")) }
+            "concat" expand {
+                OperatorExprEditor(
+                    operator = OperatorEditor("++"),
+                    left = ScExprExpander().defaultState(),
+                    right = ScExprExpander().defaultState()
+                )
+            }
+            "exp" expand {
+                OperatorExprEditor(
+                    operator = OperatorEditor("**"),
+                    left = ScExprExpander().defaultState(),
+                    right = ScExprExpander().defaultState()
+                )
+            }
             "tuple" expand { TupleExprEditor().defaultState() }
             "named" expand { NamedExprEditor().defaultState() }
             "block" expand { CodeBlockEditor().defaultState() }
             "function" expand { ScFunctionEditor().defaultState() }
-            "new" expand { NewObjectEditor().defaultState() }
             "bus" expand { BusSelector().defaultState() }
             "buffer" expand { BufferSelector().defaultState() }
             "group" expand { GroupSelector().defaultState() }
@@ -149,7 +160,8 @@ class ScExprExpander() : ConfiguredExpander<ScExpr, ScExprEditor<*>>(), ScExprEd
                     ?: return@expand null
                 VSTPluginEditor(pluginName).defaultState()
             }
-            "synth" expand { AdhocSynthEditor() }
+            "adhoc-synth" expand { AdhocSynthEditor().defaultState() }
+            "synth" expand { SynthExprEditor().defaultState() }
             "in" expand { InExprEditor().defaultState() }
             "out" expand { OutExprEditor().defaultState() }
         }

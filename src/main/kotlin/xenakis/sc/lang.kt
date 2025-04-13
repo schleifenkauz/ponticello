@@ -382,23 +382,6 @@ data class OperatorExpr(val left: ScExpr, val operator: Operator, val right: ScE
 
 @Serializable
 @Compound(nodeType = ScExpr::class)
-data class NewObject(val className: Identifier, val arguments: List<ScExpr>) : ScExpr {
-    override val isValid: Boolean
-        get() = className.isValid && arguments.all { it.isValid }
-
-    override val children: List<ScElement>
-        get() = listOf(className) + arguments
-
-    override fun code(writer: ScWriter, context: Context) = with(writer) {
-        className.code(writer, context)
-        append("(")
-        appendList(arguments, separator = ", ", context)
-        append(")")
-    }
-}
-
-@Serializable
-@Compound(nodeType = ScExpr::class)
 data class AccessKey(val receiver: ScExpr, val key: ScExpr) : ScExpr {
     override val isValid: Boolean
         get() = receiver.isValid && key.isValid
@@ -480,8 +463,7 @@ data class AdhocSynth(
         target: String,
         addAction: String,
         wrapInTask: Boolean
-    ) =
-        with(writer) {
+    ) = with(writer) {
             val plugins = block.statements.flatMap { s -> s.allChildren<VSTPlugin>() }
             if (wrapInTask && plugins.isNotEmpty()) {
                 appendBlock("Task", endLine = false) {

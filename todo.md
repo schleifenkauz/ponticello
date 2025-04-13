@@ -75,6 +75,7 @@
 - reconsider the bundle system
 - use TAB to navigate in editor hierarchy
 - add play button to samples
+- process defs should also be possible to save globally
 
 ## Long term ideas
 
@@ -150,6 +151,7 @@
 - cutting doesn't work
 - weird window sizing issue with tool pane windows
 - have to initialize buses before SynthDefs!
+- copying SuperCollider expressions does not work
 
 ## Was unterscheidet Ponticello von anderen DAWs?
 - Möglichkeit beliebig komplexe SynthDefs zu bauen.

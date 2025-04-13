@@ -177,7 +177,7 @@ class NamedObjectListView<O : NamedObject>(
 
     private fun copySelected() {
         val selected = selectedBox ?: return
-        val format = config.dataFormat(selected.obj)
+        val format = config.dataFormat(selected.obj) ?: return
         val content = mapOf(format to selected.obj)
         val clipboard = Clipboard.getSystemClipboard()
         clipboard.setContent(content)

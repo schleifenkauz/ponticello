@@ -12,3 +12,10 @@ fun WhileExpr(condition: ScExpr, block: CodeBlock): ScExpr {
     val bodyFunc = ScFunction(body = block)
     return condFunc.send("while", bodyFunc)
 }
+
+@Compound(nodeType = ScExpr::class)
+fun LoopExpr(block: CodeBlock): ScExpr = ScFunction(body = block).send("loop")
+
+@Compound(nodeType = ScExpr::class)
+fun SynthExpr(synthDef: Identifier, arguments: List<NamedExpr>): ScExpr =
+    Identifier("Synth").send("new", synthDef, ArrayExpr(arguments))

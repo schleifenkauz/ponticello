@@ -32,7 +32,7 @@
     -fx-alignment: center-left;
 }
 
-.new-object {
+.synth-expr {
     -fx-border-color: green !important;
 }
 

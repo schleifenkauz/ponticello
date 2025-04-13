@@ -16,39 +16,36 @@ import hextant.core.view.ListEditorControl.Orientation
 import hextant.core.view.ListEditorControl.SeparatorCell
 import hextant.fx.view
 import javafx.scene.layout.HBox
-import reaktive.collection.binding.isNotEmpty
-import reaktive.value.now
 
-class NewObjectEditorControl @ProvideImplementation(ControlFactory::class) constructor(
-    private val editor: xenakis.sc.editor.NewObjectEditor,
-    arguments: Bundle
+class SynthExprEditorControl @ProvideImplementation(ControlFactory::class) constructor(
+    private val editor: xenakis.sc.editor.SynthExprEditor,
+    arguments: Bundle,
 ) : CompoundEditorControl(editor, arguments.withDefault(MULTILINE, false)) {
-    private val anyArguments = editor.arguments.editors.isNotEmpty()
-
-    init {
-        triggerLayoutOnChange(anyArguments)
-    }
-
     override fun build(): Layout = vertical {
-        styleClass("compound-expr", "new-object")
+        styleClass("compound-expr", "synth-expr")
         horizontal {
+            keyword("Synth")
             space()
-            view(editor.className)
-            if (!arguments[MULTILINE] || !anyArguments.now) {
-                view(editor.arguments) {
+            view(editor.synthDef)
+            space()
+            keyword("[")
+            if (!arguments[MULTILINE]) {
+                view(editor.arguments, cached = false) {
                     set(ORIENTATION, Orientation.Horizontal)
                     set(CELL_FACTORY) { SeparatorCell(", ").also { it.root.centerChildren() } }
                     set(ADD_WITH_COMMA, true)
                 }.root.styleClass("arguments").centerChildren()
+                keyword("]")
             }
         }
-        if (arguments[MULTILINE] && anyArguments.now) {
+        if (arguments[MULTILINE]) {
             indented {
-                view(editor.arguments) {
+                view(editor.arguments, cached = false) {
                     set(ORIENTATION, Orientation.Vertical)
                     set(CELL_FACTORY) { ListEditorControl.DefaultCell { item -> HBox(item) } }
                 }
             }
+            keyword("]")
         }
     }
 }

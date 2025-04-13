@@ -4,10 +4,12 @@ import fxutils.actions.collectActions
 import fxutils.actions.isShiftDown
 import fxutils.actions.registerShortcuts
 import fxutils.letContentFillViewPort
+import fxutils.setBackground
 import hextant.context.Context
 import hextant.serial.EditorRoot
 import javafx.scene.control.ScrollPane
 import javafx.scene.layout.VBox
+import javafx.scene.paint.Color
 import org.kordamp.ikonli.material2.Material2MZ
 import reaktive.value.ReactiveString
 import xenakis.model.Settings
@@ -25,6 +27,7 @@ class ParameterizedObjectDefPane(
     private val parametersList = NamedObjectListView(parameters, config)
 
     init {
+        code.control.setBackground(Color.BLACK)
         val content = ScrollPane(VBox(parametersList, code.control)).letContentFillViewPort()
         setup(title, content, actions = actions.withContext(this))
         parametersList.registerShortcuts(parametersList.actions)

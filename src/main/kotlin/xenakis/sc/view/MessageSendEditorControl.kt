@@ -17,24 +17,37 @@ import hextant.core.view.ListEditorControl.Orientation
 import hextant.core.view.ListEditorControl.SeparatorCell
 import hextant.fx.view
 import reaktive.collection.binding.isNotEmpty
+import reaktive.value.binding.and
+import reaktive.value.binding.equalTo
+import reaktive.value.binding.map
 import reaktive.value.now
+import xenakis.sc.Identifier
 import xenakis.ui.misc.HelpBrowser
 
 class MessageSendEditorControl @ProvideImplementation(ControlFactory::class) constructor(
     private val editor: xenakis.sc.editor.MessageSendEditor,
-    arguments: Bundle
-) : CompoundEditorControl(editor, arguments.withDefault(MULTILINE, false)) {
+    arguments: Bundle,
+) : CompoundEditorControl(editor, arguments.withDefault(MULTILINE, HIDE_NEW_KEYWORD)) {
     private val hasArguments = editor.arguments.editors.isNotEmpty()
+    val usesMethodNew = editor.receiver.result.map { receiver -> receiver is Identifier } and
+            editor.method.result.equalTo(Identifier("new"))
+
+    init {
+        triggerLayoutOnChange(hasArguments)
+        triggerLayoutOnChange(usesMethodNew)
+    }
 
     override fun build(): Layout = vertical {
         horizontal {
             view(editor.receiver)
-            operator(".")
-            view(editor.method) {
-                registerShortcuts {
-                    on("Ctrl+D") {
-                        val bounds = localToScreen(boundsInLocal)
-                        editor.context[HelpBrowser].showMethodDocumentation(editor.method, bounds)
+            if (!(usesMethodNew.now && arguments[HIDE_NEW_KEYWORD])) {
+                operator(".")
+                view(editor.method) {
+                    registerShortcuts {
+                        on("Ctrl+D") {
+                            val bounds = localToScreen(boundsInLocal)
+                            editor.context[HelpBrowser].showMethodDocumentation(editor.method, bounds)
+                        }
                     }
                 }
             }
