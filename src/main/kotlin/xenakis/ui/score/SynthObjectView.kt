@@ -23,7 +23,11 @@ import reaktive.value.forEach
 import reaktive.value.now
 import reaktive.value.reactiveValue
 import xenakis.impl.*
-import xenakis.model.score.*
+import xenakis.model.score.ParameterControlList
+import xenakis.model.score.ScoreObjectInstance
+import xenakis.model.score.SynthObject
+import xenakis.model.score.controls.ParameterControl
+import xenakis.model.score.controls.ValueControl
 import xenakis.sc.view.ObjectSelectorControl
 import xenakis.ui.launcher.XenakisMainActivity
 

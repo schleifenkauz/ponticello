@@ -10,8 +10,8 @@ import reaktive.value.reactiveVariable
 import xenakis.model.registry.ObjectReference
 import xenakis.model.registry.ObjectRegistry
 import xenakis.model.registry.SynthDefRegistry
-import xenakis.model.score.GroupControl
-import xenakis.model.score.ParameterControl
+import xenakis.model.score.controls.GroupControl
+import xenakis.model.score.controls.ParameterControl
 import xenakis.sc.GroupControlSpec
 
 @Serializable

@@ -7,18 +7,16 @@ import reaktive.Observer
 import reaktive.value.*
 import reaktive.value.binding.flatMap
 import reaktive.value.binding.map
-import xenakis.impl.Decimal
-import xenakis.impl.copy
-import xenakis.impl.toDecimal
+import xenakis.impl.*
 import xenakis.model.obj.BusObject
 import xenakis.model.obj.BusReference
 import xenakis.model.obj.ReferencedSynthDefObject
 import xenakis.model.registry.BusRegistry
 import xenakis.model.registry.reference
-import xenakis.model.score.BusControl
 import xenakis.model.score.ObjectPosition
 import xenakis.model.score.ParameterControlList
-import xenakis.model.score.ValueControl
+import xenakis.model.score.controls.BusControl
+import xenakis.model.score.controls.ValueControl
 import xenakis.sc.client.ScWriter
 import xenakis.sc.writeSynthCode
 
@@ -43,18 +41,23 @@ class SendFlow(
     override fun copy(): AudioFlow =
         SendFlow(targetRef.copy(), amountPercent.copy())
 
+    override fun validate(): Boolean {
+        if (!targetRef.now.isResolved.now) {
+            Logger.error("Target bus ${targetRef.now.getName()} is not resolved")
+            return false
+        }
+        return true
+    }
+
     override fun ScWriter.writeCode(placement: NodePlacement) {
         val controls = ParameterControlList.create(
             "in" to BusControl(reactiveVariable(associatedBus.reference())),
             "out" to BusControl(reactiveVariable(targetRef.now)),
             "amp" to ValueControl(reactiveVariable(amountPercent.now * 0.01.toDecimal())),
         )
-        val synthVar = superColliderName.now
-        val info = ScoreObjectInfo(ObjectPosition.ZERO, synthVar.removePrefix("~"), synthVar, placement)
-        writeSynthCode(
-            ReferencedSynthDefObject.get("send"), context,
-            info, duration = null, controls
-        )
+        val info = ScoreObjectInfo(ObjectPosition.ZERO, 0, placement, cutoff = zero)
+        val def = ReferencedSynthDefObject.get("send")
+        writeSynthCode(SynthFlow(def, controls), info, controls) //TODO choose right name
     }
 
     override fun getDefaultName(): ReactiveString =

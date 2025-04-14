@@ -70,6 +70,7 @@ class XenakisMainActivity(val project: XenakisProject) : Activity() {
     val logWindow = makeSubWindow(LogPane(Logger), "Log", context, SubWindow.Type.Undecorated)
 
     val settingsWindow = makeSubWindow(SettingsPane(context[Settings], context), "Settings", context)
+        .also { w -> w.scene.initHextantScene(context) }
 
     val flowPaneWindow: SubWindow
 

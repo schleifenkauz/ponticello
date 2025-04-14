@@ -12,9 +12,9 @@ import reaktive.value.binding.map
 import reaktive.value.now
 import xenakis.model.Settings
 import xenakis.model.obj.ParameterizedObject
-import xenakis.model.score.ParameterControl
 import xenakis.model.score.ParameterControlList
 import xenakis.model.score.ParameterControlList.NamedParameterControl
+import xenakis.model.score.controls.ParameterControl
 import xenakis.sc.ControlSpec
 import xenakis.sc.GroupControlSpec
 import xenakis.ui.controls.ControlAssignmentEditor

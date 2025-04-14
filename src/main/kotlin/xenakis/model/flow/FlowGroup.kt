@@ -12,6 +12,8 @@ class FlowGroup(
 ) : AudioNode {
     override val superColliderName: ReactiveString = associatedBus.name.map { name -> "~flows_${name}" }
 
+    override fun validate(): Boolean = true
+
     override fun ScWriter.writeCode(placement: NodePlacement) {
         +"${superColliderName.now} = Group.new(${placement.target}, ${placement.addAction})"
     }

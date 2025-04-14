@@ -7,9 +7,9 @@ import xenakis.model.Utils
 import xenakis.model.obj.BusObject
 import xenakis.model.obj.CustomizableSynthDefObject
 import xenakis.model.registry.BusRegistry
-import xenakis.model.score.BusControl
 import xenakis.model.score.ObjectPosition
 import xenakis.model.score.SynthObject
+import xenakis.model.score.controls.BusControl
 
 class AudioFlowGraphTest {
     @Test
@@ -32,14 +32,14 @@ class AudioFlowGraphTest {
         sine.initialize(context)
         sine.controls.addControl("out", BusControl.create(perc))
 
-        val info1 = graph.insert(sine, ObjectPosition.ZERO)
+        val info1 = graph.insert(sine, ObjectPosition.ZERO, suffix = 0)
         println(graph.getOrder())
         println(info1)
 
         val lpf = SynthObject.create("lpf", CustomizableSynthDefObject.lpf())
         lpf.initialize(context)
         lpf.controls.addControl("bus", BusControl.create(buses.getInput()))
-        val info2 = graph.insert(lpf, ObjectPosition.ZERO)
+        val info2 = graph.insert(lpf, ObjectPosition.ZERO, suffix = 0)
         println(graph.getOrder())
         println(info2)
     }

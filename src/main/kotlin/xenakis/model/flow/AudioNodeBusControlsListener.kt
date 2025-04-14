@@ -2,10 +2,10 @@ package xenakis.model.flow
 
 import reaktive.Observer
 import reaktive.value.now
-import xenakis.model.score.BusControl
-import xenakis.model.score.ParameterControl
 import xenakis.model.score.ParameterControlList
 import xenakis.model.score.ParameterControlList.NamedParameterControl
+import xenakis.model.score.controls.BusControl
+import xenakis.model.score.controls.ParameterControl
 import xenakis.sc.BusControlSpec
 import xenakis.sc.ControlSpec
 

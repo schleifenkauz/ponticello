@@ -39,6 +39,8 @@ class ScoreObjectPlaceholder(@SerialName("group") val groupRef: GroupReference) 
 
     override fun copy(): AudioFlow = ScoreObjectPlaceholder(groupRef)
 
+    override fun validate(): Boolean = true
+
     override fun ScWriter.writeCode(placement: NodePlacement) {
         +"${group.superColliderName} = Group.new(${placement.target}, ${placement.addAction})"
     }

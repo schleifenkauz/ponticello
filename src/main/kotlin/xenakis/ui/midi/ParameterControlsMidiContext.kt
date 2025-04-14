@@ -2,7 +2,7 @@ package xenakis.ui.midi
 
 import reaktive.value.now
 import xenakis.model.score.ParameterControlList
-import xenakis.model.score.ValueControl
+import xenakis.model.score.controls.ValueControl
 import xenakis.sc.NumericalControlSpec
 
 class ParameterControlsMidiContext(private val controls: ParameterControlList) : AbstractMidiContext(controls.context) {

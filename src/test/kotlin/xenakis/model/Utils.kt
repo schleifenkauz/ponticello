@@ -8,10 +8,10 @@ import xenakis.impl.asTime
 import xenakis.impl.toDecimal
 import xenakis.model.obj.GroupObject
 import xenakis.model.registry.*
-import xenakis.model.score.GroupControl
 import xenakis.model.score.ParameterControlList
 import xenakis.model.score.ScoreObject
 import xenakis.model.score.SynthObject
+import xenakis.model.score.controls.GroupControl
 import xenakis.sc.client.SuperColliderClient
 
 object Utils {

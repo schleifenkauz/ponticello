@@ -23,9 +23,9 @@ import xenakis.impl.*
 import xenakis.model.obj.ParameterizedObject
 import xenakis.model.score.Envelope
 import xenakis.model.score.Envelope.EnvelopePoint
-import xenakis.model.score.EnvelopeControl
 import xenakis.model.score.ObjectPosition
 import xenakis.model.score.ParameterControlList.NamedParameterControl
+import xenakis.model.score.controls.EnvelopeControl
 import xenakis.sc.NumericalControlSpec
 import xenakis.sc.mapOnto
 import xenakis.ui.actions.Tool

@@ -1,16 +1,21 @@
 package xenakis.model.obj
 
+import reaktive.value.ReactiveValue
 import reaktive.value.now
+import xenakis.impl.Decimal
+import xenakis.impl.Logger
 import xenakis.model.flow.FlowType
 import xenakis.model.registry.NamedObject
-import xenakis.model.score.BusControl
 import xenakis.model.score.ParameterControlList
+import xenakis.model.score.controls.BusControl
 import xenakis.sc.BusControlSpec
 import xenakis.sc.ControlSpec
 
 interface ParameterizedObject : NamedObject {
     val def: ParameterizedObjectDef
     val controls: ParameterControlList
+
+    fun duration(): ReactiveValue<Decimal>?
 
     fun getSpec(parameter: String): ControlSpec? = controls.getOrNull(parameter)?.spec?.now
 
@@ -40,5 +45,24 @@ interface ParameterizedObject : NamedObject {
                 controls.addControl(name, param.defaultControl(context))
             }
         }
+    }
+
+    fun validate(): Boolean {
+        var valid = true
+        for (control in controls) {
+            val spec = control.spec.now
+            if (spec == null) {
+                Logger.error("No spec found for control ${control.name.now} on $this")
+                valid = false
+                continue
+            }
+            if (!control.now.validate(spec, this)) {
+                valid = false
+            }
+        }
+        if (!valid) {
+            Logger.error("Validation on $this")
+        }
+        return valid
     }
 }

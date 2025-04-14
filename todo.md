@@ -47,7 +47,7 @@
 ### Minor
 
 - recognize transport shortcuts from all windows (?)
-- lhs of assignments can be compound expressions
+- lhs of assignments can be compound expressions (!!!)
 - re-enable allocated buffers (can be used with WrBuf/RdBuf SynthDefs)
 - new parameter type: buffer position (range depends on supplied buffer)
   - or use 0..1 range and scale to buffer duration
@@ -64,6 +64,7 @@
   - maybe only move playback cursor on timeline?
 - make undecorated windows resizable
 - own editor type for control references
+  - can only be used in LFO argument expressions
 - what to do when user selects a new `SynthDef` for a synth object
   - re-sync parameter controls in some way...
 - highlight unresolved references of object selectors
@@ -72,12 +73,13 @@
   - based on focused window
 - make command popups more stylish
   - also add adequate shortcut to show popup
-- use TAB to navigate in editor hierarchy
+- use TAB to navigate in editor hierarchy 
+  - instead of arrow keys
+  - use `Ctrl` to navigate in larger chunks
 - add play button to samples
-- global variable in SuperCollider for list of all samples
+- global variable in SuperCollider for list of all samples (`ALL_SAMPLES`)
 - undo managers for sub scenes 
   - undo/redo actions on tool panes
-- move settings directory to cloud
 - clear temporary synths (and buses) when pausing
 
 ## Long term ideas

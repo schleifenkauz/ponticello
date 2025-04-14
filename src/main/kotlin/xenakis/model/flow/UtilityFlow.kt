@@ -8,10 +8,10 @@ import xenakis.impl.zero
 import xenakis.model.obj.BusObject
 import xenakis.model.obj.ReferencedSynthDefObject
 import xenakis.model.registry.reference
-import xenakis.model.score.BusControl
 import xenakis.model.score.ObjectPosition
 import xenakis.model.score.ParameterControlList
-import xenakis.model.score.ValueControl
+import xenakis.model.score.controls.BusControl
+import xenakis.model.score.controls.ValueControl
 import xenakis.sc.client.ScWriter
 import xenakis.sc.writeSynthCode
 
@@ -24,6 +24,8 @@ class UtilityFlow(
     override fun copy(): AudioFlow =
         UtilityFlow(volumeDb.copy(), muted.copy(), solo.copy())
 
+    override fun validate(): Boolean = true
+
     override fun ScWriter.writeCode(placement: NodePlacement) {
         //TODO we need a way to mute other buses when something is soloed
         val volume = when {
@@ -34,12 +36,9 @@ class UtilityFlow(
             "bus" to BusControl(reactiveVariable(associatedBus.reference())),
             "volume" to ValueControl(reactiveVariable(volume)),
         )
-        val synthVar = superColliderName.now
-        val info = ScoreObjectInfo(ObjectPosition.ZERO, synthVar.removePrefix("~"), synthVar, placement)
-        writeSynthCode(
-            ReferencedSynthDefObject.get("utility"), context,
-            info, duration = null, controls
-        )
+        val info = ScoreObjectInfo(ObjectPosition.ZERO, suffix = 0, placement, cutoff = zero)
+        val def = ReferencedSynthDefObject.get("utility")
+        writeSynthCode(SynthFlow(def, controls), info, controls)
     }
 
     override fun getDefaultName(): ReactiveString = reactiveValue("Utility")

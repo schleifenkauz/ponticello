@@ -2,13 +2,12 @@ package xenakis.ui.launcher
 
 import bundles.set
 import fxutils.prompt.PredicateTextPrompt
-import fxutils.shortcut
 import hextant.context.ControlFactory
 import hextant.context.SelectionDistributor
-import hextant.core.editor.TokenEditor
+import hextant.core.editor.defaultState
+import hextant.core.editor.isSubEditor
 import hextant.core.view.EditorControl
 import hextant.core.view.ListEditorControl
-import hextant.core.view.TokenEditorControl
 import hextant.plugins.*
 import hextant.serial.PropertyAccessor
 import hextant.undo.compoundEdit
@@ -18,14 +17,12 @@ import xenakis.impl.one
 import xenakis.impl.randomColor
 import xenakis.model.obj.CustomizableSynthDefObject
 import xenakis.model.obj.ParameterDefObject
+import xenakis.model.registry.SynthDefRegistry
 import xenakis.sc.DecimalLiteral
 import xenakis.sc.Identifier
 import xenakis.sc.NumericalControlSpec
 import xenakis.sc.Warp
-import xenakis.sc.editor.IdentifierEditor
-import xenakis.sc.editor.MessageSendEditor
-import xenakis.sc.editor.ScExprExpander
-import xenakis.sc.editor.ScExprListEditor
+import xenakis.sc.editor.*
 import xenakis.sc.view.*
 import xenakis.sc.view.ScFunctionEditorControl.Companion.SINGLE_LINE_FUNCTION
 import xenakis.ui.impl.showDialog
@@ -97,9 +94,35 @@ object XenakisHextantPlugin : PluginInitializer({
             is ArrayExprEditorControl,
             is LiteralArrayExprEditorControl,
             is TupleExprEditorControl,
-            is SynthExprEditorControl, -> ctrl.editorParent
+            is SynthExprEditorControl,
+                -> ctrl.editorParent
 
             else -> null
+        }
+    }
+
+    registerCommand<IdentifierEditor, Unit> {
+        shortName = "add-synth-args"
+        name = "Add all relevant arguments to Synth"
+        applicableIf { ed ->
+            val synthDefName = ed.result.now.text
+            ed.isSubEditor(SynthExprEditor::synthDef) && ed.context[SynthDefRegistry].has(synthDefName)
+        }
+        executing { ed ->
+            val synthDefName = ed.result.now.text
+            val synthDef = ed.context[SynthDefRegistry].get(synthDefName)
+            val expr = ed.parent as SynthExprEditor
+            val existingArguments = expr.arguments.result.now.map { arg -> arg.name.text }
+            for (param in synthDef.parameters) {
+                val name = param.name.now
+                if (name in existingArguments) continue
+                expr.arguments.addLast(
+                    NamedExprEditor(
+                        IdentifierEditor(name),
+                        ScExprExpander().defaultState()
+                    )
+                )
+            }
         }
     }
 

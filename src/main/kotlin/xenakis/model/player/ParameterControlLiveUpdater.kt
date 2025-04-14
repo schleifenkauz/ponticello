@@ -6,7 +6,11 @@ import reaktive.value.now
 import reaktive.value.observe
 import xenakis.impl.Decimal
 import xenakis.model.obj.BusReference
-import xenakis.model.score.*
+import xenakis.model.score.ParameterControlList
+import xenakis.model.score.controls.BusControl
+import xenakis.model.score.controls.BusValueControl
+import xenakis.model.score.controls.ParameterControl
+import xenakis.model.score.controls.ValueControl
 import xenakis.sc.client.ScWriter
 import xenakis.sc.client.SuperColliderClient
 

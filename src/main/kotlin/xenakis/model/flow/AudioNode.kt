@@ -11,6 +11,8 @@ sealed interface AudioNode {
 
     fun getOutputs(): Collection<BusObject>
 
+    fun validate(): Boolean
+
     fun ScWriter.writeCode(placement: NodePlacement)
 
     fun addListener(listener: Listener)

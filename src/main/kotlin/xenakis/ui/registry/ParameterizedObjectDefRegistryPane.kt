@@ -6,15 +6,15 @@ import fxutils.prompt.SimpleSearchableListView
 import fxutils.prompt.YesNoPrompt
 import hextant.fx.initHextantScene
 import javafx.scene.paint.Color
-import xenakis.model.obj.ConfigurableParameterizedObjectDef
+import xenakis.model.obj.ParameterizedObjectDef
 import xenakis.model.registry.GlobalDefinitionLibrary
 import xenakis.model.registry.ObjectRegistry
 import xenakis.sc.Identifier
 import xenakis.ui.registry.NamedObjectListView.ContentDisplay
 
-abstract class ParameterizedObjectDefRegistryPane<T : ConfigurableParameterizedObjectDef>(
+abstract class ParameterizedObjectDefRegistryPane<T : ParameterizedObjectDef>(
     private val defs: ObjectRegistry<T>,
-    private val globalLibrary: PublicProperty<GlobalDefinitionLibrary<T>>,
+    private val globalLibrary: PublicProperty<out GlobalDefinitionLibrary<out T>>,
 ) : ObjectRegistryPane<T>(defs) {
     override val supportedModes: Set<ContentDisplay>
         get() = setOf(ContentDisplay.DetailsPane, ContentDisplay.SubWindow)

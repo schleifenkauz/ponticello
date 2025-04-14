@@ -18,6 +18,7 @@ import xenakis.model.obj.ParameterizedObject
 import xenakis.model.obj.ParameterizedObjectDef
 import xenakis.model.registry.NamedObjectList
 import xenakis.model.registry.NamedObjectListSerializer
+import xenakis.model.score.controls.ParameterControl
 import xenakis.sc.ControlSpec
 
 @Serializable(with = ParameterControlList.Serializer::class)

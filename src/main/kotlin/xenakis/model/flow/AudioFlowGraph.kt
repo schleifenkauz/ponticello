@@ -24,9 +24,7 @@ class AudioFlowGraph(
     private val flows: AudioFlows,
     private val nodeTree: NodeTree,
 ) : NamedObjectList.Listener<BusObject>, AudioFlows.Listener {
-    private val activeSynthObjects = mutableMapOf<SynthObject, MutableSet<ActiveSynth>>()
-    private val takenSuffixes = mutableMapOf<String, MutableSet<Int>>()
-    private val suffixes = mutableMapOf<Pair<ScoreObject, ObjectPosition>, Int>()
+    private val activeSynths = mutableMapOf<SynthObject, MutableSet<ActiveSynth>>()
     private val flowGroups = mutableMapOf<BusObject, FlowGroup>()
     private val order = LinkedList<AudioNode>()
     private val readFrom = mutableMapOf<BusObject, Counter<AudioNode>>()
@@ -44,6 +42,8 @@ class AudioFlowGraph(
             rebuildFlowGraph()
         }
     }
+
+    fun activeSynths() = activeSynths.values.flatten()
 
     private fun rebuildFlowGraph() {
         reorderNodeTree()
@@ -105,8 +105,7 @@ class AudioFlowGraph(
     }
 
     private fun getPlacementInOrder(node: AudioNode): NodePlacement {
-        val idx = order.indexOf(node)
-        return when (idx) {
+        return when (val idx = order.indexOf(node)) {
             0 -> NodePlacement(AddAction.AddToHead, "s.defaultGroup")
             else -> NodePlacement(AddAction.AddAfter, order[idx - 1].superColliderName.now)
         }
@@ -171,42 +170,28 @@ class AudioFlowGraph(
         }
     }
 
-    fun insert(obj: ScoreObject, absolutePosition: ObjectPosition): ScoreObjectInfo {
-        val takenSuffixes = takenSuffixes[obj.name.now].orEmpty()
-        val suffix = (0..Int.MAX_VALUE).first { n -> n !in takenSuffixes }
-        suffixes[obj to absolutePosition] = suffix
-        val name = if (suffix == 0) obj.name.now else "${obj.name.now}_$suffix"
-        lateinit var group: GroupObject
+    fun insert(obj: SynthObject, absolutePosition: ObjectPosition, suffix: Int): NodePlacement {
         val defaultGroup = obj.context[GroupRegistry].getDefault()
         Logger.fine("mark start for $obj at $absolutePosition, suffix = $suffix", Logger.Category.Playback)
-        if (obj is SynthObject) {
-            val node = ActiveSynth(obj, absolutePosition, suffix)
-            activeSynthObjects.getOrPut(obj, ::mutableSetOf).add(node)
-            group = node.obj.groupObj
-            if (group == defaultGroup) {
-                addNode(node)
-                reorderNodeTree()
-            }
-            val placement = getPlacementFor(node)
-            val synthVar = "~synths['$name']"
-            val info = ScoreObjectInfo(absolutePosition, name, synthVar, placement)
-            return info
-        } else return ScoreObjectInfo(absolutePosition, name, "<no name>", null)
+        val node = ActiveSynth(obj, absolutePosition, suffix)
+        activeSynths.getOrPut(obj, ::mutableSetOf).add(node)
+        val group = node.obj.groupObj
+        if (group == defaultGroup) {
+            addNode(node)
+            reorderNodeTree()
+        }
+        val placement = getPlacementFor(node)
+        nodeTree.addNode(node, placement, createSynth = false)
+        return placement
     }
 
-    fun remove(obj: ScoreObject, absolutePosition: ObjectPosition) {
-        val suffix = suffixes.remove(obj to absolutePosition)
-        if (suffix == null) {
-            Logger.warn("could not remove $obj at $absolutePosition", Logger.Category.Playback)
-        } else {
-            if (obj is SynthObject) {
-                val node = ActiveSynth(obj, absolutePosition, suffix)
-                activeSynthObjects.getValue(obj).remove(node)
-                removeNode(node)
-                reorderNodeTree()
-            }
-            Logger.fine("marked end for $obj, suffix = $suffix", Logger.Category.Playback)
-        }
+    fun remove(obj: SynthObject, absolutePosition: ObjectPosition, suffix: Int) {
+        val node = ActiveSynth(obj, absolutePosition, suffix)
+        activeSynths.getValue(obj).remove(node)
+        removeNode(node)
+        reorderNodeTree()
+        Logger.fine("marked end for $obj, suffix = $suffix", Logger.Category.Playback)
+        nodeTree.removeNode(node, freeSynth = false)
     }
 
     private fun addNode(node: AudioNode) {
@@ -241,13 +226,14 @@ class AudioFlowGraph(
     }
 
     fun activeInstances(obj: ScoreObject): Set<ActiveSynth> =
-        if (obj is SynthObject) activeSynthObjects[obj].orEmpty() else emptySet()
+        if (obj is SynthObject) activeSynths[obj].orEmpty() else emptySet()
 
     fun clear() {
-        for (activeSynth in activeSynthObjects.values.flatten()) {
+        for (activeSynth in activeSynths()) {
             removeNode(activeSynth)
+            nodeTree.removeNode(activeSynth)
         }
-        activeSynthObjects.clear()
+        activeSynths.clear()
     }
 
     fun flowGroup(bus: BusObject): FlowGroup = flowGroups.getValue(bus)

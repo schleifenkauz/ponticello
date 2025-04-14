@@ -24,7 +24,7 @@ import xenakis.ui.registry.NamedObjectListView.ContentDisplay
 
 class SynthDefRegistryPane(
     private val synthDefs: SynthDefRegistry,
-) : ObjectRegistryPane<SynthDefObject>(synthDefs) {
+) : ParameterizedObjectDefRegistryPane<SynthDefObject>(synthDefs, GlobalDefinitionLibrary.synthDefs) {
     override val supportedModes: Set<ContentDisplay>
         get() = setOf(ContentDisplay.DetailsPane, ContentDisplay.SubWindow)
 

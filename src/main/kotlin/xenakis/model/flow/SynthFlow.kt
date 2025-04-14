@@ -3,19 +3,16 @@ package xenakis.model.flow
 import hextant.context.Context
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
-import reaktive.value.ReactiveString
-import reaktive.value.ReactiveVariable
+import reaktive.value.*
 import reaktive.value.binding.flatMap
-import reaktive.value.now
-import reaktive.value.reactiveVariable
+import xenakis.impl.Decimal
 import xenakis.impl.zero
 import xenakis.model.obj.*
 import xenakis.model.player.ParameterControlLiveUpdater
 import xenakis.model.registry.reference
-import xenakis.model.score.BusControl
 import xenakis.model.score.ObjectPosition
 import xenakis.model.score.ParameterControlList
-import xenakis.model.score.ValueControl
+import xenakis.model.score.controls.BusControl
 import xenakis.sc.BusControlSpec
 import xenakis.sc.client.ScWriter
 import xenakis.sc.client.SuperColliderClient
@@ -27,6 +24,8 @@ class SynthFlow(
     private var defRef: ReactiveVariable<SynthDefReference>,
     override val controls: ParameterControlList,
 ) : AudioFlow(), ParameterizedObject {
+    constructor(def: SynthDefObject, controls: ParameterControlList) : this(reactiveVariable(def.reference()), controls)
+
     @Transient
     lateinit var synthDefSelector: SynthDefSelector
         private set
@@ -38,6 +37,8 @@ class SynthFlow(
 
     override val def: ParameterizedObjectDef
         get() = synthDef
+
+    override fun duration(): ReactiveValue<Decimal>? = null
 
     override fun initialize(context: Context, bus: BusObject) {
         super.initialize(context, bus)
@@ -51,16 +52,13 @@ class SynthFlow(
 
     override fun copy(): AudioFlow = SynthFlow(defRef, controls.copy())
 
+    override fun validate(): Boolean = super.validate()
+
     override fun ScWriter.writeCode(placement: NodePlacement) {
-        val synthVar = superColliderName.now
-        val info = ScoreObjectInfo(ObjectPosition.ZERO, synthVar.removePrefix("~"), synthVar, placement)
+        val info = ScoreObjectInfo(ObjectPosition.ZERO, suffix = 0, placement, cutoff = zero)
         val mainBusControl = getMainBusParameter(synthDef)!! to BusControl.create(associatedBus)
-        val withoutDuration = "afterDuration" to ValueControl.create(zero) //no free after duration
         writeSynthCode(
-            synthDef, context,
-            info, duration = null,
-            controls,
-            controls.controlMap + mainBusControl + withoutDuration
+            this@SynthFlow, info, controls, controls.controlMap + mainBusControl
         )
     }
 

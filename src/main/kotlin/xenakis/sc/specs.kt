@@ -17,10 +17,10 @@ import xenakis.model.obj.BusReference
 import xenakis.model.registry.GroupRegistry
 import xenakis.model.registry.ObjectReference
 import xenakis.model.registry.reference
-import xenakis.model.score.BufferControl
-import xenakis.model.score.BusControl
-import xenakis.model.score.GroupControl
-import xenakis.model.score.ValueControl
+import xenakis.model.score.controls.BufferControl
+import xenakis.model.score.controls.BusControl
+import xenakis.model.score.controls.GroupControl
+import xenakis.model.score.controls.ValueControl
 import xenakis.sc.editor.ControlSpecEditor
 import xenakis.sc.editor.SimpleColorEditor
 import xenakis.sc.editor.SimpleIntegerEditor

@@ -6,8 +6,14 @@ import reaktive.Observer
 import reaktive.value.now
 import reaktive.value.reactiveVariable
 import xenakis.model.obj.ParameterizedObject
-import xenakis.model.score.*
+import xenakis.model.score.Envelope
+import xenakis.model.score.ParameterControlList
 import xenakis.model.score.ParameterControlList.NamedParameterControl
+import xenakis.model.score.ScoreObject
+import xenakis.model.score.ScoreObjectInstance
+import xenakis.model.score.controls.EnvelopeControl
+import xenakis.model.score.controls.ParameterControl
+import xenakis.model.score.controls.getNumericalValue
 import xenakis.sc.ControlSpec
 import xenakis.sc.NumericalControlSpec
 import xenakis.sc.ParameterType

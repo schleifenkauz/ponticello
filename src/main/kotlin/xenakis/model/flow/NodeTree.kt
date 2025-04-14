@@ -8,19 +8,25 @@ class NodeTree(private val client: SuperColliderClient) {
     private val nameObserver = mutableMapOf<AudioNode, Observer>()
     private val activeNodes = mutableSetOf<AudioNode>()
 
-    fun addNode(node: AudioNode, placement: NodePlacement) {
-        client.run {
-            node.run { writeCode(placement) }
+    fun addNode(node: AudioNode, placement: NodePlacement, createSynth: Boolean = true) {
+        if (!node.validate()) return
+        if (createSynth) {
+            client.run {
+                node.run { writeCode(placement) }
+            }
         }
         nameObserver[node] = node.superColliderName.observe { _, old, new -> rename(old, new) }
         activeNodes.add(node)
     }
 
-    fun removeNode(node: AudioNode) {
+    fun removeNode(node: AudioNode, freeSynth: Boolean = true) {
         if (!(activeNodes.remove(node))) return
-        client.run {
-            +"${node.superColliderName.now}.free"
-            +"${node.superColliderName.now} = nil"
+        val name = node.superColliderName.now
+        if (freeSynth) {
+            client.run {
+                +"if ($name != nil && $name.isRunning) { $name.free }"
+                +"$name = nil"
+            }
         }
         nameObserver.remove(node)!!.kill()
     }

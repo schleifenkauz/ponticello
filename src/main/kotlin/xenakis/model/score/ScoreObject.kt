@@ -8,20 +8,21 @@ import javafx.geometry.HorizontalDirection
 import javafx.geometry.HorizontalDirection.LEFT
 import javafx.scene.input.DataFormat
 import javafx.scene.paint.Color
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
+import reaktive.value.ReactiveValue
 import reaktive.value.ReactiveVariable
 import reaktive.value.now
 import reaktive.value.reactiveVariable
-import xenakis.impl.ColorSerializer
-import xenakis.impl.Decimal
-import xenakis.impl.withPrecision
-import xenakis.impl.zero
+import xenakis.impl.*
 import xenakis.model.flow.ScoreObjectInfo
 import xenakis.model.obj.AbstractRenamableObject
 import xenakis.model.registry.ObjectRegistry
 import xenakis.model.registry.ScoreObjectRegistry
 import xenakis.model.score.Score.Companion.rootScore
+import xenakis.model.score.controls.EnvelopeControl
+import xenakis.model.score.controls.ParameterControl
 import xenakis.sc.ControlSpec
 import xenakis.sc.NumericalControlSpec
 import xenakis.sc.client.SuperColliderContext
@@ -37,11 +38,26 @@ sealed class ScoreObject : AbstractRenamableObject() {
 
     open val canResize: Boolean get() = true
 
-    var duration: Decimal = zero(ObjectPosition.TIME_PRECISION)
-        protected set
+    @SerialName("duration")
+    private var _duration = reactiveVariable(0.0.asTime)
+    @SerialName("height")
+    private var _height = reactiveVariable(0.0.asY)
+    
+    var duration: Decimal
+        get() = _duration.now
+        protected set(value) {
+            _duration.now = value
+        }
 
-    var height: Decimal = zero(ObjectPosition.Y_PRECISION)
-        protected set
+    var height: Decimal
+        get() = _height.now
+        protected set(value) {
+            _height.now = value
+        }
+
+    fun duration(): ReactiveValue<Decimal> = _duration
+
+    fun height(): ReactiveValue<Decimal> = _height
 
     @Transient
     private val viewManager: ListenerManager<Listener> = ListenerManager.createWeakListenerManager()
@@ -67,6 +83,10 @@ sealed class ScoreObject : AbstractRenamableObject() {
         //this is only for needed when opening projects that were created before the decimal-precision update
         duration = duration.withPrecision(ObjectPosition.TIME_PRECISION)
         height = height.withPrecision(ObjectPosition.Y_PRECISION)
+    }
+
+    open fun validate(): Boolean {
+        return true
     }
 
     abstract fun writeCode(info: ScoreObjectInfo): String
@@ -221,7 +241,7 @@ sealed class ScoreObject : AbstractRenamableObject() {
         private val newDuration: Decimal,
         private val newHeight: Decimal,
         private val type: ResizeType,
-        private val direction: Direction
+        private val direction: Direction,
     ) : AbstractEdit() {
         override val actionDescription: String
             get() = "Resize object"

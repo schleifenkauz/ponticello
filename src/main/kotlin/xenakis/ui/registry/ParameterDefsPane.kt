@@ -25,7 +25,7 @@ class ParameterDefsPane(private val parameters: ParameterDefList, context: Conte
             Identifier.isValid(txt) && parameters.none { p -> p.name.now == txt }
         }).showDialog(header) ?: return
         val type = SimpleSearchableListView<ParameterType>(ParameterType.regularTypes, "Parameter type")
-            .showPopup(header, initialOption = ParameterType.Numerical) ?: return
+            .showPopup(actionBar, initialOption = ParameterType.Numerical) ?: return
         val spec = type.defaultControlSpec()
         val param = ParameterDefObject(name, spec)
         parameters.add(param)

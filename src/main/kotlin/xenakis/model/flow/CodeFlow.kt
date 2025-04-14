@@ -31,6 +31,8 @@ class CodeFlow(val codeEditor: EditorRoot<@Contextual CodeBlockEditor>) : AudioF
 
     }
 
+    override fun validate(): Boolean = true
+
     override fun ScWriter.writeCode(placement: NodePlacement) {
         val code = codeEditor.editor.result.now
         appendBlock(endLine = false) {

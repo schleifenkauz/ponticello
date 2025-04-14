@@ -2,6 +2,8 @@ package xenakis.ui.controls
 
 import bundles.createBundle
 import fxutils.*
+import fxutils.actions.ActionBar
+import fxutils.actions.collectActions
 import fxutils.controls.SliderBar
 import fxutils.prompt.InfoPrompt
 import fxutils.prompt.SimpleSearchableListView
@@ -18,16 +20,21 @@ import javafx.scene.input.Dragboard
 import javafx.scene.layout.BorderPane
 import javafx.scene.layout.HBox
 import javafx.scene.layout.Priority
+import javafx.scene.layout.Region
+import javafx.scene.paint.Color
 import org.controlsfx.control.ToggleSwitch
-import reaktive.value.ReactiveVariable
+import org.kordamp.ikonli.materialdesign2.MaterialDesignD
+import reaktive.value.*
+import reaktive.value.binding.map
 import reaktive.value.fx.asProperty
-import reaktive.value.now
-import reaktive.value.reactiveVariable
 import xenakis.impl.asTime
+import xenakis.impl.one
+import xenakis.impl.zero
 import xenakis.model.obj.*
 import xenakis.model.registry.*
-import xenakis.model.score.*
 import xenakis.model.score.ParameterControlList.NamedParameterControl
+import xenakis.model.score.ScoreObject
+import xenakis.model.score.controls.*
 import xenakis.sc.*
 import xenakis.sc.editor.BusSelector
 import xenakis.sc.editor.GroupSelector
@@ -121,8 +128,9 @@ class ControlAssignmentEditor(val control: NamedParameterControl) : HBox() {
             Value -> "Value"
             Envelope -> "Envelope"
             Group -> "Group"
-            LFO -> "LFO"
+            LFO -> "Expr"
             SingleBusValue -> "Bus Value"
+            AttackRelease -> "ASR"
         }
 
         object Value : ControlType<ValueControl>() {
@@ -188,10 +196,26 @@ class ControlAssignmentEditor(val control: NamedParameterControl) : HBox() {
                 control: CustomControl,
             ): Node {
                 val pane = ScrollPane(control.expr.control)
-                val window = SubWindow(BorderPane(pane), "LFO for ${namedControl.name.now}")
+                pane.background = background(Color.BLACK)
+                val window = SubWindow(Region(), "LFO for ${namedControl.name.now}")
                 window.scene.initHextantScene(obj.context)
                 window.resize(500.0, 200.0)
-                return button("Code") { window.show() }
+                val showWindowButton = button("Code") { window.showOrBringToFront() }
+                val actionBar = ActionBar(actions.withContext(control), "medium-icon-button")
+                val box = HBox(actionBar, infiniteSpace()).centerChildren()
+                box.userData = control.subWindow.forEach { subWindow ->
+                    if (subWindow) {
+                        box.children.remove(pane)
+                        box.children.add(0, showWindowButton)
+                        val layout = BorderPane(pane)
+                        window.scene.root = layout
+                    } else {
+                        window.scene.root = Region()
+                        box.children.remove(showWindowButton)
+                        box.children.add(0, pane)
+                    }
+                }
+                return box
             }
 
             override fun createDefaultControl(
@@ -204,7 +228,19 @@ class ControlAssignmentEditor(val control: NamedParameterControl) : HBox() {
                 if (oldControl.getNumericalValue() != null) {
                     editor.setInitialText(oldControl.getNumericalValue().toString())
                 } else editor.setInitialText("")
-                return CustomControl(root)
+                return CustomControl(root, reactiveVariable(false))
+            }
+
+            private val actions = collectActions<CustomControl> {
+                addAction("Toggle sub window") {
+                    description { ctrl ->
+                        ctrl.subWindow.map { subWindow ->
+                            if (subWindow) "Show inline" else "Show in sub window"
+                        }
+                    }
+                    icon(MaterialDesignD.DOCK_WINDOW)
+                    toggles(CustomControl::subWindow)
+                }
             }
         }
 
@@ -308,8 +344,50 @@ class ControlAssignmentEditor(val control: NamedParameterControl) : HBox() {
                 GroupControl(reactiveVariable(obj.context[GroupRegistry].getDefault().reference()))
         }
 
+        object AttackRelease : ControlType<AttackReleaseControl>() {
+            override fun createDetailInput(
+                obj: ParameterizedObject,
+                namedControl: NamedParameterControl,
+                control: AttackReleaseControl,
+            ): Node {
+                val box = HBox(10.0)
+                val spec = namedControl.spec.now as? NumericalControlSpec
+                    ?: return missingSpecOptionsBar(obj, namedControl)
+                box.userData = obj.duration()!!.forEach { duration ->
+                    val timeSpec = NumericalControlSpec(
+                        default = zero, min = zero, max = duration,
+                        step = 0.01.asTime, warp = Warp.Linear, associatedColor = Color.GRAY
+                    ).converter()
+                    control.attack.now = control.attack.now.coerceAtMost(duration)
+                    control.release.now = control.release.now.coerceAtMost(duration - control.attack.now)
+                    val levelSpec = spec.converter()
+                    val level = SliderBar(control.level, reactiveValue("Level"), levelSpec)
+                    val attack = SliderBar(control.attack, reactiveValue("Attack"), timeSpec)
+                    val release = SliderBar(control.release, reactiveValue("Release"), timeSpec)
+                    level.prefWidth = 100.0
+                    attack.prefWidth = 100.0
+                    release.prefWidth = 100.0
+                    box.children.setAll(level, attack, release)
+                } and control.attack.observe { _, _, attack ->
+                    control.release.now = control.release.now.coerceAtMost(obj.duration()!!.now - attack)
+                } and control.release.observe { _, _, release ->
+                    control.attack.now = control.attack.now.coerceAtMost(obj.duration()!!.now - release)
+                }
+                return box.centerChildren()
+            }
+
+            override fun createDefaultControl(
+                obj: ParameterizedObject,
+                spec: ControlSpec?,
+                oldControl: ParameterControl,
+            ): AttackReleaseControl {
+                val level = oldControl.getNumericalValue() ?: one
+                return AttackReleaseControl(reactiveVariable(zero), reactiveVariable(zero), reactiveVariable(level))
+            }
+        }
+
         companion object {
-            val all: List<ControlType<*>> = listOf(Value, LFO, Envelope, BusValue, SingleBusValue)
+            val all: List<ControlType<*>> = listOf(Value, LFO, Envelope, BusValue, SingleBusValue, AttackRelease)
 
             @Suppress("UNCHECKED_CAST")
             fun <O : ParameterControl> getType(option: O) = when (option) {
@@ -321,6 +399,7 @@ class ControlAssignmentEditor(val control: NamedParameterControl) : HBox() {
                 is SingleBusValueControl -> SingleBusValue
                 is BufferControl -> Buffer
                 is GroupControl -> Group
+                is AttackReleaseControl -> AttackRelease
             } as ControlType<O>
 
             private fun busSelector(

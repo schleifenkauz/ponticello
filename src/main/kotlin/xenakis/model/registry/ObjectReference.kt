@@ -50,6 +50,8 @@ class ObjectReference<O : NamedObject>(private var _name: String) : ScExpr {
 
     fun get(): O? = obj
 
+    fun force(): O = obj ?: error("ObjectReference ${getName() }is not resolved")
+
     fun getName() = obj?.name?.now ?: _name
 
     val name get() = obj?.name ?: reactiveValue(_name)

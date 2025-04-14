@@ -30,6 +30,7 @@ import xenakis.model.obj.SynthDefObject
 import xenakis.model.project.score
 import xenakis.model.registry.*
 import xenakis.model.score.*
+import xenakis.model.score.controls.BufferControl
 import xenakis.sc.Identifier
 import xenakis.sc.editor.EventDictionaryEditor
 import xenakis.sc.editor.ScFunctionEditor

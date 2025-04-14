@@ -4,7 +4,7 @@ import hextant.context.Context
 import reaktive.value.ReactiveVariable
 import reaktive.value.now
 import xenakis.model.registry.NamedObject
-import xenakis.model.score.ParameterControl
+import xenakis.model.score.controls.ParameterControl
 import xenakis.sc.ControlSpec
 import xenakis.ui.registry.ParameterDefList
 
@@ -30,4 +30,6 @@ interface ParameterizedObjectDef: NamedObject {
         }
         return controls
     }
+
+    fun sync()
 }

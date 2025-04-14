@@ -1,40 +1,24 @@
 package xenakis.model.flow
 
+import reaktive.value.binding.map
 import reaktive.value.now
-import reaktive.value.reactiveValue
-import xenakis.impl.Logger
 import xenakis.model.obj.BusObject
-import xenakis.model.obj.NoSynthDef
+import xenakis.model.player.SuffixManager
 import xenakis.model.score.ObjectPosition
 import xenakis.model.score.SynthObject
 import xenakis.sc.client.ScWriter
-import xenakis.sc.writeSynthCode
 
 data class ActiveSynth(
     val obj: SynthObject,
     val absolutePosition: ObjectPosition,
     val suffix: Int,
 ) : AudioNode {
-    override val superColliderName = reactiveValue(
-        when (suffix) {
-            0 -> "~${obj.name.now}"
-            else -> "~${obj.name.now}_$suffix"
-        }
-    )
+    override val superColliderName = obj.name.map { name -> "~synth_${SuffixManager.uniqueName(name, suffix)}" }
+
+    override fun validate(): Boolean = obj.validate()
 
     override fun ScWriter.writeCode(placement: NodePlacement) {
-        val name = superColliderName.now.removePrefix("~")
-        val synthVar = "~synths[$name]"
-        val info = ScoreObjectInfo(absolutePosition, name, synthVar, placement)
-        val def = obj.synthDef
-        if (def is NoSynthDef) {
-            Logger.warn(
-                "SynthDef ${obj.synthDefSelector.result.now.getName()} is not resolved",
-                Logger.Category.AudioFlow
-            )
-        } else {
-            writeSynthCode(def, obj.context, info, obj.duration, obj.controls)
-        }
+        throw UnsupportedOperationException("ActiveSynths are not meant to be written to SC")
     }
 
     override fun getInputs(): Collection<BusObject> = obj.getInputs()

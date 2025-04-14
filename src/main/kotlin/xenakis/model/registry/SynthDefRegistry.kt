@@ -21,10 +21,10 @@ class SynthDefRegistry(
     override val objects: MutableList<SynthDefObject>
 ) : SuperColliderObjectRegistry<SynthDefObject>() {
     override val liveCycleType: SuperColliderObject.LiveCycleType
-        get() = SuperColliderObject.LiveCycleType.InterpreterBoot //TODO this doesn't work for VSTPlugins
+        get() = SuperColliderObject.LiveCycleType.InterpreterBoot
 
     override val objectType: String
-        get() = "Instrument"
+        get() = "SynthDef"
 
     val selectedInstrument: SynthDefObject?
         get() = selectedInstrumentRef.now.get()

@@ -20,6 +20,7 @@ class ScorePlayer(
     private val events: ScoreEventCollector,
     private val recorder: Recorder,
 ) : AbstractPlayer(DELTA_T, settings.lookAhead) {
+    private val suffixManager = SuffixManager()
 
     private var lastPlayFrom: Decimal = PlayHead.START
 
@@ -34,7 +35,7 @@ class ScorePlayer(
 
     private fun collectActiveObjects(
         position: ObjectPosition, score: Score, time: Decimal, delta: Decimal,
-        dest: MutableList<Event>
+        dest: MutableList<Event>,
     ) {
         if (position.time - delta > time) return
         for (inst in score.objectInstances) {
@@ -66,16 +67,19 @@ class ScorePlayer(
         val obj = inst.obj
         val delta = position.time - playHead.currentTime
         val pos = ObjectPosition(playHead.currentTime + delta.coerceAtLeast(zero), position.y)
-        val name = graph.insert(obj, position)
         Logger.fine("Scheduling $obj at $pos, delta: $delta", Logger.Category.Playback)
-        scheduleObject(obj, name, cutoff = -delta.coerceAtMost(zero))
+        scheduleObject(obj, position, cutoff = -delta.coerceAtMost(zero))
     }
 
     fun stopPlayBackInstantly(obj: ScoreObject, pos: ObjectPosition, name: String) {
-        graph.remove(obj, pos)
+        val suffix = suffixManager.remove(obj, pos) ?: return
         when (obj) {
-            is SynthObject -> client.run("~synths['$name'].free;")
+            is SynthObject -> {
+                graph.remove(obj, pos, suffix)
+            }
+
             is TaskObject -> client.run("~tasks['$name'].free;")
+
             else -> {}
         }
     }
@@ -88,13 +92,16 @@ class ScorePlayer(
             when (type) {
                 Event.Type.ObjectStart -> {
                     Logger.fine("ObjectStart: $obj at $position", Logger.Category.Playback)
-                    val name = graph.insert(obj, position)
-                    scheduleObject(obj, name, cutoff = zero)
+                    scheduleObject(obj, position, cutoff = zero)
                 }
 
                 Event.Type.ObjectEnd -> {
                     Logger.fine("ObjectEnd: $obj at $position", Logger.Category.Playback)
-                    graph.remove(obj, position + ObjectPosition(-obj.duration, zero))
+                    val startPos = position + ObjectPosition(-obj.duration, zero)
+                    val suffix = suffixManager.remove(obj, startPos) ?: continue
+                    if (obj is SynthObject) {
+                        graph.remove(obj, startPos, suffix)
+                    }
                 }
 
                 else -> {}
@@ -103,24 +110,35 @@ class ScorePlayer(
         }
     }
 
-    private fun scheduleObject(obj: ScoreObject, info: ScoreObjectInfo, cutoff: Decimal) {
-        val time = info.absolutePosition.time - lastPlayFrom
+    private fun scheduleObject(obj: ScoreObject, absolutePosition: ObjectPosition, cutoff: Decimal) {
+        if (!obj.validate()) return
+        val time = absolutePosition.time - lastPlayFrom
         val timeForExecution = (time + settings.scLangLatency.now).toString()
-        val o = if (cutoff > zero) obj.cut(cutoff, HorizontalDirection.RIGHT, obj.name.now) ?: obj else obj
-
-        val code = o.writeCode(info)
+        val suffix = suffixManager.insert(obj, absolutePosition)
+        var info = ScoreObjectInfo(absolutePosition, suffix, null, cutoff)
+        if (obj is SynthObject) {
+            val placement = graph.insert(obj, absolutePosition, suffix)
+            info = info.copy(placement = placement)
+        }
+        val code = if (cutoff > zero) {
+            val cut = obj.cut(cutoff, HorizontalDirection.RIGHT, obj.name.now) as SynthObject
+            cut.writeCode(info)
+        } else {
+            obj.writeCode(info)
+        }
         if (code == "") return
-        Logger.fine("unique name for $o at $time: $name", Logger.Category.Playback)
-        Logger.fine("time for execution: ${timeForExecution}s", Logger.Category.Playback)
         client.send("schedule", listOf(timeForExecution, code))
+        Logger.fine("unique name for $obj at $time: ${info.uniqueName(obj)}", Logger.Category.Playback)
+        Logger.fine("time for execution: ${timeForExecution}s", Logger.Category.Playback)
+
     }
 
     override fun pausePlayback() {
         Logger.info("Pausing playback", Logger.Category.Playback)
         recorder.pausingPlayback()
-        client.send("pause_play")
-        events.resetEvents()
         graph.clear()
+        events.resetEvents()
+        client.send("pause_play")
     }
 
     override fun resetPlayback() {

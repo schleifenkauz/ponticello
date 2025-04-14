@@ -18,7 +18,10 @@ import xenakis.model.player.ParameterControlLiveUpdater
 import xenakis.model.player.PlaybackManager
 import xenakis.model.registry.GroupRegistry
 import xenakis.model.registry.reference
-import xenakis.sc.ControlSpec
+import xenakis.model.score.controls.BufferControl
+import xenakis.model.score.controls.EnvelopeControl
+import xenakis.model.score.controls.GroupControl
+import xenakis.model.score.controls.ValueControl
 import xenakis.sc.NumericalControlSpec
 import xenakis.sc.client.SuperColliderClient
 import xenakis.sc.editor.SynthDefSelector
@@ -30,7 +33,7 @@ class SynthObject(
     @SerialName("name") override val mutableName: ReactiveVariable<String>,
     @SerialName("synthDef") private val synthDefRef: ReactiveVariable<SynthDefReference>,
     override val controls: ParameterControlList
-) : ScoreObject(), ParameterizedObject {
+) : ParameterizedScoreObject() {
     override val type: String
         get() = "synth"
 
@@ -43,11 +46,6 @@ class SynthObject(
 
     @Transient
     private lateinit var listener: ParameterControlLiveUpdater
-
-    override val associatedControls: Map<String, ParameterControl>
-        get() = controls.controlMap
-
-    override fun getSpec(parameter: String): ControlSpec? = super<ParameterizedObject>.getSpec(parameter)
 
     val synthDef: SynthDefObject get() = synthDefRef.now.get() ?: NoSynthDef()
 
@@ -77,17 +75,27 @@ class SynthObject(
 
     override fun doCut(position: Decimal, whichHalf: HorizontalDirection, newName: String): ScoreObject = SynthObject(
         reactiveVariable(newName), synthDefRef.copy(),
-        controls = controls.transformControls { ctrl ->
-            val c = ctrl.now
-            val name = ctrl.name.now
-            when {
-                name == "startPos" && c is ValueControl && whichHalf == RIGHT ->
-                    ValueControl(reactiveVariable(c.value.now + position * (playBufRate?.now ?: one(3))))
-
-                else -> c.cut(position, whichHalf, ctrl.spec.now as NumericalControlSpec)
-            }
-        }
+        controls = cutEnvelopes(whichHalf, position)
     )
+
+    private fun cutEnvelopes(
+        whichHalf: HorizontalDirection,
+        position: Decimal,
+    ) = controls.transformControls { ctrl ->
+        val c = ctrl.now
+        val name = ctrl.name.now
+        when {
+            name == "startPos" && c is ValueControl && whichHalf == RIGHT ->
+                ValueControl(reactiveVariable(c.value.now + position * (playBufRate?.now ?: one(3))))
+
+            c is EnvelopeControl -> {
+                val spec = ctrl.spec.now as? NumericalControlSpec ?: return@transformControls c
+                val warp = spec.warp
+                EnvelopeControl(c.points.cut(position, whichHalf, warp), c.displayColor, c.display)
+            }
+            else -> c
+        }
+    }
 
     override fun beginResize(type: ResizeType, direction: Direction): Boolean {
         if (type.isStretch && playBufRate != null) {
@@ -152,7 +160,7 @@ class SynthObject(
 
     override fun writeCode(info: ScoreObjectInfo): String = code {
         appendBlock("s.makeBundle(${context[Settings].serverLatency.now})") {
-            writeSynthCode(synthDef, context, info, duration, controls, controls.controlMap)
+            writeSynthCode(this@SynthObject, info, controls)
         }
     }
 

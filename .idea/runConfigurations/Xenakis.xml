@@ -2,6 +2,7 @@
   <configuration default="false" name="Xenakis" type="JetRunConfigurationType">
     <envs>
       <env name="PONTICELLO_HOME" value="$USER_HOME$/cloud/.xenakis" />
+      <env name="PONTICELLO_PROJECTS" value="$USER_HOME$/cloud/compositions" />
     </envs>
     <option name="MAIN_CLASS_NAME" value="xenakis.MainKt" />
     <module name="xenakis.main" />

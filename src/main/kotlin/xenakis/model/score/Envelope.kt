@@ -60,10 +60,10 @@ class Envelope(@SerialName("points") private val _points: MutableList<EnvelopePo
         }
     }
 
-    fun code(doneAction: String = "Done.freeSelf", warp: Warp): String {
+    fun code(warp: Warp): String {
         val levels = points.map { (_, y) -> y.toString() }
         val times = points.zipWithNext { a, b -> (b.time - a.time).toString() }
-        return "EnvGen.kr(Env.new(levels: $levels, times: $times, curve: $warp), doneAction: $doneAction)"
+        return "Env.new(levels: $levels, times: $times, curve: $warp)"
     }
 
     fun interpolateValueAt(t: Decimal, warp: Warp): Decimal {

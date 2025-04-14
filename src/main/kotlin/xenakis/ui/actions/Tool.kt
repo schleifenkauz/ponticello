@@ -14,7 +14,6 @@ import xenakis.ui.registry.SimpleSearchableRegistryView
 
 enum class Tool(config: Action.Builder<SelectorBar<Tool, Context>>.() -> Unit) : SelectorBar.Option<Context, Tool> {
     Pointer({
-        shortcut("ESCAPE")
         icon(MaterialDesignC.CURSOR_DEFAULT_OUTLINE)
     }),
     Resize({
