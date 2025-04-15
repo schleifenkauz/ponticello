@@ -37,8 +37,12 @@ sealed class AudioFlow : AbstractRenamableObject(), AudioNode {
     final override lateinit var superColliderName: ReactiveString
         private set
 
-    open fun initialize(context: Context, bus: BusObject) {
+    final override fun initialize(context: Context) {
         super.initialize(context)
+    }
+
+    open fun initialize(context: Context, bus: BusObject) {
+        initialize(context)
         associatedBus = bus
         superColliderName = name.map(::getSuperColliderName)
     }

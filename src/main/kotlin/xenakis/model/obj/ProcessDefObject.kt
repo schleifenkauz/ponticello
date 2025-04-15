@@ -72,7 +72,7 @@ class ProcessDefObject(
             val loop = loopBlock.editor.result.now.substitute(argumentSubstitution) as CodeBlock
             val delta = deltaExpr.editor.result.now.substitute(argumentSubstitution)
             setup.writeCode(writer, context)
-            appendBlock("while { t < duration }") {
+            appendBlock("while { t <= duration }") {
                 appendBlock("var delta___ = ", endLine = false) {
                     loop.writeCode(writer, context)
                     delta.code(writer, context)
@@ -86,7 +86,7 @@ class ProcessDefObject(
 
     override fun sync() {
         context[SuperColliderClient].run { writer.sync() }
-        Logger.confirm("Synchronized SynthDef '${name.now}'", Logger.Category.Instruments)
+        Logger.confirm("Synchronized ProcessDef '${name.now}'", Logger.Category.Instruments)
     }
 
     override fun ScWriter.freeObject() {

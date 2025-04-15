@@ -79,10 +79,13 @@
 - global variable in SuperCollider for list of all samples (`ALL_SAMPLES`)
 - undo managers for sub scenes 
   - undo/redo actions on tool panes
-- clear temporary synths (and buses) when pausing
-  - save associated objects in the node tree? 
 - curve parameter type
 - asr parameter type?
+- remove display option on process object control lists
+- auto-focus parameters after typing new method
+- weird duplicating bug when pasting
+- add decoration to tool pane windows and instead remove the header
+  - so they can be resizable
 
 ## Long term ideas
 

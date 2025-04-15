@@ -19,6 +19,7 @@ class IntSpinnerControl @ProvideImplementation(ControlFactory::class) constructo
         spinner.valueProperty().addListener { _, _, newValue ->
             editor.setResult(newValue)
         }
+        supportArguments(MIN, MAX)
     }
 
     override fun displayResult(result: Int) {

@@ -18,9 +18,8 @@ fun LoopExpr(block: CodeBlock): ScExpr = ScFunction(body = block).send("loop")
 
 @Compound(nodeType = ScExpr::class)
 fun SynthExpr(synthDef: Identifier, arguments: List<NamedExpr>): ScExpr {
-    val synth = Identifier("Synth").send("new", SymbolLiteral(synthDef.text), ArrayExpr(arguments))
-        .send("postln")
-        .send("onFree", lambda("synth") { Identifier("~synths")/*.send("remove", Identifier("synth"))*/ })
+    val synth = Identifier("Synth").send("new", RawScExpr("\\${synthDef.text}"), ArrayExpr(arguments))
+        .send("onFree", lambda("synth") { Identifier("~synths").send("remove", Identifier("synth")) })
     return Identifier("~synths").send("add", synth)
 }
 

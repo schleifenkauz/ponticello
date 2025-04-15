@@ -120,8 +120,8 @@ class XenakisLauncher {
         }
     }
 
-    fun closeProject() {
-        val save = askIfUserWantsToSave() ?: return
+    fun closeProject(autoSave: Boolean) {
+        val save = autoSave || askIfUserWantsToSave() ?: return
         if (save) saveProject()
         recentProjects.clearActiveProject()
         showLauncher()

@@ -29,7 +29,7 @@ import xenakis.ui.impl.Direction
 class SynthObject(
     @SerialName("name") override val mutableName: ReactiveVariable<String>,
     @SerialName("synthDef") private val synthDefRef: ReactiveVariable<SynthDefReference>,
-    override val controls: ParameterControlList
+    override val controls: ParameterControlList,
 ) : ScoreObject(), ParameterizedObject {
     override val type: String
         get() = "synth"
@@ -99,6 +99,7 @@ class SynthObject(
                 val warp = spec.warp
                 EnvelopeControl(c.points.cut(position, whichHalf, warp), c.displayColor, c.display)
             }
+
             else -> c
         }
     }
@@ -165,15 +166,13 @@ class SynthObject(
     }
 
     override fun writeCode(info: ScoreObjectInfo): String = code {
-        appendBlock("s.makeBundle(${context[Settings].serverLatency.now})") {
-            writeSynthCode(this@SynthObject, info, controls)
-        }
+        writeSynthCode(this@SynthObject, info, context[Settings].serverLatency.now)
     }
 
     companion object {
         fun create(
             name: String, def: SynthDefObject,
-            controls: ParameterControlList = ParameterControlList.empty()
+            controls: ParameterControlList = ParameterControlList.empty(),
         ): SynthObject {
             return SynthObject(reactiveVariable(name), reactiveVariable(def.reference()), controls)
         }

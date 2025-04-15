@@ -1,7 +1,6 @@
 package xenakis.sc.view
 
 import bundles.Bundle
-import bundles.withDefault
 import hextant.codegen.ProvideImplementation
 import hextant.context.ControlFactory
 import hextant.core.view.CompoundEditorControl
@@ -9,7 +8,11 @@ import hextant.core.view.CompoundEditorControl
 class SynthExprEditorControl @ProvideImplementation(ControlFactory::class) constructor(
     private val editor: xenakis.sc.editor.SynthExprEditor,
     arguments: Bundle,
-) : CompoundEditorControl(editor, arguments.withDefault(MULTILINE)) {
+) : CompoundEditorControl(editor, arguments) {
+    init {
+        supportArguments(MULTILINE)
+    }
+
     override fun build(): Layout = vertical {
         styleClass("compound-expr", "synth-expr")
         horizontal {

@@ -1,11 +1,15 @@
 package xenakis.model.flow
 
+import hextant.context.Context
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 import reaktive.value.*
 import xenakis.impl.Decimal
 import xenakis.impl.copy
 import xenakis.impl.zero
 import xenakis.model.obj.BusObject
+import xenakis.model.obj.ParameterizedObject
+import xenakis.model.obj.ParameterizedObjectDef
 import xenakis.model.obj.ReferencedSynthDefObject
 import xenakis.model.registry.reference
 import xenakis.model.score.ObjectPosition
@@ -20,7 +24,26 @@ class UtilityFlow(
     private val volumeDb: ReactiveVariable<Decimal> = reactiveVariable(zero),
     private val muted: ReactiveVariable<Boolean> = reactiveVariable(false),
     val solo: ReactiveVariable<Boolean> = reactiveVariable(false),
-) : AudioFlow() {
+) : AudioFlow(), ParameterizedObject {
+    @Transient
+    override val def: ParameterizedObjectDef = ReferencedSynthDefObject.get("utility")
+
+    @Transient
+    override lateinit var controls: ParameterControlList
+        private set
+
+    override fun duration(): ReactiveValue<Decimal>? = null
+
+    override fun initialize(context: Context, bus: BusObject) {
+        super.initialize(context, bus)
+        def.initialize(context)
+        controls = ParameterControlList.create(
+            "bus" to BusControl(reactiveVariable(associatedBus.reference())),
+            "volume" to ValueControl(volumeDb), //TODO how to mute
+        )
+        controls.initialize(context, this)
+    }
+
     override fun copy(): AudioFlow =
         UtilityFlow(volumeDb.copy(), muted.copy(), solo.copy())
 
@@ -28,17 +51,12 @@ class UtilityFlow(
 
     override fun ScWriter.writeCode(placement: NodePlacement) {
         //TODO we need a way to mute other buses when something is soloed
-        val volume = when {
-            muted.now -> Decimal.NINF
-            else -> volumeDb.now
-        }
-        val controls = ParameterControlList.create(
-            "bus" to BusControl(reactiveVariable(associatedBus.reference())),
-            "volume" to ValueControl(reactiveVariable(volume)),
-        )
         val info = ScoreObjectInfo(ObjectPosition.ZERO, suffix = 0, placement, cutoff = zero)
-        val def = ReferencedSynthDefObject.get("utility")
-        writeSynthCode(SynthFlow(def, controls), info, controls)
+        val name = superColliderName.now
+        writeSynthCode(
+            this@UtilityFlow, info, latency = zero,
+            customUniqueName = name.removePrefix("~"), customSynthVar = name
+        )
     }
 
     override fun getDefaultName(): ReactiveString = reactiveValue("Utility")

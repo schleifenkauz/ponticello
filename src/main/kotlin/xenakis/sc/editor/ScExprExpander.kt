@@ -153,6 +153,7 @@ class ScExprExpander() : ConfiguredExpander<ScExpr, ScExprEditor<*>>(), ScExprEd
             "function" expand { ScFunctionEditor().defaultState() }
             "bus" expand { BusSelector().defaultState() }
             "buffer" expand { BufferSelector().defaultState() }
+            "sample" expand { SampleSelector().defaultState() }
             "group" expand { GroupSelector().defaultState() }
             "plugin" expand { ctx ->
                 val availablePlugins = VSTPluginObject.availablePlugins(ctx).toList()

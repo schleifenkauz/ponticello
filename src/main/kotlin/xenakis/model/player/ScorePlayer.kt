@@ -110,9 +110,13 @@ class ScorePlayer(
     private fun stopObject(obj: ScoreObject, startPos: ObjectPosition, suffix: Int) {
         when (obj) {
             is SynthObject -> {
-                graph.remove(obj, startPos, suffix)
+                try {
+                    graph.remove(obj, startPos, suffix)
+                } catch (e: Exception) {
+                    Logger.error("Failed to remove $obj from audio flow graph", e, Logger.Category.Playback)
+                }
                 val name = obj.superColliderName(suffix)
-                client.run("$name.free;")
+                client.run("if ($name != nil && $name.isRunning) { $name.free; }")
             }
 
             is ProcessObject, is TaskObject -> {
@@ -144,8 +148,8 @@ class ScorePlayer(
     override fun pausePlayback() {
         Logger.info("Pausing playback", Logger.Category.Playback)
         recorder.pausingPlayback()
-        graph.clear()
         activeObjectManager.forEach(::stopObject)
+        graph.clear()
         activeObjectManager.clear()
         events.resetEvents()
         client.send("pause_play")

@@ -18,7 +18,9 @@ SynthDef(\send, {
     var snd = In.ar(in, 2);
     snd = snd * amp;
     Out.ar(out, snd);
-}).add;
+}, metadata: (specs: (
+    amp: [0, 1, \lin, 0.01, 1]
+))).add;
 
 ServerBoot.add {
     ~xenakis_addr.sendMsg('/booted');
@@ -40,7 +42,8 @@ ServerTree.add {
             answer = handler.(*msg.drop(2));
             ~xenakis_addr.sendMsg('/reply', id, answer.asString);
         } { |error|
-			~xenakis_addr.sendMsg('/error', id, error.what);
+			~xenakis_addr.sendMsg('/error', id, error.what ++ msg.asString);
+			error.throw;
         }
 	}, address);
 };
@@ -57,6 +60,7 @@ OSCdef('eval', {
                 ~xenakis_addr.sendMsg('/reply', id, answer.asString);
             } { |error|
                 ~xenakis_addr.sendMsg('/error', id, error.what);
+                error.throw;
             }
         }
 	}
@@ -64,11 +68,13 @@ OSCdef('eval', {
 OSCdef('run', {
 	arg msg, time, addr, recvPort;
 	var code = msg[1], fct;
+	code.postln;
 	fct = this.compile(code.asString);
 	if (fct == nil) { ~xenakis_addr.sendMsg('error', -1, "Compilation error") };
 	AppClock.sched(0) {
 		try { fct.value } { |error|
 			~xenakis_addr.sendMsg('/error', -1, error.what);
+			error.throw;
 		}
 	}
 }, 'run');
@@ -80,7 +86,6 @@ OSCdef('start_play', {
 }, '/start_play');
 OSCdef('pause_play', {
     ~play_start = -1;
-    ~synths.postln;
     ~synths.copy.do(_.free); //copy to avoid concurrent modification
     ~tasks.do(_.stop);
     ~tasks = [];
@@ -96,6 +101,7 @@ OSCdef('schedule', {
 	    if (my_play_start == ~play_start) {
 		    try { fct.value } { |error|
 				~xenakis_addr.sendMsg('/error', -1, error.what);
+				error.throw;
 			}
 		};
 		nil;
@@ -120,18 +126,25 @@ OSCdef('schedule', {
 	SynthDescLib.global.synthDescs[synthName.asSymbol].specs[controlName] != nil;
 });
 ~setupHandler.('controlMinval', { |synthName, controlName|
-	var minval;
-	minval = SynthDescLib.global.synthDescs[synthName.asSymbol].specs[controlName].minval;
-	minval
+	var desc, spec, minval;
+	"get control min".postln;
+	desc = SynthDescLib.global.synthDescs[synthName.asSymbol].postln;
+	desc.specs.postln;
+	spec = desc.specs[controlName].postln;
+	0
+	//spec.minval;
 });
 ~setupHandler.('controlMaxval', { |synthName, controlName|
-	SynthDescLib.global.synthDescs[synthName.asSymbol].specs[controlName].maxval;
+	1
+	//SynthDescLib.global.synthDescs[synthName.asSymbol].specs[controlName].maxval;
 });
 ~setupHandler.('controlWarp', { |synthName, controlName|
-	SynthDescLib.global.synthDescs[synthName.asSymbol].specs[controlName].warp.asString;
+	'lin'
+	//SynthDescLib.global.synthDescs[synthName.asSymbol].specs[controlName].warp.asString;
 });
 ~setupHandler.('controlStep', { |synthName, controlName|
-	SynthDescLib.global.synthDescs[synthName.asSymbol].specs[controlName].step;
+    0.1
+	//SynthDescLib.global.synthDescs[synthName.asSymbol].specs[controlName].step;
 });
 "Successfully setup OSC!".postln;
 )

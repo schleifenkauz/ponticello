@@ -27,6 +27,7 @@ class MessageSendEditorControl @ProvideImplementation(ControlFactory::class) con
     init {
         triggerLayoutOnChange(hasArguments)
         triggerLayoutOnChange(usesMethodNew)
+        supportArguments(MULTILINE, HIDE_NEW_KEYWORD)
     }
 
     override fun build(): Layout = vertical {

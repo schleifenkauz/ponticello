@@ -151,8 +151,12 @@ class SampleObject private constructor(
 
     override fun rename(newName: String) {
         val oldSpectrogramFile = spectrogramFile
+        val oldAudioFile = audioFileInSamplesDir()
         super.rename(newName)
         if (oldSpectrogramFile.isFile) oldSpectrogramFile.renameTo(spectrogramFile)
+        if (registry.copyAudioFiles.now && oldAudioFile.isFile) {
+            oldAudioFile.renameTo(audioFileInSamplesDir())
+        }
     }
 
     override fun ScWriter.createObject() {

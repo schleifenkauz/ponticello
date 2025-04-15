@@ -10,6 +10,10 @@ class LiteralArrayExprEditorControl @ProvideImplementation(ControlFactory::class
     private val editor: xenakis.sc.editor.LiteralArrayEditor,
     arguments: Bundle,
 ) : CompoundEditorControl(editor, arguments) {
+    init {
+        supportArguments(MULTILINE)
+    }
+
     override fun build(): Layout = vertical {
         viewOrientableList(editor.elements, arguments[MULTILINE])
             .root.styleClass("compound-expr", "array")

@@ -190,7 +190,6 @@ sealed class ScoreObject : AbstractRenamableObject() {
         obj.duration = duration
         obj.height = height
         obj.associatedColor.now = associatedColor.now
-        obj.initialize(context)
         return obj
     }
 

@@ -23,6 +23,7 @@ class ScFunctionEditorControl @ProvideImplementation(ControlFactory::class) cons
 
     init {
         triggerLayoutOnChange(canBeSingleLine)
+        supportArguments(SINGLE_LINE_FUNCTION)
     }
 
     override fun build(): Layout = if (arguments[SINGLE_LINE_FUNCTION] && canBeSingleLine.now) horizontal {

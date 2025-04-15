@@ -18,6 +18,7 @@ import xenakis.model.score.ObjectPosition
 import xenakis.model.score.ScoreObject
 import xenakis.model.score.SynthObject
 import xenakis.sc.client.SuperColliderClient
+import xenakis.sc.client.isServerRunning
 import java.util.*
 
 class AudioFlowGraph(
@@ -32,13 +33,11 @@ class AudioFlowGraph(
     private val graph = ReachabilityGraph<AudioNode>()
     private val placeholderContents = mutableMapOf<GroupObject, MutableList<ActiveSynth>>()
     private val treeClearObserver: Observer
-    private var serverRunning = false
 
     init {
         flows.context[BusRegistry].addListener(this)
         flows.addListener(this)
         treeClearObserver = flows.context[SuperColliderClient].treeCleared.observe { _ ->
-            serverRunning = true
             rebuildFlowGraph()
         }
     }
@@ -81,7 +80,7 @@ class AudioFlowGraph(
         val node = flowGroup(flow.associatedBus)
         addChildNode(node, flow)
         reorderNodeTree()
-        if (serverRunning) {
+        if (flows.context[SuperColliderClient].isServerRunning()) {
             val placement = getPlacementFor(flow)
             nodeTree.addNode(flow, placement)
         }
@@ -91,7 +90,7 @@ class AudioFlowGraph(
         val node = flowGroup(flow.associatedBus)
         removeChildNode(node, flow)
         reorderNodeTree()
-        if (serverRunning) {
+        if (flows.context[SuperColliderClient].isServerRunning()) {
             nodeTree.removeNode(flow)
         }
     }

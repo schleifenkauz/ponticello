@@ -2,6 +2,7 @@ package xenakis.ui.actions
 
 import fxutils.actions.Action
 import fxutils.actions.action
+import fxutils.actions.isShiftDown
 import org.kordamp.ikonli.codicons.Codicons
 import org.kordamp.ikonli.material2.Material2MZ
 import org.kordamp.ikonli.material2.Material2OutlinedAL
@@ -31,8 +32,11 @@ object ProjectActions : Action.Collector<XenakisLauncher>() {
         add(newProject)
         addAction("Close Project") {
             icon(MaterialDesignC.CLOSE)
+            shortcut("Ctrl+Shift?+W")
             description("Close project and open the launcher window.")
-            executes { launcher: XenakisLauncher -> launcher.closeProject() }
+            executes { launcher: XenakisLauncher, ev ->
+                launcher.closeProject(autoSave = ev.isShiftDown())
+            }
         }
     }
 }

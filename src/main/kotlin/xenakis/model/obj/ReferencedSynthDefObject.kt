@@ -3,7 +3,6 @@ package xenakis.model.obj
 import hextant.context.Context
 import javafx.scene.paint.Color
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.Transient
 import reaktive.value.ReactiveValue
 import reaktive.value.ReactiveVariable
 import reaktive.value.reactiveValue
@@ -17,18 +16,19 @@ import xenakis.sc.Rate
 import xenakis.sc.client.ScWriter
 import xenakis.sc.client.SuperColliderClient
 import xenakis.ui.registry.ParameterDefList
-import java.util.*
 
 @Serializable
 class ReferencedSynthDefObject(
     private val _name: String,
-    override val color: ReactiveVariable<@Serializable(with = ColorSerializer::class) Color>
+    override val color: ReactiveVariable<@Serializable(with = ColorSerializer::class) Color>,
 ) : SynthDefObject, AbstractNamedObject() {
-    @Transient
-    private var _parameters: ParameterDefList = ParameterDefList()
+    override lateinit var parameters: ParameterDefList
+        private set
 
     override fun initialize(context: Context) {
         super.initialize(context)
+        parameters = ParameterDefList()
+        parameters.initialize(context)
         updateParameters()
     }
 
@@ -38,8 +38,6 @@ class ReferencedSynthDefObject(
 
     override val name: ReactiveValue<String>
         get() = reactiveValue(_name)
-
-    override val parameters: ParameterDefList = ParameterDefList(Collections.unmodifiableList(_parameters))
 
     override fun ScWriter.sync() {
         updateParameters()
@@ -55,12 +53,12 @@ class ReferencedSynthDefObject(
             return
         }
         val newParameters = getSynthDefParameters(_name)
-        for (param in _parameters.toList()) {
-            _parameters.remove(param)
+        for (param in parameters.toList()) {
+            parameters.remove(param)
         }
         for (param in newParameters) {
             param.initialize(context)
-            _parameters.add(param)
+            parameters.add(param)
         } //TODO modify based on diff
     }
 
@@ -69,25 +67,29 @@ class ReferencedSynthDefObject(
             val params = mutableListOf<ParameterDefObject>()
             val nParams = send("controls", listOf(name)).get().toInt()
             for (i in 0 until nParams) {
-                val controlRef = listOf(name, i)
-                val paramName = send("controlName", controlRef).get()
-                if (paramName == "duration") continue
-                val default = send("controlDefault", controlRef).get()
-                val spec = when (paramName) {
-                    "in" -> BusControlSpec(Rate.Audio, 2, FlowType.In)
-                    "out" -> BusControlSpec(Rate.Audio, 2, FlowType.Out)
-                    "bus" -> BusControlSpec(Rate.Audio, 2, FlowType.Out)
-                    "buf" -> BufferControlSpec(2)
-                    else -> {
-                        val min = send("controlMinval", listOf(name, paramName)).get().toDouble()
-                        val max = send("controlMaxval", listOf(name, paramName)).get().toDouble()
-                        val warp = send("controlWarp", listOf(name, paramName)).get().toWarp()
-                        val step = send("controlStep", listOf(name, paramName)).get().toDouble()
-                        NumericalControlSpec(default.toDouble(), min, max, step.toDecimal(), warp, randomColor())
+                try {
+                    val controlRef = listOf(name, i)
+                    val paramName = send("controlName", controlRef).get()
+                    if (paramName == "duration") continue
+                    val default = send("controlDefault", controlRef).get()
+                    val spec = when (paramName) {
+                        "in" -> BusControlSpec(Rate.Audio, 2, FlowType.In)
+                        "out" -> BusControlSpec(Rate.Audio, 2, FlowType.Out)
+                        "bus" -> BusControlSpec(Rate.Audio, 2, FlowType.Out)
+                        "buf" -> BufferControlSpec(2)
+                        else -> {
+                            val min = send("controlMinval", listOf(name, paramName)).get().toDouble()
+                            val max = send("controlMaxval", listOf(name, paramName)).get().toDouble()
+                            val warp = send("controlWarp", listOf(name, paramName)).get().toWarp()
+                            val step = send("controlStep", listOf(name, paramName)).get().toDouble()
+                            NumericalControlSpec(default.toDouble(), min, max, step.toDecimal(), warp, randomColor())
+                        }
                     }
+                    val param = ParameterDefObject(paramName, spec)
+                    params.add(param)
+                } catch (ex: Exception) {
+                    Logger.error("Failed to get parameter for SynthDef #$name", ex)
                 }
-                val param = ParameterDefObject(paramName, spec)
-                params.add(param)
             }
             return params
         }

@@ -56,9 +56,15 @@ class SynthFlow(
 
     override fun ScWriter.writeCode(placement: NodePlacement) {
         val info = ScoreObjectInfo(ObjectPosition.ZERO, suffix = 0, placement, cutoff = zero)
-        val mainBusControl = getMainBusParameter(synthDef)!! to BusControl.create(associatedBus)
+        val mainBusParameter = getMainBusParameter(synthDef)!!
+        val mainBusControl = mainBusParameter.name.now to Pair(
+            mainBusParameter.spec.now,
+            BusControl.create(associatedBus)
+        )
+        val name = superColliderName.now
         writeSynthCode(
-            this@SynthFlow, info, controls, controls.controlMap + mainBusControl
+            this@SynthFlow, info, extraControls = mapOf(mainBusControl), latency = zero,
+            customUniqueName = name.removePrefix("~"), customSynthVar = name
         )
     }
 
@@ -76,12 +82,12 @@ class SynthFlow(
         fun createFor(associatedBus: BusObject, def: SynthDefObject, context: Context): SynthFlow {
             val controls = def.defaultControls(context, defaultGroup = null, defaultBus = associatedBus.reference())
             val mainBusParam = getMainBusParameter(def)
-            controls.removeIf { (name, _) -> name == "group" || name == mainBusParam }
+            controls.removeIf { (name, _) -> name == "group" || name == mainBusParam!!.name.now }
             val flow = SynthFlow(reactiveVariable(def.reference()), ParameterControlList.from(controls))
             return flow
         }
 
         fun getMainBusParameter(def: SynthDefObject) =
-            def.parameters.firstOrNull { p -> p.spec.now is BusControlSpec }?.name?.now
+            def.parameters.firstOrNull { p -> p.spec.now is BusControlSpec }
     }
 }

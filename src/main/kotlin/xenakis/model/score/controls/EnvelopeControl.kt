@@ -73,7 +73,7 @@ class EnvelopeControl(
         parameter: String,
         spec: ControlSpec,
     ) {
-        val auxiliaryVarName = getAuxiliaryVarName(synthVar, parameter)
+        val auxiliaryVarName = getAuxiliaryVarName(synthVar.removePrefix("~synth_"), parameter)
         +"${synthVar}.map(\\$parameter, $auxiliaryVarName)"
     }
 

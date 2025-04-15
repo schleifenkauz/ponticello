@@ -88,7 +88,7 @@ data class CustomControl(
         parameter: String,
         spec: ControlSpec
     ) {
-        val busName = getBusName(synthVar, parameter)
+        val busName = getBusName(synthVar.removePrefix("~synth_"), parameter)
         +"${synthVar}.map(\\$parameter, $busName)"
     }
 }

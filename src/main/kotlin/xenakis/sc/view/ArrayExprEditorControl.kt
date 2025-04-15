@@ -11,6 +11,10 @@ class ArrayExprEditorControl @ProvideImplementation(ControlFactory::class) const
     private val editor: xenakis.sc.editor.ArrayExprEditor,
     arguments: Bundle,
 ) : CompoundEditorControl(editor, arguments) {
+    init {
+        supportArguments(MULTILINE)
+    }
+
     override fun build(): Layout = vertical {
         root.styleClass("compound-expr", "array")
         if (arguments[MULTILINE]) {

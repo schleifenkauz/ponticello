@@ -8,9 +8,7 @@ import reaktive.value.*
 import reaktive.value.binding.flatMap
 import reaktive.value.binding.map
 import xenakis.impl.*
-import xenakis.model.obj.BusObject
-import xenakis.model.obj.BusReference
-import xenakis.model.obj.ReferencedSynthDefObject
+import xenakis.model.obj.*
 import xenakis.model.registry.BusRegistry
 import xenakis.model.registry.reference
 import xenakis.model.score.ObjectPosition
@@ -24,7 +22,7 @@ import xenakis.sc.client.ScWriter
 class SendFlow(
     val targetRef: ReactiveVariable<BusReference>,
     val amountPercent: ReactiveVariable<Decimal>,
-) : AudioFlow() {
+) : AudioFlow(), ParameterizedObject {
     @Transient
     private val observers = mutableListOf<Observer>()
 
@@ -32,10 +30,26 @@ class SendFlow(
     lateinit var targetBus: ReactiveValue<BusObject?>
         private set
 
+    @Transient
+    override val def: ParameterizedObjectDef = ReferencedSynthDefObject.get("send")
+
+    @Transient
+    override lateinit var controls: ParameterControlList
+        private set
+
+    override fun duration(): ReactiveValue<Decimal>? = null
+
     override fun initialize(context: Context, bus: BusObject) {
         super.initialize(context, bus)
         targetRef.now.resolve(context[BusRegistry])
         targetBus = targetRef.map { ref -> ref.get() }
+        def.initialize(context)
+        controls = ParameterControlList.create(
+            "in" to BusControl(reactiveVariable(associatedBus.reference())),
+            "out" to BusControl(reactiveVariable(targetRef.now)),
+            "amp" to ValueControl(reactiveVariable(amountPercent.now * 0.01.toDecimal())),
+        )
+        controls.initialize(context, this)
     }
 
     override fun copy(): AudioFlow =
@@ -50,14 +64,12 @@ class SendFlow(
     }
 
     override fun ScWriter.writeCode(placement: NodePlacement) {
-        val controls = ParameterControlList.create(
-            "in" to BusControl(reactiveVariable(associatedBus.reference())),
-            "out" to BusControl(reactiveVariable(targetRef.now)),
-            "amp" to ValueControl(reactiveVariable(amountPercent.now * 0.01.toDecimal())),
-        )
         val info = ScoreObjectInfo(ObjectPosition.ZERO, 0, placement, cutoff = zero)
-        val def = ReferencedSynthDefObject.get("send")
-        writeSynthCode(SynthFlow(def, controls), info, controls) //TODO choose right name
+        val name = superColliderName.now
+        writeSynthCode(
+            this@SendFlow, info, latency = zero,
+            customUniqueName = name.removePrefix("~"), customSynthVar = name
+        )
     }
 
     override fun getDefaultName(): ReactiveString =

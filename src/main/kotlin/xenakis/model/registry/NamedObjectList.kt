@@ -8,7 +8,7 @@ import reaktive.value.now
 import xenakis.impl.Logger
 import xenakis.model.obj.AbstractContextualObject
 
-abstract class NamedObjectList<O : NamedObject>() : List<O>, AbstractContextualObject() {
+abstract class NamedObjectList<O : NamedObject> : List<O>, AbstractContextualObject() {
     protected abstract val objects: MutableList<O>
 
     abstract val objectType: String
@@ -62,7 +62,7 @@ abstract class NamedObjectList<O : NamedObject>() : List<O>, AbstractContextualO
     }
 
     open fun add(obj: O, idx: Int = objects.size) {
-        if (has(obj.name.now)) {
+        if (obj.name.now != NamedObject.NO_NAME && has(obj.name.now)) {
             Logger.severe("$objectType with name ${obj.name.now} already registered.", Logger.Category.Registries)
             return
         }
