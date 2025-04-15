@@ -112,7 +112,7 @@ object XenakisHextantPlugin : PluginInitializer({
             val synthDefName = ed.result.now.text
             val synthDef = ed.context[SynthDefRegistry].get(synthDefName)
             val expr = ed.parent as SynthExprEditor
-            val existingArguments = expr.arguments.result.now.map { arg -> arg.name.text }
+            val existingArguments = expr.arguments.result.now.map { arg -> arg.name.text } + "duration"
             for (param in synthDef.parameters) {
                 val name = param.name.now
                 if (name in existingArguments) continue

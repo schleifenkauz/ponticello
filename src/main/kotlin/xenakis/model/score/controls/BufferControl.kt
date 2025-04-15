@@ -35,6 +35,8 @@ data class BufferControl(
         return checkResolution(sample.now, "Sample")
     }
 
-    override fun generateCodeFor(obj: ParameterizedObject, spec: ControlSpec): ScExpr =
-        sample.now.force().superColliderExpr
+    override fun generateArgumentExpr(
+        obj: ParameterizedObject, uniqueName: String,
+        parameter: String, spec: ControlSpec
+    ): ScExpr = sample.now.force().superColliderExpr
 }

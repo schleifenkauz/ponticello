@@ -46,7 +46,6 @@
 
 ### Minor
 
-- recognize transport shortcuts from all windows (?)
 - lhs of assignments can be compound expressions (!!!)
 - re-enable allocated buffers (can be used with WrBuf/RdBuf SynthDefs)
 - new parameter type: buffer position (range depends on supplied buffer)
@@ -81,6 +80,9 @@
 - undo managers for sub scenes 
   - undo/redo actions on tool panes
 - clear temporary synths (and buses) when pausing
+  - save associated objects in the node tree? 
+- curve parameter type
+- asr parameter type?
 
 ## Long term ideas
 

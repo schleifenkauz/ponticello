@@ -44,18 +44,34 @@ data class AttackReleaseControl(
 
     override fun providesConstantSynthArgument(): Boolean = false
 
-    override fun generateCodeFor(obj: ParameterizedObject, spec: ControlSpec): ScExpr {
+    override fun generateArgumentExpr(
+        obj: ParameterizedObject,
+        uniqueName: String,
+        parameter: String,
+        spec: ControlSpec
+    ): ScExpr {
         spec as NumericalControlSpec
         val env = generateEnvelope(obj)
-        return env.generateCodeFor(obj, spec)
+        return env.generateArgumentExpr(obj, uniqueName, parameter, spec)
+    }
+
+    override fun ScWriter.generatePreparationCode(
+        obj: ParameterizedObject, uniqueName: String,
+        parameter: String, spec: ControlSpec,
+        associatedServerObjects: MutableList<String>
+    ) {
+        val ctrl = generateEnvelope(obj)
+        return with(ctrl) { generatePreparationCode(obj, uniqueName, parameter, spec, associatedServerObjects) }
     }
 
     override fun ScWriter.applyToSynth(
-        parameter: String, spec: ControlSpec,
-        obj: ParameterizedObject, synthVar: String,
+        obj: ParameterizedObject,
+        synthVar: String,
+        parameter: String,
+        spec: ControlSpec
     ) {
         val ctrl = generateEnvelope(obj)
-        with(ctrl) { applyToSynth(parameter, spec, obj, synthVar) }
+        with (ctrl) { applyToSynth(obj, synthVar, parameter, spec) }
     }
 
     private fun generateEnvelope(obj: ParameterizedObject): EnvelopeControl {

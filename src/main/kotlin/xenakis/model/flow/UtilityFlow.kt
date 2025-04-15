@@ -12,8 +12,8 @@ import xenakis.model.score.ObjectPosition
 import xenakis.model.score.ParameterControlList
 import xenakis.model.score.controls.BusControl
 import xenakis.model.score.controls.ValueControl
+import xenakis.model.score.controls.writeSynthCode
 import xenakis.sc.client.ScWriter
-import xenakis.sc.writeSynthCode
 
 @Serializable
 class UtilityFlow(

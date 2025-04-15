@@ -18,14 +18,11 @@ import xenakis.model.player.ParameterControlLiveUpdater
 import xenakis.model.player.PlaybackManager
 import xenakis.model.registry.GroupRegistry
 import xenakis.model.registry.reference
-import xenakis.model.score.controls.BufferControl
-import xenakis.model.score.controls.EnvelopeControl
-import xenakis.model.score.controls.GroupControl
-import xenakis.model.score.controls.ValueControl
+import xenakis.model.score.controls.*
+import xenakis.sc.ControlSpec
 import xenakis.sc.NumericalControlSpec
 import xenakis.sc.client.SuperColliderClient
 import xenakis.sc.editor.SynthDefSelector
-import xenakis.sc.writeSynthCode
 import xenakis.ui.impl.Direction
 
 @Serializable
@@ -33,9 +30,11 @@ class SynthObject(
     @SerialName("name") override val mutableName: ReactiveVariable<String>,
     @SerialName("synthDef") private val synthDefRef: ReactiveVariable<SynthDefReference>,
     override val controls: ParameterControlList
-) : ParameterizedScoreObject() {
+) : ScoreObject(), ParameterizedObject {
     override val type: String
         get() = "synth"
+
+    override val superColliderPrefix: String get() = "~synth"
 
     @Transient
     lateinit var synthDefSelector: SynthDefSelector
@@ -51,6 +50,13 @@ class SynthObject(
 
     override val def: ParameterizedObjectDef
         get() = synthDef
+
+    override val associatedControls: Map<String, ParameterControl>
+        get() = controls.controlMap
+
+    override fun getSpec(parameter: String): ControlSpec? = super<ParameterizedObject>.getSpec(parameter)
+
+    override fun validate(): Boolean = controls.validate()
 
     val group: ReactiveVariable<GroupReference>? get() = (controls.controlMap["group"] as GroupControl?)?.group
 
@@ -155,7 +161,7 @@ class SynthObject(
     private fun getActiveSynths(): List<String> {
         if (!context.hasProperty(PlaybackManager) || !context[PlaybackManager].player.isPlaying.now) return emptyList()
         val activeInstances = context[PlaybackManager].graph.activeInstances(this@SynthObject)
-        return activeInstances.map { i -> "~synths['${i.superColliderName.now.removePrefix("~")}']" }
+        return activeInstances.map { i -> i.superColliderName.now }
     }
 
     override fun writeCode(info: ScoreObjectInfo): String = code {

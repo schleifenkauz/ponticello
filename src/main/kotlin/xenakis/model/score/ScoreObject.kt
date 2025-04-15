@@ -18,6 +18,7 @@ import reaktive.value.reactiveVariable
 import xenakis.impl.*
 import xenakis.model.flow.ScoreObjectInfo
 import xenakis.model.obj.AbstractRenamableObject
+import xenakis.model.player.ActiveObjectManager
 import xenakis.model.registry.ObjectRegistry
 import xenakis.model.registry.ScoreObjectRegistry
 import xenakis.model.score.Score.Companion.rootScore
@@ -40,9 +41,10 @@ sealed class ScoreObject : AbstractRenamableObject() {
 
     @SerialName("duration")
     private var _duration = reactiveVariable(0.0.asTime)
+
     @SerialName("height")
     private var _height = reactiveVariable(0.0.asY)
-    
+
     var duration: Decimal
         get() = _duration.now
         protected set(value) {
@@ -83,6 +85,13 @@ sealed class ScoreObject : AbstractRenamableObject() {
         //this is only for needed when opening projects that were created before the decimal-precision update
         duration = duration.withPrecision(ObjectPosition.TIME_PRECISION)
         height = height.withPrecision(ObjectPosition.Y_PRECISION)
+    }
+
+    open val superColliderPrefix: String? get() = null
+
+    fun superColliderName(suffix: Int): String {
+        val prefix = superColliderPrefix ?: error("$this has no superColliderPrefix")
+        return "${prefix}_${ActiveObjectManager.uniqueName(name.now, suffix)}"
     }
 
     open fun validate(): Boolean {

@@ -1,6 +1,5 @@
 package xenakis.model.player
 
-import javafx.geometry.HorizontalDirection
 import reaktive.value.now
 import xenakis.impl.*
 import xenakis.model.Settings
@@ -20,7 +19,7 @@ class ScorePlayer(
     private val events: ScoreEventCollector,
     private val recorder: Recorder,
 ) : AbstractPlayer(DELTA_T, settings.lookAhead) {
-    private val suffixManager = SuffixManager()
+    private val activeObjectManager = ActiveObjectManager()
 
     private var lastPlayFrom: Decimal = PlayHead.START
 
@@ -72,7 +71,7 @@ class ScorePlayer(
     }
 
     fun stopPlayBackInstantly(obj: ScoreObject, pos: ObjectPosition, name: String) {
-        val suffix = suffixManager.remove(obj, pos) ?: return
+        val suffix = activeObjectManager.remove(obj, pos) ?: return
         when (obj) {
             is SynthObject -> {
                 graph.remove(obj, pos, suffix)
@@ -98,10 +97,8 @@ class ScorePlayer(
                 Event.Type.ObjectEnd -> {
                     Logger.fine("ObjectEnd: $obj at $position", Logger.Category.Playback)
                     val startPos = position + ObjectPosition(-obj.duration, zero)
-                    val suffix = suffixManager.remove(obj, startPos) ?: continue
-                    if (obj is SynthObject) {
-                        graph.remove(obj, startPos, suffix)
-                    }
+                    val suffix = activeObjectManager.remove(obj, startPos) ?: continue
+                    stopObject(obj, startPos, suffix)
                 }
 
                 else -> {}
@@ -110,22 +107,33 @@ class ScorePlayer(
         }
     }
 
+    private fun stopObject(obj: ScoreObject, startPos: ObjectPosition, suffix: Int) {
+        when (obj) {
+            is SynthObject -> {
+                graph.remove(obj, startPos, suffix)
+                val name = obj.superColliderName(suffix)
+                client.run("$name.free;")
+            }
+
+            is ProcessObject, is TaskObject -> {
+                val name = obj.superColliderName(suffix)
+                client.run("$name.stop;")
+            }
+            else -> {}
+        }
+    }
+
     private fun scheduleObject(obj: ScoreObject, absolutePosition: ObjectPosition, cutoff: Decimal) {
         if (!obj.validate()) return
         val time = absolutePosition.time - lastPlayFrom
         val timeForExecution = (time + settings.scLangLatency.now).toString()
-        val suffix = suffixManager.insert(obj, absolutePosition)
-        var info = ScoreObjectInfo(absolutePosition, suffix, null, cutoff)
+        val suffix = activeObjectManager.insert(obj, absolutePosition)
+        var info = ScoreObjectInfo(absolutePosition, suffix, null, cutoff.takeIf { it > zero } ?: zero)
         if (obj is SynthObject) {
             val placement = graph.insert(obj, absolutePosition, suffix)
             info = info.copy(placement = placement)
         }
-        val code = if (cutoff > zero) {
-            val cut = obj.cut(cutoff, HorizontalDirection.RIGHT, obj.name.now) as SynthObject
-            cut.writeCode(info)
-        } else {
-            obj.writeCode(info)
-        }
+        val code = obj.writeCode(info)
         if (code == "") return
         client.send("schedule", listOf(timeForExecution, code))
         Logger.fine("unique name for $obj at $time: ${info.uniqueName(obj)}", Logger.Category.Playback)
@@ -137,6 +145,8 @@ class ScorePlayer(
         Logger.info("Pausing playback", Logger.Category.Playback)
         recorder.pausingPlayback()
         graph.clear()
+        activeObjectManager.forEach(::stopObject)
+        activeObjectManager.clear()
         events.resetEvents()
         client.send("pause_play")
     }

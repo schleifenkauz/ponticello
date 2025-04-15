@@ -29,7 +29,8 @@ class ParameterControlList(
         get() = "Parameter control"
 
     @Transient
-    private lateinit var associatedObject: ParameterizedObject
+    lateinit var associatedObject: ParameterizedObject
+        private set
 
     private val def: ParameterizedObjectDef get() = associatedObject.def
 
@@ -174,6 +175,25 @@ class ParameterControlList(
         ParameterControlList(mapTo(mutableListOf()) { p -> p.copy(f(p)) })
 
     fun copy() = ParameterControlList(mapTo(mutableListOf()) { it.copy() })
+
+    fun validate(): Boolean {
+        var valid = true
+        for (control in this) {
+            val spec = control.spec.now
+            if (spec == null) {
+                Logger.error("No spec found for control ${control.name.now} on $associatedObject")
+                valid = false
+                continue
+            }
+            if (!control.now.validate(spec, associatedObject)) {
+                valid = false
+            }
+        }
+        if (!valid) {
+            Logger.error("Validation on $associatedObject")
+        }
+        return valid
+    }
 
     class ReassignControl(
         private val control: NamedParameterControl,

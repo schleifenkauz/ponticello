@@ -3,7 +3,7 @@ package xenakis.model.flow
 import reaktive.value.binding.map
 import reaktive.value.now
 import xenakis.model.obj.BusObject
-import xenakis.model.player.SuffixManager
+import xenakis.model.player.ActiveObjectManager
 import xenakis.model.score.ObjectPosition
 import xenakis.model.score.SynthObject
 import xenakis.sc.client.ScWriter
@@ -11,9 +11,9 @@ import xenakis.sc.client.ScWriter
 data class ActiveSynth(
     val obj: SynthObject,
     val absolutePosition: ObjectPosition,
-    val suffix: Int,
+    val suffix: Int
 ) : AudioNode {
-    override val superColliderName = obj.name.map { name -> "~synth_${SuffixManager.uniqueName(name, suffix)}" }
+    override val superColliderName = obj.name.map { name -> "~synth_${ActiveObjectManager.uniqueName(name, suffix)}" }
 
     override fun validate(): Boolean = obj.validate()
 

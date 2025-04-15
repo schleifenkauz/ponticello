@@ -26,12 +26,14 @@ data class GroupControl(val group: ReactiveVariable<GroupReference>) : Parameter
 
     override fun validate(spec: ControlSpec, obj: ParameterizedObject): Boolean {
         if (spec !is GroupControlSpec) {
-            Logger.error("Expected GroupControlSpec but got $spec")
+            Logger.error("$this is not valid for a parameter with spec $spec")
             return false
         }
         return checkResolution(group.now, "Group")
     }
 
-    override fun generateCodeFor(obj: ParameterizedObject, spec: ControlSpec): ScExpr =
-        Identifier(group.now.superColliderName)
+    override fun generateArgumentExpr(
+        obj: ParameterizedObject, uniqueName: String,
+        parameter: String, spec: ControlSpec
+    ): ScExpr = Identifier(group.now.superColliderName)
 }

@@ -73,10 +73,11 @@ class ProcessDefObject(
             val delta = deltaExpr.editor.result.now.substitute(argumentSubstitution)
             setup.writeCode(writer, context)
             appendBlock("while { t < duration }") {
-                appendBlock("var delta___ = ") {
+                appendBlock("var delta___ = ", endLine = false) {
                     loop.writeCode(writer, context)
                     delta.code(writer, context)
                 }
+                appendLine(".value;")
                 +"delta___.wait"
                 +"t = t + delta___"
             }

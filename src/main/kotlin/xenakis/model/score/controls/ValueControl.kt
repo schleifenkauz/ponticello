@@ -27,7 +27,12 @@ data class ValueControl(val value: ReactiveVariable<Decimal>) : ParameterControl
         return true
     }
 
-    override fun generateCodeFor(obj: ParameterizedObject, spec: ControlSpec): ScExpr = DecimalLiteral(value.now)
+    override fun generateArgumentExpr(
+        obj: ParameterizedObject,
+        uniqueName: String,
+        parameter: String,
+        spec: ControlSpec
+    ): ScExpr = DecimalLiteral(value.now)
 
     companion object {
         fun create(value: Decimal) = ValueControl(reactiveVariable(value))

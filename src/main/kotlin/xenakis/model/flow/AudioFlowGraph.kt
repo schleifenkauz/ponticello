@@ -231,7 +231,6 @@ class AudioFlowGraph(
     fun clear() {
         for (activeSynth in activeSynths()) {
             removeNode(activeSynth)
-            nodeTree.removeNode(activeSynth)
         }
         activeSynths.clear()
     }

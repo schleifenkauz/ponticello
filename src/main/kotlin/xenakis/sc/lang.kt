@@ -258,13 +258,22 @@ data class ScFunction(val parameters: List<Identifier> = emptyList(), val body: 
     override val isValid: Boolean
         get() = parameters.all { it.isValid } && body.isValid
 
-    override fun code(writer: ScWriter, context: Context) = writer.appendBlock("", endLine = false) {
-        if (parameters.isNotEmpty()) {
-            append("arg ")
-            appendList(parameters, separator = ", ", context)
-            appendLine(";")
+    override fun code(writer: ScWriter, context: Context) = with(writer) {
+        if (body.statements.size <= 1 && body.variables.isEmpty()) {
+            append("{ ")
+            if (parameters.isNotEmpty()) append(parameters.joinToString(", ", "|", "| ") { id -> id.text })
+            body.statements.singleOrNull()?.code(writer, context)
+            append("}")
+        } else {
+            appendBlock("", endLine = false) {
+                if (parameters.isNotEmpty()) {
+                    append("arg ")
+                    appendList(parameters, separator = ", ", context)
+                    appendLine(";")
+                }
+                body.writeCode(writer, context)
+            }
         }
-        body.writeCode(writer, context)
     }
 }
 
@@ -346,8 +355,10 @@ data class MessageSend(val receiver: ScExpr, val method: Identifier, val argumen
 
     override fun code(writer: ScWriter, context: Context) = with(writer) {
         receiver.code(writer, context)
-        writer.append(".")
-        method.code(writer, context)
+        if (method != Identifier("new")) {
+            writer.append(".")
+            method.code(writer, context)
+        }
         if (arguments.isNotEmpty()) {
             append("(")
             appendList(arguments, separator = ", ", context)
@@ -425,7 +436,7 @@ data class VSTPlugin(
     val channels: Int,
     val pluginName: String,
     val id: String,
-    val presetName: String
+    val presetName: String,
 ) : ScExpr {
     override val isValid: Boolean
         get() = input.isValid
@@ -465,22 +476,22 @@ data class AdhocSynth(
         synthName: String,
         target: String,
         addAction: String,
-        wrapInTask: Boolean
+        wrapInTask: Boolean,
     ) = with(writer) {
-            val plugins = block.statements.flatMap { s -> s.allChildren<VSTPlugin>() }
-            if (wrapInTask && plugins.isNotEmpty()) {
-                appendBlock("Task", endLine = false) {
-                    writeCodeInsideTask(context, plugins, synthName, target, addAction)
-                }
-                +".play"
-            } else {
+        val plugins = block.statements.flatMap { s -> s.allChildren<VSTPlugin>() }
+        if (wrapInTask && plugins.isNotEmpty()) {
+            appendBlock("Task", endLine = false) {
                 writeCodeInsideTask(context, plugins, synthName, target, addAction)
             }
+            +".play"
+        } else {
+            writeCodeInsideTask(context, plugins, synthName, target, addAction)
         }
+    }
 
     private fun ScWriter.writeCodeInsideTask(
         context: Context, plugins: List<VSTPlugin>,
-        synthName: String, target: String, addAction: String
+        synthName: String, target: String, addAction: String,
     ) {
         appendBlock("$synthName = SynthDef(\\${name.text})", endLine = false) {
             block.writeCode(writer, context)

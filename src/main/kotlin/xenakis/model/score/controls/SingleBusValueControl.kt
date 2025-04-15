@@ -30,7 +30,12 @@ data class SingleBusValueControl(val bus: ReactiveVariable<BusReference>) : Para
         return checkResolution(bus.now, "Bus")
     }
 
-    override fun generateCodeFor(obj: ParameterizedObject, spec: ControlSpec): ScExpr =
+    override fun generateArgumentExpr(
+        obj: ParameterizedObject,
+        uniqueName: String,
+        parameter: String,
+        spec: ControlSpec
+    ): ScExpr =
         when (obj.def) {
             is ProcessDefObject -> lambda("t") { this.bus.now.force().superColliderExpr.send("getSynchronous") }
             else -> bus.now.force().superColliderExpr.send("getSynchronous")

@@ -13,11 +13,11 @@ import xenakis.model.registry.reference
 import xenakis.model.score.ObjectPosition
 import xenakis.model.score.ParameterControlList
 import xenakis.model.score.controls.BusControl
+import xenakis.model.score.controls.writeSynthCode
 import xenakis.sc.BusControlSpec
 import xenakis.sc.client.ScWriter
 import xenakis.sc.client.SuperColliderClient
 import xenakis.sc.editor.SynthDefSelector
-import xenakis.sc.writeSynthCode
 
 @Serializable
 class SynthFlow(
@@ -52,7 +52,7 @@ class SynthFlow(
 
     override fun copy(): AudioFlow = SynthFlow(defRef, controls.copy())
 
-    override fun validate(): Boolean = super.validate()
+    override fun validate(): Boolean = controls.validate()
 
     override fun ScWriter.writeCode(placement: NodePlacement) {
         val info = ScoreObjectInfo(ObjectPosition.ZERO, suffix = 0, placement, cutoff = zero)

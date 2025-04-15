@@ -18,10 +18,20 @@ sealed class ParameterControl : AbstractContextualObject() {
 
     open fun providesConstantSynthArgument(): Boolean = true
 
-    open fun ScWriter.applyToSynth(parameter: String, spec: ControlSpec, obj: ParameterizedObject, synthVar: String) {
+    open fun ScWriter.generatePreparationCode(
+        obj: ParameterizedObject, uniqueName: String,
+        parameter: String, spec: ControlSpec,
+        associatedServerObjects: MutableList<String>
+    ) {}
+
+    open fun ScWriter.applyToSynth(obj: ParameterizedObject, synthVar: String, parameter: String, spec: ControlSpec) {
+
     }
 
-    abstract fun generateCodeFor(obj: ParameterizedObject, spec: ControlSpec): ScExpr
+    abstract fun generateArgumentExpr(
+        obj: ParameterizedObject, uniqueName: String,
+        parameter: String, spec: ControlSpec
+    ): ScExpr
 
     companion object {
         @JvmStatic

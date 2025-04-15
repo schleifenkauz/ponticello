@@ -75,13 +75,15 @@ OSCdef('run', {
 OSCdef('start_play', {
 	arg msg;
 	~play_start = TempoClock.beats;
-	~synths = ();
-	~tasks = ();
+	~synths = [].asList;
+	~tasks = [].asList;
 }, '/start_play');
 OSCdef('pause_play', {
     ~play_start = -1;
-    ~synths.do { |s| if (s.isRunning) { s.free } };
-    ~tasks.do { |t| if (t.isPlaying) { t.stop; } };
+    ~synths.postln;
+    ~synths.copy.do(_.free); //copy to avoid concurrent modification
+    ~tasks.do(_.stop);
+    ~tasks = [];
 }, '/pause_play');
 OSCdef('schedule', {
 	arg msg;

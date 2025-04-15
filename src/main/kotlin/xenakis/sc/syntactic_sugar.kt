@@ -17,5 +17,15 @@ fun WhileExpr(condition: ScExpr, block: CodeBlock): ScExpr {
 fun LoopExpr(block: CodeBlock): ScExpr = ScFunction(body = block).send("loop")
 
 @Compound(nodeType = ScExpr::class)
-fun SynthExpr(synthDef: Identifier, arguments: List<NamedExpr>): ScExpr =
-    Identifier("Synth").send("new", SymbolLiteral(synthDef.text), ArrayExpr(arguments))
+fun SynthExpr(synthDef: Identifier, arguments: List<NamedExpr>): ScExpr {
+    val synth = Identifier("Synth").send("new", SymbolLiteral(synthDef.text), ArrayExpr(arguments))
+        .send("postln")
+        .send("onFree", lambda("synth") { Identifier("~synths")/*.send("remove", Identifier("synth"))*/ })
+    return Identifier("~synths").send("add", synth)
+}
+
+@Compound(nodeType = ScExpr::class)
+fun Task(block: CodeBlock): ScExpr {
+    val task = Identifier("Task").send("new", block).send("play")
+    return Identifier("~tasks").send("add", task)
+}

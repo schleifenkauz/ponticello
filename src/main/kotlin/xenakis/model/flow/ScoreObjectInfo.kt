@@ -2,7 +2,7 @@ package xenakis.model.flow
 
 import reaktive.value.now
 import xenakis.impl.Decimal
-import xenakis.model.player.SuffixManager
+import xenakis.model.player.ActiveObjectManager
 import xenakis.model.registry.NamedObject
 import xenakis.model.score.ObjectPosition
 
@@ -12,7 +12,7 @@ data class ScoreObjectInfo(
     val placement: NodePlacement?,
     val cutoff: Decimal,
 ) {
-    fun uniqueName(obj: NamedObject) = SuffixManager.uniqueName(obj.name.now, suffix)
+    fun uniqueName(obj: NamedObject) = ActiveObjectManager.uniqueName(obj.name.now, suffix)
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

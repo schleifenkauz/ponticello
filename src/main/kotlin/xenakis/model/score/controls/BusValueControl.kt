@@ -10,12 +10,10 @@ import xenakis.impl.copy
 import xenakis.model.obj.BusReference
 import xenakis.model.obj.ParameterizedObject
 import xenakis.model.obj.ProcessDefObject
+import xenakis.model.obj.SynthDefObject
 import xenakis.model.registry.BusRegistry
-import xenakis.sc.ControlSpec
-import xenakis.sc.NumericalControlSpec
-import xenakis.sc.ScExpr
+import xenakis.sc.*
 import xenakis.sc.client.ScWriter
-import xenakis.sc.send
 
 @Serializable
 @SerialName("BusValue")
@@ -36,17 +34,25 @@ class BusValueControl(val bus: ReactiveVariable<BusReference>) : ParameterContro
         return checkResolution(bus.now, "Bus")
     }
 
-    override fun generateCodeFor(obj: ParameterizedObject, spec: ControlSpec): ScExpr =
-        when (obj.def) {
-            is ProcessDefObject -> throw AssertionError("BusValueControl is not implemented on process objects")
-            else -> bus.now.force().superColliderExpr.send("getSynchronous")
-        }
-
-    override fun ScWriter.applyToSynth(
+    override fun generateArgumentExpr(
+        obj: ParameterizedObject,
+        uniqueName: String,
         parameter: String,
         spec: ControlSpec,
+    ): ScExpr {
+        val busExpr = bus.now.force().superColliderExpr
+        return when (obj.def) {
+            is SynthDefObject -> busExpr.send("kr")
+            is ProcessDefObject -> lambda { busExpr.send("getSynchronous") }
+            else -> busExpr.send("getSynchronous")
+        }
+    }
+
+    override fun ScWriter.applyToSynth(
         obj: ParameterizedObject,
         synthVar: String,
+        parameter: String,
+        spec: ControlSpec
     ) {
         val bus = bus.now.force().superColliderName
         +"${synthVar}.map(\\$parameter, $bus)"

@@ -11,12 +11,10 @@ import reaktive.value.reactiveVariable
 import xenakis.impl.copy
 import xenakis.model.obj.ParameterizedObject
 import xenakis.model.obj.ProcessDefObject
-import xenakis.sc.ControlSpec
-import xenakis.sc.ScExpr
+import xenakis.model.obj.SynthDefObject
+import xenakis.sc.*
 import xenakis.sc.client.ScWriter
 import xenakis.sc.editor.ScExprExpander
-import xenakis.sc.lambda
-import xenakis.sc.substitute
 
 @Serializable
 @SerialName("Custom")
@@ -34,34 +32,63 @@ data class CustomControl(
 
     override fun providesConstantSynthArgument(): Boolean = false
 
-    override fun generateCodeFor(obj: ParameterizedObject, spec: ControlSpec): ScExpr =
-        when (obj.def) {
-            is ProcessDefObject -> lambda("t") { expr.editor.result.now }
-            else -> expr.editor.result.now
-        }
-
-    override fun ScWriter.applyToSynth(
-        parameter: String,
-        spec: ControlSpec,
-        obj: ParameterizedObject,
-        synthVar: String,
+    override fun ScWriter.generatePreparationCode(
+        obj: ParameterizedObject, uniqueName: String,
+        parameter: String, spec: ControlSpec,
+        associatedServerObjects: MutableList<String>
     ) {
-        val code = obj.controls.controlMap.entries.associate { (name, control) ->
-            val expr = control.generateCodeFor(obj, spec)
-            expr.let { "~ctrl_$name" to it }
-        }
-        val expr = expr.editor.result.now
-            .substitute(code)
-        val busName = "~auxil_${obj.name.now}_${parameter}"
-        +"$busName = Bus.control(s, 1)"
-        if (obj.duration() != null) {
+        val expr = substituteControlParameters(obj, uniqueName, spec)
+        if (obj.def is SynthDefObject && obj.def.hasParameter(parameter)) {
+            val busName = getBusName(uniqueName, parameter)
+            +"$busName = Bus.control(s, 1)"
+            val auxilSynthName = "~auxil_synth_${uniqueName}_${parameter}"
+            append("$auxilSynthName = ")
             appendBlock("", endLine = false) {
-                +"Env.new(levels: [0, 0], times: [${obj.duration()!!.now}]).kr(Done.freeSelf)"
                 expr.code(writer, context)
             }
             +".play(s, $busName)"
+            associatedServerObjects.addAll(listOf(busName, auxilSynthName))
         }
-        +"${synthVar}.map(\\$parameter, $busName)"
+    }
 
+    private fun substituteControlParameters(
+        obj: ParameterizedObject,
+        uniqueName: String,
+        spec: ControlSpec,
+    ): ScExpr {
+        val code = obj.controls.controlMap.entries.associate { (param, control) ->
+            val expr = control.generateArgumentExpr(obj, uniqueName, param, spec)
+            expr.let { "~ctrl_$param" to it }
+        }
+        return this.expr.editor.result.now.substitute(code)
+    }
+
+    private fun getBusName(uniqueName: String, parameter: String) = "~auxil_bus_${uniqueName}_${parameter}"
+
+    override fun generateArgumentExpr(
+        obj: ParameterizedObject,
+        uniqueName: String,
+        parameter: String,
+        spec: ControlSpec
+    ): ScExpr =
+        when (obj.def) {
+            is ProcessDefObject -> lambda("t") { substituteControlParameters(obj, uniqueName, spec) }
+            is SynthDefObject -> {
+                if (obj.def.hasParameter(parameter)) {
+                    val busName = getBusName(uniqueName, parameter)
+                    Identifier(busName).send("kr")
+                } else substituteControlParameters(obj, uniqueName, spec)
+            }
+            else -> substituteControlParameters(obj, uniqueName, spec)
+        }
+
+    override fun ScWriter.applyToSynth(
+        obj: ParameterizedObject,
+        synthVar: String,
+        parameter: String,
+        spec: ControlSpec
+    ) {
+        val busName = getBusName(synthVar, parameter)
+        +"${synthVar}.map(\\$parameter, $busName)"
     }
 }

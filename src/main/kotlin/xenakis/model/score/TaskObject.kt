@@ -21,6 +21,8 @@ class TaskObject(
     override val type: String
         get() = "task"
 
+    override val superColliderPrefix: String get() = "~task"
+
     override val canResize: Boolean
         get() = false
 
@@ -31,7 +33,8 @@ class TaskObject(
     }
 
     override fun writeCode(info: ScoreObjectInfo): String = code {
-        appendBlock("~tasks['$name'] = Task", endLine = false) {
+        val name = superColliderName(info.suffix)
+        appendBlock("$name = Task", endLine = false) {
             +"${context[Settings].serverLatency.now}.wait"
             val function = code.editor.result.now
             function.code(writer, context)

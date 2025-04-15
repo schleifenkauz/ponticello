@@ -5,7 +5,7 @@ import xenakis.impl.Logger
 import xenakis.model.score.ObjectPosition
 import xenakis.model.score.ScoreObject
 
-class SuffixManager {
+class ActiveObjectManager {
     private val takenSuffixes = mutableMapOf<String, MutableSet<Int>>()
     private val suffixes = mutableMapOf<Pair<ScoreObject, ObjectPosition>, Int>()
 
@@ -25,10 +25,20 @@ class SuffixManager {
         return suffix
     }
 
+    fun all(): List<ActiveObject> = suffixes.map { (pair, suffix) ->
+        val (obj, pos) = pair
+        ActiveObject(obj, pos, suffix)
+    }
+
+    fun forEach(action: (obj: ScoreObject, absolutePosition: ObjectPosition, suffix: Int) -> Unit) =
+        suffixes.forEach { (pair, suffix) -> action(pair.first, pair.second, suffix) }
+
     fun clear() {
         takenSuffixes.clear()
         suffixes.clear()
     }
+
+    data class ActiveObject(val obj: ScoreObject, val absolutePosition: ObjectPosition, val suffix: Int)
 
     companion object {
         fun uniqueName(base: String, suffix: Int) = if (suffix == 0) base else "${base}_$suffix"

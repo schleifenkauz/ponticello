@@ -3,7 +3,6 @@ package xenakis.model.obj
 import reaktive.value.ReactiveValue
 import reaktive.value.now
 import xenakis.impl.Decimal
-import xenakis.impl.Logger
 import xenakis.model.flow.FlowType
 import xenakis.model.registry.NamedObject
 import xenakis.model.score.ParameterControlList
@@ -47,22 +46,5 @@ interface ParameterizedObject : NamedObject {
         }
     }
 
-    fun validate(): Boolean {
-        var valid = true
-        for (control in controls) {
-            val spec = control.spec.now
-            if (spec == null) {
-                Logger.error("No spec found for control ${control.name.now} on $this")
-                valid = false
-                continue
-            }
-            if (!control.now.validate(spec, this)) {
-                valid = false
-            }
-        }
-        if (!valid) {
-            Logger.error("Validation on $this")
-        }
-        return valid
-    }
+    fun validate(): Boolean
 }

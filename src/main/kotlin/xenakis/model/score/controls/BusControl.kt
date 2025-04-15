@@ -34,8 +34,10 @@ class BusControl(val bus: ReactiveVariable<BusReference>) : ParameterControl() {
         return checkResolution(bus.now, "Bus")
     }
 
-    override fun generateCodeFor(obj: ParameterizedObject, spec: ControlSpec): ScExpr =
-        bus.now.force().superColliderExpr
+    override fun generateArgumentExpr(
+        obj: ParameterizedObject, uniqueName: String,
+        parameter: String, spec: ControlSpec
+    ): ScExpr = bus.now.force().superColliderExpr
 
     companion object {
         fun create(bus: BusObject) = BusControl(reactiveVariable(bus.reference()))
