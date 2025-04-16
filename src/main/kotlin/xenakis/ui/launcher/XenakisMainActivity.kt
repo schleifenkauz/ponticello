@@ -72,6 +72,8 @@ class XenakisMainActivity(val project: XenakisProject) : Activity() {
     val settingsWindow = makeSubWindow(SettingsPane(context[Settings], context), "Settings", context)
         .also { w -> w.scene.initHextantScene(context) }
 
+    private val interactionConfig = InteractionConfig(project.settings)
+
     val flowPaneWindow: SubWindow
 
     val serverTreeCodeWindow: SubWindow
@@ -215,7 +217,7 @@ class XenakisMainActivity(val project: XenakisProject) : Activity() {
                 toolbarPart(ProjectActions.withContext(launcher)),
                 toolbarPart(UndoRedoActions.withContext(context[UndoManager])),
                 toolbarPart(PlaybackActions.withContext(playback)),
-                InteractionConfig(project.settings),
+                interactionConfig,
                 toolSelector,
             )
             center = HBox(infiniteSpace(), createContextBar(), infiniteSpace())
@@ -236,7 +238,7 @@ class XenakisMainActivity(val project: XenakisProject) : Activity() {
             registerActions(PlaybackActions.withContext(playback))
             registerActions(ScoreNavigationActions.withContext(scoreView))
             registerActions(Tool.entries.map { t -> t.action.withContext(toolSelector) })
-            InteractionConfig.addGridRelatedShortcuts(this, project)
+            interactionConfig.addGridRelatedShortcuts(this)
             registerActions(ToolWindowActions.withContext(this@XenakisMainActivity))
             val objectCtx = ObjectActionContext.MultiObjectContext(context[ScoreObjectSelectionManager])
             registerActions(ObjectActions.singleObjectActions.withContext(objectCtx))

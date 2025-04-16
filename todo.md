@@ -84,16 +84,16 @@
 - remove display option on process object control lists
 - auto-focus parameters after typing new method
 - weird duplicating bug when pasting
-- add decoration to tool pane windows and instead remove the header
+- add decoration to tool pane windows and instead remove the heading
   - so they can be resizable
 - ability to specify start bar in tempo grid
 - automatically focus first control in detail pane when showing compound prompt
 - select 'default' group in new Synth
-- show shortcuts for snap options
 - resize copied object image when zooming
 - show duration of objects in detail pane
-- toggle snapping shortcut does not work
 - choose alternative addresses if the default ones are busy
+- debug `NamedObjectListView` 
+- reconsider which threads to use (coroutines?)
 
 ## Long term ideas
 

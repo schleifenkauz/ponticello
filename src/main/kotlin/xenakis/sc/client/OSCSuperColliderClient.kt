@@ -75,6 +75,8 @@ class OSCSuperColliderClient(
 
     override fun run() {
         while (!interrupted() && !receiver.isClosed) {
+            //IMPORTANT: this loop may not call any blocking methods
+            //Otherwise communication with SuperCollider will stop working
             val buf = ByteArray(4096)
             val packet = DatagramPacket(buf, buf.size)
             try {

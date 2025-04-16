@@ -57,7 +57,6 @@ OSCdef('eval', {
         AppClock.sched(0) {
             try {
                 answer = fct.value;
-                "sending reply to ".post; ~xenakis_addr.post; ": ".post; answer.postln;
                 ~xenakis_addr.sendMsg('/reply', id, answer.asString);
             } { |error|
                 ~xenakis_addr.sendMsg('/error', id, error.what);
