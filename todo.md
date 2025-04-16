@@ -87,7 +87,7 @@
 - add decoration to tool pane windows and instead remove the heading
   - so they can be resizable
 - resize copied object image when zooming
-- show duration of objects in detail pane
+- don't ask whether remove score object when creating/inlining group objets
 - choose alternative addresses if the default ones are busy
 - debug `NamedObjectListView` 
 - reconsider which threads to use (coroutines?)

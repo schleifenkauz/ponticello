@@ -1,12 +1,9 @@
 package xenakis.ui.score
 
-import fxutils.centerChildren
+import fxutils.*
 import fxutils.prompt.CompoundPrompt
 import fxutils.prompt.DetailPane
 import fxutils.prompt.compoundPrompt
-import fxutils.setFixedWidth
-import fxutils.solidBorder
-import fxutils.styleClass
 import hextant.context.Context
 import hextant.undo.UndoManager
 import hextant.undo.compoundEdit
@@ -39,7 +36,12 @@ import xenakis.model.score.*
 import xenakis.model.score.Score.Companion.rootScore
 import xenakis.ui.actions.Tool
 import xenakis.ui.controls.NameControl
-import xenakis.ui.impl.*
+import xenakis.ui.impl.Direction
+import xenakis.ui.impl.isResizeCursor
+import xenakis.ui.impl.resizeDirection
+import xenakis.ui.impl.resizeType
+import xenakis.ui.impl.rootPane
+import xenakis.ui.impl.setupDraggingAndResizing
 import xenakis.ui.launcher.XenakisLauncher.Companion.currentProject
 import xenakis.ui.launcher.XenakisMainActivity
 
@@ -87,7 +89,8 @@ abstract class ScoreObjectView(
         if (obj is ScoreObject.Unresolved) {
             return@apply
         } else {
-            addItem("Name: ", NameControl(obj))
+            val durationLabel = label(obj.duration().map { dur -> if (dur == zero) "" else "(${dur.toCanonicalString()} seconds)" })
+            addItem("Name: ", HBox(NameControl(obj), durationLabel).centerChildren())
             setupDetailPane(this)
         }
     }
