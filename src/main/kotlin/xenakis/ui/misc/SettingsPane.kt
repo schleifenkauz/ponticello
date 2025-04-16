@@ -16,7 +16,7 @@ import xenakis.ui.registry.ToolPane
 class SettingsPane(settings: Settings, private val context: Context) : ToolPane() {
     init {
         styleClass("settings-pane")
-        setup("Settings", vbox {
+        setup(vbox {
             children {
                 +ParameterDefsPane(settings.defaultParametersDefs, context, title = "Default parameter control specs")
                 +Label("Playback options").styleClass("heading")

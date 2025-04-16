@@ -41,7 +41,7 @@ class SampleRegistryPane(
             }
         })
         samples.context[SampleRegistryPane] = this
-        setup("Samples")
+        setup()
     }
 
     override fun addObject() {

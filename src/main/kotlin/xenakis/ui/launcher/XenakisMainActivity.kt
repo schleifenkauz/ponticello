@@ -25,6 +25,7 @@ import javafx.scene.control.SplitPane
 import javafx.scene.layout.*
 import javafx.stage.Screen
 import javafx.stage.StageStyle
+import javafx.stage.Window
 import reaktive.Observer
 import reaktive.value.now
 import xenakis.impl.Logger
@@ -34,8 +35,9 @@ import xenakis.model.player.PlaybackManager
 import xenakis.model.project.*
 import xenakis.sc.client.SuperColliderClient
 import xenakis.ui.actions.*
-import xenakis.ui.flow.FlowPane
+import xenakis.ui.flow.AudioFlowPane
 import xenakis.ui.impl.makeSubWindow
+import xenakis.ui.impl.makeToolWindow
 import xenakis.ui.launcher.XenakisApp.Companion.primaryStage
 import xenakis.ui.midi.ContextualMidiReceiver
 import xenakis.ui.midi.ParameterControlsMidiContext
@@ -53,23 +55,23 @@ class XenakisMainActivity(val project: XenakisProject) : Activity() {
         .styleClass("toolbar-part")
 
     val synthDefsPane = SynthDefRegistryPane(project.instruments)
-    val synthDefsWindow = makeSubWindow(synthDefsPane, "Instruments", context, SubWindow.Type.ToolWindow)
+    val synthDefsWindow = makeToolWindow(synthDefsPane, "Instruments", context)
 
     val processDefsPane = ProcessDefRegistryPane(project[PROCESS_DEFS])
-    val processDefsWindow = makeSubWindow(processDefsPane, "Process Definitions", context, SubWindow.Type.ToolWindow)
+    val processDefsWindow = makeToolWindow(processDefsPane, "Process Definitions", context)
 
     private val busRegistryPane = ControlBusRegistryPane(project.busses)
-    val busesWindow = makeSubWindow(busRegistryPane, "Busses", context, SubWindow.Type.Undecorated)
+    val busesWindow = makeToolWindow(busRegistryPane, "Control Buses", context)
 
     private val samplesPane = SampleRegistryPane(project.buffers)
-    val samplesWindow = makeSubWindow(samplesPane, "Samples", context, SubWindow.Type.Undecorated)
+    val samplesWindow = makeToolWindow(samplesPane, "Samples", context)
 
     private val buffersPane = AllocatedBufferRegistryPane(project.buffers)
-    val buffersWindow = makeSubWindow(buffersPane, "Allocated Buffers", context, SubWindow.Type.Undecorated)
+    val buffersWindow = makeToolWindow(buffersPane, "Allocated Buffers", context)
 
-    val logWindow = makeSubWindow(LogPane(Logger), "Log", context, SubWindow.Type.Undecorated)
+    val logWindow = makeToolWindow(LogPane(Logger), "Log", context)
 
-    val settingsWindow = makeSubWindow(SettingsPane(context[Settings], context), "Settings", context)
+    val settingsWindow = makeToolWindow(SettingsPane(context[Settings], context), "Settings", context)
         .also { w -> w.scene.initHextantScene(context) }
 
     private val interactionConfig = InteractionConfig(project.settings)
@@ -111,7 +113,7 @@ class XenakisMainActivity(val project: XenakisProject) : Activity() {
         project.context[ScoreObjectSelectionManager] = ScoreObjectSelectionManager(project.context, scoreView)
         scoreView.initialize()
 
-        val flowPane = FlowPane(project.flows)
+        val flowPane = AudioFlowPane(project.flows)
         flowPane.setPrefSize(1000.0, 1000.0)
         flowPaneWindow = makeSubWindow(flowPane, "Audio flows", context)
 
@@ -257,5 +259,7 @@ class XenakisMainActivity(val project: XenakisProject) : Activity() {
         //TODO is there more cleanup to do?
     }
 
-    companion object : PublicProperty<XenakisMainActivity> by publicProperty("XenakisMainScreen")
+    companion object : PublicProperty<XenakisMainActivity> by publicProperty("XenakisMainScreen") {
+        private fun <W: Window> W.defaultToolWindowSize() = defaultSize(800.0, 800.0)
+    }
 }

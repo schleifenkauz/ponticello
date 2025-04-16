@@ -17,10 +17,10 @@ abstract class SearchableToolPane<O : NamedObject> : ToolPane(), ObjectBoxConfig
     lateinit var listView: NamedObjectListView<O>
         private set
 
-    protected fun setup(title: String, list: NamedObjectList<O>, actions: () -> List<ContextualizedAction>) {
+    protected fun setup(title: String?, list: NamedObjectList<O>, actions: () -> List<ContextualizedAction>) {
         listView = NamedObjectListView(list, this, filter = { obj -> filter(obj) && matchesSearch(obj) })
         setupSearchField()
-        setup(title, listView, searchText, actions())
+        setup(listView, title, searchText, actions())
     }
 
     private fun setupSearchField() {

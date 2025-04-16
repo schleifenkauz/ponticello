@@ -75,16 +75,8 @@
     -fx-background-color: black;
 }
 
-.settings-pane {
-    -fx-background-color: black;
-}
-
 .command-history-label:focused {
     -fx-background-color: gray;
-}
-
-.items-scroll-bar {
-    -fx-hbar-policy: never;
 }
 
 .code-pane {

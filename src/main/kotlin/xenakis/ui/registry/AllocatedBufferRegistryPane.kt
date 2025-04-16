@@ -22,7 +22,7 @@ import xenakis.sc.client.SuperColliderClient
 
 class AllocatedBufferRegistryPane(buffers: BufferRegistry) : ObjectRegistryPane<BufferObject>(buffers) {
     init {
-        setup("Allocated Buffers")
+        setup()
     }
 
     override fun createNewObject(name: String): BufferObject? {

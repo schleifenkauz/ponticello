@@ -17,7 +17,7 @@ class ParameterDefsPane(private val parameters: ParameterDefList, context: Conte
     private val objectBoxList = NamedObjectListView(parameters, config)
 
     init {
-        setup(title = title, content = objectBoxList, actions = actions.withContext(this))
+        setup(content = objectBoxList, title = title, actions = actions.withContext(this))
     }
 
     private fun addParameter() {

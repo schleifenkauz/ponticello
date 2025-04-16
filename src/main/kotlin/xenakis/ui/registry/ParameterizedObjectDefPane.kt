@@ -8,15 +8,11 @@ import javafx.scene.Node
 import javafx.scene.control.ScrollPane
 import javafx.scene.layout.VBox
 import org.kordamp.ikonli.material2.Material2MZ
-import reaktive.value.ReactiveString
 import xenakis.model.Settings
 import xenakis.model.obj.ConfigurableParameterizedObjectDef
 import xenakis.ui.launcher.XenakisApp.Companion.primaryStage
 
-abstract class ParameterizedObjectDefPane<T: ConfigurableParameterizedObjectDef>(
-    protected val def: T,
-    title: ReactiveString,
-) : ToolPane() {
+abstract class ParameterizedObjectDefPane<T: ConfigurableParameterizedObjectDef>(protected val def: T) : ToolPane() {
     private val config = ParameterListConfig(def.context)
     private val parametersList = NamedObjectListView(def.parameters, config)
 
@@ -24,7 +20,7 @@ abstract class ParameterizedObjectDefPane<T: ConfigurableParameterizedObjectDef>
         val content = this.getContent(def)
         val layout = VBox(parametersList, content)
         val scrollPane = ScrollPane(layout).letContentFillViewPort()
-        setup(title, scrollPane, actions = actions.withContext(this))
+        setup(null, scrollPane, actions = actions.withContext(this))
         parametersList.registerShortcuts(parametersList.actions)
     }
 

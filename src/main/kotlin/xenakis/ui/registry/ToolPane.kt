@@ -2,19 +2,15 @@ package xenakis.ui.registry
 
 import fxutils.actions.ActionBar
 import fxutils.actions.ContextualizedAction
-import fxutils.actions.collectActions
 import fxutils.actions.registerShortcuts
 import fxutils.infiniteSpace
 import fxutils.label
-import fxutils.setupWindowDragging
 import fxutils.styleClass
 import javafx.scene.Node
 import javafx.scene.layout.HBox
 import javafx.scene.layout.Priority.ALWAYS
 import javafx.scene.layout.Region
 import javafx.scene.layout.VBox
-import org.kordamp.ikonli.materialdesign2.MaterialDesignC
-import org.kordamp.ikonli.materialdesign2.MaterialDesignR
 import reaktive.value.ReactiveString
 import reaktive.value.binding.Binding
 import reaktive.value.binding.equalTo
@@ -37,58 +33,44 @@ abstract class ToolPane : VBox() {
     }
 
     fun setup(
-        title: ReactiveString, content: Node,
+        title: ReactiveString?, content: Node,
         headerContent: Node? = null, actions: List<ContextualizedAction> = emptyList(),
     ) {
-        val headerActions = actions + ToolPane.actions.withContext(this)
         this.headerContent = headerContent
         this.content = content
-        header = createHeader(title, headerActions)
+        header = createHeader(title, actions)
         children.addAll(header, content)
         setVgrow(content, ALWAYS)
-        registerShortcuts(headerActions)
+        registerShortcuts(actions)
     }
 
     fun setup(
-        title: String, content: Node,
+        content: Node, title: String? = null,
         headerContent: Node? = null, actions: List<ContextualizedAction> = emptyList(),
     ) {
-        setup(reactiveValue(title), content, headerContent, actions)
+        setup(title?.let(::reactiveValue), content, headerContent, actions)
     }
 
     override fun requestFocus() {
         headerContent?.requestFocus() ?: content.requestFocus()
     }
 
-    private fun createHeader(title: ReactiveString, headerActions: List<ContextualizedAction>): HBox {
-        val label = label(title).styleClass("heading")
+    private fun createHeader(title: ReactiveString?, headerActions: List<ContextualizedAction>): HBox {
         actionBar = ActionBar(headerActions, buttonStyle = "medium-icon-button")
-        val box = HBox(label, infiniteSpace(), actionBar).styleClass("tool-pane-header")
-        box.setupWindowDragging { scene.window }
-        label.setupWindowDragging { scene.window }
-        if (headerContent != null) box.children.add(1, headerContent)
+        val box = HBox(infiniteSpace(), actionBar).styleClass("tool-pane-header")
+        if (headerContent != null) box.children.add(0, headerContent)
+        if (title != null) {
+            val label = label(title).styleClass("heading")
+            box.children.add(0, label)
+        }
+        //box.setupWindowDragging { scene.window }
+        //label?.setupWindowDragging { scene.window }
         return box
     }
 
     companion object {
-        private val actions = collectActions<ToolPane> {
-            addAction("Resize window to fit contents") {
-                shortcut("Ctrl+L")
-                applicableIf { p -> isSceneRoot(p) }
-                icon(MaterialDesignR.RESIZE)
-                executes { p -> p.scene.window.sizeToScene() }
-            }
-            addAction("Close window") {
-                shortcut("Ctrl+W")
-                applicableIf { p -> isSceneRoot(p) }
-                icon(MaterialDesignC.CLOSE)
-                executes { p -> p.scene.window.hide() }
-            }
-        }
-
         private fun isSceneRoot(p: ToolPane): Binding<Boolean> = p.sceneProperty().asReactiveValue().flatMap { s ->
-            if (s != null) s.rootProperty().asReactiveValue().equalTo(p)
-            else reactiveValue(false)
+            s?.rootProperty()?.asReactiveValue()?.equalTo(p) ?: reactiveValue(false)
         }
     }
 }

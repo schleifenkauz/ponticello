@@ -17,8 +17,8 @@ import xenakis.model.registry.NamedObjectList
 import xenakis.ui.controls.NamePrompt
 import xenakis.ui.registry.ToolPane
 
-class FlowPane(
-    private val flows: AudioFlows
+class AudioFlowPane(
+    private val flows: AudioFlows,
 ) : ToolPane(), NamedObjectList.Listener<BusObject> {
     private val hbox = HBox(4.0)
     private val verticalBoxes = mutableMapOf<BusObject, FlowChainView>()
@@ -31,7 +31,7 @@ class FlowPane(
             vbarPolicy = ScrollBarPolicy.NEVER
             isFitToHeight = true
         }
-        setup("Audio Flows", content = HBox(scrollPane, makeAddBusButton()))
+        setup(content = HBox(scrollPane, makeAddBusButton()), title = null as String?)
         buses.addListener(this)
     }
 

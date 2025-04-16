@@ -19,6 +19,7 @@ import xenakis.model.registry.NamedObjectList
 import xenakis.model.registry.ObjectRegistry
 import xenakis.ui.controls.NameControl
 import xenakis.ui.controls.NamePrompt
+import xenakis.ui.impl.makeToolWindow
 import xenakis.ui.launcher.XenakisApp.Companion.primaryStage
 import xenakis.ui.registry.NamedObjectListView.ContentDisplay
 
@@ -42,7 +43,8 @@ class ObjectBox<O : NamedObject>(val parent: NamedObjectListView<O>, val obj: O)
 
     private val header = HBox(nameDisplay, *config.getItemContent(obj).toTypedArray(), space, actionBar)
 
-    val content = config.getContent(obj)
+    var content = config.getContent(obj)
+        private set
 
     init {
         space.setOnMousePressed { parent.select(this) }
@@ -66,8 +68,13 @@ class ObjectBox<O : NamedObject>(val parent: NamedObjectListView<O>, val obj: O)
             children.remove(content)
         }
         if (option == ContentDisplay.SubWindow) {
-            subWindow = undecoratedSubWindow(content).also { w ->
+            val objectType = parent.source.objectType
+            val name = obj.name.now
+            val title = "$objectType $name"
+            content = config.getContent(obj) ?: return //ugly trick to avoid weird JavaFX bug
+            subWindow = makeToolWindow(content!!, title, parent.source.context).also { w ->
                 config.configureSubWindow(w)
+                w.sizeToScene()
                 if (w.owner == null) w.initOwner(obj.context[primaryStage])
             }
         }

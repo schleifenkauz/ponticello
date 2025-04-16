@@ -1,8 +1,12 @@
 package xenakis.ui.registry
 
-import fxutils.*
+import fxutils.PseudoClasses
+import fxutils.SubWindow
 import fxutils.actions.Action
 import fxutils.actions.collectActions
+import fxutils.setRoot
+import fxutils.styleClass
+import javafx.geometry.Dimension2D
 import javafx.scene.Node
 import javafx.scene.Parent
 import javafx.scene.control.Control
@@ -10,6 +14,7 @@ import javafx.scene.control.ScrollPane
 import javafx.scene.input.Clipboard
 import javafx.scene.layout.HBox
 import javafx.scene.layout.Priority
+import javafx.scene.layout.Region
 import javafx.scene.layout.VBox
 import org.kordamp.ikonli.materialdesign2.MaterialDesignD
 import org.kordamp.ikonli.materialdesign2.MaterialDesignV
@@ -22,13 +27,15 @@ class NamedObjectListView<O : NamedObject>(
     val source: NamedObjectList<O>,
     val config: ObjectBoxConfig<O>,
     private val contentDisplay: ReactiveVariable<ContentDisplay>,
-    private var filter: (O) -> Boolean = { true }
+    private var filter: (O) -> Boolean = { true },
 ) : Control(), NamedObjectList.Listener<O> {
     constructor(
         source: NamedObjectList<O>, config: ObjectBoxConfig<O>,
         contentDisplay: ContentDisplay = config.supportedModes.first(),
-        filter: (O) -> Boolean = { true }
+        filter: (O) -> Boolean = { true },
     ) : this(source, config, reactiveVariable(contentDisplay), filter)
+
+    private val storedWindowSize = mutableMapOf<ContentDisplay, Dimension2D>()
 
     var autoResizeScene = false
 
@@ -38,7 +45,7 @@ class NamedObjectListView<O : NamedObject>(
     private var selectedBox: ObjectBox<O>? = null
 
     private val vbox = VBox()
-    private val itemsScrollPane = ScrollPane(vbox).letContentFillViewPort().styleClass("items-scroll-bar")
+    private val itemsScrollPane = ScrollPane(vbox).styleClass("items-scroll-bar")
     private var displayedContent: Parent? = null
 
     val actions = listActions.withContext(this)
@@ -59,27 +66,39 @@ class NamedObjectListView<O : NamedObject>(
     val mode: ReactiveValue<ContentDisplay> get() = contentDisplay
 
     fun setMode(mode: ContentDisplay) {
+        if (scene?.window != null) {
+            storedWindowSize[contentDisplay.now] = Dimension2D(scene.window.width, scene.window.height)
+        }
         contentDisplay.now = mode
         if (mode != ContentDisplay.DetailsPane) {
             setRoot(itemsScrollPane)
+        }
+        if (mode == ContentDisplay.SubWindow) {
+            selectedBox?.showSubWindow()
         }
         for (box in boxes) box.setContentDisplay(mode)
         if (mode == ContentDisplay.DetailsPane) {
             displayContent(selectedBox)
         }
-        autoResize()
+        if (autoResizeScene && scene?.window != null && mode in storedWindowSize) {
+            val size = storedWindowSize.getValue(mode)
+            scene.window.width = size.width
+            scene.window.height = size.height
+        } else autoResize()
     }
 
     private fun displayContent(box: ObjectBox<O>?) {
-        val content = box?.content ?: return
+        val content = box?.content ?: Region()
         displayedContent = content as? ToolPane ?: ScrollPane(content)
         HBox.setHgrow(displayedContent, Priority.ALWAYS)
         setRoot(HBox(itemsScrollPane, displayedContent))
     }
 
     private fun autoResize() {
-        if (autoResizeScene && scene?.window != null) {
-            //TODO size...
+        if (mode.now != ContentDisplay.DetailsPane && autoResizeScene && scene?.window != null) {
+            scene.window.sizeToScene()
+            scene.window.height = scene.window.height.coerceAtMost(1000.0)
+            scene.window.width = scene.window.width.coerceAtMost(1000.0)
         }
     }
 
@@ -90,7 +109,7 @@ class NamedObjectListView<O : NamedObject>(
         boxes.add(j, box)
         vbox.children.add(j, box)
         select(obj)
-        if (mode.now != ContentDisplay.DetailsPane) autoResize()
+        autoResize()
     }
 
     private fun getInsertionIndex(idx: Int): Int {
@@ -114,7 +133,7 @@ class NamedObjectListView<O : NamedObject>(
         if (displayedContent == box.content) {
             setRoot(itemsScrollPane)
         }
-        if (mode.now != ContentDisplay.DetailsPane) autoResize()
+        autoResize()
     }
 
     override fun moved(obj: O, idx: Int) {

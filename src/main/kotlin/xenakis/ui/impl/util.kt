@@ -3,6 +3,7 @@
 package xenakis.ui.impl
 
 import fxutils.SubWindow
+import fxutils.defaultSize
 import fxutils.prompt.Prompt
 import hextant.context.Context
 import javafx.scene.Parent
@@ -61,9 +62,12 @@ fun <R> Prompt<R, *>.showDialog(context: Context) = showDialog(owner = context[p
 
 fun makeSubWindow(
     root: Parent, title: String,
-    context: Context, type: SubWindow.Type = SubWindow.Type.Undecorated
+    context: Context, type: SubWindow.Type = SubWindow.Type.ToolWindow,
 ): SubWindow {
     val w = SubWindow(root, title, type)
     w.initOwner(context[primaryStage])
     return w
 }
+
+fun makeToolWindow(root: Parent, title: String, context: Context): SubWindow =
+    makeSubWindow(root, title, context, SubWindow.Type.ToolWindow).defaultSize(800.0, 800.0)

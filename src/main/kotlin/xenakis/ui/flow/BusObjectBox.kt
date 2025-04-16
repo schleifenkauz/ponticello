@@ -1,8 +1,10 @@
 package xenakis.ui.flow
 
-import fxutils.*
 import fxutils.actions.ActionBar
 import fxutils.actions.collectActions
+import fxutils.infiniteSpace
+import fxutils.setFixedWidth
+import fxutils.styleClass
 import javafx.scene.control.Spinner
 import javafx.scene.layout.HBox
 import org.kordamp.ikonli.evaicons.Evaicons
@@ -12,9 +14,9 @@ import xenakis.model.obj.BusObject
 import xenakis.model.registry.BusRegistry
 import xenakis.sc.client.SuperColliderClient
 import xenakis.ui.actions.RegistryObjectActions
+import xenakis.ui.controls.NameControl
 
-class BusObjectBox(obj: BusObject) : HBox() {
-    private val label = label(obj.name) styleClass "bus-label"
+class BusObjectBox(obj: BusObject) : HBox(5.0) {
     private val channelsSpinner = Spinner<Int>(0, 128, 2).setFixedWidth(65.0)
 
     init {
@@ -26,7 +28,7 @@ class BusObjectBox(obj: BusObject) : HBox() {
             channelsSpinner.valueFactory.valueProperty().bindBidirectional(obj.channels.asProperty())
         }
         children.addAll(
-            label, hspace(20.0),
+            NameControl(obj),
             channelsSpinner, infiniteSpace(),
             ActionBar(actions.withContext(obj), buttonStyle = "medium-icon-button")
         )
