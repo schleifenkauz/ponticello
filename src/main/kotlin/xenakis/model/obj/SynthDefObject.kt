@@ -7,9 +7,10 @@ import kotlinx.serialization.Serializable
 import reaktive.value.ReactiveVariable
 import reaktive.value.now
 import reaktive.value.reactiveVariable
-import xenakis.model.registry.ObjectReference
+import xenakis.model.registry.GroupRegistry
 import xenakis.model.registry.ObjectRegistry
 import xenakis.model.registry.SynthDefRegistry
+import xenakis.model.registry.reference
 import xenakis.model.score.controls.GroupControl
 import xenakis.model.score.controls.ParameterControl
 import xenakis.sc.GroupControlSpec
@@ -35,7 +36,7 @@ sealed interface SynthDefObject : ParameterizedObjectDef, SuperColliderObject {
         context: Context, defaultGroup: GroupReference?, defaultBus: BusReference?
     ): MutableList<Pair<String, ParameterControl>> {
         val controls = super.defaultControls(context, defaultGroup, defaultBus)
-        val group = defaultGroup ?: ObjectReference.none()
+        val group = defaultGroup ?: context[GroupRegistry].getDefault().reference()
         controls.add("group" to GroupControl(reactiveVariable(group)))
         return controls
     }

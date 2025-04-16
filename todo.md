@@ -88,7 +88,6 @@
   - so they can be resizable
 - ability to specify start bar in tempo grid
 - automatically focus first control in detail pane when showing compound prompt
-- select 'default' group in new Synth
 - resize copied object image when zooming
 - show duration of objects in detail pane
 - choose alternative addresses if the default ones are busy

@@ -14,6 +14,8 @@ import xenakis.impl.*
 import xenakis.model.flow.FlowType
 import xenakis.model.flow.editor.FlowTypeEditor
 import xenakis.model.obj.BusReference
+import xenakis.model.obj.GroupReference
+import xenakis.model.registry.BusRegistry
 import xenakis.model.registry.GroupRegistry
 import xenakis.model.registry.ObjectReference
 import xenakis.model.registry.reference
@@ -58,15 +60,26 @@ sealed interface ControlSpec {
     val defaultValueExpr: String? get() = null
 }
 
-fun ControlSpec.defaultControl(context: Context, defaultBus: BusReference?) = when (this) {
+fun ControlSpec.defaultControl(
+    context: Context,
+    defaultBus: BusReference?, defaultGroup: GroupReference?,
+) = when (this) {
     is BufferControlSpec -> BufferControl(reactiveVariable(ObjectReference.none()))
     is BusControlSpec -> {
-        val bus = defaultBus ?: ObjectReference.none()
+        val bus = defaultBus ?: if (rate == Rate.Audio) {
+            when (flow) {
+                FlowType.In -> context[BusRegistry].getInput().reference()
+                FlowType.Out -> context[BusRegistry].getOutput().reference()
+            }
+        } else ObjectReference.none()
         BusControl(reactiveVariable(bus))
     }
 
     is NumericalControlSpec -> ValueControl(reactiveVariable(defaultValue.get()))
-    is GroupControlSpec -> GroupControl(reactiveVariable(context[GroupRegistry].getDefault().reference()))
+    is GroupControlSpec -> {
+        val group = defaultGroup ?: context[GroupRegistry].getDefault().reference()
+        GroupControl(reactiveVariable(group))
+    }
 }
 
 @Serializable

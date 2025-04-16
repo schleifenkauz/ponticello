@@ -26,7 +26,7 @@ interface ParameterizedObjectDef: NamedObject {
         context: Context, defaultGroup: GroupReference?, defaultBus: BusReference?
     ): MutableList<Pair<String, ParameterControl>> {
         val controls = parameters.mapTo(mutableListOf()) { p ->
-            p.name.now to p.defaultControl(context, defaultBus)
+            p.name.now to p.defaultControl(context, defaultBus, defaultGroup)
         }
         return controls
     }

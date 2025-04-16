@@ -193,8 +193,8 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
         }
 
     private fun getDefaultControls(def: ParameterizedObjectDef): ParameterControlList {
-        val defaultGroup = associatedObject?.defaultGroupRef?.now
-        val defaultBus = associatedObject?.defaultBusRef?.now
+        val defaultGroup = associatedObject?.defaultGroupRef?.now ?: context[GroupRegistry].getDefault().reference()
+        val defaultBus = associatedObject?.defaultBusRef?.now ?: context[BusRegistry].getDefault().reference()
         val controls = def.defaultControls(context, defaultGroup, defaultBus)
         return ParameterControlList.from(controls)
     }
