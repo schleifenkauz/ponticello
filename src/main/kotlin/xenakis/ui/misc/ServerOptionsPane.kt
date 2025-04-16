@@ -7,6 +7,7 @@ import javafx.collections.FXCollections.observableList
 import javafx.scene.control.ComboBox
 import javafx.scene.control.Spinner
 import xenakis.model.ServerOptions
+import xenakis.sc.client.SuperColliderClient
 
 class ServerOptionsPane(
     private val context: Context,
@@ -31,6 +32,6 @@ class ServerOptionsPane(
         options.sampleRate = sampleRate.value
         options.numWireBufs = numWireBufs.value
         options.device = device.text
-        options.reboot(context)
+        options.reboot(context[SuperColliderClient])
     }
 }

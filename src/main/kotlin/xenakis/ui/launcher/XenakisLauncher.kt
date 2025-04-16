@@ -3,6 +3,7 @@ package xenakis.ui.launcher
 import bundles.PublicProperty
 import bundles.publicProperty
 import bundles.set
+import com.illposed.osc.transport.OSCPortOut
 import fxutils.SubWindow
 import fxutils.prompt.PredicateTextPrompt
 import fxutils.prompt.YesNoPrompt
@@ -11,6 +12,7 @@ import hextant.context.extend
 import hextant.core.HextantCore
 import hextant.fx.Stylesheets
 import hextant.plugins.PluginBuilder
+import hextant.serial.readJson
 import hextant.serial.writeJson
 import hextant.undo.UndoManager
 import javafx.application.Platform
@@ -18,12 +20,14 @@ import javafx.stage.Stage
 import kotlinx.serialization.serializer
 import xenakis.impl.Logger
 import xenakis.impl.registerImplementationsFromClasspath
+import xenakis.model.ServerOptions
 import xenakis.model.Settings
 import xenakis.model.project.SERVER_OPTIONS
 import xenakis.model.project.XenakisProject
 import xenakis.model.project.XenakisProject.Companion.projectDirectory
 import xenakis.model.project.get
 import xenakis.model.registry.GlobalDefinitionLibrary
+import xenakis.sc.client.ConsoleMonitor
 import xenakis.sc.client.OSCSuperColliderClient
 import xenakis.sc.client.SuperColliderClient
 import xenakis.ui.impl.showDialog
@@ -84,20 +88,30 @@ class XenakisLauncher {
     }
 
     fun openProject() {
+        if (getActiveProject() != null) {
+            val save = askIfUserWantsToSave() ?: return
+            if (save) saveProject()
+        }
         val file = rootContext[XenakisFiles].showOpenDialog("*.xen") ?: return
         openProject(file.parentFile)
     }
 
     fun openProject(folder: File) {
-        setupProjectContext(
+        val context = rootContext.extend()
+        setupSuperCollider(
+            context,
             "opening project",
-            whenReady = { context ->
+            clientReady = { client ->
+                val serverOptions = folder.resolve("xenakis_data").resolve("server_options.json")
+                    .readJson<ServerOptions>()
+                serverOptions.reboot(client)
+            },
+            serverReady = {
                 context[projectDirectory] = folder
                 val project = XenakisProject.loadFrom(folder, getOrLaunchLoadingScreen())
                 project.initialize(context)
+                project[SERVER_OPTIONS].configureIOBuses()
                 openProject(project)
-            }, onError = {
-                recentProjects.clearActiveProject()
             }
         )
     }
@@ -108,7 +122,6 @@ class XenakisLauncher {
     private fun getActiveProject(): XenakisProject? = (currentActivity as? XenakisMainActivity)?.project
 
     private fun openProject(project: XenakisProject) {
-        project[SERVER_OPTIONS].reboot(project.context)
         rootContext[UndoManager].reset()
         rootContext[currentProject] = project
         recentProjects.push(project.projectDirectory)
@@ -120,7 +133,7 @@ class XenakisLauncher {
         }
     }
 
-    fun closeProject(autoSave: Boolean) {
+    fun closeProject(autoSave: Boolean = false) {
         val save = autoSave || askIfUserWantsToSave() ?: return
         if (save) saveProject()
         recentProjects.clearActiveProject()
@@ -128,6 +141,10 @@ class XenakisLauncher {
     }
 
     fun createNewProject() {
+        if (getActiveProject() != null) {
+            val save = askIfUserWantsToSave() ?: return
+            if (save) saveProject()
+        }
         val name =
             PredicateTextPrompt("Project name", "") { name -> name.isNotBlank() }.showDialog(rootContext) ?: return
         val location = rootContext[XenakisFiles].projectsDir
@@ -138,11 +155,16 @@ class XenakisLauncher {
     }
 
     private fun createNewProject(location: File) {
-        setupProjectContext("creating new project") { context ->
-            val project = XenakisProject.create(location, context)
-            save(project, location)
-            openProject(project)
-        }
+        val context = rootContext.extend()
+        setupSuperCollider(
+            context,
+            "creating new project",
+            clientReady = { client -> client.run("s.boot") },
+            serverReady = {
+                val project = XenakisProject.create(location, context)
+                save(project, location)
+                openProject(project)
+            })
     }
 
     fun saveProject() {
@@ -169,23 +191,41 @@ class XenakisLauncher {
         }
     }
 
-    private fun setupProjectContext(description: String, onError: () -> Unit = {}, whenReady: (Context) -> Unit) {
+    private fun setupSuperCollider(
+        context: Context,
+        description: String,
+        clientReady: (SuperColliderClient) -> Unit,
+        serverReady: (SuperColliderClient) -> Unit,
+    ) {
         val indicator = getOrLaunchLoadingScreen()
         indicator.displayProgress(0.0, "Starting SuperCollider")
         try {
-            val client = OSCSuperColliderClient.create()
-            val context = rootContext.extend {
-                set(SuperColliderClient, client)
+            val client = OSCSuperColliderClient.create(scPort = OSCPortOut.DEFAULT_SC_LANG_OSC_PORT)
+            client.consoleMonitor.addListener(ConsoleMonitor.PipeToSystemOut)
+            client.onClientReady {
+                Platform.runLater {
+                    try {
+                        context[SuperColliderClient] = client
+                        clientReady(client)
+                    } catch (e: Exception) {
+                        Logger.error("Error while $description")
+                        client.quit()
+                        recentProjects.clearActiveProject()
+                        showLauncher()
+                    }
+                }
             }
-            context[SuperColliderClient].bootServer(indicator) {
-                try {
-                    whenReady(context)
-                } catch (e: Exception) {
-                    e.printStackTrace()
-                    Logger.error("Error $description")
-                    client.quit()
-                    onError()
-                    showLauncher()
+            client.onServerBooted {
+                Platform.runLater {
+                    try {
+                        serverReady(client)
+                    } catch (e: Exception) {
+                        Logger.error("Error while $description")
+                        e.printStackTrace()
+                        recentProjects.clearActiveProject()
+                        client.quit()
+                        showLauncher()
+                    }
                 }
             }
         } catch (e: Exception) {

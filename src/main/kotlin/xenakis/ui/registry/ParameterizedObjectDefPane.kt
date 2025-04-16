@@ -37,7 +37,7 @@ abstract class ParameterizedObjectDefPane<T: ConfigurableParameterizedObjectDef>
             def.context[primaryStage], actionBar.localToScreen(0.0, actionBar.height)
         )
         val newParam = listView.showPopup() ?: return
-        def.parameters.add(newParam)
+        def.parameters.add(newParam.copy())
         val idx = def.parameters.indices.last
         parametersList.select(idx)
     }

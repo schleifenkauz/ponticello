@@ -12,8 +12,8 @@ import xenakis.model.obj.BusObject
 import xenakis.model.obj.SampleObject
 import xenakis.model.project.SERVER_OPTIONS
 import xenakis.model.project.get
+import xenakis.model.registry.BufferRegistry
 import xenakis.model.registry.BusRegistry
-import xenakis.model.registry.SampleRegistry
 import xenakis.sc.client.SuperColliderClient
 import xenakis.ui.controls.NamePrompt
 import xenakis.ui.impl.showDialog
@@ -67,13 +67,13 @@ class Recorder(private val context: Context) {
     }
 
     private fun addRecordedAudioAsSample(): Boolean {
-        val name = NamePrompt(context[SampleRegistry], "Name for sample", "").showDialog(context) ?: return true
+        val name = NamePrompt(context[BufferRegistry], "Name for sample", "").showDialog(context) ?: return true
         val samplePath = context[currentProject].projectDirectory
             .resolve("samples").also(File::mkdir)
             .resolve("$name.wav")
         pathOfLastRecording!!.copyTo(samplePath)
         val obj = SampleObject.create(context[currentProject], reactiveVariable(name), samplePath)
-        context[SampleRegistry].add(obj)
+        context[BufferRegistry].add(obj)
         return false
     }
 

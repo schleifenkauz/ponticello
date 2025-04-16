@@ -22,11 +22,13 @@ class NamedObjectListView<O : NamedObject>(
     val source: NamedObjectList<O>,
     val config: ObjectBoxConfig<O>,
     private val contentDisplay: ReactiveVariable<ContentDisplay>,
+    private var filter: (O) -> Boolean = { true }
 ) : Control(), NamedObjectList.Listener<O> {
     constructor(
         source: NamedObjectList<O>, config: ObjectBoxConfig<O>,
         contentDisplay: ContentDisplay = config.supportedModes.first(),
-    ) : this(source, config, reactiveVariable(contentDisplay))
+        filter: (O) -> Boolean = { true }
+    ) : this(source, config, reactiveVariable(contentDisplay), filter)
 
     var autoResizeScene = false
 
@@ -38,8 +40,6 @@ class NamedObjectListView<O : NamedObject>(
     private val vbox = VBox()
     private val itemsScrollPane = ScrollPane(vbox).letContentFillViewPort().styleClass("items-scroll-bar")
     private var displayedContent: Parent? = null
-
-    private var filter: (O) -> Boolean = { true }
 
     val actions = listActions.withContext(this)
 

@@ -21,9 +21,10 @@ import org.kordamp.ikonli.materialdesign2.MaterialDesignP
 import reaktive.value.now
 import reaktive.value.reactiveVariable
 import xenakis.impl.asY
+import xenakis.model.obj.BufferObject
 import xenakis.model.obj.SampleObject
-import xenakis.model.project.samples
-import xenakis.model.registry.SampleRegistry
+import xenakis.model.project.buffers
+import xenakis.model.registry.BufferRegistry
 import xenakis.sc.Identifier
 import xenakis.ui.launcher.XenakisFiles
 import xenakis.ui.launcher.XenakisLauncher.Companion.currentProject
@@ -31,8 +32,8 @@ import xenakis.ui.launcher.XenakisMainActivity
 import java.io.File
 
 class SampleRegistryPane(
-    private val samples: SampleRegistry,
-) : ObjectRegistryPane<SampleObject>(samples) {
+    private val samples: BufferRegistry,
+) : ObjectRegistryPane<BufferObject>(samples) {
     init {
         setupDropArea({ db -> db.hasFiles("wav") }, { ev ->
             for (file in ev.dragboard.files) {
@@ -40,7 +41,7 @@ class SampleRegistryPane(
             }
         })
         samples.context[SampleRegistryPane] = this
-        setup()
+        setup("Samples")
     }
 
     override fun addObject() {
@@ -57,21 +58,24 @@ class SampleRegistryPane(
 
     public override fun createNewObject(name: String): SampleObject? = loadNewSample { _ -> name }
 
-    override fun getActions(box: ObjectBox<SampleObject>): List<ContextualizedAction> = actions.withContext(box.obj)
+    override fun filter(obj: BufferObject): Boolean = obj is SampleObject
+
+    override fun getActions(box: ObjectBox<BufferObject>): List<ContextualizedAction> = actions.withContext(box.obj)
 
     override fun headerActions(): List<ContextualizedAction> = headerActions.withContext(samples)
 
-    override fun configureDragboard(obj: SampleObject, dragboard: Dragboard) {
+    override fun configureDragboard(obj: BufferObject, dragboard: Dragboard) {
+        obj as SampleObject
         val scoreView = samples.context[XenakisMainActivity].scoreView
         val width = scoreView.getWidth(obj.duration)
         val height = scoreView.getPaneY(0.02.asY)
         dragboard.dragView = Image(obj.spectrogramFile.inputStream(), width, height, false, false)
     }
 
-    override fun dataFormat(obj: SampleObject): DataFormat = SampleObject.DATA_FORMAT
+    override fun dataFormat(obj: BufferObject): DataFormat = BufferObject.DATA_FORMAT
 
     companion object : PublicProperty<SampleRegistryPane> by publicProperty("SampleRegistryPane") {
-        private val headerActions = collectActions<SampleRegistry> {
+        private val headerActions = collectActions<BufferRegistry> {
             addAction("Toggle copy to samples dir") {
                 toggles(
                     { registry -> registry.copyAudioFiles },
@@ -88,11 +92,12 @@ class SampleRegistryPane(
             }
         }
 
-        private val actions = collectActions<SampleObject> {
+        private val actions = collectActions<BufferObject> {
             addAction("View sample") {
                 icon(Evaicons.ACTIVITY)
                 shortcut("Ctrl+Shift+O")
                 executes { obj ->
+                    obj as SampleObject
                     val image = ImageView(obj.spectrogramImage)
                     val scrollPane = ScrollPane(image)
                     val window = SubWindow(scrollPane, "Spectrogram of sample '${obj.name.now}'")
@@ -103,12 +108,13 @@ class SampleRegistryPane(
                 icon(Material2MZ.SYNC)
                 description("Reload from file system")
                 shortcut("Shift+Alt+S")
-                executes(SampleObject::sync)
+                executes(BufferObject::sync)
             }
             addAction("Replace sample contents") {
                 icon(MaterialDesignF.FILE_MUSIC_OUTLINE)
                 executes { obj ->
-                    val samples = obj.context[currentProject].samples
+                    obj as SampleObject
+                    val samples = obj.context[currentProject].buffers
                     val newFile = samples.context[XenakisFiles].showOpenDialog("*.wav") ?: return@executes
                     if (samples.getSample(newFile) != null) return@executes
                     obj.loadFile(newFile)

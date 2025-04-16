@@ -1,37 +1,16 @@
 package xenakis.model.obj
 
-import kotlinx.serialization.SerialName
-import kotlinx.serialization.Serializable
-import reaktive.value.ReactiveVariable
-import reaktive.value.now
-import reaktive.value.reactiveVariable
-import xenakis.model.registry.BufferRegistry
-import xenakis.model.registry.ObjectRegistry
-import xenakis.sc.client.ScWriter
+import javafx.scene.input.DataFormat
+import xenakis.impl.Decimal
 
-@Serializable
-class BufferObject(
-    @SerialName("name") override val mutableName: ReactiveVariable<String>,
-    val channels: ReactiveVariable<Int>, val frames: ReactiveVariable<Int>
-) : AbstractSuperColliderObject() {
-    override val superColliderName get() = "~buf_${name.now}"
+sealed class BufferObject : AbstractSuperColliderObject() {
+    abstract fun channels(): Int
 
-    override val registry: ObjectRegistry<*>
-        get() = context[BufferRegistry]
+    abstract fun frames(): Int
 
-    override fun ScWriter.createObject() {
-        +"$superColliderName = Buffer.alloc(s, ${frames.now}, ${channels.now})"
-    }
-
-    override fun canRenameTo(newName: String): Boolean = !context[BufferRegistry].has(newName)
-
-    override fun rename(newName: String) {
-        super.rename(newName)
-        sync()
-    }
+    abstract fun duration(): Decimal
 
     companion object {
-        fun create(name: String, channels: Int, frames: Int): BufferObject =
-            BufferObject(reactiveVariable(name), reactiveVariable(channels), reactiveVariable(frames))
+        val DATA_FORMAT = DataFormat("buffer")
     }
 }

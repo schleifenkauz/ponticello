@@ -2,7 +2,6 @@ package xenakis.model.obj
 
 import hextant.context.Context
 import javafx.scene.image.Image
-import javafx.scene.input.DataFormat
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
@@ -12,7 +11,7 @@ import reaktive.value.now
 import xenakis.impl.*
 import xenakis.model.project.XenakisProject
 import xenakis.model.project.XenakisProject.Companion.projectDirectory
-import xenakis.model.registry.SampleRegistry
+import xenakis.model.registry.BufferRegistry
 import xenakis.model.score.ObjectPosition
 import xenakis.sc.client.ScWriter
 import java.io.File
@@ -21,15 +20,15 @@ import javax.sound.sampled.AudioInputStream
 import javax.sound.sampled.AudioSystem
 
 @Serializable
-class SampleObject private constructor(
+class SampleObject(
     @SerialName("name") override val mutableName: ReactiveVariable<String>,
     private var referencedFile: String,
-) : AbstractSuperColliderObject() {
+) : BufferObject() {
     override val superColliderName: String
         get() = "~sample_${name.now}"
 
-    override val registry: SampleRegistry
-        get() = context[SampleRegistry]
+    override val registry: BufferRegistry
+        get() = context[BufferRegistry]
 
     private val samplesDir
         get() = context[projectDirectory].resolve("samples")
@@ -38,6 +37,8 @@ class SampleObject private constructor(
     @Transient
     lateinit var audioFile: File
         private set
+
+    fun filePath(): String = referencedFile
 
     val spectrogramFile get() = samplesDir.resolve("${name.now}_spectrogram.png")
 
@@ -51,6 +52,12 @@ class SampleObject private constructor(
 
     @Transient
     var sampleRate = 0.0
+
+    override fun channels(): Int = channels
+
+    override fun frames(): Int = (duration * sampleRate).toInt()
+
+    override fun duration(): Decimal = duration
 
     @Transient
     private val contentChange = unitEvent()
@@ -147,7 +154,7 @@ class SampleObject private constructor(
         sync()
     }
 
-    override fun canRenameTo(newName: String): Boolean = !context[SampleRegistry].has(newName)
+    override fun canRenameTo(newName: String): Boolean = !context[BufferRegistry].has(newName)
 
     override fun rename(newName: String) {
         val oldSpectrogramFile = spectrogramFile
@@ -207,7 +214,5 @@ class SampleObject private constructor(
             val referencedFile = relativizePath(project.projectDirectory, audioFile)
             return SampleObject(name, referencedFile)
         }
-
-        val DATA_FORMAT = DataFormat("sample")
     }
 }

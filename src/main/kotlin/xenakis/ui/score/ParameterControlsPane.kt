@@ -94,7 +94,7 @@ class ParameterControlsPane(
             }
         }
 
-        fun addNewControl(obj: ParameterizedObject, anchor: Point2D) {
+        private fun addNewControl(obj: ParameterizedObject, anchor: Point2D) {
             val context = obj.context
             val defaultParameters = context[Settings].defaultParametersDefs
             val synthParameters = obj.def.parameters

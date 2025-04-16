@@ -64,7 +64,7 @@ class SynthObject(
 
     private val bufferControl get() = controls.controlMap["buf"] as? BufferControl
 
-    val sample: ReactiveValue<SampleReference?> get() = bufferControl?.sample ?: reactiveVariable(null)
+    val sample: ReactiveValue<BufferReference?> get() = bufferControl?.sample ?: reactiveVariable(null)
 
     val displaySample: ReactiveValue<Boolean>? get() = bufferControl?.display
 
@@ -140,7 +140,7 @@ class SynthObject(
             }
         }
         if (sample.now != null && playBufRate != null && playbufStartPos != null) {
-            val sampleDur = sample.now!!.get()?.duration ?: 0.0.asTime
+            val sampleDur = sample.now!!.get()?.duration() ?: 0.0.asTime
             playbufStartPos!!.now = (playbufStartPos!!.now + playBufRate!!.now * duration).wrapAt(sampleDur)
             while (playbufStartPos!!.now < zero) playbufStartPos!!.now += sampleDur
             playBufRate!!.now *= -1

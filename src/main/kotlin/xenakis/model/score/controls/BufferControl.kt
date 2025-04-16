@@ -8,9 +8,9 @@ import reaktive.value.now
 import reaktive.value.reactiveVariable
 import xenakis.impl.Logger
 import xenakis.impl.copy
+import xenakis.model.obj.BufferReference
 import xenakis.model.obj.ParameterizedObject
-import xenakis.model.obj.SampleReference
-import xenakis.model.registry.SampleRegistry
+import xenakis.model.registry.BufferRegistry
 import xenakis.sc.BufferControlSpec
 import xenakis.sc.ControlSpec
 import xenakis.sc.ScExpr
@@ -18,11 +18,11 @@ import xenakis.sc.ScExpr
 @Serializable
 @SerialName("Buffer")
 data class BufferControl(
-    val sample: ReactiveVariable<SampleReference>,
+    val sample: ReactiveVariable<BufferReference>,
     val display: ReactiveVariable<Boolean> = reactiveVariable(true),
 ) : ParameterControl() {
     override fun initialize(context: Context) {
-        sample.now.resolve(context[SampleRegistry])
+        sample.now.resolve(context[BufferRegistry])
     }
 
     override fun copy(): ParameterControl = BufferControl(sample.copy(), display.copy())

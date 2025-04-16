@@ -23,8 +23,8 @@ abstract class ObjectRegistryPane<O : NamedObject>(
 
     protected open fun headerActions(): List<ContextualizedAction> = emptyList()
 
-    protected fun setup() {
-        setup(title = plural(registry.objectType), registry) { headerActions() + headerActions.withContext(this) }
+    protected fun setup(title: String = plural(registry.objectType)) {
+        setup(title, registry) { headerActions() + headerActions.withContext(this) }
         listView.autoResizeScene = true
         registerShortcuts(listView.actions)
     }

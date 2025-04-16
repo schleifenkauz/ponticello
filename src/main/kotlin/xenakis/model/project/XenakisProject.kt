@@ -73,13 +73,13 @@ class XenakisProject private constructor(val components: Map<Component<out Conte
         instruments.syncAll()
         get(BUFFERS).syncAll()
         busses.syncAll()
-        samples.syncAll()
+        buffers.syncAll()
         context[AudioFlowGraph].syncAll()
         Logger.confirm("Synchronized with SuperCollider", Logger.Category.Project)
     }
 
     fun rebootServer() {
-        get(SERVER_OPTIONS).reboot(context)
+        get(SERVER_OPTIONS).reboot(context[SuperColliderClient])
     }
 
     companion object {

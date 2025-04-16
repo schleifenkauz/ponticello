@@ -40,10 +40,7 @@ import xenakis.ui.launcher.XenakisApp.Companion.primaryStage
 import xenakis.ui.midi.ContextualMidiReceiver
 import xenakis.ui.midi.ParameterControlsMidiContext
 import xenakis.ui.misc.*
-import xenakis.ui.registry.ControlBusRegistryPane
-import xenakis.ui.registry.ProcessDefRegistryPane
-import xenakis.ui.registry.SampleRegistryPane
-import xenakis.ui.registry.SynthDefRegistryPane
+import xenakis.ui.registry.*
 import xenakis.ui.score.ScoreObjectSelectionManager
 import xenakis.ui.score.ScoreView
 
@@ -64,8 +61,11 @@ class XenakisMainActivity(val project: XenakisProject) : Activity() {
     private val busRegistryPane = ControlBusRegistryPane(project.busses)
     val busesWindow = makeSubWindow(busRegistryPane, "Busses", context, SubWindow.Type.Undecorated)
 
-    private val samplesPane = SampleRegistryPane(project.samples)
+    private val samplesPane = SampleRegistryPane(project.buffers)
     val samplesWindow = makeSubWindow(samplesPane, "Samples", context, SubWindow.Type.Undecorated)
+
+    private val buffersPane = AllocatedBufferRegistryPane(project.buffers)
+    val buffersWindow = makeSubWindow(buffersPane, "Allocated Buffers", context, SubWindow.Type.Undecorated)
 
     val logWindow = makeSubWindow(LogPane(Logger), "Log", context, SubWindow.Type.Undecorated)
 

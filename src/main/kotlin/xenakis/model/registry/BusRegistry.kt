@@ -5,8 +5,6 @@ import bundles.publicProperty
 import bundles.set
 import hextant.context.Context
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.Transient
-import reaktive.Observer
 import reaktive.value.now
 import xenakis.model.obj.BusObject
 import xenakis.model.obj.SuperColliderObject
@@ -14,7 +12,7 @@ import xenakis.sc.Rate
 
 @Serializable
 class BusRegistry(
-    override val objects: MutableList<BusObject>
+    override val objects: MutableList<BusObject>,
 ) : SuperColliderObjectRegistry<BusObject>() {
     override val objectType: String
         get() = "Bus"
@@ -22,13 +20,10 @@ class BusRegistry(
     override val liveCycleType: SuperColliderObject.LiveCycleType
         get() = SuperColliderObject.LiveCycleType.ServerBoot
 
-    @Transient
-    private lateinit var defaultValueRestore: Observer
-
     override fun initialize(context: Context) {
         super.initialize(context)
         context[BusRegistry] = this
-        defaultValueRestore = client.treeCleared.observe {
+        client.onTreeCleared {
             client.run {
                 for (bus in all().filterIsInstance<BusObject.ControlBus>()) {
                     bus.run { setDefaultValue(skipIfZero = false) }

@@ -11,20 +11,19 @@ import reaktive.value.now
 import xenakis.model.registry.NamedObject
 import xenakis.model.registry.NamedObjectList
 
-abstract class SearchableToolPane<O : NamedObject>() : ToolPane(), ObjectBoxConfig<O> {
+abstract class SearchableToolPane<O : NamedObject> : ToolPane(), ObjectBoxConfig<O> {
     protected val searchText = CustomTextField().styleClass("sleek-text-field", "search-field")
 
     lateinit var listView: NamedObjectListView<O>
         private set
 
     protected fun setup(title: String, list: NamedObjectList<O>, actions: () -> List<ContextualizedAction>) {
-        listView = NamedObjectListView(list, this)
+        listView = NamedObjectListView(list, this, filter = { obj -> filter(obj) && matchesSearch(obj) })
         setupSearchField()
         setup(title, listView, searchText, actions())
     }
 
     private fun setupSearchField() {
-        listView.setFilter { obj -> filter(obj) && matchesSearch(obj) }
         searchText.promptText = "Search..."
         searchText.left = FontIcon(Material2MZ.SEARCH)
         searchText.textProperty().addListener { _, _, _ -> listView.refilter() }

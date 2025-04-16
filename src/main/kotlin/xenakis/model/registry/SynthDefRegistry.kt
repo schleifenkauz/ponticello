@@ -10,6 +10,7 @@ import kotlinx.serialization.Serializable
 import reaktive.value.ReactiveVariable
 import reaktive.value.now
 import reaktive.value.reactiveVariable
+import xenakis.impl.Logger
 import xenakis.model.obj.ReferencedSynthDefObject
 import xenakis.model.obj.SuperColliderObject
 import xenakis.model.obj.SynthDefObject
@@ -41,7 +42,12 @@ class SynthDefRegistry(
 
     fun synthDescLibContains(name: String): Boolean {
         val answer = client.send("isSynthDef", listOf(name))
-        return answer.get().toBoolean()
+        return try {
+            answer.get().toBoolean()
+        } catch (e: Exception) {
+            Logger.error("Failed to query SynthDef '$name'", e)
+            false
+        }
     }
 
     companion object : PublicProperty<SynthDefRegistry> by publicProperty("InstrumentRegistry") {

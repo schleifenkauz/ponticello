@@ -17,7 +17,7 @@ data class ServerOptions(
     var device: String = "",
     var numInputChannels: Int = 2, var numOutputChannels: Int = 2,
     var memSize: Int = 8192, var sampleRate: Int = 44100, var numWireBufs: Int = 8192,
-    var recordedBus: BusReference = ObjectReference.none()
+    var recordedBus: BusReference = ObjectReference.none(),
 ) : AbstractContextualObject() {
     override fun initialize(context: Context) {
         super.initialize(context)
@@ -27,11 +27,8 @@ data class ServerOptions(
         recordedBus.resolve(context[BusRegistry])
     }
 
-    fun reboot(context: Context) {
-        val buses = context[BusRegistry]
-        buses.get("input").channels.now = numInputChannels
-        buses.get("output").channels.now = numOutputChannels
-        context[SuperColliderClient].run {
+    fun reboot(client: SuperColliderClient) {
+        client.run {
             if (isWindows) {
                 +"s.options.device_(${if (device.isEmpty()) "nil" else "\"$device\""})"
             }
@@ -42,6 +39,13 @@ data class ServerOptions(
             +"s.options.sampleRate = $sampleRate"
             +"s.reboot"
         }
+        if (initialized) configureIOBuses()
+    }
+
+    fun configureIOBuses() {
+        val buses = context[BusRegistry]
+        buses.get("input").channels.now = numInputChannels
+        buses.get("output").channels.now = numOutputChannels
     }
 
     companion object {

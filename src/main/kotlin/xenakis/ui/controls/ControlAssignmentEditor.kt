@@ -19,7 +19,6 @@ import javafx.scene.input.DragEvent
 import javafx.scene.input.Dragboard
 import javafx.scene.layout.BorderPane
 import javafx.scene.layout.HBox
-import javafx.scene.layout.Priority
 import javafx.scene.layout.Region
 import javafx.scene.paint.Color
 import org.controlsfx.control.ToggleSwitch
@@ -36,9 +35,9 @@ import xenakis.model.score.ParameterControlList.NamedParameterControl
 import xenakis.model.score.ScoreObject
 import xenakis.model.score.controls.*
 import xenakis.sc.*
+import xenakis.sc.editor.BufferSelector
 import xenakis.sc.editor.BusSelector
 import xenakis.sc.editor.GroupSelector
-import xenakis.sc.editor.SampleSelector
 import xenakis.sc.editor.ScExprExpander
 import xenakis.sc.view.ObjectSelectorControl
 import xenakis.ui.impl.colorPicker
@@ -53,7 +52,7 @@ class ControlAssignmentEditor(val control: NamedParameterControl) : HBox() {
         set(value) {
             field = value!!
             children.clear()
-            setHgrow(detailEditor, Priority.ALWAYS)
+            //setHgrow(detailEditor, Priority.ALWAYS)
             if (spec is NumericalControlSpec) children.add(optionButton)
             children.add(detailEditor)
         }
@@ -68,18 +67,20 @@ class ControlAssignmentEditor(val control: NamedParameterControl) : HBox() {
 
     private fun onDrop(ev: DragEvent) {
         val db = ev.dragboard
-        val samples = control.context[SampleRegistry]
+        val samples = control.context[BufferRegistry]
         val sample =
-            if (db.hasFile("wav")) samples.getOrAdd(db.files[0])
-            else if (db.hasContent(SampleObject.DATA_FORMAT)) samples.get(db.getContent(SampleObject.DATA_FORMAT) as String)
-            else return
+            when {
+                db.hasFile("wav") -> samples.getOrAdd(db.files[0])
+                db.hasContent(BufferObject.DATA_FORMAT) -> samples.get(db.getContent(BufferObject.DATA_FORMAT) as String)
+                else -> return
+            }
         val ctrl = control.now as BufferControl
         ctrl.sample.set(sample.reference())
     }
 
     private fun canDrop(db: Dragboard): Boolean {
         if (control.now !is BufferControl) return false
-        return db.hasFile("wav") || db.hasContent(SampleObject.DATA_FORMAT)
+        return db.hasFile("wav") || db.hasContent(BufferObject.DATA_FORMAT)
     }
 
     private fun showOptionPopup() {
@@ -301,7 +302,7 @@ class ControlAssignmentEditor(val control: NamedParameterControl) : HBox() {
                 namedControl: NamedParameterControl,
                 control: BufferControl,
             ): Node {
-                val editor = SampleSelector()
+                val editor = BufferSelector()
                 val spec = namedControl.spec.now as BufferControlSpec
                 editor.setFilter(spec.channels)
                 editor.syncWith(control.sample)
@@ -309,7 +310,7 @@ class ControlAssignmentEditor(val control: NamedParameterControl) : HBox() {
                 val selectorControl = ObjectSelectorControl(editor, createBundle())
                 val displaySwitch = ToggleSwitch("Display: ")
                 displaySwitch.selectedProperty().bindBidirectional(control.display.asProperty())
-                return HBox(selectorControl, infiniteSpace(), displaySwitch).centerChildren()
+                return HBox(5.0, selectorControl, infiniteSpace(), displaySwitch).centerChildren()
             }
 
             override fun createDefaultControl(
@@ -319,7 +320,7 @@ class ControlAssignmentEditor(val control: NamedParameterControl) : HBox() {
             ): BufferControl {
                 spec as BufferControlSpec
                 val display = reactiveVariable(spec.isPlayBufSource)
-                val sample: ReactiveVariable<SampleReference> = reactiveVariable(ObjectReference.none())
+                val sample: ReactiveVariable<BufferReference> = reactiveVariable(ObjectReference.none())
                 return BufferControl(sample, display)
             }
         }

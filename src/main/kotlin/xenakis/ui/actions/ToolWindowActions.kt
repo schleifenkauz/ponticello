@@ -71,6 +71,11 @@ object ToolWindowActions : Action.Collector<XenakisMainActivity>({
         icon(Material2AL.LIBRARY_MUSIC)
         executes { activity -> activity.samplesWindow.showOrBringToFront() }
     }
+    addAction("Show buffers") {
+        shortcut("Ctrl+Shift+B")
+        icon(MaterialDesignB.BUFFER)
+        executes { activity -> activity.buffersWindow.showOrBringToFront() }
+    }
     addAction("Show control buses") {
         shortcut("Ctrl+B")
         icon(Material2AL.GRAPHIC_EQ)

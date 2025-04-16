@@ -3,36 +3,49 @@ package xenakis.sc.client
 import com.illposed.osc.OSCMessage
 import com.illposed.osc.transport.OSCPortOut
 import com.illposed.osc.transport.OSCPortOutBuilder
-import reaktive.event.EventStream
+import reaktive.Observer
 import reaktive.event.unitEvent
+import reaktive.observe
 import xenakis.impl.Logger
 import xenakis.impl.superColliderPath
-import xenakis.sc.client.StatusListener.StatusUpdate
 import java.net.*
 import java.nio.ByteBuffer
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Future
 import java.util.concurrent.TimeUnit
+import kotlin.concurrent.thread
 import kotlin.io.path.toPath
 
 class OSCSuperColliderClient(
     process: Process,
     private val sender: OSCPortOut,
-    private val receiver: DatagramSocket
+    private val receiver: DatagramSocket,
 ) : SuperColliderClient, Thread() {
     private var idCounter = 0
     private val waitingForReply = mutableMapOf<Int, CompletableFuture<String>>()
 
     override val consoleMonitor: ConsoleMonitor = ConsoleMonitor(process)
-    override val statusListener: StatusListener = StatusListener(consoleMonitor)
 
-    private val serverReboot = unitEvent()
+    private val eventObservers = mutableListOf<Observer>()
+
+    private val ready = unitEvent()
+    private val serverBoot = unitEvent()
     private val treeClear = unitEvent()
 
-    override val serverRebooted: EventStream<Unit>
-        get() = serverReboot.stream
-    override val treeCleared: EventStream<Unit>
-        get() = treeClear.stream
+    override fun onServerBooted(action: () -> Unit) {
+        eventObservers.add(serverBoot.stream.observe(action))
+    }
+
+    override fun onTreeCleared(action: () -> Unit) {
+        eventObservers.add(treeClear.stream.observe(action))
+    }
+
+    override fun onClientReady(action: () -> Unit) {
+        eventObservers.add(ready.stream.observe(action))
+    }
+
+    override var sampleRate: Double = -1.0
+        private set
 
     init {
         consoleMonitor.start()
@@ -57,7 +70,7 @@ class OSCSuperColliderClient(
         } catch (e: Exception) {
             future.completeExceptionally(e)
         }
-        return future.orTimeout(1, TimeUnit.SECONDS)
+        return future.orTimeout(3, TimeUnit.SECONDS)
     }
 
     override fun run() {
@@ -77,7 +90,14 @@ class OSCSuperColliderClient(
             }
             val path = String(buf, 0, 8)
             when {
-                path.startsWith("/booted") -> serverReboot.fire()
+                path.startsWith("/ready") -> {
+                    ready.fire()
+                }
+
+                path.startsWith("/booted") -> thread {
+                    sampleRate = eval("s.sampleRate").get().toDouble()
+                    serverBoot.fire()
+                }
 
                 path.startsWith("/cleared") -> treeClear.fire()
 
@@ -134,7 +154,6 @@ class OSCSuperColliderClient(
         interrupt()
         sender.disconnect()
         receiver.close()
-        statusListener.status = StatusUpdate.Exited
     }
 
     companion object {
@@ -160,13 +179,6 @@ class OSCSuperColliderClient(
                 .build()
             val receiver = DatagramSocket(myPort + 1)
             return OSCSuperColliderClient(sclang, sender, receiver)
-        }
-
-        @JvmStatic
-        fun main(args: Array<String>) {
-            val client = create()
-            sleep(200000)
-            client.run("'hello'.postln")
         }
     }
 }

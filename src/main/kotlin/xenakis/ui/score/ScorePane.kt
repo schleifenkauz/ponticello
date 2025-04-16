@@ -24,8 +24,8 @@ import reaktive.value.now
 import reaktive.value.reactiveVariable
 import xenakis.impl.*
 import xenakis.impl.Logger.Category
+import xenakis.model.obj.BufferObject
 import xenakis.model.obj.ParameterizedObjectDef
-import xenakis.model.obj.SampleObject
 import xenakis.model.obj.SynthDefObject
 import xenakis.model.project.score
 import xenakis.model.registry.*
@@ -154,27 +154,27 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
     }
 
     private fun addPlayBufOnDrop() {
-        setupDropArea({ db -> db.hasFile("wav") || db.hasContent(SampleObject.DATA_FORMAT) }, { ev ->
-            val sample = extractSampleFromDragBoard(ev.dragboard) ?: return@setupDropArea
+        setupDropArea({ db -> db.hasFile("wav") || db.hasContent(BufferObject.DATA_FORMAT) }, { ev ->
+            val sample = extractBufferFromDragboard(ev.dragboard) ?: return@setupDropArea
             val pos = snapToGrid(ev.x, ev.y)
             createPlayBufObject(sample, pos)
         })
     }
 
-    private fun extractSampleFromDragBoard(db: Dragboard): SampleObject? = when {
+    private fun extractBufferFromDragboard(db: Dragboard): BufferObject? = when {
         db.hasFiles() -> {
             val file = db.files[0]
-            context[SampleRegistry].getOrAdd(file)
+            context[BufferRegistry].getOrAdd(file)
         }
 
-        db.hasContent(SampleObject.DATA_FORMAT) -> {
-            context[SampleRegistry].get(db.getContent(SampleObject.DATA_FORMAT) as String)
+        db.hasContent(BufferObject.DATA_FORMAT) -> {
+            context[BufferRegistry].get(db.getContent(BufferObject.DATA_FORMAT) as String)
         }
 
         else -> null
     }
 
-    private fun createPlayBufObject(sample: SampleObject, pos: ObjectPosition) =
+    private fun createPlayBufObject(buffer: BufferObject, pos: ObjectPosition) =
         context.compoundEdit("Add sample to score") {
             val instruments = context[SynthDefRegistry]
             val synthDef = instruments.selectedInstrument
@@ -184,12 +184,12 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
             }
             val controls = getDefaultControls(synthDef)
             val synthDefRef = reactiveVariable(synthDef.reference())
-            val name = context[ScoreObjectRegistry].availableName(sample.name.now)
+            val name = context[ScoreObjectRegistry].availableName(buffer.name.now)
             val obj = SynthObject(reactiveVariable(name), synthDefRef, controls)
-            obj.setInitialSize(sample.duration, 0.02.withPrecision(ObjectPosition.Y_PRECISION))
+            obj.setInitialSize(buffer.duration(), 0.02.withPrecision(ObjectPosition.Y_PRECISION))
             val inst = ScoreObjectInstance(obj, pos)
             score.addObject(inst)
-            controls.reassignControl("buf", BufferControl(reactiveVariable(sample.reference())))
+            controls.reassignControl("buf", BufferControl(reactiveVariable(buffer.reference())))
         }
 
     private fun getDefaultControls(def: ParameterizedObjectDef): ParameterControlList {
@@ -406,7 +406,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
             }
 
             ev.button == MouseButton.PRIMARY && ev.isAltDown -> {
-                val popup = SimpleSearchableRegistryView(context[SampleRegistry], "Place sample")
+                val popup = SimpleSearchableRegistryView(context[BufferRegistry], "Place sample")
                 val anchor = localToScreen(ev.x, ev.y)
                 val sample = popup.showPopup(anchor, scene.window) ?: return
                 val pos = snapToGrid(ev.x, ev.y)

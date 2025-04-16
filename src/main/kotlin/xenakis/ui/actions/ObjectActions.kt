@@ -28,7 +28,10 @@ import xenakis.ui.impl.Direction
 import xenakis.ui.impl.showDialog
 import xenakis.ui.launcher.XenakisMainActivity
 import xenakis.ui.launcher.XenakisMainActivity.Mode
-import xenakis.ui.score.*
+import xenakis.ui.score.PianoRollObjectView
+import xenakis.ui.score.ProcessObjectView
+import xenakis.ui.score.ScoreObjectGroupView
+import xenakis.ui.score.SynthObjectView
 
 object ObjectActions {
     val multiObjectActions = collectActions {
@@ -53,8 +56,8 @@ object ObjectActions {
                         else MaterialDesignV.VOLUME_HIGH
                     }
             }
-            executeMultiAction { view, _ ->
-                if (view !is MemoObjectView && view !is TempoGridObjectView) {
+            executeMultiAction { view, ev ->
+                if (!ev.isTargetTextInput) {
                     view.instance.toggleMuted()
                 }
             }

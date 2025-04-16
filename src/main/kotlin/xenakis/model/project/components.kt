@@ -26,11 +26,7 @@ val BUSSES = component<BusRegistry>(
     "busses", BusRegistry::createDefault,
     NamedObjectListSerializer(serializer(), ::BusRegistry)
 )
-val BUFFERS = component<BufferRegistry>(
-    "buffers", BufferRegistry::createDefault,
-    NamedObjectListSerializer(serializer(), ::BufferRegistry)
-)
-val SAMPLES = component<SampleRegistry>("samples", SampleRegistry::createDefault)
+val BUFFERS = component<BufferRegistry>("buffers", BufferRegistry::createDefault)
 val PATTERNS = component<GlobalPatternRegistry>("patterns", GlobalPatternRegistry::createDefault)
 val INSTRUMENTS = component<SynthDefRegistry>("instruments", SynthDefRegistry::createDefault)
 val FLOWS = component<AudioFlows>("flows", AudioFlows::createDefault)
@@ -45,7 +41,7 @@ val SCORE = component<Score>("score", ::Score)
 
 val allComponents = listOf<Component<out ContextualObject>>(
     SETTINGS,
-    GROUPS, BUSSES, SAMPLES, BUFFERS,
+    GROUPS, BUSSES, BUFFERS,
     PATTERNS, INSTRUMENTS, PROCESS_DEFS,
     FLOWS, SETUP_CODE, SERVER_OPTIONS,
     OBJECTS, SCORE
@@ -56,7 +52,7 @@ inline operator fun <reified T : ContextualObject> XenakisProject.get(component:
 
 val XenakisProject.score get() = get(SCORE)
 val XenakisProject.busses get() = get(BUSSES)
-val XenakisProject.samples get() = get(SAMPLES)
+val XenakisProject.buffers get() = get(BUFFERS)
 val XenakisProject.instruments get() = get(INSTRUMENTS)
 val XenakisProject.objects get() = get(OBJECTS)
 val XenakisProject.flows get() = get(FLOWS)

@@ -33,7 +33,7 @@ class ControlBusRegistryPane(busses: BusRegistry) : ObjectRegistryPane<BusObject
     private val specObservers = ObserverMap<BusObject.ControlBus>()
 
     init {
-     setup()
+        setup("Control Buses")
     }
 
     override fun createNewObject(name: String): BusObject = BusObject.control(name, 1)

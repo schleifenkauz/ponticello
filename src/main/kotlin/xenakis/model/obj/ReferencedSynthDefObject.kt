@@ -65,7 +65,12 @@ class ReferencedSynthDefObject(
     private fun getSynthDefParameters(name: String): MutableList<ParameterDefObject> =
         with(context[SuperColliderClient]) {
             val params = mutableListOf<ParameterDefObject>()
-            val nParams = send("controls", listOf(name)).get().toInt()
+            val nParams = try {
+                send("controls", listOf(name)).get().toInt()
+            } catch (ex: Exception) {
+                Logger.error("Failed to get number of parameters for SynthDef #$name", ex)
+                return@with mutableListOf()
+            }
             for (i in 0 until nParams) {
                 try {
                     val controlRef = listOf(name, i)

@@ -1,7 +1,6 @@
 package xenakis.model.registry
 
 import hextant.context.Context
-import reaktive.Observer
 import xenakis.model.obj.SuperColliderObject
 import xenakis.sc.client.SuperColliderClient
 
@@ -11,18 +10,14 @@ abstract class SuperColliderObjectRegistry<O : SuperColliderObject> : ObjectRegi
         private set
 
     protected abstract val liveCycleType: SuperColliderObject.LiveCycleType
-    private var liveCycleObserver: Observer? = null
 
     override fun initialize(context: Context) {
         super.initialize(context)
         client = context[SuperColliderClient]
-        liveCycleObserver = when (liveCycleType) {
-            SuperColliderObject.LiveCycleType.InterpreterBoot -> {
-                createAll()
-                null
-            }
-            SuperColliderObject.LiveCycleType.ServerBoot -> client.serverRebooted.observe { _ -> createAll() }
-            SuperColliderObject.LiveCycleType.ServerTree -> client.treeCleared.observe { _ -> createAll() }
+        when (liveCycleType) {
+            SuperColliderObject.LiveCycleType.InterpreterBoot -> createAll()
+            SuperColliderObject.LiveCycleType.ServerBoot -> client.onServerBooted { createAll() }
+            SuperColliderObject.LiveCycleType.ServerTree -> client.onTreeCleared { createAll() }
         }
     }
 

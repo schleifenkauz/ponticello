@@ -226,10 +226,6 @@ fun createSelectorControl(editor: xenakis.sc.editor.BusSelector, arguments: Bund
     ObjectSelectorControl(editor, arguments)
 
 @ProvideImplementation(ControlFactory::class)
-fun createSelectorControl(editor: xenakis.sc.editor.BufferSelector, arguments: Bundle) =
-    ObjectSelectorControl(editor, arguments)
-
-@ProvideImplementation(ControlFactory::class)
 fun createSelectorControl(editor: xenakis.sc.editor.GroupSelector, arguments: Bundle) =
     ObjectSelectorControl(editor, arguments)
 
