@@ -82,7 +82,7 @@ abstract class ScoreObjectView(
 
     override fun getX(time: Decimal): Double = getWidth(time)
 
-    fun getDetailPane() = DetailPane().apply {
+    fun getDetailPane() = DetailPane(labelWidth = 120.0).apply {
         val obj = instance.obj
         if (obj is ScoreObject.Unresolved) {
             return@apply

@@ -17,12 +17,14 @@ class TempoGridObject(
     @SerialName("name") override val mutableName: ReactiveVariable<String>,
     val beatsPerMinute: ReactiveVariable<Int>,
     val beatsPerBar: ReactiveVariable<Int>,
-    val ticksPerBeat: ReactiveVariable<Int>
+    val ticksPerBeat: ReactiveVariable<Int>,
+    val firstBar: ReactiveVariable<Int> = reactiveVariable(0),
 ) : ScoreObject() {
     @Transient
     private val configObserver: Observer = beatsPerMinute.observe { _ -> fireUpdatedConfig() }
         .and(beatsPerBar.observe { _ -> fireUpdatedConfig() })
         .and(ticksPerBeat.observe { _ -> fireUpdatedConfig() })
+        .and(firstBar.observe { _ -> fireUpdatedConfig() })
 
     override val type: String
         get() = "tempo"
@@ -34,7 +36,10 @@ class TempoGridObject(
     }
 
     override fun doClone(newName: String): ScoreObject =
-        TempoGridObject(reactiveVariable(newName), beatsPerMinute.copy(), beatsPerBar.copy(), ticksPerBeat.copy())
+        TempoGridObject(
+            reactiveVariable(newName),
+            beatsPerMinute.copy(), beatsPerBar.copy(), ticksPerBeat.copy(), firstBar.copy()
+        )
 
     fun snapToGrid(t: Decimal, option: SnapOption): Decimal {
         val beatUnit = 60.0.asTime / beatsPerMinute.now
@@ -58,7 +63,7 @@ class TempoGridObject(
     }
 
     override fun writeCode(
-        info: ScoreObjectInfo
+        info: ScoreObjectInfo,
     ): String = ""
 
     companion object {

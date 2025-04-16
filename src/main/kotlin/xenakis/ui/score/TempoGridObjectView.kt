@@ -43,16 +43,20 @@ class TempoGridObjectView(inst: ScoreObjectInstance, val obj: TempoGridObject) :
     }
 
     override fun setupDetailPane(pane: DetailPane) {
-        val bpmSpinner = Spinner<Int>(10, 500, 60).setFixedWidth(100.0)
-        val bpbSpinner = Spinner<Int>(1, 24, 4).setFixedWidth(100.0)
-        val tpbSpinner = Spinner<Int>(1, 24, 4).setFixedWidth(100.0)
+        val bpmSpinner = Spinner<Int>(10, 500, 60).setFixedWidth(70.0)
+        val bpbSpinner = Spinner<Int>(1, 24, 4).setFixedWidth(70.0)
+        val tpbSpinner = Spinner<Int>(1, 24, 4).setFixedWidth(70.0)
+        val firstBarSpinner = Spinner<Int>(0, 1000, 1).setFixedWidth(70.0)
         bpmSpinner.isEditable = true
+        firstBarSpinner.isEditable = true
         bpmSpinner.valueFactory.valueProperty().bindBidirectional(obj.beatsPerMinute.asProperty())
         bpbSpinner.valueFactory.valueProperty().bindBidirectional(obj.beatsPerBar.asProperty())
         tpbSpinner.valueFactory.valueProperty().bindBidirectional(obj.ticksPerBeat.asProperty())
+        firstBarSpinner.valueFactory.valueProperty().bindBidirectional(obj.firstBar.asProperty())
         pane.addItem("Beats per minute:", bpmSpinner)
         pane.addItem("Beats per bar:", bpbSpinner)
         pane.addItem("Ticks per bar:", tpbSpinner)
+        pane.addItem("First bar:", firstBarSpinner)
     }
 
     override fun rescale() {
@@ -70,6 +74,7 @@ class TempoGridObjectView(inst: ScoreObjectInstance, val obj: TempoGridObject) :
         val tpb = obj.ticksPerBeat.now
         val bars = (obj.duration * bpm / 60 / bpb).ceilToInt()
         val barsPerSecond = bpm.toDouble() / bpb / 60
+        val firstBar = obj.firstBar.now
         for (bar in 0..bars) {
             val barX = getX(bar)
             if (barX > prefWidth) continue
@@ -78,7 +83,7 @@ class TempoGridObjectView(inst: ScoreObjectInstance, val obj: TempoGridObject) :
             area.children.add(barLine)
             val barNumberDist = pane.context.rootPane.pixelsPerSecond / barsPerSecond
             if (barNumberDist > MIN_BAR_NUMBER_DIST) {
-                val barNumber = Text((barX - 5).coerceAtLeast(0.0), 12.0, bar.toString())
+                val barNumber = Text((barX - 5).coerceAtLeast(0.0), 12.0, (bar + firstBar).toString())
                     .styleClass("bar-number")
                 area.children.add(barNumber)
             }
