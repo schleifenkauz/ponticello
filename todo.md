@@ -14,7 +14,10 @@
 ### UI niceties
 
 - option to put documentation browser into fixed window
-- save main window size/position and arrangement of utility panes
+- move sync-action to item scroll list (synth defs and process defs)
+  - but display when shown in sub window?
+- move add parameter button to bottom of parameter list
+- make the quit button nicer
 
 ### Better help popups for SuperCollider API
 
@@ -24,10 +27,9 @@
 
 - as synth arguments 
   - either delta patterns -> `Pmono` for all the delta pattern arguments
-  - or global pattern streams -> simply get `<stream>.next`
+  - or global pattern streams -> simply get `<stream>.next` (implemented)
 - as standalone objects (`pbind`)
   - this can be done with tasks and a special expression editor for `PLbindef`s 
-- attaching to a synth in the score (`pmono`)
 
 ### Attach transformations to buses not to flows
 
@@ -46,21 +48,22 @@
 - in which cases can we talk to scsynth directly?
   - bus value update (could really improve live modulation performance)
 
+### Questions
+
+- is the `AdhocSynth` still needed?
+
 ### Needs Fix
 
 - improve the timeline
   - maybe only move playback cursor on timeline?
   - display timeline not as part of the score (below or on top?)
 - resize copied object image when zooming
-- don't ask whether remove score object when creating/inlining group objets
-- why do `Button`s exclude underscores in their text?
 - reimplement startup progress bar
 - why aren't the duplicate buttons shown?
+- weird duplicating bug when pasting
 
 ### Minor
 
-- new parameter type: buffer position (range depends on supplied buffer)
-  - or use 0..1 range and scale to buffer duration
 - ability to specify added time in beats/bars/ticks
 - option to create external automation (adding a kr-write `SynthObject`) for numerical parameter
 - select new objects after unlinking
@@ -84,7 +87,6 @@
   - undo/redo actions on tool panes
 - curve parameter type
 - asr parameter type?
-- weird duplicating bug when pasting
 - choose alternative addresses if the default ones are busy
 - reconsider which threads to use (coroutines?)
 

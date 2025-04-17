@@ -1,5 +1,7 @@
 package xenakis.model.score
 
+import fxutils.prompt.YesNoPrompt
+import hextant.context.withoutUndo
 import hextant.core.editor.ListenerManager
 import hextant.undo.AbstractEdit
 import hextant.undo.Edit
@@ -19,7 +21,7 @@ import xenakis.impl.*
 import xenakis.model.flow.ScoreObjectInfo
 import xenakis.model.obj.AbstractRenamableObject
 import xenakis.model.player.ActiveObjectManager
-import xenakis.model.registry.ObjectRegistry
+import xenakis.model.project.score
 import xenakis.model.registry.ScoreObjectRegistry
 import xenakis.model.score.Score.Companion.rootScore
 import xenakis.model.score.controls.EnvelopeControl
@@ -28,6 +30,8 @@ import xenakis.sc.ControlSpec
 import xenakis.sc.NumericalControlSpec
 import xenakis.sc.client.SuperColliderContext
 import xenakis.ui.impl.Direction
+import xenakis.ui.launcher.XenakisApp.Companion.primaryStage
+import xenakis.ui.launcher.XenakisLauncher.Companion.currentProject
 
 @Serializable
 sealed class ScoreObject : AbstractRenamableObject() {
@@ -78,7 +82,7 @@ sealed class ScoreObject : AbstractRenamableObject() {
     @Transient
     protected var resizeType: ResizeType = ResizeType.Regular
 
-    override val registry: ObjectRegistry<*>?
+    override val registry: ScoreObjectRegistry
         get() = context[ScoreObjectRegistry]
 
     init {
@@ -232,6 +236,34 @@ sealed class ScoreObject : AbstractRenamableObject() {
 
     fun removeListener(listener: Listener) {
         viewManager.removeListener(listener)
+    }
+
+    fun addedToScore(registry: ScoreObjectRegistry) {
+        if (!registry.has(this)) {
+            registry.context.withoutUndo { registry.add(this) }
+        }
+        if (this is ScoreObjectGroup) {
+            for (inst in score.objectInstances) {
+                inst.obj.addedToScore(registry)
+            }
+        }
+    }
+
+    fun removedFromScore() {
+        if (!context[currentProject].score.hasInstancesOf(this) && registry.has(this)) {
+            val remove = YesNoPrompt(
+                "Score has no instances of $this anymore. Remove it from the registry?",
+                cancellable = false,
+                default = false
+            ).showDialog(owner = context[primaryStage])
+            if (remove != true) return
+            context.withoutUndo { registry.remove(this) }
+            if (this is ScoreObjectGroup) {
+                for (subInst in score.objectInstances) {
+                    subInst.obj.removedFromScore()
+                }
+            }
+        }
     }
 
     interface Listener {

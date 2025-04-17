@@ -54,9 +54,9 @@ class ScoreObjectSelectionManager(val context: Context, private val rootPane: Sc
         val isSelected = view in selectedViews
         view.setSelected(isSelected)
         if (isSelected) {
-            view.instance.obj?.notifyListeners { isSomeInstanceSelected(true) }
+            view.instance.obj.notifyListeners { isSomeInstanceSelected(true) }
         } else if (view.instance.obj !in selectedObjects) {
-            view.instance.obj?.notifyListeners { isSomeInstanceSelected(false) }
+            view.instance.obj.notifyListeners { isSomeInstanceSelected(false) }
         }
     }
 
@@ -99,7 +99,7 @@ class ScoreObjectSelectionManager(val context: Context, private val rootPane: Sc
     fun removeSelected() {
         for (inst in selectedInstances) {
             val score = inst.score ?: error("No score associated with $inst")
-            score.removeObject(inst)
+            score.removeObject(inst, removeFromRegistry = true)
         }
         deselectAll()
     }

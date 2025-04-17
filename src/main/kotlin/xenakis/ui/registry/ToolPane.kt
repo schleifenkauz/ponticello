@@ -2,6 +2,7 @@ package xenakis.ui.registry
 
 import fxutils.actions.ActionBar
 import fxutils.actions.ContextualizedAction
+import fxutils.actions.action
 import fxutils.actions.registerShortcuts
 import fxutils.infiniteSpace
 import fxutils.label
@@ -11,6 +12,7 @@ import javafx.scene.layout.HBox
 import javafx.scene.layout.Priority.ALWAYS
 import javafx.scene.layout.Region
 import javafx.scene.layout.VBox
+import org.kordamp.ikonli.materialdesign2.MaterialDesignR
 import reaktive.value.ReactiveString
 import reaktive.value.binding.Binding
 import reaktive.value.binding.equalTo
@@ -63,14 +65,19 @@ abstract class ToolPane : VBox() {
             val label = label(title).styleClass("heading")
             box.children.add(0, label)
         }
-        //box.setupWindowDragging { scene.window }
-        //label?.setupWindowDragging { scene.window }
         return box
     }
 
     companion object {
-        private fun isSceneRoot(p: ToolPane): Binding<Boolean> = p.sceneProperty().asReactiveValue().flatMap { s ->
-            s?.rootProperty()?.asReactiveValue()?.equalTo(p) ?: reactiveValue(false)
+        private fun isSceneRoot(node: Node): Binding<Boolean> = node.sceneProperty().asReactiveValue().flatMap { s ->
+            s?.rootProperty()?.asReactiveValue()?.equalTo(node) ?: reactiveValue(false)
+        }
+
+        val fitContentAction = action<Node>("Resize window to fit contents") {
+            shortcut("Ctrl+L")
+            applicableIf { p -> isSceneRoot(p) }
+            icon(MaterialDesignR.RESIZE)
+            executes { p -> p.scene.window.sizeToScene() }
         }
     }
 }

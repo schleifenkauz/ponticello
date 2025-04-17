@@ -54,6 +54,8 @@ abstract class NamedObjectList<O : NamedObject> : List<O>, AbstractContextualObj
 
     fun has(name: String) = objects.any { it.name.now == name }
 
+    fun has(obj: O) = objects.contains(obj)
+
     fun overwrite(obj: O) {
         val old = get(obj.name.now)
         val index = objects.indexOf(old)

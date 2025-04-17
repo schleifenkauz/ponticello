@@ -18,7 +18,6 @@ import hextant.fx.handleCommands
 import hextant.fx.initHextantScene
 import hextant.undo.UndoManager
 import hextant.undo.historyShortcuts
-import javafx.application.Platform
 import javafx.geometry.Dimension2D
 import javafx.scene.Scene
 import javafx.scene.control.Label
@@ -114,8 +113,6 @@ class XenakisMainActivity(val project: XenakisProject) : Activity() {
         val largeScreenAvailable = Screen.getScreens().any { s -> s.bounds.width > 3000 }
         mode = if (largeScreenAvailable) Mode.Desktop else Mode.Laptop
 
-
-
         context[XenakisMainActivity] = this
         context[HelpBrowser] = HelpBrowser()
 
@@ -162,15 +159,9 @@ class XenakisMainActivity(val project: XenakisProject) : Activity() {
         ArrowKeys.registerArrowKeys(stage.scene, this)
         stage.title = "Xenakis: ${project.name}"
         stage.isResizable = true
-        Platform.runLater {
-            if (mode == Mode.Desktop) {
-                val screenSize = Screen.getPrimary().bounds
-                stage.resize(screenSize.width * 0.75, screenSize.height)
-                stage.relocate(0.0, 0.0)
-            } else {
-                stage.isMaximized = true
-            }
-        }
+        val state = project[UI_STATE].windowStates.getOrPut("MainWindow", ::RegularWindowState)
+        val screenSize = Screen.getPrimary().bounds
+        state.applyTo(stage, defaultSize = Dimension2D(screenSize.width, screenSize.height))
     }
 
     override fun afterShowing() {

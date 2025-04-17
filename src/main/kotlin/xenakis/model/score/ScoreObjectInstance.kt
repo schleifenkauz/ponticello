@@ -1,8 +1,6 @@
 package xenakis.model.score
 
-import fxutils.prompt.YesNoPrompt
 import hextant.context.Context
-import hextant.context.withoutUndo
 import hextant.core.editor.ListenerManager
 import hextant.undo.AbstractEdit
 import hextant.undo.Edit
@@ -19,11 +17,8 @@ import xenakis.impl.Decimal
 import xenakis.impl.copy
 import xenakis.impl.rangeTo
 import xenakis.model.obj.ScoreObjectReference
-import xenakis.model.project.score
 import xenakis.model.registry.ScoreObjectRegistry
 import xenakis.model.registry.reference
-import xenakis.ui.launcher.XenakisApp.Companion.primaryStage
-import xenakis.ui.launcher.XenakisLauncher.Companion.currentProject
 
 @Serializable
 class ScoreObjectInstance(
@@ -72,33 +67,12 @@ class ScoreObjectInstance(
 
     fun addedToScore(score: Score) {
         this.score = score
-        val registry = context[ScoreObjectRegistry]
-        val o = obj
-        if (!registry.has(o.name.now)) context.withoutUndo { registry.add(o) }
-        if (o is ScoreObjectGroup) {
-            for (inst in o.score.objectInstances) {
-                inst.addedToScore(o.score)
-            }
-        }
+        if (obj !is ScoreObject.Unresolved) obj.addedToScore(context[ScoreObjectRegistry])
     }
 
-    fun removedFromScore() {
+    fun removedFromScore(removeFromRegistry: Boolean) {
         score = null
-        val o = obj
-        if (!context[currentProject].score.hasInstancesOf(o) && o in context[ScoreObjectRegistry]) {
-            val remove = YesNoPrompt(
-                "Score has no instances of object ${o.name.now} anymore. Remove it from the registry?",
-                cancellable = false,
-                default = false
-            ).showDialog(owner = context[primaryStage])
-            if (remove != true) return
-            context.withoutUndo { context[ScoreObjectRegistry].remove(o) }
-            if (o is ScoreObjectGroup) {
-                for (subInst in o.score.objectInstances) {
-                    subInst.removedFromScore()
-                }
-            }
-        }
+        if (removeFromRegistry && obj !is ScoreObject.Unresolved) obj.removedFromScore()
     }
 
     fun initialize(context: Context) {
@@ -153,9 +127,9 @@ class ScoreObjectInstance(
             for (inst in obj.score.objectInstances.toList()) {
                 inst.moveInto(newScore, relativePosition + this.position, recurse = true)
             }
-            score!!.removeObject(this)
+            score!!.removeObject(this, removeFromRegistry = false)
         } else {
-            score!!.removeObject(this)
+            score!!.removeObject(this, removeFromRegistry = false)
             moveTo(position + relativePosition)
             newScore.addObject(this)
         }
@@ -199,7 +173,7 @@ class ScoreObjectInstance(
 
     fun replaceWith(obj: ScoreObject) {
         val score = this.score ?: error("Cannot replace $this as it has no parent score")
-        score.removeObject(this)
+        score.removeObject(this, removeFromRegistry = true)
         val newInst = ScoreObjectInstance(obj, this.position)
         score.addObject(newInst)
     }

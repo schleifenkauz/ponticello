@@ -62,7 +62,7 @@ object SelectionRelatedActions {
             activity.toolSelector.select(Tool.Pointer)
             val view = context[ScoreObjectSelectionManager].focusedView.now ?: return@on
             val inst = view.instance
-            inst.score?.removeObject(inst)
+            inst.score?.removeObject(inst, removeFromRegistry = false)
             scoreView.setClipboard(inst.obj, view)
         }
         on("U") { ev ->
@@ -74,7 +74,7 @@ object SelectionRelatedActions {
                     for (oldInst in instances) {
                         val newInst = ScoreObjectInstance(clone, oldInst.position, oldInst.muted.copy())
                         oldInst.score?.addObject(newInst)
-                        oldInst.score?.removeObject(oldInst)
+                        oldInst.score?.removeObject(oldInst, removeFromRegistry = true)
                     }
                 }
             }

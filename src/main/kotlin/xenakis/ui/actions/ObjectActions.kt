@@ -42,7 +42,7 @@ object ObjectActions {
             executeMultiAction { view, _ ->
                 val instance = view.instance
                 val score = instance.score ?: return@executeMultiAction
-                score.removeObject(instance)
+                score.removeObject(instance, removeFromRegistry = true)
             }
         }
         addObjectAction("Toggle mute") {
@@ -171,7 +171,7 @@ object ObjectActions {
                         subInst.moveTo(inst.position + subInst.position)
                         parentScore.addObject(subInst)
                     }
-                    inst.score!!.removeObject(inst)
+                    inst.score!!.removeObject(inst, removeFromRegistry = true) //TODO do we need to ask?
                 }
             }
         }

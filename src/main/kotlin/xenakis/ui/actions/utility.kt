@@ -24,7 +24,8 @@ fun Action.Builder<ObjectActionContext>.executeMultiAction(action: (ScoreObjectV
             selected.isEmpty() -> return@executes
             selected.size == 1 -> action(selected.single(), ev)
             else -> ctx.context.compoundEdit(name) {
-                for (view in ctx.selectedViews) {
+                val selectedViews = ctx.selectedViews.toList() //copy to avoid concurrent modification
+                for (view in selectedViews) {
                     action(view, ev)
                 }
             }

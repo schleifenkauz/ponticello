@@ -62,6 +62,7 @@ abstract class ObjectRegistryPane<O : NamedObject>(
                 }
             }
             addAll(NamedObjectListView.modeChangeActions) { p -> p.listView }
+            add(fitContentAction)
         }
     }
 }

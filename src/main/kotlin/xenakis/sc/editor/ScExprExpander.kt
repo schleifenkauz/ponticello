@@ -161,6 +161,8 @@ class ScExprExpander() : ConfiguredExpander<ScExpr, ScExprEditor<*>>(), ScExprEd
                 VSTPluginEditor(pluginName).defaultState()
             }
             "adhoc-synth" expand { AdhocSynthEditor().defaultState() }
+            "def" expand { FunctionDefEditor().defaultState() }
+            "run" expand { RunExprEditor().defaultState() }
             "synth" expand { SynthExprEditor().defaultState() }
             "in" expand { InExprEditor().defaultState() }
             "out" expand { OutExprEditor().defaultState() }

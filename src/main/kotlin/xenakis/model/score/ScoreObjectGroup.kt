@@ -46,6 +46,7 @@ class ScoreObjectGroup(
         super.initialize(context)
         groupSelector = GroupSelector()
         groupSelector.syncWith(defaultGroupRef)
+        groupSelector.initialize(context)
         busSelector = BusSelector()
         busSelector.syncWith(defaultBusRef)
         busSelector.initialize(context)

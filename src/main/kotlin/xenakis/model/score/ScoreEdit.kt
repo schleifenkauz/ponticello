@@ -14,11 +14,15 @@ abstract class ScoreEdit(val score: Score) : AbstractEdit() {
         }
 
         override fun doUndo() {
-            score.removeObject(obj)
+            score.removeObject(obj, removeFromRegistry = true)
         }
     }
 
-    class RemoveObjects(private val objects: Set<ScoreObjectInstance>, score: Score) : ScoreEdit(score) {
+    class RemoveObjects(
+        private val objects: Set<ScoreObjectInstance>,
+        private val removeFromRegistry: Boolean,
+        score: Score,
+    ) : ScoreEdit(score) {
         override val actionDescription: String
             get() = "Remove objects from score"
 
@@ -27,13 +31,14 @@ abstract class ScoreEdit(val score: Score) : AbstractEdit() {
         }
 
         override fun doRedo() {
-            score.removeObjects(objects)
+            score.removeObjects(objects, removeFromRegistry)
         }
 
         override fun mergeWith(other: Edit): Edit? {
             if (other !is RemoveObjects) return null
             if (other.score != this.score) return null
-            return RemoveObjects(this.objects + other.objects, score)
+            if (other.removeFromRegistry != this.removeFromRegistry) return null
+            return RemoveObjects(this.objects + other.objects, other.removeFromRegistry, score)
         }
     }
 

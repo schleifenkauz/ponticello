@@ -468,82 +468,86 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
     * */
 
     private fun createNewObject(tool: Tool, rect: RectangleSelection, ev: MouseEvent) {
-        val obj = when (tool) {
-            Synth -> {
-                val def = context[SynthDefRegistry].selectedInstrument
-                if (def !is SynthDefObject) return
-                val initialName = context[ScoreObjectRegistry].availableName(def.name.now)
-                val name = NamePrompt(context[ScoreObjectRegistry], "Name for new Synth object", initialName)
-                    .showDialog(context) ?: return
-                val ref = reactiveVariable(def.reference())
-                val controls = getDefaultControls(def)
-                SynthObject(reactiveVariable(name), ref, controls)
-            }
-
-            Process -> {
-                val def = context[ProcessDefRegistry].selectedDef ?: return
-                val initialName = context[ScoreObjectRegistry].availableName(def.name.now)
-                val name = NamePrompt(context[ScoreObjectRegistry], "Name for new Process object", initialName)
-                    .showDialog(context) ?: return
-                val ref = reactiveVariable(def.reference())
-                val controls = getDefaultControls(def)
-                ProcessObject(reactiveVariable(name), ref, controls)
-            }
-
-            Group -> {
-                val name = context[ScoreObjectRegistry].availableName("group")
-                context.compoundEdit("Add object group") {
-                    val subScore = Score(mutableListOf())
-                    val groupObj = ScoreObjectGroup(reactiveVariable(name), subScore)
-                    val inst = addObject(groupObj, rect)
-                    val relativePosition = -inst.position
-                    for (view in viewsInside(rect.rect.boundsInParent)) {
-                        view.instance.moveInto(subScore, relativePosition, recurse = ev.isShiftDown)
-                    }
+        try {
+            val obj = when (tool) {
+                Synth -> {
+                    val def = context[SynthDefRegistry].selectedInstrument
+                    if (def !is SynthDefObject) return
+                    val initialName = context[ScoreObjectRegistry].availableName(def.name.now)
+                    val name = NamePrompt(context[ScoreObjectRegistry], "Name for new Synth object", initialName)
+                        .showDialog(context) ?: return
+                    val ref = reactiveVariable(def.reference())
+                    val controls = getDefaultControls(def)
+                    SynthObject(reactiveVariable(name), ref, controls)
                 }
-                return
-            }
 
-            PianoRoll -> {
-                val instr = context[SynthDefRegistry].selectedInstrument ?: return
-                compoundPrompt("Configure new object") {
-                    val defaultName = context[ScoreObjectRegistry].availableName("piano_roll")
-                    val nameField = TextField(defaultName) named "Object name"
-                    val rootPitchSelector =
-                        ComboBox(observableList(MidiPitch.allPitchClasses())) named "Root pitch class"
-                    rootPitchSelector.value = MidiPitch(0)
-                    val registerSpinner = Spinner<Int>(0, 10, 4) named "Base register"
-                    val octaves = Spinner<Int>(1, 12, 2) named "Octaves"
-                    onConfirm {
-                        val name = nameField.text
-                        if (!Identifier.isValid(name) || score.has(name)) return@onConfirm null
-                        val lowestPitch = rootPitchSelector.value.step + 12 * registerSpinner.value
-                        val highestPitch = lowestPitch + 12 * octaves.value
-                        val notes = mutableListOf<PianoRollObject.Note>()
-                        val eventDictionary = EditorRoot(EventDictionaryEditor())
-                        PianoRollObject(
-                            reactiveVariable(name),
-                            reactiveVariable(instr.reference()),
-                            lowestPitch,
-                            highestPitch,
-                            eventDictionary,
-                            notes
-                        )
+                Process -> {
+                    val def = context[ProcessDefRegistry].selectedDef ?: return
+                    val initialName = context[ScoreObjectRegistry].availableName(def.name.now)
+                    val name = NamePrompt(context[ScoreObjectRegistry], "Name for new Process object", initialName)
+                        .showDialog(context) ?: return
+                    val ref = reactiveVariable(def.reference())
+                    val controls = getDefaultControls(def)
+                    ProcessObject(reactiveVariable(name), ref, controls)
+                }
+
+                Group -> {
+                    val name = context[ScoreObjectRegistry].availableName("group")
+                    context.compoundEdit("Add object group") {
+                        val subScore = Score(mutableListOf())
+                        val groupObj = ScoreObjectGroup(reactiveVariable(name), subScore)
+                        val inst = addObject(groupObj, rect)
+                        val relativePosition = -inst.position
+                        for (view in viewsInside(rect.rect.boundsInParent)) {
+                            view.instance.moveInto(subScore, relativePosition, recurse = ev.isShiftDown)
+                        }
                     }
-                }.showDialog(context) ?: return
-            }
+                    return
+                }
 
-            TempoGrid -> {
-                val name = context[ScoreObjectRegistry].availableName("grid")
-                TempoGridObject.createDefault(name)
-            }
+                PianoRoll -> {
+                    val instr = context[SynthDefRegistry].selectedInstrument ?: return
+                    compoundPrompt("Configure new object") {
+                        val defaultName = context[ScoreObjectRegistry].availableName("piano_roll")
+                        val nameField = TextField(defaultName) named "Object name"
+                        val rootPitchSelector =
+                            ComboBox(observableList(MidiPitch.allPitchClasses())) named "Root pitch class"
+                        rootPitchSelector.value = MidiPitch(0)
+                        val registerSpinner = Spinner<Int>(0, 10, 4) named "Base register"
+                        val octaves = Spinner<Int>(1, 12, 2) named "Octaves"
+                        onConfirm {
+                            val name = nameField.text
+                            if (!Identifier.isValid(name) || score.has(name)) return@onConfirm null
+                            val lowestPitch = rootPitchSelector.value.step + 12 * registerSpinner.value
+                            val highestPitch = lowestPitch + 12 * octaves.value
+                            val notes = mutableListOf<PianoRollObject.Note>()
+                            val eventDictionary = EditorRoot(EventDictionaryEditor())
+                            PianoRollObject(
+                                reactiveVariable(name),
+                                reactiveVariable(instr.reference()),
+                                lowestPitch,
+                                highestPitch,
+                                eventDictionary,
+                                notes
+                            )
+                        }
+                    }.showDialog(context) ?: return
+                }
 
-            Pointer, Cut, AddTime, Task, Memo, Resize -> {
-                Logger.warn("Unrecognized object type $tool", Category.Score)
-                return
+                TempoGrid -> {
+                    val name = context[ScoreObjectRegistry].availableName("grid")
+                    TempoGridObject.createDefault(name)
+                }
+
+                Pointer, Cut, AddTime, Task, Memo, Resize -> {
+                    Logger.warn("Unrecognized object type $tool", Category.Score)
+                    return
+                }
             }
+            addObject(obj, rect)
+        } catch (e: Exception) {
+            Logger.error("Error creating new object", e, Category.Score)
         }
-        addObject(obj, rect)
     }
 
     private fun addObject(obj: ScoreObject, rect: RectangleSelection): ScoreObjectInstance {

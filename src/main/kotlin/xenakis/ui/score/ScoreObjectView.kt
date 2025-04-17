@@ -46,7 +46,7 @@ import xenakis.ui.launcher.XenakisLauncher.Companion.currentProject
 import xenakis.ui.launcher.XenakisMainActivity
 
 abstract class ScoreObjectView(
-    val instance: ScoreObjectInstance
+    val instance: ScoreObjectInstance,
 ) : Pane(), ScoreObjectInstance.Listener, ScoreObject.Listener, TimeBlock {
     var isInitialized: Boolean = false
         private set
@@ -84,14 +84,19 @@ abstract class ScoreObjectView(
 
     override fun getX(time: Decimal): Double = getWidth(time)
 
-    fun getDetailPane() = DetailPane(labelWidth = 120.0).apply {
+    fun getDetailPane(): DetailPane {
+        val detailPane = DetailPane(labelWidth = 120.0)
         val obj = instance.obj
         if (obj is ScoreObject.Unresolved) {
-            return@apply
+            return detailPane
         } else {
-            val durationLabel = label(obj.duration().map { dur -> if (dur == zero) "" else "(${dur.toCanonicalString()} seconds)" })
-            addItem("Name: ", HBox(NameControl(obj), durationLabel).centerChildren())
-            setupDetailPane(this)
+            val durationLabel = label(obj.duration().map { dur ->
+                if (dur == zero) ""
+                else "(${dur.toCanonicalString()} seconds)"
+            })
+            detailPane.addItem("Name: ", HBox(NameControl(obj), durationLabel).centerChildren())
+            setupDetailPane(detailPane)
+            return detailPane
         }
     }
 
@@ -194,7 +199,7 @@ abstract class ScoreObjectView(
         context.compoundEdit("Cut object") {
             for (inst in context[rootScore].instancesOf(instance.obj).toList()) {
                 val score = inst.score
-                score!!.removeObject(inst)
+                score!!.removeObject(inst, removeFromRegistry = true) //TODO maybe don't even ask
                 val inst1 = ScoreObjectInstance(half1, inst.position, inst.muted.copy())
                 val inst2 = ScoreObjectInstance(half2, inst.position + relativePosition, inst.muted.copy())
                 score.addObject(inst1)
@@ -219,10 +224,6 @@ abstract class ScoreObjectView(
             else -> borderColorWhenNotSelected to 0.5
         }
         border = solidBorder(borderColor, width = width, radius = BORDER_RADIUS)
-    }
-
-    private fun delete() {
-        pane.score.removeObject(instance)
     }
 
     /*
@@ -370,7 +371,7 @@ abstract class ScoreObjectView(
         private fun makeLoopConfigPrompt(
             periodUnit: SnapOption?,
             grid: TempoGridObject?,
-            inst: ScoreObjectInstance
+            inst: ScoreObjectInstance,
         ): CompoundPrompt<LoopConfig> {
             val prompt = compoundPrompt("Configure loop of object ${inst.obj.name.now}") {
                 val periodInput = when (periodUnit) {

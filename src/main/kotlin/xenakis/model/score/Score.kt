@@ -86,18 +86,18 @@ class Score(
         undo.record(ScoreEdit.AddObject(inst, this))
     }
 
-    fun removeObjects(set: Set<ScoreObjectInstance>) {
+    fun removeObjects(set: Set<ScoreObjectInstance>, removeFromRegistry: Boolean) {
         for (inst in set) {
             Logger.info("Removing ${inst.obj.name.now} from score ${scoreName.now}", Logger.Category.Score)
             instances.remove(inst)
             views.notifyListeners { removedObject(this@Score, inst) }
-            inst.removedFromScore()
+            inst.removedFromScore(removeFromRegistry)
         }
-        undo.record(ScoreEdit.RemoveObjects(set, this))
+        undo.record(ScoreEdit.RemoveObjects(set, removeFromRegistry, this))
     }
 
-    fun removeObject(obj: ScoreObjectInstance) {
-        removeObjects(setOf(obj))
+    fun removeObject(obj: ScoreObjectInstance, removeFromRegistry: Boolean) {
+        removeObjects(setOf(obj), removeFromRegistry)
     }
 
     fun movedObject(inst: ScoreObjectInstance, oldPosition: ObjectPosition) {
@@ -128,7 +128,7 @@ class Score(
         for (inst in objectInstances) {
             if (inst.start > start) {
                 if (inst.start + inst.obj.duration < end) {
-                    removeObject(inst)
+                    removeObject(inst, removeFromRegistry = true)
                 } else {
                     val newStart = (inst.start - removedDuration).coerceAtLeast(zero)
                     inst.setTime(newStart)
