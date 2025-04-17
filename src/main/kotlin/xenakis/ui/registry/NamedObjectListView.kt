@@ -3,6 +3,7 @@ package xenakis.ui.registry
 import fxutils.*
 import fxutils.actions.Action
 import fxutils.actions.collectActions
+import fxutils.actions.registerActions
 import javafx.geometry.Dimension2D
 import javafx.scene.Node
 import javafx.scene.Parent
@@ -59,6 +60,12 @@ class NamedObjectListView<O : NamedObject>(
         }
         vbox.children.addAll(boxes)
         setMode(contentDisplay.now)
+        registerShortcuts {
+            val selectedContent = selectedBox?.content
+            if (contentDisplay.now == ContentDisplay.DetailsPane && selectedContent is ToolPane) {
+                registerActions(selectedContent.actionBar.actions())
+            }
+        }
     }
 
     val mode: ReactiveValue<ContentDisplay> get() = contentDisplay

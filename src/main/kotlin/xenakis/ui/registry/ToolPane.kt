@@ -25,7 +25,7 @@ abstract class ToolPane : VBox() {
     lateinit var header: Region
         private set
 
-    protected lateinit var actionBar: ActionBar
+    lateinit var actionBar: ActionBar
         private set
 
     init {
