@@ -140,7 +140,7 @@ class SynthObject(
             }
         }
         if (sample.now != null && playBufRate != null && playbufStartPos != null) {
-            val sampleDur = sample.now!!.get()?.duration() ?: 0.0.asTime
+            val sampleDur = sample.now!!.get()?.duration()?.now ?: 0.0.asTime
             playbufStartPos!!.now = (playbufStartPos!!.now + playBufRate!!.now * duration).wrapAt(sampleDur)
             while (playbufStartPos!!.now < zero) playbufStartPos!!.now += sampleDur
             playBufRate!!.now *= -1

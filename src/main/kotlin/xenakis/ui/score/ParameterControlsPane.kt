@@ -52,7 +52,7 @@ class ParameterControlsPane(
     }
 
     override fun changedSpec(control: NamedParameterControl, oldSpec: ControlSpec?, newSpec: ControlSpec?) {
-        val editor = editors.getValue(control)
+        val editor = editors[control] ?: return
         editor.setControl(control.now) //TODO can this be done in a better way?
     }
 

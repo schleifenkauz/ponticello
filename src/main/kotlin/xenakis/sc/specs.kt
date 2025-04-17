@@ -29,17 +29,18 @@ import xenakis.sc.editor.SimpleIntegerEditor
 
 @Serializable
 enum class ParameterType {
-    Bus, Buffer, Numerical, Group;
+    Bus, Buffer, Numerical, Group, BufferPosition;
 
     override fun toString(): String = when (this) {
         Bus -> "bus"
         Buffer -> "buf"
         Numerical -> "num"
         Group -> "group"
+        BufferPosition -> "buf-pos"
     }
 
     companion object {
-        val regularTypes = listOf(Bus, Buffer, Numerical)
+        val regularTypes = listOf(Numerical, Bus, Buffer, BufferPosition)
     }
 }
 
@@ -47,7 +48,8 @@ fun ParameterType.defaultControlSpec(): ControlSpec = when (this) {
     ParameterType.Bus -> BusControlSpec(Rate.Audio, 2, FlowType.Out)
     ParameterType.Buffer -> BufferControlSpec(channels = 2)
     ParameterType.Numerical -> NumericalControlSpec.DEFAULT
-    ParameterType.Group -> GroupControlSpec()
+    ParameterType.Group -> GroupControlSpec
+    ParameterType.BufferPosition -> BufferPositionControlSpec
 }
 
 @Serializable
@@ -76,6 +78,7 @@ fun ControlSpec.defaultControl(
     }
 
     is NumericalControlSpec -> ValueControl(reactiveVariable(defaultValue.get()))
+    is BufferPositionControlSpec -> ValueControl(reactiveVariable(zero))
     is GroupControlSpec -> {
         val group = defaultGroup ?: context[GroupRegistry].getDefault().reference()
         GroupControl(reactiveVariable(group))
@@ -106,7 +109,10 @@ data class NumericalControlSpec(
         step, warp, associatedColor
     )
 
-    constructor(default: Decimal, min: Decimal, max: Decimal, step: Decimal, warp: Warp, associatedColor: Color) : this(
+    constructor(
+        default: Decimal, min: Decimal, max: Decimal, step: Decimal,
+        warp: Warp, associatedColor: Color = Color.WHITE,
+    ) : this(
         DecimalLiteral(default), DecimalLiteral(min), DecimalLiteral(max), warp, DecimalLiteral(step), associatedColor
     )
 
@@ -148,7 +154,7 @@ data class NumericalControlSpec(
 @Compound
 @Serializable
 @SerialName("bus")
-class BusControlSpec(
+data class BusControlSpec(
     val rate: Rate,
     @Component(editor = SimpleIntegerEditor::class) val channels: Int,
     @Component(editor = FlowTypeEditor::class) val flow: FlowType,
@@ -159,18 +165,13 @@ class BusControlSpec(
     override val code: String
         get() = "kr"
 
-    override fun equals(other: Any?): Boolean = other is BusControlSpec
-
-    override fun hashCode(): Int = -2
-
-    override fun toString(): String = "bus"
-
+    override fun toString(): String = "bus ($flow): [$channels x $rate]"
 }
 
 @Serializable
 @Compound
 @SerialName("buffer")
-class BufferControlSpec(@Component(editor = SimpleIntegerEditor::class) val channels: Int) : ControlSpec {
+data class BufferControlSpec(@Component(editor = SimpleIntegerEditor::class) val channels: Int) : ControlSpec {
     var isPlayBufSource: Boolean = true
 
     override val type: ParameterType
@@ -179,25 +180,27 @@ class BufferControlSpec(@Component(editor = SimpleIntegerEditor::class) val chan
     override val code: String
         get() = "kr"
 
-    override fun equals(other: Any?): Boolean = other is BufferControlSpec
+    override fun toString(): String = "buf [$channels]"
+}
 
-    override fun hashCode(): Int = -1
+@Serializable
+@SerialName("BufPos")
+data object BufferPositionControlSpec : ControlSpec {
+    override val type: ParameterType
+        get() = ParameterType.Numerical
 
-    override fun toString(): String = "buf"
+    override val code: String
+        get() = "kr(0)"
 }
 
 @Serializable
 @SerialName("group")
-class GroupControlSpec : ControlSpec {
+data object GroupControlSpec : ControlSpec {
     override val type: ParameterType
         get() = ParameterType.Group
 
     override val code: String
         get() = throw UnsupportedOperationException("Group control has no code")
-
-    override fun equals(other: Any?): Boolean = other is GroupControlSpec
-
-    override fun hashCode(): Int = -1
 
     override fun toString(): String = "buf"
 }

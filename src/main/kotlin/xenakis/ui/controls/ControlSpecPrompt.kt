@@ -5,19 +5,12 @@ import fxutils.prompt.ConfirmablePrompt
 import javafx.beans.binding.BooleanBinding
 import javafx.scene.Node
 import javafx.scene.control.Button
-import javafx.scene.layout.Region
 import reaktive.value.now
 import xenakis.model.flow.FlowType
 import xenakis.model.obj.ConfigurableParameterizedObjectDef
 import xenakis.model.obj.ParameterDefObject
 import xenakis.model.obj.ParameterizedObject
-import xenakis.sc.BufferControlSpec
-import xenakis.sc.BusControlSpec
-import xenakis.sc.ControlSpec
-import xenakis.sc.GroupControlSpec
-import xenakis.sc.NumericalControlSpec
-import xenakis.sc.ParameterType
-import xenakis.sc.Rate
+import xenakis.sc.*
 
 abstract class ControlSpecPrompt<S : ControlSpec, N : Node>(
     private val parameterName: String,
@@ -90,8 +83,8 @@ abstract class ControlSpecPrompt<S : ControlSpec, N : Node>(
             return when (initialSpec) {
                 is BufferControlSpec -> BufferControlSpecPrompt(parameterName, parentObject, title, initialSpec)
                 is BusControlSpec -> BusControlSpecPrompt(parameterName, parentObject, title, initialSpec)
-                is GroupControlSpec -> null
                 is NumericalControlSpec -> NumericalControlSpecPrompt(parameterName, parentObject, initialSpec, title)
+                is GroupControlSpec, is BufferPositionControlSpec -> null
             }
         }
 
@@ -104,6 +97,7 @@ abstract class ControlSpecPrompt<S : ControlSpec, N : Node>(
             ParameterType.Buffer -> create(parameterName, parentObject, BufferControlSpec(2))
             ParameterType.Numerical -> create(parameterName, parentObject, NumericalControlSpec.DEFAULT)
             ParameterType.Group -> null
+            ParameterType.BufferPosition -> null
         }
     }
 }

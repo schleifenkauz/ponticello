@@ -17,7 +17,7 @@ import hextant.core.view.ListEditorControl.Companion.ORIENTATION
 
 val MULTILINE = publicProperty("MULTILINE_ARGUMENTS", false)
 
-val HIDE_NEW_KEYWORD = publicProperty("HIDE_NEW_KEYWORD", true)
+val HIDE_NEW_KEYWORD = publicProperty("HIDE_NEW_KEYWORD", false)
 
 val DISPLAY_BRACES = publicProperty("DISPLAY_BRACES", true)
 
@@ -156,7 +156,16 @@ fun createControl(editor: xenakis.sc.editor.BusControlSpecEditor, arguments: Bun
 
 @ProvideImplementation(ControlFactory::class)
 fun createControl(editor: xenakis.sc.editor.BufferControlSpecEditor, arguments: Bundle) =
-    CompoundEditorControl(editor, arguments) { horizontal { } }
+    CompoundEditorControl(editor, arguments) {
+        horizontal {
+            keyword("channels: ")
+            view(editor.channels) {
+                set(IntSpinnerControl.MIN, 1)
+                set(IntSpinnerControl.MAX, 256)
+            }.maxWidth = 65.0
+            root.centerChildren().styleClass("buffer-control-spec")
+        }
+    }
 
 @ProvideImplementation(ControlFactory::class)
 fun createControl(editor: xenakis.sc.editor.NumericalControlSpecEditor, arguments: Bundle) =

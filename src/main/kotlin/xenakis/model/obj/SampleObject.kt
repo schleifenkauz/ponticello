@@ -6,8 +6,10 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import reaktive.event.unitEvent
+import reaktive.value.ReactiveValue
 import reaktive.value.ReactiveVariable
 import reaktive.value.now
+import reaktive.value.reactiveVariable
 import xenakis.impl.*
 import xenakis.model.project.XenakisProject
 import xenakis.model.project.XenakisProject.Companion.projectDirectory
@@ -45,7 +47,7 @@ class SampleObject(
     val spectrogramImage by lazy { Image(spectrogramFile.inputStream()) }
 
     @Transient
-    var duration: Decimal = -one(ObjectPosition.TIME_PRECISION)
+    var duration: ReactiveVariable<Decimal> = reactiveVariable(-one(ObjectPosition.TIME_PRECISION))
 
     @Transient
     var channels: Int = 0
@@ -55,9 +57,9 @@ class SampleObject(
 
     override fun channels(): Int = channels
 
-    override fun frames(): Int = (duration * sampleRate).toInt()
+    override fun frames(): Int = (duration.now * sampleRate).toInt()
 
-    override fun duration(): Decimal = duration
+    override fun duration(): ReactiveValue<Decimal> = duration
 
     @Transient
     private val contentChange = unitEvent()
@@ -75,7 +77,7 @@ class SampleObject(
 
     private fun updateInfos() {
         useAudioStream { s ->
-            duration = s.duration.asTime
+            duration.now = s.duration.asTime
             channels = s.format.channels
             sampleRate = s.format.sampleRate.toDouble()
         }

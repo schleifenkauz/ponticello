@@ -1,7 +1,6 @@
 package xenakis.sc.view
 
 import bundles.Bundle
-import bundles.withDefault
 import fxutils.centerChildren
 import fxutils.registerShortcuts
 import fxutils.styleClass
@@ -19,7 +18,7 @@ import xenakis.ui.misc.HelpBrowser
 class MessageSendEditorControl @ProvideImplementation(ControlFactory::class) constructor(
     private val editor: xenakis.sc.editor.MessageSendEditor,
     arguments: Bundle,
-) : CompoundEditorControl(editor, arguments.withDefault(MULTILINE, HIDE_NEW_KEYWORD)) {
+) : CompoundEditorControl(editor, arguments) {
     private val hasArguments = editor.arguments.editors.isNotEmpty()
     val usesMethodNew = editor.receiver.result.map { receiver -> receiver is Identifier } and
             editor.method.result.equalTo(Identifier("new"))

@@ -3,23 +3,29 @@ package xenakis.model.score
 import hextant.context.Context
 import hextant.undo.AbstractEdit
 import hextant.undo.UndoManager
+import javafx.scene.paint.Color
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import reaktive.Observer
-import reaktive.value.ReactiveValue
-import reaktive.value.ReactiveVariable
-import reaktive.value.now
-import reaktive.value.reactiveVariable
+import reaktive.value.*
+import reaktive.value.binding.flatMap
+import reaktive.value.binding.map
 import xenakis.impl.Logger
+import xenakis.impl.toDecimal
+import xenakis.impl.zero
 import xenakis.model.obj.AbstractRenamableObject
 import xenakis.model.obj.ParameterDefObject
 import xenakis.model.obj.ParameterizedObject
 import xenakis.model.obj.ParameterizedObjectDef
 import xenakis.model.registry.NamedObjectList
 import xenakis.model.registry.NamedObjectListSerializer
+import xenakis.model.score.controls.BufferControl
 import xenakis.model.score.controls.ParameterControl
+import xenakis.sc.BufferPositionControlSpec
 import xenakis.sc.ControlSpec
+import xenakis.sc.NumericalControlSpec
+import xenakis.sc.Warp
 
 @Serializable(with = ParameterControlList.Serializer::class)
 class ParameterControlList(
@@ -42,14 +48,17 @@ class ParameterControlList(
     class NamedParameterControl(
         @SerialName("name") override val mutableName: ReactiveVariable<String>,
         private var value: ParameterControl,
-        private var customSpec: ControlSpec? = null
+        private var customSpec: ControlSpec? = null,
     ) : AbstractRenamableObject() {
         constructor(name: String, value: ParameterControl, customSpec: ControlSpec? = null) : this(
             reactiveVariable(name), value, customSpec
         )
 
         @Transient
-        private lateinit var _spec: ReactiveVariable<ControlSpec?>
+        private var _spec: ReactiveVariable<ControlSpec?> = reactiveVariable(null)
+
+        @Transient
+        private var specBinder: Observer? = null
 
         val spec: ReactiveValue<ControlSpec?> get() = _spec
 
@@ -72,7 +81,34 @@ class ParameterControlList(
             this.controls = controls
             super.initialize(controls.context)
             value.initialize(context)
-            _spec = reactiveVariable(customSpec ?: parentObject.def.getSpec(name.now)?.now)
+            val spec = customSpec ?: parentObject.def.getSpec(name.now)?.now
+            updateSpec(spec)
+        }
+
+        private fun updateSpec(spec: ControlSpec?) {
+            specBinder?.kill()
+            specBinder = resolveControlSpec(spec).forEach { s ->
+                val oldSpec = _spec.now
+                _spec.now = s
+                controls.notifyListeners<Listener> { changedSpec(this@NamedParameterControl, oldSpec, s) }
+            }
+        }
+
+        private fun resolveControlSpec(spec: ControlSpec?): ReactiveValue<ControlSpec?> = when (spec) {
+            null -> reactiveValue(null)
+            is BufferPositionControlSpec -> {
+                val buf = controls.getOrNull("buf")?.value as? BufferControl
+                val duration = buf?.sample?.flatMap { s -> s.get()?.duration() ?: reactiveValue(zero) }
+                duration?.map { dur ->
+                    NumericalControlSpec(
+                        default = zero, min = zero, max = dur,
+                        step = 0.01.toDecimal(), warp = Warp.Linear,
+                        associatedColor = Color.WHITE
+                    )
+                } ?: reactiveValue(null)
+            }
+
+            else -> reactiveValue(spec)
         }
 
         fun setCustomSpec(custom: ControlSpec?) {
@@ -80,16 +116,16 @@ class ParameterControlList(
             customSpec = custom
             context[UndoManager].record(EditCustomSpec(this, before, custom))
             val defaultSpec = controls.getDefaultSpec(this)
-            val oldSpec = before ?: defaultSpec
-            _spec.now = custom ?: defaultSpec
-            controls.notifyListeners<Listener> { changedSpec(this@NamedParameterControl, oldSpec, spec.now) }
+            val newSpec = custom ?: defaultSpec
+            updateSpec(newSpec)
         }
 
         fun useSpecFromDefinition(): Boolean {
             check(spec.now == null) { "useSpecFromDefinition can only be used if current spec is null" }
-            val spec = controls.def.getSpec(name.now)?: return false
-            _spec.now = spec.now
-            controls.notifyListeners<Listener> { changedSpec(this@NamedParameterControl, null, spec.now) }
+            val spec = controls.def.getSpec(name.now) ?: return false
+            specBinder?.kill()
+            _spec.bind(resolveControlSpec(spec.now))
+
             return true
         }
 
@@ -198,7 +234,7 @@ class ParameterControlList(
     class ReassignControl(
         private val control: NamedParameterControl,
         private val oldControl: ParameterControl,
-        private val newControl: ParameterControl
+        private val newControl: ParameterControl,
     ) : AbstractEdit() {
         override val actionDescription: String
             get() = "Reassign controls"
@@ -215,7 +251,7 @@ class ParameterControlList(
     class EditCustomSpec(
         private val control: NamedParameterControl,
         private val extraSpecBefore: ControlSpec?,
-        private val extraSpecAfter: ControlSpec?
+        private val extraSpecAfter: ControlSpec?,
     ) : AbstractEdit() {
         override val actionDescription: String
             get() = when {
@@ -243,7 +279,7 @@ class ParameterControlList(
         fun reassignedControl(
             namedControl: NamedParameterControl,
             oldControl: ParameterControl,
-            control: ParameterControl
+            control: ParameterControl,
         )
 
         fun changedSpec(control: NamedParameterControl, oldSpec: ControlSpec?, newSpec: ControlSpec?) {}

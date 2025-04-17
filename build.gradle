@@ -60,6 +60,7 @@ dependencies {
     implementation 'com.illposed.osc:javaosc-core:0.9'
 
     implementation 'org.slf4j:log4j-over-slf4j:2.0.17'
+    implementation 'com.github.kwhat:jnativehook:2.2.2'
 
     testImplementation("org.junit.jupiter:junit-jupiter-api:${junitVersion}")
     testImplementation "io.mockk:mockk:1.13.17"

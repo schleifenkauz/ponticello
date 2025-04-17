@@ -28,6 +28,7 @@ class ParameterDefObject(
     fun simpleString(): String {
         val type = when (spec.now) {
             is NumericalControlSpec -> "num"
+            is BufferPositionControlSpec -> "buf-pos"
             is BufferControlSpec -> "buf"
             is BusControlSpec -> "bus"
             is GroupControlSpec -> "group"

@@ -186,7 +186,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
             val synthDefRef = reactiveVariable(synthDef.reference())
             val name = context[ScoreObjectRegistry].availableName(buffer.name.now)
             val obj = SynthObject(reactiveVariable(name), synthDefRef, controls)
-            obj.setInitialSize(buffer.duration(), 0.02.withPrecision(ObjectPosition.Y_PRECISION))
+            obj.setInitialSize(buffer.duration().now, 0.02.withPrecision(ObjectPosition.Y_PRECISION))
             val inst = ScoreObjectInstance(obj, pos)
             score.addObject(inst)
             controls.reassignControl("buf", BufferControl(reactiveVariable(buffer.reference())))

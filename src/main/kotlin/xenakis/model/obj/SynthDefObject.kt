@@ -26,7 +26,7 @@ sealed interface SynthDefObject : ParameterizedObjectDef, SuperColliderObject {
         get() = "\\${name.now}"
 
     override fun getParameter(name: String): ParameterDefObject? = when (name) {
-        "group" -> ParameterDefObject("group", GroupControlSpec())
+        "group" -> ParameterDefObject("group", GroupControlSpec)
         else -> super.getParameter(name)
     }
 

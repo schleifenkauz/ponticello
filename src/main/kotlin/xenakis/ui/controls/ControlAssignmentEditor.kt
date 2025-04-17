@@ -33,6 +33,7 @@ import xenakis.model.obj.*
 import xenakis.model.registry.*
 import xenakis.model.score.ParameterControlList.NamedParameterControl
 import xenakis.model.score.ScoreObject
+import xenakis.model.score.SynthObject
 import xenakis.model.score.controls.*
 import xenakis.sc.*
 import xenakis.sc.editor.BufferSelector
@@ -168,9 +169,12 @@ class ControlAssignmentEditor(val control: NamedParameterControl) : HBox() {
                 if (namedControl.spec.now !is NumericalControlSpec) return missingSpecOptionsBar(obj, namedControl)
                 val colorPicker = colorPicker(control.displayColor)
                 colorPicker.setFixedWidth(30.0)
-                val toggle = ToggleSwitch("Display: ")
-                toggle.selectedProperty().bindBidirectional(control.display.asProperty())
-                val box = HBox(5.0, colorPicker, toggle)
+                val box = HBox(5.0, colorPicker)
+                if (obj is SynthObject) {
+                    val toggle = ToggleSwitch("Display: ")
+                    toggle.selectedProperty().bindBidirectional(control.display.asProperty())
+                    box.children.add(toggle)
+                }
                 box.alignment = Pos.CENTER_LEFT
                 return box
             }

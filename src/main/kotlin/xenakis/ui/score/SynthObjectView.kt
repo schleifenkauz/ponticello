@@ -153,20 +153,20 @@ class SynthObjectView(
         val sample = obj.sample.now?.get() as? SampleObject ?: return
         val rate = obj.playBufRate?.now ?: one(precision = 3)
         if (rate == zero) return
-        val defaultStartPos = if (rate < zero) sample.duration() else zero
-        var startPos = obj.playbufStartPos?.now?.wrapAt(sample.duration()) ?: defaultStartPos
-        if (rate < zero && startPos < 1e-5.asTime) startPos = sample.duration()
+        val defaultStartPos = if (rate < zero) sample.duration().now else zero
+        var startPos = obj.playbufStartPos?.now?.wrapAt(sample.duration().now) ?: defaultStartPos
+        if (rate < zero && startPos < 1e-5.asTime) startPos = sample.duration().now
         var t = zero
         for (i in 0..100) {
             if (t >= obj.duration) break
             var imageDur = when {
-                t > zero -> sample.duration() / rate.abs()
-                rate > zero -> (sample.duration() - startPos) / rate
+                t > zero -> sample.duration().now / rate.abs()
+                rate > zero -> (sample.duration().now - startPos) / rate
                 else -> startPos / -rate
             }
             if (t + imageDur > obj.duration) imageDur = obj.duration - t
             val view = displaySpectrogramPart(
-                imageDur, sample.duration(), rate,
+                imageDur, sample.duration().now, rate,
                 startPos = if (t == zero) startPos else defaultStartPos
             )
             view.layoutX = pane.getWidth(t)

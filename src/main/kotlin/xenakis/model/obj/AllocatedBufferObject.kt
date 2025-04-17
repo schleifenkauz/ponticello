@@ -2,6 +2,7 @@ package xenakis.model.obj
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import reaktive.value.ReactiveValue
 import reaktive.value.ReactiveVariable
 import reaktive.value.now
 import reaktive.value.reactiveVariable
@@ -33,7 +34,7 @@ class AllocatedBufferObject(
         return (sampleRate * duration.now.toDouble()).toInt()
     }
 
-    override fun duration(): Decimal = duration.now
+    override fun duration(): ReactiveValue<Decimal> = duration
 
     override fun canRenameTo(newName: String): Boolean = !context[BufferRegistry].has(newName)
 
