@@ -41,6 +41,10 @@ class ActiveObjectManager {
     data class ActiveObject(val obj: ScoreObject, val absolutePosition: ObjectPosition, val suffix: Int)
 
     companion object {
-        fun uniqueName(base: String, suffix: Int) = if (suffix == 0) base else "${base}_$suffix"
+        fun uniqueName(base: String, suffix: Int) = when (suffix) {
+            -1 -> "${base}___"
+            0 -> base
+            else -> "${base}_$suffix"
+        }
     }
 }

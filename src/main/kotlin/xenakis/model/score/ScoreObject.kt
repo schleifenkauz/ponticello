@@ -43,6 +43,8 @@ sealed class ScoreObject : AbstractRenamableObject() {
 
     open val canResize: Boolean get() = true
 
+    open val affectsPlayback: Boolean get() = true
+
     @SerialName("duration")
     private var _duration = reactiveVariable(0.0.asTime)
 
@@ -326,6 +328,9 @@ sealed class ScoreObject : AbstractRenamableObject() {
 
         override val type: String
             get() = "none"
+
+        override val affectsPlayback: Boolean
+            get() = false
 
         override fun writeCode(info: ScoreObjectInfo): String = ""
 

@@ -125,6 +125,7 @@ class ScExprExpander() : ConfiguredExpander<ScExpr, ScExprEditor<*>>(), ScExprEd
             "if".expand { IfExprEditor().defaultState() }
             "while".expand(Expander<*, *>::isStatementInBlock) { _ -> WhileExprEditor().defaultState() }
             "loop".expand(Expander<*, *>::isStatementInBlock) { _ -> LoopExprEditor().defaultState() }
+            "play".expand { PlayObjectEditor().defaultState() }
             "assign".expand { AssignmentEditor().defaultState() }
             "eq".expand {
                 OperatorExprEditor(

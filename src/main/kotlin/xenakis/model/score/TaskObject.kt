@@ -11,12 +11,12 @@ import reaktive.value.reactiveVariable
 import xenakis.impl.code
 import xenakis.model.Settings
 import xenakis.model.flow.ScoreObjectInfo
-import xenakis.sc.editor.ScFunctionEditor
+import xenakis.sc.editor.CodeBlockEditor
 
 @Serializable
 class TaskObject(
     @SerialName("name") override val mutableName: ReactiveVariable<String>,
-    val code: EditorRoot<@Contextual ScFunctionEditor>,
+    val code: EditorRoot<@Contextual CodeBlockEditor>,
 ) : ScoreObject() {
     override val type: String
         get() = "task"
@@ -29,6 +29,7 @@ class TaskObject(
     override fun doClone(newName: String): ScoreObject = TaskObject(reactiveVariable(newName), code.clone(context))
 
     override fun initialize(context: Context) {
+        super.initialize(context)
         code.initialize(context)
     }
 
@@ -36,9 +37,8 @@ class TaskObject(
         val name = superColliderName(info.suffix)
         appendBlock("$name = Task", endLine = false) {
             +"${context[Settings].serverLatency.now}.wait"
-            val function = code.editor.result.now
-            function.code(writer, context)
-            appendLine(".value()")
+            val block = code.editor.result.now
+            block.writeCode(writer, context)
         }
         appendLine(".play;")
     }

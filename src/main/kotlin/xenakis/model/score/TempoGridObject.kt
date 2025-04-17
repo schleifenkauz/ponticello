@@ -31,6 +31,9 @@ class TempoGridObject(
     override val canMute: Boolean
         get() = false
 
+    override val affectsPlayback: Boolean
+        get() = false
+
     private fun fireUpdatedConfig() {
         notifyListeners<TempoGridObjectView> { updatedConfig() }
     }

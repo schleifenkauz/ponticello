@@ -6,6 +6,7 @@ import fxutils.runFXWithTimeout
 import fxutils.setupDropArea
 import fxutils.styleClass
 import hextant.context.Context
+import hextant.core.editor.defaultState
 import hextant.serial.EditorRoot
 import hextant.undo.compoundEdit
 import javafx.application.Platform
@@ -32,8 +33,8 @@ import xenakis.model.registry.*
 import xenakis.model.score.*
 import xenakis.model.score.controls.BufferControl
 import xenakis.sc.Identifier
+import xenakis.sc.editor.CodeBlockEditor
 import xenakis.sc.editor.EventDictionaryEditor
-import xenakis.sc.editor.ScFunctionEditor
 import xenakis.ui.actions.Tool
 import xenakis.ui.actions.Tool.*
 import xenakis.ui.controls.DecimalPrompt
@@ -348,7 +349,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
                     val defaultName = context[ScoreObjectRegistry].availableName("task")
                     val name = NamePrompt(context[ScoreObjectRegistry], "Task name", defaultName)
                         .showDialog(context) ?: return
-                    val code = EditorRoot(ScFunctionEditor())
+                    val code = EditorRoot(CodeBlockEditor().defaultState())
                     TaskObject(reactiveVariable(name), code)
                 }
 
@@ -368,7 +369,6 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
                 }
             }
         }
-
     }
 
     private fun mouseReleased(ev: MouseEvent) {

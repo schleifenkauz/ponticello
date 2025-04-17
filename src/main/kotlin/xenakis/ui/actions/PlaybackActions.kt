@@ -46,7 +46,7 @@ object PlaybackActions : Action.Collector<PlaybackManager>({
         executes { playback -> playback.player.reset() }
     }
     addAction("Toggle recording") {
-        shortcut("Ctrl+R")
+        shortcut("Ctrl+Shift+R")
         icon { playback ->
             playback.recorder.isActive.map { active ->
                 if (active) MaterialDesignM.MICROPHONE

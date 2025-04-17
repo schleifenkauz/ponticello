@@ -33,6 +33,9 @@ class ScoreObjectGroup(
     override val type: String
         get() = "compound"
 
+    override val affectsPlayback: Boolean
+        get() = score.objectInstances.any { inst -> inst.obj.affectsPlayback }
+
     @Transient
     lateinit var groupSelector: GroupSelector
         private set

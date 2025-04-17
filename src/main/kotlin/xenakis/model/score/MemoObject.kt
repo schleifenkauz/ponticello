@@ -23,6 +23,9 @@ class MemoObject(
     override val canResize: Boolean
         get() = false
 
+    override val affectsPlayback: Boolean
+        get() = false
+
     var text: String
         get() = _text
         set(value) {

@@ -1,6 +1,17 @@
 package xenakis.sc
 
+import hextant.codegen.Component
 import hextant.codegen.Compound
+import hextant.context.Context
+import xenakis.impl.Logger
+import xenakis.impl.zero
+import xenakis.model.flow.NodePlacement
+import xenakis.model.flow.ScoreObjectInfo
+import xenakis.model.obj.ScoreObjectReference
+import xenakis.model.score.ObjectPosition
+import xenakis.model.score.SynthObject
+import xenakis.sc.client.ScWriter
+import xenakis.sc.editor.ScoreObjectSelector
 
 @Compound(nodeType = ScExpr::class)
 fun IfExpr(condition: ScExpr, then: ScExpr, otherwise: ScExpr): ScExpr =
@@ -35,3 +46,25 @@ fun run(block: CodeBlock): ScExpr = ScFunction(body = block).send("value")
 @Compound(nodeType = ScExpr::class)
 fun functionDef(name: Identifier, parameters: List<Identifier>, body: CodeBlock): ScExpr =
     Assignment(Identifier("~${name.text}"), ScFunction(parameters, body))
+
+@Compound(nodeType = ScExpr::class)
+data class PlayObject(
+    @Component(ScoreObjectSelector::class) val reference: ScoreObjectReference,
+) : ScExpr {
+    override val isValid: Boolean
+        get() = reference.isValid
+
+    override fun code(writer: ScWriter, context: Context) {
+        val obj = reference.get()
+        if (obj == null) {
+            Logger.error("PlayObject reference $reference is invalid")
+            return
+        }
+        val placement =
+            if (obj is SynthObject) NodePlacement(NodePlacement.AddAction.AddToHead, obj.groupObj.superColliderName)
+            else null
+        val info = ScoreObjectInfo(ObjectPosition.ZERO, suffix = -1, placement, cutoff = zero)
+        val code = obj.writeCode(info)
+        writer.append(code)
+    }
+}

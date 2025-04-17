@@ -97,8 +97,9 @@ class ScorePlayer(
                 Event.Type.ObjectEnd -> {
                     Logger.fine("ObjectEnd: $obj at $position", Logger.Category.Playback)
                     val startPos = position + ObjectPosition(-obj.duration, zero)
+                    if (obj.duration == zero) continue
                     val suffix = activeObjectManager.remove(obj, startPos) ?: continue
-                    stopObject(obj, startPos, suffix)
+                    stopObject(obj, startPos, suffix, stopPrematurely = false)
                 }
 
                 else -> {}
@@ -107,7 +108,7 @@ class ScorePlayer(
         }
     }
 
-    private fun stopObject(obj: ScoreObject, startPos: ObjectPosition, suffix: Int) {
+    private fun stopObject(obj: ScoreObject, startPos: ObjectPosition, suffix: Int, stopPrematurely: Boolean) {
         when (obj) {
             is SynthObject -> {
                 try {
@@ -116,13 +117,18 @@ class ScorePlayer(
                     Logger.error("Failed to remove $obj from audio flow graph", e, Logger.Category.Playback)
                 }
                 val name = obj.superColliderName(suffix)
-                client.run("if ($name != nil && $name.isRunning) { $name.free; }")
+                if (stopPrematurely) {
+                    client.run("if ($name != nil && $name.isRunning) { $name.free; }")
+                }
             }
 
             is ProcessObject, is TaskObject -> {
                 val name = obj.superColliderName(suffix)
-                client.run("$name.stop;")
+                if (stopPrematurely) {
+                    client.run("$name.stop;")
+                }
             }
+
             else -> {}
         }
     }
@@ -171,7 +177,9 @@ class ScorePlayer(
     override fun pausePlayback() {
         Logger.info("Pausing playback", Logger.Category.Playback)
         recorder.pausingPlayback()
-        activeObjectManager.forEach(::stopObject)
+        activeObjectManager.forEach { obj, startPos, suffix ->
+            stopObject(obj, startPos, suffix, stopPrematurely = true)
+        }
         graph.clear()
         activeObjectManager.clear()
         events.resetEvents()

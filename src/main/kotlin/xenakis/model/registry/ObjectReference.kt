@@ -23,6 +23,9 @@ class ObjectReference<O : NamedObject>(private var _name: String) : ScExpr {
     lateinit var isResolved: ReactiveBoolean
         private set
 
+    override val isValid: Boolean
+        get() = isResolved.now
+
     constructor(obj: O) : this(obj.name.now) {
         resolve(obj)
     }

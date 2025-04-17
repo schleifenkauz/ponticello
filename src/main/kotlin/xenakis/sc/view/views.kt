@@ -176,6 +176,15 @@ fun createControl(editor: xenakis.sc.editor.FunctionDefEditor, args: Bundle) = C
 }
 
 @ProvideImplementation(ControlFactory::class)
+fun createControl(editor: xenakis.sc.editor.PlayObjectEditor, args: Bundle) = CompoundEditorControl(editor, args) {
+    horizontal {
+        keyword("play ")
+        view(editor.reference)
+        root.centerChildren()
+    }
+}
+
+@ProvideImplementation(ControlFactory::class)
 fun createControl(editor: xenakis.sc.editor.OperatorEditor, arguments: Bundle): TokenEditorControl =
     TokenEditorControl(editor, arguments, completer = NoCompleter, styleClass = "operator")
 
