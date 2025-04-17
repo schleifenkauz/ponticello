@@ -12,6 +12,8 @@ import hextant.codegen.ProvideImplementation
 import hextant.completion.NoCompleter
 import hextant.context.ControlFactory
 import hextant.core.view.*
+import hextant.core.view.ListEditorControl.Companion.ADD_WITH_COMMA
+import hextant.core.view.ListEditorControl.Companion.CELL_FACTORY
 import hextant.core.view.ListEditorControl.Companion.EMPTY_DISPLAY
 import hextant.core.view.ListEditorControl.Companion.ORIENTATION
 
@@ -152,6 +154,26 @@ fun createControl(editor: xenakis.sc.editor.RunExprEditor, arguments: Bundle) =
             }
         }
     }
+
+@ProvideImplementation(ControlFactory::class)
+fun createControl(editor: xenakis.sc.editor.FunctionDefEditor, args: Bundle) = CompoundEditorControl(editor, args) {
+    vertical {
+        horizontal {
+            keyword("func ")
+            view(editor.name)
+            operator("(")
+            view(editor.parameters) {
+                set(ORIENTATION, ListEditorControl.Orientation.Horizontal)
+                set(CELL_FACTORY) { ListEditorControl.SeparatorCell(",") }
+                set(ADD_WITH_COMMA, true)
+            }
+            operator(")")
+        }
+        indented {
+            view(editor.body)
+        }
+    }
+}
 
 @ProvideImplementation(ControlFactory::class)
 fun createControl(editor: xenakis.sc.editor.OperatorEditor, arguments: Bundle): TokenEditorControl =

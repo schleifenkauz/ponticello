@@ -120,52 +120,52 @@ class ScExprExpander() : ConfiguredExpander<ScExpr, ScExprEditor<*>>(), ScExprEd
 
     companion object {
         val config = ExpanderConfig<ScExprEditor<*>>(fallback = LiteralExpander.config).apply {
-            "at" expand { AccessKeyEditor().defaultState() }
-            "array" expand { ArrayExprEditor().defaultState() }
-            "if" expand { IfExprEditor().defaultState() }
-            "while" expand { WhileExprEditor().defaultState() }
-            "loop" expand { LoopExprEditor().defaultState() }
-            "assign" expand { AssignmentEditor().defaultState() }
-            "eq" expand {
+            "at".expand { AccessKeyEditor().defaultState() }
+            "array".expand { ArrayExprEditor().defaultState() }
+            "if".expand { IfExprEditor().defaultState() }
+            "while".expand(Expander<*, *>::isStatementInBlock) { _ -> WhileExprEditor().defaultState() }
+            "loop".expand(Expander<*, *>::isStatementInBlock) { _ -> LoopExprEditor().defaultState() }
+            "assign".expand { AssignmentEditor().defaultState() }
+            "eq".expand {
                 OperatorExprEditor(
                     ScExprExpander().defaultState(),
                     operator = OperatorEditor("=="),
                     ScExprExpander().defaultState()
                 )
             }
-            "concat" expand {
+            "concat".expand {
                 OperatorExprEditor(
                     operator = OperatorEditor("++"),
                     left = ScExprExpander().defaultState(),
                     right = ScExprExpander().defaultState()
                 )
             }
-            "exp" expand {
+            "exp".expand {
                 OperatorExprEditor(
                     operator = OperatorEditor("**"),
                     left = ScExprExpander().defaultState(),
                     right = ScExprExpander().defaultState()
                 )
             }
-            "tuple" expand { TupleExprEditor().defaultState() }
-            "named" expand { NamedExprEditor().defaultState() }
-            "block" expand { CodeBlockEditor().defaultState() }
-            "function" expand { ScFunctionEditor().defaultState() }
-            "bus" expand { BusSelector().defaultState() }
-            "buf" expand { BufferSelector().defaultState() }
-            "group" expand { GroupSelector().defaultState() }
-            "plugin" expand { ctx ->
-                val availablePlugins = VSTPluginObject.availablePlugins(ctx).toList()
+            "tuple".expand { _ -> TupleExprEditor().defaultState() }
+            "named".expand { NamedExprEditor().defaultState() }
+            "block".expand { CodeBlockEditor().defaultState() }
+            "lambda".expand { _ -> ScFunctionEditor().defaultState() }
+            "bus".expand { BusSelector().defaultState() }
+            "buf".expand { BufferSelector().defaultState() }
+            "group".expand { GroupSelector().defaultState() }
+            "plugin".expand { expander ->
+                val availablePlugins = VSTPluginObject.availablePlugins(expander.context).toList()
                 val pluginName = showSelectorDialog("Plugin", availablePlugins, null, anchor = null)
                     ?: return@expand null
                 VSTPluginEditor(pluginName).defaultState()
             }
-            "adhoc-synth" expand { AdhocSynthEditor().defaultState() }
-            "def" expand { FunctionDefEditor().defaultState() }
-            "run" expand { RunExprEditor().defaultState() }
-            "synth" expand { SynthExprEditor().defaultState() }
-            "in" expand { InExprEditor().defaultState() }
-            "out" expand { OutExprEditor().defaultState() }
+            "adhoc-synth".expand { AdhocSynthEditor().defaultState() }
+            "def".expand(Expander<*, *>::isStatementInBlock) { _ -> FunctionDefEditor().defaultState() }
+            "run".expand { RunExprEditor().defaultState() }
+            "synth".expand { SynthExprEditor().defaultState() }
+            "in".expand { InExprEditor().defaultState() }
+            "out".expand { OutExprEditor().defaultState() }
         }
     }
 }

@@ -1,5 +1,7 @@
 package xenakis.sc.editor
 
+import hextant.core.editor.Expander
+import hextant.core.editor.isSubEditor
 import xenakis.model.obj.BusObject
 import xenakis.model.registry.reference
 import xenakis.sc.NumericalControlSpec
@@ -15,6 +17,12 @@ fun NumericalControlSpec.createEditor() = NumericalControlSpecEditor(
 )
 
 private fun ScExprEditor<*>.exp() = ScExprExpander(this)
+
+fun Expander<*, *>.isStatementInBlock(): Boolean {
+    val parent = parent
+    if (parent !is ScExprListEditor) return false
+    return parent.isSubEditor(CodeBlockEditor::statements)
+}
 
 fun simpleText(text: String) = ScExprExpander(text)
 

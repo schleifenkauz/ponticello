@@ -7,6 +7,7 @@ import hextant.codegen.ProvideImplementation
 import hextant.completion.CompletionStrategy
 import hextant.completion.CompoundCompleter
 import hextant.context.ControlFactory
+import hextant.core.editor.Expander
 import hextant.core.view.ExpanderControl
 import reaktive.value.forEach
 import xenakis.sc.*
@@ -16,7 +17,7 @@ import xenakis.ui.misc.HelpBrowser
 @ProvideImplementation(ControlFactory::class)
 object ScExprExpanderControlFactory : ControlFactory<xenakis.sc.editor.ScExprExpander> {
     override fun createControl(editor: xenakis.sc.editor.ScExprExpander, arguments: Bundle): ExpanderControl {
-        val completer = CompoundCompleter<Any, String>()
+        val completer = CompoundCompleter<Expander<*, *>, String>()
         completer.addCompleter(xenakis.sc.editor.ScExprExpander.config.completer(CompletionStrategy.simple))
         completer.addCompleter(ReferenceCompleter)
         arguments[ExpanderControl.COMPLETER] = completer
