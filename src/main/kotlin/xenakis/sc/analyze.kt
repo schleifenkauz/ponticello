@@ -24,7 +24,7 @@ fun ScExpr.transform(f: (ScExpr) -> ScExpr): ScExpr = when (this) {
     is NamedExpr -> f(NamedExpr(name, value.transform(f)))
     is CodeBlock -> f(transformBlock(f))
     is ScFunction -> f(ScFunction(parameters, body.transformBlock(f)))
-    is Assignment -> f(Assignment(variable, expression.transform(f)))
+    is Assignment -> f(Assignment(assignee, expression.transform(f))) //TODO how to transform assignee
     is MessageSend -> f(MessageSend(receiver.transform(f), method, arguments.map { a -> a.transform(f) }))
     is OperatorExpr -> f(OperatorExpr(left.transform(f), operator, right.transform(f)))
     is AccessKey -> f(AccessKey(receiver.transform(f), key.transform(f)))

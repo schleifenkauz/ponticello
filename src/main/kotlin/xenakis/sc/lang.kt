@@ -61,6 +61,9 @@ abstract class SimpleScElement(val code: String) : ScElement {
     }
 }
 
+@UseEditor(AssignableExprExpander::class)
+interface AssignableScExpr : ScExpr
+
 @Serializable
 @EditorInterface(LiteralEditor::class)
 @UseEditor(LiteralExpander::class)
@@ -80,7 +83,7 @@ sealed interface Literal : ScExpr {
 
 sealed interface Invalid
 
-data class UnrecognizedToken(val text: String) : Literal, Invalid {
+data class UnrecognizedToken(val text: String) : Literal, Invalid, AssignableScExpr {
     override val isValid: Boolean
         get() = false
 
@@ -89,7 +92,7 @@ data class UnrecognizedToken(val text: String) : Literal, Invalid {
     }
 }
 
-object EmptyExpr : Literal, Invalid {
+object EmptyExpr : Literal, Invalid, AssignableScExpr {
     override fun code(writer: ScWriter, context: Context) {
         writer.append("")
     }
@@ -200,7 +203,7 @@ data class LiteralArray(val elements: List<Literal>) : Literal {
 @Serializable
 @Token(nodeType = ScExpr::class)
 @ListEditor
-data class Identifier(val text: String) : SimpleScElement(text), ScExpr {
+data class Identifier(val text: String) : SimpleScElement(text), AssignableScExpr, ScExpr {
     override val isValid: Boolean
         get() = isValid(text)
 
@@ -279,15 +282,19 @@ data class ScFunction(val parameters: List<Identifier> = emptyList(), val body: 
 
 @Serializable
 @Compound(nodeType = ScExpr::class)
-data class Assignment(val variable: Identifier, val expression: ScExpr) : ScExpr {
+data class Assignment(
+    val assignee: AssignableScExpr,
+    val expression: ScExpr,
+) : ScExpr {
     override val isValid: Boolean
-        get() = variable.isValid && expression.isValid
+        get() = assignee.isValid && expression.isValid
 
     override val children: List<ScElement>
-        get() = listOf(variable, expression)
+        get() = listOf(assignee, expression)
 
     override fun code(writer: ScWriter, context: Context) {
-        writer.append("${variable.text} = ")
+        assignee.code(writer, context)
+        writer.append(" = ")
         expression.code(writer, context)
     }
 }
@@ -367,6 +374,19 @@ data class MessageSend(val receiver: ScExpr, val method: Identifier, val argumen
     }
 }
 
+@Serializable
+@Compound(nodeType = ScExpr::class)
+data class PropertyAccessExpr(val receiver: ScExpr, val property: Identifier) : ScExpr, AssignableScExpr {
+    override val isValid: Boolean
+        get() = receiver.isValid && property.isValid
+
+    override fun code(writer: ScWriter, context: Context) {
+        receiver.code(writer, context)
+        writer.append(".")
+        property.code(writer, context)
+    }
+}
+
 fun ScExpr.send(message: String, vararg arguments: ScExpr) =
     MessageSend(this, Identifier(message), arguments.asList())
 
@@ -396,7 +416,7 @@ data class OperatorExpr(val left: ScExpr, val operator: Operator, val right: ScE
 
 @Serializable
 @Compound(nodeType = ScExpr::class)
-data class AccessKey(val receiver: ScExpr, val key: ScExpr) : ScExpr {
+data class AccessKey(val receiver: ScExpr, val key: ScExpr) : ScExpr, AssignableScExpr {
     override val isValid: Boolean
         get() = receiver.isValid && key.isValid
 

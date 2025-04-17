@@ -49,4 +49,4 @@ fun `in`(bus: ScExprExpander, rate: Rate, channels: Int) = ScExprExpander(
 )
 
 fun assign(name: String, expr: ScExprExpander) =
-    AssignmentEditor(IdentifierEditor(name), expr).exp()
+    AssignmentEditor(AssignableExprExpander(name), expr).exp()

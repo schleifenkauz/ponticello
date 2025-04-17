@@ -59,7 +59,6 @@
 
 ### Minor
 
-- lhs of assignments can be compound expressions (!!!)
 - new parameter type: buffer position (range depends on supplied buffer)
   - or use 0..1 range and scale to buffer duration
 - ability to specify added time in beats/bars/ticks

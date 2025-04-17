@@ -186,6 +186,7 @@ class NamedObjectListView<O : NamedObject>(
     }
 
     fun select(idx: Int) {
+        if (idx !in boxes.indices) return
         select(boxes[idx])
     }
 

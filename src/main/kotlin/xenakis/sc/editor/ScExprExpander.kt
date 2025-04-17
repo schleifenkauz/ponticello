@@ -44,7 +44,7 @@ class ScExprExpander() : ConfiguredExpander<ScExpr, ScExprEditor<*>>(), ScExprEd
             text == ":" -> NamedExprEditor().defaultState()
 
             text.endsWith("=") && Identifier.isValid(text.dropLast(1)) -> AssignmentEditor(
-                IdentifierEditor(text.dropLast(1)),
+                AssignableExprExpander(text.dropLast(1)),
                 ScExprExpander().defaultState()
             )
 
@@ -72,7 +72,7 @@ class ScExprExpander() : ConfiguredExpander<ScExpr, ScExprEditor<*>>(), ScExprEd
 
     override fun onExpansion(editor: ScExprEditor<*>) {
         when {
-            editor is AssignmentEditor && editor.variable.text.now.isNotEmpty() ->
+            editor is AssignmentEditor && !editor.assignee.text.now.isNullOrEmpty() ->
                 editor.expression.notifyViews { focus() }
 
             editor is MessageSendEditor && editor.receiver.result.now != EmptyExpr ->
@@ -95,7 +95,7 @@ class ScExprExpander() : ConfiguredExpander<ScExpr, ScExprEditor<*>>(), ScExprEd
     @ProvideCommand(shortName = "assign", type = Command.Type.SingleReceiver)
     fun assignToVariable() = makeUndoableEdit("Wrap in assignment") {
         val value = withoutUndo { snapshot() }
-        val variable = IdentifierEditor()
+        val variable = AssignableExprExpander("")
         val assignment = AssignmentEditor(variable, value)
         expand(assignment)
         variable.notifyViews { focus() }
@@ -110,7 +110,7 @@ class ScExprExpander() : ConfiguredExpander<ScExpr, ScExprEditor<*>>(), ScExprEd
         variable.notifyViews { focus() }
     }
 
-    @ProvideCommand(shortName = "send", type = Command.Type.SingleReceiver)
+    @ProvideCommand(shortName = "send", type = Command.Type.SingleReceiver, defaultShortcut = "Ctrl+PERIOD")
     fun callMethod() = makeUndoableEdit("Wrap in method call") {
         val receiver = withoutUndo { snapshot() }
         val send = MessageSendEditor(receiver)

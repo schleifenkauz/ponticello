@@ -39,7 +39,7 @@ fun createControl(editor: xenakis.sc.editor.AssignmentEditor, arguments: Bundle)
     CompoundEditorControl(editor, arguments) {
         horizontal {
             styleClass("compound-expr", "assignment")
-            view(editor.variable)
+            view(editor.assignee)
             operator(" = ")
             view(editor.expression)
             root.centerChildren()
@@ -56,6 +56,17 @@ fun createControl(editor: xenakis.sc.editor.OperatorExprEditor, arguments: Bundl
             view(editor.operator)
             space()
             view(editor.right)
+            root.centerChildren()
+        }
+    }
+
+@ProvideImplementation(ControlFactory::class)
+fun createControl(editor: xenakis.sc.editor.PropertyAccessExprEditor, arguments: Bundle) =
+    CompoundEditorControl(editor, arguments) {
+        horizontal {
+            view(editor.receiver)
+            operator(".")
+            view(editor.property)
             root.centerChildren()
         }
     }
