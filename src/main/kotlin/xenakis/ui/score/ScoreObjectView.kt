@@ -30,7 +30,7 @@ import reaktive.value.now
 import reaktive.value.reactiveVariable
 import xenakis.impl.*
 import xenakis.model.player.PlaybackManager
-import xenakis.model.project.InteractionSettings.SnapOption
+import xenakis.model.project.UIState.SnapOption
 import xenakis.model.project.settings
 import xenakis.model.score.*
 import xenakis.model.score.Score.Companion.rootScore
