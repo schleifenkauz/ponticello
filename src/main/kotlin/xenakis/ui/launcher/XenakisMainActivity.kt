@@ -19,6 +19,7 @@ import hextant.fx.initHextantScene
 import hextant.undo.UndoManager
 import hextant.undo.historyShortcuts
 import javafx.application.Platform
+import javafx.geometry.Dimension2D
 import javafx.scene.Scene
 import javafx.scene.control.Label
 import javafx.scene.control.SplitPane
@@ -36,7 +37,6 @@ import xenakis.model.project.*
 import xenakis.sc.client.SuperColliderClient
 import xenakis.ui.actions.*
 import xenakis.ui.flow.AudioFlowPane
-import xenakis.ui.impl.makeSubWindow
 import xenakis.ui.impl.makeToolWindow
 import xenakis.ui.launcher.XenakisApp.Companion.primaryStage
 import xenakis.ui.midi.ContextualMidiReceiver
@@ -55,26 +55,36 @@ class XenakisMainActivity(val project: XenakisProject) : Activity() {
         .styleClass("toolbar-part")
 
     val synthDefsPane = SynthDefRegistryPane(project.instruments)
-    val synthDefsWindow = makeToolWindow(synthDefsPane, "Instruments", context)
+    val synthDefsWindow =
+        context.makeToolWindow(
+            synthDefsPane, "Instruments",
+            defaultSize = Dimension2D(1200.0, 1200.0)
+        )
 
     val processDefsPane = ProcessDefRegistryPane(project[PROCESS_DEFS])
-    val processDefsWindow = makeToolWindow(processDefsPane, "Process Definitions", context)
+    val processDefsWindow = context.makeToolWindow(
+        processDefsPane, "Process Definitions",
+        defaultSize = Dimension2D(1200.0, 1200.0)
+    )
 
     private val busRegistryPane = ControlBusRegistryPane(project.busses)
-    val busesWindow = makeToolWindow(busRegistryPane, "Control Buses", context).also(Window::sizeToScene)
+    val busesWindow = context.makeToolWindow(busRegistryPane, "Control Buses")
 
     private val samplesPane = SampleRegistryPane(project.buffers)
-    val samplesWindow = makeToolWindow(samplesPane, "Samples", context).also(Window::sizeToScene)
+    val samplesWindow = context.makeToolWindow(samplesPane, "Samples")
 
     private val buffersPane = AllocatedBufferRegistryPane(project.buffers)
-    val buffersWindow = makeToolWindow(buffersPane, "Allocated Buffers", context).also(Window::sizeToScene)
+    val buffersWindow = context.makeToolWindow(buffersPane, "Allocated Buffers")
 
-    val logWindow = makeToolWindow(LogPane(Logger), "Log", context)
+    private val patternsPane = GlobalPatternRegistryPane(project.patterns)
+    val patternsWindow = context.makeToolWindow(patternsPane, "Patterns")
 
-    val settingsWindow = makeToolWindow(SettingsPane(context[Settings], context), "Settings", context)
+    val logWindow = context.makeToolWindow(LogPane(Logger), "Log")
+
+    val settingsWindow = context.makeToolWindow(SettingsPane(context[Settings], context), "Settings")
         .also { w -> w.scene.initHextantScene(context) }
 
-    private val interactionConfig = InteractionConfig(project.settings)
+    private val interactionConfig = InteractionConfigBar(project.settings)
 
     val flowPaneWindow: SubWindow
 
@@ -104,30 +114,28 @@ class XenakisMainActivity(val project: XenakisProject) : Activity() {
         val largeScreenAvailable = Screen.getScreens().any { s -> s.bounds.width > 3000 }
         mode = if (largeScreenAvailable) Mode.Desktop else Mode.Laptop
 
+
+
         context[XenakisMainActivity] = this
         context[HelpBrowser] = HelpBrowser()
-        settingsWindow.width = 1000.0
-        settingsWindow.height = 1000.0
 
         scoreView = ScoreView(project.score, project.context)
         project.context[ScoreObjectSelectionManager] = ScoreObjectSelectionManager(project.context, scoreView)
         scoreView.initialize()
 
         val flowPane = AudioFlowPane(project.flows)
-        flowPane.setPrefSize(1000.0, 1000.0)
-        flowPaneWindow = makeSubWindow(flowPane, "Audio flows", context)
-
-        synthDefsWindow.scene.initHextantScene(context)
-        processDefsWindow.scene.initHextantScene(context)
+        flowPaneWindow = context.makeToolWindow(flowPane, "Audio flows", defaultSize = Dimension2D(2000.0, 800.0))
 
         val (serverSetup, serverTree) = project[SETUP_CODE]
-        serverSetupCodeWindow = makeSubWindow(serverSetup.control, "ServerSetup", context)
-        serverSetupCodeWindow.scene.initHextantScene(context)
-        serverSetupCodeWindow.resize(500.0, 500.0)
+        serverSetupCodeWindow = context.makeToolWindow(
+            serverSetup.control, "ServerSetup",
+            defaultSize = Dimension2D(500.0, 500.0)
+        )
 
-        serverTreeCodeWindow = makeSubWindow(serverTree.control, "ServerTree", context)
-        serverTreeCodeWindow.scene.initHextantScene(context)
-        serverTreeCodeWindow.resize(500.0, 500.0)
+        serverTreeCodeWindow = context.makeToolWindow(
+            serverTree.control, "ServerTree",
+            defaultSize = Dimension2D(500.0, 500.0)
+        )
 
         playback = PlaybackManager(scoreView, project.flows)
         context[PlaybackManager] = playback
@@ -260,6 +268,6 @@ class XenakisMainActivity(val project: XenakisProject) : Activity() {
     }
 
     companion object : PublicProperty<XenakisMainActivity> by publicProperty("XenakisMainScreen") {
-        private fun <W: Window> W.defaultToolWindowSize() = defaultSize(800.0, 800.0)
+        private fun <W : Window> W.defaultToolWindowSize() = defaultSize(800.0, 800.0)
     }
 }

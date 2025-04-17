@@ -5,7 +5,6 @@ import fxutils.actions.Action
 import fxutils.actions.collectActions
 import fxutils.actions.registerActions
 import javafx.geometry.Dimension2D
-import javafx.scene.Node
 import javafx.scene.Parent
 import javafx.scene.control.Control
 import javafx.scene.control.Label
@@ -15,6 +14,7 @@ import javafx.scene.layout.HBox
 import javafx.scene.layout.Priority
 import javafx.scene.layout.Region
 import javafx.scene.layout.VBox
+import kotlinx.serialization.Serializable
 import org.kordamp.ikonli.materialdesign2.MaterialDesignD
 import org.kordamp.ikonli.materialdesign2.MaterialDesignV
 import reaktive.value.*
@@ -25,16 +25,16 @@ import xenakis.model.registry.NamedObjectList
 class NamedObjectListView<O : NamedObject>(
     val source: NamedObjectList<O>,
     val config: ObjectBoxConfig<O>,
-    private val contentDisplay: ReactiveVariable<ContentDisplay>,
+    private val displayMode: ReactiveVariable<DisplayMode>,
     private var filter: (O) -> Boolean = { true },
 ) : Control(), NamedObjectList.Listener<O> {
     constructor(
         source: NamedObjectList<O>, config: ObjectBoxConfig<O>,
-        contentDisplay: ContentDisplay = config.supportedModes.first(),
+        displayMode: DisplayMode = config.supportedModes.first(),
         filter: (O) -> Boolean = { true },
-    ) : this(source, config, reactiveVariable(contentDisplay), filter)
+    ) : this(source, config, reactiveVariable(displayMode), filter)
 
-    private val storedWindowSize = mutableMapOf<ContentDisplay, Dimension2D>()
+    private val storedWindowSizes = mutableMapOf<DisplayMode, Dimension2D>()
 
     var autoResizeScene = false
 
@@ -49,7 +49,7 @@ class NamedObjectListView<O : NamedObject>(
 
     val actions = listActions.withContext(this)
 
-    fun getBoxes(): List<Node> = boxes
+    fun getBoxes(): List<ObjectBox<*>> = boxes
 
     init {
         source.addListener(this, initialize = false)
@@ -59,45 +59,47 @@ class NamedObjectListView<O : NamedObject>(
             boxes.add(box)
         }
         vbox.children.addAll(boxes)
-        setMode(contentDisplay.now)
+        setMode(displayMode.now)
         registerShortcuts {
-            val selectedContent = selectedBox?.content
-            if (contentDisplay.now == ContentDisplay.DetailsPane && selectedContent is ToolPane) {
+            val selected = selectedBox ?: return@registerShortcuts
+            registerActions(selected.actionBar.actions())
+            val selectedContent = selected.content
+            if (displayMode.now != DisplayMode.DetailsPane && selectedContent is ToolPane) {
                 registerActions(selectedContent.actionBar.actions())
             }
         }
     }
 
-    val mode: ReactiveValue<ContentDisplay> get() = contentDisplay
+    val mode: ReactiveValue<DisplayMode> get() = displayMode
 
-    fun setMode(mode: ContentDisplay) {
+    fun setMode(mode: DisplayMode) {
         if (scene?.window != null) {
-            storedWindowSize[contentDisplay.now] = Dimension2D(scene.window.width, scene.window.height)
+            storedWindowSizes[displayMode.now] = Dimension2D(scene.window.width, scene.window.height)
         }
-        contentDisplay.now = mode
+        displayMode.now = mode
         updateRoot(mode)
-        if (autoResizeScene && scene?.window != null && mode in storedWindowSize) {
-            val size = storedWindowSize.getValue(mode)
+        if (autoResizeScene && scene?.window != null && mode in storedWindowSizes) {
+            val size = storedWindowSizes.getValue(mode)
             scene.window.width = size.width
             scene.window.height = size.height
         } else autoResize()
     }
 
-    private fun updateRoot(mode: ContentDisplay) {
+    private fun updateRoot(mode: DisplayMode) {
         if (boxes.isEmpty()) {
-            val objectType = plural(source.objectType)
+            val objectType = plural(source.objectType).lowercase()
             val emptyDisplay = VBox(Label("No $objectType to display")).centerChildren()
             emptyDisplay.setPadding(10.0)
             setRoot(emptyDisplay)
         } else {
-            if (mode != ContentDisplay.DetailsPane) {
+            if (mode != DisplayMode.DetailsPane) {
                 setRoot(itemsScrollPane)
             }
-            if (mode == ContentDisplay.SubWindow) {
+            if (mode == DisplayMode.SubWindow) {
                 selectedBox?.showSubWindow()
             }
             for (box in boxes) box.setContentDisplay(mode)
-            if (mode == ContentDisplay.DetailsPane) {
+            if (mode == DisplayMode.DetailsPane) {
                 displayContent(selectedBox)
             }
         }
@@ -111,7 +113,7 @@ class NamedObjectListView<O : NamedObject>(
     }
 
     private fun autoResize() {
-        if (mode.now != ContentDisplay.DetailsPane && autoResizeScene && scene?.window != null) {
+        if (mode.now != DisplayMode.DetailsPane && autoResizeScene && scene?.window != null) {
             scene.window.sizeToScene()
             scene.window.height = scene.window.height.coerceAtMost(1000.0)
             scene.window.width = scene.window.width.coerceAtMost(1000.0)
@@ -177,7 +179,7 @@ class NamedObjectListView<O : NamedObject>(
         selectedBox?.pseudoClassStateChanged(PseudoClasses.SELECTED, false)
         selectedBox = box
         box.pseudoClassStateChanged(PseudoClasses.SELECTED, true)
-        if (mode.now == ContentDisplay.DetailsPane) {
+        if (mode.now == DisplayMode.DetailsPane) {
             displayContent(box)
         }
         config.onSelected(box.obj)
@@ -191,6 +193,8 @@ class NamedObjectListView<O : NamedObject>(
         val box = boxes.find { b -> b.obj == obj } ?: error("No box for $obj")
         select(box)
     }
+
+    fun selectedIndex(): Int = boxes.indexOf(selectedBox)
 
     private fun navigate(deltaIdx: Int) {
         if (selectedBox != null) {
@@ -226,7 +230,7 @@ class NamedObjectListView<O : NamedObject>(
 
     fun showContent(obj: O) {
         select(obj)
-        if (mode.now == ContentDisplay.SubWindow) {
+        if (mode.now == DisplayMode.SubWindow) {
             getBox(obj).showSubWindow()
         } else {
             val window = scene.window as SubWindow
@@ -234,7 +238,8 @@ class NamedObjectListView<O : NamedObject>(
         }
     }
 
-    enum class ContentDisplay {
+    @Serializable
+    enum class DisplayMode {
         Inline, SubWindow, DetailsPane;
 
         companion object {
@@ -283,7 +288,7 @@ class NamedObjectListView<O : NamedObject>(
             }
         }
 
-        private fun Action.Builder<NamedObjectListView<*>>.modeChange(mode: ContentDisplay) {
+        private fun Action.Builder<NamedObjectListView<*>>.modeChange(mode: DisplayMode) {
             applicableIf { view ->
                 if (mode in view.config.supportedModes) view.mode.notEqualTo(mode)
                 else reactiveValue(false)
@@ -295,15 +300,15 @@ class NamedObjectListView<O : NamedObject>(
             get() = collectActions {
                 addAction("Display content inline") {
                     icon(MaterialDesignV.VIEW_SEQUENTIAL)
-                    modeChange(ContentDisplay.Inline)
+                    modeChange(DisplayMode.Inline)
                 }
                 addAction("Display content in Sub-Window") {
                     icon(MaterialDesignD.DOCK_WINDOW)
-                    modeChange(ContentDisplay.SubWindow)
+                    modeChange(DisplayMode.SubWindow)
                 }
                 addAction("Display content in side bar") {
                     icon(MaterialDesignV.VIEW_SPLIT_VERTICAL)
-                    modeChange(ContentDisplay.DetailsPane)
+                    modeChange(DisplayMode.DetailsPane)
                 }
             }
     }

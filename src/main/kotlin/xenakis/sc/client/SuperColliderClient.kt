@@ -2,6 +2,7 @@ package xenakis.sc.client
 
 import bundles.PublicProperty
 import bundles.publicProperty
+import reaktive.Observer
 import xenakis.impl.Logger
 import xenakis.impl.Logger.Category
 import xenakis.impl.canSuperColliderTalkToMe
@@ -10,7 +11,7 @@ import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Future
 
 interface SuperColliderClient : SuperColliderContext {
-    fun onServerBooted(action: () -> Unit)
+    fun onServerBooted(action: () -> Unit): Observer
     fun onTreeCleared(action: () -> Unit)
     fun onClientReady(action: () -> Unit)
 

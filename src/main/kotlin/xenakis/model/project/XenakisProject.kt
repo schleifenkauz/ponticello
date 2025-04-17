@@ -39,10 +39,11 @@ class XenakisProject private constructor(val components: Map<Component<out Conte
     fun saveTo(projectDirectory: File) {
         for (inst in score.allInstances()) {
             if (inst.obj !in objects) {
-                Logger.warn("Had to readd object for $inst", Logger.Category.Project)
+                Logger.warn("Had to add object for $inst", Logger.Category.Project)
                 objects.add(inst.obj)
             }
         }
+        get(UI_STATE).saveWindowStates()
         this.projectDirectory = projectDirectory
         dataDir.mkdirs()
         for ((component, _) in components) {

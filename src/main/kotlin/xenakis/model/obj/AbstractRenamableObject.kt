@@ -12,6 +12,8 @@ abstract class AbstractRenamableObject : RenamableObject, AbstractNamedObject() 
     final override val name: ReactiveValue<String>
         get() = mutableName
 
+    override fun canRenameTo(newName: String): Boolean = registry != null && !registry!!.has(newName)
+
     override fun rename(newName: String) {
         context[UndoManager].record(RenameEdit(this, name.now, newName))
         mutableName.now = newName

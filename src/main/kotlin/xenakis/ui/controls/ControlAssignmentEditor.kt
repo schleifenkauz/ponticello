@@ -36,10 +36,7 @@ import xenakis.model.score.ScoreObject
 import xenakis.model.score.SynthObject
 import xenakis.model.score.controls.*
 import xenakis.sc.*
-import xenakis.sc.editor.BufferSelector
-import xenakis.sc.editor.BusSelector
-import xenakis.sc.editor.GroupSelector
-import xenakis.sc.editor.ScExprExpander
+import xenakis.sc.editor.*
 import xenakis.sc.view.ObjectSelectorControl
 import xenakis.ui.impl.colorPicker
 
@@ -91,6 +88,7 @@ class ControlAssignmentEditor(val control: NamedParameterControl) : HBox() {
             initialOption = selectedOption
         ) ?: return
         updateControlType(option)
+        detailEditor?.requestFocus()
     }
 
     private fun updateControlType(t: ControlType<*>) {
@@ -123,19 +121,7 @@ class ControlAssignmentEditor(val control: NamedParameterControl) : HBox() {
 
         abstract fun createDefaultControl(obj: ParameterizedObject, spec: ControlSpec?, oldControl: ParameterControl): C
 
-        override fun toString(): String = when (this) {
-            Buffer -> "Buffer"
-            Bus -> "Bus"
-            BusValue -> "Bus"
-            Value -> "Value"
-            Envelope -> "Envelope"
-            Group -> "Group"
-            LFO -> "Expr"
-            SingleBusValue -> "Bus Value"
-            AttackRelease -> "ASR"
-        }
-
-        object Value : ControlType<ValueControl>() {
+        data object Value : ControlType<ValueControl>() {
             override fun createDetailInput(
                 obj: ParameterizedObject,
                 namedControl: NamedParameterControl,
@@ -160,7 +146,7 @@ class ControlAssignmentEditor(val control: NamedParameterControl) : HBox() {
             }
         }
 
-        object Envelope : ControlType<EnvelopeControl>() {
+        data object Envelope : ControlType<EnvelopeControl>() {
             override fun createDetailInput(
                 obj: ParameterizedObject,
                 namedControl: NamedParameterControl,
@@ -194,7 +180,7 @@ class ControlAssignmentEditor(val control: NamedParameterControl) : HBox() {
             }
         }
 
-        object LFO : ControlType<CustomControl>() {
+        data object Expr : ControlType<CustomControl>() {
             override fun createDetailInput(
                 obj: ParameterizedObject,
                 namedControl: NamedParameterControl,
@@ -249,7 +235,7 @@ class ControlAssignmentEditor(val control: NamedParameterControl) : HBox() {
             }
         }
 
-        object Bus : ControlType<BusControl>() {
+        data object Bus : ControlType<BusControl>() {
             override fun createDetailInput(
                 obj: ParameterizedObject,
                 namedControl: NamedParameterControl,
@@ -266,7 +252,7 @@ class ControlAssignmentEditor(val control: NamedParameterControl) : HBox() {
             }
         }
 
-        object BusValue : ControlType<BusValueControl>() {
+        data object BusValue : ControlType<BusValueControl>() {
             override fun createDetailInput(
                 obj: ParameterizedObject,
                 namedControl: NamedParameterControl,
@@ -281,9 +267,11 @@ class ControlAssignmentEditor(val control: NamedParameterControl) : HBox() {
                 val initial = oldControl.getBus() ?: obj.context[BusRegistry].getDefault().reference()
                 return BusValueControl(reactiveVariable(initial))
             }
+
+            override fun toString(): String = "Bus"
         }
 
-        object SingleBusValue :
+        data object SingleBusValue :
             ControlType<SingleBusValueControl>() {
             override fun createDetailInput(
                 obj: ParameterizedObject,
@@ -298,9 +286,10 @@ class ControlAssignmentEditor(val control: NamedParameterControl) : HBox() {
                 return SingleBusValueControl(reactiveVariable(initial))
             }
 
+            override fun toString(): String = "Bus Value"
         }
 
-        object Buffer : ControlType<BufferControl>() {
+        data object Buffer : ControlType<BufferControl>() {
             override fun createDetailInput(
                 obj: ParameterizedObject,
                 namedControl: NamedParameterControl,
@@ -329,7 +318,7 @@ class ControlAssignmentEditor(val control: NamedParameterControl) : HBox() {
             }
         }
 
-        object Group : ControlType<GroupControl>() {
+        data object Group : ControlType<GroupControl>() {
             override fun createDetailInput(
                 obj: ParameterizedObject,
                 namedControl: NamedParameterControl,
@@ -349,7 +338,28 @@ class ControlAssignmentEditor(val control: NamedParameterControl) : HBox() {
                 GroupControl(reactiveVariable(obj.context[GroupRegistry].getDefault().reference()))
         }
 
-        object AttackRelease : ControlType<AttackReleaseControl>() {
+        data object GlobalPattern : ControlType<GlobalPatternControl>() {
+            override fun createDetailInput(
+                obj: ParameterizedObject,
+                namedControl: NamedParameterControl,
+                control: GlobalPatternControl,
+            ): Node {
+                val selector = GlobalPatternSelector()
+                selector.syncWith(control.pattern)
+                selector.initialize(obj.context)
+                return ObjectSelectorControl(selector, createBundle())
+            }
+
+            override fun createDefaultControl(
+                obj: ParameterizedObject,
+                spec: ControlSpec?,
+                oldControl: ParameterControl,
+            ): GlobalPatternControl = GlobalPatternControl(reactiveVariable(ObjectReference.none()))
+
+            override fun toString(): String = "Pattern"
+        }
+
+        data object AttackRelease : ControlType<AttackReleaseControl>() {
             override fun createDetailInput(
                 obj: ParameterizedObject,
                 namedControl: NamedParameterControl,
@@ -389,21 +399,28 @@ class ControlAssignmentEditor(val control: NamedParameterControl) : HBox() {
                 val level = oldControl.getNumericalValue() ?: one
                 return AttackReleaseControl(reactiveVariable(zero), reactiveVariable(zero), reactiveVariable(level))
             }
+
+            override fun toString(): String = "ASR"
         }
 
         companion object {
-            val all: List<ControlType<*>> = listOf(Value, LFO, Envelope, BusValue, SingleBusValue, AttackRelease)
+            val all: List<ControlType<*>> = listOf(
+                Value, Envelope, AttackRelease,
+                BusValue, SingleBusValue,
+                GlobalPattern, Expr
+            )
 
             @Suppress("UNCHECKED_CAST")
             fun <O : ParameterControl> getType(option: O) = when (option) {
                 is ValueControl -> Value
-                is CustomControl -> LFO
+                is CustomControl -> Expr
                 is EnvelopeControl -> Envelope
                 is BusControl -> Bus
                 is BusValueControl -> BusValue
                 is SingleBusValueControl -> SingleBusValue
                 is BufferControl -> Buffer
                 is GroupControl -> Group
+                is GlobalPatternControl -> GlobalPattern
                 is AttackReleaseControl -> AttackRelease
             } as ControlType<O>
 

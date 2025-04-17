@@ -19,9 +19,9 @@ import xenakis.model.registry.NamedObjectList
 import xenakis.model.registry.ObjectRegistry
 import xenakis.ui.controls.NameControl
 import xenakis.ui.controls.NamePrompt
-import xenakis.ui.impl.makeToolWindow
+import xenakis.ui.impl.makeSubWindow
 import xenakis.ui.launcher.XenakisApp.Companion.primaryStage
-import xenakis.ui.registry.NamedObjectListView.ContentDisplay
+import xenakis.ui.registry.NamedObjectListView.DisplayMode
 
 class ObjectBox<O : NamedObject>(val parent: NamedObjectListView<O>, val obj: O) : VBox() {
     var subWindow: SubWindow? = null
@@ -34,7 +34,7 @@ class ObjectBox<O : NamedObject>(val parent: NamedObjectListView<O>, val obj: O)
     private val nameDisplay =
         nameControl ?: HBox(label(obj.name).styleClass("name-field")).styleClass("name")
 
-    private val actionBar = ActionBar(
+    val actionBar = ActionBar(
         config.getActions(this) + objectActions.withContext(this),
         config.buttonStyle
     )
@@ -55,30 +55,30 @@ class ObjectBox<O : NamedObject>(val parent: NamedObjectListView<O>, val obj: O)
         if (config.dataFormat(obj) != null) setupDragging()
     }
 
-    fun setContentDisplay(option: ContentDisplay) {
+    fun setContentDisplay(option: DisplayMode) {
         if (content == null) return
-        if (option != ContentDisplay.SubWindow) {
+        if (option != DisplayMode.SubWindow) {
             subWindow?.let { w ->
                 w.hide()
                 w.scene.root = Region()
                 subWindow = null
             }
         }
-        if (option != ContentDisplay.Inline && content in children) {
+        if (option != DisplayMode.Inline && content in children) {
             children.remove(content)
         }
-        if (option == ContentDisplay.SubWindow) {
+        if (option == DisplayMode.SubWindow) {
             val objectType = parent.source.objectType
             val name = obj.name.now
             val title = "$objectType $name"
             content = config.getContent(obj) ?: return //ugly trick to avoid weird JavaFX bug
-            subWindow = makeToolWindow(content!!, title, parent.source.context).also { w ->
+            subWindow = makeSubWindow(content!!, title, parent.source.context).also { w ->
                 config.configureSubWindow(w)
                 w.sizeToScene()
                 if (w.owner == null) w.initOwner(obj.context[primaryStage])
             }
         }
-        if (option == ContentDisplay.Inline) {
+        if (option == DisplayMode.Inline) {
             children.add(content)
         }
     }
@@ -128,7 +128,7 @@ class ObjectBox<O : NamedObject>(val parent: NamedObjectListView<O>, val obj: O)
                     reactiveValue(config.detailWindowIcon(box.obj))
                 }
                 shortcuts("Ctrl+E")
-                applicableIf { box -> box.parent.mode.equalTo(ContentDisplay.SubWindow) }
+                applicableIf { box -> box.parent.mode.equalTo(DisplayMode.SubWindow) }
                 executes { box, ev ->
                     box.showSubWindow()
                 }

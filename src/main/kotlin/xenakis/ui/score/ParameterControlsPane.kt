@@ -20,7 +20,7 @@ import xenakis.sc.GroupControlSpec
 import xenakis.ui.controls.ControlAssignmentEditor
 import xenakis.ui.controls.ControlSpecPrompt
 import xenakis.ui.launcher.XenakisApp.Companion.primaryStage
-import xenakis.ui.registry.NamedObjectListView.ContentDisplay
+import xenakis.ui.registry.NamedObjectListView.DisplayMode
 import xenakis.ui.registry.ObjectBox
 import xenakis.ui.registry.SearchableParameterDefListView
 import xenakis.ui.registry.SearchableToolPane
@@ -39,8 +39,8 @@ class ParameterControlsPane(
     override val enableReordering: Boolean
         get() = true
 
-    override val supportedModes: Set<ContentDisplay>
-        get() = setOf(ContentDisplay.Inline, ContentDisplay.DetailsPane)
+    override val supportedModes: Set<DisplayMode>
+        get() = setOf(DisplayMode.Inline, DisplayMode.DetailsPane)
 
     override fun reassignedControl(
         namedControl: NamedParameterControl,

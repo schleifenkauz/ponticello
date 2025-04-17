@@ -132,6 +132,17 @@ fun createControl(editor: xenakis.sc.editor.LoopExprEditor, arguments: Bundle) =
     }
 
 @ProvideImplementation(ControlFactory::class)
+fun createControl(editor: xenakis.sc.editor.RunExprEditor, arguments: Bundle) =
+    CompoundEditorControl(editor, arguments) {
+        vertical {
+            keyword("run")
+            indented {
+                view(editor.block)
+            }
+        }
+    }
+
+@ProvideImplementation(ControlFactory::class)
 fun createControl(editor: xenakis.sc.editor.OperatorEditor, arguments: Bundle): TokenEditorControl =
     TokenEditorControl(editor, arguments, completer = NoCompleter, styleClass = "operator")
 

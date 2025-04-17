@@ -355,7 +355,7 @@ data class MessageSend(val receiver: ScExpr, val method: Identifier, val argumen
 
     override fun code(writer: ScWriter, context: Context) = with(writer) {
         receiver.code(writer, context)
-        if (method != Identifier("new")) {
+        if (method != Identifier("new") || arguments.isEmpty()) {
             writer.append(".")
             method.code(writer, context)
         }

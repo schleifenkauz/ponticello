@@ -23,8 +23,11 @@ fun SynthExpr(synthDef: Identifier, arguments: List<NamedExpr>): ScExpr {
     return Identifier("~synths").send("add", synth)
 }
 
-@Compound(nodeType = ScExpr::class)
-fun Task(block: CodeBlock): ScExpr {
+@Compound(nodeType = ScExpr::class, classLocation = "xenakis.sc.editor.TaskExprEditor")
+fun task(block: CodeBlock): ScExpr {
     val task = Identifier("Task").send("new", block).send("play")
     return Identifier("~tasks").send("add", task)
 }
+
+@Compound(nodeType = ScExpr::class, classLocation = "xenakis.sc.editor.RunExprEditor")
+fun run(block: CodeBlock): ScExpr = ScFunction(body = block).send("value")

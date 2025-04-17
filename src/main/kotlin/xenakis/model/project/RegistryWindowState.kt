@@ -1,0 +1,41 @@
+package xenakis.model.project
+
+import javafx.geometry.Dimension2D
+import javafx.stage.Stage
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
+import reaktive.value.now
+import xenakis.ui.registry.NamedObjectListView
+import xenakis.ui.registry.ObjectRegistryPane
+
+@Serializable
+@SerialName("RegistryWindow")
+class RegistryWindowState : WindowState() {
+    private var selectedIndex: Int = -1
+    private var displayMode: NamedObjectListView.DisplayMode? = null
+
+    @Transient
+    private lateinit var targetPane: ObjectRegistryPane<*>
+
+    override fun applyTo(window: Stage, defaultSize: Dimension2D?) {
+        super.applyTo(window, defaultSize)
+        val root = window.scene.root
+        if (root is ObjectRegistryPane<*>) {
+            targetPane = root
+            val mode = displayMode
+            if (mode != null && mode in root.listView.config.supportedModes) {
+                root.listView.setMode(mode)
+            }
+            if (selectedIndex != -1) {
+                root.listView.select(selectedIndex)
+            }
+        }
+    }
+
+    override fun saveFromTarget() {
+        super.saveFromTarget()
+        displayMode = targetPane.listView.mode.now
+        selectedIndex = targetPane.listView.selectedIndex()
+    }
+}

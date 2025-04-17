@@ -10,14 +10,14 @@ import xenakis.model.obj.ParameterizedObjectDef
 import xenakis.model.registry.GlobalDefinitionLibrary
 import xenakis.model.registry.ObjectRegistry
 import xenakis.sc.Identifier
-import xenakis.ui.registry.NamedObjectListView.ContentDisplay
+import xenakis.ui.registry.NamedObjectListView.DisplayMode
 
 abstract class ParameterizedObjectDefRegistryPane<T : ParameterizedObjectDef>(
     private val defs: ObjectRegistry<T>,
     private val globalLibrary: PublicProperty<out GlobalDefinitionLibrary<out T>>,
 ) : ObjectRegistryPane<T>(defs) {
-    override val supportedModes: Set<ContentDisplay>
-        get() = setOf(ContentDisplay.DetailsPane, ContentDisplay.SubWindow)
+    override val supportedModes: Set<DisplayMode>
+        get() = setOf(DisplayMode.DetailsPane, DisplayMode.SubWindow)
 
     override fun configureSubWindow(window: SubWindow) {
         window.scene.initHextantScene(registry.context, applyStyle = false)

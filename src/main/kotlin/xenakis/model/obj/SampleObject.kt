@@ -156,8 +156,6 @@ class SampleObject(
         sync()
     }
 
-    override fun canRenameTo(newName: String): Boolean = !context[BufferRegistry].has(newName)
-
     override fun rename(newName: String) {
         val oldSpectrogramFile = spectrogramFile
         val oldAudioFile = audioFileInSamplesDir()

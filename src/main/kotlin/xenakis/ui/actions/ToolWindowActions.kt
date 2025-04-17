@@ -86,4 +86,9 @@ object ToolWindowActions : Action.Collector<XenakisMainActivity>({
             midiReceiver.setContext(ControlBusesMidiReceiver(buses))
         }
     }
+    addAction("Show global Patterns") {
+        shortcut("Ctrl+Shift+P")
+        icon(MaterialDesignL.LARAVEL)
+        executes { activity -> activity.patternsWindow.showOrBringToFront() }
+    }
 })

@@ -39,7 +39,7 @@ import xenakis.ui.launcher.XenakisMainActivity
 import xenakis.ui.midi.ContextualMidiReceiver
 import xenakis.ui.midi.ParameterControlsMidiContext
 import xenakis.ui.registry.NamedObjectListView
-import xenakis.ui.registry.NamedObjectListView.ContentDisplay
+import xenakis.ui.registry.NamedObjectListView.DisplayMode
 import xenakis.ui.registry.ObjectBox
 import xenakis.ui.registry.ObjectBoxConfig
 import xenakis.ui.score.ParameterControlsPane
@@ -65,8 +65,8 @@ class FlowChainView(
         registerShortcuts(flowsList.actions)
     }
 
-    override val supportedModes: Set<ContentDisplay>
-        get() = setOf(ContentDisplay.Inline, ContentDisplay.SubWindow)
+    override val supportedModes: Set<DisplayMode>
+        get() = setOf(DisplayMode.Inline, DisplayMode.SubWindow)
 
     override fun getContent(obj: AudioFlow): Parent? = when (obj) {
         is CodeFlow -> obj.codeEditor.control
@@ -106,7 +106,7 @@ class FlowChainView(
         }
     }
 
-    override fun dataFormat(obj: AudioFlow): DataFormat? = AudioFlow.DATA_FORMAT
+    override fun dataFormat(obj: AudioFlow): DataFormat = AudioFlow.DATA_FORMAT
 
     override fun getDefaultDisplayName(obj: AudioFlow): ReactiveString = obj.getDefaultName()
 

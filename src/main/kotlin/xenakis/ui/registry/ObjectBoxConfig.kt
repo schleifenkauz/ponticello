@@ -20,7 +20,7 @@ interface ObjectBoxConfig<O : NamedObject> {
 
     fun detailWindowIcon(obj: O): Ikon = MaterialDesignE.EYE
 
-    val supportedModes get() = setOf(NamedObjectListView.ContentDisplay.Inline)
+    val supportedModes get() = setOf(NamedObjectListView.DisplayMode.Inline)
 
     fun getItemContent(obj: O): List<Node> = emptyList()
 

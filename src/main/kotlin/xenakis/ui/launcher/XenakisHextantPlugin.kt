@@ -73,7 +73,13 @@ object XenakisHextantPlugin : PluginInitializer({
         name = "Toggle the visibility of the method name 'new'"
         defaultShortcut("Alt+N")
         applicableIf { ctrl -> ctrl.usesMethodNew.now }
-        executing { ctrl -> ctrl.arguments[HIDE_NEW_KEYWORD] = !ctrl.arguments[HIDE_NEW_KEYWORD] }
+        executing { ctrl ->
+            val hide = !ctrl.arguments[HIDE_NEW_KEYWORD]
+            if (ctrl.getChild(MessageSendEditor::method)?.isFocusWithin == true) {
+                ctrl.getChild(MessageSendEditor::arguments)?.receiveFocus()
+            }
+            ctrl.arguments[HIDE_NEW_KEYWORD] = hide
+        }
     }
 
     commandDelegation<EditorControl<*>> { ctrl ->
@@ -89,7 +95,7 @@ object XenakisHextantPlugin : PluginInitializer({
 
     commandDelegation<ListEditorControl> { ctrl ->
         if (ctrl.target !is ScExprListEditor) null
-        when (ctrl.editorParent) {
+        else when (ctrl.editorParent) {
             is MessageSendEditorControl,
             is ArrayExprEditorControl,
             is LiteralArrayExprEditorControl,

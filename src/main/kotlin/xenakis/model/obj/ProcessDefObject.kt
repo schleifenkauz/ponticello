@@ -51,8 +51,6 @@ class ProcessDefObject(
         loopBlock.clone(context)
     )
 
-    override fun canRenameTo(newName: String): Boolean = !context[ProcessDefRegistry].has(newName)
-
     override fun ScWriter.createObject() {
         appendBlock("$superColliderName = ") {
             append("arg t = 0, duration")

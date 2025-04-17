@@ -16,10 +16,10 @@ import reaktive.value.binding.map
 import reaktive.value.binding.not
 import reaktive.value.fx.asObservableValue
 import reaktive.value.now
-import xenakis.model.project.InteractionSettings
-import xenakis.model.project.InteractionSettings.SnapOption
+import xenakis.model.project.UIState
+import xenakis.model.project.UIState.SnapOption
 
-class InteractionConfig(private val settings: InteractionSettings) : HBox() {
+class InteractionConfigBar(private val settings: UIState) : HBox() {
     private val snapToggle = toggleSnap.withContext(settings)
     private val gridToggle = toggleGrid.withContext(settings)
 
@@ -62,7 +62,7 @@ class InteractionConfig(private val settings: InteractionSettings) : HBox() {
 
 
     companion object {
-        private val toggleSnap = action<InteractionSettings>("Toggle snapping") {
+        private val toggleSnap = action<UIState>("Toggle snapping") {
             shortcut("Q")
             icon { settings ->
                 settings.snapEnabled.map { enabled ->
@@ -70,13 +70,13 @@ class InteractionConfig(private val settings: InteractionSettings) : HBox() {
                     else MaterialDesignM.MAGNET
                 }
             }
-            toggles(InteractionSettings::snapEnabled)
+            toggles(UIState::snapEnabled)
         }
 
         private val toggleGrid = action("Toggle time grid") {
             shortcut("T")
             icon(Material2AL.LINEAR_SCALE)
-            toggles(InteractionSettings::displayTimeGrid)
+            toggles(UIState::displayTimeGrid)
         }
 
     }

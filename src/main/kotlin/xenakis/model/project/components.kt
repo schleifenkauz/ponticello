@@ -17,7 +17,7 @@ inline fun <reified T> component(
     serializer: KSerializer<T> = serializer<T>()
 ) = Component(name, serializer, default)
 
-val SETTINGS = component<InteractionSettings>("settings", InteractionSettings::default)
+val UI_STATE = component<UIState>("ui-state", UIState::default)
 val GROUPS = component<GroupRegistry>(
     "groups", GroupRegistry::createDefault,
     NamedObjectListSerializer(serializer(), ::GroupRegistry)
@@ -40,7 +40,7 @@ val OBJECTS = component<ScoreObjectRegistry>(
 val SCORE = component<Score>("score", ::Score)
 
 val allComponents = listOf<Component<out ContextualObject>>(
-    SETTINGS,
+    UI_STATE,
     GROUPS, BUSSES, BUFFERS,
     PATTERNS, INSTRUMENTS, PROCESS_DEFS,
     FLOWS, SETUP_CODE, SERVER_OPTIONS,
@@ -53,7 +53,8 @@ inline operator fun <reified T : ContextualObject> XenakisProject.get(component:
 val XenakisProject.score get() = get(SCORE)
 val XenakisProject.busses get() = get(BUSSES)
 val XenakisProject.buffers get() = get(BUFFERS)
+val XenakisProject.patterns get() = get(PATTERNS)
 val XenakisProject.instruments get() = get(INSTRUMENTS)
 val XenakisProject.objects get() = get(OBJECTS)
 val XenakisProject.flows get() = get(FLOWS)
-val XenakisProject.settings get() = get(SETTINGS)
+val XenakisProject.settings get() = get(UI_STATE)

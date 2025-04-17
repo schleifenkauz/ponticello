@@ -28,10 +28,8 @@ data class ValueControl(val value: ReactiveVariable<Decimal>) : ParameterControl
     }
 
     override fun generateArgumentExpr(
-        obj: ParameterizedObject,
-        uniqueName: String,
-        parameter: String,
-        spec: ControlSpec
+        obj: ParameterizedObject, uniqueName: String,
+        parameter: String, spec: ControlSpec
     ): ScExpr = DecimalLiteral(value.now)
 
     companion object {

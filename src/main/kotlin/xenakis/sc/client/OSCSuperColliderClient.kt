@@ -32,8 +32,10 @@ class OSCSuperColliderClient(
     private val serverBoot = unitEvent()
     private val treeClear = unitEvent()
 
-    override fun onServerBooted(action: () -> Unit) {
-        eventObservers.add(serverBoot.stream.observe(action))
+    override fun onServerBooted(action: () -> Unit): Observer {
+        val observer = serverBoot.stream.observe(action)
+        eventObservers.add(observer)
+        return observer
     }
 
     override fun onTreeCleared(action: () -> Unit) {

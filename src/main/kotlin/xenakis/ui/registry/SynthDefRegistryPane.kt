@@ -20,13 +20,13 @@ import xenakis.model.obj.SynthDefObject
 import xenakis.model.registry.GlobalDefinitionLibrary
 import xenakis.model.registry.SynthDefRegistry
 import xenakis.ui.impl.colorPicker
-import xenakis.ui.registry.NamedObjectListView.ContentDisplay
+import xenakis.ui.registry.NamedObjectListView.DisplayMode
 
 class SynthDefRegistryPane(
     private val synthDefs: SynthDefRegistry,
 ) : ParameterizedObjectDefRegistryPane<SynthDefObject>(synthDefs, GlobalDefinitionLibrary.synthDefs) {
-    override val supportedModes: Set<ContentDisplay>
-        get() = setOf(ContentDisplay.DetailsPane, ContentDisplay.SubWindow)
+    override val supportedModes: Set<DisplayMode>
+        get() = setOf(DisplayMode.DetailsPane, DisplayMode.SubWindow)
 
     init {
         setup()

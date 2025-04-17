@@ -18,6 +18,7 @@ import hextant.undo.UndoManager
 import javafx.application.Platform
 import javafx.stage.Stage
 import kotlinx.serialization.serializer
+import reaktive.Observer
 import xenakis.impl.Logger
 import xenakis.impl.registerImplementationsFromClasspath
 import xenakis.model.ServerOptions
@@ -170,7 +171,7 @@ class XenakisLauncher {
     fun saveProject() {
         val project = rootContext[currentProject]
         val file = recentProjects.activeProject() ?: rootContext[XenakisFiles].showOpenDialog("*.xen") ?: return
-        tryWithAlert("Saving score") { save(project, file) }
+        tryWithAlert("Saving project") { save(project, file) }
         Logger.confirm("Saved project ${project.projectDirectory.name}", Logger.Category.Project)
     }
 
@@ -215,10 +216,12 @@ class XenakisLauncher {
                     }
                 }
             }
-            client.onServerBooted {
+            lateinit var bootObserver: Observer
+            bootObserver = client.onServerBooted {
                 Platform.runLater {
                     try {
                         serverReady(client)
+                        bootObserver.kill()
                     } catch (e: Exception) {
                         Logger.error("Error while $description")
                         e.printStackTrace()

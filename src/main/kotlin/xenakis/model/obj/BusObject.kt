@@ -16,7 +16,6 @@ import reaktive.value.now
 import reaktive.value.reactiveVariable
 import xenakis.impl.Decimal
 import xenakis.impl.zero
-import xenakis.model.project.busses
 import xenakis.model.registry.BusRegistry
 import xenakis.model.registry.ObjectRegistry
 import xenakis.sc.DecimalLiteral
@@ -25,7 +24,6 @@ import xenakis.sc.Rate
 import xenakis.sc.Rate.Audio
 import xenakis.sc.Rate.Control
 import xenakis.sc.client.ScWriter
-import xenakis.ui.launcher.XenakisLauncher
 
 @Serializable
 sealed class BusObject : AbstractSuperColliderObject() {
@@ -52,10 +50,6 @@ sealed class BusObject : AbstractSuperColliderObject() {
     override val registry: ObjectRegistry<*>?
         get() = context[BusRegistry]
 
-    override fun canRenameTo(newName: String): Boolean =
-        name.now.startsWith("global_") == newName.startsWith("global_") &&
-                !context[XenakisLauncher.currentProject].busses.has(newName)
-
     override fun initialize(context: Context) {
         super.initialize(context)
         if (busType == Type.Regular) {
@@ -72,7 +66,7 @@ sealed class BusObject : AbstractSuperColliderObject() {
     class AudioBus(
         @SerialName("name") override val mutableName: ReactiveVariable<String>,
         override val channels: ReactiveVariable<Int>,
-        override val busType: Type
+        override val busType: Type,
     ) : BusObject() {
         override val rate: Rate get() = Audio
 

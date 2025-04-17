@@ -12,12 +12,12 @@ import xenakis.model.obj.ProcessDefObject
 import xenakis.model.registry.GlobalDefinitionLibrary
 import xenakis.model.registry.ProcessDefRegistry
 import xenakis.ui.impl.colorPicker
-import xenakis.ui.registry.NamedObjectListView.ContentDisplay
+import xenakis.ui.registry.NamedObjectListView.DisplayMode
 
 class ProcessDefRegistryPane(
     registry: ProcessDefRegistry,
 ) : ParameterizedObjectDefRegistryPane<ProcessDefObject>(registry, GlobalDefinitionLibrary.processDefs) {
-    override val supportedModes: Set<ContentDisplay> get() = setOf(ContentDisplay.DetailsPane, ContentDisplay.SubWindow)
+    override val supportedModes: Set<DisplayMode> get() = setOf(DisplayMode.DetailsPane, DisplayMode.SubWindow)
 
     init {
         setup()

@@ -128,18 +128,41 @@ class ScorePlayer(
     }
 
     private fun scheduleObject(obj: ScoreObject, absolutePosition: ObjectPosition, cutoff: Decimal) {
-        if (!obj.validate()) return
+        try {
+            if (!obj.validate()) return
+        } catch (e: Exception) {
+            Logger.error("Failed to validate $obj", e, Logger.Category.Playback)
+            return
+        }
         val time = absolutePosition.time - lastPlayFrom
         val timeForExecution = (time + settings.scLangLatency.now).toString()
-        val suffix = activeObjectManager.insert(obj, absolutePosition)
+        val suffix = try {
+            activeObjectManager.insert(obj, absolutePosition)
+        } catch (e: Exception) {
+            Logger.error("Failed to insert $obj into active object manager", e, Logger.Category.Playback)
+            return
+        }
         var info = ScoreObjectInfo(absolutePosition, suffix, null, cutoff.takeIf { it > zero } ?: zero)
         if (obj is SynthObject) {
-            val placement = graph.insert(obj, absolutePosition, suffix)
+            val placement = try {
+                graph.insert(obj, absolutePosition, suffix)
+            } catch (e: Exception) {
+                Logger.error("Failed to insert $obj into audio flow graph", e, Logger.Category.Playback)
+                return
+            }
             info = info.copy(placement = placement)
         }
-        val code = obj.writeCode(info)
+        val code = try {
+            obj.writeCode(info)
+        } catch (e: Exception) {
+            Logger.error("Failed to write code for $obj", e, Logger.Category.Playback)
+        }
         if (code == "") return
-        client.send("schedule", listOf(timeForExecution, code))
+        try {
+            client.send("schedule", listOf(timeForExecution, code))
+        } catch (e: Exception) {
+            Logger.error("Failed to schedule $obj", e, Logger.Category.Playback)
+        }
         Logger.fine("unique name for $obj at $time: ${info.uniqueName(obj)}", Logger.Category.Playback)
         Logger.fine("time for execution: ${timeForExecution}s", Logger.Category.Playback)
 

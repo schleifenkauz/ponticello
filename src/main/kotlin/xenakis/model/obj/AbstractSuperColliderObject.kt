@@ -7,10 +7,6 @@ import xenakis.sc.client.SuperColliderClient
 abstract class AbstractSuperColliderObject : AbstractRenamableObject(), SuperColliderObject {
     protected val client get() = context[SuperColliderClient]
 
-    override fun initialize(context: Context) {
-        super.initialize(context)
-    }
-
     override fun sync() {
         client.run { sync() }
     }

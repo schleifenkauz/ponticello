@@ -55,6 +55,7 @@
 - don't ask whether remove score object when creating/inlining group objets
 - why do `Button`s exclude underscores in their text?
 - reimplement startup progress bar
+- why aren't the duplicate buttons shown?
 
 ### Minor
 

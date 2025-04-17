@@ -60,7 +60,8 @@ fun ScWriter.writeSynthCode(
         }
         val synthDefName = obj.def.name.now
         val synthVar = customSynthVar ?: "~synth_$uniqueName"
-        append("$synthVar = Synth.newPaused(\\$synthDefName, [")
+//        append("$synthVar = Synth.newPaused(\\$synthDefName, [")
+        append("$synthVar = Synth(\\$synthDefName, [")
         for ((param, control) in controlsWithSpecs) {
             val (spec, ctrl) = control
             if (!obj.def.hasParameter(param) && param !in SPECIAL_PARAMETERS) continue
@@ -73,14 +74,16 @@ fun ScWriter.writeSynthCode(
         if (obj.duration() != null) append("duration: ${obj.duration()!!.now}")
         else append("afterDuration: Done.none")
         appendLine("], target: ${info.placement!!.target}, addAction: ${info.placement.addAction});")
-        +"s.sync"
+//        +"s.sync"
         +"$synthVar.register"
-        appendBlock("$synthVar.onFree ") {
-            for (name in associatedServerObjects) {
-                +"$name.free"
+        if (associatedServerObjects.isNotEmpty()) {
+            appendBlock("$synthVar.onFree ") {
+                for (name in associatedServerObjects) {
+                    +"$name.free"
+                }
             }
         }
-        +"s.sync"
+//        +"s.sync"
         for ((param, control) in controlsWithSpecs) {
             val (spec, ctrl) = control
             if (!obj.def.hasParameter(param) && param !in SPECIAL_PARAMETERS) continue
@@ -88,6 +91,8 @@ fun ScWriter.writeSynthCode(
                 applyToSynth(obj, synthVar, param, spec)
             }
         }
-        +"$synthVar.run"
+//        +"$synthVar.run"
     }
 }
+
+// Synth(\sine, [freq: 400, amp: 1, out: s.outputBus, pan: 0, group: s.defaultGroup, duration: 5.0000], target: s.defaultGroup, addAction: 'addToHead')
