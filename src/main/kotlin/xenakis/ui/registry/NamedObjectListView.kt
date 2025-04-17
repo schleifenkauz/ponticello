@@ -1,15 +1,13 @@
 package xenakis.ui.registry
 
-import fxutils.PseudoClasses
-import fxutils.SubWindow
+import fxutils.*
 import fxutils.actions.Action
 import fxutils.actions.collectActions
-import fxutils.setRoot
-import fxutils.styleClass
 import javafx.geometry.Dimension2D
 import javafx.scene.Node
 import javafx.scene.Parent
 import javafx.scene.control.Control
+import javafx.scene.control.Label
 import javafx.scene.control.ScrollPane
 import javafx.scene.input.Clipboard
 import javafx.scene.layout.HBox
@@ -70,21 +68,32 @@ class NamedObjectListView<O : NamedObject>(
             storedWindowSize[contentDisplay.now] = Dimension2D(scene.window.width, scene.window.height)
         }
         contentDisplay.now = mode
-        if (mode != ContentDisplay.DetailsPane) {
-            setRoot(itemsScrollPane)
-        }
-        if (mode == ContentDisplay.SubWindow) {
-            selectedBox?.showSubWindow()
-        }
-        for (box in boxes) box.setContentDisplay(mode)
-        if (mode == ContentDisplay.DetailsPane) {
-            displayContent(selectedBox)
-        }
+        updateRoot(mode)
         if (autoResizeScene && scene?.window != null && mode in storedWindowSize) {
             val size = storedWindowSize.getValue(mode)
             scene.window.width = size.width
             scene.window.height = size.height
         } else autoResize()
+    }
+
+    private fun updateRoot(mode: ContentDisplay) {
+        if (boxes.isEmpty()) {
+            val objectType = plural(source.objectType)
+            val emptyDisplay = VBox(Label("No $objectType to display")).centerChildren()
+            emptyDisplay.setPadding(10.0)
+            setRoot(emptyDisplay)
+        } else {
+            if (mode != ContentDisplay.DetailsPane) {
+                setRoot(itemsScrollPane)
+            }
+            if (mode == ContentDisplay.SubWindow) {
+                selectedBox?.showSubWindow()
+            }
+            for (box in boxes) box.setContentDisplay(mode)
+            if (mode == ContentDisplay.DetailsPane) {
+                displayContent(selectedBox)
+            }
+        }
     }
 
     private fun displayContent(box: ObjectBox<O>?) {
@@ -108,6 +117,7 @@ class NamedObjectListView<O : NamedObject>(
         val box = getBox(obj)
         boxes.add(j, box)
         vbox.children.add(j, box)
+        updateRoot(mode.now)
         select(obj)
         autoResize()
     }
@@ -126,13 +136,14 @@ class NamedObjectListView<O : NamedObject>(
     }
 
     override fun removed(obj: O) {
-        val box = boxesCache.getValue(obj)
+        val box = boxesCache[obj] ?: return
         boxes.remove(box)
         vbox.children.remove(box)
         box.subWindow?.hide()
         if (displayedContent == box.content) {
-            setRoot(itemsScrollPane)
+            displayContent(null)
         }
+        updateRoot(mode.now)
         autoResize()
     }
 
@@ -159,7 +170,6 @@ class NamedObjectListView<O : NamedObject>(
         selectedBox?.pseudoClassStateChanged(PseudoClasses.SELECTED, false)
         selectedBox = box
         box.pseudoClassStateChanged(PseudoClasses.SELECTED, true)
-        setRoot(itemsScrollPane)
         if (mode.now == ContentDisplay.DetailsPane) {
             displayContent(box)
         }
@@ -236,6 +246,7 @@ class NamedObjectListView<O : NamedObject>(
                 executes { list ->
                     val selected = list.selectedBox?.obj ?: return@executes
                     if (selected.canDelete) {
+                        @Suppress("UNCHECKED_CAST")
                         val source = list.source as NamedObjectList<NamedObject>
                         source.remove(selected)
                     }
@@ -274,7 +285,7 @@ class NamedObjectListView<O : NamedObject>(
         }
 
         val modeChangeActions
-            get() = collectActions<NamedObjectListView<*>> {
+            get() = collectActions {
                 addAction("Display content inline") {
                     icon(MaterialDesignV.VIEW_SEQUENTIAL)
                     modeChange(ContentDisplay.Inline)

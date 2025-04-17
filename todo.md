@@ -43,11 +43,22 @@
 
 - add score objects as functions in sc 
   - what about object groups
+- in which cases can we talk to scsynth directly?
+  - bus value update (could really improve live modulation performance)
+
+### Needs Fix
+
+- improve the timeline
+  - maybe only move playback cursor on timeline?
+  - display timeline not as part of the score (below or on top?)
+- resize copied object image when zooming
+- don't ask whether remove score object when creating/inlining group objets
+- why do `Button`s exclude underscores in their text?
+- reimplement startup progress bar
 
 ### Minor
 
 - lhs of assignments can be compound expressions (!!!)
-- re-enable allocated buffers (can be used with WrBuf/RdBuf SynthDefs)
 - new parameter type: buffer position (range depends on supplied buffer)
   - or use 0..1 range and scale to buffer duration
 - ability to specify added time in beats/bars/ticks
@@ -59,9 +70,6 @@
   - how to lookup which score pane is hovered?
 - live updates for envelopes
 - ability to copy and paste whole time ranges
-- improve the timeline 
-  - maybe only move playback cursor on timeline?
-- make undecorated windows resizable
 - own editor type for control references
   - can only be used in LFO argument expressions
 - what to do when user selects a new `SynthDef` for a synth object
@@ -70,28 +78,19 @@
 - unify window positioning
 - more adequate midi contexts 
   - based on focused window
-- use TAB to navigate in editor hierarchy 
-  - instead of arrow keys
-  - use `Ctrl` to navigate in larger chunks
 - add play button to samples
 - global variable in SuperCollider for list of all samples (`ALL_SAMPLES`)
 - undo managers for sub scenes 
   - undo/redo actions on tool panes
 - curve parameter type
 - asr parameter type?
-- remove display option on process object control lists
-- auto-focus parameters after typing new method
 - weird duplicating bug when pasting
-- resize copied object image when zooming
-- don't ask whether remove score object when creating/inlining group objets
 - choose alternative addresses if the default ones are busy
 - reconsider which threads to use (coroutines?)
 
 ## Long term ideas
 
-### Ability to view all the ScoreObjects
-
-- space for objects to live in, that are not (yet) in the main score
+### LiveSynth space
 
 ### Track references to objects
 

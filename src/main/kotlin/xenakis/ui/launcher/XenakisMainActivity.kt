@@ -61,13 +61,13 @@ class XenakisMainActivity(val project: XenakisProject) : Activity() {
     val processDefsWindow = makeToolWindow(processDefsPane, "Process Definitions", context)
 
     private val busRegistryPane = ControlBusRegistryPane(project.busses)
-    val busesWindow = makeToolWindow(busRegistryPane, "Control Buses", context)
+    val busesWindow = makeToolWindow(busRegistryPane, "Control Buses", context).also(Window::sizeToScene)
 
     private val samplesPane = SampleRegistryPane(project.buffers)
-    val samplesWindow = makeToolWindow(samplesPane, "Samples", context)
+    val samplesWindow = makeToolWindow(samplesPane, "Samples", context).also(Window::sizeToScene)
 
     private val buffersPane = AllocatedBufferRegistryPane(project.buffers)
-    val buffersWindow = makeToolWindow(buffersPane, "Allocated Buffers", context)
+    val buffersWindow = makeToolWindow(buffersPane, "Allocated Buffers", context).also(Window::sizeToScene)
 
     val logWindow = makeToolWindow(LogPane(Logger), "Log", context)
 
