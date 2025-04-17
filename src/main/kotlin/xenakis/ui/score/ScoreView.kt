@@ -1,7 +1,6 @@
 package xenakis.ui.score
 
 import fxutils.SubWindow
-import fxutils.registerShortcuts
 import fxutils.styleClass
 import hextant.context.Context
 import javafx.application.Platform
@@ -9,7 +8,6 @@ import javafx.geometry.Rectangle2D
 import javafx.scene.Node
 import javafx.scene.SnapshotParameters
 import javafx.scene.image.ImageView
-import javafx.scene.input.MouseEvent
 import javafx.scene.layout.Pane
 import javafx.scene.paint.Color
 import javafx.scene.robot.Robot
@@ -73,18 +71,6 @@ class ScoreView(score: Score, context: Context) : ScorePane(score, context) {
 
     fun initialize() {
         this.score.addListener(this)
-    }
-
-    override fun startSelection(pos: ObjectPosition, ev: MouseEvent) {
-        super.startSelection(pos, ev)
-        val selection = selectedArea!!
-        selection.rect.registerShortcuts {
-            on("S") {
-                displayStart = selection.time.coerceAtMost(0.0.asTime)
-                displayEnd = selection.time + selection.duration
-                repaint()
-            }
-        }
     }
 
     fun setClipboard(obj: ScoreObject, view: ScoreObjectView) {
@@ -185,7 +171,15 @@ class ScoreView(score: Score, context: Context) : ScorePane(score, context) {
         }
         displayStart = start
         displayEnd = end
+        noNegativeTimes()
         repaint()
+    }
+
+    private fun noNegativeTimes() {
+        if (displayStart < zero) {
+            displayEnd -= displayStart
+            displayStart -= displayStart
+        }
     }
 
     override fun repaint() {
@@ -279,26 +273,22 @@ class ScoreView(score: Score, context: Context) : ScorePane(score, context) {
         val newIntervalSize = (displayEnd - displayStart) * amount
         val oldIntervalCenter = (displayEnd + displayStart) / 2
         val newIntervalCenter = (getTime(evX) + oldIntervalCenter * 3) / 4
-        displayStart = newIntervalCenter - (newIntervalSize / 2)
-        displayEnd = newIntervalCenter + (newIntervalSize / 2)
-        noNegativeTimes()
-        repaint()
+        display(newIntervalCenter - (newIntervalSize / 2), newIntervalCenter + (newIntervalSize / 2))
     }
 
+    fun displaySelectedArea() {
+        val area = selectedArea ?: return
+        clearRegionSelection()
+        display(area.time, area.time + area.duration)
+    }
+    
     fun scroll(amount: Double) {
         displayStart += amount
         displayEnd += amount
-        noNegativeTimes()
+        display(displayStart + amount, displayEnd + amount)
         repaint()
     }
-
-    private fun noNegativeTimes() {
-        if (displayStart < zero) {
-            displayEnd -= displayStart
-            displayStart -= displayStart
-        }
-    }
-
+    
     companion object {
         private val QUANTIZED_PIXELS_PER_SECOND = listOf(1.0, 2.0, 5.0, 10.0, 20.0, 50.0, 100.0, 200.0, 500.0)
     }

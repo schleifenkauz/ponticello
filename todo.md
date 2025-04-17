@@ -153,14 +153,10 @@
 - resizing behaviour is not quite right
 - something is not quite right yet in `ScoreEventCollector` (especially when resizing objects...)
 - moving objects to sub score parent is buggy
-- wait for synth to be allocated before applying envelopes
 - sub-objects get buggy after unlinking group objects
   - the new objects don't get added to the `ScoreEventCollector`
-- selection based region display is not quite right
 - recording doesn't work
 - cutting doesn't work
-- weird window sizing issue with tool pane windows
-- have to initialize buses before SynthDefs!
 
 ## Was unterscheidet Ponticello von anderen DAWs?
 - Möglichkeit beliebig komplexe SynthDefs zu bauen.

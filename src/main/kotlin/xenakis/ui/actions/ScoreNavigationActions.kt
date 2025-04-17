@@ -1,7 +1,9 @@
 package xenakis.ui.actions
 
 import fxutils.actions.Action
+import fxutils.actions.isAltDown
 import fxutils.actions.isShiftDown
+import fxutils.actions.isTargetTextInput
 import fxutils.mouseX
 import org.kordamp.ikonli.material2.Material2MZ
 import reaktive.value.now
@@ -53,6 +55,13 @@ object ScoreNavigationActions : Action.Collector<ScoreView>({
         icon(Material2MZ.ZOOM_OUT)
         executes { view ->
             view.zoom(1.2, view.mouseX)
+        }
+    }
+    addAction("Display selected region") {
+        shortcut("Alt?+Z")
+        executes { view, ev ->
+            if (ev.isTargetTextInput && !ev.isAltDown()) return@executes
+            view.displaySelectedArea()
         }
     }
 })

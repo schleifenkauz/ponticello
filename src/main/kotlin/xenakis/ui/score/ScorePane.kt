@@ -293,7 +293,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
         selectedArea = selection
     }
 
-    private fun clearRegionSelection() {
+    protected fun clearRegionSelection() {
         val selection = selectedArea ?: return
         children.remove(selection.rect)
         selectedArea = null
