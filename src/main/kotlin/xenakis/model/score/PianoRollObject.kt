@@ -210,7 +210,7 @@ class PianoRollObject(
 
     override fun writeCode(
         info: ScoreObjectInfo
-    ): String = code {
+    ): String = writeCode {
         val generalEventDict = eventDictionary.editor.result.now
         for ((idx, n) in notes.withIndex()) {
             val t = n.onset

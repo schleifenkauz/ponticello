@@ -5,8 +5,8 @@ import hextant.context.Context
 import reaktive.value.ReactiveBoolean
 import reaktive.value.now
 import reaktive.value.reactiveVariable
-import xenakis.impl.code
 import xenakis.impl.superColliderPath
+import xenakis.impl.writeCode
 import xenakis.model.Settings
 import xenakis.model.obj.BusObject
 import xenakis.model.obj.SampleObject
@@ -87,7 +87,7 @@ class Recorder(private val context: Context) {
         val bus = getRecordedBus()
         client.run("s.prepareForRecord(${path.superColliderPath}, ${bus.channels.now})")
         val settings = context[Settings]
-        val code = code {
+        val code = writeCode {
             val serverLatency = settings.serverLatency.now
             appendBlock("s.makeBundle($serverLatency)") {
                 +"s.record(bus: ${bus.superColliderName})"

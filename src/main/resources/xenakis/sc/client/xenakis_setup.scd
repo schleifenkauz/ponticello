@@ -42,7 +42,7 @@ ServerTree.add {
             answer = handler.(*msg.drop(2));
             ~xenakis_addr.sendMsg('/reply', id, answer.asString);
         } { |error|
-			~xenakis_addr.sendMsg('/error', id, error.what ++ msg.asString);
+			~xenakis_addr.sendMsg('/error', id, error.what);
 			error.throw;
         }
 	}, address);

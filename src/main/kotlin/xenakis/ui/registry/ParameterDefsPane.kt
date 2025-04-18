@@ -23,8 +23,8 @@ class ParameterDefsPane(private val parameters: ParameterDefList, context: Conte
     private fun addParameter() {
         val name = PredicateTextPrompt("Parameter name", initialText = "", check = { txt ->
             Identifier.isValid(txt) && parameters.none { p -> p.name.now == txt }
-        }).showDialog(header) ?: return
-        val type = SimpleSearchableListView<ParameterType>(ParameterType.regularTypes, "Parameter type")
+        }).showDialog(header ?: this) ?: return
+        val type = SimpleSearchableListView(ParameterType.regularTypes, "Parameter type")
             .showPopup(actionBar, initialOption = ParameterType.Numerical) ?: return
         val spec = type.defaultControlSpec()
         val param = ParameterDefObject(name, spec)

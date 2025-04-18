@@ -2,8 +2,8 @@ package xenakis.model.project
 
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.serializer
+import xenakis.model.ScratchFile
 import xenakis.model.ServerOptions
-import xenakis.model.SetupCode
 import xenakis.model.flow.AudioFlows
 import xenakis.model.obj.ContextualObject
 import xenakis.model.registry.*
@@ -14,7 +14,7 @@ data class Component<T>(val name: String, val serializer: KSerializer<T>, val de
 inline fun <reified T> component(
     name: String,
     noinline default: () -> T,
-    serializer: KSerializer<T> = serializer<T>()
+    serializer: KSerializer<T> = serializer<T>(),
 ) = Component(name, serializer, default)
 
 val UI_STATE = component<UIState>("ui-state", UIState::default)
@@ -31,7 +31,7 @@ val PATTERNS = component<GlobalPatternRegistry>("patterns", GlobalPatternRegistr
 val INSTRUMENTS = component<SynthDefRegistry>("instruments", SynthDefRegistry::createDefault)
 val FLOWS = component<AudioFlows>("flows", AudioFlows::createDefault)
 val PROCESS_DEFS = component<ProcessDefRegistry>("processDefs", ProcessDefRegistry::createDefault)
-val SETUP_CODE = component<SetupCode>("setup_code", SetupCode::default)
+
 val SERVER_OPTIONS = component<ServerOptions>("server_options", ServerOptions::default)
 val OBJECTS = component<ScoreObjectRegistry>(
     "objects", ScoreObjectRegistry::createDefault,
@@ -43,9 +43,9 @@ val allComponents = listOf<Component<out ContextualObject>>(
     UI_STATE,
     GROUPS, BUSSES, BUFFERS,
     PATTERNS, INSTRUMENTS, PROCESS_DEFS,
-    FLOWS, SETUP_CODE, SERVER_OPTIONS,
+    FLOWS, SERVER_OPTIONS,
     OBJECTS, SCORE
-)
+) + ScratchFile.Type.entries.map { type -> type.component }
 
 inline operator fun <reified T : ContextualObject> XenakisProject.get(component: Component<out T>) =
     components[component] as T

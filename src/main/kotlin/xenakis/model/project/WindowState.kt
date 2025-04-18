@@ -14,7 +14,7 @@ sealed class WindowState {
     private var height: Double? = null
 
     @Transient
-    private lateinit var target: Window
+    private var target: Window? = null
 
     open fun applyTo(window: Stage, defaultSize: Dimension2D?) {
         target = window
@@ -30,6 +30,7 @@ sealed class WindowState {
     }
 
     open fun saveFromTarget() {
+        val target = target ?: return
         x = target.x.takeIf { it.isFinite() }
         y = target.y.takeIf { it.isFinite() }
         width = target.width.takeIf { it.isFinite() }

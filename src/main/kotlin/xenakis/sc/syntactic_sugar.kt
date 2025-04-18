@@ -40,9 +40,6 @@ fun task(block: CodeBlock): ScExpr {
     return Identifier("~tasks").send("add", task)
 }
 
-@Compound(nodeType = ScExpr::class, classLocation = "xenakis.sc.editor.RunExprEditor")
-fun run(block: CodeBlock): ScExpr = ScFunction(body = block).send("value")
-
 @Compound(nodeType = ScExpr::class)
 fun functionDef(name: Identifier, parameters: List<Identifier>, body: CodeBlock): ScExpr =
     Assignment(Identifier("~${name.text}"), ScFunction(parameters, body))

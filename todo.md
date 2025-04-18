@@ -48,22 +48,6 @@
 - in which cases can we talk to scsynth directly?
   - bus value update (could really improve live modulation performance)
 
-### Code windows
-
-1. Playground
-2. Setup: executed before booting server
-3. ServerBoot: executed after server has booted
-4. ServerTree: executed after the tree was cleared
-
-- Shortcut/Button for executing the selected code (`Ctrl+Enter`)
-  - either one editor or consecutive statements in a block editor
-- Result/Error popup shown with (visually indicated) option to copy
-- Command variant that also removes the executed code (`Ctrl+Shift+Enter`)
-  - useful for quick queries
-- Make it easy to copy/cut/paste between the 4 code panes
-- also have a tool window for console output
-  - maybe implement SuperCollider logging level
-
 ### Questions
 
 - is the `AdhocSynth` still needed?
@@ -75,9 +59,17 @@
   - display timeline not as part of the score (below or on top?)
 - resize copied object image when zooming
 - weird duplicating bug when pasting
+- resizing behaviour is not quite right
+- something is not quite right yet in `ScoreEventCollector` (especially when resizing objects...)
+- moving objects to sub score parent is buggy
+- sub-objects get buggy after unlinking group objects
+  - the new objects don't get added to the `ScoreEventCollector`
+- recording doesn't work
+- cutting doesn't work
 
 ### Minor
 
+- commands in tool panes to save associated component
 - ability to specify added time in beats/bars/ticks
 - option to create external automation (adding a kr-write `SynthObject`) for numerical parameter
 - select new objects after unlinking
@@ -104,6 +96,12 @@
 - choose alternative addresses if the default ones are busy
 
 ## Long term ideas
+
+### Own notification API integrating with the LogPane
+
+### Maybe use ControlsFX RangeSlider
+
+- https://controlsfx.github.io/features/rangeslider/
 
 ### LiveSynth space
 
@@ -157,16 +155,6 @@
 - dragging them stretches/shrinks all the other sections uniformly
 - double click with shift on a divider adds a new section
 - sections can have associated buses, that are used for any new Synths that have bus parameters
-
-## Bugs
-
-- resizing behaviour is not quite right
-- something is not quite right yet in `ScoreEventCollector` (especially when resizing objects...)
-- moving objects to sub score parent is buggy
-- sub-objects get buggy after unlinking group objects
-  - the new objects don't get added to the `ScoreEventCollector`
-- recording doesn't work
-- cutting doesn't work
 
 ## Was unterscheidet Ponticello von anderen DAWs?
 - Möglichkeit beliebig komplexe SynthDefs zu bauen.

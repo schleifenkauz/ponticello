@@ -30,7 +30,7 @@ fun Context.registerImplementationsFromClasspath() {
     }
 }
 
-inline fun code(writeCode: ScWriter.() -> Unit): String {
+inline fun writeCode(writeCode: ScWriter.() -> Unit): String {
     val writer = StringWriter()
     ScWriter(writer).appendGroup(writeCode)
     val code = writer.toString()

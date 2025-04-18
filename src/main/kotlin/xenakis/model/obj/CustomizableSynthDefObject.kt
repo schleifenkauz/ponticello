@@ -3,6 +3,7 @@ package xenakis.model.obj
 import bundles.publicProperty
 import bundles.set
 import hextant.context.Context
+import hextant.context.SelectionDistributor
 import hextant.context.extend
 import hextant.core.editor.defaultState
 import hextant.serial.EditorRoot
@@ -30,7 +31,7 @@ class CustomizableSynthDefObject(
     @SerialName("name") override val mutableName: ReactiveVariable<String>,
     override val parameters: ParameterDefList,
     override val color: ReactiveVariable<@Serializable(with = ColorSerializer::class) Color> = reactiveVariable(Color.WHITE),
-    val ugenGraph: EditorRoot<@Contextual CodeBlockEditor>? = null
+    val ugenGraph: EditorRoot<@Contextual CodeBlockEditor>? = null,
 ) : SynthDefObject, AbstractRenamableObject(), ConfigurableParameterizedObjectDef {
     override val canCopy: Boolean
         get() = true
@@ -81,11 +82,13 @@ class CustomizableSynthDefObject(
 
     override fun initialize(context: Context) {
         if (initialized) return
-        super.initialize(context)
-        parameters.initialize(context)
-        ugenGraph?.initialize(context.extend {
+        val myContext = context.extend {
             set(editedSynthDef, this@CustomizableSynthDefObject)
-        })
+            set(SelectionDistributor, SelectionDistributor.newInstance())
+        }
+        super.initialize(myContext)
+        parameters.initialize(myContext)
+        ugenGraph?.initialize(myContext)
     }
 
     override fun canRenameTo(newName: String): Boolean = !context[SynthDefRegistry].has(newName)

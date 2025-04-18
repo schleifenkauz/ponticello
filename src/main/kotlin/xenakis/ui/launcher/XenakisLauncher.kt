@@ -21,6 +21,7 @@ import kotlinx.serialization.serializer
 import reaktive.Observer
 import xenakis.impl.Logger
 import xenakis.impl.registerImplementationsFromClasspath
+import xenakis.model.ScratchFile
 import xenakis.model.ServerOptions
 import xenakis.model.Settings
 import xenakis.model.project.SERVER_OPTIONS
@@ -105,6 +106,10 @@ class XenakisLauncher {
             context,
             "opening project",
             clientReady = { client ->
+                val beforeBoot = folder.resolve("xenakis_data").resolve("before_boot.json")
+                    .readJson(ScratchFile.Serializer(ScratchFile.Type.BEFORE_BOOT))
+                beforeBoot.initialize(context)
+                beforeBoot.executeContents(client)
                 val serverOptions = folder.resolve("xenakis_data").resolve("server_options.json")
                     .readJson<ServerOptions>()
                 serverOptions.reboot(client)
@@ -219,7 +224,7 @@ class XenakisLauncher {
                         context[SuperColliderClient] = client
                         clientReady(client)
                     } catch (e: Exception) {
-                        Logger.error("Error while $description")
+                        Logger.error("Error while $description", e)
                         client.quit()
                         recentProjects.clearActiveProject()
                         showLauncher()
@@ -233,8 +238,7 @@ class XenakisLauncher {
                         serverReady(client)
                         bootObserver.kill()
                     } catch (e: Exception) {
-                        Logger.error("Error while $description")
-                        e.printStackTrace()
+                        Logger.error("Error while $description", e)
                         recentProjects.clearActiveProject()
                         client.quit()
                         showLauncher()

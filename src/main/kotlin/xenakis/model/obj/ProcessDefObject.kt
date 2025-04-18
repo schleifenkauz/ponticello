@@ -1,6 +1,9 @@
 package xenakis.model.obj
 
+import bundles.set
 import hextant.context.Context
+import hextant.context.SelectionDistributor
+import hextant.context.extend
 import hextant.core.editor.defaultState
 import hextant.serial.EditorRoot
 import javafx.scene.paint.Color
@@ -93,11 +96,14 @@ class ProcessDefObject(
 
     override fun initialize(context: Context) {
         if (initialized) return
-        super.initialize(context)
-        parameters.initialize(context)
-        setupBlock.initialize(context)
-        loopBlock.initialize(context)
-        deltaExpr.initialize(context)
+        val myContext = context.extend {
+            set(SelectionDistributor, SelectionDistributor.newInstance())
+        }
+        super.initialize(myContext)
+        parameters.initialize(myContext)
+        setupBlock.initialize(myContext)
+        loopBlock.initialize(myContext)
+        deltaExpr.initialize(myContext)
     }
 
     override fun rename(newName: String) {

@@ -6,7 +6,7 @@ import reaktive.Observer
 import xenakis.impl.Logger
 import xenakis.impl.Logger.Category
 import xenakis.impl.canSuperColliderTalkToMe
-import xenakis.impl.code
+import xenakis.impl.writeCode
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Future
 
@@ -42,7 +42,7 @@ interface SuperColliderClient : SuperColliderContext {
     }
 
     override fun run(writeCode: ScWriter.() -> Unit) {
-        val command = code(writeCode)
+        val command = writeCode(writeCode)
         if (command.isNotBlank()) run(command)
     }
 

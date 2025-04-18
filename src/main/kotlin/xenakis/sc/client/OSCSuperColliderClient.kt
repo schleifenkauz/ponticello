@@ -122,15 +122,14 @@ class OSCSuperColliderClient(
                 path.startsWith("/error") -> {
                     val message = getContentString(buf)
                     val id = getId(buf)
-                    val errorMessage = "Error in SuperCollider: $message"
-                    Logger.error(errorMessage, Logger.Category.SuperCollider)
+                    Logger.warn(message, Logger.Category.SuperCollider)
                     if (id != -1) {
                         val future = waitingForReply.remove(id)
                         if (future == null) {
                             Logger.error("Wasn't waiting for a reply for id $id")
                             continue
                         }
-                        future.completeExceptionally(SuperColliderException(errorMessage))
+                        future.completeExceptionally(SuperColliderException(message))
                     }
                 }
             }
@@ -160,6 +159,7 @@ class OSCSuperColliderClient(
         interrupt()
         sender.disconnect()
         receiver.close()
+        eventExecutor.shutdown()
     }
 
     companion object {

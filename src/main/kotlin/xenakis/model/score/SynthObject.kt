@@ -165,7 +165,7 @@ class SynthObject(
         return activeInstances.map { i -> i.superColliderName.now }
     }
 
-    override fun writeCode(info: ScoreObjectInfo): String = code {
+    override fun writeCode(info: ScoreObjectInfo): String = writeCode {
         writeSynthCode(this@SynthObject, info, context[Settings].serverLatency.now)
     }
 

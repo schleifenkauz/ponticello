@@ -6,8 +6,8 @@ import kotlinx.serialization.Serializable
 import reaktive.value.ReactiveVariable
 import reaktive.value.now
 import reaktive.value.reactiveVariable
-import xenakis.impl.code
 import xenakis.impl.copy
+import xenakis.impl.writeCode
 import xenakis.model.Settings
 import xenakis.model.flow.ScoreObjectInfo
 import xenakis.model.obj.ParameterizedObject
@@ -52,7 +52,7 @@ class ProcessObject(
         val uniqueName = info.uniqueName(this)
         val superColliderName = superColliderName(info.suffix)
         val associatedServerObjects = mutableListOf<String>()
-        return code {
+        return writeCode {
             appendBlock("$superColliderName = Task", endLine = false) {
                 val latency = context[Settings].serverLatency.get()
                 for (control in controls) {

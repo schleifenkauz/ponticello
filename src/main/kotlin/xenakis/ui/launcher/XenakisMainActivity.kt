@@ -15,7 +15,6 @@ import hextant.context.Properties
 import hextant.context.SelectionDistributor
 import hextant.core.view.EditorControl
 import hextant.fx.handleCommands
-import hextant.fx.initHextantScene
 import hextant.undo.UndoManager
 import hextant.undo.historyShortcuts
 import javafx.geometry.Dimension2D
@@ -23,12 +22,13 @@ import javafx.scene.Scene
 import javafx.scene.control.Label
 import javafx.scene.control.SplitPane
 import javafx.scene.layout.*
+import javafx.scene.paint.Color
 import javafx.stage.Screen
 import javafx.stage.StageStyle
-import javafx.stage.Window
 import reaktive.Observer
 import reaktive.value.now
 import xenakis.impl.Logger
+import xenakis.model.ScratchFile
 import xenakis.model.Settings
 import xenakis.model.obj.ParameterizedObject
 import xenakis.model.player.PlaybackManager
@@ -37,7 +37,6 @@ import xenakis.sc.client.SuperColliderClient
 import xenakis.ui.actions.*
 import xenakis.ui.flow.AudioFlowPane
 import xenakis.ui.impl.makeToolWindow
-import xenakis.ui.launcher.XenakisApp.Companion.primaryStage
 import xenakis.ui.midi.ContextualMidiReceiver
 import xenakis.ui.midi.ParameterControlsMidiContext
 import xenakis.ui.misc.*
@@ -81,14 +80,17 @@ class XenakisMainActivity(val project: XenakisProject) : Activity() {
     val logWindow = context.makeToolWindow(LogPane(Logger), "Log")
 
     val settingsWindow = context.makeToolWindow(SettingsPane(context[Settings], context), "Settings")
-        .also { w -> w.scene.initHextantScene(context) }
 
     private val interactionConfig = InteractionConfigBar(project.settings)
 
     val flowPaneWindow: SubWindow
 
-    val serverTreeCodeWindow: SubWindow
-    val serverSetupCodeWindow: SubWindow
+    val scratchFileWindows = ScratchFile.Type.entries.associateWith { type ->
+        val root = project[type.component].root
+        val pane = CodePane(root, ownWindow = true)
+        context.makeToolWindow(pane, type.toString(), defaultSize = Dimension2D(500.0, 500.0))
+            .also { w -> w.scene.fill = Color.BLACK }
+    }
 
     val scoreView: ScoreView
 
@@ -101,7 +103,7 @@ class XenakisMainActivity(val project: XenakisProject) : Activity() {
 
     val playback: PlaybackManager
 
-    val shellWindow = SuperColliderShellController.createShellWindow(context)
+    val shellWindow = SuperColliderOutputPane.createShellWindow(context)
 
     override val context get() = project.context
 
@@ -123,17 +125,6 @@ class XenakisMainActivity(val project: XenakisProject) : Activity() {
         val flowPane = AudioFlowPane(project.flows)
         flowPaneWindow = context.makeToolWindow(flowPane, "Audio flows", defaultSize = Dimension2D(2000.0, 800.0))
 
-        val (serverSetup, serverTree) = project[SETUP_CODE]
-        serverSetupCodeWindow = context.makeToolWindow(
-            serverSetup.control, "ServerSetup",
-            defaultSize = Dimension2D(500.0, 500.0)
-        )
-
-        serverTreeCodeWindow = context.makeToolWindow(
-            serverTree.control, "ServerTree",
-            defaultSize = Dimension2D(500.0, 500.0)
-        )
-
         playback = PlaybackManager(scoreView, project.flows)
         context[PlaybackManager] = playback
 
@@ -154,14 +145,14 @@ class XenakisMainActivity(val project: XenakisProject) : Activity() {
     }
 
     override fun beforeShowing() {
-        stage.scene.addGlobalShortcuts()
-        stage.initStyle(StageStyle.UNDECORATED)
-        ArrowKeys.registerArrowKeys(stage.scene, this)
-        stage.title = "Xenakis: ${project.name}"
-        stage.isResizable = true
+        primaryStage.scene.addGlobalShortcuts()
+        primaryStage.initStyle(StageStyle.UNDECORATED)
+        ArrowKeys.registerArrowKeys(primaryStage.scene, this)
+        primaryStage.title = "Xenakis: ${project.name}"
+        primaryStage.isResizable = true
         val state = project[UI_STATE].windowStates.getOrPut("MainWindow", ::RegularWindowState)
         val screenSize = Screen.getPrimary().bounds
-        state.applyTo(stage, defaultSize = Dimension2D(screenSize.width, screenSize.height))
+        state.applyTo(primaryStage, defaultSize = Dimension2D(screenSize.width, screenSize.height))
     }
 
     override fun afterShowing() {
@@ -192,7 +183,7 @@ class XenakisMainActivity(val project: XenakisProject) : Activity() {
                 val focusedView = context[SelectionDistributor].focusedView.now
                 if (focusedView is EditorControl<*>) {
                     val point = focusedView.localToScreen(0.0, 0.0) ?: return@on
-                    commandLinePopup.show(context[primaryStage], point.x, point.y)
+                    commandLinePopup.show(primaryStage, point.x, point.y)
                 }
             }
             historyShortcuts(context[UndoManager])
@@ -258,7 +249,5 @@ class XenakisMainActivity(val project: XenakisProject) : Activity() {
         //TODO is there more cleanup to do?
     }
 
-    companion object : PublicProperty<XenakisMainActivity> by publicProperty("XenakisMainScreen") {
-        private fun <W : Window> W.defaultToolWindowSize() = defaultSize(800.0, 800.0)
-    }
+    companion object : PublicProperty<XenakisMainActivity> by publicProperty("XenakisMainScreen")
 }

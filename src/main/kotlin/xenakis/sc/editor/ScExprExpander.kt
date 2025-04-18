@@ -150,7 +150,7 @@ class ScExprExpander() : ConfiguredExpander<ScExpr, ScExprEditor<*>>(), ScExprEd
             }
             "tuple".expand { _ -> TupleExprEditor().defaultState() }
             "named".expand { NamedExprEditor().defaultState() }
-            "block".expand { CodeBlockEditor().defaultState() }
+            "block".expand(Expander<*, *>::isStatementInBlock) { CodeBlockEditor().defaultState() }
             "lambda".expand { _ -> ScFunctionEditor().defaultState() }
             "bus".expand { BusSelector().defaultState() }
             "buf".expand { BufferSelector().defaultState() }
@@ -163,8 +163,6 @@ class ScExprExpander() : ConfiguredExpander<ScExpr, ScExprEditor<*>>(), ScExprEd
             }
             "adhoc-synth".expand { AdhocSynthEditor().defaultState() }
             "def".expand(Expander<*, *>::isStatementInBlock) { _ -> FunctionDefEditor().defaultState() }
-            "run".expand { RunExprEditor().defaultState() }
-            "synth".expand { SynthExprEditor().defaultState() }
             "in".expand { InExprEditor().defaultState() }
             "out".expand { OutExprEditor().defaultState() }
         }

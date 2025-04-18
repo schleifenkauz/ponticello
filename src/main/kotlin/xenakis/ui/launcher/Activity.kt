@@ -8,7 +8,7 @@ import javafx.scene.image.Image
 import javafx.stage.Stage
 
 abstract class Activity {
-    protected lateinit var stage: Stage
+    lateinit var primaryStage: Stage
         private set
 
     abstract val context: Context
@@ -20,7 +20,7 @@ abstract class Activity {
     protected open fun afterShowing() {}
 
     fun show(stage: Stage) {
-        this.stage = stage
+        this.primaryStage = stage
         stage.scene = Scene(getLayout())
         stage.scene.initHextantScene(context)
         stage.icons.setAll(APP_ICON)
@@ -31,7 +31,7 @@ abstract class Activity {
 
     fun hide() {
         close()
-        stage.hide()
+        primaryStage.hide()
     }
 
     protected open fun close() {}

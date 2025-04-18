@@ -1,3 +1,3 @@
 package xenakis.sc.client
 
-class SuperColliderException(message: String) : RuntimeException(message)
+class SuperColliderException(val errorMessage: String) : RuntimeException("Error in SuperCollider: $errorMessage")

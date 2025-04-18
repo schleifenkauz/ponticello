@@ -63,18 +63,18 @@ class LauncherActivity(private val launcher: XenakisLauncher) : Activity() {
     override fun getLayout(): Parent = VBox(header, recentProjects).styleClass("startup-screen")
 
     override fun beforeShowing() {
-        stage.initStyle(StageStyle.UNDECORATED)
-        stage.isMaximized = false
-        stage.title = "Xenakis Launcher"
+        primaryStage.initStyle(StageStyle.UNDECORATED)
+        primaryStage.isMaximized = false
+        primaryStage.title = "Xenakis Launcher"
     }
 
     override fun afterShowing() {
         runFXWithTimeout(100) {
-            stage.sizeToScene()
-            stage.isResizable = false
-            stage.centerOnScreen()
+            primaryStage.sizeToScene()
+            primaryStage.isResizable = false
+            primaryStage.centerOnScreen()
         }
-        stage.scene.root.registerShortcuts(launcherActions.withContext(launcher) + QuitAction.withContext(launcher))
+        primaryStage.scene.root.registerShortcuts(launcherActions.withContext(launcher) + QuitAction.withContext(launcher))
     }
 
     private class ProjectBox(val activity: LauncherActivity, val projectFile: File) : HBox() {

@@ -29,10 +29,10 @@ class LoadingScreen(override val context: Context) : Activity(), ProgressIndicat
     override fun getLayout() = VBox(logo, StackPane(progressBar, statusText))
 
     override fun beforeShowing() {
-        stage.sizeToScene()
-        stage.titleProperty().bind(statusText.textProperty())
-        stage.initStyle(StageStyle.UNDECORATED)
-        stage.scene.registerShortcuts {
+        primaryStage.sizeToScene()
+        primaryStage.titleProperty().bind(statusText.textProperty())
+        primaryStage.initStyle(StageStyle.UNDECORATED)
+        primaryStage.scene.registerShortcuts {
             on("Ctrl+Q") {
                 if (context.hasProperty(SuperColliderClient)) context[SuperColliderClient].quit()
                 context[XenakisLauncher].quitApplication()
@@ -55,7 +55,6 @@ class LoadingScreen(override val context: Context) : Activity(), ProgressIndicat
     }
 
     private fun updateProgress(progress: Double, status: String) {
-        println("Progress: $progress, Status: $status")
         progressBar.progress = progress
         statusText.text = status
     }

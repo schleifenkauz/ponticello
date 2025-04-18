@@ -8,7 +8,7 @@ import kotlinx.serialization.Serializable
 import reaktive.value.ReactiveVariable
 import reaktive.value.now
 import reaktive.value.reactiveVariable
-import xenakis.impl.code
+import xenakis.impl.writeCode
 import xenakis.model.Settings
 import xenakis.model.flow.ScoreObjectInfo
 import xenakis.sc.editor.CodeBlockEditor
@@ -33,7 +33,7 @@ class TaskObject(
         code.initialize(context)
     }
 
-    override fun writeCode(info: ScoreObjectInfo): String = code {
+    override fun writeCode(info: ScoreObjectInfo): String = writeCode {
         val name = superColliderName(info.suffix)
         appendBlock("$name = Task", endLine = false) {
             +"${context[Settings].serverLatency.now}.wait"

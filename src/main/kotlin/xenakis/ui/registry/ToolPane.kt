@@ -24,7 +24,7 @@ abstract class ToolPane : VBox() {
     lateinit var content: Node
         private set
     private var headerContent: Node? = null
-    lateinit var header: Region
+    var header: Region? = null
         private set
 
     lateinit var actionBar: ActionBar
@@ -41,7 +41,8 @@ abstract class ToolPane : VBox() {
         this.headerContent = headerContent
         this.content = content
         header = createHeader(title, actions)
-        children.addAll(header, content)
+        if (header != null) children.add(header)
+        children.add(content)
         setVgrow(content, ALWAYS)
         registerShortcuts(actions)
     }
@@ -57,7 +58,8 @@ abstract class ToolPane : VBox() {
         headerContent?.requestFocus() ?: content.requestFocus()
     }
 
-    private fun createHeader(title: ReactiveString?, headerActions: List<ContextualizedAction>): HBox {
+    private fun createHeader(title: ReactiveString?, headerActions: List<ContextualizedAction>): HBox? {
+        if (title == null && headerActions.isEmpty() && headerContent == null) return null
         actionBar = ActionBar(headerActions, buttonStyle = "medium-icon-button")
         val box = HBox(infiniteSpace(), actionBar).styleClass("tool-pane-header")
         if (headerContent != null) box.children.add(0, headerContent)

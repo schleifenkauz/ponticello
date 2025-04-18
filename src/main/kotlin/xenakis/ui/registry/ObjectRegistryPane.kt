@@ -5,6 +5,7 @@ import fxutils.actions.collectActions
 import fxutils.actions.registerShortcuts
 import fxutils.plural
 import fxutils.styleClass
+import hextant.undo.UndoManager
 import javafx.geometry.Point2D
 import org.kordamp.ikonli.materialdesign2.MaterialDesignP
 import org.kordamp.ikonli.materialdesign2.MaterialDesignS
@@ -12,6 +13,7 @@ import reaktive.value.reactiveValue
 import xenakis.impl.Logger
 import xenakis.model.registry.NamedObject
 import xenakis.model.registry.ObjectRegistry
+import xenakis.ui.actions.UndoRedoActions
 import xenakis.ui.controls.NamePrompt
 
 abstract class ObjectRegistryPane<O : NamedObject>(
@@ -42,6 +44,7 @@ abstract class ObjectRegistryPane<O : NamedObject>(
 
     companion object {
         private val headerActions = collectActions<ObjectRegistryPane<*>> {
+            addAll(UndoRedoActions) { pane -> pane.registry.context[UndoManager] }
             addAction("Create object") {
                 description { p -> reactiveValue("Create new ${p.registry.objectType}") }
                 shortcut("Ctrl+PLUS")
