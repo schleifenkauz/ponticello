@@ -69,7 +69,7 @@
 
 ### Minor
 
-- commands in tool panes to save associated component
+- commands in tool panes to save associated component?
 - ability to specify added time in beats/bars/ticks
 - option to create external automation (adding a kr-write `SynthObject`) for numerical parameter
 - select new objects after unlinking

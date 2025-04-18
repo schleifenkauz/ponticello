@@ -44,7 +44,7 @@ import java.util.concurrent.Executors
 
 class CodePane(
     private val rootEditor: CodeBlockEditor?,
-    rootControl: Parent,
+    private val rootControl: Parent,
     private val context: Context,
     ownWindow: Boolean = false,
 ) : StackPane() {
@@ -74,6 +74,10 @@ class CodePane(
             children.add(rootControl)
             registerShortcuts(listOf(evaluateSelectedCodeAction.withContext(this)))
         }
+    }
+
+    override fun requestFocus() {
+        rootControl.requestFocus()
     }
 
     private fun executeSelectedCode(delete: Boolean) {
@@ -193,7 +197,7 @@ class CodePane(
     private fun showResult(result: String, anchorNode: Region, error: Boolean) {
         Platform.runLater {
             val copyButton = copyResultAction.withContext(result).makeButton("medium-icon-button")
-            val resultText = Text(result)
+            val resultText = Text(limitString(result, 100))
             resultText.fill = if (error) Color.RED else Color.WHITE
             val layout = HBox(HBox(resultText).centerChildren(), VBox(infiniteSpace(), copyButton))
                 .styleClass("result-pane")
@@ -207,6 +211,10 @@ class CodePane(
             popup.show(anchorNode, offset)
         }
     }
+
+    private fun limitString(input: String, maxLength: Int): String =
+        if (input.length > maxLength) input.take(maxLength) + "..."
+        else input
 
     companion object {
         private val resultWaiter = Executors.newCachedThreadPool()

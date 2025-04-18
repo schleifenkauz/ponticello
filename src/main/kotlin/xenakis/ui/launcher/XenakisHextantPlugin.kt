@@ -59,13 +59,18 @@ object XenakisHextantPlugin : PluginInitializer({
     registerCommand<ScFunctionEditorControl, Unit> {
         shortName = "multiline"
         name = "Convert to multi-line function"
-        executing { ctrl -> ctrl.arguments[SINGLE_LINE_FUNCTION] = false }
+        applicableIf { ctrl -> ctrl.canBeSingleLine.now && ctrl.arguments[SINGLE_LINE_FUNCTION] }
+        executing { ctrl ->
+            ctrl.arguments[SINGLE_LINE_FUNCTION] = false
+        }
     }
     registerCommand<ScFunctionEditorControl, Unit> {
         shortName = "single line"
         name = "Convert to single-line function"
-        applicableIf { ctrl -> ctrl.canBeSingleLine.now }
-        executing { ctrl -> ctrl.arguments[SINGLE_LINE_FUNCTION] = true }
+        applicableIf { ctrl -> ctrl.canBeSingleLine.now && !ctrl.arguments[SINGLE_LINE_FUNCTION] }
+        executing { ctrl ->
+            ctrl.arguments[SINGLE_LINE_FUNCTION] = true
+        }
     }
 
     registerCommand<MessageSendEditorControl, Unit> {
@@ -165,7 +170,7 @@ object XenakisHextantPlugin : PluginInitializer({
             shortName = "multiline"
             name = "Put $itemType on multiple lines"
             defaultShortcut("Alt+L")
-            applicableIf { ctrl -> ctrl.arguments[MULTILINE] == false }
+            applicableIf { ctrl -> !ctrl.arguments[MULTILINE] }
             executing { ctrl, _ ->
                 val selectedBefore = ctrl.context[SelectionDistributor].focusedView.now
                 ctrl.arguments[MULTILINE] = true
@@ -178,7 +183,7 @@ object XenakisHextantPlugin : PluginInitializer({
             shortName = "singleLine"
             name = "Put $itemType on single line"
             defaultShortcut("Alt+L")
-            applicableIf { ctrl -> ctrl.arguments[MULTILINE] == true }
+            applicableIf { ctrl -> ctrl.arguments[MULTILINE] }
             executing { ctrl, _ ->
                 val selectedBefore = ctrl.context[SelectionDistributor].focusedView.now
                 ctrl.arguments[MULTILINE] = false
