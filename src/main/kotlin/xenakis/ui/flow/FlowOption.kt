@@ -16,19 +16,17 @@ import xenakis.ui.controls.NamePrompt
 import xenakis.ui.registry.SimpleSearchableRegistryView
 
 sealed interface FlowOption {
-    fun createFlow(context: Context, anchor: Region, associatedBus: BusObject, onCreate: (AudioFlow) -> Unit)
+    fun createFlow(context: Context, anchor: Region, associatedBus: BusObject): AudioFlow?
 
     data object Send : FlowOption {
         override fun createFlow(
             context: Context,
             anchor: Region,
             associatedBus: BusObject,
-            onCreate: (AudioFlow) -> Unit
-        ) {
+        ): AudioFlow? {
             val selected = SimpleSearchableRegistryView(context[BusRegistry], "Target bus")
-                .showPopup(anchor) ?: return
-            onCreate(SendFlow.createFor(associatedBus, selected, context))
-
+                .showPopup(anchor) ?: return null
+            return SendFlow.createFor(associatedBus, selected, context)
         }
     }
 
@@ -37,8 +35,7 @@ sealed interface FlowOption {
             context: Context,
             anchor: Region,
             associatedBus: BusObject,
-            onCreate: (AudioFlow) -> Unit
-        ) = onCreate(UtilityFlow())
+        ): AudioFlow = UtilityFlow()
     }
 
     data object Code : FlowOption {
@@ -46,8 +43,7 @@ sealed interface FlowOption {
             context: Context,
             anchor: Region,
             associatedBus: BusObject,
-            onCreate: (AudioFlow) -> Unit
-        ) = onCreate(CodeFlow.createFor(associatedBus))
+        ): AudioFlow = CodeFlow.createFor(associatedBus)
     }
 
     data object Placeholder : FlowOption {
@@ -55,12 +51,11 @@ sealed interface FlowOption {
             context: Context,
             anchor: Region,
             associatedBus: BusObject,
-            onCreate: (AudioFlow) -> Unit
-        ) {
-            val groupName = NamePrompt(context[GroupRegistry], "Group name", "").showDialog(anchor) ?: return
+        ): AudioFlow? {
+            val groupName = NamePrompt(context[GroupRegistry], "Group name", "").showDialog(anchor) ?: return null
             val group = GroupObject(reactiveVariable(groupName))
             context[GroupRegistry].add(group)
-            onCreate(ScoreObjectPlaceholder(group.reference()))
+            return ScoreObjectPlaceholder(group.reference())
         }
     }
 
@@ -69,8 +64,7 @@ sealed interface FlowOption {
             context: Context,
             anchor: Region,
             associatedBus: BusObject,
-            onCreate: (AudioFlow) -> Unit
-        ) = onCreate(SynthFlow.createFor(associatedBus, def, context))
+        ): AudioFlow = SynthFlow.createFor(associatedBus, def, context)
 
         override fun toString(): String = "Synth ${def.name.now}"
     }
@@ -78,7 +72,7 @@ sealed interface FlowOption {
     companion object {
         private val simpleOptions = listOf(Code, Send, Utility, Placeholder)
 
-        fun getOptions(context: Context) =
+        fun getOptions(context: Context): List<FlowOption> =
             simpleOptions + context[SynthDefRegistry].all().filterIsInstance<SynthDefObject>().map(::Synth)
     }
 }

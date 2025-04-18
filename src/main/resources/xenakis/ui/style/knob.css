@@ -2,17 +2,9 @@
     -fx-stroke-width: 2px;
 }
 
-.knob-mass {
-    -fx-fill: black;
-}
-
 .knob-mass:hover {
     -fx-border-width: 2px;
     -fx-border-color: green;
-}
-
-.knob-dot {
-    -fx-fill: black;
 }
 
 .knob-dot:hover {
@@ -36,7 +28,6 @@
 }
 
 .knob-arc {
-    -fx-stroke: black;
     -fx-fill: transparent;
     -fx-stroke-width: 3px;
 }

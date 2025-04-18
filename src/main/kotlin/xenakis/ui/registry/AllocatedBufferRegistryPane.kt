@@ -83,6 +83,7 @@ class AllocatedBufferRegistryPane(buffers: BufferRegistry) : ObjectRegistryPane<
             }
             addAction("Reallocate") {
                 icon(Material2MZ.SYNC)
+                shortcut("Ctrl+U")
                 executes { box -> sync(box) }
             }
         }

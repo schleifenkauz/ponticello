@@ -4,7 +4,6 @@ import fxutils.actions.button
 import fxutils.setBackground
 import fxutils.styleClass
 import javafx.scene.control.ScrollPane
-import javafx.scene.control.ScrollPane.ScrollBarPolicy
 import javafx.scene.layout.BorderPane
 import javafx.scene.layout.HBox
 import javafx.scene.layout.Priority
@@ -27,10 +26,8 @@ class AudioFlowPane(
     init {
         styleClass.add("flow-pane")
         setBackground(Color.BLACK)
-        val scrollPane = ScrollPane(hbox).apply {
-            vbarPolicy = ScrollBarPolicy.NEVER
-            isFitToHeight = true
-        }
+        val scrollPane = ScrollPane(hbox)
+        scrollPane.isFitToHeight = true
         setup(content = HBox(scrollPane, makeAddBusButton()), title = null as String?)
         buses.addListener(this)
     }

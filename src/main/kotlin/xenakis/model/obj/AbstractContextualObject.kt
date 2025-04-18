@@ -18,6 +18,10 @@ abstract class AbstractContextualObject : ContextualObject {
 
     final override val context: Context get() = _context
 
+    protected fun setContext(context: Context) {
+        _context = context
+    }
+
     override fun initialize(context: Context) {
         //check(initialized) { "$this already initialized!" }
         if (initialized) return

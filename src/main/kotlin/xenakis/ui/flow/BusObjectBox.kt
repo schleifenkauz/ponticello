@@ -34,7 +34,6 @@ class BusObjectBox(obj: BusObject) : HBox(5.0) {
         )
     }
 
-
     companion object {
         private val actions = collectActions<BusObject> {
             addAction("Monitor bus") {
@@ -44,7 +43,7 @@ class BusObjectBox(obj: BusObject) : HBox(5.0) {
                     bus.context[SuperColliderClient].run("${bus.superColliderName}.scope;")
                 }
             }
-            addAll(RegistryObjectActions.all(BusRegistry))
+            add(RegistryObjectActions.deleteAction(BusRegistry))
         }
     }
 }

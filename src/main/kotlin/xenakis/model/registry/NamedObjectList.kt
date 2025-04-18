@@ -19,7 +19,7 @@ abstract class NamedObjectList<O : NamedObject> : List<O>, AbstractContextualObj
     override fun initialize(context: Context) {
         super.initialize(context)
         for (obj in objects) {
-            obj.initialize(context)
+            initializeObject(obj)
         }
     }
 
@@ -63,12 +63,16 @@ abstract class NamedObjectList<O : NamedObject> : List<O>, AbstractContextualObj
         add(obj, index)
     }
 
+    protected open fun initializeObject(obj: O) {
+        obj.initialize(context)
+    }
+
     open fun add(obj: O, idx: Int = objects.size) {
         if (obj.name.now != NamedObject.NO_NAME && has(obj.name.now)) {
             Logger.severe("$objectType with name ${obj.name.now} already registered.", Logger.Category.Registries)
             return
         }
-        obj.initialize(context)
+        initializeObject(obj)
         objects.add(idx, obj)
         Logger.info("Adding $obj to ${javaClass.simpleName}", Logger.Category.Registries)
         obj.onAdded(context)
@@ -104,6 +108,7 @@ abstract class NamedObjectList<O : NamedObject> : List<O>, AbstractContextualObj
         objects.removeAt(oldIdx)
         if (oldIdx < idx) objects.add(idx, obj)
         else objects.add(idx, obj)
+        onMoved(obj, oldIdx, idx)
         context[UndoManager].record(ListEdit.MoveObject(this@NamedObjectList, obj, oldIdx, idx))
         listeners.notifyListeners { moved(obj, idx) }
     }
@@ -130,6 +135,7 @@ abstract class NamedObjectList<O : NamedObject> : List<O>, AbstractContextualObj
 
     protected open fun onRemoved(obj: O, idx: Int) {}
 
+    protected open fun onMoved(obj: O, oldIdx: Int, newIdx: Int) {}
 
 
     interface Listener<in O : NamedObject> {

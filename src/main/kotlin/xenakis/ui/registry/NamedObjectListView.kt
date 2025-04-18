@@ -5,10 +5,12 @@ import fxutils.actions.Action
 import fxutils.actions.collectActions
 import fxutils.actions.registerActions
 import javafx.geometry.Dimension2D
+import javafx.scene.Node
 import javafx.scene.Parent
 import javafx.scene.control.Control
 import javafx.scene.control.Label
 import javafx.scene.control.ScrollPane
+import javafx.scene.control.Tooltip
 import javafx.scene.input.Clipboard
 import javafx.scene.layout.HBox
 import javafx.scene.layout.Priority
@@ -85,15 +87,39 @@ class NamedObjectListView<O : NamedObject>(
         } else autoResize()
     }
 
+    private fun addObjectButton(): Node {
+        val button = button("Add ${source.objectType}") {
+            addObject()
+        }
+        button.tooltip = Tooltip("Type Ctrl+PLUS to add a new ${source.objectType}.")
+        return if (config.centerAddObjectButton) VBox(button).centerChildren() else button
+    }
+
+    private fun addObject() {
+        val newObj = config.createNewObject() ?: return
+        source.add(newObj)
+        if (filter(newObj)) {
+            select(newObj)
+        }
+    }
+
+    private fun emptyDisplay(): VBox {
+        val objectType = plural(source.objectType)
+        val emptyDisplay = VBox(Label("No $objectType to display"))
+        emptyDisplay.centerChildren()
+        emptyDisplay.setPadding(10.0)
+        return emptyDisplay
+    }
+
     private fun updateRoot(mode: DisplayMode) {
         if (boxes.isEmpty()) {
-            val objectType = plural(source.objectType).lowercase()
-            val emptyDisplay = VBox(Label("No $objectType to display")).centerChildren()
-            emptyDisplay.setPadding(10.0)
-            setRoot(emptyDisplay)
+            val root =
+                if (config.enableAddObjectButton) addObjectButton()
+                else emptyDisplay()
+            setRoot(root)
         } else {
             if (mode != DisplayMode.DetailsPane) {
-                setRoot(itemsScrollPane)
+                setRoot(itemCellsLayout())
             }
             if (mode == DisplayMode.SubWindow) {
                 selectedBox?.showSubWindow()
@@ -105,11 +131,15 @@ class NamedObjectListView<O : NamedObject>(
         }
     }
 
+    private fun itemCellsLayout() =
+        if (config.enableAddObjectButton) VBox(itemsScrollPane, addObjectButton())
+        else itemsScrollPane
+
     private fun displayContent(box: ObjectBox<O>?) {
         val content = box?.content ?: Region()
         displayedContent = content as? ToolPane ?: ScrollPane(content)
         HBox.setHgrow(displayedContent, Priority.ALWAYS)
-        setRoot(HBox(itemsScrollPane, displayedContent))
+        setRoot(HBox(itemCellsLayout(), displayedContent))
     }
 
     private fun autoResize() {
@@ -250,6 +280,10 @@ class NamedObjectListView<O : NamedObject>(
 
     companion object {
         val listActions = collectActions<NamedObjectListView<*>> {
+            addAction("Add object") {
+                shortcut("Ctrl+PLUS")
+                executes { list -> list.addObject() }
+            }
             addAction("Rename selected") {
                 shortcut("F2")
                 executes { list -> list.renameSelected() }

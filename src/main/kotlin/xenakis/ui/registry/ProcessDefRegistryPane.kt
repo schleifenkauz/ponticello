@@ -7,7 +7,6 @@ import javafx.scene.Node
 import javafx.scene.Parent
 import org.kordamp.ikonli.Ikon
 import org.kordamp.ikonli.material2.Material2AL
-import org.kordamp.ikonli.materialdesign2.MaterialDesignE
 import xenakis.model.obj.ProcessDefObject
 import xenakis.model.registry.GlobalDefinitionLibrary
 import xenakis.model.registry.ProcessDefRegistry
@@ -35,13 +34,6 @@ class ProcessDefRegistryPane(
 
     companion object {
         private val actions = collectActions<ObjectBox<ProcessDefObject>> {
-            addAction("Save to global library") {
-                icon(MaterialDesignE.EXPORT_VARIANT)
-                executes { box ->
-                    val def = box.obj
-                    def.context[GlobalDefinitionLibrary.processDefs].saveToGlobalLib(def, anchorNode = box)
-                }
-            }
         }
     }
 }

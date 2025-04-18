@@ -10,6 +10,7 @@ import javafx.scene.control.Tooltip
 import javafx.scene.input.KeyEvent
 import javafx.scene.input.MouseEvent
 import javafx.scene.layout.Pane
+import javafx.scene.paint.Color
 import javafx.scene.shape.Arc
 import javafx.scene.shape.Circle
 import javafx.scene.shape.Line
@@ -23,12 +24,13 @@ import kotlin.math.*
 
 class Knob(
     val parameter: String,
-    val variable: ReactiveVariable<Decimal>,
+    private val variable: ReactiveVariable<Decimal>,
     private val spec: NumericalControlSpec,
-    private val radius: Double = DEFAULT_RADIUS
+    private val radius: Double = DEFAULT_RADIUS,
+    private val color: Color = Color.BLACK
 ) : Control() {
     private val knobDots = mutableListOf<Circle>()
-    private val knob = Circle(radius, radius, radius - 10) styleClass "knob-mass"
+    private val knob = Circle(radius, radius, radius - 10, color) styleClass "knob-mass"
     private val indicator = Line(radius, radius, 0.0, 0.0) styleClass "knob-indicator"
     private val valueLabel = Label() styleClass "knob-value"
 
@@ -123,7 +125,7 @@ class Knob(
         if (discreteValues <= MAX_DOTS) {
             for (i in 0..discreteValues) {
                 val v = (spec.min.get() + i * spec.step.get()).withPrecision(spec.precision)
-                val dot = Circle(DOT_RADIUS) styleClass "knob-dot"
+                val dot = Circle(DOT_RADIUS, color) styleClass "knob-dot"
                 val p = getPoint(v, radius - 5)
                 dot.centerX = p.x
                 dot.centerY = p.y
@@ -132,6 +134,7 @@ class Knob(
             children.addAll(knobDots)
         } else {
             val arc = Arc(radius, radius, radius - 5, radius - 5, 210.0, -240.0) styleClass "knob-arc"
+            arc.stroke = color
             children.add(arc)
         }
     }

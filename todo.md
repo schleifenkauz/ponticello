@@ -48,6 +48,22 @@
 - in which cases can we talk to scsynth directly?
   - bus value update (could really improve live modulation performance)
 
+### Code windows
+
+1. Playground
+2. Setup: executed before booting server
+3. ServerBoot: executed after server has booted
+4. ServerTree: executed after the tree was cleared
+
+- Shortcut/Button for executing the selected code (`Ctrl+Enter`)
+  - either one editor or consecutive statements in a block editor
+- Result/Error popup shown with (visually indicated) option to copy
+- Command variant that also removes the executed code (`Ctrl+Shift+Enter`)
+  - useful for quick queries
+- Make it easy to copy/cut/paste between the 4 code panes
+- also have a tool window for console output
+  - maybe implement SuperCollider logging level
+
 ### Questions
 
 - is the `AdhocSynth` still needed?
@@ -144,10 +160,6 @@
 - dragging them stretches/shrinks all the other sections uniformly
 - double click with shift on a divider adds a new section
 - sections can have associated buses, that are used for any new Synths that have bus parameters
-
-### Nicer console
-
-- use Hextant editors for commands
 
 ## Bugs
 

@@ -15,6 +15,9 @@ import xenakis.model.registry.NamedObject.Companion.NO_NAME
 
 interface ObjectBoxConfig<O : NamedObject> {
     val enableReordering: Boolean get() = false
+    val enableAddObjectButton: Boolean get() = false
+
+    val centerAddObjectButton: Boolean get() = false
 
     val buttonStyle: String get() = "medium-icon-button"
 
@@ -35,6 +38,8 @@ interface ObjectBoxConfig<O : NamedObject> {
     fun dataFormat(obj: O): DataFormat? = null
 
     fun getDefaultDisplayName(obj: O): ReactiveString = reactiveValue(NO_NAME)
+
+    fun createNewObject(): O? = null
 
     fun onSelected(obj: O) {}
 

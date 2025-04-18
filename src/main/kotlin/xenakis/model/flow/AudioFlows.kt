@@ -3,6 +3,7 @@ package xenakis.model.flow
 import hextant.context.Context
 import hextant.core.editor.ListenerManager
 import hextant.undo.UndoManager
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import reaktive.Observer
@@ -15,10 +16,7 @@ import xenakis.model.obj.AbstractContextualObject
 import xenakis.model.obj.BusObject
 import xenakis.model.obj.BusReference
 import xenakis.model.obj.GroupObject
-import xenakis.model.registry.BusRegistry
-import xenakis.model.registry.GroupRegistry
-import xenakis.model.registry.NamedObjectList
-import xenakis.model.registry.reference
+import xenakis.model.registry.*
 
 @Serializable
 class AudioFlows(
@@ -58,17 +56,7 @@ class AudioFlows(
         _flows = _flows.mapKeysTo(mutableMapOf()) { (ref, _) -> ref.resolve(busRegistry); ref }
         for (bus in busRegistry) {
             numFlows[bus] = reactiveVariable(0)
-            if (bus.reference() !in _flows) _flows[bus.reference()] = AudioFlowList()
-            _flows.getValue(bus.reference()).initialize(context)
-        }
-        for ((bus, flows) in _flows) {
-            if (flows.isEmpty()) continue
-            flows.first().isFirst.set(true)
-            flows.last().isLast.set(true)
-            for (flow in flows) {
-                flow.initialize(context, bus.get()!!) //TODO is it guaranteed that the bus is resolved?
-                onAddFlow(flow)
-            }
+            _flows.getOrPut(bus.reference()) { AudioFlowList() }.initialize(context, this, bus)
         }
     }
 
@@ -108,29 +96,29 @@ class AudioFlows(
     }
 
     fun addFlow(flow: AudioFlow, index: Int = associatedFlows(flow.associatedBus).size) {
-        changeFlows(flow.associatedBus) { add(flow, index) }
-        onAddFlow(flow)
-        undoManager.record(AudioFlowsEdit.AddFlow(this, flow))
-        listeners.notifyListeners { addedFlow(flow, index) }
-        if (flow.isActive.now) listeners.notifyListeners { activatedFlow(flow) }
+        flows.getValue(flow.associatedBus.reference()).add(flow, index)
     }
 
-    private fun onAddFlow(flow: AudioFlow) {
+    fun removeFlow(flow: AudioFlow) {
+        flows.getValue(flow.associatedBus.reference()).remove(flow)
+    }
+
+    private fun onAddFlow(flow: AudioFlow, idx: Int) {
         numFlows.getValue(flow.associatedBus).now++
         activationObservers[flow] = flow.isActive.observe { _, _, active ->
             if (active) listeners.notifyListeners { activatedFlow(flow) }
             else listeners.notifyListeners { deactivatedFlow(flow) }
         }
         if (flow is ScoreObjectPlaceholder) placeholders[flow.group] = flow
+        listeners.notifyListeners { addedFlow(flow, idx) }
+        if (flow.isActive.now) listeners.notifyListeners { activatedFlow(flow) }
     }
 
-    fun removeFlow(flow: AudioFlow) {
-        changeFlows(flow.associatedBus) { remove(flow) }
+    private fun onRemovedFlow(flow: AudioFlow, idx: Int) {
         numFlows.getValue(flow.associatedBus).now--
         val obs = activationObservers.remove(flow)
         if (obs == null) Logger.warn("Couldn't kill activation observer of $flow", Logger.Category.AudioFlow)
         else obs.kill()
-        undoManager.record(AudioFlowsEdit.RemoveFlow(this, flow))
         if (flow is ScoreObjectPlaceholder) {
             placeholders.remove(flow.groupRef.get())
             context[GroupRegistry].remove(flow.group)
@@ -142,28 +130,7 @@ class AudioFlows(
     }
 
     fun moveFlow(flow: AudioFlow, index: Int) {
-        changeFlows(flow.associatedBus) {
-            check(index in indices) { "Invalid index $index ($flow)" }
-            val oldIndex = indexOf(flow)
-            if (index == oldIndex) return
-            remove(flow)
-            add(flow, index)
-            undoManager.record(AudioFlowsEdit.MoveFlow(this@AudioFlows, flow, oldIndex, index))
-            listeners.notifyListeners { movedFlow(flow, oldIndex, index) }
-        }
-    }
-
-    private inline fun changeFlows(bus: BusObject, action: AudioFlowList.() -> Unit) {
-        val associatedFlows = _flows.getValue(bus.reference())
-        if (!associatedFlows.isEmpty()) {
-            associatedFlows.first().isFirst.now = false
-            associatedFlows.last().isLast.now = false
-        }
-        associatedFlows.action()
-        if (!associatedFlows.isEmpty()) {
-            associatedFlows.first().isFirst.now = true
-            associatedFlows.last().isLast.now = true
-        }
+        flows.getValue(flow.associatedBus.reference()).move(flow, index)
     }
 
     class FlowReference(private val busReference: BusReference, private val index: Int) : java.io.Serializable {
@@ -183,6 +150,80 @@ class AudioFlows(
 
     fun numberOfFlows(associatedBus: BusObject): ReactiveInt = numFlows.getValue(associatedBus)
 
+    @Serializable(with = AudioFlowList.Serializer::class)
+    @SerialName("AudioFlowList")
+    class AudioFlowList(
+        override val objects: MutableList<AudioFlow> = mutableListOf(),
+    ) : NamedObjectList<AudioFlow>() {
+        private lateinit var allFlows: AudioFlows
+        private lateinit var associatedBus: BusObject
+
+        override val objectType: String
+            get() = "Flow"
+
+        fun initialize(context: Context, allFlows: AudioFlows, bus: BusObject) {
+            this.allFlows = allFlows
+            associatedBus = bus
+            setContext(context)
+            for ((idx, obj) in objects.withIndex()) {
+                obj.initialize(context, associatedBus)
+                allFlows.onAddFlow(obj, idx)
+            }
+            if (!isEmpty()) {
+                first().isFirst.set(true)
+                last().isLast.set(true)
+            }
+        }
+
+        override fun initializeObject(obj: AudioFlow) {
+            obj.initialize(context, associatedBus)
+        }
+
+        override fun onAdded(obj: AudioFlow, idx: Int) {
+            allFlows.onAddFlow(obj, idx)
+            if (idx == 0) {
+                obj.isFirst.set(true)
+                if (size > 1) get(1).isFirst.set(false)
+            }
+            if (idx == size - 1) {
+                obj.isLast.set(true)
+                if (size > 1) get(size - 2).isLast.set(false)
+            }
+        }
+
+        override fun onRemoved(obj: AudioFlow, idx: Int) {
+            allFlows.onRemovedFlow(obj, idx)
+            if (idx == 0 && isNotEmpty()) {
+                first().isFirst.set(true)
+            }
+            if (idx == size && isNotEmpty()) {
+                last().isLast.set(true)
+            }
+        }
+
+        override fun onMoved(obj: AudioFlow, oldIdx: Int, newIdx: Int) {
+            allFlows.listeners.notifyListeners { movedFlow(obj, oldIdx, newIdx) }
+            if (oldIdx == 0) {
+                first().isFirst.set(true)
+            }
+            if (oldIdx == size - 1) {
+                last().isLast.set(true)
+            }
+            if (newIdx == 0) {
+                obj.isFirst.set(true)
+                get(1).isFirst.set(false)
+            }
+            if (newIdx == size - 1) {
+                obj.isLast.set(true)
+                get(size - 2).isLast.set(false)
+            }
+        }
+
+        object Serializer : NamedObjectListSerializer<AudioFlow, AudioFlowList>(
+            kotlinx.serialization.serializer(), ::AudioFlowList
+        )
+    }
+
     companion object {
         fun createDefault(): AudioFlows = AudioFlows(mutableMapOf())
     }
@@ -197,7 +238,5 @@ class AudioFlows(
         fun deactivatedFlow(flow: AudioFlow) {}
 
         fun movedFlow(flow: AudioFlow, oldIndex: Int, newIndex: Int) {}
-
-        fun movedNode(node: BusObject) {}
     }
 }

@@ -1,7 +1,10 @@
 package xenakis.ui.flow
 
 import bundles.createBundle
-import fxutils.actions.*
+import fxutils.actions.Action
+import fxutils.actions.ContextualizedAction
+import fxutils.actions.collectActions
+import fxutils.actions.registerShortcuts
 import fxutils.centerChildren
 import fxutils.prompt.SimpleSearchableListView
 import fxutils.setupDropArea
@@ -10,13 +13,13 @@ import javafx.scene.Parent
 import javafx.scene.control.Slider
 import javafx.scene.input.DataFormat
 import javafx.scene.input.DragEvent
+import javafx.scene.input.Dragboard
 import javafx.scene.input.TransferMode
-import javafx.scene.layout.BorderPane
 import javafx.scene.layout.HBox
 import javafx.scene.layout.Priority
 import javafx.scene.layout.VBox
+import javafx.scene.paint.Color
 import org.kordamp.ikonli.material2.Material2AL
-import org.kordamp.ikonli.materialdesign2.MaterialDesignP
 import org.kordamp.ikonli.materialdesign2.MaterialDesignR
 import reaktive.value.ReactiveString
 import reaktive.value.binding.map
@@ -46,34 +49,47 @@ import xenakis.ui.score.ParameterControlsPane
 
 class FlowChainView(
     private val flows: AudioFlows,
-    private val associatedBus: BusObject
+    private val associatedBus: BusObject,
 ) : VBox(5.0), ObjectBoxConfig<AudioFlow> {
     private val busBox = BusObjectBox(associatedBus)
 
-    val flowsList = NamedObjectListView(flows.associatedFlows(associatedBus), this)
+    private val myFlows = flows.associatedFlows(associatedBus)
+    private val flowsList = NamedObjectListView(myFlows, this)
 
     override val buttonStyle: String
         get() = "flow-action-button"
     override val enableReordering: Boolean
         get() = true
+    override val enableAddObjectButton: Boolean
+        get() = true
 
-    init {
-        val addFlowRegion = makeAddFlowButton()
-        children.addAll(flowsList, addFlowRegion, busBox)
-        setVgrow(addFlowRegion, Priority.ALWAYS)
-        setupDropArea({ db -> db.hasContent(AudioFlow.DATA_FORMAT) }, ::onDrop)
-        registerShortcuts(flowsList.actions)
-    }
+    override val centerAddObjectButton: Boolean
+        get() = true
 
     override val supportedModes: Set<DisplayMode>
         get() = setOf(DisplayMode.Inline, DisplayMode.SubWindow)
+
+    init {
+        children.addAll(flowsList, busBox)
+        setVgrow(flowsList, Priority.ALWAYS)
+        setupDropArea(::canDrop, ::onDrop)
+        registerShortcuts(flowsList.actions)
+    }
+
+    private fun canDrop(db: Dragboard): Boolean = when {
+        db.hasContent(AudioFlow.DATA_FORMAT) -> true
+        db.hasContent(SynthDefObject.DATA_FORMAT) ->
+            db.getFrom(flows.context[SynthDefRegistry], SynthDefObject.DATA_FORMAT) != null
+
+        else -> false
+    }
 
     override fun getContent(obj: AudioFlow): Parent? = when (obj) {
         is CodeFlow -> obj.codeEditor.control
         is ScoreObjectPlaceholder -> null
         is SendFlow -> {
-            val spec = NumericalControlSpec(100.0, 0.0, 100.0, 1.toDecimal(), Warp.Linear)
-            val knob = Knob("Amount", (obj.amountPercent), spec)
+            val spec = NumericalControlSpec(100.0, 0.0, 100.0, 1.toDecimal(), Warp.Linear, Color.GREEN)
+            val knob = Knob("Amount", (obj.amountPercent), spec, color = Color.gray(0.3))
             val targetBusSelector = BusSelector()
             targetBusSelector.setFilter(reactiveValue(obj.associatedBus.rate), obj.associatedBus.channels)
             targetBusSelector.syncWith(obj.targetRef)
@@ -101,6 +117,7 @@ class FlowChainView(
                 val context = ParameterControlsMidiContext(obj.controls)
                 receiver.setContext(context)
             }
+
             is UtilityFlow -> {} //TODO for the volume fader a motorized fader could be integrated...!
             else -> {}
         }
@@ -111,44 +128,34 @@ class FlowChainView(
     override fun getDefaultDisplayName(obj: AudioFlow): ReactiveString = obj.getDefaultName()
 
     private fun onDrop(ev: DragEvent) {
-        val reference = ev.dragboard.getContent(AudioFlow.DATA_FORMAT) as AudioFlows.FlowReference
-        val flow = reference.getFrom(flows)
-        var newIndex = flowsList.getBoxes().binarySearchBy(ev.y) { n -> n.layoutY }
-        if (newIndex < 0) newIndex = -(newIndex + 1)
-        if (flow.associatedBus != associatedBus) {
-            val copy = flow.copy()
-            copy.initialize(flows.context, associatedBus)
-            flows.addFlow(copy, newIndex)
-            if (TransferMode.COPY !in ev.dragboard.transferModes) {
-                flows.removeFlow(flow)
+        if (ev.dragboard.hasContent(AudioFlow.DATA_FORMAT)) {
+            val reference = ev.dragboard.getContent(AudioFlow.DATA_FORMAT) as AudioFlows.FlowReference
+            val flow = reference.getFrom(flows)
+            var newIndex = flowsList.getBoxes().binarySearchBy(ev.y) { n -> n.layoutY }
+            if (newIndex < 0) newIndex = -(newIndex + 1)
+            if (flow.associatedBus != associatedBus) {
+                val copy = flow.copy()
+                copy.initialize(flows.context, associatedBus)
+                flows.addFlow(copy, newIndex)
+                if (TransferMode.COPY !in ev.dragboard.transferModes) {
+                    flows.removeFlow(flow)
+                }
+            } else {
+                if (TransferMode.MOVE !in ev.dragboard.transferModes) return
+                flow.context[currentProject].flows.moveFlow(flow, newIndex)
             }
-        } else {
-            if (TransferMode.MOVE !in ev.dragboard.transferModes) return
-            flow.context[currentProject].flows.moveFlow(flow, newIndex)
-        }
-    }
-
-    private fun makeAddFlowButton(): BorderPane {
-        val btn = MaterialDesignP.PLUS.button("Add flow").styleClass("large-icon-button")
-        val pane = BorderPane(btn)
-        val registry = flows.context[SynthDefRegistry]
-        pane.setupDropArea(condition = { db ->
-            db.hasContent(SynthDefObject.DATA_FORMAT) &&
-                    db.getFrom(registry, SynthDefObject.DATA_FORMAT) is SynthDefObject
-        }) { ev ->
-            val def = ev.dragboard.getFrom(registry, SynthDefObject.DATA_FORMAT) as SynthDefObject
+        } else if (ev.dragboard.hasContent(SynthDefObject.DATA_FORMAT)) {
+            val registry = flows.context[SynthDefRegistry]
+            val def = ev.dragboard.getFrom(registry, SynthDefObject.DATA_FORMAT) ?: return
             val flow = SynthFlow.createFor(associatedBus, def, flows.context)
             flows.addFlow(flow)
         }
-        btn.setOnMouseClicked {
-            val options = FlowOption.getOptions(flows.context)
-            val option = SimpleSearchableListView(options, "Add flow").showPopup(anchorNode = btn) ?: return@setOnMouseClicked
-            option.createFlow(flows.context, btn, associatedBus) { flow ->
-                flow.initialize(flows.context, associatedBus)
-                flows.addFlow(flow)
-            }
-        }
-        return pane
+    }
+
+    override fun createNewObject(): AudioFlow? {
+        val options = FlowOption.getOptions(flows.context)
+        val option = SimpleSearchableListView(options, "Add flow").showPopup(anchorNode = flowsList) ?: return null
+        return option.createFlow(flows.context, anchor = flowsList, associatedBus)
     }
 
     companion object {
