@@ -39,7 +39,7 @@ class EnvelopeEditor(
     val namedControl: NamedParameterControl, val envelope: Envelope,
     val objectView: ScoreObjectView, val pane: Pane
 ) : EnvelopeView {
-    private val context get() = parentPane.context
+    private val context get() = objectView.context
 
     private val control get() = namedControl.now as EnvelopeControl
     
@@ -50,7 +50,7 @@ class EnvelopeEditor(
     private val associatedObject get() = objectView.instance.obj
 
     private val spec get() = namedControl.spec.now as NumericalControlSpec
-    private val yTransform get() = spec.mapOnto(pane.prefHeight..0.0)
+    private val yTransform get() = spec.mapOnto(pane.height..0.0)
 
     private val valueGrid get() = spec.step.get()
 
@@ -72,7 +72,7 @@ class EnvelopeEditor(
         line.setOnMouseEntered { mouseInfo.isVisible = true }
         line.setOnMouseExited { mouseInfo.isVisible = false }
         line.setOnMouseMoved { ev ->
-            val t = parentPane.getDuration(ev.x)
+            val t = objectView.getDuration(ev.x)
             val v = envelope.interpolateValueAt(t, spec.warp)
             displayPosition(t, v)
         }
@@ -121,7 +121,7 @@ class EnvelopeEditor(
         }
         line.setOnMouseClicked { ev ->
             when {
-                ev.button == PRIMARY && ev.isControlDown -> objectView.pane.context.rootPane.magnifyEnvelope(this)
+                ev.button == PRIMARY && ev.isControlDown -> context.rootPane.magnifyEnvelope(this)
 
                 ev.button == PRIMARY && ev.isShiftDown && associatedObject is ParameterizedObject -> {
                     val parentObject = objectView.instance.obj as ParameterizedObject
@@ -169,7 +169,7 @@ class EnvelopeEditor(
     }
 
     override fun addedPoint(idx: Int, point: EnvelopePoint) {
-        val x = parentPane.getWidth(point.time)
+        val x = objectView.getWidth(point.time)
         val y = yTransform.map(point.value.toDouble())
         line.points.addAll(idx * 2, listOf(x, y))
         addHandle(idx, x, y)
@@ -185,7 +185,7 @@ class EnvelopeEditor(
         val (px, py) = newPoint
         displayPosition(px, py)
 
-        val tx = parentPane.getWidth(px)
+        val tx = objectView.getWidth(px)
         val ty = yTransform.map(py.toDouble())
 
         handles[idx].centerX = tx
@@ -196,7 +196,7 @@ class EnvelopeEditor(
     }
 
     private fun transformXToTime(x: Double): Decimal {
-        val pos = ObjectPosition(parentPane.getDuration(x), 0.0.asY) + objectView.absolutePosition
+        val pos = ObjectPosition(objectView.getDuration(x), 0.0.asY) + objectView.absolutePosition
         val (t, _) = context.rootPane.snapToGrid(pos)
         parentPane.markT(t)
         return (t - objectView.absolutePosition.time).coerceIn(zero..associatedObject.duration)
@@ -206,7 +206,7 @@ class EnvelopeEditor(
         yTransform.unmap(y).snap(valueGrid).coerceIn(yTransform.sourceRange)
 
     private fun displayPosition(t: Decimal, v: Decimal) {
-        val x = parentPane.getWidth(t)
+        val x = objectView.getWidth(t)
         mouseInfo.text = "${parameterName}: ${v.toCanonicalString()}"
         var y = yTransform.map(v.toDouble())
         val infoHeight = mouseInfo.prefHeight(-1.0)
@@ -225,7 +225,7 @@ class EnvelopeEditor(
         pane.children.add(line)
 
         for ((idx, p) in envelope.points.withIndex()) {
-            val x = parentPane.getWidth(p.time)
+            val x = objectView.getWidth(p.time)
             val y = yTransform.map(p.value.toDouble())
             line.points.addAll(x, y)
             addHandle(idx, x, y)
@@ -337,17 +337,19 @@ class EnvelopeEditor(
 
     private fun adjustPointHorizontal(idx: Int, dir: HorizontalDirection) {
         if (idx == 0 || idx == envelope.points.size - 1) return
-        val positionInPane = objectView.instance.position.plusTime(envelope.points[idx].time)
-        val tBefore = envelope.points[idx].time
         val deltaT = objectView.getDeltaT(dir)
-        val snapped = objectView.pane.snapToGrid(positionInPane)
-        val tSnapped = snapped.time - objectView.instance.start
-        val newT = when {
-            deltaT > 0.0.asTime && tSnapped > tBefore -> tSnapped
-            deltaT > 0.0.asTime && tSnapped <= tBefore -> tSnapped + deltaT
-            deltaT < 0.0.asTime && tSnapped >= tBefore -> tSnapped + deltaT
-            deltaT < 0.0.asTime && tSnapped < tBefore -> tSnapped
-            else -> throw AssertionError("All cases are covered")
+        val tBefore = envelope.points[idx].time
+        val newT = run {
+            val positionInPane = objectView.instance.position.plusTime(envelope.points[idx].time)
+            val snapped = parentPane.snapToGrid(positionInPane)
+            val tSnapped = snapped.time - objectView.instance.start
+            when {
+                deltaT > 0.0.asTime && tSnapped > tBefore -> tSnapped
+                deltaT > 0.0.asTime && tSnapped <= tBefore -> tSnapped + deltaT
+                deltaT < 0.0.asTime && tSnapped >= tBefore -> tSnapped + deltaT
+                deltaT < 0.0.asTime && tSnapped < tBefore -> tSnapped
+                else -> throw AssertionError("All cases are covered")
+            }
         }
         parentPane.markT(newT + objectView.instance.start)
         envelope.beginPointEdit(idx)

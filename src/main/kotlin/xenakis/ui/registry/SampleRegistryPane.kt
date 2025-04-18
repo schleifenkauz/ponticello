@@ -68,7 +68,7 @@ class SampleRegistryPane(
         obj as SampleObject
         val scoreView = samples.context[XenakisMainActivity].scoreView
         val width = scoreView.getWidth(obj.duration().now)
-        val height = scoreView.getPaneY(0.02.asY)
+        val height = scoreView.getScreenY(0.02.asY)
         dragboard.dragView = Image(obj.spectrogramFile.inputStream(), width, height, false, false)
     }
 

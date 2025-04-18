@@ -29,6 +29,7 @@ object ArrowKeys {
             if (ev.code !in setOf(KeyCode.LEFT, KeyCode.RIGHT, KeyCode.UP, KeyCode.DOWN)) return@addEventFilter
             if (ev.isAltDown) {
                 val view = context[ScoreObjectSelectionManager].focusedView.now ?: return@addEventFilter
+                val pane = view.pane
                 val inst = view.instance
                 if (ev.code !in setOf(KeyCode.LEFT, KeyCode.RIGHT)) return@addEventFilter
                 val start = if (ev.code == KeyCode.RIGHT) inst.start + inst.obj.duration
@@ -36,7 +37,7 @@ object ArrowKeys {
                 val position = ObjectPosition(start, inst.y)
                 val newInst = if (ev.isShiftDown) inst.clone(position) else inst.duplicate(position)
                 inst.score!!.addObject(newInst)
-                val newView = view.pane.getObjectView(newInst)
+                val newView = pane.getObjectView(newInst)
                 runFXWithTimeout(10) {
                     context[ScoreObjectSelectionManager].select(newView, addToSelection = false)
                 }

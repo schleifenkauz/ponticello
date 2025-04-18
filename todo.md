@@ -1,6 +1,8 @@
 ### Questions
 
 - is the `AdhocSynth` still needed?
+- does each `ConfigurableParameterizedObjectDef` need its own context
+  - or does it take the one of its registry?
 
 ### Needs Fix
 

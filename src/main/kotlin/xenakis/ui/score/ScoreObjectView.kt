@@ -13,14 +13,12 @@ import javafx.geometry.HorizontalDirection.LEFT
 import javafx.geometry.HorizontalDirection.RIGHT
 import javafx.geometry.VerticalDirection
 import javafx.scene.Cursor
-import javafx.scene.control.Button
-import javafx.scene.control.ColorPicker
-import javafx.scene.control.Spinner
-import javafx.scene.control.TextField
+import javafx.scene.control.*
 import javafx.scene.input.MouseEvent
 import javafx.scene.layout.*
 import javafx.scene.paint.Color
 import javafx.scene.paint.Color.BLACK
+import javafx.stage.Window
 import reaktive.value.ReactiveValue
 import reaktive.value.binding.map
 import reaktive.value.binding.orElse
@@ -38,9 +36,9 @@ import xenakis.ui.actions.Tool
 import xenakis.ui.controls.NameControl
 import xenakis.ui.impl.Direction
 import xenakis.ui.impl.isResizeCursor
+import xenakis.ui.impl.makeSubWindow
 import xenakis.ui.impl.resizeDirection
 import xenakis.ui.impl.resizeType
-import xenakis.ui.impl.rootPane
 import xenakis.ui.impl.setupDraggingAndResizing
 import xenakis.ui.launcher.XenakisLauncher.Companion.currentProject
 import xenakis.ui.launcher.XenakisMainActivity
@@ -52,7 +50,11 @@ abstract class ScoreObjectView(
         private set
     lateinit var pane: ScorePane
         private set
-    val context: Context get() = pane.context
+
+    private var isSubWindow: Boolean = false
+
+    lateinit var context: Context
+        private set
 
     private lateinit var muteUnmuteBtn: Button
 
@@ -76,13 +78,21 @@ abstract class ScoreObjectView(
         colorPicker.prefHeight = 30.0
     }
 
-    override fun getDuration(width: Double): Decimal = pane.getDuration(width)
+    override fun getDuration(width: Double): Decimal =
+        if (!isSubWindow) pane.getDuration(width) else (width * (instance.obj.duration / width))
 
-    override fun getWidth(duration: Decimal): Double = pane.getWidth(duration)
+    override fun getWidth(duration: Decimal): Double =
+        if (!isSubWindow) pane.getWidth(duration) else (duration * (width / instance.obj.duration)).toDouble()
 
     override fun getTime(x: Double): Decimal = getDuration(x)
 
     override fun getX(time: Decimal): Double = getWidth(time)
+
+    fun getScoreY(screenY: Double): Decimal =
+        if (!isSubWindow) pane.getScoreY(screenY) else (screenY * (instance.obj.height / height))
+
+    fun getScreenY(scoreY: Decimal): Double =
+        if (!isSubWindow) pane.getScreenY(scoreY) else (scoreY * (height / instance.obj.height)).toDouble()
 
     fun getDetailPane(): DetailPane {
         val detailPane = DetailPane(labelWidth = 120.0)
@@ -103,6 +113,7 @@ abstract class ScoreObjectView(
     protected open fun setupDetailPane(pane: DetailPane) {}
 
     fun askForLoopConfig(): LoopConfig? {
+        if (isSubWindow) return null
         val settings = context[currentProject].settings
         val grid = pane.getNearestGrid(instance.position)?.obj
             .takeIf { settings.snapEnabled.now } as TempoGridObject?
@@ -111,10 +122,20 @@ abstract class ScoreObjectView(
         return prompt.showDialog(anchorNode = this)
     }
 
+    protected open fun initialize() {
+        initializeLayout()
+        setBackground()
+
+        instance.addListener(this)
+        instance.obj.addListener(this)
+        isInitialized = true
+    }
+
     open fun initialize(parent: ScorePane) {
         if (isInitialized) return
-        this.pane = parent
-        initializeLayout()
+        pane = parent
+        context = parent.context
+        initialize()
         val canResize = instance.obj.canResize
         setupDraggingAndResizing(
             parent.context,
@@ -124,11 +145,17 @@ abstract class ScoreObjectView(
             startDrag = this::startDrag,
             finishDrag = this::finishedDrag
         )
-        setBackground()
         addMouseActions()
-        instance.addListener(this)
-        instance.obj.addListener(this)
-        isInitialized = true
+    }
+
+    open fun initialize(parent: ScorePane, window: Window) {
+        if (isInitialized) return
+        pane = parent
+        context = pane.context
+        isSubWindow = true
+        heightProperty().addListener { _, _, _ -> rescale() }
+        widthProperty().addListener { _, _, _ -> rescale() }
+        initialize()
     }
 
     protected fun selectThis(addToSelection: Boolean) {
@@ -138,7 +165,9 @@ abstract class ScoreObjectView(
     }
 
     private fun initializeLayout() {
-        relocate(pane.getX(instance.start), pane.getPaneY(instance.y))
+        if (!isSubWindow) {
+            relocate(pane.getX(instance.start), pane.getScreenY(instance.y))
+        }
         setPrefSize(getDisplayWidth(), getDisplayHeight())
     }
 
@@ -162,16 +191,20 @@ abstract class ScoreObjectView(
     private fun addMouseActions() {
         addEventHandler(MouseEvent.MOUSE_CLICKED) { ev ->
             ev.consume()
+            if (ev.clickCount == 2) {
+                openInSubWindow()
+                return@addEventHandler
+            }
             val tool = context[XenakisMainActivity].toolSelector.selected
             when (tool) {
                 Tool.Cut -> {
                     val obj = instance.obj
                     if (obj is ScoreObjectGroup && ev.isShiftDown) {
-                        val position = pane.getScoreY(ev.y)
+                        val position = getScoreY(ev.y)
                         val (top, bottom) = obj.cutVertically(position)
                         replaceWithCutHalves(top, bottom, relativePosition = ObjectPosition(zero, position))
                     } else if (!ev.isShiftDown) {
-                        val position = pane.getDuration(ev.x)
+                        val position = getDuration(ev.x)
                         val leftHalf = obj.cut(position, LEFT, "${obj.name.now}_left") ?: return@addEventHandler
                         val rightHalf = obj.cut(position, RIGHT, "${obj.name.now}_right") ?: return@addEventHandler
                         replaceWithCutHalves(leftHalf, rightHalf, relativePosition = ObjectPosition(position, zero))
@@ -193,6 +226,20 @@ abstract class ScoreObjectView(
                 else -> {}
             }
         }
+    }
+
+    private fun openInSubWindow() {
+        if (isSubWindow) return
+        val view = pane.createObjectView(instance)
+        view.setPrefSize(700.0, 500.0)
+        val detailPane = view.getDetailPane()
+        val layout = SplitPane(view, detailPane)
+        layout.setDividerPositions(0.7)
+        val window = makeSubWindow(layout, "", context)
+        window.width = 1000.0
+        window.height = 500.0
+        view.initialize(pane, window)
+        window.show()
     }
 
     private fun replaceWithCutHalves(half1: ScoreObject, half2: ScoreObject, relativePosition: ObjectPosition) {
@@ -270,23 +317,26 @@ abstract class ScoreObjectView(
         pane.markT(instance.start + deltaT)
     }
 
-    open fun getDisplayWidth(): Double = pane.getWidth(instance.duration)
+    open fun getDisplayWidth(): Double = getWidth(instance.duration)
 
-    open fun getDisplayHeight() = pane.getPaneY(instance.height)
+    open fun getDisplayHeight() = getScreenY(instance.height)
 
     open fun rescale() {}
 
     final override fun moved(start: Decimal, y: Decimal) {
-        relocate(pane.getX(instance.start), pane.getPaneY(y))
+        if (!isSubWindow) relocate(getX(instance.start), getScreenY(y))
     }
 
     override fun resizedObject(obj: ScoreObject) {
-        setPrefSize(getDisplayWidth(), getDisplayHeight())
+        if (!isSubWindow) {
+            setPrefSize(getDisplayWidth(), getDisplayHeight())
+        }
         rescale()
     }
 
     @Suppress("UNUSED_PARAMETER") //parameter [ev] is needed to be compatible with Node.setupDraggingAndResizing
     private fun resize(old: Bounds, deltaX: Double, deltaY: Double, cursor: Cursor, ev: MouseEvent) {
+        check(!isSubWindow) { "Cannot resize $this because it has its own sub window." }
         check(instance.obj.canResize) { "Attempt to resize object that is not resizable" }
         val direction = cursor.resizeDirection()
         val oldX = if (direction.left) old.minX else old.maxX
@@ -317,17 +367,18 @@ abstract class ScoreObjectView(
     }
 
     fun getDeltaT(direction: HorizontalDirection): Decimal {
+        val factor = if (direction == LEFT) -3.0 else 3.0
         val grid = pane.getNearestGrid(instance.position)?.obj as TempoGridObject?
         val settings = context[currentProject].settings
         val snapOption = if (settings.snapEnabled.now) settings.snapOption.now else null
-        val factor = if (direction == LEFT) -1.0 else 1.0
         val deltaT =
             if (snapOption != null && grid != null) grid.getDuration(snapOption) * factor
-            else (factor / pane.context.rootPane.pixelsPerSecond).asTime
+            else getDuration(factor)
         return deltaT
     }
 
     fun adjustHorizontal(direction: HorizontalDirection, resize: Boolean, resizeType: ScoreObject.ResizeType?) {
+        check(instance.obj.canResize) { "Cannot adjust horizontal $this because it has its own sub-window." }
         val deltaT = getDeltaT(direction)
         if (resize) {
             val targetDuration = (instance.obj.duration + deltaT).coerceAtMost(pane.score.maxTime - instance.start)
@@ -351,6 +402,7 @@ abstract class ScoreObjectView(
     }
 
     protected fun adjustVertical(resize: Boolean, resizeType: ScoreObject.ResizeType, deltaY: Decimal) {
+        check(!isSubWindow) { "Cannot adjust vertical $this because it has its own sub-window." }
         if (resize) {
             val targetHeight = (instance.obj.height + deltaY).coerceAtMost(pane.score.maxY - instance.y)
             instance.obj.resize(
@@ -368,6 +420,7 @@ abstract class ScoreObjectView(
     companion object {
         private const val BORDER_WIDTH = 3.0
         private const val BORDER_RADIUS = 2.0
+
         private fun makeLoopConfigPrompt(
             periodUnit: SnapOption?,
             grid: TempoGridObject?,

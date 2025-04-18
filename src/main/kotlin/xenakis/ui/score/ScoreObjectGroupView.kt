@@ -19,9 +19,10 @@ class ScoreObjectGroupView(private val inst: ScoreObjectInstance, val obj: Score
         styleClass("sub-score")
     }
 
-    override fun initialize(parent: ScorePane) {
-        super.initialize(parent)
-        scorePane = SubScorePane(inst, obj, parent, context)
+    override fun initialize() {
+        super.initialize()
+        scorePane = if (pane != null) SubScorePane(inst, obj, pane, context)
+        else ScoreView(obj.score, context)
         children.add(scorePane)
         scorePane.prefWidthProperty().bind(widthProperty())
         scorePane.prefHeightProperty().bind(heightProperty())

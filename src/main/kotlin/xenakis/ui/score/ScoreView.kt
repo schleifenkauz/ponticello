@@ -81,7 +81,7 @@ class ScoreView(score: Score, context: Context) : ScorePane(score, context) {
         clipboardObjectView.viewport = Rectangle2D(5.0, 3.0, view.prefWidth - 4.0, view.prefHeight - 4.0)
         val mousePos = screenToLocal(robot.mousePosition)
         val (t, y) = snapToGrid(mousePos.x, mousePos.y)
-        clipboardObjectView.relocate(getX(t), getPaneY(y))
+        clipboardObjectView.relocate(getX(t), getScreenY(y))
         clipboardObjectView.opacity = 0.3
         clipboardObjectView.viewOrder = -1000.0
         clipboardObjectView.isMouseTransparent = true
@@ -253,7 +253,7 @@ class ScoreView(score: Score, context: Context) : ScorePane(score, context) {
         setOnMouseMoved { ev ->
             val (t, y) = snapToGrid(ev.x, ev.y)
             markT(t)
-            clipboardObjectView.relocate(getX(t), getPaneY(y))
+            clipboardObjectView.relocate(getX(t), getScreenY(y))
             ev.consume()
         }
     }

@@ -85,8 +85,8 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
 
     override fun getWidth(duration: Decimal): Double = (duration * context.rootPane.pixelsPerSecond).toDouble()
 
-    fun getScoreY(paneY: Double): Decimal = (paneY / context.rootPane.height).asY
-    fun getPaneY(scoreY: Decimal): Double = (scoreY * context.rootPane.height).toDouble()
+    fun getScoreY(screenY: Double): Decimal = (screenY / context.rootPane.height).asY
+    fun getScreenY(scoreY: Decimal): Double = (scoreY * context.rootPane.height).toDouble()
 
     init {
         styleClass("score-pane")
@@ -122,7 +122,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
                 view.setPrefSize(view.getDisplayWidth(), view.getDisplayHeight())
                 view.rescale()
             }
-            view.relocate(getX(inst.start), getPaneY(inst.y))
+            view.relocate(getX(inst.start), getScreenY(inst.y))
             if (view !in children) children.add(view)
             if (System.currentTimeMillis() - tStart > maxTime) {
                 break
@@ -206,7 +206,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
 
     fun getObjectView(inst: ScoreObjectInstance) = views[inst] ?: error("No view found for ${inst.ref.getName()}")
 
-    private fun createObjectView(inst: ScoreObjectInstance): ScoreObjectView = when (val obj = inst.obj) {
+    fun createObjectView(inst: ScoreObjectInstance): ScoreObjectView = when (val obj = inst.obj) {
         is SynthObject -> SynthObjectView(inst, obj)
         is TaskObject -> TaskObjectView(inst, obj)
         is ProcessObject -> ProcessObjectView(inst, obj)
@@ -248,7 +248,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
         clearRegionSelection()
         val pos = snapToGrid(ev.x, ev.y)
         val (t, y) = pos
-        val rect = Rectangle(getX(t), getPaneY(y), 0.0, 0.0)
+        val rect = Rectangle(getX(t), getScreenY(y), 0.0, 0.0)
         when (selectedTool) {
             Synth -> {
                 val synthDef = context[SynthDefRegistry].selectedInstrument

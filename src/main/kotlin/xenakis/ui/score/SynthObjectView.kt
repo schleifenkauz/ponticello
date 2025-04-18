@@ -51,8 +51,8 @@ class SynthObjectView(
         styleClass("synth-object")
     }
 
-    override fun initialize(parent: ScorePane) {
-        super.initialize(parent)
+    override fun initialize() {
+        super.initialize()
         sampleObserver = obj.sample.forEach { s ->
             sampleContentObserver?.kill()
             if (s != null) {
@@ -169,7 +169,7 @@ class SynthObjectView(
                 imageDur, sample.duration().now, rate,
                 startPos = if (t == zero) startPos else defaultStartPos
             )
-            view.layoutX = pane.getWidth(t)
+            view.layoutX = getWidth(t)
             t += imageDur
             spectrogramViews.add(view)
         }
@@ -191,7 +191,7 @@ class SynthObjectView(
         val height = spectrogramImage!!.height
         view.viewport = Rectangle2D(minX, minY, width, height)
         view.fitHeight = prefHeight
-        view.fitWidth = pane.getWidth(duration)
+        view.fitWidth = getWidth(duration)
         view.viewOrder = 1000.0
         if (rate < zero) view.transforms.addAll(
             Translate(view.fitWidth, 0.0),

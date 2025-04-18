@@ -28,8 +28,8 @@ abstract class ParameterizedScoreObjectView<O>(
 
     abstract val obj: O
 
-    override fun initialize(parent: ScorePane) {
-        super.initialize(parent)
+    override fun initialize() {
+        super.initialize()
         listenForMouseEvents()
         obj.controls.addListener(this)
     }

@@ -33,8 +33,8 @@ class RectangleSelection(private val pane: ScorePane, val rect: Rectangle, initi
         rect.x = pane.getX(time)
         rect.width = pane.getWidth(duration)
         if (!isTimeSelection) {
-            rect.y = pane.getPaneY(y)
-            rect.height = pane.getPaneY(height)
+            rect.y = pane.getScreenY(y)
+            rect.height = pane.getScreenY(height)
         }
     }
 

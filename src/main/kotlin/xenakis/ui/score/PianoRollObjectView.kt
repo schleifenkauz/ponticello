@@ -74,21 +74,21 @@ class PianoRollObjectView(inst: ScoreObjectInstance, private val obj: PianoRollO
     }
 
     private fun updateNoteDisplay(rect: Region, note: PianoRollObject.Note) {
-        rect.layoutX = pane.getWidth(note.onset)
+        rect.layoutX = getWidth(note.onset)
         rect.layoutY = getY(note.midinote)
-        rect.prefWidth = pane.getWidth(note.duration)
+        rect.prefWidth = getWidth(note.duration)
         rect.prefHeight = pixelsPerPitch
     }
 
     private fun snapToGrid(x: Double, y: Double): Decimal {
-        val pos = ObjectPosition(getTime(x), pane.getScoreY(y))
-        return pane.context.rootPane.snapToGrid(pos + absolutePosition).time - absolutePosition.time
+        val pos = ObjectPosition(getTime(x), getScoreY(y))
+        return context.rootPane.snapToGrid(pos + absolutePosition).time - absolutePosition.time
     }
 
     private fun setupNoteObjectEvents(rect: Region, note: PianoRollObject.Note) {
         rect.isFocusTraversable = true
         rect.setupDraggingAndResizing(
-            context = pane.context,
+            context = context,
             canUserChangeWidth = true, canUserChangeHeight = false,
             moveTool = Tool.PianoRoll,
             resizeTool = Tool.PianoRoll,
@@ -205,8 +205,8 @@ class PianoRollObjectView(inst: ScoreObjectInstance, private val obj: PianoRollO
         shadeBlackKeys()
     }
 
-    override fun initialize(parent: ScorePane) {
-        super.initialize(parent)
+    override fun initialize() {
+        super.initialize()
         drawOrientationLines()
         shadeBlackKeys()
         listenForMouseEvents()
@@ -278,8 +278,8 @@ class PianoRollObjectView(inst: ScoreObjectInstance, private val obj: PianoRollO
                 }
 
                 MouseEvent.MOUSE_RELEASED -> {
-                    val time = pane.getDuration(cursor.x)
-                    val duration = pane.getDuration(cursor.width)
+                    val time = getDuration(cursor.x)
+                    val duration = getDuration(cursor.width)
                     val midinote = getMidiNote(cursor.y)
                     val note = PianoRollObject.Note.create(context, time, duration, midinote)
                     obj.addNote(note)

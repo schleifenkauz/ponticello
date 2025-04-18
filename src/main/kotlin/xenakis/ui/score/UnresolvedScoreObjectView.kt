@@ -11,7 +11,6 @@ import xenakis.impl.asTime
 import xenakis.impl.asY
 import xenakis.model.registry.ScoreObjectRegistry
 import xenakis.model.score.Score.Companion.rootScore
-import xenakis.model.score.ScoreObject
 import xenakis.model.score.ScoreObjectInstance
 import xenakis.ui.registry.SimpleSearchableRegistryView
 
@@ -36,7 +35,7 @@ class UnresolvedScoreObjectView(instance: ScoreObjectInstance) : ScoreObjectView
         pane.addItem("Object #${instance.ref.getName()} unresolved", btn)
     }
 
-    override fun getDisplayHeight(): Double = pane.getPaneY(0.02.asY)
+    override fun getDisplayHeight(): Double = getScreenY(0.02.asY)
 
-    override fun getDisplayWidth(): Double = pane.getWidth(0.5.asTime)
+    override fun getDisplayWidth(): Double = getWidth(0.5.asTime)
 }

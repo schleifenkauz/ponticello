@@ -36,8 +36,8 @@ class TempoGridObjectView(inst: ScoreObjectInstance, val obj: TempoGridObject) :
     override val borderColorWhenNotSelected: Color
         get() = Color.TRANSPARENT
 
-    override fun initialize(parent: ScorePane) {
-        super.initialize(parent)
+    override fun initialize() {
+        super.initialize()
         marker.visibleProperty().bind(context[currentProject].settings.snapEnabled.asObservableValue())
         repaint()
     }
@@ -81,7 +81,7 @@ class TempoGridObjectView(inst: ScoreObjectInstance, val obj: TempoGridObject) :
             val barLine = Line(barX, BAR_LINE_SPACE, barX, prefHeight - BAR_LINE_SPACE)
                 .styleClass("tempo-line", "bar-line")
             area.children.add(barLine)
-            val barNumberDist = pane.context.rootPane.pixelsPerSecond / barsPerSecond
+            val barNumberDist = context.rootPane.pixelsPerSecond / barsPerSecond
             if (barNumberDist > MIN_BAR_NUMBER_DIST) {
                 val barNumber = Text((barX - 5).coerceAtLeast(0.0), 12.0, (bar + firstBar).toString())
                     .styleClass("bar-number")
@@ -110,7 +110,7 @@ class TempoGridObjectView(inst: ScoreObjectInstance, val obj: TempoGridObject) :
     private fun getX(bar: Int, beat: Int = 0, tick: Int = 0): Double {
         val secondsPerBeat = 60.0.asTime / obj.beatsPerMinute.now
         val t = ((bar * obj.beatsPerBar.now) + beat + (tick.toDouble() / obj.ticksPerBeat.now)) * secondsPerBeat
-        return pane.getWidth(t)
+        return getWidth(t)
     }
 
     fun unmark() {
