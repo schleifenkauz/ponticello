@@ -1,4 +1,46 @@
-## Functionality
+### Questions
+
+- is the `AdhocSynth` still needed?
+
+### Needs Fix
+
+- improve the timeline
+  - maybe only move playback cursor on timeline?
+  - display timeline not as part of the score (below or on top?)
+- resize copied object image when zooming
+- weird duplicating bug when pasting
+- resizing behaviour is not quite right
+- something is not quite right yet in `ScoreEventCollector` (especially when resizing objects...)
+- moving objects to sub score parent is buggy
+- sub-objects get buggy after unlinking group objects
+  - the new objects don't get added to the `ScoreEventCollector`
+- recording doesn't work
+
+### Minor
+
+- commands in tool panes to save associated component?
+- ability to specify added time in beats/bars/ticks
+- option to create external automation (adding a kr-write `SynthObject`) for numerical parameter
+- select new objects after unlinking
+- live updates for envelopes
+- ability to copy and paste whole time ranges
+- own editor type for control references
+  - can only be used in LFO argument expressions
+- what to do when user selects a new `SynthDef` for a synth object
+  - re-sync parameter controls in some way...
+- highlight unresolved references of object selectors
+- unify window positioning
+- more adequate midi contexts
+  - based on focused window
+- add play button to samples
+- global variable in SuperCollider for list of all samples (`ALL_SAMPLES`)
+- undo managers for sub scenes
+  - undo/redo actions on tool panes
+- curve parameter type?
+- asr parameter type?
+- choose alternative addresses if the default ones are busy
+
+## New Functionality
 
 ### completion
 
@@ -14,14 +56,9 @@
 ### UI niceties
 
 - option to put documentation browser into fixed window
-- move sync-action to item scroll list (synth defs and process defs)
-  - but display when shown in sub window?
-- move add parameter button to bottom of parameter list
 - make the quit button nicer
-
-### Better help popups for SuperCollider API
-
-- press Ctrl+P to show parameter info of current selected cell
+- align the inline code editor of expression parameter controls better
+- don't squish the item cell list in detail pane mode
 
 ### Support for patterns
 
@@ -47,55 +84,6 @@
   - what about object groups
 - in which cases can we talk to scsynth directly?
   - bus value update (could really improve live modulation performance)
-
-### Questions
-
-- is the `AdhocSynth` still needed?
-
-### Needs Fix
-
-- improve the timeline
-  - maybe only move playback cursor on timeline?
-  - display timeline not as part of the score (below or on top?)
-- resize copied object image when zooming
-- weird duplicating bug when pasting
-- resizing behaviour is not quite right
-- something is not quite right yet in `ScoreEventCollector` (especially when resizing objects...)
-- moving objects to sub score parent is buggy
-- sub-objects get buggy after unlinking group objects
-  - the new objects don't get added to the `ScoreEventCollector`
-- recording doesn't work
-- cutting doesn't work
-
-### Minor
-
-- commands in tool panes to save associated component?
-- ability to specify added time in beats/bars/ticks
-- option to create external automation (adding a kr-write `SynthObject`) for numerical parameter
-- select new objects after unlinking
-- make pasting with shortcut (V and Shift+V)
-  - how to query mouse position (`javafx.scene.robot.Robot.mousePosition`)
-- object insertion with INSERT
-  - how to lookup which score pane is hovered?
-- live updates for envelopes
-- ability to copy and paste whole time ranges
-- own editor type for control references
-  - can only be used in LFO argument expressions
-- what to do when user selects a new `SynthDef` for a synth object
-  - re-sync parameter controls in some way...
-- highlight unresolved references of object selectors
-- unify window positioning
-- more adequate midi contexts 
-  - based on focused window
-- add play button to samples
-- global variable in SuperCollider for list of all samples (`ALL_SAMPLES`)
-- undo managers for sub scenes 
-  - undo/redo actions on tool panes
-- curve parameter type?
-- asr parameter type?
-- choose alternative addresses if the default ones are busy
-
-## Long term ideas
 
 ### Own notification API integrating with the LogPane
 

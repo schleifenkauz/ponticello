@@ -2,26 +2,32 @@ package xenakis.ui.launcher
 
 import bundles.set
 import fxutils.prompt.PredicateTextPrompt
+import fxutils.shortcut
 import hextant.context.ControlFactory
+import hextant.context.EditorControlGroup
 import hextant.context.SelectionDistributor
 import hextant.core.editor.defaultState
+import hextant.core.editor.getParent
 import hextant.core.editor.isSubEditor
 import hextant.core.view.EditorControl
 import hextant.core.view.ListEditorControl
 import hextant.plugins.*
 import hextant.serial.PropertyAccessor
 import hextant.undo.compoundEdit
+import javafx.application.Platform
+import javafx.scene.control.Tooltip
+import javafx.util.Duration
 import reaktive.value.now
 import xenakis.impl.Logger
 import xenakis.impl.one
 import xenakis.impl.randomColor
+import xenakis.impl.writeCode
 import xenakis.model.obj.CustomizableSynthDefObject
 import xenakis.model.obj.ParameterDefObject
 import xenakis.model.registry.SynthDefRegistry
-import xenakis.sc.DecimalLiteral
-import xenakis.sc.Identifier
-import xenakis.sc.NumericalControlSpec
-import xenakis.sc.Warp
+import xenakis.sc.*
+import xenakis.sc.client.SuperColliderClient
+import xenakis.sc.client.eval
 import xenakis.sc.editor.*
 import xenakis.sc.view.*
 import xenakis.sc.view.ScFunctionEditorControl.Companion.SINGLE_LINE_FUNCTION
@@ -137,6 +143,42 @@ object XenakisHextantPlugin : PluginInitializer({
         }
     }
 
+    registerCommand<ScExprEditor<*>, Unit> {
+        shortName = "show-parameter"
+        name = "Show parameter info"
+        defaultShortcut = "Ctrl+P".shortcut
+        applicableIf { editor ->
+            val parent = editor.parent
+            parent is ScExprListEditor && parent.isSubEditor(MessageSendEditor::arguments)
+        }
+        executing { editor ->
+            val messageSend = editor.getParent<MessageSendEditor>() ?: return@executing
+            showParameterInfo(editor, messageSend) { argumentString ->
+                val index = messageSend.arguments.editors.now.indexOf(editor)
+                argumentString.split(", ")[index]
+            }
+        }
+    }
+
+    registerCommand<ScExprEditor<*>, Unit> {
+        shortName = "show-parameters"
+        name = "Show parameters"
+        defaultShortcut = "Ctrl+Shift+P".shortcut
+        applicableIf { editor -> editor.getParent<MessageSendEditor>() != null }
+        executing { editor ->
+            val messageSend = editor.getParent<MessageSendEditor>() ?: return@executing
+            showParameterInfo(editor, messageSend)
+        }
+    }
+
+    registerCommand<MessageSendEditor, Unit> {
+        shortName = "add-all-named-arguments"
+        name = "Add named arguments for all parameters"
+        executing { editor ->
+            addAllNamedArguments(editor)
+        }
+    }
+
     registerCommand<ScExprExpander, Unit> {
         shortName = "extract-param"
         name = "Extract parameter"
@@ -190,4 +232,67 @@ object XenakisHextantPlugin : PluginInitializer({
                 selectedBefore?.select()
             }
         }
+}
+
+private fun addAllNamedArguments(editor: MessageSendEditor) {
+    val existingArguments = editor.arguments.result.now
+        .filterIsInstance<NamedExpr>()
+        .mapTo(mutableSetOf()) { arg -> arg.name.text }
+    val addedEditors = mutableListOf<ScExprExpander>()
+    getParameterInfo(editor) { argumentString ->
+        if (argumentString.isBlank()) return@getParameterInfo
+        editor.context.compoundEdit("Add all named arguments") {
+            for (arg in argumentString.split(", ")) {
+                val name = arg.substringBefore("=")
+                if (name in existingArguments) continue
+                val defaultValue = arg.substringAfter("=", missingDelimiterValue = "")
+                val expander = ScExprExpander(defaultValue)
+                val argumentEditor = NamedExprEditor(IdentifierEditor(name), expander)
+                editor.arguments.addLast(ScExprExpander(argumentEditor))
+                addedEditors.add(expander)
+            }
+        }
+        val newFocus = addedEditors.firstOrNull { ed -> ed.result.now == EmptyExpr } ?: addedEditors.firstOrNull()
+        if (newFocus != null) {
+            val control = editor.context[EditorControlGroup].getViewOf(newFocus)
+            control.select()
+        }
+    }
+}
+
+private fun showParameterInfo(
+    editor: ScExprEditor<*>,
+    messageSend: MessageSendEditor,
+    getInfoFromArgumentString: (String) -> String = { it },
+) {
+    getParameterInfo(messageSend) { argumentString ->
+        val info = getInfoFromArgumentString(argumentString)
+        val anchor = editor.context[EditorControlGroup].getViewOf(editor)
+        val position = anchor.localToScreen(0.0, anchor.height + 10.0)
+        val tooltip = Tooltip(info)
+        tooltip.isAutoHide = true
+        tooltip.showDuration = Duration.seconds(5.0)
+        tooltip.show(anchor, position.x, position.y)
+    }
+}
+
+private fun getParameterInfo(
+    messageSend: MessageSendEditor,
+    action: (String) -> Unit,
+) {
+    val method = messageSend.method.result.now.text
+    val receiver = messageSend.receiver.result.now
+    val context = messageSend.context
+    val code = writeCode {
+        receiver.code(writer, context)
+        append(".class.findRespondingMethodFor(")
+        append("\\")
+        append(method)
+        append(").argumentString")
+    }
+    context[SuperColliderClient].eval(code) { result ->
+        Platform.runLater {
+            action(result)
+        }
+    }
 }

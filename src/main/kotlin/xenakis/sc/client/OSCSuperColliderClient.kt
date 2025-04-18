@@ -12,7 +12,6 @@ import java.net.*
 import java.nio.ByteBuffer
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Executors
-import java.util.concurrent.Future
 import java.util.concurrent.TimeUnit
 import kotlin.io.path.toPath
 
@@ -61,7 +60,7 @@ class OSCSuperColliderClient(
         sender.send(msg)
     }
 
-    override fun send(address: String, arguments: List<Any>): Future<String> {
+    override fun send(address: String, arguments: List<Any>): CompletableFuture<String> {
         val id = idCounter++
         val future = CompletableFuture<String>()
         val adr = if (!address.startsWith('/')) "/$address" else address

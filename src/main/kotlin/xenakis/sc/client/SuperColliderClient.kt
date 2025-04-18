@@ -8,7 +8,6 @@ import xenakis.impl.Logger.Category
 import xenakis.impl.canSuperColliderTalkToMe
 import xenakis.impl.writeCode
 import java.util.concurrent.CompletableFuture
-import java.util.concurrent.Future
 
 interface SuperColliderClient : SuperColliderContext {
     fun onServerBooted(action: () -> Unit): Observer
@@ -19,9 +18,9 @@ interface SuperColliderClient : SuperColliderContext {
 
     fun sendAsync(address: String, arguments: List<Any> = emptyList())
 
-    fun send(address: String, arguments: List<Any> = emptyList()): Future<String>
+    fun send(address: String, arguments: List<Any> = emptyList()): CompletableFuture<String>
 
-    fun eval(code: String): Future<String> {
+    fun eval(code: String): CompletableFuture<String> {
         if (!canSuperColliderTalkToMe) {
             run(code)
             return CompletableFuture.completedFuture("")
