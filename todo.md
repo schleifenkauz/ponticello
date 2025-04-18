@@ -99,10 +99,9 @@
 - global variable in SuperCollider for list of all samples (`ALL_SAMPLES`)
 - undo managers for sub scenes 
   - undo/redo actions on tool panes
-- curve parameter type
+- curve parameter type?
 - asr parameter type?
 - choose alternative addresses if the default ones are busy
-- reconsider which threads to use (coroutines?)
 
 ## Long term ideas
 

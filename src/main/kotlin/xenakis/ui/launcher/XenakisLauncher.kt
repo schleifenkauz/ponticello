@@ -111,7 +111,7 @@ class XenakisLauncher {
             },
             serverReady = {
                 progressBar.displayProgress(0.2, "Booted SuperCollider server, opening project...")
-                thread {
+                thread(isDaemon = true) {
                     context[projectDirectory] = folder
                     val project = XenakisProject.loadFrom(folder, progressBar, targetProgress = 0.9)
                     progressBar.displayProgress(0.95, "Loaded project, initializing...")

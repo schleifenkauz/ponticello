@@ -46,7 +46,7 @@ abstract class NamedObjectList<O : NamedObject> : List<O>, AbstractContextualObj
     override val size: Int
         get() = objects.size
 
-    fun all(): List<O> = objects
+    fun all(): List<O> = objects.toList()
 
     fun get(name: String): O = getOrNull(name) ?: throw NoSuchElementException("Object $name not found in $this")
 

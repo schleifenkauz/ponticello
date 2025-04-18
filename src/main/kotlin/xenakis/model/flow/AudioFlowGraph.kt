@@ -42,7 +42,7 @@ class AudioFlowGraph(
 
     private fun rebuildFlowGraph() {
         reorderNodeTree()
-        for (o in order) {
+        for (o in order.toList()) { //copy to avoid concurrent modification
             if (o is FlowGroup && o.associatedBus is BusObject.AudioBus) {
                 nodeTree.addNode(o, NodePlacement(AddAction.AddToTail, "s"))
                 for (flow in o.flows()) {

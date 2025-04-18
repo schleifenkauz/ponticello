@@ -11,9 +11,9 @@ import xenakis.impl.superColliderPath
 import java.net.*
 import java.nio.ByteBuffer
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.Executors
 import java.util.concurrent.Future
 import java.util.concurrent.TimeUnit
-import kotlin.concurrent.thread
 import kotlin.io.path.toPath
 
 class OSCSuperColliderClient(
@@ -23,11 +23,11 @@ class OSCSuperColliderClient(
 ) : SuperColliderClient, Thread() {
     private var idCounter = 0
     private val waitingForReply = mutableMapOf<Int, CompletableFuture<String>>()
+    private val eventExecutor = Executors.newSingleThreadExecutor()
 
     override val consoleMonitor: ConsoleMonitor = ConsoleMonitor(process)
 
     private val eventObservers = mutableListOf<Observer>()
-
     private val ready = unitEvent()
     private val serverBoot = unitEvent()
     private val treeClear = unitEvent()
@@ -94,16 +94,18 @@ class OSCSuperColliderClient(
             }
             val path = String(buf, 0, 8)
             when {
-                path.startsWith("/ready") -> {
+                path.startsWith("/ready") -> eventExecutor.execute {
                     ready.fire()
                 }
 
-                path.startsWith("/booted") -> thread {
+                path.startsWith("/booted") -> eventExecutor.execute {
                     sampleRate = eval("s.sampleRate").get().toDouble()
                     serverBoot.fire()
                 }
 
-                path.startsWith("/cleared") -> treeClear.fire()
+                path.startsWith("/cleared") -> eventExecutor.execute {
+                    treeClear.fire()
+                }
 
                 path.startsWith("/reply") -> {
                     val result = getContentString(buf)
