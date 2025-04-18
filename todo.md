@@ -74,8 +74,6 @@
   - maybe only move playback cursor on timeline?
   - display timeline not as part of the score (below or on top?)
 - resize copied object image when zooming
-- reimplement startup progress bar
-- why aren't the duplicate buttons shown?
 - weird duplicating bug when pasting
 
 ### Minor

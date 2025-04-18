@@ -36,6 +36,7 @@ import xenakis.ui.impl.tryWithAlert
 import xenakis.ui.launcher.XenakisApp.Companion.primaryStage
 import xenakis.ui.midi.ContextualMidiReceiver
 import java.io.File
+import kotlin.concurrent.thread
 import kotlin.system.exitProcess
 
 class XenakisLauncher {
@@ -99,6 +100,7 @@ class XenakisLauncher {
 
     fun openProject(folder: File) {
         val context = rootContext.extend()
+        val progressBar = getOrLaunchLoadingScreen()
         setupSuperCollider(
             context,
             "opening project",
@@ -108,11 +110,15 @@ class XenakisLauncher {
                 serverOptions.reboot(client)
             },
             serverReady = {
-                context[projectDirectory] = folder
-                val project = XenakisProject.loadFrom(folder, getOrLaunchLoadingScreen())
-                project.initialize(context)
-                project[SERVER_OPTIONS].configureIOBuses()
-                openProject(project)
+                progressBar.displayProgress(0.2, "Booted SuperCollider server, opening project...")
+                thread {
+                    context[projectDirectory] = folder
+                    val project = XenakisProject.loadFrom(folder, progressBar, targetProgress = 0.9)
+                    progressBar.displayProgress(0.95, "Loaded project, initializing...")
+                    project.initialize(context)
+                    project[SERVER_OPTIONS].configureIOBuses()
+                    openProject(project)
+                }
             }
         )
     }
@@ -126,6 +132,7 @@ class XenakisLauncher {
         rootContext[UndoManager].reset()
         rootContext[currentProject] = project
         recentProjects.push(project.projectDirectory)
+        getOrLaunchLoadingScreen().displayProgress(0.98, "Almost ready, launching project view...")
         Platform.runLater {
             val activity = launchActivity("Open project ${project.name}") { XenakisMainActivity(project) }
             if (activity == null) {
@@ -148,8 +155,7 @@ class XenakisLauncher {
         }
         val name =
             PredicateTextPrompt("Project name", "") { name -> name.isNotBlank() }.showDialog(rootContext) ?: return
-        val location = rootContext[XenakisFiles].projectsDir
-            .resolve(name) //TODO introduce option for projects location
+        val location = rootContext[XenakisFiles].projectsDir.resolve(name)
         location.mkdir()
         location.resolve("project.xen").writeText(location.name)
         createNewProject(location)
@@ -157,13 +163,16 @@ class XenakisLauncher {
 
     private fun createNewProject(location: File) {
         val context = rootContext.extend()
+        val progressBar = getOrLaunchLoadingScreen()
         setupSuperCollider(
             context,
             "creating new project",
             clientReady = { client -> client.run("s.boot") },
             serverReady = {
+                progressBar.displayProgress(0.2, "Booted SuperCollider server, creating new project...")
                 val project = XenakisProject.create(location, context)
                 save(project, location)
+                progressBar.displayProgress(0.3, "Created new project...")
                 openProject(project)
             })
     }
@@ -198,13 +207,14 @@ class XenakisLauncher {
         clientReady: (SuperColliderClient) -> Unit,
         serverReady: (SuperColliderClient) -> Unit,
     ) {
-        val indicator = getOrLaunchLoadingScreen()
-        indicator.displayProgress(0.0, "Starting SuperCollider")
+        val progressBar = getOrLaunchLoadingScreen()
+        progressBar.displayProgress(0.0, "Starting SuperCollider...")
         try {
             val client = OSCSuperColliderClient.create(scPort = OSCPortOut.DEFAULT_SC_LANG_OSC_PORT)
             client.consoleMonitor.addListener(ConsoleMonitor.PipeToSystemOut)
             client.onClientReady {
                 Platform.runLater {
+                    progressBar.displayProgress(0.1, "SuperCollider started, booting server...")
                     try {
                         context[SuperColliderClient] = client
                         clientReady(client)

@@ -9,6 +9,7 @@ import xenakis.impl.json
 import xenakis.model.flow.AudioFlowGraph
 import xenakis.model.obj.ContextualObject
 import xenakis.sc.client.SuperColliderClient
+import xenakis.ui.launcher.ProgressIndicator
 import java.io.File
 
 class XenakisProject private constructor(val components: Map<Component<out ContextualObject>, ContextualObject>) {
@@ -88,10 +89,13 @@ class XenakisProject private constructor(val components: Map<Component<out Conte
 
         fun loadFrom(
             folder: File,
-            indicator: xenakis.ui.launcher.ProgressIndicator
+            indicator: ProgressIndicator,
+            targetProgress: Double
         ): XenakisProject {
             val data = folder.resolve("xenakis_data")
+            val progressPerComponent = (targetProgress - indicator.progress) / allComponents.size
             val components = allComponents.associateWith { (name, serializer, default) ->
+                indicator.increaseProgress(progressPerComponent, "Loading $name")
                 val file = data.resolve("$name.json")
                 if (file.isFile) {
                     val stream = file.inputStream().buffered()
@@ -105,7 +109,6 @@ class XenakisProject private constructor(val components: Map<Component<out Conte
                     }
                 } else default()
             }
-            //TODO update indicator while reading
             val project = XenakisProject(components)
             project.projectDirectory = folder
             return project

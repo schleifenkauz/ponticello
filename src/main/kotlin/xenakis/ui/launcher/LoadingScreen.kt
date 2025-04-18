@@ -12,10 +12,13 @@ import javafx.scene.layout.VBox
 import javafx.stage.StageStyle
 import xenakis.sc.client.SuperColliderClient
 
-class LoadingScreen(override val context: Context): Activity(), ProgressIndicator {
+class LoadingScreen(override val context: Context) : Activity(), ProgressIndicator {
     private val progressBar = ProgressBar() styleClass "loading-screen-bar"
     private val statusText = Label()
     private val logo = ImageView(APP_ICON)
+
+    override val progress: Double
+        get() = progressBar.progress
 
     init {
         logo.isPreserveRatio = true
@@ -38,15 +41,23 @@ class LoadingScreen(override val context: Context): Activity(), ProgressIndicato
     }
 
     override fun initialStatus(status: String) {
-        progressBar.progress = 0.0
-        statusText.text = status
+        displayProgress(0.0, status)
     }
 
     override fun displayProgress(progress: Double, status: String) {
-        Platform.runLater {
-            progressBar.progress = progress
-            statusText.text = status
+        if (Platform.isFxApplicationThread()) {
+            updateProgress(progress, status)
+        } else {
+            Platform.runLater {
+                updateProgress(progress, status)
+            }
         }
+    }
+
+    private fun updateProgress(progress: Double, status: String) {
+        println("Progress: $progress, Status: $status")
+        progressBar.progress = progress
+        statusText.text = status
     }
 
     override fun increaseProgress(delta: Double, status: String) {

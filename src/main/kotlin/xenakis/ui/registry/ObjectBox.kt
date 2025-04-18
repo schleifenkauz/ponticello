@@ -9,6 +9,7 @@ import javafx.scene.layout.HBox
 import javafx.scene.layout.Region
 import javafx.scene.layout.VBox
 import org.kordamp.ikonli.material2.Material2AL
+import org.kordamp.ikonli.materialdesign2.MaterialDesignC
 import org.kordamp.ikonli.materialdesign2.MaterialDesignR
 import reaktive.value.binding.equalTo
 import reaktive.value.now
@@ -121,6 +122,7 @@ class ObjectBox<O : NamedObject>(val parent: NamedObjectListView<O>, val obj: O)
     }
 
     companion object {
+        @Suppress("UNCHECKED_CAST")
         private val objectActions = collectActions<ObjectBox<*>> {
             addAction("Edit object details") {
                 icon { box ->
@@ -129,13 +131,13 @@ class ObjectBox<O : NamedObject>(val parent: NamedObjectListView<O>, val obj: O)
                 }
                 shortcuts("Ctrl+E")
                 applicableIf { box -> box.parent.mode.equalTo(DisplayMode.SubWindow) }
-                executes { box, ev ->
+                executes { box, _ ->
                     box.showSubWindow()
                 }
             }
-            @Suppress("UNCHECKED_CAST")
             addAction("Duplicate object") {
                 applicableIf { box -> reactiveValue(box.obj.canCopy && box.obj.registry != null) }
+                icon(MaterialDesignC.CONTENT_COPY)
                 description { box -> reactiveValue(box.parent.source.objectType) }
                 executes { box, ev ->
                     val obj = box.obj
