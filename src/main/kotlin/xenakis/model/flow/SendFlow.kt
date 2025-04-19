@@ -60,7 +60,7 @@ class SendFlow(
             Logger.error("Target bus ${targetRef.now.getName()} is not resolved")
             return false
         }
-        return true
+        return controls.validate()
     }
 
     override fun ScWriter.writeCode(placement: NodePlacement) {

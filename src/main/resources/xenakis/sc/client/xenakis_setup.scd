@@ -126,25 +126,19 @@ OSCdef('schedule', {
 	SynthDescLib.global.synthDescs[synthName.asSymbol].specs[controlName] != nil;
 });
 ~setupHandler.('controlMinval', { |synthName, controlName|
-	var desc, spec, minval;
-	"get control min".postln;
-	desc = SynthDescLib.global.synthDescs[synthName.asSymbol].postln;
-	desc.specs.postln;
-	spec = desc.specs[controlName].postln;
-	0
-	//spec.minval;
+	var desc, spec;
+	desc = SynthDescLib.global.synthDescs[synthName.asSymbol];
+	spec = desc.specs[controlName];
+	spec[0];
 });
 ~setupHandler.('controlMaxval', { |synthName, controlName|
-	1
-	//SynthDescLib.global.synthDescs[synthName.asSymbol].specs[controlName].maxval;
+	SynthDescLib.global.synthDescs[synthName.asSymbol].specs[controlName][1];
 });
 ~setupHandler.('controlWarp', { |synthName, controlName|
-	'lin'
-	//SynthDescLib.global.synthDescs[synthName.asSymbol].specs[controlName].warp.asString;
+	SynthDescLib.global.synthDescs[synthName.asSymbol].specs[controlName][2];
 });
 ~setupHandler.('controlStep', { |synthName, controlName|
-    0.1
-	//SynthDescLib.global.synthDescs[synthName.asSymbol].specs[controlName].step;
+	SynthDescLib.global.synthDescs[synthName.asSymbol].specs[controlName][3];
 });
 ~xenakis_addr.sendMsg('/ready');
 "Successfully setup OSC!".postln;

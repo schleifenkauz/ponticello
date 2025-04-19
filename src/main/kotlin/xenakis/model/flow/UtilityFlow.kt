@@ -47,7 +47,7 @@ class UtilityFlow(
     override fun copy(): AudioFlow =
         UtilityFlow(volumeDb.copy(), muted.copy(), solo.copy())
 
-    override fun validate(): Boolean = true
+    override fun validate(): Boolean = controls.validate()
 
     override fun ScWriter.writeCode(placement: NodePlacement) {
         //TODO we need a way to mute other buses when something is soloed
