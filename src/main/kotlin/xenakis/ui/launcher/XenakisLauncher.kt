@@ -21,7 +21,7 @@ import kotlinx.serialization.serializer
 import reaktive.Observer
 import xenakis.impl.Logger
 import xenakis.impl.registerImplementationsFromClasspath
-import xenakis.model.ScratchFile
+import xenakis.model.ScriptObject
 import xenakis.model.ServerOptions
 import xenakis.model.Settings
 import xenakis.model.project.SERVER_OPTIONS
@@ -107,7 +107,7 @@ class XenakisLauncher {
             "opening project",
             clientReady = { client ->
                 val beforeBoot = folder.resolve("xenakis_data").resolve("before_boot.json")
-                    .readJson(ScratchFile.Serializer(ScratchFile.Type.BEFORE_BOOT))
+                    .readJson(ScriptObject.Serializer(ScriptObject.Type.BEFORE_BOOT))
                 beforeBoot.initialize(context)
                 beforeBoot.executeContents(client)
                 val serverOptions = folder.resolve("xenakis_data").resolve("server_options.json")

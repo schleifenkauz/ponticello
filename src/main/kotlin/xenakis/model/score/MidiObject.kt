@@ -26,7 +26,7 @@ import xenakis.ui.impl.Direction
 import xenakis.ui.score.PianoRollObjectView
 
 @Serializable
-class PianoRollObject(
+class MidiObject(
     @SerialName("name") override val mutableName: ReactiveVariable<String>,
     @SerialName("instrument") private val mInstrument: ReactiveVariable<SynthDefReference>,
     @SerialName("lowestPitch") private var mLowestPitch: Int,
@@ -190,7 +190,7 @@ class PianoRollObject(
         }
     }
 
-    override fun doClone(newName: String): ScoreObject = PianoRollObject(
+    override fun doClone(newName: String): ScoreObject = MidiObject(
         reactiveVariable(newName), mInstrument.copy(), lowestPitch, highestPitch,
         context.withoutUndo { eventDictionary.clone(context) },
         notes.mapTo(mutableListOf()) { n -> n.copy() }
@@ -201,7 +201,7 @@ class PianoRollObject(
             LEFT -> notes.filter { n -> n.onset < position }
             RIGHT -> notes.filter { n -> n.onset >= position }
         }.mapTo(mutableListOf()) { n -> n.copy() }
-        return PianoRollObject(
+        return MidiObject(
             reactiveVariable(newName), mInstrument,
             lowestPitch, highestPitch,
             eventDictionary.clone(context), notes
@@ -232,8 +232,8 @@ class PianoRollObject(
         }
     }
 
-    abstract class Edit(protected val obj: PianoRollObject, protected val note: Note) : AbstractEdit() {
-        class AddNote(obj: PianoRollObject, note: Note) : Edit(obj, note) {
+    abstract class Edit(protected val obj: MidiObject, protected val note: Note) : AbstractEdit() {
+        class AddNote(obj: MidiObject, note: Note) : Edit(obj, note) {
             override val actionDescription: String
                 get() = "Add note"
 
@@ -246,7 +246,7 @@ class PianoRollObject(
             }
         }
 
-        class RemoveNote(obj: PianoRollObject, note: Note) : Edit(obj, note) {
+        class RemoveNote(obj: MidiObject, note: Note) : Edit(obj, note) {
             override val actionDescription: String
                 get() = "Remove note"
 
@@ -259,7 +259,7 @@ class PianoRollObject(
             }
         }
 
-        class Transpose(private val obj: PianoRollObject, private val deltaPitch: Int) : AbstractEdit() {
+        class Transpose(private val obj: MidiObject, private val deltaPitch: Int) : AbstractEdit() {
             override val actionDescription: String
                 get() = "Transpose"
 
@@ -273,7 +273,7 @@ class PianoRollObject(
         }
 
         class AddTime(
-            private val obj: PianoRollObject, private val position: Decimal, private val amount: Decimal
+            private val obj: MidiObject, private val position: Decimal, private val amount: Decimal
         ) : AbstractEdit() {
             override val actionDescription: String
                 get() = "Add time"
@@ -288,7 +288,7 @@ class PianoRollObject(
         }
 
         class DeleteTimeRange(
-            private val obj: PianoRollObject, private val from: Decimal, private val to: Decimal
+            private val obj: MidiObject, private val from: Decimal, private val to: Decimal
         ) : AbstractEdit() {
             override val actionDescription: String
                 get() = "Remove time range"
@@ -312,7 +312,7 @@ class PianoRollObject(
         val eventDictionary: EditorRoot<@Contextual EventDictionaryEditor>
     ) {
         @Transient
-        lateinit var parent: PianoRollObject
+        lateinit var parent: MidiObject
 
         var onset: Decimal by this::_time.reactive { oldValue, newValue ->
             parent.context[UndoManager].record(PropertyEdit(this::onset, oldValue, newValue, "Edit note time"))

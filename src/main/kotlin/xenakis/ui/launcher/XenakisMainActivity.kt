@@ -1,34 +1,22 @@
 package xenakis.ui.launcher
 
 import bundles.PublicProperty
-import bundles.createBundle
 import bundles.publicProperty
 import bundles.set
 import fxutils.*
 import fxutils.actions.ActionBar
 import fxutils.actions.ContextualizedAction
-import fxutils.actions.SelectorBar
 import fxutils.actions.registerActions
-import hextant.command.line.CommandLineControl
-import hextant.command.line.CommandLinePopup
-import hextant.context.Properties
-import hextant.context.SelectionDistributor
-import hextant.core.view.EditorControl
-import hextant.fx.handleCommands
 import hextant.undo.UndoManager
-import hextant.undo.historyShortcuts
 import javafx.geometry.Dimension2D
 import javafx.scene.Scene
-import javafx.scene.control.Label
-import javafx.scene.control.SplitPane
 import javafx.scene.layout.*
 import javafx.scene.paint.Color
 import javafx.stage.Screen
 import javafx.stage.StageStyle
 import reaktive.Observer
-import reaktive.value.now
 import xenakis.impl.Logger
-import xenakis.model.ScratchFile
+import xenakis.model.ScriptObject
 import xenakis.model.Settings
 import xenakis.model.obj.ParameterizedObject
 import xenakis.model.player.PlaybackManager
@@ -49,15 +37,13 @@ class XenakisMainActivity(val project: XenakisProject) : Activity() {
         project.context[XenakisMainActivity] = this
     }
 
-    val toolSelector = SelectorBar(project.context, Tool.entries, Tool.Pointer, "large-icon-button")
-        .styleClass("toolbar-part")
+    private val detailPaneManager = DetailPaneManager(project.context)
 
     val synthDefsPane = SynthDefRegistryPane(project.instruments)
-    val synthDefsWindow =
-        context.makeToolWindow(
-            synthDefsPane, "Instruments",
-            defaultSize = Dimension2D(1200.0, 1200.0)
-        )
+    val synthDefsWindow = context.makeToolWindow(
+        synthDefsPane, "Instruments",
+        defaultSize = Dimension2D(1200.0, 1200.0)
+    )
 
     val processDefsPane = ProcessDefRegistryPane(project[PROCESS_DEFS])
     val processDefsWindow = context.makeToolWindow(
@@ -85,7 +71,7 @@ class XenakisMainActivity(val project: XenakisProject) : Activity() {
 
     val flowPaneWindow: SubWindow
 
-    val scratchFileWindows = ScratchFile.Type.entries.associateWith { type ->
+    val scriptObjectWindows = ScriptObject.Type.entries.associateWith { type ->
         val root = project[type.component].root
         val pane = CodePane(root, ownWindow = true)
         context.makeToolWindow(pane, type.toString(), defaultSize = Dimension2D(500.0, 500.0))
@@ -94,12 +80,7 @@ class XenakisMainActivity(val project: XenakisProject) : Activity() {
 
     val scoreView: ScoreView
 
-    private val observer: Observer
-
-    private val detailPane = VBox(10.0).apply {
-        styleClass("tool-pane")
-        children.add(Label("Object details") styleClass "heading")
-    }
+    private lateinit var observer: Observer
 
     val playback: PlaybackManager
 
@@ -128,14 +109,13 @@ class XenakisMainActivity(val project: XenakisProject) : Activity() {
         playback = PlaybackManager(scoreView, project.flows)
         context[PlaybackManager] = playback
 
+        showObjectDetailsOnSelection()
+    }
+
+    private fun showObjectDetailsOnSelection() {
         observer = scoreView.selector.focusedView.observe { _, _, focusedView ->
-            if (detailPane.children.size == 2) {
-                detailPane.children.removeAt(1)
-            }
-            if (focusedView != null) {
-                detailPane.children.add(focusedView.getDetailPane())
-            }
-            val obj = focusedView?.instance?.obj
+            detailPaneManager.focused(focusedView)
+            val obj = focusedView?.obj
             if (obj is ParameterizedObject) {
                 context[ContextualMidiReceiver].setContext(ParameterControlsMidiContext(obj.controls))
             } else {
@@ -162,41 +142,10 @@ class XenakisMainActivity(val project: XenakisProject) : Activity() {
     }
 
     override fun getLayout(): VBox {
-        var mainView: Region = scoreView
-        if (mode == Mode.Desktop) {
-            val horizontalSplitter = SplitPane(scoreView, detailPane)
-            horizontalSplitter.setDividerPositions(0.8)
-            mainView = horizontalSplitter
-        }
         val toolbar = createToolbar()
         for (box in toolbar.children) HBox.setHgrow(box, Priority.ALWAYS)
-        VBox.setVgrow(mainView, Priority.ALWAYS)
-        val layout = VBox(toolbar, mainView)
-        val context = project.context
-        val commandLinePopup = CommandLinePopup(
-            context,
-            context[Properties.localCommandLine],
-            arguments = createBundle { set(CommandLineControl.HISTORY_ITEMS, 0) })
-        layout.registerShortcuts {
-            handleCommands(project, context, context[Properties.globalCommandLine])
-            on("Alt+SPACE") {
-                val focusedView = context[SelectionDistributor].focusedView.now
-                if (focusedView is EditorControl<*>) {
-                    val point = focusedView.localToScreen(0.0, 0.0) ?: return@on
-                    commandLinePopup.show(primaryStage, point.x, point.y)
-                }
-            }
-            historyShortcuts(context[UndoManager])
-        }
-        return layout
-    }
-
-    private fun createContextBar(): ActionBar {
-        val selector = context[ScoreObjectSelectionManager]
-        val context = ObjectActionContext.SingleObjectContext(selector)
-        val actions = ObjectActions.singleObjectActions.withContext(context) +
-                ObjectActions.multiObjectActions.withContext(context)
-        return toolbarPart(actions)
+        VBox.setVgrow(scoreView, Priority.ALWAYS)
+        return VBox(toolbar, scoreView)
     }
 
     private fun toolbarPart(actions: List<ContextualizedAction>) =
@@ -208,11 +157,14 @@ class XenakisMainActivity(val project: XenakisProject) : Activity() {
                 10.0,
                 toolbarPart(ProjectActions.withContext(launcher)),
                 toolbarPart(UndoRedoActions.withContext(context[UndoManager])),
-                toolbarPart(PlaybackActions.withContext(playback)),
-                interactionConfig,
-                toolSelector,
             )
-            center = HBox(infiniteSpace(), createContextBar(), infiniteSpace())
+            center = HBox(
+                infiniteSpace(),
+                interactionConfig,
+                hspace(50.0),
+                toolbarPart(PlaybackActions.withContext(playback)),
+                infiniteSpace()
+            )
             val toolWindowActions = ToolWindowActions.withContext(this@XenakisMainActivity)
             val serverActions = ServerActions.withContext(project)
             right = HBox(
@@ -229,7 +181,6 @@ class XenakisMainActivity(val project: XenakisProject) : Activity() {
             registerActions(QuitAction.withContext(launcher))
             registerActions(PlaybackActions.withContext(playback))
             registerActions(ScoreNavigationActions.withContext(scoreView))
-            registerActions(Tool.entries.map { t -> t.action.withContext(toolSelector) })
             interactionConfig.addGridRelatedShortcuts(this)
             registerActions(ToolWindowActions.withContext(this@XenakisMainActivity))
             val objectCtx = ObjectActionContext.MultiObjectContext(context[ScoreObjectSelectionManager])

@@ -5,20 +5,13 @@ import bundles.publicProperty
 import bundles.set
 import hextant.context.Context
 import javafx.scene.paint.Color
-import kotlinx.serialization.SerialName
-import kotlinx.serialization.Serializable
-import reaktive.value.ReactiveVariable
-import reaktive.value.now
 import reaktive.value.reactiveVariable
 import xenakis.impl.Logger
 import xenakis.model.obj.ReferencedSynthDefObject
 import xenakis.model.obj.SuperColliderObject
 import xenakis.model.obj.SynthDefObject
-import xenakis.model.obj.SynthDefReference
 
-@Serializable
 class SynthDefRegistry(
-    @SerialName("selectedInstrument") private val selectedInstrumentRef: ReactiveVariable<SynthDefReference>,
     override val objects: MutableList<SynthDefObject>
 ) : SuperColliderObjectRegistry<SynthDefObject>() {
     override val liveCycleType: SuperColliderObject.LiveCycleType
@@ -27,17 +20,9 @@ class SynthDefRegistry(
     override val objectType: String
         get() = "SynthDef"
 
-    val selectedInstrument: SynthDefObject?
-        get() = selectedInstrumentRef.now.get()
-
     override fun initialize(context: Context) {
-        super.initialize(context)
         context[SynthDefRegistry] = this
-        selectedInstrumentRef.now.resolve(this)
-    }
-
-    fun select(instrument: SynthDefObject?) {
-        selectedInstrumentRef.now = instrument?.reference() ?: ObjectReference.none()
+        super.initialize(context)
     }
 
     fun synthDescLibContains(name: String): Boolean {
@@ -52,7 +37,7 @@ class SynthDefRegistry(
 
     companion object : PublicProperty<SynthDefRegistry> by publicProperty("InstrumentRegistry") {
         fun createDefault(): SynthDefRegistry =
-            SynthDefRegistry(reactiveVariable(ObjectReference.none()), mutableListOf())
+            SynthDefRegistry(mutableListOf())
 
         fun defaultInstrument() = ReferencedSynthDefObject("default", reactiveVariable(Color.WHEAT))
     }

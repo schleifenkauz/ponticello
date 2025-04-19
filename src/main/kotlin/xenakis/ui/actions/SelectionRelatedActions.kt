@@ -21,7 +21,7 @@ object SelectionRelatedActions {
         val scoreView = activity.scoreView
         val context = activity.context
         on("ESCAPE") {
-            scoreView.endNewObject()
+            scoreView.clearRegionSelection()
             scoreView.clearClipboard()
             if (!playback.player.isPlaying.now && playback.playHead.pane is ScoreObjectView) {
                 val attachedView = playback.playHead.pane as ScoreObjectView
@@ -31,7 +31,6 @@ object SelectionRelatedActions {
             }
             context[ScoreObjectSelectionManager].deselectAll()
             context[XenakisMainActivity].scoreView.requestFocus()
-            context[XenakisMainActivity].toolSelector.select(Tool.Pointer)
         }
         on("Ctrl+A") { ev ->
             if (ev.isTargetTextInput) return@on
@@ -50,7 +49,6 @@ object SelectionRelatedActions {
         on("C") { ev ->
             if (ev.isTargetTextInput) return@on
             val selected = resolveFocusedObject(scoreView.selector) ?: return@on
-            activity.toolSelector.select(Tool.Pointer)
             scoreView.setClipboard(selected.instance.obj, selected)
         }
         on("Ctrl+C") { ev ->
@@ -60,7 +58,6 @@ object SelectionRelatedActions {
         }
         on("X") { ev ->
             if (ev.isTargetTextInput) return@on
-            activity.toolSelector.select(Tool.Pointer)
             val view = context[ScoreObjectSelectionManager].focusedView.now ?: return@on
             val inst = view.instance
             inst.score?.removeObject(inst, Score.RegistryOption.KEEP_IN_REGISTRY)

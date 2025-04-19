@@ -20,7 +20,7 @@ import xenakis.sc.client.SuperColliderClient
 import xenakis.sc.code
 import xenakis.sc.editor.CodeBlockEditor
 
-class ScratchFile(val root: EditorRoot<@Contextual CodeBlockEditor>, val type: Type) : AbstractContextualObject() {
+class ScriptObject(val root: EditorRoot<@Contextual CodeBlockEditor>, val type: Type) : AbstractContextualObject() {
     override fun initialize(context: Context) {
         super.initialize(context)
         root.initialize(context.extend {
@@ -46,19 +46,19 @@ class ScratchFile(val root: EditorRoot<@Contextual CodeBlockEditor>, val type: T
         client.run(code)
     }
 
-    class Serializer(val type: Type) : KSerializer<ScratchFile> {
+    class Serializer(val type: Type) : KSerializer<ScriptObject> {
         private val codeSerializer = EditorRoot.Serializer
 
         override val descriptor: SerialDescriptor
             get() = codeSerializer.descriptor
 
         @Suppress("UNCHECKED_CAST")
-        override fun deserialize(decoder: Decoder): ScratchFile {
+        override fun deserialize(decoder: Decoder): ScriptObject {
             val root = decoder.decodeSerializableValue(codeSerializer)
-            return ScratchFile(root as EditorRoot<CodeBlockEditor>, type)
+            return ScriptObject(root as EditorRoot<CodeBlockEditor>, type)
         }
 
-        override fun serialize(encoder: Encoder, value: ScratchFile) {
+        override fun serialize(encoder: Encoder, value: ScriptObject) {
             encoder.encodeSerializableValue(codeSerializer, value.root)
         }
     }
@@ -77,9 +77,9 @@ class ScratchFile(val root: EditorRoot<@Contextual CodeBlockEditor>, val type: T
             SERVER_TREE -> "Server Tree"
         }
 
-        val component = component<ScratchFile>(
+        val component = component<ScriptObject>(
             name = this.name.lowercase(),
-            default = { ScratchFile(EditorRoot<@Contextual CodeBlockEditor>(CodeBlockEditor().defaultState()), this) },
+            default = { ScriptObject(EditorRoot<@Contextual CodeBlockEditor>(CodeBlockEditor().defaultState()), this) },
             serializer = Serializer(this)
         )
     }
@@ -87,7 +87,7 @@ class ScratchFile(val root: EditorRoot<@Contextual CodeBlockEditor>, val type: T
     companion object {
         fun component(type: Type) = component(
             name = type.name.lowercase(),
-            default = { ScratchFile(EditorRoot(CodeBlockEditor().defaultState()), type) },
+            default = { ScriptObject(EditorRoot(CodeBlockEditor().defaultState()), type) },
             serializer = Serializer(type)
         )
     }

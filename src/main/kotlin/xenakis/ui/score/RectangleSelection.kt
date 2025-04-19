@@ -2,6 +2,7 @@ package xenakis.ui.score
 
 import javafx.scene.shape.Rectangle
 import xenakis.impl.abs
+import xenakis.impl.toDecimal
 import xenakis.model.score.ObjectPosition
 import xenakis.model.score.ScoreObject
 import xenakis.model.score.ScoreObjectInstance
@@ -43,5 +44,9 @@ class RectangleSelection(private val pane: ScorePane, val rect: Rectangle, initi
         return ScoreObjectInstance(obj, time, y)
     }
 
-    fun isNotEmpty(): Boolean = corner1 != corner2
+    fun isEmpty(): Boolean = (duration * height) < THRESHOLD
+
+    companion object {
+        private val THRESHOLD = 0.001.toDecimal()
+    }
 }

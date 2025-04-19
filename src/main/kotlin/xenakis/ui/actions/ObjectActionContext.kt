@@ -18,7 +18,18 @@ interface ObjectActionContext {
 
     fun isApplicable(action: String): ReactiveBoolean
 
-    class SingleObjectContext(private val selector: ScoreObjectSelectionManager) : ObjectActionContext {
+    class SingleObjectContext(private val view: ScoreObjectView) : ObjectActionContext {
+        override val context: Context
+            get() = view.context
+        override val focusedView: ReactiveValue<ScoreObjectView?>
+            get() = reactiveValue(view)
+        override val selectedViews: Collection<ScoreObjectView>
+            get() = listOf(view)
+
+        override fun isApplicable(action: String): ReactiveBoolean = reactiveValue(true)
+    }
+
+    class SingleSelectedObjectContext(private val selector: ScoreObjectSelectionManager) : ObjectActionContext {
         override val focusedView: ReactiveValue<ScoreObjectView?>
             get() = selector.focusedView
 

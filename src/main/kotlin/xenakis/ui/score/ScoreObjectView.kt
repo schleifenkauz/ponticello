@@ -1,6 +1,7 @@
 package xenakis.ui.score
 
 import fxutils.*
+import fxutils.actions.ActionBar
 import fxutils.prompt.CompoundPrompt
 import fxutils.prompt.DetailPane
 import fxutils.prompt.compoundPrompt
@@ -13,10 +14,12 @@ import javafx.geometry.HorizontalDirection.LEFT
 import javafx.geometry.HorizontalDirection.RIGHT
 import javafx.geometry.VerticalDirection
 import javafx.scene.Cursor
+import javafx.scene.Node
 import javafx.scene.control.Button
 import javafx.scene.control.ColorPicker
 import javafx.scene.control.Spinner
 import javafx.scene.control.TextField
+import javafx.scene.input.MouseButton
 import javafx.scene.input.MouseEvent
 import javafx.scene.layout.*
 import javafx.scene.paint.Color
@@ -36,7 +39,8 @@ import xenakis.model.project.UIState.SnapOption
 import xenakis.model.project.settings
 import xenakis.model.score.*
 import xenakis.model.score.Score.Companion.rootScore
-import xenakis.ui.actions.Tool
+import xenakis.ui.actions.ObjectActionContext
+import xenakis.ui.actions.ObjectActions
 import xenakis.ui.controls.NameControl
 import xenakis.ui.impl.Direction
 import xenakis.ui.impl.isResizeCursor
@@ -45,7 +49,6 @@ import xenakis.ui.impl.resizeDirection
 import xenakis.ui.impl.resizeType
 import xenakis.ui.impl.setupDraggingAndResizing
 import xenakis.ui.launcher.XenakisLauncher.Companion.currentProject
-import xenakis.ui.launcher.XenakisMainActivity
 
 abstract class ScoreObjectView(
     val instance: ScoreObjectInstance,
@@ -102,19 +105,35 @@ abstract class ScoreObjectView(
         if (!isSubWindow) pane.getScreenY(scoreY) else (scoreY * (height / instance.obj.height)).toDouble()
 
     fun getDetailPane(): DetailPane {
-        val detailPane = DetailPane(labelWidth = 120.0)
+        val detailPane = DetailPane(labelWidth = 100.0)
         val obj = instance.obj
         if (obj is ScoreObject.Unresolved) {
             return detailPane
         } else {
-            val durationLabel = label(obj.duration().map { dur ->
-                if (dur == zero) ""
-                else "(${dur.toCanonicalString()} seconds)"
-            })
-            detailPane.addItem("Name: ", HBox(NameControl(obj), durationLabel).centerChildren())
+            detailPane.children.add(
+                HBox(
+                    NameControl(obj),
+                    createActionsBar(),
+                    *headerItems().toTypedArray()
+                )
+            )
+            val durationLabel = label(obj.duration().map { dur -> "${dur.toCanonicalString()} seconds" })
+            if (obj.canResize) {
+                detailPane.addItem("Duration", durationLabel)
+            }
             setupDetailPane(detailPane)
             return detailPane
         }
+    }
+
+    protected open fun headerItems(): List<Node> = emptyList()
+
+    private fun createActionsBar(): ActionBar {
+        val selector = context[ScoreObjectSelectionManager]
+        val context = ObjectActionContext.SingleSelectedObjectContext(selector)
+        val actions = ObjectActions.singleObjectActions.withContext(context) +
+                ObjectActions.multiObjectActions.withContext(context)
+        return ActionBar(actions, buttonStyle = "medium-icon-button")
     }
 
     protected open fun setupDetailPane(pane: DetailPane) {}
@@ -147,10 +166,8 @@ abstract class ScoreObjectView(
         setupDraggingAndResizing(
             parent.context,
             canUserChangeWidth = canResize, canUserChangeHeight = canResize,
-            moveTool = Tool.Pointer, resizeTool = Tool.Resize,
             drag = this::dragTo, resize = this::resize,
-            startDrag = this::startDrag,
-            finishDrag = this::finishedDrag
+            startDrag = this::startDrag, finishDrag = this::finishedDrag
         )
         addMouseActions()
     }
@@ -197,41 +214,39 @@ abstract class ScoreObjectView(
 
     private fun addMouseActions() {
         addEventHandler(MouseEvent.MOUSE_CLICKED) { ev ->
-            ev.consume()
-            if (ev.clickCount == 2) {
-                showInSubWindow()
-                return@addEventHandler
-            }
-            val tool = context[XenakisMainActivity].toolSelector.selected
-            when (tool) {
-                Tool.Cut -> {
-                    val obj = instance.obj
-                    if (obj is ScoreObjectGroup && ev.isShiftDown) {
-                        val position = getScoreY(ev.y)
-                        val (top, bottom) = obj.cutVertically(position)
-                        replaceWithCutHalves(top, bottom, relativePosition = ObjectPosition(zero, position))
-                    } else if (!ev.isShiftDown) {
-                        val position = getDuration(ev.x)
-                        val leftHalf = obj.cut(position, LEFT, "${obj.name.now}_left") ?: return@addEventHandler
-                        val rightHalf = obj.cut(position, RIGHT, "${obj.name.now}_right") ?: return@addEventHandler
-                        replaceWithCutHalves(leftHalf, rightHalf, relativePosition = ObjectPosition(position, zero))
-                    }
-                }
-
-                Tool.Pointer, Tool.Resize -> {
+            when {
+                ev.button == MouseButton.PRIMARY && ev.clickCount == 2 -> showInSubWindow()
+                ev.button == MouseButton.SECONDARY && ev.modifiers.isEmpty() -> {
                     val playback = context[PlaybackManager]
                     if (!playback.player.isPlaying.now) {
-                        if (ev.isControlDown) {
-                            playback.attachToView(this)
-                        }
-                        if (playback.isAttachedTo(this)) {
-                            playback.playHead.setPlayHeadX(ev.x)
-                        }
+                        playback.attachToView(this)
                     }
                 }
 
-                else -> {}
+                ev.button == MouseButton.PRIMARY && ev.modifiers.isEmpty() -> {
+                    val playback = context[PlaybackManager]
+                    if (playback.isAttachedTo(this)) {
+                        playback.playHead.setPlayHeadX(ev.x)
+                    }
+                }
+
+                else -> return@addEventHandler
             }
+            ev.consume()
+        }
+    }
+
+    private fun cutObject(ev: MouseEvent) {
+        val obj = instance.obj
+        if (obj is ScoreObjectGroup && ev.isShiftDown) {
+            val position = getScoreY(ev.y)
+            val (top, bottom) = obj.cutVertically(position)
+            replaceWithCutHalves(top, bottom, relativePosition = ObjectPosition(zero, position))
+        } else if (!ev.isShiftDown) {
+            val position = getDuration(ev.x)
+            val leftHalf = obj.cut(position, LEFT, "${obj.name.now}_left") ?: return
+            val rightHalf = obj.cut(position, RIGHT, "${obj.name.now}_right") ?: return
+            replaceWithCutHalves(leftHalf, rightHalf, relativePosition = ObjectPosition(position, zero))
         }
     }
 

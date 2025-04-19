@@ -37,8 +37,6 @@
   - based on focused window
 - add play button to samples
 - global variable in SuperCollider for list of all samples (`ALL_SAMPLES`)
-- undo managers for sub scenes
-  - undo/redo actions on tool panes
 - curve parameter type?
 - asr parameter type?
 - choose alternative addresses if the default ones are busy
@@ -50,6 +48,8 @@
 - variables
 - global variables
 - classes
+
+- also highlight unresolved variables!
 
 ### Stretching time regions
 
@@ -130,22 +130,12 @@
 
 ### Is vertical scroll/zoom needed?
 
-### Ability to show score objects in resizable/movable floating window (with detail pane)
-
 ### Are there better methods of navigating through the score?
 
 - for example a little overview pane at the bottom (like in VSCode)
 - is arrow key navigation inside the score somehow possible?
 
 ### Drum sequencer objects
-
-### Divide the score into multiple tracks
-
-- vertical sections (like JavaFX `SplitPane`)
-- draggable dividers
-- dragging them stretches/shrinks all the other sections uniformly
-- double click with shift on a divider adds a new section
-- sections can have associated buses, that are used for any new Synths that have bus parameters
 
 ## Was unterscheidet Ponticello von anderen DAWs?
 - Möglichkeit beliebig komplexe SynthDefs zu bauen.

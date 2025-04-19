@@ -5,10 +5,11 @@ import fxutils.actions.isShiftDown
 import fxutils.prompt.SimpleSearchableListView
 import fxutils.prompt.SimpleTextPrompt
 import javafx.scene.layout.Region
+import org.kordamp.ikonli.codicons.Codicons
 import org.kordamp.ikonli.material2.Material2AL
 import org.kordamp.ikonli.materialdesign2.*
 import xenakis.impl.Logger
-import xenakis.model.ScratchFile
+import xenakis.model.ScriptObject
 import xenakis.model.registry.BusRegistry
 import xenakis.ui.impl.NotificationView
 import xenakis.ui.impl.showDialog
@@ -36,22 +37,22 @@ object ToolWindowActions : Action.Collector<XenakisMainActivity>({
             } else activity.logWindow.showOrBringToFront()
         }
     }
-    addAction("Edit scratch file") {
-        icon(MaterialDesignF.FILE_COG)
-        shortcut("Ctrl+K")
-        executes { activity, ev ->
-            val list = SimpleSearchableListView(ScratchFile.Type.entries, "Open scratch file")
-            val source = ev?.source as? Region
-            val anchor = source?.localToScreen(0.0, source.height)
-            val type = list.showPopup(anchor, owner = activity.primaryStage) ?: return@executes
-            val window = activity.scratchFileWindows.getValue(type)
-            window.showOrBringToFront()
-        }
-    }
     addAction("Open help browser") {
         shortcut("F1")
         icon(MaterialDesignW.WEB)
         executes { activity -> activity.context[HelpBrowser].show() }
+    }
+    addAction("Edit scratch file") {
+        icon(MaterialDesignF.FILE_COG)
+        shortcut("Ctrl+K")
+        executes { activity, ev ->
+            val list = SimpleSearchableListView(ScriptObject.Type.entries, "Open scratch file")
+            val source = ev?.source as? Region
+            val anchor = source?.localToScreen(0.0, source.height)
+            val type = list.showPopup(anchor, owner = activity.primaryStage) ?: return@executes
+            val window = activity.scriptObjectWindows.getValue(type)
+            window.showOrBringToFront()
+        }
     }
     addAction("Lookup documentation") {
         shortcut("Ctrl+Shift+D")
@@ -60,17 +61,26 @@ object ToolWindowActions : Action.Collector<XenakisMainActivity>({
                 .showDialog(activity.context) ?: return@executes
             activity.context[HelpBrowser].searchDocumentation(searchText)
         }
-
-    }
-    addAction("Show audio flows") {
-        shortcut("Ctrl+F")
-        icon(MaterialDesignT.TUNE)
-        executes { activity -> activity.flowPaneWindow.showOrBringToFront() }
     }
     addAction("Edit settings") {
         shortcut("Ctrl+Alt+S")
         icon(MaterialDesignC.COG)
         executes { activity -> activity.settingsWindow.showOrBringToFront() }
+    }
+    addAction("Show SynthDefs") {
+        icon(MaterialDesignS.SINE_WAVE)
+        shortcut("Ctrl+I")
+        executes { activity -> activity.synthDefsWindow.showOrBringToFront() }
+    }
+    addAction("Show ProcessDefs") {
+        shortcut("Ctrl+P")
+        icon(Codicons.SERVER_PROCESS)
+        executes { activity -> activity.processDefsWindow.showOrBringToFront() }
+    }
+    addAction("Show audio flows") {
+        shortcut("Ctrl+F")
+        icon(MaterialDesignT.TUNE)
+        executes { activity -> activity.flowPaneWindow.showOrBringToFront() }
     }
     addAction("Show samples") {
         shortcut("Ctrl+Shift+S")

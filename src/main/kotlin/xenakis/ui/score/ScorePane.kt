@@ -1,10 +1,8 @@
 package xenakis.ui.score
 
-import fxutils.hasFile
+import fxutils.*
+import fxutils.prompt.SimpleSearchableListView
 import fxutils.prompt.compoundPrompt
-import fxutils.runFXWithTimeout
-import fxutils.setupDropArea
-import fxutils.styleClass
 import hextant.context.Context
 import hextant.core.editor.defaultState
 import hextant.serial.EditorRoot
@@ -12,6 +10,7 @@ import hextant.undo.compoundEdit
 import javafx.application.Platform
 import javafx.collections.FXCollections.observableList
 import javafx.geometry.Bounds
+import javafx.geometry.Point2D
 import javafx.scene.control.ComboBox
 import javafx.scene.control.Spinner
 import javafx.scene.control.TextField
@@ -19,15 +18,15 @@ import javafx.scene.input.Dragboard
 import javafx.scene.input.MouseButton
 import javafx.scene.input.MouseEvent
 import javafx.scene.layout.Pane
-import javafx.scene.paint.Color.*
 import javafx.scene.shape.Rectangle
 import reaktive.value.now
 import reaktive.value.reactiveVariable
 import xenakis.impl.*
-import xenakis.impl.Logger.Category
 import xenakis.model.obj.BufferObject
-import xenakis.model.obj.ParameterizedObjectDef
+import xenakis.model.obj.ProcessDefObject
 import xenakis.model.obj.SynthDefObject
+import xenakis.model.project.UI_STATE
+import xenakis.model.project.get
 import xenakis.model.project.score
 import xenakis.model.registry.*
 import xenakis.model.score.*
@@ -35,8 +34,6 @@ import xenakis.model.score.controls.BufferControl
 import xenakis.sc.Identifier
 import xenakis.sc.editor.CodeBlockEditor
 import xenakis.sc.editor.EventDictionaryEditor
-import xenakis.ui.actions.Tool
-import xenakis.ui.actions.Tool.*
 import xenakis.ui.controls.DecimalPrompt
 import xenakis.ui.controls.NamePrompt
 import xenakis.ui.impl.rootPane
@@ -48,14 +45,12 @@ import java.util.concurrent.CompletableFuture
 import kotlin.math.absoluteValue
 
 abstract class ScorePane(val score: Score, val context: Context) : Pane(), ScoreListener, TimeBlock {
-    private var newObject: RectangleSelection? = null
     protected var selectedArea: RectangleSelection? = null
 
     protected val views = mutableMapOf<ScoreObjectInstance, ScoreObjectView>()
     val allViews: Collection<ScoreObjectView> get() = views.values
 
     protected val activity get() = context[XenakisMainActivity]
-    private val selectedTool get() = activity.toolSelector.selected
 
     val selector: ScoreObjectSelectionManager get() = context[ScoreObjectSelectionManager]
 
@@ -135,6 +130,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
 
     protected open fun listenForEvents() {
         addEventHandler(MouseEvent.ANY) { ev ->
+            //TODO is this needed?
             val pane = when (val target = ev.target) {
                 is ScorePane -> target
                 is ScoreObjectGroupView -> if (target.isInitialized) target.scorePane else return@addEventHandler
@@ -144,14 +140,13 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
             when (ev.eventType) {
                 MouseEvent.MOUSE_PRESSED -> pane.mousePressed(e)
                 MouseEvent.MOUSE_DRAGGED -> pane.mouseDragged(e)
+                MouseEvent.MOUSE_CLICKED -> when (ev.clickCount) {
+                    1 -> mouseClicked(ev)
+                    2 -> doubleClicked(ev)
+                }
+
                 MouseEvent.MOUSE_RELEASED -> pane.mouseReleased(e)
             }
-        }
-        setOnMouseClicked { ev ->
-            if (ev.clickCount >= 2) {
-                doubleClicked(ev)
-            }
-
         }
         addPlayBufOnDrop()
     }
@@ -160,7 +155,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
         setupDropArea({ db -> db.hasFile("wav") || db.hasContent(BufferObject.DATA_FORMAT) }, { ev ->
             val sample = extractBufferFromDragboard(ev.dragboard) ?: return@setupDropArea
             val pos = snapToGrid(ev.x, ev.y)
-            createPlayBufObject(sample, pos)
+            createPlayBufObject(sample, pos, localToScreen(ev.x, ev.y))
         })
     }
 
@@ -177,30 +172,20 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
         else -> null
     }
 
-    private fun createPlayBufObject(buffer: BufferObject, pos: ObjectPosition) =
+    private fun createPlayBufObject(buffer: BufferObject, pos: ObjectPosition, anchor: Point2D) {
+        val synthDef = context[currentProject][UI_STATE].getOrSelectSynthDef(anchor, scene.window) ?: return
+        val controls = synthDef.getDefaultControls(associatedObject)
+        val synthDefRef = reactiveVariable(synthDef.reference())
+        val name = context[ScoreObjectRegistry].availableName(buffer.name.now)
+        val obj = SynthObject(reactiveVariable(name), synthDefRef, controls)
+        obj.setInitialSize(buffer.duration().now, 0.02.withPrecision(ObjectPosition.Y_PRECISION))
+        val inst = ScoreObjectInstance(obj, pos)
         context.compoundEdit("Add sample to score") {
-            val instruments = context[SynthDefRegistry]
-            val synthDef = instruments.selectedInstrument
-            if (synthDef !is SynthDefObject) {
-                Logger.error("A SynthDef should be selected for sample playback to work", Category.Buffers)
-                return
-            }
-            val controls = getDefaultControls(synthDef)
-            val synthDefRef = reactiveVariable(synthDef.reference())
-            val name = context[ScoreObjectRegistry].availableName(buffer.name.now)
-            val obj = SynthObject(reactiveVariable(name), synthDefRef, controls)
-            obj.setInitialSize(buffer.duration().now, 0.02.withPrecision(ObjectPosition.Y_PRECISION))
-            val inst = ScoreObjectInstance(obj, pos)
             score.addObject(inst)
             controls.reassignControl("buf", BufferControl(reactiveVariable(buffer.reference())))
         }
-
-    private fun getDefaultControls(def: ParameterizedObjectDef): ParameterControlList {
-        val defaultGroup = associatedObject?.defaultGroupRef?.now ?: context[GroupRegistry].getDefault().reference()
-        val defaultBus = associatedObject?.defaultBusRef?.now ?: context[BusRegistry].getDefault().reference()
-        val controls = def.defaultControls(context, defaultGroup, defaultBus)
-        return ParameterControlList.from(controls)
     }
+
 
     /*
     * Score object view management
@@ -214,7 +199,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
         is ProcessObject -> ProcessObjectView(inst, obj)
         is MemoObject -> MemoObjectView(inst, obj)
         is ScoreObjectGroup -> ScoreObjectGroupView(inst, obj)
-        is PianoRollObject -> PianoRollObjectView(inst, obj)
+        is MidiObject -> PianoRollObjectView(inst, obj)
         is TempoGridObject -> TempoGridObjectView(inst, obj)
         is ScoreObject.Unresolved -> UnresolvedScoreObjectView(inst)
     }
@@ -243,86 +228,63 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
     * Mouse events
     * */
 
-    private fun mousePressed(ev: MouseEvent) {
-        ev.consume()
-        val selectedTool = activity.toolSelector.selected
-        if (newObject != null) return
-        clearRegionSelection()
-        val pos = snapToGrid(ev.x, ev.y)
-        val (t, y) = pos
-        val rect = Rectangle(getX(t), getScreenY(y), 0.0, 0.0)
-        when (selectedTool) {
-            Synth -> {
-                val synthDef = context[SynthDefRegistry].selectedInstrument
-                if (synthDef !is SynthDefObject) return
-                rect.fill = synthDef.color.now
-            }
-
-            Process -> {
-                val processDef = context[ProcessDefRegistry].selectedDef ?: return
-                rect.fill = processDef.color.now
-            }
-
-            Task, Memo, Cut, AddTime -> return
-
-            Group -> {
-                rect.stroke = WHITE
-                rect.fill = rgb(0, 0, 0, 0.3)
-            }
-
-            PianoRoll -> rect.fill = context[SynthDefRegistry].selectedInstrument?.color?.now ?: return
-
-            TempoGrid -> {
-                rect.fill = TRANSPARENT
-                rect.stroke = BLACK
-            }
-
-            Pointer, Resize -> {
-                startSelection(pos, ev)
-                return
-            }
-        }
-        beginNewObject(pos, rect)
-    }
-
-    protected open fun startSelection(pos: ObjectPosition, ev: MouseEvent) {
-        check(selectedArea == null)
-        val selectionRect = Rectangle() styleClass "selection-rect"
-        val selection = RectangleSelection(this, selectionRect, pos)
-        if (ev.isControlDown) {
-            selection.useAsTimeSelection()
-        }
-        children.add(selection.rect)
-        selectedArea = selection
-    }
-
-    protected fun clearRegionSelection() {
-        val selection = selectedArea ?: return
-        children.remove(selection.rect)
-        selectedArea = null
-    }
-
-    private fun mouseDragged(ev: MouseEvent) {
-        val newObj = newObject
-        val pos = snapToGrid(ev.x, ev.y)
+    private fun mouseClicked(ev: MouseEvent) {
+        if (score == context[currentProject].score && !ev.isShiftDown) selector.deselectAll()
+        val (t, y) = snapToGrid(ev.x, ev.y)
+        val scoreView = context[XenakisMainActivity].scoreView
         when {
-            newObj != null -> {
-                newObj.setOppositeCorner(pos)
-                markT(pos.time)
-                ev.consume()
+            ev.button == MouseButton.SECONDARY -> pasteFromSystemClipboard(ev)
+
+            ev.isAltDown && ev.isShiftDown -> {
+                val popup = SimpleSearchableRegistryView(context[BufferRegistry], "Place sample")
+                val anchor = localToScreen(ev.x, ev.y)
+                val sample = popup.showPopup(anchor, scene.window) ?: return
+                val pos = snapToGrid(ev.x, ev.y)
+                createPlayBufObject(sample, pos, localToScreen(ev.x, ev.y))
             }
 
-            selectedArea != null && canSelectRegion() -> {
-                val selection = selectedArea!!
-                selection.setOppositeCorner(pos)
-                markT(pos.time)
+            ev.isAltDown -> {
+                val popup = SimpleSearchableRegistryView(context[ScoreObjectRegistry], "Add object instance")
+                val anchor = localToScreen(ev.x, ev.y)
+                val obj = popup.showPopup(anchor, scene.window) ?: return
+                val pos = snapToGrid(ev.x, ev.y)
+                val inst = ScoreObjectInstance(obj, pos)
+                score.addObject(inst)
             }
+
+            scoreView.isInDuplicateMode() -> {
+                var obj = scoreView.clipboardObject!!
+                if (obj.height > score.maxY || obj.duration > score.maxTime) return
+                if (ev.isShiftDown) {
+                    val name = context[ScoreObjectRegistry].nameForClone(obj)
+                    obj = obj.clone(name)
+                }
+                val time = t.coerceIn(zero, score.maxTime - obj.duration)
+                val scoreY = y.coerceIn(zero, score.maxY - obj.height)
+                val duplicate = ScoreObjectInstance(obj, time, scoreY)
+                score.addObject(duplicate)
+            }
+
+            this is ScoreView && !activity.playback.player.isPlaying.now -> {
+                if (ev.isControlDown) {
+                    activity.playback.attachToMainScore()
+                }
+                if (activity.playback.isAttachedTo(this)) {
+                    activity.playback.playHead.movePlayHead(t)
+                }
+            }
+
+            this is ScoreView -> {
+                if (!ev.isShiftDown) {
+                    context[ScoreObjectSelectionManager].deselectAll()
+                    requestFocus()
+                }
+            }
+
+            else -> return
         }
+        ev.consume()
     }
-
-    private fun canSelectRegion() =
-        (this is ScoreView && selectedTool in setOf(Pointer, Resize)
-                || this is SubScorePane && selectedTool == Group)
 
     private fun pasteFromSystemClipboard(ev: MouseEvent) {
         var instances = context[ScoreObjectSelectionManager].getSystemClipboard() ?: return
@@ -341,215 +303,204 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
         }
     }
 
-    private fun doubleClicked(ev: MouseEvent) {
-        val tool = activity.toolSelector.selected
-        if (tool in setOf(Task, Memo)) {
+    private fun mousePressed(ev: MouseEvent) {
+        ev.consume()
+        clearRegionSelection()
+        val pos = snapToGrid(ev.x, ev.y)
+        val selectionRect = Rectangle() styleClass "selection-rect"
+        val selection = RectangleSelection(this, selectionRect, pos)
+        if (ev.isShiftDown) {
+            selection.useAsTimeSelection()
+        }
+        children.add(selection.rect)
+        selectedArea = selection
+    }
+
+    fun clearRegionSelection() {
+        val selection = selectedArea ?: return
+        children.remove(selection.rect)
+        selectedArea = null
+    }
+
+    private fun mouseDragged(ev: MouseEvent) {
+        if (selectedArea != null) {
+            val pos = snapToGrid(ev.x, ev.y)
+            val selection = selectedArea!!
+            selection.setOppositeCorner(pos)
+            markT(pos.time)
             ev.consume()
-            val (t, y) = snapToGrid(ev.x, ev.y)
-            val obj = when (tool) {
-                Task -> {
-                    val defaultName = context[ScoreObjectRegistry].availableName("task")
-                    val name = NamePrompt(context[ScoreObjectRegistry], "Task name", defaultName)
-                        .showDialog(context) ?: return
-                    val code = EditorRoot(CodeBlockEditor().defaultState())
-                    TaskObject(reactiveVariable(name), code)
-                }
+        }
+    }
 
-                Memo -> {
-                    val defaultName = context[ScoreObjectRegistry].availableName("memo")
-                    MemoObject(reactiveVariable(defaultName), "")
-                }
-
-                else -> throw AssertionError()
+    private fun doubleClicked(ev: MouseEvent) {
+        ev.consume()
+        val (t, y) = snapToGrid(ev.x, ev.y)
+        val type = SimpleSearchableListView(listOf("Task", "Memo"), "Choose object type")
+            .showPopup(localToScreen(ev.x, ev.y), scene.window) ?: return
+        val obj = when (type) {
+            "Task" -> {
+                val defaultName = context[ScoreObjectRegistry].availableName("task")
+                val name = NamePrompt(context[ScoreObjectRegistry], "Task name", defaultName)
+                    .showDialog(ev) ?: return
+                val code = EditorRoot(CodeBlockEditor().defaultState())
+                TaskObject(reactiveVariable(name), code)
             }
-            val inst = ScoreObjectInstance(obj, t, y)
-            score.addObject(inst)
-            if (obj is MemoObject) {
-                val view = getObjectView(inst) as MemoObjectView
-                runFXWithTimeout {
-                    view.enterEdit()
-                }
+
+            "Memo" -> {
+                val defaultName = context[ScoreObjectRegistry].availableName("memo")
+                MemoObject(reactiveVariable(defaultName), "")
+            }
+
+            else -> return
+        }
+
+        val inst = ScoreObjectInstance(obj, t, y)
+        score.addObject(inst)
+        if (obj is MemoObject) {
+            val view = getObjectView(inst) as MemoObjectView
+            runFXWithTimeout {
+                view.enterEdit()
             }
         }
     }
 
     private fun mouseReleased(ev: MouseEvent) {
         if (ev.target != this) return
-        ev.consume()
-        if (score == context[currentProject].score && !ev.isShiftDown) selector.deselectAll()
-        val newObj = newObject
         val selection = selectedArea
-        val tool = activity.toolSelector.selected
-        val (t, y) = snapToGrid(ev.x, ev.y)
-        val scoreView = context[XenakisMainActivity].scoreView
-        when {
-            tool == AddTime -> {
-                val amount = DecimalPrompt(
-                    "How much time to add",
-                    precision = 2, initialValue = 10.0, 0.0..1000.0
-                ).showDialog(context) ?: return
-                addTime(t, amount)
-            }
-
-            newObj != null -> {
-                if (newObj.isNotEmpty()) {
-                    createNewObject(tool, newObj, ev)
-                }
-                endNewObject()
-            }
-
-            ev.button == MouseButton.PRIMARY && ev.isAltDown && ev.isShiftDown -> {
-                val popup = SimpleSearchableRegistryView(context[ScoreObjectRegistry], "Add object instance")
-                val anchor = localToScreen(ev.x, ev.y)
-                val obj = popup.showPopup(anchor, scene.window) ?: return
-                val pos = snapToGrid(ev.x, ev.y)
-                val inst = ScoreObjectInstance(obj, pos)
-                score.addObject(inst)
-            }
-
-            ev.button == MouseButton.PRIMARY && ev.isAltDown -> {
-                val popup = SimpleSearchableRegistryView(context[BufferRegistry], "Place sample")
-                val anchor = localToScreen(ev.x, ev.y)
-                val sample = popup.showPopup(anchor, scene.window) ?: return
-                val pos = snapToGrid(ev.x, ev.y)
-                createPlayBufObject(sample, pos)
-            }
-
-            ev.button == MouseButton.PRIMARY && scoreView.isInDuplicateMode() -> {
-                var obj = scoreView.clipboardObject!!
-                if (obj.height > score.maxY || obj.duration > score.maxTime) return
-                if (ev.isShiftDown) {
-                    val name = context[ScoreObjectRegistry].nameForClone(obj)
-                    obj = obj.clone(name)
-                }
-                val time = t.coerceIn(zero, score.maxTime - obj.duration)
-                val scoreY = y.coerceIn(zero, score.maxY - obj.height)
-                val duplicate = ScoreObjectInstance(obj, time, scoreY)
-                score.addObject(duplicate)
-            }
-
-            selection != null && selection.isNotEmpty() -> {
-                if (!ev.isShiftDown) {
-                    selector.deselectAll()
-                }
-                if (selection.isTimeSelection) {
-                    selection.rect.requestFocus()
-                } else {
-                    val views = viewsInside(selection.rect.boundsInParent)
-                    for (view in views) {
-                        selector.select(view, addToSelection = true)
-                    }
-                    clearRegionSelection()
-                }
-            }
-
-            ev.button == MouseButton.SECONDARY -> pasteFromSystemClipboard(ev)
-
-            this is ScoreView && !activity.playback.player.isPlaying.now -> {
-                if (ev.isControlDown) {
-                    activity.playback.attachToMainScore()
-                }
-                if (activity.playback.isAttachedTo(this)) {
-                    activity.playback.playHead.movePlayHead(t)
-                }
-            }
-
-            this is ScoreView -> {
-                if (!ev.isShiftDown) {
-                    context[ScoreObjectSelectionManager].deselectAll()
-                    requestFocus()
-                }
-            }
+        if (selection == null || selection.isEmpty()) return
+        selector.deselectAll()
+        clearRegionSelection()
+        if (selection.isTimeSelection) {
+            selection.rect.requestFocus()
+            return
         }
-    }
-
-    private fun viewsInside(bounds: Bounds) = views.values.filter { v -> bounds.contains(v.boundsInParent) }
-
-    /*
-    * Object creation
-    * */
-
-    private fun createNewObject(tool: Tool, rect: RectangleSelection, ev: MouseEvent) {
-        try {
-            val obj = when (tool) {
-                Synth -> {
-                    val def = context[SynthDefRegistry].selectedInstrument
-                    if (def !is SynthDefObject) return
-                    val initialName = context[ScoreObjectRegistry].availableName(def.name.now)
-                    val name = NamePrompt(context[ScoreObjectRegistry], "Name for new Synth object", initialName)
-                        .showDialog(context) ?: return
-                    val ref = reactiveVariable(def.reference())
-                    val controls = getDefaultControls(def)
-                    SynthObject(reactiveVariable(name), ref, controls)
-                }
-
-                Process -> {
-                    val def = context[ProcessDefRegistry].selectedDef ?: return
-                    val initialName = context[ScoreObjectRegistry].availableName(def.name.now)
-                    val name = NamePrompt(context[ScoreObjectRegistry], "Name for new Process object", initialName)
-                        .showDialog(context) ?: return
-                    val ref = reactiveVariable(def.reference())
-                    val controls = getDefaultControls(def)
-                    ProcessObject(reactiveVariable(name), ref, controls)
-                }
-
-                Group -> {
+        val containedViews = viewsInside(selection.rect.boundsInParent)
+        when (ev.modifiers) {
+            setOf(Alt) -> {
+                ev.consume()
+                if (containedViews.isEmpty()) {
+                    val availableOptions = context[SynthDefRegistry].map(NewObjectOption::Synth) +
+                            context[ProcessDefRegistry].map(NewObjectOption::Process) +
+                            context[SynthDefRegistry].map(NewObjectOption::MIDI) +
+                            listOf(NewObjectOption.Group, NewObjectOption.TempoGrid)
+                    val popup = SimpleSearchableListView(availableOptions, "Add score object")
+                    val anchor =
+                        localToScreen(selection.rect.boundsInParent.centerX, selection.rect.boundsInParent.centerY)
+                    val option = popup.showPopup(anchor, scene.window) ?: return
+                    val obj = if (option is NewObjectOption.MIDI) {
+                        createMidiObject(option.def, anchor) ?: return
+                    } else {
+                        val initialName = option.defaultName(context[ScoreObjectRegistry])
+                        val name = NamePrompt(context[ScoreObjectRegistry], "Name for object", initialName)
+                            .showDialog(scene.window, anchor) ?: return
+                        createNewObject(option, name)
+                    }
+                    addObject(obj, selection)
+                } else {
                     val name = context[ScoreObjectRegistry].availableName("group")
                     context.compoundEdit("Add object group") {
                         val subScore = Score(mutableListOf())
                         val groupObj = ScoreObjectGroup(reactiveVariable(name), subScore)
-                        val inst = addObject(groupObj, rect)
+                        val inst = addObject(groupObj, selection)
                         val relativePosition = -inst.position
-                        for (view in viewsInside(rect.rect.boundsInParent)) {
+                        for (view in containedViews) {
                             view.instance.moveInto(subScore, relativePosition, recurse = ev.isShiftDown)
                         }
                     }
                     return
                 }
+            }
 
-                PianoRoll -> {
-                    val instr = context[SynthDefRegistry].selectedInstrument ?: return
-                    compoundPrompt("Configure new object") {
-                        val defaultName = context[ScoreObjectRegistry].availableName("piano_roll")
-                        val nameField = TextField(defaultName) named "Object name"
-                        val rootPitchSelector =
-                            ComboBox(observableList(MidiPitch.allPitchClasses())) named "Root pitch class"
-                        rootPitchSelector.value = MidiPitch(0)
-                        val registerSpinner = Spinner<Int>(0, 10, 4) named "Base register"
-                        val octaves = Spinner<Int>(1, 12, 2) named "Octaves"
-                        onConfirm {
-                            val name = nameField.text
-                            if (!Identifier.isValid(name) || score.has(name)) return@onConfirm null
-                            val lowestPitch = rootPitchSelector.value.step + 12 * registerSpinner.value
-                            val highestPitch = lowestPitch + 12 * octaves.value
-                            val notes = mutableListOf<PianoRollObject.Note>()
-                            val eventDictionary = EditorRoot(EventDictionaryEditor())
-                            PianoRollObject(
-                                reactiveVariable(name),
-                                reactiveVariable(instr.reference()),
-                                lowestPitch,
-                                highestPitch,
-                                eventDictionary,
-                                notes
-                            )
-                        }
-                    }.showDialog(context) ?: return
-                }
-
-                TempoGrid -> {
-                    val name = context[ScoreObjectRegistry].availableName("grid")
-                    TempoGridObject.createDefault(name)
-                }
-
-                Pointer, Cut, AddTime, Task, Memo, Resize -> {
-                    Logger.warn("Unrecognized object type $tool", Category.Score)
-                    return
+            noModifiers, setOf(Shift) -> {
+                ev.consume()
+                for ((idx, view) in containedViews.withIndex()) {
+                    val addToSelection = idx != 0 || ev.isShiftDown
+                    selector.select(view, addToSelection)
                 }
             }
-            addObject(obj, rect)
-        } catch (e: Exception) {
-            Logger.error("Error creating new object", e, Category.Score)
         }
+    }
+
+    private fun createNewObject(option: NewObjectOption, name: String) = when (option) {
+        is NewObjectOption.Synth -> {
+            val controls = option.def.getDefaultControls(associatedObject)
+            SynthObject.create(name, option.def, controls)
+        }
+
+        is NewObjectOption.Process -> {
+            val controls = option.def.getDefaultControls(associatedObject)
+            ProcessObject(
+                reactiveVariable(name),
+                reactiveVariable(option.def.reference()),
+                controls
+            )
+        }
+
+        is NewObjectOption.MIDI -> throw AssertionError("Handled before")
+        NewObjectOption.Group -> ScoreObjectGroup(reactiveVariable(name), Score(mutableListOf()))
+        NewObjectOption.TempoGrid -> TODO()
+    }
+
+    private sealed class NewObjectOption {
+        override fun toString() = when (this) {
+            is Synth -> "Synth: ${def.name.now}"
+            is Process -> "Process: ${def.name.now}"
+            is MIDI -> "MIDI: ${def.name.now}"
+            is Group -> "Group"
+            is TempoGrid -> "Tempo grid"
+        }
+
+        fun defaultName(registry: ScoreObjectRegistry): String = when (this) {
+            is Synth -> registry.availableName(def.name.now)
+            is MIDI -> registry.availableName("${def.name.now}_midi")
+            is Process -> registry.availableName(def.name.now)
+            Group -> registry.availableName("group")
+            TempoGrid -> registry.availableName("tempo")
+        }
+
+        class Synth(val def: SynthDefObject) : NewObjectOption()
+        class Process(val def: ProcessDefObject) : NewObjectOption()
+        class MIDI(val def: SynthDefObject) : NewObjectOption()
+        object Group : NewObjectOption()
+        object TempoGrid : NewObjectOption()
+    }
+
+    private fun showAddTimeDialog(t: Decimal) {
+        val amount = DecimalPrompt(
+            "How much time to add",
+            precision = 2, initialValue = 10.0, 0.0..1000.0
+        ).showDialog(context) ?: return
+        addTime(t, amount)
+    }
+
+    private fun viewsInside(bounds: Bounds) = views.values.filter { v -> bounds.contains(v.boundsInParent) }
+
+    private fun createMidiObject(instr: SynthDefObject, anchor: Point2D): MidiObject? {
+        return compoundPrompt("Configure new object") {
+            val defaultName = context[ScoreObjectRegistry].availableName("piano_roll")
+            val nameField = TextField(defaultName) named "Object name"
+            val rootPitchSelector =
+                ComboBox(observableList(MidiPitch.allPitchClasses())) named "Root pitch class"
+            rootPitchSelector.value = MidiPitch(0)
+            val registerSpinner = Spinner<Int>(0, 10, 4) named "Base register"
+            val octaves = Spinner<Int>(1, 12, 2) named "Octaves"
+            onConfirm {
+                val name = nameField.text
+                if (!Identifier.isValid(name) || score.has(name)) return@onConfirm null
+                val lowestPitch = rootPitchSelector.value.step + 12 * registerSpinner.value
+                val highestPitch = lowestPitch + 12 * octaves.value
+                val notes = mutableListOf<MidiObject.Note>()
+                val eventDictionary = EditorRoot(EventDictionaryEditor())
+                MidiObject(
+                    reactiveVariable(name),
+                    reactiveVariable(instr.reference()),
+                    lowestPitch,
+                    highestPitch,
+                    eventDictionary,
+                    notes
+                )
+            }
+        }.showDialog(scene.window, anchor)
     }
 
     private fun addObject(obj: ScoreObject, rect: RectangleSelection): ScoreObjectInstance {
@@ -559,18 +510,6 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
         score.addObject(inst)
         selector.select(getObjectView(inst), addToSelection = false)
         return inst
-    }
-
-    private fun beginNewObject(position: ObjectPosition, s: Rectangle) {
-        if (s !in children) children.add(s)
-        newObject = RectangleSelection(this, s, position)
-    }
-
-    fun endNewObject() {
-        if (newObject != null) {
-            children.remove(newObject!!.rect)
-            newObject = null
-        }
     }
 
     fun removeSelected() {

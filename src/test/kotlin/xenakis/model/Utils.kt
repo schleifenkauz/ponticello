@@ -35,7 +35,6 @@ object Utils {
         set(
             SynthDefRegistry,
             SynthDefRegistry(
-                reactiveVariable(ObjectReference.none()),
                 mutableListOf(/*InstrumentRegistry.defaultInstrument()*/)
             ).also { it.initialize(this) }
         )

@@ -28,7 +28,6 @@ import xenakis.model.score.ParameterControlList.NamedParameterControl
 import xenakis.model.score.controls.EnvelopeControl
 import xenakis.sc.NumericalControlSpec
 import xenakis.sc.mapOnto
-import xenakis.ui.actions.Tool
 import xenakis.ui.controls.ControlSpecPrompt
 import xenakis.ui.controls.DecimalPrompt
 import xenakis.ui.impl.rootPane
@@ -81,7 +80,6 @@ class EnvelopeEditor(
     private fun setupLineDragging() {
         var draggingSegment = false
         line.setupDragging(
-            context, dragTool = Tool.Pointer,
             defaultCursor = Cursor.CROSSHAIR, dragCursor = Cursor.V_RESIZE,
             onPressed = { ev ->
                 val t = transformXToTime(ev.x)
@@ -92,8 +90,7 @@ class EnvelopeEditor(
                 if (diff.abs() >= spec.step.get()) return@setupDragging
                 draggingSegment = true
                 envelope.beginSegmentEdit(segmentIdx - 1)
-            },
-            onReleased = {
+            }, onReleased = {
                 if (draggingSegment) {
                     envelope.finishEdit()
                     draggingSegment = false
@@ -272,10 +269,8 @@ class EnvelopeEditor(
             on("DOWN") { adjustPointVertical(idx, -1) }
         }
         handle.setupDragging(
-            context,
-            defaultCursor = Cursor.CROSSHAIR, dragCursor = Cursor.MOVE,
-            dragTool = Tool.Pointer,
-            onPressed = { envelope.beginPointEdit(handles.indexOf(handle)) },
+            defaultCursor = Cursor.CROSSHAIR,
+            dragCursor = Cursor.MOVE, onPressed = { envelope.beginPointEdit(handles.indexOf(handle)) },
             onReleased = { envelope.finishEdit() }
         ) { _, _, old, dx, dy ->
             val idx = handles.indexOf(handle)

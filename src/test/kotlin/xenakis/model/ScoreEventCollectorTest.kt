@@ -45,7 +45,7 @@ class ScoreEventCollectorTest {
                 p < 0.65 -> {
                     val inst = rootScore.allInstances().toList().random(rnd)
                     println("Remove $inst")
-                    inst.score?.removeObject(inst, removeFromRegistry = false)
+                    inst.score?.removeObject(inst, Score.RegistryOption.KEEP_IN_REGISTRY)
                 }
 
                 p < 0.8 -> {
