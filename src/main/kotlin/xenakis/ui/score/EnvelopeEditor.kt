@@ -50,7 +50,7 @@ class EnvelopeEditor(
     private val associatedObject get() = objectView.instance.obj
 
     private val spec get() = namedControl.spec.now as NumericalControlSpec
-    private val yTransform get() = spec.mapOnto(pane.height..0.0)
+    private val yTransform get() = spec.mapOnto(objectView.getScreenY(objectView.obj.height)..0.0)
 
     private val valueGrid get() = spec.step.get()
 

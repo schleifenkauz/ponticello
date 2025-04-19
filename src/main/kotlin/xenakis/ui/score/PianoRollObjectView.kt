@@ -40,7 +40,7 @@ import xenakis.ui.impl.showDialog
 import xenakis.ui.launcher.XenakisMainActivity
 import kotlin.math.roundToInt
 
-class PianoRollObjectView(inst: ScoreObjectInstance, private val obj: PianoRollObject) : ScoreObjectView(inst) {
+class PianoRollObjectView(inst: ScoreObjectInstance, override val obj: PianoRollObject) : ScoreObjectView(inst) {
     private val noteRects = mutableMapOf<PianoRollObject.Note, BorderPane>()
     private val orientationLines = mutableListOf<Line>()
     private val blackKeys = mutableListOf<Rectangle>()

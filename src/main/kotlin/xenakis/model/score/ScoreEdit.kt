@@ -14,13 +14,13 @@ abstract class ScoreEdit(val score: Score) : AbstractEdit() {
         }
 
         override fun doUndo() {
-            score.removeObject(obj, removeFromRegistry = true)
+            score.removeObject(obj, option = Score.RegistryOption.REMOVE_WITHOUT_ASKING)
         }
     }
 
     class RemoveObjects(
         private val objects: Set<ScoreObjectInstance>,
-        private val removeFromRegistry: Boolean,
+        private val option: Score.RegistryOption,
         score: Score,
     ) : ScoreEdit(score) {
         override val actionDescription: String
@@ -31,14 +31,14 @@ abstract class ScoreEdit(val score: Score) : AbstractEdit() {
         }
 
         override fun doRedo() {
-            score.removeObjects(objects, removeFromRegistry)
+            score.removeObjects(objects, option)
         }
 
         override fun mergeWith(other: Edit): Edit? {
             if (other !is RemoveObjects) return null
             if (other.score != this.score) return null
-            if (other.removeFromRegistry != this.removeFromRegistry) return null
-            return RemoveObjects(this.objects + other.objects, other.removeFromRegistry, score)
+            if (other.option != this.option) return null
+            return RemoveObjects(this.objects + other.objects, other.option, score)
         }
     }
 

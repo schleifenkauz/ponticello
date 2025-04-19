@@ -21,6 +21,7 @@ import xenakis.impl.times
 import xenakis.impl.zero
 import xenakis.model.obj.NoSynthDef
 import xenakis.model.score.ObjectPosition
+import xenakis.model.score.Score
 import xenakis.model.score.ScoreObject
 import xenakis.model.score.ScoreObjectGroup
 import xenakis.ui.controls.RenamePrompt
@@ -42,7 +43,7 @@ object ObjectActions {
             executeMultiAction { view, _ ->
                 val instance = view.instance
                 val score = instance.score ?: return@executeMultiAction
-                score.removeObject(instance, removeFromRegistry = true)
+                score.removeObject(instance, option = Score.RegistryOption.ASK_IF_NEEDED)
             }
         }
         addObjectAction("Toggle mute") {
@@ -171,7 +172,7 @@ object ObjectActions {
                         subInst.moveTo(inst.position + subInst.position)
                         parentScore.addObject(subInst)
                     }
-                    inst.score!!.removeObject(inst, removeFromRegistry = true) //TODO do we need to ask?
+                    inst.score!!.removeObject(inst, Score.RegistryOption.REMOVE_WITHOUT_ASKING)
                 }
             }
         }

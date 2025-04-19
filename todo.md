@@ -17,9 +17,11 @@
 - sub-objects get buggy after unlinking group objects
   - the new objects don't get added to the `ScoreEventCollector`
 - recording doesn't work
+- uncomment and debug SynthDef queries
 
 ### Minor
 
+- improve the display of the envelope values
 - commands in tool panes to save associated component?
 - ability to specify added time in beats/bars/ticks
 - option to create external automation (adding a kr-write `SynthObject`) for numerical parameter

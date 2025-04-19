@@ -251,18 +251,19 @@ sealed class ScoreObject : AbstractRenamableObject() {
         }
     }
 
-    fun removedFromScore() {
+    fun removedFromScore(option: Score.RegistryOption) {
+        if (option == Score.RegistryOption.KEEP_IN_REGISTRY) return
         if (!context[currentProject].score.hasInstancesOf(this) && registry.has(this)) {
-            val remove = YesNoPrompt(
+            val remove = option == Score.RegistryOption.REMOVE_WITHOUT_ASKING || YesNoPrompt(
                 "Score has no instances of $this anymore. Remove it from the registry?",
                 cancellable = false,
                 default = false
-            ).showDialog(owner = context[primaryStage])
-            if (remove != true) return
+            ).showDialog(owner = context[primaryStage]) ?: false
+            if (!remove) return
             context.withoutUndo { registry.remove(this) }
             if (this is ScoreObjectGroup) {
                 for (subInst in score.objectInstances) {
-                    subInst.obj.removedFromScore()
+                    subInst.obj.removedFromScore(option)
                 }
             }
         }

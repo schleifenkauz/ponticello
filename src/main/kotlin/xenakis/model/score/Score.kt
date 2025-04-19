@@ -6,6 +6,7 @@ import hextant.context.Context
 import hextant.context.withoutUndo
 import hextant.core.editor.ListenerManager
 import hextant.undo.UndoManager
+import hextant.undo.compoundEdit
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import reaktive.value.ReactiveString
@@ -45,14 +46,12 @@ class Score(
         context[rootScore] = this
         for (inst in objectInstances) {
             inst.initialize(context)
+            inst.addedToScore(this)
         }
     }
 
     override fun initialize(context: Context) {
         initialize(context, parentObject = null)
-        for (inst in objectInstances) {
-            inst.addedToScore(this)
-        }
     }
 
     fun addListener(listener: ScoreListener, notify: Boolean = true) {
@@ -86,18 +85,18 @@ class Score(
         undo.record(ScoreEdit.AddObject(inst, this))
     }
 
-    fun removeObjects(set: Set<ScoreObjectInstance>, removeFromRegistry: Boolean) {
+    fun removeObjects(set: Set<ScoreObjectInstance>, option: RegistryOption) {
         for (inst in set) {
             Logger.info("Removing ${inst.obj.name.now} from score ${scoreName.now}", Logger.Category.Score)
             instances.remove(inst)
             views.notifyListeners { removedObject(this@Score, inst) }
-            inst.removedFromScore(removeFromRegistry)
+            inst.removedFromScore(option)
         }
-        undo.record(ScoreEdit.RemoveObjects(set, removeFromRegistry, this))
+        undo.record(ScoreEdit.RemoveObjects(set, option, this))
     }
 
-    fun removeObject(obj: ScoreObjectInstance, removeFromRegistry: Boolean) {
-        removeObjects(setOf(obj), removeFromRegistry)
+    fun removeObject(obj: ScoreObjectInstance, option: RegistryOption) {
+        removeObjects(setOf(obj), option)
     }
 
     fun movedObject(inst: ScoreObjectInstance, oldPosition: ObjectPosition) {
@@ -123,33 +122,33 @@ class Score(
     }
 
     fun deleteTimeRange(start: Decimal, end: Decimal) {
-        undo.beginCompoundEdit()
-        val removedDuration = end - start
-        for (inst in objectInstances) {
-            if (inst.start > start) {
-                if (inst.start + inst.obj.duration < end) {
-                    removeObject(inst, removeFromRegistry = true)
-                } else {
-                    val newStart = (inst.start - removedDuration).coerceAtLeast(zero)
-                    inst.setTime(newStart)
+        context.compoundEdit("Delete time range") {
+            val removedDuration = end - start
+            for (inst in objectInstances) {
+                if (inst.start > start) {
+                    if (inst.start + inst.obj.duration < end) {
+                        removeObject(inst, option = RegistryOption.REMOVE_WITHOUT_ASKING)
+                    } else {
+                        val newStart = (inst.start - removedDuration).coerceAtLeast(zero)
+                        inst.setTime(newStart)
+                    }
                 }
             }
         }
-        undo.finishCompoundEdit("Delete time range")
     }
 
     fun loop(inst: ScoreObjectInstance, period: Decimal, repetitions: Int) {
-        context[UndoManager].beginCompoundEdit("Loop object")
-        var t = inst.start
-        val layers = (inst.obj.duration / period + 0.95).toInt()
-        for (n in 1..repetitions) {
-            t += period
-            val layer = n % layers
-            val y = inst.position.y + (layer * inst.height)
-            val clone = inst.duplicate(t, y)
-            addObject(clone)
+        context.compoundEdit("Loop object") {
+            var t = inst.start
+            val layers = (inst.obj.duration / period + 0.95).toInt()
+            for (n in 1..repetitions) {
+                t += period
+                val layer = n % layers
+                val y = inst.position.y + (layer * inst.height)
+                val clone = inst.duplicate(t, y)
+                addObject(clone)
+            }
         }
-        context[UndoManager].finishCompoundEdit()
     }
 
     fun hasInstancesOf(obj: ScoreObject, filterMuted: Boolean = false): Boolean = instancesOf(obj, filterMuted).any()
@@ -169,6 +168,12 @@ class Score(
             yield(inst)
             if (o is ScoreObjectGroup) yieldAll(o.score.allInstances())
         }
+    }
+
+    enum class RegistryOption {
+        KEEP_IN_REGISTRY,
+        REMOVE_WITHOUT_ASKING,
+        ASK_IF_NEEDED;
     }
 
     companion object {

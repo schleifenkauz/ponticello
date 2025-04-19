@@ -9,6 +9,7 @@ import kotlinx.serialization.serializer
 import reaktive.value.ReactiveValue
 import reaktive.value.now
 import reaktive.value.reactiveVariable
+import xenakis.model.score.Score
 import xenakis.model.score.ScoreObject
 import xenakis.model.score.ScoreObjectInstance
 
@@ -99,7 +100,7 @@ class ScoreObjectSelectionManager(val context: Context, private val rootPane: Sc
     fun removeSelected() {
         for (inst in selectedInstances) {
             val score = inst.score ?: error("No score associated with $inst")
-            score.removeObject(inst, removeFromRegistry = true)
+            score.removeObject(inst, Score.RegistryOption.ASK_IF_NEEDED)
         }
         deselectAll()
     }

@@ -14,7 +14,9 @@ import javafx.scene.input.Dragboard
 import javafx.scene.input.KeyEvent
 import javafx.scene.input.MouseEvent
 import javafx.scene.paint.Color
+import reaktive.value.ReactiveString
 import reaktive.value.ReactiveVariable
+import reaktive.value.fx.asObservableValue
 import reaktive.value.now
 import xenakis.impl.Decimal
 import xenakis.impl.asY
@@ -74,6 +76,13 @@ fun makeSubWindow(
     val w = SubWindow(root, title, type)
     w.initOwner(context[primaryStage])
     return w
+}
+
+fun makeSubWindow(
+    root: Parent, title: ReactiveString,
+    context: Context, type: SubWindow.Type = SubWindow.Type.ToolWindow,
+): SubWindow = makeSubWindow(root, title.get(), context, type).apply {
+    titleProperty().bind(title.asObservableValue())
 }
 
 fun Context.makeToolWindow(

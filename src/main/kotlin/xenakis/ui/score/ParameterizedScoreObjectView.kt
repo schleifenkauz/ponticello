@@ -26,7 +26,7 @@ abstract class ParameterizedScoreObjectView<O>(
     private val envelopeDisplayObservers = mutableMapOf<EnvelopeControl, Observer>()
     private val envelopeEditors = mutableListOf<EnvelopeEditor>()
 
-    abstract val obj: O
+    abstract override val obj: O
 
     override fun initialize() {
         super.initialize()

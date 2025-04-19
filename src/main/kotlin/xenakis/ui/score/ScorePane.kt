@@ -63,6 +63,8 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
     protected abstract val displayEnd: Decimal
     abstract val associatedObject: ScoreObjectGroup?
 
+    abstract val pixelsPerSecond: Double
+
     open fun snapToGrid(position: ObjectPosition): ObjectPosition =
         context.rootPane.snapToGrid(position + absolutePosition) - absolutePosition
 
@@ -76,17 +78,17 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
         context.rootPane.markT(time)
     }
 
-    override fun getX(time: Decimal): Double = ((time - displayStart) * context.rootPane.pixelsPerSecond).toDouble()
+    override fun getX(time: Decimal): Double = ((time - displayStart) * pixelsPerSecond).toDouble()
 
-    override fun getTime(x: Double): Decimal = (x / context.rootPane.pixelsPerSecond) + displayStart
+    override fun getTime(x: Double): Decimal = (x / pixelsPerSecond) + displayStart
 
-    override fun getDuration(width: Double): Decimal =
-        (width / context.rootPane.pixelsPerSecond).asTime
+    override fun getDuration(width: Double): Decimal = (width / pixelsPerSecond).asTime
 
-    override fun getWidth(duration: Decimal): Double = (duration * context.rootPane.pixelsPerSecond).toDouble()
+    override fun getWidth(duration: Decimal): Double = (duration * pixelsPerSecond).toDouble()
 
-    fun getScoreY(screenY: Double): Decimal = (screenY / context.rootPane.height).asY
-    fun getScreenY(scoreY: Decimal): Double = (scoreY * context.rootPane.height).toDouble()
+    open fun getScoreY(screenY: Double): Decimal = (screenY / context.rootPane.height).asY
+
+    open fun getScreenY(scoreY: Decimal): Double = (scoreY * context.rootPane.height).toDouble()
 
     init {
         styleClass("score-pane")

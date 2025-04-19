@@ -70,9 +70,9 @@ class ScoreObjectInstance(
         if (obj !is ScoreObject.Unresolved) obj.addedToScore(context[ScoreObjectRegistry])
     }
 
-    fun removedFromScore(removeFromRegistry: Boolean) {
+    fun removedFromScore(option: Score.RegistryOption) {
         score = null
-        if (removeFromRegistry && obj !is ScoreObject.Unresolved) obj.removedFromScore()
+        if (obj !is ScoreObject.Unresolved) obj.removedFromScore(option)
     }
 
     fun initialize(context: Context) {
@@ -127,9 +127,9 @@ class ScoreObjectInstance(
             for (inst in obj.score.objectInstances.toList()) {
                 inst.moveInto(newScore, relativePosition + this.position, recurse = true)
             }
-            score!!.removeObject(this, removeFromRegistry = false)
+            score!!.removeObject(this, Score.RegistryOption.KEEP_IN_REGISTRY)
         } else {
-            score!!.removeObject(this, removeFromRegistry = false)
+            score!!.removeObject(this, Score.RegistryOption.KEEP_IN_REGISTRY)
             moveTo(position + relativePosition)
             newScore.addObject(this)
         }
@@ -173,7 +173,7 @@ class ScoreObjectInstance(
 
     fun replaceWith(obj: ScoreObject) {
         val score = this.score ?: error("Cannot replace $this as it has no parent score")
-        score.removeObject(this, removeFromRegistry = true)
+        score.removeObject(this, Score.RegistryOption.ASK_IF_NEEDED)
         val newInst = ScoreObjectInstance(obj, this.position)
         score.addObject(newInst)
     }

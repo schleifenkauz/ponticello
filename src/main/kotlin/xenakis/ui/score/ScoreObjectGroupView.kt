@@ -8,7 +8,10 @@ import xenakis.model.score.ScoreObjectGroup
 import xenakis.model.score.ScoreObjectInstance
 import xenakis.sc.view.ObjectSelectorControl
 
-class ScoreObjectGroupView(private val inst: ScoreObjectInstance, val obj: ScoreObjectGroup) : ScoreObjectView(inst) {
+class ScoreObjectGroupView(
+    private val inst: ScoreObjectInstance,
+    override val obj: ScoreObjectGroup,
+) : ScoreObjectView(inst) {
     lateinit var scorePane: ScorePane
         private set
 
@@ -21,8 +24,7 @@ class ScoreObjectGroupView(private val inst: ScoreObjectInstance, val obj: Score
 
     override fun initialize() {
         super.initialize()
-        scorePane = if (pane != null) SubScorePane(inst, obj, pane, context)
-        else ScoreView(obj.score, context)
+        scorePane = SubScorePane(inst, obj, pane, isSubWindow, context)
         children.add(scorePane)
         scorePane.prefWidthProperty().bind(widthProperty())
         scorePane.prefHeightProperty().bind(heightProperty())

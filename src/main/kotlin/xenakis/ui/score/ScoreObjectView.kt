@@ -13,11 +13,15 @@ import javafx.geometry.HorizontalDirection.LEFT
 import javafx.geometry.HorizontalDirection.RIGHT
 import javafx.geometry.VerticalDirection
 import javafx.scene.Cursor
-import javafx.scene.control.*
+import javafx.scene.control.Button
+import javafx.scene.control.ColorPicker
+import javafx.scene.control.Spinner
+import javafx.scene.control.TextField
 import javafx.scene.input.MouseEvent
 import javafx.scene.layout.*
 import javafx.scene.paint.Color
 import javafx.scene.paint.Color.BLACK
+import javafx.stage.Screen
 import javafx.stage.Window
 import reaktive.value.ReactiveValue
 import reaktive.value.binding.map
@@ -51,7 +55,10 @@ abstract class ScoreObjectView(
     lateinit var pane: ScorePane
         private set
 
-    private var isSubWindow: Boolean = false
+    open val obj: ScoreObject get() = instance.obj
+
+    protected var isSubWindow: Boolean = false
+        private set
 
     lateinit var context: Context
         private set
@@ -79,7 +86,7 @@ abstract class ScoreObjectView(
     }
 
     override fun getDuration(width: Double): Decimal =
-        if (!isSubWindow) pane.getDuration(width) else (width * (instance.obj.duration / width))
+        if (!isSubWindow) pane.getDuration(width) else (width * (instance.obj.duration / this.width))
 
     override fun getWidth(duration: Decimal): Double =
         if (!isSubWindow) pane.getWidth(duration) else (duration * (width / instance.obj.duration)).toDouble()
@@ -89,7 +96,7 @@ abstract class ScoreObjectView(
     override fun getX(time: Decimal): Double = getWidth(time)
 
     fun getScoreY(screenY: Double): Decimal =
-        if (!isSubWindow) pane.getScoreY(screenY) else (screenY * (instance.obj.height / height))
+        if (!isSubWindow) pane.getScoreY(screenY) else (screenY * (instance.obj.height / this.height))
 
     fun getScreenY(scoreY: Decimal): Double =
         if (!isSubWindow) pane.getScreenY(scoreY) else (scoreY * (height / instance.obj.height)).toDouble()
@@ -192,7 +199,7 @@ abstract class ScoreObjectView(
         addEventHandler(MouseEvent.MOUSE_CLICKED) { ev ->
             ev.consume()
             if (ev.clickCount == 2) {
-                openInSubWindow()
+                showInSubWindow()
                 return@addEventHandler
             }
             val tool = context[XenakisMainActivity].toolSelector.selected
@@ -228,25 +235,24 @@ abstract class ScoreObjectView(
         }
     }
 
-    private fun openInSubWindow() {
+    private fun showInSubWindow() {
         if (isSubWindow) return
         val view = pane.createObjectView(instance)
-        view.setPrefSize(700.0, 500.0)
-        val detailPane = view.getDetailPane()
-        val layout = SplitPane(view, detailPane)
-        layout.setDividerPositions(0.7)
-        val window = makeSubWindow(layout, "", context)
-        window.width = 1000.0
-        window.height = 500.0
-        view.initialize(pane, window)
+        val maxDimensions = Screen.getPrimary().visualBounds
+        val window = makeSubWindow(view, obj.name.map { n -> "Object $n" }, context)
+        window.width = (this.prefWidth * 3).coerceAtMost(maxDimensions.width)
+        window.height = (this.prefHeight * 3).coerceAtMost(maxDimensions.height)
+//        view.alwaysHGrow()
+//        view.alwaysVGrow()
         window.show()
+        view.initialize(pane, window)
     }
 
     private fun replaceWithCutHalves(half1: ScoreObject, half2: ScoreObject, relativePosition: ObjectPosition) {
         context.compoundEdit("Cut object") {
             for (inst in context[rootScore].instancesOf(instance.obj).toList()) {
                 val score = inst.score
-                score!!.removeObject(inst, removeFromRegistry = true) //TODO maybe don't even ask
+                score!!.removeObject(inst, Score.RegistryOption.KEEP_IN_REGISTRY)
                 val inst1 = ScoreObjectInstance(half1, inst.position, inst.muted.copy())
                 val inst2 = ScoreObjectInstance(half2, inst.position + relativePosition, inst.muted.copy())
                 score.addObject(inst1)

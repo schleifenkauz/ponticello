@@ -43,8 +43,8 @@ class ScoreView(score: Score, context: Context) : ScorePane(score, context) {
 
     override var displayEnd: Decimal = 0.0.asTime
 
-    val pixelsPerSecond: Double
-        get() = (width / (displayEnd - displayStart)).toDouble()
+    override val pixelsPerSecond: Double
+        get() = (this.width / (displayEnd - displayStart)).toDouble()
 
     override val associatedObject: ScoreObjectGroup?
         get() = null

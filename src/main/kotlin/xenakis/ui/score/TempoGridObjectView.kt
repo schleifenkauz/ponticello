@@ -17,10 +17,9 @@ import xenakis.impl.*
 import xenakis.model.project.settings
 import xenakis.model.score.ScoreObjectInstance
 import xenakis.model.score.TempoGridObject
-import xenakis.ui.impl.rootPane
 import xenakis.ui.launcher.XenakisLauncher.Companion.currentProject
 
-class TempoGridObjectView(inst: ScoreObjectInstance, val obj: TempoGridObject) : ScoreObjectView(inst) {
+class TempoGridObjectView(inst: ScoreObjectInstance, override val obj: TempoGridObject) : ScoreObjectView(inst) {
     private val area = Pane()
     private val marker = Line() styleClass "grid-marker-line"
 
@@ -81,7 +80,7 @@ class TempoGridObjectView(inst: ScoreObjectInstance, val obj: TempoGridObject) :
             val barLine = Line(barX, BAR_LINE_SPACE, barX, prefHeight - BAR_LINE_SPACE)
                 .styleClass("tempo-line", "bar-line")
             area.children.add(barLine)
-            val barNumberDist = context.rootPane.pixelsPerSecond / barsPerSecond
+            val barNumberDist = pane.pixelsPerSecond / barsPerSecond
             if (barNumberDist > MIN_BAR_NUMBER_DIST) {
                 val barNumber = Text((barX - 5).coerceAtLeast(0.0), 12.0, (bar + firstBar).toString())
                     .styleClass("bar-number")
