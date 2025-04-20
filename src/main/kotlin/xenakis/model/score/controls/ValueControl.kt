@@ -27,6 +27,8 @@ data class ValueControl(val value: ReactiveVariable<Decimal>) : ParameterControl
         return true
     }
 
+    override fun providesConstantSynthArgument(): Boolean = false
+
     override fun ScWriter.generatePreparationCode(
         obj: ParameterizedObject, uniqueName: String,
         parameter: String, spec: ControlSpec,
@@ -47,7 +49,7 @@ data class ValueControl(val value: ReactiveVariable<Decimal>) : ParameterControl
         obj: ParameterizedObject, synthVar: String,
         parameter: String, spec: ControlSpec,
     ) {
-        val busName = uniqueArgumentName(synthVar, parameter)
+        val busName = uniqueArgumentName(synthVar.removePrefix("~synth_"), parameter)
         +"$synthVar.map('$parameter', $busName)"
     }
 

@@ -1,11 +1,16 @@
 package xenakis.ui.actions
 
 import fxutils.actions.Action
+import fxutils.actions.action
 import fxutils.actions.isShiftDown
+import org.kordamp.ikonli.evaicons.Evaicons
 import org.kordamp.ikonli.materialdesign2.MaterialDesignR
+import xenakis.impl.Logger
+import xenakis.model.obj.BusReference
 import xenakis.model.project.SERVER_OPTIONS
 import xenakis.model.project.XenakisProject
 import xenakis.model.project.get
+import xenakis.sc.client.SuperColliderClient
 import xenakis.ui.impl.showDialog
 import xenakis.ui.misc.ServerOptionsPane
 
@@ -41,4 +46,18 @@ object ServerActions : Action.Collector<XenakisProject>({
             project.client.run("ServerMeter.new(s, $numIns, $numOuts)")
         }
     }
-})
+}) {
+    val scopeBus = action<BusReference>("Scope") {
+        icon(Evaicons.ACTIVITY)
+        applicableIf { ref -> ref.isResolved }
+        ifNotApplicable(Action.IfNotApplicable.Disable)
+        executes { ref ->
+            val bus = ref.get()
+            if (bus == null) {
+                Logger.warn("Bus $ref is not resolved", Logger.Category.Registries)
+                return@executes
+            }
+            bus.context[SuperColliderClient].run("${bus.superColliderName}.scope;")
+        }
+    }
+}

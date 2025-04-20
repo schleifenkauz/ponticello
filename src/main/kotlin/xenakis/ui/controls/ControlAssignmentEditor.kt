@@ -3,6 +3,7 @@ package xenakis.ui.controls
 import bundles.createBundle
 import fxutils.*
 import fxutils.actions.ActionBar
+import fxutils.actions.ContextualizedAction
 import fxutils.actions.collectActions
 import fxutils.controls.SliderBar
 import fxutils.prompt.InfoPrompt
@@ -35,6 +36,7 @@ import xenakis.model.score.controls.*
 import xenakis.sc.*
 import xenakis.sc.editor.*
 import xenakis.sc.view.ObjectSelectorControl
+import xenakis.ui.actions.ServerActions
 import xenakis.ui.impl.colorPicker
 import xenakis.ui.impl.makeSubWindow
 import xenakis.ui.impl.sceneFill
@@ -48,13 +50,6 @@ class ControlAssignmentEditor(val control: NamedParameterControl, val view: Scor
     private val spec get() = control.spec.now
     private var settingControl = false
     private var detailEditor: Node? = null
-        set(value) {
-            field = value!!
-            children.clear()
-            //setHgrow(detailEditor, Priority.ALWAYS)
-            if (spec is NumericalControlSpec) children.add(optionButton)
-            children.add(detailEditor)
-        }
 
     init {
         optionButton.isFocusTraversable = false
@@ -107,6 +102,11 @@ class ControlAssignmentEditor(val control: NamedParameterControl, val view: Scor
             if (control.spec.now == null) missingSpecOptionsBar(control)
             else type.createDetailInput(control, newControl, view)
         detailEditors[type] = detailEditor!!
+        children.clear()
+        if (spec is NumericalControlSpec) children.add(optionButton)
+        val actions = type.actions(control, newControl, view)
+        children.add(detailEditor)
+        if (actions.isNotEmpty()) children.add(ActionBar(actions, "medium-icon-button"))
         settingControl = false
     }
 
@@ -121,6 +121,11 @@ class ControlAssignmentEditor(val control: NamedParameterControl, val view: Scor
             control: C,
             view: ScoreObjectView?,
         ): Node
+
+        open fun actions(
+            namedControl: NamedParameterControl, control: C,
+            view: ScoreObjectView?,
+        ): List<ContextualizedAction> = emptyList()
 
         abstract fun createDefaultControl(obj: ParameterizedObject, spec: ControlSpec?, oldControl: ParameterControl): C
 
@@ -158,8 +163,7 @@ class ControlAssignmentEditor(val control: NamedParameterControl, val view: Scor
                 if (namedControl.spec.now !is NumericalControlSpec) return missingSpecOptionsBar(namedControl)
                 val colorPicker = colorPicker(control.displayColor)
                 colorPicker.setFixedWidth(30.0)
-                val actionBar = ActionBar(actions.withContext(control), "medium-icon-button")
-                val box = HBox(5.0, colorPicker, actionBar)
+                val box = HBox(5.0, colorPicker)
                 if (namedControl.parentObject is SynthObject) {
                     val toggle = ToggleSwitch("Display: ")
                     toggle.selectedProperty().bindBidirectional(control.display.asProperty())
@@ -182,6 +186,12 @@ class ControlAssignmentEditor(val control: NamedParameterControl, val view: Scor
                 val display = reactiveVariable(true)
                 return EnvelopeControl(env, displayColor, display)
             }
+
+            override fun actions(
+                namedControl: NamedParameterControl,
+                control: EnvelopeControl,
+                view: ScoreObjectView?,
+            ): List<ContextualizedAction> = actions.withContext(control)
 
             private val actions = collectActions<EnvelopeControl> {
                 addAction("Update") {
@@ -208,10 +218,7 @@ class ControlAssignmentEditor(val control: NamedParameterControl, val view: Scor
                 val window = makeSubWindow(pane, "LFO for ${namedControl.name.now}", control.context)
                 window.sceneFill(Color.BLACK)
                 window.resize(300.0, 150.0)
-                val showWindowButton = button("Code") { window.showOrBringToFront() }
-                val actionBar = ActionBar(actions, "medium-icon-button")
-                val box = HBox(showWindowButton, actionBar, infiniteSpace()).centerChildren()
-                return box
+                return button("Code") { window.showOrBringToFront() }
             }
 
             override fun createDefaultControl(
@@ -226,6 +233,12 @@ class ControlAssignmentEditor(val control: NamedParameterControl, val view: Scor
                 } else editor.setInitialText("")
                 return UGenControl(root)
             }
+
+            override fun actions(
+                namedControl: NamedParameterControl,
+                control: UGenControl,
+                view: ScoreObjectView?,
+            ): List<ContextualizedAction> = actions.withContext(Pair(namedControl, view))
 
             private val actions = collectActions<Pair<NamedParameterControl, ScoreObjectView?>> {
                 addAction("Update") {
@@ -265,6 +278,12 @@ class ControlAssignmentEditor(val control: NamedParameterControl, val view: Scor
                 val initial = oldControl.getBus() ?: obj.context[BusRegistry].getDefault().reference()
                 return BusControl(reactiveVariable(initial))
             }
+
+            override fun actions(
+                namedControl: NamedParameterControl,
+                control: BusControl,
+                view: ScoreObjectView?,
+            ): List<ContextualizedAction> = listOf(ServerActions.scopeBus.withContext(control.bus.now))
         }
 
         data object BusValue : ControlType<BusValueControl>() {
@@ -284,6 +303,12 @@ class ControlAssignmentEditor(val control: NamedParameterControl, val view: Scor
             }
 
             override fun toString(): String = "Bus"
+
+            override fun actions(
+                namedControl: NamedParameterControl,
+                control: BusValueControl,
+                view: ScoreObjectView?,
+            ): List<ContextualizedAction> = listOf(ServerActions.scopeBus.withContext(control.bus.now))
         }
 
         data object SingleBusValue : ControlType<SingleBusValueControl>() {
@@ -299,6 +324,12 @@ class ControlAssignmentEditor(val control: NamedParameterControl, val view: Scor
                 val initial = oldControl.getBus() ?: obj.context[BusRegistry].getDefault().reference()
                 return SingleBusValueControl(reactiveVariable(initial))
             }
+
+            override fun actions(
+                namedControl: NamedParameterControl,
+                control: SingleBusValueControl,
+                view: ScoreObjectView?,
+            ): List<ContextualizedAction> = listOf(ServerActions.scopeBus.withContext(control.bus.now))
 
             override fun toString(): String = "Bus Value"
         }
@@ -348,8 +379,7 @@ class ControlAssignmentEditor(val control: NamedParameterControl, val view: Scor
                 obj: ParameterizedObject,
                 spec: ControlSpec?,
                 oldControl: ParameterControl,
-            ): GroupControl =
-                GroupControl(reactiveVariable(obj.context[GroupRegistry].getDefault().reference()))
+            ): GroupControl = GroupControl(reactiveVariable(obj.context[GroupRegistry].getDefault().reference()))
         }
 
         data object GlobalPattern : ControlType<GlobalPatternControl>() {
