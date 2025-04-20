@@ -70,7 +70,7 @@ abstract class ParameterizedObjectDefRegistryPane<T : ParameterizedObjectDef>(
     private fun createObject(option: AddObjectOption) {
         when (option) {
             is AddObjectOption.NewObject -> {
-                createNewObject()?.let { def ->
+                this.createNewObject(option.name)?.let { def ->
                     registry.add(def)
                     listView.select(def)
                 }

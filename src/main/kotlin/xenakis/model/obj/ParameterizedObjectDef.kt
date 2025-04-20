@@ -1,7 +1,6 @@
 package xenakis.model.obj
 
 import hextant.context.Context
-import reaktive.event.EventStream
 import reaktive.value.ReactiveVariable
 import reaktive.value.now
 import xenakis.model.registry.BusRegistry
@@ -16,8 +15,6 @@ import xenakis.ui.registry.ParameterDefList
 
 interface ParameterizedObjectDef : NamedObject {
     val parameters: ParameterDefList
-
-    val updated: EventStream<Unit>
 
     fun getParameter(name: String): ParameterDefObject? = parameters.find { it.name.now == name }
 

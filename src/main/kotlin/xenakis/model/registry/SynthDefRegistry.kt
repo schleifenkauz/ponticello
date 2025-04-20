@@ -9,7 +9,6 @@ import kotlinx.serialization.Transient
 import reaktive.Observer
 import reaktive.value.reactiveVariable
 import xenakis.impl.Logger
-import xenakis.model.obj.CustomizableSynthDefObject
 import xenakis.model.obj.ReferencedSynthDefObject
 import xenakis.model.obj.SuperColliderObject
 import xenakis.model.obj.SynthDefObject
@@ -32,9 +31,7 @@ class SynthDefRegistry(
         super.initialize(context)
         updateObserver = context[SuperColliderClient].updatedSynthDef.observe { _, name ->
             val def = getOrNull(name) ?: return@observe
-            if (def is CustomizableSynthDefObject) {
-                def.update.fire()
-            }
+            def.onUpdated()
         }
     }
 

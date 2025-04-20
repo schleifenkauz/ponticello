@@ -3,8 +3,6 @@ package xenakis.model.obj
 import hextant.context.Context
 import javafx.scene.paint.Color
 import kotlinx.serialization.Serializable
-import reaktive.event.EventStream
-import reaktive.event.never
 import reaktive.value.ReactiveValue
 import reaktive.value.ReactiveVariable
 import reaktive.value.reactiveValue
@@ -24,8 +22,6 @@ class ReferencedSynthDefObject(
     private val _name: String,
     override val color: ReactiveVariable<@Serializable(with = ColorSerializer::class) Color>,
 ) : SynthDefObject, AbstractNamedObject() {
-    override val updated: EventStream<Unit>
-        get() = never()
     override lateinit var parameters: ParameterDefList
         private set
 

@@ -19,17 +19,10 @@ import xenakis.sc.client.SuperColliderClient
 abstract class AbstractLiveUpdater(protected val obj: ParameterizedObject) : ParameterControlList.Listener {
     private val controlObservers = mutableMapOf<ParameterControl, Observer>()
 
-    private lateinit var defObserver: Observer
-
     fun listen(controls: ParameterControlList) {
         controls.addListener(this, initialize = false)
         for ((param, control) in controls.controlMap) {
             observeControl(param, control)
-        }
-        defObserver = obj.def.updated.observe { _ ->
-            obj.context[SuperColliderClient].run {
-                updatedDefinition()
-            }
         }
     }
 
@@ -37,7 +30,6 @@ abstract class AbstractLiveUpdater(protected val obj: ParameterizedObject) : Par
         obj.controls.removeListener(this)
         for ((_, observer) in controlObservers) observer.kill()
         controlObservers.clear()
-        defObserver.kill()
     }
 
     protected fun runOnActiveObjects(action: ScWriter.(String, Decimal) -> Unit) {
@@ -206,8 +198,6 @@ abstract class AbstractLiveUpdater(protected val obj: ParameterizedObject) : Par
         controlObservers.remove(oldControl)?.kill()
         addedControl(namedControl.name.now, control)
     }
-
-    protected abstract fun ScWriter.updatedDefinition()
 
     protected abstract fun ScWriter.updateValue(uniqueName: String, parameter: String, value: Decimal)
 

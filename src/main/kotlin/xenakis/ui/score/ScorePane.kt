@@ -504,7 +504,9 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
         if (obj in registry) registry.add(obj)
         val inst = rect.createInstance(obj)
         score.addObject(inst)
-        selector.select(getObjectView(inst), addToSelection = false)
+        Platform.runLater {
+            selector.select(getObjectView(inst), addToSelection = false)
+        }
         return inst
     }
 

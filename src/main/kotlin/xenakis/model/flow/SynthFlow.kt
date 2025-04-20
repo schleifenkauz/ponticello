@@ -11,7 +11,6 @@ import reaktive.value.reactiveVariable
 import xenakis.impl.zero
 import xenakis.model.obj.*
 import xenakis.model.registry.reference
-import xenakis.model.score.ObjectPosition
 import xenakis.model.score.ParameterControlList
 import xenakis.model.score.controls.BusControl
 import xenakis.model.score.controls.writeSynthCode
@@ -46,7 +45,6 @@ class SynthFlow(
     override fun copy(): AudioFlow = SynthFlow(defRef, controls.copy())
 
     override fun ScWriter.writeCode(placement: NodePlacement) {
-        val info = ScoreObjectInfo(ObjectPosition.ZERO, suffix = 0, placement, cutoff = zero)
         val mainBusParameter = getMainBusParameter(synthDef)!!
         val mainBusControl = mainBusParameter.name.now to Pair(
             mainBusParameter.spec.now,

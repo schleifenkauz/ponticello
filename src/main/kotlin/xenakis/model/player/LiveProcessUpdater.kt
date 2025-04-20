@@ -11,12 +11,6 @@ import xenakis.sc.NumericalControlSpec
 import xenakis.sc.client.ScWriter
 
 class LiveProcessUpdater(obj: ParameterizedObject): AbstractLiveUpdater(obj) {
-    override fun ScWriter.updatedDefinition() {
-        runOnActiveObjects { uniqueName, objectTime ->
-            val processName = "process_$uniqueName"
-        }
-    }
-
     override fun ScWriter.updateValue(uniqueName: String, parameter: String, value: Decimal) {
         updateArgument(uniqueName, parameter, value.toString())
     }

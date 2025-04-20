@@ -11,9 +11,6 @@ import javafx.scene.paint.Color
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.Transient
-import reaktive.event.EventStream
-import reaktive.event.unitEvent
 import reaktive.value.ReactiveVariable
 import reaktive.value.now
 import reaktive.value.reactiveVariable
@@ -38,12 +35,6 @@ class CustomizableSynthDefObject(
 ) : SynthDefObject, AbstractRenamableObject(), ConfigurableParameterizedObjectDef {
     override val canCopy: Boolean
         get() = true
-
-    @Transient
-    val update = unitEvent()
-
-    override val updated: EventStream<Unit>
-        get() = update.stream
 
     override fun copy(name: String): SynthDefObject = CustomizableSynthDefObject(
         reactiveVariable(name),

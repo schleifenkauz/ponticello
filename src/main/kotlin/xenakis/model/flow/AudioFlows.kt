@@ -1,5 +1,8 @@
 package xenakis.model.flow
 
+import bundles.PublicProperty
+import bundles.publicProperty
+import bundles.set
 import hextant.context.Context
 import hextant.core.editor.ListenerManager
 import hextant.undo.UndoManager
@@ -45,6 +48,7 @@ class AudioFlows(
     fun all(): List<AudioFlow> = flows.values.flatten()
 
     override fun initialize(context: Context) {
+        context[AudioFlows] = this
         super.initialize(context)
         busRegistry = context[BusRegistry]
         busRegistry.addListener(this, initialize = false)
@@ -224,7 +228,7 @@ class AudioFlows(
         )
     }
 
-    companion object {
+    companion object: PublicProperty<AudioFlows> by publicProperty("AudioFlows") {
         fun createDefault(): AudioFlows = AudioFlows(mutableMapOf())
     }
 
