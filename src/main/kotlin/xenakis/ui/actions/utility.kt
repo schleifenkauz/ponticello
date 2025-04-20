@@ -1,10 +1,17 @@
 package xenakis.ui.actions
 
 import fxutils.actions.Action
+import fxutils.actions.registerActions
+import fxutils.registerShortcuts
+import hextant.context.Context
 import hextant.undo.compoundEdit
 import javafx.event.Event
+import javafx.scene.Scene
 import reaktive.value.binding.map
 import reaktive.value.now
+import xenakis.model.player.PlaybackManager
+import xenakis.ui.launcher.XenakisLauncher.Companion.currentProject
+import xenakis.ui.launcher.XenakisMainActivity
 import xenakis.ui.score.ScoreObjectView
 
 inline fun Action.Collector<ObjectActionContext>.addObjectAction(
@@ -43,4 +50,12 @@ inline fun <reified V> Action.Builder<ObjectActionContext>.applicableOn() {
 
 fun Action.Builder<ObjectActionContext>.executeSingle(action: (ScoreObjectView, Event?) -> Unit) {
     executes { ctx, ev -> ctx.focusedView.now?.let { action(it, ev) } }
+}
+
+fun Scene.registerGlobalShortcuts(context: Context) {
+    registerShortcuts {
+        registerActions(PlaybackActions.withContext(context[PlaybackManager]))
+        registerActions(ToolWindowActions.withContext(context[XenakisMainActivity]))
+        registerActions(ServerActions.withContext(context[currentProject]))
+    }
 }

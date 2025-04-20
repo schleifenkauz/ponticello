@@ -2,6 +2,7 @@
     -fx-accent: #06b806;
     -fx-focus-color: -fx-accent;
     -fx-base: #1d1d20;
+    -fx-background-color: transparent;
     -fx-control-inner-background: derive(-fx-base, 35%);
     -fx-control-inner-background-alt: -fx-control-inner-background;
 }

@@ -1,34 +1,33 @@
 package xenakis.ui.actions
 
-import fxutils.SubWindow
+import fxutils.actions.Action
 import fxutils.actions.collectActions
+import fxutils.actions.isAltDown
 import fxutils.actions.isTargetTextInput
 import fxutils.prompt.IntegerPrompt
 import hextant.context.Context
 import hextant.undo.compoundEdit
 import javafx.geometry.HorizontalDirection.RIGHT
 import org.kordamp.ikonli.material2.Material2AL
-import org.kordamp.ikonli.material2.Material2MZ
-import org.kordamp.ikonli.materialdesign2.MaterialDesignP
-import org.kordamp.ikonli.materialdesign2.MaterialDesignR
-import org.kordamp.ikonli.materialdesign2.MaterialDesignV
+import org.kordamp.ikonli.materialdesign2.*
+import reaktive.value.binding.Binding
 import reaktive.value.binding.flatMap
 import reaktive.value.binding.map
 import reaktive.value.now
 import reaktive.value.reactiveValue
+import reaktive.value.toggle
 import xenakis.impl.Logger
+import xenakis.impl.copy
 import xenakis.impl.times
 import xenakis.impl.zero
 import xenakis.model.obj.NoSynthDef
-import xenakis.model.score.ObjectPosition
-import xenakis.model.score.Score
-import xenakis.model.score.ScoreObject
-import xenakis.model.score.ScoreObjectGroup
+import xenakis.model.player.PlaybackManager
+import xenakis.model.registry.ScoreObjectRegistry
+import xenakis.model.score.*
 import xenakis.ui.controls.RenamePrompt
 import xenakis.ui.impl.Direction
 import xenakis.ui.impl.showDialog
 import xenakis.ui.launcher.XenakisMainActivity
-import xenakis.ui.launcher.XenakisMainActivity.Mode
 import xenakis.ui.score.PianoRollObjectView
 import xenakis.ui.score.ProcessObjectView
 import xenakis.ui.score.ScoreObjectGroupView
@@ -48,7 +47,7 @@ object ObjectActions {
         }
         addObjectAction("Toggle mute") {
             description("Toggle mute the selected object instances")
-            shortcut("M")
+            shortcut("Alt?+M")
             icon { selector ->
                 selector.focusedView
                     .flatMap { view -> view?.instance?.muted ?: reactiveValue(false) }
@@ -58,43 +57,120 @@ object ObjectActions {
                     }
             }
             executeMultiAction { view, ev ->
-                if (!ev.isTargetTextInput) {
+                if (!ev.isTargetTextInput || ev.isAltDown()) {
                     view.instance.toggleMuted()
                 }
             }
         }
+        addObjectAction("Copy object to clipboard") {
+            shortcut("Ctrl+C")
+            icon(MaterialDesignC.CONTENT_COPY)
+            executes { ctx, _ ->
+                val scoreView = ctx.context[XenakisMainActivity].scoreView
+                scoreView.selector.setSystemClipboard(ctx.selectedViews.map { v -> v.instance })
+            }
+        }
     }
 
-
-    val singleObjectActions = collectActions {
-        addObjectAction("Create loop") {
-            shortcut("L")
-            icon(MaterialDesignR.REPEAT)
-            executeSingle { view, ev ->
-                if (!ev.isTargetTextInput) {
-                    val config = view.askForLoopConfig() ?: return@executeSingle
-                    val instance = view.instance
-                    val score = instance.score ?: return@executeSingle
-                    score.loop(instance, config.period, config.repetitions)
+    val playbackActions = collectActions {
+        addObjectAction("Play object") {
+            shortcut("Ctrl+SPACE")
+            applicableIf(::canApplyPlaybackActions)
+            ifNotApplicable(Action.IfNotApplicable.Disable)
+            icon { ctx ->
+                ctx.context[PlaybackManager].isPlaying.map { playing ->
+                    if (playing) MaterialDesignP.PAUSE else MaterialDesignP.PLAY
+                }
+            }
+            description { ctx ->
+                ctx.context[PlaybackManager].isPlaying.map { playing ->
+                    if (playing) "Pause object" else "Play object"
+                }
+            }
+            executeSingle { view, _ ->
+                val playback = view.context[PlaybackManager]
+                if (playback.isPlaying.now) playback.player.pause()
+                else {
+                    if (!playback.isAttachedTo(view)) playback.attachToView(view)
+                    playback.player.play()
                 }
             }
         }
+        addObjectAction("Toggle loop") {
+            shortcut("Alt?+L")
+            icon(MaterialDesignR.REPEAT)
+            applicableIf(::canApplyPlaybackActions)
+            ifNotApplicable(Action.IfNotApplicable.Disable)
+            icon(MaterialDesignR.REPEAT)
+            toggleState { ctx -> ctx.context[PlaybackManager].loopingActivated }
+            executeSingle { view, ev ->
+                if (ev.isTargetTextInput && !ev.isAltDown()) return@executeSingle
+                val playback = view.context[PlaybackManager]
+                if (!playback.isPlaying.now) {
+                    if (!playback.isAttachedTo(view)) playback.attachToView(view)
+                    playback.player.play()
+                }
+                playback.loopingActivated.toggle()
+            }
+        }
+    }
+
+    val singleObjectActions = collectActions {
+        addObjectAction("Duplicate object") {
+            shortcut("Alt?+C")
+            icon(MaterialDesignC.CONTENT_DUPLICATE)
+            executeSingle { view, ev ->
+                if (ev.isTargetTextInput && !ev.isAltDown()) return@executeSingle
+                val scoreView = view.context[XenakisMainActivity].scoreView
+                scoreView.setClipboard(view.obj, view)
+            }
+        }
+        addObjectAction("Unlink from original") {
+            shortcut("Alt?+U")
+            icon(MaterialDesignL.LINK_OFF)
+            executes { ctx, ev ->
+                if (ev.isTargetTextInput && !ev.isAltDown()) return@executes
+                if (ctx.selectedViews.isEmpty()) return@executes
+                ctx.context.compoundEdit("Unlink from original") {
+                    for ((obj, instances) in ctx.selectedViews.map { v -> v.instance }.groupBy { inst -> inst.obj }) {
+                        val name = ctx.context[ScoreObjectRegistry].nameForClone(obj)
+                        val clone = obj.clone(name)
+                        for (oldInst in instances) {
+                            val newInst = ScoreObjectInstance(clone, oldInst.position, oldInst.muted.copy())
+                            oldInst.score?.addObject(newInst)
+                            oldInst.score?.removeObject(oldInst, Score.RegistryOption.REMOVE_WITHOUT_ASKING)
+                        }
+                    }
+                }
+
+            }
+        }
+        addObjectAction("Cut object") {
+            shortcut("Alt?+X")
+            executeSingle { view, ev ->
+                if (ev.isTargetTextInput && !ev.isAltDown()) return@executeSingle
+                val inst = view.instance
+                inst.score?.removeObject(inst, Score.RegistryOption.KEEP_IN_REGISTRY)
+                val scoreView = view.context[XenakisMainActivity].scoreView
+                scoreView.setClipboard(inst.obj, view)
+            }
+        }
         addObjectAction("Reverse object") {
-            shortcut("R")
+            shortcut("Alt?+R")
             icon(Material2AL.FLIP)
-            applicableOn<SynthObjectView>()
+            applicableOn { view -> view is SynthObjectView }
             executeSingle { view, ev ->
                 view as SynthObjectView
-                if (!ev.isTargetTextInput) {
+                if (!ev.isTargetTextInput || ev.isAltDown()) {
                     view.obj.reverse()
                 }
             }
         }
-        addObjectAction("View Instrument") {
-            shortcut("I")
+        addObjectAction("View definition") {
+            shortcut("Alt?+I")
             applicableOn { v -> v is SynthObjectView || v is ProcessObjectView }
             executeSingle { view, ev ->
-                if (!ev.isTargetTextInput) {
+                if (!ev.isTargetTextInput || ev.isAltDown()) {
                     val mainScreen = view.context[XenakisMainActivity]
                     if (view is SynthObjectView) {
                         val def = view.obj.synthDef
@@ -176,26 +252,28 @@ object ObjectActions {
                 }
             }
         }
-        addObjectAction("Edit object properties") {
-            shortcut("P")
-            icon(Material2MZ.TUNE)
-            applicableIf { ctx ->
-                if (ctx.context[XenakisMainActivity].mode == Mode.Laptop) ctx.focusedView.map { v -> v != null }
-                else reactiveValue(false)
-            }
-            executeSingle { view, _ ->
-                val pane = view.getDetailPane()
-                val name = view.instance.obj.name.now
-                val window = SubWindow(pane, "Configure $name", type = SubWindow.Type.Undecorated)
-                window.show()
-            }
-        }
         addObjectAction("Transpose") {
             icon(MaterialDesignP.PROGRESS_QUESTION)
             applicableOn<PianoRollObjectView>()
             executeSingle { view, _ ->
                 view as PianoRollObjectView
                 view.showTransposeDialog()
+            }
+        }
+    }
+
+    val all = collectActions {
+        addAll(multiObjectActions)
+        addAll(singleObjectActions)
+        addAll(playbackActions)
+    }
+
+    private fun canApplyPlaybackActions(ctx: ObjectActionContext): Binding<Boolean> {
+        val playback = ctx.context[PlaybackManager]
+        return ctx.focusedView.flatMap { view ->
+            if (view == null || !view.obj.affectsPlayback) reactiveValue(false)
+            else playback.isPlaying.map { playing ->
+                if (playing) playback.isAttachedTo(view) else true
             }
         }
     }

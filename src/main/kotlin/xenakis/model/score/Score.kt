@@ -28,7 +28,7 @@ class Score(
         private set
 
     @Transient
-    var parentObject: ScoreObjectGroup? = null
+    var parentObject: ScoreObject? = null
         private set
 
     @Transient
@@ -39,7 +39,7 @@ class Score(
     val maxTime get() = parentObject?.duration ?: Decimal.INF
     val maxY get() = parentObject?.height ?: one(ObjectPosition.Y_PRECISION)
 
-    fun initialize(context: Context, parentObject: ScoreObjectGroup?) {
+    fun initialize(context: Context, parentObject: ScoreObject?) {
         super.initialize(context)
         this.parentObject = parentObject
         this.scoreName = parentObject?.name ?: reactiveValue(ROOT_SCORE_NAME)

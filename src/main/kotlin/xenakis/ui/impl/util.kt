@@ -14,6 +14,7 @@ import javafx.scene.input.Dragboard
 import javafx.scene.input.KeyEvent
 import javafx.scene.input.MouseEvent
 import javafx.scene.paint.Color
+import javafx.stage.Window
 import reaktive.value.ReactiveString
 import reaktive.value.ReactiveVariable
 import reaktive.value.fx.asObservableValue
@@ -28,6 +29,7 @@ import xenakis.model.registry.NamedObject
 import xenakis.model.registry.ObjectRegistry
 import xenakis.model.score.ScoreObject
 import xenakis.model.score.ScoreObjectInstance
+import xenakis.ui.actions.registerGlobalShortcuts
 import xenakis.ui.launcher.XenakisApp.Companion.primaryStage
 import xenakis.ui.launcher.XenakisLauncher.Companion.currentProject
 import xenakis.ui.launcher.XenakisMainActivity
@@ -69,18 +71,23 @@ fun colorPicker(controlledVar: ReactiveVariable<Color>): ColorPicker {
 
 fun <R> Prompt<R, *>.showDialog(context: Context) = showDialog(owner = context[primaryStage])
 
+private val DEFAULT_SCENE_FILL = Color.web("#1d1d20")
+
 fun makeSubWindow(
     root: Parent, title: String,
     context: Context, type: SubWindow.Type = SubWindow.Type.ToolWindow,
 ): SubWindow {
     val w = SubWindow(root, title, type)
+    w.scene.fill = DEFAULT_SCENE_FILL
+    w.scene.registerGlobalShortcuts(context)
+    w.scene.initHextantScene(context)
     w.initOwner(context[primaryStage])
     return w
 }
 
 fun makeSubWindow(
-    root: Parent, title: ReactiveString,
-    context: Context, type: SubWindow.Type = SubWindow.Type.ToolWindow,
+    root: Parent, title: ReactiveString, context: Context,
+    type: SubWindow.Type = SubWindow.Type.ToolWindow,
 ): SubWindow = makeSubWindow(root, title.get(), context, type).apply {
     titleProperty().bind(title.asObservableValue())
 }
@@ -89,9 +96,7 @@ fun Context.makeToolWindow(
     root: Parent, title: String,
     defaultSize: Dimension2D? = null,
 ): SubWindow {
-    val window = SubWindow(root, title, SubWindow.Type.ToolWindow)
-    window.scene.initHextantScene(this)
-    window.initOwner(this[primaryStage])
+    val window = makeSubWindow(root, title, this, SubWindow.Type.ToolWindow)
     if (hasProperty(currentProject)) {
         val interactionSettings = this[currentProject][UI_STATE]
         val state = interactionSettings.windowStates.getOrPut(title) {
@@ -102,3 +107,5 @@ fun Context.makeToolWindow(
     }
     return window
 }
+
+fun <W : Window> W.sceneFill(color: Color) = apply { scene.fill = color }

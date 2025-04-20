@@ -3,7 +3,6 @@ package xenakis.model.player
 import reaktive.value.now
 import xenakis.impl.*
 import xenakis.model.Settings
-import xenakis.model.flow.AudioFlowGraph
 import xenakis.model.flow.ScoreObjectInfo
 import xenakis.model.player.ScoreEventCollector.Event
 import xenakis.model.score.*
@@ -12,16 +11,18 @@ import xenakis.ui.misc.PlayHead
 
 class ScorePlayer(
     private val rootScore: Score,
-    override val playHead: PlayHead,
+    private val manager: PlaybackManager,
     override val client: SuperColliderClient,
-    private val graph: AudioFlowGraph,
     private val settings: Settings,
-    private val events: ScoreEventCollector,
-    private val recorder: Recorder,
 ) : AbstractPlayer(DELTA_T, settings.lookAhead) {
     private val activeObjectManager = ActiveObjectManager()
 
     private var lastPlayFrom: Decimal = PlayHead.START
+
+    override val playHead: PlayHead
+        get() = manager.playHead
+
+    override val loop get() = manager.loopingActivated.now
 
     override val maxTime: Decimal
         get() = rootScore.maxTime
@@ -50,7 +51,7 @@ class ScorePlayer(
 
     override fun startPlay(startFrom: Decimal): Boolean {
         client.sendAsync("start_play")
-        recorder.startingPlayback()
+        manager.recorder.startingPlayback()
         Logger.fine("Starting playback at $startFrom", Logger.Category.Playback)
         lastPlayFrom = startFrom
         val activeObjects = activeObjects(startFrom, delta = settings.lookAhead)
@@ -74,7 +75,7 @@ class ScorePlayer(
         val suffix = activeObjectManager.remove(obj, pos) ?: return
         when (obj) {
             is SynthObject -> {
-                graph.remove(obj, pos, suffix)
+                manager.graph.remove(obj, pos, suffix)
             }
 
             is TaskObject -> client.run("~tasks['$name'].free;")
@@ -84,7 +85,7 @@ class ScorePlayer(
     }
 
     override fun scheduleEvents(t: Decimal, delta: Decimal) {
-        for (ev in events.eventsAt(t - delta, delta * 5)) {
+        for (ev in manager.events.eventsAt(t - delta, delta * 5)) {
             val (type, position, inst) = ev
             if (inst.muted.now) continue
             val obj = inst.obj
@@ -112,7 +113,7 @@ class ScorePlayer(
         when (obj) {
             is SynthObject -> {
                 try {
-                    graph.remove(obj, startPos, suffix)
+                    manager.graph.remove(obj, startPos, suffix)
                 } catch (e: Exception) {
                     Logger.error("Failed to remove $obj from audio flow graph", e, Logger.Category.Playback)
                 }
@@ -151,7 +152,7 @@ class ScorePlayer(
         var info = ScoreObjectInfo(absolutePosition, suffix, null, cutoff.takeIf { it > zero } ?: zero)
         if (obj is SynthObject) {
             val placement = try {
-                graph.insert(obj, absolutePosition, suffix)
+                manager.graph.insert(obj, absolutePosition, suffix)
             } catch (e: Exception) {
                 Logger.error("Failed to insert $obj into audio flow graph", e, Logger.Category.Playback)
                 return
@@ -176,18 +177,18 @@ class ScorePlayer(
 
     override fun pausePlayback() {
         Logger.info("Pausing playback", Logger.Category.Playback)
-        recorder.pausingPlayback()
+        manager.recorder.pausingPlayback()
         activeObjectManager.forEach { obj, startPos, suffix ->
             stopObject(obj, startPos, suffix, stopPrematurely = true)
         }
-        graph.clear()
+        manager.graph.clear()
         activeObjectManager.clear()
-        events.resetEvents()
+        manager.events.resetEvents()
         client.send("pause_play")
     }
 
     override fun resetPlayback() {
-        if (recorder.isActive.now) recorder.stopRecording()
+        if (manager.recorder.isActive.now) manager.recorder.stopRecording()
         client.run("s.freeAll")
     }
 

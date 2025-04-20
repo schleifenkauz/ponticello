@@ -2,6 +2,7 @@ package xenakis.ui.score
 
 import fxutils.*
 import fxutils.actions.ActionBar
+import fxutils.actions.registerShortcuts
 import fxutils.prompt.CompoundPrompt
 import fxutils.prompt.DetailPane
 import fxutils.prompt.compoundPrompt
@@ -68,8 +69,6 @@ abstract class ScoreObjectView(
 
     private lateinit var muteUnmuteBtn: Button
 
-    val actions = HBox().centerChildren() styleClass "actions"
-
     protected open val defaultBackgroundColor: ReactiveValue<Color>
         get() = reactiveVariable(BLACK)
     val backgroundColor by lazy { instance.obj.associatedColor.orElse(defaultBackgroundColor) }
@@ -110,16 +109,18 @@ abstract class ScoreObjectView(
         if (obj is ScoreObject.Unresolved) {
             return detailPane
         } else {
+            val ctx = ObjectActionContext.SingleObjectContext(this)
+            val actions = ObjectActions.all.withContext(ctx)
             detailPane.children.add(
                 HBox(
                     NameControl(obj),
-                    createActionsBar(),
+                    ActionBar(actions, buttonStyle = "medium-icon-button"),
                     *headerItems().toTypedArray()
                 ).centerChildren().pad(8.0)
             )
-            val durationLabel = label(obj.duration().map { dur -> "${dur.toCanonicalString()} seconds" })
-                .pad(5.0)
+            detailPane.registerShortcuts(actions)
             if (obj.canResize) {
+                val durationLabel = label(obj.duration().map { dur -> "${dur.toCanonicalString()} seconds" }).pad(5.0)
                 detailPane.addItem("Duration", durationLabel)
             }
             setupDetailPane(detailPane)
@@ -128,14 +129,6 @@ abstract class ScoreObjectView(
     }
 
     protected open fun headerItems(): List<Node> = emptyList()
-
-    private fun createActionsBar(): ActionBar {
-        val selector = context[ScoreObjectSelectionManager]
-        val context = ObjectActionContext.SingleSelectedObjectContext(selector)
-        val actions = ObjectActions.singleObjectActions.withContext(context) +
-                ObjectActions.multiObjectActions.withContext(context)
-        return ActionBar(actions, buttonStyle = "medium-icon-button")
-    }
 
     protected open fun setupDetailPane(pane: DetailPane) {}
 
@@ -217,16 +210,10 @@ abstract class ScoreObjectView(
         addEventHandler(MouseEvent.MOUSE_CLICKED) { ev ->
             when {
                 ev.button == MouseButton.PRIMARY && ev.clickCount == 2 -> showInSubWindow()
-                ev.button == MouseButton.SECONDARY && ev.modifiers.isEmpty() -> {
-                    val playback = context[PlaybackManager]
-                    if (!playback.player.isPlaying.now) {
-                        playback.attachToView(this)
-                    }
-                }
 
                 ev.button == MouseButton.PRIMARY && ev.modifiers.isEmpty() -> {
                     val playback = context[PlaybackManager]
-                    if (playback.isAttachedTo(this)) {
+                    if (!playback.isPlaying.now && playback.isAttachedTo(this)) {
                         playback.playHead.setPlayHeadX(ev.x)
                     }
                 }

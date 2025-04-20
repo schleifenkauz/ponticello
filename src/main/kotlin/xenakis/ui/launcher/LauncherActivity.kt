@@ -21,6 +21,7 @@ import org.kordamp.ikonli.material2.Material2AL
 import org.kordamp.ikonli.material2.Material2MZ
 import xenakis.ui.actions.ProjectActions
 import xenakis.ui.actions.QuitAction
+import xenakis.ui.impl.sceneFill
 import xenakis.ui.impl.showDialog
 import java.io.File
 
@@ -64,6 +65,7 @@ class LauncherActivity(private val launcher: XenakisLauncher) : Activity() {
 
     override fun beforeShowing() {
         primaryStage.initStyle(StageStyle.UNDECORATED)
+        primaryStage.sceneFill(Color.BLACK)
         primaryStage.isMaximized = false
         primaryStage.title = "Xenakis Launcher"
     }

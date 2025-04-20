@@ -9,7 +9,6 @@ import fxutils.actions.ContextualizedAction
 import fxutils.actions.registerActions
 import hextant.undo.UndoManager
 import javafx.geometry.Dimension2D
-import javafx.scene.Scene
 import javafx.scene.layout.*
 import javafx.scene.paint.Color
 import javafx.stage.Screen
@@ -90,12 +89,7 @@ class XenakisMainActivity(val project: XenakisProject) : Activity() {
 
     private val launcher get() = context[XenakisLauncher]
 
-    val mode: Mode
-
     init {
-        val largeScreenAvailable = Screen.getScreens().any { s -> s.bounds.width > 3000 }
-        mode = if (largeScreenAvailable) Mode.Desktop else Mode.Laptop
-
         context[XenakisMainActivity] = this
         context[HelpBrowser] = HelpBrowser()
 
@@ -125,7 +119,8 @@ class XenakisMainActivity(val project: XenakisProject) : Activity() {
     }
 
     override fun beforeShowing() {
-        primaryStage.scene.addGlobalShortcuts()
+        primaryStage.scene.registerGlobalShortcuts(context)
+        registerMainActivityShortcuts()
         primaryStage.initStyle(StageStyle.UNDECORATED)
         ArrowKeys.registerArrowKeys(primaryStage.scene, this)
         primaryStage.title = "Xenakis: ${project.name}"
@@ -175,24 +170,16 @@ class XenakisMainActivity(val project: XenakisProject) : Activity() {
         } styleClass "toolbar"
     }
 
-    private fun Scene.addGlobalShortcuts() {
-        registerShortcuts {
-            registerActions(ProjectActions.withContext(launcher))
-            registerActions(QuitAction.withContext(launcher))
-            registerActions(PlaybackActions.withContext(playback))
-            registerActions(ScoreNavigationActions.withContext(scoreView))
-            interactionConfig.addGridRelatedShortcuts(this)
-            registerActions(ToolWindowActions.withContext(this@XenakisMainActivity))
-            val objectCtx = ObjectActionContext.MultiObjectContext(context[ScoreObjectSelectionManager])
-            registerActions(ObjectActions.singleObjectActions.withContext(objectCtx))
-            registerActions(ObjectActions.multiObjectActions.withContext(objectCtx))
-            SelectionRelatedActions.addShortcuts(this, this@XenakisMainActivity)
-            registerActions(ServerActions.withContext(project))
-        }
-    }
-
-    enum class Mode {
-        Desktop, Laptop;
+    private fun registerMainActivityShortcuts() = primaryStage.scene.registerShortcuts {
+        registerActions(ProjectActions.withContext(launcher))
+        registerActions(QuitAction.withContext(launcher))
+        registerActions(PlaybackActions.withContext(playback))
+        registerActions(ScoreNavigationActions.withContext(scoreView))
+        interactionConfig.addGridRelatedShortcuts(this)
+        val objectCtx = ObjectActionContext.MultiObjectContext(context[ScoreObjectSelectionManager])
+        registerActions(ObjectActions.all.withContext(objectCtx))
+        SelectionRelatedActions.addShortcuts(this, this@XenakisMainActivity)
+        registerActions(UndoRedoActions.withContext(context[UndoManager]))
     }
 
     override fun close() {

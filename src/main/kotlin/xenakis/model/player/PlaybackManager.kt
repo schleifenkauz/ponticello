@@ -3,7 +3,10 @@ package xenakis.model.player
 import bundles.PublicProperty
 import bundles.publicProperty
 import javafx.scene.layout.Pane
+import reaktive.Observer
+import reaktive.value.ReactiveValue
 import reaktive.value.now
+import reaktive.value.reactiveVariable
 import xenakis.model.Settings
 import xenakis.model.flow.AudioFlowGraph
 import xenakis.model.flow.AudioFlows
@@ -18,15 +21,23 @@ import xenakis.ui.score.ScoreObjectGroupView
 import xenakis.ui.score.ScoreObjectView
 import xenakis.ui.score.ScoreView
 
-class PlaybackManager(private val scoreView: ScoreView, private val flows: AudioFlows) {
+class PlaybackManager(private val scoreView: ScoreView, flows: AudioFlows) {
     val playHead = PlayHead()
     val recorder = Recorder(scoreView.context)
     val nodeTree = NodeTree(scoreView.context[SuperColliderClient])
     val graph = AudioFlowGraph(flows, nodeTree)
     lateinit var player: ScorePlayer
         private set
-    private lateinit var events: ScoreEventCollector
+    lateinit var events: ScoreEventCollector
+        private set
     private var isAttached = false
+
+    private var isPlayingObserver: Observer? = null
+    private val _isPlaying = reactiveVariable(false)
+
+    val isPlaying: ReactiveValue<Boolean> = _isPlaying
+
+    val loopingActivated = reactiveVariable(false)
 
     val context get() = scoreView.context
 
@@ -58,13 +69,15 @@ class PlaybackManager(private val scoreView: ScoreView, private val flows: Audio
         detach()
         val settings = context[Settings]
         events = ScoreEventCollector(score, graph, settings)
-        player = ScorePlayer(score, playHead, scoreView.context[SuperColliderClient], graph, settings, events, recorder)
+        player = ScorePlayer(score, this, scoreView.context[SuperColliderClient], settings)
+        isPlayingObserver?.kill()
+        isPlayingObserver = _isPlaying.bind(player.isPlaying)
         events.player = player
         isAttached = true
     }
 
     fun movePlayHeadToStart() {
-        if (!player.isPlaying.now) {
+        if (!isPlaying.now) {
             playHead.movePlayHeadToStart()
         }
     }
@@ -73,7 +86,7 @@ class PlaybackManager(private val scoreView: ScoreView, private val flows: Audio
         private fun simpleScore(obj: ScoreObject): Score {
             val inst = ScoreObjectInstance(obj, ObjectPosition.ZERO)
             val score = Score(mutableListOf(inst))
-            score.initialize(obj.context, null)
+            score.initialize(obj.context, obj)
             return score
         }
     }

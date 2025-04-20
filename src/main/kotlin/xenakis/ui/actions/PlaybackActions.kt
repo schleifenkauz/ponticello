@@ -1,7 +1,9 @@
 package xenakis.ui.actions
 
 import fxutils.actions.Action
+import fxutils.actions.isAltDown
 import fxutils.actions.isShiftDown
+import fxutils.actions.isTargetTextInput
 import javafx.scene.layout.Region
 import org.kordamp.ikonli.material2.Material2MZ
 import org.kordamp.ikonli.materialdesign2.MaterialDesignM
@@ -19,20 +21,24 @@ import xenakis.ui.registry.SearchableBusListView
 object PlaybackActions : Action.Collector<PlaybackManager>({
     addAction("Go to start") {
         description("Move the playback cursor to the start of the score")
-        shortcut("Ctrl+DIGIT0")
+        shortcut("Alt?+DIGIT0")
         icon(Material2MZ.SKIP_PREVIOUS)
-        executes { playback -> playback.movePlayHeadToStart() }
+        executes { playback, ev ->
+            if (ev.isTargetTextInput && !ev.isAltDown()) return@executes
+            playback.movePlayHeadToStart()
+        }
     }
     addAction("Toggle Playback") {
-        shortcut("Ctrl+SPACE")
+        shortcut("Alt?+SPACE")
         icon { playback ->
-            playback.player.isPlaying.map { playing ->
+            playback.isPlaying.map { playing ->
                 if (playing) Material2MZ.PAUSE
                 else Material2MZ.PLAY_ARROW
             }
         }
-        executes { playback ->
-            if (!playback.player.isPlaying.now) {
+        executes { playback, ev ->
+            if (ev.isTargetTextInput && !ev.isAltDown()) return@executes
+            if (!playback.isPlaying.now) {
                 playback.player.play()
             } else {
                 playback.player.pause()

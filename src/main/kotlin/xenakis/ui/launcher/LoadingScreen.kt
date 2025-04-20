@@ -9,8 +9,10 @@ import javafx.scene.control.ProgressBar
 import javafx.scene.image.ImageView
 import javafx.scene.layout.StackPane
 import javafx.scene.layout.VBox
+import javafx.scene.paint.Color
 import javafx.stage.StageStyle
 import xenakis.sc.client.SuperColliderClient
+import xenakis.ui.impl.sceneFill
 
 class LoadingScreen(override val context: Context) : Activity(), ProgressIndicator {
     private val progressBar = ProgressBar() styleClass "loading-screen-bar"
@@ -32,6 +34,7 @@ class LoadingScreen(override val context: Context) : Activity(), ProgressIndicat
         primaryStage.sizeToScene()
         primaryStage.titleProperty().bind(statusText.textProperty())
         primaryStage.initStyle(StageStyle.UNDECORATED)
+        primaryStage.sceneFill(Color.BLACK)
         primaryStage.scene.registerShortcuts {
             on("Ctrl+Q") {
                 if (context.hasProperty(SuperColliderClient)) context[SuperColliderClient].quit()

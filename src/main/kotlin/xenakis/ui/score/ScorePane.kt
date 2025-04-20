@@ -266,12 +266,8 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
             }
 
             this is ScoreView && !activity.playback.player.isPlaying.now -> {
-                if (ev.isControlDown) {
-                    activity.playback.attachToMainScore()
-                }
-                if (activity.playback.isAttachedTo(this)) {
-                    activity.playback.playHead.movePlayHead(t)
-                }
+                activity.playback.attachToMainScore()
+                activity.playback.playHead.movePlayHead(t)
             }
 
             this is ScoreView -> {

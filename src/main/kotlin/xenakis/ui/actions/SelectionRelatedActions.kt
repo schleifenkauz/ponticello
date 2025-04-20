@@ -7,7 +7,6 @@ import hextant.undo.compoundEdit
 import reaktive.value.now
 import reaktive.value.reactiveVariable
 import xenakis.impl.Logger
-import xenakis.impl.copy
 import xenakis.impl.unaryMinus
 import xenakis.model.registry.ScoreObjectRegistry
 import xenakis.model.score.*
@@ -43,37 +42,6 @@ object SelectionRelatedActions {
                 if (inst != selected.instance) {
                     val view = pane.getObjectView(inst)
                     context[ScoreObjectSelectionManager].select(view, addToSelection = true)
-                }
-            }
-        }
-        on("C") { ev ->
-            if (ev.isTargetTextInput) return@on
-            val selected = resolveFocusedObject(scoreView.selector) ?: return@on
-            scoreView.setClipboard(selected.instance.obj, selected)
-        }
-        on("Ctrl+C") { ev ->
-            if (ev.isTargetTextInput) return@on
-            val selected = scoreView.selector.selectedInstances.toList()
-            scoreView.selector.setSystemClipboard(selected)
-        }
-        on("X") { ev ->
-            if (ev.isTargetTextInput) return@on
-            val view = context[ScoreObjectSelectionManager].focusedView.now ?: return@on
-            val inst = view.instance
-            inst.score?.removeObject(inst, Score.RegistryOption.KEEP_IN_REGISTRY)
-            scoreView.setClipboard(inst.obj, view)
-        }
-        on("U") { ev ->
-            if (ev.isTargetTextInput) return@on
-            context.compoundEdit("Unlink object from its original") {
-                for ((obj, instances) in scoreView.selector.selectedInstances.groupBy { inst -> inst.obj }) {
-                    val name = context[ScoreObjectRegistry].nameForClone(obj)
-                    val clone = obj.clone(name)
-                    for (oldInst in instances) {
-                        val newInst = ScoreObjectInstance(clone, oldInst.position, oldInst.muted.copy())
-                        oldInst.score?.addObject(newInst)
-                        oldInst.score?.removeObject(oldInst, Score.RegistryOption.REMOVE_WITHOUT_ASKING)
-                    }
                 }
             }
         }
