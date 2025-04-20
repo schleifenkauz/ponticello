@@ -10,7 +10,6 @@ import xenakis.impl.Logger
 import xenakis.impl.copy
 import xenakis.model.obj.BufferReference
 import xenakis.model.obj.ParameterizedObject
-import xenakis.model.obj.ProcessDefObject
 import xenakis.model.registry.BufferRegistry
 import xenakis.sc.BufferControlSpec
 import xenakis.sc.ControlSpec
@@ -42,18 +41,19 @@ data class BufferControl(
         obj: ParameterizedObject, uniqueName: String,
         parameter: String, spec: ControlSpec,
         associatedServerObjects: MutableList<String>,
+        context: CodegenContext,
     ) {
-        if (obj.def is ProcessDefObject) {
+        if (context == CodegenContext.Process) {
             val bufferName = sample.now.force().superColliderName
             +"${uniqueArgumentName(uniqueName, parameter)} = $bufferName"
         }
     }
 
     override fun generateArgumentExpr(
-        obj: ParameterizedObject, uniqueName: String?,
-        parameter: String, spec: ControlSpec,
-    ): ScExpr = when {
-        uniqueName!= null && obj.def is ProcessDefObject -> Identifier(uniqueArgumentName(uniqueName, parameter))
+        obj: ParameterizedObject, uniqueName: String,
+        parameter: String, spec: ControlSpec, context: CodegenContext,
+    ): ScExpr = when(context) {
+        CodegenContext.Process -> Identifier(uniqueArgumentName(uniqueName, parameter))
         else -> sample.now.force().superColliderExpr
     }
 }

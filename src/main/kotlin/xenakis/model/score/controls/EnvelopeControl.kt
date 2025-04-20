@@ -10,8 +10,6 @@ import reaktive.value.ReactiveVariable
 import reaktive.value.reactiveVariable
 import xenakis.impl.ColorSerializer
 import xenakis.model.obj.ParameterizedObject
-import xenakis.model.obj.ProcessDefObject
-import xenakis.model.obj.SynthDefObject
 import xenakis.model.score.Envelope
 import xenakis.sc.*
 import xenakis.sc.client.ScWriter
@@ -41,12 +39,13 @@ class EnvelopeControl(
         obj: ParameterizedObject, uniqueName: String,
         parameter: String, spec: ControlSpec,
         associatedServerObjects: MutableList<String>,
+        context: CodegenContext,
     ) {
         spec as NumericalControlSpec
         val envelopeCode = points.code(warp = spec.warp)
         val auxiliaryVarName = uniqueArgumentName(uniqueName, parameter)
-        when (obj.def) {
-            is SynthDefObject -> {
+        when (context) {
+            CodegenContext.Synth, CodegenContext.SubArg -> {
                 +"$auxiliaryVarName  = Bus.control(s, 1)"
                 val auxiliarySynthName = envSynthName(uniqueName, parameter)
                 val synthName = "~synth_$uniqueName"
@@ -54,38 +53,25 @@ class EnvelopeControl(
                 associatedServerObjects.addAll(listOf(auxiliarySynthName, auxiliaryVarName))
             }
 
-            is ProcessDefObject -> {
+            CodegenContext.Process -> {
                 +"$auxiliaryVarName = $envelopeCode"
             }
         }
     }
 
-    override fun generateSubArgumentExpr(
-        obj: ParameterizedObject,
-        uniqueName: String?,
-        parameter: String,
-        spec: ControlSpec,
-    ): ScExpr {
-        return when {
-            uniqueName == null -> RawScExpr(points.code((spec as NumericalControlSpec).warp))
-            obj.def is SynthDefObject -> Identifier(uniqueArgumentName(uniqueName, parameter)).send("kr")
-            else -> generateArgumentExpr(obj, uniqueName, parameter, spec)
-        }
-    }
-
     override fun generateArgumentExpr(
-        obj: ParameterizedObject, uniqueName: String?,
-        parameter: String, spec: ControlSpec,
+        obj: ParameterizedObject, uniqueName: String,
+        parameter: String, spec: ControlSpec, context: CodegenContext,
     ): ScExpr {
         spec as NumericalControlSpec
-        return when (obj.def) {
-            is SynthDefObject -> DecimalLiteral(points.points.first().value)
-            is ProcessDefObject -> lambda("t") {
-                val argName = uniqueArgumentName(uniqueName!!, parameter)
+        return when (context) {
+            CodegenContext.Synth -> DecimalLiteral(points.points.first().value)
+            CodegenContext.Process -> lambda("t") {
+                val argName = uniqueArgumentName(uniqueName, parameter)
                 Identifier(argName).send("at", Identifier("t"))
             }
 
-            else -> RawScExpr(points.code(warp = spec.warp))
+            else -> Identifier(uniqueArgumentName(uniqueName, parameter)).send("kr")
         }
     }
 

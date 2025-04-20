@@ -6,6 +6,7 @@ import xenakis.impl.Decimal
 import xenakis.impl.zero
 import xenakis.model.flow.NodePlacement
 import xenakis.model.obj.ParameterizedObject
+import xenakis.model.score.controls.ParameterControl.CodegenContext
 import xenakis.sc.ControlSpec
 import xenakis.sc.NumericalControlSpec
 import xenakis.sc.client.ScWriter
@@ -59,7 +60,7 @@ fun ScWriter.writeSynthCode(
             val (spec, ctrl) = control
             if (!obj.def.hasParameter(param) && param !in SPECIAL_PARAMETERS) continue
             if (!ctrl.providesConstantSynthArgument()) continue
-            val expr = ctrl.generateArgumentExpr(obj, uniqueName, param, spec)
+            val expr = ctrl.generateArgumentExpr(obj, uniqueName, param, spec, context = CodegenContext.Synth)
             append("$param: ")
             expr.code(writer, obj.context)
             append(", ")
@@ -73,7 +74,7 @@ fun ScWriter.writeSynthCode(
         for ((param, control) in controlsWithSpecs) {
             val (spec, ctrl) = control
             with(ctrl) {
-                generatePreparationCode(obj, uniqueName, param, spec, associatedServerObjects)
+                generatePreparationCode(obj, uniqueName, param, spec, associatedServerObjects, CodegenContext.Synth)
             }
         }
         if (associatedServerObjects.isNotEmpty()) {

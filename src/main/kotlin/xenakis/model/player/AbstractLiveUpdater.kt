@@ -19,9 +19,9 @@ import xenakis.sc.client.SuperColliderClient
 abstract class AbstractLiveUpdater(protected val obj: ParameterizedObject) : ParameterControlList.Listener {
     private val controlObservers = mutableMapOf<ParameterControl, Observer>()
 
-    fun listen(controls: ParameterControlList) {
-        controls.addListener(this, initialize = false)
-        for ((param, control) in controls.controlMap) {
+    fun startListening() {
+        obj.controls.addListener(this, initialize = false)
+        for ((param, control) in obj.controls.controlMap) {
             observeControl(param, control)
         }
     }
@@ -32,7 +32,7 @@ abstract class AbstractLiveUpdater(protected val obj: ParameterizedObject) : Par
         controlObservers.clear()
     }
 
-    protected fun runOnActiveObjects(action: ScWriter.(String, Decimal) -> Unit) {
+    private fun runOnActiveObjects(action: ScWriter.(String, Decimal) -> Unit) {
         val client = obj.context[SuperColliderClient]
         val playbackManager = obj.context[PlaybackManager]
         val activeInstances = obj.activeInstances()
@@ -228,7 +228,6 @@ abstract class AbstractLiveUpdater(protected val obj: ParameterizedObject) : Par
         writer.appendBlock("", endLine = false) {
             substituted.code(writer, obj.context)
         }
-        writer.appendLine(".play($auxiliarySynthName, $busName, fadeTime: 0.02, addAction: 'addReplace')")
-
+        writer.appendLine(".play($auxiliarySynthName, $busName, fadeTime: 0.02, addAction: 'addReplace');")
     }
 }

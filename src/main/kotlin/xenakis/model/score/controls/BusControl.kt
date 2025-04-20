@@ -11,7 +11,6 @@ import xenakis.impl.copy
 import xenakis.model.obj.BusObject
 import xenakis.model.obj.BusReference
 import xenakis.model.obj.ParameterizedObject
-import xenakis.model.obj.ProcessDefObject
 import xenakis.model.registry.BusRegistry
 import xenakis.model.registry.reference
 import xenakis.sc.BusControlSpec
@@ -41,20 +40,20 @@ class BusControl(val bus: ReactiveVariable<BusReference>) : ParameterControl() {
         obj: ParameterizedObject, uniqueName: String,
         parameter: String, spec: ControlSpec,
         associatedServerObjects: MutableList<String>,
+        context: CodegenContext,
     ) {
-        if (obj.def is ProcessDefObject) {
+        if (context == CodegenContext.Process) {
             val busName = bus.now.force().superColliderName
             +"${uniqueArgumentName(uniqueName, parameter)} = $busName"
         }
     }
 
     override fun generateArgumentExpr(
-        obj: ParameterizedObject, uniqueName: String?,
-        parameter: String, spec: ControlSpec,
-    ): ScExpr = when {
-        uniqueName == null -> bus.now.force().superColliderExpr
-        obj.def is ProcessDefObject -> Identifier(uniqueArgumentName(uniqueName, parameter))
-        else -> bus.now.force().superColliderExpr
+        obj: ParameterizedObject, uniqueName: String,
+        parameter: String, spec: ControlSpec, context: CodegenContext,
+    ): ScExpr = when(context) {
+        CodegenContext.Synth, CodegenContext.SubArg -> bus.now.force().superColliderExpr
+        CodegenContext.Process -> Identifier(uniqueArgumentName(uniqueName, parameter))
     }
 
     companion object {

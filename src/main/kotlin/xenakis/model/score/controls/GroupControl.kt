@@ -33,7 +33,7 @@ data class GroupControl(val group: ReactiveVariable<GroupReference>) : Parameter
     }
 
     override fun generateArgumentExpr(
-        obj: ParameterizedObject, uniqueName: String?,
-        parameter: String, spec: ControlSpec
+        obj: ParameterizedObject, uniqueName: String,
+        parameter: String, spec: ControlSpec, context: CodegenContext
     ): ScExpr = Identifier(group.now.superColliderName)
 }

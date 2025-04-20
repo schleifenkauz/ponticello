@@ -158,7 +158,7 @@ class SynthObject(
 
     override fun onLoadedIntoRegistry() {
         super<ScoreObject>.onLoadedIntoRegistry()
-        controlListener.listen(controls)
+        controlListener.startListening()
     }
 
     override fun onRemoved() {

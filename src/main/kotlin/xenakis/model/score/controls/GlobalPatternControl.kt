@@ -7,7 +7,6 @@ import reaktive.value.now
 import xenakis.impl.copy
 import xenakis.model.obj.GlobalPatternReference
 import xenakis.model.obj.ParameterizedObject
-import xenakis.model.obj.ProcessDefObject
 import xenakis.model.registry.GlobalPatternRegistry
 import xenakis.sc.*
 import xenakis.sc.client.ScWriter
@@ -28,18 +27,19 @@ class GlobalPatternControl(val pattern: ReactiveVariable<GlobalPatternReference>
         obj: ParameterizedObject, uniqueName: String,
         parameter: String, spec: ControlSpec,
         associatedServerObjects: MutableList<String>,
+        context: CodegenContext,
     ) {
-        if (obj.def is ProcessDefObject) {
+        if (context == CodegenContext.Process) {
             val patternName = pattern.now.force().superColliderName
             +"${uniqueArgumentName(uniqueName, parameter)} = $patternName"
         }
     }
 
     override fun generateArgumentExpr(
-        obj: ParameterizedObject, uniqueName: String?,
-        parameter: String, spec: ControlSpec,
-    ): ScExpr = when {
-        uniqueName != null && obj.def is ProcessDefObject -> lambda("t") {
+        obj: ParameterizedObject, uniqueName: String,
+        parameter: String, spec: ControlSpec, context: CodegenContext,
+    ): ScExpr = when (context) {
+        CodegenContext.Process -> lambda("t") {
             Identifier(uniqueArgumentName(uniqueName, parameter)).send("next")
         }
 

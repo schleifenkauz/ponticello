@@ -22,22 +22,28 @@ sealed class ParameterControl : AbstractContextualObject() {
         obj: ParameterizedObject, uniqueName: String,
         parameter: String, spec: ControlSpec,
         associatedServerObjects: MutableList<String>,
+        context: CodegenContext,
     ) {
     }
 
-    open fun ScWriter.applyToSynth(obj: ParameterizedObject, synthVar: String, parameter: String, spec: ControlSpec) {
+    open fun ScWriter.applyToSynth(
+        obj: ParameterizedObject,
+        synthVar: String,
+        parameter: String,
+        spec: ControlSpec,
+    ) {
 
     }
 
     abstract fun generateArgumentExpr(
-        obj: ParameterizedObject, uniqueName: String?,
+        obj: ParameterizedObject, uniqueName: String,
         parameter: String, spec: ControlSpec,
+        context: CodegenContext,
     ): ScExpr
 
-    open fun generateSubArgumentExpr(
-        obj: ParameterizedObject, uniqueName: String?,
-        parameter: String, spec: ControlSpec,
-    ): ScExpr = generateArgumentExpr(obj, uniqueName, parameter, spec)
+    enum class CodegenContext {
+        Synth, Process, SubArg;
+    }
 
     companion object {
         @JvmStatic

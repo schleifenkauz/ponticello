@@ -9,7 +9,6 @@ import xenakis.impl.Logger
 import xenakis.impl.copy
 import xenakis.model.obj.BusReference
 import xenakis.model.obj.ParameterizedObject
-import xenakis.model.obj.ProcessDefObject
 import xenakis.model.registry.BusRegistry
 import xenakis.sc.*
 import xenakis.sc.client.ScWriter
@@ -37,20 +36,21 @@ class BusValueControl(val bus: ReactiveVariable<BusReference>) : ParameterContro
         obj: ParameterizedObject, uniqueName: String,
         parameter: String, spec: ControlSpec,
         associatedServerObjects: MutableList<String>,
+        context: CodegenContext,
     ) {
-        if (obj.def is ProcessDefObject) {
+        if (context == CodegenContext.Process) {
             val busName = bus.now.force().superColliderName
             +"${uniqueArgumentName(uniqueName, parameter)} = $busName"
         }
     }
 
     override fun generateArgumentExpr(
-        obj: ParameterizedObject, uniqueName: String?,
-        parameter: String, spec: ControlSpec,
+        obj: ParameterizedObject, uniqueName: String,
+        parameter: String, spec: ControlSpec, context: CodegenContext,
     ): ScExpr {
         val busExpr = bus.now.force().superColliderExpr
-        return when {
-            uniqueName != null && obj.def is ProcessDefObject -> lambda {
+        return when(context) {
+            CodegenContext.Process -> lambda {
                 val busVar = Identifier(uniqueArgumentName(uniqueName, parameter))
                 busVar.send("getSynchronous")
             }

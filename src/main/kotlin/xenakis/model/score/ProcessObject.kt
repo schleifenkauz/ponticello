@@ -19,6 +19,7 @@ import xenakis.model.obj.ProcessDefReference
 import xenakis.model.player.LiveProcessUpdater
 import xenakis.model.registry.ProcessDefRegistry
 import xenakis.model.score.controls.ParameterControl
+import xenakis.model.score.controls.ParameterControl.CodegenContext
 import xenakis.sc.ControlSpec
 
 @Serializable
@@ -55,7 +56,7 @@ class ProcessObject(
 
     override fun onLoadedIntoRegistry() {
         super<ScoreObject>.onLoadedIntoRegistry()
-        listener.listen(controls)
+        listener.startListening()
     }
 
     override fun onRemoved() {
@@ -77,7 +78,8 @@ class ProcessObject(
                     with(control.now) {
                         generatePreparationCode(
                             this@ProcessObject, uniqueName,
-                            name, spec, associatedServerObjects
+                            name, spec, associatedServerObjects,
+                            context = CodegenContext.Process
                         )
                     }
                 }
@@ -87,7 +89,10 @@ class ProcessObject(
                     if (!def.hasParameter(control.name.now)) continue
                     val name = control.name.now
                     val spec = control.spec.now!!
-                    val arg = control.now.generateArgumentExpr(this@ProcessObject, uniqueName, name, spec)
+                    val arg = control.now.generateArgumentExpr(
+                        this@ProcessObject, uniqueName, name, spec,
+                        context = CodegenContext.Process
+                    )
                     append(", $name: ")
                     arg.code(writer, context)
                 }

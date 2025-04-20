@@ -9,8 +9,6 @@ import xenakis.impl.Decimal
 import xenakis.impl.Logger
 import xenakis.impl.copy
 import xenakis.model.obj.ParameterizedObject
-import xenakis.model.obj.ProcessDefObject
-import xenakis.model.obj.SynthDefObject
 import xenakis.sc.*
 import xenakis.sc.client.ScWriter
 
@@ -27,18 +25,17 @@ data class ValueControl(val value: ReactiveVariable<Decimal>) : ParameterControl
         return true
     }
 
-    override fun providesConstantSynthArgument(): Boolean = false
-
     override fun ScWriter.generatePreparationCode(
         obj: ParameterizedObject, uniqueName: String,
         parameter: String, spec: ControlSpec,
         associatedServerObjects: MutableList<String>,
+        context: CodegenContext,
     ) {
         val argVar = uniqueArgumentName(uniqueName, parameter)
-        when (obj.def) {
-            is ProcessDefObject -> +"$argVar = ${value.now}"
+        when (context) {
+            CodegenContext.Process -> +"$argVar = ${value.now}"
 
-            is SynthDefObject -> {
+            else -> {
                 +"$argVar = Bus.control(s, 1)"
                 +"$argVar.set(${value.now})"
             }
@@ -54,16 +51,15 @@ data class ValueControl(val value: ReactiveVariable<Decimal>) : ParameterControl
     }
 
     override fun generateArgumentExpr(
-        obj: ParameterizedObject, uniqueName: String?,
-        parameter: String, spec: ControlSpec,
-    ): ScExpr = when {
-        uniqueName == null -> DecimalLiteral(value.now)
-        obj.def is ProcessDefObject -> lambda {
+        obj: ParameterizedObject, uniqueName: String,
+        parameter: String, spec: ControlSpec, context: CodegenContext,
+    ): ScExpr = when (context) {
+        CodegenContext.Process -> lambda {
             Identifier(uniqueArgumentName(uniqueName, parameter))
         }
-        obj.def is SynthDefObject -> Identifier(uniqueArgumentName(uniqueName, parameter)).send("kr")
 
-        else -> DecimalLiteral(value.now)
+        CodegenContext.SubArg -> Identifier(uniqueArgumentName(uniqueName, parameter)).send("kr")
+        CodegenContext.Synth -> DecimalLiteral(value.now)
     }
 
     companion object {

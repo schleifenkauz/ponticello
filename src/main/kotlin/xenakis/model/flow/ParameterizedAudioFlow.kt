@@ -31,7 +31,7 @@ sealed class ParameterizedAudioFlow : AudioFlow(), ParameterizedObject {
 
     override fun onLoadedIntoRegistry() {
         super<AudioFlow>.onAdded()
-        listener.listen(controls)
+        listener.startListening()
     }
 
     override fun onRemoved() {

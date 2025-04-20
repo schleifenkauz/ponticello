@@ -46,22 +46,24 @@ data class AttackReleaseControl(
 
     override fun generateArgumentExpr(
         obj: ParameterizedObject,
-        uniqueName: String?,
+        uniqueName: String,
         parameter: String,
-        spec: ControlSpec
+        spec: ControlSpec,
+        context: CodegenContext
     ): ScExpr {
         spec as NumericalControlSpec
         val env = generateEnvelope(obj)
-        return env.generateArgumentExpr(obj, uniqueName, parameter, spec)
+        return env.generateArgumentExpr(obj, uniqueName, parameter, spec, context)
     }
 
     override fun ScWriter.generatePreparationCode(
         obj: ParameterizedObject, uniqueName: String,
         parameter: String, spec: ControlSpec,
-        associatedServerObjects: MutableList<String>
+        associatedServerObjects: MutableList<String>,
+        context: CodegenContext
     ) {
         val ctrl = generateEnvelope(obj)
-        return with(ctrl) { generatePreparationCode(obj, uniqueName, parameter, spec, associatedServerObjects) }
+        return with(ctrl) { generatePreparationCode(obj, uniqueName, parameter, spec, associatedServerObjects, context) }
     }
 
     override fun ScWriter.applyToSynth(

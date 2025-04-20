@@ -97,9 +97,7 @@ sealed class ScoreObject : AbstractRenamableObject() {
     open val superColliderPrefix: String? get() = null
 
     fun activeInstances(): List<ActiveObjectManager.ActiveInstance> {
-        val playbackManager = context[PlaybackManager]
-        if (!playbackManager.isPlaying.now) return emptyList()
-        return playbackManager.activeObjects.activeInstances(this)
+        return context[PlaybackManager].activeObjects.activeInstances(this)
     }
 
     fun superColliderName(suffix: Int): String {

@@ -8,10 +8,12 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import reaktive.event.unitEvent
 import reaktive.value.now
+import xenakis.model.flow.AudioFlow
 import xenakis.model.obj.ParameterizedObject
-import xenakis.model.obj.ProcessDefObject
-import xenakis.model.obj.SynthDefObject
 import xenakis.model.player.ActiveObjectManager
+import xenakis.model.player.PlaybackManager
+import xenakis.model.score.ObjectPosition
+import xenakis.model.score.ProcessObject
 import xenakis.model.score.SynthObject
 import xenakis.sc.*
 import xenakis.sc.client.ScWriter
@@ -41,6 +43,7 @@ data class UGenControl(
         obj: ParameterizedObject, uniqueName: String,
         parameter: String, spec: ControlSpec,
         associatedServerObjects: MutableList<String>,
+        context: CodegenContext,
     ) {
         val expr = substituteControlParameters(expr.editor.result.now, obj, uniqueName)
         val busName = uniqueArgumentName(uniqueName, parameter)
@@ -49,7 +52,7 @@ data class UGenControl(
         val synthName = "~synth_$uniqueName"
         append("$auxilSynthName = ")
         appendBlock("", endLine = false) {
-            expr.code(writer, context)
+            expr.code(writer, this@UGenControl.context)
         }
         +".play($synthName, $busName, fadeTime: 0, addAction: 'addBefore')"
         associatedServerObjects.addAll(listOf(busName, auxilSynthName))
@@ -57,20 +60,18 @@ data class UGenControl(
 
     override fun generateArgumentExpr(
         obj: ParameterizedObject,
-        uniqueName: String?,
+        uniqueName: String,
         parameter: String,
         spec: ControlSpec,
+        context: CodegenContext,
     ): ScExpr {
-        if (uniqueName == null) return substituteControlParameters(expr.editor.result.now, obj, null)
         val busName = uniqueArgumentName(uniqueName, parameter)
-        return when (obj.def) {
-            is SynthDefObject -> Identifier(busName).send("kr")
-            is ProcessDefObject -> lambda {
+        return when (context) {
+            CodegenContext.Synth, CodegenContext.SubArg -> Identifier(busName).send("kr")
+            CodegenContext.Process -> lambda {
                 val busVar = Identifier(busName)
                 busVar.send("getSynchronous")
             }
-
-            else -> throw AssertionError("UGenControl is only applicable to SynthDef and ProcessDef")
         }
     }
 
@@ -89,28 +90,46 @@ data class UGenControl(
         parameter: String, parentObject: ParameterizedObject,
     ) {
         val client = context[SuperColliderClient]
-        if (activeInstance != null) {
-            val baseName = parentObject.name.now
-            val uniqueName = ActiveObjectManager.uniqueName(baseName, activeInstance.suffix)
-            val busName = uniqueArgumentName(uniqueName, parameter)
-            client.run {
-                +"var scope"
-                +"scope = Stethoscope.new(s, 1, $busName.index, rate:'control')"
-                if (activeInstance.obj is SynthObject) {
-                    +"~synth_$uniqueName.onFree { AppClock.sched(0.1) { scope.window.close; scope.quit; nil  } }"
+        when {
+            parentObject is AudioFlow -> {
+                //TODO
+            }
+            activeInstance != null -> {
+                val baseName = parentObject.name.now
+                val uniqueName = ActiveObjectManager.uniqueName(baseName, activeInstance.suffix)
+                val busName = uniqueArgumentName(uniqueName, parameter)
+                client.run {
+                    +"var scope"
+                    +"scope = Stethoscope.new(s, 1, $busName.index, rate:'control')"
+                    val closeScope = "AppClock.sched(0.05) { scope.window.close; scope.quit; nil  }"
+                    if (activeInstance.obj is SynthObject) {
+                        +"~synth_$uniqueName.onFree { $closeScope }"
+                    } else if (activeInstance.obj is ProcessObject) {
+                        +"~process_$uniqueName.addDependant { |obj, signal| if (signal == 'stopped') { $closeScope } }"
+                    }
                 }
             }
-        } else {
-            client.run {
-                val expr = expr.editor.result.now
-                val substituted = substituteControlParameters(expr, parentObject, uniqueName = null)
-                val code = substituted.code(context)
+            parentObject is SynthObject -> {
                 client.run {
                     +"var bus, scope, synth"
+                    val associatedServerObjects = mutableListOf<String>()
+                    val activeObjects = context[PlaybackManager].activeObjects
+                    val suffix = activeObjects.insert(parentObject, ObjectPosition.ZERO)
+                    val uniqueName = ActiveObjectManager.uniqueName(parentObject.name.now, suffix)
+                    for (control in parentObject.controls) {
+                        control.now.run {
+                            generatePreparationCode(
+                                parentObject, uniqueName,
+                                control.name.now, control.spec.now!!,
+                                associatedServerObjects,
+                                context = CodegenContext.SubArg
+                            )
+                        }
+                    }
+                    +"~synth_$uniqueName = 'x'" //make it a dummy synth, so set and map commands don't fail...
                     +"bus = Bus.control(s, 1)"
-                    +"synth = { $code }.play(s, bus)"
-                    +"scope = Stethoscope.new(s, 1, bus.index, rate:'control')"
-                    +"scope.window.onClose = { synth.free; bus.free; scope.quit; }"
+                    +"scope = Stethoscope.new(s, 1, ~arg_${uniqueName}_$parameter.index, rate:'control')"
+                    +"scope.window.onClose = { synth.free; bus.free; scope.quit; }" //TODO remove from active objects on close
                 }
             }
         }
@@ -119,11 +138,16 @@ data class UGenControl(
     companion object {
         fun synthName(uniqueName: String, parameter: String) = "~auxil_synth_${uniqueName}_${parameter}"
 
-        fun substituteControlParameters(expr: ScExpr, obj: ParameterizedObject, uniqueName: String?): ScExpr {
+        fun substituteControlParameters(expr: ScExpr, obj: ParameterizedObject, uniqueName: String): ScExpr {
             val substitution = obj.controls.associate { ctrl ->
                 val param = ctrl.name.now
                 val spec = ctrl.spec.now!!
-                "~ctrl_$param" to { ctrl.now.generateSubArgumentExpr(obj, uniqueName, param, spec) }
+                "~ctrl_$param" to {
+                    ctrl.now.generateArgumentExpr(
+                        obj, uniqueName,
+                        param, spec, context = CodegenContext.SubArg
+                    )
+                }
             }
             return expr.substitute(substitution)
         }
