@@ -34,7 +34,7 @@ object ServerActions : Action.Collector<XenakisProject>({
         executes { project -> project.client.run("s.scope") }
     }
     addAction("Show ServerMeter") {
-        shortcut("Ctrl+M")
+        shortcut("Ctrl+Shift+M")
         executes { project ->
             val numIns = project[SERVER_OPTIONS].numInputChannels
             val numOuts = project[SERVER_OPTIONS].numOutputChannels

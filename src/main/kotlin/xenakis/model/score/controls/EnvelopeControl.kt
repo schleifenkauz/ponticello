@@ -4,6 +4,8 @@ import hextant.context.Context
 import javafx.scene.paint.Color
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
+import reaktive.event.unitEvent
 import reaktive.value.ReactiveVariable
 import reaktive.value.reactiveVariable
 import xenakis.impl.ColorSerializer
@@ -21,6 +23,9 @@ class EnvelopeControl(
     val displayColor: ReactiveVariable<@Serializable(with = ColorSerializer::class) Color> = reactiveVariable(Color.BLACK),
     val display: ReactiveVariable<Boolean> = reactiveVariable(true),
 ) : ParameterControl() {
+    @Transient
+    val update = unitEvent()
+
     override fun initialize(context: Context) {
         points.initialize(context)
     }
@@ -30,7 +35,7 @@ class EnvelopeControl(
 
     override fun validate(spec: ControlSpec, obj: ParameterizedObject): Boolean = spec is NumericalControlSpec
 
-    override fun providesConstantSynthArgument(): Boolean = false
+    override fun providesConstantSynthArgument(): Boolean = true
 
     override fun ScWriter.generatePreparationCode(
         obj: ParameterizedObject, uniqueName: String,
@@ -44,7 +49,8 @@ class EnvelopeControl(
             is SynthDefObject -> {
                 +"$auxiliaryVarName  = Bus.control(s, 1)"
                 val auxiliarySynthName = envSynthName(uniqueName, parameter)
-                +"$auxiliarySynthName = { $envelopeCode.kr }.play(s, $auxiliaryVarName)"
+                val synthName = "~synth_$uniqueName"
+                +"$auxiliarySynthName = { $envelopeCode.kr }.play($synthName, $auxiliaryVarName, fadeTime: 0, addAction: 'addBefore')"
                 associatedServerObjects.addAll(listOf(auxiliarySynthName, auxiliaryVarName))
             }
 
@@ -54,6 +60,16 @@ class EnvelopeControl(
         }
     }
 
+    override fun generateSubArgumentExpr(
+        obj: ParameterizedObject,
+        uniqueName: String,
+        parameter: String,
+        spec: ControlSpec,
+    ): ScExpr = when (obj.def) {
+        is SynthDefObject -> Identifier(uniqueArgumentName(uniqueName, parameter)).send("kr")
+        else -> generateArgumentExpr(obj, uniqueName, parameter, spec)
+    }
+
     override fun generateArgumentExpr(
         obj: ParameterizedObject, uniqueName: String,
         parameter: String, spec: ControlSpec,
@@ -61,7 +77,7 @@ class EnvelopeControl(
         spec as NumericalControlSpec
         val auxiliaryVarName = uniqueArgumentName(uniqueName, parameter)
         return when (obj.def) {
-            is SynthDefObject -> Identifier(auxiliaryVarName).send("kr")
+            is SynthDefObject -> DecimalLiteral(points.points.first().value)
             is ProcessDefObject -> lambda("t") { Identifier(auxiliaryVarName).send("at", Identifier("t")) }
             else -> RawScExpr(points.code(warp = spec.warp))
         }

@@ -29,8 +29,8 @@ sealed class ParameterizedAudioFlow : AudioFlow(), ParameterizedObject {
         listener = LiveSynthUpdater(this)
     }
 
-    override fun onAdded(context: Context) {
-        super<AudioFlow>.onAdded(context)
+    override fun onLoadedIntoRegistry() {
+        super<AudioFlow>.onAdded()
         listener.listen(controls)
     }
 

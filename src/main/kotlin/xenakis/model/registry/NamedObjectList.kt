@@ -21,6 +21,9 @@ abstract class NamedObjectList<O : NamedObject> : List<O>, AbstractContextualObj
         for (obj in objects) {
             initializeObject(obj)
         }
+        for (obj in this) {
+            obj.onLoadedIntoRegistry()
+        }
     }
 
     override fun indexOf(element: O): Int = objects.indexOf(element)
@@ -75,8 +78,9 @@ abstract class NamedObjectList<O : NamedObject> : List<O>, AbstractContextualObj
         initializeObject(obj)
         objects.add(idx, obj)
         Logger.info("Adding $obj to ${javaClass.simpleName}", Logger.Category.Registries)
-        obj.onAdded(context)
+        obj.onAdded()
         onAdded(obj, idx)
+        obj.onLoadedIntoRegistry()
         context[UndoManager].record(ListEdit.AddObject(this, obj, idx))
         listeners.notifyListeners { added(obj, idx) }
     }

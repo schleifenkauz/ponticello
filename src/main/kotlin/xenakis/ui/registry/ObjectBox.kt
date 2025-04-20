@@ -137,8 +137,8 @@ class ObjectBox<O : NamedObject>(val parent: NamedObjectListView<O>, val obj: O)
             }
             addAction("Duplicate object") {
                 applicableIf { box -> reactiveValue(box.obj.canCopy && box.obj.registry != null) }
-                icon(MaterialDesignC.CONTENT_COPY)
-                description { box -> reactiveValue(box.parent.source.objectType) }
+                icon(MaterialDesignC.CONTENT_DUPLICATE)
+                description { box -> reactiveValue("Duplicate ${box.parent.source.objectType}") }
                 executes { box, ev ->
                     val obj = box.obj
                     val list = box.parent.source as ObjectRegistry<NamedObject>

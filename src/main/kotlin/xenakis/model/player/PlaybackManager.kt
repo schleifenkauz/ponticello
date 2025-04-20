@@ -69,7 +69,7 @@ class PlaybackManager(private val scoreView: ScoreView, flows: AudioFlows) {
     private fun attachTo(score: Score) {
         detach()
         val settings = context[Settings]
-        events = ScoreEventCollector(score, graph, settings)
+        events = ScoreEventCollector(score, activeObjects, settings)
         player = ScorePlayer(score, this, scoreView.context[SuperColliderClient], settings)
         isPlayingObserver?.kill()
         isPlayingObserver = _isPlaying.bind(player.isPlaying)

@@ -53,8 +53,8 @@ class ProcessObject(
         listener = LiveProcessUpdater(this)
     }
 
-    override fun onAdded(context: Context) {
-        super<ScoreObject>.onAdded(context)
+    override fun onLoadedIntoRegistry() {
+        super<ScoreObject>.onLoadedIntoRegistry()
         listener.listen(controls)
     }
 

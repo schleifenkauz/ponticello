@@ -24,8 +24,7 @@ class NodeTree(private val client: SuperColliderClient) {
         val name = node.superColliderName.now
         if (freeSynth) {
             client.run {
-                +"if ($name != nil && $name.isRunning) { $name.free }"
-                +"$name = nil"
+                +"if ($name != nil) { $name.free }"
             }
         }
         nameObserver.remove(node)!!.kill()

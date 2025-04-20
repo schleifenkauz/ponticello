@@ -46,7 +46,12 @@ data class UGenControl(
         val busName = uniqueArgumentName(uniqueName, parameter)
         +"$busName = Bus.control(s, 1)"
         val auxilSynthName = synthName(uniqueName, parameter)
-        createSynth(this, busName, expr, context, auxilSynthName)
+        val synthName = "~synth_$uniqueName"
+        append("$auxilSynthName = ")
+        appendBlock("", endLine = false) {
+            expr.code(writer, context)
+        }
+        +".play($synthName, $busName, fadeTime: 0, addAction: 'addBefore')"
         associatedServerObjects.addAll(listOf(busName, auxilSynthName))
     }
 
@@ -86,21 +91,11 @@ data class UGenControl(
             obj: ParameterizedObject, uniqueName: String,
         ): ScExpr {
             val code = obj.controls.controlMap.entries.associate { (param, control) ->
-                val arg = control.generateArgumentExpr(obj, uniqueName, param, spec)
+                val arg = control.generateSubArgumentExpr(obj, uniqueName, param, spec)
                 arg.let { "~ctrl_$param" to it }
             }
             return expr.substitute(code)
         }
 
-        fun createSynth(
-            writer: ScWriter, busName: String, expr: ScExpr,
-            context: Context, auxilSynthName: String,
-        ) = with(writer) {
-            append("$auxilSynthName = ")
-            appendBlock("", endLine = false) {
-                expr.code(this.writer, context)
-            }
-            +".play(s, $busName)"
-        }
     }
 }

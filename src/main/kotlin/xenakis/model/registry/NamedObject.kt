@@ -1,6 +1,5 @@
 package xenakis.model.registry
 
-import hextant.context.Context
 import reaktive.value.ReactiveBoolean
 import reaktive.value.ReactiveValue
 import xenakis.model.obj.ContextualObject
@@ -18,7 +17,7 @@ interface NamedObject : ContextualObject {
 
     fun copy(name: String): NamedObject = throw UnsupportedOperationException("Cannot copy $this")
 
-    fun onAdded(context: Context) {}
+    fun onAdded() {}
 
     fun onLoadedIntoRegistry() {}
 

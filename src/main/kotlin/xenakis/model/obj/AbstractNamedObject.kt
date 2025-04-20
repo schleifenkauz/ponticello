@@ -1,6 +1,5 @@
 package xenakis.model.obj
 
-import hextant.context.Context
 import kotlinx.serialization.Transient
 import reaktive.value.ReactiveBoolean
 import reaktive.value.now
@@ -14,11 +13,11 @@ abstract class AbstractNamedObject : AbstractContextualObject(), NamedObject {
     override val isAdded: ReactiveBoolean
         get() = _isAdded
 
-    final override fun onLoadedIntoRegistry() {
+    override fun onLoadedIntoRegistry() {
         _isAdded.now = true
     }
 
-    override fun onAdded(context: Context) {
+    override fun onAdded() {
         _isAdded.now = true
     }
 

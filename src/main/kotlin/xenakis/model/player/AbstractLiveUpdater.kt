@@ -35,6 +35,8 @@ abstract class AbstractLiveUpdater(protected val obj: ParameterizedObject) : Par
 
     fun stopListening() {
         obj.controls.removeListener(this)
+        for ((_, observer) in controlObservers) observer.kill()
+        controlObservers.clear()
         defObserver.kill()
     }
 
@@ -48,6 +50,7 @@ abstract class AbstractLiveUpdater(protected val obj: ParameterizedObject) : Par
                 val name = ActiveObjectManager.uniqueName(obj.name.now, suffix)
                 val superColliderName = "${obj.superColliderPrefix}_$name"
                 val objectTime = playbackManager.playHead.currentTime - pos.time
+                println("$name ($superColliderName) at $objectTime")
                 appendBlock("if ($superColliderName != nil)") {
                     action(name, objectTime)
                 }
@@ -167,7 +170,11 @@ abstract class AbstractLiveUpdater(protected val obj: ParameterizedObject) : Par
             }
 
             is AttackReleaseControl -> return //TODO
-            is EnvelopeControl -> return //TODO
+            is EnvelopeControl -> control.update.stream.observe { _ ->
+                runOnActiveObjects { name, objectTime ->
+                    updateEnvelope(writer, objectTime, name, parameter, envelope = control.points)
+                }
+            }
             is GlobalPatternControl -> control.pattern.observe { _, pattern ->
                 runOnActiveObjects { name, _ ->
                     updatePattern(name, parameter, pattern)
@@ -224,11 +231,15 @@ abstract class AbstractLiveUpdater(protected val obj: ParameterizedObject) : Par
     )
 
     protected open fun updateUGenControl(writer: ScWriter, uniqueName: String, parameter: String, expr: ScExpr) {
-        val synthName = UGenControl.synthName(uniqueName, parameter)
-        writer.appendLine("$synthName.free;")
+        val auxiliarySynthName = UGenControl.synthName(uniqueName, parameter)
         val spec = obj.getSpec(parameter) ?: return
         val substituted = UGenControl.substituteControlParameters(expr, spec, obj, uniqueName)
         val busName = ParameterControl.uniqueArgumentName(uniqueName, parameter)
-        UGenControl.createSynth(writer, busName, substituted, obj.context, UGenControl.synthName(uniqueName, parameter))
+        writer.append("$auxiliarySynthName = ")
+        writer.appendBlock("", endLine = false) {
+            substituted.code(writer, obj.context)
+        }
+        writer.appendLine(".play($auxiliarySynthName, $busName, fadeTime: 0.02, addAction: 'addReplace')")
+
     }
 }

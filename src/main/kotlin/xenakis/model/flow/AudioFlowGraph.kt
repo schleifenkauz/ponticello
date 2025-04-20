@@ -38,7 +38,7 @@ class AudioFlowGraph(
         flows.context[SuperColliderClient].onTreeCleared { rebuildFlowGraph() }
     }
 
-    fun activeSynths() = activeSynths.values.flatten()
+    private fun activeSynths() = activeSynths.values.flatten()
 
     private fun rebuildFlowGraph() {
         reorderNodeTree()
@@ -106,7 +106,7 @@ class AudioFlowGraph(
         }
     }
 
-    fun getPlacementFor(node: AudioNode): NodePlacement = when (node) {
+    private fun getPlacementFor(node: AudioNode): NodePlacement = when (node) {
         is AudioFlow -> {
             val group = flowGroup(node.associatedBus)
             val flows = group.flows()

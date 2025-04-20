@@ -68,17 +68,9 @@ class ScorePlayer(
         scheduleObject(obj, position, cutoff = -delta.coerceAtMost(zero))
     }
 
-    fun stopPlayBackInstantly(obj: ScoreObject, pos: ObjectPosition, name: String) {
+    fun stopPlayBackInstantly(obj: ScoreObject, pos: ObjectPosition) {
         val suffix = manager.activeObjects.remove(obj, pos) ?: return
-        when (obj) {
-            is SynthObject -> {
-                manager.graph.remove(obj, pos, suffix)
-            }
-
-            is TaskObject -> client.run("~tasks['$name'].free;")
-
-            else -> {}
-        }
+        stopObject(obj, pos, suffix)
     }
 
     override fun scheduleEvents(t: Decimal, delta: Decimal) {
@@ -97,7 +89,7 @@ class ScorePlayer(
                     val startPos = position + ObjectPosition(-obj.duration, zero)
                     if (obj.duration == zero) continue
                     val suffix = manager.activeObjects.remove(obj, startPos) ?: continue
-                    stopObject(obj, startPos, suffix, stopPrematurely = false)
+                    stopObject(obj, startPos, suffix)
                 }
 
                 else -> {}
@@ -106,7 +98,7 @@ class ScorePlayer(
         }
     }
 
-    private fun stopObject(obj: ScoreObject, startPos: ObjectPosition, suffix: Int, stopPrematurely: Boolean) {
+    private fun stopObject(obj: ScoreObject, startPos: ObjectPosition, suffix: Int ) {
         when (obj) {
             is SynthObject -> {
                 try {
@@ -115,16 +107,12 @@ class ScorePlayer(
                     Logger.error("Failed to remove $obj from audio flow graph", e, Logger.Category.Playback)
                 }
                 val name = obj.superColliderName(suffix)
-                if (stopPrematurely) {
-                    client.run("if ($name != nil && $name.isRunning) { $name.free; }")
-                }
+                client.run("if ($name != nil) { $name.free; }")
             }
 
             is ProcessObject, is TaskObject -> {
                 val name = obj.superColliderName(suffix)
-                if (stopPrematurely) {
-                    client.run("$name.stop;")
-                }
+                client.run("$name.stop;")
             }
 
             else -> {}
@@ -174,7 +162,7 @@ class ScorePlayer(
     override fun pausePlayback() {
         Logger.info("Pausing playback", Logger.Category.Playback)
         manager.activeObjects.forEach { obj, startPos, suffix ->
-            stopObject(obj, startPos, suffix, stopPrematurely = true)
+            stopObject(obj, startPos, suffix)
         }
         manager.pausedPlayback()
         client.send("pause_play")
@@ -182,6 +170,7 @@ class ScorePlayer(
 
     override fun resetPlayback() {
         if (manager.recorder.isActive.now) manager.recorder.stopRecording()
+        pausePlayback()
         client.run("s.freeAll")
     }
 

@@ -144,7 +144,7 @@ object XenakisHextantPlugin : PluginInitializer({
     registerCommand<ScExprEditor<*>, Unit> {
         shortName = "show-parameter"
         name = "Show parameter info"
-        defaultShortcut = "Ctrl+P".shortcut
+        defaultShortcut = "Alt+P".shortcut
         applicableIf { editor ->
             val parent = editor.parent
             parent is ScExprListEditor && parent.isSubEditor(MessageSendEditor::arguments)
@@ -161,7 +161,7 @@ object XenakisHextantPlugin : PluginInitializer({
     registerCommand<ScExprEditor<*>, Unit> {
         shortName = "show-parameters"
         name = "Show parameters"
-        defaultShortcut = "Ctrl+Shift+P".shortcut
+        defaultShortcut = "Alt+Shift+P".shortcut
         applicableIf { editor -> editor.getParent<MessageSendEditor>() != null }
         executing { editor ->
             val messageSend = editor.getParent<MessageSendEditor>() ?: return@executing

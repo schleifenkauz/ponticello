@@ -6,7 +6,6 @@ import javafx.geometry.HorizontalDirection.RIGHT
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
-import reaktive.Observer
 import reaktive.value.ReactiveValue
 import reaktive.value.ReactiveVariable
 import reaktive.value.now
@@ -21,7 +20,6 @@ import xenakis.model.registry.reference
 import xenakis.model.score.controls.*
 import xenakis.sc.ControlSpec
 import xenakis.sc.NumericalControlSpec
-import xenakis.sc.client.SuperColliderClient
 import xenakis.sc.editor.SynthDefSelector
 import xenakis.ui.impl.Direction
 
@@ -45,9 +43,6 @@ class SynthObject(
 
     @Transient
     private lateinit var controlListener: LiveSynthUpdater
-
-    @Transient
-    private lateinit var synthDefObserver: Observer
 
     val synthDef: SynthDefObject get() = synthDefRef.now.get() ?: NoSynthDef()
 
@@ -161,14 +156,9 @@ class SynthObject(
         controlListener = LiveSynthUpdater(this)
     }
 
-    override fun onAdded(context: Context) {
-        super<ScoreObject>.onAdded(context)
+    override fun onLoadedIntoRegistry() {
+        super<ScoreObject>.onLoadedIntoRegistry()
         controlListener.listen(controls)
-        synthDefObserver = context[SuperColliderClient].updatedSynthDef.observe { _, name ->
-            if (name == def.name.now) {
-                activeInstances()
-            }
-        }
     }
 
     override fun onRemoved() {

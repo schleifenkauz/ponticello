@@ -21,8 +21,9 @@ sealed class ParameterControl : AbstractContextualObject() {
     open fun ScWriter.generatePreparationCode(
         obj: ParameterizedObject, uniqueName: String,
         parameter: String, spec: ControlSpec,
-        associatedServerObjects: MutableList<String>
-    ) {}
+        associatedServerObjects: MutableList<String>,
+    ) {
+    }
 
     open fun ScWriter.applyToSynth(obj: ParameterizedObject, synthVar: String, parameter: String, spec: ControlSpec) {
 
@@ -30,8 +31,13 @@ sealed class ParameterControl : AbstractContextualObject() {
 
     abstract fun generateArgumentExpr(
         obj: ParameterizedObject, uniqueName: String,
-        parameter: String, spec: ControlSpec
+        parameter: String, spec: ControlSpec,
     ): ScExpr
+
+    open fun generateSubArgumentExpr(
+        obj: ParameterizedObject, uniqueName: String,
+        parameter: String, spec: ControlSpec,
+    ): ScExpr = generateArgumentExpr(obj, uniqueName, parameter, spec)
 
     companion object {
         @JvmStatic

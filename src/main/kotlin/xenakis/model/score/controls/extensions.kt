@@ -52,13 +52,6 @@ fun ScWriter.writeSynthCode(
             val control = ctrl.now.adjustControlForCutoff(cutoff, spec)
             ctrl.name.now to Pair(spec, control)
         } + extraControls
-        val associatedServerObjects = mutableListOf<String>()
-        for ((param, control) in controlsWithSpecs) {
-            val (spec, ctrl) = control
-            with(ctrl) {
-                generatePreparationCode(obj, uniqueName, param, spec, associatedServerObjects)
-            }
-        }
         val synthDefName = obj.def.name.now
         val synthVar = customSynthVar ?: "~synth_$uniqueName"
         append("$synthVar = Synth.newPaused(\\$synthDefName, [")
@@ -76,11 +69,20 @@ fun ScWriter.writeSynthCode(
         appendLine("], target: ${placement.target}, addAction: ${placement.addAction});")
         +"s.sync"
         +"$synthVar.register"
+        val associatedServerObjects = mutableListOf<String>()
+        for ((param, control) in controlsWithSpecs) {
+            val (spec, ctrl) = control
+            with(ctrl) {
+                generatePreparationCode(obj, uniqueName, param, spec, associatedServerObjects)
+            }
+        }
         if (associatedServerObjects.isNotEmpty()) {
             appendBlock("$synthVar.onFree ") {
                 for (name in associatedServerObjects) {
                     +"$name.free"
+                    +"$name = nil"
                 }
+                +"$synthVar = nil"
             }
         }
         +"s.sync"

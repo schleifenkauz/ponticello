@@ -19,13 +19,15 @@ import xenakis.sc.client.ScWriter
 
 class LiveSynthUpdater(obj: ParameterizedObject) : AbstractLiveUpdater(obj) {
     override fun ScWriter.updatedDefinition() {
-        val playback = obj.context[PlaybackManager]
         runOnActiveObjects { uniqueName, objectTime ->
-            val synthName = "synth_$uniqueName"
+            val synthName = "~synth_$uniqueName"
             val placement = NodePlacement(NodePlacement.AddAction.AddReplace, target = synthName)
             when (obj) {
                 is AudioFlow -> obj.run { writeCode(placement) }
-                is SynthObject -> obj.run { writeCode(uniqueName, placement, cutoff = objectTime) }
+                is SynthObject -> {
+                    val code = obj.writeCode(uniqueName, placement, cutoff = objectTime)
+                    appendLine(code)
+                }
             }
         }
     }
@@ -73,9 +75,8 @@ class LiveSynthUpdater(obj: ParameterizedObject) : AbstractLiveUpdater(obj) {
         val cut = envelope.cut(objectTime, HorizontalDirection.RIGHT, spec.warp)
         val envelopeCode = cut.code(spec.warp)
         val auxiliarySynthName = EnvelopeControl.envSynthName(uniqueName, parameter)
-        writer.appendLine("$auxiliarySynthName.free;")
         val auxiliaryBus = ParameterControl.uniqueArgumentName(uniqueName, parameter)
-        writer.appendLine("$auxiliarySynthName = { $envelopeCode.kr }.play(s, $auxiliaryBus);")
+        writer.appendLine("$auxiliarySynthName = { $envelopeCode.kr }.play($auxiliarySynthName, $auxiliaryBus, fadeTime: 0.02, addAction: 'addReplace');")
         val busName = ParameterControl.uniqueArgumentName(uniqueName, parameter)
         writer.appendLine("~synth_$uniqueName.map('$parameter', $busName);")
     }

@@ -1,6 +1,5 @@
 package xenakis.model.obj
 
-import hextant.context.Context
 import xenakis.sc.client.ScWriter
 import xenakis.sc.client.SuperColliderClient
 
@@ -17,8 +16,8 @@ abstract class AbstractSuperColliderObject : AbstractRenamableObject(), SuperCol
         +"if ($superColliderName != nil) { $superColliderName.free; $superColliderName = nil; }"
     }
 
-    override fun onAdded(context: Context) {
-        super<AbstractRenamableObject>.onAdded(context)
+    override fun onLoadedIntoRegistry() {
+        super<AbstractRenamableObject>.onLoadedIntoRegistry()
         client.run { createObject() }
     }
 

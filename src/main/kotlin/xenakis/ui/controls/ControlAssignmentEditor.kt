@@ -103,7 +103,9 @@ class ControlAssignmentEditor(val control: NamedParameterControl) : HBox() {
         val type = ControlType.getType(newControl)
         settingControl = true
         optionButton.text = type.toString()
-        detailEditor = type.createDetailInput(control.parentObject, control, newControl)
+        detailEditor =
+            if (control.spec.now == null) missingSpecOptionsBar(control)
+            else type.createDetailInput(control.parentObject, control, newControl)
         detailEditors[type] = detailEditor!!
         settingControl = false
     }
@@ -129,7 +131,7 @@ class ControlAssignmentEditor(val control: NamedParameterControl) : HBox() {
                 control: ValueControl,
             ): Node {
                 val spec = namedControl.spec.now
-                if (spec !is NumericalControlSpec) return missingSpecOptionsBar(obj, namedControl)
+                if (spec !is NumericalControlSpec) return missingSpecOptionsBar(namedControl)
                 val converter = spec.converter()
                 val sliderBar = SliderBar(
                     control.value, namedControl.name, converter,
@@ -153,14 +155,15 @@ class ControlAssignmentEditor(val control: NamedParameterControl) : HBox() {
                 namedControl: NamedParameterControl,
                 control: EnvelopeControl,
             ): Node {
-                if (namedControl.spec.now !is NumericalControlSpec) return missingSpecOptionsBar(obj, namedControl)
+                if (namedControl.spec.now !is NumericalControlSpec) return missingSpecOptionsBar(namedControl)
                 val colorPicker = colorPicker(control.displayColor)
                 colorPicker.setFixedWidth(30.0)
-                val box = HBox(5.0, colorPicker)
-                if (obj is SynthObject) {
+                val actionBar = ActionBar(actions.withContext(control), "medium-icon-button")
+                val box = HBox(5.0, colorPicker, actionBar)
+                if (namedControl.parentObject is SynthObject) {
                     val toggle = ToggleSwitch("Display: ")
                     toggle.selectedProperty().bindBidirectional(control.display.asProperty())
-                    box.children.add(toggle)
+                    box.children.add(1, toggle)
                 }
                 box.alignment = Pos.CENTER_LEFT
                 return box
@@ -179,6 +182,14 @@ class ControlAssignmentEditor(val control: NamedParameterControl) : HBox() {
                 val display = reactiveVariable(true)
                 return EnvelopeControl(env, displayColor, display)
             }
+
+            private val actions = collectActions<EnvelopeControl> {
+                addAction("Update") {
+                    icon(MaterialDesignS.SYNC)
+                    shortcut("Ctrl+U")
+                    executes { ctrl -> ctrl.update.fire() }
+                }
+            }
         }
 
         data object UGen : ControlType<UGenControl>() {
@@ -190,7 +201,7 @@ class ControlAssignmentEditor(val control: NamedParameterControl) : HBox() {
                 val pane = ScrollPane(control.expr.control)
                 pane.background = background(Color.BLACK)
                 val window = SubWindow(Region(), "LFO for ${namedControl.name.now}")
-                window.scene.initHextantScene(obj.context)
+                window.scene.initHextantScene(namedControl.context)
                 window.resize(500.0, 200.0)
                 val showWindowButton = button("Code") { window.showOrBringToFront() }
                 val actionBar = ActionBar(actions.withContext(control), "medium-icon-button")
@@ -246,7 +257,7 @@ class ControlAssignmentEditor(val control: NamedParameterControl) : HBox() {
                 obj: ParameterizedObject,
                 namedControl: NamedParameterControl,
                 control: BusControl,
-            ): Node = busSelector(control.bus, namedControl.spec.now, obj.context)
+            ): Node = busSelector(control.bus, namedControl.spec.now, namedControl.context)
 
             override fun createDefaultControl(
                 obj: ParameterizedObject,
@@ -263,7 +274,7 @@ class ControlAssignmentEditor(val control: NamedParameterControl) : HBox() {
                 obj: ParameterizedObject,
                 namedControl: NamedParameterControl,
                 control: BusValueControl,
-            ): Node = busSelector(control.bus, namedControl.spec.now, obj.context)
+            ): Node = busSelector(control.bus, namedControl.spec.now, namedControl.context)
 
             override fun createDefaultControl(
                 obj: ParameterizedObject,
@@ -277,13 +288,12 @@ class ControlAssignmentEditor(val control: NamedParameterControl) : HBox() {
             override fun toString(): String = "Bus"
         }
 
-        data object SingleBusValue :
-            ControlType<SingleBusValueControl>() {
+        data object SingleBusValue : ControlType<SingleBusValueControl>() {
             override fun createDetailInput(
                 obj: ParameterizedObject,
                 namedControl: NamedParameterControl,
                 control: SingleBusValueControl,
-            ): Node = busSelector(control.bus, namedControl.spec.now, obj.context)
+            ): Node = busSelector(control.bus, namedControl.spec.now, namedControl.context)
 
             override fun createDefaultControl(
                 obj: ParameterizedObject, spec: ControlSpec?, oldControl: ParameterControl,
@@ -305,7 +315,7 @@ class ControlAssignmentEditor(val control: NamedParameterControl) : HBox() {
                 val spec = namedControl.spec.now as BufferControlSpec
                 editor.setFilter(spec.channels)
                 editor.syncWith(control.sample)
-                editor.initialize(obj.context)
+                editor.initialize(namedControl.context)
                 val selectorControl = ObjectSelectorControl(editor, createBundle())
                 val displaySwitch = ToggleSwitch("Display: ")
                 displaySwitch.selectedProperty().bindBidirectional(control.display.asProperty())
@@ -352,7 +362,7 @@ class ControlAssignmentEditor(val control: NamedParameterControl) : HBox() {
             ): Node {
                 val selector = GlobalPatternSelector()
                 selector.syncWith(control.pattern)
-                selector.initialize(obj.context)
+                selector.initialize(namedControl.context)
                 return ObjectSelectorControl(selector, createBundle())
             }
 
@@ -373,8 +383,8 @@ class ControlAssignmentEditor(val control: NamedParameterControl) : HBox() {
             ): Node {
                 val box = HBox(10.0)
                 val spec = namedControl.spec.now as? NumericalControlSpec
-                    ?: return missingSpecOptionsBar(obj, namedControl)
-                box.userData = obj.duration()!!.forEach { duration ->
+                    ?: return missingSpecOptionsBar(namedControl)
+                box.userData = namedControl.parentObject.duration()!!.forEach { duration ->
                     val timeSpec = NumericalControlSpec(
                         default = zero, min = zero, max = duration,
                         step = 0.01.asTime, warp = Warp.Linear, associatedColor = Color.GRAY
@@ -442,24 +452,26 @@ class ControlAssignmentEditor(val control: NamedParameterControl) : HBox() {
                 editor.initialize(context)
                 return ObjectSelectorControl(editor, createBundle())
             }
-
-            private fun missingSpecOptionsBar(obj: ParameterizedObject, control: NamedParameterControl): HBox = HBox(
-                5.0,
-                Label("No spec found"),
-                button("Use spec from definition") { ev ->
-                    val success = control.useSpecFromDefinition()
-                    if (!success) {
-                        InfoPrompt("No spec found in '${obj.def.name.now}'").showDialog(ev)
-                    }
-                },
-                button("Provide custom spec") { ev ->
-                    val spec = NumericalControlSpecPrompt(
-                        control.name.now, obj, NumericalControlSpec.DEFAULT,
-                        "Provide custom specification"
-                    ).showDialog(ev) ?: return@button
-                    control.setCustomSpec(spec)
-                }
-            ).centerChildren()
         }
+    }
+
+    companion object {
+        private fun missingSpecOptionsBar(control: NamedParameterControl): HBox = HBox(
+            5.0,
+            Label("Invalid or unresolved spec"),
+            button("Use spec from definition") { ev ->
+                val success = control.useSpecFromDefinition()
+                if (!success) {
+                    InfoPrompt("No spec found in '${control.parentObject.def.name.now}'").showDialog(ev)
+                }
+            },
+            button("Provide custom spec") { ev ->
+                val spec = NumericalControlSpecPrompt(
+                    control.name.now, control.parentObject, NumericalControlSpec.DEFAULT,
+                    "Provide custom specification"
+                ).showDialog(ev) ?: return@button
+                control.setCustomSpec(spec)
+            }
+        ).centerChildren()
     }
 }

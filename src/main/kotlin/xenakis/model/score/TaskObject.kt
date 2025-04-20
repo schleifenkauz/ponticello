@@ -40,6 +40,7 @@ class TaskObject(
             +"${context[Settings].serverLatency.now}.wait"
             val block = code.editor.result.now
             block.writeCode(writer, context)
+            +"$name = nil"
         }
         appendLine(".play;")
     }

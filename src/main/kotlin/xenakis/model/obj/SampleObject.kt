@@ -83,8 +83,8 @@ class SampleObject(
         }
     }
 
-    override fun onAdded(context: Context) {
-        super.onAdded(context)
+    override fun onAdded() {
+        super.onAdded()
         if (registry.copyAudioFiles.now) {
             copyReferencedFileToSamplesDir()
             updateInfos()

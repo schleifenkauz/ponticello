@@ -106,13 +106,19 @@ class XenakisLauncher {
             context,
             "opening project",
             clientReady = { client ->
-                val beforeBoot = folder.resolve("xenakis_data").resolve("before_boot.json")
-                    .readJson(ScriptObject.Serializer(ScriptObject.Type.BEFORE_BOOT))
-                beforeBoot.initialize(context)
-                beforeBoot.executeContents(client)
-                val serverOptions = folder.resolve("xenakis_data").resolve("server_options.json")
-                    .readJson<ServerOptions>()
-                serverOptions.reboot(client)
+                val beforeBootFile = folder.resolve("xenakis_data").resolve("before_boot.json")
+                if (beforeBootFile.exists()) {
+                    val beforeBoot = beforeBootFile
+                        .readJson(ScriptObject.Serializer(ScriptObject.Type.BEFORE_BOOT))
+                    beforeBoot.initialize(context)
+                    beforeBoot.executeContents(client)
+                }
+                val serverOptionsFile = folder.resolve("xenakis_data").resolve("server_options.json")
+                if (serverOptionsFile.exists()) {
+                    val serverOptions = serverOptionsFile
+                        .readJson<ServerOptions>()
+                    serverOptions.reboot(client)
+                }
             },
             serverReady = {
                 progressBar.displayProgress(0.2, "Booted SuperCollider server, opening project...")

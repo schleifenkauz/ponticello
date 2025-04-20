@@ -18,7 +18,7 @@ class ReachabilityGraph<V> {
     fun edges(): Set<Pair<V, V>> = edges
 
     fun reachable(from: V, target: V): Boolean {
-        return from in reaches.getValue(target)
+        return from in reaches[target].orEmpty()
     }
 
     fun dfsReachable(from: V, target: V): Boolean {

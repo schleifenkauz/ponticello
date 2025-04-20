@@ -86,7 +86,7 @@ class ParameterControlList(
         }
 
         private fun updateSpec(spec: ControlSpec?) {
-            specBinder?.kill()
+            specBinder?.tryKill()
             specBinder = resolveControlSpec(spec).forEach { s ->
                 val oldSpec = _spec.now
                 _spec.now = s

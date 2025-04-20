@@ -11,6 +11,7 @@ import javafx.scene.paint.Color
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 import reaktive.event.EventStream
 import reaktive.event.unitEvent
 import reaktive.value.ReactiveVariable
@@ -38,6 +39,7 @@ class CustomizableSynthDefObject(
     override val canCopy: Boolean
         get() = true
 
+    @Transient
     val update = unitEvent()
 
     override val updated: EventStream<Unit>
@@ -47,7 +49,7 @@ class CustomizableSynthDefObject(
         reactiveVariable(name),
         ParameterDefList(parameters.mapTo(mutableListOf()) { p -> p.copy() }),
         color.copy(),
-        ugenGraph?.clone(context)
+        ugenGraph?.clone()
     )
 
     override fun ScWriter.sync() {
@@ -70,13 +72,11 @@ class CustomizableSynthDefObject(
             val parameterCode = RawScExpr("\\${p.name.now}.${p.spec.now.code}")
             Assignment(Identifier(p.name.now), parameterCode)
         } + Assignment(Identifier("duration"), SymbolLiteral("duration").send("ir"))
-        val freeAfterDuration =
-            RawScExpr("Env.new(levels: [0, 0], times: [duration]).kr(\\afterDuration.ir(Done.freeSelf))")
         val variables = ugenGraph?.editor?.result?.now?.variables.orEmpty()
         val statements = ugenGraph?.editor?.result?.now?.statements.orEmpty()
         val block = CodeBlock(
             variables = parameterVariables + variables,
-            statements = parameterAssignments + statements + freeAfterDuration
+            statements = parameterAssignments + statements
         )
         val graphFunc = ScFunction(emptyList(), block)
         graphFunc.code(this, context)
