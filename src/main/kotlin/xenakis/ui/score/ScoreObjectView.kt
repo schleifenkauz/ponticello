@@ -115,9 +115,10 @@ abstract class ScoreObjectView(
                     NameControl(obj),
                     createActionsBar(),
                     *headerItems().toTypedArray()
-                )
+                ).centerChildren().pad(8.0)
             )
             val durationLabel = label(obj.duration().map { dur -> "${dur.toCanonicalString()} seconds" })
+                .pad(5.0)
             if (obj.canResize) {
                 detailPane.addItem("Duration", durationLabel)
             }

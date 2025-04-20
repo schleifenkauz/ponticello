@@ -12,7 +12,6 @@ import hextant.fx.initHextantScene
 import hextant.serial.EditorRoot
 import hextant.undo.UndoManager
 import javafx.application.Platform
-import javafx.geometry.Insets
 import javafx.geometry.Point2D
 import javafx.geometry.Pos
 import javafx.scene.Parent
@@ -61,14 +60,10 @@ class CodePane(
         }
         if (ownWindow) {
             val actions = actions.withContext(this)
-            val header = ActionBar(actions, "medium-icon-button")
+            val actionBar = ActionBar(actions, "medium-icon-button").floating(Pos.TOP_RIGHT)
             val scrollPane = ScrollPane(rootControl)
-            header.maxWidth = header.prefWidth(-1.0)
-            header.maxHeight = header.prefHeight(-1.0)
-            header.padding = Insets(5.0)
             setAlignment(scrollPane, Pos.TOP_LEFT)
-            setAlignment(header, Pos.TOP_RIGHT)
-            children.addAll(scrollPane, header)
+            children.addAll(scrollPane, actionBar)
             registerShortcuts(actions)
         } else {
             children.add(rootControl)
