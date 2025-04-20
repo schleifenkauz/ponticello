@@ -44,12 +44,12 @@ data class SingleBusValueControl(val bus: ReactiveVariable<BusReference>) : Para
 
     override fun generateArgumentExpr(
         obj: ParameterizedObject,
-        uniqueName: String,
+        uniqueName: String?,
         parameter: String,
         spec: ControlSpec,
     ): ScExpr =
-        when (obj.def) {
-            is ProcessDefObject -> lambda("t") {
+        when  {
+            uniqueName != null && obj.def is ProcessDefObject -> lambda("t") {
                 val busVar = Identifier(uniqueArgumentName(uniqueName, parameter))
                 busVar.send("getSynchronous")
             }

@@ -27,6 +27,7 @@ import xenakis.ui.registry.SearchableToolPane
 
 class ParameterControlsPane(
     private val obj: ParameterizedObject, title: String,
+    private val view: ScoreObjectView? = null,
 ) : SearchableToolPane<NamedParameterControl>(), ParameterControlList.Listener {
     private val editors = mutableMapOf<NamedParameterControl, ControlAssignmentEditor>()
 
@@ -57,12 +58,13 @@ class ParameterControlsPane(
     }
 
     override fun getItemContent(obj: NamedParameterControl): List<Node> {
-        val editor = editors.getOrPut(obj) { ControlAssignmentEditor(obj) }
+        val editor = editors.getOrPut(obj) { ControlAssignmentEditor(obj, view) }
         editor.setControl(obj.now)
         return listOf(editor)
     }
 
-    override fun getActions(box: ObjectBox<NamedParameterControl>): List<ContextualizedAction> = actions.withContext(box)
+    override fun getActions(box: ObjectBox<NamedParameterControl>): List<ContextualizedAction> =
+        actions.withContext(box)
 
     companion object {
         private val headerActions = collectActions<ParameterControlsPane> {
@@ -82,7 +84,7 @@ class ParameterControlsPane(
         private val actions = collectActions<ObjectBox<NamedParameterControl>> {
             addAction("Edit spec") {
                 shortcut("Ctrl+K")
-                applicableIf { box ->  box.obj.spec.map { s -> s != null && s !is GroupControlSpec } }
+                applicableIf { box -> box.obj.spec.map { s -> s != null && s !is GroupControlSpec } }
                 icon(Codicons.SYMBOL_PROPERTY)
                 executes { box ->
                     val control = box.obj

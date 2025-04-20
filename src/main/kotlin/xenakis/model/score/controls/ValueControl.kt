@@ -10,6 +10,7 @@ import xenakis.impl.Logger
 import xenakis.impl.copy
 import xenakis.model.obj.ParameterizedObject
 import xenakis.model.obj.ProcessDefObject
+import xenakis.model.obj.SynthDefObject
 import xenakis.sc.*
 import xenakis.sc.client.ScWriter
 
@@ -31,16 +32,35 @@ data class ValueControl(val value: ReactiveVariable<Decimal>) : ParameterControl
         parameter: String, spec: ControlSpec,
         associatedServerObjects: MutableList<String>,
     ) {
-        if (obj.def is ProcessDefObject) {
-            +"${uniqueArgumentName(uniqueName, parameter)} = ${value.now}"
+        val argVar = uniqueArgumentName(uniqueName, parameter)
+        when (obj.def) {
+            is ProcessDefObject -> +"$argVar = ${value.now}"
+
+            is SynthDefObject -> {
+                +"$argVar = Bus.control(s, 1)"
+                +"$argVar.set(${value.now})"
+            }
         }
     }
 
-    override fun generateArgumentExpr(
-        obj: ParameterizedObject, uniqueName: String,
+    override fun ScWriter.applyToSynth(
+        obj: ParameterizedObject, synthVar: String,
         parameter: String, spec: ControlSpec,
-    ): ScExpr = when (obj.def) {
-        is ProcessDefObject -> Identifier(uniqueArgumentName(uniqueName, parameter))
+    ) {
+        val busName = uniqueArgumentName(synthVar, parameter)
+        +"$synthVar.map('$parameter', $busName)"
+    }
+
+    override fun generateArgumentExpr(
+        obj: ParameterizedObject, uniqueName: String?,
+        parameter: String, spec: ControlSpec,
+    ): ScExpr = when {
+        uniqueName == null -> DecimalLiteral(value.now)
+        obj.def is ProcessDefObject -> lambda {
+            Identifier(uniqueArgumentName(uniqueName, parameter))
+        }
+        obj.def is SynthDefObject -> Identifier(uniqueArgumentName(uniqueName, parameter)).send("kr")
+
         else -> DecimalLiteral(value.now)
     }
 

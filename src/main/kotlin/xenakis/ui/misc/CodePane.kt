@@ -42,14 +42,19 @@ import java.util.concurrent.ExecutionException
 import java.util.concurrent.Executors
 
 class CodePane(
-    private val rootEditor: CodeBlockEditor?,
+    private val rootEditor: ScExprEditor<*>?,
     private val rootControl: Parent,
     private val context: Context,
+    extraActions: List<ContextualizedAction> = emptyList(),
+    actionBarAlignment: Pos = Pos.TOP_RIGHT,
     ownWindow: Boolean = false,
 ) : StackPane() {
     constructor(
-        root: EditorRoot<CodeBlockEditor>, ownWindow: Boolean = false,
-    ) : this(root.editor, root.control, root.editor.context, ownWindow)
+        root: EditorRoot<out ScExprEditor<*>>,
+        extraActions: List<ContextualizedAction> = emptyList(),
+        actionBarAlignment: Pos = Pos.TOP_RIGHT,
+        ownWindow: Boolean = false,
+    ) : this(root.editor, root.control, root.editor.context, extraActions, actionBarAlignment, ownWindow)
 
     init {
         rootControl.styleClass("code-pane")
@@ -59,8 +64,8 @@ class CodePane(
             }
         }
         if (ownWindow) {
-            val actions = actions.withContext(this)
-            val actionBar = ActionBar(actions, "medium-icon-button").floating(Pos.TOP_RIGHT)
+            val actions = actions.withContext(this) + extraActions
+            val actionBar = ActionBar(actions, "medium-icon-button").floating(actionBarAlignment)
             val scrollPane = ScrollPane(rootControl)
             setAlignment(scrollPane, Pos.TOP_LEFT)
             children.addAll(scrollPane, actionBar)
@@ -93,8 +98,8 @@ class CodePane(
     }
 
     private fun evaluateSingleExpression(editor: Any, delete: Boolean) {
-        when (editor) {
-            rootEditor -> {
+        when {
+            rootEditor is CodeBlockEditor && editor == rootEditor -> {
                 evaluate(rootEditor.statements.result.now, anchorEditor = rootEditor) {
                     if (delete) {
                         rootEditor.variables.clear()
@@ -103,8 +108,7 @@ class CodePane(
                     }
                 }
             }
-
-            is ScExprEditor<*> -> {
+            editor is ScExprEditor<*> -> {
                 evaluate(listOf(editor.result.now), anchorEditor = editor) {
                     if (delete) {
                         val expander = editor as? ScExprExpander ?: editor.expander as? ScExprExpander
@@ -118,8 +122,7 @@ class CodePane(
                     }
                 }
             }
-
-            is ScExprListEditor -> {
+            editor is ScExprListEditor -> {
                 evaluate(editor.result.now, anchorEditor = editor.editors.now.last()) {
                     if (delete) {
                         editor.clear()
@@ -159,11 +162,13 @@ class CodePane(
     private fun evaluate(statements: List<ScExpr>, anchorEditor: Editor<*>, onSuccess: () -> Unit) {
         val anchorNode = context[EditorControlGroup].getViewOf(anchorEditor)
         val code = writeCode {
-            val variables = rootEditor?.variables?.result?.now ?: emptyList()
-            if (variables.isNotEmpty()) {
-                append("var ")
-                append(variables.joinToString(", ") { id -> id.text })
-                appendLine(";")
+            if (rootEditor is CodeBlockEditor) {
+                val variables = rootEditor.variables.result.now
+                if (variables.isNotEmpty()) {
+                    append("var ")
+                    append(variables.joinToString(", ") { id -> id.text })
+                    appendLine(";")
+                }
             }
             for (statement in statements) {
                 statement.code(writer, context)

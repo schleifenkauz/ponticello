@@ -33,7 +33,8 @@ class LiveSynthUpdater(obj: ParameterizedObject) : AbstractLiveUpdater(obj) {
     }
 
     override fun ScWriter.updateValue(uniqueName: String, parameter: String, value: Decimal) {
-        +"~synth_$uniqueName.set('$parameter', $value)"
+        val varName = ParameterControl.uniqueArgumentName(uniqueName, parameter)
+        +"$varName.set($value)"
     }
 
     override fun ScWriter.remapBus(uniqueName: String, parameter: String, bus: BusReference) {

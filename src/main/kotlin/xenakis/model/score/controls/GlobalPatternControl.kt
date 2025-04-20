@@ -36,10 +36,13 @@ class GlobalPatternControl(val pattern: ReactiveVariable<GlobalPatternReference>
     }
 
     override fun generateArgumentExpr(
-        obj: ParameterizedObject, uniqueName: String,
+        obj: ParameterizedObject, uniqueName: String?,
         parameter: String, spec: ControlSpec,
-    ): ScExpr = when (obj.def) {
-        is ProcessDefObject -> lambda("t") { Identifier(uniqueArgumentName(uniqueName, parameter)).send("next") }
+    ): ScExpr = when {
+        uniqueName != null && obj.def is ProcessDefObject -> lambda("t") {
+            Identifier(uniqueArgumentName(uniqueName, parameter)).send("next")
+        }
+
         else -> pattern.now.force().superColliderExpr.send("next")
     }
 }

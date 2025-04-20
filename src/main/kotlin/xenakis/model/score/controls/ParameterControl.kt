@@ -30,12 +30,12 @@ sealed class ParameterControl : AbstractContextualObject() {
     }
 
     abstract fun generateArgumentExpr(
-        obj: ParameterizedObject, uniqueName: String,
+        obj: ParameterizedObject, uniqueName: String?,
         parameter: String, spec: ControlSpec,
     ): ScExpr
 
     open fun generateSubArgumentExpr(
-        obj: ParameterizedObject, uniqueName: String,
+        obj: ParameterizedObject, uniqueName: String?,
         parameter: String, spec: ControlSpec,
     ): ScExpr = generateArgumentExpr(obj, uniqueName, parameter, spec)
 

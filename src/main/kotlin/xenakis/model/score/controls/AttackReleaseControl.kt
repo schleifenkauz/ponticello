@@ -46,7 +46,7 @@ data class AttackReleaseControl(
 
     override fun generateArgumentExpr(
         obj: ParameterizedObject,
-        uniqueName: String,
+        uniqueName: String?,
         parameter: String,
         spec: ControlSpec
     ): ScExpr {

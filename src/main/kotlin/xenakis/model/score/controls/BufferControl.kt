@@ -50,10 +50,10 @@ data class BufferControl(
     }
 
     override fun generateArgumentExpr(
-        obj: ParameterizedObject, uniqueName: String,
+        obj: ParameterizedObject, uniqueName: String?,
         parameter: String, spec: ControlSpec,
-    ): ScExpr = when (obj.def) {
-        is ProcessDefObject -> Identifier(uniqueArgumentName(uniqueName, parameter))
+    ): ScExpr = when {
+        uniqueName!= null && obj.def is ProcessDefObject -> Identifier(uniqueArgumentName(uniqueName, parameter))
         else -> sample.now.force().superColliderExpr
     }
 }

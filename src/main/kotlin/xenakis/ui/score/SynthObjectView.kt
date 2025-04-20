@@ -73,7 +73,7 @@ class SynthObjectView(
         }.styleClass("medium-icon-button").disableIf(obj.synthDefSelector.isResolved.not())
         val box = ObjectSelectorControl(obj.synthDefSelector, createBundle())
         pane.addItem("SynthDef: ", HBox(5.0, box, viewBtn).centerChildren())
-        pane.children.add(ParameterControlsPane(obj, "Synth controls"))
+        pane.children.add(ParameterControlsPane(obj, "Synth controls", this))
     }
 
     override fun added(control: ParameterControlList.NamedParameterControl, idx: Int) {

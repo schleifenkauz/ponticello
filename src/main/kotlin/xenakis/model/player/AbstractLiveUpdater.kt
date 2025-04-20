@@ -232,8 +232,7 @@ abstract class AbstractLiveUpdater(protected val obj: ParameterizedObject) : Par
 
     protected open fun updateUGenControl(writer: ScWriter, uniqueName: String, parameter: String, expr: ScExpr) {
         val auxiliarySynthName = UGenControl.synthName(uniqueName, parameter)
-        val spec = obj.getSpec(parameter) ?: return
-        val substituted = UGenControl.substituteControlParameters(expr, spec, obj, uniqueName)
+        val substituted = UGenControl.substituteControlParameters(expr, obj, uniqueName)
         val busName = ParameterControl.uniqueArgumentName(uniqueName, parameter)
         writer.append("$auxiliarySynthName = ")
         writer.appendBlock("", endLine = false) {

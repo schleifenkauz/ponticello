@@ -35,6 +35,6 @@ class ProcessObjectView(
         }.styleClass("medium-icon-button").disableIf(selector.isResolved.not())
         val box = ObjectSelectorControl(selector, createBundle())
         pane.addItem("ProcessDef: ", HBox(5.0, box, viewBtn).centerChildren())
-        pane.children.add(ParameterControlsPane(obj, "Process controls"))
+        pane.children.add(ParameterControlsPane(obj, "Process controls", this))
     }
 }

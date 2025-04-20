@@ -91,6 +91,12 @@ class PlaybackManager(private val scoreView: ScoreView, flows: AudioFlows) {
 
     }
 
+    fun getActiveInstance(view: ScoreObjectView): ActiveObjectManager.ActiveInstance? {
+        if (!isPlaying.now) return null
+        val objectInstances = activeObjects.activeInstances(view.obj)
+        return objectInstances.find { inst -> inst.absolutePosition == view.absolutePosition }
+    }
+
     companion object : PublicProperty<PlaybackManager> by publicProperty("PlaybackManager") {
         private fun simpleScore(obj: ScoreObject): Score {
             val inst = ScoreObjectInstance(obj, ObjectPosition.ZERO)

@@ -82,7 +82,7 @@ class ProcessDefObject(
             appendLine(";")
             val argumentSubstitution = parameters.associate { p ->
                 val name = p.name.now
-                name to RawScExpr("$name.value(t)")
+                name to { RawScExpr("$name.value(t)") }
             }
             val setup = setupBlock.editor.result.now.substitute(argumentSubstitution) as CodeBlock
             val loop = loopBlock.editor.result.now.substitute(argumentSubstitution) as CodeBlock

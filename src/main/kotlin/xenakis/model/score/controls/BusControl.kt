@@ -49,10 +49,11 @@ class BusControl(val bus: ReactiveVariable<BusReference>) : ParameterControl() {
     }
 
     override fun generateArgumentExpr(
-        obj: ParameterizedObject, uniqueName: String,
+        obj: ParameterizedObject, uniqueName: String?,
         parameter: String, spec: ControlSpec,
-    ): ScExpr = when (obj.def) {
-        is ProcessDefObject -> Identifier(uniqueArgumentName(uniqueName, parameter))
+    ): ScExpr = when {
+        uniqueName == null -> bus.now.force().superColliderExpr
+        obj.def is ProcessDefObject -> Identifier(uniqueArgumentName(uniqueName, parameter))
         else -> bus.now.force().superColliderExpr
     }
 

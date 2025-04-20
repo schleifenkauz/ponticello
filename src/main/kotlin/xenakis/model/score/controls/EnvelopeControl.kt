@@ -62,23 +62,29 @@ class EnvelopeControl(
 
     override fun generateSubArgumentExpr(
         obj: ParameterizedObject,
-        uniqueName: String,
+        uniqueName: String?,
         parameter: String,
         spec: ControlSpec,
-    ): ScExpr = when (obj.def) {
-        is SynthDefObject -> Identifier(uniqueArgumentName(uniqueName, parameter)).send("kr")
-        else -> generateArgumentExpr(obj, uniqueName, parameter, spec)
+    ): ScExpr {
+        return when {
+            uniqueName == null -> RawScExpr(points.code((spec as NumericalControlSpec).warp))
+            obj.def is SynthDefObject -> Identifier(uniqueArgumentName(uniqueName, parameter)).send("kr")
+            else -> generateArgumentExpr(obj, uniqueName, parameter, spec)
+        }
     }
 
     override fun generateArgumentExpr(
-        obj: ParameterizedObject, uniqueName: String,
+        obj: ParameterizedObject, uniqueName: String?,
         parameter: String, spec: ControlSpec,
     ): ScExpr {
         spec as NumericalControlSpec
-        val auxiliaryVarName = uniqueArgumentName(uniqueName, parameter)
         return when (obj.def) {
             is SynthDefObject -> DecimalLiteral(points.points.first().value)
-            is ProcessDefObject -> lambda("t") { Identifier(auxiliaryVarName).send("at", Identifier("t")) }
+            is ProcessDefObject -> lambda("t") {
+                val argName = uniqueArgumentName(uniqueName!!, parameter)
+                Identifier(argName).send("at", Identifier("t"))
+            }
+
             else -> RawScExpr(points.code(warp = spec.warp))
         }
     }

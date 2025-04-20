@@ -8,29 +8,25 @@ import fxutils.controls.SliderBar
 import fxutils.prompt.InfoPrompt
 import fxutils.prompt.SimpleSearchableListView
 import hextant.context.Context
-import hextant.fx.initHextantScene
 import hextant.serial.EditorRoot
 import javafx.geometry.Pos
 import javafx.scene.Node
 import javafx.scene.control.Button
 import javafx.scene.control.Label
-import javafx.scene.control.ScrollPane
 import javafx.scene.input.DragEvent
 import javafx.scene.input.Dragboard
-import javafx.scene.layout.BorderPane
 import javafx.scene.layout.HBox
-import javafx.scene.layout.Region
 import javafx.scene.paint.Color
 import org.controlsfx.control.ToggleSwitch
-import org.kordamp.ikonli.materialdesign2.MaterialDesignD
+import org.kordamp.ikonli.evaicons.Evaicons
 import org.kordamp.ikonli.materialdesign2.MaterialDesignS
 import reaktive.value.*
-import reaktive.value.binding.map
 import reaktive.value.fx.asProperty
 import xenakis.impl.asTime
 import xenakis.impl.one
 import xenakis.impl.zero
 import xenakis.model.obj.*
+import xenakis.model.player.PlaybackManager
 import xenakis.model.registry.*
 import xenakis.model.score.ParameterControlList.NamedParameterControl
 import xenakis.model.score.ScoreObject
@@ -40,8 +36,12 @@ import xenakis.sc.*
 import xenakis.sc.editor.*
 import xenakis.sc.view.ObjectSelectorControl
 import xenakis.ui.impl.colorPicker
+import xenakis.ui.impl.makeSubWindow
+import xenakis.ui.impl.sceneFill
+import xenakis.ui.misc.CodePane
+import xenakis.ui.score.ScoreObjectView
 
-class ControlAssignmentEditor(val control: NamedParameterControl) : HBox() {
+class ControlAssignmentEditor(val control: NamedParameterControl, val view: ScoreObjectView?) : HBox() {
     private var selectedOption: ControlType<*>? = null
     private val optionButton = Button() styleClass "sleek-button"
     private val detailEditors = mutableMapOf<ControlType<*>, Node>()
@@ -105,7 +105,7 @@ class ControlAssignmentEditor(val control: NamedParameterControl) : HBox() {
         optionButton.text = type.toString()
         detailEditor =
             if (control.spec.now == null) missingSpecOptionsBar(control)
-            else type.createDetailInput(control.parentObject, control, newControl)
+            else type.createDetailInput(control, newControl, view)
         detailEditors[type] = detailEditor!!
         settingControl = false
     }
@@ -117,18 +117,18 @@ class ControlAssignmentEditor(val control: NamedParameterControl) : HBox() {
 
     sealed class ControlType<C : ParameterControl> {
         abstract fun createDetailInput(
-            obj: ParameterizedObject,
             namedControl: NamedParameterControl,
             control: C,
+            view: ScoreObjectView?,
         ): Node
 
         abstract fun createDefaultControl(obj: ParameterizedObject, spec: ControlSpec?, oldControl: ParameterControl): C
 
         data object Value : ControlType<ValueControl>() {
             override fun createDetailInput(
-                obj: ParameterizedObject,
                 namedControl: NamedParameterControl,
                 control: ValueControl,
+                view: ScoreObjectView?,
             ): Node {
                 val spec = namedControl.spec.now
                 if (spec !is NumericalControlSpec) return missingSpecOptionsBar(namedControl)
@@ -151,9 +151,9 @@ class ControlAssignmentEditor(val control: NamedParameterControl) : HBox() {
 
         data object Envelope : ControlType<EnvelopeControl>() {
             override fun createDetailInput(
-                obj: ParameterizedObject,
                 namedControl: NamedParameterControl,
                 control: EnvelopeControl,
+                view: ScoreObjectView?,
             ): Node {
                 if (namedControl.spec.now !is NumericalControlSpec) return missingSpecOptionsBar(namedControl)
                 val colorPicker = colorPicker(control.displayColor)
@@ -194,30 +194,23 @@ class ControlAssignmentEditor(val control: NamedParameterControl) : HBox() {
 
         data object UGen : ControlType<UGenControl>() {
             override fun createDetailInput(
-                obj: ParameterizedObject,
                 namedControl: NamedParameterControl,
                 control: UGenControl,
+                view: ScoreObjectView?,
             ): Node {
-                val pane = ScrollPane(control.expr.control)
-                pane.background = background(Color.BLACK)
-                val window = SubWindow(Region(), "LFO for ${namedControl.name.now}")
-                window.scene.initHextantScene(namedControl.context)
-                window.resize(500.0, 200.0)
+                val actions = actions.withContext(Pair(namedControl, view))
+                val pane = CodePane(
+                    control.expr,
+                    extraActions = actions,
+                    actionBarAlignment = Pos.BOTTOM_RIGHT,
+                    ownWindow = true
+                )
+                val window = makeSubWindow(pane, "LFO for ${namedControl.name.now}", control.context)
+                window.sceneFill(Color.BLACK)
+                window.resize(300.0, 150.0)
                 val showWindowButton = button("Code") { window.showOrBringToFront() }
-                val actionBar = ActionBar(actions.withContext(control), "medium-icon-button")
-                val box = HBox(actionBar, infiniteSpace()).centerChildren()
-                box.userData = control.subWindow.forEach { subWindow ->
-                    if (subWindow) {
-                        box.children.remove(pane)
-                        box.children.add(0, showWindowButton)
-                        val layout = BorderPane(pane)
-                        window.scene.root = layout
-                    } else {
-                        window.scene.root = Region()
-                        box.children.remove(showWindowButton)
-                        box.children.add(0, pane)
-                    }
-                }
+                val actionBar = ActionBar(actions, "medium-icon-button")
+                val box = HBox(showWindowButton, actionBar, infiniteSpace()).centerChildren()
                 return box
             }
 
@@ -231,32 +224,37 @@ class ControlAssignmentEditor(val control: NamedParameterControl) : HBox() {
                 if (oldControl.getNumericalValue() != null) {
                     editor.setInitialText(oldControl.getNumericalValue().toString())
                 } else editor.setInitialText("")
-                return UGenControl(root, reactiveVariable(false))
+                return UGenControl(root)
             }
 
-            private val actions = collectActions<UGenControl> {
+            private val actions = collectActions<Pair<NamedParameterControl, ScoreObjectView?>> {
                 addAction("Update") {
                     icon(MaterialDesignS.SYNC)
                     shortcut("Ctrl+U")
-                    executes { ctrl -> ctrl.update.fire() }
-                }
-                addAction("Toggle sub window") {
-                    description { ctrl ->
-                        ctrl.subWindow.map { subWindow ->
-                            if (subWindow) "Show inline" else "Show in sub window"
-                        }
+                    executes { (ctrl) ->
+                        val ugen = ctrl.now as UGenControl
+                        ugen.update.fire()
                     }
-                    icon(MaterialDesignD.DOCK_WINDOW)
-                    toggles(UGenControl::subWindow)
+                }
+                addAction("Scope") {
+                    icon(Evaicons.ACTIVITY)
+                    shortcut("Ctrl+E")
+                    executes { (ctrl, view) ->
+                        val ugen = ctrl.now as UGenControl
+                        val activeInstance = view?.let { ctrl.context[PlaybackManager].getActiveInstance(it) }
+                        val parameter = ctrl.name.now
+                        ugen.scope(activeInstance, parameter, ctrl.parentObject)
+                    }
                 }
             }
+
         }
 
         data object Bus : ControlType<BusControl>() {
             override fun createDetailInput(
-                obj: ParameterizedObject,
                 namedControl: NamedParameterControl,
                 control: BusControl,
+                view: ScoreObjectView?,
             ): Node = busSelector(control.bus, namedControl.spec.now, namedControl.context)
 
             override fun createDefaultControl(
@@ -271,9 +269,9 @@ class ControlAssignmentEditor(val control: NamedParameterControl) : HBox() {
 
         data object BusValue : ControlType<BusValueControl>() {
             override fun createDetailInput(
-                obj: ParameterizedObject,
                 namedControl: NamedParameterControl,
                 control: BusValueControl,
+                view: ScoreObjectView?,
             ): Node = busSelector(control.bus, namedControl.spec.now, namedControl.context)
 
             override fun createDefaultControl(
@@ -290,9 +288,9 @@ class ControlAssignmentEditor(val control: NamedParameterControl) : HBox() {
 
         data object SingleBusValue : ControlType<SingleBusValueControl>() {
             override fun createDetailInput(
-                obj: ParameterizedObject,
                 namedControl: NamedParameterControl,
                 control: SingleBusValueControl,
+                view: ScoreObjectView?,
             ): Node = busSelector(control.bus, namedControl.spec.now, namedControl.context)
 
             override fun createDefaultControl(
@@ -307,9 +305,9 @@ class ControlAssignmentEditor(val control: NamedParameterControl) : HBox() {
 
         data object Buffer : ControlType<BufferControl>() {
             override fun createDetailInput(
-                obj: ParameterizedObject,
                 namedControl: NamedParameterControl,
                 control: BufferControl,
+                view: ScoreObjectView?,
             ): Node {
                 val editor = BufferSelector()
                 val spec = namedControl.spec.now as BufferControlSpec
@@ -336,13 +334,13 @@ class ControlAssignmentEditor(val control: NamedParameterControl) : HBox() {
 
         data object Group : ControlType<GroupControl>() {
             override fun createDetailInput(
-                obj: ParameterizedObject,
                 namedControl: NamedParameterControl,
                 control: GroupControl,
+                view: ScoreObjectView?,
             ): Node {
                 val selector = GroupSelector()
                 selector.syncWith(control.group)
-                selector.initialize(obj.context)
+                selector.initialize(namedControl.context)
                 return ObjectSelectorControl(selector, createBundle())
             }
 
@@ -356,9 +354,9 @@ class ControlAssignmentEditor(val control: NamedParameterControl) : HBox() {
 
         data object GlobalPattern : ControlType<GlobalPatternControl>() {
             override fun createDetailInput(
-                obj: ParameterizedObject,
                 namedControl: NamedParameterControl,
                 control: GlobalPatternControl,
+                view: ScoreObjectView?,
             ): Node {
                 val selector = GlobalPatternSelector()
                 selector.syncWith(control.pattern)
@@ -377,9 +375,9 @@ class ControlAssignmentEditor(val control: NamedParameterControl) : HBox() {
 
         data object AttackRelease : ControlType<AttackReleaseControl>() {
             override fun createDetailInput(
-                obj: ParameterizedObject,
                 namedControl: NamedParameterControl,
                 control: AttackReleaseControl,
+                view: ScoreObjectView?,
             ): Node {
                 val box = HBox(10.0)
                 val spec = namedControl.spec.now as? NumericalControlSpec
@@ -400,9 +398,9 @@ class ControlAssignmentEditor(val control: NamedParameterControl) : HBox() {
                     release.prefWidth = 100.0
                     box.children.setAll(level, attack, release)
                 } and control.attack.observe { _, _, attack ->
-                    control.release.now = control.release.now.coerceAtMost(obj.duration()!!.now - attack)
+                    control.release.now = control.release.now.coerceAtMost(view!!.obj.duration().now - attack)
                 } and control.release.observe { _, _, release ->
-                    control.attack.now = control.attack.now.coerceAtMost(obj.duration()!!.now - release)
+                    control.attack.now = control.attack.now.coerceAtMost(view!!.obj.duration().now - release)
                 }
                 return box.centerChildren()
             }
