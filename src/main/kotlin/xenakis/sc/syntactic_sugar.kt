@@ -4,12 +4,7 @@ import hextant.codegen.Component
 import hextant.codegen.Compound
 import hextant.context.Context
 import xenakis.impl.Logger
-import xenakis.impl.zero
-import xenakis.model.flow.NodePlacement
-import xenakis.model.flow.ScoreObjectInfo
 import xenakis.model.obj.ScoreObjectReference
-import xenakis.model.score.ObjectPosition
-import xenakis.model.score.SynthObject
 import xenakis.sc.client.ScWriter
 import xenakis.sc.editor.ScoreObjectSelector
 
@@ -57,11 +52,6 @@ data class PlayObject(
             Logger.error("PlayObject reference $reference is invalid")
             return
         }
-        val placement =
-            if (obj is SynthObject) NodePlacement(NodePlacement.AddAction.AddToHead, obj.groupObj.superColliderName)
-            else null
-        val info = ScoreObjectInfo(ObjectPosition.ZERO, suffix = -1, placement, cutoff = zero)
-        val code = obj.writeCode(info)
-        writer.append(code)
+        TODO()
     }
 }

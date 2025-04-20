@@ -4,6 +4,7 @@ import com.illposed.osc.OSCMessage
 import com.illposed.osc.transport.OSCPortOut
 import com.illposed.osc.transport.OSCPortOutBuilder
 import reaktive.Observer
+import reaktive.event.event
 import reaktive.event.unitEvent
 import reaktive.observe
 import xenakis.impl.Logger
@@ -30,6 +31,8 @@ class OSCSuperColliderClient(
     private val ready = unitEvent()
     private val serverBoot = unitEvent()
     private val treeClear = unitEvent()
+    private val updateSynthDef = event<String>()
+    private val updateProcessDef = event<String>()
 
     override fun onServerBooted(action: () -> Unit): Observer {
         val observer = serverBoot.stream.observe(action)
@@ -44,6 +47,9 @@ class OSCSuperColliderClient(
     override fun onClientReady(action: () -> Unit) {
         eventObservers.add(ready.stream.observe(action))
     }
+
+    override val updatedSynthDef = updateSynthDef.stream
+    override val updatedProcessDef = updateProcessDef.stream
 
     override var sampleRate: Double = -1.0
         private set
@@ -104,6 +110,15 @@ class OSCSuperColliderClient(
 
                 path.startsWith("/cleared") -> eventExecutor.execute {
                     treeClear.fire()
+                }
+                path.startsWith("/updated") -> eventExecutor.execute {
+                    val str = getContentString(buf)
+                    val type = str.substringBefore(":")
+                    val name = str.substringAfter(":")
+                    when (type) {
+                        "synth_def" -> updateSynthDef.fire(name)
+                        "process_def" -> updateProcessDef.fire(name)
+                    }
                 }
 
                 path.startsWith("/reply") -> {

@@ -2,6 +2,7 @@ package xenakis.model.player
 
 import reaktive.value.now
 import xenakis.impl.Logger
+import xenakis.model.registry.NamedObject
 import xenakis.model.score.ObjectPosition
 import xenakis.model.score.ScoreObject
 
@@ -25,8 +26,8 @@ class ActiveObjectManager {
         return suffix
     }
 
-    fun all(): List<ActiveObject> = suffixes.flatMap { (obj, suffixes) ->
-        suffixes.map { (pos, suffix) -> ActiveObject(obj, pos, suffix) }
+    fun all(): List<ActiveInstance> = suffixes.flatMap { (obj, suffixes) ->
+        suffixes.map { (pos, suffix) -> ActiveInstance(obj, pos, suffix) }
     }
 
     fun forEach(action: (obj: ScoreObject, absolutePosition: ObjectPosition, suffix: Int) -> Unit) {
@@ -35,15 +36,15 @@ class ActiveObjectManager {
         }
     }
 
-    fun activeInstances(obj: ScoreObject): List<ActiveObject> =
-        suffixes[obj]?.map { (pos, suffix) -> ActiveObject(obj, pos, suffix) }.orEmpty()
+    fun activeInstances(obj: ScoreObject): List<ActiveInstance> =
+        suffixes[obj]?.map { (pos, suffix) -> ActiveInstance(obj, pos, suffix) }.orEmpty()
 
     fun clear() {
         takenSuffixes.clear()
         suffixes.clear()
     }
 
-    data class ActiveObject(val obj: ScoreObject, val absolutePosition: ObjectPosition, val suffix: Int)
+    data class ActiveInstance(val obj: NamedObject, val absolutePosition: ObjectPosition, val suffix: Int)
 
     companion object {
         fun uniqueName(base: String, suffix: Int) = when (suffix) {

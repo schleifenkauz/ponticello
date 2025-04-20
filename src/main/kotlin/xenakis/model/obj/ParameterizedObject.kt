@@ -4,6 +4,7 @@ import reaktive.value.ReactiveValue
 import reaktive.value.now
 import xenakis.impl.Decimal
 import xenakis.model.flow.FlowType
+import xenakis.model.player.ActiveObjectManager
 import xenakis.model.registry.NamedObject
 import xenakis.model.score.ParameterControlList
 import xenakis.model.score.controls.BusControl
@@ -16,7 +17,7 @@ interface ParameterizedObject : NamedObject {
 
     val superColliderPrefix: String
 
-    fun activeInstances(): List<String>
+    fun activeInstances(): List<ActiveObjectManager.ActiveInstance>
 
     fun duration(): ReactiveValue<Decimal>?
 

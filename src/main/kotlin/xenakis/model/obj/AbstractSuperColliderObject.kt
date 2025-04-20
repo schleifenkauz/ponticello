@@ -8,13 +8,8 @@ abstract class AbstractSuperColliderObject : AbstractRenamableObject(), SuperCol
     protected val client get() = context[SuperColliderClient]
 
     override fun sync() {
-        client.run { sync() }
-    }
-
-    protected fun redefine() {
         client.run {
-            freeObject()
-            createObject()
+            sync()
         }
     }
 

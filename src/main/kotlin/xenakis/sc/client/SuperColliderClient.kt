@@ -3,6 +3,7 @@ package xenakis.sc.client
 import bundles.PublicProperty
 import bundles.publicProperty
 import reaktive.Observer
+import reaktive.event.EventStream
 import xenakis.impl.Logger
 import xenakis.impl.Logger.Category
 import xenakis.impl.canSuperColliderTalkToMe
@@ -13,6 +14,9 @@ interface SuperColliderClient : SuperColliderContext {
     fun onServerBooted(action: () -> Unit): Observer
     fun onTreeCleared(action: () -> Unit)
     fun onClientReady(action: () -> Unit)
+
+    val updatedSynthDef: EventStream<String>
+    val updatedProcessDef: EventStream<String>
 
     val sampleRate: Double
 

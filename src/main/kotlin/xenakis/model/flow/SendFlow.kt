@@ -14,7 +14,6 @@ import xenakis.model.obj.ParameterizedObjectDef
 import xenakis.model.obj.ReferencedSynthDefObject
 import xenakis.model.registry.BusRegistry
 import xenakis.model.registry.reference
-import xenakis.model.score.ObjectPosition
 import xenakis.model.score.ParameterControlList
 import xenakis.model.score.controls.BusControl
 import xenakis.model.score.controls.ValueControl
@@ -65,11 +64,10 @@ class SendFlow(
     }
 
     override fun ScWriter.writeCode(placement: NodePlacement) {
-        val info = ScoreObjectInfo(ObjectPosition.ZERO, 0, placement, cutoff = zero)
-        val name = superColliderName.now
         writeSynthCode(
-            this@SendFlow, info, latency = zero,
-            customUniqueName = name.removePrefix("~"), customSynthVar = name
+            this@SendFlow, superColliderName.now.removePrefix("~"),
+            cutoff = zero, placement, latency = zero,
+            customSynthVar = superColliderName.now,
         )
     }
 

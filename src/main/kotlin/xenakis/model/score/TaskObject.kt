@@ -8,9 +8,10 @@ import kotlinx.serialization.Serializable
 import reaktive.value.ReactiveVariable
 import reaktive.value.now
 import reaktive.value.reactiveVariable
+import xenakis.impl.Decimal
 import xenakis.impl.writeCode
 import xenakis.model.Settings
-import xenakis.model.flow.ScoreObjectInfo
+import xenakis.model.flow.NodePlacement
 import xenakis.sc.editor.CodeBlockEditor
 
 @Serializable
@@ -33,8 +34,8 @@ class TaskObject(
         code.initialize(context)
     }
 
-    override fun writeCode(info: ScoreObjectInfo): String = writeCode {
-        val name = superColliderName(info.suffix)
+    override fun writeCode(uniqueName: String, placement: NodePlacement?, cutoff: Decimal): String = writeCode {
+        val name = "~task_$uniqueName"
         appendBlock("$name = Task", endLine = false) {
             +"${context[Settings].serverLatency.now}.wait"
             val block = code.editor.result.now

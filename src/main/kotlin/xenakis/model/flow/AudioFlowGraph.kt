@@ -106,7 +106,7 @@ class AudioFlowGraph(
         }
     }
 
-    private fun getPlacementFor(node: AudioNode): NodePlacement = when (node) {
+    fun getPlacementFor(node: AudioNode): NodePlacement = when (node) {
         is AudioFlow -> {
             val group = flowGroup(node.associatedBus)
             val flows = group.flows()

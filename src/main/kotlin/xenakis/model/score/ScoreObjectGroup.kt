@@ -14,7 +14,7 @@ import reaktive.value.reactiveVariable
 import xenakis.impl.Decimal
 import xenakis.impl.copy
 import xenakis.impl.zero
-import xenakis.model.flow.ScoreObjectInfo
+import xenakis.model.flow.NodePlacement
 import xenakis.model.obj.BusReference
 import xenakis.model.obj.GroupReference
 import xenakis.model.registry.ObjectReference
@@ -56,7 +56,7 @@ class ScoreObjectGroup(
         this.score.initialize(context, this)
     }
 
-    override fun writeCode(info: ScoreObjectInfo): String = ""
+    override fun writeCode(uniqueName: String, placement: NodePlacement?, cutoff: Decimal): String = ""
 
     override fun doCut(position: Decimal, whichHalf: HorizontalDirection, newName: String): ScoreObject {
         val objects = mutableListOf<ScoreObjectInstance>()

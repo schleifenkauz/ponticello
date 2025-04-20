@@ -5,7 +5,7 @@ data class NodePlacement(
     val target: String
 ) {
     enum class AddAction {
-        AddAfter, AddBefore, AddToTail, AddToHead;
+        AddAfter, AddBefore, AddToTail, AddToHead, AddReplace;
 
         override fun toString() = "'${name.first().lowercase()}${name.drop(1)}'"
     }

@@ -18,7 +18,7 @@ import reaktive.value.ReactiveVariable
 import reaktive.value.now
 import reaktive.value.reactiveVariable
 import xenakis.impl.*
-import xenakis.model.flow.ScoreObjectInfo
+import xenakis.model.flow.NodePlacement
 import xenakis.model.obj.AbstractRenamableObject
 import xenakis.model.player.ActiveObjectManager
 import xenakis.model.player.PlaybackManager
@@ -96,27 +96,22 @@ sealed class ScoreObject : AbstractRenamableObject() {
 
     open val superColliderPrefix: String? get() = null
 
-    fun activeInstances(): List<String> =
-        context[PlaybackManager].activeObjects.activeInstances(this).map { (_, _, suffix) ->
-            ActiveObjectManager.uniqueName(name.now, suffix)
-        }
-
+    fun activeInstances(): List<ActiveObjectManager.ActiveInstance> {
+        val playbackManager = context[PlaybackManager]
+        if (!playbackManager.isPlaying.now) return emptyList()
+        return playbackManager.activeObjects.activeInstances(this)
+    }
 
     fun superColliderName(suffix: Int): String {
         val prefix = superColliderPrefix ?: error("$this has no superColliderPrefix")
         return "${prefix}_${ActiveObjectManager.uniqueName(name.now, suffix)}"
     }
 
-    protected fun activeObjects(): List<ActiveObjectManager.ActiveObject> {
-        if (!context.hasProperty(PlaybackManager) || !context[PlaybackManager].player.isPlaying.now) return emptyList()
-        return context[PlaybackManager].activeObjects.activeInstances(this)
-    }
-
     open fun validate(): Boolean {
         return true
     }
 
-    abstract fun writeCode(info: ScoreObjectInfo): String
+    abstract fun writeCode(uniqueName: String, placement: NodePlacement?, cutoff: Decimal): String
 
     protected fun recordEdit(edit: Edit) {
         if (initialized) {
@@ -345,7 +340,7 @@ sealed class ScoreObject : AbstractRenamableObject() {
         override val affectsPlayback: Boolean
             get() = false
 
-        override fun writeCode(info: ScoreObjectInfo): String = ""
+        override fun writeCode(uniqueName: String, placement: NodePlacement?, cutoff: Decimal): String = ""
 
         override fun doClone(newName: String): ScoreObject = this
     }

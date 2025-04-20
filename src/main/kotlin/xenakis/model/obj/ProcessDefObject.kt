@@ -10,6 +10,8 @@ import javafx.scene.paint.Color
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import reaktive.event.EventStream
+import reaktive.event.unitEvent
 import reaktive.value.ReactiveVariable
 import reaktive.value.now
 import reaktive.value.reactiveVariable
@@ -37,6 +39,11 @@ class ProcessDefObject(
     val loopBlock: EditorRoot<@Contextual CodeBlockEditor> = EditorRoot(CodeBlockEditor().defaultState()),
     val deltaExpr: EditorRoot<@Contextual ScExprExpander> = EditorRoot(ScExprExpander().defaultState())
 ) : ConfigurableParameterizedObjectDef, AbstractSuperColliderObject() {
+    val update = unitEvent()
+
+    override val updated: EventStream<Unit>
+        get() = update.stream
+
     override val superColliderName: String
         get() = "~proc_${name.now}"
 
@@ -53,6 +60,14 @@ class ProcessDefObject(
         setupBlock.clone(context),
         loopBlock.clone(context)
     )
+
+    override fun ScWriter.sync() {
+        appendBlock("fork") {
+            createObject()
+            +"s.sync"
+            +"~xenakis_addr.sendMsg('/update', 'process_def:${name.now}')"
+        }
+    }
 
     override fun ScWriter.createObject() {
         appendBlock("$superColliderName = ") {

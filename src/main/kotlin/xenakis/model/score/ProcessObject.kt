@@ -7,15 +7,16 @@ import kotlinx.serialization.Transient
 import reaktive.value.ReactiveVariable
 import reaktive.value.now
 import reaktive.value.reactiveVariable
+import xenakis.impl.Decimal
 import xenakis.impl.copy
 import xenakis.impl.writeCode
 import xenakis.model.Settings
-import xenakis.model.flow.ScoreObjectInfo
+import xenakis.model.flow.NodePlacement
 import xenakis.model.obj.ParameterizedObject
 import xenakis.model.obj.ParameterizedObjectDef
 import xenakis.model.obj.ProcessDefObject
 import xenakis.model.obj.ProcessDefReference
-import xenakis.model.player.LiveProcessControlUpdater
+import xenakis.model.player.LiveProcessUpdater
 import xenakis.model.registry.ProcessDefRegistry
 import xenakis.model.score.controls.ParameterControl
 import xenakis.sc.ControlSpec
@@ -41,7 +42,7 @@ class ProcessObject(
         get() = controls.controlMap
 
     @Transient
-    private lateinit var listener: LiveProcessControlUpdater
+    private lateinit var listener: LiveProcessUpdater
 
     override fun getSpec(parameter: String): ControlSpec? = controls.getOrNull(parameter)?.spec?.now
 
@@ -49,15 +50,23 @@ class ProcessObject(
         super.initialize(context)
         processDefRef.now.resolve(context[ProcessDefRegistry])
         controls.initialize(context, this)
-        listener = LiveProcessControlUpdater(this)
+        listener = LiveProcessUpdater(this)
+    }
+
+    override fun onAdded(context: Context) {
+        super<ScoreObject>.onAdded(context)
         listener.listen(controls)
+    }
+
+    override fun onRemoved() {
+        super<ScoreObject>.onRemoved()
+        listener.stopListening()
     }
 
     override fun validate(): Boolean = controls.validate()
 
-    override fun writeCode(info: ScoreObjectInfo): String {
-        val uniqueName = info.uniqueName(this)
-        val superColliderName = superColliderName(info.suffix)
+    override fun writeCode(uniqueName: String, placement: NodePlacement?, cutoff: Decimal): String {
+        val superColliderName = "~process_$uniqueName"
         val associatedServerObjects = mutableListOf<String>()
         return writeCode {
             appendBlock("$superColliderName = Task", endLine = false) {
@@ -73,8 +82,7 @@ class ProcessObject(
                     }
                 }
                 +"$latency.wait"
-                val t0 = info.cutoff
-                append("${processDefRef.now.superColliderName}.value(t: $t0, duration: $duration")
+                append("${processDefRef.now.superColliderName}.value(t: $cutoff, duration: $duration")
                 for (control in controls) {
                     if (!def.hasParameter(control.name.now)) continue
                     val name = control.name.now

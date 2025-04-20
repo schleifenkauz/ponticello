@@ -32,7 +32,6 @@ class SynthFlow(
 
     val synthDef get() = defRef.now.get() ?: NoSynthDef()
 
-
     override val def: ParameterizedObjectDef
         get() = synthDef
 
@@ -55,8 +54,8 @@ class SynthFlow(
         )
         val name = superColliderName.now
         writeSynthCode(
-            this@SynthFlow, info, extraControls = mapOf(mainBusControl), latency = zero,
-            customUniqueName = name.removePrefix("~"), customSynthVar = name
+            this@SynthFlow, name.removePrefix("~"), cutoff = zero, placement,
+            latency = zero, extraControls = mapOf(mainBusControl), customSynthVar = name
         )
     }
 

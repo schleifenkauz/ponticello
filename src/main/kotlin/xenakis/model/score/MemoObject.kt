@@ -6,7 +6,7 @@ import kotlinx.serialization.Serializable
 import reaktive.value.ReactiveVariable
 import reaktive.value.reactiveVariable
 import xenakis.impl.Decimal
-import xenakis.model.flow.ScoreObjectInfo
+import xenakis.model.flow.NodePlacement
 import xenakis.ui.score.MemoObjectView
 
 @Serializable
@@ -38,5 +38,5 @@ class MemoObject(
 
     override fun doClone(newName: String): ScoreObject = MemoObject(reactiveVariable(newName), text)
 
-    override fun writeCode(info: ScoreObjectInfo): String = ""
+    override fun writeCode(uniqueName: String, placement: NodePlacement?, cutoff: Decimal): String = ""
 }

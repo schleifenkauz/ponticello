@@ -11,6 +11,8 @@ import javafx.scene.paint.Color
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import reaktive.event.EventStream
+import reaktive.event.unitEvent
 import reaktive.value.ReactiveVariable
 import reaktive.value.now
 import reaktive.value.reactiveVariable
@@ -36,6 +38,11 @@ class CustomizableSynthDefObject(
     override val canCopy: Boolean
         get() = true
 
+    val update = unitEvent()
+
+    override val updated: EventStream<Unit>
+        get() = update.stream
+
     override fun copy(name: String): SynthDefObject = CustomizableSynthDefObject(
         reactiveVariable(name),
         ParameterDefList(parameters.mapTo(mutableListOf()) { p -> p.copy() }),
@@ -44,7 +51,11 @@ class CustomizableSynthDefObject(
     )
 
     override fun ScWriter.sync() {
-        createObject()
+        appendBlock("fork") {
+            createObject()
+            +"s.sync"
+            +"~xenakis_addr.sendMsg('/updated', 'synth_def:${name.now}')"
+        }
     }
 
     override fun sync() {

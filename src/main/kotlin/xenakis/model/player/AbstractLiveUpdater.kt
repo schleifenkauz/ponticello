@@ -1,6 +1,5 @@
 package xenakis.model.player
 
-import kotlinx.serialization.Transient
 import reaktive.Observer
 import reaktive.value.now
 import reaktive.value.observe
@@ -17,17 +16,40 @@ import xenakis.sc.ScExpr
 import xenakis.sc.client.ScWriter
 import xenakis.sc.client.SuperColliderClient
 
-abstract class AbstractLiveControlUpdater(protected val obj: ParameterizedObject) : ParameterControlList.Listener {
-    @Transient
+abstract class AbstractLiveUpdater(protected val obj: ParameterizedObject) : ParameterControlList.Listener {
     private val controlObservers = mutableMapOf<ParameterControl, Observer>()
 
-    private fun runOnActiveObjects(action: ScWriter.(String) -> Unit) {
+    private lateinit var defObserver: Observer
+
+    fun listen(controls: ParameterControlList) {
+        controls.addListener(this, initialize = false)
+        for ((param, control) in controls.controlMap) {
+            observeControl(param, control)
+        }
+        defObserver = obj.def.updated.observe { _ ->
+            obj.context[SuperColliderClient].run {
+                updatedDefinition()
+            }
+        }
+    }
+
+    fun stopListening() {
+        obj.controls.removeListener(this)
+        defObserver.kill()
+    }
+
+    protected fun runOnActiveObjects(action: ScWriter.(String, Decimal) -> Unit) {
         val client = obj.context[SuperColliderClient]
+        val playbackManager = obj.context[PlaybackManager]
+        val activeInstances = obj.activeInstances()
+        if (activeInstances.isEmpty()) return
         client.run {
-            for (name in obj.activeInstances()) {
+            for ((_, pos, suffix) in activeInstances) {
+                val name = ActiveObjectManager.uniqueName(obj.name.now, suffix)
                 val superColliderName = "${obj.superColliderPrefix}_$name"
+                val objectTime = playbackManager.playHead.currentTime - pos.time
                 appendBlock("if ($superColliderName != nil)") {
-                    action(name)
+                    action(name, objectTime)
                 }
             }
         }
@@ -49,7 +71,7 @@ abstract class AbstractLiveControlUpdater(protected val obj: ParameterizedObject
     }
 
     private fun setDefault(parameter: String, spec: NumericalControlSpec) {
-        runOnActiveObjects { name ->
+        runOnActiveObjects { name, _ ->
             updateValue(name, parameter, spec.defaultValue.get())
         }
     }
@@ -60,7 +82,7 @@ abstract class AbstractLiveControlUpdater(protected val obj: ParameterizedObject
         obj: ParameterControlList.NamedParameterControl,
     ) {
         when (obj.now) {
-            is EnvelopeControl -> runOnActiveObjects { name ->
+            is EnvelopeControl -> runOnActiveObjects { name, _ ->
                 val auxiliarySynthName = EnvelopeControl.envSynthName(name, parameter)
                 +"$auxiliarySynthName.free"
                 val busName = ParameterControl.uniqueArgumentName(name, parameter)
@@ -69,7 +91,7 @@ abstract class AbstractLiveControlUpdater(protected val obj: ParameterizedObject
             }
 
             is AttackReleaseControl -> TODO()
-            is UGenControl -> runOnActiveObjects { name ->
+            is UGenControl -> runOnActiveObjects { name, _ ->
                 val synthName = UGenControl.synthName(name, parameter)
                 +"$synthName.free"
                 val busName = ParameterControl.uniqueArgumentName(name, parameter)
@@ -83,19 +105,19 @@ abstract class AbstractLiveControlUpdater(protected val obj: ParameterizedObject
     private fun addedControl(parameter: String, ctrl: ParameterControl) {
         observeControl(parameter, ctrl)
         when (ctrl) {
-            is BusControl -> runOnActiveObjects { name ->
+            is BusControl -> runOnActiveObjects { name, _ ->
                 updateBus(name, parameter, ctrl.bus.now)
             }
 
-            is BusValueControl -> runOnActiveObjects { name ->
+            is BusValueControl -> runOnActiveObjects { name, _ ->
                 remapBus(name, parameter, ctrl.bus.now)
             }
 
-            is ValueControl -> runOnActiveObjects { name ->
+            is ValueControl -> runOnActiveObjects { name, _ ->
                 updateValue(name, parameter, ctrl.value.now)
             }
 
-            is BufferControl -> runOnActiveObjects { name ->
+            is BufferControl -> runOnActiveObjects { name, _ ->
                 updateBuffer(name, parameter, ctrl.sample.now)
             }
 
@@ -103,11 +125,11 @@ abstract class AbstractLiveControlUpdater(protected val obj: ParameterizedObject
 
             is EnvelopeControl -> return //TODO
 
-            is GlobalPatternControl -> runOnActiveObjects { name ->
+            is GlobalPatternControl -> runOnActiveObjects { name, _ ->
                 updatePattern(name, parameter, ctrl.pattern.now)
             }
 
-            is SingleBusValueControl -> runOnActiveObjects { name ->
+            is SingleBusValueControl -> runOnActiveObjects { name, _ ->
                 updateValueBus(name, parameter, ctrl.bus.now)
             }
 
@@ -121,25 +143,25 @@ abstract class AbstractLiveControlUpdater(protected val obj: ParameterizedObject
     private fun observeControl(parameter: String, control: ParameterControl) {
         controlObservers[control] = when (control) {
             is BusControl -> control.bus.observe { _, bus ->
-                runOnActiveObjects { name ->
+                runOnActiveObjects { name, _ ->
                     updateBus(name, parameter, bus)
                 }
             }
 
             is BusValueControl -> control.bus.observe { _, bus ->
-                runOnActiveObjects { name ->
+                runOnActiveObjects { name, _ ->
                     remapBus(name, parameter, bus)
                 }
             }
 
             is ValueControl -> control.value.observe { _, value ->
-                runOnActiveObjects { name ->
+                runOnActiveObjects { name, _ ->
                     updateValue(name, parameter, value)
                 }
             }
 
             is BufferControl -> control.sample.observe { _, buf ->
-                runOnActiveObjects { name ->
+                runOnActiveObjects { name, _ ->
                     updateBuffer(name, parameter, buf)
                 }
             }
@@ -147,19 +169,19 @@ abstract class AbstractLiveControlUpdater(protected val obj: ParameterizedObject
             is AttackReleaseControl -> return //TODO
             is EnvelopeControl -> return //TODO
             is GlobalPatternControl -> control.pattern.observe { _, pattern ->
-                runOnActiveObjects { name ->
+                runOnActiveObjects { name, _ ->
                     updatePattern(name, parameter, pattern)
                 }
             }
 
             is SingleBusValueControl -> control.bus.observe { _, bus ->
-                runOnActiveObjects { name ->
+                runOnActiveObjects { name, _ ->
                     updateValueBus(name, parameter, bus)
                 }
             }
 
             is UGenControl -> control.update.stream.observe { _ ->
-                runOnActiveObjects { name ->
+                runOnActiveObjects { name, _ ->
                     val expr = control.expr.editor.result.now
                     updateUGenControl(this, name, parameter, expr)
                 }
@@ -178,12 +200,7 @@ abstract class AbstractLiveControlUpdater(protected val obj: ParameterizedObject
         addedControl(namedControl.name.now, control)
     }
 
-    fun listen(controls: ParameterControlList) {
-        controls.addListener(this, initialize = false)
-        for ((param, control) in controls.controlMap) {
-            observeControl(param, control)
-        }
-    }
+    protected abstract fun ScWriter.updatedDefinition()
 
     protected abstract fun ScWriter.updateValue(uniqueName: String, parameter: String, value: Decimal)
 
@@ -201,14 +218,10 @@ abstract class AbstractLiveControlUpdater(protected val obj: ParameterizedObject
         pattern: GlobalPatternReference,
     )
 
-    protected open fun updateEnvelope(writer: ScWriter, uniqueName: String, parameter: String, envelope: Envelope) {
-        val auxiliarySynthName = EnvelopeControl.envSynthName(uniqueName, parameter)
-        writer.appendLine("$auxiliarySynthName.free;")
-        val auxiliaryBus = ParameterControl.uniqueArgumentName(uniqueName, parameter)
-        val spec = obj.getSpec(parameter) as? NumericalControlSpec ?: return
-        val envelopeCode = envelope.code(spec.warp) //TODO take into consideration where the play head is...
-        writer.appendLine("$auxiliarySynthName = { $envelopeCode.kr }.play(s, $auxiliaryBus);")
-    }
+    protected abstract fun updateEnvelope(
+        writer: ScWriter, objectTime: Decimal,
+        uniqueName: String, parameter: String, envelope: Envelope,
+    )
 
     protected open fun updateUGenControl(writer: ScWriter, uniqueName: String, parameter: String, expr: ScExpr) {
         val synthName = UGenControl.synthName(uniqueName, parameter)

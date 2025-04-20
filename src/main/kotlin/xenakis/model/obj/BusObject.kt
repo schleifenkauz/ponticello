@@ -53,7 +53,9 @@ sealed class BusObject : AbstractSuperColliderObject() {
     override fun initialize(context: Context) {
         super.initialize(context)
         if (busType == Type.Regular) {
-            observer = channels.observe { _ -> redefine() }
+            observer = channels.observe { _ ->
+                sync()
+            }
         }
     }
 

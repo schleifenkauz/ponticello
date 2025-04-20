@@ -8,7 +8,7 @@ import reaktive.value.ReactiveVariable
 import reaktive.value.now
 import reaktive.value.reactiveVariable
 import xenakis.impl.*
-import xenakis.model.flow.ScoreObjectInfo
+import xenakis.model.flow.NodePlacement
 import xenakis.model.project.UIState.SnapOption
 import xenakis.ui.score.TempoGridObjectView
 
@@ -66,7 +66,9 @@ class TempoGridObject(
     }
 
     override fun writeCode(
-        info: ScoreObjectInfo,
+        uniqueName: String,
+        placement: NodePlacement?,
+        cutoff: Decimal,
     ): String = ""
 
     companion object {

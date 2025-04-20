@@ -1,12 +1,16 @@
 package xenakis.model.obj
 
 import javafx.scene.paint.Color
+import reaktive.event.EventStream
+import reaktive.event.never
 import reaktive.value.*
 import xenakis.sc.client.ScWriter
 import xenakis.ui.registry.ParameterDefList
 import java.util.*
 
 class NoSynthDef : SynthDefObject, AbstractContextualObject() {
+    override val updated: EventStream<Unit>
+        get() = never()
     override val isAdded: ReactiveBoolean
         get() = reactiveValue(false)
 

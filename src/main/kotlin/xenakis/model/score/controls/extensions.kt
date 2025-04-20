@@ -4,7 +4,7 @@ import javafx.geometry.HorizontalDirection
 import reaktive.value.now
 import xenakis.impl.Decimal
 import xenakis.impl.zero
-import xenakis.model.flow.ScoreObjectInfo
+import xenakis.model.flow.NodePlacement
 import xenakis.model.obj.ParameterizedObject
 import xenakis.sc.ControlSpec
 import xenakis.sc.NumericalControlSpec
@@ -26,12 +26,12 @@ fun ParameterControl.getBus() = when (this) {
 }
 
 private fun ParameterControl.adjustControlForCutoff(
-    info: ScoreObjectInfo,
+    cutoff: Decimal,
     spec: ControlSpec,
 ): ParameterControl {
-    val control = if (info.cutoff != zero && this is EnvelopeControl) {
+    val control = if (cutoff != zero && this is EnvelopeControl) {
         spec as NumericalControlSpec
-        val cutoffEnvelope = points.cut(info.cutoff, HorizontalDirection.RIGHT, spec.warp)
+        val cutoffEnvelope = points.cut(cutoff, HorizontalDirection.RIGHT, spec.warp)
         EnvelopeControl(cutoffEnvelope)
     } else this
     return control
@@ -39,18 +39,19 @@ private fun ParameterControl.adjustControlForCutoff(
 
 fun ScWriter.writeSynthCode(
     obj: ParameterizedObject,
-    info: ScoreObjectInfo,
+    uniqueName: String,
+    cutoff: Decimal,
+    placement: NodePlacement,
     latency: Decimal,
     extraControls: Map<String, Pair<ControlSpec, ParameterControl>> = emptyMap(),
-    customSynthVar: String? = null, customUniqueName: String? = null,
+    customSynthVar: String? = null,
 ) {
     appendBlock("s.makeBundle($latency)") {
         val controlsWithSpecs = obj.controls.all().associate { ctrl ->
             val spec = ctrl.spec.now!!
-            val control = ctrl.now.adjustControlForCutoff(info, spec)
+            val control = ctrl.now.adjustControlForCutoff(cutoff, spec)
             ctrl.name.now to Pair(spec, control)
         } + extraControls
-        val uniqueName = customUniqueName ?: info.uniqueName(obj)
         val associatedServerObjects = mutableListOf<String>()
         for ((param, control) in controlsWithSpecs) {
             val (spec, ctrl) = control
@@ -72,7 +73,7 @@ fun ScWriter.writeSynthCode(
         }
         if (obj.duration() != null) append("duration: ${obj.duration()!!.now}")
         else append("afterDuration: Done.none")
-        appendLine("], target: ${info.placement!!.target}, addAction: ${info.placement.addAction});")
+        appendLine("], target: ${placement.target}, addAction: ${placement.addAction});")
         +"s.sync"
         +"$synthVar.register"
         if (associatedServerObjects.isNotEmpty()) {

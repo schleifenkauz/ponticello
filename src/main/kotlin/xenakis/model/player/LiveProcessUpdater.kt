@@ -10,7 +10,13 @@ import xenakis.model.score.controls.ParameterControl
 import xenakis.sc.NumericalControlSpec
 import xenakis.sc.client.ScWriter
 
-class LiveProcessControlUpdater(obj: ParameterizedObject): AbstractLiveControlUpdater(obj) {
+class LiveProcessUpdater(obj: ParameterizedObject): AbstractLiveUpdater(obj) {
+    override fun ScWriter.updatedDefinition() {
+        runOnActiveObjects { uniqueName, objectTime ->
+            val processName = "process_$uniqueName"
+        }
+    }
+
     override fun ScWriter.updateValue(uniqueName: String, parameter: String, value: Decimal) {
         updateArgument(uniqueName, parameter, value.toString())
     }
@@ -35,7 +41,13 @@ class LiveProcessControlUpdater(obj: ParameterizedObject): AbstractLiveControlUp
         updateArgument(uniqueName, parameter, superColliderName)
     }
 
-    override fun updateEnvelope(writer: ScWriter, uniqueName: String, parameter: String, envelope: Envelope) {
+    override fun updateEnvelope(
+        writer: ScWriter,
+        objectTime: Decimal,
+        uniqueName: String,
+        parameter: String,
+        envelope: Envelope
+    ) {
         val spec = obj.getSpec(parameter) as? NumericalControlSpec ?: return
         val envelopeCode = envelope.code(spec.warp)
         writer.updateArgument(uniqueName, parameter, envelopeCode)

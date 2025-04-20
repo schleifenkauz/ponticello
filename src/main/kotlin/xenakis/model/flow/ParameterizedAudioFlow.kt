@@ -1,29 +1,42 @@
 package xenakis.model.flow
 
 import hextant.context.Context
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import reaktive.value.ReactiveValue
-import reaktive.value.now
 import xenakis.impl.Decimal
 import xenakis.model.obj.BusObject
 import xenakis.model.obj.ParameterizedObject
-import xenakis.model.player.LiveSynthControlUpdater
+import xenakis.model.player.ActiveObjectManager
+import xenakis.model.player.LiveSynthUpdater
+import xenakis.model.score.ObjectPosition
 
-abstract class ParameterizedAudioFlow : AudioFlow(), ParameterizedObject {
+@Serializable
+sealed class ParameterizedAudioFlow : AudioFlow(), ParameterizedObject {
     override val superColliderPrefix: String
         get() = "~flow"
 
     @Transient
-    private lateinit var listener: LiveSynthControlUpdater
+    private lateinit var listener: LiveSynthUpdater
 
-    final override fun activeInstances(): List<String> = listOf(name.now)
+    final override fun activeInstances(): List<ActiveObjectManager.ActiveInstance> =
+        listOf(ActiveObjectManager.ActiveInstance(this, absolutePosition = ObjectPosition.ZERO, 0))
 
     final override fun duration(): ReactiveValue<Decimal>? = null
 
     override fun initialize(context: Context, bus: BusObject) {
         super.initialize(context, bus)
-        listener = LiveSynthControlUpdater(this)
+        listener = LiveSynthUpdater(this)
+    }
+
+    override fun onAdded(context: Context) {
+        super<AudioFlow>.onAdded(context)
         listener.listen(controls)
+    }
+
+    override fun onRemoved() {
+        super<AudioFlow>.onRemoved()
+        listener.stopListening()
     }
 
     override fun validate(): Boolean = controls.validate()

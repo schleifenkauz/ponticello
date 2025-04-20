@@ -6,20 +6,22 @@ import javafx.geometry.HorizontalDirection.RIGHT
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
+import reaktive.Observer
 import reaktive.value.ReactiveValue
 import reaktive.value.ReactiveVariable
 import reaktive.value.now
 import reaktive.value.reactiveVariable
 import xenakis.impl.*
 import xenakis.model.Settings
-import xenakis.model.flow.ScoreObjectInfo
+import xenakis.model.flow.NodePlacement
 import xenakis.model.obj.*
-import xenakis.model.player.LiveSynthControlUpdater
+import xenakis.model.player.LiveSynthUpdater
 import xenakis.model.registry.GroupRegistry
 import xenakis.model.registry.reference
 import xenakis.model.score.controls.*
 import xenakis.sc.ControlSpec
 import xenakis.sc.NumericalControlSpec
+import xenakis.sc.client.SuperColliderClient
 import xenakis.sc.editor.SynthDefSelector
 import xenakis.ui.impl.Direction
 
@@ -42,7 +44,10 @@ class SynthObject(
     private var playBufRateBeforeResize = zero
 
     @Transient
-    private lateinit var listener: LiveSynthControlUpdater
+    private lateinit var controlListener: LiveSynthUpdater
+
+    @Transient
+    private lateinit var synthDefObserver: Observer
 
     val synthDef: SynthDefObject get() = synthDefRef.now.get() ?: NoSynthDef()
 
@@ -153,12 +158,26 @@ class SynthObject(
         synthDefSelector.syncWith(synthDefRef)
         synthDefSelector.initialize(context)
         controls.initialize(context, this)
-        listener = LiveSynthControlUpdater(this)
-        listener.listen(controls)
+        controlListener = LiveSynthUpdater(this)
     }
 
-    override fun writeCode(info: ScoreObjectInfo): String = writeCode {
-        writeSynthCode(this@SynthObject, info, context[Settings].serverLatency.now)
+    override fun onAdded(context: Context) {
+        super<ScoreObject>.onAdded(context)
+        controlListener.listen(controls)
+        synthDefObserver = context[SuperColliderClient].updatedSynthDef.observe { _, name ->
+            if (name == def.name.now) {
+                activeInstances()
+            }
+        }
+    }
+
+    override fun onRemoved() {
+        super<ScoreObject>.onRemoved()
+        controlListener.stopListening()
+    }
+
+    override fun writeCode(uniqueName: String, placement: NodePlacement?, cutoff: Decimal): String = writeCode {
+        writeSynthCode(this@SynthObject, uniqueName, cutoff, placement!!, context[Settings].serverLatency.now)
     }
 
     companion object {

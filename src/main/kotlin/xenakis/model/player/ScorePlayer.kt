@@ -3,7 +3,6 @@ package xenakis.model.player
 import reaktive.value.now
 import xenakis.impl.*
 import xenakis.model.Settings
-import xenakis.model.flow.ScoreObjectInfo
 import xenakis.model.player.ScoreEventCollector.Event
 import xenakis.model.score.*
 import xenakis.sc.client.SuperColliderClient
@@ -147,18 +146,17 @@ class ScorePlayer(
             Logger.error("Failed to insert $obj into active object manager", e, Logger.Category.Playback)
             return
         }
-        var info = ScoreObjectInfo(absolutePosition, suffix, null, cutoff.takeIf { it > zero } ?: zero)
-        if (obj is SynthObject) {
-            val placement = try {
+        val placement = if (obj is SynthObject) {
+            try {
                 manager.graph.insert(obj, absolutePosition, suffix)
             } catch (e: Exception) {
                 Logger.error("Failed to insert $obj into audio flow graph", e, Logger.Category.Playback)
                 return
             }
-            info = info.copy(placement = placement)
-        }
+        } else null
+        val uniqueName = ActiveObjectManager.uniqueName(obj.name.now, suffix)
         val code = try {
-            obj.writeCode(info)
+            obj.writeCode(uniqueName, placement, cutoff.takeIf { it > zero } ?: zero)
         } catch (e: Exception) {
             Logger.error("Failed to write code for $obj", e, Logger.Category.Playback)
         }
@@ -168,7 +166,7 @@ class ScorePlayer(
         } catch (e: Exception) {
             Logger.error("Failed to schedule $obj", e, Logger.Category.Playback)
         }
-        Logger.fine("unique name for $obj at $time: ${info.uniqueName(obj)}", Logger.Category.Playback)
+        Logger.fine("unique name for $obj at $time: $uniqueName", Logger.Category.Playback)
         Logger.fine("time for execution: ${timeForExecution}s", Logger.Category.Playback)
 
     }

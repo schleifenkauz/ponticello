@@ -17,7 +17,7 @@ import reaktive.value.ReactiveVariable
 import reaktive.value.now
 import reaktive.value.reactiveVariable
 import xenakis.impl.*
-import xenakis.model.flow.ScoreObjectInfo
+import xenakis.model.flow.NodePlacement
 import xenakis.model.obj.NoSynthDef
 import xenakis.model.obj.SynthDefReference
 import xenakis.sc.code
@@ -209,7 +209,9 @@ class MidiObject(
     }
 
     override fun writeCode(
-        info: ScoreObjectInfo
+        uniqueName: String,
+        placement: NodePlacement?,
+        cutoff: Decimal
     ): String = writeCode {
         val generalEventDict = eventDictionary.editor.result.now
         for ((idx, n) in notes.withIndex()) {
