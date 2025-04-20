@@ -46,17 +46,17 @@ fun ScoreObjectInstance.verticalDist(y: Decimal) = when {
     else -> 0.0.asY
 }
 
-val KeyEvent.resizeType: ScoreObject.ResizeType?
+val KeyEvent.resizeMode: ScoreObject.ResizeMode?
     get() = resizeType(isShiftDown, isAltDown)
 
-val MouseEvent.resizeType: ScoreObject.ResizeType?
+val MouseEvent.resizeMode: ScoreObject.ResizeMode?
     get() = resizeType(isShiftDown, isAltDown)
 
 private fun resizeType(shift: Boolean, alt: Boolean) = when {
-    shift && alt -> ScoreObject.ResizeType.DeepStretch
-    shift -> ScoreObject.ResizeType.Stretch
-    alt -> null
-    else -> ScoreObject.ResizeType.Regular
+    shift && alt -> null
+    shift -> ScoreObject.ResizeMode.Stretch
+    alt -> ScoreObject.ResizeMode.DeepStretch
+    else -> ScoreObject.ResizeMode.Regular
 }
 
 val Context.rootPane get() = get(XenakisMainActivity).scoreView
@@ -71,7 +71,7 @@ fun colorPicker(controlledVar: ReactiveVariable<Color>): ColorPicker {
 
 fun <R> Prompt<R, *>.showDialog(context: Context) = showDialog(owner = context[primaryStage])
 
-private val DEFAULT_SCENE_FILL = Color.web("#1d1d20")
+val DEFAULT_SCENE_FILL = Color.web("#1d1d20")
 
 fun makeSubWindow(
     root: Parent, title: String,

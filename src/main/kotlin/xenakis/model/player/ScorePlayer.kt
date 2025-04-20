@@ -15,8 +15,6 @@ class ScorePlayer(
     override val client: SuperColliderClient,
     private val settings: Settings,
 ) : AbstractPlayer(DELTA_T, settings.lookAhead) {
-    private val activeObjectManager = ActiveObjectManager()
-
     private var lastPlayFrom: Decimal = PlayHead.START
 
     override val playHead: PlayHead
@@ -72,7 +70,7 @@ class ScorePlayer(
     }
 
     fun stopPlayBackInstantly(obj: ScoreObject, pos: ObjectPosition, name: String) {
-        val suffix = activeObjectManager.remove(obj, pos) ?: return
+        val suffix = manager.activeObjects.remove(obj, pos) ?: return
         when (obj) {
             is SynthObject -> {
                 manager.graph.remove(obj, pos, suffix)
@@ -99,7 +97,7 @@ class ScorePlayer(
                     Logger.fine("ObjectEnd: $obj at $position", Logger.Category.Playback)
                     val startPos = position + ObjectPosition(-obj.duration, zero)
                     if (obj.duration == zero) continue
-                    val suffix = activeObjectManager.remove(obj, startPos) ?: continue
+                    val suffix = manager.activeObjects.remove(obj, startPos) ?: continue
                     stopObject(obj, startPos, suffix, stopPrematurely = false)
                 }
 
@@ -144,7 +142,7 @@ class ScorePlayer(
         val time = absolutePosition.time - lastPlayFrom
         val timeForExecution = (time + settings.scLangLatency.now).toString()
         val suffix = try {
-            activeObjectManager.insert(obj, absolutePosition)
+            manager.activeObjects.insert(obj, absolutePosition)
         } catch (e: Exception) {
             Logger.error("Failed to insert $obj into active object manager", e, Logger.Category.Playback)
             return
@@ -177,13 +175,10 @@ class ScorePlayer(
 
     override fun pausePlayback() {
         Logger.info("Pausing playback", Logger.Category.Playback)
-        manager.recorder.pausingPlayback()
-        activeObjectManager.forEach { obj, startPos, suffix ->
+        manager.activeObjects.forEach { obj, startPos, suffix ->
             stopObject(obj, startPos, suffix, stopPrematurely = true)
         }
-        manager.graph.clear()
-        activeObjectManager.clear()
-        manager.events.resetEvents()
+        manager.pausedPlayback()
         client.send("pause_play")
     }
 

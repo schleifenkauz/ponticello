@@ -39,11 +39,11 @@ class EnvelopeControl(
     ) {
         spec as NumericalControlSpec
         val envelopeCode = points.code(warp = spec.warp)
-        val auxiliaryVarName = getAuxiliaryVarName(uniqueName, parameter)
+        val auxiliaryVarName = uniqueArgumentName(uniqueName, parameter)
         when (obj.def) {
             is SynthDefObject -> {
                 +"$auxiliaryVarName  = Bus.control(s, 1)"
-                val auxiliarySynthName = "~auxil_synth_${uniqueName}_$parameter"
+                val auxiliarySynthName = envSynthName(uniqueName, parameter)
                 +"$auxiliarySynthName = { $envelopeCode.kr }.play(s, $auxiliaryVarName)"
                 associatedServerObjects.addAll(listOf(auxiliarySynthName, auxiliaryVarName))
             }
@@ -59,7 +59,7 @@ class EnvelopeControl(
         parameter: String, spec: ControlSpec,
     ): ScExpr {
         spec as NumericalControlSpec
-        val auxiliaryVarName = getAuxiliaryVarName(uniqueName, parameter)
+        val auxiliaryVarName = uniqueArgumentName(uniqueName, parameter)
         return when (obj.def) {
             is SynthDefObject -> Identifier(auxiliaryVarName).send("kr")
             is ProcessDefObject -> lambda("t") { Identifier(auxiliaryVarName).send("at", Identifier("t")) }
@@ -73,9 +73,11 @@ class EnvelopeControl(
         parameter: String,
         spec: ControlSpec,
     ) {
-        val auxiliaryVarName = getAuxiliaryVarName(synthVar.removePrefix("~synth_"), parameter)
+        val auxiliaryVarName = uniqueArgumentName(synthVar.removePrefix("~synth_"), parameter)
         +"${synthVar}.map(\\$parameter, $auxiliaryVarName)"
     }
 
-    private fun getAuxiliaryVarName(uniqueName: String, parameter: String) = "~auxil_${uniqueName}_${parameter}"
+    companion object {
+        fun envSynthName(uniqueName: String, parameter: String) = "~env_synth_${uniqueName}_$parameter"
+    }
 }

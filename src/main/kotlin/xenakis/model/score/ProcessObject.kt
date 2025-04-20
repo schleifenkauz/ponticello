@@ -3,6 +3,7 @@ package xenakis.model.score
 import hextant.context.Context
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 import reaktive.value.ReactiveVariable
 import reaktive.value.now
 import reaktive.value.reactiveVariable
@@ -14,6 +15,7 @@ import xenakis.model.obj.ParameterizedObject
 import xenakis.model.obj.ParameterizedObjectDef
 import xenakis.model.obj.ProcessDefObject
 import xenakis.model.obj.ProcessDefReference
+import xenakis.model.player.LiveProcessControlUpdater
 import xenakis.model.registry.ProcessDefRegistry
 import xenakis.model.score.controls.ParameterControl
 import xenakis.sc.ControlSpec
@@ -38,12 +40,17 @@ class ProcessObject(
     override val associatedControls: Map<String, ParameterControl>
         get() = controls.controlMap
 
+    @Transient
+    private lateinit var listener: LiveProcessControlUpdater
+
     override fun getSpec(parameter: String): ControlSpec? = controls.getOrNull(parameter)?.spec?.now
 
     override fun initialize(context: Context) {
         super.initialize(context)
         processDefRef.now.resolve(context[ProcessDefRegistry])
         controls.initialize(context, this)
+        listener = LiveProcessControlUpdater(this)
+        listener.listen(controls)
     }
 
     override fun validate(): Boolean = controls.validate()

@@ -23,6 +23,7 @@ import javafx.scene.layout.Region
 import javafx.scene.paint.Color
 import org.controlsfx.control.ToggleSwitch
 import org.kordamp.ikonli.materialdesign2.MaterialDesignD
+import org.kordamp.ikonli.materialdesign2.MaterialDesignS
 import reaktive.value.*
 import reaktive.value.binding.map
 import reaktive.value.fx.asProperty
@@ -180,11 +181,11 @@ class ControlAssignmentEditor(val control: NamedParameterControl) : HBox() {
             }
         }
 
-        data object Expr : ControlType<CustomControl>() {
+        data object UGen : ControlType<UGenControl>() {
             override fun createDetailInput(
                 obj: ParameterizedObject,
                 namedControl: NamedParameterControl,
-                control: CustomControl,
+                control: UGenControl,
             ): Node {
                 val pane = ScrollPane(control.expr.control)
                 pane.background = background(Color.BLACK)
@@ -213,16 +214,21 @@ class ControlAssignmentEditor(val control: NamedParameterControl) : HBox() {
                 obj: ParameterizedObject,
                 spec: ControlSpec?,
                 oldControl: ParameterControl,
-            ): CustomControl {
+            ): UGenControl {
                 val editor = ScExprExpander()
                 val root = EditorRoot(editor)
                 if (oldControl.getNumericalValue() != null) {
                     editor.setInitialText(oldControl.getNumericalValue().toString())
                 } else editor.setInitialText("")
-                return CustomControl(root, reactiveVariable(false))
+                return UGenControl(root, reactiveVariable(false))
             }
 
-            private val actions = collectActions<CustomControl> {
+            private val actions = collectActions<UGenControl> {
+                addAction("Update") {
+                    icon(MaterialDesignS.SYNC)
+                    shortcut("Ctrl+U")
+                    executes { ctrl -> ctrl.update.fire() }
+                }
                 addAction("Toggle sub window") {
                     description { ctrl ->
                         ctrl.subWindow.map { subWindow ->
@@ -230,7 +236,7 @@ class ControlAssignmentEditor(val control: NamedParameterControl) : HBox() {
                         }
                     }
                     icon(MaterialDesignD.DOCK_WINDOW)
-                    toggles(CustomControl::subWindow)
+                    toggles(UGenControl::subWindow)
                 }
             }
         }
@@ -407,13 +413,13 @@ class ControlAssignmentEditor(val control: NamedParameterControl) : HBox() {
             val all: List<ControlType<*>> = listOf(
                 Value, Envelope, AttackRelease,
                 BusValue, SingleBusValue,
-                GlobalPattern, Expr
+                GlobalPattern, UGen
             )
 
             @Suppress("UNCHECKED_CAST")
             fun <O : ParameterControl> getType(option: O) = when (option) {
                 is ValueControl -> Value
-                is CustomControl -> Expr
+                is UGenControl -> UGen
                 is EnvelopeControl -> Envelope
                 is BusControl -> Bus
                 is BusValueControl -> BusValue
@@ -422,6 +428,7 @@ class ControlAssignmentEditor(val control: NamedParameterControl) : HBox() {
                 is GroupControl -> Group
                 is GlobalPatternControl -> GlobalPattern
                 is AttackReleaseControl -> AttackRelease
+                else -> throw AssertionError()
             } as ControlType<O>
 
             private fun busSelector(

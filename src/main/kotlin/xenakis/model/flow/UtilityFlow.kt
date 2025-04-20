@@ -8,7 +8,6 @@ import xenakis.impl.Decimal
 import xenakis.impl.copy
 import xenakis.impl.zero
 import xenakis.model.obj.BusObject
-import xenakis.model.obj.ParameterizedObject
 import xenakis.model.obj.ParameterizedObjectDef
 import xenakis.model.obj.ReferencedSynthDefObject
 import xenakis.model.registry.reference
@@ -24,15 +23,13 @@ class UtilityFlow(
     private val volumeDb: ReactiveVariable<Decimal> = reactiveVariable(zero),
     private val muted: ReactiveVariable<Boolean> = reactiveVariable(false),
     val solo: ReactiveVariable<Boolean> = reactiveVariable(false),
-) : AudioFlow(), ParameterizedObject {
+) : ParameterizedAudioFlow() {
     @Transient
     override val def: ParameterizedObjectDef = ReferencedSynthDefObject.get("utility")
 
     @Transient
     override lateinit var controls: ParameterControlList
         private set
-
-    override fun duration(): ReactiveValue<Decimal>? = null
 
     override fun initialize(context: Context, bus: BusObject) {
         super.initialize(context, bus)
@@ -46,8 +43,6 @@ class UtilityFlow(
 
     override fun copy(): AudioFlow =
         UtilityFlow(volumeDb.copy(), muted.copy(), solo.copy())
-
-    override fun validate(): Boolean = controls.validate()
 
     override fun ScWriter.writeCode(placement: NodePlacement) {
         //TODO we need a way to mute other buses when something is soloed

@@ -47,5 +47,7 @@ sealed class ParameterControl : AbstractContextualObject() {
                 false
             }
         }
+
+        fun uniqueArgumentName(uniqueName: String, parameter: String) = "~arg_${uniqueName}_$parameter"
     }
 }

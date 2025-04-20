@@ -103,16 +103,16 @@ class ScoreObjectGroup(
         return Pair(obj1, obj2)
     }
 
-    override fun beginResize(type: ResizeType, direction: Direction): Boolean {
-        super.beginResize(type, direction)
-        if (type.isStretch || direction.left || direction.up) {
+    override fun beginResize(mode: ResizeMode, direction: Direction): Boolean {
+        super.beginResize(mode, direction)
+        if (mode.isStretch || direction.left || direction.up) {
             for (inst in score.objectInstances) {
                 inst.beginMove()
             }
         }
-        if (type == ResizeType.DeepStretch) {
+        if (mode == ResizeMode.DeepStretch) {
             for (obj in score.objects) {
-                obj.beginResize(ResizeType.DeepStretch, Direction(RIGHT, DOWN))
+                obj.beginResize(ResizeMode.DeepStretch, Direction(RIGHT, DOWN))
             }
         }
         return true
@@ -122,7 +122,7 @@ class ScoreObjectGroup(
         var minDur = zero(ObjectPosition.TIME_PRECISION)
         var minHeight = zero(ObjectPosition.Y_PRECISION)
         val objects = score.objectInstances
-        if (objects.isNotEmpty() && !resizeType.isStretch) { //todo compute min dimensions when resizeType=Stretch
+        if (objects.isNotEmpty() && !resizeMode.isStretch) { //todo compute min dimensions when resizeType=Stretch
             minDur =
                 if (resizeDirection.left) this.duration - objects.minOf { o -> o.start }
                 else objects.maxOf { o -> o.start + o.duration }
@@ -135,13 +135,13 @@ class ScoreObjectGroup(
         val deltaHeight = targetHeight.coerceAtLeast(minHeight) - this.height
         super.resize(this.duration + deltaDur, this.height + deltaHeight)
         for (inst in score.objectInstances) {
-            if (resizeType.isStretch) {
+            if (resizeMode.isStretch) {
                 val factorT = this.duration / durationBeforeResize
                 val factorY = this.height / heightBeforeResize
                 val newTime = inst.positionBeforeMove.time * factorT
                 val newY = inst.positionBeforeMove.y * factorY
                 inst.moveTo(newTime, newY, simpleMove = false)
-                if (resizeType == ResizeType.DeepStretch) {
+                if (resizeMode == ResizeMode.DeepStretch) {
                     val obj = inst.obj
                     obj.resize(obj.durationBeforeResize * factorT, obj.heightBeforeResize * factorY)
                 }
@@ -155,12 +155,12 @@ class ScoreObjectGroup(
 
     override fun finishResize(recordEdit: Boolean) {
         super.finishResize(recordEdit)
-        if (resizeType == ResizeType.DeepStretch) {
+        if (resizeMode == ResizeMode.DeepStretch) {
             for (obj in score.objects) {
                 obj.finishResize(recordEdit = false)
             }
         }
-        if (resizeType.isStretch || resizeDirection.left || resizeDirection.up) {
+        if (resizeMode.isStretch || resizeDirection.left || resizeDirection.up) {
             for (inst in score.objectInstances) {
                 inst.finishMove(notifyScore = false, recordEdit = false)
             }

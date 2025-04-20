@@ -213,10 +213,10 @@ class PianoRollObjectView(inst: ScoreObjectInstance, override val obj: MidiObjec
         pane.addLargeItem("Event dictionary", this.obj.eventDictionary.control)
     }
 
-    override fun adjustVertical(direction: VerticalDirection, resize: Boolean, resizeType: ScoreObject.ResizeType) {
+    override fun adjustVertical(direction: VerticalDirection, resize: Boolean, resizeMode: ScoreObject.ResizeMode) {
         var deltaY = obj.height / (obj.highestPitch - obj.lowestPitch + 1)
         if (direction == VerticalDirection.UP) deltaY *= -1
-        adjustVertical(resize, resizeType, deltaY)
+        adjustVertical(resize, resizeMode, deltaY)
     }
 
     fun showTransposeDialog() {

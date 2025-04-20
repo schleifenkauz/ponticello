@@ -75,13 +75,13 @@ class MidiObject(
         }
     }
 
-    override fun beginResize(type: ResizeType, direction: Direction): Boolean {
+    override fun beginResize(mode: ResizeMode, direction: Direction): Boolean {
         pixelsPerPitch = (height / (highestPitch - lowestPitch + 1)).value
-        return super.beginResize(type, direction)
+        return super.beginResize(mode, direction)
     }
 
     override fun resize(targetDuration: Decimal, targetHeight: Decimal) {
-        if (resizeType.isStretch) {
+        if (resizeMode.isStretch) {
             val horizontalRatio = targetDuration / this.duration
             super.resize(targetDuration, targetHeight)
             for (note in notes) {

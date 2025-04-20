@@ -6,6 +6,7 @@ import fxutils.actions.ContextualizedAction
 import fxutils.actions.action
 import fxutils.actions.registerShortcuts
 import fxutils.createBorder
+import fxutils.opacity
 import fxutils.registerShortcuts
 import hextant.context.Context
 import javafx.application.Platform
@@ -21,6 +22,7 @@ import reaktive.value.binding.map
 import xenakis.model.score.ScoreObject
 import xenakis.ui.actions.ObjectActionContext
 import xenakis.ui.actions.ObjectActions
+import xenakis.ui.impl.DEFAULT_SCENE_FILL
 import xenakis.ui.impl.makeSubWindow
 import xenakis.ui.impl.sceneFill
 import xenakis.ui.score.ScoreObjectView
@@ -40,7 +42,7 @@ class DetailPaneManager(private val context: Context) {
         val pane = StackPane(detailPane)
         pane.border = createBorder(Color.GRAY, 1.0)
         val window = makeSubWindow(pane, windowTitle(view), context, SubWindow.Type.Undecorated)
-            .sceneFill(Color.TRANSPARENT)
+            .sceneFill(DEFAULT_SCENE_FILL.opacity(0.5))
         window.scene.registerShortcuts {
             on("ESCAPE") { window.hide() }
         }

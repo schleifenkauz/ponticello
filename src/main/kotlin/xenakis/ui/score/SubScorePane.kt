@@ -45,12 +45,12 @@ class SubScorePane(
 
     override fun addTime(location: Decimal, amount: Decimal) {
         super.addTime(location, amount)
-        obj.resize(obj.duration + amount, obj.height, ScoreObject.ResizeType.Regular, Direction.NONE)
+        obj.resize(obj.duration + amount, obj.height, ScoreObject.ResizeMode.Regular, Direction.NONE)
     }
 
     override fun deleteTimeRange(start: Decimal, end: Decimal) {
         super.deleteTimeRange(start, end)
         val amount = end - start
-        obj.resize(obj.duration - amount, obj.height, ScoreObject.ResizeType.Regular, Direction.NONE)
+        obj.resize(obj.duration - amount, obj.height, ScoreObject.ResizeMode.Regular, Direction.NONE)
     }
 }

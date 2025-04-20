@@ -9,10 +9,9 @@ import xenakis.impl.Decimal
 import xenakis.impl.Logger
 import xenakis.impl.copy
 import xenakis.model.obj.ParameterizedObject
-import xenakis.sc.ControlSpec
-import xenakis.sc.DecimalLiteral
-import xenakis.sc.NumericalControlSpec
-import xenakis.sc.ScExpr
+import xenakis.model.obj.ProcessDefObject
+import xenakis.sc.*
+import xenakis.sc.client.ScWriter
 
 @Serializable
 @SerialName("Value")
@@ -27,10 +26,23 @@ data class ValueControl(val value: ReactiveVariable<Decimal>) : ParameterControl
         return true
     }
 
+    override fun ScWriter.generatePreparationCode(
+        obj: ParameterizedObject, uniqueName: String,
+        parameter: String, spec: ControlSpec,
+        associatedServerObjects: MutableList<String>,
+    ) {
+        if (obj.def is ProcessDefObject) {
+            +"${uniqueArgumentName(uniqueName, parameter)} = ${value.now}"
+        }
+    }
+
     override fun generateArgumentExpr(
         obj: ParameterizedObject, uniqueName: String,
-        parameter: String, spec: ControlSpec
-    ): ScExpr = DecimalLiteral(value.now)
+        parameter: String, spec: ControlSpec,
+    ): ScExpr = when (obj.def) {
+        is ProcessDefObject -> Identifier(uniqueArgumentName(uniqueName, parameter))
+        else -> DecimalLiteral(value.now)
+    }
 
     companion object {
         fun create(value: Decimal) = ValueControl(reactiveVariable(value))

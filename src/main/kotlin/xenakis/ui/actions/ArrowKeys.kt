@@ -10,7 +10,7 @@ import javafx.scene.input.KeyCode
 import javafx.scene.input.KeyEvent
 import reaktive.value.now
 import xenakis.model.score.ObjectPosition
-import xenakis.ui.impl.resizeType
+import xenakis.ui.impl.resizeMode
 import xenakis.ui.launcher.XenakisMainActivity
 import xenakis.ui.score.ScoreObjectSelectionManager
 import xenakis.ui.score.ScoreObjectView
@@ -45,7 +45,7 @@ object ArrowKeys {
                 val selected = context[ScoreObjectSelectionManager].selectedViews
                     .associateBy { v -> v.instance }.values //filters out views that display the same instance
                 val resize = ev.isControlDown
-                val resizeType = ev.resizeType ?: return@addEventFilter
+                val resizeType = ev.resizeMode ?: return@addEventFilter
                 for (view in selected) {
                     when (ev.code) {
                         KeyCode.LEFT -> view.adjustHorizontal(direction = HorizontalDirection.LEFT, resize, resizeType)

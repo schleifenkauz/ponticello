@@ -26,6 +26,7 @@ class PlaybackManager(private val scoreView: ScoreView, flows: AudioFlows) {
     val recorder = Recorder(scoreView.context)
     val nodeTree = NodeTree(scoreView.context[SuperColliderClient])
     val graph = AudioFlowGraph(flows, nodeTree)
+    val activeObjects = ActiveObjectManager()
     lateinit var player: ScorePlayer
         private set
     lateinit var events: ScoreEventCollector
@@ -80,6 +81,14 @@ class PlaybackManager(private val scoreView: ScoreView, flows: AudioFlows) {
         if (!isPlaying.now) {
             playHead.movePlayHeadToStart()
         }
+    }
+    
+    fun pausedPlayback() {
+        graph.clear()
+        recorder.pausingPlayback()
+        activeObjects.clear()
+        events.resetEvents()
+
     }
 
     companion object : PublicProperty<PlaybackManager> by publicProperty("PlaybackManager") {

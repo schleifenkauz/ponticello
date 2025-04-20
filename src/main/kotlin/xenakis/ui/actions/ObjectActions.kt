@@ -286,7 +286,7 @@ object ObjectActions {
             val duration = obj.duration
             obj.resize(
                 duration * (times + 1), obj.height,
-                ScoreObject.ResizeType.Regular, Direction.horizontal(RIGHT)
+                ScoreObject.ResizeMode.Regular, Direction.horizontal(RIGHT)
             )
             for (n in 1..times) {
                 for (subInst in obj.score.objectInstances.toList()) {

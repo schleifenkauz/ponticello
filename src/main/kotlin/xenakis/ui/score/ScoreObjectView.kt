@@ -47,7 +47,7 @@ import xenakis.ui.impl.Direction
 import xenakis.ui.impl.isResizeCursor
 import xenakis.ui.impl.makeSubWindow
 import xenakis.ui.impl.resizeDirection
-import xenakis.ui.impl.resizeType
+import xenakis.ui.impl.resizeMode
 import xenakis.ui.impl.setupDraggingAndResizing
 import xenakis.ui.launcher.XenakisLauncher.Companion.currentProject
 
@@ -110,15 +110,17 @@ abstract class ScoreObjectView(
             return detailPane
         } else {
             val ctx = ObjectActionContext.SingleObjectContext(this)
-            val actions = ObjectActions.all.withContext(ctx)
             detailPane.children.add(
                 HBox(
+                    5.0,
                     NameControl(obj),
-                    ActionBar(actions, buttonStyle = "medium-icon-button"),
+                    ActionBar(ObjectActions.multiObjectActions.withContext(ctx), buttonStyle = "medium-icon-button"),
+                    ActionBar(ObjectActions.singleObjectActions.withContext(ctx), buttonStyle = "medium-icon-button"),
+                    ActionBar(ObjectActions.playbackActions.withContext(ctx), buttonStyle = "medium-icon-button"),
                     *headerItems().toTypedArray()
                 ).centerChildren().pad(8.0)
             )
-            detailPane.registerShortcuts(actions)
+            detailPane.registerShortcuts(ObjectActions.all.withContext(ctx))
             if (obj.canResize) {
                 val durationLabel = label(obj.duration().map { dur -> "${dur.toCanonicalString()} seconds" }).pad(5.0)
                 detailPane.addItem("Duration", durationLabel)
@@ -156,7 +158,7 @@ abstract class ScoreObjectView(
         pane = parent
         context = parent.context
         initialize()
-        val canResize = instance.obj.canResize
+        val canResize = obj.canResize
         setupDraggingAndResizing(
             parent.context,
             canUserChangeWidth = canResize, canUserChangeHeight = canResize,
@@ -292,7 +294,7 @@ abstract class ScoreObjectView(
         if (cursor.isResizeCursor) {
             if (selectedInstances.size > 1) return false
             val direction = cursor.resizeDirection()
-            return instance.obj.beginResize(ev.resizeType ?: return false, direction)
+            return instance.obj.beginResize(ev.resizeMode ?: return false, direction)
         } else {
             for (inst in selectedInstances) {
                 inst.beginMove()
@@ -386,14 +388,14 @@ abstract class ScoreObjectView(
         return deltaT
     }
 
-    fun adjustHorizontal(direction: HorizontalDirection, resize: Boolean, resizeType: ScoreObject.ResizeType?) {
+    fun adjustHorizontal(direction: HorizontalDirection, resize: Boolean, resizeMode: ScoreObject.ResizeMode?) {
         check(instance.obj.canResize) { "Cannot adjust horizontal $this because it has its own sub-window." }
         val deltaT = getDeltaT(direction)
         if (resize) {
             val targetDuration = (instance.obj.duration + deltaT).coerceAtMost(pane.score.maxTime - instance.start)
             instance.obj.resize(
                 targetDuration, instance.obj.height,
-                resizeType!!, Direction.horizontal(RIGHT)
+                resizeMode!!, Direction.horizontal(RIGHT)
             )
             pane.markT(instance.end)
         } else {
@@ -404,19 +406,19 @@ abstract class ScoreObjectView(
         }
     }
 
-    open fun adjustVertical(direction: VerticalDirection, resize: Boolean, resizeType: ScoreObject.ResizeType) {
+    open fun adjustVertical(direction: VerticalDirection, resize: Boolean, resizeMode: ScoreObject.ResizeMode) {
         var deltaY = 0.01.asTime
         if (direction == VerticalDirection.UP) deltaY *= -1
-        adjustVertical(resize, resizeType, deltaY)
+        adjustVertical(resize, resizeMode, deltaY)
     }
 
-    protected fun adjustVertical(resize: Boolean, resizeType: ScoreObject.ResizeType, deltaY: Decimal) {
+    protected fun adjustVertical(resize: Boolean, resizeMode: ScoreObject.ResizeMode, deltaY: Decimal) {
         check(!isSubWindow) { "Cannot adjust vertical $this because it has its own sub-window." }
         if (resize) {
             val targetHeight = (instance.obj.height + deltaY).coerceAtMost(pane.score.maxY - instance.y)
             instance.obj.resize(
                 instance.obj.duration, targetHeight,
-                resizeType, Direction.vertical(VerticalDirection.DOWN)
+                resizeMode, Direction.vertical(VerticalDirection.DOWN)
             )
         } else {
             val y = (instance.y + deltaY).coerceIn(zero, pane.score.maxY - instance.obj.height)

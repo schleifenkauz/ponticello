@@ -3,12 +3,13 @@ package xenakis.model.flow
 import hextant.context.Context
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
-import reaktive.value.*
+import reaktive.value.ReactiveString
+import reaktive.value.ReactiveVariable
 import reaktive.value.binding.flatMap
-import xenakis.impl.Decimal
+import reaktive.value.now
+import reaktive.value.reactiveVariable
 import xenakis.impl.zero
 import xenakis.model.obj.*
-import xenakis.model.player.ParameterControlLiveUpdater
 import xenakis.model.registry.reference
 import xenakis.model.score.ObjectPosition
 import xenakis.model.score.ParameterControlList
@@ -16,14 +17,13 @@ import xenakis.model.score.controls.BusControl
 import xenakis.model.score.controls.writeSynthCode
 import xenakis.sc.BusControlSpec
 import xenakis.sc.client.ScWriter
-import xenakis.sc.client.SuperColliderClient
 import xenakis.sc.editor.SynthDefSelector
 
 @Serializable
 class SynthFlow(
     private var defRef: ReactiveVariable<SynthDefReference>,
     override val controls: ParameterControlList,
-) : AudioFlow(), ParameterizedObject {
+) : ParameterizedAudioFlow() {
     constructor(def: SynthDefObject, controls: ParameterControlList) : this(reactiveVariable(def.reference()), controls)
 
     @Transient
@@ -32,13 +32,9 @@ class SynthFlow(
 
     val synthDef get() = defRef.now.get() ?: NoSynthDef()
 
-    @Transient
-    private lateinit var listener: ParameterControlLiveUpdater
 
     override val def: ParameterizedObjectDef
         get() = synthDef
-
-    override fun duration(): ReactiveValue<Decimal>? = null
 
     override fun initialize(context: Context, bus: BusObject) {
         super.initialize(context, bus)
@@ -46,13 +42,9 @@ class SynthFlow(
         synthDefSelector.syncWith(defRef)
         synthDefSelector.initialize(context)
         controls.initialize(context, this)
-        listener = ParameterControlLiveUpdater(context[SuperColliderClient]) { listOf(superColliderName.now) }
-        listener.listen(controls)
     }
 
     override fun copy(): AudioFlow = SynthFlow(defRef, controls.copy())
-
-    override fun validate(): Boolean = controls.validate()
 
     override fun ScWriter.writeCode(placement: NodePlacement) {
         val info = ScoreObjectInfo(ObjectPosition.ZERO, suffix = 0, placement, cutoff = zero)
@@ -67,10 +59,6 @@ class SynthFlow(
             customUniqueName = name.removePrefix("~"), customSynthVar = name
         )
     }
-
-    override fun getInputs(): Collection<BusObject> = super.getInputs()
-
-    override fun getOutputs(): Collection<BusObject> = super.getOutputs()
 
     override fun addListener(listener: AudioNode.Listener) {
         controls.addListener(AudioNodeBusControlsListener(listener))

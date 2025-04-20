@@ -34,16 +34,29 @@ class BusValueControl(val bus: ReactiveVariable<BusReference>) : ParameterContro
         return checkResolution(bus.now, "Bus")
     }
 
+    override fun ScWriter.generatePreparationCode(
+        obj: ParameterizedObject, uniqueName: String,
+        parameter: String, spec: ControlSpec,
+        associatedServerObjects: MutableList<String>,
+    ) {
+        if (obj.def is ProcessDefObject) {
+            val busName = bus.now.force().superColliderName
+            +"${uniqueArgumentName(uniqueName, parameter)} = $busName"
+        }
+    }
+
     override fun generateArgumentExpr(
-        obj: ParameterizedObject,
-        uniqueName: String,
-        parameter: String,
-        spec: ControlSpec,
+        obj: ParameterizedObject, uniqueName: String,
+        parameter: String, spec: ControlSpec,
     ): ScExpr {
         val busExpr = bus.now.force().superColliderExpr
         return when (obj.def) {
             is SynthDefObject -> busExpr.send("kr")
-            is ProcessDefObject -> lambda { busExpr.send("getSynchronous") }
+            is ProcessDefObject -> lambda {
+                val busVar = Identifier(uniqueArgumentName(uniqueName, parameter))
+                busVar.send("getSynchronous")
+            }
+
             else -> busExpr.send("getSynchronous")
         }
     }
@@ -52,7 +65,7 @@ class BusValueControl(val bus: ReactiveVariable<BusReference>) : ParameterContro
         obj: ParameterizedObject,
         synthVar: String,
         parameter: String,
-        spec: ControlSpec
+        spec: ControlSpec,
     ) {
         val bus = bus.now.force().superColliderName
         +"${synthVar}.map(\\$parameter, $bus)"

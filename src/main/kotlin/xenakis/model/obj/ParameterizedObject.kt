@@ -14,6 +14,10 @@ interface ParameterizedObject : NamedObject {
     val def: ParameterizedObjectDef
     val controls: ParameterControlList
 
+    val superColliderPrefix: String
+
+    fun activeInstances(): List<String>
+
     fun duration(): ReactiveValue<Decimal>?
 
     fun getSpec(parameter: String): ControlSpec? = controls.getOrNull(parameter)?.spec?.now

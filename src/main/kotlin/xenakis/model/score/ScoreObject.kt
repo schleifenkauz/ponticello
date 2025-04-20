@@ -21,6 +21,7 @@ import xenakis.impl.*
 import xenakis.model.flow.ScoreObjectInfo
 import xenakis.model.obj.AbstractRenamableObject
 import xenakis.model.player.ActiveObjectManager
+import xenakis.model.player.PlaybackManager
 import xenakis.model.project.score
 import xenakis.model.registry.ScoreObjectRegistry
 import xenakis.model.score.Score.Companion.rootScore
@@ -82,7 +83,7 @@ sealed class ScoreObject : AbstractRenamableObject() {
     protected lateinit var resizeDirection: Direction
 
     @Transient
-    protected var resizeType: ResizeType = ResizeType.Regular
+    protected var resizeMode: ResizeMode = ResizeMode.Regular
 
     override val registry: ScoreObjectRegistry
         get() = context[ScoreObjectRegistry]
@@ -95,9 +96,20 @@ sealed class ScoreObject : AbstractRenamableObject() {
 
     open val superColliderPrefix: String? get() = null
 
+    fun activeInstances(): List<String> =
+        context[PlaybackManager].activeObjects.activeInstances(this).map { (_, _, suffix) ->
+            ActiveObjectManager.uniqueName(name.now, suffix)
+        }
+
+
     fun superColliderName(suffix: Int): String {
         val prefix = superColliderPrefix ?: error("$this has no superColliderPrefix")
         return "${prefix}_${ActiveObjectManager.uniqueName(name.now, suffix)}"
+    }
+
+    protected fun activeObjects(): List<ActiveObjectManager.ActiveObject> {
+        if (!context.hasProperty(PlaybackManager) || !context[PlaybackManager].player.isPlaying.now) return emptyList()
+        return context[PlaybackManager].activeObjects.activeInstances(this)
     }
 
     open fun validate(): Boolean {
@@ -127,17 +139,17 @@ sealed class ScoreObject : AbstractRenamableObject() {
         this.height = height
     }
 
-    open fun beginResize(type: ResizeType, direction: Direction): Boolean {
+    open fun beginResize(mode: ResizeMode, direction: Direction): Boolean {
         durationBeforeResize = duration
         heightBeforeResize = height
-        resizeType = type
+        resizeMode = mode
         resizeDirection = direction
-        return type != ResizeType.DeepStretch
+        return mode != ResizeMode.DeepStretch
     }
 
     open fun resize(targetDuration: Decimal, targetHeight: Decimal) {
-        when (resizeType) {
-            ResizeType.Regular -> {
+        when (resizeMode) {
+            ResizeMode.Regular -> {
                 for ((parameter, ctrl) in associatedControls) {
                     if (ctrl !is EnvelopeControl) continue
                     val spec = getSpec(parameter) as? NumericalControlSpec
@@ -147,7 +159,7 @@ sealed class ScoreObject : AbstractRenamableObject() {
                 }
             }
 
-            ResizeType.Stretch, ResizeType.DeepStretch -> {
+            ResizeMode.Stretch, ResizeMode.DeepStretch -> {
                 for ((_, ctrl) in associatedControls) {
                     if (ctrl !is EnvelopeControl) continue
                     ctrl.points.rescale(targetDuration)
@@ -177,13 +189,13 @@ sealed class ScoreObject : AbstractRenamableObject() {
             context[UndoManager].record(
                 ResizeEdit(
                     this, durationBeforeResize, heightBeforeResize, this.duration, this.height,
-                    resizeType, resizeDirection
+                    resizeMode, resizeDirection
                 )
             )
         }
     }
 
-    fun resize(targetDuration: Decimal, targetHeight: Decimal, type: ResizeType, direction: Direction) {
+    fun resize(targetDuration: Decimal, targetHeight: Decimal, type: ResizeMode, direction: Direction) {
         beginResize(type, direction)
         resize(targetDuration, targetHeight)
         finishResize()
@@ -202,7 +214,7 @@ sealed class ScoreObject : AbstractRenamableObject() {
     protected open fun doCut(position: Decimal, whichHalf: HorizontalDirection, newName: String): ScoreObject? {
         val clone = clone(newName)
         val dur = if (whichHalf == LEFT) position else duration - position
-        clone.resize(dur, height, ResizeType.Regular, direction = Direction.NONE)
+        clone.resize(dur, height, ResizeMode.Regular, direction = Direction.NONE)
         return clone
     }
 
@@ -283,7 +295,7 @@ sealed class ScoreObject : AbstractRenamableObject() {
         private val oldHeight: Decimal,
         private val newDuration: Decimal,
         private val newHeight: Decimal,
-        private val type: ResizeType,
+        private val type: ResizeMode,
         private val direction: Direction,
     ) : AbstractEdit() {
         override val actionDescription: String
@@ -313,7 +325,7 @@ sealed class ScoreObject : AbstractRenamableObject() {
         }
     }
 
-    enum class ResizeType {
+    enum class ResizeMode {
         Regular, Stretch, DeepStretch;
 
         val isStretch: Boolean get() = this == Stretch || this == DeepStretch

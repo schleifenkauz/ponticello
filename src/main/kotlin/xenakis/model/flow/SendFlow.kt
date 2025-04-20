@@ -8,7 +8,10 @@ import reaktive.value.*
 import reaktive.value.binding.flatMap
 import reaktive.value.binding.map
 import xenakis.impl.*
-import xenakis.model.obj.*
+import xenakis.model.obj.BusObject
+import xenakis.model.obj.BusReference
+import xenakis.model.obj.ParameterizedObjectDef
+import xenakis.model.obj.ReferencedSynthDefObject
 import xenakis.model.registry.BusRegistry
 import xenakis.model.registry.reference
 import xenakis.model.score.ObjectPosition
@@ -22,7 +25,7 @@ import xenakis.sc.client.ScWriter
 class SendFlow(
     val targetRef: ReactiveVariable<BusReference>,
     val amountPercent: ReactiveVariable<Decimal>,
-) : AudioFlow(), ParameterizedObject {
+) : ParameterizedAudioFlow() {
     @Transient
     private val observers = mutableListOf<Observer>()
 
@@ -36,8 +39,6 @@ class SendFlow(
     @Transient
     override lateinit var controls: ParameterControlList
         private set
-
-    override fun duration(): ReactiveValue<Decimal>? = null
 
     override fun initialize(context: Context, bus: BusObject) {
         super.initialize(context, bus)

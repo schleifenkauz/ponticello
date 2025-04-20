@@ -14,14 +14,12 @@ import xenakis.impl.*
 import xenakis.model.Settings
 import xenakis.model.flow.ScoreObjectInfo
 import xenakis.model.obj.*
-import xenakis.model.player.ParameterControlLiveUpdater
-import xenakis.model.player.PlaybackManager
+import xenakis.model.player.LiveSynthControlUpdater
 import xenakis.model.registry.GroupRegistry
 import xenakis.model.registry.reference
 import xenakis.model.score.controls.*
 import xenakis.sc.ControlSpec
 import xenakis.sc.NumericalControlSpec
-import xenakis.sc.client.SuperColliderClient
 import xenakis.sc.editor.SynthDefSelector
 import xenakis.ui.impl.Direction
 
@@ -44,7 +42,7 @@ class SynthObject(
     private var playBufRateBeforeResize = zero
 
     @Transient
-    private lateinit var listener: ParameterControlLiveUpdater
+    private lateinit var listener: LiveSynthControlUpdater
 
     val synthDef: SynthDefObject get() = synthDefRef.now.get() ?: NoSynthDef()
 
@@ -104,16 +102,16 @@ class SynthObject(
         }
     }
 
-    override fun beginResize(type: ResizeType, direction: Direction): Boolean {
-        if (type.isStretch && playBufRate != null) {
+    override fun beginResize(mode: ResizeMode, direction: Direction): Boolean {
+        if (mode.isStretch && playBufRate != null) {
             playBufRateBeforeResize = playBufRate!!.now
         }
-        return super.beginResize(type, direction)
+        return super.beginResize(mode, direction)
     }
 
     override fun resize(targetDuration: Decimal, targetHeight: Decimal) {
         var newDuration = targetDuration
-        if (resizeType.isStretch && playBufRate != null) {
+        if (resizeMode.isStretch && playBufRate != null) {
             playBufRate!!.now *= (this.duration / newDuration)
         } else if (playbufStartPos != null) {
             if (resizeDirection.left) {
@@ -128,7 +126,7 @@ class SynthObject(
 
     override fun finishResize(recordEdit: Boolean) {
         super.finishResize(recordEdit)
-        if (resizeType.isStretch && playBufRate != null) {
+        if (resizeMode.isStretch && playBufRate != null) {
             playBufRate!!.now = playBufRateBeforeResize * (durationBeforeResize / duration)
         }
     }
@@ -155,14 +153,8 @@ class SynthObject(
         synthDefSelector.syncWith(synthDefRef)
         synthDefSelector.initialize(context)
         controls.initialize(context, this)
-        listener = ParameterControlLiveUpdater(context[SuperColliderClient], ::getActiveSynths)
+        listener = LiveSynthControlUpdater(this)
         listener.listen(controls)
-    }
-
-    private fun getActiveSynths(): List<String> {
-        if (!context.hasProperty(PlaybackManager) || !context[PlaybackManager].player.isPlaying.now) return emptyList()
-        val activeInstances = context[PlaybackManager].graph.activeInstances(this@SynthObject)
-        return activeInstances.map { i -> i.superColliderName.now }
     }
 
     override fun writeCode(info: ScoreObjectInfo): String = writeCode {

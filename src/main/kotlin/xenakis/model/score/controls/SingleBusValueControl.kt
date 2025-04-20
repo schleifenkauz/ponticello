@@ -12,6 +12,7 @@ import xenakis.model.obj.ParameterizedObject
 import xenakis.model.obj.ProcessDefObject
 import xenakis.model.registry.BusRegistry
 import xenakis.sc.*
+import xenakis.sc.client.ScWriter
 
 @Serializable
 @SerialName("SingleBusValue")
@@ -30,14 +31,29 @@ data class SingleBusValueControl(val bus: ReactiveVariable<BusReference>) : Para
         return checkResolution(bus.now, "Bus")
     }
 
+    override fun ScWriter.generatePreparationCode(
+        obj: ParameterizedObject, uniqueName: String,
+        parameter: String, spec: ControlSpec,
+        associatedServerObjects: MutableList<String>,
+    ) {
+        if (obj.def is ProcessDefObject) {
+            val busName = bus.now.force().superColliderName
+            +"${uniqueArgumentName(uniqueName, parameter)} = $busName"
+        }
+    }
+
     override fun generateArgumentExpr(
         obj: ParameterizedObject,
         uniqueName: String,
         parameter: String,
-        spec: ControlSpec
+        spec: ControlSpec,
     ): ScExpr =
         when (obj.def) {
-            is ProcessDefObject -> lambda("t") { this.bus.now.force().superColliderExpr.send("getSynchronous") }
+            is ProcessDefObject -> lambda("t") {
+                val busVar = Identifier(uniqueArgumentName(uniqueName, parameter))
+                busVar.send("getSynchronous")
+            }
+
             else -> bus.now.force().superColliderExpr.send("getSynchronous")
         }
 }

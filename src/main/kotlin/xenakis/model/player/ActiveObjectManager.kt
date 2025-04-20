@@ -7,17 +7,17 @@ import xenakis.model.score.ScoreObject
 
 class ActiveObjectManager {
     private val takenSuffixes = mutableMapOf<String, MutableSet<Int>>()
-    private val suffixes = mutableMapOf<Pair<ScoreObject, ObjectPosition>, Int>()
+    private val suffixes = mutableMapOf<ScoreObject, MutableMap<ObjectPosition, Int>>()
 
     fun insert(obj: ScoreObject, absolutePosition: ObjectPosition): Int {
         val takenSuffixes = takenSuffixes[obj.name.now].orEmpty()
         val suffix = (0..Int.MAX_VALUE).first { n -> n !in takenSuffixes }
-        suffixes[obj to absolutePosition] = suffix
+        suffixes.getOrPut(obj, ::mutableMapOf)[absolutePosition] = suffix
         return suffix
     }
 
     fun remove(obj: ScoreObject, absolutePosition: ObjectPosition): Int? {
-        val suffix = suffixes.remove(obj to absolutePosition)
+        val suffix = suffixes[obj]?.remove(absolutePosition)
         takenSuffixes[obj.name.now]?.remove(suffix)
         if (suffix == null) {
             Logger.warn("could not remove $obj at $absolutePosition", Logger.Category.Playback)
@@ -25,13 +25,18 @@ class ActiveObjectManager {
         return suffix
     }
 
-    fun all(): List<ActiveObject> = suffixes.map { (pair, suffix) ->
-        val (obj, pos) = pair
-        ActiveObject(obj, pos, suffix)
+    fun all(): List<ActiveObject> = suffixes.flatMap { (obj, suffixes) ->
+        suffixes.map { (pos, suffix) -> ActiveObject(obj, pos, suffix) }
     }
 
-    fun forEach(action: (obj: ScoreObject, absolutePosition: ObjectPosition, suffix: Int) -> Unit) =
-        suffixes.forEach { (pair, suffix) -> action(pair.first, pair.second, suffix) }
+    fun forEach(action: (obj: ScoreObject, absolutePosition: ObjectPosition, suffix: Int) -> Unit) {
+        suffixes.forEach { (obj, instances) ->
+            instances.forEach { (pos, suffix) -> action(obj, pos, suffix) }
+        }
+    }
+
+    fun activeInstances(obj: ScoreObject): List<ActiveObject> =
+        suffixes[obj]?.map { (pos, suffix) -> ActiveObject(obj, pos, suffix) }.orEmpty()
 
     fun clear() {
         takenSuffixes.clear()
