@@ -2,6 +2,7 @@ package xenakis.ui.score
 
 import fxutils.dist
 import fxutils.registerShortcuts
+import fxutils.setupDragging
 import fxutils.styleClass
 import javafx.beans.binding.Bindings
 import javafx.geometry.HorizontalDirection
@@ -31,17 +32,16 @@ import xenakis.sc.mapOnto
 import xenakis.ui.controls.ControlSpecPrompt
 import xenakis.ui.controls.DecimalPrompt
 import xenakis.ui.impl.rootPane
-import xenakis.ui.impl.setupDragging
 import kotlin.math.pow
 
 class EnvelopeEditor(
     val namedControl: NamedParameterControl, val envelope: Envelope,
-    val objectView: ScoreObjectView, val pane: Pane
+    val objectView: ScoreObjectView, val pane: Pane,
 ) : EnvelopeView {
     private val context get() = objectView.context
 
     private val control get() = namedControl.now as EnvelopeControl
-    
+
     val parameterName get() = namedControl.name.now
 
     private val color get() = control.displayColor
@@ -55,6 +55,7 @@ class EnvelopeEditor(
 
     private val mouseInfo = Label() styleClass "coordinate-info"
     private val handles = mutableListOf<Circle>()
+    private val innerCircles = mutableListOf<Circle>()
     private val line = Polyline() styleClass "envelope-line"
 
     init {
@@ -81,7 +82,7 @@ class EnvelopeEditor(
         var draggingSegment = false
         line.setupDragging(
             defaultCursor = Cursor.CROSSHAIR, dragCursor = Cursor.V_RESIZE,
-            onPressed = { ev ->
+            onPressed = { ev: MouseEvent ->
                 val t = transformXToTime(ev.x)
                 var segmentIdx = envelope.points.map(EnvelopePoint::time).binarySearch(t)
                 if (segmentIdx < 0) segmentIdx = -(segmentIdx + 1)
@@ -90,13 +91,14 @@ class EnvelopeEditor(
                 if (diff.abs() >= spec.step.get()) return@setupDragging
                 draggingSegment = true
                 envelope.beginSegmentEdit(segmentIdx - 1)
-            }, onReleased = {
+            },
+            onReleased = {
                 if (draggingSegment) {
                     envelope.finishEdit()
                     draggingSegment = false
                 }
             }
-        ) { ev, start, _, _, dy ->
+        ) { ev, start: Point2D, _, _, dy: Double ->
             if (draggingSegment) {
                 val t = transformXToTime(ev.x)
                 val y = start.y + dy
@@ -174,7 +176,9 @@ class EnvelopeEditor(
 
     override fun removedPoint(idx: Int, point: EnvelopePoint) {
         val handle = handles.removeAt(idx)
+        val innerCircle = innerCircles.removeAt(idx)
         pane.children.remove(handle)
+        pane.children.remove(innerCircle)
         line.points.remove(idx * 2, (idx + 1) * 2)
     }
 
@@ -217,6 +221,7 @@ class EnvelopeEditor(
     fun repaint() {
         removeChildren()
         pane.children.add(mouseInfo)
+        innerCircles.clear()
         handles.clear()
         line.points.clear()
         pane.children.add(line)
@@ -231,25 +236,26 @@ class EnvelopeEditor(
 
     private fun removeChildren() {
         pane.children.removeAll(handles)
+        pane.children.removeAll(innerCircles)
         pane.children.remove(line)
         pane.children.remove(mouseInfo)
     }
 
     private fun addHandle(idx: Int, x: Double, y: Double) {
         val handle = Circle(x, y, HANDLE_RADIUS)
+        val innerCircle = Circle(x, y, HANDLE_RADIUS / 3)
+        innerCircle.centerXProperty().bind(handle.centerXProperty())
+        innerCircle.centerYProperty().bind(handle.centerYProperty())
         handle.isFocusTraversable = true
-        handle.fillProperty().bind(color.asObservableValue())
+        innerCircle.fillProperty().bind(color.asObservableValue())
+        handle.fill = Color.TRANSPARENT
         handle.strokeProperty().bind(Bindings.createObjectBinding({
             val focused = handle.isFocused
             if (focused) color.now.invert() else color.now.darker()
         }, handle.focusedProperty(), color.asObservableValue()))
-        handle.strokeWidthProperty().bind(
-            handle.hoverProperty().or(handle.focusedProperty())
-                .map { hover -> if (hover) 2.0 else 0.0 }
-        )
         handle.viewOrder = -1000.0
-        handle.cursor = Cursor.CROSSHAIR
         setupHandle(handle)
+        pane.children.add(innerCircle)
         pane.children.add(handle)
         handles.add(idx, handle)
     }
@@ -269,17 +275,17 @@ class EnvelopeEditor(
             on("DOWN") { adjustPointVertical(idx, -1) }
         }
         handle.setupDragging(
-            defaultCursor = Cursor.CROSSHAIR,
-            dragCursor = Cursor.MOVE, onPressed = { envelope.beginPointEdit(handles.indexOf(handle)) },
+            defaultCursor = Cursor.CROSSHAIR, dragCursor = Cursor.MOVE,
+            onPressed = { envelope.beginPointEdit(handles.indexOf(handle)) },
             onReleased = { envelope.finishEdit() }
         ) { _, _, old, dx, dy ->
             val idx = handles.indexOf(handle)
             var t = when (idx) {
                 0 -> 0.0.asTime
                 envelope.points.size - 1 -> associatedObject.duration
-                else -> transformXToTime(old.minX + dx)
+                else -> transformXToTime(old.minX + HANDLE_RADIUS + dx)
             }
-            val y = (old.minY + dy).coerceIn(yTransform.targetRange.reverseIfEmpty())
+            val y = (old.minY + HANDLE_RADIUS + dy).coerceIn(yTransform.targetRange.reverseIfEmpty())
 
             val v = transformYToValue(y)
 
@@ -367,6 +373,7 @@ class EnvelopeEditor(
 
     private fun bringToFront() {
         line.toFront()
+        innerCircles.forEach { h -> h.toFront() }
         handles.forEach { h -> h.toFront() }
     }
 
@@ -376,6 +383,6 @@ class EnvelopeEditor(
     }
 
     companion object {
-        private const val HANDLE_RADIUS = 5.0
+        private const val HANDLE_RADIUS = 8.0
     }
 }

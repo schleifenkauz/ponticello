@@ -25,7 +25,6 @@
 - ability to specify added time in beats/bars/ticks
 - option to create external automation (adding a kr-write `SynthObject`) for numerical parameter
 - select new objects after unlinking
-- live updates for envelopes
 - ability to copy and paste whole time ranges
 - own editor type for control references
   - can only be used in LFO argument expressions
@@ -35,7 +34,6 @@
 - unify window positioning
 - more adequate midi contexts
   - based on focused window
-- add play button to samples
 - global variable in SuperCollider for list of all samples (`ALL_SAMPLES`)
 - curve parameter type?
 - asr parameter type?
@@ -60,7 +58,6 @@
 
 - option to put documentation browser into fixed window
 - make the quit button nicer
-- align the inline code editor of expression parameter controls better
 - don't squish the item cell list in detail pane mode
 
 ### Support for patterns
