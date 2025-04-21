@@ -7,6 +7,7 @@ import fxutils.prompt.CompoundPrompt
 import fxutils.prompt.DetailPane
 import fxutils.prompt.compoundPrompt
 import hextant.context.Context
+import hextant.context.withoutUndo
 import hextant.undo.UndoManager
 import hextant.undo.compoundEdit
 import javafx.geometry.Bounds
@@ -162,6 +163,7 @@ abstract class ScoreObjectView(
         setupDraggingAndResizing(
             parent.context,
             canUserChangeWidth = canResize, canUserChangeHeight = canResize,
+            resizeDescription = { ev -> if (ev.isAltDown) "Create loop" else "Resize object" },
             drag = this::dragTo, resize = this::resize,
             startDrag = this::startDrag, finishDrag = this::finishedDrag
         )
@@ -178,7 +180,7 @@ abstract class ScoreObjectView(
         initialize()
     }
 
-    protected fun selectThis(addToSelection: Boolean) {
+    fun selectView(addToSelection: Boolean) {
         toFront()
         context[ScoreObjectSelectionManager].select(this, addToSelection = addToSelection)
         requestFocus()
@@ -211,6 +213,7 @@ abstract class ScoreObjectView(
     private fun addMouseActions() {
         addEventHandler(MouseEvent.MOUSE_CLICKED) { ev ->
             when {
+                ev.button == MouseButton.PRIMARY && ev.clickCount == 1 -> selectView(addToSelection = ev.isShiftDown)
                 ev.button == MouseButton.PRIMARY && ev.clickCount == 2 -> showInSubWindow()
 
                 ev.button == MouseButton.PRIMARY && ev.modifiers.isEmpty() -> {
@@ -258,8 +261,8 @@ abstract class ScoreObjectView(
                 score!!.removeObject(inst, Score.RegistryOption.KEEP_IN_REGISTRY)
                 val inst1 = ScoreObjectInstance(half1, inst.position, inst.muted.copy())
                 val inst2 = ScoreObjectInstance(half2, inst.position + relativePosition, inst.muted.copy())
-                score.addObject(inst1)
-                score.addObject(inst2)
+                score.addObject(inst1, autoSelect = false)
+                score.addObject(inst2, autoSelect = true)
             }
         }
     }
@@ -307,10 +310,7 @@ abstract class ScoreObjectView(
     }
 
     protected open fun finishedDrag(ev: MouseEvent, cursor: Cursor) {
-        if (isCreatingLoop) {
-            isCreatingLoop = false
-            return
-        }
+        if (isCreatingLoop) return finishLoop()
         if (cursor.isResizeCursor) {
             instance.obj.finishResize()
         } else {
@@ -319,6 +319,17 @@ abstract class ScoreObjectView(
                 inst.finishMove()
             }
         }
+    }
+
+    private fun finishLoop() {
+        isCreatingLoop = false
+        if (loopedObjects.isEmpty()) return
+        context.compoundEdit("Create loop") {
+            for (inst in loopedObjects) {
+                context[UndoManager].record(ScoreEdit.AddObject(inst, pane.score))
+            }
+        }
+        loopedObjects.clear()
     }
 
     private fun dragTo(toX: Double, toY: Double) {
@@ -383,18 +394,25 @@ abstract class ScoreObjectView(
             newHeight = newHeight.coerceAtMost(parentHeight - instance.y)
         }
         if (isCreatingLoop) {
+            if (direction.up || direction.down) return
+            val factor = if (direction.left) -1 else if (direction.right) +1 else return
             val loopCount = (newDur / obj.duration).roundToInt() - 1
+            if (loopCount < 0) return
             if (loopCount > loopedObjects.size) {
-                for (i in loopedObjects.size until loopCount) {
-                    val offset = ObjectPosition(i * obj.duration, zero)
+                for (i in loopedObjects.size + 1..loopCount) {
+                    val offset = ObjectPosition(time = i * obj.duration * factor, y = zero)
                     val obj = ScoreObjectInstance(obj, instance.position + offset, instance.muted.copy())
                     loopedObjects.add(obj)
-                    pane.score.addObject(obj)
+                    context.withoutUndo {
+                        pane.score.addObject(obj, autoSelect = false)
+                    }
                 }
             } else {
                 for (i in loopedObjects.size - 1 downTo loopCount) {
                     val inst = loopedObjects.removeAt(i)
-                    pane.score.removeObject(inst, Score.RegistryOption.KEEP_IN_REGISTRY)
+                    context.withoutUndo {
+                        pane.score.removeObject(inst, Score.RegistryOption.KEEP_IN_REGISTRY)
+                    }
                 }
             }
         } else {

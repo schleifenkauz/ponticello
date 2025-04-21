@@ -52,7 +52,7 @@ class ScoreEventCollector(
     }
 
     @Synchronized
-    override fun addedObject(score: Score, inst: ScoreObjectInstance) {
+    override fun addedObject(score: Score, inst: ScoreObjectInstance, autoSelect: Boolean) {
         if (inst.muted.now) return
         added(inst)
         for (position in absolutePositions(inst)) {

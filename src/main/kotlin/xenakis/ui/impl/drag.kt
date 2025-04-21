@@ -12,9 +12,12 @@ import javafx.scene.layout.Region
 fun Region.setupDraggingAndResizing(
     context: Context,
     canUserChangeWidth: Boolean, canUserChangeHeight: Boolean,
-    drag: (x: Double, y: Double) -> Unit, resize: (Bounds, Double, Double, Cursor, MouseEvent) -> Unit,
+    resizeDescription: (MouseEvent) -> String = { "Resize object" },
+    moveDescription: (MouseEvent) -> String = { "Move object" },
     startDrag: (MouseEvent, Cursor) -> Boolean = { _, _ -> true },
-    finishDrag: (MouseEvent, Cursor) -> Unit = { _, _ -> }
+    drag: (x: Double, y: Double) -> Unit,
+    resize: (Bounds, Double, Double, Cursor, MouseEvent) -> Unit,
+    finishDrag: (MouseEvent, Cursor) -> Unit = { _, _ -> },
 ) {
     setupDraggingAndResizing(
         canUserChangeWidth, canUserChangeHeight,
@@ -22,9 +25,9 @@ fun Region.setupDraggingAndResizing(
         startDrag = { ev, cursor ->
             if (startDrag(ev, cursor)) {
                 if (isResizeCursor(cursor)) {
-                    context[UndoManager].beginCompoundEdit("Resize object")
+                    context[UndoManager].beginCompoundEdit(resizeDescription(ev))
                 } else {
-                    context[UndoManager].beginCompoundEdit("Move object")
+                    context[UndoManager].beginCompoundEdit(moveDescription(ev))
                 }
                 true
             } else false

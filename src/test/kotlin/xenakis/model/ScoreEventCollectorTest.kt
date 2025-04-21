@@ -38,7 +38,7 @@ class ScoreEventCollectorTest {
                     val y = rnd.nextDouble(100.0).asY
                     val muted = rnd.nextDouble() <= 0.2
                     val inst = ScoreObjectInstance(obj, time, y, reactiveVariable(muted))
-                    parentScore.addObject(inst)
+                    parentScore.addObject(inst,autoSelect = false)
                     println("Add $inst")
                 }
 
@@ -72,7 +72,7 @@ class ScoreEventCollectorTest {
                     val time = rnd.nextDouble(100.0).asTime
                     val y = rnd.nextDouble(100.0).asY
                     val inst = ScoreObjectInstance(obj, time, y)
-                    parentScore.addObject(inst)
+                    parentScore.addObject(inst, autoSelect = false)
                     println("Added $inst")
                 }
             }
@@ -111,7 +111,7 @@ class ScoreEventCollectorTest {
         val subObj = ScoreObjectGroup(reactiveVariable("sub_score"), subScore)
         val subInst =
             ScoreObjectInstance(subObj.reference(), 10.0.asTime, 100.0.withPrecision(ObjectPosition.Y_PRECISION))
-        rootScore.addObject(subInst)
+        rootScore.addObject(subInst, autoSelect = false)
         val obj = Utils.createDummyObject("obj1")
         subInst.toggleMuted()
         subScore.addObject(
@@ -119,7 +119,8 @@ class ScoreEventCollectorTest {
                 obj.reference(),
                 10.0.asTime,
                 10.0.asY
-            )
+            ),
+            autoSelect = false
         )
         checkEvents(rootScore, collector)
         subInst.toggleMuted()

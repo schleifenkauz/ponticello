@@ -131,7 +131,7 @@ class ScoreObjectInstance(
         } else {
             score!!.removeObject(this, Score.RegistryOption.KEEP_IN_REGISTRY)
             moveTo(position + relativePosition)
-            newScore.addObject(this)
+            newScore.addObject(this, autoSelect = false)
         }
     }
 
@@ -171,11 +171,11 @@ class ScoreObjectInstance(
         return left to right
     }
 
-    fun replaceWith(obj: ScoreObject) {
+    fun replaceWith(obj: ScoreObject, autoSelect: Boolean) {
         val score = this.score ?: error("Cannot replace $this as it has no parent score")
         score.removeObject(this, Score.RegistryOption.ASK_IF_NEEDED)
         val newInst = ScoreObjectInstance(obj, this.position)
-        score.addObject(newInst)
+        score.addObject(newInst, autoSelect)
     }
 
     override fun toString(): String = "instance of $obj at $position in ${score?.scoreName?.now}"

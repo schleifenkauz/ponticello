@@ -258,6 +258,7 @@ class EnvelopeEditor(
         pane.children.add(innerCircle)
         pane.children.add(handle)
         handles.add(idx, handle)
+        innerCircles.add(idx, innerCircle)
     }
 
     private fun setupHandle(handle: Circle) {

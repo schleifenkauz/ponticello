@@ -253,7 +253,7 @@ class ControlAssignmentEditor(val control: NamedParameterControl, val view: Scor
                     icon(Evaicons.ACTIVITY)
                     shortcut("Ctrl+E")
                     applicableIf { (_, view) -> reactiveValue(view != null) }
-                    executes { (ctrl, view) ->
+                    executes { (ctrl, view), ev ->
                         val ugen = ctrl.now as UGenControl
                         val activeObjects = ctrl.parentObject.activeObjects()
                         val activeObject =
@@ -262,6 +262,8 @@ class ControlAssignmentEditor(val control: NamedParameterControl, val view: Scor
                         val parameter = ctrl.name.now
                         if (activeObject != null) {
                             ugen.scope(activeObject, parameter)
+                        } else {
+                            InfoPrompt("Object is not played currently").showDialog(ev)
                         }
                     }
                 }

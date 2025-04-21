@@ -24,7 +24,7 @@ class MemoObjectView(inst: ScoreObjectInstance, override val obj: MemoObject) : 
             if (obj.text != text) obj.text = text
         }
         addEventFilter(MouseEvent.MOUSE_CLICKED) { ev ->
-            if (ev.clickCount >= 2) enterEdit() else selectThis(addToSelection = ev.isShiftDown)
+            if (ev.clickCount >= 2) enterEdit() else selectView(addToSelection = ev.isShiftDown)
             ev.consume()
         }
         addEventFilter(KeyEvent.KEY_PRESSED) { ev ->

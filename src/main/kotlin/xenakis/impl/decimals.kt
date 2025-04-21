@@ -141,3 +141,5 @@ fun Double.round(accuracy: Int): Double {
     val factor = 10.0.pow(accuracy)
     return (this * factor).roundToInt() / factor
 }
+
+val Decimal.sign get() = value.sign

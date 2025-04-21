@@ -122,7 +122,7 @@ class XenakisMainActivity(val project: XenakisProject) : Activity() {
         primaryStage.scene.registerGlobalShortcuts(context)
         registerMainActivityShortcuts()
         primaryStage.initStyle(StageStyle.UNDECORATED)
-        ArrowKeys.registerArrowKeys(primaryStage.scene, this)
+        ArrowKeys.registerArrowKeys(primaryStage.scene, context)
         primaryStage.title = "Xenakis: ${project.name}"
         primaryStage.isResizable = true
         val state = project[UI_STATE].windowStates.getOrPut("MainWindow", ::RegularWindowState)

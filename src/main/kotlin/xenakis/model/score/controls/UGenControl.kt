@@ -25,7 +25,7 @@ data class UGenControl(
     @Transient
     val update = unitEvent()
 
-    override fun copy(): ParameterControl = UGenControl(expr.clone(context))
+    override fun copy(): ParameterControl = UGenControl(expr.clone())
 
     override fun initialize(context: Context) {
         super.initialize(context)

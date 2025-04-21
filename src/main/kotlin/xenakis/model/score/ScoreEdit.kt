@@ -10,7 +10,7 @@ abstract class ScoreEdit(val score: Score) : AbstractEdit() {
             get() = "Add object to score"
 
         override fun doRedo() {
-            score.addObject(obj)
+            score.addObject(obj, autoSelect = false)
         }
 
         override fun doUndo() {
@@ -27,7 +27,7 @@ abstract class ScoreEdit(val score: Score) : AbstractEdit() {
             get() = "Remove objects from score"
 
         override fun doUndo() {
-            for (obj in objects) score.addObject(obj)
+            for (obj in objects) score.addObject(obj, autoSelect = false)
         }
 
         override fun doRedo() {

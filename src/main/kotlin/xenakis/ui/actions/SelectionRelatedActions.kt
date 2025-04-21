@@ -2,7 +2,6 @@ package xenakis.ui.actions
 
 import fxutils.KeyEventHandlerBody
 import fxutils.actions.isTargetTextInput
-import fxutils.runFXWithTimeout
 import hextant.undo.compoundEdit
 import reaktive.value.now
 import reaktive.value.reactiveVariable
@@ -64,18 +63,13 @@ object SelectionRelatedActions {
             val newObj = ScoreObjectGroup(reactiveVariable(name), newScore)
             newObj.setInitialSize(maxT - minT, maxY - minY)
             val newInst = ScoreObjectInstance(newObj, minT, minY)
-            parentPane.score.addObject(newInst)
+            parentPane.score.addObject(newInst, autoSelect = true)
             context.compoundEdit("Create group from objects") {
                 for (inst in instances) {
                     inst.moveInto(newScore, relativePosition, recurse)
                 }
             }
-            runFXWithTimeout {
-                val view = parentPane.getObjectView(newInst)
-                context[ScoreObjectSelectionManager].select(view, addToSelection = false)
-            }
         }
-
     }
 
     private fun resolveFocusedObject(selector: ScoreObjectSelectionManager): ScoreObjectView? {

@@ -25,6 +25,7 @@ import xenakis.impl.*
 import xenakis.model.obj.BufferObject
 import xenakis.model.obj.ProcessDefObject
 import xenakis.model.obj.SynthDefObject
+import xenakis.model.player.PlaybackManager
 import xenakis.model.project.UI_STATE
 import xenakis.model.project.get
 import xenakis.model.project.score
@@ -181,7 +182,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
         obj.setInitialSize(buffer.duration().now, 0.02.withPrecision(ObjectPosition.Y_PRECISION))
         val inst = ScoreObjectInstance(obj, pos)
         context.compoundEdit("Add sample to score") {
-            score.addObject(inst)
+            score.addObject(inst, autoSelect = true)
             controls.reassignControl("buf", BufferControl(reactiveVariable(buffer.reference())))
         }
     }
@@ -208,13 +209,15 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
     * Score change handlers
     * */
 
-    override fun addedObject(score: Score, inst: ScoreObjectInstance) {
+    override fun addedObject(score: Score, inst: ScoreObjectInstance, autoSelect: Boolean) {
         val view = createObjectView(inst)
         view.initialize(this)
         views[inst] = view
         children.add(view)
-        Platform.runLater {
-            view.requestFocus()
+        if (autoSelect) {
+            Platform.runLater {
+                view.selectView(addToSelection = false)
+            }
         }
     }
 
@@ -235,7 +238,20 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
         when {
             ev.button == MouseButton.SECONDARY -> pasteFromSystemClipboard(ev)
 
-            ev.isAltDown && ev.isShiftDown -> {
+            scoreView.isInDuplicateMode() -> {
+                var obj = scoreView.clipboardObject!!
+                if (obj.height > score.maxY || obj.duration > score.maxTime) return
+                if (ev.isAltDown) {
+                    val name = context[ScoreObjectRegistry].nameForClone(obj)
+                    obj = obj.clone(name)
+                }
+                val time = t.coerceIn(zero, score.maxTime - obj.duration)
+                val scoreY = y.coerceIn(zero, score.maxY - obj.height)
+                val duplicate = ScoreObjectInstance(obj, time, scoreY)
+                score.addObject(duplicate, autoSelect = true)
+            }
+
+            ev.modifiers == setOf(Alt, Ctrl) -> {
                 val popup = SimpleSearchableRegistryView(context[BufferRegistry], "Place sample")
                 val anchor = localToScreen(ev.x, ev.y)
                 val sample = popup.showPopup(anchor, scene.window) ?: return
@@ -243,37 +259,21 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
                 createPlayBufObject(sample, pos, localToScreen(ev.x, ev.y))
             }
 
-            ev.isAltDown -> {
+            ev.modifiers == setOf(Alt, Shift) -> {
                 val popup = SimpleSearchableRegistryView(context[ScoreObjectRegistry], "Add object instance")
                 val anchor = localToScreen(ev.x, ev.y)
                 val obj = popup.showPopup(anchor, scene.window) ?: return
                 val pos = snapToGrid(ev.x, ev.y)
                 val inst = ScoreObjectInstance(obj, pos)
-                score.addObject(inst)
+                score.addObject(inst, autoSelect = true)
             }
 
-            scoreView.isInDuplicateMode() -> {
-                var obj = scoreView.clipboardObject!!
-                if (obj.height > score.maxY || obj.duration > score.maxTime) return
-                if (ev.isShiftDown) {
-                    val name = context[ScoreObjectRegistry].nameForClone(obj)
-                    obj = obj.clone(name)
-                }
-                val time = t.coerceIn(zero, score.maxTime - obj.duration)
-                val scoreY = y.coerceIn(zero, score.maxY - obj.height)
-                val duplicate = ScoreObjectInstance(obj, time, scoreY)
-                score.addObject(duplicate)
-            }
-
-            this is ScoreView && !activity.playback.player.isPlaying.now -> {
-                activity.playback.attachToMainScore()
-                activity.playback.playHead.movePlayHead(t)
-            }
-
-            this is ScoreView -> {
-                if (!ev.isShiftDown) {
-                    context[ScoreObjectSelectionManager].deselectAll()
-                    requestFocus()
+            this is ScoreView && ev.modifiers.isEmpty() -> {
+                context[ScoreObjectSelectionManager].deselectAll()
+                requestFocus()
+                if (!(context[PlaybackManager].isPlaying.now)) {
+                    activity.playback.attachToMainScore()
+                    activity.playback.playHead.movePlayHead(t)
                 }
             }
 
@@ -292,7 +292,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
             selector.deselectAll()
             val (t, y) = snapToGrid(ev.x, ev.y)
             for (inst in instances) {
-                score.addObject(inst)
+                score.addObject(inst, autoSelect = true)
                 inst.moveTo(t - leftTop.time, y - leftTop.y, simpleMove = true)
                 selector.select(getObjectView(inst), addToSelection = true)
             }
@@ -351,7 +351,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
         }
 
         val inst = ScoreObjectInstance(obj, t, y)
-        score.addObject(inst)
+        score.addObject(inst, autoSelect = true)
         if (obj is MemoObject) {
             val view = getObjectView(inst) as MemoObjectView
             runFXWithTimeout {
@@ -433,8 +433,8 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
         }
 
         is NewObjectOption.MIDI -> throw AssertionError("Handled before")
+        NewObjectOption.TempoGrid -> TempoGridObject.create(name, 120, 4, 4)
         NewObjectOption.Group -> ScoreObjectGroup(reactiveVariable(name), Score(mutableListOf()))
-        NewObjectOption.TempoGrid -> TODO()
     }
 
     private sealed class NewObjectOption {
@@ -503,10 +503,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
         val registry = context[ScoreObjectRegistry]
         if (obj in registry) registry.add(obj)
         val inst = rect.createInstance(obj)
-        score.addObject(inst)
-        Platform.runLater {
-            selector.select(getObjectView(inst), addToSelection = false)
-        }
+        score.addObject(inst, autoSelect = true)
         return inst
     }
 

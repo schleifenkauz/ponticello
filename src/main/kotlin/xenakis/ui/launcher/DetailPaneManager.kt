@@ -20,6 +20,7 @@ import javafx.stage.Window
 import org.kordamp.ikonli.materialdesign2.MaterialDesignP
 import reaktive.value.binding.map
 import xenakis.model.score.ScoreObject
+import xenakis.ui.actions.ArrowKeys
 import xenakis.ui.actions.ObjectActionContext
 import xenakis.ui.actions.ObjectActions
 import xenakis.ui.impl.DEFAULT_SCENE_FILL
@@ -46,6 +47,7 @@ class DetailPaneManager(private val context: Context) {
         window.scene.registerShortcuts {
             on("ESCAPE") { window.hide() }
         }
+        ArrowKeys.registerArrowKeys(window.scene, context)
         val detachAction = action<Unit>("Detach") {
             icon(MaterialDesignP.PIN_OUTLINE)
             shortcuts("Ctrl+D")
@@ -72,7 +74,7 @@ class DetailPaneManager(private val context: Context) {
         val boundsInScreen = view.localToScreen(view.boundsInLocal)
         val screen = Screen.getScreensForRectangle(boundsInScreen.centerX, boundsInScreen.centerY, 1.0, 1.0).first()
         val screenCenterY = screen.visualBounds.minY + screen.visualBounds.height / 2.0
-        window.x = boundsInScreen.minX
+        window.x = boundsInScreen.minX.coerceIn(screen.visualBounds.minX, screen.visualBounds.maxX - window.width)
         val prefHeight = window.scene.root.prefHeight(-1.0)
         if (boundsInScreen.centerY > screenCenterY) {
             window.height = (prefHeight + titleBarHeight).coerceAtMost(boundsInScreen.minY - screen.bounds.minY)

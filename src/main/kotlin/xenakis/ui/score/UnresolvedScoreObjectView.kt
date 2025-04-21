@@ -28,7 +28,7 @@ class UnresolvedScoreObjectView(instance: ScoreObjectInstance) : ScoreObjectView
             }
             context.compoundEdit("Select object for unresolved instance") {
                 for (inst in instances) {
-                    inst.replaceWith(obj)
+                    inst.replaceWith(obj, autoSelect = true)
                 }
             }
         }

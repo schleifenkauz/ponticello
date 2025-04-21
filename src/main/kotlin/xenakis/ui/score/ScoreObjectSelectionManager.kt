@@ -20,7 +20,7 @@ class ScoreObjectSelectionManager(val context: Context, private val rootPane: Sc
 
     val selectedInstances: Set<ScoreObjectInstance> get() = selectedViews.mapTo(mutableSetOf()) { view -> view.instance }
 
-    val selectedObjects: Set<ScoreObject> get() = selectedInstances.mapNotNullTo(mutableSetOf()) { inst -> inst.obj }
+    val selectedObjects: Set<ScoreObject> get() = selectedInstances.mapTo(mutableSetOf()) { inst -> inst.obj }
 
     private val _focusedView = reactiveVariable<ScoreObjectView?>(null)
 

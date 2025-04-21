@@ -62,9 +62,8 @@ object ObjectActions {
                 }
             }
         }
-        addObjectAction("Copy object to clipboard") {
+        addObjectAction("Copy selected objects to clipboard") {
             shortcut("Ctrl+C")
-            icon(MaterialDesignC.CONTENT_COPY)
             executes { ctx, _ ->
                 val scoreView = ctx.context[XenakisMainActivity].scoreView
                 scoreView.selector.setSystemClipboard(ctx.selectedViews.map { v -> v.instance })
@@ -137,7 +136,7 @@ object ObjectActions {
                         val clone = obj.clone(name)
                         for (oldInst in instances) {
                             val newInst = ScoreObjectInstance(clone, oldInst.position, oldInst.muted.copy())
-                            oldInst.score?.addObject(newInst)
+                            oldInst.score?.addObject(newInst, autoSelect = true)
                             oldInst.score?.removeObject(oldInst, Score.RegistryOption.REMOVE_WITHOUT_ASKING)
                         }
                     }
@@ -246,7 +245,7 @@ object ObjectActions {
                 view.context.compoundEdit("Move objects to parent score") {
                     for (subInst in obj.score.objectInstances.toList()) {
                         subInst.moveTo(inst.position + subInst.position)
-                        parentScore.addObject(subInst)
+                        parentScore.addObject(subInst, autoSelect = false)
                     }
                     inst.score!!.removeObject(inst, Score.RegistryOption.REMOVE_WITHOUT_ASKING)
                 }
@@ -292,7 +291,7 @@ object ObjectActions {
                 for (subInst in obj.score.objectInstances.toList()) {
                     val pos = subInst.position + ObjectPosition(duration * n, zero)
                     val newInst = if (cloneObjects) subInst.clone(pos) else subInst.duplicate(pos)
-                    obj.score.addObject(newInst)
+                    obj.score.addObject(newInst, autoSelect = false)
                 }
             }
         }

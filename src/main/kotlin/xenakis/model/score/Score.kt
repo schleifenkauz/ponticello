@@ -12,7 +12,10 @@ import kotlinx.serialization.Transient
 import reaktive.value.ReactiveString
 import reaktive.value.now
 import reaktive.value.reactiveValue
-import xenakis.impl.*
+import xenakis.impl.Decimal
+import xenakis.impl.Logger
+import xenakis.impl.one
+import xenakis.impl.zero
 import xenakis.model.obj.AbstractContextualObject
 import xenakis.model.registry.ScoreObjectRegistry
 
@@ -58,7 +61,7 @@ class Score(
         views.addListener(listener)
         if (notify) {
             for (inst in objectInstances) {
-                listener.addedObject(this, inst)
+                listener.addedObject(this, inst, autoSelect = false)
             }
         }
     }
@@ -76,12 +79,12 @@ class Score(
 
     fun clone() = Score(instances.mapTo(mutableListOf()) { inst -> inst.duplicate(inst.position) })
 
-    fun addObject(inst: ScoreObjectInstance) {
+    fun addObject(inst: ScoreObjectInstance, autoSelect: Boolean) {
         inst.initialize(context)
         inst.addedToScore(this)
         Logger.info("Adding object ${inst.obj.name.now} at ${inst.position} to ${scoreName.now}", Logger.Category.Score)
         instances.add(inst)
-        views.notifyListeners { addedObject(this@Score, inst) }
+        views.notifyListeners { addedObject(this@Score, inst, autoSelect) }
         undo.record(ScoreEdit.AddObject(inst, this))
     }
 
@@ -133,20 +136,6 @@ class Score(
                         inst.setTime(newStart)
                     }
                 }
-            }
-        }
-    }
-
-    fun loop(inst: ScoreObjectInstance, period: Decimal, repetitions: Int) {
-        context.compoundEdit("Loop object") {
-            var t = inst.start
-            val layers = (inst.obj.duration / period + 0.95).toInt()
-            for (n in 1..repetitions) {
-                t += period
-                val layer = n % layers
-                val y = inst.position.y + (layer * inst.height)
-                val clone = inst.duplicate(t, y)
-                addObject(clone)
             }
         }
     }
