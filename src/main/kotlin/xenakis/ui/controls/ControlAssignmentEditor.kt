@@ -27,7 +27,7 @@ import xenakis.impl.asTime
 import xenakis.impl.one
 import xenakis.impl.zero
 import xenakis.model.obj.*
-import xenakis.model.player.PlaybackManager
+import xenakis.model.player.ActiveScoreObject
 import xenakis.model.registry.*
 import xenakis.model.score.ParameterControlList.NamedParameterControl
 import xenakis.model.score.ScoreObject
@@ -252,11 +252,17 @@ class ControlAssignmentEditor(val control: NamedParameterControl, val view: Scor
                 addAction("Scope") {
                     icon(Evaicons.ACTIVITY)
                     shortcut("Ctrl+E")
+                    applicableIf { (_, view) -> reactiveValue(view != null) }
                     executes { (ctrl, view) ->
                         val ugen = ctrl.now as UGenControl
-                        val activeInstance = view?.let { ctrl.context[PlaybackManager].getActiveInstance(it) }
+                        val activeObjects = ctrl.parentObject.activeObjects()
+                        val activeObject =
+                            if (view != null) activeObjects.find { obj -> obj is ActiveScoreObject && obj.absolutePosition == view.absolutePosition }
+                            else activeObjects.singleOrNull()
                         val parameter = ctrl.name.now
-                        ugen.scope(activeInstance, parameter, ctrl.parentObject)
+                        if (activeObject != null) {
+                            ugen.scope(activeObject, parameter)
+                        }
                     }
                 }
             }

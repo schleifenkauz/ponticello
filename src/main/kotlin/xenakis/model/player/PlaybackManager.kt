@@ -26,7 +26,7 @@ class PlaybackManager(private val scoreView: ScoreView, flows: AudioFlows) {
     val recorder = Recorder(scoreView.context)
     val nodeTree = NodeTree(scoreView.context[SuperColliderClient])
     val graph = AudioFlowGraph(flows, nodeTree)
-    val activeObjects = ActiveObjectManager()
+    val activeObjects = ActiveObjectManager(flows)
     lateinit var player: ScorePlayer
         private set
     lateinit var events: ScoreEventCollector
@@ -91,7 +91,7 @@ class PlaybackManager(private val scoreView: ScoreView, flows: AudioFlows) {
 
     }
 
-    fun getActiveInstance(view: ScoreObjectView): ActiveObjectManager.ActiveInstance? {
+    fun getActiveInstance(view: ScoreObjectView): ActiveObject? {
         if (!isPlaying.now) return null
         val objectInstances = activeObjects.activeInstances(view.obj)
         return objectInstances.find { inst -> inst.absolutePosition == view.absolutePosition }

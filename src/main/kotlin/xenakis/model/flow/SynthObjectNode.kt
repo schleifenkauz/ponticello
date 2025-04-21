@@ -8,7 +8,7 @@ import xenakis.model.score.ObjectPosition
 import xenakis.model.score.SynthObject
 import xenakis.sc.client.ScWriter
 
-data class ActiveSynth(
+data class SynthObjectNode(
     val obj: SynthObject,
     val absolutePosition: ObjectPosition,
     val suffix: Int

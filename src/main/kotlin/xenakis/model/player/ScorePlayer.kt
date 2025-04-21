@@ -161,8 +161,10 @@ class ScorePlayer(
 
     override fun pausePlayback() {
         Logger.info("Pausing playback", Logger.Category.Playback)
-        manager.activeObjects.forEach { obj, startPos, suffix ->
-            stopObject(obj, startPos, suffix)
+        manager.activeObjects.forEach { activeObject ->
+            if (activeObject is ActiveScoreObject) {
+                stopObject(activeObject.obj, activeObject.absolutePosition, activeObject.suffix)
+            }
         }
         manager.pausedPlayback()
         client.send("pause_play")

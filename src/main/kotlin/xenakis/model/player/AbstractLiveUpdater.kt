@@ -4,6 +4,7 @@ import reaktive.Observer
 import reaktive.value.now
 import reaktive.value.observe
 import xenakis.impl.Decimal
+import xenakis.impl.zero
 import xenakis.model.obj.BufferReference
 import xenakis.model.obj.BusReference
 import xenakis.model.obj.GlobalPatternReference
@@ -35,16 +36,18 @@ abstract class AbstractLiveUpdater(protected val obj: ParameterizedObject) : Par
     private fun runOnActiveObjects(action: ScWriter.(String, Decimal) -> Unit) {
         val client = obj.context[SuperColliderClient]
         val playbackManager = obj.context[PlaybackManager]
-        val activeInstances = obj.activeInstances()
+        val activeInstances = obj.activeObjects()
         if (activeInstances.isEmpty()) return
         client.run {
-            for ((_, pos, suffix) in activeInstances) {
-                val name = ActiveObjectManager.uniqueName(obj.name.now, suffix)
-                val superColliderName = "${obj.superColliderPrefix}_$name"
-                val objectTime = playbackManager.playHead.currentTime - pos.time
-                println("$name ($superColliderName) at $objectTime")
+            for (obj in activeInstances) {
+                val uniqueName = obj.uniqueName
+                val superColliderName = obj.superColliderName
+                val objectTime =
+                    if (obj is ActiveScoreObject) playbackManager.playHead.currentTime - obj.absolutePosition.time
+                    else zero
+                println("$uniqueName ($superColliderName) at $objectTime")
                 appendBlock("if ($superColliderName != nil)") {
-                    action(name, objectTime)
+                    action(uniqueName, objectTime)
                 }
             }
         }
@@ -118,7 +121,9 @@ abstract class AbstractLiveUpdater(protected val obj: ParameterizedObject) : Par
 
             is AttackReleaseControl -> return //TODO
 
-            is EnvelopeControl -> return //TODO
+            is EnvelopeControl -> runOnActiveObjects { name, objectTime ->
+                updateEnvelope(writer, objectTime, name, parameter, envelope = ctrl.points)
+            }
 
             is GlobalPatternControl -> runOnActiveObjects { name, _ ->
                 updatePattern(name, parameter, ctrl.pattern.now)
@@ -128,7 +133,10 @@ abstract class AbstractLiveUpdater(protected val obj: ParameterizedObject) : Par
                 updateValueBus(name, parameter, ctrl.bus.now)
             }
 
-            is UGenControl -> return //TODO
+            is UGenControl -> runOnActiveObjects { name, _ ->
+                val expr = ctrl.expr.editor.result.now
+                updateUGenControl(this, name, parameter, expr)
+            }
 
             else -> return //no real-time update possible
 
@@ -167,6 +175,7 @@ abstract class AbstractLiveUpdater(protected val obj: ParameterizedObject) : Par
                     updateEnvelope(writer, objectTime, name, parameter, envelope = control.points)
                 }
             }
+
             is GlobalPatternControl -> control.pattern.observe { _, pattern ->
                 runOnActiveObjects { name, _ ->
                     updatePattern(name, parameter, pattern)

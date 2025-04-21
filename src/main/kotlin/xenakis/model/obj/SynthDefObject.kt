@@ -7,16 +7,14 @@ import kotlinx.serialization.Serializable
 import reaktive.value.ReactiveVariable
 import reaktive.value.now
 import reaktive.value.reactiveVariable
-import xenakis.model.flow.AudioFlows
 import xenakis.model.flow.NodePlacement
-import xenakis.model.flow.SynthFlow
-import xenakis.model.player.ActiveObjectManager
+import xenakis.model.player.ActiveAudioFlow
+import xenakis.model.player.ActiveScoreObject
 import xenakis.model.player.PlaybackManager
 import xenakis.model.registry.GroupRegistry
 import xenakis.model.registry.ObjectRegistry
 import xenakis.model.registry.SynthDefRegistry
 import xenakis.model.registry.reference
-import xenakis.model.score.SynthObject
 import xenakis.model.score.controls.GroupControl
 import xenakis.model.score.controls.ParameterControl
 import xenakis.sc.GroupControlSpec
@@ -50,19 +48,19 @@ sealed interface SynthDefObject : ParameterizedObjectDef, SuperColliderObject {
 
     fun onUpdated() = context[SuperColliderClient].run {
         val currentTime = context[PlaybackManager].playHead.currentTime
-        for ((obj, pos, suffix) in context[PlaybackManager].activeObjects.all()) {
-            if (obj !is SynthObject || obj.synthDef != this@SynthDefObject) continue
-            val uniqueName = ActiveObjectManager.uniqueName(obj.name.now, suffix)
-            val placement = NodePlacement(NodePlacement.AddAction.AddReplace, "~synth_$uniqueName")
-            val cutoff = currentTime - pos.time
-            val code = obj.writeCode(uniqueName, placement, cutoff)
-            appendLine(code)
-        }
-        for (flow in context[AudioFlows].all()) {
-            if (flow !is SynthFlow) continue
-            if (flow.synthDef != this@SynthDefObject) continue
-            val placement = NodePlacement(NodePlacement.AddAction.AddReplace, flow.superColliderName.now)
-            flow.run { writeCode(placement) }
+        context[PlaybackManager].activeObjects.forEach { active ->
+            val def = active.associatedDef
+            if (def != this@SynthDefObject) return@forEach
+            val uniqueName = active.uniqueName
+            val placement = NodePlacement(NodePlacement.AddAction.AddReplace, active.superColliderName)
+            when (active) {
+                is ActiveAudioFlow -> active.flow.run { writeCode(placement) }
+                is ActiveScoreObject -> {
+                    val cutoff = currentTime - active.absolutePosition.time
+                    val code = active.obj.writeCode(uniqueName, placement, cutoff)
+                    appendLine(code)
+                }
+            }
         }
     }
 

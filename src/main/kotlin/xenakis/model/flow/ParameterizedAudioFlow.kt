@@ -7,9 +7,9 @@ import reaktive.value.ReactiveValue
 import xenakis.impl.Decimal
 import xenakis.model.obj.BusObject
 import xenakis.model.obj.ParameterizedObject
-import xenakis.model.player.ActiveObjectManager
+import xenakis.model.player.ActiveAudioFlow
+import xenakis.model.player.ActiveObject
 import xenakis.model.player.LiveSynthUpdater
-import xenakis.model.score.ObjectPosition
 
 @Serializable
 sealed class ParameterizedAudioFlow : AudioFlow(), ParameterizedObject {
@@ -19,8 +19,7 @@ sealed class ParameterizedAudioFlow : AudioFlow(), ParameterizedObject {
     @Transient
     private lateinit var listener: LiveSynthUpdater
 
-    final override fun activeInstances(): List<ActiveObjectManager.ActiveInstance> =
-        listOf(ActiveObjectManager.ActiveInstance(this, absolutePosition = ObjectPosition.ZERO, 0))
+    final override fun activeObjects(): List<ActiveObject> = listOf(ActiveAudioFlow(this))
 
     final override fun duration(): ReactiveValue<Decimal>? = null
 

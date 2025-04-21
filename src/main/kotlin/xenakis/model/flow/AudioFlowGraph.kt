@@ -14,7 +14,6 @@ import xenakis.model.registry.BusRegistry
 import xenakis.model.registry.GroupRegistry
 import xenakis.model.registry.NamedObjectList
 import xenakis.model.score.ObjectPosition
-import xenakis.model.score.ScoreObject
 import xenakis.model.score.SynthObject
 import xenakis.sc.client.SuperColliderClient
 import xenakis.sc.client.isServerRunning
@@ -24,13 +23,13 @@ class AudioFlowGraph(
     private val flows: AudioFlows,
     private val nodeTree: NodeTree,
 ) : NamedObjectList.Listener<BusObject>, AudioFlows.Listener {
-    private val activeSynths = mutableMapOf<SynthObject, MutableSet<ActiveSynth>>()
+    private val activeSynths = mutableMapOf<SynthObject, MutableSet<SynthObjectNode>>()
     private val flowGroups = mutableMapOf<BusObject, FlowGroup>()
     private val order = LinkedList<AudioNode>()
     private val readFrom = mutableMapOf<BusObject, Counter<AudioNode>>()
     private val writeTo = mutableMapOf<BusObject, Counter<AudioNode>>()
     private val graph = ReachabilityGraph<AudioNode>()
-    private val placeholderContents = mutableMapOf<GroupObject, MutableList<ActiveSynth>>()
+    private val placeholderContents = mutableMapOf<GroupObject, MutableList<SynthObjectNode>>()
 
     init {
         flows.context[BusRegistry].addListener(this)
@@ -115,7 +114,7 @@ class AudioFlowGraph(
             else NodePlacement(AddAction.AddAfter, flows[i - 1].superColliderName.now)
         }
 
-        is ActiveSynth -> {
+        is SynthObjectNode -> {
             val group = node.obj.groupObj
             if (group.isDefault) {
                 getPlacementInOrder(node)
@@ -144,9 +143,9 @@ class AudioFlowGraph(
     private fun comparisonFunction(v: AudioNode, u: AudioNode): Int = when {
         graph.reachable(u, v) -> +1
         graph.reachable(v, u) -> -1
-        v is ActiveSynth && u is ActiveSynth -> v.absolutePosition.y.compareTo(u.absolutePosition.y)
-        v is ActiveSynth && u is FlowGroup -> -1
-        v is FlowGroup && u is ActiveSynth -> +1
+        v is SynthObjectNode && u is SynthObjectNode -> v.absolutePosition.y.compareTo(u.absolutePosition.y)
+        v is SynthObjectNode && u is FlowGroup -> -1
+        v is FlowGroup && u is SynthObjectNode -> +1
         else -> 0
     }
 
@@ -168,7 +167,7 @@ class AudioFlowGraph(
     fun insert(obj: SynthObject, absolutePosition: ObjectPosition, suffix: Int): NodePlacement {
         val defaultGroup = obj.context[GroupRegistry].getDefault()
         Logger.fine("mark start for $obj at $absolutePosition, suffix = $suffix", Logger.Category.Playback)
-        val node = ActiveSynth(obj, absolutePosition, suffix)
+        val node = SynthObjectNode(obj, absolutePosition, suffix)
         activeSynths.getOrPut(obj, ::mutableSetOf).add(node)
         val group = node.obj.groupObj
         if (group == defaultGroup) {
@@ -181,7 +180,7 @@ class AudioFlowGraph(
     }
 
     fun remove(obj: SynthObject, absolutePosition: ObjectPosition, suffix: Int) {
-        val node = ActiveSynth(obj, absolutePosition, suffix)
+        val node = SynthObjectNode(obj, absolutePosition, suffix)
         activeSynths.getValue(obj).remove(node)
         removeNode(node)
         reorderNodeTree()
@@ -220,11 +219,8 @@ class AudioFlowGraph(
         }
     }
 
-    fun activeInstances(obj: ScoreObject): Set<ActiveSynth> =
-        if (obj is SynthObject) activeSynths[obj].orEmpty() else emptySet()
-
     fun clear() {
-        for (activeSynth in activeSynths()) {
+        for (activeSynth in activeSynths.values.flatten()) {
             removeNode(activeSynth)
         }
         activeSynths.clear()

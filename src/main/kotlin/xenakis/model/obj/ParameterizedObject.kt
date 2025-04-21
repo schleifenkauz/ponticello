@@ -4,7 +4,7 @@ import reaktive.value.ReactiveValue
 import reaktive.value.now
 import xenakis.impl.Decimal
 import xenakis.model.flow.FlowType
-import xenakis.model.player.ActiveObjectManager
+import xenakis.model.player.ActiveObject
 import xenakis.model.registry.NamedObject
 import xenakis.model.score.ParameterControlList
 import xenakis.model.score.controls.BusControl
@@ -17,7 +17,7 @@ interface ParameterizedObject : NamedObject {
 
     val superColliderPrefix: String
 
-    fun activeInstances(): List<ActiveObjectManager.ActiveInstance>
+    fun activeObjects(): List<ActiveObject>
 
     fun duration(): ReactiveValue<Decimal>?
 
@@ -28,12 +28,12 @@ interface ParameterizedObject : NamedObject {
     fun getOutputs(): Collection<BusObject> = getConnectedBusses(FlowType.Out)
 
     private fun getConnectedBusses(flowType: FlowType): Set<BusObject> = buildSet {
-        for (ctrl in controls.all()) {
-            val spec = ctrl.spec.now
-            val value = ctrl.now
+        for (control in controls.all()) {
+            val spec = control.spec.now
+            val value = control.now
             if (value is BusControl || spec !is BusControlSpec) continue
             if (spec.flow != flowType) {
-                val ctrl = ctrl.now as? BusControl ?: continue
+                val ctrl = control.now as? BusControl ?: continue
                 val bus = ctrl.bus.now.get()
                 if (bus != null) {
                     add(bus)

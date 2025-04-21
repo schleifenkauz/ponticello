@@ -2,11 +2,11 @@ package xenakis.model.player
 
 import reaktive.value.now
 import xenakis.impl.Logger
-import xenakis.model.registry.NamedObject
+import xenakis.model.flow.AudioFlows
 import xenakis.model.score.ObjectPosition
 import xenakis.model.score.ScoreObject
 
-class ActiveObjectManager {
+class ActiveObjectManager(private val flows: AudioFlows) {
     private val takenSuffixes = mutableMapOf<String, MutableSet<Int>>()
     private val suffixes = mutableMapOf<ScoreObject, MutableMap<ObjectPosition, Int>>()
 
@@ -26,25 +26,28 @@ class ActiveObjectManager {
         return suffix
     }
 
-    fun all(): List<ActiveInstance> = suffixes.flatMap { (obj, suffixes) ->
-        suffixes.map { (pos, suffix) -> ActiveInstance(obj, pos, suffix) }
+    fun all(): List<ActiveObject> = suffixes.flatMap { (obj, suffixes) ->
+        suffixes.map { (pos, suffix) -> ActiveScoreObject(obj, pos, suffix) }
     }
 
-    fun forEach(action: (obj: ScoreObject, absolutePosition: ObjectPosition, suffix: Int) -> Unit) {
+    fun forEach(action: (obj: ActiveObject) -> Unit) {
         suffixes.forEach { (obj, instances) ->
-            instances.forEach { (pos, suffix) -> action(obj, pos, suffix) }
+            instances.forEach { (pos, suffix) -> action(ActiveScoreObject(obj, pos, suffix)) }
+        }
+        for (flow in flows.all()) {
+            if (flow.isActive.now) {
+                action(ActiveAudioFlow(flow))
+            }
         }
     }
 
-    fun activeInstances(obj: ScoreObject): List<ActiveInstance> =
-        suffixes[obj]?.map { (pos, suffix) -> ActiveInstance(obj, pos, suffix) }.orEmpty()
+    fun activeInstances(obj: ScoreObject): List<ActiveScoreObject> =
+        suffixes[obj]?.map { (pos, suffix) -> ActiveScoreObject(obj, pos, suffix) }.orEmpty()
 
     fun clear() {
         takenSuffixes.clear()
         suffixes.clear()
     }
-
-    data class ActiveInstance(val obj: NamedObject, val absolutePosition: ObjectPosition, val suffix: Int)
 
     companion object {
         fun uniqueName(base: String, suffix: Int) = when (suffix) {

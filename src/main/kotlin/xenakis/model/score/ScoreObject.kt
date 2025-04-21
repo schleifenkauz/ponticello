@@ -21,6 +21,7 @@ import xenakis.impl.*
 import xenakis.model.flow.NodePlacement
 import xenakis.model.obj.AbstractRenamableObject
 import xenakis.model.player.ActiveObjectManager
+import xenakis.model.player.ActiveScoreObject
 import xenakis.model.player.PlaybackManager
 import xenakis.model.project.score
 import xenakis.model.registry.ScoreObjectRegistry
@@ -96,7 +97,7 @@ sealed class ScoreObject : AbstractRenamableObject() {
 
     open val superColliderPrefix: String? get() = null
 
-    fun activeInstances(): List<ActiveObjectManager.ActiveInstance> {
+    fun activeObjects(): List<ActiveScoreObject> {
         return context[PlaybackManager].activeObjects.activeInstances(this)
     }
 

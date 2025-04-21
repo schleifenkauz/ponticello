@@ -16,7 +16,6 @@ import javafx.geometry.HorizontalDirection.RIGHT
 import javafx.geometry.VerticalDirection
 import javafx.scene.Cursor
 import javafx.scene.Node
-import javafx.scene.control.Button
 import javafx.scene.control.ColorPicker
 import javafx.scene.control.Spinner
 import javafx.scene.control.TextField
@@ -67,7 +66,8 @@ abstract class ScoreObjectView(
     lateinit var context: Context
         private set
 
-    private lateinit var muteUnmuteBtn: Button
+    private var isCreatingLoop = false
+    private val loopedObjects = mutableListOf<ScoreObjectInstance>()
 
     protected open val defaultBackgroundColor: ReactiveValue<Color>
         get() = reactiveVariable(BLACK)
@@ -247,8 +247,6 @@ abstract class ScoreObjectView(
         val window = makeSubWindow(view, obj.name.map { n -> "Object $n" }, context)
         window.width = (this.prefWidth * 3).coerceAtMost(maxDimensions.width)
         window.height = (this.prefHeight * 3).coerceAtMost(maxDimensions.height)
-//        view.alwaysHGrow()
-//        view.alwaysVGrow()
         window.show()
         view.initialize(pane, window)
     }
@@ -289,13 +287,18 @@ abstract class ScoreObjectView(
     * */
 
     protected open fun startDrag(ev: MouseEvent, cursor: Cursor): Boolean {
-        selectThis(addToSelection = ev.isShiftDown)
-        val selectedInstances = context[ScoreObjectSelectionManager].selectedInstances + this.instance
+        val selectionManager = context[ScoreObjectSelectionManager]
         if (cursor.isResizeCursor) {
-            if (selectedInstances.size > 1) return false
-            val direction = cursor.resizeDirection()
-            return instance.obj.beginResize(ev.resizeMode ?: return false, direction)
+            selectionManager.deselectAll()
+            if (ev.isAltDown) {
+                isCreatingLoop = true
+                return true
+            } else {
+                val direction = cursor.resizeDirection()
+                return instance.obj.beginResize(ev.resizeMode ?: return false, direction)
+            }
         } else {
+            val selectedInstances = selectionManager.selectedInstances + this.instance
             for (inst in selectedInstances) {
                 inst.beginMove()
             }
@@ -304,8 +307,13 @@ abstract class ScoreObjectView(
     }
 
     protected open fun finishedDrag(ev: MouseEvent, cursor: Cursor) {
-        if (cursor.isResizeCursor) instance.obj.finishResize()
-        else {
+        if (isCreatingLoop) {
+            isCreatingLoop = false
+            return
+        }
+        if (cursor.isResizeCursor) {
+            instance.obj.finishResize()
+        } else {
             val selectedInstances = context[ScoreObjectSelectionManager].selectedInstances + this.instance
             for (inst in selectedInstances) {
                 inst.finishMove()
@@ -374,7 +382,24 @@ abstract class ScoreObjectView(
             val parentHeight = pane.associatedObject?.height ?: 1.0.asY
             newHeight = newHeight.coerceAtMost(parentHeight - instance.y)
         }
-        instance.obj.resize(newDur, newHeight)
+        if (isCreatingLoop) {
+            val loopCount = (newDur / obj.duration).roundToInt() - 1
+            if (loopCount > loopedObjects.size) {
+                for (i in loopedObjects.size until loopCount) {
+                    val offset = ObjectPosition(i * obj.duration, zero)
+                    val obj = ScoreObjectInstance(obj, instance.position + offset, instance.muted.copy())
+                    loopedObjects.add(obj)
+                    pane.score.addObject(obj)
+                }
+            } else {
+                for (i in loopedObjects.size - 1 downTo loopCount) {
+                    val inst = loopedObjects.removeAt(i)
+                    pane.score.removeObject(inst, Score.RegistryOption.KEEP_IN_REGISTRY)
+                }
+            }
+        } else {
+            instance.obj.resize(newDur, newHeight)
+        }
     }
 
     fun getDeltaT(direction: HorizontalDirection): Decimal {
