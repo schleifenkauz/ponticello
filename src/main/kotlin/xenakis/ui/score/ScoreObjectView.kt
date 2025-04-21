@@ -213,16 +213,15 @@ abstract class ScoreObjectView(
     private fun addMouseActions() {
         addEventHandler(MouseEvent.MOUSE_CLICKED) { ev ->
             when {
-                ev.button == MouseButton.PRIMARY && ev.clickCount == 1 -> selectView(addToSelection = ev.isShiftDown)
-                ev.button == MouseButton.PRIMARY && ev.clickCount == 2 -> showInSubWindow()
-
-                ev.button == MouseButton.PRIMARY && ev.modifiers.isEmpty() -> {
+                ev.modifiers.isNotEmpty() -> return@addEventHandler
+                ev.button == MouseButton.PRIMARY && ev.clickCount == 1 -> {
+                    selectView(addToSelection = ev.isShiftDown)
                     val playback = context[PlaybackManager]
                     if (!playback.isPlaying.now && playback.isAttachedTo(this)) {
                         playback.playHead.setPlayHeadX(ev.x)
                     }
                 }
-
+                ev.button == MouseButton.PRIMARY && ev.clickCount == 2 -> showInSubWindow()
                 else -> return@addEventHandler
             }
             ev.consume()

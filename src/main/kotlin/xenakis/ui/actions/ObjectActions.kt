@@ -105,11 +105,11 @@ object ObjectActions {
             executeSingle { view, ev ->
                 if (ev.isTargetTextInput && !ev.isAltDown()) return@executeSingle
                 val playback = view.context[PlaybackManager]
-                if (!playback.isPlaying.now) {
+                playback.loopingActivated.toggle()
+                if (!playback.isPlaying.now && playback.loopingActivated.now) {
                     if (!playback.isAttachedTo(view)) playback.attachToView(view)
                     playback.player.play()
                 }
-                playback.loopingActivated.toggle()
             }
         }
     }
@@ -297,6 +297,3 @@ object ObjectActions {
         }
     }
 }
-
-/*
-* */

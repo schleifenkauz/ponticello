@@ -19,6 +19,7 @@ import xenakis.sc.client.SuperColliderClient
 import xenakis.ui.misc.PlayHead
 import xenakis.ui.score.ScoreObjectGroupView
 import xenakis.ui.score.ScoreObjectView
+import xenakis.ui.score.ScorePane
 import xenakis.ui.score.ScoreView
 
 class PlaybackManager(private val scoreView: ScoreView, flows: AudioFlows) {
@@ -47,6 +48,13 @@ class PlaybackManager(private val scoreView: ScoreView, flows: AudioFlows) {
     }
 
     fun isAttachedTo(target: Pane) = playHead.pane == target
+
+    val positionOfPlayedScore: ObjectPosition
+        get() = when (val pane = playHead.pane) {
+            is ScorePane -> pane.absolutePosition
+            is ScoreObjectView -> pane.absolutePosition
+            else -> throw IllegalStateException("Cannot get position of $pane, it is not a ScorePane or ScoreObjectView")
+        }
 
     private fun detach() {
         if (!isAttached) return
@@ -82,7 +90,7 @@ class PlaybackManager(private val scoreView: ScoreView, flows: AudioFlows) {
             playHead.movePlayHeadToStart()
         }
     }
-    
+
     fun pausedPlayback() {
         graph.clear()
         recorder.pausingPlayback()

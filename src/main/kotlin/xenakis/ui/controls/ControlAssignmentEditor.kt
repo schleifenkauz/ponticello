@@ -28,6 +28,7 @@ import xenakis.impl.one
 import xenakis.impl.zero
 import xenakis.model.obj.*
 import xenakis.model.player.ActiveScoreObject
+import xenakis.model.player.PlaybackManager
 import xenakis.model.registry.*
 import xenakis.model.score.ParameterControlList.NamedParameterControl
 import xenakis.model.score.ScoreObject
@@ -256,9 +257,14 @@ class ControlAssignmentEditor(val control: NamedParameterControl, val view: Scor
                     executes { (ctrl, view), ev ->
                         val ugen = ctrl.now as UGenControl
                         val activeObjects = ctrl.parentObject.activeObjects()
-                        val activeObject =
-                            if (view != null) activeObjects.find { obj -> obj is ActiveScoreObject && obj.absolutePosition == view.absolutePosition }
-                            else activeObjects.singleOrNull()
+                        val activeObject = if (view != null) {
+                            val playbackManager = ctrl.context[PlaybackManager]
+                            val positionRelativeToPlayedScore =
+                                view.absolutePosition - playbackManager.positionOfPlayedScore
+                            activeObjects.find { obj ->
+                                obj is ActiveScoreObject && obj.absolutePosition == positionRelativeToPlayedScore
+                            }
+                        } else activeObjects.singleOrNull()
                         val parameter = ctrl.name.now
                         if (activeObject != null) {
                             ugen.scope(activeObject, parameter)

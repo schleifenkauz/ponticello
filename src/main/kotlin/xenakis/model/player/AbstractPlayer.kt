@@ -39,11 +39,11 @@ abstract class AbstractPlayer(private val deltaT: Decimal, private val lookAhead
                 val dt = ((now - lastTime) / 1000.0).asTime
                 var t = playHead.currentTime + lookAhead
                 if (playHead.currentTime > maxTime) {
+                    playHead.movePlayHeadToStart()
                     if (!loop) {
                         pause()
                         continue
                     }
-                    playHead.movePlayHeadToStart()
                     t = 0.0.asTime
                 } else {
                     playHead.advance(dt)
