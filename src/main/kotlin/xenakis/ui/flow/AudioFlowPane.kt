@@ -28,7 +28,7 @@ class AudioFlowPane(
         setBackground(Color.BLACK)
         val scrollPane = ScrollPane(hbox)
         scrollPane.isFitToHeight = true
-        setup(content = HBox(scrollPane, makeAddBusButton()), title = null as String?)
+        setup(content = HBox(scrollPane, makeAddBusButton()), title = null)
         buses.addListener(this)
     }
 

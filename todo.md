@@ -20,6 +20,7 @@
 
 ### Minor
 
+- make `ObjectBoxConfig.getContent` dependent on display mode
 - commands in tool panes to save associated component?
 - ability to specify added time in beats/bars/ticks
 - ability to copy and paste whole time ranges

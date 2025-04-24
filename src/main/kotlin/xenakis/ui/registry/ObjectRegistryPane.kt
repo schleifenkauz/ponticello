@@ -36,7 +36,7 @@ abstract class ObjectRegistryPane<O : NamedObject>(
             registry, "Name for new ${registry.objectType}",
             initialName = ""
         ).showDialog(actionBar, offset = Point2D(0.0, actionBar.height)) ?: return
-        val obj = createNewObject() ?: return
+        val obj = createNewObject(name) ?: return
         registry.add(obj)
     }
 

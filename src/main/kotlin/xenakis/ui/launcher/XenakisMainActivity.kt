@@ -60,7 +60,7 @@ class XenakisMainActivity(val project: XenakisProject) : Activity() {
     private val buffersPane = AllocatedBufferRegistryPane(project.buffers)
     val buffersWindow = context.makeToolWindow(buffersPane, "Allocated Buffers")
 
-    private val patternsPane = GlobalPatternRegistryPane(project.patterns)
+    val patternsPane = GlobalPatternRegistryPane(project.patterns)
     val patternsWindow = context.makeToolWindow(patternsPane, "Patterns")
 
     val logWindow = context.makeToolWindow(LogPane(Logger), "Log")

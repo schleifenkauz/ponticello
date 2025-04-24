@@ -80,7 +80,7 @@ class ObjectBox<O : NamedObject>(val parent: NamedObjectListView<O>, val obj: O)
             }
         }
         if (option == DisplayMode.Inline) {
-            children.add(content)
+            if (content !in children) children.add(content)
         }
     }
 

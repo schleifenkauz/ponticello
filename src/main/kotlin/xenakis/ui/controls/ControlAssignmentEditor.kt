@@ -22,8 +22,10 @@ import javafx.scene.layout.HBox
 import javafx.scene.paint.Color
 import org.controlsfx.control.ToggleSwitch
 import org.kordamp.ikonli.evaicons.Evaicons
+import org.kordamp.ikonli.materialdesign2.MaterialDesignC
 import org.kordamp.ikonli.materialdesign2.MaterialDesignS
 import reaktive.value.*
+import reaktive.value.binding.flatMap
 import reaktive.value.fx.asProperty
 import xenakis.impl.asTime
 import xenakis.impl.asY
@@ -47,6 +49,7 @@ import xenakis.ui.impl.colorPicker
 import xenakis.ui.impl.makeSubWindow
 import xenakis.ui.impl.sceneFill
 import xenakis.ui.launcher.XenakisLauncher.Companion.currentProject
+import xenakis.ui.launcher.XenakisMainActivity
 import xenakis.ui.misc.CodePane
 import xenakis.ui.registry.SimpleSearchableRegistryView
 import xenakis.ui.score.ScoreObjectView
@@ -450,7 +453,23 @@ class ControlAssignmentEditor(val control: NamedParameterControl, val view: Scor
                 oldControl: ParameterControl,
             ): GlobalPatternControl = GlobalPatternControl(reactiveVariable(ObjectReference.none()))
 
+            override fun actions(
+                namedControl: NamedParameterControl,
+                control: GlobalPatternControl,
+                view: ScoreObjectView?,
+            ): List<ContextualizedAction> = listOf(plotAction.withContext(control))
+
             override fun toString(): String = "Pattern"
+
+            private val plotAction = action<GlobalPatternControl>("Plot") {
+                icon(MaterialDesignC.CHART_BOX_OUTLINE)
+                applicableWhen { ctrl -> ctrl.pattern.flatMap { p -> p.isResolved } }
+                executes { ctrl ->
+                    val obj = ctrl.pattern.now.get() ?: return@executes
+                    val pane = obj.context[XenakisMainActivity].patternsPane
+                    pane.showPlotPane(obj)
+                }
+            }
         }
 
         data object AttackRelease : ControlType<AttackReleaseControl>() {

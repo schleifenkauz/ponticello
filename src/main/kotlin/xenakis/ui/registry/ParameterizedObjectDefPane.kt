@@ -33,7 +33,7 @@ abstract class ParameterizedObjectDefPane<T : ConfigurableParameterizedObjectDef
         val content = this.getContent(def)
         val layout = VBox(parametersList, content)
         val scrollPane = ScrollPane(layout).letContentFillViewPort()
-        setup(null, scrollPane)
+        setup(scrollPane, null)
         parametersList.registerShortcuts(parametersList.actions)
     }
 

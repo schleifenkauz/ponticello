@@ -8,6 +8,7 @@ import org.controlsfx.control.textfield.CustomTextField
 import org.kordamp.ikonli.javafx.FontIcon
 import org.kordamp.ikonli.material2.Material2MZ
 import reaktive.value.now
+import reaktive.value.reactiveValue
 import xenakis.model.registry.NamedObject
 import xenakis.model.registry.NamedObjectList
 
@@ -20,7 +21,7 @@ abstract class SearchableToolPane<O : NamedObject> : ToolPane(), ObjectBoxConfig
     protected fun setup(title: String?, list: NamedObjectList<O>, actions: () -> List<ContextualizedAction>) {
         listView = NamedObjectListView(list, this, filter = { obj -> filter(obj) && matchesSearch(obj) })
         setupSearchField()
-        setup(listView, title, searchText, actions())
+        setup(listView, title?.let(::reactiveValue), searchText, actions())
     }
 
     private fun setupSearchField() {

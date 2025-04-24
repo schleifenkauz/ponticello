@@ -21,6 +21,8 @@ import reaktive.value.fx.asReactiveValue
 import reaktive.value.reactiveValue
 
 abstract class ToolPane : VBox() {
+    lateinit var title: ReactiveString
+        private set
     lateinit var content: Node
         private set
     private var headerContent: Node? = null
@@ -35,11 +37,12 @@ abstract class ToolPane : VBox() {
     }
 
     fun setup(
-        title: ReactiveString?, content: Node,
+        content: Node, title: ReactiveString? = null,
         headerContent: Node? = null, actions: List<ContextualizedAction> = emptyList(),
     ) {
         this.headerContent = headerContent
         this.content = content
+        this.title = title ?: reactiveValue("<???>")
         header = createHeader(title, actions)
         if (header != null) children.add(header)
         children.add(content)
@@ -48,10 +51,10 @@ abstract class ToolPane : VBox() {
     }
 
     fun setup(
-        content: Node, title: String? = null,
+        content: Node, title: String,
         headerContent: Node? = null, actions: List<ContextualizedAction> = emptyList(),
     ) {
-        setup(title?.let(::reactiveValue), content, headerContent, actions)
+        setup(content, reactiveValue(title), headerContent, actions)
     }
 
     override fun requestFocus() {

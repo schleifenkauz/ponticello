@@ -1,18 +1,25 @@
 package xenakis.ui.registry
 
+import fxutils.SubWindow
 import fxutils.actions.ContextualizedAction
 import fxutils.actions.collectActions
 import javafx.scene.Parent
 import javafx.scene.input.DataFormat
 import org.kordamp.ikonli.Ikon
 import org.kordamp.ikonli.material2.Material2AL
+import org.kordamp.ikonli.materialdesign2.MaterialDesignC
 import org.kordamp.ikonli.materialdesign2.MaterialDesignS
+import reaktive.value.binding.map
 import xenakis.model.obj.GlobalPatternObject
 import xenakis.model.registry.ObjectRegistry
+import xenakis.ui.impl.makeSubWindow
+import xenakis.ui.misc.PatternPlotPane
 
 class GlobalPatternRegistryPane(
-    registry: ObjectRegistry<GlobalPatternObject>
+    registry: ObjectRegistry<GlobalPatternObject>,
 ) : ObjectRegistryPane<GlobalPatternObject>(registry) {
+    private val plotPaneWindows = mutableMapOf<GlobalPatternObject, SubWindow>()
+
     init {
         setup()
     }
@@ -30,16 +37,34 @@ class GlobalPatternRegistryPane(
     override fun detailWindowIcon(obj: GlobalPatternObject): Ikon = Material2AL.CODE
 
     override fun getActions(box: ObjectBox<GlobalPatternObject>): List<ContextualizedAction> =
-        actions.withContext(box.obj)
+        actions.withContext(box)
 
     override fun dataFormat(obj: GlobalPatternObject): DataFormat = GlobalPatternObject.DATA_FORMAT
 
+    fun showPlotPane(obj: GlobalPatternObject) {
+        val window = plotPaneWindows.getOrPut(obj) {
+            val pane = PatternPlotPane(obj)
+            val title = obj.name.map { n -> "Plot $n" }
+             makeSubWindow(pane, title, obj.context)
+        }
+        window.showOrBringToFront()
+    }
+
     companion object {
-        private val actions = collectActions<GlobalPatternObject> {
+        private val actions = collectActions<ObjectBox<GlobalPatternObject>> {
             addAction("Sync") {
                 icon(MaterialDesignS.SYNC)
                 shortcut("Ctrl+U")
-                executes { obj -> obj.sync() }
+                executes { box -> box.obj.sync() }
+            }
+            addAction("Plot") {
+                icon(MaterialDesignC.CHART_BOX_OUTLINE)
+                shortcut("Alt+V")
+                applicableIf { box -> box.config is GlobalPatternRegistryPane }
+                executes { box ->
+                    val pane = box.config as GlobalPatternRegistryPane
+                    pane.showPlotPane(box.obj)
+                }
             }
         }
     }
