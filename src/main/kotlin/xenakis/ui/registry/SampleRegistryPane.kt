@@ -10,17 +10,15 @@ import fxutils.hasFiles
 import fxutils.prompt.YesNoPrompt
 import fxutils.setupDropArea
 import javafx.scene.control.ScrollPane
-import javafx.scene.image.Image
 import javafx.scene.image.ImageView
 import javafx.scene.input.DataFormat
-import javafx.scene.input.Dragboard
 import org.kordamp.ikonli.evaicons.Evaicons
 import org.kordamp.ikonli.material2.Material2MZ
+import org.kordamp.ikonli.materialdesign2.MaterialDesignC
 import org.kordamp.ikonli.materialdesign2.MaterialDesignF
 import org.kordamp.ikonli.materialdesign2.MaterialDesignP
 import reaktive.value.now
 import reaktive.value.reactiveVariable
-import xenakis.impl.asY
 import xenakis.model.obj.BufferObject
 import xenakis.model.obj.SampleObject
 import xenakis.model.project.buffers
@@ -28,7 +26,7 @@ import xenakis.model.registry.BufferRegistry
 import xenakis.sc.Identifier
 import xenakis.ui.launcher.XenakisFiles
 import xenakis.ui.launcher.XenakisLauncher.Companion.currentProject
-import xenakis.ui.launcher.XenakisMainActivity
+import xenakis.ui.score.ScoreObjectDuplicator
 import java.io.File
 
 class SampleRegistryPane(
@@ -64,14 +62,6 @@ class SampleRegistryPane(
 
     override fun headerActions(): List<ContextualizedAction> = headerActions.withContext(samples)
 
-    override fun configureDragboard(obj: BufferObject, dragboard: Dragboard) {
-        obj as SampleObject
-        val scoreView = samples.context[XenakisMainActivity].scoreView
-        val width = scoreView.getWidth(obj.duration().now)
-        val height = scoreView.getScreenY(0.02.asY)
-        dragboard.dragView = Image(obj.spectrogramFile.inputStream(), width, height, false, false)
-    }
-
     override fun dataFormat(obj: BufferObject): DataFormat = BufferObject.DATA_FORMAT
 
     companion object : PublicProperty<SampleRegistryPane> by publicProperty("SampleRegistryPane") {
@@ -96,8 +86,7 @@ class SampleRegistryPane(
             addAction("View sample") {
                 icon(Evaicons.ACTIVITY)
                 shortcut("Ctrl+Shift+O")
-                executes { obj ->
-                    obj as SampleObject
+                executesOn { obj: SampleObject ->
                     val image = ImageView(obj.spectrogramImage)
                     val scrollPane = ScrollPane(image)
                     val window = SubWindow(scrollPane, "Spectrogram of sample '${obj.name.now}'")
@@ -112,12 +101,18 @@ class SampleRegistryPane(
             }
             addAction("Replace sample contents") {
                 icon(MaterialDesignF.FILE_MUSIC_OUTLINE)
-                executes { obj ->
-                    obj as SampleObject
+                executesOn { obj: SampleObject ->
                     val samples = obj.context[currentProject].buffers
-                    val newFile = samples.context[XenakisFiles].showOpenDialog("*.wav") ?: return@executes
-                    if (samples.getSample(newFile) != null) return@executes
+                    val newFile = samples.context[XenakisFiles].showOpenDialog("*.wav") ?: return@executesOn
+                    if (samples.getSample(newFile) != null) return@executesOn
                     obj.loadFile(newFile)
+                }
+            }
+            addAction("Add to score") {
+                icon(MaterialDesignC.CONTENT_COPY)
+                executesOn { obj: SampleObject, ev ->
+                    val duplicator = obj.context[ScoreObjectDuplicator]
+                    duplicator.enterDuplicateMode(obj, ev)
                 }
             }
         }

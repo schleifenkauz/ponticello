@@ -95,7 +95,9 @@ class XenakisMainActivity(val project: XenakisProject) : Activity() {
         context[HelpBrowser] = HelpBrowser()
 
         scoreView = NavigableScorePane(project.score, project.context)
-        project.context[ScoreObjectDuplicator] = ScoreObjectDuplicator()
+        val duplicator = ScoreObjectDuplicator()
+        project.context[ScoreObjectDuplicator] = duplicator
+        duplicator.registerRootPane(scoreView)
         project.context[ScoreObjectSelectionManager] = ScoreObjectSelectionManager(project.context, scoreView)
         scoreView.initialize()
 

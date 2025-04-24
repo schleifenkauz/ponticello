@@ -1,8 +1,7 @@
 package xenakis.model.project
 
 import hextant.context.Context
-import javafx.geometry.Point2D
-import javafx.stage.Window
+import javafx.event.Event
 import kotlinx.serialization.Serializable
 import reaktive.value.ReactiveVariable
 import reaktive.value.now
@@ -27,12 +26,12 @@ class UIState private constructor(
         selectedSynthDef.now?.resolve(context[SynthDefRegistry])
     }
 
-    fun getOrSelectSynthDef(anchor: Point2D, ownerWindow: Window): SynthDefObject? =
-        selectedSynthDef.get()?.get() ?: selectSynthDef(anchor, ownerWindow)
+    fun getOrSelectSynthDef(event: Event?): SynthDefObject? =
+        selectedSynthDef.get()?.get() ?: selectSynthDef(event)
 
-    fun selectSynthDef(anchor: Point2D, ownerWindow: Window): SynthDefObject? {
+    fun selectSynthDef(event: Event?): SynthDefObject? {
         val synthDef = SimpleSearchableRegistryView(context[SynthDefRegistry], "Select instrument")
-            .showPopup(anchor, owner = ownerWindow) ?: return null
+            .showPopup(event) ?: return null
         selectedSynthDef.now = synthDef.reference()
         return synthDef
     }

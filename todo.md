@@ -2,20 +2,20 @@
 
 - is the `AdhocSynth` still needed?
 - does each `ConfigurableParameterizedObjectDef` need its own context
-  - or does it take the one of its registry?
+    - or does it take the one of its registry?
 
 ### Needs Fix
 
 - improve the timeline
-  - maybe only move playback cursor on timeline?
-  - display timeline not as part of the score (below or on top?)
-- resize copied object image when zooming
+    - maybe only move the playback-cursor on timeline?
+    - display timeline not as part of the score (below or on top?)
+    - show the cursor-position next to playback actions (do we even need a timeline then?)
 - weird duplicating bug when pasting
 - resizing behaviour is not quite right
 - something is not quite right yet in `ScoreEventCollector` (especially when resizing objects...)
 - moving objects to sub score parent is buggy
 - sub-objects get buggy after unlinking group objects
-  - the new objects don't get added to the `ScoreEventCollector`
+    - the new objects don't get added to the `ScoreEventCollector`
 - recording doesn't work
 
 ### Minor
@@ -24,12 +24,12 @@
 - ability to specify added time in beats/bars/ticks
 - ability to copy and paste whole time ranges
 - own editor type for control references
-  - can only be used in LFO argument expressions
+    - can only be used in LFO argument expressions
 - what to do when user selects a new `SynthDef` for a synth object
-  - re-sync parameter controls in some way...
+    - re-sync parameter controls in some way...
 - unify window positioning
 - more adequate midi contexts
-  - based on focused window
+    - based on focused window
 - global variable in SuperCollider for list of all samples (`ALL_SAMPLES`)
 - curve parameter type?
 - asr parameter type?
@@ -58,28 +58,28 @@
 
 ### Support for patterns
 
-- as synth arguments 
-  - either delta patterns -> `Pmono` for all the delta pattern arguments
-  - or global pattern streams -> simply get `<stream>.next` (implemented)
+- as synth arguments
+    - either delta patterns -> `Pmono` for all the delta pattern arguments
+    - or global pattern streams -> simply get `<stream>.next` (implemented)
 - as standalone objects (`pbind`)
-  - this can be done with tasks and a special expression editor for `PLbindef`s 
+    - this can be done with tasks and a special expression editor for `PLbindef`s
 
 ### Attach transformations to buses not to flows
 
 - how to mute
-  - disable flow graph arrows
-  - or mute individual buses
+    - disable flow graph arrows
+    - or mute individual buses
 - graphical tools for EQ, compression (multi-band), reverb, etc.
-  - integrate as special editors?
+    - integrate as special editors?
 - or open transformation chain by clicking on bus in the flow graph
 - how to notify user about loops in the flow graph
 
 ### More efficient communication with SC
 
-- add score objects as functions in sc 
-  - what about object groups
+- add score objects as functions in sc
+    - what about object groups
 - in which cases can we talk to scsynth directly?
-  - bus value update (could really improve live modulation performance)
+    - bus value update (could really improve live modulation performance)
 
 ### Own notification API integrating with the LogPane
 
@@ -109,8 +109,8 @@
 - edit a clone of a `ScoreObjectGroup` in a `SubWindow` and sync it with the main score on demand
 - sub score windows for live loops
 - time jumps
-  - like goto statements
-  - can have conditions (examples...?)
+    - like goto statements
+    - can have conditions (examples...?)
 
 ### DJ functionality
 
@@ -131,6 +131,7 @@
 ### Drum sequencer objects
 
 ## Was unterscheidet Ponticello von anderen DAWs?
+
 - Möglichkeit beliebig komplexe SynthDefs zu bauen.
 - Unterstützung des Pattern-Systems von SuperCollider (bald)
 - Möglichkeit Programmschnipsel in die Partitur einzubinden.

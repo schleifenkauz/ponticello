@@ -5,13 +5,10 @@ import fxutils.styleClass
 import hextant.context.Context
 import javafx.application.Platform
 import javafx.scene.Node
-import javafx.scene.image.ImageView
 import javafx.scene.layout.Pane
 import javafx.scene.paint.Color
-import javafx.scene.robot.Robot
 import javafx.scene.shape.Line
 import javafx.scene.text.Text
-import reaktive.Observer
 import reaktive.value.fx.asObservableValue
 import reaktive.value.now
 import xenakis.impl.*
@@ -30,9 +27,6 @@ class NavigableScorePane(score: Score, context: Context) : ScorePane(score, cont
 
     override val root: ScorePane
         get() = this
-
-    private var clipboardObjectView: ImageView? = null
-    private lateinit var duplicatorObserver: Observer
 
     private var latestRepaintTrigger = 0L
 
@@ -67,21 +61,6 @@ class NavigableScorePane(score: Score, context: Context) : ScorePane(score, cont
 
     fun initialize() {
         this.score.addListener(this)
-        val duplicator = context[ScoreObjectDuplicator]
-        duplicatorObserver = duplicator.onEnterDuplicateMode.observe { _, image ->
-            val view = duplicator.createImageView(image)
-            children.add(view)
-            view.visibleProperty().bind(hoverProperty())
-            if (isHover) {
-                val mousePos = screenToLocal(Robot().mousePosition)
-                val (t, y) = snapToGrid(mousePos.x, mousePos.y)
-                view.relocate(getX(t), getScreenY(y))
-            }
-            clipboardObjectView = view
-        } and duplicator.onExitDuplicateMode.observe {
-            children.remove(clipboardObjectView)
-            clipboardObjectView = null
-        }
     }
 
     override fun snapToGrid(position: ObjectPosition): ObjectPosition {
@@ -174,10 +153,10 @@ class NavigableScorePane(score: Score, context: Context) : ScorePane(score, cont
         latestRepaintTrigger = System.currentTimeMillis()
         layoutObjects()
         repositionEnvelopeMagnifier()
-        if (clipboardObjectView != null && clipboardObjectView !in children) children.add(clipboardObjectView)
         if (positionTracker !in children) children.add(positionTracker)
         activity.playback.playHead.updatePosition()
         displayTimeGrid()
+        context[ScoreObjectDuplicator].repainted(this)
     }
 
     private fun layoutObjects() {
@@ -241,11 +220,7 @@ class NavigableScorePane(score: Score, context: Context) : ScorePane(score, cont
         setOnMouseMoved { ev ->
             val (t, y) = snapToGrid(ev.x, ev.y)
             markT(t)
-            clipboardObjectView?.let { view ->
-                val layoutY = getScreenY(y).coerceAtMost(height - view.boundsInParent.height)
-                val layoutX = getX(t).coerceAtMost(width - view.boundsInParent.width)
-                view.relocate(layoutX, layoutY)
-            }
+            context[ScoreObjectDuplicator].movedCursor(this, t, y)
             ev.consume()
         }
     }

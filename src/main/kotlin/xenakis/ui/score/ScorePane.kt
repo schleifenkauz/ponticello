@@ -9,6 +9,7 @@ import hextant.serial.EditorRoot
 import hextant.undo.compoundEdit
 import javafx.application.Platform
 import javafx.collections.FXCollections.observableList
+import javafx.event.Event
 import javafx.geometry.Bounds
 import javafx.geometry.Point2D
 import javafx.scene.control.ComboBox
@@ -31,7 +32,6 @@ import xenakis.model.project.get
 import xenakis.model.project.score
 import xenakis.model.registry.*
 import xenakis.model.score.*
-import xenakis.model.score.controls.BufferControl
 import xenakis.sc.Identifier
 import xenakis.sc.editor.CodeBlockEditor
 import xenakis.sc.editor.EventDictionaryEditor
@@ -154,10 +154,10 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
     }
 
     private fun addPlayBufOnDrop() {
-        setupDropArea({ db -> db.hasFile("wav") || db.hasContent(BufferObject.DATA_FORMAT) }, { ev ->
+        setupDropArea({ db -> db.hasFile("wav") }, { ev ->
             val sample = extractBufferFromDragboard(ev.dragboard) ?: return@setupDropArea
             val pos = snapToGrid(ev.x, ev.y)
-            createPlayBufObject(sample, pos, localToScreen(ev.x, ev.y))
+            createPlayBufObject(sample, pos, ev)
         })
     }
 
@@ -167,24 +167,16 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
             context[BufferRegistry].getOrAdd(file)
         }
 
-        db.hasContent(BufferObject.DATA_FORMAT) -> {
-            context[BufferRegistry].get(db.getContent(BufferObject.DATA_FORMAT) as String)
-        }
-
         else -> null
     }
 
-    private fun createPlayBufObject(buffer: BufferObject, pos: ObjectPosition, anchor: Point2D) {
-        val synthDef = context[currentProject][UI_STATE].getOrSelectSynthDef(anchor, scene.window) ?: return
-        val controls = synthDef.getDefaultControls(associatedObject)
-        val synthDefRef = reactiveVariable(synthDef.reference())
-        val name = context[ScoreObjectRegistry].availableName(buffer.name.now)
-        val obj = SynthObject(reactiveVariable(name), synthDefRef, controls)
-        obj.setInitialSize(buffer.duration().now, 0.02.withPrecision(ObjectPosition.Y_PRECISION))
-        val inst = ScoreObjectInstance(obj, pos)
+    private fun createPlayBufObject(buffer: BufferObject, position: ObjectPosition, ev: Event?) {
+        val synthDef = buffer.context[currentProject][UI_STATE].getOrSelectSynthDef(ev) ?: return
+        val obj = buffer.createSynthObject(synthDef) ?: return
+        val inst = ScoreObjectInstance(obj, position)
         context.compoundEdit("Add sample to score") {
             score.addObject(inst, autoSelect = true)
-            controls.reassignControl("buf", BufferControl(reactiveVariable(buffer.reference())))
+
         }
     }
 
@@ -254,10 +246,9 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
 
             ev.modifiers == setOf(Alt, Ctrl) -> {
                 val popup = SimpleSearchableRegistryView(context[BufferRegistry], "Place sample")
-                val anchor = localToScreen(ev.x, ev.y)
-                val sample = popup.showPopup(anchor, scene.window) ?: return
+                val sample = popup.showPopup(ev) ?: return
                 val pos = snapToGrid(ev.x, ev.y)
-                createPlayBufObject(sample, pos, localToScreen(ev.x, ev.y))
+                createPlayBufObject(sample, pos, ev)
             }
 
             ev.modifiers == setOf(Alt, Shift) -> {

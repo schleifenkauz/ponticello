@@ -46,9 +46,9 @@ val OBJECTS = component<ScoreObjectRegistry>(
 val SCORE = component<Score>("score", ::Score)
 
 val allComponents = listOf<Component<out ContextualObject>>(
-    UI_STATE,
     GROUPS, BUSSES, BUFFERS,
     PATTERNS, SYNTH_DEFS, PROCESS_DEFS,
+    UI_STATE,
     FLOWS, SERVER_OPTIONS,
     OBJECTS, SCORE
 ) + ScriptObject.Type.entries.map { type -> type.component }
