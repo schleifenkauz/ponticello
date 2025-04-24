@@ -30,7 +30,7 @@ class ScoreObjectSelectionManager(val context: Context, private val rootPane: Sc
 
     val focusedObject get() = focusedInstance?.obj
 
-    private val focusedScorePane: ScorePane
+    val focusedScorePane: ScorePane
         get() = (focusedView.now as? ScoreObjectGroupView)?.scorePane
             ?: selectedViews.mapTo(mutableSetOf()) { v -> v.pane }.singleOrNull()
             ?: rootPane
@@ -84,6 +84,7 @@ class ScoreObjectSelectionManager(val context: Context, private val rootPane: Sc
         for (v in previouslySelected) {
             v.setSelected(false)
         }
+        focusedScorePane.clearRegionSelection()
     }
 
     fun selectAll() {
@@ -117,10 +118,6 @@ class ScoreObjectSelectionManager(val context: Context, private val rootPane: Sc
         val content = clipboard.getContent(ScoreObject.DATA_FORMAT) as String
         val instances = Json.decodeFromString(serializer<List<ScoreObjectInstance>>(), content)
         return instances
-    }
-
-    fun toggleMuteSelected() {
-
     }
 
     companion object : PublicProperty<ScoreObjectSelectionManager> by publicProperty("ObjectSelector")

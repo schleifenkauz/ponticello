@@ -11,7 +11,7 @@ object UndoRedoActions: Action.Collector<UndoManager>({
         description(UndoManager::undoText)
         ifNotApplicable(Action.IfNotApplicable.Disable)
         icon(MaterialDesignU.UNDO)
-        applicableIf { manager -> manager.canUndo }
+        applicableWhen { manager -> manager.canUndo }
         executes { manager -> manager.undo() }
     }
     addAction("Undo") {
@@ -19,7 +19,7 @@ object UndoRedoActions: Action.Collector<UndoManager>({
         description(UndoManager::redoText)
         ifNotApplicable(Action.IfNotApplicable.Disable)
         icon(MaterialDesignR.REDO)
-        applicableIf { manager -> manager.canRedo }
+        applicableWhen { manager -> manager.canRedo }
         executes { manager -> manager.redo() }
     }
 })

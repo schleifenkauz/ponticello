@@ -235,12 +235,12 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
     private fun mouseClicked(ev: MouseEvent) {
         if (score == context[currentProject].score && !ev.isShiftDown) selector.deselectAll()
         val (t, y) = snapToGrid(ev.x, ev.y)
-        val scoreView = context[XenakisMainActivity].scoreView
+        val duplicator = context[ScoreObjectDuplicator]
         when {
             ev.button == MouseButton.SECONDARY -> pasteFromSystemClipboard(ev)
 
-            scoreView.isInDuplicateMode() -> {
-                var obj = scoreView.clipboardObject!!
+            duplicator.isInDuplicateMode() -> {
+                var obj = duplicator.clipboardObject!!
                 if (obj.height > score.maxY || obj.duration > score.maxTime) return
                 if (ev.isAltDown) {
                     val name = context[ScoreObjectRegistry].nameForClone(obj)
@@ -249,7 +249,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
                 val time = t.coerceIn(zero, score.maxTime - obj.duration)
                 val scoreY = y.coerceIn(zero, score.maxY - obj.height)
                 val duplicate = ScoreObjectInstance(obj, time, scoreY)
-                score.addObject(duplicate, autoSelect = true)
+                score.addObject(duplicate, autoSelect = false)
             }
 
             ev.modifiers == setOf(Alt, Ctrl) -> {

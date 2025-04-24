@@ -9,9 +9,9 @@ import org.kordamp.ikonli.material2.Material2MZ
 import reaktive.value.now
 import xenakis.impl.asTime
 import xenakis.model.player.PlaybackManager
-import xenakis.ui.score.ScoreView
+import xenakis.ui.score.NavigableScorePane
 
-object ScoreNavigationActions : Action.Collector<ScoreView>({
+object ScoreNavigationActions : Action.Collector<NavigableScorePane>({
     addAction("Move View To Start") {
         description("Moves the displayed portion of the score to the start")
         shortcut("HOME")

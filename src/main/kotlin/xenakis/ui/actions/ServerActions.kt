@@ -49,7 +49,7 @@ object ServerActions : Action.Collector<XenakisProject>({
 }) {
     val scopeBus = action<BusReference>("Scope") {
         icon(Evaicons.ACTIVITY)
-        applicableIf { ref -> ref.isResolved }
+        applicableWhen { ref -> ref.isResolved }
         ifNotApplicable(Action.IfNotApplicable.Disable)
         executes { ref ->
             val bus = ref.get()

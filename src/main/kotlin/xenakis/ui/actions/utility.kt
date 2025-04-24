@@ -20,7 +20,7 @@ inline fun Action.Collector<ObjectActionContext>.addObjectAction(
     body: Action.Builder<ObjectActionContext>.() -> Unit
 ) {
     addAction(name) {
-        applicableIf { ctx -> ctx.isApplicable(name) }
+        applicableWhen { ctx -> ctx.isApplicable(name) }
         body()
     }
 }
@@ -42,7 +42,7 @@ fun Action.Builder<ObjectActionContext>.executeMultiAction(action: (ScoreObjectV
 }
 
 inline fun Action.Builder<ObjectActionContext>.applicableOn(crossinline predicate: (ScoreObjectView) -> Boolean) {
-    applicableIf { ctx -> ctx.focusedView.map { v -> v != null && predicate(v) } }
+    applicableWhen { ctx -> ctx.focusedView.map { v -> v != null && predicate(v) } }
 }
 
 inline fun <reified V> Action.Builder<ObjectActionContext>.applicableOn() {

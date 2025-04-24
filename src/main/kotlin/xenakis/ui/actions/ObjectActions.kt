@@ -28,10 +28,7 @@ import xenakis.ui.controls.RenamePrompt
 import xenakis.ui.impl.Direction
 import xenakis.ui.impl.showDialog
 import xenakis.ui.launcher.XenakisMainActivity
-import xenakis.ui.score.PianoRollObjectView
-import xenakis.ui.score.ProcessObjectView
-import xenakis.ui.score.ScoreObjectGroupView
-import xenakis.ui.score.SynthObjectView
+import xenakis.ui.score.*
 
 object ObjectActions {
     val multiObjectActions = collectActions {
@@ -65,8 +62,8 @@ object ObjectActions {
         addObjectAction("Copy selected objects to clipboard") {
             shortcut("Ctrl+C")
             executes { ctx, _ ->
-                val scoreView = ctx.context[XenakisMainActivity].scoreView
-                scoreView.selector.setSystemClipboard(ctx.selectedViews.map { v -> v.instance })
+                val selector = ctx.context[ScoreObjectSelectionManager]
+                selector.setSystemClipboard(ctx.selectedViews.map { v -> v.instance })
             }
         }
     }
@@ -74,7 +71,7 @@ object ObjectActions {
     val playbackActions = collectActions {
         addObjectAction("Play object") {
             shortcut("Ctrl+SPACE")
-            applicableIf(::canApplyPlaybackActions)
+            applicableWhen(::canApplyPlaybackActions)
             ifNotApplicable(Action.IfNotApplicable.Disable)
             icon { ctx ->
                 ctx.context[PlaybackManager].isPlaying.map { playing ->
@@ -98,7 +95,7 @@ object ObjectActions {
         addObjectAction("Toggle loop") {
             shortcut("Alt?+L")
             icon(MaterialDesignR.REPEAT)
-            applicableIf(::canApplyPlaybackActions)
+            applicableWhen(::canApplyPlaybackActions)
             ifNotApplicable(Action.IfNotApplicable.Disable)
             icon(MaterialDesignR.REPEAT)
             toggleState { ctx -> ctx.context[PlaybackManager].loopingActivated }
@@ -120,8 +117,9 @@ object ObjectActions {
             icon(MaterialDesignC.CONTENT_DUPLICATE)
             executeSingle { view, ev ->
                 if (ev.isTargetTextInput && !ev.isAltDown()) return@executeSingle
-                val scoreView = view.context[XenakisMainActivity].scoreView
-                scoreView.setClipboard(view.obj, view)
+                view.context[ScoreObjectSelectionManager].deselectAll()
+                val duplicator = view.context[ScoreObjectDuplicator]
+                duplicator.enterDuplicateMode(view.obj, view)
             }
         }
         addObjectAction("Unlink from original") {
@@ -150,8 +148,9 @@ object ObjectActions {
                 if (ev.isTargetTextInput && !ev.isAltDown()) return@executeSingle
                 val inst = view.instance
                 inst.score?.removeObject(inst, Score.RegistryOption.KEEP_IN_REGISTRY)
-                val scoreView = view.context[XenakisMainActivity].scoreView
-                scoreView.setClipboard(inst.obj, view)
+                val duplicator = view.context[ScoreObjectDuplicator]
+                view.context[ScoreObjectSelectionManager].deselectAll()
+                duplicator.enterDuplicateMode(inst.obj, view)
             }
         }
         addObjectAction("Reverse object") {

@@ -10,17 +10,17 @@ import xenakis.impl.unaryMinus
 import xenakis.model.registry.ScoreObjectRegistry
 import xenakis.model.score.*
 import xenakis.ui.launcher.XenakisMainActivity
+import xenakis.ui.score.ScoreObjectDuplicator
 import xenakis.ui.score.ScoreObjectSelectionManager
 import xenakis.ui.score.ScoreObjectView
 
 object SelectionRelatedActions {
     fun addShortcuts(handler: KeyEventHandlerBody<*>, activity: XenakisMainActivity) = with(handler){
-        val playback = activity.playback
-        val scoreView = activity.scoreView
         val context = activity.context
+        val playback = activity.playback
+        val selector = context[ScoreObjectSelectionManager]
         on("ESCAPE") {
-            scoreView.clearRegionSelection()
-            scoreView.clearClipboard()
+            context[ScoreObjectDuplicator].exitDuplicateMode()
             if (!playback.player.isPlaying.now && playback.playHead.pane is ScoreObjectView) {
                 val attachedView = playback.playHead.pane as ScoreObjectView
                 val absoluteTime = attachedView.absolutePosition.time + playback.playHead.currentTime
@@ -28,14 +28,13 @@ object SelectionRelatedActions {
                 playback.playHead.movePlayHead(absoluteTime)
             }
             context[ScoreObjectSelectionManager].deselectAll()
-            context[XenakisMainActivity].scoreView.requestFocus()
         }
         on("Ctrl+A") { ev ->
             if (ev.isTargetTextInput) return@on
             context[ScoreObjectSelectionManager].selectAll()
         }
         on("Ctrl+Shift+A") {
-            val selected = resolveFocusedObject(scoreView.selector) ?: return@on
+            val selected = resolveFocusedObject(selector) ?: return@on
             val pane = selected.pane
             for (inst in pane.score.instancesOf(selected.instance.obj)) {
                 if (inst != selected.instance) {
@@ -47,7 +46,7 @@ object SelectionRelatedActions {
 
         on("Shift?+G") { ev ->
             if (ev.isTargetTextInput) return@on
-            val views = scoreView.selector.selectedViews
+            val views = selector.selectedViews
             //import to get a single ScorePane (not a single Score)
             // because we want the instances to be from one ScorePane (or the root score)
             val parentPane = views.mapTo(mutableSetOf()) { v -> v.pane }.singleOrNull() ?: return@on

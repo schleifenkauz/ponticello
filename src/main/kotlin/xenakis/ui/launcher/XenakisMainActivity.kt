@@ -29,6 +29,7 @@ import xenakis.ui.midi.ParameterControlsMidiContext
 import xenakis.ui.misc.*
 import xenakis.ui.registry.*
 import xenakis.ui.score.NavigableScorePane
+import xenakis.ui.score.ScoreObjectDuplicator
 import xenakis.ui.score.ScoreObjectSelectionManager
 
 class XenakisMainActivity(val project: XenakisProject) : Activity() {
@@ -94,6 +95,7 @@ class XenakisMainActivity(val project: XenakisProject) : Activity() {
         context[HelpBrowser] = HelpBrowser()
 
         scoreView = NavigableScorePane(project.score, project.context)
+        project.context[ScoreObjectDuplicator] = ScoreObjectDuplicator()
         project.context[ScoreObjectSelectionManager] = ScoreObjectSelectionManager(project.context, scoreView)
         scoreView.initialize()
 
