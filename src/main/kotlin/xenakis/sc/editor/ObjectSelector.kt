@@ -19,7 +19,7 @@ abstract class ObjectSelector<O : NamedObject> :
 
     abstract fun getRegistry(): ObjectRegistry<O>
 
-    protected open fun filter(obj: O): Boolean = true
+    open fun filter(obj: O): Boolean = true
 
     fun selectInitial(value: O) {
         selectInitial(value.reference())

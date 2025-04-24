@@ -31,7 +31,6 @@ import xenakis.sc.NumericalControlSpec
 import xenakis.sc.mapOnto
 import xenakis.ui.controls.ControlSpecPrompt
 import xenakis.ui.controls.DecimalPrompt
-import xenakis.ui.impl.rootPane
 import kotlin.math.pow
 
 class EnvelopeEditor(
@@ -120,7 +119,12 @@ class EnvelopeEditor(
         }
         line.setOnMouseClicked { ev ->
             when {
-                ev.button == PRIMARY && ev.isControlDown -> context.rootPane.magnifyEnvelope(this)
+                ev.button == PRIMARY && ev.isControlDown -> {
+                    val root = parentPane.root
+                    if (root is NavigableScorePane) {
+                        root.magnifyEnvelope(this)
+                    }
+                }
 
                 ev.button == PRIMARY && ev.isShiftDown && associatedObject is ParameterizedObject -> {
                     val parentObject = objectView.instance.obj as ParameterizedObject
@@ -198,7 +202,7 @@ class EnvelopeEditor(
 
     private fun transformXToTime(x: Double): Decimal {
         val pos = ObjectPosition(objectView.getDuration(x), 0.0.asY) + objectView.absolutePosition
-        val (t, _) = context.rootPane.snapToGrid(pos)
+        val (t, _) = parentPane.snapToGrid(pos)
         parentPane.markT(t)
         return (t - objectView.absolutePosition.time).coerceIn(zero..associatedObject.duration)
     }

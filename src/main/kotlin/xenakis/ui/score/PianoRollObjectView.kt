@@ -32,7 +32,6 @@ import xenakis.model.score.ScoreObject
 import xenakis.model.score.ScoreObjectInstance
 import xenakis.sc.editor.EventDictionaryEditor
 import xenakis.sc.view.ObjectSelectorControl
-import xenakis.ui.impl.rootPane
 import xenakis.ui.impl.setupDraggingAndResizing
 import xenakis.ui.impl.showDialog
 import kotlin.math.roundToInt
@@ -78,7 +77,7 @@ class PianoRollObjectView(inst: ScoreObjectInstance, override val obj: MidiObjec
 
     private fun snapToGrid(x: Double, y: Double): Decimal {
         val pos = ObjectPosition(getTime(x), getScoreY(y))
-        return context.rootPane.snapToGrid(pos + absolutePosition).time - absolutePosition.time
+        return pane.root.snapToGrid(pos + absolutePosition).time - absolutePosition.time
     }
 
     private fun setupNoteObjectEvents(rect: Region, note: MidiObject.Note) {

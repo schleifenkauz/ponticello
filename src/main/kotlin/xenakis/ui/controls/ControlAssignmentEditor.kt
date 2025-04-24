@@ -4,12 +4,14 @@ import bundles.createBundle
 import fxutils.*
 import fxutils.actions.ActionBar
 import fxutils.actions.ContextualizedAction
+import fxutils.actions.action
 import fxutils.actions.collectActions
 import fxutils.controls.SliderBar
 import fxutils.prompt.InfoPrompt
 import fxutils.prompt.SimpleSearchableListView
 import hextant.context.Context
 import hextant.serial.EditorRoot
+import hextant.undo.compoundEdit
 import javafx.geometry.Pos
 import javafx.scene.Node
 import javafx.scene.control.Button
@@ -24,14 +26,17 @@ import org.kordamp.ikonli.materialdesign2.MaterialDesignS
 import reaktive.value.*
 import reaktive.value.fx.asProperty
 import xenakis.impl.asTime
+import xenakis.impl.asY
 import xenakis.impl.one
 import xenakis.impl.zero
 import xenakis.model.obj.*
 import xenakis.model.player.ActiveScoreObject
 import xenakis.model.player.PlaybackManager
+import xenakis.model.project.score
 import xenakis.model.registry.*
 import xenakis.model.score.ParameterControlList.NamedParameterControl
 import xenakis.model.score.ScoreObject
+import xenakis.model.score.ScoreObjectInstance
 import xenakis.model.score.SynthObject
 import xenakis.model.score.controls.*
 import xenakis.sc.*
@@ -41,7 +46,9 @@ import xenakis.ui.actions.ServerActions
 import xenakis.ui.impl.colorPicker
 import xenakis.ui.impl.makeSubWindow
 import xenakis.ui.impl.sceneFill
+import xenakis.ui.launcher.XenakisLauncher.Companion.currentProject
 import xenakis.ui.misc.CodePane
+import xenakis.ui.registry.SimpleSearchableRegistryView
 import xenakis.ui.score.ScoreObjectView
 
 class ControlAssignmentEditor(val control: NamedParameterControl, val view: ScoreObjectView?) : HBox() {
@@ -253,7 +260,7 @@ class ControlAssignmentEditor(val control: NamedParameterControl, val view: Scor
                 addAction("Scope") {
                     icon(Evaicons.ACTIVITY)
                     shortcut("Ctrl+E")
-                    applicableIf { (_, view) -> reactiveValue(view != null) }
+                    applicableIf { (_, view) -> view != null }
                     executes { (ctrl, view), ev ->
                         val ugen = ctrl.now as UGenControl
                         val activeObjects = ctrl.parentObject.activeObjects()
@@ -322,7 +329,36 @@ class ControlAssignmentEditor(val control: NamedParameterControl, val view: Scor
                 namedControl: NamedParameterControl,
                 control: BusValueControl,
                 view: ScoreObjectView?,
-            ): List<ContextualizedAction> = listOf(ServerActions.scopeBus.withContext(control.bus.now))
+            ): List<ContextualizedAction> = listOf(
+                ServerActions.scopeBus.withContext(control.bus.now),
+                automateWithSynth.withContext(namedControl)
+            )
+
+            private val automateWithSynth = action<NamedParameterControl>("Automate with Synth") {
+                icon(MaterialDesignS.SINE_WAVE)
+                applicableIf { ctrl -> ctrl.parentObject is ScoreObject }
+                executes { ctrl, ev ->
+                    val obj = ctrl.parentObject as ScoreObject
+                    val context = ctrl.context
+                    val synthDef = SimpleSearchableRegistryView(context[SynthDefRegistry], "Choose SynthDef")
+                        .showPopup(ev, initialOption = null) ?: return@executes
+                    val parameter = ctrl.name.now
+                    val name = "${obj.name.now}_$parameter"
+                    val controls = synthDef.getDefaultControls(null)
+                    val outBus = controls.getOrNull("out")?.now
+                    if (outBus is BusControl) {
+                        outBus.bus.now = (ctrl.now as BusControl).bus.now
+                    }
+                    val synthObj = SynthObject.create(name, synthDef, controls)
+                    synthObj.setInitialSize(obj.duration, height = 0.05.asY)
+                    context.compoundEdit("Add automation synth") {
+                        for (inst in context[currentProject].score.instancesOf(obj).toList()) {
+                            val newInst = ScoreObjectInstance(synthObj, inst.start, inst.y - 0.06.asY)
+                            inst.score!!.addObject(newInst, autoSelect = true)
+                        }
+                    }
+                }
+            }
         }
 
         data object SingleBusValue : ControlType<SingleBusValueControl>() {

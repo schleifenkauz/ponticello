@@ -20,17 +20,13 @@
 
 ### Minor
 
-- improve the display of the envelope values
 - commands in tool panes to save associated component?
 - ability to specify added time in beats/bars/ticks
-- option to create external automation (adding a kr-write `SynthObject`) for numerical parameter
-- select new objects after unlinking
 - ability to copy and paste whole time ranges
 - own editor type for control references
   - can only be used in LFO argument expressions
 - what to do when user selects a new `SynthDef` for a synth object
   - re-sync parameter controls in some way...
-- highlight unresolved references of object selectors
 - unify window positioning
 - more adequate midi contexts
   - based on focused window

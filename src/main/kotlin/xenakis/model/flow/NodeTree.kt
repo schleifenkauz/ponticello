@@ -33,6 +33,7 @@ class NodeTree(private val client: SuperColliderClient) {
     fun isActive(node: AudioNode) = node in activeNodes
 
     fun moveAfter(target: AudioNode, node: AudioNode) {
+        if (target == node) return
         client.run {
             +"${node.superColliderName.now}.moveAfter(${target.superColliderName.now})"
         }

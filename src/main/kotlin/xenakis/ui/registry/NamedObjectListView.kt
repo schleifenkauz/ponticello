@@ -309,12 +309,12 @@ class NamedObjectListView<O : NamedObject>(
             }
             addAction("Move up") {
                 shortcut("Ctrl+UP")
-                applicableIf { list -> reactiveValue(list.config.enableReordering) }
+                applicableIf { list -> list.config.enableReordering }
                 executes { list -> list.moveSelected(-1) }
             }
             addAction("Move down") {
                 shortcut("Ctrl+DOWN")
-                applicableIf { list -> reactiveValue(list.config.enableReordering) }
+                applicableIf { list -> list.config.enableReordering }
                 executes { list -> list.moveSelected(+1) }
             }
             addAction("Copy item") {
@@ -324,7 +324,7 @@ class NamedObjectListView<O : NamedObject>(
         }
 
         private fun Action.Builder<NamedObjectListView<*>>.modeChange(mode: DisplayMode) {
-            applicableIf { view ->
+            applicableWhen { view ->
                 if (mode in view.config.supportedModes) view.mode.notEqualTo(mode)
                 else reactiveValue(false)
             }

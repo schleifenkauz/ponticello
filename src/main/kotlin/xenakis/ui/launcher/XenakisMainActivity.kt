@@ -28,8 +28,8 @@ import xenakis.ui.midi.ContextualMidiReceiver
 import xenakis.ui.midi.ParameterControlsMidiContext
 import xenakis.ui.misc.*
 import xenakis.ui.registry.*
+import xenakis.ui.score.NavigableScorePane
 import xenakis.ui.score.ScoreObjectSelectionManager
-import xenakis.ui.score.ScoreView
 
 class XenakisMainActivity(val project: XenakisProject) : Activity() {
     init {
@@ -77,7 +77,7 @@ class XenakisMainActivity(val project: XenakisProject) : Activity() {
             .also { w -> w.scene.fill = Color.BLACK }
     }
 
-    val scoreView: ScoreView
+    val scoreView: NavigableScorePane
 
     private lateinit var observer: Observer
 
@@ -93,7 +93,7 @@ class XenakisMainActivity(val project: XenakisProject) : Activity() {
         context[XenakisMainActivity] = this
         context[HelpBrowser] = HelpBrowser()
 
-        scoreView = ScoreView(project.score, project.context)
+        scoreView = NavigableScorePane(project.score, project.context)
         project.context[ScoreObjectSelectionManager] = ScoreObjectSelectionManager(project.context, scoreView)
         scoreView.initialize()
 
@@ -107,7 +107,7 @@ class XenakisMainActivity(val project: XenakisProject) : Activity() {
     }
 
     private fun showObjectDetailsOnSelection() {
-        observer = scoreView.selector.focusedView.observe { _, _, focusedView ->
+        observer = context[ScoreObjectSelectionManager].focusedView.observe { _, _, focusedView ->
             detailPaneManager.focused(focusedView)
             val obj = focusedView?.obj
             if (obj is ParameterizedObject) {

@@ -17,12 +17,12 @@ import xenakis.model.score.ScoreObject
 import xenakis.model.score.ScoreObjectInstance
 import xenakis.sc.client.SuperColliderClient
 import xenakis.ui.misc.PlayHead
+import xenakis.ui.score.NavigableScorePane
 import xenakis.ui.score.ScoreObjectGroupView
 import xenakis.ui.score.ScoreObjectView
 import xenakis.ui.score.ScorePane
-import xenakis.ui.score.ScoreView
 
-class PlaybackManager(private val scoreView: ScoreView, flows: AudioFlows) {
+class PlaybackManager(private val scoreView: NavigableScorePane, flows: AudioFlows) {
     val playHead = PlayHead()
     val recorder = Recorder(scoreView.context)
     val nodeTree = NodeTree(scoreView.context[SuperColliderClient])

@@ -37,7 +37,6 @@ import xenakis.sc.editor.CodeBlockEditor
 import xenakis.sc.editor.EventDictionaryEditor
 import xenakis.ui.controls.DecimalPrompt
 import xenakis.ui.controls.NamePrompt
-import xenakis.ui.impl.rootPane
 import xenakis.ui.impl.showDialog
 import xenakis.ui.launcher.XenakisLauncher.Companion.currentProject
 import xenakis.ui.launcher.XenakisMainActivity
@@ -55,6 +54,8 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
 
     val selector: ScoreObjectSelectionManager get() = context[ScoreObjectSelectionManager]
 
+    abstract val root: ScorePane
+
     protected abstract val displayStart: Decimal
     protected abstract val displayEnd: Decimal
     abstract val associatedObject: ScoreObjectGroup?
@@ -62,16 +63,16 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
     abstract val pixelsPerSecond: Double
 
     open fun snapToGrid(position: ObjectPosition): ObjectPosition =
-        context.rootPane.snapToGrid(position + absolutePosition) - absolutePosition
+        root.snapToGrid(position + absolutePosition) - absolutePosition
 
     open fun getNearestGrid(position: ObjectPosition): ScoreObjectInstance? =
-        context.rootPane.getNearestGrid(position + absolutePosition)
+        root.getNearestGrid(position + absolutePosition)
 
     fun snapToGrid(x: Double, y: Double): ObjectPosition = snapToGrid(ObjectPosition(getTime(x), getScoreY(y)))
 
     open fun markT(t: Decimal) {
         val time = t + absolutePosition.time
-        context.rootPane.markT(time)
+        root.markT(time)
     }
 
     override fun getX(time: Decimal): Double = ((time - displayStart) * pixelsPerSecond).toDouble()
@@ -82,9 +83,9 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
 
     override fun getWidth(duration: Decimal): Double = (duration * pixelsPerSecond).toDouble()
 
-    open fun getScoreY(screenY: Double): Decimal = (screenY / context.rootPane.height).asY
+    open fun getScoreY(screenY: Double): Decimal = (screenY / root.height).asY
 
-    open fun getScreenY(scoreY: Decimal): Double = (scoreY * context.rootPane.height).toDouble()
+    open fun getScreenY(scoreY: Decimal): Double = (scoreY * root.height).toDouble()
 
     init {
         styleClass("score-pane")
@@ -268,7 +269,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
                 score.addObject(inst, autoSelect = true)
             }
 
-            this is ScoreView && ev.modifiers.isEmpty() -> {
+            this is NavigableScorePane && ev.modifiers.isEmpty() -> {
                 context[ScoreObjectSelectionManager].deselectAll()
                 requestFocus()
                 if (!(context[PlaybackManager].isPlaying.now)) {

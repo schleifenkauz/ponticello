@@ -130,13 +130,13 @@ class ObjectBox<O : NamedObject>(val parent: NamedObjectListView<O>, val obj: O)
                     reactiveValue(config.detailWindowIcon(box.obj))
                 }
                 shortcuts("Ctrl+E")
-                applicableIf { box -> box.parent.mode.equalTo(DisplayMode.SubWindow) }
+                applicableWhen { box -> box.parent.mode.equalTo(DisplayMode.SubWindow) }
                 executes { box, _ ->
                     box.showSubWindow()
                 }
             }
             addAction("Duplicate object") {
-                applicableIf { box -> reactiveValue(box.obj.canCopy && box.obj.registry != null) }
+                applicableIf { box -> box.obj.canCopy && box.obj.registry != null }
                 icon(MaterialDesignC.CONTENT_DUPLICATE)
                 description { box -> reactiveValue("Duplicate ${box.parent.source.objectType}") }
                 executes { box, ev ->
@@ -146,17 +146,17 @@ class ObjectBox<O : NamedObject>(val parent: NamedObjectListView<O>, val obj: O)
                     val name = NamePrompt(list, "Name for new duplicate instrument", initialName)
                         .showDialog(ev) ?: return@executes
                     val copy = obj.copy(name)
-                    list.add(copy, list.indexOf(obj))
+                    list.add(copy, list.indexOf(obj) + 1)
                 }
             }
             addAction("Reorder") {
                 icon(MaterialDesignR.REORDER_HORIZONTAL)
-                applicableIf { box -> reactiveValue(box.config.enableReordering) }
+                applicableIf { box -> box.config.enableReordering }
             }
             addAction("Delete object") {
                 icon(Material2AL.DELETE)
                 shortcuts("Ctrl+DELETE")
-                applicableIf { box -> reactiveValue(box.obj.canDelete) }
+                applicableIf { box -> box.obj.canDelete }
                 executes { box ->
                     val source = box.parent.source as NamedObjectList<NamedObject>
                     source.remove(box.obj)

@@ -32,7 +32,6 @@ import xenakis.model.score.ScoreObjectInstance
 import xenakis.ui.actions.registerGlobalShortcuts
 import xenakis.ui.launcher.XenakisApp.Companion.primaryStage
 import xenakis.ui.launcher.XenakisLauncher.Companion.currentProject
-import xenakis.ui.launcher.XenakisMainActivity
 import xenakis.ui.registry.ObjectRegistryPane
 
 fun <T : NamedObject> Dragboard.getFrom(registry: ObjectRegistry<T>, format: DataFormat): T? {
@@ -58,8 +57,6 @@ private fun resizeType(shift: Boolean, alt: Boolean) = when {
     alt -> ScoreObject.ResizeMode.DeepStretch
     else -> ScoreObject.ResizeMode.Regular
 }
-
-val Context.rootPane get() = get(XenakisMainActivity).scoreView
 
 fun colorPicker(controlledVar: ReactiveVariable<Color>): ColorPicker {
     val picker = ColorPicker(controlledVar.now)

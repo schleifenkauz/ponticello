@@ -10,7 +10,6 @@ import hextant.fx.initHextantScene
 import javafx.scene.paint.Color
 import org.kordamp.ikonli.material2.Material2MZ
 import org.kordamp.ikonli.materialdesign2.MaterialDesignE
-import reaktive.value.reactiveValue
 import xenakis.model.obj.ConfigurableParameterizedObjectDef
 import xenakis.model.obj.ParameterizedObjectDef
 import xenakis.model.obj.ProcessDefObject
@@ -103,7 +102,7 @@ abstract class ParameterizedObjectDefRegistryPane<T : ParameterizedObjectDef>(
             }
             addAction("Save to global library") {
                 icon(MaterialDesignE.EXPORT_VARIANT)
-                applicableIf { box -> reactiveValue(box.obj is ConfigurableParameterizedObjectDef) }
+                applicableIf { box -> box.obj is ConfigurableParameterizedObjectDef }
                 executes { box ->
                     val def = box.obj
                     @Suppress("UNCHECKED_CAST")

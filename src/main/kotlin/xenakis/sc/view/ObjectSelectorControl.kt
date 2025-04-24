@@ -19,6 +19,7 @@ class ObjectSelectorControl<O : NamedObject>(
 
             override fun displayText(option: O): String = selector.toString(option).now
         }
+        view.setFilter { obj -> selector.filter(obj) }
         val option = view.showPopup(anchorNode = this, initialOption = selector.result.now.get())
         if (option != null) selector.select(option.reference())
     }

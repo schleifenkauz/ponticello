@@ -25,7 +25,7 @@ import java.util.concurrent.CompletableFuture
 import kotlin.concurrent.thread
 import kotlin.math.exp
 
-class ScoreView(score: Score, context: Context) : ScorePane(score, context) {
+class NavigableScorePane(score: Score, context: Context) : ScorePane(score, context) {
     private val positionTracker = Line() styleClass "mouse-tracker-line"
     private val robot = Robot()
 
@@ -33,6 +33,9 @@ class ScoreView(score: Score, context: Context) : ScorePane(score, context) {
         private set
     private val clipboardObjectView: ImageView = ImageView().also { v -> v.isVisible = false }
     private val timeGridObjects = mutableListOf<Node>()
+
+    override val root: ScorePane
+        get() = this
 
     private var latestRepaintTrigger = 0L
 
@@ -63,10 +66,7 @@ class ScoreView(score: Score, context: Context) : ScorePane(score, context) {
         isFocusTraversable = true
         listenForEvents()
         heightProperty().addListener { _ -> repaint() }
-        widthProperty().addListener { _, oldWidth, newWidth ->
-            //displayEnd = displayStart + (displayedDuration * newWidth.toDouble() / oldWidth.toDouble())
-            repaint()
-        }
+        widthProperty().addListener { _ -> repaint() }
     }
 
     fun initialize() {

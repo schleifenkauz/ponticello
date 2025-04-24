@@ -16,6 +16,8 @@ class SubScorePane(
     private val independentScale: Boolean,
     context: Context,
 ) : ScorePane(obj.score, context) {
+    override val root: ScorePane
+        get() = parentPane.root
     override val displayStart: Decimal
         get() = 0.0.asTime
     override val displayEnd: Decimal

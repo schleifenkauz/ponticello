@@ -84,7 +84,7 @@ class ParameterControlsPane(
         private val actions = collectActions<ObjectBox<NamedParameterControl>> {
             addAction("Edit spec") {
                 shortcut("Ctrl+K")
-                applicableIf { box -> box.obj.spec.map { s -> s != null && s !is GroupControlSpec } }
+                applicableWhen { box -> box.obj.spec.map { s -> s != null && s !is GroupControlSpec } }
                 icon(Codicons.SYMBOL_PROPERTY)
                 executes { box ->
                     val control = box.obj

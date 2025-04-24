@@ -82,7 +82,7 @@ class ControlBusRegistryPane(busses: BusRegistry) : ObjectRegistryPane<BusObject
         private val actions = collectActions<ObjectBox<BusObject>> {
             addAction("Remove default value") {
                 icon(Material2AL.CLOSE)
-                applicableIf { box ->
+                applicableWhen { box ->
                     if (box.obj !is BusObject.ControlBus) reactiveValue(false)
                     else box.obj.spec.notNull()
                 }

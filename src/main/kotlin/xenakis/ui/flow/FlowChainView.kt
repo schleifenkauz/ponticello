@@ -167,7 +167,7 @@ class FlowChainView(
                         else MaterialDesignR.RADIOBOX_BLANK
                     }
                 }
-                applicableIf { flow -> reactiveValue(flow.canDeactivate) }
+                applicableIf { flow -> flow.canDeactivate }
                 shortcut("Ctrl+T")
                 executes { flow -> flow.isActive.now = !flow.isActive.now }
             }
@@ -177,7 +177,7 @@ class FlowChainView(
             addAction("View SynthDef") {
                 icon(Material2AL.CODE)
                 shortcut("Ctrl+L")
-                applicableIf { flow -> flow.synthDefSelector.isResolved }
+                applicableWhen { flow -> flow.synthDefSelector.isResolved }
                 ifNotApplicable(Action.IfNotApplicable.Disable)
                 executes { flow ->
                     val pane = flow.context[XenakisMainActivity].synthDefsPane
