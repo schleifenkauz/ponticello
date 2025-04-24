@@ -7,7 +7,9 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import reaktive.event.unitEvent
+import reaktive.value.ReactiveVariable
 import reaktive.value.now
+import reaktive.value.reactiveVariable
 import xenakis.model.obj.ParameterizedObject
 import xenakis.model.obj.ProcessDefObject
 import xenakis.model.obj.SynthDefObject
@@ -21,6 +23,7 @@ import xenakis.sc.editor.ScExprExpander
 @SerialName("UGen")
 data class UGenControl(
     val expr: EditorRoot<@Contextual ScExprExpander>,
+    val display: ReactiveVariable<Boolean> = reactiveVariable(true),
 ) : ParameterControl() {
     @Transient
     val update = unitEvent()

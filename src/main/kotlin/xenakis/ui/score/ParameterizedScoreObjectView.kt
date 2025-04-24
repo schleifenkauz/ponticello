@@ -3,6 +3,7 @@ package xenakis.ui.score
 import javafx.geometry.Point2D
 import javafx.scene.input.MouseEvent
 import reaktive.Observer
+import reaktive.value.forEach
 import reaktive.value.now
 import reaktive.value.reactiveVariable
 import xenakis.model.obj.ParameterizedObject
@@ -13,18 +14,21 @@ import xenakis.model.score.ScoreObject
 import xenakis.model.score.ScoreObjectInstance
 import xenakis.model.score.controls.EnvelopeControl
 import xenakis.model.score.controls.ParameterControl
+import xenakis.model.score.controls.UGenControl
 import xenakis.model.score.controls.getNumericalValue
 import xenakis.sc.ControlSpec
 import xenakis.sc.NumericalControlSpec
 import xenakis.sc.ParameterType
+import xenakis.sc.ScExpr
 import xenakis.ui.launcher.XenakisApp.Companion.primaryStage
 import xenakis.ui.registry.SearchableParameterDefListView
 
 abstract class ParameterizedScoreObjectView<O>(
     instance: ScoreObjectInstance,
 ) : ScoreObjectView(instance), ParameterControlList.Listener where O : ScoreObject, O : ParameterizedObject {
-    private val envelopeDisplayObservers = mutableMapOf<EnvelopeControl, Observer>()
+    private val observers = mutableMapOf<ParameterControl, Observer>()
     private val envelopeEditors = mutableListOf<EnvelopeEditor>()
+    private val lfoCanvases = mutableMapOf<UGenControl, LFOCanvas>()
 
     abstract override val obj: O
 
@@ -75,21 +79,58 @@ abstract class ParameterizedScoreObjectView<O>(
     override fun added(control: NamedParameterControl, idx: Int) {
         when (val ctrl = control.now) {
             is EnvelopeControl -> addedEnvelopeControl(control, ctrl)
+            is UGenControl -> addedUGenControl(control, ctrl)
             else -> {}
         }
     }
 
     private fun addedEnvelopeControl(control: NamedParameterControl, env: EnvelopeControl) {
         if (env.display.now) displayEnvelope(control, env.points)
-        envelopeDisplayObservers[env] = env.display.observe { _, _, display ->
+        observers[env] = env.display.observe { _, _, display ->
             if (display) displayEnvelope(control, env.points)
             else removeEnvelope(control)
         }
     }
 
+    private fun addedUGenControl(control: NamedParameterControl, ctrl: UGenControl) {
+        observers[ctrl] = ctrl.expr.editor.result.forEach { expr ->
+            if (ctrl.display.now) {
+                val spec = control.spec.now as? NumericalControlSpec ?: return@forEach
+                displayLFO(ctrl, spec, expr)
+            }
+        } and ctrl.display.observe { _, _, display ->
+            if (display) {
+                val spec = control.spec.now as? NumericalControlSpec ?: return@observe
+                displayLFO(ctrl, spec, ctrl.expr.editor.result.now)
+            } else removeLFODisplay(ctrl)
+        }
+    }
+
+    private fun removeLFODisplay(control: UGenControl) {
+        val canvas = lfoCanvases.remove(control) ?: return
+        children.remove(canvas)
+    }
+
+    private fun displayLFO(control: UGenControl, spec: NumericalControlSpec, expr: ScExpr) {
+        val lfo = expr.lfo ?: return
+        val canvas = lfoCanvases.getOrPut(control) {
+            val c = LFOCanvas()
+            c.widthProperty().bind(widthProperty())
+            c.heightProperty().bind(heightProperty())
+            children.add(c)
+            c
+        }
+        canvas.display(lfo, spec, obj.duration.toDouble())
+    }
+
     override fun removed(control: NamedParameterControl) {
         when (val ctrl = control.now) {
             is EnvelopeControl -> removedEnvelopeControl(control, ctrl)
+            is UGenControl -> {
+                observers.remove(ctrl)?.kill()
+                removeLFODisplay(ctrl)
+            }
+
             else -> {}
         }
     }
@@ -100,12 +141,17 @@ abstract class ParameterizedScoreObjectView<O>(
         control: ParameterControl,
     ) {
         if (oldControl is EnvelopeControl) removedEnvelopeControl(namedControl, oldControl)
+        if (oldControl is UGenControl) {
+            removeLFODisplay(oldControl)
+            observers.remove(oldControl)?.kill()
+        }
         if (control is EnvelopeControl) addedEnvelopeControl(namedControl, control)
+        if (control is UGenControl) addedUGenControl(namedControl, control)
     }
 
     private fun removedEnvelopeControl(control: NamedParameterControl, env: EnvelopeControl) {
         removeEnvelope(control)
-        envelopeDisplayObservers.remove(env)!!.kill()
+        observers.remove(env)!!.kill()
     }
 
     override fun changedSpec(control: NamedParameterControl, oldSpec: ControlSpec?, newSpec: ControlSpec?) {

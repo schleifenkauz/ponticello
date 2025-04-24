@@ -14,10 +14,7 @@ import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import xenakis.impl.Decimal
 import xenakis.impl.parseDecimal
-import xenakis.impl.superColliderPath
 import xenakis.impl.zero
-import xenakis.model.obj.GroupReference
-import xenakis.model.project.XenakisProject.Companion.projectDirectory
 import xenakis.sc.client.ScWriter
 import xenakis.sc.editor.*
 import java.io.StringWriter
@@ -41,7 +38,9 @@ fun ScElement.code(context: Context): String {
 @EditorInterface(ScExprEditor::class)
 @UseEditor(ScExprExpander::class)
 @ListEditor
-interface ScExpr : ScElement
+interface ScExpr : ScElement {
+    val lfo: LFO? get() = null
+}
 
 @Serializable
 abstract class SimpleScElement(val code: String) : ScElement {
@@ -107,7 +106,10 @@ object Nil : Literal, SimpleScElement("nil")
 @Token
 @Serializable(with = DecimalLiteral.Serializer::class)
 @SerialName("DoubleLiteral") //backward compatibility
-data class DecimalLiteral(val text: String, val valueOrNull: Decimal?) : Literal, SimpleScElement(text) {
+data class DecimalLiteral(val text: String, val valueOrNull: Decimal?) : Literal, SimpleScElement(text), ScExpr {
+    override val lfo: LFO?
+        get() = ConstantLFO(get().value)
+
     constructor(value: Decimal) : this(value.toString(), value)
 
     override fun toString(): String = text
@@ -372,6 +374,37 @@ data class MessageSend(val receiver: ScExpr, val method: Identifier, val argumen
             append(")")
         }
     }
+
+    override val lfo: LFO? by lazy {
+        val receiverLFO = receiver.lfo
+        when (method.text) {
+            "kr", "ar" -> {
+                if (receiver !is Identifier) return@lazy null
+                val freq = arguments.getOrNull(0)?.lfo ?: return@lazy null
+                val phase =
+                    if (arguments.size == 2) (arguments[1] as? DecimalLiteral)?.get()?.value ?: return@lazy null
+                    else 0.0
+                when (receiver.text) {
+                    "SinOsc", "LFSinOsc" -> Sine(freq, phase)
+                    "Saw", "LFSaw" -> Sawtooth(freq, phase)
+                    else -> null
+                }
+            }
+
+            "range", "exprange" -> {
+                if (receiverLFO == null) return@lazy null
+                val min = arguments.getOrNull(0) ?: return@lazy null
+                val max = arguments.getOrNull(1) ?: return@lazy null
+                if (min !is DecimalLiteral || max !is DecimalLiteral) return@lazy null
+                when (method.text) {
+                    "range" -> LinRange(receiverLFO, min.get().value, max.get().value)
+                    "exprange" -> ExpRange(receiverLFO, min.get().value, max.get().value)
+                    else -> null
+                }
+            }
+            else -> null
+        }
+    }
 }
 
 @Serializable
@@ -402,6 +435,17 @@ data class OperatorExpr(val left: ScExpr, val operator: Operator, val right: ScE
     override val isValid: Boolean
         get() = left.isValid && operator.isValid && right.isValid
 
+    override val lfo: LFO? by lazy {
+        val left = left.lfo ?: return@lazy null
+        val right = right.lfo ?: return@lazy null
+        when (operator) {
+            Operator.Div -> DivLFO(left, right)
+            Operator.Minus -> SubLFO(left, right)
+            Operator.Plus -> AddLFO(left, right)
+            Operator.Times -> MulLFO(left, right)
+            else -> null
+        }
+    }
     override val children: List<ScElement>
         get() = listOf(left, operator, right)
 
@@ -443,89 +487,5 @@ data class SpreadArray(val array: ScExpr) : ScExpr {
     override fun code(writer: ScWriter, context: Context) {
         writer.append("*")
         array.code(writer, context)
-    }
-}
-
-@Serializable
-@Compound
-data class EventDictionary(val entries: List<NamedExpr>)
-
-@Serializable
-data class VSTPlugin(
-    val input: ScExpr,
-    val channels: Int,
-    val pluginName: String,
-    val id: String,
-    val presetName: String,
-) : ScExpr {
-    override val isValid: Boolean
-        get() = input.isValid
-
-    override val children: List<ScElement>
-        get() = listOf(input)
-
-    override fun code(writer: ScWriter, context: Context) {
-        writer.append("VSTPlugin.ar(${input.code(context)}, $channels, id: '$id')")
-    }
-}
-
-@Compound(nodeType = ScExpr::class)
-@Serializable
-data class AdhocSynth(
-    val name: Identifier,
-    val block: CodeBlock,
-    @Component(GroupSelector::class) val group: GroupReference,
-) : ScExpr {
-    override val isValid: Boolean
-        get() = block.isValid
-
-    override val children: List<ScElement>
-        get() = listOf(block)
-
-    override fun code(writer: ScWriter, context: Context) = writeCode(
-        writer, context,
-        synthName = "~adhoc_${name.text}",
-        target = group.get()?.superColliderName ?: "<none>", //TODO
-        addAction = "addToHead",
-        wrapInTask = false
-    )
-
-    fun writeCode(
-        writer: ScWriter,
-        context: Context,
-        synthName: String,
-        target: String,
-        addAction: String,
-        wrapInTask: Boolean,
-    ) = with(writer) {
-        val plugins = block.statements.flatMap { s -> s.allChildren<VSTPlugin>() }
-        if (wrapInTask && plugins.isNotEmpty()) {
-            appendBlock("Task", endLine = false) {
-                writeCodeInsideTask(context, plugins, synthName, target, addAction)
-            }
-            +".play"
-        } else {
-            writeCodeInsideTask(context, plugins, synthName, target, addAction)
-        }
-    }
-
-    private fun ScWriter.writeCodeInsideTask(
-        context: Context, plugins: List<VSTPlugin>,
-        synthName: String, target: String, addAction: String,
-    ) {
-        appendBlock("$synthName = SynthDef(\\${name.text})", endLine = false) {
-            block.writeCode(writer, context)
-        }
-        +".add.play($target, addAction: $addAction)"
-        if (plugins.isEmpty()) return
-        +"s.sync"
-        +"1.wait"
-        for (plugin in plugins) {
-            val pluginName = plugin.pluginName
-            val presetName = plugin.presetName
-            val presetFile = context[projectDirectory].resolve("presets").resolve("$presetName.fxp").superColliderPath
-            val action = "action: { |c| if (PathName(${presetFile}).isFile) { c.readProgram(${presetFile}) } }"
-            +"~ctrl_$presetName = VSTPluginController($synthName, id: '${plugin.id}').open('$pluginName.vst3', $action)"
-        }
     }
 }

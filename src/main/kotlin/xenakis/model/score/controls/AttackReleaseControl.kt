@@ -76,7 +76,7 @@ data class AttackReleaseControl(
         with (ctrl) { applyToSynth(obj, synthVar, parameter, spec) }
     }
 
-    private fun generateEnvelope(obj: ParameterizedObject): EnvelopeControl {
+    fun generateEnvelope(obj: ParameterizedObject): EnvelopeControl {
         val totalDuration = obj.duration()!!.now
         val sustain = totalDuration - (attack.now + release.now)
         val env = Envelope(
@@ -87,7 +87,6 @@ data class AttackReleaseControl(
                 EnvelopePoint(totalDuration, zero),
             )
         )
-        val ctrl = EnvelopeControl(env)
-        return ctrl
+        return EnvelopeControl(env)
     }
 }

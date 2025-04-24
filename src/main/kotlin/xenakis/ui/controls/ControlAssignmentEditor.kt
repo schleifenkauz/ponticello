@@ -26,6 +26,8 @@ import org.kordamp.ikonli.materialdesign2.MaterialDesignC
 import org.kordamp.ikonli.materialdesign2.MaterialDesignS
 import reaktive.value.*
 import reaktive.value.binding.flatMap
+import reaktive.value.binding.map
+import reaktive.value.fx.asObservableValue
 import reaktive.value.fx.asProperty
 import xenakis.impl.asTime
 import xenakis.impl.asY
@@ -229,7 +231,15 @@ class ControlAssignmentEditor(val control: NamedParameterControl, val view: Scor
                 val window = makeSubWindow(pane, "LFO for ${namedControl.name.now}", control.context)
                 window.sceneFill(Color.BLACK)
                 window.resize(300.0, 150.0)
-                return button("Code") { window.showOrBringToFront() }
+                val showWindowButton = button("Code") { window.showOrBringToFront() }
+                val displayToggle = ToggleSwitch("Display: ")
+                displayToggle.selectedProperty().bindBidirectional(control.display.asProperty())
+                displayToggle.disableProperty().bind(
+                    control.expr.editor.result.map { expr ->
+                        expr.lfo == null
+                    }.asObservableValue()
+                )
+                return HBox(5.0, showWindowButton, displayToggle).centerChildren()
             }
 
             override fun createDefaultControl(
