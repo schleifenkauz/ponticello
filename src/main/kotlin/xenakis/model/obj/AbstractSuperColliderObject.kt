@@ -22,7 +22,7 @@ abstract class AbstractSuperColliderObject : AbstractRenamableObject(), SuperCol
     }
 
     override fun onRemoved() {
-        initialized = false
+        client.run { freeObject() }
     }
 
     override fun rename(newName: String) {

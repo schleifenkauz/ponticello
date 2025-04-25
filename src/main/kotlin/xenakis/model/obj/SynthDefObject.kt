@@ -9,6 +9,7 @@ import reaktive.value.now
 import reaktive.value.reactiveVariable
 import xenakis.model.flow.NodePlacement
 import xenakis.model.player.ActiveAudioFlow
+import xenakis.model.player.ActiveLiveObject
 import xenakis.model.player.ActiveScoreObject
 import xenakis.model.player.PlaybackManager
 import xenakis.model.registry.GroupRegistry
@@ -60,6 +61,8 @@ sealed interface SynthDefObject : ParameterizedObjectDef, SuperColliderObject {
                     val code = active.obj.writeCode(uniqueName, placement, cutoff)
                     appendLine(code)
                 }
+
+                is ActiveLiveObject -> TODO()
             }
         }
     }

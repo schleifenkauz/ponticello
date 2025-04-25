@@ -9,9 +9,9 @@ import javafx.scene.input.DataFormat
 import org.kordamp.ikonli.Ikon
 import org.kordamp.ikonli.material2.Material2AL
 import org.kordamp.ikonli.materialdesign2.MaterialDesignC
-import org.kordamp.ikonli.materialdesign2.MaterialDesignS
 import reaktive.value.binding.map
 import xenakis.model.obj.GlobalPatternObject
+import xenakis.model.obj.SuperColliderObject
 import xenakis.model.registry.ObjectRegistry
 import xenakis.ui.impl.makeSubWindow
 import xenakis.ui.misc.CodePane
@@ -60,11 +60,7 @@ class GlobalPatternRegistryPane(
 
     companion object {
         private val actions = collectActions<ObjectBox<GlobalPatternObject>> {
-            addAction("Sync") {
-                icon(MaterialDesignS.SYNC)
-                shortcut("Ctrl+U")
-                executes { box -> box.obj.sync() }
-            }
+            addAll(SuperColliderObject.actions) { box -> box.obj }
             addAction("Plot") {
                 icon(MaterialDesignC.CHART_BOX_OUTLINE)
                 shortcut("Alt+V")

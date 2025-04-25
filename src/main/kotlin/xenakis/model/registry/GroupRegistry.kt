@@ -19,6 +19,10 @@ class GroupRegistry(
         context[GroupRegistry] = this
     }
 
+    override fun syncAll() {
+
+    }
+
     override fun getDefault(): GroupObject = find { g -> g.isDefault } ?: error("Default group not found!")
 
     companion object : PublicProperty<GroupRegistry> by publicProperty("GroupRegistry") {

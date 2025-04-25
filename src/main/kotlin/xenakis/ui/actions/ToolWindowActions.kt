@@ -107,4 +107,9 @@ object ToolWindowActions : Action.Collector<XenakisMainActivity>({
         icon(MaterialDesignL.LARAVEL)
         executes { activity -> activity.patternsWindow.showOrBringToFront() }
     }
+    addAction("Show LiveTasks") {
+        shortcut("Ctrl+Shift+T")
+        icon(MaterialDesignI.INFINITY)
+        executes { activity -> activity.liveTasksWindow.showOrBringToFront() }
+    }
 })

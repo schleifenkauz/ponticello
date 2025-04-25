@@ -50,7 +50,7 @@ abstract class SearchableToolPane<O : NamedObject> : ToolPane(), NamedObjectList
     private fun matchesSearch(obj: O) = obj.name.now.contains(searchText.text, ignoreCase = true)
 
     companion object {
-        val actions = collectActions {
+        private val actions = collectActions {
             addAction("Focus search field") {
                 shortcut("Ctrl+F")
                 executes { pane: SearchableToolPane<*> ->

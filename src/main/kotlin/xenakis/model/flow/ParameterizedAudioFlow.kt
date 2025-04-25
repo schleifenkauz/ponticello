@@ -4,6 +4,7 @@ import hextant.context.Context
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import reaktive.value.ReactiveValue
+import reaktive.value.now
 import xenakis.impl.Decimal
 import xenakis.model.obj.BusObject
 import xenakis.model.obj.ParameterizedObject
@@ -19,7 +20,8 @@ sealed class ParameterizedAudioFlow : AudioFlow(), ParameterizedObject {
     @Transient
     private lateinit var listener: LiveSynthUpdater
 
-    final override fun activeObjects(): List<ActiveObject> = listOf(ActiveAudioFlow(this))
+    final override fun activeObjects(): List<ActiveObject> =
+        if (isActive.now) listOf(ActiveAudioFlow(this)) else emptyList()
 
     final override fun duration(): ReactiveValue<Decimal>? = null
 
