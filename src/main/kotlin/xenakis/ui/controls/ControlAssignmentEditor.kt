@@ -34,6 +34,7 @@ import xenakis.impl.asY
 import xenakis.impl.one
 import xenakis.impl.zero
 import xenakis.model.obj.*
+import xenakis.model.player.ActiveObject
 import xenakis.model.player.ActiveScoreObject
 import xenakis.model.player.PlaybackManager
 import xenakis.model.project.score
@@ -232,14 +233,16 @@ class ControlAssignmentEditor(val control: NamedParameterControl, val view: Scor
                 window.sceneFill(Color.BLACK)
                 window.resize(300.0, 150.0)
                 val showWindowButton = button("Code") { window.showOrBringToFront() }
-                val displayToggle = ToggleSwitch("Display: ")
-                displayToggle.selectedProperty().bindBidirectional(control.display.asProperty())
-                displayToggle.disableProperty().bind(
-                    control.expr.editor.result.map { expr ->
-                        expr.lfo == null
-                    }.asObservableValue()
-                )
-                return HBox(5.0, showWindowButton, displayToggle).centerChildren()
+                if (namedControl.parentObject is ScoreObject) {
+                    val displayToggle = ToggleSwitch("Display: ")
+                    displayToggle.selectedProperty().bindBidirectional(control.display.asProperty())
+                    displayToggle.disableProperty().bind(
+                        control.expr.editor.result.map { expr ->
+                            expr.lfo == null
+                        }.asObservableValue()
+                    )
+                    return HBox(5.0, showWindowButton, displayToggle).centerChildren()
+                } else return showWindowButton
             }
 
             override fun createDefaultControl(
@@ -273,18 +276,9 @@ class ControlAssignmentEditor(val control: NamedParameterControl, val view: Scor
                 addAction("Scope") {
                     icon(Evaicons.ACTIVITY)
                     shortcut("Ctrl+E")
-                    applicableIf { (_, view) -> view != null }
                     executes { (ctrl, view), ev ->
                         val ugen = ctrl.now as UGenControl
-                        val activeObjects = ctrl.parentObject.activeObjects()
-                        val activeObject = if (view != null) {
-                            val playbackManager = ctrl.context[PlaybackManager]
-                            val positionRelativeToPlayedScore =
-                                view.absolutePosition - playbackManager.positionOfPlayedScore
-                            activeObjects.find { obj ->
-                                obj is ActiveScoreObject && obj.absolutePosition == positionRelativeToPlayedScore
-                            }
-                        } else activeObjects.singleOrNull()
+                        val activeObject = getActiveObject(ctrl, view)
                         val parameter = ctrl.name.now
                         if (activeObject != null) {
                             ugen.scope(activeObject, parameter)
@@ -293,6 +287,19 @@ class ControlAssignmentEditor(val control: NamedParameterControl, val view: Scor
                         }
                     }
                 }
+            }
+
+            private fun getActiveObject(ctrl: NamedParameterControl, view: ScoreObjectView?): ActiveObject? {
+                val activeObjects = ctrl.parentObject.activeObjects()
+                val activeObject = if (view != null) {
+                    val playbackManager = ctrl.context[PlaybackManager]
+                    val positionRelativeToPlayedScore =
+                        view.absolutePosition - playbackManager.positionOfPlayedScore
+                    activeObjects.find { obj ->
+                        obj is ActiveScoreObject && obj.absolutePosition == positionRelativeToPlayedScore
+                    }
+                } else activeObjects.singleOrNull()
+                return activeObject
             }
 
         }

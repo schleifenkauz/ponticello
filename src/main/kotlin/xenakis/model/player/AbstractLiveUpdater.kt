@@ -9,6 +9,7 @@ import xenakis.model.obj.BufferReference
 import xenakis.model.obj.BusReference
 import xenakis.model.obj.GlobalPatternReference
 import xenakis.model.obj.ParameterizedObject
+import xenakis.model.registry.NamedObject.Companion.NO_NAME
 import xenakis.model.score.Envelope
 import xenakis.model.score.ParameterControlList
 import xenakis.model.score.controls.*
@@ -40,12 +41,11 @@ abstract class AbstractLiveUpdater(protected val obj: ParameterizedObject) : Par
         if (activeInstances.isEmpty()) return
         client.run {
             for (obj in activeInstances) {
-                val uniqueName = obj.uniqueName
                 val superColliderName = obj.superColliderName
+                val uniqueName = obj.uniqueName.takeIf { it != NO_NAME } ?: superColliderName.removePrefix("~")
                 val objectTime =
                     if (obj is ActiveScoreObject) playbackManager.playHead.currentTime - obj.absolutePosition.time
                     else zero
-                println("$uniqueName ($superColliderName) at $objectTime")
                 appendBlock("if ($superColliderName != nil)") {
                     action(uniqueName, objectTime)
                 }

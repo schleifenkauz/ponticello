@@ -171,6 +171,7 @@ class AudioFlows(
             setContext(context)
             for ((idx, obj) in objects.withIndex()) {
                 obj.initialize(context, associatedBus)
+                obj.onLoadedIntoRegistry()
                 allFlows.onAddFlow(obj, idx)
             }
             if (!isEmpty()) {

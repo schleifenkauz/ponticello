@@ -48,7 +48,7 @@ class EnvelopeControl(
             CodegenContext.Synth, CodegenContext.SubArg -> {
                 +"$auxiliaryVarName  = Bus.control(s, 1)"
                 val auxiliarySynthName = envSynthName(uniqueName, parameter)
-                val synthName = "~synth_$uniqueName"
+                val synthName = "${obj.superColliderPrefix}$uniqueName"
                 +"$auxiliarySynthName = { $envelopeCode.kr }.play($synthName, $auxiliaryVarName, fadeTime: 0, addAction: 'addBefore')"
                 associatedServerObjects.addAll(listOf(auxiliarySynthName, auxiliaryVarName))
             }
@@ -77,11 +77,12 @@ class EnvelopeControl(
 
     override fun ScWriter.applyToSynth(
         obj: ParameterizedObject,
+        uniqueName: String,
         synthVar: String,
         parameter: String,
         spec: ControlSpec,
     ) {
-        val auxiliaryVarName = uniqueArgumentName(synthVar.removePrefix("~synth_"), parameter)
+        val auxiliaryVarName = uniqueArgumentName(uniqueName, parameter)
         +"${synthVar}.map(\\$parameter, $auxiliaryVarName)"
     }
 

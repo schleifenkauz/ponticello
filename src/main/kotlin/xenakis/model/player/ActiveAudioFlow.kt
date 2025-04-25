@@ -8,9 +8,9 @@ class ActiveAudioFlow(val flow: AudioFlow) : ActiveObject() {
     override val associatedObject: ParameterizedObject?
         get() = flow as? ParameterizedObject
 
-    override val uniqueName: String
-        get() = flow.name.now
-
     override val superColliderName: String
         get() = flow.superColliderName.now
+
+    override val uniqueName: String
+        get() = superColliderName.removePrefix("~")
 }

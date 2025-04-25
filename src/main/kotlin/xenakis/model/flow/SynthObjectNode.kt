@@ -13,7 +13,7 @@ data class SynthObjectNode(
     val absolutePosition: ObjectPosition,
     val suffix: Int
 ) : AudioNode {
-    override val superColliderName = obj.name.map { name -> "~synth_${ActiveObjectManager.uniqueName(name, suffix)}" }
+    override val superColliderName = obj.name.map { name -> "${obj.superColliderPrefix}${ActiveObjectManager.uniqueName(name, suffix)}" }
 
     override fun validate(): Boolean = obj.validate()
 

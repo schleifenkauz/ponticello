@@ -32,7 +32,7 @@ class ProcessObject(
         get() = "process"
 
     override val superColliderPrefix: String
-        get() = "~process"
+        get() = "~process_"
 
     val processDef get() = processDefRef.now.get() ?: ProcessDefObject.unresolved()
 

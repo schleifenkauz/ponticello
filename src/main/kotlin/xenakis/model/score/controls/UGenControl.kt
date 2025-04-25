@@ -49,7 +49,7 @@ data class UGenControl(
         val busName = uniqueArgumentName(uniqueName, parameter)
         +"$busName = Bus.control(s, 1)"
         val auxilSynthName = synthName(uniqueName, parameter)
-        val synthName = "~synth_$uniqueName"
+        val synthName = "${obj.superColliderPrefix}$uniqueName"
         append("$auxilSynthName = ")
         appendBlock("", endLine = false) {
             expr.code(writer, this@UGenControl.context)
@@ -77,11 +77,12 @@ data class UGenControl(
 
     override fun ScWriter.applyToSynth(
         obj: ParameterizedObject,
+        uniqueName: String,
         synthVar: String,
         parameter: String,
         spec: ControlSpec,
     ) {
-        val busName = uniqueArgumentName(synthVar.removePrefix("~synth_"), parameter)
+        val busName = uniqueArgumentName(uniqueName, parameter)
         +"${synthVar}.map(\\$parameter, $busName)"
     }
 

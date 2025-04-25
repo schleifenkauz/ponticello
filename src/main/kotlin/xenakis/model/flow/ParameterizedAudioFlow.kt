@@ -14,7 +14,7 @@ import xenakis.model.player.LiveSynthUpdater
 @Serializable
 sealed class ParameterizedAudioFlow : AudioFlow(), ParameterizedObject {
     override val superColliderPrefix: String
-        get() = "~flow"
+        get() = "~"
 
     @Transient
     private lateinit var listener: LiveSynthUpdater

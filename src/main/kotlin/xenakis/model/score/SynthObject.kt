@@ -32,7 +32,7 @@ class SynthObject(
     override val type: String
         get() = "synth"
 
-    override val superColliderPrefix: String get() = "~synth"
+    override val superColliderPrefix: String get() = "~synth_"
 
     @Transient
     lateinit var synthDefSelector: SynthDefSelector

@@ -51,9 +51,10 @@ class SynthFlow(
             BusControl.create(associatedBus)
         )
         val name = superColliderName.now
+        val uniqueName = name.removePrefix("~")
         writeSynthCode(
-            this@SynthFlow, name.removePrefix("~"), cutoff = zero, placement,
-            latency = zero, extraControls = mapOf(mainBusControl), customSynthVar = name
+            this@SynthFlow, uniqueName, cutoff = zero, placement,
+            latency = zero, extraControls = mapOf(mainBusControl)
         )
     }
 

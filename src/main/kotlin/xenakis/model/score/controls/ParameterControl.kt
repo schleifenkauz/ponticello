@@ -28,6 +28,7 @@ sealed class ParameterControl : AbstractContextualObject() {
 
     open fun ScWriter.applyToSynth(
         obj: ParameterizedObject,
+        uniqueName: String,
         synthVar: String,
         parameter: String,
         spec: ControlSpec,

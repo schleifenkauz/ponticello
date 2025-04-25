@@ -43,10 +43,10 @@ data class ValueControl(val value: ReactiveVariable<Decimal>) : ParameterControl
     }
 
     override fun ScWriter.applyToSynth(
-        obj: ParameterizedObject, synthVar: String,
-        parameter: String, spec: ControlSpec,
+        obj: ParameterizedObject, uniqueName: String,
+        synthVar: String, parameter: String, spec: ControlSpec,
     ) {
-        val busName = uniqueArgumentName(synthVar.removePrefix("~synth_"), parameter)
+        val busName = uniqueArgumentName(uniqueName, parameter)
         +"$synthVar.map('$parameter', $busName)"
     }
 

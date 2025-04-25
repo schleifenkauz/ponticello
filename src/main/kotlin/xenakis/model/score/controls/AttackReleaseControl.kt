@@ -68,12 +68,13 @@ data class AttackReleaseControl(
 
     override fun ScWriter.applyToSynth(
         obj: ParameterizedObject,
+        uniqueName: String,
         synthVar: String,
         parameter: String,
         spec: ControlSpec
     ) {
         val ctrl = generateEnvelope(obj)
-        with (ctrl) { applyToSynth(obj, synthVar, parameter, spec) }
+        with (ctrl) { applyToSynth(obj, uniqueName, synthVar, parameter, spec) }
     }
 
     fun generateEnvelope(obj: ParameterizedObject): EnvelopeControl {

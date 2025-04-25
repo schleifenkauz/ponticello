@@ -67,7 +67,6 @@ class SendFlow(
         writeSynthCode(
             this@SendFlow, superColliderName.now.removePrefix("~"),
             cutoff = zero, placement, latency = zero,
-            customSynthVar = superColliderName.now,
         )
     }
 

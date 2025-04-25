@@ -22,22 +22,22 @@ class LiveSynthUpdater(obj: ParameterizedObject) : AbstractLiveUpdater(obj) {
 
     override fun ScWriter.remapBus(uniqueName: String, parameter: String, bus: BusReference) {
         val superColliderName = bus.get()?.superColliderName ?: return
-        +"~synth_$uniqueName.map('$parameter', $superColliderName)"
+        +"${obj.superColliderPrefix}$uniqueName.map('$parameter', $superColliderName)"
     }
 
     override fun ScWriter.updateBus(uniqueName: String, parameter: String, bus: BusReference) {
         val superColliderName = bus.get()?.superColliderName ?: return
-        +"~synth_$uniqueName.set('$parameter', $superColliderName)"
+        +"${obj.superColliderPrefix}$uniqueName.set('$parameter', $superColliderName)"
     }
 
     override fun ScWriter.updateValueBus(uniqueName: String, parameter: String, bus: BusReference) {
         val superColliderName = bus.get()?.superColliderName ?: return
-        +"~synth_$uniqueName.set('$parameter', $superColliderName.getSynchronous)"
+        +"${obj.superColliderPrefix}$uniqueName.set('$parameter', $superColliderName.getSynchronous)"
     }
 
     override fun ScWriter.updateBuffer(uniqueName: String, parameter: String, buf: BufferReference) {
         val superColliderName = buf.get()?.superColliderName ?: return
-        +"~synth_$uniqueName.set('$parameter', $superColliderName)"
+        +"${obj.superColliderPrefix}$uniqueName.set('$parameter', $superColliderName)"
     }
 
     override fun ScWriter.updatePattern(uniqueName: String, parameter: String, pattern: GlobalPatternReference) {
@@ -47,7 +47,7 @@ class LiveSynthUpdater(obj: ParameterizedObject) : AbstractLiveUpdater(obj) {
     override fun updateUGenControl(writer: ScWriter, uniqueName: String, parameter: String, expr: ScExpr) {
         super.updateUGenControl(writer, uniqueName, parameter, expr)
         val busName = ParameterControl.uniqueArgumentName(uniqueName, parameter)
-        writer.appendLine("~synth_$uniqueName.map('$parameter', $busName);")
+        writer.appendLine("${obj.superColliderPrefix}$uniqueName.map('$parameter', $busName);")
     }
 
     override fun updateEnvelope(
@@ -62,6 +62,6 @@ class LiveSynthUpdater(obj: ParameterizedObject) : AbstractLiveUpdater(obj) {
         val auxiliaryBus = ParameterControl.uniqueArgumentName(uniqueName, parameter)
         writer.appendLine("$auxiliarySynthName = { $envelopeCode.kr }.play($auxiliarySynthName, $auxiliaryBus, fadeTime: 0.02, addAction: 'addReplace');")
         val busName = ParameterControl.uniqueArgumentName(uniqueName, parameter)
-        writer.appendLine("~synth_$uniqueName.map('$parameter', $busName);")
+        writer.appendLine("${obj.superColliderPrefix}$uniqueName.map('$parameter', $busName);")
     }
 }

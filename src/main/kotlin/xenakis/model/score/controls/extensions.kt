@@ -45,7 +45,6 @@ fun ScWriter.writeSynthCode(
     placement: NodePlacement,
     latency: Decimal,
     extraControls: Map<String, Pair<ControlSpec, ParameterControl>> = emptyMap(),
-    customSynthVar: String? = null,
 ) {
     appendBlock("s.makeBundle($latency)") {
         val controlsWithSpecs = obj.controls.all().associate { ctrl ->
@@ -54,7 +53,7 @@ fun ScWriter.writeSynthCode(
             ctrl.name.now to Pair(spec, control)
         } + extraControls
         val synthDefName = obj.def.name.now
-        val synthVar = customSynthVar ?: "~synth_$uniqueName"
+        val synthVar = "${obj.superColliderPrefix}$uniqueName"
         append("$synthVar = Synth.newPaused(\\$synthDefName, [")
         for ((param, control) in controlsWithSpecs) {
             val (spec, ctrl) = control
@@ -78,7 +77,7 @@ fun ScWriter.writeSynthCode(
             }
         }
         if (associatedServerObjects.isNotEmpty()) {
-            appendBlock("$synthVar.onFree ") {
+            appendBlock("$synthVar.onFree") {
                 for (name in associatedServerObjects) {
                     +"$name.free"
                     +"$name = nil"
@@ -91,11 +90,9 @@ fun ScWriter.writeSynthCode(
             val (spec, ctrl) = control
             if (!obj.def.hasParameter(param) && param !in SPECIAL_PARAMETERS) continue
             with(ctrl) {
-                applyToSynth(obj, synthVar, param, spec)
+                applyToSynth(obj, uniqueName, synthVar, param, spec)
             }
         }
         +"$synthVar.run"
     }
 }
-
-// Synth(\sine, [freq: 400, amp: 1, out: s.outputBus, pan: 0, group: s.defaultGroup, duration: 5.0000], target: s.defaultGroup, addAction: 'addToHead')

@@ -60,6 +60,7 @@ class BusValueControl(val bus: ReactiveVariable<BusReference>) : ParameterContro
 
     override fun ScWriter.applyToSynth(
         obj: ParameterizedObject,
+        uniqueName: String,
         synthVar: String,
         parameter: String,
         spec: ControlSpec,

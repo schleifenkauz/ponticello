@@ -48,8 +48,7 @@ class UtilityFlow(
         val name = superColliderName.now
         writeSynthCode(
             this@UtilityFlow, name.removePrefix("~"),
-            cutoff = zero, placement, latency = zero,
-            customSynthVar = name
+            cutoff = zero, placement, latency = zero
         )
     }
 
