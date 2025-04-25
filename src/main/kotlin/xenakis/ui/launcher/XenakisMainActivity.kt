@@ -24,6 +24,7 @@ import xenakis.sc.client.SuperColliderClient
 import xenakis.ui.actions.*
 import xenakis.ui.flow.AudioFlowPane
 import xenakis.ui.impl.makeToolWindow
+import xenakis.ui.live.LiveTaskRegistryPane
 import xenakis.ui.midi.ContextualMidiReceiver
 import xenakis.ui.midi.ParameterControlsMidiContext
 import xenakis.ui.misc.*
@@ -62,6 +63,9 @@ class XenakisMainActivity(val project: XenakisProject) : Activity() {
 
     val patternsPane = GlobalPatternRegistryPane(project.patterns)
     val patternsWindow = context.makeToolWindow(patternsPane, "Patterns")
+
+    private val liveTasksPane = LiveTaskRegistryPane(project[LIVE_TASKS])
+    val liveTasksWindow = context.makeToolWindow(liveTasksPane, "Live Tasks")
 
     val logWindow = context.makeToolWindow(LogPane(Logger), "Log")
 

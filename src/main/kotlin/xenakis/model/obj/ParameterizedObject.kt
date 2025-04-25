@@ -19,7 +19,7 @@ interface ParameterizedObject : NamedObject {
 
     fun activeObjects(): List<ActiveObject>
 
-    fun duration(): ReactiveValue<Decimal>?
+    fun duration(): ReactiveValue<Decimal>? = null
 
     fun getSpec(parameter: String): ControlSpec? = controls.getOrNull(parameter)?.spec?.now
 
