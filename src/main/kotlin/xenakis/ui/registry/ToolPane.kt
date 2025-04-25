@@ -10,7 +10,6 @@ import fxutils.styleClass
 import javafx.scene.Node
 import javafx.scene.layout.HBox
 import javafx.scene.layout.Priority.ALWAYS
-import javafx.scene.layout.Region
 import javafx.scene.layout.VBox
 import org.kordamp.ikonli.materialdesign2.MaterialDesignR
 import reaktive.value.ReactiveString
@@ -26,7 +25,7 @@ abstract class ToolPane : VBox() {
     lateinit var content: Node
         private set
     private var headerContent: Node? = null
-    var header: Region? = null
+    var header: HBox? = null
         private set
 
     lateinit var actionBar: ActionBar

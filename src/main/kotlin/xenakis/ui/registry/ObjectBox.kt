@@ -3,6 +3,7 @@ package xenakis.ui.registry
 import fxutils.*
 import fxutils.actions.ActionBar
 import fxutils.actions.collectActions
+import javafx.scene.Parent
 import javafx.scene.input.MouseEvent
 import javafx.scene.input.TransferMode
 import javafx.scene.layout.HBox
@@ -44,7 +45,7 @@ class ObjectBox<O : NamedObject>(val parent: NamedObjectListView<O>, val obj: O)
 
     private val header = HBox(nameDisplay, *config.getItemContent(obj).toTypedArray(), space, actionBar)
 
-    var content = config.getContent(obj)
+    var content: Parent? = null
         private set
 
     init {
@@ -61,7 +62,6 @@ class ObjectBox<O : NamedObject>(val parent: NamedObjectListView<O>, val obj: O)
     }
 
     fun setContentDisplay(option: DisplayMode) {
-        if (content == null) return
         if (option != DisplayMode.SubWindow) {
             subWindow?.let { w ->
                 w.hide()
@@ -72,11 +72,11 @@ class ObjectBox<O : NamedObject>(val parent: NamedObjectListView<O>, val obj: O)
         if (option != DisplayMode.Inline && content in children) {
             children.remove(content)
         }
+        content = config.getContent(obj, option) ?: return
         if (option == DisplayMode.SubWindow) {
             val objectType = parent.source.objectType
             val name = obj.name.now
             val title = "$objectType $name"
-            content = config.getContent(obj) ?: return //ugly trick to avoid weird JavaFX bug
             subWindow = makeSubWindow(content!!, title, parent.source.context).also { w ->
                 config.configureSubWindow(w)
                 w.sizeToScene()
@@ -130,7 +130,7 @@ class ObjectBox<O : NamedObject>(val parent: NamedObjectListView<O>, val obj: O)
         private val objectActions = collectActions<ObjectBox<*>> {
             addAction("Edit object details") {
                 icon { box ->
-                    val config = box.config as ObjectBoxConfig<NamedObject>
+                    val config = box.config as NamedObjectListConfig<NamedObject>
                     reactiveValue(config.detailWindowIcon(box.obj))
                 }
                 shortcuts("Ctrl+E")

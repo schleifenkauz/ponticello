@@ -32,7 +32,7 @@ class ParameterControlsPane(
 
     init {
         obj.controls.addListener(this)
-        setup(title, obj.controls) { headerActions.withContext(this) }
+        setup(title, obj.controls, { headerActions.withContext(this) })
     }
 
     override val enableReordering: Boolean

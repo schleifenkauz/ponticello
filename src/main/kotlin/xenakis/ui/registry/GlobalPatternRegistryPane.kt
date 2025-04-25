@@ -3,6 +3,7 @@ package xenakis.ui.registry
 import fxutils.SubWindow
 import fxutils.actions.ContextualizedAction
 import fxutils.actions.collectActions
+import javafx.geometry.Pos
 import javafx.scene.Parent
 import javafx.scene.input.DataFormat
 import org.kordamp.ikonli.Ikon
@@ -13,6 +14,7 @@ import reaktive.value.binding.map
 import xenakis.model.obj.GlobalPatternObject
 import xenakis.model.registry.ObjectRegistry
 import xenakis.ui.impl.makeSubWindow
+import xenakis.ui.misc.CodePane
 import xenakis.ui.misc.PatternPlotPane
 
 class GlobalPatternRegistryPane(
@@ -32,7 +34,13 @@ class GlobalPatternRegistryPane(
     override val enableReordering: Boolean
         get() = true
 
-    override fun getContent(obj: GlobalPatternObject): Parent = obj.patternCode.control
+    override fun getContent(obj: GlobalPatternObject, mode: NamedObjectListView.DisplayMode): Parent = when (mode) {
+        NamedObjectListView.DisplayMode.SubWindow -> {
+            val actions = actions.withContext(listView.getBox(obj))
+            CodePane(obj.patternCode, extraActions = actions, ownWindow = true, actionBarAlignment = Pos.BOTTOM_RIGHT)
+        }
+        else -> obj.patternCode.control
+    }
 
     override fun detailWindowIcon(obj: GlobalPatternObject): Ikon = Material2AL.CODE
 

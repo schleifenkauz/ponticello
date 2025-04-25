@@ -6,6 +6,7 @@ import fxutils.actions.collectActions
 import fxutils.actions.registerActions
 import javafx.application.Platform
 import javafx.geometry.Dimension2D
+import javafx.geometry.Orientation
 import javafx.scene.Node
 import javafx.scene.Parent
 import javafx.scene.control.Control
@@ -13,10 +14,9 @@ import javafx.scene.control.Label
 import javafx.scene.control.ScrollPane
 import javafx.scene.control.Tooltip
 import javafx.scene.input.Clipboard
-import javafx.scene.layout.HBox
-import javafx.scene.layout.Priority
-import javafx.scene.layout.Region
-import javafx.scene.layout.VBox
+import javafx.scene.input.KeyCode
+import javafx.scene.input.KeyEvent
+import javafx.scene.layout.*
 import kotlinx.serialization.Serializable
 import org.kordamp.ikonli.materialdesign2.MaterialDesignD
 import org.kordamp.ikonli.materialdesign2.MaterialDesignV
@@ -27,12 +27,12 @@ import xenakis.model.registry.NamedObjectList
 
 class NamedObjectListView<O : NamedObject>(
     val source: NamedObjectList<O>,
-    val config: ObjectBoxConfig<O>,
+    val config: NamedObjectListConfig<O>,
     private val displayMode: ReactiveVariable<DisplayMode>,
     private var filter: (O) -> Boolean = { true },
 ) : Control(), NamedObjectList.Listener<O> {
     constructor(
-        source: NamedObjectList<O>, config: ObjectBoxConfig<O>,
+        source: NamedObjectList<O>, config: NamedObjectListConfig<O>,
         displayMode: DisplayMode = config.supportedModes.first(),
         filter: (O) -> Boolean = { true },
     ) : this(source, config, reactiveVariable(displayMode), filter)
@@ -43,14 +43,23 @@ class NamedObjectListView<O : NamedObject>(
 
     private val boxes = mutableListOf<ObjectBox<O>>()
     private val boxesCache = mutableMapOf<O, ObjectBox<O>>()
-    private fun getBox(obj: O) = boxesCache.getOrPut(obj) { ObjectBox(this, obj) }
+    fun getBox(obj: O) = boxesCache.getOrPut(obj) { ObjectBox(this, obj) }
     private var selectedBox: ObjectBox<O>? = null
 
-    private val vbox = VBox()
-    private val itemsScrollPane = ScrollPane(vbox).styleClass("items-scroll-bar")
+    val itemsScrollPane = ScrollPane(Pane()).styleClass("items-scroll-bar")
+    private var itemsLayout: Pane
+        get() = itemsScrollPane.content as Pane
+        set(value) {
+            itemsScrollPane.content = value
+            value.children.addAll(boxes)
+        }
     private var displayedContent: Parent? = null
 
     val actions = listActions.withContext(this)
+
+    val mode: ReactiveValue<DisplayMode> get() = displayMode
+
+    val orientation get() = if (mode.now == DisplayMode.Inline) config.inlineOrientation else Orientation.VERTICAL
 
     fun getBoxes(): List<ObjectBox<*>> = boxes
 
@@ -61,7 +70,6 @@ class NamedObjectListView<O : NamedObject>(
             val box = getBox(obj)
             boxes.add(box)
         }
-        vbox.children.addAll(boxes)
         setMode(displayMode.now)
         registerShortcuts {
             val selected = selectedBox ?: return@registerShortcuts
@@ -73,9 +81,14 @@ class NamedObjectListView<O : NamedObject>(
         }
     }
 
-    val mode: ReactiveValue<DisplayMode> get() = displayMode
-
     fun setMode(mode: DisplayMode) {
+        val horizontalLayout = mode == DisplayMode.Inline && config.inlineOrientation == Orientation.HORIZONTAL
+        if (horizontalLayout && itemsLayout !is HBox) {
+            itemsLayout = HBox()
+        }
+        if (!horizontalLayout && itemsLayout !is VBox) {
+            itemsLayout = VBox()
+        }
         if (scene?.window != null) {
             storedWindowSizes[displayMode.now] = Dimension2D(scene.window.width, scene.window.height)
         }
@@ -156,7 +169,7 @@ class NamedObjectListView<O : NamedObject>(
         val j = getInsertionIndex(idx)
         val box = getBox(obj)
         boxes.add(j, box)
-        vbox.children.add(j, box)
+        itemsLayout.children.add(j, box)
         updateRoot(mode.now)
         select(obj)
         autoResize()
@@ -178,7 +191,7 @@ class NamedObjectListView<O : NamedObject>(
     override fun removed(obj: O) {
         val box = boxesCache[obj] ?: return
         boxes.remove(box)
-        vbox.children.remove(box)
+        itemsLayout.children.remove(box)
         box.subWindow?.hide()
         if (displayedContent == box.content) {
             displayContent(null)
@@ -200,7 +213,7 @@ class NamedObjectListView<O : NamedObject>(
     fun refilter() {
         boxes.clear()
         source.filter(filter).mapTo(boxes) { obj -> getBox(obj) }
-        vbox.children.setAll(boxes)
+        itemsLayout.children.setAll(boxes)
         if (boxes.isNotEmpty()) select(0)
         autoResize()
     }
@@ -283,7 +296,7 @@ class NamedObjectListView<O : NamedObject>(
         Inline, SubWindow, DetailsPane;
 
         companion object {
-            val all = entries.toSet()
+            val all get() = setOf(Inline, SubWindow, DetailsPane)
         }
     }
 
@@ -309,22 +322,54 @@ class NamedObjectListView<O : NamedObject>(
                 }
             }
             addAction("Select previous") {
-                shortcut("UP")
-                executes { list -> list.navigate(-1) }
+                shortcuts("UP", "LEFT")
+                executes { list, ev ->
+                    if (ev !is KeyEvent) return@executes
+                    if (ev.code == KeyCode.UP && list.orientation == Orientation.VERTICAL) {
+                        list.navigate(-1)
+                    }
+                    if (ev.code == KeyCode.LEFT && list.orientation == Orientation.HORIZONTAL) {
+                        list.navigate(-1)
+                    }
+                }
             }
             addAction("Select next") {
-                shortcut("DOWN")
-                executes { list -> list.navigate(+1) }
+                shortcuts("DOWN", "RIGHT")
+                executes { list, ev ->
+                    if (ev !is KeyEvent) return@executes
+                    if (ev.code == KeyCode.DOWN && list.orientation == Orientation.VERTICAL) {
+                        list.navigate(+1)
+                    }
+                    if (ev.code == KeyCode.RIGHT && list.orientation == Orientation.HORIZONTAL) {
+                        list.navigate(+1)
+                    }
+                }
             }
-            addAction("Move up") {
-                shortcut("Ctrl+UP")
+            addAction("Swap with previous") {
+                shortcuts("Ctrl+UP", "Ctrl+LEFT")
                 applicableIf { list -> list.config.enableReordering }
-                executes { list -> list.moveSelected(-1) }
+                executes { list, ev ->
+                    if (ev !is KeyEvent) return@executes
+                    if (ev.code == KeyCode.UP && list.orientation == Orientation.VERTICAL) {
+                        list.moveSelected(-1)
+                    }
+                    if (ev.code == KeyCode.LEFT && list.orientation == Orientation.HORIZONTAL) {
+                        list.moveSelected(-1)
+                    }
+                }
             }
-            addAction("Move down") {
-                shortcut("Ctrl+DOWN")
+            addAction("Swap with next") {
+                shortcuts("Ctrl+DOWN", "Ctrl+RIGHT")
                 applicableIf { list -> list.config.enableReordering }
-                executes { list -> list.moveSelected(+1) }
+                executes { list, ev ->
+                    if (ev !is KeyEvent) return@executes
+                    if (ev.code == KeyCode.DOWN && list.orientation == Orientation.VERTICAL) {
+                        list.moveSelected(+1)
+                    }
+                    if (ev.code == KeyCode.RIGHT && list.orientation == Orientation.HORIZONTAL) {
+                        list.moveSelected(+1)
+                    }
+                }
             }
             addAction("Copy item") {
                 shortcut("Ctrl+C")
@@ -347,7 +392,12 @@ class NamedObjectListView<O : NamedObject>(
         val modeChangeActions
             get() = collectActions {
                 addAction("Display content inline") {
-                    icon(MaterialDesignV.VIEW_SEQUENTIAL)
+                    icon { view: NamedObjectListView<*> ->
+                        when (view.config.inlineOrientation) {
+                            Orientation.HORIZONTAL -> reactiveValue(MaterialDesignV.VIEW_WEEK)
+                            Orientation.VERTICAL -> reactiveValue(MaterialDesignV.VIEW_SEQUENTIAL)
+                        }
+                    }
                     modeChange(DisplayMode.Inline)
                 }
                 addAction("Display content in Sub-Window") {

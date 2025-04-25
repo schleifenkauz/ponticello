@@ -5,7 +5,7 @@ import fxutils.actions.collectActions
 import fxutils.plural
 import fxutils.styleClass
 import hextant.undo.UndoManager
-import javafx.geometry.Point2D
+import javafx.event.Event
 import org.kordamp.ikonli.materialdesign2.MaterialDesignP
 import org.kordamp.ikonli.materialdesign2.MaterialDesignS
 import reaktive.value.reactiveValue
@@ -25,15 +25,15 @@ abstract class ObjectRegistryPane<O : NamedObject>(
     protected open fun headerActions(): List<ContextualizedAction> = emptyList()
 
     protected fun setup() {
-        setup(title = null, registry) { headerActions() + headerActions.withContext(this) }
+        setup(title = null, registry) { headerActions.withContext(this) + headerActions() }
         listView.autoResizeScene = true
     }
 
-    protected open fun addObject() {
+    protected open fun addObject(ev: Event?) {
         val name = NamePrompt(
             registry, "Name for new ${registry.objectType}",
             initialName = ""
-        ).showDialog(actionBar, offset = Point2D(0.0, actionBar.height)) ?: return
+        ).showDialog(ev) ?: return
         val obj = createNewObject(name) ?: return
         registry.add(obj)
     }
@@ -47,7 +47,7 @@ abstract class ObjectRegistryPane<O : NamedObject>(
                 description { p -> reactiveValue("Create new ${p.registry.objectType}") }
                 shortcut("Ctrl+PLUS")
                 icon(MaterialDesignP.PLUS)
-                executes { p -> p.addObject() }
+                executes { p, ev -> p.addObject(ev) }
             }
             addAction("Sync registry") {
                 description { p -> reactiveValue("Sync ${plural(p.registry.objectType)}") }
@@ -62,8 +62,6 @@ abstract class ObjectRegistryPane<O : NamedObject>(
                     )
                 }
             }
-            addAll(NamedObjectListView.modeChangeActions) { p -> p.listView }
-            add(fitContentAction)
         }
     }
 }

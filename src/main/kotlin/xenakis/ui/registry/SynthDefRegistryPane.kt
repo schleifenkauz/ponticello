@@ -33,7 +33,7 @@ class SynthDefRegistryPane(
         if (obj is CustomizableSynthDefObject) Material2AL.CODE
         else MaterialDesignE.EYE
 
-    override fun getContent(obj: SynthDefObject): Parent? = when (obj) {
+    override fun getContent(obj: SynthDefObject, mode: DisplayMode): Parent? = when (obj) {
         is CustomizableSynthDefObject -> SynthDefObjectPane(obj)
         is ReferencedSynthDefObject -> ParameterInfoPane(obj.parameters.toReactiveList())
         is NoSynthDef -> null

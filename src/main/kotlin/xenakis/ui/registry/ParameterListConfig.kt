@@ -12,7 +12,7 @@ import xenakis.model.obj.ParameterDefObject
 import xenakis.sc.ParameterType
 import xenakis.sc.editor.ControlSpecEditor
 
-open class ParameterListConfig(private val context: Context) : ObjectBoxConfig<ParameterDefObject> {
+open class ParameterListConfig(private val context: Context) : NamedObjectListConfig<ParameterDefObject> {
     private val observers = mutableMapOf<ParameterDefObject, Observer>()
 
     override val enableReordering: Boolean

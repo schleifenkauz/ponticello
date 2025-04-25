@@ -1,22 +1,21 @@
 package xenakis.ui.flow
 
 import bundles.createBundle
-import fxutils.actions.Action
 import fxutils.actions.ContextualizedAction
 import fxutils.actions.collectActions
 import fxutils.centerChildren
 import fxutils.prompt.SimpleSearchableListView
+import fxutils.setRoot
 import fxutils.setupDropArea
 import fxutils.styleClass
 import javafx.scene.Parent
+import javafx.scene.control.Control
 import javafx.scene.control.Slider
 import javafx.scene.input.DataFormat
 import javafx.scene.input.DragEvent
 import javafx.scene.input.Dragboard
 import javafx.scene.input.TransferMode
 import javafx.scene.layout.HBox
-import javafx.scene.layout.Priority
-import javafx.scene.layout.VBox
 import javafx.scene.paint.Color
 import org.kordamp.ikonli.material2.Material2AL
 import org.kordamp.ikonli.materialdesign2.MaterialDesignR
@@ -40,18 +39,16 @@ import xenakis.ui.launcher.XenakisLauncher.Companion.currentProject
 import xenakis.ui.launcher.XenakisMainActivity
 import xenakis.ui.midi.ContextualMidiReceiver
 import xenakis.ui.midi.ParameterControlsMidiContext
+import xenakis.ui.registry.NamedObjectListConfig
 import xenakis.ui.registry.NamedObjectListView
 import xenakis.ui.registry.NamedObjectListView.DisplayMode
 import xenakis.ui.registry.ObjectBox
-import xenakis.ui.registry.ObjectBoxConfig
 import xenakis.ui.score.ParameterControlsPane
 
 class FlowChainView(
     private val flows: AudioFlows,
     private val associatedBus: BusObject,
-) : VBox(5.0), ObjectBoxConfig<AudioFlow> {
-    private val busBox = BusObjectBox(associatedBus)
-
+) : Control(), NamedObjectListConfig<AudioFlow> {
     private val myFlows = flows.associatedFlows(associatedBus)
     private val flowsList = NamedObjectListView(myFlows, this)
 
@@ -69,9 +66,8 @@ class FlowChainView(
         get() = setOf(DisplayMode.Inline, DisplayMode.SubWindow)
 
     init {
-        children.addAll(flowsList, busBox)
-        setVgrow(flowsList, Priority.ALWAYS)
-        setupDropArea(::canDrop, ::onDrop)
+        setRoot(flowsList)
+        flowsList.setupDropArea(::canDrop, ::onDrop)
     }
 
     private fun canDrop(db: Dragboard): Boolean = when {
@@ -82,7 +78,7 @@ class FlowChainView(
         else -> false
     }
 
-    override fun getContent(obj: AudioFlow): Parent? = when (obj) {
+    override fun getContent(obj: AudioFlow, mode: DisplayMode): Parent? = when (obj) {
         is CodeFlow -> obj.codeEditor.control
         is ScoreObjectPlaceholder -> null
         is SendFlow -> {
@@ -101,11 +97,7 @@ class FlowChainView(
     }
 
     override fun getActions(box: ObjectBox<AudioFlow>): List<ContextualizedAction> {
-        val extraActions = when (box.obj) {
-            is SynthFlow -> synthFlowActions.withContext(box.obj)
-            else -> emptyList()
-        }
-        return extraActions + defaultActions.withContext(box.obj)
+        return actions.withContext(box.obj)
     }
 
     override fun onSelected(obj: AudioFlow) {
@@ -157,7 +149,7 @@ class FlowChainView(
     }
 
     companion object {
-        private val defaultActions = collectActions<AudioFlow> {
+        private val actions = collectActions<AudioFlow> {
             addAction("Toggle activated") {
                 icon { flow ->
                     flow.isActive.map { active ->
@@ -169,20 +161,19 @@ class FlowChainView(
                 shortcut("Ctrl+T")
                 executes { flow -> flow.isActive.now = !flow.isActive.now }
             }
-        }
-
-        private val synthFlowActions = collectActions<SynthFlow> {
             addAction("View SynthDef") {
                 icon(Material2AL.CODE)
                 shortcut("Ctrl+L")
-                applicableWhen { flow -> flow.synthDefSelector.isResolved }
-                ifNotApplicable(Action.IfNotApplicable.Disable)
+                applicableWhen { flow ->
+                    if (flow !is SynthFlow) reactiveValue(false)
+                    else flow.synthDefSelector.isResolved
+                }
                 executes { flow ->
+                    flow as SynthFlow
                     val pane = flow.context[XenakisMainActivity].synthDefsPane
                     pane.listView.showContent(flow.synthDef)
                 }
             }
         }
-
     }
 }

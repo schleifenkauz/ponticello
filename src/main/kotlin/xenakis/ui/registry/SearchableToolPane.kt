@@ -1,5 +1,6 @@
 package xenakis.ui.registry
 
+import fxutils.actions.ActionBar
 import fxutils.actions.ContextualizedAction
 import fxutils.actions.collectActions
 import fxutils.actions.registerShortcuts
@@ -13,18 +14,25 @@ import reaktive.value.now
 import reaktive.value.reactiveValue
 import xenakis.model.registry.NamedObject
 import xenakis.model.registry.NamedObjectList
+import xenakis.ui.registry.NamedObjectListView.Companion.modeChangeActions
 
-abstract class SearchableToolPane<O : NamedObject> : ToolPane(), ObjectBoxConfig<O> {
+abstract class SearchableToolPane<O : NamedObject> : ToolPane(), NamedObjectListConfig<O> {
     protected val searchText = CustomTextField().styleClass("sleek-text-field", "search-field")
 
     lateinit var listView: NamedObjectListView<O>
         private set
 
-    protected fun setup(title: String?, list: NamedObjectList<O>, actions: () -> List<ContextualizedAction>) {
+    protected fun setup(
+        title: String?, list: NamedObjectList<O>,
+        extraActions: () -> List<ContextualizedAction> = { emptyList() },
+    ) {
         listView = NamedObjectListView(list, this, filter = { obj -> filter(obj) && matchesSearch(obj) })
         setupSearchField()
-        setup(listView, title?.let(::reactiveValue), searchText, actions())
-        registerShortcuts(listView.actions + SearchableToolPane.actions.withContext(this))
+        val windowActions = modeChangeActions.withContext(listView) + fitContentAction.withContext(this)
+        setup(listView, title?.let(::reactiveValue), searchText, windowActions)
+        val actions = listView.actions + extraActions()
+        registerShortcuts(actions)
+        header!!.children.add(1, ActionBar(actions, buttonStyle = "medium-icon-button"))
     }
 
     private fun setupSearchField() {

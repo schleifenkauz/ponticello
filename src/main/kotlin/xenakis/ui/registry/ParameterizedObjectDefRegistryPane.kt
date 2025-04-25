@@ -7,6 +7,7 @@ import fxutils.actions.collectActions
 import fxutils.prompt.SimpleSearchableListView
 import fxutils.prompt.YesNoPrompt
 import hextant.fx.initHextantScene
+import javafx.event.Event
 import javafx.scene.paint.Color
 import org.kordamp.ikonli.material2.Material2MZ
 import org.kordamp.ikonli.materialdesign2.MaterialDesignE
@@ -32,7 +33,7 @@ abstract class ParameterizedObjectDefRegistryPane<T : ParameterizedObjectDef>(
         window.scene.fill = Color.BLACK
     }
 
-    override fun addObject() {
+    override fun addObject(ev: Event?) {
         val globalLib = registry.context[globalLibrary]
         val synthDefsFromGlobal = globalLib.getNames().map(AddObjectOption::ObjectFromGlobalLib)
         val searchableList = AddObjectOptionListView(synthDefsFromGlobal)

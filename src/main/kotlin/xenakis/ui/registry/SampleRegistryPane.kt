@@ -9,6 +9,7 @@ import fxutils.actions.collectActions
 import fxutils.hasFiles
 import fxutils.prompt.YesNoPrompt
 import fxutils.setupDropArea
+import javafx.event.Event
 import javafx.scene.control.ScrollPane
 import javafx.scene.image.ImageView
 import javafx.scene.input.DataFormat
@@ -42,7 +43,7 @@ class SampleRegistryPane(
         setup()
     }
 
-    override fun addObject() {
+    override fun addObject(ev: Event?) {
         val obj = loadNewSample { file -> Identifier.truncate(file.nameWithoutExtension) } ?: return
         registry.add(obj)
     }

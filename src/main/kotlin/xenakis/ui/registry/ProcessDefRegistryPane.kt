@@ -28,7 +28,7 @@ class ProcessDefRegistryPane(
 
     override fun createNewObject(name: String): ProcessDefObject = ProcessDefObject.newEmpty(name)
 
-    override fun getContent(obj: ProcessDefObject): Parent = ProcessDefObjectPane(obj)
+    override fun getContent(obj: ProcessDefObject, mode: DisplayMode): Parent = ProcessDefObjectPane(obj)
 
     override fun getActions(box: ObjectBox<ProcessDefObject>): List<ContextualizedAction> = actions.withContext(box)
 

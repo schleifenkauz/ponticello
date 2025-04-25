@@ -2,6 +2,7 @@ package xenakis.ui.registry
 
 import fxutils.SubWindow
 import fxutils.actions.ContextualizedAction
+import javafx.geometry.Orientation
 import javafx.scene.Node
 import javafx.scene.Parent
 import javafx.scene.input.DataFormat
@@ -13,21 +14,24 @@ import reaktive.value.reactiveValue
 import xenakis.model.registry.NamedObject
 import xenakis.model.registry.NamedObject.Companion.NO_NAME
 
-interface ObjectBoxConfig<O : NamedObject> {
+interface NamedObjectListConfig<O : NamedObject> {
     val enableReordering: Boolean get() = false
+
     val enableAddObjectButton: Boolean get() = false
 
     val centerAddObjectButton: Boolean get() = false
 
     val buttonStyle: String get() = "medium-icon-button"
 
-    fun detailWindowIcon(obj: O): Ikon = MaterialDesignE.EYE
+    val inlineOrientation: Orientation get() = Orientation.VERTICAL
 
     val supportedModes get() = setOf(NamedObjectListView.DisplayMode.Inline)
 
+    fun detailWindowIcon(obj: O): Ikon = MaterialDesignE.EYE
+
     fun getItemContent(obj: O): List<Node> = emptyList()
 
-    fun getContent(obj: O): Parent? = null
+    fun getContent(obj: O, mode: NamedObjectListView.DisplayMode): Parent? = null
 
     fun getActions(box: ObjectBox<O>): List<ContextualizedAction> = emptyList()
 

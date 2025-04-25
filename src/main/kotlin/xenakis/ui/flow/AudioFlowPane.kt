@@ -1,60 +1,92 @@
 package xenakis.ui.flow
 
-import fxutils.actions.button
-import fxutils.setBackground
-import fxutils.styleClass
-import javafx.scene.control.ScrollPane
-import javafx.scene.layout.BorderPane
-import javafx.scene.layout.HBox
-import javafx.scene.layout.Priority
-import javafx.scene.paint.Color
+import fxutils.actions.ContextualizedAction
+import fxutils.actions.collectActions
+import fxutils.prompt.IntegerPrompt
+import fxutils.setFixedWidth
+import javafx.geometry.Orientation
+import javafx.geometry.Point2D
+import javafx.scene.Node
+import javafx.scene.control.Spinner
+import org.kordamp.ikonli.evaicons.Evaicons
 import org.kordamp.ikonli.materialdesign2.MaterialDesignP
+import reaktive.value.fx.asObservableValue
+import reaktive.value.fx.asProperty
+import reaktive.value.now
 import xenakis.model.flow.AudioFlows
 import xenakis.model.obj.BusObject
 import xenakis.model.registry.BusRegistry
-import xenakis.model.registry.NamedObjectList
+import xenakis.sc.client.SuperColliderClient
+import xenakis.ui.actions.RegistryObjectActions
 import xenakis.ui.controls.NamePrompt
-import xenakis.ui.registry.ToolPane
+import xenakis.ui.registry.NamedObjectListView.DisplayMode
+import xenakis.ui.registry.ObjectBox
+import xenakis.ui.registry.SearchableToolPane
 
 class AudioFlowPane(
     private val flows: AudioFlows,
-) : ToolPane(), NamedObjectList.Listener<BusObject> {
-    private val hbox = HBox(4.0)
-    private val verticalBoxes = mutableMapOf<BusObject, FlowChainView>()
+) : SearchableToolPane<BusObject>() {
     private val buses = flows.context[BusRegistry]
+
+    override val inlineOrientation: Orientation
+        get() = Orientation.HORIZONTAL
+
+    override val supportedModes: Set<DisplayMode>
+        get() = setOf(DisplayMode.Inline, DisplayMode.SubWindow, DisplayMode.DetailsPane)
 
     init {
         styleClass.add("flow-pane")
-        setBackground(Color.BLACK)
-        val scrollPane = ScrollPane(hbox)
-        scrollPane.isFitToHeight = true
-        setup(content = HBox(scrollPane, makeAddBusButton()), title = null)
-        buses.addListener(this)
+        setup(title = null, buses) { headerActions.withContext(this) }
+        listView.itemsScrollPane.isFitToHeight = true
+        listView.autoResizeScene = true
     }
 
-    private fun makeAddBusButton(): BorderPane {
-        val btn = MaterialDesignP.PLUS.button("Add flow") { ev ->
-            val name = NamePrompt(flows.context[BusRegistry], "Name for new bus", "").showDialog(ev)
-                ?: return@button
-            val bus = BusObject.audio(name)
-            buses.add(bus)
-        }.styleClass("large-icon-button")
-        val pane = BorderPane(btn)
-        HBox.setHgrow(pane, Priority.ALWAYS)
-        return pane
+    override fun filter(obj: BusObject): Boolean = obj is BusObject.AudioBus
+
+    override fun getContent(obj: BusObject, mode: DisplayMode) = FlowChainView(flows, obj)
+
+    override fun getItemContent(obj: BusObject): List<Node> {
+        val channelsSpinner = Spinner<Int>(0, 64, obj.channels.now).setFixedWidth(65.0)
+        if (obj.busType != BusObject.Type.Regular) {
+            channelsSpinner.valueFactory.valueProperty().bind(obj.channels.asObservableValue())
+            channelsSpinner.isDisable = true
+        } else {
+            channelsSpinner.valueFactory.valueProperty().bindBidirectional(obj.channels.asProperty())
+        }
+        return listOf(channelsSpinner)
     }
 
-    override fun added(obj: BusObject, idx: Int) {
-        if (obj !is BusObject.AudioBus) return
-        val box = FlowChainView(flows, obj)
-        verticalBoxes[obj] = box
-        hbox.children.add(box)
-        box.prefHeightProperty().bind(heightProperty())
+    override fun getActions(box: ObjectBox<BusObject>): List<ContextualizedAction> = actions.withContext(box.obj)
+
+    override fun createNewObject(): BusObject? {
+        val busName = NamePrompt(buses, "Bus name", "")
+            .showDialog(header!!, offset = Point2D(200.0, 0.0)) ?: return null
+        val channels = IntegerPrompt("Channels", initialValue = 2, range = 1..64)
+            .showDialog(actionBar) ?: return null
+        return BusObject.audio(busName, channels)
     }
 
-    override fun removed(obj: BusObject) {
-        if (obj !is BusObject.AudioBus) return
-        val box = verticalBoxes.remove(obj) ?: error("No box found for $obj")
-        hbox.children.remove(box)
+    companion object {
+        private val actions = collectActions<BusObject> {
+            addAction("Monitor bus") {
+                icon(Evaicons.ACTIVITY)
+                shortcut("Ctrl+M")
+                executes { bus ->
+                    bus.context[SuperColliderClient].run("${bus.superColliderName}.scope;")
+                }
+            }
+            add(RegistryObjectActions.deleteAction(BusRegistry))
+        }
+
+        private val headerActions = collectActions<AudioFlowPane> {
+            addAction("Create new audio bus") {
+                shortcut("Ctrl+PLUS")
+                icon(MaterialDesignP.PLUS)
+                executes { p ->
+                    val bus = p.createNewObject() ?: return@executes
+                    p.buses.add(bus)
+                }
+            }
+        }
     }
 }
