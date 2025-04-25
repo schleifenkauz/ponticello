@@ -48,8 +48,12 @@ class ObjectBox<O : NamedObject>(val parent: NamedObjectListView<O>, val obj: O)
         private set
 
     init {
-        space.setOnMousePressed { parent.select(this) }
-        addEventFilter(MouseEvent.MOUSE_PRESSED) { parent.select(this) }
+        addEventFilter(MouseEvent.MOUSE_CLICKED) { ev ->
+            parent.select(this)
+            if (ev.clickCount == 2) {
+                parent.showSelected()
+            }
+        }
         styleClass("object-box")
         children.add(header.styleClass("object-box-header"))
         if (config.enableReordering) setupReordering()

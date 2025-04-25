@@ -4,6 +4,7 @@ import fxutils.*
 import fxutils.actions.Action
 import fxutils.actions.collectActions
 import fxutils.actions.registerActions
+import javafx.application.Platform
 import javafx.geometry.Dimension2D
 import javafx.scene.Node
 import javafx.scene.Parent
@@ -260,13 +261,21 @@ class NamedObjectListView<O : NamedObject>(
     }
 
     fun showContent(obj: O) {
-        select(obj)
         if (mode.now == DisplayMode.SubWindow) {
             getBox(obj).showSubWindow()
         } else {
+            select(obj)
             val window = scene.window as SubWindow
             window.showOrBringToFront()
+            Platform.runLater {
+                getBox(obj).content?.requestFocus()
+            }
         }
+    }
+
+    fun showSelected() {
+        val selected = selectedBox?.obj ?: return
+        showContent(selected)
     }
 
     @Serializable
@@ -320,6 +329,10 @@ class NamedObjectListView<O : NamedObject>(
             addAction("Copy item") {
                 shortcut("Ctrl+C")
                 executes { list -> list.copySelected() }
+            }
+            addAction("Focus selected object") {
+                shortcut("Enter")
+                executes { list -> list.showSelected() }
             }
         }
 

@@ -3,7 +3,6 @@ package xenakis.ui.score
 import fxutils.actions.ContextualizedAction
 import fxutils.actions.collectActions
 import fxutils.actions.isShiftDown
-import fxutils.actions.registerShortcuts
 import javafx.geometry.Point2D
 import javafx.scene.Node
 import org.kordamp.ikonli.codicons.Codicons
@@ -34,7 +33,6 @@ class ParameterControlsPane(
     init {
         obj.controls.addListener(this)
         setup(title, obj.controls) { headerActions.withContext(this) }
-        registerShortcuts(listView.actions)
     }
 
     override val enableReordering: Boolean

@@ -1,6 +1,8 @@
 package xenakis.ui.registry
 
 import fxutils.actions.ContextualizedAction
+import fxutils.actions.collectActions
+import fxutils.actions.registerShortcuts
 import fxutils.styleClass
 import javafx.scene.layout.HBox
 import javafx.scene.layout.Priority
@@ -22,16 +24,31 @@ abstract class SearchableToolPane<O : NamedObject> : ToolPane(), ObjectBoxConfig
         listView = NamedObjectListView(list, this, filter = { obj -> filter(obj) && matchesSearch(obj) })
         setupSearchField()
         setup(listView, title?.let(::reactiveValue), searchText, actions())
+        registerShortcuts(listView.actions + SearchableToolPane.actions.withContext(this))
     }
 
     private fun setupSearchField() {
         searchText.promptText = "Search..."
         searchText.left = FontIcon(Material2MZ.SEARCH)
         searchText.textProperty().addListener { _, _, _ -> listView.refilter() }
+        searchText.setOnAction {
+            listView.showSelected()
+        }
         HBox.setHgrow(searchText, Priority.ALWAYS)
     }
 
     protected open fun filter(obj: O): Boolean = true
 
     private fun matchesSearch(obj: O) = obj.name.now.contains(searchText.text, ignoreCase = true)
+
+    companion object {
+        val actions = collectActions {
+            addAction("Focus search field") {
+                shortcut("Ctrl+F")
+                executes { pane: SearchableToolPane<*> ->
+                    pane.searchText.requestFocus()
+                }
+            }
+        }
+    }
 }

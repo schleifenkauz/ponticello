@@ -2,7 +2,6 @@ package xenakis.ui.registry
 
 import fxutils.actions.ContextualizedAction
 import fxutils.actions.collectActions
-import fxutils.actions.registerShortcuts
 import fxutils.plural
 import fxutils.styleClass
 import hextant.undo.UndoManager
@@ -28,7 +27,6 @@ abstract class ObjectRegistryPane<O : NamedObject>(
     protected fun setup() {
         setup(title = null, registry) { headerActions() + headerActions.withContext(this) }
         listView.autoResizeScene = true
-        registerShortcuts(listView.actions)
     }
 
     protected open fun addObject() {

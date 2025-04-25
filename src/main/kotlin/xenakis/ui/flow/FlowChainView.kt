@@ -4,7 +4,6 @@ import bundles.createBundle
 import fxutils.actions.Action
 import fxutils.actions.ContextualizedAction
 import fxutils.actions.collectActions
-import fxutils.actions.registerShortcuts
 import fxutils.centerChildren
 import fxutils.prompt.SimpleSearchableListView
 import fxutils.setupDropArea
@@ -73,7 +72,6 @@ class FlowChainView(
         children.addAll(flowsList, busBox)
         setVgrow(flowsList, Priority.ALWAYS)
         setupDropArea(::canDrop, ::onDrop)
-        registerShortcuts(flowsList.actions)
     }
 
     private fun canDrop(db: Dragboard): Boolean = when {

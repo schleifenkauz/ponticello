@@ -25,7 +25,7 @@ object ToolWindowActions : Action.Collector<XenakisMainActivity>({
         executes { activity -> activity.shellWindow.showOrBringToFront() }
     }
     addAction("Show log window") {
-        shortcut("Ctrl+L")
+        shortcut("Ctrl+Shift+L")
         icon(MaterialDesignB.BELL)
         executes { activity, ev ->
             if (ev.isShiftDown()) {
@@ -78,7 +78,7 @@ object ToolWindowActions : Action.Collector<XenakisMainActivity>({
         executes { activity -> activity.processDefsWindow.showOrBringToFront() }
     }
     addAction("Show audio flows") {
-        shortcut("Ctrl+F")
+        shortcut("Ctrl+Shift+F")
         icon(MaterialDesignT.TUNE)
         executes { activity -> activity.flowPaneWindow.showOrBringToFront() }
     }
