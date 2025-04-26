@@ -18,6 +18,8 @@ interface SuperColliderClient : SuperColliderContext {
     val updatedSynthDef: EventStream<String>
     val updatedProcessDef: EventStream<String>
 
+    val onPlayObj: EventStream<String>
+
     val sampleRate: Double
 
     fun sendAsync(address: String, arguments: List<Any> = emptyList())

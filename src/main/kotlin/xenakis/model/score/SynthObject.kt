@@ -14,11 +14,9 @@ import xenakis.impl.*
 import xenakis.model.Settings
 import xenakis.model.flow.NodePlacement
 import xenakis.model.obj.*
-import xenakis.model.player.LiveSynthUpdater
 import xenakis.model.registry.GroupRegistry
 import xenakis.model.registry.reference
 import xenakis.model.score.controls.*
-import xenakis.sc.ControlSpec
 import xenakis.sc.NumericalControlSpec
 import xenakis.sc.editor.SynthDefSelector
 import xenakis.ui.impl.Direction
@@ -28,7 +26,7 @@ class SynthObject(
     @SerialName("name") override val mutableName: ReactiveVariable<String>,
     @SerialName("synthDef") private val synthDefRef: ReactiveVariable<SynthDefReference>,
     override val controls: ParameterControlList,
-) : ScoreObject(), ParameterizedObject {
+) : ParameterizedScoreObject() {
     override val type: String
         get() = "synth"
 
@@ -41,18 +39,10 @@ class SynthObject(
     @Transient
     private var playBufRateBeforeResize = zero
 
-    @Transient
-    private lateinit var controlListener: LiveSynthUpdater
-
     val synthDef: SynthDefObject get() = synthDefRef.now.get() ?: NoSynthDef()
 
     override val def: ParameterizedObjectDef
         get() = synthDef
-
-    override val associatedControls: Map<String, ParameterControl>
-        get() = controls.controlMap
-
-    override fun getSpec(parameter: String): ControlSpec? = super<ParameterizedObject>.getSpec(parameter)
 
     override fun validate(): Boolean = controls.validate()
 
@@ -152,18 +142,7 @@ class SynthObject(
         synthDefSelector = SynthDefSelector()
         synthDefSelector.syncWith(synthDefRef)
         synthDefSelector.initialize(context)
-        controls.initialize(context, this)
-        controlListener = LiveSynthUpdater(this)
-    }
-
-    override fun onLoadedIntoRegistry() {
-        super<ScoreObject>.onLoadedIntoRegistry()
-        controlListener.startListening()
-    }
-
-    override fun onRemoved() {
-        super<ScoreObject>.onRemoved()
-        controlListener.stopListening()
+        initializeControls()
     }
 
     override fun writeCode(uniqueName: String, placement: NodePlacement?, cutoff: Decimal): String = writeCode {

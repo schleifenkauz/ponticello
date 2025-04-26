@@ -3,32 +3,29 @@ package xenakis.ui.score
 import javafx.geometry.Point2D
 import javafx.scene.input.MouseEvent
 import reaktive.Observer
-import reaktive.value.forEach
 import reaktive.value.now
 import reaktive.value.reactiveVariable
-import xenakis.model.obj.ParameterizedObject
 import xenakis.model.score.Envelope
 import xenakis.model.score.ParameterControlList
 import xenakis.model.score.ParameterControlList.NamedParameterControl
-import xenakis.model.score.ScoreObject
+import xenakis.model.score.ParameterizedScoreObject
 import xenakis.model.score.ScoreObjectInstance
 import xenakis.model.score.controls.EnvelopeControl
 import xenakis.model.score.controls.ParameterControl
-import xenakis.model.score.controls.UGenControl
 import xenakis.model.score.controls.getNumericalValue
 import xenakis.sc.ControlSpec
 import xenakis.sc.NumericalControlSpec
 import xenakis.sc.ParameterType
-import xenakis.sc.ScExpr
 import xenakis.ui.launcher.XenakisApp.Companion.primaryStage
 import xenakis.ui.registry.SearchableParameterDefListView
 
-abstract class ParameterizedScoreObjectView<O>(
+abstract class ParameterizedScoreObjectView<O : ParameterizedScoreObject>(
     instance: ScoreObjectInstance,
-) : ScoreObjectView(instance), ParameterControlList.Listener where O : ScoreObject, O : ParameterizedObject {
+) : ScoreObjectView(instance), ParameterControlList.Listener {
     private val observers = mutableMapOf<ParameterControl, Observer>()
     private val envelopeEditors = mutableListOf<EnvelopeEditor>()
-    private val lfoCanvases = mutableMapOf<UGenControl, LFOCanvas>()
+    private val lfoCanvases = mutableMapOf<NamedParameterControl, LFOCanvas>()
+    private lateinit var lfosObserver: Observer
 
     abstract override val obj: O
 
@@ -36,6 +33,7 @@ abstract class ParameterizedScoreObjectView<O>(
         super.initialize()
         listenForMouseEvents()
         obj.controls.addListener(this)
+        lfosObserver = observeLFOs()
     }
 
     private fun listenForMouseEvents() {
@@ -73,13 +71,25 @@ abstract class ParameterizedScoreObjectView<O>(
         }
         if (name !in obj.controls.controlMap) obj.controls.addControl(name, control, customSpec)
         else obj.controls.reassignControl(name, control)
-
     }
 
-    override fun added(control: NamedParameterControl, idx: Int) {
-        when (val ctrl = control.now) {
-            is EnvelopeControl -> addedEnvelopeControl(control, ctrl)
-            is UGenControl -> addedUGenControl(control, ctrl)
+    private fun observeLFOs() = obj.lfosManager.onRemove { param ->
+        val canvas = lfoCanvases.remove(param)
+        if (canvas != null) children.remove(canvas)
+    } and obj.lfosManager.onDisplay { param, spec, lfo ->
+        val canvas = lfoCanvases.getOrPut(param) {
+            val c = LFOCanvas(obj)
+            c.widthProperty().bind(widthProperty())
+            c.heightProperty().bind(heightProperty())
+            children.add(c)
+            c
+        }
+        canvas.display(lfo, spec)
+    }
+
+    override fun added(obj: NamedParameterControl, idx: Int) {
+        when (val ctrl = obj.now) {
+            is EnvelopeControl -> addedEnvelopeControl(obj, ctrl)
             else -> {}
         }
     }
@@ -92,45 +102,10 @@ abstract class ParameterizedScoreObjectView<O>(
         }
     }
 
-    private fun addedUGenControl(control: NamedParameterControl, ctrl: UGenControl) {
-        observers[ctrl] = ctrl.expr.editor.result.forEach { expr ->
-            if (ctrl.display.now) {
-                val spec = control.spec.now as? NumericalControlSpec ?: return@forEach
-                displayLFO(ctrl, spec, expr)
-            }
-        } and ctrl.display.observe { _, _, display ->
-            if (display) {
-                val spec = control.spec.now as? NumericalControlSpec ?: return@observe
-                displayLFO(ctrl, spec, ctrl.expr.editor.result.now)
-            } else removeLFODisplay(ctrl)
-        }
-    }
-
-    private fun removeLFODisplay(control: UGenControl) {
-        val canvas = lfoCanvases.remove(control) ?: return
-        children.remove(canvas)
-    }
-
-    private fun displayLFO(control: UGenControl, spec: NumericalControlSpec, expr: ScExpr) {
-        val lfo = expr.lfo ?: return
-        val canvas = lfoCanvases.getOrPut(control) {
-            val c = LFOCanvas()
-            c.widthProperty().bind(widthProperty())
-            c.heightProperty().bind(heightProperty())
-            children.add(c)
-            c
-        }
-        canvas.display(lfo, spec, obj.duration.toDouble())
-    }
-
-    override fun removed(control: NamedParameterControl) {
-        when (val ctrl = control.now) {
-            is EnvelopeControl -> removedEnvelopeControl(control, ctrl)
-            is UGenControl -> {
-                observers.remove(ctrl)?.kill()
-                removeLFODisplay(ctrl)
-            }
-
+    override fun removed(obj: NamedParameterControl) {
+        observers.remove(obj.now)?.kill()
+        when (obj.now) {
+            is EnvelopeControl -> removeEnvelope(obj)
             else -> {}
         }
     }
@@ -140,22 +115,22 @@ abstract class ParameterizedScoreObjectView<O>(
         oldControl: ParameterControl,
         control: ParameterControl,
     ) {
-        if (oldControl is EnvelopeControl) removedEnvelopeControl(namedControl, oldControl)
-        if (oldControl is UGenControl) {
-            removeLFODisplay(oldControl)
-            observers.remove(oldControl)?.kill()
-        }
+        observers.remove(oldControl)?.kill()
+        if (oldControl is EnvelopeControl) removeEnvelope(namedControl)
         if (control is EnvelopeControl) addedEnvelopeControl(namedControl, control)
-        if (control is UGenControl) addedUGenControl(namedControl, control)
-    }
-
-    private fun removedEnvelopeControl(control: NamedParameterControl, env: EnvelopeControl) {
-        removeEnvelope(control)
-        observers.remove(env)!!.kill()
     }
 
     override fun changedSpec(control: NamedParameterControl, oldSpec: ControlSpec?, newSpec: ControlSpec?) {
-        envelopeEditors.find { ed -> ed.namedControl == control }?.repaint()
+        when (val ctrl = control.now) {
+            is EnvelopeControl -> {
+                if (ctrl.display.now) {
+                    envelopeEditors.find { ed -> ed.namedControl == control }?.repaint()
+                }
+            }
+
+            else -> {}
+        }
+
     }
 
     private fun removeEnvelope(control: NamedParameterControl) {

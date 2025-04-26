@@ -124,7 +124,7 @@ class ParameterControlList(
             check(spec.now == null) { "useSpecFromDefinition can only be used if current spec is null" }
             val spec = controls.def.getSpec(name.now) ?: return false
             specBinder?.kill()
-            _spec.bind(resolveControlSpec(spec.now))
+            updateSpec(spec.now)
 
             return true
         }

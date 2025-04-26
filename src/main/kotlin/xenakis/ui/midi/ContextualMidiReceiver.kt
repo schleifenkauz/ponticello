@@ -2,6 +2,7 @@ package xenakis.ui.midi
 
 import bundles.PublicProperty
 import bundles.publicProperty
+import xenakis.impl.Logger
 import xenakis.impl.MidiPitch
 import javax.sound.midi.*
 
@@ -28,6 +29,7 @@ class ContextualMidiReceiver : Receiver {
 
     fun initialize(deviceName: String) {
         val devices = MidiSystem.getMidiDeviceInfo()
+        Logger.info("Available MIDI devices: ${devices.joinToString { d -> d.name }}", Logger.Category.VSTPlugins)
         for (info in devices.filter { d -> d.name.startsWith(deviceName) }) {
             device = MidiSystem.getMidiDevice(info)
             try {

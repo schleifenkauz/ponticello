@@ -1,15 +1,12 @@
 package xenakis.sc
 
 import reaktive.value.ReactiveValue
-import reaktive.value.binding.map
 import reaktive.value.now
 import reaktive.value.reactiveValue
-import xenakis.model.obj.ParameterizedObject
+import xenakis.model.registry.ObjectReference
 import xenakis.model.score.Envelope
-import xenakis.model.score.controls.AttackReleaseControl
-import xenakis.model.score.controls.EnvelopeControl
-import xenakis.model.score.controls.UGenControl
-import xenakis.model.score.controls.ValueControl
+import xenakis.model.score.ParameterControlList.NamedParameterControl
+import xenakis.ui.misc.LFOsManager
 import java.util.*
 import kotlin.math.exp
 import kotlin.math.ln
@@ -17,28 +14,30 @@ import kotlin.math.sin
 
 private const val TWO_PI = 2.0 * Math.PI
 
-interface LFO {
+abstract class LFO {
     val range: Double get() = max - min
 
-    val min: Double
-    val max: Double
+    abstract val min: Double
+    abstract val max: Double
 
-    val children: List<LFO> get() = emptyList()
+    open val children: List<LFO> get() = emptyList()
 
-    fun resolveDependencies(obj: ParameterizedObject) {
-        for (child in children) {
-            child.resolveDependencies(obj)
-        }
+    protected lateinit var manager: LFOsManager
+        private set
+
+    fun initialize(manager: LFOsManager) {
+        this.manager = manager
+        children.forEach { child -> child.initialize(manager) }
     }
 
-    fun isResolved(): Boolean = children.all { child -> child.isResolved() }
+    open fun isResolved(): Boolean = children.all { child -> child.isResolved() }
 
-    fun dependsOn(parameter: String): Boolean = children.any { child -> child.dependsOn(parameter) }
+    open fun dependsOn(parameter: NamedParameterControl): Boolean = children.any { child -> child.dependsOn(parameter) }
 
-    fun generateValues(duration: Double, sampleRate: Int, dest: DoubleArray)
+    abstract fun generateValues(duration: Double, sampleRate: Int, dest: DoubleArray)
 }
 
-data class ConstantLFO(val value: ReactiveValue<Double>) : LFO {
+data class ConstantLFO(val value: ReactiveValue<Double>) : LFO() {
     constructor(value: Double) : this(reactiveValue(value))
 
     override val min: Double
@@ -51,12 +50,11 @@ data class ConstantLFO(val value: ReactiveValue<Double>) : LFO {
     }
 }
 
-data class AddLFO(val left: LFO, val right: LFO) : LFO {
-    override val min = left.min + right.min
-    override val max = left.max + right.max
+data class AddLFO(val left: LFO, val right: LFO) : LFO() {
+    override val min get() = left.min + right.min
+    override val max get() = left.max + right.max
 
-    override val children: List<LFO>
-        get() = listOf(left, right)
+    override val children = listOf(left, right)
 
     override fun generateValues(duration: Double, sampleRate: Int, dest: DoubleArray) {
         left.generateValues(duration, sampleRate, dest)
@@ -68,9 +66,9 @@ data class AddLFO(val left: LFO, val right: LFO) : LFO {
     }
 }
 
-data class MulLFO(val left: LFO, val right: LFO) : LFO {
-    override val min: Double = minOf(left.min * right.min, left.min * right.max, left.max * right.min)
-    override val max: Double = maxOf(left.max * right.max, left.min * left.max)
+data class MulLFO(val left: LFO, val right: LFO) : LFO() {
+    override val min: Double by lazy { minOf(left.min * right.min, left.min * right.max, left.max * right.min) }
+    override val max: Double by lazy { maxOf(left.max * right.max, left.min * left.max) }
 
     override val children: List<LFO>
         get() = listOf(left, right)
@@ -85,9 +83,9 @@ data class MulLFO(val left: LFO, val right: LFO) : LFO {
     }
 }
 
-data class DivLFO(val left: LFO, val right: LFO) : LFO {
-    override val min: Double = minOf(left.min / right.min, left.min / right.max, left.max / right.min)
-    override val max: Double = maxOf(left.max / right.max, left.min / left.max)
+data class DivLFO(val left: LFO, val right: LFO) : LFO() {
+    override val min: Double by lazy { minOf(left.min / right.min, left.min / right.max, left.max / right.min) }
+    override val max: Double by lazy { maxOf(left.max / right.max, left.min / left.max) }
 
     override val children: List<LFO>
         get() = listOf(left, right)
@@ -102,7 +100,7 @@ data class DivLFO(val left: LFO, val right: LFO) : LFO {
     }
 }
 
-data class SubLFO(val left: LFO, val right: LFO) : LFO {
+data class SubLFO(val left: LFO, val right: LFO) : LFO() {
     override val min: Double
         get() = left.min - right.max
     override val max: Double
@@ -121,13 +119,12 @@ data class SubLFO(val left: LFO, val right: LFO) : LFO {
     }
 }
 
-data class NegLFO(val lfo: LFO) : LFO {
+data class NegLFO(val lfo: LFO) : LFO() {
     override val min: Double
         get() = -lfo.max
     override val max: Double
         get() = -lfo.min
-    override val children: List<LFO>
-        get() = listOf(lfo)
+    override val children = listOf(lfo)
 
     override fun generateValues(duration: Double, sampleRate: Int, dest: DoubleArray) {
         lfo.generateValues(duration, sampleRate, dest)
@@ -137,7 +134,7 @@ data class NegLFO(val lfo: LFO) : LFO {
     }
 }
 
-data class ReciprocalLFO(val lfo: LFO) : LFO {
+data class ReciprocalLFO(val lfo: LFO) : LFO() {
     override val min: Double
         get() = 1.0 / lfo.max
     override val max: Double
@@ -167,9 +164,8 @@ private inline fun generatePhaseSignal(
     }
 }
 
-data class Sawtooth(val frequency: LFO, val initialPhase: Double) : LFO {
-    override val children: List<LFO>
-        get() = listOf(frequency)
+data class Sawtooth(val frequency: LFO, val initialPhase: Double) : LFO() {
+    override val children = listOf(frequency)
     override val min: Double
         get() = -1.0
     override val max: Double
@@ -180,7 +176,7 @@ data class Sawtooth(val frequency: LFO, val initialPhase: Double) : LFO {
     }
 }
 
-data class Pulse(val frequency: LFO, val width: LFO, val initialPhase: Double) : LFO {
+data class Pulse(val frequency: LFO, val width: LFO, val initialPhase: Double) : LFO() {
     override val children: List<LFO>
         get() = listOf(frequency)
 
@@ -198,7 +194,7 @@ data class Pulse(val frequency: LFO, val width: LFO, val initialPhase: Double) :
     }
 }
 
-data class Sine(val frequency: LFO, val initialPhase: Double) : LFO {
+data class Sine(val frequency: LFO, val initialPhase: Double) : LFO() {
     override val min: Double
         get() = -1.0
     override val max: Double
@@ -212,7 +208,7 @@ data class Sine(val frequency: LFO, val initialPhase: Double) : LFO {
     }
 }
 
-data class Line(val start: Double, val end: Double) : LFO {
+data class Line(val start: Double, val end: Double) : LFO() {
     override val min: Double
         get() = minOf(start, end)
     override val max: Double
@@ -228,7 +224,7 @@ data class Line(val start: Double, val end: Double) : LFO {
     }
 }
 
-data class LinRange(val lfo: LFO, override val min: Double, override val max: Double) : LFO {
+data class LinRange(val lfo: LFO, override val min: Double, override val max: Double) : LFO() {
     override val children: List<LFO>
         get() = listOf(lfo)
 
@@ -242,7 +238,7 @@ data class LinRange(val lfo: LFO, override val min: Double, override val max: Do
     }
 }
 
-data class ExpRange(val lfo: LFO, override val min: Double, override val max: Double) : LFO {
+data class ExpRange(val lfo: LFO, override val min: Double, override val max: Double) : LFO() {
     override val children: List<LFO>
         get() = listOf(lfo)
 
@@ -259,7 +255,7 @@ data class ExpRange(val lfo: LFO, override val min: Double, override val max: Do
     }
 }
 
-data class EnvelopeLFO(val envelope: Envelope) : LFO {
+data class EnvelopeLFO(val envelope: Envelope) : LFO() {
     override val min: Double = envelope.points.minOf { p -> p.value.value }
     override val max: Double = envelope.points.minOf { p -> p.value.value }
 
@@ -299,41 +295,39 @@ data class EnvelopeLFO(val envelope: Envelope) : LFO {
     }
 }
 
-class ParameterReferenceLFO(private val parameter: String) : LFO {
-    private var resolved: ReactiveValue<LFO?>? = null
+class ParameterReferenceLFO(private val parameter: ObjectReference<NamedParameterControl>) : LFO() {
+    private val resolvedLFO get() = parameter.get()?.let { param -> manager.getLFO(param) }
 
     override val min: Double
-        get() = resolved?.now?.min ?: error("Parameter $parameter has not been resolved")
+        get() = resolvedLFO?.min ?: error("Parameter $parameter has not been resolved")
     override val max: Double
-        get() = resolved?.now?.max ?: error("Parameter $parameter has not been resolved")
+        get() = resolvedLFO?.max ?: error("Parameter $parameter has not been resolved")
 
     override fun generateValues(duration: Double, sampleRate: Int, dest: DoubleArray) {
-        if (resolved == null) {
-            error("Parameter $parameter has not been resolved")
-        } else if (resolved!!.now == null) {
-            error("Parameter $parameter has not been resolved as an LFO")
-        }
-        resolved!!.now!!.generateValues(duration, sampleRate, dest)
+        val lfo = resolvedLFO ?: error("Parameter $parameter has not been resolved")
+        lfo.generateValues(duration, sampleRate, dest)
     }
 
-    override fun resolveDependencies(obj: ParameterizedObject) {
-        val control = obj.controls.getOrNull(parameter) ?: return
-        resolved = when (val ctrl = control.now) {
-            is AttackReleaseControl -> reactiveValue(EnvelopeLFO(ctrl.generateEnvelope(obj).points))
-            is EnvelopeControl -> reactiveValue(EnvelopeLFO(ctrl.points))
-            is UGenControl -> {
-                ctrl.expr.editor.result.map { expr ->
-                    expr.lfo?.also { lfo -> lfo.resolveDependencies(obj) }
-                }
-            }
+    override fun isResolved(): Boolean = resolvedLFO != null
 
-            is ValueControl -> reactiveValue(ConstantLFO(ctrl.value.map { it.value }))
-            else -> null
-        }
+    override fun dependsOn(parameter: NamedParameterControl): Boolean =
+        parameter == this.parameter.get() || resolvedLFO?.dependsOn(parameter) == true
+}
+
+class ParameterNameLFO(private val parameter: String) : LFO() {
+    private val resolvedLFO get() = manager.getLFOByName(parameter)
+
+    override val min: Double
+        get() = resolvedLFO?.min ?: error("Parameter $parameter has not been resolved")
+    override val max: Double
+        get() = resolvedLFO?.max ?: error("Parameter $parameter has not been resolved")
+
+    override fun generateValues(duration: Double, sampleRate: Int, dest: DoubleArray) {
+        val lfo = resolvedLFO ?: error("Parameter $parameter has not been resolved")
+        lfo.generateValues(duration, sampleRate, dest)
     }
 
-    override fun isResolved(): Boolean = resolved?.now != null && resolved!!.now!!.isResolved()
+    override fun isResolved(): Boolean = resolvedLFO != null
 
-    override fun dependsOn(parameter: String): Boolean =
-        parameter == this.parameter || resolved?.now?.dependsOn(parameter) == true
+    override fun dependsOn(parameter: NamedParameterControl): Boolean = parameter.name.now == this.parameter
 }

@@ -76,15 +76,6 @@ fun ScWriter.writeSynthCode(
                 generatePreparationCode(obj, uniqueName, param, spec, associatedServerObjects, CodegenContext.Synth)
             }
         }
-        if (associatedServerObjects.isNotEmpty()) {
-            appendBlock("$synthVar.onFree") {
-                for (name in associatedServerObjects) {
-                    +"$name.free"
-                    +"$name = nil"
-                }
-                +"$synthVar = nil"
-            }
-        }
         +"s.sync"
         for ((param, control) in controlsWithSpecs) {
             val (spec, ctrl) = control
@@ -94,5 +85,14 @@ fun ScWriter.writeSynthCode(
             }
         }
         +"$synthVar.run"
+        if (associatedServerObjects.isNotEmpty()) {
+            appendBlock("$synthVar.onFree") {
+                for (name in associatedServerObjects) {
+                    +"$name.free"
+                    +"$name = nil"
+                }
+                +"$synthVar = nil"
+            }
+        }
     }
 }

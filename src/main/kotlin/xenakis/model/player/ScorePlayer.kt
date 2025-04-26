@@ -119,7 +119,7 @@ class ScorePlayer(
         }
     }
 
-    private fun scheduleObject(obj: ScoreObject, absolutePosition: ObjectPosition, cutoff: Decimal) {
+    fun scheduleObject(obj: ScoreObject, absolutePosition: ObjectPosition, cutoff: Decimal) {
         try {
             if (!obj.validate()) return
         } catch (e: Exception) {

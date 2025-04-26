@@ -196,6 +196,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
         is MidiObject -> PianoRollObjectView(inst, obj)
         is TempoGridObject -> TempoGridObjectView(inst, obj)
         is ScoreObject.Unresolved -> UnresolvedScoreObjectView(inst)
+        is ParameterizedScoreObject -> throw AssertionError()
     }
 
     /*

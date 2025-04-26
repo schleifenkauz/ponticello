@@ -47,6 +47,8 @@ class SynthObjectView(
     override val defaultBackgroundColor: ReactiveValue<Color>
         get() = obj.synthDefSelector.result.flatMap { ref -> ref.get()?.color ?: reactiveValue(Color.GRAY) }
 
+    private lateinit var controlsPane: ParameterControlsPane
+
     init {
         styleClass("synth-object")
     }
@@ -64,6 +66,7 @@ class SynthObjectView(
             }
         }
         sampleDisplayObserver = obj.displaySample?.forEach { updateSpectrogram() }
+        controlsPane = ParameterControlsPane(obj, "Synth controls", this)
     }
 
     override fun setupDetailPane(pane: DetailPane) {
@@ -73,7 +76,7 @@ class SynthObjectView(
         }.styleClass("medium-icon-button").disableIf(obj.synthDefSelector.isResolved.not())
         val box = ObjectSelectorControl(obj.synthDefSelector, createBundle())
         pane.addItem("SynthDef: ", HBox(5.0, box, viewBtn).centerChildren())
-        pane.children.add(ParameterControlsPane(obj, "Synth controls", this))
+        pane.children.add(controlsPane)
     }
 
     override fun added(control: ParameterControlList.NamedParameterControl, idx: Int) {

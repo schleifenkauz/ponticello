@@ -5,10 +5,7 @@ import hextant.codegen.Compound
 import hextant.context.Context
 import reaktive.value.now
 import xenakis.impl.Logger
-import xenakis.impl.zero
-import xenakis.model.flow.NodePlacement
 import xenakis.model.obj.ScoreObjectReference
-import xenakis.model.score.SynthObject
 import xenakis.sc.client.ScWriter
 import xenakis.sc.editor.ScoreObjectSelector
 
@@ -56,12 +53,7 @@ data class PlayObject(
             Logger.error("PlayObject reference $reference is invalid")
             return
         }
-        //TODO late bind
-        val placement =
-            if (obj is SynthObject) NodePlacement(NodePlacement.AddAction.AddToHead, obj.groupObj.superColliderName)
-            else null
-        val uniqueName = "${obj.name.now}_live"
-        val code = obj.writeCode(uniqueName, placement, cutoff = zero)
-        writer.append(code)
+        val name = obj.name.now
+        writer.append("~xenakis_addr.sendMsg(\\playobj, '$name')")
     }
 }

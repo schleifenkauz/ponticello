@@ -20,10 +20,17 @@ import xenakis.sc.view.ObjectSelectorControl
 import xenakis.ui.launcher.XenakisMainActivity
 
 class ProcessObjectView(
-    instance: ScoreObjectInstance, override val obj: ProcessObject
+    instance: ScoreObjectInstance, override val obj: ProcessObject,
 ) : ParameterizedScoreObjectView<ProcessObject>(instance) {
+    private lateinit var controlsPane: ParameterControlsPane
+
     override val defaultBackgroundColor: ReactiveValue<Color>
         get() = obj.processDefRef.flatMap { ref -> ref.get()?.color ?: reactiveValue(Color.GRAY) }
+
+    override fun initialize() {
+        super.initialize()
+        controlsPane = ParameterControlsPane(obj, "Process controls", this)
+    }
 
     override fun setupDetailPane(pane: DetailPane) {
         pane.addItem("Color:", this.colorPicker)
@@ -35,6 +42,6 @@ class ProcessObjectView(
         }.styleClass("medium-icon-button").disableIf(selector.isResolved.not())
         val box = ObjectSelectorControl(selector, createBundle())
         pane.addItem("ProcessDef: ", HBox(5.0, box, viewBtn).centerChildren())
-        pane.children.add(ParameterControlsPane(obj, "Process controls", this))
+        pane.children.add(controlsPane)
     }
 }

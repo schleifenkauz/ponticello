@@ -7,10 +7,14 @@ import reaktive.Observer
 import reaktive.value.ReactiveValue
 import reaktive.value.now
 import reaktive.value.reactiveVariable
+import xenakis.impl.Logger
+import xenakis.impl.one
+import xenakis.impl.zero
 import xenakis.model.Settings
 import xenakis.model.flow.AudioFlowGraph
 import xenakis.model.flow.AudioFlows
 import xenakis.model.flow.NodeTree
+import xenakis.model.registry.ScoreObjectRegistry
 import xenakis.model.score.ObjectPosition
 import xenakis.model.score.Score
 import xenakis.model.score.ScoreObject
@@ -34,6 +38,7 @@ class PlaybackManager(private val scoreView: NavigableScorePane, flows: AudioFlo
         private set
     private var isAttached = false
 
+    private val playObjObserver: Observer
     private var isPlayingObserver: Observer? = null
     private val _isPlaying = reactiveVariable(false)
 
@@ -45,7 +50,20 @@ class PlaybackManager(private val scoreView: NavigableScorePane, flows: AudioFlo
 
     init {
         attachToMainScore()
+        playObjObserver = registerPlayObserver()
     }
+
+    private fun registerPlayObserver(): Observer =
+        scoreView.context[SuperColliderClient].onPlayObj.observe { _, name ->
+            val obj = context[ScoreObjectRegistry].getOrNull(name)
+            if (obj == null) {
+                Logger.warn("Could not find object with name $name", Logger.Category.Playback)
+                return@observe
+            }
+            val pos = ObjectPosition(playHead.currentTime, one)
+            player.scheduleObject(obj, pos, cutoff = zero)
+            //TODO schedule freeing/stopping the scheduled object after its duration
+        }
 
     fun isAttachedTo(target: Pane) = playHead.pane == target
 

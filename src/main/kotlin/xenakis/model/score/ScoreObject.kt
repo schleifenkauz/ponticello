@@ -65,7 +65,7 @@ sealed class ScoreObject : AbstractRenamableObject() {
             _height.now = value
         }
 
-    fun duration(): ReactiveValue<Decimal> = _duration
+    open fun duration(): ReactiveValue<Decimal> = _duration
 
     fun height(): ReactiveValue<Decimal> = _height
 

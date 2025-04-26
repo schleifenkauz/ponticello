@@ -238,7 +238,7 @@ class ControlAssignmentEditor(val control: NamedParameterControl, val view: Scor
                     displayToggle.selectedProperty().bindBidirectional(control.display.asProperty())
                     displayToggle.disableProperty().bind(
                         control.expr.editor.result.map { expr ->
-                            expr.lfo == null
+                            expr.getLfo() == null
                         }.asObservableValue()
                     )
                     return HBox(5.0, showWindowButton, displayToggle).centerChildren()

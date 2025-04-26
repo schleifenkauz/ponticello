@@ -31,7 +31,8 @@ interface ParameterizedObject : NamedObject {
         for (control in controls.all()) {
             val spec = control.spec.now
             val value = control.now
-            if (value is BusControl || spec !is BusControlSpec) continue
+            //TODO also consider control value buses?
+            if (value !is BusControl || spec !is BusControlSpec) continue
             if (spec.flow != flowType) {
                 val ctrl = control.now as? BusControl ?: continue
                 val bus = ctrl.bus.now.get()

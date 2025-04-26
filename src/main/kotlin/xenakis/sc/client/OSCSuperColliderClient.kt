@@ -33,6 +33,7 @@ class OSCSuperColliderClient(
     private val treeClear = unitEvent()
     private val updateSynthDef = event<String>()
     private val updateProcessDef = event<String>()
+    private val playObj = event<String>()
 
     override fun onServerBooted(action: () -> Unit): Observer {
         val observer = serverBoot.stream.observe(action)
@@ -48,8 +49,10 @@ class OSCSuperColliderClient(
         eventObservers.add(ready.stream.observe(action))
     }
 
-    override val updatedSynthDef = updateSynthDef.stream
-    override val updatedProcessDef = updateProcessDef.stream
+    override val updatedSynthDef get() = updateSynthDef.stream
+    override val updatedProcessDef get() = updateProcessDef.stream
+
+    override val onPlayObj get() = playObj.stream
 
     override var sampleRate: Double = -1.0
         private set
@@ -111,6 +114,7 @@ class OSCSuperColliderClient(
                 path.startsWith("/cleared") -> eventExecutor.execute {
                     treeClear.fire()
                 }
+
                 path.startsWith("/updated") -> eventExecutor.execute {
                     val str = getContentString(buf)
                     val type = str.substringBefore(":")
@@ -119,6 +123,11 @@ class OSCSuperColliderClient(
                         "synth_def" -> updateSynthDef.fire(name)
                         "process_def" -> updateProcessDef.fire(name)
                     }
+                }
+
+                path.startsWith("/playobj") -> eventExecutor.execute {
+                    val name = getContentString(buf)
+                    playObj.fire(name)
                 }
 
                 path.startsWith("/reply") -> {

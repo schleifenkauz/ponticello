@@ -172,7 +172,7 @@ class AudioFlowGraph(
         val group = node.obj.groupObj
         if (group == defaultGroup) {
             addNode(node)
-            reorderNodeTree()
+            //reorderNodeTree()
         }
         val placement = getPlacementFor(node)
         nodeTree.addNode(node, placement, createSynth = false)
@@ -183,7 +183,7 @@ class AudioFlowGraph(
         val node = SynthObjectNode(obj, absolutePosition, suffix)
         activeSynths.getValue(obj).remove(node)
         removeNode(node)
-        reorderNodeTree()
+        //reorderNodeTree()
         Logger.fine("marked end for $obj, suffix = $suffix", Logger.Category.Playback)
         nodeTree.removeNode(node, freeSynth = false)
     }

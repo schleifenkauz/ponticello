@@ -39,7 +39,7 @@ fun ScElement.code(context: Context): String {
 @UseEditor(ScExprExpander::class)
 @ListEditor
 interface ScExpr : ScElement {
-    val lfo: LFO? get() = null
+    fun getLfo(): LFO? = null
 }
 
 @Serializable
@@ -107,8 +107,7 @@ object Nil : Literal, SimpleScElement("nil")
 @Serializable(with = DecimalLiteral.Serializer::class)
 @SerialName("DoubleLiteral") //backward compatibility
 data class DecimalLiteral(val text: String, val valueOrNull: Decimal?) : Literal, SimpleScElement(text), ScExpr {
-    override val lfo: LFO?
-        get() = ConstantLFO(get().value)
+    override fun getLfo(): LFO = ConstantLFO(get().value)
 
     constructor(value: Decimal) : this(value.toString(), value)
 
@@ -211,6 +210,11 @@ data class Identifier(val text: String) : SimpleScElement(text), AssignableScExp
 
     val isValidClassName: Boolean
         get() = isValid && text[0].isUpperCase()
+
+    override fun getLfo(): LFO? {
+        if (!text.startsWith("~ctrl_")) return null
+        return ParameterNameLFO(text.removePrefix("~ctrl_"))
+    }
 
     companion object {
         fun isValid(token: String): Boolean {
@@ -375,14 +379,14 @@ data class MessageSend(val receiver: ScExpr, val method: Identifier, val argumen
         }
     }
 
-    override val lfo: LFO? by lazy {
-        val receiverLFO = receiver.lfo
-        when (method.text) {
+    override fun getLfo(): LFO? {
+        val receiverLFO = receiver.getLfo()
+        return when (method.text) {
             "kr", "ar" -> {
-                if (receiver !is Identifier) return@lazy null
-                val freq = arguments.getOrNull(0)?.lfo ?: return@lazy null
+                if (receiver !is Identifier) return null
+                val freq = arguments.getOrNull(0)?.getLfo() ?: return null
                 val phase =
-                    if (arguments.size == 2) (arguments[1] as? DecimalLiteral)?.get()?.value ?: return@lazy null
+                    if (arguments.size == 2) (arguments[1] as? DecimalLiteral)?.get()?.value ?: return null
                     else 0.0
                 when (receiver.text) {
                     "SinOsc", "LFSinOsc" -> Sine(freq, phase)
@@ -392,16 +396,17 @@ data class MessageSend(val receiver: ScExpr, val method: Identifier, val argumen
             }
 
             "range", "exprange" -> {
-                if (receiverLFO == null) return@lazy null
-                val min = arguments.getOrNull(0) ?: return@lazy null
-                val max = arguments.getOrNull(1) ?: return@lazy null
-                if (min !is DecimalLiteral || max !is DecimalLiteral) return@lazy null
+                if (receiverLFO == null) return null
+                val min = arguments.getOrNull(0) ?: return null
+                val max = arguments.getOrNull(1) ?: return null
+                if (min !is DecimalLiteral || max !is DecimalLiteral) return null
                 when (method.text) {
                     "range" -> LinRange(receiverLFO, min.get().value, max.get().value)
                     "exprange" -> ExpRange(receiverLFO, min.get().value, max.get().value)
                     else -> null
                 }
             }
+
             else -> null
         }
     }
@@ -435,10 +440,10 @@ data class OperatorExpr(val left: ScExpr, val operator: Operator, val right: ScE
     override val isValid: Boolean
         get() = left.isValid && operator.isValid && right.isValid
 
-    override val lfo: LFO? by lazy {
-        val left = left.lfo ?: return@lazy null
-        val right = right.lfo ?: return@lazy null
-        when (operator) {
+    override fun getLfo(): LFO? {
+        val left = left.getLfo() ?: return null
+        val right = right.getLfo() ?: return null
+        return when (operator) {
             Operator.Div -> DivLFO(left, right)
             Operator.Minus -> SubLFO(left, right)
             Operator.Plus -> AddLFO(left, right)
