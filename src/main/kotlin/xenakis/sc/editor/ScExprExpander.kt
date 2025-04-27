@@ -3,7 +3,6 @@ package xenakis.sc.editor
 import fxutils.prompt.showSelectorDialog
 import hextant.command.Command
 import hextant.command.meta.ProvideCommand
-import hextant.context.withoutUndo
 import hextant.core.editor.*
 import reaktive.value.now
 import xenakis.model.obj.VSTPluginObject
@@ -92,29 +91,39 @@ class ScExprExpander() : ConfiguredExpander<ScExpr, ScExprEditor<*>>(), ScExprEd
         }
     }
 
-    @ProvideCommand(shortName = "assign", type = Command.Type.SingleReceiver)
-    fun assignToVariable() = makeUndoableEdit("Wrap in assignment") {
-        val value = withoutUndo { snapshot() }
+    @ProvideCommand(
+        shortName = "assign", name = "Wrap in assignment",
+        defaultShortcut = "Ctrl+Shift+DIGIT0",
+        type = Command.Type.SingleReceiver
+    )
+    fun assignToVariable() {
+        val value = snapshot()
         val variable = AssignableExprExpander("")
         val assignment = AssignmentEditor(variable, value)
-        expand(assignment)
+        expand(assignment, editDescription = "Wrap in assignment")
         variable.notifyViews { focus() }
     }
 
-    @ProvideCommand(shortName = "name", type = Command.Type.SingleReceiver)
-    fun nameValue() = makeUndoableEdit("Wrap in named value") {
-        val value = withoutUndo { snapshot() }
+    @ProvideCommand(
+        shortName = "name", name = "Wrap in named value",
+        type = Command.Type.SingleReceiver
+    )
+    fun nameValue() {
+        val value = snapshot()
         val variable = IdentifierEditor()
         val named = NamedExprEditor(variable, value)
-        expand(named)
+        expand(named, editDescription = "Wrap in named value")
         variable.notifyViews { focus() }
     }
 
-    @ProvideCommand(shortName = "send", type = Command.Type.SingleReceiver, defaultShortcut = "Ctrl+PERIOD")
-    fun callMethod() = makeUndoableEdit("Wrap in method call") {
-        val receiver = withoutUndo { snapshot() }
+    @ProvideCommand(
+        shortName = "send", name = "Wrap in method call",
+        type = Command.Type.SingleReceiver, defaultShortcut = "Ctrl+PERIOD"
+    )
+    fun callMethod() {
+        val receiver = snapshot()
         val send = MessageSendEditor(receiver)
-        expand(send)
+        expand(send, editDescription = "Wrap in method call")
         send.method.notifyViews { focus() }
     }
 

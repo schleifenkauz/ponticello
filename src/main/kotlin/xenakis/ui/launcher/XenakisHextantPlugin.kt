@@ -5,9 +5,7 @@ import fxutils.prompt.PredicateTextPrompt
 import fxutils.shortcut
 import hextant.context.ControlFactory
 import hextant.context.SelectionDistributor
-import hextant.core.editor.defaultState
-import hextant.core.editor.getParent
-import hextant.core.editor.isSubEditor
+import hextant.core.editor.*
 import hextant.core.view.EditorControl
 import hextant.core.view.ListEditorControl
 import hextant.plugins.*
@@ -113,6 +111,20 @@ object XenakisHextantPlugin : PluginInitializer({
                 -> ctrl.editorParent
 
             else -> null
+        }
+    }
+
+    registerCommand<ScExprEditor<*>, Unit> {
+        shortName = "unwrap"
+        name = "Unwrap and replace parent"
+        defaultShortcut = "Alt+X".shortcut
+        applicableIf { editor -> editor.parent?.expander is ScExprExpander }
+        executing { editor ->
+            val parent = editor.parent ?: return@executing
+            val selector = editor.context[SelectionDistributor]
+            selector.saveSelectionState()
+            parent.replaceWith(editor.snapshot(), editDescription = "Unwrap expression")
+            selector.restoreSelectionState()
         }
     }
 
