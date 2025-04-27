@@ -78,7 +78,7 @@ class ReachabilityGraph<V> {
         for (u in backEdges.getValue(v)) {
             s.removeIf(reaches.getValue(u)::contains)
         }
-        s.removeIf { w -> w !in reaches.getValue(v) }
+        s.removeIf { w -> w !in reaches[v].orEmpty() }
         s.remove(v)
         if (s.isNotEmpty()) {
             for (u in s) {

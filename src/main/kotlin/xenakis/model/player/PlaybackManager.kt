@@ -27,7 +27,7 @@ import xenakis.ui.score.ScoreObjectView
 import xenakis.ui.score.ScorePane
 
 class PlaybackManager(private val scoreView: NavigableScorePane, flows: AudioFlows) {
-    val playHead = PlayHead()
+    val playHead = PlayHead(scoreView.context)
     val recorder = Recorder(scoreView.context)
     val nodeTree = NodeTree(scoreView.context[SuperColliderClient])
     val graph = AudioFlowGraph(flows, nodeTree)
@@ -115,12 +115,6 @@ class PlaybackManager(private val scoreView: NavigableScorePane, flows: AudioFlo
         activeObjects.clear()
         events.resetEvents()
 
-    }
-
-    fun getActiveInstance(view: ScoreObjectView): ActiveObject? {
-        if (!isPlaying.now) return null
-        val objectInstances = activeObjects.activeInstances(view.obj)
-        return objectInstances.find { inst -> inst.absolutePosition == view.absolutePosition }
     }
 
     companion object : PublicProperty<PlaybackManager> by publicProperty("PlaybackManager") {

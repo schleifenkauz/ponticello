@@ -1,22 +1,33 @@
 package xenakis.ui.misc
 
 import fxutils.styleClass
+import hextant.context.Context
 import javafx.application.Platform
 import javafx.scene.layout.Pane
 import javafx.scene.shape.Line
 import xenakis.impl.Decimal
 import xenakis.impl.zero
 import xenakis.model.score.ObjectPosition
+import xenakis.ui.launcher.XenakisMainActivity
 import xenakis.ui.score.TimeBlock
 
-class PlayHead {
+class PlayHead(private val context: Context) {
+    private var attached = false
+
     var currentTime = START
-        private set
+        private set(value) {
+            field = value
+            val activity = context[XenakisMainActivity]
+            if (attached && pane == activity.scoreView) {
+                Platform.runLater {
+                    activity.timeCodeView.displayTime(value)
+                }
+            }
+        }
 
     private val playHead = Line().styleClass("play-head")
 
-    lateinit var timeBlock: TimeBlock
-        private set
+    private lateinit var timeBlock: TimeBlock
     lateinit var pane: Pane
         private set
 
@@ -33,6 +44,7 @@ class PlayHead {
         movePlayHead(START)
         timeBlock = target
         pane = target
+        attached = true
     }
 
     fun setPlayHeadX(x: Double) {

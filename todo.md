@@ -6,10 +6,6 @@
 
 ### Needs Fix
 
-- improve the timeline
-    - maybe only move the playback-cursor on timeline?
-    - display timeline not as part of the score (below or on top?)
-    - show the cursor-position next to playback actions (do we even need a timeline then?)
 - weird duplicating bug when pasting
 - resizing behaviour is not quite right
 - something is not quite right yet in `ScoreEventCollector` (especially when resizing objects...)
@@ -20,8 +16,7 @@
 
 ### Minor
 
-- make `ObjectBoxConfig.getContent` dependent on display mode
-- commands in tool panes to save associated component?
+- is the envelope magnifier really needed?
 - ability to specify added time in beats/bars/ticks
 - ability to copy and paste whole time ranges
 - own editor type for control references
@@ -31,10 +26,8 @@
 - unify window positioning
 - more adequate midi contexts
     - based on focused window
-- global variable in SuperCollider for list of all samples (`ALL_SAMPLES`)
-- curve parameter type?
 - asr parameter type?
-- choose alternative addresses if the default ones are busy
+  - with curve parameter
 
 ## New Functionality
 
@@ -88,8 +81,6 @@
 
 - https://controlsfx.github.io/features/rangeslider/
 
-### LiveSynth space
-
 ### Track references to objects
 
 - buses, samples, score objects, etc.
@@ -123,11 +114,6 @@
 ### Different curvatures for envelopes
 
 ### Is vertical scroll/zoom needed?
-
-### Are there better methods of navigating through the score?
-
-- for example a little overview pane at the bottom (like in VSCode)
-- is arrow key navigation inside the score somehow possible?
 
 ### Drum sequencer objects
 

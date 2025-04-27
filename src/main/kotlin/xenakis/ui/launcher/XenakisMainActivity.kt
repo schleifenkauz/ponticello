@@ -32,6 +32,7 @@ import xenakis.ui.registry.*
 import xenakis.ui.score.NavigableScorePane
 import xenakis.ui.score.ScoreObjectDuplicator
 import xenakis.ui.score.ScoreObjectSelectionManager
+import xenakis.ui.score.TimeCodeView
 
 class XenakisMainActivity(val project: XenakisProject) : Activity() {
     init {
@@ -81,6 +82,8 @@ class XenakisMainActivity(val project: XenakisProject) : Activity() {
         context.makeToolWindow(pane, type.toString(), defaultSize = Dimension2D(500.0, 500.0))
             .also { w -> w.scene.fill = Color.BLACK }
     }
+
+    val timeCodeView = TimeCodeView()
 
     val scoreView: NavigableScorePane
 
@@ -164,8 +167,10 @@ class XenakisMainActivity(val project: XenakisProject) : Activity() {
             center = HBox(
                 infiniteSpace(),
                 interactionConfig,
-                hspace(50.0),
+                hspace(20.0),
                 toolbarPart(PlaybackActions.withContext(playback)),
+                hspace(20.0),
+                timeCodeView,
                 infiniteSpace()
             )
             val toolWindowActions = ToolWindowActions.withContext(this@XenakisMainActivity)

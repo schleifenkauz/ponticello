@@ -17,7 +17,6 @@ import xenakis.ui.registry.SimpleSearchableRegistryView
 class UIState private constructor(
     val snapEnabled: ReactiveVariable<Boolean> = reactiveVariable(false),
     val snapOption: ReactiveVariable<SnapOption> = reactiveVariable(SnapOption.Seconds),
-    val displayTimeGrid: ReactiveVariable<Boolean> = reactiveVariable(false),
     val selectedSynthDef: ReactiveVariable<SynthDefReference?> = reactiveVariable(null),
     val windowStates: MutableMap<String, WindowState> = mutableMapOf(),
 ) : AbstractContextualObject() {

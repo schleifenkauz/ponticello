@@ -111,19 +111,23 @@ abstract class ScoreObjectView(
             return detailPane
         } else {
             val ctx = ObjectActionContext.SingleObjectContext(this)
-            detailPane.children.add(
-                HBox(
-                    5.0,
-                    NameControl(obj),
-                    ActionBar(ObjectActions.multiObjectActions.withContext(ctx), buttonStyle = "medium-icon-button"),
-                    ActionBar(ObjectActions.singleObjectActions.withContext(ctx), buttonStyle = "medium-icon-button"),
-                    ActionBar(ObjectActions.playbackActions.withContext(ctx), buttonStyle = "medium-icon-button"),
-                    *headerItems().toTypedArray()
-                ).centerChildren().pad(8.0)
-            )
+            val headerBox = HBox(
+                5.0,
+                NameControl(obj),
+                ActionBar(ObjectActions.multiObjectActions.withContext(ctx), buttonStyle = "medium-icon-button"),
+                ActionBar(ObjectActions.singleObjectActions.withContext(ctx), buttonStyle = "medium-icon-button"),
+                *headerItems().toTypedArray()
+            ).centerChildren().pad(8.0)
+            if (obj.affectsPlayback) {
+                val playbackActions = ActionBar(ObjectActions.playbackActions.withContext(ctx), "medium-icon-button")
+                headerBox.children.add(3, playbackActions)
+            }
+            detailPane.children.add(headerBox)
             detailPane.registerShortcuts(ObjectActions.all.withContext(ctx))
             if (obj.canResize) {
-                val durationLabel = label(obj.duration().map { dur -> "${dur.toCanonicalString()} seconds" }).pad(5.0)
+                val durationLabel = label(obj.duration().map { dur ->
+                    "${dur.round(2).toCanonicalString()} seconds"
+                }).pad(5.0)
                 detailPane.addItem("Duration", durationLabel)
             }
             setupDetailPane(detailPane)
@@ -221,6 +225,7 @@ abstract class ScoreObjectView(
                         playback.playHead.setPlayHeadX(ev.x)
                     }
                 }
+
                 ev.button == MouseButton.PRIMARY && ev.clickCount == 2 -> showInSubWindow()
                 else -> return@addEventHandler
             }

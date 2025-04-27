@@ -10,7 +10,6 @@ import fxutils.styleClass
 import javafx.scene.control.Label
 import javafx.scene.layout.HBox
 import javafx.scene.layout.Region
-import org.kordamp.ikonli.material2.Material2AL
 import org.kordamp.ikonli.materialdesign2.MaterialDesignM
 import reaktive.value.binding.map
 import reaktive.value.binding.not
@@ -21,7 +20,6 @@ import xenakis.model.project.UIState.SnapOption
 
 class InteractionConfigBar(private val settings: UIState) : HBox() {
     private val snapToggle = toggleSnap.withContext(settings)
-    private val gridToggle = toggleGrid.withContext(settings)
 
     private val optionList = object : SimpleSearchableListView<SnapOption>(SnapOption.entries, "Select snap option") {
         override fun createCell(option: SnapOption): Region = HBox(
@@ -45,7 +43,6 @@ class InteractionConfigBar(private val settings: UIState) : HBox() {
         optionButton.disableProperty().bind(settings.snapEnabled.not().asObservableValue())
         children.addAll(
             snapToggle.makeButton("large-icon-button"),
-            gridToggle.makeButton("large-icon-button"),
             optionButton
         )
     }
@@ -57,7 +54,7 @@ class InteractionConfigBar(private val settings: UIState) : HBox() {
                 settings.snapOption.now = option
             }
         }
-        body.registerActions(listOf(snapToggle, gridToggle))
+        body.registerActions(listOf(snapToggle))
     }
 
 
@@ -72,12 +69,5 @@ class InteractionConfigBar(private val settings: UIState) : HBox() {
             }
             toggles(UIState::snapEnabled)
         }
-
-        private val toggleGrid = action("Toggle time grid") {
-            shortcut("T")
-            icon(Material2AL.LINEAR_SCALE)
-            toggles(UIState::displayTimeGrid)
-        }
-
     }
 }

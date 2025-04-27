@@ -125,3 +125,9 @@ Label.memo-area {
 .score-pane:drop-possible {
     -fx-background-color: #222720;
 }
+
+.time-code-label {
+    -fx-font-size: 15px;
+    -fx-text-fill: green;
+    -fx-font-weight: 300;
+}

@@ -4,35 +4,30 @@ import fxutils.SubWindow
 import fxutils.styleClass
 import hextant.context.Context
 import javafx.application.Platform
-import javafx.scene.Node
 import javafx.scene.layout.Pane
 import javafx.scene.paint.Color
 import javafx.scene.shape.Line
-import javafx.scene.text.Text
-import reaktive.value.fx.asObservableValue
 import reaktive.value.now
 import xenakis.impl.*
+import xenakis.model.player.PlaybackManager
 import xenakis.model.project.UIState.SnapOption
 import xenakis.model.project.settings
 import xenakis.model.score.*
 import xenakis.ui.impl.verticalDist
 import xenakis.ui.launcher.XenakisLauncher.Companion.currentProject
+import xenakis.ui.launcher.XenakisMainActivity
 import java.util.concurrent.CompletableFuture
 import kotlin.concurrent.thread
 import kotlin.math.exp
 
 class NavigableScorePane(score: Score, context: Context) : ScorePane(score, context) {
     private val positionTracker = Line() styleClass "mouse-tracker-line"
-    private val timeGridObjects = mutableListOf<Node>()
 
     override val root: ScorePane
         get() = this
 
     private var latestRepaintTrigger = 0L
 
-    private var timeGrid: Double = 0.1
-    val xAccuracy: Int
-        get() = accuracy(timeGrid)
     override var displayStart: Decimal = 0.0.asTime
 
     override var displayEnd: Decimal = 0.0.asTime
@@ -90,6 +85,11 @@ class NavigableScorePane(score: Score, context: Context) : ScorePane(score, cont
             else g.unmark()
         }
         positionTracker.layoutX = getX(t)
+        val activity = context[XenakisMainActivity]
+        val playbackManager = context[PlaybackManager]
+        if (this == activity.scoreView && !(playbackManager.isAttachedTo(this) && playbackManager.isPlaying.now)) {
+            activity.timeCodeView.displayTime(t)
+        }
     }
 
     override fun getNearestGrid(position: ObjectPosition): ScoreObjectInstance? {
@@ -155,7 +155,6 @@ class NavigableScorePane(score: Score, context: Context) : ScorePane(score, cont
         repositionEnvelopeMagnifier()
         if (positionTracker !in children) children.add(positionTracker)
         activity.playback.playHead.updatePosition()
-        displayTimeGrid()
         context[ScoreObjectDuplicator].repainted(this)
     }
 
@@ -173,35 +172,6 @@ class NavigableScorePane(score: Score, context: Context) : ScorePane(score, cont
                 job.join()
             }
         }
-    }
-
-    private fun displayTimeGrid() {
-        children.removeAll(timeGridObjects)
-        timeGridObjects.clear()
-        val settings = context[currentProject].settings
-        val gridVisible = settings.displayTimeGrid.asObservableValue()
-        var idx = QUANTIZED_PIXELS_PER_SECOND.binarySearchBy(pixelsPerSecond) { s -> s }
-        if (idx < 0) idx = (-(idx + 1)).coerceAtMost(QUANTIZED_PIXELS_PER_SECOND.size - 1)
-        val quantizedPixelsPerSecond = QUANTIZED_PIXELS_PER_SECOND[idx]
-        timeGrid = (1 / quantizedPixelsPerSecond) * 50.0
-        for (t in displayStart..displayEnd step timeGrid) {
-            val x = getX(t)
-            val l = Line() styleClass "grid-line"
-            l.viewOrder = -100.0
-            l.startX = x
-            l.endX = x
-            l.startYProperty().bind(heightProperty().subtract(40))
-            l.endYProperty().bind(heightProperty().subtract(5))
-            l.visibleProperty().bind(gridVisible)
-            timeGridObjects.add(l)
-            val timeCode = timeCode(t, xAccuracy)
-            val txt = Text(timeCode).styleClass("grid-time-code")
-            txt.x = x - 8
-            txt.yProperty().bind(heightProperty().subtract(40))
-            txt.visibleProperty().bind(gridVisible)
-            timeGridObjects.add(txt)
-        }
-        children.addAll(timeGridObjects)
     }
 
     override fun listenForEvents() {
@@ -254,9 +224,5 @@ class NavigableScorePane(score: Score, context: Context) : ScorePane(score, cont
         displayEnd += amount
         display(displayStart + amount, displayEnd + amount)
         repaint()
-    }
-
-    companion object {
-        private val QUANTIZED_PIXELS_PER_SECOND = listOf(1.0, 2.0, 5.0, 10.0, 20.0, 50.0, 100.0, 200.0, 500.0)
     }
 }
