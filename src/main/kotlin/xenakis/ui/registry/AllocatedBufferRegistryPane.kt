@@ -6,6 +6,7 @@ import fxutils.prompt.compoundPrompt
 import fxutils.registerShortcuts
 import fxutils.setFixedWidth
 import hextant.fx.HextantTextField
+import javafx.event.Event
 import javafx.scene.Node
 import javafx.scene.control.Label
 import javafx.scene.control.Spinner
@@ -27,7 +28,7 @@ class AllocatedBufferRegistryPane(buffers: BufferRegistry) : ObjectRegistryPane<
         setup()
     }
 
-    override fun createNewObject(name: String): BufferObject? {
+    override fun createNewObject(name: String, ev: Event?): BufferObject? {
         return compoundPrompt("Configure buffer $name") {
             val channelsSpinner = Spinner<Int>(1, 12, 2) named "Channels"
             val durationField = TextField() named "Duration (s)"

@@ -5,38 +5,27 @@ import hextant.serial.EditorRoot
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
 import reaktive.value.ReactiveString
+import reaktive.value.ReactiveValue
+import reaktive.value.binding.map
 import reaktive.value.now
 import reaktive.value.reactiveValue
-import xenakis.model.obj.BusObject
 import xenakis.sc.client.ScWriter
 import xenakis.sc.editor.CodeBlockEditor
-import xenakis.sc.editor.IdentifierEditor
-import xenakis.sc.editor.assign
-import xenakis.sc.editor.`in`
 
 @Serializable
 class CodeFlow(val codeEditor: EditorRoot<@Contextual CodeBlockEditor>) : AudioFlow() {
-    override fun initialize(context: Context, bus: BusObject) {
+    override fun initialize(context: Context) {
         super.initialize(context)
         codeEditor.initialize(context)
     }
 
     override fun copy(): AudioFlow = CodeFlow(codeEditor.clone(context))
 
-    override fun getInputs(): Collection<BusObject> = emptySet()
+    override val isValid: ReactiveValue<Boolean> = codeEditor.editor.result.map { result -> result.isValid }
 
-    override fun getOutputs(): Collection<BusObject> = emptySet() //TODO make input ands output configurable
-
-    override fun addListener(listener: AudioNode.Listener) {
-
-    }
-
-    override fun validate(): Boolean = true
-
-    override fun ScWriter.writeCode(placement: NodePlacement) {
+    override fun writeCode(writer: ScWriter, placement: NodePlacement) = with(writer) {
         val code = codeEditor.editor.result.now
         appendBlock(endLine = false) {
-            //TODO maybe read associatedBus into 'snd' variable here
             code.writeCode(writer, context)
         }
         +".play"
@@ -45,11 +34,6 @@ class CodeFlow(val codeEditor: EditorRoot<@Contextual CodeBlockEditor>) : AudioF
     override fun getDefaultName(): ReactiveString = reactiveValue("Code")
 
     companion object {
-        fun createFor(bus: BusObject): CodeFlow {
-            val editor = CodeBlockEditor()
-            editor.variables.setInitialEditors(IdentifierEditor("snd"))
-            editor.statements.setInitialEditors(assign("snd", `in`(bus)))
-            return CodeFlow(EditorRoot(editor))
-        }
+        fun create(): CodeFlow = CodeFlow(EditorRoot(CodeBlockEditor()))
     }
 }

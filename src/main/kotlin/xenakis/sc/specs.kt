@@ -5,23 +5,15 @@ import hextant.codegen.Choice
 import hextant.codegen.Component
 import hextant.codegen.Compound
 import hextant.codegen.UseEditor
-import hextant.context.Context
 import javafx.scene.paint.Color
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import reaktive.value.reactiveVariable
 import xenakis.impl.*
-import xenakis.model.flow.FlowType
-import xenakis.model.flow.editor.FlowTypeEditor
 import xenakis.model.obj.BusReference
-import xenakis.model.obj.GroupReference
-import xenakis.model.registry.BusRegistry
-import xenakis.model.registry.GroupRegistry
 import xenakis.model.registry.ObjectReference
-import xenakis.model.registry.reference
 import xenakis.model.score.controls.BufferControl
 import xenakis.model.score.controls.BusControl
-import xenakis.model.score.controls.GroupControl
 import xenakis.model.score.controls.ValueControl
 import xenakis.sc.editor.ControlSpecEditor
 import xenakis.sc.editor.SimpleColorEditor
@@ -29,13 +21,12 @@ import xenakis.sc.editor.SimpleIntegerEditor
 
 @Serializable
 enum class ParameterType {
-    Bus, Buffer, Numerical, Group, BufferPosition;
+    Bus, Buffer, Numerical, BufferPosition;
 
     override fun toString(): String = when (this) {
         Bus -> "bus"
         Buffer -> "buf"
         Numerical -> "num"
-        Group -> "group"
         BufferPosition -> "buf-pos"
     }
 
@@ -45,10 +36,9 @@ enum class ParameterType {
 }
 
 fun ParameterType.defaultControlSpec(): ControlSpec = when (this) {
-    ParameterType.Bus -> BusControlSpec(Rate.Audio, 2, FlowType.Out)
+    ParameterType.Bus -> BusControlSpec(Rate.Audio, 2)
     ParameterType.Buffer -> BufferControlSpec(channels = 2)
     ParameterType.Numerical -> NumericalControlSpec.DEFAULT
-    ParameterType.Group -> GroupControlSpec
     ParameterType.BufferPosition -> BufferPositionControlSpec
 }
 
@@ -62,27 +52,15 @@ sealed interface ControlSpec {
     val defaultValueExpr: String? get() = null
 }
 
-fun ControlSpec.defaultControl(
-    context: Context,
-    defaultBus: BusReference?, defaultGroup: GroupReference?,
-) = when (this) {
+fun ControlSpec.defaultControl(defaultBus: BusReference?) = when (this) {
     is BufferControlSpec -> BufferControl(reactiveVariable(ObjectReference.none()))
     is BusControlSpec -> {
-        val bus = defaultBus ?: if (rate == Rate.Audio) {
-            when (flow) {
-                FlowType.In -> context[BusRegistry].getInput().reference()
-                FlowType.Out -> context[BusRegistry].getOutput().reference()
-            }
-        } else ObjectReference.none()
+        val bus = defaultBus ?: ObjectReference.none()
         BusControl(reactiveVariable(bus))
     }
 
     is NumericalControlSpec -> ValueControl(reactiveVariable(defaultValue.get()))
     is BufferPositionControlSpec -> ValueControl(reactiveVariable(zero))
-    is GroupControlSpec -> {
-        val group = defaultGroup ?: context[GroupRegistry].getDefault().reference()
-        GroupControl(reactiveVariable(group))
-    }
 }
 
 @Serializable
@@ -157,7 +135,6 @@ data class NumericalControlSpec(
 data class BusControlSpec(
     val rate: Rate,
     @Component(editor = SimpleIntegerEditor::class) val channels: Int,
-    @Component(editor = FlowTypeEditor::class) val flow: FlowType,
 ) : ControlSpec {
     override val type: ParameterType
         get() = ParameterType.Bus
@@ -165,7 +142,7 @@ data class BusControlSpec(
     override val code: String
         get() = "kr"
 
-    override fun toString(): String = "bus ($flow): [$channels x $rate]"
+    override fun toString(): String = "bus: [$channels x $rate]"
 }
 
 @Serializable
@@ -191,18 +168,6 @@ data object BufferPositionControlSpec : ControlSpec {
 
     override val code: String
         get() = "kr(0)"
-}
-
-@Serializable
-@SerialName("group")
-data object GroupControlSpec : ControlSpec {
-    override val type: ParameterType
-        get() = ParameterType.Group
-
-    override val code: String
-        get() = throw UnsupportedOperationException("Group control has no code")
-
-    override fun toString(): String = "buf"
 }
 
 fun NumericalControlSpec.mapOnto(targetRange: DoubleRange) = SpecTransformation(this, targetRange)

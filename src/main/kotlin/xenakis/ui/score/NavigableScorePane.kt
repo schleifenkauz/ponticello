@@ -1,18 +1,26 @@
 package xenakis.ui.score
 
+import fxutils.Ctrl
 import fxutils.SubWindow
+import fxutils.modifiers
 import fxutils.styleClass
 import hextant.context.Context
 import javafx.application.Platform
+import javafx.geometry.Point2D
+import javafx.scene.input.MouseEvent
 import javafx.scene.layout.Pane
 import javafx.scene.paint.Color
 import javafx.scene.shape.Line
+import reaktive.event.unitEvent
 import reaktive.value.now
 import xenakis.impl.*
+import xenakis.model.flow.AudioFlowGroup
+import xenakis.model.flow.AudioFlows
 import xenakis.model.player.PlaybackManager
 import xenakis.model.project.UIState.SnapOption
 import xenakis.model.project.settings
 import xenakis.model.score.*
+import xenakis.ui.controls.NamePrompt
 import xenakis.ui.impl.verticalDist
 import xenakis.ui.launcher.XenakisLauncher.Companion.currentProject
 import xenakis.ui.launcher.XenakisMainActivity
@@ -23,10 +31,9 @@ import kotlin.math.exp
 class NavigableScorePane(score: Score, context: Context) : ScorePane(score, context) {
     private val positionTracker = Line() styleClass "mouse-tracker-line"
 
-    override val root: ScorePane
-        get() = this
-
     private var latestRepaintTrigger = 0L
+    private val repaint = unitEvent()
+    val onRepaint get() = repaint.stream
 
     override var displayStart: Decimal = 0.0.asTime
 
@@ -40,6 +47,9 @@ class NavigableScorePane(score: Score, context: Context) : ScorePane(score, cont
 
     override val absolutePosition: ObjectPosition
         get() = ObjectPosition.ZERO
+
+    override val root: ScorePane
+        get() = this
 
     val displayedDuration get() = displayEnd - displayStart
 
@@ -153,9 +163,9 @@ class NavigableScorePane(score: Score, context: Context) : ScorePane(score, cont
         latestRepaintTrigger = System.currentTimeMillis()
         layoutObjects()
         repositionEnvelopeMagnifier()
+        repaint.fire()
         if (positionTracker !in children) children.add(positionTracker)
         activity.playback.playHead.updatePosition()
-        context[ScoreObjectDuplicator].repainted(this)
     }
 
     private fun layoutObjects() {
@@ -179,6 +189,22 @@ class NavigableScorePane(score: Score, context: Context) : ScorePane(score, cont
         isFocusTraversable = true
         setupPositionTracker()
         setupNavigation()
+    }
+
+    override fun rightClicked(ev: MouseEvent) {
+        super.rightClicked(ev)
+        if (ev.modifiers == setOf(Ctrl)) {
+            addFlowGroup(ev)
+        }
+    }
+
+    private fun addFlowGroup(ev: MouseEvent) {
+        val y = getScoreY(ev.y)
+        val name = NamePrompt(context[AudioFlows], "Name for new flow group", "")
+            .showDialog(scene.window, Point2D(ev.x, ev.y)) ?: return
+        val color = randomColor()
+        val group = AudioFlowGroup.create(name, y, color)
+        context[AudioFlows].add(group)
     }
 
     private fun setupPositionTracker() {

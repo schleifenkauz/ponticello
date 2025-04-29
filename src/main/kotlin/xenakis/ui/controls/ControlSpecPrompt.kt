@@ -6,7 +6,6 @@ import javafx.beans.binding.BooleanBinding
 import javafx.scene.Node
 import javafx.scene.control.Button
 import reaktive.value.now
-import xenakis.model.flow.FlowType
 import xenakis.model.obj.ConfigurableParameterizedObjectDef
 import xenakis.model.obj.ParameterDefObject
 import xenakis.model.obj.ParameterizedObject
@@ -84,7 +83,7 @@ abstract class ControlSpecPrompt<S : ControlSpec, N : Node>(
                 is BufferControlSpec -> BufferControlSpecPrompt(parameterName, parentObject, title, initialSpec)
                 is BusControlSpec -> BusControlSpecPrompt(parameterName, parentObject, title, initialSpec)
                 is NumericalControlSpec -> NumericalControlSpecPrompt(parameterName, parentObject, initialSpec, title)
-                is GroupControlSpec, is BufferPositionControlSpec -> null
+                is BufferPositionControlSpec -> null
             }
         }
 
@@ -93,10 +92,9 @@ abstract class ControlSpecPrompt<S : ControlSpec, N : Node>(
             parentObject: ParameterizedObject?,
             parameterType: ParameterType,
         ): ControlSpecPrompt<*, *>? = when (parameterType) {
-            ParameterType.Bus -> create(parameterName, parentObject, BusControlSpec(Rate.Audio, 2, FlowType.Out))
+            ParameterType.Bus -> create(parameterName, parentObject, BusControlSpec(Rate.Audio, 2))
             ParameterType.Buffer -> create(parameterName, parentObject, BufferControlSpec(2))
             ParameterType.Numerical -> create(parameterName, parentObject, NumericalControlSpec.DEFAULT)
-            ParameterType.Group -> null
             ParameterType.BufferPosition -> null
         }
     }

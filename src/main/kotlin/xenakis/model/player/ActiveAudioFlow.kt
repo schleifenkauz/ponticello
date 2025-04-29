@@ -1,6 +1,5 @@
 package xenakis.model.player
 
-import reaktive.value.now
 import xenakis.model.flow.AudioFlow
 import xenakis.model.obj.ParameterizedObject
 
@@ -9,7 +8,7 @@ class ActiveAudioFlow(val flow: AudioFlow) : ActiveObject() {
         get() = flow as? ParameterizedObject
 
     override val superColliderName: String
-        get() = flow.superColliderName.now
+        get() = flow.superColliderName
 
     override val uniqueName: String
         get() = superColliderName.removePrefix("~")

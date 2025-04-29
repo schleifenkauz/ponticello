@@ -15,17 +15,18 @@ import org.kordamp.ikonli.materialdesign2.MaterialDesignR
 import reaktive.value.binding.equalTo
 import reaktive.value.now
 import reaktive.value.reactiveValue
+import xenakis.model.obj.ContextualObject
 import xenakis.model.obj.RenamableObject
 import xenakis.model.registry.NamedObject
-import xenakis.model.registry.NamedObjectList
+import xenakis.model.registry.ObjectList
 import xenakis.model.registry.ObjectRegistry
 import xenakis.ui.controls.NameControl
 import xenakis.ui.controls.NamePrompt
 import xenakis.ui.impl.makeSubWindow
 import xenakis.ui.launcher.XenakisApp.Companion.primaryStage
-import xenakis.ui.registry.NamedObjectListView.DisplayMode
+import xenakis.ui.registry.ObjectListView.DisplayMode
 
-class ObjectBox<O : NamedObject>(val parent: NamedObjectListView<O>, val obj: O) : VBox() {
+class ObjectBox<O : ContextualObject>(val parent: ObjectListView<O>, val obj: O) : VBox() {
     var subWindow: SubWindow? = null
         private set
 
@@ -34,7 +35,11 @@ class ObjectBox<O : NamedObject>(val parent: NamedObjectListView<O>, val obj: O)
     val nameControl = if (obj is RenamableObject) NameControl(obj, config.getDefaultDisplayName(obj)) else null
 
     private val nameDisplay =
-        nameControl ?: HBox(label(obj.name).styleClass("name-field")).styleClass("name")
+        when {
+            nameControl != null -> nameControl
+            obj is NamedObject -> HBox(label(obj.name).styleClass("name-field")).styleClass("name")
+            else -> null
+        }
 
     val actionBar = ActionBar(
         config.getActions(this) + objectActions.withContext(this),
@@ -43,22 +48,25 @@ class ObjectBox<O : NamedObject>(val parent: NamedObjectListView<O>, val obj: O)
 
     private val space = infiniteSpace()
 
-    private val header = HBox(nameDisplay, *config.getItemContent(obj).toTypedArray(), space, actionBar)
+    private val header = HBox() styleClass "object-box-header"
 
     var content: Parent? = null
         private set
 
     init {
+        styleClass("object-box")
+        if (nameDisplay != null) header.children.add(nameDisplay)
+        header.children.addAll(config.getItemContent(obj))
+        header.children.addAll(space, actionBar)
+        if (config.enableReordering) setupReordering()
+        if (obj is NamedObject && config.dataFormat(obj) != null) setupDragging()
+        children.setAll(header)
         addEventFilter(MouseEvent.MOUSE_CLICKED) { ev ->
             parent.select(this)
             if (ev.clickCount == 2) {
                 parent.showSelected()
             }
         }
-        styleClass("object-box")
-        children.add(header.styleClass("object-box-header"))
-        if (config.enableReordering) setupReordering()
-        if (config.dataFormat(obj) != null) setupDragging()
     }
 
     fun setContentDisplay(option: DisplayMode) {
@@ -69,13 +77,13 @@ class ObjectBox<O : NamedObject>(val parent: NamedObjectListView<O>, val obj: O)
                 subWindow = null
             }
         }
-        if (option != DisplayMode.Inline && content in children) {
-            children.remove(content)
+        if (option != DisplayMode.Inline) {
+            children.setAll(header)
         }
         content = config.getContent(obj, option) ?: return
         if (option == DisplayMode.SubWindow) {
             val objectType = parent.source.objectType
-            val name = obj.name.now
+            val name = if (obj is NamedObject) obj.name.now else ""
             val title = "$objectType $name"
             subWindow = makeSubWindow(content!!, title, parent.source.context).also { w ->
                 config.configureSubWindow(w)
@@ -84,7 +92,7 @@ class ObjectBox<O : NamedObject>(val parent: NamedObjectListView<O>, val obj: O)
             }
         }
         if (option == DisplayMode.Inline) {
-            if (content !in children) children.add(content)
+            children.setAll(header, content)
         }
     }
 
@@ -95,6 +103,7 @@ class ObjectBox<O : NamedObject>(val parent: NamedObjectListView<O>, val obj: O)
 
     private fun setupDragging() {
         val dragTarget = space
+        obj as NamedObject
         dragTarget.setOnDragDetected { ev ->
             if (ev.isControlDown) {
                 val db = dragTarget.startDragAndDrop(TransferMode.COPY)
@@ -130,7 +139,7 @@ class ObjectBox<O : NamedObject>(val parent: NamedObjectListView<O>, val obj: O)
         private val objectActions = collectActions<ObjectBox<*>> {
             addAction("Edit object details") {
                 icon { box ->
-                    val config = box.config as NamedObjectListConfig<NamedObject>
+                    val config = box.config as ObjectListDisplayConfig<ContextualObject>
                     reactiveValue(config.detailWindowIcon(box.obj))
                 }
                 shortcuts("Ctrl+E")
@@ -140,11 +149,11 @@ class ObjectBox<O : NamedObject>(val parent: NamedObjectListView<O>, val obj: O)
                 }
             }
             addAction("Duplicate object") {
-                applicableIf { box -> box.obj.canCopy && box.obj.registry != null }
+                applicableIf { box -> box.obj is NamedObject && box.obj.canCopy && box.obj.registry != null }
                 icon(MaterialDesignC.CONTENT_DUPLICATE)
                 description { box -> reactiveValue("Duplicate ${box.parent.source.objectType}") }
                 executes { box, ev ->
-                    val obj = box.obj
+                    val obj = box.obj as NamedObject
                     val list = box.parent.source as ObjectRegistry<NamedObject>
                     val initialName = obj.name.now + "_copy"
                     val name = NamePrompt(list, "Name for new duplicate instrument", initialName)
@@ -160,9 +169,9 @@ class ObjectBox<O : NamedObject>(val parent: NamedObjectListView<O>, val obj: O)
             addAction("Delete object") {
                 icon(Material2AL.DELETE)
                 shortcuts("Ctrl+DELETE")
-                applicableIf { box -> box.obj.canDelete }
+                applicableIf { box -> box.obj is NamedObject && box.obj.canDelete }
                 executes { box ->
-                    val source = box.parent.source as NamedObjectList<NamedObject>
+                    val source = box.parent.source as ObjectList<ContextualObject>
                     source.remove(box.obj)
                 }
             }

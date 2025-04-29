@@ -6,22 +6,18 @@ import io.mockk.mockk
 import reaktive.value.reactiveVariable
 import xenakis.impl.asTime
 import xenakis.impl.toDecimal
-import xenakis.model.obj.GroupObject
 import xenakis.model.registry.*
 import xenakis.model.score.ParameterControlList
 import xenakis.model.score.ScoreObject
 import xenakis.model.score.SynthObject
-import xenakis.model.score.controls.GroupControl
 import xenakis.sc.client.SuperColliderClient
 
 object Utils {
-    val defaultGroup = GroupObject.DEFAULT.reference()
-
     fun createDummyObject(name: String): ScoreObject {
         val dummy1 = SynthObject(
             mutableName = reactiveVariable(name),
             synthDefRef = reactiveVariable(ObjectReference("default")),
-            controls = ParameterControlList.create("group" to GroupControl(reactiveVariable(defaultGroup)))
+            controls = ParameterControlList.create()
         )
         dummy1.setInitialSize(10.0.asTime, 100.0.toDecimal())
         return dummy1

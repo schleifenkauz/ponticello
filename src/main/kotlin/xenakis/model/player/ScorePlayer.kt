@@ -3,6 +3,7 @@ package xenakis.model.player
 import reaktive.value.now
 import xenakis.impl.*
 import xenakis.model.Settings
+import xenakis.model.flow.SynthObjectNode
 import xenakis.model.player.ScoreEventCollector.Event
 import xenakis.model.score.*
 import xenakis.sc.client.SuperColliderClient
@@ -102,7 +103,8 @@ class ScorePlayer(
         when (obj) {
             is SynthObject -> {
                 try {
-                    manager.graph.remove(obj, startPos, suffix)
+                    val node = SynthObjectNode(obj, startPos, suffix)
+                    manager.nodeTree.removeNode(node)
                 } catch (e: Exception) {
                     Logger.error("Failed to remove $obj from audio flow graph", e, Logger.Category.Playback)
                 }
@@ -136,7 +138,8 @@ class ScorePlayer(
         }
         val placement = if (obj is SynthObject) {
             try {
-                manager.graph.insert(obj, absolutePosition, suffix)
+                val node = SynthObjectNode(obj, absolutePosition, suffix)
+                manager.nodeTree.addNode(node)
             } catch (e: Exception) {
                 Logger.error("Failed to insert $obj into audio flow graph", e, Logger.Category.Playback)
                 return

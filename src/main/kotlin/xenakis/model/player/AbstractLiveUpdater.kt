@@ -137,9 +137,6 @@ abstract class AbstractLiveUpdater(protected val obj: ParameterizedObject) : Par
                 val expr = ctrl.expr.editor.result.now
                 updateUGenControl(this, name, parameter, expr)
             }
-
-            else -> return //no real-time update possible
-
         }
     }
 
@@ -194,8 +191,6 @@ abstract class AbstractLiveUpdater(protected val obj: ParameterizedObject) : Par
                     updateUGenControl(this, name, parameter, expr)
                 }
             }
-
-            else -> return //no real-time update possible
         }
     }
 

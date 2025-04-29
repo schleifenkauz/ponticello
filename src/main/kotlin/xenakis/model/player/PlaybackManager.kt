@@ -11,7 +11,6 @@ import xenakis.impl.Logger
 import xenakis.impl.one
 import xenakis.impl.zero
 import xenakis.model.Settings
-import xenakis.model.flow.AudioFlowGraph
 import xenakis.model.flow.AudioFlows
 import xenakis.model.flow.NodeTree
 import xenakis.model.registry.ScoreObjectRegistry
@@ -30,7 +29,6 @@ class PlaybackManager(private val scoreView: NavigableScorePane, flows: AudioFlo
     val playHead = PlayHead(scoreView.context)
     val recorder = Recorder(scoreView.context)
     val nodeTree = NodeTree(scoreView.context[SuperColliderClient])
-    val graph = AudioFlowGraph(flows, nodeTree)
     val activeObjects = ActiveObjectManager(flows)
     lateinit var player: ScorePlayer
         private set
@@ -110,11 +108,9 @@ class PlaybackManager(private val scoreView: NavigableScorePane, flows: AudioFlo
     }
 
     fun pausedPlayback() {
-        graph.clear()
         recorder.pausingPlayback()
         activeObjects.clear()
         events.resetEvents()
-
     }
 
     companion object : PublicProperty<PlaybackManager> by publicProperty("PlaybackManager") {

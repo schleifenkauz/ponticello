@@ -18,7 +18,6 @@ import xenakis.impl.ColorSerializer
 import xenakis.impl.Logger
 import xenakis.impl.copy
 import xenakis.impl.randomColor
-import xenakis.model.flow.FlowType
 import xenakis.model.registry.SynthDefRegistry
 import xenakis.sc.*
 import xenakis.sc.client.ScWriter
@@ -116,12 +115,12 @@ class CustomizableSynthDefObject(
 
         fun sine() = create(
             name = "sine",
-            ParameterDefObject("out", BusControlSpec(Rate.Audio, 2, FlowType.Out))
+            ParameterDefObject("out", BusControlSpec(Rate.Audio, 2))
         )
 
         fun lpf() = create(
             name = "lpf",
-            ParameterDefObject("bus", BusControlSpec(Rate.Audio, 2, FlowType.In))
+            ParameterDefObject("bus", BusControlSpec(Rate.Audio, 2))
         )
     }
 }

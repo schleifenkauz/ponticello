@@ -6,7 +6,7 @@ import xenakis.model.flow.AudioFlows
 import xenakis.model.score.ObjectPosition
 import xenakis.model.score.ScoreObject
 
-class ActiveObjectManager(private val flows: AudioFlows) {
+class ActiveObjectManager(private val flowGroups: AudioFlows) {
     private val takenSuffixes = mutableMapOf<String, MutableSet<Int>>()
     private val suffixes = mutableMapOf<ScoreObject, MutableMap<ObjectPosition, Int>>()
 
@@ -34,8 +34,10 @@ class ActiveObjectManager(private val flows: AudioFlows) {
         suffixes.forEach { (obj, instances) ->
             instances.forEach { (pos, suffix) -> action(ActiveScoreObject(obj, pos, suffix)) }
         }
-        for (flow in flows.all()) {
-            if (flow.isActive.now) {
+        for (group in flowGroups.all()) {
+            if (!group.isActive.now) continue
+            for (flow in group.flows) {
+                if (!flow.isActive.now) continue
                 action(ActiveAudioFlow(flow))
             }
         }

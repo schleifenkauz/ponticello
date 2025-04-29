@@ -6,8 +6,9 @@ import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.listSerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
+import xenakis.model.obj.ContextualObject
 
-open class NamedObjectListSerializer<O : NamedObject, L : NamedObjectList<O>>(
+open class ObjectListSerializer<O : ContextualObject, L : ObjectList<O>>(
     val elementSerializer: KSerializer<O>,
     val createList: (MutableList<O>) -> L
 ) : KSerializer<L> {

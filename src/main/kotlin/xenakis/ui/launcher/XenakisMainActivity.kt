@@ -17,6 +17,7 @@ import reaktive.Observer
 import xenakis.impl.Logger
 import xenakis.model.ScriptObject
 import xenakis.model.Settings
+import xenakis.model.flow.AudioFlows
 import xenakis.model.obj.ParameterizedObject
 import xenakis.model.player.PlaybackManager
 import xenakis.model.project.*
@@ -29,10 +30,7 @@ import xenakis.ui.midi.ContextualMidiReceiver
 import xenakis.ui.midi.ParameterControlsMidiContext
 import xenakis.ui.misc.*
 import xenakis.ui.registry.*
-import xenakis.ui.score.NavigableScorePane
-import xenakis.ui.score.ScoreObjectDuplicator
-import xenakis.ui.score.ScoreObjectSelectionManager
-import xenakis.ui.score.TimeCodeView
+import xenakis.ui.score.*
 
 class XenakisMainActivity(val project: XenakisProject) : Activity() {
     init {
@@ -53,8 +51,11 @@ class XenakisMainActivity(val project: XenakisProject) : Activity() {
         defaultSize = Dimension2D(1200.0, 1200.0)
     )
 
-    private val busRegistryPane = ControlBusRegistryPane(project.busses)
-    val busesWindow = context.makeToolWindow(busRegistryPane, "Control Buses")
+    private val controlBusPane = ControlBusRegistryPane(project.busses)
+    val controlBusWindow = context.makeToolWindow(controlBusPane, "Control Buses")
+
+    private val audioBusPane = AudioBusRegistryPane(project.busses)
+    val audioBusWindow = context.makeToolWindow(audioBusPane, "Audio Buses")
 
     private val samplesPane = SampleRegistryPane(project.buffers)
     val samplesWindow = context.makeToolWindow(samplesPane, "Samples")
@@ -87,6 +88,8 @@ class XenakisMainActivity(val project: XenakisProject) : Activity() {
 
     val scoreView: NavigableScorePane
 
+    private val flowGroupLines: FlowGroupLines
+
     private lateinit var observer: Observer
 
     val playback: PlaybackManager
@@ -102,6 +105,7 @@ class XenakisMainActivity(val project: XenakisProject) : Activity() {
         context[HelpBrowser] = HelpBrowser()
 
         scoreView = NavigableScorePane(project.score, project.context)
+        flowGroupLines = FlowGroupLines(project.flows, scoreView)
         val duplicator = ScoreObjectDuplicator()
         project.context[ScoreObjectDuplicator] = duplicator
         duplicator.registerRootPane(scoreView)
@@ -113,6 +117,8 @@ class XenakisMainActivity(val project: XenakisProject) : Activity() {
 
         playback = PlaybackManager(scoreView, project.flows)
         context[PlaybackManager] = playback
+
+        context[AudioFlows].createAllFlows()
 
         showObjectDetailsOnSelection()
     }

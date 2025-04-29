@@ -9,7 +9,10 @@ import reaktive.list.ReactiveList
 import reaktive.list.fx.asObservableList
 import reaktive.value.now
 import xenakis.model.obj.ParameterDefObject
-import xenakis.sc.*
+import xenakis.sc.BufferControlSpec
+import xenakis.sc.BufferPositionControlSpec
+import xenakis.sc.BusControlSpec
+import xenakis.sc.NumericalControlSpec
 
 class ParameterInfoPane(
     parameters: ReactiveList<ParameterDefObject>,
@@ -30,7 +33,6 @@ class ParameterInfoPane(
                     when (val spec = item.spec.now) {
                         is BufferControlSpec -> add(Label("buf"))
                         is BusControlSpec -> add(Label("bus"))
-                        is GroupControlSpec -> add(Label("group"))
                         is BufferPositionControlSpec -> add(Label("bufpos"))
                         is NumericalControlSpec -> {
                             add(Label("num, "))

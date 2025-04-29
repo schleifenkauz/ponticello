@@ -8,6 +8,7 @@ import javafx.scene.SnapshotParameters
 import javafx.scene.image.Image
 import javafx.scene.image.ImageView
 import javafx.scene.robot.Robot
+import reaktive.Observer
 import xenakis.impl.Decimal
 import xenakis.model.obj.SampleObject
 import xenakis.model.project.UI_STATE
@@ -16,14 +17,18 @@ import xenakis.model.score.ScoreObject
 import xenakis.ui.launcher.XenakisLauncher.Companion.currentProject
 
 class ScoreObjectDuplicator {
+    private val repaintObservers = mutableListOf<Observer>()
+
     var clipboardObject: ScoreObject? = null
         private set
 
     private val panes = mutableListOf<ScorePane>()
     private val imageViews = mutableMapOf<ScorePane, ImageView>()
 
-    fun registerRootPane(pane: ScorePane) {
+    fun registerRootPane(pane: NavigableScorePane) {
         panes.add(pane)
+        val observer = pane.onRepaint.observe { _ -> repainted(pane) }
+        repaintObservers.add(observer)
     }
 
     fun enterDuplicateMode(obj: ScoreObject, view: ScoreObjectView) {
@@ -68,7 +73,7 @@ class ScoreObjectDuplicator {
         view.fitHeight = pane.getScreenY(clipboardObject!!.height) - 4.0
     }
 
-    fun repainted(pane: ScorePane) {
+    private fun repainted(pane: ScorePane) {
         val imageView = imageViews[pane] ?: return
         check(clipboardObject != null) { "Not in duplicate mode" }
         imageView.fitWidth = pane.getWidth(clipboardObject!!.duration) - 4.0

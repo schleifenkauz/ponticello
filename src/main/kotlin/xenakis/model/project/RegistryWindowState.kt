@@ -6,14 +6,14 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import reaktive.value.now
-import xenakis.ui.registry.NamedObjectListView
+import xenakis.ui.registry.ObjectListView
 import xenakis.ui.registry.ObjectRegistryPane
 
 @Serializable
 @SerialName("RegistryWindow")
 class RegistryWindowState : WindowState() {
     private var selectedIndex: Int = -1
-    private var displayMode: NamedObjectListView.DisplayMode? = null
+    private var displayMode: ObjectListView.DisplayMode? = null
 
     @Transient
     private lateinit var targetPane: ObjectRegistryPane<*>

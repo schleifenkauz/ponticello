@@ -33,7 +33,6 @@ class ScoreObjectGroupView(
 
     override fun setupDetailPane(pane: DetailPane) {
         pane.addItem("Color:", this.colorPicker)
-        pane.addItem("Default group", ObjectSelectorControl(this.obj.groupSelector, createBundle()))
         pane.addItem("Default bus", ObjectSelectorControl(this.obj.busSelector, createBundle()))
     }
 

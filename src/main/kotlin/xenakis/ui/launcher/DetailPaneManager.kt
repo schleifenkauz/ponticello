@@ -72,7 +72,8 @@ class DetailPaneManager(private val context: Context) {
     private fun updateBounds(view: ScoreObjectView, window: SubWindow) {
         val titleBarHeight = if (window.style == StageStyle.DECORATED) TITLE_BAR_HEIGHT else 0.0
         val boundsInScreen = view.localToScreen(view.boundsInLocal)
-        val screen = Screen.getScreensForRectangle(boundsInScreen.centerX, boundsInScreen.centerY, 1.0, 1.0).first()
+        val screen = Screen.getScreensForRectangle(boundsInScreen.centerX, boundsInScreen.centerY, 1.0, 1.0)
+            .firstOrNull() ?: return
         val screenCenterY = screen.visualBounds.minY + screen.visualBounds.height / 2.0
         window.x = boundsInScreen.minX.coerceIn(screen.visualBounds.minX, screen.visualBounds.maxX - window.width)
         val prefHeight = window.scene.root.prefHeight(-1.0)

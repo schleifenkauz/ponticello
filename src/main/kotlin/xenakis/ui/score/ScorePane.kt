@@ -52,7 +52,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
 
     protected val activity get() = context[XenakisMainActivity]
 
-    val selector: ScoreObjectSelectionManager get() = context[ScoreObjectSelectionManager]
+    private val selector: ScoreObjectSelectionManager get() = context[ScoreObjectSelectionManager]
 
     abstract val root: ScorePane
 
@@ -142,9 +142,10 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
             when (ev.eventType) {
                 MouseEvent.MOUSE_PRESSED -> pane.mousePressed(e)
                 MouseEvent.MOUSE_DRAGGED -> pane.mouseDragged(e)
-                MouseEvent.MOUSE_CLICKED -> when (ev.clickCount) {
-                    1 -> mouseClicked(ev)
-                    2 -> doubleClicked(ev)
+                MouseEvent.MOUSE_CLICKED -> when {
+                    ev.button == MouseButton.SECONDARY -> rightClicked(ev)
+                    ev.clickCount == 1 -> mouseClicked(ev)
+                    ev.clickCount == 2 -> doubleClicked(ev)
                 }
 
                 MouseEvent.MOUSE_RELEASED -> pane.mouseReleased(e)
@@ -225,13 +226,39 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
     * Mouse events
     * */
 
+    protected open fun rightClicked(ev: MouseEvent) {
+        when (ev.modifiers) {
+            noModifiers -> {
+                val popup = SimpleSearchableRegistryView(context[ScoreObjectRegistry], "Add object instance")
+                val anchor = localToScreen(ev.x, ev.y)
+                val obj = popup.showPopup(anchor, scene.window) ?: return
+                val pos = snapToGrid(ev.x, ev.y)
+                val inst = ScoreObjectInstance(obj, pos)
+                score.addObject(inst, autoSelect = true)
+                ev.consume()
+            }
+
+            setOf(Alt) -> {
+                val popup = SimpleSearchableRegistryView(context[BufferRegistry], "Place sample")
+                val anchor = localToScreen(ev.x, ev.y)
+                val sample = popup.showPopup(anchor, scene.window) ?: return
+                val pos = snapToGrid(ev.x, ev.y)
+                createPlayBufObject(sample, pos, ev)
+                ev.consume()
+            }
+
+            setOf(Shift) -> {
+                pasteFromSystemClipboard(ev)
+                ev.consume()
+            }
+        }
+    }
+
     private fun mouseClicked(ev: MouseEvent) {
         if (score == context[currentProject].score && !ev.isShiftDown) selector.deselectAll()
         val (t, y) = snapToGrid(ev.x, ev.y)
         val duplicator = context[ScoreObjectDuplicator]
         when {
-            ev.button == MouseButton.SECONDARY -> pasteFromSystemClipboard(ev)
-
             duplicator.isInDuplicateMode() -> {
                 var obj = duplicator.clipboardObject!!
                 if (obj.height > score.maxY || obj.duration > score.maxTime) return
@@ -243,22 +270,6 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
                 val scoreY = y.coerceIn(zero, score.maxY - obj.height)
                 val duplicate = ScoreObjectInstance(obj, time, scoreY)
                 score.addObject(duplicate, autoSelect = false)
-            }
-
-            ev.modifiers == setOf(Alt, Ctrl) -> {
-                val popup = SimpleSearchableRegistryView(context[BufferRegistry], "Place sample")
-                val sample = popup.showPopup(ev) ?: return
-                val pos = snapToGrid(ev.x, ev.y)
-                createPlayBufObject(sample, pos, ev)
-            }
-
-            ev.modifiers == setOf(Alt, Shift) -> {
-                val popup = SimpleSearchableRegistryView(context[ScoreObjectRegistry], "Add object instance")
-                val anchor = localToScreen(ev.x, ev.y)
-                val obj = popup.showPopup(anchor, scene.window) ?: return
-                val pos = snapToGrid(ev.x, ev.y)
-                val inst = ScoreObjectInstance(obj, pos)
-                score.addObject(inst, autoSelect = true)
             }
 
             this is NavigableScorePane && ev.modifiers.isEmpty() -> {

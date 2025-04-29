@@ -19,7 +19,7 @@ import xenakis.model.registry.GlobalDefinitionLibrary
 import xenakis.model.registry.NamedObject
 import xenakis.model.registry.ObjectRegistry
 import xenakis.sc.Identifier
-import xenakis.ui.registry.NamedObjectListView.DisplayMode
+import xenakis.ui.registry.ObjectListView.DisplayMode
 
 abstract class ParameterizedObjectDefRegistryPane<T : ParameterizedObjectDef>(
     private val defs: ObjectRegistry<T>,
@@ -39,7 +39,7 @@ abstract class ParameterizedObjectDefRegistryPane<T : ParameterizedObjectDef>(
         val searchableList = AddObjectOptionListView(synthDefsFromGlobal)
         searchableList.enterText(searchText.text)
         val option = searchableList.showPopup(anchorNode = actionBar) ?: return
-        createObject(option)
+        createObject(option, ev)
     }
 
     private sealed interface AddObjectOption {
@@ -67,10 +67,10 @@ abstract class ParameterizedObjectDefRegistryPane<T : ParameterizedObjectDef>(
         }
     }
 
-    private fun createObject(option: AddObjectOption) {
+    private fun createObject(option: AddObjectOption, ev: Event?) {
         when (option) {
             is AddObjectOption.NewObject -> {
-                this.createNewObject(option.name)?.let { def ->
+                this.createNewObject(option.name, ev)?.let { def ->
                     registry.add(def)
                     listView.select(def)
                 }

@@ -1,10 +1,11 @@
 package xenakis.model.registry
 
 import hextant.undo.AbstractEdit
+import xenakis.model.obj.ContextualObject
 
-sealed class ListEdit<O : NamedObject>(protected val registry: NamedObjectList<O>) : AbstractEdit() {
-    class AddObject<O : NamedObject>(
-        registry: NamedObjectList<O>,
+sealed class ListEdit<O : ContextualObject>(protected val registry: ObjectList<O>) : AbstractEdit() {
+    class AddObject<O : ContextualObject>(
+        registry: ObjectList<O>,
         private val obj: O,
         private val idx: Int
     ) : ListEdit<O>(registry) {
@@ -20,8 +21,8 @@ sealed class ListEdit<O : NamedObject>(protected val registry: NamedObjectList<O
         }
     }
 
-    class RemoveObject<O : NamedObject>(
-        registry: NamedObjectList<O>,
+    class RemoveObject<O : ContextualObject>(
+        registry: ObjectList<O>,
         private val obj: O,
         private val idx: Int
     ) : ListEdit<O>(registry) {
@@ -37,8 +38,8 @@ sealed class ListEdit<O : NamedObject>(protected val registry: NamedObjectList<O
         }
     }
 
-    class MoveObject<O : NamedObject>(
-        registry: NamedObjectList<O>,
+    class MoveObject<O : ContextualObject>(
+        registry: ObjectList<O>,
         private val obj: O,
         private val fromIdx: Int,
         private val toIdx: Int

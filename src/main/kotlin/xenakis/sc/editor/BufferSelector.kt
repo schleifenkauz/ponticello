@@ -25,5 +25,5 @@ class BufferSelector : ObjectSelector<BufferObject>() {
     override fun filter(obj: BufferObject): Boolean =
         expectedChannels.now == null || obj.channels() == expectedChannels.now
 
-    override fun createNewObject(name: String): SampleObject? = context[SampleRegistryPane].createNewObject(name)
+    override fun createNewObject(name: String): SampleObject? = context[SampleRegistryPane].createNewObject(name, null)
 }

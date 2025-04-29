@@ -1,25 +1,14 @@
 package xenakis.model.flow
 
 import reaktive.value.ReactiveString
-import xenakis.model.obj.BusObject
-import xenakis.sc.client.ScWriter
+import reaktive.value.ReactiveValue
+import reaktive.value.now
+import xenakis.impl.Decimal
 
-sealed interface AudioNode {
+sealed interface AudioNode: Comparable<AudioNode> {
     val superColliderName: ReactiveString
 
-    fun getInputs(): Collection<BusObject>
+    val yPosition: ReactiveValue<Decimal>
 
-    fun getOutputs(): Collection<BusObject>
-
-    fun validate(): Boolean
-
-    fun ScWriter.writeCode(placement: NodePlacement)
-
-    fun addListener(listener: Listener)
-
-    interface Listener {
-        fun addedBus(bus: BusObject, type: FlowType)
-
-        fun removedBus(bus: BusObject, type: FlowType)
-    }
+    override fun compareTo(other: AudioNode): Int = compareValuesBy(this, other) { node -> node.yPosition.now }
 }

@@ -9,6 +9,8 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import reaktive.Observer
 import reaktive.value.*
+import reaktive.value.binding.binding
+import reaktive.value.binding.equalTo
 import reaktive.value.binding.flatMap
 import reaktive.value.binding.map
 import xenakis.impl.Logger
@@ -19,7 +21,8 @@ import xenakis.model.obj.ParameterDefObject
 import xenakis.model.obj.ParameterizedObject
 import xenakis.model.obj.ParameterizedObjectDef
 import xenakis.model.registry.NamedObjectList
-import xenakis.model.registry.NamedObjectListSerializer
+import xenakis.model.registry.ObjectList
+import xenakis.model.registry.ObjectListSerializer
 import xenakis.model.score.controls.BufferControl
 import xenakis.model.score.controls.ParameterControl
 import xenakis.sc.BufferPositionControlSpec
@@ -30,13 +33,21 @@ import xenakis.sc.Warp
 @Serializable(with = ParameterControlList.Serializer::class)
 class ParameterControlList(
     override val objects: MutableList<NamedParameterControl> = mutableListOf(),
-) : NamedObjectList<ParameterControlList.NamedParameterControl>(), NamedObjectList.Listener<ParameterDefObject> {
+) : NamedObjectList<ParameterControlList.NamedParameterControl>(), ObjectList.Listener<ParameterDefObject> {
     override val objectType: String
         get() = "Parameter control"
 
     @Transient
     lateinit var associatedObject: ParameterizedObject
         private set
+
+    @Transient
+    private var invalidCount = reactiveVariable(0)
+
+    val isValid: ReactiveValue<Boolean> get() = invalidCount.equalTo(0)
+
+    @Transient
+    private lateinit var validationObserver: Observer
 
     private val def: ParameterizedObjectDef get() = associatedObject.def
 
@@ -47,11 +58,11 @@ class ParameterControlList(
     @Serializable
     class NamedParameterControl(
         @SerialName("name") override val mutableName: ReactiveVariable<String>,
-        private var value: ParameterControl,
+        private val value: ReactiveVariable<ParameterControl>,
         private var customSpec: ControlSpec? = null,
     ) : AbstractRenamableObject() {
         constructor(name: String, value: ParameterControl, customSpec: ControlSpec? = null) : this(
-            reactiveVariable(name), value, customSpec
+            reactiveVariable(name), reactiveVariable(value), customSpec
         )
 
         @Transient
@@ -66,11 +77,15 @@ class ParameterControlList(
         lateinit var controls: ParameterControlList
             private set
 
+        @Transient
+        lateinit var isValid: ReactiveBoolean
+            private set
+
         val parentObject get() = controls.associatedObject
 
-        val now get() = value
+        val now get() = value.now
 
-        override fun copy(name: String): NamedParameterControl = NamedParameterControl(name, value, customSpec)
+        override fun copy(name: String): NamedParameterControl = NamedParameterControl(name, now, customSpec)
 
         fun copy(value: ParameterControl = now.copy()): NamedParameterControl =
             NamedParameterControl(name.now, value, customSpec)
@@ -80,9 +95,9 @@ class ParameterControlList(
         fun initialize(controls: ParameterControlList) {
             this.controls = controls
             super.initialize(controls.context)
-            value.initialize(context)
-            val spec = customSpec ?: parentObject.def.getSpec(name.now)?.now
-            updateSpec(spec)
+            value.now.initialize(context)
+            updateSpec(customSpec ?: parentObject.def.getSpec(name.now)?.now)
+            isValid = binding(_spec, value) { spec, ctrl -> spec != null && ctrl.validate(spec, parentObject) }
         }
 
         private fun updateSpec(spec: ControlSpec?) {
@@ -97,7 +112,7 @@ class ParameterControlList(
         private fun resolveControlSpec(spec: ControlSpec?): ReactiveValue<ControlSpec?> = when (spec) {
             null -> reactiveValue(null)
             is BufferPositionControlSpec -> {
-                val buf = controls.getOrNull("buf")?.value as? BufferControl
+                val buf = controls.getOrNull("buf")?.now as? BufferControl
                 val duration = buf?.sample?.flatMap { s -> s.get()?.duration() ?: reactiveValue(zero) }
                 duration?.map { dur ->
                     NumericalControlSpec(
@@ -144,9 +159,9 @@ class ParameterControlList(
         }
 
         fun reassign(newControl: ParameterControl) {
-            val oldControl = value
+            val oldControl = now
             newControl.initialize(context)
-            value = newControl
+            value.now = newControl
             context[UndoManager].record(ReassignControl(this, oldControl, newControl))
             controls.notifyListeners<Listener> { reassignedControl(this@NamedParameterControl, oldControl, newControl) }
         }
@@ -159,6 +174,17 @@ class ParameterControlList(
         this.associatedObject = associatedObject
         for (ctrl in this) ctrl.initialize(this)
         def.parameters.addListener(this)
+        setupValidation()
+    }
+
+    private fun setupValidation() {
+        validationObserver = observeEach { ctrl ->
+            if (!ctrl.isValid.now) invalidCount.now++
+            ctrl.isValid.observe { _, _, valid ->
+                if (valid) invalidCount.now--
+                else invalidCount.now++
+            }
+        }
     }
 
     private fun getDefaultSpec(ctrl: NamedParameterControl) = def.getSpec(ctrl.name.now)?.now
@@ -167,7 +193,7 @@ class ParameterControlList(
         parameterObservers[obj] = obj.name.observe { _, oldName, newName ->
             val ctrl = getOrNull(oldName) ?: return@observe
             ctrl.parameterNameChanged(newName)
-        } and obj.spec.observe { _, oldSpec, newSpec ->
+        } and obj.spec.observe { _, _, newSpec ->
             val ctrl = getOrNull(obj.name.now) ?: return@observe
             ctrl.parameterSpecChanged(newSpec)
         }
@@ -269,7 +295,7 @@ class ParameterControlList(
         }
     }
 
-    interface Listener : NamedObjectList.Listener<NamedParameterControl> {
+    interface Listener : ObjectList.Listener<NamedParameterControl> {
         override fun added(obj: NamedParameterControl, idx: Int) {
         }
 
@@ -285,7 +311,7 @@ class ParameterControlList(
         fun changedSpec(control: NamedParameterControl, oldSpec: ControlSpec?, newSpec: ControlSpec?) {}
     }
 
-    object Serializer : NamedObjectListSerializer<NamedParameterControl, ParameterControlList>(
+    object Serializer : ObjectListSerializer<NamedParameterControl, ParameterControlList>(
         kotlinx.serialization.serializer(), ::ParameterControlList
     )
 

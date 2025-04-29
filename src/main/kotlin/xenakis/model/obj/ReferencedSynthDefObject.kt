@@ -8,7 +8,6 @@ import reaktive.value.ReactiveVariable
 import reaktive.value.reactiveValue
 import reaktive.value.reactiveVariable
 import xenakis.impl.*
-import xenakis.model.flow.FlowType
 import xenakis.sc.BufferControlSpec
 import xenakis.sc.BusControlSpec
 import xenakis.sc.NumericalControlSpec
@@ -78,9 +77,7 @@ class ReferencedSynthDefObject(
                     if (paramName == "duration") continue
                     val default = send("controlDefault", controlRef).get()
                     val spec = when (paramName) {
-                        "in" -> BusControlSpec(Rate.Audio, 2, FlowType.In)
-                        "out" -> BusControlSpec(Rate.Audio, 2, FlowType.Out)
-                        "bus" -> BusControlSpec(Rate.Audio, 2, FlowType.Out)
+                        "in", "out", "bus" -> BusControlSpec(Rate.Audio, 2)
                         "buf" -> BufferControlSpec(2)
                         else -> {
                             val min = send("controlMinval", listOf(name, paramName)).get().toDouble()

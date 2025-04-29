@@ -27,7 +27,7 @@ abstract class ParameterizedObjectDefPane<T : ConfigurableParameterizedObjectDef
         override val enableAddObjectButton: Boolean
             get() = true
     }
-    private val parametersList = NamedObjectListView(def.parameters, config)
+    private val parametersList = ObjectListView(def.parameters, config)
 
     init {
         val content = this.getContent(def)

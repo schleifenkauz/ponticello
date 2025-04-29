@@ -5,11 +5,9 @@ import hextant.core.editor.ChoiceEditor
 import hextant.serial.JsonSerializer
 import hextant.serial.KJsonSerializer
 import xenakis.impl.randomColor
-import xenakis.model.flow.FlowType
-import xenakis.model.flow.editor.FlowTypeEditor
 import xenakis.sc.*
 
-class ControlSpecEditor() : ChoiceEditor<ParameterType, ControlSpec, Editor<ControlSpec>>(),
+class ControlSpecEditor : ChoiceEditor<ParameterType, ControlSpec, Editor<ControlSpec>>(),
     JsonSerializer<ParameterType> by KJsonSerializer.get() {
     override fun choices(): List<ParameterType> = ParameterType.regularTypes
 
@@ -25,7 +23,6 @@ class ControlSpecEditor() : ChoiceEditor<ParameterType, ControlSpec, Editor<Cont
                 val specEditor = BusControlSpecEditor(
                     RateEditor(spec.rate),
                     SimpleIntegerEditor(spec.channels),
-                    FlowTypeEditor(spec.flow)
                 )
                 specEditor.setupDefaultState()
                 select(ParameterType.Bus, specEditor)
@@ -43,8 +40,7 @@ class ControlSpecEditor() : ChoiceEditor<ParameterType, ControlSpec, Editor<Cont
     override fun createEditor(choice: ParameterType): Editor<ControlSpec> = when (choice) {
         ParameterType.Bus -> BusControlSpecEditor(
             RateEditor(Rate.Audio),
-            SimpleIntegerEditor(2),
-            FlowTypeEditor(FlowType.Out)
+            SimpleIntegerEditor(2)
         )
         ParameterType.Buffer -> BufferControlSpecEditor()
         ParameterType.Numerical -> NumericalControlSpecEditor(

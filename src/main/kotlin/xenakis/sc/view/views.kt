@@ -181,9 +181,6 @@ fun createControl(editor: xenakis.sc.editor.OperatorEditor, arguments: Bundle): 
 fun createControl(editor: xenakis.sc.editor.BusControlSpecEditor, arguments: Bundle) =
     CompoundEditorControl(editor, arguments) {
         horizontal {
-            space()
-            view(editor.flow)
-            space()
             keyword("rate: ")
             view(editor.rate)
             space()

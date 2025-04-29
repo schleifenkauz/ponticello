@@ -11,10 +11,10 @@ import org.kordamp.ikonli.Ikon
 import org.kordamp.ikonli.materialdesign2.MaterialDesignE
 import reaktive.value.ReactiveString
 import reaktive.value.reactiveValue
-import xenakis.model.registry.NamedObject
+import xenakis.model.obj.ContextualObject
 import xenakis.model.registry.NamedObject.Companion.NO_NAME
 
-interface NamedObjectListConfig<O : NamedObject> {
+interface ObjectListDisplayConfig<O: ContextualObject> {
     val enableReordering: Boolean get() = false
 
     val enableAddObjectButton: Boolean get() = false
@@ -25,13 +25,13 @@ interface NamedObjectListConfig<O : NamedObject> {
 
     val inlineOrientation: Orientation get() = Orientation.VERTICAL
 
-    val supportedModes get() = setOf(NamedObjectListView.DisplayMode.Inline)
+    val supportedModes get() = setOf(ObjectListView.DisplayMode.Inline)
 
     fun detailWindowIcon(obj: O): Ikon = MaterialDesignE.EYE
 
     fun getItemContent(obj: O): List<Node> = emptyList()
 
-    fun getContent(obj: O, mode: NamedObjectListView.DisplayMode): Parent? = null
+    fun getContent(obj: O, mode: ObjectListView.DisplayMode): Parent? = null
 
     fun getActions(box: ObjectBox<O>): List<ContextualizedAction> = emptyList()
 

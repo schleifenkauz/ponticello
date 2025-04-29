@@ -3,10 +3,10 @@
 - is the `AdhocSynth` still needed?
 - does each `ConfigurableParameterizedObjectDef` need its own context
     - or does it take the one of its registry?
+- separate registries for audio and control buses?
 
 ### Needs Fix
 
-- weird duplicating bug when pasting
 - resizing behaviour is not quite right
 - something is not quite right yet in `ScoreEventCollector` (especially when resizing objects...)
 - moving objects to sub score parent is buggy
@@ -16,6 +16,8 @@
 
 ### Minor
 
+- implement process flows
+  - so we can remove live processes...
 - is the envelope magnifier really needed?
 - ability to specify added time in beats/bars/ticks
 - ability to copy and paste whole time ranges
@@ -57,16 +59,6 @@
     - or global pattern streams -> simply get `<stream>.next` (implemented)
 - as standalone objects (`pbind`)
     - this can be done with tasks and a special expression editor for `PLbindef`s
-
-### Attach transformations to buses not to flows
-
-- how to mute
-    - disable flow graph arrows
-    - or mute individual buses
-- graphical tools for EQ, compression (multi-band), reverb, etc.
-    - integrate as special editors?
-- or open transformation chain by clicking on bus in the flow graph
-- how to notify user about loops in the flow graph
 
 ### More efficient communication with SC
 

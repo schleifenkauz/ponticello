@@ -22,17 +22,19 @@ import org.kordamp.ikonli.materialdesign2.MaterialDesignD
 import org.kordamp.ikonli.materialdesign2.MaterialDesignV
 import reaktive.value.*
 import reaktive.value.binding.notEqualTo
+import xenakis.model.obj.ContextualObject
 import xenakis.model.registry.NamedObject
 import xenakis.model.registry.NamedObjectList
+import xenakis.model.registry.ObjectList
 
-class NamedObjectListView<O : NamedObject>(
-    val source: NamedObjectList<O>,
-    val config: NamedObjectListConfig<O>,
+class ObjectListView<O: ContextualObject>(
+    val source: ObjectList<O>,
+    val config: ObjectListDisplayConfig<O>,
     private val displayMode: ReactiveVariable<DisplayMode>,
     private var filter: (O) -> Boolean = { true },
-) : Control(), NamedObjectList.Listener<O> {
+) : Control(), ObjectList.Listener<O> {
     constructor(
-        source: NamedObjectList<O>, config: NamedObjectListConfig<O>,
+        source: ObjectList<O>, config: ObjectListDisplayConfig<O>,
         displayMode: DisplayMode = config.supportedModes.first(),
         filter: (O) -> Boolean = { true },
     ) : this(source, config, reactiveVariable(displayMode), filter)
@@ -301,7 +303,7 @@ class NamedObjectListView<O : NamedObject>(
     }
 
     companion object {
-        val listActions = collectActions<NamedObjectListView<*>> {
+        val listActions = collectActions<ObjectListView<*>> {
             addAction("Add object") {
                 shortcut("Ctrl+PLUS")
                 executes { list -> list.addObject() }
@@ -312,9 +314,10 @@ class NamedObjectListView<O : NamedObject>(
             }
             addAction("Delete selected") {
                 shortcut("Ctrl+DELETE")
+                applicableIf { list -> list.source is NamedObjectList<*> }
                 executes { list ->
                     val selected = list.selectedBox?.obj ?: return@executes
-                    if (selected.canDelete) {
+                    if (selected is NamedObject && selected.canDelete) {
                         @Suppress("UNCHECKED_CAST")
                         val source = list.source as NamedObjectList<NamedObject>
                         source.remove(selected)
@@ -381,7 +384,7 @@ class NamedObjectListView<O : NamedObject>(
             }
         }
 
-        private fun Action.Builder<NamedObjectListView<*>>.modeChange(mode: DisplayMode) {
+        private fun Action.Builder<ObjectListView<*>>.modeChange(mode: DisplayMode) {
             applicableWhen { view ->
                 if (mode in view.config.supportedModes) view.mode.notEqualTo(mode)
                 else reactiveValue(false)
@@ -392,7 +395,7 @@ class NamedObjectListView<O : NamedObject>(
         val modeChangeActions
             get() = collectActions {
                 addAction("Display content inline") {
-                    icon { view: NamedObjectListView<*> ->
+                    icon { view: ObjectListView<*> ->
                         when (view.config.inlineOrientation) {
                             Orientation.HORIZONTAL -> reactiveValue(MaterialDesignV.VIEW_WEEK)
                             Orientation.VERTICAL -> reactiveValue(MaterialDesignV.VIEW_SEQUENTIAL)

@@ -21,28 +21,31 @@ inline fun <reified T> component(
 val UI_STATE = component<UIState>("ui-state", UIState::default)
 val GROUPS = component<GroupRegistry>(
     "groups", GroupRegistry::createDefault,
-    NamedObjectListSerializer(serializer(), ::GroupRegistry)
+    ObjectListSerializer(serializer(), ::GroupRegistry)
 )
 val BUSSES = component<BusRegistry>(
     "busses", BusRegistry::createDefault,
-    NamedObjectListSerializer(serializer(), ::BusRegistry)
+    ObjectListSerializer(serializer(), ::BusRegistry)
 )
 val BUFFERS = component<BufferRegistry>("buffers", BufferRegistry::createDefault)
 val PATTERNS = component<GlobalPatternRegistry>("patterns", GlobalPatternRegistry::createDefault)
 val SYNTH_DEFS = component<SynthDefRegistry>(
     "instruments", SynthDefRegistry::createDefault,
-    NamedObjectListSerializer(serializer(), ::SynthDefRegistry)
+    ObjectListSerializer(serializer(), ::SynthDefRegistry)
 )
 val PROCESS_DEFS = component<ProcessDefRegistry>(
     "processDefs", ProcessDefRegistry::createDefault,
-    NamedObjectListSerializer(serializer(), ::ProcessDefRegistry)
+    ObjectListSerializer(serializer(), ::ProcessDefRegistry)
 )
-val FLOWS = component<AudioFlows>("flows", AudioFlows::createDefault)
+val FLOWS = component<AudioFlows>(
+    "flows", AudioFlows::createDefault,
+    ObjectListSerializer(serializer(), ::AudioFlows)
+)
 
 val SERVER_OPTIONS = component<ServerOptions>("server_options", ServerOptions::default)
 val OBJECTS = component<ScoreObjectRegistry>(
     "objects", ScoreObjectRegistry::createDefault,
-    NamedObjectListSerializer(serializer(), ::ScoreObjectRegistry)
+    ObjectListSerializer(serializer(), ::ScoreObjectRegistry)
 )
 val LIVE_TASKS = component<LiveTaskRegistry>("live_tasks", LiveTaskRegistry::createDefault)
 

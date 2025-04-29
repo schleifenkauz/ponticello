@@ -94,12 +94,19 @@ object ToolWindowActions : Action.Collector<XenakisMainActivity>({
     }
     addAction("Show control buses") {
         shortcut("Ctrl+B")
-        icon(Material2AL.GRAPHIC_EQ)
+        icon(MaterialDesignT.TUNE_VARIANT)
         executes { activity ->
-            activity.busesWindow.showOrBringToFront()
+            activity.controlBusWindow.showOrBringToFront()
             val buses = activity.context[BusRegistry]
             val midiReceiver = activity.context[ContextualMidiReceiver]
             midiReceiver.setContext(ControlBusesMidiReceiver(buses))
+        }
+    }
+    addAction("Show audio buses") {
+        shortcut("Ctrl+Shift+B")
+        icon(Material2AL.GRAPHIC_EQ)
+        executes { activity ->
+            activity.audioBusWindow.showOrBringToFront()
         }
     }
     addAction("Show global Patterns") {

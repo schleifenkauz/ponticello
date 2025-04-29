@@ -79,11 +79,11 @@ class SynthObjectView(
         pane.children.add(controlsPane)
     }
 
-    override fun added(control: ParameterControlList.NamedParameterControl, idx: Int) {
-        super<ParameterizedScoreObjectView>.added(control, idx)
-        val ctrl = control.now
+    override fun added(obj: ParameterControlList.NamedParameterControl, idx: Int) {
+        super<ParameterizedScoreObjectView>.added(obj, idx)
+        val ctrl = obj.now
         if (ctrl !is ValueControl) return
-        addedConstantControl(control, ctrl)
+        addedConstantControl(obj, ctrl)
     }
 
     private fun addedConstantControl(

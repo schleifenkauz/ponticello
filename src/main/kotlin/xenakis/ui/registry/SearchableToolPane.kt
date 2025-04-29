@@ -14,19 +14,19 @@ import reaktive.value.now
 import reaktive.value.reactiveValue
 import xenakis.model.registry.NamedObject
 import xenakis.model.registry.NamedObjectList
-import xenakis.ui.registry.NamedObjectListView.Companion.modeChangeActions
+import xenakis.ui.registry.ObjectListView.Companion.modeChangeActions
 
-abstract class SearchableToolPane<O : NamedObject> : ToolPane(), NamedObjectListConfig<O> {
+abstract class SearchableToolPane<O : NamedObject> : ToolPane(), ObjectListDisplayConfig<O> {
     protected val searchText = CustomTextField().styleClass("sleek-text-field", "search-field")
 
-    lateinit var listView: NamedObjectListView<O>
+    lateinit var listView: ObjectListView<O>
         private set
 
     protected fun setup(
         title: String?, list: NamedObjectList<O>,
         extraActions: () -> List<ContextualizedAction> = { emptyList() },
     ) {
-        listView = NamedObjectListView(list, this, filter = { obj -> filter(obj) && matchesSearch(obj) })
+        listView = ObjectListView(list, this, filter = { obj -> filter(obj) && matchesSearch(obj) })
         setupSearchField()
         val windowActions = modeChangeActions.withContext(listView) + fitContentAction.withContext(this)
         setup(listView, title?.let(::reactiveValue), searchText, windowActions)

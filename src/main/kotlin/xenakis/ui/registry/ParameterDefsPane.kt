@@ -14,7 +14,7 @@ import xenakis.sc.defaultControlSpec
 class ParameterDefsPane(private val parameters: ParameterDefList, context: Context, title: String) : ToolPane() {
     private val config = ParameterListConfig(context)
 
-    private val objectBoxList = NamedObjectListView(parameters, config)
+    private val objectBoxList = ObjectListView(parameters, config)
 
     init {
         setup(content = objectBoxList, title = title, actions = actions.withContext(this))

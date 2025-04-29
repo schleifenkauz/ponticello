@@ -3,18 +3,17 @@ package xenakis.model.flow
 import hextant.context.Context
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
-import reaktive.value.ReactiveString
-import reaktive.value.ReactiveVariable
+import reaktive.value.*
+import reaktive.value.binding.and
 import reaktive.value.binding.flatMap
-import reaktive.value.now
-import reaktive.value.reactiveVariable
 import xenakis.impl.zero
-import xenakis.model.obj.*
+import xenakis.model.obj.NoSynthDef
+import xenakis.model.obj.ParameterizedObjectDef
+import xenakis.model.obj.SynthDefObject
+import xenakis.model.obj.SynthDefReference
 import xenakis.model.registry.reference
 import xenakis.model.score.ParameterControlList
-import xenakis.model.score.controls.BusControl
 import xenakis.model.score.controls.writeSynthCode
-import xenakis.sc.BusControlSpec
 import xenakis.sc.client.ScWriter
 import xenakis.sc.editor.SynthDefSelector
 
@@ -34,46 +33,32 @@ class SynthFlow(
     override val def: ParameterizedObjectDef
         get() = synthDef
 
-    override fun initialize(context: Context, bus: BusObject) {
-        super.initialize(context, bus)
+    @Transient
+    override lateinit var isValid: ReactiveValue<Boolean>
+        private set
+
+    override fun initialize(context: Context) {
+        super.initialize(context)
         synthDefSelector = SynthDefSelector()
         synthDefSelector.syncWith(defRef)
         synthDefSelector.initialize(context)
         controls.initialize(context, this)
+        isValid = controls.isValid and defRef.flatMap(SynthDefReference::isResolved)
     }
 
     override fun copy(): AudioFlow = SynthFlow(defRef, controls.copy())
 
-    override fun ScWriter.writeCode(placement: NodePlacement) {
-        val mainBusParameter = getMainBusParameter(synthDef)!!
-        val mainBusControl = mainBusParameter.name.now to Pair(
-            mainBusParameter.spec.now,
-            BusControl.create(associatedBus)
-        )
-        val name = superColliderName.now
-        val uniqueName = name.removePrefix("~")
-        writeSynthCode(
-            this@SynthFlow, uniqueName, cutoff = zero, placement,
-            latency = zero, extraControls = mapOf(mainBusControl)
-        )
-    }
-
-    override fun addListener(listener: AudioNode.Listener) {
-        controls.addListener(AudioNodeBusControlsListener(listener))
+    override fun writeCode(writer: ScWriter, placement: NodePlacement) {
+        writer.writeSynthCode(this, superColliderName.removePrefix("~"), cutoff = zero, placement, latency = zero)
     }
 
     override fun getDefaultName(): ReactiveString = defRef.flatMap { ref -> ref.name }
 
     companion object {
-        fun createFor(associatedBus: BusObject, def: SynthDefObject, context: Context): SynthFlow {
-            val controls = def.defaultControls(context, defaultGroup = null, defaultBus = associatedBus.reference())
-            val mainBusParam = getMainBusParameter(def)
-            controls.removeIf { (name, _) -> name == "group" || name == mainBusParam!!.name.now }
+        fun create(def: SynthDefObject, context: Context): SynthFlow {
+            val controls = def.defaultControls(context, defaultBus = null)
             val flow = SynthFlow(reactiveVariable(def.reference()), ParameterControlList.from(controls))
             return flow
         }
-
-        fun getMainBusParameter(def: SynthDefObject) =
-            def.parameters.firstOrNull { p -> p.spec.now is BusControlSpec }
     }
 }

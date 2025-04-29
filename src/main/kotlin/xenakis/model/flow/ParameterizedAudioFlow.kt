@@ -6,7 +6,6 @@ import kotlinx.serialization.Transient
 import reaktive.value.ReactiveValue
 import reaktive.value.now
 import xenakis.impl.Decimal
-import xenakis.model.obj.BusObject
 import xenakis.model.obj.ParameterizedObject
 import xenakis.model.player.ActiveAudioFlow
 import xenakis.model.player.ActiveObject
@@ -25,8 +24,8 @@ sealed class ParameterizedAudioFlow : AudioFlow(), ParameterizedObject {
 
     final override fun duration(): ReactiveValue<Decimal>? = null
 
-    override fun initialize(context: Context, bus: BusObject) {
-        super.initialize(context, bus)
+    override fun initialize(context: Context) {
+        super.initialize(context)
         listener = LiveSynthUpdater(this)
     }
 
@@ -38,15 +37,5 @@ sealed class ParameterizedAudioFlow : AudioFlow(), ParameterizedObject {
     override fun onRemoved() {
         super<AudioFlow>.onRemoved()
         listener.stopListening()
-    }
-
-    override fun validate(): Boolean = controls.validate()
-
-    override fun getInputs(): Collection<BusObject> {
-        return super.getInputs()
-    }
-
-    override fun getOutputs(): Collection<BusObject> {
-        return super.getOutputs()
     }
 }

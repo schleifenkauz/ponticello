@@ -45,7 +45,10 @@ import xenakis.model.score.ScoreObjectInstance
 import xenakis.model.score.SynthObject
 import xenakis.model.score.controls.*
 import xenakis.sc.*
-import xenakis.sc.editor.*
+import xenakis.sc.editor.BufferSelector
+import xenakis.sc.editor.BusSelector
+import xenakis.sc.editor.GlobalPatternSelector
+import xenakis.sc.editor.ScExprExpander
 import xenakis.sc.view.ObjectSelectorControl
 import xenakis.ui.actions.ServerActions
 import xenakis.ui.impl.colorPicker
@@ -324,7 +327,7 @@ class ControlAssignmentEditor(val control: NamedParameterControl, val view: Scor
                 namedControl: NamedParameterControl,
                 control: BusControl,
                 view: ScoreObjectView?,
-            ): List<ContextualizedAction> = listOf(ServerActions.scopeBus.withContext(control.bus.now))
+            ): List<ContextualizedAction> = listOf(ServerActions.scopeBus.withContext(control.bus))
         }
 
         data object BusValue : ControlType<BusValueControl>() {
@@ -350,7 +353,7 @@ class ControlAssignmentEditor(val control: NamedParameterControl, val view: Scor
                 control: BusValueControl,
                 view: ScoreObjectView?,
             ): List<ContextualizedAction> = listOf(
-                ServerActions.scopeBus.withContext(control.bus.now),
+                ServerActions.scopeBus.withContext(control.bus),
                 automateWithSynth.withContext(namedControl)
             )
 
@@ -399,7 +402,7 @@ class ControlAssignmentEditor(val control: NamedParameterControl, val view: Scor
                 namedControl: NamedParameterControl,
                 control: SingleBusValueControl,
                 view: ScoreObjectView?,
-            ): List<ContextualizedAction> = listOf(ServerActions.scopeBus.withContext(control.bus.now))
+            ): List<ContextualizedAction> = listOf(ServerActions.scopeBus.withContext(control.bus))
 
             override fun toString(): String = "Bus Value"
         }
@@ -431,25 +434,6 @@ class ControlAssignmentEditor(val control: NamedParameterControl, val view: Scor
                 val sample: ReactiveVariable<BufferReference> = reactiveVariable(ObjectReference.none())
                 return BufferControl(sample, display)
             }
-        }
-
-        data object Group : ControlType<GroupControl>() {
-            override fun createDetailInput(
-                namedControl: NamedParameterControl,
-                control: GroupControl,
-                view: ScoreObjectView?,
-            ): Node {
-                val selector = GroupSelector()
-                selector.syncWith(control.group)
-                selector.initialize(namedControl.context)
-                return ObjectSelectorControl(selector, createBundle())
-            }
-
-            override fun createDefaultControl(
-                obj: ParameterizedObject,
-                spec: ControlSpec?,
-                oldControl: ParameterControl,
-            ): GroupControl = GroupControl(reactiveVariable(obj.context[GroupRegistry].getDefault().reference()))
         }
 
         data object GlobalPattern : ControlType<GlobalPatternControl>() {
@@ -549,7 +533,6 @@ class ControlAssignmentEditor(val control: NamedParameterControl, val view: Scor
                 is BusValueControl -> BusValue
                 is SingleBusValueControl -> SingleBusValue
                 is BufferControl -> Buffer
-                is GroupControl -> Group
                 is GlobalPatternControl -> GlobalPattern
                 is AttackReleaseControl -> AttackRelease
                 else -> throw AssertionError()

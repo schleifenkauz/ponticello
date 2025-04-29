@@ -2,53 +2,74 @@ package xenakis.model.flow
 
 import reaktive.Observer
 import reaktive.value.now
+import xenakis.impl.Decimal
+import xenakis.impl.Logger
+import xenakis.model.flow.NodePlacement.AddAction
 import xenakis.sc.client.SuperColliderClient
 
 class NodeTree(private val client: SuperColliderClient) {
-    private val nameObserver = mutableMapOf<AudioNode, Observer>()
-    private val activeNodes = mutableSetOf<AudioNode>()
+    private val observers = mutableMapOf<AudioNode, Observer>()
+    private val activeNodes = mutableListOf<AudioNode>()
 
-    fun addNode(node: AudioNode, placement: NodePlacement, createSynth: Boolean = true) {
-        if (!node.validate()) return
-        if (createSynth) {
-            client.run {
-                node.run { writeCode(placement) }
-            }
-        }
-        nameObserver[node] = node.superColliderName.observe { _, old, new -> rename(old, new) }
-        activeNodes.add(node)
+    fun addNode(node: AudioNode): NodePlacement {
+        var idx = activeNodes.binarySearch(node)
+        if (idx >= 0) error("Node $node already exists")
+        idx = -(idx + 1)
+        activeNodes.add(idx, node)
+        observeNode(node)
+        return if (idx == 0) NodePlacement(AddAction.AddToHead, "s.defaultGroup")
+        else NodePlacement(AddAction.AddAfter, activeNodes[idx - 1].superColliderName.now)
     }
 
-    fun removeNode(node: AudioNode, freeSynth: Boolean = true) {
-        if (!(activeNodes.remove(node))) return
-        val name = node.superColliderName.now
-        if (freeSynth) {
-            client.run {
-                +"if ($name != nil) { $name.free }"
-            }
+    private fun observeNode(node: AudioNode) {
+        observers[node] = node.superColliderName.observe { _, old, new ->
+            renamedNode(new, old)
+        } and node.yPosition.observe { _, _, newY ->
+            changedYPosition(node, newY)
         }
-        nameObserver.remove(node)!!.kill()
     }
 
-    fun isActive(node: AudioNode) = node in activeNodes
-
-    fun moveAfter(target: AudioNode, node: AudioNode) {
-        if (target == node) return
+    private fun renamedNode(new: String, old: String) {
         client.run {
-            +"${node.superColliderName.now}.moveAfter(${target.superColliderName.now})"
+            +"$new = $old"
+            +"$old = nil"
         }
     }
 
-    fun moveToHead(group: AudioNode, flow: AudioNode) {
-        client.run {
-            +"${flow.superColliderName.now}.moveToHead(${group.superColliderName.now})"
+    private fun changedYPosition(node: AudioNode, newY: Decimal) {
+        val oldIndex = activeNodes.indexOf(node)
+        if (oldIndex < 0) {
+            Logger.warn("Node $node not found in node tree", Logger.Category.Playback)
+            return
+        }
+        val belowPreviousNode = oldIndex == 0 || activeNodes[oldIndex - 1].yPosition.now < newY
+        val aboveNextNode = oldIndex == activeNodes.lastIndex || activeNodes[oldIndex + 1].yPosition.now > newY
+        if (belowPreviousNode && aboveNextNode) return
+        activeNodes.removeAt(oldIndex)
+        var newIndex = activeNodes.binarySearchBy(newY) { n -> n.yPosition.now  }
+        newIndex = -(newIndex + 1)
+        activeNodes.add(newIndex, node)
+        if (newIndex == oldIndex) return
+        if (newIndex == 0) {
+            client.run("${node.superColliderName.now}.moveToHead(s.defaultGroup)")
+        } else {
+            val prevName = activeNodes[newIndex - 1].superColliderName.now
+            client.run("${node.superColliderName.now}.moveAfter($prevName)")
         }
     }
 
-    private fun rename(oldName: String, newName: String) {
-        client.run {
-            +"$newName = $oldName"
-            +"$oldName = nil"
+    fun removeNode(node: AudioNode) {
+        if (!(activeNodes.remove(node))) {
+            Logger.warn("Node $node not found in node tree", Logger.Category.Playback)
+            return
         }
+        observers.remove(node)!!.kill()
+    }
+
+    fun clear() {
+        for (node in activeNodes) {
+            observers.remove(node)!!.kill()
+        }
+        activeNodes.clear()
     }
 }

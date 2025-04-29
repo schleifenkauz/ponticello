@@ -6,7 +6,7 @@ import kotlinx.serialization.KSerializer
 import kotlinx.serialization.json.decodeFromStream
 import xenakis.impl.Logger
 import xenakis.impl.json
-import xenakis.model.flow.AudioFlowGraph
+import xenakis.model.flow.AudioFlows
 import xenakis.model.obj.ContextualObject
 import xenakis.sc.client.SuperColliderClient
 import xenakis.ui.launcher.ProgressIndicator
@@ -76,7 +76,7 @@ class XenakisProject private constructor(val components: Map<Component<out Conte
         get(BUFFERS).syncAll()
         busses.syncAll()
         buffers.syncAll()
-        context[AudioFlowGraph].syncAll()
+        context[AudioFlows].syncAll()
         Logger.confirm("Synchronized with SuperCollider", Logger.Category.Project)
     }
 

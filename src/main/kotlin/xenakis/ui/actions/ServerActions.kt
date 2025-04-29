@@ -5,6 +5,9 @@ import fxutils.actions.action
 import fxutils.actions.isShiftDown
 import org.kordamp.ikonli.evaicons.Evaicons
 import org.kordamp.ikonli.materialdesign2.MaterialDesignR
+import reaktive.value.ReactiveValue
+import reaktive.value.binding.flatMap
+import reaktive.value.now
 import xenakis.impl.Logger
 import xenakis.model.obj.BusReference
 import xenakis.model.project.SERVER_OPTIONS
@@ -47,12 +50,12 @@ object ServerActions : Action.Collector<XenakisProject>({
         }
     }
 }) {
-    val scopeBus = action<BusReference>("Scope") {
+    val scopeBus = action<ReactiveValue<BusReference>>("Scope") {
         icon(Evaicons.ACTIVITY)
-        applicableWhen { ref -> ref.isResolved }
+        applicableWhen { ref -> ref.flatMap(BusReference::isResolved) }
         ifNotApplicable(Action.IfNotApplicable.Disable)
         executes { ref ->
-            val bus = ref.get()
+            val bus = ref.now.get()
             if (bus == null) {
                 Logger.warn("Bus $ref is not resolved", Logger.Category.Registries)
                 return@executes

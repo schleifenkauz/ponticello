@@ -1,33 +1,24 @@
 package xenakis.ui.flow
 
-import fxutils.actions.ContextualizedAction
 import fxutils.actions.collectActions
-import fxutils.prompt.IntegerPrompt
+import fxutils.prompt.SimpleSearchableListView
 import fxutils.setFixedWidth
+import fxutils.setupDropArea
 import javafx.geometry.Orientation
-import javafx.geometry.Point2D
 import javafx.scene.Node
-import javafx.scene.control.Spinner
-import org.kordamp.ikonli.evaicons.Evaicons
+import javafx.scene.Parent
 import org.kordamp.ikonli.materialdesign2.MaterialDesignP
-import reaktive.value.fx.asObservableValue
-import reaktive.value.fx.asProperty
-import reaktive.value.now
+import org.kordamp.ikonli.materialdesign2.MaterialDesignR
+import reaktive.value.binding.`if`
+import reaktive.value.binding.map
+import xenakis.model.flow.AudioFlowGroup
 import xenakis.model.flow.AudioFlows
-import xenakis.model.obj.BusObject
-import xenakis.model.registry.BusRegistry
-import xenakis.sc.client.SuperColliderClient
-import xenakis.ui.actions.RegistryObjectActions
-import xenakis.ui.controls.NamePrompt
-import xenakis.ui.registry.NamedObjectListView.DisplayMode
-import xenakis.ui.registry.ObjectBox
+import xenakis.ui.impl.colorPicker
+import xenakis.ui.registry.ObjectListView
+import xenakis.ui.registry.ObjectListView.DisplayMode
 import xenakis.ui.registry.SearchableToolPane
 
-class AudioFlowPane(
-    private val flows: AudioFlows,
-) : SearchableToolPane<BusObject>() {
-    private val buses = flows.context[BusRegistry]
-
+class AudioFlowPane(flows: AudioFlows) : SearchableToolPane<AudioFlowGroup>() {
     override val inlineOrientation: Orientation
         get() = Orientation.HORIZONTAL
 
@@ -36,56 +27,49 @@ class AudioFlowPane(
 
     init {
         styleClass.add("flow-pane")
-        setup(title = null, buses) { headerActions.withContext(this) }
+        setup(title = null, flows)
         listView.itemsScrollPane.isFitToHeight = true
         listView.autoResizeScene = true
     }
 
-    override fun filter(obj: BusObject): Boolean = obj is BusObject.AudioBus
-
-    override fun getContent(obj: BusObject, mode: DisplayMode) = FlowChainView(flows, obj)
-
-    override fun getItemContent(obj: BusObject): List<Node> {
-        val channelsSpinner = Spinner<Int>(0, 64, obj.channels.now).setFixedWidth(65.0)
-        if (obj.busType != BusObject.Type.Regular) {
-            channelsSpinner.valueFactory.valueProperty().bind(obj.channels.asObservableValue())
-            channelsSpinner.isDisable = true
-        } else {
-            channelsSpinner.valueFactory.valueProperty().bindBidirectional(obj.channels.asProperty())
-        }
-        return listOf(channelsSpinner)
+    override fun getItemContent(obj: AudioFlowGroup): List<Node> {
+        val colorPicker = colorPicker(obj.associatedColor).setFixedWidth(30.0)
+        return listOf(colorPicker)
     }
 
-    override fun getActions(box: ObjectBox<BusObject>): List<ContextualizedAction> = actions.withContext(box.obj)
-
-    override fun createNewObject(): BusObject? {
-        val busName = NamePrompt(buses, "Bus name", "")
-            .showDialog(header!!, offset = Point2D(200.0, 0.0)) ?: return null
-        val channels = IntegerPrompt("Channels", initialValue = 2, range = 1..64)
-            .showDialog(actionBar) ?: return null
-        return BusObject.audio(busName, channels)
+    override fun getContent(obj: AudioFlowGroup, mode: DisplayMode): Parent {
+        val config = FlowListConfig(obj.context, autoResizeScene = mode == DisplayMode.SubWindow)
+        val listView = ObjectListView(obj.flows, config)
+        listView.setupDropArea(config::canDrop) { ev -> config.onDrop(ev, listView) }
+        return listView
     }
 
     companion object {
-        private val actions = collectActions<BusObject> {
-            addAction("Monitor bus") {
-                icon(Evaicons.ACTIVITY)
-                shortcut("Ctrl+M")
-                executes { bus ->
-                    bus.context[SuperColliderClient].run("${bus.superColliderName}.scope;")
+        val actions = collectActions<AudioFlowGroup> {
+            addAction("Add flow") {
+                icon(MaterialDesignP.PLUS)
+                executes { group, ev ->
+                    val options = FlowOption.getOptions(group.context)
+                    val option = SimpleSearchableListView(options, "Add flow").showPopup(ev) ?: return@executes
+                    val flow = option.createFlow(group.context, ev) ?: return@executes
+                    group.flows.add(flow)
                 }
             }
-            add(RegistryObjectActions.deleteAction(BusRegistry))
-        }
-
-        private val headerActions = collectActions<AudioFlowPane> {
-            addAction("Create new audio bus") {
-                shortcut("Ctrl+PLUS")
-                icon(MaterialDesignP.PLUS)
-                executes { p ->
-                    val bus = p.createNewObject() ?: return@executes
-                    p.buses.add(bus)
+            addAction("Toggle activated") {
+                description { grp ->
+                    `if`(
+                        grp.isActive,
+                        then = { "Deactivate group" },
+                        otherwise = { "Activate group" }
+                    )
                 }
+                icon { grp ->
+                    grp.isActive.map { active ->
+                        if (active) MaterialDesignR.RADIOBOX_MARKED
+                        else MaterialDesignR.RADIOBOX_BLANK
+                    }
+                }
+                executes { grp -> grp.toggleActive() }
             }
         }
     }

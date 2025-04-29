@@ -2,6 +2,7 @@ package xenakis.ui.live
 
 import hextant.core.editor.defaultState
 import hextant.serial.EditorRoot
+import javafx.event.Event
 import javafx.geometry.Orientation
 import javafx.scene.Parent
 import reaktive.value.reactiveVariable
@@ -9,7 +10,7 @@ import xenakis.model.live.LiveTaskObject
 import xenakis.model.live.LiveTaskRegistry
 import xenakis.sc.editor.CodeBlockEditor
 import xenakis.ui.misc.CodePane
-import xenakis.ui.registry.NamedObjectListView.DisplayMode
+import xenakis.ui.registry.ObjectListView.DisplayMode
 
 class LiveTaskRegistryPane(registry: LiveTaskRegistry) : LiveObjectRegistryPane<LiveTaskObject>(registry) {
     init {
@@ -22,7 +23,7 @@ class LiveTaskRegistryPane(registry: LiveTaskRegistry) : LiveObjectRegistryPane<
     override val inlineOrientation: Orientation
         get() = Orientation.HORIZONTAL
 
-    override fun createNewObject(name: String): LiveTaskObject = LiveTaskObject(
+    override fun createNewObject(name: String, ev: Event?): LiveTaskObject = LiveTaskObject(
         reactiveVariable(name),
         EditorRoot(CodeBlockEditor().defaultState())
     )

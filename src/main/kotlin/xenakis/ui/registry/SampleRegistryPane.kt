@@ -55,7 +55,7 @@ class SampleRegistryPane(
         return sample
     }
 
-    public override fun createNewObject(name: String): SampleObject? = loadNewSample { _ -> name }
+    public override fun createNewObject(name: String, ev: Event?): SampleObject? = loadNewSample { _ -> name }
 
     override fun filter(obj: BufferObject): Boolean = obj is SampleObject
 

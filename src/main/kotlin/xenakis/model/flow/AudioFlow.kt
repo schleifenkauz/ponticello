@@ -1,56 +1,66 @@
 package xenakis.model.flow
 
-import hextant.context.Context
 import javafx.scene.input.DataFormat
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
+import reaktive.Observer
 import reaktive.value.ReactiveString
-import reaktive.value.ReactiveVariable
-import reaktive.value.binding.map
+import reaktive.value.ReactiveValue
 import reaktive.value.now
 import reaktive.value.reactiveVariable
+import xenakis.impl.Logger
 import xenakis.model.obj.AbstractRenamableObject
-import xenakis.model.obj.BusObject
 import xenakis.model.project.flows
 import xenakis.model.registry.NamedObject.Companion.NO_NAME
+import xenakis.sc.client.ScWriter
+import xenakis.sc.client.SuperColliderClient
 import xenakis.ui.launcher.XenakisLauncher.Companion.currentProject
 
 @Serializable
-sealed class AudioFlow : AbstractRenamableObject(), AudioNode {
-    val isActive: ReactiveVariable<Boolean> = reactiveVariable(true)
+sealed class AudioFlow : AbstractRenamableObject() {
+    private val active = reactiveVariable(false)
+    val isActive: ReactiveValue<Boolean> get() = active
 
     @Transient
-    val isFirst = reactiveVariable(false)
-
-    @Transient
-    val isLast = reactiveVariable(false)
-
-    @Transient
-    lateinit var associatedBus: BusObject
-        private set
+    private var deactivateOnInvalid: Observer? = null
 
     @SerialName("name")
     override var mutableName = reactiveVariable(NO_NAME)
 
-    @Transient
-    final override lateinit var superColliderName: ReactiveString
-        private set
+    val superColliderName get() = getSuperColliderName(name.now)
 
-    final override fun initialize(context: Context) {
-        super.initialize(context)
+    abstract val isValid: ReactiveValue<Boolean>
+
+    abstract fun writeCode(writer: ScWriter, placement: NodePlacement)
+
+    fun activate() {
+        if (!isValid.now) {
+            Logger.warn("Attempted to activate invalid AudioFlow $this", Logger.Category.Playback)
+            return
+        }
+        active.now = true
+        if (deactivateOnInvalid == null) {
+            deactivateOnInvalid = isValid.observe { _, _, valid ->
+                if (!valid) deactivate()
+            }
+        }
     }
 
-    open fun initialize(context: Context, bus: BusObject) {
-        initialize(context)
-        associatedBus = bus
-        superColliderName = name.map(::getSuperColliderName)
+    fun deactivate() {
+        active.now = false
     }
 
-    protected open fun getSuperColliderName(name: String) =
+    fun sync() {
+        if (!isActive.now) return
+        context[SuperColliderClient].run {
+            val placement = NodePlacement(NodePlacement.AddAction.AddReplace, superColliderName)
+            writeCode(writer, placement)
+        }
+    }
+
+    fun getSuperColliderName(name: String) =
         if (name == NO_NAME) "~flow_${hashCode()}" else "~flow_$name"
-
-    open val canDeactivate: Boolean get() = true
 
     override val canRename: Boolean
         get() = false

@@ -3,6 +3,7 @@ package xenakis.ui.registry
 import fxutils.actions.ContextualizedAction
 import fxutils.actions.collectActions
 import fxutils.setFixedWidth
+import javafx.event.Event
 import javafx.scene.Node
 import javafx.scene.Parent
 import org.kordamp.ikonli.Ikon
@@ -11,7 +12,7 @@ import xenakis.model.obj.ProcessDefObject
 import xenakis.model.registry.GlobalDefinitionLibrary
 import xenakis.model.registry.ProcessDefRegistry
 import xenakis.ui.impl.colorPicker
-import xenakis.ui.registry.NamedObjectListView.DisplayMode
+import xenakis.ui.registry.ObjectListView.DisplayMode
 
 class ProcessDefRegistryPane(
     registry: ProcessDefRegistry,
@@ -26,7 +27,7 @@ class ProcessDefRegistryPane(
 
     override fun getItemContent(obj: ProcessDefObject): List<Node> = listOf(colorPicker(obj.color).setFixedWidth(30.0))
 
-    override fun createNewObject(name: String): ProcessDefObject = ProcessDefObject.newEmpty(name)
+    override fun createNewObject(name: String, ev: Event?): ProcessDefObject = ProcessDefObject.newEmpty(name)
 
     override fun getContent(obj: ProcessDefObject, mode: DisplayMode): Parent = ProcessDefObjectPane(obj)
 

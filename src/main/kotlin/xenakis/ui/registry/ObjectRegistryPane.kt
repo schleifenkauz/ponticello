@@ -34,11 +34,11 @@ abstract class ObjectRegistryPane<O : NamedObject>(
             registry, "Name for new ${registry.objectType}",
             initialName = ""
         ).showDialog(ev) ?: return
-        val obj = createNewObject(name) ?: return
+        val obj = createNewObject(name, ev) ?: return
         registry.add(obj)
     }
 
-    protected abstract fun createNewObject(name: String): O?
+    protected abstract fun createNewObject(name: String, ev: Event?): O?
 
     companion object {
         private val headerActions = collectActions<ObjectRegistryPane<*>> {

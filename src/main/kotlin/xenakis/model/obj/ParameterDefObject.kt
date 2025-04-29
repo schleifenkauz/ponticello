@@ -21,7 +21,7 @@ class ParameterDefObject(
     override fun canRenameTo(newName: String): Boolean = true
 
     fun defaultControl(context: Context, defaultBus: BusReference? = null, defaultGroup: GroupReference? = null) =
-        spec.now.defaultControl(context, defaultBus, defaultGroup)
+        spec.now.defaultControl(defaultBus)
 
     override fun toString(): String = "${name.now}: ${spec.now}"
 
@@ -31,7 +31,6 @@ class ParameterDefObject(
             is BufferPositionControlSpec -> "buf-pos"
             is BufferControlSpec -> "buf"
             is BusControlSpec -> "bus"
-            is GroupControlSpec -> "group"
         }
         return "${name.now} ($type)"
     }

@@ -7,7 +7,7 @@ import javafx.geometry.Point2D
 import javafx.scene.Node
 import org.kordamp.ikonli.codicons.Codicons
 import org.kordamp.ikonli.material2.Material2MZ
-import reaktive.value.binding.map
+import reaktive.value.binding.impl.notNull
 import reaktive.value.now
 import xenakis.model.Settings
 import xenakis.model.obj.ParameterizedObject
@@ -15,12 +15,11 @@ import xenakis.model.score.ParameterControlList
 import xenakis.model.score.ParameterControlList.NamedParameterControl
 import xenakis.model.score.controls.ParameterControl
 import xenakis.sc.ControlSpec
-import xenakis.sc.GroupControlSpec
 import xenakis.ui.controls.ControlAssignmentEditor
 import xenakis.ui.controls.ControlSpecPrompt
 import xenakis.ui.launcher.XenakisApp.Companion.primaryStage
-import xenakis.ui.registry.NamedObjectListView.DisplayMode
 import xenakis.ui.registry.ObjectBox
+import xenakis.ui.registry.ObjectListView.DisplayMode
 import xenakis.ui.registry.SearchableParameterDefListView
 import xenakis.ui.registry.SearchableToolPane
 
@@ -32,14 +31,14 @@ class ParameterControlsPane(
 
     init {
         obj.controls.addListener(this)
-        setup(title, obj.controls, { headerActions.withContext(this) })
+        setup(title, obj.controls) { headerActions.withContext(this) }
     }
 
     override val enableReordering: Boolean
         get() = true
 
     override val supportedModes: Set<DisplayMode>
-        get() = setOf(DisplayMode.Inline, DisplayMode.DetailsPane)
+        get() = setOf(DisplayMode.Inline)
 
     override fun reassignedControl(
         namedControl: NamedParameterControl,
@@ -81,8 +80,7 @@ class ParameterControlsPane(
 
         private val actions = collectActions<ObjectBox<NamedParameterControl>> {
             addAction("Edit spec") {
-                shortcut("Ctrl+K")
-                applicableWhen { box -> box.obj.spec.map { s -> s != null && s !is GroupControlSpec } }
+                applicableWhen { box -> box.obj.spec.notNull() }
                 icon(Codicons.SYMBOL_PROPERTY)
                 executes { box ->
                     val control = box.obj

@@ -3,6 +3,7 @@ package xenakis.ui.registry
 import fxutils.SubWindow
 import fxutils.actions.ContextualizedAction
 import fxutils.actions.collectActions
+import javafx.event.Event
 import javafx.geometry.Pos
 import javafx.scene.Parent
 import javafx.scene.input.DataFormat
@@ -26,16 +27,16 @@ class GlobalPatternRegistryPane(
         setup()
     }
 
-    override fun createNewObject(name: String): GlobalPatternObject = GlobalPatternObject.create(name)
+    override fun createNewObject(name: String, ev: Event?): GlobalPatternObject = GlobalPatternObject.create(name)
 
-    override val supportedModes: Set<NamedObjectListView.DisplayMode>
-        get() = NamedObjectListView.DisplayMode.all
+    override val supportedModes: Set<ObjectListView.DisplayMode>
+        get() = ObjectListView.DisplayMode.all
 
     override val enableReordering: Boolean
         get() = true
 
-    override fun getContent(obj: GlobalPatternObject, mode: NamedObjectListView.DisplayMode): Parent = when (mode) {
-        NamedObjectListView.DisplayMode.SubWindow -> {
+    override fun getContent(obj: GlobalPatternObject, mode: ObjectListView.DisplayMode): Parent = when (mode) {
+        ObjectListView.DisplayMode.SubWindow -> {
             val actions = actions.withContext(listView.getBox(obj))
             CodePane(obj.patternCode, extraActions = actions, ownWindow = true, actionBarAlignment = Pos.BOTTOM_RIGHT)
         }

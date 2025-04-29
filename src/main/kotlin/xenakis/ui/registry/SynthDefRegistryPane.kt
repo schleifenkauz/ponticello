@@ -2,6 +2,7 @@ package xenakis.ui.registry
 
 import fxutils.prompt.YesNoPrompt
 import fxutils.setFixedWidth
+import javafx.event.Event
 import javafx.scene.Node
 import javafx.scene.Parent
 import javafx.scene.input.DataFormat
@@ -17,7 +18,7 @@ import xenakis.model.obj.SynthDefObject
 import xenakis.model.registry.GlobalDefinitionLibrary
 import xenakis.model.registry.SynthDefRegistry
 import xenakis.ui.impl.colorPicker
-import xenakis.ui.registry.NamedObjectListView.DisplayMode
+import xenakis.ui.registry.ObjectListView.DisplayMode
 
 class SynthDefRegistryPane(
     private val synthDefs: SynthDefRegistry,
@@ -41,7 +42,7 @@ class SynthDefRegistryPane(
 
     override fun dataFormat(obj: SynthDefObject): DataFormat = SynthDefObject.DATA_FORMAT
 
-    public override fun createNewObject(name: String): SynthDefObject? {
+    public override fun createNewObject(name: String, ev: Event?): SynthDefObject? {
         when {
             canSuperColliderTalkToMe && synthDefs.synthDescLibContains(name) -> {
                 val reference = YesNoPrompt(

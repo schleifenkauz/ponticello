@@ -16,18 +16,15 @@ import xenakis.impl.copy
 import xenakis.impl.zero
 import xenakis.model.flow.NodePlacement
 import xenakis.model.obj.BusReference
-import xenakis.model.obj.GroupReference
 import xenakis.model.registry.ObjectReference
 import xenakis.sc.client.SuperColliderContext
 import xenakis.sc.editor.BusSelector
-import xenakis.sc.editor.GroupSelector
 import xenakis.ui.impl.Direction
 
 @Serializable
 class ScoreObjectGroup(
     @SerialName("name") override val mutableName: ReactiveVariable<String>,
     val score: Score,
-    @SerialName("defaultGroup") val defaultGroupRef: ReactiveVariable<GroupReference> = reactiveVariable(ObjectReference.none()),
     @SerialName("defaultBus") val defaultBusRef: ReactiveVariable<BusReference> = reactiveVariable(ObjectReference.none())
 ) : ScoreObject() {
     override val type: String
@@ -37,19 +34,12 @@ class ScoreObjectGroup(
         get() = score.objectInstances.any { inst -> inst.obj.affectsPlayback }
 
     @Transient
-    lateinit var groupSelector: GroupSelector
-        private set
-
-    @Transient
     lateinit var busSelector: BusSelector
         private set
 
     override fun initialize(context: Context) {
         if (initialized) return
         super.initialize(context)
-        groupSelector = GroupSelector()
-        groupSelector.syncWith(defaultGroupRef)
-        groupSelector.initialize(context)
         busSelector = BusSelector()
         busSelector.syncWith(defaultBusRef)
         busSelector.initialize(context)
@@ -84,7 +74,7 @@ class ScoreObjectGroup(
         }
         val score = Score(objects)
         val name = if (whichHalf == LEFT) "${name.now}_left" else "${name.now}_right"
-        return ScoreObjectGroup(reactiveVariable(name), score, defaultGroupRef.copy(), defaultBusRef.copy())
+        return ScoreObjectGroup(reactiveVariable(name), score, defaultBusRef.copy())
     }
 
     fun cutVertically(position: Decimal): Pair<ScoreObjectGroup, ScoreObjectGroup> {
@@ -96,8 +86,8 @@ class ScoreObjectGroup(
         }
         val name1 = reactiveVariable(name.now + "_top")
         val name2 = reactiveVariable(name.now + "_bot")
-        val obj1 = ScoreObjectGroup(name1, Score(top), defaultGroupRef.copy(), defaultBusRef.copy())
-        val obj2 = ScoreObjectGroup(name2, Score(bottom), defaultGroupRef.copy(), defaultBusRef.copy())
+        val obj1 = ScoreObjectGroup(name1, Score(top), defaultBusRef.copy())
+        val obj2 = ScoreObjectGroup(name2, Score(bottom), defaultBusRef.copy())
         obj1.setInitialSize(duration, position)
         obj2.setInitialSize(duration, height - position)
         return Pair(obj1, obj2)
@@ -175,7 +165,7 @@ class ScoreObjectGroup(
     }
 
     override fun doClone(newName: String): ScoreObject =
-        ScoreObjectGroup(reactiveVariable(newName), score.clone(), defaultGroupRef.copy(), defaultBusRef.copy())
+        ScoreObjectGroup(reactiveVariable(newName), score.clone(), defaultBusRef.copy())
 
     override fun onRemoved() {
         super.onRemoved()

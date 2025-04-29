@@ -14,9 +14,11 @@ import xenakis.impl.*
 import xenakis.model.Settings
 import xenakis.model.flow.NodePlacement
 import xenakis.model.obj.*
-import xenakis.model.registry.GroupRegistry
 import xenakis.model.registry.reference
-import xenakis.model.score.controls.*
+import xenakis.model.score.controls.BufferControl
+import xenakis.model.score.controls.EnvelopeControl
+import xenakis.model.score.controls.ValueControl
+import xenakis.model.score.controls.writeSynthCode
 import xenakis.sc.NumericalControlSpec
 import xenakis.sc.editor.SynthDefSelector
 import xenakis.ui.impl.Direction
@@ -45,10 +47,6 @@ class SynthObject(
         get() = synthDef
 
     override fun validate(): Boolean = controls.validate()
-
-    val group: ReactiveVariable<GroupReference>? get() = (controls.controlMap["group"] as GroupControl?)?.group
-
-    val groupObj get() = group?.now?.get() ?: context[GroupRegistry].getDefault()
 
     private val bufferControl get() = controls.controlMap["buf"] as? BufferControl
 
