@@ -11,7 +11,7 @@ class ScoreObjectSelector : ObjectSelector<ScoreObject>() {
         else -> true
     }
 
-    override fun getRegistry(): ObjectRegistry<ScoreObject> = context[ScoreObjectRegistry]
+    override fun getList(): ObjectRegistry<ScoreObject> = context[ScoreObjectRegistry]
 
     override fun createNewObject(name: String): ScoreObject? = null
 }

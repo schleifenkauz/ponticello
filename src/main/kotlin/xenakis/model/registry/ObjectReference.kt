@@ -35,7 +35,7 @@ class ObjectReference<O : NamedObject>(private var _name: String) : ScExpr {
         isResolved = obj.isAdded
     }
 
-    fun resolve(registry: ObjectRegistry<O>): O? {
+    fun resolve(registry: NamedObjectList<O>): O? {
         if (obj != null) return obj as O
         if (_name == "<none>") {
             isResolved = reactiveValue(false)

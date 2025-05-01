@@ -5,6 +5,7 @@ import hextant.command.Command
 import hextant.command.meta.ProvideCommand
 import hextant.core.editor.*
 import reaktive.value.now
+import xenakis.model.ctx.PonticelloContext
 import xenakis.model.obj.VSTPluginObject
 import xenakis.sc.*
 
@@ -170,6 +171,13 @@ class ScExprExpander() : ConfiguredExpander<ScExpr, ScExprEditor<*>>(), ScExprEd
                     ?: return@expand null
                 VSTPluginEditor(pluginName).defaultState()
             }
+            "control".expand(
+                condition = { exp ->
+                    exp.context.hasProperty(PonticelloContext) &&
+                            exp.context[PonticelloContext].associatedObject != null
+                },
+                create = { ParameterReferenceEditor().defaultState() }
+            )
             "adhoc-synth".expand { AdhocSynthEditor().defaultState() }
             "def".expand(Expander<*, *>::isStatementInBlock) { _ -> FunctionDefEditor().defaultState() }
             "in".expand { InExprEditor().defaultState() }

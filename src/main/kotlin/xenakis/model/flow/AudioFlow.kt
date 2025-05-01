@@ -13,7 +13,6 @@ import xenakis.impl.Logger
 import xenakis.model.obj.AbstractRenamableObject
 import xenakis.model.project.flows
 import xenakis.model.registry.NamedObject.Companion.NO_NAME
-import xenakis.sc.client.ScWriter
 import xenakis.sc.client.SuperColliderClient
 import xenakis.ui.launcher.XenakisLauncher.Companion.currentProject
 
@@ -32,7 +31,7 @@ sealed class AudioFlow : AbstractRenamableObject() {
 
     abstract val isValid: ReactiveValue<Boolean>
 
-    abstract fun writeCode(writer: ScWriter, placement: NodePlacement)
+    abstract fun writeCode(placement: NodePlacement): String
 
     fun activate() {
         if (!isValid.now) {
@@ -53,10 +52,9 @@ sealed class AudioFlow : AbstractRenamableObject() {
 
     fun sync() {
         if (!isActive.now) return
-        context[SuperColliderClient].run {
-            val placement = NodePlacement(NodePlacement.AddAction.AddReplace, superColliderName)
-            writeCode(writer, placement)
-        }
+        val placement = NodePlacement.replace(superColliderName)
+        val code = writeCode(placement)
+        context[SuperColliderClient].run(code)
     }
 
     fun getSuperColliderName(name: String) =

@@ -41,17 +41,17 @@ class ParameterControlsPane(
         get() = setOf(DisplayMode.Inline)
 
     override fun reassignedControl(
-        namedControl: NamedParameterControl,
+        parameter: NamedParameterControl,
         oldControl: ParameterControl,
-        control: ParameterControl,
+        newControl: ParameterControl,
     ) {
-        val editor = editors.getValue(namedControl)
-        editor.setControl(control)
+        val editor = editors.getValue(parameter)
+        editor.setControl(newControl)
     }
 
-    override fun changedSpec(control: NamedParameterControl, oldSpec: ControlSpec?, newSpec: ControlSpec?) {
-        val editor = editors[control] ?: return
-        editor.setControl(control.now) //TODO can this be done in a better way?
+    override fun changedSpec(parameter: NamedParameterControl, oldSpec: ControlSpec?, newSpec: ControlSpec?) {
+        val editor = editors[parameter] ?: return
+        editor.setControl(parameter.now) //TODO can this be done in a better way?
     }
 
     override fun getItemContent(obj: NamedParameterControl): List<Node> {

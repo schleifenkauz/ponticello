@@ -169,7 +169,7 @@ class ObjectBox<O : ContextualObject>(val parent: ObjectListView<O>, val obj: O)
             addAction("Delete object") {
                 icon(Material2AL.DELETE)
                 shortcuts("Ctrl+DELETE")
-                applicableIf { box -> box.obj is NamedObject && box.obj.canDelete }
+                applicableIf { box -> box.obj !is NamedObject || box.obj.canDelete }
                 executes { box ->
                     val source = box.parent.source as ObjectList<ContextualObject>
                     source.remove(box.obj)

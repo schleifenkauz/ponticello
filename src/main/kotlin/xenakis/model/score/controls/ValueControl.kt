@@ -9,6 +9,7 @@ import xenakis.impl.Decimal
 import xenakis.impl.Logger
 import xenakis.impl.copy
 import xenakis.model.obj.ParameterizedObject
+import xenakis.model.obj.SynthDefObject
 import xenakis.sc.*
 import xenakis.sc.client.ScWriter
 
@@ -24,6 +25,10 @@ data class ValueControl(val value: ReactiveVariable<Decimal>) : ParameterControl
         }
         return true
     }
+
+    override fun allocatesBus(obj: ParameterizedObject): Boolean = obj.def is SynthDefObject
+
+    override fun usesAuxilSynth(obj: ParameterizedObject): Boolean = false
 
     override fun ScWriter.generatePreparationCode(
         obj: ParameterizedObject, uniqueName: String,

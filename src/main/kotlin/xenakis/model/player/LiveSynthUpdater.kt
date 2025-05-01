@@ -8,16 +8,31 @@ import xenakis.model.obj.BusReference
 import xenakis.model.obj.GlobalPatternReference
 import xenakis.model.obj.ParameterizedObject
 import xenakis.model.score.Envelope
-import xenakis.model.score.controls.EnvelopeControl
 import xenakis.model.score.controls.ParameterControl
+import xenakis.model.score.controls.guardAgainstReplaceNil
 import xenakis.sc.NumericalControlSpec
 import xenakis.sc.ScExpr
 import xenakis.sc.client.ScWriter
 
 class LiveSynthUpdater(obj: ParameterizedObject) : AbstractLiveUpdater(obj) {
-    override fun ScWriter.updateValue(uniqueName: String, parameter: String, value: Decimal) {
-        val varName = ParameterControl.uniqueArgumentName(uniqueName, parameter)
-        +"$varName.set($value)"
+    override fun ScWriter.updateValue(
+        uniqueName: String, parameter: String, value: Decimal,
+        onBus: Boolean, remap: Boolean,
+    ) {
+        if (onBus) {
+            val varName = ParameterControl.uniqueArgumentName(uniqueName, parameter)
+            +"$varName.set($value)"
+            if (remap) remap(uniqueName, parameter)
+        } else {
+            val synthName = "${obj.superColliderPrefix}$uniqueName"
+            +"$synthName.set(\\$parameter, $value)"
+        }
+    }
+
+    private fun ScWriter.remap(uniqueName: String, parameter: String) {
+        val busName = ParameterControl.uniqueArgumentName(uniqueName, parameter)
+        val synthVar = "${obj.superColliderPrefix}$uniqueName"
+        +"$synthVar.map(\\$parameter, $busName)"
     }
 
     override fun ScWriter.remapBus(uniqueName: String, parameter: String, bus: BusReference) {
@@ -44,24 +59,30 @@ class LiveSynthUpdater(obj: ParameterizedObject) : AbstractLiveUpdater(obj) {
         Logger.warn("Cannot update pattern for synth object $uniqueName", Logger.Category.Playback)
     }
 
-    override fun updateUGenControl(writer: ScWriter, uniqueName: String, parameter: String, expr: ScExpr) {
-        super.updateUGenControl(writer, uniqueName, parameter, expr)
-        val busName = ParameterControl.uniqueArgumentName(uniqueName, parameter)
-        writer.appendLine("${obj.superColliderPrefix}$uniqueName.map('$parameter', $busName);")
+    override fun updateUGenControl(
+        writer: ScWriter, uniqueName: String, parameter: String,
+        expr: ScExpr, replace: Boolean, remap: Boolean,
+    ) {
+        super.updateUGenControl(writer, uniqueName, parameter, expr, replace, remap)
+        if (remap) writer.remap(uniqueName, parameter)
     }
 
     override fun updateEnvelope(
         writer: ScWriter, objectTime: Decimal,
         uniqueName: String, parameter: String,
-        envelope: Envelope,
+        envelope: Envelope, remap: Boolean,
     ) {
         val spec = obj.getSpec(parameter) as? NumericalControlSpec ?: return
         val cut = envelope.cut(objectTime, HorizontalDirection.RIGHT, spec.warp)
         val envelopeCode = cut.code(spec.warp)
-        val auxiliarySynthName = EnvelopeControl.envSynthName(uniqueName, parameter)
+        val auxiliarySynthName = ParameterControl.auxilSynthName(uniqueName, parameter)
+        val placement = getAuxiliarySynthPlacement(parameter, uniqueName, replace = true)
+        val action = guardAgainstReplaceNil(placement)
         val auxiliaryBus = ParameterControl.uniqueArgumentName(uniqueName, parameter)
-        writer.appendLine("$auxiliarySynthName = { $envelopeCode.kr }.play($auxiliarySynthName, $auxiliaryBus, fadeTime: 0.02, addAction: 'addReplace');")
-        val busName = ParameterControl.uniqueArgumentName(uniqueName, parameter)
-        writer.appendLine("${obj.superColliderPrefix}$uniqueName.map('$parameter', $busName);")
+        writer.appendLine(
+            "$auxiliarySynthName = { $envelopeCode.kr }" +
+                    ".play(target: ${placement.target}, outpus: $auxiliaryBus, fadeTime: 0.02, addAction: ${action});"
+        )
+        if (remap) writer.remap(uniqueName, parameter)
     }
 }

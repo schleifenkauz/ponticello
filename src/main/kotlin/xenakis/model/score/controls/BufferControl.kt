@@ -23,7 +23,8 @@ data class BufferControl(
     val sample: ReactiveVariable<BufferReference>,
     val display: ReactiveVariable<Boolean> = reactiveVariable(true),
 ) : ParameterControl() {
-    override fun initialize(context: Context) {
+    override fun initialize(context: Context, parentObject: ParameterizedObject) {
+        super.initialize(context, parentObject)
         sample.now.resolve(context[BufferRegistry])
     }
 

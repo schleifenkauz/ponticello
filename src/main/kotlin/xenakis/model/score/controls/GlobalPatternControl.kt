@@ -18,8 +18,8 @@ class GlobalPatternControl(val pattern: ReactiveVariable<GlobalPatternReference>
     override fun validate(spec: ControlSpec, obj: ParameterizedObject): Boolean =
         checkResolution(pattern.now, "Pattern")
 
-    override fun initialize(context: Context) {
-        super.initialize(context)
+    override fun initialize(context: Context, parentObject: ParameterizedObject) {
+        super.initialize(context, parentObject)
         pattern.now.resolve(context[GlobalPatternRegistry])
     }
 

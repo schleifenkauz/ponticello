@@ -6,10 +6,7 @@ import kotlinx.serialization.Transient
 import reaktive.Observer
 import reaktive.value.*
 import reaktive.value.binding.flatMap
-import xenakis.impl.Decimal
-import xenakis.impl.copy
-import xenakis.impl.toDecimal
-import xenakis.impl.zero
+import xenakis.impl.*
 import xenakis.model.obj.BusObject
 import xenakis.model.obj.BusReference
 import xenakis.model.obj.ParameterizedObjectDef
@@ -19,7 +16,6 @@ import xenakis.model.score.ParameterControlList
 import xenakis.model.score.controls.BusControl
 import xenakis.model.score.controls.ValueControl
 import xenakis.model.score.controls.writeSynthCode
-import xenakis.sc.client.ScWriter
 
 @Serializable
 class UtilityFlow(
@@ -58,10 +54,8 @@ class UtilityFlow(
     override fun copy(): AudioFlow =
         UtilityFlow(targetRef.copy(), volumeDb.copy(), muted.copy())
 
-    override fun writeCode(writer: ScWriter, placement: NodePlacement) {
-        writer.writeSynthCode(
-            this, superColliderName.removePrefix("~"), cutoff = zero, placement, latency = zero
-        )
+    override fun writeCode(placement: NodePlacement): String = writeCode {
+        writeSynthCode(this@UtilityFlow, superColliderName.removePrefix("~"), cutoff = zero, placement, latency = zero)
     }
 
     override fun getDefaultName(): ReactiveString = reactiveValue("Utility")

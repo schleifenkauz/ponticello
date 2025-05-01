@@ -16,7 +16,8 @@ import xenakis.sc.client.ScWriter
 @Serializable
 @SerialName("SingleBusValue")
 data class SingleBusValueControl(val bus: ReactiveVariable<BusReference>) : ParameterControl() {
-    override fun initialize(context: Context) {
+    override fun initialize(context: Context, parentObject: ParameterizedObject) {
+        super.initialize(context, parentObject)
         bus.now.resolve(context[BusRegistry])
     }
 

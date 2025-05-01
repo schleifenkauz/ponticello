@@ -9,7 +9,7 @@ import xenakis.model.registry.ObjectRegistry
 import xenakis.sc.Rate
 
 class BusSelector : ObjectSelector<BusObject>() {
-    override fun getRegistry(): ObjectRegistry<BusObject> = context[BusRegistry]
+    override fun getList(): ObjectRegistry<BusObject> = context[BusRegistry]
 
     private var expectedRate: ReactiveValue<Rate?> = reactiveValue(null)
     private var expectedChannels: ReactiveValue<Int?> = reactiveValue(null)

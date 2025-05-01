@@ -7,10 +7,7 @@ import reaktive.Observer
 import reaktive.observe
 import reaktive.value.*
 import reaktive.value.binding.map
-import xenakis.impl.Decimal
-import xenakis.impl.copy
-import xenakis.impl.toDecimal
-import xenakis.impl.zero
+import xenakis.impl.*
 import xenakis.model.obj.AbstractContextualObject
 import xenakis.model.obj.BusObject
 import xenakis.model.obj.BusReference
@@ -18,9 +15,9 @@ import xenakis.model.registry.BusRegistry
 import xenakis.model.registry.ObjectList
 import xenakis.model.registry.ObjectListSerializer
 import xenakis.model.registry.ObjectReference
+import xenakis.model.score.controls.guardAgainstReplaceNil
 import xenakis.sc.NumericalControlSpec
 import xenakis.sc.Warp
-import xenakis.sc.client.ScWriter
 import xenakis.sc.client.SuperColliderClient
 import xenakis.ui.midi.AbstractMidiContext
 import xenakis.ui.midi.MidiContext
@@ -143,18 +140,22 @@ class MixerFlow(
         componentObservers.remove(obj)?.kill()
     }
 
-    override fun writeCode(writer: ScWriter, placement: NodePlacement) = with(writer) {
-        if (components.isEmpty()) return
+    override fun writeCode(placement: NodePlacement): String = writeCode {
+        if (components.isEmpty()) return@writeCode
         val sink = targetBus.now.force()
         appendBlock("$superColliderName = ", endLine = false) {
-            +"var sources, volumes"
+            +"var sources, volumes, mix"
             val sources = components.map { comp -> comp.sourceBus.now.force().superColliderName }
             val volumes = components.map { comp -> getActualVolume(comp) }
             +"sources = NamedControl.kr(\\sources, $sources)"
             +"volumes = NamedControl.kr(\\volumes, $volumes)"
-            +"Mix(In.ar(sources) * volumes)"
+            +"sources = In.ar(sources, ${sink.channels.now}) * volumes"
+            +"sources.postln"
+            +"Mix(sources).postln"
         }
-        appendLine(".play(${placement.target}, ${sink.superColliderName}, addAction: ${placement.addAction})")
+        //TODO what if there is only one source bus (avoid stereo collapse)
+        val action = guardAgainstReplaceNil(placement)
+        appendLine(".play(${placement.target}, ${sink.superColliderName}, addAction: ${action})")
     }
 
     override fun getDefaultName(): ReactiveString = targetBus.map { bus -> "Mixer ${bus.getName()}" }

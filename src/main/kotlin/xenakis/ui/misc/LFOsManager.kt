@@ -135,25 +135,25 @@ class LFOsManager : ParameterControlList.Listener {
     }
 
     override fun reassignedControl(
-        namedControl: NamedParameterControl,
+        parameter: NamedParameterControl,
         oldControl: ParameterControl,
-        control: ParameterControl,
+        newControl: ParameterControl,
     ) {
-        removeLFO(namedControl)
-        observers.remove(namedControl)?.kill()
-        addedControl(namedControl, control)
+        removeLFO(parameter)
+        observers.remove(parameter)?.kill()
+        addedControl(parameter, newControl)
     }
 
-    override fun changedSpec(control: NamedParameterControl, oldSpec: ControlSpec?, newSpec: ControlSpec?) {
-        if (control.now !is UGenControl) return
-        val lfo = lfoMap[control] ?: return
+    override fun changedSpec(parameter: NamedParameterControl, oldSpec: ControlSpec?, newSpec: ControlSpec?) {
+        if (parameter.now !is UGenControl) return
+        val lfo = lfoMap[parameter] ?: return
         if (newSpec is NumericalControlSpec) {
             if (lfo.isResolved()) {
-                displayed.add(control)
-                display.fire(Triple(control, newSpec, lfoMap[control]!!))
+                displayed.add(parameter)
+                display.fire(Triple(parameter, newSpec, lfoMap[parameter]!!))
             }
-        } else if (displayed.remove(control)) {
-            remove.fire(control)
+        } else if (displayed.remove(parameter)) {
+            remove.fire(parameter)
         }
     }
 }

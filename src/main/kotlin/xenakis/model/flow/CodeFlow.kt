@@ -9,7 +9,7 @@ import reaktive.value.ReactiveValue
 import reaktive.value.binding.map
 import reaktive.value.now
 import reaktive.value.reactiveValue
-import xenakis.sc.client.ScWriter
+import xenakis.impl.writeCode
 import xenakis.sc.editor.CodeBlockEditor
 
 @Serializable
@@ -23,7 +23,7 @@ class CodeFlow(val codeEditor: EditorRoot<@Contextual CodeBlockEditor>) : AudioF
 
     override val isValid: ReactiveValue<Boolean> = codeEditor.editor.result.map { result -> result.isValid }
 
-    override fun writeCode(writer: ScWriter, placement: NodePlacement) = with(writer) {
+    override fun writeCode(placement: NodePlacement): String = writeCode {
         val code = codeEditor.editor.result.now
         appendBlock(endLine = false) {
             code.writeCode(writer, context)

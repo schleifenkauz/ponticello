@@ -15,7 +15,7 @@ import xenakis.model.obj.ParameterizedObjectDef
 import xenakis.model.obj.ProcessDefObject
 import xenakis.model.obj.ProcessDefReference
 import xenakis.model.registry.ProcessDefRegistry
-import xenakis.model.score.controls.ParameterControl.CodegenContext
+import xenakis.model.score.controls.writeProcessCode
 import xenakis.sc.ControlSpec
 
 @Serializable
@@ -45,40 +45,11 @@ class ProcessObject(
 
     override fun validate(): Boolean = controls.validate()
 
-    override fun writeCode(uniqueName: String, placement: NodePlacement?, cutoff: Decimal): String {
-        val superColliderName = "~process_$uniqueName"
-        val associatedServerObjects = mutableListOf<String>()
-        return writeCode {
-            appendBlock("$superColliderName = Task", endLine = false) {
-                val latency = context[Settings].serverLatency.get()
-                for (control in controls) {
-                    val spec = control.spec.now!!
-                    val name = control.name.now
-                    with(control.now) {
-                        generatePreparationCode(
-                            this@ProcessObject, uniqueName,
-                            name, spec, associatedServerObjects,
-                            context = CodegenContext.Process
-                        )
-                    }
-                }
-                +"$latency.wait"
-                append("${processDefRef.now.superColliderName}.value(t: $cutoff, duration: $duration")
-                for (control in controls) {
-                    if (!def.hasParameter(control.name.now)) continue
-                    val name = control.name.now
-                    val spec = control.spec.now!!
-                    val arg = control.now.generateArgumentExpr(
-                        this@ProcessObject, uniqueName, name, spec,
-                        context = CodegenContext.Process
-                    )
-                    append(", $name: ")
-                    arg.code(writer, context)
-                }
-                appendLine(");")
-            }
-            +".play"
-        }
+    override fun writeCode(uniqueName: String, placement: NodePlacement?, cutoff: Decimal): String = writeCode {
+        writeProcessCode(
+            this@ProcessObject, uniqueName,
+            cutoff, context[Settings].serverLatency.get(),
+        )
     }
 
     override fun doClone(newName: String): ScoreObject =

@@ -8,8 +8,8 @@ import reaktive.value.*
 import reaktive.value.binding.flatMap
 import reaktive.value.binding.map
 import xenakis.model.registry.NamedObject
+import xenakis.model.registry.NamedObjectList
 import xenakis.model.registry.ObjectReference
-import xenakis.model.registry.ObjectRegistry
 import xenakis.model.registry.reference
 
 abstract class ObjectSelector<O : NamedObject> :
@@ -17,7 +17,7 @@ abstract class ObjectSelector<O : NamedObject> :
     lateinit var isResolved: ReactiveBoolean
         private set
 
-    abstract fun getRegistry(): ObjectRegistry<O>
+    abstract fun getList(): NamedObjectList<O>
 
     open fun filter(obj: O): Boolean = true
 
@@ -26,8 +26,7 @@ abstract class ObjectSelector<O : NamedObject> :
     }
 
     override fun doInitialize() {
-        super.doInitialize()
-        result.now.resolve(getRegistry())
+        result.now.resolve(getList())
         isResolved = result.flatMap { ref -> ref.isResolved }
     }
 
@@ -36,7 +35,7 @@ abstract class ObjectSelector<O : NamedObject> :
     }
 
     override fun choices(): List<ObjectReference<O>> =
-        getRegistry().all().filter(::filter).map { obj -> obj.reference() }
+        getList().all().filter(::filter).map { obj -> obj.reference() }
 
     abstract fun createNewObject(name: String): O?
 

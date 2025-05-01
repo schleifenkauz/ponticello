@@ -117,18 +117,18 @@ class SynthObjectView(
     }
 
     override fun reassignedControl(
-        namedControl: ParameterControlList.NamedParameterControl,
+        parameter: ParameterControlList.NamedParameterControl,
         oldControl: ParameterControl,
-        control: ParameterControl
+        newControl: ParameterControl
     ) {
-        super.reassignedControl(namedControl, oldControl, control)
+        super.reassignedControl(parameter, oldControl, newControl)
         if (oldControl is ValueControl) {
-            when (namedControl.name.now) {
+            when (parameter.name.now) {
                 "startPos" -> startPosObserver?.kill()
                 "rate" -> rateObserver?.kill()
             }
         }
-        if (control is ValueControl) addedConstantControl(namedControl, control)
+        if (newControl is ValueControl) addedConstantControl(parameter, newControl)
     }
 
     override fun rescale() {

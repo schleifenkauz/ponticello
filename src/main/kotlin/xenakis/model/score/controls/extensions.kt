@@ -5,6 +5,7 @@ import reaktive.value.now
 import xenakis.impl.Decimal
 import xenakis.impl.zero
 import xenakis.model.flow.NodePlacement
+import xenakis.model.flow.NodePlacement.AddAction
 import xenakis.model.obj.ParameterizedObject
 import xenakis.model.score.controls.ParameterControl.CodegenContext
 import xenakis.sc.ControlSpec
@@ -39,19 +40,15 @@ private fun ParameterControl.adjustControlForCutoff(
 }
 
 fun ScWriter.writeSynthCode(
-    obj: ParameterizedObject,
-    uniqueName: String,
-    cutoff: Decimal,
-    placement: NodePlacement,
-    latency: Decimal,
-    extraControls: Map<String, Pair<ControlSpec, ParameterControl>> = emptyMap(),
+    obj: ParameterizedObject, uniqueName: String,
+    cutoff: Decimal, placement: NodePlacement, latency: Decimal,
 ) {
     appendBlock("s.makeBundle($latency)") {
         val controlsWithSpecs = obj.controls.all().associate { ctrl ->
             val spec = ctrl.spec.now!!
             val control = ctrl.now.adjustControlForCutoff(cutoff, spec)
             ctrl.name.now to Pair(spec, control)
-        } + extraControls
+        }
         val synthDefName = obj.def.name.now
         val synthVar = "${obj.superColliderPrefix}$uniqueName"
         append("$synthVar = Synth.newPaused(\\$synthDefName, [")
@@ -66,7 +63,8 @@ fun ScWriter.writeSynthCode(
         }
         if (obj.duration() != null) append("duration: ${obj.duration()!!.now}")
         else append("afterDuration: Done.none")
-        appendLine("], target: ${placement.target}, addAction: ${placement.addAction});")
+        val action = guardAgainstReplaceNil(placement)
+        appendLine("], target: ${placement.target}, addAction: $action);")
         +"s.sync"
         +"$synthVar.register"
         val associatedServerObjects = mutableListOf<String>()
@@ -95,4 +93,48 @@ fun ScWriter.writeSynthCode(
             }
         }
     }
+}
+
+fun guardAgainstReplaceNil(placement: NodePlacement) = if (placement.addAction == AddAction.AddReplace)
+    "if (${placement.target} != nil) { 'addReplace' } { \"'${placement.target}' not found\".postln; ${AddAction.AddToTail} }"
+else placement.addAction.toString()
+
+fun ScWriter.writeProcessCode(
+    obj: ParameterizedObject,
+    uniqueName: String,
+    cutoff: Decimal,
+    latency: Decimal,
+) {
+    val superColliderName = "~process_$uniqueName"
+    val associatedServerObjects = mutableListOf<String>()
+    appendBlock("$superColliderName = Task", endLine = false) {
+        for (control in obj.controls) {
+            val spec = control.spec.now!!
+            val name = control.name.now
+            with(control.now) {
+                generatePreparationCode(
+                    obj, uniqueName,
+                    name, spec, associatedServerObjects,
+                    context = CodegenContext.Process
+                )
+            }
+        }
+        +"$latency.wait"
+        val duration = obj.duration()?.now?.toString() ?: "inf"
+        val defName = "proc_${obj.def.name.now}"
+        append("$defName.value(t: $cutoff, duration: $duration")
+        for (control in obj.controls) {
+            if (!obj.def.hasParameter(control.name.now)) continue
+            val name = control.name.now
+            val spec = control.spec.now!!
+            val arg = control.now.generateArgumentExpr(
+                obj, uniqueName, name, spec,
+                context = CodegenContext.Process
+            )
+            append(", $name: ")
+            arg.code(writer, obj.context)
+        }
+        appendLine(");")
+    }
+    +".play"
 }

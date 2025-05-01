@@ -78,6 +78,9 @@ class FlowListConfig(
         is SynthFlow -> ParameterControlsPane(obj, "Flow controls").apply {
             listView.autoResizeScene = autoResizeScene
         }
+        is ProcessFlow -> ParameterControlsPane(obj, "Flow controls").apply {
+            listView.autoResizeScene = autoResizeScene
+        }
         is UtilityFlow -> Slider(-60.0, +6.0, 0.0) styleClass "volume-fader"
         is MixerFlow -> MixerFlowView(obj).apply {
             componentsView.autoResizeScene = autoResizeScene
@@ -174,7 +177,7 @@ class FlowListConfig(
                 executes { flow ->
                     flow as SynthFlow
                     val pane = flow.context[XenakisMainActivity].synthDefsPane
-                    pane.listView.showContent(flow.synthDef)
+                    pane.listView.showContent(flow.def)
                 }
             }
         }

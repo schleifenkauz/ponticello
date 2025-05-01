@@ -6,7 +6,7 @@ import xenakis.model.registry.GroupRegistry
 import xenakis.model.registry.ObjectRegistry
 
 class GroupSelector : ObjectSelector<GroupObject>() {
-    override fun getRegistry(): ObjectRegistry<GroupObject> = context[GroupRegistry]
+    override fun getList(): ObjectRegistry<GroupObject> = context[GroupRegistry]
 
     override fun createNewObject(name: String): GroupObject = GroupObject(reactiveVariable(name))
 }

@@ -13,7 +13,7 @@ class ObjectSelectorControl<O : NamedObject>(
     private val selector: ObjectSelector<O>, arguments: Bundle,
 ) : SimpleChoiceEditorControl<ObjectReference<O>>(selector, arguments) {
     public override fun showChoicePopup() {
-        val registry = selector.getRegistry()
+        val registry = selector.getList()
         val view = object : SearchableRegistryView<O>(registry, "Select ${registry.objectType}") {
             override fun createObject(name: String): O? = selector.createNewObject(name)
 

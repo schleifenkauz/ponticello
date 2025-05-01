@@ -7,10 +7,7 @@ import reaktive.value.*
 import reaktive.value.binding.and
 import reaktive.value.binding.flatMap
 import reaktive.value.binding.map
-import xenakis.impl.Decimal
-import xenakis.impl.copy
-import xenakis.impl.toDecimal
-import xenakis.impl.zero
+import xenakis.impl.*
 import xenakis.model.obj.BusObject
 import xenakis.model.obj.BusReference
 import xenakis.model.obj.ParameterizedObjectDef
@@ -21,7 +18,6 @@ import xenakis.model.score.ParameterControlList
 import xenakis.model.score.controls.BusControl
 import xenakis.model.score.controls.ValueControl
 import xenakis.model.score.controls.writeSynthCode
-import xenakis.sc.client.ScWriter
 
 @Serializable
 class SendFlow(
@@ -67,8 +63,8 @@ class SendFlow(
     override fun copy(): AudioFlow =
         SendFlow(sourceRef.copy(), targetRef.copy(), amountPercent.copy())
 
-    override fun writeCode(writer: ScWriter, placement: NodePlacement) {
-        writer.writeSynthCode(this, superColliderName.removePrefix("~"), cutoff = zero, placement, latency = zero)
+    override fun writeCode(placement: NodePlacement): String = writeCode {
+        writeSynthCode(this@SendFlow, superColliderName.removePrefix("~"), cutoff = zero, placement, latency = zero)
     }
 
     override fun getDefaultName(): ReactiveString =

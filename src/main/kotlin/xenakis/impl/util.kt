@@ -32,7 +32,12 @@ fun Context.registerImplementationsFromClasspath() {
 
 inline fun writeCode(writeCode: ScWriter.() -> Unit): String {
     val writer = StringWriter()
-    ScWriter(writer).appendGroup(writeCode)
+    try {
+        ScWriter(writer).appendGroup(writeCode)
+    } catch (e: Exception) {
+        Logger.error("Error during code generation", e)
+        return ""
+    }
     val code = writer.toString()
     return code
 }

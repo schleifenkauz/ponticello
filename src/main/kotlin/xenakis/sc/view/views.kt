@@ -312,3 +312,13 @@ fun createAControl(editor: xenakis.sc.editor.OutExprEditor, arguments: Bundle) =
             view(editor.channelsArray)
         }
     }
+
+@ProvideImplementation(ControlFactory::class)
+fun createAControl(editor: xenakis.sc.editor.ParameterReferenceEditor, arguments: Bundle) =
+    CompoundEditorControl(editor, arguments) {
+        horizontal {
+            keyword("get ")
+            view(editor.parameter)
+            root.centerChildren()
+        }
+    }

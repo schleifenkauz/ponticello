@@ -10,7 +10,7 @@ import xenakis.model.registry.ObjectRegistry
 import xenakis.ui.registry.SampleRegistryPane
 
 class BufferSelector : ObjectSelector<BufferObject>() {
-    override fun getRegistry(): ObjectRegistry<BufferObject> = context[BufferRegistry]
+    override fun getList(): ObjectRegistry<BufferObject> = context[BufferRegistry]
 
     private var expectedChannels: ReactiveValue<Int?> = reactiveValue(null)
 

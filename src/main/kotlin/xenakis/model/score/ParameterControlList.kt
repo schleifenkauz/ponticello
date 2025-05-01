@@ -1,7 +1,6 @@
 package xenakis.model.score
 
 import hextant.context.Context
-import hextant.undo.AbstractEdit
 import hextant.undo.UndoManager
 import javafx.scene.paint.Color
 import kotlinx.serialization.SerialName
@@ -95,7 +94,7 @@ class ParameterControlList(
         fun initialize(controls: ParameterControlList) {
             this.controls = controls
             super.initialize(controls.context)
-            value.now.initialize(context)
+            value.now.initialize(context, parentObject)
             updateSpec(customSpec ?: parentObject.def.getSpec(name.now)?.now)
             isValid = binding(_spec, value) { spec, ctrl -> spec != null && ctrl.validate(spec, parentObject) }
         }
@@ -129,7 +128,7 @@ class ParameterControlList(
         fun setCustomSpec(custom: ControlSpec?) {
             val before = customSpec
             customSpec = custom
-            context[UndoManager].record(EditCustomSpec(this, before, custom))
+            context[UndoManager].record(ParameterControlEdit.EditCustomSpec(this, before, custom))
             val defaultSpec = controls.getDefaultSpec(this)
             val newSpec = custom ?: defaultSpec
             updateSpec(newSpec)
@@ -160,9 +159,9 @@ class ParameterControlList(
 
         fun reassign(newControl: ParameterControl) {
             val oldControl = now
-            newControl.initialize(context)
+            newControl.initialize(context, parentObject)
             value.now = newControl
-            context[UndoManager].record(ReassignControl(this, oldControl, newControl))
+            context[UndoManager].record(ParameterControlEdit.ReassignControl(this, oldControl, newControl))
             controls.notifyListeners<Listener> { reassignedControl(this@NamedParameterControl, oldControl, newControl) }
         }
 
@@ -213,6 +212,8 @@ class ParameterControlList(
 
     fun getControl(name: String) = getOrNull(name)?.now
 
+    fun indexOf(parameter: String) = indexOfFirst { ctrl -> ctrl.name.now == parameter }
+
     fun getCustomSpec(parameter: String): ControlSpec? = getOrNull(parameter)?.customSpec()
 
     fun reassignControl(parameter: String, control: ParameterControl) {
@@ -257,44 +258,6 @@ class ParameterControlList(
         return valid
     }
 
-    class ReassignControl(
-        private val control: NamedParameterControl,
-        private val oldControl: ParameterControl,
-        private val newControl: ParameterControl,
-    ) : AbstractEdit() {
-        override val actionDescription: String
-            get() = "Reassign controls"
-
-        override fun doUndo() {
-            control.reassign(oldControl)
-        }
-
-        override fun doRedo() {
-            control.reassign(newControl)
-        }
-    }
-
-    class EditCustomSpec(
-        private val control: NamedParameterControl,
-        private val extraSpecBefore: ControlSpec?,
-        private val extraSpecAfter: ControlSpec?,
-    ) : AbstractEdit() {
-        override val actionDescription: String
-            get() = when {
-                extraSpecBefore != null && extraSpecAfter == null -> "Reset parameter spec"
-                extraSpecBefore == null && extraSpecAfter != null -> "Add custom parameter spec"
-                else -> "Modify extra spec"
-            }
-
-        override fun doUndo() {
-            control.setCustomSpec(extraSpecBefore)
-        }
-
-        override fun doRedo() {
-            control.setCustomSpec(extraSpecAfter)
-        }
-    }
-
     interface Listener : ObjectList.Listener<NamedParameterControl> {
         override fun added(obj: NamedParameterControl, idx: Int) {
         }
@@ -303,12 +266,12 @@ class ParameterControlList(
         }
 
         fun reassignedControl(
-            namedControl: NamedParameterControl,
+            parameter: NamedParameterControl,
             oldControl: ParameterControl,
-            control: ParameterControl,
+            newControl: ParameterControl,
         )
 
-        fun changedSpec(control: NamedParameterControl, oldSpec: ControlSpec?, newSpec: ControlSpec?) {}
+        fun changedSpec(parameter: NamedParameterControl, oldSpec: ControlSpec?, newSpec: ControlSpec?) {}
     }
 
     object Serializer : ObjectListSerializer<NamedParameterControl, ParameterControlList>(

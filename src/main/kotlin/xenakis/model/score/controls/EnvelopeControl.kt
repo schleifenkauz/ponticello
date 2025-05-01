@@ -10,6 +10,7 @@ import reaktive.value.ReactiveVariable
 import reaktive.value.reactiveVariable
 import xenakis.impl.ColorSerializer
 import xenakis.model.obj.ParameterizedObject
+import xenakis.model.obj.SynthDefObject
 import xenakis.model.score.Envelope
 import xenakis.sc.*
 import xenakis.sc.client.ScWriter
@@ -24,7 +25,8 @@ class EnvelopeControl(
     @Transient
     val update = unitEvent()
 
-    override fun initialize(context: Context) {
+    override fun initialize(context: Context, parentObject: ParameterizedObject) {
+        super.initialize(context, parentObject)
         points.initialize(context)
     }
 
@@ -34,6 +36,10 @@ class EnvelopeControl(
     override fun validate(spec: ControlSpec, obj: ParameterizedObject): Boolean = spec is NumericalControlSpec
 
     override fun providesConstantSynthArgument(): Boolean = true
+
+    override fun allocatesBus(obj: ParameterizedObject): Boolean = obj.def is SynthDefObject
+
+    override fun usesAuxilSynth(obj: ParameterizedObject): Boolean = obj.def is SynthDefObject
 
     override fun ScWriter.generatePreparationCode(
         obj: ParameterizedObject, uniqueName: String,
@@ -47,9 +53,9 @@ class EnvelopeControl(
         when (context) {
             CodegenContext.Synth, CodegenContext.SubArg -> {
                 +"$auxiliaryVarName  = Bus.control(s, 1)"
-                val auxiliarySynthName = envSynthName(uniqueName, parameter)
+                val auxiliarySynthName = auxilSynthName(uniqueName, parameter)
                 val synthName = "${obj.superColliderPrefix}$uniqueName"
-                +"$auxiliarySynthName = { $envelopeCode.kr }.play($synthName, $auxiliaryVarName, fadeTime: 0, addAction: 'addBefore')"
+                +"$auxiliarySynthName = { $envelopeCode.kr }.play(target: $synthName, outbus: $auxiliaryVarName, fadeTime: 0, addAction: 'addBefore')"
                 associatedServerObjects.addAll(listOf(auxiliarySynthName, auxiliaryVarName))
             }
 
@@ -84,9 +90,5 @@ class EnvelopeControl(
     ) {
         val auxiliaryVarName = uniqueArgumentName(uniqueName, parameter)
         +"${synthVar}.map(\\$parameter, $auxiliaryVarName)"
-    }
-
-    companion object {
-        fun envSynthName(uniqueName: String, parameter: String) = "~env_synth_${uniqueName}_$parameter"
     }
 }

@@ -4,7 +4,6 @@ import reaktive.Observer
 import reaktive.value.now
 import xenakis.impl.Decimal
 import xenakis.impl.Logger
-import xenakis.model.flow.NodePlacement.AddAction
 import xenakis.sc.client.SuperColliderClient
 
 class NodeTree(private val client: SuperColliderClient) {
@@ -17,8 +16,8 @@ class NodeTree(private val client: SuperColliderClient) {
         idx = -(idx + 1)
         activeNodes.add(idx, node)
         observeNode(node)
-        return if (idx == 0) NodePlacement(AddAction.AddToHead, "s.defaultGroup")
-        else NodePlacement(AddAction.AddAfter, activeNodes[idx - 1].superColliderName.now)
+        return if (idx == 0) NodePlacement.head("s.defaultGroup")
+        else NodePlacement.after(activeNodes[idx - 1].superColliderName.now)
     }
 
     private fun observeNode(node: AudioNode) {

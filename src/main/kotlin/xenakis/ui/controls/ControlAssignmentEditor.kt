@@ -133,6 +133,8 @@ class ControlAssignmentEditor(val control: NamedParameterControl, val view: Scor
     }
 
     sealed class ControlType<C : ParameterControl> {
+        open fun applicableOn(obj: ParameterizedObject): Boolean = true
+
         abstract fun createDetailInput(
             namedControl: NamedParameterControl,
             control: C,
@@ -172,6 +174,8 @@ class ControlAssignmentEditor(val control: NamedParameterControl, val view: Scor
         }
 
         data object Envelope : ControlType<EnvelopeControl>() {
+            override fun applicableOn(obj: ParameterizedObject): Boolean = obj is ScoreObject
+
             override fun createDetailInput(
                 namedControl: NamedParameterControl,
                 control: EnvelopeControl,
@@ -234,7 +238,8 @@ class ControlAssignmentEditor(val control: NamedParameterControl, val view: Scor
                 )
                 val window = makeSubWindow(pane, "LFO for ${namedControl.name.now}", control.context)
                 window.sceneFill(Color.BLACK)
-                window.resize(300.0, 150.0)
+                window.minWidth = 100.0
+                window.minHeight = 100.0
                 val showWindowButton = button("Code") { window.showOrBringToFront() }
                 if (namedControl.parentObject is ScoreObject) {
                     val displayToggle = ToggleSwitch("Display: ")
@@ -474,6 +479,8 @@ class ControlAssignmentEditor(val control: NamedParameterControl, val view: Scor
         }
 
         data object AttackRelease : ControlType<AttackReleaseControl>() {
+            override fun applicableOn(obj: ParameterizedObject): Boolean = obj is ScoreObject
+
             override fun createDetailInput(
                 namedControl: NamedParameterControl,
                 control: AttackReleaseControl,

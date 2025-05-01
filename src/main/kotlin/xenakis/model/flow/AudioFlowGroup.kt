@@ -10,7 +10,6 @@ import reaktive.value.*
 import reaktive.value.binding.map
 import xenakis.impl.ColorSerializer
 import xenakis.impl.Decimal
-import xenakis.model.flow.NodePlacement.AddAction
 import xenakis.model.obj.AbstractRenamableObject
 import xenakis.model.player.PlaybackManager
 import xenakis.model.registry.NamedObjectList
@@ -96,11 +95,10 @@ class AudioFlowGroup(
         val idx = flows.indexOf(flow)
         val prev = previousActiveFlow(idx)
         val placement =
-            if (prev == null) NodePlacement(AddAction.AddToHead, superColliderName.now)
-            else NodePlacement(AddAction.AddAfter, prev.superColliderName)
-        client.run {
-            flow.writeCode(writer, placement)
-        }
+            if (prev == null) NodePlacement.head(superColliderName.now)
+            else NodePlacement.after(prev.superColliderName)
+        val code = flow.writeCode(placement)
+        client.run(code)
     }
 
     private fun deactivate(flow: AudioFlow) {
@@ -140,7 +138,7 @@ class AudioFlowGroup(
 
     fun sync() {
         if (isActive.now) {
-            val placement = NodePlacement(addAction = AddAction.AddReplace, superColliderName.now)
+            val placement = NodePlacement.replace(superColliderName.now)
             addToServer(placement)
         }
     }

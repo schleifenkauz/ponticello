@@ -1,7 +1,10 @@
 package xenakis.model.score.controls
 
+import bundles.set
 import hextant.context.Context
+import hextant.context.extend
 import hextant.serial.EditorRoot
+import hextant.undo.UndoManager
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -10,6 +13,8 @@ import reaktive.event.unitEvent
 import reaktive.value.ReactiveVariable
 import reaktive.value.now
 import reaktive.value.reactiveVariable
+import xenakis.model.ctx.PonticelloContext
+import xenakis.model.ctx.Scope
 import xenakis.model.obj.ParameterizedObject
 import xenakis.model.obj.ProcessDefObject
 import xenakis.model.obj.SynthDefObject
@@ -30,14 +35,22 @@ data class UGenControl(
 
     override fun copy(): ParameterControl = UGenControl(expr.clone())
 
-    override fun initialize(context: Context) {
-        super.initialize(context)
-        expr.initialize(context)
+    override fun initialize(context: Context, parentObject: ParameterizedObject) {
+        super.initialize(context, parentObject)
+        val myContext = context.extend {
+            set(UndoManager, UndoManager.newInstance())
+            set(PonticelloContext, PonticelloContext(parentObject, Scope.createEmpty()))
+        }
+        expr.initialize(myContext)
     }
 
     override fun validate(spec: ControlSpec, obj: ParameterizedObject): Boolean = true
 
     override fun providesConstantSynthArgument(): Boolean = false
+
+    override fun allocatesBus(obj: ParameterizedObject): Boolean = true
+
+    override fun usesAuxilSynth(obj: ParameterizedObject): Boolean = true
 
     override fun ScWriter.generatePreparationCode(
         obj: ParameterizedObject, uniqueName: String,
@@ -48,13 +61,13 @@ data class UGenControl(
         val expr = substituteControlParameters(expr.editor.result.now, obj, uniqueName)
         val busName = uniqueArgumentName(uniqueName, parameter)
         +"$busName = Bus.control(s, 1)"
-        val auxilSynthName = synthName(uniqueName, parameter)
+        val auxilSynthName = auxilSynthName(uniqueName, parameter)
         val synthName = "${obj.superColliderPrefix}$uniqueName"
         append("$auxilSynthName = ")
         appendBlock("", endLine = false) {
             expr.code(writer, this@UGenControl.context)
         }
-        +".play($synthName, $busName, fadeTime: 0, addAction: 'addBefore')"
+        +".play(target: $synthName, outbus: $busName, fadeTime: 0, addAction: 'addBefore')"
         associatedServerObjects.addAll(listOf(busName, auxilSynthName))
     }
 
@@ -103,20 +116,17 @@ data class UGenControl(
     }
 
     companion object {
-        fun synthName(uniqueName: String, parameter: String) = "~auxil_synth_${uniqueName}_${parameter}"
-
         fun substituteControlParameters(expr: ScExpr, obj: ParameterizedObject, uniqueName: String): ScExpr {
-            val substitution = obj.controls.associate { ctrl ->
+            val parameterMap = obj.controls.associateWith { ctrl ->
                 val param = ctrl.name.now
                 val spec = ctrl.spec.now!!
-                "~ctrl_$param" to {
-                    ctrl.now.generateArgumentExpr(
-                        obj, uniqueName,
-                        param, spec, context = CodegenContext.SubArg
-                    )
-                }
+                { ctrl.now.generateArgumentExpr(obj, uniqueName, param, spec, context = CodegenContext.SubArg) }
             }
-            return expr.substitute(substitution)
+            val substitution = parameterMap.mapKeys { (param, _) -> "~ctrl_${param.name.now}" }
+            return expr.transform<ParameterReference> { ref ->
+                parameterMap[ref.parameter.get()]?.invoke()
+                    ?: error("Unresolved control reference '${ref.parameter.getName()}'")
+            }.substitute(substitution)
         }
     }
 }

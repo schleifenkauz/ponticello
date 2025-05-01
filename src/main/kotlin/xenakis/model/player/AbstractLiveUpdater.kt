@@ -5,13 +5,12 @@ import reaktive.value.now
 import reaktive.value.observe
 import xenakis.impl.Decimal
 import xenakis.impl.zero
-import xenakis.model.obj.BufferReference
-import xenakis.model.obj.BusReference
-import xenakis.model.obj.GlobalPatternReference
-import xenakis.model.obj.ParameterizedObject
+import xenakis.model.flow.NodePlacement
+import xenakis.model.obj.*
 import xenakis.model.registry.NamedObject.Companion.NO_NAME
 import xenakis.model.score.Envelope
 import xenakis.model.score.ParameterControlList
+import xenakis.model.score.ParameterControlList.NamedParameterControl
 import xenakis.model.score.controls.*
 import xenakis.sc.NumericalControlSpec
 import xenakis.sc.ScExpr
@@ -53,54 +52,58 @@ abstract class AbstractLiveUpdater(protected val obj: ParameterizedObject) : Par
         }
     }
 
-    override fun added(obj: ParameterControlList.NamedParameterControl, idx: Int) {
+    override fun added(obj: NamedParameterControl, idx: Int) {
         val parameter = obj.name.now
         val ctrl = obj.now
-        addedControl(parameter, ctrl)
+        addedControl(parameter, ctrl, replaceAuxilSynth = false, remap = true)
     }
 
-    override fun removed(obj: ParameterControlList.NamedParameterControl) {
+    override fun removed(obj: NamedParameterControl) {
         controlObservers.remove(obj.now)?.kill()
         val parameter = obj.name.now
         val spec = obj.spec.now
         if (spec !is NumericalControlSpec) return
+        freeServerObjectsAssociatedWith(parameter, obj)
         setDefault(parameter, spec)
-        freeServerObjectsAssociatedWith(parameter, spec, obj)
+    }
+
+    override fun moved(obj: NamedParameterControl, idx: Int) {
+        if (obj.now.hasOwnSynth(this.obj)) {
+            val parameter = obj.name.now
+            runOnActiveObjects { name, _ ->
+                val target = getPlacementTarget(parameter, name)
+                val synthName = ParameterControl.auxilSynthName(name, parameter)
+                +"$synthName.moveBefore($target)"
+            }
+        }
     }
 
     private fun setDefault(parameter: String, spec: NumericalControlSpec) {
         runOnActiveObjects { name, _ ->
-            updateValue(name, parameter, spec.defaultValue.get())
+            updateValue(name, parameter, spec.defaultValue.get(), onBus = false, remap = false)
         }
     }
 
-    private fun freeServerObjectsAssociatedWith(
-        parameter: String,
-        spec: NumericalControlSpec,
-        obj: ParameterControlList.NamedParameterControl,
-    ) {
-        when (obj.now) {
-            is EnvelopeControl -> runOnActiveObjects { name, _ ->
-                val auxiliarySynthName = EnvelopeControl.envSynthName(name, parameter)
-                +"$auxiliarySynthName.free"
-                val busName = ParameterControl.uniqueArgumentName(name, parameter)
-                +"$busName.free"
-                updateValue(name, parameter, spec.defaultValue.get())
-            }
+    private fun freeServerObjectsAssociatedWith(parameter: String, control: NamedParameterControl) {
+        if (control.now.allocatesBus(obj)) freeParameterBuses(parameter)
+        if (control.now.usesAuxilSynth(obj)) freeAuxilSynths(parameter)
+    }
 
-            is AttackReleaseControl -> TODO()
-            is UGenControl -> runOnActiveObjects { name, _ ->
-                val synthName = UGenControl.synthName(name, parameter)
-                +"$synthName.free"
-                val busName = ParameterControl.uniqueArgumentName(name, parameter)
-                +"$busName.free"
-            }
-
-            else -> {}
+    private fun freeAuxilSynths(parameter: String) {
+        runOnActiveObjects { name, _ ->
+            val auxiliarySynthName = ParameterControl.auxilSynthName(name, parameter)
+            +"$auxiliarySynthName.free"
         }
     }
 
-    private fun addedControl(parameter: String, ctrl: ParameterControl) {
+    private fun freeParameterBuses(parameter: String) {
+        runOnActiveObjects { name, _ ->
+            val busName = ParameterControl.uniqueArgumentName(name, parameter)
+            +"$busName.free"
+        }
+    }
+
+    private fun addedControl(parameter: String, ctrl: ParameterControl, replaceAuxilSynth: Boolean, remap: Boolean) {
         observeControl(parameter, ctrl)
         when (ctrl) {
             is BusControl -> runOnActiveObjects { name, _ ->
@@ -112,7 +115,7 @@ abstract class AbstractLiveUpdater(protected val obj: ParameterizedObject) : Par
             }
 
             is ValueControl -> runOnActiveObjects { name, _ ->
-                updateValue(name, parameter, ctrl.value.now)
+                updateValue(name, parameter, ctrl.value.now, onBus = obj.def is SynthDefObject, remap)
             }
 
             is BufferControl -> runOnActiveObjects { name, _ ->
@@ -122,7 +125,7 @@ abstract class AbstractLiveUpdater(protected val obj: ParameterizedObject) : Par
             is AttackReleaseControl -> return //TODO
 
             is EnvelopeControl -> runOnActiveObjects { name, objectTime ->
-                updateEnvelope(writer, objectTime, name, parameter, envelope = ctrl.points)
+                updateEnvelope(writer, objectTime, name, parameter, envelope = ctrl.points, remap)
             }
 
             is GlobalPatternControl -> runOnActiveObjects { name, _ ->
@@ -135,7 +138,7 @@ abstract class AbstractLiveUpdater(protected val obj: ParameterizedObject) : Par
 
             is UGenControl -> runOnActiveObjects { name, _ ->
                 val expr = ctrl.expr.editor.result.now
-                updateUGenControl(this, name, parameter, expr)
+                updateUGenControl(this, name, parameter, expr, replaceAuxilSynth, remap)
             }
         }
     }
@@ -156,7 +159,7 @@ abstract class AbstractLiveUpdater(protected val obj: ParameterizedObject) : Par
 
             is ValueControl -> control.value.observe { _, value ->
                 runOnActiveObjects { name, _ ->
-                    updateValue(name, parameter, value)
+                    updateValue(name, parameter, value, onBus = obj.def is SynthDefObject, remap = false)
                 }
             }
 
@@ -169,7 +172,7 @@ abstract class AbstractLiveUpdater(protected val obj: ParameterizedObject) : Par
             is AttackReleaseControl -> return //TODO
             is EnvelopeControl -> control.update.stream.observe { _ ->
                 runOnActiveObjects { name, objectTime ->
-                    updateEnvelope(writer, objectTime, name, parameter, envelope = control.points)
+                    updateEnvelope(writer, objectTime, name, parameter, envelope = control.points, remap = false)
                 }
             }
 
@@ -188,22 +191,39 @@ abstract class AbstractLiveUpdater(protected val obj: ParameterizedObject) : Par
             is UGenControl -> control.update.stream.observe { _ ->
                 runOnActiveObjects { name, _ ->
                     val expr = control.expr.editor.result.now
-                    updateUGenControl(this, name, parameter, expr)
+                    updateUGenControl(this, name, parameter, expr, replace = true, remap = false)
                 }
             }
         }
     }
 
     override fun reassignedControl(
-        namedControl: ParameterControlList.NamedParameterControl,
+        parameter: NamedParameterControl,
         oldControl: ParameterControl,
-        control: ParameterControl,
+        newControl: ParameterControl,
     ) {
         controlObservers.remove(oldControl)?.kill()
-        addedControl(namedControl.name.now, control)
+        if (oldControl.allocatesBus(obj) && !newControl.allocatesBus(obj)) {
+            freeParameterBuses(parameter.name.now)
+        }
+        if (!oldControl.allocatesBus(obj) && newControl.allocatesBus(obj)) {
+            runOnActiveObjects { name, _ ->
+                val busName = ParameterControl.uniqueArgumentName(name, parameter.name.now)
+                +"$busName.free"
+            }
+        }
+        if (oldControl.usesAuxilSynth(obj) && !newControl.usesAuxilSynth(obj)) {
+            freeAuxilSynths(parameter.name.now)
+        }
+        val replaceAuxilSynth = oldControl.usesAuxilSynth(obj)
+        val remap = oldControl.allocatesBus(obj)
+        addedControl(parameter.name.now, newControl, replaceAuxilSynth, remap)
     }
 
-    protected abstract fun ScWriter.updateValue(uniqueName: String, parameter: String, value: Decimal)
+    protected abstract fun ScWriter.updateValue(
+        uniqueName: String, parameter: String, value: Decimal,
+        onBus: Boolean, remap: Boolean,
+    )
 
     protected abstract fun ScWriter.updateBus(uniqueName: String, parameter: String, bus: BusReference)
 
@@ -222,16 +242,47 @@ abstract class AbstractLiveUpdater(protected val obj: ParameterizedObject) : Par
     protected abstract fun updateEnvelope(
         writer: ScWriter, objectTime: Decimal,
         uniqueName: String, parameter: String, envelope: Envelope,
+        remap: Boolean,
     )
 
-    protected open fun updateUGenControl(writer: ScWriter, uniqueName: String, parameter: String, expr: ScExpr) {
-        val auxiliarySynthName = UGenControl.synthName(uniqueName, parameter)
+    protected open fun updateUGenControl(
+        writer: ScWriter,
+        uniqueName: String,
+        parameter: String,
+        expr: ScExpr,
+        replace: Boolean,
+        remap: Boolean,
+    ) {
+        val auxiliarySynthName = ParameterControl.auxilSynthName(uniqueName, parameter)
         val substituted = UGenControl.substituteControlParameters(expr, obj, uniqueName)
         val busName = ParameterControl.uniqueArgumentName(uniqueName, parameter)
         writer.append("$auxiliarySynthName = ")
         writer.appendBlock("", endLine = false) {
             substituted.code(writer, obj.context)
         }
-        writer.appendLine(".play($auxiliarySynthName, $busName, fadeTime: 0.02, addAction: 'addReplace');")
+        val placement = getAuxiliarySynthPlacement(parameter, uniqueName, replace)
+        val action = guardAgainstReplaceNil(placement)
+        writer.appendLine(".play(target: ${placement.target}, outbus: $busName, fadeTime: 0.02, addAction: ${action});")
+    }
+
+    protected fun getAuxiliarySynthPlacement(parameter: String, uniqueName: String, replace: Boolean) = when {
+        replace -> NodePlacement.replace(ParameterControl.auxilSynthName(uniqueName, parameter))
+        else -> {
+            val placementTarget = getPlacementTarget(parameter, uniqueName)
+            NodePlacement.before(placementTarget)
+        }
+    }
+
+    private fun getPlacementTarget(parameter: String, uniqueName: String): String {
+        val parametersWithSynth = obj.controls
+            .filter { ctrl -> ctrl.now.hasOwnSynth(obj) }
+            .map { ctrl -> ctrl.name.now }
+        val idx = parametersWithSynth.indexOf(parameter)
+        return if (idx == -1 || idx == parametersWithSynth.size - 1) {
+            val mainSynthName = "${obj.superColliderPrefix}$uniqueName"
+            mainSynthName
+        } else {
+            parametersWithSynth[idx + 1]
+        }
     }
 }

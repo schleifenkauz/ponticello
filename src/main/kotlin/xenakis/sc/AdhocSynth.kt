@@ -64,7 +64,7 @@ data class AdhocSynth(
         for (plugin in plugins) {
             val pluginName = plugin.pluginName
             val presetName = plugin.presetName
-            val presetFile = context[XenakisProject.Companion.projectDirectory].resolve("presets").resolve("$presetName.fxp").superColliderPath
+            val presetFile = context[XenakisProject.projectDirectory].resolve("presets").resolve("$presetName.fxp").superColliderPath
             val action = "action: { |c| if (PathName(${presetFile}).isFile) { c.readProgram(${presetFile}) } }"
             +"~ctrl_$presetName = VSTPluginController($synthName, id: '${plugin.id}').open('$pluginName.vst3', $action)"
         }

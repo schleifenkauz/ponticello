@@ -25,21 +25,21 @@ sealed interface SynthDefObject : ParameterizedObjectDef, SuperColliderObject {
 
     override fun hasParameter(name: String): Boolean = name == "group" || super.hasParameter(name)
 
-    fun onUpdated() = context[SuperColliderClient].run {
+    fun onUpdated() {
         val currentTime = context[PlaybackManager].playHead.currentTime
         context[PlaybackManager].activeObjects.forEach { active ->
             val def = active.associatedDef
             if (def != this@SynthDefObject) return@forEach
             val uniqueName = active.uniqueName
-            val placement = NodePlacement(NodePlacement.AddAction.AddReplace, active.superColliderName)
-            when (active) {
-                is ActiveAudioFlow -> active.flow.writeCode(writer, placement)
+            val placement = NodePlacement.replace(active.superColliderName)
+            val code = when (active) {
+                is ActiveAudioFlow -> active.flow.writeCode(placement)
                 is ActiveScoreObject -> {
                     val cutoff = currentTime - active.absolutePosition.time
-                    val code = active.obj.writeCode(uniqueName, placement, cutoff)
-                    appendLine(code)
+                    active.obj.writeCode(uniqueName, placement, cutoff)
                 }
             }
+            context[SuperColliderClient].run(code)
         }
     }
 

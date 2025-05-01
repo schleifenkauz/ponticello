@@ -11,7 +11,13 @@ import xenakis.sc.NumericalControlSpec
 import xenakis.sc.client.ScWriter
 
 class LiveProcessUpdater(obj: ParameterizedObject): AbstractLiveUpdater(obj) {
-    override fun ScWriter.updateValue(uniqueName: String, parameter: String, value: Decimal) {
+    override fun ScWriter.updateValue(
+        uniqueName: String,
+        parameter: String,
+        value: Decimal,
+        onBus: Boolean,
+        remap: Boolean
+    ) {
         updateArgument(uniqueName, parameter, value.toString())
     }
 
@@ -40,7 +46,8 @@ class LiveProcessUpdater(obj: ParameterizedObject): AbstractLiveUpdater(obj) {
         objectTime: Decimal,
         uniqueName: String,
         parameter: String,
-        envelope: Envelope
+        envelope: Envelope,
+        remap: Boolean
     ) {
         val spec = obj.getSpec(parameter) as? NumericalControlSpec ?: return
         val envelopeCode = envelope.code(spec.warp)

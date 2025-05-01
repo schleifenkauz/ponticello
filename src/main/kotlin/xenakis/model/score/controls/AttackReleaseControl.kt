@@ -9,6 +9,7 @@ import xenakis.impl.Logger
 import xenakis.impl.copy
 import xenakis.impl.zero
 import xenakis.model.obj.ParameterizedObject
+import xenakis.model.obj.SynthDefObject
 import xenakis.model.score.Envelope
 import xenakis.model.score.Envelope.EnvelopePoint
 import xenakis.sc.ControlSpec
@@ -43,6 +44,10 @@ data class AttackReleaseControl(
     }
 
     override fun providesConstantSynthArgument(): Boolean = false
+
+    override fun allocatesBus(obj: ParameterizedObject): Boolean = obj.def is SynthDefObject
+
+    override fun usesAuxilSynth(obj: ParameterizedObject): Boolean = obj.def is SynthDefObject
 
     override fun generateArgumentExpr(
         obj: ParameterizedObject,

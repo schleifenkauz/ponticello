@@ -10,12 +10,12 @@ import javafx.scene.layout.Region
 import reaktive.value.now
 import xenakis.model.obj.RenamableObject
 import xenakis.model.registry.NamedObject
-import xenakis.model.registry.ObjectRegistry
+import xenakis.model.registry.NamedObjectList
 import xenakis.sc.Identifier
 import xenakis.ui.controls.RenamePrompt
 
 abstract class SearchableRegistryView<O : NamedObject>(
-    val registry: ObjectRegistry<O>, title: String
+    val registry: NamedObjectList<O>, title: String
 ) : SearchableListView<O>(title) {
     init {
         registerShortcuts {

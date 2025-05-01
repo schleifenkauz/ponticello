@@ -111,20 +111,20 @@ abstract class ParameterizedScoreObjectView<O : ParameterizedScoreObject>(
     }
 
     override fun reassignedControl(
-        namedControl: NamedParameterControl,
+        parameter: NamedParameterControl,
         oldControl: ParameterControl,
-        control: ParameterControl,
+        newControl: ParameterControl,
     ) {
         observers.remove(oldControl)?.kill()
-        if (oldControl is EnvelopeControl) removeEnvelope(namedControl)
-        if (control is EnvelopeControl) addedEnvelopeControl(namedControl, control)
+        if (oldControl is EnvelopeControl) removeEnvelope(parameter)
+        if (newControl is EnvelopeControl) addedEnvelopeControl(parameter, newControl)
     }
 
-    override fun changedSpec(control: NamedParameterControl, oldSpec: ControlSpec?, newSpec: ControlSpec?) {
-        when (val ctrl = control.now) {
+    override fun changedSpec(parameter: NamedParameterControl, oldSpec: ControlSpec?, newSpec: ControlSpec?) {
+        when (val ctrl = parameter.now) {
             is EnvelopeControl -> {
                 if (ctrl.display.now) {
-                    envelopeEditors.find { ed -> ed.namedControl == control }?.repaint()
+                    envelopeEditors.find { ed -> ed.namedControl == parameter }?.repaint()
                 }
             }
 
