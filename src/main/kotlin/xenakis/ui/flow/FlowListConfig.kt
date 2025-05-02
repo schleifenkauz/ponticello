@@ -6,7 +6,6 @@ import fxutils.actions.ContextualizedAction
 import fxutils.actions.collectActions
 import fxutils.prompt.InfoPrompt
 import fxutils.styleClass
-import hextant.context.Context
 import javafx.scene.Node
 import javafx.scene.Parent
 import javafx.scene.control.Slider
@@ -42,8 +41,11 @@ import xenakis.ui.registry.SimpleSearchableRegistryView
 import xenakis.ui.score.ParameterControlsPane
 
 class FlowListConfig(
-    private val context: Context, private val autoResizeScene: Boolean,
+    private val group: AudioFlowGroup,
+    private val autoResizeScene: Boolean,
 ) : ObjectListDisplayConfig<AudioFlow> {
+    private val context get() = group.context
+
     override val buttonStyle: String
         get() = "flow-action-button"
     override val enableReordering: Boolean
@@ -78,9 +80,11 @@ class FlowListConfig(
         is SynthFlow -> ParameterControlsPane(obj, "Flow controls").apply {
             listView.autoResizeScene = autoResizeScene
         }
+
         is ProcessFlow -> ParameterControlsPane(obj, "Flow controls").apply {
             listView.autoResizeScene = autoResizeScene
         }
+
         is UtilityFlow -> Slider(-60.0, +6.0, 0.0) styleClass "volume-fader"
         is MixerFlow -> MixerFlowView(obj).apply {
             componentsView.autoResizeScene = autoResizeScene
@@ -108,6 +112,11 @@ class FlowListConfig(
 
     override fun dataFormat(obj: AudioFlow): DataFormat = AudioFlow.DATA_FORMAT
 
+    override fun configureDragboard(obj: AudioFlow, dragboard: Dragboard) {
+        val ref = AudioFlows.FlowReference(group.name.now, obj.name.now)
+        dragboard.setContent(mapOf(AudioFlow.DATA_FORMAT to ref))
+    }
+
     override fun getDefaultDisplayName(obj: AudioFlow): ReactiveString = obj.getDefaultName()
 
     fun onDrop(ev: DragEvent, listView: ObjectListView<AudioFlow>) {
@@ -117,8 +126,8 @@ class FlowListConfig(
             var newIndex = listView.getBoxes().binarySearchBy(ev.y) { n -> n.layoutY }
             if (newIndex < 0) newIndex = -(newIndex + 1)
             val copy = flow.copy()
-            copy.initialize(context)
             listView.source.add(copy, newIndex)
+            if (flow.isActive.now) copy.activate()
             if (TransferMode.COPY !in ev.dragboard.transferModes) {
                 reference.removeFrom(context[AudioFlows])
             }

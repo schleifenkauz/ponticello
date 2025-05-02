@@ -7,8 +7,8 @@ import reaktive.value.ReactiveVariable
 import reaktive.value.now
 import xenakis.model.flow.NodePlacement
 import xenakis.model.player.ActiveAudioFlow
+import xenakis.model.player.ActiveObjectsManager
 import xenakis.model.player.ActiveScoreObject
-import xenakis.model.player.PlaybackManager
 import xenakis.model.registry.ObjectRegistry
 import xenakis.model.registry.SynthDefRegistry
 import xenakis.sc.client.SuperColliderClient
@@ -26,8 +26,7 @@ sealed interface SynthDefObject : ParameterizedObjectDef, SuperColliderObject {
     override fun hasParameter(name: String): Boolean = name == "group" || super.hasParameter(name)
 
     fun onUpdated() {
-        val currentTime = context[PlaybackManager].playHead.currentTime
-        context[PlaybackManager].activeObjects.forEach { active ->
+        context[ActiveObjectsManager].forEach { active ->
             val def = active.associatedDef
             if (def != this@SynthDefObject) return@forEach
             val uniqueName = active.uniqueName
@@ -35,7 +34,7 @@ sealed interface SynthDefObject : ParameterizedObjectDef, SuperColliderObject {
             val code = when (active) {
                 is ActiveAudioFlow -> active.flow.writeCode(placement)
                 is ActiveScoreObject -> {
-                    val cutoff = currentTime - active.absolutePosition.time
+                    val cutoff = active.player.currentTime - active.absolutePosition.time
                     active.obj.writeCode(uniqueName, placement, cutoff)
                 }
             }

@@ -20,9 +20,8 @@ import reaktive.value.reactiveVariable
 import xenakis.impl.*
 import xenakis.model.flow.NodePlacement
 import xenakis.model.obj.AbstractRenamableObject
-import xenakis.model.player.ActiveObjectManager
+import xenakis.model.player.ActiveObjectsManager
 import xenakis.model.player.ActiveScoreObject
-import xenakis.model.player.PlaybackManager
 import xenakis.model.project.score
 import xenakis.model.registry.ScoreObjectRegistry
 import xenakis.model.score.Score.Companion.rootScore
@@ -89,21 +88,13 @@ sealed class ScoreObject : AbstractRenamableObject() {
     override val registry: ScoreObjectRegistry
         get() = context[ScoreObjectRegistry]
 
-    init {
-        //this is only for needed when opening projects that were created before the decimal-precision update
-        duration = duration.withPrecision(ObjectPosition.TIME_PRECISION)
-        height = height.withPrecision(ObjectPosition.Y_PRECISION)
-    }
-
     open val superColliderPrefix: String? get() = null
 
-    fun activeObjects(): List<ActiveScoreObject> {
-        return context[PlaybackManager].activeObjects.activeInstances(this)
-    }
+    fun activeObjects(): List<ActiveScoreObject> = context[ActiveObjectsManager].activeInstances(this)
 
     fun superColliderName(suffix: Int): String {
         val prefix = superColliderPrefix ?: error("$this has no superColliderPrefix")
-        return "${prefix}_${ActiveObjectManager.uniqueName(name.now, suffix)}"
+        return "${prefix}${ActiveObjectsManager.uniqueName(name.now, suffix)}"
     }
 
     open fun validate(): Boolean {

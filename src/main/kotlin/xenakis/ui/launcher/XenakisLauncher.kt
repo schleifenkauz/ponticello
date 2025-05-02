@@ -221,7 +221,7 @@ class XenakisLauncher {
         val progressBar = getOrLaunchLoadingScreen()
         progressBar.displayProgress(0.0, "Starting SuperCollider...")
         try {
-            val port = OSCPortOut.DEFAULT_SC_LANG_OSC_PORT + 5
+            val port = OSCPortOut.DEFAULT_SC_LANG_OSC_PORT + 6
             val client = OSCSuperColliderClient.create(port)
             client.consoleMonitor.addListener(ConsoleMonitor.PipeToSystemOut)
             client.onClientReady {

@@ -11,7 +11,6 @@ import reaktive.value.binding.map
 import xenakis.impl.ColorSerializer
 import xenakis.impl.Decimal
 import xenakis.model.obj.AbstractRenamableObject
-import xenakis.model.player.PlaybackManager
 import xenakis.model.registry.NamedObjectList
 import xenakis.model.registry.ObjectList
 import xenakis.model.registry.ObjectListSerializer
@@ -36,7 +35,10 @@ class AudioFlowGroup(
     @Transient
     private lateinit var client: SuperColliderClient
 
-    private val nodeTree: NodeTree get() = context[PlaybackManager].nodeTree
+    private val nodeTree: NodeTree get() = context[NodeTree]
+
+    override val registry: AudioFlows
+        get() = context[AudioFlows]
 
     override fun initialize(context: Context) {
         super.initialize(context)
@@ -133,6 +135,7 @@ class AudioFlowGroup(
     }
 
     private fun freeGroup() {
+        context[NodeTree].removeNode(this)
         client.run("${superColliderName.now}.free")
     }
 

@@ -9,7 +9,7 @@ import javafx.event.Event
 import javafx.scene.Scene
 import reaktive.value.binding.map
 import reaktive.value.now
-import xenakis.model.player.PlaybackManager
+import xenakis.model.player.ScorePlayer
 import xenakis.ui.launcher.XenakisLauncher
 import xenakis.ui.launcher.XenakisLauncher.Companion.currentProject
 import xenakis.ui.launcher.XenakisMainActivity
@@ -55,7 +55,7 @@ fun Action.Builder<ObjectActionContext>.executeSingle(action: (ScoreObjectView, 
 
 fun Scene.registerGlobalShortcuts(context: Context) {
     registerShortcuts {
-        registerActions(PlaybackActions.withContext(context[PlaybackManager]))
+        registerActions(PlaybackActions.withContext(context[ScorePlayer.CURRENT]))
         registerActions(ToolWindowActions.withContext(context[XenakisMainActivity]))
         registerActions(ServerActions.withContext(context[currentProject]))
         registerActions(ProjectActions.withContext(context[XenakisLauncher]))

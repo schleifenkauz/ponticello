@@ -1,38 +1,42 @@
 package xenakis.model.player
 
+import bundles.PublicProperty
+import bundles.publicProperty
 import reaktive.value.now
 import xenakis.impl.Logger
 import xenakis.model.flow.AudioFlows
 import xenakis.model.score.ObjectPosition
 import xenakis.model.score.ScoreObject
 
-class ActiveObjectManager(private val flowGroups: AudioFlows) {
+class ActiveObjectsManager(private val flowGroups: AudioFlows) {
     private val takenSuffixes = mutableMapOf<String, MutableSet<Int>>()
-    private val suffixes = mutableMapOf<ScoreObject, MutableMap<ObjectPosition, Int>>()
+    private val suffixes = mutableMapOf<ScoreObject, MutableMap<ObjectPosition, ActiveScoreObject>>()
 
-    fun insert(obj: ScoreObject, absolutePosition: ObjectPosition): Int {
+    fun insert(player: ScorePlayer, obj: ScoreObject, absolutePosition: ObjectPosition): Int {
         val takenSuffixes = takenSuffixes[obj.name.now].orEmpty()
         val suffix = (0..Int.MAX_VALUE).first { n -> n !in takenSuffixes }
-        suffixes.getOrPut(obj, ::mutableMapOf)[absolutePosition] = suffix
+        val active = ActiveScoreObject(player, obj, absolutePosition, suffix)
+        suffixes.getOrPut(obj, ::mutableMapOf)[absolutePosition] = active
         return suffix
     }
 
     fun remove(obj: ScoreObject, absolutePosition: ObjectPosition): Int? {
-        val suffix = suffixes[obj]?.remove(absolutePosition)
-        takenSuffixes[obj.name.now]?.remove(suffix)
-        if (suffix == null) {
+        val active = suffixes[obj]?.remove(absolutePosition)
+        if (active == null) {
             Logger.warn("could not remove $obj at $absolutePosition", Logger.Category.Playback)
+            return null
         }
-        return suffix
+        takenSuffixes[obj.name.now]?.remove(active.suffix)
+        return active.suffix
     }
 
-    fun all(): List<ActiveObject> = suffixes.flatMap { (obj, suffixes) ->
-        suffixes.map { (pos, suffix) -> ActiveScoreObject(obj, pos, suffix) }
+    fun all(): List<ActiveScoreObject> = suffixes.flatMap { (_, suffixes) ->
+        suffixes.map { (_, active) -> active }
     }
 
     fun forEach(action: (obj: ActiveObject) -> Unit) {
-        suffixes.forEach { (obj, instances) ->
-            instances.forEach { (pos, suffix) -> action(ActiveScoreObject(obj, pos, suffix)) }
+        suffixes.forEach { (_, instances) ->
+            instances.forEach { (_, active) -> action(active) }
         }
         for (group in flowGroups.all()) {
             if (!group.isActive.now) continue
@@ -44,14 +48,14 @@ class ActiveObjectManager(private val flowGroups: AudioFlows) {
     }
 
     fun activeInstances(obj: ScoreObject): List<ActiveScoreObject> =
-        suffixes[obj]?.map { (pos, suffix) -> ActiveScoreObject(obj, pos, suffix) }.orEmpty()
+        suffixes[obj]?.map { (_, active) -> active }.orEmpty()
 
     fun clear() {
         takenSuffixes.clear()
         suffixes.clear()
     }
 
-    companion object {
+    companion object: PublicProperty<ActiveObjectsManager> by publicProperty("ActiveObjectsManager") {
         fun uniqueName(base: String, suffix: Int) = when (suffix) {
             -1 -> "${base}___"
             0 -> base

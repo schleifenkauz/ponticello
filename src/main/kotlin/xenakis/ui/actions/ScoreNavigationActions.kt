@@ -8,7 +8,7 @@ import fxutils.mouseX
 import org.kordamp.ikonli.material2.Material2MZ
 import reaktive.value.now
 import xenakis.impl.asTime
-import xenakis.model.player.PlaybackManager
+import xenakis.model.player.ScorePlayer
 import xenakis.ui.score.NavigableScorePane
 
 object ScoreNavigationActions : Action.Collector<NavigableScorePane>({
@@ -25,8 +25,8 @@ object ScoreNavigationActions : Action.Collector<NavigableScorePane>({
         description("Move displayed portion of the score to playback cursor")
         shortcut("Shift+SPACE")
         executes { view ->
-            val playback = view.context[PlaybackManager]
-            val t = playback.playHead.currentTime
+            val player = view.context[ScorePlayer.CURRENT]
+            val t = player.currentTime
             view.display(t, view.displayedDuration + t)
         }
     }
@@ -34,13 +34,13 @@ object ScoreNavigationActions : Action.Collector<NavigableScorePane>({
         shortcut("Ctrl+Shift?+DIGIT0")
         icon(Material2MZ.SKIP_PREVIOUS)
         executes { view, ev ->
-            val playback = view.context[PlaybackManager]
+            val player = view.context[ScorePlayer.CURRENT]
             if (ev.isShiftDown()) {
-                if (playback.player.isPlaying.now) return@executes
+                if (player.isPlaying.now) return@executes
                 view.display(0.0.asTime, view.displayedDuration)
-                playback.attachToMainScore()
+                player.attachToScoreView(view)
             }
-            playback.movePlayHeadToStart()
+            player.movePlayHeadToStart()
         }
     }
     addAction("Zoom in") {

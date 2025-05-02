@@ -16,14 +16,12 @@ import reaktive.value.now
 import xenakis.impl.*
 import xenakis.model.flow.AudioFlowGroup
 import xenakis.model.flow.AudioFlows
-import xenakis.model.player.PlaybackManager
-import xenakis.model.project.UIState.SnapOption
+import xenakis.model.player.ScorePlayer
 import xenakis.model.project.settings
 import xenakis.model.score.*
 import xenakis.ui.controls.NamePrompt
 import xenakis.ui.impl.verticalDist
 import xenakis.ui.launcher.XenakisLauncher.Companion.currentProject
-import xenakis.ui.launcher.XenakisMainActivity
 import java.util.concurrent.CompletableFuture
 import kotlin.concurrent.thread
 import kotlin.math.exp
@@ -73,7 +71,7 @@ class NavigableScorePane(score: Score, context: Context) : ScorePane(score, cont
         val (t, y) = position
         if (!settings.snapEnabled.now) return position
         when (val option = settings.snapOption.now) {
-            SnapOption.Seconds -> return ObjectPosition(t.round(0), y)
+            TimeUnit.Seconds -> return ObjectPosition(t.round(0), y)
             else -> {
                 val nearestGrid = getNearestGrid(position)
                 for (grid in allViews.filterIsInstance<TempoGridObjectView>()) {
@@ -95,10 +93,9 @@ class NavigableScorePane(score: Score, context: Context) : ScorePane(score, cont
             else g.unmark()
         }
         positionTracker.layoutX = getX(t)
-        val activity = context[XenakisMainActivity]
-        val playbackManager = context[PlaybackManager]
-        if (this == activity.scoreView && !(playbackManager.isAttachedTo(this) && playbackManager.isPlaying.now)) {
-            activity.timeCodeView.displayTime(t)
+        val player = context[ScorePlayer.CURRENT]
+        if (this == context[CURRENT_ROOT] && !player.isPlaying.now) {
+            context[TimeCodeView].displayTime(t)
         }
     }
 
@@ -165,7 +162,7 @@ class NavigableScorePane(score: Score, context: Context) : ScorePane(score, cont
         repositionEnvelopeMagnifier()
         repaint.fire()
         if (positionTracker !in children) children.add(positionTracker)
-        activity.playback.playHead.updatePosition()
+        context[ScorePlayer.CURRENT].playHead.updatePosition()
     }
 
     private fun layoutObjects() {

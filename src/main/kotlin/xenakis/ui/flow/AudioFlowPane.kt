@@ -38,7 +38,7 @@ class AudioFlowPane(flows: AudioFlows) : SearchableToolPane<AudioFlowGroup>() {
     }
 
     override fun getContent(obj: AudioFlowGroup, mode: DisplayMode): Parent {
-        val config = FlowListConfig(obj.context, autoResizeScene = mode == DisplayMode.SubWindow)
+        val config = FlowListConfig(obj, autoResizeScene = mode == DisplayMode.SubWindow)
         val listView = ObjectListView(obj.flows, config)
         listView.setupDropArea(config::canDrop) { ev -> config.onDrop(ev, listView) }
         return listView

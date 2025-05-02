@@ -1,29 +1,80 @@
 package xenakis.model.player
 
+import bundles.publicProperty
+import hextant.context.Context
+import javafx.scene.layout.Pane
 import reaktive.value.now
+import reaktive.value.reactiveVariable
 import xenakis.impl.*
 import xenakis.model.Settings
+import xenakis.model.flow.NodeTree
 import xenakis.model.flow.SynthObjectNode
 import xenakis.model.player.ScoreEventCollector.Event
 import xenakis.model.score.*
 import xenakis.sc.client.SuperColliderClient
 import xenakis.ui.misc.PlayHead
+import xenakis.ui.score.ScoreObjectGroupView
+import xenakis.ui.score.ScoreObjectView
+import xenakis.ui.score.ScorePane
 
 class ScorePlayer(
-    private val rootScore: Score,
-    private val manager: PlaybackManager,
-    override val client: SuperColliderClient,
-    private val settings: Settings,
-) : AbstractPlayer(DELTA_T, settings.lookAhead) {
+    val context: Context
+) : AbstractPlayer(DELTA_T, context[Settings].lookAhead) {
+    private var isAttached = false
+    private lateinit var rootScore: Score
+    lateinit var events: ScoreEventCollector
+        private set
+
+    public override val playHead: PlayHead = PlayHead(context)
+
+    override val client: SuperColliderClient = context[SuperColliderClient]
+    private val activeObjects = context[ActiveObjectsManager]
+    private val nodeTree = context[NodeTree]
+
     private var lastPlayFrom: Decimal = PlayHead.START
 
-    override val playHead: PlayHead
-        get() = manager.playHead
+    val loopingActivated = reactiveVariable(false)
 
-    override val loop get() = manager.loopingActivated.now
+    override val loop: Boolean
+        get() = loopingActivated.now
 
     override val maxTime: Decimal
         get() = rootScore.maxTime
+
+    private fun detach() {
+        if (!isAttached) return
+        events.removeListeners()
+        isAttached = false
+    }
+
+    private fun attachTo(score: Score) {
+        detach()
+        rootScore = score
+        events = ScoreEventCollector(score, context[Settings])
+        events.player = this
+        isAttached = true
+    }
+
+    fun isAttachedTo(target: Pane) = playHead.pane == target
+
+    fun attachToScoreView(pane: ScorePane) {
+        detach()
+        playHead.attachTo(pane, verticalPadding = 20.0)
+        attachTo(pane.score)
+    }
+
+    fun attachToView(view: ScoreObjectView) {
+        detach()
+        val score = if (view is ScoreObjectGroupView) view.obj.score else simpleScore(view.instance.obj)
+        playHead.attachTo(view, verticalPadding = 0.0)
+        attachTo(score)
+    }
+
+    fun movePlayHeadToStart() {
+        if (!isPlaying.now) {
+            playHead.movePlayHeadToStart()
+        }
+    }
 
     private fun activeObjects(time: Decimal, delta: Decimal): List<Event> {
         val dest = mutableListOf<Event>()
@@ -49,10 +100,10 @@ class ScorePlayer(
 
     override fun startPlay(startFrom: Decimal): Boolean {
         client.sendAsync("start_play")
-        manager.recorder.startingPlayback()
+        context[Recorder].startingPlayback()
         Logger.fine("Starting playback at $startFrom", Logger.Category.Playback)
         lastPlayFrom = startFrom
-        val activeObjects = activeObjects(startFrom, delta = settings.lookAhead)
+        val activeObjects = activeObjects(startFrom, delta = context[Settings].lookAhead)
         for ((_, position, inst) in activeObjects) {
             if (!inst.muted.now) {
                 scheduleInstantly(inst, position)
@@ -70,12 +121,12 @@ class ScorePlayer(
     }
 
     fun stopPlayBackInstantly(obj: ScoreObject, pos: ObjectPosition) {
-        val suffix = manager.activeObjects.remove(obj, pos) ?: return
+        val suffix = context[ActiveObjectsManager].remove(obj, pos) ?: return
         stopObject(obj, pos, suffix)
     }
 
     override fun scheduleEvents(t: Decimal, delta: Decimal) {
-        for (ev in manager.events.eventsAt(t - delta, delta * 5)) {
+        for (ev in events.eventsAt(t - delta, delta * 5)) {
             val (type, position, inst) = ev
             if (inst.muted.now) continue
             val obj = inst.obj
@@ -89,7 +140,7 @@ class ScorePlayer(
                     Logger.fine("ObjectEnd: $obj at $position", Logger.Category.Playback)
                     val startPos = position + ObjectPosition(-obj.duration, zero)
                     if (obj.duration == zero) continue
-                    val suffix = manager.activeObjects.remove(obj, startPos) ?: continue
+                    val suffix = activeObjects.remove(obj, startPos) ?: continue
                     stopObject(obj, startPos, suffix)
                 }
 
@@ -99,17 +150,17 @@ class ScorePlayer(
         }
     }
 
-    private fun stopObject(obj: ScoreObject, startPos: ObjectPosition, suffix: Int ) {
+    private fun stopObject(obj: ScoreObject, startPos: ObjectPosition, suffix: Int) {
         when (obj) {
             is SynthObject -> {
                 try {
                     val node = SynthObjectNode(obj, startPos, suffix)
-                    manager.nodeTree.removeNode(node)
+                    nodeTree.removeNode(node)
                 } catch (e: Exception) {
                     Logger.error("Failed to remove $obj from audio flow graph", e, Logger.Category.Playback)
                 }
                 val name = obj.superColliderName(suffix)
-                client.run("if ($name != nil) { $name.free; }")
+                client.run("if ($name != nil) { $name.free; } { \"'$name' not found\".postln; }")
             }
 
             is ProcessObject, is TaskObject -> {
@@ -129,9 +180,9 @@ class ScorePlayer(
             return
         }
         val time = absolutePosition.time - lastPlayFrom
-        val timeForExecution = (time + settings.scLangLatency.now).toString()
+        val timeForExecution = (time + context[Settings].scLangLatency.now).toString()
         val suffix = try {
-            manager.activeObjects.insert(obj, absolutePosition)
+            activeObjects.insert(this, obj, absolutePosition)
         } catch (e: Exception) {
             Logger.error("Failed to insert $obj into active object manager", e, Logger.Category.Playback)
             return
@@ -139,13 +190,13 @@ class ScorePlayer(
         val placement = if (obj is SynthObject) {
             try {
                 val node = SynthObjectNode(obj, absolutePosition, suffix)
-                manager.nodeTree.addNode(node)
+                nodeTree.addNode(node)
             } catch (e: Exception) {
                 Logger.error("Failed to insert $obj into audio flow graph", e, Logger.Category.Playback)
                 return
             }
         } else null
-        val uniqueName = ActiveObjectManager.uniqueName(obj.name.now, suffix)
+        val uniqueName = ActiveObjectsManager.uniqueName(obj.name.now, suffix)
         val code = try {
             obj.writeCode(uniqueName, placement, cutoff.takeIf { it > zero } ?: zero)
         } catch (e: Exception) {
@@ -164,22 +215,33 @@ class ScorePlayer(
 
     override fun pausePlayback() {
         Logger.info("Pausing playback", Logger.Category.Playback)
-        manager.activeObjects.forEach { activeObject ->
-            if (activeObject is ActiveScoreObject) {
+        activeObjects.forEach { activeObject ->
+            if (activeObject is ActiveScoreObject && activeObject.player == this) {
                 stopObject(activeObject.obj, activeObject.absolutePosition, activeObject.suffix)
             }
         }
-        manager.pausedPlayback()
+        context[Recorder].pausingPlayback()
+        activeObjects.clear()
+        events.resetEvents()
         client.send("pause_play")
     }
 
     override fun resetPlayback() {
-        if (manager.recorder.isActive.now) manager.recorder.stopRecording()
+        if (context[Recorder].isActive.now) context[Recorder].stopRecording()
         pausePlayback()
         client.run("s.freeAll")
     }
 
     companion object {
         private val DELTA_T = 0.03.toDecimal()
+
+        private fun simpleScore(obj: ScoreObject): Score {
+            val inst = ScoreObjectInstance(obj, ObjectPosition.ZERO)
+            val score = Score(mutableListOf(inst))
+            score.initialize(obj.context, obj)
+            return score
+        }
+
+        val CURRENT = publicProperty<ScorePlayer>("MainScorePlayer")
     }
 }

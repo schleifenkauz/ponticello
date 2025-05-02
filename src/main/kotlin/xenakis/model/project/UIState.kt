@@ -11,12 +11,13 @@ import xenakis.model.obj.SynthDefObject
 import xenakis.model.obj.SynthDefReference
 import xenakis.model.registry.SynthDefRegistry
 import xenakis.model.registry.reference
+import xenakis.model.score.TimeUnit
 import xenakis.ui.registry.SimpleSearchableRegistryView
 
 @Serializable
 class UIState private constructor(
     val snapEnabled: ReactiveVariable<Boolean> = reactiveVariable(false),
-    val snapOption: ReactiveVariable<SnapOption> = reactiveVariable(SnapOption.Seconds),
+    val snapOption: ReactiveVariable<TimeUnit> = reactiveVariable(TimeUnit.Seconds),
     val selectedSynthDef: ReactiveVariable<SynthDefReference?> = reactiveVariable(null),
     val windowStates: MutableMap<String, WindowState> = mutableMapOf(),
 ) : AbstractContextualObject() {
@@ -39,10 +40,6 @@ class UIState private constructor(
         for ((_, state) in windowStates) {
             state.saveFromTarget()
         }
-    }
-
-    enum class SnapOption {
-        Seconds, Bars, Beats, Ticks;
     }
 
     companion object {

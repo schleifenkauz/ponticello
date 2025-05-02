@@ -4,10 +4,10 @@ import kotlinx.serialization.Serializable
 import reaktive.value.ReactiveValue
 import reaktive.value.now
 import reaktive.value.reactiveVariable
-import xenakis.model.obj.AbstractSuperColliderObject
+import xenakis.model.obj.AbstractRenamableObject
 
 @Serializable
-sealed class LiveObject: AbstractSuperColliderObject() {
+sealed class LiveObject: AbstractRenamableObject() {
     private var _isActive = reactiveVariable(false)
 
     val isActive: ReactiveValue<Boolean> get() = _isActive
@@ -33,6 +33,8 @@ sealed class LiveObject: AbstractSuperColliderObject() {
         if (isActive.now) deactivate()
         doReset()
     }
+
+    abstract fun sync()
 
     protected abstract fun doActivate()
 

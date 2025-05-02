@@ -7,7 +7,6 @@ import org.kordamp.ikonli.materialdesign2.MaterialDesignP
 import org.kordamp.ikonli.materialdesign2.MaterialDesignS
 import reaktive.value.binding.map
 import xenakis.model.live.LiveObject
-import xenakis.model.obj.SuperColliderObject
 import xenakis.model.registry.ObjectRegistry
 import xenakis.ui.registry.ObjectBox
 import xenakis.ui.registry.ObjectRegistryPane
@@ -21,7 +20,11 @@ abstract class LiveObjectRegistryPane<O : LiveObject>(registry: ObjectRegistry<O
     companion object {
         @JvmStatic
         protected val actions = collectActions<LiveObject> {
-            addAll(SuperColliderObject.actions) { it }
+            addAction("Sync") {
+                icon(MaterialDesignS.SYNC)
+                shortcut("Ctrl+U")
+                executes { obj -> obj.sync() }
+            }
             addAction("Play/pause") {
                 icon { obj -> obj.isActive.map { active -> if (active) MaterialDesignP.PAUSE else MaterialDesignP.PLAY } }
                 shortcut("Ctrl+SPACE")

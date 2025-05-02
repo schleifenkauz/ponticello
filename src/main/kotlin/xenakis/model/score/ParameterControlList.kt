@@ -237,7 +237,7 @@ class ParameterControlList(
     fun transformControls(f: (NamedParameterControl) -> ParameterControl) =
         ParameterControlList(mapTo(mutableListOf()) { p -> p.copy(f(p)) })
 
-    fun copy() = ParameterControlList(mapTo(mutableListOf()) { it.copy() })
+    fun copy() = ParameterControlList(mapTo(mutableListOf()) { ctrl -> ctrl.copy() })
 
     fun validate(): Boolean {
         var valid = true

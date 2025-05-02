@@ -1,5 +1,7 @@
 package xenakis.model.flow
 
+import bundles.PublicProperty
+import bundles.publicProperty
 import reaktive.Observer
 import reaktive.value.now
 import xenakis.impl.Decimal
@@ -71,4 +73,6 @@ class NodeTree(private val client: SuperColliderClient) {
         }
         activeNodes.clear()
     }
+
+    companion object: PublicProperty<NodeTree> by publicProperty("NodeTree")
 }

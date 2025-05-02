@@ -5,9 +5,9 @@ import bundles.publicProperty
 import bundles.set
 import hextant.context.Context
 import reaktive.value.now
-import xenakis.model.player.PlaybackManager
 import xenakis.model.registry.ObjectRegistry
 import xenakis.sc.client.SuperColliderClient
+import java.io.Serializable
 
 class AudioFlows(override val objects: MutableList<AudioFlowGroup>, ) : ObjectRegistry<AudioFlowGroup>() {
     override val objectType: String
@@ -26,14 +26,14 @@ class AudioFlows(override val objects: MutableList<AudioFlowGroup>, ) : ObjectRe
     }
 
     fun createAllFlows() {
-        context[PlaybackManager].nodeTree.clear()
+        context[NodeTree].clear()
         for (group in this) {
             if (!group.isActive.now) continue
             group.createFlows()
         }
     }
 
-    data class FlowReference(val groupName: String, val flowName: String) {
+    data class FlowReference(val groupName: String, val flowName: String): Serializable {
         fun getFlow(flows: AudioFlows) = flows.getOrNull(groupName)?.flows?.getOrNull(flowName)
 
         fun removeFrom(flows: AudioFlows) {

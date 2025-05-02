@@ -1,5 +1,7 @@
 package xenakis.ui.score
 
+import bundles.PublicProperty
+import bundles.publicProperty
 import fxutils.centerChildren
 import fxutils.styleClass
 import javafx.scene.control.Label
@@ -11,15 +13,6 @@ class TimeCodeView : HBox() {
     private val seconds = Label() styleClass "time-code-label"
     private val hundreths = Label() styleClass "time-code-label"
 
-    fun displayTime(time: Decimal) {
-        val minutes = time.toInt() / 60
-        val seconds = time.toInt() % 60
-        val hundreths = ((time.value - time.value.toInt()) * 100).toInt()
-        this.minutes.text = minutes.toString().padStart(2, '0')
-        this.seconds.text = seconds.toString().padStart(2, '0')
-        this.hundreths.text = hundreths.toString().padStart(2, '0')
-    }
-
     init {
         styleClass("time-code", "toolbar-part")
         children.addAll(
@@ -29,4 +22,15 @@ class TimeCodeView : HBox() {
         )
         centerChildren()
     }
+
+    fun displayTime(time: Decimal) {
+        val minutes = time.toInt() / 60
+        val seconds = time.toInt() % 60
+        val hundreths = ((time.value - time.value.toInt()) * 100).toInt()
+        this.minutes.text = minutes.toString().padStart(2, '0')
+        this.seconds.text = seconds.toString().padStart(2, '0')
+        this.hundreths.text = hundreths.toString().padStart(2, '0')
+    }
+
+    companion object: PublicProperty<TimeCodeView> by publicProperty("TimeCodeView")
 }

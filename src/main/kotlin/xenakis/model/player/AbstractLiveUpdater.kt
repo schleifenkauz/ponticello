@@ -35,7 +35,6 @@ abstract class AbstractLiveUpdater(protected val obj: ParameterizedObject) : Par
 
     private fun runOnActiveObjects(action: ScWriter.(String, Decimal) -> Unit) {
         val client = obj.context[SuperColliderClient]
-        val playbackManager = obj.context[PlaybackManager]
         val activeInstances = obj.activeObjects()
         if (activeInstances.isEmpty()) return
         client.run {
@@ -43,7 +42,7 @@ abstract class AbstractLiveUpdater(protected val obj: ParameterizedObject) : Par
                 val superColliderName = obj.superColliderName
                 val uniqueName = obj.uniqueName.takeIf { it != NO_NAME } ?: superColliderName.removePrefix("~")
                 val objectTime =
-                    if (obj is ActiveScoreObject) playbackManager.playHead.currentTime - obj.absolutePosition.time
+                    if (obj is ActiveScoreObject) obj.player.currentTime - obj.absolutePosition.time
                     else zero
                 appendBlock("if ($superColliderName != nil)") {
                     action(uniqueName, objectTime)

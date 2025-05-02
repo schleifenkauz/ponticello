@@ -21,7 +21,7 @@ import xenakis.impl.copy
 import xenakis.impl.times
 import xenakis.impl.zero
 import xenakis.model.obj.NoSynthDef
-import xenakis.model.player.PlaybackManager
+import xenakis.model.player.ScorePlayer
 import xenakis.model.registry.ScoreObjectRegistry
 import xenakis.model.score.*
 import xenakis.ui.controls.RenamePrompt
@@ -74,21 +74,21 @@ object ObjectActions {
             applicableWhen(::canApplyPlaybackActions)
             ifNotApplicable(Action.IfNotApplicable.Disable)
             icon { ctx ->
-                ctx.context[PlaybackManager].isPlaying.map { playing ->
+                ctx.context[ScorePlayer.CURRENT].isPlaying.map { playing ->
                     if (playing) MaterialDesignP.PAUSE else MaterialDesignP.PLAY
                 }
             }
             description { ctx ->
-                ctx.context[PlaybackManager].isPlaying.map { playing ->
+                ctx.context[ScorePlayer.CURRENT].isPlaying.map { playing ->
                     if (playing) "Pause object" else "Play object"
                 }
             }
             executeSingle { view, _ ->
-                val playback = view.context[PlaybackManager]
-                if (playback.isPlaying.now) playback.player.pause()
+                val playback = view.context[ScorePlayer.CURRENT]
+                if (playback.isPlaying.now) playback.pause()
                 else {
                     if (!playback.isAttachedTo(view)) playback.attachToView(view)
-                    playback.player.play()
+                    playback.play()
                 }
             }
         }
@@ -98,14 +98,14 @@ object ObjectActions {
             applicableWhen(::canApplyPlaybackActions)
             ifNotApplicable(Action.IfNotApplicable.Disable)
             icon(MaterialDesignR.REPEAT)
-            toggleState { ctx -> ctx.context[PlaybackManager].loopingActivated }
+            toggleState { ctx -> ctx.context[ScorePlayer.CURRENT].loopingActivated }
             executeSingle { view, ev ->
                 if (ev.isTargetTextInput && !ev.isAltDown()) return@executeSingle
-                val playback = view.context[PlaybackManager]
-                playback.loopingActivated.toggle()
-                if (!playback.isPlaying.now && playback.loopingActivated.now) {
-                    if (!playback.isAttachedTo(view)) playback.attachToView(view)
-                    playback.player.play()
+                val player = view.context[ScorePlayer.CURRENT]
+                player.loopingActivated.toggle()
+                if (!player.isPlaying.now && player.loopingActivated.now) {
+                    if (!player.isAttachedTo(view)) player.attachToView(view)
+                    player.play()
                 }
             }
         }
@@ -267,11 +267,11 @@ object ObjectActions {
     }
 
     private fun canApplyPlaybackActions(ctx: ObjectActionContext): Binding<Boolean> {
-        val playback = ctx.context[PlaybackManager]
+        val player = ctx.context[ScorePlayer.CURRENT]
         return ctx.focusedView.flatMap { view ->
             if (view == null || !view.obj.affectsPlayback) reactiveValue(false)
-            else playback.isPlaying.map { playing ->
-                if (playing) playback.isAttachedTo(view) else true
+            else player.isPlaying.map { playing ->
+                if (playing) player.isAttachedTo(view) else true
             }
         }
     }

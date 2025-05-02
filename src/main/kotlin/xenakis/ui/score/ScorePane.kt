@@ -1,5 +1,6 @@
 package xenakis.ui.score
 
+import bundles.publicProperty
 import fxutils.*
 import fxutils.prompt.SimpleSearchableListView
 import fxutils.prompt.compoundPrompt
@@ -26,7 +27,7 @@ import xenakis.impl.*
 import xenakis.model.obj.BufferObject
 import xenakis.model.obj.ProcessDefObject
 import xenakis.model.obj.SynthDefObject
-import xenakis.model.player.PlaybackManager
+import xenakis.model.player.ScorePlayer
 import xenakis.model.project.UI_STATE
 import xenakis.model.project.get
 import xenakis.model.project.score
@@ -275,9 +276,10 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
             this is NavigableScorePane && ev.modifiers.isEmpty() -> {
                 context[ScoreObjectSelectionManager].deselectAll()
                 requestFocus()
-                if (!(context[PlaybackManager].isPlaying.now)) {
-                    activity.playback.attachToMainScore()
-                    activity.playback.playHead.movePlayHead(t)
+                val player = context[ScorePlayer.CURRENT]
+                if (!(player.isPlaying.now)) {
+                    player.attachToScoreView(this)
+                    player.playHead.movePlayHead(t)
                 }
             }
 
@@ -522,5 +524,9 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
             selector.removeSelected()
         }
         selector.deselectAll()
+    }
+
+    companion object {
+        val CURRENT_ROOT = publicProperty<ScorePane>("CurrentRootScorePane")
     }
 }

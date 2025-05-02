@@ -35,8 +35,7 @@ import reaktive.value.fx.asObservableValue
 import reaktive.value.now
 import reaktive.value.reactiveVariable
 import xenakis.impl.*
-import xenakis.model.player.PlaybackManager
-import xenakis.model.project.UIState.SnapOption
+import xenakis.model.player.ScorePlayer
 import xenakis.model.project.settings
 import xenakis.model.score.*
 import xenakis.model.score.Score.Companion.rootScore
@@ -220,9 +219,9 @@ abstract class ScoreObjectView(
                 ev.modifiers.isNotEmpty() -> return@addEventHandler
                 ev.button == MouseButton.PRIMARY && ev.clickCount == 1 -> {
                     selectView(addToSelection = ev.isShiftDown)
-                    val playback = context[PlaybackManager]
-                    if (!playback.isPlaying.now && playback.isAttachedTo(this)) {
-                        playback.playHead.setPlayHeadX(ev.x)
+                    val player = context[ScorePlayer.CURRENT]
+                    if (!player.isPlaying.now && player.isAttachedTo(this)) {
+                        player.playHead.setPlayHeadX(ev.x)
                     }
                 }
 
@@ -480,7 +479,7 @@ abstract class ScoreObjectView(
         private const val BORDER_RADIUS = 2.0
 
         private fun makeLoopConfigPrompt(
-            periodUnit: SnapOption?,
+            periodUnit: TimeUnit?,
             grid: TempoGridObject?,
             inst: ScoreObjectInstance,
         ): CompoundPrompt<LoopConfig> {
@@ -501,7 +500,7 @@ abstract class ScoreObjectView(
                 }
                 onConfirm {
                     val period = when (periodInput) {
-                        is Spinner<*> -> periodInput.value as Int * grid!!.getDuration(periodUnit ?: SnapOption.Seconds)
+                        is Spinner<*> -> periodInput.value as Int * grid!!.getDuration(periodUnit ?: TimeUnit.Seconds)
                         is TextField -> periodInput.text.parseDecimal()!!
                         else -> error("Invalid period input control: $periodInput")
                     }

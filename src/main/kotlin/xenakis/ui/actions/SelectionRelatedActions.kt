@@ -2,30 +2,31 @@ package xenakis.ui.actions
 
 import fxutils.KeyEventHandlerBody
 import fxutils.actions.isTargetTextInput
+import hextant.context.Context
 import hextant.undo.compoundEdit
 import reaktive.value.now
 import reaktive.value.reactiveVariable
 import xenakis.impl.Logger
 import xenakis.impl.unaryMinus
+import xenakis.model.player.ScorePlayer
 import xenakis.model.registry.ScoreObjectRegistry
 import xenakis.model.score.*
-import xenakis.ui.launcher.XenakisMainActivity
 import xenakis.ui.score.ScoreObjectDuplicator
 import xenakis.ui.score.ScoreObjectSelectionManager
 import xenakis.ui.score.ScoreObjectView
+import xenakis.ui.score.ScorePane
 
 object SelectionRelatedActions {
-    fun addShortcuts(handler: KeyEventHandlerBody<*>, activity: XenakisMainActivity) = with(handler){
-        val context = activity.context
-        val playback = activity.playback
+    fun addShortcuts(handler: KeyEventHandlerBody<*>, context: Context) = with(handler){
+        val player = context[ScorePlayer.CURRENT]
         val selector = context[ScoreObjectSelectionManager]
         on("ESCAPE") {
             context[ScoreObjectDuplicator].exitDuplicateMode()
-            if (!playback.player.isPlaying.now && playback.playHead.pane is ScoreObjectView) {
-                val attachedView = playback.playHead.pane as ScoreObjectView
-                val absoluteTime = attachedView.absolutePosition.time + playback.playHead.currentTime
-                playback.attachToMainScore()
-                playback.playHead.movePlayHead(absoluteTime)
+            if (!player.isPlaying.now && player.playHead.pane is ScoreObjectView) {
+                val attachedView = player.playHead.pane as ScoreObjectView
+                val absoluteTime = attachedView.absolutePosition.time + player.playHead.currentTime
+                player.attachToScoreView(context[ScorePane.CURRENT_ROOT])
+                player.playHead.movePlayHead(absoluteTime)
             }
             context[ScoreObjectSelectionManager].deselectAll()
         }

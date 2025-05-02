@@ -16,13 +16,13 @@ import reaktive.value.binding.not
 import reaktive.value.fx.asObservableValue
 import reaktive.value.now
 import xenakis.model.project.UIState
-import xenakis.model.project.UIState.SnapOption
+import xenakis.model.score.TimeUnit
 
 class InteractionConfigBar(private val settings: UIState) : HBox() {
     private val snapToggle = toggleSnap.withContext(settings)
 
-    private val optionList = object : SimpleSearchableListView<SnapOption>(SnapOption.entries, "Select snap option") {
-        override fun createCell(option: SnapOption): Region = HBox(
+    private val optionList = object : SimpleSearchableListView<TimeUnit>(TimeUnit.entries, "Select snap option") {
+        override fun createCell(option: TimeUnit): Region = HBox(
             5.0,
             Label(option.name.lowercase()),
             infiniteSpace(),
@@ -31,11 +31,11 @@ class InteractionConfigBar(private val settings: UIState) : HBox() {
     }
     private val optionButton = optionList.selectorButton(settings.snapOption)
 
-    private fun shortcutFor(option: SnapOption) = when (option) {
-        SnapOption.Seconds -> "Alt+S"
-        SnapOption.Bars -> "Alt+B"
-        SnapOption.Beats -> "Alt+N"
-        SnapOption.Ticks -> "Alt+T"
+    private fun shortcutFor(option: TimeUnit) = when (option) {
+        TimeUnit.Seconds -> "Alt+S"
+        TimeUnit.Bars -> "Alt+B"
+        TimeUnit.Beats -> "Alt+N"
+        TimeUnit.Ticks -> "Alt+T"
     }
 
     init {
@@ -48,7 +48,7 @@ class InteractionConfigBar(private val settings: UIState) : HBox() {
     }
 
     fun addGridRelatedShortcuts(body: KeyEventHandlerBody<Unit>) {
-        for (option in SnapOption.entries) {
+        for (option in TimeUnit.entries) {
             val shortcut = shortcutFor(option)
             body.on(shortcut){
                 settings.snapOption.now = option

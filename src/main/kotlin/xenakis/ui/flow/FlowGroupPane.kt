@@ -16,7 +16,7 @@ import xenakis.ui.registry.ObjectListView.Companion.modeChangeActions
 import xenakis.ui.registry.ToolPane
 
 class FlowGroupPane(group: AudioFlowGroup) : ToolPane() {
-    private val config = FlowListConfig(group.context, autoResizeScene = true)
+    private val config = FlowListConfig(group, autoResizeScene = true)
     private val flowsView = ObjectListView(group.flows, config)
 
     init {

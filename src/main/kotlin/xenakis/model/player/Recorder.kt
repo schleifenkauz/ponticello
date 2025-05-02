@@ -1,5 +1,7 @@
 package xenakis.model.player
 
+import bundles.PublicProperty
+import bundles.publicProperty
 import fxutils.prompt.YesNoPrompt
 import hextant.context.Context
 import reaktive.value.ReactiveBoolean
@@ -32,7 +34,8 @@ class Recorder(private val context: Context) {
 
     fun toggleIsActive() {
         _isActive.now = !isActive.now
-        if (isActive.now && context[PlaybackManager].player.isPlaying.now) startRecording()
+        //TODO also immediately start recording if there are any loops playing
+        if (isActive.now && context[ScorePlayer.CURRENT].isPlaying.now) startRecording()
         else stopRecording()
     }
 
@@ -103,4 +106,6 @@ class Recorder(private val context: Context) {
             .resolve(fileName)
         return path
     }
+
+    companion object: PublicProperty<Recorder> by publicProperty("Recorder")
 }

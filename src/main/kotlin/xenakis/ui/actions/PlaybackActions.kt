@@ -9,7 +9,8 @@ import org.kordamp.ikonli.material2.Material2MZ
 import org.kordamp.ikonli.materialdesign2.MaterialDesignM
 import reaktive.value.binding.map
 import reaktive.value.now
-import xenakis.model.player.PlaybackManager
+import xenakis.model.player.Recorder
+import xenakis.model.player.ScorePlayer
 import xenakis.model.project.SERVER_OPTIONS
 import xenakis.model.project.get
 import xenakis.model.registry.BusRegistry
@@ -18,30 +19,30 @@ import xenakis.sc.Rate
 import xenakis.ui.launcher.XenakisLauncher.Companion.currentProject
 import xenakis.ui.registry.SearchableBusListView
 
-object PlaybackActions : Action.Collector<PlaybackManager>({
+object PlaybackActions : Action.Collector<ScorePlayer>({
     addAction("Go to start") {
         description("Move the playback cursor to the start of the score")
         shortcut("Alt?+DIGIT0")
         icon(Material2MZ.SKIP_PREVIOUS)
-        executes { playback, ev ->
+        executes { player, ev ->
             if (ev.isTargetTextInput && !ev.isAltDown()) return@executes
-            playback.movePlayHeadToStart()
+            player.movePlayHeadToStart()
         }
     }
     addAction("Toggle Playback") {
         shortcut("Alt?+SPACE")
-        icon { playback ->
-            playback.isPlaying.map { playing ->
+        icon { player ->
+            player.isPlaying.map { playing ->
                 if (playing) Material2MZ.PAUSE
                 else Material2MZ.PLAY_ARROW
             }
         }
-        executes { playback, ev ->
+        executes { player, ev ->
             if (ev.isTargetTextInput && !ev.isAltDown()) return@executes
-            if (!playback.isPlaying.now) {
-                playback.player.play()
+            if (!player.isPlaying.now) {
+                player.play()
             } else {
-                playback.player.pause()
+                player.pause()
             }
         }
     }
@@ -49,19 +50,19 @@ object PlaybackActions : Action.Collector<PlaybackManager>({
         description("Stop playback and free all Synths")
         shortcut("Ctrl+PERIOD")
         icon(Material2MZ.STOP)
-        executes { playback -> playback.player.reset() }
+        executes { player -> player.reset() }
     }
     addAction("Toggle recording") {
         shortcut("Ctrl+Shift+R")
-        icon { playback ->
-            playback.recorder.isActive.map { active ->
+        icon { player ->
+            player.context[Recorder].isActive.map { active ->
                 if (active) MaterialDesignM.MICROPHONE
                 else MaterialDesignM.MICROPHONE_OUTLINE
             }
         }
-        executes { playback, ev ->
+        executes { player, ev ->
             if (ev.isShiftDown()) {
-                val context = playback.context
+                val context = player.context
                 val project = context[currentProject]
                 val currentSelected =
                     project[SERVER_OPTIONS].recordedBus.get() ?: context[BusRegistry].getDefault()
@@ -73,7 +74,7 @@ object PlaybackActions : Action.Collector<PlaybackManager>({
                     initialOption = currentSelected
                 )
                 if (bus != null) project[SERVER_OPTIONS].recordedBus = bus.reference()
-            } else playback.recorder.toggleIsActive()
+            } else player.context[Recorder].toggleIsActive()
         }
     }
 })

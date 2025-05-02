@@ -86,30 +86,27 @@ class MixerFlow(
     private fun setupComponent(obj: MixerComponent) {
         if (obj.solo.now) soloed++
         componentObservers[obj] = obj.sourceBus.observe { _, old, new ->
-            setSourceBus(obj, old, new)
+            setSourceBus(old, new)
         } and obj.mute.observe { _, _, _ ->
-            recomputeVolume(obj)
+            recomputeVolumes()
         } and obj.volume.observe { _, _, _ ->
-            recomputeVolume(obj)
+            recomputeVolumes()
         } and obj.solo.observe { _, _, solo ->
             if (solo) {
                 soloed++
-                if (soloed == 1) recomputeVolumes()
-                else recomputeVolume(obj)
+                recomputeVolumes()
             } else {
                 soloed--
-                if (soloed == 0) recomputeVolumes()
-                else recomputeVolume(obj)
+                recomputeVolumes()
             }
         }
     }
 
-    private fun setSourceBus(comp: MixerComponent, old: BusReference, new: BusReference) {
+    private fun setSourceBus(old: BusReference, new: BusReference) {
         replacedBus(old, new)
         if (!isActive.now) return
-        val idx = components.indexOf(comp)
-        val bus = new.get() ?: return
-        client.run("$superColliderName.set($idx, ${bus.superColliderName})") //TODO this is not right yet
+        val buses = components.map { comp -> comp.sourceBus.now.force().superColliderName }
+        client.run("$superColliderName.setn(\\sources, $buses)") //TODO this is not right yet
     }
 
     private fun replacedBus(old: BusReference, new: BusReference) {
@@ -123,15 +120,6 @@ class MixerFlow(
         if (!isActive.now) return
         val volumes = components.map { comp -> getActualVolume(comp) }
         client.run("$superColliderName.setn(\\volumes, $volumes)")
-    }
-
-    private fun recomputeVolume(comp: MixerComponent) {
-        if (!isActive.now) return
-        recomputeVolumes()
-        return //TODO how does this work
-//        val argIndex = components.size + components.indexOf(comp)
-//        val volume = getActualVolume(comp)
-//        client.run("$superColliderName.set($argIndex, $volume)")
     }
 
     override fun removed(obj: MixerComponent) {
@@ -150,10 +138,10 @@ class MixerFlow(
             +"sources = NamedControl.kr(\\sources, $sources)"
             +"volumes = NamedControl.kr(\\volumes, $volumes)"
             +"sources = In.ar(sources, ${sink.channels.now}) * volumes"
-            +"sources.postln"
-            +"Mix(sources).postln"
+            if (components.size > 1) {
+                +"sources.sum"
+            }
         }
-        //TODO what if there is only one source bus (avoid stereo collapse)
         val action = guardAgainstReplaceNil(placement)
         appendLine(".play(${placement.target}, ${sink.superColliderName}, addAction: ${action})")
     }

@@ -105,11 +105,11 @@ class ObjectBox<O : ContextualObject>(val parent: ObjectListView<O>, val obj: O)
         val dragTarget = space
         obj as NamedObject
         dragTarget.setOnDragDetected { ev ->
-            if (ev.isControlDown) {
-                val db = dragTarget.startDragAndDrop(TransferMode.COPY)
-                db.setContent(mapOf(config.dataFormat(obj) to obj.name.now))
-                ev.consume()
-            }
+            val transferMode = if (ev.isControlDown && obj.canCopy) TransferMode.COPY else TransferMode.MOVE
+            val db = dragTarget.startDragAndDrop(transferMode)
+            db.setContent(mapOf(config.dataFormat(obj) to obj.name.now))
+            config.configureDragboard(obj, db)
+            ev.consume()
         }
     }
 
@@ -125,6 +125,7 @@ class ObjectBox<O : ContextualObject>(val parent: ObjectListView<O>, val obj: O)
                 val oldIndex = parent.getBoxes().indexOf(this)
                 try {
                     if (idx != oldIndex) {
+                        if (idx > oldIndex) idx--
                         parent.source.move(obj, idx)
                     }
                 } finally {

@@ -36,7 +36,6 @@ import xenakis.impl.zero
 import xenakis.model.obj.*
 import xenakis.model.player.ActiveObject
 import xenakis.model.player.ActiveScoreObject
-import xenakis.model.player.PlaybackManager
 import xenakis.model.project.score
 import xenakis.model.registry.*
 import xenakis.model.score.ParameterControlList.NamedParameterControl
@@ -95,7 +94,8 @@ class ControlAssignmentEditor(val control: NamedParameterControl, val view: Scor
     }
 
     private fun showOptionPopup() {
-        val listView = SimpleSearchableListView(ControlType.all, "Select control type")
+        val options = ControlType.all.filter { option -> option.applicableOn(control.parentObject) }
+        val listView = SimpleSearchableListView(options, "Select control type")
         val option = listView.showPopup(
             anchorNode = optionButton,
             initialOption = selectedOption
@@ -299,17 +299,15 @@ class ControlAssignmentEditor(val control: NamedParameterControl, val view: Scor
 
             private fun getActiveObject(ctrl: NamedParameterControl, view: ScoreObjectView?): ActiveObject? {
                 val activeObjects = ctrl.parentObject.activeObjects()
-                val activeObject = if (view != null) {
-                    val playbackManager = ctrl.context[PlaybackManager]
-                    val positionRelativeToPlayedScore =
-                        view.absolutePosition - playbackManager.positionOfPlayedScore
-                    activeObjects.find { obj ->
-                        obj is ActiveScoreObject && obj.absolutePosition == positionRelativeToPlayedScore
-                    }
+                return if (view != null) {
+                    activeObjects
+                        .filterIsInstance<ActiveScoreObject>()
+                        .find { obj ->
+                            val absolutePosition = view.absolutePosition + obj.player.playHead.absoluteStartPosition
+                            obj.absolutePosition == absolutePosition
+                        }
                 } else activeObjects.singleOrNull()
-                return activeObject
             }
-
         }
 
         data object Bus : ControlType<BusControl>() {

@@ -12,7 +12,6 @@ import java.util.*
 
 class ScoreEventCollector(
     private val rootScore: Score,
-    private val manager: ActiveObjectManager?,
     private val settings: Settings,
 ) : ScoreListener, ScoreObject.Listener {
     private val events = TreeMap<ObjectPosition, MutableSet<Event>>()
@@ -170,7 +169,7 @@ class ScoreEventCollector(
             val posEnd = position + ObjectPosition(obj.duration, zero)
             val player = player
             if (
-                player != null && manager != null && player.isPlaying.now
+                player != null && player.isPlaying.now
                 && player.currentTime in position.time - settings.lookAhead..posEnd.time
             ) {
                 player.scheduleInstantly(inst, position)
@@ -193,12 +192,8 @@ class ScoreEventCollector(
             removeEvent(Event(Event.Type.ObjectStart, position, inst))
             removeEvent(Event(Event.Type.ObjectEnd, posEnd, inst))
             val player = player
-            if (player != null && manager != null && player.isPlaying.now) {
-                for (node in manager.activeInstances(obj)) {
-                    if (node.absolutePosition == position) {
-                        player.stopPlayBackInstantly(obj, node.absolutePosition)
-                    }
-                }
+            if (player != null && player.isPlaying.now && player.currentTime in position.time..posEnd.time) {
+                player.stopPlayBackInstantly(obj, position)
             }
         }
     }
@@ -234,7 +229,7 @@ class ScoreEventCollector(
         val type: Type,
         val absolutePosition: ObjectPosition,
         val inst: ScoreObjectInstance,
-        var scheduled: Boolean = false
+        var scheduled: Boolean = false,
     ) {
         override fun toString(): String = "$type: ${inst.obj.name.now} at $absolutePosition"
 

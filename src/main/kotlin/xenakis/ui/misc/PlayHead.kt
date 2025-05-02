@@ -8,8 +8,10 @@ import javafx.scene.shape.Line
 import xenakis.impl.Decimal
 import xenakis.impl.zero
 import xenakis.model.score.ObjectPosition
-import xenakis.ui.launcher.XenakisMainActivity
+import xenakis.ui.score.ScoreObjectView
+import xenakis.ui.score.ScorePane
 import xenakis.ui.score.TimeBlock
+import xenakis.ui.score.TimeCodeView
 
 class PlayHead(private val context: Context) {
     private var attached = false
@@ -17,10 +19,9 @@ class PlayHead(private val context: Context) {
     var currentTime = START
         private set(value) {
             field = value
-            val activity = context[XenakisMainActivity]
-            if (attached && pane == activity.scoreView) {
+            if (attached) {
                 Platform.runLater {
-                    activity.timeCodeView.displayTime(value)
+                    context[TimeCodeView].displayTime(value)
                 }
             }
         }
@@ -35,6 +36,13 @@ class PlayHead(private val context: Context) {
         playHead.viewOrder = -500.0
         playHead.strokeWidth = PLAY_HEAD_WIDTH
     }
+
+    val absoluteStartPosition: ObjectPosition
+        get() = when (val pane = pane) {
+            is ScorePane -> pane.absolutePosition
+            is ScoreObjectView -> pane.absolutePosition
+            else -> throw IllegalStateException("Cannot get position of $pane, it is not a ScorePane or ScoreObjectView")
+        }
 
     fun <T> attachTo(target: T, verticalPadding: Double) where T : TimeBlock, T : Pane {
         (playHead.parent as? Pane)?.children?.remove(playHead)
@@ -62,6 +70,7 @@ class PlayHead(private val context: Context) {
     }
 
     fun updatePosition() {
+        if (!attached) return
         if (!pane.children.contains(playHead)) pane.children.add(playHead)
         playHead.layoutX = timeBlock.getX(currentTime)
     }

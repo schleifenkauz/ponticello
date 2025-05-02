@@ -9,7 +9,6 @@ import reaktive.value.now
 import reaktive.value.reactiveVariable
 import xenakis.impl.*
 import xenakis.model.flow.NodePlacement
-import xenakis.model.project.UIState.SnapOption
 import xenakis.ui.score.TempoGridObjectView
 
 @Serializable
@@ -44,24 +43,24 @@ class TempoGridObject(
             beatsPerMinute.copy(), beatsPerBar.copy(), ticksPerBeat.copy(), firstBar.copy()
         )
 
-    fun snapToGrid(t: Decimal, option: SnapOption): Decimal {
+    fun snapToGrid(t: Decimal, option: TimeUnit): Decimal {
         val beatUnit = 60.0.asTime / beatsPerMinute.now
         val unit = when (option) {
-            SnapOption.Bars -> beatUnit * beatsPerBar.now
-            SnapOption.Beats -> beatUnit
-            SnapOption.Ticks -> beatUnit / ticksPerBeat.now
+            TimeUnit.Bars -> beatUnit * beatsPerBar.now
+            TimeUnit.Beats -> beatUnit
+            TimeUnit.Ticks -> beatUnit / ticksPerBeat.now
             else -> throw AssertionError("Invalid snap option $option")
         }
         return (t / unit).roundToInt() * unit
     }
 
-    fun getDuration(periodUnit: SnapOption): Decimal {
+    fun getDuration(periodUnit: TimeUnit): Decimal {
         val beatDur = (60.0.asTime / beatsPerMinute.now)
         return when (periodUnit) {
-            SnapOption.Seconds -> one
-            SnapOption.Bars -> beatsPerBar.now * beatDur
-            SnapOption.Beats -> beatDur
-            SnapOption.Ticks -> beatDur / ticksPerBeat.now
+            TimeUnit.Seconds -> one
+            TimeUnit.Bars -> beatsPerBar.now * beatDur
+            TimeUnit.Beats -> beatDur
+            TimeUnit.Ticks -> beatDur / ticksPerBeat.now
         }
     }
 
