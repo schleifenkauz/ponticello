@@ -16,36 +16,35 @@ import xenakis.impl.Decimal
 import xenakis.impl.Logger
 import xenakis.impl.one
 import xenakis.impl.zero
+import xenakis.model.live.LiveLoopObject
 import xenakis.model.obj.AbstractContextualObject
 import xenakis.model.registry.ScoreObjectRegistry
 
 @Serializable
 class Score(
-    private val instances: MutableList<ScoreObjectInstance> = mutableListOf()
+    private val instances: MutableList<ScoreObjectInstance> = mutableListOf(),
 ) : AbstractContextualObject() {
     val objectInstances: List<ScoreObjectInstance> get() = instances
 
     val objects get() = objectInstances.mapTo(mutableSetOf()) { inst -> inst.obj }
 
-    lateinit var scoreName: ReactiveString
-        private set
-
     @Transient
-    var parentObject: ScoreObject? = null
+    var scoreName: ReactiveString = reactiveValue(ROOT_SCORE_NAME)
+        private set
+    @Transient
+    var maxTime = reactiveValue(Decimal.INF)
+        private set
+    @Transient
+    var maxY = reactiveValue(one)
         private set
 
     @Transient
     private val views = ListenerManager.createWeakListenerManager<ScoreListener>()
 
-    private val undo by lazy { context[UndoManager] }
+    private val undo get() = context[UndoManager]
 
-    val maxTime get() = parentObject?.duration ?: Decimal.INF
-    val maxY get() = parentObject?.height ?: one(ObjectPosition.Y_PRECISION)
-
-    fun initialize(context: Context, parentObject: ScoreObject?) {
+    override fun initialize(context: Context) {
         super.initialize(context)
-        this.parentObject = parentObject
-        this.scoreName = parentObject?.name ?: reactiveValue(ROOT_SCORE_NAME)
         context[rootScore] = this
         for (inst in objectInstances) {
             inst.initialize(context)
@@ -53,8 +52,17 @@ class Score(
         }
     }
 
-    override fun initialize(context: Context) {
-        initialize(context, parentObject = null)
+    fun initialize(context: Context, parentObject: ScoreObject) {
+        initialize(context)
+        scoreName = parentObject.name
+        maxTime = parentObject.duration()
+        maxY = parentObject.height()
+    }
+
+    fun initialize(context: Context, loopObject: LiveLoopObject) {
+        initialize(context)
+        scoreName = loopObject.name
+        maxTime = loopObject.config.duration()
     }
 
     fun addListener(listener: ScoreListener, notify: Boolean = true) {

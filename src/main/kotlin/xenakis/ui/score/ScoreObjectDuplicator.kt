@@ -25,7 +25,7 @@ class ScoreObjectDuplicator {
     private val panes = mutableListOf<ScorePane>()
     private val imageViews = mutableMapOf<ScorePane, ImageView>()
 
-    fun registerRootPane(pane: NavigableScorePane) {
+    fun registerRootPane(pane: RootScorePane) {
         panes.add(pane)
         val observer = pane.onRepaint.observe { _ -> repainted(pane) }
         repaintObservers.add(observer)

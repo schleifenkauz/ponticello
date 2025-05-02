@@ -19,7 +19,7 @@ class ScoreEventCollectorTest {
     fun randomlyAddAndRemoveObjects() {
         val context = Utils.createContext()
         val rootScore = Score()
-        rootScore.initialize(context, null)
+        rootScore.initialize(context)
         val collector = ScoreEventCollector(rootScore, context[Settings])
         val objects = mutableListOf<ScoreObject>()
         val subScores = mutableListOf<Score>()
@@ -105,7 +105,7 @@ class ScoreEventCollectorTest {
     fun addInstanceToMutedSubScore() {
         val context = Utils.createContext()
         val rootScore = Score()
-        rootScore.initialize(context, null)
+        rootScore.initialize(context)
         val collector = ScoreEventCollector(rootScore, context[Settings])
         val subScore = Score()
         val subObj = ScoreObjectGroup(reactiveVariable("sub_score"), subScore)

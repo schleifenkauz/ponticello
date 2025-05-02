@@ -1,136 +1,31 @@
 package xenakis.ui.score
 
 import fxutils.Ctrl
-import fxutils.SubWindow
 import fxutils.modifiers
-import fxutils.styleClass
 import hextant.context.Context
-import javafx.application.Platform
 import javafx.geometry.Point2D
 import javafx.scene.input.MouseEvent
-import javafx.scene.layout.Pane
-import javafx.scene.paint.Color
-import javafx.scene.shape.Line
-import reaktive.event.unitEvent
-import reaktive.value.now
 import xenakis.impl.*
 import xenakis.model.flow.AudioFlowGroup
 import xenakis.model.flow.AudioFlows
-import xenakis.model.player.ScorePlayer
-import xenakis.model.project.settings
-import xenakis.model.score.*
+import xenakis.model.score.Score
 import xenakis.ui.controls.NamePrompt
-import xenakis.ui.impl.verticalDist
-import xenakis.ui.launcher.XenakisLauncher.Companion.currentProject
-import java.util.concurrent.CompletableFuture
-import kotlin.concurrent.thread
 import kotlin.math.exp
 
-class NavigableScorePane(score: Score, context: Context) : ScorePane(score, context) {
-    private val positionTracker = Line() styleClass "mouse-tracker-line"
-
-    private var latestRepaintTrigger = 0L
-    private val repaint = unitEvent()
-    val onRepaint get() = repaint.stream
-
+class NavigableScorePane(score: Score, context: Context) : RootScorePane(score, context) {
     override var displayStart: Decimal = 0.0.asTime
 
     override var displayEnd: Decimal = 0.0.asTime
 
-    override val pixelsPerSecond: Double
-        get() = (this.width / (displayEnd - displayStart)).toDouble()
-
-    override val associatedObject: ScoreObjectGroup?
-        get() = null
-
-    override val absolutePosition: ObjectPosition
-        get() = ObjectPosition.ZERO
-
-    override val root: ScorePane
-        get() = this
-
     val displayedDuration get() = displayEnd - displayStart
-
-    private var magnifiedEnvelope: EnvelopeEditor? = null
-    private var magnifierWindow: SubWindow? = null
-
     init {
         styleClass.add("score-view")
         isFocusTraversable = true
         listenForEvents()
-        heightProperty().addListener { _ -> repaint() }
-        widthProperty().addListener { _ -> repaint() }
     }
 
     fun initialize() {
         this.score.addListener(this)
-    }
-
-    override fun snapToGrid(position: ObjectPosition): ObjectPosition {
-        val settings = context[currentProject].settings
-        val (t, y) = position
-        if (!settings.snapEnabled.now) return position
-        when (val option = settings.snapOption.now) {
-            TimeUnit.Seconds -> return ObjectPosition(t.round(0), y)
-            else -> {
-                val nearestGrid = getNearestGrid(position)
-                for (grid in allViews.filterIsInstance<TempoGridObjectView>()) {
-                    if (grid.instance != nearestGrid) grid.unmark()
-                }
-                if (nearestGrid == null) return position
-                val obj = nearestGrid.obj as TempoGridObject
-                val snapped = obj.snapToGrid(t - nearestGrid.start, option)
-                return ObjectPosition(snapped + nearestGrid.start, y)
-            }
-        }
-    }
-
-    override fun markT(t: Decimal) {
-        val grids = allViews
-            .filterIsInstance<TempoGridObjectView>()
-        for (g in grids) {
-            if (t in g.instance.timeRange) g.mark(t - g.instance.start)
-            else g.unmark()
-        }
-        positionTracker.layoutX = getX(t)
-        val player = context[ScorePlayer.CURRENT]
-        if (this == context[CURRENT_ROOT] && !player.isPlaying.now) {
-            context[TimeCodeView].displayTime(t)
-        }
-    }
-
-    override fun getNearestGrid(position: ObjectPosition): ScoreObjectInstance? {
-        val grids = score.objectInstances.filter { inst -> inst.obj is TempoGridObject }
-        val relevantGrids = grids.filter { g -> position.time in g.timeRange }
-        val nearestGrid = relevantGrids.minByOrNull { g -> g.verticalDist(position.y) }
-        return nearestGrid
-    }
-
-    fun magnifyEnvelope(editor: EnvelopeEditor) {
-        val pane = Pane() styleClass "envelope-sub-window"
-        val semitransparent = editor.objectView.backgroundColor.now.deriveColor(1.0, 1.0, 1.0, 0.3)
-        pane.style = "-fx-background-color: ${semitransparent.toString().replacePrefix("0x", "#")};"
-        magnifiedEnvelope = EnvelopeEditor(editor.namedControl, editor.envelope, editor.objectView, pane)
-        val objName = editor.objectView.instance.obj.name.now
-        val title = "Envelope for ${editor.parameterName} of $objName"
-        magnifierWindow?.hide()
-        magnifierWindow = SubWindow(pane, title, SubWindow.Type.Popup)
-        repositionEnvelopeMagnifier()
-        magnifierWindow!!.show()
-    }
-
-    private fun repositionEnvelopeMagnifier() {
-        val editor = magnifiedEnvelope ?: return
-        val window = magnifierWindow ?: return
-        editor.pane.setPrefSize(editor.objectView.prefWidth, height / 5)
-        editor.repaint()
-        val coords = editor.objectView.localToScreen(0.0, 0.0) ?: return
-        window.sizeToScene()
-        window.x = coords.x
-        window.y =
-            if (coords.y + editor.objectView.prefHeight / 2 > height / 2) coords.y - editor.pane.prefHeight - 10.0
-            else coords.y + editor.objectView.prefHeight + 10.0
-        window.scene.fill = Color.TRANSPARENT
     }
 
     fun displayWholeScore() {
@@ -156,35 +51,8 @@ class NavigableScorePane(score: Score, context: Context) : ScorePane(score, cont
         }
     }
 
-    override fun repaint() {
-        latestRepaintTrigger = System.currentTimeMillis()
-        layoutObjects()
-        repositionEnvelopeMagnifier()
-        repaint.fire()
-        if (positionTracker !in children) children.add(positionTracker)
-        context[ScorePlayer.CURRENT].playHead.updatePosition()
-    }
-
-    private fun layoutObjects() {
-        val repaintTrigger = latestRepaintTrigger
-        val maxTime = 25L //determines how much time is spent consecutively on the Application Thread
-        val itr = views.iterator()
-        thread {
-            while (itr.hasNext()) {
-                if (repaintTrigger != latestRepaintTrigger) {
-                    break
-                }
-                val job = CompletableFuture<Unit>()
-                Platform.runLater { layoutObjects(itr, maxTime, job) }
-                job.join()
-            }
-        }
-    }
-
     override fun listenForEvents() {
         super.listenForEvents()
-        isFocusTraversable = true
-        setupPositionTracker()
         setupNavigation()
     }
 
@@ -202,20 +70,6 @@ class NavigableScorePane(score: Score, context: Context) : ScorePane(score, cont
         val color = randomColor()
         val group = AudioFlowGroup.create(name, y, color)
         context[AudioFlows].add(group)
-    }
-
-    private fun setupPositionTracker() {
-        positionTracker.startY = 5.0
-        positionTracker.endYProperty().bind(heightProperty().subtract(5))
-        positionTracker.viewOrder = -100.0
-        positionTracker.isMouseTransparent = true
-        positionTracker.visibleProperty().bind(hoverProperty())
-        setOnMouseMoved { ev ->
-            val (t, y) = snapToGrid(ev.x, ev.y)
-            markT(t)
-            context[ScoreObjectDuplicator].movedCursor(this, t, y)
-            ev.consume()
-        }
     }
 
     private fun setupNavigation() {

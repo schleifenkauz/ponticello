@@ -25,6 +25,9 @@ class LiveTaskObject(
     override val registry: LiveTaskRegistry
         get() = context[LiveTaskRegistry]
 
+    override val quantization: Quantization
+        get() = Quantization.None //TODO
+
     override fun initialize(context: Context) {
         super.initialize(context)
         code.initialize(context)

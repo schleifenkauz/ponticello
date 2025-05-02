@@ -93,6 +93,7 @@ class Decimal(val value: Double, val precision: Int) : Number(), Comparable<Deci
                 -1 -> 0
                 else -> str.length - decimalPointIdx - 1
             }
+            if (str == "inf") return INF
             val value = str.toDoubleOrNull() ?: error("Invalid decimal: $str")
             return Decimal(value, precision)
         }

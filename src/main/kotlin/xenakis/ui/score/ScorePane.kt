@@ -66,7 +66,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
     open fun snapToGrid(position: ObjectPosition): ObjectPosition =
         root.snapToGrid(position + absolutePosition) - absolutePosition
 
-    open fun getNearestGrid(position: ObjectPosition): ScoreObjectInstance? =
+    open fun getNearestGrid(position: ObjectPosition): Pair<Decimal, TempoGridObject>? =
         root.getNearestGrid(position + absolutePosition)
 
     fun snapToGrid(x: Double, y: Double): ObjectPosition = snapToGrid(ObjectPosition(getTime(x), getScoreY(y)))
@@ -262,13 +262,13 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
         when {
             duplicator.isInDuplicateMode() -> {
                 var obj = duplicator.clipboardObject!!
-                if (obj.height > score.maxY || obj.duration > score.maxTime) return
+                if (obj.height > score.maxY.now || obj.duration > score.maxTime.now) return
                 if (ev.isAltDown) {
                     val name = context[ScoreObjectRegistry].nameForClone(obj)
                     obj = obj.clone(name)
                 }
-                val time = t.coerceIn(zero, score.maxTime - obj.duration)
-                val scoreY = y.coerceIn(zero, score.maxY - obj.height)
+                val time = t.coerceIn(zero, score.maxTime.now - obj.duration)
+                val scoreY = y.coerceIn(zero, score.maxY.now - obj.height)
                 val duplicate = ScoreObjectInstance(obj, time, scoreY)
                 score.addObject(duplicate, autoSelect = false)
             }

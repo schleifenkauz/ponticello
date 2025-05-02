@@ -25,7 +25,7 @@ object ToolWindowActions : Action.Collector<XenakisMainActivity>({
         executes { activity -> activity.shellWindow.showOrBringToFront() }
     }
     addAction("Show log window") {
-        shortcut("Ctrl+Shift+L")
+        shortcut("Ctrl+Alt+L")
         icon(MaterialDesignB.BELL)
         executes { activity, ev ->
             if (ev.isShiftDown()) {
@@ -114,9 +114,14 @@ object ToolWindowActions : Action.Collector<XenakisMainActivity>({
         icon(MaterialDesignL.LARAVEL)
         executes { activity -> activity.patternsWindow.showOrBringToFront() }
     }
-    addAction("Show LiveTasks") {
+    addAction("Show Live Tasks") {
         shortcut("Ctrl+Shift+T")
-        icon(MaterialDesignI.INFINITY)
+        icon(MaterialDesignP.PROGRESS_QUESTION)
         executes { activity -> activity.liveTasksWindow.showOrBringToFront() }
+    }
+    addAction("Show Live Loops") {
+        shortcut("Ctrl+Shift+L")
+        icon(MaterialDesignI.INFINITY)
+        executes { activity -> activity.liveLoopsWindow.showOrBringToFront() }
     }
 })

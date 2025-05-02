@@ -4,8 +4,6 @@ import bundles.PublicProperty
 import bundles.publicProperty
 import bundles.set
 import fxutils.*
-import fxutils.actions.ActionBar
-import fxutils.actions.ContextualizedAction
 import fxutils.actions.registerActions
 import hextant.undo.UndoManager
 import javafx.geometry.Dimension2D
@@ -28,6 +26,7 @@ import xenakis.sc.client.SuperColliderClient
 import xenakis.ui.actions.*
 import xenakis.ui.flow.AudioFlowPane
 import xenakis.ui.impl.makeToolWindow
+import xenakis.ui.live.LiveLoopRegistryPane
 import xenakis.ui.live.LiveTaskRegistryPane
 import xenakis.ui.midi.ContextualMidiReceiver
 import xenakis.ui.midi.ParameterControlsMidiContext
@@ -71,6 +70,9 @@ class XenakisMainActivity(val project: XenakisProject) : Activity() {
 
     private val liveTasksPane = LiveTaskRegistryPane(project[LIVE_TASKS])
     val liveTasksWindow = context.makeToolWindow(liveTasksPane, "Live Tasks")
+
+    private val liveLoopsPane = LiveLoopRegistryPane(project[LIVE_LOOPS])
+    val liveLoopsWindow = context.makeToolWindow(liveLoopsPane, "Live Loops")
 
     val logWindow = context.makeToolWindow(LogPane(Logger), "Log")
 
@@ -170,9 +172,6 @@ class XenakisMainActivity(val project: XenakisProject) : Activity() {
         VBox.setVgrow(scoreView, Priority.ALWAYS)
         return VBox(toolbar, scoreView)
     }
-
-    private fun toolbarPart(actions: List<ContextualizedAction>) =
-        ActionBar(actions, buttonStyle = "large-icon-button").styleClass("toolbar-part")
 
     private fun createToolbar(): Pane {
         return BorderPane().apply {

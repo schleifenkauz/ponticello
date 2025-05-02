@@ -39,7 +39,7 @@ class ScorePlayer(
         get() = loopingActivated.now
 
     override val maxTime: Decimal
-        get() = rootScore.maxTime
+        get() = rootScore.maxTime.now
 
     private fun detach() {
         if (!isAttached) return

@@ -1,8 +1,11 @@
 package xenakis.ui.actions
 
 import fxutils.actions.Action
+import fxutils.actions.ActionBar
+import fxutils.actions.ContextualizedAction
 import fxutils.actions.registerActions
 import fxutils.registerShortcuts
+import fxutils.styleClass
 import hextant.context.Context
 import hextant.undo.compoundEdit
 import javafx.event.Event
@@ -61,3 +64,6 @@ fun Scene.registerGlobalShortcuts(context: Context) {
         registerActions(ProjectActions.withContext(context[XenakisLauncher]))
     }
 }
+
+fun toolbarPart(actions: List<ContextualizedAction>) =
+    ActionBar(actions, buttonStyle = "large-icon-button").styleClass("toolbar-part")

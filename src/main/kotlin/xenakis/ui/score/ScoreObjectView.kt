@@ -141,8 +141,8 @@ abstract class ScoreObjectView(
     fun askForLoopConfig(): LoopConfig? {
         if (isSubWindow) return null
         val settings = context[currentProject].settings
-        val grid = pane.getNearestGrid(instance.position)?.obj
-            .takeIf { settings.snapEnabled.now } as TempoGridObject?
+        val grid = pane.getNearestGrid(instance.position)?.second
+            .takeIf { settings.snapEnabled.now }
         val periodUnit = if (grid == null) null else settings.snapOption.now
         val prompt = makeLoopConfigPrompt(periodUnit, grid, instance)
         return prompt.showDialog(anchorNode = this)
@@ -338,9 +338,9 @@ abstract class ScoreObjectView(
     private fun dragTo(toX: Double, toY: Double) {
         val movedObjects = context[ScoreObjectSelectionManager].selectedInstances + this.instance
         val minDeltaT = -movedObjects.minOf { inst -> inst.start }
-        val maxDeltaT = movedObjects.minOf { inst -> inst.score!!.maxTime - inst.end }
+        val maxDeltaT = movedObjects.minOf { inst -> inst.score!!.maxTime.now - inst.end }
         val minDeltaY = -movedObjects.minOf { inst -> inst.y }
-        val maxDeltaY = movedObjects.minOf { inst -> inst.score!!.maxY - (inst.y + inst.height) }
+        val maxDeltaY = movedObjects.minOf { inst -> inst.score!!.maxY.now - (inst.y + inst.height) }
         val (t, y) = pane.snapToGrid(toX, toY)
         val deltaT = (t - instance.start).coerceIn(minDeltaT..maxDeltaT)
         val deltaY = (y - instance.y).coerceIn(minDeltaY..maxDeltaY)
@@ -390,7 +390,7 @@ abstract class ScoreObjectView(
 
         if (direction.left) newDur = newDur.coerceAtMost(instance.end)
         if (pane is SubScorePane && direction.right) newDur =
-            newDur.coerceAtMost(pane.associatedObject!!.duration - instance.start)
+            newDur.coerceAtMost(pane.score.maxTime.now - instance.start)
         if (direction.up) newHeight = newHeight.coerceAtMost(instance.y + instance.height)
         if (direction.down) {
             val parentHeight = pane.associatedObject?.height ?: 1.0.asY
@@ -425,7 +425,7 @@ abstract class ScoreObjectView(
 
     fun getDeltaT(direction: HorizontalDirection): Decimal {
         val factor = if (direction == LEFT) -3.0 else 3.0
-        val grid = pane.getNearestGrid(instance.position)?.obj as TempoGridObject?
+        val grid = pane.getNearestGrid(instance.position)?.second
         val settings = context[currentProject].settings
         val snapOption = if (settings.snapEnabled.now) settings.snapOption.now else null
         val deltaT =
@@ -438,7 +438,7 @@ abstract class ScoreObjectView(
         check(instance.obj.canResize) { "Cannot adjust horizontal $this because it has its own sub-window." }
         val deltaT = getDeltaT(direction)
         if (resize) {
-            val targetDuration = (instance.obj.duration + deltaT).coerceAtMost(pane.score.maxTime - instance.start)
+            val targetDuration = (instance.obj.duration + deltaT).coerceAtMost(pane.score.maxTime.now - instance.start)
             instance.obj.resize(
                 targetDuration, instance.obj.height,
                 resizeMode!!, Direction.horizontal(RIGHT)
@@ -446,7 +446,7 @@ abstract class ScoreObjectView(
             pane.markT(instance.end)
         } else {
             val (t, _) = pane.snapToGrid(instance.position.plusTime(deltaT))
-            val start = t.coerceIn(zero, pane.score.maxTime - instance.obj.duration)
+            val start = t.coerceIn(zero, pane.score.maxTime.now - instance.obj.duration)
             instance.setTime(start)
             pane.markT(start)
         }
@@ -461,13 +461,13 @@ abstract class ScoreObjectView(
     protected fun adjustVertical(resize: Boolean, resizeMode: ScoreObject.ResizeMode, deltaY: Decimal) {
         check(!isSubWindow) { "Cannot adjust vertical $this because it has its own sub-window." }
         if (resize) {
-            val targetHeight = (instance.obj.height + deltaY).coerceAtMost(pane.score.maxY - instance.y)
+            val targetHeight = (instance.obj.height + deltaY).coerceAtMost(pane.score.maxY.now - instance.y)
             instance.obj.resize(
                 instance.obj.duration, targetHeight,
                 resizeMode, Direction.vertical(VerticalDirection.DOWN)
             )
         } else {
-            val y = (instance.y + deltaY).coerceIn(zero, pane.score.maxY - instance.obj.height)
+            val y = (instance.y + deltaY).coerceIn(zero, pane.score.maxY.now - instance.obj.height)
             instance.setY(y)
         }
     }

@@ -12,6 +12,8 @@ sealed class LiveObject: AbstractRenamableObject() {
 
     val isActive: ReactiveValue<Boolean> get() = _isActive
 
+    abstract val quantization: Quantization
+
     fun activate() {
         if (isActive.now) error("$this is Already Active")
         _isActive.now = true
