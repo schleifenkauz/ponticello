@@ -96,7 +96,7 @@ class Recorder(private val context: Context) {
                 +"s.record(bus: ${bus.superColliderName})"
             }
         }
-        client.send("schedule", listOf(settings.scLangLatency.now.toDouble(), code))
+        client.send("schedule", listOf(settings.scLangLatency.now.toDouble(), 0, code))
     }
 
     private fun pathForNextRecording(): File {

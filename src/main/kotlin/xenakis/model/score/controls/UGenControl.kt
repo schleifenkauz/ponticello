@@ -55,11 +55,10 @@ data class UGenControl(
     override fun ScWriter.generatePreparationCode(
         obj: ParameterizedObject, uniqueName: String,
         parameter: String, spec: ControlSpec,
-        associatedServerObjects: MutableList<String>,
         context: CodegenContext,
     ) {
         val expr = substituteControlParameters(expr.editor.result.now, obj, uniqueName)
-        val busName = uniqueArgumentName(uniqueName, parameter)
+        val busName = auxilBusName(uniqueName, parameter)
         +"$busName = Bus.control(s, 1)"
         val auxilSynthName = auxilSynthName(uniqueName, parameter)
         val synthName = "${obj.superColliderPrefix}$uniqueName"
@@ -68,7 +67,6 @@ data class UGenControl(
             expr.code(writer, this@UGenControl.context)
         }
         +".play(target: $synthName, outbus: $busName, fadeTime: 0, addAction: 'addBefore')"
-        associatedServerObjects.addAll(listOf(busName, auxilSynthName))
     }
 
     override fun generateArgumentExpr(
@@ -78,7 +76,7 @@ data class UGenControl(
         spec: ControlSpec,
         context: CodegenContext,
     ): ScExpr {
-        val busName = uniqueArgumentName(uniqueName, parameter)
+        val busName = auxilBusName(uniqueName, parameter)
         return when (context) {
             CodegenContext.Synth, CodegenContext.SubArg -> Identifier(busName).send("kr")
             CodegenContext.Process -> lambda {
@@ -95,14 +93,14 @@ data class UGenControl(
         parameter: String,
         spec: ControlSpec,
     ) {
-        val busName = uniqueArgumentName(uniqueName, parameter)
+        val busName = auxilBusName(uniqueName, parameter)
         +"${synthVar}.map(\\$parameter, $busName)"
     }
 
     fun scope(activeObject: ActiveObject, parameter: String) {
         val client = context[SuperColliderClient]
         val uniqueName = activeObject.uniqueName
-        val busName = uniqueArgumentName(uniqueName, parameter)
+        val busName = auxilBusName(uniqueName, parameter)
         client.run {
             +"var scope"
             +"scope = Stethoscope.new(s, 1, $busName.index, rate:'control')"

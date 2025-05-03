@@ -3,8 +3,8 @@ package xenakis.sc.client
 import com.illposed.osc.OSCMessage
 import com.illposed.osc.transport.OSCPortOut
 import com.illposed.osc.transport.OSCPortOutBuilder
+import hextant.core.editor.ListenerManager
 import reaktive.Observer
-import reaktive.event.event
 import reaktive.event.unitEvent
 import reaktive.observe
 import xenakis.impl.Logger
@@ -25,15 +25,14 @@ class OSCSuperColliderClient(
     private val waitingForReply = mutableMapOf<Int, CompletableFuture<String>>()
     private val eventExecutor = Executors.newSingleThreadExecutor()
 
+    private val listeners = ListenerManager.createWeakListenerManager<SuperColliderListener>()
+
     override val consoleMonitor: ConsoleMonitor = ConsoleMonitor(process)
 
     private val eventObservers = mutableListOf<Observer>()
     private val ready = unitEvent()
     private val serverBoot = unitEvent()
     private val treeClear = unitEvent()
-    private val updateSynthDef = event<String>()
-    private val updateProcessDef = event<String>()
-    private val playObj = event<String>()
 
     override fun onServerBooted(action: () -> Unit): Observer {
         val observer = serverBoot.stream.observe(action)
@@ -49,11 +48,6 @@ class OSCSuperColliderClient(
         eventObservers.add(ready.stream.observe(action))
     }
 
-    override val updatedSynthDef get() = updateSynthDef.stream
-    override val updatedProcessDef get() = updateProcessDef.stream
-
-    override val onPlayObj get() = playObj.stream
-
     override var sampleRate: Double = -1.0
         private set
 
@@ -62,6 +56,10 @@ class OSCSuperColliderClient(
         isDaemon = true
         start()
     }
+
+    override fun addListener(listener: SuperColliderListener) = listeners.addListener(listener)
+
+    override fun removeListener(listener: SuperColliderListener) = listeners.removeListener(listener)
 
     override fun sendAsync(address: String, arguments: List<Any>) {
         val adr = if (!address.startsWith('/')) "/$address" else address
@@ -101,6 +99,10 @@ class OSCSuperColliderClient(
                 }
             }
             val path = String(buf, 0, 8)
+            val content = getContentString(buf)
+            eventExecutor.execute {
+                listeners.notifyListeners { onMessage(path, content) }
+            }
             when {
                 path.startsWith("/ready") -> eventExecutor.execute {
                     ready.fire()
@@ -115,31 +117,15 @@ class OSCSuperColliderClient(
                     treeClear.fire()
                 }
 
-                path.startsWith("/updated") -> eventExecutor.execute {
-                    val str = getContentString(buf)
-                    val type = str.substringBefore(":")
-                    val name = str.substringAfter(":")
-                    when (type) {
-                        "synth_def" -> updateSynthDef.fire(name)
-                        "process_def" -> updateProcessDef.fire(name)
-                    }
-                }
-
-                path.startsWith("/playobj") -> eventExecutor.execute {
-                    val name = getContentString(buf)
-                    playObj.fire(name)
-                }
-
                 path.startsWith("/reply") -> {
-                    val result = getContentString(buf)
                     val id = getId(buf)
-                    Logger.fine("Completed id: $id, result: $result", Logger.Category.SuperCollider)
+                    Logger.fine("Completed id: $id, result: $content", Logger.Category.SuperCollider)
                     val future = waitingForReply.remove(id)
                     if (future == null) {
                         Logger.error("Wasn't waiting for a reply for id $id")
                         continue
                     }
-                    future.complete(result)
+                    future.complete(content)
                 }
 
                 path.startsWith("/error") -> {

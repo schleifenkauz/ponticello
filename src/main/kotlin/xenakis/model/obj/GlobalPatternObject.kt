@@ -39,6 +39,10 @@ class GlobalPatternObject(
     override val canCopy: Boolean
         get() = true
 
+    override fun ScWriter.sync() {
+        createObject()
+    }
+
     override fun copy(name: String): NamedObject = GlobalPatternObject(reactiveVariable(name), patternCode.clone())
 
     override fun ScWriter.createObject() {

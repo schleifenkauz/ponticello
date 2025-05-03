@@ -40,9 +40,9 @@ abstract class RootScorePane(score: Score, context: Context) : ScorePane(score, 
     final override val absolutePosition: ObjectPosition
         get() = ObjectPosition.ZERO
 
-    init {
-        heightProperty().addListener { _ -> repaint() }
-        widthProperty().addListener { _ -> repaint() }
+    fun initialize() {
+        listenForEvents()
+        this.score.addListener(this)
     }
 
     override fun listenForEvents() {

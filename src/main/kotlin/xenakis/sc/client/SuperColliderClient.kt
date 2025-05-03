@@ -3,7 +3,6 @@ package xenakis.sc.client
 import bundles.PublicProperty
 import bundles.publicProperty
 import reaktive.Observer
-import reaktive.event.EventStream
 import xenakis.impl.Logger
 import xenakis.impl.Logger.Category
 import xenakis.impl.canSuperColliderTalkToMe
@@ -11,16 +10,17 @@ import xenakis.impl.writeCode
 import java.util.concurrent.CompletableFuture
 
 interface SuperColliderClient : SuperColliderContext {
+    val sampleRate: Double
+
     fun onServerBooted(action: () -> Unit): Observer
+
     fun onTreeCleared(action: () -> Unit)
+
     fun onClientReady(action: () -> Unit)
 
-    val updatedSynthDef: EventStream<String>
-    val updatedProcessDef: EventStream<String>
+    fun addListener(listener: SuperColliderListener)
 
-    val onPlayObj: EventStream<String>
-
-    val sampleRate: Double
+    fun removeListener(listener: SuperColliderListener)
 
     fun sendAsync(address: String, arguments: List<Any> = emptyList())
 

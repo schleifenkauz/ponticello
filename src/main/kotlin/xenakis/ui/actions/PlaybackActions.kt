@@ -9,6 +9,7 @@ import org.kordamp.ikonli.material2.Material2MZ
 import org.kordamp.ikonli.materialdesign2.MaterialDesignM
 import reaktive.value.binding.map
 import reaktive.value.now
+import xenakis.model.flow.NodeTree
 import xenakis.model.player.Recorder
 import xenakis.model.player.ScorePlayer
 import xenakis.model.project.SERVER_OPTIONS
@@ -16,6 +17,7 @@ import xenakis.model.project.get
 import xenakis.model.registry.BusRegistry
 import xenakis.model.registry.reference
 import xenakis.sc.Rate
+import xenakis.sc.client.SuperColliderClient
 import xenakis.ui.launcher.XenakisLauncher.Companion.currentProject
 import xenakis.ui.registry.SearchableBusListView
 
@@ -50,7 +52,14 @@ object PlaybackActions : Action.Collector<ScorePlayer>({
         description("Stop playback and free all Synths")
         shortcut("Ctrl+PERIOD")
         icon(Material2MZ.STOP)
-        executes { player -> player.reset() }
+        executes { p ->
+            p.context[Recorder].stopRecording()
+            for (player in ScorePlayer.all()) {
+                player.pause()
+            }
+            p.context[NodeTree].clear()
+            p.context[SuperColliderClient].run("s.freeAll")
+        }
     }
     addAction("Toggle recording") {
         shortcut("Ctrl+Shift+R")

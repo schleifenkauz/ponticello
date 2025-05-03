@@ -15,6 +15,7 @@ abstract class AbstractRenamableObject : RenamableObject, AbstractNamedObject() 
     override fun canRenameTo(newName: String): Boolean = registry != null && !registry!!.has(newName)
 
     override fun rename(newName: String) {
+        if (newName == name.now) return
         context[UndoManager].record(RenameEdit(this, name.now, newName))
         mutableName.now = newName
     }

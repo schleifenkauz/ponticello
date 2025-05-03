@@ -44,19 +44,17 @@ class EnvelopeControl(
     override fun ScWriter.generatePreparationCode(
         obj: ParameterizedObject, uniqueName: String,
         parameter: String, spec: ControlSpec,
-        associatedServerObjects: MutableList<String>,
         context: CodegenContext,
     ) {
         spec as NumericalControlSpec
         val envelopeCode = points.code(warp = spec.warp)
-        val auxiliaryVarName = uniqueArgumentName(uniqueName, parameter)
+        val auxiliaryVarName = auxilBusName(uniqueName, parameter)
         when (context) {
             CodegenContext.Synth, CodegenContext.SubArg -> {
                 +"$auxiliaryVarName  = Bus.control(s, 1)"
                 val auxiliarySynthName = auxilSynthName(uniqueName, parameter)
                 val synthName = "${obj.superColliderPrefix}$uniqueName"
                 +"$auxiliarySynthName = { $envelopeCode.kr }.play(target: $synthName, outbus: $auxiliaryVarName, fadeTime: 0, addAction: 'addBefore')"
-                associatedServerObjects.addAll(listOf(auxiliarySynthName, auxiliaryVarName))
             }
 
             CodegenContext.Process -> {
@@ -73,11 +71,11 @@ class EnvelopeControl(
         return when (context) {
             CodegenContext.Synth -> DecimalLiteral(points.points.first().value)
             CodegenContext.Process -> lambda("t") {
-                val argName = uniqueArgumentName(uniqueName, parameter)
+                val argName = auxilBusName(uniqueName, parameter)
                 Identifier(argName).send("at", Identifier("t"))
             }
 
-            else -> Identifier(uniqueArgumentName(uniqueName, parameter)).send("kr")
+            else -> Identifier(auxilBusName(uniqueName, parameter)).send("kr")
         }
     }
 
@@ -88,7 +86,7 @@ class EnvelopeControl(
         parameter: String,
         spec: ControlSpec,
     ) {
-        val auxiliaryVarName = uniqueArgumentName(uniqueName, parameter)
+        val auxiliaryVarName = auxilBusName(uniqueName, parameter)
         +"${synthVar}.map(\\$parameter, $auxiliaryVarName)"
     }
 }

@@ -20,6 +20,7 @@ import javafx.scene.input.Dragboard
 import javafx.scene.input.MouseButton
 import javafx.scene.input.MouseEvent
 import javafx.scene.layout.Pane
+import javafx.scene.paint.Color
 import javafx.scene.shape.Rectangle
 import reaktive.value.now
 import reaktive.value.reactiveVariable
@@ -30,7 +31,6 @@ import xenakis.model.obj.SynthDefObject
 import xenakis.model.player.ScorePlayer
 import xenakis.model.project.UI_STATE
 import xenakis.model.project.get
-import xenakis.model.project.score
 import xenakis.model.registry.*
 import xenakis.model.score.*
 import xenakis.sc.Identifier
@@ -63,6 +63,13 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
 
     abstract val pixelsPerSecond: Double
 
+    init {
+        styleClass("score-pane")
+        border = createBorder(Color.RED, 3.0)
+        heightProperty().addListener { _ -> repaint() }
+        widthProperty().addListener { _ -> repaint() }
+    }
+
     open fun snapToGrid(position: ObjectPosition): ObjectPosition =
         root.snapToGrid(position + absolutePosition) - absolutePosition
 
@@ -87,10 +94,6 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
     open fun getScoreY(screenY: Double): Decimal = (screenY / root.height).asY
 
     open fun getScreenY(scoreY: Decimal): Double = (scoreY * root.height).toDouble()
-
-    init {
-        styleClass("score-pane")
-    }
 
     protected open fun addTime(location: Decimal, amount: Decimal) {
         score.addTime(location, amount)
@@ -256,7 +259,6 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
     }
 
     private fun mouseClicked(ev: MouseEvent) {
-        if (score == context[currentProject].score && !ev.isShiftDown) selector.deselectAll()
         val (t, y) = snapToGrid(ev.x, ev.y)
         val duplicator = context[ScoreObjectDuplicator]
         when {
@@ -273,8 +275,8 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
                 score.addObject(duplicate, autoSelect = false)
             }
 
-            this is NavigableScorePane && ev.modifiers.isEmpty() -> {
-                context[ScoreObjectSelectionManager].deselectAll()
+            this is RootScorePane && ev.modifiers.isEmpty() -> {
+                selector.deselectAll()
                 requestFocus()
                 val player = context[ScorePlayer.CURRENT]
                 if (!(player.isPlaying.now)) {

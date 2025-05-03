@@ -20,8 +20,8 @@ class LiveSynthUpdater(obj: ParameterizedObject) : AbstractLiveUpdater(obj) {
         onBus: Boolean, remap: Boolean,
     ) {
         if (onBus) {
-            val varName = ParameterControl.uniqueArgumentName(uniqueName, parameter)
-            +"$varName.set($value)"
+            val busName = ParameterControl.auxilBusName(uniqueName, parameter)
+            +"$busName.set($value)"
             if (remap) remap(uniqueName, parameter)
         } else {
             val synthName = "${obj.superColliderPrefix}$uniqueName"
@@ -30,7 +30,7 @@ class LiveSynthUpdater(obj: ParameterizedObject) : AbstractLiveUpdater(obj) {
     }
 
     private fun ScWriter.remap(uniqueName: String, parameter: String) {
-        val busName = ParameterControl.uniqueArgumentName(uniqueName, parameter)
+        val busName = ParameterControl.auxilBusName(uniqueName, parameter)
         val synthVar = "${obj.superColliderPrefix}$uniqueName"
         +"$synthVar.map(\\$parameter, $busName)"
     }
@@ -78,7 +78,7 @@ class LiveSynthUpdater(obj: ParameterizedObject) : AbstractLiveUpdater(obj) {
         val auxiliarySynthName = ParameterControl.auxilSynthName(uniqueName, parameter)
         val placement = getAuxiliarySynthPlacement(parameter, uniqueName, replace = true)
         val action = guardAgainstReplaceNil(placement)
-        val auxiliaryBus = ParameterControl.uniqueArgumentName(uniqueName, parameter)
+        val auxiliaryBus = ParameterControl.auxilBusName(uniqueName, parameter)
         writer.appendLine(
             "$auxiliarySynthName = { $envelopeCode.kr }" +
                     ".play(target: ${placement.target}, outpus: $auxiliaryBus, fadeTime: 0.02, addAction: ${action});"

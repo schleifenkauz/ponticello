@@ -20,16 +20,12 @@ import reaktive.value.reactiveVariable
 import xenakis.impl.*
 import xenakis.model.flow.NodePlacement
 import xenakis.model.obj.AbstractRenamableObject
-import xenakis.model.player.ActiveObjectsManager
-import xenakis.model.player.ActiveScoreObject
-import xenakis.model.project.score
 import xenakis.model.registry.ScoreObjectRegistry
 import xenakis.model.score.Score.Companion.rootScore
 import xenakis.model.score.controls.EnvelopeControl
 import xenakis.model.score.controls.ParameterControl
 import xenakis.sc.ControlSpec
 import xenakis.sc.NumericalControlSpec
-import xenakis.sc.client.SuperColliderContext
 import xenakis.ui.impl.Direction
 import xenakis.ui.launcher.XenakisApp.Companion.primaryStage
 import xenakis.ui.launcher.XenakisLauncher.Companion.currentProject
@@ -90,13 +86,6 @@ sealed class ScoreObject : AbstractRenamableObject() {
 
     open val superColliderPrefix: String? get() = null
 
-    fun activeObjects(): List<ActiveScoreObject> = context[ActiveObjectsManager].activeInstances(this)
-
-    fun superColliderName(suffix: Int): String {
-        val prefix = superColliderPrefix ?: error("$this has no superColliderPrefix")
-        return "${prefix}${ActiveObjectsManager.uniqueName(name.now, suffix)}"
-    }
-
     open fun validate(): Boolean {
         return true
     }
@@ -110,14 +99,6 @@ sealed class ScoreObject : AbstractRenamableObject() {
     }
 
     override fun canRenameTo(newName: String): Boolean = !context[ScoreObjectRegistry].has(newName)
-
-    override fun rename(newName: String) {
-        if (name.now == newName) return
-        if (initialized) recordEdit(ScoreObjectEdit.Rename(oldName = name.now, newName = newName, this))
-        super.rename(newName)
-    }
-
-    open fun serverBooted(context: SuperColliderContext) {}
 
     fun setInitialSize(duration: Decimal, height: Decimal) {
         this.duration = duration
@@ -250,7 +231,7 @@ sealed class ScoreObject : AbstractRenamableObject() {
 
     fun removedFromScore(option: Score.RegistryOption) {
         if (option == Score.RegistryOption.KEEP_IN_REGISTRY) return
-        if (!context[currentProject].score.hasInstancesOf(this) && registry.has(this)) {
+        if (!context[currentProject].hasInstancesOf(this) && registry.has(this)) {
             val remove = option == Score.RegistryOption.REMOVE_WITHOUT_ASKING || YesNoPrompt(
                 "Score has no instances of $this anymore. Remove it from the registry?",
                 cancellable = false,

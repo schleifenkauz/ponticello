@@ -9,9 +9,9 @@ import javafx.scene.layout.HBox
 import xenakis.impl.Decimal
 
 class TimeCodeView : HBox() {
-    private val minutes = Label() styleClass "time-code-label"
-    private val seconds = Label() styleClass "time-code-label"
-    private val hundreths = Label() styleClass "time-code-label"
+    private val minutes = Label("00") styleClass "time-code-label"
+    private val seconds = Label("00") styleClass "time-code-label"
+    private val hundreths = Label("00") styleClass "time-code-label"
 
     init {
         styleClass("time-code", "toolbar-part")

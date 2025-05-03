@@ -28,7 +28,6 @@ class ScoreObjectGroupView(
         children.add(scorePane)
         scorePane.prefWidthProperty().bind(widthProperty())
         scorePane.prefHeightProperty().bind(heightProperty())
-        scorePane.repaint()
     }
 
     override fun setupDetailPane(pane: DetailPane) {
@@ -39,8 +38,5 @@ class ScoreObjectGroupView(
     override fun rescale() {
         super.rescale()
         scorePane.repaint()
-        for (view in scorePane.allViews) {
-            view.rescale()
-        }
     }
 }

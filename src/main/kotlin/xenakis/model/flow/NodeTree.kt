@@ -14,8 +14,12 @@ class NodeTree(private val client: SuperColliderClient) {
 
     fun addNode(node: AudioNode): NodePlacement {
         var idx = activeNodes.binarySearch(node)
-        if (idx >= 0) error("Node $node already exists")
-        idx = -(idx + 1)
+        if (idx >= 0) {
+            removeNode(node)
+            Logger.warn("Node $node already in node tree", Logger.Category.Playback)
+        } else {
+            idx = -(idx + 1)
+        }
         activeNodes.add(idx, node)
         observeNode(node)
         return if (idx == 0) NodePlacement.head("s.defaultGroup")

@@ -64,11 +64,10 @@ data class AttackReleaseControl(
     override fun ScWriter.generatePreparationCode(
         obj: ParameterizedObject, uniqueName: String,
         parameter: String, spec: ControlSpec,
-        associatedServerObjects: MutableList<String>,
         context: CodegenContext
     ) {
         val ctrl = generateEnvelope(obj)
-        return with(ctrl) { generatePreparationCode(obj, uniqueName, parameter, spec, associatedServerObjects, context) }
+        return with(ctrl) { generatePreparationCode(obj, uniqueName, parameter, spec, context) }
     }
 
     override fun ScWriter.applyToSynth(

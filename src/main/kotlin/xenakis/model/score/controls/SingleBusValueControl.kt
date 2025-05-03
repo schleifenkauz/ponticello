@@ -34,7 +34,6 @@ data class SingleBusValueControl(val bus: ReactiveVariable<BusReference>) : Para
     override fun ScWriter.generatePreparationCode(
         obj: ParameterizedObject, uniqueName: String,
         parameter: String, spec: ControlSpec,
-        associatedServerObjects: MutableList<String>,
         context: CodegenContext,
     ) {
         if (context == CodegenContext.Process) {

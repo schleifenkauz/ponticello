@@ -11,6 +11,7 @@ import reaktive.value.binding.map
 import xenakis.impl.ColorSerializer
 import xenakis.impl.Decimal
 import xenakis.model.obj.AbstractRenamableObject
+import xenakis.model.player.ScorePlayer
 import xenakis.model.registry.NamedObjectList
 import xenakis.model.registry.ObjectList
 import xenakis.model.registry.ObjectListSerializer
@@ -118,7 +119,7 @@ class AudioFlowGroup(
         }
     }
 
-    fun createFlows() {
+    fun createFlows() = ScorePlayer.execute {
         val placement = nodeTree.addNode(this)
         addToServer(placement)
     }
@@ -134,7 +135,7 @@ class AudioFlowGroup(
         }
     }
 
-    private fun freeGroup() {
+    private fun freeGroup() = ScorePlayer.execute {
         context[NodeTree].removeNode(this)
         client.run("${superColliderName.now}.free")
     }

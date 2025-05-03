@@ -25,11 +25,12 @@ class LiveLoopObject(
         get() = config.getQuantization()
 
     override fun initialize(context: Context) {
-        player = ScorePlayer(context)
         val myContext = context.extend {
             set(UndoManager, UndoManager.newInstance())
-            set(ScorePlayer.CURRENT, player)
         }
+        player = ScorePlayer.create(myContext)
+        player.loopingActivated.set(true)
+        myContext[ScorePlayer.CURRENT] = player
         super.initialize(myContext)
         config.initialize(myContext)
         rootScore.initialize(myContext, this)

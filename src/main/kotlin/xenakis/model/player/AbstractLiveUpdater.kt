@@ -97,7 +97,7 @@ abstract class AbstractLiveUpdater(protected val obj: ParameterizedObject) : Par
 
     private fun freeParameterBuses(parameter: String) {
         runOnActiveObjects { name, _ ->
-            val busName = ParameterControl.uniqueArgumentName(name, parameter)
+            val busName = ParameterControl.auxilBusName(name, parameter)
             +"$busName.free"
         }
     }
@@ -207,7 +207,7 @@ abstract class AbstractLiveUpdater(protected val obj: ParameterizedObject) : Par
         }
         if (!oldControl.allocatesBus(obj) && newControl.allocatesBus(obj)) {
             runOnActiveObjects { name, _ ->
-                val busName = ParameterControl.uniqueArgumentName(name, parameter.name.now)
+                val busName = ParameterControl.auxilBusName(name, parameter.name.now)
                 +"$busName.free"
             }
         }
@@ -254,7 +254,7 @@ abstract class AbstractLiveUpdater(protected val obj: ParameterizedObject) : Par
     ) {
         val auxiliarySynthName = ParameterControl.auxilSynthName(uniqueName, parameter)
         val substituted = UGenControl.substituteControlParameters(expr, obj, uniqueName)
-        val busName = ParameterControl.uniqueArgumentName(uniqueName, parameter)
+        val busName = ParameterControl.auxilBusName(uniqueName, parameter)
         writer.append("$auxiliarySynthName = ")
         writer.appendBlock("", endLine = false) {
             substituted.code(writer, obj.context)

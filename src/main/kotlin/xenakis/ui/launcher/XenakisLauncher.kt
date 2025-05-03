@@ -24,6 +24,9 @@ import xenakis.impl.registerImplementationsFromClasspath
 import xenakis.model.ScriptObject
 import xenakis.model.ServerOptions
 import xenakis.model.Settings
+import xenakis.model.flow.NodeTree
+import xenakis.model.player.ActiveObjectsManager
+import xenakis.model.player.Recorder
 import xenakis.model.project.SERVER_OPTIONS
 import xenakis.model.project.XenakisProject
 import xenakis.model.project.XenakisProject.Companion.projectDirectory
@@ -36,6 +39,7 @@ import xenakis.ui.impl.showDialog
 import xenakis.ui.impl.tryWithAlert
 import xenakis.ui.launcher.XenakisApp.Companion.primaryStage
 import xenakis.ui.midi.ContextualMidiReceiver
+import xenakis.ui.score.ScoreObjectDuplicator
 import java.io.File
 import kotlin.concurrent.thread
 import kotlin.system.exitProcess
@@ -229,6 +233,11 @@ class XenakisLauncher {
                     progressBar.displayProgress(0.1, "SuperCollider started, booting server...")
                     try {
                         context[SuperColliderClient] = client
+                        context[ActiveObjectsManager] = ActiveObjectsManager(context)
+                        client.addListener(context[ActiveObjectsManager])
+                        context[NodeTree] = NodeTree(client)
+                        context[ScoreObjectDuplicator] = ScoreObjectDuplicator()
+                        context[Recorder] = Recorder(context)
                         clientReady(client)
                     } catch (e: Exception) {
                         Logger.error("Error while $description", e)

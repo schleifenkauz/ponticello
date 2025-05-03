@@ -17,5 +17,5 @@ class ActiveScoreObject(
         get() = ActiveObjectsManager.uniqueName(obj.name.now, suffix)
 
     override val superColliderName: String
-        get() = obj.superColliderName(suffix)
+        get() = obj.superColliderPrefix + uniqueName
 }

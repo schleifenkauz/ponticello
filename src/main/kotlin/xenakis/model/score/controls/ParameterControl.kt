@@ -27,7 +27,6 @@ sealed class ParameterControl : AbstractContextualObject() {
     open fun ScWriter.generatePreparationCode(
         obj: ParameterizedObject, uniqueName: String,
         parameter: String, spec: ControlSpec,
-        associatedServerObjects: MutableList<String>,
         context: CodegenContext,
     ) {
     }
@@ -63,8 +62,6 @@ sealed class ParameterControl : AbstractContextualObject() {
     }
 
     companion object {
-        fun auxilSynthName(uniqueName: String, parameter: String) = "~auxil_synth_${uniqueName}_${parameter}"
-
         @JvmStatic
         protected fun checkResolution(reference: ObjectReference<*>, type: String): Boolean = when {
             reference.isResolved.now -> true
@@ -79,6 +76,14 @@ sealed class ParameterControl : AbstractContextualObject() {
             }
         }
 
-        fun uniqueArgumentName(uniqueName: String, parameter: String) = "~arg_${uniqueName}_$parameter"
+        fun uniqueArgumentName(uniqueName: String, parameter: String) = "~args_${uniqueName}[\\$parameter]"
+
+        fun auxilBusesVar(uniqueName: String) = "~auxil_buses_$uniqueName"
+
+        fun auxilBusName(uniqueName: String, parameter: String) = "${auxilBusesVar(uniqueName)}[\\$parameter]"
+
+        fun auxilSynthsVar(uniqueName: String) = "~auxil_synths_$uniqueName"
+
+        fun auxilSynthName(uniqueName: String, parameter: String) = "${auxilSynthsVar(uniqueName)}[\\${parameter}]"
     }
 }

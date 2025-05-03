@@ -121,7 +121,7 @@ class EnvelopeEditor(
             when {
                 ev.button == PRIMARY && ev.isControlDown -> {
                     val root = parentPane.root
-                    if (root is NavigableScorePane) {
+                    if (root is RootScorePane) {
                         root.magnifyEnvelope(this)
                     }
                 }

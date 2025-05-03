@@ -20,12 +20,6 @@ class NavigableScorePane(score: Score, context: Context) : RootScorePane(score, 
     val displayedDuration get() = displayEnd - displayStart
     init {
         styleClass.add("score-view")
-        isFocusTraversable = true
-        listenForEvents()
-    }
-
-    fun initialize() {
-        this.score.addListener(this)
     }
 
     fun displayWholeScore() {

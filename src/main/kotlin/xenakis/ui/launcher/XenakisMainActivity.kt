@@ -16,10 +16,8 @@ import xenakis.impl.Logger
 import xenakis.model.ScriptObject
 import xenakis.model.Settings
 import xenakis.model.flow.AudioFlows
-import xenakis.model.flow.NodeTree
 import xenakis.model.obj.ParameterizedObject
-import xenakis.model.player.ActiveObjectsManager
-import xenakis.model.player.Recorder
+import xenakis.model.player.PlaybackMessageListener
 import xenakis.model.player.ScorePlayer
 import xenakis.model.project.*
 import xenakis.sc.client.SuperColliderClient
@@ -97,6 +95,7 @@ class XenakisMainActivity(val project: XenakisProject) : Activity() {
     private lateinit var observer: Observer
 
     private lateinit var player: ScorePlayer
+    private lateinit var playbackMessageListener: PlaybackMessageListener
 
     val shellWindow = SuperColliderOutputPane.createShellWindow(context)
 
@@ -120,19 +119,16 @@ class XenakisMainActivity(val project: XenakisProject) : Activity() {
         context[TimeCodeView] = timeCodeView
         context[ScorePane.CURRENT_ROOT] = scoreView
         flowGroupLines = FlowGroupLines(project.flows, scoreView)
-        val duplicator = ScoreObjectDuplicator()
-        project.context[ScoreObjectDuplicator] = duplicator
-        duplicator.registerRootPane(scoreView)
+        context[ScoreObjectDuplicator].registerRootPane(scoreView)
         project.context[ScoreObjectSelectionManager] = ScoreObjectSelectionManager(project.context, scoreView)
     }
 
     private fun setupPlayback() {
-        context[ActiveObjectsManager] = ActiveObjectsManager(project.flows)
-        context[NodeTree] = NodeTree(context[SuperColliderClient])
-        context[Recorder] = Recorder(context)
-        player = ScorePlayer(context)
+        player = ScorePlayer.create(context)
         player.attachToScoreView(scoreView)
-        context[ScorePlayer.CURRENT] = ScorePlayer(context)
+        context[ScorePlayer.CURRENT] = player
+        playbackMessageListener = PlaybackMessageListener(project.objects, project.flows, player)
+        context[SuperColliderClient].addListener(playbackMessageListener)
         context[AudioFlows].createAllFlows()
     }
 

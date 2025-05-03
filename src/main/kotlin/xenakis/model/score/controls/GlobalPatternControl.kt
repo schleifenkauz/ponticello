@@ -26,7 +26,6 @@ class GlobalPatternControl(val pattern: ReactiveVariable<GlobalPatternReference>
     override fun ScWriter.generatePreparationCode(
         obj: ParameterizedObject, uniqueName: String,
         parameter: String, spec: ControlSpec,
-        associatedServerObjects: MutableList<String>,
         context: CodegenContext,
     ) {
         if (context == CodegenContext.Process) {

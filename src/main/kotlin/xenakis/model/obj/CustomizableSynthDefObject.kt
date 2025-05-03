@@ -46,7 +46,7 @@ class CustomizableSynthDefObject(
         appendBlock("fork") {
             createObject()
             +"s.sync"
-            +"~xenakis_addr.sendMsg('/updated', 'synth_def:${name.now}')"
+            +"~xenakis_addr.sendMsg('/updated', -1, 'synth_def:${name.now}')"
         }
     }
 
@@ -57,16 +57,25 @@ class CustomizableSynthDefObject(
 
     override fun ScWriter.createObject() {
         append("SynthDef(\\${name.now}, ")
-        val parameterVariables = parameters.map { p -> Identifier(p.name.now) } + Identifier("duration")
+        val extraVariables = listOf("duration_", "attack_", "release_", "sustain_", "level_", "env_")
+        val parameterVariables = parameters.map { p -> Identifier(p.name.now) }
         val parameterAssignments = parameters.map { p ->
             val parameterCode = RawScExpr("\\${p.name.now}.${p.spec.now.code}")
             Assignment(Identifier(p.name.now), parameterCode)
-        } + Assignment(Identifier("duration"), SymbolLiteral("duration").send("ir"))
+        }
         val variables = ugenGraph?.editor?.result?.now?.variables.orEmpty()
+        val extraStatements = listOf(
+            RawScExpr("duration_ = \\duration.ir"),
+            RawScExpr("attack_ = \\attack.kr(0.01)"),
+            RawScExpr("release_ = \\release.kr(0.01)"),
+            RawScExpr("level_ = \\level.kr(1)"),
+            RawScExpr("env_ = Env.asr(attack_, level_, release_).kr(Done.freeSelf, \\gate.kr(1))"),
+            RawScExpr("Env([0, 0], [duration_]).kr(\\afterDuration.ir(Done.freeSelf))")
+        )
         val statements = ugenGraph?.editor?.result?.now?.statements.orEmpty()
         val block = CodeBlock(
-            variables = parameterVariables + variables,
-            statements = parameterAssignments + statements
+            variables = extraVariables.map(::Identifier) + parameterVariables + variables,
+            statements = extraStatements + parameterAssignments + statements
         )
         val graphFunc = ScFunction(emptyList(), block)
         graphFunc.code(this, context)

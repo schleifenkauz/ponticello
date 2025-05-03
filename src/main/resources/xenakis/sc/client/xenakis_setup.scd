@@ -33,6 +33,8 @@ ServerTree.add {
     ~xenakis_addr.sendMsg('/cleared');
 };
 
+~play_start = ();
+
 ~setupHandler = { arg address, handler;
 	OSCdef(address, {
 		arg msg, time, addr, recvPort;
@@ -78,34 +80,35 @@ OSCdef('run', {
 		}
 	}
 }, 'run');
-OSCdef('start_play', {
-	arg msg;
-	~play_start = TempoClock.beats;
-	~synths = [].asList;
-	~tasks = [].asList;
+OSCdef('start_play', { |msg|
+    var player_id = msg[1];
+    "START PLAY ".post; player_id.postln;
+	~play_start[player_id] = TempoClock.beats;
 }, '/start_play');
-OSCdef('pause_play', {
-    ~play_start = -1;
-    ~synths.copy.do(_.free); //copy to avoid concurrent modification
-    ~tasks.do(_.stop);
-    ~tasks = [];
+OSCdef('pause_play', { |msg|
+    var player_id = msg[1];
+    "PAUSE_PLAY ".post; player_id.postln;
+    ~play_start[player_id] = -1;
 }, '/pause_play');
 OSCdef('schedule', {
 	arg msg;
-	var time = msg[2].asFloat, code = msg[3], fct, my_play_start = ~play_start;
+	var time = msg[2].asFloat, player_id = msg[3], code = msg[4], fct, my_play_start;
+	my_play_start = ~play_start[player_id];
+	'SCHEDULE: '.post; player_id.post; ' '.post; my_play_start.postln;
 	fct = this.compile(code.asString);
 	if (fct == nil) { "Compilation error".throw };
-	'SCHEDULE: '.postln;
-	code.postln;
-	TempoClock.schedAbs(max(~play_start + time, TempoClock.beats)) {
-	    if (my_play_start == ~play_start) {
-		    try { fct.value } { |error|
-				~xenakis_addr.sendMsg('/error', -1, error.what);
-				error.throw;
-			}
-		};
-		nil;
-	}
+    code.postln;
+	if (my_play_start != nil) {
+        TempoClock.schedAbs(max(my_play_start + time, TempoClock.beats)) {
+            if (my_play_start == ~play_start[player_id]) {
+                try { fct.value } { |error|
+                    ~xenakis_addr.sendMsg('/error', -1, error.what);
+                    error.throw;
+                }
+            };
+            nil;
+        }
+    }
 }, '/schedule');
 ~setupHandler.('isSynthDef', { |name|
 	SynthDescLib.global.synthDescs[name.asSymbol] != nil;

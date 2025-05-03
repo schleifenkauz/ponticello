@@ -151,7 +151,6 @@ abstract class ScoreObjectView(
     protected open fun initialize() {
         initializeLayout()
         setBackground()
-
         instance.addListener(this)
         instance.obj.addListener(this)
         isInitialized = true

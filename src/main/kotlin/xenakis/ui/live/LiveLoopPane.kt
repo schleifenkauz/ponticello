@@ -6,6 +6,7 @@ import fxutils.infiniteSpace
 import javafx.scene.layout.HBox
 import javafx.scene.layout.Priority
 import javafx.scene.layout.VBox
+import reaktive.Observer
 import xenakis.model.live.LiveLoopObject
 import xenakis.ui.actions.PlaybackActions
 import xenakis.ui.actions.toolbarPart
@@ -17,11 +18,14 @@ class LiveLoopPane(private val obj: LiveLoopObject) : VBox() {
     private val context = obj.context
     private val timeCodeView = TimeCodeView()
     private val scorePane = LiveScorePane(obj)
+    private val resizeObserver: Observer
 
     init {
         setupPlayback()
         setVgrow(scorePane, Priority.ALWAYS)
         children.addAll(createPlaybackBar(), scorePane)
+        scorePane.initialize()
+        resizeObserver = obj.config.duration().observe { _ -> scorePane.repaint() }
     }
 
     private fun setupPlayback() {

@@ -8,6 +8,7 @@ import xenakis.impl.Logger
 import xenakis.impl.json
 import xenakis.model.flow.AudioFlows
 import xenakis.model.obj.ContextualObject
+import xenakis.model.score.ScoreObject
 import xenakis.sc.client.SuperColliderClient
 import xenakis.ui.launcher.ProgressIndicator
 import java.io.File
@@ -52,7 +53,7 @@ class XenakisProject private constructor(val components: Map<Component<out Conte
         }
     }
 
-    fun save(component: Component<out  ContextualObject>) {
+    fun save(component: Component<out ContextualObject>) {
         val file = dataDir.resolve("${component.name}.json")
         val value = components.getValue(component)
         try {
@@ -84,13 +85,16 @@ class XenakisProject private constructor(val components: Map<Component<out Conte
         get(SERVER_OPTIONS).reboot(context[SuperColliderClient])
     }
 
+    fun hasInstancesOf(obj: ScoreObject): Boolean =
+        score.hasInstancesOf(obj) || get(LIVE_LOOPS).any { loop -> loop.rootScore.hasInstancesOf(obj) }
+
     companion object {
         val projectDirectory = bundles.publicProperty<File>("Project directory")
 
         fun loadFrom(
             folder: File,
             indicator: ProgressIndicator,
-            targetProgress: Double
+            targetProgress: Double,
         ): XenakisProject {
             val data = folder.resolve("xenakis_data")
             val progressPerComponent = (targetProgress - indicator.progress) / allComponents.size

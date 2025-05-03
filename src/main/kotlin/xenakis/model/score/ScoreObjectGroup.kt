@@ -17,7 +17,6 @@ import xenakis.impl.zero
 import xenakis.model.flow.NodePlacement
 import xenakis.model.obj.BusReference
 import xenakis.model.registry.ObjectReference
-import xenakis.sc.client.SuperColliderContext
 import xenakis.sc.editor.BusSelector
 import xenakis.ui.impl.Direction
 
@@ -154,13 +153,6 @@ class ScoreObjectGroup(
             for (inst in score.objectInstances) {
                 inst.finishMove(notifyScore = false, recordEdit = false)
             }
-        }
-    }
-
-    override fun serverBooted(context: SuperColliderContext) {
-        super.serverBooted(context)
-        for (obj in score.objects) {
-            obj.serverBooted(context)
         }
     }
 

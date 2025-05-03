@@ -33,16 +33,18 @@ data class ValueControl(val value: ReactiveVariable<Decimal>) : ParameterControl
     override fun ScWriter.generatePreparationCode(
         obj: ParameterizedObject, uniqueName: String,
         parameter: String, spec: ControlSpec,
-        associatedServerObjects: MutableList<String>,
         context: CodegenContext,
     ) {
-        val argVar = uniqueArgumentName(uniqueName, parameter)
         when (context) {
-            CodegenContext.Process -> +"$argVar = ${value.now}"
+            CodegenContext.Process -> {
+                val argVar = uniqueArgumentName(uniqueName, parameter)
+                +"$argVar = ${value.now}"
+            }
 
             else -> {
-                +"$argVar = Bus.control(s, 1)"
-                +"$argVar.set(${value.now})"
+                val busName = auxilBusName(uniqueName, parameter)
+                +"$busName = Bus.control(s, 1)"
+                +"$busName.set(${value.now})"
             }
         }
     }
@@ -51,7 +53,7 @@ data class ValueControl(val value: ReactiveVariable<Decimal>) : ParameterControl
         obj: ParameterizedObject, uniqueName: String,
         synthVar: String, parameter: String, spec: ControlSpec,
     ) {
-        val busName = uniqueArgumentName(uniqueName, parameter)
+        val busName = auxilBusName(uniqueName, parameter)
         +"$synthVar.map('$parameter', $busName)"
     }
 
@@ -63,7 +65,7 @@ data class ValueControl(val value: ReactiveVariable<Decimal>) : ParameterControl
             Identifier(uniqueArgumentName(uniqueName, parameter))
         }
 
-        CodegenContext.SubArg -> Identifier(uniqueArgumentName(uniqueName, parameter)).send("kr")
+        CodegenContext.SubArg -> Identifier(auxilBusName(uniqueName, parameter)).send("kr")
         CodegenContext.Synth -> DecimalLiteral(value.now)
     }
 

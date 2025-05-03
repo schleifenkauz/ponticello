@@ -54,6 +54,6 @@ data class PlayObject(
             return
         }
         val name = obj.name.now
-        writer.append("~xenakis_addr.sendMsg(\\playobj, '$name')")
+        writer.append("~xenakis_addr.sendMsg(\\play, -1, '$name')")
     }
 }

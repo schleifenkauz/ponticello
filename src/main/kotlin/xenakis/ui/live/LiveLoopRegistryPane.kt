@@ -1,5 +1,6 @@
 package xenakis.ui.live
 
+import fxutils.SubWindow
 import fxutils.actions.ContextualizedAction
 import fxutils.actions.collectActions
 import javafx.event.Event
@@ -24,6 +25,11 @@ class LiveLoopRegistryPane(registry: LiveLoopRegistry) : LiveObjectRegistryPane<
         get() = setOf(DisplayMode.SubWindow, DisplayMode.DetailsPane)
 
     override fun getContent(obj: LiveLoopObject, mode: DisplayMode): Parent = LiveLoopPane(obj)
+
+    override fun configureSubWindow(window: SubWindow) {
+        window.width = 400.0
+        window.height = 400.0
+    }
 
     override fun createNewObject(name: String, ev: Event?): LiveLoopObject? {
         val config = LoopConfig.createDefault()

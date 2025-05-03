@@ -16,10 +16,15 @@ import xenakis.ui.misc.PlayHead
 import xenakis.ui.score.ScoreObjectGroupView
 import xenakis.ui.score.ScoreObjectView
 import xenakis.ui.score.ScorePane
+import java.lang.ref.WeakReference
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.Executors
 
-class ScorePlayer(
-    val context: Context
+class ScorePlayer private constructor(
+    val id: Int, val context: Context,
 ) : AbstractPlayer(DELTA_T, context[Settings].lookAhead) {
+    private var loopedTime: Decimal = zero
+
     private var isAttached = false
     private lateinit var rootScore: Score
     lateinit var events: ScoreEventCollector
@@ -48,7 +53,6 @@ class ScorePlayer(
     }
 
     private fun attachTo(score: Score) {
-        detach()
         rootScore = score
         events = ScoreEventCollector(score, context[Settings])
         events.player = this
@@ -99,14 +103,17 @@ class ScorePlayer(
     }
 
     override fun startPlay(startFrom: Decimal): Boolean {
-        client.sendAsync("start_play")
-        context[Recorder].startingPlayback()
-        Logger.fine("Starting playback at $startFrom", Logger.Category.Playback)
-        lastPlayFrom = startFrom
-        val activeObjects = activeObjects(startFrom, delta = context[Settings].lookAhead)
-        for ((_, position, inst) in activeObjects) {
-            if (!inst.muted.now) {
-                scheduleInstantly(inst, position)
+        execute {
+            client.sendAsync("start_play", listOf(id))
+            context[Recorder].startingPlayback()
+            Logger.fine("Starting playback at $startFrom", Logger.Category.Playback)
+            lastPlayFrom = startFrom
+            loopedTime = zero
+            val activeObjects = activeObjects(startFrom, delta = context[Settings].lookAhead)
+            for ((_, position, inst) in activeObjects) {
+                if (!inst.muted.now) {
+                    scheduleInstantly(inst, position)
+                }
             }
         }
         return true
@@ -120,12 +127,12 @@ class ScorePlayer(
         scheduleObject(obj, position, cutoff = -delta.coerceAtMost(zero))
     }
 
-    fun stopPlayBackInstantly(obj: ScoreObject, pos: ObjectPosition) {
-        val suffix = context[ActiveObjectsManager].remove(obj, pos) ?: return
-        stopObject(obj, pos, suffix)
+    override fun looped() {
+        loopedTime += maxTime
+        events.unscheduleAll()
     }
 
-    override fun scheduleEvents(t: Decimal, delta: Decimal) {
+    override fun scheduleEvents(t: Decimal, delta: Decimal) = execute {
         for (ev in events.eventsAt(t - delta, delta * 5)) {
             val (type, position, inst) = ev
             if (inst.muted.now) continue
@@ -137,38 +144,16 @@ class ScorePlayer(
                 }
 
                 Event.Type.ObjectEnd -> {
-                    Logger.fine("ObjectEnd: $obj at $position", Logger.Category.Playback)
-                    val startPos = position + ObjectPosition(-obj.duration, zero)
-                    if (obj.duration == zero) continue
-                    val suffix = activeObjects.remove(obj, startPos) ?: continue
-                    stopObject(obj, startPos, suffix)
+//                    Logger.fine("ObjectEnd: $obj at $position", Logger.Category.Playback)
+//                    val startPos = position + ObjectPosition(-obj.duration, zero)
+//                    if (obj.duration == zero) continue
+//                    val suffix = activeObjects.remove(obj, startPos) ?: continue
+//                    stopObject(obj, startPos, suffix)
                 }
 
                 else -> {}
             }
             ev.scheduled = true
-        }
-    }
-
-    private fun stopObject(obj: ScoreObject, startPos: ObjectPosition, suffix: Int) {
-        when (obj) {
-            is SynthObject -> {
-                try {
-                    val node = SynthObjectNode(obj, startPos, suffix)
-                    nodeTree.removeNode(node)
-                } catch (e: Exception) {
-                    Logger.error("Failed to remove $obj from audio flow graph", e, Logger.Category.Playback)
-                }
-                val name = obj.superColliderName(suffix)
-                client.run("if ($name != nil) { $name.free; } { \"'$name' not found\".postln; }")
-            }
-
-            is ProcessObject, is TaskObject -> {
-                val name = obj.superColliderName(suffix)
-                client.run("$name.stop;")
-            }
-
-            else -> {}
         }
     }
 
@@ -179,9 +164,9 @@ class ScorePlayer(
             Logger.error("Failed to validate $obj", e, Logger.Category.Playback)
             return
         }
-        val time = absolutePosition.time - lastPlayFrom
+        val time = absolutePosition.time + loopedTime - lastPlayFrom
         val timeForExecution = (time + context[Settings].scLangLatency.now).toString()
-        val suffix = try {
+        val activeObject = try {
             activeObjects.insert(this, obj, absolutePosition)
         } catch (e: Exception) {
             Logger.error("Failed to insert $obj into active object manager", e, Logger.Category.Playback)
@@ -189,50 +174,65 @@ class ScorePlayer(
         }
         val placement = if (obj is SynthObject) {
             try {
-                val node = SynthObjectNode(obj, absolutePosition, suffix)
+                val node = SynthObjectNode(obj, activeObject)
                 nodeTree.addNode(node)
             } catch (e: Exception) {
                 Logger.error("Failed to insert $obj into audio flow graph", e, Logger.Category.Playback)
                 return
             }
         } else null
-        val uniqueName = ActiveObjectsManager.uniqueName(obj.name.now, suffix)
         val code = try {
-            obj.writeCode(uniqueName, placement, cutoff.takeIf { it > zero } ?: zero)
+            obj.writeCode(activeObject.uniqueName, placement, cutoff.takeIf { it > zero } ?: zero)
         } catch (e: Exception) {
             Logger.error("Failed to write code for $obj", e, Logger.Category.Playback)
         }
         if (code == "") return
         try {
-            client.send("schedule", listOf(timeForExecution, code))
+            client.send("schedule", listOf(timeForExecution, id, code))
         } catch (e: Exception) {
             Logger.error("Failed to schedule $obj", e, Logger.Category.Playback)
         }
-        Logger.fine("unique name for $obj at $time: $uniqueName", Logger.Category.Playback)
+        Logger.fine("unique name for $obj at $time: ${activeObject.uniqueName}", Logger.Category.Playback)
         Logger.fine("time for execution: ${timeForExecution}s", Logger.Category.Playback)
-
     }
 
-    override fun pausePlayback() {
+    fun stopPlayBackInstantly(obj: ScoreObject, pos: ObjectPosition) = execute {
+        val active = context[ActiveObjectsManager].getActiveObject(obj, pos) ?: return@execute
+        stopObjectInstantly(active)
+    }
+
+    private fun stopObjectInstantly(active: ActiveScoreObject): CompletableFuture<String> = when (active.obj) {
+        is SynthObject -> {
+            val name = active.superColliderName
+            client.eval("if ($name != nil) { $name.release; } { \"'$name' not found\".postln; }")
+        }
+
+        is ProcessObject, is TaskObject -> {
+            val name = active.superColliderName
+            client.eval("$name.stop;")
+        }
+
+        else -> CompletableFuture.completedFuture("unknown")
+    }
+
+    override fun pausePlayback() = execute {
         Logger.info("Pausing playback", Logger.Category.Playback)
+        client.sendAsync("pause_play", listOf(id))
+        context[Recorder].pausingPlayback()
+        val futures = mutableListOf<CompletableFuture<*>>()
         activeObjects.forEach { activeObject ->
             if (activeObject is ActiveScoreObject && activeObject.player == this) {
-                stopObject(activeObject.obj, activeObject.absolutePosition, activeObject.suffix)
+                futures.add(stopObjectInstantly(activeObject))
             }
         }
-        context[Recorder].pausingPlayback()
-        activeObjects.clear()
+        CompletableFuture.allOf(*futures.toTypedArray()).join()
+        activeObjects.clear(this)
         events.resetEvents()
-        client.send("pause_play")
-    }
-
-    override fun resetPlayback() {
-        if (context[Recorder].isActive.now) context[Recorder].stopRecording()
-        pausePlayback()
-        client.run("s.freeAll")
     }
 
     companion object {
+        private val executor = Executors.newSingleThreadExecutor()
+
         private val DELTA_T = 0.03.toDecimal()
 
         private fun simpleScore(obj: ScoreObject): Score {
@@ -242,6 +242,25 @@ class ScorePlayer(
             return score
         }
 
-        val CURRENT = publicProperty<ScorePlayer>("MainScorePlayer")
+        val CURRENT = publicProperty<ScorePlayer>("ScorePlayer")
+
+        private var nextId = 0
+        private val all = mutableListOf<WeakReference<ScorePlayer>>()
+
+        fun all(): List<ScorePlayer> {
+            all.removeIf { it.get() == null }
+            return all.mapNotNull { ref -> ref.get() }
+        }
+
+        fun create(context: Context): ScorePlayer {
+            val id = nextId++
+            val player = ScorePlayer(id, context)
+            all.add(WeakReference(player))
+            return player
+        }
+
+        fun execute(action: () -> Unit) {
+            executor.execute(action)
+        }
     }
 }

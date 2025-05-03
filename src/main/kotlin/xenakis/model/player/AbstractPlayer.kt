@@ -43,6 +43,8 @@ abstract class AbstractPlayer(private val deltaT: Decimal, private val lookAhead
                     if (!loop) {
                         pause()
                         continue
+                    } else {
+                        looped()
                     }
                     t = 0.0.asTime
                 } else {
@@ -61,6 +63,8 @@ abstract class AbstractPlayer(private val deltaT: Decimal, private val lookAhead
     }
 
     private fun toMs(t: Decimal) = (t * 1000).toLong()
+
+    protected abstract fun looped()
 
     protected abstract fun startPlay(startFrom: Decimal): Boolean
 
@@ -85,14 +89,7 @@ abstract class AbstractPlayer(private val deltaT: Decimal, private val lookAhead
         pausePlayback()
     }
 
-    fun reset() {
-        pause()
-        resetPlayback()
-    }
-
     protected abstract fun pausePlayback()
-
-    protected abstract fun resetPlayback()
 
     open fun close() {
         interrupt()
