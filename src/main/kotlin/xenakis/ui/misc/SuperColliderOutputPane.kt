@@ -19,6 +19,7 @@ class SuperColliderOutputPane : TextArea(), ConsoleMonitor.Listener {
     override fun process(txt: String) {
         Platform.runLater {
             buffer.append(txt)
+            if (buffer.length > 20000) buffer.delete(0, 10000)
             text = buffer.toString()
             scrollTop = Double.MAX_VALUE //TODO why doesn't it scroll to the end???
         }

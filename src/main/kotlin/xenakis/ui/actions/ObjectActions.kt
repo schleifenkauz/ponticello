@@ -1,6 +1,5 @@
 package xenakis.ui.actions
 
-import fxutils.actions.Action
 import fxutils.actions.collectActions
 import fxutils.actions.isAltDown
 import fxutils.actions.isTargetTextInput
@@ -9,13 +8,15 @@ import hextant.context.Context
 import hextant.undo.compoundEdit
 import javafx.geometry.HorizontalDirection.RIGHT
 import org.kordamp.ikonli.material2.Material2AL
-import org.kordamp.ikonli.materialdesign2.*
+import org.kordamp.ikonli.materialdesign2.MaterialDesignC
+import org.kordamp.ikonli.materialdesign2.MaterialDesignL
+import org.kordamp.ikonli.materialdesign2.MaterialDesignP
+import org.kordamp.ikonli.materialdesign2.MaterialDesignV
 import reaktive.value.binding.Binding
 import reaktive.value.binding.flatMap
 import reaktive.value.binding.map
 import reaktive.value.now
 import reaktive.value.reactiveValue
-import reaktive.value.toggle
 import xenakis.impl.Logger
 import xenakis.impl.copy
 import xenakis.impl.times
@@ -68,11 +69,9 @@ object ObjectActions {
         }
     }
 
-    val playbackActions = collectActions {
-        addObjectAction("Play object") {
+    val playbackActions = collectActions<ScoreObject> {
+        addAction("Play object") {
             shortcut("Ctrl+SPACE")
-            applicableWhen(::canApplyPlaybackActions)
-            ifNotApplicable(Action.IfNotApplicable.Disable)
             icon { ctx ->
                 ctx.context[ScorePlayer.CURRENT].isPlaying.map { playing ->
                     if (playing) MaterialDesignP.PAUSE else MaterialDesignP.PLAY
@@ -83,35 +82,26 @@ object ObjectActions {
                     if (playing) "Pause object" else "Play object"
                 }
             }
-            executeSingle { view, _ ->
-                val playback = view.context[ScorePlayer.CURRENT]
+            executes { obj, _ ->
+                val playback = obj.context[ScorePlayer.CURRENT]
                 if (playback.isPlaying.now) playback.pause()
-                else {
-                    if (!playback.isAttachedTo(view)) playback.attachToView(view)
-                    playback.play()
-                }
-            }
-        }
-        addObjectAction("Toggle loop") {
-            shortcut("Alt?+L")
-            icon(MaterialDesignR.REPEAT)
-            applicableWhen(::canApplyPlaybackActions)
-            ifNotApplicable(Action.IfNotApplicable.Disable)
-            icon(MaterialDesignR.REPEAT)
-            toggleState { ctx -> ctx.context[ScorePlayer.CURRENT].loopingActivated }
-            executeSingle { view, ev ->
-                if (ev.isTargetTextInput && !ev.isAltDown()) return@executeSingle
-                val player = view.context[ScorePlayer.CURRENT]
-                player.loopingActivated.toggle()
-                if (!player.isPlaying.now && player.loopingActivated.now) {
-                    if (!player.isAttachedTo(view)) player.attachToView(view)
-                    player.play()
-                }
+                else playback.play()
             }
         }
     }
 
     val singleObjectActions = collectActions {
+        addObjectAction("Show as sub window") {
+            shortcut("Alt?+W")
+            icon(MaterialDesignL.LAUNCH)
+            executeSingle { view, _ ->
+                val scoreObjectsPane = view.context[XenakisMainActivity].scoreObjectsPane
+                val w = scoreObjectsPane.listView.showContent(view.obj) ?: return@executeSingle
+                val coords = view.localToScreen(view.width, 0.0)
+                w.x = coords.x
+                w.y = coords.y
+            }
+        }
         addObjectAction("Duplicate object") {
             shortcut("Alt?+C")
             icon(MaterialDesignC.CONTENT_DUPLICATE)
@@ -191,7 +181,7 @@ object ObjectActions {
         addObjectAction("Rename object") {
             shortcut("F2")
             executeSingle { view, _ ->
-                val obj = view.instance.obj
+                val obj = view.obj
                 RenamePrompt(obj, "New name for object").showDialog(view.context)
             }
         }
@@ -200,7 +190,7 @@ object ObjectActions {
             shortcut("E")
             applicableOn<ScoreObjectGroupView>()
             executeSingle { view, _ ->
-                val obj = view.instance.obj as? ScoreObjectGroup ?: return@executeSingle
+                val obj = view.obj as? ScoreObjectGroup ?: return@executeSingle
                 val context = view.context
                 extendGroup(obj, context, moreThanOne = false, cloneObjects = false)
             }
@@ -210,7 +200,7 @@ object ObjectActions {
             shortcut("Ctrl+E")
             applicableOn<ScoreObjectGroupView>()
             executeSingle { view, _ ->
-                val obj = view.instance.obj as? ScoreObjectGroup ?: return@executeSingle
+                val obj = view.obj as? ScoreObjectGroup ?: return@executeSingle
                 val context = view.context
                 extendGroup(obj, context, moreThanOne = true, cloneObjects = false)
             }
@@ -219,7 +209,7 @@ object ObjectActions {
             shortcut("Shift+E")
             applicableOn<ScoreObjectGroupView>()
             executeSingle { view, _ ->
-                val obj = view.instance.obj as? ScoreObjectGroup ?: return@executeSingle
+                val obj = view.obj as? ScoreObjectGroup ?: return@executeSingle
                 val context = view.context
                 extendGroup(obj, context, moreThanOne = false, cloneObjects = true)
             }
@@ -228,7 +218,7 @@ object ObjectActions {
             shortcut("Ctrl+Shift+E")
             applicableOn<ScoreObjectGroupView>()
             executeSingle { view, _ ->
-                val obj = view.instance.obj as? ScoreObjectGroup ?: return@executeSingle
+                val obj = view.obj as? ScoreObjectGroup ?: return@executeSingle
                 val context = view.context
                 extendGroup(obj, context, moreThanOne = true, cloneObjects = false)
             }
@@ -263,16 +253,12 @@ object ObjectActions {
     val all = collectActions {
         addAll(multiObjectActions)
         addAll(singleObjectActions)
-        addAll(playbackActions)
     }
 
     private fun canApplyPlaybackActions(ctx: ObjectActionContext): Binding<Boolean> {
-        val player = ctx.context[ScorePlayer.CURRENT]
         return ctx.focusedView.flatMap { view ->
             if (view == null || !view.obj.affectsPlayback) reactiveValue(false)
-            else player.isPlaying.map { playing ->
-                if (playing) player.isAttachedTo(view) else true
-            }
+            else reactiveValue(true)
         }
     }
 

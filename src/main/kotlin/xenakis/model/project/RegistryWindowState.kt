@@ -16,7 +16,7 @@ class RegistryWindowState : WindowState() {
     private var displayMode: ObjectListView.DisplayMode? = null
 
     @Transient
-    private lateinit var targetPane: ObjectRegistryPane<*>
+    private var targetPane: ObjectRegistryPane<*>? = null
 
     override fun applyTo(window: Stage, defaultSize: Dimension2D?) {
         super.applyTo(window, defaultSize)
@@ -35,6 +35,7 @@ class RegistryWindowState : WindowState() {
 
     override fun saveFromTarget() {
         super.saveFromTarget()
+        val targetPane = targetPane ?: return
         displayMode = targetPane.listView.mode.now
         selectedIndex = targetPane.listView.selectedIndex()
     }

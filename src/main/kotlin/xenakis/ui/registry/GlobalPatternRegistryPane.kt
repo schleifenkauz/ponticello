@@ -6,6 +6,7 @@ import fxutils.actions.collectActions
 import javafx.event.Event
 import javafx.geometry.Pos
 import javafx.scene.Parent
+import javafx.scene.control.ScrollPane
 import javafx.scene.input.DataFormat
 import org.kordamp.ikonli.Ikon
 import org.kordamp.ikonli.material2.Material2AL
@@ -40,7 +41,12 @@ class GlobalPatternRegistryPane(
             val actions = actions.withContext(listView.getBox(obj))
             CodePane(obj.patternCode, extraActions = actions, ownWindow = true, actionBarAlignment = Pos.BOTTOM_RIGHT)
         }
-        else -> obj.patternCode.control
+        else -> ScrollPane(obj.patternCode.control)
+    }
+
+    override fun configureSubWindow(window: SubWindow) {
+        window.width = 600.0
+        window.height = 400.0
     }
 
     override fun detailWindowIcon(obj: GlobalPatternObject): Ikon = Material2AL.CODE

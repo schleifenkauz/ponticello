@@ -15,7 +15,7 @@ class ScoreObjectRegistry(
     override val objects: MutableList<ScoreObject> = mutableListOf(),
 ) : ObjectRegistry<ScoreObject>() {
     override val objectType: String
-        get() = "score_object"
+        get() = "Score Object"
 
     override fun initialize(context: Context) {
         context[ScoreObjectRegistry] = this

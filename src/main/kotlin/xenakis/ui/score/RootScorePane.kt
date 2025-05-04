@@ -40,7 +40,7 @@ abstract class RootScorePane(score: Score, context: Context) : ScorePane(score, 
     final override val absolutePosition: ObjectPosition
         get() = ObjectPosition.ZERO
 
-    fun initialize() {
+    open fun initialize() {
         listenForEvents()
         this.score.addListener(this)
     }
@@ -70,7 +70,7 @@ abstract class RootScorePane(score: Score, context: Context) : ScorePane(score, 
         val semitransparent = editor.objectView.backgroundColor.now.deriveColor(1.0, 1.0, 1.0, 0.3)
         pane.style = "-fx-background-color: ${semitransparent.toString().replacePrefix("0x", "#")};"
         magnifiedEnvelope = EnvelopeEditor(editor.namedControl, editor.envelope, editor.objectView, pane)
-        val objName = editor.objectView.instance.obj.name.now
+        val objName = editor.objectView.obj.name.now
         val title = "Envelope for ${editor.parameterName} of $objName"
         magnifierWindow?.hide()
         magnifierWindow = SubWindow(pane, title, SubWindow.Type.Popup)
@@ -108,7 +108,7 @@ abstract class RootScorePane(score: Score, context: Context) : ScorePane(score, 
         }
     }
 
-    final override fun repaint() {
+    override fun repaint() {
         latestRepaintTrigger = System.currentTimeMillis()
         layoutObjects()
         repositionEnvelopeMagnifier()
@@ -152,7 +152,7 @@ abstract class RootScorePane(score: Score, context: Context) : ScorePane(score, 
         }
         positionTracker.layoutX = getX(t)
         val player = context[ScorePlayer.CURRENT]
-        if (this == context[CURRENT_ROOT] && !player.isPlaying.now) {
+        if (!player.isPlaying.now) {
             context[TimeCodeView].displayTime(t)
         }
     }

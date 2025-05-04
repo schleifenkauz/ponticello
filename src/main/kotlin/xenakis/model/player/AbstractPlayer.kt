@@ -28,7 +28,6 @@ abstract class AbstractPlayer(private val deltaT: Decimal, private val lookAhead
 
     init {
         isDaemon = true
-        start()
     }
 
     override fun run() {
@@ -72,6 +71,10 @@ abstract class AbstractPlayer(private val deltaT: Decimal, private val lookAhead
 
     fun play(): Boolean {
         if (isPlaying.now) return true
+        if (state == State.TERMINATED) {
+            Logger.error("Player thread has already been terminated", Logger.Category.Playback)
+        }
+        if (state == State.NEW) start()
         Logger.info("Starting playback", Logger.Category.Playback)
         if (!startPlay(playHead.currentTime)) {
             return false

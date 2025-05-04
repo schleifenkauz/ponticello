@@ -30,7 +30,7 @@ fun ScExpr.transform(f: (ScExpr) -> ScExpr): ScExpr = when (this) {
     is AccessKey -> f(AccessKey(receiver.transform(f), key.transform(f)))
     is SpreadArray -> f(SpreadArray(array.transform(f)))
     is VSTPlugin -> f(VSTPlugin(input.transform(f), channels, pluginName, id, presetName))
-    is AdhocSynth -> f(AdhocSynth(name, block.transformBlock(f), group))
+    is AdhocSynth -> f(AdhocSynth(name, block.transformBlock(f)))
     else -> f(this)
 }
 

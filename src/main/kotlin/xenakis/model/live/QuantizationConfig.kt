@@ -2,13 +2,15 @@ package xenakis.model.live
 
 import hextant.context.Context
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
+import reaktive.event.unitEvent
 import reaktive.value.ReactiveValue
 import reaktive.value.ReactiveVariable
 import reaktive.value.now
 import reaktive.value.reactiveVariable
 import xenakis.impl.Decimal
 import xenakis.impl.copy
-import xenakis.impl.times
+import xenakis.impl.one
 import xenakis.impl.zero
 import xenakis.model.obj.AbstractContextualObject
 import xenakis.model.registry.NamedObjectList
@@ -18,19 +20,25 @@ import xenakis.model.score.TempoGridObject
 import xenakis.model.score.TimeUnit
 
 @Serializable
-class LoopConfig(
+class QuantizationConfig(
     val grid: ReactiveVariable<ObjectReference<TempoGridObject>>,
-    val durationUnit: ReactiveVariable<TimeUnit>, val durationValue: ReactiveVariable<Int>,
-    val quantizationUnit: ReactiveVariable<QuantizationUnit>, val quantizationValue: ReactiveVariable<Int>,
-    val offsetUnit: ReactiveVariable<TimeUnit>, val offsetValue: ReactiveVariable<Int>,
+    val durationUnit: ReactiveVariable<TimeUnit>, val durationValue: ReactiveVariable<Decimal>,
+    val quantizationUnit: ReactiveVariable<QuantizationUnit>, val quantizationValue: ReactiveVariable<Decimal>,
+    val offsetUnit: ReactiveVariable<TimeUnit>, val offsetValue: ReactiveVariable<Decimal>,
     val enableSnapping: ReactiveVariable<Boolean>,
     val enableQuantization: ReactiveVariable<Boolean>,
     val relativeToGridInstance: ReactiveVariable<Boolean>,
     val shiftGrid: ReactiveVariable<Boolean>,
 ) : AbstractContextualObject() {
+    @Transient
     private lateinit var duration: ReactiveVariable<Decimal>
 
     fun duration(): ReactiveValue<Decimal> = duration
+
+    @Transient
+    private val update = unitEvent()
+
+    val onUpdate get() = update.stream
 
     override fun initialize(context: Context) {
         super.initialize(context)
@@ -53,7 +61,7 @@ class LoopConfig(
         return unit * durationValue.now
     }
 
-    fun copy() = LoopConfig(
+    fun copy() = QuantizationConfig(
         grid.copy(),
         durationUnit.copy(), durationValue.copy(),
         quantizationUnit.copy(), quantizationValue.copy(),
@@ -62,7 +70,7 @@ class LoopConfig(
         relativeToGridInstance.copy(), shiftGrid.copy()
     )
 
-    fun update(source: LoopConfig) {
+    fun update(source: QuantizationConfig) {
         grid.set(source.grid.now)
         durationUnit.set(source.durationUnit.now)
         durationValue.set(source.durationValue.now)
@@ -75,17 +83,23 @@ class LoopConfig(
         relativeToGridInstance.set(source.relativeToGridInstance.now)
         shiftGrid.set(source.shiftGrid.now)
         duration.set(computeDuration())
+        update.fire()
+    }
+
+    fun setDuration(value: Decimal) {
+        val unit = grid.now.get()?.getDuration(durationUnit.now) ?: return
+        durationValue.set(value / unit)
     }
 
     companion object {
-        fun createDefault() = LoopConfig(
+        fun createDefault() = QuantizationConfig(
             grid = reactiveVariable(ObjectReference.none()),
             durationUnit = reactiveVariable(TimeUnit.Seconds),
-            durationValue = reactiveVariable(1),
+            durationValue = reactiveVariable(one),
             quantizationUnit = reactiveVariable(QuantizationUnit.Seconds),
-            quantizationValue = reactiveVariable(1),
+            quantizationValue = reactiveVariable(one),
             offsetUnit = reactiveVariable(TimeUnit.Seconds),
-            offsetValue = reactiveVariable(0),
+            offsetValue = reactiveVariable(zero),
             enableSnapping = reactiveVariable(true),
             enableQuantization = reactiveVariable(true),
             relativeToGridInstance = reactiveVariable(false),

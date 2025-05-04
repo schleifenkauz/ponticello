@@ -7,8 +7,8 @@ import xenakis.model.obj.ProcessDefObject
 import xenakis.ui.misc.CodePane
 
 class ProcessDefObjectPane(
-    def: ProcessDefObject,
-) : ParameterizedObjectDefPane<ProcessDefObject>(def) {
+    def: ProcessDefObject, enableActions: Boolean,
+) : ParameterizedObjectDefPane<ProcessDefObject>(def, enableActions) {
     private lateinit var setupCodePane: EditorControl<*>
 
     override fun getContent(def: ProcessDefObject): Node {

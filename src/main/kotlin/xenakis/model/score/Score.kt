@@ -16,7 +16,6 @@ import xenakis.impl.Decimal
 import xenakis.impl.Logger
 import xenakis.impl.one
 import xenakis.impl.zero
-import xenakis.model.live.LiveLoopObject
 import xenakis.model.obj.AbstractContextualObject
 import xenakis.model.registry.ScoreObjectRegistry
 
@@ -57,12 +56,6 @@ class Score(
         scoreName = parentObject.name
         maxTime = parentObject.duration()
         maxY = parentObject.height()
-    }
-
-    fun initialize(context: Context, loopObject: LiveLoopObject) {
-        initialize(context)
-        scoreName = loopObject.name
-        maxTime = loopObject.config.duration()
     }
 
     fun addListener(listener: ScoreListener, notify: Boolean = true) {

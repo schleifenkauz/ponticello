@@ -67,6 +67,11 @@ object ToolWindowActions : Action.Collector<XenakisMainActivity>({
         icon(MaterialDesignC.COG)
         executes { activity -> activity.settingsWindow.showOrBringToFront() }
     }
+    addAction("Show ScoreObjects") {
+        shortcut("Ctrl+Shift+O")
+        icon(MaterialDesignP.PLAYLIST_PLAY)
+        executes { activity -> activity.scoreObjectsWindow.showOrBringToFront() }
+    }
     addAction("Show SynthDefs") {
         icon(MaterialDesignS.SINE_WAVE)
         shortcut("Ctrl+I")
@@ -118,10 +123,5 @@ object ToolWindowActions : Action.Collector<XenakisMainActivity>({
         shortcut("Ctrl+Shift+T")
         icon(MaterialDesignP.PROGRESS_QUESTION)
         executes { activity -> activity.liveTasksWindow.showOrBringToFront() }
-    }
-    addAction("Show Live Loops") {
-        shortcut("Ctrl+Shift+L")
-        icon(MaterialDesignI.INFINITY)
-        executes { activity -> activity.liveLoopsWindow.showOrBringToFront() }
     }
 })

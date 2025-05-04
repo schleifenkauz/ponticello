@@ -80,8 +80,8 @@ class ObjectBox<O : ContextualObject>(val parent: ObjectListView<O>, val obj: O)
         if (option != DisplayMode.Inline) {
             children.setAll(header)
         }
-        content = config.getContent(obj, option) ?: return
         if (option == DisplayMode.SubWindow) {
+            content = config.getContent(obj, option) ?: return
             val objectType = parent.source.objectType
             val name = if (obj is NamedObject) obj.name.now else ""
             val title = "$objectType $name"
@@ -92,13 +92,15 @@ class ObjectBox<O : ContextualObject>(val parent: ObjectListView<O>, val obj: O)
             }
         }
         if (option == DisplayMode.Inline) {
+            content = config.getContent(obj, option) ?: return
             children.setAll(header, content)
         }
     }
 
-    fun showSubWindow() {
-        val w = this.subWindow ?: return
+    fun showSubWindow(): SubWindow? {
+        val w = this.subWindow ?: return null
         w.showOrBringToFront()
+        return w
     }
 
     private fun setupDragging() {

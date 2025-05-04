@@ -19,7 +19,7 @@ import xenakis.model.score.ScoreObjectInstance
 import xenakis.model.score.TempoGridObject
 import xenakis.ui.launcher.XenakisLauncher.Companion.currentProject
 
-class TempoGridObjectView(inst: ScoreObjectInstance, override val obj: TempoGridObject) : ScoreObjectView(inst) {
+class TempoGridObjectView(override val obj: TempoGridObject, inst: ScoreObjectInstance) : ScoreObjectView(inst) {
     private val area = Pane()
     private val marker = Line() styleClass "grid-marker-line"
 
@@ -72,7 +72,7 @@ class TempoGridObjectView(inst: ScoreObjectInstance, override val obj: TempoGrid
         val bpb = obj.beatsPerBar.now
         val tpb = obj.ticksPerBeat.now
         val bars = (obj.duration * bpm / 60 / bpb).ceilToInt()
-        val barsPerSecond = bpm.toDouble() / bpb / 60
+        val secondsPerBar = (60 * bpb) / bpm.toDouble()
         val firstBar = obj.firstBar.now
         for (bar in 0..bars) {
             val barX = getX(bar)
@@ -80,7 +80,7 @@ class TempoGridObjectView(inst: ScoreObjectInstance, override val obj: TempoGrid
             val barLine = Line(barX, BAR_LINE_SPACE, barX, prefHeight - BAR_LINE_SPACE)
                 .styleClass("tempo-line", "bar-line")
             area.children.add(barLine)
-            val barNumberDist = pane.pixelsPerSecond / barsPerSecond
+            val barNumberDist = getX(secondsPerBar.toDecimal())
             if (barNumberDist > MIN_BAR_NUMBER_DIST) {
                 val barNumber = Text((barX - 5).coerceAtLeast(0.0), 12.0, (bar + firstBar).toString())
                     .styleClass("bar-number")

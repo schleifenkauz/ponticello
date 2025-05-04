@@ -4,7 +4,6 @@ import bundles.PublicProperty
 import bundles.publicProperty
 import hextant.context.Context
 import reaktive.value.now
-import xenakis.impl.Logger
 import xenakis.model.flow.AudioFlows
 import xenakis.model.flow.NodeTree
 import xenakis.model.flow.SynthObjectNode
@@ -25,6 +24,12 @@ class ActiveObjectsManager(private val context: Context) : SuperColliderListener
         val active = ActiveScoreObject(player, obj, absolutePosition, suffix)
         bySuffix.getOrPut(obj, ::mutableMapOf)[suffix] = active
         byAbsolutePosition.getOrPut(obj, ::mutableMapOf)[absolutePosition] = active
+        return active
+    }
+
+    fun remove(obj: ScoreObject, absolutePosition: ObjectPosition): ActiveScoreObject? {
+        val active = byAbsolutePosition[obj]?.get(absolutePosition) ?: return null
+        remove(active)
         return active
     }
 
@@ -76,12 +81,7 @@ class ActiveObjectsManager(private val context: Context) : SuperColliderListener
     override fun onMessage(path: String, content: String) = ScorePlayer.execute {
         when {
             path.startsWith("/freed") || path.startsWith("/stopped") -> {
-                val activeObj = removeByName(content)
-                if (activeObj == null) {
-                    Logger.warn("Received '$path' message for unknown object: $content", Logger.Category.Playback)
-                } else {
-                    Logger.fine("Received '$path' message for $activeObj", Logger.Category.Playback)
-                }
+                removeByName(content)
             }
         }
     }

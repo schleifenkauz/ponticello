@@ -33,7 +33,7 @@ import xenakis.sc.view.ObjectSelectorControl
 import xenakis.ui.launcher.XenakisMainActivity
 
 class SynthObjectView(
-    instance: ScoreObjectInstance, override val obj: SynthObject
+    override val obj: SynthObject, instance: ScoreObjectInstance
 ) : ParameterizedScoreObjectView<SynthObject>(instance), ParameterControlList.Listener {
     private var spectrogramImage: Image? = null
     private val spectrogramViews = mutableListOf<ImageView>()

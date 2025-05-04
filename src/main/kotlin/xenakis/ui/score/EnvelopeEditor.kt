@@ -44,8 +44,8 @@ class EnvelopeEditor(
     val parameterName get() = namedControl.name.now
 
     private val color get() = control.displayColor
-    private val parentPane get() = objectView.pane
-    private val associatedObject get() = objectView.instance.obj
+    private val parentPane = objectView.parentPane
+    private val associatedObject get() = objectView.obj
 
     private val spec get() = namedControl.spec.now as NumericalControlSpec
     private val yTransform get() = spec.mapOnto(objectView.getScreenY(objectView.obj.height)..0.0)
@@ -127,7 +127,7 @@ class EnvelopeEditor(
                 }
 
                 ev.button == PRIMARY && ev.isShiftDown && associatedObject is ParameterizedObject -> {
-                    val parentObject = objectView.instance.obj as ParameterizedObject
+                    val parentObject = objectView.obj as ParameterizedObject
                     ControlSpecPrompt.create(
                         parameterName,
                         parentObject,
@@ -346,7 +346,7 @@ class EnvelopeEditor(
         val deltaT = objectView.getDeltaT(dir)
         val tBefore = envelope.points[idx].time
         val newT = run {
-            val positionInPane = objectView.instance.position.plusTime(envelope.points[idx].time)
+            val positionInPane = objectView.instance.position.plusTime(tBefore)
             val snapped = parentPane.snapToGrid(positionInPane)
             val tSnapped = snapped.time - objectView.instance.start
             when {

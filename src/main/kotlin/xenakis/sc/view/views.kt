@@ -181,6 +181,7 @@ fun createControl(editor: xenakis.sc.editor.OperatorEditor, arguments: Bundle): 
 fun createControl(editor: xenakis.sc.editor.BusControlSpecEditor, arguments: Bundle) =
     CompoundEditorControl(editor, arguments) {
         horizontal {
+            space()
             keyword("rate: ")
             view(editor.rate)
             space()
@@ -271,10 +272,6 @@ fun createControl(editor: xenakis.sc.editor.StringLiteralEditor, arguments: Bund
 
 @ProvideImplementation(ControlFactory::class)
 fun createSelectorControl(editor: xenakis.sc.editor.BusSelector, arguments: Bundle) =
-    ObjectSelectorControl(editor, arguments)
-
-@ProvideImplementation(ControlFactory::class)
-fun createSelectorControl(editor: xenakis.sc.editor.GroupSelector, arguments: Bundle) =
     ObjectSelectorControl(editor, arguments)
 
 @ProvideImplementation(ControlFactory::class)

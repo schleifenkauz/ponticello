@@ -6,7 +6,6 @@ import xenakis.model.score.ScoreObject
 
 typealias SynthDefReference = ObjectReference<@Contextual SynthDefObject>
 typealias BusReference = ObjectReference<@Contextual BusObject>
-typealias GroupReference = ObjectReference<@Contextual GroupObject>
 typealias BufferReference = ObjectReference<@Contextual BufferObject>
 typealias ProcessDefReference = ObjectReference<@Contextual ProcessDefObject>
 typealias GlobalPatternReference = ObjectReference<@Contextual GlobalPatternObject>

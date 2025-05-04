@@ -8,6 +8,7 @@ import javafx.scene.layout.Region
 import org.kordamp.ikonli.material2.Material2MZ
 import org.kordamp.ikonli.materialdesign2.MaterialDesignM
 import reaktive.value.binding.map
+import reaktive.value.binding.not
 import reaktive.value.now
 import xenakis.model.flow.NodeTree
 import xenakis.model.player.Recorder
@@ -26,6 +27,8 @@ object PlaybackActions : Action.Collector<ScorePlayer>({
         description("Move the playback cursor to the start of the score")
         shortcut("Alt?+DIGIT0")
         icon(Material2MZ.SKIP_PREVIOUS)
+        applicableWhen { player -> player.isPlaying.not() }
+        ifNotApplicable(Action.IfNotApplicable.Disable)
         executes { player, ev ->
             if (ev.isTargetTextInput && !ev.isAltDown()) return@executes
             player.movePlayHeadToStart()
@@ -52,6 +55,7 @@ object PlaybackActions : Action.Collector<ScorePlayer>({
         description("Stop playback and free all Synths")
         shortcut("Ctrl+PERIOD")
         icon(Material2MZ.STOP)
+        applicableIf { player -> player.isMainScorePlayer() }
         executes { p ->
             p.context[Recorder].stopRecording()
             for (player in ScorePlayer.all()) {
@@ -63,6 +67,7 @@ object PlaybackActions : Action.Collector<ScorePlayer>({
     }
     addAction("Toggle recording") {
         shortcut("Ctrl+Shift+R")
+        applicableIf { player -> player.isMainScorePlayer() }
         icon { player ->
             player.context[Recorder].isActive.map { active ->
                 if (active) MaterialDesignM.MICROPHONE

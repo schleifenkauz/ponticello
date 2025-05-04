@@ -11,7 +11,6 @@ import reaktive.value.ReactiveBoolean
 import reaktive.value.now
 import reaktive.value.reactiveValue
 import xenakis.impl.Logger
-import xenakis.model.obj.GroupObject
 import xenakis.model.obj.SuperColliderObject
 import xenakis.sc.ScExpr
 import xenakis.sc.client.ScWriter
@@ -68,7 +67,6 @@ class ObjectReference<O : NamedObject>(private var _name: String) : ScExpr {
                 _name == NONE -> "<none>"
                 obj == null -> "<unresolved: $_name>"
                 obj is SuperColliderObject -> obj.superColliderName
-                obj is GroupObject -> obj.superColliderName
                 else -> error("$obj has no SuperCollider name")
             }
         }

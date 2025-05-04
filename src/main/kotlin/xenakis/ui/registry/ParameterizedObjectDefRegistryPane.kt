@@ -92,27 +92,26 @@ abstract class ParameterizedObjectDefRegistryPane<T : ParameterizedObjectDef>(
         }
     }
 
-    override fun getActions(box: ObjectBox<T>): List<ContextualizedAction> = actions.withContext(box)
+    override fun getActions(box: ObjectBox<T>): List<ContextualizedAction> = actions.withContext(box.obj)
 
     companion object {
-        private val actions = collectActions<ObjectBox<out ParameterizedObjectDef>> {
+        val actions = collectActions<ParameterizedObjectDef> {
             addAction("Sync") {
                 icon(Material2MZ.SYNC)
                 shortcuts("Ctrl+U")
-                executes { box -> box.obj.sync() }
+                executes { obj -> obj.sync() }
             }
             addAction("Save to global library") {
                 icon(MaterialDesignE.EXPORT_VARIANT)
-                applicableIf { box -> box.obj is ConfigurableParameterizedObjectDef }
-                executes { box ->
-                    val def = box.obj
+                applicableIf { obj -> obj is ConfigurableParameterizedObjectDef }
+                executes { def, ev ->
                     @Suppress("UNCHECKED_CAST")
                     val library = when (def) {
                         is ProcessDefObject -> def.context[GlobalDefinitionLibrary.processDefs]
                         is SynthDefObject -> def.context[GlobalDefinitionLibrary.synthDefs]
                         else -> error("Cannot save $def to global library")
                     } as GlobalDefinitionLibrary<NamedObject>
-                    library.saveToGlobalLib(def, anchorNode = box)
+                    library.saveToGlobalLib(def, ev)
                 }
             }
         }

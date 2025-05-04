@@ -164,7 +164,6 @@ class ScExprExpander() : ConfiguredExpander<ScExpr, ScExprEditor<*>>(), ScExprEd
             "lambda".expand { _ -> ScFunctionEditor().defaultState() }
             "bus".expand { BusSelector().defaultState() }
             "buf".expand { BufferSelector().defaultState() }
-            "group".expand { GroupSelector().defaultState() }
             "plugin".expand { expander ->
                 val availablePlugins = VSTPluginObject.availablePlugins(expander.context).toList()
                 val pluginName = showSelectorDialog("Plugin", availablePlugins, null, anchor = null)

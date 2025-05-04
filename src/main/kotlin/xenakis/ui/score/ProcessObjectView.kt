@@ -20,7 +20,7 @@ import xenakis.sc.view.ObjectSelectorControl
 import xenakis.ui.launcher.XenakisMainActivity
 
 class ProcessObjectView(
-    instance: ScoreObjectInstance, override val obj: ProcessObject,
+    override val obj: ProcessObject, instance: ScoreObjectInstance,
 ) : ParameterizedScoreObjectView<ProcessObject>(instance) {
     private lateinit var controlsPane: ParameterControlsPane
 

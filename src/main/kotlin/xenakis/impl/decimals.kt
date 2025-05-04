@@ -8,7 +8,7 @@ typealias DoubleRange = ClosedFloatingPointRange<Double>
 val DoubleRange.asDecimal: DecimalRange get() = start.toDecimal()..endInclusive.toDecimal()
 
 data class DecimalRange(
-    override val start: Decimal, override val endInclusive: Decimal
+    override val start: Decimal, override val endInclusive: Decimal,
 ) : ClosedFloatingPointRange<Decimal> {
     override fun lessThanOrEquals(a: Decimal, b: Decimal): Boolean = a <= b
 
@@ -143,3 +143,10 @@ fun Double.round(accuracy: Int): Double {
 }
 
 val Decimal.sign get() = value.sign
+
+fun Decimal.isMultipleOf(factor: Decimal): Boolean {
+    val quotient = this / factor
+    return quotient.isInteger
+}
+
+val Decimal.isInteger get() = '.' !in toCanonicalString()

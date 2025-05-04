@@ -15,8 +15,10 @@ class NodeTree(private val client: SuperColliderClient) {
     fun addNode(node: AudioNode): NodePlacement {
         var idx = activeNodes.binarySearch(node)
         if (idx >= 0) {
-            removeNode(node)
-            Logger.warn("Node $node already in node tree", Logger.Category.Playback)
+            if (activeNodes[idx] == node) {
+                removeNode(node)
+                Logger.warn("Node $node already in node tree", Logger.Category.Playback)
+            }
         } else {
             idx = -(idx + 1)
         }

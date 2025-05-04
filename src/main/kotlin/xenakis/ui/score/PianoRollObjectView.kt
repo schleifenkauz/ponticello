@@ -36,7 +36,7 @@ import xenakis.ui.impl.setupDraggingAndResizing
 import xenakis.ui.impl.showDialog
 import kotlin.math.roundToInt
 
-class PianoRollObjectView(inst: ScoreObjectInstance, override val obj: MidiObject) : ScoreObjectView(inst) {
+class PianoRollObjectView(override val obj: MidiObject, inst: ScoreObjectInstance) : ScoreObjectView(inst) {
     private val noteRects = mutableMapOf<MidiObject.Note, BorderPane>()
     private val orientationLines = mutableListOf<Line>()
     private val blackKeys = mutableListOf<Rectangle>()
@@ -77,7 +77,7 @@ class PianoRollObjectView(inst: ScoreObjectInstance, override val obj: MidiObjec
 
     private fun snapToGrid(x: Double, y: Double): Decimal {
         val pos = ObjectPosition(getTime(x), getScoreY(y))
-        return pane.root.snapToGrid(pos + absolutePosition).time - absolutePosition.time
+        return parentPane.root.snapToGrid(pos + absolutePosition).time - absolutePosition.time
     }
 
     private fun setupNoteObjectEvents(rect: Region, note: MidiObject.Note) {
@@ -219,7 +219,7 @@ class PianoRollObjectView(inst: ScoreObjectInstance, override val obj: MidiObjec
     }
 
     fun showTransposeDialog() {
-        val semitones = IntegerPrompt("Tranpose by semitones", 0, -36..36)
+        val semitones = IntegerPrompt("Transpose by semitones", 0, -36..36)
             .showDialog(context) ?: return
         obj.transpose(semitones)
     }

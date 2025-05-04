@@ -3,8 +3,7 @@ package xenakis.model.registry
 import bundles.publicProperty
 import fxutils.prompt.YesNoPrompt
 import javafx.application.Platform
-import javafx.geometry.Point2D
-import javafx.scene.layout.Region
+import javafx.event.Event
 import kotlinx.serialization.KSerializer
 import reaktive.value.now
 import xenakis.impl.Logger
@@ -53,13 +52,13 @@ class GlobalDefinitionLibrary<T: NamedObject>(
 
     private fun jsonFile(name: String): File = directory.resolve("$name.json")
 
-    fun saveToGlobalLib(obj: T, anchorNode: Region) {
+    fun saveToGlobalLib(obj: T, ev: Event?) {
         val name = obj.name.now
         if (!has(name) ||
             YesNoPrompt(
                 "Overwrite SynthDef $name in global library?",
                 default = true
-            ).showDialog(anchorNode, offset = Point2D(anchorNode.width, 0.0)) == true
+            ).showDialog(ev) == true
         ) {
             async {
                 push(obj)

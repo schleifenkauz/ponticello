@@ -9,7 +9,6 @@ import javafx.geometry.Dimension2D
 import javafx.geometry.Orientation
 import javafx.scene.Node
 import javafx.scene.Parent
-import javafx.scene.control.Control
 import javafx.scene.control.Label
 import javafx.scene.control.ScrollPane
 import javafx.scene.control.Tooltip
@@ -17,6 +16,8 @@ import javafx.scene.input.Clipboard
 import javafx.scene.input.KeyCode
 import javafx.scene.input.KeyEvent
 import javafx.scene.layout.*
+import javafx.scene.paint.Color
+import javafx.stage.Window
 import kotlinx.serialization.Serializable
 import org.kordamp.ikonli.materialdesign2.MaterialDesignD
 import org.kordamp.ikonli.materialdesign2.MaterialDesignV
@@ -32,7 +33,7 @@ class ObjectListView<O: ContextualObject>(
     val config: ObjectListDisplayConfig<O>,
     private val displayMode: ReactiveVariable<DisplayMode>,
     private var filter: (O) -> Boolean = { true },
-) : Control(), ObjectList.Listener<O> {
+) : BorderPane(), ObjectList.Listener<O> {
     constructor(
         source: ObjectList<O>, config: ObjectListDisplayConfig<O>,
         displayMode: DisplayMode = config.supportedModes.first(),
@@ -53,6 +54,7 @@ class ObjectListView<O: ContextualObject>(
         get() = itemsScrollPane.content as Pane
         set(value) {
             itemsScrollPane.content = value
+            itemsScrollPane.letContentFillViewPort()
             value.children.addAll(boxes)
         }
     private var displayedContent: Parent? = null
@@ -66,6 +68,7 @@ class ObjectListView<O: ContextualObject>(
     fun getBoxes(): List<ObjectBox<*>> = boxes
 
     init {
+        border = createBorder(Color.BLUE, 2.0)
         source.addListener(this, initialize = false)
         for (obj in source) {
             if (!filter(obj)) continue
@@ -153,9 +156,13 @@ class ObjectListView<O: ContextualObject>(
 
     private fun displayContent(box: ObjectBox<O>?) {
         val content = box?.content ?: Region()
-        displayedContent = content as? ToolPane ?: ScrollPane(content)
+        displayedContent = content
         HBox.setHgrow(displayedContent, Priority.ALWAYS)
         setRoot(HBox(itemCellsLayout(), displayedContent))
+    }
+
+    private fun setRoot(root: Node) {
+        center = root
     }
 
     private fun autoResize() {
@@ -275,16 +282,17 @@ class ObjectListView<O: ContextualObject>(
         selected.nameControl?.startEdit()
     }
 
-    fun showContent(obj: O) {
+    fun showContent(obj: O): Window? {
         if (mode.now == DisplayMode.SubWindow) {
-            getBox(obj).showSubWindow()
+            return getBox(obj).showSubWindow()
         } else {
             select(obj)
-            val window = scene.window as SubWindow
-            window.showOrBringToFront()
+            val window = scene.window as? SubWindow
+            window?.showOrBringToFront()
             Platform.runLater {
                 getBox(obj).content?.requestFocus()
             }
+            return window
         }
     }
 

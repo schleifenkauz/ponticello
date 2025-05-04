@@ -11,7 +11,10 @@ import xenakis.model.obj.ConfigurableParameterizedObjectDef
 import xenakis.model.obj.ParameterDefObject
 import xenakis.ui.launcher.XenakisApp.Companion.primaryStage
 
-abstract class ParameterizedObjectDefPane<T : ConfigurableParameterizedObjectDef>(protected val def: T) : ToolPane() {
+abstract class ParameterizedObjectDefPane<T : ConfigurableParameterizedObjectDef>(
+    protected val def: T,
+    enableActions: Boolean,
+) : ToolPane() {
     private val config: ParameterListConfig = object : ParameterListConfig(def.context) {
         override fun createNewObject(): ParameterDefObject? {
             val defaultParameters = def.context[Settings].defaultParametersDefs
@@ -33,7 +36,9 @@ abstract class ParameterizedObjectDefPane<T : ConfigurableParameterizedObjectDef
         val content = this.getContent(def)
         val layout = VBox(parametersList, content)
         val scrollPane = ScrollPane(layout).letContentFillViewPort()
-        setup(scrollPane, null)
+        val actions = ParameterizedObjectDefRegistryPane.actions.withContext(def)
+        setup(scrollPane, title = null, headerContent = null, if (enableActions) actions else emptyList())
+        if (enableActions) registerShortcuts(actions)
         parametersList.registerShortcuts(parametersList.actions)
     }
 

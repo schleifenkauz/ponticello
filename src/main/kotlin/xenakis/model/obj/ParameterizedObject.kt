@@ -24,7 +24,7 @@ interface ParameterizedObject : NamedObject {
         for (param in def.parameters) {
             val name = param.name.now
             if (name !in controls.controlMap) {
-                controls.addControl(name, param.defaultControl(context))
+                controls.addControl(name, param.defaultControl())
             }
         }
     }

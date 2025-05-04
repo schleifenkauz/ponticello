@@ -6,7 +6,10 @@ import io.mockk.mockk
 import reaktive.value.reactiveVariable
 import xenakis.impl.asTime
 import xenakis.impl.toDecimal
-import xenakis.model.registry.*
+import xenakis.model.registry.BusRegistry
+import xenakis.model.registry.ObjectReference
+import xenakis.model.registry.ScoreObjectRegistry
+import xenakis.model.registry.SynthDefRegistry
 import xenakis.model.score.ParameterControlList
 import xenakis.model.score.ScoreObject
 import xenakis.model.score.SynthObject
@@ -34,7 +37,6 @@ object Utils {
                 mutableListOf(/*InstrumentRegistry.defaultInstrument()*/)
             ).also { it.initialize(this) }
         )
-        set(GroupRegistry, GroupRegistry.createDefault().also { it.initialize(this) })
         set(BusRegistry, BusRegistry.createDefault().also { it.initialize(this) })
     }
 }

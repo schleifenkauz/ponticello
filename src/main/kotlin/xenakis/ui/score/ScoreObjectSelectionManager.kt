@@ -32,7 +32,7 @@ class ScoreObjectSelectionManager(val context: Context, private val rootPane: Sc
 
     val focusedScorePane: ScorePane
         get() = (focusedView.now as? ScoreObjectGroupView)?.scorePane
-            ?: selectedViews.mapTo(mutableSetOf()) { v -> v.pane }.singleOrNull()
+            ?: selectedViews.mapTo(mutableSetOf()) { v -> v.parentPane }.singleOrNull()
             ?: rootPane
 
     fun select(view: ScoreObjectView, addToSelection: Boolean): Boolean {
@@ -55,9 +55,9 @@ class ScoreObjectSelectionManager(val context: Context, private val rootPane: Sc
         val isSelected = view in selectedViews
         view.setSelected(isSelected)
         if (isSelected) {
-            view.instance.obj.notifyListeners { isSomeInstanceSelected(true) }
-        } else if (view.instance.obj !in selectedObjects) {
-            view.instance.obj.notifyListeners { isSomeInstanceSelected(false) }
+            view.obj.notifyListeners { isSomeInstanceSelected(true) }
+        } else if (view.obj !in selectedObjects) {
+            view.obj.notifyListeners { isSomeInstanceSelected(false) }
         }
     }
 
@@ -93,7 +93,7 @@ class ScoreObjectSelectionManager(val context: Context, private val rootPane: Sc
         for (v in focusedPane.allViews) {
             _selectedViews.add(v)
             v.setSelected(true)
-            v.instance.obj.notifyListeners { isSomeInstanceSelected(true) }
+            v.obj.notifyListeners { isSomeInstanceSelected(true) }
         }
         _focusedView.set(_selectedViews.singleOrNull())
     }

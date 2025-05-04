@@ -12,6 +12,7 @@ import javafx.scene.paint.Color
 import javafx.stage.Screen
 import javafx.stage.StageStyle
 import reaktive.Observer
+import reaktive.value.reactiveValue
 import xenakis.impl.Logger
 import xenakis.model.ScriptObject
 import xenakis.model.Settings
@@ -24,7 +25,6 @@ import xenakis.sc.client.SuperColliderClient
 import xenakis.ui.actions.*
 import xenakis.ui.flow.AudioFlowPane
 import xenakis.ui.impl.makeToolWindow
-import xenakis.ui.live.LiveLoopRegistryPane
 import xenakis.ui.live.LiveTaskRegistryPane
 import xenakis.ui.midi.ContextualMidiReceiver
 import xenakis.ui.midi.ParameterControlsMidiContext
@@ -38,6 +38,8 @@ class XenakisMainActivity(val project: XenakisProject) : Activity() {
     }
 
     private val detailPaneManager = DetailPaneManager(project.context)
+
+    val mainScoreView: NavigableScorePane = NavigableScorePane(project.score, project.context)
 
     val synthDefsPane = SynthDefRegistryPane(project.instruments)
     val synthDefsWindow = context.makeToolWindow(
@@ -69,8 +71,8 @@ class XenakisMainActivity(val project: XenakisProject) : Activity() {
     private val liveTasksPane = LiveTaskRegistryPane(project[LIVE_TASKS])
     val liveTasksWindow = context.makeToolWindow(liveTasksPane, "Live Tasks")
 
-    private val liveLoopsPane = LiveLoopRegistryPane(project[LIVE_LOOPS])
-    val liveLoopsWindow = context.makeToolWindow(liveLoopsPane, "Live Loops")
+    val scoreObjectsPane = ScoreObjectRegistryPane(project.objects)
+    val scoreObjectsWindow = context.makeToolWindow(scoreObjectsPane, "Score objects")
 
     val logWindow = context.makeToolWindow(LogPane(Logger), "Log")
 
@@ -88,9 +90,8 @@ class XenakisMainActivity(val project: XenakisProject) : Activity() {
             .also { w -> w.scene.fill = Color.BLACK }
     }
 
-    private lateinit var scoreView: NavigableScorePane
-    private lateinit var timeCodeView: TimeCodeView
-    private lateinit var flowGroupLines: FlowGroupLines
+    private val timeCodeView: TimeCodeView = TimeCodeView()
+    private val flowGroupLines: FlowGroupLines = FlowGroupLines(project.flows, mainScoreView)
 
     private lateinit var observer: Observer
 
@@ -113,19 +114,15 @@ class XenakisMainActivity(val project: XenakisProject) : Activity() {
     }
 
     private fun setupMainScoreView() {
-        scoreView = NavigableScorePane(project.score, project.context)
-        scoreView.initialize()
-        timeCodeView = TimeCodeView()
+        mainScoreView.initialize()
         context[TimeCodeView] = timeCodeView
-        context[ScorePane.CURRENT_ROOT] = scoreView
-        flowGroupLines = FlowGroupLines(project.flows, scoreView)
-        context[ScoreObjectDuplicator].registerRootPane(scoreView)
-        project.context[ScoreObjectSelectionManager] = ScoreObjectSelectionManager(project.context, scoreView)
+        context[ScorePane.CURRENT_ROOT] = mainScoreView
+        context[ScoreObjectDuplicator].registerRootPane(mainScoreView)
+        project.context[ScoreObjectSelectionManager] = ScoreObjectSelectionManager(project.context, mainScoreView)
     }
 
     private fun setupPlayback() {
-        player = ScorePlayer.create(context)
-        player.attachToScoreView(scoreView)
+        player = ScorePlayer.create(mainScoreView, loopingActivated = reactiveValue(false))
         context[ScorePlayer.CURRENT] = player
         playbackMessageListener = PlaybackMessageListener(project.objects, project.flows, player)
         context[SuperColliderClient].addListener(playbackMessageListener)
@@ -158,15 +155,15 @@ class XenakisMainActivity(val project: XenakisProject) : Activity() {
 
     override fun afterShowing() {
         runFXWithTimeout(1000) {
-            scoreView.displayWholeScore()
+            mainScoreView.displayWholeScore()
         }
     }
 
     override fun getLayout(): VBox {
         val toolbar = createToolbar()
         for (box in toolbar.children) HBox.setHgrow(box, Priority.ALWAYS)
-        VBox.setVgrow(scoreView, Priority.ALWAYS)
-        return VBox(toolbar, scoreView)
+        VBox.setVgrow(mainScoreView, Priority.ALWAYS)
+        return VBox(toolbar, mainScoreView)
     }
 
     private fun createToolbar(): Pane {
@@ -199,7 +196,7 @@ class XenakisMainActivity(val project: XenakisProject) : Activity() {
         registerActions(ProjectActions.withContext(launcher))
         registerActions(QuitAction.withContext(launcher))
         registerActions(PlaybackActions.withContext(player))
-        registerActions(ScoreNavigationActions.withContext(scoreView))
+        registerActions(ScoreNavigationActions.withContext(mainScoreView))
         interactionConfig.addGridRelatedShortcuts(this)
         val objectCtx = ObjectActionContext.MultiObjectContext(context[ScoreObjectSelectionManager])
         registerActions(ObjectActions.all.withContext(objectCtx))

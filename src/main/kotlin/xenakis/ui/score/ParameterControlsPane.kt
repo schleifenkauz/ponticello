@@ -105,7 +105,7 @@ class ParameterControlsPane(
             ).showPopup() ?: return
             val parameter = option.name.now
             val customSpec = option.spec.now.takeIf { !obj.def.hasParameter(parameter) }
-            val control = option.defaultControl(context)
+            val control = option.defaultControl()
             obj.controls.addControl(parameter, control, customSpec)
         }
     }

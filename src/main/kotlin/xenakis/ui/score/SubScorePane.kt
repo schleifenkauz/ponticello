@@ -13,7 +13,6 @@ class SubScorePane(
     private val instance: ScoreObjectInstance,
     private val obj: ScoreObjectGroup,
     private val parentPane: ScorePane,
-    private val independentScale: Boolean,
     context: Context,
 ) : ScorePane(obj.score, context) {
     override val root: ScorePane
@@ -24,7 +23,7 @@ class SubScorePane(
         get() = obj.duration
 
     override val pixelsPerSecond: Double
-        get() = if (independentScale) this.width / obj.duration.value else parentPane.pixelsPerSecond
+        get() = parentPane.pixelsPerSecond
 
     override val absolutePosition: ObjectPosition
         get() = parentPane.absolutePosition + instance.position
@@ -36,14 +35,6 @@ class SubScorePane(
         listenForEvents()
         obj.score.addListener(this)
     }
-
-    override fun getScoreY(screenY: Double): Decimal =
-        if (independentScale) (screenY / (this.height / obj.height.value)).asTime
-        else super.getScoreY(screenY)
-
-    override fun getScreenY(scoreY: Decimal): Double =
-        if (independentScale) scoreY.value * (this.height / obj.height.value)
-        else super.getScreenY(scoreY)
 
     override fun addTime(location: Decimal, amount: Decimal) {
         super.addTime(location, amount)

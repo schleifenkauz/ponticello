@@ -13,7 +13,7 @@ import javafx.scene.text.Text
 import xenakis.model.score.MemoObject
 import xenakis.model.score.ScoreObjectInstance
 
-class MemoObjectView(inst: ScoreObjectInstance, override val obj: MemoObject) : ScoreObjectView(inst) {
+class MemoObjectView(override val obj: MemoObject, inst: ScoreObjectInstance) : ScoreObjectView(inst) {
     private val edit = TextArea(obj.text) styleClass "memo-area"
     private val display = Label(obj.text) styleClass "memo-area"
     private val computeSize = Text(obj.text)

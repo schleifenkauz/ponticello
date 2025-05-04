@@ -5,6 +5,7 @@ import fxutils.setFixedWidth
 import javafx.event.Event
 import javafx.scene.Node
 import javafx.scene.Parent
+import javafx.scene.control.ScrollPane
 import javafx.scene.input.DataFormat
 import org.kordamp.ikonli.Ikon
 import org.kordamp.ikonli.material2.Material2AL
@@ -35,8 +36,12 @@ class SynthDefRegistryPane(
         else MaterialDesignE.EYE
 
     override fun getContent(obj: SynthDefObject, mode: DisplayMode): Parent? = when (obj) {
-        is CustomizableSynthDefObject -> SynthDefObjectPane(obj)
-        is ReferencedSynthDefObject -> ParameterInfoPane(obj.parameters.toReactiveList())
+        is CustomizableSynthDefObject -> {
+            val enableActions = mode == DisplayMode.SubWindow
+            SynthDefObjectPane(obj, enableActions)
+        }
+
+        is ReferencedSynthDefObject -> ScrollPane(ParameterInfoPane(obj.parameters.toReactiveList()))
         is NoSynthDef -> null
     }
 

@@ -85,8 +85,7 @@ class XenakisProject private constructor(val components: Map<Component<out Conte
         get(SERVER_OPTIONS).reboot(context[SuperColliderClient])
     }
 
-    fun hasInstancesOf(obj: ScoreObject): Boolean =
-        score.hasInstancesOf(obj) || get(LIVE_LOOPS).any { loop -> loop.rootScore.hasInstancesOf(obj) }
+    fun hasInstancesOf(obj: ScoreObject): Boolean = score.hasInstancesOf(obj)
 
     companion object {
         val projectDirectory = bundles.publicProperty<File>("Project directory")

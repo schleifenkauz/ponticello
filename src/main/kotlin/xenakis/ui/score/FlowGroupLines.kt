@@ -4,6 +4,7 @@ import fxutils.SubWindow
 import fxutils.setupDragging
 import javafx.beans.value.ObservableValue
 import javafx.scene.control.Label
+import javafx.scene.input.MouseButton
 import javafx.scene.input.MouseEvent
 import javafx.scene.shape.Line
 import reaktive.Observer
@@ -25,7 +26,6 @@ class FlowGroupLines(
 ) : ObjectList.Listener<AudioFlowGroup> {
     private val repaintObserver: Observer
     private val lines = mutableMapOf<AudioFlowGroup, Line>()
-    private val groupPanes = mutableMapOf<AudioFlowGroup, FlowGroupPane>()
     private val groupPaneWindows = mutableMapOf<AudioFlowGroup, SubWindow>()
     private val tooltip = Label()
 
@@ -70,8 +70,8 @@ class FlowGroupLines(
         line.startYProperty().bind(y)
         line.endYProperty().bind(y)
         line.setOnMouseClicked { ev ->
-            if (ev.clickCount == 2) {
-                showGroupPane(group)
+            if (ev.button == MouseButton.SECONDARY) {
+                showGroupPane(group, ev)
             }
         }
     }
@@ -105,16 +105,18 @@ class FlowGroupLines(
         }
     }
 
-    private fun showGroupPane(group: AudioFlowGroup) {
+    private fun showGroupPane(group: AudioFlowGroup, ev: MouseEvent) {
         val existingWindow = groupPaneWindows[group]
-        if (existingWindow != null && existingWindow.isShowing) {
-            existingWindow.toFront()
+        if (existingWindow != null) {
+            existingWindow.showOrBringToFront()
             return
         }
-        val pane = groupPanes.getOrPut(group) { FlowGroupPane(group) }
+        val pane = FlowGroupPane(group)
         val title = group.name.map { name -> "Flow group $name" }
         val window = makeSubWindow(pane, title, group.context, SubWindow.Type.ToolWindow)
         groupPaneWindows[group] = window
+        window.x = ev.screenX
+        window.y = ev.screenY
         window.show()
     }
 
@@ -127,6 +129,5 @@ class FlowGroupLines(
         pane.children.remove(line)
         groupPaneWindows[obj]?.close()
         groupPaneWindows.remove(obj)
-        groupPanes.remove(obj)
     }
 }

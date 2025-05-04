@@ -1,6 +1,5 @@
 package xenakis.model.obj
 
-import hextant.context.Context
 import javafx.scene.paint.Color
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -20,8 +19,7 @@ class ParameterDefObject(
 
     override fun canRenameTo(newName: String): Boolean = true
 
-    fun defaultControl(context: Context, defaultBus: BusReference? = null, defaultGroup: GroupReference? = null) =
-        spec.now.defaultControl(defaultBus)
+    fun defaultControl(defaultBus: BusReference? = null) = spec.now.defaultControl(defaultBus)
 
     override fun toString(): String = "${name.now}: ${spec.now}"
 

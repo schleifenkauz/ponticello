@@ -7,7 +7,7 @@ import javafx.scene.control.ScrollPane
 import xenakis.model.score.ScoreObjectInstance
 import xenakis.model.score.TaskObject
 
-class TaskObjectView(inst: ScoreObjectInstance, override val obj: TaskObject) : ScoreObjectView(inst) {
+class TaskObjectView(override val obj: TaskObject, inst: ScoreObjectInstance) : ScoreObjectView(inst) {
     private val nameLabel = label(obj.name) styleClass "task-label"
 
     private val codeEditor = obj.code.control

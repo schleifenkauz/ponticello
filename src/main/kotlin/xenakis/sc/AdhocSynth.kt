@@ -1,21 +1,17 @@
 package xenakis.sc
 
-import hextant.codegen.Component
 import hextant.codegen.Compound
 import hextant.context.Context
 import kotlinx.serialization.Serializable
 import xenakis.impl.superColliderPath
-import xenakis.model.obj.GroupReference
 import xenakis.model.project.XenakisProject
 import xenakis.sc.client.ScWriter
-import xenakis.sc.editor.GroupSelector
 
 @Compound(nodeType = ScExpr::class)
 @Serializable
 data class AdhocSynth(
     val name: Identifier,
     val block: CodeBlock,
-    @Component(GroupSelector::class) val group: GroupReference,
 ) : ScExpr {
     override val isValid: Boolean
         get() = block.isValid
@@ -26,7 +22,7 @@ data class AdhocSynth(
     override fun code(writer: ScWriter, context: Context) = writeCode(
         writer, context,
         synthName = "~adhoc_${name.text}",
-        target = group.get()?.superColliderName ?: "<none>", //TODO
+        target = "s.defaultGroup",
         addAction = "addToHead",
         wrapInTask = false
     )

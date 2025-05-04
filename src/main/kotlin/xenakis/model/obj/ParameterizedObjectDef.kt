@@ -30,7 +30,7 @@ interface ParameterizedObjectDef : NamedObject {
         context: Context, defaultBus: BusReference?,
     ): MutableList<Pair<String, ParameterControl>> {
         val controls = parameters.mapTo(mutableListOf()) { p ->
-            p.name.now to p.defaultControl(context, defaultBus)
+            p.name.now to p.defaultControl(defaultBus)
         }
         return controls
     }

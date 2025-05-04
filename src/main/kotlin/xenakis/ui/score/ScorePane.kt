@@ -70,6 +70,8 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
         widthProperty().addListener { _ -> repaint() }
     }
 
+    open fun isRoot(obj: ScoreObject) = false
+
     open fun snapToGrid(position: ObjectPosition): ObjectPosition =
         root.snapToGrid(position + absolutePosition) - absolutePosition
 
@@ -192,24 +194,12 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
 
     fun getObjectView(inst: ScoreObjectInstance) = views[inst] ?: error("No view found for ${inst.ref.getName()}")
 
-    fun createObjectView(inst: ScoreObjectInstance): ScoreObjectView = when (val obj = inst.obj) {
-        is SynthObject -> SynthObjectView(inst, obj)
-        is TaskObject -> TaskObjectView(inst, obj)
-        is ProcessObject -> ProcessObjectView(inst, obj)
-        is MemoObject -> MemoObjectView(inst, obj)
-        is ScoreObjectGroup -> ScoreObjectGroupView(inst, obj)
-        is MidiObject -> PianoRollObjectView(inst, obj)
-        is TempoGridObject -> TempoGridObjectView(inst, obj)
-        is ScoreObject.Unresolved -> UnresolvedScoreObjectView(inst)
-        is ParameterizedScoreObject -> throw AssertionError()
-    }
-
     /*
     * Score change handlers
     * */
 
     override fun addedObject(score: Score, inst: ScoreObjectInstance, autoSelect: Boolean) {
-        val view = createObjectView(inst)
+        val view = createObjectView(inst.obj, inst)
         view.initialize(this)
         views[inst] = view
         children.add(view)
@@ -279,10 +269,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
                 selector.deselectAll()
                 requestFocus()
                 val player = context[ScorePlayer.CURRENT]
-                if (!(player.isPlaying.now)) {
-                    player.attachToScoreView(this)
-                    player.playHead.movePlayHead(t)
-                }
+                player.playHead.movePlayHead(t)
             }
 
             else -> return
@@ -511,6 +498,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
         val registry = context[ScoreObjectRegistry]
         if (obj in registry) registry.add(obj)
         val inst = rect.createInstance(obj)
+        obj.liveConfig.yPosition.set(this.absolutePosition.y + inst.y)
         score.addObject(inst, autoSelect = true)
         return inst
     }
@@ -530,5 +518,16 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
 
     companion object {
         val CURRENT_ROOT = publicProperty<ScorePane>("CurrentRootScorePane")
+
+        fun createObjectView(obj: ScoreObject, instance: ScoreObjectInstance): ScoreObjectView = when (obj) {
+            is SynthObject -> SynthObjectView(obj, instance)
+            is TaskObject -> TaskObjectView(obj, instance)
+            is ProcessObject -> ProcessObjectView(obj, instance)
+            is MemoObject -> MemoObjectView(obj, instance)
+            is ScoreObjectGroup -> ScoreObjectGroupView(obj, instance)
+            is MidiObject -> PianoRollObjectView(obj, instance)
+            is TempoGridObject -> TempoGridObjectView(obj, instance)
+            is ScoreObject.Unresolved -> UnresolvedScoreObjectView(instance)
+        }
     }
 }

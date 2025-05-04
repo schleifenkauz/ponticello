@@ -1,12 +1,10 @@
 package xenakis.ui.live
 
-import fxutils.centerChildren
-import fxutils.hspace
+import fxutils.*
 import fxutils.prompt.CompoundPrompt
 import fxutils.prompt.SimpleSearchableListView
-import fxutils.setFixedWidth
-import fxutils.sync
 import javafx.scene.Node
+import javafx.scene.control.Button
 import javafx.scene.control.Spinner
 import javafx.scene.layout.HBox
 import org.controlsfx.control.ToggleSwitch
@@ -14,42 +12,48 @@ import reaktive.value.binding.flatMap
 import reaktive.value.binding.not
 import reaktive.value.fx.asObservableValue
 import reaktive.value.now
-import xenakis.model.live.LoopConfig
+import xenakis.impl.sync
+import xenakis.model.live.QuantizationConfig
 import xenakis.model.live.QuantizationUnit
 import xenakis.model.registry.ObjectReference
 import xenakis.model.registry.ScoreObjectRegistry
 import xenakis.model.registry.reference
+import xenakis.model.score.ScoreObject.ResizeMode
 import xenakis.model.score.TempoGridObject
 import xenakis.model.score.TimeUnit
 
-class LoopConfigDialog(
-    private val config: LoopConfig, title: String,
-) : CompoundPrompt<LoopConfig>(title, labelWidth = 150.0) {
+class QuantizationConfigDialog(
+    private val config: QuantizationConfig, title: String,
+) : CompoundPrompt<ResizeMode>(title, labelWidth = 150.0) {
     private val tempoGrids = config.context[ScoreObjectRegistry]
         .filterIsInstance<TempoGridObject>()
         .map { obj -> obj.reference() }
 
     private val gridSelector = SimpleSearchableListView(tempoGrids, "Choose grid")
         .selectorButton(config.grid)
+        .setFixedWidth(SELECTOR_WIDTH)
 
     private val durationUnitInput = SimpleSearchableListView(TimeUnit.entries, "Choose duration unit")
         .selectorButton(config.durationUnit)
+        .setFixedWidth(SELECTOR_WIDTH)
 
-    private val durationValueInput = Spinner<Int>(1, Int.MAX_VALUE, config.durationValue.now)
+    private val durationValueInput = Spinner<Double>(1.0, Double.MAX_VALUE, config.durationValue.now.value)
         .sync(config.durationValue)
         .setFixedWidth(SPINNER_WIDTH)
 
     private val quantizationUnitInput = SimpleSearchableListView(QuantizationUnit.entries, "Choose quantization unit")
         .selectorButton(config.quantizationUnit)
+        .setFixedWidth(SELECTOR_WIDTH)
 
-    private val quantizationValueInput = Spinner<Int>(1, Int.MAX_VALUE, config.quantizationValue.now)
+    private val quantizationValueInput = Spinner<Double>(1.0, Double.MAX_VALUE, config.quantizationValue.now.value)
         .sync(config.quantizationValue)
         .setFixedWidth(SPINNER_WIDTH)
 
     private val offsetUnitInput = SimpleSearchableListView(TimeUnit.entries, "Choose offset unit")
         .selectorButton(config.offsetUnit)
+        .setFixedWidth(SELECTOR_WIDTH)
 
-    private val offsetValueInput = Spinner<Int>(0, Int.MAX_VALUE, config.offsetValue.now)
+    private val offsetValueInput = Spinner<Double>(0.0, Double.MAX_VALUE, config.offsetValue.now.value)
         .sync(config.offsetValue)
         .setFixedWidth(SPINNER_WIDTH)
 
@@ -66,6 +70,12 @@ class LoopConfigDialog(
         addItem(name, HBox(5.0, *items).centerChildren())
     }
 
+    override fun extraButtons(): List<Button> = listOf(
+        button("Confirm and stretch") {
+            commit(ResizeMode.Stretch)
+        }
+    )
+
     init {
         val unresolvedGrid = config.grid.flatMap(ObjectReference<*>::isResolved).not().asObservableValue()
         relativizeToGridInstanceSwitch.disableProperty().bind(unresolvedGrid)
@@ -80,9 +90,10 @@ class LoopConfigDialog(
         row("Offset: ", offsetUnitInput, offsetValueInput, shiftGridToggle)
     }
 
-    override fun confirm(): LoopConfig = config
+    override fun confirm(): ResizeMode = ResizeMode.Regular
 
     companion object {
+        private const val SELECTOR_WIDTH = 120.0
         private const val SPINNER_WIDTH = 80.0
     }
 }

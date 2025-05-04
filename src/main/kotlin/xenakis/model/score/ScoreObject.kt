@@ -1,6 +1,7 @@
 package xenakis.model.score
 
 import fxutils.prompt.YesNoPrompt
+import hextant.context.Context
 import hextant.context.withoutUndo
 import hextant.core.editor.ListenerManager
 import hextant.undo.AbstractEdit
@@ -19,6 +20,8 @@ import reaktive.value.now
 import reaktive.value.reactiveVariable
 import xenakis.impl.*
 import xenakis.model.flow.NodePlacement
+import xenakis.model.live.LiveConfig
+import xenakis.model.live.QuantizationConfig
 import xenakis.model.obj.AbstractRenamableObject
 import xenakis.model.registry.ScoreObjectRegistry
 import xenakis.model.score.Score.Companion.rootScore
@@ -52,6 +55,7 @@ sealed class ScoreObject : AbstractRenamableObject() {
         get() = _duration.now
         protected set(value) {
             _duration.now = value
+            quantizationConfig.setDuration(value)
         }
 
     var height: Decimal
@@ -60,9 +64,9 @@ sealed class ScoreObject : AbstractRenamableObject() {
             _height.now = value
         }
 
-    open fun duration(): ReactiveValue<Decimal> = _duration
+    val quantizationConfig = QuantizationConfig.createDefault()
 
-    fun height(): ReactiveValue<Decimal> = _height
+    val liveConfig = LiveConfig.createDefault()
 
     @Transient
     private val viewManager: ListenerManager<Listener> = ListenerManager.createWeakListenerManager()
@@ -85,6 +89,22 @@ sealed class ScoreObject : AbstractRenamableObject() {
         get() = context[ScoreObjectRegistry]
 
     open val superColliderPrefix: String? get() = null
+
+    open fun duration(): ReactiveValue<Decimal> = _duration
+
+    fun height(): ReactiveValue<Decimal> = _height
+
+    open fun independentScore(): Score {
+        val inst = ScoreObjectInstance(this, ObjectPosition.ZERO)
+        val score = Score(mutableListOf(inst))
+        score.initialize(context, this)
+        return score
+    }
+
+    override fun initialize(context: Context) {
+        super.initialize(context)
+        quantizationConfig.initialize(context)
+    }
 
     open fun validate(): Boolean {
         return true

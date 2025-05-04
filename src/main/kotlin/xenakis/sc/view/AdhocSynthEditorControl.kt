@@ -14,7 +14,6 @@ class AdhocSynthEditorControl @ProvideImplementation(ControlFactory::class) cons
             view(editor.name)
             space()
             keyword("group: ")
-            view(editor.group)
         }
         view(editor.block)
     }

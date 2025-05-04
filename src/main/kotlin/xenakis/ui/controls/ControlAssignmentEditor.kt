@@ -22,6 +22,7 @@ import javafx.scene.layout.HBox
 import javafx.scene.paint.Color
 import org.controlsfx.control.ToggleSwitch
 import org.kordamp.ikonli.evaicons.Evaicons
+import org.kordamp.ikonli.material2.Material2AL
 import org.kordamp.ikonli.materialdesign2.MaterialDesignC
 import org.kordamp.ikonli.materialdesign2.MaterialDesignS
 import reaktive.value.*
@@ -303,7 +304,7 @@ class ControlAssignmentEditor(val control: NamedParameterControl, val view: Scor
                     activeObjects
                         .filterIsInstance<ActiveScoreObject>()
                         .find { obj ->
-                            val absolutePosition = view.absolutePosition + obj.player.playHead.absoluteStartPosition
+                            val absolutePosition = view.absolutePosition + obj.player.pane.absolutePosition
                             obj.absolutePosition == absolutePosition
                         }
                 } else activeObjects.singleOrNull()
@@ -461,17 +462,28 @@ class ControlAssignmentEditor(val control: NamedParameterControl, val view: Scor
                 namedControl: NamedParameterControl,
                 control: GlobalPatternControl,
                 view: ScoreObjectView?,
-            ): List<ContextualizedAction> = listOf(plotAction.withContext(control))
+            ): List<ContextualizedAction> = actions.withContext(control)
 
             override fun toString(): String = "Pattern"
 
-            private val plotAction = action<GlobalPatternControl>("Plot") {
-                icon(MaterialDesignC.CHART_BOX_OUTLINE)
-                applicableWhen { ctrl -> ctrl.pattern.flatMap { p -> p.isResolved } }
-                executes { ctrl ->
-                    val obj = ctrl.pattern.now.get() ?: return@executes
-                    val pane = obj.context[XenakisMainActivity].patternsPane
-                    pane.showPlotPane(obj)
+            private val actions = collectActions<GlobalPatternControl> {
+                addAction("Plot") {
+                    icon(MaterialDesignC.CHART_BOX_OUTLINE)
+                    applicableWhen { ctrl -> ctrl.pattern.flatMap { p -> p.isResolved } }
+                    executes { ctrl ->
+                        val obj = ctrl.pattern.now.get() ?: return@executes
+                        val pane = obj.context[XenakisMainActivity].patternsPane
+                        pane.showPlotPane(obj)
+                    }
+                }
+                addAction("Edit") {
+                    icon(Material2AL.CODE)
+                    applicableWhen { ctrl -> ctrl.pattern.flatMap(GlobalPatternReference::isResolved) }
+                    executes { ctrl ->
+                        val obj = ctrl.pattern.now.get() ?: return@executes
+                        val pane = obj.context[XenakisMainActivity].patternsPane
+                        pane.listView.showContent(obj)
+                    }
                 }
             }
         }

@@ -39,6 +39,10 @@ class DetailPaneManager(private val context: Context) {
             detached.getValue(view.obj).showOrBringToFront()
             return
         }
+        showDetailPane(view)
+    }
+
+    fun showDetailPane(view: ScoreObjectView) {
         val detailPane = view.getDetailPane()
         val pane = StackPane(detailPane)
         pane.border = createBorder(Color.GRAY, 1.0)
@@ -110,7 +114,6 @@ class DetailPaneManager(private val context: Context) {
         val ctx = ObjectActionContext.SingleObjectContext(view)
         val actions = ObjectActions.singleObjectActions.withContext(ctx) +
                 ObjectActions.multiObjectActions.withContext(ctx) +
-                ObjectActions.playbackActions.withContext(ctx) +
                 listOf(windowAction)
         pane.registerShortcuts(actions)
         val actionBar = ActionBar(listOf(windowAction), buttonStyle = "medium-icon-button")

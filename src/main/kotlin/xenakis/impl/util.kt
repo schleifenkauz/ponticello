@@ -4,9 +4,11 @@ import hextant.context.Context
 import hextant.context.Properties.classLoader
 import hextant.plugins.Aspects
 import hextant.plugins.Implementation
+import javafx.scene.control.Spinner
 import javafx.scene.paint.Color
 import kotlinx.serialization.json.Json
 import reaktive.value.ReactiveValue
+import reaktive.value.ReactiveVariable
 import reaktive.value.reactiveVariable
 import xenakis.sc.Warp
 import xenakis.sc.client.ScWriter
@@ -98,3 +100,12 @@ val canSuperColliderTalkToMe get() = true
 fun String.replacePrefix(prefix: String, replacement: String) =
     if (startsWith(prefix)) replacement + drop(prefix.length) else this
 
+fun Spinner<Double>.sync(variable: ReactiveVariable<Decimal>): Spinner<Double> {
+    isEditable = true
+    valueProperty().addListener { _ ->
+        val value = editor.text.parseDecimal() ?: return@addListener
+        variable.set(value)
+    }
+    userData = variable.observe { _, _, v -> editor.text = v.toString() }
+    return this
+}

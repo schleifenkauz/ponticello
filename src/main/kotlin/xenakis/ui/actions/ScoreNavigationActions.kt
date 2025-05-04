@@ -38,7 +38,6 @@ object ScoreNavigationActions : Action.Collector<NavigableScorePane>({
             if (ev.isShiftDown()) {
                 if (player.isPlaying.now) return@executes
                 view.display(0.0.asTime, view.displayedDuration)
-                player.attachToScoreView(view)
             }
             player.movePlayHeadToStart()
         }

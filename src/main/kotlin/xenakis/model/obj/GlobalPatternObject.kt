@@ -39,6 +39,10 @@ class GlobalPatternObject(
     override val canCopy: Boolean
         get() = true
 
+    override fun ScWriter.freeObject() {
+        +"$superColliderName = nil"
+    }
+
     override fun ScWriter.sync() {
         createObject()
     }

@@ -86,7 +86,6 @@ class SampleRegistryPane(
         private val actions = collectActions<BufferObject> {
             addAction("View sample") {
                 icon(Evaicons.ACTIVITY)
-                shortcut("Ctrl+Shift+O")
                 executesOn { obj: SampleObject ->
                     val image = ImageView(obj.spectrogramImage)
                     val scrollPane = ScrollPane(image)

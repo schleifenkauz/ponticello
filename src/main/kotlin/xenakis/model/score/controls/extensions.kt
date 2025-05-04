@@ -45,6 +45,7 @@ fun ScWriter.writeSynthCode(
     cutoff: Decimal, placement: NodePlacement, latency: Decimal,
 ) {
     appendBlock("s.makeBundle($latency)") {
+        +"var auxilBuses = (), auxilSynths = ()"
         val controlsWithSpecs = obj.controls.all().associate { ctrl ->
             val spec = ctrl.spec.now!!
             val control = ctrl.now.adjustControlForCutoff(cutoff, spec)
@@ -52,7 +53,7 @@ fun ScWriter.writeSynthCode(
         }
         val synthDefName = obj.def.name.now
         val synthVar = "${obj.superColliderPrefix}$uniqueName"
-        val (auxilSynthsMap, auxilBusesMap) = allocateAuxilMaps(uniqueName)
+        allocateAuxilMaps(uniqueName)
         append("$synthVar = Synth.newPaused(\\$synthDefName, [")
         for ((param, control) in controlsWithSpecs) {
             val (spec, ctrl) = control
@@ -68,7 +69,6 @@ fun ScWriter.writeSynthCode(
         val action = guardAgainstReplaceNil(placement)
         appendLine("], target: ${placement.target}, addAction: $action);")
         +"s.sync"
-        +"$synthVar.register"
         for ((param, control) in controlsWithSpecs) {
             val (spec, ctrl) = control
             with(ctrl) {
@@ -83,12 +83,14 @@ fun ScWriter.writeSynthCode(
                 applyToSynth(obj, uniqueName, synthVar, param, spec)
             }
         }
+        +"$synthVar.register"
         +"$synthVar.run"
         appendBlock("$synthVar.onFree") {
             if (obj is ScoreObject) {
                 +"~xenakis_addr.sendMsg('/freed', -1, \"$uniqueName\")" //TODO what if it was renamed
             }
-            freeAuxilMaps(auxilBusesMap, auxilSynthsMap)
+            +"auxilBuses.do(_.free)"
+            +"auxilSynths.do(_.free)"
         }
     }
 }
@@ -115,7 +117,7 @@ fun ScWriter.writeProcessCode(
                 )
             }
         }
-        val (auxilBusesMap, auxilSynthsMap) = allocateAuxilMaps(uniqueName)
+        allocateAuxilMaps(uniqueName)
         +"$latency.wait"
         val duration = obj.duration()?.now?.toString() ?: "inf"
         val defName = "proc_${obj.def.name.now}"
@@ -135,22 +137,15 @@ fun ScWriter.writeProcessCode(
         if (obj is ScoreObject) {
             +"~xenakis_addr.sendMsg('/stopped', -1, ${uniqueName})"
         }
-        freeAuxilMaps(auxilBusesMap, auxilSynthsMap)
+        +"auxilBuses.do(_.free)"
+        +"auxilSynths.do(_.free)"
     }
     +".play"
 }
 
-private fun ScWriter.freeAuxilMaps(auxilBusesMap: String, auxilSynthsMap: String) {
-    +"$auxilBusesMap.do(_.free)"
-    +"$auxilBusesMap = nil"
-    +"$auxilSynthsMap.do(_.free)"
-    +"$auxilSynthsMap = nil"
-}
-
-private fun ScWriter.allocateAuxilMaps(uniqueName: String): Pair<String, String> {
+private fun ScWriter.allocateAuxilMaps(uniqueName: String) {
     val auxilSynthsMap = ParameterControl.auxilSynthsVar(uniqueName)
     val auxilBusesMap = ParameterControl.auxilBusesVar(uniqueName)
-    +"$auxilSynthsMap = ()"
-    +"$auxilBusesMap = ()"
-    return Pair(auxilBusesMap, auxilSynthsMap)
+    +"$auxilSynthsMap = auxilSynths"
+    +"$auxilBusesMap = auxilBuses"
 }
