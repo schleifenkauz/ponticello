@@ -26,6 +26,7 @@ import reaktive.value.now
 import reaktive.value.reactiveVariable
 import xenakis.impl.*
 import xenakis.model.obj.BufferObject
+import xenakis.model.obj.MeterObject
 import xenakis.model.obj.ProcessDefObject
 import xenakis.model.obj.SynthDefObject
 import xenakis.model.player.ScorePlayer
@@ -75,7 +76,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
     open fun snapToGrid(position: ObjectPosition): ObjectPosition =
         root.snapToGrid(position + absolutePosition) - absolutePosition
 
-    open fun getNearestGrid(position: ObjectPosition): Pair<Decimal, TempoGridObject>? =
+    open fun getNearestGrid(position: ObjectPosition): Pair<Decimal, MeterObject>? =
         root.getNearestGrid(position + absolutePosition)
 
     fun snapToGrid(x: Double, y: Double): ObjectPosition = snapToGrid(ObjectPosition(getTime(x), getScoreY(y)))
@@ -373,7 +374,8 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
                     val availableOptions = context[SynthDefRegistry].map(NewObjectOption::Synth) +
                             context[ProcessDefRegistry].map(NewObjectOption::Process) +
                             context[SynthDefRegistry].map(NewObjectOption::MIDI) +
-                            listOf(NewObjectOption.Group, NewObjectOption.TempoGrid)
+                            context[MeterRegistry].map(NewObjectOption::TempoGrid) +
+                            listOf(NewObjectOption.Group, NewObjectOption.NewTempoGrid)
                     val popup = SimpleSearchableListView(availableOptions, "Add score object")
                     val anchor =
                         localToScreen(selection.rect.boundsInParent.centerX, selection.rect.boundsInParent.centerY)
@@ -428,7 +430,17 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
         }
 
         is NewObjectOption.MIDI -> throw AssertionError("Handled before")
-        NewObjectOption.TempoGrid -> TempoGridObject.create(name, 120, 4, 4)
+        is NewObjectOption.TempoGrid -> TempoGridObject(
+            reactiveVariable(name),
+            option.meter.reference()
+        )
+
+        NewObjectOption.NewTempoGrid -> {
+            val newMeter = MeterObject.create(name, 60, 4, 4)
+            context[MeterRegistry].add(newMeter)
+            TempoGridObject(reactiveVariable(name), newMeter.reference())
+        }
+
         NewObjectOption.Group -> ScoreObjectGroup(reactiveVariable(name), Score(mutableListOf()))
     }
 
@@ -438,22 +450,25 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
             is Process -> "Process: ${def.name.now}"
             is MIDI -> "MIDI: ${def.name.now}"
             is Group -> "Group"
-            is TempoGrid -> "Tempo grid"
+            is TempoGrid -> "Tempo grid: ${meter.name.now}"
+            is NewTempoGrid -> "New tempo grid"
         }
 
         fun defaultName(registry: ScoreObjectRegistry): String = when (this) {
             is Synth -> registry.availableName(def.name.now)
             is MIDI -> registry.availableName("${def.name.now}_midi")
             is Process -> registry.availableName(def.name.now)
+            is TempoGrid -> registry.availableName(meter.name.now)
+            is NewTempoGrid -> registry.availableName("tempo")
             Group -> registry.availableName("group")
-            TempoGrid -> registry.availableName("tempo")
         }
 
         class Synth(val def: SynthDefObject) : NewObjectOption()
         class Process(val def: ProcessDefObject) : NewObjectOption()
         class MIDI(val def: SynthDefObject) : NewObjectOption()
+        class TempoGrid(val meter: MeterObject) : NewObjectOption()
         object Group : NewObjectOption()
-        object TempoGrid : NewObjectOption()
+        object NewTempoGrid : NewObjectOption()
     }
 
     private fun showAddTimeDialog(t: Decimal) {

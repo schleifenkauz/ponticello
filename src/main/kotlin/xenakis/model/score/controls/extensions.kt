@@ -46,6 +46,7 @@ fun ScWriter.writeSynthCode(
 ) {
     appendBlock("s.makeBundle($latency)") {
         +"var auxilBuses = (), auxilSynths = ()"
+        +"s.sync"
         val controlsWithSpecs = obj.controls.all().associate { ctrl ->
             val spec = ctrl.spec.now!!
             val control = ctrl.now.adjustControlForCutoff(cutoff, spec)

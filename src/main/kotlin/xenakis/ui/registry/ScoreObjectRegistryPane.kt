@@ -10,6 +10,7 @@ import javafx.scene.Parent
 import javafx.scene.input.DataFormat
 import javafx.scene.layout.BorderPane
 import org.kordamp.ikonli.codicons.Codicons
+import org.kordamp.ikonli.materialdesign2.MaterialDesignM
 import org.kordamp.ikonli.materialdesign2.MaterialDesignP
 import org.kordamp.ikonli.materialdesign2.MaterialDesignR
 import reaktive.value.now
@@ -17,7 +18,9 @@ import reaktive.value.reactiveValue
 import xenakis.impl.one
 import xenakis.impl.toDecimal
 import xenakis.impl.zero
+import xenakis.model.registry.MeterRegistry
 import xenakis.model.registry.ScoreObjectRegistry
+import xenakis.model.registry.reference
 import xenakis.model.score.ScoreObject
 import xenakis.sc.NumericalControlSpec
 import xenakis.sc.Warp
@@ -71,10 +74,20 @@ class ScoreObjectRegistryPane(registry: ScoreObjectRegistry) : ObjectRegistryPan
                 icon(MaterialDesignP.PROGRESS_QUESTION)
                 toggles({ obj -> obj.liveConfig.addToScore })
             }
+            addAction("Quantize start") {
+                applicableIf { obj -> obj.affectsPlayback }
+                icon(MaterialDesignM.METRONOME)
+                toggles({ obj -> obj.quantizationConfig.enableQuantization })
+            }
             addAction("Configure quantization") {
                 applicableIf { obj -> obj.affectsPlayback }
                 icon(Codicons.SYMBOL_PROPERTY)
                 executes { obj, ev ->
+                    if (obj.quantizationConfig.meter.now.isResolved.now.not()) {
+                        val meter = SimpleSearchableRegistryView(obj.context[MeterRegistry], "Select meter")
+                            .showPopup(ev) ?: return@executes
+                        obj.quantizationConfig.meter.set(meter.reference())
+                    }
                     val copy = obj.quantizationConfig.copy()
                     copy.initialize(obj.context)
                     QuantizationConfigDialog(copy, "Configure live loop '${obj.name.now}")

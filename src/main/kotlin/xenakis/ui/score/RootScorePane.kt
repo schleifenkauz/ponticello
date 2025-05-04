@@ -13,6 +13,7 @@ import xenakis.impl.Decimal
 import xenakis.impl.div
 import xenakis.impl.replacePrefix
 import xenakis.impl.round
+import xenakis.model.obj.MeterObject
 import xenakis.model.player.ScorePlayer
 import xenakis.model.project.settings
 import xenakis.model.score.*
@@ -37,7 +38,7 @@ abstract class RootScorePane(score: Score, context: Context) : ScorePane(score, 
         get() = null
     final override val pixelsPerSecond: Double
         get() = (this.width / (displayEnd - displayStart)).toDouble()
-    final override val absolutePosition: ObjectPosition
+    override val absolutePosition: ObjectPosition
         get() = ObjectPosition.ZERO
 
     open fun initialize() {
@@ -117,11 +118,15 @@ abstract class RootScorePane(score: Score, context: Context) : ScorePane(score, 
         context[ScorePlayer.CURRENT].playHead.updatePosition()
     }
 
-    override fun getNearestGrid(position: ObjectPosition): Pair<Decimal, TempoGridObject>? {
-        val grids = score.objectInstances.filter { inst -> inst.obj is TempoGridObject }
+    override fun getNearestGrid(position: ObjectPosition): Pair<Decimal, MeterObject>? {
+        val grids = score.objectInstances.filter { inst ->
+            val obj = inst.obj
+            obj is TempoGridObject && obj.meter.isResolved.now
+        }
         val relevantGrids = grids.filter { g -> position.time in g.timeRange }
         val nearestGrid = relevantGrids.minByOrNull { g -> g.verticalDist(position.y) } ?: return null
-        return nearestGrid.start to nearestGrid.obj as TempoGridObject
+        val gridObj = nearestGrid.obj as TempoGridObject
+        return nearestGrid.start to gridObj.meter.force()
     }
 
     final override fun snapToGrid(position: ObjectPosition): ObjectPosition {
@@ -133,12 +138,12 @@ abstract class RootScorePane(score: Score, context: Context) : ScorePane(score, 
             else -> {
                 val nearestGrid = getNearestGrid(position)
                 val gridStart = nearestGrid?.first
-                val gridObj = nearestGrid?.second
+                val meter = nearestGrid?.second
                 for (grid in allViews.filterIsInstance<TempoGridObjectView>()) {
                     if (grid.instance.start != gridStart) grid.unmark()
                 }
-                if (gridObj == null || gridStart == null) return position
-                val snapped = gridObj.snapToGrid(t - gridStart, option)
+                if (meter == null || gridStart == null) return position
+                val snapped = meter.snapToGrid(t - gridStart, option)
                 return ObjectPosition(snapped + gridStart, y)
             }
         }

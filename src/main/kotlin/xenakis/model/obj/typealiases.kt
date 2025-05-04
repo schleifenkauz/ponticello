@@ -10,3 +10,4 @@ typealias BufferReference = ObjectReference<@Contextual BufferObject>
 typealias ProcessDefReference = ObjectReference<@Contextual ProcessDefObject>
 typealias GlobalPatternReference = ObjectReference<@Contextual GlobalPatternObject>
 typealias ScoreObjectReference = ObjectReference<@Contextual ScoreObject>
+typealias MeterReference = ObjectReference<@Contextual MeterObject>

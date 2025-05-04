@@ -64,7 +64,7 @@ sealed class ScoreObject : AbstractRenamableObject() {
             _height.now = value
         }
 
-    val quantizationConfig = QuantizationConfig.createDefault()
+    val quantizationConfig: QuantizationConfig = QuantizationConfig.createDefault()
 
     val liveConfig = LiveConfig.createDefault()
 

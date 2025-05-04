@@ -8,10 +8,7 @@ import hextant.context.Context
 import hextant.undo.compoundEdit
 import javafx.geometry.HorizontalDirection.RIGHT
 import org.kordamp.ikonli.material2.Material2AL
-import org.kordamp.ikonli.materialdesign2.MaterialDesignC
-import org.kordamp.ikonli.materialdesign2.MaterialDesignL
-import org.kordamp.ikonli.materialdesign2.MaterialDesignP
-import org.kordamp.ikonli.materialdesign2.MaterialDesignV
+import org.kordamp.ikonli.materialdesign2.*
 import reaktive.value.binding.Binding
 import reaktive.value.binding.flatMap
 import reaktive.value.binding.map
@@ -22,7 +19,6 @@ import xenakis.impl.copy
 import xenakis.impl.times
 import xenakis.impl.zero
 import xenakis.model.obj.NoSynthDef
-import xenakis.model.player.ScorePlayer
 import xenakis.model.registry.ScoreObjectRegistry
 import xenakis.model.score.*
 import xenakis.ui.controls.RenamePrompt
@@ -69,31 +65,11 @@ object ObjectActions {
         }
     }
 
-    val playbackActions = collectActions<ScoreObject> {
-        addAction("Play object") {
-            shortcut("Ctrl+SPACE")
-            icon { ctx ->
-                ctx.context[ScorePlayer.CURRENT].isPlaying.map { playing ->
-                    if (playing) MaterialDesignP.PAUSE else MaterialDesignP.PLAY
-                }
-            }
-            description { ctx ->
-                ctx.context[ScorePlayer.CURRENT].isPlaying.map { playing ->
-                    if (playing) "Pause object" else "Play object"
-                }
-            }
-            executes { obj, _ ->
-                val playback = obj.context[ScorePlayer.CURRENT]
-                if (playback.isPlaying.now) playback.pause()
-                else playback.play()
-            }
-        }
-    }
-
     val singleObjectActions = collectActions {
         addObjectAction("Show as sub window") {
             shortcut("Alt?+W")
             icon(MaterialDesignL.LAUNCH)
+            applicableOn { view -> !view.parentPane.isRoot(view.obj) }
             executeSingle { view, _ ->
                 val scoreObjectsPane = view.context[XenakisMainActivity].scoreObjectsPane
                 val w = scoreObjectsPane.listView.showContent(view.obj) ?: return@executeSingle
@@ -115,6 +91,7 @@ object ObjectActions {
         addObjectAction("Unlink from original") {
             shortcut("Alt?+U")
             icon(MaterialDesignL.LINK_OFF)
+            applicableOn { view -> !view.parentPane.isRoot(view.obj) }
             executes { ctx, ev ->
                 if (ev.isTargetTextInput && !ev.isAltDown()) return@executes
                 if (ctx.selectedViews.isEmpty()) return@executes
@@ -134,6 +111,7 @@ object ObjectActions {
         }
         addObjectAction("Cut object") {
             shortcut("Alt?+X")
+            applicableOn { view -> !view.parentPane.isRoot(view.obj) }
             executeSingle { view, ev ->
                 if (ev.isTargetTextInput && !ev.isAltDown()) return@executeSingle
                 val inst = view.instance
@@ -183,6 +161,16 @@ object ObjectActions {
             executeSingle { view, _ ->
                 val obj = view.obj
                 RenamePrompt(obj, "New name for object").showDialog(view.context)
+            }
+        }
+
+        addObjectAction("Infer quantization config from score") {
+            icon(MaterialDesignM.METRONOME)
+            applicableOn { view ->
+                view.obj.affectsPlayback && view.scene.window == view.context[XenakisMainActivity].primaryStage
+            }
+            executeSingle { view, _ ->
+                view.inferQuantization()
             }
         }
 

@@ -6,29 +6,29 @@ import reaktive.Observer
 import reaktive.value.forEach
 import reaktive.value.now
 import xenakis.impl.Decimal
-import xenakis.impl.asY
 import xenakis.impl.zero
+import xenakis.model.obj.MeterObject
 import xenakis.model.score.ObjectPosition
 import xenakis.model.score.ScoreObject
-import xenakis.model.score.ScoreObjectInstance
-import xenakis.model.score.TempoGridObject
 import xenakis.ui.impl.Direction
 
 class SingleObjectScorePane(
-    private val rootObj: ScoreObject, context: Context,
+    val rootObj: ScoreObject, context: Context,
 ) : RootScorePane(rootObj.independentScore(), context) {
     override val displayStart: Decimal
         get() = zero
     override val displayEnd: Decimal
         get() = rootObj.duration
 
+    override val absolutePosition: ObjectPosition
+        get() = ObjectPosition(zero, rootObj.liveConfig.yPosition.now)
     private var gridView: TempoGridObjectView? = null
     private lateinit var durationObserver: Observer
     private lateinit var gridObserver: Observer
 
     override fun initialize() {
         super.initialize()
-        gridObserver = rootObj.quantizationConfig.grid.forEach { grid ->
+        gridObserver = rootObj.quantizationConfig.meter.forEach { grid ->
             updateGrid(grid.get())
         }
         durationObserver = rootObj.duration().observe { _ -> repaint() }
@@ -51,16 +51,21 @@ class SingleObjectScorePane(
         gridView.obj.resize(rootObj.duration, height, ScoreObject.ResizeMode.Regular, direction)
     }
 
-    private fun updateGrid(grid: TempoGridObject?) {
-        if (grid == null) {
+    private fun updateGrid(meter: MeterObject?) {
+        if (meter == null) {
             if (gridView != null) {
                 children.remove(gridView)
                 gridView = null
             }
             return
         }
-        val inst = ScoreObjectInstance(grid, zero, 1.0.asY)
-        score.addObject(inst, autoSelect = false)
+//        val grid = TempoGridObject(reactiveVariable("helper_${rootObj.name.now}"), meter.reference())
+//        grid.initialize(context)
+//        val inst = ScoreObjectInstance(grid, zero, 1.0.asY)
+//        gridView = TempoGridObjectView(grid, inst)
+//        gridView!!.initialize(this)
+//        resizeGrid()
+//        score.addObject(inst, autoSelect = false)
 //        val view = TempoGridObjectView(grid, inst)
 //        view.initialize(this)
 //        view.prefWidthProperty().bind(widthProperty())
@@ -71,18 +76,14 @@ class SingleObjectScorePane(
 //        children.add(view)
     }
 
-    override fun getScoreY(screenY: Double): Decimal = super.getScoreY(screenY + GRID_HEIGHT) * rootObj.height
-
-    override fun getScreenY(scoreY: Decimal): Double = super.getScreenY(scoreY / rootObj.height) - GRID_HEIGHT
-
     override fun isRoot(obj: ScoreObject): Boolean = obj == rootObj || obj == gridView?.obj
 
-    override fun getNearestGrid(position: ObjectPosition): Pair<Decimal, TempoGridObject>? {
+    override fun getNearestGrid(position: ObjectPosition): Pair<Decimal, MeterObject>? {
         val fromScore = super.getNearestGrid(position)
         if (fromScore != null) return fromScore
         val config = rootObj.quantizationConfig
-        val referenceGrid = config.grid.now.get()
-        return if (config.enableSnapping.now && referenceGrid != null) Pair(zero, referenceGrid)
+        val referenceGrid = config.meter.now.get()
+        return if (referenceGrid != null) Pair(zero, referenceGrid)
         else null
     }
 

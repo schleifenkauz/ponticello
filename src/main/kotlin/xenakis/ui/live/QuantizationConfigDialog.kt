@@ -15,22 +15,19 @@ import reaktive.value.now
 import xenakis.impl.sync
 import xenakis.model.live.QuantizationConfig
 import xenakis.model.live.QuantizationUnit
+import xenakis.model.registry.MeterRegistry
 import xenakis.model.registry.ObjectReference
-import xenakis.model.registry.ScoreObjectRegistry
 import xenakis.model.registry.reference
 import xenakis.model.score.ScoreObject.ResizeMode
-import xenakis.model.score.TempoGridObject
 import xenakis.model.score.TimeUnit
 
 class QuantizationConfigDialog(
     private val config: QuantizationConfig, title: String,
 ) : CompoundPrompt<ResizeMode>(title, labelWidth = 150.0) {
-    private val tempoGrids = config.context[ScoreObjectRegistry]
-        .filterIsInstance<TempoGridObject>()
-        .map { obj -> obj.reference() }
+    private val tempoGrids = config.context[MeterRegistry].map { obj -> obj.reference() }
 
     private val gridSelector = SimpleSearchableListView(tempoGrids, "Choose grid")
-        .selectorButton(config.grid)
+        .selectorButton(config.meter)
         .setFixedWidth(SELECTOR_WIDTH)
 
     private val durationUnitInput = SimpleSearchableListView(TimeUnit.entries, "Choose duration unit")
@@ -45,7 +42,7 @@ class QuantizationConfigDialog(
         .selectorButton(config.quantizationUnit)
         .setFixedWidth(SELECTOR_WIDTH)
 
-    private val quantizationValueInput = Spinner<Double>(1.0, Double.MAX_VALUE, config.quantizationValue.now.value)
+    private val quantizationValueInput = Spinner<Int>(1, Int.MAX_VALUE, config.quantizationValue.now)
         .sync(config.quantizationValue)
         .setFixedWidth(SPINNER_WIDTH)
 
@@ -57,13 +54,9 @@ class QuantizationConfigDialog(
         .sync(config.offsetValue)
         .setFixedWidth(SPINNER_WIDTH)
 
-    private val enableSnappingToggle = ToggleSwitch("Enable snapping")
-        .sync(config.enableSnapping)
-    private val enableQuantizationToggle = ToggleSwitch("Enable quantization")
+    private val enableQuantizationToggle = ToggleSwitch()
         .sync(config.enableQuantization)
-    private val relativizeToGridInstanceSwitch = ToggleSwitch("Relativize to nearest grid instance")
-        .sync(config.relativeToGridInstance)
-    private val shiftGridToggle = ToggleSwitch("Shift grid")
+    private val shiftGridToggle = ToggleSwitch()
         .sync(config.shiftGrid)
 
     private fun row(name: String, vararg items: Node) {
@@ -77,17 +70,17 @@ class QuantizationConfigDialog(
     )
 
     init {
-        val unresolvedGrid = config.grid.flatMap(ObjectReference<*>::isResolved).not().asObservableValue()
-        relativizeToGridInstanceSwitch.disableProperty().bind(unresolvedGrid)
-        enableSnappingToggle.disableProperty().bind(unresolvedGrid)
+        val unresolvedGrid = config.meter.flatMap(ObjectReference<*>::isResolved).not().asObservableValue()
         shiftGridToggle.disableProperty().bind(unresolvedGrid)
         durationUnitInput.disableProperty().bind(unresolvedGrid)
         quantizationUnitInput.disableProperty().bind(unresolvedGrid)
         offsetUnitInput.disableProperty().bind(unresolvedGrid)
-        row("Reference grid", gridSelector, hspace(SPINNER_WIDTH), relativizeToGridInstanceSwitch)
-        row("Duration: ", durationUnitInput, durationValueInput, enableSnappingToggle)
-        row("Quantization: ", quantizationUnitInput, quantizationValueInput, enableQuantizationToggle)
-        row("Offset: ", offsetUnitInput, offsetValueInput, shiftGridToggle)
+        row("Reference grid", gridSelector, hspace(SPINNER_WIDTH))
+        row("Duration: ", durationUnitInput, durationValueInput)
+        row("Quantization: ", quantizationUnitInput, quantizationValueInput)
+        row("Offset: ", offsetUnitInput, offsetValueInput)
+        addItem("Enable quantization", enableQuantizationToggle)
+        addItem("Shift grid", shiftGridToggle)
     }
 
     override fun confirm(): ResizeMode = ResizeMode.Regular

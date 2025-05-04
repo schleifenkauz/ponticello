@@ -3,6 +3,8 @@ package xenakis.ui.score
 import fxutils.prompt.DetailPane
 import fxutils.setFixedWidth
 import fxutils.styleClass
+import javafx.scene.control.Button
+import javafx.scene.control.Label
 import javafx.scene.control.Spinner
 import javafx.scene.layout.Pane
 import javafx.scene.paint.Color
@@ -42,6 +44,10 @@ class TempoGridObjectView(override val obj: TempoGridObject, inst: ScoreObjectIn
     }
 
     override fun setupDetailPane(pane: DetailPane) {
+        if (!obj.meter.isResolved.now) {
+            pane.children.add(Label("Unresolved meter ${obj.meter.getName()}").styleClass("-fx-text-fill: red;"))
+            return
+        }
         val bpmSpinner = Spinner<Int>(10, 500, 60).setFixedWidth(70.0)
         val bpbSpinner = Spinner<Int>(1, 24, 4).setFixedWidth(70.0)
         val tpbSpinner = Spinner<Int>(1, 24, 4).setFixedWidth(70.0)
@@ -52,9 +58,12 @@ class TempoGridObjectView(override val obj: TempoGridObject, inst: ScoreObjectIn
         bpbSpinner.valueFactory.valueProperty().bindBidirectional(obj.beatsPerBar.asProperty())
         tpbSpinner.valueFactory.valueProperty().bindBidirectional(obj.ticksPerBeat.asProperty())
         firstBarSpinner.valueFactory.valueProperty().bindBidirectional(obj.firstBar.asProperty())
-        pane.addItem("Beats per minute:", bpmSpinner)
-        pane.addItem("Beats per bar:", bpbSpinner)
-        pane.addItem("Ticks per bar:", tpbSpinner)
+        val nameButton = Button()
+        nameButton.textProperty().bind(obj.meter.name.asObservableValue())
+        pane.addItem("Meter", nameButton)
+        pane.addItem("BPM:", bpmSpinner)
+        pane.addItem("Beats", bpbSpinner)
+        pane.addItem("Ticks", tpbSpinner)
         pane.addItem("First bar:", firstBarSpinner)
     }
 

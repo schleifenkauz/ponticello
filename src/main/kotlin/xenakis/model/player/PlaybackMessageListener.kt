@@ -34,6 +34,6 @@ class PlaybackMessageListener(
             return
         }
         val pos = ObjectPosition(player.currentTime, one)
-        player.scheduleObject(obj, pos, cutoff = zero)
+        player.scheduler.scheduleObject(obj, pos, cutoff = zero)
     }
 }

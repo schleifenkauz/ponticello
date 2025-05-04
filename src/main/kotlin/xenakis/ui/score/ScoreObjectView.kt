@@ -215,18 +215,18 @@ abstract class ScoreObjectView(
         }
     }
 
-    private fun inferQuantization(): Boolean {
+    fun inferQuantization(): Boolean {
         val position = instance.position
-        val (gridStart, grid) = parentPane.getNearestGrid(position) ?: return false
+        val (gridStart, meter) = parentPane.getNearestGrid(position) ?: return false
         obj.liveConfig.yPosition.set(absolutePosition.y)
-        obj.quantizationConfig.grid.set(grid.reference())
-        val (durUnit, durValue) = grid.represent(obj.duration)
+        obj.quantizationConfig.meter.set(meter.reference())
+        val (durUnit, durValue) = meter.represent(obj.duration)
         obj.quantizationConfig.durationUnit.set(durUnit)
         obj.quantizationConfig.durationValue.set(durValue)
         var delta = absolutePosition.time - gridStart
         while (delta < zero) delta += obj.duration
         while (delta > obj.duration) delta -= obj.duration
-        val (offsetUnit, offsetValue) = grid.represent(delta)
+        val (offsetUnit, offsetValue) = meter.represent(delta)
         obj.quantizationConfig.offsetUnit.set(offsetUnit)
         obj.quantizationConfig.offsetValue.set(offsetValue)
         return true
@@ -403,11 +403,11 @@ abstract class ScoreObjectView(
     fun getDeltaT(direction: HorizontalDirection): Decimal {
         val parentPane = parentPane
         val factor = if (direction == LEFT) -3.0 else 3.0
-        val grid = parentPane.getNearestGrid(instance.position)?.second
+        val meter = parentPane.getNearestGrid(instance.position)?.second
         val settings = context[currentProject].settings
         val snapOption = if (settings.snapEnabled.now) settings.snapOption.now else null
         val deltaT =
-            if (snapOption != null && grid != null) grid.getDuration(snapOption) * factor
+            if (snapOption != null && meter != null) meter.getDuration(snapOption) * factor
             else getDuration(factor)
         return deltaT
     }

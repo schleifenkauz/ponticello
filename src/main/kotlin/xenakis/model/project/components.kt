@@ -19,6 +19,9 @@ inline fun <reified T> component(
 ) = Component(name, serializer, default)
 
 val UI_STATE = component<UIState>("ui-state", UIState::default)
+
+val METERS = component<MeterRegistry>("meters", MeterRegistry::createDefault)
+
 val BUSSES = component<BusRegistry>(
     "busses", BusRegistry::createDefault,
     ObjectListSerializer(serializer(), ::BusRegistry)
@@ -48,10 +51,10 @@ val LIVE_TASKS = component<LiveTaskRegistry>("live_tasks", LiveTaskRegistry::cre
 val SCORE = component<Score>("score", ::Score)
 
 val allComponents = listOf<Component<out ContextualObject>>(
+    METERS,
     BUSSES, BUFFERS,
     PATTERNS, SYNTH_DEFS, PROCESS_DEFS,
-    UI_STATE,
-    FLOWS, SERVER_OPTIONS,
+    UI_STATE, FLOWS, SERVER_OPTIONS,
     OBJECTS, LIVE_TASKS, SCORE
 ) + ScriptObject.Type.entries.map { type -> type.component }
 

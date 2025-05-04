@@ -2,8 +2,7 @@ package xenakis.model.live
 
 import kotlinx.serialization.Serializable
 import xenakis.impl.Decimal
-import xenakis.model.registry.ObjectReference
-import xenakis.model.score.TempoGridObject
+import xenakis.model.obj.MeterReference
 import xenakis.model.score.TimeUnit
 
 @Serializable
@@ -13,8 +12,8 @@ sealed interface Quantization {
 
     @Serializable
     data class RelativeTo(
-        val grid: ObjectReference<TempoGridObject>,
-        val quantizationUnit: QuantizationUnit, val quantizationValue: Decimal,
+        val grid: MeterReference,
+        val quantizationUnit: QuantizationUnit, val quantizationValue: Int,
         val offsetUnit: TimeUnit, val offset: Decimal,
     ) : Quantization
 

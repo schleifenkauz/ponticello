@@ -2,43 +2,57 @@ package xenakis.model.player
 
 import bundles.publicProperty
 import reaktive.value.ReactiveBoolean
+import reaktive.value.ReactiveValue
 import reaktive.value.now
+import reaktive.value.reactiveVariable
 import xenakis.impl.*
 import xenakis.model.Settings
-import xenakis.model.flow.NodeTree
-import xenakis.model.flow.SynthObjectNode
-import xenakis.model.player.ScoreEventCollector.Event
-import xenakis.model.score.*
+import xenakis.model.score.ObjectPosition
+import xenakis.model.score.ScoreObject
+import xenakis.model.score.ScoreObjectInstance
 import xenakis.sc.client.SuperColliderClient
 import xenakis.ui.launcher.XenakisMainActivity
 import xenakis.ui.misc.PlayHead
 import xenakis.ui.score.ScorePane
+import xenakis.ui.score.SingleObjectScorePane
 import java.lang.ref.WeakReference
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Executors
+import java.util.concurrent.Future
+import java.util.concurrent.TimeUnit
 
 class ScorePlayer private constructor(
     val id: Int, val pane: ScorePane,
-    private val loopingActivated: ReactiveBoolean
-) : AbstractPlayer(DELTA_T, pane.context[Settings].lookAhead) {
-    private var loopedTime: Decimal = zero
+    private val loopingActivated: ReactiveBoolean,
+) {
+    private val _isPlaying = reactiveVariable(false)
+    private var lastTime: Long = 0
+    private var loopHandle: Future<*>? = null
+    private var startPlayHandle: Future<*>? = null
     private var lastPlayFrom: Decimal = PlayHead.START
+    private var loopedTime: Decimal = zero
+
+    val isPlaying: ReactiveValue<Boolean> = _isPlaying
 
     val context get() = pane.context
 
-    override val client: SuperColliderClient = context[SuperColliderClient]
+    private val lookAhead get() = context[Settings].lookAhead
+
+    private val client: SuperColliderClient = context[SuperColliderClient]
     private val activeObjects = context[ActiveObjectsManager]
-    private val nodeTree = context[NodeTree]
-
     private val events: ScoreEventCollector = ScoreEventCollector(pane.score, pane.context[Settings])
+    val playHead: PlayHead = PlayHead(pane)
 
-    public override val playHead: PlayHead = PlayHead(pane)
+    val scheduler = ScoreObjectScheduler(this)
 
-    override val loop: Boolean
-        get() = loopingActivated.now
+    val currentTime get() = playHead.currentTime
 
-    override val maxTime: Decimal
+    private val maxTime: Decimal
         get() = pane.score.maxTime.now
+
+    val loopOffset get() = loopedTime - lastPlayFrom
+
+    val elapsedTime: Decimal get() = loopOffset + (currentTime - lastPlayFrom)
 
     fun isMainScorePlayer() = pane == context[XenakisMainActivity].mainScoreView
 
@@ -48,43 +62,71 @@ class ScorePlayer private constructor(
         }
     }
 
-    private fun activeObjects(time: Decimal, delta: Decimal): List<Event> {
-        val dest = mutableListOf<Event>()
-        collectActiveObjects(ObjectPosition(0.0, 0.0), pane.score, time, delta, dest)
-        return dest
-    }
-
-    private fun collectActiveObjects(
-        position: ObjectPosition, score: Score, time: Decimal, delta: Decimal,
-        dest: MutableList<Event>,
-    ) {
-        if (position.time - delta > time) return
-        for (inst in score.objectInstances) {
-            val obj = inst.obj
-            val absolutePosition = position + inst.position
-            if (obj is ScoreObjectGroup) {
-                collectActiveObjects(absolutePosition, obj.score, time, delta, dest)
-            } else if (absolutePosition.time - delta <= time && time <= absolutePosition.time + obj.duration) {
-                dest.add(Event(Event.Type.Dummy, absolutePosition, inst))
+    private fun runLoop() {
+        val now = System.currentTimeMillis()
+        if (isPlaying.now) {
+            val dt = ((now - lastTime) / 1000.0).asTime
+            var t = playHead.currentTime + lookAhead
+            if (playHead.currentTime > maxTime) {
+                playHead.movePlayHeadToStart()
+                if (!loopingActivated.now) {
+                    pause()
+                    return
+                } else {
+                    loopedTime += maxTime
+                    events.unscheduleAll()
+                }
+                t = 0.0.asTime
+            } else {
+                playHead.advance(dt)
             }
+            scheduler.scheduleEvents(events.eventsAt(t - dt, dt * 5))
         }
+        lastTime = now
     }
 
-    override fun startPlay(startFrom: Decimal): Boolean {
+    fun play() {
+        if (isPlaying.now) return
+        _isPlaying.now = true
+        val rootObj = (pane as? SingleObjectScorePane)?.rootObj
+        val quantization = rootObj?.quantizationConfig?.takeIf { it.meter.now.isResolved.now }
+        val quantizationDelay = if (quantization == null || !quantization.enableQuantization.now) zero else {
+            val quant = quantization.computeQuant(rootObj)
+            val offset = quantization.computeOffset()
+            val meter = quantization.meter.now.force()
+            meter.clock.scheduleStart(this, quant, offset)
+        }
+        val period: Long = 5
+        val initialDelay: Long = toMs(quantizationDelay + lookAhead)
+        startPlayHandle = executor.schedule({ startPlaying() }, toMs(quantizationDelay), TimeUnit.MILLISECONDS)
+        loopHandle = looper.scheduleAtFixedRate({ runLoop() }, initialDelay, period, TimeUnit.MILLISECONDS)
+    }
+
+    private fun startPlaying() {
+        client.sendAsync("start_play", listOf(id))
+        context[Recorder].startingPlayback()
+        Logger.fine("Starting playback at ${playHead.currentTime}", Logger.Category.Playback)
+        lastPlayFrom = playHead.currentTime
+        loopedTime = zero
         execute {
-            client.sendAsync("start_play", listOf(id))
-            context[Recorder].startingPlayback()
-            Logger.fine("Starting playback at $startFrom", Logger.Category.Playback)
-            lastPlayFrom = startFrom
-            loopedTime = zero
-            val activeObjects = activeObjects(startFrom, delta = context[Settings].lookAhead)
+            val activeObjects = scheduler.activeObjects(playHead.currentTime, delta = context[Settings].lookAhead)
             for ((_, position, inst) in activeObjects) {
                 if (!inst.muted.now) {
                     scheduleInstantly(inst, position)
                 }
             }
         }
-        return true
+        lastTime = System.currentTimeMillis()
+    }
+
+    fun pause() {
+        if (!isPlaying.now) return
+        _isPlaying.now = false
+        startPlayHandle?.cancel(true)
+        startPlayHandle = null
+        loopHandle?.cancel(true)
+        loopHandle = null
+        pausePlayback()
     }
 
     fun scheduleInstantly(inst: ScoreObjectInstance, position: ObjectPosition) {
@@ -92,104 +134,24 @@ class ScorePlayer private constructor(
         val delta = position.time - playHead.currentTime
         val pos = ObjectPosition(playHead.currentTime + delta.coerceAtLeast(zero), position.y)
         Logger.fine("Scheduling $obj at $pos, delta: $delta", Logger.Category.Playback)
-        scheduleObject(obj, position, cutoff = -delta.coerceAtMost(zero))
+        scheduler.scheduleObject(obj, position, cutoff = -delta.coerceAtMost(zero))
     }
 
-    override fun looped() {
-        loopedTime += maxTime
-        events.unscheduleAll()
-    }
-
-    override fun scheduleEvents(t: Decimal, delta: Decimal) = execute {
-        for (ev in events.eventsAt(t - delta, delta * 5)) {
-            val (type, position, inst) = ev
-            if (inst.muted.now) continue
-            val obj = inst.obj
-            when (type) {
-                Event.Type.ObjectStart -> {
-                    Logger.fine("ObjectStart: $obj at $position", Logger.Category.Playback)
-                    scheduleObject(obj, position, cutoff = zero)
-                }
-
-                Event.Type.ObjectEnd -> {
-                    Logger.fine("ObjectEnd: $obj at $position", Logger.Category.Playback)
-                    val startPos = position + ObjectPosition(-obj.duration, zero)
-                    if (obj.duration == zero) continue
-                    activeObjects.remove(obj, startPos) ?: continue
-                }
-
-                else -> {}
-            }
-            ev.scheduled = true
-        }
-    }
-
-    fun scheduleObject(obj: ScoreObject, absolutePosition: ObjectPosition, cutoff: Decimal) {
-        try {
-            if (!obj.validate()) return
-        } catch (e: Exception) {
-            Logger.error("Failed to validate $obj", e, Logger.Category.Playback)
-            return
-        }
-        val time = absolutePosition.time + loopedTime - lastPlayFrom
-        val timeForExecution = (time + context[Settings].scLangLatency.now).toString()
-        val activeObject = try {
-            activeObjects.insert(this, obj, absolutePosition)
-        } catch (e: Exception) {
-            Logger.error("Failed to insert $obj into active object manager", e, Logger.Category.Playback)
-            return
-        }
-        val placement = if (obj is SynthObject) {
-            try {
-                val node = SynthObjectNode(obj, activeObject)
-                nodeTree.addNode(node)
-            } catch (e: Exception) {
-                Logger.error("Failed to insert $obj into audio flow graph", e, Logger.Category.Playback)
-                return
-            }
-        } else null
-        val code = try {
-            obj.writeCode(activeObject.uniqueName, placement, cutoff.takeIf { it > zero } ?: zero)
-        } catch (e: Exception) {
-            Logger.error("Failed to write code for $obj", e, Logger.Category.Playback)
-        }
-        if (code == "") return
-        try {
-            client.send("schedule", listOf(timeForExecution, id, code))
-        } catch (e: Exception) {
-            Logger.error("Failed to schedule $obj", e, Logger.Category.Playback)
-        }
-        Logger.fine("unique name for $obj at $time: ${activeObject.uniqueName}", Logger.Category.Playback)
-        Logger.fine("time for execution: ${timeForExecution}s", Logger.Category.Playback)
-    }
 
     fun stopPlayBackInstantly(obj: ScoreObject, pos: ObjectPosition) = execute {
         val active = context[ActiveObjectsManager].getActiveObject(obj, pos) ?: return@execute
-        stopObjectInstantly(active)
+        scheduler.stopObjectInstantly(active)
     }
 
-    private fun stopObjectInstantly(active: ActiveScoreObject): CompletableFuture<String> = when (active.obj) {
-        is SynthObject -> {
-            val name = active.superColliderName
-            client.eval("if ($name != nil) { $name.release; } { \"'$name' not found\".postln; }")
-        }
 
-        is ProcessObject, is TaskObject -> {
-            val name = active.superColliderName
-            client.eval("$name.stop;")
-        }
-
-        else -> CompletableFuture.completedFuture("unknown")
-    }
-
-    override fun pausePlayback() = execute {
+    private fun pausePlayback() = execute {
         Logger.info("Pausing playback", Logger.Category.Playback)
         client.sendAsync("pause_play", listOf(id))
         context[Recorder].pausingPlayback()
         val futures = mutableListOf<CompletableFuture<*>>()
         activeObjects.forEach { activeObject ->
             if (activeObject is ActiveScoreObject && activeObject.player == this) {
-                futures.add(stopObjectInstantly(activeObject))
+                futures.add(scheduler.stopObjectInstantly(activeObject))
             }
         }
         CompletableFuture.allOf(*futures.toTypedArray()).join()
@@ -198,13 +160,18 @@ class ScorePlayer private constructor(
     }
 
     companion object {
-        private val executor = Executors.newSingleThreadExecutor()
-
-        private val DELTA_T = 0.03.toDecimal()
-
         val CURRENT = publicProperty<ScorePlayer>("ScorePlayer")
 
+        private val executor = Executors.newSingleThreadScheduledExecutor()
+
+        fun execute(action: () -> Unit) {
+            executor.execute(action)
+        }
+
+        private val looper = Executors.newScheduledThreadPool(4)
+
         private var nextId = 0
+
         private val all = mutableListOf<WeakReference<ScorePlayer>>()
 
         fun all(): List<ScorePlayer> {
@@ -219,8 +186,6 @@ class ScorePlayer private constructor(
             return player
         }
 
-        fun execute(action: () -> Unit) {
-            executor.execute(action)
-        }
+        private fun toMs(t: Decimal) = (t * 1000).toLong()
     }
 }
