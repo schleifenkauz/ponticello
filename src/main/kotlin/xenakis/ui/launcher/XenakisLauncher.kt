@@ -19,6 +19,7 @@ import javafx.application.Platform
 import javafx.stage.Stage
 import kotlinx.serialization.serializer
 import reaktive.Observer
+import reaktive.value.now
 import xenakis.impl.Logger
 import xenakis.impl.registerImplementationsFromClasspath
 import xenakis.model.ScriptObject
@@ -95,12 +96,21 @@ class XenakisLauncher {
     }
 
     fun openProject() {
-        if (getActiveProject() != null) {
-            val save = askIfUserWantsToSave() ?: return
-            if (save) saveProject()
-        }
+        if (saveChanges() == null) return
         val file = rootContext[XenakisFiles].showOpenDialog("*.xen") ?: return
         openProject(file.parentFile)
+    }
+
+    private fun saveChanges(autoSave: Boolean = false): Boolean? {
+        val project = getActiveProject() ?: return false
+        if (autoSave) {
+            saveProject()
+            return true
+        }
+        if (!project.context[UndoManager].hasUnsavedChanges.now) return false
+        val save = askIfUserWantsToSave() ?: return null
+        if (save) saveProject()
+        return false
     }
 
     fun openProject(folder: File) {
@@ -157,19 +167,15 @@ class XenakisLauncher {
     }
 
     fun closeProject(autoSave: Boolean = false) {
-        val save = autoSave || askIfUserWantsToSave() ?: return
-        if (save) saveProject()
+        saveChanges(autoSave) ?: return
         recentProjects.clearActiveProject()
         showLauncher()
     }
 
     fun createNewProject() {
-        if (getActiveProject() != null) {
-            val save = askIfUserWantsToSave() ?: return
-            if (save) saveProject()
-        }
-        val name =
-            PredicateTextPrompt("Project name", "") { name -> name.isNotBlank() }.showDialog(rootContext) ?: return
+        saveChanges() ?: return
+        val name = PredicateTextPrompt("Project name", "") { name -> name.isNotBlank() }
+            .showDialog(rootContext) ?: return
         val location = rootContext[XenakisFiles].projectsDir.resolve(name)
         location.mkdir()
         location.resolve("project.xen").writeText(location.name)
@@ -272,13 +278,12 @@ class XenakisLauncher {
     }
 
     fun closeRequest(automaticallySave: Boolean = false) {
-        if (getActiveProject() == null) {
+        val project = getActiveProject()
+        if (project == null) {
             currentActivity.hide()
             return
         }
-        //TODO check if any edits have been made since the last save
-        val save = automaticallySave || askIfUserWantsToSave() ?: return
-        if (save) saveProject()
+        saveChanges(automaticallySave) ?: return
         currentActivity.hide()
         quitApplication()
     }

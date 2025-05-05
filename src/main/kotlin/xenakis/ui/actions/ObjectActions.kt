@@ -24,6 +24,7 @@ import xenakis.model.score.*
 import xenakis.ui.controls.RenamePrompt
 import xenakis.ui.impl.Direction
 import xenakis.ui.impl.showDialog
+import xenakis.ui.launcher.DetailPaneManager
 import xenakis.ui.launcher.XenakisMainActivity
 import xenakis.ui.score.*
 
@@ -66,6 +67,13 @@ object ObjectActions {
     }
 
     val singleObjectActions = collectActions {
+        addAction("Show detail pane") {
+            shortcut("Alt?+D")
+            applicableOn { view -> !view.parentPane.isRoot(view.obj) }
+            executeSingle { view, _ ->
+                view.context[DetailPaneManager].showDetailPane(view)
+            }
+        }
         addObjectAction("Show as sub window") {
             shortcut("Alt?+W")
             icon(MaterialDesignL.LAUNCH)

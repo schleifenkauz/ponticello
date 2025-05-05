@@ -27,6 +27,8 @@ interface ObjectListDisplayConfig<O: ContextualObject> {
 
     val supportedModes get() = setOf(ObjectListView.DisplayMode.Inline)
 
+    val autoSelectNewObjects: Boolean get() = true
+
     fun detailWindowIcon(obj: O): Ikon = MaterialDesignE.EYE
 
     fun getItemContent(obj: O): List<Node> = emptyList()

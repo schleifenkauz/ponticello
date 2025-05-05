@@ -1,8 +1,8 @@
 package xenakis.ui.launcher
 
+import bundles.PublicProperty
+import bundles.publicProperty
 import fxutils.SubWindow
-import fxutils.actions.ActionBar
-import fxutils.actions.ContextualizedAction
 import fxutils.actions.action
 import fxutils.actions.registerShortcuts
 import fxutils.createBorder
@@ -11,12 +11,10 @@ import fxutils.registerShortcuts
 import hextant.context.Context
 import javafx.application.Platform
 import javafx.beans.InvalidationListener
-import javafx.geometry.Pos
 import javafx.scene.layout.StackPane
 import javafx.scene.paint.Color
 import javafx.stage.Screen
 import javafx.stage.StageStyle
-import javafx.stage.Window
 import org.kordamp.ikonli.materialdesign2.MaterialDesignP
 import reaktive.value.binding.map
 import xenakis.model.score.ScoreObject
@@ -30,34 +28,61 @@ import xenakis.ui.score.ScoreObjectView
 
 class DetailPaneManager(private val context: Context) {
     private val detached = mutableMapOf<ScoreObject, SubWindow>()
-    private var currentlyShown: Window? = null
+    private var currentlyShown: SubWindow? = null
+    private var attachedToView: ScoreObjectView? = null
 
-    fun focused(view: ScoreObjectView?) {
+    fun showDetailPane(view: ScoreObjectView?) {
         currentlyShown?.hide()
-        if (view == null) return
-        if (view.obj in detached) {
-            detached.getValue(view.obj).showOrBringToFront()
+        if (view == null) {
+            currentlyShown = null
+            attachedToView = null
             return
         }
-        showDetailPane(view)
+        when {
+            attachedToView != null && currentlyShown != null && attachedToView != view -> detach(view)
+            view.obj in detached -> reattach(detached.getValue(view.obj), view)
+            else -> {
+                showDetailPaneFor(view)
+                attachedToView = view
+            }
+        }
     }
 
-    fun showDetailPane(view: ScoreObjectView) {
-        val detailPane = view.getDetailPane()
+    fun hideCurrentlyShown() {
+        currentlyShown?.hide()
+        currentlyShown = null
+        attachedToView = null
+    }
+
+    private fun showDetailPaneFor(view: ScoreObjectView) {
+        lateinit var window: SubWindow
+        val detachAction = action<Unit>("Detach") {
+            icon(MaterialDesignP.PIN_OUTLINE)
+            shortcuts("Ctrl+D")
+            executes { _ ->
+                window.hide()
+                detach(view)
+            }
+        }.withContext(Unit)
+        val detailPane = view.getDetailPane(listOf(detachAction))
         val pane = StackPane(detailPane)
         pane.border = createBorder(Color.GRAY, 1.0)
-        val window = makeSubWindow(pane, windowTitle(view), context, SubWindow.Type.Undecorated)
+        window = makeSubWindow(pane, windowTitle(view), context, SubWindow.Type.Undecorated)
             .sceneFill(DEFAULT_SCENE_FILL.opacity(0.5))
         window.scene.registerShortcuts {
             on("ESCAPE") { window.hide() }
         }
         ArrowKeys.registerArrowKeys(window.scene, context)
-        val detachAction = action<Unit>("Detach") {
-            icon(MaterialDesignP.PIN_OUTLINE)
-            shortcuts("Ctrl+D")
-            executes { _ -> detach(view, window) }
-        }.withContext(Unit)
-        addActions(view, detachAction, pane)
+        addActions(view, pane)
+        updateBoundsOnMove(view, window)
+        window.show()
+        Platform.runLater {
+            updateBounds(view, window)
+        }
+        currentlyShown = window
+    }
+
+    private fun updateBoundsOnMove(view: ScoreObjectView, window: SubWindow) {
         val listener = InvalidationListener { _ -> updateBounds(view, window) }
         view.layoutXProperty().addListener(listener)
         view.layoutYProperty().addListener(listener)
@@ -66,11 +91,6 @@ class DetailPaneManager(private val context: Context) {
             view.layoutXProperty().removeListener(listener)
             view.layoutYProperty().removeListener(listener)
         }
-        window.show()
-        Platform.runLater {
-            updateBounds(view, window)
-        }
-        currentlyShown = window
     }
 
     private fun updateBounds(view: ScoreObjectView, window: SubWindow) {
@@ -90,40 +110,41 @@ class DetailPaneManager(private val context: Context) {
         }
     }
 
-    private fun detach(view: ScoreObjectView, window: Window) {
-        window.hide()
+    private fun detach(view: ScoreObjectView) {
         val title = windowTitle(view)
-        val pane = StackPane(view.getDetailPane())
-        val newWindow = makeSubWindow(pane, title, context)
+        lateinit var newWindow: SubWindow
         val attachAction = action<Unit>("Attach") {
             icon(MaterialDesignP.PIN_OFF_OUTLINE)
             shortcuts("Ctrl+Shift+D")
             executes { _ ->
-                newWindow.hide()
-                detached.remove(view.obj)
-                focused(view)
+                reattach(newWindow, view)
             }
         }.withContext(Unit)
-        addActions(view, attachAction, pane)
+        val detailPane = view.getDetailPane(extraActions = listOf(attachAction))
+        val pane = StackPane(detailPane)
+        newWindow = makeSubWindow(pane, title, context)
+        addActions(view, pane)
         newWindow.show()
         updateBounds(view, newWindow)
         detached[view.obj] = newWindow
     }
 
-    private fun addActions(view: ScoreObjectView, windowAction: ContextualizedAction, pane: StackPane) {
+    private fun reattach(newWindow: SubWindow, view: ScoreObjectView) {
+        newWindow.hide()
+        detached.remove(view.obj)
+        showDetailPaneFor(view)
+    }
+
+    private fun addActions(view: ScoreObjectView, pane: StackPane) {
         val ctx = ObjectActionContext.SingleObjectContext(view)
         val actions = ObjectActions.singleObjectActions.withContext(ctx) +
-                ObjectActions.multiObjectActions.withContext(ctx) +
-                listOf(windowAction)
+                ObjectActions.multiObjectActions.withContext(ctx)
         pane.registerShortcuts(actions)
-        val actionBar = ActionBar(listOf(windowAction), buttonStyle = "medium-icon-button")
-            .floating(Pos.TOP_RIGHT)
-        pane.children.add(actionBar)
     }
 
     private fun windowTitle(view: ScoreObjectView) = view.obj.name.map { name -> "Object $name" }
 
-    companion object {
+    companion object : PublicProperty<DetailPaneManager> by publicProperty("DetailPaneManager") {
         private const val TITLE_BAR_HEIGHT = 35.0
     }
 }

@@ -20,7 +20,6 @@ import javafx.scene.input.Dragboard
 import javafx.scene.input.MouseButton
 import javafx.scene.input.MouseEvent
 import javafx.scene.layout.Pane
-import javafx.scene.paint.Color
 import javafx.scene.shape.Rectangle
 import reaktive.value.now
 import reaktive.value.reactiveVariable
@@ -66,7 +65,6 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
 
     init {
         styleClass("score-pane")
-        border = createBorder(Color.RED, 3.0)
         heightProperty().addListener { _ -> repaint() }
         widthProperty().addListener { _ -> repaint() }
     }
@@ -150,9 +148,9 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
                 MouseEvent.MOUSE_PRESSED -> pane.mousePressed(e)
                 MouseEvent.MOUSE_DRAGGED -> pane.mouseDragged(e)
                 MouseEvent.MOUSE_CLICKED -> when {
-                    ev.button == MouseButton.SECONDARY -> rightClicked(ev)
-                    ev.clickCount == 1 -> mouseClicked(ev)
-                    ev.clickCount == 2 -> doubleClicked(ev)
+                    ev.button == MouseButton.SECONDARY -> pane.rightClicked(ev)
+                    ev.clickCount == 1 -> pane.mouseClicked(ev)
+                    ev.clickCount == 2 -> pane.doubleClicked(ev)
                 }
 
                 MouseEvent.MOUSE_RELEASED -> pane.mouseReleased(e)
@@ -223,7 +221,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
 
     protected open fun rightClicked(ev: MouseEvent) {
         when (ev.modifiers) {
-            noModifiers -> {
+            setOf(Alt) -> {
                 val popup = SimpleSearchableRegistryView(context[ScoreObjectRegistry], "Add object instance")
                 val anchor = localToScreen(ev.x, ev.y)
                 val obj = popup.showPopup(anchor, scene.window) ?: return
@@ -233,7 +231,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
                 ev.consume()
             }
 
-            setOf(Alt) -> {
+            setOf(Alt, Shift) -> {
                 val popup = SimpleSearchableRegistryView(context[BufferRegistry], "Place sample")
                 val anchor = localToScreen(ev.x, ev.y)
                 val sample = popup.showPopup(anchor, scene.window) ?: return
@@ -242,7 +240,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
                 ev.consume()
             }
 
-            setOf(Shift) -> {
+            setOf(Ctrl, Shift) -> {
                 pasteFromSystemClipboard(ev)
                 ev.consume()
             }
@@ -270,7 +268,9 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
                 selector.deselectAll()
                 requestFocus()
                 val player = context[ScorePlayer.CURRENT]
-                player.playHead.movePlayHead(t)
+                if (!player.isPlaying.now) { //TODO pause and replay if currently playing
+                    player.playHead.movePlayHead(t)
+                }
             }
 
             else -> return
@@ -296,6 +296,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
     }
 
     private fun mousePressed(ev: MouseEvent) {
+        if (this !is RootScorePane != ev.isControlDown) return
         ev.consume()
         clearRegionSelection()
         val pos = snapToGrid(ev.x, ev.y)

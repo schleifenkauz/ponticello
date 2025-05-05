@@ -2,6 +2,7 @@ package xenakis.model.obj
 
 import reaktive.value.now
 import xenakis.impl.Decimal
+import xenakis.impl.Logger
 import xenakis.impl.zero
 import xenakis.model.player.ScorePlayer
 
@@ -14,6 +15,7 @@ class MeterClock {
 
     fun scheduleStart(player: ScorePlayer, quant: Decimal, offset: Decimal): Decimal {
         removeInactivePlayers()
+        activePlayers.removeIf { (p) -> p == player }
         if (activePlayers.isEmpty()) {
             assert(activePlayers.isEmpty())
             activePlayers.add(ActivePlayer(player, offset))
@@ -23,9 +25,12 @@ class MeterClock {
             var time = meterTime //TODO find a good name...
             while (time < zero) time += quant
             while (time >= quant) time -= quant
-            val delay = quant - meterTime
+            val delay = quant - time
             activePlayers.add(ActivePlayer(player, meterTime + delay))
-            return delay
+            if (delay < zero) {
+                Logger.warn("Negative delay detected: $delay", Logger.Category.Playback)
+            }
+            return delay.coerceAtLeast(zero)
         }
     }
 

@@ -36,6 +36,10 @@ class ScoreObjectScheduler(private val player: ScorePlayer) {
                     val startPos = position + ObjectPosition(-obj.duration, zero)
                     if (obj.duration == zero) continue
                     activeObjects.remove(obj, startPos) ?: continue
+                    if (obj is TempoGridObject && obj.meter.isResolved.now) {
+                        val meter = obj.meter.force()
+                        meter.clock.detach(player)
+                    }
                 }
 
                 else -> {}
@@ -67,6 +71,10 @@ class ScoreObjectScheduler(private val player: ScorePlayer) {
         }
         val time = absolutePosition.time + player.loopOffset
         val timeForExecution = (time + context[Settings].scLangLatency.now).toString()
+        if (obj is TempoGridObject && obj.meter.isResolved.now) {
+            val meter = obj.meter.force()
+            meter.clock.attach(player, offset = zero)
+        }
         val activeObject = try {
             activeObjects.insert(player, obj, absolutePosition)
         } catch (e: Exception) {

@@ -17,7 +17,6 @@ import xenakis.impl.Logger
 import xenakis.model.ScriptObject
 import xenakis.model.Settings
 import xenakis.model.flow.AudioFlows
-import xenakis.model.obj.ParameterizedObject
 import xenakis.model.player.PlaybackMessageListener
 import xenakis.model.player.ScorePlayer
 import xenakis.model.project.*
@@ -26,8 +25,6 @@ import xenakis.ui.actions.*
 import xenakis.ui.flow.AudioFlowPane
 import xenakis.ui.impl.makeToolWindow
 import xenakis.ui.live.LiveTaskRegistryPane
-import xenakis.ui.midi.ContextualMidiReceiver
-import xenakis.ui.midi.ParameterControlsMidiContext
 import xenakis.ui.misc.*
 import xenakis.ui.registry.*
 import xenakis.ui.score.*
@@ -36,8 +33,6 @@ class XenakisMainActivity(val project: XenakisProject) : Activity() {
     init {
         project.context[XenakisMainActivity] = this
     }
-
-    private val detailPaneManager = DetailPaneManager(project.context)
 
     val mainScoreView: NavigableScorePane = NavigableScorePane(project.score, project.context)
 
@@ -107,10 +102,10 @@ class XenakisMainActivity(val project: XenakisProject) : Activity() {
     init {
         context[XenakisMainActivity] = this
         context[HelpBrowser] = HelpBrowser()
+        context[DetailPaneManager] = DetailPaneManager(project.context)
 
         setupMainScoreView()
         setupPlayback()
-        showObjectDetailsOnSelection()
     }
 
     private fun setupMainScoreView() {
@@ -127,18 +122,6 @@ class XenakisMainActivity(val project: XenakisProject) : Activity() {
         playbackMessageListener = PlaybackMessageListener(project.objects, project.flows, player)
         context[SuperColliderClient].addListener(playbackMessageListener)
         context[AudioFlows].createAllFlows()
-    }
-
-    private fun showObjectDetailsOnSelection() {
-        observer = context[ScoreObjectSelectionManager].focusedView.observe { _, _, focusedView ->
-            detailPaneManager.focused(focusedView)
-            val obj = focusedView?.obj
-            if (obj is ParameterizedObject) {
-                context[ContextualMidiReceiver].setContext(ParameterControlsMidiContext(obj.controls))
-            } else {
-                context[ContextualMidiReceiver].setContext(null)
-            }
-        }
     }
 
     override fun beforeShowing() {
@@ -177,7 +160,7 @@ class XenakisMainActivity(val project: XenakisProject) : Activity() {
                 infiniteSpace(),
                 interactionConfig,
                 hspace(20.0),
-                toolbarPart(PlaybackActions.withContext(player)),
+                toolbarPart(PlaybackActions.global.withContext(player)),
                 hspace(20.0),
                 timeCodeView,
                 infiniteSpace()
@@ -195,7 +178,6 @@ class XenakisMainActivity(val project: XenakisProject) : Activity() {
     private fun registerMainActivityShortcuts() = primaryStage.scene.registerShortcuts {
         registerActions(ProjectActions.withContext(launcher))
         registerActions(QuitAction.withContext(launcher))
-        registerActions(PlaybackActions.withContext(player))
         registerActions(ScoreNavigationActions.withContext(mainScoreView))
         interactionConfig.addGridRelatedShortcuts(this)
         val objectCtx = ObjectActionContext.MultiObjectContext(context[ScoreObjectSelectionManager])

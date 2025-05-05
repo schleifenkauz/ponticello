@@ -58,7 +58,7 @@ fun Action.Builder<ObjectActionContext>.executeSingle(action: (ScoreObjectView, 
 
 fun Scene.registerGlobalShortcuts(context: Context) {
     registerShortcuts {
-        registerActions(PlaybackActions.withContext(context[ScorePlayer.CURRENT]))
+        registerActions(PlaybackActions.global.withContext(context[ScorePlayer.CURRENT]))
         registerActions(ToolWindowActions.withContext(context[XenakisMainActivity]))
         registerActions(ServerActions.withContext(context[currentProject]))
         registerActions(ProjectActions.withContext(context[XenakisLauncher]))

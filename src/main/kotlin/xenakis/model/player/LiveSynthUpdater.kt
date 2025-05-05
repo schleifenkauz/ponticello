@@ -20,12 +20,39 @@ class LiveSynthUpdater(obj: ParameterizedObject) : AbstractLiveUpdater(obj) {
         onBus: Boolean, remap: Boolean,
     ) {
         if (onBus) {
-            val busName = ParameterControl.auxilBusName(uniqueName, parameter)
-            +"$busName.set($value)"
-            if (remap) remap(uniqueName, parameter)
+            mapToValueBus(uniqueName, parameter, value, remap)
         } else {
-            val synthName = "${obj.superColliderPrefix}$uniqueName"
-            +"$synthName.set(\\$parameter, $value)"
+            setSynthArg(uniqueName, parameter, value)
+        }
+    }
+
+    private fun ScWriter.setSynthArg(uniqueName: String, parameter: String, value: Decimal) {
+        val synthName = "${obj.superColliderPrefix}$uniqueName"
+        +"$synthName.set(\\$parameter, $value)"
+    }
+
+    private fun ScWriter.mapToValueBus(
+        uniqueName: String,
+        parameter: String,
+        value: Decimal,
+        remap: Boolean,
+    ) {
+        val busName = ParameterControl.auxilBusName(uniqueName, parameter)
+        +"$busName.set($value)"
+        if (remap) remap(uniqueName, parameter)
+    }
+
+    override fun ScWriter.updateValueControlMode(
+        uniqueName: String, parameter: String,
+        allocateBus: Boolean, currentValue: Decimal
+    ) {
+        val busName = ParameterControl.auxilBusName(uniqueName, parameter)
+        if (allocateBus) {
+            mapToValueBus(uniqueName, parameter, currentValue, remap = true)
+        } else {
+            +"$busName.free"
+            +"$busName = nil"
+            setSynthArg(uniqueName, parameter, currentValue)
         }
     }
 

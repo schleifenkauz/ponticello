@@ -8,6 +8,7 @@ import reaktive.observe
 import reaktive.value.*
 import reaktive.value.binding.map
 import xenakis.impl.*
+import xenakis.model.Settings
 import xenakis.model.obj.AbstractContextualObject
 import xenakis.model.obj.BusObject
 import xenakis.model.obj.BusReference
@@ -131,19 +132,22 @@ class MixerFlow(
     override fun writeCode(placement: NodePlacement): String = writeCode {
         if (components.isEmpty()) return@writeCode
         val sink = targetBus.now.force()
-        appendBlock("$superColliderName = ", endLine = false) {
-            +"var sources, volumes, mix"
-            val sources = components.map { comp -> comp.sourceBus.now.force().superColliderName }
-            val volumes = components.map { comp -> getActualVolume(comp) }
-            +"sources = NamedControl.kr(\\sources, $sources)"
-            +"volumes = NamedControl.kr(\\volumes, $volumes)"
-            +"sources = In.ar(sources, ${sink.channels.now}) * volumes"
-            if (components.size > 1) {
-                +"sources.sum"
+        val latency = context[Settings].serverLatency.now
+        appendBlock("s.makeBundle($latency)") {
+            appendBlock("$superColliderName = ", endLine = false) {
+                +"var sources, volumes, mix"
+                val sources = components.map { comp -> comp.sourceBus.now.force().superColliderName }
+                val volumes = components.map { comp -> getActualVolume(comp) }
+                +"sources = NamedControl.kr(\\sources, $sources)"
+                +"volumes = NamedControl.kr(\\volumes, $volumes)"
+                +"sources = In.ar(sources, ${sink.channels.now}) * volumes"
+                if (components.size > 1) {
+                    +"sources.sum"
+                }
             }
+            val action = guardAgainstReplaceNil(placement)
+            appendLine(".play(${placement.target}, ${sink.superColliderName}, addAction: ${action})")
         }
-        val action = guardAgainstReplaceNil(placement)
-        appendLine(".play(${placement.target}, ${sink.superColliderName}, addAction: ${action})")
     }
 
     override fun getDefaultName(): ReactiveString = targetBus.map { bus -> "Mixer ${bus.getName()}" }

@@ -114,7 +114,8 @@ abstract class AbstractLiveUpdater(protected val obj: ParameterizedObject) : Par
             }
 
             is ValueControl -> runOnActiveObjects { name, _ ->
-                updateValue(name, parameter, ctrl.value.now, onBus = obj.def is SynthDefObject, remap)
+                val onBus = obj.def is SynthDefObject && ctrl.allocateBus.now
+                updateValue(name, parameter, ctrl.value.now, onBus, remap)
             }
 
             is BufferControl -> runOnActiveObjects { name, _ ->
@@ -158,7 +159,12 @@ abstract class AbstractLiveUpdater(protected val obj: ParameterizedObject) : Par
 
             is ValueControl -> control.value.observe { _, value ->
                 runOnActiveObjects { name, _ ->
-                    updateValue(name, parameter, value, onBus = obj.def is SynthDefObject, remap = false)
+                    val onBus = obj.def is SynthDefObject && control.allocateBus.now
+                    updateValue(name, parameter, value, onBus, remap = false)
+                }
+            } and control.allocateBus.observe { _, allocateBus ->
+                runOnActiveObjects { name, _ ->
+                    updateValueControlMode(name, parameter, allocateBus, control.value.now)
                 }
             }
 
@@ -223,6 +229,11 @@ abstract class AbstractLiveUpdater(protected val obj: ParameterizedObject) : Par
         uniqueName: String, parameter: String, value: Decimal,
         onBus: Boolean, remap: Boolean,
     )
+
+    protected open fun ScWriter.updateValueControlMode(
+        uniqueName: String, parameter: String,
+        allocateBus: Boolean, currentValue: Decimal,
+    ) {}
 
     protected abstract fun ScWriter.updateBus(uniqueName: String, parameter: String, bus: BusReference)
 

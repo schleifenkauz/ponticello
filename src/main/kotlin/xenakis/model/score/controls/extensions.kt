@@ -46,7 +46,6 @@ fun ScWriter.writeSynthCode(
 ) {
     appendBlock("s.makeBundle($latency)") {
         +"var auxilBuses = (), auxilSynths = ()"
-        +"s.sync"
         val controlsWithSpecs = obj.controls.all().associate { ctrl ->
             val spec = ctrl.spec.now!!
             val control = ctrl.now.adjustControlForCutoff(cutoff, spec)
@@ -97,7 +96,7 @@ fun ScWriter.writeSynthCode(
 }
 
 fun guardAgainstReplaceNil(placement: NodePlacement) = if (placement.addAction == AddAction.AddReplace)
-    "if (${placement.target} != nil) { 'addReplace' } { \"'${placement.target}' not found\".postln; ${AddAction.AddToTail} }"
+    "if (${placement.target} != nil && ${placement.target}.isRunning) { 'addReplace' } { \"'${placement.target}' not found\".postln; ${AddAction.AddToTail} }"
 else placement.addAction.toString()
 
 fun ScWriter.writeProcessCode(

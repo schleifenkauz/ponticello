@@ -99,6 +99,9 @@ class ObjectListView<O: ContextualObject>(
         }
         displayMode.now = mode
         updateRoot(mode)
+        if (mode == DisplayMode.SubWindow) {
+            selectedBox?.showSubWindow()
+        }
         if (autoResizeScene && scene?.window != null && mode in storedWindowSizes) {
             val size = storedWindowSizes.getValue(mode)
             scene.window.width = size.width
@@ -139,9 +142,6 @@ class ObjectListView<O: ContextualObject>(
         } else {
             if (mode != DisplayMode.DetailsPane) {
                 setRoot(itemCellsLayout())
-            }
-            if (mode == DisplayMode.SubWindow) {
-                selectedBox?.showSubWindow()
             }
             for (box in boxes) box.setContentDisplay(mode)
             if (mode == DisplayMode.DetailsPane) {

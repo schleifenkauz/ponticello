@@ -1,12 +1,10 @@
 package xenakis.ui.score
 
 import bundles.set
+import fxutils.*
 import fxutils.actions.action
 import fxutils.actions.makeButton
-import fxutils.centerChildren
-import fxutils.createBorder
-import fxutils.hspace
-import fxutils.infiniteSpace
+import fxutils.actions.registerActions
 import hextant.context.extend
 import javafx.scene.control.SplitPane
 import javafx.scene.layout.HBox
@@ -21,8 +19,7 @@ import xenakis.impl.times
 import xenakis.model.player.ScorePlayer
 import xenakis.model.score.ScoreObject
 import xenakis.model.score.ScoreObjectGroup
-import xenakis.ui.actions.PlaybackActions
-import xenakis.ui.actions.toolbarPart
+import xenakis.ui.actions.*
 import xenakis.ui.registry.ScoreObjectRegistryPane
 
 //TODO bad name
@@ -34,14 +31,23 @@ class ScoreObjectViewPane private constructor(val obj: ScoreObject) : VBox() {
     private var lastDividerPosition = -1.0
     private val timeCodeView = TimeCodeView()
     private val showDetailsPane = reactiveVariable(false)
+    private val selector = ScoreObjectSelectionManager(context, scorePane)
 
     init {
         setDefaultSize()
         border = createBorder(Color.AQUAMARINE, 2.0)
+        context[ScoreObjectSelectionManager] = selector
         scorePane.initialize()
         setupPlayback()
         setVgrow(splitter, Priority.ALWAYS)
         children.addAll(createPlaybackBar(), splitter)
+        registerShortcuts {
+            SelectionRelatedActions.addShortcuts(this, context)
+            val ctx = ObjectActionContext.MultiObjectContext(selector)
+            registerActions(ObjectActions.all.withContext(ctx))
+            registerActions(ScoreObjectRegistryPane.actions.withContext(obj))
+            registerActions(PlaybackActions.local.withContext(player))
+        }
     }
 
     private fun toggleDetailsPane() {
@@ -78,11 +84,12 @@ class ScoreObjectViewPane private constructor(val obj: ScoreObject) : VBox() {
         infiniteSpace(),
         toolbarPart(ScoreObjectRegistryPane.actions.withContext(obj)),
         hspace(20.0),
-        toolbarPart(PlaybackActions.withContext(player)),
+        toolbarPart(PlaybackActions.local.withContext(player)),
         hspace(20.0),
         timeCodeView,
         infiniteSpace(),
-        showDetailPaneAction.withContext(this).makeButton("medium-icon-button")
+        showDetailPaneAction.withContext(this).makeButton("medium-icon-button"),
+        hspace(10.0)
     ).centerChildren()
 
     companion object {

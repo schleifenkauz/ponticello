@@ -57,6 +57,12 @@ class ActiveObjectsManager(private val context: Context) : SuperColliderListener
         }
     }
 
+    fun clear() {
+        takenSuffixes.clear()
+        bySuffix.clear()
+        byAbsolutePosition.clear()
+    }
+
     private fun removeByName(uniqueName: String): ActiveObject? {
         val name = uniqueName.substringBeforeLast('_')
         val suffix = uniqueName.substringAfterLast('_').toIntOrNull() ?: return null

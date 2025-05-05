@@ -94,12 +94,14 @@ class AudioFlowGroup(
         }
     }
 
-    private fun activate(flow: AudioFlow) {
+    private fun activate(flow: AudioFlow, customPlacement: NodePlacement? = null) {
         val idx = flows.indexOf(flow)
         val prev = previousActiveFlow(idx)
-        val placement =
-            if (prev == null) NodePlacement.head(superColliderName.now)
-            else NodePlacement.after(prev.superColliderName)
+        val placement = when {
+            customPlacement != null -> customPlacement
+            prev == null -> NodePlacement.head(superColliderName.now)
+            else -> NodePlacement.after(prev.superColliderName)
+        }
         val code = flow.writeCode(placement)
         client.run(code)
     }
@@ -109,13 +111,13 @@ class AudioFlowGroup(
     }
 
     private fun addToServer(placement: NodePlacement) {
+        val groupName = superColliderName.now
         client.run {
-            val name = superColliderName.now
-            +"$name = Group.new(${placement.target}, ${placement.addAction})"
+            +"$groupName = Group.new(${placement.target}, ${placement.addAction})"
         }
         for (flow in flows) {
             if (!flow.isActive.now) continue
-            activate(flow)
+            activate(flow, customPlacement = NodePlacement.tail(groupName))
         }
     }
 
@@ -130,7 +132,7 @@ class AudioFlowGroup(
 
     override fun onRemoved() {
         super.onRemoved()
-        if(isActive.now) {
+        if (isActive.now) {
             freeGroup()
         }
     }

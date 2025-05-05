@@ -95,3 +95,21 @@
     -fx-max-width: 150px;
 }
 
+.check-box {
+    -fx-background-color: transparent !important;
+    -fx-content-display: right;
+}
+
+.check-box .box {
+    -fx-background-color: transparent !important;
+    -fx-border-color: white;
+    -fx-border-radius: 3px;
+}
+
+.check-box:hover .box {
+    -fx-border-color: -fx-accent;
+}
+
+.check-box:selected .mark {
+    -fx-background-color: white;
+}

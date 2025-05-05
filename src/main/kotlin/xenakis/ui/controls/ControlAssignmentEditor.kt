@@ -15,12 +15,12 @@ import hextant.undo.compoundEdit
 import javafx.geometry.Pos
 import javafx.scene.Node
 import javafx.scene.control.Button
+import javafx.scene.control.CheckBox
 import javafx.scene.control.Label
 import javafx.scene.input.DragEvent
 import javafx.scene.input.Dragboard
 import javafx.scene.layout.HBox
 import javafx.scene.paint.Color
-import org.controlsfx.control.ToggleSwitch
 import org.kordamp.ikonli.evaicons.Evaicons
 import org.kordamp.ikonli.material2.Material2AL
 import org.kordamp.ikonli.materialdesign2.MaterialDesignC
@@ -163,7 +163,8 @@ class ControlAssignmentEditor(val control: NamedParameterControl, val view: Scor
                     style = SliderBar.Style.AlwaysValue
                 )
                 sliderBar.prefWidth = 150.0
-                return sliderBar
+                val useAsArgBox = CheckBox("Allocate bus").sync(control.allocateBus)
+                return HBox(5.0, sliderBar, useAsArgBox).centerChildren()
             }
 
             override fun createDefaultControl(
@@ -187,7 +188,7 @@ class ControlAssignmentEditor(val control: NamedParameterControl, val view: Scor
                 colorPicker.setFixedWidth(30.0)
                 val box = HBox(5.0, colorPicker)
                 if (namedControl.parentObject is SynthObject) {
-                    val toggle = ToggleSwitch("Display: ")
+                    val toggle = CheckBox("Display ")
                     toggle.selectedProperty().bindBidirectional(control.display.asProperty())
                     box.children.add(1, toggle)
                 }
@@ -243,7 +244,7 @@ class ControlAssignmentEditor(val control: NamedParameterControl, val view: Scor
                 window.minHeight = 100.0
                 val showWindowButton = button("Code") { window.showOrBringToFront() }
                 if (namedControl.parentObject is ScoreObject) {
-                    val displayToggle = ToggleSwitch("Display: ")
+                    val displayToggle = CheckBox("Display")
                     displayToggle.selectedProperty().bindBidirectional(control.display.asProperty())
                     displayToggle.disableProperty().bind(
                         control.expr.editor.result.map { expr ->
@@ -423,7 +424,7 @@ class ControlAssignmentEditor(val control: NamedParameterControl, val view: Scor
                 editor.syncWith(control.sample)
                 editor.initialize(namedControl.context)
                 val selectorControl = ObjectSelectorControl(editor, createBundle())
-                val displaySwitch = ToggleSwitch("Display: ")
+                val displaySwitch = CheckBox("Display")
                 displaySwitch.selectedProperty().bindBidirectional(control.display.asProperty())
                 return HBox(5.0, selectorControl, infiniteSpace(), displaySwitch).centerChildren()
             }

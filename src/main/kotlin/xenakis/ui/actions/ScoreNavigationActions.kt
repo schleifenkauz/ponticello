@@ -6,6 +6,7 @@ import fxutils.actions.isShiftDown
 import fxutils.actions.isTargetTextInput
 import fxutils.mouseX
 import org.kordamp.ikonli.material2.Material2MZ
+import reaktive.value.binding.not
 import reaktive.value.now
 import xenakis.impl.asTime
 import xenakis.model.player.ScorePlayer
@@ -33,13 +34,14 @@ object ScoreNavigationActions : Action.Collector<NavigableScorePane>({
     addAction("Move playback cursor to start") {
         shortcut("Ctrl+Shift?+DIGIT0")
         icon(Material2MZ.SKIP_PREVIOUS)
+        applicableWhen { view -> view.context[ScorePlayer.CURRENT].isPlaying.not() }
         executes { view, ev ->
             val player = view.context[ScorePlayer.CURRENT]
+            if (player.isPlaying.now) return@executes
             if (ev.isShiftDown()) {
-                if (player.isPlaying.now) return@executes
                 view.display(0.0.asTime, view.displayedDuration)
             }
-            player.movePlayHeadToStart()
+            player.playHead.movePlayHeadToStart()
         }
     }
     addAction("Zoom in") {

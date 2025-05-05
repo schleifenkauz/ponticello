@@ -8,7 +8,6 @@ import reaktive.value.now
 import reaktive.value.reactiveVariable
 import xenakis.impl.*
 import xenakis.model.live.QuantizationUnit
-import xenakis.model.score.ScoreObject
 import xenakis.model.score.TimeUnit
 
 @Serializable
@@ -47,13 +46,13 @@ class MeterObject(
         }
     }
 
-    fun getDuration(unit: QuantizationUnit, obj: ScoreObject): Decimal {
+    fun getDuration(unit: QuantizationUnit, objDuration: Decimal): Decimal {
         val beatDur = getBeatDur()
         return when (unit) {
             QuantizationUnit.Bars -> beatsPerBar.now * beatDur
             QuantizationUnit.Beats -> beatDur
             QuantizationUnit.Ticks -> beatDur / ticksPerBeat.now
-            QuantizationUnit.ObjectDuration -> obj.duration
+            QuantizationUnit.ObjectDuration -> objDuration
         }
     }
 

@@ -2,6 +2,7 @@ package xenakis.ui.score
 
 import fxutils.*
 import fxutils.actions.ActionBar
+import fxutils.actions.ContextualizedAction
 import fxutils.actions.registerShortcuts
 import fxutils.prompt.DetailPane
 import hextant.context.Context
@@ -14,7 +15,6 @@ import javafx.geometry.HorizontalDirection.LEFT
 import javafx.geometry.HorizontalDirection.RIGHT
 import javafx.geometry.VerticalDirection
 import javafx.scene.Cursor
-import javafx.scene.Node
 import javafx.scene.control.ColorPicker
 import javafx.scene.input.MouseButton
 import javafx.scene.input.MouseEvent
@@ -41,6 +41,7 @@ import xenakis.ui.impl.isResizeCursor
 import xenakis.ui.impl.resizeDirection
 import xenakis.ui.impl.resizeMode
 import xenakis.ui.impl.setupDraggingAndResizing
+import xenakis.ui.launcher.DetailPaneManager
 import xenakis.ui.launcher.XenakisLauncher.Companion.currentProject
 import xenakis.ui.launcher.XenakisMainActivity
 
@@ -93,7 +94,7 @@ abstract class ScoreObjectView(
 
     fun getScreenY(scoreY: Decimal): Double = parentPane.getScreenY(scoreY)
 
-    fun getDetailPane(): DetailPane {
+    fun getDetailPane(extraActions: List<ContextualizedAction> = emptyList()): DetailPane {
         val detailPane = DetailPane(labelWidth = 100.0)
         if (obj is ScoreObject.Unresolved) {
             return detailPane
@@ -104,7 +105,8 @@ abstract class ScoreObjectView(
                 NameControl(obj),
                 ActionBar(ObjectActions.multiObjectActions.withContext(ctx), buttonStyle = "medium-icon-button"),
                 ActionBar(ObjectActions.singleObjectActions.withContext(ctx), buttonStyle = "medium-icon-button"),
-                *headerItems().toTypedArray()
+                infiniteSpace(),
+                ActionBar(extraActions, buttonStyle = "medium-icon-button"),
             ).centerChildren().pad(8.0)
             detailPane.children.add(headerBox)
             detailPane.registerShortcuts(ObjectActions.all.withContext(ctx))
@@ -118,8 +120,6 @@ abstract class ScoreObjectView(
             return detailPane
         }
     }
-
-    protected open fun headerItems(): List<Node> = emptyList()
 
     protected open fun setupDetailPane(pane: DetailPane) {}
 
@@ -147,12 +147,6 @@ abstract class ScoreObjectView(
             )
             addMouseActions()
         }
-    }
-
-    fun initialize(context: Context) {
-        if (isInitialized) return
-        this.context = context
-        initialize()
     }
 
     fun selectView(addToSelection: Boolean) {
@@ -188,14 +182,16 @@ abstract class ScoreObjectView(
     private fun addMouseActions() {
         addEventHandler(MouseEvent.MOUSE_CLICKED) { ev ->
             when {
-                ev.modifiers.isNotEmpty() -> return@addEventHandler
-                ev.button == MouseButton.PRIMARY && ev.clickCount == 1 -> selectView(addToSelection = ev.isShiftDown)
+                ev.button == MouseButton.SECONDARY && ev.modifiers.isEmpty() -> {
+                    context[DetailPaneManager].showDetailPane(this)
+                }
 
-                ev.button == MouseButton.PRIMARY && ev.clickCount == 2 -> {
+                ev.button == MouseButton.SECONDARY && ev.modifiers == setOf(Shift) -> {
                     if (!parentPane.isRoot(obj)) {
                         context[XenakisMainActivity].scoreObjectsPane.listView.showContent(obj)
                     }
                 }
+
                 else -> return@addEventHandler
             }
             ev.consume()
@@ -269,6 +265,9 @@ abstract class ScoreObjectView(
 
     protected open fun startDrag(ev: MouseEvent, cursor: Cursor): Boolean {
         val selectionManager = context[ScoreObjectSelectionManager]
+        if (!selectionManager.isSelected(this)) {
+            selectView(addToSelection = ev.isShiftDown)
+        }
         if (cursor.isResizeCursor) {
             selectionManager.deselectAll()
             if (ev.isAltDown) {

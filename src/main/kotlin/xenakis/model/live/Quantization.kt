@@ -13,7 +13,7 @@ sealed interface Quantization {
     @Serializable
     data class RelativeTo(
         val grid: MeterReference,
-        val quantizationUnit: QuantizationUnit, val quantizationValue: Int,
+        val quantizationUnit: QuantizationUnit, val quantizationValue: Decimal,
         val offsetUnit: TimeUnit, val offset: Decimal,
     ) : Quantization
 

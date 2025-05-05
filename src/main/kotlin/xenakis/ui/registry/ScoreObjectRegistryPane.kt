@@ -11,7 +11,6 @@ import javafx.scene.input.DataFormat
 import javafx.scene.layout.BorderPane
 import org.kordamp.ikonli.codicons.Codicons
 import org.kordamp.ikonli.materialdesign2.MaterialDesignM
-import org.kordamp.ikonli.materialdesign2.MaterialDesignP
 import org.kordamp.ikonli.materialdesign2.MaterialDesignR
 import reaktive.value.now
 import reaktive.value.reactiveValue
@@ -69,11 +68,11 @@ class ScoreObjectRegistryPane(registry: ScoreObjectRegistry) : ObjectRegistryPan
                     whenTrue = MaterialDesignR.REPEAT,
                 )
             }
-            addAction("Toggle add to score") {
-                applicableIf { obj -> obj.affectsPlayback }
-                icon(MaterialDesignP.PROGRESS_QUESTION)
-                toggles({ obj -> obj.liveConfig.addToScore })
-            }
+//            addAction("Toggle add to score") {
+//                applicableIf { obj -> obj.affectsPlayback }
+//                icon(MaterialDesignP.PROGRESS_QUESTION)
+//                toggles({ obj -> obj.liveConfig.addToScore })
+//            }
             addAction("Quantize start") {
                 applicableIf { obj -> obj.affectsPlayback }
                 icon(MaterialDesignM.METRONOME)

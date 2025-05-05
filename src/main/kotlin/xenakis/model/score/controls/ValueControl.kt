@@ -15,7 +15,10 @@ import xenakis.sc.client.ScWriter
 
 @Serializable
 @SerialName("Value")
-data class ValueControl(val value: ReactiveVariable<Decimal>) : ParameterControl() {
+data class ValueControl(
+    val value: ReactiveVariable<Decimal>,
+    val allocateBus: ReactiveVariable<Boolean> = reactiveVariable(false),
+) : ParameterControl() {
     override fun copy(): ParameterControl = ValueControl(value.copy())
 
     override fun validate(spec: ControlSpec, obj: ParameterizedObject): Boolean {
@@ -26,7 +29,9 @@ data class ValueControl(val value: ReactiveVariable<Decimal>) : ParameterControl
         return true
     }
 
-    override fun allocatesBus(obj: ParameterizedObject): Boolean = obj.def is SynthDefObject
+    override fun allocatesBus(obj: ParameterizedObject): Boolean = allocateBus.now && obj.def is SynthDefObject
+
+    override fun providesConstantSynthArgument(): Boolean = !allocateBus.now
 
     override fun usesAuxilSynth(obj: ParameterizedObject): Boolean = false
 
@@ -35,13 +40,13 @@ data class ValueControl(val value: ReactiveVariable<Decimal>) : ParameterControl
         parameter: String, spec: ControlSpec,
         context: CodegenContext,
     ) {
-        when (context) {
-            CodegenContext.Process -> {
+        when {
+            context == CodegenContext.Process -> {
                 val argVar = uniqueArgumentName(uniqueName, parameter)
                 +"$argVar = ${value.now}"
             }
 
-            else -> {
+            allocateBus.now -> {
                 val busName = auxilBusName(uniqueName, parameter)
                 +"$busName = Bus.control(s, 1)"
                 +"$busName.set(${value.now})"
@@ -53,8 +58,12 @@ data class ValueControl(val value: ReactiveVariable<Decimal>) : ParameterControl
         obj: ParameterizedObject, uniqueName: String,
         synthVar: String, parameter: String, spec: ControlSpec,
     ) {
-        val busName = auxilBusName(uniqueName, parameter)
-        +"$synthVar.map('$parameter', $busName)"
+        if (allocateBus.now) {
+            val busName = auxilBusName(uniqueName, parameter)
+            +"$synthVar.map('$parameter', $busName)"
+        } else {
+            +"$synthVar.set('$parameter', ${value.now})"
+        }
     }
 
     override fun generateArgumentExpr(
@@ -65,7 +74,10 @@ data class ValueControl(val value: ReactiveVariable<Decimal>) : ParameterControl
             Identifier(uniqueArgumentName(uniqueName, parameter))
         }
 
-        CodegenContext.SubArg -> Identifier(auxilBusName(uniqueName, parameter)).send("kr")
+        CodegenContext.SubArg ->
+            if (allocateBus.now) Identifier(auxilBusName(uniqueName, parameter)).send("kr")
+            else DecimalLiteral(value.now)
+
         CodegenContext.Synth -> DecimalLiteral(value.now)
     }
 
