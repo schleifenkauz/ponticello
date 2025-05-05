@@ -50,7 +50,7 @@ class ScorePlayer private constructor(
 
     val loopOffset get() = loopedTime - lastPlayFrom
 
-    val elapsedTime: Decimal get() = loopOffset + (currentTime - lastPlayFrom)
+    val elapsedTime: Decimal get() = loopOffset + currentTime + lookAhead
 
     private fun runLoop() {
         val dt = (LOOP_PERIOD / 1000.0).asTime
@@ -89,7 +89,6 @@ class ScorePlayer private constructor(
         }
         val initialDelay: Long = toMs(quantizationDelay + lookAhead)
         startPlayHandle = executor.schedule({ startPlaying() }, toMs(quantizationDelay), TimeUnit.MILLISECONDS)
-
         loopHandle = looper.scheduleAtFixedRate({ runLoop() }, initialDelay, LOOP_PERIOD, TimeUnit.MILLISECONDS)
     }
 
