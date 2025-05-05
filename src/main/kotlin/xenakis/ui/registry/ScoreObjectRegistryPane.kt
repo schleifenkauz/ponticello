@@ -37,7 +37,7 @@ class ScoreObjectRegistryPane(registry: ScoreObjectRegistry) : ObjectRegistryPan
     }
 
     override fun getItemContent(obj: ScoreObject): List<Node> {
-        val spec = NumericalControlSpec(zero, zero, one, 0.01.toDecimal(), Warp.Linear)
+        val spec = NumericalControlSpec(zero, zero, one, 0.01.toDecimal(), zero, Warp.Linear)
         val name = reactiveValue("Y in main score")
         val scoreYSlider = SliderBar(obj.liveConfig.yPosition, name, spec.converter())
         scoreYSlider.prefWidth = 150.0

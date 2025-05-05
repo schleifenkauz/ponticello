@@ -19,12 +19,14 @@ class NumericalControlSpecPrompt(
     private val maxTxt = textField(initialSpec.max.text) named "Maximum"
     private val defaultTxt = textField(initialSpec.defaultValue.text) named "Default"
     private val stepTxt = textField(initialSpec.step.text) named "Step"
+    private val lagTxt = textField(initialSpec.lag.text) named "Lag"
     private val associatedColor = ColorPicker(initialSpec.associatedColor) named "Color"
 
     private val min get() = minTxt.text.parseDecimal()
     private val max get() = maxTxt.text.parseDecimal()
     private val default get() = defaultTxt.text.parseDecimal()
     private val step get() = stepTxt.text.parseDecimal()
+    private val lag get() = lagTxt.text.parseDecimal()
     private var warp = initialSpec.warp
     private val warpButton = SimpleSearchableListView(Warp.entries, "Choose warp")
         .selectorButton(this::warp) named "Warp"
@@ -36,6 +38,7 @@ class NumericalControlSpecPrompt(
                 max == null -> false
                 default == null -> true
                 step == null -> false
+                lag == null -> false
                 default!! < min!! -> false
                 default!! > max!! -> false
                 else -> true
@@ -49,5 +52,5 @@ class NumericalControlSpecPrompt(
         return this
     }
 
-    override fun makeSpec() = NumericalControlSpec(default!!, min!!, max!!, step!!, warp, associatedColor.value)
+    override fun makeSpec() = NumericalControlSpec(default!!, min!!, max!!, step!!, lag!!, warp, associatedColor.value)
 }

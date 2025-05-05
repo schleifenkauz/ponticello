@@ -39,7 +39,7 @@ fun ParameterType.defaultControlSpec(): ControlSpec = when (this) {
     ParameterType.Bus -> BusControlSpec(Rate.Audio, 2)
     ParameterType.Buffer -> BufferControlSpec(channels = 2)
     ParameterType.Numerical -> NumericalControlSpec.DEFAULT
-    ParameterType.BufferPosition -> BufferPositionControlSpec
+    ParameterType.BufferPosition -> BufferPositionControlSpec()
 }
 
 @Serializable
@@ -72,6 +72,7 @@ data class NumericalControlSpec(
     val max: DecimalLiteral,
     val warp: Warp,
     val step: DecimalLiteral,
+    val lag: DecimalLiteral = DecimalLiteral(0.02.toDecimal()),
     @Serializable(with = ColorSerializer::class)
     @Component(SimpleColorEditor::class)
     val associatedColor: Color = Color.WHITE,
@@ -79,26 +80,27 @@ data class NumericalControlSpec(
     val precision get() = step.get().precision
 
     constructor(
-        default: Double, min: Double, max: Double, step: Decimal,
+        default: Double, min: Double, max: Double, step: Decimal, lag: Double,
         warp: Warp = Warp.Linear, associatedColor: Color = Color.WHITE,
     ) : this(
         default.withPrecision(step.precision),
         min.withPrecision(step.precision), max.withPrecision(step.precision),
-        step, warp, associatedColor
+        step, lag.withPrecision(step.precision), warp, associatedColor
     )
 
     constructor(
-        default: Decimal, min: Decimal, max: Decimal, step: Decimal,
+        default: Decimal, min: Decimal, max: Decimal, step: Decimal, lag: Decimal,
         warp: Warp, associatedColor: Color = Color.WHITE,
     ) : this(
-        DecimalLiteral(default), DecimalLiteral(min), DecimalLiteral(max), warp, DecimalLiteral(step), associatedColor
+        DecimalLiteral(default), DecimalLiteral(min), DecimalLiteral(max), warp,
+        DecimalLiteral(step), DecimalLiteral(lag), associatedColor
     )
 
     override val type: ParameterType
         get() = ParameterType.Numerical
 
     override val code: String
-        get() = "kr(${defaultValue.text}, spec: [${min.text}, ${max.text}, $warp, ${step.text}])"
+        get() = "kr(${defaultValue.text}, lag: ${lag.text}, spec: [${min.text}, ${max.text}, $warp, ${step.text}])"
 
     override val defaultValueExpr: String
         get() = defaultValue.text
@@ -125,7 +127,7 @@ data class NumericalControlSpec(
     }
 
     companion object {
-        val DEFAULT = NumericalControlSpec(zero, zero, one, 0.01.toDecimal(), Warp.Linear, Color.WHITE)
+        val DEFAULT = NumericalControlSpec(zero, zero, one, 0.01.toDecimal(), zero, Warp.Linear, Color.WHITE)
     }
 }
 
@@ -162,7 +164,8 @@ data class BufferControlSpec(@Component(editor = SimpleIntegerEditor::class) val
 
 @Serializable
 @SerialName("BufPos")
-data object BufferPositionControlSpec : ControlSpec {
+@Compound
+class BufferPositionControlSpec : ControlSpec {
     override val type: ParameterType
         get() = ParameterType.Numerical
 

@@ -5,12 +5,14 @@ import reaktive.value.now
 import reaktive.value.observe
 import xenakis.impl.Decimal
 import xenakis.impl.zero
+import xenakis.model.flow.AudioFlow
 import xenakis.model.flow.NodePlacement
 import xenakis.model.obj.*
 import xenakis.model.registry.NamedObject.Companion.NO_NAME
 import xenakis.model.score.Envelope
 import xenakis.model.score.ParameterControlList
 import xenakis.model.score.ParameterControlList.NamedParameterControl
+import xenakis.model.score.ScoreObject
 import xenakis.model.score.controls.*
 import xenakis.sc.NumericalControlSpec
 import xenakis.sc.ScExpr
@@ -19,11 +21,34 @@ import xenakis.sc.client.SuperColliderClient
 
 abstract class AbstractLiveUpdater(protected val obj: ParameterizedObject) : ParameterControlList.Listener {
     private val controlObservers = mutableMapOf<ParameterControl, Observer>()
+    private var nameObserver: Observer? = null
 
     fun startListening() {
         obj.controls.addListener(this, initialize = false)
         for ((param, control) in obj.controls.controlMap) {
             observeControl(param, control)
+        }
+        nameObserver = syncNameWithSuperCollider()
+    }
+
+    private fun syncNameWithSuperCollider() = obj.name.observe { _, oldName, newName ->
+        runOnActiveObjects { name, _ ->
+            val suffix = if (obj is ScoreObject) name.substringAfterLast('_', "") else ""
+            val prefix = if (obj is AudioFlow) "flow_" else ""
+            val oldUniqueName = prefix + oldName + suffix
+            val newUniqueName = prefix + newName + suffix
+            val oldSupercolliderName = obj.superColliderPrefix + oldUniqueName
+            val newSupercolliderName = obj.superColliderPrefix + newUniqueName
+            +"$newSupercolliderName = $oldSupercolliderName"
+            +"$oldSupercolliderName = nil"
+            val oldBusesName = ParameterControl.auxilBusesVar(oldUniqueName)
+            val newBusesName = ParameterControl.auxilBusesVar(newUniqueName)
+            val oldSynthsName = ParameterControl.auxilSynthsVar(oldUniqueName)
+            val newSynthsName = ParameterControl.auxilSynthsVar(newUniqueName)
+            +"$newBusesName = $oldBusesName"
+            +"$oldBusesName = nil"
+            +"$newSynthsName = $oldSynthsName"
+            +"$oldSynthsName = nil"
         }
     }
 
@@ -31,6 +56,8 @@ abstract class AbstractLiveUpdater(protected val obj: ParameterizedObject) : Par
         obj.controls.removeListener(this)
         for ((_, observer) in controlObservers) observer.kill()
         controlObservers.clear()
+        nameObserver?.kill()
+        nameObserver = null
     }
 
     private fun runOnActiveObjects(action: ScWriter.(String, Decimal) -> Unit) {
@@ -233,7 +260,8 @@ abstract class AbstractLiveUpdater(protected val obj: ParameterizedObject) : Par
     protected open fun ScWriter.updateValueControlMode(
         uniqueName: String, parameter: String,
         allocateBus: Boolean, currentValue: Decimal,
-    ) {}
+    ) {
+    }
 
     protected abstract fun ScWriter.updateBus(uniqueName: String, parameter: String, bus: BusReference)
 

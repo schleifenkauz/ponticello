@@ -15,7 +15,6 @@ class ControlSpecEditor : ChoiceEditor<ParameterType, ControlSpec, Editor<Contro
         when (spec) {
             is BufferControlSpec -> {
                 val specEditor = BufferControlSpecEditor(channels = SimpleIntegerEditor(spec.channels))
-                specEditor.setupDefaultState()
                 select(ParameterType.Buffer, specEditor)
             }
 
@@ -24,7 +23,6 @@ class ControlSpecEditor : ChoiceEditor<ParameterType, ControlSpec, Editor<Contro
                     RateEditor(spec.rate),
                     SimpleIntegerEditor(spec.channels),
                 )
-                specEditor.setupDefaultState()
                 select(ParameterType.Bus, specEditor)
             }
 
@@ -33,7 +31,10 @@ class ControlSpecEditor : ChoiceEditor<ParameterType, ControlSpec, Editor<Contro
                 select(ParameterType.Numerical, specEditor)
             }
 
-            else -> {}
+            is BufferPositionControlSpec -> {
+                val specEditor = BufferPositionControlSpecEditor()
+                select(ParameterType.BufferPosition, specEditor)
+            }
         }
     }
 
@@ -48,6 +49,7 @@ class ControlSpecEditor : ChoiceEditor<ParameterType, ControlSpec, Editor<Contro
             min = DecimalLiteralEditor("0"),
             max = DecimalLiteralEditor("1"),
             warp = WarpEditor(Warp.Linear),
+            lag = DecimalLiteralEditor("0.02"),
             step = DecimalLiteralEditor("0.1"),
             associatedColor = SimpleColorEditor(randomColor())
         )

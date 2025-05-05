@@ -23,20 +23,20 @@ class SettingsPane(settings: Settings, private val context: Context) : ToolPane(
                 item("Latency: ") {
                     +Knob(
                         "Latency (sclang) in ms", settings.scLangLatency,
-                        NumericalControlSpec(0.1, 0.01, 1.0, 0.01.toDecimal())
+                        NumericalControlSpec(0.1, 0.01, 1.0, 0.01.toDecimal(), 0.0)
                     )
                     +Knob(
                         "Latency (scsynth) in ms", settings.serverLatency,
-                        NumericalControlSpec(0.1, 0.01, 1.0, 0.01.toDecimal())
+                        NumericalControlSpec(0.1, 0.01, 1.0, 0.01.toDecimal(), 0.0)
                     )
                 }
                 knobItem(
                     "Garbage collection interval: ", settings.garbageCollectionPeriod,
-                    NumericalControlSpec(60.0, 10.0, 240.0, 10.0.toDecimal())
+                    NumericalControlSpec(60.0, 10.0, 240.0, 10.0.toDecimal(), 0.0)
                 )
                 knobItem(
                     "Knob sensitivity: ", settings.knobSensitivity,
-                    NumericalControlSpec(default = 3.0, 1.0, 10.0, 0.1.toDecimal(), Warp.Linear)
+                    NumericalControlSpec(default = 3.0, 1.0, 10.0, 0.1.toDecimal(), 0.0, Warp.Linear)
                 )
             }
         })

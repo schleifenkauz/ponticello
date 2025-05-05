@@ -66,12 +66,6 @@ class AudioFlowGroup(
             if (!this.isActive.now) return@observe
             if (active) activate(obj)
             else deactivate(obj)
-        } and obj.name.observe { _, oldName, newName ->
-            if (!this.isActive.now) return@observe
-            client.run {
-                +"${obj.getSuperColliderName(newName)} = ${obj.getSuperColliderName(oldName)}"
-                +"${obj.getSuperColliderName(oldName)} = nil"
-            }
         }
     }
 

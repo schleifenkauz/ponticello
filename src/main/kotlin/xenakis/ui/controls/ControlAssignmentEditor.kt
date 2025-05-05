@@ -503,7 +503,7 @@ class ControlAssignmentEditor(val control: NamedParameterControl, val view: Scor
                 box.userData = namedControl.parentObject.duration()!!.forEach { duration ->
                     val timeSpec = NumericalControlSpec(
                         default = zero, min = zero, max = duration,
-                        step = 0.01.asTime, warp = Warp.Linear, associatedColor = Color.GRAY
+                        step = 0.01.asTime, lag = zero, warp = Warp.Linear, associatedColor = Color.GRAY
                     ).converter()
                     control.attack.now = control.attack.now.coerceAtMost(duration)
                     control.release.now = control.release.now.coerceAtMost(duration - control.attack.now)

@@ -84,7 +84,10 @@ class ReferencedSynthDefObject(
                             val max = send("controlMaxval", listOf(name, paramName)).get().toDouble()
                             val warp = send("controlWarp", listOf(name, paramName)).get().toWarp()
                             val step = send("controlStep", listOf(name, paramName)).get().toDouble()
-                            NumericalControlSpec(default.toDouble(), min, max, step.toDecimal(), warp, randomColor())
+                            NumericalControlSpec(
+                                default.toDouble(), min, max,
+                                step.toDecimal(), 0.02, warp, randomColor()
+                            )
                         }
                     }
                     val param = ParameterDefObject(paramName, spec)

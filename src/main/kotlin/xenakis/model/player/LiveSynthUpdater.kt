@@ -48,6 +48,7 @@ class LiveSynthUpdater(obj: ParameterizedObject) : AbstractLiveUpdater(obj) {
     ) {
         val busName = ParameterControl.auxilBusName(uniqueName, parameter)
         if (allocateBus) {
+            +"$busName = Bus.control(s, 1)"
             mapToValueBus(uniqueName, parameter, currentValue, remap = true)
         } else {
             +"$busName.free"

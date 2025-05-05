@@ -13,6 +13,7 @@ import reaktive.value.binding.equalTo
 import reaktive.value.binding.flatMap
 import reaktive.value.binding.map
 import xenakis.impl.Logger
+import xenakis.impl.asTime
 import xenakis.impl.toDecimal
 import xenakis.impl.zero
 import xenakis.model.obj.AbstractRenamableObject
@@ -116,7 +117,7 @@ class ParameterControlList(
                 duration?.map { dur ->
                     NumericalControlSpec(
                         default = zero, min = zero, max = dur,
-                        step = 0.01.toDecimal(), warp = Warp.Linear,
+                        step = 0.01.toDecimal(), lag = 0.01.asTime, warp = Warp.Linear,
                         associatedColor = Color.WHITE
                     )
                 } ?: reactiveValue(null)

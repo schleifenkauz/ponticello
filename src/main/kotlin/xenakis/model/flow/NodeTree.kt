@@ -29,17 +29,8 @@ class NodeTree(private val client: SuperColliderClient) {
     }
 
     private fun observeNode(node: AudioNode) {
-        observers[node] = node.superColliderName.observe { _, old, new ->
-            renamedNode(new, old)
-        } and node.yPosition.observe { _, _, newY ->
+        observers[node] = node.yPosition.observe { _, _, newY ->
             changedYPosition(node, newY)
-        }
-    }
-
-    private fun renamedNode(new: String, old: String) {
-        client.run {
-            +"$new = $old"
-            +"$old = nil"
         }
     }
 

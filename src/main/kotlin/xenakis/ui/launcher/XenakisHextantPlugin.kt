@@ -15,6 +15,7 @@ import reaktive.value.now
 import xenakis.impl.Logger
 import xenakis.impl.one
 import xenakis.impl.randomColor
+import xenakis.impl.toDecimal
 import xenakis.model.obj.CustomizableSynthDefObject
 import xenakis.model.obj.ParameterDefObject
 import xenakis.model.registry.SynthDefRegistry
@@ -207,7 +208,7 @@ object XenakisHextantPlugin : PluginInitializer({
             }
             val spec = NumericalControlSpec(
                 defaultValue, defaultValue, defaultValue,
-                Warp.Linear, DecimalLiteral(one), randomColor()
+                Warp.Linear, DecimalLiteral(one), DecimalLiteral(0.02.toDecimal()), randomColor()
             )
             val param = ParameterDefObject(name, spec)
             editor.context.compoundEdit("Extract parameter") {

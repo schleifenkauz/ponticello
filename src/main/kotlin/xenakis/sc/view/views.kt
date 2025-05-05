@@ -208,6 +208,12 @@ fun createControl(editor: xenakis.sc.editor.BufferControlSpecEditor, arguments: 
     }
 
 @ProvideImplementation(ControlFactory::class)
+fun createControl(editor: xenakis.sc.editor.BufferPositionControlSpecEditor, arguments: Bundle) =
+    CompoundEditorControl(editor, arguments) {
+        horizontal {  }
+    }
+
+@ProvideImplementation(ControlFactory::class)
 fun createControl(editor: xenakis.sc.editor.NumericalControlSpecEditor, arguments: Bundle) =
     CompoundEditorControl(editor, arguments) {
         horizontal {
@@ -223,6 +229,8 @@ fun createControl(editor: xenakis.sc.editor.NumericalControlSpecEditor, argument
             keyword("step: ")
             view(editor.step)//.minWidth = 30.0
             space()
+            keyword("lag: ")
+            view(editor.lag)
             keyword("warp: ")
             view(editor.warp)
             space()

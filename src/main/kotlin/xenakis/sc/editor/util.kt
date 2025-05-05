@@ -11,8 +11,9 @@ fun NumericalControlSpec.createEditor() = NumericalControlSpecEditor(
     defaultValue = DecimalLiteralEditor(defaultValue.text),
     min = DecimalLiteralEditor(min.text),
     max = DecimalLiteralEditor(max.text),
-    warp = WarpEditor(warp),
     step = DecimalLiteralEditor(step.text),
+    lag = DecimalLiteralEditor(lag.text),
+    warp = WarpEditor(warp),
     associatedColor = SimpleColorEditor(associatedColor)
 )
 
