@@ -34,7 +34,7 @@ class TaskObject(
         code.initialize(context)
     }
 
-    override fun writeCode(uniqueName: String, placement: NodePlacement?, cutoff: Decimal): String = writeCode {
+    override fun writeCode(uniqueName: String, placement: NodePlacement?, cutoff: Decimal, latency: Decimal): String = writeCode {
         val name = "~task_$uniqueName"
         appendBlock("$name = Task", endLine = false) {
             +"${context[Settings].serverLatency.now}.wait"

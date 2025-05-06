@@ -21,6 +21,8 @@ class ScoreObjectScheduler(val context: Context) {
     private val client = context[SuperColliderClient]
     private val nodeTree = context[NodeTree]
     private val activeObjects = context[ActiveObjectsManager]
+    private val serverLatency get() = context[Settings].serverLatency.now
+    private val sclangLatency get() = context[Settings].scLangLatency.now
 
     fun scheduleEvents(events: List<Event>, player: ScorePlayer) = execute {
         for (ev in events) {
@@ -71,7 +73,8 @@ class ScoreObjectScheduler(val context: Context) {
 
     fun scheduleObject(
         obj: ScoreObject, absolutePosition: ObjectPosition,
-        cutoff: Decimal, player: ScorePlayer
+        cutoff: Decimal, player: ScorePlayer,
+        scLangLatency: Decimal = this.sclangLatency, serverLatency: Decimal = this.serverLatency,
     ): ActiveScoreObject? {
         try {
             if (!obj.validate()) return null
@@ -80,7 +83,7 @@ class ScoreObjectScheduler(val context: Context) {
             return null
         }
         val time = absolutePosition.time - player.lastPlayFrom
-        val timeForExecution = (time + context[Settings].scLangLatency.now).toString()
+        val timeForExecution = (time + scLangLatency).toString()
         if (obj is TempoGridObject && obj.meter.isResolved.now) {
             val meter = obj.meter.force()
             player.getClock().attach(player, meter, cutoff)
@@ -101,7 +104,7 @@ class ScoreObjectScheduler(val context: Context) {
             }
         } else null
         val code = try {
-            obj.writeCode(activeObject.uniqueName, placement, cutoff.takeIf { it > zero } ?: zero)
+            obj.writeCode(activeObject.uniqueName, placement, cutoff.takeIf { it > zero } ?: zero, serverLatency)
         } catch (e: Exception) {
             Logger.error("Failed to write code for $obj", e, Logger.Category.Playback)
         }

@@ -45,7 +45,7 @@ class ProcessObject(
 
     override fun validate(): Boolean = controls.validate()
 
-    override fun writeCode(uniqueName: String, placement: NodePlacement?, cutoff: Decimal): String = writeCode {
+    override fun writeCode(uniqueName: String, placement: NodePlacement?, cutoff: Decimal, latency: Decimal): String = writeCode {
         writeProcessCode(
             this@ProcessObject, uniqueName,
             cutoff, context[Settings].serverLatency.get(),

@@ -115,7 +115,7 @@ sealed class ScoreObject : AbstractRenamableObject() {
         return true
     }
 
-    abstract fun writeCode(uniqueName: String, placement: NodePlacement?, cutoff: Decimal): String
+    abstract fun writeCode(uniqueName: String, placement: NodePlacement?, cutoff: Decimal, latency: Decimal): String
 
     protected fun recordEdit(edit: Edit) {
         if (initialized) {
@@ -334,7 +334,7 @@ sealed class ScoreObject : AbstractRenamableObject() {
         override val affectsPlayback: Boolean
             get() = false
 
-        override fun writeCode(uniqueName: String, placement: NodePlacement?, cutoff: Decimal): String = ""
+        override fun writeCode(uniqueName: String, placement: NodePlacement?, cutoff: Decimal, latency: Decimal): String = ""
 
         override fun doClone(newName: String): ScoreObject = this
     }

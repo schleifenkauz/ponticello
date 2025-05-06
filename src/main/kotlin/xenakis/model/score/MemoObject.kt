@@ -38,5 +38,5 @@ class MemoObject(
 
     override fun doClone(newName: String): ScoreObject = MemoObject(reactiveVariable(newName), text)
 
-    override fun writeCode(uniqueName: String, placement: NodePlacement?, cutoff: Decimal): String = ""
+    override fun writeCode(uniqueName: String, placement: NodePlacement?, cutoff: Decimal, latency: Decimal): String = ""
 }

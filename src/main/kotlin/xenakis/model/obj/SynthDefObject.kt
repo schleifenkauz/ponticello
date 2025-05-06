@@ -5,6 +5,7 @@ import javafx.scene.paint.Color
 import kotlinx.serialization.Serializable
 import reaktive.value.ReactiveVariable
 import reaktive.value.now
+import xenakis.impl.zero
 import xenakis.model.flow.NodePlacement
 import xenakis.model.player.ActiveAudioFlow
 import xenakis.model.player.ActiveObjectsManager
@@ -36,7 +37,7 @@ sealed interface SynthDefObject : ParameterizedObjectDef, SuperColliderObject {
                     is ActiveAudioFlow -> active.flow.writeCode(placement)
                     is ActiveScoreObject -> {
                         val cutoff = active.player.currentTime - active.absolutePosition.time
-                        active.obj.writeCode(active.uniqueName, placement, cutoff)
+                        active.obj.writeCode(active.uniqueName, placement, cutoff, latency = zero)
                     }
                 }
                 context[SuperColliderClient].run(code)

@@ -47,7 +47,7 @@ class ScoreObjectGroup(
         this.score.initialize(context, this)
     }
 
-    override fun writeCode(uniqueName: String, placement: NodePlacement?, cutoff: Decimal): String = ""
+    override fun writeCode(uniqueName: String, placement: NodePlacement?, cutoff: Decimal, latency: Decimal): String = ""
 
     override fun doCut(position: Decimal, whichHalf: HorizontalDirection, newName: String): ScoreObject {
         val objects = mutableListOf<ScoreObjectInstance>()

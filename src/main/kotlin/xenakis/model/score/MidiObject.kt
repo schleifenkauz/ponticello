@@ -211,7 +211,8 @@ class MidiObject(
     override fun writeCode(
         uniqueName: String,
         placement: NodePlacement?,
-        cutoff: Decimal
+        cutoff: Decimal,
+        latency: Decimal
     ): String = writeCode {
         val generalEventDict = eventDictionary.editor.result.now
         for ((idx, n) in notes.withIndex()) {

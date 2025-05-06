@@ -4,6 +4,7 @@ import hextant.context.Context
 import javafx.event.Event
 import reaktive.value.now
 import xenakis.model.flow.*
+import xenakis.model.obj.ProcessDefObject
 import xenakis.model.obj.SynthDefObject
 import xenakis.model.registry.BusRegistry
 import xenakis.model.registry.SynthDefRegistry
@@ -39,11 +40,15 @@ sealed interface FlowOption {
     }
 
     data class Synth(val def: SynthDefObject) : FlowOption {
-        override fun createFlow(context: Context, ev: Event?): AudioFlow {
-            return SynthFlow.create(def, context)
-        }
+        override fun createFlow(context: Context, ev: Event?): AudioFlow = SynthFlow.create(def, context)
 
         override fun toString(): String = "Synth ${def.name.now}"
+    }
+
+    data class Process(val def: ProcessDefObject): FlowOption {
+        override fun createFlow(context: Context, ev: Event?): AudioFlow = ProcessFlow.create(def, context)
+
+        override fun toString(): String = "Process ${def.name.now}"
     }
 
     companion object {

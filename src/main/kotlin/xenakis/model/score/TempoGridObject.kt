@@ -57,5 +57,6 @@ class TempoGridObject(
         uniqueName: String,
         placement: NodePlacement?,
         cutoff: Decimal,
+        latency: Decimal,
     ): String = ""
 }

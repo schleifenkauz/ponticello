@@ -17,18 +17,12 @@
 
 ### Minor
 
-- implement process flows
-  - so we can remove live processes...
 - is the envelope magnifier really needed?
 - ability to specify added time in beats/bars/ticks
 - ability to copy and paste whole time ranges
-- own editor type for control references
-    - can only be used in LFO argument expressions
 - what to do when user selects a new `SynthDef` for a synth object
     - re-sync parameter controls in some way...
 - unify window positioning
-- more adequate midi contexts
-    - based on focused window
 - asr parameter type?
   - with curve parameter
 
@@ -92,7 +86,6 @@
 ### Live mode
 
 - edit a clone of a `ScoreObjectGroup` in a `SubWindow` and sync it with the main score on demand
-- sub score windows for live loops
 - time jumps
     - like goto statements
     - can have conditions (examples...?)

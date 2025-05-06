@@ -74,7 +74,10 @@ class LauncherGrid private constructor(
         val player = getPlayer()
         val time = if (player.isPlaying.now) player.currentTime else zero
         val position = ObjectPosition(time, y.now)
-        activeObjects[index] = scheduler.scheduleObject(obj, position, cutoff = zero, player)
+        activeObjects[index] = scheduler.scheduleObject(
+            obj, position, cutoff = zero, player,
+            scLangLatency = zero, serverLatency = zero
+        )
         listeners.notifyListeners { pressed(index) }
     }
 
@@ -107,7 +110,7 @@ class LauncherGrid private constructor(
     }
 
     private fun addToTargetScore(activeObject: ActiveScoreObject, item: GridItem) {
-         val score = getScore() ?: return
+        val score = getScore() ?: return
         val player = getPlayer()
         if (!player.isPlaying.now) return
         val pos = activeObject.absolutePosition
@@ -117,7 +120,7 @@ class LauncherGrid private constructor(
             val name = context[ScoreObjectRegistry].availableName(obj.name.now)
             obj = obj.cut(obj.duration - cutoff, HorizontalDirection.LEFT, name) ?: obj
         }
-         val inst = ScoreObjectInstance(obj, pos)
+        val inst = ScoreObjectInstance(obj, pos)
         runFXWithTimeout(50) { //timeout to avoid double playback (maybe solve this in a cleaner way...)
             score.addObject(inst, autoSelect = false)
         }

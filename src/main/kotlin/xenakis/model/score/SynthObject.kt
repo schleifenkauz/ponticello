@@ -11,7 +11,6 @@ import reaktive.value.ReactiveVariable
 import reaktive.value.now
 import reaktive.value.reactiveVariable
 import xenakis.impl.*
-import xenakis.model.Settings
 import xenakis.model.flow.NodePlacement
 import xenakis.model.obj.*
 import xenakis.model.registry.reference
@@ -143,8 +142,11 @@ class SynthObject(
         initializeControls()
     }
 
-    override fun writeCode(uniqueName: String, placement: NodePlacement?, cutoff: Decimal): String = writeCode {
-        writeSynthCode(this@SynthObject, uniqueName, cutoff, placement!!, context[Settings].serverLatency.now)
+    override fun writeCode(
+        uniqueName: String, placement: NodePlacement?,
+        cutoff: Decimal, latency: Decimal,
+    ): String = writeCode {
+        writeSynthCode(this@SynthObject, uniqueName, cutoff, placement!!, latency)
     }
 
     companion object {
