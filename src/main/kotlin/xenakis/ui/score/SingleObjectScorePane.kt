@@ -1,9 +1,8 @@
 package xenakis.ui.score
 
 import hextant.context.Context
-import javafx.geometry.HorizontalDirection
+import javafx.scene.layout.Pane
 import reaktive.Observer
-import reaktive.value.forEach
 import reaktive.value.now
 import xenakis.impl.Decimal
 import xenakis.impl.asY
@@ -12,7 +11,6 @@ import xenakis.impl.zero
 import xenakis.model.obj.MeterObject
 import xenakis.model.score.ObjectPosition
 import xenakis.model.score.ScoreObject
-import xenakis.ui.impl.Direction
 
 class SingleObjectScorePane(
     val rootObj: ScoreObject, context: Context,
@@ -24,16 +22,15 @@ class SingleObjectScorePane(
 
     override val absolutePosition: ObjectPosition
         get() = ObjectPosition(zero, rootObj.liveConfig.yPosition.now)
-    private var gridView: TempoGridObjectView? = null
     private lateinit var durationObserver: Observer
-    private lateinit var gridObserver: Observer
+
+    private val gridArea = Pane()
 
     override fun initialize() {
         super.initialize()
-        gridObserver = rootObj.quantizationConfig.meter.forEach { grid ->
-            updateGrid(grid.get())
-        }
         durationObserver = rootObj.duration().observe { _ -> repaint() }
+        children.add(gridArea)
+        gridArea.layoutYProperty().bind(heightProperty().subtract(GRID_HEIGHT))
     }
 
     fun getSingleObjectView(): ScoreObjectView? {
@@ -43,46 +40,21 @@ class SingleObjectScorePane(
 
     override fun repaint() {
         super.repaint()
-        resizeGrid()
+        repaintGrid()
     }
 
-    private fun resizeGrid() {
-        val height = getScoreY(GRID_HEIGHT)
-        val direction = Direction.horizontal(HorizontalDirection.RIGHT)
-        val gridView = gridView ?: return
-        gridView.obj.resize(rootObj.duration, height, ScoreObject.ResizeMode.Regular, direction)
-    }
-
-    private fun updateGrid(meter: MeterObject?) {
-        if (meter == null) {
-            if (gridView != null) {
-                children.remove(gridView)
-                gridView = null
-            }
-            return
-        }
-//        val grid = TempoGridObject(reactiveVariable("helper_${rootObj.name.now}"), meter.reference())
-//        grid.initialize(context)
-//        val inst = ScoreObjectInstance(grid, zero, 1.0.asY)
-//        gridView = TempoGridObjectView(grid, inst)
-//        gridView!!.initialize(this)
-//        resizeGrid()
-//        score.addObject(inst, autoSelect = false)
-//        val view = TempoGridObjectView(grid, inst)
-//        view.initialize(this)
-//        view.prefWidthProperty().bind(widthProperty())
-//        view.prefHeight = GRID_HEIGHT
-//        view.layoutX = 0.0
-//        view.layoutYProperty().bind(heightProperty().subtract(GRID_HEIGHT))
-//        gridView = view
-//        children.add(view)
+    private fun repaintGrid() {
+        gridArea.children.clear()
+        val meter = rootObj.quantizationConfig.meter.now.get() ?: return
+        val duration = rootObj.duration.value
+        TempoGridObjectView.paintGrid(meter, firstBar = 0, duration, gridArea, width, GRID_HEIGHT)
     }
 
     override fun getScoreY(screenY: Double): Decimal = (screenY / (height - GRID_HEIGHT)).asY * rootObj.height
 
     override fun getScreenY(scoreY: Decimal): Double = ((scoreY / rootObj.height) * (height - GRID_HEIGHT)).value
 
-    override fun isRoot(obj: ScoreObject): Boolean = obj == rootObj || obj == gridView?.obj
+    override fun isRoot(obj: ScoreObject): Boolean = obj == rootObj
 
     override fun getNearestGrid(position: ObjectPosition): Pair<Decimal, MeterObject>? {
         val fromScore = super.getNearestGrid(position)

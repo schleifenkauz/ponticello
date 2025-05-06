@@ -15,11 +15,13 @@ import reaktive.value.fx.asObservableValue
 import reaktive.value.fx.asProperty
 import reaktive.value.now
 import reaktive.value.reactiveValue
-import xenakis.impl.*
+import xenakis.impl.Decimal
+import xenakis.model.obj.MeterObject
 import xenakis.model.project.settings
 import xenakis.model.score.ScoreObjectInstance
 import xenakis.model.score.TempoGridObject
 import xenakis.ui.launcher.XenakisLauncher.Companion.currentProject
+import kotlin.math.ceil
 
 class TempoGridObjectView(override val obj: TempoGridObject, inst: ScoreObjectInstance) : ScoreObjectView(inst) {
     private val area = Pane()
@@ -76,49 +78,11 @@ class TempoGridObjectView(override val obj: TempoGridObject, inst: ScoreObjectIn
     }
 
     private fun repaint() {
-        area.children.clear()
-        val bpm = obj.beatsPerMinute.now
-        val bpb = obj.beatsPerBar.now
-        val tpb = obj.ticksPerBeat.now
-        val bars = (obj.duration * bpm / 60 / bpb).ceilToInt()
-        val secondsPerBar = (60 * bpb) / bpm.toDouble()
+        val meter = obj.meter.get() ?: return
+        val duration = obj.duration
         val firstBar = obj.firstBar.now
-        for (bar in 0..bars) {
-            val barX = getX(bar)
-            if (barX > prefWidth) continue
-            val barLine = Line(barX, BAR_LINE_SPACE, barX, prefHeight - BAR_LINE_SPACE)
-                .styleClass("tempo-line", "bar-line")
-            area.children.add(barLine)
-            val barNumberDist = getX(secondsPerBar.toDecimal())
-            if (barNumberDist > MIN_BAR_NUMBER_DIST) {
-                val barNumber = Text((barX - 5).coerceAtLeast(0.0), 12.0, (bar + firstBar).toString())
-                    .styleClass("bar-number")
-                area.children.add(barNumber)
-            }
-            for (beat in 0 until bpb) {
-                val beatX = getX(bar, beat)
-                if (beatX > prefWidth) continue
-                val beatLine = Line(beatX, prefHeight * (1 - BEAT_LINE_SPACE), beatX, prefHeight * BEAT_LINE_SPACE)
-                    .styleClass("tempo-line", "beat-line")
-                area.children.add(beatLine)
-                for (tick in 0 until tpb) {
-                    val tickX = getX(bar, beat, tick)
-                    if (tickX > prefWidth) continue
-                    val tickLine = Line(tickX, prefHeight * (1 - TICK_LINE_SPACE), tickX, prefHeight * TICK_LINE_SPACE)
-                        .styleClass("tempo-line", "tick-line")
-                    area.children.add(tickLine)
-                }
-            }
-        }
-        val horizontalLine = Line(0.0, prefHeight / 2, prefWidth, prefHeight / 2)
-            .styleClass("tempo-line", "horizontal-line")
-        area.children.add(horizontalLine)
-    }
-
-    private fun getX(bar: Int, beat: Int = 0, tick: Int = 0): Double {
-        val secondsPerBeat = 60.0.asTime / obj.beatsPerMinute.now
-        val t = ((bar * obj.beatsPerBar.now) + beat + (tick.toDouble() / obj.ticksPerBeat.now)) * secondsPerBeat
-        return getWidth(t)
+        area.children.clear()
+        paintGrid(meter, firstBar, duration.value, area, prefWidth, prefHeight)
     }
 
     fun unmark() {
@@ -139,5 +103,48 @@ class TempoGridObjectView(override val obj: TempoGridObject, inst: ScoreObjectIn
         private const val BEAT_LINE_SPACE = 0.3
         private const val TICK_LINE_SPACE = 0.4
         private const val MIN_BAR_NUMBER_DIST = 30.0
+
+        fun paintGrid(
+            meter: MeterObject, firstBar: Int, duration: Double,
+            area: Pane, width: Double, height: Double,
+        ) {
+            val bpm = meter.beatsPerMinute.now
+            val bpb = meter.beatsPerBar.now
+            val tpb = meter.ticksPerBeat.now
+            val bars = ceil(duration * bpm / 60 / bpb).toInt()
+            val pixelsPerBeat = (width / duration / bpm * 60)
+            val secondsPerBar = (60 * bpb) / bpm.toDouble()
+            val barNumberDist = secondsPerBar * (width / duration)
+            for (bar in 0..bars) {
+                val barX = pixelsPerBeat * bar * bpb
+                if (barX > width) break
+                val barLine = Line(barX, BAR_LINE_SPACE, barX, height - BAR_LINE_SPACE)
+                    .styleClass("tempo-line", "bar-line")
+                area.children.add(barLine)
+                if (barNumberDist > MIN_BAR_NUMBER_DIST) {
+                    val barNumber = Text((barX - 5).coerceAtLeast(0.0), 12.0, (bar + firstBar).toString())
+                        .styleClass("bar-number")
+                    area.children.add(barNumber)
+                }
+                for (beat in 0 until bpb) {
+                    val beatX = barX + (pixelsPerBeat * beat)
+                    if (beatX > width) break
+                    val beatLine = Line(beatX, height * (1 - BEAT_LINE_SPACE), beatX, height * BEAT_LINE_SPACE)
+                        .styleClass("tempo-line", "beat-line")
+                    area.children.add(beatLine)
+                    for (tick in 0 until tpb) {
+                        val tickX = beatX + (pixelsPerBeat * tick) / tpb
+                        if (tickX > width) break
+                        val tickLine =
+                            Line(tickX, height * (1 - TICK_LINE_SPACE), tickX, height * TICK_LINE_SPACE)
+                                .styleClass("tempo-line", "tick-line")
+                        area.children.add(tickLine)
+                    }
+                }
+            }
+            val horizontalLine = Line(0.0, height / 2, width, height / 2)
+                .styleClass("tempo-line", "horizontal-line")
+            area.children.add(horizontalLine)
+        }
     }
 }

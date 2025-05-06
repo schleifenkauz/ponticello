@@ -83,9 +83,9 @@ abstract class ScoreObjectView(
         colorPicker.prefHeight = 30.0
     }
 
-    override fun getDuration(width: Double): Decimal = parentPane.getDuration(width)
+    override fun getDuration(width: Double): Decimal = parentPane.getDuration(width) ////TODO could be computed locally
 
-    override fun getWidth(duration: Decimal): Double = parentPane.getWidth(duration)
+    override fun getWidth(duration: Decimal): Double = parentPane.getWidth(duration) //TODO could be computed locally
 
     override fun getTime(x: Double): Decimal = getDuration(x)
 

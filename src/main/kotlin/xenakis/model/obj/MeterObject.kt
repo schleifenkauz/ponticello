@@ -56,6 +56,11 @@ class MeterObject(
         }
     }
 
+    fun getDuration(bar: Int, beat: Int, tick: Int): Decimal {
+        val secondsPerBeat = 60.0.asTime / beatsPerMinute.now
+        return ((bar * beatsPerBar.now) + beat + (tick.toDouble() / ticksPerBeat.now)) * secondsPerBeat
+    }
+
     fun represent(duration: Decimal): Pair<TimeUnit, Decimal> {
         val beatDur = getBeatDur()
         val durInBars = duration / (beatDur * beatsPerBar.now)
