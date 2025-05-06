@@ -1,7 +1,9 @@
 package xenakis.model.live
 
+import fxutils.runFXWithTimeout
 import hextant.context.Context
 import hextant.core.editor.ListenerManager
+import javafx.geometry.HorizontalDirection
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import reaktive.value.ReactiveVariable
@@ -15,12 +17,15 @@ import xenakis.model.obj.ScoreObjectReference
 import xenakis.model.player.ActiveScoreObject
 import xenakis.model.player.ScoreObjectScheduler
 import xenakis.model.player.ScorePlayer
+import xenakis.model.project.mainScore
 import xenakis.model.registry.ObjectReference
 import xenakis.model.registry.ObjectRegistry
 import xenakis.model.registry.ScoreObjectRegistry
 import xenakis.model.registry.reference
 import xenakis.model.score.ObjectPosition
 import xenakis.model.score.ScoreObjectGroup
+import xenakis.model.score.ScoreObjectInstance
+import xenakis.ui.launcher.XenakisLauncher.Companion.currentProject
 
 @Serializable
 class LauncherGrid private constructor(
@@ -73,6 +78,12 @@ class LauncherGrid private constructor(
         listeners.notifyListeners { pressed(index) }
     }
 
+    private fun getScore() = when (val t = target.now) {
+        is Target.SubScore -> t.ref.get()?.score
+        Target.MainScore -> context[currentProject].mainScore
+        Target.None -> null
+    }
+
     private fun getPlayer() = when (val t = target.now) {
         is Target.SubScore -> t.ref.get()?.player ?: context[ScorePlayer.MAIN]
         Target.MainScore, Target.None -> context[ScorePlayer.MAIN]
@@ -84,14 +95,32 @@ class LauncherGrid private constructor(
         checkAttachedAndValidIndex(index) ?: return
         listeners.notifyListeners { released(index) }
         val item = getItem(index)
-        if (!item.freeOnRelease.now) return
         val activeObject = activeObjects[index]
         if (activeObject == null) {
             Logger.warn("Object at index $index was not active", Logger.Category.Playback)
             return
         }
+        addToTargetScore(activeObject, item)
+        if (!item.freeOnRelease.now) return
         scheduler.stopObjectInstantly(activeObject)
         activeObjects[index] = null
+    }
+
+    private fun addToTargetScore(activeObject: ActiveScoreObject, item: GridItem) {
+         val score = getScore() ?: return
+        val player = getPlayer()
+        if (!player.isPlaying.now) return
+        val pos = activeObject.absolutePosition
+        var obj = activeObject.obj
+        val cutoff = (pos.time + obj.duration) - player.currentTime
+        if (item.freeOnRelease.now && cutoff > zero) {
+            val name = context[ScoreObjectRegistry].availableName(obj.name.now)
+            obj = obj.cut(obj.duration - cutoff, HorizontalDirection.LEFT, name) ?: obj
+        }
+         val inst = ScoreObjectInstance(obj, pos)
+        runFXWithTimeout(50) { //timeout to avoid double playback (maybe solve this in a cleaner way...)
+            score.addObject(inst, autoSelect = false)
+        }
     }
 
     private fun checkAttachedAndValidIndex(index: Int): Int? {

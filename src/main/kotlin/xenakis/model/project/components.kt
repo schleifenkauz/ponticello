@@ -66,7 +66,7 @@ val allComponents = listOf<Component<out ContextualObject>>(
 inline operator fun <reified T : ContextualObject> XenakisProject.get(component: Component<out T>) =
     components[component] as T
 
-val XenakisProject.score get() = get(SCORE)
+val XenakisProject.mainScore get() = get(SCORE)
 val XenakisProject.busses get() = get(BUSSES)
 val XenakisProject.buffers get() = get(BUFFERS)
 val XenakisProject.patterns get() = get(PATTERNS)

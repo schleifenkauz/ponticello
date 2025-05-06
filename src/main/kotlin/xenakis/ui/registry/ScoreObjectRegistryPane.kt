@@ -1,6 +1,7 @@
 package xenakis.ui.registry
 
 import fxutils.SubWindow
+import fxutils.actions.Action
 import fxutils.actions.ContextualizedAction
 import fxutils.actions.collectActions
 import fxutils.controls.SliderBar
@@ -103,6 +104,7 @@ class ScoreObjectRegistryPane(registry: ScoreObjectRegistry) : ObjectRegistryPan
                     if (!obj.affectsPlayback) reactiveValue(false)
                     else obj.player?.isPlaying?.not() ?: reactiveValue(true)
                 }
+                ifNotApplicable(Action.IfNotApplicable.Disable)
                 icon(Codicons.SYMBOL_PROPERTY)
                 executes { obj, ev ->
                     if (obj.quantizationConfig.meter.now.isResolved.now.not()) {

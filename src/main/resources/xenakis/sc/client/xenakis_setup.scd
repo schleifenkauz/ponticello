@@ -95,10 +95,10 @@ OSCdef('schedule', {
 	var time = msg[2].asFloat, player_id = msg[3], code = msg[4], fct, my_play_start, abs_time;
 	my_play_start = ~play_start[player_id];
     abs_time = (my_play_start ?? TempoClock.beats) + time;
-	'SCHEDULE: '.post; player_id.post;
-	' '.post; my_play_start.post;
-	' '.post; time.post;
-	' '.post; abs_time.postln;
+	'SCHEDULE, player_id ='.post; player_id.post;
+	', my_play_start = '.post; my_play_start.post;
+	', time =  '.post; time.post;
+	', abs_time = '.post; abs_time.postln;
 	fct = this.compile(code.asString);
 	if (fct == nil) { "Compilation error".throw };
     //code.postln;

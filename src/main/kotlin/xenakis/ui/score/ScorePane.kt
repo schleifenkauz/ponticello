@@ -197,7 +197,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
     * Score change handlers
     * */
 
-    override fun addedObject(score: Score, inst: ScoreObjectInstance, autoSelect: Boolean) {
+    override fun addedObject(score: Score, inst: ScoreObjectInstance, autoSelect: Boolean)  {
         val view = createObjectView(inst.obj, inst)
         view.initialize(this)
         views[inst] = view
@@ -260,8 +260,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
                 }
                 val time = t.coerceIn(zero, score.maxTime.now - obj.duration)
                 val scoreY = y.coerceIn(zero, score.maxY.now - obj.height)
-                val duplicate = ScoreObjectInstance(obj, time, scoreY)
-                score.addObject(duplicate, autoSelect = false)
+                score.addObject(obj, time, scoreY, autoSelect = false)
             }
 
             this is RootScorePane && ev.modifiers.isEmpty() -> {

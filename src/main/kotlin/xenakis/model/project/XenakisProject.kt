@@ -2,6 +2,7 @@ package xenakis.model.project
 
 import bundles.set
 import hextant.context.Context
+import hextant.undo.UndoManager
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.json.decodeFromStream
 import xenakis.impl.Logger
@@ -39,7 +40,7 @@ class XenakisProject private constructor(val components: Map<Component<out Conte
     }
 
     fun saveTo(projectDirectory: File) {
-        for (inst in score.allInstances()) {
+        for (inst in mainScore.allInstances()) {
             if (inst.obj !in objects) {
                 Logger.warn("Had to add object for $inst", Logger.Category.Project)
                 objects.add(inst.obj)
@@ -51,6 +52,7 @@ class XenakisProject private constructor(val components: Map<Component<out Conte
         for ((component, _) in components) {
             save(component)
         }
+        context[UndoManager].savedChanges()
     }
 
     fun save(component: Component<out ContextualObject>) {
@@ -85,7 +87,7 @@ class XenakisProject private constructor(val components: Map<Component<out Conte
         get(SERVER_OPTIONS).reboot(context[SuperColliderClient])
     }
 
-    fun hasInstancesOf(obj: ScoreObject): Boolean = score.hasInstancesOf(obj)
+    fun hasInstancesOf(obj: ScoreObject): Boolean = mainScore.hasInstancesOf(obj)
 
     companion object {
         val projectDirectory = bundles.publicProperty<File>("Project directory")

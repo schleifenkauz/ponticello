@@ -9,7 +9,10 @@ import reaktive.value.reactiveVariable
 import xenakis.impl.Logger
 import xenakis.impl.unaryMinus
 import xenakis.model.registry.ScoreObjectRegistry
-import xenakis.model.score.*
+import xenakis.model.score.ObjectPosition
+import xenakis.model.score.Score
+import xenakis.model.score.ScoreObject
+import xenakis.model.score.ScoreObjectGroup
 import xenakis.ui.score.ScoreObjectDuplicator
 import xenakis.ui.score.ScoreObjectSelectionManager
 import xenakis.ui.score.ScoreObjectView
@@ -53,8 +56,7 @@ object SelectionRelatedActions {
             val name = context[ScoreObjectRegistry].availableName("group")
             val newObj = ScoreObjectGroup(reactiveVariable(name), newScore)
             newObj.setInitialSize(maxT - minT, maxY - minY)
-            val newInst = ScoreObjectInstance(newObj, minT, minY)
-            parentPane.score.addObject(newInst, autoSelect = true)
+            parentPane.score.addObject(newObj, minT, minY, autoSelect = true)
             context.compoundEdit("Create group from objects") {
                 for (inst in instances) {
                     inst.moveInto(newScore, relativePosition, recurse)

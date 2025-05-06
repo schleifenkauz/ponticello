@@ -13,6 +13,7 @@
 - sub-objects get buggy after unlinking group objects
     - the new objects don't get added to the `ScoreEventCollector`
 - recording doesn't work
+- loops get ahead of themselves
 
 ### Minor
 

@@ -108,6 +108,7 @@ class ScorePlayer private constructor(
         if (!isPlaying.now) return
         _isPlaying.now = false
         loopedTime = zero
+        lastPlayFrom = zero
         getClock().stop(this)
         freeActiveObjects()
     }

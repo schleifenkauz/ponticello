@@ -89,6 +89,11 @@ class Score(
         undo.record(ScoreEdit.AddObject(inst, this))
     }
 
+    fun addObject(obj: ScoreObject, time: Decimal, y: Decimal, autoSelect: Boolean) {
+        val inst = ScoreObjectInstance(obj, time, y)
+        addObject(inst, autoSelect)
+    }
+
     fun removeObjects(set: Set<ScoreObjectInstance>, option: RegistryOption) {
         for (inst in set) {
             Logger.info("Removing ${inst.obj.name.now} from score ${scoreName.now}", Logger.Category.Score)

@@ -19,6 +19,7 @@ import xenakis.model.score.controls.BufferControl
 import xenakis.model.score.controls.EnvelopeControl
 import xenakis.model.score.controls.ValueControl
 import xenakis.model.score.controls.writeSynthCode
+import xenakis.sc.BufferPositionControlSpec
 import xenakis.sc.NumericalControlSpec
 import xenakis.sc.editor.SynthDefSelector
 import xenakis.ui.impl.Direction
@@ -75,9 +76,8 @@ class SynthObject(
         position: Decimal,
     ) = controls.transformControls { ctrl ->
         val c = ctrl.now
-        val name = ctrl.name.now
         when {
-            name == "startPos" && c is ValueControl && whichHalf == RIGHT ->
+            c is ValueControl && ctrl.spec.now is BufferPositionControlSpec && whichHalf == RIGHT ->
                 ValueControl(reactiveVariable(c.value.now + position * (playBufRate?.now ?: one(3))))
 
             c is EnvelopeControl -> {
@@ -86,7 +86,7 @@ class SynthObject(
                 EnvelopeControl(c.points.cut(position, whichHalf, warp), c.displayColor, c.display)
             }
 
-            else -> c
+            else -> c.copy()
         }
     }
 

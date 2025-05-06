@@ -37,7 +37,7 @@ class XenakisMainActivity(val project: XenakisProject) : Activity() {
         project.context[XenakisMainActivity] = this
     }
 
-    val mainScoreView: NavigableScorePane = NavigableScorePane(project.score, project.context)
+    val mainScoreView: NavigableScorePane = NavigableScorePane(project.mainScore, project.context)
 
     val synthDefsPane by lazy { SynthDefRegistryPane(project.instruments) }
     val synthDefsWindow by lazy {

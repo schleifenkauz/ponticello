@@ -211,7 +211,6 @@ sealed class ScoreObject : AbstractRenamableObject() {
 
     fun cut(position: Decimal, whichHalf: HorizontalDirection, newName: String): ScoreObject? {
         val obj = doCut(position, whichHalf, newName) ?: return null
-        obj.rename(newName)
         obj.height = height
         obj.associatedColor.now = associatedColor.now
         if (whichHalf == LEFT) {
@@ -219,7 +218,6 @@ sealed class ScoreObject : AbstractRenamableObject() {
         } else {
             obj.duration = duration - position
         }
-        obj.initialize(context)
         return obj
     }
 

@@ -1,85 +1,10 @@
 /*
-* Audio Flow Graph
-*/
-
-.audio-flow-graph {
-    -fx-background-color: #1e1f22;
-}
-
-.audio-flow-graph:drop-possible {
-    -fx-background-color: #222720;
-}
-
-.bus-node {
-    -fx-background-color: #232328;
-    -fx-background-radius: 5px;
-    -fx-border-color: black;
-    -fx-border-width: 2px;
-    -fx-border-radius: 6px;
-    -fx-padding: 3px;
-    -fx-font-size: 16px;
-}
-
-.bus-node:hover {
-    -fx-border-color: white;
-}
-
-.bus-node:focused {
-    -fx-background-color: #4e0303;
-}
-
-.flow-arrow {
-    -fx-stroke-width: 2.5;
-}
-
-.flow-arrow:hover {
-    -fx-stroke-width: 4;
-}
-
-/*
 * Flow Pane
 */
 
 .flow-pane {
     -fx-vbar-policy: never;
     -fx-background-color: black !important;
-}
-
-.bus-label {
-    -fx-font-size: 15px;
-}
-
-.bus-box {
-    -fx-spacing: 5px;
-    -fx-padding: 3px;
-    -fx-alignment: center-left;
-    -fx-border-color: gray;
-    -fx-border-width: 1px;
-    -fx-border-radius: 3px;
-    -fx-pref-height: 50px;
-}
-
-.flow-box {
-    -fx-border-color: black;
-    -fx-border-width: 1px !important;
-    -fx-border-radius: 3px;
-    -fx-padding: 3px;
-    -fx-focus-traversable: true;
-    -fx-background-color: #1d1d20;
-}
-
-.flow-box:hover {
-    -fx-border-color: #4e0303;
-}
-
-.flow-box:focused {
-    -fx-background-color: #2c1010;
-}
-
-.flow-box-header {
-    -fx-border-color: black;
-    -fx-border-width: 0px 0px 1px 0px;
-    -fx-alignment: center-left;
 }
 
 .flow-action-button FontIcon {

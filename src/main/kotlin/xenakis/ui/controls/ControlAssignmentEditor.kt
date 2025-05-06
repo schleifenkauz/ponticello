@@ -37,11 +37,10 @@ import xenakis.impl.zero
 import xenakis.model.obj.*
 import xenakis.model.player.ActiveObject
 import xenakis.model.player.ActiveScoreObject
-import xenakis.model.project.score
+import xenakis.model.project.mainScore
 import xenakis.model.registry.*
 import xenakis.model.score.ParameterControlList.NamedParameterControl
 import xenakis.model.score.ScoreObject
-import xenakis.model.score.ScoreObjectInstance
 import xenakis.model.score.SynthObject
 import xenakis.model.score.controls.*
 import xenakis.sc.*
@@ -380,9 +379,8 @@ class ControlAssignmentEditor(val control: NamedParameterControl, val view: Scor
                     val synthObj = SynthObject.create(name, synthDef, controls)
                     synthObj.setInitialSize(obj.duration, height = 0.05.asY)
                     context.compoundEdit("Add automation synth") {
-                        for (inst in context[currentProject].score.instancesOf(obj).toList()) {
-                            val newInst = ScoreObjectInstance(synthObj, inst.start, inst.y - 0.06.asY)
-                            inst.score!!.addObject(newInst, autoSelect = true)
+                        for (inst in context[currentProject].mainScore.instancesOf(obj).toList()) {
+                            inst.score!!.addObject(synthObj, inst.start, inst.y - 0.06.asY, autoSelect = true)
                         }
                     }
                 }

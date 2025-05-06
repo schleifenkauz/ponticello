@@ -60,7 +60,12 @@ class LauncherGridPane(
                 val item = grid[i, j]
                 val box = display(item)
                 val index = grid.getIndex(i, j)
-                box.setOnMousePressed { grid.noteOn(index, velocity = 64) }
+                box.setOnMousePressed { ev ->
+                    if (ev.target == box) grid.noteOn(index, velocity = 64)
+                }
+                box.setOnMouseReleased { ev ->
+                    if (ev.target == box) grid.noteOff(index)
+                }
                 gridPane.add(box, j, i)
                 boxes.add(box)
             }
@@ -81,7 +86,7 @@ class LauncherGridPane(
             .pad(10.0)
         val freeOnReleaseOption = CheckBox("Stop on release").sync(item.freeOnRelease)
         return VBox(
-            HBox(3.0, infiniteSpace(),  control, viewBtn, infiniteSpace()).centerChildren(),
+            HBox(3.0, infiniteSpace(), control, viewBtn, infiniteSpace()).centerChildren(),
             HBox(hspace(10.0), scoreYSlider),
             freeOnReleaseOption
         ).styleClass("launcher-grid-item")
