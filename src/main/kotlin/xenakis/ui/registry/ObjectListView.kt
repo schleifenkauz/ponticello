@@ -79,8 +79,8 @@ class ObjectListView<O: ContextualObject>(
         registerShortcuts {
             val selected = selectedBox ?: return@registerShortcuts
             registerActions(selected.actionBar.actions())
-            val selectedContent = selected.content
-            if (displayMode.now != DisplayMode.DetailsPane && selectedContent is ToolPane) {
+            val selectedContent = selected.getContent()
+            if (displayMode.now == DisplayMode.DetailsPane && selectedContent is ToolPane) {
                 registerActions(selectedContent.actionBar.actions())
             }
         }
@@ -99,9 +99,6 @@ class ObjectListView<O: ContextualObject>(
         }
         displayMode.now = mode
         updateRoot(mode)
-        if (mode == DisplayMode.SubWindow) {
-            selectedBox?.showSubWindow()
-        }
         if (autoResizeScene && scene?.window != null && mode in storedWindowSizes) {
             val size = storedWindowSizes.getValue(mode)
             scene.window.width = size.width
@@ -155,7 +152,7 @@ class ObjectListView<O: ContextualObject>(
         else itemsScrollPane
 
     private fun displayContent(box: ObjectBox<O>?) {
-        val content = box?.content ?: Region()
+        val content = box?.getContent() ?: Region()
         displayedContent = content
         HBox.setHgrow(displayedContent, Priority.ALWAYS)
         setRoot(HBox(itemCellsLayout(), displayedContent))
@@ -202,7 +199,7 @@ class ObjectListView<O: ContextualObject>(
         boxes.remove(box)
         itemsLayout.children.remove(box)
         box.subWindow?.hide()
-        if (displayedContent == box.content) {
+        if (displayedContent == box.getContent()) {
             displayContent(null)
         }
         updateRoot(mode.now)
@@ -294,7 +291,7 @@ class ObjectListView<O: ContextualObject>(
             val window = scene.window as? SubWindow
             window?.showOrBringToFront()
             Platform.runLater {
-                getBox(obj).content?.requestFocus()
+                getBox(obj).getContent()?.requestFocus()
             }
             return window
         }

@@ -2,6 +2,7 @@ package xenakis.ui.live
 
 import bundles.createBundle
 import fxutils.*
+import fxutils.actions.Action
 import fxutils.actions.action
 import fxutils.actions.collectActions
 import fxutils.actions.makeButton
@@ -52,7 +53,9 @@ class LauncherGridPane(
         val viewBtn = viewObjectAction.withContext(item).makeButton("medium-icon-button")
         val spec = NumericalControlSpec(zero, zero, one, 0.01.toDecimal(), zero, Warp.Linear)
         val name = reactiveValue("Y position")
-        val scoreYSlider = SliderBar(item.yPosition, name, spec.converter()).pad(10.0)
+        val scoreYSlider = SliderBar(item.yPosition, name, spec.converter())
+            .setFixedWidth(120.0)
+            .pad(10.0)
         val freeOnReleaseOption = CheckBox("Stop on release").sync(item.freeOnRelease)
         return VBox(
             HBox(3.0, infiniteSpace(),  control, viewBtn, infiniteSpace()).centerChildren(),
@@ -65,6 +68,7 @@ class LauncherGridPane(
         private val viewObjectAction = action<LauncherGrid.GridItem>("View object") {
             icon(MaterialDesignE.EYE)
             applicableWhen { item -> item.ref.flatMap(ScoreObjectReference::isResolved) }
+            ifNotApplicable(Action.IfNotApplicable.Disable)
             executes { item ->
                 val obj = item.ref.now.get() ?: return@executes
                 val objectsPane = obj.context[XenakisMainActivity].scoreObjectsPane

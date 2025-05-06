@@ -6,7 +6,6 @@ import fxutils.actions.ContextualizedAction
 import fxutils.actions.collectActions
 import fxutils.prompt.SimpleSearchableListView
 import fxutils.prompt.YesNoPrompt
-import hextant.fx.initHextantScene
 import javafx.event.Event
 import javafx.scene.paint.Color
 import org.kordamp.ikonli.material2.Material2MZ
@@ -29,7 +28,6 @@ abstract class ParameterizedObjectDefRegistryPane<T : ParameterizedObjectDef>(
         get() = setOf(DisplayMode.DetailsPane, DisplayMode.SubWindow)
 
     override fun configureSubWindow(window: SubWindow, obj: T) {
-        window.scene.initHextantScene(registry.context, applyStyle = false)
         window.scene.fill = Color.BLACK
     }
 

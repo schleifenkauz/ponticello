@@ -50,8 +50,15 @@ class ObjectBox<O : ContextualObject>(val parent: ObjectListView<O>, val obj: O)
 
     private val header = HBox() styleClass "object-box-header"
 
-    var content: Parent? = null
-        private set
+    private lateinit var currentMode: DisplayMode
+
+    private var content: Parent? = null
+
+    fun getContent(): Parent? {
+        content?.let { return it }
+        content = config.getContent(obj, currentMode) ?: return null
+        return content!!
+    }
 
     init {
         styleClass("object-box")
@@ -69,36 +76,42 @@ class ObjectBox<O : ContextualObject>(val parent: ObjectListView<O>, val obj: O)
         }
     }
 
-    fun setContentDisplay(option: DisplayMode) {
-        if (option != DisplayMode.SubWindow) {
+    fun setContentDisplay(mode: DisplayMode) {
+        content = null
+        currentMode = mode
+        if (mode != DisplayMode.SubWindow) {
             subWindow?.let { w ->
                 w.hide()
                 w.scene.root = Region()
                 subWindow = null
             }
         }
-        if (option != DisplayMode.Inline) {
+        if (mode != DisplayMode.Inline) {
             children.setAll(header)
         }
-        if (option == DisplayMode.SubWindow) {
-            content = config.getContent(obj, option) ?: return
-            val objectType = parent.source.objectType
-            val name = if (obj is NamedObject) obj.name.now else ""
-            val title = "$objectType $name"
-            subWindow = makeSubWindow(content!!, title, parent.source.context).also { w ->
-                config.configureSubWindow(w, obj)
-                w.sizeToScene()
-                if (w.owner == null) w.initOwner(obj.context[primaryStage])
-            }
-        }
-        if (option == DisplayMode.Inline) {
-            content = config.getContent(obj, option) ?: return
+        if (mode == DisplayMode.Inline) {
+            content = config.getContent(obj, mode) ?: return
             children.setAll(header, content)
         }
     }
 
+    private fun createSubWindow(): SubWindow? {
+        content = config.getContent(obj, DisplayMode.SubWindow) ?: return null
+        val objectType = parent.source.objectType
+        val name = if (obj is NamedObject) obj.name.now else ""
+        val title = "$objectType $name"
+        return makeSubWindow(content!!, title, parent.source.context).also { w ->
+            config.configureSubWindow(w, obj)
+            w.sizeToScene()
+            if (w.owner == null) w.initOwner(obj.context[primaryStage])
+        }
+    }
+
     fun showSubWindow(): SubWindow? {
-        val w = this.subWindow ?: return null
+        if (subWindow == null) {
+            subWindow = createSubWindow()
+        }
+        val w = subWindow ?: return null
         w.showOrBringToFront()
         return w
     }

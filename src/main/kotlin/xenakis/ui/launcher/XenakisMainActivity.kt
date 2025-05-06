@@ -8,7 +8,6 @@ import fxutils.actions.registerActions
 import hextant.undo.UndoManager
 import javafx.geometry.Dimension2D
 import javafx.scene.layout.*
-import javafx.scene.paint.Color
 import javafx.stage.Screen
 import javafx.stage.StageStyle
 import reaktive.value.reactiveValue
@@ -40,20 +39,23 @@ class XenakisMainActivity(val project: XenakisProject) : Activity() {
 
     val mainScoreView: NavigableScorePane = NavigableScorePane(project.score, project.context)
 
-    val synthDefsPane = SynthDefRegistryPane(project.instruments)
-    val synthDefsWindow = context.makeToolWindow(
-        synthDefsPane, "Instruments",
-        defaultSize = Dimension2D(1200.0, 1200.0)
-    )
+    val synthDefsPane by lazy { SynthDefRegistryPane(project.instruments) }
+    val synthDefsWindow by lazy {
+        context.makeToolWindow(
+            synthDefsPane, "Instruments",
+            defaultSize = Dimension2D(1200.0, 1200.0)
+        )
+    }
 
-    val processDefsPane = ProcessDefRegistryPane(project[PROCESS_DEFS])
-    val processDefsWindow = context.makeToolWindow(
-        processDefsPane, "Process Definitions",
-        defaultSize = Dimension2D(1200.0, 1200.0)
-    )
-
-    private val controlBusPane = ControlBusRegistryPane(project.busses)
-    val controlBusWindow = context.makeToolWindow(controlBusPane, "Control Buses")
+    val processDefsPane by lazy { ProcessDefRegistryPane(project[PROCESS_DEFS]) }
+    val processDefsWindow by lazy {
+        context.makeToolWindow(
+            processDefsPane, "Process Definitions",
+            defaultSize = Dimension2D(1200.0, 1200.0)
+        )
+    }
+    private val controlBusPane by lazy { ControlBusRegistryPane(project.busses) }
+    val controlBusWindow by lazy { context.makeToolWindow(controlBusPane, "Control Buses") }
 
     private val audioBusPane = AudioBusRegistryPane(project.busses)
     val audioBusWindow = context.makeToolWindow(audioBusPane, "Audio Buses")
@@ -67,32 +69,31 @@ class XenakisMainActivity(val project: XenakisProject) : Activity() {
     val patternsPane = GlobalPatternRegistryPane(project.patterns)
     val patternsWindow = context.makeToolWindow(patternsPane, "Patterns")
 
-    private val liveTasksPane = LiveTaskRegistryPane(project[LIVE_TASKS])
-    val liveTasksWindow = context.makeToolWindow(liveTasksPane, "Live Tasks")
+    private val liveTasksPane by lazy { LiveTaskRegistryPane(project[LIVE_TASKS]) }
+    val liveTasksWindow by lazy { context.makeToolWindow(liveTasksPane, "Live Tasks") }
 
-    private val gridPane = LauncherGridPane(context, project[LAUNCHER_GRID])
+    private val gridPane by lazy { LauncherGridPane(context, project[LAUNCHER_GRID]) }
     val launcherGridWindow = makeSubWindow(gridPane, "Launcher Grid", context).also { w ->
         w.sizeToScene()
         w.isResizable = false
     }
 
-    val scoreObjectsPane = ScoreObjectRegistryPane(project.objects)
-    val scoreObjectsWindow = context.makeToolWindow(scoreObjectsPane, "Score objects")
+    val scoreObjectsPane by lazy { ScoreObjectRegistryPane(project.objects) }
+    val scoreObjectsWindow by lazy { context.makeToolWindow(scoreObjectsPane, "Score objects") }
 
-    val logWindow = context.makeToolWindow(LogPane(Logger), "Log")
+    val logWindow by lazy { context.makeToolWindow(LogPane(Logger), "Log") }
 
-    val settingsWindow = context.makeToolWindow(SettingsPane(context[Settings], context), "Settings")
+    val settingsWindow by lazy { context.makeToolWindow(SettingsPane(context[Settings], context), "Settings") }
 
     private val interactionConfig = InteractionConfigBar(project.settings)
 
-    private val flowPane = AudioFlowPane(project.flows)
-    val flowPaneWindow = context.makeToolWindow(flowPane, "Audio flows", defaultSize = Dimension2D(2000.0, 800.0))
+    private val flowPane by lazy { AudioFlowPane (project.flows) }
+    val flowPaneWindow by lazy { context.makeToolWindow(flowPane, "Audio flows", defaultSize = Dimension2D(2000.0, 800.0)) }
 
     val scriptObjectWindows = ScriptObject.Type.entries.associateWith { type ->
         val root = project[type.component].root
         val pane = CodePane(root, ownWindow = true)
         context.makeToolWindow(pane, type.toString(), defaultSize = Dimension2D(500.0, 500.0))
-            .also { w -> w.scene.fill = Color.BLACK }
     }
 
     private val timeCodeView: TimeCodeView = TimeCodeView()
@@ -122,7 +123,7 @@ class XenakisMainActivity(val project: XenakisProject) : Activity() {
         receiver.registerMidiContext(controlBusWindow) { ControlBusesMidiReceiver(project.busses) }
         receiver.registerMidiContext(flowPaneWindow) {
             val selectedGroup = flowPane.listView.selectedBox() ?: return@registerMidiContext null
-            val flowListView = selectedGroup.content as? ObjectListView<*> ?: return@registerMidiContext null
+            val flowListView = selectedGroup.getContent() as? ObjectListView<*> ?: return@registerMidiContext null
             val selectedFlow = flowListView.selectedObject() as? AudioFlow
             selectedFlow?.midiContext()
         }
