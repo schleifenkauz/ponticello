@@ -248,6 +248,10 @@ class ObjectListView<O: ContextualObject>(
         select(box)
     }
 
+    fun selectedBox(): ObjectBox<O>? = selectedBox
+
+    fun selectedObject(): O? = selectedBox?.obj
+
     fun selectedIndex(): Int = boxes.indexOf(selectedBox)
 
     private fun navigate(deltaIdx: Int) {

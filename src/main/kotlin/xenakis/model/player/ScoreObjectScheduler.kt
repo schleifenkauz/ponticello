@@ -14,7 +14,7 @@ import xenakis.model.score.*
 import xenakis.sc.client.SuperColliderClient
 import java.util.concurrent.CompletableFuture
 
-class ScoreObjectScheduler(private val player: ScorePlayer) {
+class ScoreObjectScheduler(val player: ScorePlayer) {
     private val client = player.context[SuperColliderClient]
     private val context = player.context
     private val nodeTree = context[NodeTree]
@@ -35,7 +35,8 @@ class ScoreObjectScheduler(private val player: ScorePlayer) {
                     Logger.fine("ObjectEnd: $obj at $position", Logger.Category.Playback)
                     val startPos = position + ObjectPosition(-obj.duration, zero)
                     if (obj.duration == zero) continue
-                    activeObjects.remove(obj, startPos) ?: continue
+                    val active = activeObjects.remove(obj, startPos) ?: continue
+                    active.stillActive = false
                     if (obj is TempoGridObject && obj.meter.isResolved.now) {
                         val meter = obj.meter.force()
                         meter.clock.detach(player)
@@ -48,26 +49,30 @@ class ScoreObjectScheduler(private val player: ScorePlayer) {
         }
     }
 
-    fun stopObjectInstantly(active: ActiveScoreObject): CompletableFuture<String> = when (active.obj) {
-        is SynthObject -> {
-            val name = active.superColliderName
-            client.eval("if ($name != nil) { $name.release; } { \"'$name' not found\".postln; }")
-        }
+    fun stopObjectInstantly(active: ActiveScoreObject): CompletableFuture<String> {
+        if (!active.stillActive) return CompletableFuture.completedFuture("")
+        active.stillActive = false
+        return when (active.obj) {
+            is SynthObject -> {
+                val name = active.superColliderName
+                client.eval("if ($name != nil) { $name.release; } { \"'$name' not found\".postln; }")
+            }
 
-        is ProcessObject, is TaskObject -> {
-            val name = active.superColliderName
-            client.eval("$name.stop;")
-        }
+            is ProcessObject, is TaskObject -> {
+                val name = active.superColliderName
+                client.eval("$name.stop;")
+            }
 
-        else -> CompletableFuture.completedFuture("unknown")
+            else -> CompletableFuture.completedFuture("unknown")
+        }
     }
 
-    fun scheduleObject(obj: ScoreObject, absolutePosition: ObjectPosition, cutoff: Decimal) {
+    fun scheduleObject(obj: ScoreObject, absolutePosition: ObjectPosition, cutoff: Decimal): ActiveScoreObject? {
         try {
-            if (!obj.validate()) return
+            if (!obj.validate()) return null
         } catch (e: Exception) {
             Logger.error("Failed to validate $obj", e, Logger.Category.Playback)
-            return
+            return null
         }
         val time = absolutePosition.time + player.loopOffset
         val timeForExecution = (time + context[Settings].scLangLatency.now).toString()
@@ -79,7 +84,7 @@ class ScoreObjectScheduler(private val player: ScorePlayer) {
             activeObjects.insert(player, obj, absolutePosition)
         } catch (e: Exception) {
             Logger.error("Failed to insert $obj into active object manager", e, Logger.Category.Playback)
-            return
+            return null
         }
         val placement = if (obj is SynthObject) {
             try {
@@ -87,7 +92,7 @@ class ScoreObjectScheduler(private val player: ScorePlayer) {
                 nodeTree.addNode(node)
             } catch (e: Exception) {
                 Logger.error("Failed to insert $obj into audio flow graph", e, Logger.Category.Playback)
-                return
+                return null
             }
         } else null
         val code = try {
@@ -95,7 +100,7 @@ class ScoreObjectScheduler(private val player: ScorePlayer) {
         } catch (e: Exception) {
             Logger.error("Failed to write code for $obj", e, Logger.Category.Playback)
         }
-        if (code == "") return
+        if (code == "") return null
         try {
             client.send("schedule", listOf(timeForExecution, player.id, code))
         } catch (e: Exception) {
@@ -103,6 +108,7 @@ class ScoreObjectScheduler(private val player: ScorePlayer) {
         }
         Logger.fine("unique name for $obj at $time: ${activeObject.uniqueName}", Logger.Category.Playback)
         Logger.fine("time for execution: ${timeForExecution}s", Logger.Category.Playback)
+        return activeObject
     }
 
     fun activeObjects(time: Decimal, delta: Decimal): List<Event> {

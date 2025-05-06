@@ -28,7 +28,7 @@ abstract class ParameterizedObjectDefRegistryPane<T : ParameterizedObjectDef>(
     override val supportedModes: Set<DisplayMode>
         get() = setOf(DisplayMode.DetailsPane, DisplayMode.SubWindow)
 
-    override fun configureSubWindow(window: SubWindow) {
+    override fun configureSubWindow(window: SubWindow, obj: T) {
         window.scene.initHextantScene(registry.context, applyStyle = false)
         window.scene.fill = Color.BLACK
     }

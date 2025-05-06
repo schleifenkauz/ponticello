@@ -16,7 +16,7 @@ abstract class SuperColliderObjectRegistry<O : SuperColliderObject> : ObjectRegi
 
     override fun initialize(context: Context) {
         val myContext = context.extend {
-            set(UndoManager, UndoManager.newInstance())
+            set(UndoManager, context[UndoManager].createSubManager())
         }
         super.initialize(myContext)
         client = myContext[SuperColliderClient]

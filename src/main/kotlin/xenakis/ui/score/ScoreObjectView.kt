@@ -16,6 +16,7 @@ import javafx.geometry.HorizontalDirection.RIGHT
 import javafx.geometry.VerticalDirection
 import javafx.scene.Cursor
 import javafx.scene.control.ColorPicker
+import javafx.scene.control.Tooltip
 import javafx.scene.input.MouseButton
 import javafx.scene.input.MouseEvent
 import javafx.scene.layout.*
@@ -146,6 +147,9 @@ abstract class ScoreObjectView(
                 startDrag = this::startDrag, finishDrag = this::finishedDrag
             )
             addMouseActions()
+            val tooltip = Tooltip()
+            tooltip.textProperty().bind(obj.name.asObservableValue())
+            Tooltip.install(this, tooltip)
         }
     }
 

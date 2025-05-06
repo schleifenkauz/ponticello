@@ -5,6 +5,7 @@ import kotlinx.serialization.serializer
 import xenakis.model.ScriptObject
 import xenakis.model.ServerOptions
 import xenakis.model.flow.AudioFlows
+import xenakis.model.live.LauncherGrid
 import xenakis.model.live.LiveTaskRegistry
 import xenakis.model.obj.ContextualObject
 import xenakis.model.registry.*
@@ -50,12 +51,14 @@ val LIVE_TASKS = component<LiveTaskRegistry>("live_tasks", LiveTaskRegistry::cre
 
 val SCORE = component<Score>("score", ::Score)
 
+val LAUNCHER_GRID = component<LauncherGrid>("launcher_grid", { LauncherGrid.createNByN(4) })
+
 val allComponents = listOf<Component<out ContextualObject>>(
     METERS,
     BUSSES, BUFFERS,
     PATTERNS, SYNTH_DEFS, PROCESS_DEFS,
     UI_STATE, FLOWS, SERVER_OPTIONS,
-    OBJECTS, LIVE_TASKS, SCORE
+    OBJECTS, LIVE_TASKS, SCORE, LAUNCHER_GRID
 ) + ScriptObject.Type.entries.map { type -> type.component }
 
 inline operator fun <reified T : ContextualObject> XenakisProject.get(component: Component<out T>) =

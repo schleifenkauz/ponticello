@@ -1,5 +1,6 @@
 package xenakis.ui.registry
 
+import fxutils.SubWindow
 import fxutils.actions.ContextualizedAction
 import fxutils.actions.collectActions
 import fxutils.controls.SliderBar
@@ -17,6 +18,7 @@ import reaktive.value.reactiveValue
 import xenakis.impl.one
 import xenakis.impl.toDecimal
 import xenakis.impl.zero
+import xenakis.model.obj.ParameterizedObject
 import xenakis.model.registry.MeterRegistry
 import xenakis.model.registry.ScoreObjectRegistry
 import xenakis.model.registry.reference
@@ -25,6 +27,8 @@ import xenakis.sc.NumericalControlSpec
 import xenakis.sc.Warp
 import xenakis.ui.impl.Direction
 import xenakis.ui.live.QuantizationConfigDialog
+import xenakis.ui.midi.ContextualMidiReceiver
+import xenakis.ui.midi.ParameterControlsMidiContext
 import xenakis.ui.registry.ObjectListView.DisplayMode
 import xenakis.ui.score.ScoreObjectViewPane
 
@@ -42,6 +46,14 @@ class ScoreObjectRegistryPane(registry: ScoreObjectRegistry) : ObjectRegistryPan
         val scoreYSlider = SliderBar(obj.liveConfig.yPosition, name, spec.converter())
         scoreYSlider.prefWidth = 150.0
         return listOf(scoreYSlider)
+    }
+
+    override fun configureSubWindow(window: SubWindow, obj: ScoreObject) {
+        if (obj is ParameterizedObject) {
+            registry.context[ContextualMidiReceiver].registerMidiContext(window) {
+                ParameterControlsMidiContext(obj.controls)
+            }
+        }
     }
 
     override fun getContent(obj: ScoreObject, mode: DisplayMode): Parent {

@@ -10,12 +10,9 @@ import org.kordamp.ikonli.material2.Material2AL
 import org.kordamp.ikonli.materialdesign2.*
 import xenakis.impl.Logger
 import xenakis.model.ScriptObject
-import xenakis.model.registry.BusRegistry
 import xenakis.ui.impl.NotificationView
 import xenakis.ui.impl.showDialog
 import xenakis.ui.launcher.XenakisMainActivity
-import xenakis.ui.midi.ContextualMidiReceiver
-import xenakis.ui.midi.ControlBusesMidiReceiver
 import xenakis.ui.misc.HelpBrowser
 
 object ToolWindowActions : Action.Collector<XenakisMainActivity>({
@@ -93,19 +90,14 @@ object ToolWindowActions : Action.Collector<XenakisMainActivity>({
         executes { activity -> activity.samplesWindow.showOrBringToFront() }
     }
     addAction("Show buffers") {
-        shortcut("Ctrl+Shift+B")
+        shortcut("Ctrl+Alt+B")
         icon(MaterialDesignB.BUFFER)
         executes { activity -> activity.buffersWindow.showOrBringToFront() }
     }
     addAction("Show control buses") {
         shortcut("Ctrl+B")
         icon(MaterialDesignT.TUNE_VARIANT)
-        executes { activity ->
-            activity.controlBusWindow.showOrBringToFront()
-            val buses = activity.context[BusRegistry]
-            val midiReceiver = activity.context[ContextualMidiReceiver]
-            midiReceiver.setContext(ControlBusesMidiReceiver(buses))
-        }
+        executes { activity -> activity.controlBusWindow.showOrBringToFront() }
     }
     addAction("Show audio buses") {
         shortcut("Ctrl+Shift+B")
@@ -123,5 +115,10 @@ object ToolWindowActions : Action.Collector<XenakisMainActivity>({
         shortcut("Ctrl+Shift+T")
         icon(MaterialDesignP.PROGRESS_QUESTION)
         executes { activity -> activity.liveTasksWindow.showOrBringToFront() }
+    }
+    addAction("Show Launcher Grid") {
+        shortcut("Ctrl+G")
+        icon(MaterialDesignG.GRID)
+        executes { activity -> activity.launcherGridWindow.showOrBringToFront() }
     }
 })

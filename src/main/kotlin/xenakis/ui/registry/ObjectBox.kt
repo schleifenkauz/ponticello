@@ -86,7 +86,7 @@ class ObjectBox<O : ContextualObject>(val parent: ObjectListView<O>, val obj: O)
             val name = if (obj is NamedObject) obj.name.now else ""
             val title = "$objectType $name"
             subWindow = makeSubWindow(content!!, title, parent.source.context).also { w ->
-                config.configureSubWindow(w)
+                config.configureSubWindow(w, obj)
                 w.sizeToScene()
                 if (w.owner == null) w.initOwner(obj.context[primaryStage])
             }

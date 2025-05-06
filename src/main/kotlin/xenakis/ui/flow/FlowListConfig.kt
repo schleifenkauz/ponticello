@@ -29,10 +29,9 @@ import xenakis.model.registry.SynthDefRegistry
 import xenakis.sc.Rate
 import xenakis.sc.editor.BusSelector
 import xenakis.sc.view.ObjectSelectorControl
+import xenakis.ui.actions.ServerActions
 import xenakis.ui.impl.getFrom
 import xenakis.ui.launcher.XenakisMainActivity
-import xenakis.ui.midi.ContextualMidiReceiver
-import xenakis.ui.midi.ParameterControlsMidiContext
 import xenakis.ui.registry.ObjectBox
 import xenakis.ui.registry.ObjectListDisplayConfig
 import xenakis.ui.registry.ObjectListView
@@ -95,21 +94,6 @@ class FlowListConfig(
         return actions.withContext(box.obj)
     }
 
-    override fun onSelected(obj: AudioFlow) {
-        when (obj) {
-            is SynthFlow -> {
-                val receiver = obj.context[ContextualMidiReceiver]
-                val context = ParameterControlsMidiContext(obj.controls)
-                receiver.setContext(context)
-            }
-
-            is MixerFlow -> MixerFlow
-
-            is UtilityFlow -> {} //TODO for the volume fader a motorized fader could be integrated...!
-            else -> {}
-        }
-    }
-
     override fun dataFormat(obj: AudioFlow): DataFormat = AudioFlow.DATA_FORMAT
 
     override fun configureDragboard(obj: AudioFlow, dragboard: Dragboard) {
@@ -149,6 +133,7 @@ class FlowListConfig(
                     flow.components.add(MixerFlow.MixerComponent.create(bus))
                 }
             }
+            add(ServerActions.scopeBus) { f -> (f as? MixerFlow)?.targetBus }
             addAction("Toggle activated") {
                 icon { flow ->
                     binding(flow.isValid, flow.isActive) { valid, active ->

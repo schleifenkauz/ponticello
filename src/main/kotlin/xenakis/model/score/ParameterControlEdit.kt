@@ -15,11 +15,11 @@ abstract class ParameterControlEdit(protected val control: NamedParameterControl
             get() = "Reassign controls"
 
         override fun doUndo() {
-            control.reassign(oldControl)
+            control.reassign(oldControl.copy())
         }
 
         override fun doRedo() {
-            control.reassign(newControl)
+            control.reassign(newControl.copy())
         }
     }
 

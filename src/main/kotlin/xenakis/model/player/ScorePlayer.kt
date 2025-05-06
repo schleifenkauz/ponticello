@@ -56,16 +56,17 @@ class ScorePlayer private constructor(
         val dt = (LOOP_PERIOD / 1000.0).asTime
         if (isPlaying.now) {
             var t = playHead.currentTime + lookAhead
-            if (playHead.currentTime > maxTime) {
-                playHead.movePlayHeadToStart()
+            if (t >= maxTime) t -= maxTime
+            if (playHead.currentTime >= maxTime) {
                 if (!loopingActivated.now) {
+                    playHead.movePlayHeadToStart()
                     pause()
                     return
                 } else {
+                    playHead.movePlayHead(playHead.currentTime - maxTime)
                     loopedTime += maxTime
                     events.unscheduleAll()
                 }
-                t = 0.0.asTime
             } else {
                 playHead.advance(dt)
             }
@@ -115,6 +116,7 @@ class ScorePlayer private constructor(
         startPlayHandle = null
         loopHandle?.cancel(true)
         loopHandle = null
+        loopedTime = zero
         freeActiveObjects()
     }
 

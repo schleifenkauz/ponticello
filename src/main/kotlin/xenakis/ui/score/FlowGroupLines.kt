@@ -18,6 +18,7 @@ import xenakis.model.flow.AudioFlows
 import xenakis.model.registry.ObjectList
 import xenakis.ui.flow.FlowGroupPane
 import xenakis.ui.impl.makeSubWindow
+import xenakis.ui.midi.ContextualMidiReceiver
 import kotlin.math.absoluteValue
 
 class FlowGroupLines(
@@ -114,6 +115,10 @@ class FlowGroupLines(
         val pane = FlowGroupPane(group)
         val title = group.name.map { name -> "Flow group $name" }
         val window = makeSubWindow(pane, title, group.context, SubWindow.Type.ToolWindow)
+        group.context[ContextualMidiReceiver].registerMidiContext(window) {
+            val selected = pane.flowsView.selectedObject()
+            selected?.midiContext()
+        }
         groupPaneWindows[group] = window
         window.x = ev.screenX
         window.y = ev.screenY

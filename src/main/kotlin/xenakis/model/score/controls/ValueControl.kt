@@ -61,8 +61,6 @@ data class ValueControl(
         if (allocateBus.now) {
             val busName = auxilBusName(uniqueName, parameter)
             +"$synthVar.map('$parameter', $busName)"
-        } else {
-            +"$synthVar.set('$parameter', ${value.now})"
         }
     }
 

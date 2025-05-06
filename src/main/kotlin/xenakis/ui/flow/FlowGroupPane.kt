@@ -17,7 +17,7 @@ import xenakis.ui.registry.ToolPane
 
 class FlowGroupPane(group: AudioFlowGroup) : ToolPane() {
     private val config = FlowListConfig(group, autoResizeScene = true)
-    private val flowsView = ObjectListView(group.flows, config)
+    val flowsView = ObjectListView(group.flows, config)
 
     init {
         flowsView.setupDropArea(config::canDrop) { ev -> config.onDrop(ev, flowsView) }

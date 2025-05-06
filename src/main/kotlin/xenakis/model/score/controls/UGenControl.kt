@@ -38,7 +38,7 @@ data class UGenControl(
     override fun initialize(context: Context, parentObject: ParameterizedObject) {
         super.initialize(context, parentObject)
         val myContext = context.extend {
-            set(UndoManager, UndoManager.newInstance())
+            set(UndoManager, context[UndoManager].createSubManager())
             set(PonticelloContext, PonticelloContext(parentObject, Scope.createEmpty()))
         }
         expr.initialize(myContext)

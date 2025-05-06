@@ -10,6 +10,8 @@ import xenakis.model.obj.ParameterizedObject
 import xenakis.model.player.ActiveAudioFlow
 import xenakis.model.player.ActiveObject
 import xenakis.model.player.LiveSynthUpdater
+import xenakis.ui.midi.MidiContext
+import xenakis.ui.midi.ParameterControlsMidiContext
 
 @Serializable
 sealed class ParameterizedAudioFlow : AudioFlow(), ParameterizedObject {
@@ -38,4 +40,6 @@ sealed class ParameterizedAudioFlow : AudioFlow(), ParameterizedObject {
         super<AudioFlow>.onRemoved()
         listener.stopListening()
     }
+
+    override fun midiContext(): MidiContext? = ParameterControlsMidiContext(controls)
 }

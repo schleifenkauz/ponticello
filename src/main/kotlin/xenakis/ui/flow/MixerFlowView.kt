@@ -17,6 +17,7 @@ import xenakis.model.flow.MixerFlow
 import xenakis.sc.Rate
 import xenakis.sc.editor.BusSelector
 import xenakis.sc.view.ObjectSelectorControl
+import xenakis.ui.actions.ServerActions
 import xenakis.ui.registry.ObjectBox
 import xenakis.ui.registry.ObjectListDisplayConfig
 import xenakis.ui.registry.ObjectListView
@@ -50,6 +51,7 @@ class MixerFlowView(private val flow: MixerFlow) : Control(), ObjectListDisplayC
 
     companion object {
         private val actions = collectActions<MixerFlow.MixerComponent> {
+            add(ServerActions.scopeBus) { f -> f.sourceBus }
             addAction("Toggle mute") {
                 icon(MaterialDesignA.ALPHA_M_BOX)
                 toggles(MixerFlow.MixerComponent::mute)

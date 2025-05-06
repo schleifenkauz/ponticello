@@ -88,26 +88,28 @@ OSCdef('start_play', { |msg|
 OSCdef('pause_play', { |msg|
     var player_id = msg[1];
     "PAUSE_PLAY ".post; player_id.postln;
-    ~play_start[player_id] = -1;
+    ~play_start[player_id] = nil;
 }, '/pause_play');
 OSCdef('schedule', {
 	arg msg;
-	var time = msg[2].asFloat, player_id = msg[3], code = msg[4], fct, my_play_start;
+	var time = msg[2].asFloat, player_id = msg[3], code = msg[4], fct, my_play_start, abs_time;
 	my_play_start = ~play_start[player_id];
-	'SCHEDULE: '.post; player_id.post; ' '.post; my_play_start.postln;
+    abs_time = (my_play_start ?? TempoClock.beats) + time;
+	'SCHEDULE: '.post; player_id.post;
+	' '.post; my_play_start.post;
+	' '.post; time.post;
+	' '.post; abs_time.postln;
 	fct = this.compile(code.asString);
 	if (fct == nil) { "Compilation error".throw };
     code.postln;
-	if (my_play_start != nil) {
-        TempoClock.schedAbs(max(my_play_start + time, TempoClock.beats)) {
-            if (my_play_start == ~play_start[player_id]) {
-                try { fct.value } { |error|
-                    ~xenakis_addr.sendMsg('/error', -1, error.what);
-                    error.throw;
-                }
-            };
-            nil;
-        }
+    TempoClock.schedAbs(abs_time) {
+        if (my_play_start.isNil || (my_play_start == ~play_start[player_id])) {
+            try { fct.value } { |error|
+                ~xenakis_addr.sendMsg('/error', -1, error.what);
+                error.throw;
+            }
+        };
+        nil;
     }
 }, '/schedule');
 ~setupHandler.('isSynthDef', { |name|

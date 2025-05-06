@@ -15,6 +15,7 @@ import xenakis.model.project.flows
 import xenakis.model.registry.NamedObject.Companion.NO_NAME
 import xenakis.sc.client.SuperColliderClient
 import xenakis.ui.launcher.XenakisLauncher.Companion.currentProject
+import xenakis.ui.midi.MidiContext
 
 @Serializable
 sealed class AudioFlow : AbstractRenamableObject() {
@@ -57,11 +58,10 @@ sealed class AudioFlow : AbstractRenamableObject() {
         context[SuperColliderClient].run(code)
     }
 
-    fun getSuperColliderName(name: String) =
-        if (name == NO_NAME) "~flow_${hashCode()}" else "~flow_$name"
+    open fun midiContext(): MidiContext? = null
 
-    override val canRename: Boolean
-        get() = false
+    private fun getSuperColliderName(name: String) =
+        if (name == NO_NAME) "~flow_${hashCode()}" else "~flow_$name"
 
     abstract fun getDefaultName(): ReactiveString
 
@@ -69,10 +69,6 @@ sealed class AudioFlow : AbstractRenamableObject() {
         context[currentProject].flows.all().none { f -> f.name.now == newName }
 
     abstract fun copy(): AudioFlow
-
-    final override fun hashCode(): Int = super.hashCode()
-
-    final override fun equals(other: Any?): Boolean = super.equals(other)
 
     companion object {
         val DATA_FORMAT = DataFormat("audio-flow")

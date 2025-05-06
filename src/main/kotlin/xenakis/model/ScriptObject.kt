@@ -25,7 +25,7 @@ class ScriptObject(val root: EditorRoot<@Contextual CodeBlockEditor>, val type: 
         super.initialize(context)
         root.initialize(context.extend {
             set(SelectionDistributor, SelectionDistributor.newInstance())
-            set(UndoManager, UndoManager.newInstance())
+            set(UndoManager, context[UndoManager].createSubManager())
         })
         val client = context[SuperColliderClient]
         when (type) {

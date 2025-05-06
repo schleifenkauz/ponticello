@@ -199,7 +199,7 @@ class MixerFlow(
         }
     }
 
-    fun midiContext(): MidiContext = MixerMidiContext()
+    override fun midiContext(): MidiContext = MixerMidiContext()
 
     companion object {
         private val MUTE_VOLUME = (-1000).toDecimal()

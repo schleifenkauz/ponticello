@@ -44,7 +44,7 @@ class GlobalPatternRegistryPane(
         else -> ScrollPane(obj.patternCode.control)
     }
 
-    override fun configureSubWindow(window: SubWindow) {
+    override fun configureSubWindow(window: SubWindow, obj: GlobalPatternObject) {
         window.width = 600.0
         window.height = 400.0
     }

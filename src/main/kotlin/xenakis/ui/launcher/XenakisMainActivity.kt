@@ -11,11 +11,11 @@ import javafx.scene.layout.*
 import javafx.scene.paint.Color
 import javafx.stage.Screen
 import javafx.stage.StageStyle
-import reaktive.Observer
 import reaktive.value.reactiveValue
 import xenakis.impl.Logger
 import xenakis.model.ScriptObject
 import xenakis.model.Settings
+import xenakis.model.flow.AudioFlow
 import xenakis.model.flow.AudioFlows
 import xenakis.model.player.PlaybackMessageListener
 import xenakis.model.player.ScorePlayer
@@ -23,8 +23,12 @@ import xenakis.model.project.*
 import xenakis.sc.client.SuperColliderClient
 import xenakis.ui.actions.*
 import xenakis.ui.flow.AudioFlowPane
+import xenakis.ui.impl.makeSubWindow
 import xenakis.ui.impl.makeToolWindow
+import xenakis.ui.live.LauncherGridPane
 import xenakis.ui.live.LiveTaskRegistryPane
+import xenakis.ui.midi.ContextualMidiReceiver
+import xenakis.ui.midi.ControlBusesMidiReceiver
 import xenakis.ui.misc.*
 import xenakis.ui.registry.*
 import xenakis.ui.score.*
@@ -66,6 +70,12 @@ class XenakisMainActivity(val project: XenakisProject) : Activity() {
     private val liveTasksPane = LiveTaskRegistryPane(project[LIVE_TASKS])
     val liveTasksWindow = context.makeToolWindow(liveTasksPane, "Live Tasks")
 
+    private val gridPane = LauncherGridPane(context, project[LAUNCHER_GRID])
+    val launcherGridWindow = makeSubWindow(gridPane, "Launcher Grid", context).also { w ->
+        w.sizeToScene()
+        w.isResizable = false
+    }
+
     val scoreObjectsPane = ScoreObjectRegistryPane(project.objects)
     val scoreObjectsWindow = context.makeToolWindow(scoreObjectsPane, "Score objects")
 
@@ -88,8 +98,6 @@ class XenakisMainActivity(val project: XenakisProject) : Activity() {
     private val timeCodeView: TimeCodeView = TimeCodeView()
     private val flowGroupLines: FlowGroupLines = FlowGroupLines(project.flows, mainScoreView)
 
-    private lateinit var observer: Observer
-
     private lateinit var player: ScorePlayer
     private lateinit var playbackMessageListener: PlaybackMessageListener
 
@@ -106,6 +114,19 @@ class XenakisMainActivity(val project: XenakisProject) : Activity() {
 
         setupMainScoreView()
         setupPlayback()
+        registerMidiContexts()
+    }
+
+    private fun registerMidiContexts() {
+        val receiver = context[ContextualMidiReceiver]
+        receiver.registerMidiContext(controlBusWindow) { ControlBusesMidiReceiver(project.busses) }
+        receiver.registerMidiContext(flowPaneWindow) {
+            val selectedGroup = flowPane.listView.selectedBox() ?: return@registerMidiContext null
+            val flowListView = selectedGroup.content as? ObjectListView<*> ?: return@registerMidiContext null
+            val selectedFlow = flowListView.selectedObject() as? AudioFlow
+            selectedFlow?.midiContext()
+        }
+        project[LAUNCHER_GRID].attachTo(player)
     }
 
     private fun setupMainScoreView() {

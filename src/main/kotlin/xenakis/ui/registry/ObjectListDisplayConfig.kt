@@ -39,7 +39,7 @@ interface ObjectListDisplayConfig<O: ContextualObject> {
 
     fun configureDragboard(obj: O, dragboard: Dragboard) {}
 
-    fun configureSubWindow(window: SubWindow) {}
+    fun configureSubWindow(window: SubWindow, obj: O) {}
 
     fun dataFormat(obj: O): DataFormat? = null
 

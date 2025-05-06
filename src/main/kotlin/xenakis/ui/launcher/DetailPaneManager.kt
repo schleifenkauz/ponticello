@@ -17,6 +17,7 @@ import javafx.stage.Screen
 import javafx.stage.StageStyle
 import org.kordamp.ikonli.materialdesign2.MaterialDesignP
 import reaktive.value.binding.map
+import xenakis.model.obj.ParameterizedObject
 import xenakis.model.score.ScoreObject
 import xenakis.ui.actions.ArrowKeys
 import xenakis.ui.actions.ObjectActionContext
@@ -24,6 +25,8 @@ import xenakis.ui.actions.ObjectActions
 import xenakis.ui.impl.DEFAULT_SCENE_FILL
 import xenakis.ui.impl.makeSubWindow
 import xenakis.ui.impl.sceneFill
+import xenakis.ui.midi.ContextualMidiReceiver
+import xenakis.ui.midi.ParameterControlsMidiContext
 import xenakis.ui.score.ScoreObjectView
 
 class DetailPaneManager(private val context: Context) {
@@ -69,6 +72,7 @@ class DetailPaneManager(private val context: Context) {
         pane.border = createBorder(Color.GRAY, 1.0)
         window = makeSubWindow(pane, windowTitle(view), context, SubWindow.Type.Undecorated)
             .sceneFill(DEFAULT_SCENE_FILL.opacity(0.5))
+        registerMidiContext(view, window)
         window.scene.registerShortcuts {
             on("ESCAPE") { window.hide() }
         }
@@ -123,10 +127,18 @@ class DetailPaneManager(private val context: Context) {
         val detailPane = view.getDetailPane(extraActions = listOf(attachAction))
         val pane = StackPane(detailPane)
         newWindow = makeSubWindow(pane, title, context)
+        registerMidiContext(view, newWindow)
         addActions(view, pane)
         newWindow.show()
         updateBounds(view, newWindow)
         detached[view.obj] = newWindow
+    }
+
+    private fun registerMidiContext(view: ScoreObjectView, newWindow: SubWindow) {
+        val obj = view.obj
+        if (obj is ParameterizedObject) {
+            context[ContextualMidiReceiver].registerMidiContext(newWindow) { ParameterControlsMidiContext(obj.controls) }
+        }
     }
 
     private fun reattach(newWindow: SubWindow, view: ScoreObjectView) {

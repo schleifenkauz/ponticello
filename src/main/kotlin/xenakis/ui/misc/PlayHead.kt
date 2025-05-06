@@ -4,6 +4,7 @@ import fxutils.styleClass
 import javafx.application.Platform
 import javafx.scene.shape.Line
 import xenakis.impl.Decimal
+import xenakis.impl.withPrecision
 import xenakis.impl.zero
 import xenakis.model.score.ObjectPosition
 import xenakis.ui.score.ScorePane
@@ -30,7 +31,7 @@ class PlayHead(private val pane: ScorePane) {
 
     fun setPlayHeadX(x: Double) {
         playHead.layoutX = x
-        currentTime = pane.getTime(x)
+        currentTime = pane.getTime(x).withPrecision(3)
     }
 
     fun movePlayHead(pos: Decimal) {

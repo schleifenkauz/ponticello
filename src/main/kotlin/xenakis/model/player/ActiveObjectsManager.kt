@@ -14,13 +14,13 @@ import xenakis.model.score.SynthObject
 import xenakis.sc.client.SuperColliderListener
 
 class ActiveObjectsManager(private val context: Context) : SuperColliderListener {
-    private val takenSuffixes = mutableMapOf<String, MutableSet<Int>>()
+    private val nextSuffix = mutableMapOf<ScoreObject, Int>()
     private val bySuffix = mutableMapOf<ScoreObject, MutableMap<Int, ActiveScoreObject>>()
     private val byAbsolutePosition = mutableMapOf<ScoreObject, MutableMap<ObjectPosition, ActiveScoreObject>>()
 
     fun insert(player: ScorePlayer, obj: ScoreObject, absolutePosition: ObjectPosition): ActiveScoreObject {
-        val takenSuffixes = takenSuffixes[obj.name.now].orEmpty()
-        val suffix = (0..Int.MAX_VALUE).first { n -> n !in takenSuffixes }
+        val suffix = nextSuffix[obj] ?: 0
+        nextSuffix[obj] = suffix + 1
         val active = ActiveScoreObject(player, obj, absolutePosition, suffix)
         bySuffix.getOrPut(obj, ::mutableMapOf)[suffix] = active
         byAbsolutePosition.getOrPut(obj, ::mutableMapOf)[absolutePosition] = active
@@ -58,7 +58,7 @@ class ActiveObjectsManager(private val context: Context) : SuperColliderListener
     }
 
     fun clear() {
-        takenSuffixes.clear()
+        nextSuffix.clear()
         bySuffix.clear()
         byAbsolutePosition.clear()
     }
@@ -69,7 +69,7 @@ class ActiveObjectsManager(private val context: Context) : SuperColliderListener
         val obj = context[ScoreObjectRegistry].getOrNull(name) ?: return null
         val active = bySuffix[obj]?.get(suffix) ?: return null
         remove(active)
-        println("Removed $uniqueName")
+        active.stillActive = false
         return active
     }
 
@@ -77,7 +77,6 @@ class ActiveObjectsManager(private val context: Context) : SuperColliderListener
         val obj = active.obj
         bySuffix[obj]?.remove(active.suffix)
         byAbsolutePosition[obj]?.remove(active.absolutePosition)
-        takenSuffixes[name]?.remove(active.suffix)
         if (obj is SynthObject) {
             val node = SynthObjectNode(obj, active)
             context[NodeTree].removeNode(node)
@@ -87,6 +86,7 @@ class ActiveObjectsManager(private val context: Context) : SuperColliderListener
     override fun onMessage(path: String, content: String) = ScorePlayer.execute {
         when {
             path.startsWith("/freed") || path.startsWith("/stopped") -> {
+                println("Received '$path' message with content '$content'")
                 removeByName(content)
             }
         }

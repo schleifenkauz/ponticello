@@ -10,6 +10,8 @@ data class ActiveScoreObject(
     val absolutePosition: ObjectPosition,
     val suffix: Int,
 ) : ActiveObject() {
+    var stillActive = true
+
     override val associatedObject: ScoreObject
         get() = obj
 
