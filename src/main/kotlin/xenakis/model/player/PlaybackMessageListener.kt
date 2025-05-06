@@ -1,7 +1,7 @@
 package xenakis.model.player
 
+import reaktive.value.now
 import xenakis.impl.Logger
-import xenakis.impl.one
 import xenakis.impl.zero
 import xenakis.model.flow.AudioFlows
 import xenakis.model.registry.ScoreObjectRegistry
@@ -33,7 +33,8 @@ class PlaybackMessageListener(
             Logger.warn("Could not find object with name $name", Logger.Category.Playback)
             return
         }
-        val pos = ObjectPosition(player.currentTime, one)
+        val y = obj.liveConfig.yPosition.now
+        val pos = ObjectPosition(player.currentTime, y)
         player.scheduler.scheduleObject(obj, pos, cutoff = zero, player)
     }
 }
