@@ -77,6 +77,7 @@ class ScoreObjectViewPane private constructor(val obj: ScoreObject) : VBox() {
         context[ScorePane.CURRENT_ROOT] = scorePane
         context[ScoreObjectDuplicator].registerRootPane(scorePane)
         player = ScorePlayer.create(scorePane, loopingActivated = obj.liveConfig.loop)
+        obj.player = player
         context[ScorePlayer.CURRENT] = player
     }
 

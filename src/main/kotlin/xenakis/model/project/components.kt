@@ -21,6 +21,8 @@ inline fun <reified T> component(
 
 val UI_STATE = component<UIState>("ui-state", UIState::default)
 
+val CLOCKS = component<ClockRegistry>("clocks", ClockRegistry::createDefault)
+
 val METERS = component<MeterRegistry>("meters", MeterRegistry::createDefault)
 
 val BUSSES = component<BusRegistry>(
@@ -54,7 +56,7 @@ val SCORE = component<Score>("score", ::Score)
 val LAUNCHER_GRID = component<LauncherGrid>("launcher_grid", { LauncherGrid.createNByN(4) })
 
 val allComponents = listOf<Component<out ContextualObject>>(
-    METERS,
+    METERS, CLOCKS,
     BUSSES, BUFFERS,
     PATTERNS, SYNTH_DEFS, PROCESS_DEFS,
     UI_STATE, FLOWS, SERVER_OPTIONS,

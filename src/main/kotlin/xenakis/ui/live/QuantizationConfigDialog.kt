@@ -15,6 +15,7 @@ import reaktive.value.now
 import xenakis.impl.sync
 import xenakis.model.live.QuantizationConfig
 import xenakis.model.live.QuantizationUnit
+import xenakis.model.registry.ClockRegistry
 import xenakis.model.registry.MeterRegistry
 import xenakis.model.registry.ObjectReference
 import xenakis.model.registry.reference
@@ -25,9 +26,14 @@ class QuantizationConfigDialog(
     config: QuantizationConfig, title: String,
 ) : CompoundPrompt<ResizeMode>(title, labelWidth = 150.0) {
     private val tempoGrids = config.context[MeterRegistry].map { obj -> obj.reference() }
+    private val clocks = config.context[ClockRegistry].map { obj -> obj.reference() }
 
-    private val gridSelector = SimpleSearchableListView(tempoGrids, "Choose grid")
+    private val meterSelector = SimpleSearchableListView(tempoGrids, "Choose meter")
         .selectorButton(config.meter)
+        .setFixedWidth(SELECTOR_WIDTH)
+
+    private val clockSelector = SimpleSearchableListView(clocks, "Choose clock")
+        .selectorButton(config.clock)
         .setFixedWidth(SELECTOR_WIDTH)
 
     private val durationUnitInput = SimpleSearchableListView(TimeUnit.entries, "Choose duration unit")
@@ -75,12 +81,13 @@ class QuantizationConfigDialog(
         durationUnitInput.disableProperty().bind(unresolvedGrid)
         quantizationUnitInput.disableProperty().bind(unresolvedGrid)
         offsetUnitInput.disableProperty().bind(unresolvedGrid)
-        row("Reference grid", gridSelector, hspace(SPINNER_WIDTH))
+        row("Meter: ", meterSelector)
+        row("Clock: ", clockSelector)
         row("Duration: ", durationUnitInput, durationValueInput)
         row("Quantization: ", quantizationUnitInput, quantizationValueInput)
         row("Offset: ", offsetUnitInput, offsetValueInput)
-        addItem("Enable quantization", enableQuantizationToggle)
-        addItem("Shift grid", shiftGridToggle)
+        addItem("Enable quantization: ", enableQuantizationToggle)
+        addItem("Shift grid: ", shiftGridToggle)
     }
 
     override fun confirm(): ResizeMode = ResizeMode.Regular

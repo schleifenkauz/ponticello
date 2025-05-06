@@ -2,7 +2,6 @@ package xenakis.model.obj
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.Transient
 import reaktive.Observer
 import reaktive.Reactive
 import reaktive.value.ReactiveVariable
@@ -21,9 +20,6 @@ class MeterObject(
 ) : AbstractRenamableObject() {
     override val canCopy: Boolean
         get() = true
-
-    @Transient
-    val clock = MeterClock()
 
     private fun getBeatDur() = (60.0.asTime / beatsPerMinute.now)
 

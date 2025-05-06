@@ -1,6 +1,7 @@
 package xenakis.model.obj
 
 import kotlinx.serialization.Contextual
+import xenakis.model.player.ClockObject
 import xenakis.model.registry.ObjectReference
 import xenakis.model.score.ScoreObject
 
@@ -11,3 +12,4 @@ typealias ProcessDefReference = ObjectReference<@Contextual ProcessDefObject>
 typealias GlobalPatternReference = ObjectReference<@Contextual GlobalPatternObject>
 typealias ScoreObjectReference = ObjectReference<@Contextual ScoreObject>
 typealias MeterReference = ObjectReference<@Contextual MeterObject>
+typealias ClockReference = ObjectReference<@Contextual ClockObject>

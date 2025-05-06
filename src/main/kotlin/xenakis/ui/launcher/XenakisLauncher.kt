@@ -28,6 +28,7 @@ import xenakis.model.Settings
 import xenakis.model.flow.NodeTree
 import xenakis.model.player.ActiveObjectsManager
 import xenakis.model.player.Recorder
+import xenakis.model.player.ScoreObjectScheduler
 import xenakis.model.project.SERVER_OPTIONS
 import xenakis.model.project.XenakisProject
 import xenakis.model.project.XenakisProject.Companion.projectDirectory
@@ -242,6 +243,7 @@ class XenakisLauncher {
                         context[ActiveObjectsManager] = ActiveObjectsManager(context)
                         client.addListener(context[ActiveObjectsManager])
                         context[NodeTree] = NodeTree(client)
+                        context[ScoreObjectScheduler] = ScoreObjectScheduler(context)
                         context[ScoreObjectDuplicator] = ScoreObjectDuplicator()
                         context[Recorder] = Recorder(context)
                         clientReady(client)

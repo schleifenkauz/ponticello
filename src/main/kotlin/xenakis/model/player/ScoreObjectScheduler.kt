@@ -1,5 +1,8 @@
 package xenakis.model.player
 
+import bundles.PublicProperty
+import bundles.publicProperty
+import hextant.context.Context
 import reaktive.value.now
 import xenakis.impl.Decimal
 import xenakis.impl.Logger
@@ -14,13 +17,12 @@ import xenakis.model.score.*
 import xenakis.sc.client.SuperColliderClient
 import java.util.concurrent.CompletableFuture
 
-class ScoreObjectScheduler(val player: ScorePlayer) {
-    private val client = player.context[SuperColliderClient]
-    private val context = player.context
+class ScoreObjectScheduler(val context: Context) {
+    private val client = context[SuperColliderClient]
     private val nodeTree = context[NodeTree]
     private val activeObjects = context[ActiveObjectsManager]
 
-    fun scheduleEvents(events: List<Event>) = execute {
+    fun scheduleEvents(events: List<Event>, player: ScorePlayer) = execute {
         for (ev in events) {
             val (type, position, inst) = ev
             if (inst.muted.now) continue
@@ -28,7 +30,7 @@ class ScoreObjectScheduler(val player: ScorePlayer) {
             when (type) {
                 Event.Type.ObjectStart -> {
                     Logger.fine("ObjectStart: $obj at $position", Logger.Category.Playback)
-                    scheduleObject(obj, position, cutoff = zero)
+                    scheduleObject(obj, position, cutoff = zero, player)
                 }
 
                 Event.Type.ObjectEnd -> {
@@ -39,7 +41,7 @@ class ScoreObjectScheduler(val player: ScorePlayer) {
                     active.stillActive = false
                     if (obj is TempoGridObject && obj.meter.isResolved.now) {
                         val meter = obj.meter.force()
-                        meter.clock.detach(player)
+                        player.getClock().detach(player, meter)
                     }
                 }
 
@@ -67,18 +69,21 @@ class ScoreObjectScheduler(val player: ScorePlayer) {
         }
     }
 
-    fun scheduleObject(obj: ScoreObject, absolutePosition: ObjectPosition, cutoff: Decimal): ActiveScoreObject? {
+    fun scheduleObject(
+        obj: ScoreObject, absolutePosition: ObjectPosition,
+        cutoff: Decimal, player: ScorePlayer
+    ): ActiveScoreObject? {
         try {
             if (!obj.validate()) return null
         } catch (e: Exception) {
             Logger.error("Failed to validate $obj", e, Logger.Category.Playback)
             return null
         }
-        val time = absolutePosition.time + player.loopOffset
+        val time = absolutePosition.time + player.lastPlayFrom
         val timeForExecution = (time + context[Settings].scLangLatency.now).toString()
         if (obj is TempoGridObject && obj.meter.isResolved.now) {
             val meter = obj.meter.force()
-            meter.clock.attach(player, offset = zero)
+            player.getClock().attach(player, meter, cutoff)
         }
         val activeObject = try {
             activeObjects.insert(player, obj, absolutePosition)
@@ -106,14 +111,15 @@ class ScoreObjectScheduler(val player: ScorePlayer) {
         } catch (e: Exception) {
             Logger.error("Failed to schedule $obj", e, Logger.Category.Playback)
         }
+        println("Scheduled $activeObject at $timeForExecution")
         Logger.fine("unique name for $obj at $time: ${activeObject.uniqueName}", Logger.Category.Playback)
         Logger.fine("time for execution: ${timeForExecution}s", Logger.Category.Playback)
         return activeObject
     }
 
-    fun activeObjects(time: Decimal, delta: Decimal): List<Event> {
+    fun activeObjects(time: Decimal, delta: Decimal, score: Score): List<Event> {
         val dest = mutableListOf<Event>()
-        collectActiveObjects(ObjectPosition(0.0, 0.0), player.pane.score, time, delta, dest)
+        collectActiveObjects(ObjectPosition(0.0, 0.0), score, time, delta, dest)
         return dest
     }
 
@@ -133,4 +139,5 @@ class ScoreObjectScheduler(val player: ScorePlayer) {
         }
     }
 
+    companion object: PublicProperty<ScoreObjectScheduler> by publicProperty("ScoreObjectScheduler")
 }

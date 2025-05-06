@@ -11,8 +11,10 @@ import javafx.scene.Parent
 import javafx.scene.input.DataFormat
 import javafx.scene.layout.BorderPane
 import org.kordamp.ikonli.codicons.Codicons
+import org.kordamp.ikonli.materialdesign2.MaterialDesignA
 import org.kordamp.ikonli.materialdesign2.MaterialDesignM
 import org.kordamp.ikonli.materialdesign2.MaterialDesignR
+import reaktive.value.binding.not
 import reaktive.value.now
 import reaktive.value.reactiveValue
 import xenakis.impl.one
@@ -90,8 +92,17 @@ class ScoreObjectRegistryPane(registry: ScoreObjectRegistry) : ObjectRegistryPan
                 icon(MaterialDesignM.METRONOME)
                 toggles({ obj -> obj.quantizationConfig.enableQuantization })
             }
+            addAction("Resize object") {
+                icon(MaterialDesignA.ARROW_EXPAND_HORIZONTAL)
+                executes { obj ->
+                    //TODO resize dialog
+                }
+            }
             addAction("Configure quantization") {
-                applicableIf { obj -> obj.affectsPlayback }
+                applicableWhen { obj ->
+                    if (!obj.affectsPlayback) reactiveValue(false)
+                    else obj.player?.isPlaying?.not() ?: reactiveValue(true)
+                }
                 icon(Codicons.SYMBOL_PROPERTY)
                 executes { obj, ev ->
                     if (obj.quantizationConfig.meter.now.isResolved.now.not()) {

@@ -76,6 +76,7 @@ class ObjectReference<O : NamedObject>(private var _name: String) : ScExpr {
     }
 
     override fun equals(other: Any?): Boolean = when {
+        this === other -> true
         other !is ObjectReference<*> -> false
         obj != null -> obj == other.obj
         else -> _name == other._name

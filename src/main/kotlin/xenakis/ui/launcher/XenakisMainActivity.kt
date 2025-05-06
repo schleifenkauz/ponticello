@@ -127,7 +127,7 @@ class XenakisMainActivity(val project: XenakisProject) : Activity() {
             val selectedFlow = flowListView.selectedObject() as? AudioFlow
             selectedFlow?.midiContext()
         }
-        project[LAUNCHER_GRID].attachTo(player)
+        receiver.attachGrid(project[LAUNCHER_GRID])
     }
 
     private fun setupMainScoreView() {
@@ -141,6 +141,7 @@ class XenakisMainActivity(val project: XenakisProject) : Activity() {
     private fun setupPlayback() {
         player = ScorePlayer.create(mainScoreView, loopingActivated = reactiveValue(false))
         context[ScorePlayer.CURRENT] = player
+        context[ScorePlayer.MAIN] = player
         playbackMessageListener = PlaybackMessageListener(project.objects, project.flows, player)
         context[SuperColliderClient].addListener(playbackMessageListener)
         context[AudioFlows].createAllFlows()

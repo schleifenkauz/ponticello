@@ -11,14 +11,19 @@ import reaktive.value.now
 import reaktive.value.reactiveVariable
 import xenakis.impl.*
 import xenakis.model.obj.AbstractContextualObject
+import xenakis.model.obj.ClockReference
 import xenakis.model.obj.MeterReference
+import xenakis.model.player.ClockObject
+import xenakis.model.registry.ClockRegistry
 import xenakis.model.registry.MeterRegistry
 import xenakis.model.registry.ObjectReference
+import xenakis.model.registry.reference
 import xenakis.model.score.TimeUnit
 
 @Serializable
 class QuantizationConfig(
     val meter: ReactiveVariable<MeterReference> = reactiveVariable(ObjectReference.none()),
+    val clock: ReactiveVariable<ClockReference> = reactiveVariable(ObjectReference.none()),
     val durationUnit: ReactiveVariable<TimeUnit> = reactiveVariable(TimeUnit.Seconds),
     val quantizationUnit: ReactiveVariable<QuantizationUnit> = reactiveVariable(QuantizationUnit.Bars),
     val quantizationValue: ReactiveVariable<Decimal> = reactiveVariable(one),
@@ -45,6 +50,10 @@ class QuantizationConfig(
 
     override fun initialize(context: Context) {
         super.initialize(context)
+        if (clock.now == ObjectReference.none<ClockObject>()) {
+            clock.now = context[ClockRegistry].getDefault().reference()
+        }
+        clock.now.resolve(context[ClockRegistry])
         meter.now.resolve(context[MeterRegistry])
         duration = reactiveVariable(computeDuration())
         automaticallyUpdateValuesOnUnitChange()
@@ -102,7 +111,7 @@ class QuantizationConfig(
     }
 
     fun copy() = QuantizationConfig(
-        meter.copy(),
+        meter.copy(), clock.copy(),
         durationUnit.copy(),
         quantizationUnit.copy(), quantizationValue.copy(),
         offsetUnit.copy(), offsetValue.copy(),
@@ -111,6 +120,7 @@ class QuantizationConfig(
 
     fun update(source: QuantizationConfig) {
         meter.set(source.meter.now)
+        clock.set(source.clock.now)
         durationUnit.set(source.durationUnit.now)
         durationValue.set(source.durationValue.now)
         quantizationUnit.set(source.quantizationUnit.now)

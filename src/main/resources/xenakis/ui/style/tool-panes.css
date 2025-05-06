@@ -105,3 +105,7 @@
 .launcher-grid-item:hover {
     -fx-background-color: rgba(0, 1000, 0, 0.1);
 }
+
+.launcher-grid-item:pressed {
+    -fx-background-color: rgba(100, 0, 0, 0.35) !important;
+}

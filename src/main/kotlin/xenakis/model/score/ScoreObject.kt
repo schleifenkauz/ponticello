@@ -23,6 +23,7 @@ import xenakis.model.flow.NodePlacement
 import xenakis.model.live.LiveConfig
 import xenakis.model.live.QuantizationConfig
 import xenakis.model.obj.AbstractRenamableObject
+import xenakis.model.player.ScorePlayer
 import xenakis.model.registry.ScoreObjectRegistry
 import xenakis.model.score.Score.Companion.rootScore
 import xenakis.model.score.controls.EnvelopeControl
@@ -44,6 +45,9 @@ sealed class ScoreObject : AbstractRenamableObject() {
     open val canResize: Boolean get() = true
 
     open val affectsPlayback: Boolean get() = true
+
+    @Transient
+    var player: ScorePlayer? = null
 
     @SerialName("duration")
     private var _duration = reactiveVariable(0.0.asTime)
