@@ -3,6 +3,8 @@ package xenakis.model.obj
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
+import reaktive.Observer
+import reaktive.Reactive
 import reaktive.value.ReactiveVariable
 import reaktive.value.now
 import reaktive.value.reactiveVariable
@@ -76,6 +78,9 @@ class MeterObject(
         reactiveVariable(name),
         beatsPerMinute.copy(), beatsPerBar.copy(), ticksPerBeat.copy()
     )
+
+    fun observe(handler: (Reactive) -> Unit): Observer =
+        beatsPerMinute.observe(handler) and beatsPerBar.observe(handler) and ticksPerBeat.observe(handler)
 
     companion object {
         fun create(name: String, bpm: Int, bpb: Int, tpb: Int) = MeterObject(

@@ -84,7 +84,7 @@ class QuantizationConfig(
         )
 
     fun computeDuration(): Decimal {
-        val grid = meter.now.get() ?: return zero
+        val grid = meter.now.get() ?: return one
         val unit = grid.getDuration(durationUnit.now)
         return unit * durationValue.now
     }

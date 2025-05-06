@@ -105,7 +105,7 @@ class ScoreObjectRegistryPane(registry: ScoreObjectRegistry) : ObjectRegistryPan
                         .showDialog(ev) ?: return@executes
                     obj.quantizationConfig.update(copy)
                     val newDuration = obj.quantizationConfig.computeDuration()
-                    val direction = Direction.horizontal(HorizontalDirection.LEFT)
+                    val direction = Direction.horizontal(HorizontalDirection.RIGHT)
                     obj.resize(newDuration, obj.height, ScoreObject.ResizeMode.Regular, direction)
                 }
             }

@@ -4,6 +4,7 @@ import fxutils.SubWindow
 import fxutils.styleClass
 import hextant.context.Context
 import javafx.application.Platform
+import javafx.scene.input.MouseEvent
 import javafx.scene.layout.Pane
 import javafx.scene.paint.Color
 import javafx.scene.shape.Line
@@ -58,12 +59,23 @@ abstract class RootScorePane(score: Score, context: Context) : ScorePane(score, 
         positionTracker.viewOrder = -100.0
         positionTracker.isMouseTransparent = true
         positionTracker.visibleProperty().bind(hoverProperty())
-        setOnMouseMoved { ev ->
-            val (t, y) = snapToGrid(ev.x, ev.y)
-            markT(t)
-            context[ScoreObjectDuplicator].movedCursor(this, t, y)
-            ev.consume()
+        setOnMouseMoved { ev -> mouseMoved(ev) }
+        setOnMouseExited { mouseExited() }
+    }
+
+    protected open fun mouseMoved(ev: MouseEvent) {
+        val (t, y) = snapToGrid(ev.x, ev.y)
+        markT(t)
+        context[ScoreObjectDuplicator].movedCursor(this, t, y)
+        ev.consume()
+    }
+
+    protected open fun mouseExited() {
+        for (gridView in allViews.filterIsInstance<TempoGridObjectView>()) {
+            gridView.unmark()
         }
+        val player = context[ScorePlayer.CURRENT]
+        context[TimeCodeView].displayTime(player.currentTime)
     }
 
     fun magnifyEnvelope(editor: EnvelopeEditor) {
@@ -149,7 +161,7 @@ abstract class RootScorePane(score: Score, context: Context) : ScorePane(score, 
         }
     }
 
-    final override fun markT(t: Decimal) {
+    override fun markT(t: Decimal) {
         val grids = allViews.filterIsInstance<TempoGridObjectView>()
         for (g in grids) {
             if (t in g.instance.timeRange) g.mark(t - g.instance.start)
