@@ -27,12 +27,16 @@ import xenakis.ui.midi.MidiContext
 class MixerFlow(
     val targetBus: ReactiveVariable<BusReference>,
     val components: MixerComponentList,
+    val masterVolume: ReactiveVariable<Decimal> = reactiveVariable(zero),
 ) : AudioFlow(), ObjectList.Listener<MixerFlow.MixerComponent> {
     @Transient
     private val componentObservers = mutableMapOf<MixerComponent, Observer>()
 
     @Transient
     private lateinit var sinkObserver: Observer
+
+    @Transient
+    private lateinit var masterVolumeObserver: Observer
 
     @Transient
     private var soloed = 0
@@ -72,6 +76,9 @@ class MixerFlow(
         sinkObserver = targetBus.observe { _, old, new ->
             replacedBus(old, new)
             sync()
+        }
+        masterVolumeObserver = masterVolume.observe { _, _, vol ->
+            client.run("$superColliderName.set(\\master_volume, $vol.dbamp)")
         }
     }
 
@@ -135,15 +142,18 @@ class MixerFlow(
         val latency = context[Settings].serverLatency.now
         appendBlock("s.makeBundle($latency)") {
             appendBlock("$superColliderName = ", endLine = false) {
-                +"var sources, volumes, mix"
+                +"var sources, volumes, mix, snd"
                 val sources = components.map { comp -> comp.sourceBus.now.force().superColliderName }
                 val volumes = components.map { comp -> getActualVolume(comp) }
-                +"sources = NamedControl.kr(\\sources, $sources)"
-                +"volumes = NamedControl.kr(\\volumes, $volumes)"
+                +"sources = NamedControl.kr(\\sources, $sources, lags: 0.02, fixedLag: true)"
+                +"volumes = NamedControl.kr(\\volumes, $volumes, lags: 0.02, fixedLag: true)"
                 +"sources = In.ar(sources, ${sink.channels.now}) * volumes"
-                if (components.size > 1) {
-                    +"sources.sum"
-                }
+                +"snd = In.ar(${sink.superColliderName}, ${sink.channels.now})"
+                val masterVolume = "\\master_volume.kr(${masterVolume.now}.dbamp, lag: 0.02, fixedLag: true)"
+                val mix = if (components.size > 1) "sources.sum" else "sources"
+                +"snd = (snd + $mix) * $masterVolume"
+                +"ReplaceOut.ar(${sink.superColliderName}, snd)"
+                +"0"
             }
             val action = guardAgainstReplaceNil(placement)
             appendLine(".play(${placement.target}, ${sink.superColliderName}, addAction: ${action})")
@@ -193,8 +203,12 @@ class MixerFlow(
 
     private inner class MixerMidiContext : AbstractMidiContext(context) {
         override fun cc(channel: Int, index: Int, value: Int) {
-            if (channel !in components.indices) return
-            val comp = components[channel]
+            if (channel == 0) {
+                masterVolume.now = adjustValue(masterVolume.now, VOLUME_SPEC, value)
+                return
+            }
+            if (channel + 1 !in components.indices) return
+            val comp = components[channel + 1]
             comp.volume.now = adjustValue(comp.volume.now, VOLUME_SPEC, value)
         }
     }

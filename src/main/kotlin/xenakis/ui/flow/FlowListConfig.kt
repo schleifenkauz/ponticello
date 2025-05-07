@@ -4,7 +4,9 @@ import bundles.createBundle
 import fxutils.actions.Action
 import fxutils.actions.ContextualizedAction
 import fxutils.actions.collectActions
+import fxutils.controls.SliderBar
 import fxutils.prompt.InfoPrompt
+import fxutils.setFixedWidth
 import fxutils.styleClass
 import javafx.scene.Node
 import javafx.scene.Parent
@@ -67,7 +69,13 @@ class FlowListConfig(
             selector.setFilter(rate = Rate.Audio, channels = null)
             selector.syncWith(obj.targetBus)
             selector.initialize(context)
-            listOf(ObjectSelectorControl(selector, createBundle()))
+            val masterVolumeSlider = SliderBar(
+                obj.masterVolume, reactiveValue("Master volume"),
+                MixerFlow.VOLUME_SPEC.converter(),
+                SliderBar.Style.AlwaysValue
+            ).setFixedWidth(150.0)
+            val selectorControl = ObjectSelectorControl(selector, createBundle())
+            listOf(selectorControl, masterVolumeSlider)
         }
 
         else -> emptyList()

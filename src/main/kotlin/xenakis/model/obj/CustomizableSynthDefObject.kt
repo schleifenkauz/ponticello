@@ -66,8 +66,8 @@ class CustomizableSynthDefObject(
         val variables = ugenGraph?.editor?.result?.now?.variables.orEmpty()
         val extraStatements = listOf(
             RawScExpr("duration_ = \\duration.ir"),
-            RawScExpr("attack_ = \\attack.kr(0.01)"),
-            RawScExpr("release_ = \\release.kr(0.01)"),
+            RawScExpr("attack_ = \\attack.kr(0.02)"),
+            RawScExpr("release_ = \\release.kr(0.02)"),
             RawScExpr("level_ = \\level.kr(1)"),
             RawScExpr("env_ = Env.asr(attack_, level_, release_).kr(Done.freeSelf, \\gate.kr(1))"),
             RawScExpr("Env([0, 0], [duration_]).kr(\\afterDuration.ir(Done.freeSelf))")

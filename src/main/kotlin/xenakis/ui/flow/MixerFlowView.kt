@@ -5,6 +5,7 @@ import fxutils.actions.Action
 import fxutils.actions.ContextualizedAction
 import fxutils.actions.collectActions
 import fxutils.controls.SliderBar
+import fxutils.setFixedWidth
 import fxutils.setRoot
 import javafx.scene.Node
 import javafx.scene.control.Control
@@ -38,6 +39,7 @@ class MixerFlowView(private val flow: MixerFlow) : Control(), ObjectListDisplayC
         selector.syncWith(obj.sourceBus)
         selector.initialize(flow.context)
         val selectorControl = ObjectSelectorControl(selector, createBundle())
+            .setFixedWidth(100.0)
         val name = reactiveValue("Volume")
         val converter = MixerFlow.VOLUME_SPEC.converter()
         val volumeSlider = SliderBar(obj.volume, name, converter, SliderBar.Style.AlwaysValue)
