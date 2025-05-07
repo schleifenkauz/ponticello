@@ -19,7 +19,6 @@ import org.kordamp.ikonli.materialdesign2.MaterialDesignE
 import org.kordamp.ikonli.materialdesign2.MaterialDesignR
 import reaktive.value.binding.flatMap
 import reaktive.value.now
-import reaktive.value.reactiveValue
 import xenakis.impl.one
 import xenakis.impl.toDecimal
 import xenakis.impl.zero
@@ -80,8 +79,7 @@ class LauncherGridPane(
         val control = ObjectSelectorControl(selector, createBundle())
         val viewBtn = viewObjectAction.withContext(item).makeButton("medium-icon-button")
         val spec = NumericalControlSpec(zero, zero, one, 0.01.toDecimal(), zero, Warp.Linear)
-        val name = reactiveValue("Y position")
-        val scoreYSlider = SliderBar(item.yPosition, name, spec.converter())
+        val scoreYSlider = SliderBar(item.yPosition, "Score Y", spec.converter())
             .setFixedWidth(120.0)
             .pad(10.0)
         val freeOnReleaseOption = CheckBox("Stop on release").sync(item.freeOnRelease)

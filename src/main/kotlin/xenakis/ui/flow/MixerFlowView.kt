@@ -40,9 +40,8 @@ class MixerFlowView(private val flow: MixerFlow) : Control(), ObjectListDisplayC
         selector.initialize(flow.context)
         val selectorControl = ObjectSelectorControl(selector, createBundle())
             .setFixedWidth(100.0)
-        val name = reactiveValue("Volume")
-        val converter = MixerFlow.VOLUME_SPEC.converter()
-        val volumeSlider = SliderBar(obj.volume, name, converter, SliderBar.Style.AlwaysValue)
+        val converter = MixerFlow.VOLUME_SPEC.converter(unit = "db")
+        val volumeSlider = SliderBar(obj.volume, "Volume (db)", converter, SliderBar.Style.AlwaysValue)
         volumeSlider.prefWidth = 150.0
         volumeSlider.disableProperty().bind(obj.mute.asObservableValue())
         return listOf(selectorControl, volumeSlider)

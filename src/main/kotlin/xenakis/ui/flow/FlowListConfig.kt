@@ -71,7 +71,7 @@ class FlowListConfig(
             selector.initialize(context)
             val masterVolumeSlider = SliderBar(
                 obj.masterVolume, reactiveValue("Master volume"),
-                MixerFlow.VOLUME_SPEC.converter(),
+                MixerFlow.VOLUME_SPEC.converter(unit = "db"),
                 SliderBar.Style.AlwaysValue
             ).setFixedWidth(150.0)
             val selectorControl = ObjectSelectorControl(selector, createBundle())

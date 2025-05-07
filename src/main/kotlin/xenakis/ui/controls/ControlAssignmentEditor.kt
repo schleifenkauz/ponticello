@@ -25,11 +25,14 @@ import org.kordamp.ikonli.evaicons.Evaicons
 import org.kordamp.ikonli.material2.Material2AL
 import org.kordamp.ikonli.materialdesign2.MaterialDesignC
 import org.kordamp.ikonli.materialdesign2.MaterialDesignS
-import reaktive.value.*
+import reaktive.value.ReactiveVariable
 import reaktive.value.binding.flatMap
 import reaktive.value.binding.map
+import reaktive.value.forEach
 import reaktive.value.fx.asObservableValue
 import reaktive.value.fx.asProperty
+import reaktive.value.now
+import reaktive.value.reactiveVariable
 import xenakis.impl.asTime
 import xenakis.impl.asY
 import xenakis.impl.one
@@ -502,13 +505,13 @@ class ControlAssignmentEditor(val control: NamedParameterControl, val view: Scor
                     val timeSpec = NumericalControlSpec(
                         default = zero, min = zero, max = duration,
                         step = 0.01.asTime, lag = zero, warp = Warp.Linear, associatedColor = Color.GRAY
-                    ).converter()
+                    ).converter(unit = "s")
                     control.attack.now = control.attack.now.coerceAtMost(duration)
                     control.release.now = control.release.now.coerceAtMost(duration - control.attack.now)
-                    val levelSpec = spec.converter()
-                    val level = SliderBar(control.level, reactiveValue("Level"), levelSpec)
-                    val attack = SliderBar(control.attack, reactiveValue("Attack"), timeSpec)
-                    val release = SliderBar(control.release, reactiveValue("Release"), timeSpec)
+                    val levelSpec = spec.converter(unit = "db")
+                    val level = SliderBar(control.level, "Level", levelSpec)
+                    val attack = SliderBar(control.attack, "Attack", timeSpec)
+                    val release = SliderBar(control.release, "Release", timeSpec)
                     level.prefWidth = 100.0
                     attack.prefWidth = 100.0
                     release.prefWidth = 100.0

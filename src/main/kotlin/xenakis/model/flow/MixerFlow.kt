@@ -203,7 +203,7 @@ class MixerFlow(
 
     private inner class MixerMidiContext : AbstractMidiContext(context) {
         override fun cc(channel: Int, index: Int, value: Int) {
-            if (channel == 0) {
+            if (index == 0) {
                 masterVolume.now = adjustValue(masterVolume.now, VOLUME_SPEC, value)
                 return
             }
@@ -216,8 +216,6 @@ class MixerFlow(
     override fun midiContext(): MidiContext = MixerMidiContext()
 
     companion object {
-        private val MUTE_VOLUME = (-1000).toDecimal()
-
         val VOLUME_SPEC = NumericalControlSpec(
             default = zero, min = (-60).toDecimal(), max = (+24).toDecimal(),
             lag = 0.02.toDecimal(), warp = Warp.Linear, step = 0.1.toDecimal(),
