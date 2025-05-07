@@ -39,31 +39,40 @@ class XenakisProject private constructor(val components: Map<Component<out Conte
         }
     }
 
-    fun saveTo(projectDirectory: File) {
+    fun saveTo(projectDirectory: File): Boolean {
         for (inst in mainScore.allInstances()) {
             if (inst.obj !in objects) {
                 Logger.warn("Had to add object for $inst", Logger.Category.Project)
                 objects.add(inst.obj)
             }
         }
-        get(UI_STATE).saveWindowStates()
+        try {
+            get(UI_STATE).saveWindowStates()
+        } catch (e: Exception) {
+            Logger.error("Failed to save window states!", e)
+        }
         this.projectDirectory = projectDirectory
         dataDir.mkdirs()
+        var savedAllComponents = true
         for ((component, _) in components) {
-            save(component)
+            val ok = save(component)
+            if (!ok) savedAllComponents = false
         }
-        context[UndoManager].savedChanges()
+        if (savedAllComponents) context[UndoManager].savedChanges()
+        return savedAllComponents
     }
 
-    fun save(component: Component<out ContextualObject>) {
+    fun save(component: Component<out ContextualObject>): Boolean {
         val file = dataDir.resolve("${component.name}.json")
         val value = components.getValue(component)
         try {
             val str = json.encodeToString(component.serializer as KSerializer<ContextualObject>, value)
             file.writeText(str)
+            return true
         } catch (e: Exception) {
             Logger.error("Error while saving ${component.name} to $file!")
             e.printStackTrace()
+            return false
         }
     }
 

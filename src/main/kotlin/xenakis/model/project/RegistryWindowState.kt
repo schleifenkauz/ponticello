@@ -11,7 +11,7 @@ import xenakis.ui.registry.ObjectRegistryPane
 
 @Serializable
 @SerialName("RegistryWindow")
-class RegistryWindowState : WindowState() {
+class RegistryWindowState(override val reference: Reference) : WindowState() {
     private var selectedIndex: Int = -1
     private var displayMode: ObjectListView.DisplayMode? = null
 

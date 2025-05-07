@@ -51,7 +51,6 @@ abstract class ObjectList<O: ContextualObject> : List<O>, AbstractContextualObje
 
     fun has(obj: O) = objects.contains(obj)
 
-
     protected open fun initializeObject(obj: O) {
         obj.initialize(context)
     }

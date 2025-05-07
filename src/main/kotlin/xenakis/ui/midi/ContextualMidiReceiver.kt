@@ -47,16 +47,19 @@ class ContextualMidiReceiver : Receiver {
 
     private fun noteOn(index: Int, velocity: Int, channel: Int, ctx: MidiContext?) {
         val grid = launcherGrid
-        val note = index - NOTE_INDEX_OFFSET
-        if (grid != null && grid.isActive.now && note in grid.itemIndices) grid.noteOn(note, velocity)
-        else ctx?.noteOn(channel, MidiPitch(index), velocity)
+        val note = xjamGridIndex(index)
+        if (grid != null && grid.isActive.now && note in grid.items().indices) {
+            val item = grid.items()[note]
+            grid.noteOn(item, velocity)
+        } else ctx?.noteOn(channel, MidiPitch(index), velocity)
     }
 
     private fun noteOff(index: Int, channel: Int, ctx: MidiContext?) {
         val grid = launcherGrid
-        val note = index - NOTE_INDEX_OFFSET
-        if (grid != null && grid.isActive.now && note in grid.itemIndices) grid.noteOff(note)
-        else ctx?.noteOff(channel, MidiPitch(index))
+        val note = xjamGridIndex(index)
+        if (grid != null && grid.isActive.now && note in grid.items().indices) {
+            grid.noteOff(grid.items()[note])
+        } else ctx?.noteOff(channel, MidiPitch(index))
     }
 
     fun initialize(deviceName: String) {
@@ -82,6 +85,13 @@ class ContextualMidiReceiver : Receiver {
     companion object : PublicProperty<ContextualMidiReceiver> by publicProperty("Midi receiver") {
         private const val CC_INDEX_OFFSET = 20
 
-        private const val NOTE_INDEX_OFFSET = 48
+        private const val GRID_INDEX_OFFSET = 36
+
+        private fun xjamGridIndex(midiPitch: Int): Int {
+            val index = midiPitch - GRID_INDEX_OFFSET
+            val row = 3 - (index / 4)
+            val column = index % 4
+            return row * 4 + column
+        }
     }
 }

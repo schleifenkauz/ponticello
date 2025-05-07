@@ -302,6 +302,11 @@ class ObjectListView<O: ContextualObject>(
         showContent(selected)
     }
 
+    fun initializeContent(obj: O) {
+        val box = boxesCache[obj] ?: return
+        box.getContent()
+    }
+
     @Serializable
     enum class DisplayMode {
         Inline, SubWindow, DetailsPane;

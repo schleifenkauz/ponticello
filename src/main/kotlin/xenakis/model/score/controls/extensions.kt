@@ -68,14 +68,12 @@ fun ScWriter.writeSynthCode(
         else append("afterDuration: Done.none")
         val action = guardAgainstReplaceNil(placement)
         appendLine("], target: ${placement.target}, addAction: $action);")
-        +"s.sync"
         for ((param, control) in controlsWithSpecs) {
             val (spec, ctrl) = control
             with(ctrl) {
                 generatePreparationCode(obj, uniqueName, param, spec, CodegenContext.Synth)
             }
         }
-        +"s.sync"
         for ((param, control) in controlsWithSpecs) {
             val (spec, ctrl) = control
             if (!obj.def.hasParameter(param) && param !in SPECIAL_PARAMETERS) continue

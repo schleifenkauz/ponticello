@@ -25,10 +25,10 @@ import xenakis.model.score.TimeUnit
 class QuantizationConfigDialog(
     config: QuantizationConfig, title: String,
 ) : CompoundPrompt<ResizeMode>(title, labelWidth = 150.0) {
-    private val tempoGrids = config.context[MeterRegistry].map { obj -> obj.reference() }
+    private val meters = config.context[MeterRegistry].map { obj -> obj.reference() }
     private val clocks = config.context[ClockRegistry].map { obj -> obj.reference() }
 
-    private val meterSelector = SimpleSearchableListView(tempoGrids, "Choose meter")
+    private val meterSelector = SimpleSearchableListView(meters, "Choose meter")
         .selectorButton(config.meter)
         .setFixedWidth(SELECTOR_WIDTH)
 
@@ -90,7 +90,7 @@ class QuantizationConfigDialog(
         addItem("Shift grid: ", shiftGridToggle)
     }
 
-    override fun confirm(): ResizeMode = ResizeMode.Regular
+    override fun getDefault(): ResizeMode = ResizeMode.Regular
 
     companion object {
         private const val SELECTOR_WIDTH = 120.0

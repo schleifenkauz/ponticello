@@ -22,7 +22,6 @@ import xenakis.model.project.*
 import xenakis.sc.client.SuperColliderClient
 import xenakis.ui.actions.*
 import xenakis.ui.flow.AudioFlowPane
-import xenakis.ui.impl.makeSubWindow
 import xenakis.ui.impl.makeToolWindow
 import xenakis.ui.live.LauncherGridPane
 import xenakis.ui.live.LiveTaskRegistryPane
@@ -73,9 +72,11 @@ class XenakisMainActivity(val project: XenakisProject) : Activity() {
     val liveTasksWindow by lazy { context.makeToolWindow(liveTasksPane, "Live Tasks") }
 
     private val gridPane by lazy { LauncherGridPane(context, project[LAUNCHER_GRID]) }
-    val launcherGridWindow = makeSubWindow(gridPane, "Launcher Grid", context).also { w ->
-        w.sizeToScene()
-        w.isResizable = false
+    val launcherGridWindow by lazy {
+        context.makeToolWindow(gridPane, "Launcher Grid").also { w ->
+            w.sizeToScene()
+            w.isResizable = false
+        }
     }
 
     val scoreObjectsPane by lazy { ScoreObjectRegistryPane(project.objects) }
@@ -97,7 +98,6 @@ class XenakisMainActivity(val project: XenakisProject) : Activity() {
     }
 
     private val timeCodeView: TimeCodeView = TimeCodeView()
-    private val flowGroupLines: FlowGroupLines = FlowGroupLines(project.flows, mainScoreView)
 
     private lateinit var player: ScorePlayer
     private lateinit var playbackMessageListener: PlaybackMessageListener
@@ -112,6 +112,7 @@ class XenakisMainActivity(val project: XenakisProject) : Activity() {
         context[XenakisMainActivity] = this
         context[HelpBrowser] = HelpBrowser()
         context[DetailPaneManager] = DetailPaneManager(project.context)
+        context[FlowGroupManager] = FlowGroupManager(project.flows, mainScoreView)
 
         setupMainScoreView()
         setupPlayback()
@@ -154,7 +155,7 @@ class XenakisMainActivity(val project: XenakisProject) : Activity() {
         ArrowKeys.registerArrowKeys(primaryStage.scene, context)
         primaryStage.title = "Xenakis: ${project.name}"
         primaryStage.isResizable = true
-        val state = project[UI_STATE].windowStates.getOrPut("MainWindow", ::RegularWindowState)
+        val state = project[UI_STATE].getWindowState(WindowState.Reference.ByTitle("MainWindow"), ::RegularWindowState)
         val screenSize = Screen.getPrimary().bounds
         state.applyTo(primaryStage, defaultSize = Dimension2D(screenSize.width, screenSize.height))
     }

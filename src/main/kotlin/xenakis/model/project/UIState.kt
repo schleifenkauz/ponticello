@@ -19,7 +19,7 @@ class UIState private constructor(
     val snapEnabled: ReactiveVariable<Boolean> = reactiveVariable(false),
     val snapOption: ReactiveVariable<TimeUnit> = reactiveVariable(TimeUnit.Seconds),
     val selectedSynthDef: ReactiveVariable<SynthDefReference?> = reactiveVariable(null),
-    val windowStates: MutableMap<String, WindowState> = mutableMapOf(),
+    private val windowStates: MutableList<WindowState> = mutableListOf(),
 ) : AbstractContextualObject() {
     override fun initialize(context: Context) {
         super.initialize(context)
@@ -36,8 +36,16 @@ class UIState private constructor(
         return synthDef
     }
 
+    fun getWindowState(reference: WindowState.Reference, default: (WindowState.Reference) -> WindowState): WindowState {
+        val present = windowStates.find { state -> state.reference == reference }
+        if (present != null) return present
+        val newState = default(reference)
+        windowStates.add(newState)
+        return newState
+    }
+
     fun saveWindowStates() {
-        for ((_, state) in windowStates) {
+        for (state in windowStates) {
             state.saveFromTarget()
         }
     }

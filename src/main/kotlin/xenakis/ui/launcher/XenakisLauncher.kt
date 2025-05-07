@@ -38,7 +38,6 @@ import xenakis.sc.client.ConsoleMonitor
 import xenakis.sc.client.OSCSuperColliderClient
 import xenakis.sc.client.SuperColliderClient
 import xenakis.ui.impl.showDialog
-import xenakis.ui.impl.tryWithAlert
 import xenakis.ui.launcher.XenakisApp.Companion.primaryStage
 import xenakis.ui.midi.ContextualMidiReceiver
 import xenakis.ui.score.ScoreObjectDuplicator
@@ -105,12 +104,17 @@ class XenakisLauncher {
     private fun saveChanges(autoSave: Boolean = false): Boolean? {
         val project = getActiveProject() ?: return false
         if (autoSave) {
-            saveProject()
+            val ok = saveProject()
+            if (!ok) return null
             return true
         }
         if (!project.context[UndoManager].hasUnsavedChanges.now) return false
         val save = askIfUserWantsToSave() ?: return null
-        if (save) saveProject()
+        if (save) {
+            val ok = saveProject()
+            if (!ok) return null
+            return false
+        }
         return false
     }
 
@@ -199,16 +203,22 @@ class XenakisLauncher {
             })
     }
 
-    fun saveProject() {
+    fun saveProject(): Boolean {
         val project = rootContext[currentProject]
-        val file = recentProjects.activeProject() ?: rootContext[XenakisFiles].showOpenDialog("*.xen") ?: return
-        tryWithAlert("Saving project") { save(project, file) }
-        Logger.confirm("Saved project ${project.projectDirectory.name}", Logger.Category.Project)
+        val file = recentProjects.activeProject() ?: rootContext[XenakisFiles].showOpenDialog("*.xen") ?: return false
+        val ok = save(project, file)
+        if (ok) {
+            Logger.confirm("Saved project ${project.projectDirectory.name}", Logger.Category.Project)
+        } else {
+            Logger.error("Failed to save project ${project.projectDirectory.name}", Logger.Category.Project)
+        }
+        return ok
     }
 
-    private fun save(project: XenakisProject, folder: File) {
-        project.saveTo(folder)
+    private fun save(project: XenakisProject, folder: File): Boolean {
+        val ok = project.saveTo(folder)
         recentProjects.push(folder)
+        return ok
     }
 
     fun launchXenakis(primaryStage: Stage) {

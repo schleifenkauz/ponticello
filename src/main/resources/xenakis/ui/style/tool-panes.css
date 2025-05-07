@@ -94,10 +94,9 @@
 }
 
 .launcher-grid-item {
-    /*-fx-padding: 5px;*/
-    -fx-alignment: center;
+    -fx-alignment: top-center;
     -fx-border-color: black;
-    -fx-spacing: 5px;
+    -fx-spacing: 8px;
     -fx-pref-height: 150px;
     -fx-pref-width: 150px;
 }
@@ -106,6 +105,10 @@
     -fx-background-color: rgba(0, 1000, 0, 0.1);
 }
 
-.launcher-grid-item:pressed {
+.launcher-grid-item:active {
     -fx-background-color: rgba(100, 0, 0, 0.35) !important;
+}
+
+.launcher-grid-item:drop-possible {
+    -fx-background-color: rgba(0, 128, 0, 0.5);
 }

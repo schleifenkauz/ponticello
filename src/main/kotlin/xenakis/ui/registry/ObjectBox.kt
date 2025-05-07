@@ -100,11 +100,12 @@ class ObjectBox<O : ContextualObject>(val parent: ObjectListView<O>, val obj: O)
         val objectType = parent.source.objectType
         val name = if (obj is NamedObject) obj.name.now else ""
         val title = "$objectType $name"
-        return makeSubWindow(content!!, title, parent.source.context).also { w ->
-            config.configureSubWindow(w, obj)
-            w.sizeToScene()
-            if (w.owner == null) w.initOwner(obj.context[primaryStage])
-        }
+        val window =
+            if (obj is NamedObject) makeSubWindow(obj, content!!)
+            else makeSubWindow(content!!, title, obj.context).also { it.sizeToScene() }
+        config.configureSubWindow(window, obj)
+        window.initOwner(obj.context[primaryStage])
+        return window
     }
 
     fun showSubWindow(): SubWindow? {
@@ -117,7 +118,7 @@ class ObjectBox<O : ContextualObject>(val parent: ObjectListView<O>, val obj: O)
     }
 
     private fun setupDragging() {
-        val dragTarget = space
+        val dragTarget = actionBar.getButton(objectActions.getAction("Grabber"))
         obj as NamedObject
         dragTarget.setOnDragDetected { ev ->
             val transferMode = if (ev.isControlDown && obj.canCopy) TransferMode.COPY else TransferMode.MOVE
@@ -177,6 +178,12 @@ class ObjectBox<O : ContextualObject>(val parent: ObjectListView<O>, val obj: O)
                     val copy = obj.copy(name)
                     list.add(copy, list.indexOf(obj) + 1)
                 }
+            }
+            addAction("Grabber") {
+                icon(MaterialDesignC.CURSOR_POINTER)
+                applicableIf { box ->
+                    val config = box.config as ObjectListDisplayConfig<NamedObject>
+                    box.obj is NamedObject && config.dataFormat(box.obj) != null }
             }
             addAction("Reorder") {
                 icon(MaterialDesignR.REORDER_HORIZONTAL)

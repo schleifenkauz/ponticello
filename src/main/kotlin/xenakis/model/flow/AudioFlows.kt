@@ -33,6 +33,9 @@ class AudioFlows(override val objects: MutableList<AudioFlowGroup>, ) : ObjectRe
         }
     }
 
+    fun allFlows() = objects.flatMap { grp -> grp.flows }
+
+    @kotlinx.serialization.Serializable
     data class FlowReference(val groupName: String, val flowName: String): Serializable {
         fun getFlow(flows: AudioFlows) = flows.getOrNull(groupName)?.flows?.getOrNull(flowName)
 

@@ -3,6 +3,7 @@ package xenakis.ui.registry
 import fxutils.SubWindow
 import fxutils.actions.Action
 import fxutils.actions.ContextualizedAction
+import fxutils.actions.action
 import fxutils.actions.collectActions
 import fxutils.controls.SliderBar
 import javafx.event.Event
@@ -30,6 +31,7 @@ import xenakis.sc.NumericalControlSpec
 import xenakis.sc.Warp
 import xenakis.ui.impl.Direction
 import xenakis.ui.live.QuantizationConfigDialog
+import xenakis.ui.live.ScoreObjectResizeDialog
 import xenakis.ui.midi.ContextualMidiReceiver
 import xenakis.ui.midi.ParameterControlsMidiContext
 import xenakis.ui.registry.ObjectListView.DisplayMode
@@ -73,54 +75,55 @@ class ScoreObjectRegistryPane(registry: ScoreObjectRegistry) : ObjectRegistryPan
     override fun createNewObject(name: String, ev: Event?): ScoreObject? = null
 
     companion object {
-        val actions = collectActions<ScoreObject> {
-            addAction("Toggle looping") {
-                applicableIf { obj -> obj.affectsPlayback }
-                toggles(
-                    { obj -> obj.liveConfig.loop },
-                    whenFalse = MaterialDesignR.REPEAT_OFF,
-                    whenTrue = MaterialDesignR.REPEAT,
-                )
+        val configureQuantizationAction = action<ScoreObject>("Configure quantization") {
+            applicableWhen { obj ->
+                if (!obj.affectsPlayback) reactiveValue(false)
+                else obj.player?.isPlaying?.not() ?: reactiveValue(true)
             }
-//            addAction("Toggle add to score") {
-//                applicableIf { obj -> obj.affectsPlayback }
-//                icon(MaterialDesignP.PROGRESS_QUESTION)
-//                toggles({ obj -> obj.liveConfig.addToScore })
-//            }
-            addAction("Quantize start") {
-                applicableIf { obj -> obj.affectsPlayback }
-                icon(MaterialDesignM.METRONOME)
-                toggles({ obj -> obj.quantizationConfig.enableQuantization })
-            }
-            addAction("Resize object") {
-                icon(MaterialDesignA.ARROW_EXPAND_HORIZONTAL)
-                executes { obj ->
-                    //TODO resize dialog
+            ifNotApplicable(Action.IfNotApplicable.Disable)
+            icon(Codicons.SYMBOL_PROPERTY)
+            executes { obj, ev ->
+                if (obj.quantizationConfig.meter.now.isResolved.now.not()) {
+                    val meter = SimpleSearchableRegistryView(obj.context[MeterRegistry], "Select meter")
+                        .showPopup(ev) ?: return@executes
+                    obj.quantizationConfig.meter.set(meter.reference())
                 }
+                val copy = obj.quantizationConfig.copy()
+                copy.initialize(obj.context)
+                QuantizationConfigDialog(copy, "Configure live loop '${obj.name.now}")
+                    .showDialog(ev) ?: return@executes
+                obj.quantizationConfig.update(copy)
+                val newDuration = obj.quantizationConfig.computeDuration()
+                val direction = Direction.horizontal(HorizontalDirection.RIGHT)
+                obj.resize(newDuration, obj.height, ScoreObject.ResizeMode.Regular, direction)
             }
-            addAction("Configure quantization") {
-                applicableWhen { obj ->
-                    if (!obj.affectsPlayback) reactiveValue(false)
-                    else obj.player?.isPlaying?.not() ?: reactiveValue(true)
-                }
-                ifNotApplicable(Action.IfNotApplicable.Disable)
-                icon(Codicons.SYMBOL_PROPERTY)
-                executes { obj, ev ->
-                    if (obj.quantizationConfig.meter.now.isResolved.now.not()) {
-                        val meter = SimpleSearchableRegistryView(obj.context[MeterRegistry], "Select meter")
-                            .showPopup(ev) ?: return@executes
-                        obj.quantizationConfig.meter.set(meter.reference())
-                    }
-                    val copy = obj.quantizationConfig.copy()
-                    copy.initialize(obj.context)
-                    QuantizationConfigDialog(copy, "Configure live loop '${obj.name.now}")
-                        .showDialog(ev) ?: return@executes
-                    obj.quantizationConfig.update(copy)
-                    val newDuration = obj.quantizationConfig.computeDuration()
-                    val direction = Direction.horizontal(HorizontalDirection.RIGHT)
-                    obj.resize(newDuration, obj.height, ScoreObject.ResizeMode.Regular, direction)
-                }
-            }
+        }
+
+        val toggleLoopingAction = action<ScoreObject>("Toggle looping") {
+            applicableIf { obj -> obj.affectsPlayback }
+            toggles(
+                { obj -> obj.liveConfig.loop },
+                whenFalse = MaterialDesignR.REPEAT_OFF,
+                whenTrue = MaterialDesignR.REPEAT,
+            )
+        }
+
+        val quantizeStartAction = action<ScoreObject>("Quantize start") {
+            applicableIf { obj -> obj.affectsPlayback }
+            icon(MaterialDesignM.METRONOME)
+            toggles({ obj -> obj.quantizationConfig.enableQuantization })
+        }
+
+        val resizeObjectAction = action("Resize object") {
+            icon(MaterialDesignA.ARROW_EXPAND_HORIZONTAL)
+            executes { obj, ev -> ScoreObjectResizeDialog.show(obj, ev) }
+        }
+
+        val actions = collectActions {
+            add(toggleLoopingAction)
+            add(quantizeStartAction)
+            add(resizeObjectAction)
+            add(configureQuantizationAction)
         }
     }
 }

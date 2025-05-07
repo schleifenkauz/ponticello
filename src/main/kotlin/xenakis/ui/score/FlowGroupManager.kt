@@ -1,14 +1,17 @@
 package xenakis.ui.score
 
+import bundles.PublicProperty
+import bundles.publicProperty
 import fxutils.SubWindow
 import fxutils.setupDragging
+import fxutils.show
 import javafx.beans.value.ObservableValue
+import javafx.geometry.Point2D
 import javafx.scene.control.Label
 import javafx.scene.input.MouseButton
 import javafx.scene.input.MouseEvent
 import javafx.scene.shape.Line
 import reaktive.Observer
-import reaktive.value.binding.map
 import reaktive.value.fx.asObservableValue
 import reaktive.value.now
 import xenakis.impl.Decimal
@@ -21,7 +24,7 @@ import xenakis.ui.impl.makeSubWindow
 import xenakis.ui.midi.ContextualMidiReceiver
 import kotlin.math.absoluteValue
 
-class FlowGroupLines(
+class FlowGroupManager(
     flows: AudioFlows,
     private val pane: NavigableScorePane,
 ) : ObjectList.Listener<AudioFlowGroup> {
@@ -72,7 +75,7 @@ class FlowGroupLines(
         line.endYProperty().bind(y)
         line.setOnMouseClicked { ev ->
             if (ev.button == MouseButton.SECONDARY) {
-                showGroupPane(group, ev)
+                showGroupPane(group, Point2D(ev.x, ev.y))
             }
         }
     }
@@ -106,23 +109,20 @@ class FlowGroupLines(
         }
     }
 
-    private fun showGroupPane(group: AudioFlowGroup, ev: MouseEvent) {
+    fun showGroupPane(group: AudioFlowGroup, coords: Point2D? = null) {
         val existingWindow = groupPaneWindows[group]
         if (existingWindow != null) {
             existingWindow.showOrBringToFront()
             return
         }
         val pane = FlowGroupPane(group)
-        val title = group.name.map { name -> "Flow group $name" }
-        val window = makeSubWindow(pane, title, group.context, SubWindow.Type.ToolWindow)
+        val window = makeSubWindow(group, pane)
         group.context[ContextualMidiReceiver].registerMidiContext(window) {
             val selected = pane.flowsView.selectedObject()
             selected?.midiContext()
         }
         groupPaneWindows[group] = window
-        window.x = ev.screenX
-        window.y = ev.screenY
-        window.show()
+        if (coords != null) window.show(coords) else window.show()
     }
 
     override fun removed(obj: AudioFlowGroup) {
@@ -135,4 +135,6 @@ class FlowGroupLines(
         groupPaneWindows[obj]?.close()
         groupPaneWindows.remove(obj)
     }
+
+    companion object: PublicProperty<FlowGroupManager> by publicProperty("FlowGroupLines")
 }

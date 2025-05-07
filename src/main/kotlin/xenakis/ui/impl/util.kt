@@ -21,12 +21,10 @@ import reaktive.value.fx.asObservableValue
 import reaktive.value.now
 import xenakis.impl.Decimal
 import xenakis.impl.asY
-import xenakis.model.project.RegistryWindowState
-import xenakis.model.project.RegularWindowState
-import xenakis.model.project.UI_STATE
-import xenakis.model.project.get
+import xenakis.model.project.*
 import xenakis.model.registry.NamedObject
 import xenakis.model.registry.ObjectRegistry
+import xenakis.model.registry.reference
 import xenakis.model.score.ScoreObject
 import xenakis.model.score.ScoreObjectInstance
 import xenakis.ui.actions.registerGlobalShortcuts
@@ -94,15 +92,29 @@ fun Context.makeToolWindow(
     defaultSize: Dimension2D? = null,
 ): SubWindow {
     val window = makeSubWindow(root, title, this, SubWindow.Type.ToolWindow)
-    if (hasProperty(currentProject)) {
-        val interactionSettings = this[currentProject][UI_STATE]
-        val state = interactionSettings.windowStates.getOrPut(title) {
-            if (root is ObjectRegistryPane<*>) RegistryWindowState()
-            else RegularWindowState()
-        }
-        state.applyTo(window, defaultSize)
-    }
+    window.applySavedState(this, WindowState.Reference.ByTitle(title), defaultSize)
     return window
+}
+
+fun SubWindow.applySavedState(
+    context: Context, reference: WindowState.Reference,
+    defaultSize: Dimension2D?,
+): SubWindow {
+    if (context.hasProperty(currentProject)) {
+        val interactionSettings = context[currentProject][UI_STATE]
+        val state = interactionSettings.getWindowState(reference) {
+            if (scene.root is ObjectRegistryPane<*>) RegistryWindowState(reference)
+            else RegularWindowState(reference)
+        }
+        state.applyTo(this, defaultSize)
+    }
+    return this
+}
+
+fun <T : NamedObject> makeSubWindow(obj: T, root: Parent, defaultSize: Dimension2D? = null): SubWindow {
+    val windowRef = WindowState.Reference.ByDisplayedObject(obj.registry!!.objectType, obj.reference())
+    return makeSubWindow(root, obj.name, obj.context)
+        .applySavedState(obj.context, windowRef, defaultSize)
 }
 
 fun <W : Window> W.sceneFill(color: Color) = apply { scene.fill = color }

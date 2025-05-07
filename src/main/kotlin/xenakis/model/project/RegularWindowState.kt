@@ -5,4 +5,4 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 @SerialName("RegularWindow")
-class RegularWindowState: WindowState()
+class RegularWindowState(override val reference: Reference): WindowState()
