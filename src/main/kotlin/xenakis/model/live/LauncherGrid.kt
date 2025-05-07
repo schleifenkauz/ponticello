@@ -1,8 +1,11 @@
 package xenakis.model.live
 
+import bundles.set
 import fxutils.runFXWithTimeout
 import hextant.context.Context
+import hextant.context.extend
 import hextant.core.editor.ListenerManager
+import hextant.undo.UndoManager
 import javafx.application.Platform
 import javafx.geometry.HorizontalDirection
 import javafx.scene.input.DataFormat
@@ -37,6 +40,9 @@ class LauncherGrid private constructor(
     val target: ReactiveVariable<Target> = reactiveVariable(Target.None),
 ) : AbstractContextualObject() {
     @Transient
+    private lateinit var undoManager: UndoManager
+
+    @Transient
     private val columns = sqrt(items.size.toDouble()).toInt()
 
     val isActive = reactiveVariable(false)
@@ -53,7 +59,11 @@ class LauncherGrid private constructor(
     fun items(): List<GridItem> = items.asList()
 
     override fun initialize(context: Context) {
-        super.initialize(context)
+        undoManager = context[UndoManager].createSubManager()
+        val myContext = context.extend {
+            set(UndoManager, undoManager)
+        }
+        super.initialize(myContext)
         scheduler = context[ScoreObjectScheduler]
         val target = target.now
         if (target is Target.SubScore) {
@@ -61,7 +71,7 @@ class LauncherGrid private constructor(
             target.ref.resolve(context[ScoreObjectRegistry] as ObjectRegistry<ScoreObjectGroup>)
         }
         for (item in items) {
-            item.initialize(context, this)
+            item.initialize(myContext, this)
         }
     }
 
@@ -74,8 +84,6 @@ class LauncherGrid private constructor(
 
     operator fun get(row: Int, column: Int) = items[row * columns + column]
 
-    fun getIndex(row: Int, column: Int) = row * columns + column
-
     fun swap(item1: GridItem, item2: GridItem) {
         val i = items.indexOf(item1)
         val j = items.indexOf(item2)
@@ -85,6 +93,7 @@ class LauncherGrid private constructor(
             updateItem(item1)
             updateItem(item2)
         }
+        undoManager.record(LauncherGridEdit.SwapItems(this, item1, item2))
     }
 
     fun noteOn(item: GridItem, velocity: Int) {
@@ -200,8 +209,10 @@ class LauncherGrid private constructor(
         var target: ItemTarget
             get() = _target
             set(value) {
+                val oldTarget = _target
                 _target = value
                 value.initialize(context)
+                grid.undoManager.record(LauncherGridEdit.SetItemTarget(this, oldTarget, value))
                 grid.listeners.notifyListeners { updateItem(this@GridItem) }
             }
 

@@ -6,6 +6,7 @@ import fxutils.actions.collectActions
 import fxutils.controls.SliderBar
 import fxutils.prompt.SimpleSearchableListView
 import hextant.context.Context
+import hextant.undo.UndoManager
 import javafx.scene.control.CheckBox
 import javafx.scene.control.Label
 import javafx.scene.input.MouseButton
@@ -32,6 +33,7 @@ import xenakis.model.score.ScoreObject
 import xenakis.model.score.ScoreObjectGroup
 import xenakis.sc.NumericalControlSpec
 import xenakis.sc.Warp
+import xenakis.ui.actions.UndoRedoActions
 import xenakis.ui.launcher.XenakisMainActivity
 import xenakis.ui.registry.ScoreObjectRegistryPane
 import xenakis.ui.registry.ToolPane
@@ -232,6 +234,7 @@ class LauncherGridPane(
         }
 
         private val actions = collectActions {
+            addAll(UndoRedoActions) { grid: LauncherGrid -> grid.context[UndoManager] }
             addAction("Toggle active") {
                 toggles(
                     LauncherGrid::isActive,
