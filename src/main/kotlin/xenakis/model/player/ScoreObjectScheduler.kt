@@ -82,7 +82,7 @@ class ScoreObjectScheduler(val context: Context) {
             Logger.error("Failed to validate $obj", e, Logger.Category.Playback)
             return null
         }
-        val time = absolutePosition.time - player.lastPlayFrom
+        val time = absolutePosition.time + player.loopOffset
         val timeForExecution = (time + scLangLatency).toString()
         if (obj is TempoGridObject && obj.meter.isResolved.now) {
             val meter = obj.meter.force()

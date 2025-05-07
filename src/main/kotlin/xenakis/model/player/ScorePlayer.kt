@@ -41,6 +41,8 @@ class ScorePlayer private constructor(
 
     val currentTime get() = playHead.currentTime
 
+    val loopOffset: Decimal get() = loopedTime - lastPlayFrom
+
     private val maxTime: Decimal
         get() = pane.score.maxTime.now
 

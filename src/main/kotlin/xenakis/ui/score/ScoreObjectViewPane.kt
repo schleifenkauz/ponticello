@@ -20,6 +20,7 @@ import xenakis.model.player.ScorePlayer
 import xenakis.model.score.ScoreObject
 import xenakis.model.score.ScoreObjectGroup
 import xenakis.ui.actions.*
+import xenakis.ui.launcher.XenakisMainActivity
 import xenakis.ui.registry.ScoreObjectRegistryPane
 
 //TODO bad name
@@ -47,6 +48,7 @@ class ScoreObjectViewPane private constructor(val obj: ScoreObject) : VBox() {
             registerActions(ObjectActions.all.withContext(ctx))
             registerActions(ScoreObjectRegistryPane.actions.withContext(obj))
             registerActions(PlaybackActions.local.withContext(player))
+            context[XenakisMainActivity].interactionConfig.addGridRelatedShortcuts(this)
         }
     }
 

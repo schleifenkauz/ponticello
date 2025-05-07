@@ -85,7 +85,7 @@ class XenakisMainActivity(val project: XenakisProject) : Activity() {
 
     val settingsWindow by lazy { context.makeToolWindow(SettingsPane(context[Settings], context), "Settings") }
 
-    private val interactionConfig = InteractionConfigBar(project.settings)
+    val interactionConfig = InteractionConfigBar(project.settings)
 
     private val flowPane by lazy { AudioFlowPane (project.flows) }
     val flowPaneWindow by lazy { context.makeToolWindow(flowPane, "Audio flows", defaultSize = Dimension2D(2000.0, 800.0)) }
