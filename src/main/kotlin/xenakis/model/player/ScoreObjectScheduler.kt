@@ -40,7 +40,7 @@ class ScoreObjectScheduler(val context: Context) {
                     val startPos = position + ObjectPosition(-obj.duration, zero)
                     if (obj.duration == zero) continue
                     val active = activeObjects.remove(obj, startPos) ?: continue
-                    active.stillActive = false
+                    active.stopped()
                     if (obj is TempoGridObject && obj.meter.isResolved.now) {
                         val meter = obj.meter.force()
                         player.getClock().detach(player, meter)
@@ -54,8 +54,8 @@ class ScoreObjectScheduler(val context: Context) {
     }
 
     fun stopObjectInstantly(active: ActiveScoreObject): CompletableFuture<String> {
-        if (!active.stillActive) return CompletableFuture.completedFuture("")
-        active.stillActive = false
+        if (!active.isStillActive) return CompletableFuture.completedFuture("")
+        active.stopped()
         return when (active.obj) {
             is SynthObject -> {
                 val name = active.superColliderName
@@ -114,7 +114,7 @@ class ScoreObjectScheduler(val context: Context) {
         } catch (e: Exception) {
             Logger.error("Failed to schedule $obj", e, Logger.Category.Playback)
         }
-        println("Scheduled $activeObject at $timeForExecution")
+        println("Scheduled $activeObject at $timeForExecution ($placement)")
         Logger.fine("unique name for $obj at $time: ${activeObject.uniqueName}", Logger.Category.Playback)
         Logger.fine("time for execution: ${timeForExecution}s", Logger.Category.Playback)
         return activeObject

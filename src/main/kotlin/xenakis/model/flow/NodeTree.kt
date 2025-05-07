@@ -13,6 +13,7 @@ class NodeTree(private val client: SuperColliderClient) {
     private val activeNodes = mutableListOf<AudioNode>()
 
     fun addNode(node: AudioNode): NodePlacement {
+        activeNodes.removeIf { n -> !n.isStillActive }
         var idx = activeNodes.binarySearch(node)
         if (idx >= 0) {
             if (activeNodes[idx] == node) {

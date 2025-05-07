@@ -30,6 +30,9 @@ class AudioFlowGroup(
 
     val isActive: ReactiveBoolean get() = active
 
+    override val isStillActive: Boolean
+        get() = isActive.now
+
     @Transient
     private val observers = mutableMapOf<AudioFlow, Observer>()
 

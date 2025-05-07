@@ -69,7 +69,7 @@ class ActiveObjectsManager(private val context: Context) : SuperColliderListener
         val obj = context[ScoreObjectRegistry].getOrNull(name) ?: return null
         val active = bySuffix[obj]?.get(suffix) ?: return null
         remove(active)
-        active.stillActive = false
+        active.stopped()
         return active
     }
 

@@ -68,23 +68,14 @@ class ScorePlayer private constructor(
     fun play() {
         if (isPlaying.now) return
         _isPlaying.now = true
-        val rootObj = (pane as? SingleObjectScorePane)?.rootObj
         val quantization = getQuantization()
         val clock = getClock()
-        if (quantization != null) {
-            val offset = quantization.computeOffset()
-            val meter = quantization.meter.now.force()
-            val quant = quantization.computeQuant(rootObj!!.duration)
-            clock.scheduleStart(this, meter, quant, offset)
-        } else {
-            clock.start(this)
-        }
+        clock.scheduleStart(this, quantization)
     }
 
     private fun getQuantization(): QuantizationConfig? {
         val rootObj = (pane as? SingleObjectScorePane)?.rootObj
         return rootObj?.quantizationConfig
-            ?.takeIf { it.meter.now.isResolved.now && it.enableQuantization.now }
     }
 
     fun getClock(): ClockObject =

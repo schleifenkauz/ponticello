@@ -7,6 +7,8 @@ import xenakis.impl.Decimal
 import xenakis.model.player.ScorePlayer
 
 sealed interface AudioNode: Comparable<AudioNode> {
+    val isStillActive: Boolean
+
     val player: ScorePlayer? get() = null
 
     val superColliderName: ReactiveString

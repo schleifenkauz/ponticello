@@ -12,6 +12,9 @@ data class SynthObjectNode(
     val obj: SynthObject,
     val active: ActiveScoreObject,
 ) : AudioNode {
+    override val isStillActive: Boolean
+        get() = active.isStillActive
+
     override val superColliderName =
         obj.name.map { _ -> active.superColliderName }
 

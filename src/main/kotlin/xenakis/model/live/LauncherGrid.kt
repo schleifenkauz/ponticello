@@ -99,7 +99,7 @@ class LauncherGrid private constructor(
     fun noteOn(item: GridItem, velocity: Int) {
         val active = activeObjects[item]
         item.target.pressed()
-        if (item.stopOnRelease.now && active != null && active.stillActive) return //TODO check needed?
+//        if (item.stopOnRelease.now && active != null && active.stillActive) return //TODO check needed?
         when (val target = item.target) {
             ItemTarget.None -> return
             is ItemTarget.Flow -> {
@@ -127,13 +127,15 @@ class LauncherGrid private constructor(
             is ItemTarget.Object -> {
                 val obj = target.ref.get() ?: return
                 val player = getPlayer()
-                val time = if (player.isPlaying.now) player.currentTime else zero
-                val y = obj.liveConfig.yPosition.now
-                val position = ObjectPosition(time, y)
-                activeObjects[item] = scheduler.scheduleObject(
-                    obj, position, cutoff = zero, player,
-                    scLangLatency = zero, serverLatency = zero
-                ) //TODO consider velocity
+                player.getClock().scheduleAction(obj.quantizationConfig, obj.duration) {
+                    val time = if (player.isPlaying.now) player.currentTime else zero
+                    val y = obj.liveConfig.yPosition.now
+                    val position = ObjectPosition(time, y)
+                    activeObjects[item] = scheduler.scheduleObject(
+                        obj, position, cutoff = zero, player,
+                        scLangLatency = zero, serverLatency = zero
+                    ) //TODO consider velocity
+                }
             }
         }
     }
