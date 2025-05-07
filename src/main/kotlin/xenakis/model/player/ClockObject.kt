@@ -52,7 +52,7 @@ class ClockObject(override val mutableName: ReactiveVariable<String>) : Abstract
     private fun runLoop() {
         val systemTime = System.currentTimeMillis()
         for ((player, startTime) in activePlayers.toList()) { //copy to avoid concurrent modification
-            val elapsedTime = (systemTime - (clockStartTime + startTime + lookAheadMs)).toSeconds()
+            val elapsedTime = (systemTime - (clockStartTime + startTime)).toSeconds()
             player.doCycle(this, elapsedTime)
         }
     }

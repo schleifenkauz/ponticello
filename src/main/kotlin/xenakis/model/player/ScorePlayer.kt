@@ -47,21 +47,32 @@ class ScorePlayer private constructor(
         get() = pane.score.maxTime.now
 
     fun doCycle(clock: ClockObject, elapsedTime: Decimal) {
-        val scoreTime = elapsedTime - loopedTime
-        if (scoreTime >= maxTime) {
-            playHead.movePlayHeadToStart()
-            if (!loopingActivated.now) {
+        var scoreTime = elapsedTime - loopedTime
+
+        var playHeadPos = scoreTime - clock.lookAhead
+        if (playHeadPos < zero) playHeadPos += maxTime
+        if (playHeadPos >= maxTime) {
+            if (loopingActivated.now) {
+                playHeadPos -= maxTime
+            } else {
+                playHead.movePlayHeadToStart()
                 pause()
+                return
+            }
+        }
+        playHead.movePlayHead(playHeadPos)
+
+        if (scoreTime >= maxTime) {
+            if (!loopingActivated.now) {
                 return
             } else {
                 loopedTime += maxTime
+                scoreTime -= maxTime
                 events.unscheduleAll()
             }
-        } else {
-            playHead.movePlayHead(scoreTime)
         }
-        val t = scoreTime + clock.lookAhead - clock.period
-        val events = events.eventsAt(t, delta = clock.period * 5)
+
+        val events = events.eventsAt(scoreTime - clock.period * 5, delta = clock.period * 5)
         scheduler.scheduleEvents(events, this)
     }
 

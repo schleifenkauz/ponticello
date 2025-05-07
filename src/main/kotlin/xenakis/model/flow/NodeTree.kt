@@ -6,6 +6,7 @@ import reaktive.Observer
 import reaktive.value.now
 import xenakis.impl.Decimal
 import xenakis.impl.Logger
+import xenakis.impl.zero
 import xenakis.sc.client.SuperColliderClient
 
 class NodeTree(private val client: SuperColliderClient) {
@@ -13,7 +14,6 @@ class NodeTree(private val client: SuperColliderClient) {
     private val activeNodes = mutableListOf<AudioNode>()
 
     fun addNode(node: AudioNode): NodePlacement {
-        activeNodes.removeIf { n -> !n.isStillActive }
         var idx = activeNodes.binarySearch(node)
         if (idx >= 0) {
             if (activeNodes[idx] == node) {
@@ -22,6 +22,15 @@ class NodeTree(private val client: SuperColliderClient) {
             }
         } else {
             idx = -(idx + 1)
+        }
+        while (idx >= 1) {
+            val prevNode = activeNodes[idx]
+            when {
+                !prevNode.isStillActive -> idx--
+                prevNode.yPosition.now >= node.yPosition.now -> idx--
+                prevNode.startedAt >= (prevNode.player?.currentTime ?: zero) -> idx--
+                else -> break
+            }
         }
         activeNodes.add(idx, node)
         observeNode(node)

@@ -9,6 +9,8 @@ import xenakis.model.player.ScorePlayer
 sealed interface AudioNode: Comparable<AudioNode> {
     val isStillActive: Boolean
 
+    val startedAt: Decimal
+
     val player: ScorePlayer? get() = null
 
     val superColliderName: ReactiveString

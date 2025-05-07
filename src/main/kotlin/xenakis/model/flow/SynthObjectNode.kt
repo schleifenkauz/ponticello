@@ -15,6 +15,9 @@ data class SynthObjectNode(
     override val isStillActive: Boolean
         get() = active.isStillActive
 
+    override val startedAt: Decimal
+        get() = active.absolutePosition.time
+
     override val superColliderName =
         obj.name.map { _ -> active.superColliderName }
 

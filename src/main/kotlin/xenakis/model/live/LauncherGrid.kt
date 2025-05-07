@@ -112,14 +112,15 @@ class LauncherGrid private constructor(
 
             is ItemTarget.Player -> Platform.runLater {
                 val obj = target.ref.get() ?: return@runLater
-                context[XenakisMainActivity].scoreObjectsPane.listView.showContent(obj)
                 val player = obj.player
                 if (player == null) {
                     Logger.warn("Player is null for ScoreObject ${obj.name.now}", Logger.Category.Playback)
                     return@runLater
                 }
-                if (!player.isPlaying.now) player.play()
-                else if (!item.stopOnRelease.now) {
+                if (!player.isPlaying.now) {
+                    player.play()
+                    context[XenakisMainActivity].scoreObjectsPane.listView.showContent(obj)
+                } else if (!item.stopOnRelease.now) {
                     player.pause()
                 }
             }

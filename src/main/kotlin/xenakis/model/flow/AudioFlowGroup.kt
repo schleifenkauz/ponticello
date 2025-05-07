@@ -33,6 +33,9 @@ class AudioFlowGroup(
     override val isStillActive: Boolean
         get() = isActive.now
 
+    override val startedAt: Decimal
+        get() = Decimal.NINF
+
     @Transient
     private val observers = mutableMapOf<AudioFlow, Observer>()
 
