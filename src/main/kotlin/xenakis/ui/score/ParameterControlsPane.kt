@@ -80,7 +80,7 @@ class ParameterControlsPane(
 
         private val actions = collectActions<ObjectBox<NamedParameterControl>> {
             addAction("Edit spec") {
-                applicableWhen { box -> box.obj.spec.notNull() }
+                enableWhen { box -> box.obj.spec.notNull() }
                 icon(Codicons.SYMBOL_PROPERTY)
                 executes { box ->
                     val control = box.obj

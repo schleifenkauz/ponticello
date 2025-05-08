@@ -1,5 +1,6 @@
 package xenakis.ui.controls
 
+import fxutils.actions.Action
 import fxutils.actions.ActionBar
 import fxutils.actions.collectActions
 import fxutils.alwaysHGrow
@@ -92,17 +93,19 @@ class NameControl(
     companion object {
         private val actions = collectActions<NameControl> {
             addAction("Edit name") {
-                applicableWhen { ctrl -> ctrl.isEditing.not() }
+                enableWhen { ctrl -> ctrl.isEditing.not() }
+                ifNotApplicable(Action.IfNotApplicable.Hide)
                 icon(Material2AL.EDIT)
                 executes(NameControl::startEdit)
             }
             addAction("Commit edit") {
-                applicableWhen { ctrl -> ctrl.isEditing }
+                enableWhen { ctrl -> ctrl.isEditing }
+                ifNotApplicable(Action.IfNotApplicable.Hide)
                 icon(Material2AL.CHECK)
                 executes(NameControl::commitEdit)
             }
             addAction("Abandon edit") {
-                applicableWhen { ctrl -> ctrl.isEditing }
+                enableWhen { ctrl -> ctrl.isEditing }
                 //icon(Material2AL.CLOSE)
                 executes(NameControl::abandonEdit)
             }

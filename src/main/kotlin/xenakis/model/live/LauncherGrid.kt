@@ -2,6 +2,7 @@ package xenakis.model.live
 
 import bundles.set
 import fxutils.runFXWithTimeout
+import fxutils.undo.PropertyEdit
 import fxutils.undo.UndoManager
 import hextant.context.Context
 import hextant.context.extend
@@ -41,7 +42,8 @@ class LauncherGrid private constructor(
     val target: ReactiveVariable<Target> = reactiveVariable(Target.None),
 ) : AbstractContextualObject() {
     @Transient
-    private lateinit var undoManager: UndoManager
+    lateinit var undoManager: UndoManager
+        private set
 
     @Transient
     private val columns = sqrt(items.size.toDouble()).toInt()
@@ -130,7 +132,7 @@ class LauncherGrid private constructor(
             is ItemTarget.Object -> {
                 val obj = target.ref.get() ?: return
                 val player = getPlayer()
-                player.getClock().scheduleAction(obj.quantizationConfig, obj.duration) { quantizationDelay ->
+                player.getClock().scheduleAction(obj.quantizationConfig) { quantizationDelay ->
                     val time = if (player.isPlaying.now) player.playHead.currentTime else zero
                     val y = obj.liveConfig.yPosition.now
                     val position = ObjectPosition(time, y)
@@ -219,9 +221,11 @@ class LauncherGrid private constructor(
             get() = _target
             set(value) {
                 val oldTarget = _target
+                if (value == oldTarget) return
                 _target = value
                 value.initialize(context)
-                grid.undoManager.record(LauncherGridEdit.SetItemTarget(this, oldTarget, value))
+                val description = if (value is ItemTarget.None) "Reset target" else "Choose target"
+                grid.undoManager.record(PropertyEdit(this::target, oldTarget, value, description))
                 grid.listeners.notifyListeners { updateItem(this@GridItem) }
             }
 

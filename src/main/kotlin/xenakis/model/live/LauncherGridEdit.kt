@@ -3,23 +3,6 @@ package xenakis.model.live
 import fxutils.undo.AbstractEdit
 
 abstract class LauncherGridEdit : AbstractEdit() {
-    class SetItemTarget(
-        val item: LauncherGrid.GridItem,
-        val oldTarget: LauncherGrid.ItemTarget,
-        val newTarget: LauncherGrid.ItemTarget,
-    ) : LauncherGridEdit() {
-        override val actionDescription: String
-            get() = "Set Launcher Grid item target"
-
-        override fun doRedo() {
-            item.target = newTarget
-        }
-
-        override fun doUndo() {
-            item.target = oldTarget
-        }
-    }
-
     class SwapItems(
         val grid: LauncherGrid,
         val item1: LauncherGrid.GridItem,

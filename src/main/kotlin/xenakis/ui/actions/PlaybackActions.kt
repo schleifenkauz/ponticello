@@ -25,8 +25,7 @@ object PlaybackActions {
         description("Move the playback cursor to the start of the score")
         shortcut(shortcut)
         icon(Material2MZ.SKIP_PREVIOUS)
-        applicableWhen { player -> player.isPlaying.not() }
-        ifNotApplicable(Action.IfNotApplicable.Disable)
+        enableWhen { player -> player.isPlaying.not() }
         executes { player, ev ->
             if (ev.isTargetTextInput && !ev.isAltDown() && !ev.isControlDown()) return@executes
             if (!player.isPlaying.now) {

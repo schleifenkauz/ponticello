@@ -1,5 +1,6 @@
 package xenakis.model.live
 
+import fxutils.undo.UndoManager
 import hextant.context.Context
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
@@ -18,7 +19,9 @@ import xenakis.model.registry.ClockRegistry
 import xenakis.model.registry.MeterRegistry
 import xenakis.model.registry.ObjectReference
 import xenakis.model.registry.reference
+import xenakis.model.score.ScoreObject
 import xenakis.model.score.TimeUnit
+import xenakis.ui.live.QuantizationConfigEdit
 
 @Serializable
 class QuantizationConfig(
@@ -36,7 +39,7 @@ class QuantizationConfig(
     val durationValue: ReactiveVariable<Decimal> = reactiveVariable(zero)
 
     @Transient
-    private lateinit var duration: ReactiveVariable<Decimal>
+    private lateinit var associatedObject: ScoreObject
 
     @Transient
     private val update = unitEvent()
@@ -46,7 +49,7 @@ class QuantizationConfig(
 
     val onUpdate get() = update.stream
 
-    fun duration(): ReactiveValue<Decimal> = duration
+    fun duration(): ReactiveValue<Decimal> = associatedObject.duration()
 
     override fun initialize(context: Context) {
         super.initialize(context)
@@ -55,8 +58,12 @@ class QuantizationConfig(
         }
         clock.now.resolve(context[ClockRegistry])
         meter.now.resolve(context[MeterRegistry])
-        duration = reactiveVariable(computeDuration())
         automaticallyUpdateValuesOnUnitChange()
+    }
+
+    fun initialize(context: Context, associatedObject: ScoreObject) {
+        initialize(context)
+        this.associatedObject = associatedObject
     }
 
     private fun automaticallyUpdateValuesOnUnitChange() {
@@ -98,9 +105,9 @@ class QuantizationConfig(
         return unit * durationValue.now
     }
 
-    fun computeQuant(objDuration: Decimal): Decimal {
+    fun computeQuant(): Decimal {
         val grid = meter.now.force()
-        val unit = grid.getDuration(quantizationUnit.now, objDuration)
+        val unit = grid.getDuration(quantizationUnit.now, duration().now)
         return unit * quantizationValue.now
     }
 
@@ -119,6 +126,7 @@ class QuantizationConfig(
     ).also { copy -> copy.durationValue.set(durationValue.now) }
 
     fun update(source: QuantizationConfig) {
+        val before = copy()
         meter.set(source.meter.now)
         clock.set(source.clock.now)
         durationUnit.set(source.durationUnit.now)
@@ -129,8 +137,8 @@ class QuantizationConfig(
         offsetValue.set(source.offsetValue.now)
         enableQuantization.set(source.enableQuantization.now)
         shiftGrid.set(source.shiftGrid.now)
-        duration.set(computeDuration())
         update.fire()
+        context[UndoManager].record(QuantizationConfigEdit(associatedObject, before, source))
     }
 
     fun setDuration(value: Decimal) {

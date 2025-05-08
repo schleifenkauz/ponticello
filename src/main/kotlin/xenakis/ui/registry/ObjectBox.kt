@@ -160,7 +160,7 @@ class ObjectBox<O : ContextualObject>(val parent: ObjectListView<O>, val obj: O)
                     reactiveValue(config.detailWindowIcon(box.obj))
                 }
                 shortcuts("Ctrl+E")
-                applicableWhen { box -> box.parent.mode.equalTo(DisplayMode.SubWindow) }
+                enableWhen { box -> box.parent.mode.equalTo(DisplayMode.SubWindow) }
                 executes { box, _ ->
                     box.showSubWindow()
                 }

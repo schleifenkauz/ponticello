@@ -79,7 +79,7 @@ abstract class ToolPane : VBox() {
 
         val fitContentAction = action<Node>("Resize window to fit contents") {
             shortcut("Ctrl+L")
-            applicableWhen { p -> isSceneRoot(p) }
+            enableWhen { p -> isSceneRoot(p) }
             icon(MaterialDesignR.RESIZE)
             executes { p -> p.scene.window.sizeToScene() }
         }

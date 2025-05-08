@@ -3,6 +3,7 @@ package xenakis.ui.registry
 import fxutils.actions.ContextualizedAction
 import fxutils.actions.collectActions
 import fxutils.controls.SliderBar
+import fxutils.undo.UndoManager
 import javafx.event.Event
 import javafx.geometry.Point2D
 import javafx.scene.Node
@@ -48,7 +49,10 @@ class ControlBusRegistryPane(busses: BusRegistry) : AbstractBusRegistryPane(buss
             if (spec != null) {
                 defaultValue.now = spec.defaultValue.get()
                 if (previousSpec?.copy(defaultValue = spec.defaultValue) != spec) {
-                    val slider = SliderBar(defaultValue, name, spec.converter(), SliderBar.Style.AlwaysValue)
+                    val slider = SliderBar(
+                        defaultValue, name, spec.converter(), SliderBar.Style.AlwaysValue,
+                        undoManager = registry.context[UndoManager]
+                    )
                     slider.prefWidth = 150.0
                     sliderBox.children.add(slider)
                 }
@@ -74,7 +78,7 @@ class ControlBusRegistryPane(busses: BusRegistry) : AbstractBusRegistryPane(buss
         private val actions = collectActions<ObjectBox<BusObject.ControlBus>> {
             addAction("Remove default value") {
                 icon(Material2AL.CLOSE)
-                applicableWhen { box -> box.obj.spec.notNull() }
+                enableWhen { box -> box.obj.spec.notNull() }
                 executes { box -> box.obj.updateSpec(null) }
             }
             addAction("Configure default value") {

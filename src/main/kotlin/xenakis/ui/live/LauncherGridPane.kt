@@ -6,7 +6,6 @@ import fxutils.actions.collectActions
 import fxutils.controls.SliderBar
 import fxutils.prompt.SimpleSearchableListView
 import fxutils.undo.UndoManager
-import hextant.context.Context
 import javafx.scene.control.CheckBox
 import javafx.scene.control.Label
 import javafx.scene.input.MouseButton
@@ -40,9 +39,9 @@ import xenakis.ui.registry.ToolPane
 import xenakis.ui.score.FlowGroupManager
 
 class LauncherGridPane(
-    private val context: Context,
     private val grid: LauncherGrid,
 ) : ToolPane(), LauncherGrid.View {
+    private val context = grid.context
     private val boxes = mutableMapOf<LauncherGrid.GridItem, Region>()
     private val gridPane = GridPane().styleClass("launcher-grid-pane")
 
@@ -66,7 +65,7 @@ class LauncherGridPane(
     private fun setupHeader(): HBox {
         val availableTargets = LauncherGrid.Target.options(context)
         val targetSelector = SimpleSearchableListView(availableTargets, "Choose target")
-            .selectorButton(grid.target)
+            .selectorButton(grid.target, undoManager = context[UndoManager])
         val headerContent = HBox(5.0, Label("Target: "), targetSelector).centerChildren()
         return headerContent
     }
@@ -101,7 +100,7 @@ class LauncherGridPane(
         val centeredActionBar = HBox(infiniteSpace(), actionBar, infiniteSpace())
         val box = VBox(button, centeredActionBar).styleClass("launcher-grid-item")
         if (target !is ItemTarget.None) {
-            val freeOnReleaseOption = CheckBox().sync(item.stopOnRelease)
+            val freeOnReleaseOption = CheckBox().sync(item.stopOnRelease, "Stop on release", context[UndoManager])
             val optionBox = HBox(
                 3.0,
                 infiniteSpace(),
@@ -116,8 +115,10 @@ class LauncherGridPane(
             val obj = target.ref.get()
             if (obj != null) {
                 val spec = NumericalControlSpec(zero, zero, one, 0.01.toDecimal(), zero, Warp.Linear)
-                val scoreYSlider = SliderBar(obj.liveConfig.yPosition, "Score Y", spec.converter())
-                    .setFixedWidth(120.0)
+                val scoreYSlider = SliderBar(
+                    obj.liveConfig.yPosition, "Score Y", spec.converter(),
+                    undoManager = context[UndoManager],
+                ).setFixedWidth(120.0)
                 box.children.add(scoreYSlider)
             }
         }

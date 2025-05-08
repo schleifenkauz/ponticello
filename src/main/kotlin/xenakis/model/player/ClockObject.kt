@@ -64,19 +64,19 @@ class ClockObject(override val mutableName: ReactiveVariable<String>) : Abstract
         if (quantization != null && quantization.enableQuantization.now && quantization.meter.now.isResolved.now) {
             val offset = quantization.computeOffset()
             val meter = quantization.meter.now.force()
-            val quant = quantization.computeQuant(quantization.computeDuration())
+            val quant = quantization.computeQuant()
             scheduleStart(meter, quant, offset, player)
         } else {
             start(player)
         }
     }
 
-    fun scheduleAction(quantization: QuantizationConfig, objDuration: Decimal = zero, action: (Decimal) -> Unit) {
+    fun scheduleAction(quantization: QuantizationConfig, action: (Decimal) -> Unit) {
         val meterRef = quantization.meter.now
         if (quantization.enableQuantization.now && meterRef.isResolved.now) {
             val offset = quantization.computeOffset()
             val meter = meterRef.force()
-            val quant = quantization.computeQuant(objDuration)
+            val quant = quantization.computeQuant()
             scheduleStart(meter, quant, offset, player = null, action)
         } else {
             action(zero)

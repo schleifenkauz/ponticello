@@ -1,5 +1,7 @@
 package xenakis.impl
 
+import fxutils.undo.UndoManager
+import fxutils.undo.VariableEdit
 import hextant.context.Context
 import hextant.context.Properties.classLoader
 import hextant.plugins.Aspects
@@ -9,6 +11,7 @@ import javafx.scene.paint.Color
 import kotlinx.serialization.json.Json
 import reaktive.value.ReactiveValue
 import reaktive.value.ReactiveVariable
+import reaktive.value.now
 import reaktive.value.reactiveVariable
 import xenakis.sc.Warp
 import xenakis.sc.client.ScWriter
@@ -100,11 +103,19 @@ val canSuperColliderTalkToMe get() = true
 fun String.replacePrefix(prefix: String, replacement: String) =
     if (startsWith(prefix)) replacement + drop(prefix.length) else this
 
-fun Spinner<Double>.sync(variable: ReactiveVariable<Decimal>): Spinner<Double> {
+fun Spinner<Double>.sync(
+    variable: ReactiveVariable<Decimal>,
+    variableDescription: String? = null, undoManager: UndoManager? = null,
+): Spinner<Double> {
     isEditable = true
     valueProperty().addListener { _ ->
         val value = editor.text.parseDecimal() ?: return@addListener
+        val oldValue = variable.now
+        if (oldValue == value) return@addListener
         variable.set(value)
+        if (undoManager != null && variableDescription != null) {
+            undoManager.record(VariableEdit(variable, oldValue, value, "Update $variableDescription"))
+        }
     }
     userData = variable.observe { _, _, v -> editor.text = v.toString() }
     return this

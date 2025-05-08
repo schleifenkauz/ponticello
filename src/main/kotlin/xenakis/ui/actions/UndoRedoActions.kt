@@ -9,17 +9,15 @@ object UndoRedoActions: Action.Collector<UndoManager>({
     addAction("Undo") {
         shortcut("Ctrl+Z")
         description(UndoManager::undoText)
-        ifNotApplicable(Action.IfNotApplicable.Disable)
         icon(MaterialDesignU.UNDO)
-        applicableWhen { manager -> manager.canUndo }
+        enableWhen { manager -> manager.canUndo }
         executes { manager -> manager.undo() }
     }
     addAction("Undo") {
         shortcut("Ctrl+Shift+Z")
         description(UndoManager::redoText)
-        ifNotApplicable(Action.IfNotApplicable.Disable)
         icon(MaterialDesignR.REDO)
-        applicableWhen { manager -> manager.canRedo }
+        enableWhen { manager -> manager.canRedo }
         executes { manager -> manager.redo() }
     }
 })

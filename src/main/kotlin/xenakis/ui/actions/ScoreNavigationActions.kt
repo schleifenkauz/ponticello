@@ -34,7 +34,7 @@ object ScoreNavigationActions : Action.Collector<NavigableScorePane>({
     addAction("Move playback cursor to start") {
         shortcut("Ctrl+Shift?+DIGIT0")
         icon(Material2MZ.SKIP_PREVIOUS)
-        applicableWhen { view -> view.context[ScorePlayer.CURRENT].isPlaying.not() }
+        enableWhen { view -> view.context[ScorePlayer.CURRENT].isPlaying.not() }
         executes { view, ev ->
             val player = view.context[ScorePlayer.CURRENT]
             if (player.isPlaying.now) return@executes

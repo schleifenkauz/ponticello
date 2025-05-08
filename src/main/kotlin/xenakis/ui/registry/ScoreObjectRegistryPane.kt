@@ -2,11 +2,11 @@ package xenakis.ui.registry
 
 import fxutils.Direction
 import fxutils.SubWindow
-import fxutils.actions.Action
 import fxutils.actions.ContextualizedAction
 import fxutils.actions.action
 import fxutils.actions.collectActions
 import fxutils.controls.SliderBar
+import fxutils.undo.UndoManager
 import javafx.event.Event
 import javafx.geometry.HorizontalDirection
 import javafx.scene.Node
@@ -30,6 +30,7 @@ import xenakis.model.registry.reference
 import xenakis.model.score.ScoreObject
 import xenakis.sc.NumericalControlSpec
 import xenakis.sc.Warp
+import xenakis.ui.actions.undoable
 import xenakis.ui.live.QuantizationConfigDialog
 import xenakis.ui.live.ScoreObjectResizeDialog
 import xenakis.ui.midi.ContextualMidiReceiver
@@ -47,7 +48,10 @@ class ScoreObjectRegistryPane(registry: ScoreObjectRegistry) : ObjectRegistryPan
 
     override fun getItemContent(obj: ScoreObject): List<Node> {
         val spec = NumericalControlSpec(zero, zero, one, 0.01.toDecimal(), zero, Warp.Linear)
-        val scoreYSlider = SliderBar(obj.liveConfig.yPosition, "Score Y", spec.converter())
+        val scoreYSlider = SliderBar(
+            obj.liveConfig.yPosition, "Score Y", spec.converter(),
+            undoManager = obj.context[UndoManager]
+        )
         scoreYSlider.prefWidth = 150.0
         return listOf(scoreYSlider)
     }
@@ -76,11 +80,10 @@ class ScoreObjectRegistryPane(registry: ScoreObjectRegistry) : ObjectRegistryPan
 
     companion object {
         val configureQuantizationAction = action<ScoreObject>("Configure quantization") {
-            applicableWhen { obj ->
+            enableWhen { obj ->
                 if (!obj.affectsPlayback) reactiveValue(false)
                 else obj.player?.isPlaying?.not() ?: reactiveValue(true)
             }
-            ifNotApplicable(Action.IfNotApplicable.Disable)
             icon(Codicons.SYMBOL_PROPERTY)
             executes { obj, ev ->
                 if (obj.quantizationConfig.meter.now.isResolved.now.not()) {
@@ -106,11 +109,13 @@ class ScoreObjectRegistryPane(registry: ScoreObjectRegistry) : ObjectRegistryPan
                 whenFalse = MaterialDesignR.REPEAT_OFF,
                 whenTrue = MaterialDesignR.REPEAT,
             )
+            undoable()
         }
 
         val quantizeStartAction = action<ScoreObject>("Quantize start") {
             applicableIf { obj -> obj.affectsPlayback }
             icon(MaterialDesignM.METRONOME)
+            undoable()
             toggles({ obj -> obj.quantizationConfig.enableQuantization })
         }
 

@@ -399,7 +399,7 @@ class ObjectListView<O: ContextualObject>(
         }
 
         private fun Action.Builder<ObjectListView<*>>.modeChange(mode: DisplayMode) {
-            applicableWhen { view ->
+            enableWhen { view ->
                 if (mode in view.config.supportedModes) view.mode.notEqualTo(mode)
                 else reactiveValue(false)
             }

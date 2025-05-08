@@ -52,8 +52,7 @@ object ServerActions : Action.Collector<XenakisProject>({
 }) {
     val scopeBus = action<ReactiveValue<BusReference>>("Scope") {
         icon(Evaicons.ACTIVITY)
-        applicableWhen { ref -> ref.flatMap(BusReference::isResolved) }
-        ifNotApplicable(Action.IfNotApplicable.Disable)
+        enableWhen { ref -> ref.flatMap(BusReference::isResolved) }
         executes { ref ->
             val bus = ref.now.get()
             if (bus == null) {

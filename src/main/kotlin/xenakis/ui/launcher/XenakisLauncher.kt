@@ -120,6 +120,7 @@ class XenakisLauncher {
 
     fun openProject(folder: File) {
         val context = rootContext.extend()
+        context[UndoManager] = UndoManager.newInstance()
         val progressBar = getOrLaunchLoadingScreen()
         setupSuperCollider(
             context,
@@ -159,7 +160,6 @@ class XenakisLauncher {
     private fun getActiveProject(): XenakisProject? = (currentActivity as? XenakisMainActivity)?.project
 
     private fun openProject(project: XenakisProject) {
-        rootContext[UndoManager].reset()
         rootContext[currentProject] = project
         recentProjects.push(project.projectDirectory)
         getOrLaunchLoadingScreen().displayProgress(0.98, "Almost ready, launching project view...")
@@ -189,6 +189,7 @@ class XenakisLauncher {
 
     private fun createNewProject(location: File) {
         val context = rootContext.extend()
+        context[UndoManager] = UndoManager.newInstance()
         val progressBar = getOrLaunchLoadingScreen()
         setupSuperCollider(
             context,

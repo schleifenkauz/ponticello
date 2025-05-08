@@ -107,8 +107,7 @@ sealed class ScoreObject : AbstractRenamableObject() {
 
     override fun initialize(context: Context) {
         super.initialize(context)
-        quantizationConfig.initialize(context)
-        quantizationConfig.setDuration(duration)
+        quantizationConfig.initialize(context, this)
     }
 
     open fun validate(): Boolean {

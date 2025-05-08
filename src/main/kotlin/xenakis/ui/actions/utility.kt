@@ -6,12 +6,14 @@ import fxutils.actions.ContextualizedAction
 import fxutils.actions.registerActions
 import fxutils.registerShortcuts
 import fxutils.styleClass
+import fxutils.undo.UndoManager
 import hextant.context.Context
 import hextant.context.compoundEdit
 import javafx.event.Event
 import javafx.scene.Scene
 import reaktive.value.binding.map
 import reaktive.value.now
+import xenakis.model.obj.ContextualObject
 import xenakis.model.player.ScorePlayer
 import xenakis.ui.launcher.XenakisLauncher
 import xenakis.ui.launcher.XenakisLauncher.Companion.currentProject
@@ -23,7 +25,7 @@ inline fun Action.Collector<ObjectActionContext>.addObjectAction(
     body: Action.Builder<ObjectActionContext>.() -> Unit
 ) {
     addAction(name) {
-        applicableWhen { ctx -> ctx.isApplicable(name) }
+        enableWhen { ctx -> ctx.isApplicable(name) }
         body()
     }
 }
@@ -45,7 +47,8 @@ fun Action.Builder<ObjectActionContext>.executeMultiAction(action: (ScoreObjectV
 }
 
 inline fun Action.Builder<ObjectActionContext>.applicableOn(crossinline predicate: (ScoreObjectView) -> Boolean) {
-    applicableWhen { ctx -> ctx.focusedView.map { v -> v != null && predicate(v) } }
+    enableWhen { ctx -> ctx.focusedView.map { v -> v != null && predicate(v) } }
+    ifNotApplicable(Action.IfNotApplicable.Hide)
 }
 
 inline fun <reified V> Action.Builder<ObjectActionContext>.applicableOn() {
@@ -67,3 +70,7 @@ fun Scene.registerGlobalShortcuts(context: Context) {
 
 fun toolbarPart(actions: List<ContextualizedAction>) =
     ActionBar(actions, buttonStyle = "large-icon-button").styleClass("toolbar-part")
+
+fun Action.Builder<out ContextualObject>.undoable() {
+    undoable { obj -> obj.context[UndoManager] }
+}

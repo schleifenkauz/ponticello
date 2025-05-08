@@ -1,13 +1,13 @@
 package xenakis.ui.flow
 
 import bundles.createBundle
-import fxutils.actions.Action
 import fxutils.actions.ContextualizedAction
 import fxutils.actions.collectActions
 import fxutils.controls.SliderBar
 import fxutils.prompt.InfoPrompt
 import fxutils.setFixedWidth
 import fxutils.styleClass
+import fxutils.undo.UndoManager
 import javafx.scene.Node
 import javafx.scene.Parent
 import javafx.scene.control.Slider
@@ -72,7 +72,8 @@ class FlowListConfig(
             val masterVolumeSlider = SliderBar(
                 obj.masterVolume, reactiveValue("Master volume"),
                 MixerFlow.VOLUME_SPEC.converter(unit = "db"),
-                SliderBar.Style.AlwaysValue
+                SliderBar.Style.AlwaysValue,
+                undoManager = obj.context[UndoManager]
             ).setFixedWidth(150.0)
             val selectorControl = ObjectSelectorControl(selector, createBundle())
             listOf(selectorControl, masterVolumeSlider)
@@ -165,14 +166,13 @@ class FlowListConfig(
             addAction("Reload") {
                 icon(MaterialDesignS.SYNC)
                 shortcut("Ctrl+U")
-                applicableWhen { flow -> flow.isActive }
-                ifNotApplicable(Action.IfNotApplicable.Disable)
+                enableWhen { flow -> flow.isActive }
                 executes { flow -> flow.sync() }
             }
             addAction("View SynthDef") {
                 icon(Material2AL.CODE)
                 shortcut("Ctrl+L")
-                applicableWhen { flow ->
+                enableWhen { flow ->
                     if (flow !is SynthFlow) reactiveValue(false)
                     else flow.synthDefSelector.isResolved
                 }

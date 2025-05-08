@@ -25,6 +25,7 @@ import xenakis.model.obj.SampleObject
 import xenakis.model.project.buffers
 import xenakis.model.registry.BufferRegistry
 import xenakis.sc.Identifier
+import xenakis.ui.actions.undoable
 import xenakis.ui.launcher.XenakisFiles
 import xenakis.ui.launcher.XenakisLauncher.Companion.currentProject
 import xenakis.ui.score.ScoreObjectDuplicator
@@ -80,6 +81,7 @@ class SampleRegistryPane(
                     whenTrue = MaterialDesignP.PACKAGE_VARIANT_CLOSED,
                     whenFalse = MaterialDesignP.PACKAGE_VARIANT
                 )
+                undoable()
             }
         }
 

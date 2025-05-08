@@ -9,6 +9,7 @@ import fxutils.actions.collectActions
 import fxutils.controls.SliderBar
 import fxutils.prompt.InfoPrompt
 import fxutils.prompt.SimpleSearchableListView
+import fxutils.undo.UndoManager
 import hextant.context.Context
 import hextant.context.compoundEdit
 import hextant.serial.EditorRoot
@@ -162,11 +163,13 @@ class ControlAssignmentEditor(val control: NamedParameterControl, val view: Scor
                 val converter = spec.converter()
                 val sliderBar = SliderBar(
                     control.value, namedControl.name, converter,
-                    style = SliderBar.Style.AlwaysValue
+                    style = SliderBar.Style.AlwaysValue,
+                    undoManager = namedControl.context[UndoManager]
                 )
                 sliderBar.prefWidth = 150.0
-                val useAsArgBox = CheckBox("Allocate bus").sync(control.allocateBus)
-                return HBox(5.0, sliderBar, useAsArgBox).centerChildren()
+                val allocateBusOption = CheckBox()
+                    .sync(control.allocateBus, description = "Allocate bus", namedControl.context[UndoManager])
+                return HBox(5.0, sliderBar, Label("Allocate bus"), allocateBusOption).centerChildren()
             }
 
             override fun createDefaultControl(
@@ -190,9 +193,9 @@ class ControlAssignmentEditor(val control: NamedParameterControl, val view: Scor
                 colorPicker.setFixedWidth(30.0)
                 val box = HBox(5.0, colorPicker)
                 if (namedControl.parentObject is SynthObject) {
-                    val toggle = CheckBox("Display ")
-                    toggle.selectedProperty().bindBidirectional(control.display.asProperty())
-                    box.children.add(1, toggle)
+                    val toggle = CheckBox()
+                        .sync(control.display, description = "Display envelope", namedControl.context[UndoManager])
+                    box.children.addAll(1, listOf(Label("Display envelope"), toggle))
                 }
                 box.alignment = Pos.CENTER_LEFT
                 return box
@@ -246,14 +249,14 @@ class ControlAssignmentEditor(val control: NamedParameterControl, val view: Scor
                 window.minHeight = 100.0
                 val showWindowButton = button("Code") { window.showOrBringToFront() }
                 if (namedControl.parentObject is ScoreObject) {
-                    val displayToggle = CheckBox("Display")
-                    displayToggle.selectedProperty().bindBidirectional(control.display.asProperty())
+                    val displayToggle = CheckBox()
+                        .sync(control.display, "Display UGen", namedControl.context[UndoManager])
                     displayToggle.disableProperty().bind(
                         control.expr.editor.result.map { expr ->
                             expr.getLfo() == null
                         }.asObservableValue()
                     )
-                    return HBox(5.0, showWindowButton, displayToggle).centerChildren()
+                    return HBox(5.0, showWindowButton, Label("Display"), displayToggle).centerChildren()
                 } else return showWindowButton
             }
 
@@ -425,9 +428,10 @@ class ControlAssignmentEditor(val control: NamedParameterControl, val view: Scor
                 editor.syncWith(control.sample)
                 editor.initialize(namedControl.context)
                 val selectorControl = ObjectSelectorControl(editor, createBundle())
-                val displaySwitch = CheckBox("Display")
+                val displaySwitch = CheckBox()
+                    .sync(control.display, description = "Show spectrum", namedControl.context[UndoManager])
                 displaySwitch.selectedProperty().bindBidirectional(control.display.asProperty())
-                return HBox(5.0, selectorControl, infiniteSpace(), displaySwitch).centerChildren()
+                return HBox(5.0, selectorControl, infiniteSpace(), Label("Show spectrum"), displaySwitch).centerChildren()
             }
 
             override fun createDefaultControl(
@@ -471,7 +475,7 @@ class ControlAssignmentEditor(val control: NamedParameterControl, val view: Scor
             private val actions = collectActions<GlobalPatternControl> {
                 addAction("Plot") {
                     icon(MaterialDesignC.CHART_BOX_OUTLINE)
-                    applicableWhen { ctrl -> ctrl.pattern.flatMap { p -> p.isResolved } }
+                    enableWhen { ctrl -> ctrl.pattern.flatMap { p -> p.isResolved } }
                     executes { ctrl ->
                         val obj = ctrl.pattern.now.get() ?: return@executes
                         val pane = obj.context[XenakisMainActivity].patternsPane
@@ -480,7 +484,7 @@ class ControlAssignmentEditor(val control: NamedParameterControl, val view: Scor
                 }
                 addAction("Edit") {
                     icon(Material2AL.CODE)
-                    applicableWhen { ctrl -> ctrl.pattern.flatMap(GlobalPatternReference::isResolved) }
+                    enableWhen { ctrl -> ctrl.pattern.flatMap(GlobalPatternReference::isResolved) }
                     executes { ctrl ->
                         val obj = ctrl.pattern.now.get() ?: return@executes
                         val pane = obj.context[XenakisMainActivity].patternsPane
@@ -509,9 +513,20 @@ class ControlAssignmentEditor(val control: NamedParameterControl, val view: Scor
                     control.attack.now = control.attack.now.coerceAtMost(duration)
                     control.release.now = control.release.now.coerceAtMost(duration - control.attack.now)
                     val levelSpec = spec.converter(unit = "db")
-                    val level = SliderBar(control.level, "Level", levelSpec)
-                    val attack = SliderBar(control.attack, "Attack", timeSpec)
-                    val release = SliderBar(control.release, "Release", timeSpec)
+                    val level =
+                        SliderBar(
+                            control.level, "Level", levelSpec,
+                            undoManager = namedControl.context[UndoManager]
+                        )
+                    val attack =
+                        SliderBar(
+                            control.attack, "Attack", timeSpec,
+                            undoManager = namedControl.context[UndoManager]
+                        )
+                    val release = SliderBar(
+                        control.release, "Release", timeSpec,
+                        undoManager = namedControl.context[UndoManager]
+                    )
                     level.prefWidth = 100.0
                     attack.prefWidth = 100.0
                     release.prefWidth = 100.0

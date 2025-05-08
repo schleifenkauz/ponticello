@@ -71,7 +71,7 @@ class XenakisMainActivity(val project: XenakisProject) : Activity() {
     private val liveTasksPane by lazy { LiveTaskRegistryPane(project[LIVE_TASKS]) }
     val liveTasksWindow by lazy { context.makeToolWindow(liveTasksPane, "Live Tasks") }
 
-    private val gridPane by lazy { LauncherGridPane(context, project[LAUNCHER_GRID]) }
+    private val gridPane by lazy { LauncherGridPane(project[LAUNCHER_GRID]) }
     val launcherGridWindow by lazy {
         context.makeToolWindow(gridPane, "Launcher Grid").also { w ->
             w.sizeToScene()
