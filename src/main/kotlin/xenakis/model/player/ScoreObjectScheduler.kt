@@ -12,10 +12,8 @@ import xenakis.model.Settings
 import xenakis.model.flow.NodeTree
 import xenakis.model.flow.SynthObjectNode
 import xenakis.model.player.ScoreEventCollector.Event
-import xenakis.model.player.ScorePlayer.Companion.execute
 import xenakis.model.score.*
 import xenakis.sc.client.SuperColliderClient
-import java.util.concurrent.CompletableFuture
 
 class ScoreObjectScheduler(val context: Context) {
     private val client = context[SuperColliderClient]
@@ -24,7 +22,8 @@ class ScoreObjectScheduler(val context: Context) {
     private val serverLatency get() = context[Settings].serverLatency.now
     private val sclangLatency get() = context[Settings].scLangLatency.now
 
-    fun scheduleEvents(events: List<Event>, player: ScorePlayer) = execute {
+    //Only inside on ScorePlayer.execute
+    fun scheduleEvents(events: List<Event>, player: ScorePlayer) {
         for (ev in events) {
             val (type, position, inst) = ev
             if (inst.muted.now) continue
@@ -53,24 +52,32 @@ class ScoreObjectScheduler(val context: Context) {
         }
     }
 
-    fun stopObjectInstantly(active: ActiveScoreObject): CompletableFuture<String> {
-        if (!active.isStillActive) return CompletableFuture.completedFuture("")
+    //Only inside on ScorePlayer.execute
+    fun stopPlayBackInstantly(obj: ScoreObject, pos: ObjectPosition) {
+        val active = activeObjects.getActiveObject(obj, pos) ?: return
+        stopObjectInstantly(active)
+    }
+
+    //Only inside on ScorePlayer.execute
+    fun stopObjectInstantly(active: ActiveScoreObject) {
+        if (!active.isStillActive) return
         active.stopped()
-        return when (active.obj) {
+        when (active.obj) {
             is SynthObject -> {
                 val name = active.superColliderName
-                client.eval("if ($name != nil) { $name.release; } { \"'$name' not found\".postln; }")
+                client.run("if ($name != nil) { $name.release; } { \"'$name' not found\".postln; }")
             }
 
             is ProcessObject, is TaskObject -> {
                 val name = active.superColliderName
-                client.eval("$name.stop;")
+                client.run("$name.stop;")
             }
 
-            else -> CompletableFuture.completedFuture("unknown")
+            else -> {}
         }
     }
 
+    //Only inside ScorePlayer.execute
     fun scheduleObject(
         obj: ScoreObject, absolutePosition: ObjectPosition,
         cutoff: Decimal, player: ScorePlayer,
@@ -120,6 +127,7 @@ class ScoreObjectScheduler(val context: Context) {
         return activeObject
     }
 
+    //Only inside on ScorePlayer.execute
     fun activeObjects(time: Decimal, delta: Decimal, score: Score): List<Event> {
         val dest = mutableListOf<Event>()
         collectActiveObjects(ObjectPosition(0.0, 0.0), score, time, delta, dest)
@@ -142,5 +150,5 @@ class ScoreObjectScheduler(val context: Context) {
         }
     }
 
-    companion object: PublicProperty<ScoreObjectScheduler> by publicProperty("ScoreObjectScheduler")
+    companion object : PublicProperty<ScoreObjectScheduler> by publicProperty("ScoreObjectScheduler")
 }

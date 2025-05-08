@@ -10,14 +10,12 @@ import xenakis.model.Settings
 import xenakis.model.live.QuantizationConfig
 import xenakis.model.registry.ClockRegistry
 import xenakis.model.score.ObjectPosition
-import xenakis.model.score.ScoreObject
 import xenakis.model.score.ScoreObjectInstance
 import xenakis.sc.client.SuperColliderClient
 import xenakis.ui.misc.PlayHead
 import xenakis.ui.score.ScorePane
 import xenakis.ui.score.SingleObjectScorePane
 import java.lang.ref.WeakReference
-import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Executors
 
 class ScorePlayer private constructor(
@@ -47,7 +45,7 @@ class ScorePlayer private constructor(
     private val maxTime: Decimal
         get() = pane.score.maxTime.now
 
-    fun doCycle(clock: ClockObject, elapsedTime: Decimal) {
+    fun doCycle(clock: ClockObject, elapsedTime: Decimal) = execute {
         var scoreTime = elapsedTime - loopedTime
 
         var playHeadPos = scoreTime - lookAhead
@@ -58,18 +56,18 @@ class ScorePlayer private constructor(
             } else {
                 playHead.movePlayHeadToStart()
                 pause()
-                return
+                return@execute
             }
         }
         playHead.movePlayHead(playHeadPos)
 
         if (scoreTime >= maxTime) {
             if (!loopingActivated.now) {
-                return
+                return@execute
             } else {
                 loopedTime += maxTime
                 scoreTime -= maxTime
-                events.unscheduleAll()
+                events.rescheduleAll()
             }
         }
 
@@ -93,19 +91,17 @@ class ScorePlayer private constructor(
     fun getClock(): ClockObject =
         getQuantization()?.clock?.now?.get() ?: context[ClockRegistry].getDefault()
 
-    fun startPlaying() {
+    fun startPlaying() = execute {
         client.sendAsync("start_play", listOf(id))
         context[Recorder].startingPlayback()
         val time = playHead.currentTime
         Logger.fine("Starting playback at $time", Logger.Category.Playback)
         lastPlayFrom = time
         loopedTime = zero
-        execute {
-            val activeObjects = scheduler.activeObjects(time, context[Settings].lookAhead, pane.score)
-            for ((_, position, inst) in activeObjects) {
-                if (!inst.muted.now) {
-                    scheduleInstantly(inst, position)
-                }
+        val activeObjects = scheduler.activeObjects(time, context[Settings].lookAhead, pane.score)
+        for ((_, position, inst) in activeObjects) {
+            if (!inst.muted.now) {
+                scheduleInstantly(inst, position)
             }
         }
     }
@@ -119,6 +115,7 @@ class ScorePlayer private constructor(
         freeActiveObjects()
     }
 
+    //Only inside ScorePlayer.execute
     fun scheduleInstantly(inst: ScoreObjectInstance, position: ObjectPosition) {
         val obj = inst.obj
         val delta = position.time - playHead.currentTime
@@ -127,26 +124,16 @@ class ScorePlayer private constructor(
         scheduler.scheduleObject(obj, position, cutoff = -delta.coerceAtMost(zero), this)
     }
 
-
-    fun stopPlayBackInstantly(obj: ScoreObject, pos: ObjectPosition) = execute {
-        val active = context[ActiveObjectsManager].getActiveObject(obj, pos) ?: return@execute
-        scheduler.stopObjectInstantly(active)
-    }
-
-
     private fun freeActiveObjects() = execute {
         Logger.info("Pausing playback", Logger.Category.Playback)
         client.sendAsync("pause_play", listOf(id))
         context[Recorder].pausingPlayback()
-        val futures = mutableListOf<CompletableFuture<*>>()
-        println()
         for (activeObject in activeObjects.all()) {
             if (activeObject.player == this) {
                 println("Stopping $activeObject")
-                futures.add(scheduler.stopObjectInstantly(activeObject))
+                scheduler.stopObjectInstantly(activeObject)
             }
         }
-        CompletableFuture.allOf(*futures.toTypedArray()).join()
         activeObjects.clear(this)
         events.resetEvents()
     }

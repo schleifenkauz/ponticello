@@ -135,10 +135,12 @@ class LauncherGrid private constructor(
                     val y = obj.liveConfig.yPosition.now
                     val position = ObjectPosition(time, y)
                     val totalDelay = quantizationDelay.coerceAtMost(context[Settings].lookAhead)
-                    activeObjects[item] = scheduler.scheduleObject(
-                        obj, position, cutoff = zero, player,
-                        scLangLatency = totalDelay / 2, serverLatency = totalDelay / 2
-                    ) //TODO consider velocity
+                    ScorePlayer.execute {
+                        activeObjects[item] = scheduler.scheduleObject(
+                            obj, position, cutoff = zero, player,
+                            scLangLatency = totalDelay / 2, serverLatency = totalDelay / 2
+                        ) //TODO consider velocity
+                    }
                 }
             }
         }
@@ -163,7 +165,9 @@ class LauncherGrid private constructor(
                 val activeObject = activeObjects[item] ?: return
                 addToTargetScore(activeObject, item)
                 if (!item.stopOnRelease.now) return
-                scheduler.stopObjectInstantly(activeObject)
+                ScorePlayer.execute {
+                    scheduler.stopObjectInstantly(activeObject)
+                }
                 activeObjects[item] = null
             }
 

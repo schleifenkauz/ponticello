@@ -35,6 +35,8 @@ class PlaybackMessageListener(
         }
         val y = obj.liveConfig.yPosition.now
         val pos = ObjectPosition(player.playHead.currentTime, y)
-        player.scheduler.scheduleObject(obj, pos, cutoff = zero, player)
+        ScorePlayer.execute {
+            player.scheduler.scheduleObject(obj, pos, cutoff = zero, player)
+        }
     }
 }

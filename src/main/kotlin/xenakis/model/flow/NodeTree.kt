@@ -24,7 +24,7 @@ class NodeTree(private val client: SuperColliderClient) {
             idx = -(idx + 1)
         }
         while (idx >= 1) {
-            val prevNode = activeNodes[idx]
+            val prevNode = activeNodes[idx - 1]
             when {
                 !prevNode.isStillActive -> idx--
                 prevNode.yPosition.now >= node.yPosition.now -> idx--

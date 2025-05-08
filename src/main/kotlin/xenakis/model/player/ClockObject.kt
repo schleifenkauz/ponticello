@@ -38,7 +38,11 @@ class ClockObject(override val mutableName: ReactiveVariable<String>) : Abstract
     private var clockStartTime = 0L
 
     @Transient
-    private val executor = Executors.newSingleThreadScheduledExecutor()
+    private val executor = Executors.newSingleThreadScheduledExecutor { runnable ->
+        Thread(runnable, "ClockThread ${name.now}").apply {
+            priority = 7
+        }
+    }
 
     override fun initialize(context: Context) {
         super.initialize(context)
@@ -81,7 +85,7 @@ class ClockObject(override val mutableName: ReactiveVariable<String>) : Abstract
 
     private fun start(player: ScorePlayer) {
         val currentTime = getCurrentTime()
-        val startTime = currentTime - player.currentTime.toMillis()
+        val startTime = currentTime - player.playHead.currentTime.toMillis()
         scheduleStart(player, {}, startTime, quantizationDelay = 0L)
     }
 
@@ -167,7 +171,7 @@ class ClockObject(override val mutableName: ReactiveVariable<String>) : Abstract
     )
 
     companion object {
-        private const val PERIOD_MS = 5L
+        private const val PERIOD_MS = 20L
         private val PERIOD_S = PERIOD_MS.toSeconds()
 
         private fun Decimal.toMillis() = (this * 1000).toLong()

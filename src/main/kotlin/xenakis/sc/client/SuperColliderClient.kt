@@ -39,7 +39,7 @@ interface SuperColliderClient : SuperColliderContext {
         if (command == "(\n)\n") return
         Logger.fine("run: $command", Category.SuperCollider)
         try {
-            send("eval", listOf(command))
+            sendAsync("run", listOf(command))
         } catch (e: Exception) {
             System.err.println("Exception while running $command")
             e.printStackTrace()

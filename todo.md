@@ -13,7 +13,6 @@
 - sub-objects get buggy after unlinking group objects
     - the new objects don't get added to the `ScoreEventCollector`
 - recording doesn't work
-- loops get ahead of themselves
 
 ### Minor
 
@@ -61,6 +60,7 @@
     - what about object groups
 - in which cases can we talk to scsynth directly?
     - bus value update (could really improve live modulation performance)
+  - SynthObjects could be created by sending messages to scsynth directly
 
 ### Own notification API integrating with the LogPane
 
@@ -85,7 +85,6 @@
 
 ### Live mode
 
-- edit a clone of a `ScoreObjectGroup` in a `SubWindow` and sync it with the main score on demand
 - time jumps
     - like goto statements
     - can have conditions (examples...?)

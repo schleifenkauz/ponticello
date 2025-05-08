@@ -13,12 +13,12 @@ import java.util.*
 class ScoreEventCollector(
     private val rootScore: Score,
     private val settings: Settings,
+    private val player: ScorePlayer? = null,
 ) : ScoreListener, ScoreObject.Listener {
     private val events = TreeMap<ObjectPosition, MutableSet<Event>>()
     private val scoreInstances = mutableMapOf<Score, MutableSet<ScoreObjectInstance>>()
     private val instances = mutableMapOf<ScoreObject, MutableSet<ScoreObjectInstance>>()
-
-    var player: ScorePlayer? = null
+    private val scheduler = rootScore.context[ScoreObjectScheduler]
 
     init {
         rootScore.addListener(this)
@@ -50,9 +50,8 @@ class ScoreEventCollector(
         }
     }
 
-    @Synchronized
-    override fun addedObject(score: Score, inst: ScoreObjectInstance, autoSelect: Boolean) {
-        if (inst.muted.now) return
+    override fun addedObject(score: Score, inst: ScoreObjectInstance, autoSelect: Boolean) = ScorePlayer.execute {
+        if (inst.muted.now) return@execute
         added(inst)
         for (position in absolutePositions(inst)) {
             addToPlayback(inst, position)
@@ -74,9 +73,8 @@ class ScoreEventCollector(
         }
     }
 
-    @Synchronized
-    override fun removedObject(score: Score, inst: ScoreObjectInstance) {
-        if (inst.muted.now) return
+    override fun removedObject(score: Score, inst: ScoreObjectInstance) = ScorePlayer.execute {
+        if (inst.muted.now) return@execute
         removed(inst)
         for (position in absolutePositions(inst)) {
             removeFromPlayback(inst, position)
@@ -98,37 +96,36 @@ class ScoreEventCollector(
         }
     }
 
-    @Synchronized
-    override fun finishedResize(obj: ScoreObject, deltaDuration: Decimal, deltaHeight: Decimal, direction: Direction) {
-        if (obj is ScoreObjectGroup) return
-        val eventsBefore = events.size
-        val newEvents = mutableListOf<Event>()
-        for ((_, events) in events) {
-            val itr = events.iterator()
-            for (ev in itr) {
-                if (ev.inst.obj != obj) continue
-                val (t, y) = ev.absolutePosition
-                val newY = if (direction.up) y - deltaHeight else y
-                if (ev.type == Event.Type.ObjectStart && (direction.left || direction.up)) {
-                    itr.remove()
-                    val newStart = ObjectPosition(if (direction.left) t - deltaDuration else t, newY)
-                    newEvents.add(Event(Event.Type.ObjectStart, newStart, ev.inst))
-                } else if (ev.type == Event.Type.ObjectEnd && (direction.right || direction.up)) {
-                    itr.remove()
-                    val newEnd = ObjectPosition(if (direction.right) t + deltaDuration else t, newY)
-                    newEvents.add(Event(Event.Type.ObjectEnd, newEnd, ev.inst))
+    override fun finishedResize(obj: ScoreObject, deltaDuration: Decimal, deltaHeight: Decimal, direction: Direction) =
+        ScorePlayer.execute {
+            if (obj is ScoreObjectGroup) return@execute
+            val eventsBefore = events.size
+            val newEvents = mutableListOf<Event>()
+            for ((_, events) in events) {
+                val itr = events.iterator()
+                for (ev in itr) {
+                    if (ev.inst.obj != obj) continue
+                    val (t, y) = ev.absolutePosition
+                    val newY = if (direction.up) y - deltaHeight else y
+                    if (ev.type == Event.Type.ObjectStart && (direction.left || direction.up)) {
+                        itr.remove()
+                        val newStart = ObjectPosition(if (direction.left) t - deltaDuration else t, newY)
+                        newEvents.add(Event(Event.Type.ObjectStart, newStart, ev.inst))
+                    } else if (ev.type == Event.Type.ObjectEnd && (direction.right || direction.up)) {
+                        itr.remove()
+                        val newEnd = ObjectPosition(if (direction.right) t + deltaDuration else t, newY)
+                        newEvents.add(Event(Event.Type.ObjectEnd, newEnd, ev.inst))
+                    }
                 }
             }
+            for (ev in newEvents) addEvent(ev)
+            if (nEvents() != eventsBefore) {
+                Logger.warn("Resizing object changed number of score events", Logger.Category.Playback)
+            }
         }
-        for (ev in newEvents) addEvent(ev)
-        if (nEvents() != eventsBefore) {
-            Logger.warn("Resizing object changed number of score events", Logger.Category.Playback)
-        }
-    }
 
-    @Synchronized
-    override fun movedObject(score: Score, inst: ScoreObjectInstance, dt: Decimal, dy: Decimal) {
-        if (inst.muted.now) return
+    override fun movedObject(score: Score, inst: ScoreObjectInstance, dt: Decimal, dy: Decimal) = ScorePlayer.execute {
+        if (inst.muted.now) return@execute
         val oldPosition = inst.position + ObjectPosition(-dt, -dy)
         val eventsBefore = nEvents()
         Logger.fine("Move object $inst from $oldPosition", Logger.Category.Playback)
@@ -143,8 +140,7 @@ class ScoreEventCollector(
 
     private fun nEvents() = events.values.sumOf { set -> set.size }
 
-    @Synchronized
-    override fun toggledMute(score: Score, inst: ScoreObjectInstance, muted: Boolean) {
+    override fun toggledMute(score: Score, inst: ScoreObjectInstance, muted: Boolean) = ScorePlayer.execute {
         if (!muted) added(inst)
         for (position in absolutePositions(inst)) {
             if (muted) removeFromPlayback(inst, position, onlyNonMuted = false)
@@ -196,13 +192,13 @@ class ScoreEventCollector(
             val player = player
             if (player != null && player.isPlaying.now && player.playHead.currentTime in position.time..posEnd.time) {
                 ScorePlayer.execute {
-                    player.stopPlayBackInstantly(obj, position)
+                    scheduler.stopPlayBackInstantly(obj, position)
                 }
             }
         }
     }
 
-    @Synchronized
+    //Only inside ScorePlayer.execute
     fun eventsAt(time: Decimal, delta: Decimal): List<Event> {
         val pos = ObjectPosition(time, zero)
         return events.tailMap(pos)
@@ -211,11 +207,19 @@ class ScoreEventCollector(
             .flatMap { (_, events) -> events.filter { ev -> !ev.scheduled } }
     }
 
+    //Only inside ScorePlayer.execute
     fun resetEvents() {
         for ((_, events) in events) {
             for (ev in events) {
                 ev.scheduled = false
             }
+        }
+    }
+
+    //Only inside ScorePlayer.execute
+    fun rescheduleAll() {
+        for (ev in events.values.flatten()) {
+            ev.scheduled = false
         }
     }
 
@@ -226,12 +230,6 @@ class ScoreEventCollector(
         }
         for ((obj, instances) in instances) {
             if (instances.isNotEmpty()) obj.removeListener(this)
-        }
-    }
-
-    fun unscheduleAll() {
-        for (ev in events.values.flatten()) {
-            ev.scheduled = false
         }
     }
 
