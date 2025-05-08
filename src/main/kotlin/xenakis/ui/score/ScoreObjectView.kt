@@ -249,6 +249,9 @@ abstract class ScoreObjectView(
             else -> borderColorWhenNotSelected to 0.5
         }
         border = solidBorder(borderColor, width = width, radius = BORDER_RADIUS)
+        if (!value) {
+            context[DetailPaneManager].hideDetailPane(this)
+        }
     }
 
     override fun isSomeInstanceSelected(yesOrNo: Boolean) {

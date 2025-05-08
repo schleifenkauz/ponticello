@@ -51,6 +51,10 @@ class DetailPaneManager(private val context: Context) {
         }
     }
 
+    fun hideDetailPane(view: ScoreObjectView) {
+        if (attachedToView == view) hideCurrentlyShown()
+    }
+
     fun hideCurrentlyShown() {
         currentlyShown?.hide()
         currentlyShown = null

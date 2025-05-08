@@ -47,6 +47,7 @@ import kotlin.math.absoluteValue
 
 abstract class ScorePane(val score: Score, val context: Context) : Pane(), ScoreListener, TimeBlock {
     protected var selectedArea: RectangleSelection? = null
+    private var mousePress: Point2D? = null
 
     protected val views = mutableMapOf<ScoreObjectInstance, ScoreObjectView>()
     val allViews: Collection<ScoreObjectView> get() = views.values
@@ -137,26 +138,30 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
 
     protected open fun listenForEvents() {
         addEventHandler(MouseEvent.ANY) { ev ->
-            //TODO is this needed?
-            val pane = when (val target = ev.target) {
-                is ScorePane -> target
-                is ScoreObjectGroupView -> if (target.isInitialized) target.scorePane else return@addEventHandler
-                else -> return@addEventHandler
-            }
-            val e = ev.copyFor(pane, pane)
+            if (ev.target != this) return@addEventHandler
+            if (this !is RootScorePane && !ev.isControlDown) return@addEventHandler
+            ev.consume()
             when (ev.eventType) {
-                MouseEvent.MOUSE_PRESSED -> pane.mousePressed(e)
-                MouseEvent.MOUSE_DRAGGED -> pane.mouseDragged(e)
-                MouseEvent.MOUSE_CLICKED -> when {
-                    ev.button == MouseButton.SECONDARY -> pane.rightClicked(ev)
-                    ev.clickCount == 1 -> pane.mouseClicked(ev)
-                    ev.clickCount == 2 -> pane.doubleClicked(ev)
+                MouseEvent.MOUSE_PRESSED -> mousePressed(ev)
+                MouseEvent.MOUSE_DRAGGED -> mouseDragged(ev)
+                MouseEvent.MOUSE_CLICKED -> {
+                    val p = Point2D(ev.x, ev.y)
+                    if (p != mousePress) return@addEventHandler
+                        when {
+                            ev.button == MouseButton.SECONDARY -> rightClicked(ev)
+                            ev.clickCount == 1 -> mouseClicked(ev)
+                            ev.clickCount == 2 -> doubleClicked(ev)
+                        }
                 }
 
-                MouseEvent.MOUSE_RELEASED -> pane.mouseReleased(e)
+                MouseEvent.MOUSE_RELEASED -> mouseReleased(ev)
             }
         }
-        addPlayBufOnDrop()
+        setupDropArea({ db -> db.hasFile("wav") }, { ev ->
+            val sample = extractBufferFromDragboard(ev.dragboard) ?: return@setupDropArea
+            val pos = snapToGrid(ev.x, ev.y)
+            createPlayBufObject(sample, pos, ev)
+        })
     }
 
     private fun addPlayBufOnDrop() {
@@ -185,7 +190,6 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
 
         }
     }
-
 
     /*
     * Score object view management
@@ -228,21 +232,18 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
                 val pos = snapToGrid(ev.x, ev.y)
                 val inst = ScoreObjectInstance(obj, pos)
                 score.addObject(inst, autoSelect = true)
-                ev.consume()
             }
 
-            setOf(Alt, Shift) -> {
+            setOf(Shift) -> {
                 val popup = SimpleSearchableRegistryView(context[BufferRegistry], "Place sample")
                 val anchor = localToScreen(ev.x, ev.y)
                 val sample = popup.showPopup(anchor, scene.window) ?: return
                 val pos = snapToGrid(ev.x, ev.y)
                 createPlayBufObject(sample, pos, ev)
-                ev.consume()
             }
 
-            setOf(Ctrl, Shift) -> {
+            setOf(Alt, Shift) -> {
                 pasteFromSystemClipboard(ev)
-                ev.consume()
             }
         }
     }
@@ -272,9 +273,8 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
                 }
             }
 
-            else -> return
+            else -> {}
         }
-        ev.consume()
     }
 
     private fun pasteFromSystemClipboard(ev: MouseEvent) {
@@ -295,13 +295,12 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
     }
 
     private fun mousePressed(ev: MouseEvent) {
-        if (this !is RootScorePane != ev.isControlDown) return
-        ev.consume()
+        mousePress = Point2D(ev.x, ev.y)
         clearRegionSelection()
         val pos = snapToGrid(ev.x, ev.y)
         val selectionRect = Rectangle() styleClass "selection-rect"
         val selection = RectangleSelection(this, selectionRect, pos)
-        if (ev.isShiftDown) {
+        if (ev.modifiers == setOf(Shift, Alt)) {
             selection.useAsTimeSelection()
         }
         children.add(selection.rect)
@@ -320,12 +319,10 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
             val selection = selectedArea!!
             selection.setOppositeCorner(pos)
             markT(pos.time)
-            ev.consume()
         }
     }
 
     private fun doubleClicked(ev: MouseEvent) {
-        ev.consume()
         val (t, y) = snapToGrid(ev.x, ev.y)
         val type = SimpleSearchableListView(listOf("Task", "Memo"), "Choose object type")
             .showPopup(localToScreen(ev.x, ev.y), scene.window) ?: return
@@ -357,10 +354,8 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
     }
 
     private fun mouseReleased(ev: MouseEvent) {
-        if (ev.target != this) return
         val selection = selectedArea
         if (selection == null || selection.isEmpty()) return
-        selector.deselectAll()
         clearRegionSelection()
         if (selection.isTimeSelection) {
             selection.rect.requestFocus()
@@ -369,7 +364,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
         val containedViews = viewsInside(selection.rect.boundsInParent)
         when (ev.modifiers) {
             setOf(Alt) -> {
-                ev.consume()
+                selector.deselectAll()
                 if (containedViews.isEmpty()) {
                     val availableOptions = context[SynthDefRegistry].map(NewObjectOption::Synth) +
                             context[ProcessDefRegistry].map(NewObjectOption::Process) +
@@ -378,7 +373,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
                             listOf(NewObjectOption.Group, NewObjectOption.NewTempoGrid)
                     val popup = SimpleSearchableListView(availableOptions, "Add score object")
                     val anchor =
-                        localToScreen(selection.rect.boundsInParent.centerX, selection.rect.boundsInParent.centerY)
+                        localToScreen(selection.rect.boundsInParent.centerX, selection.rect.boundsInParent.minY)
                     val option = popup.showPopup(anchor, scene.window) ?: return
                     val obj = if (option is NewObjectOption.MIDI) {
                         createMidiObject(option.def, anchor) ?: return
@@ -405,7 +400,6 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
             }
 
             noModifiers, setOf(Shift) -> {
-                ev.consume()
                 for ((idx, view) in containedViews.withIndex()) {
                     val addToSelection = idx != 0 || ev.isShiftDown
                     selector.select(view, addToSelection)
