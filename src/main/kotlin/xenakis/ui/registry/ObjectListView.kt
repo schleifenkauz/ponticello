@@ -79,7 +79,7 @@ class ObjectListView<O: ContextualObject>(
         registerShortcuts {
             val selected = selectedBox ?: return@registerShortcuts
             registerActions(selected.actionBar.actions())
-            val selectedContent = selected.getContent()
+            val selectedContent = selected.content()
             if (displayMode.now == DisplayMode.DetailsPane && selectedContent is ToolPane) {
                 registerActions(selectedContent.actionBar.actions())
             }
@@ -152,7 +152,7 @@ class ObjectListView<O: ContextualObject>(
         else itemsScrollPane
 
     private fun displayContent(box: ObjectBox<O>?) {
-        val content = box?.getContent() ?: Region()
+        val content = box?.content() ?: Region()
         displayedContent = content
         HBox.setHgrow(displayedContent, Priority.ALWAYS)
         setRoot(HBox(itemCellsLayout(), displayedContent))
@@ -199,7 +199,7 @@ class ObjectListView<O: ContextualObject>(
         boxes.remove(box)
         itemsLayout.children.remove(box)
         box.subWindow?.hide()
-        if (displayedContent == box.getContent()) {
+        if (displayedContent == box.content) {
             displayContent(null)
         }
         updateRoot(mode.now)
@@ -291,7 +291,7 @@ class ObjectListView<O: ContextualObject>(
             val window = scene.window as? SubWindow
             window?.showOrBringToFront()
             Platform.runLater {
-                getBox(obj).getContent()?.requestFocus()
+                getBox(obj).content()?.requestFocus()
             }
             return window
         }
@@ -304,7 +304,7 @@ class ObjectListView<O: ContextualObject>(
 
     fun initializeContent(obj: O) {
         val box = boxesCache[obj] ?: return
-        box.getContent()
+        box.content()
     }
 
     @Serializable

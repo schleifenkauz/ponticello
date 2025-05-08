@@ -31,7 +31,6 @@ import xenakis.model.registry.reference
 import xenakis.model.score.ObjectPosition
 import xenakis.model.score.ScoreObject
 import xenakis.model.score.ScoreObjectGroup
-import xenakis.model.score.ScoreObjectInstance
 import xenakis.ui.launcher.XenakisLauncher.Companion.currentProject
 import xenakis.ui.launcher.XenakisMainActivity
 import kotlin.math.sqrt
@@ -99,9 +98,7 @@ class LauncherGrid private constructor(
     }
 
     fun noteOn(item: GridItem, velocity: Int) {
-        val active = activeObjects[item]
         item.target.pressed()
-//        if (item.stopOnRelease.now && active != null && active.stillActive) return //TODO check needed?
         when (val target = item.target) {
             ItemTarget.None -> return
             is ItemTarget.Flow -> {
@@ -134,7 +131,7 @@ class LauncherGrid private constructor(
                 val obj = target.ref.get() ?: return
                 val player = getPlayer()
                 player.getClock().scheduleAction(obj.quantizationConfig, obj.duration) { quantizationDelay ->
-                    val time = if (player.isPlaying.now) player.currentTime else zero
+                    val time = if (player.isPlaying.now) player.playHead.currentTime else zero
                     val y = obj.liveConfig.yPosition.now
                     val position = ObjectPosition(time, y)
                     val totalDelay = quantizationDelay.coerceAtMost(context[Settings].lookAhead)
@@ -190,16 +187,15 @@ class LauncherGrid private constructor(
         val score = getScore() ?: return
         val player = getPlayer()
         if (!player.isPlaying.now) return
-        val pos = activeObject.absolutePosition
+        val (time, y) = activeObject.absolutePosition
         var obj = activeObject.obj
-        val cutoff = (pos.time + obj.duration) - player.currentTime
+        val cutoff = (time + obj.duration) - player.playHead.currentTime
         if (item.stopOnRelease.now && cutoff > zero) {
             val name = context[ScoreObjectRegistry].availableName(obj.name.now)
             obj = obj.cut(obj.duration - cutoff, HorizontalDirection.LEFT, name) ?: obj
         }
-        val inst = ScoreObjectInstance(obj, pos)
         runFXWithTimeout(50) { //timeout to avoid double playback (maybe solve this in a cleaner way...)
-            score.addObject(inst, autoSelect = false)
+            score.addObject(obj, time, y * score.maxY.now, autoSelect = false)
         }
     }
 

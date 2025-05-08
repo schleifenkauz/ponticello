@@ -52,9 +52,9 @@ class ObjectBox<O : ContextualObject>(val parent: ObjectListView<O>, val obj: O)
 
     private lateinit var currentMode: DisplayMode
 
-    private var content: Parent? = null
+    var content: Parent? = null
 
-    fun getContent(): Parent? {
+    fun content(): Parent? {
         content?.let { return it }
         content = config.getContent(obj, currentMode) ?: return null
         return content!!

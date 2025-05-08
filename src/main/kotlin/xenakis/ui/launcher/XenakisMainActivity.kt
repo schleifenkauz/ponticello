@@ -124,7 +124,7 @@ class XenakisMainActivity(val project: XenakisProject) : Activity() {
         receiver.registerMidiContext(controlBusWindow) { ControlBusesMidiReceiver(project.busses) }
         receiver.registerMidiContext(flowPaneWindow) {
             val selectedGroup = flowPane.listView.selectedBox() ?: return@registerMidiContext null
-            val flowListView = selectedGroup.getContent() as? ObjectListView<*> ?: return@registerMidiContext null
+            val flowListView = selectedGroup.content() as? ObjectListView<*> ?: return@registerMidiContext null
             val selectedFlow = flowListView.selectedObject() as? AudioFlow
             selectedFlow?.midiContext()
         }
