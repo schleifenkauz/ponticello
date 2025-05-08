@@ -14,7 +14,9 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import reaktive.value.*
 import xenakis.impl.Logger
+import xenakis.impl.div
 import xenakis.impl.zero
+import xenakis.model.Settings
 import xenakis.model.flow.AudioFlows
 import xenakis.model.obj.AbstractContextualObject
 import xenakis.model.obj.ScoreObjectReference
@@ -112,6 +114,9 @@ class LauncherGrid private constructor(
 
             is ItemTarget.Player -> Platform.runLater {
                 val obj = target.ref.get() ?: return@runLater
+                if (obj.player == null) {
+                    context[XenakisMainActivity].scoreObjectsPane.listView.showContent(obj)
+                }
                 val player = obj.player
                 if (player == null) {
                     Logger.warn("Player is null for ScoreObject ${obj.name.now}", Logger.Category.Playback)
@@ -128,13 +133,14 @@ class LauncherGrid private constructor(
             is ItemTarget.Object -> {
                 val obj = target.ref.get() ?: return
                 val player = getPlayer()
-                player.getClock().scheduleAction(obj.quantizationConfig, obj.duration) {
+                player.getClock().scheduleAction(obj.quantizationConfig, obj.duration) { quantizationDelay ->
                     val time = if (player.isPlaying.now) player.currentTime else zero
                     val y = obj.liveConfig.yPosition.now
                     val position = ObjectPosition(time, y)
+                    val totalDelay = quantizationDelay.coerceAtMost(context[Settings].lookAhead)
                     activeObjects[item] = scheduler.scheduleObject(
                         obj, position, cutoff = zero, player,
-                        scLangLatency = zero, serverLatency = zero
+                        scLangLatency = totalDelay / 2, serverLatency = totalDelay / 2
                     ) //TODO consider velocity
                 }
             }

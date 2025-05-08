@@ -27,19 +27,20 @@ class ScorePlayer private constructor(
 ) {
     private val _isPlaying = reactiveVariable(false)
     private var loopedTime: Decimal = zero
-    var lastPlayFrom: Decimal = zero
-        private set
+    private var lastPlayFrom: Decimal = zero
 
     val isPlaying: ReactiveValue<Boolean> = _isPlaying
 
     val context get() = pane.context
+
+    private val lookAhead get() = context[Settings].lookAhead
 
     private val client: SuperColliderClient = context[SuperColliderClient]
     private val activeObjects = context[ActiveObjectsManager]
     private val events: ScoreEventCollector = ScoreEventCollector(pane.score, pane.context[Settings])
     val playHead: PlayHead = PlayHead(pane)
 
-    val currentTime get() = playHead.currentTime
+    val currentTime get() = if (isPlaying.now) playHead.currentTime + lookAhead else playHead.currentTime
 
     val loopOffset: Decimal get() = loopedTime - lastPlayFrom
 
@@ -49,7 +50,7 @@ class ScorePlayer private constructor(
     fun doCycle(clock: ClockObject, elapsedTime: Decimal) {
         var scoreTime = elapsedTime - loopedTime
 
-        var playHeadPos = scoreTime - clock.lookAhead
+        var playHeadPos = scoreTime - lookAhead
         if (playHeadPos < zero) playHeadPos += maxTime
         if (playHeadPos >= maxTime) {
             if (loopingActivated.now) {
@@ -72,7 +73,7 @@ class ScorePlayer private constructor(
             }
         }
 
-        val events = events.eventsAt(scoreTime - clock.period * 5, delta = clock.period * 5)
+        val events = events.eventsAt(scoreTime - clock.period, delta = clock.period * 5)
         scheduler.scheduleEvents(events, this)
     }
 
@@ -95,11 +96,12 @@ class ScorePlayer private constructor(
     fun startPlaying() {
         client.sendAsync("start_play", listOf(id))
         context[Recorder].startingPlayback()
-        Logger.fine("Starting playback at ${playHead.currentTime}", Logger.Category.Playback)
-        lastPlayFrom = playHead.currentTime
+        val time = playHead.currentTime
+        Logger.fine("Starting playback at $time", Logger.Category.Playback)
+        lastPlayFrom = time
         loopedTime = zero
         execute {
-            val activeObjects = scheduler.activeObjects(playHead.currentTime, context[Settings].lookAhead, pane.score)
+            val activeObjects = scheduler.activeObjects(time, context[Settings].lookAhead, pane.score)
             for ((_, position, inst) in activeObjects) {
                 if (!inst.muted.now) {
                     scheduleInstantly(inst, position)

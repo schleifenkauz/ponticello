@@ -75,7 +75,7 @@ abstract class RootScorePane(score: Score, context: Context) : ScorePane(score, 
             gridView.unmark()
         }
         val player = context[ScorePlayer.CURRENT]
-        context[TimeCodeView].displayTime(player.currentTime)
+        context[TimeCodeView].displayTime(player.playHead.currentTime)
     }
 
     fun magnifyEnvelope(editor: EnvelopeEditor) {

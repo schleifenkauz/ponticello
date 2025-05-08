@@ -23,9 +23,6 @@ class ClockObject(override val mutableName: ReactiveVariable<String>) : Abstract
     @Transient
     private var lookAheadMs: Long = 0
 
-    @Transient
-    var lookAhead: Decimal = zero
-        private set
     val period get() = PERIOD_S
 
     @Transient
@@ -46,7 +43,6 @@ class ClockObject(override val mutableName: ReactiveVariable<String>) : Abstract
     override fun initialize(context: Context) {
         super.initialize(context)
         lookAheadMs = context[Settings].lookAhead.toMillis()
-        lookAhead = lookAheadMs.toSeconds()
     }
 
     private fun runLoop() {
@@ -60,47 +56,6 @@ class ClockObject(override val mutableName: ReactiveVariable<String>) : Abstract
     override val canRename: Boolean
         get() = name.now != "default"
 
-    fun start(player: ScorePlayer) {
-        val currentTime = getCurrentTime()
-        val startTime = currentTime - player.playHead.currentTime.toMillis()
-        scheduleStart(player, {}, startTime, quantizationDelay = 0L)
-    }
-
-    fun scheduleStart(
-        meter: MeterObject?, quant: Decimal, offset: Decimal,
-        player: ScorePlayer?, action: () -> Unit = {},
-    ) {
-        val currentTime = getCurrentTime()
-        val activeMeter = activeMeters.firstOrNull { (m) -> m == meter }
-        val quantizationDelay = if (activeMeter != null) {
-            val quantMillis = quant.toMillis()
-            val meterTime = currentTime - activeMeter.startTime
-            var timeSinceLastMatch = meterTime - offset.toMillis() //TODO find a good name...
-            while (timeSinceLastMatch < 0L) timeSinceLastMatch += quantMillis //TODO make this more efficient
-            while (timeSinceLastMatch >= quantMillis) timeSinceLastMatch -= quantMillis
-            quantMillis - timeSinceLastMatch
-        } else 0L
-        val startTime = currentTime - (player?.playHead?.currentTime?.toMillis() ?: 0) + quantizationDelay
-        if (meter != null && player != null) {
-            activeMeters.add(ActiveMeter(meter, player, startTime))
-        }
-        scheduleStart(player, action, startTime, quantizationDelay)
-    }
-
-    private fun scheduleStart(player: ScorePlayer?, action: () -> Unit, startTime: Long, quantizationDelay: Long) {
-        executor.schedule({ action(); player?.startPlaying() }, quantizationDelay, MILLISECONDS)
-        if (player != null) {
-            executor.schedule(
-                { activePlayers.add(ActivePlayer(player, startTime)) },
-                quantizationDelay + lookAheadMs,
-                MILLISECONDS
-            )
-        }
-        if (clockTask == null) {
-            clockTask = executor.scheduleAtFixedRate({ runLoop() }, 0, PERIOD_MS, MILLISECONDS)
-        }
-    }
-
     fun scheduleStart(player: ScorePlayer, quantization: QuantizationConfig?) {
         if (quantization != null && quantization.enableQuantization.now && quantization.meter.now.isResolved.now) {
             val offset = quantization.computeOffset()
@@ -112,7 +67,7 @@ class ClockObject(override val mutableName: ReactiveVariable<String>) : Abstract
         }
     }
 
-    fun scheduleAction(quantization: QuantizationConfig, objDuration: Decimal = zero, action: () -> Unit) {
+    fun scheduleAction(quantization: QuantizationConfig, objDuration: Decimal = zero, action: (Decimal) -> Unit) {
         val meterRef = quantization.meter.now
         if (quantization.enableQuantization.now && meterRef.isResolved.now) {
             val offset = quantization.computeOffset()
@@ -120,7 +75,54 @@ class ClockObject(override val mutableName: ReactiveVariable<String>) : Abstract
             val quant = quantization.computeQuant(objDuration)
             scheduleStart(meter, quant, offset, player = null, action)
         } else {
-            action()
+            action(zero)
+        }
+    }
+
+    private fun start(player: ScorePlayer) {
+        val currentTime = getCurrentTime()
+        val startTime = currentTime - player.currentTime.toMillis()
+        scheduleStart(player, {}, startTime, quantizationDelay = 0L)
+    }
+
+    private fun scheduleStart(
+        meter: MeterObject?, quant: Decimal, offset: Decimal,
+        player: ScorePlayer?, action: (delay: Decimal) -> Unit = {},
+    ) {
+        val currentTime = getCurrentTime()
+        val activeMeter = activeMeters.firstOrNull { (m) -> m == meter }
+        val playHeadPos = player?.playHead?.currentTime?.toMillis() ?: 0
+        val quantizationDelay = if (activeMeter != null) {
+            val quantMillis = quant.toMillis()
+            val meterTime = currentTime - activeMeter.startTime
+            var timeSinceLastMatch = meterTime - offset.toMillis() - playHeadPos
+            timeSinceLastMatch %= quantMillis
+            if (timeSinceLastMatch < 0) timeSinceLastMatch += quantMillis
+            quantMillis - timeSinceLastMatch
+        } else 0L
+        val startTime = currentTime + quantizationDelay - playHeadPos
+        if (meter != null && player != null) {
+            activeMeters.add(ActiveMeter(meter, player, startTime))
+        }
+        scheduleStart(player, action, startTime, quantizationDelay)
+    }
+
+    private fun scheduleStart(
+        player: ScorePlayer?, action: (Decimal) -> Unit,
+        startTime: Long, quantizationDelay: Long,
+    ) {
+        executor.schedule({
+            action(quantizationDelay.toSeconds()); player?.startPlaying()
+        }, quantizationDelay, MILLISECONDS)
+        if (player != null) {
+            executor.schedule(
+                { activePlayers.add(ActivePlayer(player, startTime)) },
+                quantizationDelay + lookAheadMs,
+                MILLISECONDS
+            )
+        }
+        if (clockTask == null) {
+            clockTask = executor.scheduleAtFixedRate({ runLoop() }, 0, PERIOD_MS, MILLISECONDS)
         }
     }
 

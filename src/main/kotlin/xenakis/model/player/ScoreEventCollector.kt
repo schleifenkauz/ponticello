@@ -170,7 +170,7 @@ class ScoreEventCollector(
             val player = player
             if (
                 player != null && player.isPlaying.now
-                && player.currentTime in position.time - settings.lookAhead..posEnd.time
+                && player.playHead.currentTime in position.time - settings.lookAhead..posEnd.time
             ) {
                 ScorePlayer.execute {
                     player.scheduleInstantly(inst, position)
@@ -194,7 +194,7 @@ class ScoreEventCollector(
             removeEvent(Event(Event.Type.ObjectStart, position, inst))
             removeEvent(Event(Event.Type.ObjectEnd, posEnd, inst))
             val player = player
-            if (player != null && player.isPlaying.now && player.currentTime in position.time..posEnd.time) {
+            if (player != null && player.isPlaying.now && player.playHead.currentTime in position.time..posEnd.time) {
                 ScorePlayer.execute {
                     player.stopPlayBackInstantly(obj, position)
                 }

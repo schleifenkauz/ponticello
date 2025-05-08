@@ -27,7 +27,7 @@ object ScoreNavigationActions : Action.Collector<NavigableScorePane>({
         shortcut("Shift+SPACE")
         executes { view ->
             val player = view.context[ScorePlayer.CURRENT]
-            val t = player.currentTime
+            val t = player.playHead.currentTime
             view.display(t, view.displayedDuration + t)
         }
     }

@@ -29,7 +29,7 @@ class QuantizationConfig(
     val quantizationValue: ReactiveVariable<Decimal> = reactiveVariable(one),
     val offsetUnit: ReactiveVariable<TimeUnit> = reactiveVariable(TimeUnit.Seconds),
     val offsetValue: ReactiveVariable<Decimal> = reactiveVariable(zero),
-    val enableQuantization: ReactiveVariable<Boolean> = reactiveVariable(true),
+    val enableQuantization: ReactiveVariable<Boolean> = reactiveVariable(false),
     val shiftGrid: ReactiveVariable<Boolean> = reactiveVariable(false),
 ) : AbstractContextualObject() {
     @Transient

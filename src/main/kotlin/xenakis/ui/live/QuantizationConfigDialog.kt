@@ -90,7 +90,7 @@ class QuantizationConfigDialog(
         addItem("Shift grid: ", shiftGridToggle)
     }
 
-    override fun getDefault(): ResizeMode = ResizeMode.Regular
+    override fun confirm(): ResizeMode = ResizeMode.Regular
 
     companion object {
         private const val SELECTOR_WIDTH = 120.0
