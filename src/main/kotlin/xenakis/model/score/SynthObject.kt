@@ -1,5 +1,6 @@
 package xenakis.model.score
 
+import fxutils.Direction
 import hextant.context.Context
 import javafx.geometry.HorizontalDirection
 import javafx.geometry.HorizontalDirection.RIGHT
@@ -21,7 +22,6 @@ import xenakis.model.score.controls.writeSynthCode
 import xenakis.sc.BufferPositionControlSpec
 import xenakis.sc.NumericalControlSpec
 import xenakis.sc.editor.SynthDefSelector
-import xenakis.ui.impl.Direction
 
 @Serializable
 class SynthObject(

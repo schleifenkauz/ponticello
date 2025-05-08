@@ -1,5 +1,6 @@
 package xenakis.ui.score
 
+import fxutils.Direction
 import hextant.context.Context
 import xenakis.impl.Decimal
 import xenakis.impl.asTime
@@ -7,7 +8,6 @@ import xenakis.model.score.ObjectPosition
 import xenakis.model.score.ScoreObject
 import xenakis.model.score.ScoreObjectGroup
 import xenakis.model.score.ScoreObjectInstance
-import xenakis.ui.impl.Direction
 
 class SubScorePane(
     private val instance: ScoreObjectInstance,

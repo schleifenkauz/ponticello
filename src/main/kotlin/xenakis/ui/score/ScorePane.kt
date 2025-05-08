@@ -5,9 +5,9 @@ import fxutils.*
 import fxutils.prompt.SimpleSearchableListView
 import fxutils.prompt.compoundPrompt
 import hextant.context.Context
+import hextant.context.compoundEdit
 import hextant.core.editor.defaultState
 import hextant.serial.EditorRoot
-import hextant.undo.compoundEdit
 import javafx.application.Platform
 import javafx.collections.FXCollections.observableList
 import javafx.event.Event

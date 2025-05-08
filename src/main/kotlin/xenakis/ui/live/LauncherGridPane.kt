@@ -5,8 +5,8 @@ import fxutils.actions.ActionBar
 import fxutils.actions.collectActions
 import fxutils.controls.SliderBar
 import fxutils.prompt.SimpleSearchableListView
+import fxutils.undo.UndoManager
 import hextant.context.Context
-import hextant.undo.UndoManager
 import javafx.scene.control.CheckBox
 import javafx.scene.control.Label
 import javafx.scene.input.MouseButton

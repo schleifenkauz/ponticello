@@ -4,9 +4,9 @@ import fxutils.centerChildren
 import fxutils.prompt.YesNoPrompt
 import fxutils.registerShortcuts
 import fxutils.styleClass
-import hextant.undo.AbstractEdit
-import hextant.undo.Edit
-import hextant.undo.UndoManager
+import fxutils.undo.AbstractEdit
+import fxutils.undo.Edit
+import fxutils.undo.UndoManager
 import javafx.application.Platform
 import javafx.scene.control.Slider
 import javafx.scene.control.TextField

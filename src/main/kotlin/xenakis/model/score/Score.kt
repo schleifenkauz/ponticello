@@ -2,11 +2,11 @@ package xenakis.model.score
 
 import bundles.publicProperty
 import bundles.set
+import fxutils.undo.UndoManager
 import hextant.context.Context
+import hextant.context.compoundEdit
 import hextant.context.withoutUndo
 import hextant.core.editor.ListenerManager
-import hextant.undo.UndoManager
-import hextant.undo.compoundEdit
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import reaktive.value.ReactiveString

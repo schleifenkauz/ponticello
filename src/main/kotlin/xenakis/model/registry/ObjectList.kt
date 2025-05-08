@@ -1,8 +1,8 @@
 package xenakis.model.registry
 
+import fxutils.undo.UndoManager
 import hextant.context.Context
 import hextant.core.editor.ListenerManager
-import hextant.undo.UndoManager
 import kotlinx.serialization.Transient
 import reaktive.Observer
 import xenakis.impl.Logger

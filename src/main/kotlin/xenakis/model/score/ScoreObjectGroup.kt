@@ -1,5 +1,6 @@
 package xenakis.model.score
 
+import fxutils.Direction
 import hextant.context.Context
 import javafx.geometry.HorizontalDirection
 import javafx.geometry.HorizontalDirection.LEFT
@@ -18,7 +19,6 @@ import xenakis.model.flow.NodePlacement
 import xenakis.model.obj.BusReference
 import xenakis.model.registry.ObjectReference
 import xenakis.sc.editor.BusSelector
-import xenakis.ui.impl.Direction
 
 @Serializable
 class ScoreObjectGroup(

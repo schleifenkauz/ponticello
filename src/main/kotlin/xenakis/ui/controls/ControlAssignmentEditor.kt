@@ -10,8 +10,8 @@ import fxutils.controls.SliderBar
 import fxutils.prompt.InfoPrompt
 import fxutils.prompt.SimpleSearchableListView
 import hextant.context.Context
+import hextant.context.compoundEdit
 import hextant.serial.EditorRoot
-import hextant.undo.compoundEdit
 import javafx.geometry.Pos
 import javafx.scene.Node
 import javafx.scene.control.Button

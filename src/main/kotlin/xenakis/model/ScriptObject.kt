@@ -1,12 +1,12 @@
 package xenakis.model
 
 import bundles.set
+import fxutils.undo.UndoManager
 import hextant.context.Context
 import hextant.context.SelectionDistributor
 import hextant.context.extend
 import hextant.core.editor.defaultState
 import hextant.serial.EditorRoot
-import hextant.undo.UndoManager
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable

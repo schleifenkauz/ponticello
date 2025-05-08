@@ -1,11 +1,12 @@
 package xenakis.ui.actions
 
+import fxutils.Direction
 import fxutils.actions.collectActions
 import fxutils.actions.isAltDown
 import fxutils.actions.isTargetTextInput
 import fxutils.prompt.IntegerPrompt
 import hextant.context.Context
-import hextant.undo.compoundEdit
+import hextant.context.compoundEdit
 import javafx.geometry.HorizontalDirection.RIGHT
 import org.kordamp.ikonli.material2.Material2AL
 import org.kordamp.ikonli.materialdesign2.*
@@ -22,7 +23,6 @@ import xenakis.model.obj.NoSynthDef
 import xenakis.model.registry.ScoreObjectRegistry
 import xenakis.model.score.*
 import xenakis.ui.controls.RenamePrompt
-import xenakis.ui.impl.Direction
 import xenakis.ui.impl.showDialog
 import xenakis.ui.launcher.DetailPaneManager
 import xenakis.ui.launcher.XenakisMainActivity

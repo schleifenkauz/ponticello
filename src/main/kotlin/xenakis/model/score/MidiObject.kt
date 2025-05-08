@@ -1,11 +1,12 @@
 package xenakis.model.score
 
+import fxutils.Direction
+import fxutils.undo.AbstractEdit
+import fxutils.undo.PropertyEdit
+import fxutils.undo.UndoManager
 import hextant.context.Context
 import hextant.context.withoutUndo
 import hextant.serial.EditorRoot
-import hextant.undo.AbstractEdit
-import hextant.undo.PropertyEdit
-import hextant.undo.UndoManager
 import javafx.geometry.HorizontalDirection
 import javafx.geometry.HorizontalDirection.LEFT
 import javafx.geometry.HorizontalDirection.RIGHT
@@ -22,7 +23,6 @@ import xenakis.model.obj.NoSynthDef
 import xenakis.model.obj.SynthDefReference
 import xenakis.sc.code
 import xenakis.sc.editor.*
-import xenakis.ui.impl.Direction
 import xenakis.ui.score.PianoRollObjectView
 
 @Serializable

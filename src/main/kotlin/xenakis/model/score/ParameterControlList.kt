@@ -1,7 +1,7 @@
 package xenakis.model.score
 
+import fxutils.undo.UndoManager
 import hextant.context.Context
-import hextant.undo.UndoManager
 import javafx.scene.paint.Color
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable

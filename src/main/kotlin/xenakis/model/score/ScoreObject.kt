@@ -1,12 +1,13 @@
 package xenakis.model.score
 
+import fxutils.Direction
 import fxutils.prompt.YesNoPrompt
+import fxutils.undo.AbstractEdit
+import fxutils.undo.Edit
+import fxutils.undo.UndoManager
 import hextant.context.Context
 import hextant.context.withoutUndo
 import hextant.core.editor.ListenerManager
-import hextant.undo.AbstractEdit
-import hextant.undo.Edit
-import hextant.undo.UndoManager
 import javafx.geometry.HorizontalDirection
 import javafx.geometry.HorizontalDirection.LEFT
 import javafx.scene.input.DataFormat
@@ -30,7 +31,6 @@ import xenakis.model.score.controls.EnvelopeControl
 import xenakis.model.score.controls.ParameterControl
 import xenakis.sc.ControlSpec
 import xenakis.sc.NumericalControlSpec
-import xenakis.ui.impl.Direction
 import xenakis.ui.launcher.XenakisApp.Companion.primaryStage
 import xenakis.ui.launcher.XenakisLauncher.Companion.currentProject
 

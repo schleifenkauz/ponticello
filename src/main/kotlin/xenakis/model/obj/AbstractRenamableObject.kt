@@ -1,7 +1,7 @@
 package xenakis.model.obj
 
-import hextant.undo.AbstractEdit
-import hextant.undo.UndoManager
+import fxutils.undo.AbstractEdit
+import fxutils.undo.UndoManager
 import reaktive.value.ReactiveValue
 import reaktive.value.ReactiveVariable
 import reaktive.value.now

@@ -1,6 +1,6 @@
 package xenakis.model.score
 
-import hextant.undo.AbstractEdit
+import fxutils.undo.AbstractEdit
 import javafx.scene.paint.Color
 import reaktive.value.now
 

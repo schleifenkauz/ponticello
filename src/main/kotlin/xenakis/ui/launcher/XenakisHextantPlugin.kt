@@ -5,12 +5,12 @@ import fxutils.prompt.PredicateTextPrompt
 import fxutils.shortcut
 import hextant.context.ControlFactory
 import hextant.context.SelectionDistributor
+import hextant.context.compoundEdit
 import hextant.core.editor.*
 import hextant.core.view.EditorControl
 import hextant.core.view.ListEditorControl
 import hextant.plugins.*
 import hextant.serial.PropertyAccessor
-import hextant.undo.compoundEdit
 import reaktive.value.now
 import xenakis.impl.Logger
 import xenakis.impl.one

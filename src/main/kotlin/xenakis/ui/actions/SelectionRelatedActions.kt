@@ -3,7 +3,7 @@ package xenakis.ui.actions
 import fxutils.KeyEventHandlerBody
 import fxutils.actions.isTargetTextInput
 import hextant.context.Context
-import hextant.undo.compoundEdit
+import hextant.context.compoundEdit
 import reaktive.value.now
 import reaktive.value.reactiveVariable
 import xenakis.impl.Logger

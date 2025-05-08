@@ -1,9 +1,9 @@
 package xenakis.model.registry
 
 import bundles.set
+import fxutils.undo.UndoManager
 import hextant.context.Context
 import hextant.context.extend
-import hextant.undo.UndoManager
 import xenakis.model.obj.SuperColliderObject
 import xenakis.sc.client.SuperColliderClient
 

@@ -7,7 +7,7 @@ import fxutils.actions.registerActions
 import fxutils.registerShortcuts
 import fxutils.styleClass
 import hextant.context.Context
-import hextant.undo.compoundEdit
+import hextant.context.compoundEdit
 import javafx.event.Event
 import javafx.scene.Scene
 import reaktive.value.binding.map

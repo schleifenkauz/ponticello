@@ -2,10 +2,10 @@ package xenakis.model.live
 
 import bundles.set
 import fxutils.runFXWithTimeout
+import fxutils.undo.UndoManager
 import hextant.context.Context
 import hextant.context.extend
 import hextant.core.editor.ListenerManager
-import hextant.undo.UndoManager
 import javafx.application.Platform
 import javafx.geometry.HorizontalDirection
 import javafx.scene.input.DataFormat

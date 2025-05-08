@@ -1,5 +1,6 @@
 package xenakis.model.player
 
+import fxutils.Direction
 import reaktive.value.now
 import xenakis.impl.Decimal
 import xenakis.impl.Logger
@@ -7,7 +8,6 @@ import xenakis.impl.unaryMinus
 import xenakis.impl.zero
 import xenakis.model.Settings
 import xenakis.model.score.*
-import xenakis.ui.impl.Direction
 import java.util.*
 
 class ScoreEventCollector(

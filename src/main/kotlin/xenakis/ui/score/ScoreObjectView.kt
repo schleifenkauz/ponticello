@@ -5,10 +5,10 @@ import fxutils.actions.ActionBar
 import fxutils.actions.ContextualizedAction
 import fxutils.actions.registerShortcuts
 import fxutils.prompt.DetailPane
+import fxutils.undo.UndoManager
 import hextant.context.Context
+import hextant.context.compoundEdit
 import hextant.context.withoutUndo
-import hextant.undo.UndoManager
-import hextant.undo.compoundEdit
 import javafx.geometry.Bounds
 import javafx.geometry.HorizontalDirection
 import javafx.geometry.HorizontalDirection.LEFT
@@ -37,9 +37,6 @@ import xenakis.model.score.Score.Companion.rootScore
 import xenakis.ui.actions.ObjectActionContext
 import xenakis.ui.actions.ObjectActions
 import xenakis.ui.controls.NameControl
-import xenakis.ui.impl.Direction
-import xenakis.ui.impl.isResizeCursor
-import xenakis.ui.impl.resizeDirection
 import xenakis.ui.impl.resizeMode
 import xenakis.ui.impl.setupDraggingAndResizing
 import xenakis.ui.launcher.DetailPaneManager

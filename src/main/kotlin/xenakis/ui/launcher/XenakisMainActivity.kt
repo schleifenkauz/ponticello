@@ -5,7 +5,7 @@ import bundles.publicProperty
 import bundles.set
 import fxutils.*
 import fxutils.actions.registerActions
-import hextant.undo.UndoManager
+import fxutils.undo.UndoManager
 import javafx.geometry.Dimension2D
 import javafx.scene.layout.*
 import javafx.stage.Screen

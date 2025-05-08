@@ -1,10 +1,10 @@
 package xenakis.model.score
 
+import fxutils.undo.AbstractEdit
+import fxutils.undo.Edit
+import fxutils.undo.UndoManager
 import hextant.context.Context
 import hextant.core.editor.ListenerManager
-import hextant.undo.AbstractEdit
-import hextant.undo.Edit
-import hextant.undo.UndoManager
 import javafx.geometry.HorizontalDirection
 import javafx.geometry.HorizontalDirection.LEFT
 import javafx.geometry.HorizontalDirection.RIGHT

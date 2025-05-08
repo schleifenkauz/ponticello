@@ -1,5 +1,6 @@
 package xenakis.ui.live
 
+import fxutils.Direction
 import fxutils.button
 import fxutils.prompt.CompoundPrompt
 import fxutils.prompt.SimpleSearchableListView
@@ -15,7 +16,6 @@ import xenakis.model.registry.reference
 import xenakis.model.score.ScoreObject
 import xenakis.model.score.ScoreObject.ResizeMode
 import xenakis.model.score.TimeUnit
-import xenakis.ui.impl.Direction
 
 class ScoreObjectResizeDialog(private val obj: ScoreObject) : CompoundPrompt<ResizeMode>(
     "Resize ${obj.name.now}",

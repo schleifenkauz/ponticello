@@ -4,7 +4,7 @@ import fxutils.actions.ContextualizedAction
 import fxutils.actions.collectActions
 import fxutils.plural
 import fxutils.styleClass
-import hextant.undo.UndoManager
+import fxutils.undo.UndoManager
 import javafx.event.Event
 import org.kordamp.ikonli.materialdesign2.MaterialDesignP
 import org.kordamp.ikonli.materialdesign2.MaterialDesignS

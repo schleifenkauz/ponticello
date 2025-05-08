@@ -1,6 +1,6 @@
 package xenakis.model.registry
 
-import hextant.undo.AbstractEdit
+import fxutils.undo.AbstractEdit
 import xenakis.model.obj.ContextualObject
 
 sealed class ListEdit<O : ContextualObject>(protected val registry: ObjectList<O>) : AbstractEdit() {

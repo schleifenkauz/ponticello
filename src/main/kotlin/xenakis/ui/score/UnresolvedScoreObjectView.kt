@@ -2,7 +2,7 @@ package xenakis.ui.score
 
 import fxutils.button
 import fxutils.prompt.DetailPane
-import hextant.undo.compoundEdit
+import hextant.context.compoundEdit
 import javafx.scene.paint.Color
 import reaktive.value.ReactiveValue
 import reaktive.value.now

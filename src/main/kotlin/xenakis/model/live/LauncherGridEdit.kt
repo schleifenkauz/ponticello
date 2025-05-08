@@ -1,6 +1,6 @@
 package xenakis.model.live
 
-import hextant.undo.AbstractEdit
+import fxutils.undo.AbstractEdit
 
 abstract class LauncherGridEdit : AbstractEdit() {
     class SetItemTarget(

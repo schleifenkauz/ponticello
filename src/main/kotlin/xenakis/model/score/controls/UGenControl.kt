@@ -1,10 +1,10 @@
 package xenakis.model.score.controls
 
 import bundles.set
+import fxutils.undo.UndoManager
 import hextant.context.Context
 import hextant.context.extend
 import hextant.serial.EditorRoot
-import hextant.undo.UndoManager
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable

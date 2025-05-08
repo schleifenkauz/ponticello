@@ -2,8 +2,8 @@ package xenakis.ui.impl
 
 import fxutils.isResizeCursor
 import fxutils.setupDraggingAndResizing
+import fxutils.undo.UndoManager
 import hextant.context.Context
-import hextant.undo.UndoManager
 import javafx.geometry.Bounds
 import javafx.scene.Cursor
 import javafx.scene.input.MouseEvent

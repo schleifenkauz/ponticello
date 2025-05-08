@@ -1,7 +1,7 @@
 package xenakis.ui.actions
 
 import hextant.context.EditorControlGroup
-import hextant.undo.compoundEdit
+import hextant.context.compoundEdit
 import javafx.application.Platform
 import javafx.scene.control.Tooltip
 import javafx.util.Duration

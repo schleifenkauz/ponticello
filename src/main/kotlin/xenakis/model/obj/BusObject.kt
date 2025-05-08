@@ -1,8 +1,8 @@
 package xenakis.model.obj
 
+import fxutils.undo.UndoManager
+import fxutils.undo.VariableEdit
 import hextant.context.Context
-import hextant.undo.UndoManager
-import hextant.undo.VariableEdit
 import javafx.application.Platform
 import javafx.scene.input.DataFormat
 import kotlinx.serialization.SerialName

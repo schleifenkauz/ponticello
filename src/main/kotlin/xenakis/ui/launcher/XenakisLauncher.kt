@@ -7,6 +7,7 @@ import com.illposed.osc.transport.OSCPortOut
 import fxutils.SubWindow
 import fxutils.prompt.PredicateTextPrompt
 import fxutils.prompt.YesNoPrompt
+import fxutils.undo.UndoManager
 import hextant.context.Context
 import hextant.context.extend
 import hextant.core.HextantCore
@@ -14,7 +15,6 @@ import hextant.fx.Stylesheets
 import hextant.plugins.PluginBuilder
 import hextant.serial.readJson
 import hextant.serial.writeJson
-import hextant.undo.UndoManager
 import javafx.application.Platform
 import javafx.stage.Stage
 import kotlinx.serialization.serializer

@@ -1,6 +1,6 @@
 package xenakis.model.score
 
-import hextant.undo.AbstractEdit
+import fxutils.undo.AbstractEdit
 import xenakis.model.score.ParameterControlList.NamedParameterControl
 import xenakis.model.score.controls.ParameterControl
 import xenakis.sc.ControlSpec

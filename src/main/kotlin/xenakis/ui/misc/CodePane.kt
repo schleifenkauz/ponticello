@@ -3,6 +3,7 @@ package xenakis.ui.misc
 import fxutils.*
 import fxutils.actions.*
 import fxutils.prompt.InfoPrompt
+import fxutils.undo.UndoManager
 import hextant.context.Context
 import hextant.context.EditorControlGroup
 import hextant.context.SelectionDistributor
@@ -10,7 +11,6 @@ import hextant.core.Editor
 import hextant.core.editor.defaultState
 import hextant.fx.initHextantScene
 import hextant.serial.EditorRoot
-import hextant.undo.UndoManager
 import javafx.application.Platform
 import javafx.geometry.Point2D
 import javafx.geometry.Pos

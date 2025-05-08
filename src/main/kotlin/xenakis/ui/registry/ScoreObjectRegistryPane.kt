@@ -1,5 +1,6 @@
 package xenakis.ui.registry
 
+import fxutils.Direction
 import fxutils.SubWindow
 import fxutils.actions.Action
 import fxutils.actions.ContextualizedAction
@@ -29,7 +30,6 @@ import xenakis.model.registry.reference
 import xenakis.model.score.ScoreObject
 import xenakis.sc.NumericalControlSpec
 import xenakis.sc.Warp
-import xenakis.ui.impl.Direction
 import xenakis.ui.live.QuantizationConfigDialog
 import xenakis.ui.live.ScoreObjectResizeDialog
 import xenakis.ui.midi.ContextualMidiReceiver

@@ -1,7 +1,7 @@
 package xenakis.model.score
 
-import hextant.undo.AbstractEdit
-import hextant.undo.Edit
+import fxutils.undo.AbstractEdit
+import fxutils.undo.Edit
 import xenakis.impl.Decimal
 
 abstract class ScoreEdit(val score: Score) : AbstractEdit() {
