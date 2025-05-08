@@ -48,7 +48,7 @@ class SingleObjectScorePane(
         gridArea.setOnMouseClicked { ev ->
             val (t, _) = snapToGrid(ev.x, ev.y)
             val player = context[ScorePlayer.CURRENT]
-            if (!player.isPlaying.now) {
+            if (!player.isScheduled.now) {
                 player.playHead.movePlayHead(t)
             }
             ev.consume()

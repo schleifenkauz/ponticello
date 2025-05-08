@@ -29,6 +29,7 @@ import xenakis.model.flow.NodeTree
 import xenakis.model.player.ActiveObjectsManager
 import xenakis.model.player.Recorder
 import xenakis.model.player.ScoreObjectScheduler
+import xenakis.model.player.ScorePlayer
 import xenakis.model.project.SERVER_OPTIONS
 import xenakis.model.project.XenakisProject
 import xenakis.model.project.XenakisProject.Companion.projectDirectory
@@ -160,6 +161,7 @@ class XenakisLauncher {
     private fun getActiveProject(): XenakisProject? = (currentActivity as? XenakisMainActivity)?.project
 
     private fun openProject(project: XenakisProject) {
+        ScorePlayer.clearInstances()
         rootContext[currentProject] = project
         recentProjects.push(project.projectDirectory)
         getOrLaunchLoadingScreen().displayProgress(0.98, "Almost ready, launching project view...")

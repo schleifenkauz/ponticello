@@ -9,7 +9,6 @@ import xenakis.impl.zero
 @Serializable
 class LiveConfig(
     val yPosition: ReactiveVariable<Decimal> = reactiveVariable(zero),
-    val addToScore: ReactiveVariable<Boolean> = reactiveVariable(false),
     val loop: ReactiveVariable<Boolean> = reactiveVariable(false)
 ) {
     companion object {

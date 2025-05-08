@@ -82,7 +82,7 @@ class ScoreObjectRegistryPane(registry: ScoreObjectRegistry) : ObjectRegistryPan
         val configureQuantizationAction = action<ScoreObject>("Configure quantization") {
             enableWhen { obj ->
                 if (!obj.affectsPlayback) reactiveValue(false)
-                else obj.player?.isPlaying?.not() ?: reactiveValue(true)
+                else obj.player?.isScheduled?.not() ?: reactiveValue(true)
             }
             icon(Codicons.SYMBOL_PROPERTY)
             executes { obj, ev ->

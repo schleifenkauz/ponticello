@@ -4,9 +4,11 @@ import bundles.PublicProperty
 import bundles.publicProperty
 import bundles.set
 import fxutils.*
+import fxutils.actions.ActionBar
 import fxutils.actions.registerActions
 import fxutils.undo.UndoManager
 import javafx.geometry.Dimension2D
+import javafx.scene.input.TransferMode
 import javafx.scene.layout.*
 import javafx.stage.Screen
 import javafx.stage.StageStyle
@@ -88,6 +90,9 @@ class XenakisMainActivity(val project: XenakisProject) : Activity() {
 
     val interactionConfig = InteractionConfigBar(project.settings)
 
+    lateinit var playerBar: ActionBar
+        private set
+
     private val flowPane by lazy { AudioFlowPane (project.flows) }
     val flowPaneWindow by lazy { context.makeToolWindow(flowPane, "Audio flows", defaultSize = Dimension2D(2000.0, 800.0)) }
 
@@ -146,6 +151,13 @@ class XenakisMainActivity(val project: XenakisProject) : Activity() {
         playbackMessageListener = PlaybackMessageListener(project.objects, project.flows, player)
         context[SuperColliderClient].addListener(playbackMessageListener)
         context[AudioFlows].createAllFlows()
+        playerBar = toolbarPart(PlaybackActions.global.withContext(player))
+        val recordBtn = playerBar.getButton(PlaybackActions.toggleRecording)
+        recordBtn.setOnDragDetected { ev ->
+            val db = recordBtn.startDragAndDrop(TransferMode.COPY)
+            db.setContent(mapOf(PlaybackActions.RECORD_BUTTON to "<>"))
+            ev.consume()
+        }
     }
 
     override fun beforeShowing() {
@@ -184,7 +196,7 @@ class XenakisMainActivity(val project: XenakisProject) : Activity() {
                 infiniteSpace(),
                 interactionConfig,
                 hspace(20.0),
-                toolbarPart(PlaybackActions.global.withContext(player)),
+                playerBar,
                 hspace(20.0),
                 timeCodeView,
                 infiniteSpace()

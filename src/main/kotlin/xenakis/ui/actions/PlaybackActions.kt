@@ -1,9 +1,11 @@
 package xenakis.ui.actions
 
 import fxutils.actions.*
-import javafx.scene.layout.Region
+import javafx.event.Event
+import javafx.scene.input.DataFormat
 import org.kordamp.ikonli.material2.Material2MZ
 import org.kordamp.ikonli.materialdesign2.MaterialDesignM
+import reaktive.value.binding.and
 import reaktive.value.binding.map
 import reaktive.value.binding.not
 import reaktive.value.now
@@ -25,10 +27,10 @@ object PlaybackActions {
         description("Move the playback cursor to the start of the score")
         shortcut(shortcut)
         icon(Material2MZ.SKIP_PREVIOUS)
-        enableWhen { player -> player.isPlaying.not() }
+        enableWhen { player -> player.isScheduled.not() }
         executes { player, ev ->
             if (ev.isTargetTextInput && !ev.isAltDown() && !ev.isControlDown()) return@executes
-            if (!player.isPlaying.now) {
+            if (!player.isScheduled.now) {
                 player.playHead.movePlayHeadToStart()
             }
         }
@@ -42,9 +44,10 @@ object PlaybackActions {
                 else Material2MZ.PLAY_ARROW
             }
         }
+        toggleState { player -> player.isScheduled and player.isPlaying.not() }
         executes { player, ev ->
             if (ev.isTargetTextInput && !ev.isAltDown() && !ev.isControlDown()) return@executes
-            if (!player.isPlaying.now) {
+            if (!player.isScheduled.now) {
                 player.play()
             } else {
                 player.pause()
@@ -57,6 +60,39 @@ object PlaybackActions {
         add(playAction("Ctrl+SPACE"))
     }
 
+    val toggleRecording: Action<ScorePlayer> = action("Toggle Recording") {
+        shortcut("Ctrl+Alt+Shift?+R")
+        icon { player ->
+            player.context[Recorder].isRecording.map { recording ->
+                if (recording) MaterialDesignM.MICROPHONE
+                else MaterialDesignM.MICROPHONE_OUTLINE
+            }
+        }
+        toggleState { player ->
+            val recorder = player.context[Recorder]
+            recorder.isActive and recorder.isRecording.not()
+        }
+        executes { player, ev ->
+            if (ev.isShiftDown()) {
+                selectRecordedBus(player, ev)
+            } else player.context[Recorder].toggle()
+        }
+    }
+
+    val RECORD_BUTTON = DataFormat("record-button")
+
+    fun selectRecordedBus(player: ScorePlayer, ev: Event?) {
+        val context = player.context
+        val project = context[currentProject]
+        val currentSelected =
+            project[SERVER_OPTIONS].recordedBus.get() ?: context[BusRegistry].getDefault()
+        val bus = SearchableBusListView(
+            context[BusRegistry],
+            "Select bus to record to", rate = Rate.Audio
+        ).showPopup(ev, initialOption = currentSelected)
+        if (bus != null) project[SERVER_OPTIONS].recordedBus = bus.reference()
+    }
+
     val global = collectActions<ScorePlayer> {
         add(goToStartAction("Alt?+DIGIT0"))
         add(playAction("Alt?+SPACE"))
@@ -66,7 +102,7 @@ object PlaybackActions {
             icon(Material2MZ.STOP)
             executes { p ->
                 p.context[Recorder].stopRecording()
-                for (player in ScorePlayer.all()) {
+                for (player in ScorePlayer.instances()) {
                     player.pause()
                 }
                 p.context[ActiveObjectsManager].clear()
@@ -74,30 +110,6 @@ object PlaybackActions {
                 p.context[SuperColliderClient].run("s.freeAll")
             }
         }
-        addAction("Toggle recording") {
-            shortcut("Ctrl+Shift+R")
-            icon { player ->
-                player.context[Recorder].isActive.map { active ->
-                    if (active) MaterialDesignM.MICROPHONE
-                    else MaterialDesignM.MICROPHONE_OUTLINE
-                }
-            }
-            executes { player, ev ->
-                if (ev.isShiftDown()) {
-                    val context = player.context
-                    val project = context[currentProject]
-                    val currentSelected =
-                        project[SERVER_OPTIONS].recordedBus.get() ?: context[BusRegistry].getDefault()
-                    val bus = SearchableBusListView(
-                        context[BusRegistry],
-                        "Select bus to record to", rate = Rate.Audio
-                    ).showPopup(
-                        anchorNode = ev?.source as Region,
-                        initialOption = currentSelected
-                    )
-                    if (bus != null) project[SERVER_OPTIONS].recordedBus = bus.reference()
-                } else player.context[Recorder].toggleIsActive()
-            }
-        }
+        add(toggleRecording)
     }
 }

@@ -4,6 +4,7 @@ import bundles.PublicProperty
 import bundles.publicProperty
 import fxutils.prompt.YesNoPrompt
 import hextant.context.Context
+import javafx.application.Platform
 import reaktive.value.ReactiveBoolean
 import reaktive.value.now
 import reaktive.value.reactiveVariable
@@ -29,22 +30,35 @@ class Recorder(private val context: Context) {
 
     private var pathOfLastRecording: File? = null
 
-    private val _isActive = reactiveVariable(false)
-    val isActive: ReactiveBoolean get() = _isActive
+    private val active = reactiveVariable(false)
+    val isActive: ReactiveBoolean get() = active
 
-    fun toggleIsActive() {
-        _isActive.now = !isActive.now
-        //TODO also immediately start recording if there are any loops playing
-        if (isActive.now && context[ScorePlayer.CURRENT].isPlaying.now) startRecording()
-        else stopRecording()
+    private val recording = reactiveVariable(false)
+    val isRecording: ReactiveBoolean get() = recording //isRecording -> isActive
+
+    fun toggle() {
+        when {
+            !isActive.now -> {
+                active.set(true)
+                if (ScorePlayer.instances().any { p -> p.isScheduled.now }) {
+                    startRecording()
+                }
+            }
+            isRecording.now -> stopRecording()
+            else -> startRecording()
+        }
     }
 
     fun startingPlayback() {
-        if (isActive.now) scheduleRecording()
+        if (isActive.now && !isRecording.now) {
+            scheduleRecording()
+        }
     }
 
     fun pausingPlayback() {
-        if (isActive.now) pauseRecording()
+        if (isActive.now && ScorePlayer.instances().none { p -> p.isScheduled.now }) {
+            stopRecording()
+        }
     }
 
     private fun startRecording() {
@@ -52,20 +66,26 @@ class Recorder(private val context: Context) {
         pathOfLastRecording = path
         val recordedBus = getRecordedBus()
         client.run("s.record(${path.superColliderPath}, ${recordedBus.superColliderName}, ${recordedBus.channels.now})")
+        recording.set(true)
     }
 
     private fun getRecordedBus(): BusObject {
         val options = context[currentProject][SERVER_OPTIONS]
-        return options.recordedBus.get() ?: context[BusRegistry].getDefault()
+        return options.recordedBus.get() ?: context[BusRegistry].getOutput()
     }
 
     fun stopRecording() {
+        active.set(false)
+        if (!isRecording.now) return
+        recording.set(false)
         client.run("s.stopRecording")
-        if (pathOfLastRecording != null) {
-            if (YesNoPrompt("Add recorded audio as sample").showDialog(context) == true) {
-                if (addRecordedAudioAsSample()) return
+        Platform.runLater {
+            if (pathOfLastRecording != null) {
+                if (YesNoPrompt("Add recorded audio as sample").showDialog(context) == true) {
+                    if (addRecordedAudioAsSample()) return@runLater
+                }
+                pathOfLastRecording = null
             }
-            pathOfLastRecording = null
         }
     }
 
@@ -80,10 +100,6 @@ class Recorder(private val context: Context) {
         return false
     }
 
-    private fun pauseRecording() {
-        client.run("s.pauseRecording")
-    }
-
     private fun scheduleRecording() {
         val path = pathForNextRecording()
         pathOfLastRecording = path
@@ -96,7 +112,8 @@ class Recorder(private val context: Context) {
                 +"s.record(bus: ${bus.superColliderName})"
             }
         }
-        client.send("schedule", listOf(settings.scLangLatency.now.toDouble(), 0, code))
+        client.sendAsync("schedule", listOf(settings.scLangLatency.now.toDouble(), -1, code)) //TODO why does sendAsync not work?
+        recording.set(true)
     }
 
     private fun pathForNextRecording(): File {

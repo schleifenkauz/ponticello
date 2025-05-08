@@ -1,6 +1,7 @@
 package xenakis.ui.live
 
 import fxutils.*
+import fxutils.actions.Action
 import fxutils.actions.ActionBar
 import fxutils.actions.collectActions
 import fxutils.controls.SliderBar
@@ -8,6 +9,8 @@ import fxutils.prompt.SimpleSearchableListView
 import fxutils.undo.UndoManager
 import javafx.scene.control.CheckBox
 import javafx.scene.control.Label
+import javafx.scene.input.DragEvent
+import javafx.scene.input.Dragboard
 import javafx.scene.input.MouseButton
 import javafx.scene.input.TransferMode
 import javafx.scene.layout.GridPane
@@ -15,8 +18,11 @@ import javafx.scene.layout.HBox
 import javafx.scene.layout.Region
 import javafx.scene.layout.VBox
 import kotlinx.serialization.Contextual
+import org.kordamp.ikonli.codicons.Codicons
 import org.kordamp.ikonli.materialdesign2.MaterialDesignE
 import org.kordamp.ikonli.materialdesign2.MaterialDesignR
+import reaktive.value.binding.and
+import reaktive.value.binding.not
 import reaktive.value.now
 import xenakis.impl.one
 import xenakis.impl.toDecimal
@@ -26,12 +32,14 @@ import xenakis.model.flow.AudioFlows
 import xenakis.model.live.LauncherGrid
 import xenakis.model.live.LauncherGrid.GridItemReference
 import xenakis.model.live.LauncherGrid.ItemTarget
+import xenakis.model.player.ScorePlayer
 import xenakis.model.registry.ScoreObjectRegistry
 import xenakis.model.registry.reference
 import xenakis.model.score.ScoreObject
 import xenakis.model.score.ScoreObjectGroup
 import xenakis.sc.NumericalControlSpec
 import xenakis.sc.Warp
+import xenakis.ui.actions.PlaybackActions
 import xenakis.ui.actions.UndoRedoActions
 import xenakis.ui.launcher.XenakisMainActivity
 import xenakis.ui.registry.ScoreObjectRegistryPane
@@ -154,45 +162,55 @@ class LauncherGridPane(
             db.setContent(mapOf(GridItemReference.DATA_FORMAT to ref))
             ev.consume()
         }
-        box.setupDropArea({ db ->
-            if (item.target.isActive.now) return@setupDropArea false
-            when {
-                db.hasContent(GridItemReference.DATA_FORMAT) -> {
-                    val ref = db.getContent(GridItemReference.DATA_FORMAT) as GridItemReference
-                    ref.getItem(grid) != item
-                }
+        box.setupDropArea(canDropOnItem(item), dropOn(item))
+    }
 
-                db.hasContent(AudioFlow.DATA_FORMAT) -> true
-                db.hasContent(ScoreObject.DATA_FORMAT) -> {
-                    val name = db.getContent(ScoreObject.DATA_FORMAT) as String
-                    val obj = context[ScoreObjectRegistry].getOrNull(name)
-                    obj != null && obj.affectsPlayback
-                }
-
-                else -> false
+    private fun dropOn(item: LauncherGrid.GridItem) = { ev: DragEvent ->
+        val db = ev.dragboard
+        when {
+            db.hasContent(GridItemReference.DATA_FORMAT) -> {
+                val ref = db.getContent(GridItemReference.DATA_FORMAT) as GridItemReference
+                val droppedItem = ref.getItem(grid)
+                grid.swap(item, droppedItem)
             }
-        }) { ev ->
-            val db = ev.dragboard
-            when {
-                db.hasContent(GridItemReference.DATA_FORMAT) -> {
-                    val ref = db.getContent(GridItemReference.DATA_FORMAT) as GridItemReference
-                    val droppedItem = ref.getItem(grid)
-                    grid.swap(item, droppedItem)
-                }
+            db.hasContent(PlaybackActions.RECORD_BUTTON) -> {
+                item.target = ItemTarget.ToggleRecording
+            }
 
-                db.hasContent(AudioFlow.DATA_FORMAT) -> {
-                    val ref = db.getContent(AudioFlow.DATA_FORMAT) as AudioFlows.FlowReference
-                    item.target = ItemTarget.Flow(ref)
-                }
+            db.hasContent(AudioFlow.DATA_FORMAT) -> {
+                val ref = db.getContent(AudioFlow.DATA_FORMAT) as AudioFlows.FlowReference
+                item.target = ItemTarget.Flow(ref)
+            }
 
-                db.hasContent(ScoreObject.DATA_FORMAT) -> {
-                    val name = db.getContent(ScoreObject.DATA_FORMAT) as String
-                    val obj = context[ScoreObjectRegistry].getOrNull(name) ?: return@setupDropArea
+            db.hasContent(ScoreObject.DATA_FORMAT) -> {
+                val name = db.getContent(ScoreObject.DATA_FORMAT) as String
+                val obj = context[ScoreObjectRegistry].getOrNull(name)
+                if (obj != null) {
                     item.target =
                         if (obj is ScoreObjectGroup) ItemTarget.Player(obj.reference())
                         else ItemTarget.Object(obj.reference())
                 }
             }
+        }
+    }
+
+    private fun canDropOnItem(item: LauncherGrid.GridItem) = { db: Dragboard ->
+        when {
+            item.target.isActive.now -> false
+            db.hasContent(PlaybackActions.RECORD_BUTTON) -> true
+            db.hasContent(GridItemReference.DATA_FORMAT) -> {
+                val ref = db.getContent(GridItemReference.DATA_FORMAT) as GridItemReference
+                ref.getItem(grid) != item
+            }
+
+            db.hasContent(AudioFlow.DATA_FORMAT) -> true
+            db.hasContent(ScoreObject.DATA_FORMAT) -> {
+                val name = db.getContent(ScoreObject.DATA_FORMAT) as String
+                val obj = context[ScoreObjectRegistry].getOrNull(name)
+                obj != null && obj.affectsPlayback
+            }
+
+            else -> false
         }
     }
 
@@ -220,6 +238,14 @@ class LauncherGridPane(
 
                         else -> {}
                     }
+                }
+            }
+            addAction("Configure recording") {
+                enableWhen { target -> target.isActive.not() and (target is ItemTarget.ToggleRecording) }
+                ifNotApplicable(Action.IfNotApplicable.Hide)
+                icon(Codicons.SYMBOL_PROPERTY)
+                executes { target, ev ->
+                    PlaybackActions.selectRecordedBus(target.context[ScorePlayer.MAIN], ev)
                 }
             }
             add(ScoreObjectRegistryPane.configureQuantizationAction) { target -> target.targetObject }

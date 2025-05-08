@@ -23,11 +23,13 @@ class ScorePlayer private constructor(
     val scheduler: ScoreObjectScheduler,
     private val loopingActivated: ReactiveBoolean,
 ) {
-    private val _isPlaying = reactiveVariable(false)
+    private val playing = reactiveVariable(false)
+    private val scheduled = reactiveVariable(false)
     private var loopedTime: Decimal = zero
     private var lastPlayFrom: Decimal = zero
 
-    val isPlaying: ReactiveValue<Boolean> = _isPlaying
+    val isPlaying: ReactiveValue<Boolean> = playing
+    val isScheduled: ReactiveValue<Boolean> = scheduled
 
     val context get() = pane.context
 
@@ -38,7 +40,7 @@ class ScorePlayer private constructor(
     private val events: ScoreEventCollector = ScoreEventCollector(pane.score, pane.context[Settings])
     val playHead: PlayHead = PlayHead(pane)
 
-    val currentTime get() = if (isPlaying.now) playHead.currentTime + lookAhead else playHead.currentTime
+    val currentTime get() = if (isScheduled.now) playHead.currentTime + lookAhead else playHead.currentTime
 
     val loopOffset: Decimal get() = loopedTime - lastPlayFrom
 
@@ -76,8 +78,8 @@ class ScorePlayer private constructor(
     }
 
     fun play() {
-        if (isPlaying.now) return
-        _isPlaying.now = true
+        if (isScheduled.now) return
+        scheduled.set(true)
         val quantization = getQuantization()
         val clock = getClock()
         clock.scheduleStart(this, quantization)
@@ -92,6 +94,7 @@ class ScorePlayer private constructor(
         getQuantization()?.clock?.now?.get() ?: context[ClockRegistry].getDefault()
 
     fun startPlaying() = execute {
+        playing.set(true)
         client.sendAsync("start_play", listOf(id))
         context[Recorder].startingPlayback()
         val time = playHead.currentTime
@@ -107,8 +110,9 @@ class ScorePlayer private constructor(
     }
 
     fun pause() {
-        if (!isPlaying.now) return
-        _isPlaying.now = false
+        if (!isScheduled.now && !isPlaying.now) return
+        scheduled.set(false)
+        playing.set(false)
         loopedTime = zero
         lastPlayFrom = zero
         getClock().stop(this)
@@ -153,7 +157,11 @@ class ScorePlayer private constructor(
 
         private val all = mutableListOf<WeakReference<ScorePlayer>>()
 
-        fun all(): List<ScorePlayer> {
+        fun clearInstances() {
+            all.clear()
+        }
+
+        fun instances(): List<ScorePlayer> {
             all.removeIf { it.get() == null }
             return all.mapNotNull { ref -> ref.get() }
         }

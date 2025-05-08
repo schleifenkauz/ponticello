@@ -22,6 +22,7 @@ import xenakis.model.flow.AudioFlows
 import xenakis.model.obj.AbstractContextualObject
 import xenakis.model.obj.ScoreObjectReference
 import xenakis.model.player.ActiveScoreObject
+import xenakis.model.player.Recorder
 import xenakis.model.player.ScoreObjectScheduler
 import xenakis.model.player.ScorePlayer
 import xenakis.model.project.mainScore
@@ -103,6 +104,7 @@ class LauncherGrid private constructor(
         item.target.pressed()
         when (val target = item.target) {
             ItemTarget.None -> return
+            ItemTarget.ToggleRecording -> context[Recorder].toggle()
             is ItemTarget.Flow -> {
                 val flow = target.ref.getFlow(context[AudioFlows]) ?: return
                 if (!flow.isActive.now) flow.activate()
@@ -121,7 +123,7 @@ class LauncherGrid private constructor(
                     Logger.warn("Player is null for ScoreObject ${obj.name.now}", Logger.Category.Playback)
                     return@runLater
                 }
-                if (!player.isPlaying.now) {
+                if (!player.isScheduled.now) {
                     player.play()
                     context[XenakisMainActivity].scoreObjectsPane.listView.showContent(obj)
                 } else if (!item.stopOnRelease.now) {
@@ -163,6 +165,12 @@ class LauncherGrid private constructor(
         item.target.released()
         when (val target = item.target) {
             ItemTarget.None -> return
+            ItemTarget.ToggleRecording -> {
+                val recorder = context[Recorder]
+                if (item.stopOnRelease.now && recorder.isActive.now) {
+                    recorder.stopRecording()
+                }
+            }
             is ItemTarget.Object -> {
                 val activeObject = activeObjects[item] ?: return
                 addToTargetScore(activeObject, item)
@@ -175,7 +183,7 @@ class LauncherGrid private constructor(
 
             is ItemTarget.Player -> {
                 val player = target.ref.get()?.player ?: return
-                if (player.isPlaying.now && item.stopOnRelease.now) {
+                if (player.isScheduled.now && item.stopOnRelease.now) {
                     player.pause()
                 }
             }
@@ -272,6 +280,21 @@ class LauncherGrid private constructor(
         }
 
         @Serializable
+        data object ToggleRecording: ItemTarget() {
+            override val canView: Boolean
+                get() = false
+            override lateinit var isActive: ReactiveBoolean
+                private set
+
+            override fun toString(): String = "Toggle Recording"
+
+            override fun initialize(context: Context) {
+                super.initialize(context)
+                isActive = context[Recorder].isActive
+            }
+        }
+
+        @Serializable
         data class Object(val ref: ScoreObjectReference) : ItemTarget() {
             override val canView: Boolean
                 get() = ref.isResolved.now
@@ -327,7 +350,7 @@ class LauncherGrid private constructor(
                 }
                 val scoreObjectsPane = context[XenakisMainActivity].scoreObjectsPane
                 scoreObjectsPane.listView.initializeContent(obj)
-                isActive = obj.player?.isPlaying ?: reactiveValue(false)
+                isActive = obj.player?.isScheduled ?: reactiveValue(false)
             }
 
             override fun toString() = "Player ${ref.getName()}"
@@ -363,7 +386,7 @@ class LauncherGrid private constructor(
                         Flow(ref)
                     }
                 }
-                return listOf(None) + objectTargets + playerTargets + flowTargets
+                return listOf(None, ToggleRecording) + objectTargets + playerTargets + flowTargets
             }
         }
     }

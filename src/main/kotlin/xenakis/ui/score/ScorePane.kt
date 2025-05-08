@@ -268,7 +268,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
                 selector.deselectAll()
                 requestFocus()
                 val player = context[ScorePlayer.CURRENT]
-                if (!player.isPlaying.now) { //TODO pause and replay if currently playing
+                if (!player.isScheduled.now) { //TODO pause and replay if currently playing
                     player.playHead.movePlayHead(t)
                 }
             }
