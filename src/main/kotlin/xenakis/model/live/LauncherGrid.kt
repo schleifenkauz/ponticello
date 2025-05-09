@@ -19,10 +19,7 @@ import xenakis.impl.div
 import xenakis.impl.zero
 import xenakis.model.Settings
 import xenakis.model.flow.AudioFlows
-import xenakis.model.obj.AbstractContextualObject
-import xenakis.model.obj.ParameterDefReference
-import xenakis.model.obj.ParameterizedObject
-import xenakis.model.obj.ScoreObjectReference
+import xenakis.model.obj.*
 import xenakis.model.player.ActiveScoreObject
 import xenakis.model.player.Recorder
 import xenakis.model.player.ScoreObjectScheduler
@@ -35,6 +32,7 @@ import xenakis.model.registry.reference
 import xenakis.model.score.ObjectPosition
 import xenakis.model.score.ScoreObject
 import xenakis.model.score.ScoreObjectGroup
+import xenakis.model.score.SynthObject
 import xenakis.ui.launcher.XenakisLauncher.Companion.currentProject
 import xenakis.ui.launcher.XenakisMainActivity
 import kotlin.math.sqrt
@@ -238,6 +236,9 @@ class LauncherGrid private constructor(
                 val description = if (value is ItemTarget.None) "Reset target" else "Choose target"
                 grid.undoManager.record(PropertyEdit(this::target, oldTarget, value, description))
                 grid.listeners.notifyListeners { updateItem(this@GridItem) }
+                if (value is ItemTarget.Object && value.targetObject is SynthObject) {
+                    value.velocityParameter.now = ParameterDefObject.LEVEL.reference()
+                }
             }
 
         fun reference() = GridItemReference(grid.items.indexOf(this))
@@ -316,10 +317,13 @@ class LauncherGrid private constructor(
             override fun initialize(context: Context) {
                 super.initialize(context)
                 val obj = ref.resolve(context[ScoreObjectRegistry])
+                val velocityParam = velocityParameter.now
                 if (obj is ParameterizedObject) {
-                    val velocityParam = velocityParameter.now
                     val paramName = velocityParam.getName()
-                    velocityParameter.now = obj.def.getParameter(paramName)?.reference() ?: velocityParam
+                    velocityParameter.now = obj.def.getParameter(paramName)?.reference()
+                        ?: velocityParam.also { it.setUnresolved() }
+                } else {
+                    velocityParameter.now.setUnresolved()
                 }
             }
 

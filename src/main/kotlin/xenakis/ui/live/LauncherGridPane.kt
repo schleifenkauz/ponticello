@@ -10,10 +10,7 @@ import fxutils.undo.UndoManager
 import fxutils.undo.VariableEdit
 import javafx.scene.control.CheckBox
 import javafx.scene.control.Label
-import javafx.scene.input.DragEvent
-import javafx.scene.input.Dragboard
-import javafx.scene.input.MouseButton
-import javafx.scene.input.TransferMode
+import javafx.scene.input.*
 import javafx.scene.layout.GridPane
 import javafx.scene.layout.HBox
 import javafx.scene.layout.Region
@@ -23,10 +20,7 @@ import org.kordamp.ikonli.codicons.Codicons
 import org.kordamp.ikonli.materialdesign2.MaterialDesignA
 import org.kordamp.ikonli.materialdesign2.MaterialDesignE
 import org.kordamp.ikonli.materialdesign2.MaterialDesignR
-import reaktive.value.binding.and
-import reaktive.value.binding.flatMap
-import reaktive.value.binding.`if`
-import reaktive.value.binding.not
+import reaktive.value.binding.*
 import reaktive.value.now
 import reaktive.value.reactiveValue
 import xenakis.impl.one
@@ -37,14 +31,17 @@ import xenakis.model.flow.AudioFlows
 import xenakis.model.live.LauncherGrid
 import xenakis.model.live.LauncherGrid.GridItemReference
 import xenakis.model.live.LauncherGrid.ItemTarget
+import xenakis.model.obj.ParameterDefObject
 import xenakis.model.obj.ParameterDefReference
 import xenakis.model.obj.ParameterizedObject
 import xenakis.model.player.ScorePlayer
+import xenakis.model.registry.ObjectReference
 import xenakis.model.registry.ScoreObjectRegistry
 import xenakis.model.registry.reference
 import xenakis.model.score.ScoreObject
 import xenakis.model.score.ScoreObjectGroup
 import xenakis.sc.NumericalControlSpec
+import xenakis.sc.ParameterType
 import xenakis.sc.Warp
 import xenakis.ui.actions.PlaybackActions
 import xenakis.ui.actions.UndoRedoActions
@@ -255,23 +252,35 @@ class LauncherGridPane(
                     if (target !is ItemTarget.Object || target.targetObject !is ParameterizedObject) reactiveValue(null)
                     else `if`(
                         target.velocityParameter.flatMap(ParameterDefReference::isResolved),
-                        then = { MaterialDesignA.ALPHA_V_BOX_OUTLINE },
-                        otherwise = { MaterialDesignA.ALPHA_V_BOX }
+                        then = { MaterialDesignA.ALPHA_V_BOX },
+                        otherwise = { MaterialDesignA.ALPHA_V_BOX_OUTLINE }
                     )
+                }
+                toggleState { target ->
+                    if (target !is ItemTarget.Object || target.targetObject !is ParameterizedObject) reactiveValue(false)
+                    else target.velocityParameter.map { it != ObjectReference.none<ParameterDefObject>() }
                 }
                 executes { target, ev ->
                     if (target !is ItemTarget.Object) return@executes
-                    val obj = target.targetObject as? ParameterizedObject ?: return@executes
-                    val oldVelocityParam = target.velocityParameter.now
-                    val newVelocityParam = SearchableParameterDefListView(
-                        obj.def.allParameters(), "Select velocity parameter"
-                    ).showPopup(ev, initialOption = oldVelocityParam.get()) ?: return@executes
-                    if (newVelocityParam != oldVelocityParam.get()) {
-                        val ref = newVelocityParam.reference()
-                        target.velocityParameter.set(ref)
-                        target.context[UndoManager].record(
-                            VariableEdit(target.velocityParameter, oldVelocityParam, ref, "Select velocity parameter")
-                        )
+                    if (ev is MouseEvent && ev.button == MouseButton.SECONDARY) {
+                        target.velocityParameter.set(ObjectReference.none())
+                    } else {
+                        val obj = target.targetObject as? ParameterizedObject ?: return@executes
+                        val oldVelocityParam = target.velocityParameter.now
+                        val newVelocityParam = SearchableParameterDefListView(
+                            obj.def.allParameters(), "Select velocity parameter",
+                            fixedParameterType = ParameterType.Numerical
+                        ).showPopup(ev, initialOption = oldVelocityParam.get()) ?: return@executes
+                        if (newVelocityParam != oldVelocityParam.get()) {
+                            val ref = newVelocityParam.reference()
+                            target.velocityParameter.set(ref)
+                            target.context[UndoManager].record(
+                                VariableEdit(
+                                    target.velocityParameter, oldVelocityParam, ref,
+                                    "Select velocity parameter"
+                                )
+                            )
+                        }
                     }
                 }
             }

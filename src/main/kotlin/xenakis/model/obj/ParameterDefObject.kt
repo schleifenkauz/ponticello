@@ -17,7 +17,12 @@ class ParameterDefObject(
 ) : AbstractRenamableObject() {
     constructor(name: String, spec: ControlSpec) : this(reactiveVariable(name), reactiveVariable(spec))
 
-    override fun canRenameTo(newName: String): Boolean = true
+    var isImmutable = false
+        private set
+
+    private fun immutable() = also { isImmutable = true }
+
+    override fun canRenameTo(newName: String): Boolean = !isImmutable
 
     fun defaultControl(defaultBus: BusReference? = null) = spec.now.defaultControl(defaultBus)
 
@@ -29,6 +34,7 @@ class ParameterDefObject(
             is BufferPositionControlSpec -> "buf-pos"
             is BufferControlSpec -> "buf"
             is BusControlSpec -> "bus"
+            is AttackReleaseControlSpec -> return "attack-release"
         }
         return "${name.now} ($type)"
     }
@@ -36,19 +42,23 @@ class ParameterDefObject(
     fun copy() = ParameterDefObject(mutableName.copy(), spec.copy())
 
     companion object {
-        private val freq = ParameterDefObject(
+        private val FREQ = ParameterDefObject(
             "freq",
             NumericalControlSpec(440.0, 20.0, 20000.0, 1.0.toDecimal(), 0.02, Warp.Exponential, Color.BLACK)
         )
-        private val amp = ParameterDefObject(
+        val AMP = ParameterDefObject(
             "amp",
             NumericalControlSpec(0.1, 0.0, 1.0, 0.01.toDecimal(), 0.02, Warp.Linear, Color.ORANGE)
         )
-        private val pan = ParameterDefObject(
+        val PAN = ParameterDefObject(
             "pan",
             NumericalControlSpec(0.0, -1.0, 1.0, 0.1.toDecimal(), 0.02, Warp.Linear, Color.BLUE)
         )
 
-        val defaults = listOf(freq, amp, pan)
+        val LEVEL = ParameterDefObject("level", NumericalControlSpec.LEVEL).immutable()
+
+        val ATTACK_RELEASE = ParameterDefObject("attack-release", AttackReleaseControlSpec()).immutable()
+
+        val defaults = listOf(FREQ, AMP, PAN)
     }
 }

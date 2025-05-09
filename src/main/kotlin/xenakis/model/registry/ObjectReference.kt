@@ -34,6 +34,11 @@ class ObjectReference<O : NamedObject>(private var _name: String) : ScExpr {
         isResolved = obj.isAdded
     }
 
+    fun setUnresolved() {
+        obj = null
+        isResolved = reactiveValue(false)
+    }
+
     fun resolve(registry: NamedObjectList<O>): O? {
         if (obj != null) return obj as O
         if (_name == "<none>") {
@@ -104,6 +109,6 @@ class ObjectReference<O : NamedObject>(private var _name: String) : ScExpr {
     companion object {
         const val NONE = "<none>"
 
-        fun <O: NamedObject> none() = ObjectReference<O>(NONE)
+        fun <O: NamedObject> none() = ObjectReference<O>(NONE).also { it.setUnresolved() }
     }
 }
