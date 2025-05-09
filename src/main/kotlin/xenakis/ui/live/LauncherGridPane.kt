@@ -32,7 +32,6 @@ import xenakis.model.live.ItemTarget
 import xenakis.model.live.LauncherGrid
 import xenakis.model.live.LauncherGrid.GridItemReference
 import xenakis.model.obj.ParameterDefObject
-import xenakis.model.obj.ParameterDefReference
 import xenakis.model.obj.ParameterizedObject
 import xenakis.model.player.ScorePlayer
 import xenakis.model.registry.ObjectReference
@@ -251,7 +250,7 @@ class LauncherGridPane(
                 icon { target ->
                     if (target !is ItemTarget.Object || target.targetObject !is ParameterizedObject) reactiveValue(null)
                     else `if`(
-                        target.velocityParameter.flatMap(ParameterDefReference::isResolved),
+                        target.velocityParameter.flatMap { p -> p.isResolved or (p.getName() == "level") },
                         then = { MaterialDesignA.ALPHA_V_BOX },
                         otherwise = { MaterialDesignA.ALPHA_V_BOX_OUTLINE }
                     )
@@ -261,25 +260,33 @@ class LauncherGridPane(
                     else target.velocityParameter.map { it != ObjectReference.none<ParameterDefObject>() }
                 }
                 executes { target, ev ->
-                    if (target !is ItemTarget.Object) return@executes
-                    if (ev is MouseEvent && ev.button == MouseButton.SECONDARY) {
-                        target.velocityParameter.set(ObjectReference.none())
-                    } else {
-                        val obj = target.targetObject as? ParameterizedObject ?: return@executes
-                        val oldVelocityParam = target.velocityParameter.now
-                        val newVelocityParam = SearchableParameterDefListView(
-                            obj.def.allParameters(), "Select velocity parameter",
-                            fixedParameterType = ParameterType.Numerical
-                        ).showPopup(ev, initialOption = oldVelocityParam.get()) ?: return@executes
-                        if (newVelocityParam != oldVelocityParam.get()) {
-                            val ref = newVelocityParam.reference()
-                            target.velocityParameter.set(ref)
-                            target.context[UndoManager].record(
-                                VariableEdit(
-                                    target.velocityParameter, oldVelocityParam, ref,
-                                    "Select velocity parameter"
+                    val obj = target.targetObject as? ParameterizedObject ?: return@executes
+                    when {
+                        target !is ItemTarget.Object -> {}
+                        ev is MouseEvent && ev.button == MouseButton.SECONDARY -> {
+                            target.velocityParameter.set(ObjectReference.none())
+                        }
+//                        ev.isShiftDown() -> {
+//                            val velocityParam = target.velocityParameter.now.get() ?: return@executes
+//                            ControlSpecPrompt.create(velocityParam.name.now, obj, velocityParam.spec.now)
+//                                ?.showDialog(ev)
+//                        }
+                        else -> {
+                            val oldVelocityParam = target.velocityParameter.now
+                            val newVelocityParam = SearchableParameterDefListView(
+                                obj.def.allParameters(), "Select velocity parameter",
+                                fixedParameterType = ParameterType.Numerical
+                            ).showPopup(ev, initialOption = oldVelocityParam.get()) ?: return@executes
+                            if (newVelocityParam != oldVelocityParam.get()) {
+                                val ref = newVelocityParam.reference()
+                                target.velocityParameter.set(ref)
+                                target.context[UndoManager].record(
+                                    VariableEdit(
+                                        target.velocityParameter, oldVelocityParam, ref,
+                                        "Select velocity parameter"
+                                    )
                                 )
-                            )
+                            }
                         }
                     }
                 }

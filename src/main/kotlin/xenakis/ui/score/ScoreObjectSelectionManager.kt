@@ -12,6 +12,7 @@ import reaktive.value.reactiveVariable
 import xenakis.model.score.Score
 import xenakis.model.score.ScoreObject
 import xenakis.model.score.ScoreObjectInstance
+import xenakis.ui.launcher.DetailPaneManager
 
 class ScoreObjectSelectionManager(val context: Context, private val rootPane: ScorePane) {
     private val _selectedViews = mutableSetOf<ScoreObjectView>()
@@ -76,6 +77,7 @@ class ScoreObjectSelectionManager(val context: Context, private val rootPane: Sc
     }
 
     fun deselectAll() {
+        context[DetailPaneManager].hideCurrentlyShown()
         val previouslySelected = selectedViews.toSet()
         val previouslySelectedObjects = selectedObjects.toSet()
         _selectedViews.clear()

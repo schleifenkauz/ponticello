@@ -148,14 +148,14 @@ class SynthObjectView(
         }
     }
 
-    private fun displaySpectrogram() {
+    private fun displaySpectrogram() = Platform.runLater {
         children.removeAll(spectrogramViews)
         spectrogramViews.clear()
-        if (obj.displaySample?.now != true) return
-        if (spectrogramImage == null) return
-        val sample = obj.sample.now?.get() as? SampleObject ?: return
+        if (obj.displaySample?.now != true) return@runLater
+        if (spectrogramImage == null) return@runLater
+        val sample = obj.sample.now?.get() as? SampleObject ?: return@runLater
         val rate = obj.playBufRate?.now ?: one(precision = 3)
-        if (rate == zero) return
+        if (rate == zero) return@runLater
         val defaultStartPos = if (rate < zero) sample.duration().now else zero
         var startPos = obj.playbufStartPos?.now?.wrapAt(sample.duration().now) ?: defaultStartPos
         if (rate < zero && startPos < 1e-5.asTime) startPos = sample.duration().now

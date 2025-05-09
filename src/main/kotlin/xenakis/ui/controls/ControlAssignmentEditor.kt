@@ -31,10 +31,7 @@ import reaktive.value.binding.flatMap
 import reaktive.value.binding.map
 import reaktive.value.fx.asObservableValue
 import reaktive.value.fx.asProperty
-import xenakis.impl.asTime
-import xenakis.impl.asY
-import xenakis.impl.one
-import xenakis.impl.zero
+import xenakis.impl.*
 import xenakis.model.obj.*
 import xenakis.model.player.ActiveObject
 import xenakis.model.player.ActiveScoreObject
@@ -511,7 +508,7 @@ class ControlAssignmentEditor(val control: NamedParameterControl, val view: Scor
                 box.userData = duration.forEach { maxDur ->
                     val timeSpec = NumericalControlSpec(
                         default = zero, min = zero, max = maxDur,
-                        step = 0.01.asTime, lag = zero, warp = Warp.Linear, associatedColor = Color.GRAY
+                        step = 0.01.toDecimal(), lag = zero, warp = Warp.Linear, associatedColor = Color.GRAY
                     ).converter(unit = "s")
                     control.attack.now = control.attack.now.coerceAtMost(maxDur)
                     if (objectDuration != null) {

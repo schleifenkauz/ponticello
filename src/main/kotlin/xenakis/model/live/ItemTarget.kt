@@ -6,10 +6,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import reaktive.value.*
-import xenakis.impl.Logger
-import xenakis.impl.div
-import xenakis.impl.toDecimal
-import xenakis.impl.zero
+import xenakis.impl.*
 import xenakis.model.Settings
 import xenakis.model.flow.AudioFlows
 import xenakis.model.obj.*
@@ -132,10 +129,10 @@ sealed class ItemTarget : AbstractContextualObject() {
                 val totalDelay = quantizationDelay.coerceAtMost(context[Settings].lookAhead)
                 val extraArguments = mutableMapOf<ParameterDefObject, ParameterControl>()
                 val velocityParameter = velocityParameter.now.get()
-                val velocitySpec = velocityParameter?.spec?.now as? NumericalControlSpec
-                if (obj is ParameterizedObject && velocitySpec != null) {
-                    val transform = velocitySpec.mapOnto(0.0..127.0)
-                    val value = transform.unmap(velocity.toDouble()).toDecimal()
+                val spec = velocityParameter?.spec?.now as? NumericalControlSpec
+                if (obj is ParameterizedObject && spec != null) {
+                    val transform = spec.mapOnto(0.0..127.0)
+                    val value = transform.unmap(velocity.toDouble()).toDecimal().withPrecision(spec.precision)
                     extraArguments[velocityParameter] = ValueControl.create(value)
                 }
                 ScorePlayer.execute {
