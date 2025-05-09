@@ -5,8 +5,6 @@ import fxutils.actions.ContextualizedAction
 import fxutils.actions.collectActions
 import fxutils.actions.registerShortcuts
 import fxutils.styleClass
-import javafx.scene.layout.HBox
-import javafx.scene.layout.Priority
 import org.controlsfx.control.textfield.CustomTextField
 import org.kordamp.ikonli.javafx.FontIcon
 import org.kordamp.ikonli.material2.Material2MZ
@@ -43,7 +41,6 @@ abstract class SearchableToolPane<O : NamedObject> : ToolPane(), ObjectListDispl
         searchText.setOnAction {
             listView.showSelected()
         }
-        HBox.setHgrow(searchText, Priority.ALWAYS)
     }
 
     protected open fun filter(obj: O): Boolean = true

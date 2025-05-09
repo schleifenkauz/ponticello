@@ -101,7 +101,7 @@ OSCdef('schedule', {
 	', abs_time = '.post; abs_time.postln;
 	fct = this.compile(code.asString);
 	if (fct == nil) { "Compilation error".throw };
-    //code.postln;
+    code.postln;
     TempoClock.schedAbs(abs_time) {
         if (my_play_start.isNil || (my_play_start == ~play_start[player_id])) {
             try { fct.value } { |error|

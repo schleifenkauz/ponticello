@@ -26,9 +26,9 @@ class GlobalPatternControl(val pattern: ReactiveVariable<GlobalPatternReference>
     override fun ScWriter.generatePreparationCode(
         obj: ParameterizedObject, uniqueName: String,
         parameter: String, spec: ControlSpec,
-        context: CodegenContext,
+        ctx: CodegenContext,
     ) {
-        if (context == CodegenContext.Process) {
+        if (ctx == CodegenContext.Process) {
             val patternName = pattern.now.force().superColliderName
             +"${uniqueArgumentName(uniqueName, parameter)} = $patternName"
         }

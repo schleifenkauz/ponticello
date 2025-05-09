@@ -41,9 +41,9 @@ data class BufferControl(
     override fun ScWriter.generatePreparationCode(
         obj: ParameterizedObject, uniqueName: String,
         parameter: String, spec: ControlSpec,
-        context: CodegenContext,
+        ctx: CodegenContext,
     ) {
-        if (context == CodegenContext.Process) {
+        if (ctx == CodegenContext.Process) {
             val bufferName = sample.now.force().superColliderName
             +"${uniqueArgumentName(uniqueName, parameter)} = $bufferName"
         }

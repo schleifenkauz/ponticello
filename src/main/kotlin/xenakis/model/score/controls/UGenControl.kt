@@ -55,7 +55,7 @@ data class UGenControl(
     override fun ScWriter.generatePreparationCode(
         obj: ParameterizedObject, uniqueName: String,
         parameter: String, spec: ControlSpec,
-        context: CodegenContext,
+        ctx: CodegenContext,
     ) {
         val expr = substituteControlParameters(expr.editor.result.now, obj, uniqueName)
         val busName = auxilBusName(uniqueName, parameter)

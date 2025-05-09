@@ -1,5 +1,6 @@
 package xenakis.ui.registry
 
+import fxutils.actions.Action
 import fxutils.actions.ContextualizedAction
 import fxutils.actions.collectActions
 import fxutils.controls.SliderBar
@@ -79,6 +80,7 @@ class ControlBusRegistryPane(busses: BusRegistry) : AbstractBusRegistryPane(buss
             addAction("Remove default value") {
                 icon(Material2AL.CLOSE)
                 enableWhen { box -> box.obj.spec.notNull() }
+                ifNotApplicable(Action.IfNotApplicable.Hide)
                 executes { box -> box.obj.updateSpec(null) }
             }
             addAction("Configure default value") {
@@ -90,7 +92,7 @@ class ControlBusRegistryPane(busses: BusRegistry) : AbstractBusRegistryPane(buss
                     val name = bus.name.now
                     val initialSpec = bus.spec.now ?: NumericalControlSpec.DEFAULT
                     val spec = ControlSpecPrompt.create(name, null, initialSpec)!!
-                        .showDialog(box, offset = Point2D(box.width, 0.0)) ?: return@executes
+                        .showDialog(box, offset = Point2D(box.width, 0.0))
                     bus.updateSpec(spec as NumericalControlSpec)
                 }
             }

@@ -33,69 +33,72 @@ private fun ParameterControl.adjustControlForCutoff(
     cutoff: Decimal,
     spec: ControlSpec,
 ): ParameterControl {
-    val control = if (cutoff != zero && this is EnvelopeControl) {
+    return if (cutoff != zero && this is EnvelopeControl) {
         spec as NumericalControlSpec
         val cutoffEnvelope = points.cut(cutoff, HorizontalDirection.RIGHT, spec.warp)
-        EnvelopeControl(cutoffEnvelope)
+        val control = EnvelopeControl(cutoffEnvelope)
+        control.initialize(context)
+        control
     } else this
-    return control
 }
 
 fun ScWriter.writeSynthCode(
     obj: ParameterizedObject, uniqueName: String,
     cutoff: Decimal, placement: NodePlacement, latency: Decimal,
     extraArguments: Map<ParameterDefObject, ParameterControl> = emptyMap(),
-) {
+) = appendBlock("fork") {
+    +"var auxilBuses = (), auxilSynths = ()"
+    val controlMap = obj.controls.all().associate { ctrl ->
+        val spec = ctrl.spec.now!!
+        val control = ctrl.now.adjustControlForCutoff(cutoff, spec)
+        ctrl.name.now to Pair(spec, control)
+    } + extraArguments.map { (param, control) -> param.name.now to Pair(param.spec.now, control) }
+    val synthDefName = obj.def.name.now
+    val synthVar = "${obj.superColliderPrefix}$uniqueName"
+    allocateAuxilMaps(uniqueName)
+    +"s.sync"
+    append("$synthVar = Synth.newPaused(\\$synthDefName, [")
+    for ((param, control) in controlMap) {
+        val (spec, ctrl) = control
+        if (!obj.def.hasParameter(param) && param !in SPECIAL_PARAMETERS) continue
+        val customSynthArgs = ctrl.customSynthArguments()
+        if (customSynthArgs != null) append(customSynthArgs)
+        if (!ctrl.providesConstantSynthArgument()) continue
+        val expr = ctrl.generateArgumentExpr(obj, uniqueName, param, spec, context = CodegenContext.Synth)
+        append("$param: ")
+        expr.code(writer, obj.context)
+        append(", ")
+    }
+    if (obj.duration() != null) append("duration: ${obj.duration()!!.now}")
+    else append("afterDuration: Done.none")
+    val action = guardAgainstReplaceNil(placement)
+    appendLine("], target: ${placement.target}, addAction: $action);")
+    +"s.sync"
+    for ((param, control) in controlMap) {
+        val (spec, ctrl) = control
+        with(ctrl) {
+            generatePreparationCode(obj, uniqueName, param, spec, CodegenContext.Synth)
+        }
+    }
+    if (controlMap.isNotEmpty()) +"s.sync"
+    for ((param, control) in controlMap) {
+        val (spec, ctrl) = control
+        if (!obj.def.hasParameter(param) && param !in SPECIAL_PARAMETERS) continue
+        with(ctrl) {
+            applyToSynth(obj, uniqueName, synthVar, param, spec)
+        }
+    }
+    +"$synthVar.register"
     appendBlock("s.makeBundle($latency)") {
-        +"var auxilBuses = (), auxilSynths = ()"
-        val controlMap = obj.controls.all().associate { ctrl ->
-            val spec = ctrl.spec.now!!
-            val control = ctrl.now.adjustControlForCutoff(cutoff, spec)
-            ctrl.name.now to Pair(spec, control)
-        } + extraArguments.map { (param, control) -> param.name.now to Pair(param.spec.now, control) }
-        val synthDefName = obj.def.name.now
-        val synthVar = "${obj.superColliderPrefix}$uniqueName"
-        allocateAuxilMaps(uniqueName)
-        append("$synthVar = Synth.newPaused(\\$synthDefName, [")
-        for ((param, control) in controlMap) {
-            val (spec, ctrl) = control
-            if (!obj.def.hasParameter(param) && param !in SPECIAL_PARAMETERS) continue
-            val customSynthArgs = ctrl.customSynthArguments()
-            if (customSynthArgs != null) append(customSynthArgs)
-            if (!ctrl.providesConstantSynthArgument()) continue
-            val expr = ctrl.generateArgumentExpr(obj, uniqueName, param, spec, context = CodegenContext.Synth)
-            append("$param: ")
-            expr.code(writer, obj.context)
-            append(", ")
-        }
-        if (obj.duration() != null) append("duration: ${obj.duration()!!.now}")
-        else append("afterDuration: Done.none")
-        val action = guardAgainstReplaceNil(placement)
-        appendLine("], target: ${placement.target}, addAction: $action);")
-        +"s.sync"
-        for ((param, control) in controlMap) {
-            val (spec, ctrl) = control
-            with(ctrl) {
-                generatePreparationCode(obj, uniqueName, param, spec, CodegenContext.Synth)
-            }
-        }
-        +"s.sync"
-        for ((param, control) in controlMap) {
-            val (spec, ctrl) = control
-            if (!obj.def.hasParameter(param) && param !in SPECIAL_PARAMETERS) continue
-            with(ctrl) {
-                applyToSynth(obj, uniqueName, synthVar, param, spec)
-            }
-        }
-        +"$synthVar.register"
         +"$synthVar.run"
-        appendBlock("$synthVar.onFree") {
-            if (obj is ScoreObject) {
-                +"~xenakis_addr.sendMsg('/freed', -1, \"$uniqueName\")" //TODO what if it was renamed
-            }
-            +"auxilBuses.do(_.free)"
-            +"auxilSynths.do(_.free)"
+        +"${ParameterControl.auxilSynthsVar(uniqueName)}.do(_.run)"
+    }
+    appendBlock("$synthVar.onFree") {
+        if (obj is ScoreObject) {
+            +"~xenakis_addr.sendMsg('/freed', -1, \"$uniqueName\")" //TODO what if it was renamed
         }
+        +"auxilBuses.do(_.free)"
+        +"auxilSynths.do(_.free)"
     }
 }
 
@@ -119,7 +122,7 @@ fun ScWriter.writeProcessCode(
             with(ctrl) {
                 generatePreparationCode(
                     obj, uniqueName,
-                    param, spec, context = CodegenContext.Process
+                    param, spec, ctx = CodegenContext.Process
                 )
             }
         }

@@ -8,7 +8,6 @@ import reaktive.observe
 import reaktive.value.*
 import reaktive.value.binding.map
 import xenakis.impl.*
-import xenakis.model.Settings
 import xenakis.model.obj.AbstractContextualObject
 import xenakis.model.obj.BusObject
 import xenakis.model.obj.BusReference
@@ -140,8 +139,7 @@ class MixerFlow(
     override fun writeCode(placement: NodePlacement): String = writeCode {
         if (components.isEmpty()) return@writeCode
         val sink = targetBus.now.force()
-        val latency = context[Settings].serverLatency.now
-        appendBlock("s.makeBundle($latency)") {
+        appendBlock("s.makeBundle(0)") {
             appendBlock("$superColliderName = ", endLine = false) {
                 +"var sources, volumes, mix, snd"
                 val sources = components.map { comp -> comp.sourceBus.now.force().superColliderName }

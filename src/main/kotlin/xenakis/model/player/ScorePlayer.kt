@@ -37,7 +37,7 @@ class ScorePlayer private constructor(
 
     private val client: SuperColliderClient = context[SuperColliderClient]
     private val activeObjects = context[ActiveObjectsManager]
-    private val events: ScoreEventCollector = ScoreEventCollector(pane.score, pane.context[Settings])
+    private val events: ScoreEventCollector = ScoreEventCollector(pane.score, pane.context[Settings], this)
     val playHead: PlayHead = PlayHead(pane)
 
     val currentTime get() = if (isScheduled.now) playHead.currentTime + lookAhead else playHead.currentTime

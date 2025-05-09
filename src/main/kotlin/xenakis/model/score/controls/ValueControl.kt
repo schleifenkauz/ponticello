@@ -38,10 +38,10 @@ data class ValueControl(
     override fun ScWriter.generatePreparationCode(
         obj: ParameterizedObject, uniqueName: String,
         parameter: String, spec: ControlSpec,
-        context: CodegenContext,
+        ctx: CodegenContext,
     ) {
         when {
-            context == CodegenContext.Process -> {
+            ctx == CodegenContext.Process -> {
                 val argVar = uniqueArgumentName(uniqueName, parameter)
                 +"$argVar = ${value.now}"
             }

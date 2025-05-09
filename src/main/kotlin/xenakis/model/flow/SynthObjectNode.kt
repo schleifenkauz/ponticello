@@ -6,6 +6,7 @@ import reaktive.value.now
 import reaktive.value.reactiveValue
 import xenakis.impl.Decimal
 import xenakis.model.player.ActiveScoreObject
+import xenakis.model.player.ScorePlayer
 import xenakis.model.score.SynthObject
 
 data class SynthObjectNode(
@@ -17,6 +18,9 @@ data class SynthObjectNode(
 
     override val startedAt: Decimal
         get() = active.absolutePosition.time
+
+    override val player: ScorePlayer
+        get() = active.player
 
     override val superColliderName =
         obj.name.map { _ -> active.superColliderName }

@@ -72,6 +72,7 @@ class CustomizableSynthDefObject(
             RawScExpr("duration = \\duration.ir"),
             RawScExpr("attack = \\attack.kr(${AttackReleaseControl.DEFAULT})"),
             RawScExpr("release = \\release.kr(${AttackReleaseControl.DEFAULT})"),
+            RawScExpr("sustain = duration - (attack + release)"),
             RawScExpr("level = \\level.kr(1)"),
             RawScExpr("env_ = Env.asr(attack, 1, release).kr(Done.freeSelf, \\gate.kr(1)) * level"),
             RawScExpr("Env([0, 0], [duration]).kr(\\afterDuration.ir(Done.freeSelf))")

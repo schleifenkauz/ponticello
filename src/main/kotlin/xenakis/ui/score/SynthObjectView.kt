@@ -67,6 +67,7 @@ class SynthObjectView(
         }
         sampleDisplayObserver = obj.displaySample?.forEach { updateSpectrogram() }
         controlsPane = ParameterControlsPane(obj, "Synth controls", this)
+        controlsPane.listView.autoResizeScene = true
     }
 
     override fun setupDetailPane(pane: DetailPane) {

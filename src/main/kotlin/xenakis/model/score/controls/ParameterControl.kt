@@ -29,7 +29,7 @@ sealed class ParameterControl : AbstractContextualObject() {
     open fun ScWriter.generatePreparationCode(
         obj: ParameterizedObject, uniqueName: String,
         parameter: String, spec: ControlSpec,
-        context: CodegenContext,
+        ctx: CodegenContext,
     ) {
     }
 

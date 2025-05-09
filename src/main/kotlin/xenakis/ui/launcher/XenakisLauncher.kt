@@ -26,10 +26,7 @@ import xenakis.model.ScriptObject
 import xenakis.model.ServerOptions
 import xenakis.model.Settings
 import xenakis.model.flow.NodeTree
-import xenakis.model.player.ActiveObjectsManager
-import xenakis.model.player.Recorder
-import xenakis.model.player.ScoreObjectScheduler
-import xenakis.model.player.ScorePlayer
+import xenakis.model.player.*
 import xenakis.model.project.SERVER_OPTIONS
 import xenakis.model.project.XenakisProject
 import xenakis.model.project.XenakisProject.Companion.projectDirectory
@@ -254,6 +251,7 @@ class XenakisLauncher {
                     try {
                         context[SuperColliderClient] = client
                         context[ActiveObjectsManager] = ActiveObjectsManager(context)
+                        context[AuxilSynthDefManager] = AuxilSynthDefManager()
                         client.addListener(context[ActiveObjectsManager])
                         context[NodeTree] = NodeTree(client)
                         context[ScoreObjectScheduler] = ScoreObjectScheduler(context)

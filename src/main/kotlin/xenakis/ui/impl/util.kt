@@ -6,6 +6,7 @@ import fxutils.SubWindow
 import fxutils.prompt.Prompt
 import hextant.context.Context
 import hextant.fx.initHextantScene
+import hextant.fx.registerCopyPasteShortcuts
 import javafx.geometry.Dimension2D
 import javafx.scene.Parent
 import javafx.scene.control.ColorPicker
@@ -75,6 +76,7 @@ fun makeSubWindow(
     val w = SubWindow(root, title, type)
     w.scene.fill = DEFAULT_SCENE_FILL
     w.scene.registerGlobalShortcuts(context)
+    w.scene.registerCopyPasteShortcuts(context)
     w.scene.initHextantScene(context)
     w.initOwner(context[primaryStage])
     return w

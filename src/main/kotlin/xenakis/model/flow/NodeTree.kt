@@ -6,7 +6,6 @@ import reaktive.Observer
 import reaktive.value.now
 import xenakis.impl.Decimal
 import xenakis.impl.Logger
-import xenakis.impl.zero
 import xenakis.sc.client.SuperColliderClient
 
 class NodeTree(private val client: SuperColliderClient) {
@@ -23,12 +22,11 @@ class NodeTree(private val client: SuperColliderClient) {
         } else {
             idx = -(idx + 1)
         }
-        while (idx >= 1) {
+         while (idx >= 1) {
             val prevNode = activeNodes[idx - 1]
             when {
                 !prevNode.isStillActive -> idx--
                 prevNode.yPosition.now >= node.yPosition.now -> idx--
-                prevNode.startedAt >= (prevNode.player?.currentTime ?: zero) -> idx--
                 else -> break
             }
         }
