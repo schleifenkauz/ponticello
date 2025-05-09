@@ -101,101 +101,11 @@ class LauncherGrid private constructor(
     }
 
     fun noteOn(item: GridItem, velocity: Int) {
-        item.target.pressed()
-        when (val target = item.target) {
-            ItemTarget.None -> return
-            ItemTarget.ToggleRecording -> context[Recorder].toggle()
-            is ItemTarget.Flow -> {
-                val flow = target.ref.getFlow(context[AudioFlows]) ?: return
-                if (!flow.isActive.now) flow.activate()
-                else if (!item.stopOnRelease.now) {
-                    flow.deactivate()
-                }
-            }
-
-            is ItemTarget.Player -> Platform.runLater {
-                val obj = target.ref.get() ?: return@runLater
-                if (obj.player == null) {
-                    context[XenakisMainActivity].scoreObjectsPane().listView.showContent(obj)
-                }
-                val player = obj.player
-                if (player == null) {
-                    Logger.warn("Player is null for ScoreObject ${obj.name.now}", Logger.Category.Playback)
-                    return@runLater
-                }
-                if (!player.isScheduled.now) {
-                    player.play()
-                    context[XenakisMainActivity].scoreObjectsPane().listView.showContent(obj)
-                } else if (!item.stopOnRelease.now) {
-                    player.pause()
-                }
-            }
-
-            is ItemTarget.Object -> {
-                val obj = target.ref.get() ?: return
-                val player = getPlayer()
-                player.getClock().scheduleAction(obj.quantizationConfig) { quantizationDelay ->
-                    val time = if (player.isPlaying.now) player.playHead.currentTime else zero
-                    val y = obj.liveConfig.yPosition.now
-                    val position = ObjectPosition(time, y)
-                    val totalDelay = quantizationDelay.coerceAtMost(context[Settings].lookAhead)
-                    ScorePlayer.execute {
-                        activeObjects[item] = scheduler.scheduleObject(
-                            obj, position, cutoff = zero, player,
-                            scLangLatency = totalDelay / 2, serverLatency = totalDelay / 2
-                        ) //TODO consider velocity
-                    }
-                }
-            }
-        }
-    }
-
-    private fun getScore() = when (val t = target.now) {
-        is Target.SubScore -> t.ref.get()?.score
-        Target.MainScore -> context[currentProject].mainScore
-        Target.None -> null
-    }
-
-    private fun getPlayer() = when (val t = target.now) {
-        is Target.SubScore -> t.ref.get()?.player ?: context[ScorePlayer.MAIN]
-        Target.MainScore, Target.None -> context[ScorePlayer.MAIN]
+        item.target.pressed(velocity, item)
     }
 
     fun noteOff(item: GridItem) {
-        item.target.released()
-        when (val target = item.target) {
-            ItemTarget.None -> return
-            ItemTarget.ToggleRecording -> {
-                val recorder = context[Recorder]
-                if (item.stopOnRelease.now && recorder.isActive.now) {
-                    recorder.stopRecording()
-                }
-            }
-
-            is ItemTarget.Object -> {
-                val activeObject = activeObjects[item] ?: return
-                addToTargetScore(activeObject, item)
-                if (!item.stopOnRelease.now) return
-                ScorePlayer.execute {
-                    scheduler.stopObjectInstantly(activeObject)
-                }
-                activeObjects[item] = null
-            }
-
-            is ItemTarget.Player -> {
-                val player = target.ref.get()?.player ?: return
-                if (player.isScheduled.now && item.stopOnRelease.now) {
-                    player.pause()
-                }
-            }
-
-            is ItemTarget.Flow -> {
-                val flow = target.ref.getFlow(context[AudioFlows]) ?: return
-                if (flow.isActive.now && item.stopOnRelease.now) {
-                    flow.deactivate()
-                }
-            }
-        }
+        item.target.released(item)
     }
 
     private fun addToTargetScore(activeObject: ActiveScoreObject, item: GridItem) {
@@ -212,6 +122,17 @@ class LauncherGrid private constructor(
         runFXWithTimeout(50) { //timeout to avoid double playback (maybe solve this in a cleaner way...)
             score.addObject(obj, time, y * score.maxY.now, autoSelect = false)
         }
+    }
+
+    private fun getScore() = when (val t = target.now) {
+        is Target.SubScore -> t.ref.get()?.score
+        Target.MainScore -> context[currentProject].mainScore
+        Target.None -> null
+    }
+
+    private fun getPlayer() = when (val t = target.now) {
+        is Target.SubScore -> t.ref.get()?.player ?: context[ScorePlayer.MAIN]
+        Target.MainScore, Target.None -> context[ScorePlayer.MAIN]
     }
 
     fun addView(view: View) {
@@ -266,13 +187,21 @@ class LauncherGrid private constructor(
     sealed class ItemTarget : AbstractContextualObject() {
         open val targetObject: ScoreObject? get() = null
 
+        protected lateinit var grid: LauncherGrid
+            private set
+
         abstract val canView: Boolean
 
         abstract val isActive: ReactiveBoolean
 
-        open fun pressed() {}
+        abstract fun pressed(velocity: Int, item: GridItem)
 
-        open fun released() {}
+        abstract fun released(item: GridItem)
+
+        fun initialize(grid: LauncherGrid) {
+            initialize(grid.context)
+            this.grid = grid
+        }
 
         @Serializable
         data object None : ItemTarget() {
@@ -281,6 +210,12 @@ class LauncherGrid private constructor(
 
             override val canView: Boolean
                 get() = false
+
+            override fun pressed(velocity: Int, item: GridItem) {
+            }
+
+            override fun released(item: GridItem) {
+            }
         }
 
         @Serializable
@@ -295,6 +230,17 @@ class LauncherGrid private constructor(
             override fun initialize(context: Context) {
                 super.initialize(context)
                 isActive = context[Recorder].isActive
+            }
+
+            override fun pressed(velocity: Int, item: GridItem) {
+                context[Recorder].toggle()
+            }
+
+            override fun released(item: GridItem) {
+                val recorder = context[Recorder]
+                if (item.stopOnRelease.now && recorder.isActive.now) {
+                    recorder.stopRecording()
+                }
             }
         }
 
@@ -327,12 +273,34 @@ class LauncherGrid private constructor(
                 }
             }
 
-            override fun pressed() {
+            override fun pressed(velocity: Int, item: GridItem) {
                 active.set(true)
+                val obj = ref.get() ?: return
+                val player = grid.getPlayer()
+                player.getClock().scheduleAction(obj.quantizationConfig) { quantizationDelay ->
+                    val time = if (player.isPlaying.now) player.playHead.currentTime else zero
+                    val y = obj.liveConfig.yPosition.now
+                    val position = ObjectPosition(time, y)
+                    val totalDelay = quantizationDelay.coerceAtMost(context[Settings].lookAhead)
+                    ScorePlayer.execute {
+                        grid.activeObjects[item] = grid.scheduler.scheduleObject(
+                            obj, position, cutoff = zero, player,
+                            scLangLatency = totalDelay / 2, serverLatency = totalDelay / 2
+                        ) //TODO consider velocity
+                    }
+                }
+
             }
 
-            override fun released() {
+            override fun released(item: GridItem) {
                 active.set(false)
+                val activeObject = grid.activeObjects[item] ?: return
+                grid.addToTargetScore(activeObject, item)
+                if (!item.stopOnRelease.now) return
+                ScorePlayer.execute {
+                    grid.scheduler.stopObjectInstantly(activeObject)
+                }
+                grid.activeObjects[item] = null
             }
 
             override fun toString() = "Object ${ref.getName()}"
@@ -354,6 +322,34 @@ class LauncherGrid private constructor(
                 ref.resolve(context[ScoreObjectRegistry])
                 if (context.hasProperty(XenakisMainActivity)) {
                     preparePlayer()
+                }
+            }
+
+            override fun pressed(velocity: Int, item: GridItem) {
+                Platform.runLater {
+                    val obj = ref.get() ?: return@runLater
+                    if (obj.player == null) {
+                        context[XenakisMainActivity].scoreObjectsPane().listView.showContent(obj)
+                    }
+                    val player = obj.player
+                    if (player == null) {
+                        Logger.warn("Player is null for ScoreObject ${obj.name.now}", Logger.Category.Playback)
+                        return@runLater
+                    }
+                    if (!player.isScheduled.now) {
+                        player.play()
+                        context[XenakisMainActivity].scoreObjectsPane().listView.showContent(obj)
+                    } else if (!item.stopOnRelease.now) {
+                        player.pause()
+                    }
+                }
+
+            }
+
+            override fun released(item: GridItem) {
+                val player = ref.get()?.player ?: return
+                if (player.isScheduled.now && item.stopOnRelease.now) {
+                    player.pause()
                 }
             }
 
@@ -383,6 +379,21 @@ class LauncherGrid private constructor(
             override fun initialize(context: Context) {
                 super.initialize(context)
                 isActive = ref.getFlow(context[AudioFlows])?.isActive ?: reactiveValue(false)
+            }
+
+            override fun pressed(velocity: Int, item: GridItem) {
+                val flow = ref.getFlow(context[AudioFlows]) ?: return
+                if (!flow.isActive.now) flow.activate()
+                else if (!item.stopOnRelease.now) {
+                    flow.deactivate()
+                }
+            }
+
+            override fun released(item: GridItem) {
+                val flow = ref.getFlow(context[AudioFlows]) ?: return
+                if (flow.isActive.now && item.stopOnRelease.now) {
+                    flow.deactivate()
+                }
             }
 
             override fun toString(): String = "Flow ${ref.flowName}"
