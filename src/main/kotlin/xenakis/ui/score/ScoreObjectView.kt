@@ -314,6 +314,7 @@ abstract class ScoreObjectView(
     }
 
     private fun dragTo(toX: Double, toY: Double) {
+        context[DetailPaneManager].hideCurrentlyShown()
         val movedObjects = context[ScoreObjectSelectionManager].selectedInstances + this.instance
         val minDeltaT = -movedObjects.minOf { inst -> inst.start }
         val maxDeltaT = movedObjects.minOf { inst -> inst.score!!.maxTime.now - inst.end }
@@ -350,6 +351,7 @@ abstract class ScoreObjectView(
     @Suppress("UNUSED_PARAMETER") //parameter [ev] is needed to be compatible with Node.setupDraggingAndResizing
     private fun resize(old: Bounds, deltaX: Double, deltaY: Double, cursor: Cursor, ev: MouseEvent) {
         check(obj.canResize) { "Attempt to resize object that is not resizable" }
+        context[DetailPaneManager].hideCurrentlyShown()
         val parentPane = parentPane
         val direction = cursor.resizeDirection()
         val oldX = if (direction.left) old.minX else old.maxX
