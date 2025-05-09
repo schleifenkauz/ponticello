@@ -11,7 +11,6 @@ import reaktive.value.reactiveVariable
 import xenakis.impl.ColorSerializer
 import xenakis.model.obj.ParameterizedObject
 import xenakis.model.obj.SynthDefObject
-import xenakis.model.player.AuxilSynthDefManager
 import xenakis.model.score.Envelope
 import xenakis.sc.*
 import xenakis.sc.client.ScWriter
@@ -52,12 +51,14 @@ class EnvelopeControl(
         when (ctx) {
             CodegenContext.Synth, CodegenContext.SubArg -> {
                 +"$auxiliaryVarName = Bus.control(s, 1)"
-                val synthDefName = context[AuxilSynthDefManager].run {
-                    defineEnvelopeSynthDef(points, spec.warp)
-                }
+                val envelopeCode = points.code(warp = spec.warp)
+//                val synthDefName = context[AuxilSynthDefManager].run {
+//                    defineEnvelopeSynthDef(points, spec.warp)
+//                }
                 val auxiliarySynthName = auxilSynthName(uniqueName, parameter)
                 val synthName = "${obj.superColliderPrefix}$uniqueName"
-                +"$auxiliarySynthName = Synth.newPaused($synthDefName, [out: $auxiliarySynthName], target: $synthName, addAction: \\addBefore)"
+                +"$auxiliarySynthName = { $envelopeCode.kr }.play(target: $synthName, outbus: $auxiliaryVarName, fadeTime: 0, addAction: 'addBefore')"
+//                +"$auxiliarySynthName = Synth.newPaused($synthDefName, [out: $auxiliarySynthName], target: $synthName, addAction: \\addBefore)"
             }
 
             CodegenContext.Process -> {

@@ -19,6 +19,7 @@ abstract class ParameterizedObjectDefPane<T : ConfigurableParameterizedObjectDef
         override fun createNewObject(): ParameterDefObject? {
             val defaultParameters = def.context[Settings].defaultParametersDefs
                 .filter { param -> !def.hasParameter(param.name.now) }
+            //TODO better placement
             val anchor = parametersList.localToScreen(parametersList.height - 50.0, parametersList.width / 2.0)
             val listView = SearchableParameterDefListView(defaultParameters, "New parameter")
             return listView.showPopup(anchor, def.context[primaryStage])
