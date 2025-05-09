@@ -7,21 +7,18 @@ import fxutils.undo.UndoManager
 import hextant.context.Context
 import hextant.context.extend
 import hextant.core.editor.ListenerManager
-import javafx.application.Platform
 import javafx.geometry.HorizontalDirection
 import javafx.scene.input.DataFormat
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
-import reaktive.value.*
-import xenakis.impl.Logger
-import xenakis.impl.div
+import reaktive.value.ReactiveVariable
+import reaktive.value.now
+import reaktive.value.reactiveVariable
 import xenakis.impl.zero
-import xenakis.model.Settings
-import xenakis.model.flow.AudioFlows
-import xenakis.model.obj.*
+import xenakis.model.obj.AbstractContextualObject
+import xenakis.model.obj.ParameterDefObject
 import xenakis.model.player.ActiveScoreObject
-import xenakis.model.player.Recorder
 import xenakis.model.player.ScoreObjectScheduler
 import xenakis.model.player.ScorePlayer
 import xenakis.model.project.mainScore
@@ -29,12 +26,9 @@ import xenakis.model.registry.ObjectReference
 import xenakis.model.registry.ObjectRegistry
 import xenakis.model.registry.ScoreObjectRegistry
 import xenakis.model.registry.reference
-import xenakis.model.score.ObjectPosition
-import xenakis.model.score.ScoreObject
 import xenakis.model.score.ScoreObjectGroup
 import xenakis.model.score.SynthObject
 import xenakis.ui.launcher.XenakisLauncher.Companion.currentProject
-import xenakis.ui.launcher.XenakisMainActivity
 import kotlin.math.sqrt
 
 @Serializable
@@ -52,10 +46,10 @@ class LauncherGrid private constructor(
     val isActive = reactiveVariable(false)
 
     @Transient
-    private lateinit var scheduler: ScoreObjectScheduler
+    lateinit var scheduler: ScoreObjectScheduler
 
     @Transient
-    private val activeObjects = mutableMapOf<GridItem, ActiveScoreObject?>()
+    val activeObjects = mutableMapOf<GridItem, ActiveScoreObject?>()
 
     @Transient
     private val listeners = ListenerManager.createWeakListenerManager<View>()
@@ -108,7 +102,7 @@ class LauncherGrid private constructor(
         item.target.released(item)
     }
 
-    private fun addToTargetScore(activeObject: ActiveScoreObject, item: GridItem) {
+    fun addToTargetScore(activeObject: ActiveScoreObject, item: GridItem) {
         val score = getScore() ?: return
         val player = getPlayer()
         if (!player.isPlaying.now) return
@@ -130,7 +124,7 @@ class LauncherGrid private constructor(
         Target.None -> null
     }
 
-    private fun getPlayer() = when (val t = target.now) {
+    fun getPlayer() = when (val t = target.now) {
         is Target.SubScore -> t.ref.get()?.player ?: context[ScorePlayer.MAIN]
         Target.MainScore, Target.None -> context[ScorePlayer.MAIN]
     }
@@ -153,7 +147,7 @@ class LauncherGrid private constructor(
                 val oldTarget = _target
                 if (value == oldTarget) return
                 _target = value
-                value.initialize(context)
+                value.initialize(grid)
                 val description = if (value is ItemTarget.None) "Reset target" else "Choose target"
                 grid.undoManager.record(PropertyEdit(this::target, oldTarget, value, description))
                 grid.listeners.notifyListeners { updateItem(this@GridItem) }
@@ -166,12 +160,12 @@ class LauncherGrid private constructor(
 
         override fun initialize(context: Context) {
             super.initialize(context)
-            target.initialize(context)
+            target.initialize(grid)
         }
 
         fun initialize(context: Context, grid: LauncherGrid) {
-            initialize(context)
             this.grid = grid
+            initialize(context)
         }
     }
 
@@ -180,240 +174,6 @@ class LauncherGrid private constructor(
 
         companion object {
             val DATA_FORMAT = DataFormat("xenakis/grid-item-reference")
-        }
-    }
-
-    @Serializable
-    sealed class ItemTarget : AbstractContextualObject() {
-        open val targetObject: ScoreObject? get() = null
-
-        protected lateinit var grid: LauncherGrid
-            private set
-
-        abstract val canView: Boolean
-
-        abstract val isActive: ReactiveBoolean
-
-        abstract fun pressed(velocity: Int, item: GridItem)
-
-        abstract fun released(item: GridItem)
-
-        fun initialize(grid: LauncherGrid) {
-            initialize(grid.context)
-            this.grid = grid
-        }
-
-        @Serializable
-        data object None : ItemTarget() {
-            override val isActive: ReactiveBoolean
-                get() = reactiveValue(false)
-
-            override val canView: Boolean
-                get() = false
-
-            override fun pressed(velocity: Int, item: GridItem) {
-            }
-
-            override fun released(item: GridItem) {
-            }
-        }
-
-        @Serializable
-        data object ToggleRecording : ItemTarget() {
-            override val canView: Boolean
-                get() = false
-            override lateinit var isActive: ReactiveBoolean
-                private set
-
-            override fun toString(): String = "Toggle Recording"
-
-            override fun initialize(context: Context) {
-                super.initialize(context)
-                isActive = context[Recorder].isActive
-            }
-
-            override fun pressed(velocity: Int, item: GridItem) {
-                context[Recorder].toggle()
-            }
-
-            override fun released(item: GridItem) {
-                val recorder = context[Recorder]
-                if (item.stopOnRelease.now && recorder.isActive.now) {
-                    recorder.stopRecording()
-                }
-            }
-        }
-
-        @Serializable
-        data class Object(val ref: ScoreObjectReference) : ItemTarget() {
-            var velocityParameter: ReactiveVariable<ParameterDefReference> = reactiveVariable(ObjectReference.none())
-
-            override val canView: Boolean
-                get() = ref.isResolved.now
-
-            override val targetObject: ScoreObject?
-                get() = ref.get()
-
-            @Transient
-            private val active = reactiveVariable(false)
-
-            override val isActive: ReactiveBoolean
-                get() = active
-
-            override fun initialize(context: Context) {
-                super.initialize(context)
-                val obj = ref.resolve(context[ScoreObjectRegistry])
-                val velocityParam = velocityParameter.now
-                if (obj is ParameterizedObject) {
-                    val paramName = velocityParam.getName()
-                    velocityParameter.now = obj.def.getParameter(paramName)?.reference()
-                        ?: velocityParam.also { it.setUnresolved() }
-                } else {
-                    velocityParameter.now.setUnresolved()
-                }
-            }
-
-            override fun pressed(velocity: Int, item: GridItem) {
-                active.set(true)
-                val obj = ref.get() ?: return
-                val player = grid.getPlayer()
-                player.getClock().scheduleAction(obj.quantizationConfig) { quantizationDelay ->
-                    val time = if (player.isPlaying.now) player.playHead.currentTime else zero
-                    val y = obj.liveConfig.yPosition.now
-                    val position = ObjectPosition(time, y)
-                    val totalDelay = quantizationDelay.coerceAtMost(context[Settings].lookAhead)
-                    ScorePlayer.execute {
-                        grid.activeObjects[item] = grid.scheduler.scheduleObject(
-                            obj, position, cutoff = zero, player,
-                            scLangLatency = totalDelay / 2, serverLatency = totalDelay / 2
-                        ) //TODO consider velocity
-                    }
-                }
-
-            }
-
-            override fun released(item: GridItem) {
-                active.set(false)
-                val activeObject = grid.activeObjects[item] ?: return
-                grid.addToTargetScore(activeObject, item)
-                if (!item.stopOnRelease.now) return
-                ScorePlayer.execute {
-                    grid.scheduler.stopObjectInstantly(activeObject)
-                }
-                grid.activeObjects[item] = null
-            }
-
-            override fun toString() = "Object ${ref.getName()}"
-        }
-
-        @Serializable
-        data class Player(val ref: ScoreObjectReference) : ItemTarget() {
-            override val canView: Boolean
-                get() = ref.isResolved.now
-
-            override val targetObject: ScoreObject?
-                get() = ref.get()
-
-            @Transient
-            override lateinit var isActive: ReactiveBoolean
-
-            override fun initialize(context: Context) {
-                super.initialize(context)
-                ref.resolve(context[ScoreObjectRegistry])
-                if (context.hasProperty(XenakisMainActivity)) {
-                    preparePlayer()
-                }
-            }
-
-            override fun pressed(velocity: Int, item: GridItem) {
-                Platform.runLater {
-                    val obj = ref.get() ?: return@runLater
-                    if (obj.player == null) {
-                        context[XenakisMainActivity].scoreObjectsPane().listView.showContent(obj)
-                    }
-                    val player = obj.player
-                    if (player == null) {
-                        Logger.warn("Player is null for ScoreObject ${obj.name.now}", Logger.Category.Playback)
-                        return@runLater
-                    }
-                    if (!player.isScheduled.now) {
-                        player.play()
-                        context[XenakisMainActivity].scoreObjectsPane().listView.showContent(obj)
-                    } else if (!item.stopOnRelease.now) {
-                        player.pause()
-                    }
-                }
-
-            }
-
-            override fun released(item: GridItem) {
-                val player = ref.get()?.player ?: return
-                if (player.isScheduled.now && item.stopOnRelease.now) {
-                    player.pause()
-                }
-            }
-
-            fun preparePlayer() {
-                val obj = targetObject
-                if (obj == null) {
-                    isActive = reactiveValue(false)
-                    return
-                }
-                val scoreObjectsPane = context[XenakisMainActivity].scoreObjectsPane()
-                scoreObjectsPane.listView.initializeContent(obj)
-                isActive = obj.player?.isScheduled ?: reactiveValue(false)
-            }
-
-            override fun toString() = "Player ${ref.getName()}"
-        }
-
-        @Serializable
-        data class Flow(val ref: AudioFlows.FlowReference) : ItemTarget() {
-            override val canView: Boolean
-                get() = true
-
-            @Transient
-            override lateinit var isActive: ReactiveBoolean
-                private set
-
-            override fun initialize(context: Context) {
-                super.initialize(context)
-                isActive = ref.getFlow(context[AudioFlows])?.isActive ?: reactiveValue(false)
-            }
-
-            override fun pressed(velocity: Int, item: GridItem) {
-                val flow = ref.getFlow(context[AudioFlows]) ?: return
-                if (!flow.isActive.now) flow.activate()
-                else if (!item.stopOnRelease.now) {
-                    flow.deactivate()
-                }
-            }
-
-            override fun released(item: GridItem) {
-                val flow = ref.getFlow(context[AudioFlows]) ?: return
-                if (flow.isActive.now && item.stopOnRelease.now) {
-                    flow.deactivate()
-                }
-            }
-
-            override fun toString(): String = "Flow ${ref.flowName}"
-        }
-
-        companion object {
-            fun options(context: Context): List<ItemTarget> {
-                val objects = context[ScoreObjectRegistry].filter { obj -> obj.affectsPlayback }
-                val objectTargets = objects
-                    .filter { obj -> obj !is ScoreObjectGroup }
-                    .map { obj -> Object(obj.reference()) }
-                val playerTargets = objects.map { obj -> Player(obj.reference()) }
-                val flowTargets = context[AudioFlows].all().flatMap { group ->
-                    group.flows.all().map { flow ->
-                        val ref = AudioFlows.FlowReference(group.name.now, flow.name.now)
-                        Flow(ref)
-                    }
-                }
-                return listOf(None, ToggleRecording) + objectTargets + playerTargets + flowTargets
-            }
         }
     }
 

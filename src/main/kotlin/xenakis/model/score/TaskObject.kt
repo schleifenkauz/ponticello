@@ -12,6 +12,8 @@ import xenakis.impl.Decimal
 import xenakis.impl.writeCode
 import xenakis.model.Settings
 import xenakis.model.flow.NodePlacement
+import xenakis.model.obj.ParameterDefObject
+import xenakis.model.score.controls.ParameterControl
 import xenakis.sc.editor.CodeBlockEditor
 
 @Serializable
@@ -34,7 +36,13 @@ class TaskObject(
         code.initialize(context)
     }
 
-    override fun writeCode(uniqueName: String, placement: NodePlacement?, cutoff: Decimal, latency: Decimal): String = writeCode {
+    override fun writeCode(
+        uniqueName: String,
+        placement: NodePlacement?,
+        cutoff: Decimal,
+        latency: Decimal,
+        extraArguments: Map<ParameterDefObject, ParameterControl>
+    ): String = writeCode {
         val name = "~task_$uniqueName"
         appendBlock("$name = Task", endLine = false) {
             +"${context[Settings].serverLatency.now}.wait"

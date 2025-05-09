@@ -28,9 +28,9 @@ import xenakis.impl.toDecimal
 import xenakis.impl.zero
 import xenakis.model.flow.AudioFlow
 import xenakis.model.flow.AudioFlows
+import xenakis.model.live.ItemTarget
 import xenakis.model.live.LauncherGrid
 import xenakis.model.live.LauncherGrid.GridItemReference
-import xenakis.model.live.LauncherGrid.ItemTarget
 import xenakis.model.obj.ParameterDefObject
 import xenakis.model.obj.ParameterDefReference
 import xenakis.model.obj.ParameterizedObject

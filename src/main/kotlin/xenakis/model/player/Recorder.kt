@@ -112,7 +112,7 @@ class Recorder(private val context: Context) {
                 +"s.record(bus: ${bus.superColliderName})"
             }
         }
-        client.sendAsync("schedule", listOf(settings.scLangLatency.now.toDouble(), -1, code)) //TODO why does sendAsync not work?
+        client.sendAsync("schedule", listOf(settings.scLangLatency.now.toDouble(), -1, code))
         recording.set(true)
     }
 

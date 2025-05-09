@@ -7,10 +7,12 @@ import reaktive.value.now
 import xenakis.model.flow.AudioFlows
 import xenakis.model.flow.NodeTree
 import xenakis.model.flow.SynthObjectNode
+import xenakis.model.obj.ParameterDefObject
 import xenakis.model.registry.ScoreObjectRegistry
 import xenakis.model.score.ObjectPosition
 import xenakis.model.score.ScoreObject
 import xenakis.model.score.SynthObject
+import xenakis.model.score.controls.ParameterControl
 import xenakis.sc.client.SuperColliderListener
 
 class ActiveObjectsManager(private val context: Context) : SuperColliderListener {
@@ -18,10 +20,13 @@ class ActiveObjectsManager(private val context: Context) : SuperColliderListener
     private val bySuffix = mutableMapOf<ScoreObject, MutableMap<Int, ActiveScoreObject>>()
     private val byAbsolutePosition = mutableMapOf<ScoreObject, MutableMap<ObjectPosition, ActiveScoreObject>>()
 
-    fun insert(player: ScorePlayer, obj: ScoreObject, absolutePosition: ObjectPosition): ActiveScoreObject {
+    fun insert(
+        player: ScorePlayer, obj: ScoreObject, absolutePosition: ObjectPosition,
+        extraArguments: Map<ParameterDefObject, ParameterControl>
+    ): ActiveScoreObject {
         val suffix = nextSuffix[obj] ?: 0
         nextSuffix[obj] = suffix + 1
-        val active = ActiveScoreObject(player, obj, absolutePosition, suffix)
+        val active = ActiveScoreObject(player, obj, absolutePosition, suffix, extraArguments)
         bySuffix.getOrPut(obj, ::mutableMapOf)[suffix] = active
         byAbsolutePosition.getOrPut(obj, ::mutableMapOf)[absolutePosition] = active
         return active

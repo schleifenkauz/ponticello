@@ -15,10 +15,7 @@ import xenakis.impl.*
 import xenakis.model.flow.NodePlacement
 import xenakis.model.obj.*
 import xenakis.model.registry.reference
-import xenakis.model.score.controls.BufferControl
-import xenakis.model.score.controls.EnvelopeControl
-import xenakis.model.score.controls.ValueControl
-import xenakis.model.score.controls.writeSynthCode
+import xenakis.model.score.controls.*
 import xenakis.sc.BufferPositionControlSpec
 import xenakis.sc.NumericalControlSpec
 import xenakis.sc.editor.SynthDefSelector
@@ -144,9 +141,9 @@ class SynthObject(
 
     override fun writeCode(
         uniqueName: String, placement: NodePlacement?,
-        cutoff: Decimal, latency: Decimal,
+        cutoff: Decimal, latency: Decimal, extraArguments: Map<ParameterDefObject, ParameterControl>,
     ): String = writeCode {
-        writeSynthCode(this@SynthObject, uniqueName, cutoff, placement!!, latency)
+        writeSynthCode(this@SynthObject, uniqueName, cutoff, placement!!, latency, extraArguments)
     }
 
     companion object {

@@ -24,6 +24,7 @@ import xenakis.model.flow.NodePlacement
 import xenakis.model.live.LiveConfig
 import xenakis.model.live.QuantizationConfig
 import xenakis.model.obj.AbstractRenamableObject
+import xenakis.model.obj.ParameterDefObject
 import xenakis.model.player.ScorePlayer
 import xenakis.model.registry.ScoreObjectRegistry
 import xenakis.model.score.Score.Companion.rootScore
@@ -114,7 +115,13 @@ sealed class ScoreObject : AbstractRenamableObject() {
         return true
     }
 
-    abstract fun writeCode(uniqueName: String, placement: NodePlacement?, cutoff: Decimal, latency: Decimal): String
+    abstract fun writeCode(
+        uniqueName: String,
+        placement: NodePlacement?,
+        cutoff: Decimal,
+        latency: Decimal,
+        extraArguments: Map<ParameterDefObject, ParameterControl> = emptyMap(),
+    ): String
 
     protected fun recordEdit(edit: Edit) {
         if (initialized) {
@@ -333,7 +340,13 @@ sealed class ScoreObject : AbstractRenamableObject() {
         override val affectsPlayback: Boolean
             get() = false
 
-        override fun writeCode(uniqueName: String, placement: NodePlacement?, cutoff: Decimal, latency: Decimal): String = ""
+        override fun writeCode(
+            uniqueName: String,
+            placement: NodePlacement?,
+            cutoff: Decimal,
+            latency: Decimal,
+            extraArguments: Map<ParameterDefObject, ParameterControl>
+        ): String = ""
 
         override fun doClone(newName: String): ScoreObject = this
     }

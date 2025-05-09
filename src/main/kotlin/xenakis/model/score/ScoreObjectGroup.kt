@@ -17,7 +17,9 @@ import xenakis.impl.copy
 import xenakis.impl.zero
 import xenakis.model.flow.NodePlacement
 import xenakis.model.obj.BusReference
+import xenakis.model.obj.ParameterDefObject
 import xenakis.model.registry.ObjectReference
+import xenakis.model.score.controls.ParameterControl
 import xenakis.sc.editor.BusSelector
 
 @Serializable
@@ -47,7 +49,13 @@ class ScoreObjectGroup(
         this.score.initialize(context, this)
     }
 
-    override fun writeCode(uniqueName: String, placement: NodePlacement?, cutoff: Decimal, latency: Decimal): String = ""
+    override fun writeCode(
+        uniqueName: String,
+        placement: NodePlacement?,
+        cutoff: Decimal,
+        latency: Decimal,
+        extraArguments: Map<ParameterDefObject, ParameterControl>
+    ): String = ""
 
     override fun doCut(position: Decimal, whichHalf: HorizontalDirection, newName: String): ScoreObject {
         val objects = mutableListOf<ScoreObjectInstance>()

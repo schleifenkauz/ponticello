@@ -6,6 +6,7 @@ import xenakis.impl.Decimal
 import xenakis.impl.zero
 import xenakis.model.flow.NodePlacement
 import xenakis.model.flow.NodePlacement.AddAction
+import xenakis.model.obj.ParameterDefObject
 import xenakis.model.obj.ParameterizedObject
 import xenakis.model.score.ScoreObject
 import xenakis.model.score.controls.ParameterControl.CodegenContext
@@ -43,19 +44,20 @@ private fun ParameterControl.adjustControlForCutoff(
 fun ScWriter.writeSynthCode(
     obj: ParameterizedObject, uniqueName: String,
     cutoff: Decimal, placement: NodePlacement, latency: Decimal,
+    extraArguments: Map<ParameterDefObject, ParameterControl> = emptyMap(),
 ) {
     appendBlock("s.makeBundle($latency)") {
         +"var auxilBuses = (), auxilSynths = ()"
-        val controlsWithSpecs = obj.controls.all().associate { ctrl ->
+        val controlMap = obj.controls.all().associate { ctrl ->
             val spec = ctrl.spec.now!!
             val control = ctrl.now.adjustControlForCutoff(cutoff, spec)
             ctrl.name.now to Pair(spec, control)
-        }
+        } + extraArguments.map { (param, control) -> param.name.now to Pair(param.spec.now, control) }
         val synthDefName = obj.def.name.now
         val synthVar = "${obj.superColliderPrefix}$uniqueName"
         allocateAuxilMaps(uniqueName)
         append("$synthVar = Synth.newPaused(\\$synthDefName, [")
-        for ((param, control) in controlsWithSpecs) {
+        for ((param, control) in controlMap) {
             val (spec, ctrl) = control
             if (!obj.def.hasParameter(param) && param !in SPECIAL_PARAMETERS) continue
             val customSynthArgs = ctrl.customSynthArguments()
@@ -71,14 +73,14 @@ fun ScWriter.writeSynthCode(
         val action = guardAgainstReplaceNil(placement)
         appendLine("], target: ${placement.target}, addAction: $action);")
         +"s.sync"
-        for ((param, control) in controlsWithSpecs) {
+        for ((param, control) in controlMap) {
             val (spec, ctrl) = control
             with(ctrl) {
                 generatePreparationCode(obj, uniqueName, param, spec, CodegenContext.Synth)
             }
         }
         +"s.sync"
-        for ((param, control) in controlsWithSpecs) {
+        for ((param, control) in controlMap) {
             val (spec, ctrl) = control
             if (!obj.def.hasParameter(param) && param !in SPECIAL_PARAMETERS) continue
             with(ctrl) {
@@ -102,20 +104,22 @@ fun guardAgainstReplaceNil(placement: NodePlacement) = if (placement.addAction =
 else placement.addAction.toString()
 
 fun ScWriter.writeProcessCode(
-    obj: ParameterizedObject,
-    uniqueName: String,
-    cutoff: Decimal,
-    latency: Decimal,
+    obj: ParameterizedObject, uniqueName: String,
+    cutoff: Decimal, latency: Decimal,
+    extraArguments: Map<ParameterDefObject, ParameterControl> = emptyMap()
 ) {
     val superColliderName = "~process_$uniqueName"
+    val controlMap = obj.controls.all().associate { ctrl ->
+        val spec = ctrl.spec.now!!
+        ctrl.name.now to Pair(spec, ctrl.now)
+    } + extraArguments.map { (param, control) -> param.name.now to Pair(param.spec.now, control) }
     appendBlock("$superColliderName = Task", endLine = false) {
-        for (control in obj.controls) {
-            val spec = control.spec.now!!
-            val name = control.name.now
-            with(control.now) {
+        for ((param, control) in controlMap) {
+            val (spec, ctrl) = control
+            with(ctrl) {
                 generatePreparationCode(
                     obj, uniqueName,
-                    name, spec, context = CodegenContext.Process
+                    param, spec, context = CodegenContext.Process
                 )
             }
         }
@@ -124,15 +128,14 @@ fun ScWriter.writeProcessCode(
         val duration = obj.duration()?.now?.toString() ?: "inf"
         val defName = "proc_${obj.def.name.now}"
         append("$defName.value(t: $cutoff, duration: $duration")
-        for (control in obj.controls) {
-            if (!obj.def.hasParameter(control.name.now)) continue
-            val name = control.name.now
-            val spec = control.spec.now!!
-            val arg = control.now.generateArgumentExpr(
-                obj, uniqueName, name, spec,
+        for ((param, control) in controlMap) {
+            if (!obj.def.hasParameter(param)) continue
+            val (spec, ctrl) = control
+            val arg = ctrl.generateArgumentExpr(
+                obj, uniqueName, param, spec,
                 context = CodegenContext.Process
             )
-            append(", $name: ")
+            append(", $param: ")
             arg.code(writer, obj.context)
         }
         appendLine(");")

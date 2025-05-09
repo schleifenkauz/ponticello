@@ -11,10 +11,12 @@ import xenakis.impl.copy
 import xenakis.impl.writeCode
 import xenakis.model.Settings
 import xenakis.model.flow.NodePlacement
+import xenakis.model.obj.ParameterDefObject
 import xenakis.model.obj.ParameterizedObjectDef
 import xenakis.model.obj.ProcessDefObject
 import xenakis.model.obj.ProcessDefReference
 import xenakis.model.registry.ProcessDefRegistry
+import xenakis.model.score.controls.ParameterControl
 import xenakis.model.score.controls.writeProcessCode
 import xenakis.sc.ControlSpec
 
@@ -45,10 +47,17 @@ class ProcessObject(
 
     override fun validate(): Boolean = controls.validate()
 
-    override fun writeCode(uniqueName: String, placement: NodePlacement?, cutoff: Decimal, latency: Decimal): String = writeCode {
+    override fun writeCode(
+        uniqueName: String,
+        placement: NodePlacement?,
+        cutoff: Decimal,
+        latency: Decimal,
+        extraArguments: Map<ParameterDefObject, ParameterControl>
+    ): String = writeCode {
         writeProcessCode(
             this@ProcessObject, uniqueName,
             cutoff, context[Settings].serverLatency.get(),
+            extraArguments
         )
     }
 

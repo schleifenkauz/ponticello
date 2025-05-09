@@ -35,7 +35,7 @@ sealed interface SynthDefObject : ParameterizedObjectDef, SuperColliderObject {
                     is ActiveAudioFlow -> active.flow.writeCode(placement)
                     is ActiveScoreObject -> {
                         val cutoff = active.player.currentTime - active.absolutePosition.time
-                        active.obj.writeCode(active.uniqueName, placement, cutoff, latency = zero)
+                        active.obj.writeCode(active.uniqueName, placement, cutoff, latency = zero, active.extraArguments)
                     }
                 }
                 context[SuperColliderClient].run(code)

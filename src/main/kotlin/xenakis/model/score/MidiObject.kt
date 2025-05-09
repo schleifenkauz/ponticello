@@ -20,7 +20,9 @@ import reaktive.value.reactiveVariable
 import xenakis.impl.*
 import xenakis.model.flow.NodePlacement
 import xenakis.model.obj.NoSynthDef
+import xenakis.model.obj.ParameterDefObject
 import xenakis.model.obj.SynthDefReference
+import xenakis.model.score.controls.ParameterControl
 import xenakis.sc.code
 import xenakis.sc.editor.*
 import xenakis.ui.score.PianoRollObjectView
@@ -212,7 +214,8 @@ class MidiObject(
         uniqueName: String,
         placement: NodePlacement?,
         cutoff: Decimal,
-        latency: Decimal
+        latency: Decimal,
+        extraArguments: Map<ParameterDefObject, ParameterControl>
     ): String = writeCode {
         val generalEventDict = eventDictionary.editor.result.now
         for ((idx, n) in notes.withIndex()) {

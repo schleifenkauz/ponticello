@@ -11,8 +11,10 @@ import xenakis.impl.zero
 import xenakis.model.Settings
 import xenakis.model.flow.NodeTree
 import xenakis.model.flow.SynthObjectNode
+import xenakis.model.obj.ParameterDefObject
 import xenakis.model.player.ScoreEventCollector.Event
 import xenakis.model.score.*
+import xenakis.model.score.controls.ParameterControl
 import xenakis.sc.client.SuperColliderClient
 
 class ScoreObjectScheduler(val context: Context) {
@@ -82,6 +84,7 @@ class ScoreObjectScheduler(val context: Context) {
         obj: ScoreObject, absolutePosition: ObjectPosition,
         cutoff: Decimal, player: ScorePlayer,
         scLangLatency: Decimal = this.sclangLatency, serverLatency: Decimal = this.serverLatency,
+        extraArguments: Map<ParameterDefObject, ParameterControl> = emptyMap(),
     ): ActiveScoreObject? {
         try {
             if (!obj.validate()) return null
@@ -96,7 +99,7 @@ class ScoreObjectScheduler(val context: Context) {
             player.getClock().attach(player, meter, cutoff)
         }
         val activeObject = try {
-            activeObjects.insert(player, obj, absolutePosition)
+            activeObjects.insert(player, obj, absolutePosition, extraArguments)
         } catch (e: Exception) {
             Logger.error("Failed to insert $obj into active object manager", e, Logger.Category.Playback)
             return null
@@ -111,7 +114,8 @@ class ScoreObjectScheduler(val context: Context) {
             }
         } else null
         val code = try {
-            obj.writeCode(activeObject.uniqueName, placement, cutoff.takeIf { it > zero } ?: zero, serverLatency)
+            val nonNegativeCutoff = cutoff.takeIf { it > zero } ?: zero
+            obj.writeCode(activeObject.uniqueName, placement, nonNegativeCutoff, serverLatency, extraArguments)
         } catch (e: Exception) {
             Logger.error("Failed to write code for $obj", e, Logger.Category.Playback)
         }

@@ -12,7 +12,9 @@ import xenakis.impl.Decimal
 import xenakis.impl.copy
 import xenakis.model.flow.NodePlacement
 import xenakis.model.obj.MeterReference
+import xenakis.model.obj.ParameterDefObject
 import xenakis.model.registry.MeterRegistry
+import xenakis.model.score.controls.ParameterControl
 import xenakis.ui.score.TempoGridObjectView
 
 @Serializable
@@ -58,5 +60,6 @@ class TempoGridObject(
         placement: NodePlacement?,
         cutoff: Decimal,
         latency: Decimal,
+        extraArguments: Map<ParameterDefObject, ParameterControl>,
     ): String = ""
 }
