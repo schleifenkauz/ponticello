@@ -32,7 +32,7 @@ class SynthDefRegistry(
         if (path.startsWith("/updated")) {
             val type = content.substringBefore(":")
             val name = content.substringAfter(":")
-            if (type == "synthdef") {
+            if (type == "synth_def") {
                 val def = getOrNull(name) ?: return
                 def.onUpdated()
             }

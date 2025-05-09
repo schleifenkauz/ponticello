@@ -72,7 +72,7 @@ class SynthObjectView(
     override fun setupDetailPane(pane: DetailPane) {
         pane.addItem("Color:", this.colorPicker)
         val viewBtn = Material2AL.CODE.button(action = "View SynthDef") {
-            context[XenakisMainActivity].synthDefsPane.listView.showContent(obj.synthDef)
+            context[XenakisMainActivity].synthDefsPane().listView.showContent(obj.synthDef)
         }.styleClass("medium-icon-button").disableIf(obj.synthDefSelector.isResolved.not())
         val box = ObjectSelectorControl(obj.synthDefSelector, createBundle())
         pane.addItem("SynthDef: ", HBox(5.0, box, viewBtn).centerChildren())

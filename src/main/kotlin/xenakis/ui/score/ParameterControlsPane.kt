@@ -95,14 +95,12 @@ class ParameterControlsPane(
         private fun addNewControl(obj: ParameterizedObject, anchor: Point2D) {
             val context = obj.context
             val defaultParameters = context[Settings].defaultParametersDefs
-            val synthParameters = obj.def.parameters
+            val synthParameters = obj.def.allParameters()
             val unassignedParameters = (synthParameters + defaultParameters)
                 .filter { param -> param.name.now !in obj.controls.controlMap }
                 .filter { param -> !(param in defaultParameters && synthParameters.any { p -> p.name.now == param.name.now }) }
-            val option = SearchableParameterDefListView(
-                unassignedParameters, "Add parameter", obj,
-                context[primaryStage], anchor
-            ).showPopup() ?: return
+            val option = SearchableParameterDefListView(unassignedParameters, "Add parameter", obj)
+                .showPopup(anchor, context[primaryStage]) ?: return
             val parameter = option.name.now
             val customSpec = option.spec.now.takeIf { !obj.def.hasParameter(parameter) }
             val control = option.defaultControl()

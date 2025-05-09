@@ -9,5 +9,5 @@ class SynthDefSelector : ObjectSelector<SynthDefObject>() {
     override fun getList(): ObjectRegistry<SynthDefObject> = context[SynthDefRegistry]
 
     override fun createNewObject(name: String): SynthDefObject? =
-        context[XenakisMainActivity].synthDefsPane.createNewObject()
+        context[XenakisMainActivity].synthDefsPane().createNewObject()
 }

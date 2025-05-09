@@ -20,6 +20,8 @@ sealed class ParameterControl : AbstractContextualObject() {
 
     open fun providesConstantSynthArgument(): Boolean = true
 
+    open fun customSynthArguments(): String? = null
+
     open fun allocatesBus(obj: ParameterizedObject): Boolean = false
 
     open fun usesAuxilSynth(obj: ParameterizedObject): Boolean = false

@@ -79,7 +79,7 @@ object ObjectActions {
             icon(MaterialDesignL.LAUNCH)
             applicableOn { view -> !view.parentPane.isRoot(view.obj) }
             executeSingle { view, _ ->
-                val scoreObjectsPane = view.context[XenakisMainActivity].scoreObjectsPane
+                val scoreObjectsPane = view.context[XenakisMainActivity].scoreObjectsPane()
                 val w = scoreObjectsPane.listView.showContent(view.obj) ?: return@executeSingle
                 val coords = view.localToScreen(view.width, 0.0)
                 w.x = coords.x
@@ -152,11 +152,11 @@ object ObjectActions {
                             Logger.warn("Instrument is not resolved", Logger.Category.Score)
                             return@executeSingle
                         }
-                        mainScreen.synthDefsPane.listView.showContent(def)
+                        mainScreen.synthDefsPane().listView.showContent(def)
                     } else if (view is ProcessObjectView) {
                         if (view.obj.processDefRef.now.isResolved.now) {
                             val obj = view.obj.processDef
-                            mainScreen.processDefsPane.listView.showContent(obj)
+                            mainScreen.processDefsPane().listView.showContent(obj)
                         } else {
                             Logger.warn("ProcessDef is not resolved", Logger.Category.Score)
                         }

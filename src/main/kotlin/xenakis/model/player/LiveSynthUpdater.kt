@@ -8,6 +8,7 @@ import xenakis.model.obj.BusReference
 import xenakis.model.obj.GlobalPatternReference
 import xenakis.model.obj.ParameterizedObject
 import xenakis.model.score.Envelope
+import xenakis.model.score.controls.AttackReleaseControl
 import xenakis.model.score.controls.ParameterControl
 import xenakis.model.score.controls.guardAgainstReplaceNil
 import xenakis.sc.NumericalControlSpec
@@ -109,7 +110,7 @@ class LiveSynthUpdater(obj: ParameterizedObject) : AbstractLiveUpdater(obj) {
         val auxiliaryBus = ParameterControl.auxilBusName(uniqueName, parameter)
         writer.appendLine(
             "$auxiliarySynthName = { $envelopeCode.kr }" +
-                    ".play(target: ${placement.target}, outpus: $auxiliaryBus, fadeTime: 0.02, addAction: ${action});"
+                    ".play(target: ${placement.target}, outpus: $auxiliaryBus, fadeTime: ${AttackReleaseControl.DEFAULT}, addAction: ${action});"
         )
         if (remap) writer.remap(uniqueName, parameter)
     }

@@ -3,7 +3,7 @@ package xenakis.ui.controls
 import fxutils.prompt.TextPrompt
 import xenakis.impl.*
 
-class DecimalPrompt(
+open class DecimalPrompt(
     title: String, private val precision: Int, initialValue: Decimal?,
     private val range: DecimalRange = (-Decimal.INF)..Decimal.INF
 ) : TextPrompt<Decimal>(title, initialValue?.toString().orEmpty()) {

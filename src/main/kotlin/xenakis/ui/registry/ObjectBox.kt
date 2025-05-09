@@ -1,6 +1,7 @@
 package xenakis.ui.registry
 
 import fxutils.*
+import fxutils.actions.Action
 import fxutils.actions.ActionBar
 import fxutils.actions.collectActions
 import javafx.scene.Parent
@@ -161,6 +162,7 @@ class ObjectBox<O : ContextualObject>(val parent: ObjectListView<O>, val obj: O)
                 }
                 shortcuts("Ctrl+E")
                 enableWhen { box -> box.parent.mode.equalTo(DisplayMode.SubWindow) }
+                ifNotApplicable(Action.IfNotApplicable.Hide)
                 executes { box, _ ->
                     box.showSubWindow()
                 }

@@ -35,6 +35,7 @@ class ControlSpecEditor : ChoiceEditor<ParameterType, ControlSpec, Editor<Contro
                 val specEditor = BufferPositionControlSpecEditor()
                 select(ParameterType.BufferPosition, specEditor)
             }
+            else -> throw AssertionError("Illegal ControlSpec type: $spec")
         }
     }
 

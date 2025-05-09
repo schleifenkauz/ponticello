@@ -21,7 +21,7 @@ interface ParameterizedObject : NamedObject {
     fun getSpec(parameter: String): ControlSpec? = controls.getOrNull(parameter)?.spec?.now
 
     fun addControlsForAllObjectParameters() {
-        for (param in def.parameters) {
+        for (param in def.allParameters()) {
             val name = param.name.now
             if (name !in controls.controlMap) {
                 controls.addControl(name, param.defaultControl())

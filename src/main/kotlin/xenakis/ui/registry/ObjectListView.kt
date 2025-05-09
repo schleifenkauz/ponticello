@@ -81,7 +81,10 @@ class ObjectListView<O: ContextualObject>(
             registerActions(selected.actionBar.actions())
             val selectedContent = selected.content()
             if (displayMode.now == DisplayMode.DetailsPane && selectedContent is ToolPane) {
-                registerActions(selectedContent.actionBar.actions())
+                val actionBar = selectedContent.actionBar
+                if (actionBar != null) {
+                    registerActions(actionBar.actions())
+                }
             }
         }
     }
@@ -288,7 +291,7 @@ class ObjectListView<O: ContextualObject>(
             return getBox(obj).showSubWindow()
         } else {
             select(obj)
-            val window = scene.window as? SubWindow
+            val window = scene?.window as? SubWindow
             window?.showOrBringToFront()
             Platform.runLater {
                 getBox(obj).content()?.requestFocus()
@@ -403,6 +406,7 @@ class ObjectListView<O: ContextualObject>(
                 if (mode in view.config.supportedModes) view.mode.notEqualTo(mode)
                 else reactiveValue(false)
             }
+            ifNotApplicable(Action.IfNotApplicable.Hide)
             executes { view -> view.setMode(mode) }
         }
 

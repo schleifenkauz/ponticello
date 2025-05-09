@@ -8,10 +8,12 @@ import hextant.codegen.UseEditor
 import javafx.scene.paint.Color
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import reaktive.value.ReactiveVariable
 import reaktive.value.reactiveVariable
 import xenakis.impl.*
 import xenakis.model.obj.BusReference
 import xenakis.model.registry.ObjectReference
+import xenakis.model.score.controls.AttackReleaseControl
 import xenakis.model.score.controls.BufferControl
 import xenakis.model.score.controls.BusControl
 import xenakis.model.score.controls.ValueControl
@@ -21,13 +23,14 @@ import xenakis.sc.editor.SimpleIntegerEditor
 
 @Serializable
 enum class ParameterType {
-    Bus, Buffer, Numerical, BufferPosition;
+    Bus, Buffer, Numerical, BufferPosition, AttackRelease;
 
     override fun toString(): String = when (this) {
         Bus -> "bus"
         Buffer -> "buf"
         Numerical -> "num"
         BufferPosition -> "buf-pos"
+        AttackRelease -> "attack-release"
     }
 
     companion object {
@@ -40,6 +43,7 @@ fun ParameterType.defaultControlSpec(): ControlSpec = when (this) {
     ParameterType.Buffer -> BufferControlSpec(channels = 2)
     ParameterType.Numerical -> NumericalControlSpec.DEFAULT
     ParameterType.BufferPosition -> BufferPositionControlSpec()
+    ParameterType.AttackRelease -> AttackReleaseControlSpec()
 }
 
 @Serializable
@@ -61,6 +65,7 @@ fun ControlSpec.defaultControl(defaultBus: BusReference?) = when (this) {
 
     is NumericalControlSpec -> ValueControl(reactiveVariable(defaultValue.get()))
     is BufferPositionControlSpec -> ValueControl(reactiveVariable(zero))
+    is AttackReleaseControlSpec -> AttackReleaseControl.createDefault()
 }
 
 @Serializable
@@ -72,7 +77,7 @@ data class NumericalControlSpec(
     val max: DecimalLiteral,
     val warp: Warp,
     val step: DecimalLiteral,
-    val lag: DecimalLiteral = DecimalLiteral(0.02.toDecimal()),
+    val lag: DecimalLiteral = DecimalLiteral(AttackReleaseControl.DEFAULT),
     @Serializable(with = ColorSerializer::class)
     @Component(SimpleColorEditor::class)
     val associatedColor: Color = Color.WHITE,
@@ -128,7 +133,15 @@ data class NumericalControlSpec(
     }
 
     companion object {
-        val DEFAULT = NumericalControlSpec(zero, zero, one, 0.01.toDecimal(), zero, Warp.Linear, Color.WHITE)
+        val DEFAULT = NumericalControlSpec(
+            zero, zero, one, 0.01.toDecimal(),
+            AttackReleaseControl.DEFAULT, Warp.Linear, Color.WHITE
+        )
+
+        val LEVEL = NumericalControlSpec(
+            one, zero, one, 0.01.toDecimal(),
+            AttackReleaseControl.DEFAULT, Warp.Linear, Color.WHITE
+        )
     }
 }
 
@@ -172,6 +185,16 @@ class BufferPositionControlSpec : ControlSpec {
 
     override val code: String
         get() = "kr(0)"
+}
+
+@Serializable
+@SerialName("AttackRelease")
+class AttackReleaseControlSpec : ControlSpec {
+    val maxDuration: ReactiveVariable<Decimal> = reactiveVariable(one)
+    override val type: ParameterType
+        get() = ParameterType.AttackRelease
+    override val code: String
+        get() = "<attack-release>"
 }
 
 fun NumericalControlSpec.mapOnto(targetRange: DoubleRange) = SpecTransformation(this, targetRange)

@@ -38,7 +38,7 @@ class ProcessObjectView(
         selector.syncWith(obj.processDefRef)
         selector.initialize(context)
         val viewBtn = Material2AL.CODE.button(action = "View ProcessDef") {
-            context[XenakisMainActivity].processDefsPane.listView.showContent(obj.processDef)
+            context[XenakisMainActivity].processDefsPane().listView.showContent(obj.processDef)
         }.styleClass("medium-icon-button").disableIf(selector.isResolved.not())
         val box = ObjectSelectorControl(selector, createBundle())
         pane.addItem("ProcessDef: ", HBox(5.0, box, viewBtn).centerChildren())

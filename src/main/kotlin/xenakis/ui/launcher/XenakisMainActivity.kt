@@ -38,9 +38,9 @@ class XenakisMainActivity(val project: XenakisProject) : Activity() {
         project.context[XenakisMainActivity] = this
     }
 
-    val mainScoreView: NavigableScorePane = NavigableScorePane(project.mainScore, project.context)
+    private val mainScoreView: NavigableScorePane = NavigableScorePane(project.mainScore, project.context)
 
-    val synthDefsPane by lazy { SynthDefRegistryPane(project.instruments) }
+    private val synthDefsPane by lazy { SynthDefRegistryPane(project.instruments) }
     val synthDefsWindow by lazy {
         context.makeToolWindow(
             synthDefsPane, "Instruments",
@@ -48,27 +48,43 @@ class XenakisMainActivity(val project: XenakisProject) : Activity() {
         )
     }
 
-    val processDefsPane by lazy { ProcessDefRegistryPane(project[PROCESS_DEFS]) }
+    fun synthDefsPane(): SynthDefRegistryPane {
+        synthDefsWindow
+        return synthDefsPane
+    }
+
+    private val processDefsPane by lazy { ProcessDefRegistryPane(project[PROCESS_DEFS]) }
     val processDefsWindow by lazy {
         context.makeToolWindow(
             processDefsPane, "Process Definitions",
             defaultSize = Dimension2D(1200.0, 1200.0)
         )
     }
+
+    fun processDefsPane(): ProcessDefRegistryPane {
+        processDefsWindow
+        return processDefsPane
+    }
+
     private val controlBusPane by lazy { ControlBusRegistryPane(project.busses) }
     val controlBusWindow by lazy { context.makeToolWindow(controlBusPane, "Control Buses") }
 
-    private val audioBusPane = AudioBusRegistryPane(project.busses)
-    val audioBusWindow = context.makeToolWindow(audioBusPane, "Audio Buses")
+    private val audioBusPane by lazy { AudioBusRegistryPane(project.busses)}
+    val audioBusWindow by lazy { context.makeToolWindow(audioBusPane, "Audio Buses") }
 
-    private val samplesPane = SampleRegistryPane(project.buffers)
-    val samplesWindow = context.makeToolWindow(samplesPane, "Samples")
+    private val samplesPane by lazy { SampleRegistryPane(project.buffers) }
+    val samplesWindow by lazy { context.makeToolWindow(samplesPane, "Samples") }
 
-    private val buffersPane = AllocatedBufferRegistryPane(project.buffers)
-    val buffersWindow = context.makeToolWindow(buffersPane, "Allocated Buffers")
+    private val buffersPane by lazy { AllocatedBufferRegistryPane(project.buffers) }
+    val buffersWindow by lazy { context.makeToolWindow(buffersPane, "Allocated Buffers") }
 
-    val patternsPane = GlobalPatternRegistryPane(project.patterns)
-    val patternsWindow = context.makeToolWindow(patternsPane, "Patterns")
+    private val patternsPane by lazy { GlobalPatternRegistryPane(project.patterns) }
+    val patternsWindow by lazy { context.makeToolWindow(patternsPane, "Patterns") }
+
+    fun patternsPane(): GlobalPatternRegistryPane {
+        patternsWindow
+        return patternsPane
+    }
 
     private val liveTasksPane by lazy { LiveTaskRegistryPane(project[LIVE_TASKS]) }
     val liveTasksWindow by lazy { context.makeToolWindow(liveTasksPane, "Live Tasks") }
@@ -81,8 +97,13 @@ class XenakisMainActivity(val project: XenakisProject) : Activity() {
         }
     }
 
-    val scoreObjectsPane by lazy { ScoreObjectRegistryPane(project.objects) }
+    private val scoreObjectsPane by lazy { ScoreObjectRegistryPane(project.objects) }
     val scoreObjectsWindow by lazy { context.makeToolWindow(scoreObjectsPane, "Score objects") }
+
+    fun scoreObjectsPane(): ScoreObjectRegistryPane {
+        scoreObjectsWindow
+        return scoreObjectsPane
+    }
 
     val logWindow by lazy { context.makeToolWindow(LogPane(Logger), "Log") }
 

@@ -178,7 +178,7 @@ class FlowListConfig(
                 }
                 executes { flow ->
                     flow as SynthFlow
-                    val pane = flow.context[XenakisMainActivity].synthDefsPane
+                    val pane = flow.context[XenakisMainActivity].synthDefsPane()
                     pane.listView.showContent(flow.def)
                 }
             }

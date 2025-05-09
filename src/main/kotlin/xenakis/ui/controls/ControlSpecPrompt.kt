@@ -2,6 +2,7 @@ package xenakis.ui.controls
 
 import fxutils.button
 import fxutils.prompt.ConfirmablePrompt
+import fxutils.prompt.Prompt
 import javafx.beans.binding.BooleanBinding
 import javafx.scene.Node
 import javafx.scene.control.Button
@@ -75,26 +76,32 @@ abstract class ControlSpecPrompt<S : ControlSpec, N : Node>(
             parameterName: String,
             parentObject: ParameterizedObject?,
             initialSpec: ControlSpec,
-        ): ControlSpecPrompt<*, *>? {
+        ): Prompt<out ControlSpec, *>? {
             val title =
                 if (parentObject != null) "Control spec for parameter $parameterName of ${parentObject.name.now}"
                 else "Control spec for new parameter $parameterName"
+            @Suppress("UNCHECKED_CAST")
             return when (initialSpec) {
                 is BufferControlSpec -> BufferControlSpecPrompt(parameterName, parentObject, title, initialSpec)
                 is BusControlSpec -> BusControlSpecPrompt(parameterName, parentObject, title, initialSpec)
                 is NumericalControlSpec -> NumericalControlSpecPrompt(parameterName, parentObject, initialSpec, title)
+                is AttackReleaseControlSpec -> AttackReleaseControlSpecPrompt(
+                    initialSpec, "Maximum attack/release"
+                )
+
                 is BufferPositionControlSpec -> null
-            }
+            } as Prompt<out ControlSpec, *>?
         }
 
         fun create(
             parameterName: String,
             parentObject: ParameterizedObject?,
             parameterType: ParameterType,
-        ): ControlSpecPrompt<*, *>? = when (parameterType) {
+        ): Prompt<out ControlSpec, *>? = when (parameterType) {
             ParameterType.Bus -> create(parameterName, parentObject, BusControlSpec(Rate.Audio, 2))
             ParameterType.Buffer -> create(parameterName, parentObject, BufferControlSpec(2))
             ParameterType.Numerical -> create(parameterName, parentObject, NumericalControlSpec.DEFAULT)
+            ParameterType.AttackRelease -> create(parameterName, parentObject, AttackReleaseControlSpec())
             ParameterType.BufferPosition -> null
         }
     }

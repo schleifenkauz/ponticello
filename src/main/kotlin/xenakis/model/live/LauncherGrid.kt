@@ -20,6 +20,8 @@ import xenakis.impl.zero
 import xenakis.model.Settings
 import xenakis.model.flow.AudioFlows
 import xenakis.model.obj.AbstractContextualObject
+import xenakis.model.obj.ParameterDefReference
+import xenakis.model.obj.ParameterizedObject
 import xenakis.model.obj.ScoreObjectReference
 import xenakis.model.player.ActiveScoreObject
 import xenakis.model.player.Recorder
@@ -116,7 +118,7 @@ class LauncherGrid private constructor(
             is ItemTarget.Player -> Platform.runLater {
                 val obj = target.ref.get() ?: return@runLater
                 if (obj.player == null) {
-                    context[XenakisMainActivity].scoreObjectsPane.listView.showContent(obj)
+                    context[XenakisMainActivity].scoreObjectsPane().listView.showContent(obj)
                 }
                 val player = obj.player
                 if (player == null) {
@@ -125,7 +127,7 @@ class LauncherGrid private constructor(
                 }
                 if (!player.isScheduled.now) {
                     player.play()
-                    context[XenakisMainActivity].scoreObjectsPane.listView.showContent(obj)
+                    context[XenakisMainActivity].scoreObjectsPane().listView.showContent(obj)
                 } else if (!item.stopOnRelease.now) {
                     player.pause()
                 }
@@ -171,6 +173,7 @@ class LauncherGrid private constructor(
                     recorder.stopRecording()
                 }
             }
+
             is ItemTarget.Object -> {
                 val activeObject = activeObjects[item] ?: return
                 addToTargetScore(activeObject, item)
@@ -280,7 +283,7 @@ class LauncherGrid private constructor(
         }
 
         @Serializable
-        data object ToggleRecording: ItemTarget() {
+        data object ToggleRecording : ItemTarget() {
             override val canView: Boolean
                 get() = false
             override lateinit var isActive: ReactiveBoolean
@@ -296,6 +299,8 @@ class LauncherGrid private constructor(
 
         @Serializable
         data class Object(val ref: ScoreObjectReference) : ItemTarget() {
+            var velocityParameter: ReactiveVariable<ParameterDefReference> = reactiveVariable(ObjectReference.none())
+
             override val canView: Boolean
                 get() = ref.isResolved.now
 
@@ -309,7 +314,13 @@ class LauncherGrid private constructor(
                 get() = active
 
             override fun initialize(context: Context) {
-                ref.resolve(context[ScoreObjectRegistry])
+                super.initialize(context)
+                val obj = ref.resolve(context[ScoreObjectRegistry])
+                if (obj is ParameterizedObject) {
+                    val velocityParam = velocityParameter.now
+                    val paramName = velocityParam.getName()
+                    velocityParameter.now = obj.def.getParameter(paramName)?.reference() ?: velocityParam
+                }
             }
 
             override fun pressed() {
@@ -348,7 +359,7 @@ class LauncherGrid private constructor(
                     isActive = reactiveValue(false)
                     return
                 }
-                val scoreObjectsPane = context[XenakisMainActivity].scoreObjectsPane
+                val scoreObjectsPane = context[XenakisMainActivity].scoreObjectsPane()
                 scoreObjectsPane.listView.initializeContent(obj)
                 isActive = obj.player?.isScheduled ?: reactiveValue(false)
             }

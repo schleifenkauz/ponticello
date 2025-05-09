@@ -51,7 +51,7 @@ abstract class ObjectRegistryPane<O : NamedObject>(
             }
             addAction("Sync registry") {
                 description { p -> reactiveValue("Sync ${plural(p.registry.objectType)}") }
-                shortcut("Ctrl+Shift+S")
+                shortcut("Ctrl+Shift+U")
                 icon(MaterialDesignS.SYNC)
                 executes { p ->
                     p.registry.syncAll()

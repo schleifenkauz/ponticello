@@ -13,3 +13,4 @@ typealias GlobalPatternReference = ObjectReference<@Contextual GlobalPatternObje
 typealias ScoreObjectReference = ObjectReference<@Contextual ScoreObject>
 typealias MeterReference = ObjectReference<@Contextual MeterObject>
 typealias ClockReference = ObjectReference<@Contextual ClockObject>
+typealias ParameterDefReference = ObjectReference<@Contextual ParameterDefObject>

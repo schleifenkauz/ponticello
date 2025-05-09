@@ -300,7 +300,7 @@ abstract class AbstractLiveUpdater(protected val obj: ParameterizedObject) : Par
         }
         val placement = getAuxiliarySynthPlacement(parameter, uniqueName, replace)
         val action = guardAgainstReplaceNil(placement)
-        writer.appendLine(".play(target: ${placement.target}, outbus: $busName, fadeTime: 0.02, addAction: ${action});")
+        writer.appendLine(".play(target: ${placement.target}, outbus: $busName, fadeTime: ${AttackReleaseControl.DEFAULT}, addAction: ${action});")
     }
 
     protected fun getAuxiliarySynthPlacement(parameter: String, uniqueName: String, replace: Boolean) = when {

@@ -189,7 +189,7 @@ abstract class ScoreObjectView(
 
                 ev.button == MouseButton.SECONDARY && ev.modifiers == setOf(Shift) -> {
                     if (!parentPane.isRoot(obj)) {
-                        context[XenakisMainActivity].scoreObjectsPane.listView.showContent(obj)
+                        context[XenakisMainActivity].scoreObjectsPane().listView.showContent(obj)
                     }
                 }
 

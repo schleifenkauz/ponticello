@@ -1,9 +1,6 @@
 package xenakis.ui.registry
 
-import fxutils.actions.ActionBar
-import fxutils.actions.ContextualizedAction
-import fxutils.actions.action
-import fxutils.actions.registerShortcuts
+import fxutils.actions.*
 import fxutils.infiniteSpace
 import fxutils.label
 import fxutils.styleClass
@@ -28,7 +25,7 @@ abstract class ToolPane : VBox() {
     var header: HBox? = null
         private set
 
-    lateinit var actionBar: ActionBar
+    var actionBar: ActionBar? = null
         private set
 
     init {
@@ -80,6 +77,7 @@ abstract class ToolPane : VBox() {
         val fitContentAction = action<Node>("Resize window to fit contents") {
             shortcut("Ctrl+L")
             enableWhen { p -> isSceneRoot(p) }
+            ifNotApplicable(Action.IfNotApplicable.Hide)
             icon(MaterialDesignR.RESIZE)
             executes { p -> p.scene.window.sizeToScene() }
         }

@@ -7,6 +7,7 @@ import fxutils.actions.collectActions
 import fxutils.controls.SliderBar
 import fxutils.prompt.SimpleSearchableListView
 import fxutils.undo.UndoManager
+import fxutils.undo.VariableEdit
 import javafx.scene.control.CheckBox
 import javafx.scene.control.Label
 import javafx.scene.input.DragEvent
@@ -19,11 +20,15 @@ import javafx.scene.layout.Region
 import javafx.scene.layout.VBox
 import kotlinx.serialization.Contextual
 import org.kordamp.ikonli.codicons.Codicons
+import org.kordamp.ikonli.materialdesign2.MaterialDesignA
 import org.kordamp.ikonli.materialdesign2.MaterialDesignE
 import org.kordamp.ikonli.materialdesign2.MaterialDesignR
 import reaktive.value.binding.and
+import reaktive.value.binding.flatMap
+import reaktive.value.binding.`if`
 import reaktive.value.binding.not
 import reaktive.value.now
+import reaktive.value.reactiveValue
 import xenakis.impl.one
 import xenakis.impl.toDecimal
 import xenakis.impl.zero
@@ -32,6 +37,8 @@ import xenakis.model.flow.AudioFlows
 import xenakis.model.live.LauncherGrid
 import xenakis.model.live.LauncherGrid.GridItemReference
 import xenakis.model.live.LauncherGrid.ItemTarget
+import xenakis.model.obj.ParameterDefReference
+import xenakis.model.obj.ParameterizedObject
 import xenakis.model.player.ScorePlayer
 import xenakis.model.registry.ScoreObjectRegistry
 import xenakis.model.registry.reference
@@ -43,6 +50,7 @@ import xenakis.ui.actions.PlaybackActions
 import xenakis.ui.actions.UndoRedoActions
 import xenakis.ui.launcher.XenakisMainActivity
 import xenakis.ui.registry.ScoreObjectRegistryPane
+import xenakis.ui.registry.SearchableParameterDefListView
 import xenakis.ui.registry.ToolPane
 import xenakis.ui.score.FlowGroupManager
 
@@ -173,6 +181,7 @@ class LauncherGridPane(
                 val droppedItem = ref.getItem(grid)
                 grid.swap(item, droppedItem)
             }
+
             db.hasContent(PlaybackActions.RECORD_BUTTON) -> {
                 item.target = ItemTarget.ToggleRecording
             }
@@ -240,6 +249,32 @@ class LauncherGridPane(
                     }
                 }
             }
+            addAction("Set velocity parameter") {
+                applicableIf { target -> target is ItemTarget.Object && target.targetObject is ParameterizedObject }
+                icon { target ->
+                    if (target !is ItemTarget.Object || target.targetObject !is ParameterizedObject) reactiveValue(null)
+                    else `if`(
+                        target.velocityParameter.flatMap(ParameterDefReference::isResolved),
+                        then = { MaterialDesignA.ALPHA_V_BOX_OUTLINE },
+                        otherwise = { MaterialDesignA.ALPHA_V_BOX }
+                    )
+                }
+                executes { target, ev ->
+                    if (target !is ItemTarget.Object) return@executes
+                    val obj = target.targetObject as? ParameterizedObject ?: return@executes
+                    val oldVelocityParam = target.velocityParameter.now
+                    val newVelocityParam = SearchableParameterDefListView(
+                        obj.def.allParameters(), "Select velocity parameter"
+                    ).showPopup(ev, initialOption = oldVelocityParam.get()) ?: return@executes
+                    if (newVelocityParam != oldVelocityParam.get()) {
+                        val ref = newVelocityParam.reference()
+                        target.velocityParameter.set(ref)
+                        target.context[UndoManager].record(
+                            VariableEdit(target.velocityParameter, oldVelocityParam, ref, "Select velocity parameter")
+                        )
+                    }
+                }
+            }
             addAction("Configure recording") {
                 enableWhen { target -> target.isActive.not() and (target is ItemTarget.ToggleRecording) }
                 ifNotApplicable(Action.IfNotApplicable.Hide)
@@ -256,7 +291,7 @@ class LauncherGridPane(
         }
 
         private fun showObject(obj: @Contextual ScoreObject) {
-            val objectsPane = obj.context[XenakisMainActivity].scoreObjectsPane
+            val objectsPane = obj.context[XenakisMainActivity].scoreObjectsPane()
             objectsPane.listView.showContent(obj)
         }
 

@@ -47,17 +47,16 @@ abstract class ParameterizedScoreObjectView<O : ParameterizedScoreObject>(
     }
 
     private fun showNewEnvelopePopup(point: Point2D) {
-        val possibleParameters = obj.def.parameters
+        val possibleParameters = obj.def.allParameters()
             .filter { p -> p.spec.now is NumericalControlSpec }
             .filter { p ->
                 val control = obj.controls.controlMap[p.name.now]
                 control !is EnvelopeControl || !control.display.now
             }
         val listView = SearchableParameterDefListView(
-            possibleParameters, "New parameter", obj,
-            context[primaryStage], point, fixedParameterType = ParameterType.Numerical
+            possibleParameters, "New parameter", obj, fixedParameterType = ParameterType.Numerical
         )
-        val param = listView.showPopup() ?: return
+        val param = listView.showPopup(point, context[primaryStage]) ?: return
         val name = param.name.now
         val spec = param.spec.now as NumericalControlSpec
         val initialValue = obj.controls.controlMap[name]?.getNumericalValue() ?: spec.defaultValue.get()

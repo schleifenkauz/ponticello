@@ -25,8 +25,6 @@ sealed interface SynthDefObject : ParameterizedObjectDef, SuperColliderObject {
     override val superColliderName: String
         get() = "\\${name.now}"
 
-    override fun hasParameter(name: String): Boolean = name == "group" || super.hasParameter(name)
-
     fun onUpdated() {
         ScorePlayer.execute {
             context[ActiveObjectsManager].forEach { active ->

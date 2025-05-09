@@ -107,7 +107,7 @@ class AudioFlowGroup(
     }
 
     private fun deactivate(flow: AudioFlow) {
-        client.run("${flow.superColliderName}.free")
+        client.run("${flow.superColliderName}.release")
     }
 
     private fun addToServer(placement: NodePlacement) {

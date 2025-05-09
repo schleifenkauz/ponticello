@@ -37,6 +37,7 @@ abstract class SearchableToolPane<O : NamedObject> : ToolPane(), ObjectListDispl
 
     private fun setupSearchField() {
         searchText.promptText = "Search..."
+        searchText.maxWidth = 150.0
         searchText.left = FontIcon(Material2MZ.SEARCH)
         searchText.textProperty().addListener { _, _, _ -> listView.refilter() }
         searchText.setOnAction {

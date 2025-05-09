@@ -26,14 +26,11 @@ import org.kordamp.ikonli.evaicons.Evaicons
 import org.kordamp.ikonli.material2.Material2AL
 import org.kordamp.ikonli.materialdesign2.MaterialDesignC
 import org.kordamp.ikonli.materialdesign2.MaterialDesignS
-import reaktive.value.ReactiveVariable
+import reaktive.value.*
 import reaktive.value.binding.flatMap
 import reaktive.value.binding.map
-import reaktive.value.forEach
 import reaktive.value.fx.asObservableValue
 import reaktive.value.fx.asProperty
-import reaktive.value.now
-import reaktive.value.reactiveVariable
 import xenakis.impl.asTime
 import xenakis.impl.asY
 import xenakis.impl.one
@@ -431,7 +428,13 @@ class ControlAssignmentEditor(val control: NamedParameterControl, val view: Scor
                 val displaySwitch = CheckBox()
                     .sync(control.display, description = "Show spectrum", namedControl.context[UndoManager])
                 displaySwitch.selectedProperty().bindBidirectional(control.display.asProperty())
-                return HBox(5.0, selectorControl, infiniteSpace(), Label("Show spectrum"), displaySwitch).centerChildren()
+                return HBox(
+                    5.0,
+                    selectorControl,
+                    infiniteSpace(),
+                    Label("Show spectrum"),
+                    displaySwitch
+                ).centerChildren()
             }
 
             override fun createDefaultControl(
@@ -478,7 +481,7 @@ class ControlAssignmentEditor(val control: NamedParameterControl, val view: Scor
                     enableWhen { ctrl -> ctrl.pattern.flatMap { p -> p.isResolved } }
                     executes { ctrl ->
                         val obj = ctrl.pattern.now.get() ?: return@executes
-                        val pane = obj.context[XenakisMainActivity].patternsPane
+                        val pane = obj.context[XenakisMainActivity].patternsPane()
                         pane.showPlotPane(obj)
                     }
                 }
@@ -487,7 +490,7 @@ class ControlAssignmentEditor(val control: NamedParameterControl, val view: Scor
                     enableWhen { ctrl -> ctrl.pattern.flatMap(GlobalPatternReference::isResolved) }
                     executes { ctrl ->
                         val obj = ctrl.pattern.now.get() ?: return@executes
-                        val pane = obj.context[XenakisMainActivity].patternsPane
+                        val pane = obj.context[XenakisMainActivity].patternsPane()
                         pane.listView.showContent(obj)
                     }
                 }
@@ -495,29 +498,27 @@ class ControlAssignmentEditor(val control: NamedParameterControl, val view: Scor
         }
 
         data object AttackRelease : ControlType<AttackReleaseControl>() {
-            override fun applicableOn(obj: ParameterizedObject): Boolean = obj is ScoreObject
-
             override fun createDetailInput(
                 namedControl: NamedParameterControl,
                 control: AttackReleaseControl,
                 view: ScoreObjectView?,
             ): Node {
                 val box = HBox(10.0)
-                val spec = namedControl.spec.now as? NumericalControlSpec
-                    ?: return missingSpecOptionsBar(namedControl)
-                box.userData = namedControl.parentObject.duration()!!.forEach { duration ->
+                val spec = namedControl.spec.now as? AttackReleaseControlSpec
+                val customTotalDuration = spec?.maxDuration ?: reactiveValue(one)
+                val objectDuration = namedControl.parentObject.duration()
+                val duration = objectDuration ?: customTotalDuration
+                box.userData = duration.forEach { maxDur ->
                     val timeSpec = NumericalControlSpec(
-                        default = zero, min = zero, max = duration,
+                        default = zero, min = zero, max = maxDur,
                         step = 0.01.asTime, lag = zero, warp = Warp.Linear, associatedColor = Color.GRAY
                     ).converter(unit = "s")
-                    control.attack.now = control.attack.now.coerceAtMost(duration)
-                    control.release.now = control.release.now.coerceAtMost(duration - control.attack.now)
-                    val levelSpec = spec.converter(unit = "db")
-                    val level =
-                        SliderBar(
-                            control.level, "Level", levelSpec,
-                            undoManager = namedControl.context[UndoManager]
-                        )
+                    control.attack.now = control.attack.now.coerceAtMost(maxDur)
+                    if (objectDuration != null) {
+                        control.release.now = control.release.now.coerceAtMost(maxDur - control.attack.now)
+                    } else {
+                        control.release.now = control.release.now.coerceAtMost(maxDur)
+                    }
                     val attack =
                         SliderBar(
                             control.attack, "Attack", timeSpec,
@@ -527,14 +528,17 @@ class ControlAssignmentEditor(val control: NamedParameterControl, val view: Scor
                         control.release, "Release", timeSpec,
                         undoManager = namedControl.context[UndoManager]
                     )
-                    level.prefWidth = 100.0
                     attack.prefWidth = 100.0
                     release.prefWidth = 100.0
-                    box.children.setAll(level, attack, release)
+                    box.children.setAll(attack, release) //TODO would be awesome to merge them into one slider
                 } and control.attack.observe { _, _, attack ->
-                    control.release.now = control.release.now.coerceAtMost(view!!.obj.duration().now - attack)
+                    if (objectDuration != null) {
+                        control.release.now = control.release.now.coerceAtMost(duration.now - attack)
+                    }
                 } and control.release.observe { _, _, release ->
-                    control.attack.now = control.attack.now.coerceAtMost(view!!.obj.duration().now - release)
+                    if (objectDuration != null) {
+                        control.attack.now = control.attack.now.coerceAtMost(duration.now - release)
+                    }
                 }
                 return box.centerChildren()
             }
@@ -543,10 +547,7 @@ class ControlAssignmentEditor(val control: NamedParameterControl, val view: Scor
                 obj: ParameterizedObject,
                 spec: ControlSpec?,
                 oldControl: ParameterControl,
-            ): AttackReleaseControl {
-                val level = oldControl.getNumericalValue() ?: one
-                return AttackReleaseControl(reactiveVariable(zero), reactiveVariable(zero), reactiveVariable(level))
-            }
+            ): AttackReleaseControl = AttackReleaseControl.createDefault()
 
             override fun toString(): String = "ASR"
         }

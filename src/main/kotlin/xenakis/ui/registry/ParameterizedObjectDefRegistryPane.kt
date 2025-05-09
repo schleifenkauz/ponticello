@@ -36,7 +36,7 @@ abstract class ParameterizedObjectDefRegistryPane<T : ParameterizedObjectDef>(
         val synthDefsFromGlobal = globalLib.getNames().map(AddObjectOption::ObjectFromGlobalLib)
         val searchableList = AddObjectOptionListView(synthDefsFromGlobal)
         searchableList.enterText(searchText.text)
-        val option = searchableList.showPopup(anchorNode = actionBar) ?: return
+        val option = searchableList.showPopup(ev) ?: return
         createObject(option, ev)
     }
 
@@ -78,7 +78,7 @@ abstract class ParameterizedObjectDefRegistryPane<T : ParameterizedObjectDef>(
                 val name = option.name
                 val def = registry.context[globalLibrary].get(name) ?: return
                 if (registry.has(name)) {
-                    if (YesNoPrompt("Overwrite ${defs.objectType} $name?").showDialog(anchorNode = actionBar) == true) {
+                    if (YesNoPrompt("Overwrite ${defs.objectType} $name?").showDialog(ev) == true) {
                         registry.overwrite(def)
                     } else return
                 } else {

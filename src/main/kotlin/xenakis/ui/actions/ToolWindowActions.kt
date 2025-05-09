@@ -17,7 +17,7 @@ import xenakis.ui.misc.HelpBrowser
 
 object ToolWindowActions : Action.Collector<XenakisMainActivity>({
     addAction("Open console") {
-        shortcut("Ctrl+T")
+        shortcut("Ctrl+Alt+C")
         icon(MaterialDesignC.CONSOLE)
         executes { activity -> activity.shellWindow.showOrBringToFront() }
     }

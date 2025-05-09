@@ -16,6 +16,7 @@ import xenakis.model.registry.BusRegistry
 import xenakis.model.registry.ObjectList
 import xenakis.model.registry.ObjectListSerializer
 import xenakis.model.registry.ObjectReference
+import xenakis.model.score.controls.AttackReleaseControl
 import xenakis.model.score.controls.guardAgainstReplaceNil
 import xenakis.sc.NumericalControlSpec
 import xenakis.sc.Warp
@@ -145,11 +146,11 @@ class MixerFlow(
                 +"var sources, volumes, mix, snd"
                 val sources = components.map { comp -> comp.sourceBus.now.force().superColliderName }
                 val volumes = components.map { comp -> getActualVolume(comp) }
-                +"sources = NamedControl.kr(\\sources, $sources, lags: 0.02, fixedLag: true)"
-                +"volumes = NamedControl.kr(\\volumes, $volumes, lags: 0.02, fixedLag: true)"
+                +"sources = NamedControl.kr(\\sources, $sources, lags: ${AttackReleaseControl.DEFAULT}, fixedLag: true)"
+                +"volumes = NamedControl.kr(\\volumes, $volumes, lags: ${AttackReleaseControl.DEFAULT}, fixedLag: true)"
                 +"sources = In.ar(sources, ${sink.channels.now}) * volumes"
                 +"snd = In.ar(${sink.superColliderName}, ${sink.channels.now})"
-                val masterVolume = "\\master_volume.kr(${masterVolume.now}.dbamp, lag: 0.02, fixedLag: true)"
+                val masterVolume = "\\master_volume.kr(${masterVolume.now}.dbamp, lag: ${AttackReleaseControl.DEFAULT}, fixedLag: true)"
                 val mix = if (components.size > 1) "sources.sum" else "sources"
                 +"snd = (snd + $mix) * $masterVolume"
                 +"ReplaceOut.ar(${sink.superColliderName}, snd)"
@@ -218,7 +219,7 @@ class MixerFlow(
     companion object {
         val VOLUME_SPEC = NumericalControlSpec(
             default = zero, min = (-60).toDecimal(), max = (+24).toDecimal(),
-            lag = 0.02.toDecimal(), warp = Warp.Linear, step = 0.1.toDecimal(),
+            lag = AttackReleaseControl.DEFAULT, warp = Warp.Linear, step = 0.1.toDecimal(),
         )
 
         fun create() = MixerFlow(

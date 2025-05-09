@@ -19,6 +19,7 @@ import xenakis.impl.Logger
 import xenakis.impl.copy
 import xenakis.impl.randomColor
 import xenakis.model.registry.SynthDefRegistry
+import xenakis.model.score.controls.AttackReleaseControl
 import xenakis.sc.*
 import xenakis.sc.client.ScWriter
 import xenakis.sc.client.SuperColliderClient
@@ -35,6 +36,9 @@ class CustomizableSynthDefObject(
     override val canCopy: Boolean
         get() = true
 
+    override fun allParameters(): List<ParameterDefObject> =
+        parameters + listOf(ParameterDefObject.LEVEL, ParameterDefObject.ATTACK_RELEASE)
+
     override fun copy(name: String): SynthDefObject = CustomizableSynthDefObject(
         reactiveVariable(name),
         ParameterDefList(parameters.mapTo(mutableListOf()) { p -> p.copy() }),
@@ -46,7 +50,7 @@ class CustomizableSynthDefObject(
         appendBlock("fork") {
             createObject()
             +"s.sync"
-            +"~xenakis_addr.sendMsg('/updated', -1, 'synth_def:${name.now}')"
+            +"~xenakis_addr.sendMsg('/updated', 'synth_def:${name.now}')"
         }
     }
 
@@ -57,7 +61,7 @@ class CustomizableSynthDefObject(
 
     override fun ScWriter.createObject() {
         append("SynthDef(\\${name.now}, ")
-        val extraVariables = listOf("duration_", "attack_", "release_", "sustain_", "level_", "env_")
+        val extraVariables = listOf("duration", "attack", "release", "sustain", "level", "env_")
         val parameterVariables = parameters.map { p -> Identifier(p.name.now) }
         val parameterAssignments = parameters.map { p ->
             val parameterCode = RawScExpr("\\${p.name.now}.${p.spec.now.code}")
@@ -65,12 +69,12 @@ class CustomizableSynthDefObject(
         }
         val variables = ugenGraph?.editor?.result?.now?.variables.orEmpty()
         val extraStatements = listOf(
-            RawScExpr("duration_ = \\duration.ir"),
-            RawScExpr("attack_ = \\attack.kr(0.02)"),
-            RawScExpr("release_ = \\release.kr(0.02)"),
-            RawScExpr("level_ = \\level.kr(1)"),
-            RawScExpr("env_ = Env.asr(attack_, level_, release_).kr(Done.freeSelf, \\gate.kr(1))"),
-            RawScExpr("Env([0, 0], [duration_]).kr(\\afterDuration.ir(Done.freeSelf))")
+            RawScExpr("duration = \\duration.ir"),
+            RawScExpr("attack = \\attack.kr(${AttackReleaseControl.DEFAULT})"),
+            RawScExpr("release = \\release.kr(${AttackReleaseControl.DEFAULT})"),
+            RawScExpr("level = \\level.kr(1)"),
+            RawScExpr("env_ = Env.asr(attack, 1, release).kr(Done.freeSelf, \\gate.kr(1)) * level"),
+            RawScExpr("Env([0, 0], [duration]).kr(\\afterDuration.ir(Done.freeSelf))")
         )
         val statements = ugenGraph?.editor?.result?.now?.statements.orEmpty()
         val block = CodeBlock(

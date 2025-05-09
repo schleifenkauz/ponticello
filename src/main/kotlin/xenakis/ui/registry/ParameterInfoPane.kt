@@ -9,10 +9,7 @@ import reaktive.list.ReactiveList
 import reaktive.list.fx.asObservableList
 import reaktive.value.now
 import xenakis.model.obj.ParameterDefObject
-import xenakis.sc.BufferControlSpec
-import xenakis.sc.BufferPositionControlSpec
-import xenakis.sc.BusControlSpec
-import xenakis.sc.NumericalControlSpec
+import xenakis.sc.*
 
 class ParameterInfoPane(
     parameters: ReactiveList<ParameterDefObject>,
@@ -34,6 +31,7 @@ class ParameterInfoPane(
                         is BufferControlSpec -> add(Label("buf"))
                         is BusControlSpec -> add(Label("bus"))
                         is BufferPositionControlSpec -> add(Label("bufpos"))
+                        is AttackReleaseControlSpec -> add(Label("attack-release"))
                         is NumericalControlSpec -> {
                             add(Label("num, "))
                             add(Label("default = ${spec.defaultValue.text}, ")) {

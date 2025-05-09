@@ -15,7 +15,9 @@ import xenakis.ui.registry.ParameterDefList
 interface ParameterizedObjectDef : NamedObject {
     val parameters: ParameterDefList
 
-    fun getParameter(name: String): ParameterDefObject? = parameters.find { it.name.now == name }
+    fun allParameters(): List<ParameterDefObject> = parameters
+
+    fun getParameter(name: String): ParameterDefObject? = allParameters().find { p -> p.name.now == name }
 
     fun getSpec(name: String): ReactiveVariable<ControlSpec>? = getParameter(name)?.spec
 
@@ -24,15 +26,12 @@ interface ParameterizedObjectDef : NamedObject {
         parameter.spec.now = spec
     }
 
-    fun hasParameter(name: String): Boolean = parameters.any { it.name.now == name }
+    fun hasParameter(name: String): Boolean = allParameters().any { it.name.now == name }
 
     fun defaultControls(
         context: Context, defaultBus: BusReference?,
-    ): MutableList<Pair<String, ParameterControl>> {
-        val controls = parameters.mapTo(mutableListOf()) { p ->
-            p.name.now to p.defaultControl(defaultBus)
-        }
-        return controls
+    ): MutableList<Pair<String, ParameterControl>> = allParameters().mapTo(mutableListOf()) { p ->
+        p.name.now to p.defaultControl(defaultBus)
     }
 
     fun getDefaultControls(associatedObject: ScoreObjectGroup?): ParameterControlList {
