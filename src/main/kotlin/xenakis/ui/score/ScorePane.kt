@@ -146,7 +146,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
                 MouseEvent.MOUSE_DRAGGED -> mouseDragged(ev)
                 MouseEvent.MOUSE_CLICKED -> {
                     val p = Point2D(ev.x, ev.y)
-                    if (p.distance(mousePress) > 1.0) return@addEventHandler
+                    if (mousePress != null && p.distance(mousePress) > 1.0) return@addEventHandler
                         when {
                             ev.button == MouseButton.SECONDARY -> rightClicked(ev)
                             ev.clickCount == 1 -> mouseClicked(ev)

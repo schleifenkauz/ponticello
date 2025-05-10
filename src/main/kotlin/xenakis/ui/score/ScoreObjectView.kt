@@ -84,9 +84,9 @@ abstract class ScoreObjectView(
 
     override fun getWidth(duration: Decimal): Double = parentPane.getWidth(duration) //TODO could be computed locally
 
-    override fun getTime(x: Double): Decimal = getDuration(x)
+    override fun getTime(x: Double): Decimal = getDuration(x) //TODO is this right?
 
-    override fun getX(time: Decimal): Double = getWidth(time)
+    override fun getX(time: Decimal): Double = getWidth(time) //TODO is this right?
 
     fun getScoreY(screenY: Double): Decimal = parentPane.getScoreY(screenY)
 
@@ -337,7 +337,7 @@ abstract class ScoreObjectView(
 
     final override fun moved(start: Decimal, y: Decimal) {
         if (!parentPane.isRoot(obj)) {
-            relocate(getX(instance.start), getScreenY(y))
+            relocate(parentPane.getX(instance.start), parentPane.getScreenY(y))
         }
     }
 
