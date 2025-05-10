@@ -38,7 +38,7 @@ javafx {
 }
 
 application {
-    mainClassName = "xenakis.ui.main.XenakisApp"
+    mainClassName = "ponticello.ui.main.PonticelloApp"
 }
 
 dependencies {

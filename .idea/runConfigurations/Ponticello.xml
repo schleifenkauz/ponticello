@@ -1,0 +1,15 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Ponticello" type="JetRunConfigurationType">
+    <envs>
+      <env name="PONTICELLO_HOME" value="$USER_HOME$/cloud/.xenakis" />
+      <env name="PONTICELLO_PROJECTS" value="$USER_HOME$/cloud/compositions" />
+    </envs>
+    <option name="MAIN_CLASS_NAME" value="ponticello.MainKt" />
+    <module name="xenakis.main" />
+    <shortenClasspath name="NONE" />
+    <option name="VM_PARAMETERS" value="-Xms1g -Xmx4g" />
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>
