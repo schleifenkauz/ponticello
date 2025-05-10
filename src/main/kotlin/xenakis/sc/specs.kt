@@ -190,7 +190,7 @@ class BufferPositionControlSpec : ControlSpec {
 @Serializable
 @SerialName("AttackRelease")
 class AttackReleaseControlSpec : ControlSpec {
-    val maxDuration: ReactiveVariable<Decimal> = reactiveVariable(one)
+    val maxDuration: ReactiveVariable<Decimal?> = reactiveVariable(null)
     override val type: ParameterType
         get() = ParameterType.AttackRelease
     override val code: String

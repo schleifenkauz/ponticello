@@ -29,6 +29,7 @@ import org.kordamp.ikonli.materialdesign2.MaterialDesignS
 import reaktive.value.*
 import reaktive.value.binding.flatMap
 import reaktive.value.binding.map
+import reaktive.value.binding.orElse
 import reaktive.value.fx.asObservableValue
 import reaktive.value.fx.asProperty
 import xenakis.impl.*
@@ -502,9 +503,9 @@ class ControlAssignmentEditor(val control: NamedParameterControl, val view: Scor
             ): Node {
                 val box = HBox(10.0)
                 val spec = namedControl.spec.now as? AttackReleaseControlSpec
-                val customTotalDuration = spec?.maxDuration ?: reactiveValue(one)
+                val customTotalDuration = spec?.maxDuration ?: reactiveValue(null)
                 val objectDuration = namedControl.parentObject.duration()
-                val duration = objectDuration ?: customTotalDuration
+                val duration = customTotalDuration.orElse(objectDuration ?: reactiveValue(one))
                 box.userData = duration.forEach { maxDur ->
                     val timeSpec = NumericalControlSpec(
                         default = zero, min = zero, max = maxDur,
