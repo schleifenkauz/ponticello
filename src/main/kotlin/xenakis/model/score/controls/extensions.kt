@@ -15,7 +15,7 @@ import xenakis.sc.ControlSpec
 import xenakis.sc.NumericalControlSpec
 import xenakis.sc.client.ScWriter
 
-private val SPECIAL_PARAMETERS = setOf("afterDuration")
+private val SPECIAL_PARAMETERS = setOf("auto_release")
 
 fun ParameterControl.getNumericalValue() = when (this) {
     is ValueControl -> value.now
@@ -78,7 +78,7 @@ fun ScWriter.writeSynthCode(
         append(", ")
     }
     if (obj.duration() != null) append("duration: ${obj.duration()!!.now - cutoff}")
-    else append("afterDuration: Done.none")
+    else append("auto_release: 0")
     val action = guardAgainstReplaceNil(placement)
     appendLine("], target: ${placement.target}, addAction: $action);")
     +"s.sync"
