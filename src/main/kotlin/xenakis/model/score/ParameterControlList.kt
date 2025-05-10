@@ -119,7 +119,7 @@ class ParameterControlList(
                         default = zero, min = zero, max = dur,
                         step = 0.01.toDecimal(), lag = 0.01.asTime, warp = Warp.Linear,
                         associatedColor = Color.WHITE
-                    )
+                    ).also { it.origin = spec }
                 } ?: reactiveValue(null)
             }
 

@@ -8,6 +8,7 @@ import hextant.codegen.UseEditor
 import javafx.scene.paint.Color
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 import reaktive.value.ReactiveVariable
 import reaktive.value.reactiveVariable
 import xenakis.impl.*
@@ -83,6 +84,9 @@ data class NumericalControlSpec(
     val associatedColor: Color = Color.WHITE,
 ) : ControlSpec {
     val precision get() = step.get().precision
+
+    @Transient
+    var origin: ControlSpec? = null
 
     constructor(
         default: Double, min: Double, max: Double, step: Decimal, lag: Double,

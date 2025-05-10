@@ -10,6 +10,7 @@ import xenakis.model.obj.ParameterDefObject
 import xenakis.model.obj.ParameterizedObject
 import xenakis.model.score.ScoreObject
 import xenakis.model.score.controls.ParameterControl.CodegenContext
+import xenakis.sc.BufferPositionControlSpec
 import xenakis.sc.ControlSpec
 import xenakis.sc.NumericalControlSpec
 import xenakis.sc.client.ScWriter
@@ -33,13 +34,20 @@ private fun ParameterControl.adjustControlForCutoff(
     cutoff: Decimal,
     spec: ControlSpec,
 ): ParameterControl {
-    return if (cutoff != zero && this is EnvelopeControl) {
-        spec as NumericalControlSpec
-        val cutoffEnvelope = points.cut(cutoff, HorizontalDirection.RIGHT, spec.warp)
-        val control = EnvelopeControl(cutoffEnvelope)
-        control.initialize(context)
-        control
-    } else this
+    return when {
+        cutoff <= zero -> this
+        this is EnvelopeControl -> {
+            spec as NumericalControlSpec
+            val cutoffEnvelope = points.cut(cutoff, HorizontalDirection.RIGHT, spec.warp)
+            val control = EnvelopeControl(cutoffEnvelope)
+            control.initialize(context)
+            control
+        }
+        this is ValueControl && spec is NumericalControlSpec&& spec.origin is BufferPositionControlSpec ->
+            ValueControl.create(value.now + cutoff)
+
+        else -> this
+    }
 }
 
 fun ScWriter.writeSynthCode(
@@ -69,7 +77,7 @@ fun ScWriter.writeSynthCode(
         expr.code(writer, obj.context)
         append(", ")
     }
-    if (obj.duration() != null) append("duration: ${obj.duration()!!.now}")
+    if (obj.duration() != null) append("duration: ${obj.duration()!!.now - cutoff}")
     else append("afterDuration: Done.none")
     val action = guardAgainstReplaceNil(placement)
     appendLine("], target: ${placement.target}, addAction: $action);")
@@ -109,7 +117,7 @@ else placement.addAction.toString()
 fun ScWriter.writeProcessCode(
     obj: ParameterizedObject, uniqueName: String,
     cutoff: Decimal, latency: Decimal,
-    extraArguments: Map<ParameterDefObject, ParameterControl> = emptyMap()
+    extraArguments: Map<ParameterDefObject, ParameterControl> = emptyMap(),
 ) {
     val superColliderName = "~process_$uniqueName"
     val controlMap = obj.controls.all().associate { ctrl ->
