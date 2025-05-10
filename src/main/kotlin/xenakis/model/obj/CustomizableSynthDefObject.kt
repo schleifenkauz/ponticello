@@ -74,8 +74,7 @@ class CustomizableSynthDefObject(
             RawScExpr("release = \\release.kr(${AttackReleaseControl.DEFAULT})"),
             RawScExpr("sustain = duration - (attack + release)"),
             RawScExpr("level = \\level.kr(1)"),
-            RawScExpr("env_ = Env.asr(attack, 1, release).kr(Done.freeSelf, \\gate.kr(1)) * level"),
-            RawScExpr("Env([0, 0], [duration]).kr(\\afterDuration.ir(Done.freeSelf))")
+            RawScExpr("env_ = Env.asr(attack, 1, release, 'lin').kr(\\afterDuration.kr(Done.freeSelf), Env.new([1, 1, 0], [attack + sustain, 0]).kr * \\gate.kr(1)) * level"),
         )
         val statements = ugenGraph?.editor?.result?.now?.statements.orEmpty()
         val block = CodeBlock(

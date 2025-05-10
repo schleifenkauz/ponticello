@@ -135,6 +135,7 @@ class ScoreObjectScheduler(val context: Context) {
     fun activeObjects(time: Decimal, delta: Decimal, score: Score): List<Event> {
         val dest = mutableListOf<Event>()
         collectActiveObjects(ObjectPosition(0.0, 0.0), score, time, delta, dest)
+        dest.sortWith(compareBy({ it.absolutePosition.time }, { it.absolutePosition.y })) //TODO necessary?
         return dest
     }
 
