@@ -4,9 +4,9 @@ import bundles.createBundle
 import fxutils.actions.ContextualizedAction
 import fxutils.actions.collectActions
 import fxutils.controls.SliderBar
-import fxutils.setFixedWidth
 import fxutils.setRoot
 import fxutils.undo.UndoManager
+import fxutils.widthAtLeast
 import javafx.scene.Node
 import javafx.scene.control.Control
 import org.kordamp.ikonli.materialdesign2.MaterialDesignA
@@ -40,7 +40,7 @@ class MixerFlowView(private val flow: MixerFlow) : Control(), ObjectListDisplayC
         selector.syncWith(obj.sourceBus)
         selector.initialize(flow.context)
         val selectorControl = ObjectSelectorControl(selector, createBundle())
-            .setFixedWidth(100.0)
+            .widthAtLeast(150.0)
         val converter = MixerFlow.VOLUME_SPEC.converter(unit = "db")
         val volumeSlider = SliderBar(
             obj.volume, "Volume (db)", converter, SliderBar.Style.AlwaysValue,

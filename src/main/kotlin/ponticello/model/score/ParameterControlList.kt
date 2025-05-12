@@ -6,12 +6,6 @@ import javafx.scene.paint.Color
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
-import reaktive.Observer
-import reaktive.value.*
-import reaktive.value.binding.binding
-import reaktive.value.binding.equalTo
-import reaktive.value.binding.flatMap
-import reaktive.value.binding.map
 import ponticello.impl.Logger
 import ponticello.impl.asTime
 import ponticello.impl.toDecimal
@@ -29,6 +23,12 @@ import ponticello.sc.BufferPositionControlSpec
 import ponticello.sc.ControlSpec
 import ponticello.sc.NumericalControlSpec
 import ponticello.sc.Warp
+import reaktive.Observer
+import reaktive.value.*
+import reaktive.value.binding.binding
+import reaktive.value.binding.equalTo
+import reaktive.value.binding.flatMap
+import reaktive.value.binding.map
 
 @Serializable(with = ParameterControlList.Serializer::class)
 class ParameterControlList(
@@ -112,7 +112,7 @@ class ParameterControlList(
         private fun resolveControlSpec(spec: ControlSpec?): ReactiveValue<ControlSpec?> = when (spec) {
             null -> reactiveValue(null)
             is BufferPositionControlSpec -> {
-                val buf = controls.getOrNull("buf")?.now as? BufferControl
+                val buf = controls.controlMap.values.filterIsInstance<BufferControl>().firstOrNull()
                 val duration = buf?.sample?.flatMap { s -> s.get()?.duration() ?: reactiveValue(zero) }
                 duration?.map { dur ->
                     NumericalControlSpec(
