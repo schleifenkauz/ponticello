@@ -41,7 +41,7 @@ class PonticelloProject private constructor(val components: Map<Component<out Co
 
     fun saveTo(projectDirectory: File): Boolean {
         for (inst in mainScore.allInstances()) {
-            if (inst.obj !in objects) {
+            if (inst.obj !is ScoreObject.Unresolved && inst.obj !in objects) {
                 Logger.warn("Had to add object for $inst", Logger.Category.Project)
                 objects.add(inst.obj)
             }

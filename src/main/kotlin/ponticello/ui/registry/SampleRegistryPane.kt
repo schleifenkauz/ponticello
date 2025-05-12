@@ -3,15 +3,12 @@ package ponticello.ui.registry
 import bundles.PublicProperty
 import bundles.publicProperty
 import bundles.set
-import fxutils.SubWindow
 import fxutils.actions.ContextualizedAction
 import fxutils.actions.collectActions
 import fxutils.hasFiles
 import fxutils.prompt.YesNoPrompt
 import fxutils.setupDropArea
 import javafx.event.Event
-import javafx.scene.control.ScrollPane
-import javafx.scene.image.ImageView
 import javafx.scene.input.DataFormat
 import org.kordamp.ikonli.evaicons.Evaicons
 import org.kordamp.ikonli.material2.Material2MZ
@@ -27,7 +24,6 @@ import ponticello.ui.actions.undoable
 import ponticello.ui.launcher.PonticelloFiles
 import ponticello.ui.launcher.PonticelloLauncher.Companion.currentProject
 import ponticello.ui.score.ScoreObjectDuplicator
-import reaktive.value.now
 import reaktive.value.reactiveVariable
 import java.io.File
 
@@ -88,12 +84,7 @@ class SampleRegistryPane(
         private val actions = collectActions<BufferObject> {
             addAction("View sample") {
                 icon(Evaicons.ACTIVITY)
-                executesOn { obj: SampleObject ->
-                    val image = ImageView(obj.spectrogramImage)
-                    val scrollPane = ScrollPane(image)
-                    val window = SubWindow(scrollPane, "Spectrogram of sample '${obj.name.now}'")
-                    window.show()
-                }
+                executesOn { obj: SampleObject -> obj.showSpectrogram() }
             }
             addAction("Reload") {
                 icon(Material2MZ.SYNC)

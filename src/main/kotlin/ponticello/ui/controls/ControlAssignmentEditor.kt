@@ -25,6 +25,7 @@ import javafx.scene.paint.Color
 import org.kordamp.ikonli.evaicons.Evaicons
 import org.kordamp.ikonli.material2.Material2AL
 import org.kordamp.ikonli.materialdesign2.MaterialDesignC
+import org.kordamp.ikonli.materialdesign2.MaterialDesignE
 import org.kordamp.ikonli.materialdesign2.MaterialDesignS
 import ponticello.impl.*
 import ponticello.model.obj.*
@@ -444,6 +445,26 @@ class ControlAssignmentEditor(val control: NamedParameterControl, val view: Scor
                 val display = reactiveVariable(spec.isPlayBufSource)
                 val sample: ReactiveVariable<BufferReference> = reactiveVariable(ObjectReference.none())
                 return BufferControl(sample, display)
+            }
+
+            override fun actions(
+                namedControl: NamedParameterControl,
+                control: BufferControl,
+                view: ScoreObjectView?,
+            ): List<ContextualizedAction> = actions.withContext(control)
+
+            private val actions = collectActions<BufferControl> {
+                addAction("View contents") {
+                    icon(MaterialDesignE.EYE)
+                    enableWhen { ctrl -> ctrl.sample.flatMap(BufferReference::isResolved) }
+                    executes { ctrl ->
+                        when (val buf = ctrl.sample.now.get()) {
+                            is SampleObject -> buf.showSpectrogram()
+                            is AllocatedBufferObject -> buf.plotBuffer()
+                            null -> Logger.warn("Unresolved buffer ${ctrl.sample.now}", Logger.Category.Buffers)
+                        }
+                    }
+                }
             }
         }
 

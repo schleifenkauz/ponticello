@@ -1,21 +1,24 @@
 package ponticello.model.obj
 
+import fxutils.SubWindow
 import hextant.context.Context
+import javafx.scene.control.ScrollPane
 import javafx.scene.image.Image
+import javafx.scene.image.ImageView
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
-import reaktive.event.unitEvent
-import reaktive.value.ReactiveValue
-import reaktive.value.ReactiveVariable
-import reaktive.value.now
-import reaktive.value.reactiveVariable
 import ponticello.impl.*
 import ponticello.model.project.PonticelloProject
 import ponticello.model.project.PonticelloProject.Companion.projectDirectory
 import ponticello.model.registry.BufferRegistry
 import ponticello.model.score.ObjectPosition
 import ponticello.sc.client.ScWriter
+import reaktive.event.unitEvent
+import reaktive.value.ReactiveValue
+import reaktive.value.ReactiveVariable
+import reaktive.value.now
+import reaktive.value.reactiveVariable
 import java.io.File
 import java.util.concurrent.CompletableFuture
 import javax.sound.sampled.AudioInputStream
@@ -199,6 +202,13 @@ class SampleObject(
             createSpectrogram().join()
             Thread.sleep(10)
         }
+    }
+
+    fun showSpectrogram() {
+        val image = ImageView(spectrogramImage)
+        val scrollPane = ScrollPane(image)
+        val window = SubWindow(scrollPane, "Spectrogram of sample '${name.now}'")
+        window.show()
     }
 
     companion object {

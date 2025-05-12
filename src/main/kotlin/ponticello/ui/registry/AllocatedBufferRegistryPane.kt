@@ -19,7 +19,6 @@ import ponticello.impl.parseDecimal
 import ponticello.model.obj.AllocatedBufferObject
 import ponticello.model.obj.BufferObject
 import ponticello.model.registry.BufferRegistry
-import ponticello.sc.client.SuperColliderClient
 import reaktive.value.fx.asProperty
 import reaktive.value.now
 
@@ -76,11 +75,7 @@ class AllocatedBufferRegistryPane(buffers: BufferRegistry) : ObjectRegistryPane<
         private val actions = collectActions<ObjectBox<BufferObject>> {
             addAction("View buffer contents") {
                 icon(Evaicons.ACTIVITY)
-                executes { box ->
-                    val buf = box.obj
-                    val client = buf.context[SuperColliderClient]
-                    client.run("${buf.superColliderName}.plot('${buf.name.now}')")
-                }
+                executes { box -> box.obj.plotBuffer() }
             }
             addAction("Reallocate") {
                 icon(Material2MZ.SYNC)

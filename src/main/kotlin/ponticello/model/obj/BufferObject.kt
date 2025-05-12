@@ -7,6 +7,7 @@ import ponticello.model.registry.ScoreObjectRegistry
 import ponticello.model.registry.reference
 import ponticello.model.score.SynthObject
 import ponticello.model.score.controls.BufferControl
+import ponticello.sc.client.SuperColliderClient
 import reaktive.value.ReactiveValue
 import reaktive.value.now
 
@@ -26,6 +27,11 @@ sealed class BufferObject : AbstractSuperColliderObject() {
         val obj = SynthObject.create(name, synthDef, controls)
         obj.setInitialSize(duration().now, 0.02.asY)
         return obj
+    }
+
+    fun plotBuffer() {
+        val client = context[SuperColliderClient]
+        client.run("${superColliderName}.plot('${name.now}')")
     }
 
     companion object {
