@@ -5,6 +5,7 @@ import fxutils.actions.Action
 import fxutils.actions.collectActions
 import fxutils.actions.registerActions
 import javafx.application.Platform
+import javafx.event.Event
 import javafx.geometry.Dimension2D
 import javafx.geometry.Orientation
 import javafx.scene.Node
@@ -110,15 +111,15 @@ class ObjectListView<O: ContextualObject>(
     }
 
     private fun addObjectButton(): Node {
-        val button = button("Add ${source.objectType}") {
-            addObject()
+        val button = button("Add ${source.objectType}") { ev ->
+            addObject(ev)
         }
         button.tooltip = Tooltip("Type Ctrl+PLUS to add a new ${source.objectType}.")
         return if (config.centerAddObjectButton) VBox(button).centerChildren() else button
     }
 
-    private fun addObject() {
-        val newObj = config.createNewObject() ?: return
+    private fun addObject(ev: Event? = null) {
+        val newObj = config.createNewObject(ev) ?: return
         source.add(newObj)
         if (filter(newObj)) {
             select(newObj)

@@ -2,13 +2,13 @@ package ponticello.ui.registry
 
 import fxutils.actions.registerShortcuts
 import fxutils.letContentFillViewPort
+import javafx.event.Event
 import javafx.scene.Node
 import javafx.scene.control.ScrollPane
 import javafx.scene.layout.VBox
 import ponticello.model.Settings
 import ponticello.model.obj.ConfigurableParameterizedObjectDef
 import ponticello.model.obj.ParameterDefObject
-import ponticello.ui.launcher.PonticelloApp.Companion.primaryStage
 import reaktive.value.now
 
 abstract class ParameterizedObjectDefPane<T : ConfigurableParameterizedObjectDef>(
@@ -16,13 +16,11 @@ abstract class ParameterizedObjectDefPane<T : ConfigurableParameterizedObjectDef
     enableActions: Boolean,
 ) : ToolPane() {
     private val config: ParameterListConfig = object : ParameterListConfig(def.context) {
-        override fun createNewObject(): ParameterDefObject? {
+        override fun createNewObject(ev: Event?): ParameterDefObject? {
             val defaultParameters = def.context[Settings].defaultParametersDefs
                 .filter { param -> !def.hasParameter(param.name.now) }
-            //TODO better placement
-            val anchor = parametersList.localToScreen(parametersList.height - 50.0, parametersList.width / 2.0)
             val listView = SearchableParameterDefListView(defaultParameters, "New parameter")
-            return listView.showPopup(anchor, def.context[primaryStage])
+            return listView.showPopup(ev)
         }
 
         override val enableAddObjectButton: Boolean

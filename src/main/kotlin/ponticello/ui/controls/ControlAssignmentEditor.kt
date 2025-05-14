@@ -25,7 +25,6 @@ import javafx.scene.paint.Color
 import org.kordamp.ikonli.evaicons.Evaicons
 import org.kordamp.ikonli.material2.Material2AL
 import org.kordamp.ikonli.materialdesign2.MaterialDesignC
-import org.kordamp.ikonli.materialdesign2.MaterialDesignE
 import org.kordamp.ikonli.materialdesign2.MaterialDesignS
 import ponticello.impl.*
 import ponticello.model.obj.*
@@ -455,7 +454,7 @@ class ControlAssignmentEditor(val control: NamedParameterControl, val view: Scor
 
             private val actions = collectActions<BufferControl> {
                 addAction("View contents") {
-                    icon(MaterialDesignE.EYE)
+                    icon(Evaicons.ACTIVITY)
                     enableWhen { ctrl -> ctrl.sample.flatMap(BufferReference::isResolved) }
                     executes { ctrl ->
                         when (val buf = ctrl.sample.now.get()) {

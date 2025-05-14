@@ -2,6 +2,7 @@ package ponticello.ui.registry
 
 import fxutils.SubWindow
 import fxutils.actions.ContextualizedAction
+import javafx.event.Event
 import javafx.geometry.Orientation
 import javafx.scene.Node
 import javafx.scene.Parent
@@ -45,7 +46,7 @@ interface ObjectListDisplayConfig<O: ContextualObject> {
 
     fun getDefaultDisplayName(obj: O): ReactiveString = reactiveValue(NO_NAME)
 
-    fun createNewObject(): O? = null
+    fun createNewObject(ev: Event?): O? = null
 
     fun onSelected(obj: O) {}
 
