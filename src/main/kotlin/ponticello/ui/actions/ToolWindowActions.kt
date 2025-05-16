@@ -116,6 +116,10 @@ object ToolWindowActions : Action.Collector<PonticelloMainActivity>({
         icon(MaterialDesignP.PROGRESS_QUESTION)
         executes { activity -> activity.liveTasksWindow.showOrBringToFront() }
     }
+    addAction("Show Clocks") {
+        icon(Material2AL.ACCESS_TIME)
+        executes { activity -> activity.clocksWindow.showOrBringToFront() }
+    }
     addAction("Show Launcher Grid") {
         shortcut("Ctrl+G")
         icon(MaterialDesignG.GRID)

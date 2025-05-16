@@ -2,14 +2,13 @@ package ponticello.model.player
 
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
-import ponticello.impl.Decimal
-import ponticello.impl.asTime
-import ponticello.impl.times
-import ponticello.impl.zero
+import ponticello.impl.*
 import ponticello.model.Settings
 import ponticello.model.live.QuantizationConfig
 import ponticello.model.obj.AbstractRenamableObject
 import ponticello.model.obj.MeterObject
+import ponticello.sc.NumericalControlSpec
+import ponticello.sc.Warp
 import reaktive.value.ReactiveVariable
 import reaktive.value.now
 import reaktive.value.reactiveVariable
@@ -51,6 +50,7 @@ class ClockObject(
     private fun runLoop() {
         val now = System.currentTimeMillis()
         clockTime += (now - lastSystemTime).toSeconds() * timeWarp.now
+        lastSystemTime = now
         for ((player, startTime) in activePlayers.toList()) { //copy to avoid concurrent modification
             player.doCycle(this, clockTime - startTime)
         }
@@ -124,6 +124,7 @@ class ClockObject(
             )
         }
         if (clockTask == null) {
+            lastSystemTime = System.currentTimeMillis()
             clockTask = executor.scheduleAtFixedRate({ runLoop() }, 0, PERIOD_MS, MILLISECONDS)
         }
     }
@@ -170,5 +171,13 @@ class ClockObject(
         private fun Long.toSeconds() = (this / 1000.0).asTime
 
         fun withName(name: String) = ClockObject(reactiveVariable(name))
+
+        val TIME_WARP_SPEC = NumericalControlSpec(
+            default = 1.0,
+            min = 0.5, max = 2.0,
+            step = 0.05.toDecimal(),
+            lag = 0.01,
+            warp = Warp.Exponential
+        )
     }
 }

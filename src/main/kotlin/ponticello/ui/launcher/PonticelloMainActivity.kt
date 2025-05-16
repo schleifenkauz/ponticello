@@ -89,6 +89,9 @@ class PonticelloMainActivity(val project: PonticelloProject) : Activity() {
     private val liveTasksPane by lazy { LiveTaskRegistryPane(project[LIVE_TASKS]) }
     val liveTasksWindow by lazy { context.makeToolWindow(liveTasksPane, "Live Tasks") }
 
+    private val clocksPane by lazy { ClockRegistryPane(project[CLOCKS]) }
+    val clocksWindow by lazy { context.makeToolWindow(clocksPane, "Clocks") }
+
     private val gridPane by lazy { LauncherGridPane(project[LAUNCHER_GRID]) }
     val launcherGridWindow by lazy {
         context.makeToolWindow(gridPane, "Launcher Grid").also { w ->
