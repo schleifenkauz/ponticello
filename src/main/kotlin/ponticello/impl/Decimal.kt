@@ -43,6 +43,8 @@ class Decimal(val value: Double, val precision: Int) : Number(), Comparable<Deci
 
     operator fun div(other: Decimal): Decimal = Decimal(value / other.value, max(precision, other.precision))
 
+    operator fun rem(other: Decimal): Decimal = Decimal(value % other.value, max(precision, other.precision))
+
     fun pow(exponent: Int): Decimal = Decimal(value.pow(exponent), precision)
 
     fun pow(exponent: Double): Decimal = Decimal(value.pow(exponent), precision)
