@@ -9,10 +9,7 @@ import kotlinx.serialization.Contextual
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
-import reaktive.event.unitEvent
-import reaktive.value.ReactiveVariable
-import reaktive.value.now
-import reaktive.value.reactiveVariable
+import ponticello.impl.Decimal
 import ponticello.model.ctx.PonticelloContext
 import ponticello.model.ctx.Scope
 import ponticello.model.obj.ParameterizedObject
@@ -23,6 +20,10 @@ import ponticello.sc.*
 import ponticello.sc.client.ScWriter
 import ponticello.sc.client.SuperColliderClient
 import ponticello.sc.editor.ScExprExpander
+import reaktive.event.unitEvent
+import reaktive.value.ReactiveVariable
+import reaktive.value.now
+import reaktive.value.reactiveVariable
 
 @Serializable
 @SerialName("UGen")
@@ -55,6 +56,7 @@ data class UGenControl(
     override fun ScWriter.generatePreparationCode(
         obj: ParameterizedObject, uniqueName: String,
         parameter: String, spec: ControlSpec,
+        cutoff: Decimal,
         ctx: CodegenContext,
     ) {
         val expr = substituteControlParameters(expr.editor.result.now, obj, uniqueName)

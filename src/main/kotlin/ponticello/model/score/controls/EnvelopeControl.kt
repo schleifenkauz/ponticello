@@ -5,15 +5,16 @@ import javafx.scene.paint.Color
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
-import reaktive.event.unitEvent
-import reaktive.value.ReactiveVariable
-import reaktive.value.reactiveVariable
 import ponticello.impl.ColorSerializer
+import ponticello.impl.Decimal
 import ponticello.model.obj.ParameterizedObject
 import ponticello.model.obj.SynthDefObject
 import ponticello.model.score.Envelope
 import ponticello.sc.*
 import ponticello.sc.client.ScWriter
+import reaktive.event.unitEvent
+import reaktive.value.ReactiveVariable
+import reaktive.value.reactiveVariable
 
 @Serializable
 @SerialName("Envelope")
@@ -44,6 +45,7 @@ class EnvelopeControl(
     override fun ScWriter.generatePreparationCode(
         obj: ParameterizedObject, uniqueName: String,
         parameter: String, spec: ControlSpec,
+        cutoff: Decimal,
         ctx: CodegenContext,
     ) {
         spec as NumericalControlSpec
@@ -51,13 +53,13 @@ class EnvelopeControl(
         when (ctx) {
             CodegenContext.Synth, CodegenContext.SubArg -> {
                 +"$auxiliaryVarName = Bus.control(s, 1)"
-                val envelopeCode = points.code(warp = spec.warp)
+                val envelopeCode = points.generatorCode(spec.warp, cutoff)
 //                val synthDefName = context[AuxilSynthDefManager].run {
 //                    defineEnvelopeSynthDef(points, spec.warp)
 //                }
                 val auxiliarySynthName = auxilSynthName(uniqueName, parameter)
                 val synthName = "${obj.superColliderPrefix}$uniqueName"
-                +"$auxiliarySynthName = { $envelopeCode.kr }.play(target: $synthName, outbus: $auxiliaryVarName, fadeTime: 0, addAction: 'addBefore')"
+                +"$auxiliarySynthName = { $envelopeCode }.play(target: $synthName, outbus: $auxiliaryVarName, fadeTime: 0, addAction: 'addBefore')"
 //                +"$auxiliarySynthName = Synth.newPaused($synthDefName, [out: $auxiliarySynthName], target: $synthName, addAction: \\addBefore)"
             }
 

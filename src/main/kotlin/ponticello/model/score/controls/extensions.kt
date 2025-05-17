@@ -1,19 +1,15 @@
 package ponticello.model.score.controls
 
-import javafx.geometry.HorizontalDirection
-import reaktive.value.now
 import ponticello.impl.Decimal
-import ponticello.impl.zero
 import ponticello.model.flow.NodePlacement
 import ponticello.model.flow.NodePlacement.AddAction
 import ponticello.model.obj.ParameterDefObject
 import ponticello.model.obj.ParameterizedObject
 import ponticello.model.score.ScoreObject
 import ponticello.model.score.controls.ParameterControl.CodegenContext
-import ponticello.sc.BufferPositionControlSpec
 import ponticello.sc.ControlSpec
-import ponticello.sc.NumericalControlSpec
 import ponticello.sc.client.ScWriter
+import reaktive.value.now
 
 private val SPECIAL_PARAMETERS = setOf("auto_release")
 
@@ -30,37 +26,13 @@ fun ParameterControl.getBus() = when (this) {
     else -> null
 }
 
-private fun ParameterControl.adjustControlForCutoff(
-    cutoff: Decimal,
-    spec: ControlSpec,
-): ParameterControl {
-    return when {
-        cutoff <= zero -> this
-        this is EnvelopeControl -> {
-            spec as NumericalControlSpec
-            val cutoffEnvelope = points.cut(cutoff, HorizontalDirection.RIGHT, spec.warp)
-            val control = EnvelopeControl(cutoffEnvelope)
-            control.initialize(context)
-            control
-        }
-        this is ValueControl && spec is NumericalControlSpec&& spec.origin is BufferPositionControlSpec ->
-            ValueControl.create(value.now + cutoff)
-
-        else -> this
-    }
-}
-
 fun ScWriter.writeSynthCode(
     obj: ParameterizedObject, uniqueName: String,
     cutoff: Decimal, placement: NodePlacement, latency: Decimal,
     extraArguments: Map<ParameterDefObject, ParameterControl> = emptyMap(),
 ) = appendBlock("fork") {
     +"var auxilBuses = (), auxilSynths = ()"
-    val controlMap = obj.controls.all().associate { ctrl ->
-        val spec = ctrl.spec.now!!
-        val control = ctrl.now.adjustControlForCutoff(cutoff, spec)
-        ctrl.name.now to Pair(spec, control)
-    } + extraArguments.map { (param, control) -> param.name.now to Pair(param.spec.now, control) }
+    val controlMap = createControlMap(obj, extraArguments)
     val synthDefName = obj.def.name.now
     val synthVar = "${obj.superColliderPrefix}$uniqueName"
     allocateAuxilMaps(uniqueName)
@@ -85,7 +57,7 @@ fun ScWriter.writeSynthCode(
     for ((param, control) in controlMap) {
         val (spec, ctrl) = control
         with(ctrl) {
-            generatePreparationCode(obj, uniqueName, param, spec, CodegenContext.Synth)
+            generatePreparationCode(obj, uniqueName, param, spec, cutoff, CodegenContext.Synth)
         }
     }
     if (controlMap.isNotEmpty()) +"s.sync"
@@ -97,7 +69,7 @@ fun ScWriter.writeSynthCode(
         }
     }
     +"$synthVar.register"
-    appendBlock("s.makeBundle($latency)") {
+    appendBlock("s.makeBundle($latency / ~time_warp)") {
         +"$synthVar.run"
         +"${ParameterControl.auxilSynthsVar(uniqueName)}.do(_.run)"
     }
@@ -120,18 +92,12 @@ fun ScWriter.writeProcessCode(
     extraArguments: Map<ParameterDefObject, ParameterControl> = emptyMap(),
 ) {
     val superColliderName = "~process_$uniqueName"
-    val controlMap = obj.controls.all().associate { ctrl ->
-        val spec = ctrl.spec.now!!
-        ctrl.name.now to Pair(spec, ctrl.now)
-    } + extraArguments.map { (param, control) -> param.name.now to Pair(param.spec.now, control) }
+    val controlMap = createControlMap(obj, extraArguments)
     appendBlock("$superColliderName = Task", endLine = false) {
         for ((param, control) in controlMap) {
             val (spec, ctrl) = control
             with(ctrl) {
-                generatePreparationCode(
-                    obj, uniqueName,
-                    param, spec, ctx = CodegenContext.Process
-                )
+                generatePreparationCode(obj, uniqueName, param, spec, cutoff, ctx = CodegenContext.Process)
             }
         }
         allocateAuxilMaps(uniqueName)
@@ -157,6 +123,17 @@ fun ScWriter.writeProcessCode(
         +"auxilSynths.do(_.free)"
     }
     +".play"
+}
+
+private fun createControlMap(
+    obj: ParameterizedObject,
+    extraArguments: Map<ParameterDefObject, ParameterControl>,
+): Map<String, Pair<ControlSpec, ParameterControl>> {
+    val controlMap = obj.controls.all().associate { ctrl ->
+        val spec = ctrl.spec.now!!
+        ctrl.name.now to Pair(spec, ctrl.now)
+    } + extraArguments.map { (param, control) -> param.name.now to Pair(param.spec.now, control) }
+    return controlMap
 }
 
 private fun ScWriter.allocateAuxilMaps(uniqueName: String) {

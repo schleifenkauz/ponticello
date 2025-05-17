@@ -4,11 +4,11 @@ import com.illposed.osc.OSCMessage
 import com.illposed.osc.transport.OSCPortOut
 import com.illposed.osc.transport.OSCPortOutBuilder
 import hextant.core.editor.ListenerManager
+import ponticello.impl.Logger
+import ponticello.impl.superColliderPath
 import reaktive.Observer
 import reaktive.event.unitEvent
 import reaktive.observe
-import ponticello.impl.Logger
-import ponticello.impl.superColliderPath
 import java.net.*
 import java.nio.ByteBuffer
 import java.util.concurrent.CompletableFuture
@@ -63,7 +63,7 @@ class OSCSuperColliderClient(
 
     override fun sendAsync(address: String, arguments: List<Any>) {
         val adr = if (!address.startsWith('/')) "/$address" else address
-        val msg = OSCMessage(adr, arguments)
+        val msg = OSCMessage(adr, listOf(-1) + arguments)
         sender.send(msg)
     }
 

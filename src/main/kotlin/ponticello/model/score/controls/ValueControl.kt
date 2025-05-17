@@ -2,9 +2,6 @@ package ponticello.model.score.controls
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import reaktive.value.ReactiveVariable
-import reaktive.value.now
-import reaktive.value.reactiveVariable
 import ponticello.impl.Decimal
 import ponticello.impl.Logger
 import ponticello.impl.copy
@@ -12,6 +9,9 @@ import ponticello.model.obj.ParameterizedObject
 import ponticello.model.obj.SynthDefObject
 import ponticello.sc.*
 import ponticello.sc.client.ScWriter
+import reaktive.value.ReactiveVariable
+import reaktive.value.now
+import reaktive.value.reactiveVariable
 
 @Serializable
 @SerialName("Value")
@@ -38,6 +38,7 @@ data class ValueControl(
     override fun ScWriter.generatePreparationCode(
         obj: ParameterizedObject, uniqueName: String,
         parameter: String, spec: ControlSpec,
+        cutoff: Decimal,
         ctx: CodegenContext,
     ) {
         when {
@@ -47,9 +48,11 @@ data class ValueControl(
             }
 
             allocateBus.now -> {
+                var value = value.now
+                if (spec is NumericalControlSpec && spec.origin is BufferPositionControlSpec) value += cutoff
                 val busName = auxilBusName(uniqueName, parameter)
                 +"$busName = Bus.control(s, 1)"
-                +"$busName.set(${value.now})"
+                +"$busName.set(${value})"
             }
         }
     }

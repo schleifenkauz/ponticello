@@ -1,6 +1,5 @@
 package ponticello.model.player
 
-import javafx.geometry.HorizontalDirection
 import ponticello.impl.Decimal
 import ponticello.impl.Logger
 import ponticello.model.obj.BufferReference
@@ -102,14 +101,13 @@ class LiveSynthUpdater(obj: ParameterizedObject) : AbstractLiveUpdater(obj) {
         envelope: Envelope, remap: Boolean,
     ) {
         val spec = obj.getSpec(parameter) as? NumericalControlSpec ?: return
-        val cut = envelope.cut(objectTime, HorizontalDirection.RIGHT, spec.warp)
-        val envelopeCode = cut.code(spec.warp)
+        val envelopeCode = envelope.generatorCode(spec.warp, offset = objectTime)
         val auxiliarySynthName = ParameterControl.auxilSynthName(uniqueName, parameter)
         val placement = getAuxiliarySynthPlacement(parameter, uniqueName, replace = true)
         val action = guardAgainstReplaceNil(placement)
         val auxiliaryBus = ParameterControl.auxilBusName(uniqueName, parameter)
         writer.appendLine(
-            "$auxiliarySynthName = { $envelopeCode.kr }" +
+            "$auxiliarySynthName = { $envelopeCode }" +
                     ".play(target: ${placement.target}, outpus: $auxiliaryBus, fadeTime: ${AttackReleaseControl.DEFAULT}, addAction: ${action});"
         )
         if (remap) writer.remap(uniqueName, parameter)

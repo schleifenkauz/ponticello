@@ -3,7 +3,6 @@ package ponticello.model.player
 import bundles.PublicProperty
 import bundles.publicProperty
 import hextant.context.Context
-import reaktive.value.now
 import ponticello.impl.Decimal
 import ponticello.impl.Logger
 import ponticello.impl.unaryMinus
@@ -16,6 +15,7 @@ import ponticello.model.player.ScoreEventCollector.Event
 import ponticello.model.score.*
 import ponticello.model.score.controls.ParameterControl
 import ponticello.sc.client.SuperColliderClient
+import reaktive.value.now
 
 class ScoreObjectScheduler(val context: Context) {
     private val client = context[SuperColliderClient]
@@ -121,7 +121,8 @@ class ScoreObjectScheduler(val context: Context) {
         }
         if (code == "") return null
         try {
-            client.send("schedule", listOf(timeForExecution, player.id, code)) //TODO why does sendAsync not work?
+            val info = activeObject.uniqueName
+            client.send("schedule", listOf(timeForExecution, player.id, code, info)) //TODO why does sendAsync not work?
         } catch (e: Exception) {
             Logger.error("Failed to schedule $obj", e, Logger.Category.Playback)
         }
@@ -145,6 +146,7 @@ class ScoreObjectScheduler(val context: Context) {
     ) {
         if (position.time - delta > time) return
         for (inst in score.objectInstances) {
+            if (inst.muted.now) continue
             val obj = inst.obj
             val absolutePosition = position + inst.position
             if (obj is ScoreObjectGroup) {

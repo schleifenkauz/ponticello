@@ -61,7 +61,7 @@ class CustomizableSynthDefObject(
 
     override fun ScWriter.createObject() {
         append("SynthDef(\\${name.now}, ")
-        val extraVariables = listOf("duration", "attack", "release", "sustain", "level", "auto_release_", "env_")
+        val extraVariables = listOf("duration", "attack", "release", "sustain", "level", "auto_release_", "env_, auto_release_env")
         val parameterVariables = parameters.map { p -> Identifier(p.name.now) }
         val parameterAssignments = parameters.map { p ->
             val parameterCode = RawScExpr("\\${p.name.now}.${p.spec.now.code}")
@@ -75,7 +75,8 @@ class CustomizableSynthDefObject(
             RawScExpr("sustain = duration - (attack + release)"),
             RawScExpr("level = \\level.kr(1)"),
             RawScExpr("auto_release_ = \\auto_release.kr(1)"),
-            RawScExpr("env_ = Env.asr(attack, 1, release, 'lin').kr(auto_release_ * 2, Env.new([1, 1, 1 - auto_release_], [attack + sustain, 0]).kr * \\gate.kr(1)) * level"),
+            RawScExpr("auto_release_env = IEnvGen.kr(Env.new([1, 1, 1 - auto_release_], [attack + sustain, 0]), index: Sweep.kr(rate: ~time_warp_bus.kr))"),
+            RawScExpr("env_ = Env.asr(attack, 1, release, 'lin').kr(auto_release_ * 2, gate: auto_release_env * \\gate.kr(1) * level, timeScale: ~time_warp_bus.kr)"),
         )
         val statements = ugenGraph?.editor?.result?.now?.statements.orEmpty()
         val block = CodeBlock(
