@@ -2,8 +2,6 @@ package ponticello.model.score
 
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
-import reaktive.value.ReactiveValue
-import reaktive.value.now
 import ponticello.impl.Decimal
 import ponticello.model.obj.ParameterizedObject
 import ponticello.model.player.ActiveObjectsManager
@@ -13,7 +11,10 @@ import ponticello.model.player.ScorePlayer
 import ponticello.model.score.controls.ParameterControl
 import ponticello.sc.ControlSpec
 import ponticello.sc.client.SuperColliderClient
+import ponticello.sc.client.run
 import ponticello.ui.misc.LFOsManager
+import reaktive.value.ReactiveValue
+import reaktive.value.now
 
 @Serializable
 sealed class ParameterizedScoreObject : ScoreObject(), ParameterizedObject {

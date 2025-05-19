@@ -13,6 +13,8 @@ import ponticello.model.registry.NamedObjectList
 import ponticello.model.registry.ObjectList
 import ponticello.model.registry.ObjectListSerializer
 import ponticello.sc.client.SuperColliderClient
+import ponticello.sc.client.eval
+import ponticello.sc.client.run
 import reaktive.Observer
 import reaktive.value.*
 import reaktive.value.binding.map

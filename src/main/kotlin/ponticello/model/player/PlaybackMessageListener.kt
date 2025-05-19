@@ -13,7 +13,7 @@ class PlaybackMessageListener(
     private val flows: AudioFlows,
     private val player: ScorePlayer,
 ) : OSCListener {
-    override fun onMessage(path: String, content: String) = ScorePlayer.execute{
+    override fun onMessage(path: String, id: Int, content: String) = ScorePlayer.execute{
         when {
             path.startsWith("/play") -> playObject(content)
 

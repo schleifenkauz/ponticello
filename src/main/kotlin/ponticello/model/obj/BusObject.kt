@@ -18,6 +18,7 @@ import ponticello.sc.Rate
 import ponticello.sc.Rate.Audio
 import ponticello.sc.Rate.Control
 import ponticello.sc.client.ScWriter
+import ponticello.sc.client.run
 import reaktive.Observer
 import reaktive.value.ReactiveValue
 import reaktive.value.ReactiveVariable

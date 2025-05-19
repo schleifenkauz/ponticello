@@ -40,6 +40,8 @@ class ScorePlayer private constructor(
     private val events: ScoreEventCollector = ScoreEventCollector(pane.score, pane.context[Settings], this)
     val playHead: PlayHead = PlayHead(pane)
 
+    private var currentClock: ClockObject? = null
+
     val currentTime get() = if (isScheduled.now) playHead.currentTime + lookAhead else playHead.currentTime
 
     val loopOffset: Decimal get() = loopedTime - lastPlayFrom
@@ -82,6 +84,7 @@ class ScorePlayer private constructor(
         scheduled.set(true)
         val quantization = getQuantization()
         val clock = getClock()
+        currentClock = clock
         clock.scheduleStart(this, quantization)
     }
 
@@ -90,8 +93,9 @@ class ScorePlayer private constructor(
         return rootObj?.quantizationConfig
     }
 
-    fun getClock(): ClockObject =
-        getQuantization()?.clock?.now?.get() ?: context[ClockRegistry].getDefault()
+    fun getClock(): ClockObject = currentClock
+        ?: getQuantization()?.clock?.now?.get()
+        ?: context[ClockRegistry].getDefault()
 
     fun startPlaying() = execute {
         playing.set(true)
@@ -115,6 +119,7 @@ class ScorePlayer private constructor(
         loopedTime = zero
         lastPlayFrom = zero
         getClock().stop(this)
+        currentClock = null
         client.send("pause_play", listOf(id))
         freeActiveObjects()
     }

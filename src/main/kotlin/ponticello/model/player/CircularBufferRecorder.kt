@@ -43,7 +43,7 @@ class CircularBufferRecorder(
         client.send("exportBufferSegment", listOf(path.absolutePath, duration.toString()))
     }
 
-    override fun onMessage(path: String, content: String) {
+    override fun onMessage(path: String, id: Int, content: String) {
         thread {
             println("Received message $path: $content")
             if (path != "/complet") return@thread

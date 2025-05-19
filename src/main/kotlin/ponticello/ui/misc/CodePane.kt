@@ -31,6 +31,7 @@ import ponticello.impl.writeCode
 import ponticello.sc.ScExpr
 import ponticello.sc.client.SuperColliderClient
 import ponticello.sc.client.SuperColliderException
+import ponticello.sc.client.eval
 import ponticello.sc.editor.CodeBlockEditor
 import ponticello.sc.editor.ScExprEditor
 import ponticello.sc.editor.ScExprExpander

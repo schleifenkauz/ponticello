@@ -20,6 +20,7 @@ import ponticello.model.score.controls.AttackReleaseControl
 import ponticello.sc.*
 import ponticello.sc.client.ScWriter
 import ponticello.sc.client.SuperColliderClient
+import ponticello.sc.client.run
 import ponticello.sc.editor.CodeBlockEditor
 import ponticello.ui.registry.ParameterDefList
 import reaktive.value.ReactiveVariable

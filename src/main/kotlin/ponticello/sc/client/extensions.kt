@@ -1,6 +1,7 @@
 package ponticello.sc.client
 
 import ponticello.impl.Logger
+import java.util.concurrent.CompletableFuture
 
 fun SuperColliderClient.isServerRunning() = try {
     eval("s.serverRunning").get().toBoolean()
@@ -24,4 +25,14 @@ fun SuperColliderClient.eval(code: String, onError: (String) -> Unit = {}, onSuc
             onSuccess(result)
         }
     }
+}
+
+fun SuperColliderClient.eval(code: String): CompletableFuture<String> {
+    Logger.fine("eval $code", Logger.Category.SuperCollider, detailMessage = code)
+    return send("eval", listOf(code))
+}
+
+fun SuperColliderContext.run(writeCode: ScWriter.() -> Unit) {
+    val command = ponticello.impl.writeCode(writeCode)
+    if (command.isNotBlank()) run(command)
 }

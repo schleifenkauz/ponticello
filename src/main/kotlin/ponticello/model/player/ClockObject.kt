@@ -51,6 +51,8 @@ class ClockObject(
     override val canDelete: Boolean
         get() = name.now != "default"
 
+    val activeMeter: MeterObject? get() = activeMeters.firstOrNull()?.meter
+
     override fun canRenameTo(newName: String): Boolean = name.now != "default" && super.canRenameTo(newName)
 
     override fun initialize(context: Context) {

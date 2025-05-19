@@ -19,6 +19,7 @@ import ponticello.model.player.ActiveObject
 import ponticello.sc.*
 import ponticello.sc.client.ScWriter
 import ponticello.sc.client.SuperColliderClient
+import ponticello.sc.client.run
 import ponticello.sc.editor.ScExprExpander
 import reaktive.event.unitEvent
 import reaktive.value.ReactiveVariable

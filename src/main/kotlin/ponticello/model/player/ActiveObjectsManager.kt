@@ -88,7 +88,7 @@ class ActiveObjectsManager(private val context: Context) : OSCListener {
         }
     }
 
-    override fun onMessage(path: String, content: String) = ScorePlayer.execute {
+    override fun onMessage(path: String, id: Int, content: String) = ScorePlayer.execute {
         when {
             path.startsWith("/freed") || path.startsWith("/stopped") -> {
                 println("Received '$path' message with content '$content'")

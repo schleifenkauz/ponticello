@@ -28,7 +28,7 @@ class SynthDefRegistry(
         context[SuperColliderClient].addListener(this)
     }
 
-    override fun onMessage(path: String, content: String) {
+    override fun onMessage(path: String, id: Int, content: String) {
         if (path.startsWith("/updated")) {
             val type = content.substringBefore(":")
             val name = content.substringAfter(":")
