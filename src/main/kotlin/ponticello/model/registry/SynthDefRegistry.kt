@@ -5,17 +5,17 @@ import bundles.publicProperty
 import bundles.set
 import hextant.context.Context
 import javafx.scene.paint.Color
-import reaktive.value.reactiveVariable
 import ponticello.impl.Logger
 import ponticello.model.obj.ReferencedSynthDefObject
 import ponticello.model.obj.SuperColliderObject
 import ponticello.model.obj.SynthDefObject
+import ponticello.sc.client.OSCListener
 import ponticello.sc.client.SuperColliderClient
-import ponticello.sc.client.SuperColliderListener
+import reaktive.value.reactiveVariable
 
 class SynthDefRegistry(
     override val objects: MutableList<SynthDefObject>,
-) : SuperColliderObjectRegistry<SynthDefObject>(), SuperColliderListener {
+) : SuperColliderObjectRegistry<SynthDefObject>(), OSCListener {
     override val liveCycleType: SuperColliderObject.LiveCycleType
         get() = SuperColliderObject.LiveCycleType.InterpreterBoot
 

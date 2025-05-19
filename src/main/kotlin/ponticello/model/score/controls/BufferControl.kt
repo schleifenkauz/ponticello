@@ -53,7 +53,7 @@ data class BufferControl(
 
     override fun generateArgumentExpr(
         obj: ParameterizedObject, uniqueName: String,
-        parameter: String, spec: ControlSpec, context: CodegenContext,
+        parameter: String, spec: ControlSpec, cutoff: Decimal, context: CodegenContext,
     ): ScExpr = when(context) {
         CodegenContext.Process -> Identifier(uniqueArgumentName(uniqueName, parameter))
         else -> sample.now.force().superColliderExpr

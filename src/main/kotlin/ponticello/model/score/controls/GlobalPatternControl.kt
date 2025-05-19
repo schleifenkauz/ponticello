@@ -38,7 +38,7 @@ class GlobalPatternControl(val pattern: ReactiveVariable<GlobalPatternReference>
 
     override fun generateArgumentExpr(
         obj: ParameterizedObject, uniqueName: String,
-        parameter: String, spec: ControlSpec, context: CodegenContext,
+        parameter: String, spec: ControlSpec, cutoff: Decimal, context: CodegenContext,
     ): ScExpr = when (context) {
         CodegenContext.Process -> lambda("t") {
             Identifier(uniqueArgumentName(uniqueName, parameter)).send("next")

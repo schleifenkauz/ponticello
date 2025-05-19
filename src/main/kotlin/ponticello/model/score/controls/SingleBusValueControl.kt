@@ -49,6 +49,7 @@ data class SingleBusValueControl(val bus: ReactiveVariable<BusReference>) : Para
         uniqueName: String,
         parameter: String,
         spec: ControlSpec,
+        cutoff: Decimal,
         context: CodegenContext,
     ): ScExpr =
         when(context)  {

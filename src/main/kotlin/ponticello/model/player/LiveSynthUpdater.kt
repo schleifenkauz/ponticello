@@ -89,9 +89,9 @@ class LiveSynthUpdater(obj: ParameterizedObject) : AbstractLiveUpdater(obj) {
 
     override fun updateUGenControl(
         writer: ScWriter, uniqueName: String, parameter: String,
-        expr: ScExpr, replace: Boolean, remap: Boolean,
+        expr: ScExpr, replace: Boolean, remap: Boolean, objectTime: Decimal
     ) {
-        super.updateUGenControl(writer, uniqueName, parameter, expr, replace, remap)
+        super.updateUGenControl(writer, uniqueName, parameter, expr, replace, remap, objectTime)
         if (remap) writer.remap(uniqueName, parameter)
     }
 

@@ -22,6 +22,7 @@ SynthDef(\send, {
     amp: [0, 1, \lin, 0.01, 1]
 ))).add;
 
+
 ServerBoot.add {
     ~ponticello_addr.sendMsg('/booted');
     ~time_warp_bus = Bus.control(s, 1);
@@ -123,7 +124,53 @@ OSCdef(\set_time_warp, { |msg|
     ~time_warp_bus.set(tempo);
     ~time_warp = tempo;
     postf("Time warp: %\n", tempo);
+    "ok"
 }, '/set_time_warp');
+
+~setupHandler.(\startCircularBuffer, { |duration|
+    var frames;
+    ~circularRecorder.free;
+    ~circularBuffer.free;
+    frames = duration.asFloat * s.sampleRate;
+    ~circularBuffer = Buffer.alloc(s, frames, 2);
+    ~circularRecorder = SynthDef(\circularRecord, {
+        arg buf;
+        var in, writePos, trig;
+        in = SoundIn.ar([0, 1]);
+        writePos = Phasor.ar(0, 1, 0, frames);
+        BufWr.ar(in, ~circularBuffer.bufnum, writePos, loop: 1);
+    }).play;
+    ~t_start_recording = AppClock.seconds;
+    postf("Start recording to circular buffer of duration % s\n", duration);
+    "ok"
+});
+
+~setupHandler.(\markBufferSegmentEnd, {
+    if (~circularBuffer != nil) {
+        ~buffer_segment_end = ((AppClock.seconds - ~t_start_recording) % ~circularBuffer.duration);
+        postf("Marking buffer segment end: %\n", ~buffer_segment_end);
+    } {
+        "ERROR: Recording to circular buffer was not started.".postln;
+    }
+});
+
+~setupHandler.(\exportBufferSegment, { |path, duration|
+    var numFrames, startFrame;
+    if (~circularBuffer != nil) {
+        numFrames = duration.asFloat * s.sampleRate;
+        startFrame = ~buffer_segment_end * s.sampleRate - numFrames;
+        if (startFrame < 0) { startFrame = startFrame + ~circularBuffer.numFrames };
+        postf("Writing % seconds to % starting from %\n", duration, path, startFrame / s.sampleRate);
+        ~circularBuffer.write(path, "wav", "int16", numFrames, startFrame, false) {
+            postf("Finished writing to %\n", path);
+            ~ponticello_addr.sendMsg('/complet', path);
+        };
+        "ok"
+    } {
+        "ERROR: Recording to circular buffer was not started.".postln;
+    }
+}, \exportBufferSegment);
+
 ~setupHandler.('isSynthDef', { |name|
 	SynthDescLib.global.synthDescs[name.asSymbol] != nil;
 });

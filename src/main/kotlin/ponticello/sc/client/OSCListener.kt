@@ -1,5 +1,5 @@
 package ponticello.sc.client
 
-interface SuperColliderListener {
+interface OSCListener {
     fun onMessage(path: String, content: String)
 }

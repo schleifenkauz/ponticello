@@ -1,8 +1,5 @@
 package ponticello.model.player
 
-import reaktive.Observer
-import reaktive.value.now
-import reaktive.value.observe
 import ponticello.impl.Decimal
 import ponticello.impl.zero
 import ponticello.model.flow.AudioFlow
@@ -18,6 +15,9 @@ import ponticello.sc.NumericalControlSpec
 import ponticello.sc.ScExpr
 import ponticello.sc.client.ScWriter
 import ponticello.sc.client.SuperColliderClient
+import reaktive.Observer
+import reaktive.value.now
+import reaktive.value.observe
 
 abstract class AbstractLiveUpdater(protected val obj: ParameterizedObject) : ParameterControlList.Listener {
     private val controlObservers = mutableMapOf<ParameterControl, Observer>()
@@ -163,9 +163,9 @@ abstract class AbstractLiveUpdater(protected val obj: ParameterizedObject) : Par
                 updateValueBus(name, parameter, ctrl.bus.now)
             }
 
-            is UGenControl -> runOnActiveObjects { name, _ ->
+            is UGenControl -> runOnActiveObjects { name, objectTime ->
                 val expr = ctrl.expr.editor.result.now
-                updateUGenControl(this, name, parameter, expr, replaceAuxilSynth, remap)
+                updateUGenControl(this, name, parameter, expr, replaceAuxilSynth, remap, objectTime)
             }
         }
     }
@@ -221,9 +221,9 @@ abstract class AbstractLiveUpdater(protected val obj: ParameterizedObject) : Par
             }
 
             is UGenControl -> control.update.stream.observe { _ ->
-                runOnActiveObjects { name, _ ->
+                runOnActiveObjects { name, objectTime ->
                     val expr = control.expr.editor.result.now
-                    updateUGenControl(this, name, parameter, expr, replace = true, remap = false)
+                    updateUGenControl(this, name, parameter, expr, replace = true, remap = false, objectTime)
                 }
             }
         }
@@ -284,15 +284,11 @@ abstract class AbstractLiveUpdater(protected val obj: ParameterizedObject) : Par
     )
 
     protected open fun updateUGenControl(
-        writer: ScWriter,
-        uniqueName: String,
-        parameter: String,
-        expr: ScExpr,
-        replace: Boolean,
-        remap: Boolean,
+        writer: ScWriter, uniqueName: String, parameter: String,
+        expr: ScExpr, replace: Boolean, remap: Boolean, objectTime: Decimal
     ) {
         val auxiliarySynthName = ParameterControl.auxilSynthName(uniqueName, parameter)
-        val substituted = UGenControl.substituteControlParameters(expr, obj, uniqueName)
+        val substituted = UGenControl.substituteControlParameters(expr, obj, uniqueName, objectTime)
         val busName = ParameterControl.auxilBusName(uniqueName, parameter)
         writer.append("$auxiliarySynthName = ")
         writer.appendBlock("", endLine = false) {

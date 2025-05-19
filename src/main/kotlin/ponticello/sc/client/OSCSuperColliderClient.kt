@@ -25,7 +25,7 @@ class OSCSuperColliderClient(
     private val waitingForReply = mutableMapOf<Int, CompletableFuture<String>>()
     private val eventExecutor = Executors.newSingleThreadExecutor()
 
-    private val listeners = ListenerManager.createWeakListenerManager<SuperColliderListener>()
+    private val listeners = ListenerManager.createWeakListenerManager<OSCListener>()
 
     override val consoleMonitor: ConsoleMonitor = ConsoleMonitor(process)
 
@@ -57,9 +57,9 @@ class OSCSuperColliderClient(
         start()
     }
 
-    override fun addListener(listener: SuperColliderListener) = listeners.addListener(listener)
+    override fun addListener(listener: OSCListener) = listeners.addListener(listener)
 
-    override fun removeListener(listener: SuperColliderListener) = listeners.removeListener(listener)
+    override fun removeListener(listener: OSCListener) = listeners.removeListener(listener)
 
     override fun sendAsync(address: String, arguments: List<Any>) {
         val adr = if (!address.startsWith('/')) "/$address" else address

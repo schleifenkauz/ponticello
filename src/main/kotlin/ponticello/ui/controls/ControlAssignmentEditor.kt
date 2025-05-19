@@ -285,7 +285,6 @@ class ControlAssignmentEditor(val control: NamedParameterControl, val view: Scor
                 }
                 addAction("Scope") {
                     icon(Evaicons.ACTIVITY)
-                    shortcut("Ctrl+E")
                     executes { (ctrl, view), ev ->
                         val ugen = ctrl.now as UGenControl
                         val activeObject = getActiveObject(ctrl, view)

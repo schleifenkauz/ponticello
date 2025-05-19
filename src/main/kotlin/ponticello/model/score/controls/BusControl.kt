@@ -52,7 +52,7 @@ class BusControl(val bus: ReactiveVariable<BusReference>) : ParameterControl() {
 
     override fun generateArgumentExpr(
         obj: ParameterizedObject, uniqueName: String,
-        parameter: String, spec: ControlSpec, context: CodegenContext,
+        parameter: String, spec: ControlSpec, cutoff: Decimal, context: CodegenContext,
     ): ScExpr = when(context) {
         CodegenContext.Synth, CodegenContext.SubArg -> bus.now.force().superColliderExpr
         CodegenContext.Process -> Identifier(uniqueArgumentName(uniqueName, parameter))

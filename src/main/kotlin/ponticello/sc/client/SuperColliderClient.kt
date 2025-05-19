@@ -2,11 +2,11 @@ package ponticello.sc.client
 
 import bundles.PublicProperty
 import bundles.publicProperty
-import reaktive.Observer
 import ponticello.impl.Logger
 import ponticello.impl.Logger.Category
 import ponticello.impl.canSuperColliderTalkToMe
 import ponticello.impl.writeCode
+import reaktive.Observer
 import java.util.concurrent.CompletableFuture
 
 interface SuperColliderClient : SuperColliderContext {
@@ -18,9 +18,9 @@ interface SuperColliderClient : SuperColliderContext {
 
     fun onClientReady(action: () -> Unit)
 
-    fun addListener(listener: SuperColliderListener)
+    fun addListener(listener: OSCListener)
 
-    fun removeListener(listener: SuperColliderListener)
+    fun removeListener(listener: OSCListener)
 
     fun sendAsync(address: String, arguments: List<Any> = emptyList())
 

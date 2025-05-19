@@ -103,7 +103,7 @@ class AudioFlowGroup(
             else -> NodePlacement.after(prev.superColliderName)
         }
         val code = flow.writeCode(placement)
-        client.run(code)
+        client.eval(code).join() //Enforce that the synths are added in the right order
     }
 
     private fun deactivate(flow: AudioFlow) {
@@ -117,7 +117,6 @@ class AudioFlowGroup(
         }
         for (flow in flows) {
             if (!flow.isActive.now) continue
-            //TODO how can we enforce that the synths are added in the correct order?
             activate(flow, customPlacement = NodePlacement.tail(groupName))
         }
     }

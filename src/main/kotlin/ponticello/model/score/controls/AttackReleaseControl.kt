@@ -2,9 +2,6 @@ package ponticello.model.score.controls
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import reaktive.value.ReactiveVariable
-import reaktive.value.now
-import reaktive.value.reactiveVariable
 import ponticello.impl.*
 import ponticello.model.obj.ParameterizedObject
 import ponticello.model.obj.SynthDefObject
@@ -13,6 +10,9 @@ import ponticello.model.score.Envelope.EnvelopePoint
 import ponticello.sc.ControlSpec
 import ponticello.sc.NumericalControlSpec
 import ponticello.sc.ScExpr
+import reaktive.value.ReactiveVariable
+import reaktive.value.now
+import reaktive.value.reactiveVariable
 
 @Serializable
 @SerialName("AttackRelease")
@@ -47,11 +47,12 @@ data class AttackReleaseControl(
         uniqueName: String,
         parameter: String,
         spec: ControlSpec,
+        cutoff: Decimal,
         context: CodegenContext,
     ): ScExpr {
         spec as NumericalControlSpec
         val env = generateEnvelope(obj)
-        return env.generateArgumentExpr(obj, uniqueName, parameter, spec, context)
+        return env.generateArgumentExpr(obj, uniqueName, parameter, spec, cutoff, context)
     }
 
     private fun generateEnvelope(obj: ParameterizedObject): EnvelopeControl {

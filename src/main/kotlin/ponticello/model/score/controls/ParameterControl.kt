@@ -46,7 +46,7 @@ sealed class ParameterControl : AbstractContextualObject() {
 
     abstract fun generateArgumentExpr(
         obj: ParameterizedObject, uniqueName: String,
-        parameter: String, spec: ControlSpec,
+        parameter: String, spec: ControlSpec, cutoff: Decimal,
         context: CodegenContext,
     ): ScExpr
 

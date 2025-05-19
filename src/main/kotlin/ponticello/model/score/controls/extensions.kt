@@ -44,7 +44,7 @@ fun ScWriter.writeSynthCode(
         val customSynthArgs = ctrl.customSynthArguments()
         if (customSynthArgs != null) append(customSynthArgs)
         if (!ctrl.providesConstantSynthArgument()) continue
-        val expr = ctrl.generateArgumentExpr(obj, uniqueName, param, spec, context = CodegenContext.Synth)
+        val expr = ctrl.generateArgumentExpr(obj, uniqueName, param, spec, cutoff, context = CodegenContext.Synth)
         append("$param: ")
         expr.code(writer, obj.context)
         append(", ")
@@ -109,7 +109,7 @@ fun ScWriter.writeProcessCode(
             if (!obj.def.hasParameter(param)) continue
             val (spec, ctrl) = control
             val arg = ctrl.generateArgumentExpr(
-                obj, uniqueName, param, spec,
+                obj, uniqueName, param, spec, cutoff,
                 context = CodegenContext.Process
             )
             append(", $param: ")

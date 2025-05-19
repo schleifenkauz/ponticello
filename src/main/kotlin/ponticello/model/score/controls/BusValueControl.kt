@@ -48,7 +48,7 @@ class BusValueControl(val bus: ReactiveVariable<BusReference>) : ParameterContro
 
     override fun generateArgumentExpr(
         obj: ParameterizedObject, uniqueName: String,
-        parameter: String, spec: ControlSpec, context: CodegenContext,
+        parameter: String, spec: ControlSpec, cutoff: Decimal, context: CodegenContext,
     ): ScExpr {
         val busExpr = bus.now.force().superColliderExpr
         return when(context) {

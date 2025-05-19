@@ -219,11 +219,11 @@ data class Identifier(val text: String) : SimpleScElement(text), AssignableScExp
     companion object {
         fun isValid(token: String): Boolean {
             if (token.isEmpty()) return false
-            if (!token.first().isLetterOrDigit() && token.first() != '~') return false
+            if (!token.first().isLetter() && token.first() != '~') return false
             return token.drop(1).all { c -> c.isLetterOrDigit() || c == '_' }
         }
 
-        fun truncate(token: String) = token.filter { it.isLetterOrDigit() }
+        fun truncate(token: String) = token.filter { it.isLetterOrDigit() || it == '_' }
     }
 }
 

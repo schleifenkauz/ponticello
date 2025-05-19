@@ -10,11 +10,6 @@ import hextant.context.compoundEdit
 import javafx.geometry.HorizontalDirection.RIGHT
 import org.kordamp.ikonli.material2.Material2AL
 import org.kordamp.ikonli.materialdesign2.*
-import reaktive.value.binding.Binding
-import reaktive.value.binding.flatMap
-import reaktive.value.binding.map
-import reaktive.value.now
-import reaktive.value.reactiveValue
 import ponticello.impl.Logger
 import ponticello.impl.copy
 import ponticello.impl.times
@@ -27,6 +22,11 @@ import ponticello.ui.impl.showDialog
 import ponticello.ui.launcher.DetailPaneManager
 import ponticello.ui.launcher.PonticelloMainActivity
 import ponticello.ui.score.*
+import reaktive.value.binding.Binding
+import reaktive.value.binding.flatMap
+import reaktive.value.binding.map
+import reaktive.value.now
+import reaktive.value.reactiveValue
 
 object ObjectActions {
     val multiObjectActions = collectActions {
@@ -193,7 +193,7 @@ object ObjectActions {
         }
 
         addObjectAction("Extend object group (Customized)") {
-            shortcut("Ctrl+E")
+            shortcut("Alt+E")
             applicableOn<ScoreObjectGroupView>()
             executeSingle { view, _ ->
                 val obj = view.obj as? ScoreObjectGroup ?: return@executeSingle
@@ -211,7 +211,7 @@ object ObjectActions {
             }
         }
         addObjectAction("Extend object group (Customized, clone children)") {
-            shortcut("Ctrl+Shift+E")
+            shortcut("Alt+Shift+E")
             applicableOn<ScoreObjectGroupView>()
             executeSingle { view, _ ->
                 val obj = view.obj as? ScoreObjectGroup ?: return@executeSingle

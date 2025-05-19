@@ -20,7 +20,7 @@ abstract class ParameterizedObjectDefPane<T : ConfigurableParameterizedObjectDef
             val defaultParameters = def.context[Settings].defaultParametersDefs
                 .filter { param -> !def.hasParameter(param.name.now) }
             val listView = SearchableParameterDefListView(defaultParameters, "New parameter")
-            return listView.showPopup(ev)
+            return listView.showPopup(ev)?.copy()
         }
 
         override val enableAddObjectButton: Boolean
