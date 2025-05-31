@@ -122,7 +122,8 @@ class ScoreObjectScheduler(val context: Context) {
         if (code == "") return null
         try {
             val info = activeObject.uniqueName
-            client.send("schedule", listOf(timeForExecution, player.id, code, info)) //TODO why does sendAsync not work?
+            val description = "Schedule $info"
+            client.send("schedule", listOf(timeForExecution, player.id, code, info), description) //TODO why does sendAsync not work?
         } catch (e: Exception) {
             Logger.error("Failed to schedule $obj", e, Logger.Category.Playback)
         }

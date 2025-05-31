@@ -79,6 +79,6 @@ class PatternPlotPane(private val pattern: GlobalPatternObject) : ToolPane() {
             expr.code(writer, pattern.context)
             append(".asStream.nextN($n).asCompileString")
         }
-        client.eval(code, onError = ::displayError, onSuccess = ::update)
+        client.eval(code, description = "Plot pattern ${pattern.name.now}", onError = ::displayError, onSuccess = ::update)
     }
 }

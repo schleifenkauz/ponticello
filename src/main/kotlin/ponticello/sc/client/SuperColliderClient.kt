@@ -15,7 +15,7 @@ interface SuperColliderClient : SuperColliderContext {
 
     fun onClientReady(action: () -> Unit)
 
-    fun send(address: String, arguments: List<Any> = emptyList()): CompletableFuture<String>
+    fun send(address: String, arguments: List<Any> = emptyList(), description: String? = null): CompletableFuture<String>
 
     fun sendAsync(address: String, arguments: List<Any> = emptyList())
 

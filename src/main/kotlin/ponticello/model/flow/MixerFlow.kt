@@ -4,7 +4,6 @@ import hextant.context.Context
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import ponticello.impl.*
-import ponticello.model.Settings
 import ponticello.model.obj.AbstractContextualObject
 import ponticello.model.obj.BusObject
 import ponticello.model.obj.BusReference
@@ -140,25 +139,23 @@ class MixerFlow(
     override fun writeCode(placement: NodePlacement): String = writeCode {
         if (components.isEmpty()) return@writeCode
         val sink = targetBus.now.force()
-        val latency = context[Settings].serverLatency.now
-        appendBlock("s.makeBundle($latency)") {
-            appendBlock("$superColliderName = ", endLine = false) {
-                +"var sources, volumes, mix, snd"
-                val sources = components.map { comp -> comp.sourceBus.now.force().superColliderName }
-                val volumes = components.map { comp -> getActualVolume(comp) }
-                +"sources = NamedControl.kr(\\sources, $sources, lags: ${AttackReleaseControl.DEFAULT}, fixedLag: true)"
-                +"volumes = NamedControl.kr(\\volumes, $volumes, lags: ${AttackReleaseControl.DEFAULT}, fixedLag: true)"
-                +"sources = In.ar(sources, ${sink.channels.now}) * volumes"
-                +"snd = In.ar(${sink.superColliderName}, ${sink.channels.now})"
-                val masterVolume = "\\master_volume.kr(${masterVolume.now}.dbamp, lag: ${AttackReleaseControl.DEFAULT}, fixedLag: true)"
-                val mix = if (components.size > 1) "sources.sum" else "sources"
-                +"snd = (snd + $mix) * $masterVolume * Linen.kr(\\gate.kr(1), 0.02, 1, 0.02, Done.freeSelf)"
-                +"ReplaceOut.ar(${sink.superColliderName}, snd)"
-                +"0"
-            }
-            val action = guardAgainstReplaceNil(placement)
-            appendLine(".play(${placement.target}, ${sink.superColliderName}, addAction: ${action})")
+        appendBlock("$superColliderName = ", endLine = false) {
+            +"var sources, volumes, mix, snd"
+            val sources = components.map { comp -> comp.sourceBus.now.force().superColliderName }
+            val volumes = components.map { comp -> getActualVolume(comp) }
+            +"sources = NamedControl.kr(\\sources, $sources, lags: ${AttackReleaseControl.DEFAULT}, fixedLag: true)"
+            +"volumes = NamedControl.kr(\\volumes, $volumes, lags: ${AttackReleaseControl.DEFAULT}, fixedLag: true)"
+            +"sources = In.ar(sources, ${sink.channels.now}) * volumes"
+            +"snd = In.ar(${sink.superColliderName}, ${sink.channels.now})"
+            val masterVolume =
+                "\\master_volume.kr(${masterVolume.now}.dbamp, lag: ${AttackReleaseControl.DEFAULT}, fixedLag: true)"
+            val mix = if (components.size > 1) "sources.sum" else "sources"
+            +"snd = (snd + $mix) * $masterVolume * Linen.kr(\\gate.kr(1), 0.02, 1, 0.02, Done.freeSelf)"
+            +"ReplaceOut.ar(${sink.superColliderName}, snd)"
+            +"0"
         }
+        val action = guardAgainstReplaceNil(placement)
+        appendLine(".play(${placement.target}, ${sink.superColliderName}, addAction: ${action});")
     }
 
     override fun getDefaultName(): ReactiveString = targetBus.map { bus -> "Mixer ${bus.getName()}" }

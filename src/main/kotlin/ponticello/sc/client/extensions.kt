@@ -4,7 +4,7 @@ import com.illposed.osc.OSCMessage
 import ponticello.impl.Logger
 import java.util.concurrent.CompletableFuture
 
-inline fun <reified T: Any> OSCMessage.getArgument(index: Int, name: String): T? {
+inline fun <reified T : Any> OSCMessage.getArgument(index: Int, name: String): T? {
     if (index !in arguments.indices) {
         Logger.warn("Index for argument '$name' out of bounds: $index", Logger.Category.SuperCollider)
         return null
@@ -26,8 +26,11 @@ fun SuperColliderClient.isServerRunning() = try {
     false
 }
 
-fun SuperColliderClient.eval(code: String, onError: (String) -> Unit = {}, onSuccess: (String) -> Unit) {
-    eval(code).whenComplete { result, error ->
+fun SuperColliderClient.eval(
+    code: String, description: String = "evaluating $code",
+    onError: (String) -> Unit = {}, onSuccess: (String) -> Unit,
+) {
+    eval(code, description).whenComplete { result, error ->
         if (error != null) {
             when (error) {
                 is SuperColliderException -> onError(error.errorMessage)
@@ -43,9 +46,9 @@ fun SuperColliderClient.eval(code: String, onError: (String) -> Unit = {}, onSuc
     }
 }
 
-fun SuperColliderClient.eval(code: String): CompletableFuture<String> {
+fun SuperColliderClient.eval(code: String, description: String = "evaluating $code"): CompletableFuture<String> {
     Logger.fine("eval $code", Logger.Category.SuperCollider, detailMessage = code)
-    return send("eval", listOf(code))
+    return send("eval", listOf(code), description)
 }
 
 fun SuperColliderContext.run(writeCode: ScWriter.() -> Unit) {

@@ -57,10 +57,10 @@ OSCdef('eval', {
 	arg msg, time, addr, recvPort;
 	var id = msg[1], code = msg[2], fct, answer;
 	fct = this.compile(code.asString);
-	//code.postln;
     if (fct == nil) { ~ponticello_addr.sendMsg('error', id, "Compilation error") } {
-        AppClock.sched(0) {
+        fork {
             try {
+	            code.postln;
                 answer = fct.value;
                 ~ponticello_addr.sendMsg('/reply', id, answer.asString);
             } { |error|
@@ -73,12 +73,12 @@ OSCdef('eval', {
 OSCdef('run', {
 	arg msg, time, addr, recvPort;
 	var code = msg[2], fct;
-	//code.postln;
 	fct = this.compile(code.asString);
 	if (fct == nil) { ~ponticello_addr.sendMsg('error', "Compilation error") };
-	AppClock.sched(0) {
+	fork {
+	    code.postln;
 		try { fct.value } { |error|
-			~ponticello_addr.sendMsg('/error', error.what);
+			~ponticello_addr.sendMsg('/error', nil, error.what);
 			error.throw;
 		}
 	}
@@ -104,13 +104,14 @@ OSCdef('schedule', {
 	', abs_time = '.post; abs_time.postln;
 	fct = this.compile(code.asString);
 	if (fct == nil) { "Compilation error".throw };
-    //code.postln;
     TempoClock.schedAbs(abs_time) {
         if (my_play_start.isNil || (my_play_start == ~play_start[player_id])) {
-            postf("Executing %\n", info);
-            try { fct.value } { |error|
-                ~ponticello_addr.sendMsg('/error', error.what);
-                error.throw;
+            fork {
+                code.postln;
+                try { fct.value } { |error|
+                    ~ponticello_addr.sendMsg('/error', error.what);
+                    error.throw;
+                }
             }
         } {
             "Rejecting % scheduled for % because % != %".format(info, abs_time, my_play_start, ~play_start[player_id]);

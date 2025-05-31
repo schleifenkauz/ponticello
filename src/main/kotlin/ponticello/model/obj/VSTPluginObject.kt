@@ -108,7 +108,10 @@ class VSTPluginObject private constructor(
         }
 
         fun availablePlugins(context: Context) = context[SuperColliderClient]
-            .eval("var str = \"\"; VSTPlugin.pluginList.do { |p| str = str ++ \", \" ++ p.name }; str;").get()
+            .eval(
+                "var str = \"\"; VSTPlugin.pluginList.do { |p| str = str ++ \", \" ++ p.name }; str;",
+                description = "getting list of available plugins"
+            ).get()
             .removePrefix(", ")
             .split(", ")
             .toSet()

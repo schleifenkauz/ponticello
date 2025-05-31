@@ -65,6 +65,8 @@ sealed class AudioFlow : AbstractRenamableObject() {
 
     abstract fun getDefaultName(): ReactiveString
 
+    fun getDisplayName(): String = name.now.takeIf { it != NO_NAME } ?: getDefaultName().now
+
     override fun canRenameTo(newName: String): Boolean =
         context[currentProject].flows.all().none { f -> f.name.now == newName }
 

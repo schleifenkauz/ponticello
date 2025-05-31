@@ -5,17 +5,17 @@ import fxutils.actions.action
 import fxutils.actions.isShiftDown
 import org.kordamp.ikonli.evaicons.Evaicons
 import org.kordamp.ikonli.materialdesign2.MaterialDesignR
-import reaktive.value.ReactiveValue
-import reaktive.value.binding.flatMap
-import reaktive.value.now
 import ponticello.impl.Logger
 import ponticello.model.obj.BusReference
-import ponticello.model.project.SERVER_OPTIONS
 import ponticello.model.project.PonticelloProject
+import ponticello.model.project.SERVER_OPTIONS
 import ponticello.model.project.get
 import ponticello.sc.client.SuperColliderClient
 import ponticello.ui.impl.showDialog
 import ponticello.ui.misc.ServerOptionsPane
+import reaktive.value.ReactiveValue
+import reaktive.value.binding.flatMap
+import reaktive.value.now
 
 object ServerActions : Action.Collector<PonticelloProject>({
     addAction("Reboot server") {
@@ -35,11 +35,11 @@ object ServerActions : Action.Collector<PonticelloProject>({
     }
     addAction("Plot Server Tree") {
         shortcut("Ctrl+Alt+T")
-        executes { project -> project.client.run("s.plotTree") }
+        executes { project -> project.client.run("AppClock.sched(0) { s.plotTree }") }
     }
     addAction("Monitor output") {
         shortcut("Ctrl+Shift+M")
-        executes { project -> project.client.run("s.scope") }
+        executes { project -> project.client.run("AppClock.sched(0) { s.scope }") }
     }
     addAction("Show ServerMeter") {
         shortcut("Ctrl+Shift+M")
@@ -59,7 +59,7 @@ object ServerActions : Action.Collector<PonticelloProject>({
                 Logger.warn("Bus $ref is not resolved", Logger.Category.Registries)
                 return@executes
             }
-            bus.context[SuperColliderClient].run("${bus.superColliderName}.scope;")
+            bus.context[SuperColliderClient].run("AppClock.sched(0) { ${bus.superColliderName}.scope; }")
         }
     }
 }

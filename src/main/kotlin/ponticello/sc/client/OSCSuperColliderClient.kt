@@ -65,12 +65,12 @@ class OSCSuperColliderClient(
         sender.send(msg)
     }
 
-    override fun send(address: String, arguments: List<Any>): CompletableFuture<String> {
+    override fun send(address: String, arguments: List<Any>, description: String?): CompletableFuture<String> {
         val id = idCounter++
         val future = CompletableFuture<String>()
         val adr = if (!address.startsWith('/')) "/$address" else address
         val msg = OSCMessage(adr, listOf(id) + arguments)
-        waitingForReply[id] = PendingRequest(msg, future)
+        waitingForReply[id] = PendingRequest(description, msg, future)
         try {
             sender.send(msg)
         } catch (e: Exception) {
@@ -92,7 +92,7 @@ class OSCSuperColliderClient(
 
     override fun acceptMessage(event: OSCMessageEvent) {
         val address = event.message.address
-        when(address) {
+        when (address) {
             "/ready" -> eventExecutor.execute {
                 ready.fire()
             }
@@ -115,6 +115,9 @@ class OSCSuperColliderClient(
                     Logger.warn("Wasn't waiting for a reply for id $id", Logger.Category.SuperCollider)
                     return
                 }
+                if (request.description != null) {
+                    println("Completed ${request.description}")
+                }
                 request.future.complete(result)
             }
 
@@ -122,13 +125,13 @@ class OSCSuperColliderClient(
                 val message = event.message.getArgument<String>(1, "message") ?: "<unknown>"
                 val id = event.message.id
                 Logger.warn(message, Logger.Category.SuperCollider)
-                if (id != -1) {
+                if (id != null) {
                     val request = waitingForReply.remove(id)
                     if (request == null) {
                         Logger.error("Wasn't waiting for a reply for id $id")
                         return
                     }
-                    val exception = SuperColliderException(request.oscMessage, message)
+                    val exception = SuperColliderException(request.description, request.oscMessage, message)
                     request.future.completeExceptionally(exception)
                 }
             }
@@ -144,7 +147,11 @@ class OSCSuperColliderClient(
         eventExecutor.shutdown()
     }
 
-    private data class PendingRequest(val oscMessage: OSCMessage, val future: CompletableFuture<String>)
+    private data class PendingRequest(
+        val description: String?,
+        val oscMessage: OSCMessage,
+        val future: CompletableFuture<String>,
+    )
 
     companion object {
         private const val SETUP_FILE = "ponticello_setup.scd"

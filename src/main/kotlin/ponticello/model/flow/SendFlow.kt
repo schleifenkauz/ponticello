@@ -4,7 +4,6 @@ import hextant.context.Context
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import ponticello.impl.*
-import ponticello.model.Settings
 import ponticello.model.obj.BusObject
 import ponticello.model.obj.BusReference
 import ponticello.model.obj.ParameterizedObjectDef
@@ -65,8 +64,11 @@ class SendFlow(
         SendFlow(sourceRef.copy(), targetRef.copy(), amountPercent.copy())
 
     override fun writeCode(placement: NodePlacement): String = writeCode {
-        val latency = context[Settings].serverLatency.now
-        writeSynthCode(this@SendFlow, superColliderName.removePrefix("~"), cutoff = zero, placement, latency)
+        val latency = zero // context[Settings].serverLatency.now
+        writeSynthCode(
+            this@SendFlow, superColliderName.removePrefix("~"),
+            cutoff = zero, placement, latency
+        )
     }
 
     override fun getDefaultName(): ReactiveString =

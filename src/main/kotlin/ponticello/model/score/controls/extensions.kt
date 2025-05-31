@@ -1,6 +1,7 @@
 package ponticello.model.score.controls
 
 import ponticello.impl.Decimal
+import ponticello.impl.zero
 import ponticello.model.flow.NodePlacement
 import ponticello.model.flow.NodePlacement.AddAction
 import ponticello.model.obj.ParameterDefObject
@@ -30,12 +31,12 @@ fun ScWriter.writeSynthCode(
     obj: ParameterizedObject, uniqueName: String,
     cutoff: Decimal, placement: NodePlacement, latency: Decimal,
     extraArguments: Map<ParameterDefObject, ParameterControl> = emptyMap(),
-) = appendBlock("fork") {
+) {
     +"var auxilBuses = (), auxilSynths = ()"
     val controlMap = createControlMap(obj, extraArguments)
     val synthDefName = obj.def.name.now
     val synthVar = "${obj.superColliderPrefix}$uniqueName"
-    allocateAuxilMaps(uniqueName)
+    createAuxilMaps(uniqueName)
     +"s.sync"
     append("$synthVar = Synth.newPaused(\\$synthDefName, [")
     for ((param, control) in controlMap) {
@@ -54,22 +55,22 @@ fun ScWriter.writeSynthCode(
     val action = guardAgainstReplaceNil(placement)
     appendLine("], target: ${placement.target}, addAction: $action);")
     +"s.sync"
-    for ((param, control) in controlMap) {
-        val (spec, ctrl) = control
-        with(ctrl) {
-            generatePreparationCode(obj, uniqueName, param, spec, cutoff, CodegenContext.Synth)
+    appendBlock("s.makeBundle(${if (latency != zero) "$latency / ~time_warp" else "nil"})") {
+        for ((param, control) in controlMap) {
+            val (spec, ctrl) = control
+            with(ctrl) {
+                generatePreparationCode(obj, uniqueName, param, spec, cutoff, CodegenContext.Synth)
+            }
         }
-    }
-    if (controlMap.isNotEmpty()) +"s.sync"
-    for ((param, control) in controlMap) {
-        val (spec, ctrl) = control
-        if (!obj.def.hasParameter(param) && param !in SPECIAL_PARAMETERS) continue
-        with(ctrl) {
-            applyToSynth(obj, uniqueName, synthVar, param, spec)
+        +"s.sync"
+        for ((param, control) in controlMap) {
+            val (spec, ctrl) = control
+            if (!obj.def.hasParameter(param) && param !in SPECIAL_PARAMETERS) continue
+            with(ctrl) {
+                applyToSynth(obj, uniqueName, synthVar, param, spec)
+            }
         }
-    }
-    +"$synthVar.register"
-    appendBlock("s.makeBundle($latency / ~time_warp)") {
+        +"$synthVar.register"
         +"$synthVar.run"
         +"${ParameterControl.auxilSynthsVar(uniqueName)}.do(_.run)"
     }
@@ -100,7 +101,7 @@ fun ScWriter.writeProcessCode(
                 generatePreparationCode(obj, uniqueName, param, spec, cutoff, ctx = CodegenContext.Process)
             }
         }
-        allocateAuxilMaps(uniqueName)
+        createAuxilMaps(uniqueName)
         +"$latency.wait"
         val duration = obj.duration()?.now?.toString() ?: "inf"
         val defName = "proc_${obj.def.name.now}"
@@ -136,7 +137,7 @@ private fun createControlMap(
     return controlMap
 }
 
-private fun ScWriter.allocateAuxilMaps(uniqueName: String) {
+private fun ScWriter.createAuxilMaps(uniqueName: String) {
     val auxilSynthsMap = ParameterControl.auxilSynthsVar(uniqueName)
     val auxilBusesMap = ParameterControl.auxilBusesVar(uniqueName)
     +"$auxilSynthsMap = auxilSynths"
