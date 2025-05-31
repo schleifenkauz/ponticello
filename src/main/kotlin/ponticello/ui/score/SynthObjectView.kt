@@ -15,13 +15,6 @@ import javafx.scene.paint.Color
 import javafx.scene.transform.Scale
 import javafx.scene.transform.Translate
 import org.kordamp.ikonli.material2.Material2AL
-import reaktive.Observer
-import reaktive.value.ReactiveValue
-import reaktive.value.binding.flatMap
-import reaktive.value.binding.not
-import reaktive.value.forEach
-import reaktive.value.now
-import reaktive.value.reactiveValue
 import ponticello.impl.*
 import ponticello.model.obj.SampleObject
 import ponticello.model.score.ParameterControlList
@@ -31,6 +24,13 @@ import ponticello.model.score.controls.ParameterControl
 import ponticello.model.score.controls.ValueControl
 import ponticello.sc.view.ObjectSelectorControl
 import ponticello.ui.launcher.PonticelloMainActivity
+import reaktive.Observer
+import reaktive.value.ReactiveValue
+import reaktive.value.binding.flatMap
+import reaktive.value.binding.not
+import reaktive.value.forEach
+import reaktive.value.now
+import reaktive.value.reactiveValue
 
 class SynthObjectView(
     override val obj: SynthObject, instance: ScoreObjectInstance
@@ -46,8 +46,6 @@ class SynthObjectView(
 
     override val defaultBackgroundColor: ReactiveValue<Color>
         get() = obj.synthDefSelector.result.flatMap { ref -> ref.get()?.color ?: reactiveValue(Color.GRAY) }
-
-    private lateinit var controlsPane: ParameterControlsPane
 
     init {
         styleClass("synth-object")
@@ -66,8 +64,6 @@ class SynthObjectView(
             }
         }
         sampleDisplayObserver = obj.displaySample?.forEach { updateSpectrogram() }
-        controlsPane = ParameterControlsPane(obj, "Synth controls", this)
-        controlsPane.listView.autoResizeScene = true
     }
 
     override fun setupDetailPane(pane: DetailPane) {
@@ -77,6 +73,8 @@ class SynthObjectView(
         }.styleClass("medium-icon-button").disableIf(obj.synthDefSelector.isResolved.not())
         val box = ObjectSelectorControl(obj.synthDefSelector, createBundle())
         pane.addItem("SynthDef: ", HBox(5.0, box, viewBtn).centerChildren())
+        val controlsPane = ParameterControlsPane(obj, "Synth controls", this)
+        controlsPane.listView.autoResizeScene = true
         pane.children.add(controlsPane)
     }
 

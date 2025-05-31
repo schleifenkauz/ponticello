@@ -2,10 +2,11 @@ package ponticello.sc.client
 
 import bundles.PublicProperty
 import bundles.publicProperty
+import com.illposed.osc.OSCMessageListener
 import reaktive.Observer
 import java.util.concurrent.CompletableFuture
 
-interface SuperColliderClient : SuperColliderContext, OSCReceiver {
+interface SuperColliderClient : SuperColliderContext {
     val sampleRate: Double
 
     fun onServerBooted(action: () -> Unit): Observer
@@ -17,6 +18,8 @@ interface SuperColliderClient : SuperColliderContext, OSCReceiver {
     fun send(address: String, arguments: List<Any> = emptyList()): CompletableFuture<String>
 
     fun sendAsync(address: String, arguments: List<Any> = emptyList())
+
+    fun addListener(listener: OSCMessageListener)
 
     fun quit()
 

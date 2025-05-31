@@ -10,16 +10,16 @@ SynthDef(\vst_instrument, {
 SynthDef(\utility, {
     arg bus, volume, pan;
     var snd = In.ar(bus, 2);
-    snd = snd * volume.dbamp;
+    snd = snd * volume.dbamp * Linen.kr(\gate.kr(1), 0.02, 1, 0.02, Done.freeSelf);
     Out.ar(bus, snd);
 }).add;
 SynthDef(\send, {
     arg in, out, amp;
     var snd = In.ar(in, 2);
-    snd = snd * amp;
+    snd = snd * amp * Linen.kr(\gate.kr(1), 0.02, 1, 0.02, Done.freeSelf);
     Out.ar(out, snd);
 }, metadata: (specs: (
-    amp: [0, 1, \lin, 0.01, 1]
+    amp: [0, 1, \lin, 0.01, 1],
 ))).add;
 
 
@@ -75,10 +75,10 @@ OSCdef('run', {
 	var code = msg[2], fct;
 	//code.postln;
 	fct = this.compile(code.asString);
-	if (fct == nil) { ~ponticello_addr.sendMsg('error', -1, "Compilation error") };
+	if (fct == nil) { ~ponticello_addr.sendMsg('error', "Compilation error") };
 	AppClock.sched(0) {
 		try { fct.value } { |error|
-			~ponticello_addr.sendMsg('/error', -1, error.what);
+			~ponticello_addr.sendMsg('/error', error.what);
 			error.throw;
 		}
 	}
@@ -109,7 +109,7 @@ OSCdef('schedule', {
         if (my_play_start.isNil || (my_play_start == ~play_start[player_id])) {
             postf("Executing %\n", info);
             try { fct.value } { |error|
-                ~ponticello_addr.sendMsg('/error', -1, error.what);
+                ~ponticello_addr.sendMsg('/error', error.what);
                 error.throw;
             }
         } {
@@ -163,7 +163,7 @@ OSCdef(\set_time_warp, { |msg|
         postf("Writing % seconds to % starting from %\n", duration, path, startFrame / s.sampleRate);
         ~circularBuffer.write(path, "wav", "int16", numFrames, startFrame, false) {
             postf("Finished writing to %\n", path);
-            ~ponticello_addr.sendMsg('/complet', path);
+            ~ponticello_addr.sendMsg('/complet', 0, path);
         };
         "ok"
     } {
@@ -190,10 +190,7 @@ OSCdef(\set_time_warp, { |msg|
 	SynthDescLib.global.synthDescs[synthName.asSymbol].specs[controlName] != nil;
 });
 ~setupHandler.('controlMinval', { |synthName, controlName|
-	var desc, spec;
-	desc = SynthDescLib.global.synthDescs[synthName.asSymbol];
-	spec = desc.specs[controlName];
-	spec[0];
+	SynthDescLib.global.synthDescs[synthName.asSymbol].specs[controlName][0];
 });
 ~setupHandler.('controlMaxval', { |synthName, controlName|
 	SynthDescLib.global.synthDescs[synthName.asSymbol].specs[controlName][1];
@@ -204,6 +201,7 @@ OSCdef(\set_time_warp, { |msg|
 ~setupHandler.('controlStep', { |synthName, controlName|
 	SynthDescLib.global.synthDescs[synthName.asSymbol].specs[controlName][3];
 });
+~ponticello_addr.postln;
 ~ponticello_addr.sendMsg('/ready');
 "Successfully setup OSC!";
 )

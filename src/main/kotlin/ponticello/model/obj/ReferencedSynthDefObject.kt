@@ -1,12 +1,9 @@
 package ponticello.model.obj
 
 import hextant.context.Context
+import hextant.context.withoutUndo
 import javafx.scene.paint.Color
 import kotlinx.serialization.Serializable
-import reaktive.value.ReactiveValue
-import reaktive.value.ReactiveVariable
-import reaktive.value.reactiveValue
-import reaktive.value.reactiveVariable
 import ponticello.impl.*
 import ponticello.sc.BufferControlSpec
 import ponticello.sc.BusControlSpec
@@ -15,6 +12,10 @@ import ponticello.sc.Rate
 import ponticello.sc.client.ScWriter
 import ponticello.sc.client.SuperColliderClient
 import ponticello.ui.registry.ParameterDefList
+import reaktive.value.ReactiveValue
+import reaktive.value.ReactiveVariable
+import reaktive.value.reactiveValue
+import reaktive.value.reactiveVariable
 
 @Serializable
 class ReferencedSynthDefObject(
@@ -51,14 +52,16 @@ class ReferencedSynthDefObject(
             Logger.error("SuperCollider cannot send data to me")
             return
         }
-        val newParameters = getSynthDefParameters(_name)
-        for (param in parameters.toList()) {
-            parameters.remove(param)
+        context.withoutUndo {
+            val newParameters = getSynthDefParameters(_name)
+            for (param in parameters.toList()) {
+                parameters.remove(param)
+            }
+            for (param in newParameters) {
+                param.initialize(context)
+                parameters.add(param)
+            } //TODO modify based on diff
         }
-        for (param in newParameters) {
-            param.initialize(context)
-            parameters.add(param)
-        } //TODO modify based on diff
     }
 
     private fun getSynthDefParameters(name: String): MutableList<ParameterDefObject> =
@@ -78,6 +81,7 @@ class ReferencedSynthDefObject(
                     val default = send("controlDefault", controlRef).get()
                     val spec = when (paramName) {
                         "in", "out", "bus" -> BusControlSpec(Rate.Audio, 2)
+                        "gate" -> NumericalControlSpec.GATE
                         "buf" -> BufferControlSpec(2)
                         else -> {
                             val min = send("controlMinval", listOf(name, paramName)).get().toDouble()

@@ -1,16 +1,17 @@
 package ponticello.sc.client
 
 import com.illposed.osc.OSCMessage
+import com.illposed.osc.OSCMessageEvent
+import com.illposed.osc.OSCMessageListener
+import com.illposed.osc.messageselector.JavaRegexAddressMessageSelector
+import com.illposed.osc.transport.OSCPortIn
 import com.illposed.osc.transport.OSCPortOut
-import com.illposed.osc.transport.OSCPortOutBuilder
 import ponticello.impl.Logger
 import ponticello.impl.superColliderPath
 import reaktive.Observer
 import reaktive.event.unitEvent
 import reaktive.observe
-import java.net.DatagramSocket
 import java.net.InetAddress
-import java.net.InetSocketAddress
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
@@ -19,10 +20,10 @@ import kotlin.io.path.toPath
 class OSCSuperColliderClient(
     process: Process,
     private val sender: OSCPortOut,
-    private val receiver: OSCReceiver,
-) : SuperColliderClient, Thread(), OSCReceiver by receiver, OSCListener {
-    private var idCounter = 0
-    private val waitingForReply = mutableMapOf<Int, CompletableFuture<String>>()
+    private val receiver: OSCPortIn,
+) : SuperColliderClient, OSCMessageListener {
+    private var idCounter = 1
+    private val waitingForReply = mutableMapOf<Int, PendingRequest>()
     private val eventExecutor = Executors.newSingleThreadExecutor()
 
     override val consoleMonitor: ConsoleMonitor = ConsoleMonitor(process)
@@ -51,8 +52,11 @@ class OSCSuperColliderClient(
 
     init {
         consoleMonitor.start()
-        isDaemon = true
-        start()
+        addListener(this)
+    }
+
+    override fun addListener(listener: OSCMessageListener) {
+        receiver.dispatcher.addListener(ALL_MESSAGES, listener)
     }
 
     override fun sendAsync(address: String, arguments: List<Any>) {
@@ -66,7 +70,7 @@ class OSCSuperColliderClient(
         val future = CompletableFuture<String>()
         val adr = if (!address.startsWith('/')) "/$address" else address
         val msg = OSCMessage(adr, listOf(id) + arguments)
-        waitingForReply[id] = future
+        waitingForReply[id] = PendingRequest(msg, future)
         try {
             sender.send(msg)
         } catch (e: Exception) {
@@ -86,55 +90,61 @@ class OSCSuperColliderClient(
         }
     }
 
-    override fun onMessage(path: String, id: Int, content: String) {
-        when {
-            path.startsWith("/ready") -> eventExecutor.execute {
+    override fun acceptMessage(event: OSCMessageEvent) {
+        val address = event.message.address
+        when(address) {
+            "/ready" -> eventExecutor.execute {
                 ready.fire()
             }
 
-            path.startsWith("/booted") -> eventExecutor.execute {
+            "/booted" -> eventExecutor.execute {
                 sampleRate = eval("s.sampleRate").get().toDouble()
                 serverBoot.fire()
             }
 
-            path.startsWith("/cleared") -> eventExecutor.execute {
+            "/cleared" -> eventExecutor.execute {
                 treeClear.fire()
             }
 
-            path.startsWith("/reply") -> {
-                Logger.fine("Completed id: $id, result: $content", Logger.Category.SuperCollider)
-                val future = waitingForReply.remove(id)
-                if (future == null) {
-                    Logger.error("Wasn't waiting for a reply for id $id")
+            "/reply" -> {
+                val id = event.message.id
+                val result = event.message.getArgument<String>(1, "result")
+                Logger.fine("Completed id: $id, result: $result", Logger.Category.SuperCollider)
+                val request = waitingForReply.remove(id)
+                if (request == null) {
+                    Logger.warn("Wasn't waiting for a reply for id $id", Logger.Category.SuperCollider)
                     return
                 }
-                future.complete(content)
+                request.future.complete(result)
             }
 
-            path.startsWith("/error") -> {
-                Logger.warn(content, Logger.Category.SuperCollider)
+            "/error" -> {
+                val message = event.message.getArgument<String>(1, "message") ?: "<unknown>"
+                val id = event.message.id
+                Logger.warn(message, Logger.Category.SuperCollider)
                 if (id != -1) {
-                    val future = waitingForReply.remove(id)
-                    if (future == null) {
+                    val request = waitingForReply.remove(id)
+                    if (request == null) {
                         Logger.error("Wasn't waiting for a reply for id $id")
                         return
                     }
-                    future.completeExceptionally(SuperColliderException(content))
+                    val exception = SuperColliderException(request.oscMessage, message)
+                    request.future.completeExceptionally(exception)
                 }
             }
         }
-
     }
 
     override fun quit() {
         consoleMonitor.interrupt()
         run("s.quit;")
         run("0.exit;")
-        interrupt()
         sender.disconnect()
         receiver.close()
         eventExecutor.shutdown()
     }
+
+    private data class PendingRequest(val oscMessage: OSCMessage, val future: CompletableFuture<String>)
 
     companion object {
         private const val SETUP_FILE = "ponticello_setup.scd"
@@ -145,21 +155,16 @@ class OSCSuperColliderClient(
                 .redirectInput(ProcessBuilder.Redirect.PIPE)
                 .redirectOutput(ProcessBuilder.Redirect.PIPE)
                 .start()
-            sleep(100)
+            Thread.sleep(100)
             sclang.outputStream.write("this.executeFile($setupFile);\n".toByteArray())
             sclang.outputStream.flush()
             val localhost = InetAddress.getLoopbackAddress()
-            val myPort = 7774
-            val local = InetSocketAddress(localhost, myPort)
-            val remote = InetSocketAddress(localhost, scPort)
-            println("local: $local, remote: $remote")
-            val sender = OSCPortOutBuilder()
-                .setLocalSocketAddress(local)
-                .setRemoteSocketAddress(remote)
-                .build()
-            val socket = DatagramSocket(myPort + 1)
-            val receiver = OSCReceiver.create(socket)
+            val sender = OSCPortOut(localhost, scPort)
+            val receiver = OSCPortIn(7775)
+            receiver.startListening()
             return OSCSuperColliderClient(sclang, sender, receiver)
         }
+
+        private val ALL_MESSAGES = JavaRegexAddressMessageSelector(".*")
     }
 }

@@ -1,7 +1,23 @@
 package ponticello.sc.client
 
+import com.illposed.osc.OSCMessage
 import ponticello.impl.Logger
 import java.util.concurrent.CompletableFuture
+
+inline fun <reified T: Any> OSCMessage.getArgument(index: Int, name: String): T? {
+    if (index !in arguments.indices) {
+        Logger.warn("Index for argument '$name' out of bounds: $index", Logger.Category.SuperCollider)
+        return null
+    }
+    val argument = arguments[index]
+    if (argument !is T) {
+        Logger.warn("Argument '$name' is not of type ${T::class.java.canonicalName}", Logger.Category.SuperCollider)
+        return null
+    }
+    return argument
+}
+
+val OSCMessage.id get() = getArgument<Int>(0, "id")
 
 fun SuperColliderClient.isServerRunning() = try {
     eval("s.serverRunning").get().toBoolean()

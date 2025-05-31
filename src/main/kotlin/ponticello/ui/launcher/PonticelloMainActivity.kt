@@ -3,9 +3,12 @@ package ponticello.ui.launcher
 import bundles.PublicProperty
 import bundles.publicProperty
 import bundles.set
-import fxutils.*
 import fxutils.actions.ActionBar
 import fxutils.actions.registerActions
+import fxutils.hspace
+import fxutils.infiniteSpace
+import fxutils.registerShortcuts
+import fxutils.styleClass
 import fxutils.undo.UndoManager
 import javafx.geometry.Dimension2D
 import javafx.scene.input.TransferMode
@@ -196,12 +199,7 @@ class PonticelloMainActivity(val project: PonticelloProject) : Activity() {
         val state = project[UI_STATE].getWindowState(WindowState.Reference.ByTitle("MainWindow"), ::RegularWindowState)
         val screenSize = Screen.getPrimary().bounds
         state.applyTo(primaryStage, defaultSize = Dimension2D(screenSize.width, screenSize.height))
-    }
-
-    override fun afterShowing() {
-        runFXWithTimeout(1000) {
-            mainScoreView.displayWholeScore()
-        }
+        mainScoreView.displayWholeScore()
     }
 
     override fun getLayout(): VBox {

@@ -1,27 +1,32 @@
 package ponticello.model.player
 
+import com.illposed.osc.OSCMessageEvent
+import com.illposed.osc.OSCMessageListener
 import ponticello.impl.Logger
 import ponticello.impl.zero
 import ponticello.model.flow.AudioFlows
 import ponticello.model.registry.ScoreObjectRegistry
 import ponticello.model.score.ObjectPosition
-import ponticello.sc.client.OSCListener
+import ponticello.sc.client.getArgument
 import reaktive.value.now
 
 class PlaybackMessageListener(
     private val objects: ScoreObjectRegistry,
     private val flows: AudioFlows,
     private val player: ScorePlayer,
-) : OSCListener {
-    override fun onMessage(path: String, id: Int, content: String) = ScorePlayer.execute{
-        when {
-            path.startsWith("/play") -> playObject(content)
+) : OSCMessageListener {
+    override fun acceptMessage(event: OSCMessageEvent) = ScorePlayer.execute {
+        when (event.message.address) {
+            "/play" -> {
+                val name = event.message.getArgument<String>(1, "name") ?: return@execute
+                playObject(name)
+            }
 
-            path.startsWith("/pause") -> {
+            "/pause" -> {
 
             }
 
-            path.startsWith("/resume") -> {
+            "/resume" -> {
 
             }
         }

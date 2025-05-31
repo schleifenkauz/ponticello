@@ -3,19 +3,21 @@ package ponticello.model.registry
 import bundles.PublicProperty
 import bundles.publicProperty
 import bundles.set
+import com.illposed.osc.OSCMessageEvent
+import com.illposed.osc.OSCMessageListener
 import hextant.context.Context
 import javafx.scene.paint.Color
 import ponticello.impl.Logger
 import ponticello.model.obj.ReferencedSynthDefObject
 import ponticello.model.obj.SuperColliderObject
 import ponticello.model.obj.SynthDefObject
-import ponticello.sc.client.OSCListener
 import ponticello.sc.client.SuperColliderClient
+import ponticello.sc.client.getArgument
 import reaktive.value.reactiveVariable
 
 class SynthDefRegistry(
     override val objects: MutableList<SynthDefObject>,
-) : SuperColliderObjectRegistry<SynthDefObject>(), OSCListener {
+) : SuperColliderObjectRegistry<SynthDefObject>(), OSCMessageListener {
     override val liveCycleType: SuperColliderObject.LiveCycleType
         get() = SuperColliderObject.LiveCycleType.InterpreterBoot
 
@@ -28,10 +30,10 @@ class SynthDefRegistry(
         context[SuperColliderClient].addListener(this)
     }
 
-    override fun onMessage(path: String, id: Int, content: String) {
-        if (path.startsWith("/updated")) {
-            val type = content.substringBefore(":")
-            val name = content.substringAfter(":")
+    override fun acceptMessage(event: OSCMessageEvent) {
+        if (event.message.address == "/updated") {
+            val type = event.message.getArgument<String>(1, "type") ?: return
+            val name = event.message.getArgument<String>(2, "name") ?: return
             if (type == "synth_def") {
                 val def = getOrNull(name) ?: return
                 def.onUpdated()

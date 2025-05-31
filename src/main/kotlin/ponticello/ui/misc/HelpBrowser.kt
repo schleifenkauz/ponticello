@@ -12,21 +12,27 @@ import ponticello.sc.editor.ScExprEditor
 import reaktive.value.now
 
 class HelpBrowser {
-    private val webView: WebView = WebView()
+    private lateinit var webView: WebView
+    private lateinit var window: SubWindow
+    private var initialized = false
 
-    private val window = SubWindow(webView, "Help Browser", type = SubWindow.Type.Popup)
-
-    init {
+    private fun initialize() {
+        if (initialized) return
+        webView = WebView()
+        window = SubWindow(webView, "Help Browser", type = SubWindow.Type.Popup)
         webView.setPrefSize(600.0, 800.0)
         webView.engine.load("$URL_ROOT/Help.html")
         window.sizeToScene()
+        initialized = true
     }
 
     fun show() {
+        initialize()
         window.showOrBringToFront()
     }
 
     fun showClassDocumentation(target: ScExprEditor<*>, bounds: Bounds) {
+        initialize()
         val name = target.result.now
         if (name !is Identifier || !name.isValidClassName) return
         webView.engine.load("$URL_ROOT/Classes/${name.text}.html")
@@ -34,6 +40,7 @@ class HelpBrowser {
     }
 
     fun showMethodDocumentation(target: IdentifierEditor, bounds: Bounds) {
+        initialize()
         val name = target.result.now
         if (!name.isValid) return
         val (receiver, _, _) = target.parent?.result?.now as MessageSend
@@ -46,12 +53,14 @@ class HelpBrowser {
     }
 
     private fun show(bounds: Bounds) {
+        initialize()
         window.x = bounds.minX
         window.y = bounds.maxY + 10.0
         show()
     }
 
     fun searchDocumentation(searchText: String) {
+        initialize()
         webView.engine.load("$URL_ROOT/Search.html#$searchText")
         show()
     }

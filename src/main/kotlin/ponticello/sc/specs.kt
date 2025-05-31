@@ -9,8 +9,6 @@ import javafx.scene.paint.Color
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
-import reaktive.value.ReactiveVariable
-import reaktive.value.reactiveVariable
 import ponticello.impl.*
 import ponticello.model.obj.BusReference
 import ponticello.model.registry.ObjectReference
@@ -21,6 +19,8 @@ import ponticello.model.score.controls.ValueControl
 import ponticello.sc.editor.ControlSpecEditor
 import ponticello.sc.editor.SimpleColorEditor
 import ponticello.sc.editor.SimpleIntegerEditor
+import reaktive.value.ReactiveVariable
+import reaktive.value.reactiveVariable
 
 @Serializable
 enum class ParameterType {
@@ -141,6 +141,8 @@ data class NumericalControlSpec(
             zero, zero, one, 0.01.toDecimal(),
             AttackReleaseControl.DEFAULT, Warp.Linear, Color.WHITE
         )
+
+        val GATE = NumericalControlSpec(one, zero, one, one, zero, Warp.Linear)
 
         val LEVEL = NumericalControlSpec(
             one, zero, one, 0.01.toDecimal(),

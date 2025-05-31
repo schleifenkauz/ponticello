@@ -2,6 +2,8 @@ package ponticello.model.player
 
 import bundles.PublicProperty
 import bundles.publicProperty
+import com.illposed.osc.OSCMessageEvent
+import com.illposed.osc.OSCMessageListener
 import hextant.context.Context
 import ponticello.model.flow.AudioFlows
 import ponticello.model.flow.NodeTree
@@ -12,10 +14,10 @@ import ponticello.model.score.ObjectPosition
 import ponticello.model.score.ScoreObject
 import ponticello.model.score.SynthObject
 import ponticello.model.score.controls.ParameterControl
-import ponticello.sc.client.OSCListener
+import ponticello.sc.client.getArgument
 import reaktive.value.now
 
-class ActiveObjectsManager(private val context: Context) : OSCListener {
+class ActiveObjectsManager(private val context: Context) : OSCMessageListener {
     private val nextSuffix = mutableMapOf<ScoreObject, Int>()
     private val bySuffix = mutableMapOf<ScoreObject, MutableMap<Int, ActiveScoreObject>>()
     private val byAbsolutePosition = mutableMapOf<ScoreObject, MutableMap<ObjectPosition, ActiveScoreObject>>()
@@ -88,11 +90,12 @@ class ActiveObjectsManager(private val context: Context) : OSCListener {
         }
     }
 
-    override fun onMessage(path: String, id: Int, content: String) = ScorePlayer.execute {
-        when {
-            path.startsWith("/freed") || path.startsWith("/stopped") -> {
-                println("Received '$path' message with content '$content'")
-                removeByName(content)
+    override fun acceptMessage(event: OSCMessageEvent) = ScorePlayer.execute {
+        val address = event.message.address
+        when (address) {
+            "stopped", "freed" -> {
+                val name = event.message.getArgument<String>(1, "name") ?: return@execute
+                removeByName(name)
             }
         }
     }

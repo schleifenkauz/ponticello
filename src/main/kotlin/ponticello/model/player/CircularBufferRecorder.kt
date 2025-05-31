@@ -2,13 +2,15 @@ package ponticello.model.player
 
 import bundles.PublicProperty
 import bundles.publicProperty
+import com.illposed.osc.OSCMessageEvent
+import com.illposed.osc.OSCMessageListener
 import hextant.context.Context
 import ponticello.impl.Decimal
 import ponticello.impl.Logger
 import ponticello.impl.zero
 import ponticello.model.registry.BufferRegistry
-import ponticello.sc.client.OSCListener
 import ponticello.sc.client.SuperColliderClient
+import ponticello.sc.client.getArgument
 import ponticello.ui.launcher.PonticelloLauncher.Companion.currentProject
 import java.io.File
 import kotlin.concurrent.thread
@@ -16,7 +18,7 @@ import kotlin.concurrent.thread
 class CircularBufferRecorder(
     private val context: Context,
     private val client: SuperColliderClient,
-) : OSCListener {
+) : OSCMessageListener {
     init {
         client.addListener(this)
     }
@@ -43,14 +45,15 @@ class CircularBufferRecorder(
         client.send("exportBufferSegment", listOf(path.absolutePath, duration.toString()))
     }
 
-    override fun onMessage(path: String, id: Int, content: String) {
+    override fun acceptMessage(event: OSCMessageEvent) {
+        val address = event.message.address
         thread {
-            println("Received message $path: $content")
-            if (path != "/complet") return@thread
-            val file = File(content)
+            if (address != "/complete") return@thread
+            val path = event.message.getArgument<String>(1, "path") ?: return@thread
+            val file = File(path)
             Thread.sleep(50)
             if (!file.isFile) {
-                Logger.error("Could not find file $content", Logger.Category.Buffers)
+                Logger.error("Could not find file $path", Logger.Category.Buffers)
                 return@thread
             }
             context[BufferRegistry].getOrAdd(file)
