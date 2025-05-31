@@ -150,7 +150,7 @@ class MixerFlow(
                 +"snd = In.ar(${sink.superColliderName}, ${sink.channels.now})"
                 val masterVolume = "\\master_volume.kr(${masterVolume.now}.dbamp, lag: ${AttackReleaseControl.DEFAULT}, fixedLag: true)"
                 val mix = if (components.size > 1) "sources.sum" else "sources"
-                +"snd = (snd + $mix) * $masterVolume"
+                +"snd = (snd + $mix) * $masterVolume * Linen.kr(\\gate.kr(1), 0.02, 1, 0.02, Done.freeSelf)"
                 +"ReplaceOut.ar(${sink.superColliderName}, snd)"
                 +"0"
             }
@@ -177,6 +177,7 @@ class MixerFlow(
             volume.observe(handler) and mute.observe(handler) and solo.observe(handler)
 
         override fun initialize(context: Context) {
+            super.initialize(context)
             sourceBus.now.resolve(context[BusRegistry])
         }
 

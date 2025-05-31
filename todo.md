@@ -12,7 +12,8 @@
 - moving objects to sub score parent is buggy
 - sub-objects get buggy after unlinking group objects
     - the new objects don't get added to the `ScoreEventCollector`
-- recording doesn't work
+- deleting objects doesn't remove them from the events collector...
+- duplicating large groups takes a LONG time
 
 ### Minor
 

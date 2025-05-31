@@ -10,11 +10,6 @@ import hextant.context.compoundEdit
 import javafx.geometry.HorizontalDirection.RIGHT
 import org.kordamp.ikonli.material2.Material2AL
 import org.kordamp.ikonli.materialdesign2.*
-import reaktive.value.binding.Binding
-import reaktive.value.binding.flatMap
-import reaktive.value.binding.map
-import reaktive.value.now
-import reaktive.value.reactiveValue
 import ponticello.impl.Logger
 import ponticello.impl.copy
 import ponticello.impl.times
@@ -27,6 +22,11 @@ import ponticello.ui.impl.showDialog
 import ponticello.ui.launcher.DetailPaneManager
 import ponticello.ui.launcher.PonticelloMainActivity
 import ponticello.ui.score.*
+import reaktive.value.binding.Binding
+import reaktive.value.binding.flatMap
+import reaktive.value.binding.map
+import reaktive.value.now
+import reaktive.value.reactiveValue
 
 object ObjectActions {
     val multiObjectActions = collectActions {
@@ -70,7 +70,8 @@ object ObjectActions {
         addAction("Show detail pane") {
             shortcut("Alt?+D")
             applicableOn { view -> !view.parentPane.isRoot(view.obj) }
-            executeSingle { view, _ ->
+            executeSingle { view, ev ->
+                if (ev.isTargetTextInput && !ev.isAltDown()) return@executeSingle
                 view.context[DetailPaneManager].showDetailPane(view)
             }
         }
@@ -78,7 +79,8 @@ object ObjectActions {
             shortcut("Alt?+W")
             icon(MaterialDesignL.LAUNCH)
             applicableOn { view -> !view.parentPane.isRoot(view.obj) }
-            executeSingle { view, _ ->
+            executeSingle { view, ev ->
+                if (ev.isTargetTextInput && !ev.isAltDown()) return@executeSingle
                 val scoreObjectsPane = view.context[PonticelloMainActivity].scoreObjectsPane()
                 val w = scoreObjectsPane.listView.showContent(view.obj) ?: return@executeSingle
                 val coords = view.localToScreen(view.width, 0.0)
@@ -175,7 +177,7 @@ object ObjectActions {
         addObjectAction("Infer quantization config from score") {
             icon(MaterialDesignM.METRONOME)
             applicableOn { view ->
-                view.obj.affectsPlayback && view.scene.window == view.context[PonticelloMainActivity].primaryStage
+                view.obj.affectsPlayback && view.scene?.window == view.context[PonticelloMainActivity].primaryStage
             }
             executeSingle { view, _ ->
                 view.inferQuantization()
@@ -185,7 +187,8 @@ object ObjectActions {
         addObjectAction("Extend object group") {
             shortcut("E")
             applicableOn<ScoreObjectGroupView>()
-            executeSingle { view, _ ->
+            executeSingle { view, ev ->
+                if (ev.isTargetTextInput && !ev.isAltDown()) return@executeSingle
                 val obj = view.obj as? ScoreObjectGroup ?: return@executeSingle
                 val context = view.context
                 extendGroup(obj, context, moreThanOne = false, cloneObjects = false)
