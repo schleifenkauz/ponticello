@@ -3,10 +3,7 @@ package ponticello.model.player
 import bundles.PublicProperty
 import bundles.publicProperty
 import hextant.context.Context
-import ponticello.impl.Decimal
-import ponticello.impl.Logger
-import ponticello.impl.unaryMinus
-import ponticello.impl.zero
+import ponticello.impl.*
 import ponticello.model.Settings
 import ponticello.model.flow.NodeTree
 import ponticello.model.flow.SynthObjectNode
@@ -93,7 +90,7 @@ class ScoreObjectScheduler(val context: Context) {
             return null
         }
         val time = absolutePosition.time + player.loopOffset
-        val timeForExecution = (time + scLangLatency).toString()
+        val scheduledTime = (time + scLangLatency - 0.08.toDecimal()).toString()
         if (obj is TempoGridObject && obj.meter.isResolved.now) {
             val meter = obj.meter.force()
             player.getClock().attach(player, meter, cutoff)
@@ -114,8 +111,7 @@ class ScoreObjectScheduler(val context: Context) {
             }
         } else null
         val code = try {
-            val nonNegativeCutoff = cutoff.takeIf { it > zero } ?: zero
-            obj.writeCode(activeObject.uniqueName, placement, nonNegativeCutoff, serverLatency, extraArguments)
+            obj.writeCode(activeObject.uniqueName, placement, cutoff, serverLatency, extraArguments)
         } catch (e: Exception) {
             Logger.error("Failed to write code for $obj", e, Logger.Category.Playback)
         }
@@ -123,20 +119,20 @@ class ScoreObjectScheduler(val context: Context) {
         try {
             val info = activeObject.uniqueName
             val description = "Schedule $info"
-            client.send("schedule", listOf(timeForExecution, player.id, code, info), description) //TODO why does sendAsync not work?
+            client.send("schedule", listOf(scheduledTime, player.id, code, info), description) //TODO why does sendAsync not work?
         } catch (e: Exception) {
             Logger.error("Failed to schedule $obj", e, Logger.Category.Playback)
         }
-        println("Scheduled $activeObject at $timeForExecution ($placement)")
+        println("Scheduled $activeObject at $scheduledTime ($placement)")
         Logger.fine("unique name for $obj at $time: ${activeObject.uniqueName}", Logger.Category.Playback)
-        Logger.fine("time for execution: ${timeForExecution}s", Logger.Category.Playback)
+        Logger.fine("time for execution: ${scheduledTime}s", Logger.Category.Playback)
         return activeObject
     }
 
     //Only inside on ScorePlayer.execute
     fun activeObjects(time: Decimal, delta: Decimal, score: Score): List<Event> {
         val dest = mutableListOf<Event>()
-        collectActiveObjects(ObjectPosition(0.0, 0.0), score, time, delta, dest)
+        collectActiveObjects(ObjectPosition.ZERO, score, time, delta, dest)
         dest.sortWith(compareBy({ it.absolutePosition.time }, { it.absolutePosition.y })) //TODO necessary?
         return dest
     }

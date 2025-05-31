@@ -32,7 +32,8 @@ fun ScWriter.writeSynthCode(
     cutoff: Decimal, placement: NodePlacement, latency: Decimal,
     extraArguments: Map<ParameterDefObject, ParameterControl> = emptyMap(),
 ) {
-    +"var auxilBuses = (), auxilSynths = ()"
+    +"var auxilBuses = (), auxilSynths = (), t0, delta_t"
+    +"t0 = TempoClock.beats"
     val controlMap = createControlMap(obj, extraArguments)
     val synthDefName = obj.def.name.now
     val synthVar = "${obj.superColliderPrefix}$uniqueName"
@@ -55,22 +56,23 @@ fun ScWriter.writeSynthCode(
     val action = guardAgainstReplaceNil(placement)
     appendLine("], target: ${placement.target}, addAction: $action);")
     +"s.sync"
-    appendBlock("s.makeBundle(${if (latency != zero) "$latency / ~time_warp" else "nil"})") {
-        for ((param, control) in controlMap) {
-            val (spec, ctrl) = control
-            with(ctrl) {
-                generatePreparationCode(obj, uniqueName, param, spec, cutoff, CodegenContext.Synth)
-            }
+    for ((param, control) in controlMap) {
+        val (spec, ctrl) = control
+        with(ctrl) {
+            generatePreparationCode(obj, uniqueName, param, spec, cutoff, CodegenContext.Synth)
         }
-        +"s.sync"
-        for ((param, control) in controlMap) {
-            val (spec, ctrl) = control
-            if (!obj.def.hasParameter(param) && param !in SPECIAL_PARAMETERS) continue
-            with(ctrl) {
-                applyToSynth(obj, uniqueName, synthVar, param, spec)
-            }
+    }
+    if (controlMap.isNotEmpty()) +"s.sync"
+    for ((param, control) in controlMap) {
+        val (spec, ctrl) = control
+        if (!obj.def.hasParameter(param) && param !in SPECIAL_PARAMETERS) continue
+        with(ctrl) {
+            applyToSynth(obj, uniqueName, synthVar, param, spec)
         }
-        +"$synthVar.register"
+    }
+    +"$synthVar.register"
+    if (latency != zero) +"delta_t = TempoClock.beats - t0"
+    appendBlock("s.makeBundle(${if (latency != zero) "($latency - delta_t) / ~time_warp" else "nil"})") {
         +"$synthVar.run"
         +"${ParameterControl.auxilSynthsVar(uniqueName)}.do(_.run)"
     }

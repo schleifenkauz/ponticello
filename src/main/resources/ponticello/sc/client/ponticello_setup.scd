@@ -114,7 +114,7 @@ OSCdef('schedule', {
                 }
             }
         } {
-            "Rejecting % scheduled for % because % != %".format(info, abs_time, my_play_start, ~play_start[player_id]);
+            postf("Rejecting % scheduled for % because % != %", info, abs_time, my_play_start, ~play_start[player_id]);
         };
         nil;
     }

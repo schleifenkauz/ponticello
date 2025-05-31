@@ -128,9 +128,9 @@ class ScorePlayer private constructor(
     fun scheduleInstantly(inst: ScoreObjectInstance, position: ObjectPosition) {
         val obj = inst.obj
         val delta = position.time - playHead.currentTime
-        val pos = ObjectPosition(playHead.currentTime + delta.coerceAtLeast(zero), position.y)
+        val pos = ObjectPosition(maxOf(position.time, playHead.currentTime), position.y)
         Logger.fine("Scheduling $obj at $pos, delta: $delta", Logger.Category.Playback)
-        scheduler.scheduleObject(obj, position, cutoff = -delta.coerceAtMost(zero), this)
+        scheduler.scheduleObject(obj, pos, cutoff = -delta.coerceAtMost(zero), this)
     }
 
     private fun freeActiveObjects() = execute {
