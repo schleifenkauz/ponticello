@@ -5,15 +5,17 @@ import javafx.application.Platform
 import javafx.scene.shape.Line
 import ponticello.impl.Decimal
 import ponticello.impl.asTime
+import ponticello.impl.withPrecision
+import ponticello.model.score.ObjectPosition
 import ponticello.ui.score.ScorePane
 import ponticello.ui.score.TimeCodeView
 
 class PlayHead(private val pane: ScorePane) {
     var currentTime = 0.0.asTime
         private set(value) {
-            field = value
+            field = value.withPrecision(ObjectPosition.TIME_PRECISION)
             Platform.runLater {
-                pane.context[TimeCodeView].displayTime(value)
+                pane.context[TimeCodeView].displayTime(field)
             }
         }
 

@@ -22,8 +22,10 @@ SynthDef(\send, {
     amp: [0, 1, \lin, 0.01, 1]
 ))).add;
 
+
 ServerBoot.add {
     ~ponticello_addr.sendMsg('/booted');
+    ~time_warp_bus = Bus.control(s, 1);
 	Task {
 		1.wait;
 		VSTPlugin.search;
@@ -34,6 +36,7 @@ ServerTree.add {
 };
 
 ~play_start = ();
+~time_warp = 1;
 
 ~setupHandler = { arg address, handler;
 	OSCdef(address, {
@@ -54,7 +57,7 @@ OSCdef('eval', {
 	arg msg, time, addr, recvPort;
 	var id = msg[1], code = msg[2], fct, answer;
 	fct = this.compile(code.asString);
-	code.postln;
+	//code.postln;
     if (fct == nil) { ~ponticello_addr.sendMsg('error', id, "Compilation error") } {
         AppClock.sched(0) {
             try {
@@ -69,8 +72,8 @@ OSCdef('eval', {
 }, 'eval');
 OSCdef('run', {
 	arg msg, time, addr, recvPort;
-	var code = msg[1], fct;
-	code.postln;
+	var code = msg[2], fct;
+	//code.postln;
 	fct = this.compile(code.asString);
 	if (fct == nil) { ~ponticello_addr.sendMsg('error', -1, "Compilation error") };
 	AppClock.sched(0) {
@@ -81,18 +84,18 @@ OSCdef('run', {
 	}
 }, 'run');
 OSCdef('start_play', { |msg|
-    var player_id = msg[1];
-    "START PLAY ".post; player_id.postln;
+    var player_id = msg[2];
+    "START PLAY ".post; msg.postln;
 	~play_start[player_id] = TempoClock.beats;
 }, '/start_play');
 OSCdef('pause_play', { |msg|
-    var player_id = msg[1];
+    var player_id = msg[2];
     "PAUSE_PLAY ".post; player_id.postln;
     ~play_start[player_id] = nil;
 }, '/pause_play');
 OSCdef('schedule', {
 	arg msg;
-	var time = msg[2].asFloat, player_id = msg[3], code = msg[4], fct, my_play_start, abs_time;
+	var time = msg[2].asFloat, player_id = msg[3], code = msg[4], info = msg[5], fct, my_play_start, abs_time;
 	my_play_start = ~play_start[player_id];
     abs_time = (my_play_start ?? TempoClock.beats) + time;
 	'SCHEDULE, player_id ='.post; player_id.post;
@@ -101,17 +104,73 @@ OSCdef('schedule', {
 	', abs_time = '.post; abs_time.postln;
 	fct = this.compile(code.asString);
 	if (fct == nil) { "Compilation error".throw };
-    code.postln;
+    //code.postln;
     TempoClock.schedAbs(abs_time) {
         if (my_play_start.isNil || (my_play_start == ~play_start[player_id])) {
+            postf("Executing %\n", info);
             try { fct.value } { |error|
                 ~ponticello_addr.sendMsg('/error', -1, error.what);
                 error.throw;
             }
+        } {
+            "Rejecting % scheduled for % because % != %".format(info, abs_time, my_play_start, ~play_start[player_id]);
         };
         nil;
     }
 }, '/schedule');
+OSCdef(\set_time_warp, { |msg|
+    var tempo = msg[2].asFloat;
+    TempoClock.tempo = tempo;
+    ~time_warp_bus.set(tempo);
+    ~time_warp = tempo;
+    postf("Time warp: %\n", tempo);
+    "ok"
+}, '/set_time_warp');
+
+~setupHandler.(\startCircularBuffer, { |duration|
+    var frames;
+    ~circularRecorder.free;
+    ~circularBuffer.free;
+    frames = duration.asFloat * s.sampleRate;
+    ~circularBuffer = Buffer.alloc(s, frames, 2);
+    ~circularRecorder = SynthDef(\circularRecord, {
+        arg buf;
+        var in, writePos, trig;
+        in = SoundIn.ar([0, 1]);
+        writePos = Phasor.ar(0, 1, 0, frames);
+        BufWr.ar(in, ~circularBuffer.bufnum, writePos, loop: 1);
+    }).play;
+    ~t_start_recording = AppClock.seconds;
+    postf("Start recording to circular buffer of duration % s\n", duration);
+    "ok"
+});
+
+~setupHandler.(\markBufferSegmentEnd, {
+    if (~circularBuffer != nil) {
+        ~buffer_segment_end = ((AppClock.seconds - ~t_start_recording) % ~circularBuffer.duration);
+        postf("Marking buffer segment end: %\n", ~buffer_segment_end);
+    } {
+        "ERROR: Recording to circular buffer was not started.".postln;
+    }
+});
+
+~setupHandler.(\exportBufferSegment, { |path, duration|
+    var numFrames, startFrame;
+    if (~circularBuffer != nil) {
+        numFrames = duration.asFloat * s.sampleRate;
+        startFrame = ~buffer_segment_end * s.sampleRate - numFrames;
+        if (startFrame < 0) { startFrame = startFrame + ~circularBuffer.numFrames };
+        postf("Writing % seconds to % starting from %\n", duration, path, startFrame / s.sampleRate);
+        ~circularBuffer.write(path, "wav", "int16", numFrames, startFrame, false) {
+            postf("Finished writing to %\n", path);
+            ~ponticello_addr.sendMsg('/complet', path);
+        };
+        "ok"
+    } {
+        "ERROR: Recording to circular buffer was not started.".postln;
+    }
+}, \exportBufferSegment);
+
 ~setupHandler.('isSynthDef', { |name|
 	SynthDescLib.global.synthDescs[name.asSymbol] != nil;
 });

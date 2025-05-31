@@ -5,10 +5,10 @@ import bundles.publicProperty
 import bundles.set
 import hextant.context.Context
 import kotlinx.serialization.Serializable
-import reaktive.value.now
 import ponticello.impl.Logger
 import ponticello.model.score.ScoreObject
 import ponticello.model.score.ScoreObject.Unresolved
+import reaktive.value.now
 
 @Serializable
 class ScoreObjectRegistry(
@@ -28,14 +28,6 @@ class ScoreObjectRegistry(
             return
         }
         super.add(obj, idx)
-    }
-
-    fun availableName(prefix: String): String {
-        for (n in 1..Int.MAX_VALUE) {
-            val name = "${prefix}_$n"
-            if (!has(name)) return name
-        }
-        throw AssertionError()
     }
 
     fun nameForClone(obj: ScoreObject): String {

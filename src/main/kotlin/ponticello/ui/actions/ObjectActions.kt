@@ -196,7 +196,7 @@ object ObjectActions {
         }
 
         addObjectAction("Extend object group (Customized)") {
-            shortcut("Ctrl+E")
+            shortcut("Alt+E")
             applicableOn<ScoreObjectGroupView>()
             executeSingle { view, _ ->
                 val obj = view.obj as? ScoreObjectGroup ?: return@executeSingle
@@ -214,7 +214,7 @@ object ObjectActions {
             }
         }
         addObjectAction("Extend object group (Customized, clone children)") {
-            shortcut("Ctrl+Shift+E")
+            shortcut("Alt+Shift+E")
             applicableOn<ScoreObjectGroupView>()
             executeSingle { view, _ ->
                 val obj = view.obj as? ScoreObjectGroup ?: return@executeSingle

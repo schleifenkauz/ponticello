@@ -4,10 +4,6 @@ import hextant.context.Context
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
-import reaktive.Observer
-import reaktive.value.ReactiveVariable
-import reaktive.value.now
-import reaktive.value.reactiveVariable
 import ponticello.impl.randomColor
 import ponticello.impl.superColliderPath
 import ponticello.model.project.PonticelloProject.Companion.projectDirectory
@@ -17,7 +13,12 @@ import ponticello.model.registry.reference
 import ponticello.sc.Rate
 import ponticello.sc.client.ScWriter
 import ponticello.sc.client.SuperColliderClient
+import ponticello.sc.client.eval
 import ponticello.sc.editor.BusSelector
+import reaktive.Observer
+import reaktive.value.ReactiveVariable
+import reaktive.value.now
+import reaktive.value.reactiveVariable
 
 @Serializable
 class VSTPluginObject private constructor(

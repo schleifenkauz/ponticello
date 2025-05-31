@@ -70,7 +70,6 @@ abstract class ParameterizedObjectDefRegistryPane<T : ParameterizedObjectDef>(
             is AddObjectOption.NewObject -> {
                 this.createNewObject(option.name, ev)?.let { def ->
                     registry.add(def)
-                    listView.select(def)
                 }
             }
 
@@ -84,7 +83,6 @@ abstract class ParameterizedObjectDefRegistryPane<T : ParameterizedObjectDef>(
                 } else {
                     registry.add(def)
                 }
-                listView.select(def)
                 def.sync()
             }
         }

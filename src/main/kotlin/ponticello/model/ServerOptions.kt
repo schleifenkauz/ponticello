@@ -2,7 +2,6 @@ package ponticello.model
 
 import hextant.context.Context
 import kotlinx.serialization.Serializable
-import reaktive.value.now
 import ponticello.impl.isWindows
 import ponticello.model.obj.AbstractContextualObject
 import ponticello.model.obj.BusObject
@@ -11,6 +10,8 @@ import ponticello.model.registry.BusRegistry
 import ponticello.model.registry.ObjectReference
 import ponticello.model.registry.reference
 import ponticello.sc.client.SuperColliderClient
+import ponticello.sc.client.run
+import reaktive.value.now
 
 @Serializable
 data class ServerOptions(

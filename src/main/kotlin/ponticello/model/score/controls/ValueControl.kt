@@ -2,16 +2,17 @@ package ponticello.model.score.controls
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import reaktive.value.ReactiveVariable
-import reaktive.value.now
-import reaktive.value.reactiveVariable
 import ponticello.impl.Decimal
 import ponticello.impl.Logger
 import ponticello.impl.copy
+import ponticello.impl.one
 import ponticello.model.obj.ParameterizedObject
 import ponticello.model.obj.SynthDefObject
 import ponticello.sc.*
 import ponticello.sc.client.ScWriter
+import reaktive.value.ReactiveVariable
+import reaktive.value.now
+import reaktive.value.reactiveVariable
 
 @Serializable
 @SerialName("Value")
@@ -37,19 +38,20 @@ data class ValueControl(
 
     override fun ScWriter.generatePreparationCode(
         obj: ParameterizedObject, uniqueName: String,
-        parameter: String, spec: ControlSpec,
+        parameter: String, spec: ControlSpec, cutoff: Decimal,
         ctx: CodegenContext,
     ) {
+        val adjustedValue = adjustValueIfIsBufferPosition(obj, spec, cutoff)
         when {
             ctx == CodegenContext.Process -> {
                 val argVar = uniqueArgumentName(uniqueName, parameter)
-                +"$argVar = ${value.now}"
+                +"$argVar = $adjustedValue"
             }
 
             allocateBus.now -> {
                 val busName = auxilBusName(uniqueName, parameter)
                 +"$busName = Bus.control(s, 1)"
-                +"$busName.set(${value.now})"
+                +"$busName.set(${adjustedValue})"
             }
         }
     }
@@ -66,18 +68,28 @@ data class ValueControl(
 
     override fun generateArgumentExpr(
         obj: ParameterizedObject, uniqueName: String,
-        parameter: String, spec: ControlSpec, context: CodegenContext,
-    ): ScExpr = when (context) {
-        CodegenContext.Process -> lambda {
-            Identifier(uniqueArgumentName(uniqueName, parameter))
+        parameter: String, spec: ControlSpec, cutoff: Decimal, context: CodegenContext,
+    ): ScExpr {
+        val adjustedValue = adjustValueIfIsBufferPosition(obj, spec, cutoff)
+        return when (context) {
+            CodegenContext.Process -> lambda {
+                Identifier(uniqueArgumentName(uniqueName, parameter))
+            }
+
+            CodegenContext.SubArg ->
+                if (allocateBus.now) Identifier(auxilBusName(uniqueName, parameter)).send("kr")
+                else DecimalLiteral(adjustedValue)
+
+            CodegenContext.Synth -> DecimalLiteral(adjustedValue)
         }
-
-        CodegenContext.SubArg ->
-            if (allocateBus.now) Identifier(auxilBusName(uniqueName, parameter)).send("kr")
-            else DecimalLiteral(value.now)
-
-        CodegenContext.Synth -> DecimalLiteral(value.now)
     }
+
+    private fun adjustValueIfIsBufferPosition(obj: ParameterizedObject, spec: ControlSpec, cutoff: Decimal) =
+        if (spec is NumericalControlSpec && spec.origin is BufferPositionControlSpec) {
+            val rateCtrl = obj.controls.getOrNull("rate")?.now as? ValueControl
+            val rate = rateCtrl?.value?.now ?: one
+            value.now + cutoff * rate
+        } else value.now
 
     companion object {
         fun create(value: Decimal) = ValueControl(reactiveVariable(value))

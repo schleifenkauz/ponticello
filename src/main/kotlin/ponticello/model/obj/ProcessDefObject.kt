@@ -20,6 +20,7 @@ import ponticello.sc.CodeBlock
 import ponticello.sc.RawScExpr
 import ponticello.sc.client.ScWriter
 import ponticello.sc.client.SuperColliderClient
+import ponticello.sc.client.run
 import ponticello.sc.editor.CodeBlockEditor
 import ponticello.sc.editor.ScExprExpander
 import ponticello.sc.substitute

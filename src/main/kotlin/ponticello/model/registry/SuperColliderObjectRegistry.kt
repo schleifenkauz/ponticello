@@ -6,6 +6,7 @@ import hextant.context.Context
 import hextant.context.extend
 import ponticello.model.obj.SuperColliderObject
 import ponticello.sc.client.SuperColliderClient
+import ponticello.sc.client.run
 
 abstract class SuperColliderObjectRegistry<O : SuperColliderObject> : ObjectRegistry<O>() {
     @Transient

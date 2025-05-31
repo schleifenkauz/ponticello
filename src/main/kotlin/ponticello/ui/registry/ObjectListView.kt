@@ -29,7 +29,7 @@ import ponticello.model.registry.ObjectList
 import reaktive.value.*
 import reaktive.value.binding.notEqualTo
 
-class ObjectListView<O: ContextualObject>(
+class ObjectListView<O : ContextualObject>(
     val source: ObjectList<O>,
     val config: ObjectListDisplayConfig<O>,
     private val displayMode: ReactiveVariable<DisplayMode>,
@@ -121,9 +121,6 @@ class ObjectListView<O: ContextualObject>(
     private fun addObject(ev: Event? = null) {
         val newObj = config.createNewObject(ev) ?: return
         source.add(newObj)
-        if (filter(newObj)) {
-            select(newObj)
-        }
     }
 
     private fun emptyDisplay(): VBox {
@@ -174,8 +171,8 @@ class ObjectListView<O: ContextualObject>(
         }
     }
 
-    override fun added(obj: O, idx: Int) {
-        if (!filter(obj)) return
+    override fun added(obj: O, idx: Int) = Platform.runLater {
+        if (!filter(obj)) return@runLater
         val j = getInsertionIndex(idx)
         val box = getBox(obj)
         boxes.add(j, box)
@@ -198,8 +195,8 @@ class ObjectListView<O: ContextualObject>(
         return -(j + 1)
     }
 
-    override fun removed(obj: O) {
-        val box = boxesCache[obj] ?: return
+    override fun removed(obj: O) = Platform.runLater {
+        val box = boxesCache[obj] ?: return@runLater
         boxes.remove(box)
         itemsLayout.children.remove(box)
         box.subWindow?.hide()

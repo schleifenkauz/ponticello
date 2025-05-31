@@ -3,74 +3,131 @@ package ponticello.model.player
 import hextant.context.Context
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
-import reaktive.value.ReactiveVariable
-import reaktive.value.now
-import reaktive.value.reactiveVariable
-import ponticello.impl.Decimal
-import ponticello.impl.asTime
-import ponticello.impl.times
-import ponticello.impl.zero
+import ponticello.impl.*
 import ponticello.model.Settings
 import ponticello.model.live.QuantizationConfig
 import ponticello.model.obj.AbstractRenamableObject
 import ponticello.model.obj.MeterObject
-import java.util.concurrent.Executors
-import java.util.concurrent.Future
-import java.util.concurrent.TimeUnit.MILLISECONDS
+import ponticello.model.registry.ClockRegistry
+import ponticello.sc.NumericalControlSpec
+import ponticello.sc.Warp
+import ponticello.sc.client.SuperColliderClient
+import reaktive.Observer
+import reaktive.value.ReactiveVariable
+import reaktive.value.forEach
+import reaktive.value.now
+import reaktive.value.reactiveVariable
 
 @Serializable
-class ClockObject(override val mutableName: ReactiveVariable<String>) : AbstractRenamableObject() {
-    @Transient
-    private var lookAheadMs: Long = 0
+class ClockObject(
+    override val mutableName: ReactiveVariable<String>,
+    val timeWarp: ReactiveVariable<Decimal> = reactiveVariable(1.0.asTime),
+) : AbstractRenamableObject(), Runnable {
+    private val lookAhead: Decimal get() = context[Settings].lookAhead
+    val period get() = PERIOD_S * timeWarp.now
 
-    val period get() = PERIOD_S
+    override val registry: ClockRegistry
+        get() = context[ClockRegistry]
 
     @Transient
     private val activePlayers = mutableSetOf<ActivePlayer>()
-
     @Transient
     private val activeMeters = mutableSetOf<ActiveMeter>()
+    @Transient
+    private val scheduledActions = mutableListOf<ScheduledAction>()
 
     @Transient
-    private var clockTask: Future<*>? = null
+    private var clockTime = 0.0.asTime
+    @Transient
+    private var runClock = false
+    @Transient
+    private lateinit var thread: Thread
 
     @Transient
-    private var clockStartTime = 0L
+    private lateinit var timeWarpObserver: Observer
+    
+    private val client get() = context[SuperColliderClient]
 
-    @Transient
-    private val executor = Executors.newSingleThreadScheduledExecutor { runnable ->
-        Thread(runnable, "ClockThread ${name.now}").apply {
-            priority = 7
-        }
-    }
+    override val canDelete: Boolean
+        get() = name.now != "default"
+
+    val activeMeter: MeterObject? get() = activeMeters.firstOrNull()?.meter
+
+    override fun canRenameTo(newName: String): Boolean = name.now != "default" && super.canRenameTo(newName)
 
     override fun initialize(context: Context) {
         super.initialize(context)
-        lookAheadMs = context[Settings].lookAhead.toMillis()
+        timeWarpObserver = timeWarp.forEach { warp ->
+            client.sendAsync("set_time_warp", listOf(warp.toString()))
+        }
+        startClockThread()
     }
 
-    private fun runLoop() {
-        val systemTime = System.currentTimeMillis()
-        for ((player, startTime) in activePlayers.toList()) { //copy to avoid concurrent modification
-            val elapsedTime = (systemTime - (clockStartTime + startTime)).toSeconds()
-            player.doCycle(this, elapsedTime)
+    private fun startClockThread() {
+        thread = Thread(this)
+        thread.isDaemon = true
+        thread.priority = 7
+        thread.name = "ClockThread ${name.now}"
+        thread.uncaughtExceptionHandler = Thread.UncaughtExceptionHandler { _, e ->
+            Logger.error("ClockThread ${name.now} crashed", e)
+        }
+        thread.start()
+    }
+
+    override fun run() {
+        var lastTime = System.currentTimeMillis()
+        while (true) {
+            val now = System.currentTimeMillis()
+            val delta = (now - lastTime).toSeconds()
+            lastTime = now
+            if (!runClock) {
+                Thread.sleep(PERIOD_MS)
+                continue
+            }
+            synchronized(this) {
+                clockTime += delta * timeWarp.now
+                processEvents()
+            }
+            Thread.sleep(PERIOD_MS)
+        }
+    }
+
+    private fun processEvents() {
+        for ((player, startTime, offset) in activePlayers.toList()) { //copy to avoid concurrent modification
+            if (startTime <= clockTime && player.isScheduled.now && !player.isPlaying.now) {
+                player.startPlaying()
+            }
+            if (!player.isPlaying.now) continue
+            if (startTime + lookAhead <= clockTime) {
+                player.doCycle(this, clockTime - startTime + offset)
+            }
+        }
+        val itr = scheduledActions.iterator()
+        while (itr.hasNext()) {
+            val (action, scheduledTime) = itr.next()
+            if (clockTime >= scheduledTime) {
+                action.invoke(scheduledTime)
+                itr.remove()
+            }
         }
     }
 
     override val canRename: Boolean
         get() = name.now != "default"
 
+    @Synchronized
     fun scheduleStart(player: ScorePlayer, quantization: QuantizationConfig?) {
         if (quantization != null && quantization.enableQuantization.now && quantization.meter.now.isResolved.now) {
             val offset = quantization.computeOffset()
             val meter = quantization.meter.now.force()
             val quant = quantization.computeQuant()
-            scheduleStart(meter, quant, offset, player)
+            scheduleStart(meter, quant, offset, player, action = null)
         } else {
             start(player)
         }
-    }
+     }
 
+    @Synchronized
     fun scheduleAction(quantization: QuantizationConfig, action: (Decimal) -> Unit) {
         val meterRef = quantization.meter.now
         if (quantization.enableQuantization.now && meterRef.isResolved.now) {
@@ -84,100 +141,107 @@ class ClockObject(override val mutableName: ReactiveVariable<String>) : Abstract
     }
 
     private fun start(player: ScorePlayer) {
-        val currentTime = getCurrentTime()
-        val startTime = currentTime - player.playHead.currentTime.toMillis()
-        scheduleStart(player, {}, startTime, quantizationDelay = 0L)
+        val startTime = clockTime
+        val offset = player.playHead.currentTime
+        scheduleStart(player, {}, startTime, offset)
     }
 
     private fun scheduleStart(
         meter: MeterObject?, quant: Decimal, offset: Decimal,
-        player: ScorePlayer?, action: (delay: Decimal) -> Unit = {},
+        player: ScorePlayer?, action: ((delay: Decimal) -> Unit)? = null,
     ) {
-        val currentTime = getCurrentTime()
         val activeMeter = activeMeters.firstOrNull { (m) -> m == meter }
-        val playHeadPos = player?.playHead?.currentTime?.toMillis() ?: 0
+        val playHeadPos = player?.playHead?.currentTime ?: 0.0.asTime
         val quantizationDelay = if (activeMeter != null) {
-            val quantMillis = quant.toMillis()
-            val meterTime = currentTime - activeMeter.startTime
-            var timeSinceLastMatch = meterTime - offset.toMillis() - playHeadPos
-            timeSinceLastMatch %= quantMillis
-            if (timeSinceLastMatch < 0) timeSinceLastMatch += quantMillis
-            quantMillis - timeSinceLastMatch
-        } else 0L
-        val startTime = currentTime + quantizationDelay - playHeadPos
+            val meterTime = clockTime - activeMeter.startTime
+            var timeSinceLastMatch = meterTime - offset - playHeadPos
+            timeSinceLastMatch %= quant
+            if (timeSinceLastMatch < zero) timeSinceLastMatch += quant
+            quant - timeSinceLastMatch
+        } else zero
+        val startTime = clockTime + quantizationDelay
         if (meter != null && player != null) {
             activeMeters.add(ActiveMeter(meter, player, startTime))
         }
-        scheduleStart(player, action, startTime, quantizationDelay)
+        scheduleStart(player, action, startTime, playHeadPos)
+    }
+
+    private fun startClock() {
+        clockTime = zero
+        runClock = true
     }
 
     private fun scheduleStart(
-        player: ScorePlayer?, action: (Decimal) -> Unit,
-        startTime: Long, quantizationDelay: Long,
-    ) {
-        executor.schedule({
-            action(quantizationDelay.toSeconds()); player?.startPlaying()
-        }, quantizationDelay, MILLISECONDS)
+        player: ScorePlayer?, action: ((Decimal) -> Unit)?,
+        startTime: Decimal, offset: Decimal
+    ) { 
         if (player != null) {
-            executor.schedule(
-                { activePlayers.add(ActivePlayer(player, startTime)) },
-                quantizationDelay + lookAheadMs,
-                MILLISECONDS
-            )
+            activePlayers.add(ActivePlayer(player, startTime, offset))
         }
-        if (clockTask == null) {
-            clockTask = executor.scheduleAtFixedRate({ runLoop() }, 0, PERIOD_MS, MILLISECONDS)
+        if (action != null) {
+            scheduledActions.add(ScheduledAction(action, startTime))
+        }
+        if (!runClock) {
+            startClock()
         }
     }
 
-
-    private fun getCurrentTime(): Long {
-        val systemTime = System.currentTimeMillis()
-        if (clockStartTime == 0L) {
-            clockStartTime = systemTime
-        }
-        val currentTime = systemTime - clockStartTime
-        return currentTime
-    }
-
+    @Synchronized
     fun stop(player: ScorePlayer) {
         activePlayers.removeIf { (p) -> p == player }
         activeMeters.removeIf { meter -> meter.player == player }
         if (activePlayers.isEmpty()) {
-            clockStartTime = 0L
-            clockTask?.cancel(true)
-            clockTask = null
+            stopClock()
         }
     }
 
+    private fun stopClock() {
+        clockTime = 0.0.asTime
+        runClock = false
+    }
+
+    @Synchronized
     fun attach(player: ScorePlayer, meter: MeterObject, offset: Decimal) {
-        val startTime = System.currentTimeMillis() - clockStartTime - offset.toMillis()
+        val startTime = clockTime - offset
         activeMeters.add(ActiveMeter(meter, player, startTime))
     }
 
+    @Synchronized
     fun detach(player: ScorePlayer, meter: MeterObject) {
         activeMeters.removeIf { active -> active.meter == meter && active.player == player }
     }
 
     private data class ActivePlayer(
         val player: ScorePlayer,
-        val startTime: Long,
+        val startTime: Decimal,
+        val offset: Decimal
+    )
+
+    private data class ScheduledAction(
+        val action: (Decimal) -> Unit,
+        val scheduledTime: Decimal
     )
 
     private data class ActiveMeter(
         val meter: MeterObject,
         val player: ScorePlayer,
-        val startTime: Long,
+        val startTime: Decimal,
     )
 
     companion object {
         private const val PERIOD_MS = 20L
         private val PERIOD_S = PERIOD_MS.toSeconds()
 
-        private fun Decimal.toMillis() = (this * 1000).toLong()
-
         private fun Long.toSeconds() = (this / 1000.0).asTime
 
         fun withName(name: String) = ClockObject(reactiveVariable(name))
+
+        val TIME_WARP_SPEC = NumericalControlSpec(
+            default = 1.0,
+            min = 0.5, max = 2.0,
+            step = 0.05.toDecimal(),
+            lag = 0.01,
+            warp = Warp.Exponential
+        )
     }
 }

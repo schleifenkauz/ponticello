@@ -3,8 +3,7 @@ package ponticello.model.score.controls
 import hextant.context.Context
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import reaktive.value.ReactiveVariable
-import reaktive.value.now
+import ponticello.impl.Decimal
 import ponticello.impl.Logger
 import ponticello.impl.copy
 import ponticello.model.obj.BusReference
@@ -12,6 +11,8 @@ import ponticello.model.obj.ParameterizedObject
 import ponticello.model.registry.BusRegistry
 import ponticello.sc.*
 import ponticello.sc.client.ScWriter
+import reaktive.value.ReactiveVariable
+import reaktive.value.now
 
 @Serializable
 @SerialName("SingleBusValue")
@@ -34,6 +35,7 @@ data class SingleBusValueControl(val bus: ReactiveVariable<BusReference>) : Para
     override fun ScWriter.generatePreparationCode(
         obj: ParameterizedObject, uniqueName: String,
         parameter: String, spec: ControlSpec,
+        cutoff: Decimal,
         ctx: CodegenContext,
     ) {
         if (ctx == CodegenContext.Process) {
@@ -47,6 +49,7 @@ data class SingleBusValueControl(val bus: ReactiveVariable<BusReference>) : Para
         uniqueName: String,
         parameter: String,
         spec: ControlSpec,
+        cutoff: Decimal,
         context: CodegenContext,
     ): ScExpr =
         when(context)  {

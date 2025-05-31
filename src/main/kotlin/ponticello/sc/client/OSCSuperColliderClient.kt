@@ -3,14 +3,14 @@ package ponticello.sc.client
 import com.illposed.osc.OSCMessage
 import com.illposed.osc.transport.OSCPortOut
 import com.illposed.osc.transport.OSCPortOutBuilder
-import hextant.core.editor.ListenerManager
+import ponticello.impl.Logger
+import ponticello.impl.superColliderPath
 import reaktive.Observer
 import reaktive.event.unitEvent
 import reaktive.observe
-import ponticello.impl.Logger
-import ponticello.impl.superColliderPath
-import java.net.*
-import java.nio.ByteBuffer
+import java.net.DatagramSocket
+import java.net.InetAddress
+import java.net.InetSocketAddress
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
@@ -19,13 +19,11 @@ import kotlin.io.path.toPath
 class OSCSuperColliderClient(
     process: Process,
     private val sender: OSCPortOut,
-    private val receiver: DatagramSocket,
-) : SuperColliderClient, Thread() {
+    private val receiver: OSCReceiver,
+) : SuperColliderClient, Thread(), OSCReceiver by receiver, OSCListener {
     private var idCounter = 0
     private val waitingForReply = mutableMapOf<Int, CompletableFuture<String>>()
     private val eventExecutor = Executors.newSingleThreadExecutor()
-
-    private val listeners = ListenerManager.createWeakListenerManager<SuperColliderListener>()
 
     override val consoleMonitor: ConsoleMonitor = ConsoleMonitor(process)
 
@@ -57,13 +55,9 @@ class OSCSuperColliderClient(
         start()
     }
 
-    override fun addListener(listener: SuperColliderListener) = listeners.addListener(listener)
-
-    override fun removeListener(listener: SuperColliderListener) = listeners.removeListener(listener)
-
     override fun sendAsync(address: String, arguments: List<Any>) {
         val adr = if (!address.startsWith('/')) "/$address" else address
-        val msg = OSCMessage(adr, arguments)
+        val msg = OSCMessage(adr, listOf(-1) + arguments)
         sender.send(msg)
     }
 
@@ -81,84 +75,55 @@ class OSCSuperColliderClient(
         return future.orTimeout(3, TimeUnit.SECONDS)
     }
 
-    override fun run() {
-        while (!interrupted() && !receiver.isClosed) {
-            //IMPORTANT: this loop may not call any blocking methods
-            //Otherwise communication with SuperCollider will stop working
-            val buf = ByteArray(4096)
-            val packet = DatagramPacket(buf, buf.size)
-            try {
-                receiver.receive(packet)
-            } catch (e: SocketException) {
-                if (e.message == "Socket closed") {
-                    println("Closed receiver socket")
-                    break
-                } else {
-                    e.printStackTrace()
-                    continue
-                }
+    override fun run(command: String) {
+        if (command == "(\n)\n") return
+        Logger.fine("run: $command", Logger.Category.SuperCollider)
+        try {
+            sendAsync("run", listOf(command))
+        } catch (e: Exception) {
+            System.err.println("Exception while running $command")
+            e.printStackTrace()
+        }
+    }
+
+    override fun onMessage(path: String, id: Int, content: String) {
+        when {
+            path.startsWith("/ready") -> eventExecutor.execute {
+                ready.fire()
             }
-            val path = String(buf, 0, 8)
-            val content = getContentString(buf)
-            eventExecutor.execute {
-                listeners.notifyListeners { onMessage(path, content) }
+
+            path.startsWith("/booted") -> eventExecutor.execute {
+                sampleRate = eval("s.sampleRate").get().toDouble()
+                serverBoot.fire()
             }
-            when {
-                path.startsWith("/ready") -> eventExecutor.execute {
-                    ready.fire()
-                }
 
-                path.startsWith("/booted") -> eventExecutor.execute {
-                    sampleRate = eval("s.sampleRate").get().toDouble()
-                    serverBoot.fire()
-                }
+            path.startsWith("/cleared") -> eventExecutor.execute {
+                treeClear.fire()
+            }
 
-                path.startsWith("/cleared") -> eventExecutor.execute {
-                    treeClear.fire()
+            path.startsWith("/reply") -> {
+                Logger.fine("Completed id: $id, result: $content", Logger.Category.SuperCollider)
+                val future = waitingForReply.remove(id)
+                if (future == null) {
+                    Logger.error("Wasn't waiting for a reply for id $id")
+                    return
                 }
+                future.complete(content)
+            }
 
-                path.startsWith("/reply") -> {
-                    val id = getId(buf)
-                    Logger.fine("Completed id: $id, result: $content", Logger.Category.SuperCollider)
+            path.startsWith("/error") -> {
+                Logger.warn(content, Logger.Category.SuperCollider)
+                if (id != -1) {
                     val future = waitingForReply.remove(id)
                     if (future == null) {
                         Logger.error("Wasn't waiting for a reply for id $id")
-                        continue
+                        return
                     }
-                    future.complete(content)
+                    future.completeExceptionally(SuperColliderException(content))
                 }
-
-                path.startsWith("/error") -> {
-                    val message = getContentString(buf)
-                    val id = getId(buf)
-                    Logger.warn(message, Logger.Category.SuperCollider)
-                    if (id != -1) {
-                        val future = waitingForReply.remove(id)
-                        if (future == null) {
-                            Logger.error("Wasn't waiting for a reply for id $id")
-                            continue
-                        }
-                        future.completeExceptionally(SuperColliderException(message))
-                    }
-                }
-            }
-            try {
-                sleep(10)
-            } catch (e: InterruptedException) {
-                receiver.close()
-                return
             }
         }
-        receiver.close()
-    }
 
-    private fun getId(buf: ByteArray) = ByteBuffer.wrap(buf, 12, 4).getInt()
-
-    private fun getContentString(buf: ByteArray): String {
-        var len = 0
-        while (len + 16 < buf.size && buf[len + 16].toInt() != 0) len++
-        val result = String(buf, 16, len)
-        return result
     }
 
     override fun quit() {
@@ -192,7 +157,8 @@ class OSCSuperColliderClient(
                 .setLocalSocketAddress(local)
                 .setRemoteSocketAddress(remote)
                 .build()
-            val receiver = DatagramSocket(myPort + 1)
+            val socket = DatagramSocket(myPort + 1)
+            val receiver = OSCReceiver.create(socket)
             return OSCSuperColliderClient(sclang, sender, receiver)
         }
     }

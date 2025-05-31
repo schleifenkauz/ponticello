@@ -1,12 +1,14 @@
 package ponticello.sc.editor
 
 import hextant.core.editor.CompoundEditor
-import reaktive.value.ReactiveValue
 import ponticello.impl.Logger
 import ponticello.impl.superColliderPath
 import ponticello.model.project.PonticelloProject.Companion.projectDirectory
 import ponticello.sc.VSTPlugin
 import ponticello.sc.client.SuperColliderClient
+import ponticello.sc.client.eval
+import ponticello.sc.client.run
+import reaktive.value.ReactiveValue
 
 class VSTPluginEditor() : CompoundEditor<VSTPlugin>(), ScExprEditor<VSTPlugin> {
     constructor(pluginName: String) : this() {

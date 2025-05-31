@@ -79,10 +79,6 @@ class ScWriter(private val output: Appendable) : SuperColliderContext {
         appendLine(command)
     }
 
-    override fun run(writeCode: ScWriter.() -> Unit) {
-        this.writeCode()
-    }
-
     companion object {
         inline fun wrap(context: SuperColliderContext, block: ScWriter.() -> Unit) {
             if (context is ScWriter) return context.block()

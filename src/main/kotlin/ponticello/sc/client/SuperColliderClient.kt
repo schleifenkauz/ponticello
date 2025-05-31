@@ -3,13 +3,9 @@ package ponticello.sc.client
 import bundles.PublicProperty
 import bundles.publicProperty
 import reaktive.Observer
-import ponticello.impl.Logger
-import ponticello.impl.Logger.Category
-import ponticello.impl.canSuperColliderTalkToMe
-import ponticello.impl.writeCode
 import java.util.concurrent.CompletableFuture
 
-interface SuperColliderClient : SuperColliderContext {
+interface SuperColliderClient : SuperColliderContext, OSCReceiver {
     val sampleRate: Double
 
     fun onServerBooted(action: () -> Unit): Observer
@@ -18,38 +14,9 @@ interface SuperColliderClient : SuperColliderContext {
 
     fun onClientReady(action: () -> Unit)
 
-    fun addListener(listener: SuperColliderListener)
-
-    fun removeListener(listener: SuperColliderListener)
-
-    fun sendAsync(address: String, arguments: List<Any> = emptyList())
-
     fun send(address: String, arguments: List<Any> = emptyList()): CompletableFuture<String>
 
-    fun eval(code: String): CompletableFuture<String> {
-        if (!canSuperColliderTalkToMe) {
-            run(code)
-            return CompletableFuture.completedFuture("")
-        }
-        Logger.fine("eval $code", Category.SuperCollider, detailMessage = code)
-        return send("eval", listOf(code))
-    }
-
-    override fun run(command: String) {
-        if (command == "(\n)\n") return
-        Logger.fine("run: $command", Category.SuperCollider)
-        try {
-            sendAsync("run", listOf(command))
-        } catch (e: Exception) {
-            System.err.println("Exception while running $command")
-            e.printStackTrace()
-        }
-    }
-
-    override fun run(writeCode: ScWriter.() -> Unit) {
-        val command = writeCode(writeCode)
-        if (command.isNotBlank()) run(command)
-    }
+    fun sendAsync(address: String, arguments: List<Any> = emptyList())
 
     fun quit()
 

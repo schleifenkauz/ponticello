@@ -1,19 +1,19 @@
 package ponticello.model.player
 
-import reaktive.value.now
 import ponticello.impl.Logger
 import ponticello.impl.zero
 import ponticello.model.flow.AudioFlows
 import ponticello.model.registry.ScoreObjectRegistry
 import ponticello.model.score.ObjectPosition
-import ponticello.sc.client.SuperColliderListener
+import ponticello.sc.client.OSCListener
+import reaktive.value.now
 
 class PlaybackMessageListener(
     private val objects: ScoreObjectRegistry,
     private val flows: AudioFlows,
     private val player: ScorePlayer,
-) : SuperColliderListener {
-    override fun onMessage(path: String, content: String) = ScorePlayer.execute{
+) : OSCListener {
+    override fun onMessage(path: String, id: Int, content: String) = ScorePlayer.execute{
         when {
             path.startsWith("/play") -> playObject(content)
 

@@ -3,7 +3,6 @@ package ponticello.model.player
 import bundles.PublicProperty
 import bundles.publicProperty
 import hextant.context.Context
-import reaktive.value.now
 import ponticello.model.flow.AudioFlows
 import ponticello.model.flow.NodeTree
 import ponticello.model.flow.SynthObjectNode
@@ -13,9 +12,10 @@ import ponticello.model.score.ObjectPosition
 import ponticello.model.score.ScoreObject
 import ponticello.model.score.SynthObject
 import ponticello.model.score.controls.ParameterControl
-import ponticello.sc.client.SuperColliderListener
+import ponticello.sc.client.OSCListener
+import reaktive.value.now
 
-class ActiveObjectsManager(private val context: Context) : SuperColliderListener {
+class ActiveObjectsManager(private val context: Context) : OSCListener {
     private val nextSuffix = mutableMapOf<ScoreObject, Int>()
     private val bySuffix = mutableMapOf<ScoreObject, MutableMap<Int, ActiveScoreObject>>()
     private val byAbsolutePosition = mutableMapOf<ScoreObject, MutableMap<ObjectPosition, ActiveScoreObject>>()
@@ -88,7 +88,7 @@ class ActiveObjectsManager(private val context: Context) : SuperColliderListener
         }
     }
 
-    override fun onMessage(path: String, content: String) = ScorePlayer.execute {
+    override fun onMessage(path: String, id: Int, content: String) = ScorePlayer.execute {
         when {
             path.startsWith("/freed") || path.startsWith("/stopped") -> {
                 println("Received '$path' message with content '$content'")

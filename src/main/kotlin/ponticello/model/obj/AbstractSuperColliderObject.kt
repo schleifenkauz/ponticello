@@ -2,6 +2,7 @@ package ponticello.model.obj
 
 import ponticello.sc.client.ScWriter
 import ponticello.sc.client.SuperColliderClient
+import ponticello.sc.client.run
 
 abstract class AbstractSuperColliderObject : AbstractRenamableObject(), SuperColliderObject {
     protected val client get() = context[SuperColliderClient]

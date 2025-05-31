@@ -5,10 +5,11 @@ import bundles.publicProperty
 import bundles.set
 import hextant.context.Context
 import kotlinx.serialization.Serializable
-import reaktive.value.now
 import ponticello.model.obj.BusObject
 import ponticello.model.obj.SuperColliderObject
 import ponticello.sc.Rate
+import ponticello.sc.client.run
+import reaktive.value.now
 
 @Serializable
 class BusRegistry(

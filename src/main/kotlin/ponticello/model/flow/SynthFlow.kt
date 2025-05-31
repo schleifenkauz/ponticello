@@ -6,6 +6,7 @@ import kotlinx.serialization.Transient
 import ponticello.impl.copy
 import ponticello.impl.writeCode
 import ponticello.impl.zero
+import ponticello.model.Settings
 import ponticello.model.obj.NoSynthDef
 import ponticello.model.obj.SynthDefObject
 import ponticello.model.obj.SynthDefReference
@@ -45,7 +46,8 @@ class SynthFlow(
     override fun copy(): AudioFlow = SynthFlow(defRef.copy(), controls.copy())
 
     override fun writeCode(placement: NodePlacement): String = writeCode {
-        writeSynthCode(this@SynthFlow, superColliderName.removePrefix("~"), cutoff = zero, placement, latency = zero)
+        val latency = context[Settings].serverLatency.now
+        writeSynthCode(this@SynthFlow, superColliderName.removePrefix("~"), cutoff = zero, placement, latency)
     }
 
     override fun getDefaultName(): ReactiveString = defRef.flatMap { ref -> ref.name }

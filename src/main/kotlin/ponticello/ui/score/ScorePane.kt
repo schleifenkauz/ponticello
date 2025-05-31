@@ -21,8 +21,6 @@ import javafx.scene.input.MouseButton
 import javafx.scene.input.MouseEvent
 import javafx.scene.layout.Pane
 import javafx.scene.shape.Rectangle
-import reaktive.value.now
-import reaktive.value.reactiveVariable
 import ponticello.impl.*
 import ponticello.model.obj.BufferObject
 import ponticello.model.obj.MeterObject
@@ -42,6 +40,8 @@ import ponticello.ui.impl.showDialog
 import ponticello.ui.launcher.PonticelloLauncher.Companion.currentProject
 import ponticello.ui.launcher.PonticelloMainActivity
 import ponticello.ui.registry.SimpleSearchableRegistryView
+import reaktive.value.now
+import reaktive.value.reactiveVariable
 import java.util.concurrent.CompletableFuture
 import kotlin.math.absoluteValue
 
@@ -157,15 +157,11 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
                 MouseEvent.MOUSE_RELEASED -> mouseReleased(ev)
             }
         }
-        setupDropArea({ db -> db.hasFile("wav") }, { ev ->
-            val sample = extractBufferFromDragboard(ev.dragboard) ?: return@setupDropArea
-            val pos = snapToGrid(ev.x, ev.y)
-            createPlayBufObject(sample, pos, ev)
-        })
+        addPlayBufOnDrop()
     }
 
     private fun addPlayBufOnDrop() {
-        setupDropArea({ db -> db.hasFile("wav") }, { ev ->
+        setupDropArea({ db -> db.hasFile("wav") || db.hasContent(BufferObject.DATA_FORMAT) }, { ev ->
             val sample = extractBufferFromDragboard(ev.dragboard) ?: return@setupDropArea
             val pos = snapToGrid(ev.x, ev.y)
             createPlayBufObject(sample, pos, ev)
@@ -176,6 +172,10 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
         db.hasFiles() -> {
             val file = db.files[0]
             context[BufferRegistry].getOrAdd(file)
+        }
+        db.hasContent(BufferObject.DATA_FORMAT) -> {
+            val bufName = db.getContent(BufferObject.DATA_FORMAT) as String
+            context[BufferRegistry].get(bufName)
         }
 
         else -> null

@@ -4,6 +4,7 @@ import hextant.context.Context
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import ponticello.impl.*
+import ponticello.model.Settings
 import ponticello.model.obj.AbstractContextualObject
 import ponticello.model.obj.BusObject
 import ponticello.model.obj.BusReference
@@ -139,7 +140,8 @@ class MixerFlow(
     override fun writeCode(placement: NodePlacement): String = writeCode {
         if (components.isEmpty()) return@writeCode
         val sink = targetBus.now.force()
-        appendBlock("s.makeBundle(0)") {
+        val latency = context[Settings].serverLatency.now
+        appendBlock("s.makeBundle($latency)") {
             appendBlock("$superColliderName = ", endLine = false) {
                 +"var sources, volumes, mix, snd"
                 val sources = components.map { comp -> comp.sourceBus.now.force().superColliderName }

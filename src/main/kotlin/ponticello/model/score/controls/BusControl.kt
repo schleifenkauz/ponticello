@@ -3,9 +3,7 @@ package ponticello.model.score.controls
 import hextant.context.Context
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import reaktive.value.ReactiveVariable
-import reaktive.value.now
-import reaktive.value.reactiveVariable
+import ponticello.impl.Decimal
 import ponticello.impl.Logger
 import ponticello.impl.copy
 import ponticello.model.obj.BusObject
@@ -18,6 +16,9 @@ import ponticello.sc.ControlSpec
 import ponticello.sc.Identifier
 import ponticello.sc.ScExpr
 import ponticello.sc.client.ScWriter
+import reaktive.value.ReactiveVariable
+import reaktive.value.now
+import reaktive.value.reactiveVariable
 
 @Serializable
 @SerialName("Bus")
@@ -40,6 +41,7 @@ class BusControl(val bus: ReactiveVariable<BusReference>) : ParameterControl() {
     override fun ScWriter.generatePreparationCode(
         obj: ParameterizedObject, uniqueName: String,
         parameter: String, spec: ControlSpec,
+        cutoff: Decimal,
         ctx: CodegenContext,
     ) {
         if (ctx == CodegenContext.Process) {
@@ -50,7 +52,7 @@ class BusControl(val bus: ReactiveVariable<BusReference>) : ParameterControl() {
 
     override fun generateArgumentExpr(
         obj: ParameterizedObject, uniqueName: String,
-        parameter: String, spec: ControlSpec, context: CodegenContext,
+        parameter: String, spec: ControlSpec, cutoff: Decimal, context: CodegenContext,
     ): ScExpr = when(context) {
         CodegenContext.Synth, CodegenContext.SubArg -> bus.now.force().superColliderExpr
         CodegenContext.Process -> Identifier(uniqueArgumentName(uniqueName, parameter))

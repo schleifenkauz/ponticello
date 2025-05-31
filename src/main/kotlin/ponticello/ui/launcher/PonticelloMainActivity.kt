@@ -17,6 +17,7 @@ import ponticello.model.ScriptObject
 import ponticello.model.Settings
 import ponticello.model.flow.AudioFlow
 import ponticello.model.flow.AudioFlows
+import ponticello.model.player.CircularBufferRecorder
 import ponticello.model.player.PlaybackMessageListener
 import ponticello.model.player.ScorePlayer
 import ponticello.model.project.*
@@ -88,6 +89,9 @@ class PonticelloMainActivity(val project: PonticelloProject) : Activity() {
 
     private val liveTasksPane by lazy { LiveTaskRegistryPane(project[LIVE_TASKS]) }
     val liveTasksWindow by lazy { context.makeToolWindow(liveTasksPane, "Live Tasks") }
+
+    private val clocksPane by lazy { ClockRegistryPane(project[CLOCKS]) }
+    val clocksWindow by lazy { context.makeToolWindow(clocksPane, "Clocks") }
 
     private val gridPane by lazy { LauncherGridPane(project[LAUNCHER_GRID]) }
     val launcherGridWindow by lazy {
@@ -179,6 +183,7 @@ class PonticelloMainActivity(val project: PonticelloProject) : Activity() {
             db.setContent(mapOf(PlaybackActions.RECORD_BUTTON to "<>"))
             ev.consume()
         }
+        context[CircularBufferRecorder] = CircularBufferRecorder(context, context[SuperColliderClient])
     }
 
     override fun beforeShowing() {

@@ -7,6 +7,7 @@ import kotlinx.serialization.SerialName
 import ponticello.model.obj.SuperColliderObject
 import ponticello.sc.client.ScWriter
 import ponticello.sc.client.SuperColliderClient
+import ponticello.sc.client.run
 import ponticello.sc.editor.CodeBlockEditor
 import reaktive.value.ReactiveVariable
 import reaktive.value.now

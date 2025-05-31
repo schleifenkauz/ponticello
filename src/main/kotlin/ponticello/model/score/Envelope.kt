@@ -66,6 +66,11 @@ class Envelope(@SerialName("points") private val _points: MutableList<EnvelopePo
         return "Env.new(levels: $levels, times: $times, curve: $warp)"
     }
 
+    fun generatorCode(warp: Warp, offset: Decimal): String {
+        val envCode = code(warp)
+        return "IEnvGen.kr($envCode, index: Sweep.kr(rate: ~time_warp_bus.kr) + $offset)"
+    }
+
     fun interpolateValueAt(t: Decimal, warp: Warp): Decimal {
         var i = points.binarySearch(EnvelopePoint(t, zero))
         if (i >= 0) return points[i].value

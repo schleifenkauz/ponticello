@@ -1,10 +1,6 @@
 package ponticello.model.player
 
 import bundles.publicProperty
-import reaktive.value.ReactiveBoolean
-import reaktive.value.ReactiveValue
-import reaktive.value.now
-import reaktive.value.reactiveVariable
 import ponticello.impl.*
 import ponticello.model.Settings
 import ponticello.model.live.QuantizationConfig
@@ -15,6 +11,10 @@ import ponticello.sc.client.SuperColliderClient
 import ponticello.ui.misc.PlayHead
 import ponticello.ui.score.ScorePane
 import ponticello.ui.score.SingleObjectScorePane
+import reaktive.value.ReactiveBoolean
+import reaktive.value.ReactiveValue
+import reaktive.value.now
+import reaktive.value.reactiveVariable
 import java.lang.ref.WeakReference
 import java.util.concurrent.Executors
 
@@ -40,6 +40,8 @@ class ScorePlayer private constructor(
     private val events: ScoreEventCollector = ScoreEventCollector(pane.score, pane.context[Settings], this)
     val playHead: PlayHead = PlayHead(pane)
 
+    private var currentClock: ClockObject? = null
+
     val currentTime get() = if (isScheduled.now) playHead.currentTime + lookAhead else playHead.currentTime
 
     val loopOffset: Decimal get() = loopedTime - lastPlayFrom
@@ -47,8 +49,8 @@ class ScorePlayer private constructor(
     private val maxTime: Decimal
         get() = pane.score.maxTime.now
 
-    fun doCycle(clock: ClockObject, elapsedTime: Decimal) = execute {
-        var scoreTime = elapsedTime - loopedTime
+    fun doCycle(clock: ClockObject, time: Decimal) = execute {
+        var scoreTime = time - loopedTime
 
         var playHeadPos = scoreTime - lookAhead
         if (playHeadPos < zero) playHeadPos += maxTime
@@ -82,6 +84,7 @@ class ScorePlayer private constructor(
         scheduled.set(true)
         val quantization = getQuantization()
         val clock = getClock()
+        currentClock = clock
         clock.scheduleStart(this, quantization)
     }
 
@@ -90,12 +93,14 @@ class ScorePlayer private constructor(
         return rootObj?.quantizationConfig
     }
 
-    fun getClock(): ClockObject =
-        getQuantization()?.clock?.now?.get() ?: context[ClockRegistry].getDefault()
+    fun getClock(): ClockObject = currentClock
+        ?: getQuantization()?.clock?.now?.get()
+        ?: context[ClockRegistry].getDefault()
 
     fun startPlaying() = execute {
         playing.set(true)
-        client.sendAsync("start_play", listOf(id))
+        System.err.println("Start Player [$id]")
+        client.send("start_play", listOf(id))
         context[Recorder].startingPlayback()
         val time = playHead.currentTime
         Logger.fine("Starting playback at $time", Logger.Category.Playback)
@@ -103,9 +108,7 @@ class ScorePlayer private constructor(
         loopedTime = zero
         val activeObjects = scheduler.activeObjects(time, context[Settings].lookAhead, pane.score)
         for ((_, position, inst) in activeObjects) {
-            if (!inst.muted.now) {
-                scheduleInstantly(inst, position)
-            }
+            scheduleInstantly(inst, position)
         }
     }
 
@@ -116,6 +119,8 @@ class ScorePlayer private constructor(
         loopedTime = zero
         lastPlayFrom = zero
         getClock().stop(this)
+        currentClock = null
+        client.send("pause_play", listOf(id))
         freeActiveObjects()
     }
 
@@ -130,7 +135,6 @@ class ScorePlayer private constructor(
 
     private fun freeActiveObjects() = execute {
         Logger.info("Pausing playback", Logger.Category.Playback)
-        client.sendAsync("pause_play", listOf(id))
         context[Recorder].pausingPlayback()
         for (activeObject in activeObjects.all()) {
             if (activeObject.player == this) {

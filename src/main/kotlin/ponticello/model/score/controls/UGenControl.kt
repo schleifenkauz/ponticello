@@ -9,10 +9,7 @@ import kotlinx.serialization.Contextual
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
-import reaktive.event.unitEvent
-import reaktive.value.ReactiveVariable
-import reaktive.value.now
-import reaktive.value.reactiveVariable
+import ponticello.impl.Decimal
 import ponticello.model.ctx.PonticelloContext
 import ponticello.model.ctx.Scope
 import ponticello.model.obj.ParameterizedObject
@@ -22,7 +19,12 @@ import ponticello.model.player.ActiveObject
 import ponticello.sc.*
 import ponticello.sc.client.ScWriter
 import ponticello.sc.client.SuperColliderClient
+import ponticello.sc.client.run
 import ponticello.sc.editor.ScExprExpander
+import reaktive.event.unitEvent
+import reaktive.value.ReactiveVariable
+import reaktive.value.now
+import reaktive.value.reactiveVariable
 
 @Serializable
 @SerialName("UGen")
@@ -55,9 +57,10 @@ data class UGenControl(
     override fun ScWriter.generatePreparationCode(
         obj: ParameterizedObject, uniqueName: String,
         parameter: String, spec: ControlSpec,
+        cutoff: Decimal,
         ctx: CodegenContext,
     ) {
-        val expr = substituteControlParameters(expr.editor.result.now, obj, uniqueName)
+        val expr = substituteControlParameters(expr.editor.result.now, obj, uniqueName, cutoff)
         val busName = auxilBusName(uniqueName, parameter)
         +"$busName = Bus.control(s, 1)"
         val auxilSynthName = auxilSynthName(uniqueName, parameter)
@@ -74,6 +77,7 @@ data class UGenControl(
         uniqueName: String,
         parameter: String,
         spec: ControlSpec,
+        cutoff: Decimal,
         context: CodegenContext,
     ): ScExpr {
         val busName = auxilBusName(uniqueName, parameter)
@@ -114,11 +118,13 @@ data class UGenControl(
     }
 
     companion object {
-        fun substituteControlParameters(expr: ScExpr, obj: ParameterizedObject, uniqueName: String): ScExpr {
+        fun substituteControlParameters(
+            expr: ScExpr, obj: ParameterizedObject, uniqueName: String, cutoff: Decimal,
+        ): ScExpr {
             val parameterMap = obj.controls.associateWith { ctrl ->
                 val param = ctrl.name.now
                 val spec = ctrl.spec.now!!
-                { ctrl.now.generateArgumentExpr(obj, uniqueName, param, spec, context = CodegenContext.SubArg) }
+                { ctrl.now.generateArgumentExpr(obj, uniqueName, param, spec, cutoff, context = CodegenContext.SubArg) }
             }
             val substitution = parameterMap.mapKeys { (param, _) -> "~ctrl_${param.name.now}" }
             return expr.transform<ParameterReference> { ref ->

@@ -4,6 +4,7 @@ import hextant.context.Context
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import ponticello.impl.*
+import ponticello.model.Settings
 import ponticello.model.obj.BusObject
 import ponticello.model.obj.BusReference
 import ponticello.model.obj.ParameterizedObjectDef
@@ -55,7 +56,8 @@ class UtilityFlow(
         UtilityFlow(targetRef.copy(), volumeDb.copy(), muted.copy())
 
     override fun writeCode(placement: NodePlacement): String = writeCode {
-        writeSynthCode(this@UtilityFlow, superColliderName.removePrefix("~"), cutoff = zero, placement, latency = zero)
+        val latency = context[Settings].serverLatency.now
+        writeSynthCode(this@UtilityFlow, superColliderName.removePrefix("~"), cutoff = zero, placement, latency)
     }
 
     override fun getDefaultName(): ReactiveString = reactiveValue("Utility")
