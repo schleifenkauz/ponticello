@@ -23,7 +23,7 @@ class SearchableParameterDefListView(
         val type = fixedParameterType ?: SimpleSearchableListView(ParameterType.regularTypes, "Parameter type")
             .showPopup(anchor, ownerWindow, initialOption = ParameterType.Numerical) ?: return null
         val prompt = ControlSpecPrompt.create(text, parentObject, type) ?: return null
-        val spec = prompt.showDialog(ownerWindow, anchor)
+        val spec = prompt.showDialog(ownerWindow, anchor) ?: return null
         return ParameterDefObject(text, spec)
     }
 }

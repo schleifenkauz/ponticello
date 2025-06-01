@@ -71,7 +71,7 @@ class ScorePlayer private constructor(
             } else {
                 loopedTime += maxTime
                 scoreTime -= maxTime
-                events.rescheduleAll()
+                events.resetEvents()
             }
         }
 
@@ -122,15 +122,7 @@ class ScorePlayer private constructor(
         currentClock = null
         client.send("pause_play", listOf(id))
         freeActiveObjects()
-    }
-
-    //Only inside ScorePlayer.execute
-    fun scheduleInstantly(inst: ScoreObjectInstance, position: ObjectPosition) {
-        val obj = inst.obj
-        val delta = position.time - playHead.currentTime
-        val pos = ObjectPosition(maxOf(position.time, playHead.currentTime), position.y)
-        Logger.fine("Scheduling $obj at $pos, delta: $delta", Logger.Category.Playback)
-        scheduler.scheduleObject(obj, pos, cutoff = -delta.coerceAtMost(zero), this)
+        events.recomputeEvents()
     }
 
     private fun freeActiveObjects() = execute {
@@ -143,8 +135,17 @@ class ScorePlayer private constructor(
             }
         }
         activeObjects.clear(this)
-        events.resetEvents()
     }
+
+    //Only inside ScorePlayer.execute
+    fun scheduleInstantly(inst: ScoreObjectInstance, position: ObjectPosition) {
+        val obj = inst.obj
+        val delta = position.time - playHead.currentTime
+        val pos = ObjectPosition(maxOf(position.time, playHead.currentTime), position.y)
+        Logger.fine("Scheduling $obj at $pos, delta: $delta", Logger.Category.Playback)
+        scheduler.scheduleObject(obj, pos, cutoff = -delta.coerceAtMost(zero), this)
+    }
+
 
     companion object {
         val CURRENT = publicProperty<ScorePlayer>("ScorePlayer")

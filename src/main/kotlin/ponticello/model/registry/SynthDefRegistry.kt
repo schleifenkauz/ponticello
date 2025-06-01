@@ -32,8 +32,8 @@ class SynthDefRegistry(
 
     override fun acceptMessage(event: OSCMessageEvent) {
         if (event.message.address == "/updated") {
-            val type = event.message.getArgument<String>(1, "type") ?: return
-            val name = event.message.getArgument<String>(2, "name") ?: return
+            val type = event.message.getArgument<String>(0, "type") ?: return
+            val name = event.message.getArgument<String>(1, "name") ?: return
             if (type == "synth_def") {
                 val def = getOrNull(name) ?: return
                 def.onUpdated()

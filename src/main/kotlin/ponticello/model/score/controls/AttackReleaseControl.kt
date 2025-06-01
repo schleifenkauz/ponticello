@@ -36,7 +36,12 @@ data class AttackReleaseControl(
 
     override fun providesConstantSynthArgument(): Boolean = false
 
-    override fun customSynthArguments(): String = "attack: ${attack.now}, release: ${release.now}, "
+    override fun customSynthArguments(cutoff: Decimal, totalDuration: Decimal): String {
+        val attack = (attack.now - cutoff).coerceAtLeast(zero)
+        val remainingDur = cutoff - totalDuration
+        val release = (release.now).coerceAtMost(remainingDur)
+        return "attack: ${attack}, release: ${release}, "
+    }
 
     override fun allocatesBus(obj: ParameterizedObject): Boolean = obj.def is SynthDefObject
 

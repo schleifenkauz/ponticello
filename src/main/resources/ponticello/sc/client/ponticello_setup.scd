@@ -60,7 +60,7 @@ OSCdef('eval', {
     if (fct == nil) { ~ponticello_addr.sendMsg('error', id, "Compilation error") } {
         fork {
             try {
-	            code.postln;
+	            //code.postln;
                 answer = fct.value;
                 ~ponticello_addr.sendMsg('/reply', id, answer.asString);
             } { |error|
@@ -76,7 +76,7 @@ OSCdef('run', {
 	fct = this.compile(code.asString);
 	if (fct == nil) { ~ponticello_addr.sendMsg('error', "Compilation error") };
 	fork {
-	    code.postln;
+	    //code.postln;
 		try { fct.value } { |error|
 			~ponticello_addr.sendMsg('/error', nil, error.what);
 			error.throw;
@@ -107,14 +107,14 @@ OSCdef('schedule', {
     TempoClock.schedAbs(abs_time) {
         if (my_play_start.isNil || (my_play_start == ~play_start[player_id])) {
             fork {
-                code.postln;
+                //code.postln;
                 try { fct.value } { |error|
                     ~ponticello_addr.sendMsg('/error', error.what);
                     error.throw;
                 }
             }
         } {
-            postf("Rejecting % scheduled for % because % != %", info, abs_time, my_play_start, ~play_start[player_id]);
+            postf("Rejecting % scheduled for % because % != %\n", info, abs_time, my_play_start, ~play_start[player_id]);
         };
         nil;
     }
@@ -164,7 +164,7 @@ OSCdef(\set_time_warp, { |msg|
         postf("Writing % seconds to % starting from %\n", duration, path, startFrame / s.sampleRate);
         ~circularBuffer.write(path, "wav", "int16", numFrames, startFrame, false) {
             postf("Finished writing to %\n", path);
-            ~ponticello_addr.sendMsg('/complet', 0, path);
+            ~ponticello_addr.sendMsg('/completed', 0, path);
         };
         "ok"
     } {

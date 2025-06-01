@@ -76,11 +76,10 @@ abstract class ControlSpecPrompt<S : ControlSpec, N : Node>(
             parameterName: String,
             parentObject: ParameterizedObject?,
             initialSpec: ControlSpec,
-        ): Prompt<out ControlSpec, *>? {
+        ): Prompt<out ControlSpec?, *>? {
             val title =
                 if (parentObject != null) "Control spec for parameter $parameterName of ${parentObject.name.now}"
                 else "Control spec for new parameter $parameterName"
-            @Suppress("UNCHECKED_CAST")
             return when (initialSpec) {
                 is BufferControlSpec -> BufferControlSpecPrompt(parameterName, parentObject, title, initialSpec)
                 is BusControlSpec -> BusControlSpecPrompt(parameterName, parentObject, title, initialSpec)
@@ -90,14 +89,14 @@ abstract class ControlSpecPrompt<S : ControlSpec, N : Node>(
                 )
 
                 is BufferPositionControlSpec -> null
-            } as Prompt<out ControlSpec, *>?
+            }
         }
 
         fun create(
             parameterName: String,
             parentObject: ParameterizedObject?,
             parameterType: ParameterType,
-        ): Prompt<out ControlSpec, *>? = when (parameterType) {
+        ): Prompt<out ControlSpec?, *>? = when (parameterType) {
             ParameterType.Bus -> create(parameterName, parentObject, BusControlSpec(Rate.Audio, 2))
             ParameterType.Buffer -> create(parameterName, parentObject, BufferControlSpec(2))
             ParameterType.Numerical -> create(parameterName, parentObject, NumericalControlSpec.DEFAULT)

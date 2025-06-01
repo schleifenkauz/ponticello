@@ -1,13 +1,13 @@
 package ponticello.model.player
 
 import fxutils.Direction
-import reaktive.value.now
 import ponticello.impl.Decimal
 import ponticello.impl.Logger
 import ponticello.impl.unaryMinus
 import ponticello.impl.zero
 import ponticello.model.Settings
 import ponticello.model.score.*
+import reaktive.value.now
 import java.util.*
 
 class ScoreEventCollector(
@@ -18,6 +18,7 @@ class ScoreEventCollector(
     private val events = TreeMap<ObjectPosition, MutableSet<Event>>()
     private val scoreInstances = mutableMapOf<Score, MutableSet<ScoreObjectInstance>>()
     private val instances = mutableMapOf<ScoreObject, MutableSet<ScoreObjectInstance>>()
+
     private val scheduler = rootScore.context[ScoreObjectScheduler]
 
     init {
@@ -216,14 +217,15 @@ class ScoreEventCollector(
         }
     }
 
-    //Only inside ScorePlayer.execute
-    fun rescheduleAll() {
-        for (ev in events.values.flatten()) {
-            ev.scheduled = false
-        }
+    fun recomputeEvents() {
+        removeListeners()
+        events.clear()
+        instances.clear()
+        scoreInstances.clear()
+        rootScore.addListener(this)
     }
 
-    fun removeListeners() {
+    private fun removeListeners() {
         rootScore.removeListener(this)
         for ((score, instances) in scoreInstances) {
             if (instances.isNotEmpty()) score.removeListener(this)

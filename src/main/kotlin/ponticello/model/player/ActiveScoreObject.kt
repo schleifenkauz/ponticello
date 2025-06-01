@@ -1,22 +1,24 @@
 package ponticello.model.player
 
-import reaktive.value.now
+import ponticello.impl.Decimal
 import ponticello.model.obj.ParameterDefObject
 import ponticello.model.score.ObjectPosition
 import ponticello.model.score.ScoreObject
 import ponticello.model.score.controls.ParameterControl
+import reaktive.value.now
 
 data class ActiveScoreObject(
     val player: ScorePlayer,
     val obj: ScoreObject,
     val absolutePosition: ObjectPosition,
     val suffix: Int,
+    val cutoff: Decimal,
     val extraArguments: Map<ParameterDefObject, ParameterControl>
 ) : ActiveObject() {
     private var stillActive = true
 
     val isStillActive: Boolean
-        get() = stillActive && absolutePosition.time + obj.duration > player.currentTime
+        get() = stillActive && absolutePosition.time + obj.duration - cutoff > player.currentTime
 
     fun stopped() {
         stillActive = false

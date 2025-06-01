@@ -51,7 +51,7 @@ class CustomizableSynthDefObject(
         appendBlock("fork") {
             createObject()
             +"s.sync"
-            +"~ponticello_addr.sendMsg('/updated', 'synth_def:${name.now}')"
+            +"~ponticello_addr.sendMsg('/updated', 'synth_def', '${name.now}')"
         }
     }
 

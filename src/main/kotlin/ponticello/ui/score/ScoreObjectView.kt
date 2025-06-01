@@ -22,13 +22,6 @@ import javafx.scene.input.MouseEvent
 import javafx.scene.layout.*
 import javafx.scene.paint.Color
 import javafx.scene.paint.Color.BLACK
-import reaktive.value.ReactiveValue
-import reaktive.value.binding.map
-import reaktive.value.binding.orElse
-import reaktive.value.forEach
-import reaktive.value.fx.asObservableValue
-import reaktive.value.now
-import reaktive.value.reactiveVariable
 import ponticello.impl.*
 import ponticello.model.project.settings
 import ponticello.model.registry.reference
@@ -42,6 +35,13 @@ import ponticello.ui.impl.setupDraggingAndResizing
 import ponticello.ui.launcher.DetailPaneManager
 import ponticello.ui.launcher.PonticelloLauncher.Companion.currentProject
 import ponticello.ui.launcher.PonticelloMainActivity
+import reaktive.value.ReactiveValue
+import reaktive.value.binding.map
+import reaktive.value.binding.orElse
+import reaktive.value.forEach
+import reaktive.value.fx.asObservableValue
+import reaktive.value.now
+import reaktive.value.reactiveVariable
 
 abstract class ScoreObjectView(
     val instance: ScoreObjectInstance,
@@ -407,7 +407,7 @@ abstract class ScoreObjectView(
 
     fun getDeltaT(direction: HorizontalDirection): Decimal {
         val parentPane = parentPane
-        val factor = if (direction == LEFT) -3.0 else 3.0
+        val factor = if (direction == LEFT) -1.0 else 1.0
         val meter = parentPane.getNearestGrid(instance.position)?.second
         val settings = context[currentProject].settings
         val snapOption = if (settings.snapEnabled.now) settings.snapOption.now else null

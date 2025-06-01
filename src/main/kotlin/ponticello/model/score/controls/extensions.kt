@@ -43,7 +43,7 @@ fun ScWriter.writeSynthCode(
     for ((param, control) in controlMap) {
         val (spec, ctrl) = control
         if (!obj.def.hasParameter(param) && param !in SPECIAL_PARAMETERS) continue
-        val customSynthArgs = ctrl.customSynthArguments()
+        val customSynthArgs = ctrl.customSynthArguments(cutoff, obj.duration()?.now ?: zero)
         if (customSynthArgs != null) append(customSynthArgs)
         if (!ctrl.providesConstantSynthArgument()) continue
         val expr = ctrl.generateArgumentExpr(obj, uniqueName, param, spec, cutoff, context = CodegenContext.Synth)

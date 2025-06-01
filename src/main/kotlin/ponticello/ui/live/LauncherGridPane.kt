@@ -100,11 +100,11 @@ class LauncherGridPane(
     }
 
     private fun display(item: LauncherGrid.GridItem): VBox {
-        val listView = SimpleSearchableListView(ItemTarget.options(context), "Choose item target")
         val target = item.target
         val buttonText = if (target is ItemTarget.None) "Select Target" else item.target.toString()
         val button = button(buttonText)
         button.setOnAction {
+            val listView = SimpleSearchableListView(ItemTarget.options(context), "Choose item target")
             val newTarget = listView.showPopup(button) ?: return@setOnAction
             item.target = newTarget
         }

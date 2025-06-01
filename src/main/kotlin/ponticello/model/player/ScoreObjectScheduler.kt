@@ -23,7 +23,7 @@ class ScoreObjectScheduler(val context: Context) {
 
     //Only inside on ScorePlayer.execute
     fun scheduleEvents(events: List<Event>, player: ScorePlayer) {
-        for (ev in events) {
+        for (ev in events.sortedBy { ev -> -ev.type.ordinal }) {
             val (type, position, inst) = ev
             if (inst.muted.now) continue
             val obj = inst.obj
@@ -31,6 +31,7 @@ class ScoreObjectScheduler(val context: Context) {
                 Event.Type.ObjectStart -> {
                     Logger.fine("ObjectStart: $obj at $position", Logger.Category.Playback)
                     scheduleObject(obj, position, cutoff = zero, player)
+//                    Thread.sleep(5) //avoid adding
                 }
 
                 Event.Type.ObjectEnd -> {
@@ -90,13 +91,13 @@ class ScoreObjectScheduler(val context: Context) {
             return null
         }
         val time = absolutePosition.time + player.loopOffset
-        val scheduledTime = (time + scLangLatency - 0.08.toDecimal()).toString()
+        val scheduledTime = (time + scLangLatency - 0.05.toDecimal()).toString()
         if (obj is TempoGridObject && obj.meter.isResolved.now) {
             val meter = obj.meter.force()
             player.getClock().attach(player, meter, cutoff)
         }
         val activeObject = try {
-            activeObjects.insert(player, obj, absolutePosition, extraArguments)
+            activeObjects.insert(player, obj, absolutePosition, cutoff, extraArguments)
         } catch (e: Exception) {
             Logger.error("Failed to insert $obj into active object manager", e, Logger.Category.Playback)
             return null

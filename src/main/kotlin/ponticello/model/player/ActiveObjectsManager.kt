@@ -5,6 +5,7 @@ import bundles.publicProperty
 import com.illposed.osc.OSCMessageEvent
 import com.illposed.osc.OSCMessageListener
 import hextant.context.Context
+import ponticello.impl.Decimal
 import ponticello.model.flow.AudioFlows
 import ponticello.model.flow.NodeTree
 import ponticello.model.flow.SynthObjectNode
@@ -24,11 +25,12 @@ class ActiveObjectsManager(private val context: Context) : OSCMessageListener {
 
     fun insert(
         player: ScorePlayer, obj: ScoreObject, absolutePosition: ObjectPosition,
+        cutoff: Decimal,
         extraArguments: Map<ParameterDefObject, ParameterControl>
     ): ActiveScoreObject {
         val suffix = nextSuffix[obj] ?: 0
         nextSuffix[obj] = suffix + 1
-        val active = ActiveScoreObject(player, obj, absolutePosition, suffix, extraArguments)
+        val active = ActiveScoreObject(player, obj, absolutePosition, suffix, cutoff, extraArguments)
         bySuffix.getOrPut(obj, ::mutableMapOf)[suffix] = active
         byAbsolutePosition.getOrPut(obj, ::mutableMapOf)[absolutePosition] = active
         return active
@@ -93,7 +95,7 @@ class ActiveObjectsManager(private val context: Context) : OSCMessageListener {
     override fun acceptMessage(event: OSCMessageEvent) = ScorePlayer.execute {
         val address = event.message.address
         when (address) {
-            "stopped", "freed" -> {
+            "/stopped", "/freed" -> {
                 val name = event.message.getArgument<String>(1, "name") ?: return@execute
                 removeByName(name)
             }

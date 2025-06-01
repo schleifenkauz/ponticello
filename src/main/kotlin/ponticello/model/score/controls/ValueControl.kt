@@ -85,7 +85,7 @@ data class ValueControl(
     }
 
     private fun adjustValueIfIsBufferPosition(obj: ParameterizedObject, spec: ControlSpec, cutoff: Decimal) =
-        if (spec is NumericalControlSpec && spec.origin is BufferPositionControlSpec) {
+         if (spec is NumericalControlSpec && spec.origin is BufferPositionControlSpec) {
             val rateCtrl = obj.controls.getOrNull("rate")?.now as? ValueControl
             val rate = rateCtrl?.value?.now ?: one
             value.now + cutoff * rate
