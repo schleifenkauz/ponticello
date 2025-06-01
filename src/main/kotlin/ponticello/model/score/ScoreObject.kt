@@ -15,10 +15,6 @@ import javafx.scene.paint.Color
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
-import reaktive.value.ReactiveValue
-import reaktive.value.ReactiveVariable
-import reaktive.value.now
-import reaktive.value.reactiveVariable
 import ponticello.impl.*
 import ponticello.model.flow.NodePlacement
 import ponticello.model.live.LiveConfig
@@ -34,6 +30,10 @@ import ponticello.sc.ControlSpec
 import ponticello.sc.NumericalControlSpec
 import ponticello.ui.launcher.PonticelloApp.Companion.primaryStage
 import ponticello.ui.launcher.PonticelloLauncher.Companion.currentProject
+import reaktive.value.ReactiveValue
+import reaktive.value.ReactiveVariable
+import reaktive.value.now
+import reaktive.value.reactiveVariable
 
 @Serializable
 sealed class ScoreObject : AbstractRenamableObject() {
@@ -264,7 +264,7 @@ sealed class ScoreObject : AbstractRenamableObject() {
             val remove = option == Score.RegistryOption.REMOVE_WITHOUT_ASKING || YesNoPrompt(
                 "Score has no instances of $this anymore. Remove it from the registry?",
                 cancellable = false,
-                default = false
+                default = true
             ).showDialog(owner = context[primaryStage]) ?: false
             if (!remove) return
             context.withoutUndo { registry.remove(this) }

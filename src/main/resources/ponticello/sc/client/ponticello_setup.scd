@@ -98,16 +98,14 @@ OSCdef('schedule', {
 	var time = msg[2].asFloat, player_id = msg[3], code = msg[4], info = msg[5], fct, my_play_start, abs_time;
 	my_play_start = ~play_start[player_id];
     abs_time = (my_play_start ?? TempoClock.beats) + time;
-	'SCHEDULE, player_id ='.post; player_id.post;
-	', my_play_start = '.post; my_play_start.post;
-	', time =  '.post; time.post;
-	', abs_time = '.post; abs_time.postln;
+    postf("SCHEDULE %: player_id = %, my_play_start = %, time = %, abs_time = \n", info, player_id, my_play_start, time, abs_time);
 	fct = this.compile(code.asString);
 	if (fct == nil) { "Compilation error".throw };
     TempoClock.schedAbs(abs_time) {
         if (my_play_start.isNil || (my_play_start == ~play_start[player_id])) {
             fork {
-                //code.postln;
+                code.postln;
+                postf("EXECUTE %\n", info);
                 try { fct.value } { |error|
                     ~ponticello_addr.sendMsg('/error', error.what);
                     error.throw;
