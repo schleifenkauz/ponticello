@@ -39,6 +39,7 @@ data class AttackReleaseControl(
     override fun customSynthArguments(cutoff: Decimal, totalDuration: Decimal): String {
         val attack = (attack.now - cutoff).coerceAtLeast(zero)
         val remainingDur = totalDuration - cutoff
+        check(remainingDur > zero) { "Negative remaining duration: $totalDuration - $cutoff = $remainingDur" }
         val release = (release.now).coerceAtMost(remainingDur)
         return "attack: ${attack}, release: ${release}, "
     }

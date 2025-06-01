@@ -40,10 +40,11 @@ fun ScWriter.writeSynthCode(
     createAuxilMaps(uniqueName)
     +"s.sync"
     append("$synthVar = Synth.newPaused(\\$synthDefName, [")
+    val duration = obj.duration()?.now
     for ((param, control) in controlMap) {
         val (spec, ctrl) = control
         if (!obj.def.hasParameter(param) && param !in SPECIAL_PARAMETERS) continue
-        val customSynthArgs = ctrl.customSynthArguments(cutoff, obj.duration()?.now ?: zero)
+        val customSynthArgs = ctrl.customSynthArguments(cutoff, duration ?: zero)
         if (customSynthArgs != null) append(customSynthArgs)
         if (!ctrl.providesConstantSynthArgument()) continue
         val expr = ctrl.generateArgumentExpr(obj, uniqueName, param, spec, cutoff, context = CodegenContext.Synth)
@@ -51,8 +52,11 @@ fun ScWriter.writeSynthCode(
         expr.code(writer, obj.context)
         append(", ")
     }
-    if (obj.duration() != null) append("duration: ${obj.duration()!!.now - cutoff}")
-    else append("auto_release: 0")
+    if (duration != null) {
+        val remainingDuration = duration - cutoff
+        if (remainingDuration <= zero) throw AssertionError("Cutoff ($cutoff) > duration ($duration)")
+        append("duration: $remainingDuration")
+    } else append("auto_release: 0")
     val action = guardAgainstReplaceNil(placement)
     appendLine("], target: ${placement.target}, addAction: $action);")
     +"s.sync"
