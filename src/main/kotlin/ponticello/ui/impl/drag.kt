@@ -20,7 +20,7 @@ fun Region.setupDraggingAndResizing(
     finishDrag: (MouseEvent, Cursor) -> Unit = { _, _ -> },
 ) {
     setupDraggingAndResizing(
-        canUserChangeWidth, canUserChangeHeight, threshold = 20.0,
+        canUserChangeWidth, canUserChangeHeight, threshold = 5.0,
         drag, resize,
         startDrag = { ev, cursor ->
             if (startDrag(ev, cursor)) {

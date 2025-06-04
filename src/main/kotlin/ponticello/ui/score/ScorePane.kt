@@ -255,7 +255,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
             duplicator.isInDuplicateMode() -> {
                 var obj = duplicator.clipboardObject!!
                 if (obj.height > score.maxY.now || obj.duration > score.maxTime.now) return
-                if (ev.isAltDown) {
+                if (ev.isShiftDown) {
                     val name = context[ScoreObjectRegistry].nameForClone(obj)
                     obj = obj.clone(name)
                 }

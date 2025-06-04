@@ -142,7 +142,7 @@ class ScoreObjectScheduler(val context: Context) {
         position: ObjectPosition, score: Score, time: Decimal, delta: Decimal,
         dest: MutableList<Event>,
     ) {
-        if (position.time - delta > time) return
+        if (position.time - delta >= time) return
         for (inst in score.objectInstances) {
             if (inst.muted.now) continue
             val obj = inst.obj

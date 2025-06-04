@@ -31,7 +31,7 @@ abstract class AbstractBusRegistryPane(busses: BusRegistry) : ObjectRegistryPane
                 shortcut("Ctrl+M")
                 executes { box ->
                     val bus = box.obj
-                    bus.context[SuperColliderClient].run("${bus.superColliderName}.scope;")
+                    bus.context[SuperColliderClient].run("{ ${bus.superColliderName}.scope }.defer;")
                 }
             }
         }

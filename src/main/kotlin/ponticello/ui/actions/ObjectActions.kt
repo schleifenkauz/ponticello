@@ -101,7 +101,7 @@ object ObjectActions {
         addObjectAction("Unlink from original") {
             shortcut("Alt?+U")
             icon(MaterialDesignL.LINK_OFF)
-            applicableOn { view -> !view.parentPane.isRoot(view.obj) }
+            enableWhen { ctx -> ctx.focusedView.map { focused -> focused == null || !focused.parentPane.isRoot(focused.obj) }  }
             executes { ctx, ev ->
                 if (ev.isTargetTextInput && !ev.isAltDown()) return@executes
                 if (ctx.selectedViews.isEmpty()) return@executes
