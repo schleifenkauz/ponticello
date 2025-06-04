@@ -14,9 +14,6 @@ import kotlinx.serialization.Contextual
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
-import reaktive.value.ReactiveVariable
-import reaktive.value.now
-import reaktive.value.reactiveVariable
 import ponticello.impl.*
 import ponticello.model.flow.NodePlacement
 import ponticello.model.obj.NoSynthDef
@@ -26,10 +23,11 @@ import ponticello.model.score.controls.ParameterControl
 import ponticello.sc.code
 import ponticello.sc.editor.*
 import ponticello.ui.score.PianoRollObjectView
+import reaktive.value.ReactiveVariable
+import reaktive.value.now
 
 @Serializable
 class MidiObject(
-    @SerialName("name") override val mutableName: ReactiveVariable<String>,
     @SerialName("instrument") private val mInstrument: ReactiveVariable<SynthDefReference>,
     @SerialName("lowestPitch") private var mLowestPitch: Int,
     @SerialName("highestPitch") private var mHighestPitch: Int,
@@ -192,19 +190,19 @@ class MidiObject(
         }
     }
 
-    override fun doClone(newName: String): ScoreObject = MidiObject(
-        reactiveVariable(newName), mInstrument.copy(), lowestPitch, highestPitch,
+    override fun doClone(): ScoreObject = MidiObject(
+        mInstrument.copy(), lowestPitch, highestPitch,
         context.withoutUndo { eventDictionary.clone(context) },
         notes.mapTo(mutableListOf()) { n -> n.copy() }
     )
 
-    override fun doCut(position: Decimal, whichHalf: HorizontalDirection, newName: String): ScoreObject {
+    override fun doCut(position: Decimal, whichHalf: HorizontalDirection): ScoreObject {
         val notes = when (whichHalf) {
             LEFT -> notes.filter { n -> n.onset < position }
             RIGHT -> notes.filter { n -> n.onset >= position }
         }.mapTo(mutableListOf()) { n -> n.copy() }
         return MidiObject(
-            reactiveVariable(newName), mInstrument,
+            mInstrument,
             lowestPitch, highestPitch,
             eventDictionary.clone(context), notes
         )

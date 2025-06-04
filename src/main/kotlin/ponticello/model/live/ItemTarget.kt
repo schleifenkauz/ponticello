@@ -239,16 +239,16 @@ sealed class ItemTarget : AbstractContextualObject() {
 
         override fun pressed(velocity: Int, item: LauncherGrid.GridItem) {
             val flow = ref.getFlow(context[AudioFlows]) ?: return
-            if (!flow.isActive.now) flow.activate()
+            if (!flow.isActive.now) flow.setActive(true)
             else if (!item.stopOnRelease.now) {
-                flow.deactivate()
+                flow.setActive(false)
             }
         }
 
         override fun released(item: LauncherGrid.GridItem) {
             val flow = ref.getFlow(context[AudioFlows]) ?: return
             if (flow.isActive.now && item.stopOnRelease.now) {
-                flow.deactivate()
+                flow.setActive(false)
             }
         }
 

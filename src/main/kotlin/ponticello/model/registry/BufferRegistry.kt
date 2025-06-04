@@ -13,17 +13,14 @@ import kotlinx.serialization.descriptors.serialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.*
+import ponticello.impl.parseDecimal
+import ponticello.model.obj.*
+import ponticello.sc.Identifier
+import ponticello.ui.launcher.PonticelloLauncher.Companion.currentProject
 import reaktive.Observer
 import reaktive.value.ReactiveVariable
 import reaktive.value.now
 import reaktive.value.reactiveVariable
-import ponticello.impl.parseDecimal
-import ponticello.model.obj.AllocatedBufferObject
-import ponticello.model.obj.BufferObject
-import ponticello.model.obj.SampleObject
-import ponticello.model.obj.SuperColliderObject
-import ponticello.sc.Identifier
-import ponticello.ui.launcher.PonticelloLauncher.Companion.currentProject
 import java.io.File
 
 @Serializable(with = BufferRegistry.Serializer::class)
@@ -53,7 +50,7 @@ class BufferRegistry(
     fun getSample(file: File): SampleObject? = filterIsInstance<SampleObject>().find { o -> o.audioFile == file }
 
     fun getOrAdd(file: File): SampleObject = getSample(file) ?: run {
-        val name = reactiveVariable(Identifier.truncate(file.nameWithoutExtension))
+        val name = Identifier.truncate(file.nameWithoutExtension)
         val sample = SampleObject.create(context[currentProject], name, file)
         add(sample)
         return sample
@@ -88,17 +85,16 @@ class BufferRegistry(
             for ((name, content) in obj) {
                 if (name == "copyAudioFiles") continue
                 val buf = when (content) {
-                    is JsonPrimitive -> SampleObject(reactiveVariable(name), content.string)
+                    is JsonPrimitive -> SampleObject(content.string).withName(name)
                     is JsonObject -> {
                         val channels = content["channels"]?.jsonPrimitive?.int
                             ?: error("Missing 'channels' in object: $content")
                         val duration = content["duration"]?.jsonPrimitive?.content?.parseDecimal()
                             ?: error("Missing 'duration' in object: $content")
                         AllocatedBufferObject(
-                            reactiveVariable(name),
                             reactiveVariable(channels),
                             reactiveVariable(duration)
-                        )
+                        ).withName(name)
                     }
 
                     else -> error("Unknown buffer content type: $content")

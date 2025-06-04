@@ -4,10 +4,13 @@ import bundles.PublicProperty
 import bundles.publicProperty
 import bundles.set
 import hextant.context.Context
+import ponticello.impl.Logger
 import ponticello.model.registry.ObjectRegistry
 import ponticello.sc.client.SuperColliderClient
 import reaktive.value.now
 import java.io.Serializable
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.TimeoutException
 
 class AudioFlows(override val objects: MutableList<AudioFlowGroup>, ) : ObjectRegistry<AudioFlowGroup>() {
     override val objectType: String
@@ -34,6 +37,19 @@ class AudioFlows(override val objects: MutableList<AudioFlowGroup>, ) : ObjectRe
     }
 
     fun allFlows() = objects.flatMap { grp -> grp.flows }
+
+    fun writeVSTPluginStates() {
+        val futures = mutableListOf<CompletableFuture<String>>()
+        for (flow in allFlows()) {
+            if (flow !is VSTPluginFlow) continue
+            futures.add(flow.saveConfiguration())
+        }
+        try {
+            CompletableFuture.allOf(*futures.toTypedArray()).join()
+        } catch (e: TimeoutException) {
+            Logger.error("Timeout writing VST plugin states", e, Logger.Category.VSTPlugins)
+        }
+    }
 
     @kotlinx.serialization.Serializable
     data class FlowReference(val groupName: String, val flowName: String): Serializable {

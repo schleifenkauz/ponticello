@@ -22,16 +22,19 @@ import javafx.scene.input.MouseEvent
 import javafx.scene.layout.Pane
 import javafx.scene.shape.Rectangle
 import ponticello.impl.*
-import ponticello.model.obj.BufferObject
-import ponticello.model.obj.MeterObject
-import ponticello.model.obj.ProcessDefObject
-import ponticello.model.obj.SynthDefObject
+import ponticello.model.obj.*
 import ponticello.model.player.ScorePlayer
 import ponticello.model.project.UI_STATE
 import ponticello.model.project.get
 import ponticello.model.registry.*
 import ponticello.model.score.*
+import ponticello.model.score.controls.BufferControl
+import ponticello.model.score.controls.BusControl
+import ponticello.model.score.controls.ParameterControl
+import ponticello.sc.BufferControlSpec
+import ponticello.sc.BusControlSpec
 import ponticello.sc.Identifier
+import ponticello.sc.defaultControl
 import ponticello.sc.editor.CodeBlockEditor
 import ponticello.sc.editor.EventDictionaryEditor
 import ponticello.ui.controls.DecimalPrompt
@@ -39,6 +42,8 @@ import ponticello.ui.controls.NamePrompt
 import ponticello.ui.impl.showDialog
 import ponticello.ui.launcher.PonticelloLauncher.Companion.currentProject
 import ponticello.ui.launcher.PonticelloMainActivity
+import ponticello.ui.registry.SearchableBufferListView
+import ponticello.ui.registry.SearchableBusListView
 import ponticello.ui.registry.SimpleSearchableRegistryView
 import reaktive.value.now
 import reaktive.value.reactiveVariable
@@ -147,11 +152,11 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
                 MouseEvent.MOUSE_CLICKED -> {
                     val p = Point2D(ev.x, ev.y)
                     if (lastMousePress != null && p.distance(lastMousePress) > DRAG_THRESH) return@addEventHandler
-                        when {
-                            ev.button == MouseButton.SECONDARY -> rightClicked(ev)
-                            ev.clickCount == 1 -> mouseClicked(ev)
-                            ev.clickCount == 2 -> doubleClicked(ev)
-                        }
+                    when {
+                        ev.button == MouseButton.SECONDARY -> rightClicked(ev)
+                        ev.clickCount == 1 -> mouseClicked(ev)
+                        ev.clickCount == 2 -> doubleClicked(ev)
+                    }
                 }
 
                 MouseEvent.MOUSE_RELEASED -> mouseReleased(ev)
@@ -173,6 +178,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
             val file = db.files[0]
             context[BufferRegistry].getOrAdd(file)
         }
+
         db.hasContent(BufferObject.DATA_FORMAT) -> {
             val bufName = db.getContent(BufferObject.DATA_FORMAT) as String
             context[BufferRegistry].get(bufName)
@@ -201,7 +207,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
     * Score change handlers
     * */
 
-    override fun addedObject(score: Score, inst: ScoreObjectInstance, autoSelect: Boolean)  {
+    override fun addedObject(score: Score, inst: ScoreObjectInstance, autoSelect: Boolean) {
         val view = createObjectView(inst.obj, inst)
         view.initialize(this)
         views[inst] = view
@@ -332,12 +338,12 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
                 val name = NamePrompt(context[ScoreObjectRegistry], "Task name", defaultName)
                     .showDialog(ev) ?: return
                 val code = EditorRoot(CodeBlockEditor().defaultState())
-                TaskObject(reactiveVariable(name), code)
+                TaskObject(code).withName(name)
             }
 
             "Memo" -> {
                 val defaultName = context[ScoreObjectRegistry].availableName("memo")
-                MemoObject(reactiveVariable(defaultName), "")
+                MemoObject("").withName(defaultName)
             }
 
             else -> return
@@ -381,14 +387,15 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
                         val initialName = option.defaultName(context[ScoreObjectRegistry])
                         val name = NamePrompt(context[ScoreObjectRegistry], "Name for object", initialName)
                             .showDialog(scene.window, anchor) ?: return
-                        createNewObject(option, name)
+                        val obj = createNewObject(option, ev) ?: return
+                        obj.withName(name)
                     }
                     addObject(obj, selection)
                 } else {
                     val name = context[ScoreObjectRegistry].availableName("group")
                     context.compoundEdit("Add object group") {
                         val subScore = Score(mutableListOf())
-                        val groupObj = ScoreObjectGroup(reactiveVariable(name), subScore)
+                        val groupObj = ScoreObjectGroup(subScore).withName(name)
                         val inst = addObject(groupObj, selection)
                         val relativePosition = -inst.position
                         for (view in containedViews) {
@@ -408,34 +415,33 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
         }
     }
 
-    private fun createNewObject(option: NewObjectOption, name: String) = when (option) {
-        is NewObjectOption.Synth -> {
-            val controls = option.def.getDefaultControls(associatedObject)
-            SynthObject.create(name, option.def, controls)
+    private fun createNewObject(option: NewObjectOption, ev: Event?): ScoreObject? {
+        return when (option) {
+            is NewObjectOption.Synth -> {
+                val defaultBus = associatedObject?.defaultBusRef?.now?.get()
+                val anchor = ev.popupAnchor()
+                val controls = getInitialControls(option.def, context, defaultBus, anchor) ?: return null
+                SynthObject(reactiveVariable(option.def.reference()), controls)
+            }
+
+            is NewObjectOption.Process -> {
+                val defaultBus = associatedObject?.defaultBusRef?.now?.get()
+                val anchor = ev.popupAnchor()
+                val controls = getInitialControls(option.def, context, defaultBus, anchor) ?: return null
+                ProcessObject(reactiveVariable(option.def.reference()), controls)
+            }
+
+            is NewObjectOption.MIDI -> throw AssertionError("Handled before")
+            is NewObjectOption.TempoGrid -> TempoGridObject(option.meter.reference())
+
+            NewObjectOption.NewTempoGrid -> {
+                val newMeter = MeterObject.create(60, 4, 4)
+                context[MeterRegistry].add(newMeter)
+                TempoGridObject(newMeter.reference())
+            }
+
+            NewObjectOption.Group -> ScoreObjectGroup(Score(mutableListOf()))
         }
-
-        is NewObjectOption.Process -> {
-            val controls = option.def.getDefaultControls(associatedObject)
-            ProcessObject(
-                reactiveVariable(name),
-                reactiveVariable(option.def.reference()),
-                controls
-            )
-        }
-
-        is NewObjectOption.MIDI -> throw AssertionError("Handled before")
-        is NewObjectOption.TempoGrid -> TempoGridObject(
-            reactiveVariable(name),
-            option.meter.reference()
-        )
-
-        NewObjectOption.NewTempoGrid -> {
-            val newMeter = MeterObject.create(name, 60, 4, 4)
-            context[MeterRegistry].add(newMeter)
-            TempoGridObject(reactiveVariable(name), newMeter.reference())
-        }
-
-        NewObjectOption.Group -> ScoreObjectGroup(reactiveVariable(name), Score(mutableListOf()))
     }
 
     private sealed class NewObjectOption {
@@ -492,13 +498,12 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
                 val notes = mutableListOf<MidiObject.Note>()
                 val eventDictionary = EditorRoot(EventDictionaryEditor())
                 MidiObject(
-                    reactiveVariable(name),
                     reactiveVariable(instr.reference()),
                     lowestPitch,
                     highestPitch,
                     eventDictionary,
                     notes
-                )
+                ).withName(name)
             }
         }.showDialog(scene.window, anchor)
     }
@@ -540,5 +545,35 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
         }
 
         private const val DRAG_THRESH = 5.0
+
+        fun getInitialControls(
+            def: ParameterizedObjectDef, context: Context, defaultBus: BusObject?, anchor: Point2D?,
+        ): ParameterControlList? {
+            val map = mutableMapOf<String, ParameterControl>()
+            for (param in def.parameters) {
+                val name = param.name.now
+                val control = when (val spec = param.spec.now) {
+                    is BufferControlSpec -> {
+                        val buffer = SearchableBufferListView(context[BufferRegistry], "Select $name", spec.channels)
+                            .showPopup(anchor) ?: return null
+                        BufferControl.create(buffer)
+                    }
+
+                    is BusControlSpec -> {
+                        if (defaultBus != null && defaultBus.matches(spec)) BusControl.create(defaultBus)
+                        else {
+                            val bus =
+                                SearchableBusListView(context[BusRegistry], "Select $name", spec.rate, spec.channels)
+                                    .showPopup(anchor) ?: return null
+                            BusControl.create(bus)
+                        }
+                    }
+
+                    else -> spec.defaultControl()
+                }
+                map[name] = control
+            }
+            return ParameterControlList.from(map)
+        }
     }
 }

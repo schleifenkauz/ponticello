@@ -1,8 +1,8 @@
 package ponticello.model.registry
 
+import ponticello.model.obj.ContextualObject
 import reaktive.value.ReactiveBoolean
 import reaktive.value.ReactiveValue
-import ponticello.model.obj.ContextualObject
 
 interface NamedObject : ContextualObject {
     val isAdded: ReactiveBoolean
@@ -15,7 +15,7 @@ interface NamedObject : ContextualObject {
 
     val registry: ObjectRegistry<*>? get() = null
 
-    fun copy(name: String): NamedObject = throw UnsupportedOperationException("Cannot copy $this")
+    fun copy(): NamedObject = throw UnsupportedOperationException("Cannot copy $this")
 
     fun onAdded() {}
 

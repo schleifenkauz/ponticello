@@ -6,11 +6,15 @@ import ponticello.model.registry.NamedObject
 import ponticello.model.registry.reference
 import ponticello.model.score.ParameterControlList
 import ponticello.model.score.ScoreObjectGroup
+import ponticello.model.score.controls.BusControl
 import ponticello.model.score.controls.ParameterControl
+import ponticello.sc.BusControlSpec
 import ponticello.sc.ControlSpec
+import ponticello.sc.defaultControl
 import ponticello.ui.registry.ParameterDefList
 import reaktive.value.ReactiveVariable
 import reaktive.value.now
+import reaktive.value.reactiveVariable
 
 interface ParameterizedObjectDef : NamedObject {
     val parameters: ParameterDefList
@@ -30,8 +34,11 @@ interface ParameterizedObjectDef : NamedObject {
 
     fun defaultControls(
         context: Context, defaultBus: BusReference?,
-    ): MutableList<Pair<String, ParameterControl>> = allParameters().mapTo(mutableListOf()) { p ->
-        p.name.now to p.defaultControl(defaultBus)
+    ): MutableMap<String, ParameterControl> = allParameters().associateTo(mutableMapOf()) { p ->
+        val ctrl =
+            if (p.spec.now is BusControlSpec && defaultBus != null) BusControl(reactiveVariable(defaultBus))
+            else p.spec.now.defaultControl()
+        p.name.now to ctrl
     }
 
     fun getDefaultControls(associatedObject: ScoreObjectGroup?): ParameterControlList {

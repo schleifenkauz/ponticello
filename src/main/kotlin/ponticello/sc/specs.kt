@@ -10,7 +10,6 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import ponticello.impl.*
-import ponticello.model.obj.BusReference
 import ponticello.model.registry.ObjectReference
 import ponticello.model.score.controls.AttackReleaseControl
 import ponticello.model.score.controls.BufferControl
@@ -57,13 +56,9 @@ sealed interface ControlSpec {
     val defaultValueExpr: String? get() = null
 }
 
-fun ControlSpec.defaultControl(defaultBus: BusReference?) = when (this) {
+fun ControlSpec.defaultControl() = when (this) {
     is BufferControlSpec -> BufferControl(reactiveVariable(ObjectReference.none()))
-    is BusControlSpec -> {
-        val bus = defaultBus ?: ObjectReference.none()
-        BusControl(reactiveVariable(bus))
-    }
-
+    is BusControlSpec -> BusControl(reactiveVariable(ObjectReference.none()))
     is NumericalControlSpec -> ValueControl(reactiveVariable(defaultValue.get()))
     is BufferPositionControlSpec -> ValueControl(reactiveVariable(zero))
     is AttackReleaseControlSpec -> AttackReleaseControl.createDefault()

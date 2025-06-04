@@ -9,7 +9,6 @@ import hextant.core.editor.defaultState
 import hextant.serial.EditorRoot
 import javafx.scene.paint.Color
 import kotlinx.serialization.Contextual
-import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import ponticello.impl.ColorSerializer
 import ponticello.impl.Logger
@@ -29,7 +28,6 @@ import reaktive.value.reactiveVariable
 
 @Serializable
 class CustomizableSynthDefObject(
-    @SerialName("name") override val mutableName: ReactiveVariable<String>,
     override val parameters: ParameterDefList,
     override val color: ReactiveVariable<@Serializable(with = ColorSerializer::class) Color> = reactiveVariable(Color.WHITE),
     val ugenGraph: EditorRoot<@Contextual CodeBlockEditor>? = null,
@@ -40,8 +38,7 @@ class CustomizableSynthDefObject(
     override fun allParameters(): List<ParameterDefObject> =
         parameters + listOf(ParameterDefObject.LEVEL, ParameterDefObject.ATTACK_RELEASE)
 
-    override fun copy(name: String): SynthDefObject = CustomizableSynthDefObject(
-        reactiveVariable(name),
+    override fun copy(): CustomizableSynthDefObject = CustomizableSynthDefObject(
         ParameterDefList(parameters.mapTo(mutableListOf()) { p -> p.copy() }),
         color.copy(),
         ugenGraph?.clone()
@@ -120,14 +117,13 @@ class CustomizableSynthDefObject(
         val editedSynthDef = publicProperty<CustomizableSynthDefObject>("edited synth def")
 
         fun create(name: String) = CustomizableSynthDefObject(
-            mutableName = reactiveVariable(name),
             color = reactiveVariable(randomColor()),
             parameters = ParameterDefList(),
             ugenGraph = EditorRoot(CodeBlockEditor().defaultState())
-        )
+        ).withName(name)
 
         fun create(name: String, vararg parameters: ParameterDefObject) =
-            CustomizableSynthDefObject(reactiveVariable(name), ParameterDefList(parameters.toMutableList()))
+            CustomizableSynthDefObject(ParameterDefList(parameters.toMutableList())).withName(name)
 
         fun sine() = create(
             name = "sine",

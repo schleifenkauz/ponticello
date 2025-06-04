@@ -1,7 +1,6 @@
 package ponticello.model.obj
 
 import javafx.scene.paint.Color
-import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import ponticello.impl.copy
 import ponticello.impl.toDecimal
@@ -11,11 +10,7 @@ import reaktive.value.now
 import reaktive.value.reactiveVariable
 
 @Serializable
-class ParameterDefObject(
-    @SerialName("name") override val mutableName: ReactiveVariable<String>,
-    val spec: ReactiveVariable<ControlSpec>
-) : AbstractRenamableObject() {
-    constructor(name: String, spec: ControlSpec) : this(reactiveVariable(name), reactiveVariable(spec))
+class ParameterDefObject(val spec: ReactiveVariable<ControlSpec>) : AbstractRenamableObject() {
 
     var isImmutable = false
         private set
@@ -24,7 +19,7 @@ class ParameterDefObject(
 
     override fun canRenameTo(newName: String): Boolean = !isImmutable
 
-    fun defaultControl(defaultBus: BusReference? = null) = spec.now.defaultControl(defaultBus)
+    fun defaultControl() = spec.now.defaultControl()
 
     override fun toString(): String = "${name.now}: ${spec.now}"
 
@@ -39,7 +34,7 @@ class ParameterDefObject(
         return "${name.now} ($type)"
     }
 
-    fun copy() = ParameterDefObject(mutableName.copy(), spec.copy())
+    override fun copy() = ParameterDefObject(spec.copy())
 
     companion object {
         private val FREQ = ParameterDefObject(
@@ -60,5 +55,7 @@ class ParameterDefObject(
         val ATTACK_RELEASE = ParameterDefObject("attack-release", AttackReleaseControlSpec()).immutable()
 
         val defaults = listOf(FREQ, AMP, PAN)
+
+        operator fun invoke(name: String, spec: ControlSpec) = ParameterDefObject(reactiveVariable(spec)).withName(name)
     }
 }

@@ -21,6 +21,7 @@ import ponticello.model.live.LiveConfig
 import ponticello.model.live.QuantizationConfig
 import ponticello.model.obj.AbstractRenamableObject
 import ponticello.model.obj.ParameterDefObject
+import ponticello.model.obj.withName
 import ponticello.model.player.ScorePlayer
 import ponticello.model.registry.ScoreObjectRegistry
 import ponticello.model.score.Score.Companion.rootScore
@@ -198,25 +199,26 @@ sealed class ScoreObject : AbstractRenamableObject() {
         finishResize()
     }
 
-    protected abstract fun doClone(newName: String): ScoreObject
+    protected abstract fun doClone(): ScoreObject
 
     fun clone(newName: String): ScoreObject {
-        val obj = doClone(newName)
+        val obj = doClone()
         obj.duration = duration
         obj.height = height
         obj.associatedColor.now = associatedColor.now
+        obj.setInitialName(newName)
         return obj
     }
 
-    protected open fun doCut(position: Decimal, whichHalf: HorizontalDirection, newName: String): ScoreObject? {
-        val clone = clone(newName)
+    protected open fun doCut(position: Decimal, whichHalf: HorizontalDirection): ScoreObject? {
+        val clone = doClone()
         val dur = if (whichHalf == LEFT) position else duration - position
         clone.resize(dur, height, ResizeMode.Regular, direction = Direction.NONE)
         return clone
     }
 
     fun cut(position: Decimal, whichHalf: HorizontalDirection, newName: String): ScoreObject? {
-        val obj = doCut(position, whichHalf, newName) ?: return null
+        val obj = doCut(position, whichHalf) ?: return null
         obj.height = height
         obj.associatedColor.now = associatedColor.now
         if (whichHalf == LEFT) {
@@ -224,7 +226,7 @@ sealed class ScoreObject : AbstractRenamableObject() {
         } else {
             obj.duration = duration - position
         }
-        return obj
+        return obj.withName(newName)
     }
 
     open fun getSpec(parameter: String): ControlSpec? =
@@ -332,10 +334,10 @@ sealed class ScoreObject : AbstractRenamableObject() {
 
     @Serializable
     class Unresolved : ScoreObject() {
-        override val mutableName: ReactiveVariable<String> = reactiveVariable("<unresolved>")
-
         override val type: String
             get() = "none"
+
+        override val name: ReactiveValue<String> get() = reactiveVariable("<unresolved>")
 
         override val affectsPlayback: Boolean
             get() = false
@@ -348,6 +350,6 @@ sealed class ScoreObject : AbstractRenamableObject() {
             extraArguments: Map<ParameterDefObject, ParameterControl>
         ): String = ""
 
-        override fun doClone(newName: String): ScoreObject = this
+        override fun doClone(): ScoreObject = this
     }
 }

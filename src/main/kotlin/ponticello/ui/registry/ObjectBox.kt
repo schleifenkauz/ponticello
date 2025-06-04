@@ -15,6 +15,7 @@ import org.kordamp.ikonli.materialdesign2.MaterialDesignC
 import org.kordamp.ikonli.materialdesign2.MaterialDesignR
 import ponticello.model.obj.ContextualObject
 import ponticello.model.obj.RenamableObject
+import ponticello.model.obj.withName
 import ponticello.model.registry.NamedObject
 import ponticello.model.registry.ObjectList
 import ponticello.model.registry.ObjectRegistry
@@ -168,16 +169,16 @@ class ObjectBox<O : ContextualObject>(val parent: ObjectListView<O>, val obj: O)
                 }
             }
             addAction("Duplicate object") {
-                applicableIf { box -> box.obj is NamedObject && box.obj.canCopy && box.obj.registry != null }
+                applicableIf { box -> box.obj is RenamableObject && box.obj.canCopy && box.obj.registry != null }
                 icon(MaterialDesignC.CONTENT_DUPLICATE)
                 description { box -> reactiveValue("Duplicate ${box.parent.source.objectType}") }
                 executes { box, ev ->
-                    val obj = box.obj as NamedObject
-                    val list = box.parent.source as ObjectRegistry<NamedObject>
+                    val obj = box.obj as RenamableObject
+                    val list = box.parent.source as ObjectRegistry<RenamableObject>
                     val initialName = obj.name.now + "_copy"
                     val name = NamePrompt(list, "Name for new duplicate instrument", initialName)
                         .showDialog(ev) ?: return@executes
-                    val copy = obj.copy(name)
+                    val copy = obj.copy().withName(name)
                     list.add(copy, list.indexOf(obj) + 1)
                 }
             }

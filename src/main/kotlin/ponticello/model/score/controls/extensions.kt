@@ -31,6 +31,7 @@ fun ScWriter.writeSynthCode(
     obj: ParameterizedObject, uniqueName: String,
     cutoff: Decimal, placement: NodePlacement, latency: Decimal,
     extraArguments: Map<ParameterDefObject, ParameterControl> = emptyMap(),
+    run: Boolean
 ) {
     +"var auxilBuses = (), auxilSynths = (), t0, delta_t"
     +"t0 = TempoClock.beats"
@@ -77,7 +78,7 @@ fun ScWriter.writeSynthCode(
     +"$synthVar.register"
     if (latency != zero) +"delta_t = TempoClock.beats - t0"
     appendBlock("s.makeBundle(${if (latency != zero) "($latency - delta_t) / ~time_warp" else "nil"})") {
-        +"$synthVar.run"
+        if (run) +"$synthVar.run"
         +"${ParameterControl.auxilSynthsVar(uniqueName)}.do(_.run)"
     }
     appendBlock("$synthVar.onFree") {

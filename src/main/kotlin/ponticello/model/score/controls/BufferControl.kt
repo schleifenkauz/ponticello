@@ -6,9 +6,11 @@ import kotlinx.serialization.Serializable
 import ponticello.impl.Decimal
 import ponticello.impl.Logger
 import ponticello.impl.copy
+import ponticello.model.obj.BufferObject
 import ponticello.model.obj.BufferReference
 import ponticello.model.obj.ParameterizedObject
 import ponticello.model.registry.BufferRegistry
+import ponticello.model.registry.reference
 import ponticello.sc.BufferControlSpec
 import ponticello.sc.ControlSpec
 import ponticello.sc.Identifier
@@ -57,5 +59,9 @@ data class BufferControl(
     ): ScExpr = when(context) {
         CodegenContext.Process -> Identifier(uniqueArgumentName(uniqueName, parameter))
         else -> sample.now.force().superColliderExpr
+    }
+
+    companion object {
+        fun create(buffer: BufferObject) = BufferControl(reactiveVariable(buffer.reference()))
     }
 }

@@ -13,7 +13,7 @@ class NoSynthDef : SynthDefObject, AbstractContextualObject() {
     override val color: ReactiveVariable<Color>
         get() = reactiveVariable(Color.GRAY)
 
-    override fun copy(name: String): SynthDefObject = NoSynthDef()
+    override fun copy(): SynthDefObject = NoSynthDef()
 
     override val parameters: ParameterDefList get() = ParameterDefList(Collections.unmodifiableList(emptyList()))
 

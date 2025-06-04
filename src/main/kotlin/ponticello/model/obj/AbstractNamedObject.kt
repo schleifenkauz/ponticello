@@ -24,4 +24,6 @@ abstract class AbstractNamedObject : AbstractContextualObject(), NamedObject {
     override fun onRemoved() {
         _isAdded.now = false
     }
+
+    override fun toString(): String = "${javaClass.simpleName} #${name.now}"
 }

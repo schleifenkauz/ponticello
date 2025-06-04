@@ -13,9 +13,12 @@ import ponticello.model.registry.reference
 import ponticello.model.score.ParameterControlList
 import ponticello.model.score.controls.writeSynthCode
 import ponticello.sc.editor.SynthDefSelector
-import reaktive.value.*
+import reaktive.value.ReactiveValue
+import reaktive.value.ReactiveVariable
 import reaktive.value.binding.and
 import reaktive.value.binding.flatMap
+import reaktive.value.now
+import reaktive.value.reactiveVariable
 
 @Serializable
 class SynthFlow(
@@ -48,17 +51,12 @@ class SynthFlow(
         val latency = zero // context[Settings].serverLatency.now
         writeSynthCode(
             this@SynthFlow, superColliderName.removePrefix("~"),
-            cutoff = zero, placement, latency
+            cutoff = zero, placement, latency, run = isActive.now
         )
     }
 
-    override fun getDefaultName(): ReactiveString = defRef.flatMap { ref -> ref.name }
-
     companion object {
-        fun create(def: SynthDefObject, context: Context): SynthFlow {
-            val controls = def.defaultControls(context, defaultBus = null)
-            val flow = SynthFlow(reactiveVariable(def.reference()), ParameterControlList.from(controls))
-            return flow
-        }
+        fun create(def: SynthDefObject, controls: ParameterControlList): SynthFlow =
+            SynthFlow(reactiveVariable(def.reference()), controls)
     }
 }

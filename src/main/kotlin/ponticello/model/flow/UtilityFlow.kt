@@ -57,10 +57,12 @@ class UtilityFlow(
 
     override fun writeCode(placement: NodePlacement): String = writeCode {
         val latency = context[Settings].serverLatency.now
-        writeSynthCode(this@UtilityFlow, superColliderName.removePrefix("~"), cutoff = zero, placement, latency)
+        writeSynthCode(
+            this@UtilityFlow, superColliderName.removePrefix("~"),
+            cutoff = zero, placement, latency,
+            run = isActive.now
+        )
     }
-
-    override fun getDefaultName(): ReactiveString = reactiveValue("Utility")
 
     companion object {
         private val MUTED_VOLUME = (-60).toDecimal()

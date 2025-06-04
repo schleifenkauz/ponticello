@@ -3,9 +3,6 @@ package ponticello.model.score
 import hextant.context.Context
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import reaktive.value.ReactiveVariable
-import reaktive.value.now
-import reaktive.value.reactiveVariable
 import ponticello.impl.Decimal
 import ponticello.impl.copy
 import ponticello.impl.writeCode
@@ -19,10 +16,11 @@ import ponticello.model.registry.ProcessDefRegistry
 import ponticello.model.score.controls.ParameterControl
 import ponticello.model.score.controls.writeProcessCode
 import ponticello.sc.ControlSpec
+import reaktive.value.ReactiveVariable
+import reaktive.value.now
 
 @Serializable
 class ProcessObject(
-    @SerialName("name") override val mutableName: ReactiveVariable<String>,
     @SerialName("processDef") val processDefRef: ReactiveVariable<ProcessDefReference>,
     override val controls: ParameterControlList,
 ) : ParameterizedScoreObject() {
@@ -61,6 +59,6 @@ class ProcessObject(
         )
     }
 
-    override fun doClone(newName: String): ScoreObject =
-        ProcessObject(reactiveVariable(newName), processDefRef.copy(), controls.copy())
+    override fun doClone(): ScoreObject =
+        ProcessObject(processDefRef.copy(), controls.copy())
 }

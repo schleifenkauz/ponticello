@@ -2,18 +2,15 @@ package ponticello.model.score
 
 import fxutils.undo.UndoManager
 import hextant.context.Context
+import hextant.context.withoutUndo
 import javafx.scene.paint.Color
-import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import ponticello.impl.Logger
 import ponticello.impl.asTime
 import ponticello.impl.toDecimal
 import ponticello.impl.zero
-import ponticello.model.obj.AbstractRenamableObject
-import ponticello.model.obj.ParameterDefObject
-import ponticello.model.obj.ParameterizedObject
-import ponticello.model.obj.ParameterizedObjectDef
+import ponticello.model.obj.*
 import ponticello.model.registry.NamedObjectList
 import ponticello.model.registry.ObjectList
 import ponticello.model.registry.ObjectListSerializer
@@ -57,12 +54,11 @@ class ParameterControlList(
 
     @Serializable
     class NamedParameterControl(
-        @SerialName("name") override val mutableName: ReactiveVariable<String>,
         private val value: ReactiveVariable<ParameterControl>,
         private var customSpec: ControlSpec? = null,
     ) : AbstractRenamableObject() {
-        constructor(name: String, value: ParameterControl, customSpec: ControlSpec? = null) : this(
-            reactiveVariable(name), reactiveVariable(value), customSpec
+        constructor(value: ParameterControl, customSpec: ControlSpec? = null) : this(
+            reactiveVariable(value), customSpec
         )
 
         @Transient
@@ -85,10 +81,10 @@ class ParameterControlList(
 
         val now get() = value.now
 
-        override fun copy(name: String): NamedParameterControl = NamedParameterControl(name, now, customSpec)
-
         fun copy(value: ParameterControl = now.copy()): NamedParameterControl =
-            NamedParameterControl(name.now, value, customSpec)
+            NamedParameterControl(value, customSpec).withName(name.now)
+
+        override fun copy(): NamedParameterControl = copy(now)
 
         override val canCopy: Boolean get() = true
 
@@ -147,7 +143,9 @@ class ParameterControlList(
         fun customSpec() = customSpec
 
         fun parameterNameChanged(newName: String) {
-            mutableName.now = newName
+            context.withoutUndo {
+                rename(newName)
+            }
         }
 
         fun parameterSpecChanged(newSpec: ControlSpec) {
@@ -227,7 +225,7 @@ class ParameterControlList(
     }
 
     fun addControl(parameter: String, control: ParameterControl, customSpec: ControlSpec? = null) {
-        val named = NamedParameterControl(parameter, control, customSpec)
+        val named = NamedParameterControl(control, customSpec).withName(parameter)
         add(named)
     }
 
@@ -282,11 +280,11 @@ class ParameterControlList(
     companion object {
         fun empty() = ParameterControlList()
 
-        fun create(vararg entries: Pair<String, ParameterControl>): ParameterControlList = from(entries.asList())
+        fun create(vararg entries: Pair<String, ParameterControl>): ParameterControlList = from(entries.toMap())
 
-        fun from(controls: List<Pair<String, ParameterControl>>): ParameterControlList =
-            ParameterControlList(controls.mapTo(mutableListOf<NamedParameterControl>()) { (name, control) ->
-                NamedParameterControl(name, control)
+        fun from(controls: Map<String, ParameterControl>): ParameterControlList =
+            ParameterControlList(controls.mapTo(mutableListOf()) { (name, control) ->
+                NamedParameterControl(control).withName(name)
             })
     }
 }

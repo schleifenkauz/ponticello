@@ -7,9 +7,9 @@ import hextant.context.Context
 import hextant.serial.EditorRoot
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
-import reaktive.value.reactiveVariable
 import ponticello.model.obj.GlobalPatternObject
 import ponticello.model.obj.SuperColliderObject
+import ponticello.model.obj.withName
 import ponticello.sc.editor.ScExprExpander
 
 @Serializable(with = GlobalPatternRegistry.Serializer::class)
@@ -38,7 +38,7 @@ class GlobalPatternRegistry(
         override fun getContent(obj: GlobalPatternObject): EditorRoot<ScExprExpander> = obj.patternCode
 
         override fun createObject(name: String, content: EditorRoot<ScExprExpander>): GlobalPatternObject =
-            GlobalPatternObject(reactiveVariable(name), content)
+            GlobalPatternObject(content).withName(name)
     }
 
     companion object: PublicProperty<GlobalPatternRegistry> by publicProperty("GlobalPatternRegistry") {

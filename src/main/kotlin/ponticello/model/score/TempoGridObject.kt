@@ -1,13 +1,8 @@
 package ponticello.model.score
 
 import hextant.context.Context
-import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
-import reaktive.Observer
-import reaktive.value.ReactiveVariable
-import reaktive.value.now
-import reaktive.value.reactiveVariable
 import ponticello.impl.Decimal
 import ponticello.impl.copy
 import ponticello.model.flow.NodePlacement
@@ -16,10 +11,13 @@ import ponticello.model.obj.ParameterDefObject
 import ponticello.model.registry.MeterRegistry
 import ponticello.model.score.controls.ParameterControl
 import ponticello.ui.score.TempoGridObjectView
+import reaktive.Observer
+import reaktive.value.ReactiveVariable
+import reaktive.value.now
+import reaktive.value.reactiveVariable
 
 @Serializable
 class TempoGridObject(
-    @SerialName("name") override val mutableName: ReactiveVariable<String>,
     val meter: MeterReference,
     val firstBar: ReactiveVariable<Int> = reactiveVariable(0),
 ) : ScoreObject() {
@@ -52,8 +50,8 @@ class TempoGridObject(
         notifyListeners<TempoGridObjectView> { updatedConfig() }
     }
 
-    override fun doClone(newName: String): ScoreObject =
-        TempoGridObject(reactiveVariable(newName), meter, firstBar.copy())
+    override fun doClone(): ScoreObject =
+        TempoGridObject(meter, firstBar.copy())
 
     override fun writeCode(
         uniqueName: String,

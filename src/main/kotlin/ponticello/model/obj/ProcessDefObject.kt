@@ -8,7 +8,6 @@ import hextant.core.editor.defaultState
 import hextant.serial.EditorRoot
 import javafx.scene.paint.Color
 import kotlinx.serialization.Contextual
-import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import ponticello.impl.ColorSerializer
 import ponticello.impl.Logger
@@ -31,7 +30,6 @@ import reaktive.value.reactiveVariable
 
 @Serializable
 class ProcessDefObject(
-    @SerialName("name") override val mutableName: ReactiveVariable<String>,
     val color: ReactiveVariable<@Serializable(with = ColorSerializer::class) Color>,
     override val parameters: ParameterDefList,
     val setupBlock: EditorRoot<@Contextual CodeBlockEditor> = EditorRoot(CodeBlockEditor().defaultState()),
@@ -47,8 +45,7 @@ class ProcessDefObject(
     override val canCopy: Boolean
         get() = true
 
-    override fun copy(name: String): ProcessDefObject = ProcessDefObject(
-        reactiveVariable(name),
+    override fun copy(): ProcessDefObject = ProcessDefObject(
         color.copy(),
         ParameterDefList(parameters.mapTo(mutableListOf()) { p -> p.copy() }),
         setupBlock.clone(context),
@@ -132,12 +129,11 @@ class ProcessDefObject(
 
     companion object {
         fun newEmpty(name: String) = ProcessDefObject(
-            mutableName = reactiveVariable(name),
             color = reactiveVariable(randomColor()),
             parameters = ParameterDefList(),
             setupBlock = EditorRoot(CodeBlockEditor().defaultState()),
             loopBlock = EditorRoot(CodeBlockEditor().defaultState())
-        )
+        ).withName(name)
 
         fun unresolved() = newEmpty("<unresolved>")
     }

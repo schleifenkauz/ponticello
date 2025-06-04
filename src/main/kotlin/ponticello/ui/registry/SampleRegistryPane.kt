@@ -24,7 +24,6 @@ import ponticello.ui.actions.undoable
 import ponticello.ui.launcher.PonticelloFiles
 import ponticello.ui.launcher.PonticelloLauncher.Companion.currentProject
 import ponticello.ui.score.ScoreObjectDuplicator
-import reaktive.value.reactiveVariable
 import java.io.File
 
 class SampleRegistryPane(
@@ -48,7 +47,7 @@ class SampleRegistryPane(
     private fun loadNewSample(name: (File) -> String): SampleObject? {
         val file = samples.context[PonticelloFiles].showOpenDialog("*.wav") ?: return null
         if (samples.getSample(file) != null) return null
-        val sample = SampleObject.create(samples.context[currentProject], reactiveVariable(name(file)), file)
+        val sample = SampleObject.create(samples.context[currentProject], name(file), file)
         return sample
     }
 

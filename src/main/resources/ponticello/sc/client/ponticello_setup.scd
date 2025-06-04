@@ -5,7 +5,15 @@ SynthDef(\vst_instrument, {
 	arg out = 0;
 	var snd;
 	snd = VSTPlugin.ar(nil, 2);
+	snd = snd * Linen.kr(\gate.kr(1), 0.02, 1, 0.02, Done.freeSelf);
 	Out.ar(out, snd);
+}).add;
+SynthDef(\vst_plugin, {
+    arg bus = 0;
+    var snd = In.ar(bus, 2), mix;
+    snd = VSTPlugin.ar(snd, 2, bypass: \bypass.kr(0));
+    mix = Linen.kr(\gate.kr(1), 0.02, 1, 0.02, Done.freeSelf);
+    XOut.ar(bus, mix, snd);
 }).add;
 SynthDef(\utility, {
     arg bus, volume, pan;
@@ -28,7 +36,7 @@ ServerBoot.add {
     ~time_warp_bus = Bus.control(s, 1);
 	Task {
 		1.wait;
-		VSTPlugin.search;
+		//VSTPlugin.search; do this only on demand?
 	}.play;
 };
 ServerTree.add {
@@ -76,7 +84,7 @@ OSCdef('run', {
 	fct = this.compile(code.asString);
 	if (fct == nil) { ~ponticello_addr.sendMsg('error', "Compilation error") };
 	fork {
-	    //code.postln;
+	    code.postln;
 		try { fct.value } { |error|
 			~ponticello_addr.sendMsg('/error', nil, error.what);
 			error.throw;
@@ -117,6 +125,15 @@ OSCdef('schedule', {
         nil;
     }
 }, '/schedule');
+OSCdef(\save_plugin_state, { |msg|
+    var id = msg[1], controller_var = msg[2], path = msg[3], controller;
+    controller = currentEnvironment[controller_var.asSymbol];
+    if (controller != nil) {
+        controller.writeProgram(path.asString) { |ctrl, ok|
+            ~ponticello_addr.sendMsg('/reply', id, ok.asString)
+        }
+    } { ~ponticello_addr.sendMsg('/reply', id, "false") }
+}, \save_plugin_state);
 OSCdef(\set_time_warp, { |msg|
     var tempo = msg[2].asFloat;
     TempoClock.tempo = tempo;

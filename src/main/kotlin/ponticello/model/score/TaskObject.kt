@@ -3,11 +3,7 @@ package ponticello.model.score
 import hextant.context.Context
 import hextant.serial.EditorRoot
 import kotlinx.serialization.Contextual
-import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import reaktive.value.ReactiveVariable
-import reaktive.value.now
-import reaktive.value.reactiveVariable
 import ponticello.impl.Decimal
 import ponticello.impl.writeCode
 import ponticello.model.Settings
@@ -15,10 +11,10 @@ import ponticello.model.flow.NodePlacement
 import ponticello.model.obj.ParameterDefObject
 import ponticello.model.score.controls.ParameterControl
 import ponticello.sc.editor.CodeBlockEditor
+import reaktive.value.now
 
 @Serializable
 class TaskObject(
-    @SerialName("name") override val mutableName: ReactiveVariable<String>,
     val code: EditorRoot<@Contextual CodeBlockEditor>,
 ) : ScoreObject() {
     override val type: String
@@ -29,7 +25,7 @@ class TaskObject(
     override val canResize: Boolean
         get() = false
 
-    override fun doClone(newName: String): ScoreObject = TaskObject(reactiveVariable(newName), code.clone(context))
+    override fun doClone(): ScoreObject = TaskObject(code.clone(context))
 
     override fun initialize(context: Context) {
         super.initialize(context)

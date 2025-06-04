@@ -12,6 +12,7 @@ import ponticello.impl.Decimal
 import ponticello.impl.zero
 import ponticello.model.registry.BusRegistry
 import ponticello.model.registry.ObjectRegistry
+import ponticello.sc.BusControlSpec
 import ponticello.sc.DecimalLiteral
 import ponticello.sc.NumericalControlSpec
 import ponticello.sc.Rate
@@ -60,6 +61,8 @@ sealed class BusObject : AbstractSuperColliderObject() {
         }
     }
 
+    fun matches(spec: BusControlSpec): Boolean = rate == spec.rate && channels.now == spec.channels
+
     enum class Type {
         Regular, Input, Output;
     }
@@ -67,7 +70,6 @@ sealed class BusObject : AbstractSuperColliderObject() {
     @SerialName("AudioBus")
     @Serializable
     class AudioBus(
-        @SerialName("name") override val mutableName: ReactiveVariable<String>,
         override val channels: ReactiveVariable<Int>,
         override val busType: Type,
     ) : BusObject() {
@@ -87,7 +89,6 @@ sealed class BusObject : AbstractSuperColliderObject() {
     @Serializable
     @SerialName("ControlBus")
     class ControlBus(
-        @SerialName("name") override val mutableName: ReactiveVariable<String>,
         override val channels: ReactiveVariable<Int>,
         private val _spec: ReactiveVariable<NumericalControlSpec?> = reactiveVariable(null),
     ) : BusObject() {
@@ -137,28 +138,24 @@ sealed class BusObject : AbstractSuperColliderObject() {
 
     companion object {
         val input = AudioBus(
-            reactiveVariable("input"),
             reactiveVariable(2),
             busType = Type.Input,
-        )
+        ).withName("input")
 
         val output = AudioBus(
-            reactiveVariable("output"),
             reactiveVariable(2),
             busType = Type.Output,
-        )
+        ).withName("output")
 
         fun audio(name: String, channels: Int = 2) = AudioBus(
-            reactiveVariable(name),
             reactiveVariable(channels),
             Type.Regular
-        )
+        ).withName(name)
 
         fun control(name: String, channels: Int = 1, spec: NumericalControlSpec? = null) = ControlBus(
-            reactiveVariable(name),
             reactiveVariable(channels),
             reactiveVariable(spec)
-        )
+        ).withName(name)
 
         fun create(rate: Rate, name: String, channels: Int): BusObject =
             when (rate) {

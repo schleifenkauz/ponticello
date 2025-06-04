@@ -4,10 +4,9 @@ import fxutils.KeyEventHandlerBody
 import fxutils.actions.isTargetTextInput
 import hextant.context.Context
 import hextant.context.compoundEdit
-import reaktive.value.now
-import reaktive.value.reactiveVariable
 import ponticello.impl.Logger
 import ponticello.impl.unaryMinus
+import ponticello.model.obj.withName
 import ponticello.model.registry.ScoreObjectRegistry
 import ponticello.model.score.ObjectPosition
 import ponticello.model.score.Score
@@ -16,6 +15,7 @@ import ponticello.model.score.ScoreObjectGroup
 import ponticello.ui.score.ScoreObjectDuplicator
 import ponticello.ui.score.ScoreObjectSelectionManager
 import ponticello.ui.score.ScoreObjectView
+import reaktive.value.now
 
 object SelectionRelatedActions {
     fun addShortcuts(handler: KeyEventHandlerBody<*>, context: Context) = with(handler){
@@ -54,7 +54,7 @@ object SelectionRelatedActions {
             val recurse = ev.isShiftDown
             val newScore = Score()
             val name = context[ScoreObjectRegistry].availableName("group")
-            val newObj = ScoreObjectGroup(reactiveVariable(name), newScore)
+            val newObj = ScoreObjectGroup(newScore).withName(name)
             newObj.setInitialSize(maxT - minT, maxY - minY)
             parentPane.score.addObject(newObj, minT, minY, autoSelect = true)
             context.compoundEdit("Create group from objects") {

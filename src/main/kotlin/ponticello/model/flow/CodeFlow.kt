@@ -6,11 +6,9 @@ import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
 import ponticello.impl.writeCode
 import ponticello.sc.editor.CodeBlockEditor
-import reaktive.value.ReactiveString
 import reaktive.value.ReactiveValue
 import reaktive.value.binding.map
 import reaktive.value.now
-import reaktive.value.reactiveValue
 
 @Serializable
 class CodeFlow(val codeEditor: EditorRoot<@Contextual CodeBlockEditor>) : AudioFlow() {
@@ -25,13 +23,14 @@ class CodeFlow(val codeEditor: EditorRoot<@Contextual CodeBlockEditor>) : AudioF
 
     override fun writeCode(placement: NodePlacement): String = writeCode {
         val code = codeEditor.editor.result.now
-        appendBlock(endLine = false) {
+        appendBlock("$superColliderName = ", endLine = false) {
             code.writeCode(writer, context)
         }
         +".play"
+        if (!isActive.now) {
+            +"$superColliderName.run(false)"
+        }
     }
-
-    override fun getDefaultName(): ReactiveString = reactiveValue("Code")
 
     companion object {
         fun create(): CodeFlow = CodeFlow(EditorRoot(CodeBlockEditor()))

@@ -8,10 +8,10 @@ import hextant.serial.EditorRoot
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import ponticello.model.obj.SuperColliderObject
+import ponticello.model.obj.withName
 import ponticello.model.registry.CustomNamedObjectListSerializer
 import ponticello.model.registry.SuperColliderObjectRegistry
 import ponticello.sc.editor.CodeBlockEditor
-import reaktive.value.reactiveVariable
 
 @Serializable(with = LiveTaskRegistry.Serializer::class)
 class LiveTaskRegistry(
@@ -38,7 +38,7 @@ class LiveTaskRegistry(
         override fun getContent(obj: LiveTaskObject): EditorRoot<CodeBlockEditor> = obj.code
 
         override fun createObject(name: String, content: EditorRoot<CodeBlockEditor>): LiveTaskObject =
-            LiveTaskObject(reactiveVariable(name), content)
+            LiveTaskObject(content).withName(name)
     }
 
     companion object : PublicProperty<LiveTaskRegistry> by publicProperty("LIVE_TASK_REGISTRY") {

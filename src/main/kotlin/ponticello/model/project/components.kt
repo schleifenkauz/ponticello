@@ -11,7 +11,16 @@ import ponticello.model.obj.ContextualObject
 import ponticello.model.registry.*
 import ponticello.model.score.Score
 
-data class Component<T>(val name: String, val serializer: KSerializer<T>, val default: () -> T)
+data class Component<T>(val name: String, val serializer: KSerializer<T>, val default: () -> T) {
+    var onSave: (T) -> Unit = {}
+        private set
+
+    fun onSave(handler: (T) -> Unit): Component<T> {
+        onSave = handler
+        return this
+    }
+}
+
 
 inline fun <reified T> component(
     name: String,
@@ -42,7 +51,7 @@ val PROCESS_DEFS = component<ProcessDefRegistry>(
 val FLOWS = component<AudioFlows>(
     "flows", AudioFlows::createDefault,
     ObjectListSerializer(serializer(), ::AudioFlows)
-)
+).onSave { flows -> flows.writeVSTPluginStates() }
 
 val SERVER_OPTIONS = component<ServerOptions>("server_options", ServerOptions::default)
 val OBJECTS = component<ScoreObjectRegistry>(

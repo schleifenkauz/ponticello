@@ -1,6 +1,5 @@
 package ponticello.model.obj
 
-import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import ponticello.impl.*
 import ponticello.model.live.QuantizationUnit
@@ -13,7 +12,6 @@ import reaktive.value.reactiveVariable
 
 @Serializable
 class MeterObject(
-    @SerialName("name") override val mutableName: ReactiveVariable<String>,
     val beatsPerMinute: ReactiveVariable<Int>,
     val beatsPerBar: ReactiveVariable<Int>,
     val ticksPerBeat: ReactiveVariable<Int>,
@@ -70,8 +68,7 @@ class MeterObject(
         return Pair(TimeUnit.Seconds, duration)
     }
 
-    override fun copy(name: String) = MeterObject(
-        reactiveVariable(name),
+    override fun copy() = MeterObject(
         beatsPerMinute.copy(), beatsPerBar.copy(), ticksPerBeat.copy()
     )
 
@@ -79,8 +76,7 @@ class MeterObject(
         beatsPerMinute.observe(handler) and beatsPerBar.observe(handler) and ticksPerBeat.observe(handler)
 
     companion object {
-        fun create(name: String, bpm: Int, bpb: Int, tpb: Int) = MeterObject(
-            reactiveVariable(name),
+        fun create(bpm: Int, bpb: Int, tpb: Int) = MeterObject(
             reactiveVariable(bpm),
             reactiveVariable(bpb),
             reactiveVariable(tpb)

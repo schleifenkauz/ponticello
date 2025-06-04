@@ -5,9 +5,6 @@ import bundles.publicProperty
 import fxutils.prompt.YesNoPrompt
 import hextant.context.Context
 import javafx.application.Platform
-import reaktive.value.ReactiveBoolean
-import reaktive.value.now
-import reaktive.value.reactiveVariable
 import ponticello.impl.superColliderPath
 import ponticello.impl.writeCode
 import ponticello.model.Settings
@@ -21,6 +18,9 @@ import ponticello.sc.client.SuperColliderClient
 import ponticello.ui.controls.NamePrompt
 import ponticello.ui.impl.showDialog
 import ponticello.ui.launcher.PonticelloLauncher.Companion.currentProject
+import reaktive.value.ReactiveBoolean
+import reaktive.value.now
+import reaktive.value.reactiveVariable
 import java.io.File
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -95,7 +95,7 @@ class Recorder(private val context: Context) {
             .resolve("samples").also(File::mkdir)
             .resolve("$name.wav")
         pathOfLastRecording!!.copyTo(samplePath)
-        val obj = SampleObject.create(context[currentProject], reactiveVariable(name), samplePath)
+        val obj = SampleObject.create(context[currentProject], name, samplePath)
         context[BufferRegistry].add(obj)
     }
 

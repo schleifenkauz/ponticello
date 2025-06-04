@@ -20,8 +20,10 @@ import ponticello.ui.midi.AbstractMidiContext
 import ponticello.ui.midi.MidiContext
 import reaktive.Observer
 import reaktive.observe
-import reaktive.value.*
-import reaktive.value.binding.map
+import reaktive.value.ReactiveValue
+import reaktive.value.ReactiveVariable
+import reaktive.value.now
+import reaktive.value.reactiveVariable
 
 @Serializable
 class MixerFlow(
@@ -156,9 +158,12 @@ class MixerFlow(
         }
         val action = guardAgainstReplaceNil(placement)
         appendLine(".play(${placement.target}, ${sink.superColliderName}, addAction: ${action});")
+        +"s.sync"
+        +"$superColliderName.register"
+        if (!isActive.now) {
+            +"$superColliderName.run(false)"
+        }
     }
-
-    override fun getDefaultName(): ReactiveString = targetBus.map { bus -> "Mixer ${bus.getName()}" }
 
     override fun copy(): AudioFlow = MixerFlow(targetBus.copy(), MixerComponentList(components.toMutableList()))
 

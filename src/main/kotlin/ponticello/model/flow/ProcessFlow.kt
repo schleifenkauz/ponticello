@@ -12,9 +12,12 @@ import ponticello.model.registry.reference
 import ponticello.model.score.ParameterControlList
 import ponticello.model.score.controls.writeProcessCode
 import ponticello.sc.editor.ProcessDefSelector
-import reaktive.value.*
+import reaktive.value.ReactiveValue
+import reaktive.value.ReactiveVariable
 import reaktive.value.binding.and
 import reaktive.value.binding.flatMap
+import reaktive.value.now
+import reaktive.value.reactiveVariable
 
 @Serializable
 class ProcessFlow(
@@ -41,8 +44,6 @@ class ProcessFlow(
         isValid = defRef.flatMap(ProcessDefReference::isResolved) and controls.isValid
     }
 
-    override fun getDefaultName(): ReactiveString = defRef.flatMap { ref -> ref.name }
-
     override fun copy(): AudioFlow = ProcessFlow(defRef.copy(), controls.copy())
 
     override fun writeCode(placement: NodePlacement): String = writeCode {
@@ -50,10 +51,7 @@ class ProcessFlow(
     }
 
     companion object {
-        fun create(def: ProcessDefObject, context: Context): ProcessFlow {
-            val controls = def.defaultControls(context, defaultBus = null)
-            val flow = ProcessFlow(reactiveVariable(def.reference()), ParameterControlList.from(controls))
-            return flow
-        }
+        fun create(def: ProcessDefObject, controls: ParameterControlList): ProcessFlow =
+            ProcessFlow(reactiveVariable(def.reference()), controls)
     }
 }

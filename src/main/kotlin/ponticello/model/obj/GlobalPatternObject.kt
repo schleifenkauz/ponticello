@@ -5,22 +5,17 @@ import hextant.core.editor.defaultState
 import hextant.serial.EditorRoot
 import javafx.scene.input.DataFormat
 import kotlinx.serialization.Contextual
-import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import ponticello.model.project.busses
 import ponticello.model.registry.GlobalPatternRegistry
-import ponticello.model.registry.NamedObject
 import ponticello.sc.EmptyExpr
 import ponticello.sc.client.ScWriter
 import ponticello.sc.editor.ScExprExpander
 import ponticello.ui.launcher.PonticelloLauncher
-import reaktive.value.ReactiveVariable
 import reaktive.value.now
-import reaktive.value.reactiveVariable
 
 @Serializable
 class GlobalPatternObject(
-    @SerialName("name") override val mutableName: ReactiveVariable<String>,
     val patternCode: EditorRoot<@Contextual ScExprExpander>,
 ) : AbstractSuperColliderObject() {
     override fun canRenameTo(newName: String): Boolean = !context[PonticelloLauncher.currentProject].busses.has(newName)
@@ -47,7 +42,7 @@ class GlobalPatternObject(
         createObject()
     }
 
-    override fun copy(name: String): NamedObject = GlobalPatternObject(reactiveVariable(name), patternCode.clone())
+    override fun copy(): GlobalPatternObject = GlobalPatternObject(patternCode.clone())
 
     override fun ScWriter.createObject() {
         val code = patternCode.editor.result.now
@@ -59,7 +54,7 @@ class GlobalPatternObject(
 
     companion object {
         fun create(name: String): GlobalPatternObject =
-            GlobalPatternObject(reactiveVariable(name), EditorRoot(ScExprExpander().defaultState()))
+            GlobalPatternObject(EditorRoot(ScExprExpander().defaultState())).withName(name)
 
         val DATA_FORMAT = DataFormat("GlobalPatternObject")
     }

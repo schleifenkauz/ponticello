@@ -6,6 +6,7 @@ import javafx.scene.input.DataFormat
 import org.kordamp.ikonli.material2.Material2MZ
 import org.kordamp.ikonli.materialdesign2.MaterialDesignM
 import ponticello.impl.Logger
+import ponticello.model.flow.AudioFlows
 import ponticello.model.flow.NodeTree
 import ponticello.model.player.ActiveObjectsManager
 import ponticello.model.player.CircularBufferRecorder
@@ -106,6 +107,7 @@ object PlaybackActions {
             shortcut("Ctrl+PERIOD")
             icon(Material2MZ.STOP)
             executes { p ->
+                p.context[AudioFlows].writeVSTPluginStates()
                 p.context[Recorder].stopRecording()
                 for (player in ScorePlayer.instances()) {
                     player.pause()

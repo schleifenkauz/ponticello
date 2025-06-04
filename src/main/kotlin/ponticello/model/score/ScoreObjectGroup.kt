@@ -9,22 +9,22 @@ import javafx.geometry.VerticalDirection.DOWN
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
-import reaktive.value.ReactiveVariable
-import reaktive.value.now
-import reaktive.value.reactiveVariable
 import ponticello.impl.Decimal
 import ponticello.impl.copy
 import ponticello.impl.zero
 import ponticello.model.flow.NodePlacement
 import ponticello.model.obj.BusReference
 import ponticello.model.obj.ParameterDefObject
+import ponticello.model.obj.withName
 import ponticello.model.registry.ObjectReference
 import ponticello.model.score.controls.ParameterControl
 import ponticello.sc.editor.BusSelector
+import reaktive.value.ReactiveVariable
+import reaktive.value.now
+import reaktive.value.reactiveVariable
 
 @Serializable
 class ScoreObjectGroup(
-    @SerialName("name") override val mutableName: ReactiveVariable<String>,
     val score: Score,
     @SerialName("defaultBus") val defaultBusRef: ReactiveVariable<BusReference> = reactiveVariable(ObjectReference.none())
 ) : ScoreObject() {
@@ -57,7 +57,7 @@ class ScoreObjectGroup(
         extraArguments: Map<ParameterDefObject, ParameterControl>
     ): String = ""
 
-    override fun doCut(position: Decimal, whichHalf: HorizontalDirection, newName: String): ScoreObject {
+    override fun doCut(position: Decimal, whichHalf: HorizontalDirection): ScoreObject {
         val objects = mutableListOf<ScoreObjectInstance>()
         for (inst in score.objectInstances) {
             when {
@@ -82,8 +82,7 @@ class ScoreObjectGroup(
             }
         }
         val score = Score(objects)
-        val name = if (whichHalf == LEFT) "${name.now}_left" else "${name.now}_right"
-        return ScoreObjectGroup(reactiveVariable(name), score, defaultBusRef.copy())
+        return ScoreObjectGroup(score, defaultBusRef.copy())
     }
 
     fun cutVertically(position: Decimal): Pair<ScoreObjectGroup, ScoreObjectGroup> {
@@ -93,10 +92,8 @@ class ScoreObjectGroup(
             if (inst.y < position) top.add(inst)
             else bottom.add(ScoreObjectInstance(inst.obj, inst.start, inst.y - position))
         }
-        val name1 = reactiveVariable(name.now + "_top")
-        val name2 = reactiveVariable(name.now + "_bot")
-        val obj1 = ScoreObjectGroup(name1, Score(top), defaultBusRef.copy())
-        val obj2 = ScoreObjectGroup(name2, Score(bottom), defaultBusRef.copy())
+        val obj1 = ScoreObjectGroup(Score(top), defaultBusRef.copy()).withName(name.now + "_top")
+        val obj2 = ScoreObjectGroup(Score(bottom), defaultBusRef.copy()).withName(name.now + "_bot")
         obj1.setInitialSize(duration, position)
         obj2.setInitialSize(duration, height - position)
         return Pair(obj1, obj2)
@@ -166,8 +163,8 @@ class ScoreObjectGroup(
         }
     }
 
-    override fun doClone(newName: String): ScoreObject =
-        ScoreObjectGroup(reactiveVariable(newName), score.clone(), defaultBusRef.copy())
+    override fun doClone(): ScoreObject =
+        ScoreObjectGroup(score.clone(), defaultBusRef.copy())
 
     override fun onRemoved() {
         super.onRemoved()

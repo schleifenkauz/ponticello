@@ -2,16 +2,17 @@ package ponticello.model
 
 import org.junit.jupiter.api.Assertions.assertArrayEquals
 import org.junit.jupiter.api.Test
-import reaktive.value.now
-import reaktive.value.reactiveVariable
 import ponticello.impl.asTime
 import ponticello.impl.asY
 import ponticello.impl.withPrecision
 import ponticello.impl.zero
+import ponticello.model.obj.withName
 import ponticello.model.player.ScoreEventCollector
 import ponticello.model.player.ScoreEventCollector.Event
 import ponticello.model.registry.reference
 import ponticello.model.score.*
+import reaktive.value.now
+import reaktive.value.reactiveVariable
 import kotlin.random.Random
 
 class ScoreEventCollectorTest {
@@ -67,7 +68,7 @@ class ScoreEventCollectorTest {
                         if (subScores.isEmpty() || rnd.nextDouble() < 0.8) rootScore else subScores.random(rnd)
                     val subScore = Score()
                     subScores.add(subScore)
-                    val obj = ScoreObjectGroup(reactiveVariable("score${subScores.size}"), subScore)
+                    val obj = ScoreObjectGroup(subScore).withName("score${subScores.size}")
                     obj.setInitialSize(100.0.asTime, 100.0.withPrecision(ObjectPosition.Y_PRECISION))
                     val time = rnd.nextDouble(100.0).asTime
                     val y = rnd.nextDouble(100.0).asY
@@ -108,7 +109,7 @@ class ScoreEventCollectorTest {
         rootScore.initialize(context)
         val collector = ScoreEventCollector(rootScore, context[Settings])
         val subScore = Score()
-        val subObj = ScoreObjectGroup(reactiveVariable("sub_score"), subScore)
+        val subObj = ScoreObjectGroup(subScore).withName("sub_score")
         val subInst =
             ScoreObjectInstance(subObj.reference(), 10.0.asTime, 100.0.withPrecision(ObjectPosition.Y_PRECISION))
         rootScore.addObject(subInst, autoSelect = false)

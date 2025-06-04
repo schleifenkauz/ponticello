@@ -3,7 +3,6 @@ package ponticello.model.project
 import bundles.set
 import fxutils.undo.UndoManager
 import hextant.context.Context
-import kotlinx.serialization.KSerializer
 import kotlinx.serialization.json.decodeFromStream
 import ponticello.impl.Logger
 import ponticello.impl.json
@@ -63,11 +62,13 @@ class PonticelloProject private constructor(val components: Map<Component<out Co
     }
 
     fun save(component: Component<out ContextualObject>): Boolean {
+        component as Component<ContextualObject>
         val file = dataDir.resolve("${component.name}.json")
         val value = components.getValue(component)
         try {
-            val str = json.encodeToString(component.serializer as KSerializer<ContextualObject>, value)
+            val str = json.encodeToString(component.serializer, value)
             file.writeText(str)
+            component.onSave(value)
             return true
         } catch (e: Exception) {
             Logger.error("Error while saving ${component.name} to $file!")

@@ -3,18 +3,14 @@ package ponticello.model.live
 import hextant.context.Context
 import hextant.serial.EditorRoot
 import kotlinx.serialization.Contextual
-import kotlinx.serialization.SerialName
 import ponticello.model.obj.SuperColliderObject
 import ponticello.sc.client.ScWriter
 import ponticello.sc.client.SuperColliderClient
 import ponticello.sc.client.run
 import ponticello.sc.editor.CodeBlockEditor
-import reaktive.value.ReactiveVariable
 import reaktive.value.now
-import reaktive.value.reactiveVariable
 
 class LiveTaskObject(
-    @SerialName("name") override val mutableName: ReactiveVariable<String>,
     val code: EditorRoot<@Contextual CodeBlockEditor>,
 ) : LiveObject(), SuperColliderObject {
     private val client get() = context[SuperColliderClient]
@@ -50,7 +46,7 @@ class LiveTaskObject(
         client.run { createObject() }
     }
 
-    override fun copy(name: String) = LiveTaskObject(reactiveVariable(name), code.clone())
+    override fun copy() = LiveTaskObject(code.clone())
 
     override fun ScWriter.createObject() {
             appendBlock(superColliderName) {

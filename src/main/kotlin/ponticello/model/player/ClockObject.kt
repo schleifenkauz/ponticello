@@ -8,6 +8,7 @@ import ponticello.model.Settings
 import ponticello.model.live.QuantizationConfig
 import ponticello.model.obj.AbstractRenamableObject
 import ponticello.model.obj.MeterObject
+import ponticello.model.obj.withName
 import ponticello.model.registry.ClockRegistry
 import ponticello.sc.NumericalControlSpec
 import ponticello.sc.Warp
@@ -20,7 +21,6 @@ import reaktive.value.reactiveVariable
 
 @Serializable
 class ClockObject(
-    override val mutableName: ReactiveVariable<String>,
     val timeWarp: ReactiveVariable<Decimal> = reactiveVariable(1.0.asTime),
 ) : AbstractRenamableObject(), Runnable {
     private val lookAhead: Decimal get() = context[Settings].lookAhead
@@ -234,7 +234,7 @@ class ClockObject(
 
         private fun Long.toSeconds() = (this / 1000.0).asTime
 
-        fun withName(name: String) = ClockObject(reactiveVariable(name))
+        fun withName(name: String) = ClockObject().withName(name)
 
         val TIME_WARP_SPEC = NumericalControlSpec(
             default = 1.0,

@@ -8,12 +8,12 @@ import kotlinx.serialization.Transient
 import ponticello.impl.ColorSerializer
 import ponticello.impl.Decimal
 import ponticello.model.obj.AbstractRenamableObject
+import ponticello.model.obj.withName
 import ponticello.model.player.ScorePlayer
 import ponticello.model.registry.NamedObjectList
 import ponticello.model.registry.ObjectList
 import ponticello.model.registry.ObjectListSerializer
 import ponticello.sc.client.SuperColliderClient
-import ponticello.sc.client.eval
 import ponticello.sc.client.run
 import reaktive.Observer
 import reaktive.value.*
@@ -21,11 +21,10 @@ import reaktive.value.binding.map
 
 @Serializable
 class AudioFlowGroup(
-    @SerialName("name") override val mutableName: ReactiveVariable<String>,
-    override val yPosition: ReactiveVariable<Decimal>,
-    val associatedColor: ReactiveVariable<@Serializable(with = ColorSerializer::class) Color>,
     private val active: ReactiveVariable<Boolean> = reactiveVariable(true),
     val flows: AudioFlowList,
+    override val yPosition: ReactiveVariable<Decimal>,
+    val associatedColor: ReactiveVariable<@Serializable(with = ColorSerializer::class) Color>,
 ) : AudioNode, AbstractRenamableObject(), ObjectList.Listener<AudioFlow> {
     override lateinit var superColliderName: ReactiveString
         private set
@@ -65,20 +64,23 @@ class AudioFlowGroup(
     }
 
     override fun added(obj: AudioFlow, idx: Int) {
-        if (obj.isActive.now) activate(obj)
+        val placement = when {
+            idx == 0 -> NodePlacement.head(superColliderName.now)
+            else -> NodePlacement.after(flows[idx - 1].superColliderName)
+        }
+        obj.addToServer(placement)
         observeFlow(obj)
     }
 
     private fun observeFlow(obj: AudioFlow) {
         observers[obj] = obj.isActive.observe { _, _, active ->
             if (!this.isActive.now) return@observe
-            if (active) activate(obj)
-            else deactivate(obj)
+            obj.setRunning(active)
         }
     }
 
     override fun removed(obj: AudioFlow) {
-        if (isActive.now && obj.isActive.now) deactivate(obj)
+        if (isActive.now && obj.isActive.now) obj.removeFromServer()
         observers.remove(obj)?.kill()
     }
 
@@ -96,30 +98,13 @@ class AudioFlowGroup(
         }
     }
 
-    private fun activate(flow: AudioFlow, customPlacement: NodePlacement? = null) {
-        val idx = flows.indexOf(flow)
-        val prev = previousActiveFlow(idx)
-        val placement = when {
-            customPlacement != null -> customPlacement
-            prev == null -> NodePlacement.head(superColliderName.now)
-            else -> NodePlacement.after(prev.superColliderName)
-        }
-        val code = flow.writeCode(placement)
-        client.eval(code, "activating flow ${flow.getDisplayName()}").join() //Enforce that the synths are added in the right order
-    }
-
-    private fun deactivate(flow: AudioFlow) {
-        client.run("${flow.superColliderName}.release")
-    }
-
     private fun addToServer(placement: NodePlacement) {
         val groupName = superColliderName.now
         client.run {
             +"$groupName = Group.new(${placement.target}, ${placement.addAction})"
         }
         for (flow in flows) {
-            if (!flow.isActive.now) continue
-            activate(flow, customPlacement = NodePlacement.tail(groupName))
+            flow.addToServer(placement = NodePlacement.tail(groupName))
         }
     }
 
@@ -166,11 +151,10 @@ class AudioFlowGroup(
 
     companion object {
         fun create(name: String, y: Decimal, color: Color) = AudioFlowGroup(
-            reactiveVariable(name),
-            reactiveVariable(y),
-            reactiveVariable(color),
             active = reactiveVariable(true),
-            flows = AudioFlowList()
-        )
+            flows = AudioFlowList(),
+            reactiveVariable(y),
+            reactiveVariable(color)
+        ).withName(name)
     }
 }

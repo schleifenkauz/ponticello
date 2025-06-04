@@ -1,13 +1,11 @@
 package ponticello.sc.editor
 
-import fxutils.prompt.showSelectorDialog
 import hextant.command.Command
 import hextant.command.meta.ProvideCommand
 import hextant.core.editor.*
-import reaktive.value.now
 import ponticello.model.ctx.PonticelloContext
-import ponticello.model.obj.VSTPluginObject
 import ponticello.sc.*
+import reaktive.value.now
 
 class ScExprExpander() : ConfiguredExpander<ScExpr, ScExprEditor<*>>(), ScExprEditor<ScExpr> {
     init {
@@ -94,7 +92,6 @@ class ScExprExpander() : ConfiguredExpander<ScExpr, ScExprEditor<*>>(), ScExprEd
 
     @ProvideCommand(
         shortName = "assign", name = "Wrap in assignment",
-        defaultShortcut = "Ctrl+Shift+DIGIT0",
         type = Command.Type.SingleReceiver
     )
     fun assignToVariable() {
@@ -119,7 +116,7 @@ class ScExprExpander() : ConfiguredExpander<ScExpr, ScExprEditor<*>>(), ScExprEd
 
     @ProvideCommand(
         shortName = "send", name = "Wrap in method call",
-        type = Command.Type.SingleReceiver, defaultShortcut = "Ctrl+PERIOD"
+        type = Command.Type.SingleReceiver
     )
     fun callMethod() {
         val receiver = snapshot()
@@ -164,12 +161,6 @@ class ScExprExpander() : ConfiguredExpander<ScExpr, ScExprEditor<*>>(), ScExprEd
             "lambda".expand { _ -> ScFunctionEditor().defaultState() }
             "bus".expand { BusSelector().defaultState() }
             "buf".expand { BufferSelector().defaultState() }
-            "plugin".expand { expander ->
-                val availablePlugins = VSTPluginObject.availablePlugins(expander.context).toList()
-                val pluginName = showSelectorDialog("Plugin", availablePlugins, null, anchor = null)
-                    ?: return@expand null
-                VSTPluginEditor(pluginName).defaultState()
-            }
             "control".expand(
                 condition = { exp ->
                     exp.context.hasProperty(PonticelloContext) &&

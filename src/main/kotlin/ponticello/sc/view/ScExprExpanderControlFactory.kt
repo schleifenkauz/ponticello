@@ -9,10 +9,10 @@ import hextant.completion.CompoundCompleter
 import hextant.context.ControlFactory
 import hextant.core.editor.Expander
 import hextant.core.view.ExpanderControl
-import reaktive.value.forEach
 import ponticello.sc.*
 import ponticello.sc.editor.ReferenceCompleter
 import ponticello.ui.misc.HelpBrowser
+import reaktive.value.forEach
 
 @ProvideImplementation(ControlFactory::class)
 object ScExprExpanderControlFactory : ControlFactory<ponticello.sc.editor.ScExprExpander> {
@@ -41,9 +41,9 @@ object ScExprExpanderControlFactory : ControlFactory<ponticello.sc.editor.ScExpr
         }
         control.userData = observer
         control.registerShortcuts {
-            on("Ctrl+Shift+DIGIT0") { editor.assignToVariable() }
-            on("Ctrl+PERIOD") { editor.callMethod() }
-            on("Ctrl+Shift+PERIOD") { editor.nameValue() }
+            on("Ctrl+Alt+V") { editor.assignToVariable() }
+            on("Alt+PERIOD") { editor.callMethod() }
+            on("Alt+N") { editor.nameValue() }
             on("Ctrl+D") {
                 val browser = editor.context[HelpBrowser]
                 val bounds = control.localToScreen(control.boundsInLocal)

@@ -14,10 +14,13 @@ import ponticello.model.score.ParameterControlList
 import ponticello.model.score.controls.BusControl
 import ponticello.model.score.controls.ValueControl
 import ponticello.model.score.controls.writeSynthCode
-import reaktive.value.*
+import reaktive.value.ReactiveValue
+import reaktive.value.ReactiveVariable
 import reaktive.value.binding.and
 import reaktive.value.binding.flatMap
 import reaktive.value.binding.map
+import reaktive.value.now
+import reaktive.value.reactiveVariable
 
 @Serializable
 class SendFlow(
@@ -67,12 +70,9 @@ class SendFlow(
         val latency = zero // context[Settings].serverLatency.now
         writeSynthCode(
             this@SendFlow, superColliderName.removePrefix("~"),
-            cutoff = zero, placement, latency
+            cutoff = zero, placement, latency, run = isActive.now
         )
     }
-
-    override fun getDefaultName(): ReactiveString =
-        targetRef.flatMap { target -> target.name.map { name -> "Send to $name" } }
 
     companion object {
         fun create(bus: BusObject, target: BusObject, context: Context): SendFlow {

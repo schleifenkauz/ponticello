@@ -5,7 +5,6 @@ import hextant.context.Context
 import javafx.scene.control.ScrollPane
 import javafx.scene.image.Image
 import javafx.scene.image.ImageView
-import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import ponticello.impl.*
@@ -26,7 +25,6 @@ import javax.sound.sampled.AudioSystem
 
 @Serializable
 class SampleObject(
-    @SerialName("name") override val mutableName: ReactiveVariable<String>,
     private var referencedFile: String,
 ) : BufferObject() {
     override val superColliderName: String
@@ -220,9 +218,9 @@ class SampleObject(
             }
         }
 
-        fun create(project: PonticelloProject, name: ReactiveVariable<String>, audioFile: File): SampleObject {
+        fun create(project: PonticelloProject, name: String, audioFile: File): SampleObject {
             val referencedFile = relativizePath(project.projectDirectory, audioFile)
-            return SampleObject(name, referencedFile)
+            return SampleObject(referencedFile).withName(name)
         }
     }
 }

@@ -7,10 +7,10 @@ import javafx.geometry.Orientation
 import javafx.scene.Parent
 import ponticello.model.live.LiveTaskObject
 import ponticello.model.live.LiveTaskRegistry
+import ponticello.model.obj.withName
 import ponticello.sc.editor.CodeBlockEditor
 import ponticello.ui.misc.CodePane
 import ponticello.ui.registry.ObjectListView.DisplayMode
-import reaktive.value.reactiveVariable
 
 class LiveTaskRegistryPane(registry: LiveTaskRegistry) : LiveObjectRegistryPane<LiveTaskObject>(registry) {
     init {
@@ -24,9 +24,8 @@ class LiveTaskRegistryPane(registry: LiveTaskRegistry) : LiveObjectRegistryPane<
         get() = Orientation.HORIZONTAL
 
     override fun createNewObject(name: String, ev: Event?): LiveTaskObject = LiveTaskObject(
-        reactiveVariable(name),
         EditorRoot(CodeBlockEditor().defaultState())
-    )
+    ).withName(name)
 
     override fun getContent(obj: LiveTaskObject, mode: DisplayMode): Parent {
         val actions =

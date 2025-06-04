@@ -3,8 +3,6 @@ package ponticello.model.score
 import javafx.geometry.HorizontalDirection
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import reaktive.value.ReactiveVariable
-import reaktive.value.reactiveVariable
 import ponticello.impl.Decimal
 import ponticello.model.flow.NodePlacement
 import ponticello.model.obj.ParameterDefObject
@@ -13,7 +11,6 @@ import ponticello.ui.score.MemoObjectView
 
 @Serializable
 class MemoObject(
-    @SerialName("name") override val mutableName: ReactiveVariable<String>,
     @SerialName("text") private var _text: String,
 ) : ScoreObject() {
     override val type: String
@@ -36,9 +33,9 @@ class MemoObject(
             notifyListeners<MemoObjectView> { textChanged(value) }
         }
 
-    override fun doCut(position: Decimal, whichHalf: HorizontalDirection, newName: String): ScoreObject? = null
+    override fun doCut(position: Decimal, whichHalf: HorizontalDirection): ScoreObject? = null
 
-    override fun doClone(newName: String): ScoreObject = MemoObject(reactiveVariable(newName), text)
+    override fun doClone(): ScoreObject = MemoObject(text)
 
     override fun writeCode(
         uniqueName: String,

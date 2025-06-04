@@ -1,6 +1,7 @@
 package ponticello.ui.flow
 
 import bundles.createBundle
+import fxutils.actions.Action
 import fxutils.actions.ContextualizedAction
 import fxutils.actions.collectActions
 import fxutils.controls.SliderBar
@@ -8,6 +9,8 @@ import fxutils.prompt.InfoPrompt
 import fxutils.setFixedWidth
 import fxutils.styleClass
 import fxutils.undo.UndoManager
+import fxutils.widthAtLeast
+import javafx.geometry.Point2D
 import javafx.scene.Node
 import javafx.scene.Parent
 import javafx.scene.control.Slider
@@ -16,10 +19,7 @@ import javafx.scene.input.DragEvent
 import javafx.scene.input.Dragboard
 import javafx.scene.input.TransferMode
 import org.kordamp.ikonli.material2.Material2AL
-import org.kordamp.ikonli.materialdesign2.MaterialDesignC
-import org.kordamp.ikonli.materialdesign2.MaterialDesignP
-import org.kordamp.ikonli.materialdesign2.MaterialDesignR
-import org.kordamp.ikonli.materialdesign2.MaterialDesignS
+import org.kordamp.ikonli.materialdesign2.*
 import ponticello.model.flow.*
 import ponticello.model.obj.SynthDefObject
 import ponticello.model.registry.BusRegistry
@@ -34,9 +34,9 @@ import ponticello.ui.registry.ObjectBox
 import ponticello.ui.registry.ObjectListDisplayConfig
 import ponticello.ui.registry.ObjectListView
 import ponticello.ui.registry.ObjectListView.DisplayMode
-import ponticello.ui.registry.SimpleSearchableRegistryView
+import ponticello.ui.registry.SearchableBusListView
 import ponticello.ui.score.ParameterControlsPane
-import reaktive.value.ReactiveString
+import ponticello.ui.score.ScorePane
 import reaktive.value.binding.binding
 import reaktive.value.now
 import reaktive.value.reactiveValue
@@ -79,10 +79,16 @@ class FlowListConfig(
             listOf(selectorControl, masterVolumeSlider)
         }
 
+        is VSTPluginFlow -> {
+            val busSelector = ObjectSelectorControl(obj.busSelector, createBundle())
+                .widthAtLeast(100.0)
+            listOf(busSelector)
+        }
+
         else -> emptyList()
     }
 
-    override fun getContent(obj: AudioFlow, mode: DisplayMode): Parent = when (obj) {
+    override fun getContent(obj: AudioFlow, mode: DisplayMode): Parent? = when (obj) {
         is CodeFlow -> obj.codeEditor.control
         is SendFlow -> SendFlowView(obj)
         is SynthFlow -> ParameterControlsPane(obj, "Flow controls").apply {
@@ -97,6 +103,7 @@ class FlowListConfig(
         is MixerFlow -> MixerFlowView(obj).apply {
             componentsView.autoResizeScene = autoResizeScene
         }
+        else -> null
     }
 
     override fun getActions(box: ObjectBox<AudioFlow>): List<ContextualizedAction> {
@@ -110,8 +117,6 @@ class FlowListConfig(
         dragboard.setContent(mapOf(AudioFlow.DATA_FORMAT to ref))
     }
 
-    override fun getDefaultDisplayName(obj: AudioFlow): ReactiveString = obj.getDefaultName()
-
     fun onDrop(ev: DragEvent, listView: ObjectListView<AudioFlow>) {
         if (ev.dragboard.hasContent(AudioFlow.DATA_FORMAT)) {
             val reference = ev.dragboard.getContent(AudioFlow.DATA_FORMAT) as AudioFlows.FlowReference
@@ -120,14 +125,16 @@ class FlowListConfig(
             if (newIndex < 0) newIndex = -(newIndex + 1)
             val copy = flow.copy()
             listView.source.add(copy, newIndex)
-            if (flow.isActive.now) copy.activate()
+            copy.setActive(flow.isActive.now)
             if (TransferMode.COPY !in ev.dragboard.transferModes) {
                 reference.removeFrom(context[AudioFlows])
             }
         } else if (ev.dragboard.hasContent(SynthDefObject.DATA_FORMAT)) {
             val registry = context[SynthDefRegistry]
             val def = ev.dragboard.getFrom(registry, SynthDefObject.DATA_FORMAT) ?: return
-            val flow = SynthFlow.create(def, context)
+            val anchor = Point2D(ev.x, ev.y)
+            val controls = ScorePane.getInitialControls(def, context, defaultBus = null, anchor) ?: return
+            val flow = SynthFlow.create(def, controls)
             listView.source.add(flow)
         }
     }
@@ -137,7 +144,7 @@ class FlowListConfig(
             addAction("Add source bus") {
                 icon(MaterialDesignP.PLUS)
                 executesOn<MixerFlow> { flow, ev ->
-                    val bus = SimpleSearchableRegistryView(flow.context[BusRegistry], "Select source bus")
+                    val bus = SearchableBusListView(flow.context[BusRegistry], "Select source bus")
                         .showPopup(ev) ?: return@executesOn
                     flow.components.add(MixerFlow.MixerComponent.create(bus))
                 }
@@ -159,8 +166,7 @@ class FlowListConfig(
                         InfoPrompt("Cannot activate flow").showDialog(ev) //TODO better error description
                         return@executes
                     }
-                    if (flow.isActive.now) flow.deactivate()
-                    else flow.activate()
+                    flow.toggleActive()
                 }
             }
             addAction("Reload") {
@@ -176,11 +182,16 @@ class FlowListConfig(
                     if (flow !is SynthFlow) reactiveValue(false)
                     else flow.synthDefSelector.isResolved
                 }
+                ifNotApplicable(Action.IfNotApplicable.Hide)
                 executes { flow ->
                     flow as SynthFlow
                     val pane = flow.context[PonticelloMainActivity].synthDefsPane()
                     pane.listView.showContent(flow.def)
                 }
+            }
+            addAction("Show VST editor") {
+                icon(MaterialDesignE.EYE)
+                executesOn<VSTPluginFlow> { flow -> flow.showEditor() }
             }
         }
     }

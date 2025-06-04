@@ -7,10 +7,6 @@ import javafx.geometry.HorizontalDirection.RIGHT
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
-import reaktive.value.ReactiveValue
-import reaktive.value.ReactiveVariable
-import reaktive.value.now
-import reaktive.value.reactiveVariable
 import ponticello.impl.*
 import ponticello.model.flow.NodePlacement
 import ponticello.model.obj.*
@@ -19,10 +15,13 @@ import ponticello.model.score.controls.*
 import ponticello.sc.BufferPositionControlSpec
 import ponticello.sc.NumericalControlSpec
 import ponticello.sc.editor.SynthDefSelector
+import reaktive.value.ReactiveValue
+import reaktive.value.ReactiveVariable
+import reaktive.value.now
+import reaktive.value.reactiveVariable
 
 @Serializable
 class SynthObject(
-    @SerialName("name") override val mutableName: ReactiveVariable<String>,
     @SerialName("synthDef") private val synthDefRef: ReactiveVariable<SynthDefReference>,
     override val controls: ParameterControlList,
 ) : ParameterizedScoreObject() {
@@ -57,14 +56,12 @@ class SynthObject(
     val playBufRate: ReactiveVariable<Decimal>?
         get() = (controls.controlMap["rate"] as? ValueControl)?.value?.takeIf { bufferControl != null }
 
-    override fun doClone(newName: String): ScoreObject = SynthObject(
-        reactiveVariable(newName), synthDefRef.copy(),
-        controls = controls.copy()
+    override fun doClone(): ScoreObject = SynthObject(
+        synthDefRef.copy(), controls = controls.copy()
     )
 
-    override fun doCut(position: Decimal, whichHalf: HorizontalDirection, newName: String): ScoreObject = SynthObject(
-        reactiveVariable(newName), synthDefRef.copy(),
-        controls = cutEnvelopes(whichHalf, position)
+    override fun doCut(position: Decimal, whichHalf: HorizontalDirection): ScoreObject = SynthObject(
+        synthDefRef.copy(), controls = cutEnvelopes(whichHalf, position)
     )
 
     private fun cutEnvelopes(
@@ -143,15 +140,13 @@ class SynthObject(
         uniqueName: String, placement: NodePlacement?,
         cutoff: Decimal, latency: Decimal, extraArguments: Map<ParameterDefObject, ParameterControl>,
     ): String = writeCode {
-        writeSynthCode(this@SynthObject, uniqueName, cutoff, placement!!, latency, extraArguments)
+        writeSynthCode(this@SynthObject, uniqueName, cutoff, placement!!, latency, extraArguments, run = true)
     }
 
     companion object {
         fun create(
             name: String, def: SynthDefObject,
             controls: ParameterControlList = ParameterControlList.empty(),
-        ): SynthObject {
-            return SynthObject(reactiveVariable(name), reactiveVariable(def.reference()), controls)
-        }
+        ): SynthObject = SynthObject(reactiveVariable(def.reference()), controls).withName(name)
     }
 }
