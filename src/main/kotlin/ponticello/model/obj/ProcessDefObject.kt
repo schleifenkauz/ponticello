@@ -47,7 +47,7 @@ class ProcessDefObject(
 
     override fun copy(): ProcessDefObject = ProcessDefObject(
         color.copy(),
-        ParameterDefList(parameters.mapTo(mutableListOf()) { p -> p.copy() }),
+        ParameterDefList(parameters.mapTo(mutableListOf()) { p -> p.copy().withName(p.name.now) }),
         setupBlock.clone(context),
         loopBlock.clone(context)
     )

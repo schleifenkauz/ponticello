@@ -39,7 +39,7 @@ class CustomizableSynthDefObject(
         parameters + listOf(ParameterDefObject.LEVEL, ParameterDefObject.ATTACK_RELEASE)
 
     override fun copy(): CustomizableSynthDefObject = CustomizableSynthDefObject(
-        ParameterDefList(parameters.mapTo(mutableListOf()) { p -> p.copy() }),
+        ParameterDefList(parameters.mapTo(mutableListOf()) { p -> p.copy().withName(p.name.now) }),
         color.copy(),
         ugenGraph?.clone()
     )
@@ -74,7 +74,7 @@ class CustomizableSynthDefObject(
             RawScExpr("level = \\level.kr(1)"),
             RawScExpr("auto_release_ = \\auto_release.kr(1)"),
             RawScExpr("auto_release_env = IEnvGen.kr(Env.new([1, 1, 1 - auto_release_], [attack + sustain, 0]), index: Sweep.kr(rate: ~time_warp_bus.kr))"),
-            RawScExpr("env_ = Env.asr(attack, 1, release, 'lin').kr(Done.freeSelf, gate: auto_release_env * \\gate.kr(1) * level, timeScale: ~time_warp_bus.kr)"),
+            RawScExpr("env_ = Env.asr(attack, 1, release, 'lin').kr(Done.freeSelf, gate: auto_release_env * \\gate.kr(1), timeScale: ~time_warp_bus.kr) * level"),
         )
         val statements = ugenGraph?.editor?.result?.now?.statements.orEmpty()
         val block = CodeBlock(

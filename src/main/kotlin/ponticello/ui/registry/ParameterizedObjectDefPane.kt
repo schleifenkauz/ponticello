@@ -9,6 +9,7 @@ import javafx.scene.layout.VBox
 import ponticello.model.Settings
 import ponticello.model.obj.ConfigurableParameterizedObjectDef
 import ponticello.model.obj.ParameterDefObject
+import ponticello.model.obj.withName
 import reaktive.value.now
 
 abstract class ParameterizedObjectDefPane<T : ConfigurableParameterizedObjectDef>(
@@ -20,7 +21,8 @@ abstract class ParameterizedObjectDefPane<T : ConfigurableParameterizedObjectDef
             val defaultParameters = def.context[Settings].defaultParametersDefs
                 .filter { param -> !def.hasParameter(param.name.now) }
             val listView = SearchableParameterDefListView(defaultParameters, "New parameter")
-            return listView.showPopup(ev)?.copy()
+            val param = listView.showPopup(ev) ?: return null
+            return param.copy().withName(param.name.now)
         }
 
         override val enableAddObjectButton: Boolean

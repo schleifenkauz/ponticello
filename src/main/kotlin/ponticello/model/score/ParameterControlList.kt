@@ -84,7 +84,7 @@ class ParameterControlList(
         fun copy(value: ParameterControl = now.copy()): NamedParameterControl =
             NamedParameterControl(value, customSpec).withName(name.now)
 
-        override fun copy(): NamedParameterControl = copy(now)
+        override fun copy(): NamedParameterControl = copy(now.copy())
 
         override val canCopy: Boolean get() = true
 

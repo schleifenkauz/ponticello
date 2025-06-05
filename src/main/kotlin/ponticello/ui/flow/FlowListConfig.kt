@@ -22,6 +22,7 @@ import org.kordamp.ikonli.material2.Material2AL
 import org.kordamp.ikonli.materialdesign2.*
 import ponticello.model.flow.*
 import ponticello.model.obj.SynthDefObject
+import ponticello.model.obj.withName
 import ponticello.model.registry.BusRegistry
 import ponticello.model.registry.SynthDefRegistry
 import ponticello.sc.Rate
@@ -123,7 +124,7 @@ class FlowListConfig(
             val flow = reference.getFlow(context[AudioFlows]) ?: return
             var newIndex = listView.getBoxes().binarySearchBy(ev.y) { n -> n.layoutY }
             if (newIndex < 0) newIndex = -(newIndex + 1)
-            val copy = flow.copy()
+            val copy = flow.copy().withName("${flow.name.now}_copy")
             listView.source.add(copy, newIndex)
             copy.setActive(flow.isActive.now)
             if (TransferMode.COPY !in ev.dragboard.transferModes) {

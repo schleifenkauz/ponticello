@@ -157,7 +157,7 @@ sealed class ItemTarget : AbstractContextualObject() {
             grid.activeObjects[item] = null
         }
 
-        override fun toString() = "Object ${ref.getName()}"
+        override fun toString() = ref.getName()
     }
 
     @Serializable

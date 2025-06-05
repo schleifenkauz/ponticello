@@ -3,6 +3,7 @@ package ponticello.ui.registry
 import fxutils.prompt.SimpleSearchableListView
 import ponticello.model.obj.ParameterDefObject
 import ponticello.model.obj.ParameterizedObject
+import ponticello.model.obj.withName
 import ponticello.sc.Identifier
 import ponticello.sc.ParameterType
 import ponticello.ui.controls.ControlSpecPrompt
@@ -24,6 +25,6 @@ class SearchableParameterDefListView(
             .showPopup(anchor, ownerWindow, initialOption = ParameterType.Numerical) ?: return null
         val prompt = ControlSpecPrompt.create(text, parentObject, type) ?: return null
         val spec = prompt.showDialog(ownerWindow, anchor) ?: return null
-        return ParameterDefObject(text, spec)
+        return ParameterDefObject(text, spec).withName(text)
     }
 }

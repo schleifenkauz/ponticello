@@ -250,7 +250,7 @@ sealed class ScoreObject : AbstractRenamableObject() {
     }
 
     fun addedToScore(registry: ScoreObjectRegistry) {
-        if (!registry.has(this)) {
+        if (this !is Unresolved && !registry.has(this)) {
             registry.context.withoutUndo { registry.add(this) }
         }
         if (this is ScoreObjectGroup) {

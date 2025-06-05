@@ -13,7 +13,6 @@
 - sub-objects get buggy after unlinking group objects
     - the new objects don't get added to the `ScoreEventCollector`
 - deleting objects doesn't remove them from the events collector...
-- duplicating large groups takes a LONG time
 
 ### Minor
 

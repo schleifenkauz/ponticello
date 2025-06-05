@@ -2,6 +2,7 @@ package ponticello.model.obj
 
 import fxutils.undo.AbstractEdit
 import fxutils.undo.UndoManager
+import hextant.context.Context
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import reaktive.value.ReactiveValue
@@ -12,14 +13,19 @@ import reaktive.value.reactiveVariable
 @Serializable
 abstract class AbstractRenamableObject : RenamableObject, AbstractNamedObject() {
     @SerialName("name")
-    private lateinit var _name: ReactiveVariable<String>
+    private var _name: ReactiveVariable<String>? = null
 
     override val name: ReactiveValue<String>
-        get() = _name
+        get() = _name ?: error("Object of type ${this::class.simpleName} has no name.")
 
     override fun setInitialName(name: String) {
-        check(!initialized) { "Cannot set initial name when $this is already initialized" }
+        check(!initialized) { "Cannot set initial the object is already initialized" }
         _name = reactiveVariable(name)
+    }
+
+    override fun initialize(context: Context) {
+        check(_name != null) { "Object of type ${this::class.simpleName} has no name." }
+        super.initialize(context)
     }
 
     override fun canRenameTo(newName: String): Boolean = registry != null && !registry!!.has(newName)
@@ -27,7 +33,7 @@ abstract class AbstractRenamableObject : RenamableObject, AbstractNamedObject() 
     override fun rename(newName: String) {
         if (newName == name.now) return
         context[UndoManager].record(RenameEdit(this, name.now, newName))
-        _name.now = newName
+        _name!!.now = newName
     }
 
     override fun copy(): RenamableObject = throw UnsupportedOperationException("Cannot copy $this")

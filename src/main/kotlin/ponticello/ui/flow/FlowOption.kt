@@ -23,7 +23,7 @@ sealed interface FlowOption {
                 .showPopup(anchor) ?: return null
             val selected = SearchableBusListView(context[BusRegistry], "Target bus")
                 .showPopup(anchor) ?: return null
-            return SendFlow.create(source, selected, context)
+            return SendFlow.create(source, selected)
         }
 
         override fun defaultName(): String = "send"
@@ -46,7 +46,11 @@ sealed interface FlowOption {
     }
 
     data object Mixer : FlowOption {
-        override fun createFlow(context: Context, anchor: Point2D): AudioFlow = MixerFlow.create()
+        override fun createFlow(context: Context, anchor: Point2D): MixerFlow? {
+            val out = SearchableBusListView(context[BusRegistry], "Output bus")
+                .showPopup(anchor) ?: return null
+            return MixerFlow.create(out)
+        }
 
         override fun defaultName(): String = "mixer"
     }

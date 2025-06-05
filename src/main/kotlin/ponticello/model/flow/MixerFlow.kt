@@ -10,7 +10,7 @@ import ponticello.model.obj.BusReference
 import ponticello.model.registry.BusRegistry
 import ponticello.model.registry.ObjectList
 import ponticello.model.registry.ObjectListSerializer
-import ponticello.model.registry.ObjectReference
+import ponticello.model.registry.reference
 import ponticello.model.score.controls.AttackReleaseControl
 import ponticello.model.score.controls.guardAgainstReplaceNil
 import ponticello.sc.NumericalControlSpec
@@ -225,8 +225,8 @@ class MixerFlow(
             lag = AttackReleaseControl.DEFAULT, warp = Warp.Linear, step = 0.1.toDecimal(),
         )
 
-        fun create() = MixerFlow(
-            reactiveVariable(ObjectReference.none()),
+        fun create(out: BusObject) = MixerFlow(
+            reactiveVariable(out.reference()),
             MixerComponentList(mutableListOf())
         )
     }

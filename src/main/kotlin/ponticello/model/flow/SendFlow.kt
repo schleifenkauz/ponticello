@@ -75,14 +75,10 @@ class SendFlow(
     }
 
     companion object {
-        fun create(bus: BusObject, target: BusObject, context: Context): SendFlow {
-            val flow = SendFlow(
-                reactiveVariable(bus.reference()),
-                reactiveVariable(target.reference()),
-                reactiveVariable(Decimal(100.0, 0))
-            )
-            flow.initialize(context)
-            return flow
-        }
+        fun create(source: BusObject, target: BusObject): SendFlow = SendFlow(
+            reactiveVariable(source.reference()),
+            reactiveVariable(target.reference()),
+            reactiveVariable(Decimal(100.0, 0))
+        )
     }
 }
