@@ -120,7 +120,7 @@ class ScExprExpander() : ConfiguredExpander<ScExpr, ScExprEditor<*>>(), ScExprEd
     )
     fun callMethod() {
         val receiver = snapshot()
-        val send = MessageSendEditor(receiver)
+        val send = MessageSendEditor(receiver, IdentifierEditor(""), ScExprListEditor().defaultState())
         expand(send, editDescription = "Wrap in method call")
         send.method.notifyViews { focus() }
     }

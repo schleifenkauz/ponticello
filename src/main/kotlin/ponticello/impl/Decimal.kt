@@ -78,7 +78,11 @@ class Decimal(val value: Double, val precision: Int) : Number(), Comparable<Deci
         val INF get() = Decimal(Double.POSITIVE_INFINITY, 0)
         val NINF get() = Decimal(Double.NEGATIVE_INFINITY, 0)
 
-        private fun Double.format(precision: Int) = String.format(Locale.US, "%.${precision}f", this)
+        private fun Double.format(precision: Int): String {
+            val str = String.format(Locale.US, "%.${precision}f", this)
+            return if (str.all { ch -> ch in setOf('0', '.', '-') }) str.removePrefix("-")
+            else str
+        }
     }
 
     @OptIn(ExperimentalSerializationApi::class)
