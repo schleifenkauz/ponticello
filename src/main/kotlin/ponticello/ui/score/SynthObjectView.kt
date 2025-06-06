@@ -8,10 +8,12 @@ import fxutils.prompt.DetailPane
 import fxutils.styleClass
 import javafx.application.Platform
 import javafx.geometry.Rectangle2D
+import javafx.scene.Node
 import javafx.scene.image.Image
 import javafx.scene.image.ImageView
 import javafx.scene.layout.HBox
 import javafx.scene.paint.Color
+import javafx.scene.shape.Line
 import javafx.scene.transform.Scale
 import javafx.scene.transform.Translate
 import org.kordamp.ikonli.material2.Material2AL
@@ -36,7 +38,7 @@ class SynthObjectView(
     override val obj: SynthObject, instance: ScoreObjectInstance
 ) : ParameterizedScoreObjectView<SynthObject>(instance), ParameterControlList.Listener {
     private var spectrogramImage: Image? = null
-    private val spectrogramViews = mutableListOf<ImageView>()
+    private val sampleDisplayNodes = mutableListOf<Node>()
 
     private var startPosObserver: Observer? = null
     private var rateObserver: Observer? = null
@@ -95,10 +97,10 @@ class SynthObjectView(
         }
     }
 
-    override fun removed(control: ParameterControlList.NamedParameterControl) {
-        super<ParameterizedScoreObjectView>.removed(control)
-        if (control.now !is ValueControl) return
-        removedConstantControl(control)
+    override fun removed(obj: ParameterControlList.NamedParameterControl) {
+        super<ParameterizedScoreObjectView>.removed(obj)
+        if (obj.now !is ValueControl) return
+        removedConstantControl(obj)
     }
 
     private fun removedConstantControl(control: ParameterControlList.NamedParameterControl) {
@@ -137,8 +139,8 @@ class SynthObjectView(
 
     private fun updateSpectrogram() {
         Platform.runLater {
-            children.removeAll(spectrogramViews)
-            spectrogramViews.clear()
+            children.removeAll(sampleDisplayNodes)
+            sampleDisplayNodes.clear()
             if (obj.displaySample?.now != true) return@runLater
             val sample = obj.sample.now?.get()
             if (sample !is SampleObject) return@runLater
@@ -148,8 +150,8 @@ class SynthObjectView(
     }
 
     private fun displaySpectrogram() = Platform.runLater {
-        children.removeAll(spectrogramViews)
-        spectrogramViews.clear()
+        children.removeAll(sampleDisplayNodes)
+        sampleDisplayNodes.clear()
         if (obj.displaySample?.now != true) return@runLater
         if (spectrogramImage == null) return@runLater
         val sample = obj.sample.now?.get() as? SampleObject ?: return@runLater
@@ -159,7 +161,7 @@ class SynthObjectView(
         var startPos = obj.playbufStartPos?.now?.wrapAt(sample.duration().now) ?: defaultStartPos
         if (rate < zero && startPos < 1e-5.asTime) startPos = sample.duration().now
         var t = zero
-        for (i in 0..100) {
+        while (true) {
             if (t >= obj.duration) break
             var imageDur = when {
                 t > zero -> sample.duration().now / rate.abs()
@@ -173,9 +175,14 @@ class SynthObjectView(
             )
             view.layoutX = getWidth(t)
             t += imageDur
-            spectrogramViews.add(view)
+            if (sampleDisplayNodes.isNotEmpty()) {
+                val loopPointIndicator = Line(view.layoutX, 0.0, view.layoutX, prefHeight)
+                loopPointIndicator.stroke = Color.gray(0.0, 0.5)
+                sampleDisplayNodes.add(loopPointIndicator)
+            }
+            sampleDisplayNodes.add(view)
         }
-        children.addAll(spectrogramViews)
+        children.addAll(sampleDisplayNodes)
     }
 
     private fun displaySpectrogramPart(

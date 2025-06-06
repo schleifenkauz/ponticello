@@ -172,7 +172,7 @@ object ObjectActions {
             shortcut("F2")
             executeSingle { view, _ ->
                 val obj = view.obj
-                RenamePrompt(obj, "New name for object").showDialog(view.context)
+                RenamePrompt(obj, "New name for object").showDialog(view)
             }
         }
 

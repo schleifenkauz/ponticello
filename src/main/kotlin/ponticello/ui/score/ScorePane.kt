@@ -212,7 +212,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
         views[inst] = view
         children.add(view)
         if (autoSelect) {
-            Platform.runLater {
+            runFXWithTimeout(25) {
                 view.selectView(addToSelection = false)
             }
         }
