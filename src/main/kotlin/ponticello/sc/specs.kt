@@ -84,7 +84,7 @@ data class NumericalControlSpec(
     var origin: ControlSpec? = null
 
     constructor(
-        default: Double, min: Double, max: Double, step: Decimal, lag: Double,
+        default: Double, min: Double, max: Double, step: Decimal, lag: Double = 0.0,
         warp: Warp = Warp.Linear, associatedColor: Color = Color.WHITE,
     ) : this(
         default.withPrecision(step.precision),

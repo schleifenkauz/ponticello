@@ -3,7 +3,10 @@ package ponticello.model.player
 import bundles.PublicProperty
 import bundles.publicProperty
 import hextant.context.Context
-import ponticello.impl.*
+import ponticello.impl.Decimal
+import ponticello.impl.Logger
+import ponticello.impl.unaryMinus
+import ponticello.impl.zero
 import ponticello.model.Settings
 import ponticello.model.flow.NodeTree
 import ponticello.model.flow.SynthObjectNode
@@ -20,6 +23,7 @@ class ScoreObjectScheduler(val context: Context) {
     private val activeObjects = context[ActiveObjectsManager]
     private val serverLatency get() = context[Settings].serverLatency.now
     private val sclangLatency get() = context[Settings].scLangLatency.now
+    private val extraLatency get() = context[Settings].extraLatency.now
 
     //Only inside on ScorePlayer.execute
     fun scheduleEvents(events: List<Event>, player: ScorePlayer) {
@@ -91,7 +95,7 @@ class ScoreObjectScheduler(val context: Context) {
             return null
         }
         val time = absolutePosition.time + player.loopOffset
-        val scheduledTime = (time + scLangLatency - 0.05.toDecimal()).toString()
+        val scheduledTime = (time + scLangLatency - extraLatency).toString()
         if (obj is TempoGridObject && obj.meter.isResolved.now) {
             val meter = obj.meter.force()
             player.getClock().attach(player, meter, cutoff)
