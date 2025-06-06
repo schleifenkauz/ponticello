@@ -21,4 +21,5 @@ val json = Json {
     prettyPrint = true
     ignoreUnknownKeys = true
     allowStructuredMapKeys = true
+    encodeDefaults = false
 }

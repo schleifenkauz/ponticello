@@ -34,7 +34,7 @@ data class AttackReleaseControl(
         }
     }
 
-    override fun providesConstantSynthArgument(): Boolean = false
+    override fun providesConstantSynthArgument(spec: ControlSpec): Boolean = false
 
     override fun customSynthArguments(cutoff: Decimal, totalDuration: Decimal): String {
         val attack = (attack.now - cutoff).coerceAtLeast(zero)

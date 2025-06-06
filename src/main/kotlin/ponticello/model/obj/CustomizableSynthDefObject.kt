@@ -59,7 +59,7 @@ class CustomizableSynthDefObject(
 
     override fun ScWriter.createObject() {
         append("SynthDef(\\${name.now}, ")
-        val extraVariables = listOf("duration", "attack", "release", "sustain", "level", "auto_release_", "env_, auto_release_env")
+        val extraVariables = listOf("duration", "attack", "release", "sustain_", "level", "auto_release_", "env_, auto_release_env")
         val parameterVariables = parameters.map { p -> Identifier(p.name.now) }
         val parameterAssignments = parameters.map { p ->
             val parameterCode = RawScExpr("\\${p.name.now}.${p.spec.now.code}")
@@ -70,10 +70,10 @@ class CustomizableSynthDefObject(
             RawScExpr("duration = \\duration.ir"),
             RawScExpr("attack = \\attack.kr(${AttackReleaseControl.DEFAULT})"),
             RawScExpr("release = \\release.kr(${AttackReleaseControl.DEFAULT})"),
-            RawScExpr("sustain = duration - (attack + release)"),
+            RawScExpr("sustain_ = duration - (attack + release)"),
             RawScExpr("level = \\level.kr(1)"),
             RawScExpr("auto_release_ = \\auto_release.kr(1)"),
-            RawScExpr("auto_release_env = IEnvGen.kr(Env.new([1, 1, 1 - auto_release_], [attack + sustain, 0]), index: Sweep.kr(rate: ~time_warp_bus.kr))"),
+            RawScExpr("auto_release_env = IEnvGen.kr(Env.new([1, 1, 1 - auto_release_], [attack + sustain_, 0]), index: Sweep.kr(rate: ~time_warp_bus.kr))"),
             RawScExpr("env_ = Env.asr(attack, 1, release, 2).kr(Done.freeSelf, gate: auto_release_env * \\gate.kr(1), timeScale: ~time_warp_bus.kr) * level"),
         )
         val statements = ugenGraph?.editor?.result?.now?.statements.orEmpty()

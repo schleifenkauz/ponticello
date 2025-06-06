@@ -13,12 +13,12 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
-import reaktive.value.now
 import ponticello.model.obj.AbstractContextualObject
 import ponticello.model.project.component
 import ponticello.sc.client.SuperColliderClient
 import ponticello.sc.code
 import ponticello.sc.editor.CodeBlockEditor
+import reaktive.value.now
 
 class ScriptObject(val root: EditorRoot<@Contextual CodeBlockEditor>, val type: Type) : AbstractContextualObject() {
     override fun initialize(context: Context) {
@@ -81,14 +81,6 @@ class ScriptObject(val root: EditorRoot<@Contextual CodeBlockEditor>, val type: 
             name = this.name.lowercase(),
             default = { ScriptObject(EditorRoot<@Contextual CodeBlockEditor>(CodeBlockEditor().defaultState()), this) },
             serializer = Serializer(this)
-        )
-    }
-
-    companion object {
-        fun component(type: Type) = component(
-            name = type.name.lowercase(),
-            default = { ScriptObject(EditorRoot(CodeBlockEditor().defaultState()), type) },
-            serializer = Serializer(type)
         )
     }
 }

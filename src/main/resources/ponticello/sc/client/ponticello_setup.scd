@@ -113,7 +113,7 @@ OSCdef('schedule', {
         if (my_play_start.isNil || (my_play_start == ~play_start[player_id])) {
             fork {
                 postf("EXECUTE %\n", info);
-                code.postln;
+                //code.postln;
                 try { fct.value } { |error|
                     ~ponticello_addr.sendMsg('/error', error.what);
                     error.throw;

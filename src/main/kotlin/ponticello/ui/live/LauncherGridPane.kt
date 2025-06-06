@@ -28,9 +28,13 @@ import ponticello.model.flow.AudioFlows
 import ponticello.model.live.ItemTarget
 import ponticello.model.live.LauncherGrid
 import ponticello.model.live.LauncherGrid.GridItemReference
+import ponticello.model.obj.BufferObject
 import ponticello.model.obj.ParameterDefObject
 import ponticello.model.obj.ParameterizedObject
 import ponticello.model.player.ScorePlayer
+import ponticello.model.project.UI_STATE
+import ponticello.model.project.get
+import ponticello.model.registry.BufferRegistry
 import ponticello.model.registry.ObjectReference
 import ponticello.model.registry.ScoreObjectRegistry
 import ponticello.model.registry.reference
@@ -41,6 +45,8 @@ import ponticello.sc.ParameterType
 import ponticello.sc.Warp
 import ponticello.ui.actions.PlaybackActions
 import ponticello.ui.actions.UndoRedoActions
+import ponticello.ui.impl.getFrom
+import ponticello.ui.launcher.PonticelloLauncher.Companion.currentProject
 import ponticello.ui.launcher.PonticelloMainActivity
 import ponticello.ui.registry.ScoreObjectRegistryPane
 import ponticello.ui.registry.SearchableParameterDefListView
@@ -169,7 +175,7 @@ class LauncherGridPane(
         box.setupDropArea(canDropOnItem(item), dropOn(item))
     }
 
-    private fun dropOn(item: LauncherGrid.GridItem) = { ev: DragEvent ->
+    private fun dropOn(item: LauncherGrid.GridItem) = drop@{ ev: DragEvent ->
         val db = ev.dragboard
         when {
             db.hasContent(GridItemReference.DATA_FORMAT) -> {
@@ -196,7 +202,25 @@ class LauncherGridPane(
                         else ItemTarget.Object(obj.reference())
                 }
             }
+
+            db.hasContent(BufferObject.DATA_FORMAT) -> {
+                val buffer = db.getFrom(context[BufferRegistry], BufferObject.DATA_FORMAT) ?: return@drop
+                createPlayBufTarget(ev, buffer, item)
+            }
+
+            db.hasFile("wav") -> {
+                val file = db.files[0]
+                val buffer = context[BufferRegistry].getOrAdd(file)
+                createPlayBufTarget(ev, buffer, item)
+            }
         }
+    }
+
+    private fun createPlayBufTarget(ev: DragEvent, buffer: BufferObject, item: LauncherGrid.GridItem) {
+        val synthDef = context[currentProject][UI_STATE].getOrSelectSynthDef(ev) ?: return
+        val obj = buffer.createSynthObject(synthDef) ?: return
+        context[ScoreObjectRegistry].add(obj)
+        item.target = ItemTarget.Object(obj.reference())
     }
 
     private fun canDropOnItem(item: LauncherGrid.GridItem) = { db: Dragboard ->
@@ -214,6 +238,8 @@ class LauncherGridPane(
                 val obj = context[ScoreObjectRegistry].getOrNull(name)
                 obj != null && obj.affectsPlayback
             }
+            db.hasContent(BufferObject.DATA_FORMAT) -> true
+            db.hasFile("wav") -> true
 
             else -> false
         }

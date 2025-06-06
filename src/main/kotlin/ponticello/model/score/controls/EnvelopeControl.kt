@@ -36,7 +36,7 @@ class EnvelopeControl(
 
     override fun validate(spec: ControlSpec, obj: ParameterizedObject): Boolean = spec is NumericalControlSpec
 
-    override fun providesConstantSynthArgument(): Boolean = true
+    override fun providesConstantSynthArgument(spec: ControlSpec): Boolean = true
 
     override fun allocatesBus(obj: ParameterizedObject): Boolean = obj.def is SynthDefObject
 

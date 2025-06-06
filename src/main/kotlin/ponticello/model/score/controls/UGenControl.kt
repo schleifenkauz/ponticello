@@ -48,7 +48,7 @@ data class UGenControl(
 
     override fun validate(spec: ControlSpec, obj: ParameterizedObject): Boolean = true
 
-    override fun providesConstantSynthArgument(): Boolean = false
+    override fun providesConstantSynthArgument(spec: ControlSpec): Boolean = false
 
     override fun allocatesBus(obj: ParameterizedObject): Boolean = true
 

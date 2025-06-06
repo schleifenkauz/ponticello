@@ -71,7 +71,7 @@ sealed class BusObject : AbstractSuperColliderObject() {
     @Serializable
     class AudioBus(
         override val channels: ReactiveVariable<Int>,
-        override val busType: Type,
+        override val busType: Type = Type.Regular,
     ) : BusObject() {
         override val rate: Rate get() = Audio
 

@@ -188,12 +188,11 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
     }
 
     private fun createPlayBufObject(buffer: BufferObject, position: ObjectPosition, ev: Event?) {
-        val synthDef = buffer.context[currentProject][UI_STATE].getOrSelectSynthDef(ev) ?: return
+        val synthDef = context[currentProject][UI_STATE].getOrSelectSynthDef(ev) ?: return
         val obj = buffer.createSynthObject(synthDef) ?: return
         val inst = ScoreObjectInstance(obj, position)
         context.compoundEdit("Add sample to score") {
             score.addObject(inst, autoSelect = true)
-
         }
     }
 
