@@ -12,7 +12,6 @@ import javafx.geometry.HorizontalDirection
 import javafx.scene.Node
 import javafx.scene.Parent
 import javafx.scene.input.DataFormat
-import javafx.scene.layout.BorderPane
 import org.kordamp.ikonli.codicons.Codicons
 import org.kordamp.ikonli.materialdesign2.MaterialDesignA
 import org.kordamp.ikonli.materialdesign2.MaterialDesignM
@@ -58,17 +57,14 @@ class ScoreObjectRegistryPane(registry: ScoreObjectRegistry) : ObjectRegistryPan
 
     override fun configureSubWindow(window: SubWindow, obj: ScoreObject) {
         if (obj is ParameterizedObject) {
+            val content = window.scene.root as? ScoreObjectViewPane ?: return
             registry.context[ContextualMidiReceiver].registerMidiContext(window) {
-                ParameterControlsMidiContext(obj.controls)
+                ParameterControlsMidiContext(obj.controls, content::isShowingDetailsPane)
             }
         }
     }
 
-    override fun getContent(obj: ScoreObject, mode: DisplayMode): Parent {
-        val pane = ScoreObjectViewPane.getPane(obj)
-        pane.setDefaultSize()
-        return BorderPane(pane)
-    }
+    override fun getContent(obj: ScoreObject, mode: DisplayMode): Parent = ScoreObjectViewPane.getPane(obj)
 
     override fun getActions(box: ObjectBox<ScoreObject>): List<ContextualizedAction> {
         return actions.withContext(box.obj)

@@ -24,7 +24,7 @@ class BusValueControl(val bus: ReactiveVariable<BusReference>) : ParameterContro
 
     override fun copy(): ParameterControl = BusValueControl(bus.copy())
 
-    override fun providesConstantSynthArgument(spec: ControlSpec): Boolean = false
+    override fun providesConstantSynthArgument(obj: ParameterizedObject, spec: ControlSpec, cutoff: Decimal): Boolean = false
 
     override fun validate(spec: ControlSpec, obj: ParameterizedObject): Boolean {
         if (spec !is NumericalControlSpec) {

@@ -177,7 +177,7 @@ class SynthObjectView(
             t += imageDur
             if (sampleDisplayNodes.isNotEmpty()) {
                 val loopPointIndicator = Line(view.layoutX, 0.0, view.layoutX, prefHeight)
-                loopPointIndicator.stroke = Color.gray(0.0, 0.5)
+                loopPointIndicator.stroke = Color.WHITE
                 sampleDisplayNodes.add(loopPointIndicator)
             }
             sampleDisplayNodes.add(view)

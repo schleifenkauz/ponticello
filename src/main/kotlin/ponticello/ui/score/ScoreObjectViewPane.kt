@@ -1,20 +1,21 @@
 package ponticello.ui.score
 
 import bundles.set
-import fxutils.*
 import fxutils.actions.action
 import fxutils.actions.makeButton
 import fxutils.actions.registerActions
+import fxutils.centerChildren
+import fxutils.hspace
+import fxutils.infiniteSpace
+import fxutils.registerShortcuts
+import fxutils.undo.UndoManager
 import hextant.context.extend
 import javafx.scene.control.SplitPane
 import javafx.scene.layout.HBox
 import javafx.scene.layout.Priority
 import javafx.scene.layout.VBox
-import javafx.scene.paint.Color
 import javafx.stage.Screen
 import org.kordamp.ikonli.materialdesign2.MaterialDesignV
-import reaktive.value.now
-import reaktive.value.reactiveVariable
 import ponticello.impl.times
 import ponticello.model.player.ScorePlayer
 import ponticello.model.score.ScoreObject
@@ -22,6 +23,8 @@ import ponticello.model.score.ScoreObjectGroup
 import ponticello.ui.actions.*
 import ponticello.ui.launcher.PonticelloMainActivity
 import ponticello.ui.registry.ScoreObjectRegistryPane
+import reaktive.value.now
+import reaktive.value.reactiveVariable
 
 //TODO bad name
 class ScoreObjectViewPane private constructor(val obj: ScoreObject) : VBox() {
@@ -34,20 +37,25 @@ class ScoreObjectViewPane private constructor(val obj: ScoreObject) : VBox() {
     private val showDetailsPane = reactiveVariable(false)
     private val selector = ScoreObjectSelectionManager(context, scorePane)
 
+    fun isShowingDetailsPane() = showDetailsPane.now
+
     init {
         setDefaultSize()
-        border = createBorder(Color.AQUAMARINE, 2.0)
         context[ScoreObjectSelectionManager] = selector
         scorePane.initialize()
         setupPlayback()
         setVgrow(splitter, Priority.ALWAYS)
         children.addAll(createPlaybackBar(), splitter)
+        isFocusTraversable = true
+        setOnMouseClicked { requestFocus() }
         registerShortcuts {
             SelectionRelatedActions.addShortcuts(this, context)
             val ctx = ObjectActionContext.MultiObjectContext(selector)
             registerActions(ObjectActions.all.withContext(ctx))
             registerActions(ScoreObjectRegistryPane.actions.withContext(obj))
             registerActions(PlaybackActions.local.withContext(player))
+            registerActions(UndoRedoActions.withContext(obj.context[UndoManager]))
+            registerActions(listOf(showDetailPaneAction.withContext(this@ScoreObjectViewPane)))
             context[PonticelloMainActivity].interactionConfig.addGridRelatedShortcuts(this)
         }
     }
@@ -100,6 +108,7 @@ class ScoreObjectViewPane private constructor(val obj: ScoreObject) : VBox() {
 
         private val showDetailPaneAction = action<ScoreObjectViewPane>("Show detail pane") {
             icon(MaterialDesignV.VIEW_LIST_OUTLINE)
+            shortcut("Ctrl+D")
             applicableIf { pane -> pane.obj !is ScoreObjectGroup }
             toggleState { pane -> pane.showDetailsPane }
             executes { pane -> pane.toggleDetailsPane() }

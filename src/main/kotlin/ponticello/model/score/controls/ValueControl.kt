@@ -32,8 +32,13 @@ data class ValueControl(
 
     override fun allocatesBus(obj: ParameterizedObject): Boolean = allocateBus.now && obj.def is SynthDefObject
 
-    override fun providesConstantSynthArgument(spec: ControlSpec): Boolean =
-        !allocateBus.now && spec is NumericalControlSpec && spec.defaultValue.get() != value.now
+    override fun providesConstantSynthArgument(obj: ParameterizedObject, spec: ControlSpec, cutoff: Decimal): Boolean =
+        when {
+            allocateBus.now -> false
+            spec !is NumericalControlSpec -> false
+            spec.defaultValue.get() == adjustValueIfIsBufferPosition(obj, spec, cutoff) -> false
+            else -> true
+        }
 
     override fun usesAuxilSynth(obj: ParameterizedObject): Boolean = false
 

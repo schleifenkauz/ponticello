@@ -19,7 +19,7 @@ sealed class ParameterControl : AbstractContextualObject() {
 
     abstract fun validate(spec: ControlSpec, obj: ParameterizedObject): Boolean
 
-    open fun providesConstantSynthArgument(spec: ControlSpec): Boolean = true
+    open fun providesConstantSynthArgument(obj: ParameterizedObject, spec: ControlSpec, cutoff: Decimal): Boolean = true
 
     open fun customSynthArguments(cutoff: Decimal, totalDuration: Decimal): String? = null
 

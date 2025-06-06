@@ -47,7 +47,7 @@ fun ScWriter.writeSynthCode(
         if (!obj.def.hasParameter(param) && param !in SPECIAL_PARAMETERS) continue
         val customSynthArgs = ctrl.customSynthArguments(cutoff, duration ?: Decimal.INF)
         if (customSynthArgs != null) append(customSynthArgs)
-        if (!ctrl.providesConstantSynthArgument(spec)) continue
+        if (!ctrl.providesConstantSynthArgument(obj, spec, cutoff)) continue
         val expr = ctrl.generateArgumentExpr(obj, uniqueName, param, spec, cutoff, context = CodegenContext.Synth)
         append("$param: ")
         expr.code(writer, obj.context)
