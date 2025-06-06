@@ -9,16 +9,16 @@ import javafx.geometry.HorizontalDirection
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
-import reaktive.value.ReactiveBoolean
-import reaktive.value.ReactiveVariable
-import reaktive.value.now
-import reaktive.value.reactiveVariable
 import ponticello.impl.Decimal
 import ponticello.impl.copy
 import ponticello.impl.rangeTo
 import ponticello.model.obj.ScoreObjectReference
 import ponticello.model.registry.ScoreObjectRegistry
 import ponticello.model.registry.reference
+import reaktive.value.ReactiveBoolean
+import reaktive.value.ReactiveVariable
+import reaktive.value.now
+import reaktive.value.reactiveVariable
 
 @Serializable
 class ScoreObjectInstance(
@@ -151,7 +151,7 @@ class ScoreObjectInstance(
     fun clone(
         time: Decimal = this.start, y: Decimal = this.y,
         newName: String = context[ScoreObjectRegistry].nameForClone(obj)
-    ): ScoreObjectInstance = ScoreObjectInstance(obj.clone(newName), time, y, _muted)
+    ): ScoreObjectInstance = ScoreObjectInstance(obj.clone(newName), time, y, _muted.copy())
 
     fun clone(
         position: ObjectPosition = this.position,

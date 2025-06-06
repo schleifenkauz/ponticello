@@ -8,6 +8,7 @@ import javafx.geometry.VerticalDirection
 import javafx.scene.Scene
 import javafx.scene.input.KeyCode
 import javafx.scene.input.KeyEvent
+import ponticello.model.registry.ScoreObjectRegistry
 import ponticello.model.score.ObjectPosition
 import ponticello.ui.impl.resizeMode
 import ponticello.ui.score.NavigableScorePane
@@ -34,7 +35,10 @@ object ArrowKeys {
                 val start = if (ev.code == KeyCode.RIGHT) inst.start + inst.obj.duration
                 else inst.start - inst.obj.duration
                 val position = ObjectPosition(start, inst.y)
-                val newInst = if (ev.isShiftDown) inst.clone(position) else inst.duplicate(position)
+                val newInst = if (ev.isShiftDown) {
+                    val name = context[ScoreObjectRegistry].nameForClone(inst.obj, ev) ?: return@addEventFilter
+                    inst.clone(position, name)
+                } else inst.duplicate(position)
                 inst.score!!.addObject(newInst, autoSelect = true)
             } else if (!ev.isTargetTextInput) {
                 val selected = selector.selectedViews

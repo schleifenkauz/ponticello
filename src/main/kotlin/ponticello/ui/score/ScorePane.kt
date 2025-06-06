@@ -261,7 +261,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
                 var obj = duplicator.clipboardObject!!
                 if (obj.height > score.maxY.now || obj.duration > score.maxTime.now) return
                 if (ev.isShiftDown) {
-                    val name = context[ScoreObjectRegistry].nameForClone(obj)
+                    val name = context[ScoreObjectRegistry].nameForClone(obj, ev) ?: return
                     obj = obj.clone(name)
                 }
                 val time = t.coerceIn(zero, score.maxTime.now - obj.duration)
@@ -391,7 +391,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
                     }
                     addObject(obj, selection)
                 } else {
-                    val name = context[ScoreObjectRegistry].availableName("group")
+                    val name = context[ScoreObjectRegistry].nameForGroup(ev) ?: return
                     context.compoundEdit("Add object group") {
                         val subScore = Score(mutableListOf())
                         val groupObj = ScoreObjectGroup(subScore).withName(name)

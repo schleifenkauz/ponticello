@@ -1,13 +1,15 @@
 package ponticello.ui.actions
 
 import hextant.context.Context
+import ponticello.model.score.ScoreObject
+import ponticello.model.score.ScoreObjectInstance
+import ponticello.ui.score.ScoreObjectSelectionManager
+import ponticello.ui.score.ScoreObjectView
 import reaktive.value.ReactiveBoolean
 import reaktive.value.ReactiveValue
 import reaktive.value.binding.map
 import reaktive.value.now
 import reaktive.value.reactiveValue
-import ponticello.ui.score.ScoreObjectSelectionManager
-import ponticello.ui.score.ScoreObjectView
 
 interface ObjectActionContext {
     val context: Context
@@ -15,6 +17,10 @@ interface ObjectActionContext {
     val focusedView: ReactiveValue<ScoreObjectView?>
 
     val selectedViews: Collection<ScoreObjectView>
+
+    val selectedInstances: Set<ScoreObjectInstance> get() = selectedViews.mapTo(mutableSetOf()) { v -> v.instance }
+
+    val selectedObjects: Set<ScoreObject> get() = selectedInstances.mapTo(mutableSetOf()) { inst -> inst.obj }
 
     fun isApplicable(action: String): ReactiveBoolean
 

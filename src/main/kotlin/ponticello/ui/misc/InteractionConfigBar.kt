@@ -10,6 +10,7 @@ import fxutils.styleClass
 import javafx.scene.control.Label
 import javafx.scene.layout.HBox
 import javafx.scene.layout.Region
+import org.kordamp.ikonli.materialdesign2.MaterialDesignD
 import org.kordamp.ikonli.materialdesign2.MaterialDesignM
 import ponticello.model.project.UIState
 import ponticello.model.score.TimeUnit
@@ -43,7 +44,8 @@ class InteractionConfigBar(private val settings: UIState) : HBox() {
         optionButton.disableProperty().bind(settings.snapEnabled.not().asObservableValue())
         children.addAll(
             snapToggle.makeButton("large-icon-button"),
-            optionButton
+            optionButton,
+            showExtraSettings.withContext(settings).makeButton("medium-icon-button")
         )
     }
 
@@ -68,6 +70,14 @@ class InteractionConfigBar(private val settings: UIState) : HBox() {
                 }
             }
             toggles(UIState::snapEnabled)
+        }
+
+        private val showExtraSettings = action<UIState>("Extra settings") {
+            icon(MaterialDesignD.DOTS_VERTICAL)
+            executes { settings, ev ->
+                val dialog = InteractionConfigDialog(settings)
+                dialog.showDialog(ev)
+            }
         }
     }
 }

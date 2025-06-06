@@ -15,8 +15,10 @@ import ponticello.impl.copy
 import ponticello.impl.times
 import ponticello.impl.zero
 import ponticello.model.obj.NoSynthDef
+import ponticello.model.project.UIState
 import ponticello.model.registry.ScoreObjectRegistry
 import ponticello.model.score.*
+import ponticello.ui.controls.NamePrompt
 import ponticello.ui.controls.RenamePrompt
 import ponticello.ui.impl.showDialog
 import ponticello.ui.launcher.DetailPaneManager
@@ -101,22 +103,24 @@ object ObjectActions {
         addObjectAction("Unlink from original") {
             shortcut("Alt?+U")
             icon(MaterialDesignL.LINK_OFF)
-            enableWhen { ctx -> ctx.focusedView.map { focused -> focused == null || !focused.parentPane.isRoot(focused.obj) }  }
+            enableWhen { ctx -> ctx.focusedView.map { focused -> focused == null || !focused.parentPane.isRoot(focused.obj) } }
             executes { ctx, ev ->
                 if (ev.isTargetTextInput && !ev.isAltDown()) return@executes
-                if (ctx.selectedViews.isEmpty()) return@executes
+                if (ctx.selectedInstances.isEmpty()) return@executes
+                val obj = ctx.selectedObjects.singleOrNull()
+                if (obj == null) {
+                    Logger.warn("Cannot unlink from original: selected objects are not the same", Logger.Category.Score)
+                    return@executes
+                }
+                val name = ctx.context[ScoreObjectRegistry].nameForClone(obj, null) ?: return@executes
                 ctx.context.compoundEdit("Unlink from original") {
-                    for ((obj, instances) in ctx.selectedViews.map { v -> v.instance }.groupBy { inst -> inst.obj }) {
-                        val name = ctx.context[ScoreObjectRegistry].nameForClone(obj)
-                        val clone = obj.clone(name)
-                        for (oldInst in instances) {
-                            val newInst = ScoreObjectInstance(clone, oldInst.position, oldInst.muted.copy())
-                            oldInst.score?.addObject(newInst, autoSelect = true)
-                            oldInst.score?.removeObject(oldInst, Score.RegistryOption.REMOVE_WITHOUT_ASKING)
-                        }
+                    val clone = obj.clone(name)
+                    for (oldInst in ctx.selectedInstances) {
+                        val newInst = ScoreObjectInstance(clone, oldInst.position, oldInst.muted.copy())
+                        oldInst.score?.addObject(newInst, autoSelect = true)
+                        oldInst.score?.removeObject(oldInst, Score.RegistryOption.REMOVE_WITHOUT_ASKING)
                     }
                 }
-
             }
         }
         addObjectAction("Cut object") {

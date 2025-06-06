@@ -9,15 +9,14 @@ import hextant.context.withoutUndo
 import hextant.core.editor.ListenerManager
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
-import reaktive.value.ReactiveString
-import reaktive.value.now
-import reaktive.value.reactiveValue
 import ponticello.impl.Decimal
 import ponticello.impl.Logger
 import ponticello.impl.one
 import ponticello.impl.zero
 import ponticello.model.obj.AbstractContextualObject
-import ponticello.model.registry.ScoreObjectRegistry
+import reaktive.value.ReactiveString
+import reaktive.value.now
+import reaktive.value.reactiveValue
 
 @Serializable
 class Score(
@@ -73,10 +72,7 @@ class Score(
 
     fun has(name: String) = objects.any { obj -> obj.name.now == name }
 
-    fun deepClone() = Score(instances.mapTo(mutableListOf()) { inst ->
-        val name = context[ScoreObjectRegistry].nameForClone(inst.obj)
-        inst.clone(inst.position, name)
-    })
+    fun deepClone() = Score(instances.mapTo(mutableListOf()) { inst -> inst.clone() })
 
     fun clone() = Score(instances.mapTo(mutableListOf()) { inst -> inst.duplicate(inst.position) })
 
