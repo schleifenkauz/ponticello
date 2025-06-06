@@ -15,10 +15,8 @@ import ponticello.impl.copy
 import ponticello.impl.times
 import ponticello.impl.zero
 import ponticello.model.obj.NoSynthDef
-import ponticello.model.project.UIState
 import ponticello.model.registry.ScoreObjectRegistry
 import ponticello.model.score.*
-import ponticello.ui.controls.NamePrompt
 import ponticello.ui.controls.RenamePrompt
 import ponticello.ui.impl.showDialog
 import ponticello.ui.launcher.DetailPaneManager
@@ -236,10 +234,10 @@ object ObjectActions {
                 val parentScore = inst.score!!
                 view.context.compoundEdit("Move objects to parent score") {
                     for (subInst in obj.score.objectInstances.toList()) {
-                        subInst.moveTo(inst.position + subInst.position)
-                        parentScore.addObject(subInst, autoSelect = false)
+                        val duplicate = subInst.duplicate(inst.position + subInst.position)
+                        parentScore.addObject(duplicate, autoSelect = false)
                     }
-                    inst.score!!.removeObject(inst, Score.RegistryOption.REMOVE_WITHOUT_ASKING)
+                    view.instance.score!!.removeObject(view.instance, Score.RegistryOption.REMOVE_WITHOUT_ASKING)
                 }
             }
         }
