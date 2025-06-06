@@ -4,6 +4,7 @@ import bundles.PublicProperty
 import bundles.publicProperty
 import bundles.set
 import hextant.context.Context
+import kotlinx.serialization.Transient
 import ponticello.impl.Logger
 import ponticello.model.registry.ObjectRegistry
 import ponticello.sc.client.SuperColliderClient
@@ -12,7 +13,10 @@ import java.io.Serializable
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeoutException
 
-class AudioFlows(override val objects: MutableList<AudioFlowGroup>, ) : ObjectRegistry<AudioFlowGroup>() {
+class AudioFlows(override val objects: MutableList<AudioFlowGroup>) : ObjectRegistry<AudioFlowGroup>() {
+    @Transient
+    private var addedToServer = false
+
     override val objectType: String
         get() = "Flow group"
 
@@ -25,11 +29,15 @@ class AudioFlows(override val objects: MutableList<AudioFlowGroup>, ) : ObjectRe
     override fun initialize(context: Context) {
         context[AudioFlows] = this
         super.initialize(context)
-        context[SuperColliderClient].onTreeCleared { createAllFlows() }
+        context[SuperColliderClient].onTreeCleared {
+            context[NodeTree].clear()
+            addedToServer = false
+            createAllFlows()
+        }
     }
 
     fun createAllFlows() {
-        context[NodeTree].clear()
+        if (addedToServer) return
         for (group in this) {
             if (!group.isActive.now) continue
             group.createFlows()
@@ -52,7 +60,7 @@ class AudioFlows(override val objects: MutableList<AudioFlowGroup>, ) : ObjectRe
     }
 
     @kotlinx.serialization.Serializable
-    data class FlowReference(val groupName: String, val flowName: String): Serializable {
+    data class FlowReference(val groupName: String, val flowName: String) : Serializable {
         fun getFlow(flows: AudioFlows) = flows.getOrNull(groupName)?.flows?.getOrNull(flowName)
 
         fun removeFrom(flows: AudioFlows) {

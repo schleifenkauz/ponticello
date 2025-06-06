@@ -120,10 +120,11 @@ class SynthObject(
         }
         if (sample.now != null && playBufRate != null && playbufStartPos != null) {
             val sampleDur = sample.now!!.get()?.duration()?.now ?: 0.0.asTime
-            playbufStartPos!!.now = (playbufStartPos!!.now + playBufRate!!.now * duration).wrapAt(sampleDur)
-            while (playbufStartPos!!.now < zero) playbufStartPos!!.now += sampleDur
+            var startPos = (playbufStartPos!!.now + playBufRate!!.now * duration).wrapAt(sampleDur)
+            while (startPos < zero) startPos += sampleDur
             playBufRate!!.now *= -1
-            if (playbufStartPos!!.now == zero && playBufRate!!.now < zero) playbufStartPos!!.now = sampleDur
+            if (startPos == zero && playBufRate!!.now < zero) startPos = sampleDur
+            playbufStartPos!!.now = startPos
         }
     }
 

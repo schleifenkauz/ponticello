@@ -8,7 +8,6 @@ import fxutils.prompt.DetailPane
 import fxutils.styleClass
 import javafx.application.Platform
 import javafx.geometry.Rectangle2D
-import javafx.scene.Node
 import javafx.scene.image.Image
 import javafx.scene.image.ImageView
 import javafx.scene.layout.HBox
@@ -20,6 +19,7 @@ import org.kordamp.ikonli.material2.Material2AL
 import ponticello.impl.*
 import ponticello.model.obj.SampleObject
 import ponticello.model.score.ParameterControlList
+import ponticello.model.score.ScoreObject
 import ponticello.model.score.ScoreObjectInstance
 import ponticello.model.score.SynthObject
 import ponticello.model.score.controls.ParameterControl
@@ -35,10 +35,10 @@ import reaktive.value.now
 import reaktive.value.reactiveValue
 
 class SynthObjectView(
-    override val obj: SynthObject, instance: ScoreObjectInstance
+    override val obj: SynthObject, instance: ScoreObjectInstance,
 ) : ParameterizedScoreObjectView<SynthObject>(instance), ParameterControlList.Listener {
     private var spectrogramImage: Image? = null
-    private val sampleDisplayNodes = mutableListOf<Node>()
+    private val spectrogramSegments = mutableListOf<SpectrogramSegment>()
 
     private var startPosObserver: Observer? = null
     private var rateObserver: Observer? = null
@@ -89,7 +89,7 @@ class SynthObjectView(
 
     private fun addedConstantControl(
         control: ParameterControlList.NamedParameterControl,
-        ctrl: ValueControl
+        ctrl: ValueControl,
     ) {
         when (control.name.now) {
             "startPos" -> startPosObserver = ctrl.value.forEach { _ -> displaySpectrogram() }
@@ -120,7 +120,7 @@ class SynthObjectView(
     override fun reassignedControl(
         parameter: ParameterControlList.NamedParameterControl,
         oldControl: ParameterControl,
-        newControl: ParameterControl
+        newControl: ParameterControl,
     ) {
         super.reassignedControl(parameter, oldControl, newControl)
         if (oldControl is ValueControl) {
@@ -134,13 +134,18 @@ class SynthObjectView(
 
     override fun rescale() {
         super.rescale()
+        rescaleSpectrogram()
+    }
+
+    override fun resizedObject(obj: ScoreObject) {
+        super.resizedObject(obj)
         displaySpectrogram()
     }
 
     private fun updateSpectrogram() {
         Platform.runLater {
-            children.removeAll(sampleDisplayNodes)
-            sampleDisplayNodes.clear()
+            children.removeAll(spectrogramSegments.flatMap { seg -> seg.nodes() })
+            spectrogramSegments.clear()
             if (obj.displaySample?.now != true) return@runLater
             val sample = obj.sample.now?.get()
             if (sample !is SampleObject) return@runLater
@@ -149,48 +154,64 @@ class SynthObjectView(
         }
     }
 
+    private fun rescaleSpectrogram() {
+        for (node in spectrogramSegments) {
+            val x = getWidth(node.start)
+            node.image.layoutX = x
+            node.image.fitWidth = getWidth(node.duration)
+            node.image.fitHeight = prefHeight
+            node.loopPointIndicator?.startX = x
+            node.loopPointIndicator?.endX = x
+            node.loopPointIndicator?.endY = prefHeight
+        }
+    }
+
     private fun displaySpectrogram() = Platform.runLater {
-        children.removeAll(sampleDisplayNodes)
-        sampleDisplayNodes.clear()
+        children.removeAll(spectrogramSegments.flatMap { seg -> seg.nodes() })
+        spectrogramSegments.clear()
         if (obj.displaySample?.now != true) return@runLater
         if (spectrogramImage == null) return@runLater
         val sample = obj.sample.now?.get() as? SampleObject ?: return@runLater
         val rate = obj.playBufRate?.now ?: one(precision = 3)
         if (rate == zero) return@runLater
-        val defaultStartPos = if (rate < zero) sample.duration().now else zero
-        var startPos = obj.playbufStartPos?.now?.wrapAt(sample.duration().now) ?: defaultStartPos
-        if (rate < zero && startPos < 1e-5.asTime) startPos = sample.duration().now
+        val sampleDuration = sample.duration().now
+        val defaultStartPos = if (rate < zero) sampleDuration else zero
+        var startPos = obj.playbufStartPos?.now?.wrapAt(sampleDuration) ?: defaultStartPos
+        if (rate < zero && startPos == zero) startPos = sampleDuration
+        if (rate > zero && startPos == sampleDuration) startPos = zero
         var t = zero
         while (true) {
             if (t >= obj.duration) break
-            var imageDur = when {
-                t > zero -> sample.duration().now / rate.abs()
-                rate > zero -> (sample.duration().now - startPos) / rate
+            var dur = when {
+                t > zero -> sampleDuration / rate.abs()
+                rate > zero -> (sampleDuration - startPos) / rate
                 else -> if (startPos != zero) startPos / -rate else sample.duration.now / -rate
             }
-            if (imageDur == zero) break
-            if (t + imageDur > obj.duration) imageDur = obj.duration - t
+            if (dur == zero) break
+            if (t + dur > obj.duration) dur = obj.duration - t
             val view = displaySpectrogramPart(
-                imageDur, sample.duration().now, rate,
-                startPos = if (t == zero) startPos else defaultStartPos
+                dur, sampleDuration, rate,
+                startPos = if (t != zero) defaultStartPos else startPos
             )
             view.layoutX = getWidth(t)
-            t += imageDur
-            if (sampleDisplayNodes.isNotEmpty()) {
-                val loopPointIndicator = Line(view.layoutX, 0.0, view.layoutX, prefHeight)
+            var loopPointIndicator: Line? = null
+            if (spectrogramSegments.isNotEmpty()) {
+                loopPointIndicator = Line(view.layoutX, 0.0, view.layoutX, prefHeight)
                 loopPointIndicator.stroke = Color.WHITE
-                sampleDisplayNodes.add(loopPointIndicator)
+                loopPointIndicator.viewOrder = 500.0
             }
-            sampleDisplayNodes.add(view)
+            spectrogramSegments.add(SpectrogramSegment(t, dur, view, loopPointIndicator))
+            t += dur
         }
-        children.addAll(sampleDisplayNodes)
+        children.addAll(spectrogramSegments.map { eg -> eg.image })
+        children.addAll(spectrogramSegments.mapNotNull { seg -> seg.loopPointIndicator })
     }
 
     private fun displaySpectrogramPart(
         duration: Decimal,
         sampleDuration: Decimal,
         rate: Decimal,
-        startPos: Decimal
+        startPos: Decimal,
     ): ImageView {
         val view = ImageView(spectrogramImage)
         val pixelsPerSecond = (spectrogramImage!!.width / sampleDuration * rate.absoluteValue).toDouble()
@@ -208,5 +229,14 @@ class SynthObjectView(
             Scale(-1.0, 1.0),
         )
         return view
+    }
+
+    private data class SpectrogramSegment(
+        val start: Decimal,
+        val duration: Decimal,
+        val image: ImageView,
+        val loopPointIndicator: Line?,
+    ) {
+        fun nodes() = if (loopPointIndicator != null) listOf(image, loopPointIndicator) else listOf(image)
     }
 }
