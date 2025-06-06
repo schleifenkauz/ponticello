@@ -166,8 +166,9 @@ class SynthObjectView(
             var imageDur = when {
                 t > zero -> sample.duration().now / rate.abs()
                 rate > zero -> (sample.duration().now - startPos) / rate
-                else -> startPos / -rate
+                else -> if (startPos != zero) startPos / -rate else sample.duration.now / -rate
             }
+            if (imageDur == zero) break
             if (t + imageDur > obj.duration) imageDur = obj.duration - t
             val view = displaySpectrogramPart(
                 imageDur, sample.duration().now, rate,

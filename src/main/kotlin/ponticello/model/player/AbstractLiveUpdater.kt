@@ -4,7 +4,10 @@ import ponticello.impl.Decimal
 import ponticello.impl.zero
 import ponticello.model.flow.AudioFlow
 import ponticello.model.flow.NodePlacement
-import ponticello.model.obj.*
+import ponticello.model.obj.BufferReference
+import ponticello.model.obj.BusReference
+import ponticello.model.obj.ParameterizedObject
+import ponticello.model.obj.SynthDefObject
 import ponticello.model.registry.NamedObject.Companion.NO_NAME
 import ponticello.model.score.Envelope
 import ponticello.model.score.ParameterControlList
@@ -156,17 +159,14 @@ abstract class AbstractLiveUpdater(protected val obj: ParameterizedObject) : Par
                 updateEnvelope(writer, objectTime, name, parameter, envelope = ctrl.points, remap)
             }
 
-            is GlobalPatternControl -> runOnActiveObjects { name, _ ->
-                updatePattern(name, parameter, ctrl.pattern.now)
-            }
-
-            is SingleBusValueControl -> runOnActiveObjects { name, _ ->
-                updateValueBus(name, parameter, ctrl.bus.now)
-            }
-
             is UGenControl -> runOnActiveObjects { name, objectTime ->
                 val expr = ctrl.expr.editor.result.now
                 updateUGenControl(this, name, parameter, expr, replaceAuxilSynth, remap, objectTime)
+            }
+
+            is ExprControl -> runOnActiveObjects { name, _ ->
+                val expr = ctrl.expr.editor.result.now
+                updateExprControl(name, parameter, expr)
             }
         }
     }
@@ -209,22 +209,16 @@ abstract class AbstractLiveUpdater(protected val obj: ParameterizedObject) : Par
                 }
             }
 
-            is GlobalPatternControl -> control.pattern.observe { _, pattern ->
-                runOnActiveObjects { name, _ ->
-                    updatePattern(name, parameter, pattern)
-                }
-            }
-
-            is SingleBusValueControl -> control.bus.observe { _, bus ->
-                runOnActiveObjects { name, _ ->
-                    updateValueBus(name, parameter, bus)
-                }
-            }
-
             is UGenControl -> control.update.stream.observe { _ ->
                 runOnActiveObjects { name, objectTime ->
                     val expr = control.expr.editor.result.now
                     updateUGenControl(this, name, parameter, expr, replace = true, remap = false, objectTime)
+                }
+            }
+            is ExprControl -> control.update.stream.observe { _ ->
+                runOnActiveObjects { name, _ ->
+                    val expr = control.expr.editor.result.now
+                    updateExprControl(name, parameter, expr)
                 }
             }
         }
@@ -272,12 +266,6 @@ abstract class AbstractLiveUpdater(protected val obj: ParameterizedObject) : Par
 
     protected abstract fun ScWriter.updateBuffer(uniqueName: String, parameter: String, buf: BufferReference)
 
-    protected abstract fun ScWriter.updatePattern(
-        uniqueName: String,
-        parameter: String,
-        pattern: GlobalPatternReference,
-    )
-
     protected abstract fun updateEnvelope(
         writer: ScWriter, objectTime: Decimal,
         uniqueName: String, parameter: String, envelope: Envelope,
@@ -299,6 +287,8 @@ abstract class AbstractLiveUpdater(protected val obj: ParameterizedObject) : Par
         val action = guardAgainstReplaceNil(placement)
         writer.appendLine(".play(target: ${placement.target}, outbus: $busName, fadeTime: ${AttackReleaseControl.DEFAULT}, addAction: ${action});")
     }
+
+    protected abstract fun ScWriter.updateExprControl(uniqueName: String, parameter: String, expr: ScExpr)
 
     protected fun getAuxiliarySynthPlacement(parameter: String, uniqueName: String, replace: Boolean) = when {
         replace -> NodePlacement.replace(ParameterControl.auxilSynthName(uniqueName, parameter))

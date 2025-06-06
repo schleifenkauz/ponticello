@@ -2,10 +2,7 @@ package ponticello.ui.controls
 
 import bundles.createBundle
 import fxutils.*
-import fxutils.actions.ActionBar
-import fxutils.actions.ContextualizedAction
-import fxutils.actions.action
-import fxutils.actions.collectActions
+import fxutils.actions.*
 import fxutils.controls.SliderBar
 import fxutils.prompt.InfoPrompt
 import fxutils.prompt.SimpleSearchableListView
@@ -24,7 +21,6 @@ import javafx.scene.layout.HBox
 import javafx.scene.paint.Color
 import org.kordamp.ikonli.evaicons.Evaicons
 import org.kordamp.ikonli.material2.Material2AL
-import org.kordamp.ikonli.materialdesign2.MaterialDesignC
 import org.kordamp.ikonli.materialdesign2.MaterialDesignS
 import ponticello.impl.*
 import ponticello.model.obj.*
@@ -39,7 +35,6 @@ import ponticello.model.score.controls.*
 import ponticello.sc.*
 import ponticello.sc.editor.BufferSelector
 import ponticello.sc.editor.BusSelector
-import ponticello.sc.editor.GlobalPatternSelector
 import ponticello.sc.editor.ScExprExpander
 import ponticello.sc.view.ObjectSelectorControl
 import ponticello.ui.actions.ServerActions
@@ -47,7 +42,6 @@ import ponticello.ui.impl.colorPicker
 import ponticello.ui.impl.makeSubWindow
 import ponticello.ui.impl.sceneFill
 import ponticello.ui.launcher.PonticelloLauncher.Companion.currentProject
-import ponticello.ui.launcher.PonticelloMainActivity
 import ponticello.ui.misc.CodePane
 import ponticello.ui.registry.SimpleSearchableRegistryView
 import ponticello.ui.score.ScoreObjectView
@@ -225,6 +219,45 @@ class ControlAssignmentEditor(val control: NamedParameterControl, val view: Scor
             }
         }
 
+        data object Expr : ControlType<ExprControl>() {
+            override fun createDetailInput(
+                namedControl: NamedParameterControl,
+                control: ExprControl,
+                view: ScoreObjectView?,
+            ): Node {
+                val actions = actions.withContext(control)
+                val window = makeCodePaneWindow(control.expr, control.context, namedControl, actions)
+                return showWindowAction.withContext(window).makeButton("medium-icon-button")
+            }
+
+            override fun createDefaultControl(
+                obj: ParameterizedObject,
+                spec: ControlSpec?,
+                oldControl: ParameterControl,
+            ): ExprControl {
+                val editor = ScExprExpander()
+                val root = EditorRoot(editor)
+                if (oldControl.getNumericalValue() != null) {
+                    editor.setInitialText(oldControl.getNumericalValue().toString())
+                } else editor.setInitialText("")
+                return ExprControl(root)
+            }
+
+            override fun actions(
+                namedControl: NamedParameterControl,
+                control: ExprControl,
+                view: ScoreObjectView?
+            ): List<ContextualizedAction> = actions.withContext(control)
+
+            private val actions = collectActions<ExprControl> {
+                addAction("Update") {
+                    icon(MaterialDesignS.SYNC)
+                    shortcut("Ctrl+U")
+                    executes { ctrl -> ctrl.update.fire() }
+                }
+            }
+        }
+
         data object UGen : ControlType<UGenControl>() {
             override fun createDetailInput(
                 namedControl: NamedParameterControl,
@@ -232,17 +265,8 @@ class ControlAssignmentEditor(val control: NamedParameterControl, val view: Scor
                 view: ScoreObjectView?,
             ): Node {
                 val actions = actions.withContext(Pair(namedControl, view))
-                val pane = CodePane(
-                    control.expr,
-                    extraActions = actions,
-                    actionBarAlignment = Pos.BOTTOM_RIGHT,
-                    ownWindow = true
-                )
-                val window = makeSubWindow(pane, "LFO for ${namedControl.name.now}", control.context)
-                window.sceneFill(Color.BLACK)
-                window.minWidth = 100.0
-                window.minHeight = 100.0
-                val showWindowButton = button("Code") { window.showOrBringToFront() }
+                val window = makeCodePaneWindow(control.expr, control.context, namedControl, actions)
+                val showWindowButton = showWindowAction.withContext(window).makeButton("medium-icon-button")
                 if (namedControl.parentObject is ScoreObject) {
                     val displayToggle = CheckBox()
                         .sync(control.display, "Display UGen", namedControl.context[UndoManager])
@@ -251,7 +275,7 @@ class ControlAssignmentEditor(val control: NamedParameterControl, val view: Scor
                             expr.getLfo() == null
                         }.asObservableValue()
                     )
-                    return HBox(5.0, showWindowButton, Label("Display"), displayToggle).centerChildren()
+                    return HBox(5.0, Label("Display"), displayToggle, showWindowButton).centerChildren()
                 } else return showWindowButton
             }
 
@@ -387,29 +411,6 @@ class ControlAssignmentEditor(val control: NamedParameterControl, val view: Scor
             }
         }
 
-        data object SingleBusValue : ControlType<SingleBusValueControl>() {
-            override fun createDetailInput(
-                namedControl: NamedParameterControl,
-                control: SingleBusValueControl,
-                view: ScoreObjectView?,
-            ): Node = busSelector(control.bus, namedControl.spec.now, namedControl.context)
-
-            override fun createDefaultControl(
-                obj: ParameterizedObject, spec: ControlSpec?, oldControl: ParameterControl,
-            ): SingleBusValueControl {
-                val initial = oldControl.getBus() ?: obj.context[BusRegistry].getDefault().reference()
-                return SingleBusValueControl(reactiveVariable(initial))
-            }
-
-            override fun actions(
-                namedControl: NamedParameterControl,
-                control: SingleBusValueControl,
-                view: ScoreObjectView?,
-            ): List<ContextualizedAction> = listOf(ServerActions.scopeBus.withContext(control.bus))
-
-            override fun toString(): String = "Bus Value"
-        }
-
         data object Buffer : ControlType<BufferControl>() {
             override fun createDetailInput(
                 namedControl: NamedParameterControl,
@@ -461,54 +462,6 @@ class ControlAssignmentEditor(val control: NamedParameterControl, val view: Scor
                             is AllocatedBufferObject -> buf.plotBuffer()
                             null -> Logger.warn("Unresolved buffer ${ctrl.sample.now}", Logger.Category.Buffers)
                         }
-                    }
-                }
-            }
-        }
-
-        data object GlobalPattern : ControlType<GlobalPatternControl>() {
-            override fun createDetailInput(
-                namedControl: NamedParameterControl,
-                control: GlobalPatternControl,
-                view: ScoreObjectView?,
-            ): Node {
-                val selector = GlobalPatternSelector()
-                selector.syncWith(control.pattern)
-                selector.initialize(namedControl.context)
-                return ObjectSelectorControl(selector, createBundle())
-            }
-
-            override fun createDefaultControl(
-                obj: ParameterizedObject,
-                spec: ControlSpec?,
-                oldControl: ParameterControl,
-            ): GlobalPatternControl = GlobalPatternControl(reactiveVariable(ObjectReference.none()))
-
-            override fun actions(
-                namedControl: NamedParameterControl,
-                control: GlobalPatternControl,
-                view: ScoreObjectView?,
-            ): List<ContextualizedAction> = actions.withContext(control)
-
-            override fun toString(): String = "Pattern"
-
-            private val actions = collectActions<GlobalPatternControl> {
-                addAction("Plot") {
-                    icon(MaterialDesignC.CHART_BOX_OUTLINE)
-                    enableWhen { ctrl -> ctrl.pattern.flatMap { p -> p.isResolved } }
-                    executes { ctrl ->
-                        val obj = ctrl.pattern.now.get() ?: return@executes
-                        val pane = obj.context[PonticelloMainActivity].patternsPane()
-                        pane.showPlotPane(obj)
-                    }
-                }
-                addAction("Edit") {
-                    icon(Material2AL.CODE)
-                    enableWhen { ctrl -> ctrl.pattern.flatMap(GlobalPatternReference::isResolved) }
-                    executes { ctrl ->
-                        val obj = ctrl.pattern.now.get() ?: return@executes
-                        val pane = obj.context[PonticelloMainActivity].patternsPane()
-                        pane.listView.showContent(obj)
                     }
                 }
             }
@@ -571,10 +524,13 @@ class ControlAssignmentEditor(val control: NamedParameterControl, val view: Scor
 
         companion object {
             val all: List<ControlType<*>> = listOf(
-                Value, Envelope, AttackRelease,
-                BusValue, SingleBusValue,
-                GlobalPattern, UGen
+                Value, Envelope, AttackRelease, BusValue, Expr, UGen
             )
+
+            private val showWindowAction = action<SubWindow>("Edit code") {
+                icon(Material2AL.CODE)
+                executes { w -> w.showOrBringToFront() }
+            }
 
             @Suppress("UNCHECKED_CAST")
             fun <O : ParameterControl> getType(option: O) = when (option) {
@@ -583,9 +539,8 @@ class ControlAssignmentEditor(val control: NamedParameterControl, val view: Scor
                 is EnvelopeControl -> Envelope
                 is BusControl -> Bus
                 is BusValueControl -> BusValue
-                is SingleBusValueControl -> SingleBusValue
                 is BufferControl -> Buffer
-                is GlobalPatternControl -> GlobalPattern
+                is ExprControl -> Expr
                 is AttackReleaseControl -> AttackRelease
                 else -> throw AssertionError()
             } as ControlType<O>
@@ -600,6 +555,22 @@ class ControlAssignmentEditor(val control: NamedParameterControl, val view: Scor
                 editor.syncWith(control)
                 editor.initialize(context)
                 return ObjectSelectorControl(editor, createBundle())
+            }
+
+            private fun makeCodePaneWindow(
+                root: EditorRoot<ScExprExpander>, context: Context,
+                namedControl: NamedParameterControl, actions: List<ContextualizedAction>,
+            ): SubWindow {
+                val pane = CodePane(
+                    root, extraActions = actions,
+                    actionBarAlignment = Pos.BOTTOM_RIGHT, ownWindow = true
+                )
+                val title = namedControl.name.map { name -> "Code for control '$name'" }
+                val window = makeSubWindow(pane, title, context)
+                window.sceneFill(Color.BLACK)
+                window.minWidth = 100.0
+                window.minHeight = 100.0
+                return window
             }
         }
     }

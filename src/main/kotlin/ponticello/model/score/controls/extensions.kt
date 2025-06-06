@@ -23,7 +23,6 @@ fun ParameterControl.getNumericalValue() = when (this) {
 fun ParameterControl.getBus() = when (this) {
     is BusControl -> bus.now
     is BusValueControl -> bus.now
-    is SingleBusValueControl -> bus.now
     else -> null
 }
 

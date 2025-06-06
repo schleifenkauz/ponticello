@@ -1,10 +1,8 @@
 package ponticello.model.player
 
 import ponticello.impl.Decimal
-import ponticello.impl.Logger
 import ponticello.model.obj.BufferReference
 import ponticello.model.obj.BusReference
-import ponticello.model.obj.GlobalPatternReference
 import ponticello.model.obj.ParameterizedObject
 import ponticello.model.score.Envelope
 import ponticello.model.score.controls.AttackReleaseControl
@@ -83,16 +81,18 @@ class LiveSynthUpdater(obj: ParameterizedObject) : AbstractLiveUpdater(obj) {
         +"${obj.superColliderPrefix}$uniqueName.set('$parameter', $superColliderName)"
     }
 
-    override fun ScWriter.updatePattern(uniqueName: String, parameter: String, pattern: GlobalPatternReference) {
-        Logger.warn("Cannot update pattern for synth object $uniqueName", Logger.Category.Playback)
-    }
-
     override fun updateUGenControl(
         writer: ScWriter, uniqueName: String, parameter: String,
         expr: ScExpr, replace: Boolean, remap: Boolean, objectTime: Decimal
     ) {
         super.updateUGenControl(writer, uniqueName, parameter, expr, replace, remap, objectTime)
         if (remap) writer.remap(uniqueName, parameter)
+    }
+
+    override fun ScWriter.updateExprControl(uniqueName: String, parameter: String, expr: ScExpr) {
+        append("${obj.superColliderPrefix}$uniqueName.set('$parameter', ")
+        expr.code(writer, obj.context)
+        appendLine(");")
     }
 
     override fun updateEnvelope(
