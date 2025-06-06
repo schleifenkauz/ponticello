@@ -37,8 +37,6 @@ class EnvelopeEditor(
     val namedControl: NamedParameterControl, val envelope: Envelope,
     val objectView: ScoreObjectView, val pane: Pane,
 ) : EnvelopeView {
-    private val context get() = objectView.context
-
     private val control get() = namedControl.now as EnvelopeControl
 
     val parameterName get() = namedControl.name.now
@@ -60,6 +58,10 @@ class EnvelopeEditor(
     init {
         mouseInfo.isVisible = false
         line.strokeProperty().bind(color.asObservableValue())
+        line.strokeWidthProperty().bind(Bindings.createDoubleBinding({
+            if (pane.prefWidth > WIDTH_THRESHOLD && line.isHover) 4.0
+            else 2.0
+        }, pane.prefWidthProperty(), line.hoverProperty()))
         mouseInfo.textFillProperty().bind(objectView.backgroundColor.map(Color::invert).asObservableValue())
         configureMouseActions()
         setupPositionInfo()
@@ -68,9 +70,12 @@ class EnvelopeEditor(
     }
 
     private fun setupPositionInfo() {
-        line.setOnMouseEntered { mouseInfo.isVisible = true }
+        line.setOnMouseEntered {
+            if (pane.prefWidth >= WIDTH_THRESHOLD) mouseInfo.isVisible = true
+        }
         line.setOnMouseExited { mouseInfo.isVisible = false }
         line.setOnMouseMoved { ev ->
+            if (pane.prefWidth < WIDTH_THRESHOLD) return@setOnMouseMoved
             val t = objectView.getDuration(ev.x)
             val v = envelope.interpolateValueAt(t, spec.warp)
             displayPosition(t, v)
@@ -82,6 +87,7 @@ class EnvelopeEditor(
         line.setupDragging(
             defaultCursor = Cursor.CROSSHAIR, dragCursor = Cursor.V_RESIZE,
             onPressed = { ev: MouseEvent ->
+                if (pane.prefWidth < WIDTH_THRESHOLD) return@setupDragging
                 val t = transformXToTime(ev.x)
                 var segmentIdx = envelope.points.map(EnvelopePoint::time).binarySearch(t)
                 if (segmentIdx < 0) segmentIdx = -(segmentIdx + 1)
@@ -137,7 +143,12 @@ class EnvelopeEditor(
 
                 ev.button == PRIMARY && ev.clickCount == 2 -> setSegmentValueFromPrompt(ev)
                 ev.button == PRIMARY -> bringToFront()
-                ev.button == SECONDARY -> createNewPoint(ev, interpolate = true)
+                ev.button == SECONDARY -> {
+                    if (pane.prefWidth >= WIDTH_THRESHOLD) {
+                        createNewPoint(ev, interpolate = true)
+                    }
+                }
+
                 else -> {}
             }
             ev.consume()
@@ -246,6 +257,7 @@ class EnvelopeEditor(
     }
 
     private fun addHandle(idx: Int, x: Double, y: Double) {
+        if (pane.prefWidth < WIDTH_THRESHOLD) return
         val handle = Circle(x, y, HANDLE_RADIUS)
         val innerCircle = Circle(x, y, HANDLE_RADIUS / 3)
         innerCircle.centerXProperty().bind(handle.centerXProperty())
@@ -389,5 +401,6 @@ class EnvelopeEditor(
 
     companion object {
         private const val HANDLE_RADIUS = 8.0
+        private const val WIDTH_THRESHOLD = 50.0
     }
 }

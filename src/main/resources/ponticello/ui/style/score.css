@@ -114,14 +114,6 @@ Label.memo-area {
     -fx-font-size: 14;
 }
 
-.envelope-line {
-    -fx-stroke-width: 2px;
-}
-
-.envelope-line:hover {
-    -fx-stroke-width: 4px;
-}
-
 .score-pane:drop-possible {
     -fx-background-color: #222720;
 }
