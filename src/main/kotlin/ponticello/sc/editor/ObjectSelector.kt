@@ -2,6 +2,7 @@ package ponticello.sc.editor
 
 import hextant.core.editor.SimpleChoiceEditor
 import hextant.serial.string
+import javafx.scene.input.DataFormat
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonPrimitive
 import ponticello.model.registry.NamedObject
@@ -55,7 +56,9 @@ abstract class ObjectSelector<O : NamedObject> :
 
     open fun toString(choice: NamedObject): ReactiveValue<String> = choice.name
 
-    override fun fromJson(value: JsonElement): ObjectReference<O> = ObjectReference<O>(value.string)
+    open fun dataFormat(): DataFormat? = null
+
+    override fun fromJson(value: JsonElement): ObjectReference<O> = ObjectReference(value.string)
 
     override fun toJson(value: ObjectReference<O>): JsonElement = JsonPrimitive(value.getName())
 }

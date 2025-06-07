@@ -1,5 +1,6 @@
 package ponticello.sc.editor
 
+import javafx.scene.input.DataFormat
 import ponticello.model.registry.ObjectRegistry
 import ponticello.model.registry.ScoreObjectRegistry
 import ponticello.model.score.ScoreObject
@@ -12,6 +13,8 @@ class ScoreObjectSelector : ObjectSelector<ScoreObject>() {
     }
 
     override fun getList(): ObjectRegistry<ScoreObject> = context[ScoreObjectRegistry]
+
+    override fun dataFormat(): DataFormat? = ScoreObject.DATA_FORMAT
 
     override fun createNewObject(name: String): ScoreObject? = null
 }

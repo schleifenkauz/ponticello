@@ -15,9 +15,14 @@
 }
 
 /*noinspection CssInvalidPseudoSelector*/
-:drop-possible {
+score-object:drop-possible, toolpane:drop-possible {
     -fx-border-color: green !important;
     -fx-border-width: 4px !important;
+}
+
+/*noinspection CssInvalidPseudoSelector*/
+.selector-button:drop-possible {
+    -fx-background-color: rgba(0, 128, 0, 0.5) !important;
 }
 
 .control-detail-editor {

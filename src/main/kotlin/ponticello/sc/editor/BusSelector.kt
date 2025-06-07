@@ -1,5 +1,6 @@
 package ponticello.sc.editor
 
+import javafx.scene.input.DataFormat
 import ponticello.model.obj.BusObject
 import ponticello.model.registry.BusRegistry
 import ponticello.model.registry.ObjectRegistry
@@ -35,4 +36,6 @@ class BusSelector : ObjectSelector<BusObject>() {
         val channels = expectedChannels.now ?: if (rate == Rate.Audio) 2 else 1
         return BusObject.create(rate, name, channels)
     }
+
+    override fun dataFormat(): DataFormat? = BusObject.DATA_FORMAT
 }
