@@ -9,7 +9,6 @@ import javafx.geometry.HorizontalDirection
 import javafx.geometry.HorizontalDirection.LEFT
 import javafx.geometry.HorizontalDirection.RIGHT
 import kotlinx.serialization.KSerializer
-import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import kotlinx.serialization.builtins.ListSerializer
@@ -18,15 +17,12 @@ import kotlinx.serialization.descriptors.listSerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import ponticello.impl.*
-import ponticello.sc.NumericalControlSpec
-import ponticello.sc.Warp
-import ponticello.sc.map
-import ponticello.sc.unmap
+import ponticello.sc.*
 import ponticello.ui.score.EnvelopeView
 import kotlin.math.max
 
 @Serializable(Envelope.Serializer::class)
-class Envelope(@SerialName("points") private val _points: MutableList<EnvelopePoint>) {
+class Envelope(private val _points: MutableList<EnvelopePoint>) {
     @Transient
     private val viewManager = ListenerManager.createWeakListenerManager<EnvelopeView>()
 
@@ -60,16 +56,21 @@ class Envelope(@SerialName("points") private val _points: MutableList<EnvelopePo
         }
     }
 
-    fun code(warp: Warp): String {
+    fun code(defaultWarp: Warp): String {
         val levels = points.map { (_, y) -> y.toString() }
         val times = points.zipWithNext { a, b -> (b.time - a.time).toString() }
-        return "Env.new(levels: $levels, times: $times, curve: $warp)"
+        val curves = points.drop(1).map { p -> (p.curve ?: defaultWarp) }
+        val curve =
+            if (curves.all { it == defaultWarp }) defaultWarp.code(context)
+            else curves.joinToString(",", "[", "]")
+        return "Env.new(levels: $levels, times: $times, curve: $curve)"
     }
 
     fun generatorCode(warp: Warp, offset: Decimal): String {
         val envCode = code(warp)
         return "IEnvGen.kr($envCode, index: Sweep.kr(rate: ~time_warp_bus.kr) + $offset)"
     }
+
 
     fun interpolateValueAt(t: Decimal, warp: Warp): Decimal {
         var i = points.binarySearch(EnvelopePoint(t, zero))
@@ -168,7 +169,7 @@ class Envelope(@SerialName("points") private val _points: MutableList<EnvelopePo
         finishEdit()
     }
 
-    fun addView(view: EnvelopeView) {
+    fun addListener(view: EnvelopeView) {
         viewManager.addListener(view)
     }
 
@@ -328,6 +329,7 @@ class Envelope(@SerialName("points") private val _points: MutableList<EnvelopePo
     data class EnvelopePoint(
         val time: Decimal,
         val value: Decimal,
+        val curve: Warp? = null,
     ) : Comparable<EnvelopePoint> {
         override fun compareTo(other: EnvelopePoint): Int =
             compareValuesBy(this, other, EnvelopePoint::time, EnvelopePoint::value)

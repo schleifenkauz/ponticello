@@ -66,7 +66,7 @@ class EnvelopeEditor(
         configureMouseActions()
         setupPositionInfo()
         setupLineDragging()
-        envelope.addView(this)
+        envelope.addListener(this)
     }
 
     private fun setupPositionInfo() {

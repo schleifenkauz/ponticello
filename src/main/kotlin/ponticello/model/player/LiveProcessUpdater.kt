@@ -4,7 +4,7 @@ import ponticello.impl.Decimal
 import ponticello.model.obj.BufferReference
 import ponticello.model.obj.BusReference
 import ponticello.model.obj.ParameterizedObject
-import ponticello.model.score.Envelope
+import ponticello.model.score.controls.EnvelopeControl
 import ponticello.model.score.controls.ParameterControl
 import ponticello.sc.NumericalControlSpec
 import ponticello.sc.ScExpr
@@ -47,11 +47,11 @@ class LiveProcessUpdater(obj: ParameterizedObject): AbstractLiveUpdater(obj) {
         objectTime: Decimal,
         uniqueName: String,
         parameter: String,
-        envelope: Envelope,
+        envelope: EnvelopeControl,
         remap: Boolean
     ) {
         val spec = obj.getSpec(parameter) as? NumericalControlSpec ?: return
-        val envelopeCode = envelope.code(spec.warp)
+        val envelopeCode = envelope.points.code(spec.warp)
         writer.updateArgument(uniqueName, parameter, envelopeCode)
     }
 

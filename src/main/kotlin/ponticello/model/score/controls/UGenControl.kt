@@ -16,6 +16,7 @@ import ponticello.model.obj.ParameterizedObject
 import ponticello.model.obj.ProcessDefObject
 import ponticello.model.obj.SynthDefObject
 import ponticello.model.player.ActiveObject
+import ponticello.model.score.ParameterControlList.NamedParameterControl
 import ponticello.sc.*
 import ponticello.sc.client.ScWriter
 import ponticello.sc.client.SuperColliderClient
@@ -37,11 +38,11 @@ data class UGenControl(
 
     override fun copy(): ParameterControl = UGenControl(expr.clone())
 
-    override fun initialize(context: Context, parentObject: ParameterizedObject) {
-        super.initialize(context, parentObject)
+    override fun initialize(context: Context, namedControl: NamedParameterControl) {
+        super.initialize(context, namedControl)
         val myContext = context.extend {
             set(UndoManager, context[UndoManager].createSubManager())
-            set(PonticelloContext, PonticelloContext(parentObject, Scope.createEmpty()))
+            set(PonticelloContext, PonticelloContext(namedControl.parentObject, Scope.createEmpty()))
         }
         expr.initialize(myContext)
     }

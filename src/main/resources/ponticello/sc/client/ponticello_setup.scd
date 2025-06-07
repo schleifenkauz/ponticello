@@ -84,7 +84,7 @@ OSCdef('run', {
 	fct = this.compile(code.asString);
 	if (fct == nil) { ~ponticello_addr.sendMsg('error', "Compilation error") };
 	fork {
-	    //code.postln;
+	    code.postln;
 		try { fct.value } { |error|
 			~ponticello_addr.sendMsg('/error', nil, error.what);
 			error.throw;
@@ -113,7 +113,7 @@ OSCdef('schedule', {
         if (my_play_start.isNil || (my_play_start == ~play_start[player_id])) {
             fork {
                 postf("EXECUTE %\n", info);
-                //code.postln;
+                code.postln;
                 try { fct.value } { |error|
                     ~ponticello_addr.sendMsg('/error', error.what);
                     error.throw;

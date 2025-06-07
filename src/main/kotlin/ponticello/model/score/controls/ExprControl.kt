@@ -13,6 +13,7 @@ import ponticello.impl.Decimal
 import ponticello.model.ctx.PonticelloContext
 import ponticello.model.ctx.Scope
 import ponticello.model.obj.ParameterizedObject
+import ponticello.model.score.ParameterControlList.NamedParameterControl
 import ponticello.sc.ControlSpec
 import ponticello.sc.ScExpr
 import ponticello.sc.editor.ScExprExpander
@@ -33,11 +34,11 @@ class ExprControl(val expr: EditorRoot<@Contextual ScExprExpander>) : ParameterC
         obj: ParameterizedObject, spec: ControlSpec, cutoff: Decimal,
     ): Boolean = true
 
-    override fun initialize(context: Context, parentObject: ParameterizedObject) {
-        super.initialize(context, parentObject)
+    override fun initialize(context: Context, namedControl: NamedParameterControl) {
+        super.initialize(context, namedControl)
         val myContext = context.extend {
             set(UndoManager, context[UndoManager].createSubManager())
-            set(PonticelloContext, PonticelloContext(parentObject, Scope.createEmpty()))
+            set(PonticelloContext, PonticelloContext(namedControl.parentObject, Scope.createEmpty()))
         }
         expr.initialize(myContext)
     }

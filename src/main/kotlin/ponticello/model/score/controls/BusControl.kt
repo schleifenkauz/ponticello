@@ -11,6 +11,7 @@ import ponticello.model.obj.BusReference
 import ponticello.model.obj.ParameterizedObject
 import ponticello.model.registry.BusRegistry
 import ponticello.model.registry.reference
+import ponticello.model.score.ParameterControlList
 import ponticello.sc.BusControlSpec
 import ponticello.sc.ControlSpec
 import ponticello.sc.Identifier
@@ -23,8 +24,8 @@ import reaktive.value.reactiveVariable
 @Serializable
 @SerialName("Bus")
 class BusControl(val bus: ReactiveVariable<BusReference>) : ParameterControl() {
-    override fun initialize(context: Context, parentObject: ParameterizedObject) {
-        super.initialize(context, parentObject)
+    override fun initialize(context: Context, namedControl: ParameterControlList.NamedParameterControl) {
+        super.initialize(context, namedControl)
         bus.now.resolve(context[BusRegistry])
     }
 

@@ -211,11 +211,11 @@ class ControlAssignmentEditor(val control: NamedParameterControl, val view: Scor
             ): List<ContextualizedAction> = actions.withContext(control)
 
             private val actions = collectActions<EnvelopeControl> {
-                addAction("Update") {
-                    icon(MaterialDesignS.SYNC)
-                    shortcut("Ctrl+U")
-                    executes { ctrl -> ctrl.update.fire() }
-                }
+//                addAction("Update") {
+//                    icon(MaterialDesignS.SYNC)
+//                    shortcut("Ctrl+U")
+//                    executes { ctrl -> ctrl.update.fire() }
+//                }
             }
         }
 

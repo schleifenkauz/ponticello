@@ -11,6 +11,7 @@ import ponticello.model.obj.BufferReference
 import ponticello.model.obj.ParameterizedObject
 import ponticello.model.registry.BufferRegistry
 import ponticello.model.registry.reference
+import ponticello.model.score.ParameterControlList
 import ponticello.sc.BufferControlSpec
 import ponticello.sc.ControlSpec
 import ponticello.sc.Identifier
@@ -26,8 +27,8 @@ data class BufferControl(
     val sample: ReactiveVariable<BufferReference>,
     val display: ReactiveVariable<Boolean> = reactiveVariable(true),
 ) : ParameterControl() {
-    override fun initialize(context: Context, parentObject: ParameterizedObject) {
-        super.initialize(context, parentObject)
+    override fun initialize(context: Context, namedControl: ParameterControlList.NamedParameterControl) {
+        super.initialize(context, namedControl)
         sample.now.resolve(context[BufferRegistry])
     }
 

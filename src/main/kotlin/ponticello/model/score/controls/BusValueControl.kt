@@ -9,6 +9,7 @@ import ponticello.impl.copy
 import ponticello.model.obj.BusReference
 import ponticello.model.obj.ParameterizedObject
 import ponticello.model.registry.BusRegistry
+import ponticello.model.score.ParameterControlList
 import ponticello.sc.*
 import ponticello.sc.client.ScWriter
 import reaktive.value.ReactiveVariable
@@ -17,8 +18,8 @@ import reaktive.value.now
 @Serializable
 @SerialName("BusValue")
 class BusValueControl(val bus: ReactiveVariable<BusReference>) : ParameterControl() {
-    override fun initialize(context: Context, parentObject: ParameterizedObject) {
-        super.initialize(context, parentObject)
+    override fun initialize(context: Context, namedControl: ParameterControlList.NamedParameterControl) {
+        super.initialize(context, namedControl)
         bus.now.resolve(context[BusRegistry])
     }
 

@@ -1,14 +1,12 @@
 package ponticello.model.player
 
 import ponticello.impl.Decimal
+import ponticello.model.flow.NodePlacement
 import ponticello.model.obj.BufferReference
 import ponticello.model.obj.BusReference
 import ponticello.model.obj.ParameterizedObject
-import ponticello.model.score.Envelope
-import ponticello.model.score.controls.AttackReleaseControl
+import ponticello.model.score.controls.EnvelopeControl
 import ponticello.model.score.controls.ParameterControl
-import ponticello.model.score.controls.guardAgainstReplaceNil
-import ponticello.sc.NumericalControlSpec
 import ponticello.sc.ScExpr
 import ponticello.sc.client.ScWriter
 
@@ -98,18 +96,12 @@ class LiveSynthUpdater(obj: ParameterizedObject) : AbstractLiveUpdater(obj) {
     override fun updateEnvelope(
         writer: ScWriter, objectTime: Decimal,
         uniqueName: String, parameter: String,
-        envelope: Envelope, remap: Boolean,
+        envelope: EnvelopeControl, remap: Boolean,
     ) {
-        val spec = obj.getSpec(parameter) as? NumericalControlSpec ?: return
-        val envelopeCode = envelope.generatorCode(spec.warp, offset = objectTime)
-        val auxiliarySynthName = ParameterControl.auxilSynthName(uniqueName, parameter)
-        val placement = getAuxiliarySynthPlacement(parameter, uniqueName, replace = true)
-        val action = guardAgainstReplaceNil(placement)
-        val auxiliaryBus = ParameterControl.auxilBusName(uniqueName, parameter)
-        writer.appendLine(
-            "$auxiliarySynthName = { $envelopeCode }" +
-                    ".play(target: ${placement.target}, outpus: $auxiliaryBus, fadeTime: ${AttackReleaseControl.DEFAULT}, addAction: ${action});"
-        )
+        val auxilVarName = ParameterControl.auxilBusName(uniqueName, parameter)
+        val auxilSynthName = ParameterControl.auxilSynthName(uniqueName, parameter)
+        val placement = NodePlacement.replace(auxilSynthName)
+        envelope.createEnvelopeSynth(writer, auxilVarName, auxilSynthName, placement, cutoff = objectTime, paused = false)
         if (remap) writer.remap(uniqueName, parameter)
     }
 }

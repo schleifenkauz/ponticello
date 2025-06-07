@@ -9,7 +9,6 @@ import ponticello.model.obj.BusReference
 import ponticello.model.obj.ParameterizedObject
 import ponticello.model.obj.SynthDefObject
 import ponticello.model.registry.NamedObject.Companion.NO_NAME
-import ponticello.model.score.Envelope
 import ponticello.model.score.ParameterControlList
 import ponticello.model.score.ParameterControlList.NamedParameterControl
 import ponticello.model.score.ScoreObject
@@ -156,7 +155,7 @@ abstract class AbstractLiveUpdater(protected val obj: ParameterizedObject) : Par
             is AttackReleaseControl -> return //TODO
 
             is EnvelopeControl -> runOnActiveObjects { name, objectTime ->
-                updateEnvelope(writer, objectTime, name, parameter, envelope = ctrl.points, remap)
+                updateEnvelope(writer, objectTime, name, parameter, ctrl, remap)
             }
 
             is UGenControl -> runOnActiveObjects { name, objectTime ->
@@ -205,7 +204,7 @@ abstract class AbstractLiveUpdater(protected val obj: ParameterizedObject) : Par
             is AttackReleaseControl -> return //TODO
             is EnvelopeControl -> control.update.stream.observe { _ ->
                 runOnActiveObjects { name, objectTime ->
-                    updateEnvelope(writer, objectTime, name, parameter, envelope = control.points, remap = false)
+                    updateEnvelope(writer, objectTime, name, parameter, control, remap = false)
                 }
             }
 
@@ -268,7 +267,7 @@ abstract class AbstractLiveUpdater(protected val obj: ParameterizedObject) : Par
 
     protected abstract fun updateEnvelope(
         writer: ScWriter, objectTime: Decimal,
-        uniqueName: String, parameter: String, envelope: Envelope,
+        uniqueName: String, parameter: String, envelope: EnvelopeControl,
         remap: Boolean,
     )
 

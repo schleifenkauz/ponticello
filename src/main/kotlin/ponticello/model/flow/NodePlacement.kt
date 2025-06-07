@@ -4,6 +4,8 @@ data class NodePlacement(
     val addAction: AddAction,
     val target: String
 ) {
+    val code get() = "addAction: $addAction, target: $target"
+
     enum class AddAction {
         AddAfter, AddBefore, AddToTail, AddToHead, AddReplace;
 

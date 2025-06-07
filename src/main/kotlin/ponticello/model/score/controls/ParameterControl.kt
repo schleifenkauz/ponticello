@@ -8,6 +8,7 @@ import ponticello.model.obj.AbstractContextualObject
 import ponticello.model.obj.ParameterizedObject
 import ponticello.model.obj.SynthDefObject
 import ponticello.model.registry.ObjectReference
+import ponticello.model.score.ParameterControlList.NamedParameterControl
 import ponticello.sc.ControlSpec
 import ponticello.sc.ScExpr
 import ponticello.sc.client.ScWriter
@@ -50,7 +51,7 @@ sealed class ParameterControl : AbstractContextualObject() {
         context: CodegenContext,
     ): ScExpr
 
-    open fun initialize(context: Context, parentObject: ParameterizedObject) {
+    open fun initialize(context: Context, namedControl: NamedParameterControl) {
         super.initialize(context)
     }
 

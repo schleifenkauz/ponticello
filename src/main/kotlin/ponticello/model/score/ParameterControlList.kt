@@ -91,8 +91,8 @@ class ParameterControlList(
         fun initialize(controls: ParameterControlList) {
             this.controls = controls
             super.initialize(controls.context)
-            value.now.initialize(context, parentObject)
             updateSpec(customSpec ?: parentObject.def.getSpec(name.now)?.now)
+            value.now.initialize(context, this)
             isValid = binding(_spec, value) { spec, ctrl -> spec != null && ctrl.validate(spec, parentObject) }
         }
 
@@ -158,7 +158,7 @@ class ParameterControlList(
 
         fun reassign(newControl: ParameterControl) {
             val oldControl = now
-            newControl.initialize(context, parentObject)
+            newControl.initialize(context, this)
             value.now = newControl
             context[UndoManager].record(ParameterControlEdit.ReassignControl(this, oldControl, newControl))
             controls.notifyListeners<Listener> { reassignedControl(this@NamedParameterControl, oldControl, newControl) }
