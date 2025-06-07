@@ -100,7 +100,7 @@ abstract class ScoreObjectView(
             val ctx = ObjectActionContext.SingleObjectContext(this)
             val headerBox = HBox(
                 5.0,
-                NameControl(obj),
+                NameControl(obj).setFixedWidth(150.0),
                 ActionBar(ObjectActions.multiObjectActions.withContext(ctx), buttonStyle = "medium-icon-button"),
                 ActionBar(ObjectActions.singleObjectActions.withContext(ctx), buttonStyle = "medium-icon-button"),
                 infiniteSpace(),

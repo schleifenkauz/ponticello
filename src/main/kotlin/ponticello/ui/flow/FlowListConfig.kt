@@ -4,11 +4,8 @@ import bundles.createBundle
 import fxutils.actions.Action
 import fxutils.actions.ContextualizedAction
 import fxutils.actions.collectActions
-import fxutils.controls.SliderBar
 import fxutils.prompt.InfoPrompt
-import fxutils.setFixedWidth
 import fxutils.styleClass
-import fxutils.undo.UndoManager
 import fxutils.widthAtLeast
 import javafx.geometry.Point2D
 import javafx.scene.Node
@@ -19,11 +16,13 @@ import javafx.scene.input.DragEvent
 import javafx.scene.input.Dragboard
 import javafx.scene.input.TransferMode
 import org.kordamp.ikonli.material2.Material2AL
-import org.kordamp.ikonli.materialdesign2.*
+import org.kordamp.ikonli.materialdesign2.MaterialDesignC
+import org.kordamp.ikonli.materialdesign2.MaterialDesignE
+import org.kordamp.ikonli.materialdesign2.MaterialDesignR
+import org.kordamp.ikonli.materialdesign2.MaterialDesignS
 import ponticello.model.flow.*
 import ponticello.model.obj.SynthDefObject
 import ponticello.model.obj.withName
-import ponticello.model.registry.BusRegistry
 import ponticello.model.registry.SynthDefRegistry
 import ponticello.sc.Rate
 import ponticello.sc.editor.BusSelector
@@ -35,7 +34,6 @@ import ponticello.ui.registry.ObjectBox
 import ponticello.ui.registry.ObjectListDisplayConfig
 import ponticello.ui.registry.ObjectListView
 import ponticello.ui.registry.ObjectListView.DisplayMode
-import ponticello.ui.registry.SearchableBusListView
 import ponticello.ui.score.ParameterControlsPane
 import ponticello.ui.score.ScorePane
 import reaktive.value.binding.binding
@@ -70,14 +68,8 @@ class FlowListConfig(
             selector.setFilter(rate = Rate.Audio, channels = null)
             selector.syncWith(obj.targetBus)
             selector.initialize(context)
-            val masterVolumeSlider = SliderBar(
-                obj.masterVolume, reactiveValue("Master volume"),
-                MixerFlow.VOLUME_SPEC.converter(unit = "db"),
-                SliderBar.Style.AlwaysValue,
-                undoManager = obj.context[UndoManager]
-            ).setFixedWidth(150.0)
             val selectorControl = ObjectSelectorControl(selector, createBundle())
-            listOf(selectorControl, masterVolumeSlider)
+            listOf(selectorControl)
         }
 
         is VSTPluginFlow -> {
@@ -143,16 +135,22 @@ class FlowListConfig(
 
     companion object {
         private val actions = collectActions<AudioFlow> {
-            addAction("Add source bus") {
-                icon(MaterialDesignP.PLUS)
-                executesOn<MixerFlow> { flow, ev ->
-                    val expectedChannels = flow.targetBus.now.get()?.channels?.now
-                    val bus = SearchableBusListView(
-                        flow.context[BusRegistry], "Select source bus",
-                        Rate.Audio, expectedChannels
-                    ).exclude { flow.usedBuses() }
-                        .showPopup(ev) ?: return@executesOn
-                    flow.components.add(MixerFlow.MixerComponent.create(bus))
+            addAction("Show VST editor") {
+                icon(MaterialDesignE.EYE)
+                executesOn<VSTPluginFlow> { flow -> flow.showEditor() }
+            }
+            addAction("View SynthDef") {
+                icon(Material2AL.CODE)
+                shortcut("Ctrl+L")
+                enableWhen { flow ->
+                    if (flow !is SynthFlow) reactiveValue(false)
+                    else flow.synthDefSelector.isResolved
+                }
+                ifNotApplicable(Action.IfNotApplicable.Hide)
+                executes { flow ->
+                    flow as SynthFlow
+                    val pane = flow.context[PonticelloMainActivity].synthDefsPane()
+                    pane.listView.showContent(flow.def)
                 }
             }
             add(ServerActions.scopeBus) { f -> (f as? MixerFlow)?.targetBus }
@@ -180,24 +178,6 @@ class FlowListConfig(
                 shortcut("Ctrl+U")
                 enableWhen { flow -> flow.isActive }
                 executes { flow -> flow.sync() }
-            }
-            addAction("View SynthDef") {
-                icon(Material2AL.CODE)
-                shortcut("Ctrl+L")
-                enableWhen { flow ->
-                    if (flow !is SynthFlow) reactiveValue(false)
-                    else flow.synthDefSelector.isResolved
-                }
-                ifNotApplicable(Action.IfNotApplicable.Hide)
-                executes { flow ->
-                    flow as SynthFlow
-                    val pane = flow.context[PonticelloMainActivity].synthDefsPane()
-                    pane.listView.showContent(flow.def)
-                }
-            }
-            addAction("Show VST editor") {
-                icon(MaterialDesignE.EYE)
-                executesOn<VSTPluginFlow> { flow -> flow.showEditor() }
             }
         }
     }

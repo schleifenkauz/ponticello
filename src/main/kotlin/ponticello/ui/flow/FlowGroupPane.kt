@@ -21,7 +21,7 @@ class FlowGroupPane(group: AudioFlowGroup) : ToolPane() {
 
     init {
         flowsView.setupDropArea(config::canDrop) { ev -> config.onDrop(ev, flowsView) }
-        val nameControl = NameControl(group)
+        val nameControl = NameControl(group).setFixedWidth(150.0)
         val colorPicker = colorPicker(group.associatedColor).setFixedWidth(30.0)
         val actions = AudioFlowPane.actions.withContext(group) + removeAction.withContext(group)
         val actionBar = ActionBar(actions, buttonStyle = "medium-icon-button")

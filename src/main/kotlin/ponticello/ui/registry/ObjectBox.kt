@@ -38,7 +38,7 @@ class ObjectBox<O : ContextualObject>(val parent: ObjectListView<O>, val obj: O)
 
     private val nameDisplay =
         when {
-            nameControl != null -> nameControl
+            nameControl != null -> nameControl.setFixedWidth(150.0)
             obj is NamedObject -> HBox(label(obj.name).styleClass("name-field")).styleClass("name")
             else -> null
         }

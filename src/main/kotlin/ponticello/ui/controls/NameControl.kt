@@ -3,7 +3,6 @@ package ponticello.ui.controls
 import fxutils.actions.Action
 import fxutils.actions.ActionBar
 import fxutils.actions.collectActions
-import fxutils.alwaysHGrow
 import fxutils.shortcut
 import fxutils.styleClass
 import javafx.scene.Cursor
@@ -25,7 +24,7 @@ class NameControl(
     val obj: RenamableObject,
     private val defaultDisplayName: ReactiveString = reactiveValue(NO_NAME),
 ) : HBox() {
-    private val field = TextField().alwaysHGrow() styleClass "name-field"
+    private val field = TextField() styleClass "name-field"
 
     private val observer: Observer
 

@@ -1,18 +1,21 @@
 package ponticello.ui.flow
 
 import bundles.createBundle
+import fxutils.*
 import fxutils.actions.ContextualizedAction
+import fxutils.actions.button
 import fxutils.actions.collectActions
 import fxutils.controls.SliderBar
-import fxutils.setRoot
-import fxutils.setupDropArea
 import fxutils.undo.UndoManager
-import fxutils.widthAtLeast
+import javafx.geometry.Pos
 import javafx.scene.Node
-import javafx.scene.control.Control
 import javafx.scene.input.DragEvent
 import javafx.scene.input.Dragboard
+import javafx.scene.input.MouseEvent
+import javafx.scene.layout.HBox
+import javafx.scene.layout.VBox
 import org.kordamp.ikonli.materialdesign2.MaterialDesignA
+import org.kordamp.ikonli.materialdesign2.MaterialDesignP
 import ponticello.model.flow.MixerFlow
 import ponticello.model.obj.BusObject
 import ponticello.model.registry.BusRegistry
@@ -25,18 +28,40 @@ import ponticello.ui.impl.getFrom
 import ponticello.ui.registry.ObjectBox
 import ponticello.ui.registry.ObjectListDisplayConfig
 import ponticello.ui.registry.ObjectListView
+import ponticello.ui.registry.SearchableBusListView
 import reaktive.value.binding.flatMap
 import reaktive.value.binding.not
 import reaktive.value.fx.asObservableValue
 import reaktive.value.now
 import reaktive.value.reactiveValue
 
-class MixerFlowView(private val flow: MixerFlow) : Control(), ObjectListDisplayConfig<MixerFlow.MixerComponent> {
+class MixerFlowView(private val flow: MixerFlow) : VBox(), ObjectListDisplayConfig<MixerFlow.MixerComponent> {
     val componentsView = ObjectListView(flow.components, this)
 
     init {
-        setRoot(componentsView)
+        val totalVolumeSlider = SliderBar(
+            flow.masterVolume, reactiveValue("Master volume"),
+            MixerFlow.VOLUME_SPEC.converter(unit = "db"),
+            SliderBar.Style.AlwaysValue,
+            undoManager = flow.context[UndoManager]
+        ).alwaysHGrow()
+        val addSourceBusBtn = MaterialDesignP.PLUS.button("Add source bus", "medium-icon-button", ::addSourceBus)
+        children.addAll(
+            HBox(5.0, label("Volume: "), totalVolumeSlider, addSourceBusBtn)
+                .pad(10.0).also { it.alignment = Pos.CENTER },
+            componentsView
+        )
         componentsView.setupDropArea(::canDrop, ::onDrop)
+    }
+
+    private fun addSourceBus(ev: MouseEvent) {
+        val expectedChannels = flow.targetBus.now.get()?.channels?.now
+        val bus = SearchableBusListView(
+            flow.context[BusRegistry], "Select source bus",
+            Rate.Audio, expectedChannels
+        ).exclude { flow.usedBuses() }
+            .showPopup(ev) ?: return
+        flow.components.add(MixerFlow.MixerComponent.create(bus))
     }
 
     private fun canDrop(dragboard: Dragboard): Boolean {

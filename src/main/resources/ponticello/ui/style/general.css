@@ -79,7 +79,6 @@
     -fx-border-width: 0px;
     -fx-border-radius: 0px;
     -fx-border-color: black;
-    -fx-min-width: 50px;
 }
 
 .name-field {
@@ -88,8 +87,6 @@
     -fx-background-radius: 0;
     -fx-border-width: 0;
     -fx-padding: 0px 2px 0px 2px;
-    -fx-pref-width: 100px;
-    -fx-max-width: 150px;
 }
 
 .check-box {
