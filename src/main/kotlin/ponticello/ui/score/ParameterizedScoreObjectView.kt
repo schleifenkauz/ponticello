@@ -140,13 +140,13 @@ abstract class ParameterizedScoreObjectView<O : ParameterizedScoreObject>(
 
     private fun observeLFOs() = obj.lfosManager.onRemove { param ->
         val canvas = lfoCanvases.remove(param)
-        if (canvas != null) children.remove(canvas)
+        if (canvas != null) objectPane.children.remove(canvas)
     } and obj.lfosManager.onDisplay { param, spec, lfo ->
         val canvas = lfoCanvases.getOrPut(param) {
             val c = LFOCanvas(obj)
-            c.widthProperty().bind(widthProperty())
-            c.heightProperty().bind(heightProperty())
-            children.add(c)
+            c.widthProperty().bind(objectPane.widthProperty())
+            c.heightProperty().bind(objectPane.heightProperty())
+            objectPane.children.add(c)
             c
         }
         canvas.display(lfo, spec)
@@ -206,7 +206,7 @@ abstract class ParameterizedScoreObjectView<O : ParameterizedScoreObject>(
 
     private fun displayEnvelope(control: NamedParameterControl, envelope: Envelope) {
         if (control.spec.now is NumericalControlSpec) {
-            val e = EnvelopeEditor(control, envelope, this, pane = this)
+            val e = EnvelopeEditor(control, envelope, this, pane = objectPane)
             e.repaint()
             envelopeEditors.add(e)
         }

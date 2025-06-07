@@ -45,7 +45,7 @@ import reaktive.value.reactiveVariable
 
 abstract class ScoreObjectView(
     val instance: ScoreObjectInstance,
-) : Pane(), ScoreObjectInstance.Listener, ScoreObject.Listener, TimeBlock {
+) : VBox(), ScoreObjectInstance.Listener, ScoreObject.Listener, TimeBlock {
     abstract val obj: ScoreObject
 
     var isInitialized: Boolean = false
@@ -67,6 +67,9 @@ abstract class ScoreObjectView(
     protected open val borderColorWhenSelected: Color get() = Color.web("#2a66ff")
     protected open val borderColorWhenNotSelected: Color get() = Color.TRANSPARENT
     protected open val borderColorWhenSameObjectSelected: Color get() = Color.GRAY
+
+    protected val objectPane = Pane()
+    protected val infoBar = HBox()
 
     protected val colorPicker: ColorPicker = ColorPicker() styleClass "button"
 
@@ -127,6 +130,14 @@ abstract class ScoreObjectView(
         instance.addListener(this)
         obj.addListener(this)
         isInitialized = true
+        infoBar.setBackground(Color.web("#1d1d20"))
+        val nameControl = NameControl(obj).autoSize()
+        infoBar.children.add(nameControl)
+        infoBar.visibleProperty().bind(infoBar.widthProperty().lessThanOrEqualTo(widthProperty()))
+        children.add(infoBar)
+        objectPane.prefWidthProperty().bind(widthProperty())
+        setVgrow(objectPane, Priority.ALWAYS)
+        children.add(objectPane)
     }
 
     fun initialize(parent: ScorePane) {
@@ -160,11 +171,12 @@ abstract class ScoreObjectView(
         if (!parentPane.isRoot(obj)) {
             relocate(parentPane.getX(instance.start), parentPane.getScreenY(instance.y))
         }
+        infoBar.prefWidth = getDisplayWidth()
         setPrefSize(getDisplayWidth(), getDisplayHeight())
     }
 
     private fun setBackground() {
-        backgroundProperty().bind(backgroundColor.map { color ->
+        objectPane.backgroundProperty().bind(backgroundColor.map { color ->
             Background(BackgroundFill(color, CornerRadii.EMPTY, null))
         }.asObservableValue())
         colorPicker.userData = backgroundColor.forEach { color ->
@@ -343,6 +355,7 @@ abstract class ScoreObjectView(
 
     override fun resizedObject(obj: ScoreObject) {
         if (!parentPane.isRoot(obj)) {
+            infoBar.prefWidth = getDisplayWidth()
             setPrefSize(getDisplayWidth(), getDisplayHeight())
         }
         rescale()

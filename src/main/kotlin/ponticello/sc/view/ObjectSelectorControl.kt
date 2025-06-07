@@ -1,6 +1,7 @@
 package ponticello.sc.view
 
 import bundles.Bundle
+import bundles.createBundle
 import fxutils.setupDropArea
 import hextant.core.view.SimpleChoiceEditorControl
 import javafx.scene.input.DragEvent
@@ -15,7 +16,7 @@ import ponticello.ui.registry.SearchableRegistryView
 import reaktive.value.now
 
 class ObjectSelectorControl<O : NamedObject>(
-    private val selector: ObjectSelector<O>, arguments: Bundle,
+    private val selector: ObjectSelector<O>, arguments: Bundle = createBundle(),
 ) : SimpleChoiceEditorControl<ObjectReference<O>>(selector, arguments) {
     init {
         root.setupDropArea(::canDrop, ::onDrop)

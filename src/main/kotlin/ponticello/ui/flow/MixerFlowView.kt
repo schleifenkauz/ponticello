@@ -47,7 +47,7 @@ class MixerFlowView(private val flow: MixerFlow) : VBox(), ObjectListDisplayConf
         ).alwaysHGrow()
         val addSourceBusBtn = MaterialDesignP.PLUS.button("Add source bus", "medium-icon-button", ::addSourceBus)
         children.addAll(
-            HBox(5.0, label("Volume: "), totalVolumeSlider, addSourceBusBtn)
+            HBox(5.0, addSourceBusBtn, label("Volume: "), totalVolumeSlider)
                 .pad(10.0).also { it.alignment = Pos.CENTER },
             componentsView
         )

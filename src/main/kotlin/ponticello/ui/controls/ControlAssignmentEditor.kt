@@ -1,6 +1,5 @@
 package ponticello.ui.controls
 
-import bundles.createBundle
 import fxutils.*
 import fxutils.actions.*
 import fxutils.controls.SliderBar
@@ -457,7 +456,7 @@ class ControlAssignmentEditor(val control: NamedParameterControl, val view: Scor
                 editor.setFilter(spec.channels)
                 editor.syncWith(control.sample)
                 editor.initialize(namedControl.context)
-                val selectorControl = ObjectSelectorControl(editor, createBundle())
+                val selectorControl = ObjectSelectorControl(editor)
                 val displaySwitch = CheckBox()
                     .sync(control.display, description = "Show spectrum", namedControl.context[UndoManager])
                 displaySwitch.selectedProperty().bindBidirectional(control.display.asProperty())
@@ -600,7 +599,7 @@ class ControlAssignmentEditor(val control: NamedParameterControl, val view: Scor
                 else editor.setFilter(rate = Rate.Control, channels = 1)
                 editor.syncWith(control)
                 editor.initialize(context)
-                return ObjectSelectorControl(editor, createBundle())
+                return ObjectSelectorControl(editor)
             }
 
             private fun makeCodePaneWindow(

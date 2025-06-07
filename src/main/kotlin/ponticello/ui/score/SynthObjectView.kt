@@ -58,6 +58,7 @@ class SynthObjectView(
         super.initialize()
         sampleObserver = observeSample()
         sampleDisplayObserver = obj.displaySample?.forEach { updateSpectrogram() }
+        infoBar.children.add(ObjectSelectorControl(obj.synthDefSelector))
     }
 
     private fun observeSample(): Observer = obj.sample.forEach { s ->
@@ -154,7 +155,7 @@ class SynthObjectView(
 
     private fun updateSpectrogram() {
         Platform.runLater {
-            children.removeAll(spectrogramSegments.flatMap { seg -> seg.nodes() })
+            objectPane.children.removeAll(spectrogramSegments.flatMap { seg -> seg.nodes() })
             spectrogramSegments.clear()
             if (obj.displaySample?.now != true) return@runLater
             val sample = obj.sample.now?.get()
@@ -169,15 +170,15 @@ class SynthObjectView(
             val x = getWidth(node.start)
             node.image.layoutX = x
             node.image.fitWidth = getWidth(node.duration)
-            node.image.fitHeight = prefHeight
+            node.image.fitHeight = objectPane.height
             node.loopPointIndicator?.startX = x
             node.loopPointIndicator?.endX = x
-            node.loopPointIndicator?.endY = prefHeight
+            node.loopPointIndicator?.endY = objectPane.height
         }
     }
 
     private fun displaySpectrogram() = Platform.runLater {
-        children.removeAll(spectrogramSegments.flatMap { seg -> seg.nodes() })
+        objectPane.children.removeAll(spectrogramSegments.flatMap { seg -> seg.nodes() })
         spectrogramSegments.clear()
         if (obj.displaySample?.now != true) return@runLater
         if (spectrogramImage == null) return@runLater
@@ -206,15 +207,15 @@ class SynthObjectView(
             view.layoutX = getWidth(t)
             var loopPointIndicator: Line? = null
             if (spectrogramSegments.isNotEmpty()) {
-                loopPointIndicator = Line(view.layoutX, 0.0, view.layoutX, prefHeight)
+                loopPointIndicator = Line(view.layoutX, 0.0, view.layoutX, objectPane.height)
                 loopPointIndicator.stroke = Color.WHITE
                 loopPointIndicator.viewOrder = 500.0
             }
             spectrogramSegments.add(SpectrogramSegment(t, dur, view, loopPointIndicator))
             t += dur
         }
-        children.addAll(spectrogramSegments.map { eg -> eg.image })
-        children.addAll(spectrogramSegments.mapNotNull { seg -> seg.loopPointIndicator })
+        objectPane.children.addAll(spectrogramSegments.map { eg -> eg.image })
+        objectPane.children.addAll(spectrogramSegments.mapNotNull { seg -> seg.loopPointIndicator })
     }
 
     private fun displaySpectrogramPart(
@@ -231,7 +232,7 @@ class SynthObjectView(
         if (rate < zero) minX -= width
         val height = spectrogramImage!!.height
         view.viewport = Rectangle2D(minX, minY, width, height)
-        view.fitHeight = prefHeight
+        view.fitHeight = objectPane.height
         view.fitWidth = getWidth(duration)
         view.viewOrder = 1000.0
         if (rate < zero) view.transforms.addAll(

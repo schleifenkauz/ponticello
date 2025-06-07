@@ -3,6 +3,8 @@ package ponticello.ui.controls
 import fxutils.actions.Action
 import fxutils.actions.ActionBar
 import fxutils.actions.collectActions
+import fxutils.autoSize
+import fxutils.runFXWithTimeout
 import fxutils.shortcut
 import fxutils.styleClass
 import javafx.scene.Cursor
@@ -30,6 +32,8 @@ class NameControl(
 
     val isEditing = field.editableProperty().asReactiveValue()
 
+    private var isAutoSize = false
+
     init {
         styleClass("name-control")
         field.text = obj.name.now.takeIf { it != NO_NAME } ?: defaultDisplayName.now
@@ -54,12 +58,18 @@ class NameControl(
                 abandonEdit()
             }
         }
+        field.autoSize { isAutoSize }
         observer = obj.name.observe { _, _, newName ->
             field.text = newName.takeIf { it != NO_NAME } ?: defaultDisplayName.now
         } and defaultDisplayName.observe { _, _, defaultName ->
             if (obj.name.now == NO_NAME) field.text = defaultName
         }
+        field.sceneProperty().addListener { _ ->
+            runFXWithTimeout(100) { field.autoSize(::isAutoSize) }
+        }
     }
+
+    fun autoSize() = also { isAutoSize = true }
 
     override fun requestFocus() {
         field.requestFocus()

@@ -27,7 +27,9 @@ import ponticello.model.project.*
 import ponticello.sc.client.SuperColliderClient
 import ponticello.ui.actions.*
 import ponticello.ui.flow.AudioFlowPane
+import ponticello.ui.impl.DEFAULT_SCENE_FILL
 import ponticello.ui.impl.makeToolWindow
+import ponticello.ui.impl.sceneFill
 import ponticello.ui.live.LauncherGridPane
 import ponticello.ui.live.LiveTaskRegistryPane
 import ponticello.ui.midi.ContextualMidiReceiver
@@ -128,6 +130,7 @@ class PonticelloMainActivity(val project: PonticelloProject) : Activity() {
     private val flowPane by lazy { AudioFlowPane(project.flows) }
     val flowPaneWindow by lazy {
         val window = context.makeToolWindow(flowPane, "Audio flows", defaultSize = Dimension2D(2000.0, 800.0))
+            .sceneFill(DEFAULT_SCENE_FILL)
         context[ContextualMidiReceiver].registerMidiContext(window) {
             val selectedGroup = flowPane.listView.selectedBox() ?: return@registerMidiContext null
             val flowListView = selectedGroup.content() as? ObjectListView<*> ?: return@registerMidiContext null
