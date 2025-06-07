@@ -36,15 +36,3 @@
     -fx-font-size: 10px;
     -fx-text-fill: white;
 }
-
-
-.global-controls {
-    -fx-background-color: #2e2f33;
-    -fx-spacing: 5px;
-    -fx-padding: 5px;
-    -fx-border-color: gray;
-    -fx-border-width: 2px;
-    -fx-border-radius: 5px;
-    -fx-background-radius: 5px;
-    -fx-pref-height: 64px;
-}

@@ -12,7 +12,6 @@ import hextant.context.compoundEdit
 import hextant.serial.EditorRoot
 import javafx.geometry.Pos
 import javafx.scene.Node
-import javafx.scene.control.Button
 import javafx.scene.control.CheckBox
 import javafx.scene.control.Label
 import javafx.scene.input.DragEvent
@@ -54,7 +53,7 @@ import reaktive.value.fx.asProperty
 
 class ControlAssignmentEditor(val control: NamedParameterControl, val view: ScoreObjectView?) : HBox() {
     private var selectedOption: ControlType<*>? = null
-    private val optionButton = Button() styleClass "sleek-button"
+    private val optionButton = button(style = "selector-button")
     private val detailEditors = mutableMapOf<ControlType<*>, Node>()
     private val spec get() = control.spec.now
     private var settingControl = false
@@ -63,7 +62,7 @@ class ControlAssignmentEditor(val control: NamedParameterControl, val view: Scor
     init {
         optionButton.isFocusTraversable = false
         optionButton.setOnMouseClicked { showOptionPopup() }
-        optionButton.minWidth = 85.0
+        optionButton.prefWidth = 45.0
         setupDropArea(this::canDrop, ::onDrop)
         styleClass("control-detail-editor")
     }
@@ -167,6 +166,8 @@ class ControlAssignmentEditor(val control: NamedParameterControl, val view: Scor
                 spec as NumericalControlSpec
                 return ValueControl(reactiveVariable(oldControl.getNumericalValue() ?: spec.defaultValue.get()))
             }
+
+            override fun toString(): String = "Num"
         }
 
         data object Envelope : ControlType<EnvelopeControl>() {
@@ -184,7 +185,7 @@ class ControlAssignmentEditor(val control: NamedParameterControl, val view: Scor
                 if (namedControl.parentObject is SynthObject) {
                     val toggle = CheckBox()
                         .sync(control.display, description = "Display envelope", namedControl.context[UndoManager])
-                    box.children.addAll(1, listOf(Label("Display envelope"), toggle))
+                    box.children.addAll(1, listOf(Label("Display"), toggle))
                 }
                 box.alignment = Pos.CENTER_LEFT
                 return box
@@ -203,6 +204,8 @@ class ControlAssignmentEditor(val control: NamedParameterControl, val view: Scor
                 val display = reactiveVariable(true)
                 return EnvelopeControl(env, displayColor, display)
             }
+
+            override fun toString(): String = "Env"
         }
 
         data object Expr : ControlType<ExprControl>() {

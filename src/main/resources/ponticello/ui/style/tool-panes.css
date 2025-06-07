@@ -47,7 +47,8 @@
 }
 
 .object-box {
-    -fx-border-color: gray;
+    -fx-background-color: transparent;
+    -fx-border-color: black;
     -fx-border-width: 1px;
     -fx-border-radius: 3px;
     -fx-background-radius: 3px;
@@ -55,24 +56,16 @@
 }
 
 .object-box:hover {
-    -fx-background-color: rgba(0, 1000, 0, 0.1);
+    -fx-background-color: rgba(0, 255, 0, 0.1) !important;
 }
 
 .object-box:selected {
-    -fx-background-color: rgba(100, 0, 0, 0.35) !important;
+    -fx-background-color: transparent !important;
+    -fx-border-color: rgba(100, 0, 0) !important;
 }
 
-.object-action-button {
-    -fx-background-radius: 4px;
-    -fx-border-radius: 4px;
-}
-
-.object-action-button FontIcon {
-    -fx-icon-size: 18px;
-}
-
-.object-action-button:hover {
-    -fx-background-color: black;
+.object-box:hover:selected {
+    -fx-background-color: rgba(0, 255, 0, 0.1) !important;
 }
 
 .command-history-label:focused {
@@ -93,22 +86,3 @@
     -fx-border-width: 1px;
 }
 
-.launcher-grid-item {
-    -fx-alignment: top-center;
-    -fx-border-color: black;
-    -fx-spacing: 8px;
-    -fx-pref-height: 150px;
-    -fx-pref-width: 150px;
-}
-
-.launcher-grid-item:hover {
-    -fx-background-color: rgba(0, 1000, 0, 0.1);
-}
-
-.launcher-grid-item:active {
-    -fx-background-color: rgba(100, 0, 0, 0.35) !important;
-}
-
-.launcher-grid-item:drop-possible {
-    -fx-background-color: rgba(0, 128, 0, 0.5);
-}

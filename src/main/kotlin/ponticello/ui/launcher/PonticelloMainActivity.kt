@@ -71,9 +71,13 @@ class PonticelloMainActivity(val project: PonticelloProject) : Activity() {
     }
 
     private val controlBusPane by lazy { ControlBusRegistryPane(project.busses) }
-    val controlBusWindow by lazy { context.makeToolWindow(controlBusPane, "Control Buses") }
+    val controlBusWindow by lazy {
+        val window = context.makeToolWindow(controlBusPane, "Control Buses")
+        context[ContextualMidiReceiver].registerMidiContext(window) { ControlBusesMidiReceiver(project.busses) }
+        window
+    }
 
-    private val audioBusPane by lazy { AudioBusRegistryPane(project.busses)}
+    private val audioBusPane by lazy { AudioBusRegistryPane(project.busses) }
     val audioBusWindow by lazy { context.makeToolWindow(audioBusPane, "Audio Buses") }
 
     private val samplesPane by lazy { SampleRegistryPane(project.buffers) }
@@ -121,8 +125,17 @@ class PonticelloMainActivity(val project: PonticelloProject) : Activity() {
     lateinit var playerBar: ActionBar
         private set
 
-    private val flowPane by lazy { AudioFlowPane (project.flows) }
-    val flowPaneWindow by lazy { context.makeToolWindow(flowPane, "Audio flows", defaultSize = Dimension2D(2000.0, 800.0)) }
+    private val flowPane by lazy { AudioFlowPane(project.flows) }
+    val flowPaneWindow by lazy {
+        val window = context.makeToolWindow(flowPane, "Audio flows", defaultSize = Dimension2D(2000.0, 800.0))
+        context[ContextualMidiReceiver].registerMidiContext(window) {
+            val selectedGroup = flowPane.listView.selectedBox() ?: return@registerMidiContext null
+            val flowListView = selectedGroup.content() as? ObjectListView<*> ?: return@registerMidiContext null
+            val selectedFlow = flowListView.selectedObject() as? AudioFlow
+            selectedFlow?.midiContext()
+        }
+        window
+    }
 
     val scriptObjectWindows = ScriptObject.Type.entries.associateWith { type ->
         val root = project[type.component].root
@@ -149,19 +162,7 @@ class PonticelloMainActivity(val project: PonticelloProject) : Activity() {
 
         setupMainScoreView()
         setupPlayback()
-        registerMidiContexts()
-    }
-
-    private fun registerMidiContexts() {
-        val receiver = context[ContextualMidiReceiver]
-        receiver.registerMidiContext(controlBusWindow) { ControlBusesMidiReceiver(project.busses) }
-        receiver.registerMidiContext(flowPaneWindow) {
-            val selectedGroup = flowPane.listView.selectedBox() ?: return@registerMidiContext null
-            val flowListView = selectedGroup.content() as? ObjectListView<*> ?: return@registerMidiContext null
-            val selectedFlow = flowListView.selectedObject() as? AudioFlow
-            selectedFlow?.midiContext()
-        }
-        receiver.attachGrid(project[LAUNCHER_GRID])
+        context[ContextualMidiReceiver].attachGrid(project[LAUNCHER_GRID])
     }
 
     private fun setupMainScoreView() {

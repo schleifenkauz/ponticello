@@ -102,7 +102,7 @@ class LogPane(private val logger: Logger) : VBox(), Logger.View {
         box.isFocusTraversable = true
         val detailMessage = record.detailMessage ?: record.message.takeIf { msg -> msg.length > 100 }
         if (detailMessage != null) {
-            val viewBtn = MaterialDesignE.EYE.button(action = "View details") {
+            val viewBtn = MaterialDesignE.EYE.button("View details", "medium-icon-button") {
                 val text = Text(detailMessage)
                 text.fill = Color.WHITE
                 val pane = BorderPane(text)
@@ -113,7 +113,7 @@ class LogPane(private val logger: Logger) : VBox(), Logger.View {
                 window.initOwner(scene.window)
                 window.sizeToScene()
                 window.show()
-            }.styleClass("medium-icon-button")
+            }
             box.children.addAll(infiniteSpace(), viewBtn)
         }
         box.setOnMouseClicked { box.requestFocus() }

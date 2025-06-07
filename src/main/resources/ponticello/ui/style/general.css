@@ -52,12 +52,11 @@
 
 .sleek-text-field {
     -fx-prompt-text-fill: gray;
-    -fx-font-size: 12px;
+    -fx-font-size: 11px;
     -fx-background-color: transparent;
     -fx-border-color: grey;
     -fx-border-radius: 0px;
-    -fx-padding: 3px;
-    -fx-max-width: 1000;
+    -fx-padding: 1px;
 }
 
 .search-field {
@@ -76,10 +75,9 @@
 
 .name-control {
     -fx-spacing: 5px;
-    -fx-padding: 0px 3px 0px 3px;
     -fx-alignment: center-left;
     -fx-border-width: 0px;
-    -fx-border-radius: 3px;
+    -fx-border-radius: 0px;
     -fx-border-color: black;
     -fx-min-width: 50px;
 }
@@ -89,7 +87,7 @@
     -fx-background-color: transparent;
     -fx-background-radius: 0;
     -fx-border-width: 0;
-    -fx-padding: 0;
+    -fx-padding: 0px 2px 0px 2px;
     -fx-pref-width: 100px;
     -fx-max-width: 150px;
 }
@@ -102,7 +100,7 @@
 .check-box .box {
     -fx-background-color: transparent !important;
     -fx-border-color: white;
-    -fx-border-radius: 3px;
+    -fx-border-radius: 0px;
 }
 
 .check-box:hover .box {

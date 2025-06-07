@@ -49,7 +49,7 @@ class FlowListConfig(
     private val context get() = group.context
 
     override val buttonStyle: String
-        get() = "flow-action-button"
+        get() = "small-icon-button"
     override val enableReordering: Boolean
         get() = true
 

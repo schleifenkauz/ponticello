@@ -76,6 +76,7 @@ class DetailPaneManager(private val context: Context) {
         pane.border = createBorder(Color.GRAY, 1.0)
         window = makeSubWindow(pane, windowTitle(view), context, SubWindow.Type.Undecorated)
             .sceneFill(DEFAULT_SCENE_FILL.opacity(0.5))
+        window.sizeToScene()
         registerMidiContext(view, window)
         window.scene.registerShortcuts {
             on("ESCAPE") { window.hide() }

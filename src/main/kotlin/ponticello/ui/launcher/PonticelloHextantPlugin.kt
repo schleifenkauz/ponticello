@@ -41,6 +41,7 @@ object PonticelloHextantPlugin : PluginInitializer({
     stylesheet("ponticello/ui/style/knob.css")
     stylesheet("ponticello/ui/style/general.css")
     stylesheet("ponticello/ui/style/score.css")
+    stylesheet("ponticello/ui/style/launcher-grid.css")
     stylesheet("fxutils/style.css")
     stylesheet("ponticello/ui/style/prompt.css")
     stylesheet("ponticello/ui/style/syntax.css")

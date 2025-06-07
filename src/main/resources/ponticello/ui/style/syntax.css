@@ -25,9 +25,9 @@
 
 .compound-expr {
     -fx-border-width: 2px !important;
-    -fx-border-radius: 5px !important;
-    -fx-background-radius: 5px !important;
-    -fx-padding: 2px !important;
+    -fx-border-radius: 2px !important;
+    -fx-background-radius: 2px !important;
+    -fx-padding: 0px !important;
     -fx-border-color: gray;
     -fx-alignment: center-left;
 }
@@ -72,15 +72,15 @@
 }
 
 .numerical-control-spec .hextant-text {
-    -fx-font-size: 13px !important;
+    -fx-font-size: 11px !important;
 }
 
 .control-spec .keyword {
-    -fx-font-size: 13px !important;
+    -fx-font-size: 11px !important;
 }
 
 .bus-control-spec .keyword {
-    -fx-font-size: 13px !important;
+    -fx-font-size: 11px !important;
 }
 
 .horizontal-choice-editor {

@@ -70,9 +70,9 @@ class SynthObjectView(
 
     override fun setupDetailPane(pane: DetailPane) {
         pane.addItem("Color:", this.colorPicker)
-        val viewBtn = Material2AL.CODE.button(action = "View SynthDef") {
+        val viewBtn = Material2AL.CODE.button("View SynthDef", "medium-icon-button") {
             context[PonticelloMainActivity].synthDefsPane().listView.showContent(obj.synthDef)
-        }.styleClass("medium-icon-button").disableIf(obj.synthDefSelector.isResolved.not())
+        }.disableIf(obj.synthDefSelector.isResolved.not())
         val box = ObjectSelectorControl(obj.synthDefSelector, createBundle())
         pane.addItem("SynthDef: ", HBox(5.0, box, viewBtn).centerChildren())
         val controlsPane = ParameterControlsPane(obj, "Synth controls", this)

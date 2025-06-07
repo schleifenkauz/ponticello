@@ -1,13 +1,12 @@
 package ponticello.ui.registry
 
-import fxutils.actions.ActionBar
-import fxutils.actions.ContextualizedAction
-import fxutils.actions.collectActions
-import fxutils.actions.registerShortcuts
+import fxutils.actions.*
 import fxutils.styleClass
+import javafx.scene.Cursor
 import org.controlsfx.control.textfield.CustomTextField
 import org.kordamp.ikonli.javafx.FontIcon
 import org.kordamp.ikonli.material2.Material2MZ
+import org.kordamp.ikonli.materialdesign2.MaterialDesignC
 import ponticello.model.registry.NamedObject
 import ponticello.model.registry.NamedObjectList
 import ponticello.ui.registry.ObjectListView.Companion.modeChangeActions
@@ -28,7 +27,7 @@ abstract class SearchableToolPane<O : NamedObject> : ToolPane(), ObjectListDispl
         setupSearchField()
         val windowActions = modeChangeActions.withContext(listView) + fitContentAction.withContext(this)
         setup(listView, title?.let(::reactiveValue), searchText, windowActions)
-        val actions = listView.actions + extraActions()
+        val actions = listView.actions + extraActions() + actions.withContext(this)
         registerShortcuts(actions)
         header!!.children.add(1, ActionBar(actions, buttonStyle = "medium-icon-button"))
     }
@@ -37,9 +36,13 @@ abstract class SearchableToolPane<O : NamedObject> : ToolPane(), ObjectListDispl
         searchText.promptText = "Search..."
         searchText.maxWidth = 150.0
         searchText.left = FontIcon(Material2MZ.SEARCH)
+        searchText.right = MaterialDesignC.CLOSE_CIRCLE_OUTLINE.button("Clear search", "small-icon-button") {
+            searchText.text = ""
+        }.also { btn -> btn.cursor = Cursor.DEFAULT }
+        searchText.right.setOnMouseClicked { searchText.text = "" }
         searchText.textProperty().addListener { _, _, _ -> listView.refilter() }
-        searchText.setOnAction {
-            listView.showSelected()
+        searchText.setOnAction { ev ->
+            if (ev.target == searchText) listView.showSelected()
         }
     }
 
