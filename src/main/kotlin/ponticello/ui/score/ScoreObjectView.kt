@@ -9,6 +9,9 @@ import fxutils.undo.UndoManager
 import hextant.context.Context
 import hextant.context.compoundEdit
 import hextant.context.withoutUndo
+import javafx.beans.binding.Bindings
+import javafx.beans.property.SimpleDoubleProperty
+import javafx.beans.property.SimpleObjectProperty
 import javafx.geometry.Bounds
 import javafx.geometry.HorizontalDirection
 import javafx.geometry.HorizontalDirection.LEFT
@@ -23,6 +26,8 @@ import javafx.scene.layout.*
 import javafx.scene.paint.Color
 import javafx.scene.paint.Color.BLACK
 import ponticello.impl.*
+import ponticello.model.project.InlineControlsDisplay
+import ponticello.model.project.UIState
 import ponticello.model.project.settings
 import ponticello.model.registry.reference
 import ponticello.model.score.*
@@ -45,7 +50,7 @@ import reaktive.value.reactiveVariable
 
 abstract class ScoreObjectView(
     val instance: ScoreObjectInstance,
-) : VBox(), ScoreObjectInstance.Listener, ScoreObject.Listener, TimeBlock {
+) : Pane(), ScoreObjectInstance.Listener, ScoreObject.Listener, TimeBlock {
     abstract val obj: ScoreObject
 
     var isInitialized: Boolean = false
@@ -69,7 +74,7 @@ abstract class ScoreObjectView(
     protected open val borderColorWhenSameObjectSelected: Color get() = Color.GRAY
 
     protected val objectPane = Pane()
-    protected val infoBar = HBox()
+    protected val inlineControls = HBox() styleClass "score-object-inline-controls"
 
     protected val colorPicker: ColorPicker = ColorPicker() styleClass "button"
 
@@ -130,14 +135,29 @@ abstract class ScoreObjectView(
         instance.addListener(this)
         obj.addListener(this)
         isInitialized = true
-        infoBar.setBackground(Color.web("#1d1d20"))
         val nameControl = NameControl(obj).autoSize()
-        infoBar.children.add(nameControl)
-        infoBar.visibleProperty().bind(infoBar.widthProperty().lessThanOrEqualTo(widthProperty()))
-        children.add(infoBar)
+        val controlsDisplay = context[UIState].controlsDisplay.asObservableValue()
+        inlineControls.prefWidthProperty().bind(widthProperty())
+        inlineControls.maxWidthProperty().bind(widthProperty())
+        inlineControls.backgroundProperty().bind(
+            Bindings.`when`(
+                Bindings.equal(controlsDisplay, SimpleObjectProperty(InlineControlsDisplay.CONTROLS_BAR))
+            ).then(background(Color.web("#1d1d20"))).otherwise(background(Color.TRANSPARENT))
+        )
+        inlineControls.children.add(nameControl)
+        inlineControls.visibleProperty().bind(
+            Bindings.notEqual(SimpleObjectProperty(InlineControlsDisplay.NONE), controlsDisplay)
+        )
         objectPane.prefWidthProperty().bind(widthProperty())
-        setVgrow(objectPane, Priority.ALWAYS)
-        children.add(objectPane)
+        children.add(inlineControls)
+        objectPane.layoutYProperty().bind(
+            controlsDisplay.flatMap { mode ->
+                if (mode == InlineControlsDisplay.CONTROLS_BAR) inlineControls.heightProperty()
+                else SimpleDoubleProperty(0.0)
+            }
+        )
+        objectPane.prefHeightProperty().bind(heightProperty().subtract(objectPane.layoutYProperty()))
+        children.add(0, objectPane)
     }
 
     fun initialize(parent: ScorePane) {
@@ -171,7 +191,6 @@ abstract class ScoreObjectView(
         if (!parentPane.isRoot(obj)) {
             relocate(parentPane.getX(instance.start), parentPane.getScreenY(instance.y))
         }
-        infoBar.prefWidth = getDisplayWidth()
         setPrefSize(getDisplayWidth(), getDisplayHeight())
     }
 
@@ -355,7 +374,6 @@ abstract class ScoreObjectView(
 
     override fun resizedObject(obj: ScoreObject) {
         if (!parentPane.isRoot(obj)) {
-            infoBar.prefWidth = getDisplayWidth()
             setPrefSize(getDisplayWidth(), getDisplayHeight())
         }
         rescale()

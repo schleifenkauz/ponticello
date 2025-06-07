@@ -58,7 +58,7 @@ class SynthObjectView(
         super.initialize()
         sampleObserver = observeSample()
         sampleDisplayObserver = obj.displaySample?.forEach { updateSpectrogram() }
-        infoBar.children.add(ObjectSelectorControl(obj.synthDefSelector))
+        inlineControls.children.add(ObjectSelectorControl(obj.synthDefSelector))
     }
 
     private fun observeSample(): Observer = obj.sample.forEach { s ->

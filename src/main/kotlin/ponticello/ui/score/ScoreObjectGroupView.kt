@@ -27,7 +27,8 @@ class ScoreObjectGroupView(
         scorePane = SubScorePane(instance, obj, parentPane, context)
         children.add(scorePane)
         scorePane.prefWidthProperty().bind(widthProperty())
-        scorePane.prefHeightProperty().bind(heightProperty())
+        scorePane.prefHeightProperty().bind(heightProperty().subtract(inlineControls.heightProperty()))
+        scorePane.layoutYProperty().bind(inlineControls.heightProperty())
     }
 
     override fun setupDetailPane(pane: DetailPane) {
