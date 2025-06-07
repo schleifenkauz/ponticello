@@ -4,6 +4,7 @@ import fxutils.dist
 import fxutils.registerShortcuts
 import fxutils.setupDragging
 import fxutils.styleClass
+import hextant.context.compoundEdit
 import javafx.beans.binding.Bindings
 import javafx.geometry.HorizontalDirection
 import javafx.geometry.Point2D
@@ -179,7 +180,7 @@ class EnvelopeEditor(
         var idx = envelope.points.binarySearch(newPoint, compareBy(EnvelopePoint::time))
         if (idx >= 0) return //no duplicates allowed!
         idx = -(idx + 1)
-        envelope.addPoint(idx, newPoint)
+        envelope.addPoint(idx, newPoint, undoable = true)
     }
 
     override fun addedPoint(idx: Int, point: EnvelopePoint) {
@@ -282,7 +283,7 @@ class EnvelopeEditor(
         handle.registerShortcuts {
             val idx = handles.indexOf(handle)
             on("V") { showPromptFor(idx) }
-            on("DELETE") { removeHandle(idx) }
+            on("DELETE") { removePoint(idx) }
         }
         handle.registerShortcuts(KeyEvent.KEY_PRESSED) {
             val idx = handles.indexOf(handle)
@@ -324,7 +325,7 @@ class EnvelopeEditor(
         handle.setOnMouseClicked { ev ->
             val idx = handles.indexOf(handle)
             if (ev.button == SECONDARY) {
-                removeHandle(idx)
+                removePoint(idx)
             } else if (ev.clickCount >= 2) {
                 showPromptFor(idx)
             } else if (!ev.isShiftDown) {
@@ -382,9 +383,25 @@ class EnvelopeEditor(
         envelope.editPoint(idx, value.value.snap(valueGrid))
     }
 
-    private fun removeHandle(idx: Int) {
-        if (idx != 0 && idx != envelope.points.size - 1) {
-            envelope.removePoint(idx)
+    private fun removePoint(idx: Int) {
+        when (idx) {
+            0 -> {
+                if (envelope.points.size >= 3) {
+                    envelope.context.compoundEdit("Remove first envelope point") {
+                        envelope.editPoint(0, envelope.points[1].value)
+                        envelope.removePoint(1, undoable = true)
+                    }
+                }
+            }
+            envelope.points.size - 1 -> {
+                if (envelope.points.size >= 3) {
+                    envelope.context.compoundEdit("Remove last envelope point") {
+                        envelope.editPoint(idx, envelope.points[idx - 1].value)
+                        envelope.removePoint(idx - 1, undoable = true)
+                    }
+                }
+            }
+            else -> envelope.removePoint(idx)
         }
     }
 

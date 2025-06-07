@@ -27,7 +27,7 @@ class Envelope(private val _points: MutableList<EnvelopePoint>) {
     private val viewManager = ListenerManager.createWeakListenerManager<EnvelopeView>()
 
     @Transient
-    private lateinit var context: Context
+    lateinit var context: Context
 
     val points: List<EnvelopePoint> get() = _points
 
