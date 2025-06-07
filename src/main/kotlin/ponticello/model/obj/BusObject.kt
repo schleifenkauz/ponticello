@@ -12,10 +12,7 @@ import ponticello.impl.Decimal
 import ponticello.impl.zero
 import ponticello.model.registry.BusRegistry
 import ponticello.model.registry.ObjectRegistry
-import ponticello.sc.BusControlSpec
-import ponticello.sc.DecimalLiteral
-import ponticello.sc.NumericalControlSpec
-import ponticello.sc.Rate
+import ponticello.sc.*
 import ponticello.sc.Rate.Audio
 import ponticello.sc.Rate.Control
 import ponticello.sc.client.ScWriter
@@ -61,7 +58,8 @@ sealed class BusObject : AbstractSuperColliderObject() {
         }
     }
 
-    fun matches(spec: BusControlSpec): Boolean = rate == spec.rate && channels.now == spec.channels
+    fun matches(spec: ControlSpec?): Boolean =
+        spec is BusControlSpec && rate == spec.rate && channels.now == spec.channels
 
     enum class Type {
         Regular, Input, Output;

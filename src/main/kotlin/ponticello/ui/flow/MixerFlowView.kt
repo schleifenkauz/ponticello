@@ -5,23 +5,30 @@ import fxutils.actions.ContextualizedAction
 import fxutils.actions.collectActions
 import fxutils.controls.SliderBar
 import fxutils.setRoot
+import fxutils.setupDropArea
 import fxutils.undo.UndoManager
 import fxutils.widthAtLeast
 import javafx.scene.Node
 import javafx.scene.control.Control
+import javafx.scene.input.DragEvent
+import javafx.scene.input.Dragboard
 import org.kordamp.ikonli.materialdesign2.MaterialDesignA
 import ponticello.model.flow.MixerFlow
+import ponticello.model.obj.BusObject
+import ponticello.model.registry.BusRegistry
 import ponticello.sc.Rate
 import ponticello.sc.editor.BusSelector
 import ponticello.sc.view.ObjectSelectorControl
 import ponticello.ui.actions.ServerActions
 import ponticello.ui.actions.undoable
+import ponticello.ui.impl.getFrom
 import ponticello.ui.registry.ObjectBox
 import ponticello.ui.registry.ObjectListDisplayConfig
 import ponticello.ui.registry.ObjectListView
 import reaktive.value.binding.flatMap
 import reaktive.value.binding.not
 import reaktive.value.fx.asObservableValue
+import reaktive.value.now
 import reaktive.value.reactiveValue
 
 class MixerFlowView(private val flow: MixerFlow) : Control(), ObjectListDisplayConfig<MixerFlow.MixerComponent> {
@@ -29,6 +36,18 @@ class MixerFlowView(private val flow: MixerFlow) : Control(), ObjectListDisplayC
 
     init {
         setRoot(componentsView)
+        componentsView.setupDropArea(::canDrop, ::onDrop)
+    }
+
+    private fun canDrop(dragboard: Dragboard): Boolean {
+        val bus = dragboard.getFrom(flow.context[BusRegistry], BusObject.DATA_FORMAT) ?: return false
+        val expectedChannels = bus.channels.now == flow.targetBus.now.get()?.channels?.now
+        return bus !in flow.usedBuses() && bus.rate == Rate.Audio && expectedChannels
+    }
+
+    private fun onDrop(ev: DragEvent) {
+        val bus = ev.dragboard.getFrom(flow.context[BusRegistry], BusObject.DATA_FORMAT) ?: return
+        flow.components.add(MixerFlow.MixerComponent.create(bus))
     }
 
     override fun getItemContent(obj: MixerFlow.MixerComponent): List<Node> {

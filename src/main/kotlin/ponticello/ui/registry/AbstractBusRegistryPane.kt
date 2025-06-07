@@ -5,6 +5,7 @@ import fxutils.actions.collectActions
 import fxutils.setFixedWidth
 import javafx.scene.Node
 import javafx.scene.control.Spinner
+import javafx.scene.input.DataFormat
 import org.kordamp.ikonli.materialdesign2.MaterialDesignP
 import ponticello.model.obj.BusObject
 import ponticello.model.registry.BusRegistry
@@ -21,6 +22,8 @@ abstract class AbstractBusRegistryPane(busses: BusRegistry) : ObjectRegistryPane
         channelsSpinner.isEditable = true
         return listOf(channelsSpinner)
     }
+
+    override fun dataFormat(obj: BusObject): DataFormat? = BusObject.DATA_FORMAT
 
     override fun getActions(box: ObjectBox<BusObject>): List<ContextualizedAction> = actions.withContext(box)
 

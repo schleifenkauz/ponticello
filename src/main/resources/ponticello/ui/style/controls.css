@@ -14,10 +14,15 @@
     -fx-border-color: black;
 }
 
+.object-list {
+    -fx-border-color: black;
+    -fx-border-width: 3px;
+}
+
 /*noinspection CssInvalidPseudoSelector*/
-score-object:drop-possible, toolpane:drop-possible {
+score-object:drop-possible, object-list:drop-possible {
     -fx-border-color: green !important;
-    -fx-border-width: 4px !important;
+    -fx-border-width: 3px !important;
 }
 
 /*noinspection CssInvalidPseudoSelector*/

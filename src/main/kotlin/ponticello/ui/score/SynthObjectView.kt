@@ -22,6 +22,7 @@ import ponticello.model.score.ParameterControlList
 import ponticello.model.score.ScoreObject
 import ponticello.model.score.ScoreObjectInstance
 import ponticello.model.score.SynthObject
+import ponticello.model.score.controls.BufferControl
 import ponticello.model.score.controls.ParameterControl
 import ponticello.model.score.controls.ValueControl
 import ponticello.sc.view.ObjectSelectorControl
@@ -55,17 +56,19 @@ class SynthObjectView(
 
     override fun initialize() {
         super.initialize()
-        sampleObserver = obj.sample.forEach { s ->
-            sampleContentObserver?.kill()
-            if (s != null) {
-                val sample = s.get()
-                if (sample is SampleObject) {
-                    sampleContentObserver = sample.contentsChanged.observe { _ -> updateSpectrogram() }
-                }
-                updateSpectrogram()
-            }
-        }
+        sampleObserver = observeSample()
         sampleDisplayObserver = obj.displaySample?.forEach { updateSpectrogram() }
+    }
+
+    private fun observeSample(): Observer = obj.sample.forEach { s ->
+        sampleContentObserver?.kill()
+        if (s != null) {
+            val sample = s.get()
+            if (sample is SampleObject) {
+                sampleContentObserver = sample.contentsChanged.observe { _ -> updateSpectrogram() }
+            }
+            updateSpectrogram()
+        }
     }
 
     override fun setupDetailPane(pane: DetailPane) {
@@ -123,11 +126,18 @@ class SynthObjectView(
         newControl: ParameterControl,
     ) {
         super.reassignedControl(parameter, oldControl, newControl)
+        if (oldControl is BufferControl && parameter.name.now == "buf") {
+            sampleObserver?.kill()
+            updateSpectrogram()
+        }
         if (oldControl is ValueControl) {
             when (parameter.name.now) {
                 "startPos" -> startPosObserver?.kill()
                 "rate" -> rateObserver?.kill()
             }
+        }
+        if (newControl is BufferControl && parameter.name.now == "buf") {
+            sampleObserver = observeSample()
         }
         if (newControl is ValueControl) addedConstantControl(parameter, newControl)
     }

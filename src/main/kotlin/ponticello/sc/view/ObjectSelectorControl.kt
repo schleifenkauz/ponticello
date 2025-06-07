@@ -22,22 +22,28 @@ class ObjectSelectorControl<O : NamedObject>(
         root.setOnDragDetected(::dragDetected)
     }
 
+    @Suppress("unused")
     private fun dragDetected(ev: MouseEvent) {
-        if (!ev.isControlDown) return
+        if (!selector.result.now.isResolved.now) return
         val format = selector.dataFormat() ?: return
         val db = startDragAndDrop(TransferMode.MOVE)
         db.setContent(mapOf(format to selector.result.now.name.now))
     }
 
-    private fun canDrop(dragboard: Dragboard) = dragboard.hasContent(selector.dataFormat())
+    private fun extractObject(dragboard: Dragboard): O? {
+        val name = dragboard.getContent(selector.dataFormat()) as? String ?: return null
+        return selector.getList().getOrNull(name)
+    }
+
+    private fun canDrop(dragboard: Dragboard): Boolean {
+        val obj = extractObject(dragboard)
+        return obj != null && obj != selector.result.now.get()
+    }
 
     private fun onDrop(ev: DragEvent) {
         val db = ev.dragboard
-        if (db.hasContent(selector.dataFormat())) {
-            val name = db.getContent(selector.dataFormat()) as? String ?: return
-            val obj = selector.getList().getOrNull(name) ?: return
-            selector.select(obj.reference())
-        }
+        val obj = extractObject(db) ?: return
+        selector.select(obj.reference())
     }
 
     public override fun showChoicePopup() {

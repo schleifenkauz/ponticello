@@ -37,7 +37,7 @@ class ParameterControlsPane(
     init {
         obj.controls.addListener(this)
         setup(title, obj.controls) { headerActions.withContext(this) }
-        setupDropArea(::canDrop, ::drop)
+        listView.setupDropArea(::canDrop, ::drop)
     }
 
     private fun canDrop(db: Dragboard): Boolean = db.hasContent(NamedParameterControl.DATA_FORMAT)

@@ -1,22 +1,26 @@
 package ponticello.ui.score
 
+import fxutils.prompt.SimpleSearchableListView
 import fxutils.setupDropArea
 import javafx.geometry.Point2D
 import javafx.scene.input.DragEvent
 import javafx.scene.input.Dragboard
 import javafx.scene.input.MouseEvent
 import ponticello.impl.json
+import ponticello.model.obj.BufferObject
+import ponticello.model.obj.BusObject
+import ponticello.model.registry.BufferRegistry
+import ponticello.model.registry.BusRegistry
 import ponticello.model.score.Envelope
 import ponticello.model.score.ParameterControlList
 import ponticello.model.score.ParameterControlList.NamedParameterControl
 import ponticello.model.score.ParameterizedScoreObject
 import ponticello.model.score.ScoreObjectInstance
-import ponticello.model.score.controls.EnvelopeControl
-import ponticello.model.score.controls.ParameterControl
-import ponticello.model.score.controls.getNumericalValue
+import ponticello.model.score.controls.*
 import ponticello.sc.ControlSpec
 import ponticello.sc.NumericalControlSpec
 import ponticello.sc.ParameterType
+import ponticello.ui.impl.getFrom
 import ponticello.ui.launcher.PonticelloApp.Companion.primaryStage
 import ponticello.ui.registry.SearchableParameterDefListView
 import reaktive.Observer
@@ -51,7 +55,13 @@ abstract class ParameterizedScoreObjectView<O : ParameterizedScoreObject>(
         setupDropArea(::canDrop, ::drop)
     }
 
-    private fun canDrop(db: Dragboard): Boolean = db.hasContent(NamedParameterControl.DATA_FORMAT)
+    private fun canDrop(db: Dragboard): Boolean =
+        when {
+            db.hasContent(NamedParameterControl.DATA_FORMAT) -> true
+            db.hasContent(BusObject.DATA_FORMAT) -> true
+            db.hasContent(BufferObject.DATA_FORMAT) -> true
+            else -> false
+        }
 
     private fun drop(ev: DragEvent) {
         val db = ev.dragboard
@@ -61,7 +71,45 @@ abstract class ParameterizedScoreObjectView<O : ParameterizedScoreObject>(
                 val namedControl = json.decodeFromString(NamedParameterControl.serializer(), jsonString)
                 obj.controls.duplicateControl(namedControl)
             }
+
+            db.hasContent(BusObject.DATA_FORMAT) -> {
+                val bus = db.getFrom(context[BusRegistry], BusObject.DATA_FORMAT) ?: return
+                droppedBus(bus, ev)
+            }
+
+            db.hasContent(BufferObject.DATA_FORMAT) -> {
+                val buffer = db.getFrom(context[BufferRegistry], BufferObject.DATA_FORMAT) ?: return
+                droppedBuffer(buffer, ev)
+            }
         }
+    }
+
+    private fun droppedBus(bus: BusObject, ev: DragEvent) {
+        val assignedName = getAssignedName(ev) { spec -> bus.matches(spec) } ?: return
+        val control = BusControl.create(bus)
+        obj.controls.assignControl(assignedName, control)
+    }
+
+    private fun getAssignedName(ev: DragEvent, predicate: (ControlSpec?) -> Boolean): String? {
+        val controlOptions = mutableSetOf<String>()
+        obj.controls
+            .filter { ctrl -> predicate(ctrl.spec.now) }
+            .mapTo(controlOptions) { ctrl -> ctrl.name.now }
+        obj.def.parameters
+            .filter { p -> predicate(p.spec.now) }
+            .mapTo(controlOptions) { p -> p.name.now }
+
+        return when (controlOptions.size) {
+            0 -> null
+            1 -> controlOptions.single()
+            else -> SimpleSearchableListView(controlOptions.toList(), "Select linked parameter").showPopup(ev)
+        }
+    }
+
+    private fun droppedBuffer(buffer: BufferObject, ev: DragEvent) {
+        val assignedName = getAssignedName(ev) { spec -> buffer.matches(spec) } ?: return
+        val control = BufferControl.create(buffer)
+        obj.controls.assignControl(assignedName, control)
     }
 
     private fun showNewEnvelopePopup(point: Point2D) {

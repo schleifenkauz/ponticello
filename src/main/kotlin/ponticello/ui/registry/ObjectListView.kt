@@ -17,7 +17,6 @@ import javafx.scene.input.Clipboard
 import javafx.scene.input.KeyCode
 import javafx.scene.input.KeyEvent
 import javafx.scene.layout.*
-import javafx.scene.paint.Color
 import javafx.stage.Window
 import kotlinx.serialization.Serializable
 import org.kordamp.ikonli.materialdesign2.MaterialDesignD
@@ -69,7 +68,7 @@ class ObjectListView<O : ContextualObject>(
     fun getBoxes(): List<ObjectBox<*>> = boxes
 
     init {
-        border = createBorder(Color.BLUE, 2.0)
+        styleClass("object-list")
         source.addListener(this, initialize = false)
         for (obj in source) {
             if (!filter(obj)) continue

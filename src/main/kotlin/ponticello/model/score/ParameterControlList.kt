@@ -239,6 +239,11 @@ class ParameterControlList(
         add(named)
     }
 
+    fun assignControl(parameter: String, control: ParameterControl) {
+        if (has(parameter)) reassignControl(parameter, control)
+        else addControl(parameter, control)
+    }
+
     private fun canAcceptControl(control: NamedParameterControl): Boolean {
         return if (associatedObject !is ScoreObject) control.now !is EnvelopeControl && control.now !is ExprControl
         else true
