@@ -17,6 +17,7 @@ import javafx.scene.control.Label
 import javafx.scene.input.DragEvent
 import javafx.scene.input.Dragboard
 import javafx.scene.layout.HBox
+import javafx.scene.layout.Region
 import javafx.scene.paint.Color
 import org.kordamp.ikonli.evaicons.Evaicons
 import org.kordamp.ikonli.material2.Material2AL
@@ -42,6 +43,8 @@ import ponticello.ui.impl.makeSubWindow
 import ponticello.ui.impl.sceneFill
 import ponticello.ui.launcher.PonticelloLauncher.Companion.currentProject
 import ponticello.ui.misc.CodePane
+import ponticello.ui.registry.SearchableBufferListView
+import ponticello.ui.registry.SearchableBusListView
 import ponticello.ui.registry.SimpleSearchableRegistryView
 import ponticello.ui.score.ScoreObjectView
 import reaktive.value.*
@@ -55,7 +58,6 @@ class ControlAssignmentEditor(val control: NamedParameterControl, val view: Scor
     private var selectedOption: ControlType<*>? = null
     private val optionButton = button(style = "selector-button")
     private val detailEditors = mutableMapOf<ControlType<*>, Node>()
-    private val spec get() = control.spec.now
     private var settingControl = false
     private var detailEditor: Node? = null
 
@@ -86,21 +88,23 @@ class ControlAssignmentEditor(val control: NamedParameterControl, val view: Scor
     }
 
     private fun showOptionPopup() {
-        val options = ControlType.all.filter { option -> option.applicableOn(control.parentObject) }
+        val spec = control.spec.now ?: return
+        val options = ControlType.all.filter { option -> option.applicableOn(control.parentObject, spec) }
+        if (options.isEmpty() || options.size == 1) return
         val listView = SimpleSearchableListView(options, "Select control type")
-        val option = listView.showPopup(
-            anchorNode = optionButton,
-            initialOption = selectedOption
-        ) ?: return
+        val option = listView.showPopup(anchorNode = optionButton, initialOption = selectedOption) ?: return
         updateControlType(option)
         detailEditor?.requestFocus()
     }
 
-    private fun updateControlType(t: ControlType<*>) {
+    private fun <T : ParameterControl> updateControlType(t: ControlType<T>) {
         selectedOption = t
         val oldControl = control.now
-        val newControl = t.createDefaultControl(control.parentObject, spec, oldControl)
+        val newControl = t.createInitialControl(
+            control.parentObject, control.spec.now, oldControl, control, anchorNode = optionButton
+        )
         control.reassign(newControl)
+        t.onSelected(control, newControl, view)
     }
 
     fun setControl(newControl: ParameterControl) {
@@ -112,35 +116,33 @@ class ControlAssignmentEditor(val control: NamedParameterControl, val view: Scor
             else type.createDetailInput(control, newControl, view)
         detailEditors[type] = detailEditor!!
         children.clear()
-        if (spec is NumericalControlSpec) children.add(optionButton)
+        children.add(optionButton)
         val actions = type.actions(control, newControl, view)
         children.add(detailEditor)
         if (actions.isNotEmpty()) children.add(ActionBar(actions, "medium-icon-button"))
         settingControl = false
     }
 
-    fun focusInputControl(): Boolean {
-        detailEditor?.requestFocus()
-        return detailEditor != null
-    }
-
     sealed class ControlType<C : ParameterControl> {
-        open fun applicableOn(obj: ParameterizedObject): Boolean = true
+        open fun applicableOn(obj: ParameterizedObject, spec: ControlSpec): Boolean = true
 
-        abstract fun createDetailInput(
-            namedControl: NamedParameterControl,
-            control: C,
-            view: ScoreObjectView?,
-        ): Node
+        abstract fun createDetailInput(namedControl: NamedParameterControl, control: C, view: ScoreObjectView?): Node
 
         open fun actions(
-            namedControl: NamedParameterControl, control: C,
-            view: ScoreObjectView?,
+            namedControl: NamedParameterControl, control: C, view: ScoreObjectView?,
         ): List<ContextualizedAction> = emptyList()
 
-        abstract fun createDefaultControl(obj: ParameterizedObject, spec: ControlSpec?, oldControl: ParameterControl): C
+        abstract fun createInitialControl(
+            obj: ParameterizedObject, spec: ControlSpec?, oldControl: ParameterControl,
+            namedControl: NamedParameterControl, anchorNode: Region
+        ): C
+
+        open fun onSelected(namedControl: NamedParameterControl, control: C, view: ScoreObjectView?) {}
 
         data object Value : ControlType<ValueControl>() {
+            override fun applicableOn(obj: ParameterizedObject, spec: ControlSpec): Boolean =
+                spec is NumericalControlSpec
+
             override fun createDetailInput(
                 namedControl: NamedParameterControl,
                 control: ValueControl,
@@ -160,8 +162,12 @@ class ControlAssignmentEditor(val control: NamedParameterControl, val view: Scor
                 return HBox(5.0, sliderBar, Label("Allocate bus"), allocateBusOption).centerChildren()
             }
 
-            override fun createDefaultControl(
-                obj: ParameterizedObject, spec: ControlSpec?, oldControl: ParameterControl,
+            override fun createInitialControl(
+                obj: ParameterizedObject,
+                spec: ControlSpec?,
+                oldControl: ParameterControl,
+                namedControl: NamedParameterControl,
+                anchorNode: Region,
             ): ValueControl {
                 spec as NumericalControlSpec
                 return ValueControl(reactiveVariable(oldControl.getNumericalValue() ?: spec.defaultValue.get()))
@@ -171,7 +177,8 @@ class ControlAssignmentEditor(val control: NamedParameterControl, val view: Scor
         }
 
         data object Envelope : ControlType<EnvelopeControl>() {
-            override fun applicableOn(obj: ParameterizedObject): Boolean = obj is ScoreObject
+            override fun applicableOn(obj: ParameterizedObject, spec: ControlSpec): Boolean =
+                obj is ScoreObject && spec is NumericalControlSpec
 
             override fun createDetailInput(
                 namedControl: NamedParameterControl,
@@ -191,10 +198,12 @@ class ControlAssignmentEditor(val control: NamedParameterControl, val view: Scor
                 return box
             }
 
-            override fun createDefaultControl(
+            override fun createInitialControl(
                 obj: ParameterizedObject,
                 spec: ControlSpec?,
                 oldControl: ParameterControl,
+                namedControl: NamedParameterControl,
+                anchorNode: Region,
             ): EnvelopeControl {
                 spec as NumericalControlSpec
                 val value = oldControl.getNumericalValue() ?: spec.defaultValue.get()
@@ -209,6 +218,9 @@ class ControlAssignmentEditor(val control: NamedParameterControl, val view: Scor
         }
 
         data object Expr : ControlType<ExprControl>() {
+            override fun applicableOn(obj: ParameterizedObject, spec: ControlSpec): Boolean =
+                spec is NumericalControlSpec || spec is BusControlSpec || spec is BufferControlSpec
+
             override fun createDetailInput(
                 namedControl: NamedParameterControl,
                 control: ExprControl,
@@ -219,10 +231,12 @@ class ControlAssignmentEditor(val control: NamedParameterControl, val view: Scor
                 return showWindowAction.withContext(window).makeButton("medium-icon-button")
             }
 
-            override fun createDefaultControl(
+            override fun createInitialControl(
                 obj: ParameterizedObject,
                 spec: ControlSpec?,
                 oldControl: ParameterControl,
+                namedControl: NamedParameterControl,
+                anchorNode: Region,
             ): ExprControl {
                 val editor = ScExprExpander()
                 val root = EditorRoot(editor)
@@ -232,10 +246,16 @@ class ControlAssignmentEditor(val control: NamedParameterControl, val view: Scor
                 return ExprControl(root)
             }
 
+            override fun onSelected(namedControl: NamedParameterControl, control: ExprControl, view: ScoreObjectView?) {
+                val actions = actions.withContext(control)
+                val window = makeCodePaneWindow(control.expr, control.context, namedControl, actions)
+                window.show()
+            }
+
             override fun actions(
                 namedControl: NamedParameterControl,
                 control: ExprControl,
-                view: ScoreObjectView?
+                view: ScoreObjectView?,
             ): List<ContextualizedAction> = actions.withContext(control)
 
             private val actions = collectActions<ExprControl> {
@@ -248,6 +268,9 @@ class ControlAssignmentEditor(val control: NamedParameterControl, val view: Scor
         }
 
         data object UGen : ControlType<UGenControl>() {
+            override fun applicableOn(obj: ParameterizedObject, spec: ControlSpec): Boolean =
+                spec is NumericalControlSpec
+
             override fun createDetailInput(
                 namedControl: NamedParameterControl,
                 control: UGenControl,
@@ -268,10 +291,12 @@ class ControlAssignmentEditor(val control: NamedParameterControl, val view: Scor
                 } else return showWindowButton
             }
 
-            override fun createDefaultControl(
+            override fun createInitialControl(
                 obj: ParameterizedObject,
                 spec: ControlSpec?,
                 oldControl: ParameterControl,
+                namedControl: NamedParameterControl,
+                anchorNode: Region,
             ): UGenControl {
                 val editor = ScExprExpander()
                 val root = EditorRoot(editor)
@@ -279,6 +304,13 @@ class ControlAssignmentEditor(val control: NamedParameterControl, val view: Scor
                     editor.setInitialText(oldControl.getNumericalValue().toString())
                 } else editor.setInitialText("")
                 return UGenControl(root)
+            }
+
+            override fun onSelected(namedControl: NamedParameterControl, control: UGenControl, view: ScoreObjectView?) {
+                val actions = actions.withContext(Pair(namedControl, null))
+                val window = makeCodePaneWindow(control.expr, control.context, namedControl, actions)
+                window.show()
+
             }
 
             override fun actions(
@@ -325,16 +357,20 @@ class ControlAssignmentEditor(val control: NamedParameterControl, val view: Scor
         }
 
         data object Bus : ControlType<BusControl>() {
+            override fun applicableOn(obj: ParameterizedObject, spec: ControlSpec): Boolean = spec is BusControlSpec
+
             override fun createDetailInput(
                 namedControl: NamedParameterControl,
                 control: BusControl,
                 view: ScoreObjectView?,
             ): Node = busSelector(control.bus, namedControl.spec.now, namedControl.context)
 
-            override fun createDefaultControl(
+            override fun createInitialControl(
                 obj: ParameterizedObject,
                 spec: ControlSpec?,
                 oldControl: ParameterControl,
+                namedControl: NamedParameterControl,
+                anchorNode: Region,
             ): BusControl {
                 val initial = oldControl.getBus() ?: obj.context[BusRegistry].getDefault().reference()
                 return BusControl(reactiveVariable(initial))
@@ -348,19 +384,27 @@ class ControlAssignmentEditor(val control: NamedParameterControl, val view: Scor
         }
 
         data object BusValue : ControlType<BusValueControl>() {
+            override fun applicableOn(obj: ParameterizedObject, spec: ControlSpec): Boolean =
+                spec is NumericalControlSpec
+
             override fun createDetailInput(
                 namedControl: NamedParameterControl,
                 control: BusValueControl,
                 view: ScoreObjectView?,
             ): Node = busSelector(control.bus, namedControl.spec.now, namedControl.context)
 
-            override fun createDefaultControl(
+            override fun createInitialControl(
                 obj: ParameterizedObject,
                 spec: ControlSpec?,
                 oldControl: ParameterControl,
+                namedControl: NamedParameterControl,
+                anchorNode: Region,
             ): BusValueControl {
                 val initial = oldControl.getBus() ?: obj.context[BusRegistry].getDefault().reference()
-                return BusValueControl(reactiveVariable(initial))
+                val title = "Select '${namedControl.name.now}'"
+                val selected = SearchableBusListView(obj.context[BusRegistry], title, rate = Rate.Control, channels = 1)
+                    .showPopup(anchorNode, initialOption = initial.get()) ?: initial.force()
+                return BusValueControl(reactiveVariable(selected.reference()))
             }
 
             override fun toString(): String = "Bus"
@@ -401,6 +445,8 @@ class ControlAssignmentEditor(val control: NamedParameterControl, val view: Scor
         }
 
         data object Buffer : ControlType<BufferControl>() {
+            override fun applicableOn(obj: ParameterizedObject, spec: ControlSpec): Boolean = spec is BufferControlSpec
+
             override fun createDetailInput(
                 namedControl: NamedParameterControl,
                 control: BufferControl,
@@ -424,15 +470,19 @@ class ControlAssignmentEditor(val control: NamedParameterControl, val view: Scor
                 ).centerChildren()
             }
 
-            override fun createDefaultControl(
+            override fun createInitialControl(
                 obj: ParameterizedObject,
                 spec: ControlSpec?,
                 oldControl: ParameterControl,
+                namedControl: NamedParameterControl,
+                anchorNode: Region,
             ): BufferControl {
                 spec as BufferControlSpec
                 val display = reactiveVariable(spec.isPlayBufSource)
-                val sample: ReactiveVariable<BufferReference> = reactiveVariable(ObjectReference.none())
-                return BufferControl(sample, display)
+                val title = "Select '${namedControl.name.now}'"
+                val selected = SearchableBufferListView(obj.context[BufferRegistry], title, channels = spec.channels)
+                    .showPopup(anchorNode, initialOption = null)
+                return BufferControl(reactiveVariable(selected?.reference() ?: ObjectReference.none()), display)
             }
 
             override fun actions(
@@ -440,6 +490,8 @@ class ControlAssignmentEditor(val control: NamedParameterControl, val view: Scor
                 control: BufferControl,
                 view: ScoreObjectView?,
             ): List<ContextualizedAction> = actions.withContext(control)
+
+            override fun toString(): String = "Buf"
 
             private val actions = collectActions<BufferControl> {
                 addAction("View contents") {
@@ -457,6 +509,9 @@ class ControlAssignmentEditor(val control: NamedParameterControl, val view: Scor
         }
 
         data object AttackRelease : ControlType<AttackReleaseControl>() {
+            override fun applicableOn(obj: ParameterizedObject, spec: ControlSpec): Boolean =
+                spec is NumericalControlSpec || spec is AttackReleaseControlSpec
+
             override fun createDetailInput(
                 namedControl: NamedParameterControl,
                 control: AttackReleaseControl,
@@ -502,10 +557,12 @@ class ControlAssignmentEditor(val control: NamedParameterControl, val view: Scor
                 return box.centerChildren()
             }
 
-            override fun createDefaultControl(
+            override fun createInitialControl(
                 obj: ParameterizedObject,
                 spec: ControlSpec?,
                 oldControl: ParameterControl,
+                namedControl: NamedParameterControl,
+                anchorNode: Region,
             ): AttackReleaseControl = AttackReleaseControl.createDefault()
 
             override fun toString(): String = "ASR"
@@ -513,7 +570,7 @@ class ControlAssignmentEditor(val control: NamedParameterControl, val view: Scor
 
         companion object {
             val all: List<ControlType<*>> = listOf(
-                Value, Envelope, AttackRelease, BusValue, Expr, UGen
+                Bus, Buffer, Value, Envelope, AttackRelease, BusValue, Expr, UGen
             )
 
             private val showWindowAction = action<SubWindow>("Edit code") {
