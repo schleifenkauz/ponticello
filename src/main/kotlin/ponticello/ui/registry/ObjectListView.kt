@@ -164,11 +164,11 @@ class ObjectListView<O : ContextualObject>(
     }
 
     private fun autoResize() {
-        if (mode.now != DisplayMode.DetailsPane && autoResizeScene && scene?.window != null) {
-            scene.window.sizeToScene()
-            scene.window.height = scene.window.height.coerceAtMost(1000.0)
-            scene.window.width = scene.window.width.coerceAtMost(1000.0)
-        }
+//        if (mode.now != DisplayMode.DetailsPane && autoResizeScene && scene?.window != null) {
+//            scene.window.sizeToScene()
+//            scene.window.height = scene.window.height.coerceAtMost(1000.0)
+//            scene.window.width = scene.window.width.coerceAtMost(1000.0)
+//        }
     }
 
     override fun added(obj: O, idx: Int) = Platform.runLater {

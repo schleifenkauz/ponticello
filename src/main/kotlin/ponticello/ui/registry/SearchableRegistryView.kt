@@ -17,6 +17,8 @@ import reaktive.value.now
 abstract class SearchableRegistryView<O : NamedObject>(
     val registry: NamedObjectList<O>, title: String
 ) : SearchableListView<O>(title) {
+    private var excluded: () -> Collection<O> = { emptyList() }
+
     init {
         registerShortcuts {
             val obj = selectedOption
@@ -44,7 +46,12 @@ abstract class SearchableRegistryView<O : NamedObject>(
         }
     }
 
-    override fun options(): List<O> = registry.all()
+    fun exclude(excluded: () -> Collection<O>): SearchableRegistryView<O> {
+        this.excluded = excluded
+        return this
+    }
+
+    override fun options(): List<O> = registry.all() - excluded()
 
     override fun createCell(option: O): Region {
         val label = Label(displayText(option))

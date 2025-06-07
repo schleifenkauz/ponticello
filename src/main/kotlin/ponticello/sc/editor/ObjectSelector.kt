@@ -4,22 +4,28 @@ import hextant.core.editor.SimpleChoiceEditor
 import hextant.serial.string
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonPrimitive
-import reaktive.value.*
-import reaktive.value.binding.flatMap
-import reaktive.value.binding.map
 import ponticello.model.registry.NamedObject
 import ponticello.model.registry.NamedObjectList
 import ponticello.model.registry.ObjectReference
 import ponticello.model.registry.reference
+import reaktive.value.*
+import reaktive.value.binding.flatMap
+import reaktive.value.binding.map
 
 abstract class ObjectSelector<O : NamedObject> :
     SimpleChoiceEditor<ObjectReference<O>>(), ScExprEditor<ObjectReference<O>> {
     lateinit var isResolved: ReactiveBoolean
         private set
 
+    private var excluded: () -> Collection<O> = { emptyList() }
+
     abstract fun getList(): NamedObjectList<O>
 
     open fun filter(obj: O): Boolean = true
+
+    fun exclude(excluded: () -> Collection<O>) {
+        this.excluded = excluded
+    }
 
     fun selectInitial(value: O) {
         selectInitial(value.reference())
@@ -35,7 +41,7 @@ abstract class ObjectSelector<O : NamedObject> :
     }
 
     override fun choices(): List<ObjectReference<O>> =
-        getList().all().filter(::filter).map { obj -> obj.reference() }
+        (getList().all() - excluded()).filter(::filter).map { obj -> obj.reference() }
 
     abstract fun createNewObject(name: String): O?
 

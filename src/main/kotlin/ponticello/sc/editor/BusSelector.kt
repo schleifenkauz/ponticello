@@ -1,12 +1,12 @@
 package ponticello.sc.editor
 
-import reaktive.value.ReactiveValue
-import reaktive.value.now
-import reaktive.value.reactiveValue
 import ponticello.model.obj.BusObject
 import ponticello.model.registry.BusRegistry
 import ponticello.model.registry.ObjectRegistry
 import ponticello.sc.Rate
+import reaktive.value.ReactiveValue
+import reaktive.value.now
+import reaktive.value.reactiveValue
 
 class BusSelector : ObjectSelector<BusObject>() {
     override fun getList(): ObjectRegistry<BusObject> = context[BusRegistry]
@@ -16,7 +16,7 @@ class BusSelector : ObjectSelector<BusObject>() {
 
     fun setFilter(
         rate: ReactiveValue<Rate?> = reactiveValue(null),
-        channels: ReactiveValue<Int?> = reactiveValue(null)
+        channels: ReactiveValue<Int?> = reactiveValue(null),
     ) {
         expectedRate = rate
         expectedChannels = channels

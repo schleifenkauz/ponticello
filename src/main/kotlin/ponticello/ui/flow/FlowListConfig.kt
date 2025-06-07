@@ -104,6 +104,7 @@ class FlowListConfig(
         is MixerFlow -> MixerFlowView(obj).apply {
             componentsView.autoResizeScene = autoResizeScene
         }
+
         else -> null
     }
 
@@ -145,7 +146,11 @@ class FlowListConfig(
             addAction("Add source bus") {
                 icon(MaterialDesignP.PLUS)
                 executesOn<MixerFlow> { flow, ev ->
-                    val bus = SearchableBusListView(flow.context[BusRegistry], "Select source bus")
+                    val expectedChannels = flow.targetBus.now.get()?.channels?.now
+                    val bus = SearchableBusListView(
+                        flow.context[BusRegistry], "Select source bus",
+                        Rate.Audio, expectedChannels
+                    ).exclude { flow.usedBuses() }
                         .showPopup(ev) ?: return@executesOn
                     flow.components.add(MixerFlow.MixerComponent.create(bus))
                 }

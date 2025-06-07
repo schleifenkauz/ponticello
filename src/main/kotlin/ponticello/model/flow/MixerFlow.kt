@@ -1,6 +1,7 @@
 package ponticello.model.flow
 
 import hextant.context.Context
+import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import ponticello.impl.*
@@ -66,6 +67,12 @@ class MixerFlow(
 
     @Transient
     private lateinit var client: SuperColliderClient
+
+    fun usedBuses(): List<@Contextual BusObject> {
+        val sourceBuses = components.mapNotNull { it.sourceBus.now.get() }
+        val targetBus = targetBus.now.get()?.let(::listOf) ?: emptyList()
+        return sourceBuses + targetBus
+    }
 
     override fun initialize(context: Context) {
         client = context[SuperColliderClient]

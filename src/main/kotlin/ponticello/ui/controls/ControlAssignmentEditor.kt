@@ -203,20 +203,6 @@ class ControlAssignmentEditor(val control: NamedParameterControl, val view: Scor
                 val display = reactiveVariable(true)
                 return EnvelopeControl(env, displayColor, display)
             }
-
-            override fun actions(
-                namedControl: NamedParameterControl,
-                control: EnvelopeControl,
-                view: ScoreObjectView?,
-            ): List<ContextualizedAction> = actions.withContext(control)
-
-            private val actions = collectActions<EnvelopeControl> {
-//                addAction("Update") {
-//                    icon(MaterialDesignS.SYNC)
-//                    shortcut("Ctrl+U")
-//                    executes { ctrl -> ctrl.update.fire() }
-//                }
-            }
         }
 
         data object Expr : ControlType<ExprControl>() {

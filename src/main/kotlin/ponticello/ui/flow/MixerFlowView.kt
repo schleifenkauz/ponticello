@@ -33,10 +33,7 @@ class MixerFlowView(private val flow: MixerFlow) : Control(), ObjectListDisplayC
 
     override fun getItemContent(obj: MixerFlow.MixerComponent): List<Node> {
         val selector = BusSelector()
-        selector.setFilter(
-            rate = reactiveValue(Rate.Audio),
-            channels = flow.targetBus.flatMap { bus -> bus.get()?.channels ?: reactiveValue(0) }
-        )
+        setupSourceBusSelector(selector, this@MixerFlowView.flow)
         selector.syncWith(obj.sourceBus)
         selector.initialize(flow.context)
         val selectorControl = ObjectSelectorControl(selector, createBundle())
@@ -69,6 +66,14 @@ class MixerFlowView(private val flow: MixerFlow) : Control(), ObjectListDisplayC
                 undoable()
                 enableWhen { comp -> comp.mute.not() }
             }
+        }
+
+        fun setupSourceBusSelector(selector: BusSelector, flow: MixerFlow) {
+            selector.setFilter(
+                rate = reactiveValue(Rate.Audio),
+                channels = flow.targetBus.flatMap { bus -> bus.get()?.channels ?: reactiveValue(0) }
+            )
+            selector.exclude { flow.usedBuses() }
         }
     }
 }

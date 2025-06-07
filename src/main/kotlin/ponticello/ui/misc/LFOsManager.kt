@@ -119,12 +119,14 @@ class LFOsManager : ParameterControlList.Listener {
 
     private fun updated(obj: NamedParameterControl) {
         for ((param, lfo) in lfoMap) {
-            if (param.now is UGenControl && lfo.dependsOn(obj)) {
+            val ctrl = param.now
+            if (ctrl is UGenControl && lfo.dependsOn(obj)) {
                 val spec = param.spec.now
                 if (spec is NumericalControlSpec) {
                     displayed.add(param)
                     display.fire(Triple(param, spec, lfo))
                 }
+                ctrl.update.fire()
             }
         }
     }
