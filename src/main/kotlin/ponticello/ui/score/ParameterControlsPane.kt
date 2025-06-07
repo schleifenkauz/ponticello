@@ -3,12 +3,15 @@ package ponticello.ui.score
 import fxutils.actions.ContextualizedAction
 import fxutils.actions.collectActions
 import fxutils.actions.isShiftDown
+import fxutils.setupDropArea
 import javafx.geometry.Point2D
 import javafx.scene.Node
+import javafx.scene.input.DataFormat
+import javafx.scene.input.DragEvent
+import javafx.scene.input.Dragboard
 import org.kordamp.ikonli.codicons.Codicons
 import org.kordamp.ikonli.material2.Material2MZ
-import reaktive.value.binding.impl.notNull
-import reaktive.value.now
+import ponticello.impl.json
 import ponticello.model.Settings
 import ponticello.model.obj.ParameterizedObject
 import ponticello.model.score.ParameterControlList
@@ -22,6 +25,8 @@ import ponticello.ui.registry.ObjectBox
 import ponticello.ui.registry.ObjectListView.DisplayMode
 import ponticello.ui.registry.SearchableParameterDefListView
 import ponticello.ui.registry.SearchableToolPane
+import reaktive.value.binding.impl.notNull
+import reaktive.value.now
 
 class ParameterControlsPane(
     private val obj: ParameterizedObject, title: String,
@@ -32,6 +37,20 @@ class ParameterControlsPane(
     init {
         obj.controls.addListener(this)
         setup(title, obj.controls) { headerActions.withContext(this) }
+        setupDropArea(::canDrop, ::drop)
+    }
+
+    private fun canDrop(db: Dragboard): Boolean = db.hasContent(NamedParameterControl.DATA_FORMAT)
+
+    private fun drop(ev: DragEvent) {
+        val db = ev.dragboard
+        when {
+            db.hasContent(NamedParameterControl.DATA_FORMAT) -> {
+                val jsonString = db.getContent(NamedParameterControl.DATA_FORMAT) as String
+                val namedControl = json.decodeFromString(NamedParameterControl.serializer(), jsonString)
+                obj.controls.duplicateControl(namedControl)
+            }
+        }
     }
 
     override val enableReordering: Boolean
@@ -58,6 +77,18 @@ class ParameterControlsPane(
         val editor = editors.getOrPut(obj) { ControlAssignmentEditor(obj, view) }
         editor.setControl(obj.now)
         return listOf(editor)
+    }
+
+    override fun dataFormat(obj: NamedParameterControl): DataFormat? = NamedParameterControl.DATA_FORMAT
+
+    override fun configureDragboard(obj: NamedParameterControl, dragboard: Dragboard) {
+        val copy = obj.copy()
+        if (copy.customSpec() == null) {
+            val defaultSpec = obj.parentObject.def.getSpec(copy.name.now)?.now
+            copy.setCustomSpec(defaultSpec)
+        }
+        val jsonString = json.encodeToString(NamedParameterControl.serializer(), copy)
+        dragboard.setContent(mapOf(NamedParameterControl.DATA_FORMAT to jsonString))
     }
 
     override fun getActions(box: ObjectBox<NamedParameterControl>): List<ContextualizedAction> =

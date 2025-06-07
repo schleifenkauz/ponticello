@@ -120,7 +120,7 @@ class ObjectBox<O : ContextualObject>(val parent: ObjectListView<O>, val obj: O)
     }
 
     private fun setupDragging() {
-        val dragTarget = actionBar.getButton(objectActions.getAction("Grabber"))
+        val dragTarget = actionBar.getButton(objectActions.getAction("Drag"))
         obj as NamedObject
         dragTarget.setOnDragDetected { ev ->
             val transferMode = if (ev.isControlDown && obj.canCopy) TransferMode.COPY else TransferMode.MOVE
@@ -182,7 +182,7 @@ class ObjectBox<O : ContextualObject>(val parent: ObjectListView<O>, val obj: O)
                     list.add(copy, list.indexOf(obj) + 1)
                 }
             }
-            addAction("Grabber") {
+            addAction("Drag") {
                 icon(MaterialDesignC.CURSOR_POINTER)
                 applicableIf { box ->
                     val config = box.config as ObjectListDisplayConfig<NamedObject>

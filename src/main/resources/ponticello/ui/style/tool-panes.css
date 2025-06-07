@@ -36,10 +36,6 @@
     -fx-border-radius: 5px;
 }
 
-.tool-pane:drop-possible {
-    -fx-background-color: green;
-}
-
 .object-box-header {
     -fx-spacing: 5px;
     -fx-alignment: center-left;

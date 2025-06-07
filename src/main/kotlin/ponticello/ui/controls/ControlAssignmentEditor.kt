@@ -134,7 +134,7 @@ class ControlAssignmentEditor(val control: NamedParameterControl, val view: Scor
 
         abstract fun createInitialControl(
             obj: ParameterizedObject, spec: ControlSpec?, oldControl: ParameterControl,
-            namedControl: NamedParameterControl, anchorNode: Region
+            namedControl: NamedParameterControl, anchorNode: Region,
         ): C
 
         open fun onSelected(namedControl: NamedParameterControl, control: C, view: ScoreObjectView?) {}
@@ -218,8 +218,8 @@ class ControlAssignmentEditor(val control: NamedParameterControl, val view: Scor
         }
 
         data object Expr : ControlType<ExprControl>() {
-            override fun applicableOn(obj: ParameterizedObject, spec: ControlSpec): Boolean =
-                spec is NumericalControlSpec || spec is BusControlSpec || spec is BufferControlSpec
+            override fun applicableOn(obj: ParameterizedObject, spec: ControlSpec): Boolean = obj is ScoreObject &&
+                    (spec is NumericalControlSpec || spec is BusControlSpec || spec is BufferControlSpec)
 
             override fun createDetailInput(
                 namedControl: NamedParameterControl,

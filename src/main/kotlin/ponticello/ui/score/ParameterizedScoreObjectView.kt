@@ -1,10 +1,11 @@
 package ponticello.ui.score
 
+import fxutils.setupDropArea
 import javafx.geometry.Point2D
+import javafx.scene.input.DragEvent
+import javafx.scene.input.Dragboard
 import javafx.scene.input.MouseEvent
-import reaktive.Observer
-import reaktive.value.now
-import reaktive.value.reactiveVariable
+import ponticello.impl.json
 import ponticello.model.score.Envelope
 import ponticello.model.score.ParameterControlList
 import ponticello.model.score.ParameterControlList.NamedParameterControl
@@ -18,6 +19,9 @@ import ponticello.sc.NumericalControlSpec
 import ponticello.sc.ParameterType
 import ponticello.ui.launcher.PonticelloApp.Companion.primaryStage
 import ponticello.ui.registry.SearchableParameterDefListView
+import reaktive.Observer
+import reaktive.value.now
+import reaktive.value.reactiveVariable
 
 abstract class ParameterizedScoreObjectView<O : ParameterizedScoreObject>(
     instance: ScoreObjectInstance,
@@ -42,6 +46,20 @@ abstract class ParameterizedScoreObjectView<O : ParameterizedScoreObject>(
                 val p = Point2D(ev.screenX, ev.screenY)
                 showNewEnvelopePopup(p)
                 ev.consume()
+            }
+        }
+        setupDropArea(::canDrop, ::drop)
+    }
+
+    private fun canDrop(db: Dragboard): Boolean = db.hasContent(NamedParameterControl.DATA_FORMAT)
+
+    private fun drop(ev: DragEvent) {
+        val db = ev.dragboard
+        when {
+            db.hasContent(NamedParameterControl.DATA_FORMAT) -> {
+                val jsonString = db.getContent(NamedParameterControl.DATA_FORMAT) as String
+                val namedControl = json.decodeFromString(NamedParameterControl.serializer(), jsonString)
+                obj.controls.duplicateControl(namedControl)
             }
         }
     }

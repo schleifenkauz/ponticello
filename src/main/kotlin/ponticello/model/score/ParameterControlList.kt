@@ -2,7 +2,9 @@ package ponticello.model.score
 
 import fxutils.undo.UndoManager
 import hextant.context.Context
+import hextant.context.compoundEdit
 import hextant.context.withoutUndo
+import javafx.scene.input.DataFormat
 import javafx.scene.paint.Color
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
@@ -15,6 +17,8 @@ import ponticello.model.registry.NamedObjectList
 import ponticello.model.registry.ObjectList
 import ponticello.model.registry.ObjectListSerializer
 import ponticello.model.score.controls.BufferControl
+import ponticello.model.score.controls.EnvelopeControl
+import ponticello.model.score.controls.ExprControl
 import ponticello.model.score.controls.ParameterControl
 import ponticello.sc.BufferPositionControlSpec
 import ponticello.sc.ControlSpec
@@ -125,10 +129,12 @@ class ParameterControlList(
         fun setCustomSpec(custom: ControlSpec?) {
             val before = customSpec
             customSpec = custom
-            context[UndoManager].record(ParameterControlEdit.EditCustomSpec(this, before, custom))
-            val defaultSpec = controls.getDefaultSpec(this)
-            val newSpec = custom ?: defaultSpec
-            updateSpec(newSpec)
+            if (initialized) {
+                context[UndoManager].record(ParameterControlEdit.EditCustomSpec(this, before, custom))
+                val defaultSpec = controls.getDefaultSpec(this)
+                val newSpec = custom ?: defaultSpec
+                updateSpec(newSpec)
+            }
         }
 
         fun useSpecFromDefinition(): Boolean {
@@ -165,6 +171,10 @@ class ParameterControlList(
         }
 
         override fun canRenameTo(newName: String): Boolean = !controls.has(newName)
+
+        companion object {
+            val DATA_FORMAT = DataFormat("ponticello:named-parameter-control")
+        }
     }
 
     fun initialize(context: Context, associatedObject: ParameterizedObject) {
@@ -227,6 +237,33 @@ class ParameterControlList(
     fun addControl(parameter: String, control: ParameterControl, customSpec: ControlSpec? = null) {
         val named = NamedParameterControl(control, customSpec).withName(parameter)
         add(named)
+    }
+
+    private fun canAcceptControl(control: NamedParameterControl): Boolean {
+        return if (associatedObject !is ScoreObject) control.now !is EnvelopeControl && control.now !is ExprControl
+        else true
+    }
+
+    fun duplicateControl(namedControl: NamedParameterControl) {
+        if (!canAcceptControl(namedControl)) return
+        val name = namedControl.name.now
+        val control = namedControl.now
+        val spec = namedControl.customSpec()
+        if (control is EnvelopeControl) {
+            val obj = associatedObject as ScoreObject
+            control.points.rescale(obj.duration)
+        }
+        context.compoundEdit("Copy parameter control") {
+            if (has(name)) {
+                reassignControl(name, control)
+                if (spec != null && spec != get(name).spec.now) {
+                    get(name).setCustomSpec(spec)
+                }
+            } else {
+                val customSpec = spec.takeIf { it != associatedObject.def.getSpec(name)?.now }
+                addControl(name, control, customSpec)
+            }
+        }
     }
 
     override fun onAdded(obj: NamedParameterControl, idx: Int) {

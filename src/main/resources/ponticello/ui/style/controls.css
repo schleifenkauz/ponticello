@@ -14,20 +14,10 @@
     -fx-border-color: black;
 }
 
-.detail-item {
-    -fx-border-width: 1;
-    -fx-border-radius: 3px;
-    -fx-border-color: black;
-    -fx-padding: 2px;
-    -fx-alignment: center-left;
-}
-
-.detail-item:hover {
-    -fx-background-color: rgba(100, 0, 0, 0.1);
-}
-
-.detail-item:drop-possible {
-    -fx-background-color: #222720;
+/*noinspection CssInvalidPseudoSelector*/
+:drop-possible {
+    -fx-border-color: green !important;
+    -fx-border-width: 4px !important;
 }
 
 .control-detail-editor {
