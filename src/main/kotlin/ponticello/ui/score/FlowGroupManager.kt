@@ -90,6 +90,7 @@ class FlowGroupManager(
     private fun setupDragging(line: Line, group: AudioFlowGroup) {
         var pos = Decimal.NaN
         line.setupDragging(
+            startDragEvent = MouseEvent.MOUSE_PRESSED,
             onPressed = {
                 pos = group.yPosition.now
                 line.startYProperty().unbind()

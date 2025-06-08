@@ -207,7 +207,7 @@ class AttackReleaseControlSpec : ControlSpec {
         get() = "<attack-release>"
 }
 
-fun NumericalControlSpec.mapOnto(targetRange: DoubleRange) = SpecTransformation(this, targetRange)
+fun NumericalControlSpec.mapOnto(min: Double, max: Double) = SpecTransformation(this, min..max)
 
 @Choice(initialValue = "Rate.Audio")
 enum class Rate {

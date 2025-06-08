@@ -19,6 +19,7 @@ import javafx.geometry.HorizontalDirection.RIGHT
 import javafx.geometry.VerticalDirection
 import javafx.scene.Cursor
 import javafx.scene.control.ColorPicker
+import javafx.scene.control.Label
 import javafx.scene.control.Tooltip
 import javafx.scene.input.MouseButton
 import javafx.scene.input.MouseEvent
@@ -231,7 +232,10 @@ abstract class ScoreObjectView(
                     }
                 }
 
-                else -> return@addEventHandler
+                ev.button == MouseButton.PRIMARY -> {
+                    selectView(addToSelection = ev.isShiftDown)
+                }
+
             }
             ev.consume()
         }
@@ -306,6 +310,7 @@ abstract class ScoreObjectView(
     * */
 
     protected open fun startDrag(ev: MouseEvent, cursor: Cursor): Boolean {
+        if (ev.target is Label) return false
         val selectionManager = context[ScoreObjectSelectionManager]
         if (!selectionManager.isSelected(this)) {
             selectView(addToSelection = ev.isShiftDown)

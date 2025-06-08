@@ -40,7 +40,7 @@ class LFOCanvas(private val obj: ParameterizedScoreObject) : Canvas() {
         lineWidth = 1.0
         var x = 0.0
         beginPath()
-        val transform = spec.mapOnto(height..0.0)
+        val transform = spec.mapOnto(height,0.0)
         for (value in values) {
             val y = transform.map(value)
             lineTo(x, y)

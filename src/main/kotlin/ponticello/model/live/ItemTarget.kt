@@ -131,7 +131,7 @@ sealed class ItemTarget : AbstractContextualObject() {
                 val velocityParameter = velocityParameter.now.get()
                 val spec = velocityParameter?.spec?.now as? NumericalControlSpec
                 if (obj is ParameterizedObject && spec != null) {
-                    val transform = spec.mapOnto(0.0..127.0)
+                    val transform = spec.mapOnto(0.0,127.0)
                     val value = transform.unmap(velocity.toDouble()).toDecimal().withPrecision(spec.precision)
                     extraArguments[velocityParameter] = ValueControl.create(value)
                 }

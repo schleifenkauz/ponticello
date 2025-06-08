@@ -2,6 +2,7 @@ package ponticello.ui.controls
 
 import fxutils.label
 import fxutils.prompt.SimpleSearchableListView
+import fxutils.runFXWithTimeout
 import fxutils.styleClass
 import javafx.beans.InvalidationListener
 import javafx.scene.Cursor
@@ -34,7 +35,9 @@ class InlineParameterControlsBar(
             mode in setOf(InlineControlsDisplay.EXTENDED_OVERLAY, InlineControlsDisplay.CONTROLS_BAR)
         }.asObservableValue())
         children.addListener(InvalidationListener {
-            view.updateInlineControlsVisibility()
+            runFXWithTimeout(10) {
+                view.updateInlineControlsVisibility()
+            }
         })
     }
 
@@ -64,7 +67,7 @@ class InlineParameterControlsBar(
         val box = boxes.getValue(obj)
         children.remove(box)
         val childIdx = children.binarySearchBy(idx) { b -> controls.indexOf(controlMap[b]) }
-        children.add(childIdx, box)
+        children.add(-childIdx - 1, box)
     }
 
     override fun reassignedControl(

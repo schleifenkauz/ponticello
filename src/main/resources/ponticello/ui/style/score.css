@@ -17,10 +17,6 @@
     -fx-stroke: gray;
 }
 
-.waveform-line {
-    -fx-stroke: green;
-}
-
 .channel-separator-line {
     -fx-stroke: white;
 }
@@ -35,22 +31,9 @@ Label.memo-area {
     -fx-padding: 5px 5px 5px 8px;
 }
 
-.task-label {
-    -fx-padding: 5px;
-}
-
-.grid-line {
-    -fx-stroke: green;
-}
-
 .play-head {
     -fx-stroke: green;
     -fx-stroke-width: 2px;
-}
-
-.grid-time-code {
-    -fx-stroke: green;
-    -fx-font-size: 10;
 }
 
 .score-object {
