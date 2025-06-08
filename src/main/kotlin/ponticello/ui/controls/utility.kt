@@ -1,0 +1,76 @@
+package ponticello.ui.controls
+
+import fxutils.SubWindow
+import fxutils.actions.ContextualizedAction
+import fxutils.button
+import fxutils.centerChildren
+import fxutils.prompt.InfoPrompt
+import hextant.context.Context
+import hextant.serial.EditorRoot
+import javafx.geometry.Pos
+import javafx.scene.control.Label
+import javafx.scene.layout.HBox
+import javafx.scene.paint.Color
+import ponticello.model.obj.BusObject
+import ponticello.model.obj.BusReference
+import ponticello.model.score.ParameterControlList.NamedParameterControl
+import ponticello.sc.BusControlSpec
+import ponticello.sc.ControlSpec
+import ponticello.sc.NumericalControlSpec
+import ponticello.sc.Rate
+import ponticello.sc.editor.BusSelector
+import ponticello.sc.editor.ScExprExpander
+import ponticello.sc.view.ObjectSelectorControl
+import ponticello.ui.impl.makeSubWindow
+import ponticello.ui.impl.sceneFill
+import ponticello.ui.misc.CodePane
+import reaktive.value.ReactiveVariable
+import reaktive.value.binding.map
+import reaktive.value.now
+
+fun busSelector(
+    control: ReactiveVariable<BusReference>,
+    spec: ControlSpec?, context: Context,
+): ObjectSelectorControl<BusObject> {
+    val editor = BusSelector()
+    if (spec is BusControlSpec) editor.setFilter(spec.rate, spec.channels)
+    else editor.setFilter(rate = Rate.Control, channels = 1)
+    editor.syncWith(control)
+    editor.initialize(context)
+    return ObjectSelectorControl(editor)
+}
+
+fun makeCodePaneWindow(
+    root: EditorRoot<ScExprExpander>, context: Context,
+    namedControl: NamedParameterControl, actions: List<ContextualizedAction>,
+): SubWindow {
+    val pane = CodePane(
+        root, extraActions = actions,
+        actionBarAlignment = Pos.BOTTOM_RIGHT, ownWindow = true
+    )
+    val title = namedControl.name.map { name -> "Code for control '$name'" }
+    val window = makeSubWindow(pane, title, context)
+    window.sceneFill(Color.BLACK)
+    window.minWidth = 100.0
+    window.minHeight = 100.0
+    return window
+}
+
+fun missingSpecOptionsBar(control: NamedParameterControl): HBox = HBox(
+    5.0,
+    Label("Invalid or unresolved spec"),
+    button("Use spec from definition") { ev ->
+        val success = control.useSpecFromDefinition()
+        if (!success) {
+            InfoPrompt("No spec found in '${control.parentObject.def.name.now}'").showDialog(ev)
+        }
+    },
+    button("Provide custom spec") { ev ->
+        val spec = NumericalControlSpecPrompt(
+            control.name.now, control.parentObject, NumericalControlSpec.DEFAULT,
+            "Provide custom specification"
+        ).showDialog(ev) ?: return@button
+        control.setCustomSpec(spec)
+    }
+).centerChildren()
+

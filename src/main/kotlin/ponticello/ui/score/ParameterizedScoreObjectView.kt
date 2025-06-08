@@ -7,7 +7,6 @@ import javafx.geometry.Point2D
 import javafx.scene.input.DragEvent
 import javafx.scene.input.Dragboard
 import javafx.scene.input.MouseEvent
-import javafx.scene.layout.Pane
 import ponticello.impl.json
 import ponticello.model.obj.BufferObject
 import ponticello.model.obj.BusObject
@@ -24,6 +23,7 @@ import ponticello.model.score.controls.*
 import ponticello.sc.ControlSpec
 import ponticello.sc.NumericalControlSpec
 import ponticello.sc.ParameterType
+import ponticello.ui.controls.InlineParameterControlsBar
 import ponticello.ui.impl.getFrom
 import ponticello.ui.launcher.PonticelloApp.Companion.primaryStage
 import ponticello.ui.registry.SearchableParameterDefListView
@@ -61,6 +61,9 @@ abstract class ParameterizedScoreObjectView<O : ParameterizedScoreObject>(
         objectPane.prefHeightProperty().bind(heightProperty().subtract(objectPane.layoutYProperty()))
         objectPane.heightProperty().addListener { _, _, _ -> rescale() }
         children.add(0, objectPane)
+
+        val inlineParameterControls = InlineParameterControlsBar(obj.controls, this)
+        inlineControls.children.add(1, inlineParameterControls)
     }
 
     private fun listenForMouseEvents() {

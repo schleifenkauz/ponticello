@@ -119,7 +119,7 @@ class EnvelopeEditor(
 
     private fun configureMouseActions() {
         pane.setOnMouseClicked { ev ->
-            if (pane != objectView) {
+            if (singleEnvelopeMode) {
                 when {
                     ev.button == SECONDARY && ev.clickCount == 1 -> createNewPoint(ev, interpolate = false)
                 }

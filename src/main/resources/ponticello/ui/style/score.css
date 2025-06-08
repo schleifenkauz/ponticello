@@ -130,3 +130,15 @@ Label.memo-area {
     -fx-border-color: grey;
     -fx-alignment: center-left;
 }
+
+.parameter-controls-bar {
+    -fx-spacing: 0px;
+    -fx-alignment: center-left;
+}
+
+.simple-parameter-control-box {
+    -fx-spacing: 2px;
+    -fx-alignment: center-left;
+    -fx-border-width: 0px 0px 0px 1px;
+    -fx-border-color: grey;
+}
