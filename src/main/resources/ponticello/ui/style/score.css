@@ -124,8 +124,9 @@ Label.memo-area {
     -fx-font-weight: 300;
 }
 
-.score-object-inline-controls {
+.score-object-top-bar {
     -fx-spacing: 1px;
     -fx-border-width: 0px 0px 1px 0px;
-    -fx-border-color: black;
+    -fx-border-color: grey;
+    -fx-alignment: center-left;
 }

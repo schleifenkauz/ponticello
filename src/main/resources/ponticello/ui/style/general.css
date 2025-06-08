@@ -74,7 +74,7 @@
 }
 
 .name-control {
-    -fx-spacing: 5px;
+    -fx-spacing: 0px;
     -fx-alignment: center-left;
     -fx-border-width: 0px;
     -fx-border-radius: 0px;

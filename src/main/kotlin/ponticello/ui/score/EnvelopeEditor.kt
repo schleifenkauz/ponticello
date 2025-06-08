@@ -56,6 +56,8 @@ class EnvelopeEditor(
     private val innerCircles = mutableListOf<Circle>()
     private val line = Polyline() styleClass "envelope-line"
 
+    var singleEnvelopeMode = false
+
     init {
         mouseInfo.isVisible = false
         line.strokeProperty().bind(color.asObservableValue())
@@ -116,8 +118,8 @@ class EnvelopeEditor(
     }
 
     private fun configureMouseActions() {
-        if (pane != objectView) {
-            pane.setOnMouseClicked { ev ->
+        pane.setOnMouseClicked { ev ->
+            if (pane != objectView) {
                 when {
                     ev.button == SECONDARY && ev.clickCount == 1 -> createNewPoint(ev, interpolate = false)
                 }
@@ -393,6 +395,7 @@ class EnvelopeEditor(
                     }
                 }
             }
+
             envelope.points.size - 1 -> {
                 if (envelope.points.size >= 3) {
                     envelope.context.compoundEdit("Remove last envelope point") {
@@ -401,6 +404,7 @@ class EnvelopeEditor(
                     }
                 }
             }
+
             else -> envelope.removePoint(idx)
         }
     }

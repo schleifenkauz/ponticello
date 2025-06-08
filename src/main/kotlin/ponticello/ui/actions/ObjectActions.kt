@@ -1,9 +1,11 @@
 package ponticello.ui.actions
 
 import fxutils.Direction
+import fxutils.actions.Action
 import fxutils.actions.collectActions
 import fxutils.actions.isAltDown
 import fxutils.actions.isTargetTextInput
+import fxutils.isActuallyVisible
 import fxutils.prompt.IntegerPrompt
 import hextant.context.Context
 import hextant.context.compoundEdit
@@ -15,6 +17,8 @@ import ponticello.impl.copy
 import ponticello.impl.times
 import ponticello.impl.zero
 import ponticello.model.obj.NoSynthDef
+import ponticello.model.project.InlineControlsDisplay
+import ponticello.model.project.UIState
 import ponticello.model.registry.ScoreObjectRegistry
 import ponticello.model.score.*
 import ponticello.ui.controls.RenamePrompt
@@ -23,10 +27,13 @@ import ponticello.ui.launcher.DetailPaneManager
 import ponticello.ui.launcher.PonticelloMainActivity
 import ponticello.ui.score.*
 import reaktive.value.binding.Binding
+import reaktive.value.binding.and
 import reaktive.value.binding.flatMap
 import reaktive.value.binding.map
+import reaktive.value.binding.notEqualTo
 import reaktive.value.now
 import reaktive.value.reactiveValue
+import reaktive.value.toggle
 
 object ObjectActions {
     val multiObjectActions = collectActions {
@@ -55,6 +62,25 @@ object ObjectActions {
                 if (!ev.isTargetTextInput || ev.isAltDown()) {
                     view.instance.toggleMuted()
                 }
+            }
+        }
+        addObjectAction("Toggle inline controls") {
+            shortcut("Alt?+L")
+            icon { selector ->
+                selector.focusedView
+                    .flatMap { view -> view?.instance?.hideInlineControls ?: reactiveValue(false) }
+                    .map { hidden ->
+                        if (hidden) Material2AL.EXPAND_MORE
+                        else Material2AL.EXPAND_LESS
+                    }
+            }
+            enableWhen { ctx ->
+                ctx.focusedView.map { v -> v !is ScoreObjectGroupView }
+                    .and(ctx.context[UIState].controlsDisplay.notEqualTo(InlineControlsDisplay.CONTROLS_BAR))
+            }
+            ifNotApplicable(Action.IfNotApplicable.Hide)
+            executeMultiAction { view, ev ->
+                view.instance.hideInlineControls.toggle()
             }
         }
         addObjectAction("Copy selected objects to clipboard") {
@@ -171,8 +197,11 @@ object ObjectActions {
         addObjectAction("Rename object") {
             shortcut("F2")
             executeSingle { view, _ ->
-                val obj = view.obj
-                RenamePrompt(obj, "New name for object").showDialog(view)
+                if (view.inlineNameControl.isActuallyVisible()) {
+                    view.inlineNameControl.startEdit()
+                } else {
+                    RenamePrompt(view.obj, "New name for object").showDialog(view)
+                }
             }
         }
 

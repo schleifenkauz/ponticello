@@ -2,13 +2,17 @@ package ponticello.ui.score
 
 import fxutils.prompt.SimpleSearchableListView
 import fxutils.setupDropArea
+import javafx.beans.property.SimpleDoubleProperty
 import javafx.geometry.Point2D
 import javafx.scene.input.DragEvent
 import javafx.scene.input.Dragboard
 import javafx.scene.input.MouseEvent
+import javafx.scene.layout.Pane
 import ponticello.impl.json
 import ponticello.model.obj.BufferObject
 import ponticello.model.obj.BusObject
+import ponticello.model.project.InlineControlsDisplay
+import ponticello.model.project.UIState
 import ponticello.model.registry.BufferRegistry
 import ponticello.model.registry.BusRegistry
 import ponticello.model.score.Envelope
@@ -24,6 +28,10 @@ import ponticello.ui.impl.getFrom
 import ponticello.ui.launcher.PonticelloApp.Companion.primaryStage
 import ponticello.ui.registry.SearchableParameterDefListView
 import reaktive.Observer
+import reaktive.value.binding.and
+import reaktive.value.binding.equalTo
+import reaktive.value.fx.asObservableValue
+import reaktive.value.fx.asReactiveValue
 import reaktive.value.now
 import reaktive.value.reactiveVariable
 
@@ -42,6 +50,17 @@ abstract class ParameterizedScoreObjectView<O : ParameterizedScoreObject>(
         listenForMouseEvents()
         obj.controls.addListener(this)
         lfosObserver = observeLFOs()
+        val controlsDisplay = context[UIState].controlsDisplay
+        objectPane.layoutYProperty().bind(
+            controlsDisplay.equalTo(InlineControlsDisplay.CONTROLS_BAR)
+                .and(inlineControls.visibleProperty().asReactiveValue())
+                .asObservableValue()
+                .flatMap { bar -> if (bar) inlineControls.heightProperty() else SimpleDoubleProperty(0.0) }
+        )
+        objectPane.prefWidthProperty().bind(widthProperty())
+        objectPane.prefHeightProperty().bind(heightProperty().subtract(objectPane.layoutYProperty()))
+        objectPane.heightProperty().addListener { _, _, _ -> rescale() }
+        children.add(0, objectPane)
     }
 
     private fun listenForMouseEvents() {

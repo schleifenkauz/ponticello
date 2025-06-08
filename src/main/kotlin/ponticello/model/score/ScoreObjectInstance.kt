@@ -45,6 +45,8 @@ class ScoreObjectInstance(
     var score: Score? = null
         private set
 
+    val hideInlineControls = reactiveVariable(false)
+
     val start get() = _time
     val y get() = _y
     val position get() = ObjectPosition(start, y)

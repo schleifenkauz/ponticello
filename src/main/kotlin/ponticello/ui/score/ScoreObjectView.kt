@@ -10,7 +10,6 @@ import hextant.context.Context
 import hextant.context.compoundEdit
 import hextant.context.withoutUndo
 import javafx.beans.binding.Bindings
-import javafx.beans.property.SimpleDoubleProperty
 import javafx.beans.property.SimpleObjectProperty
 import javafx.geometry.Bounds
 import javafx.geometry.HorizontalDirection
@@ -41,10 +40,14 @@ import ponticello.ui.launcher.DetailPaneManager
 import ponticello.ui.launcher.PonticelloLauncher.Companion.currentProject
 import ponticello.ui.launcher.PonticelloMainActivity
 import reaktive.value.ReactiveValue
+import reaktive.value.binding.and
 import reaktive.value.binding.map
+import reaktive.value.binding.not
+import reaktive.value.binding.notEqualTo
 import reaktive.value.binding.orElse
 import reaktive.value.forEach
 import reaktive.value.fx.asObservableValue
+import reaktive.value.fx.asReactiveValue
 import reaktive.value.now
 import reaktive.value.reactiveVariable
 
@@ -74,7 +77,11 @@ abstract class ScoreObjectView(
     protected open val borderColorWhenSameObjectSelected: Color get() = Color.GRAY
 
     protected val objectPane = Pane()
-    protected val inlineControls = HBox() styleClass "score-object-inline-controls"
+    protected val inlineControls = HBox() styleClass "score-object-top-bar"
+    lateinit var inlineNameControl: NameControl
+        private set
+    lateinit var inlineActionBar: ActionBar
+        private set
 
     protected val colorPicker: ColorPicker = ColorPicker() styleClass "button"
 
@@ -135,29 +142,25 @@ abstract class ScoreObjectView(
         instance.addListener(this)
         obj.addListener(this)
         isInitialized = true
-        val nameControl = NameControl(obj).autoSize()
-        val controlsDisplay = context[UIState].controlsDisplay.asObservableValue()
-        inlineControls.prefWidthProperty().bind(widthProperty())
-        inlineControls.maxWidthProperty().bind(widthProperty())
+        inlineNameControl = NameControl(obj).autoSize()
+        val controlsDisplay = context[UIState].controlsDisplay
+        inlineControls.prefWidthProperty().bind(prefWidthProperty())
         inlineControls.backgroundProperty().bind(
             Bindings.`when`(
                 Bindings.equal(controlsDisplay, SimpleObjectProperty(InlineControlsDisplay.CONTROLS_BAR))
-            ).then(background(Color.web("#1d1d20"))).otherwise(background(Color.TRANSPARENT))
+            ).then(background(Color.web("#1d1d20"))).otherwise(background(Color.gray(0.0, 0.25)))
         )
-        inlineControls.children.add(nameControl)
+        inlineControls.children.add(inlineNameControl)
+        inlineControls.children.add(infiniteSpace())
+        val actions = ObjectActions.multiObjectActions.withContext(ObjectActionContext.SingleObjectContext(this))
+        inlineActionBar = ActionBar(actions, buttonStyle = "small-icon-button")
+        inlineControls.children.add(inlineActionBar)
         inlineControls.visibleProperty().bind(
-            Bindings.notEqual(SimpleObjectProperty(InlineControlsDisplay.NONE), controlsDisplay)
-        )
-        objectPane.prefWidthProperty().bind(widthProperty())
+            controlsDisplay.notEqualTo(InlineControlsDisplay.NONE)
+                .and(instance.hideInlineControls.not())
+                .and(inlineControls.widthProperty().lessThanOrEqualTo(prefWidthProperty()).asReactiveValue())
+                .asObservableValue())
         children.add(inlineControls)
-        objectPane.layoutYProperty().bind(
-            controlsDisplay.flatMap { mode ->
-                if (mode == InlineControlsDisplay.CONTROLS_BAR) inlineControls.heightProperty()
-                else SimpleDoubleProperty(0.0)
-            }
-        )
-        objectPane.prefHeightProperty().bind(heightProperty().subtract(objectPane.layoutYProperty()))
-        children.add(0, objectPane)
     }
 
     fun initialize(parent: ScorePane) {

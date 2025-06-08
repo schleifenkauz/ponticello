@@ -83,6 +83,7 @@ abstract class RootScorePane(score: Score, context: Context) : ScorePane(score, 
         val semitransparent = editor.objectView.backgroundColor.now.deriveColor(1.0, 1.0, 1.0, 0.3)
         pane.style = "-fx-background-color: ${semitransparent.toString().replacePrefix("0x", "#")};"
         magnifiedEnvelope = EnvelopeEditor(editor.namedControl, editor.envelope, editor.objectView, pane)
+            .also { editor -> editor.singleEnvelopeMode = true }
         val objName = editor.objectView.obj.name.now
         val title = "Envelope for ${editor.parameterName} of $objName"
         magnifierWindow?.hide()
