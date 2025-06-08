@@ -15,7 +15,7 @@ import ponticello.sc.Warp
 class NumericalControlSpecPrompt(
     parameterName: String, parentObject: ParameterizedObject?, initialSpec: NumericalControlSpec, title: String,
 ) : ControlSpecPrompt<NumericalControlSpec, DetailPane>(parameterName, parentObject, title) {
-    override val content: DetailPane = DetailPane()
+    override val content: DetailPane = DetailPane(labelWidth = 100.0)
     private val minTxt = textField(initialSpec.min.text) named "Minimum"
     private val maxTxt = textField(initialSpec.max.text) named "Maximum"
     private val defaultTxt = textField(initialSpec.defaultValue.text) named "Default"

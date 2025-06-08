@@ -10,17 +10,17 @@ import javafx.scene.layout.Pane
 import javafx.scene.paint.Color
 import javafx.scene.shape.Line
 import javafx.scene.text.Text
-import reaktive.value.ReactiveValue
-import reaktive.value.fx.asObservableValue
-import reaktive.value.fx.asProperty
-import reaktive.value.now
-import reaktive.value.reactiveValue
 import ponticello.impl.Decimal
 import ponticello.model.obj.MeterObject
 import ponticello.model.project.settings
 import ponticello.model.score.ScoreObjectInstance
 import ponticello.model.score.TempoGridObject
 import ponticello.ui.launcher.PonticelloLauncher.Companion.currentProject
+import reaktive.value.ReactiveValue
+import reaktive.value.fx.asObservableValue
+import reaktive.value.fx.asProperty
+import reaktive.value.now
+import reaktive.value.reactiveValue
 import kotlin.math.ceil
 
 class TempoGridObjectView(override val obj: TempoGridObject, inst: ScoreObjectInstance) : ScoreObjectView(inst) {
@@ -70,6 +70,7 @@ class TempoGridObjectView(override val obj: TempoGridObject, inst: ScoreObjectIn
     }
 
     override fun rescale() {
+        super.rescale()
         repaint()
     }
 

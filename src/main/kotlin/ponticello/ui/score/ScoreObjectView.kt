@@ -9,6 +9,7 @@ import fxutils.undo.UndoManager
 import hextant.context.Context
 import hextant.context.compoundEdit
 import hextant.context.withoutUndo
+import javafx.beans.InvalidationListener
 import javafx.beans.binding.Bindings
 import javafx.beans.property.SimpleObjectProperty
 import javafx.geometry.Bounds
@@ -33,23 +34,17 @@ import ponticello.model.score.*
 import ponticello.model.score.Score.Companion.rootScore
 import ponticello.ui.actions.ObjectActionContext
 import ponticello.ui.actions.ObjectActions
+import ponticello.ui.controls.InlineParameterControlsBar
 import ponticello.ui.controls.NameControl
 import ponticello.ui.impl.resizeMode
 import ponticello.ui.impl.setupDraggingAndResizing
 import ponticello.ui.launcher.DetailPaneManager
 import ponticello.ui.launcher.PonticelloLauncher.Companion.currentProject
 import ponticello.ui.launcher.PonticelloMainActivity
-import reaktive.value.ReactiveValue
-import reaktive.value.binding.and
-import reaktive.value.binding.map
-import reaktive.value.binding.not
-import reaktive.value.binding.notEqualTo
-import reaktive.value.binding.orElse
-import reaktive.value.forEach
+import reaktive.value.*
+import reaktive.value.binding.*
 import reaktive.value.fx.asObservableValue
 import reaktive.value.fx.asReactiveValue
-import reaktive.value.now
-import reaktive.value.reactiveVariable
 
 abstract class ScoreObjectView(
     val instance: ScoreObjectInstance,
@@ -148,7 +143,7 @@ abstract class ScoreObjectView(
         inlineControls.backgroundProperty().bind(
             Bindings.`when`(
                 Bindings.equal(controlsDisplay, SimpleObjectProperty(InlineControlsDisplay.CONTROLS_BAR))
-            ).then(background(Color.web("#1d1d20"))).otherwise(background(Color.gray(0.0, 0.25)))
+            ).then(background(Color.web("#1d1d20"))).otherwise(background(Color.gray(0.3, 0.35)))
         )
         inlineControls.children.add(inlineNameControl)
         inlineControls.children.add(infiniteSpace())
@@ -156,12 +151,21 @@ abstract class ScoreObjectView(
         inlineActionBar = ActionBar(actions, buttonStyle = "small-icon-button")
         inlineControls.children.add(inlineActionBar)
         inlineControls.visibleProperty().bind(
-            controlsDisplay.notEqualTo(InlineControlsDisplay.NONE)
-                .and(instance.hideInlineControls.not())
-                .and(inlineControls.widthProperty().lessThanOrEqualTo(prefWidthProperty()).asReactiveValue())
-                .asObservableValue())
+            inlineControlsVisibilityCondition(controlsDisplay)
+                .asObservableValue()
+        )
+        inlineControls.children.addListener(InvalidationListener { _ ->
+            updateInlineControlsVisibility()
+        })
         children.add(inlineControls)
     }
+
+    protected open fun inlineControlsVisibilityCondition(
+        controlsDisplay: ReactiveVariable<InlineControlsDisplay>,
+    ): ReactiveBoolean = controlsDisplay.notEqualTo(InlineControlsDisplay.NONE)
+        .and(instance.hideInlineControls.not())
+        .and(inlineNameControl.visibleProperty().asReactiveValue())
+//            .and(inlineControls.widthProperty().lessThanOrEqualTo(prefWidthProperty()).asReactiveValue())
 
     fun initialize(parent: ScorePane) {
         if (isInitialized) return
@@ -367,7 +371,38 @@ abstract class ScoreObjectView(
 
     open fun getDisplayHeight() = getScreenY(obj.height)
 
-    open fun rescale() {}
+    open fun rescale() {
+        updateInlineControlsVisibility()
+    }
+
+    fun updateInlineControlsVisibility() {
+        updateInlineControlsVisibility(inlineControls, prefWidth)
+    }
+
+    private fun updateInlineControlsVisibility(box: HBox, availableWidth: Double) {
+        var usedWidth = 0.0
+        for (child in box.children) {
+            val width = child.prefWidth(-1.0)
+            if (child is InlineParameterControlsBar) {
+                if (!child.isVisible) continue
+                updateInlineControlsVisibility(child, availableWidth - usedWidth)
+                usedWidth += width
+            } else {
+                if (child.visibleProperty().isBound) {
+                    System.err.println("Warning: bound visibility of $child, (child of $box)")
+                    continue
+                }
+                if (usedWidth + width <= availableWidth) {
+                    child.isVisible = true
+                    child.isManaged = true
+                    usedWidth += width
+                } else {
+                    child.isVisible = false
+                    child.isManaged = false
+                }
+            }
+        }
+    }
 
     final override fun moved(start: Decimal, y: Decimal) {
         if (!parentPane.isRoot(obj)) {

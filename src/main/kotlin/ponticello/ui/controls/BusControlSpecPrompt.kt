@@ -2,6 +2,7 @@ package ponticello.ui.controls
 
 import fxutils.prompt.DetailPane
 import fxutils.prompt.SimpleSearchableListView
+import fxutils.setFixedWidth
 import fxutils.undo.UndoManager
 import javafx.scene.Node
 import javafx.scene.control.CheckBox
@@ -14,11 +15,12 @@ class BusControlSpecPrompt(
     parameterName: String, parentObject: ParameterizedObject?, title: String,
     initialSpec: BusControlSpec,
 ) : ControlSpecPrompt<BusControlSpec, DetailPane>(parameterName, parentObject, title) {
-    override val content = DetailPane()
+    override val content = DetailPane(labelWidth = 100.0)
 
     private var rate = initialSpec.rate
 
-    private val channelsSpinner = Spinner<Int>(1, 12, initialSpec.channels) named "Channels"
+    private val channelsSpinner = Spinner<Int>(1, 12, initialSpec.channels)
+        .setFixedWidth(50.0) named "Channels"
 
     private val rateSelector = SimpleSearchableListView(Rate.entries, "Choose rate")
         .selectorButton(this::rate, undoManager = parentObject?.context?.get(UndoManager)) named "Rate"

@@ -23,7 +23,6 @@ import ponticello.model.score.controls.*
 import ponticello.sc.ControlSpec
 import ponticello.sc.NumericalControlSpec
 import ponticello.sc.ParameterType
-import ponticello.ui.controls.InlineParameterControlsBar
 import ponticello.ui.impl.getFrom
 import ponticello.ui.launcher.PonticelloApp.Companion.primaryStage
 import ponticello.ui.registry.SearchableParameterDefListView
@@ -61,9 +60,6 @@ abstract class ParameterizedScoreObjectView<O : ParameterizedScoreObject>(
         objectPane.prefHeightProperty().bind(heightProperty().subtract(objectPane.layoutYProperty()))
         objectPane.heightProperty().addListener { _, _, _ -> rescale() }
         children.add(0, objectPane)
-
-        val inlineParameterControls = InlineParameterControlsBar(obj.controls, this)
-        inlineControls.children.add(1, inlineParameterControls)
     }
 
     private fun listenForMouseEvents() {
@@ -235,6 +231,7 @@ abstract class ParameterizedScoreObjectView<O : ParameterizedScoreObject>(
     }
 
     override fun rescale() {
+        super.rescale()
         for (e in envelopeEditors) {
             if (e.namedControl.spec.now is NumericalControlSpec) {
                 e.repaint()

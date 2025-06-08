@@ -3,6 +3,7 @@ package ponticello.ui.controls
 import fxutils.label
 import fxutils.prompt.SimpleSearchableListView
 import fxutils.styleClass
+import javafx.beans.InvalidationListener
 import javafx.scene.Cursor
 import javafx.scene.input.MouseButton
 import javafx.scene.layout.HBox
@@ -16,6 +17,7 @@ import ponticello.model.score.controls.ParameterControl
 import ponticello.sc.ControlSpec
 import ponticello.ui.score.ScoreObjectView
 import reaktive.value.binding.map
+import reaktive.value.forEach
 import reaktive.value.fx.asObservableValue
 import reaktive.value.now
 
@@ -24,24 +26,33 @@ class InlineParameterControlsBar(
     private val view: ScoreObjectView,
 ) : ParameterControlList.Listener, HBox() {
     private val boxes = mutableMapOf<NamedParameterControl, HBox>()
+    private val controlMap = mutableMapOf<HBox, NamedParameterControl>()
 
     init {
-        styleClass.add("parameter-controls-bar")
-        cursor = Cursor.DEFAULT
         controls.addListener(this, initialize = true)
         visibleProperty().bind(view.context[UIState].controlsDisplay.map { mode ->
             mode in setOf(InlineControlsDisplay.EXTENDED_OVERLAY, InlineControlsDisplay.CONTROLS_BAR)
         }.asObservableValue())
+        children.addListener(InvalidationListener {
+            view.updateInlineControlsVisibility()
+        })
     }
 
     override fun added(obj: NamedParameterControl, idx: Int) {
         val box = HBox() styleClass "simple-parameter-control-box"
         setControl(obj, box)
         boxes[obj] = box
-        children.add(idx, box)
         val displayInline = obj.spec.map { spec -> spec != null && spec.inlineDisplay }
-        box.visibleProperty().bind(displayInline.asObservableValue())
-        box.managedProperty().bind(box.visibleProperty())
+        box.cursor = Cursor.DEFAULT
+        box.userData = displayInline.forEach { display ->
+            if (display) {
+                val index = children.binarySearchBy(idx) { b -> controls.indexOf(controlMap[b]) }
+                if (index < 0) children.add(-index - 1, box)
+                else {}
+            } else {
+                children.remove(box)
+            }
+        }
     }
 
     override fun removed(obj: NamedParameterControl) {
@@ -52,7 +63,8 @@ class InlineParameterControlsBar(
     override fun moved(obj: NamedParameterControl, idx: Int) {
         val box = boxes.getValue(obj)
         children.remove(box)
-        children.add(idx, box)
+        val childIdx = children.binarySearchBy(idx) { b -> controls.indexOf(controlMap[b]) }
+        children.add(childIdx, box)
     }
 
     override fun reassignedControl(

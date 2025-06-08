@@ -26,6 +26,7 @@ import ponticello.model.score.controls.BufferControl
 import ponticello.model.score.controls.ParameterControl
 import ponticello.model.score.controls.ValueControl
 import ponticello.sc.view.ObjectSelectorControl
+import ponticello.ui.controls.InlineParameterControlsBar
 import ponticello.ui.launcher.PonticelloMainActivity
 import reaktive.Observer
 import reaktive.value.ReactiveValue
@@ -58,7 +59,10 @@ class SynthObjectView(
         super.initialize()
         sampleObserver = observeSample()
         sampleDisplayObserver = obj.displaySample?.forEach { updateSpectrogram() }
-        inlineControls.children.add(1, ObjectSelectorControl(obj.synthDefSelector))
+        val synthDefSelector = ObjectSelectorControl(obj.synthDefSelector)
+        inlineControls.children.add(1, synthDefSelector)
+        val inlineControlsBar = InlineParameterControlsBar(obj.controls, this)
+        inlineControls.children.add(2, inlineControlsBar)
     }
 
     private fun observeSample(): Observer = obj.sample.forEach { s ->

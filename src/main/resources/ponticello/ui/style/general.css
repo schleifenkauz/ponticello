@@ -92,7 +92,7 @@
 .check-box {
     -fx-background-color: transparent !important;
     -fx-content-display: right;
-    -fx-mark-color: white;
+    /*-fx-mark-color: white;*/
     -fx-padding: 0px;
 }
 

@@ -10,8 +10,12 @@ import javafx.scene.input.KeyEvent
 import javafx.scene.input.MouseEvent
 import javafx.scene.layout.HBox
 import javafx.scene.text.Text
+import ponticello.model.project.InlineControlsDisplay
 import ponticello.model.score.MemoObject
 import ponticello.model.score.ScoreObjectInstance
+import reaktive.value.ReactiveBoolean
+import reaktive.value.ReactiveVariable
+import reaktive.value.reactiveValue
 
 class MemoObjectView(override val obj: MemoObject, inst: ScoreObjectInstance) : ScoreObjectView(inst) {
     private val edit = TextArea(obj.text) styleClass "memo-area"
@@ -66,4 +70,8 @@ class MemoObjectView(override val obj: MemoObject, inst: ScoreObjectInstance) : 
         computeSize.text = value
         resizedObject(obj)
     }
+
+    override fun inlineControlsVisibilityCondition(
+        controlsDisplay: ReactiveVariable<InlineControlsDisplay>,
+    ): ReactiveBoolean = reactiveValue(false)
 }
