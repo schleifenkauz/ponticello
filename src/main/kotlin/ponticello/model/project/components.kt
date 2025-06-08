@@ -34,8 +34,7 @@ val PROCESS_DEFS = Component(
     MultiFileComponentSerializer(::ProcessDefRegistry)
 )
 val FLOWS = Component(
-    "flows", AudioFlows::createDefault,
-    MultiFileComponentSerializer(::AudioFlows)
+    "flows", AudioFlows::createDefault, AudioFlowsSerializer
 ).onSave { flows -> flows.writeVSTPluginStates() }
 
 val SERVER_OPTIONS = Component<ServerOptions>("server_options", ServerOptions::default)

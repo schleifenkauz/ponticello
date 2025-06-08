@@ -22,9 +22,9 @@ import reaktive.value.binding.map
 @Serializable
 class AudioFlowGroup(
     private val active: ReactiveVariable<Boolean> = reactiveVariable(true),
-    val flows: AudioFlowList,
     override val yPosition: ReactiveVariable<Decimal>,
     val associatedColor: ReactiveVariable<@Serializable(with = ColorSerializer::class) Color>,
+    val flows: AudioFlowList,
 ) : AudioNode, AbstractRenamableObject(), ObjectList.Listener<AudioFlow> {
     override lateinit var superColliderName: ReactiveString
         private set
@@ -52,7 +52,7 @@ class AudioFlowGroup(
         super.initialize(context)
         superColliderName = name.map { name -> "~flows_$name" }
         client = context[SuperColliderClient]
-        flows.initialize(context)
+        flows.initialize(context, this)
         flows.addListener(this, initialize = false)
         for (flow in flows) observeFlow(flow)
     }
@@ -144,6 +144,19 @@ class AudioFlowGroup(
         override val objectType: String
             get() = "Flow"
 
+        @Transient
+        private lateinit var parentGroup: AudioFlowGroup
+
+        fun initialize(context: Context, parent: AudioFlowGroup) {
+            this.parentGroup = parent
+            super.initialize(context)
+        }
+
+        override fun initializeObject(obj: AudioFlow) {
+            obj.setParentGroup(parentGroup)
+            obj.initialize(context)
+        }
+
         object Serializer : ObjectListSerializer<AudioFlow, AudioFlowList>(AudioFlow.serializer(), ::AudioFlowList)
     }
 
@@ -152,9 +165,9 @@ class AudioFlowGroup(
     companion object {
         fun create(name: String, y: Decimal, color: Color) = AudioFlowGroup(
             active = reactiveVariable(true),
-            flows = AudioFlowList(),
             reactiveVariable(y),
-            reactiveVariable(color)
+            reactiveVariable(color),
+            flows = AudioFlowList()
         ).withName(name)
     }
 }

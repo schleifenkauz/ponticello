@@ -27,6 +27,15 @@ sealed class AudioFlow : AbstractRenamableObject() {
 
     abstract val isValid: ReactiveValue<Boolean>
 
+    @Transient
+    lateinit var parentGroup: AudioFlowGroup
+        private set
+
+    fun setParentGroup(parent: AudioFlowGroup) {
+        check(!initialized) { "Parent group of $this cannot be changed after initialization" }
+        parentGroup = parent
+    }
+
     abstract fun writeCode(placement: NodePlacement): String
 
     fun setActive(value: Boolean) {
