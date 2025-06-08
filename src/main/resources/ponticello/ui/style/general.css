@@ -92,18 +92,18 @@
 .check-box {
     -fx-background-color: transparent !important;
     -fx-content-display: right;
+    -fx-mark-color: white;
+    -fx-padding: 0px;
 }
 
 .check-box .box {
     -fx-background-color: transparent !important;
     -fx-border-color: white;
     -fx-border-radius: 0px;
+    -fx-pref-width: 16px;
+    -fx-pref-height: 16px;
 }
 
 .check-box:hover .box {
     -fx-border-color: -fx-accent;
-}
-
-.check-box:selected .mark {
-    -fx-background-color: white;
 }

@@ -46,4 +46,6 @@ data object BusControlType : ControlType<BusControl>() {
         control: BusControl,
         view: ScoreObjectView?,
     ): List<ContextualizedAction> = listOf(ServerActions.scopeBus.withContext(control.bus))
+
+    override fun toString(): String = "Bus"
 }

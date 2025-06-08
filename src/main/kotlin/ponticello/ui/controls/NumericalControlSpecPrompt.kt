@@ -5,6 +5,7 @@ import fxutils.prompt.SimpleSearchableListView
 import fxutils.textField
 import javafx.beans.binding.Bindings
 import javafx.scene.Node
+import javafx.scene.control.CheckBox
 import javafx.scene.control.ColorPicker
 import ponticello.impl.parseDecimal
 import ponticello.model.obj.ParameterizedObject
@@ -15,12 +16,13 @@ class NumericalControlSpecPrompt(
     parameterName: String, parentObject: ParameterizedObject?, initialSpec: NumericalControlSpec, title: String,
 ) : ControlSpecPrompt<NumericalControlSpec, DetailPane>(parameterName, parentObject, title) {
     override val content: DetailPane = DetailPane()
-    private val minTxt = textField(initialSpec.min.text)  named "Minimum"
+    private val minTxt = textField(initialSpec.min.text) named "Minimum"
     private val maxTxt = textField(initialSpec.max.text) named "Maximum"
     private val defaultTxt = textField(initialSpec.defaultValue.text) named "Default"
     private val stepTxt = textField(initialSpec.step.text) named "Step"
     private val lagTxt = textField(initialSpec.lag.text) named "Lag"
     private val associatedColor = ColorPicker(initialSpec.associatedColor) named "Color"
+    private val inlineDisplayBox = CheckBox() named "Inline display"
 
     private val min get() = minTxt.text.parseDecimal()
     private val max get() = maxTxt.text.parseDecimal()
@@ -32,6 +34,7 @@ class NumericalControlSpecPrompt(
         .selectorButton(this::warp) named "Warp"
 
     init {
+        inlineDisplayBox.isSelected = initialSpec.inlineDisplay
         val isValid = Bindings.createBooleanBinding({
             when {
                 min == null -> false
@@ -47,10 +50,10 @@ class NumericalControlSpecPrompt(
         validate(isValid)
     }
 
-    infix fun <N : Node> N.named(name: String): N {
-        content.addItem(name, this)
-        return this
-    }
+    private infix fun <N : Node> N.named(name: String): N = also { content.addItem(name, it) }
 
-    override fun makeSpec() = NumericalControlSpec(default!!, min!!, max!!, step!!, lag!!, warp, associatedColor.value)
+    override fun makeSpec() = NumericalControlSpec(
+        default!!, min!!, max!!, step!!, lag!!, warp,
+        associatedColor.value, inlineDisplayBox.isSelected
+    )
 }

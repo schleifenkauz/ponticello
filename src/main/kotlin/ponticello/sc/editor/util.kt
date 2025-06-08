@@ -4,18 +4,7 @@ import hextant.core.editor.Expander
 import hextant.core.editor.isSubEditor
 import ponticello.model.obj.BusObject
 import ponticello.model.registry.reference
-import ponticello.sc.NumericalControlSpec
 import ponticello.sc.Rate
-
-fun NumericalControlSpec.createEditor() = NumericalControlSpecEditor(
-    defaultValue = DecimalLiteralEditor(defaultValue.text),
-    min = DecimalLiteralEditor(min.text),
-    max = DecimalLiteralEditor(max.text),
-    step = DecimalLiteralEditor(step.text),
-    lag = DecimalLiteralEditor(lag.text),
-    warp = WarpEditor(warp),
-    associatedColor = SimpleColorEditor(associatedColor)
-)
 
 private fun ScExprEditor<*>.exp() = ScExprExpander(this)
 

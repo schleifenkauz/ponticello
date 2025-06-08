@@ -35,9 +35,13 @@ class InlineParameterControlsBar(
     }
 
     override fun added(obj: NamedParameterControl, idx: Int) {
-        val box = createBox(obj) ?: HBox()
+        val box = HBox() styleClass "simple-parameter-control-box"
+        setControl(obj, box)
         boxes[obj] = box
         children.add(idx, box)
+        val displayInline = obj.spec.map { spec -> spec != null && spec.inlineDisplay }
+        box.visibleProperty().bind(displayInline.asObservableValue())
+        box.managedProperty().bind(box.visibleProperty())
     }
 
     override fun removed(obj: NamedParameterControl) {
@@ -56,25 +60,30 @@ class InlineParameterControlsBar(
         oldControl: ParameterControl, newControl: ParameterControl,
     ) {
         val box = boxes.getValue(parameter)
-        children.remove(box)
-        val newBox = createBox(parameter) ?: HBox()
-        boxes[parameter] = newBox
-        children.add(newBox)
+        setControl(parameter, box)
     }
 
-    private fun createBox(obj: NamedParameterControl): HBox? {
-        val type = ControlType.getType(obj.now)
-        val simpleInput = type.createSimpleInput(obj, obj.now) ?: return null
-        val nameLabel = label(obj.name.map { name -> "$name: " })
-        nameLabel.font = Font.font(11.0)
-        nameLabel.setOnMouseClicked { ev ->
-            when (ev.button) {
-                MouseButton.SECONDARY -> controls.remove(obj)
-                MouseButton.PRIMARY -> showControlTypePopup(obj, type, anchorNode = nameLabel)
-                else -> {}
-            }
+    private fun setControl(control: NamedParameterControl, box: HBox) {
+        val type = ControlType.getType(control.now)
+        val simpleInput = type.createSimpleInput(control, control.now)
+        if (simpleInput == null) {
+            box.children.clear()
+            return
         }
-        return HBox(nameLabel, simpleInput) styleClass "simple-parameter-control-box"
+        if (box.children.isEmpty()) {
+            val nameLabel = label(control.name.map { name -> "$name: " })
+            nameLabel.font = Font.font(11.0)
+            nameLabel.setOnMouseClicked { ev ->
+                when (ev.button) {
+                    MouseButton.SECONDARY -> controls.remove(control)
+                    MouseButton.PRIMARY -> showControlTypePopup(control, type, anchorNode = nameLabel)
+                    else -> {}
+                }
+            }
+            box.children.add(nameLabel)
+        }
+        box.children.remove(1, box.children.size)
+        box.children.add(1, simpleInput)
     }
 
     private fun showControlTypePopup(

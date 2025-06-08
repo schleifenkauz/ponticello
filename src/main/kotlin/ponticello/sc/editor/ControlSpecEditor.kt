@@ -14,7 +14,10 @@ class ControlSpecEditor : ChoiceEditor<ParameterType, ControlSpec, Editor<Contro
     fun setResult(spec: ControlSpec) {
         when (spec) {
             is BufferControlSpec -> {
-                val specEditor = BufferControlSpecEditor(channels = SimpleIntegerEditor(spec.channels))
+                val specEditor = BufferControlSpecEditor(
+                    channels = SimpleIntegerEditor(spec.channels),
+                    inlineDisplay = SimpleBooleanEditor(spec.inlineDisplay)
+                )
                 select(ParameterType.Buffer, specEditor)
             }
 
@@ -22,19 +25,32 @@ class ControlSpecEditor : ChoiceEditor<ParameterType, ControlSpec, Editor<Contro
                 val specEditor = BusControlSpecEditor(
                     RateEditor(spec.rate),
                     SimpleIntegerEditor(spec.channels),
+                    inlineDisplay = SimpleBooleanEditor(spec.inlineDisplay)
                 )
                 select(ParameterType.Bus, specEditor)
             }
 
             is NumericalControlSpec -> {
-                val specEditor = spec.createEditor()
+                val specEditor = NumericalControlSpecEditor(
+                    defaultValue = DecimalLiteralEditor(spec.defaultValue.text),
+                    min = DecimalLiteralEditor(spec.min.text),
+                    max = DecimalLiteralEditor(spec.max.text),
+                    step = DecimalLiteralEditor(spec.step.text),
+                    lag = DecimalLiteralEditor(spec.lag.text),
+                    warp = WarpEditor(spec.warp),
+                    associatedColor = SimpleColorEditor(spec.associatedColor),
+                    inlineDisplay = SimpleBooleanEditor(spec.inlineDisplay)
+                )
                 select(ParameterType.Numerical, specEditor)
             }
 
             is BufferPositionControlSpec -> {
-                val specEditor = BufferPositionControlSpecEditor()
+                val specEditor = BufferPositionControlSpecEditor(
+                    inlineDisplay = SimpleBooleanEditor(spec.inlineDisplay)
+                )
                 select(ParameterType.BufferPosition, specEditor)
             }
+
             else -> throw AssertionError("Illegal ControlSpec type: $spec")
         }
     }
@@ -44,6 +60,7 @@ class ControlSpecEditor : ChoiceEditor<ParameterType, ControlSpec, Editor<Contro
             RateEditor(Rate.Audio),
             SimpleIntegerEditor(2)
         )
+
         ParameterType.Buffer -> BufferControlSpecEditor()
         ParameterType.Numerical -> NumericalControlSpecEditor(
             defaultValue = DecimalLiteralEditor("0"),

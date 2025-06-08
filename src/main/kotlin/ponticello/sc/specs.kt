@@ -16,6 +16,7 @@ import ponticello.model.score.controls.BufferControl
 import ponticello.model.score.controls.BusControl
 import ponticello.model.score.controls.ValueControl
 import ponticello.sc.editor.ControlSpecEditor
+import ponticello.sc.editor.SimpleBooleanEditor
 import ponticello.sc.editor.SimpleColorEditor
 import ponticello.sc.editor.SimpleIntegerEditor
 import reaktive.value.ReactiveVariable
@@ -54,6 +55,8 @@ sealed interface ControlSpec {
     val code: String
 
     val defaultValueExpr: String? get() = null
+
+    val inlineDisplay: Boolean get() = false
 }
 
 fun ControlSpec.defaultControl() = when (this) {
@@ -74,9 +77,9 @@ data class NumericalControlSpec(
     val warp: Warp,
     val step: DecimalLiteral,
     val lag: DecimalLiteral = DecimalLiteral(AttackReleaseControl.DEFAULT),
-    @Serializable(with = ColorSerializer::class)
-    @Component(SimpleColorEditor::class)
+    @Serializable(with = ColorSerializer::class) @Component(SimpleColorEditor::class)
     val associatedColor: Color = Color.WHITE,
+    @Component(SimpleBooleanEditor::class) override val inlineDisplay: Boolean = false,
 ) : ControlSpec {
     val precision get() = step.get().precision
 
@@ -94,10 +97,10 @@ data class NumericalControlSpec(
 
     constructor(
         default: Decimal, min: Decimal, max: Decimal, step: Decimal, lag: Decimal,
-        warp: Warp, associatedColor: Color = Color.WHITE,
+        warp: Warp, associatedColor: Color = Color.WHITE, inlineDisplay: Boolean = false,
     ) : this(
         DecimalLiteral(default), DecimalLiteral(min), DecimalLiteral(max), warp,
-        DecimalLiteral(step), DecimalLiteral(lag), associatedColor
+        DecimalLiteral(step), DecimalLiteral(lag), associatedColor, inlineDisplay
     )
 
     override val type: ParameterType
@@ -152,6 +155,7 @@ data class NumericalControlSpec(
 data class BusControlSpec(
     val rate: Rate,
     @Component(editor = SimpleIntegerEditor::class) val channels: Int,
+    @Component(SimpleBooleanEditor::class) override val inlineDisplay: Boolean = true,
 ) : ControlSpec {
     override val type: ParameterType
         get() = ParameterType.Bus
@@ -165,7 +169,10 @@ data class BusControlSpec(
 @Serializable
 @Compound
 @SerialName("buffer")
-data class BufferControlSpec(@Component(editor = SimpleIntegerEditor::class) val channels: Int) : ControlSpec {
+data class BufferControlSpec(
+    @Component(editor = SimpleIntegerEditor::class) val channels: Int,
+    @Component(SimpleBooleanEditor::class) override val inlineDisplay: Boolean = false,
+) : ControlSpec {
     var isPlayBufSource: Boolean = true
 
     override val type: ParameterType
@@ -180,7 +187,9 @@ data class BufferControlSpec(@Component(editor = SimpleIntegerEditor::class) val
 @Serializable
 @SerialName("BufPos")
 @Compound
-class BufferPositionControlSpec : ControlSpec {
+data class BufferPositionControlSpec(
+    @Component(SimpleBooleanEditor::class) override val inlineDisplay: Boolean = false,
+) : ControlSpec {
     override val type: ParameterType
         get() = ParameterType.Numerical
 

@@ -190,6 +190,9 @@ fun createControl(editor: ponticello.sc.editor.BusControlSpecEditor, arguments: 
                 set(IntSpinnerControl.MIN, 1)
                 set(IntSpinnerControl.MAX, 256)
             }.maxWidth = 65.0
+            space()
+            keyword("inline-display: ")
+            view(editor.inlineDisplay)
             root.centerChildren().styleClass("bus-control-spec")
         }
     }
@@ -203,6 +206,9 @@ fun createControl(editor: ponticello.sc.editor.BufferControlSpecEditor, argument
                 set(IntSpinnerControl.MIN, 1)
                 set(IntSpinnerControl.MAX, 256)
             }.maxWidth = 65.0
+            space()
+            keyword("inline-display: ")
+            view(editor.inlineDisplay)
             root.centerChildren().styleClass("buffer-control-spec")
         }
     }
@@ -210,7 +216,11 @@ fun createControl(editor: ponticello.sc.editor.BufferControlSpecEditor, argument
 @ProvideImplementation(ControlFactory::class)
 fun createControl(editor: ponticello.sc.editor.BufferPositionControlSpecEditor, arguments: Bundle) =
     CompoundEditorControl(editor, arguments) {
-        horizontal {  }
+        horizontal {
+            keyword("inline-display: ")
+            view(editor.inlineDisplay)
+            root.centerChildren()
+        }
     }
 
 @ProvideImplementation(ControlFactory::class)
@@ -218,7 +228,7 @@ fun createControl(editor: ponticello.sc.editor.NumericalControlSpecEditor, argum
     CompoundEditorControl(editor, arguments) {
         horizontal {
             operator(" = ")
-            view(editor.defaultValue)//.minWidth = 30.0
+            view(editor.defaultValue).minWidth = 30.0
             space()
             operator("(")
             view(editor.min)//.minWidth = 30.0
@@ -227,15 +237,16 @@ fun createControl(editor: ponticello.sc.editor.NumericalControlSpecEditor, argum
             operator(")")
             space()
             keyword("step: ")
-            view(editor.step)//.minWidth = 30.0
+            view(editor.step).minWidth = 30.0
             space()
             keyword("lag: ")
             view(editor.lag)
             keyword("warp: ")
             view(editor.warp)
             space()
-            keyword("color: ")
-            view(editor.associatedColor)//.minWidth = 30.0
+            view(editor.associatedColor).minWidth = 30.0
+            keyword("inline-display: ")
+            view(editor.inlineDisplay)
             styleClass("numerical-control-spec")
             root.centerChildren()
         }

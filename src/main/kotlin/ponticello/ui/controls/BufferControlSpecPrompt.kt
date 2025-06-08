@@ -1,5 +1,8 @@
 package ponticello.ui.controls
 
+import fxutils.prompt.DetailPane
+import javafx.scene.Node
+import javafx.scene.control.CheckBox
 import javafx.scene.control.Spinner
 import ponticello.model.obj.ParameterizedObject
 import ponticello.sc.BufferControlSpec
@@ -7,8 +10,17 @@ import ponticello.sc.BufferControlSpec
 class BufferControlSpecPrompt(
     parameterName: String, parentObject: ParameterizedObject?, title: String,
     initialSpec: BufferControlSpec,
-) : ControlSpecPrompt<BufferControlSpec, Spinner<Int>>(parameterName, parentObject, title) {
-    override val content: Spinner<Int> = Spinner<Int>(1, 12, initialSpec.channels)
+) : ControlSpecPrompt<BufferControlSpec, DetailPane>(parameterName, parentObject, title) {
+    override val content: DetailPane = DetailPane(labelWidth = 100.0)
 
-    override fun makeSpec(): BufferControlSpec = BufferControlSpec(content.value)
+    private val channelsSpinner = Spinner<Int>(1, 12, initialSpec.channels) named "Channels"
+    private val inlineDisplayBox = CheckBox() named "Inline display"
+
+    init {
+        inlineDisplayBox.isSelected = initialSpec.inlineDisplay
+    }
+
+    override fun makeSpec(): BufferControlSpec = BufferControlSpec(channelsSpinner.value, inlineDisplayBox.isSelected)
+
+    private infix fun <N : Node> N.named(name: String): N = also { content.addItem(name, it) }
 }

@@ -83,6 +83,8 @@ data object UGenControlType : ControlType<UGenControl>() {
         view: ScoreObjectView?,
     ): List<ContextualizedAction> = actions.withContext(Pair(namedControl, view))
 
+    override fun toString(): String = "UGen"
+
     private val actions = collectActions<Pair<ParameterControlList.NamedParameterControl, ScoreObjectView?>> {
         addAction("Update") {
             icon(MaterialDesignS.SYNC)

@@ -63,6 +63,8 @@ data object ExprControlType : ControlType<ExprControl>() {
         view: ScoreObjectView?,
     ): List<ContextualizedAction> = actions.withContext(control)
 
+    override fun toString(): String = "Expr"
+
     private val actions = collectActions<ExprControl> {
         addAction("Update") {
             icon(MaterialDesignS.SYNC)
