@@ -1,6 +1,5 @@
 package ponticello.model.project
 
-import kotlinx.serialization.KSerializer
 import kotlinx.serialization.serializer
 import ponticello.model.ScriptObject
 import ponticello.model.ServerOptions
@@ -11,58 +10,48 @@ import ponticello.model.obj.ContextualObject
 import ponticello.model.registry.*
 import ponticello.model.score.Score
 
-data class Component<T>(val name: String, val serializer: KSerializer<T>, val default: () -> T) {
-    var onSave: (T) -> Unit = {}
-        private set
+val UI_STATE = Component<UIState>("ui-state", UIState::default)
 
-    fun onSave(handler: (T) -> Unit): Component<T> {
-        onSave = handler
-        return this
-    }
-}
+val CLOCKS = Component<ClockRegistry>("clocks", ClockRegistry::createDefault)
 
+val METERS = Component<MeterRegistry>("meters", MeterRegistry::createDefault)
 
-inline fun <reified T> component(
-    name: String,
-    noinline default: () -> T,
-    serializer: KSerializer<T> = serializer<T>(),
-) = Component(name, serializer, default)
-
-val UI_STATE = component<UIState>("ui-state", UIState::default)
-
-val CLOCKS = component<ClockRegistry>("clocks", ClockRegistry::createDefault)
-
-val METERS = component<MeterRegistry>("meters", MeterRegistry::createDefault)
-
-val BUSSES = component<BusRegistry>(
+val BUSSES = Component<BusRegistry>(
     "busses", BusRegistry::createDefault,
     ObjectListSerializer(serializer(), ::BusRegistry)
 )
-val BUFFERS = component<BufferRegistry>("buffers", BufferRegistry::createDefault)
-val PATTERNS = component<GlobalPatternRegistry>("patterns", GlobalPatternRegistry::createDefault)
-val SYNTH_DEFS = component<SynthDefRegistry>(
+val BUFFERS = Component<BufferRegistry>("buffers", BufferRegistry::createDefault)
+val PATTERNS = Component(
+    "patterns", GlobalPatternRegistry::createDefault,
+    MultiFileComponentSerializer(::GlobalPatternRegistry, listSerializer = GlobalPatternRegistry.Serializer)
+)
+val SYNTH_DEFS = Component(
     "instruments", SynthDefRegistry::createDefault,
-    ObjectListSerializer(serializer(), ::SynthDefRegistry)
+    MultiFileComponentSerializer(::SynthDefRegistry)
 )
-val PROCESS_DEFS = component<ProcessDefRegistry>(
+val PROCESS_DEFS = Component(
     "processDefs", ProcessDefRegistry::createDefault,
-    ObjectListSerializer(serializer(), ::ProcessDefRegistry)
+    MultiFileComponentSerializer(::ProcessDefRegistry)
 )
-val FLOWS = component<AudioFlows>(
+val FLOWS = Component(
     "flows", AudioFlows::createDefault,
-    ObjectListSerializer(serializer(), ::AudioFlows)
+    MultiFileComponentSerializer(::AudioFlows)
 ).onSave { flows -> flows.writeVSTPluginStates() }
 
-val SERVER_OPTIONS = component<ServerOptions>("server_options", ServerOptions::default)
-val OBJECTS = component<ScoreObjectRegistry>(
+val SERVER_OPTIONS = Component<ServerOptions>("server_options", ServerOptions::default)
+val OBJECTS = Component(
     "objects", ScoreObjectRegistry::createDefault,
-    ObjectListSerializer(serializer(), ::ScoreObjectRegistry)
+    MultiFileComponentSerializer(::ScoreObjectRegistry)
 )
-val LIVE_TASKS = component<LiveTaskRegistry>("live_tasks", LiveTaskRegistry::createDefault)
 
-val SCORE = component<Score>("score", ::Score)
+val LIVE_TASKS = Component(
+    "live_tasks", LiveTaskRegistry::createDefault,
+    MultiFileComponentSerializer(::LiveTaskRegistry, listSerializer = LiveTaskRegistry.Serializer)
+)
 
-val LAUNCHER_GRID = component<LauncherGrid>("launcher_grid", { LauncherGrid.createNByN(4) })
+val SCORE = Component<Score>("score", ::Score)
+
+val LAUNCHER_GRID = Component<LauncherGrid>("launcher_grid", { LauncherGrid.createNByN(4) })
 
 val allComponents = listOf<Component<out ContextualObject>>(
     METERS, CLOCKS,

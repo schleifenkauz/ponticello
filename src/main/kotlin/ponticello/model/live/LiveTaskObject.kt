@@ -3,6 +3,7 @@ package ponticello.model.live
 import hextant.context.Context
 import hextant.serial.EditorRoot
 import kotlinx.serialization.Contextual
+import kotlinx.serialization.Serializable
 import ponticello.model.obj.SuperColliderObject
 import ponticello.sc.client.ScWriter
 import ponticello.sc.client.SuperColliderClient
@@ -10,6 +11,7 @@ import ponticello.sc.client.run
 import ponticello.sc.editor.CodeBlockEditor
 import reaktive.value.now
 
+@Serializable
 class LiveTaskObject(
     val code: EditorRoot<@Contextual CodeBlockEditor>,
 ) : LiveObject(), SuperColliderObject {

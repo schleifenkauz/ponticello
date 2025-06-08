@@ -14,7 +14,7 @@ import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import ponticello.model.obj.AbstractContextualObject
-import ponticello.model.project.component
+import ponticello.model.project.Component
 import ponticello.sc.client.SuperColliderClient
 import ponticello.sc.code
 import ponticello.sc.editor.CodeBlockEditor
@@ -77,7 +77,7 @@ class ScriptObject(val root: EditorRoot<@Contextual CodeBlockEditor>, val type: 
             SERVER_TREE -> "Server Tree"
         }
 
-        val component = component<ScriptObject>(
+        val component = Component(
             name = this.name.lowercase(),
             default = { ScriptObject(EditorRoot<@Contextual CodeBlockEditor>(CodeBlockEditor().defaultState()), this) },
             serializer = Serializer(this)

@@ -3,9 +3,7 @@ package ponticello.model.project
 import bundles.set
 import fxutils.undo.UndoManager
 import hextant.context.Context
-import kotlinx.serialization.json.decodeFromStream
 import ponticello.impl.Logger
-import ponticello.impl.json
 import ponticello.model.flow.AudioFlows
 import ponticello.model.obj.ContextualObject
 import ponticello.model.score.ScoreObject
@@ -66,9 +64,8 @@ class PonticelloProject private constructor(val components: Map<Component<out Co
         val file = dataDir.resolve("${component.name}.json")
         val value = components.getValue(component)
         try {
-            val str = json.encodeToString(component.serializer, value)
-            file.writeText(str)
             component.onSave(value)
+            component.serializer.serializeComponent(value, dataDir)
             return true
         } catch (e: Exception) {
             Logger.error("Error while saving ${component.name} to $file!")
@@ -110,20 +107,9 @@ class PonticelloProject private constructor(val components: Map<Component<out Co
         ): PonticelloProject {
             val data = folder.resolve("data")
             val progressPerComponent = (targetProgress - indicator.progress) / allComponents.size
-            val components = allComponents.associateWith { (name, serializer, default) ->
-                indicator.increaseProgress(progressPerComponent, "Loading $name")
-                val file = data.resolve("$name.json")
-                if (file.isFile) {
-                    val stream = file.inputStream().buffered()
-                    try {
-                        json.decodeFromStream(serializer, stream)
-                    } catch (e: Exception) {
-                        Logger.error("Error while reading component $name from $file!", e)
-                        default()
-                    } finally {
-                        stream.close()
-                    }
-                } else default()
+            val components = allComponents.associateWith { component ->
+                indicator.increaseProgress(progressPerComponent, "Loading ${component.name}")
+                component.serializer.deserializeComponent(data)
             }
             val project = PonticelloProject(components)
             project.projectDirectory = folder
@@ -131,7 +117,7 @@ class PonticelloProject private constructor(val components: Map<Component<out Co
         }
 
         fun create(location: File, context: Context): PonticelloProject {
-            val components = allComponents.associateWith { (_, _, default) -> default() }
+            val components = allComponents.associateWith { component -> component.default() }
             val project = PonticelloProject(components)
             context[projectDirectory] = location
             project.projectDirectory = location
