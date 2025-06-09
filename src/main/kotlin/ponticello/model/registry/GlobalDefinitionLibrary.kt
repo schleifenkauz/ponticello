@@ -5,12 +5,11 @@ import fxutils.prompt.YesNoPrompt
 import javafx.application.Platform
 import javafx.event.Event
 import kotlinx.serialization.KSerializer
-import reaktive.value.now
 import ponticello.impl.Logger
 import ponticello.impl.async
 import ponticello.impl.json
-import ponticello.model.obj.CustomizableSynthDefObject
-import ponticello.model.obj.ProcessDefObject
+import ponticello.model.obj.InstrumentObject
+import reaktive.value.now
 import java.io.File
 
 class GlobalDefinitionLibrary<T: NamedObject>(
@@ -73,7 +72,6 @@ class GlobalDefinitionLibrary<T: NamedObject>(
     }
 
     companion object {
-        val synthDefs = publicProperty<GlobalDefinitionLibrary<CustomizableSynthDefObject>>("synthDefs")
-        val processDefs = publicProperty<GlobalDefinitionLibrary<ProcessDefObject>>("processDefs")
+        val instruments = publicProperty<GlobalDefinitionLibrary<InstrumentObject>>("instruments")
     }
 }

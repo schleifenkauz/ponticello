@@ -1,7 +1,7 @@
 package ponticello.model.player
 
+import ponticello.model.obj.InstrumentObject
 import ponticello.model.obj.ParameterizedObject
-import ponticello.model.obj.ParameterizedObjectDef
 import ponticello.model.registry.NamedObject
 
 sealed class ActiveObject {
@@ -11,6 +11,6 @@ sealed class ActiveObject {
 
     abstract val superColliderName: String
 
-    open val associatedDef: ParameterizedObjectDef?
+    open val associatedDef: InstrumentObject?
         get() = (associatedObject as? ParameterizedObject)?.def
 }

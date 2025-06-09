@@ -2,6 +2,6 @@ package ponticello.model.obj
 
 import ponticello.ui.registry.ParameterDefList
 
-interface ConfigurableParameterizedObjectDef : ParameterizedObjectDef {
+sealed interface ConfigurableInstrumentObject : InstrumentObject {
     override val parameters: ParameterDefList
 }

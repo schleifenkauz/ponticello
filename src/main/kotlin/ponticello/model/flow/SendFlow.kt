@@ -1,12 +1,13 @@
 package ponticello.model.flow
 
 import hextant.context.Context
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import ponticello.impl.*
 import ponticello.model.obj.BusObject
 import ponticello.model.obj.BusReference
-import ponticello.model.obj.ParameterizedObjectDef
+import ponticello.model.obj.InstrumentObject
 import ponticello.model.obj.ReferencedSynthDefObject
 import ponticello.model.registry.BusRegistry
 import ponticello.model.registry.reference
@@ -23,6 +24,7 @@ import reaktive.value.now
 import reaktive.value.reactiveVariable
 
 @Serializable
+@SerialName("SendFlow")
 class SendFlow(
     val sourceRef: ReactiveVariable<BusReference>,
     val targetRef: ReactiveVariable<BusReference>,
@@ -37,7 +39,7 @@ class SendFlow(
         private set
 
     @Transient
-    override val def: ParameterizedObjectDef = ReferencedSynthDefObject.get("send")
+    override val def: InstrumentObject = ReferencedSynthDefObject.get("send")
 
     @Transient
     override lateinit var controls: ParameterControlList

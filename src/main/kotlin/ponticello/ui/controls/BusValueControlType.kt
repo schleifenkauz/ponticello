@@ -10,11 +10,11 @@ import ponticello.impl.asY
 import ponticello.model.obj.ParameterizedObject
 import ponticello.model.project.mainScore
 import ponticello.model.registry.BusRegistry
-import ponticello.model.registry.SynthDefRegistry
+import ponticello.model.registry.InstrumentRegistry
 import ponticello.model.registry.reference
 import ponticello.model.score.ParameterControlList
 import ponticello.model.score.ScoreObject
-import ponticello.model.score.SynthObject
+import ponticello.model.score.SoundProcess
 import ponticello.model.score.controls.BusControl
 import ponticello.model.score.controls.BusValueControl
 import ponticello.model.score.controls.ParameterControl
@@ -66,25 +66,25 @@ data object BusValueControlType : ControlType<BusValueControl>() {
         view: ScoreObjectView?,
     ): List<ContextualizedAction> = listOf(
         ServerActions.scopeBus.withContext(control.bus),
-        automateWithSynth.withContext(namedControl)
+        automateWithProcess.withContext(namedControl)
     )
 
-    private val automateWithSynth = action<ParameterControlList.NamedParameterControl>("Automate with Synth") {
+    private val automateWithProcess = action<ParameterControlList.NamedParameterControl>("Automate with Process") {
         icon(MaterialDesignS.SINE_WAVE)
         applicableIf { ctrl -> ctrl.parentObject is ScoreObject }
         executes { ctrl, ev ->
             val obj = ctrl.parentObject as ScoreObject
             val context = ctrl.context
-            val synthDef = SimpleSearchableRegistryView(context[SynthDefRegistry], "Choose SynthDef")
+            val instrument = SimpleSearchableRegistryView(context[InstrumentRegistry], "Choose Instrument")
                 .showPopup(ev, initialOption = null) ?: return@executes
             val parameter = ctrl.name.now
             val name = "${obj.name.now}_$parameter"
-            val controls = synthDef.getDefaultControls(null)
+            val controls = instrument.getDefaultControls(null)
             val outBus = controls.getOrNull("out")?.now
             if (outBus is BusControl) {
                 outBus.bus.now = (ctrl.now as BusControl).bus.now
             }
-            val synthObj = SynthObject.create(name, synthDef, controls)
+            val synthObj = SoundProcess.create(name, instrument, controls)
             synthObj.setInitialSize(obj.duration, height = 0.05.asY)
             context.compoundEdit("Add automation synth") {
                 for (inst in context[PonticelloLauncher.currentProject].mainScore.instancesOf(obj).toList()) {

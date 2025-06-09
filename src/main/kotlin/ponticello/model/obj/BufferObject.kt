@@ -5,7 +5,7 @@ import ponticello.impl.Decimal
 import ponticello.impl.asY
 import ponticello.model.registry.ScoreObjectRegistry
 import ponticello.model.registry.reference
-import ponticello.model.score.SynthObject
+import ponticello.model.score.SoundProcess
 import ponticello.model.score.controls.BufferControl
 import ponticello.sc.BufferControlSpec
 import ponticello.sc.ControlSpec
@@ -20,13 +20,13 @@ sealed class BufferObject : AbstractSuperColliderObject() {
 
     abstract fun duration(): ReactiveValue<Decimal>
 
-    fun createSynthObject(synthDef: SynthDefObject): SynthObject? {
+    fun createSynthObject(synthDef: InstrumentObject): SoundProcess? {
         val controls = synthDef.getDefaultControls(null)
         val buf = controls.getOrNull("buf") ?: return null
         val control = buf.now as BufferControl
         control.sample.now = reference()
         val name = context[ScoreObjectRegistry].availableName(name.now)
-        val obj = SynthObject.create(name, synthDef, controls)
+        val obj = SoundProcess.create(name, synthDef, controls)
         obj.setInitialSize(duration().now, 0.02.asY)
         return obj
     }

@@ -188,8 +188,8 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
     }
 
     private fun createPlayBufObject(buffer: BufferObject, position: ObjectPosition, ev: Event?) {
-        val synthDef = context[currentProject][UI_STATE].getOrSelectSynthDef(ev) ?: return
-        val obj = buffer.createSynthObject(synthDef) ?: return
+        val instrument = context[currentProject][UI_STATE].getOrSelectInstrument(ev) ?: return
+        val obj = buffer.createSynthObject(instrument) ?: return
         val inst = ScoreObjectInstance(obj, position)
         context.compoundEdit("Add sample to score") {
             score.addObject(inst, autoSelect = true)
@@ -371,9 +371,8 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
             setOf(Alt) -> {
                 selector.deselectAll()
                 if (containedViews.isEmpty()) {
-                    val availableOptions = context[SynthDefRegistry].map(NewObjectOption::Synth) +
-                            context[ProcessDefRegistry].map(NewObjectOption::Process) +
-                            context[SynthDefRegistry].map(NewObjectOption::MIDI) +
+                    val availableOptions = context[InstrumentRegistry].map(NewObjectOption::Process) +
+                            context[InstrumentRegistry].map(NewObjectOption::MIDI) +
                             context[MeterRegistry].map(NewObjectOption::TempoGrid) +
                             listOf(NewObjectOption.Group, NewObjectOption.NewTempoGrid)
                     val popup = SimpleSearchableListView(availableOptions, "Add score object")
@@ -416,18 +415,11 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
 
     private fun createNewObject(option: NewObjectOption, ev: Event?): ScoreObject? {
         return when (option) {
-            is NewObjectOption.Synth -> {
-                val defaultBus = associatedObject?.defaultBusRef?.now?.get()
-                val anchor = ev.popupAnchor()
-                val controls = getInitialControls(option.def, context, defaultBus, anchor) ?: return null
-                SynthObject(reactiveVariable(option.def.reference()), controls)
-            }
-
             is NewObjectOption.Process -> {
                 val defaultBus = associatedObject?.defaultBusRef?.now?.get()
                 val anchor = ev.popupAnchor()
                 val controls = getInitialControls(option.def, context, defaultBus, anchor) ?: return null
-                ProcessObject(reactiveVariable(option.def.reference()), controls)
+                SoundProcess(reactiveVariable(option.def.reference()), controls)
             }
 
             is NewObjectOption.MIDI -> throw AssertionError("Handled before")
@@ -445,8 +437,12 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
 
     private sealed class NewObjectOption {
         override fun toString() = when (this) {
-            is Synth -> "Synth: ${def.name.now}"
-            is Process -> "Process: ${def.name.now}"
+            is Process -> when (def) {
+                is SynthDefObject -> "Synth: ${def.name.now}"
+                is ProcessDefObject -> "Process: ${def.name.now}"
+                else -> throw AssertionError()
+            }
+
             is MIDI -> "MIDI: ${def.name.now}"
             is Group -> "Group"
             is TempoGrid -> "Tempo grid: ${meter.name.now}"
@@ -454,7 +450,6 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
         }
 
         fun defaultName(registry: ScoreObjectRegistry): String = when (this) {
-            is Synth -> registry.availableName(def.name.now)
             is MIDI -> registry.availableName("${def.name.now}_midi")
             is Process -> registry.availableName(def.name.now)
             is TempoGrid -> registry.availableName(meter.name.now)
@@ -462,9 +457,8 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
             Group -> registry.availableName("group")
         }
 
-        class Synth(val def: SynthDefObject) : NewObjectOption()
-        class Process(val def: ProcessDefObject) : NewObjectOption()
-        class MIDI(val def: SynthDefObject) : NewObjectOption()
+        class Process(val def: InstrumentObject) : NewObjectOption()
+        class MIDI(val def: InstrumentObject) : NewObjectOption()
         class TempoGrid(val meter: MeterObject) : NewObjectOption()
         object Group : NewObjectOption()
         object NewTempoGrid : NewObjectOption()
@@ -480,7 +474,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
 
     private fun viewsInside(bounds: Bounds) = views.values.filter { v -> bounds.contains(v.boundsInParent) }
 
-    private fun createMidiObject(instr: SynthDefObject, anchor: Point2D): MidiObject? {
+    private fun createMidiObject(instr: InstrumentObject, anchor: Point2D): MidiObject? {
         return compoundPrompt("Configure new object") {
             val defaultName = context[ScoreObjectRegistry].availableName("piano_roll")
             val nameField = TextField(defaultName) named "Object name"
@@ -533,9 +527,8 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
         val CURRENT_ROOT = publicProperty<ScorePane>("CurrentRootScorePane")
 
         fun createObjectView(obj: ScoreObject, instance: ScoreObjectInstance): ScoreObjectView = when (obj) {
-            is SynthObject -> SynthObjectView(obj, instance)
+            is SoundProcess -> SoundProcessView(obj, instance)
             is TaskObject -> TaskObjectView(obj, instance)
-            is ProcessObject -> ProcessObjectView(obj, instance)
             is MemoObject -> MemoObjectView(obj, instance)
             is ScoreObjectGroup -> ScoreObjectGroupView(obj, instance)
             is MidiObject -> PianoRollObjectView(obj, instance)
@@ -546,7 +539,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
         private const val DRAG_THRESH = 5.0
 
         fun getInitialControls(
-            def: ParameterizedObjectDef, context: Context, defaultBus: BusObject?, anchor: Point2D?,
+            def: InstrumentObject, context: Context, defaultBus: BusObject?, anchor: Point2D?,
         ): ParameterControlList? {
             val map = mutableMapOf<String, ParameterControl>()
             for (param in def.parameters) {

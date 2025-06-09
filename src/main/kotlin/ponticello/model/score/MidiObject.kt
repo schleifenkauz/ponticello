@@ -16,9 +16,9 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import ponticello.impl.*
 import ponticello.model.flow.NodePlacement
-import ponticello.model.obj.NoSynthDef
+import ponticello.model.obj.InstrumentReference
+import ponticello.model.obj.NoInstrument
 import ponticello.model.obj.ParameterDefObject
-import ponticello.model.obj.SynthDefReference
 import ponticello.model.score.controls.ParameterControl
 import ponticello.sc.code
 import ponticello.sc.editor.*
@@ -28,7 +28,7 @@ import reaktive.value.now
 
 @Serializable
 class MidiObject(
-    @SerialName("instrument") private val mInstrument: ReactiveVariable<SynthDefReference>,
+    @SerialName("instrument") private val mInstrument: ReactiveVariable<InstrumentReference>,
     @SerialName("lowestPitch") private var mLowestPitch: Int,
     @SerialName("highestPitch") private var mHighestPitch: Int,
     val eventDictionary: EditorRoot<@Contextual EventDictionaryEditor>,
@@ -38,10 +38,10 @@ class MidiObject(
         get() = "piano-roll"
 
     @Transient
-    lateinit var instrumentSelector: SynthDefSelector
+    lateinit var instrumentSelector: InstrumentSelector
         private set
 
-    private val instrument get() = mInstrument.now.get() ?: NoSynthDef()
+    private val instrument get() = mInstrument.now.get() ?: NoInstrument()
 
     var lowestPitch
         get() = mLowestPitch
@@ -65,7 +65,7 @@ class MidiObject(
     override fun initialize(context: Context) {
         if (initialized) return
         super.initialize(context)
-        instrumentSelector = SynthDefSelector()
+        instrumentSelector = InstrumentSelector()
         instrumentSelector.syncWith(mInstrument)
         instrumentSelector.initialize(context)
         eventDictionary.initialize(context)

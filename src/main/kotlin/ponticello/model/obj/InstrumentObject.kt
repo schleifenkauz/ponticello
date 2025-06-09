@@ -1,8 +1,10 @@
 package ponticello.model.obj
 
 import hextant.context.Context
+import javafx.scene.input.DataFormat
+import javafx.scene.paint.Color
+import kotlinx.serialization.Serializable
 import ponticello.model.registry.BusRegistry
-import ponticello.model.registry.NamedObject
 import ponticello.model.registry.reference
 import ponticello.model.score.ParameterControlList
 import ponticello.model.score.ScoreObjectGroup
@@ -16,8 +18,11 @@ import reaktive.value.ReactiveVariable
 import reaktive.value.now
 import reaktive.value.reactiveVariable
 
-interface ParameterizedObjectDef : NamedObject {
+@Serializable
+sealed interface InstrumentObject : SuperColliderObject {
     val parameters: ParameterDefList
+
+    val color: ReactiveVariable<Color>
 
     fun allParameters(): List<ParameterDefObject> = parameters
 
@@ -47,5 +52,11 @@ interface ParameterizedObjectDef : NamedObject {
         return ParameterControlList.from(controls)
     }
 
-    fun sync()
+    override fun sync()
+
+    fun onUpdated()
+
+    companion object {
+        val DATA_FORMAT = DataFormat("ponticello:instrument")
+    }
 }

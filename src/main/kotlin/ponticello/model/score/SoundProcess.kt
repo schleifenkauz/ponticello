@@ -1,46 +1,70 @@
+@file:OptIn(ExperimentalSerializationApi::class)
+
 package ponticello.model.score
 
 import fxutils.Direction
 import hextant.context.Context
 import javafx.geometry.HorizontalDirection
 import javafx.geometry.HorizontalDirection.RIGHT
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
+import kotlinx.serialization.json.JsonNames
 import ponticello.impl.*
+import ponticello.model.Settings
 import ponticello.model.flow.NodePlacement
 import ponticello.model.obj.*
+import ponticello.model.player.ActiveObjectsManager
+import ponticello.model.player.ActiveScoreObject
+import ponticello.model.player.LiveSynthUpdater
+import ponticello.model.player.ScorePlayer
 import ponticello.model.registry.reference
 import ponticello.model.score.controls.*
 import ponticello.sc.BufferPositionControlSpec
+import ponticello.sc.ControlSpec
 import ponticello.sc.NumericalControlSpec
-import ponticello.sc.editor.SynthDefSelector
+import ponticello.sc.client.SuperColliderClient
+import ponticello.sc.client.run
+import ponticello.sc.editor.InstrumentSelector
+import ponticello.ui.misc.LFOsManager
 import reaktive.value.ReactiveValue
 import reaktive.value.ReactiveVariable
 import reaktive.value.now
 import reaktive.value.reactiveVariable
 
 @Serializable
-class SynthObject(
-    @SerialName("synthDef") private val synthDefRef: ReactiveVariable<SynthDefReference>,
+@SerialName("SoundProcess")
+class SoundProcess(
+    @JsonNames("synthDef", "processDef", "instrument") private val instrumentRef: ReactiveVariable<InstrumentReference>,
     override val controls: ParameterControlList,
-) : ParameterizedScoreObject() {
+): ScoreObject(), ParameterizedObject {
+    @Transient
+    private lateinit var controlListener: LiveSynthUpdater
+
+    @Transient
+    lateinit var lfosManager: LFOsManager
+        private set
+
+    override val associatedControls: Map<String, ParameterControl>
+        get() = controls.controlMap
+
     override val type: String
         get() = "synth"
 
     override val superColliderPrefix: String get() = "~synth_"
 
     @Transient
-    lateinit var synthDefSelector: SynthDefSelector
+    lateinit var instrumentSelector: InstrumentSelector
         private set
 
     @Transient
     private var playBufRateBeforeResize = zero
 
-    val synthDef: SynthDefObject get() = synthDefRef.now.get() ?: NoSynthDef()
+    val instrument: InstrumentObject get() = instrumentRef.now.get() ?: NoInstrument()
 
-    override val def: ParameterizedObjectDef
-        get() = synthDef
+    override val def: InstrumentObject
+        get() = instrument
 
     override fun validate(): Boolean = controls.validate()
 
@@ -56,12 +80,53 @@ class SynthObject(
     val playBufRate: ReactiveVariable<Decimal>?
         get() = (controls.controlMap["rate"] as? ValueControl)?.value?.takeIf { bufferControl != null }
 
-    override fun doClone(): ScoreObject = SynthObject(
-        synthDefRef.copy(), controls = controls.copy()
+    override fun activeObjects(): List<ActiveScoreObject> = context[ActiveObjectsManager].activeInstances(this)
+
+    override fun duration(): ReactiveValue<Decimal> = super<ScoreObject>.duration()
+
+    override fun getSpec(parameter: String): ControlSpec? = super<ParameterizedObject>.getSpec(parameter)
+
+    private fun initializeControls() {
+        controls.initialize(context, this)
+        controlListener = LiveSynthUpdater(this)
+        lfosManager = LFOsManager()
+    }
+
+    override fun onLoadedIntoRegistry() {
+        super<ScoreObject>.onLoadedIntoRegistry()
+        controlListener.startListening()
+        controls.addListener(lfosManager)
+    }
+
+    override fun onRemoved() {
+        super<ScoreObject>.onRemoved()
+        controlListener.stopListening()
+        controls.removeListener(lfosManager)
+    }
+
+    override fun rename(newName: String) {
+        ScorePlayer.execute {
+            context[SuperColliderClient].run {
+                activeObjects().forEach { active ->
+                    val old = ActiveObjectsManager.uniqueName(name.now, active.suffix)
+                    val new = ActiveObjectsManager.uniqueName(newName, active.suffix)
+                    +"${ParameterControl.auxilBusesVar(new)} = ${ParameterControl.auxilBusesVar(old)}"
+                    +"${ParameterControl.auxilBusesVar(old)} = nil"
+                    +"${ParameterControl.auxilSynthsVar(new)} = ${ParameterControl.auxilSynthsVar(old)}"
+                    +"${ParameterControl.auxilSynthsVar(old)} = nil"
+                    appendLine()
+                }
+            }
+        }
+        super.rename(newName)
+    }
+
+    override fun doClone(): ScoreObject = SoundProcess(
+        instrumentRef.copy(), controls = controls.copy()
     )
 
-    override fun doCut(position: Decimal, whichHalf: HorizontalDirection): ScoreObject = SynthObject(
-        synthDefRef.copy(), controls = cutEnvelopes(whichHalf, position)
+    override fun doCut(position: Decimal, whichHalf: HorizontalDirection): ScoreObject = SoundProcess(
+        instrumentRef.copy(), controls = cutEnvelopes(whichHalf, position)
     )
 
     private fun cutEnvelopes(
@@ -131,9 +196,9 @@ class SynthObject(
     override fun initialize(context: Context) {
         if (initialized) return
         super.initialize(context)
-        synthDefSelector = SynthDefSelector()
-        synthDefSelector.syncWith(synthDefRef)
-        synthDefSelector.initialize(context)
+        instrumentSelector = InstrumentSelector()
+        instrumentSelector.syncWith(instrumentRef)
+        instrumentSelector.initialize(context)
         initializeControls()
     }
 
@@ -141,13 +206,30 @@ class SynthObject(
         uniqueName: String, placement: NodePlacement?,
         cutoff: Decimal, latency: Decimal, extraArguments: Map<ParameterDefObject, ParameterControl>,
     ): String = writeCode {
-        writeSynthCode(this@SynthObject, uniqueName, cutoff, placement!!, latency, extraArguments, run = true)
+        when (instrument) {
+            is SynthDefObject -> {
+                writeSynthCode(
+                    this@SoundProcess, uniqueName, cutoff, placement!!,
+                    latency, extraArguments, run = true
+                )
+            }
+
+            is ProcessDefObject -> {
+                writeProcessCode(
+                    this@SoundProcess, uniqueName,
+                    cutoff, context[Settings].serverLatency.get(),
+                    extraArguments
+                )
+            }
+
+            is NoInstrument -> Logger.error("$this has no instrument assigned")
+        }
     }
 
     companion object {
         fun create(
-            name: String, def: SynthDefObject,
+            name: String, def: InstrumentObject,
             controls: ParameterControlList = ParameterControlList.empty(),
-        ): SynthObject = SynthObject(reactiveVariable(def.reference()), controls).withName(name)
+        ): SoundProcess = SoundProcess(reactiveVariable(def.reference()), controls).withName(name)
     }
 }

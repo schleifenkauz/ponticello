@@ -6,7 +6,7 @@ import fxutils.prompt.Prompt
 import javafx.beans.binding.BooleanBinding
 import javafx.scene.Node
 import javafx.scene.control.Button
-import ponticello.model.obj.ConfigurableParameterizedObjectDef
+import ponticello.model.obj.ConfigurableInstrumentObject
 import ponticello.model.obj.ParameterDefObject
 import ponticello.model.obj.ParameterizedObject
 import ponticello.sc.*
@@ -44,7 +44,7 @@ abstract class ControlSpecPrompt<S : ControlSpec, N : Node>(
     private fun confirmAndAdd() {
         val spec = confirm()
         val param = ParameterDefObject(parameterName, spec)
-        val def = parentObject!!.def as ConfigurableParameterizedObjectDef
+        val def = parentObject!!.def as ConfigurableInstrumentObject
         def.parameters.add(param)
         commit(spec)
     }
@@ -58,7 +58,7 @@ abstract class ControlSpecPrompt<S : ControlSpec, N : Node>(
 
     override fun extraButtons(): List<Button> = when {
         parentObject == null -> emptyList()
-        parentObject.def !is ConfigurableParameterizedObjectDef -> emptyList()
+        parentObject.def !is ConfigurableInstrumentObject -> emptyList()
         parentObject.def.hasParameter(parameterName) -> listOf(confirmAndSyncBtn, resetBtn)
         else -> listOf(confirmAndAddBtn)
     }

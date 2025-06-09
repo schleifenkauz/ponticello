@@ -10,6 +10,7 @@ import ponticello.model.score.controls.ParameterControl
 import ponticello.ui.score.MemoObjectView
 
 @Serializable
+@SerialName("Memo")
 class MemoObject(
     @SerialName("text") private var _text: String,
 ) : ScoreObject() {

@@ -1,31 +1,26 @@
 package ponticello.model.obj
 
-import javafx.scene.input.DataFormat
-import javafx.scene.paint.Color
 import kotlinx.serialization.Serializable
-import reaktive.value.ReactiveVariable
-import reaktive.value.now
 import ponticello.impl.zero
 import ponticello.model.flow.NodePlacement
 import ponticello.model.player.ActiveAudioFlow
 import ponticello.model.player.ActiveObjectsManager
 import ponticello.model.player.ActiveScoreObject
 import ponticello.model.player.ScorePlayer
+import ponticello.model.registry.InstrumentRegistry
 import ponticello.model.registry.ObjectRegistry
-import ponticello.model.registry.SynthDefRegistry
 import ponticello.sc.client.SuperColliderClient
+import reaktive.value.now
 
 @Serializable
-sealed interface SynthDefObject : ParameterizedObjectDef, SuperColliderObject {
-    val color: ReactiveVariable<Color>
-
+sealed interface SynthDefObject : InstrumentObject, SuperColliderObject {
     override val registry: ObjectRegistry<*>?
-        get() = context[SynthDefRegistry]
+        get() = context[InstrumentRegistry]
 
     override val superColliderName: String
         get() = "\\${name.now}"
 
-    fun onUpdated() {
+    override fun onUpdated() {
         ScorePlayer.execute {
             context[ActiveObjectsManager].forEach { active ->
                 val def = active.associatedDef
@@ -41,9 +36,5 @@ sealed interface SynthDefObject : ParameterizedObjectDef, SuperColliderObject {
                 context[SuperColliderClient].run(code)
             }
         }
-    }
-
-    companion object {
-        val DATA_FORMAT = DataFormat("synth-def")
     }
 }

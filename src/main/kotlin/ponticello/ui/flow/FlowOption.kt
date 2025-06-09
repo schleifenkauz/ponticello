@@ -3,10 +3,9 @@ package ponticello.ui.flow
 import hextant.context.Context
 import javafx.geometry.Point2D
 import ponticello.model.flow.*
-import ponticello.model.obj.ProcessDefObject
-import ponticello.model.obj.SynthDefObject
+import ponticello.model.obj.InstrumentObject
 import ponticello.model.registry.BusRegistry
-import ponticello.model.registry.SynthDefRegistry
+import ponticello.model.registry.InstrumentRegistry
 import ponticello.sc.Identifier
 import ponticello.ui.registry.SearchableBusListView
 import ponticello.ui.score.ScorePane
@@ -67,24 +66,13 @@ sealed interface FlowOption {
         override fun defaultName(): String = Identifier.truncate(pluginName)
     }
 
-    data class Synth(val def: SynthDefObject) : FlowOption {
-        override fun createFlow(context: Context, anchor: Point2D): SynthFlow? {
+    data class Instrument(val def: InstrumentObject) : FlowOption {
+        override fun createFlow(context: Context, anchor: Point2D): InstrumentFlow? {
             val controls = ScorePane.getInitialControls(def, context, defaultBus = null, anchor) ?: return null
-            return SynthFlow.create(def, controls)
+            return InstrumentFlow.create(def, controls)
         }
 
         override fun toString(): String = "Synth ${def.name.now}"
-
-        override fun defaultName(): String = def.name.now
-    }
-
-    data class Process(val def: ProcessDefObject): FlowOption {
-        override fun createFlow(context: Context, anchor: Point2D): ProcessFlow? {
-            val controls = ScorePane.getInitialControls(def, context, defaultBus = null, anchor) ?: return null
-            return ProcessFlow.create(def, controls)
-        }
-
-        override fun toString(): String = "Process ${def.name.now}"
 
         override fun defaultName(): String = def.name.now
     }
@@ -94,7 +82,7 @@ sealed interface FlowOption {
 
         fun getOptions(context: Context): List<FlowOption> {
             val vstOptions = VSTPluginFlow.availablePlugins(context).map(::VSTPlugin)
-            val synthOptions = context[SynthDefRegistry].map(::Synth)
+            val synthOptions = context[InstrumentRegistry].map(::Instrument)
             return simpleOptions + synthOptions + vstOptions
         }
     }

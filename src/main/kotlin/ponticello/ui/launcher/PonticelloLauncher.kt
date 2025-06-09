@@ -24,7 +24,10 @@ import ponticello.model.ScriptObject
 import ponticello.model.ServerOptions
 import ponticello.model.Settings
 import ponticello.model.flow.NodeTree
-import ponticello.model.player.*
+import ponticello.model.player.ActiveObjectsManager
+import ponticello.model.player.Recorder
+import ponticello.model.player.ScoreObjectScheduler
+import ponticello.model.player.ScorePlayer
 import ponticello.model.project.PonticelloProject
 import ponticello.model.project.PonticelloProject.Companion.projectDirectory
 import ponticello.model.project.SERVER_OPTIONS
@@ -53,15 +56,9 @@ class PonticelloLauncher {
         set(Settings, files.loadSettings())
         get(Settings).initialize(this)
         set(
-            GlobalDefinitionLibrary.synthDefs, GlobalDefinitionLibrary(
-                files.resolve("synth-def-lib"),
-                serializer(), objectType = "SynthDef"
-            )
-        )
-        set(
-            GlobalDefinitionLibrary.processDefs, GlobalDefinitionLibrary(
-                files.resolve("process-def-lib"),
-                serializer(), objectType = "ProcessDef"
+            GlobalDefinitionLibrary.instruments, GlobalDefinitionLibrary(
+                files.resolve("global-instruments"),
+                serializer(), objectType = "Instrument"
             )
         )
         registerImplementationsFromClasspath()
@@ -251,7 +248,6 @@ class PonticelloLauncher {
                     try {
                         context[SuperColliderClient] = client
                         context[ActiveObjectsManager] = ActiveObjectsManager(context)
-                        context[AuxilSynthDefManager] = AuxilSynthDefManager()
                         client.addListener(context[ActiveObjectsManager])
                         context[NodeTree] = NodeTree(client)
                         context[ScoreObjectScheduler] = ScoreObjectScheduler(context)

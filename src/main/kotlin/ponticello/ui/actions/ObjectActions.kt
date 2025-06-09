@@ -16,7 +16,7 @@ import ponticello.impl.Logger
 import ponticello.impl.copy
 import ponticello.impl.times
 import ponticello.impl.zero
-import ponticello.model.obj.NoSynthDef
+import ponticello.model.obj.NoInstrument
 import ponticello.model.project.InlineControlsDisplay
 import ponticello.model.project.UIState
 import ponticello.model.registry.ScoreObjectRegistry
@@ -26,12 +26,7 @@ import ponticello.ui.impl.showDialog
 import ponticello.ui.launcher.DetailPaneManager
 import ponticello.ui.launcher.PonticelloMainActivity
 import ponticello.ui.score.*
-import reaktive.value.binding.Binding
-import reaktive.value.binding.and
-import reaktive.value.binding.flatMap
-import reaktive.value.binding.map
-import reaktive.value.binding.notEqualTo
-import reaktive.value.now
+import reaktive.value.binding.*
 import reaktive.value.reactiveValue
 import reaktive.value.toggle
 
@@ -162,9 +157,9 @@ object ObjectActions {
         addObjectAction("Reverse object") {
             shortcut("Alt?+R")
             icon(Material2AL.FLIP)
-            applicableOn { view -> view is SynthObjectView }
+            applicableOn { view -> view is SoundProcessView }
             executeSingle { view, ev ->
-                view as SynthObjectView
+                view as SoundProcessView
                 if (!ev.isTargetTextInput || ev.isAltDown()) {
                     view.obj.reverse()
                 }
@@ -172,25 +167,17 @@ object ObjectActions {
         }
         addObjectAction("View definition") {
             shortcut("Alt?+I")
-            applicableOn { v -> v is SynthObjectView || v is ProcessObjectView }
+            applicableOn { v -> v is SoundProcessView }
             executeSingle { view, ev ->
                 if (!ev.isTargetTextInput || ev.isAltDown()) {
+                    view as SoundProcessView
                     val mainScreen = view.context[PonticelloMainActivity]
-                    if (view is SynthObjectView) {
-                        val def = view.obj.synthDef
-                        if (def is NoSynthDef) {
-                            Logger.warn("Instrument is not resolved", Logger.Category.Score)
-                            return@executeSingle
-                        }
-                        mainScreen.synthDefsPane().listView.showContent(def)
-                    } else if (view is ProcessObjectView) {
-                        if (view.obj.processDefRef.now.isResolved.now) {
-                            val obj = view.obj.processDef
-                            mainScreen.processDefsPane().listView.showContent(obj)
-                        } else {
-                            Logger.warn("ProcessDef is not resolved", Logger.Category.Score)
-                        }
+                    val def = view.obj.instrument
+                    if (def is NoInstrument) {
+                        Logger.warn("Instrument is not resolved", Logger.Category.Score)
+                        return@executeSingle
                     }
+                    mainScreen.instrumentsPane().listView.showContent(def)
                 }
             }
         }

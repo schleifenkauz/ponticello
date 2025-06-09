@@ -1,13 +1,14 @@
 package ponticello.model.flow
 
 import hextant.context.Context
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import ponticello.impl.*
 import ponticello.model.Settings
 import ponticello.model.obj.BusObject
 import ponticello.model.obj.BusReference
-import ponticello.model.obj.ParameterizedObjectDef
+import ponticello.model.obj.InstrumentObject
 import ponticello.model.obj.ReferencedSynthDefObject
 import ponticello.model.registry.reference
 import ponticello.model.score.ParameterControlList
@@ -19,13 +20,14 @@ import reaktive.value.*
 import reaktive.value.binding.flatMap
 
 @Serializable
+@SerialName("UtilityFlow")
 class UtilityFlow(
     private val targetRef: ReactiveVariable<BusReference>,
     private val volumeDb: ReactiveVariable<Decimal> = reactiveVariable(zero),
     private val muted: ReactiveVariable<Boolean> = reactiveVariable(false),
 ) : ParameterizedAudioFlow() {
     @Transient
-    override val def: ParameterizedObjectDef = ReferencedSynthDefObject.get("utility")
+    override val def: InstrumentObject = ReferencedSynthDefObject.get("utility")
 
     @Transient
     private val actualVolume = reactiveVariable(volumeDb.now)

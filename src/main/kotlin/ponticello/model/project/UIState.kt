@@ -7,9 +7,9 @@ import hextant.context.Context
 import javafx.event.Event
 import kotlinx.serialization.Serializable
 import ponticello.model.obj.AbstractContextualObject
-import ponticello.model.obj.SynthDefObject
-import ponticello.model.obj.SynthDefReference
-import ponticello.model.registry.SynthDefRegistry
+import ponticello.model.obj.InstrumentObject
+import ponticello.model.obj.InstrumentReference
+import ponticello.model.registry.InstrumentRegistry
 import ponticello.model.registry.reference
 import ponticello.model.score.TimeUnit
 import ponticello.ui.registry.SimpleSearchableRegistryView
@@ -21,7 +21,7 @@ import reaktive.value.reactiveVariable
 class UIState private constructor(
     val snapEnabled: ReactiveVariable<Boolean> = reactiveVariable(false),
     val snapOption: ReactiveVariable<TimeUnit> = reactiveVariable(TimeUnit.Seconds),
-    val selectedSynthDef: ReactiveVariable<SynthDefReference?> = reactiveVariable(null),
+    val selectedInstrument: ReactiveVariable<InstrumentReference?> = reactiveVariable(null),
     val askForCloneNames: ReactiveVariable<Boolean> = reactiveVariable(false),
     val askForGroupNames: ReactiveVariable<Boolean> = reactiveVariable(false),
     val controlsDisplay: ReactiveVariable<InlineControlsDisplay> = reactiveVariable(InlineControlsDisplay.NONE),
@@ -29,18 +29,18 @@ class UIState private constructor(
 ) : AbstractContextualObject() {
     override fun initialize(context: Context) {
         super.initialize(context)
-        selectedSynthDef.now?.resolve(context[SynthDefRegistry])
+        selectedInstrument.now?.resolve(context[InstrumentRegistry])
         context[UIState] = this
     }
 
-    fun getOrSelectSynthDef(event: Event?): SynthDefObject? =
-        selectedSynthDef.get()?.get() ?: selectSynthDef(event)
+    fun getOrSelectInstrument(event: Event?): InstrumentObject? =
+        selectedInstrument.get()?.get() ?: selectInstrument(event)
 
-    fun selectSynthDef(event: Event?): SynthDefObject? {
-        val synthDef = SimpleSearchableRegistryView(context[SynthDefRegistry], "Select instrument")
+    fun selectInstrument(event: Event?): InstrumentObject? {
+        val instrument = SimpleSearchableRegistryView(context[InstrumentRegistry], "Select instrument")
             .showPopup(event) ?: return null
-        selectedSynthDef.now = synthDef.reference()
-        return synthDef
+        selectedInstrument.now = instrument.reference()
+        return instrument
     }
 
     fun getWindowState(reference: WindowState.Reference, default: (WindowState.Reference) -> WindowState): WindowState {

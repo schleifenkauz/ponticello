@@ -1,6 +1,7 @@
 package ponticello.model.flow
 
 import hextant.context.Context
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import ponticello.impl.copy
@@ -25,6 +26,7 @@ import java.io.File
 import java.util.concurrent.CompletableFuture
 
 @Serializable
+@SerialName("VSTPluginFlow")
 class VSTPluginFlow private constructor(
     private val pluginName: String,
     private val busRef: ReactiveVariable<BusReference>,

@@ -14,7 +14,7 @@ import ponticello.impl.ColorSerializer
 import ponticello.impl.Logger
 import ponticello.impl.copy
 import ponticello.impl.randomColor
-import ponticello.model.registry.SynthDefRegistry
+import ponticello.model.registry.InstrumentRegistry
 import ponticello.model.score.controls.AttackReleaseControl
 import ponticello.sc.*
 import ponticello.sc.client.ScWriter
@@ -31,7 +31,7 @@ class CustomizableSynthDefObject(
     override val parameters: ParameterDefList,
     override val color: ReactiveVariable<@Serializable(with = ColorSerializer::class) Color> = reactiveVariable(Color.WHITE),
     val ugenGraph: EditorRoot<@Contextual CodeBlockEditor>? = null,
-) : SynthDefObject, AbstractRenamableObject(), ConfigurableParameterizedObjectDef {
+) : SynthDefObject, AbstractRenamableObject(), ConfigurableInstrumentObject {
     override val canCopy: Boolean
         get() = true
 
@@ -105,7 +105,7 @@ class CustomizableSynthDefObject(
         ugenGraph?.initialize(myContext)
     }
 
-    override fun canRenameTo(newName: String): Boolean = !context[SynthDefRegistry].has(newName)
+    override fun canRenameTo(newName: String): Boolean = !context[InstrumentRegistry].has(newName)
 
     override fun rename(newName: String) {
         onRemoved()

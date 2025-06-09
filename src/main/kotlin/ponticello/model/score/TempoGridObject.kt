@@ -1,6 +1,7 @@
 package ponticello.model.score
 
 import hextant.context.Context
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import ponticello.impl.Decimal
@@ -17,6 +18,7 @@ import reaktive.value.now
 import reaktive.value.reactiveVariable
 
 @Serializable
+@SerialName("TempoGrid")
 class TempoGridObject(
     val meter: MeterReference,
     val firstBar: ReactiveVariable<Int> = reactiveVariable(0),

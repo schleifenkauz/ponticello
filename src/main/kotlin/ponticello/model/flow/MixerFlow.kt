@@ -2,6 +2,7 @@ package ponticello.model.flow
 
 import hextant.context.Context
 import kotlinx.serialization.Contextual
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import ponticello.impl.*
@@ -27,6 +28,7 @@ import reaktive.value.now
 import reaktive.value.reactiveVariable
 
 @Serializable
+@SerialName("MixerFlow")
 class MixerFlow(
     val targetBus: ReactiveVariable<BusReference>,
     val components: MixerComponentList,

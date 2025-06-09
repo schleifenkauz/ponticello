@@ -5,7 +5,6 @@ import fxutils.actions.isShiftDown
 import fxutils.prompt.SimpleSearchableListView
 import fxutils.prompt.SimpleTextPrompt
 import javafx.scene.layout.Region
-import org.kordamp.ikonli.codicons.Codicons
 import org.kordamp.ikonli.material2.Material2AL
 import org.kordamp.ikonli.materialdesign2.*
 import ponticello.impl.Logger
@@ -72,12 +71,7 @@ object ToolWindowActions : Action.Collector<PonticelloMainActivity>({
     addAction("Show SynthDefs") {
         icon(MaterialDesignS.SINE_WAVE)
         shortcut("Ctrl+I")
-        executes { activity -> activity.synthDefsWindow.showOrBringToFront() }
-    }
-    addAction("Show ProcessDefs") {
-        shortcut("Ctrl+P")
-        icon(Codicons.SERVER_PROCESS)
-        executes { activity -> activity.processDefsWindow.showOrBringToFront() }
+        executes { activity -> activity.instrumentsWindow.showOrBringToFront() }
     }
     addAction("Show audio flows") {
         shortcut("Ctrl+Shift+F")

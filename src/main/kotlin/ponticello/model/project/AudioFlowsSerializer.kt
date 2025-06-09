@@ -48,7 +48,7 @@ object AudioFlowsSerializer : SingleFileComponentSerializer<AudioFlows>(
             try {
                 val validFiles = group.flows.map { flow -> "${flow.name.now}.json" }.toSet()
                 flowsDir.listFiles()?.forEach { file ->
-                    if (file.isFile && !validFiles.contains(file.name)) {
+                    if (file.isFile && file.extension == "json" && !validFiles.contains(file.name)) {
                         file.delete()
                     }
                 }
@@ -65,7 +65,7 @@ object AudioFlowsSerializer : SingleFileComponentSerializer<AudioFlows>(
                 if (file.isDirectory && !validGroupDirs.contains(file.name)) {
                     file.deleteRecursively()
                 }
-                if (file.isFile && !validGroupFiles.contains(file.name)) {
+                if (file.isFile && file.extension == "json" && !validGroupFiles.contains(file.name)) {
                     file.delete()
                 }
             }

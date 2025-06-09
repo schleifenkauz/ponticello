@@ -217,7 +217,7 @@ class LauncherGridPane(
     }
 
     private fun createPlayBufTarget(ev: DragEvent, buffer: BufferObject, item: LauncherGrid.GridItem) {
-        val synthDef = context[currentProject][UI_STATE].getOrSelectSynthDef(ev) ?: return
+        val synthDef = context[currentProject][UI_STATE].getOrSelectInstrument(ev) ?: return
         val obj = buffer.createSynthObject(synthDef) ?: return
         context[ScoreObjectRegistry].add(obj)
         item.target = ItemTarget.Object(obj.reference())

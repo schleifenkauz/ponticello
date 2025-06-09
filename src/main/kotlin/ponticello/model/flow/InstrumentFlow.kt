@@ -1,18 +1,19 @@
 package ponticello.model.flow
 
 import hextant.context.Context
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import ponticello.impl.copy
 import ponticello.impl.writeCode
 import ponticello.impl.zero
-import ponticello.model.obj.NoSynthDef
-import ponticello.model.obj.SynthDefObject
-import ponticello.model.obj.SynthDefReference
+import ponticello.model.obj.InstrumentObject
+import ponticello.model.obj.InstrumentReference
+import ponticello.model.obj.NoInstrument
 import ponticello.model.registry.reference
 import ponticello.model.score.ParameterControlList
 import ponticello.model.score.controls.writeSynthCode
-import ponticello.sc.editor.SynthDefSelector
+import ponticello.sc.editor.InstrumentSelector
 import reaktive.value.ReactiveValue
 import reaktive.value.ReactiveVariable
 import reaktive.value.binding.and
@@ -21,16 +22,17 @@ import reaktive.value.now
 import reaktive.value.reactiveVariable
 
 @Serializable
-class SynthFlow(
-    private var defRef: ReactiveVariable<SynthDefReference>,
+@SerialName("InstrumentFlow")
+class InstrumentFlow(
+    private var defRef: ReactiveVariable<InstrumentReference>,
     override val controls: ParameterControlList,
 ) : ParameterizedAudioFlow() {
     @Transient
-    lateinit var synthDefSelector: SynthDefSelector
+    lateinit var instrumentSelector: InstrumentSelector
         private set
 
-    override val def: SynthDefObject
-        get() = defRef.now.get() ?: NoSynthDef()
+    override val def: InstrumentObject
+        get() = defRef.now.get() ?: NoInstrument()
 
     @Transient
     override lateinit var isValid: ReactiveValue<Boolean>
@@ -38,25 +40,25 @@ class SynthFlow(
 
     override fun initialize(context: Context) {
         super.initialize(context)
-        synthDefSelector = SynthDefSelector()
-        synthDefSelector.syncWith(defRef)
-        synthDefSelector.initialize(context)
+        instrumentSelector = InstrumentSelector()
+        instrumentSelector.syncWith(defRef)
+        instrumentSelector.initialize(context)
         controls.initialize(context, this)
-        isValid = controls.isValid and defRef.flatMap(SynthDefReference::isResolved)
+        isValid = controls.isValid and defRef.flatMap(InstrumentReference::isResolved)
     }
 
-    override fun copy(): AudioFlow = SynthFlow(defRef.copy(), controls.copy())
+    override fun copy(): AudioFlow = InstrumentFlow(defRef.copy(), controls.copy())
 
     override fun writeCode(placement: NodePlacement): String = writeCode {
         val latency = zero // context[Settings].serverLatency.now
         writeSynthCode(
-            this@SynthFlow, superColliderName.removePrefix("~"),
+            this@InstrumentFlow, superColliderName.removePrefix("~"),
             cutoff = zero, placement, latency, run = isActive.now
         )
     }
 
     companion object {
-        fun create(def: SynthDefObject, controls: ParameterControlList): SynthFlow =
-            SynthFlow(reactiveVariable(def.reference()), controls)
+        fun create(def: InstrumentObject, controls: ParameterControlList): InstrumentFlow =
+            InstrumentFlow(reactiveVariable(def.reference()), controls)
     }
 }

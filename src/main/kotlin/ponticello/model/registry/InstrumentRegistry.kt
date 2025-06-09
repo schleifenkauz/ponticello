@@ -8,16 +8,16 @@ import com.illposed.osc.OSCMessageListener
 import hextant.context.Context
 import javafx.scene.paint.Color
 import ponticello.impl.Logger
+import ponticello.model.obj.InstrumentObject
 import ponticello.model.obj.ReferencedSynthDefObject
 import ponticello.model.obj.SuperColliderObject
-import ponticello.model.obj.SynthDefObject
 import ponticello.sc.client.SuperColliderClient
 import ponticello.sc.client.getArgument
 import reaktive.value.reactiveVariable
 
-class SynthDefRegistry(
-    override val objects: MutableList<SynthDefObject>,
-) : SuperColliderObjectRegistry<SynthDefObject>(), OSCMessageListener {
+class InstrumentRegistry(
+    override val objects: MutableList<InstrumentObject>,
+) : SuperColliderObjectRegistry<InstrumentObject>(), OSCMessageListener {
     override val liveCycleType: SuperColliderObject.LiveCycleType
         get() = SuperColliderObject.LiveCycleType.InterpreterBoot
 
@@ -25,7 +25,7 @@ class SynthDefRegistry(
         get() = "SynthDef"
 
     override fun initialize(context: Context) {
-        context[SynthDefRegistry] = this
+        context[InstrumentRegistry] = this
         super.initialize(context)
         context[SuperColliderClient].addListener(this)
     }
@@ -51,9 +51,9 @@ class SynthDefRegistry(
         }
     }
 
-    companion object : PublicProperty<SynthDefRegistry> by publicProperty("InstrumentRegistry") {
-        fun createDefault(): SynthDefRegistry =
-            SynthDefRegistry(mutableListOf())
+    companion object : PublicProperty<InstrumentRegistry> by publicProperty("InstrumentRegistry") {
+        fun createDefault(): InstrumentRegistry =
+            InstrumentRegistry(mutableListOf())
 
         fun defaultInstrument() = ReferencedSynthDefObject("default", reactiveVariable(Color.WHEAT))
     }

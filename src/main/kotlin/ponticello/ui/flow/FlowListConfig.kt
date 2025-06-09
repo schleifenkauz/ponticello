@@ -21,9 +21,9 @@ import org.kordamp.ikonli.materialdesign2.MaterialDesignE
 import org.kordamp.ikonli.materialdesign2.MaterialDesignR
 import org.kordamp.ikonli.materialdesign2.MaterialDesignS
 import ponticello.model.flow.*
-import ponticello.model.obj.SynthDefObject
+import ponticello.model.obj.InstrumentObject
 import ponticello.model.obj.withName
-import ponticello.model.registry.SynthDefRegistry
+import ponticello.model.registry.InstrumentRegistry
 import ponticello.sc.Rate
 import ponticello.sc.editor.BusSelector
 import ponticello.sc.view.ObjectSelectorControl
@@ -56,8 +56,8 @@ class FlowListConfig(
 
     fun canDrop(db: Dragboard): Boolean = when {
         db.hasContent(AudioFlow.DATA_FORMAT) -> true
-        db.hasContent(SynthDefObject.DATA_FORMAT) ->
-            db.getFrom(context[SynthDefRegistry], SynthDefObject.DATA_FORMAT) != null
+        db.hasContent(InstrumentObject.DATA_FORMAT) ->
+            db.getFrom(context[InstrumentRegistry], InstrumentObject.DATA_FORMAT) != null
 
         else -> false
     }
@@ -84,14 +84,9 @@ class FlowListConfig(
     override fun getContent(obj: AudioFlow, mode: DisplayMode): Parent? = when (obj) {
         is CodeFlow -> obj.codeEditor.control
         is SendFlow -> SendFlowView(obj)
-        is SynthFlow -> ParameterControlsPane(obj, "Flow controls").apply {
+        is InstrumentFlow -> ParameterControlsPane(obj, "Flow controls").apply {
             listView.autoResizeScene = autoResizeScene
         }
-
-        is ProcessFlow -> ParameterControlsPane(obj, "Flow controls").apply {
-            listView.autoResizeScene = autoResizeScene
-        }
-
         is UtilityFlow -> Slider(-60.0, +6.0, 0.0) styleClass "volume-fader"
         is MixerFlow -> MixerFlowView(obj).apply {
             componentsView.autoResizeScene = autoResizeScene
@@ -123,12 +118,12 @@ class FlowListConfig(
             if (TransferMode.COPY !in ev.dragboard.transferModes) {
                 reference.removeFrom(context[AudioFlows])
             }
-        } else if (ev.dragboard.hasContent(SynthDefObject.DATA_FORMAT)) {
-            val registry = context[SynthDefRegistry]
-            val def = ev.dragboard.getFrom(registry, SynthDefObject.DATA_FORMAT) ?: return
+        } else if (ev.dragboard.hasContent(InstrumentObject.DATA_FORMAT)) {
+            val registry = context[InstrumentRegistry]
+            val def = ev.dragboard.getFrom(registry, InstrumentObject.DATA_FORMAT) ?: return
             val anchor = Point2D(ev.x, ev.y)
             val controls = ScorePane.getInitialControls(def, context, defaultBus = null, anchor) ?: return
-            val flow = SynthFlow.create(def, controls)
+            val flow = InstrumentFlow.create(def, controls)
             listView.source.add(flow)
         }
     }
@@ -143,13 +138,13 @@ class FlowListConfig(
                 icon(Material2AL.CODE)
                 shortcut("Ctrl+L")
                 enableWhen { flow ->
-                    if (flow !is SynthFlow) reactiveValue(false)
-                    else flow.synthDefSelector.isResolved
+                    if (flow !is InstrumentFlow) reactiveValue(false)
+                    else flow.instrumentSelector.isResolved
                 }
                 ifNotApplicable(Action.IfNotApplicable.Hide)
                 executes { flow ->
-                    flow as SynthFlow
-                    val pane = flow.context[PonticelloMainActivity].synthDefsPane()
+                    flow as InstrumentFlow
+                    val pane = flow.context[PonticelloMainActivity].instrumentsPane()
                     pane.listView.showContent(flow.def)
                 }
             }

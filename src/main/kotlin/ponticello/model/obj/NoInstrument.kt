@@ -6,14 +6,20 @@ import ponticello.ui.registry.ParameterDefList
 import reaktive.value.*
 import java.util.*
 
-class NoSynthDef : SynthDefObject, AbstractContextualObject() {
+class NoInstrument : InstrumentObject, AbstractContextualObject() {
     override val isAdded: ReactiveBoolean
         get() = reactiveValue(false)
 
     override val color: ReactiveVariable<Color>
         get() = reactiveVariable(Color.GRAY)
 
-    override fun copy(): SynthDefObject = NoSynthDef()
+    override fun copy(): InstrumentObject = NoInstrument()
+
+    override fun onUpdated() {
+    }
+
+    override val superColliderName: String
+        get() = "<none>"
 
     override val parameters: ParameterDefList get() = ParameterDefList(Collections.unmodifiableList(emptyList()))
 

@@ -24,7 +24,7 @@ import ponticello.model.registry.ObjectRegistry
 import ponticello.model.registry.ScoreObjectRegistry
 import ponticello.model.registry.reference
 import ponticello.model.score.ScoreObjectGroup
-import ponticello.model.score.SynthObject
+import ponticello.model.score.SoundProcess
 import ponticello.ui.launcher.PonticelloLauncher.Companion.currentProject
 import reaktive.value.ReactiveVariable
 import reaktive.value.now
@@ -151,7 +151,7 @@ class LauncherGrid private constructor(
                 val description = if (value is ItemTarget.None) "Reset target" else "Choose target"
                 grid.undoManager.record(PropertyEdit(this::target, oldTarget, value, description))
                 grid.listeners.notifyListeners { updateItem(this@GridItem) }
-                if (value is ItemTarget.Object && value.targetObject is SynthObject) {
+                if (value is ItemTarget.Object && value.targetObject is SoundProcess) {
                     value.velocityParameter.now = ParameterDefObject.LEVEL.reference()
                 }
             }

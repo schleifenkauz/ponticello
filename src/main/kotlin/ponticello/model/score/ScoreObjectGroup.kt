@@ -24,6 +24,7 @@ import reaktive.value.now
 import reaktive.value.reactiveVariable
 
 @Serializable
+@SerialName("SubScore")
 class ScoreObjectGroup(
     val score: Score,
     @SerialName("defaultBus") val defaultBusRef: ReactiveVariable<BusReference> = reactiveVariable(ObjectReference.none())

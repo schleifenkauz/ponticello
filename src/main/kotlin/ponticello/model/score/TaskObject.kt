@@ -3,6 +3,7 @@ package ponticello.model.score
 import hextant.context.Context
 import hextant.serial.EditorRoot
 import kotlinx.serialization.Contextual
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import ponticello.impl.Decimal
 import ponticello.impl.writeCode
@@ -14,6 +15,7 @@ import ponticello.sc.editor.CodeBlockEditor
 import reaktive.value.now
 
 @Serializable
+@SerialName("Task")
 class TaskObject(
     val code: EditorRoot<@Contextual CodeBlockEditor>,
 ) : ScoreObject() {

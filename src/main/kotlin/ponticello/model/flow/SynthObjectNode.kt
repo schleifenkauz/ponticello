@@ -3,14 +3,14 @@ package ponticello.model.flow
 import ponticello.impl.Decimal
 import ponticello.model.player.ActiveScoreObject
 import ponticello.model.player.ScorePlayer
-import ponticello.model.score.SynthObject
+import ponticello.model.score.SoundProcess
 import reaktive.value.ReactiveValue
 import reaktive.value.binding.map
 import reaktive.value.now
 import reaktive.value.reactiveValue
 
 data class SynthObjectNode(
-    val obj: SynthObject,
+    val obj: SoundProcess,
     val active: ActiveScoreObject,
 ) : AudioNode {
     override val isStillActive: Boolean

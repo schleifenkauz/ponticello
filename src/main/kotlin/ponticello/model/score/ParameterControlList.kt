@@ -50,7 +50,7 @@ class ParameterControlList(
     @Transient
     private lateinit var validationObserver: Observer
 
-    private val def: ParameterizedObjectDef get() = associatedObject.def
+    private val def: InstrumentObject get() = associatedObject.def
 
     private val parameterObservers = mutableMapOf<ParameterDefObject, Observer>()
 

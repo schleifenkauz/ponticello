@@ -25,13 +25,9 @@ val PATTERNS = Component(
     "patterns", GlobalPatternRegistry::createDefault,
     MultiFileComponentSerializer(::GlobalPatternRegistry, listSerializer = GlobalPatternRegistry.Serializer)
 )
-val SYNTH_DEFS = Component(
-    "instruments", SynthDefRegistry::createDefault,
-    MultiFileComponentSerializer(::SynthDefRegistry)
-)
-val PROCESS_DEFS = Component(
-    "processDefs", ProcessDefRegistry::createDefault,
-    MultiFileComponentSerializer(::ProcessDefRegistry)
+val INSTRUMENTS = Component(
+    "instruments", InstrumentRegistry::createDefault,
+    MultiFileComponentSerializer(::InstrumentRegistry)
 )
 val FLOWS = Component(
     "flows", AudioFlows::createDefault, AudioFlowsSerializer
@@ -55,7 +51,7 @@ val LAUNCHER_GRID = Component<LauncherGrid>("launcher_grid", { LauncherGrid.crea
 val allComponents = listOf<Component<out ContextualObject>>(
     METERS, CLOCKS,
     BUSSES, BUFFERS,
-    PATTERNS, SYNTH_DEFS, PROCESS_DEFS,
+    PATTERNS, INSTRUMENTS,
     UI_STATE, FLOWS, SERVER_OPTIONS,
     OBJECTS, LIVE_TASKS, SCORE, LAUNCHER_GRID
 ) + ScriptObject.Type.entries.map { type -> type.component }
@@ -67,7 +63,7 @@ val PonticelloProject.mainScore get() = get(SCORE)
 val PonticelloProject.busses get() = get(BUSSES)
 val PonticelloProject.buffers get() = get(BUFFERS)
 val PonticelloProject.patterns get() = get(PATTERNS)
-val PonticelloProject.instruments get() = get(SYNTH_DEFS)
+val PonticelloProject.instruments get() = get(INSTRUMENTS)
 val PonticelloProject.objects get() = get(OBJECTS)
 val PonticelloProject.flows get() = get(FLOWS)
 val PonticelloProject.settings get() = get(UI_STATE)

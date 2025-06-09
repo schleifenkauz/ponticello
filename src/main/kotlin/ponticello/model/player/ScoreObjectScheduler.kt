@@ -11,6 +11,8 @@ import ponticello.model.Settings
 import ponticello.model.flow.NodeTree
 import ponticello.model.flow.SynthObjectNode
 import ponticello.model.obj.ParameterDefObject
+import ponticello.model.obj.ProcessDefObject
+import ponticello.model.obj.SynthDefObject
 import ponticello.model.player.ScoreEventCollector.Event
 import ponticello.model.score.*
 import ponticello.model.score.controls.ParameterControl
@@ -66,13 +68,13 @@ class ScoreObjectScheduler(val context: Context) {
     fun stopObjectInstantly(active: ActiveScoreObject) {
         if (!active.isStillActive) return
         active.stopped()
-        when (active.obj) {
-            is SynthObject -> {
+        when {
+            active.obj is SoundProcess && active.obj.instrument is SynthDefObject -> {
                 val name = active.superColliderName
                 client.run("if ($name != nil) { $name.release; } { \"'$name' not found\".postln; }")
             }
 
-            is ProcessObject, is TaskObject -> {
+            active.obj is TaskObject || active.obj is SoundProcess && active.obj.instrument is ProcessDefObject -> {
                 val name = active.superColliderName
                 client.run("$name.stop;")
             }
@@ -106,7 +108,7 @@ class ScoreObjectScheduler(val context: Context) {
             Logger.error("Failed to insert $obj into active object manager", e, Logger.Category.Playback)
             return null
         }
-        val placement = if (obj is SynthObject) {
+        val placement = if (obj is SoundProcess && obj.instrument is SynthDefObject) {
             try {
                 val node = SynthObjectNode(obj, activeObject)
                 nodeTree.addNode(node)

@@ -13,7 +13,7 @@ import ponticello.impl.asTime
 import ponticello.model.obj.ParameterizedObject
 import ponticello.model.score.ParameterControlList
 import ponticello.model.score.ScoreObject
-import ponticello.model.score.SynthObject
+import ponticello.model.score.SoundProcess
 import ponticello.model.score.controls.EnvelopeControl
 import ponticello.model.score.controls.ParameterControl
 import ponticello.model.score.controls.getNumericalValue
@@ -37,7 +37,7 @@ data object EnvelopeControlType : ControlType<EnvelopeControl>() {
         val colorPicker = colorPicker(control.displayColor)
         colorPicker.setFixedWidth(30.0)
         val box = HBox(5.0, colorPicker)
-        if (namedControl.parentObject is SynthObject) {
+        if (namedControl.parentObject is SoundProcess) {
             val toggle = CheckBox()
                 .sync(control.display, description = "Display envelope", namedControl.context[UndoManager])
             box.children.addAll(1, listOf(Label("Display"), toggle))

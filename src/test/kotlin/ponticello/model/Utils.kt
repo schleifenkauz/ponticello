@@ -7,19 +7,19 @@ import ponticello.impl.asTime
 import ponticello.impl.toDecimal
 import ponticello.model.obj.withName
 import ponticello.model.registry.BusRegistry
+import ponticello.model.registry.InstrumentRegistry
 import ponticello.model.registry.ObjectReference
 import ponticello.model.registry.ScoreObjectRegistry
-import ponticello.model.registry.SynthDefRegistry
 import ponticello.model.score.ParameterControlList
 import ponticello.model.score.ScoreObject
-import ponticello.model.score.SynthObject
+import ponticello.model.score.SoundProcess
 import ponticello.sc.client.SuperColliderClient
 import reaktive.value.reactiveVariable
 
 object Utils {
     fun createDummyObject(name: String): ScoreObject {
-        val dummy1 = SynthObject(
-            synthDefRef = reactiveVariable(ObjectReference("default")),
+        val dummy1 = SoundProcess(
+            instrumentRef = reactiveVariable(ObjectReference("default")),
             controls = ParameterControlList.create()
         ).withName(name)
         dummy1.setInitialSize(10.0.asTime, 100.0.toDecimal())
@@ -32,8 +32,8 @@ object Utils {
             ScoreObjectRegistry,
             ScoreObjectRegistry(mutableListOf()).also { it.initialize(this) })
         set(
-            SynthDefRegistry,
-            SynthDefRegistry(
+            InstrumentRegistry,
+            InstrumentRegistry(
                 mutableListOf(/*InstrumentRegistry.defaultInstrument()*/)
             ).also { it.initialize(this) }
         )

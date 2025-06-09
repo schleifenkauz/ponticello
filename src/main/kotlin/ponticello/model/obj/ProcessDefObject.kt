@@ -13,8 +13,8 @@ import ponticello.impl.ColorSerializer
 import ponticello.impl.Logger
 import ponticello.impl.copy
 import ponticello.impl.randomColor
+import ponticello.model.registry.InstrumentRegistry
 import ponticello.model.registry.ObjectRegistry
-import ponticello.model.registry.ProcessDefRegistry
 import ponticello.sc.CodeBlock
 import ponticello.sc.RawScExpr
 import ponticello.sc.client.ScWriter
@@ -30,17 +30,17 @@ import reaktive.value.reactiveVariable
 
 @Serializable
 class ProcessDefObject(
-    val color: ReactiveVariable<@Serializable(with = ColorSerializer::class) Color>,
+    override val color: ReactiveVariable<@Serializable(with = ColorSerializer::class) Color>,
     override val parameters: ParameterDefList,
     val setupBlock: EditorRoot<@Contextual CodeBlockEditor> = EditorRoot(CodeBlockEditor().defaultState()),
     val loopBlock: EditorRoot<@Contextual CodeBlockEditor> = EditorRoot(CodeBlockEditor().defaultState()),
     val deltaExpr: EditorRoot<@Contextual ScExprExpander> = EditorRoot(ScExprExpander().defaultState()),
-) : ConfigurableParameterizedObjectDef, AbstractSuperColliderObject() {
+) : ConfigurableInstrumentObject, AbstractSuperColliderObject() {
     override val superColliderName: String
         get() = "~proc_${name.now}"
 
     override val registry: ObjectRegistry<*>
-        get() = context[ProcessDefRegistry]
+        get() = context[InstrumentRegistry]
 
     override val canCopy: Boolean
         get() = true
@@ -55,6 +55,8 @@ class ProcessDefObject(
     override fun ScWriter.sync() {
         createObject()
     }
+
+    override fun onUpdated() {}
 
     override fun ScWriter.createObject() {
         //TODO variables set inside the loop aren't updated outside - how to change this?

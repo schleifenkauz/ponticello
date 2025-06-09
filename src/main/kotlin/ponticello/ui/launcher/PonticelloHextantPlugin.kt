@@ -16,7 +16,7 @@ import ponticello.impl.one
 import ponticello.impl.randomColor
 import ponticello.model.obj.CustomizableSynthDefObject
 import ponticello.model.obj.ParameterDefObject
-import ponticello.model.registry.SynthDefRegistry
+import ponticello.model.registry.InstrumentRegistry
 import ponticello.model.score.controls.AttackReleaseControl
 import ponticello.sc.DecimalLiteral
 import ponticello.sc.Identifier
@@ -135,11 +135,11 @@ object PonticelloHextantPlugin : PluginInitializer({
         name = "Add all relevant arguments to Synth"
         applicableIf { ed ->
             val synthDefName = ed.result.now.text
-            ed.isSubEditor(SynthExprEditor::synthDef) && ed.context[SynthDefRegistry].has(synthDefName)
+            ed.isSubEditor(SynthExprEditor::synthDef) && ed.context[InstrumentRegistry].has(synthDefName)
         }
         executing { ed ->
             val synthDefName = ed.result.now.text
-            val synthDef = ed.context[SynthDefRegistry].get(synthDefName)
+            val synthDef = ed.context[InstrumentRegistry].get(synthDefName)
             val expr = ed.parent as SynthExprEditor
             val existingArguments = expr.arguments.result.now.map { arg -> arg.name.text } + "duration"
             for (param in synthDef.parameters) {

@@ -46,30 +46,17 @@ class PonticelloMainActivity(val project: PonticelloProject) : Activity() {
 
     private val mainScoreView: NavigableScorePane = NavigableScorePane(project.mainScore, project.context)
 
-    private val synthDefsPane by lazy { SynthDefRegistryPane(project.instruments) }
-    val synthDefsWindow by lazy {
+    private val instrumentsPane by lazy { InstrumentRegistryPane(project.instruments) }
+    val instrumentsWindow by lazy {
         context.makeToolWindow(
-            synthDefsPane, "Instruments",
+            instrumentsPane, "Instruments",
             defaultSize = Dimension2D(1200.0, 1200.0)
         )
     }
 
-    fun synthDefsPane(): SynthDefRegistryPane {
-        synthDefsWindow
-        return synthDefsPane
-    }
-
-    private val processDefsPane by lazy { ProcessDefRegistryPane(project[PROCESS_DEFS]) }
-    val processDefsWindow by lazy {
-        context.makeToolWindow(
-            processDefsPane, "Process Definitions",
-            defaultSize = Dimension2D(1200.0, 1200.0)
-        )
-    }
-
-    fun processDefsPane(): ProcessDefRegistryPane {
-        processDefsWindow
-        return processDefsPane
+    fun instrumentsPane(): InstrumentRegistryPane {
+        instrumentsWindow
+        return instrumentsPane
     }
 
     private val controlBusPane by lazy { ControlBusRegistryPane(project.busses) }

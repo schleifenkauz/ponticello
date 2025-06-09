@@ -1,13 +1,13 @@
 package ponticello.ui.score
 
 import javafx.scene.canvas.Canvas
-import ponticello.model.score.ParameterizedScoreObject
+import ponticello.model.score.SoundProcess
 import ponticello.sc.LFO
 import ponticello.sc.NumericalControlSpec
 import ponticello.sc.mapOnto
 import kotlin.math.roundToInt
 
-class LFOCanvas(private val obj: ParameterizedScoreObject) : Canvas() {
+class LFOCanvas(private val obj: SoundProcess) : Canvas() {
     private var lfo: LFO? = null
     private lateinit var spec: NumericalControlSpec
     private val duration: Double get() = obj.duration.value
