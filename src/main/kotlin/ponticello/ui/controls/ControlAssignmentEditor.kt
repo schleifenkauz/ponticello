@@ -1,11 +1,8 @@
 package ponticello.ui.controls
 
+import fxutils.*
 import fxutils.actions.ActionBar
-import fxutils.button
-import fxutils.hasFile
 import fxutils.prompt.SimpleSearchableListView
-import fxutils.setupDropArea
-import fxutils.styleClass
 import javafx.scene.Node
 import javafx.scene.input.DragEvent
 import javafx.scene.input.Dragboard
@@ -32,6 +29,7 @@ class ControlAssignmentEditor(val control: NamedParameterControl, val view: Scor
         optionButton.prefWidth = 45.0
         setupDropArea(this::canDrop, ::onDrop)
         styleClass("parameter-control-item")
+        alwaysHGrow()
     }
 
     private fun onDrop(ev: DragEvent) {
@@ -84,7 +82,12 @@ class ControlAssignmentEditor(val control: NamedParameterControl, val view: Scor
         children.add(optionButton)
         val actions = type.actions(control, newControl, view)
         children.add(detailEditor)
-        if (actions.isNotEmpty()) children.add(ActionBar(actions, "medium-icon-button"))
+        if (actions.isNotEmpty()) {
+            children.addAll(
+                infiniteSpace(),
+                ActionBar(actions, "medium-icon-button")
+            )
+        }
         settingControl = false
     }
 }

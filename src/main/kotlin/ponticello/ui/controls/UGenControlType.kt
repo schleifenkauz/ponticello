@@ -2,16 +2,15 @@ package ponticello.ui.controls
 
 import fxutils.actions.ContextualizedAction
 import fxutils.actions.collectActions
+import fxutils.actions.detailsAction
 import fxutils.actions.makeButton
-import fxutils.centerChildren
+import fxutils.opacity
 import fxutils.prompt.InfoPrompt
 import fxutils.sync
 import fxutils.undo.UndoManager
 import hextant.serial.EditorRoot
 import javafx.scene.Node
 import javafx.scene.control.CheckBox
-import javafx.scene.control.Label
-import javafx.scene.layout.HBox
 import javafx.scene.layout.Region
 import org.kordamp.ikonli.evaicons.Evaicons
 import org.kordamp.ikonli.materialdesign2.MaterialDesignS
@@ -19,13 +18,13 @@ import ponticello.model.obj.ParameterizedObject
 import ponticello.model.player.ActiveObject
 import ponticello.model.player.ActiveScoreObject
 import ponticello.model.score.ParameterControlList
-import ponticello.model.score.ScoreObject
 import ponticello.model.score.controls.ParameterControl
 import ponticello.model.score.controls.UGenControl
 import ponticello.model.score.controls.getNumericalValue
 import ponticello.sc.ControlSpec
 import ponticello.sc.NumericalControlSpec
 import ponticello.sc.editor.ScExprExpander
+import ponticello.ui.impl.DEFAULT_SCENE_FILL
 import ponticello.ui.score.ScoreObjectView
 import reaktive.value.binding.map
 import reaktive.value.fx.asObservableValue
@@ -43,16 +42,7 @@ data object UGenControlType : ControlType<UGenControl>() {
         val actions = actions.withContext(Pair(namedControl, view))
         val window = makeCodePaneWindow(control.expr, control.context, namedControl, actions)
         val showWindowButton = showWindowAction.withContext(window).makeButton("medium-icon-button")
-        if (namedControl.parentObject is ScoreObject) {
-            val displayToggle = CheckBox()
-                .sync(control.display, "Display UGen", namedControl.context[UndoManager])
-            displayToggle.disableProperty().bind(
-                control.expr.editor.result.map { expr ->
-                    expr.getLfo() == null
-                }.asObservableValue()
-            )
-            return HBox(5.0, Label("Display"), displayToggle, showWindowButton).centerChildren()
-        } else return showWindowButton
+        return showWindowButton
     }
 
     override fun createInitialControl(
@@ -70,7 +60,11 @@ data object UGenControlType : ControlType<UGenControl>() {
         return UGenControl(root)
     }
 
-    override fun onSelected(namedControl: ParameterControlList.NamedParameterControl, control: UGenControl, view: ScoreObjectView?) {
+    override fun onSelected(
+        namedControl: ParameterControlList.NamedParameterControl,
+        control: UGenControl,
+        view: ScoreObjectView?,
+    ) {
         val actions = actions.withContext(Pair(namedControl, null))
         val window = makeCodePaneWindow(control.expr, control.context, namedControl, actions)
         window.show()
@@ -107,9 +101,24 @@ data object UGenControlType : ControlType<UGenControl>() {
                 }
             }
         }
+        add(detailsAction(sceneFill = DEFAULT_SCENE_FILL.opacity(0.5)) { (namedControl) ->
+            val control = namedControl.now as UGenControl
+            val displayToggle = CheckBox().sync(
+                control.display,
+                description = "Display", namedControl.context[UndoManager]
+            ) named "Display"
+            displayToggle.disableProperty().bind(
+                control.expr.editor.result.map { expr ->
+                    expr.getLfo() == null
+                }.asObservableValue()
+            )
+        })
     }
 
-    private fun getActiveObject(ctrl: ParameterControlList.NamedParameterControl, view: ScoreObjectView?): ActiveObject? {
+    private fun getActiveObject(
+        ctrl: ParameterControlList.NamedParameterControl,
+        view: ScoreObjectView?,
+    ): ActiveObject? {
         val activeObjects = ctrl.parentObject.activeObjects()
         return if (view != null) {
             activeObjects

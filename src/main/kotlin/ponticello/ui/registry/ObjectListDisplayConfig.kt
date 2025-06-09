@@ -15,7 +15,7 @@ import ponticello.model.registry.NamedObject.Companion.NO_NAME
 import reaktive.value.ReactiveString
 import reaktive.value.reactiveValue
 
-interface ObjectListDisplayConfig<O: ContextualObject> {
+interface ObjectListDisplayConfig<O : ContextualObject> {
     val enableReordering: Boolean get() = false
 
     val enableAddObjectButton: Boolean get() = false
@@ -29,6 +29,8 @@ interface ObjectListDisplayConfig<O: ContextualObject> {
     val supportedModes get() = setOf(ObjectListView.DisplayMode.Inline)
 
     val autoSelectNewObjects: Boolean get() = true
+
+    val addSpaceBeforeActionBar: Boolean get() = true
 
     fun detailWindowIcon(obj: O): Ikon = MaterialDesignE.EYE
 

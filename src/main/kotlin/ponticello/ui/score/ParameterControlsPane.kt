@@ -81,6 +81,8 @@ class ParameterControlsPane(
         return listOf(editor)
     }
 
+    override val addSpaceBeforeActionBar: Boolean get() = false
+
     override fun dataFormat(obj: NamedParameterControl): DataFormat = NamedParameterControl.DATA_FORMAT
 
     override fun configureDragboard(obj: NamedParameterControl, dragboard: Dragboard) {

@@ -2,14 +2,12 @@ package ponticello.ui.controls
 
 import fxutils.actions.ContextualizedAction
 import fxutils.actions.collectActions
-import fxutils.centerChildren
-import fxutils.infiniteSpace
+import fxutils.actions.detailsAction
+import fxutils.opacity
 import fxutils.sync
 import fxutils.undo.UndoManager
 import javafx.scene.Node
 import javafx.scene.control.CheckBox
-import javafx.scene.control.Label
-import javafx.scene.layout.HBox
 import javafx.scene.layout.Region
 import org.kordamp.ikonli.evaicons.Evaicons
 import ponticello.impl.Logger
@@ -24,10 +22,10 @@ import ponticello.sc.BufferControlSpec
 import ponticello.sc.ControlSpec
 import ponticello.sc.editor.BufferSelector
 import ponticello.sc.view.ObjectSelectorControl
+import ponticello.ui.impl.DEFAULT_SCENE_FILL
 import ponticello.ui.registry.SearchableBufferListView
 import ponticello.ui.score.ScoreObjectView
 import reaktive.value.binding.flatMap
-import reaktive.value.fx.asProperty
 import reaktive.value.now
 import reaktive.value.reactiveVariable
 
@@ -38,19 +36,7 @@ data object BufferControlType : ControlType<BufferControl>() {
         namedControl: ParameterControlList.NamedParameterControl,
         control: BufferControl,
         view: ScoreObjectView?,
-    ): Node {
-        val selectorControl = createSimpleInput(namedControl, control)
-        val displaySwitch = CheckBox()
-            .sync(control.display, description = "Show spectrum", namedControl.context[UndoManager])
-        displaySwitch.selectedProperty().bindBidirectional(control.display.asProperty())
-        return HBox(
-            5.0,
-            selectorControl,
-            infiniteSpace(),
-            Label("Show spectrum"),
-            displaySwitch
-        ).centerChildren()
-    }
+    ): Node = createSimpleInput(namedControl, control)
 
     override fun createSimpleInput(
         namedControl: ParameterControlList.NamedParameterControl,
@@ -101,5 +87,11 @@ data object BufferControlType : ControlType<BufferControl>() {
                 }
             }
         }
+        add(detailsAction(sceneFill = DEFAULT_SCENE_FILL.opacity(0.5)) { ctrl ->
+            CheckBox().sync(
+                ctrl.display,
+                description = "Display", ctrl.context[UndoManager]
+            ) named "Display"
+        })
     }
 }

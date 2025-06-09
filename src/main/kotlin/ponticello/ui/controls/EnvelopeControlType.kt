@@ -1,24 +1,25 @@
 package ponticello.ui.controls
 
+import fxutils.actions.ContextualizedAction
+import fxutils.actions.collectActions
+import fxutils.actions.detailsAction
+import fxutils.opacity
 import fxutils.setFixedWidth
 import fxutils.sync
 import fxutils.undo.UndoManager
-import javafx.geometry.Pos
 import javafx.scene.Node
 import javafx.scene.control.CheckBox
-import javafx.scene.control.Label
-import javafx.scene.layout.HBox
 import javafx.scene.layout.Region
 import ponticello.impl.asTime
 import ponticello.model.obj.ParameterizedObject
 import ponticello.model.score.ParameterControlList
 import ponticello.model.score.ScoreObject
-import ponticello.model.score.SoundProcess
 import ponticello.model.score.controls.EnvelopeControl
 import ponticello.model.score.controls.ParameterControl
 import ponticello.model.score.controls.getNumericalValue
 import ponticello.sc.ControlSpec
 import ponticello.sc.NumericalControlSpec
+import ponticello.ui.impl.DEFAULT_SCENE_FILL
 import ponticello.ui.impl.colorPicker
 import ponticello.ui.score.ScoreObjectView
 import reaktive.value.now
@@ -29,21 +30,12 @@ data object EnvelopeControlType : ControlType<EnvelopeControl>() {
         obj is ScoreObject && spec is NumericalControlSpec
 
     override fun createDetailInput(
-        namedControl: ParameterControlList.NamedParameterControl,
-        control: EnvelopeControl,
-        view: ScoreObjectView?,
+        namedControl: ParameterControlList.NamedParameterControl, control: EnvelopeControl, view: ScoreObjectView?,
     ): Node {
         if (namedControl.spec.now !is NumericalControlSpec) return missingSpecOptionsBar(namedControl)
         val colorPicker = colorPicker(control.displayColor)
         colorPicker.setFixedWidth(30.0)
-        val box = HBox(5.0, colorPicker)
-        if (namedControl.parentObject is SoundProcess) {
-            val toggle = CheckBox()
-                .sync(control.display, description = "Display envelope", namedControl.context[UndoManager])
-            box.children.addAll(1, listOf(Label("Display"), toggle))
-        }
-        box.alignment = Pos.CENTER_LEFT
-        return box
+        return colorPicker
     }
 
     override fun createInitialControl(
@@ -62,5 +54,18 @@ data object EnvelopeControlType : ControlType<EnvelopeControl>() {
         return EnvelopeControl(env, displayColor, display)
     }
 
+    override fun actions(
+        namedControl: ParameterControlList.NamedParameterControl, control: EnvelopeControl, view: ScoreObjectView?,
+    ): List<ContextualizedAction> = actions.withContext(control)
+
     override fun toString(): String = "Env"
+
+    private val actions = collectActions<EnvelopeControl> {
+        add(detailsAction(sceneFill = DEFAULT_SCENE_FILL.opacity(0.5)) { control ->
+            CheckBox().sync(
+                control.display,
+                description = "Display envelope", control.context[UndoManager]
+            ) named "Display"
+        })
+    }
 }

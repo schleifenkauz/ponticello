@@ -3,10 +3,9 @@ package ponticello.ui.live
 import fxutils.*
 import fxutils.actions.Action
 import fxutils.actions.ActionBar
-import fxutils.actions.action
 import fxutils.actions.collectActions
+import fxutils.actions.detailsAction
 import fxutils.controls.SliderBar
-import fxutils.prompt.DetailPane
 import fxutils.prompt.SimpleSearchableListView
 import fxutils.undo.UndoManager
 import fxutils.undo.VariableEdit
@@ -20,7 +19,6 @@ import javafx.scene.layout.VBox
 import kotlinx.serialization.Contextual
 import org.kordamp.ikonli.codicons.Codicons
 import org.kordamp.ikonli.materialdesign2.MaterialDesignA
-import org.kordamp.ikonli.materialdesign2.MaterialDesignD
 import org.kordamp.ikonli.materialdesign2.MaterialDesignE
 import org.kordamp.ikonli.materialdesign2.MaterialDesignR
 import ponticello.impl.one
@@ -252,18 +250,11 @@ class LauncherGridPane(
     }
 
     companion object {
-        private val detailsAction = action<LauncherGrid.GridItem>("Details") {
-            icon(MaterialDesignD.DOTS_VERTICAL)
-            enableWhen { item -> item.target().map { target -> target.canStop } }
-            ifNotApplicable(Action.IfNotApplicable.Hide)
-            executes { item, ev ->
-                val detailsPane = DetailPane(labelWidth = 150.0)
-                val stopOnReleaseBox = CheckBox().sync(item.stopOnRelease, "Stop on release", item.context[UndoManager])
-                detailsPane.addItem("Stop on release", stopOnReleaseBox)
-                val popup = detailsPane.asPopup()
-                popup.scene.fill = DEFAULT_SCENE_FILL.opacity(0.5)
-                popup.show(ev)
-            }
+        private val detailsAction = detailsAction<LauncherGrid.GridItem>(
+            applicability = { item -> item.target().map { target -> target.canStop } },
+            sceneFill = DEFAULT_SCENE_FILL.opacity(0.5), labelWidth = 150.0
+        ) { item ->
+            CheckBox().sync(item.stopOnRelease, "Stop on release", item.context[UndoManager]) named "Stop on release"
         }
 
         private val itemActions = collectActions<ItemTarget> {

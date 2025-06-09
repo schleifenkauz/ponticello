@@ -4,7 +4,9 @@ import fxutils.*
 import fxutils.actions.Action
 import fxutils.actions.ActionBar
 import fxutils.actions.collectActions
+import fxutils.controls.SliderBar
 import javafx.scene.Parent
+import javafx.scene.control.Button
 import javafx.scene.input.MouseEvent
 import javafx.scene.input.TransferMode
 import javafx.scene.layout.HBox
@@ -48,8 +50,6 @@ class ObjectBox<O : ContextualObject>(val parent: ObjectListView<O>, val obj: O)
         config.buttonStyle
     )
 
-    private val space = infiniteSpace()
-
     private val header = HBox() styleClass "object-box-header"
 
     private lateinit var currentMode: DisplayMode
@@ -66,11 +66,13 @@ class ObjectBox<O : ContextualObject>(val parent: ObjectListView<O>, val obj: O)
         styleClass("object-box")
         if (nameDisplay != null) header.children.add(nameDisplay)
         header.children.addAll(config.getItemContent(obj))
-        header.children.addAll(space, actionBar)
+        if (config.addSpaceBeforeActionBar) header.children.add(infiniteSpace())
+        header.children.add(actionBar)
         if (config.enableReordering) setupReordering()
         if (obj is NamedObject && config.dataFormat(obj) != null) setupDragging()
         children.setAll(header)
         addEventFilter(MouseEvent.MOUSE_CLICKED) { ev ->
+            if (ev.target is Button || ev.target is SliderBar<*>) return@addEventFilter
             parent.select(this)
             if (ev.clickCount == 2) {
                 parent.showSelected()

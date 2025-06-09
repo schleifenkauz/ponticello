@@ -1,8 +1,11 @@
 package ponticello.ui.controls
 
-import fxutils.centerChildren
+import fxutils.actions.ContextualizedAction
+import fxutils.actions.collectActions
+import fxutils.actions.detailsAction
 import fxutils.controls.SliderBar
 import fxutils.label
+import fxutils.opacity
 import fxutils.sync
 import fxutils.undo.UndoManager
 import fxutils.undo.VariableEdit
@@ -11,7 +14,6 @@ import javafx.scene.Node
 import javafx.scene.control.CheckBox
 import javafx.scene.control.Label
 import javafx.scene.input.MouseButton
-import javafx.scene.layout.HBox
 import javafx.scene.layout.Region
 import ponticello.impl.Decimal
 import ponticello.model.obj.ParameterizedObject
@@ -23,6 +25,7 @@ import ponticello.sc.ControlSpec
 import ponticello.sc.NumericalControlSpec
 import ponticello.sc.Transformation
 import ponticello.sc.mapOnto
+import ponticello.ui.impl.DEFAULT_SCENE_FILL
 import ponticello.ui.score.ScoreObjectView
 import reaktive.value.binding.map
 import reaktive.value.now
@@ -44,9 +47,7 @@ data object ValueControlType : ControlType<ValueControl>() {
             undoManager = namedControl.context[UndoManager]
         )
         sliderBar.prefWidth = 150.0
-        val allocateBusOption = CheckBox()
-            .sync(control.allocateBus, description = "Allocate bus", namedControl.context[UndoManager])
-        return HBox(5.0, sliderBar, Label("Allocate bus"), allocateBusOption).centerChildren()
+        return sliderBar
     }
 
     override fun createSimpleInput(namedControl: NamedParameterControl, control: ValueControl): Node {
@@ -114,5 +115,22 @@ data object ValueControlType : ControlType<ValueControl>() {
         return ValueControl(reactiveVariable(oldControl.getNumericalValue() ?: spec.defaultValue.get()))
     }
 
+    override fun actions(
+        namedControl: NamedParameterControl, control: ValueControl, view: ScoreObjectView?,
+    ): List<ContextualizedAction> = actions.withContext(control)
+
     override fun toString(): String = "Num"
+
+    private val actions = collectActions<ValueControl> {
+        add(
+            detailsAction(
+                sceneFill = DEFAULT_SCENE_FILL.opacity(0.5),
+                labelWidth = 100.0
+            ) { control ->
+                CheckBox().sync(
+                    control.allocateBus,
+                    description = "Allocate bus", control.context[UndoManager]
+                ) named "Allocate bus"
+            })
+    }
 }
