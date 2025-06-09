@@ -1,8 +1,8 @@
 package ponticello.model.project
 
+import hextant.serial.readJson
 import hextant.serial.writeJson
 import kotlinx.serialization.KSerializer
-import kotlinx.serialization.json.decodeFromStream
 import kotlinx.serialization.serializer
 import ponticello.impl.Logger
 import ponticello.impl.json
@@ -21,6 +21,14 @@ class MultiFileComponentSerializer<T : NamedObject, L : NamedObjectList<T>>(
         val subDir = dataDirectory.resolve(component.name)
         subDir.mkdirs()
         var everythingOk = true
+        val names = value.map { obj -> obj.name.now }
+        val registryFile = subDir.resolve("registry.json")
+        try {
+            registryFile.writeJson(names, json)
+        } catch (e: Exception) {
+            Logger.error("Error while writing object names of '${component.name}' to $registryFile!", e)
+            everythingOk = false
+        }
         for (obj in value) {
             val objName = obj.name.now
             val file = subDir.resolve("$objName.$extension")
@@ -32,7 +40,7 @@ class MultiFileComponentSerializer<T : NamedObject, L : NamedObjectList<T>>(
             }
         }
         for (file in subDir.listFiles() ?: emptyArray()) {
-            if (file.extension != extension) continue
+            if (file.name == "registry.json" || file.extension != extension) continue
             val objName = file.nameWithoutExtension
             if (!value.has(objName)) {
                 try {
@@ -51,19 +59,29 @@ class MultiFileComponentSerializer<T : NamedObject, L : NamedObjectList<T>>(
     override fun deserializeComponent(dataDirectory: File): L {
         val subDir = dataDirectory.resolve(component.name)
         if (!subDir.isDirectory) return super.deserializeComponent(dataDirectory)
-        val files = subDir.listFiles() ?: emptyArray()
+        val registryFile = subDir.resolve("registry.json")
+        val names = if (registryFile.isFile) {
+            try {
+                registryFile.readJson<List<String>>(json)
+            } catch (e: Exception) {
+                Logger.error("Failed to read object names of '${component.name}' from $registryFile!", e)
+                return listConstructor(mutableListOf())
+            }
+        } else {
+            subDir.listFiles { f -> f.extension == extension }?.map { f -> f.nameWithoutExtension } ?: emptyList()
+        }
         val list = mutableListOf<T>()
-        for (file in files) {
-            if (file.extension == extension) {
-                val stream = file.inputStream().buffered()
-                try {
-                    val obj = json.decodeFromStream(itemSerializer, stream)
-                    list.add(obj)
-                } catch (e: Exception) {
-                    Logger.error("Error while reading item of component '${component.name}' from $file!", e)
-                } finally {
-                    stream.close()
-                }
+        for (name in names) {
+            val file = subDir.resolve("$name.$extension")
+            if (!file.isFile) {
+                Logger.error("File $file is missing!")
+                continue
+            }
+            try {
+                val obj = file.readJson(itemSerializer, json)
+                list.add(obj)
+            } catch (e: Exception) {
+                Logger.error("Error while reading item of component '${component.name}' from $file!", e)
             }
         }
         return listConstructor(list)

@@ -25,7 +25,8 @@ object AudioFlowsSerializer : SingleFileComponentSerializer<AudioFlows>(
         groupsDir.mkdir()
         var everythingOk = true
         for (group in value) {
-            val info = AudioFlowGroupInfo(group.isActive.now, group.yPosition.now, group.associatedColor.now)
+            val flowOrder = group.flows.map { flow -> flow.name.now }
+            val info = AudioFlowGroupInfo(group.isActive.now, group.yPosition.now, group.associatedColor.now, flowOrder)
             val groupName = group.name.now
             val infoFile = groupsDir.resolve("$groupName.json")
             try {
@@ -92,7 +93,14 @@ object AudioFlowsSerializer : SingleFileComponentSerializer<AudioFlows>(
 
             val flows = mutableListOf<AudioFlow>()
             val flowsDir = groupsDir.resolve(groupName)
-            for (flowFile in flowsDir.listFiles { f -> f.extension == "json" } ?: emptyArray()) {
+            val flowOrder = info.flowOrder
+                ?: flowsDir.listFiles { f -> f.extension == "json" }?.map(File::nameWithoutExtension) ?: emptyList()
+            for (flowName in flowOrder) {
+                val flowFile = flowsDir.resolve("$flowName.json")
+                if (!flowFile.isFile) {
+                    Logger.error("File $flowFile is missing!")
+                    continue
+                }
                 try {
                     val flow = flowFile.readJson<AudioFlow>(json)
                     flows.add(flow)
@@ -104,6 +112,7 @@ object AudioFlowsSerializer : SingleFileComponentSerializer<AudioFlows>(
             val group = info.createGroup(flows).withName(groupName)
             groups.add(group)
         }
+        groups.sortBy { grp -> grp.yPosition.now }
         return AudioFlows(groups)
     }
 
@@ -112,6 +121,7 @@ object AudioFlowsSerializer : SingleFileComponentSerializer<AudioFlows>(
         val isActive: Boolean,
         val yPosition: Decimal,
         @Serializable(ColorSerializer::class) val color: Color,
+        val flowOrder: List<String>? = null,
     ) {
         fun createGroup(flows: MutableList<AudioFlow>) = AudioFlowGroup(
             reactiveVariable(isActive), reactiveVariable(yPosition), reactiveVariable(color),
