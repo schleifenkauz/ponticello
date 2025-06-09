@@ -1,45 +1,84 @@
 package ponticello.ui.registry
 
 import bundles.createBundle
-import hextant.context.Context
+import fxutils.actions.Action.IfNotApplicable
+import fxutils.actions.ContextualizedAction
+import fxutils.actions.collectActions
+import fxutils.opacity
+import fxutils.prompt.DetailPane
+import fxutils.showBelow
+import hextant.context.createControl
 import hextant.core.view.ChoiceEditorControl
 import javafx.scene.Node
+import javafx.stage.Popup
+import org.kordamp.ikonli.materialdesign2.MaterialDesignD
 import ponticello.model.obj.ParameterDefObject
-import ponticello.sc.editor.ControlSpecEditor
+import ponticello.sc.ParameterType
+import ponticello.sc.editor.BufferControlSpecEditor
+import ponticello.sc.editor.BufferPositionControlSpecEditor
+import ponticello.sc.editor.BusControlSpecEditor
+import ponticello.sc.editor.NumericalControlSpecEditor
+import ponticello.ui.impl.DEFAULT_SCENE_FILL
 import reaktive.Observer
+import reaktive.value.binding.map
 import reaktive.value.now
 
-open class ParameterListConfig(private val context: Context) : ObjectListDisplayConfig<ParameterDefObject> {
+open class ParameterListConfig : ObjectListDisplayConfig<ParameterDefObject> {
     private val observers = mutableMapOf<ParameterDefObject, Observer>()
 
     override val enableReordering: Boolean
         get() = true
 
     override fun getItemContent(obj: ParameterDefObject): List<Node> {
-        val editor = makeControlSpecEditor(obj)
-        syncSpecWithEditor(obj, editor)
-        val specControl = ChoiceEditorControl(editor, createBundle())
+        val specControl = ChoiceEditorControl(obj.specEditor, createBundle())
         specControl.canChoose = false
         return listOf(specControl)
     }
 
-    private fun makeControlSpecEditor(parameter: ParameterDefObject): ControlSpecEditor {
-        val editor = ControlSpecEditor()
-        editor.setResult(parameter.spec.now)
-        editor.initialize(context)
-        return editor
-    }
-
-    private fun syncSpecWithEditor(parameter: ParameterDefObject, editor: ControlSpecEditor) {
-        observers[parameter] =
-            parameter.spec.observe { _, _, spec ->
-                if (editor.result.now != spec) editor.setResult(spec)
-            } and editor.result.observe { _, _, new ->
-                if (new != parameter.spec.now) parameter.spec.now = new
-            }
-    }
+    override fun getActions(box: ObjectBox<ParameterDefObject>): List<ContextualizedAction> =
+        actions.withContext(box)
 
     override fun onRemoved(obj: ParameterDefObject) {
         observers.remove(obj)?.kill()
+    }
+
+    companion object {
+        private val actions = collectActions<ObjectBox<ParameterDefObject>> {
+            addAction("Details") {
+                icon(MaterialDesignD.DOTS_VERTICAL)
+                enableWhen { box ->
+                    box.obj.spec.map { spec ->
+                        spec.type in ParameterType.regularTypes
+                    }
+                }
+                ifNotApplicable(IfNotApplicable.Hide)
+                executes { box, _ ->
+                    val detailsPopup = Popup()
+                    val detailsPane = DetailPane(labelWidth = 110.0)
+                    when (val editor = box.obj.specEditor.content.now) {
+                        is NumericalControlSpecEditor -> {
+                            detailsPane.addItem("Inline display", editor.context.createControl(editor.inlineDisplay))
+                            detailsPane.addItem("Attack-release", editor.context.createControl(editor.attackRelease))
+                        }
+
+                        is BusControlSpecEditor -> {
+                            detailsPane.addItem("Inline display", editor.context.createControl(editor.inlineDisplay))
+                        }
+
+                        is BufferControlSpecEditor -> {
+                            detailsPane.addItem("Inline display", editor.context.createControl(editor.inlineDisplay))
+                        }
+
+                        is BufferPositionControlSpecEditor -> {
+                            detailsPane.addItem("Inline display", editor.context.createControl(editor.inlineDisplay))
+                        }
+                    }
+                    detailsPopup.content.add(detailsPane)
+                    detailsPane.scene.fill = DEFAULT_SCENE_FILL.opacity(0.5)
+                    detailsPopup.isAutoHide = true
+                    detailsPopup.showBelow(box.actionBar)
+                }
+            }
+        }
     }
 }

@@ -12,7 +12,7 @@ import ponticello.sc.defaultControlSpec
 import reaktive.value.now
 
 class ParameterDefsPane(private val parameters: ParameterDefList, context: Context, title: String) : ToolPane() {
-    private val config = ParameterListConfig(context)
+    private val config = ParameterListConfig()
 
     private val objectBoxList = ObjectListView(parameters, config)
 

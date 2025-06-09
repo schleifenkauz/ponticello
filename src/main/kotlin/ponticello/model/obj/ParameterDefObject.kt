@@ -1,19 +1,52 @@
 package ponticello.model.obj
 
+import hextant.context.Context
 import javafx.scene.paint.Color
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 import ponticello.impl.copy
 import ponticello.impl.toDecimal
 import ponticello.sc.*
+import ponticello.sc.editor.ControlSpecEditor
+import reaktive.Observer
 import reaktive.value.ReactiveVariable
 import reaktive.value.now
 import reaktive.value.reactiveVariable
 
 @Serializable
 class ParameterDefObject(val spec: ReactiveVariable<ControlSpec>) : AbstractRenamableObject() {
+    @Transient
+    private lateinit var observer: Observer
+
+    @Transient
+    lateinit var specEditor: ControlSpecEditor
+        private set
 
     var isImmutable = false
         private set
+
+    override fun initialize(context: Context) {
+        super.initialize(context)
+        specEditor = makeControlSpecEditor()
+        syncSpecWithEditor()
+    }
+
+    private fun makeControlSpecEditor(): ControlSpecEditor {
+        val editor = ControlSpecEditor()
+        editor.setResult(spec.now)
+        editor.initialize(context)
+        specEditor = editor
+        return editor
+    }
+
+    private fun syncSpecWithEditor() {
+        observer =
+            spec.observe { _, _, spec ->
+                if (specEditor.result.now != spec) specEditor.setResult(spec)
+            } and specEditor.result.observe { _, _, new ->
+                if (new != spec.now) spec.now = new
+            }
+    }
 
     private fun immutable() = also { isImmutable = true }
 

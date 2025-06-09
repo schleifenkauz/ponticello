@@ -16,7 +16,7 @@ abstract class ParameterizedObjectDefPane<T : ConfigurableInstrumentObject>(
     protected val def: T,
     enableActions: Boolean,
 ) : ToolPane() {
-    private val config: ParameterListConfig = object : ParameterListConfig(def.context) {
+    private val config: ParameterListConfig = object : ParameterListConfig() {
         override fun createNewObject(ev: Event?): ParameterDefObject? {
             val defaultParameters = def.context[Settings].defaultParametersDefs
                 .filter { param -> !def.hasParameter(param.name.now) }

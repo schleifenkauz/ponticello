@@ -4,23 +4,18 @@ import bundles.Bundle
 import bundles.createBundle
 import bundles.publicProperty
 import bundles.set
-import fxutils.actions.button
 import fxutils.button
 import fxutils.centerChildren
 import fxutils.keyword
-import fxutils.prompt.DetailPane
 import fxutils.styleClass
 import hextant.codegen.ProvideImplementation
 import hextant.completion.NoCompleter
 import hextant.context.ControlFactory
-import hextant.context.createControl
 import hextant.core.view.*
 import hextant.core.view.ListEditorControl.Companion.ADD_WITH_COMMA
 import hextant.core.view.ListEditorControl.Companion.CELL_FACTORY
 import hextant.core.view.ListEditorControl.Companion.EMPTY_DISPLAY
 import hextant.core.view.ListEditorControl.Companion.ORIENTATION
-import javafx.stage.Popup
-import org.kordamp.ikonli.materialdesign2.MaterialDesignD
 
 val MULTILINE = publicProperty("MULTILINE_ARGUMENTS", false)
 
@@ -196,8 +191,6 @@ fun createControl(editor: ponticello.sc.editor.BusControlSpecEditor, arguments: 
                 set(IntSpinnerControl.MAX, 256)
             }.maxWidth = 65.0
             space()
-            keyword("inline-display: ")
-            view(editor.inlineDisplay)
             root.centerChildren().styleClass("bus-control-spec")
         }
     }
@@ -212,8 +205,6 @@ fun createControl(editor: ponticello.sc.editor.BufferControlSpecEditor, argument
                 set(IntSpinnerControl.MAX, 256)
             }.maxWidth = 65.0
             space()
-            keyword("inline-display: ")
-            view(editor.inlineDisplay)
             root.centerChildren().styleClass("buffer-control-spec")
         }
     }
@@ -222,8 +213,6 @@ fun createControl(editor: ponticello.sc.editor.BufferControlSpecEditor, argument
 fun createControl(editor: ponticello.sc.editor.BufferPositionControlSpecEditor, arguments: Bundle) =
     CompoundEditorControl(editor, arguments) {
         horizontal {
-            keyword("inline-display: ")
-            view(editor.inlineDisplay)
             root.centerChildren()
         }
     }
@@ -251,16 +240,6 @@ fun createControl(editor: ponticello.sc.editor.NumericalControlSpecEditor, argum
             space()
             view(editor.associatedColor).minWidth = 30.0
             styleClass("numerical-control-spec")
-            val detailsBtn = MaterialDesignD.DOTS_VERTICAL.button("Details", style = "medium-icon-button") { ev ->
-                val detailsPopup = Popup()
-                detailsPopup.content.add(DetailPane(labelWidth = 110.0).apply {
-                    addItem("Inline display", editor.context.createControl(editor.inlineDisplay))
-                    addItem("Attack-release", editor.context.createControl(editor.attackRelease))
-                })
-                detailsPopup.isAutoHide = true
-                detailsPopup.show(root, ev.screenX, ev.screenY)
-            }
-            add(detailsBtn)
             root.centerChildren()
         }
     }
