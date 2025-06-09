@@ -84,7 +84,7 @@ OSCdef('run', {
 	fct = this.compile(code.asString);
 	if (fct == nil) { ~ponticello_addr.sendMsg('error', "Compilation error") };
 	fork {
-	    //code.postln;
+	    code.postln;
 		try { fct.value } { |error|
 			~ponticello_addr.sendMsg('/error', nil, error.what);
 			error.throw;

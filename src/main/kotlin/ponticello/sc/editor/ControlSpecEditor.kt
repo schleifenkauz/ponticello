@@ -2,6 +2,7 @@ package ponticello.sc.editor
 
 import hextant.core.Editor
 import hextant.core.editor.ChoiceEditor
+import hextant.core.editor.defaultState
 import hextant.serial.JsonSerializer
 import hextant.serial.KJsonSerializer
 import ponticello.impl.randomColor
@@ -39,7 +40,8 @@ class ControlSpecEditor : ChoiceEditor<ParameterType, ControlSpec, Editor<Contro
                     lag = DecimalLiteralEditor(spec.lag.text),
                     warp = WarpEditor(spec.warp),
                     associatedColor = SimpleColorEditor(spec.associatedColor),
-                    inlineDisplay = SimpleBooleanEditor(spec.inlineDisplay)
+                    inlineDisplay = SimpleBooleanEditor(spec.inlineDisplay),
+                    attackRelease = SimpleBooleanEditor(spec.attackRelease)
                 )
                 select(ParameterType.Numerical, specEditor)
             }
@@ -61,7 +63,7 @@ class ControlSpecEditor : ChoiceEditor<ParameterType, ControlSpec, Editor<Contro
             SimpleIntegerEditor(2)
         )
 
-        ParameterType.Buffer -> BufferControlSpecEditor()
+        ParameterType.Buffer -> BufferControlSpecEditor().defaultState()
         ParameterType.Numerical -> NumericalControlSpecEditor(
             defaultValue = DecimalLiteralEditor("0"),
             min = DecimalLiteralEditor("0"),
@@ -69,7 +71,9 @@ class ControlSpecEditor : ChoiceEditor<ParameterType, ControlSpec, Editor<Contro
             warp = WarpEditor(Warp.Linear),
             lag = DecimalLiteralEditor("0.02"),
             step = DecimalLiteralEditor("0.1"),
-            associatedColor = SimpleColorEditor(randomColor())
+            associatedColor = SimpleColorEditor(randomColor()),
+            inlineDisplay = SimpleBooleanEditor(false),
+            attackRelease = SimpleBooleanEditor(false)
         )
 
         else -> throw AssertionError("unknown parameter type $choice")

@@ -17,12 +17,16 @@ import kotlin.math.pow
 @Serializable(with = Warp.Serializer::class)
 @Choice(initialValue = "Warp.Linear")
 sealed class Warp : ScExpr {
+    abstract fun mappingFunction(min: String, max: String): String
+
     object Linear : Warp() {
         override fun toString(): String = "\\lin"
 
         override fun code(writer: ScWriter, context: Context) {
             writer.append("\\lin")
         }
+
+        override fun mappingFunction(min: String, max: String): String = "range($min, $max)"
     }
 
     object Exponential : Warp() {
@@ -30,6 +34,8 @@ sealed class Warp : ScExpr {
         override fun code(writer: ScWriter, context: Context) {
             writer.append("\\exp")
         }
+
+        override fun mappingFunction(min: String, max: String): String = "exprange($min, $max)"
     }
 
     data class Monomial(val exponent: Decimal) : Warp() {
@@ -38,6 +44,9 @@ sealed class Warp : ScExpr {
         override fun code(writer: ScWriter, context: Context) {
             writer.append(exponent.toString())
         }
+
+        override fun mappingFunction(min: String, max: String): String =
+            "curverange($min, $max, $exponent)"
     }
 
     companion object {
@@ -100,7 +109,7 @@ data class IdentityTransformation(val range: DoubleRange) : Transformation {
 
 data class LinearTransformation(
     override val sourceRange: DecimalRange,
-    override val targetRange: DoubleRange
+    override val targetRange: DoubleRange,
 ) : Transformation {
     private val factor = (targetRange.endInclusive - targetRange.start) / (sourceRange.endInclusive - targetRange.start)
     private val summand = targetRange.start - sourceRange.start

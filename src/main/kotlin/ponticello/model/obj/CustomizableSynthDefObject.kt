@@ -35,8 +35,14 @@ class CustomizableSynthDefObject(
     override val canCopy: Boolean
         get() = true
 
-    override fun allParameters(): List<ParameterDefObject> =
-        parameters + listOf(ParameterDefObject.LEVEL, ParameterDefObject.ATTACK_RELEASE)
+    override fun allParameters(): List<ParameterDefObject> {
+        val attackRelease = parameters.any {
+            val spec = it.spec.now
+            spec is NumericalControlSpec && spec.attackRelease
+        }
+        val additionalParameters = if (attackRelease) listOf(ParameterDefObject.ATTACK_RELEASE) else emptyList()
+        return parameters + additionalParameters
+    }
 
     override fun copy(): CustomizableSynthDefObject = CustomizableSynthDefObject(
         ParameterDefList(parameters.mapTo(mutableListOf()) { p -> p.copy().withName(p.name.now) }),
@@ -59,27 +65,48 @@ class CustomizableSynthDefObject(
 
     override fun ScWriter.createObject() {
         append("SynthDef(\\${name.now}, ")
-        val extraVariables = listOf("duration", "attack", "release", "sustain_", "level", "auto_release_", "env_, auto_release_env")
+        val extraVariables = mutableListOf("duration", "gate_env_")
         val parameterVariables = parameters.map { p -> Identifier(p.name.now) }
         val parameterAssignments = parameters.map { p ->
             val parameterCode = RawScExpr("\\${p.name.now}.${p.spec.now.code}")
             Assignment(Identifier(p.name.now), parameterCode)
         }
         val variables = ugenGraph?.editor?.result?.now?.variables.orEmpty()
-        val extraStatements = listOf(
-            RawScExpr("duration = \\duration.ir"),
-            RawScExpr("attack = \\attack.kr(${AttackReleaseControl.DEFAULT})"),
-            RawScExpr("release = \\release.kr(${AttackReleaseControl.DEFAULT})"),
-            RawScExpr("sustain_ = duration - (attack + release)"),
-            RawScExpr("level = \\level.kr(1)"),
-            RawScExpr("auto_release_ = \\auto_release.kr(1)"),
-            RawScExpr("auto_release_env = IEnvGen.kr(Env.new([1, 1, 1 - auto_release_], [attack + sustain_, 0]), index: Sweep.kr(rate: ~time_warp_bus.kr))"),
-            RawScExpr("env_ = Env.asr(attack, 1, release, 2).kr(Done.freeSelf, gate: auto_release_env * \\gate.kr(1), timeScale: ~time_warp_bus.kr) * level"),
-        )
+        val extraStatements = mutableListOf<String>()
+        val attackReleaseParameters = parameters.associate { p -> p.name.now to p.spec.now }.filter { (_, spec) ->
+            spec is NumericalControlSpec && spec.attackRelease
+        }
+        extraStatements.add("duration = \\duration.ir")
+        if (attackReleaseParameters.isNotEmpty()) {
+            extraVariables.addAll(listOf("attack", "release", "sustain_", "env_"))
+            extraStatements.add("attack = \\attack.kr(${AttackReleaseControl.DEFAULT})")
+            extraStatements.add("release = \\release.kr(${AttackReleaseControl.DEFAULT})")
+            extraStatements.add("sustain_ = duration - (attack + release)")
+            extraStatements.add(
+                "gate_env_ = IEnvGen.kr(" +
+                        "Env.new([1, 1, 1 - \\auto_release.kr(1)], [attack + sustain_, 0]), " +
+                        "index: Sweep.kr(rate: ~time_warp_bus.kr))"
+            )
+            extraStatements.add(
+                "env_ = Env.asr(attack, 1, release, curve: 2)" +
+                        ".kr(Done.freeSelf, gate: gate_env_ * \\gate.kr(1), timeScale: ~time_warp_bus.kr)"
+            )
+            for ((param, spec) in attackReleaseParameters) {
+                spec as NumericalControlSpec
+                extraStatements.add("$param = env_.${spec.warp.mappingFunction(spec.min.text, param)}")
+            }
+        } else {
+            extraStatements.add(
+                "gate_env_ = IEnvGen.kr(" +
+                        "Env.step([0, 1], [duration, 1]), " +
+                        "index: Sweep.kr(rate: ~time_warp_bus.kr))"
+            )
+            extraStatements.add("FreeSelf.kr(gate_env_)")
+        }
         val statements = ugenGraph?.editor?.result?.now?.statements.orEmpty()
         val block = CodeBlock(
             variables = extraVariables.map(::Identifier) + parameterVariables + variables,
-            statements = extraStatements + parameterAssignments + statements
+            statements = parameterAssignments + extraStatements.map(::RawScExpr) + statements
         )
         val graphFunc = ScFunction(emptyList(), block)
         graphFunc.code(this, context)

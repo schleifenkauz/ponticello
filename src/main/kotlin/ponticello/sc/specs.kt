@@ -80,6 +80,7 @@ data class NumericalControlSpec(
     @Serializable(with = ColorSerializer::class) @Component(SimpleColorEditor::class)
     val associatedColor: Color = Color.WHITE,
     @Component(SimpleBooleanEditor::class) override val inlineDisplay: Boolean = false,
+    @Component(SimpleBooleanEditor::class) val attackRelease: Boolean = false,
 ) : ControlSpec {
     val precision get() = step.get().precision
 
