@@ -9,7 +9,6 @@ import javafx.scene.Cursor
 import javafx.scene.input.MouseButton
 import javafx.scene.layout.HBox
 import javafx.scene.layout.Region
-import javafx.scene.text.Font
 import ponticello.model.project.InlineControlsDisplay
 import ponticello.model.project.UIState
 import ponticello.model.score.ParameterControlList
@@ -86,8 +85,7 @@ class InlineParameterControlsBar(
             return
         }
         if (box.children.isEmpty()) {
-            val nameLabel = label(control.name.map { name -> "$name: " })
-            nameLabel.font = Font.font(11.0)
+            val nameLabel = label(control.name.map { name -> "$name: " }) styleClass "simple-parameter-control-name"
             nameLabel.setOnMouseClicked { ev ->
                 when (ev.button) {
                     MouseButton.SECONDARY -> controls.remove(control)

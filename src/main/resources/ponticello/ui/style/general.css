@@ -5,6 +5,8 @@
     -fx-background-color: transparent;
     -fx-control-inner-background: derive(-fx-base, 35%);
     -fx-control-inner-background-alt: -fx-control-inner-background;
+    -fx-font-size: 12px;
+    -fx-font-family: "Monospaced";
 }
 
 /*
@@ -52,7 +54,6 @@
 
 .sleek-text-field {
     -fx-prompt-text-fill: gray;
-    -fx-font-size: 11px;
     -fx-background-color: transparent;
     -fx-border-color: grey;
     -fx-border-radius: 0px;
@@ -82,7 +83,6 @@
 }
 
 .name-field {
-    -fx-font-size: 12px;
     -fx-background-color: transparent;
     -fx-background-radius: 0;
     -fx-border-width: 0;

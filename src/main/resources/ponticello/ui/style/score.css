@@ -82,7 +82,7 @@ Label.memo-area {
 }
 
 .bar-number {
-    -fx-font-size: 12px;
+    -fx-font-size: 10px;
     -fx-fill: green;
     -fx-font-weight: 300;
 }
@@ -94,7 +94,6 @@ Label.memo-area {
 
 .coordinate-info {
     -fx-text-fill: white;
-    -fx-font-size: 14;
 }
 
 .score-pane:drop-possible {
