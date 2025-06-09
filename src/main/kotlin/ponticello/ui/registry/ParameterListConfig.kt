@@ -4,13 +4,13 @@ import bundles.createBundle
 import fxutils.actions.Action.IfNotApplicable
 import fxutils.actions.ContextualizedAction
 import fxutils.actions.collectActions
+import fxutils.asPopup
 import fxutils.opacity
 import fxutils.prompt.DetailPane
 import fxutils.showBelow
 import hextant.context.createControl
 import hextant.core.view.ChoiceEditorControl
 import javafx.scene.Node
-import javafx.stage.Popup
 import org.kordamp.ikonli.materialdesign2.MaterialDesignD
 import ponticello.model.obj.ParameterDefObject
 import ponticello.sc.ParameterType
@@ -53,7 +53,6 @@ open class ParameterListConfig : ObjectListDisplayConfig<ParameterDefObject> {
                 }
                 ifNotApplicable(IfNotApplicable.Hide)
                 executes { box, _ ->
-                    val detailsPopup = Popup()
                     val detailsPane = DetailPane(labelWidth = 110.0)
                     when (val editor = box.obj.specEditor.content.now) {
                         is NumericalControlSpecEditor -> {
@@ -73,10 +72,9 @@ open class ParameterListConfig : ObjectListDisplayConfig<ParameterDefObject> {
                             detailsPane.addItem("Inline display", editor.context.createControl(editor.inlineDisplay))
                         }
                     }
-                    detailsPopup.content.add(detailsPane)
-                    detailsPane.scene.fill = DEFAULT_SCENE_FILL.opacity(0.5)
-                    detailsPopup.isAutoHide = true
-                    detailsPopup.showBelow(box.actionBar)
+                    val popup = detailsPane.asPopup()
+                    popup.scene.fill = DEFAULT_SCENE_FILL.opacity(0.5)
+                    popup.showBelow(box.actionBar)
                 }
             }
         }

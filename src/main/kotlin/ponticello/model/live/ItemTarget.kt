@@ -38,6 +38,8 @@ sealed class ItemTarget : AbstractContextualObject() {
 
     abstract val canView: Boolean
 
+    open val canStop: Boolean get() = false
+
     abstract val isActive: ReactiveBoolean
 
     abstract fun pressed(velocity: Int, item: LauncherGrid.GridItem)
@@ -73,6 +75,8 @@ sealed class ItemTarget : AbstractContextualObject() {
         override lateinit var isActive: ReactiveBoolean
             private set
 
+        override val canStop get() = true
+
         override fun toString(): String = "Toggle Recording"
 
         override fun initialize(context: Context) {
@@ -102,6 +106,8 @@ sealed class ItemTarget : AbstractContextualObject() {
 
         override val targetObject: ScoreObject?
             get() = ref.get()
+
+        override val canStop: Boolean get() = true
 
         @Transient
         private val active = reactiveVariable(false)
@@ -173,6 +179,8 @@ sealed class ItemTarget : AbstractContextualObject() {
         override val targetObject: ScoreObject?
             get() = ref.get()
 
+        override val canStop: Boolean get() = true
+
         @Transient
         override lateinit var isActive: ReactiveBoolean
 
@@ -236,6 +244,8 @@ sealed class ItemTarget : AbstractContextualObject() {
         override lateinit var isActive: ReactiveBoolean
             private set
 
+        override val canStop: Boolean get() = true
+
         override fun initialize(context: Context) {
             super.initialize(context)
             isActive = ref.getFlow(context[AudioFlows])?.isActive ?: reactiveValue(false)
@@ -259,6 +269,7 @@ sealed class ItemTarget : AbstractContextualObject() {
         override fun toString(): String = "Flow ${ref.flowName}"
     }
 
+    @Serializable
     data class Script(val ref: ScriptObjectReference) : ItemTarget() {
         override val canView: Boolean
             get() = true
@@ -278,12 +289,15 @@ sealed class ItemTarget : AbstractContextualObject() {
         override fun toString(): String = "Script ${ref.getName()}"
     }
 
+    @Serializable
     data class LiveTask(val ref: LiveTaskReference) : ItemTarget() {
         override val canView: Boolean
             get() = true
 
         override val isActive: ReactiveBoolean
             get() = ref.get()?.isActive ?: reactiveValue(false)
+
+        override val canStop: Boolean get() = true
 
         override fun pressed(velocity: Int, item: LauncherGrid.GridItem) {
             val obj = ref.get() ?: return

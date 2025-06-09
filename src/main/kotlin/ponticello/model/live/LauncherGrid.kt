@@ -2,8 +2,8 @@ package ponticello.model.live
 
 import bundles.set
 import fxutils.runFXWithTimeout
-import fxutils.undo.PropertyEdit
 import fxutils.undo.UndoManager
+import fxutils.undo.VariableEdit
 import hextant.context.Context
 import hextant.context.extend
 import hextant.core.editor.ListenerManager
@@ -26,6 +26,7 @@ import ponticello.model.registry.ScoreObjectRegistry
 import ponticello.model.registry.reference
 import ponticello.model.score.ScoreObjectGroup
 import ponticello.model.score.SoundProcess
+import reaktive.value.ReactiveValue
 import reaktive.value.ReactiveVariable
 import reaktive.value.now
 import reaktive.value.reactiveVariable
@@ -135,26 +136,28 @@ class LauncherGrid private constructor(
 
     @Serializable
     class GridItem(
-        @SerialName("target") private var _target: ItemTarget = ItemTarget.None,
+        @SerialName("target") private val _target: ReactiveVariable<ItemTarget> = reactiveVariable(ItemTarget.None),
         val stopOnRelease: ReactiveVariable<Boolean> = reactiveVariable(false),
     ) : AbstractContextualObject() {
         @Transient
         private lateinit var grid: LauncherGrid
 
         var target: ItemTarget
-            get() = _target
+            get() = _target.now
             set(value) {
-                val oldTarget = _target
+                val oldTarget = _target.now
                 if (value == oldTarget) return
-                _target = value
+                _target.now = value
                 value.initialize(grid)
                 val description = if (value is ItemTarget.None) "Reset target" else "Choose target"
-                grid.undoManager.record(PropertyEdit(this::target, oldTarget, value, description))
+                grid.undoManager.record(VariableEdit(_target, oldTarget, value, description))
                 grid.listeners.notifyListeners { updateItem(this@GridItem) }
                 if (value is ItemTarget.Object && value.targetObject is SoundProcess) {
                     value.velocityParameter.now = ParameterDefObject.LEVEL.reference()
                 }
             }
+
+        fun target(): ReactiveValue<ItemTarget> = _target
 
         fun reference() = GridItemReference(grid.items.indexOf(this))
 
@@ -166,6 +169,13 @@ class LauncherGrid private constructor(
         fun initialize(context: Context, grid: LauncherGrid) {
             this.grid = grid
             initialize(context)
+        }
+
+        companion object {
+            fun createDefault(): GridItem = GridItem(
+                _target = reactiveVariable(ItemTarget.None),
+                stopOnRelease = reactiveVariable(false),
+            )
         }
     }
 
@@ -206,8 +216,6 @@ class LauncherGrid private constructor(
     }
 
     companion object {
-        fun createNByN(n: Int) = LauncherGrid(Array(n * n) {
-            GridItem(ItemTarget.None, stopOnRelease = reactiveVariable(false))
-        })
+        fun createNByN(n: Int) = LauncherGrid(Array(n * n) { GridItem.createDefault() })
     }
 }
