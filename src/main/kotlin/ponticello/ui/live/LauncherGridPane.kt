@@ -80,7 +80,7 @@ class LauncherGridPane(
     override fun defaultState(): ToolPaneState =
         ToolPaneState(ToolPaneState.Side.TOP, ToolPanePosition.Undocked.center())
 
-    init {
+    override fun afterSetup() {
         preparePlayers()
         setupGridPane()
         grid.addView(this)
@@ -293,12 +293,12 @@ class LauncherGridPane(
 
                         is ItemTarget.Script -> {
                             val obj = target.ref.get() ?: return@executes
-                            target.context[AppLayout].get<ScriptRegistryPane>().listView.showContent(obj)
+                            target.context[AppLayout].get<ScriptRegistryPane>().showContent(obj)
                         }
 
                         is ItemTarget.LiveTask -> {
                             val obj = target.ref.get() ?: return@executes
-                            target.context[AppLayout].get<LiveTaskRegistryPane>().listView.showContent(obj)
+                            target.context[AppLayout].get<LiveTaskRegistryPane>().showContent(obj)
                         }
 
                         else -> {}
@@ -368,7 +368,7 @@ class LauncherGridPane(
 
         private fun showObject(obj: @Contextual ScoreObject) {
             val objectsPane = obj.context[AppLayout].get<ScoreObjectRegistryPane>()
-            objectsPane.listView.showContent(obj)
+            objectsPane.showContent(obj)
         }
 
         private val actions = collectActions {

@@ -153,10 +153,14 @@ class ObjectListView<O : ContextualObject>(
         else itemsScrollPane
 
     private fun displayContent(box: ObjectBox<O>?) {
-        val content = box?.content() ?: Region()
-        displayedContent = content
-        HBox.setHgrow(displayedContent, Priority.ALWAYS)
-        setRoot(HBox(itemCellsLayout(), displayedContent))
+        val content = box?.content()
+        if (content != null) {
+            displayedContent = content
+            HBox.setHgrow(content, Priority.ALWAYS)
+            setRoot(HBox(itemCellsLayout(), content))
+        } else {
+            setRoot(itemCellsLayout())
+        }
     }
 
     private fun setRoot(root: Node) {

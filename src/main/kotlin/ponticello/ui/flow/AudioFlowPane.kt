@@ -1,5 +1,6 @@
 package ponticello.ui.flow
 
+import fxutils.actions.ActionBar
 import fxutils.actions.collectActions
 import fxutils.popupAnchor
 import fxutils.prompt.SimpleSearchableListView
@@ -40,14 +41,16 @@ class AudioFlowPane(flows: AudioFlows) : SearchableToolPane<AudioFlowGroup>(flow
 
     override fun defaultState(): ToolPaneState = ToolPaneState.docked(ToolPaneState.Side.BOTTOM)
 
-    override fun doSetup() {
+    override fun afterSetup() {
+        super.afterSetup()
         listView.itemsScrollPane.isFitToHeight = true
         listView.autoResizeScene = true
     }
 
     override fun getItemContent(obj: AudioFlowGroup): List<Node> {
         val colorPicker = colorPicker(obj.associatedColor).setFixedWidth(30.0)
-        return listOf(colorPicker)
+        val actionBar = ActionBar(actions.withContext(obj), "medium-icon-button")
+        return listOf(colorPicker, actionBar)
     }
 
     override fun getContent(obj: AudioFlowGroup, mode: DisplayMode): Parent =

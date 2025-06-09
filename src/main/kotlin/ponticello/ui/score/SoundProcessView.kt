@@ -14,8 +14,7 @@ import javafx.scene.image.ImageView
 import javafx.scene.input.DragEvent
 import javafx.scene.input.Dragboard
 import javafx.scene.input.MouseEvent
-import javafx.scene.layout.Border
-import javafx.scene.layout.HBox
+import javafx.scene.layout.*
 import javafx.scene.paint.Color
 import javafx.scene.shape.Line
 import javafx.scene.transform.Scale
@@ -44,10 +43,7 @@ import ponticello.ui.registry.InstrumentRegistryPane
 import ponticello.ui.registry.SearchableParameterDefListView
 import reaktive.Observer
 import reaktive.value.*
-import reaktive.value.binding.and
-import reaktive.value.binding.equalTo
-import reaktive.value.binding.flatMap
-import reaktive.value.binding.not
+import reaktive.value.binding.*
 import reaktive.value.fx.asObservableValue
 import reaktive.value.fx.asReactiveValue
 
@@ -63,6 +59,7 @@ class SoundProcessView(
     private var sampleDisplayObserver: Observer? = null
     private var sampleContentObserver: Observer? = null
 
+    private val objectPane = Pane()
     private val observers = mutableMapOf<ParameterControl, Observer>()
     private val envelopeEditors = mutableListOf<EnvelopeEditor>()
     private val lfoCanvases = mutableMapOf<NamedParameterControl, LFOCanvas>()
@@ -90,6 +87,9 @@ class SoundProcessView(
         objectPane.prefWidthProperty().bind(widthProperty())
         objectPane.prefHeightProperty().bind(heightProperty().subtract(objectPane.layoutYProperty()))
         objectPane.heightProperty().addListener { _, _, _ -> rescale() }
+        objectPane.backgroundProperty().bind(backgroundColor.map { color ->
+            Background(BackgroundFill(color, CornerRadii.EMPTY, null))
+        }.asObservableValue())
         children.add(0, objectPane)
 
         sampleObserver = observeSample()
@@ -114,7 +114,7 @@ class SoundProcessView(
     override fun setupDetailPane(pane: DetailPane) {
         pane.addItem("Color:", this.colorPicker)
         val viewBtn = Material2AL.CODE.button("View SynthDef", "medium-icon-button") {
-            context[AppLayout].get<InstrumentRegistryPane>().listView.showContent(obj.instrument)
+            context[AppLayout].get<InstrumentRegistryPane>().showContent(obj.instrument)
         }.disableIf(obj.instrumentSelector.isResolved.not())
         val box = ObjectSelectorControl(obj.instrumentSelector, createBundle())
         pane.addItem("SynthDef: ", HBox(5.0, box, viewBtn).centerChildren())

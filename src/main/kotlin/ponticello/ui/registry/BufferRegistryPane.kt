@@ -3,14 +3,11 @@ package ponticello.ui.registry
 import bundles.PublicProperty
 import bundles.publicProperty
 import bundles.set
+import fxutils.*
 import fxutils.actions.ContextualizedAction
 import fxutils.actions.collectActions
-import fxutils.hasFiles
 import fxutils.prompt.YesNoPrompt
 import fxutils.prompt.compoundPrompt
-import fxutils.registerShortcuts
-import fxutils.setFixedWidth
-import fxutils.setupDropArea
 import hextant.fx.HextantTextField
 import javafx.event.Event
 import javafx.scene.Node
@@ -18,7 +15,9 @@ import javafx.scene.control.Label
 import javafx.scene.control.Spinner
 import javafx.scene.control.TextField
 import javafx.scene.input.DataFormat
+import org.kordamp.ikonli.Ikon
 import org.kordamp.ikonli.evaicons.Evaicons
+import org.kordamp.ikonli.material2.Material2AL
 import org.kordamp.ikonli.material2.Material2MZ
 import org.kordamp.ikonli.materialdesign2.MaterialDesignC
 import org.kordamp.ikonli.materialdesign2.MaterialDesignF
@@ -44,11 +43,15 @@ class BufferRegistryPane(private val buffers: BufferRegistry) : ObjectRegistryPa
     override val title: String
         get() = "Buffers"
 
+    override val icon: Ikon
+        get() = Material2AL.LIBRARY_MUSIC
+
     override val headerActions: List<ContextualizedAction> = registryActions.withContext(buffers)
 
     override fun defaultState(): ToolPaneState = ToolPaneState.docked(ToolPaneState.Side.RIGHT)
 
     override fun afterSetup() {
+        super.afterSetup()
         listView.itemsScrollPane.setupDropArea({ db -> db.hasFiles("wav") }, { ev ->
             for (file in ev.dragboard.files) {
                 buffers.getOrAdd(file)
@@ -81,26 +84,32 @@ class BufferRegistryPane(private val buffers: BufferRegistry) : ObjectRegistryPa
         }.showDialog(this)
     }
 
-    override fun getItemContent(obj: BufferObject): List<Node> {
-        obj as AllocatedBufferObject
-        val channelsSpinner = Spinner<Int>(1, 12, obj.channels.now).setFixedWidth(70.0)
-        channelsSpinner.valueFactory.valueProperty().bindBidirectional(obj.channels.asProperty())
-        val durationInput = HextantTextField(obj.duration().now.toString())
-        durationInput.setOnAction { syncBuffer(obj, durationInput) }
-        durationInput.focusedProperty().addListener { _, _, focused ->
-            if (!focused) {
-                resetDurationInput(durationInput, obj)
+    override fun getItemContent(obj: BufferObject): List<Node> = when (obj) {
+        is AllocatedBufferObject -> {
+            val channelsSpinner = Spinner<Int>(1, 12, obj.channels.now).setFixedWidth(70.0)
+            channelsSpinner.valueFactory.valueProperty().bindBidirectional(obj.channels.asProperty())
+            val durationInput = HextantTextField(obj.duration().now.toString())
+            durationInput.setOnAction { syncBuffer(obj, durationInput) }
+            durationInput.focusedProperty().addListener { _, _, focused ->
+                if (!focused) {
+                    resetDurationInput(durationInput, obj)
+                }
             }
-        }
-        durationInput.registerShortcuts {
-            on("ESCAPE") {
-                resetDurationInput(durationInput, obj)
+            durationInput.registerShortcuts {
+                on("ESCAPE") {
+                    resetDurationInput(durationInput, obj)
+                }
             }
+            durationInput.promptText = "Number of frames"
+            durationInput.id = "duration-input"
+            val xLabel = Label("x")
+            listOf(channelsSpinner, xLabel, durationInput)
         }
-        durationInput.promptText = "Number of frames"
-        durationInput.id = "duration-input"
-        val xLabel = Label("x")
-        return listOf(channelsSpinner, xLabel, durationInput)
+
+        is SampleObject -> {
+            val pathLabel = label(obj.filePath()) styleClass "path-label"
+            listOf(pathLabel)
+        }
     }
 
     private fun resetDurationInput(durationInput: HextantTextField, obj: BufferObject) {

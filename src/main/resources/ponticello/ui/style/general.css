@@ -10,7 +10,7 @@
 }
 
 .app-layout {
-    -fx-background-color: #28282b;
+    -fx-background-color: #1d1d20;
 }
 
 /*
@@ -110,4 +110,11 @@
 
 .check-box:hover .box {
     -fx-border-color: -fx-accent;
+}
+
+.split-pane-divider {
+    -fx-padding: 0px;
+    -fx-background-color: transparent;
+    -fx-border-color: black;
+    -fx-border-width: 1px 1px 0px 0px;
 }

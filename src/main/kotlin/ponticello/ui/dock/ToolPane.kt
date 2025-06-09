@@ -10,6 +10,8 @@ import javafx.scene.layout.Region
 import javafx.scene.layout.VBox
 import org.kordamp.ikonli.Ikon
 import org.kordamp.ikonli.materialdesign2.MaterialDesignR
+import ponticello.ui.impl.DEFAULT_SCENE_FILL
+import ponticello.ui.impl.sceneFill
 import reaktive.value.ReactiveBoolean
 import reaktive.value.binding.Binding
 import reaktive.value.binding.equalTo
@@ -23,8 +25,6 @@ abstract class ToolPane : VBox() {
     abstract val title: String
     open val icon: Ikon? get() = null
     open val shortcuts: Array<String> get() = emptyArray()
-
-    open val hasSecondaryFunction: Boolean get() = false
 
     lateinit var side: ToolPaneState.Side
         private set
@@ -62,9 +62,9 @@ abstract class ToolPane : VBox() {
 
     }
 
-    private fun setup() {
+    fun setup() {
         doSetup()
-        header = createHeader(headerActions)
+        header = createHeader()
         children.add(header)
         children.add(content)
         setVgrow(content, ALWAYS)
@@ -77,11 +77,11 @@ abstract class ToolPane : VBox() {
         headerContent?.requestFocus() ?: content.requestFocus()
     }
 
-    private fun createHeader(headerActions: List<ContextualizedAction>): HBox {
+    private fun createHeader(): HBox {
         actionBar = ActionBar(headerActions, buttonStyle = "medium-icon-button")
         val label = label(title).styleClass("heading")
         val box = HBox(label, infiniteSpace(), actionBar).styleClass("tool-pane-header")
-        if (headerContent != null) box.children.add(0, headerContent)
+        if (headerContent != null) box.children.add(1, headerContent)
         return box
     }
 
@@ -96,7 +96,8 @@ abstract class ToolPane : VBox() {
             w.close()
             w.scene.root = Region()
         } ?: layout.hideDocked(this)
-        window = SubWindow(this, title, windowType)
+        window = SubWindow(this, title, windowType).sceneFill(DEFAULT_SCENE_FILL)
+        window!!.sizeToScene()
         setShowing(true)
         return window!!
     }
@@ -116,10 +117,15 @@ abstract class ToolPane : VBox() {
         side = state.side
         if (state.position is ToolPanePosition.Undocked) {
             window = SubWindow(this, title, state.position.windowType).also { w ->
-                w.relocate(state.position.x, state.position.y)
-                w.width = state.position.width
-                w.height = state.position.height
-            }
+                if (state.position.x.isNaN()) {
+                    w.centerOnScreen()
+                    w.sizeToScene()
+                } else {
+                    w.relocate(state.position.x, state.position.y)
+                    w.width = state.position.width
+                    w.height = state.position.height
+                }
+            }.sceneFill(DEFAULT_SCENE_FILL)
         }
         if (state.isShowing) {
             setShowing(true)
@@ -152,6 +158,7 @@ abstract class ToolPane : VBox() {
 
     fun toggleShowing() {
         if (showing.now && window != null && window!!.type == SubWindow.Type.ToolWindow) {
+            if (!isSetup) setup()
             window!!.showOrBringToFront()
         } else {
             setShowing(!showing.now)

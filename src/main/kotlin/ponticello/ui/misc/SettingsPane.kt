@@ -1,7 +1,6 @@
 package ponticello.ui.misc
 
 import fxutils.*
-import hextant.context.Context
 import javafx.scene.Node
 import javafx.scene.control.Label
 import org.kordamp.ikonli.Ikon
@@ -17,7 +16,7 @@ import ponticello.ui.dock.ToolPaneState
 import ponticello.ui.registry.ParameterDefsPane
 import reaktive.value.ReactiveVariable
 
-class SettingsPane(private val settings: Settings, private val context: Context) : ToolPane() {
+class SettingsPane(private val settings: Settings) : ToolPane() {
     override val title: String
         get() = "Settings"
     override val icon: Ikon
@@ -53,12 +52,12 @@ class SettingsPane(private val settings: Settings, private val context: Context)
         }
     }
 
-    override fun defaultState(): ToolPaneState =
-        ToolPaneState(ToolPaneState.Side.TOP, ToolPanePosition.Undocked.center())
-
     init {
         styleClass("settings-pane")
     }
+
+    override fun defaultState(): ToolPaneState =
+        ToolPaneState(ToolPaneState.Side.TOP, ToolPanePosition.Undocked.center())
 
     private fun ChildrenAdder.item(name: String, children: ChildrenAdder.() -> Unit) {
         +hbox {

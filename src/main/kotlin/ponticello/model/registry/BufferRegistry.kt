@@ -64,7 +64,7 @@ class BufferRegistry(
                 put("copyAudioFiles", JsonPrimitive(value.copyAudioFiles.now))
                 for (buf in value.objects) {
                     val content = when (buf) {
-                        is SampleObject -> JsonPrimitive(buf.filePath())
+                        is SampleObject -> JsonPrimitive(buf.filePath().now)
                         is AllocatedBufferObject -> buildJsonObject {
                             put("channels", JsonPrimitive(buf.channels.now))
                             put("duration", JsonPrimitive(buf.duration.now))
@@ -84,7 +84,7 @@ class BufferRegistry(
             for ((name, content) in obj) {
                 if (name == "copyAudioFiles") continue
                 val buf = when (content) {
-                    is JsonPrimitive -> SampleObject(content.string).withName(name)
+                    is JsonPrimitive -> SampleObject(reactiveVariable(content.string)).withName(name)
                     is JsonObject -> {
                         val channels = content["channels"]?.jsonPrimitive?.int
                             ?: error("Missing 'channels' in object: $content")

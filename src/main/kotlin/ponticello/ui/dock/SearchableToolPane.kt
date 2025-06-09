@@ -1,8 +1,11 @@
 package ponticello.ui.dock
 
 import fxutils.actions.*
+import fxutils.addAfter
 import fxutils.styleClass
 import javafx.scene.Cursor
+import javafx.scene.Node
+import javafx.stage.Window
 import org.controlsfx.control.textfield.CustomTextField
 import org.kordamp.ikonli.javafx.FontIcon
 import org.kordamp.ikonli.material2.Material2MZ
@@ -23,9 +26,10 @@ abstract class SearchableToolPane<O : NamedObject>(
         private set
 
     override val headerActions: List<ContextualizedAction>
-        get() = modeChangeActions.withContext(listView) + fitContentAction.withContext(this)
+        get() = modeChangeActions.withContext(listView) + fitContentAction.withContext(this) + actions.withContext(this)
 
     override val content: ObjectListView<O> get() = listView
+    override val headerContent: Node get() = searchText
 
     override fun doSetup() {
         listView = ObjectListView(list, this, filter = { obj -> filter(obj) && matchesSearch(obj) })
@@ -33,9 +37,14 @@ abstract class SearchableToolPane<O : NamedObject>(
     }
 
     override fun afterSetup() {
-        val actions = listView.actions + extraHeaderActions() + headerActions
+        val actions = listView.actions + extraHeaderActions()
         registerShortcuts(actions)
-        header.children.add(1, ActionBar(actions, buttonStyle = "medium-icon-button"))
+        header.children.addAfter(headerContent, ActionBar(actions, buttonStyle = "medium-icon-button"))
+    }
+
+    fun showContent(obj: O): Window? {
+        setShowing(true)
+        return listView.showContent(obj)
     }
 
     protected open fun extraHeaderActions(): List<ContextualizedAction> = emptyList()

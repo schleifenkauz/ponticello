@@ -39,7 +39,7 @@ class PatternPlotPane(private val pattern: GlobalPatternObject) : ToolPane() {
     override val headerContent = createHeader()
 
     init {
-        doSetup()
+        setup()
         setPrefSize(500.0, 500.0)
     }
 

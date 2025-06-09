@@ -23,7 +23,7 @@ class ClockRegistryPane(clocks: ClockRegistry) : ObjectRegistryPane<ClockObject>
 
     override fun getItemContent(obj: ClockObject): List<Node> {
         val converter = ClockObject.TIME_WARP_SPEC.converter()
-        val name = reactiveValue("Warp")
+        val name = reactiveValue("Time Warp")
         val slider = SliderBar(
             obj.timeWarp, name, converter, SliderBar.Style.Regular,
             undoManager = registry.context[UndoManager], updateActionDescription = "Update time warp"

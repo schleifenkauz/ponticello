@@ -106,7 +106,7 @@ object ObjectActions {
             executeSingle { view, ev ->
                 if (ev.isTargetTextInput && !ev.isAltDown()) return@executeSingle
                 val scoreObjectsPane = view.context[AppLayout].get<ScoreObjectRegistryPane>()
-                val w = scoreObjectsPane.listView.showContent(view.obj) ?: return@executeSingle
+                val w = scoreObjectsPane.showContent(view.obj) ?: return@executeSingle
                 val coords = view.localToScreen(view.width, 0.0)
                 w.x = coords.x
                 w.y = coords.y
@@ -179,7 +179,7 @@ object ObjectActions {
                         Logger.warn("Instrument is not resolved", Logger.Category.Score)
                         return@executeSingle
                     }
-                    view.context[AppLayout].get<InstrumentRegistryPane>().listView.showContent(def)
+                    view.context[AppLayout].get<InstrumentRegistryPane>().showContent(def)
                 }
             }
         }

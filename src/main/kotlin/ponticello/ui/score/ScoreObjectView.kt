@@ -23,7 +23,8 @@ import javafx.scene.control.Label
 import javafx.scene.control.Tooltip
 import javafx.scene.input.MouseButton
 import javafx.scene.input.MouseEvent
-import javafx.scene.layout.*
+import javafx.scene.layout.HBox
+import javafx.scene.layout.Pane
 import javafx.scene.paint.Color
 import javafx.scene.paint.Color.BLACK
 import ponticello.impl.*
@@ -74,7 +75,6 @@ abstract class ScoreObjectView(
     protected open val borderColorWhenNotSelected: Color get() = Color.TRANSPARENT
     protected open val borderColorWhenSameObjectSelected: Color get() = Color.GRAY
 
-    protected val objectPane = Pane()
     protected val inlineControls = HBox() styleClass "score-object-top-bar"
     lateinit var inlineNameControl: NameControl
         private set
@@ -136,7 +136,7 @@ abstract class ScoreObjectView(
 
     protected open fun initialize() {
         initializeLayout()
-        setBackground()
+        setupColorPicker()
         instance.addListener(this)
         obj.addListener(this)
         isInitialized = true
@@ -204,10 +204,7 @@ abstract class ScoreObjectView(
         setPrefSize(getDisplayWidth(), getDisplayHeight())
     }
 
-    private fun setBackground() {
-        objectPane.backgroundProperty().bind(backgroundColor.map { color ->
-            Background(BackgroundFill(color, CornerRadii.EMPTY, null))
-        }.asObservableValue())
+    private fun setupColorPicker() {
         colorPicker.userData = backgroundColor.forEach { color ->
             colorPicker.value = color
         }
@@ -230,7 +227,7 @@ abstract class ScoreObjectView(
 
                 ev.button == MouseButton.SECONDARY && ev.modifiers == setOf(Shift) -> {
                     if (!parentPane.isRoot(obj)) {
-                        context[AppLayout].get<ScoreObjectRegistryPane>().listView.showContent(obj)
+                        context[AppLayout].get<ScoreObjectRegistryPane>().showContent(obj)
                     }
                 }
 

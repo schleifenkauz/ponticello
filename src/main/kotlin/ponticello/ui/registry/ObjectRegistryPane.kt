@@ -1,5 +1,6 @@
 package ponticello.ui.registry
 
+import fxutils.actions.ContextualizedAction
 import fxutils.actions.collectActions
 import fxutils.plural
 import fxutils.styleClass
@@ -21,8 +22,11 @@ abstract class ObjectRegistryPane<O : NamedObject>(val registry: ObjectRegistry<
     }
 
     override fun afterSetup() {
+        super.afterSetup()
         listView.autoResizeScene = true
     }
+
+    override fun extraHeaderActions(): List<ContextualizedAction> = action.withContext(this)
 
     protected open fun addObject(ev: Event?) {
         val name = NamePrompt(
@@ -36,7 +40,7 @@ abstract class ObjectRegistryPane<O : NamedObject>(val registry: ObjectRegistry<
     protected abstract fun createNewObject(name: String, ev: Event?): O?
 
     companion object {
-        private val headerActions = collectActions<ObjectRegistryPane<*>> {
+        private val action = collectActions<ObjectRegistryPane<*>> {
             addAll(UndoRedoActions) { pane -> pane.registry.context[UndoManager] }
             addAction("Create object") {
                 description { p -> reactiveValue("Create new ${p.registry.objectType}") }

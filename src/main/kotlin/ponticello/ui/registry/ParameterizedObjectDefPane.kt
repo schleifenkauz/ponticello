@@ -2,14 +2,19 @@ package ponticello.ui.registry
 
 import fxutils.actions.ActionBar
 import fxutils.actions.registerShortcuts
+import fxutils.centerChildren
+import fxutils.infiniteSpace
 import javafx.event.Event
 import javafx.scene.Node
 import javafx.scene.control.ScrollPane
+import javafx.scene.layout.HBox
 import javafx.scene.layout.VBox
 import ponticello.model.Settings
 import ponticello.model.obj.ConfigurableInstrumentObject
 import ponticello.model.obj.ParameterDefObject
+import ponticello.model.obj.RenamableObject
 import ponticello.model.obj.withName
+import ponticello.ui.controls.NameControl
 import reaktive.value.now
 
 abstract class ParameterizedObjectDefPane<T : ConfigurableInstrumentObject>(
@@ -34,9 +39,13 @@ abstract class ParameterizedObjectDefPane<T : ConfigurableInstrumentObject>(
         this.content = layout
         val actions = InstrumentRegistryPane.actions.withContext(def)
         if (ownWindow) {
-            layout.children.add(0, ActionBar(actions, "medium-icon-button"))
+            val actionsBar = ActionBar(actions, "medium-icon-button")
+            check(def is RenamableObject) { "$def doesn't implement RenambleObject" }
+            val nameControl = NameControl(def)
+            val header = HBox(nameControl, infiniteSpace(), actionsBar).centerChildren()
+            layout.children.add(0, header)
+            registerShortcuts(actions)
         }
-        if (ownWindow) registerShortcuts(actions)
         parametersList.registerShortcuts(parametersList.actions)
     }
 

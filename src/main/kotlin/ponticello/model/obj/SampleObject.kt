@@ -14,10 +14,7 @@ import ponticello.model.registry.BufferRegistry
 import ponticello.model.score.ObjectPosition
 import ponticello.sc.client.ScWriter
 import reaktive.event.unitEvent
-import reaktive.value.ReactiveValue
-import reaktive.value.ReactiveVariable
-import reaktive.value.now
-import reaktive.value.reactiveVariable
+import reaktive.value.*
 import java.io.File
 import java.util.concurrent.CompletableFuture
 import javax.sound.sampled.AudioInputStream
@@ -25,7 +22,7 @@ import javax.sound.sampled.AudioSystem
 
 @Serializable
 class SampleObject(
-    private var referencedFile: String,
+    private val referencedFile: ReactiveVariable<String>,
 ) : BufferObject() {
     override val superColliderName: String
         get() = "~sample_${name.now}"
@@ -41,7 +38,7 @@ class SampleObject(
     lateinit var audioFile: File
         private set
 
-    fun filePath(): String = referencedFile
+    fun filePath(): ReactiveString = referencedFile
 
     val spectrogramFile get() = samplesDir.resolve("${name.now}_spectrogram.png")
 
@@ -126,10 +123,11 @@ class SampleObject(
 
     private fun referencedFile(): File {
         val base = context[projectDirectory]
+        val path = referencedFile.now
         return when {
-            referencedFile.startsWith("../") -> base.parentFile.resolve(referencedFile.drop(3))
-            referencedFile.startsWith("./") -> base.resolve(referencedFile.drop(2))
-            else -> File(referencedFile)
+            path.startsWith("../") -> base.parentFile.resolve(path.drop(3))
+            path.startsWith("./") -> base.resolve(path.drop(2))
+            else -> File(path)
         }.canonicalFile
     }
 
@@ -153,7 +151,7 @@ class SampleObject(
 
     fun loadFile(file: File) {
         val base = context[projectDirectory]
-        referencedFile = relativizePath(base, file)
+        referencedFile.now = relativizePath(base, file)
         sync()
     }
 
@@ -220,7 +218,7 @@ class SampleObject(
 
         fun create(project: PonticelloProject, name: String, audioFile: File): SampleObject {
             val referencedFile = relativizePath(project.projectDirectory, audioFile)
-            return SampleObject(referencedFile).withName(name)
+            return SampleObject(reactiveVariable(referencedFile)).withName(name)
         }
     }
 }

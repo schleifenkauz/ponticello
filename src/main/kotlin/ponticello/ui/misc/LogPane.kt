@@ -53,9 +53,9 @@ class LogPane(private val logger: Logger) : ToolPane(), Logger.View {
     private val buttonClear = button("Clear log") { logger.clear() }
     private val searchField = CustomTextField().styleClass("sleek-text-field", "search-field")
 
-    override val content: Node
-        get() = scrollPane
+    override val content: Node get() = scrollPane
     override val headerContent: Node = HBox(5.0, searchField, levelSelector, categorySelector, buttonClear)
+        .centerChildren()
 
     private val filter get() = Logger.Filter(level, category, searchField.text)
 
@@ -67,15 +67,12 @@ class LogPane(private val logger: Logger) : ToolPane(), Logger.View {
 
     override fun defaultState(): ToolPaneState = ToolPaneState(ToolPaneState.Side.RIGHT, ToolPanePosition.docked)
 
-    override fun doSetup() {
+    override fun afterSetup() {
         searchField.left = FontIcon(Material2MZ.SEARCH)
         searchField.promptText = "Search..."
         searchField.textProperty().addListener { _ -> displayFilteredRecords() }
         displayFilteredRecords()
         logger.addView(this)
-        scrollPane.isFitToWidth = true
-        children.addAll(header, scrollPane)
-        setPrefSize(800.0, 800.0)
         sceneProperty().addListener { _, _, scene ->
             scene?.window?.setOnShowing {
                 scrollToEnd()

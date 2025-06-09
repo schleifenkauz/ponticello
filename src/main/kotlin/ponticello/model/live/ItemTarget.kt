@@ -198,7 +198,7 @@ sealed class ItemTarget : AbstractContextualObject() {
             Platform.runLater {
                 val obj = ref.get() ?: return@runLater
                 if (obj.player == null) {
-                    context[AppLayout].get<ScoreObjectRegistryPane>().listView.showContent(obj)
+                    context[AppLayout].get<ScoreObjectRegistryPane>().showContent(obj)
                 }
                 val player = obj.player
                 if (player == null) {
@@ -207,7 +207,7 @@ sealed class ItemTarget : AbstractContextualObject() {
                 }
                 if (!player.isScheduled.now) {
                     player.play()
-                    context[AppLayout].get<ScoreObjectRegistryPane>().listView.showContent(obj)
+                    context[AppLayout].get<ScoreObjectRegistryPane>().showContent(obj)
                 } else if (!item.stopOnRelease.now) {
                     player.pause()
                 }

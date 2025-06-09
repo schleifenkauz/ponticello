@@ -39,9 +39,11 @@ class ParameterControlsPane(
 
     init {
         styleClass("parameter-controls")
+        setup()
     }
 
     override fun afterSetup() {
+        super.afterSetup()
         obj.controls.addListener(this)
         listView.itemsScrollPane.setupDropArea(::canDrop, ::drop)
     }

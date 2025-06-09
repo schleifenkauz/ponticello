@@ -146,7 +146,7 @@ class FlowListConfig(
                 executes { flow ->
                     flow as InstrumentFlow
                     val pane = flow.context[AppLayout].get<InstrumentRegistryPane>()
-                    pane.listView.showContent(flow.def)
+                    pane.showContent(flow.def)
                 }
             }
             add(ServerActions.scopeBus) { f -> (f as? MixerFlow)?.targetBus }

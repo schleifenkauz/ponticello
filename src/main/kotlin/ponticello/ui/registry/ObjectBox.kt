@@ -81,6 +81,7 @@ class ObjectBox<O : ContextualObject>(val parent: ObjectListView<O>, val obj: O)
     }
 
     fun setContentDisplay(mode: DisplayMode) {
+        setPseudoClassState("inline-content", false)
         content = null
         currentMode = mode
         if (mode != DisplayMode.SubWindow) {
@@ -95,6 +96,7 @@ class ObjectBox<O : ContextualObject>(val parent: ObjectListView<O>, val obj: O)
         }
         if (mode == DisplayMode.Inline) {
             content = config.getContent(obj, mode) ?: return
+            setPseudoClassState("inline-content", true)
             children.setAll(header, content)
         }
     }

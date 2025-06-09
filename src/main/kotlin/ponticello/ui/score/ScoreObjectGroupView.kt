@@ -1,20 +1,16 @@
 package ponticello.ui.score
 
 import bundles.createBundle
-import fxutils.control
 import fxutils.prompt.DetailPane
 import fxutils.styleClass
-import javafx.beans.value.ObservableValue
-import javafx.scene.layout.HBox
+import javafx.scene.layout.Background
+import javafx.scene.layout.BackgroundFill
+import javafx.scene.layout.CornerRadii
 import javafx.scene.layout.Region
-import javafx.scene.paint.Color
-import ponticello.model.project.InlineControlsDisplay
 import ponticello.model.score.ScoreObjectGroup
 import ponticello.model.score.ScoreObjectInstance
 import ponticello.sc.view.ObjectSelectorControl
-import reaktive.value.ReactiveBoolean
-import reaktive.value.ReactiveVariable
-import reaktive.value.binding.notEqualTo
+import reaktive.value.binding.map
 import reaktive.value.fx.asObservableValue
 
 class ScoreObjectGroupView(
@@ -23,9 +19,6 @@ class ScoreObjectGroupView(
 ) : ScoreObjectView(inst) {
     lateinit var scorePane: ScorePane
         private set
-
-    override val borderColorWhenNotSelected: Color
-        get() = Color.WHITE
 
     init {
         styleClass("sub-score")
@@ -42,6 +35,9 @@ class ScoreObjectGroupView(
         scorePane.layoutYProperty().bind(inlineControls.heightProperty())
         scorePane.prefWidthProperty().bind(widthProperty())
         scorePane.prefHeightProperty().bind(heightProperty().subtract(inlineControls.heightProperty()))
+        scorePane.backgroundProperty().bind(backgroundColor.map { color ->
+            Background(BackgroundFill(color, CornerRadii.EMPTY, null))
+        }.asObservableValue())
         children.add(scorePane)
     }
 

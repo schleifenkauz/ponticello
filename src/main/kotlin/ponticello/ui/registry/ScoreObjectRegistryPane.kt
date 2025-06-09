@@ -50,7 +50,7 @@ class ScoreObjectRegistryPane(registry: ScoreObjectRegistry) : ObjectRegistryPan
     override val supportedModes: Set<DisplayMode>
         get() = setOf(DisplayMode.SubWindow)
 
-    override fun defaultState(): ToolPaneState = ToolPaneState.docked(ToolPaneState.Side.RIGHT)
+    override fun defaultState(): ToolPaneState = ToolPaneState.docked(ToolPaneState.Side.LEFT)
 
     override fun getItemContent(obj: ScoreObject): List<Node> {
         val spec = NumericalControlSpec(zero, zero, one, 0.01.toDecimal(), zero, Warp.Linear)

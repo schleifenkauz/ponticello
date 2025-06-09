@@ -49,8 +49,6 @@ class BusRegistryPane(busses: BusRegistry) : ObjectRegistryPane<BusObject>(busse
 
     override fun dataFormat(obj: BusObject): DataFormat = BusObject.DATA_FORMAT
 
-    override fun filter(obj: BusObject): Boolean = obj is BusObject.ControlBus
-
     override fun onRemoved(obj: BusObject) {
         if (obj is BusObject.ControlBus) specObservers.remove(obj)
     }
@@ -73,7 +71,6 @@ class BusRegistryPane(busses: BusRegistry) : ObjectRegistryPane<BusObject>(busse
             val defaultValue = reactiveVariable(obj.spec.now?.defaultValue?.get() ?: 0.0.toDecimal())
             val name = obj.name.map { n -> "Default value for $n" }
             val sliderBox = HBox()
-            sliderBox.prefWidth = 150.0
             var previousSpec: NumericalControlSpec? = null
             specObservers[obj] = obj.spec.forEach { spec ->
                 if (spec != null) {

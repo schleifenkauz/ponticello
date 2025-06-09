@@ -1,6 +1,5 @@
 package ponticello.ui.registry
 
-import fxutils.SubWindow
 import fxutils.actions.ContextualizedAction
 import fxutils.actions.collectActions
 import fxutils.prompt.SimpleSearchableListView
@@ -11,7 +10,6 @@ import javafx.scene.Node
 import javafx.scene.Parent
 import javafx.scene.control.ScrollPane
 import javafx.scene.input.DataFormat
-import javafx.scene.paint.Color
 import org.kordamp.ikonli.Ikon
 import org.kordamp.ikonli.material2.Material2AL
 import org.kordamp.ikonli.material2.Material2MZ
@@ -40,10 +38,6 @@ class InstrumentRegistryPane(
         get() = setOf(DisplayMode.DetailsPane, DisplayMode.SubWindow)
 
     override fun defaultState(): ToolPaneState = ToolPaneState.docked(ToolPaneState.Side.RIGHT)
-
-    override fun configureSubWindow(window: SubWindow, obj: InstrumentObject) {
-        window.scene.fill = Color.BLACK
-    }
 
     override fun detailWindowIcon(obj: InstrumentObject): Ikon =
         if (obj is CustomizableSynthDefObject || obj is ProcessDefObject) Material2AL.CODE

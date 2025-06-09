@@ -9,7 +9,6 @@ import fxutils.undo.UndoManager
 import javafx.geometry.Dimension2D
 import javafx.stage.Screen
 import javafx.stage.StageStyle
-import ponticello.model.flow.AudioFlow
 import ponticello.model.flow.AudioFlows
 import ponticello.model.player.CircularBufferRecorder
 import ponticello.model.player.PlaybackMessageListener
@@ -18,15 +17,9 @@ import ponticello.model.project.*
 import ponticello.sc.client.SuperColliderClient
 import ponticello.ui.actions.*
 import ponticello.ui.dock.AppLayout
-import ponticello.ui.flow.AudioFlowPane
-import ponticello.ui.impl.DEFAULT_SCENE_FILL
-import ponticello.ui.impl.makeToolWindow
-import ponticello.ui.impl.sceneFill
 import ponticello.ui.midi.ContextualMidiReceiver
 import ponticello.ui.misc.HelpBrowser
 import ponticello.ui.misc.InteractionConfigBar
-import ponticello.ui.misc.SuperColliderOutputPane
-import ponticello.ui.registry.ObjectListView
 import ponticello.ui.score.*
 import reaktive.value.reactiveValue
 
@@ -41,24 +34,8 @@ class PonticelloMainActivity(val project: PonticelloProject) : Activity() {
 
     val interactionConfig = InteractionConfigBar(project.settings)
 
-    private val flowPane by lazy { AudioFlowPane(project.flows) }
-    val flowPaneWindow by lazy {
-        val window = context.makeToolWindow(flowPane, "Audio flows", defaultSize = Dimension2D(2000.0, 800.0))
-            .sceneFill(DEFAULT_SCENE_FILL)
-        context[ContextualMidiReceiver].registerMidiContext(window) {
-            val selectedGroup = flowPane.listView.selectedBox() ?: return@registerMidiContext null
-            val flowListView = selectedGroup.content() as? ObjectListView<*> ?: return@registerMidiContext null
-            val selectedFlow = flowListView.selectedObject() as? AudioFlow
-            selectedFlow?.midiContext()
-        }
-        window
-    }
-
-
     private lateinit var player: ScorePlayer
     private lateinit var playbackMessageListener: PlaybackMessageListener
-
-    val shellWindow = SuperColliderOutputPane.createShellWindow(context)
 
     override val context get() = project.context
 
@@ -74,6 +51,8 @@ class PonticelloMainActivity(val project: PonticelloProject) : Activity() {
         setupPlayback()
         context[ContextualMidiReceiver].attachGrid(project[LAUNCHER_GRID])
     }
+
+    private val layout = AppLayout(launcher, project, mainScoreView, interactionConfig, timeCodeView)
 
     private fun setupMainScoreView() {
         mainScoreView.initialize()
@@ -106,7 +85,7 @@ class PonticelloMainActivity(val project: PonticelloProject) : Activity() {
         mainScoreView.displayWholeScore()
     }
 
-    override fun getLayout() = AppLayout(launcher, project, mainScoreView, interactionConfig, timeCodeView)
+    override fun getLayout() = layout
 
     private fun registerMainActivityShortcuts() = primaryStage.scene.registerShortcuts {
         registerActions(ProjectActions.withContext(launcher))
@@ -117,6 +96,7 @@ class PonticelloMainActivity(val project: PonticelloProject) : Activity() {
         registerActions(ObjectActions.all.withContext(objectCtx))
         SelectionRelatedActions.addShortcuts(this, context)
         registerActions(UndoRedoActions.withContext(context[UndoManager]))
+        registerActions(layout.actions())
     }
 
     override fun close() {
