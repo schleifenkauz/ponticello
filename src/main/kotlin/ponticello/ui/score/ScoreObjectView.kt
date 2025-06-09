@@ -38,10 +38,12 @@ import ponticello.ui.actions.ObjectActionContext
 import ponticello.ui.actions.ObjectActions
 import ponticello.ui.controls.InlineParameterControlsBar
 import ponticello.ui.controls.NameControl
+import ponticello.ui.dock.AppLayout
 import ponticello.ui.impl.resizeMode
 import ponticello.ui.impl.setupDraggingAndResizing
 import ponticello.ui.launcher.DetailPaneManager
 import ponticello.ui.launcher.PonticelloMainActivity
+import ponticello.ui.registry.ScoreObjectRegistryPane
 import reaktive.value.*
 import reaktive.value.binding.*
 import reaktive.value.fx.asObservableValue
@@ -228,7 +230,7 @@ abstract class ScoreObjectView(
 
                 ev.button == MouseButton.SECONDARY && ev.modifiers == setOf(Shift) -> {
                     if (!parentPane.isRoot(obj)) {
-                        context[PonticelloMainActivity].scoreObjectsPane().listView.showContent(obj)
+                        context[AppLayout].get<ScoreObjectRegistryPane>().listView.showContent(obj)
                     }
                 }
 

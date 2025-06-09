@@ -25,6 +25,7 @@ import ponticello.model.obj.ContextualObject
 import ponticello.model.registry.NamedObject
 import ponticello.model.registry.NamedObjectList
 import ponticello.model.registry.ObjectList
+import ponticello.ui.dock.ToolPane
 import reaktive.value.*
 import reaktive.value.binding.notEqualTo
 

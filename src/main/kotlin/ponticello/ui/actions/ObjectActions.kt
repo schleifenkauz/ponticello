@@ -22,9 +22,12 @@ import ponticello.model.project.UIState
 import ponticello.model.registry.ScoreObjectRegistry
 import ponticello.model.score.*
 import ponticello.ui.controls.RenamePrompt
+import ponticello.ui.dock.AppLayout
 import ponticello.ui.impl.showDialog
 import ponticello.ui.launcher.DetailPaneManager
 import ponticello.ui.launcher.PonticelloMainActivity
+import ponticello.ui.registry.InstrumentRegistryPane
+import ponticello.ui.registry.ScoreObjectRegistryPane
 import ponticello.ui.score.*
 import reaktive.value.binding.*
 import reaktive.value.reactiveValue
@@ -102,7 +105,7 @@ object ObjectActions {
             applicableOn { view -> !view.parentPane.isRoot(view.obj) }
             executeSingle { view, ev ->
                 if (ev.isTargetTextInput && !ev.isAltDown()) return@executeSingle
-                val scoreObjectsPane = view.context[PonticelloMainActivity].scoreObjectsPane()
+                val scoreObjectsPane = view.context[AppLayout].get<ScoreObjectRegistryPane>()
                 val w = scoreObjectsPane.listView.showContent(view.obj) ?: return@executeSingle
                 val coords = view.localToScreen(view.width, 0.0)
                 w.x = coords.x
@@ -171,13 +174,12 @@ object ObjectActions {
             executeSingle { view, ev ->
                 if (!ev.isTargetTextInput || ev.isAltDown()) {
                     view as SoundProcessView
-                    val mainScreen = view.context[PonticelloMainActivity]
                     val def = view.obj.instrument
                     if (def is NoInstrument) {
                         Logger.warn("Instrument is not resolved", Logger.Category.Score)
                         return@executeSingle
                     }
-                    mainScreen.instrumentsPane().listView.showContent(def)
+                    view.context[AppLayout].get<InstrumentRegistryPane>().listView.showContent(def)
                 }
             }
         }

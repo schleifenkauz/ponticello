@@ -12,6 +12,7 @@ import ponticello.model.obj.InstrumentReference
 import ponticello.model.registry.InstrumentRegistry
 import ponticello.model.registry.reference
 import ponticello.model.score.TimeUnit
+import ponticello.ui.dock.ToolPaneState
 import ponticello.ui.registry.SimpleSearchableRegistryView
 import reaktive.value.ReactiveVariable
 import reaktive.value.now
@@ -25,6 +26,8 @@ class UIState private constructor(
     val askForCloneNames: ReactiveVariable<Boolean> = reactiveVariable(false),
     val askForGroupNames: ReactiveVariable<Boolean> = reactiveVariable(false),
     val controlsDisplay: ReactiveVariable<InlineControlsDisplay> = reactiveVariable(InlineControlsDisplay.NONE),
+    val toolPaneStates: Map<String, ToolPaneState> = emptyMap(),
+    val paneSizes: Map<ToolPaneState.Side, Double> = emptyMap(),
     private val windowStates: MutableList<WindowState> = mutableListOf(),
 ) : AbstractContextualObject() {
     override fun initialize(context: Context) {
@@ -58,6 +61,9 @@ class UIState private constructor(
     }
 
     companion object : PublicProperty<UIState> by publicProperty("UIState") {
-        fun default() = UIState(controlsDisplay = reactiveVariable(InlineControlsDisplay.EXTENDED_OVERLAY))
+        fun default() = UIState(
+            controlsDisplay = reactiveVariable(InlineControlsDisplay.EXTENDED_OVERLAY),
+
+        )
     }
 }

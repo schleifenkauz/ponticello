@@ -8,28 +8,39 @@ import fxutils.setFixedWidth
 import javafx.geometry.Orientation
 import javafx.scene.Node
 import javafx.scene.Parent
+import org.kordamp.ikonli.Ikon
 import org.kordamp.ikonli.materialdesign2.MaterialDesignP
 import org.kordamp.ikonli.materialdesign2.MaterialDesignR
+import org.kordamp.ikonli.materialdesign2.MaterialDesignT
 import ponticello.model.flow.AudioFlowGroup
 import ponticello.model.flow.AudioFlows
 import ponticello.sc.Identifier
+import ponticello.ui.dock.SearchableToolPane
+import ponticello.ui.dock.ToolPaneState
 import ponticello.ui.impl.colorPicker
 import ponticello.ui.registry.ObjectListView.DisplayMode
-import ponticello.ui.registry.SearchableToolPane
 import reaktive.value.binding.`if`
 import reaktive.value.binding.map
 import reaktive.value.now
 
-class AudioFlowPane(flows: AudioFlows) : SearchableToolPane<AudioFlowGroup>() {
+class AudioFlowPane(flows: AudioFlows) : SearchableToolPane<AudioFlowGroup>(flows) {
     override val inlineOrientation: Orientation
         get() = Orientation.HORIZONTAL
 
     override val supportedModes: Set<DisplayMode>
         get() = setOf(DisplayMode.Inline, DisplayMode.SubWindow, DisplayMode.DetailsPane)
 
+    override val title: String
+        get() = "Flows"
+    override val icon: Ikon get() = MaterialDesignT.TUNE
+
     init {
         styleClass.add("flow-pane")
-        setup(title = null, flows)
+    }
+
+    override fun defaultState(): ToolPaneState = ToolPaneState.docked(ToolPaneState.Side.BOTTOM)
+
+    override fun doSetup() {
         listView.itemsScrollPane.isFitToHeight = true
         listView.autoResizeScene = true
     }

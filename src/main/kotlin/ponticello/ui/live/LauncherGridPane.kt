@@ -1,14 +1,12 @@
 package ponticello.ui.live
 
 import fxutils.*
-import fxutils.actions.Action
-import fxutils.actions.ActionBar
-import fxutils.actions.collectActions
-import fxutils.actions.detailsAction
+import fxutils.actions.*
 import fxutils.controls.SliderBar
 import fxutils.prompt.SimpleSearchableListView
 import fxutils.undo.UndoManager
 import fxutils.undo.VariableEdit
+import javafx.scene.Node
 import javafx.scene.control.CheckBox
 import javafx.scene.control.Label
 import javafx.scene.input.*
@@ -17,9 +15,11 @@ import javafx.scene.layout.HBox
 import javafx.scene.layout.Region
 import javafx.scene.layout.VBox
 import kotlinx.serialization.Contextual
+import org.kordamp.ikonli.Ikon
 import org.kordamp.ikonli.codicons.Codicons
 import org.kordamp.ikonli.materialdesign2.MaterialDesignA
 import org.kordamp.ikonli.materialdesign2.MaterialDesignE
+import org.kordamp.ikonli.materialdesign2.MaterialDesignG
 import org.kordamp.ikonli.materialdesign2.MaterialDesignR
 import ponticello.impl.one
 import ponticello.impl.toDecimal
@@ -47,12 +47,15 @@ import ponticello.sc.ParameterType
 import ponticello.sc.Warp
 import ponticello.ui.actions.PlaybackActions
 import ponticello.ui.actions.UndoRedoActions
+import ponticello.ui.dock.AppLayout
+import ponticello.ui.dock.ToolPane
+import ponticello.ui.dock.ToolPanePosition
+import ponticello.ui.dock.ToolPaneState
 import ponticello.ui.impl.DEFAULT_SCENE_FILL
 import ponticello.ui.impl.getFrom
-import ponticello.ui.launcher.PonticelloMainActivity
 import ponticello.ui.registry.ScoreObjectRegistryPane
+import ponticello.ui.registry.ScriptRegistryPane
 import ponticello.ui.registry.SearchableParameterDefListView
-import ponticello.ui.registry.ToolPane
 import ponticello.ui.score.FlowGroupManager
 import reaktive.value.binding.*
 import reaktive.value.now
@@ -63,14 +66,24 @@ class LauncherGridPane(
 ) : ToolPane(), LauncherGrid.View {
     private val context = grid.context
     private val boxes = mutableMapOf<LauncherGrid.GridItem, Region>()
-    private val gridPane = GridPane().styleClass("launcher-grid-pane")
+    override val content = GridPane().styleClass("launcher-grid-pane")
+    override val headerContent: Node = setupHeader()
+    override val title: String
+        get() = "Grid"
+    override val icon: Ikon
+        get() = MaterialDesignG.GRID
+    override val shortcuts: Array<String>
+        get() = arrayOf("Ctrl+G")
+
+    override val headerActions: List<ContextualizedAction> = actions.withContext(grid)
+
+    override fun defaultState(): ToolPaneState =
+        ToolPaneState(ToolPaneState.Side.TOP, ToolPanePosition.Undocked.center())
 
     init {
         preparePlayers()
         setupGridPane()
         grid.addView(this)
-        val headerContent = setupHeader()
-        setup(gridPane, title = null, headerContent, actions = actions.withContext(grid))
     }
 
     private fun preparePlayers() {
@@ -95,16 +108,16 @@ class LauncherGridPane(
             val box = display(item)
             boxes[item] = box
             val (i, j) = grid.getGridIndices(item)
-            gridPane.add(box, j, i)
+            content.add(box, j, i)
         }
     }
 
     override fun updateItem(item: LauncherGrid.GridItem) {
-        gridPane.children.remove(boxes[item])
+        content.children.remove(boxes[item])
         val box = display(item)
         boxes[item] = box
         val (i, j) = grid.getGridIndices(item)
-        gridPane.add(box, j, i)
+        content.add(box, j, i)
     }
 
     private fun display(item: LauncherGrid.GridItem): VBox {
@@ -280,12 +293,12 @@ class LauncherGridPane(
 
                         is ItemTarget.Script -> {
                             val obj = target.ref.get() ?: return@executes
-                            target.context[PonticelloMainActivity].scriptsPane().listView.showContent(obj)
+                            target.context[AppLayout].get<ScriptRegistryPane>().listView.showContent(obj)
                         }
 
                         is ItemTarget.LiveTask -> {
                             val obj = target.ref.get() ?: return@executes
-                            target.context[PonticelloMainActivity].liveTasksPane().listView.showContent(obj)
+                            target.context[AppLayout].get<LiveTaskRegistryPane>().listView.showContent(obj)
                         }
 
                         else -> {}
@@ -354,7 +367,7 @@ class LauncherGridPane(
         }
 
         private fun showObject(obj: @Contextual ScoreObject) {
-            val objectsPane = obj.context[PonticelloMainActivity].scoreObjectsPane()
+            val objectsPane = obj.context[AppLayout].get<ScoreObjectRegistryPane>()
             objectsPane.listView.showContent(obj)
         }
 

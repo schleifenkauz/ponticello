@@ -21,24 +21,28 @@ import ponticello.model.score.controls.ParameterControl
 import ponticello.sc.ControlSpec
 import ponticello.ui.controls.ControlAssignmentEditor
 import ponticello.ui.controls.ControlSpecPrompt
+import ponticello.ui.dock.SearchableToolPane
 import ponticello.ui.launcher.PonticelloApp.Companion.primaryStage
 import ponticello.ui.registry.ObjectBox
 import ponticello.ui.registry.ObjectListView.DisplayMode
 import ponticello.ui.registry.SearchableParameterDefListView
-import ponticello.ui.registry.SearchableToolPane
 import reaktive.value.binding.impl.notNull
 import reaktive.value.now
 
 class ParameterControlsPane(
-    private val obj: ParameterizedObject, title: String,
-    private val view: ScoreObjectView? = null,
-) : SearchableToolPane<NamedParameterControl>(), ParameterControlList.Listener {
+    private val obj: ParameterizedObject, private val view: ScoreObjectView? = null,
+) : SearchableToolPane<NamedParameterControl>(obj.controls), ParameterControlList.Listener {
     private val editors = mutableMapOf<NamedParameterControl, ControlAssignmentEditor>()
 
+    override val title: String
+        get() = "Parameter controls"
+
     init {
-        obj.controls.addListener(this)
-        setup(title, obj.controls) { headerActions.withContext(this) }
         styleClass("parameter-controls")
+    }
+
+    override fun afterSetup() {
+        obj.controls.addListener(this)
         listView.itemsScrollPane.setupDropArea(::canDrop, ::drop)
     }
 

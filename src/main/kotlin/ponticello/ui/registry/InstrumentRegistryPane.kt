@@ -16,11 +16,13 @@ import org.kordamp.ikonli.Ikon
 import org.kordamp.ikonli.material2.Material2AL
 import org.kordamp.ikonli.material2.Material2MZ
 import org.kordamp.ikonli.materialdesign2.MaterialDesignE
+import org.kordamp.ikonli.materialdesign2.MaterialDesignS
 import ponticello.impl.canSuperColliderTalkToMe
 import ponticello.model.obj.*
 import ponticello.model.registry.GlobalDefinitionLibrary
 import ponticello.model.registry.InstrumentRegistry
 import ponticello.sc.Identifier
+import ponticello.ui.dock.ToolPaneState
 import ponticello.ui.impl.colorPicker
 import ponticello.ui.registry.ObjectListView.DisplayMode
 import reaktive.list.toReactiveList
@@ -28,12 +30,16 @@ import reaktive.list.toReactiveList
 class InstrumentRegistryPane(
     private val instruments: InstrumentRegistry,
 ) : ObjectRegistryPane<InstrumentObject>(instruments) {
+    override val title: String
+        get() = "Instruments"
+
+    override val icon: Ikon
+        get() = MaterialDesignS.SINE_WAVE
+
     override val supportedModes: Set<DisplayMode>
         get() = setOf(DisplayMode.DetailsPane, DisplayMode.SubWindow)
 
-    init {
-        setup()
-    }
+    override fun defaultState(): ToolPaneState = ToolPaneState.docked(ToolPaneState.Side.RIGHT)
 
     override fun configureSubWindow(window: SubWindow, obj: InstrumentObject) {
         window.scene.fill = Color.BLACK

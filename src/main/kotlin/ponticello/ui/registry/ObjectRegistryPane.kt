@@ -1,6 +1,5 @@
 package ponticello.ui.registry
 
-import fxutils.actions.ContextualizedAction
 import fxutils.actions.collectActions
 import fxutils.plural
 import fxutils.styleClass
@@ -13,19 +12,15 @@ import ponticello.model.registry.NamedObject
 import ponticello.model.registry.ObjectRegistry
 import ponticello.ui.actions.UndoRedoActions
 import ponticello.ui.controls.NamePrompt
+import ponticello.ui.dock.SearchableToolPane
 import reaktive.value.reactiveValue
 
-abstract class ObjectRegistryPane<O : NamedObject>(
-    val registry: ObjectRegistry<O>,
-) : SearchableToolPane<O>() {
+abstract class ObjectRegistryPane<O : NamedObject>(val registry: ObjectRegistry<O>) : SearchableToolPane<O>(registry) {
     init {
         styleClass("object-registry-pane")
     }
 
-    protected open fun headerActions(): List<ContextualizedAction> = emptyList()
-
-    protected fun setup() {
-        setup(title = null, registry) { headerActions.withContext(this) + headerActions() }
+    override fun afterSetup() {
         listView.autoResizeScene = true
     }
 

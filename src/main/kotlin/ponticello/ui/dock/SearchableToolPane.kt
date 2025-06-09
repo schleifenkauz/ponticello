@@ -1,4 +1,4 @@
-package ponticello.ui.registry
+package ponticello.ui.dock
 
 import fxutils.actions.*
 import fxutils.styleClass
@@ -9,28 +9,36 @@ import org.kordamp.ikonli.material2.Material2MZ
 import org.kordamp.ikonli.materialdesign2.MaterialDesignC
 import ponticello.model.registry.NamedObject
 import ponticello.model.registry.NamedObjectList
+import ponticello.ui.registry.ObjectListDisplayConfig
+import ponticello.ui.registry.ObjectListView
 import ponticello.ui.registry.ObjectListView.Companion.modeChangeActions
 import reaktive.value.now
-import reaktive.value.reactiveValue
 
-abstract class SearchableToolPane<O : NamedObject> : ToolPane(), ObjectListDisplayConfig<O> {
+abstract class SearchableToolPane<O : NamedObject>(
+    private val list: NamedObjectList<O>,
+) : ToolPane(), ObjectListDisplayConfig<O> {
     protected val searchText = CustomTextField().styleClass("sleek-text-field", "search-field")
 
     lateinit var listView: ObjectListView<O>
         private set
 
-    protected fun setup(
-        title: String?, list: NamedObjectList<O>,
-        extraActions: () -> List<ContextualizedAction> = { emptyList() },
-    ) {
+    override val headerActions: List<ContextualizedAction>
+        get() = modeChangeActions.withContext(listView) + fitContentAction.withContext(this)
+
+    override val content: ObjectListView<O> get() = listView
+
+    override fun doSetup() {
         listView = ObjectListView(list, this, filter = { obj -> filter(obj) && matchesSearch(obj) })
         setupSearchField()
-        val windowActions = modeChangeActions.withContext(listView) + fitContentAction.withContext(this)
-        setup(listView, title?.let(::reactiveValue), searchText, windowActions)
-        val actions = listView.actions + extraActions() + actions.withContext(this)
-        registerShortcuts(actions)
-        header!!.children.add(1, ActionBar(actions, buttonStyle = "medium-icon-button"))
     }
+
+    override fun afterSetup() {
+        val actions = listView.actions + extraHeaderActions() + headerActions
+        registerShortcuts(actions)
+        header.children.add(1, ActionBar(actions, buttonStyle = "medium-icon-button"))
+    }
+
+    protected open fun extraHeaderActions(): List<ContextualizedAction> = emptyList()
 
     private fun setupSearchField() {
         searchText.promptText = "Search..."

@@ -4,6 +4,7 @@ import fxutils.*
 import fxutils.actions.button
 import fxutils.prompt.SimpleSearchableListView
 import javafx.application.Platform
+import javafx.scene.Node
 import javafx.scene.control.Label
 import javafx.scene.control.ScrollPane
 import javafx.scene.control.Tooltip
@@ -13,20 +14,25 @@ import javafx.scene.layout.VBox
 import javafx.scene.paint.Color
 import javafx.scene.text.Text
 import org.controlsfx.control.textfield.CustomTextField
+import org.kordamp.ikonli.Ikon
 import org.kordamp.ikonli.javafx.FontIcon
 import org.kordamp.ikonli.material2.Material2MZ
+import org.kordamp.ikonli.materialdesign2.MaterialDesignB
 import org.kordamp.ikonli.materialdesign2.MaterialDesignE
 import ponticello.impl.Logger
+import ponticello.ui.dock.ToolPane
+import ponticello.ui.dock.ToolPanePosition
+import ponticello.ui.dock.ToolPaneState
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 
-class LogPane(private val logger: Logger) : VBox(), Logger.View {
-    private val boxes = VBox() styleClass "log-records"
-    private val scrollPane = ScrollPane(boxes)
-    private val searchField = CustomTextField().styleClass("sleek-text-field", "search-field")
+class LogPane(private val logger: Logger) : ToolPane(), Logger.View {
+    override val title: String
+        get() = "Notifications"
+
     private var level = Logger.Level.Info
         set(value) {
             field = value
@@ -38,23 +44,33 @@ class LogPane(private val logger: Logger) : VBox(), Logger.View {
             displayFilteredRecords()
         }
 
+    private val boxes = VBox() styleClass "log-records"
+    private val scrollPane = ScrollPane(boxes)
+    private val levelSelector = SimpleSearchableListView(Logger.Level.entries, "Select level")
+        .selectorButton(this::level) { lvl -> "Level: $lvl" }
+    private val categorySelector = SimpleSearchableListView(Logger.Category.values(), "Select category")
+        .selectorButton(this::category) { cat -> "Category: $cat" }
+    private val buttonClear = button("Clear log") { logger.clear() }
+    private val searchField = CustomTextField().styleClass("sleek-text-field", "search-field")
+
+    override val content: Node
+        get() = scrollPane
+    override val headerContent: Node = HBox(5.0, searchField, levelSelector, categorySelector, buttonClear)
+
     private val filter get() = Logger.Filter(level, category, searchField.text)
 
     init {
         styleClass("tool-pane")
+    }
+
+    override val icon: Ikon get() = MaterialDesignB.BELL
+
+    override fun defaultState(): ToolPaneState = ToolPaneState(ToolPaneState.Side.RIGHT, ToolPanePosition.docked)
+
+    override fun doSetup() {
         searchField.left = FontIcon(Material2MZ.SEARCH)
         searchField.promptText = "Search..."
         searchField.textProperty().addListener { _ -> displayFilteredRecords() }
-        val heading = Label("Log") styleClass "heading"
-        val levelSelector = SimpleSearchableListView(Logger.Level.entries, "Select level")
-            .selectorButton(this::level) { lvl -> "Level: $lvl" }
-        val categorySelector = SimpleSearchableListView(Logger.Category.values(), "Select category")
-            .selectorButton(this::category) { cat -> "Category: $cat" }
-        val buttonClear = button("Clear log") { logger.clear() }
-        val header = HBox(
-            heading, searchField,
-            levelSelector, categorySelector, buttonClear
-        ) styleClass "tool-pane-header"
         displayFilteredRecords()
         logger.addView(this)
         scrollPane.isFitToWidth = true

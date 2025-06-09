@@ -28,8 +28,9 @@ import ponticello.sc.Rate
 import ponticello.sc.editor.BusSelector
 import ponticello.sc.view.ObjectSelectorControl
 import ponticello.ui.actions.ServerActions
+import ponticello.ui.dock.AppLayout
 import ponticello.ui.impl.getFrom
-import ponticello.ui.launcher.PonticelloMainActivity
+import ponticello.ui.registry.InstrumentRegistryPane
 import ponticello.ui.registry.ObjectBox
 import ponticello.ui.registry.ObjectListDisplayConfig
 import ponticello.ui.registry.ObjectListView
@@ -84,7 +85,7 @@ class FlowListConfig(
     override fun getContent(obj: AudioFlow, mode: DisplayMode): Parent? = when (obj) {
         is CodeFlow -> obj.codeEditor.control
         is SendFlow -> SendFlowView(obj)
-        is InstrumentFlow -> ParameterControlsPane(obj, "Flow controls").apply {
+        is InstrumentFlow -> ParameterControlsPane(obj).apply {
             listView.autoResizeScene = autoResizeScene
         }
         is UtilityFlow -> Slider(-60.0, +6.0, 0.0) styleClass "volume-fader"
@@ -144,7 +145,7 @@ class FlowListConfig(
                 ifNotApplicable(Action.IfNotApplicable.Hide)
                 executes { flow ->
                     flow as InstrumentFlow
-                    val pane = flow.context[PonticelloMainActivity].instrumentsPane()
+                    val pane = flow.context[AppLayout].get<InstrumentRegistryPane>()
                     pane.listView.showContent(flow.def)
                 }
             }

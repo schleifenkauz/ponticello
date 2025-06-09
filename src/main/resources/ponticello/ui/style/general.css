@@ -9,6 +9,10 @@
     -fx-font-family: "Monospaced";
 }
 
+.app-layout {
+    -fx-background-color: #28282b;
+}
+
 /*
 * Scroll Pane
 */

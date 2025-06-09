@@ -37,9 +37,10 @@ import ponticello.sc.NumericalControlSpec
 import ponticello.sc.ParameterType
 import ponticello.sc.view.ObjectSelectorControl
 import ponticello.ui.controls.InlineParameterControlsBar
+import ponticello.ui.dock.AppLayout
 import ponticello.ui.impl.getFrom
 import ponticello.ui.launcher.PonticelloApp.Companion.primaryStage
-import ponticello.ui.launcher.PonticelloMainActivity
+import ponticello.ui.registry.InstrumentRegistryPane
 import ponticello.ui.registry.SearchableParameterDefListView
 import reaktive.Observer
 import reaktive.value.*
@@ -113,11 +114,11 @@ class SoundProcessView(
     override fun setupDetailPane(pane: DetailPane) {
         pane.addItem("Color:", this.colorPicker)
         val viewBtn = Material2AL.CODE.button("View SynthDef", "medium-icon-button") {
-            context[PonticelloMainActivity].instrumentsPane().listView.showContent(obj.instrument)
+            context[AppLayout].get<InstrumentRegistryPane>().listView.showContent(obj.instrument)
         }.disableIf(obj.instrumentSelector.isResolved.not())
         val box = ObjectSelectorControl(obj.instrumentSelector, createBundle())
         pane.addItem("SynthDef: ", HBox(5.0, box, viewBtn).centerChildren())
-        val controlsPane = ParameterControlsPane(obj, "Synth controls", this)
+        val controlsPane = ParameterControlsPane(obj, this)
         controlsPane.listView.autoResizeScene = true
         pane.children.add(controlsPane)
     }

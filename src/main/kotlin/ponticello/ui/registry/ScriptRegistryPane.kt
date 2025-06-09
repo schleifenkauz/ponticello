@@ -10,22 +10,28 @@ import javafx.scene.Parent
 import javafx.scene.input.DataFormat
 import org.kordamp.ikonli.Ikon
 import org.kordamp.ikonli.material2.Material2AL
+import org.kordamp.ikonli.materialdesign2.MaterialDesignF
 import org.kordamp.ikonli.materialdesign2.MaterialDesignP
 import ponticello.model.obj.ScriptObject
 import ponticello.model.obj.ScriptRegistry
 import ponticello.sc.client.SuperColliderClient
+import ponticello.ui.dock.ToolPaneState
 import ponticello.ui.misc.CodePane
 import ponticello.ui.registry.ObjectListView.DisplayMode
 import reaktive.value.binding.map
 import reaktive.value.now
 
 class ScriptRegistryPane(registry: ScriptRegistry) : ObjectRegistryPane<ScriptObject>(registry) {
+    override val title: String
+        get() = "Scripts"
+
+    override val icon: Ikon
+        get() = MaterialDesignF.FILE_COG
+
     override val supportedModes: Set<DisplayMode>
         get() = setOf(DisplayMode.SubWindow, DisplayMode.DetailsPane)
 
-    init {
-        setup()
-    }
+    override fun defaultState(): ToolPaneState = ToolPaneState.docked(ToolPaneState.Side.RIGHT)
 
     override fun createNewObject(name: String, ev: Event?): ScriptObject? {
         val options = SCRIPT_TYPE_OPTIONS

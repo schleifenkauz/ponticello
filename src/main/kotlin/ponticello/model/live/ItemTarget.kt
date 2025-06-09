@@ -25,7 +25,9 @@ import ponticello.model.score.controls.ValueControl
 import ponticello.sc.NumericalControlSpec
 import ponticello.sc.client.SuperColliderClient
 import ponticello.sc.mapOnto
+import ponticello.ui.dock.AppLayout
 import ponticello.ui.launcher.PonticelloMainActivity
+import ponticello.ui.registry.ScoreObjectRegistryPane
 import reaktive.value.*
 
 @Serializable
@@ -196,7 +198,7 @@ sealed class ItemTarget : AbstractContextualObject() {
             Platform.runLater {
                 val obj = ref.get() ?: return@runLater
                 if (obj.player == null) {
-                    context[PonticelloMainActivity].scoreObjectsPane().listView.showContent(obj)
+                    context[AppLayout].get<ScoreObjectRegistryPane>().listView.showContent(obj)
                 }
                 val player = obj.player
                 if (player == null) {
@@ -205,7 +207,7 @@ sealed class ItemTarget : AbstractContextualObject() {
                 }
                 if (!player.isScheduled.now) {
                     player.play()
-                    context[PonticelloMainActivity].scoreObjectsPane().listView.showContent(obj)
+                    context[AppLayout].get<ScoreObjectRegistryPane>().listView.showContent(obj)
                 } else if (!item.stopOnRelease.now) {
                     player.pause()
                 }
@@ -226,7 +228,7 @@ sealed class ItemTarget : AbstractContextualObject() {
                 isActive = reactiveValue(false)
                 return
             }
-            val scoreObjectsPane = context[PonticelloMainActivity].scoreObjectsPane()
+            val scoreObjectsPane = context[AppLayout].get<ScoreObjectRegistryPane>()
             scoreObjectsPane.listView.initializeContent(obj)
             isActive = obj.player?.isScheduled ?: reactiveValue(false)
         }

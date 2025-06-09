@@ -2,22 +2,30 @@ package ponticello.ui.misc
 
 import fxutils.*
 import hextant.context.Context
+import javafx.scene.Node
 import javafx.scene.control.Label
+import org.kordamp.ikonli.Ikon
+import org.kordamp.ikonli.materialdesign2.MaterialDesignC
 import ponticello.impl.Decimal
 import ponticello.impl.toDecimal
 import ponticello.model.Settings
 import ponticello.sc.NumericalControlSpec
 import ponticello.ui.controls.Knob
+import ponticello.ui.dock.ToolPane
+import ponticello.ui.dock.ToolPanePosition
+import ponticello.ui.dock.ToolPaneState
 import ponticello.ui.registry.ParameterDefsPane
-import ponticello.ui.registry.ToolPane
 import reaktive.value.ReactiveVariable
 
-class SettingsPane(settings: Settings, private val context: Context) : ToolPane() {
-    init {
-        styleClass("settings-pane")
-        setup(vbox {
+class SettingsPane(private val settings: Settings, private val context: Context) : ToolPane() {
+    override val title: String
+        get() = "Settings"
+    override val icon: Ikon
+        get() = MaterialDesignC.COG
+    override val content: Node by lazy {
+        vbox {
             children {
-                +ParameterDefsPane(settings.defaultParametersDefs, context, title = "Default parameter control specs")
+                +ParameterDefsPane(settings.defaultParametersDefs, title = "Default parameter control specs")
                 +Label("Playback options").styleClass("heading")
                 item("Latency: ") {
                     +Knob(
@@ -42,7 +50,14 @@ class SettingsPane(settings: Settings, private val context: Context) : ToolPane(
                     NumericalControlSpec(default = 3.0, 1.0, 10.0, 0.1.toDecimal())
                 )
             }
-        })
+        }
+    }
+
+    override fun defaultState(): ToolPaneState =
+        ToolPaneState(ToolPaneState.Side.TOP, ToolPanePosition.Undocked.center())
+
+    init {
+        styleClass("settings-pane")
     }
 
     private fun ChildrenAdder.item(name: String, children: ChildrenAdder.() -> Unit) {

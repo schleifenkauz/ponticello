@@ -12,9 +12,11 @@ import javafx.geometry.HorizontalDirection
 import javafx.scene.Node
 import javafx.scene.Parent
 import javafx.scene.input.DataFormat
+import org.kordamp.ikonli.Ikon
 import org.kordamp.ikonli.codicons.Codicons
 import org.kordamp.ikonli.materialdesign2.MaterialDesignA
 import org.kordamp.ikonli.materialdesign2.MaterialDesignM
+import org.kordamp.ikonli.materialdesign2.MaterialDesignP
 import org.kordamp.ikonli.materialdesign2.MaterialDesignR
 import ponticello.impl.one
 import ponticello.impl.toDecimal
@@ -27,6 +29,7 @@ import ponticello.model.score.ScoreObject
 import ponticello.sc.NumericalControlSpec
 import ponticello.sc.Warp
 import ponticello.ui.actions.undoable
+import ponticello.ui.dock.ToolPaneState
 import ponticello.ui.live.QuantizationConfigDialog
 import ponticello.ui.live.ScoreObjectResizeDialog
 import ponticello.ui.midi.ContextualMidiReceiver
@@ -38,12 +41,16 @@ import reaktive.value.now
 import reaktive.value.reactiveValue
 
 class ScoreObjectRegistryPane(registry: ScoreObjectRegistry) : ObjectRegistryPane<ScoreObject>(registry) {
+    override val title: String
+        get() = "Score Objects"
+
+    override val icon: Ikon
+        get() = MaterialDesignP.PLAYLIST_PLAY
+
     override val supportedModes: Set<DisplayMode>
         get() = setOf(DisplayMode.SubWindow)
 
-    init {
-        setup()
-    }
+    override fun defaultState(): ToolPaneState = ToolPaneState.docked(ToolPaneState.Side.RIGHT)
 
     override fun getItemContent(obj: ScoreObject): List<Node> {
         val spec = NumericalControlSpec(zero, zero, one, 0.01.toDecimal(), zero, Warp.Linear)

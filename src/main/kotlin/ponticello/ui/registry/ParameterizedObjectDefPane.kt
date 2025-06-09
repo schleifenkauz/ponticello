@@ -1,7 +1,7 @@
 package ponticello.ui.registry
 
+import fxutils.actions.ActionBar
 import fxutils.actions.registerShortcuts
-import fxutils.letContentFillViewPort
 import javafx.event.Event
 import javafx.scene.Node
 import javafx.scene.control.ScrollPane
@@ -13,9 +13,8 @@ import ponticello.model.obj.withName
 import reaktive.value.now
 
 abstract class ParameterizedObjectDefPane<T : ConfigurableInstrumentObject>(
-    protected val def: T,
-    enableActions: Boolean,
-) : ToolPane() {
+    protected val def: T, ownWindow: Boolean,
+): ScrollPane() {
     private val config: ParameterListConfig = object : ParameterListConfig() {
         override fun createNewObject(ev: Event?): ParameterDefObject? {
             val defaultParameters = def.context[Settings].defaultParametersDefs
@@ -31,12 +30,13 @@ abstract class ParameterizedObjectDefPane<T : ConfigurableInstrumentObject>(
     private val parametersList = ObjectListView(def.parameters, config)
 
     init {
-        val content = this.getContent(def)
-        val layout = VBox(parametersList, content)
-        val scrollPane = ScrollPane(layout).letContentFillViewPort()
+        val layout = VBox(parametersList, this.getContent(def))
+        this.content = layout
         val actions = InstrumentRegistryPane.actions.withContext(def)
-        setup(scrollPane, title = null, headerContent = null, if (enableActions) actions else emptyList())
-        if (enableActions) registerShortcuts(actions)
+        if (ownWindow) {
+            layout.children.add(0, ActionBar(actions, "medium-icon-button"))
+        }
+        if (ownWindow) registerShortcuts(actions)
         parametersList.registerShortcuts(parametersList.actions)
     }
 

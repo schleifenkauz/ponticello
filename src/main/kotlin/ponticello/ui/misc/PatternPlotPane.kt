@@ -4,6 +4,7 @@ import fxutils.centerChildren
 import fxutils.infiniteSpace
 import fxutils.prompt.SimpleSearchableListView
 import javafx.application.Platform
+import javafx.scene.Node
 import javafx.scene.control.Label
 import javafx.scene.control.OverrunStyle
 import javafx.scene.control.TextField
@@ -14,12 +15,15 @@ import ponticello.model.obj.GlobalPatternObject
 import ponticello.sc.Warp
 import ponticello.sc.client.SuperColliderClient
 import ponticello.sc.client.eval
-import ponticello.ui.registry.ToolPane
+import ponticello.ui.dock.ToolPane
 import reaktive.Observer
 import reaktive.value.forEach
 import reaktive.value.now
 
 class PatternPlotPane(private val pattern: GlobalPatternObject) : ToolPane() {
+    override val title: String
+        get() = "Pattern Plot"
+
     private val plot = PatternPlot()
     private val warpSelector = SimpleSearchableListView(Warp.entries, "Select warp")
     private val sampleNumber = TextField("20").apply { prefWidth = 50.0 }
@@ -28,18 +32,24 @@ class PatternPlotPane(private val pattern: GlobalPatternObject) : ToolPane() {
         maxWidth = 200.0
         textOverrun = OverrunStyle.ELLIPSIS
     }
-    private val codeObserver: Observer
+
+    private lateinit var codeObserver: Observer
+
+    override val content: Node get() = plot
+    override val headerContent = createHeader()
 
     init {
-        val headerContent = createHeader()
-        setup(content = plot, title = null, headerContent = headerContent)
-        codeObserver = pattern.patternCode.editor.result.forEach { expr ->
+        doSetup()
+        setPrefSize(500.0, 500.0)
+    }
+
+    override fun doSetup() {
+        codeObserver = pattern.patternCode.editor.result.forEach {
             displayPattern()
         }
         sampleNumber.setOnAction {
             displayPattern()
         }
-        setPrefSize(500.0, 500.0)
     }
 
     private fun createHeader(): HBox {
