@@ -16,7 +16,6 @@ import javafx.scene.layout.*
 import javafx.stage.Screen
 import javafx.stage.StageStyle
 import ponticello.impl.Logger
-import ponticello.model.ScriptObject
 import ponticello.model.Settings
 import ponticello.model.flow.AudioFlow
 import ponticello.model.flow.AudioFlows
@@ -86,6 +85,9 @@ class PonticelloMainActivity(val project: PonticelloProject) : Activity() {
     private val liveTasksPane by lazy { LiveTaskRegistryPane(project[LIVE_TASKS]) }
     val liveTasksWindow by lazy { context.makeToolWindow(liveTasksPane, "Live Tasks") }
 
+    private val scriptsPane by lazy { ScriptRegistryPane(project[SCRIPTS]) }
+    val scriptsWindow by lazy { context.makeToolWindow(scriptsPane, "Scripts") }
+
     private val clocksPane by lazy { ClockRegistryPane(project[CLOCKS]) }
     val clocksWindow by lazy { context.makeToolWindow(clocksPane, "Clocks") }
 
@@ -125,12 +127,6 @@ class PonticelloMainActivity(val project: PonticelloProject) : Activity() {
             selectedFlow?.midiContext()
         }
         window
-    }
-
-    val scriptObjectWindows = ScriptObject.Type.entries.associateWith { type ->
-        val root = project[type.component].root
-        val pane = CodePane(root, ownWindow = true)
-        context.makeToolWindow(pane, type.toString(), defaultSize = Dimension2D(500.0, 500.0))
     }
 
     private val timeCodeView: TimeCodeView = TimeCodeView()

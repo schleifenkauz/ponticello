@@ -17,8 +17,6 @@ class ClockRegistry(override val objects: MutableList<ClockObject>) : ObjectRegi
         context[ClockRegistry] = this
     }
 
-    override fun syncAll() {}
-
     override fun getDefault(): ClockObject = get("default")
 
     companion object: PublicProperty<ClockRegistry> by publicProperty("ClockRegistry") {

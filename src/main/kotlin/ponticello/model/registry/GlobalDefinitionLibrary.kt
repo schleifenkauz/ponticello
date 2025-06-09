@@ -2,6 +2,8 @@ package ponticello.model.registry
 
 import bundles.publicProperty
 import fxutils.prompt.YesNoPrompt
+import hextant.serial.readJson
+import hextant.serial.writeJson
 import javafx.application.Platform
 import javafx.event.Event
 import kotlinx.serialization.KSerializer
@@ -28,8 +30,7 @@ class GlobalDefinitionLibrary<T: NamedObject>(
     fun get(name: String): T? {
         val file = jsonFile(name)
         if (!file.isFile) return null
-        val text = file.readText()
-        return json.decodeFromString(serializer, text)
+        return file.readJson(serializer, json)
     }
 
     fun push(def: T) {
@@ -37,8 +38,7 @@ class GlobalDefinitionLibrary<T: NamedObject>(
         val file = jsonFile(name)
         async {
             try {
-                val str = json.encodeToString(serializer, def)
-                file.writeText(str)
+                file.writeJson(serializer, def, json)
             } catch (ex: Exception) {
                 Logger.error(
                     "Error while saving $objectType '$name' to global library",

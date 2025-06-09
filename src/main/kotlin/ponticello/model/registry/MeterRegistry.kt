@@ -12,8 +12,6 @@ class MeterRegistry(override val objects: MutableList<MeterObject>) : ObjectRegi
     override val objectType: String
         get() = "Meter"
 
-    override fun syncAll() {}
-
     override fun initialize(context: Context) {
         super.initialize(context)
         context[MeterRegistry] = this

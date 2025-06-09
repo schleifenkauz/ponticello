@@ -1,12 +1,12 @@
 package ponticello.model.project
 
 import kotlinx.serialization.serializer
-import ponticello.model.ScriptObject
 import ponticello.model.ServerOptions
 import ponticello.model.flow.AudioFlows
 import ponticello.model.live.LauncherGrid
 import ponticello.model.live.LiveTaskRegistry
 import ponticello.model.obj.ContextualObject
+import ponticello.model.obj.ScriptRegistry
 import ponticello.model.registry.*
 import ponticello.model.score.Score
 
@@ -44,6 +44,11 @@ val LIVE_TASKS = Component(
     MultiFileComponentSerializer(::LiveTaskRegistry, listSerializer = LiveTaskRegistry.Serializer)
 )
 
+val SCRIPTS = Component(
+    "scripts", ScriptRegistry::createDefault,
+    MultiFileComponentSerializer(::ScriptRegistry)
+)
+
 val SCORE = Component<Score>("score", ::Score)
 
 val LAUNCHER_GRID = Component<LauncherGrid>("launcher_grid", { LauncherGrid.createNByN(4) })
@@ -53,8 +58,8 @@ val allComponents = listOf<Component<out ContextualObject>>(
     BUSSES, BUFFERS,
     PATTERNS, INSTRUMENTS,
     UI_STATE, FLOWS, SERVER_OPTIONS,
-    OBJECTS, LIVE_TASKS, SCORE, LAUNCHER_GRID
-) + ScriptObject.Type.entries.map { type -> type.component }
+    OBJECTS, LIVE_TASKS, SCORE, SCRIPTS, LAUNCHER_GRID
+)
 
 inline operator fun <reified T : ContextualObject> PonticelloProject.get(component: Component<out T>) =
     components[component] as T
@@ -67,3 +72,4 @@ val PonticelloProject.instruments get() = get(INSTRUMENTS)
 val PonticelloProject.objects get() = get(OBJECTS)
 val PonticelloProject.flows get() = get(FLOWS)
 val PonticelloProject.settings get() = get(UI_STATE)
+val PonticelloProject.scripts get() = get(SCRIPTS)

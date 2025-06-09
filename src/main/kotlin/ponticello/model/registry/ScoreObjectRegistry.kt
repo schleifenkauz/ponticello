@@ -55,10 +55,6 @@ class ScoreObjectRegistry(
         } else defaultName
     }
 
-    override fun syncAll() {
-
-    }
-
     companion object : PublicProperty<ScoreObjectRegistry> by publicProperty("ScoreObjectRegistry") {
         fun createDefault() = ScoreObjectRegistry()
     }

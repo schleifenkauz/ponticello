@@ -17,5 +17,5 @@ abstract class ObjectRegistry<O : NamedObject>: NamedObjectList<O>() {
 
     open fun getDefault(): O? = null
 
-    abstract fun syncAll()
+    open fun syncAll() {}
 }

@@ -1,5 +1,7 @@
 package ponticello.model.project
 
+import hextant.serial.readJson
+import hextant.serial.writeJson
 import javafx.scene.paint.Color
 import kotlinx.serialization.Serializable
 import ponticello.impl.ColorSerializer
@@ -27,7 +29,7 @@ object AudioFlowsSerializer : SingleFileComponentSerializer<AudioFlows>(
             val groupName = group.name.now
             val infoFile = groupsDir.resolve("$groupName.json")
             try {
-                infoFile.writeText(json.encodeToString(AudioFlowGroupInfo.serializer(), info))
+                infoFile.writeJson(info, json)
             } catch (e: Exception) {
                 Logger.error("Error while writing info file for group $groupName to $infoFile!", e)
                 everythingOk = false
@@ -38,7 +40,7 @@ object AudioFlowsSerializer : SingleFileComponentSerializer<AudioFlows>(
                 val flowName = flow.name.now
                 val file = flowsDir.resolve("$flowName.json")
                 try {
-                    file.writeText(json.encodeToString<AudioFlow>(flow))
+                    file.writeJson(flow, json)
                 } catch (e: Exception) {
                     Logger.error("Error while writing flow $flowName to $file!", e)
                     everythingOk = false
@@ -86,13 +88,13 @@ object AudioFlowsSerializer : SingleFileComponentSerializer<AudioFlows>(
         val groups = mutableListOf<AudioFlowGroup>()
         for (infoFile in infoFiles) {
             val groupName = infoFile.nameWithoutExtension
-            val info = json.decodeFromString(AudioFlowGroupInfo.serializer(), infoFile.readText())
+            val info = infoFile.readJson<AudioFlowGroupInfo>(json)
 
             val flows = mutableListOf<AudioFlow>()
             val flowsDir = groupsDir.resolve(groupName)
             for (flowFile in flowsDir.listFiles { f -> f.extension == "json" } ?: emptyArray()) {
                 try {
-                    val flow = json.decodeFromString<AudioFlow>(flowFile.readText())
+                    val flow = flowFile.readJson<AudioFlow>(json)
                     flows.add(flow)
                 } catch (e: Exception) {
                     Logger.error("Error while reading flow ${flowFile.nameWithoutExtension} from $flowFile!", e)

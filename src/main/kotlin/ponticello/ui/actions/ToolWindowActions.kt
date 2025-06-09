@@ -8,7 +8,6 @@ import javafx.scene.layout.Region
 import org.kordamp.ikonli.material2.Material2AL
 import org.kordamp.ikonli.materialdesign2.*
 import ponticello.impl.Logger
-import ponticello.model.ScriptObject
 import ponticello.ui.impl.NotificationView
 import ponticello.ui.impl.showDialog
 import ponticello.ui.launcher.PonticelloMainActivity
@@ -38,16 +37,17 @@ object ToolWindowActions : Action.Collector<PonticelloMainActivity>({
         icon(MaterialDesignW.WEB)
         executes { activity -> activity.context[HelpBrowser].show() }
     }
-    addAction("Edit scratch file") {
+    addAction("Show scripts") {
         icon(MaterialDesignF.FILE_COG)
         shortcut("Ctrl+K")
-        executes { activity, ev ->
-            val list = SimpleSearchableListView(ScriptObject.Type.entries, "Open scratch file")
-            val source = ev?.source as? Region
-            val anchor = source?.localToScreen(0.0, source.height)
-            val type = list.showPopup(anchor, owner = activity.primaryStage) ?: return@executes
-            val window = activity.scriptObjectWindows.getValue(type)
-            window.showOrBringToFront()
+        executes { activity, _ ->
+            activity.scriptsWindow.showOrBringToFront()
+//            val list = SimpleSearchableListView(ScriptObject.Type.entries, "Open scratch file")
+//            val source = ev?.source as? Region
+//            val anchor = source?.localToScreen(0.0, source.height)
+//            val type = list.showPopup(anchor, owner = activity.primaryStage) ?: return@executes
+//            val window = activity.scriptObjectWindows.getValue(type)
+//            window.showOrBringToFront()
         }
     }
     addAction("Lookup documentation") {

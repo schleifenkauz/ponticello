@@ -19,11 +19,12 @@ import javafx.application.Platform
 import javafx.stage.Stage
 import kotlinx.serialization.serializer
 import ponticello.impl.Logger
+import ponticello.impl.json
 import ponticello.impl.registerImplementationsFromClasspath
-import ponticello.model.ScriptObject
 import ponticello.model.ServerOptions
 import ponticello.model.Settings
 import ponticello.model.flow.NodeTree
+import ponticello.model.obj.ScriptObject
 import ponticello.model.player.ActiveObjectsManager
 import ponticello.model.player.Recorder
 import ponticello.model.player.ScoreObjectScheduler
@@ -121,18 +122,22 @@ class PonticelloLauncher {
             context,
             "opening project",
             clientReady = { client ->
-                val beforeBootFile = folder.resolve("data").resolve("before_boot.json")
+                val beforeBootFile = folder.resolve("data/scripts").resolve("before_boot.json")
                 if (beforeBootFile.exists()) {
-                    val beforeBoot = beforeBootFile
-                        .readJson(ScriptObject.Serializer(ScriptObject.Type.BEFORE_BOOT))
-                    beforeBoot.initialize(context)
-                    beforeBoot.executeContents(client)
+                    try {
+                        val beforeBoot = beforeBootFile.readJson(ScriptObject.serializer())
+                        beforeBoot.initialize(context)
+                        beforeBoot.executeContents(client)
+                    } catch (e: Exception) {
+                        Logger.error("Error while executing setup script: $beforeBootFile", e)
+                    }
                 }
                 val serverOptionsFile = folder.resolve("data").resolve("server_options.json")
                 if (serverOptionsFile.exists()) {
-                    val serverOptions = serverOptionsFile
-                        .readJson<ServerOptions>()
+                    val serverOptions = serverOptionsFile.readJson<ServerOptions>(json)
                     serverOptions.reboot(client)
+                } else {
+                    client.run("s.boot")
                 }
             },
             serverReady = {

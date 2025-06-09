@@ -1,5 +1,6 @@
 package ponticello.model.project
 
+import hextant.serial.writeJson
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.json.decodeFromStream
 import kotlinx.serialization.serializer
@@ -23,9 +24,8 @@ class MultiFileComponentSerializer<T : NamedObject, L : NamedObjectList<T>>(
         for (obj in value) {
             val objName = obj.name.now
             val file = subDir.resolve("$objName.$extension")
-            val jsonString = json.encodeToString(itemSerializer, obj)
             try {
-                file.writeText(jsonString)
+                file.writeJson(itemSerializer, obj, json)
             } catch (e: Exception) {
                 everythingOk = false
                 Logger.error("Error while writing item $objName of component '${component.name}' to $file!", e)

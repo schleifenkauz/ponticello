@@ -1,5 +1,6 @@
 package ponticello.model.project
 
+import hextant.serial.writeJson
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.json.decodeFromStream
 import ponticello.impl.Logger
@@ -9,8 +10,7 @@ import java.io.File
 open class SingleFileComponentSerializer<T>(val serializer: KSerializer<T>) : ComponentSerializer<T>() {
     override fun serializeComponent(value: T, dataDirectory: File) {
         val file = dataDirectory.resolve("${component.name}.json")
-        val str = json.encodeToString(serializer, value)
-        file.writeText(str)
+        file.writeJson(serializer, value, json)
     }
 
     override fun deserializeComponent(dataDirectory: File): T {

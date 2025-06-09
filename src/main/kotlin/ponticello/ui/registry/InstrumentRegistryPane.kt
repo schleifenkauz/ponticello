@@ -40,7 +40,7 @@ class InstrumentRegistryPane(
     }
 
     override fun detailWindowIcon(obj: InstrumentObject): Ikon =
-        if (obj is CustomizableSynthDefObject) Material2AL.CODE
+        if (obj is CustomizableSynthDefObject || obj is ProcessDefObject) Material2AL.CODE
         else MaterialDesignE.EYE
 
     override fun getContent(obj: InstrumentObject, mode: DisplayMode): Parent? = when (obj) {
