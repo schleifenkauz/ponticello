@@ -2,6 +2,7 @@ package ponticello.model.live
 
 import hextant.context.Context
 import hextant.serial.EditorRoot
+import javafx.scene.input.DataFormat
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
 import ponticello.model.obj.SuperColliderObject
@@ -77,5 +78,9 @@ class LiveTaskObject(
 
     override fun doReset() {
         client.run("$superColliderName.stop")
+    }
+
+    companion object {
+        val DATA_FORMAT: DataFormat = DataFormat("ponticello/live-task")
     }
 }

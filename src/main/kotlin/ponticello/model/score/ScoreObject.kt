@@ -21,6 +21,7 @@ import ponticello.model.live.LiveConfig
 import ponticello.model.live.QuantizationConfig
 import ponticello.model.obj.AbstractRenamableObject
 import ponticello.model.obj.ParameterDefObject
+import ponticello.model.obj.project
 import ponticello.model.obj.withName
 import ponticello.model.player.ScorePlayer
 import ponticello.model.registry.ScoreObjectRegistry
@@ -30,7 +31,6 @@ import ponticello.model.score.controls.ParameterControl
 import ponticello.sc.ControlSpec
 import ponticello.sc.NumericalControlSpec
 import ponticello.ui.launcher.PonticelloApp.Companion.primaryStage
-import ponticello.ui.launcher.PonticelloLauncher.Companion.currentProject
 import reaktive.value.ReactiveValue
 import reaktive.value.ReactiveVariable
 import reaktive.value.now
@@ -262,7 +262,7 @@ sealed class ScoreObject : AbstractRenamableObject() {
 
     fun removedFromScore(option: Score.RegistryOption) {
         if (option == Score.RegistryOption.KEEP_IN_REGISTRY) return
-        if (!context[currentProject].hasInstancesOf(this) && registry.has(this)) {
+        if (!context.project.hasInstancesOf(this) && registry.has(this)) {
             val remove = option == Score.RegistryOption.REMOVE_WITHOUT_ASKING || YesNoPrompt(
                 "Score has no instances of $this anymore. Remove it from the registry?",
                 cancellable = false,

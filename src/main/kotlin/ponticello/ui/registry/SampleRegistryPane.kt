@@ -17,12 +17,12 @@ import org.kordamp.ikonli.materialdesign2.MaterialDesignF
 import org.kordamp.ikonli.materialdesign2.MaterialDesignP
 import ponticello.model.obj.BufferObject
 import ponticello.model.obj.SampleObject
+import ponticello.model.obj.project
 import ponticello.model.project.buffers
 import ponticello.model.registry.BufferRegistry
 import ponticello.sc.Identifier
 import ponticello.ui.actions.undoable
 import ponticello.ui.launcher.PonticelloFiles
-import ponticello.ui.launcher.PonticelloLauncher.Companion.currentProject
 import ponticello.ui.score.ScoreObjectDuplicator
 import java.io.File
 
@@ -47,7 +47,7 @@ class SampleRegistryPane(
     private fun loadNewSample(name: (File) -> String): SampleObject? {
         val file = samples.context[PonticelloFiles].showOpenDialog("*.wav") ?: return null
         if (samples.getSample(file) != null) return null
-        val sample = SampleObject.create(samples.context[currentProject], name(file), file)
+        val sample = SampleObject.create(samples.context.project, name(file), file)
         return sample
     }
 
@@ -94,7 +94,7 @@ class SampleRegistryPane(
             addAction("Replace sample contents") {
                 icon(MaterialDesignF.FILE_MUSIC_OUTLINE)
                 executesOn { obj: SampleObject ->
-                    val samples = obj.context[currentProject].buffers
+                    val samples = obj.context.project.buffers
                     val newFile = samples.context[PonticelloFiles].showOpenDialog("*.wav") ?: return@executesOn
                     if (samples.getSample(newFile) != null) return@executesOn
                     obj.loadFile(newFile)

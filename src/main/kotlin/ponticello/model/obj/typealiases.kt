@@ -2,6 +2,8 @@ package ponticello.model.obj
 
 import kotlinx.serialization.Contextual
 import ponticello.model.flow.AudioFlowGroup
+import ponticello.model.live.LiveObject
+import ponticello.model.live.LiveTaskObject
 import ponticello.model.player.ClockObject
 import ponticello.model.registry.ObjectReference
 import ponticello.model.score.ScoreObject
@@ -15,3 +17,6 @@ typealias MeterReference = ObjectReference<@Contextual MeterObject>
 typealias ClockReference = ObjectReference<@Contextual ClockObject>
 typealias ParameterDefReference = ObjectReference<@Contextual ParameterDefObject>
 typealias FlowGroupReference = ObjectReference<@Contextual AudioFlowGroup>
+typealias ScriptObjectReference = ObjectReference<@Contextual ScriptObject>
+typealias LiveObjectReference = ObjectReference<@Contextual LiveObject>
+typealias LiveTaskReference = ObjectReference<@Contextual LiveTaskObject>

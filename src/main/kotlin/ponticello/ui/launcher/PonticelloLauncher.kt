@@ -25,6 +25,7 @@ import ponticello.model.ServerOptions
 import ponticello.model.Settings
 import ponticello.model.flow.NodeTree
 import ponticello.model.obj.ScriptObject
+import ponticello.model.obj.project
 import ponticello.model.player.ActiveObjectsManager
 import ponticello.model.player.Recorder
 import ponticello.model.player.ScoreObjectScheduler
@@ -206,7 +207,7 @@ class PonticelloLauncher {
     }
 
     fun saveProject(): Boolean {
-        val project = rootContext[currentProject]
+        val project = rootContext.project
         val file = recentProjects.activeProject() ?: rootContext[PonticelloFiles].showOpenDialog("*.pont") ?: return false
         val ok = save(project, file)
         if (ok) {

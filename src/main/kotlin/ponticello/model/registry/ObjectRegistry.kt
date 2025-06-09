@@ -1,10 +1,10 @@
 package ponticello.model.registry
 
-import ponticello.ui.launcher.PonticelloLauncher.Companion.currentProject
+import ponticello.model.obj.project
 
 abstract class ObjectRegistry<O : NamedObject>: NamedObjectList<O>() {
     fun save() {
-        context[currentProject].save(this)
+        context.project.save(this)
     }
 
     fun availableName(prefix: String): String {

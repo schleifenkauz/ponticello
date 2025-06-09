@@ -5,10 +5,10 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import ponticello.impl.Logger
 import ponticello.model.obj.AbstractRenamableObject
+import ponticello.model.obj.project
 import ponticello.model.project.flows
 import ponticello.sc.client.SuperColliderClient
 import ponticello.sc.client.eval
-import ponticello.ui.launcher.PonticelloLauncher.Companion.currentProject
 import ponticello.ui.midi.MidiContext
 import reaktive.Observer
 import reaktive.value.ReactiveValue
@@ -81,7 +81,7 @@ sealed class AudioFlow : AbstractRenamableObject() {
     open fun midiContext(): MidiContext? = null
 
     override fun canRenameTo(newName: String): Boolean =
-        context[currentProject].flows.allFlows().none { f -> f.name.now == newName }
+        context.project.flows.allFlows().none { f -> f.name.now == newName }
 
     abstract override fun copy(): AudioFlow
 

@@ -40,7 +40,6 @@ import ponticello.sc.editor.EventDictionaryEditor
 import ponticello.ui.controls.DecimalPrompt
 import ponticello.ui.controls.NamePrompt
 import ponticello.ui.impl.showDialog
-import ponticello.ui.launcher.PonticelloLauncher.Companion.currentProject
 import ponticello.ui.launcher.PonticelloMainActivity
 import ponticello.ui.registry.SearchableBufferListView
 import ponticello.ui.registry.SearchableBusListView
@@ -188,7 +187,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
     }
 
     private fun createPlayBufObject(buffer: BufferObject, position: ObjectPosition, ev: Event?) {
-        val instrument = context[currentProject][UI_STATE].getOrSelectInstrument(ev) ?: return
+        val instrument = context.project[UI_STATE].getOrSelectInstrument(ev) ?: return
         val obj = buffer.createSynthObject(instrument) ?: return
         val inst = ScoreObjectInstance(obj, position)
         context.compoundEdit("Add sample to score") {

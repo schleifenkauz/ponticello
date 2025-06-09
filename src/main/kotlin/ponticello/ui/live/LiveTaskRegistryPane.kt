@@ -5,6 +5,7 @@ import hextant.serial.EditorRoot
 import javafx.event.Event
 import javafx.geometry.Orientation
 import javafx.scene.Parent
+import javafx.scene.input.DataFormat
 import ponticello.model.live.LiveTaskObject
 import ponticello.model.live.LiveTaskRegistry
 import ponticello.model.obj.withName
@@ -22,6 +23,8 @@ class LiveTaskRegistryPane(registry: LiveTaskRegistry) : LiveObjectRegistryPane<
 
     override val inlineOrientation: Orientation
         get() = Orientation.HORIZONTAL
+
+    override fun dataFormat(obj: LiveTaskObject): DataFormat = LiveTaskObject.DATA_FORMAT
 
     override fun createNewObject(name: String, ev: Event?): LiveTaskObject = LiveTaskObject(
         EditorRoot(CodeBlockEditor().defaultState())

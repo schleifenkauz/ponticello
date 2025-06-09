@@ -11,6 +11,9 @@ import ponticello.model.flow.AudioFlows
 import ponticello.model.obj.*
 import ponticello.model.player.Recorder
 import ponticello.model.player.ScorePlayer
+import ponticello.model.project.LIVE_TASKS
+import ponticello.model.project.get
+import ponticello.model.project.scripts
 import ponticello.model.registry.ObjectReference
 import ponticello.model.registry.ScoreObjectRegistry
 import ponticello.model.registry.reference
@@ -20,6 +23,7 @@ import ponticello.model.score.ScoreObjectGroup
 import ponticello.model.score.controls.ParameterControl
 import ponticello.model.score.controls.ValueControl
 import ponticello.sc.NumericalControlSpec
+import ponticello.sc.client.SuperColliderClient
 import ponticello.sc.mapOnto
 import ponticello.ui.launcher.PonticelloMainActivity
 import reaktive.value.*
@@ -255,6 +259,50 @@ sealed class ItemTarget : AbstractContextualObject() {
         override fun toString(): String = "Flow ${ref.flowName}"
     }
 
+    data class Script(val ref: ScriptObjectReference) : ItemTarget() {
+        override val canView: Boolean
+            get() = true
+
+        override val isActive: ReactiveBoolean
+            get() = reactiveValue(false)
+
+        override fun pressed(velocity: Int, item: LauncherGrid.GridItem) {
+            val script = ref.get() ?: return
+            script.executeContents(context[SuperColliderClient])
+        }
+
+        override fun released(item: LauncherGrid.GridItem) {
+
+        }
+
+        override fun toString(): String = "Script ${ref.getName()}"
+    }
+
+    data class LiveTask(val ref: LiveTaskReference) : ItemTarget() {
+        override val canView: Boolean
+            get() = true
+
+        override val isActive: ReactiveBoolean
+            get() = ref.get()?.isActive ?: reactiveValue(false)
+
+        override fun pressed(velocity: Int, item: LauncherGrid.GridItem) {
+            val obj = ref.get() ?: return
+            if (!obj.isActive.now) obj.toggleActive()
+            else if (!item.stopOnRelease.now) {
+                obj.toggleActive()
+            }
+        }
+
+        override fun released(item: LauncherGrid.GridItem) {
+            val obj = ref.get() ?: return
+            if (obj.isActive.now && item.stopOnRelease.now) {
+                obj.toggleActive()
+            }
+        }
+
+        override fun toString(): String = "Task: ${ref.getName()}"
+    }
+
     companion object {
         fun options(context: Context): List<ItemTarget> {
             val objects = context[ScoreObjectRegistry].filter { obj -> obj.affectsPlayback }
@@ -268,7 +316,10 @@ sealed class ItemTarget : AbstractContextualObject() {
                     Flow(ref)
                 }
             }
-            return listOf(None, ToggleRecording) + objectTargets + playerTargets + flowTargets
+            val scriptTargets = context.project.scripts.map { script -> Script(script.reference()) }
+            val taskTargets = context.project[LIVE_TASKS].map { task -> LiveTask(task.reference()) }
+            val defaultOptions = listOf(None, ToggleRecording)
+            return defaultOptions + objectTargets + playerTargets + flowTargets + scriptTargets + taskTargets
         }
     }
 }

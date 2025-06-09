@@ -11,14 +11,14 @@ import hextant.context.Context
 import hextant.context.compoundEdit
 import javafx.event.Event
 import javafx.scene.Scene
-import reaktive.value.binding.map
-import reaktive.value.now
 import ponticello.model.obj.ContextualObject
+import ponticello.model.obj.project
 import ponticello.model.player.ScorePlayer
 import ponticello.ui.launcher.PonticelloLauncher
-import ponticello.ui.launcher.PonticelloLauncher.Companion.currentProject
 import ponticello.ui.launcher.PonticelloMainActivity
 import ponticello.ui.score.ScoreObjectView
+import reaktive.value.binding.map
+import reaktive.value.now
 
 inline fun Action.Collector<ObjectActionContext>.addObjectAction(
     name: String,
@@ -63,7 +63,7 @@ fun Scene.registerGlobalShortcuts(context: Context) {
     registerShortcuts {
         registerActions(PlaybackActions.global.withContext(context[ScorePlayer.CURRENT]))
         registerActions(ToolWindowActions.withContext(context[PonticelloMainActivity]))
-        registerActions(ServerActions.withContext(context[currentProject]))
+        registerActions(ServerActions.withContext(context.project))
         registerActions(ProjectActions.withContext(context[PonticelloLauncher]))
     }
 }

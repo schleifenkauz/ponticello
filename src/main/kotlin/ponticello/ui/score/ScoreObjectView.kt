@@ -27,6 +27,7 @@ import javafx.scene.layout.*
 import javafx.scene.paint.Color
 import javafx.scene.paint.Color.BLACK
 import ponticello.impl.*
+import ponticello.model.obj.project
 import ponticello.model.project.InlineControlsDisplay
 import ponticello.model.project.UIState
 import ponticello.model.project.settings
@@ -40,7 +41,6 @@ import ponticello.ui.controls.NameControl
 import ponticello.ui.impl.resizeMode
 import ponticello.ui.impl.setupDraggingAndResizing
 import ponticello.ui.launcher.DetailPaneManager
-import ponticello.ui.launcher.PonticelloLauncher.Companion.currentProject
 import ponticello.ui.launcher.PonticelloMainActivity
 import reaktive.value.*
 import reaktive.value.binding.*
@@ -483,7 +483,7 @@ abstract class ScoreObjectView(
         val parentPane = parentPane
         val factor = if (direction == LEFT) -1.0 else 1.0
         val meter = parentPane.getNearestGrid(instance.position)?.second
-        val settings = context[currentProject].settings
+        val settings = context.project.settings
         val snapOption = if (settings.snapEnabled.now) settings.snapOption.now else null
         val deltaT =
             if (snapOption != null && meter != null) meter.getDuration(snapOption) * factor

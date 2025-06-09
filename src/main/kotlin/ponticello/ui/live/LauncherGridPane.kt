@@ -28,12 +28,13 @@ import ponticello.model.flow.AudioFlows
 import ponticello.model.live.ItemTarget
 import ponticello.model.live.LauncherGrid
 import ponticello.model.live.LauncherGrid.GridItemReference
-import ponticello.model.obj.BufferObject
-import ponticello.model.obj.ParameterDefObject
-import ponticello.model.obj.ParameterizedObject
+import ponticello.model.live.LiveTaskObject
+import ponticello.model.obj.*
 import ponticello.model.player.ScorePlayer
+import ponticello.model.project.LIVE_TASKS
 import ponticello.model.project.UI_STATE
 import ponticello.model.project.get
+import ponticello.model.project.scripts
 import ponticello.model.registry.BufferRegistry
 import ponticello.model.registry.ObjectReference
 import ponticello.model.registry.ScoreObjectRegistry
@@ -46,7 +47,6 @@ import ponticello.sc.Warp
 import ponticello.ui.actions.PlaybackActions
 import ponticello.ui.actions.UndoRedoActions
 import ponticello.ui.impl.getFrom
-import ponticello.ui.launcher.PonticelloLauncher.Companion.currentProject
 import ponticello.ui.launcher.PonticelloMainActivity
 import ponticello.ui.registry.ScoreObjectRegistryPane
 import ponticello.ui.registry.SearchableParameterDefListView
@@ -208,6 +208,16 @@ class LauncherGridPane(
                 createPlayBufTarget(ev, buffer, item)
             }
 
+            db.hasContent(ScriptObject.DATA_FORMAT) -> {
+                val script = db.getFrom(context.project.scripts, ScriptObject.DATA_FORMAT) ?: return@drop
+                item.target = ItemTarget.Script(script.reference())
+            }
+
+            db.hasContent(LiveTaskObject.DATA_FORMAT) -> {
+                val task = db.getFrom(context.project[LIVE_TASKS], LiveTaskObject.DATA_FORMAT) ?: return@drop
+                item.target = ItemTarget.LiveTask(task.reference())
+            }
+
             db.hasFile("wav") -> {
                 val file = db.files[0]
                 val buffer = context[BufferRegistry].getOrAdd(file)
@@ -217,7 +227,7 @@ class LauncherGridPane(
     }
 
     private fun createPlayBufTarget(ev: DragEvent, buffer: BufferObject, item: LauncherGrid.GridItem) {
-        val synthDef = context[currentProject][UI_STATE].getOrSelectInstrument(ev) ?: return
+        val synthDef = context.project[UI_STATE].getOrSelectInstrument(ev) ?: return
         val obj = buffer.createSynthObject(synthDef) ?: return
         context[ScoreObjectRegistry].add(obj)
         item.target = ItemTarget.Object(obj.reference())
@@ -238,7 +248,10 @@ class LauncherGridPane(
                 val obj = context[ScoreObjectRegistry].getOrNull(name)
                 obj != null && obj.affectsPlayback
             }
+
             db.hasContent(BufferObject.DATA_FORMAT) -> true
+            db.hasContent(ScriptObject.DATA_FORMAT) -> true
+            db.hasContent(LiveTaskObject.DATA_FORMAT) -> true
             db.hasFile("wav") -> true
 
             else -> false
@@ -265,6 +278,16 @@ class LauncherGridPane(
                         is ItemTarget.Object -> {
                             val obj = target.ref.get() ?: return@executes
                             showObject(obj)
+                        }
+
+                        is ItemTarget.Script -> {
+                            val obj = target.ref.get() ?: return@executes
+                            target.context[PonticelloMainActivity].scriptsPane().listView.showContent(obj)
+                        }
+
+                        is ItemTarget.LiveTask -> {
+                            val obj = target.ref.get() ?: return@executes
+                            target.context[PonticelloMainActivity].liveTasksPane().listView.showContent(obj)
                         }
 
                         else -> {}

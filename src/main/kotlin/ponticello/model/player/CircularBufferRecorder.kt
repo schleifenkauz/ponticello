@@ -8,10 +8,10 @@ import hextant.context.Context
 import ponticello.impl.Decimal
 import ponticello.impl.Logger
 import ponticello.impl.zero
+import ponticello.model.obj.project
 import ponticello.model.registry.BufferRegistry
 import ponticello.sc.client.SuperColliderClient
 import ponticello.sc.client.getArgument
-import ponticello.ui.launcher.PonticelloLauncher.Companion.currentProject
 import java.io.File
 import kotlin.concurrent.thread
 
@@ -39,7 +39,7 @@ class CircularBufferRecorder(
     }
 
     fun exportSegment(duration: Decimal, name: String) {
-        val sampleDirectory = context[currentProject].projectDirectory.resolve("samples")
+        val sampleDirectory = context.project.projectDirectory.resolve("samples")
         sampleDirectory.mkdirs()
         val path = sampleDirectory.resolve("$name.wav")
         client.send("exportBufferSegment", listOf(path.absolutePath, duration.toString()))

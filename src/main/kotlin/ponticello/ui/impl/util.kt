@@ -18,6 +18,7 @@ import javafx.scene.paint.Color
 import javafx.stage.Window
 import ponticello.impl.Decimal
 import ponticello.impl.asY
+import ponticello.model.obj.project
 import ponticello.model.project.*
 import ponticello.model.registry.NamedObject
 import ponticello.model.registry.ObjectRegistry
@@ -103,7 +104,7 @@ fun SubWindow.applySavedState(
     defaultSize: Dimension2D?,
 ): SubWindow {
     if (context.hasProperty(currentProject)) {
-        val interactionSettings = context[currentProject][UI_STATE]
+        val interactionSettings = context.project[UI_STATE]
         val state = interactionSettings.getWindowState(reference) {
             if (scene.root is ObjectRegistryPane<*>) RegistryWindowState(reference)
             else RegularWindowState(reference)

@@ -15,6 +15,7 @@ import kotlinx.serialization.Transient
 import ponticello.impl.zero
 import ponticello.model.obj.AbstractContextualObject
 import ponticello.model.obj.ParameterDefObject
+import ponticello.model.obj.project
 import ponticello.model.player.ActiveScoreObject
 import ponticello.model.player.ScoreObjectScheduler
 import ponticello.model.player.ScorePlayer
@@ -25,7 +26,6 @@ import ponticello.model.registry.ScoreObjectRegistry
 import ponticello.model.registry.reference
 import ponticello.model.score.ScoreObjectGroup
 import ponticello.model.score.SoundProcess
-import ponticello.ui.launcher.PonticelloLauncher.Companion.currentProject
 import reaktive.value.ReactiveVariable
 import reaktive.value.now
 import reaktive.value.reactiveVariable
@@ -120,7 +120,7 @@ class LauncherGrid private constructor(
 
     private fun getScore() = when (val t = target.now) {
         is Target.SubScore -> t.ref.get()?.score
-        Target.MainScore -> context[currentProject].mainScore
+        Target.MainScore -> context.project.mainScore
         Target.None -> null
     }
 

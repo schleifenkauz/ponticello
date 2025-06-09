@@ -4,20 +4,20 @@ import fxutils.styleClass
 import hextant.context.Context
 import javafx.scene.layout.Pane
 import javafx.scene.shape.Line
-import reaktive.Observer
-import reaktive.value.forEach
-import reaktive.value.fx.asObservableValue
-import reaktive.value.now
 import ponticello.impl.Decimal
 import ponticello.impl.asY
 import ponticello.impl.times
 import ponticello.impl.zero
 import ponticello.model.obj.MeterObject
+import ponticello.model.obj.project
 import ponticello.model.player.ScorePlayer
 import ponticello.model.project.settings
 import ponticello.model.score.ObjectPosition
 import ponticello.model.score.ScoreObject
-import ponticello.ui.launcher.PonticelloLauncher.Companion.currentProject
+import reaktive.Observer
+import reaktive.value.forEach
+import reaktive.value.fx.asObservableValue
+import reaktive.value.now
 
 class SingleObjectScorePane(
     val rootObj: ScoreObject, context: Context,
@@ -54,7 +54,7 @@ class SingleObjectScorePane(
             ev.consume()
         }
         marker.endY = GRID_HEIGHT
-        marker.visibleProperty().bind(context[currentProject].settings.snapEnabled.asObservableValue())
+        marker.visibleProperty().bind(context.project.settings.snapEnabled.asObservableValue())
         meterObserver = rootObj.quantizationConfig.meter.forEach { ref ->
             meterChangeObserver?.kill()
             meterChangeObserver = null

@@ -8,18 +8,18 @@ import javafx.scene.input.MouseEvent
 import javafx.scene.layout.Pane
 import javafx.scene.paint.Color
 import javafx.scene.shape.Line
-import reaktive.event.unitEvent
-import reaktive.value.now
 import ponticello.impl.Decimal
 import ponticello.impl.div
 import ponticello.impl.replacePrefix
 import ponticello.impl.round
 import ponticello.model.obj.MeterObject
+import ponticello.model.obj.project
 import ponticello.model.player.ScorePlayer
 import ponticello.model.project.settings
 import ponticello.model.score.*
 import ponticello.ui.impl.verticalDist
-import ponticello.ui.launcher.PonticelloLauncher.Companion.currentProject
+import reaktive.event.unitEvent
+import reaktive.value.now
 import java.util.concurrent.CompletableFuture
 import kotlin.concurrent.thread
 
@@ -143,7 +143,7 @@ abstract class RootScorePane(score: Score, context: Context) : ScorePane(score, 
     }
 
     final override fun snapToGrid(position: ObjectPosition): ObjectPosition {
-        val settings = context[currentProject].settings
+        val settings = context.project.settings
         val (t, y) = position
         if (!settings.snapEnabled.now) return position
         when (val option = settings.snapOption.now) {

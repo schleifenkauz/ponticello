@@ -10,6 +10,7 @@ import ponticello.impl.writeCode
 import ponticello.model.Settings
 import ponticello.model.obj.BusObject
 import ponticello.model.obj.SampleObject
+import ponticello.model.obj.project
 import ponticello.model.project.SERVER_OPTIONS
 import ponticello.model.project.get
 import ponticello.model.registry.BufferRegistry
@@ -17,7 +18,6 @@ import ponticello.model.registry.BusRegistry
 import ponticello.sc.client.SuperColliderClient
 import ponticello.ui.controls.NamePrompt
 import ponticello.ui.impl.showDialog
-import ponticello.ui.launcher.PonticelloLauncher.Companion.currentProject
 import reaktive.value.ReactiveBoolean
 import reaktive.value.now
 import reaktive.value.reactiveVariable
@@ -70,7 +70,7 @@ class Recorder(private val context: Context) {
     }
 
     private fun getRecordedBus(): BusObject {
-        val options = context[currentProject][SERVER_OPTIONS]
+        val options = context.project[SERVER_OPTIONS]
         return options.recordedBus.get() ?: context[BusRegistry].getOutput()
     }
 
@@ -91,11 +91,11 @@ class Recorder(private val context: Context) {
 
     private fun addRecordedAudioAsSample() {
         val name = NamePrompt(context[BufferRegistry], "Name for sample", "").showDialog(context) ?: return
-        val samplePath = context[currentProject].projectDirectory
+        val samplePath = context.project.projectDirectory
             .resolve("samples").also(File::mkdir)
             .resolve("$name.wav")
         pathOfLastRecording!!.copyTo(samplePath)
-        val obj = SampleObject.create(context[currentProject], name, samplePath)
+        val obj = SampleObject.create(context.project, name, samplePath)
         context[BufferRegistry].add(obj)
     }
 
@@ -117,7 +117,7 @@ class Recorder(private val context: Context) {
 
     private fun pathForNextRecording(): File {
         val fileName = DateTimeFormatter.ofPattern("yyyy-MM-dd_kk-mm").format(LocalDateTime.now()) + ".wav"
-        val path = context[currentProject].projectDirectory
+        val path = context.project.projectDirectory
             .resolve("recordings").also { dir -> dir.mkdirs() }
             .resolve(fileName)
         return path

@@ -8,6 +8,7 @@ import org.kordamp.ikonli.materialdesign2.MaterialDesignM
 import ponticello.impl.Logger
 import ponticello.model.flow.AudioFlows
 import ponticello.model.flow.NodeTree
+import ponticello.model.obj.project
 import ponticello.model.player.ActiveObjectsManager
 import ponticello.model.player.CircularBufferRecorder
 import ponticello.model.player.Recorder
@@ -21,7 +22,6 @@ import ponticello.sc.Rate
 import ponticello.sc.client.SuperColliderClient
 import ponticello.ui.controls.DecimalPrompt
 import ponticello.ui.controls.NamePrompt
-import ponticello.ui.launcher.PonticelloLauncher.Companion.currentProject
 import ponticello.ui.registry.SearchableBusListView
 import reaktive.value.binding.and
 import reaktive.value.binding.map
@@ -89,7 +89,7 @@ object PlaybackActions {
 
     fun selectRecordedBus(player: ScorePlayer, ev: Event?) {
         val context = player.context
-        val project = context[currentProject]
+        val project = context.project
         val currentSelected =
             project[SERVER_OPTIONS].recordedBus.get() ?: context[BusRegistry].getDefault()
         val bus = SearchableBusListView(

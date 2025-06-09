@@ -16,7 +16,6 @@ import kotlinx.serialization.json.*
 import ponticello.impl.parseDecimal
 import ponticello.model.obj.*
 import ponticello.sc.Identifier
-import ponticello.ui.launcher.PonticelloLauncher.Companion.currentProject
 import reaktive.Observer
 import reaktive.value.ReactiveVariable
 import reaktive.value.now
@@ -51,7 +50,7 @@ class BufferRegistry(
 
     fun getOrAdd(file: File): SampleObject = getSample(file) ?: run {
         val name = Identifier.truncate(file.nameWithoutExtension)
-        val sample = SampleObject.create(context[currentProject], name, file)
+        val sample = SampleObject.create(context.project, name, file)
         add(sample)
         return sample
     }

@@ -10,10 +10,10 @@ import javafx.scene.image.ImageView
 import javafx.scene.robot.Robot
 import ponticello.impl.Decimal
 import ponticello.model.obj.SampleObject
+import ponticello.model.obj.project
 import ponticello.model.project.UI_STATE
 import ponticello.model.project.get
 import ponticello.model.score.ScoreObject
-import ponticello.ui.launcher.PonticelloLauncher.Companion.currentProject
 import reaktive.Observer
 
 class ScoreObjectDuplicator {
@@ -62,7 +62,7 @@ class ScoreObjectDuplicator {
 
     fun enterDuplicateMode(sample: SampleObject, ev: Event?) {
         val image = Image(sample.spectrogramFile.inputStream())
-        val instrument = sample.context[currentProject][UI_STATE].getOrSelectInstrument(ev) ?: return
+        val instrument = sample.context.project[UI_STATE].getOrSelectInstrument(ev) ?: return
         val obj = sample.createSynthObject(instrument) ?: return
         enterDuplicateMode(obj, image, null)
     }

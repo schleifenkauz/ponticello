@@ -14,7 +14,6 @@ import ponticello.model.project.scripts
 import ponticello.sc.client.SuperColliderClient
 import ponticello.sc.code
 import ponticello.sc.editor.CodeBlockEditor
-import ponticello.ui.launcher.PonticelloLauncher.Companion.currentProject
 import reaktive.value.ReactiveVariable
 import reaktive.value.now
 import reaktive.value.reactiveVariable
@@ -33,7 +32,7 @@ class ScriptObject private constructor(
     }
 
     override val registry: ScriptRegistry
-        get() = context[currentProject].scripts
+        get() = context.project.scripts
 
     override val canRename: Boolean
         get() = type.now != Type.BEFORE_BOOT

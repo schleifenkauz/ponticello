@@ -12,10 +12,10 @@ import javafx.scene.shape.Line
 import javafx.scene.text.Text
 import ponticello.impl.Decimal
 import ponticello.model.obj.MeterObject
+import ponticello.model.obj.project
 import ponticello.model.project.settings
 import ponticello.model.score.ScoreObjectInstance
 import ponticello.model.score.TempoGridObject
-import ponticello.ui.launcher.PonticelloLauncher.Companion.currentProject
 import reaktive.value.ReactiveValue
 import reaktive.value.fx.asObservableValue
 import reaktive.value.fx.asProperty
@@ -41,7 +41,7 @@ class TempoGridObjectView(override val obj: TempoGridObject, inst: ScoreObjectIn
 
     override fun initialize() {
         super.initialize()
-        marker.visibleProperty().bind(context[currentProject].settings.snapEnabled.asObservableValue())
+        marker.visibleProperty().bind(context.project.settings.snapEnabled.asObservableValue())
         repaint()
     }
 
