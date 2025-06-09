@@ -31,7 +31,7 @@ class ControlAssignmentEditor(val control: NamedParameterControl, val view: Scor
         optionButton.setOnMouseClicked { showOptionPopup() }
         optionButton.prefWidth = 45.0
         setupDropArea(this::canDrop, ::onDrop)
-        styleClass("control-detail-editor")
+        styleClass("parameter-control-item")
     }
 
     private fun onDrop(ev: DragEvent) {

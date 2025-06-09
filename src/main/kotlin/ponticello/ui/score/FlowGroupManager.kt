@@ -116,7 +116,7 @@ class FlowGroupManager(
             existingWindow.showOrBringToFront()
             return
         }
-        val pane = FlowGroupPane(group)
+        val pane = FlowGroupPane(group, ownWindow = true)
         val window = makeSubWindow(group, pane)
         group.context[ContextualMidiReceiver].registerMidiContext(window) {
             val selected = pane.flowsView.selectedObject()

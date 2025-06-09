@@ -5,7 +5,6 @@ import fxutils.popupAnchor
 import fxutils.prompt.SimpleSearchableListView
 import fxutils.prompt.TextPrompt
 import fxutils.setFixedWidth
-import fxutils.setupDropArea
 import javafx.geometry.Orientation
 import javafx.scene.Node
 import javafx.scene.Parent
@@ -15,7 +14,6 @@ import ponticello.model.flow.AudioFlowGroup
 import ponticello.model.flow.AudioFlows
 import ponticello.sc.Identifier
 import ponticello.ui.impl.colorPicker
-import ponticello.ui.registry.ObjectListView
 import ponticello.ui.registry.ObjectListView.DisplayMode
 import ponticello.ui.registry.SearchableToolPane
 import reaktive.value.binding.`if`
@@ -41,12 +39,8 @@ class AudioFlowPane(flows: AudioFlows) : SearchableToolPane<AudioFlowGroup>() {
         return listOf(colorPicker)
     }
 
-    override fun getContent(obj: AudioFlowGroup, mode: DisplayMode): Parent {
-        val config = FlowListConfig(obj, autoResizeScene = mode == DisplayMode.SubWindow)
-        val listView = ObjectListView(obj.flows, config)
-        listView.setupDropArea(config::canDrop) { ev -> config.onDrop(ev, listView) }
-        return listView
-    }
+    override fun getContent(obj: AudioFlowGroup, mode: DisplayMode): Parent =
+        FlowGroupPane(obj, ownWindow = mode == DisplayMode.SubWindow)
 
     private class FlowNamePrompt(
         private val takenFlowNames: Set<String>,

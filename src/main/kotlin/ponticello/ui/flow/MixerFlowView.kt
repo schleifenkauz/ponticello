@@ -51,7 +51,8 @@ class MixerFlowView(private val flow: MixerFlow) : VBox(), ObjectListDisplayConf
                 .pad(10.0).also { it.alignment = Pos.CENTER },
             componentsView
         )
-        componentsView.setupDropArea(::canDrop, ::onDrop)
+        styleClass("mixer-flow")
+        setupDropArea(::canDrop, ::onDrop)
     }
 
     private fun addSourceBus(ev: MouseEvent) {

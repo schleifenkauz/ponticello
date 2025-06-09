@@ -4,7 +4,6 @@
 
 .flow-pane {
     -fx-vbar-policy: never;
-    -fx-background-color: black !important;
 }
 
 .volume-fader {

@@ -52,16 +52,16 @@
 }
 
 .object-box:hover {
-    -fx-background-color: rgba(0, 255, 0, 0.1) !important;
+    -fx-background-color: rgba(60, 0, 0, 0.5) !important;
 }
 
 .object-box:selected {
     -fx-background-color: transparent !important;
-    -fx-border-color: rgba(100, 0, 0) !important;
+    -fx-border-color: green !important;
 }
 
 .object-box:hover:selected {
-    -fx-background-color: rgba(0, 255, 0, 0.1) !important;
+    -fx-background-color: rgba(60, 0, 0, 0.5) !important
 }
 
 .command-history-label:focused {

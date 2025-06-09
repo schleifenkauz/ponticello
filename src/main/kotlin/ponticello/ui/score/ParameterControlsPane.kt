@@ -4,6 +4,7 @@ import fxutils.actions.ContextualizedAction
 import fxutils.actions.collectActions
 import fxutils.actions.isShiftDown
 import fxutils.setupDropArea
+import fxutils.styleClass
 import javafx.geometry.Point2D
 import javafx.scene.Node
 import javafx.scene.input.DataFormat
@@ -37,7 +38,8 @@ class ParameterControlsPane(
     init {
         obj.controls.addListener(this)
         setup(title, obj.controls) { headerActions.withContext(this) }
-        listView.setupDropArea(::canDrop, ::drop)
+        styleClass("parameter-controls")
+        listView.itemsScrollPane.setupDropArea(::canDrop, ::drop)
     }
 
     private fun canDrop(db: Dragboard): Boolean = db.hasContent(NamedParameterControl.DATA_FORMAT)
@@ -79,7 +81,7 @@ class ParameterControlsPane(
         return listOf(editor)
     }
 
-    override fun dataFormat(obj: NamedParameterControl): DataFormat? = NamedParameterControl.DATA_FORMAT
+    override fun dataFormat(obj: NamedParameterControl): DataFormat = NamedParameterControl.DATA_FORMAT
 
     override fun configureDragboard(obj: NamedParameterControl, dragboard: Dragboard) {
         val copy = obj.copy()

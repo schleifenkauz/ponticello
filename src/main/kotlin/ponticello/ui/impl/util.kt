@@ -35,7 +35,7 @@ import reaktive.value.fx.asObservableValue
 import reaktive.value.now
 
 fun <T : NamedObject> Dragboard.getFrom(registry: ObjectRegistry<T>, format: DataFormat): T? {
-    val name = getContent(format) as String
+    val name = getContent(format) as? String ?: return null
     return registry.getOrNull(name)
 }
 
@@ -68,7 +68,7 @@ fun colorPicker(controlledVar: ReactiveVariable<Color>): ColorPicker {
 
 fun <R> Prompt<R, *>.showDialog(context: Context) = showDialog(owner = context[primaryStage])
 
-val DEFAULT_SCENE_FILL = Color.web("#1d1d20")
+val DEFAULT_SCENE_FILL: Color = Color.web("#1d1d20")
 
 fun makeSubWindow(
     root: Parent, title: String,

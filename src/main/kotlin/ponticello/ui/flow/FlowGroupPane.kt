@@ -15,20 +15,24 @@ import ponticello.ui.registry.ObjectListView
 import ponticello.ui.registry.ObjectListView.Companion.modeChangeActions
 import ponticello.ui.registry.ToolPane
 
-class FlowGroupPane(group: AudioFlowGroup) : ToolPane() {
+class FlowGroupPane(group: AudioFlowGroup, ownWindow: Boolean) : ToolPane() {
     private val config = FlowListConfig(group, autoResizeScene = true)
     val flowsView = ObjectListView(group.flows, config)
 
     init {
-        flowsView.setupDropArea(config::canDrop) { ev -> config.onDrop(ev, flowsView) }
-        val nameControl = NameControl(group).setFixedWidth(150.0)
-        val colorPicker = colorPicker(group.associatedColor).setFixedWidth(30.0)
-        val actions = AudioFlowPane.actions.withContext(group) + removeAction.withContext(group)
-        val actionBar = ActionBar(actions, buttonStyle = "medium-icon-button")
-        val headerContent = HBox(5.0, nameControl, colorPicker, actionBar).centerChildren()
-        flowsView.autoResizeScene = true
-        val windowActions = modeChangeActions.withContext(flowsView)
-        setup(flowsView, title = null, headerContent, windowActions)
+        flowsView.itemsScrollPane.setupDropArea(config::canDrop, { ev -> config.onDrop(ev, flowsView) })
+        if (ownWindow) {
+            val nameControl = NameControl(group).setFixedWidth(150.0)
+            val colorPicker = colorPicker(group.associatedColor).setFixedWidth(30.0)
+            val actions = AudioFlowPane.actions.withContext(group) + removeAction.withContext(group)
+            val actionBar = ActionBar(actions, buttonStyle = "medium-icon-button")
+            val headerContent = HBox(5.0, nameControl, colorPicker, actionBar).centerChildren()
+            flowsView.autoResizeScene = true
+            val windowActions = modeChangeActions.withContext(flowsView)
+            setup(flowsView, title = null, headerContent, windowActions)
+        } else {
+            setup(flowsView, null, null, emptyList())
+        }
     }
 
     companion object {

@@ -1,13 +1,10 @@
 package ponticello.ui.score
 
 import bundles.createBundle
+import fxutils.*
 import fxutils.actions.button
-import fxutils.centerChildren
-import fxutils.disableIf
 import fxutils.prompt.DetailPane
 import fxutils.prompt.SimpleSearchableListView
-import fxutils.setupDropArea
-import fxutils.styleClass
 import javafx.application.Platform
 import javafx.beans.property.SimpleDoubleProperty
 import javafx.geometry.Point2D
@@ -17,6 +14,7 @@ import javafx.scene.image.ImageView
 import javafx.scene.input.DragEvent
 import javafx.scene.input.Dragboard
 import javafx.scene.input.MouseEvent
+import javafx.scene.layout.Border
 import javafx.scene.layout.HBox
 import javafx.scene.paint.Color
 import javafx.scene.shape.Line
@@ -73,7 +71,7 @@ class SoundProcessView(
         get() = obj.instrumentSelector.result.flatMap { ref -> ref.get()?.color ?: reactiveValue(Color.GRAY) }
 
     init {
-        styleClass("synth-object")
+        styleClass("sound-process")
     }
 
     override fun initialize() {
@@ -132,7 +130,15 @@ class SoundProcessView(
                 ev.consume()
             }
         }
-        setupDropArea(::canDrop, ::drop)
+        var borderBefore: Border? = null
+        setupDropArea(::canDrop, ::drop) { dropPossible ->
+            if (dropPossible) {
+                borderBefore = border
+                border = solidBorder(Color.GREEN, 3.0, BORDER_RADIUS)
+            } else {
+                border = borderBefore
+            }
+        }
     }
 
     private fun canDrop(db: Dragboard): Boolean =

@@ -8,6 +8,7 @@ import fxutils.actions.collectActions
 import fxutils.hasFiles
 import fxutils.prompt.YesNoPrompt
 import fxutils.setupDropArea
+import fxutils.styleClass
 import javafx.event.Event
 import javafx.scene.input.DataFormat
 import org.kordamp.ikonli.evaicons.Evaicons
@@ -30,13 +31,14 @@ class SampleRegistryPane(
     private val samples: BufferRegistry,
 ) : ObjectRegistryPane<BufferObject>(samples) {
     init {
-        setupDropArea({ db -> db.hasFiles("wav") }, { ev ->
+        samples.context[SampleRegistryPane] = this
+        setup()
+        styleClass("samples-pane")
+        listView.itemsScrollPane.setupDropArea({ db -> db.hasFiles("wav") }, { ev ->
             for (file in ev.dragboard.files) {
                 samples.getOrAdd(file)
             }
         })
-        samples.context[SampleRegistryPane] = this
-        setup()
     }
 
     override fun addObject(ev: Event?) {

@@ -534,6 +534,6 @@ abstract class ScoreObjectView(
 
     companion object {
         private const val BORDER_WIDTH = 3.0
-        private const val BORDER_RADIUS = 2.0
+        const val BORDER_RADIUS = 2.0
     }
 }
