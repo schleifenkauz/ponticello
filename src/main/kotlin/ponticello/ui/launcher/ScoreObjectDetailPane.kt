@@ -19,10 +19,12 @@ import org.kordamp.ikonli.Ikon
 import org.kordamp.ikonli.materialdesign2.MaterialDesignP
 import org.kordamp.ikonli.materialdesign2.MaterialDesignT
 import ponticello.model.obj.ParameterizedObject
+import ponticello.model.project.PonticelloProject
 import ponticello.model.score.ScoreObject
 import ponticello.ui.actions.ArrowKeys
 import ponticello.ui.actions.ObjectActionContext
 import ponticello.ui.actions.ObjectActions
+import ponticello.ui.dock.Side
 import ponticello.ui.dock.ToolPane
 import ponticello.ui.dock.ToolPaneState
 import ponticello.ui.impl.makeSubWindow
@@ -39,12 +41,8 @@ class ScoreObjectDetailPane(private val context: Context): ToolPane() {
     private var attachedToView: ScoreObjectView? = null
     private val focusedViewObserver: Observer
 
-    override val title: String
-        get() = "Score Object Details"
-
-    override val icon: Ikon
-        get() = MaterialDesignT.TUNE_VARIANT
-
+    override val type: Type
+        get() = ScoreObjectDetailPane
     override var content: Node = noSelectedObject()
         set(value) {
             children.replace(field, value)
@@ -62,7 +60,7 @@ class ScoreObjectDetailPane(private val context: Context): ToolPane() {
         context[ScoreObjectDetailPane] = this
     }
 
-    override fun defaultState(): ToolPaneState = ToolPaneState.docked(ToolPaneState.Side.LEFT)
+    override fun defaultState(): ToolPaneState = ToolPaneState.docked
 
     private fun noSelectedObject() = BorderPane(label("No object selected"))
 
@@ -197,7 +195,21 @@ class ScoreObjectDetailPane(private val context: Context): ToolPane() {
 
     private fun windowTitle(view: ScoreObjectView) = view.obj.name.map { name -> "Object $name" }
 
-    companion object : PublicProperty<ScoreObjectDetailPane> by publicProperty("DetailPaneManager") {
+    companion object : PublicProperty<ScoreObjectDetailPane> by publicProperty("DetailPaneManager"), Type {
+        override val uid: Int
+            get() = 5
+
+        override val title: String
+            get() = "Score Object Details"
+
+        override val icon: Ikon
+            get() = MaterialDesignT.TUNE_VARIANT
+
+        override val defaultSide: Side
+            get() = Side.LEFT
+
+        override fun createToolPane(project: PonticelloProject): ToolPane = ScoreObjectDetailPane(project.context)
+
         private const val TITLE_BAR_HEIGHT = 35.0
     }
 }

@@ -32,10 +32,7 @@ import ponticello.model.live.LauncherGrid.GridItemReference
 import ponticello.model.live.LiveTaskObject
 import ponticello.model.obj.*
 import ponticello.model.player.ScorePlayer
-import ponticello.model.project.LIVE_TASKS
-import ponticello.model.project.UI_STATE
-import ponticello.model.project.get
-import ponticello.model.project.scripts
+import ponticello.model.project.*
 import ponticello.model.registry.BufferRegistry
 import ponticello.model.registry.ObjectReference
 import ponticello.model.registry.ScoreObjectRegistry
@@ -48,8 +45,8 @@ import ponticello.sc.Warp
 import ponticello.ui.actions.PlaybackActions
 import ponticello.ui.actions.UndoRedoActions
 import ponticello.ui.dock.AppLayout
+import ponticello.ui.dock.Side
 import ponticello.ui.dock.ToolPane
-import ponticello.ui.dock.ToolPanePosition
 import ponticello.ui.dock.ToolPaneState
 import ponticello.ui.impl.DEFAULT_SCENE_FILL
 import ponticello.ui.impl.getFrom
@@ -68,17 +65,13 @@ class LauncherGridPane(
     private val boxes = mutableMapOf<LauncherGrid.GridItem, Region>()
     override val content = GridPane().styleClass("launcher-grid-pane")
     override val headerContent: Node = setupHeader()
-    override val title: String
-        get() = "Grid"
-    override val icon: Ikon
-        get() = MaterialDesignG.GRID
+    override val type: Type get() = LauncherGridPane
     override val shortcuts: Array<String>
         get() = arrayOf("Ctrl+G")
 
     override val headerActions: List<ContextualizedAction> = actions.withContext(grid)
 
-    override fun defaultState(): ToolPaneState =
-        ToolPaneState(ToolPaneState.Side.TOP, ToolPanePosition.Undocked.center())
+    override fun defaultState(): ToolPaneState = ToolPaneState.window
 
     override fun afterSetup() {
         preparePlayers()
@@ -262,7 +255,21 @@ class LauncherGridPane(
         }
     }
 
-    companion object {
+    companion object: Type {
+        override val uid: Int
+            get() = 0
+
+        override val defaultSide: Side
+            get() = Side.TOP
+
+        override val icon: Ikon
+            get() = MaterialDesignG.GRID
+
+        override val title: String
+            get() = "Grid"
+
+        override fun createToolPane(project: PonticelloProject): ToolPane = LauncherGridPane(project[LAUNCHER_GRID])
+
         private val detailsAction = detailsAction<LauncherGrid.GridItem>(
             applicability = { item -> item.target().map { target -> target.canStop } },
             sceneFill = DEFAULT_SCENE_FILL.opacity(0.5), labelWidth = 150.0

@@ -29,10 +29,13 @@ import ponticello.model.obj.AllocatedBufferObject
 import ponticello.model.obj.BufferObject
 import ponticello.model.obj.SampleObject
 import ponticello.model.obj.project
+import ponticello.model.project.PonticelloProject
 import ponticello.model.project.buffers
 import ponticello.model.registry.BufferRegistry
 import ponticello.sc.Identifier
 import ponticello.ui.actions.undoable
+import ponticello.ui.dock.Side
+import ponticello.ui.dock.ToolPane
 import ponticello.ui.dock.ToolPaneState
 import ponticello.ui.launcher.PonticelloFiles
 import ponticello.ui.score.ScoreObjectDuplicator
@@ -40,15 +43,11 @@ import reaktive.value.now
 import java.io.File
 
 class BufferRegistryPane(private val buffers: BufferRegistry) : ObjectRegistryPane<BufferObject>(buffers) {
-    override val title: String
-        get() = "Buffers"
-
-    override val icon: Ikon
-        get() = Material2AL.LIBRARY_MUSIC
-
+    override val type: Type
+        get() = BufferRegistryPane
     override val headerActions: List<ContextualizedAction> = registryActions.withContext(buffers)
 
-    override fun defaultState(): ToolPaneState = ToolPaneState.docked(ToolPaneState.Side.RIGHT)
+    override fun defaultState(): ToolPaneState = ToolPaneState.docked
 
     override fun afterSetup() {
         super.afterSetup()
@@ -123,7 +122,20 @@ class BufferRegistryPane(private val buffers: BufferRegistry) : ObjectRegistryPa
 
     override fun dataFormat(obj: BufferObject): DataFormat = BufferObject.DATA_FORMAT
 
-    companion object: PublicProperty<BufferRegistryPane> by publicProperty("BufferRegistryPane") {
+    companion object : PublicProperty<BufferRegistryPane> by publicProperty("BufferRegistryPane"), Type {
+        override val uid: Int
+            get() = 7
+        override val title: String
+            get() = "Buffers"
+
+        override val icon: Ikon
+            get() = Material2AL.LIBRARY_MUSIC
+
+        override val defaultSide: Side
+            get() = Side.RIGHT
+
+        override fun createToolPane(project: PonticelloProject): ToolPane = BufferRegistryPane(project.buffers)
+
         private val allocatedBufferActions = collectActions<ObjectBox<BufferObject>> {
             addAction("View buffer contents") {
                 icon(Evaicons.ACTIVITY)

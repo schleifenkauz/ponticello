@@ -9,15 +9,17 @@ import javafx.scene.control.TextArea
 import org.kordamp.ikonli.Ikon
 import org.kordamp.ikonli.materialdesign2.MaterialDesignA
 import org.kordamp.ikonli.materialdesign2.MaterialDesignC
+import ponticello.model.project.PonticelloProject
 import ponticello.sc.client.ConsoleMonitor
 import ponticello.sc.client.SuperColliderClient
+import ponticello.ui.dock.Side
 import ponticello.ui.dock.ToolPane
 import ponticello.ui.dock.ToolPaneState
 
 class ConsoleOutputPane(client: SuperColliderClient) : ToolPane(), ConsoleMonitor.Listener {
+    override val type: Type
+        get() = ConsoleOutputPane
     private val buffer = StringBuilder()
-    override val title: String get() = "Console Output"
-    override val icon: Ikon get() = MaterialDesignC.CONSOLE
     override val shortcuts get() = arrayOf("F10")
 
     override val content = TextArea() styleClass "console-output"
@@ -34,7 +36,7 @@ class ConsoleOutputPane(client: SuperColliderClient) : ToolPane(), ConsoleMonito
         scrollToEnd()
     }
 
-    override fun defaultState(): ToolPaneState = ToolPaneState.docked(ToolPaneState.Side.BOTTOM)
+    override fun defaultState(): ToolPaneState = ToolPaneState.docked
 
     override fun process(txt: String) {
         Platform.runLater {
@@ -51,7 +53,17 @@ class ConsoleOutputPane(client: SuperColliderClient) : ToolPane(), ConsoleMonito
         content.scrollTop = Double.MAX_VALUE
     }
 
-    companion object {
+    companion object : Type {
+        override val uid: Int
+            get() = 14
+        override val title: String get() = "Console Output"
+        override val icon: Ikon get() = MaterialDesignC.CONSOLE
+
+        override val defaultSide: Side
+            get() = Side.BOTTOM
+
+        override fun createToolPane(project: PonticelloProject): ToolPane = ConsoleOutputPane(project.client)
+
         private val actions = collectActions<ConsoleOutputPane> {
             addAction("Scroll Down") {
                 icon(MaterialDesignA.ARROW_DOWN)

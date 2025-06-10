@@ -67,6 +67,13 @@ abstract class SearchableToolPane<O : NamedObject>(
 
     private fun matchesSearch(obj: O) = obj.name.now.contains(searchText.text, ignoreCase = true)
 
+    override fun saveState(dest: ToolPaneState) {
+        super.saveState(dest)
+        if (dest is SearchableToolPaneState) {
+            dest.displayMode = listView.mode.now
+        }
+    }
+
     companion object {
         private val actions = collectActions {
             addAction("Focus search field") {

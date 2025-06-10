@@ -14,7 +14,11 @@ import org.kordamp.ikonli.materialdesign2.MaterialDesignF
 import org.kordamp.ikonli.materialdesign2.MaterialDesignP
 import ponticello.model.obj.ScriptObject
 import ponticello.model.obj.ScriptRegistry
+import ponticello.model.project.PonticelloProject
+import ponticello.model.project.scripts
 import ponticello.sc.client.SuperColliderClient
+import ponticello.ui.dock.Side
+import ponticello.ui.dock.ToolPane
 import ponticello.ui.dock.ToolPaneState
 import ponticello.ui.misc.CodePane
 import ponticello.ui.registry.ObjectListView.DisplayMode
@@ -22,16 +26,13 @@ import reaktive.value.binding.map
 import reaktive.value.now
 
 class ScriptRegistryPane(registry: ScriptRegistry) : ObjectRegistryPane<ScriptObject>(registry) {
-    override val title: String
-        get() = "Scripts"
-
-    override val icon: Ikon
-        get() = MaterialDesignF.FILE_COG
+    override val type: Type
+        get() = ScriptRegistryPane
 
     override val supportedModes: Set<DisplayMode>
         get() = setOf(DisplayMode.SubWindow, DisplayMode.DetailsPane)
 
-    override fun defaultState(): ToolPaneState = ToolPaneState.docked(ToolPaneState.Side.RIGHT)
+    override fun defaultState(): ToolPaneState = ToolPaneState.docked
 
     override fun createNewObject(name: String, ev: Event?): ScriptObject? {
         val options = SCRIPT_TYPE_OPTIONS
@@ -56,7 +57,21 @@ class ScriptRegistryPane(registry: ScriptRegistry) : ObjectRegistryPane<ScriptOb
     override fun getContent(obj: ScriptObject, mode: DisplayMode): Parent =
         CodePane(obj.root, ownWindow = true)
 
-    companion object {
+    companion object : Type {
+        override val uid: Int
+            get() = 11
+
+        override val title: String
+            get() = "Scripts"
+
+        override val icon: Ikon
+            get() = MaterialDesignF.FILE_COG
+
+        override val defaultSide: Side
+            get() = Side.RIGHT
+
+        override fun createToolPane(project: PonticelloProject): ToolPane = ScriptRegistryPane(project.scripts)
+
         private val actions = collectActions<ScriptObject> {
             addAction("Execute script") {
                 icon(MaterialDesignP.PLAY)

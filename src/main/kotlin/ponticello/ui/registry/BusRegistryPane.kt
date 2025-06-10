@@ -20,11 +20,15 @@ import org.kordamp.ikonli.material2.Material2MZ
 import org.kordamp.ikonli.materialdesign2.MaterialDesignP
 import ponticello.impl.toDecimal
 import ponticello.model.obj.BusObject
+import ponticello.model.project.PonticelloProject
+import ponticello.model.project.busses
 import ponticello.model.registry.BusRegistry
 import ponticello.sc.NumericalControlSpec
 import ponticello.sc.Rate
 import ponticello.sc.client.SuperColliderClient
 import ponticello.ui.controls.ControlSpecPrompt
+import ponticello.ui.dock.Side
+import ponticello.ui.dock.ToolPane
 import ponticello.ui.dock.ToolPaneState
 import reaktive.ObserverMap
 import reaktive.value.binding.impl.notNull
@@ -36,14 +40,12 @@ import reaktive.value.reactiveVariable
 class BusRegistryPane(busses: BusRegistry) : ObjectRegistryPane<BusObject>(busses) {
     private val specObservers = ObserverMap<BusObject.ControlBus>()
 
-    override val title: String
-        get() = "Busses"
-    override val icon: Ikon
-        get() = Material2AL.GRAPHIC_EQ //MaterialDesignT.TUNE_VARIANT
+    override val type: Type
+        get() = BusRegistryPane
     override val enableReordering: Boolean
         get() = true
 
-    override fun defaultState(): ToolPaneState = ToolPaneState.docked(ToolPaneState.Side.LEFT)
+    override fun defaultState(): ToolPaneState = ToolPaneState.docked
 
     override fun dataFormat(obj: BusObject): DataFormat = BusObject.DATA_FORMAT
 
@@ -99,7 +101,21 @@ class BusRegistryPane(busses: BusRegistry) : ObjectRegistryPane<BusObject>(busse
         } else actions.withContext(box)
     }
 
-    companion object {
+    companion object : Type {
+        override val uid: Int
+            get() = 3
+
+        override val defaultSide: Side
+            get() = Side.LEFT
+
+        override val title: String
+            get() = "Busses"
+
+        override val icon: Ikon
+            get() = Material2AL.GRAPHIC_EQ //MaterialDesignT.TUNE_VARIANT
+
+        override fun createToolPane(project: PonticelloProject): ToolPane = BusRegistryPane(project.busses)
+
         private val actions = collectActions<ObjectBox<BusObject>> {
             addAction("Monitor bus") {
                 icon(MaterialDesignP.PULSE)

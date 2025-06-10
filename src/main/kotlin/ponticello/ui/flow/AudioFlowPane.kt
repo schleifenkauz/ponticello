@@ -15,8 +15,12 @@ import org.kordamp.ikonli.materialdesign2.MaterialDesignR
 import org.kordamp.ikonli.materialdesign2.MaterialDesignT
 import ponticello.model.flow.AudioFlowGroup
 import ponticello.model.flow.AudioFlows
+import ponticello.model.project.PonticelloProject
+import ponticello.model.project.flows
 import ponticello.sc.Identifier
 import ponticello.ui.dock.SearchableToolPane
+import ponticello.ui.dock.Side
+import ponticello.ui.dock.ToolPane
 import ponticello.ui.dock.ToolPaneState
 import ponticello.ui.impl.colorPicker
 import ponticello.ui.registry.ObjectListView.DisplayMode
@@ -25,21 +29,20 @@ import reaktive.value.binding.map
 import reaktive.value.now
 
 class AudioFlowPane(flows: AudioFlows) : SearchableToolPane<AudioFlowGroup>(flows) {
+    override val type: Type
+        get() = AudioFlowPane
+
     override val inlineOrientation: Orientation
         get() = Orientation.HORIZONTAL
 
     override val supportedModes: Set<DisplayMode>
         get() = setOf(DisplayMode.Inline, DisplayMode.SubWindow, DisplayMode.DetailsPane)
 
-    override val title: String
-        get() = "Flows"
-    override val icon: Ikon get() = MaterialDesignT.TUNE
-
     init {
         styleClass.add("flow-pane")
     }
 
-    override fun defaultState(): ToolPaneState = ToolPaneState.docked(ToolPaneState.Side.BOTTOM)
+    override fun defaultState(): ToolPaneState = ToolPaneState.docked
 
     override fun afterSetup() {
         super.afterSetup()
@@ -63,7 +66,18 @@ class AudioFlowPane(flows: AudioFlows) : SearchableToolPane<AudioFlowGroup>(flow
         override fun convert(text: String): String? = text.takeIf { Identifier.isValid(it) && it !in takenFlowNames }
     }
 
-    companion object {
+    companion object : Type {
+        override val uid: Int
+            get() = 13
+        override val title: String
+            get() = "Flows"
+        override val icon: Ikon get() = MaterialDesignT.TUNE
+
+        override val defaultSide: Side
+            get() = Side.BOTTOM
+
+        override fun createToolPane(project: PonticelloProject): ToolPane = AudioFlowPane(project.flows)
+
         val actions = collectActions<AudioFlowGroup> {
             addAction("Add flow") {
                 icon(MaterialDesignP.PLUS)

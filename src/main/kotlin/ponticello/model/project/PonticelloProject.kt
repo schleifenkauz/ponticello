@@ -8,6 +8,7 @@ import ponticello.model.flow.AudioFlows
 import ponticello.model.obj.ContextualObject
 import ponticello.model.score.ScoreObject
 import ponticello.sc.client.SuperColliderClient
+import ponticello.ui.dock.AppLayout
 import ponticello.ui.launcher.ProgressIndicator
 import java.io.File
 
@@ -47,6 +48,11 @@ class PonticelloProject private constructor(val components: Map<Component<out Co
             get(UI_STATE).saveWindowStates()
         } catch (e: Exception) {
             Logger.error("Failed to save window states!", e)
+        }
+        try {
+            context[AppLayout].saveLayoutState()
+        } catch (e: Exception) {
+            Logger.error("Failed to save layout state!", e)
         }
         this.projectDirectory = projectDirectory
         dataDir.mkdirs()

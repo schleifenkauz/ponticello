@@ -8,21 +8,19 @@ import javafx.scene.Node
 import javafx.scene.web.WebView
 import org.kordamp.ikonli.Ikon
 import org.kordamp.ikonli.materialdesign2.MaterialDesignW
+import ponticello.model.project.PonticelloProject
 import ponticello.sc.Identifier
 import ponticello.sc.MessageSend
 import ponticello.sc.editor.IdentifierEditor
 import ponticello.sc.editor.ScExprEditor
+import ponticello.ui.dock.Side
 import ponticello.ui.dock.ToolPane
 import ponticello.ui.dock.ToolPaneState
 import reaktive.value.now
 
 class HelpBrowser : ToolPane() {
-    override val title: String
-        get() = "SuperCollider Documentation"
-
-    override val icon: Ikon
-        get() = MaterialDesignW.WEB
-
+    override val type: Type
+        get() = HelpBrowser
     override val shortcuts: Array<String> = arrayOf("F1")
 
     private lateinit var webView: WebView
@@ -30,7 +28,7 @@ class HelpBrowser : ToolPane() {
     override val content: Node
         get() = webView
 
-    override fun defaultState(): ToolPaneState = ToolPaneState.docked(ToolPaneState.Side.RIGHT)
+    override fun defaultState(): ToolPaneState = ToolPaneState.docked
 
     override fun doSetup() {
         webView = WebView()
@@ -64,7 +62,21 @@ class HelpBrowser : ToolPane() {
         webView.engine.load("$URL_ROOT/Search.html#$searchText")
     }
 
-    companion object : PublicProperty<HelpBrowser> by publicProperty("help-browser", null) {
+    companion object : PublicProperty<HelpBrowser> by publicProperty("help-browser", null), Type {
+        override val uid: Int
+            get() = 12
+
+        override val title: String
+            get() = "SuperCollider Documentation"
+
+        override val icon: Ikon
+            get() = MaterialDesignW.WEB
+
+        override val defaultSide: Side
+            get() = Side.TOP
+
+        override fun createToolPane(project: PonticelloProject): ToolPane = HelpBrowser()
+
         private const val URL_ROOT = "https://doc.sccode.org/"
     }
 }

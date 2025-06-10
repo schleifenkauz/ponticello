@@ -8,19 +8,18 @@ import org.kordamp.ikonli.materialdesign2.MaterialDesignC
 import ponticello.impl.Decimal
 import ponticello.impl.toDecimal
 import ponticello.model.Settings
+import ponticello.model.project.PonticelloProject
 import ponticello.sc.NumericalControlSpec
 import ponticello.ui.controls.Knob
+import ponticello.ui.dock.Side
 import ponticello.ui.dock.ToolPane
-import ponticello.ui.dock.ToolPanePosition
 import ponticello.ui.dock.ToolPaneState
 import ponticello.ui.registry.ParameterDefsPane
 import reaktive.value.ReactiveVariable
 
 class SettingsPane(private val settings: Settings) : ToolPane() {
-    override val title: String
-        get() = "Settings"
-    override val icon: Ikon
-        get() = MaterialDesignC.COG
+    override val type: Type
+        get() = SettingsPane
     override val content: Node by lazy {
         vbox {
             children {
@@ -56,8 +55,7 @@ class SettingsPane(private val settings: Settings) : ToolPane() {
         styleClass("settings-pane")
     }
 
-    override fun defaultState(): ToolPaneState =
-        ToolPaneState(ToolPaneState.Side.TOP, ToolPanePosition.Undocked.center())
+    override fun defaultState(): ToolPaneState = ToolPaneState.window
 
     private fun ChildrenAdder.item(name: String, children: ChildrenAdder.() -> Unit) {
         +hbox {
@@ -74,5 +72,20 @@ class SettingsPane(private val settings: Settings) : ToolPane() {
         item(name) {
             +Knob(name, variable, spec)
         }
+    }
+
+    companion object : Type {
+        override val uid: Int
+            get() = 1
+
+        override val title: String
+            get() = "Settings"
+        override val icon: Ikon
+            get() = MaterialDesignC.COG
+
+        override val defaultSide: Side
+            get() = Side.TOP
+
+        override fun createToolPane(project: PonticelloProject): ToolPane = SettingsPane(project.context[Settings])
     }
 }

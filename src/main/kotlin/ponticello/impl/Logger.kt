@@ -109,6 +109,7 @@ object Logger {
         object Server : Category()
         object Project : Category()
         object VSTPlugins : Category()
+        object Layout: Category()
 
         fun filter(category: Category?): Boolean = when {
             this == All -> true

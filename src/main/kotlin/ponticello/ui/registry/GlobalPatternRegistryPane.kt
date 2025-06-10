@@ -14,7 +14,11 @@ import org.kordamp.ikonli.materialdesign2.MaterialDesignC
 import org.kordamp.ikonli.materialdesign2.MaterialDesignL
 import ponticello.model.obj.GlobalPatternObject
 import ponticello.model.obj.SuperColliderObject
+import ponticello.model.project.PonticelloProject
+import ponticello.model.project.patterns
 import ponticello.model.registry.ObjectRegistry
+import ponticello.ui.dock.Side
+import ponticello.ui.dock.ToolPane
 import ponticello.ui.dock.ToolPaneState
 import ponticello.ui.impl.makeSubWindow
 import ponticello.ui.misc.CodePane
@@ -24,10 +28,8 @@ import reaktive.value.binding.map
 class GlobalPatternRegistryPane(
     registry: ObjectRegistry<GlobalPatternObject>,
 ) : ObjectRegistryPane<GlobalPatternObject>(registry) {
-    override val title: String
-        get() = "Patterns"
-    override val icon: Ikon
-        get() = MaterialDesignL.LARAVEL
+    override val type: Type
+        get() = GlobalPatternRegistryPane
 
     override val supportedModes: Set<ObjectListView.DisplayMode>
         get() = ObjectListView.DisplayMode.all
@@ -37,7 +39,7 @@ class GlobalPatternRegistryPane(
 
     private val plotPaneWindows = mutableMapOf<GlobalPatternObject, SubWindow>()
 
-    override fun defaultState(): ToolPaneState = ToolPaneState.docked(ToolPaneState.Side.RIGHT)
+    override fun defaultState(): ToolPaneState = ToolPaneState.docked
 
     override fun createNewObject(name: String, ev: Event?): GlobalPatternObject = GlobalPatternObject.create(name)
 
@@ -71,7 +73,19 @@ class GlobalPatternRegistryPane(
         window.showOrBringToFront()
     }
 
-    companion object {
+    companion object : Type {
+        override val uid: Int
+            get() = 9
+        override val title: String
+            get() = "Patterns"
+        override val icon: Ikon
+            get() = MaterialDesignL.LARAVEL
+
+        override val defaultSide: Side
+            get() = Side.RIGHT
+
+        override fun createToolPane(project: PonticelloProject): ToolPane = GlobalPatternRegistryPane(project.patterns)
+
         private val actions = collectActions<ObjectBox<GlobalPatternObject>> {
             addAll(SuperColliderObject.actions) { box -> box.obj }
             addAction("Plot") {

@@ -20,8 +20,9 @@ import org.kordamp.ikonli.material2.Material2MZ
 import org.kordamp.ikonli.materialdesign2.MaterialDesignB
 import org.kordamp.ikonli.materialdesign2.MaterialDesignE
 import ponticello.impl.Logger
+import ponticello.model.project.PonticelloProject
+import ponticello.ui.dock.Side
 import ponticello.ui.dock.ToolPane
-import ponticello.ui.dock.ToolPanePosition
 import ponticello.ui.dock.ToolPaneState
 import java.time.Instant
 import java.time.LocalDateTime
@@ -30,9 +31,8 @@ import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 
 class LogPane(private val logger: Logger) : ToolPane(), Logger.View {
-    override val title: String
-        get() = "Notifications"
-
+    override val type: Type
+        get() = LogPane
     private var level = Logger.Level.Info
         set(value) {
             field = value
@@ -63,9 +63,7 @@ class LogPane(private val logger: Logger) : ToolPane(), Logger.View {
         styleClass("tool-pane")
     }
 
-    override val icon: Ikon get() = MaterialDesignB.BELL
-
-    override fun defaultState(): ToolPaneState = ToolPaneState(ToolPaneState.Side.RIGHT, ToolPanePosition.docked)
+    override fun defaultState(): ToolPaneState = ToolPaneState.docked
 
     override fun afterSetup() {
         searchField.left = FontIcon(Material2MZ.SEARCH)
@@ -131,5 +129,20 @@ class LogPane(private val logger: Logger) : ToolPane(), Logger.View {
         }
         box.setOnMouseClicked { box.requestFocus() }
         return box
+    }
+
+    companion object : Type {
+        override val uid: Int
+            get() = 6
+
+        override val title: String
+            get() = "Notifications"
+
+        override val icon: Ikon get() = MaterialDesignB.BELL
+
+        override val defaultSide: Side
+            get() = Side.RIGHT
+
+        override fun createToolPane(project: PonticelloProject): ToolPane = LogPane(Logger)
     }
 }

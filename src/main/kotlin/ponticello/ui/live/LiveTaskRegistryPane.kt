@@ -11,17 +11,19 @@ import org.kordamp.ikonli.materialdesign2.MaterialDesignP
 import ponticello.model.live.LiveTaskObject
 import ponticello.model.live.LiveTaskRegistry
 import ponticello.model.obj.withName
+import ponticello.model.project.LIVE_TASKS
+import ponticello.model.project.PonticelloProject
+import ponticello.model.project.get
 import ponticello.sc.editor.CodeBlockEditor
+import ponticello.ui.dock.Side
+import ponticello.ui.dock.ToolPane
 import ponticello.ui.dock.ToolPaneState
 import ponticello.ui.misc.CodePane
 import ponticello.ui.registry.ObjectListView.DisplayMode
 
 class LiveTaskRegistryPane(registry: LiveTaskRegistry) : LiveObjectRegistryPane<LiveTaskObject>(registry) {
-    override val title: String
-        get() = "LiveTasks"
-
-    override val icon: Ikon
-        get() = MaterialDesignP.PROGRESS_QUESTION //TODO
+    override val type: Type
+        get() = LiveTaskRegistryPane
 
     override val supportedModes: Set<DisplayMode>
         get() = DisplayMode.all
@@ -29,7 +31,7 @@ class LiveTaskRegistryPane(registry: LiveTaskRegistry) : LiveObjectRegistryPane<
     override val inlineOrientation: Orientation
         get() = Orientation.HORIZONTAL
 
-    override fun defaultState(): ToolPaneState = ToolPaneState.docked(ToolPaneState.Side.RIGHT)
+    override fun defaultState(): ToolPaneState = ToolPaneState.docked
 
     override fun dataFormat(obj: LiveTaskObject): DataFormat = LiveTaskObject.DATA_FORMAT
 
@@ -42,5 +44,20 @@ class LiveTaskRegistryPane(registry: LiveTaskRegistry) : LiveObjectRegistryPane<
             if (mode == DisplayMode.SubWindow) LiveObjectRegistryPane.actions.withContext(obj)
             else emptyList()
         return CodePane(obj.code, actions, ownWindow = mode == DisplayMode.SubWindow)
+    }
+
+    companion object: Type {
+        override val uid: Int
+            get() = 10
+        override val title: String
+            get() = "LiveTasks"
+
+        override val icon: Ikon
+            get() = MaterialDesignP.PROGRESS_QUESTION //TODO
+
+        override val defaultSide: Side
+            get() = Side.RIGHT
+
+        override fun createToolPane(project: PonticelloProject): ToolPane = LiveTaskRegistryPane(project[LIVE_TASKS])
     }
 }

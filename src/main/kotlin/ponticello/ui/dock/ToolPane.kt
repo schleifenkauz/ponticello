@@ -10,6 +10,7 @@ import javafx.scene.layout.Region
 import javafx.scene.layout.VBox
 import org.kordamp.ikonli.Ikon
 import org.kordamp.ikonli.materialdesign2.MaterialDesignR
+import ponticello.model.project.PonticelloProject
 import ponticello.ui.impl.DEFAULT_SCENE_FILL
 import ponticello.ui.impl.sceneFill
 import reaktive.value.ReactiveBoolean
@@ -22,12 +23,14 @@ import reaktive.value.reactiveValue
 import reaktive.value.reactiveVariable
 
 abstract class ToolPane : VBox() {
-    abstract val title: String
-    open val icon: Ikon? get() = null
+    var initialState: ToolPaneState? = null
+        private set
+
+    open val type: Type get() = throw UnsupportedOperationException("$this has no type")
+    open val title get() = type.title
+    open val icon get() = type.icon
     open val shortcuts: Array<String> get() = emptyArray()
 
-    lateinit var side: ToolPaneState.Side
-        private set
     var isExclusive: Boolean = false
         private set
 
@@ -63,6 +66,7 @@ abstract class ToolPane : VBox() {
     }
 
     fun setup() {
+        if (isSetup) return
         doSetup()
         header = createHeader()
         children.add(header)
@@ -109,21 +113,22 @@ abstract class ToolPane : VBox() {
         layout.showDocked(this)
     }
 
-    open fun defaultState(): ToolPaneState =
-        throw UnsupportedOperationException("Default state is not supported for $title")
-
     fun initialize(layout: AppLayout, state: ToolPaneState) {
+        initialState = state
         this.layout = layout
-        side = state.side
-        if (state.position is ToolPanePosition.Undocked) {
-            window = SubWindow(this, title, state.position.windowType).also { w ->
-                if (state.position.x.isNaN()) {
+        if (state.mode == ToolPaneMode.Window || state.mode == ToolPaneMode.Floating) {
+            val windowType =
+                if (state.mode == ToolPaneMode.Floating) SubWindow.Type.Popup
+                else SubWindow.Type.ToolWindow
+            val bounds = state.windowBounds
+            window = SubWindow(this, title, windowType).also { w ->
+                if (bounds != null) {
+                    w.relocate(bounds.x, bounds.y)
+                    w.width = bounds.width
+                    w.height = bounds.height
+                } else {
                     w.centerOnScreen()
                     w.sizeToScene()
-                } else {
-                    w.relocate(state.position.x, state.position.y)
-                    w.width = state.position.width
-                    w.height = state.position.height
                 }
             }.sceneFill(DEFAULT_SCENE_FILL)
         }
@@ -132,17 +137,23 @@ abstract class ToolPane : VBox() {
         }
     }
 
-    fun currentState(): ToolPaneState {
-        val window = window
-        val position =
-            if (window != null) {
-                ToolPanePosition.Undocked(
-                    window.type,
-                    window.x, window.y,
-                    window.width, window.height
-                )
-            } else ToolPanePosition.Docked
-        return ToolPaneState(side, position, isShowing.now, isExclusive)
+    open fun defaultState(): ToolPaneState =
+        throw UnsupportedOperationException("Default state is not supported for $this")
+
+    open fun saveState(dest: ToolPaneState) {
+        dest.uid = type.uid
+        window?.let { w ->
+            if (!w.x.isNaN() && !w.y.isNaN() && !w.width.isNaN() && !w.height.isNaN()) {
+                dest.windowBounds = WindowBounds(w.x, w.y, w.width, w.height)
+            }
+        }
+        dest.mode = when {
+            window == null -> ToolPaneMode.Docked
+            window!!.type == SubWindow.Type.Popup -> ToolPaneMode.Floating
+            else -> ToolPaneMode.Window
+        }
+        dest.isShowing = isShowing.now
+        dest.isExclusive = isExclusive
     }
 
     fun setShowing(value: Boolean) {
@@ -166,6 +177,18 @@ abstract class ToolPane : VBox() {
     }
 
     override fun toString(): String = "ToolPane [$title]"
+
+    interface Type {
+        val uid: Int
+
+        val title: String
+
+        val defaultSide: Side
+
+        val icon: Ikon?
+
+        fun createToolPane(project: PonticelloProject): ToolPane
+    }
 
     companion object {
         private fun isSceneRoot(node: Node): Binding<Boolean> = node.sceneProperty().asReactiveValue().flatMap { s ->

@@ -22,6 +22,8 @@ import ponticello.impl.one
 import ponticello.impl.toDecimal
 import ponticello.impl.zero
 import ponticello.model.obj.ParameterizedObject
+import ponticello.model.project.PonticelloProject
+import ponticello.model.project.objects
 import ponticello.model.registry.MeterRegistry
 import ponticello.model.registry.ScoreObjectRegistry
 import ponticello.model.registry.reference
@@ -29,6 +31,8 @@ import ponticello.model.score.ScoreObject
 import ponticello.sc.NumericalControlSpec
 import ponticello.sc.Warp
 import ponticello.ui.actions.undoable
+import ponticello.ui.dock.Side
+import ponticello.ui.dock.ToolPane
 import ponticello.ui.dock.ToolPaneState
 import ponticello.ui.live.QuantizationConfigDialog
 import ponticello.ui.live.ScoreObjectResizeDialog
@@ -41,16 +45,13 @@ import reaktive.value.now
 import reaktive.value.reactiveValue
 
 class ScoreObjectRegistryPane(registry: ScoreObjectRegistry) : ObjectRegistryPane<ScoreObject>(registry) {
-    override val title: String
-        get() = "Score Objects"
-
-    override val icon: Ikon
-        get() = MaterialDesignP.PLAYLIST_PLAY
+    override val type: Type
+        get() = ScoreObjectRegistryPane
 
     override val supportedModes: Set<DisplayMode>
         get() = setOf(DisplayMode.SubWindow)
 
-    override fun defaultState(): ToolPaneState = ToolPaneState.docked(ToolPaneState.Side.LEFT)
+    override fun defaultState(): ToolPaneState = ToolPaneState.docked
 
     override fun getItemContent(obj: ScoreObject): List<Node> {
         val spec = NumericalControlSpec(zero, zero, one, 0.01.toDecimal(), zero, Warp.Linear)
@@ -81,7 +82,20 @@ class ScoreObjectRegistryPane(registry: ScoreObjectRegistry) : ObjectRegistryPan
 
     override fun createNewObject(name: String, ev: Event?): ScoreObject? = null
 
-    companion object {
+    companion object : Type {
+        override val uid: Int
+            get() = 4
+        override val title: String
+            get() = "Score Objects"
+
+        override val icon: Ikon
+            get() = MaterialDesignP.PLAYLIST_PLAY
+
+        override val defaultSide: Side
+            get() = Side.LEFT
+
+        override fun createToolPane(project: PonticelloProject): ToolPane = ScoreObjectRegistryPane(project.objects)
+
         val configureQuantizationAction = action<ScoreObject>("Configure quantization") {
             enableWhen { obj ->
                 if (!obj.affectsPlayback) reactiveValue(false)

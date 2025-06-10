@@ -8,6 +8,7 @@ import fxutils.actions.action
 import fxutils.actions.makeButton
 import fxutils.hspace
 import fxutils.infiniteSpace
+import fxutils.runFXWithTimeout
 import fxutils.styleClass
 import fxutils.undo.UndoManager
 import javafx.beans.binding.Bindings
@@ -19,24 +20,41 @@ import javafx.scene.input.MouseEvent
 import javafx.scene.input.TransferMode
 import javafx.scene.layout.*
 import ponticello.impl.Logger
-import ponticello.model.Settings
 import ponticello.model.player.ScorePlayer
-import ponticello.model.project.*
+import ponticello.model.project.PonticelloProject
+import ponticello.model.project.UI_STATE
+import ponticello.model.project.get
 import ponticello.ui.actions.*
-import ponticello.ui.dock.ToolPaneState.Side.*
+import ponticello.ui.dock.Side.*
 import ponticello.ui.flow.AudioFlowPane
-import ponticello.ui.impl.makeToolWindow
 import ponticello.ui.launcher.PonticelloLauncher
 import ponticello.ui.launcher.ScoreObjectDetailPane
 import ponticello.ui.live.LauncherGridPane
 import ponticello.ui.live.LiveTaskRegistryPane
-import ponticello.ui.misc.ConsoleOutputPane
-import ponticello.ui.misc.InteractionConfigBar
-import ponticello.ui.misc.LogPane
-import ponticello.ui.misc.SettingsPane
+import ponticello.ui.misc.*
 import ponticello.ui.registry.*
 import ponticello.ui.score.NavigableScorePane
 import ponticello.ui.score.TimeCodeView
+import kotlin.collections.List
+import kotlin.collections.associateWith
+import kotlin.collections.binarySearchBy
+import kotlin.collections.buildList
+import kotlin.collections.component1
+import kotlin.collections.component2
+import kotlin.collections.find
+import kotlin.collections.flatMap
+import kotlin.collections.getValue
+import kotlin.collections.iterator
+import kotlin.collections.map
+import kotlin.collections.mapOf
+import kotlin.collections.mapValues
+import kotlin.collections.mutableListOf
+import kotlin.collections.mutableMapOf
+import kotlin.collections.plus
+import kotlin.collections.set
+import kotlin.collections.toMap
+import kotlin.collections.toMutableList
+import kotlin.collections.toMutableMap
 import kotlin.reflect.KClass
 
 class AppLayout(
@@ -56,14 +74,13 @@ class AppLayout(
     private val rightBar = VBox().styleClass("dock-icons", "dock-icons-bar")
     private lateinit var topRightBar: HBox
     private val actions = mutableListOf<ContextualizedAction>()
-    private val toolPanes = createToolPanes()
+    private val sideBars = Side.entries.associateWith { _ -> mutableListOf<ToolPane.Type>() }
+    private val toolPanes = mutableListOf<ToolPane>()
     private val toolbar = createToolbar()
 
     val context get() = project.context
 
-    private val paneSizes = project[UI_STATE].paneSizes.toMutableMap()
-
-    val settingsWindow by lazy { context.makeToolWindow(SettingsPane(context[Settings]), "Settings") }
+    private val dividerPositions = project[UI_STATE].dividerPositions.toMutableMap()
 
     init {
         styleClass("app-layout")
@@ -94,6 +111,11 @@ class AppLayout(
         for (box in toolbar.children) HBox.setHgrow(box, Priority.ALWAYS)
 
         setupToolPanes()
+        runFXWithTimeout(100) {
+            for ((side, size) in dividerPositions) {
+                restorePaneSize(side, size)
+            }
+        }
     }
 
     fun getToolPane(title: String) = toolPanes.find { it.title == title }?.also { p -> p.setup() }
@@ -101,38 +123,23 @@ class AppLayout(
     fun getToolPane(clazz: KClass<out ToolPane>): ToolPane? =
         toolPanes.find { it::class == clazz }?.also { p -> p.setup() }
 
+    private fun getToolPane(type: ToolPane.Type): ToolPane? = toolPanes.find { it.type == type }
+
     inline fun <reified T : ToolPane> get() = getToolPane(T::class) as T
 
-    private fun createToolPanes() = buildList {
-        //default top
-        add(LauncherGridPane(project[LAUNCHER_GRID]))
-
-        //default left side-pane
-        add(ClockRegistryPane(project[CLOCKS]))
-        add(BusRegistryPane(project.busses))
-        add(ScoreObjectRegistryPane(project.objects))
-        add(ScoreObjectDetailPane(context))
-
-        //default right side-pane
-        add(LogPane(Logger))
-        add(BufferRegistryPane(project.buffers))
-        add(InstrumentRegistryPane(project.instruments))
-
-        add(GlobalPatternRegistryPane(project.patterns))
-        add(LiveTaskRegistryPane(project[LIVE_TASKS]))
-        add(ScriptRegistryPane(project.scripts))
-
-        //default bottom
-        add(AudioFlowPane(project.flows))
-
-        add(ConsoleOutputPane(project.client))
-    }
-
     private fun setupToolPanes() {
-        for (toolPane in toolPanes) {
-            val state = project[UI_STATE].toolPaneStates[toolPane.title] ?: toolPane.defaultState()
+        val uiState = project[UI_STATE]
+        val toolPaneSides = uiState.sideBars.entries.flatMap { (side, types) ->
+            types.map { t -> toolPaneType(t) to side }
+        }.toMap(mutableMapOf())
+        for (type in allToolPaneTypes) {
+            val side = toolPaneSides[type] ?: type.defaultSide
+            sideBars.getValue(side).add(type)
+            val toolPane = type.createToolPane(project)
+            toolPanes.add(toolPane)
+            val state = uiState.toolPaneStates.find { s -> s.uid == type.uid } ?: toolPane.defaultState()
             toolPane.initialize(this, state)
-            val iconBar = when (state.side) {
+            val iconBar = when (side) {
                 LEFT -> leftTopBar
                 RIGHT -> rightBar
                 BOTTOM -> leftBottomBar
@@ -160,39 +167,42 @@ class AppLayout(
     }
 
     fun showToolPaneConfigMenu(toolPane: ToolPane, ev: MouseEvent) {
-        TODO()
+
     }
 
     fun showDocked(toolPane: ToolPane) {
-        val sidePane = when (toolPane.side) {
-            LEFT -> leftPane
-            RIGHT -> rightPane
-            BOTTOM -> bottomPane
-            TOP -> throw AssertionError()
+        val side = getSide(toolPane)
+        val sidePane = getSidePane(side)
+        if (sidePane.items.contains(toolPane)) {
+            Logger.warn("ToolPane ${toolPane.title} already showing on $side", Logger.Category.Layout)
+            return
         }
-        sidePane.items.add(toolPane)
-        if (sidePane.items.size == 1) {
-            when (toolPane.side) {
-                LEFT -> {
-                    horizontalSplitter.items.add(0, sidePane)
-                    horizontalSplitter.setDividerPosition(0, paneSizes[LEFT] ?: DEFAULT_SIDE_PANE_PORTION)
-                }
-
-                RIGHT -> {
-                    horizontalSplitter.items.add(sidePane)
-                    val dividerIndex = horizontalSplitter.items.size - 2
-                    val position = paneSizes[RIGHT] ?: (1 - DEFAULT_SIDE_PANE_PORTION)
-                    horizontalSplitter.setDividerPosition(dividerIndex, position)
-                }
-
-                BOTTOM -> {
-                    verticalSplitter.items.add(sidePane)
-                    verticalSplitter.setDividerPosition(0, paneSizes[BOTTOM] ?: 0.66)
-                }
-
-                else -> throw AssertionError()
+        val types = sideBars.getValue(side)
+        val idx = types.indexOf(toolPane.type)
+        var insertIdx = sidePane.items.binarySearchBy(idx) { p -> types.indexOf((p as ToolPane).type) }
+        insertIdx = -insertIdx - 1
+        sidePane.items.add(insertIdx, toolPane)
+        when (side) {
+            LEFT -> if (sidePane !in horizontalSplitter.items) {
+                horizontalSplitter.items.add(0, sidePane)
+                horizontalSplitter.setDividerPosition(0, dividerPositions[LEFT] ?: DEFAULT_SIDE_PANE_PORTION)
             }
-        } else {
+
+            RIGHT -> if (sidePane !in horizontalSplitter.items) {
+                horizontalSplitter.items.add(sidePane)
+                val dividerIndex = horizontalSplitter.items.size - 2
+                val position = dividerPositions[RIGHT] ?: (1 - DEFAULT_SIDE_PANE_PORTION)
+                horizontalSplitter.setDividerPosition(dividerIndex, position)
+            }
+
+            BOTTOM -> if (sidePane !in verticalSplitter.items) {
+                verticalSplitter.items.add(sidePane)
+                verticalSplitter.setDividerPosition(0, dividerPositions[BOTTOM] ?: 0.66)
+            }
+
+            else -> throw AssertionError()
+        }
+        if (sidePane.items.size != 1) {
             val pos1 = sidePane.dividerPositions[sidePane.items.size - 2]
             sidePane.setDividerPosition(sidePane.items.size - 1, (pos1 + 1) / 2)
         }
@@ -205,19 +215,40 @@ class AppLayout(
         }
     }
 
+    private fun getSide(toolPane: ToolPane): Side {
+        val side = sideBars.keys.find { side -> toolPane.type in sideBars.getValue(side) }
+            ?: error("No side found for ${toolPane.type}")
+        return side
+    }
+
+    private fun getSidePane(side: Side) = when (side) {
+        LEFT -> leftPane
+        RIGHT -> rightPane
+        BOTTOM -> bottomPane
+        TOP -> throw AssertionError()
+    }
+
     fun hideDocked(toolPane: ToolPane) {
-        val pane = when (toolPane.side) {
-            LEFT -> leftPane
-            RIGHT -> rightPane
-            BOTTOM -> bottomPane
-            TOP -> throw AssertionError()
-        }
+        val side = getSide(toolPane)
+        val pane = getSidePane(side)
         pane.items.remove(toolPane)
         if (pane.items.isEmpty()) {
-            when (toolPane.side) {
-                LEFT -> horizontalSplitter.items.remove(leftPane)
-                RIGHT -> horizontalSplitter.items.remove(rightPane)
-                BOTTOM -> verticalSplitter.items.remove(bottomPane)
+            when (side) {
+                LEFT -> {
+                    dividerPositions[LEFT] = horizontalSplitter.dividerPositions[0]
+                    horizontalSplitter.items.remove(leftPane)
+                }
+
+                RIGHT -> {
+                    dividerPositions[RIGHT] = horizontalSplitter.dividerPositions[horizontalSplitter.items.size - 2]
+                    horizontalSplitter.items.remove(rightPane)
+                }
+
+                BOTTOM -> {
+                    dividerPositions[BOTTOM] = verticalSplitter.dividerPositions[0]
+                    verticalSplitter.items.remove(bottomPane)
+                }
+
                 else -> throw AssertionError()
             }
         }
@@ -255,9 +286,90 @@ class AppLayout(
         )
     } styleClass "toolbar"
 
+    private fun getDividerPosition(side: Side) = when (side) {
+        LEFT ->
+            if (leftPane !in horizontalSplitter.items) dividerPositions[LEFT] ?: DEFAULT_SIDE_PANE_PORTION
+            else horizontalSplitter.dividerPositions[0]
+
+        RIGHT ->
+            if (rightPane !in horizontalSplitter.items) dividerPositions[RIGHT] ?: (1 - DEFAULT_SIDE_PANE_PORTION)
+            else horizontalSplitter.dividerPositions[horizontalSplitter.items.size - 2]
+
+        BOTTOM ->
+            if (bottomPane !in verticalSplitter.items) dividerPositions[BOTTOM] ?: DEFAULT_BOTTOM_PANE_PORTION
+            else verticalSplitter.dividerPositions[0]
+
+        TOP -> 0.0
+    }
+
+    private fun restorePaneSize(side: Side, size: Double) {
+        when (side) {
+            LEFT -> if (size != 0.0 && leftPane in horizontalSplitter.items) {
+                horizontalSplitter.setDividerPosition(0, size)
+            }
+
+            RIGHT -> if (size != 0.0 && rightPane in horizontalSplitter.items) {
+                horizontalSplitter.setDividerPosition(horizontalSplitter.items.size - 2, size)
+            }
+
+            BOTTOM -> if (size != 0.0 && bottomPane in verticalSplitter.items) {
+                verticalSplitter.setDividerPosition(0, size)
+            }
+
+            TOP -> {}
+        }
+    }
+
+    fun saveLayoutState() {
+        val state = project[UI_STATE]
+        state.dividerPositions = Side.entries.associateWith(::getDividerPosition)
+        state.toolPaneStates = allToolPaneTypes.map { type ->
+            val toolPane = getToolPane(type) ?: error("$type not found")
+            val s = toolPane.initialState ?: toolPane.defaultState()
+            toolPane.saveState(s)
+            s
+        }
+        state.sideBars = sideBars.mapValues { (_, types) -> types.map { t -> t.uid } }
+    }
+
     fun actions(): List<ContextualizedAction> = actions
 
     companion object : PublicProperty<AppLayout> by publicProperty("AppLayout") {
         private const val DEFAULT_SIDE_PANE_PORTION = 0.2
+        private const val DEFAULT_BOTTOM_PANE_PORTION = 0.3
+
+        private val allToolPaneTypes = buildList {
+            //top
+            add(LauncherGridPane)
+            add(SettingsPane)
+
+            //default left side-pane
+            add(ClockRegistryPane)
+            add(BusRegistryPane)
+            add(ScoreObjectRegistryPane)
+            add(ScoreObjectDetailPane)
+
+            //default right side-pane
+            add(LogPane)
+            add(BufferRegistryPane)
+            add(InstrumentRegistryPane)
+
+            add(GlobalPatternRegistryPane)
+            add(LiveTaskRegistryPane)
+            add(ScriptRegistryPane)
+
+            add(HelpBrowser)
+
+            //default bottom
+            add(AudioFlowPane)
+            add(ConsoleOutputPane)
+        }.toMutableList()
+
+        fun toolPaneType(uid: Int) =
+            allToolPaneTypes.find { it.uid == uid } ?: error("ToolPane with UID $uid not found")
+
+        fun registerToolPane(type: ToolPane.Type) {
+            allToolPaneTypes.add(type)
+        }
     }
 }

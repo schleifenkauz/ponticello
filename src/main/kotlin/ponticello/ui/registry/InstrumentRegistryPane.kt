@@ -17,9 +17,13 @@ import org.kordamp.ikonli.materialdesign2.MaterialDesignE
 import org.kordamp.ikonli.materialdesign2.MaterialDesignS
 import ponticello.impl.canSuperColliderTalkToMe
 import ponticello.model.obj.*
+import ponticello.model.project.PonticelloProject
+import ponticello.model.project.instruments
 import ponticello.model.registry.GlobalDefinitionLibrary
 import ponticello.model.registry.InstrumentRegistry
 import ponticello.sc.Identifier
+import ponticello.ui.dock.Side
+import ponticello.ui.dock.ToolPane
 import ponticello.ui.dock.ToolPaneState
 import ponticello.ui.impl.colorPicker
 import ponticello.ui.registry.ObjectListView.DisplayMode
@@ -28,16 +32,13 @@ import reaktive.list.toReactiveList
 class InstrumentRegistryPane(
     private val instruments: InstrumentRegistry,
 ) : ObjectRegistryPane<InstrumentObject>(instruments) {
-    override val title: String
-        get() = "Instruments"
-
-    override val icon: Ikon
-        get() = MaterialDesignS.SINE_WAVE
+    override val type: Type
+        get() = InstrumentRegistryPane
 
     override val supportedModes: Set<DisplayMode>
         get() = setOf(DisplayMode.DetailsPane, DisplayMode.SubWindow)
 
-    override fun defaultState(): ToolPaneState = ToolPaneState.docked(ToolPaneState.Side.RIGHT)
+    override fun defaultState(): ToolPaneState = ToolPaneState.docked
 
     override fun detailWindowIcon(obj: InstrumentObject): Ikon =
         if (obj is CustomizableSynthDefObject || obj is ProcessDefObject) Material2AL.CODE
@@ -137,7 +138,20 @@ class InstrumentRegistryPane(
 
     override fun getActions(box: ObjectBox<InstrumentObject>): List<ContextualizedAction> = actions.withContext(box.obj)
 
-    companion object {
+    companion object : Type {
+        override val uid: Int
+            get() = 8
+        override val title: String
+            get() = "Instruments"
+
+        override val icon: Ikon
+            get() = MaterialDesignS.SINE_WAVE
+
+        override val defaultSide: Side
+            get() = Side.RIGHT
+
+        override fun createToolPane(project: PonticelloProject): ToolPane = InstrumentRegistryPane(project.instruments)
+
         val actions = collectActions<InstrumentObject> {
             addAction("Sync") {
                 icon(Material2MZ.SYNC)
