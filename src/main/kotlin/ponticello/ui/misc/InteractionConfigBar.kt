@@ -4,10 +4,10 @@ import fxutils.*
 import fxutils.actions.action
 import fxutils.actions.makeButton
 import fxutils.actions.registerActions
+import fxutils.controls.CheckBox
 import fxutils.prompt.DetailPane
 import fxutils.prompt.SimpleSearchableListView
 import fxutils.undo.UndoManager
-import javafx.scene.control.CheckBox
 import javafx.scene.control.Label
 import javafx.scene.layout.HBox
 import javafx.scene.layout.Region
@@ -67,16 +67,14 @@ class InteractionConfigBar(private val settings: UIState) : HBox() {
     companion object {
         private fun createDetailsPane(config: UIState): DetailPane = DetailPane(labelWidth = 160.0).apply {
             addItem(
-                "Ask for group names", CheckBox().sync(
-                    config.askForGroupNames,
-                    "Ask for group names", config.context[UndoManager]
-                )
+                "Ask for group names",
+                CheckBox(config.askForGroupNames)
+                    .setupUndo(config.context[UndoManager], "Ask for group names")
             )
             addItem(
-                "Ask for clone names", CheckBox().sync(
-                    config.askForCloneNames,
-                    "Ask for clone names", config.context[UndoManager]
-                )
+                "Ask for clone names",
+                CheckBox(config.askForCloneNames)
+                    .setupUndo(config.context[UndoManager], "Ask for clone names")
             )
             addItem(
                 "Inline display mode",

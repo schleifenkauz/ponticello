@@ -4,13 +4,12 @@ import fxutils.actions.ContextualizedAction
 import fxutils.actions.collectActions
 import fxutils.actions.detailsAction
 import fxutils.actions.makeButton
+import fxutils.controls.CheckBox
 import fxutils.opacity
 import fxutils.prompt.InfoPrompt
-import fxutils.sync
 import fxutils.undo.UndoManager
 import hextant.serial.EditorRoot
 import javafx.scene.Node
-import javafx.scene.control.CheckBox
 import javafx.scene.layout.Region
 import org.kordamp.ikonli.evaicons.Evaicons
 import org.kordamp.ikonli.materialdesign2.MaterialDesignS
@@ -103,10 +102,9 @@ data object UGenControlType : ControlType<UGenControl>() {
         }
         add(detailsAction(sceneFill = DEFAULT_SCENE_FILL.opacity(0.5)) { (namedControl) ->
             val control = namedControl.now as UGenControl
-            val displayToggle = CheckBox().sync(
-                control.display,
-                description = "Display", namedControl.context[UndoManager]
-            ) named "Display"
+            val displayToggle = CheckBox(control.display).setupUndo(
+                namedControl.context[UndoManager], variableDescription = "Display UGen")
+                .named("Display")
             displayToggle.disableProperty().bind(
                 control.expr.editor.result.map { expr ->
                     expr.getLfo() == null

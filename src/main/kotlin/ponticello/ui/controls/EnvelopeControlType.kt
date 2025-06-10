@@ -3,12 +3,11 @@ package ponticello.ui.controls
 import fxutils.actions.ContextualizedAction
 import fxutils.actions.collectActions
 import fxutils.actions.detailsAction
+import fxutils.controls.CheckBox
 import fxutils.opacity
 import fxutils.setFixedWidth
-import fxutils.sync
 import fxutils.undo.UndoManager
 import javafx.scene.Node
-import javafx.scene.control.CheckBox
 import javafx.scene.layout.Region
 import ponticello.impl.asTime
 import ponticello.model.obj.ParameterizedObject
@@ -62,10 +61,9 @@ data object EnvelopeControlType : ControlType<EnvelopeControl>() {
 
     private val actions = collectActions<EnvelopeControl> {
         add(detailsAction(sceneFill = DEFAULT_SCENE_FILL.opacity(0.5)) { control ->
-            CheckBox().sync(
-                control.display,
-                description = "Display envelope", control.context[UndoManager]
-            ) named "Display"
+            CheckBox(control.display)
+                .setupUndo(control.context[UndoManager], variableDescription = "Display envelope")
+                .named("Display")
         })
     }
 }

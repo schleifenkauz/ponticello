@@ -3,11 +3,10 @@ package ponticello.ui.controls
 import fxutils.actions.ContextualizedAction
 import fxutils.actions.collectActions
 import fxutils.actions.detailsAction
+import fxutils.controls.CheckBox
 import fxutils.opacity
-import fxutils.sync
 import fxutils.undo.UndoManager
 import javafx.scene.Node
-import javafx.scene.control.CheckBox
 import javafx.scene.layout.Region
 import org.kordamp.ikonli.evaicons.Evaicons
 import ponticello.impl.Logger
@@ -88,10 +87,9 @@ data object BufferControlType : ControlType<BufferControl>() {
             }
         }
         add(detailsAction(sceneFill = DEFAULT_SCENE_FILL.opacity(0.5)) { ctrl ->
-            CheckBox().sync(
-                ctrl.display,
-                description = "Display", ctrl.context[UndoManager]
-            ) named "Display"
+            CheckBox(ctrl.display)
+                .setupUndo(ctrl.context[UndoManager], variableDescription = "Display")
+                .named("Display")
         })
     }
 }

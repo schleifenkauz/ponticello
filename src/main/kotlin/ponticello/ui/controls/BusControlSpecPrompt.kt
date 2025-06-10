@@ -1,11 +1,11 @@
 package ponticello.ui.controls
 
+import fxutils.controls.CheckBox
 import fxutils.controls.IntSpinner
 import fxutils.prompt.DetailPane
 import fxutils.prompt.SimpleSearchableListView
 import fxutils.undo.UndoManager
 import javafx.scene.Node
-import javafx.scene.control.CheckBox
 import ponticello.model.obj.ParameterizedObject
 import ponticello.sc.BusControlSpec
 import ponticello.sc.Rate
@@ -23,11 +23,7 @@ class BusControlSpecPrompt(
     private val rateSelector = SimpleSearchableListView(Rate.entries, "Choose rate")
         .selectorButton(this::rate, undoManager = parentObject?.context?.get(UndoManager)) named "Rate"
 
-    private val inlineDisplayBox = CheckBox() named "Inline display"
-
-    init {
-        inlineDisplayBox.isSelected = initialSpec.inlineDisplay
-    }
+    private val inlineDisplayBox = CheckBox(initialSpec.inlineDisplay) named "Inline display"
 
     override fun makeSpec(): BusControlSpec = BusControlSpec(rate, channelsSpinner.value(), inlineDisplayBox.isSelected)
 

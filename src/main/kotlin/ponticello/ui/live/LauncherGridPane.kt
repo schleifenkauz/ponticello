@@ -2,12 +2,12 @@ package ponticello.ui.live
 
 import fxutils.*
 import fxutils.actions.*
+import fxutils.controls.CheckBox
 import fxutils.controls.SliderBar
 import fxutils.prompt.SimpleSearchableListView
 import fxutils.undo.UndoManager
 import fxutils.undo.VariableEdit
 import javafx.scene.Node
-import javafx.scene.control.CheckBox
 import javafx.scene.control.Label
 import javafx.scene.input.*
 import javafx.scene.layout.GridPane
@@ -267,7 +267,9 @@ class LauncherGridPane(
             applicability = { item -> item.target().map { target -> target.canStop } },
             sceneFill = DEFAULT_SCENE_FILL.opacity(0.5), labelWidth = 150.0
         ) { item ->
-            CheckBox().sync(item.stopOnRelease, "Stop on release", item.context[UndoManager]) named "Stop on release"
+            CheckBox(item.stopOnRelease)
+                .setupUndo(item.context[UndoManager], "Stop on release")
+                .named("Stop on release")
         }
 
         private val itemActions = collectActions<ItemTarget> {

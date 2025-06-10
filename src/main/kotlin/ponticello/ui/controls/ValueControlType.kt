@@ -3,15 +3,14 @@ package ponticello.ui.controls
 import fxutils.actions.ContextualizedAction
 import fxutils.actions.collectActions
 import fxutils.actions.detailsAction
+import fxutils.controls.CheckBox
 import fxutils.controls.SliderBar
 import fxutils.label
 import fxutils.opacity
-import fxutils.sync
 import fxutils.undo.UndoManager
 import fxutils.undo.VariableEdit
 import javafx.scene.Cursor
 import javafx.scene.Node
-import javafx.scene.control.CheckBox
 import javafx.scene.control.Label
 import javafx.scene.input.MouseButton
 import javafx.scene.layout.Region
@@ -127,10 +126,9 @@ data object ValueControlType : ControlType<ValueControl>() {
                 sceneFill = DEFAULT_SCENE_FILL.opacity(0.5),
                 labelWidth = 100.0
             ) { control ->
-                CheckBox().sync(
-                    control.allocateBus,
-                    description = "Allocate bus", control.context[UndoManager]
-                ) named "Allocate bus"
+                CheckBox(control.allocateBus)
+                    .setupUndo(control.context[UndoManager], variableDescription = "Allocate bus")
+                    .named("Allocate bus")
             })
     }
 }

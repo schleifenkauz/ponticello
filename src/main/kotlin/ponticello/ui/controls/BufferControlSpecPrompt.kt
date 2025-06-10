@@ -1,9 +1,9 @@
 package ponticello.ui.controls
 
+import fxutils.controls.CheckBox
 import fxutils.controls.IntSpinner
 import fxutils.prompt.DetailPane
 import javafx.scene.Node
-import javafx.scene.control.CheckBox
 import ponticello.model.obj.ParameterizedObject
 import ponticello.sc.BufferControlSpec
 
@@ -14,11 +14,7 @@ class BufferControlSpecPrompt(
     override val content: DetailPane = DetailPane(labelWidth = 120.0)
 
     private val channelsSpinner = IntSpinner(1, 12, initialSpec.channels).minColumns(2) named "Channels"
-    private val inlineDisplayBox = CheckBox() named "Inline display"
-
-    init {
-        inlineDisplayBox.isSelected = initialSpec.inlineDisplay
-    }
+    private val inlineDisplayBox = CheckBox(initialSpec.inlineDisplay) named "Inline display"
 
     override fun makeSpec(): BufferControlSpec = BufferControlSpec(channelsSpinner.value(), inlineDisplayBox.isSelected)
 

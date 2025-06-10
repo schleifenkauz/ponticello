@@ -1,11 +1,11 @@
 package ponticello.ui.controls
 
+import fxutils.controls.CheckBox
 import fxutils.prompt.DetailPane
 import fxutils.prompt.SimpleSearchableListView
 import fxutils.textField
 import javafx.beans.binding.Bindings
 import javafx.scene.Node
-import javafx.scene.control.CheckBox
 import javafx.scene.control.ColorPicker
 import ponticello.impl.parseDecimal
 import ponticello.model.obj.ParameterizedObject
@@ -22,7 +22,7 @@ class NumericalControlSpecPrompt(
     private val stepTxt = textField(initialSpec.step.text) named "Step"
     private val lagTxt = textField(initialSpec.lag.text) named "Lag"
     private val associatedColor = ColorPicker(initialSpec.associatedColor) named "Color"
-    private val inlineDisplayBox = CheckBox() named "Inline display"
+    private val inlineDisplayBox = CheckBox(initialSpec.inlineDisplay) named "Inline display"
 
     private val min get() = minTxt.text.parseDecimal()
     private val max get() = maxTxt.text.parseDecimal()
@@ -34,7 +34,6 @@ class NumericalControlSpecPrompt(
         .selectorButton(this::warp) named "Warp"
 
     init {
-        inlineDisplayBox.isSelected = initialSpec.inlineDisplay
         val isValid = Bindings.createBooleanBinding({
             when {
                 min == null -> false

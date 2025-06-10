@@ -1,11 +1,12 @@
 package ponticello.ui.live
 
 import fxutils.*
+import fxutils.controls.CheckBox
 import fxutils.prompt.CompoundPrompt
 import fxutils.prompt.SimpleSearchableListView
+import fxutils.undo.UndoManager
 import javafx.scene.Node
 import javafx.scene.control.Button
-import javafx.scene.control.CheckBox
 import javafx.scene.control.Spinner
 import javafx.scene.layout.HBox
 import ponticello.impl.sync
@@ -60,10 +61,11 @@ class QuantizationConfigDialog(
         .sync(config.offsetValue)
         .setFixedWidth(SPINNER_WIDTH)
 
-    private val enableQuantizationToggle = CheckBox()
-        .sync(config.enableQuantization)
-    private val shiftGridToggle = CheckBox()
-        .sync(config.shiftGrid)
+    private val enableQuantizationToggle = CheckBox(config.enableQuantization)
+        .setupUndo(config.context[UndoManager], variableDescription = "Enable quantization")
+
+    private val shiftGridToggle = CheckBox(config.shiftGrid)
+        .setupUndo(config.context[UndoManager], variableDescription = "Shift grid")
 
     private fun row(name: String, vararg items: Node) {
         addItem(name, HBox(5.0, *items).centerChildren())
