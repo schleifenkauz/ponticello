@@ -6,13 +6,14 @@ import bundles.set
 import fxutils.*
 import fxutils.actions.ContextualizedAction
 import fxutils.actions.collectActions
+import fxutils.controls.IntSpinner
 import fxutils.prompt.YesNoPrompt
 import fxutils.prompt.compoundPrompt
+import fxutils.undo.UndoManager
 import hextant.fx.HextantTextField
 import javafx.event.Event
 import javafx.scene.Node
 import javafx.scene.control.Label
-import javafx.scene.control.Spinner
 import javafx.scene.control.TextField
 import javafx.scene.input.DataFormat
 import org.kordamp.ikonli.Ikon
@@ -35,7 +36,6 @@ import ponticello.ui.actions.undoable
 import ponticello.ui.dock.ToolPaneState
 import ponticello.ui.launcher.PonticelloFiles
 import ponticello.ui.score.ScoreObjectDuplicator
-import reaktive.value.fx.asProperty
 import reaktive.value.now
 import java.io.File
 
@@ -74,10 +74,10 @@ class BufferRegistryPane(private val buffers: BufferRegistry) : ObjectRegistryPa
 
     public override fun createNewObject(name: String, ev: Event?): BufferObject? {
         return compoundPrompt("Configure buffer $name") {
-            val channelsSpinner = Spinner<Int>(1, 12, 2) named "Channels"
+            val channelsSpinner = IntSpinner(1, 12, 2).minColumns(2) named "Channels"
             val durationField = TextField() named "Duration (s)"
             onConfirm {
-                val channels = channelsSpinner.value
+                val channels = channelsSpinner.value()
                 val duration = durationField.text.parseDecimal() ?: return@onConfirm null
                 AllocatedBufferObject.create(name, channels, duration)
             }
@@ -86,8 +86,8 @@ class BufferRegistryPane(private val buffers: BufferRegistry) : ObjectRegistryPa
 
     override fun getItemContent(obj: BufferObject): List<Node> = when (obj) {
         is AllocatedBufferObject -> {
-            val channelsSpinner = Spinner<Int>(1, 12, obj.channels.now).setFixedWidth(70.0)
-            channelsSpinner.valueFactory.valueProperty().bindBidirectional(obj.channels.asProperty())
+            val channelsSpinner = IntSpinner(obj.channels, 1, 12).minColumns(2)
+                .setupUndo("Buffer Channels", obj.context[UndoManager])
             val durationInput = HextantTextField(obj.duration().now.toString())
             durationInput.setOnAction { syncBuffer(obj, durationInput) }
             durationInput.focusedProperty().addListener { _, _, focused ->

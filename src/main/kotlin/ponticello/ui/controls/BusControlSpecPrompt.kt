@@ -1,12 +1,11 @@
 package ponticello.ui.controls
 
+import fxutils.controls.IntSpinner
 import fxutils.prompt.DetailPane
 import fxutils.prompt.SimpleSearchableListView
-import fxutils.setFixedWidth
 import fxutils.undo.UndoManager
 import javafx.scene.Node
 import javafx.scene.control.CheckBox
-import javafx.scene.control.Spinner
 import ponticello.model.obj.ParameterizedObject
 import ponticello.sc.BusControlSpec
 import ponticello.sc.Rate
@@ -15,12 +14,11 @@ class BusControlSpecPrompt(
     parameterName: String, parentObject: ParameterizedObject?, title: String,
     initialSpec: BusControlSpec,
 ) : ControlSpecPrompt<BusControlSpec, DetailPane>(parameterName, parentObject, title) {
-    override val content = DetailPane(labelWidth = 100.0)
+    override val content = DetailPane(labelWidth = 120.0)
 
     private var rate = initialSpec.rate
 
-    private val channelsSpinner = Spinner<Int>(1, 12, initialSpec.channels)
-        .setFixedWidth(50.0) named "Channels"
+    private val channelsSpinner = IntSpinner(1, 12, initialSpec.channels).minColumns(2) named "Channels"
 
     private val rateSelector = SimpleSearchableListView(Rate.entries, "Choose rate")
         .selectorButton(this::rate, undoManager = parentObject?.context?.get(UndoManager)) named "Rate"
@@ -31,7 +29,7 @@ class BusControlSpecPrompt(
         inlineDisplayBox.isSelected = initialSpec.inlineDisplay
     }
 
-    override fun makeSpec(): BusControlSpec = BusControlSpec(rate, channelsSpinner.value, inlineDisplayBox.isSelected)
+    override fun makeSpec(): BusControlSpec = BusControlSpec(rate, channelsSpinner.value(), inlineDisplayBox.isSelected)
 
     private infix fun <N : Node> N.named(name: String): N = also { content.addItem(name, it) }
 }

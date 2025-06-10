@@ -42,9 +42,15 @@ object PonticelloHextantPlugin : PluginInitializer({
     stylesheet("ponticello/ui/style/general.css")
     stylesheet("ponticello/ui/style/score.css")
     stylesheet("ponticello/ui/style/launcher-grid.css")
+    stylesheet("ponticello/ui/style/syntax.css")
+
     stylesheet("fxutils/style.css")
     stylesheet("fxutils/prompts.css")
-    stylesheet("ponticello/ui/style/syntax.css")
+    stylesheet("fxutils/list-popup.css")
+    stylesheet("fxutils/controls.css")
+    stylesheet("fxutils/icon-buttons.css")
+    stylesheet("fxutils/buttons.css")
+
     on(PluginBuilder.Phase.Initialize) { ctx ->
         ctx[Aspects].implement(ControlFactory::class, ScExprExpander::class, ScExprExpanderControlFactory)
     }

@@ -3,15 +3,14 @@ package ponticello.ui.registry
 import fxutils.actions.Action
 import fxutils.actions.ContextualizedAction
 import fxutils.actions.collectActions
+import fxutils.controls.IntSpinner
 import fxutils.controls.SliderBar
 import fxutils.prompt.IntegerPrompt
 import fxutils.prompt.SimpleSearchableListView
-import fxutils.setFixedWidth
 import fxutils.undo.UndoManager
 import javafx.event.Event
 import javafx.geometry.Point2D
 import javafx.scene.Node
-import javafx.scene.control.Spinner
 import javafx.scene.input.DataFormat
 import javafx.scene.layout.HBox
 import org.kordamp.ikonli.Ikon
@@ -31,7 +30,6 @@ import reaktive.ObserverMap
 import reaktive.value.binding.impl.notNull
 import reaktive.value.binding.map
 import reaktive.value.forEach
-import reaktive.value.fx.asProperty
 import reaktive.value.now
 import reaktive.value.reactiveVariable
 
@@ -63,9 +61,9 @@ class BusRegistryPane(busses: BusRegistry) : ObjectRegistryPane<BusObject>(busse
     }
 
     override fun getItemContent(obj: BusObject): List<Node> = buildList {
-        val channelsSpinner = Spinner<Int>(1, 12, 2).setFixedWidth(60.0)
-        channelsSpinner.valueFactory.valueProperty().bindBidirectional(obj.channels.asProperty())
-        channelsSpinner.isEditable = true
+        val channelsSpinner = IntSpinner(obj.channels, 1, 12).minColumns(2)
+            .setupUndo("Bus Channels", obj.context[UndoManager])
+        channelsSpinner.isDisable = obj.busType != BusObject.Type.Regular
         add(channelsSpinner)
         if (obj is BusObject.ControlBus) {
             val defaultValue = reactiveVariable(obj.spec.now?.defaultValue?.get() ?: 0.0.toDecimal())

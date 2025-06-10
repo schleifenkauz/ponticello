@@ -2,6 +2,7 @@ package ponticello.ui.score
 
 import bundles.publicProperty
 import fxutils.*
+import fxutils.controls.IntSpinner
 import fxutils.prompt.SimpleSearchableListView
 import fxutils.prompt.compoundPrompt
 import hextant.context.Context
@@ -14,7 +15,6 @@ import javafx.event.Event
 import javafx.geometry.Bounds
 import javafx.geometry.Point2D
 import javafx.scene.control.ComboBox
-import javafx.scene.control.Spinner
 import javafx.scene.control.TextField
 import javafx.scene.input.Dragboard
 import javafx.scene.input.MouseButton
@@ -480,13 +480,13 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
             val rootPitchSelector =
                 ComboBox(observableList(MidiPitch.allPitchClasses())) named "Root pitch class"
             rootPitchSelector.value = MidiPitch(0)
-            val registerSpinner = Spinner<Int>(0, 10, 4) named "Base register"
-            val octaves = Spinner<Int>(1, 12, 2) named "Octaves"
+            val registerSpinner = IntSpinner(0, 10, 4).minColumns(2) named "Base register"
+            val octaves = IntSpinner(1, 12, 2).minColumns(2) named "Octaves"
             onConfirm {
                 val name = nameField.text
                 if (!Identifier.isValid(name) || score.has(name)) return@onConfirm null
-                val lowestPitch = rootPitchSelector.value.step + 12 * registerSpinner.value
-                val highestPitch = lowestPitch + 12 * octaves.value
+                val lowestPitch = rootPitchSelector.value.step + 12 * registerSpinner.value()
+                val highestPitch = lowestPitch + 12 * octaves.value()
                 val notes = mutableListOf<MidiObject.Note>()
                 val eventDictionary = EditorRoot(EventDictionaryEditor())
                 MidiObject(

@@ -1,9 +1,12 @@
 package ponticello.ui.controls
 
-import fxutils.*
 import fxutils.actions.Action
 import fxutils.actions.ActionBar
 import fxutils.actions.collectActions
+import fxutils.alwaysHGrow
+import fxutils.autoSize
+import fxutils.shortcut
+import fxutils.styleClass
 import javafx.scene.Cursor
 import javafx.scene.control.TextField
 import javafx.scene.input.KeyEvent
@@ -55,14 +58,11 @@ class NameControl(
                 abandonEdit()
             }
         }
-        field.autoSize { isAutoSize }
+        field.autoSize(::isAutoSize)
         observer = obj.name.observe { _, _, newName ->
             field.text = newName.takeIf { it != NO_NAME } ?: defaultDisplayName.now
         } and defaultDisplayName.observe { _, _, defaultName ->
             if (obj.name.now == NO_NAME) field.text = defaultName
-        }
-        field.sceneProperty().addListener { _ ->
-            runFXWithTimeout(100) { field.autoSize(::isAutoSize) }
         }
     }
 
