@@ -2,43 +2,76 @@ package ponticello.ui.launcher
 
 import bundles.PublicProperty
 import bundles.publicProperty
-import fxutils.SubWindow
+import bundles.set
+import fxutils.*
 import fxutils.actions.action
 import fxutils.actions.registerShortcuts
-import fxutils.createBorder
-import fxutils.opacity
-import fxutils.registerShortcuts
 import hextant.context.Context
 import javafx.application.Platform
 import javafx.beans.InvalidationListener
+import javafx.scene.Node
+import javafx.scene.layout.BorderPane
 import javafx.scene.layout.StackPane
 import javafx.scene.paint.Color
 import javafx.stage.Screen
 import javafx.stage.StageStyle
+import org.kordamp.ikonli.Ikon
 import org.kordamp.ikonli.materialdesign2.MaterialDesignP
+import org.kordamp.ikonli.materialdesign2.MaterialDesignT
 import ponticello.model.obj.ParameterizedObject
 import ponticello.model.score.ScoreObject
 import ponticello.ui.actions.ArrowKeys
 import ponticello.ui.actions.ObjectActionContext
 import ponticello.ui.actions.ObjectActions
-import ponticello.ui.impl.DEFAULT_SCENE_FILL
+import ponticello.ui.dock.ToolPane
+import ponticello.ui.dock.ToolPaneState
 import ponticello.ui.impl.makeSubWindow
-import ponticello.ui.impl.sceneFill
 import ponticello.ui.midi.ContextualMidiReceiver
 import ponticello.ui.midi.ParameterControlsMidiContext
+import ponticello.ui.score.ScoreObjectSelectionManager
 import ponticello.ui.score.ScoreObjectView
+import reaktive.Observer
 import reaktive.value.binding.map
 
-class DetailPaneManager(private val context: Context) {
+class ScoreObjectDetailPane(private val context: Context): ToolPane() {
     private val detached = mutableMapOf<ScoreObject, SubWindow>()
     private var currentlyShown: SubWindow? = null
     private var attachedToView: ScoreObjectView? = null
+    private val focusedViewObserver: Observer
+
+    override val title: String
+        get() = "Score Object Details"
+
+    override val icon: Ikon
+        get() = MaterialDesignT.TUNE_VARIANT
+
+    override var content: Node = noSelectedObject()
+        set(value) {
+            children.replace(field, value)
+            field = value
+        }
+
+    init {
+        setup()
+        val selector = context[ScoreObjectSelectionManager]
+        focusedViewObserver = selector.focusedView.observe { _, _, focused ->
+            if (window == null || window!!.type == SubWindow.Type.ToolWindow) {
+                showDetailPane(focused)
+            }
+        }
+        context[ScoreObjectDetailPane] = this
+    }
+
+    override fun defaultState(): ToolPaneState = ToolPaneState.docked(ToolPaneState.Side.LEFT)
+
+    private fun noSelectedObject() = BorderPane(label("No object selected"))
 
     fun showDetailPane(view: ScoreObjectView?) {
         currentlyShown?.hide()
         if (view == null) {
             currentlyShown = null
             attachedToView = null
+            content = noSelectedObject()
             return
         }
         when {
@@ -59,36 +92,39 @@ class DetailPaneManager(private val context: Context) {
         currentlyShown?.hide()
         currentlyShown = null
         attachedToView = null
+        if (window != null && window!!.type != SubWindow.Type.ToolWindow) {
+            setShowing(false)
+        }
     }
 
     private fun showDetailPaneFor(view: ScoreObjectView) {
-        lateinit var window: SubWindow
         val detachAction = action<Unit>("Detach") {
             icon(MaterialDesignP.PIN_OUTLINE)
             shortcuts("Ctrl+D")
             executes { _ ->
-                window.hide()
+                window?.hide()
                 detach(view)
             }
         }.withContext(Unit)
         val detailPane = view.getDetailPane(listOf(detachAction))
         val pane = StackPane(detailPane)
-        pane.border = createBorder(Color.GRAY, 1.0)
-        window = makeSubWindow(pane, windowTitle(view), context, SubWindow.Type.Undecorated)
-            .sceneFill(DEFAULT_SCENE_FILL.opacity(0.5))
-        window.sizeToScene()
-        registerMidiContext(view, window)
-        window.scene.registerShortcuts {
-            on("ESCAPE") { window.hide() }
+        window?.let { w ->
+            pane.border = createBorder(Color.GRAY, 1.0)
+            w.sizeToScene()
+            registerMidiContext(view, w)
+            w.scene.registerShortcuts {
+                on("ESCAPE") { w.hide() }
+            }
+            ArrowKeys.registerArrowKeys(w.scene, context)
+            updateBoundsOnMove(view, w)
+            Platform.runLater {
+                updateBounds(view, w)
+            }
         }
-        ArrowKeys.registerArrowKeys(window.scene, context)
         addActions(view, pane)
-        updateBoundsOnMove(view, window)
-        window.show()
-        Platform.runLater {
-            updateBounds(view, window)
-        }
+        content = pane
         currentlyShown = window
+        setShowing(true)
     }
 
     private fun updateBoundsOnMove(view: ScoreObjectView, window: SubWindow) {
@@ -161,7 +197,7 @@ class DetailPaneManager(private val context: Context) {
 
     private fun windowTitle(view: ScoreObjectView) = view.obj.name.map { name -> "Object $name" }
 
-    companion object : PublicProperty<DetailPaneManager> by publicProperty("DetailPaneManager") {
+    companion object : PublicProperty<ScoreObjectDetailPane> by publicProperty("DetailPaneManager") {
         private const val TITLE_BAR_HEIGHT = 35.0
     }
 }

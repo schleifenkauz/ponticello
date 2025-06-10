@@ -44,7 +44,6 @@ class PonticelloMainActivity(val project: PonticelloProject) : Activity() {
     init {
         context[PonticelloMainActivity] = this
         context[HelpBrowser] = HelpBrowser()
-        context[DetailPaneManager] = DetailPaneManager(project.context)
         context[FlowGroupManager] = FlowGroupManager(project.flows, mainScoreView)
 
         setupMainScoreView()

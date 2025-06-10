@@ -6,13 +6,13 @@ import hextant.context.Context
 import javafx.scene.input.Clipboard
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.serializer
-import reaktive.value.ReactiveValue
-import reaktive.value.now
-import reaktive.value.reactiveVariable
 import ponticello.model.score.Score
 import ponticello.model.score.ScoreObject
 import ponticello.model.score.ScoreObjectInstance
-import ponticello.ui.launcher.DetailPaneManager
+import ponticello.ui.launcher.ScoreObjectDetailPane
+import reaktive.value.ReactiveValue
+import reaktive.value.now
+import reaktive.value.reactiveVariable
 
 class ScoreObjectSelectionManager(val context: Context, private val rootPane: ScorePane) {
     private val _selectedViews = mutableSetOf<ScoreObjectView>()
@@ -77,7 +77,7 @@ class ScoreObjectSelectionManager(val context: Context, private val rootPane: Sc
     }
 
     fun deselectAll() {
-        context[DetailPaneManager].hideCurrentlyShown()
+        context[ScoreObjectDetailPane].hideCurrentlyShown()
         val previouslySelected = selectedViews.toSet()
         val previouslySelectedObjects = selectedObjects.toSet()
         _selectedViews.clear()

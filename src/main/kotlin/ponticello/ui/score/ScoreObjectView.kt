@@ -42,8 +42,8 @@ import ponticello.ui.controls.NameControl
 import ponticello.ui.dock.AppLayout
 import ponticello.ui.impl.resizeMode
 import ponticello.ui.impl.setupDraggingAndResizing
-import ponticello.ui.launcher.DetailPaneManager
 import ponticello.ui.launcher.PonticelloMainActivity
+import ponticello.ui.launcher.ScoreObjectDetailPane
 import ponticello.ui.registry.ScoreObjectRegistryPane
 import reaktive.value.*
 import reaktive.value.binding.*
@@ -222,7 +222,7 @@ abstract class ScoreObjectView(
         addEventHandler(MouseEvent.MOUSE_CLICKED) { ev ->
             when {
                 ev.button == MouseButton.SECONDARY && ev.modifiers.isEmpty() -> {
-                    context[DetailPaneManager].showDetailPane(this)
+                    context[ScoreObjectDetailPane].showDetailPane(this)
                 }
 
                 ev.button == MouseButton.SECONDARY && ev.modifiers == setOf(Shift) -> {
@@ -291,7 +291,7 @@ abstract class ScoreObjectView(
         }
         border = solidBorder(borderColor, width = width, radius = BORDER_RADIUS)
         if (!value) {
-            context[DetailPaneManager].hideDetailPane(this)
+            context[ScoreObjectDetailPane].hideDetailPane(this)
         }
     }
 
@@ -356,7 +356,7 @@ abstract class ScoreObjectView(
     }
 
     private fun dragTo(toX: Double, toY: Double) {
-        context[DetailPaneManager].hideCurrentlyShown()
+        context[ScoreObjectDetailPane].hideCurrentlyShown()
         val movedObjects = context[ScoreObjectSelectionManager].selectedInstances + this.instance
         val minDeltaT = -movedObjects.minOf { inst -> inst.start }
         val maxDeltaT = movedObjects.minOf { inst -> inst.score!!.maxTime.now - inst.end }
@@ -424,7 +424,7 @@ abstract class ScoreObjectView(
     @Suppress("UNUSED_PARAMETER") //parameter [ev] is needed to be compatible with Node.setupDraggingAndResizing
     private fun resize(old: Bounds, deltaX: Double, deltaY: Double, cursor: Cursor, ev: MouseEvent) {
         check(obj.canResize) { "Attempt to resize object that is not resizable" }
-        context[DetailPaneManager].hideCurrentlyShown()
+        context[ScoreObjectDetailPane].hideCurrentlyShown()
         val parentPane = parentPane
         val direction = cursor.resizeDirection()
         val oldX = if (direction.left) old.minX else old.maxX

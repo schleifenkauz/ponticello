@@ -27,6 +27,7 @@ import ponticello.ui.dock.ToolPaneState.Side.*
 import ponticello.ui.flow.AudioFlowPane
 import ponticello.ui.impl.makeToolWindow
 import ponticello.ui.launcher.PonticelloLauncher
+import ponticello.ui.launcher.ScoreObjectDetailPane
 import ponticello.ui.live.LauncherGridPane
 import ponticello.ui.live.LiveTaskRegistryPane
 import ponticello.ui.misc.ConsoleOutputPane
@@ -110,6 +111,7 @@ class AppLayout(
         add(ClockRegistryPane(project[CLOCKS]))
         add(BusRegistryPane(project.busses))
         add(ScoreObjectRegistryPane(project.objects))
+        add(ScoreObjectDetailPane(context))
 
         //default right side-pane
         add(LogPane(Logger))

@@ -24,8 +24,8 @@ import ponticello.model.score.*
 import ponticello.ui.controls.RenamePrompt
 import ponticello.ui.dock.AppLayout
 import ponticello.ui.impl.showDialog
-import ponticello.ui.launcher.DetailPaneManager
 import ponticello.ui.launcher.PonticelloMainActivity
+import ponticello.ui.launcher.ScoreObjectDetailPane
 import ponticello.ui.registry.InstrumentRegistryPane
 import ponticello.ui.registry.ScoreObjectRegistryPane
 import ponticello.ui.score.*
@@ -96,7 +96,7 @@ object ObjectActions {
             applicableOn { view -> !view.parentPane.isRoot(view.obj) }
             executeSingle { view, ev ->
                 if (ev.isTargetTextInput && !ev.isAltDown()) return@executeSingle
-                view.context[DetailPaneManager].showDetailPane(view)
+                view.context[ScoreObjectDetailPane].showDetailPane(view)
             }
         }
         addObjectAction("Show as sub window") {
