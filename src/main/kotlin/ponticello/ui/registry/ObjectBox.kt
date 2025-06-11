@@ -26,20 +26,29 @@ import ponticello.ui.impl.makeSubWindow
 import ponticello.ui.launcher.PonticelloApp.Companion.primaryStage
 import ponticello.ui.registry.ObjectListView.DisplayMode
 import reaktive.value.binding.equalTo
+import reaktive.value.binding.`if`
+import reaktive.value.binding.not
+import reaktive.value.fx.asObservableValue
 import reaktive.value.now
 import reaktive.value.reactiveValue
+import reaktive.value.reactiveVariable
+import reaktive.value.toggle
 
-class ObjectBox<O : Any>(val parent: ObjectListView<O>, val obj: O, private var currentMode: DisplayMode) : Control() {
+class ObjectBox<O : Any>(val parent: ObjectListView<O>, val obj: O) : Control() {
     var subWindow: SubWindow? = null
         private set
 
     private var prevDragTarget: Node? = null
+
+    private val currentMode get() = parent.mode.now
 
     val config get() = parent.config
 
     val nameControl = if (obj is RenamableObject) NameControl(obj, config.getDefaultDisplayName(obj)) else null
 
     val nameLabel: Label?
+
+    private val collapsed = reactiveVariable(true)
 
     private val nameDisplay: HBox? = when {
         nameControl != null -> {
@@ -66,10 +75,17 @@ class ObjectBox<O : Any>(val parent: ObjectListView<O>, val obj: O, private var 
     val header = HBox() styleClass "object-box-header"
 
     var content: Parent? = null
+        set(value) {
+            field = value
+            if (value != null) {
+                value.visibleProperty().bind(collapsed.not().asObservableValue())
+                value.managedProperty().bind(value.visibleProperty())
+            }
+        }
 
     fun content(): Parent? {
         content?.let { return it }
-        content = config.getContent(obj, currentMode) ?: return null
+        content = (config.getContent(obj, currentMode) ?: return null)
         return content!!
     }
 
@@ -90,13 +106,7 @@ class ObjectBox<O : Any>(val parent: ObjectListView<O>, val obj: O, private var 
         relayout()
     }
 
-    fun setContentDisplay(mode: DisplayMode) {
-        if (mode == currentMode) return
-        currentMode = mode
-        relayout()
-    }
-
-    private fun relayout() {
+    fun relayout() {
         content = null
         if (currentMode != DisplayMode.SubWindow) {
             subWindow?.let { w ->
@@ -105,11 +115,11 @@ class ObjectBox<O : Any>(val parent: ObjectListView<O>, val obj: O, private var 
                 subWindow = null
             }
         }
-        if (currentMode == DisplayMode.Inline) {
+        if (currentMode is DisplayMode.Inline) {
             content = config.getContent(obj, currentMode)
         }
         val root = config.boxLayout(obj, header, content)
-        setPseudoClassState("inline-content", currentMode == DisplayMode.Inline && content != null)
+        setPseudoClassState("inline-content", currentMode is DisplayMode.Inline && content != null)
         setRoot(root)
         if (config.dataFormat != null) {
             setupDragging()
@@ -189,6 +199,21 @@ class ObjectBox<O : Any>(val parent: ObjectListView<O>, val obj: O, private var 
                     val copy = obj.copy().withName(name)
                     list.add(copy, list.indexOf(obj) + 1)
                 }
+            }
+            addAction("Collapse") {
+                description { box ->
+                    `if`(box.collapsed, then = { "Expand" }, otherwise = { "Collapse" })
+                }
+                icon { box ->
+                    `if`(
+                        box.collapsed,
+                        then = { MaterialDesignC.CHEVRON_UP },
+                        otherwise = { MaterialDesignC.CHEVRON_DOWN }
+                    )
+                }
+                enableWhen { box -> box.parent.mode.equalTo(DisplayMode.Inline(collapsable = true)) }
+                ifNotApplicable(Action.IfNotApplicable.Hide)
+                executes { box, _ -> box.collapsed.toggle() }
             }
         }
     }

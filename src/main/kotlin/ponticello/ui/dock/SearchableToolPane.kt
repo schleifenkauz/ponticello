@@ -9,7 +9,7 @@ import javafx.stage.Window
 import org.controlsfx.control.textfield.CustomTextField
 import org.kordamp.ikonli.javafx.FontIcon
 import org.kordamp.ikonli.material2.Material2MZ
-import org.kordamp.ikonli.materialdesign2.MaterialDesignC
+import org.kordamp.ikonli.materialdesign2.MaterialDesignB
 import ponticello.model.registry.NamedObject
 import ponticello.model.registry.NamedObjectList
 import ponticello.ui.registry.ObjectListDisplayConfig
@@ -55,7 +55,7 @@ abstract class SearchableToolPane<O : NamedObject>(
         searchText.promptText = "Search..."
         searchText.maxWidth = 150.0
         searchText.left = FontIcon(Material2MZ.SEARCH)
-        searchText.right = MaterialDesignC.CLOSE_CIRCLE_OUTLINE.button("Clear search", "small-icon-button") {
+        searchText.right = MaterialDesignB.BACKSPACE_OUTLINE.button("Clear search", "small-icon-button") {
             searchText.text = ""
         }.also { btn -> btn.cursor = Cursor.DEFAULT }
         searchText.right.setOnMouseClicked { searchText.text = "" }
@@ -71,7 +71,7 @@ abstract class SearchableToolPane<O : NamedObject>(
 
     override fun saveState(dest: ToolPaneState) {
         super.saveState(dest)
-        if (dest is SearchableToolPaneState) {
+        if (dest is SearchableToolPaneState && isSetup) {
             dest.displayMode = listView.mode.now
         }
     }

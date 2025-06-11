@@ -63,7 +63,7 @@ class FlowGroupPane(private val group: AudioFlowGroup, ownWindow: Boolean): VBox
         get() = "small-icon-button"
 
     override val supportedModes: Set<DisplayMode>
-        get() = setOf(DisplayMode.Inline, DisplayMode.DetailsPane)
+        get() = setOf(DisplayMode.Inline(collapsable = true), DisplayMode.DetailsPane)
 
     override val dataFormat: DataFormat
         get() = AudioFlow.DATA_FORMAT

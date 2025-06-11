@@ -33,7 +33,7 @@ class AudioFlowPane(flows: AudioFlows) : SearchableToolPane<AudioFlowGroup>(flow
         get() = Orientation.HORIZONTAL
 
     override val supportedModes: Set<DisplayMode>
-        get() = setOf(DisplayMode.Inline, DisplayMode.SubWindow, DisplayMode.DetailsPane)
+        get() = setOf(DisplayMode.Inline(collapsable = true), DisplayMode.SubWindow, DisplayMode.DetailsPane)
 
     init {
         styleClass.add("flow-pane")

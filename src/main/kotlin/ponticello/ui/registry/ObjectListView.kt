@@ -67,9 +67,9 @@ class ObjectListView<O : Any>(
 
     val mode: ReactiveValue<DisplayMode> get() = displayMode
 
-    val orientation get() = if (mode.now == DisplayMode.Inline) config.inlineOrientation else Orientation.VERTICAL
+    val orientation get() = if (mode.now is DisplayMode.Inline) config.inlineOrientation else Orientation.VERTICAL
 
-    fun getBox(obj: O) = boxesCache.getOrPut(obj) { ObjectBox(this, obj, mode.now) }
+    fun getBox(obj: O) = boxesCache.getOrPut(obj) { ObjectBox(this, obj) }
 
     fun getBoxes(): List<ObjectBox<*>> = boxes
 
@@ -187,7 +187,7 @@ class ObjectListView<O : Any>(
     }
 
     fun setMode(mode: DisplayMode) {
-        val horizontalLayout = mode == DisplayMode.Inline && config.inlineOrientation == Orientation.HORIZONTAL
+        val horizontalLayout = mode is DisplayMode.Inline && config.inlineOrientation == Orientation.HORIZONTAL
         if (horizontalLayout && itemsLayout !is HBox) {
             itemsLayout = HBox()
         }
@@ -234,7 +234,9 @@ class ObjectListView<O : Any>(
                 else emptyDisplay()
             setRoot(root)
         } else {
-            for (box in boxes) box.setContentDisplay(mode)
+            for (box in boxes) {
+                box.relayout()
+            }
             if (mode == DisplayMode.DetailsPane) {
                 displayContent(selectedBox.now)
             } else {
@@ -430,12 +432,19 @@ class ObjectListView<O : Any>(
     }
 
     @Serializable
-    enum class DisplayMode {
-        Inline, SubWindow, DetailsPane, Collapsable;
-
+    sealed class DisplayMode {
         companion object {
-            val all get() = setOf(Inline, SubWindow, DetailsPane)
+            val all get() = setOf(Inline(false), Inline(true), SubWindow, DetailsPane)
         }
+
+        @Serializable
+        data class Inline(val collapsable: Boolean) : DisplayMode()
+
+        @Serializable
+        data object SubWindow : DisplayMode()
+
+        @Serializable
+        data object DetailsPane : DisplayMode()
     }
 
     companion object {
@@ -466,6 +475,7 @@ class ObjectListView<O : Any>(
                 }
                 executes { list ->
                     val selected = list.selectedBox.now?.obj ?: return@executes
+
                     @Suppress("UNCHECKED_CAST")
                     val source = list.source as ObjectList<Any>
                     source.remove(selected)
@@ -540,14 +550,16 @@ class ObjectListView<O : Any>(
 
         val modeChangeActions
             get() = collectActions {
-                addAction("Display content inline") {
-                    icon { view: ObjectListView<*> ->
-                        when (view.config.inlineOrientation) {
-                            Orientation.HORIZONTAL -> reactiveValue(MaterialDesignV.VIEW_WEEK)
-                            Orientation.VERTICAL -> reactiveValue(MaterialDesignV.VIEW_SEQUENTIAL)
+                for (collapsable in listOf(false, true)) {
+                    addAction("Display content inline") {
+                        icon { view: ObjectListView<*> ->
+                            when (view.config.inlineOrientation) {
+                                Orientation.HORIZONTAL -> reactiveValue(MaterialDesignV.VIEW_WEEK)
+                                Orientation.VERTICAL -> reactiveValue(MaterialDesignV.VIEW_SEQUENTIAL)
+                            }
                         }
+                        modeChange(DisplayMode.Inline(collapsable))
                     }
-                    modeChange(DisplayMode.Inline)
                 }
                 addAction("Display content in Sub-Window") {
                     icon(MaterialDesignD.DOCK_WINDOW)

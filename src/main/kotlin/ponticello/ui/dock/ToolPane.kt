@@ -57,7 +57,8 @@ abstract class ToolPane : VBox() {
     protected var window: SubWindow? = null
         private set
     private var showing = reactiveVariable(false)
-    private var isSetup = false
+    protected var isSetup = false
+        private set
 
     val isShowing: ReactiveBoolean get() = showing
 
@@ -104,10 +105,12 @@ abstract class ToolPane : VBox() {
     }
 
     fun setUndocked(windowType: SubWindow.Type): SubWindow {
-        window?.let { w ->
-            w.close()
-            w.scene.root = Region()
-        } ?: layout.hideDocked(this)
+        if (isShowing.now) {
+            window?.let { w ->
+                w.close()
+                w.scene.root = Region()
+            } ?: layout.hideDocked(this)
+        }
         window = SubWindow(this, title, windowType).sceneFill(DEFAULT_SCENE_FILL)
         window!!.sizeToScene()
         setShowing(true)
@@ -122,6 +125,7 @@ abstract class ToolPane : VBox() {
     }
 
     fun setMode(mode: ToolPaneMode) {
+        if (mode == currentMode()) return
         when (mode) {
             Docked -> setDocked()
             Window -> setUndocked(SubWindow.Type.ToolWindow)
@@ -249,6 +253,13 @@ abstract class ToolPane : VBox() {
             ifNotApplicable(Action.IfNotApplicable.Hide)
             icon(MaterialDesignR.RESIZE)
             executes { p -> p.scene.window.sizeToScene() }
+        }
+
+        val redockAction = action<ToolPane>("Dock") {
+            enableWhen { p -> isSceneRoot(p) }
+            ifNotApplicable(Action.IfNotApplicable.Hide)
+            //TODO find icon
+            executes { p -> p.setDocked() }
         }
     }
 }

@@ -124,7 +124,7 @@
 }
 
 .menu-item:hover {
-    -fx-background-color: rgba(0, 100, 0, 0.2);
+    -fx-background-color: rgba(0, 20, 0, 1);
 }
 
 .context-menu {

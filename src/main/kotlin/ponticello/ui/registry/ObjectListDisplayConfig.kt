@@ -39,7 +39,8 @@ interface ObjectListDisplayConfig<O : Any> {
 
     val inlineOrientation: Orientation get() = Orientation.VERTICAL
 
-    val supportedModes get() = setOf(ObjectListView.DisplayMode.Inline)
+    val supportedModes: Collection<ObjectListView.DisplayMode>
+        get() = setOf(ObjectListView.DisplayMode.Inline(collapsable = false))
 
     val autoSelectNewObjects: Boolean get() = true
 

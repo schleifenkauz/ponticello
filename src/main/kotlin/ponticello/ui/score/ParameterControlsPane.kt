@@ -40,7 +40,7 @@ class ParameterControlsPane(
         get() = "Parameter controls"
 
     override val supportedModes: Set<DisplayMode>
-        get() = setOf(DisplayMode.Inline)
+        get() = setOf(DisplayMode.Inline(collapsable = false))
 
     init {
         styleClass("parameter-controls")

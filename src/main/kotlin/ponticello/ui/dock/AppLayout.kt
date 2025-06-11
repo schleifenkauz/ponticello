@@ -45,7 +45,7 @@ class AppLayout(
     private val interactionConfigBar: InteractionConfigBar,
     private val timeCodeView: TimeCodeView,
 ) : BorderPane() {
-    private val sideBars = project[UI_STATE].sideBars.mapValues { (_, types) ->
+    private val sideBars = project[UI_STATE].sideBars.mapValuesTo(mutableMapOf()) { (_, types) ->
         ToolPaneTypeList(types.map { t -> toolPaneType(t) }.toMutableList())
     }
 
@@ -118,7 +118,7 @@ class AppLayout(
         for ((_, list) in sideBars) list.initialize(context)
         for (type in allToolPaneTypes) {
             if (type !in toolPaneSides) {
-                sideBars.getValue(type.defaultSide).add(type)
+                sideBars.getOrPut(type.defaultSide) { ToolPaneTypeList.new(context) }.add(type)
             }
             val toolPane = type.createToolPane(project)
             toolPanes.add(toolPane)
@@ -301,6 +301,7 @@ class AppLayout(
         }
         state.sideBars = sideBars.mapValues { (_, types) -> types.map { t -> t.uid } }
     }
+
     fun actions(): List<ContextualizedAction> = actions
 
     companion object : PublicProperty<AppLayout> by publicProperty("AppLayout") {

@@ -37,7 +37,7 @@ abstract class ReorderableActionBar<O : Any>(
         get() = Orientation.VERTICAL
 
     override val supportedModes: Set<ObjectListView.DisplayMode>
-        get() = setOf(ObjectListView.DisplayMode.Inline)
+        get() = setOf(ObjectListView.DisplayMode.Inline(collapsable = false))
 
     override val hideWhileDragging: Boolean
         get() = true
