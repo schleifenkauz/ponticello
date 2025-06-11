@@ -86,7 +86,7 @@
     -fx-border-color: black;
 }
 
-.name-field {
+.name-field, .name-label {
     -fx-background-color: transparent;
     -fx-background-radius: 0;
     -fx-border-width: 0;

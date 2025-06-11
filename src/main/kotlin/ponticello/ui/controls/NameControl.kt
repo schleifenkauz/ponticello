@@ -1,13 +1,9 @@
 package ponticello.ui.controls
 
+import fxutils.*
 import fxutils.actions.Action
 import fxutils.actions.ActionBar
 import fxutils.actions.collectActions
-import fxutils.alwaysHGrow
-import fxutils.autoSize
-import fxutils.shortcut
-import fxutils.styleClass
-import javafx.scene.Cursor
 import javafx.scene.control.TextField
 import javafx.scene.input.KeyEvent
 import javafx.scene.layout.HBox
@@ -17,20 +13,24 @@ import ponticello.model.registry.NamedObject.Companion.NO_NAME
 import ponticello.sc.Identifier
 import reaktive.Observer
 import reaktive.value.ReactiveString
+import reaktive.value.binding.flatMap
 import reaktive.value.binding.not
-import reaktive.value.fx.asReactiveValue
 import reaktive.value.now
 import reaktive.value.reactiveValue
+import reaktive.value.reactiveVariable
 
 class NameControl(
     val obj: RenamableObject,
     private val defaultDisplayName: ReactiveString = reactiveValue(NO_NAME),
 ) : HBox() {
     private val field = TextField().alwaysHGrow() styleClass "name-field"
+    val label = label(
+        obj.name.flatMap { n -> if (n == NO_NAME) defaultDisplayName else reactiveValue(n) }
+    ).alwaysHGrow() styleClass "name-label"
 
     private val observer: Observer
 
-    val isEditing = field.editableProperty().asReactiveValue()
+    val isEditing = reactiveVariable(false)
 
     private var isAutoSize = false
 
@@ -38,9 +38,7 @@ class NameControl(
         styleClass("name-control")
         field.text = obj.name.now.takeIf { it != NO_NAME } ?: defaultDisplayName.now
         val toolbar = ActionBar(actions.withContext(this), buttonStyle = "small-icon-button")
-        children.addAll(field, toolbar)
-        field.isEditable = false
-        field.cursorProperty().bind(field.editableProperty().map { editable -> if (editable) Cursor.TEXT else Cursor.DEFAULT })
+        children.addAll(label, toolbar)
         field.addEventFilter(KeyEvent.KEY_PRESSED) { ev ->
             if ("ENTER".shortcut.matches(ev)) {
                 commitEdit()
@@ -73,27 +71,30 @@ class NameControl(
     }
 
     fun startEdit() {
-        if (field.isEditable) return
-        field.isEditable = true
+        if (isEditing.now) return
+        children[0] = field
+        isEditing.set(true)
         field.requestFocus()
     }
 
     private fun commitEdit() {
+        if (!isEditing.now) return
         val name = field.text
-        if (!field.isEditable) return
         if (Identifier.isValid(name) && obj.canRenameTo(name)) {
-            field.isEditable = false
+            children[0] = label
             val old = obj.name.now
             if (name != old) {
                 obj.rename(name)
             }
+            isEditing.set(false)
         }
     }
 
     private fun abandonEdit() {
-        if (!field.isEditable) return
-        field.isEditable = false
+        if (!isEditing.now) return
+        children[0] = label
         field.text = obj.name.now
+        isEditing.set(false)
     }
 
     companion object {

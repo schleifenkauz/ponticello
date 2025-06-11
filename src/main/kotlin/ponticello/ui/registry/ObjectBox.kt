@@ -9,6 +9,7 @@ import javafx.scene.Node
 import javafx.scene.Parent
 import javafx.scene.control.Button
 import javafx.scene.control.Control
+import javafx.scene.control.Label
 import javafx.scene.input.MouseEvent
 import javafx.scene.input.TransferMode
 import javafx.scene.layout.HBox
@@ -40,19 +41,31 @@ class ObjectBox<O : Any>(val parent: ObjectListView<O>, val obj: O, private var 
 
     val nameControl = if (obj is RenamableObject) NameControl(obj, config.getDefaultDisplayName(obj)) else null
 
-    private val nameDisplay =
-        when {
-            nameControl != null -> nameControl.setFixedWidth(150.0)
-            obj is NamedObject -> HBox(label(obj.name).styleClass("name-field")).styleClass("name")
-            else -> null
+    val nameLabel: Label?
+
+    private val nameDisplay: HBox? = when {
+        nameControl != null -> {
+            nameLabel = nameControl.label
+            nameControl.setFixedWidth(150.0)
         }
+
+        obj is NamedObject -> {
+            nameLabel = label(obj.name.now).styleClass("name-field")
+            HBox(nameLabel).styleClass("name")
+        }
+
+        else -> {
+            nameLabel = null
+            null
+        }
+    }
 
     val actionBar = ActionBar(
         config.getActions(this) + objectActions.withContext(this),
         config.buttonStyle
     )
 
-    private val header = HBox() styleClass "object-box-header"
+    val header = HBox() styleClass "object-box-header"
 
     var content: Parent? = null
 
@@ -178,10 +191,6 @@ class ObjectBox<O : Any>(val parent: ObjectListView<O>, val obj: O, private var 
                     val copy = obj.copy().withName(name)
                     list.add(copy, list.indexOf(obj) + 1)
                 }
-            }
-            addAction("Drag") {
-                icon(MaterialDesignC.CURSOR_POINTER)
-                applicableIf { box -> box.config.showDragHandle }
             }
             addAction("Delete object") {
                 icon(Material2AL.DELETE)
