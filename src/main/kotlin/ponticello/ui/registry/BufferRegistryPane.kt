@@ -80,11 +80,8 @@ class BufferRegistryPane(private val buffers: BufferRegistry) : ObjectRegistryPa
         else -> null
     }
 
-
-    override fun addObject(ev: Event?) {
-        val obj = loadNewSample { file -> Identifier.truncate(file.nameWithoutExtension) } ?: return
-        registry.add(obj)
-    }
+    override fun createNewObject(ev: Event?): SampleObject? =
+        loadNewSample { file -> Identifier.truncate(file.nameWithoutExtension) }
 
     private fun loadNewSample(name: (File) -> String): SampleObject? {
         val file = buffers.context[PonticelloFiles].showOpenDialog("*.wav") ?: return null
@@ -93,7 +90,7 @@ class BufferRegistryPane(private val buffers: BufferRegistry) : ObjectRegistryPa
         return sample
     }
 
-    public override fun createNewObject(name: String, ev: Event?): BufferObject? {
+    override fun createNewObject(name: String, ev: Event?): BufferObject? {
         return compoundPrompt("Configure buffer $name") {
             val channelsSpinner = IntSpinner(1, 12, 2).minColumns(2) named "Channels"
             val durationField = TextField() named "Duration (s)"
@@ -185,12 +182,6 @@ class BufferRegistryPane(private val buffers: BufferRegistry) : ObjectRegistryPa
             addAction("View sample") {
                 icon(Evaicons.ACTIVITY)
                 executesOn { obj: SampleObject -> obj.showSpectrogram() }
-            }
-            addAction("Reload") {
-                icon(Material2MZ.SYNC)
-                description("Reload from file system")
-                shortcut("Shift+Alt+S")
-                executes(BufferObject::sync)
             }
             addAction("Replace sample contents") {
                 icon(MaterialDesignF.FILE_MUSIC_OUTLINE)

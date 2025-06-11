@@ -96,7 +96,7 @@ class BusRegistryPane(busses: BusRegistry) : ObjectRegistryPane<BusObject>(busse
     override fun getActions(box: ObjectBox<BusObject>): List<ContextualizedAction> {
         return if (box.obj is BusObject.ControlBus) {
             val cast = box as ObjectBox<BusObject.ControlBus>
-            actions.withContext(box) + controlBusActions.withContext(cast)
+            controlBusActions.withContext(cast) + actions.withContext(box)
         } else actions.withContext(box)
     }
 

@@ -9,6 +9,10 @@ class ToolPaneActionBar(
     private val appLayout: AppLayout,
     types: ToolPaneTypeList,
 ) : ReorderableActionBar<ToolPane.Type>("large-icon-button", types) {
+    init {
+        setup()
+    }
+
     override val listStyle: Array<String>
         get() = arrayOf("dock-icons")
 

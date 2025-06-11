@@ -118,3 +118,20 @@
     -fx-border-color: black;
     -fx-border-width: 1px 1px 0px 0px;
 }
+
+.menu-item {
+    -fx-background-color: #1a1a1b;
+}
+
+.menu-item:hover {
+    -fx-background-color: rgba(0, 100, 0, 0.2);
+}
+
+.context-menu {
+    -fx-background-color: transparent;
+}
+
+.check-icon {
+    -fx-icon-size: 16px;
+    -fx-icon-color: white;
+}

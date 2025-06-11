@@ -18,13 +18,15 @@ import javafx.scene.input.*
 import javafx.scene.layout.*
 import javafx.stage.Window
 import kotlinx.serialization.Serializable
+import org.kordamp.ikonli.material2.Material2MZ
 import org.kordamp.ikonli.materialdesign2.MaterialDesignD
+import org.kordamp.ikonli.materialdesign2.MaterialDesignP
 import org.kordamp.ikonli.materialdesign2.MaterialDesignV
-import ponticello.model.registry.NamedObject
 import ponticello.model.registry.NamedObjectList
 import ponticello.model.registry.ObjectList
 import ponticello.ui.dock.ToolPane
 import reaktive.value.*
+import reaktive.value.binding.map
 import reaktive.value.binding.notEqualTo
 
 class ObjectListView<O : Any>(
@@ -47,10 +49,10 @@ class ObjectListView<O : Any>(
 
     private val boxes = mutableListOf<ObjectBox<O>>()
     private val boxesCache = mutableMapOf<O, ObjectBox<O>>()
-    fun getBox(obj: O) = boxesCache.getOrPut(obj) { ObjectBox(this, obj, mode.now) }
-    private var selectedBox: ObjectBox<O>? = null
+    private val selectedBox: ReactiveVariable<ObjectBox<O>?> = reactiveVariable(null)
 
     val itemsScrollPane = ScrollPane(Pane()).styleClass("items-scroll-bar")
+
     private var itemsLayout: Pane
         get() = itemsScrollPane.content as Pane
         set(value) {
@@ -58,6 +60,7 @@ class ObjectListView<O : Any>(
             itemsScrollPane.letContentFillViewPort()
             value.children.addAll(boxes)
         }
+
     private var displayedContent: Parent? = null
 
     val actions = listActions.withContext(this)
@@ -65,6 +68,8 @@ class ObjectListView<O : Any>(
     val mode: ReactiveValue<DisplayMode> get() = displayMode
 
     val orientation get() = if (mode.now == DisplayMode.Inline) config.inlineOrientation else Orientation.VERTICAL
+
+    fun getBox(obj: O) = boxesCache.getOrPut(obj) { ObjectBox(this, obj, mode.now) }
 
     fun getBoxes(): List<ObjectBox<*>> = boxes
 
@@ -169,7 +174,7 @@ class ObjectListView<O : Any>(
     private fun registerSelectionShortcuts() {
         registerShortcuts {
             if (!config.enableSelection) return@registerShortcuts
-            val selected = selectedBox ?: return@registerShortcuts
+            val selected = selectedBox.now ?: return@registerShortcuts
             registerActions(selected.actionBar.actions())
             val selectedContent = selected.content()
             if (displayMode.now == DisplayMode.DetailsPane && selectedContent is ToolPane) {
@@ -231,7 +236,7 @@ class ObjectListView<O : Any>(
         } else {
             for (box in boxes) box.setContentDisplay(mode)
             if (mode == DisplayMode.DetailsPane) {
-                displayContent(selectedBox)
+                displayContent(selectedBox.now)
             } else {
                 setRoot(itemCellsLayout())
             }
@@ -318,10 +323,10 @@ class ObjectListView<O : Any>(
     }
 
     fun deselectAll() {
-        val selected = selectedBox
+        val selected = selectedBox.now
         if (selected != null) {
             selected.pseudoClassStateChanged(PseudoClasses.SELECTED, false)
-            selectedBox = null
+            selectedBox.now = null
             config.onDeselected(selected.obj)
         }
 
@@ -330,9 +335,9 @@ class ObjectListView<O : Any>(
 
     fun select(box: ObjectBox<O>) {
         if (!config.enableSelection) return
-        val prevSelected = selectedBox
+        val prevSelected = selectedBox.now
         if (prevSelected == box) return
-        selectedBox = box
+        selectedBox.now = box
         if (prevSelected != null) {
             prevSelected.pseudoClassStateChanged(PseudoClasses.SELECTED, false)
             config.onDeselected(prevSelected.obj)
@@ -357,16 +362,16 @@ class ObjectListView<O : Any>(
         select(box)
     }
 
-    fun selectedBox(): ObjectBox<O>? = selectedBox
+    fun selectedBox(): ReactiveValue<ObjectBox<O>?> = selectedBox
 
-    fun selectedObject(): O? = selectedBox?.obj
+    fun selectedObject(): O? = selectedBox.now?.obj
 
-    fun selectedIndex(): Int = boxes.indexOf(selectedBox)
+    fun selectedIndex(): Int = boxes.indexOf(selectedBox.now)
 
     private fun navigate(deltaIdx: Int) {
         if (!config.enableSelection) return
-        if (selectedBox != null) {
-            val idx = boxes.indexOf(selectedBox!!)
+        if (selectedBox.now != null) {
+            val idx = boxes.indexOf(selectedBox.now!!)
             val newIdx = (idx + deltaIdx).coerceIn(boxes.indices)
             select(boxes[newIdx])
         } else if (boxes.isNotEmpty()) {
@@ -377,7 +382,7 @@ class ObjectListView<O : Any>(
 
     private fun moveSelected(deltaIdx: Int) {
         if (!config.enableSelection) return
-        val selected = selectedBox ?: return
+        val selected = selectedBox.now ?: return
         val idx = boxes.indexOf(selected)
         val newIdx = idx + deltaIdx
         if (newIdx !in boxes.indices) return
@@ -386,7 +391,7 @@ class ObjectListView<O : Any>(
 
     private fun copySelected() {
         if (!config.enableSelection) return
-        val selected = selectedBox ?: return
+        val selected = selectedBox.now ?: return
         val format = config.dataFormat ?: return
         val content = mapOf(format to selected.obj)
         val clipboard = Clipboard.getSystemClipboard()
@@ -395,7 +400,7 @@ class ObjectListView<O : Any>(
 
     private fun renameSelected() {
         if (!config.enableSelection) return
-        val selected = selectedBox ?: return
+        val selected = selectedBox.now ?: return
         selected.nameControl?.startEdit()
     }
 
@@ -415,7 +420,7 @@ class ObjectListView<O : Any>(
 
     fun showSelected() {
         if (!config.enableSelection) return
-        val selected = selectedBox?.obj ?: return
+        val selected = selectedBox.now?.obj ?: return
         showContent(selected)
     }
 
@@ -443,16 +448,27 @@ class ObjectListView<O : Any>(
                 shortcut("F2")
                 executes { list -> list.renameSelected() }
             }
+            addAction("Create object") {
+                description { list -> reactiveValue("Create new ${list.source.objectType}") }
+                shortcut("Ctrl+PLUS")
+                icon(MaterialDesignP.PLUS)
+                executes { p, ev -> p.addObject(ev) }
+            }
             addAction("Delete selected") {
                 shortcut("Ctrl+DELETE")
-                applicableIf { list -> list.source is NamedObjectList<*> }
-                executes { list ->
-                    val selected = list.selectedBox?.obj ?: return@executes
-                    if (selected is NamedObject && selected.canDelete) {
+                icon(Material2MZ.REMOVE)
+                enableWhen { list ->
+                    list.selectedBox.map { box ->
                         @Suppress("UNCHECKED_CAST")
-                        val source = list.source as NamedObjectList<NamedObject>
-                        source.remove(selected)
+                        val config = list.config as ObjectListDisplayConfig<Any>
+                        box != null && config.canDelete(box.obj)
                     }
+                }
+                executes { list ->
+                    val selected = list.selectedBox.now?.obj ?: return@executes
+                    @Suppress("UNCHECKED_CAST")
+                    val source = list.source as ObjectList<Any>
+                    source.remove(selected)
                 }
             }
             addAction("Select previous") {

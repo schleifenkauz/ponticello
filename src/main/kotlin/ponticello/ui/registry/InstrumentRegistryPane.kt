@@ -28,6 +28,9 @@ import ponticello.ui.dock.ToolPaneState
 import ponticello.ui.impl.colorPicker
 import ponticello.ui.registry.ObjectListView.DisplayMode
 import reaktive.list.toReactiveList
+import reaktive.value.binding.impl.notNull
+import reaktive.value.binding.map
+import reaktive.value.now
 
 class InstrumentRegistryPane(
     private val instruments: InstrumentRegistry,
@@ -62,7 +65,7 @@ class InstrumentRegistryPane(
     override val dataFormat: DataFormat
         get() = InstrumentObject.DATA_FORMAT
 
-    public override fun createNewObject(name: String, ev: Event?): InstrumentObject? {
+    override fun createNewObject(name: String, ev: Event?): InstrumentObject? {
         when {
             canSuperColliderTalkToMe && instruments.synthDescLibContains(name) -> {
                 val reference = YesNoPrompt(
@@ -114,30 +117,24 @@ class InstrumentRegistryPane(
         }
     }
 
-    private fun createObject(option: AddObjectOption, ev: Event?) {
+    private fun createObject(option: AddObjectOption, ev: Event?): InstrumentObject? {
         when (option) {
             is AddObjectOption.NewObject -> {
-                this.createNewObject(option.name, ev)?.let { def ->
-                    registry.add(def)
-                }
+                return createNewObject(option.name, ev)
             }
 
             is AddObjectOption.ObjectFromGlobalLib -> {
                 val name = option.name
-                val def = registry.context[GlobalDefinitionLibrary.instruments].get(name) ?: return
-                if (registry.has(name)) {
-                    if (YesNoPrompt("Overwrite ${instruments.objectType} $name?").showDialog(ev) == true) {
-                        registry.overwrite(def)
-                    } else return
-                } else {
-                    registry.add(def)
+                val def = registry.context[GlobalDefinitionLibrary.instruments].get(name) ?: return null
+                return def.takeIf {
+                    !registry.has(name) || YesNoPrompt("Overwrite ${instruments.objectType} $name?").showDialog(ev) == true
                 }
-                def.sync()
             }
         }
     }
 
-    override fun getActions(box: ObjectBox<InstrumentObject>): List<ContextualizedAction> = actions.withContext(box.obj)
+    override fun extraHeaderActions(): List<ContextualizedAction> =
+        super.extraHeaderActions() + actions.withContext(this)
 
     companion object : Type(8, "Instruments") {
 
@@ -149,16 +146,21 @@ class InstrumentRegistryPane(
 
         override fun createToolPane(project: PonticelloProject): ToolPane = InstrumentRegistryPane(project.instruments)
 
-        val actions = collectActions<InstrumentObject> {
+        val actions = collectActions<InstrumentRegistryPane> {
             addAction("Sync") {
                 icon(Material2MZ.SYNC)
                 shortcuts("Ctrl+U")
-                executes { obj -> obj.sync() }
+                enableWhen { p -> p.listView.selectedBox().notNull() }
+                executes { p ->
+                    val selected = p.listView.selectedBox().now?.obj ?: return@executes
+                    selected.sync()
+                }
             }
             addAction("Save to global library") {
                 icon(MaterialDesignE.EXPORT_VARIANT)
-                applicableIf { obj -> obj is ConfigurableInstrumentObject }
-                executes { def, ev ->
+                enableWhen { p -> p.listView.selectedBox().map { box -> box?.obj is ConfigurableInstrumentObject } }
+                executes { p, ev ->
+                    val def = p.listView.selectedBox().now?.obj as? ConfigurableInstrumentObject ?: return@executes
                     val library = def.context[GlobalDefinitionLibrary.instruments]
                     library.saveToGlobalLib(def, ev)
                 }

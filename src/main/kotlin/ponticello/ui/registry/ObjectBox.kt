@@ -14,13 +14,11 @@ import javafx.scene.input.MouseEvent
 import javafx.scene.input.TransferMode
 import javafx.scene.layout.HBox
 import javafx.scene.layout.Region
-import org.kordamp.ikonli.material2.Material2AL
 import org.kordamp.ikonli.materialdesign2.MaterialDesignC
 import ponticello.model.obj.ContextualObject
 import ponticello.model.obj.RenamableObject
 import ponticello.model.obj.withName
 import ponticello.model.registry.NamedObject
-import ponticello.model.registry.ObjectList
 import ponticello.model.registry.ObjectRegistry
 import ponticello.ui.controls.NameControl
 import ponticello.ui.controls.NamePrompt
@@ -190,18 +188,6 @@ class ObjectBox<O : Any>(val parent: ObjectListView<O>, val obj: O, private var 
                         .showDialog(ev) ?: return@executes
                     val copy = obj.copy().withName(name)
                     list.add(copy, list.indexOf(obj) + 1)
-                }
-            }
-            addAction("Delete object") {
-                icon(Material2AL.DELETE)
-                shortcuts("Ctrl+DELETE")
-                applicableIf { box ->
-                    val config = box.config as ObjectListDisplayConfig<Any>
-                    config.canDelete(box.obj)
-                }
-                executes { box ->
-                    val source = box.parent.source as ObjectList<Any>
-                    source.remove(box.obj)
                 }
             }
         }

@@ -86,6 +86,8 @@ interface ObjectListDisplayConfig<O : Any> {
 
     fun createNewObject(ev: Event?): O? = null
 
+    fun createNewObject(name: String, ev: Event?): O? = null
+
     fun onSelected(obj: O) {}
 
     fun onDeselected(obj: O) {}

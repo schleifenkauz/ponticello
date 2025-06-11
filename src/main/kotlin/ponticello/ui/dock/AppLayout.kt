@@ -32,6 +32,7 @@ import ponticello.ui.misc.*
 import ponticello.ui.registry.*
 import ponticello.ui.score.NavigableScorePane
 import ponticello.ui.score.TimeCodeView
+import reaktive.value.now
 import kotlin.collections.component1
 import kotlin.collections.component2
 import kotlin.collections.set
@@ -44,16 +45,19 @@ class AppLayout(
     private val interactionConfigBar: InteractionConfigBar,
     private val timeCodeView: TimeCodeView,
 ) : BorderPane() {
-    private val sideBars = Side.entries.associateWith { _ -> ToolPaneTypeList(mutableListOf()) }
+    private val sideBars = project[UI_STATE].sideBars.mapValues { (_, types) ->
+        ToolPaneTypeList(types.map { t -> toolPaneType(t) }.toMutableList())
+    }
 
     private val leftPane = SplitPane()
     private val rightPane = SplitPane()
     private val bottomPane = SplitPane()
     private val horizontalSplitter = SplitPane(scoreView)
     private val verticalSplitter = SplitPane(horizontalSplitter)
-    private val leftBottomBar = ToolPaneActionBar(this, sideBars.getValue(BOTTOM))
-    private val leftTopBar = ToolPaneActionBar(this, sideBars.getValue(LEFT))
-    private val rightBar = ToolPaneActionBar(this, sideBars.getValue(RIGHT)) styleClass "dock-icons-bar"
+
+    private lateinit var leftBottomBar: ToolPaneActionBar
+    private lateinit var leftTopBar: ToolPaneActionBar
+    private lateinit var rightBar: ToolPaneActionBar
     private lateinit var topRightBar: ActionBar
 
     private val actions = mutableListOf<ContextualizedAction>()
@@ -85,11 +89,6 @@ class AppLayout(
         bottomPane.visibleProperty().bind(Bindings.isNotEmpty(bottomPane.items))
         bottomPane.managedProperty().bind(bottomPane.visibleProperty())
 
-        left = VBox(leftTopBar, infiniteSpace(), leftBottomBar) styleClass "dock-icons-bar"
-        right = rightBar
-        top = toolbar
-        center = verticalSplitter
-
         for (box in toolbar.children) HBox.setHgrow(box, Priority.ALWAYS)
 
         setupToolPanes()
@@ -98,6 +97,10 @@ class AppLayout(
                 restorePaneSize(side, size)
             }
         }
+        left = VBox(leftTopBar, infiniteSpace(), leftBottomBar) styleClass "dock-icons-bar"
+        right = rightBar styleClass "dock-icons-bar"
+        top = toolbar
+        center = verticalSplitter
     }
 
     fun getToolPane(title: String) = toolPanes.find { it.title == title }?.also { p -> p.setup() }
@@ -111,13 +114,12 @@ class AppLayout(
 
     private fun setupToolPanes() = context.withoutUndo {
         val uiState = project[UI_STATE]
-        val toolPaneSides = uiState.sideBars.entries.flatMap { (side, types) ->
-            types.map { t -> toolPaneType(t) to side }
-        }.toMap(mutableMapOf())
+        val toolPaneSides = sideBars.entries.flatMap { (side, types) -> types.map { t -> t to side } }.toMap()
         for ((_, list) in sideBars) list.initialize(context)
         for (type in allToolPaneTypes) {
-            val side = toolPaneSides[type] ?: type.defaultSide
-            sideBars.getValue(side).add(type)
+            if (type !in toolPaneSides) {
+                sideBars.getValue(type.defaultSide).add(type)
+            }
             val toolPane = type.createToolPane(project)
             toolPanes.add(toolPane)
             val state = uiState.toolPaneStates.find { s -> s.uid == type.uid } ?: toolPane.defaultState()
@@ -125,6 +127,10 @@ class AppLayout(
             val action = ToolPaneAction(toolPane)
             actions.add(action)
         }
+        leftBottomBar = ToolPaneActionBar(this, sideBars.getValue(BOTTOM))
+        leftTopBar = ToolPaneActionBar(this, sideBars.getValue(LEFT))
+        rightBar = ToolPaneActionBar(this, sideBars.getValue(RIGHT))
+        topRightBar.addActions(sideBars.getValue(TOP).map { p -> ToolPaneAction(getToolPane(p)!!) })
     }
 
     fun showDocked(toolPane: ToolPane) {
@@ -163,13 +169,20 @@ class AppLayout(
             val pos1 = sidePane.dividerPositions[sidePane.items.size - 2]
             sidePane.setDividerPosition(sidePane.items.size - 1, (pos1 + 1) / 2)
         }
-        for (p in sidePane.items) {
+        for (p in sidePane.items.toList()) {
             p as ToolPane
             if (p == toolPane) continue
             if (p.isExclusive || toolPane.isExclusive) {
                 p.setShowing(false)
             }
         }
+    }
+
+    fun setExclusive(toolPane: ToolPane) {
+        if (!toolPane.isShowing.now) return
+        val side = getSide(toolPane)
+        val pane = getSidePane(side)
+        pane.items.setAll(toolPane)
     }
 
     private fun getSide(toolPane: ToolPane): Side {
@@ -288,7 +301,6 @@ class AppLayout(
         }
         state.sideBars = sideBars.mapValues { (_, types) -> types.map { t -> t.uid } }
     }
-
     fun actions(): List<ContextualizedAction> = actions
 
     companion object : PublicProperty<AppLayout> by publicProperty("AppLayout") {

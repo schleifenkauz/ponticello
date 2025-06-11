@@ -138,9 +138,23 @@ abstract class ToolPane : VBox() {
                 setMode(mode)
             })
         }
+        val exclusiveCheck = FontIcon(Material2AL.CHECK) styleClass "check-icon"
+        exclusiveCheck.isVisible = isExclusive
+        val exclusiveItem = menuItem("Exclusive", exclusiveCheck) {
+            setExclusive(!isExclusive)
+        }
+        menu.items.add(exclusiveItem)
         val ownerWindow = layout.context[primaryStage]
         val anchor = ev.popupAnchor()
         menu.show(ownerWindow, anchor.x, anchor.y)
+    }
+
+    private fun setExclusive(exclusive: Boolean) {
+        isExclusive = exclusive
+        if (isExclusive) {
+            if (currentMode() != Docked) setDocked()
+            layout.setExclusive(this)
+        }
     }
 
     fun initialize(layout: AppLayout, state: ToolPaneState) {
@@ -216,6 +230,8 @@ abstract class ToolPane : VBox() {
         abstract val icon: Ikon?
 
         abstract fun createToolPane(project: PonticelloProject): ToolPane
+
+        override fun toString(): String = "ToolPane [$title]"
 
         companion object {
             val DATA_FORMAT = DataFormat("ponticello/tool-pane-type")
