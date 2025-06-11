@@ -15,6 +15,7 @@ import ponticello.model.project.LIVE_TASKS
 import ponticello.model.project.PonticelloProject
 import ponticello.model.project.get
 import ponticello.sc.editor.CodeBlockEditor
+import ponticello.ui.dock.SearchableToolPaneState
 import ponticello.ui.dock.Side
 import ponticello.ui.dock.ToolPane
 import ponticello.ui.dock.ToolPaneState
@@ -31,7 +32,7 @@ class LiveTaskRegistryPane(registry: LiveTaskRegistry) : LiveObjectRegistryPane<
     override val inlineOrientation: Orientation
         get() = Orientation.HORIZONTAL
 
-    override fun defaultState(): ToolPaneState = ToolPaneState.docked
+    override fun defaultState(): ToolPaneState = SearchableToolPaneState.docked
 
     override val dataFormat: DataFormat
         get() = LiveTaskObject.DATA_FORMAT

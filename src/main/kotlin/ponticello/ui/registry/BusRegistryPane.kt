@@ -27,6 +27,7 @@ import ponticello.sc.NumericalControlSpec
 import ponticello.sc.Rate
 import ponticello.sc.client.SuperColliderClient
 import ponticello.ui.controls.ControlSpecPrompt
+import ponticello.ui.dock.SearchableToolPaneState
 import ponticello.ui.dock.Side
 import ponticello.ui.dock.ToolPane
 import ponticello.ui.dock.ToolPaneState
@@ -43,7 +44,7 @@ class BusRegistryPane(busses: BusRegistry) : ObjectRegistryPane<BusObject>(busse
     override val type: Type
         get() = BusRegistryPane
 
-    override fun defaultState(): ToolPaneState = ToolPaneState.docked
+    override fun defaultState(): ToolPaneState = SearchableToolPaneState.docked
 
     override val dataFormat: DataFormat
         get() = BusObject.DATA_FORMAT

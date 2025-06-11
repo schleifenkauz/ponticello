@@ -24,4 +24,10 @@ class RegularToolPaneState : ToolPaneState()
 @Serializable
 class SearchableToolPaneState : ToolPaneState() {
     var displayMode: ObjectListView.DisplayMode? = null
+
+    companion object {
+        val docked get() = SearchableToolPaneState().apply { mode = ToolPaneMode.Docked }
+        val window get() = SearchableToolPaneState().apply { mode = ToolPaneMode.Window }
+        val floating get() = SearchableToolPaneState().apply { mode = ToolPaneMode.Floating }
+    }
 }

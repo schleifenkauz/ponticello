@@ -17,6 +17,7 @@ import ponticello.model.obj.ScriptRegistry
 import ponticello.model.project.PonticelloProject
 import ponticello.model.project.scripts
 import ponticello.sc.client.SuperColliderClient
+import ponticello.ui.dock.SearchableToolPaneState
 import ponticello.ui.dock.Side
 import ponticello.ui.dock.ToolPane
 import ponticello.ui.dock.ToolPaneState
@@ -32,7 +33,7 @@ class ScriptRegistryPane(registry: ScriptRegistry) : ObjectRegistryPane<ScriptOb
     override val supportedModes: Set<DisplayMode>
         get() = setOf(DisplayMode.SubWindow, DisplayMode.DetailsPane)
 
-    override fun defaultState(): ToolPaneState = ToolPaneState.docked
+    override fun defaultState(): ToolPaneState = SearchableToolPaneState.docked
 
     override fun createNewObject(name: String, ev: Event?): ScriptObject? {
         val options = SCRIPT_TYPE_OPTIONS

@@ -33,6 +33,8 @@ abstract class SearchableToolPane<O : NamedObject>(
 
     override fun doSetup() {
         listView = ObjectListView(list, this, filter = { obj -> filter(obj) && matchesSearch(obj) })
+        val initialMode = (initialState as? SearchableToolPaneState)?.displayMode
+        if (initialMode != null) listView.setMode(initialMode)
         setupSearchField()
     }
 

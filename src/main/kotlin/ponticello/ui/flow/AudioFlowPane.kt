@@ -18,10 +18,7 @@ import ponticello.model.flow.AudioFlows
 import ponticello.model.project.PonticelloProject
 import ponticello.model.project.flows
 import ponticello.sc.Identifier
-import ponticello.ui.dock.SearchableToolPane
-import ponticello.ui.dock.Side
-import ponticello.ui.dock.ToolPane
-import ponticello.ui.dock.ToolPaneState
+import ponticello.ui.dock.*
 import ponticello.ui.impl.colorPicker
 import ponticello.ui.registry.ObjectListView.DisplayMode
 import reaktive.value.binding.`if`
@@ -42,7 +39,7 @@ class AudioFlowPane(flows: AudioFlows) : SearchableToolPane<AudioFlowGroup>(flow
         styleClass.add("flow-pane")
     }
 
-    override fun defaultState(): ToolPaneState = ToolPaneState.docked
+    override fun defaultState(): ToolPaneState = SearchableToolPaneState.docked
 
     override fun afterSetup() {
         super.afterSetup()

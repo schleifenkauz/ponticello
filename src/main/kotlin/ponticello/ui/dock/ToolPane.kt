@@ -157,7 +157,7 @@ abstract class ToolPane : VBox() {
         }
     }
 
-    fun initialize(layout: AppLayout, state: ToolPaneState) {
+    open fun initialize(layout: AppLayout, state: ToolPaneState) {
         initialState = state
         this.layout = layout
         if (state.mode == Window || state.mode == Floating) {
