@@ -11,6 +11,7 @@ import javafx.application.Platform
 import javafx.beans.InvalidationListener
 import javafx.scene.Node
 import javafx.scene.layout.BorderPane
+import javafx.scene.layout.Priority
 import javafx.scene.layout.StackPane
 import javafx.scene.paint.Color
 import javafx.stage.Screen
@@ -35,7 +36,7 @@ import ponticello.ui.score.ScoreObjectView
 import reaktive.Observer
 import reaktive.value.binding.map
 
-class ScoreObjectDetailPane(private val context: Context): ToolPane() {
+class ScoreObjectDetailPane(private val context: Context) : ToolPane() {
     private val detached = mutableMapOf<ScoreObject, SubWindow>()
     private var currentlyShown: SubWindow? = null
     private var attachedToView: ScoreObjectView? = null
@@ -47,6 +48,7 @@ class ScoreObjectDetailPane(private val context: Context): ToolPane() {
         set(value) {
             children.replace(field, value)
             field = value
+            setVgrow(value, Priority.ALWAYS)
         }
 
     init {
@@ -122,7 +124,6 @@ class ScoreObjectDetailPane(private val context: Context): ToolPane() {
         addActions(view, pane)
         content = pane
         currentlyShown = window
-        setShowing(true)
     }
 
     private fun updateBoundsOnMove(view: ScoreObjectView, window: SubWindow) {
@@ -195,12 +196,8 @@ class ScoreObjectDetailPane(private val context: Context): ToolPane() {
 
     private fun windowTitle(view: ScoreObjectView) = view.obj.name.map { name -> "Object $name" }
 
-    companion object : PublicProperty<ScoreObjectDetailPane> by publicProperty("DetailPaneManager"), Type {
-        override val uid: Int
-            get() = 5
-
-        override val title: String
-            get() = "Score Object Details"
+    companion object : PublicProperty<ScoreObjectDetailPane> by publicProperty("DetailPaneManager"),
+        Type(5, "Score Object Details") {
 
         override val icon: Ikon
             get() = MaterialDesignT.TUNE_VARIANT

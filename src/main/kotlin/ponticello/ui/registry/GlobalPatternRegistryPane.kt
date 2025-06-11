@@ -34,9 +34,6 @@ class GlobalPatternRegistryPane(
     override val supportedModes: Set<ObjectListView.DisplayMode>
         get() = ObjectListView.DisplayMode.all
 
-    override val enableReordering: Boolean
-        get() = true
-
     private val plotPaneWindows = mutableMapOf<GlobalPatternObject, SubWindow>()
 
     override fun defaultState(): ToolPaneState = ToolPaneState.docked
@@ -62,7 +59,8 @@ class GlobalPatternRegistryPane(
     override fun getActions(box: ObjectBox<GlobalPatternObject>): List<ContextualizedAction> =
         actions.withContext(box)
 
-    override fun dataFormat(obj: GlobalPatternObject): DataFormat = GlobalPatternObject.DATA_FORMAT
+    override val dataFormat: DataFormat
+        get() = GlobalPatternObject.DATA_FORMAT
 
     fun showPlotPane(obj: GlobalPatternObject) {
         val window = plotPaneWindows.getOrPut(obj) {
@@ -73,11 +71,7 @@ class GlobalPatternRegistryPane(
         window.showOrBringToFront()
     }
 
-    companion object : Type {
-        override val uid: Int
-            get() = 9
-        override val title: String
-            get() = "Patterns"
+    companion object : Type(9, "Patterns") {
         override val icon: Ikon
             get() = MaterialDesignL.LARAVEL
 

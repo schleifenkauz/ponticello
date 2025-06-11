@@ -54,7 +54,8 @@
 }
 
 .object-box:hover:selected {
-    -fx-background-color: rgba(60, 0, 0, 0.5) !important
+    -fx-background-color: rgba(60, 0, 0, 0.5) !important;
+    -fx-border-color: green !important;
 }
 
 .command-history-label:focused {

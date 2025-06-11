@@ -1,10 +1,9 @@
 package ponticello.model.registry
 
 import fxutils.undo.AbstractEdit
-import ponticello.model.obj.ContextualObject
 
-sealed class ListEdit<O : ContextualObject>(protected val registry: ObjectList<O>) : AbstractEdit() {
-    class AddObject<O : ContextualObject>(
+sealed class ListEdit<O>(protected val registry: ObjectList<O>) : AbstractEdit() {
+    class AddObject<O>(
         registry: ObjectList<O>,
         private val obj: O,
         private val idx: Int
@@ -21,7 +20,7 @@ sealed class ListEdit<O : ContextualObject>(protected val registry: ObjectList<O
         }
     }
 
-    class RemoveObject<O : ContextualObject>(
+    class RemoveObject<O>(
         registry: ObjectList<O>,
         private val obj: O,
         private val idx: Int
@@ -38,7 +37,7 @@ sealed class ListEdit<O : ContextualObject>(protected val registry: ObjectList<O
         }
     }
 
-    class MoveObject<O : ContextualObject>(
+    class MoveObject<O>(
         registry: ObjectList<O>,
         private val obj: O,
         private val fromIdx: Int,

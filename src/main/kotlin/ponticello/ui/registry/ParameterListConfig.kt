@@ -26,9 +26,6 @@ import reaktive.value.now
 open class ParameterListConfig : ObjectListDisplayConfig<ParameterDefObject> {
     private val observers = mutableMapOf<ParameterDefObject, Observer>()
 
-    override val enableReordering: Boolean
-        get() = true
-
     override fun getItemContent(obj: ParameterDefObject): List<Node> {
         val specControl = ChoiceEditorControl(obj.specEditor, createBundle())
         specControl.canChoose = false

@@ -33,7 +33,8 @@ class LiveTaskRegistryPane(registry: LiveTaskRegistry) : LiveObjectRegistryPane<
 
     override fun defaultState(): ToolPaneState = ToolPaneState.docked
 
-    override fun dataFormat(obj: LiveTaskObject): DataFormat = LiveTaskObject.DATA_FORMAT
+    override val dataFormat: DataFormat
+        get() = LiveTaskObject.DATA_FORMAT
 
     override fun createNewObject(name: String, ev: Event?): LiveTaskObject = LiveTaskObject(
         EditorRoot(CodeBlockEditor().defaultState())
@@ -46,12 +47,7 @@ class LiveTaskRegistryPane(registry: LiveTaskRegistry) : LiveObjectRegistryPane<
         return CodePane(obj.code, actions, ownWindow = mode == DisplayMode.SubWindow)
     }
 
-    companion object: Type {
-        override val uid: Int
-            get() = 10
-        override val title: String
-            get() = "LiveTasks"
-
+    companion object: Type(10, "LiveTasks") {
         override val icon: Ikon
             get() = MaterialDesignP.PROGRESS_QUESTION //TODO
 

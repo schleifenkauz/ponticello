@@ -10,18 +10,16 @@ import javafx.geometry.Dimension2D
 import javafx.geometry.Orientation
 import javafx.scene.Node
 import javafx.scene.Parent
+import javafx.scene.control.Control
 import javafx.scene.control.Label
 import javafx.scene.control.ScrollPane
 import javafx.scene.control.Tooltip
-import javafx.scene.input.Clipboard
-import javafx.scene.input.KeyCode
-import javafx.scene.input.KeyEvent
+import javafx.scene.input.*
 import javafx.scene.layout.*
 import javafx.stage.Window
 import kotlinx.serialization.Serializable
 import org.kordamp.ikonli.materialdesign2.MaterialDesignD
 import org.kordamp.ikonli.materialdesign2.MaterialDesignV
-import ponticello.model.obj.ContextualObject
 import ponticello.model.registry.NamedObject
 import ponticello.model.registry.NamedObjectList
 import ponticello.model.registry.ObjectList
@@ -29,17 +27,19 @@ import ponticello.ui.dock.ToolPane
 import reaktive.value.*
 import reaktive.value.binding.notEqualTo
 
-class ObjectListView<O : ContextualObject>(
+class ObjectListView<O : Any>(
     val source: ObjectList<O>,
     val config: ObjectListDisplayConfig<O>,
     private val displayMode: ReactiveVariable<DisplayMode>,
     private var filter: (O) -> Boolean = { true },
-) : BorderPane(), ObjectList.Listener<O> {
+) : Control(), ObjectList.Listener<O> {
     constructor(
         source: ObjectList<O>, config: ObjectListDisplayConfig<O>,
         displayMode: DisplayMode = config.supportedModes.first(),
         filter: (O) -> Boolean = { true },
     ) : this(source, config, reactiveVariable(displayMode), filter)
+
+    private val dropPreviewNode = Region() styleClass "drop-preview"
 
     private val storedWindowSizes = mutableMapOf<DisplayMode, Dimension2D>()
 
@@ -47,7 +47,7 @@ class ObjectListView<O : ContextualObject>(
 
     private val boxes = mutableListOf<ObjectBox<O>>()
     private val boxesCache = mutableMapOf<O, ObjectBox<O>>()
-    fun getBox(obj: O) = boxesCache.getOrPut(obj) { ObjectBox(this, obj) }
+    fun getBox(obj: O) = boxesCache.getOrPut(obj) { ObjectBox(this, obj, mode.now) }
     private var selectedBox: ObjectBox<O>? = null
 
     val itemsScrollPane = ScrollPane(Pane()).styleClass("items-scroll-bar")
@@ -69,7 +69,7 @@ class ObjectListView<O : ContextualObject>(
     fun getBoxes(): List<ObjectBox<*>> = boxes
 
     init {
-        styleClass("object-list")
+        styleClass(*config.listStyle)
         source.addListener(this, initialize = false)
         for (obj in source) {
             if (!filter(obj)) continue
@@ -77,7 +77,101 @@ class ObjectListView<O : ContextualObject>(
             boxes.add(box)
         }
         setMode(displayMode.now)
+        registerSelectionShortcuts()
+        setupDropArea()
+        focusWithinProperty().addListener { _, _, focusWithin ->
+            if (!focusWithin) {
+                deselectAll()
+            }
+        }
+    }
+
+    private fun setupDropArea() {
+        itemsScrollPane.addEventHandler(DragEvent.ANY) { ev ->
+            when (ev.eventType) {
+                DragEvent.DRAG_ENTERED -> {
+                    val dragged = ev.gestureSource
+                    if (dragged is ObjectBox<*>) {
+                        dropPreviewNode.setPrefSize(dragged.width, dragged.height)
+                    } else {
+                        dropPreviewNode.setPrefSize(Region.USE_COMPUTED_SIZE, Region.USE_COMPUTED_SIZE)
+                    }
+                }
+
+                DragEvent.DRAG_OVER -> {
+                    val acceptedTransferModes = config.acceptedTransferModes(ev.dragboard)
+                    if (acceptedTransferModes.isNotEmpty()) {
+                        ev.acceptTransferModes(*acceptedTransferModes)
+                        ev.consume()
+                        val idx = getBoxIndexFromY(ev.screenY, boxes)
+                        val prevPosition = itemsLayout.children.indexOf(dropPreviewNode)
+                        if (idx != prevPosition) {
+                            if (prevPosition != -1) {
+                                itemsLayout.children.removeAt(prevPosition)
+                            }
+                            itemsLayout.children.add(idx, dropPreviewNode)
+                        }
+                    }
+                }
+
+                DragEvent.DRAG_EXITED -> {
+                    ev.consume()
+                    itemsLayout.children.remove(dropPreviewNode)
+                }
+
+                DragEvent.DRAG_DROPPED -> {
+                    ev.consume()
+                    val obj = config.getDroppedObject(ev) ?: getObjectFromSource(ev.dragboard)
+                    if (obj != null) {
+                        val idx = getBoxIndexFromY(ev.screenY, boxes.filter { b -> b.obj != obj })
+                        if (obj in source) {
+                            source.move(obj, idx)
+                            if (config.hideWhileDragging) {
+                                val box = getBox(obj)
+                                box.isVisible = true
+                                box.isManaged = true
+                            }
+                        } else {
+                            config.dropObject(obj, idx, source)
+                            val gestureSource = ev.gestureSource
+                            if (ev.transferMode == TransferMode.MOVE && gestureSource is ObjectBox<*>) {
+                                @Suppress("UNCHECKED_CAST")
+                                val source = gestureSource.parent.source as ObjectList<O>
+                                source.remove(obj)
+                            }
+                        }
+                    }
+                    ev.isDropCompleted = true
+                }
+            }
+        }
+    }
+
+    private fun getObjectFromSource(dragboard: Dragboard): O? {
+        if (!dragboard.hasContent(config.dataFormat)) return null
+        if (source !is NamedObjectList) return null
+        val name = dragboard.getContent(config.dataFormat) as? String ?: return null
+        return source.get(name)
+    }
+
+    private fun getBoxIndexFromY(screenY: Double, boxes: List<ObjectBox<O>>): Int {
+        val idx = boxes
+            .map { it.localToScreen(it.boundsInLocal).middleY }
+            .binarySearch(screenY)
+        return if (idx < 0) -idx - 1 else idx
+    }
+
+    fun startDrag(obj: O) {
+        if (config.hideWhileDragging) {
+            val box = getBox(obj)
+            box.isVisible = false
+            box.isManaged = false
+        }
+    }
+
+    private fun registerSelectionShortcuts() {
         registerShortcuts {
+            if (!config.enableSelection) return@registerShortcuts
             val selected = selectedBox ?: return@registerShortcuts
             registerActions(selected.actionBar.actions())
             val selectedContent = selected.content()
@@ -138,12 +232,11 @@ class ObjectListView<O : ContextualObject>(
                 else emptyDisplay()
             setRoot(root)
         } else {
-            if (mode != DisplayMode.DetailsPane) {
-                setRoot(itemCellsLayout())
-            }
             for (box in boxes) box.setContentDisplay(mode)
             if (mode == DisplayMode.DetailsPane) {
                 displayContent(selectedBox)
+            } else {
+                setRoot(itemCellsLayout())
             }
         }
     }
@@ -163,10 +256,6 @@ class ObjectListView<O : ContextualObject>(
         }
     }
 
-    private fun setRoot(root: Node) {
-        center = root
-    }
-
     private fun autoResize() {
 //        if (mode.now != DisplayMode.DetailsPane && autoResizeScene && scene?.window != null) {
 //            scene.window.sizeToScene()
@@ -182,7 +271,9 @@ class ObjectListView<O : ContextualObject>(
         boxes.add(j, box)
         itemsLayout.children.add(j, box)
         updateRoot(mode.now)
-        select(obj)
+        if (config.enableSelection && config.autoSelectNewObjects) {
+            select(obj)
+        }
         autoResize()
     }
 
@@ -225,11 +316,18 @@ class ObjectListView<O : ContextualObject>(
         boxes.clear()
         source.filter(filter).mapTo(boxes) { obj -> getBox(obj) }
         itemsLayout.children.setAll(boxes)
-        if (boxes.isNotEmpty()) select(0)
+        if (boxes.isNotEmpty() && config.enableSelection) select(0)
         autoResize()
     }
 
+    fun deselectAll() {
+        selectedBox?.pseudoClassStateChanged(PseudoClasses.SELECTED, false)
+        selectedBox = null
+        setRoot(itemCellsLayout())
+    }
+
     fun select(box: ObjectBox<O>) {
+        if (!config.enableSelection) return
         if (selectedBox == box) return
         selectedBox?.pseudoClassStateChanged(PseudoClasses.SELECTED, false)
         selectedBox = box
@@ -241,11 +339,13 @@ class ObjectListView<O : ContextualObject>(
     }
 
     fun select(idx: Int) {
+        if (!config.enableSelection) return
         if (idx !in boxes.indices) return
         select(boxes[idx])
     }
 
     fun select(obj: O) {
+        if (!config.enableSelection) return
         val box = boxes.find { b -> b.obj == obj } ?: error("No box for $obj")
         select(box)
     }
@@ -257,6 +357,7 @@ class ObjectListView<O : ContextualObject>(
     fun selectedIndex(): Int = boxes.indexOf(selectedBox)
 
     private fun navigate(deltaIdx: Int) {
+        if (!config.enableSelection) return
         if (selectedBox != null) {
             val idx = boxes.indexOf(selectedBox!!)
             val newIdx = (idx + deltaIdx).coerceIn(boxes.indices)
@@ -268,6 +369,7 @@ class ObjectListView<O : ContextualObject>(
     }
 
     private fun moveSelected(deltaIdx: Int) {
+        if (!config.enableSelection) return
         val selected = selectedBox ?: return
         val idx = boxes.indexOf(selected)
         val newIdx = idx + deltaIdx
@@ -276,14 +378,16 @@ class ObjectListView<O : ContextualObject>(
     }
 
     private fun copySelected() {
+        if (!config.enableSelection) return
         val selected = selectedBox ?: return
-        val format = config.dataFormat(selected.obj) ?: return
+        val format = config.dataFormat ?: return
         val content = mapOf(format to selected.obj)
         val clipboard = Clipboard.getSystemClipboard()
         clipboard.setContent(content)
     }
 
     private fun renameSelected() {
+        if (!config.enableSelection) return
         val selected = selectedBox ?: return
         selected.nameControl?.startEdit()
     }
@@ -303,6 +407,7 @@ class ObjectListView<O : ContextualObject>(
     }
 
     fun showSelected() {
+        if (!config.enableSelection) return
         val selected = selectedBox?.obj ?: return
         showContent(selected)
     }
@@ -322,7 +427,7 @@ class ObjectListView<O : ContextualObject>(
     }
 
     companion object {
-        val listActions = collectActions<ObjectListView<*>> {
+        private val listActions = collectActions<ObjectListView<*>> {
             addAction("Add object") {
                 shortcut("Ctrl+PLUS")
                 executes { list -> list.addObject() }
@@ -369,7 +474,6 @@ class ObjectListView<O : ContextualObject>(
             }
             addAction("Swap with previous") {
                 shortcuts("Ctrl+UP", "Ctrl+LEFT")
-                applicableIf { list -> list.config.enableReordering }
                 executes { list, ev ->
                     if (ev !is KeyEvent) return@executes
                     if (ev.code == KeyCode.UP && list.orientation == Orientation.VERTICAL) {
@@ -382,7 +486,6 @@ class ObjectListView<O : ContextualObject>(
             }
             addAction("Swap with next") {
                 shortcuts("Ctrl+DOWN", "Ctrl+RIGHT")
-                applicableIf { list -> list.config.enableReordering }
                 executes { list, ev ->
                     if (ev !is KeyEvent) return@executes
                     if (ev.code == KeyCode.DOWN && list.orientation == Orientation.VERTICAL) {

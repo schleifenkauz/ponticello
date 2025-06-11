@@ -3,18 +3,20 @@ package ponticello.ui.score
 import fxutils.actions.ContextualizedAction
 import fxutils.actions.collectActions
 import fxutils.actions.isShiftDown
-import fxutils.setupDropArea
 import fxutils.styleClass
 import javafx.geometry.Point2D
 import javafx.scene.Node
 import javafx.scene.input.DataFormat
 import javafx.scene.input.DragEvent
 import javafx.scene.input.Dragboard
+import javafx.scene.input.TransferMode
+import javafx.scene.input.TransferMode.COPY_OR_MOVE
 import org.kordamp.ikonli.codicons.Codicons
 import org.kordamp.ikonli.material2.Material2MZ
 import ponticello.impl.json
 import ponticello.model.Settings
 import ponticello.model.obj.ParameterizedObject
+import ponticello.model.registry.ObjectList
 import ponticello.model.score.ParameterControlList
 import ponticello.model.score.ParameterControlList.NamedParameterControl
 import ponticello.model.score.controls.ParameterControl
@@ -37,6 +39,9 @@ class ParameterControlsPane(
     override val title: String
         get() = "Parameter controls"
 
+    override val supportedModes: Set<DisplayMode>
+        get() = setOf(DisplayMode.Inline)
+
     init {
         styleClass("parameter-controls")
         setup()
@@ -45,27 +50,32 @@ class ParameterControlsPane(
     override fun afterSetup() {
         super.afterSetup()
         obj.controls.addListener(this)
-        listView.itemsScrollPane.setupDropArea(::canDrop, ::drop)
     }
 
-    private fun canDrop(db: Dragboard): Boolean = db.hasContent(NamedParameterControl.DATA_FORMAT)
+    override fun acceptedTransferModes(dragboard: Dragboard): Array<TransferMode> =
+        if (dragboard.hasContent(dataFormat)) COPY_OR_MOVE
+        else emptyArray()
 
-    private fun drop(ev: DragEvent) {
-        val db = ev.dragboard
-        when {
-            db.hasContent(NamedParameterControl.DATA_FORMAT) -> {
-                val jsonString = db.getContent(NamedParameterControl.DATA_FORMAT) as String
-                val namedControl = json.decodeFromString(NamedParameterControl.serializer(), jsonString)
-                obj.controls.duplicateControl(namedControl)
-            }
+    override fun getDroppedObject(ev: DragEvent): NamedParameterControl? = when {
+        ev.dragboard.hasContent(dataFormat) ->
+            ev.dragboard.getContent(dataFormat) as NamedParameterControl
+        else -> null
+    }
+
+    override fun dropObject(obj: NamedParameterControl, idx: Int, list: ObjectList<NamedParameterControl>) {
+        if (list is ParameterControlList) {
+            list.duplicateControl(obj, idx)
+        } else {
+            super.dropObject(obj, idx, list)
         }
     }
 
-    override val enableReordering: Boolean
-        get() = true
+    override val dataFormat: DataFormat
+        get() = NamedParameterControl.DATA_FORMAT
 
-    override val supportedModes: Set<DisplayMode>
-        get() = setOf(DisplayMode.Inline)
+    override fun configureDragboard(obj: NamedParameterControl, dragboard: Dragboard) {
+        dragboard.setContent(mapOf(NamedParameterControl.DATA_FORMAT to obj))
+    }
 
     override fun reassignedControl(
         parameter: NamedParameterControl,
@@ -88,18 +98,6 @@ class ParameterControlsPane(
     }
 
     override val addSpaceBeforeActionBar: Boolean get() = false
-
-    override fun dataFormat(obj: NamedParameterControl): DataFormat = NamedParameterControl.DATA_FORMAT
-
-    override fun configureDragboard(obj: NamedParameterControl, dragboard: Dragboard) {
-        val copy = obj.copy()
-        if (copy.customSpec() == null) {
-            val defaultSpec = obj.parentObject.def.getSpec(copy.name.now)?.now
-            copy.setCustomSpec(defaultSpec)
-        }
-        val jsonString = json.encodeToString(NamedParameterControl.serializer(), copy)
-        dragboard.setContent(mapOf(NamedParameterControl.DATA_FORMAT to jsonString))
-    }
 
     override fun getActions(box: ObjectBox<NamedParameterControl>): List<ContextualizedAction> =
         actions.withContext(box)

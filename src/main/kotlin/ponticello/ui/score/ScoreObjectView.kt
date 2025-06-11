@@ -222,7 +222,9 @@ abstract class ScoreObjectView(
         addEventHandler(MouseEvent.MOUSE_CLICKED) { ev ->
             when {
                 ev.button == MouseButton.SECONDARY && ev.modifiers.isEmpty() -> {
-                    context[ScoreObjectDetailPane].showDetailPane(this)
+                    val toolPane = context[ScoreObjectDetailPane]
+                    toolPane.showDetailPane(this)
+                    toolPane.setShowing(true)
                 }
 
                 ev.button == MouseButton.SECONDARY && ev.modifiers == setOf(Shift) -> {

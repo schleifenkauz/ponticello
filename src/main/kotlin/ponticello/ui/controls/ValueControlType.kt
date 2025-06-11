@@ -77,7 +77,6 @@ data object ValueControlType : ControlType<ValueControl>() {
             spec = namedControl.spec.now as? NumericalControlSpec ?: return@setOnDragDetected
             transformation = spec.mapOnto(DRAG_RANGE, -DRAG_RANGE)
             valueBefore = control.value.now
-            println("Drag detected")
             dragStartY = ev.screenY
             valueLabel.startFullDrag()
             ev.consume()

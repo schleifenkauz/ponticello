@@ -3,12 +3,15 @@ package ponticello.ui.registry
 import bundles.PublicProperty
 import bundles.publicProperty
 import bundles.set
-import fxutils.*
 import fxutils.actions.ContextualizedAction
 import fxutils.actions.collectActions
 import fxutils.controls.IntSpinner
+import fxutils.hasFile
+import fxutils.label
 import fxutils.prompt.YesNoPrompt
 import fxutils.prompt.compoundPrompt
+import fxutils.registerShortcuts
+import fxutils.styleClass
 import fxutils.undo.UndoManager
 import hextant.fx.HextantTextField
 import javafx.event.Event
@@ -16,6 +19,9 @@ import javafx.scene.Node
 import javafx.scene.control.Label
 import javafx.scene.control.TextField
 import javafx.scene.input.DataFormat
+import javafx.scene.input.DragEvent
+import javafx.scene.input.Dragboard
+import javafx.scene.input.TransferMode
 import org.kordamp.ikonli.Ikon
 import org.kordamp.ikonli.evaicons.Evaicons
 import org.kordamp.ikonli.material2.Material2AL
@@ -37,6 +43,7 @@ import ponticello.ui.actions.undoable
 import ponticello.ui.dock.Side
 import ponticello.ui.dock.ToolPane
 import ponticello.ui.dock.ToolPaneState
+import ponticello.ui.impl.getFrom
 import ponticello.ui.launcher.PonticelloFiles
 import ponticello.ui.score.ScoreObjectDuplicator
 import reaktive.value.now
@@ -51,13 +58,28 @@ class BufferRegistryPane(private val buffers: BufferRegistry) : ObjectRegistryPa
 
     override fun afterSetup() {
         super.afterSetup()
-        listView.itemsScrollPane.setupDropArea({ db -> db.hasFiles("wav") }, { ev ->
-            for (file in ev.dragboard.files) {
-                buffers.getOrAdd(file)
-            }
-        })
         buffers.context[BufferRegistryPane] = this
     }
+
+    override fun acceptedTransferModes(dragboard: Dragboard): Array<TransferMode> {
+        if (dragboard.hasContent(dataFormat)) return arrayOf(TransferMode.MOVE)
+        if (dragboard.hasFile("wav") && !buffers.has(dragboard.files[0].nameWithoutExtension)) {
+            return if (buffers.copyAudioFiles.now) arrayOf(TransferMode.COPY)
+            else arrayOf(TransferMode.MOVE)
+        }
+        return arrayOf()
+    }
+
+    override fun getDroppedObject(ev: DragEvent): BufferObject? = when {
+        ev.dragboard.hasContent(dataFormat) -> ev.dragboard.getFrom(buffers, dataFormat)
+        ev.dragboard.hasFile("wav") -> {
+            val file = ev.dragboard.files[0]
+            val name = file.nameWithoutExtension
+            SampleObject.create(buffers.context.project, name, file)
+        }
+        else -> null
+    }
+
 
     override fun addObject(ev: Event?) {
         val obj = loadNewSample { file -> Identifier.truncate(file.nameWithoutExtension) } ?: return
@@ -120,14 +142,10 @@ class BufferRegistryPane(private val buffers: BufferRegistry) : ObjectRegistryPa
         is SampleObject -> sampleActions.withContext(box.obj)
     }
 
-    override fun dataFormat(obj: BufferObject): DataFormat = BufferObject.DATA_FORMAT
+    override val dataFormat: DataFormat
+        get() = BufferObject.DATA_FORMAT
 
-    companion object : PublicProperty<BufferRegistryPane> by publicProperty("BufferRegistryPane"), Type {
-        override val uid: Int
-            get() = 7
-        override val title: String
-            get() = "Buffers"
-
+    companion object : PublicProperty<BufferRegistryPane> by publicProperty("BufferRegistryPane"), Type(7, "Buffers") {
         override val icon: Ikon
             get() = Material2AL.LIBRARY_MUSIC
 

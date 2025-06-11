@@ -1,3 +1,5 @@
+@file:Suppress("UNCHECKED_CAST")
+
 package ponticello.ui.registry
 
 import fxutils.SubWindow
@@ -7,16 +9,27 @@ import javafx.geometry.Orientation
 import javafx.scene.Node
 import javafx.scene.Parent
 import javafx.scene.input.DataFormat
+import javafx.scene.input.DragEvent
 import javafx.scene.input.Dragboard
+import javafx.scene.input.TransferMode
+import javafx.scene.layout.HBox
+import javafx.scene.layout.VBox
 import org.kordamp.ikonli.Ikon
 import org.kordamp.ikonli.materialdesign2.MaterialDesignE
-import ponticello.model.obj.ContextualObject
+import ponticello.model.registry.NamedObject
 import ponticello.model.registry.NamedObject.Companion.NO_NAME
+import ponticello.model.registry.ObjectList
 import reaktive.value.ReactiveString
 import reaktive.value.reactiveValue
 
-interface ObjectListDisplayConfig<O : ContextualObject> {
-    val enableReordering: Boolean get() = false
+interface ObjectListDisplayConfig<O : Any> {
+    val boxStyle: Array<String> get() = arrayOf("object-box")
+
+    val listStyle: Array<String> get() = arrayOf("object-list")
+
+    val enableSelection: Boolean get() = true
+
+    val hideWhileDragging: Boolean get() = false
 
     val enableAddObjectButton: Boolean get() = false
 
@@ -36,6 +49,12 @@ interface ObjectListDisplayConfig<O : ContextualObject> {
 
     fun getItemContent(obj: O): List<Node> = emptyList()
 
+    fun canDelete(obj: O): Boolean = !(obj is NamedObject && !obj.canDelete)
+
+    val showDragHandle: Boolean get() = dataFormat != null
+
+    val dataFormat: DataFormat? get() = null
+
     fun getContent(obj: O, mode: ObjectListView.DisplayMode): Parent? = null
 
     fun getActions(box: ObjectBox<O>): List<ContextualizedAction> = emptyList()
@@ -44,7 +63,24 @@ interface ObjectListDisplayConfig<O : ContextualObject> {
 
     fun configureSubWindow(window: SubWindow, obj: O) {}
 
-    fun dataFormat(obj: O): DataFormat? = null
+    fun getDragTarget(box: ObjectBox<O>): Node = box.actionBar.getButton(ObjectBox.objectActions.getAction("Drag"))
+
+    fun acceptedTransferModes(dragboard: Dragboard): Array<TransferMode> =
+        if (dragboard.hasContent(dataFormat)) arrayOf(TransferMode.MOVE)
+        else emptyArray()
+
+    fun getDroppedObject(ev: DragEvent): O? = null
+
+    fun canCopy(obj: O): Boolean = obj is NamedObject && obj.canCopy
+
+    fun copy(obj: O): O =
+        if (obj !is NamedObject) throw UnsupportedOperationException("Cannot copy $obj")
+        else if (!obj.canCopy) throw UnsupportedOperationException("Cannot copy $obj")
+        else obj.copy() as O
+
+    fun dropObject(obj: O, idx: Int, list: ObjectList<O>) {
+        list.add(obj, idx)
+    }
 
     fun getDefaultDisplayName(obj: O): ReactiveString = reactiveValue(NO_NAME)
 
@@ -53,4 +89,8 @@ interface ObjectListDisplayConfig<O : ContextualObject> {
     fun onSelected(obj: O) {}
 
     fun onRemoved(obj: O) {}
+
+    fun boxLayout(obj: O, header: HBox, content: Node?): Node =
+        if (content != null) VBox(header, content)
+        else header
 }

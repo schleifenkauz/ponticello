@@ -306,7 +306,7 @@ abstract class AbstractLiveUpdater(protected val obj: ParameterizedObject) : Par
             val mainSynthName = "${obj.superColliderPrefix}$uniqueName"
             mainSynthName
         } else {
-            parametersWithSynth[idx + 1]
+            ParameterControl.auxilSynthName(parametersWithSynth[idx + 1], uniqueName)
         }
     }
 }

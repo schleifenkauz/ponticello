@@ -59,7 +59,8 @@ class InstrumentRegistryPane(
         is NoInstrument -> null
     }
 
-    override fun dataFormat(obj: InstrumentObject): DataFormat = InstrumentObject.DATA_FORMAT
+    override val dataFormat: DataFormat
+        get() = InstrumentObject.DATA_FORMAT
 
     public override fun createNewObject(name: String, ev: Event?): InstrumentObject? {
         when {
@@ -138,11 +139,7 @@ class InstrumentRegistryPane(
 
     override fun getActions(box: ObjectBox<InstrumentObject>): List<ContextualizedAction> = actions.withContext(box.obj)
 
-    companion object : Type {
-        override val uid: Int
-            get() = 8
-        override val title: String
-            get() = "Instruments"
+    companion object : Type(8, "Instruments") {
 
         override val icon: Ikon
             get() = MaterialDesignS.SINE_WAVE

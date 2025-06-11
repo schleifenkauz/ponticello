@@ -119,7 +119,7 @@ class SoundProcessView(
         val box = ObjectSelectorControl(obj.instrumentSelector, createBundle())
         pane.addItem("SynthDef: ", HBox(5.0, box, viewBtn).centerChildren())
         val controlsPane = ParameterControlsPane(obj, this)
-        controlsPane.listView.autoResizeScene = true
+        VBox.setVgrow(controlsPane, Priority.ALWAYS)
         pane.children.add(controlsPane)
     }
 
@@ -154,8 +154,7 @@ class SoundProcessView(
         val db = ev.dragboard
         when {
             db.hasContent(NamedParameterControl.DATA_FORMAT) -> {
-                val jsonString = db.getContent(NamedParameterControl.DATA_FORMAT) as String
-                val namedControl = json.decodeFromString(NamedParameterControl.serializer(), jsonString)
+                val namedControl = db.getContent(NamedParameterControl.DATA_FORMAT) as NamedParameterControl
                 obj.controls.duplicateControl(namedControl)
             }
 

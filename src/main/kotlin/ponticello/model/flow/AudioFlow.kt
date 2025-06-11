@@ -32,7 +32,6 @@ sealed class AudioFlow : AbstractRenamableObject() {
         private set
 
     fun setParentGroup(parent: AudioFlowGroup) {
-        check(!initialized) { "Parent group of $this cannot be changed after initialization" }
         parentGroup = parent
     }
 

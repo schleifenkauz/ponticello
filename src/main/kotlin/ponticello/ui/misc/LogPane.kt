@@ -131,12 +131,7 @@ class LogPane(private val logger: Logger) : ToolPane(), Logger.View {
         return box
     }
 
-    companion object : Type {
-        override val uid: Int
-            get() = 6
-
-        override val title: String
-            get() = "Notifications"
+    companion object : Type(6, "Notifications") {
 
         override val icon: Ikon get() = MaterialDesignB.BELL
 

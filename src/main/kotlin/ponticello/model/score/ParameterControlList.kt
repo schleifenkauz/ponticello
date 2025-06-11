@@ -60,7 +60,7 @@ class ParameterControlList(
     class NamedParameterControl(
         private val value: ReactiveVariable<ParameterControl>,
         private var customSpec: ControlSpec? = null,
-    ) : AbstractRenamableObject() {
+    ) : AbstractRenamableObject(), java.io.Serializable {
         constructor(value: ParameterControl, customSpec: ControlSpec? = null) : this(
             reactiveVariable(value), customSpec
         )
@@ -234,9 +234,12 @@ class ParameterControlList(
         named.reassign(control)
     }
 
-    fun addControl(parameter: String, control: ParameterControl, customSpec: ControlSpec? = null) {
+    fun addControl(
+        parameter: String, control: ParameterControl, customSpec: ControlSpec? = null,
+        idx: Int = objects.size,
+    ) {
         val named = NamedParameterControl(control, customSpec).withName(parameter)
-        add(named)
+        add(named, idx)
     }
 
     fun assignControl(parameter: String, control: ParameterControl) {
@@ -249,7 +252,7 @@ class ParameterControlList(
         else true
     }
 
-    fun duplicateControl(namedControl: NamedParameterControl) {
+    fun duplicateControl(namedControl: NamedParameterControl, idx: Int = objects.size) {
         if (!canAcceptControl(namedControl)) return
         val name = namedControl.name.now
         val control = namedControl.now
@@ -264,9 +267,10 @@ class ParameterControlList(
                 if (spec != null && spec != get(name).spec.now) {
                     get(name).setCustomSpec(spec)
                 }
+                move(get(name), idx)
             } else {
                 val customSpec = spec.takeIf { it != associatedObject.def.getSpec(name)?.now }
-                addControl(name, control, customSpec)
+                addControl(name, control, customSpec, idx)
             }
         }
     }

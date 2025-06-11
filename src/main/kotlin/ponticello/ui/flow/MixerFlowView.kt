@@ -12,6 +12,7 @@ import javafx.scene.Node
 import javafx.scene.input.DragEvent
 import javafx.scene.input.Dragboard
 import javafx.scene.input.MouseEvent
+import javafx.scene.input.TransferMode
 import javafx.scene.layout.HBox
 import javafx.scene.layout.VBox
 import org.kordamp.ikonli.materialdesign2.MaterialDesignA
@@ -52,7 +53,6 @@ class MixerFlowView(private val flow: MixerFlow) : VBox(), ObjectListDisplayConf
             componentsView
         )
         styleClass("mixer-flow")
-        setupDropArea(::canDrop, ::onDrop)
     }
 
     private fun addSourceBus(ev: MouseEvent) {
@@ -65,15 +65,16 @@ class MixerFlowView(private val flow: MixerFlow) : VBox(), ObjectListDisplayConf
         flow.components.add(MixerFlow.MixerComponent.create(bus))
     }
 
-    private fun canDrop(dragboard: Dragboard): Boolean {
-        val bus = dragboard.getFrom(flow.context[BusRegistry], BusObject.DATA_FORMAT) ?: return false
+    override fun acceptedTransferModes(dragboard: Dragboard): Array<TransferMode> {
+        val bus = dragboard.getFrom(flow.context[BusRegistry], BusObject.DATA_FORMAT) ?: return emptyArray()
         val expectedChannels = bus.channels.now == flow.targetBus.now.get()?.channels?.now
-        return bus !in flow.usedBuses() && bus.rate == Rate.Audio && expectedChannels
+        return if (bus !in flow.usedBuses() && bus.rate == Rate.Audio && expectedChannels) arrayOf(TransferMode.LINK)
+        else emptyArray()
     }
 
-    private fun onDrop(ev: DragEvent) {
-        val bus = ev.dragboard.getFrom(flow.context[BusRegistry], BusObject.DATA_FORMAT) ?: return
-        flow.components.add(MixerFlow.MixerComponent.create(bus))
+    override fun getDroppedObject(ev: DragEvent): MixerFlow.MixerComponent? {
+        val bus = ev.dragboard.getFrom(flow.context[BusRegistry], BusObject.DATA_FORMAT) ?: return null
+        return MixerFlow.MixerComponent.create(bus)
     }
 
     override fun getItemContent(obj: MixerFlow.MixerComponent): List<Node> {

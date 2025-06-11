@@ -42,12 +42,11 @@ class BusRegistryPane(busses: BusRegistry) : ObjectRegistryPane<BusObject>(busse
 
     override val type: Type
         get() = BusRegistryPane
-    override val enableReordering: Boolean
-        get() = true
 
     override fun defaultState(): ToolPaneState = ToolPaneState.docked
 
-    override fun dataFormat(obj: BusObject): DataFormat = BusObject.DATA_FORMAT
+    override val dataFormat: DataFormat
+        get() = BusObject.DATA_FORMAT
 
     override fun onRemoved(obj: BusObject) {
         if (obj is BusObject.ControlBus) specObservers.remove(obj)
@@ -101,15 +100,9 @@ class BusRegistryPane(busses: BusRegistry) : ObjectRegistryPane<BusObject>(busse
         } else actions.withContext(box)
     }
 
-    companion object : Type {
-        override val uid: Int
-            get() = 3
-
+    companion object : Type(3, "Busses") {
         override val defaultSide: Side
             get() = Side.LEFT
-
-        override val title: String
-            get() = "Busses"
 
         override val icon: Ikon
             get() = Material2AL.GRAPHIC_EQ //MaterialDesignT.TUNE_VARIANT

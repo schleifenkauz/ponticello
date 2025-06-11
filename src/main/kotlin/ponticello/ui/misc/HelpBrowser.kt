@@ -62,13 +62,8 @@ class HelpBrowser : ToolPane() {
         webView.engine.load("$URL_ROOT/Search.html#$searchText")
     }
 
-    companion object : PublicProperty<HelpBrowser> by publicProperty("help-browser", null), Type {
-        override val uid: Int
-            get() = 12
-
-        override val title: String
-            get() = "SuperCollider Documentation"
-
+    companion object : PublicProperty<HelpBrowser> by publicProperty("help-browser", null),
+        Type(12, "SuperCollider Documentation") {
         override val icon: Ikon
             get() = MaterialDesignW.WEB
 

@@ -50,19 +50,15 @@ class ScriptRegistryPane(registry: ScriptRegistry) : ObjectRegistryPane<ScriptOb
 
     override fun detailWindowIcon(obj: ScriptObject): Ikon = Material2AL.CODE
 
-    override fun dataFormat(obj: ScriptObject): DataFormat = ScriptObject.DATA_FORMAT
+    override val dataFormat: DataFormat
+        get() = ScriptObject.DATA_FORMAT
 
     override fun getActions(box: ObjectBox<ScriptObject>): List<ContextualizedAction> = actions.withContext(box.obj)
 
     override fun getContent(obj: ScriptObject, mode: DisplayMode): Parent =
         CodePane(obj.root, ownWindow = true)
 
-    companion object : Type {
-        override val uid: Int
-            get() = 11
-
-        override val title: String
-            get() = "Scripts"
+    companion object : Type(11, "Scripts") {
 
         override val icon: Ikon
             get() = MaterialDesignF.FILE_COG

@@ -74,12 +74,7 @@ class SettingsPane(private val settings: Settings) : ToolPane() {
         }
     }
 
-    companion object : Type {
-        override val uid: Int
-            get() = 1
-
-        override val title: String
-            get() = "Settings"
+    companion object : Type(1, "Settings") {
         override val icon: Ikon
             get() = MaterialDesignC.COG
 

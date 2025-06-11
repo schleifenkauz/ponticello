@@ -96,7 +96,9 @@ object ObjectActions {
             applicableOn { view -> !view.parentPane.isRoot(view.obj) }
             executeSingle { view, ev ->
                 if (ev.isTargetTextInput && !ev.isAltDown()) return@executeSingle
-                view.context[ScoreObjectDetailPane].showDetailPane(view)
+                val pane = view.context[ScoreObjectDetailPane]
+                pane.showDetailPane(view)
+                pane.setShowing(true)
             }
         }
         addObjectAction("Show as sub window") {

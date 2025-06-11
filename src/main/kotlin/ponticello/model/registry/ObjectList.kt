@@ -4,12 +4,12 @@ import fxutils.undo.UndoManager
 import hextant.context.Context
 import hextant.core.editor.ListenerManager
 import kotlinx.serialization.Transient
-import reaktive.Observer
 import ponticello.impl.Logger
 import ponticello.model.obj.AbstractContextualObject
 import ponticello.model.obj.ContextualObject
+import reaktive.Observer
 
-abstract class ObjectList<O: ContextualObject> : List<O>, AbstractContextualObject() {
+abstract class ObjectList<O> : List<O>, AbstractContextualObject() {
     protected abstract val objects: MutableList<O>
 
     abstract val objectType: String
@@ -52,7 +52,9 @@ abstract class ObjectList<O: ContextualObject> : List<O>, AbstractContextualObje
     fun has(obj: O) = objects.contains(obj)
 
     protected open fun initializeObject(obj: O) {
-        obj.initialize(context)
+        if (obj is ContextualObject) {
+            obj.initialize(context)
+        }
     }
 
     open fun add(obj: O, idx: Int = objects.size) {
@@ -132,7 +134,7 @@ abstract class ObjectList<O: ContextualObject> : List<O>, AbstractContextualObje
         }
     }
 
-    interface Listener<in O : ContextualObject> {
+    interface Listener<in O> {
         fun added(obj: O, idx: Int)
         fun removed(obj: O)
         fun moved(obj: O, idx: Int) {

@@ -2,17 +2,25 @@ package ponticello.ui.dock
 
 import fxutils.*
 import fxutils.actions.*
+import javafx.event.Event
 import javafx.scene.Node
+import javafx.scene.control.ContextMenu
+import javafx.scene.input.DataFormat
 import javafx.scene.input.KeyEvent
 import javafx.scene.layout.HBox
 import javafx.scene.layout.Priority.ALWAYS
 import javafx.scene.layout.Region
 import javafx.scene.layout.VBox
 import org.kordamp.ikonli.Ikon
+import org.kordamp.ikonli.javafx.FontIcon
+import org.kordamp.ikonli.material2.Material2AL
 import org.kordamp.ikonli.materialdesign2.MaterialDesignR
+import ponticello.model.obj.AbstractContextualObject
 import ponticello.model.project.PonticelloProject
+import ponticello.ui.dock.ToolPaneMode.*
 import ponticello.ui.impl.DEFAULT_SCENE_FILL
 import ponticello.ui.impl.sceneFill
+import ponticello.ui.launcher.PonticelloApp.Companion.primaryStage
 import reaktive.value.ReactiveBoolean
 import reaktive.value.binding.Binding
 import reaktive.value.binding.equalTo
@@ -113,12 +121,34 @@ abstract class ToolPane : VBox() {
         layout.showDocked(this)
     }
 
+    fun setMode(mode: ToolPaneMode) {
+        when (mode) {
+            Docked -> setDocked()
+            Window -> setUndocked(SubWindow.Type.ToolWindow)
+            Floating -> setUndocked(SubWindow.Type.Popup)
+        }
+    }
+
+    fun showToolPaneConfigMenu(ev: Event?) {
+        val menu = ContextMenu()
+        for (mode in ToolPaneMode.entries) {
+            val icon = FontIcon(Material2AL.CHECK) styleClass "check-icon"
+            icon.isVisible = currentMode() == mode
+            menu.items.add(menuItem(mode.name, icon) {
+                setMode(mode)
+            })
+        }
+        val ownerWindow = layout.context[primaryStage]
+        val anchor = ev.popupAnchor()
+        menu.show(ownerWindow, anchor.x, anchor.y)
+    }
+
     fun initialize(layout: AppLayout, state: ToolPaneState) {
         initialState = state
         this.layout = layout
-        if (state.mode == ToolPaneMode.Window || state.mode == ToolPaneMode.Floating) {
+        if (state.mode == Window || state.mode == Floating) {
             val windowType =
-                if (state.mode == ToolPaneMode.Floating) SubWindow.Type.Popup
+                if (state.mode == Floating) SubWindow.Type.Popup
                 else SubWindow.Type.ToolWindow
             val bounds = state.windowBounds
             window = SubWindow(this, title, windowType).also { w ->
@@ -147,13 +177,15 @@ abstract class ToolPane : VBox() {
                 dest.windowBounds = WindowBounds(w.x, w.y, w.width, w.height)
             }
         }
-        dest.mode = when {
-            window == null -> ToolPaneMode.Docked
-            window!!.type == SubWindow.Type.Popup -> ToolPaneMode.Floating
-            else -> ToolPaneMode.Window
-        }
+        dest.mode = currentMode()
         dest.isShowing = isShowing.now
         dest.isExclusive = isExclusive
+    }
+
+    private fun currentMode() = when {
+        window == null -> Docked
+        window!!.type == SubWindow.Type.Popup -> Floating
+        else -> Window
     }
 
     fun setShowing(value: Boolean) {
@@ -178,16 +210,16 @@ abstract class ToolPane : VBox() {
 
     override fun toString(): String = "ToolPane [$title]"
 
-    interface Type {
-        val uid: Int
+    abstract class Type(val uid: Int, val title: String): AbstractContextualObject() {
+        abstract val defaultSide: Side
 
-        val title: String
+        abstract val icon: Ikon?
 
-        val defaultSide: Side
+        abstract fun createToolPane(project: PonticelloProject): ToolPane
 
-        val icon: Ikon?
-
-        fun createToolPane(project: PonticelloProject): ToolPane
+        companion object {
+            val DATA_FORMAT = DataFormat("ponticello/tool-pane-type")
+        }
     }
 
     companion object {

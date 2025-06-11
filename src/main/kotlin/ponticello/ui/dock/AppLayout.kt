@@ -3,20 +3,17 @@ package ponticello.ui.dock
 import bundles.PublicProperty
 import bundles.publicProperty
 import bundles.set
+import fxutils.actions.ActionBar
 import fxutils.actions.ContextualizedAction
-import fxutils.actions.action
-import fxutils.actions.makeButton
 import fxutils.hspace
 import fxutils.infiniteSpace
 import fxutils.runFXWithTimeout
 import fxutils.styleClass
 import fxutils.undo.UndoManager
+import hextant.context.withoutUndo
 import javafx.beans.binding.Bindings
 import javafx.geometry.Orientation
 import javafx.scene.control.SplitPane
-import javafx.scene.input.KeyEvent
-import javafx.scene.input.MouseButton
-import javafx.scene.input.MouseEvent
 import javafx.scene.input.TransferMode
 import javafx.scene.layout.*
 import ponticello.impl.Logger
@@ -35,26 +32,9 @@ import ponticello.ui.misc.*
 import ponticello.ui.registry.*
 import ponticello.ui.score.NavigableScorePane
 import ponticello.ui.score.TimeCodeView
-import kotlin.collections.List
-import kotlin.collections.associateWith
-import kotlin.collections.binarySearchBy
-import kotlin.collections.buildList
 import kotlin.collections.component1
 import kotlin.collections.component2
-import kotlin.collections.find
-import kotlin.collections.flatMap
-import kotlin.collections.getValue
-import kotlin.collections.iterator
-import kotlin.collections.map
-import kotlin.collections.mapOf
-import kotlin.collections.mapValues
-import kotlin.collections.mutableListOf
-import kotlin.collections.mutableMapOf
-import kotlin.collections.plus
 import kotlin.collections.set
-import kotlin.collections.toMap
-import kotlin.collections.toMutableList
-import kotlin.collections.toMutableMap
 import kotlin.reflect.KClass
 
 class AppLayout(
@@ -64,17 +44,19 @@ class AppLayout(
     private val interactionConfigBar: InteractionConfigBar,
     private val timeCodeView: TimeCodeView,
 ) : BorderPane() {
+    private val sideBars = Side.entries.associateWith { _ -> ToolPaneTypeList(mutableListOf()) }
+
     private val leftPane = SplitPane()
     private val rightPane = SplitPane()
     private val bottomPane = SplitPane()
     private val horizontalSplitter = SplitPane(scoreView)
     private val verticalSplitter = SplitPane(horizontalSplitter)
-    private val leftBottomBar = VBox() styleClass "dock-icons"
-    private val leftTopBar = VBox() styleClass "dock-icons"
-    private val rightBar = VBox().styleClass("dock-icons", "dock-icons-bar")
-    private lateinit var topRightBar: HBox
+    private val leftBottomBar = ToolPaneActionBar(this, sideBars.getValue(BOTTOM))
+    private val leftTopBar = ToolPaneActionBar(this, sideBars.getValue(LEFT))
+    private val rightBar = ToolPaneActionBar(this, sideBars.getValue(RIGHT)) styleClass "dock-icons-bar"
+    private lateinit var topRightBar: ActionBar
+
     private val actions = mutableListOf<ContextualizedAction>()
-    private val sideBars = Side.entries.associateWith { _ -> mutableListOf<ToolPane.Type>() }
     private val toolPanes = mutableListOf<ToolPane>()
     private val toolbar = createToolbar()
 
@@ -123,15 +105,16 @@ class AppLayout(
     fun getToolPane(clazz: KClass<out ToolPane>): ToolPane? =
         toolPanes.find { it::class == clazz }?.also { p -> p.setup() }
 
-    private fun getToolPane(type: ToolPane.Type): ToolPane? = toolPanes.find { it.type == type }
+    fun getToolPane(type: ToolPane.Type): ToolPane? = toolPanes.find { it.type == type }
 
     inline fun <reified T : ToolPane> get() = getToolPane(T::class) as T
 
-    private fun setupToolPanes() {
+    private fun setupToolPanes() = context.withoutUndo {
         val uiState = project[UI_STATE]
         val toolPaneSides = uiState.sideBars.entries.flatMap { (side, types) ->
             types.map { t -> toolPaneType(t) to side }
         }.toMap(mutableMapOf())
+        for ((_, list) in sideBars) list.initialize(context)
         for (type in allToolPaneTypes) {
             val side = toolPaneSides[type] ?: type.defaultSide
             sideBars.getValue(side).add(type)
@@ -139,35 +122,9 @@ class AppLayout(
             toolPanes.add(toolPane)
             val state = uiState.toolPaneStates.find { s -> s.uid == type.uid } ?: toolPane.defaultState()
             toolPane.initialize(this, state)
-            val iconBar = when (side) {
-                LEFT -> leftTopBar
-                RIGHT -> rightBar
-                BOTTOM -> leftBottomBar
-                TOP -> topRightBar
-            }
-            val action = toolPaneIconAction(toolPane)
-            actions.add(action.withContext(Unit))
-            val button = action.makeButton("large-icon-button")
-            iconBar.children.add(button)
+            val action = ToolPaneAction(toolPane)
+            actions.add(action)
         }
-    }
-
-    private fun toolPaneIconAction(toolPane: ToolPane) = action<Unit>(toolPane.title) {
-        val icon = toolPane.icon
-        if (icon != null) icon(icon)
-        shortcuts(*toolPane.shortcuts)
-        toggleState { toolPane.isShowing }
-        executes { _, ev ->
-            when {
-                ev is MouseEvent && ev.button == MouseButton.PRIMARY -> toolPane.toggleShowing()
-                ev is MouseEvent && ev.button == MouseButton.SECONDARY -> showToolPaneConfigMenu(toolPane, ev)
-                ev is KeyEvent -> toolPane.handleShortcut(ev)
-            }
-        }
-    }
-
-    fun showToolPaneConfigMenu(toolPane: ToolPane, ev: MouseEvent) {
-
     }
 
     fun showDocked(toolPane: ToolPane) {

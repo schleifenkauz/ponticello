@@ -66,11 +66,7 @@ class AudioFlowPane(flows: AudioFlows) : SearchableToolPane<AudioFlowGroup>(flow
         override fun convert(text: String): String? = text.takeIf { Identifier.isValid(it) && it !in takenFlowNames }
     }
 
-    companion object : Type {
-        override val uid: Int
-            get() = 13
-        override val title: String
-            get() = "Flows"
+    companion object : Type(13, "Flows") {
         override val icon: Ikon get() = MaterialDesignT.TUNE
 
         override val defaultSide: Side

@@ -5,16 +5,16 @@ import fxutils.actions.Action
 import fxutils.actions.ActionBar
 import fxutils.actions.collectActions
 import fxutils.controls.SliderBar
+import javafx.scene.Node
 import javafx.scene.Parent
 import javafx.scene.control.Button
+import javafx.scene.control.Control
 import javafx.scene.input.MouseEvent
 import javafx.scene.input.TransferMode
 import javafx.scene.layout.HBox
 import javafx.scene.layout.Region
-import javafx.scene.layout.VBox
 import org.kordamp.ikonli.material2.Material2AL
 import org.kordamp.ikonli.materialdesign2.MaterialDesignC
-import org.kordamp.ikonli.materialdesign2.MaterialDesignR
 import ponticello.model.obj.ContextualObject
 import ponticello.model.obj.RenamableObject
 import ponticello.model.obj.withName
@@ -30,9 +30,11 @@ import reaktive.value.binding.equalTo
 import reaktive.value.now
 import reaktive.value.reactiveValue
 
-class ObjectBox<O : ContextualObject>(val parent: ObjectListView<O>, val obj: O) : VBox() {
+class ObjectBox<O : Any>(val parent: ObjectListView<O>, val obj: O, private var currentMode: DisplayMode) : Control() {
     var subWindow: SubWindow? = null
         private set
+
+    private var prevDragTarget: Node? = null
 
     val config get() = parent.config
 
@@ -52,8 +54,6 @@ class ObjectBox<O : ContextualObject>(val parent: ObjectListView<O>, val obj: O)
 
     private val header = HBox() styleClass "object-box-header"
 
-    private lateinit var currentMode: DisplayMode
-
     var content: Parent? = null
 
     fun content(): Parent? {
@@ -63,14 +63,11 @@ class ObjectBox<O : ContextualObject>(val parent: ObjectListView<O>, val obj: O)
     }
 
     init {
-        styleClass("object-box")
         if (nameDisplay != null) header.children.add(nameDisplay)
         header.children.addAll(config.getItemContent(obj))
         if (config.addSpaceBeforeActionBar) header.children.add(infiniteSpace())
         header.children.add(actionBar)
-        if (config.enableReordering) setupReordering()
-        if (obj is NamedObject && config.dataFormat(obj) != null) setupDragging()
-        children.setAll(header)
+
         addEventFilter(MouseEvent.MOUSE_CLICKED) { ev ->
             if (ev.target is Button || ev.target is SliderBar<*>) return@addEventFilter
             parent.select(this)
@@ -78,26 +75,33 @@ class ObjectBox<O : ContextualObject>(val parent: ObjectListView<O>, val obj: O)
                 parent.showSelected()
             }
         }
+        styleClass(*config.boxStyle)
+        relayout()
     }
 
     fun setContentDisplay(mode: DisplayMode) {
-        setPseudoClassState("inline-content", false)
-        content = null
+        if (mode == currentMode) return
         currentMode = mode
-        if (mode != DisplayMode.SubWindow) {
+        relayout()
+    }
+
+    private fun relayout() {
+        content = null
+        if (currentMode != DisplayMode.SubWindow) {
             subWindow?.let { w ->
                 w.hide()
                 w.scene.root = Region()
                 subWindow = null
             }
         }
-        if (mode != DisplayMode.Inline) {
-            children.setAll(header)
+        if (currentMode == DisplayMode.Inline) {
+            content = config.getContent(obj, currentMode)
         }
-        if (mode == DisplayMode.Inline) {
-            content = config.getContent(obj, mode) ?: return
-            setPseudoClassState("inline-content", true)
-            children.setAll(header, content)
+        val root = config.boxLayout(obj, header, content)
+        setPseudoClassState("inline-content", currentMode == DisplayMode.Inline && content != null)
+        setRoot(root)
+        if (config.dataFormat != null) {
+            setupDragging()
         }
     }
 
@@ -106,11 +110,12 @@ class ObjectBox<O : ContextualObject>(val parent: ObjectListView<O>, val obj: O)
         val objectType = parent.source.objectType
         val name = if (obj is NamedObject) obj.name.now else ""
         val title = "$objectType $name"
+        val context = if (obj is ContextualObject) obj.context else parent.source.context
         val window =
             if (obj is NamedObject) makeSubWindow(obj, content!!)
-            else makeSubWindow(content!!, title, obj.context).also { it.sizeToScene() }
+            else makeSubWindow(content!!, title, context).also { it.sizeToScene() }
         config.configureSubWindow(window, obj)
-        window.initOwner(obj.context[primaryStage])
+        window.initOwner(context[primaryStage])
         return window
     }
 
@@ -124,45 +129,33 @@ class ObjectBox<O : ContextualObject>(val parent: ObjectListView<O>, val obj: O)
     }
 
     private fun setupDragging() {
-        val dragTarget = actionBar.getButton(objectActions.getAction("Drag"))
-        obj as NamedObject
+        val dragTarget = config.getDragTarget(this)
+        if (dragTarget == prevDragTarget) return
+        prevDragTarget = dragTarget
         dragTarget.setOnDragDetected { ev ->
-            val transferMode = if (ev.isControlDown && obj.canCopy) TransferMode.COPY else TransferMode.MOVE
-            val db = dragTarget.startDragAndDrop(transferMode)
-            db.setContent(mapOf(config.dataFormat(obj) to obj.name.now))
+            val db = if (ev.isControlDown && config.canCopy(obj)) this.startDragAndDrop(TransferMode.COPY)
+            else this.startDragAndDrop(TransferMode.MOVE, TransferMode.LINK)
+            if (obj is NamedObject) {
+                db.setContent(mapOf(config.dataFormat to obj.name.now))
+            }
             config.configureDragboard(obj, db)
+            parent.startDrag(obj)
             ev.consume()
         }
-    }
-
-    private fun setupReordering() {
-        val dragTarget = actionBar.getButton(objectActions.getAction("Reorder"))
-        dragTarget.setupDragging(
-            onPressed = { viewOrder = 100.0 },
-            relocateBy = { _, _, _, _, dy -> translateY = dy },
-            onReleased = {
-                viewOrder = 0.0
-                var idx = parent.getBoxes().binarySearchBy(layoutY + translateY) { b -> b.layoutY }
-                if (idx < 0) idx = -(idx + 1)
-                val oldIndex = parent.getBoxes().indexOf(this)
-                try {
-                    if (idx != oldIndex) {
-                        if (idx > oldIndex) idx--
-                        parent.source.move(obj, idx)
-                    }
-                } finally {
-                    translateY = 0.0
-                }
+        setOnDragDone { ev ->
+            if (!ev.isDropCompleted && config.hideWhileDragging) {
+                isVisible = true
+                isManaged = true
             }
-        )
+        }
     }
 
     companion object {
         @Suppress("UNCHECKED_CAST")
-        private val objectActions = collectActions<ObjectBox<*>> {
+        val objectActions = collectActions<ObjectBox<*>> {
             addAction("Edit object details") {
                 icon { box ->
-                    val config = box.config as ObjectListDisplayConfig<ContextualObject>
+                    val config = box.config as ObjectListDisplayConfig<Any>
                     reactiveValue(config.detailWindowIcon(box.obj))
                 }
                 shortcuts("Ctrl+E")
@@ -188,20 +181,17 @@ class ObjectBox<O : ContextualObject>(val parent: ObjectListView<O>, val obj: O)
             }
             addAction("Drag") {
                 icon(MaterialDesignC.CURSOR_POINTER)
-                applicableIf { box ->
-                    val config = box.config as ObjectListDisplayConfig<NamedObject>
-                    box.obj is NamedObject && config.dataFormat(box.obj) != null }
-            }
-            addAction("Reorder") {
-                icon(MaterialDesignR.REORDER_HORIZONTAL)
-                applicableIf { box -> box.config.enableReordering }
+                applicableIf { box -> box.config.showDragHandle }
             }
             addAction("Delete object") {
                 icon(Material2AL.DELETE)
                 shortcuts("Ctrl+DELETE")
-                applicableIf { box -> box.obj !is NamedObject || box.obj.canDelete }
+                applicableIf { box ->
+                    val config = box.config as ObjectListDisplayConfig<Any>
+                    config.canDelete(box.obj)
+                }
                 executes { box ->
-                    val source = box.parent.source as ObjectList<ContextualObject>
+                    val source = box.parent.source as ObjectList<Any>
                     source.remove(box.obj)
                 }
             }

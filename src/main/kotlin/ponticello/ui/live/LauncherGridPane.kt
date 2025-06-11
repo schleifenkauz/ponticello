@@ -255,18 +255,12 @@ class LauncherGridPane(
         }
     }
 
-    companion object: Type {
-        override val uid: Int
-            get() = 0
-
+    companion object: Type(0, "Grid") {
         override val defaultSide: Side
             get() = Side.TOP
 
         override val icon: Ikon
             get() = MaterialDesignG.GRID
-
-        override val title: String
-            get() = "Grid"
 
         override fun createToolPane(project: PonticelloProject): ToolPane = LauncherGridPane(project[LAUNCHER_GRID])
 

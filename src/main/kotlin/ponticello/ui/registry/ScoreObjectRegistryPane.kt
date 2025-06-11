@@ -78,15 +78,12 @@ class ScoreObjectRegistryPane(registry: ScoreObjectRegistry) : ObjectRegistryPan
         return actions.withContext(box.obj)
     }
 
-    override fun dataFormat(obj: ScoreObject): DataFormat = ScoreObject.DATA_FORMAT
+    override val dataFormat: DataFormat
+        get() = ScoreObject.DATA_FORMAT
 
     override fun createNewObject(name: String, ev: Event?): ScoreObject? = null
 
-    companion object : Type {
-        override val uid: Int
-            get() = 4
-        override val title: String
-            get() = "Score Objects"
+    companion object : Type(4, "Score Objects") {
 
         override val icon: Ikon
             get() = MaterialDesignP.PLAYLIST_PLAY

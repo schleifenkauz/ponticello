@@ -14,19 +14,9 @@
     -fx-border-color: black;
 }
 
-/*.object-list {*/
-/*    -fx-border-color: black;*/
-/*    -fx-border-width: 3px;*/
-/*}*/
-
 /*noinspection CssInvalidPseudoSelector*/
 .selector-button:drop-possible,
-.items-scroll-bar:drop-possible,
-.parameter-controls:drop-possible,
-parameter-control-item:drop-possible,
-.flow-group:drop-possible,
-.mixer-flow:drop-possible,
-.samples-pane:drop-possible {
+.parameter-control-item:drop-possible {
     -fx-background-color: rgba(0, 128, 0, 0.5) !important;
 }
 
@@ -37,4 +27,10 @@ parameter-control-item:drop-possible,
 .parameter-control-item {
     -fx-alignment: center-left;
     -fx-spacing: 3px;
+}
+
+.drop-preview {
+    -fx-hbar-policy: always;
+    -fx-vbar-policy: always;
+    -fx-background-color: rgba(0, 128, 0, 0.5);
 }

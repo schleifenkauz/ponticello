@@ -53,10 +53,7 @@ class ConsoleOutputPane(client: SuperColliderClient) : ToolPane(), ConsoleMonito
         content.scrollTop = Double.MAX_VALUE
     }
 
-    companion object : Type {
-        override val uid: Int
-            get() = 14
-        override val title: String get() = "Console Output"
+    companion object : Type(14, "Console Output") {
         override val icon: Ikon get() = MaterialDesignC.CONSOLE
 
         override val defaultSide: Side
