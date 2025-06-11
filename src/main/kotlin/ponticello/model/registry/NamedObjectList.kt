@@ -1,8 +1,8 @@
 package ponticello.model.registry
 
 import hextant.context.Context
-import reaktive.value.now
 import ponticello.impl.Logger
+import reaktive.value.now
 
 abstract class NamedObjectList<O : NamedObject> : ObjectList<O>() {
     override fun initialize(context: Context) {
@@ -36,12 +36,12 @@ abstract class NamedObjectList<O : NamedObject> : ObjectList<O>() {
     }
 
     override fun remove(obj: O) {
-        super.remove(obj)
+        removeByName(obj.name.now)
         obj.onRemoved()
     }
 
     fun removeByName(name: String) {
         val control = getOrNull(name) ?: error("$objectType with name '$name' not found in $this")
-        remove(control)
+        super.remove(control)
     }
 }

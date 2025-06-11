@@ -134,6 +134,13 @@ class FlowGroupPane(private val group: AudioFlowGroup, ownWindow: Boolean): VBox
         dragboard.setContent(mapOf(AudioFlow.DATA_FORMAT to ref))
     }
 
+    override fun onDeselected(obj: AudioFlow) {
+        if (obj !is InstrumentFlow) return
+        val box = flowsView.getBox(obj)
+        val controlsPane = box.content as? ParameterControlsPane ?: return
+        controlsPane.listView.deselectAll()
+    }
+
     companion object {
         private val actions = collectActions<AudioFlow> {
             addAction("Show VST editor") {

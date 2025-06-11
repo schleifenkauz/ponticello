@@ -79,11 +79,6 @@ class ObjectListView<O : Any>(
         setMode(displayMode.now)
         registerSelectionShortcuts()
         setupDropArea()
-        focusWithinProperty().addListener { _, _, focusWithin ->
-            if (!focusWithin) {
-                deselectAll()
-            }
-        }
     }
 
     private fun setupDropArea() {
@@ -121,7 +116,7 @@ class ObjectListView<O : Any>(
 
                 DragEvent.DRAG_DROPPED -> {
                     ev.consume()
-                    val obj = config.getDroppedObject(ev) ?: getObjectFromSource(ev.dragboard)
+                    val obj = config.getDroppedObject(ev) ?: getObjectFromSource(ev)
                     if (obj != null) {
                         val idx = getBoxIndexFromY(ev.screenY, boxes.filter { b -> b.obj != obj })
                         if (obj in source) {
@@ -147,7 +142,9 @@ class ObjectListView<O : Any>(
         }
     }
 
-    private fun getObjectFromSource(dragboard: Dragboard): O? {
+    private fun getObjectFromSource(ev: DragEvent): O? {
+        if (ev.gestureSource !in boxes) return null
+        val dragboard = ev.dragboard
         if (!dragboard.hasContent(config.dataFormat)) return null
         if (source !is NamedObjectList) return null
         val name = dragboard.getContent(config.dataFormat) as? String ?: return null
@@ -321,16 +318,26 @@ class ObjectListView<O : Any>(
     }
 
     fun deselectAll() {
-        selectedBox?.pseudoClassStateChanged(PseudoClasses.SELECTED, false)
-        selectedBox = null
+        val selected = selectedBox
+        if (selected != null) {
+            selected.pseudoClassStateChanged(PseudoClasses.SELECTED, false)
+            selectedBox = null
+            config.onDeselected(selected.obj)
+        }
+
         setRoot(itemCellsLayout())
     }
 
     fun select(box: ObjectBox<O>) {
         if (!config.enableSelection) return
-        if (selectedBox == box) return
-        selectedBox?.pseudoClassStateChanged(PseudoClasses.SELECTED, false)
+        val prevSelected = selectedBox
+        if (prevSelected == box) return
         selectedBox = box
+        if (prevSelected != null) {
+            prevSelected.pseudoClassStateChanged(PseudoClasses.SELECTED, false)
+            config.onDeselected(prevSelected.obj)
+        }
+
         box.pseudoClassStateChanged(PseudoClasses.SELECTED, true)
         if (mode.now == DisplayMode.DetailsPane) {
             displayContent(box)
@@ -419,7 +426,7 @@ class ObjectListView<O : Any>(
 
     @Serializable
     enum class DisplayMode {
-        Inline, SubWindow, DetailsPane;
+        Inline, SubWindow, DetailsPane, Collapsable;
 
         companion object {
             val all get() = setOf(Inline, SubWindow, DetailsPane)

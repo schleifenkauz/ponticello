@@ -88,6 +88,8 @@ interface ObjectListDisplayConfig<O : Any> {
 
     fun onSelected(obj: O) {}
 
+    fun onDeselected(obj: O) {}
+
     fun onRemoved(obj: O) {}
 
     fun boxLayout(obj: O, header: HBox, content: Node?): Node =
