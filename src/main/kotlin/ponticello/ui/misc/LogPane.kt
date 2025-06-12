@@ -5,6 +5,7 @@ import fxutils.actions.button
 import fxutils.prompt.SimpleSearchableListView
 import javafx.application.Platform
 import javafx.scene.Node
+import javafx.scene.Parent
 import javafx.scene.control.Label
 import javafx.scene.control.ScrollPane
 import javafx.scene.control.Tooltip
@@ -53,7 +54,7 @@ class LogPane(private val logger: Logger) : ToolPane(), Logger.View {
     private val buttonClear = button("Clear log") { logger.clear() }
     private val searchField = CustomTextField().styleClass("sleek-text-field", "search-field")
 
-    override val content: Node get() = scrollPane
+    override val content: Parent get() = scrollPane
     override val headerContent: Node = HBox(5.0, searchField, levelSelector, categorySelector, buttonClear)
         .centerChildren()
 

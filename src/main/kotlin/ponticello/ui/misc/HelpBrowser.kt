@@ -4,7 +4,7 @@ import bundles.PublicProperty
 import bundles.publicProperty
 import fxutils.relocate
 import javafx.geometry.Bounds
-import javafx.scene.Node
+import javafx.scene.Parent
 import javafx.scene.web.WebView
 import org.kordamp.ikonli.Ikon
 import org.kordamp.ikonli.materialdesign2.MaterialDesignW
@@ -25,7 +25,7 @@ class HelpBrowser : ToolPane() {
 
     private lateinit var webView: WebView
 
-    override val content: Node
+    override val content: Parent
         get() = webView
 
     override fun defaultState(): ToolPaneState = ToolPaneState.docked

@@ -9,7 +9,6 @@ import kotlinx.serialization.serializer
 import ponticello.model.score.Score
 import ponticello.model.score.ScoreObject
 import ponticello.model.score.ScoreObjectInstance
-import ponticello.ui.launcher.ScoreObjectDetailPane
 import reaktive.value.ReactiveValue
 import reaktive.value.now
 import reaktive.value.reactiveVariable
@@ -77,7 +76,6 @@ class ScoreObjectSelectionManager(val context: Context, private val rootPane: Sc
     }
 
     fun deselectAll() {
-        context[ScoreObjectDetailPane].hideCurrentlyShown()
         val previouslySelected = selectedViews.toSet()
         val previouslySelectedObjects = selectedObjects.toSet()
         _selectedViews.clear()

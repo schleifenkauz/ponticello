@@ -40,7 +40,9 @@ class FlowGroupManager(
             for ((group, line) in lines) {
                 line.strokeWidth = 2.0
                 val flowsPane = audioFlowsPane
-                flowsPane.listView.getBox(group).setPseudoClassState("flow-group-hover", false)
+                if (flowsPane.isSetup) {
+                    flowsPane.listView.getBox(group).setPseudoClassState("flow-group-hover", false)
+                }
             }
             val entry = lines.entries.find { (_, l) -> (l.startY - ev.y).absoluteValue < 3.0 }
             if (entry == null) pane.children.remove(tooltip)

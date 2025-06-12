@@ -4,7 +4,7 @@ import fxutils.centerChildren
 import fxutils.infiniteSpace
 import fxutils.prompt.SimpleSearchableListView
 import javafx.application.Platform
-import javafx.scene.Node
+import javafx.scene.Parent
 import javafx.scene.control.Label
 import javafx.scene.control.OverrunStyle
 import javafx.scene.control.TextField
@@ -35,7 +35,7 @@ class PatternPlotPane(private val pattern: GlobalPatternObject) : ToolPane() {
 
     private lateinit var codeObserver: Observer
 
-    override val content: Node get() = plot
+    override val content: Parent get() = plot
     override val headerContent = createHeader()
 
     init {

@@ -3,7 +3,7 @@ package ponticello.ui.registry
 import fxutils.actions.collectActions
 import fxutils.prompt.PredicateTextPrompt
 import fxutils.prompt.SimpleSearchableListView
-import javafx.scene.Node
+import javafx.scene.Parent
 import org.kordamp.ikonli.material2.Material2MZ
 import ponticello.model.obj.ParameterDefObject
 import ponticello.sc.Identifier
@@ -17,7 +17,7 @@ class ParameterDefsPane(private val parameters: ParameterDefList, override val t
 
     private val objectBoxList = ObjectListView(parameters, config)
 
-    override val content: Node
+    override val content: Parent
         get() = objectBoxList
 
     private fun addParameter() {

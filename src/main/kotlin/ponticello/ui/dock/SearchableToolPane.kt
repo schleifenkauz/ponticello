@@ -5,6 +5,7 @@ import fxutils.addAfter
 import fxutils.styleClass
 import javafx.scene.Cursor
 import javafx.scene.Node
+import javafx.scene.Parent
 import javafx.stage.Window
 import org.controlsfx.control.textfield.CustomTextField
 import org.kordamp.ikonli.javafx.FontIcon
@@ -28,7 +29,7 @@ abstract class SearchableToolPane<O : NamedObject>(
     override val headerActions: List<ContextualizedAction>
         get() = modeChangeActions.withContext(listView) + fitContentAction.withContext(this) + actions.withContext(this)
 
-    override val content: ObjectListView<O> get() = listView
+    override val content: Parent get() = listView
     override val headerContent: Node get() = searchText
 
     override fun doSetup() {

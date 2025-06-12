@@ -1,7 +1,6 @@
 package ponticello.ui.registry
 
 import fxutils.Direction
-import fxutils.SubWindow
 import fxutils.actions.ContextualizedAction
 import fxutils.actions.action
 import fxutils.actions.collectActions
@@ -21,7 +20,6 @@ import org.kordamp.ikonli.materialdesign2.MaterialDesignR
 import ponticello.impl.one
 import ponticello.impl.toDecimal
 import ponticello.impl.zero
-import ponticello.model.obj.ParameterizedObject
 import ponticello.model.project.PonticelloProject
 import ponticello.model.project.objects
 import ponticello.model.registry.MeterRegistry
@@ -36,8 +34,6 @@ import ponticello.ui.dock.ToolPane
 import ponticello.ui.dock.ToolPaneState
 import ponticello.ui.live.QuantizationConfigDialog
 import ponticello.ui.live.ScoreObjectResizeDialog
-import ponticello.ui.midi.ContextualMidiReceiver
-import ponticello.ui.midi.ParameterControlsMidiContext
 import ponticello.ui.registry.ObjectListView.DisplayMode
 import ponticello.ui.score.ScoreObjectViewPane
 import reaktive.value.binding.not
@@ -61,15 +57,6 @@ class ScoreObjectRegistryPane(registry: ScoreObjectRegistry) : ObjectRegistryPan
         )
         scoreYSlider.prefWidth = 150.0
         return listOf(scoreYSlider)
-    }
-
-    override fun configureSubWindow(window: SubWindow, obj: ScoreObject) {
-        if (obj is ParameterizedObject) {
-            val content = window.scene.root as? ScoreObjectViewPane ?: return
-            registry.context[ContextualMidiReceiver].registerMidiContext(window) {
-                ParameterControlsMidiContext(obj.controls, content::isShowingDetailsPane)
-            }
-        }
     }
 
     override fun getContent(obj: ScoreObject, mode: DisplayMode): Parent = ScoreObjectViewPane.getPane(obj)

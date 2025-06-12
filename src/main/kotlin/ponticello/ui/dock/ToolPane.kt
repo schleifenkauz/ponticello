@@ -4,13 +4,19 @@ import fxutils.*
 import fxutils.actions.*
 import javafx.event.Event
 import javafx.scene.Node
+import javafx.scene.Parent
+import javafx.scene.Scene
 import javafx.scene.control.ContextMenu
 import javafx.scene.input.DataFormat
 import javafx.scene.input.KeyEvent
 import javafx.scene.layout.HBox
 import javafx.scene.layout.Priority.ALWAYS
 import javafx.scene.layout.Region
+import javafx.scene.layout.StackPane
 import javafx.scene.layout.VBox
+import javafx.scene.robot.Robot
+import javafx.stage.Popup
+import javafx.stage.Stage
 import org.kordamp.ikonli.Ikon
 import org.kordamp.ikonli.javafx.FontIcon
 import org.kordamp.ikonli.material2.Material2AL
@@ -20,7 +26,6 @@ import ponticello.model.project.PonticelloProject
 import ponticello.ui.dock.ToolPaneMode.*
 import ponticello.ui.impl.DEFAULT_SCENE_FILL
 import ponticello.ui.impl.sceneFill
-import ponticello.ui.launcher.PonticelloApp.Companion.primaryStage
 import reaktive.value.ReactiveBoolean
 import reaktive.value.binding.Binding
 import reaktive.value.binding.equalTo
@@ -44,7 +49,7 @@ abstract class ToolPane : VBox() {
 
     private lateinit var layout: AppLayout
 
-    protected abstract val content: Node
+    protected abstract val content: Parent
     protected open val headerContent: Node? get() = null
     protected open val headerActions: List<ContextualizedAction> get() = emptyList()
 
@@ -54,10 +59,10 @@ abstract class ToolPane : VBox() {
     var actionBar: ActionBar? = null
         private set
 
-    protected var window: SubWindow? = null
+    protected var window: javafx.stage.Window? = null
         private set
     private var showing = reactiveVariable(false)
-    protected var isSetup = false
+    var isSetup = false
         private set
 
     val isShowing: ReactiveBoolean get() = showing
@@ -104,37 +109,20 @@ abstract class ToolPane : VBox() {
         }
     }
 
-    fun setUndocked(windowType: SubWindow.Type): SubWindow {
-        if (isShowing.now) {
-            window?.let { w ->
-                w.close()
-                w.scene.root = Region()
-            } ?: layout.hideDocked(this)
-        }
-        window = SubWindow(this, title, windowType).sceneFill(DEFAULT_SCENE_FILL)
-        window!!.sizeToScene()
-        window!!.setOnHidden {
-            showing.set(false)
-        }
-        setShowing(true)
-        return window!!
-    }
-
     fun setDocked() {
-        window?.close()
-        window?.scene?.root = Region()
-        window = null
-        showing.now = true
         layout.showDocked(this)
     }
 
     fun setMode(mode: ToolPaneMode) {
         if (mode == currentMode()) return
-        when (mode) {
-            Docked -> setDocked()
-            Window -> setUndocked(SubWindow.Type.ToolWindow)
-            Floating -> setUndocked(SubWindow.Type.Popup)
+        setShowing(false)
+        this.scene?.root = Region()
+        window = when (mode) {
+            Docked -> null
+            Window -> makeToolWindow()
+            Floating -> makePopup()
         }
+        setShowing(true)
     }
 
     fun showToolPaneConfigMenu(ev: Event?) {
@@ -152,7 +140,7 @@ abstract class ToolPane : VBox() {
             setExclusive(!isExclusive)
         }
         menu.items.add(exclusiveItem)
-        val ownerWindow = layout.context[primaryStage]
+        val ownerWindow = layout.scene.window
         val anchor = ev.popupAnchor()
         menu.show(ownerWindow, anchor.x, anchor.y)
     }
@@ -160,7 +148,7 @@ abstract class ToolPane : VBox() {
     private fun setExclusive(exclusive: Boolean) {
         isExclusive = exclusive
         if (isExclusive) {
-            if (currentMode() != Docked) setDocked()
+            if (currentMode() != Docked) setMode(Docked)
             layout.setExclusive(this)
         }
     }
@@ -168,25 +156,41 @@ abstract class ToolPane : VBox() {
     open fun initialize(layout: AppLayout, state: ToolPaneState) {
         initialState = state
         this.layout = layout
-        if (state.mode == Window || state.mode == Floating) {
-            val windowType =
-                if (state.mode == Floating) SubWindow.Type.Popup
-                else SubWindow.Type.ToolWindow
-            val bounds = state.windowBounds
-            window = SubWindow(this, title, windowType).also { w ->
-                if (bounds != null) {
-                    w.relocate(bounds.x, bounds.y)
-                    w.width = bounds.width
-                    w.height = bounds.height
-                } else {
-                    w.centerOnScreen()
-                    w.sizeToScene()
-                }
-            }.sceneFill(DEFAULT_SCENE_FILL)
+        window = when (state.mode) {
+            Floating -> makePopup()
+            Window -> makeToolWindow()
+            Docked -> null
         }
         if (state.isShowing) {
             setShowing(true)
         }
+    }
+
+    protected open fun makePopup(): Popup {
+        val popup = Popup()
+        popup.content.add(StackPane(this))
+        popup.scene.stylesheets.addAll(SubWindow.globalStylesheets)
+        popup.sceneFill(DEFAULT_SCENE_FILL)
+        popup.isAutoHide = true
+        popup.setOnHidden { ev ->
+            showing.set(false)
+            ev.consume()
+        }
+        return popup
+    }
+
+    protected open fun makeToolWindow(): Stage {
+        val stage = Stage()
+        stage.title = title
+        initialState?.windowBounds?.applyTo(stage) ?: stage.centerOnScreen()
+        stage.scene = Scene(StackPane(this))
+        stage.scene.stylesheets.addAll(SubWindow.globalStylesheets)
+        stage.sceneFill(DEFAULT_SCENE_FILL)
+        stage.setOnHidden { ev ->
+            showing.set(false)
+            ev.consume()
+        }
+        return stage
     }
 
     open fun defaultState(): ToolPaneState =
@@ -204,27 +208,46 @@ abstract class ToolPane : VBox() {
         dest.isExclusive = isExclusive
     }
 
-    private fun currentMode() = when {
-        window == null -> Docked
-        window!!.type == SubWindow.Type.Popup -> Floating
-        else -> Window
+    private fun currentMode() = when (window) {
+        is Popup -> Floating
+        is Stage -> Window
+        null -> Docked
+        else -> throw AssertionError("Invalid ToolPane window $window")
     }
 
     fun setShowing(value: Boolean) {
         if (showing.now == value) return
-        showing.set(value)
         if (value) {
             if (!isSetup) setup()
-            window?.showOrBringToFront() ?: layout.showDocked(this)
+            when (val w = window) {
+                is Popup -> showing.now = showPopup(w)
+                is Stage -> {
+                    w.show()
+                    showing.now = true
+                }
+
+                else -> {
+                    layout.showDocked(this)
+                    showing.now = true
+                }
+            }
         } else {
             window?.hide() ?: layout.hideDocked(this)
+            showing.set(false)
         }
     }
 
+    protected open fun showPopup(popup: Popup): Boolean {
+        val robot = Robot()
+        popup.show(layout.scene.window, robot.mouseX, robot.mouseY)
+        return true
+    }
+
     fun toggleShowing() {
-        if (showing.now && window != null && window!!.type == SubWindow.Type.ToolWindow) {
+        val w = window
+        if (showing.now && w != null && w is Stage) {
             if (!isSetup) setup()
-            window!!.showOrBringToFront()
+            w.show()
         } else {
             setShowing(!showing.now)
         }
@@ -232,7 +255,7 @@ abstract class ToolPane : VBox() {
 
     override fun toString(): String = "ToolPane [$title]"
 
-    abstract class Type(val uid: Int, val title: String): AbstractContextualObject() {
+    abstract class Type(val uid: Int, val title: String) : AbstractContextualObject() {
         abstract val defaultSide: Side
 
         abstract val icon: Ikon?
@@ -263,7 +286,7 @@ abstract class ToolPane : VBox() {
             enableWhen { p -> isSceneRoot(p) }
             ifNotApplicable(Action.IfNotApplicable.Hide)
             //TODO find icon
-            executes { p -> p.setDocked() }
+            executes { p -> p.setMode(Docked) }
         }
     }
 }

@@ -2,7 +2,7 @@ package ponticello.ui.midi
 
 import bundles.PublicProperty
 import bundles.publicProperty
-import javafx.stage.Window
+import javafx.scene.Node
 import ponticello.impl.Logger
 import ponticello.impl.MidiPitch
 import ponticello.model.live.LauncherGrid
@@ -12,7 +12,7 @@ import javax.sound.midi.*
 
 class ContextualMidiReceiver : Receiver {
     private var device: MidiDevice? = null
-    private val midiContextMap = WeakHashMap<Window, () -> MidiContext?>()
+    private val midiContextMap = WeakHashMap<Node, () -> MidiContext?>()
 
     private var launcherGrid: LauncherGrid? = null
 
@@ -21,12 +21,14 @@ class ContextualMidiReceiver : Receiver {
     }
 
     private fun getActiveMidiContext(): MidiContext? {
-        val activeWindow = Window.getWindows().firstOrNull { w -> w.isFocused } ?: return null
-        return midiContextMap[activeWindow]?.invoke()
+        return midiContextMap.entries
+            .filter { (node, _) -> node.isFocusWithin }
+            .mapNotNull { (_, context) -> context.invoke() }
+            .firstOrNull()
     }
 
-    fun registerMidiContext(window: Window, context: () -> MidiContext?) {
-        midiContextMap[window] = context
+    fun registerMidiContext(node: Node, context: () -> MidiContext?) {
+        midiContextMap[node] = context
     }
 
     override fun send(message: MidiMessage?, timeStamp: Long) {

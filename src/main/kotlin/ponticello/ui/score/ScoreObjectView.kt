@@ -113,7 +113,6 @@ abstract class ScoreObjectView(
             val headerBox = HBox(
                 5.0,
                 NameControl(obj).setFixedWidth(150.0),
-                ActionBar(ObjectActions.multiObjectActions.withContext(ctx), buttonStyle = "medium-icon-button"),
                 ActionBar(ObjectActions.singleObjectActions.withContext(ctx), buttonStyle = "medium-icon-button"),
                 infiniteSpace(),
                 ActionBar(extraActions, buttonStyle = "medium-icon-button"),
@@ -222,8 +221,9 @@ abstract class ScoreObjectView(
         addEventHandler(MouseEvent.MOUSE_CLICKED) { ev ->
             when {
                 ev.button == MouseButton.SECONDARY && ev.modifiers.isEmpty() -> {
+                    selectView(addToSelection = false)
                     val toolPane = context[ScoreObjectDetailPane]
-                    toolPane.showDetailPane(this)
+                    toolPane.updateContent(this)
                     toolPane.setShowing(true)
                 }
 
@@ -292,9 +292,6 @@ abstract class ScoreObjectView(
             else -> borderColorWhenNotSelected to 0.5
         }
         border = solidBorder(borderColor, width = width, radius = BORDER_RADIUS)
-        if (!value) {
-            context[ScoreObjectDetailPane].hideDetailPane(this)
-        }
     }
 
     override fun isSomeInstanceSelected(yesOrNo: Boolean) {
@@ -358,7 +355,7 @@ abstract class ScoreObjectView(
     }
 
     private fun dragTo(toX: Double, toY: Double) {
-        context[ScoreObjectDetailPane].hideCurrentlyShown()
+        context[ScoreObjectDetailPane].hidePopup()
         val movedObjects = context[ScoreObjectSelectionManager].selectedInstances + this.instance
         val minDeltaT = -movedObjects.minOf { inst -> inst.start }
         val maxDeltaT = movedObjects.minOf { inst -> inst.score!!.maxTime.now - inst.end }
@@ -426,7 +423,7 @@ abstract class ScoreObjectView(
     @Suppress("UNUSED_PARAMETER") //parameter [ev] is needed to be compatible with Node.setupDraggingAndResizing
     private fun resize(old: Bounds, deltaX: Double, deltaY: Double, cursor: Cursor, ev: MouseEvent) {
         check(obj.canResize) { "Attempt to resize object that is not resizable" }
-        context[ScoreObjectDetailPane].hideCurrentlyShown()
+        context[ScoreObjectDetailPane].hidePopup()
         val parentPane = parentPane
         val direction = cursor.resizeDirection()
         val oldX = if (direction.left) old.minX else old.maxX

@@ -1,7 +1,7 @@
 package ponticello.ui.misc
 
 import fxutils.*
-import javafx.scene.Node
+import javafx.scene.Parent
 import javafx.scene.control.Label
 import org.kordamp.ikonli.Ikon
 import org.kordamp.ikonli.materialdesign2.MaterialDesignC
@@ -20,7 +20,7 @@ import reaktive.value.ReactiveVariable
 class SettingsPane(private val settings: Settings) : ToolPane() {
     override val type: Type
         get() = SettingsPane
-    override val content: Node by lazy {
+    override val content: Parent by lazy {
         vbox {
             children {
                 +ParameterDefsPane(settings.defaultParametersDefs, title = "Default parameter control specs")

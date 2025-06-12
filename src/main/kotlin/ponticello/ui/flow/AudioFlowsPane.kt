@@ -86,7 +86,7 @@ class AudioFlowsPane(flows: AudioFlows) : SearchableToolPane<AudioFlowGroup>(flo
 
     override fun saveState(dest: ToolPaneState) {
         super.saveState(dest)
-        if (dest is FlowPaneState) {
+        if (dest is FlowPaneState && isSetup) {
             dest.expandedFlows = allFlowBoxes().withIndex()
                 .filter { (_, box) -> box.isExpanded.now }
                 .map { v -> v.index }
