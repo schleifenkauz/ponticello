@@ -147,6 +147,11 @@ data class NumericalControlSpec(
             one, zero, one, 0.01.toDecimal(),
             AttackReleaseControl.DEFAULT, Warp.Linear, Color.WHITE
         )
+
+        val PAN = NumericalControlSpec(
+            zero, -one, one, 0.01.toDecimal(),
+            AttackReleaseControl.DEFAULT, Warp.Linear, Color.WHITE
+        )
     }
 }
 

@@ -77,7 +77,7 @@ class GlobalPatternRegistryPane(
             get() = MaterialDesignL.LARAVEL
 
         override val shortcuts: Array<String>
-            get() = arrayOf("F8")
+            get() = arrayOf("F7")
 
         override val defaultSide: Side
             get() = Side.RIGHT

@@ -110,6 +110,8 @@ class MixerFlow(
             recomputeVolumes()
         } and obj.volume.observe { _, _, _ ->
             recomputeVolumes()
+        } and obj.pan.observe { _, _, _ ->
+            panChanged()
         } and obj.solo.observe { _, _, solo ->
             if (solo) {
                 soloed++
@@ -119,6 +121,12 @@ class MixerFlow(
                 recomputeVolumes()
             }
         }
+    }
+
+    private fun panChanged() {
+        if (!isActive.now) return
+        val pans = components.map { comp -> comp.pan.now }
+        client.run("$superColliderName.setn(\\pans, $pans)")
     }
 
     private fun setSourceBus(old: BusReference, new: BusReference) {
@@ -151,12 +159,17 @@ class MixerFlow(
         if (components.isEmpty()) return@writeCode
         val sink = targetBus.now.force()
         appendBlock("$superColliderName = ", endLine = false) {
-            +"var sources, volumes, mix, snd"
+            +"var sources, volumes, pans, mix, snd"
             val sources = components.map { comp -> comp.sourceBus.now.force().superColliderName }
             val volumes = components.map { comp -> getActualVolume(comp) }
             +"sources = NamedControl.kr(\\sources, $sources, lags: ${AttackReleaseControl.DEFAULT}, fixedLag: true)"
             +"volumes = NamedControl.kr(\\volumes, $volumes, lags: ${AttackReleaseControl.DEFAULT}, fixedLag: true)"
             +"sources = In.ar(sources, ${sink.channels.now}) * volumes"
+            if (sink.channels.now == 2) {
+                val pans = components.map { comp -> comp.pan.now }
+                +"pans = NamedControl.kr(\\pans, $pans, lags: ${AttackReleaseControl.DEFAULT}, fixedLag: true)"
+                +"sources = Pan2.ar(sources, pans)"
+            }
             +"snd = In.ar(${sink.superColliderName}, ${sink.channels.now})"
             val masterVolume =
                 "\\master_volume.kr(${masterVolume.now}.dbamp, lag: ${AttackReleaseControl.DEFAULT}, fixedLag: true)"
@@ -182,7 +195,7 @@ class MixerFlow(
         val volume: ReactiveVariable<Decimal>,
         val mute: ReactiveVariable<Boolean>,
         val solo: ReactiveVariable<Boolean>,
-        //TODO: add panning and EQ component?
+        val pan: ReactiveVariable<Decimal> = reactiveVariable(zero),
     ) : AbstractContextualObject() {
         fun copy() = MixerComponent(sourceBus, volume.copy(), mute.copy(), solo.copy())
 

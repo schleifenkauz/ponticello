@@ -1,6 +1,7 @@
 package ponticello.ui.dock
 
 import kotlinx.serialization.Serializable
+import ponticello.model.flow.AudioFlows
 import ponticello.ui.registry.ObjectListView
 
 @Serializable
@@ -44,4 +45,9 @@ class FlowPaneState: SearchableToolPaneState() {
     init {
         mode = ToolPaneMode.Docked
     }
+}
+
+@Serializable
+class MixerPaneState: ToolPaneState() {
+    var flowReference: AudioFlows.FlowReference? = null
 }

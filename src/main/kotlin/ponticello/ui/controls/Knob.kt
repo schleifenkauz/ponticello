@@ -3,6 +3,8 @@ package ponticello.ui.controls
 import fxutils.centerHorizontally
 import fxutils.setRoot
 import fxutils.styleClass
+import fxutils.undo.UndoManager
+import fxutils.undo.VariableEdit
 import javafx.geometry.Point2D
 import javafx.scene.control.Control
 import javafx.scene.control.Label
@@ -17,9 +19,11 @@ import javafx.scene.shape.Line
 import ponticello.impl.*
 import ponticello.sc.NumericalControlSpec
 import ponticello.sc.SpecTransformation
+import ponticello.sc.mapOnto
 import reaktive.Observer
 import reaktive.value.ReactiveVariable
 import reaktive.value.forEach
+import reaktive.value.now
 import kotlin.math.*
 
 class Knob(
@@ -27,7 +31,10 @@ class Knob(
     private val variable: ReactiveVariable<Decimal>,
     private val spec: NumericalControlSpec,
     private val radius: Double = DEFAULT_RADIUS,
-    private val color: Color = Color.BLACK
+    private val color: Color = Color.BLACK,
+    private val inputMethod: InputMethod = InputMethod.Vertical,
+    private val showRange: Boolean = true,
+    private val undoManager: UndoManager? = null,
 ) : Control() {
     private val knobDots = mutableListOf<Circle>()
     private val knob = Circle(radius, radius, radius - 10, color) styleClass "knob-mass"
@@ -58,26 +65,79 @@ class Knob(
     }
 
     private fun listenForMouseEvents() {
-        addEventHandler(MouseEvent.MOUSE_PRESSED) { ev ->
-            val x = ev.x - radius
-            val y = ev.y - radius
-            if (sqrt(x * x + y * y) < radius / 2) return@addEventHandler
-            setValueFromMouse(x, y)
-            ev.consume()
-        }
-        addEventHandler(MouseEvent.MOUSE_DRAGGED) { ev ->
-            setValueFromMouse((ev.x - radius), (ev.y - radius))
-            ev.consume()
-        }
-        addEventHandler(MouseEvent.MOUSE_CLICKED) { ev ->
-            if (ev.clickCount >= 2) {
-                showValueInput()
-            } else {
-                requestFocus()
+        var valueBefore = Decimal.NaN
+        val transformation = spec.mapOnto(DRAG_RANGE, -DRAG_RANGE)
+        var dragStart = Point2D.ZERO
+        addEventHandler(MouseEvent.ANY) { ev ->
+            when (ev.eventType) {
+                MouseEvent.DRAG_DETECTED -> {
+                    if (inputMethod == InputMethod.Vertical || inputMethod == InputMethod.Horizontal) {
+                        valueBefore = variable.now
+                        dragStart = Point2D(ev.screenX, ev.screenY)
+                        startFullDrag()
+                    }
+                    ev.consume()
+                }
+
+                MouseEvent.MOUSE_PRESSED -> {
+                    if (inputMethod == InputMethod.Angle) {
+                        val x = ev.x - radius
+                        val y = ev.y - radius
+                        if (sqrt(x * x + y * y) < radius / 2) return@addEventHandler
+                        setValueFromMouse(x, y)
+                    }
+                }
+
+                MouseEvent.MOUSE_DRAGGED -> {
+                    when (inputMethod) {
+                        InputMethod.Angle -> {
+                            setValueFromMouse((ev.x - radius), (ev.y - radius))
+                        }
+
+                        InputMethod.Horizontal -> {
+                            if (dragStart != Point2D.ZERO) {
+                                val deltaX = ev.screenX - dragStart.x
+                                updateValueByPosDelta(transformation, deltaX, valueBefore)
+                            }
+                        }
+
+                        InputMethod.Vertical -> {
+                            if (dragStart != Point2D.ZERO) {
+                                val deltaY = ev.screenY - dragStart.y
+                                updateValueByPosDelta(transformation, -deltaY, valueBefore)
+                            }
+                        }
+                    }
+                }
+
+                MouseEvent.MOUSE_RELEASED -> {
+                    if (valueBefore.isNaN()) return@addEventHandler
+                    val value = variable.now
+                    if (undoManager != null && value != valueBefore) {
+                        val actionDescription = "Update $parameter"
+                        undoManager.record(VariableEdit(variable, valueBefore, actionDescription))
+                    }
+                    dragStart = Point2D.ZERO
+                    valueBefore = Decimal.NaN
+                }
+
+                MouseEvent.MOUSE_CLICKED -> {
+                    if (ev.clickCount >= 2) {
+                        showValueInput()
+                    } else {
+                        requestFocus()
+                    }
+                }
             }
             ev.consume()
         }
         tooltip = Tooltip(parameter)
+    }
+
+    private fun updateValueByPosDelta(transformation: SpecTransformation, delta: Double, valueBefore: Decimal) {
+        val value = transformation.unmap(transformation.map(valueBefore.value) - delta)
+            .coerceIn(spec.min.get().value, spec.max.get().value)
+        variable.set(Decimal(value, precision = spec.precision))
     }
 
     private fun showValueInput() {
@@ -122,6 +182,7 @@ class Knob(
     }
 
     private fun addDotsOrArc() {
+        if (!showRange) return
         if (discreteValues <= MAX_DOTS) {
             for (i in 0..discreteValues) {
                 val v = (spec.min.get() + i * spec.step.get()).withPrecision(spec.precision)
@@ -149,11 +210,16 @@ class Knob(
         indicator.endY = end.y
     }
 
+    enum class InputMethod {
+        Angle, Horizontal, Vertical;
+    }
+
     companion object {
         private const val DEFAULT_RADIUS = 24.0
         private const val MIN_ANGLE = 6.5 / 3 * PI
         private const val MAX_ANGLE = 2.5 / 3 * PI
         private const val DOT_RADIUS = 3.0
         private const val MAX_DOTS = 20
+        private const val DRAG_RANGE = 200.0
     }
 }

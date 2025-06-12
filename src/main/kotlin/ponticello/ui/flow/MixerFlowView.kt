@@ -15,21 +15,25 @@ import javafx.scene.input.MouseEvent
 import javafx.scene.input.TransferMode
 import javafx.scene.layout.HBox
 import javafx.scene.layout.VBox
+import javafx.scene.paint.Color
 import org.kordamp.ikonli.materialdesign2.MaterialDesignA
 import org.kordamp.ikonli.materialdesign2.MaterialDesignP
 import ponticello.model.flow.MixerFlow
 import ponticello.model.obj.BusObject
 import ponticello.model.registry.BusRegistry
+import ponticello.sc.NumericalControlSpec
 import ponticello.sc.Rate
 import ponticello.sc.editor.BusSelector
 import ponticello.sc.view.ObjectSelectorControl
 import ponticello.ui.actions.ServerActions
 import ponticello.ui.actions.undoable
+import ponticello.ui.controls.Knob
 import ponticello.ui.impl.getFrom
 import ponticello.ui.registry.ObjectBox
 import ponticello.ui.registry.ObjectListDisplayConfig
 import ponticello.ui.registry.ObjectListView
 import ponticello.ui.registry.SearchableBusListView
+import reaktive.value.binding.equalTo
 import reaktive.value.binding.flatMap
 import reaktive.value.binding.not
 import reaktive.value.fx.asObservableValue
@@ -37,7 +41,8 @@ import reaktive.value.now
 import reaktive.value.reactiveValue
 
 class MixerFlowView(private val flow: MixerFlow) : VBox(), ObjectListDisplayConfig<MixerFlow.MixerComponent> {
-    val componentsView = ObjectListView(flow.components, this)
+    private val channels = flow.targetBus.flatMap { bus -> bus.get()?.channels ?: reactiveValue(0) }
+    private val componentsView = ObjectListView(flow.components, this)
 
     init {
         val totalVolumeSlider = SliderBar(
@@ -84,6 +89,7 @@ class MixerFlowView(private val flow: MixerFlow) : VBox(), ObjectListDisplayConf
         selector.initialize(flow.context)
         val selectorControl = ObjectSelectorControl(selector, createBundle())
             .widthAtLeast(150.0)
+
         val converter = MixerFlow.VOLUME_SPEC.converter(unit = "db")
         val volumeSlider = SliderBar(
             obj.volume, "Volume (db)", converter, SliderBar.Style.AlwaysValue,
@@ -91,7 +97,15 @@ class MixerFlowView(private val flow: MixerFlow) : VBox(), ObjectListDisplayConf
         )
         volumeSlider.prefWidth = 150.0
         volumeSlider.disableProperty().bind(obj.mute.asObservableValue())
-        return listOf(selectorControl, volumeSlider)
+
+        val panKnob = Knob(
+            "Pan", obj.pan, NumericalControlSpec.PAN,
+            radius = 20.0, color = Color.BLACK, showRange = true,
+            inputMethod = Knob.InputMethod.Horizontal,
+            undoManager = flow.context[UndoManager]
+        )
+        panKnob.visibleProperty().bind(channels.equalTo(2).asObservableValue())
+        return listOf(selectorControl, volumeSlider, panKnob)
     }
 
     override fun getActions(box: ObjectBox<MixerFlow.MixerComponent>): List<ContextualizedAction> =

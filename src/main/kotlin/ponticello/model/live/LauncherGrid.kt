@@ -14,7 +14,6 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import ponticello.impl.zero
 import ponticello.model.obj.AbstractContextualObject
-import ponticello.model.obj.ParameterDefObject
 import ponticello.model.obj.project
 import ponticello.model.player.ActiveScoreObject
 import ponticello.model.player.ScoreObjectScheduler
@@ -152,8 +151,11 @@ class LauncherGrid private constructor(
                 val description = if (value is ItemTarget.None) "Reset target" else "Choose target"
                 grid.undoManager.record(VariableEdit(_target, oldTarget, value, description))
                 grid.listeners.notifyListeners { updateItem(this@GridItem) }
-                if (value is ItemTarget.Object && value.targetObject is SoundProcess) {
-                    value.velocityParameter.now = ParameterDefObject.LEVEL.reference()
+                if (value is ItemTarget.Object) {
+                    val target = value.targetObject
+                    if (target is SoundProcess && target.def.hasParameter("level")) {
+                        value.velocityParameter.now = target.def.getParameter("level")!!.reference()
+                    }
                 }
             }
 
