@@ -33,18 +33,25 @@ class AudioFlowPane(flows: AudioFlows) : SearchableToolPane<AudioFlowGroup>(flow
         get() = Orientation.HORIZONTAL
 
     override val supportedModes: Set<DisplayMode>
-        get() = setOf(DisplayMode.Inline(collapsable = true), DisplayMode.SubWindow, DisplayMode.DetailsPane)
+        get() = setOf(DisplayMode.Inline(collapsable = false), DisplayMode.SubWindow, DisplayMode.DetailsPane)
 
     init {
         styleClass.add("flow-pane")
     }
 
-    override fun defaultState(): ToolPaneState = SearchableToolPaneState.docked
+    override fun defaultState(): ToolPaneState = FlowPaneState()
 
     override fun afterSetup() {
         super.afterSetup()
         listView.itemsScrollPane.isFitToHeight = true
         listView.autoResizeScene = true
+        val state = initialState
+        if (state is FlowPaneState) {
+            val flowBoxes = allFlowBoxes()
+            for (idx in state.expandedFlows) {
+                flowBoxes[idx].toggleExpanded()
+            }
+        }
     }
 
     override fun getItemContent(obj: AudioFlowGroup): List<Node> {
@@ -55,6 +62,25 @@ class AudioFlowPane(flows: AudioFlows) : SearchableToolPane<AudioFlowGroup>(flow
 
     override fun getContent(obj: AudioFlowGroup, mode: DisplayMode): Parent =
         FlowGroupPane(obj, ownWindow = mode == DisplayMode.SubWindow)
+
+    override fun onDeselected(obj: AudioFlowGroup) {
+        val groupPane = listView.getBox(obj).content as? FlowGroupPane ?: return
+        groupPane.flowsView.deselectAll()
+    }
+
+    override fun saveState(dest: ToolPaneState) {
+        super.saveState(dest)
+        if (dest is FlowPaneState) {
+            dest.expandedFlows = allFlowBoxes().withIndex()
+                .filter { (_, box) -> box.isExpanded }
+                .map { v -> v.index }
+        }
+    }
+
+    private fun allFlowBoxes() = listView.getBoxes().flatMap { box ->
+        val groupPane = box.content as? FlowGroupPane ?: return@flatMap emptyList()
+        groupPane.flowsView.getBoxes()
+    }
 
     private class FlowNamePrompt(
         private val takenFlowNames: Set<String>,

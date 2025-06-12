@@ -9,36 +9,28 @@ import javafx.scene.input.KeyEvent
 import javafx.scene.layout.HBox
 import org.kordamp.ikonli.material2.Material2AL
 import ponticello.model.obj.RenamableObject
-import ponticello.model.registry.NamedObject.Companion.NO_NAME
 import ponticello.sc.Identifier
 import reaktive.Observer
-import reaktive.value.ReactiveString
-import reaktive.value.binding.flatMap
 import reaktive.value.binding.not
 import reaktive.value.now
-import reaktive.value.reactiveValue
 import reaktive.value.reactiveVariable
 
-class NameControl(
-    val obj: RenamableObject,
-    private val defaultDisplayName: ReactiveString = reactiveValue(NO_NAME),
-) : HBox() {
+class NameControl(val obj: RenamableObject) : HBox() {
+    val isEditing = reactiveVariable(false)
+
     private val field = TextField().alwaysHGrow() styleClass "name-field"
-    val label = label(
-        obj.name.flatMap { n -> if (n == NO_NAME) defaultDisplayName else reactiveValue(n) }
-    ).alwaysHGrow() styleClass "name-label"
+    val label = label(obj.name).alwaysHGrow() styleClass "name-label"
+
+    val actionBar = ActionBar(actions.withContext(this), buttonStyle = "small-icon-button")
 
     private val observer: Observer
-
-    val isEditing = reactiveVariable(false)
 
     private var isAutoSize = false
 
     init {
         styleClass("name-control")
-        field.text = obj.name.now.takeIf { it != NO_NAME } ?: defaultDisplayName.now
-        val toolbar = ActionBar(actions.withContext(this), buttonStyle = "small-icon-button")
-        children.addAll(label, toolbar)
+        field.text = obj.name.now
+        children.addAll(label, actionBar)
         field.addEventFilter(KeyEvent.KEY_PRESSED) { ev ->
             if ("ENTER".shortcut.matches(ev)) {
                 commitEdit()
@@ -57,11 +49,7 @@ class NameControl(
             }
         }
         field.autoSize(::isAutoSize)
-        observer = obj.name.observe { _, _, newName ->
-            field.text = newName.takeIf { it != NO_NAME } ?: defaultDisplayName.now
-        } and defaultDisplayName.observe { _, _, defaultName ->
-            if (obj.name.now == NO_NAME) field.text = defaultName
-        }
+        observer = obj.name.observe { _, _, newName -> field.text = newName }
     }
 
     fun autoSize() = also { isAutoSize = true }

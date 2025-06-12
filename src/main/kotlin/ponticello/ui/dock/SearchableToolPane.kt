@@ -32,9 +32,17 @@ abstract class SearchableToolPane<O : NamedObject>(
     override val headerContent: Node get() = searchText
 
     override fun doSetup() {
-        listView = ObjectListView(list, this, filter = { obj -> filter(obj) && matchesSearch(obj) })
-        val initialMode = (initialState as? SearchableToolPaneState)?.displayMode
-        if (initialMode != null) listView.setMode(initialMode)
+        var initialMode = supportedModes.first()
+        val state = initialState
+        if (state is SearchableToolPaneState) {
+            if (state.displayMode != null) initialMode = state.displayMode!!
+        }
+        listView = ObjectListView(list, this, initialMode, filter = { obj -> filter(obj) && matchesSearch(obj) })
+        if (state is SearchableToolPaneState) {
+            for (idx in state.expandedBoxes) {
+                listView.getBoxes()[idx].toggleExpanded()
+            }
+        }
         setupSearchField()
     }
 
@@ -73,6 +81,9 @@ abstract class SearchableToolPane<O : NamedObject>(
         super.saveState(dest)
         if (dest is SearchableToolPaneState && isSetup) {
             dest.displayMode = listView.mode.now
+            dest.expandedBoxes = listView.getBoxes().withIndex()
+                .filter { (_, box) -> box.isExpanded }
+                .map(IndexedValue<*>::index)
         }
     }
 

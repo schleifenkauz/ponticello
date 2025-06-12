@@ -198,6 +198,9 @@ class ObjectListView<O : Any>(
             storedWindowSizes[displayMode.now] = Dimension2D(scene.window.width, scene.window.height)
         }
         displayMode.now = mode
+        for (box in boxes) {
+            box.relayout()
+        }
         updateRoot(mode)
         if (autoResizeScene && scene?.window != null && mode in storedWindowSizes) {
             val size = storedWindowSizes.getValue(mode)
@@ -234,9 +237,6 @@ class ObjectListView<O : Any>(
                 else emptyDisplay()
             setRoot(root)
         } else {
-            for (box in boxes) {
-                box.relayout()
-            }
             if (mode == DisplayMode.DetailsPane) {
                 displayContent(selectedBox.now)
             } else {
@@ -435,6 +435,8 @@ class ObjectListView<O : Any>(
     sealed class DisplayMode {
         companion object {
             val all get() = setOf(Inline(false), Inline(true), SubWindow, DetailsPane)
+
+            val Collapsable get() = Inline(collapsable = true)
         }
 
         @Serializable

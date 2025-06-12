@@ -36,7 +36,7 @@ ServerBoot.add {
     ~time_warp_bus = Bus.control(s, 1);
 	Task {
 		1.wait;
-		VSTPlugin.search;
+		VSTPlugin.search(verbose: false);
 	}.play;
 };
 ServerTree.add {
@@ -84,7 +84,7 @@ OSCdef('run', {
 	fct = this.compile(code.asString);
 	if (fct == nil) { ~ponticello_addr.sendMsg('error', "Compilation error") };
 	fork {
-	    code.postln;
+	    //code.postln;
 		try { fct.value } { |error|
 			~ponticello_addr.sendMsg('/error', nil, error.what);
 			error.throw;

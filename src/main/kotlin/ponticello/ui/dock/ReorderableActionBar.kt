@@ -7,7 +7,6 @@ import javafx.geometry.Orientation
 import javafx.scene.Node
 import javafx.scene.Parent
 import javafx.scene.control.Control
-import javafx.scene.layout.HBox
 import javafx.scene.layout.Region
 import ponticello.model.registry.ObjectList
 import ponticello.ui.registry.ObjectBox
@@ -56,7 +55,7 @@ abstract class ReorderableActionBar<O : Any>(
         return action.makeButton(style)
     }
 
-    override fun boxLayout(obj: O, header: HBox, content: Node?): Node = content ?: Region()
+    override fun boxLayout(obj: O, header: Region, content: Node?): Node = content ?: Region()
 
     companion object {
         operator fun invoke(style: String, actions: ObjectList<ContextualizedAction>) =

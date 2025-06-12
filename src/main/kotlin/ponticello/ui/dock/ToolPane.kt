@@ -113,6 +113,9 @@ abstract class ToolPane : VBox() {
         }
         window = SubWindow(this, title, windowType).sceneFill(DEFAULT_SCENE_FILL)
         window!!.sizeToScene()
+        window!!.setOnHidden {
+            showing.set(false)
+        }
         setShowing(true)
         return window!!
     }

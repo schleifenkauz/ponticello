@@ -40,9 +40,9 @@ class InstrumentRegistryPane(
         get() = InstrumentRegistryPane
 
     override val supportedModes: Set<DisplayMode>
-        get() = setOf(DisplayMode.DetailsPane, DisplayMode.SubWindow)
+        get() = setOf(DisplayMode.DetailsPane, DisplayMode.SubWindow, DisplayMode.Collapsable)
 
-    override fun defaultState(): ToolPaneState = SearchableToolPaneState.docked
+    override fun defaultState(): ToolPaneState = SearchableToolPaneState.window
 
     override fun detailWindowIcon(obj: InstrumentObject): Ikon =
         if (obj is CustomizableSynthDefObject || obj is ProcessDefObject) Material2AL.CODE

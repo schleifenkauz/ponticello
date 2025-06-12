@@ -27,7 +27,8 @@ import ponticello.ui.launcher.PonticelloApp.Companion.primaryStage
 import ponticello.ui.registry.ObjectListView.DisplayMode
 import reaktive.value.binding.equalTo
 import reaktive.value.binding.`if`
-import reaktive.value.binding.not
+import reaktive.value.binding.notEqualTo
+import reaktive.value.binding.or
 import reaktive.value.fx.asObservableValue
 import reaktive.value.now
 import reaktive.value.reactiveValue
@@ -44,20 +45,22 @@ class ObjectBox<O : Any>(val parent: ObjectListView<O>, val obj: O) : Control() 
 
     val config get() = parent.config
 
-    val nameControl = if (obj is RenamableObject) NameControl(obj, config.getDefaultDisplayName(obj)) else null
+    val nameControl = if (obj is RenamableObject) NameControl(obj) else null
 
     val nameLabel: Label?
 
-    private val collapsed = reactiveVariable(true)
+    private val expanded = reactiveVariable(false)
 
-    private val nameDisplay: HBox? = when {
+    val isExpanded get() = expanded.now
+
+    private val nameDisplay: Region? = when {
         nameControl != null -> {
             nameLabel = nameControl.label
             nameControl.setFixedWidth(150.0)
         }
 
         obj is NamedObject -> {
-            nameLabel = label(obj.name.now).styleClass("name-field")
+            nameLabel = Label(obj.name.now).styleClass("name-field")
             HBox(nameLabel).styleClass("name")
         }
 
@@ -78,8 +81,10 @@ class ObjectBox<O : Any>(val parent: ObjectListView<O>, val obj: O) : Control() 
         set(value) {
             field = value
             if (value != null) {
-                value.visibleProperty().bind(collapsed.not().asObservableValue())
-                value.managedProperty().bind(value.visibleProperty())
+                val visible = (parent.mode.notEqualTo(DisplayMode.Collapsable) or expanded)
+                    .asObservableValue()
+                value.visibleProperty().bind(visible)
+                value.managedProperty().bind(visible)
             }
         }
 
@@ -94,6 +99,7 @@ class ObjectBox<O : Any>(val parent: ObjectListView<O>, val obj: O) : Control() 
         header.children.addAll(config.getItemContent(obj))
         if (config.addSpaceBeforeActionBar) header.children.add(infiniteSpace())
         header.children.add(actionBar)
+        header.centerChildren()
 
         addEventFilter(MouseEvent.MOUSE_CLICKED) { ev ->
             if (ev.target is Button || ev.target is SliderBar<*>) return@addEventFilter
@@ -103,7 +109,6 @@ class ObjectBox<O : Any>(val parent: ObjectListView<O>, val obj: O) : Control() 
             }
         }
         styleClass(*config.boxStyle)
-        relayout()
     }
 
     fun relayout() {
@@ -119,11 +124,17 @@ class ObjectBox<O : Any>(val parent: ObjectListView<O>, val obj: O) : Control() 
             content = config.getContent(obj, currentMode)
         }
         val root = config.boxLayout(obj, header, content)
-        setPseudoClassState("inline-content", currentMode is DisplayMode.Inline && content != null)
+        updateInlineContentPseudoClass()
         setRoot(root)
         if (config.dataFormat != null) {
             setupDragging()
         }
+    }
+
+    private fun updateInlineContentPseudoClass() {
+        val inlineContent = content != null && currentMode == DisplayMode.Inline(collapsable = false)
+                || currentMode == DisplayMode.Collapsable && expanded.now
+        setPseudoClassState("inline-content", inlineContent)
     }
 
     private fun createSubWindow(): SubWindow? {
@@ -138,6 +149,11 @@ class ObjectBox<O : Any>(val parent: ObjectListView<O>, val obj: O) : Control() 
         config.configureSubWindow(window, obj)
         window.initOwner(context[primaryStage])
         return window
+    }
+
+    fun toggleExpanded() {
+        expanded.toggle()
+        updateInlineContentPseudoClass()
     }
 
     fun showSubWindow(): SubWindow? {
@@ -202,18 +218,18 @@ class ObjectBox<O : Any>(val parent: ObjectListView<O>, val obj: O) : Control() 
             }
             addAction("Collapse") {
                 description { box ->
-                    `if`(box.collapsed, then = { "Expand" }, otherwise = { "Collapse" })
+                    `if`(box.expanded, then = { "Collapse" }, otherwise = { "Expand" })
                 }
                 icon { box ->
                     `if`(
-                        box.collapsed,
+                        box.expanded,
                         then = { MaterialDesignC.CHEVRON_UP },
                         otherwise = { MaterialDesignC.CHEVRON_DOWN }
                     )
                 }
-                enableWhen { box -> box.parent.mode.equalTo(DisplayMode.Inline(collapsable = true)) }
+                enableWhen { box -> box.parent.mode.equalTo(DisplayMode.Collapsable) }
                 ifNotApplicable(Action.IfNotApplicable.Hide)
-                executes { box, _ -> box.collapsed.toggle() }
+                executes { box, _ -> box.toggleExpanded() }
             }
         }
     }

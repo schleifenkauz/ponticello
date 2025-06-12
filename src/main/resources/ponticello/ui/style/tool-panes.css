@@ -22,9 +22,10 @@
 }
 
 .object-box-header {
-    -fx-spacing: 5px;
+    -fx-spacing: 2px;
     -fx-alignment: center-left;
     -fx-background-color: transparent;
+    -fx-padding: 2px;
 }
 
 .object-box {

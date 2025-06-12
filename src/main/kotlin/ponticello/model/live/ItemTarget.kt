@@ -29,6 +29,7 @@ import ponticello.ui.dock.AppLayout
 import ponticello.ui.launcher.PonticelloMainActivity
 import ponticello.ui.registry.ScoreObjectRegistryPane
 import reaktive.value.*
+import reaktive.value.binding.and
 
 @Serializable
 sealed class ItemTarget : AbstractContextualObject() {
@@ -143,7 +144,7 @@ sealed class ItemTarget : AbstractContextualObject() {
                 val velocityParameter = velocityParameter.now.get()
                 val spec = velocityParameter?.spec?.now as? NumericalControlSpec
                 if (obj is ParameterizedObject && spec != null) {
-                    val transform = spec.mapOnto(0.0,127.0)
+                    val transform = spec.mapOnto(0.0, 127.0)
                     val value = transform.unmap(velocity.toDouble()).toDecimal().withPrecision(spec.precision)
                     extraArguments[velocityParameter] = ValueControl.create(value)
                 }
@@ -250,11 +251,17 @@ sealed class ItemTarget : AbstractContextualObject() {
 
         override fun initialize(context: Context) {
             super.initialize(context)
-            isActive = ref.getFlow(context[AudioFlows])?.isActive ?: reactiveValue(false)
+            val flow = ref.getFlow(context[AudioFlows])
+            isActive =
+                if (flow == null) reactiveValue(false)
+                else flow.isActive and flow.parentGroup.isActive
         }
 
         override fun pressed(velocity: Int, item: LauncherGrid.GridItem) {
             val flow = ref.getFlow(context[AudioFlows]) ?: return
+            if (!flow.parentGroup.isActive.now) {
+                flow.parentGroup.toggleActive()
+            }
             if (!flow.isActive.now) flow.setActive(true)
             else if (!item.stopOnRelease.now) {
                 flow.setActive(false)

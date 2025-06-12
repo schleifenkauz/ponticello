@@ -22,12 +22,26 @@ sealed class ToolPaneState {
 class RegularToolPaneState : ToolPaneState()
 
 @Serializable
-class SearchableToolPaneState : ToolPaneState() {
+sealed class SearchableToolPaneState : ToolPaneState() {
     var displayMode: ObjectListView.DisplayMode? = null
 
+    var expandedBoxes = emptyList<Int>()
+
     companion object {
-        val docked get() = SearchableToolPaneState().apply { mode = ToolPaneMode.Docked }
-        val window get() = SearchableToolPaneState().apply { mode = ToolPaneMode.Window }
-        val floating get() = SearchableToolPaneState().apply { mode = ToolPaneMode.Floating }
+        val docked get() = RegularSearchableToolPaneState().apply { mode = ToolPaneMode.Docked }
+        val window get() = RegularSearchableToolPaneState().apply { mode = ToolPaneMode.Window }
+        val floating get() = RegularSearchableToolPaneState().apply { mode = ToolPaneMode.Floating }
+    }
+}
+
+@Serializable
+class RegularSearchableToolPaneState : SearchableToolPaneState()
+
+@Serializable
+class FlowPaneState: SearchableToolPaneState() {
+    var expandedFlows = emptyList<Int>()
+
+    init {
+        mode = ToolPaneMode.Docked
     }
 }

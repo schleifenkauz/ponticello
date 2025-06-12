@@ -12,7 +12,7 @@ import javafx.scene.input.DataFormat
 import javafx.scene.input.DragEvent
 import javafx.scene.input.Dragboard
 import javafx.scene.input.TransferMode
-import javafx.scene.layout.HBox
+import javafx.scene.layout.Region
 import javafx.scene.layout.VBox
 import org.kordamp.ikonli.Ikon
 import org.kordamp.ikonli.materialdesign2.MaterialDesignE
@@ -95,7 +95,7 @@ interface ObjectListDisplayConfig<O : Any> {
 
     fun onRemoved(obj: O) {}
 
-    fun boxLayout(obj: O, header: HBox, content: Node?): Node =
+    fun boxLayout(obj: O, header: Region, content: Node?): Node =
         if (content != null) VBox(header, content)
         else header
 }

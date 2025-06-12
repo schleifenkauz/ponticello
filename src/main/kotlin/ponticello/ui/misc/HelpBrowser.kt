@@ -68,7 +68,7 @@ class HelpBrowser : ToolPane() {
             get() = MaterialDesignW.WEB
 
         override val defaultSide: Side
-            get() = Side.TOP
+            get() = Side.RIGHT
 
         override fun createToolPane(project: PonticelloProject): ToolPane = HelpBrowser()
 
