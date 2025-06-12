@@ -13,7 +13,6 @@ import javafx.scene.image.Image
 import javafx.scene.image.ImageView
 import javafx.scene.input.DragEvent
 import javafx.scene.input.Dragboard
-import javafx.scene.input.MouseEvent
 import javafx.scene.layout.*
 import javafx.scene.paint.Color
 import javafx.scene.shape.Line
@@ -124,13 +123,6 @@ class SoundProcessView(
     }
 
     private fun listenForMouseEvents() {
-        addEventHandler(MouseEvent.MOUSE_CLICKED) { ev ->
-            if (ev.isAltDown) {
-                val p = Point2D(ev.screenX, ev.screenY)
-                showNewEnvelopePopup(p)
-                ev.consume()
-            }
-        }
         var borderBefore: Border? = null
         setupDropArea(::canDrop, ::drop) { dropPossible ->
             if (dropPossible) {
@@ -198,7 +190,7 @@ class SoundProcessView(
         obj.controls.assignControl(assignedName, control)
     }
 
-    private fun showNewEnvelopePopup(point: Point2D) {
+    fun showNewEnvelopePopup() {
         val possibleParameters = obj.def.allParameters()
             .filter { p -> p.spec.now is NumericalControlSpec }
             .filter { p ->
@@ -208,7 +200,9 @@ class SoundProcessView(
         val listView = SearchableParameterDefListView(
             possibleParameters, "New parameter", obj, fixedParameterType = ParameterType.Numerical
         )
-        val param = listView.showPopup(point, context[primaryStage]) ?: return
+        val relativeY = if (inlineControls.isVisible) inlineControls.height else 0.0
+        val anchor = localToScreen(Point2D(0.0, relativeY))
+        val param = listView.showPopup(anchor, context[primaryStage]) ?: return
         val name = param.name.now
         val spec = param.spec.now as NumericalControlSpec
         val initialValue = obj.controls.controlMap[name]?.getNumericalValue() ?: spec.defaultValue.get()

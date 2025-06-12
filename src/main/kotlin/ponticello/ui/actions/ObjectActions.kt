@@ -193,7 +193,15 @@ object ObjectActions {
 //                }
 //            }
 //        }
-
+        addObjectAction("Add envelope") {
+            shortcut("Alt?+E")
+            applicableOn<SoundProcessView>()
+            executeSingle { view, ev ->
+                if (ev.isTargetTextInput && !ev.isAltDown()) return@executeSingle
+                view as SoundProcessView
+                view.showNewEnvelopePopup()
+            }
+        }
         addObjectAction("Infer quantization config from score") {
             icon(MaterialDesignM.METRONOME)
             applicableOn { view ->
