@@ -54,4 +54,41 @@ abstract class ScoreEdit(val score: Score) : AbstractEdit() {
             score.deleteTimeRange(location, location + amount)
         }
     }
+
+    class MoveObject(
+        private val obj: ScoreObjectInstance,
+        private val before: ObjectPosition,
+        private val after: ObjectPosition,
+    ) : AbstractEdit() {
+        override val actionDescription: String
+            get() = "Move object"
+
+        override fun doRedo() {
+            obj.moveTo(after.time, after.y, simpleMove = true)
+        }
+
+        override fun doUndo() {
+            obj.moveTo(before.time, before.y, simpleMove = true)
+        }
+
+        override fun mergeWith(other: Edit): Edit? {
+            if (other is MoveObject && other.obj == this.obj) {
+                return MoveObject(obj, this.before, other.after)
+            }
+            return null
+        }
+    }
+
+    class ToggleMute(private val obj: ScoreObjectInstance) : AbstractEdit() {
+        override val actionDescription: String
+            get() = "Toggle Muted"
+
+        override fun doUndo() {
+            obj.toggleMuted()
+        }
+
+        override fun doRedo() {
+            obj.toggleMuted()
+        }
+    }
 }

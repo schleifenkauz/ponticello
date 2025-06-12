@@ -2,9 +2,11 @@ package ponticello.ui.actions
 
 import fxutils.actions.isTargetTextInput
 import hextant.context.Context
-import javafx.geometry.HorizontalDirection
+import hextant.context.compoundEdit
+import javafx.geometry.HorizontalDirection.LEFT
 import javafx.geometry.HorizontalDirection.RIGHT
-import javafx.geometry.VerticalDirection
+import javafx.geometry.VerticalDirection.DOWN
+import javafx.geometry.VerticalDirection.UP
 import javafx.scene.Scene
 import javafx.scene.input.KeyCode
 import javafx.scene.input.KeyEvent
@@ -45,13 +47,15 @@ object ArrowKeys {
                     .associateBy { v -> v.instance }.values //filters out views that display the same instance
                 val resize = ev.isControlDown
                 val resizeType = ev.resizeMode ?: return@addEventFilter
-                for (view in selected) {
-                    when (ev.code) {
-                        KeyCode.LEFT -> view.adjustHorizontal(direction = HorizontalDirection.LEFT, resize, resizeType)
-                        KeyCode.RIGHT -> view.adjustHorizontal(direction = RIGHT, resize, resizeType)
-                        KeyCode.UP -> view.adjustVertical(direction = VerticalDirection.UP, resize, resizeType)
-                        KeyCode.DOWN -> view.adjustVertical(direction = VerticalDirection.DOWN, resize, resizeType)
-                        else -> throw AssertionError()
+                context.compoundEdit("Move objects") {
+                    for (view in selected) {
+                        when (ev.code) {
+                            KeyCode.LEFT -> view.adjustHorizontal(direction = LEFT, resize, resizeType)
+                            KeyCode.RIGHT -> view.adjustHorizontal(direction = RIGHT, resize, resizeType)
+                            KeyCode.UP -> view.adjustVertical(direction = UP, resize, resizeType)
+                            KeyCode.DOWN -> view.adjustVertical(direction = DOWN, resize, resizeType)
+                            else -> throw AssertionError()
+                        }
                     }
                 }
             }

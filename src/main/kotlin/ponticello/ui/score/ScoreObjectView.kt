@@ -336,9 +336,11 @@ abstract class ScoreObjectView(
         if (cursor.isResizeCursor) {
             obj.finishResize()
         } else {
-            val selectedInstances = context[ScoreObjectSelectionManager].selectedInstances + this.instance
-            for (inst in selectedInstances) {
-                inst.finishMove()
+            context.compoundEdit("Move objects") {
+                val selectedInstances = context[ScoreObjectSelectionManager].selectedInstances + this.instance
+                for (inst in selectedInstances) {
+                    inst.finishMove()
+                }
             }
         }
     }

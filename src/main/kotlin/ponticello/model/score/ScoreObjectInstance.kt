@@ -1,7 +1,5 @@
 package ponticello.model.score
 
-import fxutils.undo.AbstractEdit
-import fxutils.undo.Edit
 import fxutils.undo.UndoManager
 import hextant.context.Context
 import hextant.core.editor.ListenerManager
@@ -107,7 +105,7 @@ class ScoreObjectInstance(
     fun finishMove(notifyScore: Boolean = true, recordEdit: Boolean = true) {
         if (position == positionBeforeMove) return
         if (notifyScore) score?.movedObject(this, positionBeforeMove)
-        if (recordEdit) context[UndoManager].record(MoveObject(this, positionBeforeMove, position))
+        if (recordEdit) context[UndoManager].record(ScoreEdit.MoveObject(this, positionBeforeMove, position))
         positionBeforeMove = ObjectPosition.ZERO
     }
 
@@ -140,7 +138,7 @@ class ScoreObjectInstance(
     fun toggleMuted() {
         if (obj.canMute) {
             _muted.now = !muted.now
-            context[UndoManager].record(ToggleMute(this))
+            context[UndoManager].record(ScoreEdit.ToggleMute(this))
             viewManager.notifyListeners { toggledMute(muted.now) }
             score?.toggledMute(this, muted.now)
         }
@@ -186,42 +184,5 @@ class ScoreObjectInstance(
         fun moved(start: Decimal, y: Decimal)
 
         fun toggledMute(muted: Boolean)
-    }
-
-    class MoveObject(
-        private val obj: ScoreObjectInstance,
-        private val before: ObjectPosition,
-        private val after: ObjectPosition,
-    ) : AbstractEdit() {
-        override val actionDescription: String
-            get() = "Move object"
-
-        override fun doRedo() {
-            obj.moveTo(after.time, after.y, simpleMove = true)
-        }
-
-        override fun doUndo() {
-            obj.moveTo(before.time, before.y, simpleMove = true)
-        }
-
-        override fun mergeWith(other: Edit): Edit? {
-            if (other is MoveObject && other.obj == this.obj) {
-                return MoveObject(obj, this.before, other.after)
-            }
-            return null
-        }
-    }
-
-    private class ToggleMute(private val obj: ScoreObjectInstance) : AbstractEdit() {
-        override val actionDescription: String
-            get() = "Toggle Muted"
-
-        override fun doUndo() {
-            obj.toggleMuted()
-        }
-
-        override fun doRedo() {
-            obj.toggleMuted()
-        }
     }
 }
