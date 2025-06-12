@@ -108,6 +108,9 @@ class BusRegistryPane(busses: BusRegistry) : ObjectRegistryPane<BusObject>(busse
         override val icon: Ikon
             get() = Material2AL.GRAPHIC_EQ //MaterialDesignT.TUNE_VARIANT
 
+        override val shortcuts: Array<String>
+            get() = arrayOf("F4")
+
         override fun createToolPane(project: PonticelloProject): ToolPane = BusRegistryPane(project.busses)
 
         private val actions = collectActions<ObjectBox<BusObject>> {

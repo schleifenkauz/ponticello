@@ -21,7 +21,6 @@ import reaktive.value.now
 class HelpBrowser : ToolPane() {
     override val type: Type
         get() = HelpBrowser
-    override val shortcuts: Array<String> = arrayOf("F1")
 
     private lateinit var webView: WebView
 
@@ -66,6 +65,8 @@ class HelpBrowser : ToolPane() {
         Type(12, "SuperCollider Documentation") {
         override val icon: Ikon
             get() = MaterialDesignW.WEB
+
+        override val shortcuts: Array<String> = arrayOf("F1")
 
         override val defaultSide: Side
             get() = Side.RIGHT

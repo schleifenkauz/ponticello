@@ -152,6 +152,9 @@ class ScoreObjectDetailPane(private val context: Context) : ToolPane() {
         override val icon: Ikon
             get() = MaterialDesignT.TUNE_VARIANT
 
+        override val shortcuts: Array<String>
+            get() = arrayOf("F1")
+
         override val defaultSide: Side
             get() = Side.LEFT
 

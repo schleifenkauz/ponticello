@@ -5,7 +5,6 @@ import fxutils.actions.Action
 import fxutils.actions.collectActions
 import fxutils.actions.isAltDown
 import fxutils.actions.isTargetTextInput
-import fxutils.isActuallyVisible
 import fxutils.prompt.IntegerPrompt
 import hextant.context.Context
 import hextant.context.compoundEdit
@@ -21,7 +20,6 @@ import ponticello.model.project.InlineControlsDisplay
 import ponticello.model.project.UIState
 import ponticello.model.registry.ScoreObjectRegistry
 import ponticello.model.score.*
-import ponticello.ui.controls.RenamePrompt
 import ponticello.ui.dock.AppLayout
 import ponticello.ui.impl.showDialog
 import ponticello.ui.launcher.PonticelloMainActivity
@@ -185,16 +183,16 @@ object ObjectActions {
                 }
             }
         }
-        addObjectAction("Rename object") {
-            shortcut("F2")
-            executeSingle { view, _ ->
-                if (view.inlineNameControl.isActuallyVisible()) {
-                    view.inlineNameControl.startEdit()
-                } else {
-                    RenamePrompt(view.obj, "New name for object").showDialog(view)
-                }
-            }
-        }
+//        addObjectAction("Rename object") {
+//            shortcut("F2")
+//            executeSingle { view, _ ->
+//                if (view.inlineNameControl.isActuallyVisible()) {
+//                    view.inlineNameControl.startEdit()
+//                } else {
+//                    RenamePrompt(view.obj, "New name for object").showDialog(view)
+//                }
+//            }
+//        }
 
         addObjectAction("Infer quantization config from score") {
             icon(MaterialDesignM.METRONOME)

@@ -4,6 +4,7 @@ import fxutils.actions.ContextualizedAction
 import fxutils.actions.collectActions
 import fxutils.actions.isShiftDown
 import fxutils.styleClass
+import javafx.event.Event
 import javafx.geometry.Point2D
 import javafx.scene.Node
 import javafx.scene.input.DataFormat
@@ -16,6 +17,7 @@ import org.kordamp.ikonli.material2.Material2MZ
 import ponticello.impl.json
 import ponticello.model.Settings
 import ponticello.model.obj.ParameterizedObject
+import ponticello.model.obj.withName
 import ponticello.model.registry.ObjectList
 import ponticello.model.score.ParameterControlList
 import ponticello.model.score.ParameterControlList.NamedParameterControl
@@ -24,7 +26,6 @@ import ponticello.sc.ControlSpec
 import ponticello.ui.controls.ControlAssignmentEditor
 import ponticello.ui.controls.ControlSpecPrompt
 import ponticello.ui.dock.SearchableToolPane
-import ponticello.ui.launcher.PonticelloApp.Companion.primaryStage
 import ponticello.ui.registry.ObjectBox
 import ponticello.ui.registry.ObjectListView.DisplayMode
 import ponticello.ui.registry.SearchableParameterDefListView
@@ -50,6 +51,30 @@ class ParameterControlsPane(
     override fun afterSetup() {
         super.afterSetup()
         obj.controls.addListener(this)
+    }
+
+    override fun createNewObject(ev: Event?): NamedParameterControl? {
+        if (ev.isShiftDown()) {
+            obj.addControlsForAllObjectParameters()
+            return null
+        } else {
+            return createNewControl(ev)
+        }
+    }
+
+    private fun createNewControl(ev: Event?): NamedParameterControl? {
+        val context = obj.context
+        val defaultParameters = context[Settings].defaultParametersDefs
+        val synthParameters = obj.def.allParameters()
+        val unassignedParameters = (synthParameters + defaultParameters)
+            .filter { param -> param.name.now !in obj.controls.controlMap }
+            .filter { param -> !(param in defaultParameters && synthParameters.any { p -> p.name.now == param.name.now }) }
+        val option = SearchableParameterDefListView(unassignedParameters, "Add parameter", obj)
+            .showPopup(ev) ?: return null
+        val parameter = option.name.now
+        val customSpec = option.spec.now.takeIf { !obj.def.hasParameter(parameter) }
+        val control = option.defaultControl()
+        return NamedParameterControl(control, customSpec).withName(parameter)
     }
 
     override fun acceptedTransferModes(dragboard: Dragboard): Array<TransferMode> =
@@ -118,11 +143,7 @@ class ParameterControlsPane(
                 icon(Material2MZ.PLUS)
                 shortcut("Ctrl+PLUS")
                 executes { p, ev ->
-                    if (ev.isShiftDown()) {
-                        p.obj.addControlsForAllObjectParameters()
-                    } else {
-                        addNewControl(p.obj, p.localToScreen(0.0, p.height))
-                    }
+
                 }
             }
         }
@@ -139,21 +160,6 @@ class ParameterControlsPane(
                     )?.showDialog(box, offset = Point2D(box.width, 0.0))
                 }
             }
-        }
-
-        private fun addNewControl(obj: ParameterizedObject, anchor: Point2D) {
-            val context = obj.context
-            val defaultParameters = context[Settings].defaultParametersDefs
-            val synthParameters = obj.def.allParameters()
-            val unassignedParameters = (synthParameters + defaultParameters)
-                .filter { param -> param.name.now !in obj.controls.controlMap }
-                .filter { param -> !(param in defaultParameters && synthParameters.any { p -> p.name.now == param.name.now }) }
-            val option = SearchableParameterDefListView(unassignedParameters, "Add parameter", obj)
-                .showPopup(anchor, context[primaryStage]) ?: return
-            val parameter = option.name.now
-            val customSpec = option.spec.now.takeIf { !obj.def.hasParameter(parameter) }
-            val control = option.defaultControl()
-            obj.controls.addControl(parameter, control, customSpec)
         }
 
         private val serializedControlFormat = DataFormat("ponticello/parameter-control-reference")

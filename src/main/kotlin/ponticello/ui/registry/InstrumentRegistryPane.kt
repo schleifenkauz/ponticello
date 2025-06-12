@@ -138,9 +138,11 @@ class InstrumentRegistryPane(
         super.extraHeaderActions() + actions.withContext(this)
 
     companion object : Type(8, "Instruments") {
-
         override val icon: Ikon
             get() = MaterialDesignS.SINE_WAVE
+
+        override val shortcuts: Array<String>
+            get() = arrayOf("F3")
 
         override val defaultSide: Side
             get() = Side.RIGHT

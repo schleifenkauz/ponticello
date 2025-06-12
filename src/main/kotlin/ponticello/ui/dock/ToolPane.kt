@@ -42,7 +42,7 @@ abstract class ToolPane : VBox() {
     open val type: Type get() = throw UnsupportedOperationException("$this has no type")
     open val title get() = type.title
     open val icon get() = type.icon
-    open val shortcuts: Array<String> get() = emptyArray()
+    open val shortcuts: Array<String> get() = type.shortcuts
 
     var isExclusive: Boolean = false
         private set
@@ -122,7 +122,9 @@ abstract class ToolPane : VBox() {
             Window -> makeToolWindow()
             Floating -> makePopup()
         }
-        setShowing(true)
+        if (mode != Floating) {
+            setShowing(true)
+        }
     }
 
     fun showToolPaneConfigMenu(ev: Event?) {
@@ -259,6 +261,8 @@ abstract class ToolPane : VBox() {
         abstract val defaultSide: Side
 
         abstract val icon: Ikon?
+
+        open val shortcuts: Array<String> get() = emptyArray()
 
         abstract fun createToolPane(project: PonticelloProject): ToolPane
 

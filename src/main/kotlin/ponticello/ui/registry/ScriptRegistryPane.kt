@@ -60,9 +60,11 @@ class ScriptRegistryPane(registry: ScriptRegistry) : ObjectRegistryPane<ScriptOb
         CodePane(obj.root, ownWindow = true)
 
     companion object : Type(11, "Scripts") {
-
         override val icon: Ikon
             get() = MaterialDesignF.FILE_COG
+
+        override val shortcuts: Array<String>
+            get() = arrayOf("F6")
 
         override val defaultSide: Side
             get() = Side.RIGHT

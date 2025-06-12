@@ -452,10 +452,6 @@ class ObjectListView<O : Any>(
 
     companion object {
         val listActions = collectActions<ObjectListView<*>> {
-            addAction("Add object") {
-                shortcut("Ctrl+PLUS")
-                executes { list -> list.addObject() }
-            }
             addAction("Delete selected") {
                 shortcut("Ctrl+DELETE")
                 icon(Material2MZ.REMOVE)

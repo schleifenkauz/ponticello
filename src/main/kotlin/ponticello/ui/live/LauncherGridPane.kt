@@ -66,8 +66,6 @@ class LauncherGridPane(
     override val content = GridPane().styleClass("launcher-grid-pane")
     override val headerContent: Node = setupHeader()
     override val type: Type get() = LauncherGridPane
-    override val shortcuts: Array<String>
-        get() = arrayOf("Ctrl+G")
 
     override val headerActions: List<ContextualizedAction> = actions.withContext(grid)
 
@@ -261,6 +259,9 @@ class LauncherGridPane(
 
         override val icon: Ikon
             get() = MaterialDesignG.GRID
+
+        override val shortcuts: Array<String>
+            get() = arrayOf("Ctrl+G")
 
         override fun createToolPane(project: PonticelloProject): ToolPane = LauncherGridPane(project[LAUNCHER_GRID])
 

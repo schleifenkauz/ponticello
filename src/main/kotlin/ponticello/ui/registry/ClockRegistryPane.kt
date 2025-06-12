@@ -36,7 +36,6 @@ class ClockRegistryPane(clocks: ClockRegistry) : ObjectRegistryPane<ClockObject>
     override fun createNewObject(name: String, ev: Event?): ClockObject = ClockObject.withName(name)
 
     companion object : Type(2, "Clocks") {
-
         override val icon: Ikon
             get() = Material2AL.ACCESS_TIME
 
