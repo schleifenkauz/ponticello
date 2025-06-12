@@ -95,3 +95,7 @@
     -fx-font-size: 10px;
     -fx-font-family: "Monospaced"
 }
+
+.object-box:flow-group-hover {
+    -fx-background-color: rgba(60, 0, 0, 0.5) !important;
+}

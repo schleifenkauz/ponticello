@@ -25,10 +25,7 @@ import ponticello.ui.controls.NamePrompt
 import ponticello.ui.impl.makeSubWindow
 import ponticello.ui.launcher.PonticelloApp.Companion.primaryStage
 import ponticello.ui.registry.ObjectListView.DisplayMode
-import reaktive.value.binding.equalTo
-import reaktive.value.binding.`if`
-import reaktive.value.binding.notEqualTo
-import reaktive.value.binding.or
+import reaktive.value.binding.*
 import reaktive.value.fx.asObservableValue
 import reaktive.value.now
 import reaktive.value.reactiveValue
@@ -51,7 +48,11 @@ class ObjectBox<O : Any>(val parent: ObjectListView<O>, val obj: O) : Control() 
 
     private val expanded = reactiveVariable(false)
 
-    val isExpanded get() = expanded.now
+    val isExpanded by lazy {
+        binding(parent.mode, expanded) { mode, expanded ->
+            mode == DisplayMode.Inline(collapsable = false) || expanded
+        }
+    }
 
     private val nameDisplay: Region? = when {
         nameControl != null -> {
@@ -100,6 +101,7 @@ class ObjectBox<O : Any>(val parent: ObjectListView<O>, val obj: O) : Control() 
         if (config.addSpaceBeforeActionBar) header.children.add(infiniteSpace())
         header.children.add(actionBar)
         header.centerChildren()
+        isFocusTraversable = true
 
         addEventFilter(MouseEvent.MOUSE_CLICKED) { ev ->
             if (ev.target is Button || ev.target is SliderBar<*>) return@addEventFilter
@@ -107,11 +109,12 @@ class ObjectBox<O : Any>(val parent: ObjectListView<O>, val obj: O) : Control() 
             if (ev.clickCount == 2) {
                 parent.showSelected()
             }
+            requestFocus()
         }
         styleClass(*config.boxStyle)
     }
 
-    fun relayout() {
+    fun updateMode() {
         content = null
         if (currentMode != DisplayMode.SubWindow) {
             subWindow?.let { w ->
@@ -123,12 +126,19 @@ class ObjectBox<O : Any>(val parent: ObjectListView<O>, val obj: O) : Control() 
         if (currentMode is DisplayMode.Inline) {
             content = config.getContent(obj, currentMode)
         }
-        val root = config.boxLayout(obj, header, content)
-        updateInlineContentPseudoClass()
-        setRoot(root)
+        relayout()
         if (config.dataFormat != null) {
             setupDragging()
         }
+        config.configureBox(this, currentMode)
+    }
+
+    private fun relayout() {
+        val root =
+            if (currentMode == DisplayMode.Collapsable && !expanded.now) config.collapsedLayout(this, header, content)
+            else config.boxLayout(obj, header, content)
+        updateInlineContentPseudoClass()
+        setRoot(root)
     }
 
     private fun updateInlineContentPseudoClass() {
@@ -153,7 +163,7 @@ class ObjectBox<O : Any>(val parent: ObjectListView<O>, val obj: O) : Control() 
 
     fun toggleExpanded() {
         expanded.toggle()
-        updateInlineContentPseudoClass()
+        relayout()
     }
 
     fun showSubWindow(): SubWindow? {
@@ -216,7 +226,7 @@ class ObjectBox<O : Any>(val parent: ObjectListView<O>, val obj: O) : Control() 
                     list.add(copy, list.indexOf(obj) + 1)
                 }
             }
-            addAction("Collapse") {
+            addAction("Expand/Collapse") {
                 description { box ->
                     `if`(box.expanded, then = { "Collapse" }, otherwise = { "Expand" })
                 }

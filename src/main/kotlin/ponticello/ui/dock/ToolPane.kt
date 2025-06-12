@@ -124,6 +124,7 @@ abstract class ToolPane : VBox() {
         window?.close()
         window?.scene?.root = Region()
         window = null
+        showing.now = true
         layout.showDocked(this)
     }
 

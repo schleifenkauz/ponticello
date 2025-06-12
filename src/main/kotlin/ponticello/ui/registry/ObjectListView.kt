@@ -132,13 +132,13 @@ class ObjectListView<O : Any>(
                                 box.isManaged = true
                             }
                         } else {
-                            config.dropObject(obj, idx, source)
                             val gestureSource = ev.gestureSource
                             if (ev.transferMode == TransferMode.MOVE && gestureSource is ObjectBox<*>) {
                                 @Suppress("UNCHECKED_CAST")
                                 val source = gestureSource.parent.source as ObjectList<O>
                                 source.remove(obj)
                             }
+                            config.dropObject(obj, idx, source)
                         }
                     }
                     ev.isDropCompleted = true
@@ -199,7 +199,7 @@ class ObjectListView<O : Any>(
         }
         displayMode.now = mode
         for (box in boxes) {
-            box.relayout()
+            box.updateMode()
         }
         updateRoot(mode)
         if (autoResizeScene && scene?.window != null && mode in storedWindowSizes) {
@@ -272,6 +272,7 @@ class ObjectListView<O : Any>(
         if (!filter(obj)) return@runLater
         val j = getInsertionIndex(idx)
         val box = getBox(obj)
+        box.updateMode()
         boxes.add(j, box)
         itemsLayout.children.add(j, box)
         updateRoot(mode.now)
@@ -450,20 +451,10 @@ class ObjectListView<O : Any>(
     }
 
     companion object {
-        private val listActions = collectActions<ObjectListView<*>> {
+        val listActions = collectActions<ObjectListView<*>> {
             addAction("Add object") {
                 shortcut("Ctrl+PLUS")
                 executes { list -> list.addObject() }
-            }
-            addAction("Rename selected") {
-                shortcut("F2")
-                executes { list -> list.renameSelected() }
-            }
-            addAction("Create object") {
-                description { list -> reactiveValue("Create new ${list.source.objectType}") }
-                shortcut("Ctrl+PLUS")
-                icon(MaterialDesignP.PLUS)
-                executes { p, ev -> p.addObject(ev) }
             }
             addAction("Delete selected") {
                 shortcut("Ctrl+DELETE")
@@ -482,6 +473,20 @@ class ObjectListView<O : Any>(
                     val source = list.source as ObjectList<Any>
                     source.remove(selected)
                 }
+            }
+            addAction("Deselect all") {
+                shortcut("ESCAPE")
+                executes { list -> list.deselectAll() }
+            }
+            addAction("Rename selected") {
+                shortcut("F2")
+                executes { list -> list.renameSelected() }
+            }
+            addAction("Create object") {
+                description { list -> reactiveValue("Create new ${list.source.objectType}") }
+                shortcut("Ctrl+PLUS")
+                icon(MaterialDesignP.PLUS)
+                executes { p, ev -> p.addObject(ev) }
             }
             addAction("Select previous") {
                 shortcuts("UP", "LEFT")

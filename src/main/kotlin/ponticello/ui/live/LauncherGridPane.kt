@@ -281,7 +281,7 @@ class LauncherGridPane(
                     when (target) {
                         is ItemTarget.Flow -> {
                             val group = target.context[AudioFlows].getOrNull(target.ref.groupName) ?: return@executes
-                            target.context[FlowGroupManager].showGroupPane(group)
+                            target.context[FlowGroupManager].showFlowGroup(group)
                         }
 
                         is ItemTarget.Player -> {

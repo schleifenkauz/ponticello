@@ -21,9 +21,10 @@ import ponticello.model.player.ScorePlayer
 import ponticello.model.project.PonticelloProject
 import ponticello.model.project.UI_STATE
 import ponticello.model.project.get
+import ponticello.model.registry.ObjectList
 import ponticello.ui.actions.*
 import ponticello.ui.dock.Side.*
-import ponticello.ui.flow.AudioFlowPane
+import ponticello.ui.flow.AudioFlowsPane
 import ponticello.ui.launcher.PonticelloLauncher
 import ponticello.ui.launcher.ScoreObjectDetailPane
 import ponticello.ui.live.LauncherGridPane
@@ -44,14 +45,15 @@ class AppLayout(
     private val scoreView: NavigableScorePane,
     private val interactionConfigBar: InteractionConfigBar,
     private val timeCodeView: TimeCodeView,
-) : BorderPane() {
-    private val sideBars = project[UI_STATE].sideBars.mapValuesTo(mutableMapOf()) { (_, types) ->
+) : BorderPane(), ObjectList.Listener<ToolPane.Type> {
+    private val sideBarLists = project[UI_STATE].sideBars.mapValuesTo(mutableMapOf()) { (_, types) ->
         ToolPaneTypeList(types.map { t -> toolPaneType(t) }.toMutableList())
     }
 
     private val leftPane = SplitPane()
     private val rightPane = SplitPane()
     private val bottomPane = SplitPane()
+    private val sidePanes = listOf(leftPane, rightPane, bottomPane)
     private val horizontalSplitter = SplitPane(scoreView)
     private val verticalSplitter = SplitPane(horizontalSplitter)
 
@@ -97,6 +99,9 @@ class AppLayout(
                 restorePaneSize(side, size)
             }
         }
+        for ((side, sideBarList) in sideBarLists) {
+            sideBarList.addListener(this, initialize = false)
+        }
         left = VBox(leftTopBar, infiniteSpace(), leftBottomBar) styleClass "dock-icons-bar"
         right = rightBar styleClass "dock-icons-bar"
         top = toolbar
@@ -105,20 +110,20 @@ class AppLayout(
 
     fun getToolPane(title: String) = toolPanes.find { it.title == title }?.also { p -> p.setup() }
 
-    fun getToolPane(clazz: KClass<out ToolPane>): ToolPane? =
-        toolPanes.find { it::class == clazz }?.also { p -> p.setup() }
+    fun getToolPane(clazz: KClass<out ToolPane>, setup: Boolean = true): ToolPane? =
+        toolPanes.find { it::class == clazz }?.also { p -> if (setup) p.setup() }
 
     fun getToolPane(type: ToolPane.Type): ToolPane? = toolPanes.find { it.type == type }
 
-    inline fun <reified T : ToolPane> get() = getToolPane(T::class) as T
+    inline fun <reified T : ToolPane> get(setup: Boolean = true) = getToolPane(T::class, setup) as T
 
     private fun setupToolPanes() = context.withoutUndo {
         val uiState = project[UI_STATE]
-        val toolPaneSides = sideBars.entries.flatMap { (side, types) -> types.map { t -> t to side } }.toMap()
-        for ((_, list) in sideBars) list.initialize(context)
+        val toolPaneSides = sideBarLists.entries.flatMap { (side, types) -> types.map { t -> t to side } }.toMap()
+        for ((_, list) in sideBarLists) list.initialize(context)
         for (type in allToolPaneTypes) {
             if (type !in toolPaneSides) {
-                sideBars.getOrPut(type.defaultSide) { ToolPaneTypeList.new(context) }.add(type)
+                sideBarLists.getOrPut(type.defaultSide) { ToolPaneTypeList.new(context) }.add(type)
             }
             val toolPane = type.createToolPane(project)
             toolPanes.add(toolPane)
@@ -127,10 +132,10 @@ class AppLayout(
             val action = ToolPaneAction(toolPane)
             actions.add(action)
         }
-        leftBottomBar = ToolPaneActionBar(this, sideBars.getValue(BOTTOM))
-        leftTopBar = ToolPaneActionBar(this, sideBars.getValue(LEFT))
-        rightBar = ToolPaneActionBar(this, sideBars.getValue(RIGHT))
-        topRightBar.addActions(sideBars.getValue(TOP).map { p -> ToolPaneAction(getToolPane(p)!!) })
+        leftBottomBar = ToolPaneActionBar(this, sideBarLists.getValue(BOTTOM))
+        leftTopBar = ToolPaneActionBar(this, sideBarLists.getValue(LEFT))
+        rightBar = ToolPaneActionBar(this, sideBarLists.getValue(RIGHT))
+        topRightBar.addActions(sideBarLists.getValue(TOP).map { p -> ToolPaneAction(getToolPane(p)!!) })
     }
 
     fun showDocked(toolPane: ToolPane) {
@@ -140,7 +145,7 @@ class AppLayout(
             Logger.warn("ToolPane ${toolPane.title} already showing on $side", Logger.Category.Layout)
             return
         }
-        val types = sideBars.getValue(side)
+        val types = sideBarLists.getValue(side)
         val idx = types.indexOf(toolPane.type)
         var insertIdx = sidePane.items.binarySearchBy(idx) { p -> types.indexOf((p as ToolPane).type) }
         insertIdx = -insertIdx - 1
@@ -186,7 +191,7 @@ class AppLayout(
     }
 
     private fun getSide(toolPane: ToolPane): Side {
-        val side = sideBars.keys.find { side -> toolPane.type in sideBars.getValue(side) }
+        val side = sideBarLists.keys.find { side -> toolPane.type in sideBarLists.getValue(side) }
             ?: error("No side found for ${toolPane.type}")
         return side
     }
@@ -199,22 +204,25 @@ class AppLayout(
     }
 
     fun hideDocked(toolPane: ToolPane) {
-        val side = getSide(toolPane)
-        val pane = getSidePane(side)
+        val pane = sidePanes.find { pane -> toolPane in pane.items }
+        if (pane == null) {
+            Logger.warn("ToolPane ${toolPane.title} not showing", Logger.Category.Layout)
+            return
+        }
         pane.items.remove(toolPane)
         if (pane.items.isEmpty()) {
-            when (side) {
-                LEFT -> {
+            when (pane) {
+                leftPane -> {
                     dividerPositions[LEFT] = horizontalSplitter.dividerPositions[0]
                     horizontalSplitter.items.remove(leftPane)
                 }
 
-                RIGHT -> {
+                rightPane -> {
                     dividerPositions[RIGHT] = horizontalSplitter.dividerPositions[horizontalSplitter.items.size - 2]
                     horizontalSplitter.items.remove(rightPane)
                 }
 
-                BOTTOM -> {
+                bottomPane -> {
                     dividerPositions[BOTTOM] = verticalSplitter.dividerPositions[0]
                     verticalSplitter.items.remove(bottomPane)
                 }
@@ -222,6 +230,25 @@ class AppLayout(
                 else -> throw AssertionError()
             }
         }
+    }
+
+    override fun removed(obj: ToolPane.Type) {
+        val toolPane = getToolPane(obj) ?: error("ToolPane $obj not found")
+        if (toolPane.isShowing.now) {
+            hideDocked(toolPane)
+        }
+    }
+
+    override fun added(obj: ToolPane.Type, idx: Int) {
+        val toolPane = getToolPane(obj) ?: error("ToolPane $obj not found")
+        if (toolPane.isShowing.now) {
+            showDocked(toolPane)
+        }
+    }
+
+    override fun moved(obj: ToolPane.Type, idx: Int) {
+        removed(obj)
+        added(obj, idx)
     }
 
     private fun createToolbar(): Pane = BorderPane().apply {
@@ -299,7 +326,7 @@ class AppLayout(
             toolPane.saveState(s)
             s
         }
-        state.sideBars = sideBars.mapValues { (_, types) -> types.map { t -> t.uid } }
+        state.sideBars = sideBarLists.mapValues { (_, types) -> types.map { t -> t.uid } }
     }
 
     fun actions(): List<ContextualizedAction> = actions
@@ -331,7 +358,7 @@ class AppLayout(
             add(HelpBrowser)
 
             //default bottom
-            add(AudioFlowPane)
+            add(AudioFlowsPane)
             add(ConsoleOutputPane)
         }.toMutableList()
 

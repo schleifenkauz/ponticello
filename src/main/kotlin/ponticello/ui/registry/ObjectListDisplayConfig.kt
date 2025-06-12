@@ -50,6 +50,8 @@ interface ObjectListDisplayConfig<O : Any> {
 
     fun getItemContent(obj: O): List<Node> = emptyList()
 
+    fun configureBox(box: ObjectBox<O>, currentMode: ObjectListView.DisplayMode) {}
+
     fun canDelete(obj: O): Boolean = !(obj is NamedObject && !obj.canDelete)
 
     val showDragHandle: Boolean get() = dataFormat != null
@@ -98,4 +100,6 @@ interface ObjectListDisplayConfig<O : Any> {
     fun boxLayout(obj: O, header: Region, content: Node?): Node =
         if (content != null) VBox(header, content)
         else header
+
+    fun collapsedLayout(box: ObjectBox<O>, header: Region, content: Parent?): Node = boxLayout(box.obj, header, content)
 }

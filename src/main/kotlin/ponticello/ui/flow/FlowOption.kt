@@ -4,6 +4,9 @@ import hextant.context.Context
 import javafx.geometry.Point2D
 import ponticello.model.flow.*
 import ponticello.model.obj.InstrumentObject
+import ponticello.model.obj.NoInstrument
+import ponticello.model.obj.ProcessDefObject
+import ponticello.model.obj.SynthDefObject
 import ponticello.model.registry.BusRegistry
 import ponticello.model.registry.InstrumentRegistry
 import ponticello.sc.Identifier
@@ -72,7 +75,11 @@ sealed interface FlowOption {
             return InstrumentFlow.create(def, controls)
         }
 
-        override fun toString(): String = "Synth ${def.name.now}"
+        override fun toString(): String = when (def) {
+            is SynthDefObject -> "Instrument ${def.name.now}"
+            is ProcessDefObject -> "Process ${def.name.now}"
+            is NoInstrument -> throw AssertionError("NoInstrument should not be here")
+        }
 
         override fun defaultName(): String = def.name.now
     }

@@ -82,7 +82,7 @@ abstract class SearchableToolPane<O : NamedObject>(
         if (dest is SearchableToolPaneState && isSetup) {
             dest.displayMode = listView.mode.now
             dest.expandedBoxes = listView.getBoxes().withIndex()
-                .filter { (_, box) -> box.isExpanded }
+                .filter { (_, box) -> box.isExpanded.now }
                 .map(IndexedValue<*>::index)
         }
     }

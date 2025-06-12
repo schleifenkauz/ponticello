@@ -2,11 +2,9 @@ package ponticello.ui.score
 
 import bundles.PublicProperty
 import bundles.publicProperty
-import fxutils.SubWindow
+import fxutils.setPseudoClassState
 import fxutils.setupDragging
-import fxutils.show
 import javafx.beans.value.ObservableValue
-import javafx.geometry.Point2D
 import javafx.scene.control.Label
 import javafx.scene.input.MouseButton
 import javafx.scene.input.MouseEvent
@@ -16,9 +14,8 @@ import ponticello.impl.Logger
 import ponticello.model.flow.AudioFlowGroup
 import ponticello.model.flow.AudioFlows
 import ponticello.model.registry.ObjectList
-import ponticello.ui.flow.FlowGroupPane
-import ponticello.ui.impl.makeSubWindow
-import ponticello.ui.midi.ContextualMidiReceiver
+import ponticello.ui.dock.AppLayout
+import ponticello.ui.flow.AudioFlowsPane
 import reaktive.Observer
 import reaktive.value.fx.asObservableValue
 import reaktive.value.now
@@ -30,8 +27,9 @@ class FlowGroupManager(
 ) : ObjectList.Listener<AudioFlowGroup> {
     private val repaintObserver: Observer
     private val lines = mutableMapOf<AudioFlowGroup, Line>()
-    private val groupPaneWindows = mutableMapOf<AudioFlowGroup, SubWindow>()
     private val tooltip = Label()
+
+    private val audioFlowsPane by lazy { pane.context[AppLayout].get<AudioFlowsPane>(setup = false) }
 
     init {
         flows.addListener(this)
@@ -39,7 +37,11 @@ class FlowGroupManager(
             repaint()
         }
         pane.addEventHandler(MouseEvent.MOUSE_MOVED) { ev ->
-            for (line in lines.values) line.strokeWidth = 2.0
+            for ((group, line) in lines) {
+                line.strokeWidth = 2.0
+                val flowsPane = audioFlowsPane
+                flowsPane.listView.getBox(group).setPseudoClassState("flow-group-hover", false)
+            }
             val entry = lines.entries.find { (_, l) -> (l.startY - ev.y).absoluteValue < 3.0 }
             if (entry == null) pane.children.remove(tooltip)
             else {
@@ -48,6 +50,10 @@ class FlowGroupManager(
                 if (tooltip !in pane.children) pane.children.add(tooltip)
                 tooltip.text = group.name.now
                 tooltip.relocate(ev.x + 12.0, ev.y + 12.0)
+                val flowsPane = audioFlowsPane
+                if (flowsPane.isShowing.now) {
+                    flowsPane.listView.getBox(group).setPseudoClassState("flow-group-hover", true)
+                }
             }
         }
     }
@@ -73,11 +79,19 @@ class FlowGroupManager(
         val y = getLineY(group)
         line.startYProperty().bind(y)
         line.endYProperty().bind(y)
-        line.setOnMouseClicked { ev ->
+        line.addEventHandler(MouseEvent.MOUSE_CLICKED) { ev ->
             if (ev.button == MouseButton.SECONDARY) {
-                showGroupPane(group, Point2D(ev.x, ev.y))
+                showFlowGroup(group)
             }
         }
+    }
+
+    fun showFlowGroup(group: AudioFlowGroup) {
+        val flowsPane = audioFlowsPane
+        flowsPane.setShowing(true)
+        val box = flowsPane.listView.getBox(group)
+        if (!box.isExpanded.now) box.toggleExpanded()
+        flowsPane.listView.select(group)
     }
 
     private fun getLineY(group: AudioFlowGroup): ObservableValue<Double>? {
@@ -110,22 +124,6 @@ class FlowGroupManager(
         }
     }
 
-    fun showGroupPane(group: AudioFlowGroup, coords: Point2D? = null) {
-        val existingWindow = groupPaneWindows[group]
-        if (existingWindow != null) {
-            existingWindow.showOrBringToFront()
-            return
-        }
-        val pane = FlowGroupPane(group, ownWindow = true)
-        val window = makeSubWindow(group, pane)
-        group.context[ContextualMidiReceiver].registerMidiContext(window) {
-            val selected = pane.flowsView.selectedObject()
-            selected?.midiContext()
-        }
-        groupPaneWindows[group] = window
-        if (coords != null) window.show(coords) else window.show()
-    }
-
     override fun removed(obj: AudioFlowGroup) {
         val line = lines.remove(obj)
         if (line == null) {
@@ -133,9 +131,9 @@ class FlowGroupManager(
             return
         }
         pane.children.remove(line)
-        groupPaneWindows[obj]?.close()
-        groupPaneWindows.remove(obj)
     }
+
+    fun getFlowLine(group: AudioFlowGroup): Line = lines[group] ?: error("No line found for flow group $group")
 
     companion object: PublicProperty<FlowGroupManager> by publicProperty("FlowGroupLines")
 }

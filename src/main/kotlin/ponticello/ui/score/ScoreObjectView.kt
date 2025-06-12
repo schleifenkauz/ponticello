@@ -78,8 +78,7 @@ abstract class ScoreObjectView(
     protected val inlineControls = HBox() styleClass "score-object-top-bar"
     lateinit var inlineNameControl: NameControl
         private set
-    lateinit var inlineActionBar: ActionBar
-        private set
+    private lateinit var inlineActionBar: ActionBar
 
     protected val colorPicker: ColorPicker = ColorPicker() styleClass "button"
 
@@ -152,6 +151,7 @@ abstract class ScoreObjectView(
         inlineControls.children.add(infiniteSpace())
         val actions = ObjectActions.multiObjectActions.withContext(ObjectActionContext.SingleObjectContext(this))
         inlineActionBar = ActionBar(actions, buttonStyle = "small-icon-button")
+        inlineActionBar.cursor = Cursor.DEFAULT
         inlineControls.children.add(inlineActionBar)
         inlineControls.visibleProperty().bind(
             inlineControlsVisibilityCondition(controlsDisplay)

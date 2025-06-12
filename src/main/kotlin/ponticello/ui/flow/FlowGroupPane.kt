@@ -4,6 +4,8 @@ import bundles.createBundle
 import fxutils.*
 import fxutils.actions.*
 import fxutils.prompt.InfoPrompt
+import fxutils.prompt.SimpleSearchableListView
+import fxutils.prompt.TextPrompt
 import javafx.geometry.Point2D
 import javafx.scene.Node
 import javafx.scene.Parent
@@ -21,6 +23,7 @@ import ponticello.model.flow.*
 import ponticello.model.obj.InstrumentObject
 import ponticello.model.obj.withName
 import ponticello.model.registry.InstrumentRegistry
+import ponticello.sc.Identifier
 import ponticello.sc.Rate
 import ponticello.sc.editor.BusSelector
 import ponticello.sc.view.ObjectSelectorControl
@@ -37,6 +40,8 @@ import ponticello.ui.registry.ObjectListView.DisplayMode
 import ponticello.ui.score.ParameterControlsPane
 import ponticello.ui.score.ScorePane
 import reaktive.value.binding.binding
+import reaktive.value.binding.`if`
+import reaktive.value.binding.map
 import reaktive.value.now
 import reaktive.value.reactiveValue
 
@@ -47,7 +52,7 @@ class FlowGroupPane(private val group: AudioFlowGroup, ownWindow: Boolean): VBox
         if (ownWindow) {
             val nameControl = NameControl(group).setFixedWidth(150.0)
             val colorPicker = colorPicker(group.associatedColor).setFixedWidth(30.0)
-            val actions = AudioFlowPane.actions.withContext(group) + removeAction.withContext(group)
+            val actions = flowsView.actions + toggleActiveAction.withContext(group)
             val actionBar = ActionBar(actions, buttonStyle = "medium-icon-button")
             val header = HBox(5.0, nameControl, colorPicker, infiniteSpace(), actionBar).centerChildren()
             flowsView.autoResizeScene = true
@@ -126,7 +131,7 @@ class FlowGroupPane(private val group: AudioFlowGroup, ownWindow: Boolean): VBox
     }
 
     override fun getActions(box: ObjectBox<AudioFlow>): List<ContextualizedAction> {
-        return actions.withContext(box.obj)
+        return flowActions.withContext(box.obj)
     }
 
     override fun configureDragboard(obj: AudioFlow, dragboard: Dragboard) {
@@ -141,8 +146,54 @@ class FlowGroupPane(private val group: AudioFlowGroup, ownWindow: Boolean): VBox
         controlsPane.listView.deselectAll()
     }
 
+    private class FlowNamePrompt(
+        private val takenFlowNames: Set<String>,
+        title: String, initialText: String,
+    ) : TextPrompt<String>(title, initialText) {
+        override fun convert(text: String): String? = text.takeIf { Identifier.isValid(it) && it !in takenFlowNames }
+    }
+
     companion object {
-        private val actions = collectActions<AudioFlow> {
+        val toggleActiveAction = action<AudioFlowGroup>("Toggle activated") {
+            description { grp ->
+                `if`(
+                    grp.isActive,
+                    then = { "Deactivate group" },
+                    otherwise = { "Activate group" }
+                )
+            }
+            icon { grp ->
+                grp.isActive.map { active ->
+                    if (active) MaterialDesignR.RADIOBOX_MARKED
+                    else MaterialDesignR.RADIOBOX_BLANK
+                }
+            }
+            executes { grp -> grp.toggleActive() }
+        }
+
+        val addFlowAction = action<AudioFlowGroup>("Add flow") {
+            icon(MaterialDesignP.PLUS)
+            executes { group, ev ->
+                val options = FlowOption.getOptions(group.context)
+                val option = SimpleSearchableListView(options, "Add flow").showPopup(ev) ?: return@executes
+                val defaultName = option.defaultName()
+                val takenFlowNames = group.context[AudioFlows].allFlows().mapTo(mutableSetOf()) { f -> f.name.now }
+                val idx = (1..Int.MAX_VALUE).first { idx -> "${defaultName}_$idx" !in takenFlowNames }
+                val name = FlowNamePrompt(takenFlowNames, "Flow name", "${defaultName}_$idx")
+                    .showDialog(ev) ?: return@executes
+                val anchor = ev.popupAnchor()
+                val flow = option.createFlow(group.context, anchor) ?: return@executes
+                flow.setInitialName(name)
+                group.flows.add(flow)
+            }
+        }
+
+        val groupActions = collectActions {
+            add(toggleActiveAction)
+            add(addFlowAction)
+        }
+
+        private val flowActions = collectActions<AudioFlow> {
             addAction("Show VST editor") {
                 icon(MaterialDesignE.EYE)
                 executesOn<VSTPluginFlow> { flow -> flow.showEditor() }
@@ -187,11 +238,6 @@ class FlowGroupPane(private val group: AudioFlowGroup, ownWindow: Boolean): VBox
                 enableWhen { flow -> flow.isActive }
                 executes { flow -> flow.sync() }
             }
-        }
-
-        private val removeAction = action<AudioFlowGroup>("Remove") {
-            icon(MaterialDesignD.DELETE)
-            executes { group -> group.context[AudioFlows].remove(group) }
         }
     }
 }
