@@ -9,11 +9,13 @@ import fxutils.controls.SliderBar
 import fxutils.undo.UndoManager
 import javafx.geometry.Pos
 import javafx.scene.Node
+import javafx.scene.Parent
 import javafx.scene.input.DragEvent
 import javafx.scene.input.Dragboard
 import javafx.scene.input.MouseEvent
 import javafx.scene.input.TransferMode
 import javafx.scene.layout.HBox
+import javafx.scene.layout.Region
 import javafx.scene.layout.VBox
 import javafx.scene.paint.Color
 import org.kordamp.ikonli.materialdesign2.MaterialDesignA
@@ -42,7 +44,7 @@ import reaktive.value.reactiveValue
 
 class MixerFlowView(private val flow: MixerFlow) : VBox(), ObjectListDisplayConfig<MixerFlow.MixerComponent> {
     private val channels = flow.targetBus.flatMap { bus -> bus.get()?.channels ?: reactiveValue(0) }
-    private val componentsView = ObjectListView(flow.components, this)
+    val componentsView = ObjectListView(flow.components, this)
 
     init {
         val totalVolumeSlider = SliderBar(
@@ -82,7 +84,7 @@ class MixerFlowView(private val flow: MixerFlow) : VBox(), ObjectListDisplayConf
         return MixerFlow.MixerComponent.create(bus)
     }
 
-    override fun getItemContent(obj: MixerFlow.MixerComponent): List<Node> {
+    override fun getHeaderContent(obj: MixerFlow.MixerComponent): List<Node> {
         val selector = BusSelector()
         setupSourceBusSelector(selector, this@MixerFlowView.flow)
         selector.syncWith(obj.sourceBus)
@@ -99,14 +101,15 @@ class MixerFlowView(private val flow: MixerFlow) : VBox(), ObjectListDisplayConf
         volumeSlider.disableProperty().bind(obj.mute.asObservableValue())
 
         val panKnob = Knob(
-            "Pan", obj.pan, NumericalControlSpec.PAN,
-            radius = 20.0, color = Color.BLACK, showRange = true,
-            inputMethod = Knob.InputMethod.Horizontal,
+            "Balance", obj.pan, NumericalControlSpec.BALANCE,
+            radius = 16.0, color = Color.BLACK, inputMethod = Knob.InputMethod.Horizontal,
             undoManager = flow.context[UndoManager]
         )
         panKnob.visibleProperty().bind(channels.equalTo(2).asObservableValue())
         return listOf(selectorControl, volumeSlider, panKnob)
     }
+
+    override fun getContent(obj: MixerFlow.MixerComponent, mode: ObjectListView.DisplayMode): Parent = Region()
 
     override fun getActions(box: ObjectBox<MixerFlow.MixerComponent>): List<ContextualizedAction> =
         actions.withContext(box.obj)

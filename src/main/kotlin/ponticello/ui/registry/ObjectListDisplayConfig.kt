@@ -46,21 +46,19 @@ interface ObjectListDisplayConfig<O : Any> {
 
     val addSpaceBeforeActionBar: Boolean get() = true
 
-    fun detailWindowIcon(obj: O): Ikon = MaterialDesignE.EYE
-
-    fun getItemContent(obj: O): List<Node> = emptyList()
-
-    fun configureBox(box: ObjectBox<O>, currentMode: ObjectListView.DisplayMode) {}
-
-    fun canDelete(obj: O): Boolean = !(obj is NamedObject && !obj.canDelete)
-
     val showDragHandle: Boolean get() = dataFormat != null
 
     val dataFormat: DataFormat? get() = null
 
-    fun getContent(obj: O, mode: ObjectListView.DisplayMode): Parent? = null
+    fun getHeaderContent(obj: O): List<Node> = emptyList()
+
+    fun detailWindowIcon(obj: O): Ikon = MaterialDesignE.EYE
 
     fun getActions(box: ObjectBox<O>): List<ContextualizedAction> = emptyList()
+
+    fun getContent(obj: O, mode: ObjectListView.DisplayMode): Parent? = null
+
+    fun configureBox(box: ObjectBox<O>, currentMode: ObjectListView.DisplayMode) {}
 
     fun configureDragboard(obj: O, dragboard: Dragboard) {}
 
@@ -73,6 +71,8 @@ interface ObjectListDisplayConfig<O : Any> {
         else emptyArray()
 
     fun getDroppedObject(ev: DragEvent): O? = null
+
+    fun canDelete(obj: O): Boolean = !(obj is NamedObject && !obj.canDelete)
 
     fun canCopy(obj: O): Boolean = obj is NamedObject && obj.canCopy
 

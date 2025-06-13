@@ -33,19 +33,23 @@ class Knob(
     private val radius: Double = DEFAULT_RADIUS,
     private val color: Color = Color.BLACK,
     private val inputMethod: InputMethod = InputMethod.Vertical,
-    private val showRange: Boolean = true,
     private val undoManager: UndoManager? = null,
 ) : Control() {
     private val knobDots = mutableListOf<Circle>()
-    private val knob = Circle(radius, radius, radius - 10, color) styleClass "knob-mass"
+    private val valueArc = Arc(radius, radius, radius - 5.0, radius - 5.0, 210.0, 0.0) styleClass "knob-arc"
     private val indicator = Line(radius, radius, 0.0, 0.0) styleClass "knob-indicator"
     private val valueLabel = Label() styleClass "knob-value"
 
     @Suppress("EmptyRange")
-    private val transform = SpecTransformation(spec, MIN_ANGLE..MAX_ANGLE)
-    private val root = Pane(knob, indicator, valueLabel)
+    private val angleTransform = SpecTransformation(spec, MIN_ANGLE..MAX_ANGLE)
 
-    private val discreteValues = ((spec.max.get() - spec.min.get()) / spec.step.get()).roundToInt()
+    private val transform = when (inputMethod) {
+        InputMethod.Angle -> angleTransform
+        InputMethod.Horizontal, InputMethod.Vertical -> SpecTransformation(spec, -DRAG_RANGE..DRAG_RANGE)
+    }
+    private val root = Pane(indicator, valueLabel)
+
+    private val nDiscreteValues = ((spec.max.get() - spec.min.get()) / spec.step.get()).roundToInt()
 
     private val valueObserver: Observer
 
@@ -56,9 +60,9 @@ class Knob(
         setPrefSize(radius * 2, radius * 2)
         setMinSize(radius * 2, radius * 2)
         valueObserver = variable.forEach { value -> updatedValue(value) }
-        indicator.stroke = spec.associatedColor
         valueLabel.centerHorizontally(this)
-        valueLabel.layoutY = radius * 1.4
+        valueLabel.layoutY = radius * 1.3
+        tooltip = Tooltip(parameter)
         addDotsOrArc()
         listenForMouseEvents()
         addShortcuts()
@@ -66,7 +70,6 @@ class Knob(
 
     private fun listenForMouseEvents() {
         var valueBefore = Decimal.NaN
-        val transformation = spec.mapOnto(DRAG_RANGE, -DRAG_RANGE)
         var dragStart = Point2D.ZERO
         addEventHandler(MouseEvent.ANY) { ev ->
             when (ev.eventType) {
@@ -97,14 +100,14 @@ class Knob(
                         InputMethod.Horizontal -> {
                             if (dragStart != Point2D.ZERO) {
                                 val deltaX = ev.screenX - dragStart.x
-                                updateValueByPosDelta(transformation, deltaX, valueBefore)
+                                updateValueByPosDelta(deltaX, valueBefore)
                             }
                         }
 
                         InputMethod.Vertical -> {
                             if (dragStart != Point2D.ZERO) {
                                 val deltaY = ev.screenY - dragStart.y
-                                updateValueByPosDelta(transformation, -deltaY, valueBefore)
+                                updateValueByPosDelta(-deltaY, valueBefore)
                             }
                         }
                     }
@@ -134,10 +137,10 @@ class Knob(
         tooltip = Tooltip(parameter)
     }
 
-    private fun updateValueByPosDelta(transformation: SpecTransformation, delta: Double, valueBefore: Decimal) {
-        val value = transformation.unmap(transformation.map(valueBefore.value) - delta)
-            .coerceIn(spec.min.get().value, spec.max.get().value)
-        variable.set(Decimal(value, precision = spec.precision))
+    private fun updateValueByPosDelta(delta: Double, valueBefore: Decimal) {
+        val value = transform.unmap(transform.map(valueBefore.value) + delta)
+            .coerceIn(spec.min.get().value, spec.max.get().value).snap(spec.step.get())
+        variable.set(value)
     }
 
     private fun showValueInput() {
@@ -176,16 +179,15 @@ class Knob(
     }
 
     private fun getPoint(value: Decimal, r: Double): Point2D {
-        val phi = transform.map(value.toDouble()) - PI / 2
+        val phi = angleTransform.map(value.toDouble()) - PI / 2
         val p = Point2D(radius + r * sin(phi), radius + r * cos(phi))
         return p
     }
 
     private fun addDotsOrArc() {
-        if (!showRange) return
-        if (discreteValues <= MAX_DOTS) {
-            for (i in 0..discreteValues) {
-                val v = (spec.min.get() + i * spec.step.get()).withPrecision(spec.precision)
+        if (nDiscreteValues <= MAX_DOTS) {
+            for (i in 0..nDiscreteValues) {
+                val v = getDiscreteValue(i)
                 val dot = Circle(DOT_RADIUS, color) styleClass "knob-dot"
                 val p = getPoint(v, radius - 5)
                 dot.centerX = p.x
@@ -197,17 +199,30 @@ class Knob(
             val arc = Arc(radius, radius, radius - 5, radius - 5, 210.0, -240.0) styleClass "knob-arc"
             arc.stroke = color
             children.add(arc)
+            valueArc.stroke = spec.associatedColor
+            children.add(valueArc)
         }
     }
 
+    private fun getDiscreteValue(step: Int) = (spec.min.get() + step * spec.step.get()).withPrecision(spec.precision)
+
     private fun updatedValue(value: Decimal) {
         valueLabel.text = value.toString()
-        val start = getPoint(value, radius / 3)
-        val end = getPoint(value, radius - 10.0)
-        indicator.startX = start.x
-        indicator.startY = start.y
-        indicator.endX = end.x
-        indicator.endY = end.y
+        val p = getPoint(value, radius - 5.0)
+        indicator.endX = p.x
+        indicator.endY = p.y
+
+        if (nDiscreteValues <= MAX_DOTS) {
+            for (i in 0..nDiscreteValues) {
+                val v = getDiscreteValue(i)
+                val dot = knobDots[i]
+                if (v <= value) {
+                    dot.fill = spec.associatedColor
+                } else break
+            }
+        } else {
+            valueArc.length = spec.mapOnto(0.0, -240.0).map(value.value)
+        }
     }
 
     enum class InputMethod {

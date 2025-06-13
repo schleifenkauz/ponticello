@@ -102,7 +102,7 @@ class FlowGroupPane(private val group: AudioFlowGroup, ownWindow: Boolean): VBox
         }
     }
 
-    override fun getItemContent(obj: AudioFlow): List<Node> = when (obj) {
+    override fun getHeaderContent(obj: AudioFlow): List<Node> = when (obj) {
         is MixerFlow -> {
             val selector = BusSelector()
             selector.setFilter(rate = Rate.Audio, channels = null)
@@ -142,8 +142,10 @@ class FlowGroupPane(private val group: AudioFlowGroup, ownWindow: Boolean): VBox
     override fun onDeselected(obj: AudioFlow) {
         if (obj !is InstrumentFlow) return
         val box = flowsView.getBox(obj)
-        val controlsPane = box.content as? ParameterControlsPane ?: return
-        controlsPane.listView.deselectAll()
+        when (val content = box.content) {
+            is ParameterControlsPane -> content.listView.deselectAll()
+            is MixerFlowView -> content.componentsView.deselectAll()
+        }
     }
 
     private class FlowNamePrompt(

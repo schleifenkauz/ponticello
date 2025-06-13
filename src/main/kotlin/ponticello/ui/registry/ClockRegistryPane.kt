@@ -23,7 +23,7 @@ class ClockRegistryPane(clocks: ClockRegistry) : ObjectRegistryPane<ClockObject>
 
     override fun defaultState(): ToolPaneState = ToolPaneState.docked
 
-    override fun getItemContent(obj: ClockObject): List<Node> {
+    override fun getHeaderContent(obj: ClockObject): List<Node> {
         val converter = ClockObject.TIME_WARP_SPEC.converter()
         val name = reactiveValue("Time Warp")
         val slider = SliderBar(

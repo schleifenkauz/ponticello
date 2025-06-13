@@ -14,6 +14,7 @@ import reaktive.Observer
 import reaktive.value.ReactiveValue
 import reaktive.value.now
 import reaktive.value.reactiveVariable
+import java.util.concurrent.CompletableFuture
 
 @Serializable
 sealed class AudioFlow : AbstractRenamableObject() {
@@ -56,10 +57,9 @@ sealed class AudioFlow : AbstractRenamableObject() {
         setActive(!isActive.now)
     }
 
-    fun addToServer(placement: NodePlacement) {
+    fun addToServer(placement: NodePlacement): CompletableFuture<String> {
         val code = writeCode(placement)
-        //join enforces that the synths are added in the right order
-        context[SuperColliderClient].eval(code, "activating flow ${name.now}").join()
+        return context[SuperColliderClient].eval(code, "activating flow ${name.now}")
     }
 
     fun removeFromServer() {
@@ -71,8 +71,9 @@ sealed class AudioFlow : AbstractRenamableObject() {
     }
 
     fun sync() {
-        if (!isActive.now) return
-        val placement = NodePlacement.replace(superColliderName)
+        if (!isActive.now || !parentGroup.isActive.now) return
+        context[SuperColliderClient].run("$superColliderName.free")
+        val placement = parentGroup.getPlacement(this)
         val code = writeCode(placement)
         context[SuperColliderClient].run(code)
     }
@@ -85,6 +86,6 @@ sealed class AudioFlow : AbstractRenamableObject() {
     abstract override fun copy(): AudioFlow
 
     companion object {
-        val DATA_FORMAT = DataFormat("audio-flow")
+        val DATA_FORMAT = DataFormat("ponticello/audio-flow")
     }
 }

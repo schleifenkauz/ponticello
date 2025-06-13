@@ -55,7 +55,7 @@ class AudioFlowsPane(flows: AudioFlows) : SearchableToolPane<AudioFlowGroup>(flo
         }
     }
 
-    override fun getItemContent(obj: AudioFlowGroup): List<Node> {
+    override fun getHeaderContent(obj: AudioFlowGroup): List<Node> {
         val colorPicker = colorPicker(obj.associatedColor).setFixedWidth(30.0)
         return listOf(colorPicker)
     }

@@ -42,7 +42,7 @@ class ScriptRegistryPane(registry: ScriptRegistry) : ObjectRegistryPane<ScriptOb
         return ScriptObject.create(type, name)
     }
 
-    override fun getItemContent(obj: ScriptObject): List<Node> {
+    override fun getHeaderContent(obj: ScriptObject): List<Node> {
         val typeSelector = SimpleSearchableListView(SCRIPT_TYPE_OPTIONS, "Script type")
             .selectorButton(obj.type).setFixedWidth(90.0)
         if (obj.type.now == ScriptObject.Type.BEFORE_BOOT) typeSelector.isDisable = true

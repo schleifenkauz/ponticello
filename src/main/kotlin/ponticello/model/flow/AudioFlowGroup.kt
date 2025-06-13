@@ -14,7 +14,7 @@ import ponticello.model.registry.NamedObjectList
 import ponticello.model.registry.ObjectList
 import ponticello.model.registry.ObjectListSerializer
 import ponticello.sc.client.SuperColliderClient
-import ponticello.sc.client.run
+import ponticello.sc.client.eval
 import reaktive.Observer
 import reaktive.value.*
 import reaktive.value.binding.map
@@ -98,13 +98,22 @@ class AudioFlowGroup(
         }
     }
 
+    fun getPlacement(flow: AudioFlow): NodePlacement {
+        val idx = flows.indexOf(flow)
+        return when (val prev = previousActiveFlow(idx)) {
+            null -> NodePlacement.head(superColliderName.now)
+            else -> NodePlacement.after(prev.superColliderName)
+        }
+    }
+
     private fun addToServer(placement: NodePlacement) {
         val groupName = superColliderName.now
-        client.run {
+        client.eval {
             +"$groupName = Group.new(${placement.target}, ${placement.addAction})"
-        }
+        }.join()
         for (flow in flows) {
-            flow.addToServer(placement = NodePlacement.tail(groupName))
+            //join enforces that the synths are added in the right order
+            flow.addToServer(placement = NodePlacement.tail(groupName)).join()
         }
     }
 

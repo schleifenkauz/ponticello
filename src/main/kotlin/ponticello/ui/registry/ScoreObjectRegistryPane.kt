@@ -49,7 +49,7 @@ class ScoreObjectRegistryPane(registry: ScoreObjectRegistry) : ObjectRegistryPan
 
     override fun defaultState(): ToolPaneState = ToolPaneState.docked
 
-    override fun getItemContent(obj: ScoreObject): List<Node> {
+    override fun getHeaderContent(obj: ScoreObject): List<Node> {
         val spec = NumericalControlSpec(zero, zero, one, 0.01.toDecimal(), zero, Warp.Linear)
         val scoreYSlider = SliderBar(
             obj.liveConfig.yPosition, "Score Y", spec.converter(),

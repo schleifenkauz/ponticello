@@ -126,7 +126,7 @@ class ParameterControlsPane(
         editor.setControl(parameter.now) //TODO can this be done in a better way?
     }
 
-    override fun getItemContent(obj: NamedParameterControl): List<Node> {
+    override fun getHeaderContent(obj: NamedParameterControl): List<Node> {
         val editor = editors.getOrPut(obj) { ControlAssignmentEditor(obj, view) }
         editor.setControl(obj.now)
         return listOf(editor)

@@ -98,7 +98,7 @@ class CustomizableSynthDefObject(
         } else {
             extraStatements.add(
                 "gate_env_ = IEnvGen.kr(" +
-                        "Env.step([0, 1], [duration, 1]), " +
+                        "Env.step([0, \\auto_release.kr(1)], [duration, 1]), " +
                         "index: Sweep.kr(rate: ~time_warp_bus.kr))"
             )
             extraStatements.add("FreeSelf.kr(gate_env_)")

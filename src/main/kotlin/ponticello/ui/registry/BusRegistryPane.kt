@@ -62,7 +62,7 @@ class BusRegistryPane(busses: BusRegistry) : ObjectRegistryPane<BusObject>(busse
         return BusObject.create(type, name, channels)
     }
 
-    override fun getItemContent(obj: BusObject): List<Node> = buildList {
+    override fun getHeaderContent(obj: BusObject): List<Node> = buildList {
         val channelsSpinner = IntSpinner(obj.channels, 1, 12).minColumns(2)
             .setupUndo("Bus Channels", obj.context[UndoManager])
         channelsSpinner.isDisable = obj.busType != BusObject.Type.Regular

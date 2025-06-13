@@ -14,3 +14,7 @@
     -fx-orientation: horizontal;
     -fx-show-tick-labels: true;
 }
+
+.mixer-source {
+    -fx-padding: 0px 5px 0px 5px;
+}

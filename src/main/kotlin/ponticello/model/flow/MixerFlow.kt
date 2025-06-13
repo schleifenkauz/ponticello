@@ -125,7 +125,7 @@ class MixerFlow(
 
     private fun panChanged() {
         if (!isActive.now) return
-        val pans = components.map { comp -> comp.pan.now }
+        val pans = components.map { comp -> (comp.pan.now / 100).withPrecision(2) }
         client.run("$superColliderName.setn(\\pans, $pans)")
     }
 
@@ -166,9 +166,20 @@ class MixerFlow(
             +"volumes = NamedControl.kr(\\volumes, $volumes, lags: ${AttackReleaseControl.DEFAULT}, fixedLag: true)"
             +"sources = In.ar(sources, ${sink.channels.now}) * volumes"
             if (sink.channels.now == 2) {
-                val pans = components.map { comp -> comp.pan.now }
+                val pans = components.map { comp -> (comp.pan.now / 100).withPrecision(2) }
                 +"pans = NamedControl.kr(\\pans, $pans, lags: ${AttackReleaseControl.DEFAULT}, fixedLag: true)"
-                +"sources = Pan2.ar(sources, pans)"
+                when (sources.size) {
+                    0 -> {}
+                    1 -> {
+                        +"sources = Balance2.ar(sources[0], sources[1], pans)"
+                    }
+                    else -> {
+                        for (i in sources.indices) {
+                            +"sources[$i] = Balance2.ar(sources[$i][0], sources[$i][1], pans[$i])"
+                        }
+
+                    }
+                }
             }
             +"snd = In.ar(${sink.superColliderName}, ${sink.channels.now})"
             val masterVolume =

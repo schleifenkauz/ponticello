@@ -82,7 +82,7 @@ class InstrumentRegistryPane(
         }
     }
 
-    override fun getItemContent(obj: InstrumentObject): List<Node> = listOf(colorPicker(obj.color).setFixedWidth(30.0))
+    override fun getHeaderContent(obj: InstrumentObject): List<Node> = listOf(colorPicker(obj.color).setFixedWidth(30.0))
 
     override fun addObject(ev: Event?) {
         val globalLib = registry.context[GlobalDefinitionLibrary.instruments]

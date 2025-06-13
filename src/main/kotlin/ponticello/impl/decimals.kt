@@ -91,9 +91,10 @@ fun Decimal.withPrecision(precision: Int) = Decimal(value, precision)
 fun Decimal.round(precision: Int) = Decimal(value.round(precision), precision)
 
 fun String.parseDecimal(): Decimal? {
+    val tailZeros = takeLastWhile { it == '0' }.length
     val precision = when (val decimalPointIndex = indexOf('.')) {
         -1 -> 0
-        else -> length - decimalPointIndex - 1
+        else -> length - decimalPointIndex - tailZeros - 1
     }
     return toDoubleOrNull()?.withPrecision(precision)
 }

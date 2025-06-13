@@ -43,6 +43,7 @@ application {
 
 dependencies {
     implementation 'org.controlsfx:controlsfx:11.1.2'
+    implementation 'eu.hansolo:Medusa:16.0.0'
     implementation 'com.pixelduke:fxthemes:1.5.1'
 
     api 'org.kordamp.ikonli:ikonli-javafx:12.3.1'

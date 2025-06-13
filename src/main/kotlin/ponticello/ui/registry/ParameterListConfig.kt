@@ -26,7 +26,7 @@ import reaktive.value.now
 open class ParameterListConfig : ObjectListDisplayConfig<ParameterDefObject> {
     private val observers = mutableMapOf<ParameterDefObject, Observer>()
 
-    override fun getItemContent(obj: ParameterDefObject): List<Node> {
+    override fun getHeaderContent(obj: ParameterDefObject): List<Node> {
         val specControl = ChoiceEditorControl(obj.specEditor, createBundle())
         specControl.canChoose = false
         return listOf(specControl)

@@ -4,10 +4,8 @@ import fxutils.*
 import fxutils.actions.Action
 import fxutils.actions.ActionBar
 import fxutils.actions.collectActions
-import fxutils.controls.SliderBar
 import javafx.scene.Node
 import javafx.scene.Parent
-import javafx.scene.control.Button
 import javafx.scene.control.Control
 import javafx.scene.control.Label
 import javafx.scene.input.MouseEvent
@@ -97,19 +95,17 @@ class ObjectBox<O : Any>(val parent: ObjectListView<O>, val obj: O) : Control() 
 
     init {
         if (nameDisplay != null) header.children.add(nameDisplay)
-        header.children.addAll(config.getItemContent(obj))
+        header.children.addAll(config.getHeaderContent(obj))
         if (config.addSpaceBeforeActionBar) header.children.add(infiniteSpace())
         header.children.add(actionBar)
         header.centerChildren()
         isFocusTraversable = true
 
-        addEventFilter(MouseEvent.MOUSE_CLICKED) { ev ->
-            if (ev.target is Button || ev.target is SliderBar<*>) return@addEventFilter
+        addEventHandler(MouseEvent.MOUSE_CLICKED) { ev ->
             parent.select(this)
             if (ev.clickCount == 2) {
                 parent.showSelected()
             }
-            requestFocus()
         }
         styleClass(*config.boxStyle)
     }

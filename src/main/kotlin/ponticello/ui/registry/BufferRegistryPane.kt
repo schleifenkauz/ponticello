@@ -102,7 +102,7 @@ class BufferRegistryPane(private val buffers: BufferRegistry) : ObjectRegistryPa
         }.showDialog(this)
     }
 
-    override fun getItemContent(obj: BufferObject): List<Node> = when (obj) {
+    override fun getHeaderContent(obj: BufferObject): List<Node> = when (obj) {
         is AllocatedBufferObject -> {
             val channelsSpinner = IntSpinner(obj.channels, 1, 12).minColumns(2)
                 .setupUndo("Buffer Channels", obj.context[UndoManager])

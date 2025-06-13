@@ -148,9 +148,8 @@ data class NumericalControlSpec(
             AttackReleaseControl.DEFAULT, Warp.Linear, Color.WHITE
         )
 
-        val PAN = NumericalControlSpec(
-            zero, -one, one, 0.01.toDecimal(),
-            AttackReleaseControl.DEFAULT, Warp.Linear, Color.WHITE
+        val BALANCE = NumericalControlSpec(
+            0.0, -100.0, 100.0, 1.0.withPrecision(0), 0.02, associatedColor = Color.GREEN
         )
     }
 }
