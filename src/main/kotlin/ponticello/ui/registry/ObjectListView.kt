@@ -218,7 +218,7 @@ class ObjectListView<O : Any>(
     }
 
     private fun addObject(ev: Event? = null) {
-        val newObj = config.createNewObject(ev) ?: return
+        val newObj = config.createNewObject(ev, source) ?: return
         source.add(newObj)
     }
 

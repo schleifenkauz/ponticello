@@ -14,7 +14,6 @@ import javafx.scene.Scene
 import ponticello.model.obj.ContextualObject
 import ponticello.model.obj.project
 import ponticello.model.player.ScorePlayer
-import ponticello.ui.dock.AppLayout
 import ponticello.ui.launcher.PonticelloLauncher
 import ponticello.ui.score.ScoreObjectView
 import reaktive.value.binding.map
@@ -62,7 +61,6 @@ fun Action.Builder<ObjectActionContext>.executeSingle(action: (ScoreObjectView, 
 fun Scene.registerGlobalShortcuts(context: Context) {
     registerShortcuts {
         registerActions(PlaybackActions.global.withContext(context[ScorePlayer.CURRENT]))
-        registerActions(ToolWindowActions.withContext(context[AppLayout]))
         registerActions(ServerActions.withContext(context.project))
         registerActions(ProjectActions.withContext(context[PonticelloLauncher]))
     }

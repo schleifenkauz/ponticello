@@ -7,13 +7,14 @@ import fxutils.styleClass
 import hextant.codegen.ProvideImplementation
 import hextant.context.ControlFactory
 import hextant.core.view.CompoundEditorControl
+import ponticello.sc.Identifier
+import ponticello.ui.dock.AppLayout
+import ponticello.ui.misc.HelpBrowser
 import reaktive.collection.binding.isNotEmpty
 import reaktive.value.binding.and
 import reaktive.value.binding.equalTo
 import reaktive.value.binding.map
 import reaktive.value.now
-import ponticello.sc.Identifier
-import ponticello.ui.misc.HelpBrowser
 
 class MessageSendEditorControl @ProvideImplementation(ControlFactory::class) constructor(
     private val editor: ponticello.sc.editor.MessageSendEditor,
@@ -38,7 +39,8 @@ class MessageSendEditorControl @ProvideImplementation(ControlFactory::class) con
                     registerShortcuts {
                         on("Ctrl+D") {
                             val bounds = localToScreen(boundsInLocal)
-                            editor.context[HelpBrowser].showMethodDocumentation(editor.method, bounds)
+                            val helpBrowser = editor.context[AppLayout].get<HelpBrowser>()
+                            helpBrowser.showMethodDocumentation(editor.method, bounds)
                         }
                     }
                 }

@@ -4,13 +4,17 @@ import fxutils.actions.ContextualizedAction
 import fxutils.actions.collectActions
 import fxutils.actions.detailsAction
 import fxutils.controls.CheckBox
+import fxutils.label
 import fxutils.opacity
 import fxutils.undo.UndoManager
 import javafx.scene.Node
 import javafx.scene.layout.Region
 import org.kordamp.ikonli.evaicons.Evaicons
 import ponticello.impl.Logger
-import ponticello.model.obj.*
+import ponticello.model.obj.AllocatedBufferObject
+import ponticello.model.obj.BufferReference
+import ponticello.model.obj.ParameterizedObject
+import ponticello.model.obj.SampleObject
 import ponticello.model.registry.BufferRegistry
 import ponticello.model.registry.ObjectReference
 import ponticello.model.registry.reference
@@ -40,8 +44,8 @@ data object BufferControlType : ControlType<BufferControl>() {
     override fun createSimpleInput(
         namedControl: ParameterControlList.NamedParameterControl,
         control: BufferControl,
-    ): ObjectSelectorControl<BufferObject> {
-        val spec = namedControl.spec.now as BufferControlSpec
+    ): Node {
+        val spec = namedControl.spec.now as? BufferControlSpec ?: return label("Invalid spec for ${namedControl.name.now} control")
         val editor = BufferSelector()
         editor.setFilter(spec.channels)
         editor.syncWith(control.sample)

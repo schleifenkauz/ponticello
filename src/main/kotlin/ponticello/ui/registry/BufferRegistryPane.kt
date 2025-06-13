@@ -38,6 +38,7 @@ import ponticello.model.obj.project
 import ponticello.model.project.PonticelloProject
 import ponticello.model.project.buffers
 import ponticello.model.registry.BufferRegistry
+import ponticello.model.registry.ObjectList
 import ponticello.sc.Identifier
 import ponticello.ui.actions.undoable
 import ponticello.ui.dock.Side
@@ -80,7 +81,7 @@ class BufferRegistryPane(private val buffers: BufferRegistry) : ObjectRegistryPa
         else -> null
     }
 
-    override fun createNewObject(ev: Event?): SampleObject? =
+    override fun createNewObject(ev: Event?, list: ObjectList<BufferObject>): BufferObject? =
         loadNewSample { file -> Identifier.truncate(file.nameWithoutExtension) }
 
     private fun loadNewSample(name: (File) -> String): SampleObject? {

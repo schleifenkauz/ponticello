@@ -9,7 +9,6 @@ import fxutils.actions.registerShortcuts
 import fxutils.label
 import fxutils.opacity
 import fxutils.replace
-import hextant.context.Context
 import javafx.scene.Parent
 import javafx.scene.layout.BorderPane
 import javafx.scene.layout.Priority
@@ -35,10 +34,10 @@ import ponticello.ui.score.ScoreObjectView
 import reaktive.Observer
 import reaktive.value.binding.map
 
-class ScoreObjectDetailPane(private val context: Context) : ToolPane() {
+class ScoreObjectDetailPane : ToolPane() {
     private val detached = mutableMapOf<ScoreObject, SubWindow>()
     private var displayedObject: ScoreObjectView? = null
-    private val focusedViewObserver: Observer
+    private lateinit var focusedViewObserver: Observer
 
     override val type: Type
         get() = ScoreObjectDetailPane
@@ -49,8 +48,7 @@ class ScoreObjectDetailPane(private val context: Context) : ToolPane() {
             setVgrow(value, Priority.ALWAYS)
         }
 
-    init {
-        setup()
+    override fun doSetup() {
         val selector = context[ScoreObjectSelectionManager]
         focusedViewObserver = selector.focusedView.observe { _, _, focused ->
             if (window !is Popup) {
@@ -158,7 +156,7 @@ class ScoreObjectDetailPane(private val context: Context) : ToolPane() {
         override val defaultSide: Side
             get() = Side.LEFT
 
-        override fun createToolPane(project: PonticelloProject): ToolPane = ScoreObjectDetailPane(project.context)
+        override fun createToolPane(project: PonticelloProject): ToolPane = ScoreObjectDetailPane()
 
         private const val TITLE_BAR_HEIGHT = 35.0
     }

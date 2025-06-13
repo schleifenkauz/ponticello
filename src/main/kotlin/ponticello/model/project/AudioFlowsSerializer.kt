@@ -17,9 +17,16 @@ import reaktive.value.now
 import reaktive.value.reactiveVariable
 import java.io.File
 
-object AudioFlowsSerializer : SingleFileComponentSerializer<AudioFlows>(
-    ObjectListSerializer(AudioFlowGroup.serializer(), ::AudioFlows)
-) {
+object AudioFlowsSerializer : ComponentSerializer<AudioFlows>() {
+    private val singleFileSerializer = SingleFileComponentSerializer(
+        ObjectListSerializer(AudioFlowGroup.serializer(), ::AudioFlows)
+    )
+
+    override fun initialize(component: Component<AudioFlows>) {
+        super.initialize(component)
+        singleFileSerializer.initialize(component)
+    }
+
     override fun serializeComponent(value: AudioFlows, dataDirectory: File) {
         val groupsDir = dataDirectory.resolve("flows")
         groupsDir.mkdir()
@@ -83,7 +90,7 @@ object AudioFlowsSerializer : SingleFileComponentSerializer<AudioFlows>(
 
     override fun deserializeComponent(dataDirectory: File): AudioFlows {
         val groupsDir = dataDirectory.resolve("flows")
-        if (!groupsDir.exists()) return super.deserializeComponent(dataDirectory)
+        if (!groupsDir.exists()) return singleFileSerializer.deserializeComponent(dataDirectory)
 
         val infoFiles = groupsDir.listFiles { f -> f.extension == "json" } ?: return AudioFlows.createDefault()
         val groups = mutableListOf<AudioFlowGroup>()

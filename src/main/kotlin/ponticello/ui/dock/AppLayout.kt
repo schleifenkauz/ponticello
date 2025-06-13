@@ -273,9 +273,8 @@ class AppLayout(
             timeCodeView,
             infiniteSpace()
         )
-        val toolWindowActions = ToolWindowActions.withContext(this@AppLayout)
         val serverActions = ServerActions.withContext(project)
-        topRightBar = toolbarPart(toolWindowActions + serverActions)
+        topRightBar = toolbarPart(serverActions)
         right = HBox(
             topRightBar,
             hspace(50.0),

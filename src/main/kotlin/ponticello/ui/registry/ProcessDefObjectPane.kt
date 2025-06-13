@@ -8,7 +8,7 @@ import ponticello.ui.misc.CodePane
 
 class ProcessDefObjectPane(
     def: ProcessDefObject, enableActions: Boolean,
-) : ParameterizedObjectDefPane<ProcessDefObject>(def, enableActions) {
+) : ParameterizedObjectDefPane<ProcessDefObject>(def) {
     private lateinit var setupCodePane: EditorControl<*>
 
     override fun getContent(def: ProcessDefObject): Node {

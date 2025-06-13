@@ -16,7 +16,14 @@ class MultiFileComponentSerializer<T : NamedObject, L : NamedObjectList<T>>(
     private val itemSerializer: KSerializer<T>, listSerializer: KSerializer<L>,
     private val listConstructor: (MutableList<T>) -> L,
     private val extension: String = "json",
-) : SingleFileComponentSerializer<L>(listSerializer) {
+) : ComponentSerializer<L>() {
+    private val singleFileSerializer = SingleFileComponentSerializer(listSerializer)
+
+    override fun initialize(component: Component<L>) {
+        super.initialize(component)
+        singleFileSerializer.initialize(component)
+    }
+
     override fun serializeComponent(value: L, dataDirectory: File) {
         val subDir = dataDirectory.resolve(component.name)
         subDir.mkdirs()
@@ -58,7 +65,7 @@ class MultiFileComponentSerializer<T : NamedObject, L : NamedObjectList<T>>(
 
     override fun deserializeComponent(dataDirectory: File): L {
         val subDir = dataDirectory.resolve(component.name)
-        if (!subDir.isDirectory) return super.deserializeComponent(dataDirectory)
+        if (!subDir.isDirectory) return singleFileSerializer.deserializeComponent(dataDirectory)
         val registryFile = subDir.resolve("registry.json")
         val names = if (registryFile.isFile) {
             try {

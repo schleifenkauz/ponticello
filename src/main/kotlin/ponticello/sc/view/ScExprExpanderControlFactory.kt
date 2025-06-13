@@ -11,6 +11,7 @@ import hextant.core.editor.Expander
 import hextant.core.view.ExpanderControl
 import ponticello.sc.*
 import ponticello.sc.editor.ReferenceCompleter
+import ponticello.ui.dock.AppLayout
 import ponticello.ui.misc.HelpBrowser
 import reaktive.value.forEach
 
@@ -45,7 +46,7 @@ object ScExprExpanderControlFactory : ControlFactory<ponticello.sc.editor.ScExpr
             on("Alt+PERIOD") { editor.callMethod() }
             on("Alt+N") { editor.nameValue() }
             on("Ctrl+D") {
-                val browser = editor.context[HelpBrowser]
+                val browser = editor.context[AppLayout].get<HelpBrowser>()
                 val bounds = control.localToScreen(control.boundsInLocal)
                 browser.showClassDocumentation(editor, bounds)
             }

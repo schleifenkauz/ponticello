@@ -7,7 +7,6 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import ponticello.impl.ColorSerializer
 import ponticello.impl.Decimal
-import ponticello.impl.Logger
 import ponticello.model.flow.NodePlacement
 import ponticello.model.obj.ParameterizedObject
 import ponticello.model.obj.SynthDefObject
@@ -51,7 +50,7 @@ class EnvelopeControl(
         points.initialize(context)
         specObserver = namedControl.spec.forEach { spec ->
             if (spec !is NumericalControlSpec) {
-                Logger.error("Expected NumericalControlSpec but got $spec")
+                System.err.println("Expected NumericalControlSpec on $namedControl but got $spec")
             } else if (defaultWarp != spec.warp) {
                 defaultWarp = spec.warp
                 updateSynthDef()

@@ -36,7 +36,7 @@ data class BufferControl(
 
     override fun validate(spec: ControlSpec, obj: ParameterizedObject): Boolean {
         if (spec !is BufferControlSpec) {
-            Logger.error("Expected BufferControlSpec but got $spec")
+            Logger.warn("Expected BufferControlSpec but got $spec", Logger.Category.Playback)
             return false
         }
         return checkResolution(sample.now, "Sample")

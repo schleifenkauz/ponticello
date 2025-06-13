@@ -2,6 +2,7 @@ package ponticello.ui.dock
 
 import fxutils.*
 import fxutils.actions.*
+import hextant.fx.initHextantScene
 import javafx.event.Event
 import javafx.scene.Node
 import javafx.scene.Parent
@@ -48,6 +49,8 @@ abstract class ToolPane : VBox() {
         private set
 
     private lateinit var layout: AppLayout
+
+    val context get() = layout.context
 
     protected abstract val content: Parent
     protected open val headerContent: Node? get() = null
@@ -171,7 +174,7 @@ abstract class ToolPane : VBox() {
     protected open fun makePopup(): Popup {
         val popup = Popup()
         popup.content.add(StackPane(this))
-        popup.scene.stylesheets.addAll(SubWindow.globalStylesheets)
+        popup.scene.initHextantScene(context)
         popup.sceneFill(DEFAULT_SCENE_FILL)
         popup.isAutoHide = true
         popup.setOnHidden { ev ->
@@ -186,7 +189,7 @@ abstract class ToolPane : VBox() {
         stage.title = title
         initialState?.windowBounds?.applyTo(stage) ?: stage.centerOnScreen()
         stage.scene = Scene(StackPane(this))
-        stage.scene.stylesheets.addAll(SubWindow.globalStylesheets)
+        stage.scene.initHextantScene(context)
         stage.sceneFill(DEFAULT_SCENE_FILL)
         stage.setOnHidden { ev ->
             showing.set(false)

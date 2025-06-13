@@ -18,7 +18,9 @@ import org.kordamp.ikonli.Ikon
 import org.kordamp.ikonli.materialdesign2.MaterialDesignE
 import ponticello.model.registry.NamedObject
 import ponticello.model.registry.NamedObject.Companion.NO_NAME
+import ponticello.model.registry.NamedObjectList
 import ponticello.model.registry.ObjectList
+import ponticello.ui.controls.NamePrompt
 import reaktive.value.ReactiveString
 import reaktive.value.reactiveValue
 
@@ -87,7 +89,12 @@ interface ObjectListDisplayConfig<O : Any> {
 
     fun getDefaultDisplayName(obj: O): ReactiveString = reactiveValue(NO_NAME)
 
-    fun createNewObject(ev: Event?): O? = null
+    fun createNewObject(ev: Event?, list: ObjectList<O>): O? {
+        if (list !is NamedObjectList) return null
+        val name = NamePrompt(list, "Name for new ${list.objectType}", initialName = "")
+            .showDialog(ev) ?: return null
+        return createNewObject(name, ev)
+    }
 
     fun createNewObject(name: String, ev: Event?): O? = null
 

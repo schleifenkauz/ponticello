@@ -18,7 +18,6 @@ import ponticello.sc.client.SuperColliderClient
 import ponticello.ui.actions.*
 import ponticello.ui.dock.AppLayout
 import ponticello.ui.midi.ContextualMidiReceiver
-import ponticello.ui.misc.HelpBrowser
 import ponticello.ui.misc.InteractionConfigBar
 import ponticello.ui.score.*
 import reaktive.value.reactiveValue
@@ -43,7 +42,6 @@ class PonticelloMainActivity(val project: PonticelloProject) : Activity() {
 
     init {
         context[PonticelloMainActivity] = this
-        context[HelpBrowser] = HelpBrowser()
         context[FlowGroupManager] = FlowGroupManager(project.flows, mainScoreView)
 
         setupMainScoreView()

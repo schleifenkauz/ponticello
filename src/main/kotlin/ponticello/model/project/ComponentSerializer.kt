@@ -6,7 +6,7 @@ abstract class ComponentSerializer<T> {
     protected lateinit var component: Component<T>
         private set
 
-    fun initialize(component: Component<T>) {
+    open fun initialize(component: Component<T>) {
         this.component = component
     }
 

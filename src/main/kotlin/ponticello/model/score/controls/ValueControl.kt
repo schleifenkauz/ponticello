@@ -24,7 +24,7 @@ data class ValueControl(
 
     override fun validate(spec: ControlSpec, obj: ParameterizedObject): Boolean {
         if (spec !is NumericalControlSpec) {
-            Logger.error("Expected NumericalControlSpec but got $spec")
+            Logger.warn("Expected NumericalControlSpec but got $spec", Logger.Category.Playback)
             return false
         }
         return true

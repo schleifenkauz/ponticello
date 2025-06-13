@@ -7,7 +7,7 @@ import ponticello.ui.misc.CodePane
 
 class SynthDefObjectPane(
     def: CustomizableSynthDefObject, enableActions: Boolean,
-) : ParameterizedObjectDefPane<CustomizableSynthDefObject>(def, enableActions) {
+) : ParameterizedObjectDefPane<CustomizableSynthDefObject>(def) {
     private lateinit var ugenGraphPane: EditorControl<*>
 
     override fun getContent(def: CustomizableSynthDefObject): Node {

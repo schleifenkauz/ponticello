@@ -10,13 +10,14 @@ import ponticello.model.Settings
 import ponticello.model.obj.ConfigurableInstrumentObject
 import ponticello.model.obj.ParameterDefObject
 import ponticello.model.obj.withName
+import ponticello.model.registry.ObjectList
 import reaktive.value.now
 
 abstract class ParameterizedObjectDefPane<T : ConfigurableInstrumentObject>(
-    protected val def: T, ownWindow: Boolean,
+    protected val def: T,
 ): ScrollPane() {
     private val config: ParameterListConfig = object : ParameterListConfig() {
-        override fun createNewObject(ev: Event?): ParameterDefObject? {
+        override fun createNewObject(ev: Event?, list: ObjectList<ParameterDefObject>): ParameterDefObject? {
             val defaultParameters = def.context[Settings].defaultParametersDefs
                 .filter { param -> !def.hasParameter(param.name.now) }
             val listView = SearchableParameterDefListView(defaultParameters, "New parameter")

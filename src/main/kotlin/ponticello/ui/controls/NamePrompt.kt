@@ -1,11 +1,11 @@
 package ponticello.ui.controls
 
 import fxutils.prompt.TextPrompt
-import ponticello.model.registry.ObjectRegistry
+import ponticello.model.registry.NamedObjectList
 import ponticello.sc.Identifier
 
 class NamePrompt(
-    private val registry: ObjectRegistry<*>, title: String, initialName: String
+    private val registry: NamedObjectList<*>, title: String, initialName: String
 ) : TextPrompt<String>(title, initialName) {
     override fun convert(text: String): String? {
         if (!Identifier.isValid(text)) return null

@@ -61,7 +61,6 @@ import reaktive.value.reactiveValue
 class LauncherGridPane(
     private val grid: LauncherGrid,
 ) : ToolPane(), LauncherGrid.View {
-    private val context = grid.context
     private val boxes = mutableMapOf<LauncherGrid.GridItem, Region>()
     override val content = GridPane().styleClass("launcher-grid-pane")
     override val headerContent: Node = setupHeader()
@@ -87,9 +86,9 @@ class LauncherGridPane(
     }
 
     private fun setupHeader(): HBox {
-        val availableTargets = LauncherGrid.Target.options(context)
+        val availableTargets = LauncherGrid.Target.options(grid.context)
         val targetSelector = SimpleSearchableListView(availableTargets, "Choose target")
-            .selectorButton(grid.target, undoManager = context[UndoManager])
+            .selectorButton(grid.target, undoManager = grid.context[UndoManager])
         val headerContent = HBox(5.0, Label("Target: "), targetSelector).centerChildren()
         return headerContent
     }
@@ -116,7 +115,7 @@ class LauncherGridPane(
         val buttonText = if (target is ItemTarget.None) "Select Target" else item.target.toString()
         val button = button(buttonText)
         button.setOnAction {
-            val listView = SimpleSearchableListView(ItemTarget.options(context), "Choose item target")
+            val listView = SimpleSearchableListView(ItemTarget.options(grid.context), "Choose item target")
             val newTarget = listView.showPopup(button) ?: return@setOnAction
             item.target = newTarget
         }
@@ -130,7 +129,7 @@ class LauncherGridPane(
                 val spec = NumericalControlSpec(zero, zero, one, 0.01.toDecimal(), zero, Warp.Linear)
                 val scoreYSlider = SliderBar(
                     obj.liveConfig.yPosition, "Score Y", spec.converter(),
-                    undoManager = context[UndoManager],
+                    undoManager = grid.context[UndoManager],
                 ).setFixedWidth(120.0)
                 box.children.add(scoreYSlider)
             }
@@ -190,7 +189,7 @@ class LauncherGridPane(
 
             db.hasContent(ScoreObject.DATA_FORMAT) -> {
                 val name = db.getContent(ScoreObject.DATA_FORMAT) as String
-                val obj = context[ScoreObjectRegistry].getOrNull(name)
+                val obj = grid.context[ScoreObjectRegistry].getOrNull(name)
                 if (obj != null) {
                     item.target =
                         if (obj is ScoreObjectGroup) ItemTarget.Player(obj.reference())
@@ -199,32 +198,32 @@ class LauncherGridPane(
             }
 
             db.hasContent(BufferObject.DATA_FORMAT) -> {
-                val buffer = db.getFrom(context[BufferRegistry], BufferObject.DATA_FORMAT) ?: return@drop
+                val buffer = db.getFrom(grid.context[BufferRegistry], BufferObject.DATA_FORMAT) ?: return@drop
                 createPlayBufTarget(ev, buffer, item)
             }
 
             db.hasContent(ScriptObject.DATA_FORMAT) -> {
-                val script = db.getFrom(context.project.scripts, ScriptObject.DATA_FORMAT) ?: return@drop
+                val script = db.getFrom(grid.context.project.scripts, ScriptObject.DATA_FORMAT) ?: return@drop
                 item.target = ItemTarget.Script(script.reference())
             }
 
             db.hasContent(LiveTaskObject.DATA_FORMAT) -> {
-                val task = db.getFrom(context.project[LIVE_TASKS], LiveTaskObject.DATA_FORMAT) ?: return@drop
+                val task = db.getFrom(grid.context.project[LIVE_TASKS], LiveTaskObject.DATA_FORMAT) ?: return@drop
                 item.target = ItemTarget.LiveTask(task.reference())
             }
 
             db.hasFile("wav") -> {
                 val file = db.files[0]
-                val buffer = context[BufferRegistry].getOrAdd(file)
+                val buffer = grid.context[BufferRegistry].getOrAdd(file)
                 createPlayBufTarget(ev, buffer, item)
             }
         }
     }
 
     private fun createPlayBufTarget(ev: DragEvent, buffer: BufferObject, item: LauncherGrid.GridItem) {
-        val synthDef = context.project[UI_STATE].getOrSelectInstrument(ev) ?: return
+        val synthDef = grid.context.project[UI_STATE].getOrSelectInstrument(ev) ?: return
         val obj = buffer.createSynthObject(synthDef) ?: return
-        context[ScoreObjectRegistry].add(obj)
+        grid.context[ScoreObjectRegistry].add(obj)
         item.target = ItemTarget.Object(obj.reference())
     }
 
@@ -240,7 +239,7 @@ class LauncherGridPane(
             db.hasContent(AudioFlow.DATA_FORMAT) -> true
             db.hasContent(ScoreObject.DATA_FORMAT) -> {
                 val name = db.getContent(ScoreObject.DATA_FORMAT) as String
-                val obj = context[ScoreObjectRegistry].getOrNull(name)
+                val obj = grid.context[ScoreObjectRegistry].getOrNull(name)
                 obj != null && obj.affectsPlayback
             }
 

@@ -3,10 +3,8 @@ package ponticello.ui.registry
 import fxutils.actions.ContextualizedAction
 import fxutils.actions.collectActions
 import fxutils.styleClass
-import javafx.event.Event
 import ponticello.model.registry.NamedObject
 import ponticello.model.registry.ObjectRegistry
-import ponticello.ui.controls.NamePrompt
 import ponticello.ui.dock.SearchableToolPane
 
 abstract class ObjectRegistryPane<O : NamedObject>(val registry: ObjectRegistry<O>) : SearchableToolPane<O>(registry) {
@@ -20,17 +18,6 @@ abstract class ObjectRegistryPane<O : NamedObject>(val registry: ObjectRegistry<
     }
 
     override fun extraHeaderActions(): List<ContextualizedAction> = actions.withContext(this)
-
-    protected open fun addObject(ev: Event?) {
-        val name = NamePrompt(
-            registry, "Name for new ${registry.objectType}",
-            initialName = ""
-        ).showDialog(ev) ?: return
-        val obj = createNewObject(name, ev) ?: return
-        registry.add(obj)
-    }
-
-    abstract override fun createNewObject(name: String, ev: Event?): O?
 
     companion object {
         private val actions = collectActions<ObjectRegistryPane<*>> {

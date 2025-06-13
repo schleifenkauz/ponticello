@@ -53,7 +53,7 @@ class ParameterControlsPane(
         obj.controls.addListener(this)
     }
 
-    override fun createNewObject(ev: Event?): NamedParameterControl? {
+    override fun createNewObject(ev: Event?, list: ObjectList<NamedParameterControl>): NamedParameterControl? {
         if (ev.isShiftDown()) {
             obj.addControlsForAllObjectParameters()
             return null

@@ -33,7 +33,7 @@ class BusControl(val bus: ReactiveVariable<BusReference>) : ParameterControl() {
 
     override fun validate(spec: ControlSpec, obj: ParameterizedObject): Boolean {
         if (spec !is BusControlSpec) {
-            Logger.error("Expected BusControlSpec but got $spec")
+            Logger.warn("Expected BusControlSpec but got $spec", Logger.Category.Playback)
             return false
         }
         return checkResolution(bus.now, "Bus")

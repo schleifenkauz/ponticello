@@ -21,6 +21,7 @@ import ponticello.model.project.PonticelloProject
 import ponticello.model.project.instruments
 import ponticello.model.registry.GlobalDefinitionLibrary
 import ponticello.model.registry.InstrumentRegistry
+import ponticello.model.registry.ObjectList
 import ponticello.sc.Identifier
 import ponticello.ui.dock.SearchableToolPaneState
 import ponticello.ui.dock.Side
@@ -84,13 +85,29 @@ class InstrumentRegistryPane(
 
     override fun getHeaderContent(obj: InstrumentObject): List<Node> = listOf(colorPicker(obj.color).setFixedWidth(30.0))
 
-    override fun addObject(ev: Event?) {
+    override fun createNewObject(ev: Event?, list: ObjectList<InstrumentObject>): InstrumentObject? {
         val globalLib = registry.context[GlobalDefinitionLibrary.instruments]
         val synthDefsFromGlobal = globalLib.getNames().map(AddObjectOption::ObjectFromGlobalLib)
         val searchableList = AddObjectOptionListView(synthDefsFromGlobal)
         searchableList.enterText(searchText.text)
-        val option = searchableList.showPopup(ev) ?: return
-        createObject(option, ev)
+        val option = searchableList.showPopup(ev) ?: return null
+        return createObject(option, ev)
+    }
+
+    private fun createObject(option: AddObjectOption, ev: Event?): InstrumentObject? {
+        when (option) {
+            is AddObjectOption.NewObject -> {
+                return createNewObject(option.name, ev)
+            }
+
+            is AddObjectOption.ObjectFromGlobalLib -> {
+                val name = option.name
+                val def = registry.context[GlobalDefinitionLibrary.instruments].get(name) ?: return null
+                return def.takeIf {
+                    !registry.has(name) || YesNoPrompt("Overwrite ${instruments.objectType} $name?").showDialog(ev) == true
+                }
+            }
+        }
     }
 
     private sealed interface AddObjectOption {
@@ -115,22 +132,6 @@ class InstrumentRegistryPane(
         override fun extractText(option: AddObjectOption): String = when (option) {
             is AddObjectOption.NewObject -> option.name
             is AddObjectOption.ObjectFromGlobalLib -> option.name
-        }
-    }
-
-    private fun createObject(option: AddObjectOption, ev: Event?): InstrumentObject? {
-        when (option) {
-            is AddObjectOption.NewObject -> {
-                return createNewObject(option.name, ev)
-            }
-
-            is AddObjectOption.ObjectFromGlobalLib -> {
-                val name = option.name
-                val def = registry.context[GlobalDefinitionLibrary.instruments].get(name) ?: return null
-                return def.takeIf {
-                    !registry.has(name) || YesNoPrompt("Overwrite ${instruments.objectType} $name?").showDialog(ev) == true
-                }
-            }
         }
     }
 
