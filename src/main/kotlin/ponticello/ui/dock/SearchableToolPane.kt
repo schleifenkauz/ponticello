@@ -54,7 +54,9 @@ abstract class SearchableToolPane<O : NamedObject>(
     }
 
     fun showContent(obj: O): Window? {
-        setShowing(true)
+        if (listView.mode.now != ObjectListView.DisplayMode.SubWindow) {
+            setShowing(true)
+        }
         return listView.showContent(obj)
     }
 

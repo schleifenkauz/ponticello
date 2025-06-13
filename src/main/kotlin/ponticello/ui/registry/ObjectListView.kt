@@ -412,12 +412,10 @@ class ObjectListView<O : Any>(
             return getBox(obj).showSubWindow()
         } else {
             select(obj)
-            val window = scene?.window as? SubWindow
-            window?.showOrBringToFront()
             Platform.runLater {
                 getBox(obj).content()?.requestFocus()
             }
-            return window
+            return null
         }
     }
 

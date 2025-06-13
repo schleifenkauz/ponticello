@@ -34,16 +34,15 @@ compileKotlin {
 
 javafx {
     version = '19.0.2.1'
-    modules = ['javafx.controls', 'javafx.fxml', 'javafx.web']
+    modules = ['javafx.controls', 'javafx.web']
 }
 
 application {
-    mainClassName = "ponticello.ui.main.PonticelloApp"
+    mainClassName = "ponticello.ui.launcher.PonticelloApp"
 }
 
 dependencies {
     implementation 'org.controlsfx:controlsfx:11.1.2'
-    implementation 'eu.hansolo:Medusa:16.0.0'
     implementation 'com.pixelduke:fxthemes:1.5.1'
 
     api 'org.kordamp.ikonli:ikonli-javafx:12.3.1'

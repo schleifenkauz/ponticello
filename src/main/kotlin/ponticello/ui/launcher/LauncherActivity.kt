@@ -32,7 +32,7 @@ class LauncherActivity(private val launcher: PonticelloLauncher) : Activity() {
         styleClass("sleek-text-field", "search-field")
         left = FontIcon(Material2MZ.SEARCH)
         promptText = "Search for project..."
-        minWidth = 200.0
+        prefWidth = 200.0
     }
 
     private val boxes = mutableListOf<ProjectBox>()

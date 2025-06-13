@@ -294,11 +294,9 @@ class PonticelloLauncher {
 
     fun closeRequest(automaticallySave: Boolean = false) {
         val project = getActiveProject()
-        if (project == null) {
-            currentActivity.hide()
-            return
+        if (project != null) {
+            saveChanges(automaticallySave) ?: return
         }
-        saveChanges(automaticallySave) ?: return
         currentActivity.hide()
         quitApplication()
     }
