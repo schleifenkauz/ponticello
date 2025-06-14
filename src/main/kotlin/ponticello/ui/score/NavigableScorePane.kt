@@ -18,8 +18,11 @@ class NavigableScorePane(score: Score, context: Context) : RootScorePane(score, 
     override var displayEnd: Decimal = 0.0.asTime
 
     val displayedDuration get() = displayEnd - displayStart
+
     init {
         styleClass.add("score-view")
+        heightProperty().addListener { _ -> repaint() }
+//        widthProperty().addListener { _ -> repaint() }
     }
 
     fun displayWholeScore() {

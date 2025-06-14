@@ -68,7 +68,7 @@ class AppLayout(
 
     val context get() = project.context
 
-    private val dividerPositions = project[UI_STATE].dividerPositions.toMutableMap()
+    private val savedDividerPositions = project[UI_STATE].dividerPositions.toMutableMap()
 
     init {
         styleClass("app-layout")
@@ -95,11 +95,11 @@ class AppLayout(
 
         setupToolPanes()
         runFXWithTimeout(100) {
-            for ((side, size) in dividerPositions) {
+            for ((side, size) in savedDividerPositions) {
                 restorePaneSize(side, size)
             }
         }
-        for ((side, sideBarList) in sideBarLists) {
+        for ((_, sideBarList) in sideBarLists) {
             sideBarList.addListener(this, initialize = false)
         }
         left = VBox(leftTopBar, infiniteSpace(), leftBottomBar) styleClass "dock-icons-bar"
@@ -153,19 +153,19 @@ class AppLayout(
         when (side) {
             LEFT -> if (sidePane !in horizontalSplitter.items) {
                 horizontalSplitter.items.add(0, sidePane)
-                horizontalSplitter.setDividerPosition(0, dividerPositions[LEFT] ?: DEFAULT_SIDE_PANE_PORTION)
+                horizontalSplitter.setDividerPosition(0, savedDividerPositions[LEFT] ?: DEFAULT_SIDE_PANE_PORTION)
             }
 
             RIGHT -> if (sidePane !in horizontalSplitter.items) {
                 horizontalSplitter.items.add(sidePane)
                 val dividerIndex = horizontalSplitter.items.size - 2
-                val position = dividerPositions[RIGHT] ?: (1 - DEFAULT_SIDE_PANE_PORTION)
+                val position = savedDividerPositions[RIGHT] ?: (1 - DEFAULT_SIDE_PANE_PORTION)
                 horizontalSplitter.setDividerPosition(dividerIndex, position)
             }
 
             BOTTOM -> if (sidePane !in verticalSplitter.items) {
                 verticalSplitter.items.add(sidePane)
-                verticalSplitter.setDividerPosition(0, dividerPositions[BOTTOM] ?: 0.66)
+                verticalSplitter.setDividerPosition(0, savedDividerPositions[BOTTOM] ?: 0.66)
             }
 
             else -> throw AssertionError()
@@ -213,17 +213,19 @@ class AppLayout(
         if (pane.items.isEmpty()) {
             when (pane) {
                 leftPane -> {
-                    dividerPositions[LEFT] = horizontalSplitter.dividerPositions[0]
+                    savedDividerPositions[LEFT] = horizontalSplitter.dividerPositions[0]
+                    val rightDivider = horizontalSplitter.dividerPositions[1]
                     horizontalSplitter.items.remove(leftPane)
+                    horizontalSplitter.setDividerPosition(0, rightDivider)
                 }
 
                 rightPane -> {
-                    dividerPositions[RIGHT] = horizontalSplitter.dividerPositions[horizontalSplitter.items.size - 2]
+                    savedDividerPositions[RIGHT] = horizontalSplitter.dividerPositions[horizontalSplitter.items.size - 2]
                     horizontalSplitter.items.remove(rightPane)
                 }
 
                 bottomPane -> {
-                    dividerPositions[BOTTOM] = verticalSplitter.dividerPositions[0]
+                    savedDividerPositions[BOTTOM] = verticalSplitter.dividerPositions[0]
                     verticalSplitter.items.remove(bottomPane)
                 }
 
@@ -277,22 +279,22 @@ class AppLayout(
         topRightBar = toolbarPart(serverActions)
         right = HBox(
             topRightBar,
-            hspace(50.0),
+            hspace(10.0),
             toolbarPart(QuitAction.withContext(launcher))
         )
     } styleClass "toolbar"
 
     private fun getDividerPosition(side: Side) = when (side) {
         LEFT ->
-            if (leftPane !in horizontalSplitter.items) dividerPositions[LEFT] ?: DEFAULT_SIDE_PANE_PORTION
+            if (leftPane !in horizontalSplitter.items) savedDividerPositions[LEFT] ?: DEFAULT_SIDE_PANE_PORTION
             else horizontalSplitter.dividerPositions[0]
 
         RIGHT ->
-            if (rightPane !in horizontalSplitter.items) dividerPositions[RIGHT] ?: (1 - DEFAULT_SIDE_PANE_PORTION)
+            if (rightPane !in horizontalSplitter.items) savedDividerPositions[RIGHT] ?: (1 - DEFAULT_SIDE_PANE_PORTION)
             else horizontalSplitter.dividerPositions[horizontalSplitter.items.size - 2]
 
         BOTTOM ->
-            if (bottomPane !in verticalSplitter.items) dividerPositions[BOTTOM] ?: DEFAULT_BOTTOM_PANE_PORTION
+            if (bottomPane !in verticalSplitter.items) savedDividerPositions[BOTTOM] ?: DEFAULT_BOTTOM_PANE_PORTION
             else verticalSplitter.dividerPositions[0]
 
         TOP -> 0.0

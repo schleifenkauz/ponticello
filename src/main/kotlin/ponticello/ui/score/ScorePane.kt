@@ -70,8 +70,6 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
 
     init {
         styleClass("score-pane")
-        heightProperty().addListener { _ -> repaint() }
-        widthProperty().addListener { _ -> repaint() }
     }
 
     open fun isRoot(obj: ScoreObject) = false

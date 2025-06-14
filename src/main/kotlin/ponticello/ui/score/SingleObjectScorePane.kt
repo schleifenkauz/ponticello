@@ -40,6 +40,8 @@ class SingleObjectScorePane(
         super.initialize()
         durationObserver = rootObj.duration().observe { _ -> repaint() }
         setupGrid()
+        heightProperty().addListener { _ -> repaint() }
+        widthProperty().addListener { _ -> repaint() }
     }
 
     private fun setupGrid() {
