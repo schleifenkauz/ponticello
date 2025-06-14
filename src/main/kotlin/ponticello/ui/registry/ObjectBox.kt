@@ -105,6 +105,11 @@ class ObjectBox<O : Any>(val parent: ObjectListView<O>, val obj: O) : Control() 
             if (ev.clickCount == 2) {
                 parent.showSelected()
             }
+            runFXWithTimeout(10) {
+                if (!parent.isFocusWithin) {
+                    parent.requestFocus()
+                }
+            }
         }
         styleClass(*config.boxStyle)
     }

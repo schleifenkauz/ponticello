@@ -2,6 +2,7 @@ package ponticello.ui.dock
 
 import fxutils.actions.*
 import fxutils.addAfter
+import fxutils.registerShortcuts
 import fxutils.styleClass
 import javafx.scene.Cursor
 import javafx.scene.Node
@@ -49,7 +50,9 @@ abstract class SearchableToolPane<O : NamedObject>(
 
     override fun afterSetup() {
         val actions = listView.actions + extraHeaderActions()
-        registerShortcuts(actions)
+        listView.registerShortcuts {
+            registerActions(actions)
+        }
         header.children.addAfter(headerContent, ActionBar(actions, buttonStyle = "medium-icon-button"))
     }
 

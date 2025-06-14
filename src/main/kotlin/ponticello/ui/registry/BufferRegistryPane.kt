@@ -12,6 +12,7 @@ import javafx.event.Event
 import javafx.scene.Node
 import javafx.scene.control.Label
 import javafx.scene.control.TextField
+import javafx.scene.control.Tooltip
 import javafx.scene.input.DataFormat
 import javafx.scene.input.DragEvent
 import javafx.scene.input.Dragboard
@@ -43,6 +44,7 @@ import ponticello.ui.dock.ToolPaneState
 import ponticello.ui.impl.getFrom
 import ponticello.ui.launcher.PonticelloFiles
 import ponticello.ui.score.ScoreObjectDuplicator
+import reaktive.value.fx.asObservableValue
 import reaktive.value.now
 import java.io.File
 
@@ -153,10 +155,14 @@ class BufferRegistryPane(private val buffers: BufferRegistry) : ObjectRegistryPa
             val xLabel = Label("x")
             listOf(channelsSpinner, xLabel, durationInput)
         }
+        else -> emptyList()
+    }
 
-        is SampleObject -> {
-            val pathLabel = label(obj.filePath()) styleClass "path-label"
-            listOf(pathLabel)
+    override fun configureBox(box: ObjectBox<BufferObject>, currentMode: ObjectListView.DisplayMode) {
+        val obj = box.obj
+        if (obj is SampleObject) {
+            box.tooltip = Tooltip()
+            box.tooltip.textProperty().bind(obj.filePath().asObservableValue())
         }
     }
 

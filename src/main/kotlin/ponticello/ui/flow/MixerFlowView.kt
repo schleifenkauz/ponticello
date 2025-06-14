@@ -18,6 +18,7 @@ import ponticello.sc.editor.BusSelector
 import ponticello.sc.view.ObjectSelectorControl
 import ponticello.ui.registry.ListDisplayConfig
 import ponticello.ui.registry.ObjectListView
+import reaktive.value.binding.equalTo
 import reaktive.value.binding.flatMap
 import reaktive.value.fx.asObservableValue
 import reaktive.value.reactiveValue
@@ -64,9 +65,9 @@ class MixerFlowView private constructor(
             undoManager = flow.context[UndoManager], updateActionDescription = "Update volume"
         )
         volumeSlider.prefWidth = 150.0
-        volumeSlider.disableProperty().bind(obj.mute.asObservableValue())
+        volumeSlider.disableProperty().bind(obj.state.equalTo(MixerFlow.MixerComponentMode.Mute).asObservableValue())
 
-        val panKnob = listConfig.createPanKnob(obj, 16.0)
+        val panKnob = listConfig.createPanKnob(obj.pan, 16.0)
         return listOf(selectorControl, volumeSlider, panKnob)
     }
 

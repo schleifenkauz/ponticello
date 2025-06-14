@@ -21,11 +21,8 @@ import ponticello.sc.client.SuperColliderClient
 import ponticello.ui.midi.AbstractMidiContext
 import ponticello.ui.midi.MidiContext
 import reaktive.Observer
-import reaktive.observe
-import reaktive.value.ReactiveValue
-import reaktive.value.ReactiveVariable
-import reaktive.value.now
-import reaktive.value.reactiveVariable
+import reaktive.value.*
+import reaktive.value.binding.flatMap
 
 @Serializable
 @SerialName("MixerFlow")
@@ -33,6 +30,8 @@ class MixerFlow(
     val targetBus: ReactiveVariable<BusReference>,
     val components: MixerComponentList,
     val masterVolume: ReactiveVariable<Decimal> = reactiveVariable(zero),
+    val masterMute: ReactiveVariable<Boolean> = reactiveVariable(false),
+    val monoMix: ReactiveVariable<Boolean> = reactiveVariable(false),
 ) : AudioFlow(), ObjectList.Listener<MixerFlow.MixerComponent> {
     @Transient
     private val componentObservers = mutableMapOf<MixerComponent, Observer>()
@@ -41,7 +40,9 @@ class MixerFlow(
     private lateinit var sinkObserver: Observer
 
     @Transient
-    private lateinit var masterVolumeObserver: Observer
+    private lateinit var masterObserver: Observer
+
+    val targetChannels by lazy { targetBus.flatMap { bus -> bus.get()?.channels ?: reactiveValue(0) } }
 
     @Transient
     private var soloed = 0
@@ -88,13 +89,24 @@ class MixerFlow(
             replacedBus(old, new)
             sync()
         }
-        masterVolumeObserver = masterVolume.observe { _, _, vol ->
-            client.run("$superColliderName.set(\\master_volume, $vol.dbamp)")
+        observeMasterControls()
+    }
+
+    private fun observeMasterControls() {
+        masterObserver = masterVolume.observe { _, _, vol ->
+            if (!masterMute.now) {
+                client.run("$superColliderName.set(\\master_volume, $vol.dbamp)")
+            }
+        } and masterMute.observe { _, _, mute ->
+            val volume = if (mute) "0" else "${masterVolume.now}.dbamp"
+            client.run("$superColliderName.set(\\master_volume, $volume)")
+        } and monoMix.observe { _, _, mono ->
+            client.run("$superColliderName.set(\\mono_mix, ${if (mono) "1" else "0"})")
         }
     }
 
     private fun getActualVolume(comp: MixerComponent) =
-        if (comp.mute.now || (soloed != 0 && !comp.solo.now)) "0"
+        if (comp.isMuted || (soloed != 0 && !comp.isSolo)) "0"
         else "${comp.volume.now}.dbamp"
 
     override fun added(obj: MixerComponent, idx: Int) {
@@ -103,23 +115,21 @@ class MixerFlow(
     }
 
     private fun setupComponent(obj: MixerComponent) {
-        if (obj.solo.now) soloed++
+        if (obj.isSolo) soloed++
         componentObservers[obj] = obj.sourceBus.observe { _, old, new ->
             setSourceBus(old, new)
-        } and obj.mute.observe { _, _, _ ->
+        } and obj.state.observe { _, before, after ->
+            if (before == MixerComponentMode.Solo) {
+                soloed--
+            }
+            if (after == MixerComponentMode.Solo) {
+                soloed++
+            }
             recomputeVolumes()
         } and obj.volume.observe { _, _, _ ->
             recomputeVolumes()
         } and obj.pan.observe { _, _, _ ->
             panChanged()
-        } and obj.solo.observe { _, _, solo ->
-            if (solo) {
-                soloed++
-                recomputeVolumes()
-            } else {
-                soloed--
-                recomputeVolumes()
-            }
         }
     }
 
@@ -151,7 +161,7 @@ class MixerFlow(
 
     override fun removed(obj: MixerComponent) {
         sync()
-        if (obj.solo.now) soloed--
+        if (obj.isSolo) soloed--
         componentObservers.remove(obj)?.kill()
     }
 
@@ -159,7 +169,7 @@ class MixerFlow(
         if (components.isEmpty()) return@writeCode
         val sink = targetBus.now.force()
         appendBlock("$superColliderName = ", endLine = false) {
-            +"var sources, volumes, pans, mix, snd"
+            +"var sources, volumes, pans, snd, mono_mix"
             val sources = components.map { comp -> comp.sourceBus.now.force().superColliderName }
             val volumes = components.map { comp -> getActualVolume(comp) }
             +"sources = NamedControl.kr(\\sources, $sources, lags: ${AttackReleaseControl.DEFAULT}, fixedLag: true)"
@@ -170,14 +180,11 @@ class MixerFlow(
                 +"pans = NamedControl.kr(\\pans, $pans, lags: ${AttackReleaseControl.DEFAULT}, fixedLag: true)"
                 when (sources.size) {
                     0 -> {}
-                    1 -> {
-                        +"sources = Balance2.ar(sources[0], sources[1], pans)"
-                    }
+                    1 -> +"sources = Balance2.ar(sources[0], sources[1], pans)"
                     else -> {
                         for (i in sources.indices) {
                             +"sources[$i] = Balance2.ar(sources[$i][0], sources[$i][1], pans[$i])"
                         }
-
                     }
                 }
             }
@@ -186,6 +193,10 @@ class MixerFlow(
                 "\\master_volume.kr(${masterVolume.now}.dbamp, lag: ${AttackReleaseControl.DEFAULT}, fixedLag: true)"
             val mix = if (components.size > 1) "sources.sum" else "sources"
             +"snd = (snd + $mix) * $masterVolume * Linen.kr(\\gate.kr(1), 0.02, 1, 0.02, Done.freeSelf)"
+            if (sink.channels.now == 2) {
+                +"mono_mix = \\mono_mix.kr(${if (monoMix.now) "1" else "0"})"
+                +"snd = (snd * (1 - mono_mix)) + (snd.sum ! 2 * mono_mix)"
+            }
             +"ReplaceOut.ar(${sink.superColliderName}, snd)"
             +"0"
         }
@@ -200,18 +211,21 @@ class MixerFlow(
 
     override fun copy(): AudioFlow = MixerFlow(targetBus.copy(), MixerComponentList(components.toMutableList()))
 
+    enum class MixerComponentMode {
+        Regular, Mute, Solo;
+    }
+
     @Serializable
     class MixerComponent(
         val sourceBus: ReactiveVariable<BusReference>,
-        val volume: ReactiveVariable<Decimal>,
-        val mute: ReactiveVariable<Boolean>,
-        val solo: ReactiveVariable<Boolean>,
+        val volume: ReactiveVariable<Decimal> = reactiveVariable(zero),
+        val state: ReactiveVariable<MixerComponentMode> = reactiveVariable(MixerComponentMode.Regular),
         val pan: ReactiveVariable<Decimal> = reactiveVariable(zero),
     ) : AbstractContextualObject() {
-        fun copy() = MixerComponent(sourceBus, volume.copy(), mute.copy(), solo.copy())
+        val isMuted get() = state.now == MixerComponentMode.Mute
+        val isSolo get() = state.now == MixerComponentMode.Solo
 
-        fun observe(handler: () -> Unit): Observer =
-            volume.observe(handler) and mute.observe(handler) and solo.observe(handler)
+        fun copy() = MixerComponent(sourceBus, volume.copy(), state.copy(), pan.copy())
 
         override fun initialize(context: Context) {
             super.initialize(context)
@@ -219,12 +233,7 @@ class MixerFlow(
         }
 
         companion object {
-            fun create(source: BusObject) = MixerComponent(
-                sourceBus = reactiveVariable(BusReference(source)),
-                volume = reactiveVariable(zero),
-                mute = reactiveVariable(false),
-                solo = reactiveVariable(false)
-            )
+            fun create(source: BusObject) = MixerComponent(sourceBus = reactiveVariable(BusReference(source)))
         }
     }
 
@@ -253,8 +262,8 @@ class MixerFlow(
     override fun midiContext(): MidiContext = MixerMidiContext()
 
     companion object {
-        val MIN_VOLUME = (-60.0)
-        val MAX_VOLUME = (+24.0)
+        const val MIN_VOLUME = -60.0
+        const val MAX_VOLUME = +24.0
         val VOLUME_SPEC = NumericalControlSpec(
             default = zero, min = MIN_VOLUME.toDecimal(), max = MAX_VOLUME.toDecimal(),
             lag = AttackReleaseControl.DEFAULT, warp = Warp.Linear, step = 0.1.toDecimal(),

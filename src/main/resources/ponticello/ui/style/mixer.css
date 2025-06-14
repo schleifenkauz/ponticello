@@ -6,3 +6,56 @@
 Label.fader-volume {
     -fx-font-size: 10px !important;
 }
+
+.fader-volume-box {
+    -fx-background-color: rgba(0, 0, 0, 0.2);
+    -fx-background-radius: 3px;
+}
+
+.mute-solo-button FontIcon {
+    -fx-icon-size: 15px;
+    -fx-icon-color: gray;
+}
+
+.icon-button.mute-solo-button {
+    -fx-background-radius: 4px;
+    -fx-border-radius: 4px;
+}
+
+.icon-button.mute-solo-button:hover {
+    -fx-background-color: rgba(128, 128, 128, 0.15);
+}
+
+.icon-button.mute-solo-button:selected FontIcon {
+    -fx-background-color: rgba(0, 128, 0, 0.5) !important;
+}
+
+.mono-button:selected {
+    -fx-background-color: #351919 !important
+}
+
+Slider.volume-fader {
+    -fx-minor-tick-count: 6;
+    -fx-major-tick-unit: 6;
+    -fx-show-tick-labels: true;
+    -fx-opacity: 1.0;
+}
+
+Slider.volume-fader .thumb {
+    -fx-background-color: darkgreen;
+    -fx-background-radius: 5px;
+    -fx-pref-width: 15px;
+    -fx-pref-height: 15px;
+    -fx-effect: none;
+    /*-fx-effect: dropshadow(one-pass-box, rgba(0,0,0,0.1), 2, 0.0, 0, 1);*/
+}
+
+Slider.volume-fader .thumb:hover {
+    -fx-background-color: green;
+}
+
+Slider.volume-fader .track {
+    -fx-background-color: rgba(255, 255, 255, 0.2);
+    -fx-pref-height: 5px;
+    -fx-background-radius: 3px;
+}

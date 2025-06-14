@@ -87,6 +87,13 @@ class ObjectListView<O : Any>(
         setMode(displayMode.now)
         registerSelectionShortcuts()
         setupDropArea()
+        this.isFocusTraversable = true
+        itemsScrollPane.focusedProperty().addListener { _, _, focused ->
+            if (focused) {
+                System.err.println("Item scroll pane tried to gain focus!")
+                parent.requestFocus()
+            }
+        }
     }
 
     private fun setupDropArea() {
@@ -182,9 +189,7 @@ class ObjectListView<O : Any>(
             val selectedContent = selected.content()
             if (displayMode.now == DisplayMode.DetailsPane && selectedContent is ToolPane) {
                 val actionBar = selectedContent.actionBar
-                if (actionBar != null) {
-                    registerActions(actionBar.actions())
-                }
+                registerActions(actionBar.actions())
             }
         }
     }
@@ -543,6 +548,7 @@ class ObjectListView<O : Any>(
                 description { list -> reactiveValue("Duplicate ${list.source.objectType}") }
                 executes { list, ev ->
                     val obj = list.selectedObject() as? RenamableObject ?: return@executes
+
                     @Suppress("UNCHECKED_CAST")
                     val source = list.source as ObjectRegistry<RenamableObject>
                     val initialName = obj.name.now + "_copy"

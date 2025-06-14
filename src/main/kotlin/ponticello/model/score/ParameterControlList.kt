@@ -94,7 +94,6 @@ class ParameterControlList(
 
         fun initialize(controls: ParameterControlList) {
             this.controls = controls
-            super.initialize(controls.context)
             updateSpec(customSpec ?: parentObject.def.getSpec(name.now)?.now)
             value.now.initialize(context, this)
             isValid = binding(_spec, value) { spec, ctrl -> spec != null && ctrl.validate(spec, parentObject) }
@@ -180,7 +179,7 @@ class ParameterControlList(
     fun initialize(context: Context, associatedObject: ParameterizedObject) {
         super.initialize(context)
         this.associatedObject = associatedObject
-        for (ctrl in this) ctrl.initialize(this)
+        for (ctrl in this.toList()) ctrl.initialize(this)
         def.parameters.addListener(this)
         setupValidation()
     }

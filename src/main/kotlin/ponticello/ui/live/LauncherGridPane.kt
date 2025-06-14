@@ -147,7 +147,7 @@ class LauncherGridPane(
         }
         box.setOnMouseClicked { ev ->
             if (ev.target == box && ev.modifiers.isEmpty() && ev.button == MouseButton.SECONDARY) {
-                item.target = ItemTarget.None
+                item.target = ItemTarget.None()
             }
         }
         box.setOnMouseReleased { ev ->

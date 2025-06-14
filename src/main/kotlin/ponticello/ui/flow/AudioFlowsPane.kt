@@ -6,9 +6,11 @@ import fxutils.centerChildren
 import fxutils.setFixedWidth
 import fxutils.vspace
 import javafx.geometry.Orientation
+import javafx.geometry.Pos
 import javafx.scene.Node
 import javafx.scene.Parent
 import javafx.scene.layout.Region
+import javafx.scene.layout.StackPane
 import javafx.scene.layout.VBox
 import javafx.scene.paint.Color
 import javafx.scene.text.Text
@@ -71,11 +73,15 @@ class AudioFlowsPane(flows: AudioFlows) : SearchableToolPane<AudioFlowGroup>(flo
         nameLabel.textProperty().bind(box.obj.name.asObservableValue())
         nameLabel.fill = Color.WHITE
         nameLabel.rotate = -90.0
+        StackPane.setAlignment(nameLabel, Pos.BOTTOM_CENTER)
+        val namePane = StackPane(nameLabel).setFixedWidth(15.0)
+        nameLabel.translateYProperty().bind(nameLabel.textProperty().map { -nameLabel.prefWidth(-1.0) / 2 })
+
         val expandAction = MaterialDesignC.CHEVRON_RIGHT.button("Expand", "medium-icon-button") { _ ->
             box.toggleExpanded()
         }
         val toggleActive = FlowGroupPane.toggleActiveAction.withContext(box.obj).makeButton("medium-icon-button")
-        return VBox(expandAction, toggleActive, vspace(20.0), nameLabel)
+        return VBox(expandAction, toggleActive, vspace(20.0), namePane)
             .alwaysVGrow().centerChildren().setFixedWidth(30.0)
     }
 

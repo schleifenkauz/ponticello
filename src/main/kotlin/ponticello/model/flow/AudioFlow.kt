@@ -1,5 +1,6 @@
 package ponticello.model.flow
 
+import hextant.context.Context
 import javafx.scene.input.DataFormat
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient

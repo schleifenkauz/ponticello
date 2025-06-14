@@ -135,7 +135,7 @@ class LauncherGrid private constructor(
 
     @Serializable
     class GridItem(
-        @SerialName("target") private val _target: ReactiveVariable<ItemTarget> = reactiveVariable(ItemTarget.None),
+        @SerialName("target") private val _target: ReactiveVariable<ItemTarget> = reactiveVariable(ItemTarget.None()),
         val stopOnRelease: ReactiveVariable<Boolean> = reactiveVariable(false),
     ) : AbstractContextualObject() {
         @Transient
@@ -175,7 +175,7 @@ class LauncherGrid private constructor(
 
         companion object {
             fun createDefault(): GridItem = GridItem(
-                _target = reactiveVariable(ItemTarget.None),
+                _target = reactiveVariable(ItemTarget.None()),
                 stopOnRelease = reactiveVariable(false),
             )
         }

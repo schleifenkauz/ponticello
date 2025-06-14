@@ -163,13 +163,13 @@ class AudioFlowGroup(
 
         override fun initializeObject(obj: AudioFlow) {
             obj.setParentGroup(parentGroup)
-            obj.initialize(context)
+            if (!obj.initialized) {
+                obj.initialize(context)
+            }
         }
 
         object Serializer : ObjectListSerializer<AudioFlow, AudioFlowList>(AudioFlow.serializer(), ::AudioFlowList)
     }
-
-    override fun toString(): String = superColliderName.now
 
     companion object {
         fun create(name: String, y: Decimal, color: Color) = AudioFlowGroup(

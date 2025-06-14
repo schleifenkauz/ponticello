@@ -59,7 +59,7 @@ abstract class ToolPane : VBox() {
     lateinit var header: HBox
         private set
 
-    var actionBar: ActionBar? = null
+    lateinit var actionBar: ActionBar
         private set
 
     protected var window: javafx.stage.Window? = null
@@ -85,13 +85,19 @@ abstract class ToolPane : VBox() {
     fun setup() {
         if (isSetup) return
         doSetup()
-        header = createHeader()
-        children.add(header)
-        children.add(content)
-        setVgrow(content, ALWAYS)
+        relayout()
         registerShortcuts(headerActions)
         afterSetup()
         isSetup = true
+    }
+
+    fun relayout() {
+        children.clear()
+        header = createHeader()
+        children.add(header)
+        val content = content
+        children.add(content)
+        setVgrow(content, ALWAYS)
     }
 
     override fun requestFocus() {

@@ -3,6 +3,7 @@ package ponticello.model.obj
 import bundles.PublicProperty
 import hextant.context.Context
 import kotlinx.serialization.Transient
+import ponticello.impl.Logger
 import ponticello.model.registry.NamedObject
 import ponticello.model.registry.ObjectReference
 import ponticello.model.registry.ObjectRegistry
@@ -11,7 +12,8 @@ import kotlin.reflect.KProperty
 
 abstract class AbstractContextualObject : ContextualObject {
     @Transient
-    protected var initialized = false
+    final override var initialized = false
+        private set
 
     @Transient
     private lateinit var _context: Context
@@ -23,8 +25,10 @@ abstract class AbstractContextualObject : ContextualObject {
     }
 
     override fun initialize(context: Context) {
-        //check(initialized) { "$this already initialized!" }
-        if (initialized) return
+        if (initialized) {
+            Logger.warn("$this [${hashCode()}] is already initialized", Logger.Category.Registries)
+            return
+        }
         initialized = true
         _context = context
     }

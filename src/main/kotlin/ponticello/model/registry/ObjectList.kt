@@ -52,7 +52,7 @@ abstract class ObjectList<O> : List<O>, AbstractContextualObject() {
     fun has(obj: O) = objects.contains(obj)
 
     protected open fun initializeObject(obj: O) {
-        if (obj is ContextualObject) {
+        if (obj is ContextualObject && !obj.initialized) {
             obj.initialize(context)
         }
     }

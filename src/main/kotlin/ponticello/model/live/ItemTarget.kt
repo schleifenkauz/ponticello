@@ -56,7 +56,7 @@ sealed class ItemTarget : AbstractContextualObject() {
 
     @Serializable
     @SerialName("None")
-    data object None : ItemTarget() {
+    class None : ItemTarget() { //has to be a class, otherwise we get double initialization errors
         override val isActive: ReactiveBoolean
             get() = reactiveValue(false)
 
@@ -68,6 +68,12 @@ sealed class ItemTarget : AbstractContextualObject() {
 
         override fun released(item: LauncherGrid.GridItem) {
         }
+
+        override fun toString(): String = "None"
+
+        override fun equals(other: Any?): Boolean = other is None
+
+        override fun hashCode(): Int = javaClass.hashCode()
     }
 
     @Serializable
@@ -339,7 +345,7 @@ sealed class ItemTarget : AbstractContextualObject() {
             }
             val scriptTargets = context.project.scripts.map { script -> Script(script.reference()) }
             val taskTargets = context.project[LIVE_TASKS].map { task -> LiveTask(task.reference()) }
-            val defaultOptions = listOf(None, ToggleRecording)
+            val defaultOptions = listOf(None(), ToggleRecording)
             return defaultOptions + objectTargets + playerTargets + flowTargets + scriptTargets + taskTargets
         }
     }

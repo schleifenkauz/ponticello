@@ -6,15 +6,7 @@
     -fx-vbar-policy: never;
 }
 
-.volume-fader {
-    -fx-minor-tick-count: 6;
-    -fx-major-tick-unit: 6;
+.volume-fader:horizontal {
     -fx-snap-to-ticks: true;
     -fx-min-width: 150px;
-    -fx-orientation: horizontal;
-    -fx-show-tick-labels: true;
-}
-
-.mixer-source {
-    -fx-padding: 0px 5px 0px 5px;
 }
