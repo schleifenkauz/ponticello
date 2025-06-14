@@ -42,6 +42,7 @@ class AudioFlows(override val objects: MutableList<AudioFlowGroup>) : ObjectRegi
             if (!group.isActive.now) continue
             group.createFlows()
         }
+        addedToServer = true
     }
 
     fun allFlows() = objects.flatMap { grp -> grp.flows }

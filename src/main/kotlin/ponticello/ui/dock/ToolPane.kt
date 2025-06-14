@@ -112,10 +112,6 @@ abstract class ToolPane : VBox() {
         }
     }
 
-    fun setDocked() {
-        layout.showDocked(this)
-    }
-
     fun setMode(mode: ToolPaneMode) {
         if (mode == currentMode()) return
         setShowing(false)

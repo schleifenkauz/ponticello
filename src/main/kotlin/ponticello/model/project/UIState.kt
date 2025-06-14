@@ -13,6 +13,7 @@ import ponticello.model.registry.InstrumentRegistry
 import ponticello.model.registry.reference
 import ponticello.model.score.TimeUnit
 import ponticello.ui.dock.Side
+import ponticello.ui.dock.SideBarState
 import ponticello.ui.dock.ToolPaneState
 import ponticello.ui.registry.SimpleSearchableRegistryView
 import reaktive.value.ReactiveVariable
@@ -28,8 +29,7 @@ class UIState private constructor(
     val askForGroupNames: ReactiveVariable<Boolean> = reactiveVariable(false),
     val controlsDisplay: ReactiveVariable<InlineControlsDisplay> = reactiveVariable(InlineControlsDisplay.NONE),
     var toolPaneStates: List<ToolPaneState> = emptyList(),
-    var sideBars: Map<Side, List<Int>> = emptyMap(),
-    var dividerPositions: Map<Side, Double> = emptyMap(),
+    var sideBarStates: List<SideBarState> = emptyList(),
     private val windowStates: MutableList<WindowState> = mutableListOf(),
 ) : AbstractContextualObject() {
     override fun initialize(context: Context) {
@@ -47,6 +47,8 @@ class UIState private constructor(
         selectedInstrument.now = instrument.reference()
         return instrument
     }
+
+    fun getSideBarState(side: Side) = sideBarStates.find { state -> state.side == side }
 
     fun getWindowState(reference: WindowState.Reference, default: (WindowState.Reference) -> WindowState): WindowState {
         val present = windowStates.find { state -> state.reference == reference }

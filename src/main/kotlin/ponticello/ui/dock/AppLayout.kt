@@ -5,6 +5,7 @@ import bundles.publicProperty
 import bundles.set
 import fxutils.actions.ActionBar
 import fxutils.actions.ContextualizedAction
+import fxutils.actions.collectActions
 import fxutils.hspace
 import fxutils.infiniteSpace
 import fxutils.runFXWithTimeout
@@ -16,6 +17,7 @@ import javafx.geometry.Orientation
 import javafx.scene.control.SplitPane
 import javafx.scene.input.TransferMode
 import javafx.scene.layout.*
+import org.kordamp.ikonli.materialdesign2.MaterialDesignF
 import ponticello.impl.Logger
 import ponticello.model.player.ScorePlayer
 import ponticello.model.project.PonticelloProject
@@ -46,9 +48,16 @@ class AppLayout(
     private val interactionConfigBar: InteractionConfigBar,
     private val timeCodeView: TimeCodeView,
 ) : BorderPane(), ObjectList.Listener<ToolPane.Type> {
-    private val sideBarLists = project[UI_STATE].sideBars.mapValuesTo(mutableMapOf()) { (_, types) ->
-        ToolPaneTypeList(types.map { t -> toolPaneType(t) }.toMutableList())
+    private val sideBarLists = project[UI_STATE].sideBarStates.associateTo(mutableMapOf()) { state ->
+        val toolPaneTypes = state.toolPanes.map { t -> toolPaneType(t) }.toMutableList()
+        state.side to ToolPaneTypeList(toolPaneTypes)
     }
+
+    private val savedDividerPositions = project[UI_STATE].sideBarStates.associateTo(mutableMapOf()) { state ->
+        state.side to state.dividerPosition
+    }
+
+    private var currentlyInSetup = true
 
     private val leftPane = SplitPane()
     private val rightPane = SplitPane()
@@ -62,13 +71,10 @@ class AppLayout(
     private lateinit var rightBar: ToolPaneActionBar
     private lateinit var topRightBar: ActionBar
 
-    private val actions = mutableListOf<ContextualizedAction>()
     private val toolPanes = mutableListOf<ToolPane>()
     private val toolbar = createToolbar()
 
     val context get() = project.context
-
-    private val savedDividerPositions = project[UI_STATE].dividerPositions.toMutableMap()
 
     init {
         styleClass("app-layout")
@@ -94,6 +100,7 @@ class AppLayout(
         for (box in toolbar.children) HBox.setHgrow(box, Priority.ALWAYS)
 
         setupToolPanes()
+        recoverSidePaneDividers()
         runFXWithTimeout(100) {
             for ((side, size) in savedDividerPositions) {
                 restorePaneSize(side, size)
@@ -129,18 +136,28 @@ class AppLayout(
             toolPanes.add(toolPane)
             val state = uiState.toolPaneStates.find { s -> s.uid == type.uid } ?: toolPane.defaultState()
             toolPane.initialize(this, state)
-            val action = ToolPaneAction(toolPane)
-            actions.add(action)
         }
         leftBottomBar = ToolPaneActionBar(this, sideBarLists.getValue(BOTTOM))
         leftTopBar = ToolPaneActionBar(this, sideBarLists.getValue(LEFT))
         rightBar = ToolPaneActionBar(this, sideBarLists.getValue(RIGHT))
         topRightBar.addActions(sideBarLists.getValue(TOP).map { p -> ToolPaneAction(getToolPane(p)!!) })
+        currentlyInSetup = false
+    }
+
+    private fun recoverSidePaneDividers() {
+        for (state in project[UI_STATE].sideBarStates) {
+            val pane = getSidePane(state.side) ?: continue
+            pane.setDividerPositions(*state.dividerPositions.toDoubleArray())
+        }
     }
 
     fun showDocked(toolPane: ToolPane) {
         val side = getSide(toolPane)
         val sidePane = getSidePane(side)
+        if (sidePane == null) {
+            Logger.warn("SidePane for ${toolPane.title} not found", Logger.Category.Layout)
+            return
+        }
         if (sidePane.items.contains(toolPane)) {
             Logger.warn("ToolPane ${toolPane.title} already showing on $side", Logger.Category.Layout)
             return
@@ -150,26 +167,9 @@ class AppLayout(
         var insertIdx = sidePane.items.binarySearchBy(idx) { p -> types.indexOf((p as ToolPane).type) }
         insertIdx = -insertIdx - 1
         sidePane.items.add(insertIdx, toolPane)
-        when (side) {
-            LEFT -> if (sidePane !in horizontalSplitter.items) {
-                horizontalSplitter.items.add(0, sidePane)
-                horizontalSplitter.setDividerPosition(0, savedDividerPositions[LEFT] ?: DEFAULT_SIDE_PANE_PORTION)
-            }
+        if (currentlyInSetup && project[UI_STATE].getSideBarState(side)?.isExpanded == false) return
 
-            RIGHT -> if (sidePane !in horizontalSplitter.items) {
-                horizontalSplitter.items.add(sidePane)
-                val dividerIndex = horizontalSplitter.items.size - 2
-                val position = savedDividerPositions[RIGHT] ?: (1 - DEFAULT_SIDE_PANE_PORTION)
-                horizontalSplitter.setDividerPosition(dividerIndex, position)
-            }
-
-            BOTTOM -> if (sidePane !in verticalSplitter.items) {
-                verticalSplitter.items.add(sidePane)
-                verticalSplitter.setDividerPosition(0, savedDividerPositions[BOTTOM] ?: 0.66)
-            }
-
-            else -> throw AssertionError()
-        }
+        showSidePane(sidePane)
         if (sidePane.items.size != 1) {
             val pos1 = sidePane.dividerPositions[sidePane.items.size - 2]
             sidePane.setDividerPosition(sidePane.items.size - 1, (pos1 + 1) / 2)
@@ -183,10 +183,33 @@ class AppLayout(
         }
     }
 
+    private fun showSidePane(sidePane: SplitPane) {
+        when (sidePane) {
+            leftPane -> if (sidePane !in horizontalSplitter.items) {
+                horizontalSplitter.items.add(0, sidePane)
+                horizontalSplitter.setDividerPosition(0, savedDividerPositions[LEFT] ?: DEFAULT_SIDE_PANE_PORTION)
+            }
+
+            rightPane -> if (sidePane !in horizontalSplitter.items) {
+                horizontalSplitter.items.add(sidePane)
+                val dividerIndex = horizontalSplitter.items.size - 2
+                val position = savedDividerPositions[RIGHT] ?: (1 - DEFAULT_SIDE_PANE_PORTION)
+                horizontalSplitter.setDividerPosition(dividerIndex, position)
+            }
+
+            bottomPane -> if (sidePane !in verticalSplitter.items) {
+                verticalSplitter.items.add(sidePane)
+                verticalSplitter.setDividerPosition(0, savedDividerPositions[BOTTOM] ?: 0.66)
+            }
+
+            else -> throw AssertionError()
+        }
+    }
+
     fun setExclusive(toolPane: ToolPane) {
         if (!toolPane.isShowing.now) return
         val side = getSide(toolPane)
-        val pane = getSidePane(side)
+        val pane = getSidePane(side) ?: return
         pane.items.setAll(toolPane)
     }
 
@@ -196,11 +219,11 @@ class AppLayout(
         return side
     }
 
-    private fun getSidePane(side: Side) = when (side) {
+    private fun getSidePane(side: Side): SplitPane? = when (side) {
         LEFT -> leftPane
         RIGHT -> rightPane
         BOTTOM -> bottomPane
-        TOP -> throw AssertionError()
+        TOP -> null
     }
 
     fun hideDocked(toolPane: ToolPane) {
@@ -211,26 +234,32 @@ class AppLayout(
         }
         pane.items.remove(toolPane)
         if (pane.items.isEmpty()) {
-            when (pane) {
-                leftPane -> {
-                    savedDividerPositions[LEFT] = horizontalSplitter.dividerPositions[0]
-                    val rightDivider = horizontalSplitter.dividerPositions[1]
-                    horizontalSplitter.items.remove(leftPane)
-                    horizontalSplitter.setDividerPosition(0, rightDivider)
-                }
+            hideSidePane(pane)
+        }
+    }
 
-                rightPane -> {
-                    savedDividerPositions[RIGHT] = horizontalSplitter.dividerPositions[horizontalSplitter.items.size - 2]
-                    horizontalSplitter.items.remove(rightPane)
-                }
-
-                bottomPane -> {
-                    savedDividerPositions[BOTTOM] = verticalSplitter.dividerPositions[0]
-                    verticalSplitter.items.remove(bottomPane)
-                }
-
-                else -> throw AssertionError()
+    private fun hideSidePane(pane: SplitPane) {
+        if (pane.scene == null) return
+        when (pane) {
+            leftPane -> {
+                savedDividerPositions[LEFT] = horizontalSplitter.dividerPositions[0]
+                val rightDivider = horizontalSplitter.dividerPositions[1]
+                horizontalSplitter.items.remove(leftPane)
+                horizontalSplitter.setDividerPosition(0, rightDivider)
             }
+
+            rightPane -> {
+                savedDividerPositions[RIGHT] =
+                    horizontalSplitter.dividerPositions[horizontalSplitter.items.size - 2]
+                horizontalSplitter.items.remove(rightPane)
+            }
+
+            bottomPane -> {
+                savedDividerPositions[BOTTOM] = verticalSplitter.dividerPositions[0]
+                verticalSplitter.items.remove(bottomPane)
+            }
+
+            else -> throw AssertionError()
         }
     }
 
@@ -320,21 +349,57 @@ class AppLayout(
 
     fun saveLayoutState() {
         val state = project[UI_STATE]
-        state.dividerPositions = Side.entries.associateWith(::getDividerPosition)
+        state.sideBarStates = Side.entries.map { side ->
+            val dividerPos = getDividerPosition(side)
+            val pane = getSidePane(side)
+            val dividerPositions = pane?.dividerPositions?.toList().orEmpty()
+            val toolPanes = sideBarLists.getValue(side).map { t -> t.uid }
+            val expanded = pane?.scene != null
+            SideBarState(side, dividerPos, toolPanes, dividerPositions, expanded)
+        }
         state.toolPaneStates = allToolPaneTypes.map { type ->
             val toolPane = getToolPane(type) ?: error("$type not found")
             val s = toolPane.initialState ?: toolPane.defaultState()
             toolPane.saveState(s)
             s
         }
-        state.sideBars = sideBarLists.mapValues { (_, types) -> types.map { t -> t.uid } }
     }
 
-    fun actions(): List<ContextualizedAction> = actions
+    fun actions(): List<ContextualizedAction> =
+        toolPanes.map { tp -> ToolPaneAction(tp) } + layoutActions.withContext(this)
 
     companion object : PublicProperty<AppLayout> by publicProperty("AppLayout") {
         private const val DEFAULT_SIDE_PANE_PORTION = 0.2
         private const val DEFAULT_BOTTOM_PANE_PORTION = 0.3
+
+        val layoutActions = collectActions<AppLayout> {
+            addAction("Hide all side bars") {
+                shortcut("Shift+ESCAPE")
+                icon(MaterialDesignF.FULLSCREEN)
+                executes { layout ->
+                    val sidePanes = layout.sidePanes
+                    if (sidePanes.any { p -> p.scene != null }) {
+                        for (pane in sidePanes) {
+                            layout.hideSidePane(pane)
+                        }
+                    } else {
+                        for (pane in sidePanes) {
+                            if (pane.items.isNotEmpty()) {
+                                layout.showSidePane(pane)
+                            }
+                        }
+                    }
+                }
+            }
+            addAction("Hide all tool-panes") {
+                shortcut("Ctrl+ESCAPE")
+                executes { layout ->
+                    for (toolPane in layout.toolPanes) {
+                        toolPane.setShowing(false)
+                    }
+                }
+            }
+        }
 
         private val allToolPaneTypes = buildList {
             //top

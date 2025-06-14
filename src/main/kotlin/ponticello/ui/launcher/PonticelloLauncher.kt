@@ -33,6 +33,7 @@ import ponticello.model.player.ScorePlayer
 import ponticello.model.project.PonticelloProject
 import ponticello.model.project.PonticelloProject.Companion.projectDirectory
 import ponticello.model.project.SERVER_OPTIONS
+import ponticello.model.project.UI_STATE
 import ponticello.model.project.get
 import ponticello.model.registry.GlobalDefinitionLibrary
 import ponticello.sc.client.ConsoleMonitor
@@ -100,6 +101,7 @@ class PonticelloLauncher {
 
     private fun saveChanges(autoSave: Boolean = false): Boolean? {
         val project = getActiveProject() ?: return false
+        project.save(UI_STATE)
         if (autoSave) {
             val ok = saveProject()
             if (!ok) return null

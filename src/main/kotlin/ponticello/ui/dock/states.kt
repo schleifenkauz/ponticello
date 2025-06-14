@@ -7,6 +7,15 @@ import ponticello.ui.registry.BusRegistryPane
 import ponticello.ui.registry.ObjectListView
 
 @Serializable
+data class SideBarState(
+    val side: Side,
+    val dividerPosition: Double,
+    val toolPanes: List<Int>,
+    val dividerPositions: List<Double>,
+    val isExpanded: Boolean,
+)
+
+@Serializable
 sealed class ToolPaneState {
     var uid: Int = -1
     lateinit var mode: ToolPaneMode
@@ -41,7 +50,7 @@ sealed class SearchableToolPaneState : ToolPaneState() {
 class RegularSearchableToolPaneState : SearchableToolPaneState()
 
 @Serializable
-class FlowPaneState: SearchableToolPaneState() {
+class FlowPaneState : SearchableToolPaneState() {
     var expandedFlows = emptyList<Int>()
 
     init {
@@ -50,12 +59,12 @@ class FlowPaneState: SearchableToolPaneState() {
 }
 
 @Serializable
-class MixerPaneState: ToolPaneState() {
+class MixerPaneState : ToolPaneState() {
     var flowReference: AudioFlows.FlowReference? = null
 }
 
 @Serializable
-class BusRegistryPaneState private constructor(): SearchableToolPaneState() {
+class BusRegistryPaneState private constructor() : SearchableToolPaneState() {
     lateinit var filter: BusRegistryPane.BusTypeFilter
 
     companion object {
@@ -67,7 +76,7 @@ class BusRegistryPaneState private constructor(): SearchableToolPaneState() {
 }
 
 @Serializable
-class BufferRegistryPaneState private constructor(): SearchableToolPaneState() {
+class BufferRegistryPaneState private constructor() : SearchableToolPaneState() {
     lateinit var filter: BufferRegistryPane.BufferTypeFilter
 
     companion object {
