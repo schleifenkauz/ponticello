@@ -101,6 +101,9 @@ class MixerPane(
         }
         registerShortcuts {
             registerActions(volumeActions.withContext(this@MixerPane))
+            if (channelsList != null) {
+                registerActions(channelsList!!.actions)
+            }
         }
     }
 

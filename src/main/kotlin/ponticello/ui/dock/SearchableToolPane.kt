@@ -50,7 +50,7 @@ abstract class SearchableToolPane<O : NamedObject>(
 
     override fun afterSetup() {
         val actions = listView.actions + extraHeaderActions()
-        listView.registerShortcuts {
+        registerShortcuts {
             registerActions(actions)
         }
         header.children.addAfter(headerContent, ActionBar(actions, buttonStyle = "medium-icon-button"))

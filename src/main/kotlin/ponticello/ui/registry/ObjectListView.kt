@@ -87,13 +87,7 @@ class ObjectListView<O : Any>(
         setMode(displayMode.now)
         registerSelectionShortcuts()
         setupDropArea()
-        this.isFocusTraversable = true
-        itemsScrollPane.focusedProperty().addListener { _, _, focused ->
-            if (focused) {
-                System.err.println("Item scroll pane tried to gain focus!")
-                parent.requestFocus()
-            }
-        }
+        isFocusTraversable = true
     }
 
     private fun setupDropArea() {
@@ -354,6 +348,11 @@ class ObjectListView<O : Any>(
             displayContent(box)
         }
         config.onSelected(box.obj)
+        runFXWithTimeout(10) {
+            if (!isFocusWithin) {
+                requestFocus()
+            }
+        }
     }
 
     fun select(idx: Int) {
