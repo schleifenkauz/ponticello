@@ -63,6 +63,7 @@ fun Scene.registerGlobalShortcuts(context: Context) {
         registerActions(PlaybackActions.global.withContext(context[ScorePlayer.CURRENT]))
         registerActions(ServerActions.withContext(context.project))
         registerActions(ProjectActions.withContext(context[PonticelloLauncher]))
+        registerActions(ProjectUtilityActions.withContext(context.project))
     }
 }
 

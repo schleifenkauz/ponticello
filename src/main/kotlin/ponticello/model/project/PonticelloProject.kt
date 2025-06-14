@@ -103,6 +103,16 @@ class PonticelloProject private constructor(val components: Map<Component<out Co
     fun hasInstancesOf(obj: ScoreObject): Boolean = mainScore.hasInstancesOf(obj) ||
             get(LAUNCHER_GRID).items().any { item -> item.target.targetObject == obj }
 
+    fun openInExplorer() {
+        val os = System.getProperty("os.name").lowercase()
+        when {
+            os.contains("win") -> Runtime.getRuntime().exec("explorer.exe /select,$projectDirectory")
+            os.contains("nix") || os.contains("nux") || os.contains("aix") ->
+                Runtime.getRuntime().exec("xdg-open $projectDirectory")
+            os.contains("mac") -> Runtime.getRuntime().exec("open $projectDirectory")
+        }
+    }
+
     companion object {
         val projectDirectory = bundles.publicProperty<File>("Project directory")
 
