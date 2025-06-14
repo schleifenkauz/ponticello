@@ -1,7 +1,8 @@
 package ponticello.ui.dock
 
 import kotlinx.serialization.Serializable
-import ponticello.model.flow.AudioFlows
+import ponticello.model.flow.MixerFlow
+import ponticello.model.registry.ObjectReference
 import ponticello.ui.registry.BufferRegistryPane
 import ponticello.ui.registry.BusRegistryPane
 import ponticello.ui.registry.ObjectListView
@@ -59,8 +60,14 @@ class FlowPaneState : SearchableToolPaneState() {
 }
 
 @Serializable
-class MixerPaneState : ToolPaneState() {
-    var flowReference: AudioFlows.FlowReference? = null
+class MixerPaneState private constructor(): ToolPaneState() {
+    var flowReference: ObjectReference<MixerFlow> = ObjectReference.none()
+
+    companion object {
+        fun default() = MixerPaneState().apply {
+            mode = ToolPaneMode.Docked
+        }
+    }
 }
 
 @Serializable

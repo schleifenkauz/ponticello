@@ -9,13 +9,13 @@ import javafx.scene.Parent
 import javafx.scene.control.Control
 import javafx.scene.layout.Region
 import ponticello.model.registry.ObjectList
+import ponticello.ui.registry.ListDisplayConfig
 import ponticello.ui.registry.ObjectBox
-import ponticello.ui.registry.ObjectListDisplayConfig
 import ponticello.ui.registry.ObjectListView
 
 abstract class ReorderableActionBar<O : Any>(
     private val style: String, private val paneTypes: ObjectList<O>,
-) : ObjectListDisplayConfig<O>, Control() {
+) : ListDisplayConfig<O>, Control() {
     private lateinit var layout: ObjectListView<O>
 
     protected fun setup() {

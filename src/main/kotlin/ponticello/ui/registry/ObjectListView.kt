@@ -36,11 +36,11 @@ import reaktive.value.binding.notEqualTo
 
 class ObjectListView<O : Any>(
     val source: ObjectList<O>,
-    val config: ObjectListDisplayConfig<O>,
+    val config: ListDisplayConfig<O>,
     private val displayMode: ReactiveVariable<DisplayMode>,
 ) : Control(), ObjectList.Listener<O> {
     constructor(
-        source: ObjectList<O>, config: ObjectListDisplayConfig<O>,
+        source: ObjectList<O>, config: ListDisplayConfig<O>,
         displayMode: DisplayMode = config.supportedModes.first(),
     ) : this(source, config, reactiveVariable(displayMode))
 
@@ -454,7 +454,7 @@ class ObjectListView<O : Any>(
                 enableWhen { list ->
                     list.selectedBox.map { box ->
                         @Suppress("UNCHECKED_CAST")
-                        val config = list.config as ObjectListDisplayConfig<Any>
+                        val config = list.config as ListDisplayConfig<Any>
                         box != null && config.canDelete(box.obj)
                     }
                 }

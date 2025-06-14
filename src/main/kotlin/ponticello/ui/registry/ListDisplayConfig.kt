@@ -24,7 +24,7 @@ import ponticello.ui.controls.NamePrompt
 import reaktive.value.ReactiveString
 import reaktive.value.reactiveValue
 
-interface ObjectListDisplayConfig<O : Any> {
+interface ListDisplayConfig<O : Any> {
     val boxStyle: Array<String> get() = arrayOf("object-box")
 
     val listStyle: Array<String> get() = arrayOf("object-list")

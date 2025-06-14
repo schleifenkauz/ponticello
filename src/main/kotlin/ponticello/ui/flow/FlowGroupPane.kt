@@ -20,9 +20,12 @@ import javafx.scene.layout.VBox
 import org.kordamp.ikonli.material2.Material2AL
 import org.kordamp.ikonli.materialdesign2.*
 import ponticello.model.flow.*
+import ponticello.model.obj.FlowReference
 import ponticello.model.obj.InstrumentObject
+import ponticello.model.obj.resolve
 import ponticello.model.obj.withName
 import ponticello.model.registry.InstrumentRegistry
+import ponticello.model.registry.reference
 import ponticello.sc.Identifier
 import ponticello.sc.Rate
 import ponticello.sc.editor.BusSelector
@@ -33,8 +36,8 @@ import ponticello.ui.dock.AppLayout
 import ponticello.ui.impl.colorPicker
 import ponticello.ui.impl.getFrom
 import ponticello.ui.registry.InstrumentRegistryPane
+import ponticello.ui.registry.ListDisplayConfig
 import ponticello.ui.registry.ObjectBox
-import ponticello.ui.registry.ObjectListDisplayConfig
 import ponticello.ui.registry.ObjectListView
 import ponticello.ui.registry.ObjectListView.DisplayMode
 import ponticello.ui.score.ParameterControlsPane
@@ -45,7 +48,7 @@ import reaktive.value.binding.map
 import reaktive.value.now
 import reaktive.value.reactiveValue
 
-class FlowGroupPane(private val group: AudioFlowGroup, ownWindow: Boolean): VBox(), ObjectListDisplayConfig<AudioFlow> {
+class FlowGroupPane(private val group: AudioFlowGroup, ownWindow: Boolean): VBox(), ListDisplayConfig<AudioFlow> {
     val flowsView = ObjectListView(group.flows, this)
 
     init {
@@ -82,8 +85,9 @@ class FlowGroupPane(private val group: AudioFlowGroup, ownWindow: Boolean): VBox
     override fun getDroppedObject(ev: DragEvent): AudioFlow? {
         return when {
             ev.dragboard.hasContent(AudioFlow.DATA_FORMAT) -> {
-                val reference = ev.dragboard.getContent(AudioFlow.DATA_FORMAT) as AudioFlows.FlowReference
-                val flow = reference.getFlow(context[AudioFlows]) ?: return null
+                val reference = ev.dragboard.getContent(AudioFlow.DATA_FORMAT) as FlowReference
+                reference.resolve(context)
+                val flow = reference.get() ?: return null
                 if (TransferMode.COPY != ev.acceptedTransferMode) flow
                 else {
                     val copy = flow.copy().withName("${flow.name.now}_copy")
@@ -126,7 +130,7 @@ class FlowGroupPane(private val group: AudioFlowGroup, ownWindow: Boolean): VBox
         is SendFlow -> SendFlowView(obj)
         is InstrumentFlow -> ParameterControlsPane(obj)
         is UtilityFlow -> Slider(-60.0, +6.0, 0.0) styleClass "volume-fader"
-        is MixerFlow -> MixerFlowView(obj)
+        is MixerFlow -> MixerFlowView.create(obj)
         else -> null
     }
 
@@ -135,8 +139,7 @@ class FlowGroupPane(private val group: AudioFlowGroup, ownWindow: Boolean): VBox
     }
 
     override fun configureDragboard(obj: AudioFlow, dragboard: Dragboard) {
-        val ref = AudioFlows.FlowReference(group.name.now, obj.name.now)
-        dragboard.setContent(mapOf(AudioFlow.DATA_FORMAT to ref))
+        dragboard.setContent(mapOf(AudioFlow.DATA_FORMAT to obj.reference()))
     }
 
     override fun onDeselected(obj: AudioFlow) {

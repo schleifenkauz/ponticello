@@ -13,14 +13,14 @@ import org.kordamp.ikonli.material2.Material2MZ
 import org.kordamp.ikonli.materialdesign2.MaterialDesignB
 import ponticello.model.registry.NamedObject
 import ponticello.model.registry.NamedObjectList
-import ponticello.ui.registry.ObjectListDisplayConfig
+import ponticello.ui.registry.ListDisplayConfig
 import ponticello.ui.registry.ObjectListView
 import ponticello.ui.registry.ObjectListView.Companion.modeChangeActions
 import reaktive.value.now
 
 abstract class SearchableToolPane<O : NamedObject>(
     private val list: NamedObjectList<O>,
-) : ToolPane(), ObjectListDisplayConfig<O> {
+) : ToolPane(), ListDisplayConfig<O> {
     protected val searchText = CustomTextField().styleClass("sleek-text-field", "search-field")
 
     lateinit var listView: ObjectListView<O>

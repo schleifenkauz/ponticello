@@ -7,13 +7,13 @@ import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.serialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
-import reaktive.value.ReactiveBoolean
-import reaktive.value.now
-import reaktive.value.reactiveValue
 import ponticello.impl.Logger
 import ponticello.model.obj.SuperColliderObject
 import ponticello.sc.ScExpr
 import ponticello.sc.client.ScWriter
+import reaktive.value.ReactiveBoolean
+import reaktive.value.now
+import reaktive.value.reactiveValue
 
 @Serializable(with = ObjectReference.Serializer::class)
 class ObjectReference<O : NamedObject>(private var _name: String) : ScExpr {
@@ -26,10 +26,6 @@ class ObjectReference<O : NamedObject>(private var _name: String) : ScExpr {
         get() = isResolved.now
 
     constructor(obj: O) : this(obj.name.now) {
-        resolve(obj)
-    }
-
-    private fun resolve(obj: O) {
         this.obj = obj
         isResolved = obj.isAdded
     }
@@ -39,17 +35,18 @@ class ObjectReference<O : NamedObject>(private var _name: String) : ScExpr {
         isResolved = reactiveValue(false)
     }
 
-    fun resolve(registry: NamedObjectList<O>): O? {
+    fun resolve(registry: List<O>): O? {
         if (obj != null) return obj as O
         if (_name == "<none>") {
             isResolved = reactiveValue(false)
             return null
         }
-        try {
-            resolve(registry.get(_name))
-        } catch (ex: NoSuchElementException) {
-            Logger.severe("${registry.objectType} '$_name' not found", Logger.Category.Registries)
-            obj = null
+        obj = registry.find { obj -> obj.name.now == _name }
+        if (obj != null) {
+            isResolved = obj!!.isAdded
+        } else {
+            val objectType = if (registry is ObjectList) registry.objectType else "Object"
+            Logger.warn("$objectType '$_name' not found", Logger.Category.Registries)
             isResolved = reactiveValue(false)
         }
         return obj
@@ -57,7 +54,7 @@ class ObjectReference<O : NamedObject>(private var _name: String) : ScExpr {
 
     fun get(): O? = obj
 
-    fun force(): O = obj ?: error("ObjectReference ${getName() }is not resolved")
+    fun force(): O = obj ?: error("ObjectReference ${getName()}is not resolved")
 
     fun getName() = obj?.name?.now ?: _name
 
@@ -109,6 +106,6 @@ class ObjectReference<O : NamedObject>(private var _name: String) : ScExpr {
     companion object {
         const val NONE = "<none>"
 
-        fun <O: NamedObject> none() = ObjectReference<O>(NONE).also { it.setUnresolved() }
+        fun <O : NamedObject> none() = ObjectReference<O>(NONE).also { it.setUnresolved() }
     }
 }

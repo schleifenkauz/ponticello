@@ -2,48 +2,30 @@ package ponticello.ui.flow
 
 import bundles.createBundle
 import fxutils.*
-import fxutils.actions.ContextualizedAction
 import fxutils.actions.button
-import fxutils.actions.collectActions
 import fxutils.controls.SliderBar
 import fxutils.undo.UndoManager
 import javafx.geometry.Pos
 import javafx.scene.Node
 import javafx.scene.Parent
-import javafx.scene.input.DragEvent
-import javafx.scene.input.Dragboard
-import javafx.scene.input.MouseEvent
-import javafx.scene.input.TransferMode
 import javafx.scene.layout.HBox
 import javafx.scene.layout.Region
 import javafx.scene.layout.VBox
-import javafx.scene.paint.Color
-import org.kordamp.ikonli.materialdesign2.MaterialDesignA
 import org.kordamp.ikonli.materialdesign2.MaterialDesignP
 import ponticello.model.flow.MixerFlow
-import ponticello.model.obj.BusObject
-import ponticello.model.registry.BusRegistry
-import ponticello.sc.NumericalControlSpec
 import ponticello.sc.Rate
 import ponticello.sc.editor.BusSelector
 import ponticello.sc.view.ObjectSelectorControl
-import ponticello.ui.actions.ServerActions
-import ponticello.ui.actions.undoable
-import ponticello.ui.controls.Knob
-import ponticello.ui.impl.getFrom
-import ponticello.ui.registry.ObjectBox
-import ponticello.ui.registry.ObjectListDisplayConfig
+import ponticello.ui.registry.ListDisplayConfig
 import ponticello.ui.registry.ObjectListView
-import ponticello.ui.registry.SearchableBusListView
-import reaktive.value.binding.equalTo
 import reaktive.value.binding.flatMap
-import reaktive.value.binding.not
 import reaktive.value.fx.asObservableValue
-import reaktive.value.now
 import reaktive.value.reactiveValue
 
-class MixerFlowView(private val flow: MixerFlow) : VBox(), ObjectListDisplayConfig<MixerFlow.MixerComponent> {
-    private val channels = flow.targetBus.flatMap { bus -> bus.get()?.channels ?: reactiveValue(0) }
+class MixerFlowView private constructor(
+    private val flow: MixerFlow,
+    private val listConfig: MixerComponentListConfig,
+) : VBox(), ListDisplayConfig<MixerFlow.MixerComponent> by listConfig {
     val componentsView = ObjectListView(flow.components, this)
 
     init {
@@ -53,7 +35,9 @@ class MixerFlowView(private val flow: MixerFlow) : VBox(), ObjectListDisplayConf
             SliderBar.Style.AlwaysValue,
             undoManager = flow.context[UndoManager]
         ).alwaysHGrow()
-        val addSourceBusBtn = MaterialDesignP.PLUS.button("Add source bus", "medium-icon-button", ::addSourceBus)
+        val addSourceBusBtn = MaterialDesignP.PLUS.button(
+            "Add source bus", "medium-icon-button", listConfig::addSourceBus
+        )
         children.addAll(
             HBox(5.0, addSourceBusBtn, label("Volume: "), totalVolumeSlider)
                 .pad(10.0).also { it.alignment = Pos.CENTER },
@@ -62,31 +46,13 @@ class MixerFlowView(private val flow: MixerFlow) : VBox(), ObjectListDisplayConf
         styleClass("mixer-flow")
     }
 
-    private fun addSourceBus(ev: MouseEvent) {
-        val expectedChannels = flow.targetBus.now.get()?.channels?.now
-        val bus = SearchableBusListView(
-            flow.context[BusRegistry], "Select source bus",
-            Rate.Audio, expectedChannels
-        ).exclude { flow.usedBuses() }
-            .showPopup(ev) ?: return
-        flow.components.add(MixerFlow.MixerComponent.create(bus))
-    }
-
-    override fun acceptedTransferModes(dragboard: Dragboard): Array<TransferMode> {
-        val bus = dragboard.getFrom(flow.context[BusRegistry], BusObject.DATA_FORMAT) ?: return emptyArray()
-        val expectedChannels = bus.channels.now == flow.targetBus.now.get()?.channels?.now
-        return if (bus !in flow.usedBuses() && bus.rate == Rate.Audio && expectedChannels) arrayOf(TransferMode.LINK)
-        else emptyArray()
-    }
-
-    override fun getDroppedObject(ev: DragEvent): MixerFlow.MixerComponent? {
-        val bus = ev.dragboard.getFrom(flow.context[BusRegistry], BusObject.DATA_FORMAT) ?: return null
-        return MixerFlow.MixerComponent.create(bus)
-    }
-
     override fun getHeaderContent(obj: MixerFlow.MixerComponent): List<Node> {
         val selector = BusSelector()
-        setupSourceBusSelector(selector, this@MixerFlowView.flow)
+        selector.setFilter(
+            rate = reactiveValue(Rate.Audio),
+            channels = flow.targetBus.flatMap { bus -> bus.get()?.channels ?: reactiveValue(0) }
+        )
+        selector.exclude { flow.usedBuses() }
         selector.syncWith(obj.sourceBus)
         selector.initialize(flow.context)
         val selectorControl = ObjectSelectorControl(selector, createBundle())
@@ -100,43 +66,17 @@ class MixerFlowView(private val flow: MixerFlow) : VBox(), ObjectListDisplayConf
         volumeSlider.prefWidth = 150.0
         volumeSlider.disableProperty().bind(obj.mute.asObservableValue())
 
-        val panKnob = Knob(
-            "Balance", obj.pan, NumericalControlSpec.BALANCE,
-            radius = 16.0, color = Color.BLACK, inputMethod = Knob.InputMethod.Horizontal,
-            undoManager = flow.context[UndoManager]
-        )
-        panKnob.visibleProperty().bind(channels.equalTo(2).asObservableValue())
+        val panKnob = listConfig.createPanKnob(obj, 16.0)
         return listOf(selectorControl, volumeSlider, panKnob)
     }
 
     override fun getContent(obj: MixerFlow.MixerComponent, mode: ObjectListView.DisplayMode): Parent = Region()
 
-    override fun getActions(box: ObjectBox<MixerFlow.MixerComponent>): List<ContextualizedAction> =
-        actions.withContext(box.obj)
-
     companion object {
-        private val actions = collectActions<MixerFlow.MixerComponent> {
-            add(ServerActions.scopeBus) { f -> f.sourceBus }
-            addAction("Toggle mute") {
-                icon(MaterialDesignA.ALPHA_M_BOX)
-                toggles(MixerFlow.MixerComponent::mute)
-                undoable()
-                enableWhen { comp -> comp.solo.not() }
-            }
-            addAction("Toggle solo") {
-                icon(MaterialDesignA.ALPHA_S_BOX)
-                toggles(MixerFlow.MixerComponent::solo)
-                undoable()
-                enableWhen { comp -> comp.mute.not() }
-            }
-        }
-
-        fun setupSourceBusSelector(selector: BusSelector, flow: MixerFlow) {
-            selector.setFilter(
-                rate = reactiveValue(Rate.Audio),
-                channels = flow.targetBus.flatMap { bus -> bus.get()?.channels ?: reactiveValue(0) }
-            )
-            selector.exclude { flow.usedBuses() }
+        fun create(flow: MixerFlow): MixerFlowView {
+            val listConfig = MixerComponentListConfig()
+            listConfig.setMixer(flow)
+            return MixerFlowView(flow, listConfig)
         }
     }
 }

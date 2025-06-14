@@ -9,7 +9,6 @@ import ponticello.impl.Logger
 import ponticello.model.registry.ObjectRegistry
 import ponticello.sc.client.SuperColliderClient
 import reaktive.value.now
-import java.io.Serializable
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeoutException
 
@@ -57,15 +56,6 @@ class AudioFlows(override val objects: MutableList<AudioFlowGroup>) : ObjectRegi
             CompletableFuture.allOf(*futures.toTypedArray()).join()
         } catch (e: TimeoutException) {
             Logger.error("Timeout writing VST plugin states", e, Logger.Category.VSTPlugins)
-        }
-    }
-
-    @kotlinx.serialization.Serializable
-    data class FlowReference(val groupName: String, val flowName: String) : Serializable {
-        fun getFlow(flows: AudioFlows) = flows.getOrNull(groupName)?.flows?.getOrNull(flowName)
-
-        fun removeFrom(flows: AudioFlows) {
-            flows.getOrNull(groupName)?.flows?.removeByName(flowName)
         }
     }
 

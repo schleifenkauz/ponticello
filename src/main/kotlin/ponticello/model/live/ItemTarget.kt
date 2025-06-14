@@ -239,7 +239,7 @@ sealed class ItemTarget : AbstractContextualObject() {
 
     @Serializable
     @SerialName("Flow")
-    data class Flow(val ref: AudioFlows.FlowReference) : ItemTarget() {
+    data class Flow(val ref: FlowReference) : ItemTarget() {
         override val canView: Boolean
             get() = true
 
@@ -251,14 +251,15 @@ sealed class ItemTarget : AbstractContextualObject() {
 
         override fun initialize(context: Context) {
             super.initialize(context)
-            val flow = ref.getFlow(context[AudioFlows])
+            ref.resolve(context)
+            val flow = ref.get()
             isActive =
                 if (flow == null) reactiveValue(false)
                 else flow.isActive and flow.parentGroup.isActive
         }
 
         override fun pressed(velocity: Int, item: LauncherGrid.GridItem) {
-            val flow = ref.getFlow(context[AudioFlows]) ?: return
+            val flow = ref.get() ?: return
             if (!flow.parentGroup.isActive.now) {
                 flow.parentGroup.toggleActive()
             }
@@ -269,13 +270,13 @@ sealed class ItemTarget : AbstractContextualObject() {
         }
 
         override fun released(item: LauncherGrid.GridItem) {
-            val flow = ref.getFlow(context[AudioFlows]) ?: return
+            val flow = ref.get() ?: return
             if (flow.isActive.now && item.stopOnRelease.now) {
                 flow.setActive(false)
             }
         }
 
-        override fun toString(): String = "Flow ${ref.flowName}"
+        override fun toString(): String = "Flow ${ref.getName()}"
     }
 
     @Serializable
@@ -334,10 +335,7 @@ sealed class ItemTarget : AbstractContextualObject() {
                 .map { obj -> Object(obj.reference()) }
             val playerTargets = objects.map { obj -> Player(obj.reference()) }
             val flowTargets = context[AudioFlows].all().flatMap { group ->
-                group.flows.all().map { flow ->
-                    val ref = AudioFlows.FlowReference(group.name.now, flow.name.now)
-                    Flow(ref)
-                }
+                group.flows.all().map { flow -> Flow(flow.reference()) }
             }
             val scriptTargets = context.project.scripts.map { script -> Script(script.reference()) }
             val taskTargets = context.project[LIVE_TASKS].map { task -> LiveTask(task.reference()) }

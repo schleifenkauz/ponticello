@@ -25,7 +25,6 @@ import ponticello.impl.one
 import ponticello.impl.toDecimal
 import ponticello.impl.zero
 import ponticello.model.flow.AudioFlow
-import ponticello.model.flow.AudioFlows
 import ponticello.model.live.ItemTarget
 import ponticello.model.live.LauncherGrid
 import ponticello.model.live.LauncherGrid.GridItemReference
@@ -183,7 +182,7 @@ class LauncherGridPane(
             }
 
             db.hasContent(AudioFlow.DATA_FORMAT) -> {
-                val ref = db.getContent(AudioFlow.DATA_FORMAT) as AudioFlows.FlowReference
+                val ref = db.getContent(AudioFlow.DATA_FORMAT) as FlowReference
                 item.target = ItemTarget.Flow(ref)
             }
 
@@ -280,7 +279,7 @@ class LauncherGridPane(
                 executes { target ->
                     when (target) {
                         is ItemTarget.Flow -> {
-                            val group = target.context[AudioFlows].getOrNull(target.ref.groupName) ?: return@executes
+                            val group = target.ref.get()?.parentGroup ?: return@executes
                             target.context[FlowGroupManager].showFlowGroup(group)
                         }
 

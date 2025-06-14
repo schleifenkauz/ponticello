@@ -27,6 +27,7 @@ import ponticello.model.registry.ObjectList
 import ponticello.ui.actions.*
 import ponticello.ui.dock.Side.*
 import ponticello.ui.flow.AudioFlowsPane
+import ponticello.ui.flow.MixerPane
 import ponticello.ui.launcher.PonticelloLauncher
 import ponticello.ui.launcher.ScoreObjectDetailPane
 import ponticello.ui.live.LauncherGridPane
@@ -425,6 +426,7 @@ class AppLayout(
 
             //default bottom
             add(AudioFlowsPane)
+            add(MixerPane)
             add(ConsoleOutputPane)
         }.toMutableList()
 

@@ -253,8 +253,10 @@ class MixerFlow(
     override fun midiContext(): MidiContext = MixerMidiContext()
 
     companion object {
+        val MIN_VOLUME = (-60.0)
+        val MAX_VOLUME = (+24.0)
         val VOLUME_SPEC = NumericalControlSpec(
-            default = zero, min = (-60).toDecimal(), max = (+24).toDecimal(),
+            default = zero, min = MIN_VOLUME.toDecimal(), max = MAX_VOLUME.toDecimal(),
             lag = AttackReleaseControl.DEFAULT, warp = Warp.Linear, step = 0.1.toDecimal(),
         )
 

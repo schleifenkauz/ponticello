@@ -23,7 +23,7 @@ import reaktive.Observer
 import reaktive.value.binding.map
 import reaktive.value.now
 
-open class ParameterListConfig : ObjectListDisplayConfig<ParameterDefObject> {
+open class ParameterListConfig : ListDisplayConfig<ParameterDefObject> {
     private val observers = mutableMapOf<ParameterDefObject, Observer>()
 
     override fun getHeaderContent(obj: ParameterDefObject): List<Node> {

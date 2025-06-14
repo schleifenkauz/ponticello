@@ -197,7 +197,7 @@ class ObjectBox<O : Any>(val parent: ObjectListView<O>, val obj: O) : Control() 
         val objectActions = collectActions<ObjectBox<*>> {
             addAction("Show in sub-window") {
                 icon { box ->
-                    val config = box.config as ObjectListDisplayConfig<Any>
+                    val config = box.config as ListDisplayConfig<Any>
                     reactiveValue(config.detailWindowIcon(box.obj))
                 }
                 shortcuts("Ctrl+E")
