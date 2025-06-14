@@ -29,6 +29,7 @@ import ponticello.model.project.PonticelloProject
 import ponticello.model.project.flows
 import ponticello.model.registry.ObjectReference
 import ponticello.model.registry.reference
+import ponticello.ui.actions.ServerActions
 import ponticello.ui.actions.undoable
 import ponticello.ui.controls.DecimalPrompt
 import ponticello.ui.dock.MixerPaneState
@@ -146,6 +147,8 @@ class MixerPane(
         }
         setMargin(volumeBox, Insets(0.0, 3.0, 0.0, 3.0))
 
+        val scopeButton = ServerActions.scopeBus.withContext(bus).makeButton("medium-icon-button")
+
         val (top, bottom) = if (obj != null) {
             val panKnob = listConfig.createPanKnob(obj.pan, radius = 20.0)
 
@@ -169,6 +172,7 @@ class MixerPane(
             3.0,
             HBox(infiniteSpace(), top, infiniteSpace()),
             Region() styleClass "fader-separator",
+            HBox(infiniteSpace(), scopeButton, infiniteSpace()),
             volumeBox,
             HBox(hspace(5.0), namePane, infiniteSpace(), fader, hspace(5.0)).alwaysVGrow(),
             Region() styleClass "fader-separator",
