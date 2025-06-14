@@ -19,7 +19,7 @@ import reaktive.value.now
 
 object ServerActions : Action.Collector<PonticelloProject>({
     addAction("Reboot server") {
-        shortcut("Shift?+F5")
+        shortcut("Ctrl+Shift?+B")
         icon(MaterialDesignR.RESTART)
         executes { project, ev ->
             if (ev.isShiftDown()) {

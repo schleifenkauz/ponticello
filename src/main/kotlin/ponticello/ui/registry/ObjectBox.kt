@@ -15,11 +15,8 @@ import javafx.scene.layout.Region
 import org.kordamp.ikonli.materialdesign2.MaterialDesignC
 import ponticello.model.obj.ContextualObject
 import ponticello.model.obj.RenamableObject
-import ponticello.model.obj.withName
 import ponticello.model.registry.NamedObject
-import ponticello.model.registry.ObjectRegistry
 import ponticello.ui.controls.NameControl
-import ponticello.ui.controls.NamePrompt
 import ponticello.ui.impl.makeSubWindow
 import ponticello.ui.launcher.PonticelloApp.Companion.primaryStage
 import ponticello.ui.registry.ObjectListView.DisplayMode
@@ -196,7 +193,7 @@ class ObjectBox<O : Any>(val parent: ObjectListView<O>, val obj: O) : Control() 
     companion object {
         @Suppress("UNCHECKED_CAST")
         val objectActions = collectActions<ObjectBox<*>> {
-            addAction("Edit object details") {
+            addAction("Show in sub-window") {
                 icon { box ->
                     val config = box.config as ObjectListDisplayConfig<Any>
                     reactiveValue(config.detailWindowIcon(box.obj))
@@ -206,20 +203,6 @@ class ObjectBox<O : Any>(val parent: ObjectListView<O>, val obj: O) : Control() 
                 ifNotApplicable(Action.IfNotApplicable.Hide)
                 executes { box, _ ->
                     box.showSubWindow()
-                }
-            }
-            addAction("Duplicate object") {
-                applicableIf { box -> box.obj is RenamableObject && box.obj.canCopy && box.obj.registry != null }
-                icon(MaterialDesignC.CONTENT_DUPLICATE)
-                description { box -> reactiveValue("Duplicate ${box.parent.source.objectType}") }
-                executes { box, ev ->
-                    val obj = box.obj as RenamableObject
-                    val list = box.parent.source as ObjectRegistry<RenamableObject>
-                    val initialName = obj.name.now + "_copy"
-                    val name = NamePrompt(list, "Name for new duplicate instrument", initialName)
-                        .showDialog(ev) ?: return@executes
-                    val copy = obj.copy().withName(name)
-                    list.add(copy, list.indexOf(obj) + 1)
                 }
             }
             addAction("Expand/Collapse") {

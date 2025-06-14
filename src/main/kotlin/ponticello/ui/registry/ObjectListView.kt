@@ -19,11 +19,16 @@ import javafx.scene.layout.*
 import javafx.stage.Window
 import kotlinx.serialization.Serializable
 import org.kordamp.ikonli.material2.Material2MZ
+import org.kordamp.ikonli.materialdesign2.MaterialDesignC
 import org.kordamp.ikonli.materialdesign2.MaterialDesignD
 import org.kordamp.ikonli.materialdesign2.MaterialDesignP
 import org.kordamp.ikonli.materialdesign2.MaterialDesignV
+import ponticello.model.obj.RenamableObject
+import ponticello.model.obj.withName
 import ponticello.model.registry.NamedObjectList
 import ponticello.model.registry.ObjectList
+import ponticello.model.registry.ObjectRegistry
+import ponticello.ui.controls.NamePrompt
 import ponticello.ui.dock.ToolPane
 import reaktive.value.*
 import reaktive.value.binding.map
@@ -533,6 +538,26 @@ class ObjectListView<O : Any>(
             addAction("Copy item") {
                 shortcut("Ctrl+C")
                 executes { list -> list.copySelected() }
+            }
+            addAction("Duplicate object") {
+                enableWhen { list ->
+                    list.selectedBox.map { box ->
+                        box != null && box.obj is RenamableObject && box.obj.canCopy && box.obj.registry != null
+                    }
+                }
+                ifNotApplicable(Action.IfNotApplicable.Hide)
+                icon(MaterialDesignC.CONTENT_DUPLICATE)
+                description { list -> reactiveValue("Duplicate ${list.source.objectType}") }
+                executes { list, ev ->
+                    val obj = list.selectedObject() as? RenamableObject ?: return@executes
+                    @Suppress("UNCHECKED_CAST")
+                    val source = list.source as ObjectRegistry<RenamableObject>
+                    val initialName = obj.name.now + "_copy"
+                    val name = NamePrompt(source, "Name for new duplicate instrument", initialName)
+                        .showDialog(ev) ?: return@executes
+                    val copy = obj.copy().withName(name)
+                    source.add(copy, source.indexOf(obj) + 1)
+                }
             }
             addAction("Focus selected object") {
                 shortcut("Enter")
