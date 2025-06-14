@@ -1,17 +1,11 @@
 package ponticello.ui.registry
 
-import bundles.PublicProperty
-import bundles.publicProperty
-import bundles.set
+import fxutils.*
 import fxutils.actions.ContextualizedAction
 import fxutils.actions.collectActions
 import fxutils.controls.IntSpinner
-import fxutils.hasFile
-import fxutils.label
 import fxutils.prompt.YesNoPrompt
 import fxutils.prompt.compoundPrompt
-import fxutils.registerShortcuts
-import fxutils.styleClass
 import fxutils.undo.UndoManager
 import hextant.fx.HextantTextField
 import javafx.event.Event
@@ -22,6 +16,7 @@ import javafx.scene.input.DataFormat
 import javafx.scene.input.DragEvent
 import javafx.scene.input.Dragboard
 import javafx.scene.input.TransferMode
+import javafx.scene.layout.HBox
 import org.kordamp.ikonli.Ikon
 import org.kordamp.ikonli.evaicons.Evaicons
 import org.kordamp.ikonli.material2.Material2AL
@@ -41,6 +36,7 @@ import ponticello.model.registry.BufferRegistry
 import ponticello.model.registry.ObjectList
 import ponticello.sc.Identifier
 import ponticello.ui.actions.undoable
+import ponticello.ui.dock.BufferRegistryPaneState
 import ponticello.ui.dock.Side
 import ponticello.ui.dock.ToolPane
 import ponticello.ui.dock.ToolPaneState
@@ -55,12 +51,44 @@ class BufferRegistryPane(private val buffers: BufferRegistry) : ObjectRegistryPa
         get() = BufferRegistryPane
     override val headerActions: List<ContextualizedAction> = registryActions.withContext(buffers)
 
-    override fun defaultState(): ToolPaneState = ToolPaneState.docked
+    private var filter = BufferTypeFilter.All
+        set(value) {
+            field = value
+            for ((btn, filterOption) in filterSelection.children.zip(BufferTypeFilter.entries)) {
+                btn.setPseudoClassState("selected", value == filterOption)
+            }
+            listView.refilter()
+        }
+
+    private val filterSelection = HBox()
+
+    override fun defaultState(): ToolPaneState = BufferRegistryPaneState.default()
+
+    override fun doSetup() {
+        super.doSetup()
+        val state = initialState
+        for (filterOption in BufferTypeFilter.entries) {
+            val btn = button(filterOption.name).styleClass("selector-button", "filter-tag-button")
+            btn.setOnAction { filter = filterOption }
+            filterSelection.children.add(btn)
+        }
+        if (state is BufferRegistryPaneState) {
+            filter = state.filter
+        }
+    }
 
     override fun afterSetup() {
-        super.afterSetup()
-        buffers.context[BufferRegistryPane] = this
+        header.children.addAfter(searchText, filterSelection)
     }
+
+    override fun saveState(dest: ToolPaneState) {
+        super.saveState(dest)
+        if (dest is BufferRegistryPaneState) {
+            dest.filter = filter
+        }
+    }
+
+    override fun filter(obj: BufferObject): Boolean = super.filter(obj) && filter.filter(obj)
 
     override fun acceptedTransferModes(dragboard: Dragboard): Array<TransferMode> {
         if (dragboard.hasContent(dataFormat)) return arrayOf(TransferMode.MOVE)
@@ -78,6 +106,7 @@ class BufferRegistryPane(private val buffers: BufferRegistry) : ObjectRegistryPa
             val name = file.nameWithoutExtension
             SampleObject.create(buffers.context.project, name, file)
         }
+
         else -> null
     }
 
@@ -143,7 +172,17 @@ class BufferRegistryPane(private val buffers: BufferRegistry) : ObjectRegistryPa
     override val dataFormat: DataFormat
         get() = BufferObject.DATA_FORMAT
 
-    companion object : PublicProperty<BufferRegistryPane> by publicProperty("BufferRegistryPane"), Type(7, "Buffers") {
+    enum class BufferTypeFilter {
+        All, Allocated, Samples;
+
+        fun filter(obj: BufferObject): Boolean = when (this) {
+            All -> true
+            Allocated -> obj is AllocatedBufferObject
+            Samples -> obj is SampleObject
+        }
+    }
+
+    companion object : Type(uid = 7, "Buffers") {
         override val icon: Ikon
             get() = Material2AL.LIBRARY_MUSIC
 

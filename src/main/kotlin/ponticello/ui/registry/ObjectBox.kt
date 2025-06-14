@@ -43,9 +43,11 @@ class ObjectBox<O : Any>(val parent: ObjectListView<O>, val obj: O) : Control() 
 
     private val expanded = reactiveVariable(false)
 
-    val isExpanded by lazy {
+    val isExpanded get() = expanded.now
+
+    val isCollapsed by lazy {
         binding(parent.mode, expanded) { mode, expanded ->
-            mode == DisplayMode.Inline(collapsable = false) || expanded
+            mode == DisplayMode.Collapsable && !expanded
         }
     }
 

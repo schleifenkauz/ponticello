@@ -38,7 +38,7 @@ abstract class SearchableToolPane<O : NamedObject>(
         if (state is SearchableToolPaneState) {
             if (state.displayMode != null) initialMode = state.displayMode!!
         }
-        listView = ObjectListView(list, this, initialMode, filter = { obj -> filter(obj) && matchesSearch(obj) })
+        listView = ObjectListView(list, this, initialMode)
         if (state is SearchableToolPaneState) {
             for (idx in state.expandedBoxes) {
                 listView.getBoxes()[idx].toggleExpanded()
@@ -76,7 +76,7 @@ abstract class SearchableToolPane<O : NamedObject>(
         }
     }
 
-    protected open fun filter(obj: O): Boolean = true
+    override fun filter(obj: O): Boolean = matchesSearch(obj)
 
     private fun matchesSearch(obj: O) = obj.name.now.contains(searchText.text, ignoreCase = true)
 
@@ -85,7 +85,7 @@ abstract class SearchableToolPane<O : NamedObject>(
         if (dest is SearchableToolPaneState && isSetup) {
             dest.displayMode = listView.mode.now
             dest.expandedBoxes = listView.getBoxes().withIndex()
-                .filter { (_, box) -> box.isExpanded.now }
+                .filter { (_, box) -> box.isExpanded }
                 .map(IndexedValue<*>::index)
         }
     }

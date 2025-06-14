@@ -4,6 +4,7 @@ import javafx.scene.input.DataFormat
 import ponticello.model.obj.BufferObject
 import ponticello.model.registry.BufferRegistry
 import ponticello.model.registry.ObjectRegistry
+import ponticello.ui.dock.AppLayout
 import ponticello.ui.registry.BufferRegistryPane
 import reaktive.value.ReactiveValue
 import reaktive.value.now
@@ -25,7 +26,8 @@ class BufferSelector : ObjectSelector<BufferObject>() {
     override fun filter(obj: BufferObject): Boolean =
         expectedChannels.now == null || obj.channels() == expectedChannels.now
 
-    override fun createNewObject(name: String): BufferObject? = context[BufferRegistryPane].createNewObject(name, null)
+    override fun createNewObject(name: String): BufferObject? =
+        context[AppLayout].get<BufferRegistryPane>().createNewObject(name, null)
 
     override fun dataFormat(): DataFormat = BufferObject.DATA_FORMAT
 }

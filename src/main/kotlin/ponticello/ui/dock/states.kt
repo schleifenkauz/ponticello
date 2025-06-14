@@ -2,6 +2,8 @@ package ponticello.ui.dock
 
 import kotlinx.serialization.Serializable
 import ponticello.model.flow.AudioFlows
+import ponticello.ui.registry.BufferRegistryPane
+import ponticello.ui.registry.BusRegistryPane
 import ponticello.ui.registry.ObjectListView
 
 @Serializable
@@ -50,4 +52,28 @@ class FlowPaneState: SearchableToolPaneState() {
 @Serializable
 class MixerPaneState: ToolPaneState() {
     var flowReference: AudioFlows.FlowReference? = null
+}
+
+@Serializable
+class BusRegistryPaneState private constructor(): SearchableToolPaneState() {
+    lateinit var filter: BusRegistryPane.BusTypeFilter
+
+    companion object {
+        fun default() = BusRegistryPaneState().apply {
+            mode = ToolPaneMode.Docked
+            filter = BusRegistryPane.BusTypeFilter.All
+        }
+    }
+}
+
+@Serializable
+class BufferRegistryPaneState private constructor(): SearchableToolPaneState() {
+    lateinit var filter: BufferRegistryPane.BufferTypeFilter
+
+    companion object {
+        fun default() = BufferRegistryPaneState().apply {
+            mode = ToolPaneMode.Docked
+            filter = BufferRegistryPane.BufferTypeFilter.All
+        }
+    }
 }

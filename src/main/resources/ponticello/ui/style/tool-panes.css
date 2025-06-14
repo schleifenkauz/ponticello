@@ -99,3 +99,7 @@
 .object-box:flow-group-hover {
     -fx-background-color: rgba(60, 0, 0, 0.5) !important;
 }
+
+Button.filter-tag-button:selected {
+    -fx-background-color: rgba(0, 128, 0, 0.5) !important;
+}

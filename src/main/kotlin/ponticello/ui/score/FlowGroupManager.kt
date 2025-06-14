@@ -92,7 +92,7 @@ class FlowGroupManager(
         val flowsPane = audioFlowsPane
         flowsPane.setShowing(true)
         val box = flowsPane.listView.getBox(group)
-        if (!box.isExpanded.now) box.toggleExpanded()
+        if (box.isCollapsed.now) box.toggleExpanded()
         flowsPane.listView.select(group)
     }
 

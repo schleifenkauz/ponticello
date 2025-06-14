@@ -3,10 +3,14 @@ package ponticello.ui.registry
 import fxutils.actions.Action
 import fxutils.actions.ContextualizedAction
 import fxutils.actions.collectActions
+import fxutils.addAfter
+import fxutils.button
 import fxutils.controls.IntSpinner
 import fxutils.controls.SliderBar
 import fxutils.prompt.IntegerPrompt
 import fxutils.prompt.SimpleSearchableListView
+import fxutils.setPseudoClassState
+import fxutils.styleClass
 import fxutils.undo.UndoManager
 import javafx.event.Event
 import javafx.geometry.Point2D
@@ -27,7 +31,7 @@ import ponticello.sc.NumericalControlSpec
 import ponticello.sc.Rate
 import ponticello.sc.client.SuperColliderClient
 import ponticello.ui.controls.ControlSpecPrompt
-import ponticello.ui.dock.SearchableToolPaneState
+import ponticello.ui.dock.BusRegistryPaneState
 import ponticello.ui.dock.Side
 import ponticello.ui.dock.ToolPane
 import ponticello.ui.dock.ToolPaneState
@@ -39,19 +43,53 @@ import reaktive.value.now
 import reaktive.value.reactiveVariable
 
 class BusRegistryPane(busses: BusRegistry) : ObjectRegistryPane<BusObject>(busses) {
-    private val specObservers = ObserverMap<BusObject.ControlBus>()
-
     override val type: Type
         get() = BusRegistryPane
 
-    override fun defaultState(): ToolPaneState = SearchableToolPaneState.docked
+    private val specObservers = ObserverMap<BusObject.ControlBus>()
 
-    override val dataFormat: DataFormat
-        get() = BusObject.DATA_FORMAT
+    private var filter = BusTypeFilter.All
+        set(value) {
+            field = value
+            for ((btn, filterOption) in filterSelection.children.zip(BusTypeFilter.entries)) {
+                btn.setPseudoClassState("selected", value == filterOption)
+            }
+            listView.refilter()
+        }
+
+    private val filterSelection = HBox()
+
+    override fun defaultState(): ToolPaneState = BusRegistryPaneState.default()
+
+    override fun doSetup() {
+        super.doSetup()
+        val state = initialState
+        for (filterOption in BusTypeFilter.entries) {
+            val btn = button(filterOption.name).styleClass("selector-button", "filter-tag-button")
+            btn.setOnAction { filter = filterOption }
+            filterSelection.children.add(btn)
+        }
+        if (state is BusRegistryPaneState) {
+            filter = state.filter
+        }
+    }
+
+    override fun afterSetup() {
+        header.children.addAfter(searchText, filterSelection)
+    }
+
+    override fun saveState(dest: ToolPaneState) {
+        super.saveState(dest)
+        if (dest is BusRegistryPaneState) {
+            dest.filter = filter
+        }
+    }
 
     override fun onRemoved(obj: BusObject) {
         if (obj is BusObject.ControlBus) specObservers.remove(obj)
     }
+
+    override fun filter(obj: BusObject): Boolean = super.filter(obj) && filter.filter(obj)
 
     override fun createNewObject(name: String, ev: Event?): BusObject? {
         val type = SimpleSearchableListView(Rate.entries, "Bus type")
@@ -94,6 +132,9 @@ class BusRegistryPane(busses: BusRegistry) : ObjectRegistryPane<BusObject>(busse
         }
     }
 
+    override val dataFormat: DataFormat
+        get() = BusObject.DATA_FORMAT
+
     override fun getActions(box: ObjectBox<BusObject>): List<ContextualizedAction> {
         return if (box.obj is BusObject.ControlBus) {
             val cast = box as ObjectBox<BusObject.ControlBus>
@@ -101,7 +142,17 @@ class BusRegistryPane(busses: BusRegistry) : ObjectRegistryPane<BusObject>(busse
         } else actions.withContext(box)
     }
 
-    companion object : Type(3, "Busses") {
+    enum class BusTypeFilter {
+        All, Audio, Control;
+
+        fun filter(bus: BusObject) = when (this) {
+            All -> true
+            Audio -> bus is BusObject.AudioBus
+            Control -> bus is BusObject.ControlBus
+        }
+    }
+
+    companion object : Type(uid = 3, "Busses") {
         override val defaultSide: Side
             get() = Side.LEFT
 

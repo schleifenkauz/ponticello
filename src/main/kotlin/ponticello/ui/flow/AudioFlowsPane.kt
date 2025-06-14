@@ -23,8 +23,8 @@ import ponticello.ui.dock.*
 import ponticello.ui.impl.colorPicker
 import ponticello.ui.registry.ObjectBox
 import ponticello.ui.registry.ObjectListView.DisplayMode
+import reaktive.value.binding.not
 import reaktive.value.fx.asObservableValue
-import reaktive.value.now
 
 class AudioFlowsPane(flows: AudioFlows) : SearchableToolPane<AudioFlowGroup>(flows) {
     override val type: Type
@@ -88,7 +88,7 @@ class AudioFlowsPane(flows: AudioFlows) : SearchableToolPane<AudioFlowGroup>(flo
         super.saveState(dest)
         if (dest is FlowPaneState && isSetup) {
             dest.expandedFlows = allFlowBoxes().withIndex()
-                .filter { (_, box) -> box.isExpanded.now }
+                .filter { (_, box) -> box.isExpanded }
                 .map { v -> v.index }
         }
     }
@@ -111,7 +111,7 @@ class AudioFlowsPane(flows: AudioFlows) : SearchableToolPane<AudioFlowGroup>(flo
         private val groupActions = collectActions<ObjectBox<AudioFlowGroup>> {
             add(FlowGroupPane.toggleActiveAction) { box -> box.obj }
             add(FlowGroupPane.addFlowAction.map { box: ObjectBox<AudioFlowGroup> -> box.obj }) {
-                enableWhen { box -> box.isExpanded }
+                enableWhen { box -> box.isCollapsed.not() }
                 ifNotApplicable(Action.IfNotApplicable.Hide)
             }
         }

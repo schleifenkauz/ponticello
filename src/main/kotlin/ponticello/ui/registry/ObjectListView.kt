@@ -38,13 +38,11 @@ class ObjectListView<O : Any>(
     val source: ObjectList<O>,
     val config: ObjectListDisplayConfig<O>,
     private val displayMode: ReactiveVariable<DisplayMode>,
-    private var filter: (O) -> Boolean = { true },
 ) : Control(), ObjectList.Listener<O> {
     constructor(
         source: ObjectList<O>, config: ObjectListDisplayConfig<O>,
         displayMode: DisplayMode = config.supportedModes.first(),
-        filter: (O) -> Boolean = { true },
-    ) : this(source, config, reactiveVariable(displayMode), filter)
+    ) : this(source, config, reactiveVariable(displayMode))
 
     private val dropPreviewNode = Region() styleClass "drop-preview"
 
@@ -82,7 +80,7 @@ class ObjectListView<O : Any>(
         styleClass(*config.listStyle)
         source.addListener(this, initialize = false)
         for (obj in source) {
-            if (!filter(obj)) continue
+            if (!config.filter(obj)) continue
             val box = getBox(obj)
             boxes.add(box)
         }
@@ -274,7 +272,7 @@ class ObjectListView<O : Any>(
     }
 
     override fun added(obj: O, idx: Int) = Platform.runLater {
-        if (!filter(obj)) return@runLater
+        if (!config.filter(obj)) return@runLater
         val j = getInsertionIndex(idx)
         val box = getBox(obj)
         box.updateMode()
@@ -317,14 +315,9 @@ class ObjectListView<O : Any>(
         added(obj, idx)
     }
 
-    fun setFilter(predicate: (O) -> Boolean) {
-        filter = predicate
-        refilter()
-    }
-
     fun refilter() {
         boxes.clear()
-        source.filter(filter).mapTo(boxes) { obj -> getBox(obj) }
+        source.filter(config::filter).mapTo(boxes) { obj -> getBox(obj) }
         itemsLayout.children.setAll(boxes)
         if (boxes.isNotEmpty() && config.enableSelection) select(0)
         autoResize()

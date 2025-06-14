@@ -52,6 +52,8 @@ interface ObjectListDisplayConfig<O : Any> {
 
     val dataFormat: DataFormat? get() = null
 
+    fun filter(obj: O): Boolean = true
+
     fun getHeaderContent(obj: O): List<Node> = emptyList()
 
     fun detailWindowIcon(obj: O): Ikon = MaterialDesignE.EYE
