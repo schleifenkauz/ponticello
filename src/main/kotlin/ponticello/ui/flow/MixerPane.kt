@@ -13,6 +13,8 @@ import javafx.scene.Parent
 import javafx.scene.control.Control
 import javafx.scene.control.Label
 import javafx.scene.control.Slider
+import javafx.scene.input.KeyCode
+import javafx.scene.input.KeyEvent
 import javafx.scene.layout.*
 import javafx.scene.paint.Color
 import javafx.scene.text.Text
@@ -20,6 +22,7 @@ import org.kordamp.ikonli.Ikon
 import org.kordamp.ikonli.materialdesign2.MaterialDesignT
 import org.kordamp.ikonli.materialdesign2.MaterialDesignV
 import ponticello.impl.Decimal
+import ponticello.impl.unaryMinus
 import ponticello.impl.withPrecision
 import ponticello.model.flow.MixerFlow
 import ponticello.model.flow.MixerFlow.Companion.VOLUME_SPEC
@@ -99,12 +102,35 @@ class MixerPane(
             state.flowReference.resolve(allMixerFlows())
             selectedMixer = state.flowReference
         }
+        setupVolumeChangeWithArrowKeys()
         registerShortcuts {
-            registerActions(volumeActions.withContext(this@MixerPane))
             if (channelsList != null) {
                 registerActions(channelsList!!.actions)
             }
         }
+    }
+
+    private fun setupVolumeChangeWithArrowKeys() {
+        addEventFilter(KeyEvent.KEY_PRESSED) { ev ->
+            if (ev.modifiers.isNotEmpty()) return@addEventFilter
+            val selected = channelsList?.selectedObject() ?: return@addEventFilter
+            val delta = when (ev.code) {
+                KeyCode.DOWN -> -VOLUME_SPEC.step.get()
+                KeyCode.UP -> VOLUME_SPEC.step.get()
+                else -> return@addEventFilter
+            }
+            setVolume(selected.volume, selected.volume.now + delta)
+        }
+    }
+
+    private fun setVolume(
+        variable: ReactiveVariable<Decimal>, value: Decimal,
+        updateDescription: String = "Change Volume",
+    ) {
+        VariableEdit.updateVariable(
+            variable, value,
+            context[UndoManager], updateDescription
+        )
     }
 
     override fun saveState(dest: ToolPaneState) {
@@ -134,10 +160,7 @@ class MixerPane(
             fader.value = v.toDouble()
         }
         fader.valueProperty().addListener { _, _, v ->
-            VariableEdit.updateVariable(
-                volume, v.toDouble().withPrecision(1),
-                context[UndoManager], "Change volume"
-            )
+            setVolume(volume, v.toDouble().withPrecision(1))
         }
         fader.orientation = Orientation.VERTICAL
 
@@ -224,25 +247,6 @@ class MixerPane(
                 whenFalse = MaterialDesignV.VOLUME_HIGH
             )
             undoable()
-        }
-
-        private val volumeActions = collectActions<MixerPane> {
-            addAction("Increase volume") {
-                shortcut("UP")
-                executes { pane ->
-                    val channelsList = pane.channelsList ?: return@executes
-                    val selected = channelsList.selectedObject() ?: return@executes
-                    selected.volume.now = (selected.volume.now + VOLUME_SPEC.step.get()).coerceIn(VOLUME_SPEC.range)
-                }
-            }
-            addAction("Decrease volume") {
-                shortcut("DOWN")
-                executes { pane ->
-                    val channelsList = pane.channelsList ?: return@executes
-                    val selected = channelsList.selectedObject() ?: return@executes
-                    selected.volume.now = (selected.volume.now - VOLUME_SPEC.step.get()).coerceIn(VOLUME_SPEC.range)
-                }
-            }
         }
     }
 }

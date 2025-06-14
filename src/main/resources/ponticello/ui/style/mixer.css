@@ -26,8 +26,12 @@ Label.fader-volume {
     -fx-background-color: rgba(128, 128, 128, 0.15);
 }
 
+.icon-button.mute-solo-button:selected {
+    -fx-background-color: #351919 !important;
+}
+
 .icon-button.mute-solo-button:selected FontIcon {
-    -fx-background-color: rgba(0, 128, 0, 0.5) !important;
+    -fx-icon-color: green !important;
 }
 
 .mono-button:selected {

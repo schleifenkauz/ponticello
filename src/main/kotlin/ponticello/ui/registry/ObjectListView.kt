@@ -349,8 +349,8 @@ class ObjectListView<O : Any>(
         }
         config.onSelected(box.obj)
         runFXWithTimeout(10) {
-            if (!isFocusWithin) {
-                requestFocus()
+            if (!box.isFocusWithin) {
+                box.requestFocus()
             }
         }
     }

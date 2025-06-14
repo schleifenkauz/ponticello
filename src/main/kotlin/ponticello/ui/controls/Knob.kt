@@ -149,12 +149,30 @@ class Knob(
         variable.set(v.withPrecision(spec.precision))
     }
 
-    private fun addShortcuts() = addEventHandler(KeyEvent.KEY_PRESSED) { ev ->
+    private fun addShortcuts() = addEventHandler(KeyEvent.ANY) { ev ->
         if (ev.isShiftDown || ev.isAltDown || ev.isControlDown) return@addEventHandler
         ev.consume()
+        val increaseKey = when (inputMethod) {
+            InputMethod.Vertical, InputMethod.Angle -> "UP"
+            InputMethod.Horizontal -> "RIGHT"
+        }
+        val decreaseKey = when (inputMethod) {
+            InputMethod.Vertical, InputMethod.Angle -> "DOWN"
+            InputMethod.Horizontal -> "LEFT"
+        }
         when (ev.code.toString()) {
-            "UP", "PLUS" -> increase()
-            "DOWN", "MINUS" -> decrease()
+            increaseKey, "PLUS" -> {
+                if (ev.eventType == KeyEvent.KEY_PRESSED) {
+                    increase()
+                }
+                ev.consume()
+            }
+            decreaseKey, "MINUS" -> {
+                if (ev.eventType == KeyEvent.KEY_PRESSED) {
+                    decrease()
+                }
+                ev.consume()
+            }
         }
     }
 
