@@ -3,14 +3,12 @@ package ponticello.sc.view
 import bundles.Bundle
 import bundles.publicProperty
 import fxutils.controls.IntSpinner
-import hextant.codegen.ProvideImplementation
-import hextant.context.ControlFactory
 import hextant.core.editor.SimpleEditor
 import hextant.core.view.EditorControl
 import ponticello.sc.editor.SimpleIntegerEditor
 import reaktive.value.now
 
-class IntSpinnerControl @ProvideImplementation(ControlFactory::class) constructor(
+class IntSpinnerControl (
     editor: SimpleIntegerEditor, arguments: Bundle
 ) : EditorControl<IntSpinner>(editor, arguments), SimpleEditor.View<Int> {
     private val spinner = IntSpinner(arguments[MIN], arguments[MAX], editor.result.now)

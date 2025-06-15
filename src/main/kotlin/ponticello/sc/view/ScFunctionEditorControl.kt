@@ -3,8 +3,6 @@ package ponticello.sc.view
 import bundles.Bundle
 import bundles.createBundle
 import bundles.publicProperty
-import hextant.codegen.ProvideImplementation
-import hextant.context.ControlFactory
 import hextant.core.view.CompoundEditorControl
 import reaktive.collection.binding.isEmpty
 import reaktive.collection.binding.size
@@ -12,7 +10,7 @@ import reaktive.value.binding.and
 import reaktive.value.binding.equalTo
 import reaktive.value.now
 
-class ScFunctionEditorControl @ProvideImplementation(ControlFactory::class) constructor(
+class ScFunctionEditorControl (
     private val editor: ponticello.sc.editor.ScFunctionEditor,
     arguments: Bundle
 ) : CompoundEditorControl(editor, arguments) {

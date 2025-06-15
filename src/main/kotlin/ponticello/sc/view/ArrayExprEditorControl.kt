@@ -3,11 +3,9 @@ package ponticello.sc.view
 import bundles.Bundle
 import fxutils.centerChildren
 import fxutils.styleClass
-import hextant.codegen.ProvideImplementation
-import hextant.context.ControlFactory
 import hextant.core.view.CompoundEditorControl
 
-class ArrayExprEditorControl @ProvideImplementation(ControlFactory::class) constructor(
+class ArrayExprEditorControl (
     private val editor: ponticello.sc.editor.ArrayExprEditor,
     arguments: Bundle,
 ) : CompoundEditorControl(editor, arguments) {

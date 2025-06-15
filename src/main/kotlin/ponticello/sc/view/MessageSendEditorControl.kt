@@ -4,8 +4,6 @@ import bundles.Bundle
 import fxutils.centerChildren
 import fxutils.registerShortcuts
 import fxutils.styleClass
-import hextant.codegen.ProvideImplementation
-import hextant.context.ControlFactory
 import hextant.core.view.CompoundEditorControl
 import ponticello.sc.Identifier
 import ponticello.ui.dock.AppLayout
@@ -16,7 +14,7 @@ import reaktive.value.binding.equalTo
 import reaktive.value.binding.map
 import reaktive.value.now
 
-class MessageSendEditorControl @ProvideImplementation(ControlFactory::class) constructor(
+class MessageSendEditorControl (
     private val editor: ponticello.sc.editor.MessageSendEditor,
     arguments: Bundle,
 ) : CompoundEditorControl(editor, arguments) {

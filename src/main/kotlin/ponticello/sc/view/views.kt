@@ -8,14 +8,14 @@ import fxutils.button
 import fxutils.centerChildren
 import fxutils.keyword
 import fxutils.styleClass
-import hextant.codegen.ProvideImplementation
 import hextant.completion.NoCompleter
-import hextant.context.ControlFactory
 import hextant.core.view.*
 import hextant.core.view.ListEditorControl.Companion.ADD_WITH_COMMA
 import hextant.core.view.ListEditorControl.Companion.CELL_FACTORY
 import hextant.core.view.ListEditorControl.Companion.EMPTY_DISPLAY
 import hextant.core.view.ListEditorControl.Companion.ORIENTATION
+import hextant.plugins.PluginBuilder
+import hextant.plugins.registerControlFactory
 
 val MULTILINE = publicProperty("MULTILINE_ARGUMENTS", false)
 
@@ -23,310 +23,310 @@ val HIDE_NEW_KEYWORD = publicProperty("HIDE_NEW_KEYWORD", false)
 
 val DISPLAY_BRACES = publicProperty("DISPLAY_BRACES", true)
 
-@ProvideImplementation(ControlFactory::class)
-fun createControl(editor: ponticello.sc.editor.AccessKeyEditor, arguments: Bundle) =
-    CompoundEditorControl(editor, arguments) {
-        horizontal {
-            styleClass("access-key")
-            view(editor.receiver)
-            operator("[")
-            view(editor.key)
-            operator("]")
-            root.centerChildren()
-        }
-    }
-
-@ProvideImplementation(ControlFactory::class)
-fun createControl(editor: ponticello.sc.editor.AssignmentEditor, arguments: Bundle) =
-    CompoundEditorControl(editor, arguments) {
-        horizontal {
-            styleClass("compound-expr", "assignment")
-            view(editor.assignee)
-            operator(" = ")
-            view(editor.expression)
-            root.centerChildren()
-        }
-    }
-
-@ProvideImplementation(ControlFactory::class)
-fun createControl(editor: ponticello.sc.editor.OperatorExprEditor, arguments: Bundle) =
-    CompoundEditorControl(editor, arguments) {
-        horizontal {
-            styleClass("compound-expr", "operator-expr")
-            view(editor.left)
-            space()
-            view(editor.operator)
-            space()
-            view(editor.right)
-            root.centerChildren()
-        }
-    }
-
-@ProvideImplementation(ControlFactory::class)
-fun createControl(editor: ponticello.sc.editor.PropertyAccessExprEditor, arguments: Bundle) =
-    CompoundEditorControl(editor, arguments) {
-        horizontal {
-            view(editor.receiver)
-            operator(".")
-            view(editor.property)
-            root.centerChildren()
-        }
-    }
-
-@ProvideImplementation(ControlFactory::class)
-fun createControl(editor: ponticello.sc.editor.SpreadArrayEditor, arguments: Bundle) =
-    CompoundEditorControl(editor, arguments) {
-        horizontal {
-            styleClass("spread-array")
-            operator("*")
-            view(editor.array)
-        }
-    }
-
-@ProvideImplementation(ControlFactory::class)
-fun createControl(editor: ponticello.sc.editor.NamedExprEditor, arguments: Bundle) =
-    CompoundEditorControl(editor, arguments) {
-        vertical {
-            styleClass("compound-expr", "named-expr")
+internal fun PluginBuilder.registerControlFactories() {
+    registerControlFactory { editor: ponticello.sc.editor.AccessKeyEditor, arguments ->
+        CompoundEditorControl(editor, arguments) {
             horizontal {
-                view(editor.name)
-                operator(": ")
-                view(editor.value)
+                styleClass("access-key")
+                view(editor.receiver)
+                operator("[")
+                view(editor.key)
+                operator("]")
+                root.centerChildren()
             }
         }
     }
 
-@ProvideImplementation(ControlFactory::class)
-fun createControl(editor: ponticello.sc.editor.IfExprEditor, arguments: Bundle) =
-    CompoundEditorControl(editor, arguments) {
-        vertical {
-            styleClass("compound-expr", "if")
+    registerControlFactory { editor: ponticello.sc.editor.AssignmentEditor, arguments ->
+        CompoundEditorControl(editor, arguments) {
             horizontal {
-                keyword("if")
+                styleClass("compound-expr", "assignment")
+                view(editor.assignee)
+                operator(" = ")
+                view(editor.expression)
+                root.centerChildren()
+            }
+        }
+    }
+
+    registerControlFactory { editor: ponticello.sc.editor.OperatorExprEditor, arguments ->
+        CompoundEditorControl(editor, arguments) {
+            horizontal {
+                styleClass("compound-expr", "operator-expr")
+                view(editor.left)
                 space()
-                view(editor.condition)
-            }
-            indented {
-                view(editor.then)
-            }
-            keyword("else")
-            indented {
-                view(editor.otherwise)
-            }
-        }
-    }
-
-@ProvideImplementation(ControlFactory::class)
-fun createControl(editor: ponticello.sc.editor.WhileExprEditor, arguments: Bundle) =
-    CompoundEditorControl(editor, arguments) {
-        vertical {
-            styleClass("compound-expr", "while")
-            horizontal {
-                keyword("while")
+                view(editor.operator)
                 space()
-                view(editor.condition)
-            }
-            indented {
-                view(editor.block)
+                view(editor.right)
+                root.centerChildren()
             }
         }
     }
 
-@ProvideImplementation(ControlFactory::class)
-fun createControl(editor: ponticello.sc.editor.LoopExprEditor, arguments: Bundle) =
-    CompoundEditorControl(editor, arguments) {
-        vertical {
-            styleClass("compound-expr", "loop-expr")
-            keyword("loop")
-            indented {
-                view(editor.block)
+    registerControlFactory { editor: ponticello.sc.editor.PropertyAccessExprEditor, arguments ->
+        CompoundEditorControl(editor, arguments) {
+            horizontal {
+                view(editor.receiver)
+                operator(".")
+                view(editor.property)
+                root.centerChildren()
             }
         }
     }
 
-@ProvideImplementation(ControlFactory::class)
-fun createControl(editor: ponticello.sc.editor.FunctionDefEditor, args: Bundle) = CompoundEditorControl(editor, args) {
-    vertical {
-        horizontal {
-            keyword("func ")
-            view(editor.name)
-            operator("(")
-            view(editor.parameters) {
-                set(ORIENTATION, ListEditorControl.Orientation.Horizontal)
-                set(CELL_FACTORY) { ListEditorControl.SeparatorCell(",") }
-                set(ADD_WITH_COMMA, true)
+    registerControlFactory { editor: ponticello.sc.editor.SpreadArrayEditor, arguments ->
+        CompoundEditorControl(editor, arguments) {
+            horizontal {
+                styleClass("spread-array")
+                operator("*")
+                view(editor.array)
             }
-            operator(")")
         }
-        indented {
-            view(editor.body)
+    }
+
+    registerControlFactory { editor: ponticello.sc.editor.NamedExprEditor, arguments ->
+        CompoundEditorControl(editor, arguments) {
+            vertical {
+                styleClass("compound-expr", "named-expr")
+                horizontal {
+                    view(editor.name)
+                    operator(": ")
+                    view(editor.value)
+                }
+            }
+        }
+    }
+
+    registerControlFactory { editor: ponticello.sc.editor.IfExprEditor, arguments ->
+        CompoundEditorControl(editor, arguments) {
+            vertical {
+                styleClass("compound-expr", "if")
+                horizontal {
+                    keyword("if")
+                    space()
+                    view(editor.condition)
+                }
+                indented {
+                    view(editor.then)
+                }
+                keyword("else")
+                indented {
+                    view(editor.otherwise)
+                }
+            }
+        }
+    }
+
+    registerControlFactory { editor: ponticello.sc.editor.WhileExprEditor, arguments ->
+        CompoundEditorControl(editor, arguments) {
+            vertical {
+                styleClass("compound-expr", "while")
+                horizontal {
+                    keyword("while")
+                    space()
+                    view(editor.condition)
+                }
+                indented {
+                    view(editor.block)
+                }
+            }
+        }
+    }
+
+    registerControlFactory { editor: ponticello.sc.editor.LoopExprEditor, arguments ->
+        CompoundEditorControl(editor, arguments) {
+            vertical {
+                styleClass("compound-expr", "loop-expr")
+                keyword("loop")
+                indented {
+                    view(editor.block)
+                }
+            }
+        }
+    }
+
+    registerControlFactory { editor: ponticello.sc.editor.FunctionDefEditor, args ->
+        CompoundEditorControl(editor, args) {
+            vertical {
+                horizontal {
+                    keyword("func ")
+                    view(editor.name)
+                    operator("(")
+                    view(editor.parameters) {
+                        set(ORIENTATION, ListEditorControl.Orientation.Horizontal)
+                        set(CELL_FACTORY) { ListEditorControl.SeparatorCell(",") }
+                        set(ADD_WITH_COMMA, true)
+                    }
+                    operator(")")
+                }
+                indented {
+                    view(editor.body)
+                }
+            }
+        }
+    }
+
+    registerControlFactory { editor: ponticello.sc.editor.PlayObjectEditor, args ->
+        CompoundEditorControl(editor, args) {
+            horizontal {
+                keyword("play ")
+                view(editor.reference)
+                root.centerChildren()
+            }
+        }
+    }
+
+    registerControlFactory { editor: ponticello.sc.editor.OperatorEditor, arguments: Bundle ->
+        TokenEditorControl(editor, arguments, completer = NoCompleter, styleClass = "operator")
+    }
+
+    registerControlFactory { editor: ponticello.sc.editor.BusControlSpecEditor, arguments ->
+        CompoundEditorControl(editor, arguments) {
+            horizontal {
+                space()
+                keyword("rate: ")
+                view(editor.rate)
+                space()
+                keyword("channels: ")
+                view(editor.channels) {
+                    set(IntSpinnerControl.MIN, 1)
+                    set(IntSpinnerControl.MAX, 256)
+                }.maxWidth = 65.0
+                space()
+                root.centerChildren().styleClass("bus-control-spec")
+            }
+        }
+    }
+    registerControlFactory { editor: ponticello.sc.editor.BufferControlSpecEditor, arguments ->
+        CompoundEditorControl(editor, arguments) {
+            horizontal {
+                keyword("channels: ")
+                view(editor.channels) {
+                    set(IntSpinnerControl.MIN, 1)
+                    set(IntSpinnerControl.MAX, 256)
+                }.maxWidth = 65.0
+                space()
+                root.centerChildren().styleClass("buffer-control-spec")
+            }
+        }
+    }
+
+    registerControlFactory { editor: ponticello.sc.editor.BufferPositionControlSpecEditor, arguments ->
+        CompoundEditorControl(editor, arguments) {
+            horizontal {
+                root.centerChildren()
+            }
+        }
+    }
+
+    registerControlFactory { editor: ponticello.sc.editor.NumericalControlSpecEditor, arguments ->
+        CompoundEditorControl(editor, arguments) {
+            horizontal {
+                operator(" = ")
+                view(editor.defaultValue).minWidth = 30.0
+                space()
+                operator("(")
+                view(editor.min)//.minWidth = 30.0
+                operator("..")
+                view(editor.max)//.minWidth = 30.0
+                operator(")")
+                space()
+                keyword("step: ")
+                view(editor.step).minWidth = 30.0
+                space()
+                keyword("lag: ")
+                view(editor.lag)
+                keyword("warp: ")
+                view(editor.warp)
+                space()
+                view(editor.associatedColor).minWidth = 30.0
+                styleClass("numerical-control-spec")
+                root.centerChildren()
+            }
+        }
+    }
+
+    registerControlFactory { editor: ponticello.sc.editor.ControlSpecEditor, arguments ->
+        ChoiceEditorControl(editor, arguments).apply {
+            styleClass("control-spec")
+            isDisable = true // don't allow changing parameter types
+        }
+    }
+
+    registerControlFactory { editor: ponticello.sc.editor.DecimalLiteralEditor, arguments ->
+        TokenEditorControl(editor, arguments, styleClass = "number")
+    }
+    registerControlFactory { editor: ponticello.sc.editor.OptionalExprEditor, arguments ->
+        arguments[OptionalEditorControl.EMPTY_DISPLAY] = { keyword("nil") }
+        OptionalEditorControl(editor, arguments)
+    }
+
+    registerControlFactory { editor: ponticello.sc.editor.SymbolLiteralEditor, arguments ->
+        CompoundEditorControl(editor, arguments) {
+            horizontal {
+                operator("'")
+                TokenEditorControl(editor, createBundle(), styleClass = "symbol")
+                operator("'")
+            }
+        }
+    }
+    registerControlFactory { editor: ponticello.sc.editor.StringLiteralEditor, arguments ->
+        CompoundEditorControl(editor, arguments) {
+            horizontal {
+                operator("\"")
+                TokenEditorControl(editor, createBundle(), styleClass = "string")
+                operator("\"")
+            }
+        }
+    }
+
+    registerControlFactory { editor: ponticello.sc.editor.BusSelector, arguments ->
+        ObjectSelectorControl(editor, arguments)
+    }
+
+    registerControlFactory { editor: ponticello.sc.editor.EventDictionaryEditor, arguments ->
+        CompoundEditorControl(editor, arguments) {
+            vertical {
+                view(editor.entries) {
+                    set(ORIENTATION, ListEditorControl.Orientation.Vertical)
+                    set(EMPTY_DISPLAY) { null }
+                }
+                add(button("Add entry") { editor.entries.addLast() })
+            }
+        }
+    }
+
+    registerControlFactory { editor: ponticello.sc.editor.InExprEditor, arguments ->
+        CompoundEditorControl(editor, arguments) {
+            horizontal {
+                styleClass("bus-operation", "compound-expr")
+                keyword("in")
+                space()
+                view(editor.busSelector)
+            }
+        }
+    }
+
+    registerControlFactory { editor: ponticello.sc.editor.OutExprEditor, arguments ->
+        CompoundEditorControl(editor, arguments) {
+            horizontal {
+                styleClass("bus-operation", "compound-expr")
+                keyword("out")
+                space()
+                view(editor.busSelector)
+                space()
+                view(editor.channelsArray)
+            }
+        }
+    }
+
+    registerControlFactory { editor: ponticello.sc.editor.ParameterReferenceEditor, arguments ->
+        CompoundEditorControl(editor, arguments) {
+            horizontal {
+                keyword("get ")
+                view(editor.parameter)
+                root.centerChildren()
+            }
         }
     }
 }
-
-@ProvideImplementation(ControlFactory::class)
-fun createControl(editor: ponticello.sc.editor.PlayObjectEditor, args: Bundle) = CompoundEditorControl(editor, args) {
-    horizontal {
-        keyword("play ")
-        view(editor.reference)
-        root.centerChildren()
-    }
-}
-
-@ProvideImplementation(ControlFactory::class)
-fun createControl(editor: ponticello.sc.editor.OperatorEditor, arguments: Bundle): TokenEditorControl =
-    TokenEditorControl(editor, arguments, completer = NoCompleter, styleClass = "operator")
-
-@ProvideImplementation(ControlFactory::class)
-fun createControl(editor: ponticello.sc.editor.BusControlSpecEditor, arguments: Bundle) =
-    CompoundEditorControl(editor, arguments) {
-        horizontal {
-            space()
-            keyword("rate: ")
-            view(editor.rate)
-            space()
-            keyword("channels: ")
-            view(editor.channels) {
-                set(IntSpinnerControl.MIN, 1)
-                set(IntSpinnerControl.MAX, 256)
-            }.maxWidth = 65.0
-            space()
-            root.centerChildren().styleClass("bus-control-spec")
-        }
-    }
-
-@ProvideImplementation(ControlFactory::class)
-fun createControl(editor: ponticello.sc.editor.BufferControlSpecEditor, arguments: Bundle) =
-    CompoundEditorControl(editor, arguments) {
-        horizontal {
-            keyword("channels: ")
-            view(editor.channels) {
-                set(IntSpinnerControl.MIN, 1)
-                set(IntSpinnerControl.MAX, 256)
-            }.maxWidth = 65.0
-            space()
-            root.centerChildren().styleClass("buffer-control-spec")
-        }
-    }
-
-@ProvideImplementation(ControlFactory::class)
-fun createControl(editor: ponticello.sc.editor.BufferPositionControlSpecEditor, arguments: Bundle) =
-    CompoundEditorControl(editor, arguments) {
-        horizontal {
-            root.centerChildren()
-        }
-    }
-
-@ProvideImplementation(ControlFactory::class)
-fun createControl(editor: ponticello.sc.editor.NumericalControlSpecEditor, arguments: Bundle) =
-    CompoundEditorControl(editor, arguments) {
-        horizontal {
-            operator(" = ")
-            view(editor.defaultValue).minWidth = 30.0
-            space()
-            operator("(")
-            view(editor.min)//.minWidth = 30.0
-            operator("..")
-            view(editor.max)//.minWidth = 30.0
-            operator(")")
-            space()
-            keyword("step: ")
-            view(editor.step).minWidth = 30.0
-            space()
-            keyword("lag: ")
-            view(editor.lag)
-            keyword("warp: ")
-            view(editor.warp)
-            space()
-            view(editor.associatedColor).minWidth = 30.0
-            styleClass("numerical-control-spec")
-            root.centerChildren()
-        }
-    }
-
-@ProvideImplementation(ControlFactory::class)
-fun createControl(editor: ponticello.sc.editor.ControlSpecEditor, arguments: Bundle) =
-    ChoiceEditorControl(editor, arguments).apply {
-        styleClass("control-spec")
-        button.isDisable = true // don't allow changing parameter types
-    }
-
-@ProvideImplementation(ControlFactory::class)
-fun createControl(editor: ponticello.sc.editor.DecimalLiteralEditor, arguments: Bundle) =
-    TokenEditorControl(editor, arguments, styleClass = "number")
-
-@ProvideImplementation(ControlFactory::class)
-fun createControl(editor: ponticello.sc.editor.OptionalExprEditor, arguments: Bundle): OptionalEditorControl {
-    arguments[OptionalEditorControl.EMPTY_DISPLAY] = { keyword("nil") }
-    return OptionalEditorControl(editor, arguments)
-}
-
-@ProvideImplementation(ControlFactory::class)
-fun createControl(editor: ponticello.sc.editor.SymbolLiteralEditor, arguments: Bundle) =
-    CompoundEditorControl(editor, arguments) {
-        horizontal {
-            operator("'")
-            TokenEditorControl(editor, createBundle(), styleClass = "symbol")
-            operator("'")
-        }
-    }
-
-@ProvideImplementation(ControlFactory::class)
-fun createControl(editor: ponticello.sc.editor.StringLiteralEditor, arguments: Bundle) =
-    CompoundEditorControl(editor, arguments) {
-        horizontal {
-            operator("\"")
-            TokenEditorControl(editor, createBundle(), styleClass = "string")
-            operator("\"")
-        }
-    }
-
-@ProvideImplementation(ControlFactory::class)
-fun createSelectorControl(editor: ponticello.sc.editor.BusSelector, arguments: Bundle) =
-    ObjectSelectorControl(editor, arguments)
-
-@ProvideImplementation(ControlFactory::class)
-fun createControl(editor: ponticello.sc.editor.EventDictionaryEditor, arguments: Bundle) =
-    CompoundEditorControl(editor, arguments) {
-        vertical {
-            view(editor.entries) {
-                set(ORIENTATION, ListEditorControl.Orientation.Vertical)
-                set(EMPTY_DISPLAY) { null }
-            }
-            add(button("Add entry") { editor.entries.addLast() })
-        }
-    }
-
-@ProvideImplementation(ControlFactory::class)
-fun createAControl(editor: ponticello.sc.editor.InExprEditor, arguments: Bundle) =
-    CompoundEditorControl(editor, arguments) {
-        horizontal {
-            styleClass("bus-operation", "compound-expr")
-            keyword("in")
-            space()
-            view(editor.busSelector)
-        }
-    }
-
-@ProvideImplementation(ControlFactory::class)
-fun createAControl(editor: ponticello.sc.editor.OutExprEditor, arguments: Bundle) =
-    CompoundEditorControl(editor, arguments) {
-        horizontal {
-            styleClass("bus-operation", "compound-expr")
-            keyword("out")
-            space()
-            view(editor.busSelector)
-            space()
-            view(editor.channelsArray)
-        }
-    }
-
-@ProvideImplementation(ControlFactory::class)
-fun createAControl(editor: ponticello.sc.editor.ParameterReferenceEditor, arguments: Bundle) =
-    CompoundEditorControl(editor, arguments) {
-        horizontal {
-            keyword("get ")
-            view(editor.parameter)
-            root.centerChildren()
-        }
-    }

@@ -5,10 +5,11 @@ plugins {
     id 'org.jetbrains.kotlin.kapt' version '2.1.20'
     id 'org.openjfx.javafxplugin' version '0.1.0'
     id 'org.jetbrains.kotlin.plugin.serialization' version '2.1.0'
+    id 'com.github.johnrengelman.shadow' version '8.1.1'
 }
 
 group 'com.github.nkb03'
-version '1.0-SNAPSHOT'
+version '0.2'
 
 repositories {
     mavenCentral()
@@ -43,7 +44,6 @@ application {
 
 dependencies {
     implementation 'org.controlsfx:controlsfx:11.1.2'
-    implementation 'com.pixelduke:fxthemes:1.5.1'
 
     api 'org.kordamp.ikonli:ikonli-javafx:12.3.1'
     implementation 'org.kordamp.ikonli:ikonli-materialdesign2-pack:12.3.1'
@@ -60,7 +60,6 @@ dependencies {
     implementation 'com.illposed.osc:javaosc-core:0.9'
 
     implementation 'org.slf4j:log4j-over-slf4j:2.0.17'
-    implementation 'com.github.kwhat:jnativehook:2.2.2'
 
     testImplementation("org.junit.jupiter:junit-jupiter-api:${junitVersion}")
     testImplementation "io.mockk:mockk:1.13.17"
@@ -75,4 +74,8 @@ kapt {
 
 test {
     useJUnitPlatform()
+}
+
+shadowJar {
+    mergeServiceFiles()
 }

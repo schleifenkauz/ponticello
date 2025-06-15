@@ -6,8 +6,6 @@ import bundles.Bundle
 import bundles.createBundle
 import bundles.set
 import fxutils.button
-import hextant.codegen.ProvideImplementation
-import hextant.context.ControlFactory
 import hextant.core.view.CompoundEditorControl
 import hextant.core.view.ListEditorControl
 import hextant.core.view.ListEditorControl.Companion.ADD_WITH_COMMA
@@ -19,7 +17,7 @@ import hextant.core.view.ListEditorControl.Orientation.Vertical
 import hextant.core.view.ListEditorControl.SeparatorCell
 import javafx.scene.layout.HBox
 
-class CodeBlockEditorControl @ProvideImplementation(ControlFactory::class) constructor(
+class CodeBlockEditorControl (
     val editor: ponticello.sc.editor.CodeBlockEditor,
     arguments: Bundle
 ) : CompoundEditorControl(editor, arguments) {

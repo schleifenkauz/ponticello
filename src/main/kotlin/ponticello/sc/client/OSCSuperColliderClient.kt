@@ -6,16 +6,18 @@ import com.illposed.osc.OSCMessageListener
 import com.illposed.osc.messageselector.JavaRegexAddressMessageSelector
 import com.illposed.osc.transport.OSCPortIn
 import com.illposed.osc.transport.OSCPortOut
+import hextant.context.Context
 import ponticello.impl.Logger
 import ponticello.impl.superColliderPath
+import ponticello.ui.launcher.PonticelloFiles
 import reaktive.Observer
 import reaktive.event.unitEvent
 import reaktive.observe
+import java.io.File
 import java.net.InetAddress
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
-import kotlin.io.path.toPath
 
 class OSCSuperColliderClient(
     process: Process,
@@ -156,8 +158,21 @@ class OSCSuperColliderClient(
     companion object {
         private const val SETUP_FILE = "ponticello_setup.scd"
 
-        fun create(scPort: Int = OSCPortOut.DEFAULT_SC_LANG_OSC_PORT): OSCSuperColliderClient {
-            val setupFile = this::class.java.getResource(SETUP_FILE)!!.toURI().toPath().toFile().superColliderPath
+        private var setupFile: File? = null
+
+        private fun copySetupFile(context: Context): File {
+            setupFile?.let { return it }
+            val resource = this::class.java.getResourceAsStream(SETUP_FILE) ?: error("Setup file $SETUP_FILE not found")
+            val setupScript = resource.bufferedReader().use { r -> r.readText() }
+            setupFile = context[PonticelloFiles].resolve(SETUP_FILE)
+            setupFile!!.writeText(setupScript)
+            return setupFile!!
+        }
+
+        fun create(
+            context: Context, scPort: Int = OSCPortOut.DEFAULT_SC_LANG_OSC_PORT,
+        ): OSCSuperColliderClient {
+            val setupFile = copySetupFile(context).superColliderPath
             val sclang = ProcessBuilder(mutableListOf("sclang", "-u", "$scPort"))
                 .redirectInput(ProcessBuilder.Redirect.PIPE)
                 .redirectOutput(ProcessBuilder.Redirect.PIPE)

@@ -1,11 +1,9 @@
 package ponticello.sc.view
 
 import bundles.Bundle
-import hextant.codegen.ProvideImplementation
-import hextant.context.ControlFactory
 import hextant.core.view.CompoundEditorControl
 
-class SynthExprEditorControl @ProvideImplementation(ControlFactory::class) constructor(
+class SynthExprEditorControl (
     private val editor: ponticello.sc.editor.SynthExprEditor,
     arguments: Bundle,
 ) : CompoundEditorControl(editor, arguments) {

@@ -33,6 +33,21 @@ import ponticello.ui.launcher.PonticelloHextantPlugin.singleLineCommand
 import reaktive.value.now
 
 object PonticelloHextantPlugin : PluginInitializer({
+    registerControlFactory(::AdhocSynthEditorControl)
+    registerControlFactory(::ArrayExprEditorControl)
+    registerControlFactory(::CheckBoxControl)
+    registerControlFactory(::CodeBlockEditorControl)
+    registerControlFactory(::ColorPickerControl)
+    registerControlFactory(::IntSpinnerControl)
+    registerControlFactory(::LiteralArrayExprEditorControl)
+    registerControlFactory(::MessageSendEditorControl)
+    registerControlFactory(::RawScExprEditorControl)
+    registerControlFactory(::ScFunctionEditorControl)
+    registerControlFactory(::SynthExprEditorControl)
+    registerControlFactory(::TupleExprEditorControl)
+
+    registerControlFactories()
+
     stylesheet("ponticello/ui/style/flow.css")
     stylesheet("ponticello/ui/style/controls.css")
     stylesheet("ponticello/ui/style/tool-panes.css")
