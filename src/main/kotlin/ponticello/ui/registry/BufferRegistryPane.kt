@@ -1,11 +1,14 @@
 package ponticello.ui.registry
 
-import fxutils.*
 import fxutils.actions.ContextualizedAction
 import fxutils.actions.collectActions
+import fxutils.addAfter
 import fxutils.controls.IntSpinner
+import fxutils.hasFile
+import fxutils.prompt.SimpleSearchableListView
 import fxutils.prompt.YesNoPrompt
 import fxutils.prompt.compoundPrompt
+import fxutils.registerShortcuts
 import fxutils.undo.UndoManager
 import hextant.fx.HextantTextField
 import javafx.event.Event
@@ -17,7 +20,6 @@ import javafx.scene.input.DataFormat
 import javafx.scene.input.DragEvent
 import javafx.scene.input.Dragboard
 import javafx.scene.input.TransferMode
-import javafx.scene.layout.HBox
 import org.kordamp.ikonli.Ikon
 import org.kordamp.ikonli.evaicons.Evaicons
 import org.kordamp.ikonli.material2.Material2AL
@@ -56,31 +58,24 @@ class BufferRegistryPane(private val buffers: BufferRegistry) : ObjectRegistryPa
     private var filter = BufferTypeFilter.All
         set(value) {
             field = value
-            for ((btn, filterOption) in filterSelection.children.zip(BufferTypeFilter.entries)) {
-                btn.setPseudoClassState("selected", value == filterOption)
-            }
             listView.refilter()
         }
 
-    private val filterSelection = HBox()
+    private val filterSelector = SimpleSearchableListView(BufferTypeFilter.entries, "Select filter")
+        .selectorButton(this::filter)
 
     override fun defaultState(): ToolPaneState = BufferRegistryPaneState.default()
 
     override fun doSetup() {
         super.doSetup()
         val state = initialState
-        for (filterOption in BufferTypeFilter.entries) {
-            val btn = button(filterOption.name).styleClass("selector-button", "filter-tag-button")
-            btn.setOnAction { filter = filterOption }
-            filterSelection.children.add(btn)
-        }
         if (state is BufferRegistryPaneState) {
             filter = state.filter
         }
     }
 
     override fun afterSetup() {
-        header.children.addAfter(searchText, filterSelection)
+        header.children.addAfter(searchText, filterSelector)
     }
 
     override fun saveState(dest: ToolPaneState) {

@@ -4,13 +4,10 @@ import fxutils.actions.Action
 import fxutils.actions.ContextualizedAction
 import fxutils.actions.collectActions
 import fxutils.addAfter
-import fxutils.button
 import fxutils.controls.IntSpinner
 import fxutils.controls.SliderBar
 import fxutils.prompt.IntegerPrompt
 import fxutils.prompt.SimpleSearchableListView
-import fxutils.setPseudoClassState
-import fxutils.styleClass
 import fxutils.undo.UndoManager
 import javafx.event.Event
 import javafx.geometry.Point2D
@@ -51,31 +48,24 @@ class BusRegistryPane(busses: BusRegistry) : ObjectRegistryPane<BusObject>(busse
     private var filter = BusTypeFilter.All
         set(value) {
             field = value
-            for ((btn, filterOption) in filterSelection.children.zip(BusTypeFilter.entries)) {
-                btn.setPseudoClassState("selected", value == filterOption)
-            }
             listView.refilter()
         }
 
-    private val filterSelection = HBox()
+    private val filterSelector = SimpleSearchableListView(BusTypeFilter.entries, "Select filter")
+        .selectorButton(this::filter)
 
     override fun defaultState(): ToolPaneState = BusRegistryPaneState.default()
 
     override fun doSetup() {
         super.doSetup()
         val state = initialState
-        for (filterOption in BusTypeFilter.entries) {
-            val btn = button(filterOption.name).styleClass("selector-button", "filter-tag-button")
-            btn.setOnAction { filter = filterOption }
-            filterSelection.children.add(btn)
-        }
         if (state is BusRegistryPaneState) {
             filter = state.filter
         }
     }
 
     override fun afterSetup() {
-        header.children.addAfter(searchText, filterSelection)
+        header.children.addAfter(searchText, filterSelector)
     }
 
     override fun saveState(dest: ToolPaneState) {
