@@ -32,13 +32,12 @@
     -fx-font-size: 6px !important;
 }
 
-.scroll-pane :vertical .thumb,
-.scroll-pane :horizontal .thumb {
+.scroll-pane .scroll-bar .thumb {
     -fx-background-color: rgba(0, 128, 0, 0.3);
     -fx-background-radius: 4px;
 }
 
-.scroll-pane .thumb:hover {
+.scroll-pane .scroll-bar .thumb:hover {
     -fx-background-color: rgba(0, 128, 0, 0.7) !important;
 }
 

@@ -19,7 +19,7 @@ abstract class ReorderableActionBar<O : Any>(
     private lateinit var layout: ObjectListView<O>
 
     protected fun setup() {
-        layout = ObjectListView(paneTypes, this)
+        layout = ObjectListView(paneTypes, this, scrollable = false)
         setRoot(layout)
     }
 

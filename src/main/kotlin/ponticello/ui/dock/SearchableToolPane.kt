@@ -21,6 +21,7 @@ import reaktive.value.now
 
 abstract class SearchableToolPane<O : NamedObject>(
     private val list: NamedObjectList<O>,
+    private val scrollable: Boolean = true,
 ) : ToolPane(), ListDisplayConfig<O> {
     protected val searchText = CustomTextField().styleClass("sleek-text-field", "search-field")
 
@@ -39,7 +40,7 @@ abstract class SearchableToolPane<O : NamedObject>(
         if (state is SearchableToolPaneState) {
             if (state.displayMode != null) initialMode = state.displayMode!!
         }
-        listView = ObjectListView(list, this, initialMode)
+        listView = ObjectListView(list, this, scrollable, initialMode)
         if (state is SearchableToolPaneState) {
             for (idx in state.expandedBoxes) {
                 listView.getBoxes()[idx].toggleExpanded()

@@ -27,7 +27,7 @@ class MixerFlowView private constructor(
     private val flow: MixerFlow,
     private val listConfig: MixerComponentListConfig,
 ) : VBox(), ListDisplayConfig<MixerFlow.MixerComponent> by listConfig {
-    val componentsView = ObjectListView(flow.components, this)
+    val componentsView = ObjectListView(flow.components, this, scrollable = false)
 
     init {
         val totalVolumeSlider = SliderBar(

@@ -34,7 +34,9 @@ import reaktive.value.now
 
 class ParameterControlsPane(
     private val obj: ParameterizedObject, private val view: ScoreObjectView? = null,
-) : SearchableToolPane<NamedParameterControl>(obj.controls), ParameterControlList.Listener {
+) : SearchableToolPane<NamedParameterControl>(
+    obj.controls, scrollable = false
+), ParameterControlList.Listener {
     private val editors = mutableMapOf<NamedParameterControl, ControlAssignmentEditor>()
 
     override val title: String
@@ -88,6 +90,7 @@ class ParameterControlsPane(
             val obj = json.decodeFromString<NamedParameterControl>(jsonString)
             obj
         }
+
         else -> null
     }
 

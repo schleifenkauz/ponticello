@@ -15,7 +15,7 @@ import reaktive.value.now
 class ParameterDefsPane(private val parameters: ParameterDefList, override val title: String) : ToolPane() {
     private val config = ParameterListConfig()
 
-    private val objectBoxList = ObjectListView(parameters, config)
+    private val objectBoxList = ObjectListView(parameters, config, scrollable = false)
 
     override val content: Parent
         get() = objectBoxList

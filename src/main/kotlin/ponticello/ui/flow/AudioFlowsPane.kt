@@ -1,7 +1,6 @@
 package ponticello.ui.flow
 
 import fxutils.actions.*
-import fxutils.alwaysVGrow
 import fxutils.centerChildren
 import fxutils.setFixedWidth
 import fxutils.vspace
@@ -9,6 +8,7 @@ import javafx.geometry.Orientation
 import javafx.geometry.Pos
 import javafx.scene.Node
 import javafx.scene.Parent
+import javafx.scene.layout.Priority
 import javafx.scene.layout.Region
 import javafx.scene.layout.StackPane
 import javafx.scene.layout.VBox
@@ -46,7 +46,6 @@ class AudioFlowsPane(flows: AudioFlows) : SearchableToolPane<AudioFlowGroup>(flo
 
     override fun afterSetup() {
         super.afterSetup()
-        listView.itemsScrollPane.isFitToHeight = true
         listView.autoResizeScene = true
         val state = initialState
         if (state is FlowPaneState) {
@@ -76,13 +75,14 @@ class AudioFlowsPane(flows: AudioFlows) : SearchableToolPane<AudioFlowGroup>(flo
         StackPane.setAlignment(nameLabel, Pos.BOTTOM_CENTER)
         val namePane = StackPane(nameLabel).setFixedWidth(15.0)
         nameLabel.translateYProperty().bind(nameLabel.textProperty().map { -nameLabel.prefWidth(-1.0) / 2 })
+        setVgrow(namePane, Priority.ALWAYS)
 
         val expandAction = MaterialDesignC.CHEVRON_RIGHT.button("Expand", "medium-icon-button") { _ ->
             box.toggleExpanded()
         }
         val toggleActive = FlowGroupPane.toggleActiveAction.withContext(box.obj).makeButton("medium-icon-button")
         return VBox(expandAction, toggleActive, vspace(20.0), namePane)
-            .alwaysVGrow().centerChildren().setFixedWidth(30.0)
+            .centerChildren().setFixedWidth(30.0)
     }
 
     override fun onDeselected(obj: AudioFlowGroup) {

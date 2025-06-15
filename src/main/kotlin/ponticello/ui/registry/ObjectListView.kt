@@ -37,12 +37,14 @@ import reaktive.value.binding.notEqualTo
 class ObjectListView<O : Any>(
     val source: ObjectList<O>,
     val config: ListDisplayConfig<O>,
+    private val scrollable: Boolean = true,
     private val displayMode: ReactiveVariable<DisplayMode>,
 ) : Control(), ObjectList.Listener<O> {
     constructor(
         source: ObjectList<O>, config: ListDisplayConfig<O>,
+        scrollable: Boolean = true,
         displayMode: DisplayMode = config.supportedModes.first(),
-    ) : this(source, config, reactiveVariable(displayMode))
+    ) : this(source, config, scrollable, reactiveVariable(displayMode))
 
     private val dropPreviewNode = Region() styleClass "drop-preview"
 
@@ -54,15 +56,17 @@ class ObjectListView<O : Any>(
     private val boxesCache = mutableMapOf<O, ObjectBox<O>>()
     private val selectedBox: ReactiveVariable<ObjectBox<O>?> = reactiveVariable(null)
 
-    val itemsScrollPane = ScrollPane(Pane()).styleClass("items-scroll-bar")
-
-    private var itemsLayout: Pane
-        get() = itemsScrollPane.content as Pane
+    private var itemsLayout: Pane = Pane()
         set(value) {
-            itemsScrollPane.content = value
-            itemsScrollPane.letContentFillViewPort()
+            field = value
             value.children.addAll(boxes)
+            setupDropArea()
+            if (scrollable) {
+                itemsScrollPane.content = value
+            }
         }
+
+    val itemsScrollPane = ScrollPane(Pane()).styleClass("items-scroll-bar")
 
     private var displayedContent: Parent? = null
 
@@ -84,14 +88,14 @@ class ObjectListView<O : Any>(
             val box = getBox(obj)
             boxes.add(box)
         }
+        itemsScrollPane.isFitToWidth = true
+        itemsScrollPane.isFitToHeight = true
         setMode(displayMode.now)
         registerSelectionShortcuts()
-        setupDropArea()
-        isFocusTraversable = true
     }
 
     private fun setupDropArea() {
-        itemsScrollPane.addEventHandler(DragEvent.ANY) { ev ->
+        itemsLayout.addEventHandler(DragEvent.ANY) { ev ->
             when (ev.eventType) {
                 DragEvent.DRAG_ENTERED -> {
                     val dragged = ev.gestureSource
@@ -247,9 +251,11 @@ class ObjectListView<O : Any>(
         }
     }
 
-    private fun itemCellsLayout() =
-        if (config.enableAddObjectButton) VBox(itemsScrollPane, addObjectButton())
-        else itemsScrollPane
+    private fun itemCellsLayout(): Region {
+        val itemsPane = if (scrollable) itemsScrollPane else itemsLayout
+        return if (config.enableAddObjectButton) VBox(itemsPane, addObjectButton())
+        else itemsPane
+    }
 
     private fun displayContent(box: ObjectBox<O>?) {
         val content = box?.content()

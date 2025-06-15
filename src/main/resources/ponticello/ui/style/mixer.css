@@ -1,3 +1,11 @@
+VBox.fader-layout {
+    -fx-padding: 5px 0px 5px 0px;
+    -fx-spacing: 3px;
+    -fx-alignment: center;
+    -fx-pref-width: 70px;
+    -fx-min-width: 70px;
+}
+
 .fader-separator {
     -fx-background-color: black;
     -fx-pref-height: 1px;
@@ -42,20 +50,34 @@ Slider.volume-fader {
     -fx-minor-tick-count: 6;
     -fx-major-tick-unit: 6;
     -fx-show-tick-labels: true;
-    -fx-opacity: 1.0;
+    -fx-orientation: vertical;
+    -fx-show-tick-marks: true;
 }
 
 Slider.volume-fader .thumb {
+    -fx-shape: "M 0 0 L 0 10 L 10 5 Z";
     -fx-background-color: darkgreen;
     -fx-background-radius: 5px;
-    -fx-pref-width: 15px;
-    -fx-pref-height: 15px;
+    -fx-border-color: transparent;
+    -fx-border-width: 2px;
+    -fx-pref-width: 16px;
+    -fx-pref-height: 16px;
+    -fx-focus-traversable: false;
     -fx-effect: none;
-    /*-fx-effect: dropshadow(one-pass-box, rgba(0,0,0,0.1), 2, 0.0, 0, 1);*/
+}
+
+.fader-box:focused .volume-fader .thumb {
+    -fx-border-color: black;
+    -fx-border-width: 2px;
 }
 
 Slider.volume-fader .thumb:hover {
     -fx-background-color: green;
+}
+
+Slider.volume-fader .thumb:focused {
+    -fx-border-color: black;
+    -fx-border-width: 1px;
 }
 
 Slider.volume-fader .track {

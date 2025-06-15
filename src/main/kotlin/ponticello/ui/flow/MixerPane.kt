@@ -35,6 +35,7 @@ import ponticello.model.registry.reference
 import ponticello.ui.actions.ServerActions
 import ponticello.ui.actions.undoable
 import ponticello.ui.controls.DecimalPrompt
+import ponticello.ui.controls.Knob
 import ponticello.ui.dock.MixerPaneState
 import ponticello.ui.dock.Side
 import ponticello.ui.dock.ToolPane
@@ -56,7 +57,11 @@ class MixerPane(
     override val type: Type
         get() = MixerPane
 
+    override val boxStyle: Array<String>
+        get() = arrayOf("object-box", "fader-box")
+
     private var channelsList: ObjectListView<MixerFlow.MixerComponent>? = null
+    private var masterFaderBox: Control? = null
 
     override val content: Parent
         get() {
@@ -65,10 +70,12 @@ class MixerPane(
                 val masterFader = createFaderBox(
                     mixer.targetBus, mixer.masterVolume, obj = null,
                 )
-                val box = (object : Control() {}).styleClass("object-box")
-                box.setRoot(masterFader)
-                box.setPseudoClassState("inline-content", true)
-                HBox(10.0, channelsList, box).alwaysVGrow()
+                masterFaderBox = (object : Control() {}).styleClass(*boxStyle).apply {
+                    setRoot(masterFader)
+                    setPseudoClassState("inline-content", true)
+                    setOnMouseClicked { requestFocus() }
+                }
+                HBox(10.0, channelsList, masterFaderBox).alwaysVGrow()
             } else BorderPane(Label("No mixer selected"))
         }
 
@@ -78,7 +85,7 @@ class MixerPane(
             field = value
             val mixer = value.get()
             listConfig.setMixer(mixer)
-            channelsList = mixer?.let { m -> ObjectListView(m.components, this) }
+            channelsList = mixer?.let { m -> ObjectListView(m.components, this, scrollable = true) }
             relayout()
         }
 
@@ -113,13 +120,15 @@ class MixerPane(
     private fun setupVolumeChangeWithArrowKeys() {
         addEventFilter(KeyEvent.KEY_PRESSED) { ev ->
             if (ev.modifiers.isNotEmpty()) return@addEventFilter
-            val selected = channelsList?.selectedObject() ?: return@addEventFilter
+            val selectedVolume =
+                if (ev.target == masterFaderBox) selectedMixer.get()?.masterVolume ?: return@addEventFilter
+                else channelsList?.selectedObject()?.volume ?: return@addEventFilter
             val delta = when (ev.code) {
                 KeyCode.DOWN -> -VOLUME_SPEC.step.get()
                 KeyCode.UP -> VOLUME_SPEC.step.get()
                 else -> return@addEventFilter
             }
-            setVolume(selected.volume, selected.volume.now + delta)
+            setVolume(selectedVolume, selectedVolume.now + delta)
         }
     }
 
@@ -147,23 +156,68 @@ class MixerPane(
     private fun createFaderBox(
         bus: ReactiveValue<BusReference>, volume: ReactiveVariable<Decimal>, obj: MixerFlow.MixerComponent?,
     ): VBox {
-        val nameLabel = Text()
-        nameLabel.textProperty().bind(bus.flatMap(BusReference::name).asObservableValue())
-        nameLabel.fill = Color.WHITE
-        nameLabel.rotate = -90.0
-        StackPane.setAlignment(nameLabel, Pos.BOTTOM_CENTER)
-        val namePane = StackPane(nameLabel).setFixedWidth(15.0)
-        nameLabel.translateYProperty().bind(nameLabel.textProperty().map { -nameLabel.prefWidth(-1.0) / 2 })
+        val namePane = createVerticalNameLabel(bus)
+        val fader = createFader(volume)
+        val volumeBox = createVolumeBox(volume, bus)
+        val scopeButton = ServerActions.scopeBus.withContext(bus).makeButton("medium-icon-button")
 
-        val fader = Slider(MixerFlow.MIN_VOLUME, MixerFlow.MAX_VOLUME, 0.0) styleClass "volume-fader"
-        fader.userData = volume.forEach { v ->
-            fader.value = v.toDouble()
+        fader.focusedProperty().addListener { _, _, focused ->
+            if (focused) {
+                if (obj != null) {
+                    channelsList!!.select(obj)
+                    channelsList!!.getBox(obj).requestFocus()
+                } else {
+                    masterFaderBox!!.requestFocus()
+                }
+            }
         }
-        fader.valueProperty().addListener { _, _, v ->
-            setVolume(volume, v.toDouble().withPrecision(1))
+        fader.showTickLabelsProperty().addListener { _, _, showTickLabels ->
+            if (!showTickLabels) {
+                fader.isShowTickLabels = true
+                fader.isShowTickMarks = true
+            }
         }
-        fader.orientation = Orientation.VERTICAL
 
+        val (top, bottom) =
+            if (obj != null) createPanKnobAndMuteSoloActionsBar(obj)
+            else createMasterMonoAndMuteButtons()
+        return VBox(
+            HBox(infiniteSpace(), top, infiniteSpace()),
+            Region() styleClass "fader-separator",
+            scopeButton.centered(),
+            volumeBox,
+            HBox(hspace(5.0), namePane, infiniteSpace(), fader, hspace(5.0)).alwaysVGrow(),
+            Region() styleClass "fader-separator",
+            bottom
+        ) styleClass "fader-layout"
+    }
+
+    private fun createMasterMonoAndMuteButtons(): Pair<HBox, StackPane> {
+        val monoButton = monoAction.withContext(selectedMixer.get()!!)
+            .makeTextButton("selector-button").styleClass("mono-button")
+        val monoButtonPane = HBox(infiniteSpace(), monoButton, infiniteSpace()).centerChildren()
+        monoButtonPane.prefHeight = 41.0
+
+        val masterMuteButton = masterMuteAction.withContext(selectedMixer.get()!!).makeButton("medium-icon-button")
+
+        return Pair(monoButtonPane, masterMuteButton.centered())
+    }
+
+    private fun createPanKnobAndMuteSoloActionsBar(obj: MixerFlow.MixerComponent): Pair<Knob, StackPane> {
+        val panKnob = listConfig.createPanKnob(obj.pan, radius = 20.0)
+
+        val muteAndSolo = ActionBar(
+            MixerComponentListConfig.muteAndSolo.withContext(obj),
+            buttonStyle = "mute-solo-button"
+        )
+
+        return Pair(panKnob, muteAndSolo.centered())
+    }
+
+    private fun createVolumeBox(
+        volume: ReactiveVariable<Decimal>,
+        bus: ReactiveValue<BusReference>,
+    ): HBox {
         val valueLabel = label(volume.map { v -> "$v db" }) styleClass "fader-volume"
         val volumeBox = HBox(infiniteSpace(), valueLabel, infiniteSpace()) styleClass "fader-volume-box"
         volumeBox.setOnMouseClicked { ev ->
@@ -172,41 +226,29 @@ class MixerPane(
                 .showDialog(ev) ?: return@setOnMouseClicked
         }
         setMargin(volumeBox, Insets(0.0, 3.0, 0.0, 3.0))
+        return volumeBox
+    }
 
-        val scopeButton = ServerActions.scopeBus.withContext(bus).makeButton("medium-icon-button")
+    private fun createVerticalNameLabel(bus: ReactiveValue<BusReference>): StackPane {
+        val nameLabel = Text()
+        nameLabel.textProperty().bind(bus.flatMap(BusReference::name).asObservableValue())
+        nameLabel.fill = Color.WHITE
+        nameLabel.rotate = -90.0
+        StackPane.setAlignment(nameLabel, Pos.BOTTOM_CENTER)
+        val namePane = StackPane(nameLabel).setFixedWidth(15.0)
+        nameLabel.translateYProperty().bind(nameLabel.textProperty().map { -nameLabel.prefWidth(-1.0) / 2 })
+        return namePane
+    }
 
-        val (top, bottom) = if (obj != null) {
-            val panKnob = listConfig.createPanKnob(obj.pan, radius = 20.0)
-
-            val muteAndSolo = ActionBar(
-                MixerComponentListConfig.muteAndSolo.withContext(obj),
-                buttonStyle = "mute-solo-button"
-            )
-
-            Pair(panKnob, muteAndSolo.centered())
-        } else {
-            val monoButton = monoAction.withContext(selectedMixer.get()!!)
-                .makeTextButton("selector-button").styleClass("mono-button")
-            val monoButtonPane = HBox(infiniteSpace(), monoButton, infiniteSpace()).centerChildren()
-            monoButtonPane.prefHeight = 41.0
-
-            val masterMuteButton = masterMuteAction.withContext(selectedMixer.get()!!).makeButton("medium-icon-button")
-
-            Pair(monoButtonPane, masterMuteButton.centered())
+    private fun createFader(volume: ReactiveVariable<Decimal>): Slider {
+        val fader = Slider(MixerFlow.MIN_VOLUME, MixerFlow.MAX_VOLUME, 0.0) styleClass "volume-fader"
+        fader.userData = volume.forEach { v ->
+            fader.value = v.toDouble()
         }
-        val layout = VBox(
-            3.0,
-            HBox(infiniteSpace(), top, infiniteSpace()),
-            Region() styleClass "fader-separator",
-            HBox(infiniteSpace(), scopeButton, infiniteSpace()),
-            volumeBox,
-            HBox(hspace(5.0), namePane, infiniteSpace(), fader, hspace(5.0)).alwaysVGrow(),
-            Region() styleClass "fader-separator",
-            bottom
-        )
-        layout.padding = Insets(5.0, 0.0, 5.0, 0.0)
-        layout.prefWidth = 60.0
-        return layout.centerChildren()
+        fader.valueProperty().addListener { _, _, v ->
+            setVolume(volume, v.toDouble().withPrecision(1))
+        }
+        return fader
     }
 
     override fun getContent(obj: MixerFlow.MixerComponent, mode: ObjectListView.DisplayMode): Parent = Region()

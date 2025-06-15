@@ -28,7 +28,7 @@ abstract class ParameterizedObjectDefPane<T : ConfigurableInstrumentObject>(
         override val enableAddObjectButton: Boolean
             get() = true
     }
-    private val parametersList = ObjectListView(def.parameters, config)
+    private val parametersList = ObjectListView(def.parameters, config, scrollable = false)
 
     init {
         val layout = VBox(parametersList, this.getContent(def))

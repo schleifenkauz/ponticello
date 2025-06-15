@@ -48,10 +48,11 @@ import reaktive.value.binding.map
 import reaktive.value.now
 import reaktive.value.reactiveValue
 
-class FlowGroupPane(private val group: AudioFlowGroup, ownWindow: Boolean): VBox(), ListDisplayConfig<AudioFlow> {
-    val flowsView = ObjectListView(group.flows, this)
+class FlowGroupPane(private val group: AudioFlowGroup, ownWindow: Boolean) : VBox(), ListDisplayConfig<AudioFlow> {
+    val flowsView = ObjectListView(group.flows, this, scrollable = true)
 
     init {
+        flowsView.itemsScrollPane.neverSquishHorizontally()
         if (ownWindow) {
             val nameControl = NameControl(group).setFixedWidth(150.0)
             val colorPicker = colorPicker(group.associatedColor).setFixedWidth(30.0)
@@ -95,6 +96,7 @@ class FlowGroupPane(private val group: AudioFlowGroup, ownWindow: Boolean): VBox
                     copy
                 }
             }
+
             ev.dragboard.hasContent(InstrumentObject.DATA_FORMAT) -> {
                 val registry = context[InstrumentRegistry]
                 val def = ev.dragboard.getFrom(registry, InstrumentObject.DATA_FORMAT) ?: return null
@@ -102,6 +104,7 @@ class FlowGroupPane(private val group: AudioFlowGroup, ownWindow: Boolean): VBox
                 val controls = ScorePane.getInitialControls(def, context, defaultBus = null, anchor) ?: return null
                 return InstrumentFlow.create(def, controls)
             }
+
             else -> null
         }
     }
