@@ -17,6 +17,7 @@ import javafx.scene.text.Text
 import org.kordamp.ikonli.Ikon
 import org.kordamp.ikonli.materialdesign2.MaterialDesignC
 import org.kordamp.ikonli.materialdesign2.MaterialDesignT
+import ponticello.impl.Logger
 import ponticello.model.flow.AudioFlowGroup
 import ponticello.model.flow.AudioFlows
 import ponticello.model.project.PonticelloProject
@@ -42,7 +43,7 @@ class AudioFlowsPane(flows: AudioFlows) : SearchableToolPane<AudioFlowGroup>(flo
         styleClass.add("flow-pane")
     }
 
-    override fun defaultState(): ToolPaneState = FlowPaneState()
+    override fun defaultState(): ToolPaneState = FlowPaneState.default()
 
     override fun afterSetup() {
         super.afterSetup()
@@ -51,7 +52,12 @@ class AudioFlowsPane(flows: AudioFlows) : SearchableToolPane<AudioFlowGroup>(flo
         if (state is FlowPaneState) {
             val flowBoxes = allFlowBoxes()
             for (idx in state.expandedFlows) {
-                flowBoxes[idx].toggleExpanded()
+                val box = flowBoxes.getOrNull(idx)
+                if (box == null) {
+                    Logger.warn("AudioFlow at index $idx not found", Logger.Category.Registries)
+                    continue
+                }
+                box.toggleExpanded()
             }
         }
     }
@@ -104,7 +110,7 @@ class AudioFlowsPane(flows: AudioFlows) : SearchableToolPane<AudioFlowGroup>(flo
         groupPane.flowsView.getBoxes()
     }
 
-    companion object : Type(13, "Flows") {
+    companion object : Type(uid = 13, "Flows") {
         override val icon: Ikon get() = MaterialDesignT.TUNE
 
         override val defaultSide: Side

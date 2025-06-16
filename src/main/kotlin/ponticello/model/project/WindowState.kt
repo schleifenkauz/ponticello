@@ -16,8 +16,19 @@ sealed class WindowState {
     private var width: Double? = null
     private var height: Double? = null
 
+    private var isFullScreen: Boolean? = null
+
     @Transient
     private var target: Window? = null
+
+    open fun saveFromTarget() {
+        val target = target ?: return
+        x = target.x.takeIf { it.isFinite() }
+        y = target.y.takeIf { it.isFinite() }
+        width = target.width.takeIf { it.isFinite() }
+        height = target.height.takeIf { it.isFinite() }
+        isFullScreen = target is Stage && target.isFullScreen
+    }
 
     open fun applyTo(window: Stage, defaultSize: Dimension2D?) {
         target = window
@@ -33,15 +44,8 @@ sealed class WindowState {
         } else {
             width?.let(window::setWidth)
             height?.let(window::setHeight)
+            window.isFullScreen = isFullScreen ?: false
         }
-    }
-
-    open fun saveFromTarget() {
-        val target = target ?: return
-        x = target.x.takeIf { it.isFinite() }
-        y = target.y.takeIf { it.isFinite() }
-        width = target.width.takeIf { it.isFinite() }
-        height = target.height.takeIf { it.isFinite() }
     }
 
     @Serializable

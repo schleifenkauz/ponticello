@@ -225,11 +225,14 @@ internal fun PluginBuilder.registerControlFactories() {
                 operator(" = ")
                 view(editor.defaultValue).minWidth = 30.0
                 space()
-                operator("(")
-                view(editor.min)//.minWidth = 30.0
-                operator("..")
-                view(editor.max)//.minWidth = 30.0
-                operator(")")
+                horizontal {
+                    operator("(")
+                    view(editor.min)//.minWidth = 30.0
+                    operator("..")
+                    view(editor.max)//.minWidth = 30.0
+                    operator(")")
+                    root.minWidth = 100.0
+                }
                 space()
                 keyword("step: ")
                 view(editor.step).minWidth = 30.0

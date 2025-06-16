@@ -75,6 +75,7 @@ class BufferRegistryPane(private val buffers: BufferRegistry) : ObjectRegistryPa
     }
 
     override fun afterSetup() {
+        super.afterSetup()
         header.children.addAfter(searchText, filterSelector)
     }
 

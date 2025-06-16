@@ -357,7 +357,7 @@ abstract class ScoreObjectView(
     }
 
     private fun dragTo(toX: Double, toY: Double) {
-        context[ScoreObjectDetailPane].hidePopup()
+        context[AppLayout].get<ScoreObjectDetailPane>().hidePopup()
         val movedObjects = context[ScoreObjectSelectionManager].selectedInstances + this.instance
         val minDeltaT = -movedObjects.minOf { inst -> inst.start }
         val maxDeltaT = movedObjects.minOf { inst -> inst.score!!.maxTime.now - inst.end }

@@ -51,11 +51,13 @@ sealed class SearchableToolPaneState : ToolPaneState() {
 class RegularSearchableToolPaneState : SearchableToolPaneState()
 
 @Serializable
-class FlowPaneState : SearchableToolPaneState() {
+class FlowPaneState private constructor(): SearchableToolPaneState() {
     var expandedFlows = emptyList<Int>()
 
-    init {
-        mode = ToolPaneMode.Docked
+    companion object {
+        fun default() = FlowPaneState().apply {
+            mode = ToolPaneMode.Docked
+        }
     }
 }
 

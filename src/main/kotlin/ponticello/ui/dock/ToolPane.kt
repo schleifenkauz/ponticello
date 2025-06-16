@@ -27,6 +27,7 @@ import ponticello.model.project.PonticelloProject
 import ponticello.ui.dock.ToolPaneMode.*
 import ponticello.ui.impl.DEFAULT_SCENE_FILL
 import ponticello.ui.impl.sceneFill
+import ponticello.ui.launcher.PonticelloApp.Companion.primaryStage
 import reaktive.value.ReactiveBoolean
 import reaktive.value.binding.Binding
 import reaktive.value.binding.equalTo
@@ -188,6 +189,7 @@ abstract class ToolPane : VBox() {
 
     protected open fun makeToolWindow(): Stage {
         val stage = Stage()
+        stage.initOwner(context[primaryStage])
         stage.title = title
         initialState?.windowBounds?.applyTo(stage) ?: stage.centerOnScreen()
         stage.scene = Scene(StackPane(this))

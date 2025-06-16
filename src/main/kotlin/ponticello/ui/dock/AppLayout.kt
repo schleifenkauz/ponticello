@@ -28,7 +28,7 @@ import ponticello.ui.actions.*
 import ponticello.ui.dock.Side.*
 import ponticello.ui.flow.AudioFlowsPane
 import ponticello.ui.flow.MixerPane
-import ponticello.ui.launcher.PonticelloLauncher
+import ponticello.ui.launcher.PonticelloMainActivity
 import ponticello.ui.launcher.ScoreObjectDetailPane
 import ponticello.ui.live.LauncherGridPane
 import ponticello.ui.live.LiveTaskRegistryPane
@@ -43,7 +43,7 @@ import kotlin.collections.set
 import kotlin.reflect.KClass
 
 class AppLayout(
-    private val launcher: PonticelloLauncher,
+    private val activity: PonticelloMainActivity,
     private val project: PonticelloProject,
     private val scoreView: NavigableScorePane,
     private val interactionConfigBar: InteractionConfigBar,
@@ -286,7 +286,7 @@ class AppLayout(
     private fun createToolbar(): Pane = BorderPane().apply {
         left = HBox(
             10.0,
-            toolbarPart(ProjectActions.withContext(launcher)),
+            toolbarPart(ProjectActions.withContext(activity.launcher)),
             toolbarPart(UndoRedoActions.withContext(scoreView.context[UndoManager])),
         )
         val playerBar = toolbarPart(PlaybackActions.global.withContext(context[ScorePlayer.MAIN]))
@@ -310,7 +310,7 @@ class AppLayout(
         right = HBox(
             topRightBar,
             hspace(10.0),
-            toolbarPart(QuitAction.withContext(launcher))
+            toolbarPart(WindowActions.all.withContext(activity))
         )
     } styleClass "toolbar"
 

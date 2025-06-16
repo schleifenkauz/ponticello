@@ -38,7 +38,7 @@ class PonticelloMainActivity(val project: PonticelloProject) : Activity() {
 
     override val context get() = project.context
 
-    private val launcher get() = context[PonticelloLauncher]
+    val launcher get() = context[PonticelloLauncher]
 
     init {
         context[PonticelloMainActivity] = this
@@ -49,7 +49,7 @@ class PonticelloMainActivity(val project: PonticelloProject) : Activity() {
         context[ContextualMidiReceiver].attachGrid(project[LAUNCHER_GRID])
     }
 
-    private val layout = AppLayout(launcher, project, mainScoreView, interactionConfig, timeCodeView)
+    private val appLayout by lazy { AppLayout(this, project, mainScoreView, interactionConfig, timeCodeView) }
 
     private fun setupMainScoreView() {
         mainScoreView.initialize()
@@ -82,18 +82,18 @@ class PonticelloMainActivity(val project: PonticelloProject) : Activity() {
         mainScoreView.displayWholeScore()
     }
 
-    override fun getLayout() = layout
+    override fun getLayout() = appLayout
 
     private fun registerMainActivityShortcuts() = primaryStage.scene.registerShortcuts {
         registerActions(ProjectActions.withContext(launcher))
-        registerActions(QuitAction.withContext(launcher))
+        registerActions(WindowActions.all.withContext(this@PonticelloMainActivity))
         registerActions(ScoreNavigationActions.withContext(mainScoreView))
         interactionConfig.addGridRelatedShortcuts(this)
         val objectCtx = ObjectActionContext.MultiObjectContext(context[ScoreObjectSelectionManager])
         registerActions(ObjectActions.all.withContext(objectCtx))
         SelectionRelatedActions.addShortcuts(this, context)
         registerActions(UndoRedoActions.withContext(context[UndoManager]))
-        registerActions(layout.actions())
+        registerActions(appLayout.actions())
     }
 
     override fun close() {

@@ -20,7 +20,7 @@ import org.kordamp.ikonli.javafx.FontIcon
 import org.kordamp.ikonli.material2.Material2AL
 import org.kordamp.ikonli.material2.Material2MZ
 import ponticello.ui.actions.ProjectActions
-import ponticello.ui.actions.QuitAction
+import ponticello.ui.actions.WindowActions
 import ponticello.ui.impl.sceneFill
 import ponticello.ui.impl.showDialog
 import java.io.File
@@ -40,7 +40,10 @@ class LauncherActivity(private val launcher: PonticelloLauncher) : Activity() {
 
     private val openBtn = ProjectActions.openProject.withContext(launcher).makeButton("large-icon-button")
     private val createBtn = ProjectActions.newProject.withContext(launcher).makeButton("large-icon-button")
-    private val quitBtn = ActionBar(QuitAction.withContext(launcher), buttonStyle = "large-icon-button")
+    private val quitBtn = ActionBar(
+        listOf(WindowActions.quitAction.withContext(launcher)),
+        buttonStyle = "large-icon-button"
+    )
     private val header = HBox(searchField, openBtn, createBtn, infiniteSpace(), quitBtn)
         .styleClass("startup-screen-top-bar")
 
@@ -76,7 +79,8 @@ class LauncherActivity(private val launcher: PonticelloLauncher) : Activity() {
             primaryStage.isResizable = false
             primaryStage.centerOnScreen()
         }
-        primaryStage.scene.root.registerShortcuts(launcherActions.withContext(launcher) + QuitAction.withContext(launcher))
+        val actions = launcherActions.withContext(launcher) + WindowActions.quitAction.withContext(launcher)
+        primaryStage.scene.root.registerShortcuts(actions)
     }
 
     private class ProjectBox(val activity: LauncherActivity, val projectFile: File) : HBox() {

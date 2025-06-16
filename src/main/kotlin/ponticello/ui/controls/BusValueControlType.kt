@@ -82,7 +82,7 @@ data object BusValueControlType : ControlType<BusValueControl>() {
             val controls = instrument.getDefaultControls(null)
             val outBus = controls.getOrNull("out")?.now
             if (outBus is BusControl) {
-                outBus.bus.now = (ctrl.now as BusControl).bus.now
+                outBus.bus.now = (ctrl.now as BusValueControl).bus.now
             }
             val synthObj = SoundProcess.create(name, instrument, controls)
             synthObj.setInitialSize(obj.duration, height = 0.05.asY)
