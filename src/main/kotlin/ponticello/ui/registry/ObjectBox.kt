@@ -68,12 +68,21 @@ class ObjectBox<O : Any>(val parent: ObjectListView<O>, val obj: O) : Control() 
         }
     }
 
-    val actionBar = ActionBar(
-        config.getActions(this) + objectActions.withContext(this),
-        config.buttonStyle
-    )
+    val actionBar by lazy {
+        ActionBar(
+            config.getActions(this) + objectActions.withContext(this),
+            config.buttonStyle
+        )
+    }
 
-    val header = HBox() styleClass "object-box-header"
+    val header by lazy {
+        val box = HBox() styleClass "object-box-header"
+        if (nameDisplay != null) box.children.add(nameDisplay)
+        box.children.addAll(config.getHeaderContent(obj))
+        if (config.addSpaceBeforeActionBar) box.children.add(infiniteSpace())
+        box.children.add(actionBar)
+        box
+    }
 
     var content: Parent? = null
         set(value) {
@@ -93,13 +102,7 @@ class ObjectBox<O : Any>(val parent: ObjectListView<O>, val obj: O) : Control() 
     }
 
     init {
-        if (nameDisplay != null) header.children.add(nameDisplay)
-        header.children.addAll(config.getHeaderContent(obj))
-        if (config.addSpaceBeforeActionBar) header.children.add(infiniteSpace())
-        header.children.add(actionBar)
-        header.centerChildren()
         isFocusTraversable = true
-
         addEventHandler(MouseEvent.MOUSE_CLICKED) { ev ->
             parent.select(this)
             if (ev.clickCount == 2) {

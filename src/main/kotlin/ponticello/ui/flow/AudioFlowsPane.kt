@@ -1,6 +1,9 @@
 package ponticello.ui.flow
 
-import fxutils.actions.*
+import fxutils.actions.ContextualizedAction
+import fxutils.actions.button
+import fxutils.actions.collectActions
+import fxutils.actions.makeButton
 import fxutils.centerChildren
 import fxutils.setFixedWidth
 import fxutils.vspace
@@ -25,8 +28,8 @@ import ponticello.model.project.flows
 import ponticello.ui.dock.*
 import ponticello.ui.impl.colorPicker
 import ponticello.ui.registry.ObjectBox
+import ponticello.ui.registry.ObjectListView
 import ponticello.ui.registry.ObjectListView.DisplayMode
-import reaktive.value.binding.not
 import reaktive.value.fx.asObservableValue
 
 class AudioFlowsPane(flows: AudioFlows) : SearchableToolPane<AudioFlowGroup>(flows) {
@@ -122,10 +125,9 @@ class AudioFlowsPane(flows: AudioFlows) : SearchableToolPane<AudioFlowGroup>(flo
 
         private val groupActions = collectActions<ObjectBox<AudioFlowGroup>> {
             add(FlowGroupPane.toggleActiveAction) { box -> box.obj }
-            add(FlowGroupPane.addFlowAction.map { box: ObjectBox<AudioFlowGroup> -> box.obj }) {
-                enableWhen { box -> box.isCollapsed.not() }
-                ifNotApplicable(Action.IfNotApplicable.Hide)
-            }
+            addAll(ObjectListView.listActions.map { box: ObjectBox<AudioFlowGroup> ->
+                (box.content as? FlowGroupPane)?.flowsView
+            })
         }
     }
 }

@@ -6,6 +6,7 @@ import fxutils.actions.*
 import fxutils.prompt.InfoPrompt
 import fxutils.prompt.SimpleSearchableListView
 import fxutils.prompt.TextPrompt
+import javafx.event.Event
 import javafx.geometry.Point2D
 import javafx.scene.Node
 import javafx.scene.Parent
@@ -18,13 +19,17 @@ import javafx.scene.input.TransferMode.COPY_OR_MOVE
 import javafx.scene.layout.HBox
 import javafx.scene.layout.VBox
 import org.kordamp.ikonli.material2.Material2AL
-import org.kordamp.ikonli.materialdesign2.*
+import org.kordamp.ikonli.materialdesign2.MaterialDesignC
+import org.kordamp.ikonli.materialdesign2.MaterialDesignE
+import org.kordamp.ikonli.materialdesign2.MaterialDesignR
+import org.kordamp.ikonli.materialdesign2.MaterialDesignS
 import ponticello.model.flow.*
 import ponticello.model.obj.FlowReference
 import ponticello.model.obj.InstrumentObject
 import ponticello.model.obj.resolve
 import ponticello.model.obj.withName
 import ponticello.model.registry.InstrumentRegistry
+import ponticello.model.registry.ObjectList
 import ponticello.model.registry.reference
 import ponticello.sc.Identifier
 import ponticello.sc.Rate
@@ -154,6 +159,20 @@ class FlowGroupPane(private val group: AudioFlowGroup, ownWindow: Boolean) : VBo
         }
     }
 
+    override fun createNewObject(ev: Event?, list: ObjectList<AudioFlow>): AudioFlow? {
+        val options = FlowOption.getOptions(context)
+        val option = SimpleSearchableListView(options, "Add flow").showPopup(ev) ?: return null
+        val defaultName = option.defaultName()
+        val takenFlowNames = context[AudioFlows].allFlows().mapTo(mutableSetOf()) { f -> f.name.now }
+        val idx = (1..Int.MAX_VALUE).first { idx -> "${defaultName}_$idx" !in takenFlowNames }
+        val name = FlowNamePrompt(takenFlowNames, "Flow name", "${defaultName}_$idx")
+            .showDialog(ev) ?: return null
+        val anchor = ev.popupAnchor()
+        val flow = option.createFlow(context, anchor) ?: return  null
+        flow.setInitialName(name)
+        return flow
+    }
+
     private class FlowNamePrompt(
         private val takenFlowNames: Set<String>,
         title: String, initialText: String,
@@ -179,26 +198,8 @@ class FlowGroupPane(private val group: AudioFlowGroup, ownWindow: Boolean) : VBo
             executes { grp -> grp.toggleActive() }
         }
 
-        val addFlowAction = action<AudioFlowGroup>("Add flow") {
-            icon(MaterialDesignP.PLUS)
-            executes { group, ev ->
-                val options = FlowOption.getOptions(group.context)
-                val option = SimpleSearchableListView(options, "Add flow").showPopup(ev) ?: return@executes
-                val defaultName = option.defaultName()
-                val takenFlowNames = group.context[AudioFlows].allFlows().mapTo(mutableSetOf()) { f -> f.name.now }
-                val idx = (1..Int.MAX_VALUE).first { idx -> "${defaultName}_$idx" !in takenFlowNames }
-                val name = FlowNamePrompt(takenFlowNames, "Flow name", "${defaultName}_$idx")
-                    .showDialog(ev) ?: return@executes
-                val anchor = ev.popupAnchor()
-                val flow = option.createFlow(group.context, anchor) ?: return@executes
-                flow.setInitialName(name)
-                group.flows.add(flow)
-            }
-        }
-
         val groupActions = collectActions {
             add(toggleActiveAction)
-            add(addFlowAction)
         }
 
         private val flowActions = collectActions<AudioFlow> {
