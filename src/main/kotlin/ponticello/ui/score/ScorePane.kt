@@ -382,7 +382,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
                         val initialName = option.defaultName(context[ScoreObjectRegistry])
                         val name = NamePrompt(context[ScoreObjectRegistry], "Name for object", initialName)
                             .showDialog(scene.window, anchor) ?: return
-                        val obj = createNewObject(option, ev) ?: return
+                        val obj = createNewObject(option, selection.rect) ?: return
                         obj.withName(name)
                     }
                     addObject(obj, selection)
@@ -410,11 +410,11 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
         }
     }
 
-    private fun createNewObject(option: NewObjectOption, ev: MouseEvent): ScoreObject? {
+    private fun createNewObject(option: NewObjectOption, rect: Rectangle): ScoreObject? {
         return when (option) {
             is NewObjectOption.Process -> {
                 val defaultBus = associatedObject?.defaultBusRef?.now?.get()
-                val anchor = Point2D(ev.screenX, ev.screenY)
+                val anchor = localToScreen(rect.middlePoint)
                 val controls = getInitialControls(option.def, context, defaultBus, anchor) ?: return null
                 SoundProcess(reactiveVariable(option.def.reference()), controls)
             }
