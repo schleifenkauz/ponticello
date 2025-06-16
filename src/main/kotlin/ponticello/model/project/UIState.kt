@@ -6,6 +6,7 @@ import bundles.set
 import hextant.context.Context
 import javafx.event.Event
 import kotlinx.serialization.Serializable
+import ponticello.impl.DecimalRange
 import ponticello.model.obj.AbstractContextualObject
 import ponticello.model.obj.InstrumentObject
 import ponticello.model.obj.InstrumentReference
@@ -15,6 +16,7 @@ import ponticello.model.score.TimeUnit
 import ponticello.ui.dock.Side
 import ponticello.ui.dock.SideBarState
 import ponticello.ui.dock.ToolPaneState
+import ponticello.ui.launcher.PonticelloMainActivity
 import ponticello.ui.registry.SimpleSearchableRegistryView
 import reaktive.value.ReactiveVariable
 import reaktive.value.now
@@ -28,6 +30,7 @@ class UIState private constructor(
     val askForCloneNames: ReactiveVariable<Boolean> = reactiveVariable(false),
     val askForGroupNames: ReactiveVariable<Boolean> = reactiveVariable(false),
     val controlsDisplay: ReactiveVariable<InlineControlsDisplay> = reactiveVariable(InlineControlsDisplay.NONE),
+    var mainScoreDisplayRange: DecimalRange? = null,
     var toolPaneStates: List<ToolPaneState> = emptyList(),
     var sideBarStates: List<SideBarState> = emptyList(),
     private val windowStates: MutableList<WindowState> = mutableListOf(),
@@ -59,6 +62,7 @@ class UIState private constructor(
     }
 
     fun saveWindowStates() {
+        mainScoreDisplayRange = context[PonticelloMainActivity].mainScoreView.displayRange
         for (state in windowStates) {
             state.saveFromTarget()
         }

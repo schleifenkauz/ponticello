@@ -28,7 +28,7 @@ class PonticelloMainActivity(val project: PonticelloProject) : Activity() {
         project.context[PonticelloMainActivity] = this
     }
 
-    private val mainScoreView: NavigableScorePane = NavigableScorePane(project.mainScore, project.context)
+    val mainScoreView: NavigableScorePane = NavigableScorePane(project.mainScore, project.context)
 
     private val timeCodeView: TimeCodeView = TimeCodeView()
 
@@ -81,7 +81,9 @@ class PonticelloMainActivity(val project: PonticelloProject) : Activity() {
         val state = project[UI_STATE].getWindowState(WindowState.Reference.ByTitle("MainWindow"), ::RegularWindowState)
         val screenSize = Screen.getPrimary().bounds
         state.applyTo(primaryStage, defaultSize = Dimension2D(screenSize.width, screenSize.height))
-        mainScoreView.displayWholeScore()
+        val displayRange = project[UI_STATE].mainScoreDisplayRange
+        if (displayRange == null) mainScoreView.displayWholeScore()
+        else mainScoreView.display(displayRange.start, displayRange.endInclusive)
     }
 
     override fun getLayout() = appLayout

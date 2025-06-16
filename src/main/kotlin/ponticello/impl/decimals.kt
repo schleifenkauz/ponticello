@@ -1,5 +1,6 @@
 package ponticello.impl
 
+import kotlinx.serialization.Serializable
 import ponticello.model.score.ObjectPosition
 import kotlin.math.*
 
@@ -7,6 +8,7 @@ typealias DoubleRange = ClosedFloatingPointRange<Double>
 
 val DoubleRange.asDecimal: DecimalRange get() = start.toDecimal()..endInclusive.toDecimal()
 
+@Serializable
 data class DecimalRange(
     override val start: Decimal, override val endInclusive: Decimal,
 ) : ClosedFloatingPointRange<Decimal> {
