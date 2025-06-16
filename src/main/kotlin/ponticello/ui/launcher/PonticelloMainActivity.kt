@@ -7,6 +7,7 @@ import fxutils.actions.registerActions
 import fxutils.registerShortcuts
 import fxutils.undo.UndoManager
 import javafx.geometry.Dimension2D
+import javafx.scene.input.KeyCombination
 import javafx.stage.Screen
 import javafx.stage.StageStyle
 import ponticello.model.flow.AudioFlows
@@ -70,6 +71,7 @@ class PonticelloMainActivity(val project: PonticelloProject) : Activity() {
     }
 
     override fun beforeShowing() {
+        primaryStage.fullScreenExitKeyCombination = KeyCombination.NO_MATCH
         primaryStage.scene.registerGlobalShortcuts(context)
         registerMainActivityShortcuts()
         primaryStage.initStyle(StageStyle.UNDECORATED)

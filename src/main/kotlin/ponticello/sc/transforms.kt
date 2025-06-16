@@ -26,7 +26,7 @@ sealed class Warp : ScExpr {
             writer.append("\\lin")
         }
 
-        override fun mappingFunction(min: String, max: String): String = "range($min, $max)"
+        override fun mappingFunction(min: String, max: String): String = "linlin(0, 1, $min, $max)"
     }
 
     object Exponential : Warp() {
@@ -35,7 +35,7 @@ sealed class Warp : ScExpr {
             writer.append("\\exp")
         }
 
-        override fun mappingFunction(min: String, max: String): String = "exprange($min, $max)"
+        override fun mappingFunction(min: String, max: String): String = "linexp(0, 1, $min, $max)"
     }
 
     data class Monomial(val exponent: Decimal) : Warp() {
@@ -46,7 +46,7 @@ sealed class Warp : ScExpr {
         }
 
         override fun mappingFunction(min: String, max: String): String =
-            "curverange($min, $max, $exponent)"
+            "lincurve(0, 0, $min, $max, $exponent)"
     }
 
     companion object {
