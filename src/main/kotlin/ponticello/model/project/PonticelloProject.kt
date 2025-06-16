@@ -10,6 +10,7 @@ import ponticello.model.score.ScoreObject
 import ponticello.sc.client.SuperColliderClient
 import ponticello.ui.dock.AppLayout
 import ponticello.ui.launcher.ProgressIndicator
+import reaktive.value.now
 import java.io.File
 
 class PonticelloProject private constructor(val components: Map<Component<out ContextualObject>, ContextualObject>) {
@@ -39,20 +40,22 @@ class PonticelloProject private constructor(val components: Map<Component<out Co
 
     fun saveTo(projectDirectory: File): Boolean {
         for (inst in mainScore.allInstances()) {
-            if (inst.obj !is ScoreObject.Unresolved && inst.obj !in objects) {
+            if (inst.obj !is ScoreObject.Unresolved && !objects.has(inst.obj.name.now)) {
                 Logger.warn("Had to add object for $inst", Logger.Category.Project)
                 objects.add(inst.obj)
+            }
+        }
+        if (context.hasProperty(AppLayout)) {
+            try {
+                context[AppLayout].saveLayoutState()
+            } catch (e: Exception) {
+                Logger.error("Failed to save layout state!", e)
             }
         }
         try {
             get(UI_STATE).saveWindowStates()
         } catch (e: Exception) {
             Logger.error("Failed to save window states!", e)
-        }
-        try {
-            context[AppLayout].saveLayoutState()
-        } catch (e: Exception) {
-            Logger.error("Failed to save layout state!", e)
         }
         this.projectDirectory = projectDirectory
         dataDir.mkdirs()

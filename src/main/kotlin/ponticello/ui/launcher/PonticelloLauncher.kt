@@ -39,6 +39,7 @@ import ponticello.model.registry.GlobalDefinitionLibrary
 import ponticello.sc.client.ConsoleMonitor
 import ponticello.sc.client.OSCSuperColliderClient
 import ponticello.sc.client.SuperColliderClient
+import ponticello.ui.dock.AppLayout
 import ponticello.ui.impl.showDialog
 import ponticello.ui.launcher.PonticelloApp.Companion.primaryStage
 import ponticello.ui.midi.ContextualMidiReceiver
@@ -76,6 +77,7 @@ class PonticelloLauncher {
     private lateinit var currentActivity: Activity
 
     private fun <A : Activity> launchActivity(description: String, createActivity: () -> A): A? {
+        currentActivity.hide()
         val stage = Stage()
         stage.setOnCloseRequest { closeRequest() }
         rootContext[primaryStage] = stage
@@ -87,7 +89,6 @@ class PonticelloLauncher {
             showLauncher()
             return null
         }
-        currentActivity.hide()
         currentActivity = activity
         activity.show(stage)
         return activity
@@ -101,6 +102,8 @@ class PonticelloLauncher {
 
     private fun saveChanges(autoSave: Boolean = false): Boolean? {
         val project = getActiveProject() ?: return false
+        project.context[AppLayout].saveLayoutState()
+        project[UI_STATE].saveWindowStates()
         project.save(UI_STATE)
         if (autoSave) {
             val ok = saveProject()

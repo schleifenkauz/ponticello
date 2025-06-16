@@ -5,6 +5,7 @@ import bundles.publicProperty
 import bundles.set
 import fxutils.actions.registerActions
 import fxutils.registerShortcuts
+import fxutils.runFXWithTimeout
 import fxutils.undo.UndoManager
 import javafx.geometry.Dimension2D
 import javafx.scene.input.KeyCombination
@@ -81,9 +82,14 @@ class PonticelloMainActivity(val project: PonticelloProject) : Activity() {
         val state = project[UI_STATE].getWindowState(WindowState.Reference.ByTitle("MainWindow"), ::RegularWindowState)
         val screenSize = Screen.getPrimary().bounds
         state.applyTo(primaryStage, defaultSize = Dimension2D(screenSize.width, screenSize.height))
-        val displayRange = project[UI_STATE].mainScoreDisplayRange
-        if (displayRange == null) mainScoreView.displayWholeScore()
-        else mainScoreView.display(displayRange.start, displayRange.endInclusive)
+    }
+
+    override fun afterShowing() {
+        runFXWithTimeout(20) {
+            val displayRange = project[UI_STATE].mainScoreDisplayRange
+            if (displayRange == null) mainScoreView.displayWholeScore()
+            else mainScoreView.display(displayRange.start, displayRange.endInclusive)
+        }
     }
 
     override fun getLayout() = appLayout

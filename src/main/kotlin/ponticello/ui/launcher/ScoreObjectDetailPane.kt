@@ -1,8 +1,5 @@
 package ponticello.ui.launcher
 
-import bundles.PublicProperty
-import bundles.publicProperty
-import bundles.set
 import fxutils.SubWindow
 import fxutils.actions.action
 import fxutils.actions.registerShortcuts
@@ -34,6 +31,10 @@ import ponticello.ui.score.ScoreObjectSelectionManager
 import ponticello.ui.score.ScoreObjectView
 import reaktive.Observer
 import reaktive.value.binding.map
+import kotlin.collections.firstOrNull
+import kotlin.collections.listOf
+import kotlin.collections.mutableMapOf
+import kotlin.collections.set
 
 class ScoreObjectDetailPane : ToolPane() {
     private val detached = mutableMapOf<ScoreObject, SubWindow>()
@@ -56,7 +57,6 @@ class ScoreObjectDetailPane : ToolPane() {
                 updateContent(focused)
             }
         }
-        context[ScoreObjectDetailPane] = this
     }
 
     override fun defaultState(): ToolPaneState = ToolPaneState.docked
@@ -145,8 +145,7 @@ class ScoreObjectDetailPane : ToolPane() {
 
     private fun windowTitle(view: ScoreObjectView) = view.obj.name.map { name -> "Object $name" }
 
-    companion object : PublicProperty<ScoreObjectDetailPane> by publicProperty("DetailPaneManager"),
-        Type(5, "Score Object Details") {
+    companion object: Type(5, "Score Object Details") {
 
         override val icon: Ikon
             get() = MaterialDesignT.TUNE_VARIANT

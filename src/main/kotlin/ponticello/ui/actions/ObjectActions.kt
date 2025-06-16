@@ -95,7 +95,7 @@ object ObjectActions {
             applicableOn { view -> !view.parentPane.isRoot(view.obj) }
             executeSingle { view, ev ->
                 if (ev.isTargetTextInput && !ev.isAltDown()) return@executeSingle
-                val pane = view.context[ScoreObjectDetailPane]
+                val pane = view.context[AppLayout].get<ScoreObjectDetailPane>()
                 pane.updateContent(view)
                 pane.setShowing(true)
             }

@@ -103,9 +103,7 @@ class InstrumentRegistryPane(
             is AddObjectOption.ObjectFromGlobalLib -> {
                 val name = option.name
                 val def = registry.context[GlobalDefinitionLibrary.instruments].get(name) ?: return null
-                return def.takeIf {
-                    !registry.has(name) || YesNoPrompt("Overwrite ${instruments.objectType} $name?").showDialog(ev) == true
-                }
+                return def
             }
         }
     }

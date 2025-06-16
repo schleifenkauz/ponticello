@@ -16,6 +16,7 @@ import javafx.scene.layout.Region
 import javafx.scene.layout.StackPane
 import javafx.scene.layout.VBox
 import javafx.scene.robot.Robot
+import javafx.stage.Modality
 import javafx.stage.Popup
 import javafx.stage.Stage
 import org.kordamp.ikonli.Ikon
@@ -191,6 +192,7 @@ abstract class ToolPane : VBox() {
     protected open fun makeToolWindow(): Stage {
         val stage = Stage()
         stage.initOwner(context[primaryStage])
+        stage.initModality(Modality.NONE)
         stage.title = title
         initialState?.windowBounds?.applyTo(stage) ?: stage.centerOnScreen()
         stage.scene = Scene(StackPane(this))

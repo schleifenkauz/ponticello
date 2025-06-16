@@ -6,6 +6,7 @@ import javafx.scene.Parent
 import javafx.scene.Scene
 import javafx.scene.image.Image
 import javafx.stage.Stage
+import javafx.stage.Window
 
 abstract class Activity {
     lateinit var primaryStage: Stage
@@ -31,7 +32,9 @@ abstract class Activity {
 
     fun hide() {
         close()
-        primaryStage.hide()
+        for (window in Window.getWindows().toList()) {
+            window.hide()
+        }
     }
 
     protected open fun close() {}

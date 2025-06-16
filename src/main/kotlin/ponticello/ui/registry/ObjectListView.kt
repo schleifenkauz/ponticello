@@ -4,6 +4,7 @@ import fxutils.*
 import fxutils.actions.Action
 import fxutils.actions.collectActions
 import fxutils.actions.registerActions
+import fxutils.prompt.YesNoPrompt
 import javafx.application.Platform
 import javafx.event.Event
 import javafx.geometry.Dimension2D
@@ -25,6 +26,7 @@ import org.kordamp.ikonli.materialdesign2.MaterialDesignP
 import org.kordamp.ikonli.materialdesign2.MaterialDesignV
 import ponticello.model.obj.RenamableObject
 import ponticello.model.obj.withName
+import ponticello.model.registry.NamedObject
 import ponticello.model.registry.NamedObjectList
 import ponticello.model.registry.ObjectList
 import ponticello.model.registry.ObjectRegistry
@@ -225,6 +227,10 @@ class ObjectListView<O : Any>(
 
     private fun addObject(ev: Event? = null) {
         val newObj = config.createNewObject(ev, source) ?: return
+        if (source is NamedObjectList && newObj is NamedObject && source.has(newObj.name.now)) {
+            val prompt = YesNoPrompt("Overwrite ${source.objectType} ${newObj.name.now}?")
+            if (prompt.showDialog(ev) != true) return
+        }
         source.add(newObj)
     }
 
