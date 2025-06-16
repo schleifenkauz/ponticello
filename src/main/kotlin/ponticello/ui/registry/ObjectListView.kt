@@ -238,10 +238,8 @@ class ObjectListView<O : Any>(
 
     private fun updateRoot(mode: DisplayMode) {
         if (boxes.isEmpty()) {
-            val root =
-                if (config.enableAddObjectButton) addObjectButton()
-                else emptyDisplay()
-            setRoot(root)
+            if (config.enableAddObjectButton) setRoot(addObjectButton())
+            else setRoot(emptyDisplay())
         } else {
             if (mode == DisplayMode.DetailsPane) {
                 displayContent(selectedBox.now)
@@ -305,11 +303,17 @@ class ObjectListView<O : Any>(
 
     override fun removed(obj: O) = Platform.runLater {
         val box = boxesCache[obj] ?: return@runLater
-        boxes.remove(box)
+        val idx = boxes.indexOf(box)
+        boxes.removeAt(idx)
         itemsLayout.children.remove(box)
         box.subWindow?.hide()
-        if (displayedContent == box.content) {
-            displayContent(null)
+        if (selectedBox.now == box) {
+            val nextToSelect = boxes.getOrNull(idx + 1) ?: boxes.getOrNull(idx - 1)
+            if (nextToSelect != null) {
+                select(nextToSelect)
+            } else {
+                deselectAll()
+            }
         }
         updateRoot(mode.now)
         autoResize()
@@ -321,6 +325,7 @@ class ObjectListView<O : Any>(
     }
 
     fun refilter() {
+        //TODO we could use isManaged/isVisible here.
         boxes.clear()
         source.filter(config::filter).mapTo(boxes) { obj -> getBox(obj) }
         itemsLayout.children.setAll(boxes)
