@@ -21,6 +21,7 @@ import ponticello.ui.impl.makeSubWindow
 import ponticello.ui.launcher.PonticelloApp.Companion.primaryStage
 import ponticello.ui.registry.ObjectListView.DisplayMode
 import reaktive.value.binding.*
+import reaktive.value.binding.impl.notNull
 import reaktive.value.fx.asObservableValue
 import reaktive.value.now
 import reaktive.value.reactiveValue
@@ -84,9 +85,12 @@ class ObjectBox<O : Any>(val parent: ObjectListView<O>, val obj: O) : Control() 
         box
     }
 
-    var content: Parent? = null
+    private var _content = reactiveVariable<Parent?>(null)
+
+    var content: Parent?
+        get() = _content.now
         set(value) {
-            field = value
+            _content.now = value
             if (value != null) {
                 val visible = (parent.mode.notEqualTo(DisplayMode.Collapsable) or expanded)
                     .asObservableValue()
@@ -221,7 +225,9 @@ class ObjectBox<O : Any>(val parent: ObjectListView<O>, val obj: O) : Control() 
                         otherwise = { MaterialDesignC.CHEVRON_DOWN }
                     )
                 }
-                enableWhen { box -> box.parent.mode.equalTo(DisplayMode.Collapsable) }
+                enableWhen { box ->
+                    box.parent.mode.equalTo(DisplayMode.Collapsable) and box._content.notNull()
+                }
                 ifNotApplicable(Action.IfNotApplicable.Hide)
                 executes { box, _ -> box.toggleExpanded() }
             }
