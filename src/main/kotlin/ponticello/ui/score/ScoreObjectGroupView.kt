@@ -21,7 +21,7 @@ class ScoreObjectGroupView(
     override val obj: ScoreObjectGroup,
     inst: ScoreObjectInstance,
 ) : ScoreObjectView(inst) {
-    lateinit var scorePane: ScorePane
+    lateinit var scorePane: SubScorePane
         private set
 
     init {
@@ -37,12 +37,13 @@ class ScoreObjectGroupView(
         children.add(topBar)
         scorePane = SubScorePane(instance, obj, parentPane, context)
         scorePane.layoutYProperty().bind(inlineControls.heightProperty())
-        scorePane.prefWidthProperty().bind(widthProperty())
-        scorePane.prefHeightProperty().bind(heightProperty().subtract(inlineControls.heightProperty()))
+        scorePane.prefWidthProperty().bind(prefWidthProperty())
+        scorePane.prefHeightProperty().bind(prefHeightProperty().subtract(inlineControls.heightProperty()))
         scorePane.backgroundProperty().bind(backgroundColor.map { color ->
             Background(BackgroundFill(color, CornerRadii.EMPTY, null))
         }.asObservableValue())
         children.add(scorePane)
+        scorePane.initialize()
     }
 
     override fun setupDetailPane(pane: DetailPane) {

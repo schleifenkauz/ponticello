@@ -8,10 +8,7 @@ import javafx.scene.input.MouseEvent
 import javafx.scene.layout.Pane
 import javafx.scene.paint.Color
 import javafx.scene.shape.Line
-import ponticello.impl.Decimal
-import ponticello.impl.div
-import ponticello.impl.replacePrefix
-import ponticello.impl.round
+import ponticello.impl.*
 import ponticello.model.obj.MeterObject
 import ponticello.model.obj.project
 import ponticello.model.player.ScorePlayer
@@ -52,6 +49,10 @@ abstract class RootScorePane(score: Score, context: Context) : ScorePane(score, 
         isFocusTraversable = true
         setupPositionTracker()
     }
+
+    override fun getScoreY(screenY: Double): Decimal = (screenY / height).asY
+
+    override fun getScreenY(scoreY: Decimal): Double = (scoreY * height).toDouble()
 
     private fun setupPositionTracker() {
         positionTracker.startY = 5.0
@@ -108,7 +109,7 @@ abstract class RootScorePane(score: Score, context: Context) : ScorePane(score, 
 
     private fun layoutObjects() {
         val repaintTrigger = latestRepaintTrigger
-        val maxTime = 25L //determines how much time is spent consecutively on the Application Thread
+        val maxTime = 2500L //determines how much time is spent consecutively on the Application Thread
         val itr = views.iterator()
         thread {
             while (itr.hasNext()) {

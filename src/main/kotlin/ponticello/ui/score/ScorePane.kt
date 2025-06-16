@@ -47,7 +47,6 @@ import ponticello.ui.registry.SimpleSearchableRegistryView
 import reaktive.value.now
 import reaktive.value.reactiveVariable
 import java.util.concurrent.CompletableFuture
-import kotlin.math.absoluteValue
 
 abstract class ScorePane(val score: Score, val context: Context) : Pane(), ScoreListener, TimeBlock {
     protected var selectedArea: RectangleSelection? = null
@@ -95,9 +94,9 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
 
     override fun getWidth(duration: Decimal): Double = (duration * pixelsPerSecond).toDouble()
 
-    open fun getScoreY(screenY: Double): Decimal = (screenY / root.height).asY
+    abstract fun getScoreY(screenY: Double): Decimal
 
-    open fun getScreenY(scoreY: Decimal): Double = (scoreY * root.height).toDouble()
+    abstract fun getScreenY(scoreY: Decimal): Double
 
     protected open fun addTime(location: Decimal, amount: Decimal) {
         score.addTime(location, amount)
@@ -123,8 +122,8 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
                 children.remove(view)
                 continue
             }
-            val resizeHorizontal = (view.getDisplayWidth() - view.prefWidth).absoluteValue > 0.01
-            val resizeVertical = (view.getDisplayHeight() - view.prefHeight).absoluteValue > 0.01
+            val resizeHorizontal = !view.prefWidth.isFinite() || view.getDisplayWidth() != view.prefWidth
+            val resizeVertical = !view.prefHeight.isFinite() || view.getDisplayHeight() != view.prefHeight
             if (resizeHorizontal || resizeVertical) Platform.runLater {
                 view.setPrefSize(view.getDisplayWidth(), view.getDisplayHeight())
                 view.rescale()
@@ -207,9 +206,12 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
         val view = createObjectView(inst.obj, inst)
         view.initialize(this)
         views[inst] = view
+        view.relocate(getX(inst.start), getScreenY(inst.y))
         children.add(view)
-        if (autoSelect) {
-            runFXWithTimeout(25) {
+        runFXWithTimeout(10) {
+            view.setPrefSize(view.getDisplayWidth(), view.getDisplayHeight())
+            view.rescale()
+            if (autoSelect) {
                 view.selectView(addToSelection = false)
             }
         }

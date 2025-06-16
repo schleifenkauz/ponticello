@@ -83,8 +83,8 @@ class SoundProcessView(
                 .asObservableValue()
                 .flatMap { bar -> if (bar) inlineControls.heightProperty() else SimpleDoubleProperty(0.0) }
         )
-        objectPane.prefWidthProperty().bind(widthProperty())
-        objectPane.prefHeightProperty().bind(heightProperty().subtract(objectPane.layoutYProperty()))
+        objectPane.prefWidthProperty().bind(prefWidthProperty())
+        objectPane.prefHeightProperty().bind(prefHeightProperty().subtract(objectPane.layoutYProperty()))
         objectPane.heightProperty().addListener { _, _, _ -> rescale() }
         objectPane.backgroundProperty().bind(backgroundColor.map { color ->
             Background(BackgroundFill(color, CornerRadii.EMPTY, null))

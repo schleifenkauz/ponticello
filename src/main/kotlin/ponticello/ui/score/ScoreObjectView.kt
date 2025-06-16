@@ -41,7 +41,6 @@ import ponticello.ui.controls.InlineParameterControlsBar
 import ponticello.ui.controls.NameControl
 import ponticello.ui.dock.AppLayout
 import ponticello.ui.impl.resizeMode
-import ponticello.ui.impl.setupDraggingAndResizing
 import ponticello.ui.launcher.PonticelloMainActivity
 import ponticello.ui.launcher.ScoreObjectDetailPane
 import ponticello.ui.registry.ScoreObjectRegistryPane
@@ -133,7 +132,6 @@ abstract class ScoreObjectView(
     protected open fun setupDetailPane(pane: DetailPane) {}
 
     protected open fun initialize() {
-        initializeLayout()
         setupColorPicker()
         instance.addListener(this)
         obj.addListener(this)
@@ -177,11 +175,10 @@ abstract class ScoreObjectView(
         if (!parent.isRoot(obj)) {
             val canResize = obj.canResize
             setupDraggingAndResizing(
-                parent.context,
                 canUserChangeWidth = canResize, canUserChangeHeight = canResize,
-                resizeDescription = { ev -> if (ev.isAltDown) "Create loop" else "Resize object" },
                 drag = this::dragTo, resize = this::resize,
-                startDrag = this::startDrag, finishDrag = this::finishedDrag
+                startDrag = this::startDrag, finishDrag = this::finishedDrag,
+                threshold = 5.0,
             )
             addMouseActions()
             val tooltip = Tooltip()
@@ -194,13 +191,6 @@ abstract class ScoreObjectView(
         toFront()
         context[ScoreObjectSelectionManager].select(this, addToSelection = addToSelection)
         requestFocus()
-    }
-
-    private fun initializeLayout() {
-        if (!parentPane.isRoot(obj)) {
-            relocate(parentPane.getX(instance.start), parentPane.getScreenY(instance.y))
-        }
-        setPrefSize(getDisplayWidth(), getDisplayHeight())
     }
 
     private fun setupColorPicker() {
@@ -222,7 +212,7 @@ abstract class ScoreObjectView(
             when {
                 ev.button == MouseButton.SECONDARY && ev.modifiers.isEmpty() -> {
                     selectView(addToSelection = false)
-                    val toolPane = context[ScoreObjectDetailPane]
+                    val toolPane = context[AppLayout].get<ScoreObjectDetailPane>()
                     toolPane.updateContent(this)
                     toolPane.setShowing(true)
                 }
@@ -425,7 +415,7 @@ abstract class ScoreObjectView(
     @Suppress("UNUSED_PARAMETER") //parameter [ev] is needed to be compatible with Node.setupDraggingAndResizing
     private fun resize(old: Bounds, deltaX: Double, deltaY: Double, cursor: Cursor, ev: MouseEvent) {
         check(obj.canResize) { "Attempt to resize object that is not resizable" }
-        context[ScoreObjectDetailPane].hidePopup()
+        context[AppLayout].get<ScoreObjectDetailPane>().hidePopup()
         val parentPane = parentPane
         val direction = cursor.resizeDirection()
         val oldX = if (direction.left) old.minX else old.maxX

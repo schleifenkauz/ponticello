@@ -85,9 +85,10 @@ class Score(
         undo.record(ScoreEdit.AddObject(inst, this))
     }
 
-    fun addObject(obj: ScoreObject, time: Decimal, y: Decimal, autoSelect: Boolean) {
+    fun addObject(obj: ScoreObject, time: Decimal, y: Decimal, autoSelect: Boolean): ScoreObjectInstance {
         val inst = ScoreObjectInstance(obj, time, y)
         addObject(inst, autoSelect)
+        return inst
     }
 
     fun removeObjects(set: Set<ScoreObjectInstance>, option: RegistryOption) {

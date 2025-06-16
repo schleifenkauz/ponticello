@@ -49,15 +49,15 @@ object SelectionRelatedActions {
             val minT = instances.minOf { inst -> inst.start }
             val minY = instances.minOf { inst -> inst.y }
             val maxT = instances.maxOf { inst -> inst.start + inst.duration }
-            val maxY = instances.maxOf { inst -> inst.y + inst.height }
+            val maxY = instances.maxOf { inst -> inst.y + inst.height } //TODO maybe add extra height for the top bar
             val relativePosition = ObjectPosition(-minT, -minY)
             val recurse = ev.isShiftDown
             val newScore = Score()
             val name = context[ScoreObjectRegistry].availableName("group")
-            val newObj = ScoreObjectGroup(newScore).withName(name)
-            newObj.setInitialSize(maxT - minT, maxY - minY)
-            parentPane.score.addObject(newObj, minT, minY, autoSelect = true)
+            val subScore = ScoreObjectGroup(newScore).withName(name)
+            subScore.setInitialSize(maxT - minT, maxY - minY)
             context.compoundEdit("Create group from objects") {
+                parentPane.score.addObject(subScore, minT, minY, autoSelect = true)
                 for (inst in instances) {
                     inst.moveInto(newScore, relativePosition, recurse)
                 }

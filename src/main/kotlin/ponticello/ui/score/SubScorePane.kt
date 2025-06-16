@@ -4,6 +4,8 @@ import fxutils.Direction
 import hextant.context.Context
 import ponticello.impl.Decimal
 import ponticello.impl.asTime
+import ponticello.impl.div
+import ponticello.impl.times
 import ponticello.model.score.ObjectPosition
 import ponticello.model.score.ScoreObject
 import ponticello.model.score.ScoreObjectGroup
@@ -31,10 +33,14 @@ class SubScorePane(
     override val associatedObject: ScoreObjectGroup
         get() = obj
 
-    init {
+    fun initialize() {
         listenForEvents()
         obj.score.addListener(this)
     }
+
+    override fun getScreenY(scoreY: Decimal): Double = scoreY.value * (this.prefHeight / obj.height.value)
+
+    override fun getScoreY(screenY: Double): Decimal = screenY * (obj.height / this.prefHeight)
 
     override fun addTime(location: Decimal, amount: Decimal) {
         super.addTime(location, amount)
