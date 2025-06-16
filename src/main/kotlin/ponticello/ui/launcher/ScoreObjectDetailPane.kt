@@ -15,6 +15,7 @@ import javafx.scene.layout.Priority
 import javafx.scene.layout.StackPane
 import javafx.stage.Popup
 import javafx.stage.Screen
+import javafx.stage.Window
 import org.kordamp.ikonli.Ikon
 import org.kordamp.ikonli.materialdesign2.MaterialDesignP
 import org.kordamp.ikonli.materialdesign2.MaterialDesignT
@@ -89,7 +90,7 @@ class ScoreObjectDetailPane : ToolPane() {
         return popup
     }
 
-    override fun showPopup(popup: Popup): Boolean {
+    override fun showPopup(popup: Popup, ownerWindow: Window): Boolean {
         val view = displayedObject ?: return false
         val titleBarHeight = 0.0
         val boundsInScreen = view.localToScreen(view.boundsInLocal) ?: return false

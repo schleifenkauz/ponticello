@@ -36,9 +36,9 @@ class MessageSendEditorControl (
                 view(editor.method) {
                     registerShortcuts {
                         on("Ctrl+D") {
-                            val bounds = localToScreen(boundsInLocal)
                             val helpBrowser = editor.context[AppLayout].get<HelpBrowser>()
-                            helpBrowser.showMethodDocumentation(editor.method, bounds)
+                            val anchor = this@MessageSendEditorControl
+                            helpBrowser.showMethodDocumentation(editor.method, anchor)
                         }
                     }
                 }

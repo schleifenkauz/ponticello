@@ -47,8 +47,7 @@ object ScExprExpanderControlFactory : ControlFactory<ponticello.sc.editor.ScExpr
             on("Alt+N") { editor.nameValue() }
             on("Ctrl+D") {
                 val browser = editor.context[AppLayout].get<HelpBrowser>()
-                val bounds = control.localToScreen(control.boundsInLocal)
-                browser.showClassDocumentation(editor, bounds)
+                browser.showClassDocumentation(editor, control)
             }
         }
         return control

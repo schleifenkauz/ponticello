@@ -1,18 +1,21 @@
 package ponticello.ui.misc
 
-import bundles.PublicProperty
-import bundles.publicProperty
 import fxutils.Ctrl
+import fxutils.actions.ContextualizedAction
+import fxutils.actions.collectActions
 import fxutils.modifiers
 import fxutils.noModifiers
 import fxutils.prompt.SimpleTextPrompt
 import fxutils.relocate
-import javafx.geometry.Bounds
+import javafx.beans.binding.Bindings
+import javafx.scene.Node
 import javafx.scene.Parent
 import javafx.scene.input.KeyEvent
 import javafx.scene.web.WebView
 import javafx.stage.Popup
 import org.kordamp.ikonli.Ikon
+import org.kordamp.ikonli.materialdesign2.MaterialDesignA
+import org.kordamp.ikonli.materialdesign2.MaterialDesignR
 import org.kordamp.ikonli.materialdesign2.MaterialDesignW
 import ponticello.model.project.PonticelloProject
 import ponticello.sc.Identifier
@@ -23,6 +26,7 @@ import ponticello.ui.dock.Side
 import ponticello.ui.dock.ToolPane
 import ponticello.ui.dock.ToolPaneState
 import ponticello.ui.impl.showDialog
+import reaktive.value.fx.asReactiveValue
 import reaktive.value.now
 
 class HelpBrowser : ToolPane() {
@@ -34,6 +38,8 @@ class HelpBrowser : ToolPane() {
     override val content: Parent
         get() = webView
 
+    override val headerActions: List<ContextualizedAction> = browserActions.withContext(this)
+
     override fun defaultState(): ToolPaneState = ToolPaneState.docked
 
     override fun doSetup() {
@@ -42,18 +48,19 @@ class HelpBrowser : ToolPane() {
         webView.engine.load("$URL_ROOT/Help.html")
     }
 
-    fun showClassDocumentation(target: ScExprEditor<*>, bounds: Bounds) {
-        setShowing(true)
+    fun showClassDocumentation(target: ScExprEditor<*>, anchor: Node) {
+        setShowing(true, ownerWindow = anchor.scene.window)
         val name = target.result.now
         if (name !is Identifier || !name.isValidClassName) return
         webView.engine.load("$URL_ROOT/Classes/${name.text}.html")
         if (window is Popup) {
+            val bounds = anchor.localToScreen(anchor.boundsInLocal)
             window?.relocate(bounds.minX, bounds.maxY + 10.0)
         }
     }
 
-    fun showMethodDocumentation(target: IdentifierEditor, bounds: Bounds) {
-        setShowing(true)
+    fun showMethodDocumentation(target: IdentifierEditor, anchor: Node) {
+        setShowing(true, ownerWindow = anchor.scene.window)
         val name = target.result.now
         if (!name.isValid) return
         val (receiver, _, _) = target.parent?.result?.now as MessageSend
@@ -63,6 +70,7 @@ class HelpBrowser : ToolPane() {
             webView.engine.load("$URL_ROOT/Overviews/Methods.html#${name.text}")
         }
         if (window is Popup) {
+            val bounds = anchor.localToScreen(anchor.boundsInLocal)
             window?.relocate(bounds.minX, bounds.maxY + 10.0)
         }
     }
@@ -83,8 +91,7 @@ class HelpBrowser : ToolPane() {
         }
     }
 
-    companion object : PublicProperty<HelpBrowser> by publicProperty("help-browser", null),
-        Type(12, "SuperCollider Documentation") {
+    companion object : Type(uid = 12, "SuperCollider Documentation") {
         override val icon: Ikon
             get() = MaterialDesignW.WEB
 
@@ -96,5 +103,42 @@ class HelpBrowser : ToolPane() {
         override fun createToolPane(project: PonticelloProject): ToolPane = HelpBrowser()
 
         private const val URL_ROOT = "https://doc.sccode.org/"
+
+        private val browserActions = collectActions<HelpBrowser> {
+            addAction("Back") {
+                icon(MaterialDesignA.ARROW_LEFT)
+                shortcut("Alt+LEFT")
+                enableWhen { browser ->
+                    browser.webView.engine.history.currentIndexProperty().greaterThan(0).asReactiveValue()
+                }
+                executes { browser ->
+                    val history = browser.webView.engine.history
+                    if (history.currentIndex > 0) {
+                        history.go(-1)
+                    }
+                }
+            }
+            addAction("Forward") {
+                icon(MaterialDesignA.ARROW_RIGHT)
+                shortcut("Alt+RIGHT")
+                enableWhen { browser ->
+                    val history = browser.webView.engine.history
+                    val nEntries = Bindings.size(history.entries)
+                    history.currentIndexProperty().lessThan(nEntries.subtract(1)).asReactiveValue()
+                }
+                executes { browser ->
+                    val history = browser.webView.engine.history
+                    if (history.currentIndex < history.entries.lastIndex) {
+                        history.go(+1)
+                    }
+                }
+            }
+            addAction("Reload") {
+                icon(MaterialDesignR.RELOAD)
+                executes { browser ->
+                    browser.webView.engine.reload()
+                }
+            }
+        }
     }
 }

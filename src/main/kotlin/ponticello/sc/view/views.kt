@@ -239,6 +239,7 @@ internal fun PluginBuilder.registerControlFactories() {
                 space()
                 keyword("lag: ")
                 view(editor.lag)
+                space()
                 keyword("warp: ")
                 view(editor.warp)
                 space()

@@ -110,6 +110,7 @@ abstract class ToolPane : VBox() {
         val label = label(title).styleClass("heading")
         val box = HBox(label, infiniteSpace(), actionBar).styleClass("tool-pane-header")
         if (headerContent != null) box.children.add(1, headerContent)
+        box.setupWindowDragging { scene.window }
         return box
     }
 
@@ -224,12 +225,12 @@ abstract class ToolPane : VBox() {
         else -> throw AssertionError("Invalid ToolPane window $window")
     }
 
-    fun setShowing(value: Boolean) {
+    fun setShowing(value: Boolean, ownerWindow: javafx.stage.Window = layout.context[primaryStage]) {
         if (showing.now == value) return
         if (value) {
             if (!isSetup) setup()
             when (val w = window) {
-                is Popup -> showing.now = showPopup(w)
+                is Popup -> showing.now = showPopup(w, ownerWindow)
                 is Stage -> {
                     w.show()
                     showing.now = true
@@ -246,9 +247,9 @@ abstract class ToolPane : VBox() {
         }
     }
 
-    protected open fun showPopup(popup: Popup): Boolean {
+    protected open fun showPopup(popup: Popup, ownerWindow: javafx.stage.Window): Boolean {
         val robot = Robot()
-        popup.show(layout.scene.window, robot.mouseX, robot.mouseY)
+        popup.show(ownerWindow, robot.mouseX, robot.mouseY)
         return true
     }
 
