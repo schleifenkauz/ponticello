@@ -20,6 +20,7 @@ import ponticello.model.project.InlineControlsDisplay
 import ponticello.model.project.UIState
 import ponticello.model.registry.ScoreObjectRegistry
 import ponticello.model.score.*
+import ponticello.ui.controls.RenamePrompt
 import ponticello.ui.dock.AppLayout
 import ponticello.ui.impl.showDialog
 import ponticello.ui.launcher.PonticelloMainActivity
@@ -183,16 +184,10 @@ object ObjectActions {
                 }
             }
         }
-//        addObjectAction("Rename object") {
-//            shortcut("F2")
-//            executeSingle { view, _ ->
-//                if (view.inlineNameControl.isActuallyVisible()) {
-//                    view.inlineNameControl.startEdit()
-//                } else {
-//                    RenamePrompt(view.obj, "New name for object").showDialog(view)
-//                }
-//            }
-//        }
+        addObjectAction("Rename object") {
+            shortcut("F2")
+            executeSingle { view, _ -> RenamePrompt(view.obj, "New name for object").showDialog(view) }
+        }
         addObjectAction("Add envelope") {
             shortcut("Alt?+E")
             applicableOn<SoundProcessView>()

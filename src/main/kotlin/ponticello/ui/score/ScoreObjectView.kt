@@ -76,7 +76,7 @@ abstract class ScoreObjectView(
     protected open val borderColorWhenSameObjectSelected: Color get() = Color.GRAY
 
     protected val inlineControls = HBox() styleClass "score-object-top-bar"
-    lateinit var inlineNameControl: NameControl
+    lateinit var inlineNameLabel: Label
         private set
     private lateinit var inlineActionBar: ActionBar
 
@@ -138,7 +138,7 @@ abstract class ScoreObjectView(
         instance.addListener(this)
         obj.addListener(this)
         isInitialized = true
-        inlineNameControl = NameControl(obj).autoSize()
+        inlineNameLabel = label(obj.name)
         val controlsDisplay = context[UIState].controlsDisplay
         inlineControls.prefWidthProperty().bind(prefWidthProperty())
         inlineControls.backgroundProperty().bind(
@@ -146,7 +146,7 @@ abstract class ScoreObjectView(
                 Bindings.equal(controlsDisplay, SimpleObjectProperty(InlineControlsDisplay.CONTROLS_BAR))
             ).then(background(Color.web("#1d1d20"))).otherwise(background(Color.gray(0.3, 0.35)))
         )
-        inlineControls.children.add(inlineNameControl)
+        inlineControls.children.add(inlineNameLabel)
         inlineControls.children.add(infiniteSpace())
         val actions = ObjectActions.multiObjectActions.withContext(ObjectActionContext.SingleObjectContext(this))
         inlineActionBar = ActionBar(actions, buttonStyle = "small-icon-button")
@@ -166,7 +166,7 @@ abstract class ScoreObjectView(
         controlsDisplay: ReactiveVariable<InlineControlsDisplay>,
     ): ReactiveBoolean = controlsDisplay.notEqualTo(InlineControlsDisplay.NONE)
         .and(instance.hideInlineControls.not())
-        .and(inlineNameControl.visibleProperty().asReactiveValue())
+        .and(inlineNameLabel.visibleProperty().asReactiveValue())
 //            .and(inlineControls.widthProperty().lessThanOrEqualTo(prefWidthProperty()).asReactiveValue())
 
     fun initialize(parent: ScorePane) {

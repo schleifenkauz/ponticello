@@ -7,11 +7,15 @@ import javafx.scene.layout.Background
 import javafx.scene.layout.BackgroundFill
 import javafx.scene.layout.CornerRadii
 import javafx.scene.layout.Region
+import ponticello.model.project.InlineControlsDisplay
 import ponticello.model.score.ScoreObjectGroup
 import ponticello.model.score.ScoreObjectInstance
 import ponticello.sc.view.ObjectSelectorControl
+import reaktive.value.ReactiveBoolean
+import reaktive.value.ReactiveVariable
 import reaktive.value.binding.map
 import reaktive.value.fx.asObservableValue
+import reaktive.value.reactiveValue
 
 class ScoreObjectGroupView(
     override val obj: ScoreObjectGroup,
@@ -45,6 +49,10 @@ class ScoreObjectGroupView(
         pane.addItem("Color:", this.colorPicker)
         pane.addItem("Default bus", ObjectSelectorControl(this.obj.busSelector, createBundle()))
     }
+
+    override fun inlineControlsVisibilityCondition(
+        controlsDisplay: ReactiveVariable<InlineControlsDisplay>,
+    ): ReactiveBoolean = reactiveValue(true)
 
     override fun rescale() {
         super.rescale()
