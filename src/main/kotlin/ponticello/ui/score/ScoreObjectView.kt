@@ -367,23 +367,29 @@ abstract class ScoreObjectView(
         }
     }
 
-    fun setSelected(value: Boolean) {
-        val (borderColor, width) = when {
-            value -> borderColorWhenSelected to BORDER_WIDTH
-            obj in context[ScoreObjectSelectionManager].selectedObjects -> borderColorWhenSameObjectSelected to BORDER_WIDTH
-            else -> borderColorWhenNotSelected to 0.5
-        }
-        border = solidBorder(borderColor, width = width, radius = BORDER_RADIUS)
+    fun updateIsFocused(value: Boolean) {
+        updateBorder()
     }
 
-    override fun isSomeInstanceSelected(yesOrNo: Boolean) {
-        val (borderColor, width) = when {
-            instance in context[ScoreObjectSelectionManager].selectedInstances -> borderColorWhenSelected to BORDER_WIDTH
-            yesOrNo -> borderColorWhenSameObjectSelected to BORDER_WIDTH
-            else -> borderColorWhenNotSelected to 0.5
-        }
-        border = solidBorder(borderColor, width = width, radius = BORDER_RADIUS)
+    fun updateIsSelected(value: Boolean) {
+        updateBorder()
     }
+
+    override fun updateIsSomeInstanceSelected(yesOrNo: Boolean) {
+        updateBorder()
+    }
+
+    private fun updateBorder() {
+        val selection = context[ScoreObjectSelectionManager]
+        border = when {
+            selection.focusedView.now == this -> solidBorder(Color.ORANGE, 2.0, BORDER_RADIUS)
+            selection.isSelected(instance) -> solidBorder(borderColorWhenSelected, 2.0, BORDER_RADIUS)
+            selection.isSelected(obj) -> solidBorder(borderColorWhenSameObjectSelected, 2.0, BORDER_RADIUS)
+            else -> solidBorder(borderColorWhenNotSelected, 0.5, BORDER_RADIUS)
+        }
+    }
+
+    private fun isDuplicateSelected() = obj in context[ScoreObjectSelectionManager].selectedObjects
 
     /*
     * Dragging and resizing
@@ -545,7 +551,7 @@ abstract class ScoreObjectView(
         return deltaT
     }
 
-    fun adjustHorizontal(direction: HorizontalDirection, resizeMode: ScoreObject.ResizeMode?, ) {
+    fun adjustHorizontal(direction: HorizontalDirection, resizeMode: ScoreObject.ResizeMode?) {
         check(obj.canResize) { "Cannot adjust horizontal $this because it has its own sub-window." }
         val parentPane = parentPane
         val deltaT = getDeltaT(direction)

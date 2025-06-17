@@ -37,35 +37,56 @@ class ScoreObjectSelectionManager(val context: Context, private val rootPane: Sc
 
     fun isSelected(view: ScoreObjectView): Boolean = view in selectedViews
 
-    fun select(view: ScoreObjectView, addToSelection: Boolean): Boolean {
+    fun isSelected(instance: ScoreObjectInstance): Boolean = instance in selectedInstances
+
+    fun isSelected(obj: ScoreObject): Boolean = obj in selectedObjects
+
+    fun isFocused(view: ScoreObjectView): Boolean = _focusedView.now == view
+
+    fun select(view: ScoreObjectView, addToSelection: Boolean) {
         if (!addToSelection) {
             val selectedBefore = selectedViews.toSet()
             _selectedViews.clear()
-            for (v in selectedBefore) {
-                updateIsSelected(v)
+            _selectedViews.add(view)
+            setFocused(view)
+            for (v in selectedBefore - view) {
+                updateIsSelected(v, false)
             }
+        } else {
+            if (view !in _selectedViews) _selectedViews.add(view)
+            else _selectedViews.remove(view)
+            if (view in _selectedViews) setFocused(view)
+            else updateIsSelected(view, false)
         }
-        if (view !in _selectedViews) _selectedViews.add(view)
-        else _selectedViews.remove(view)
-        _focusedView.set(_selectedViews.singleOrNull())
-        val selected = view in _selectedViews
-        updateIsSelected(view)
-        return selected
     }
 
-    private fun updateIsSelected(view: ScoreObjectView) {
-        val isSelected = view in selectedViews
-        view.setSelected(isSelected)
+    private fun setFocused(view: ScoreObjectView?) {
+        val previouslyFocused = _focusedView.now
+        if (previouslyFocused == view) return
+        _focusedView.set(view)
+        previouslyFocused?.updateIsFocused(false)
+        if (view != null) updateIsSelected(view, true)
+    }
+
+    private fun updateIsSelected(view: ScoreObjectView, isSelected: Boolean) {
         if (isSelected) {
-            view.obj.notifyListeners { isSomeInstanceSelected(true) }
-        } else if (view.obj !in selectedObjects) {
-            view.obj.notifyListeners { isSomeInstanceSelected(false) }
+            view.obj.notifyListeners { updateIsSomeInstanceSelected(true) }
+            view.updateIsFocused(true)
+        } else {
+            if (focusedView.now == view) {
+                setFocused(null)
+            } else {
+                view.updateIsSelected(false)
+            }
+            if (view.obj !in selectedObjects) {
+                view.obj.notifyListeners { updateIsSomeInstanceSelected(false) }
+            }
         }
     }
 
     fun removed(view: ScoreObjectView) {
         if (_selectedViews.remove(view)) {
-            updateIsSelected(view)
+            updateIsSelected(view, false)
         }
         if (view is ScoreObjectGroupView) {
             for (v in view.scorePane.allViews) {
@@ -79,12 +100,12 @@ class ScoreObjectSelectionManager(val context: Context, private val rootPane: Sc
         val previouslySelected = selectedViews.toSet()
         val previouslySelectedObjects = selectedObjects.toSet()
         _selectedViews.clear()
-        _focusedView.set(null)
+        setFocused(null)
         for (obj in previouslySelectedObjects) {
-            obj.notifyListeners { isSomeInstanceSelected(false) }
+            obj.notifyListeners { updateIsSomeInstanceSelected(false) }
         }
         for (v in previouslySelected) {
-            v.setSelected(false)
+            v.updateIsSelected(false)
         }
         focusedScorePane.clearRegionSelection()
     }
@@ -94,10 +115,10 @@ class ScoreObjectSelectionManager(val context: Context, private val rootPane: Sc
         deselectAll()
         for (v in focusedPane.allViews) {
             _selectedViews.add(v)
-            v.setSelected(true)
-            v.obj.notifyListeners { isSomeInstanceSelected(true) }
+            v.updateIsSelected(true)
+            v.obj.notifyListeners { updateIsSomeInstanceSelected(true) }
         }
-        _focusedView.set(_selectedViews.singleOrNull())
+        setFocused(_selectedViews.singleOrNull())
     }
 
     fun removeSelected() {

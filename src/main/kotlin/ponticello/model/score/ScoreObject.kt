@@ -284,7 +284,7 @@ sealed class ScoreObject : AbstractRenamableObject() {
 
         fun finishedResize(obj: ScoreObject, deltaDuration: Decimal, deltaHeight: Decimal, side: Side) {}
 
-        fun isSomeInstanceSelected(yesOrNo: Boolean) {}
+        fun updateIsSomeInstanceSelected(yesOrNo: Boolean) {}
     }
 
     private class ResizeEdit(
