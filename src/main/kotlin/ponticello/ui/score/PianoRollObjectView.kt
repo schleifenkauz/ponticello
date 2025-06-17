@@ -18,13 +18,6 @@ import javafx.scene.layout.Region
 import javafx.scene.paint.Color
 import javafx.scene.shape.Line
 import javafx.scene.shape.Rectangle
-import reaktive.value.ReactiveValue
-import reaktive.value.binding.binding
-import reaktive.value.binding.flatMap
-import reaktive.value.fx.asObservableValue
-import reaktive.value.now
-import reaktive.value.reactiveValue
-import reaktive.value.reactiveVariable
 import ponticello.impl.*
 import ponticello.model.score.MidiObject
 import ponticello.model.score.ObjectPosition
@@ -34,6 +27,13 @@ import ponticello.sc.editor.EventDictionaryEditor
 import ponticello.sc.view.ObjectSelectorControl
 import ponticello.ui.impl.setupDraggingAndResizing
 import ponticello.ui.impl.showDialog
+import reaktive.value.ReactiveValue
+import reaktive.value.binding.binding
+import reaktive.value.binding.flatMap
+import reaktive.value.fx.asObservableValue
+import reaktive.value.now
+import reaktive.value.reactiveValue
+import reaktive.value.reactiveVariable
 import kotlin.math.roundToInt
 
 class PianoRollObjectView(override val obj: MidiObject, inst: ScoreObjectInstance) : ScoreObjectView(inst) {
@@ -212,10 +212,10 @@ class PianoRollObjectView(override val obj: MidiObject, inst: ScoreObjectInstanc
         pane.addLargeItem("Event dictionary", this.obj.eventDictionary.control)
     }
 
-    override fun adjustVertical(direction: VerticalDirection, resize: Boolean, resizeMode: ScoreObject.ResizeMode) {
+    override fun adjustVertical(direction: VerticalDirection, resizeMode: ScoreObject.ResizeMode?) {
         var deltaY = obj.height / (obj.highestPitch - obj.lowestPitch + 1)
         if (direction == VerticalDirection.UP) deltaY *= -1
-        adjustVertical(resize, resizeMode, deltaY)
+        adjustVertical(resizeMode, deltaY)
     }
 
     fun showTransposeDialog() {

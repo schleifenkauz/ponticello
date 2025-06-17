@@ -194,7 +194,6 @@ abstract class ScoreObjectView(
     }
 
     private fun setupDragging() {
-        TODO()
     }
 
     private fun setupResizingRegions() {
@@ -546,15 +545,15 @@ abstract class ScoreObjectView(
         return deltaT
     }
 
-    fun adjustHorizontal(direction: HorizontalDirection, resize: Boolean, resizeMode: ScoreObject.ResizeMode?) {
+    fun adjustHorizontal(direction: HorizontalDirection, resizeMode: ScoreObject.ResizeMode?, ) {
         check(obj.canResize) { "Cannot adjust horizontal $this because it has its own sub-window." }
         val parentPane = parentPane
         val deltaT = getDeltaT(direction)
-        if (resize) {
+        if (resizeMode != null) {
             val targetDuration = (obj.duration + deltaT).coerceAtMost(parentPane.score.maxTime.now - instance.start)
             obj.resize(
                 targetDuration, obj.height,
-                resizeMode!!, Side.RIGHT
+                resizeMode, Side.RIGHT
             )
             parentPane.markT(instance.end)
         } else {
@@ -565,15 +564,15 @@ abstract class ScoreObjectView(
         }
     }
 
-    open fun adjustVertical(direction: VerticalDirection, resize: Boolean, resizeMode: ScoreObject.ResizeMode) {
+    open fun adjustVertical(direction: VerticalDirection, resizeMode: ScoreObject.ResizeMode?) {
         var deltaY = 0.01.asTime
         if (direction == VerticalDirection.UP) deltaY *= -1
-        adjustVertical(resize, resizeMode, deltaY)
+        adjustVertical(resizeMode, deltaY)
     }
 
-    protected fun adjustVertical(resize: Boolean, resizeMode: ScoreObject.ResizeMode, deltaY: Decimal) {
+    protected fun adjustVertical(resizeMode: ScoreObject.ResizeMode?, deltaY: Decimal) {
         val parentPane = parentPane
-        if (resize) {
+        if (resizeMode != null) {
             val targetHeight = (obj.height + deltaY).coerceAtMost(parentPane.score.maxY.now - instance.y)
             obj.resize(
                 obj.duration, targetHeight,

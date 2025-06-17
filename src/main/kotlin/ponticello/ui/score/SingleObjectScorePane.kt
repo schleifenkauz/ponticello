@@ -11,10 +11,12 @@ import ponticello.impl.zero
 import ponticello.model.obj.MeterObject
 import ponticello.model.obj.project
 import ponticello.model.player.ScorePlayer
+import ponticello.model.project.UIState
 import ponticello.model.project.settings
 import ponticello.model.score.ObjectPosition
 import ponticello.model.score.ScoreObject
 import reaktive.Observer
+import reaktive.value.binding.`if`
 import reaktive.value.forEach
 import reaktive.value.fx.asObservableValue
 import reaktive.value.now
@@ -46,6 +48,9 @@ class SingleObjectScorePane(
 
     private fun setupGrid() {
         children.add(gridArea)
+        gridArea.opacityProperty().bind(
+            `if`(context[UIState].snapEnabled, then = { 1.0 }, otherwise = { 0.5 }).asObservableValue()
+        )
         gridArea.layoutYProperty().bind(heightProperty().subtract(GRID_HEIGHT))
         gridArea.setOnMouseClicked { ev ->
             val (t, _) = snapToGrid(ev.x, ev.y)
@@ -81,7 +86,7 @@ class SingleObjectScorePane(
         gridArea.children.clear()
         val meter = rootObj.quantizationConfig.meter.now.get() ?: return
         val duration = rootObj.duration.value
-        TempoGridObjectView.paintGrid(meter, firstBar = 0, duration, gridArea, width, GRID_HEIGHT)
+        TempoGridObjectView.paintGrid(context, meter, firstBar = 0, duration, gridArea, width, GRID_HEIGHT)
     }
 
     override fun mouseExited() {

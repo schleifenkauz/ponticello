@@ -384,8 +384,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
                         val initialName = option.defaultName(context[ScoreObjectRegistry])
                         val name = NamePrompt(context[ScoreObjectRegistry], "Name for object", initialName)
                             .showDialog(scene.window, anchor) ?: return
-                        val obj = createNewObject(option, selection.rect) ?: return
-                        obj.withName(name)
+                        createNewObject(option, selection.rect, name) ?: return
                     }
                     addObject(obj, selection)
                 } else {
@@ -412,22 +411,22 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
         }
     }
 
-    private fun createNewObject(option: NewObjectOption, rect: Rectangle): ScoreObject? {
+    private fun createNewObject(option: NewObjectOption, rect: Rectangle, name: String): ScoreObject? {
         return when (option) {
             is NewObjectOption.Process -> {
                 val defaultBus = associatedObject?.defaultBusRef?.now?.get()
                 val anchor = localToScreen(rect.middlePoint)
                 val controls = getInitialControls(option.def, context, defaultBus, anchor) ?: return null
-                SoundProcess(reactiveVariable(option.def.reference()), controls)
+                SoundProcess.create(name, option.def, controls)
             }
 
             is NewObjectOption.MIDI -> throw AssertionError("Handled before")
-            is NewObjectOption.TempoGrid -> TempoGridObject(option.meter.reference())
+            is NewObjectOption.TempoGrid -> TempoGridObject(option.meter.reference()).withName(name)
 
             NewObjectOption.NewTempoGrid -> {
-                val newMeter = MeterObject.create(60, 4, 4)
+                val newMeter = MeterObject.create(60, 4, 4).withName(name)
                 context[MeterRegistry].add(newMeter)
-                TempoGridObject(newMeter.reference())
+                TempoGridObject(newMeter.reference()).withName(name)
             }
 
             NewObjectOption.Group -> ScoreObjectGroup(Score(mutableListOf()))

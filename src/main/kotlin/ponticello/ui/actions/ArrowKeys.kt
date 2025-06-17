@@ -1,6 +1,10 @@
 package ponticello.ui.actions
 
+import fxutils.Ctrl
+import fxutils.Shift
 import fxutils.actions.isTargetTextInput
+import fxutils.modifiers
+import fxutils.noModifiers
 import hextant.context.Context
 import hextant.context.compoundEdit
 import javafx.geometry.HorizontalDirection.LEFT
@@ -12,7 +16,7 @@ import javafx.scene.input.KeyCode
 import javafx.scene.input.KeyEvent
 import ponticello.model.registry.ScoreObjectRegistry
 import ponticello.model.score.ObjectPosition
-import ponticello.ui.impl.resizeMode
+import ponticello.model.score.ScoreObject
 import ponticello.ui.score.NavigableScorePane
 import ponticello.ui.score.ScoreObjectSelectionManager
 import ponticello.ui.score.ScoreObjectView
@@ -45,15 +49,19 @@ object ArrowKeys {
             } else if (!ev.isTargetTextInput) {
                 val selected = selector.selectedViews
                     .associateBy { v -> v.instance }.values //filters out views that display the same instance
-                val resize = ev.isControlDown
-                val resizeType = ev.resizeMode ?: return@addEventFilter
+                val resizeMode = when (ev.modifiers) {
+                    noModifiers -> null
+                    setOf(Shift) -> ScoreObject.ResizeMode.Stretch
+                    setOf(Ctrl) -> ScoreObject.ResizeMode.Regular
+                    else -> return@addEventFilter
+                }
                 context.compoundEdit("Move objects") {
                     for (view in selected) {
                         when (ev.code) {
-                            KeyCode.LEFT -> view.adjustHorizontal(direction = LEFT, resize, resizeType)
-                            KeyCode.RIGHT -> view.adjustHorizontal(direction = RIGHT, resize, resizeType)
-                            KeyCode.UP -> view.adjustVertical(direction = UP, resize, resizeType)
-                            KeyCode.DOWN -> view.adjustVertical(direction = DOWN, resize, resizeType)
+                            KeyCode.LEFT -> view.adjustHorizontal(direction = LEFT, resizeMode)
+                            KeyCode.RIGHT -> view.adjustHorizontal(direction = RIGHT, resizeMode)
+                            KeyCode.UP -> view.adjustVertical(direction = UP, resizeMode)
+                            KeyCode.DOWN -> view.adjustVertical(direction = DOWN, resizeMode)
                             else -> throw AssertionError()
                         }
                     }
