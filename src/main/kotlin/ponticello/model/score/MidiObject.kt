@@ -1,6 +1,5 @@
 package ponticello.model.score
 
-import fxutils.Direction
 import fxutils.undo.AbstractEdit
 import fxutils.undo.PropertyEdit
 import fxutils.undo.UndoManager
@@ -10,6 +9,7 @@ import hextant.serial.EditorRoot
 import javafx.geometry.HorizontalDirection
 import javafx.geometry.HorizontalDirection.LEFT
 import javafx.geometry.HorizontalDirection.RIGHT
+import javafx.geometry.Side
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -75,9 +75,9 @@ class MidiObject(
         }
     }
 
-    override fun beginResize(mode: ResizeMode, direction: Direction): Boolean {
+    override fun beginResize(mode: ResizeMode, side: Side): Boolean {
         pixelsPerPitch = (height / (highestPitch - lowestPitch + 1)).value
-        return super.beginResize(mode, direction)
+        return super.beginResize(mode, side)
     }
 
     override fun resize(targetDuration: Decimal, targetHeight: Decimal) {
@@ -93,14 +93,14 @@ class MidiObject(
             var minHeight = zero(ObjectPosition.Y_PRECISION)
             if (notes.isNotEmpty()) {
                 minDur = when {
-                    resizeDirection.left -> this.duration - notes.minOf { n -> n.onset }
-                    resizeDirection.right -> notes.maxOf { o -> o.onset + o.duration }
+                    resizeSide == Side.LEFT -> this.duration - notes.minOf { n -> n.onset }
+                    resizeSide == Side.RIGHT -> notes.maxOf { o -> o.onset + o.duration }
                     else -> minDur
                 }
 
                 minHeight = when {
-                    resizeDirection.down -> this.height - notes.minOf { n -> pixelsPerPitch * (n.midinote - lowestPitch) }
-                    resizeDirection.up -> notes.maxOf { n ->
+                    resizeSide == Side.BOTTOM -> this.height - notes.minOf { n -> pixelsPerPitch * (n.midinote - lowestPitch) }
+                    resizeSide == Side.TOP -> notes.maxOf { n ->
                         (pixelsPerPitch * (n.midinote - lowestPitch)) + pixelsPerPitch
                     }.asY
 
@@ -111,11 +111,11 @@ class MidiObject(
             val deltaHeight = targetHeight.coerceAtLeast(minHeight) - this.height
             val pitches = ((this.height + deltaHeight) / pixelsPerPitch).ceilToInt()
             if (pitches != pitchRange.count()) {
-                if (resizeDirection.up) highestPitch = lowestPitch + pitches
-                else if (resizeDirection.down) lowestPitch = highestPitch - pitches
+                if (resizeSide == Side.TOP) highestPitch = lowestPitch + pitches
+                else if (resizeSide == Side.BOTTOM) lowestPitch = highestPitch - pitches
             }
             super.resize(this.duration + deltaDur, (pitches * pixelsPerPitch).withPrecision(ObjectPosition.Y_PRECISION))
-            if (resizeDirection.left) {
+            if (resizeSide == Side.LEFT) {
                 for (note in this.notes) {
                     note.onset += deltaDur
                 }

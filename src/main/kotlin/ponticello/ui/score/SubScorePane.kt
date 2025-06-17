@@ -1,7 +1,7 @@
 package ponticello.ui.score
 
-import fxutils.Direction
 import hextant.context.Context
+import javafx.geometry.Side
 import ponticello.impl.Decimal
 import ponticello.impl.asTime
 import ponticello.impl.div
@@ -44,12 +44,12 @@ class SubScorePane(
 
     override fun addTime(location: Decimal, amount: Decimal) {
         super.addTime(location, amount)
-        obj.resize(obj.duration + amount, obj.height, ScoreObject.ResizeMode.Regular, Direction.NONE)
+        obj.resize(obj.duration + amount, obj.height, ScoreObject.ResizeMode.Regular, Side.RIGHT)
     }
 
     override fun deleteTimeRange(start: Decimal, end: Decimal) {
         super.deleteTimeRange(start, end)
         val amount = end - start
-        obj.resize(obj.duration - amount, obj.height, ScoreObject.ResizeMode.Regular, Direction.NONE)
+        obj.resize(obj.duration - amount, obj.height, ScoreObject.ResizeMode.Regular, Side.RIGHT)
     }
 }

@@ -1,6 +1,6 @@
 package ponticello.model.score
 
-import fxutils.Direction
+import fxutils.asHorizontalDirection
 import fxutils.prompt.YesNoPrompt
 import fxutils.undo.AbstractEdit
 import fxutils.undo.Edit
@@ -10,6 +10,7 @@ import hextant.context.withoutUndo
 import hextant.core.editor.ListenerManager
 import javafx.geometry.HorizontalDirection
 import javafx.geometry.HorizontalDirection.LEFT
+import javafx.geometry.Side
 import javafx.scene.input.DataFormat
 import javafx.scene.paint.Color
 import kotlinx.serialization.SerialName
@@ -86,7 +87,7 @@ sealed class ScoreObject : AbstractRenamableObject() {
         private set
 
     @Transient
-    protected lateinit var resizeDirection: Direction
+    protected lateinit var resizeSide: Side
 
     @Transient
     protected var resizeMode: ResizeMode = ResizeMode.Regular
@@ -137,11 +138,11 @@ sealed class ScoreObject : AbstractRenamableObject() {
         this.height = height
     }
 
-    open fun beginResize(mode: ResizeMode, direction: Direction): Boolean {
+    open fun beginResize(mode: ResizeMode, side: Side): Boolean {
         durationBeforeResize = duration
         heightBeforeResize = height
         resizeMode = mode
-        resizeDirection = direction
+        resizeSide = side
         return mode != ResizeMode.DeepStretch
     }
 
@@ -151,8 +152,8 @@ sealed class ScoreObject : AbstractRenamableObject() {
                 for ((parameter, ctrl) in associatedControls) {
                     if (ctrl !is EnvelopeControl) continue
                     val spec = getSpec(parameter) as? NumericalControlSpec
-                    if (spec != null && resizeDirection.horizontal != null) {
-                        ctrl.points.resize(targetDuration, resizeDirection.horizontal!!, spec)
+                    if (spec != null && resizeSide.isHorizontal) {
+                        ctrl.points.resize(targetDuration, resizeSide.asHorizontalDirection(), spec)
                     }
                 }
             }
@@ -169,8 +170,8 @@ sealed class ScoreObject : AbstractRenamableObject() {
         this.duration = targetDuration
         this.height = targetHeight
         for (inst in context[rootScore].instancesOf(this)) {
-            val instTime = if (resizeDirection.left) inst.start - deltaDur else inst.start
-            val instY = if (resizeDirection.up) inst.y - deltaHeight else inst.y
+            val instTime = if (resizeSide == Side.LEFT) inst.start - deltaDur else inst.start
+            val instY = if (resizeSide == Side.TOP) inst.y - deltaHeight else inst.y
             inst.moveTo(instTime, instY, simpleMove = false)
         }
         viewManager.notifyListeners { resizedObject(this@ScoreObject) }
@@ -181,20 +182,20 @@ sealed class ScoreObject : AbstractRenamableObject() {
         val deltaDuration = duration - durationBeforeResize
         val deltaHeight = height - heightBeforeResize
         viewManager.notifyListeners {
-            finishedResize(this@ScoreObject, deltaDuration, deltaHeight, resizeDirection)
+            finishedResize(this@ScoreObject, deltaDuration, deltaHeight, resizeSide)
         }
         if (recordEdit) {
             context[UndoManager].record(
                 ResizeEdit(
                     this, durationBeforeResize, heightBeforeResize, this.duration, this.height,
-                    resizeMode, resizeDirection
+                    resizeMode, resizeSide
                 )
             )
         }
     }
 
-    fun resize(targetDuration: Decimal, targetHeight: Decimal, type: ResizeMode, direction: Direction) {
-        beginResize(type, direction)
+    fun resize(targetDuration: Decimal, targetHeight: Decimal, type: ResizeMode, side: Side) {
+        beginResize(type, side)
         resize(targetDuration, targetHeight)
         finishResize()
     }
@@ -213,7 +214,7 @@ sealed class ScoreObject : AbstractRenamableObject() {
     protected open fun doCut(position: Decimal, whichHalf: HorizontalDirection): ScoreObject? {
         val clone = doClone()
         val dur = if (whichHalf == LEFT) position else duration - position
-        clone.resize(dur, height, ResizeMode.Regular, direction = Direction.NONE)
+        clone.resize(dur, height, ResizeMode.Regular, side = Side.RIGHT)
         return clone
     }
 
@@ -281,7 +282,7 @@ sealed class ScoreObject : AbstractRenamableObject() {
     interface Listener {
         fun resizedObject(obj: ScoreObject) {}
 
-        fun finishedResize(obj: ScoreObject, deltaDuration: Decimal, deltaHeight: Decimal, direction: Direction) {}
+        fun finishedResize(obj: ScoreObject, deltaDuration: Decimal, deltaHeight: Decimal, side: Side) {}
 
         fun isSomeInstanceSelected(yesOrNo: Boolean) {}
     }
@@ -293,17 +294,17 @@ sealed class ScoreObject : AbstractRenamableObject() {
         private val newDuration: Decimal,
         private val newHeight: Decimal,
         private val type: ResizeMode,
-        private val direction: Direction,
+        private val side: Side,
     ) : AbstractEdit() {
         override val actionDescription: String
             get() = "Resize object"
 
         override fun doUndo() {
-            obj.resize(oldDuration, oldHeight, type, direction)
+            obj.resize(oldDuration, oldHeight, type, side)
         }
 
         override fun doRedo() {
-            obj.resize(newDuration, newHeight, type, direction)
+            obj.resize(newDuration, newHeight, type, side)
         }
 
         override fun mergeWith(other: Edit): Edit? {
@@ -311,12 +312,12 @@ sealed class ScoreObject : AbstractRenamableObject() {
                 other !is ResizeEdit -> null
                 other.obj != this.obj -> null
                 other.type != this.type -> null
-                other.direction != this.direction -> null
+                other.side != this.side -> null
                 this.newDuration != other.oldDuration -> null
                 this.newHeight != other.oldHeight -> null
                 else -> ResizeEdit(
                     obj, oldDuration, oldHeight, other.newDuration, other.newHeight,
-                    type, direction
+                    type, side
                 )
             }
         }

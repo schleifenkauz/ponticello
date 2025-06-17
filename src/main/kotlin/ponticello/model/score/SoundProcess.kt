@@ -2,10 +2,10 @@
 
 package ponticello.model.score
 
-import fxutils.Direction
 import hextant.context.Context
 import javafx.geometry.HorizontalDirection
 import javafx.geometry.HorizontalDirection.RIGHT
+import javafx.geometry.Side
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -148,11 +148,11 @@ class SoundProcess(
         }
     }
 
-    override fun beginResize(mode: ResizeMode, direction: Direction): Boolean {
+    override fun beginResize(mode: ResizeMode, side: Side): Boolean {
         if (mode.isStretch && playBufRate != null) {
             playBufRateBeforeResize = playBufRate!!.now
         }
-        return super.beginResize(mode, direction)
+        return super.beginResize(mode, side)
     }
 
     override fun resize(targetDuration: Decimal, targetHeight: Decimal) {
@@ -160,7 +160,7 @@ class SoundProcess(
         if (resizeMode.isStretch && playBufRate != null) {
             playBufRate!!.now *= (this.duration / newDuration)
         } else if (playbufStartPos != null) {
-            if (resizeDirection.left) {
+            if (resizeSide == Side.LEFT) {
                 val rate = playBufRate?.now ?: one(precision = 3)
                 newDuration = newDuration.coerceAtMost(this.duration + playbufStartPos!!.now)
                 val deltaStart = this.duration - newDuration

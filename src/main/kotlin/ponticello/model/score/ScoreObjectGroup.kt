@@ -1,11 +1,10 @@
 package ponticello.model.score
 
-import fxutils.Direction
 import hextant.context.Context
 import javafx.geometry.HorizontalDirection
 import javafx.geometry.HorizontalDirection.LEFT
 import javafx.geometry.HorizontalDirection.RIGHT
-import javafx.geometry.VerticalDirection.DOWN
+import javafx.geometry.Side
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
@@ -100,16 +99,16 @@ class ScoreObjectGroup(
         return Pair(obj1, obj2)
     }
 
-    override fun beginResize(mode: ResizeMode, direction: Direction): Boolean {
-        super.beginResize(mode, direction)
-        if (mode.isStretch || direction.left || direction.up) {
+    override fun beginResize(mode: ResizeMode, side: Side): Boolean {
+        super.beginResize(mode, side)
+        if (mode.isStretch || side == Side.LEFT || side == Side.TOP) {
             for (inst in score.objectInstances) {
                 inst.beginMove()
             }
         }
         if (mode == ResizeMode.DeepStretch) {
             for (obj in score.objects) {
-                obj.beginResize(ResizeMode.DeepStretch, Direction(RIGHT, DOWN))
+                obj.beginResize(ResizeMode.DeepStretch, side)
             }
         }
         return true
@@ -121,11 +120,11 @@ class ScoreObjectGroup(
         val objects = score.objectInstances
         if (objects.isNotEmpty() && !resizeMode.isStretch) { //todo compute min dimensions when resizeType=Stretch
             minDur =
-                if (resizeDirection.left) this.duration - objects.minOf { o -> o.start }
+                if (resizeSide == Side.LEFT) this.duration - objects.minOf { o -> o.start }
                 else objects.maxOf { o -> o.start + o.duration }
 
             minHeight =
-                if (resizeDirection.up) this.height - objects.minOf { o -> o.y }
+                if (resizeSide == Side.TOP) this.height - objects.minOf { o -> o.y }
                 else objects.maxOf { o -> o.y + o.height }
         }
         val deltaDur = targetDuration.coerceAtLeast(minDur) - this.duration
@@ -143,8 +142,8 @@ class ScoreObjectGroup(
                     obj.resize(obj.durationBeforeResize * factorT, obj.heightBeforeResize * factorY)
                 }
             } else {
-                val newTime = if (resizeDirection.left) inst.start + deltaDur else inst.start
-                val newY = if (resizeDirection.up) inst.y + deltaHeight else inst.y
+                val newTime = if (resizeSide == Side.LEFT) inst.start + deltaDur else inst.start
+                val newY = if (resizeSide == Side.TOP) inst.y + deltaHeight else inst.y
                 inst.moveTo(newTime, newY, simpleMove = false)
             }
         }
@@ -157,7 +156,7 @@ class ScoreObjectGroup(
                 obj.finishResize(recordEdit = false)
             }
         }
-        if (resizeMode.isStretch || resizeDirection.left || resizeDirection.up) {
+        if (resizeMode.isStretch || resizeSide == Side.LEFT || resizeSide == Side.TOP) {
             for (inst in score.objectInstances) {
                 inst.finishMove(notifyScore = false, recordEdit = false)
             }

@@ -113,3 +113,28 @@ Label.memo-area {
     -fx-border-width: 0px 0px 0px 1px;
     -fx-border-color: grey;
 }
+
+.resize-region {
+    -fx-background-color: transparent;
+    -fx-background-radius: 5px;
+}
+
+.resize-region-horizontal {
+    -fx-pref-width: 7px;
+}
+
+.resize-region-vertical {
+    -fx-pref-height: 7px;
+}
+
+.score-object:hover .resize-region {
+    -fx-background-color: rgba(128, 0, 0, 0.5);
+}
+
+.score-object .resize-region:hover {
+    -fx-background-color: rgba(128, 0, 0, 0.75);
+}
+
+.score-object .resize-region:pressed {
+    -fx-background-color: rgba(128, 16, 16, 1);
+}

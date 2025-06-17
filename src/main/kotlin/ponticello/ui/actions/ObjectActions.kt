@@ -1,6 +1,5 @@
 package ponticello.ui.actions
 
-import fxutils.Direction
 import fxutils.actions.Action
 import fxutils.actions.collectActions
 import fxutils.actions.isAltDown
@@ -8,7 +7,7 @@ import fxutils.actions.isTargetTextInput
 import fxutils.prompt.IntegerPrompt
 import hextant.context.Context
 import hextant.context.compoundEdit
-import javafx.geometry.HorizontalDirection.RIGHT
+import javafx.geometry.Side
 import org.kordamp.ikonli.material2.Material2AL
 import org.kordamp.ikonli.materialdesign2.*
 import ponticello.impl.Logger
@@ -47,6 +46,7 @@ object ObjectActions {
         addObjectAction("Toggle mute") {
             description("Toggle mute the selected object instances")
             shortcut("Alt?+M")
+            applicableOn { view -> view.instance.obj.affectsPlayback }
             icon { selector ->
                 selector.focusedView
                     .flatMap { view -> view?.instance?.muted ?: reactiveValue(false) }
@@ -292,7 +292,7 @@ object ObjectActions {
             val duration = obj.duration
             obj.resize(
                 duration * (times + 1), obj.height,
-                ScoreObject.ResizeMode.Regular, Direction.horizontal(RIGHT)
+                ScoreObject.ResizeMode.Regular, Side.RIGHT
             )
             for (n in 1..times) {
                 for (subInst in obj.score.objectInstances.toList()) {

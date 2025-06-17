@@ -1,12 +1,11 @@
 package ponticello.ui.live
 
-import fxutils.Direction
 import fxutils.button
 import fxutils.prompt.CompoundPrompt
 import fxutils.prompt.SimpleSearchableListView
 import fxutils.setFixedWidth
 import javafx.event.Event
-import javafx.geometry.HorizontalDirection
+import javafx.geometry.Side
 import javafx.scene.control.Button
 import javafx.scene.control.Spinner
 import ponticello.impl.sync
@@ -58,8 +57,7 @@ class ScoreObjectResizeDialog(private val obj: ScoreObject) : CompoundPrompt<Res
             val dialog = ScoreObjectResizeDialog(obj)
             val resizeMode = dialog.showDialog(ev) ?: return
             obj.quantizationConfig.update(dialog.config)
-            val direction = Direction.horizontal(HorizontalDirection.RIGHT)
-            obj.resize(dialog.config.computeDuration(), obj.height, resizeMode, direction)
+            obj.resize(dialog.config.computeDuration(), obj.height, resizeMode, Side.RIGHT)
         }
     }
 }

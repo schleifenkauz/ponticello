@@ -1,6 +1,6 @@
 package ponticello.model.player
 
-import fxutils.Direction
+import javafx.geometry.Side
 import ponticello.impl.Decimal
 import ponticello.impl.Logger
 import ponticello.impl.unaryMinus
@@ -97,7 +97,7 @@ class ScoreEventCollector(
         }
     }
 
-    override fun finishedResize(obj: ScoreObject, deltaDuration: Decimal, deltaHeight: Decimal, direction: Direction) =
+    override fun finishedResize(obj: ScoreObject, deltaDuration: Decimal, deltaHeight: Decimal, side: Side) =
         ScorePlayer.execute {
             if (obj is ScoreObjectGroup) return@execute
             val eventsBefore = events.size
@@ -107,14 +107,14 @@ class ScoreEventCollector(
                 for (ev in itr) {
                     if (ev.inst.obj != obj) continue
                     val (t, y) = ev.absolutePosition
-                    val newY = if (direction.up) y - deltaHeight else y
-                    if (ev.type == Event.Type.ObjectStart && (direction.left || direction.up)) {
+                    val newY = if (side == Side.TOP) y - deltaHeight else y
+                    if (ev.type == Event.Type.ObjectStart && (side == Side.LEFT || side == Side.TOP)) {
                         itr.remove()
-                        val newStart = ObjectPosition(if (direction.left) t - deltaDuration else t, newY)
+                        val newStart = ObjectPosition(if (side == Side.LEFT) t - deltaDuration else t, newY)
                         newEvents.add(Event(Event.Type.ObjectStart, newStart, ev.inst))
-                    } else if (ev.type == Event.Type.ObjectEnd && (direction.right || direction.up)) {
+                    } else if (ev.type == Event.Type.ObjectEnd && (side == Side.RIGHT || side == Side.TOP)) {
                         itr.remove()
-                        val newEnd = ObjectPosition(if (direction.right) t + deltaDuration else t, newY)
+                        val newEnd = ObjectPosition(if (side == Side.RIGHT) t + deltaDuration else t, newY)
                         newEvents.add(Event(Event.Type.ObjectEnd, newEnd, ev.inst))
                     }
                 }

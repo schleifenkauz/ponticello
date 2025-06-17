@@ -12,19 +12,20 @@ import hextant.context.withoutUndo
 import javafx.beans.InvalidationListener
 import javafx.beans.binding.Bindings
 import javafx.beans.property.SimpleObjectProperty
-import javafx.geometry.Bounds
-import javafx.geometry.HorizontalDirection
+import javafx.beans.value.ObservableValue
+import javafx.geometry.*
 import javafx.geometry.HorizontalDirection.LEFT
 import javafx.geometry.HorizontalDirection.RIGHT
-import javafx.geometry.VerticalDirection
 import javafx.scene.Cursor
 import javafx.scene.control.ColorPicker
 import javafx.scene.control.Label
 import javafx.scene.control.Tooltip
 import javafx.scene.input.MouseButton
 import javafx.scene.input.MouseEvent
+import javafx.scene.layout.Background
 import javafx.scene.layout.HBox
 import javafx.scene.layout.Pane
+import javafx.scene.layout.Region
 import javafx.scene.paint.Color
 import javafx.scene.paint.Color.BLACK
 import ponticello.impl.*
@@ -40,8 +41,6 @@ import ponticello.ui.actions.ObjectActions
 import ponticello.ui.controls.InlineParameterControlsBar
 import ponticello.ui.controls.NameControl
 import ponticello.ui.dock.AppLayout
-import ponticello.ui.impl.resizeMode
-import ponticello.ui.launcher.PonticelloMainActivity
 import ponticello.ui.launcher.ScoreObjectDetailPane
 import ponticello.ui.registry.ScoreObjectRegistryPane
 import reaktive.value.*
@@ -58,8 +57,6 @@ abstract class ScoreObjectView(
         private set
     lateinit var parentPane: ScorePane
         private set
-
-    protected val isSubWindow: Boolean get() = scene.window != context[PonticelloMainActivity].primaryStage
 
     lateinit var context: Context
         private set
@@ -135,14 +132,16 @@ abstract class ScoreObjectView(
         setupColorPicker()
         instance.addListener(this)
         obj.addListener(this)
+        setupInlineControls()
         isInitialized = true
+    }
+
+    private fun setupInlineControls() {
         inlineNameLabel = label(obj.name)
         val controlsDisplay = context[UIState].controlsDisplay
         inlineControls.prefWidthProperty().bind(prefWidthProperty())
         inlineControls.backgroundProperty().bind(
-            Bindings.`when`(
-                Bindings.equal(controlsDisplay, SimpleObjectProperty(InlineControlsDisplay.CONTROLS_BAR))
-            ).then(background(Color.web("#1d1d20"))).otherwise(background(Color.gray(0.3, 0.35)))
+            inlineControlsBackground(controlsDisplay)
         )
         inlineControls.children.add(inlineNameLabel)
         inlineControls.children.add(infiniteSpace())
@@ -151,8 +150,7 @@ abstract class ScoreObjectView(
         inlineActionBar.cursor = Cursor.DEFAULT
         inlineControls.children.add(inlineActionBar)
         inlineControls.visibleProperty().bind(
-            inlineControlsVisibilityCondition(controlsDisplay)
-                .asObservableValue()
+            inlineControlsVisibilityCondition(controlsDisplay).asObservableValue()
         )
         inlineControls.children.addListener(InvalidationListener { _ ->
             updateInlineControlsVisibility()
@@ -160,12 +158,17 @@ abstract class ScoreObjectView(
         children.add(inlineControls)
     }
 
+    protected open fun inlineControlsBackground(
+        controlsDisplay: ReactiveVariable<InlineControlsDisplay>,
+    ): ObservableValue<Background> = Bindings.`when`(
+        Bindings.equal(controlsDisplay, SimpleObjectProperty(InlineControlsDisplay.CONTROLS_BAR))
+    ).then(background(Color.web("#1d1d20"))).otherwise(background(Color.gray(0.3, 0.35)))
+
     protected open fun inlineControlsVisibilityCondition(
         controlsDisplay: ReactiveVariable<InlineControlsDisplay>,
     ): ReactiveBoolean = controlsDisplay.notEqualTo(InlineControlsDisplay.NONE)
         .and(instance.hideInlineControls.not())
         .and(inlineNameLabel.visibleProperty().asReactiveValue())
-//            .and(inlineControls.widthProperty().lessThanOrEqualTo(prefWidthProperty()).asReactiveValue())
 
     fun initialize(parent: ScorePane) {
         if (isInitialized) return
@@ -173,13 +176,10 @@ abstract class ScoreObjectView(
         context = parent.context
         initialize()
         if (!parent.isRoot(obj)) {
-            val canResize = obj.canResize
-            setupDraggingAndResizing(
-                canUserChangeWidth = canResize, canUserChangeHeight = canResize,
-                drag = this::dragTo, resize = this::resize,
-                startDrag = this::startDrag, finishDrag = this::finishedDrag,
-                threshold = 5.0,
-            )
+            if (obj.canResize) {
+                setupResizingRegions()
+            }
+            setupDragging()
             addMouseActions()
             val tooltip = Tooltip()
             tooltip.textProperty().bind(obj.name.asObservableValue())
@@ -191,6 +191,99 @@ abstract class ScoreObjectView(
         toFront()
         context[ScoreObjectSelectionManager].select(this, addToSelection = addToSelection)
         requestFocus()
+    }
+
+    private fun setupDragging() {
+        TODO()
+    }
+
+    private fun setupResizingRegions() {
+        for (side in Side.entries) {
+            val region = Region() styleClass "resize-region"
+            when (side) {
+                Side.TOP, Side.BOTTOM -> {
+                    region.cursor = Cursor.V_RESIZE
+                    region.styleClass("resize-region-vertical")
+                    region.layoutXProperty().bind(
+                        this.prefWidthProperty().subtract(region.widthProperty()).divide(2.0)
+                    )
+                    region.prefWidthProperty().bind(this.prefWidthProperty().pow(0.66))
+                }
+
+                Side.LEFT, Side.RIGHT -> {
+                    region.cursor = Cursor.H_RESIZE
+                    region.styleClass("resize-region-horizontal")
+                    region.layoutYProperty().bind(
+                        this.prefHeightProperty().subtract(region.heightProperty()).divide(2.0)
+                    )
+                    region.prefHeightProperty().bind(this.prefHeightProperty().pow(0.66))
+                }
+            }
+            when (side) {
+                Side.TOP -> {
+                    region.translateYProperty().bind(region.heightProperty().divide(2.0).negate())
+                    region.visibleProperty().bind(region.prefWidthProperty().greaterThan(10.0))
+                }
+
+                Side.BOTTOM -> {
+                    region.layoutYProperty().bind(
+                        this.heightProperty().subtract(region.heightProperty().divide(2))
+                    )
+                    region.visibleProperty().bind(region.prefWidthProperty().greaterThan(10.0))
+                }
+
+                Side.LEFT -> {
+                    region.translateXProperty().bind(region.widthProperty().divide(2.0).negate())
+                    region.visibleProperty().bind(region.prefHeightProperty().greaterThan(10.0))
+                }
+
+                Side.RIGHT -> {
+                    region.layoutXProperty().bind(
+                        this.widthProperty().subtract(region.widthProperty().divide(2))
+                    )
+                    region.visibleProperty().bind(region.prefHeightProperty().greaterThan(10.0))
+                }
+            }
+            var dragStart: Point2D? = null
+            var oldBounds: Bounds? = null
+            region.addEventHandler(MouseEvent.ANY) { ev ->
+                ev.consume()
+                when (ev.eventType) {
+                    MouseEvent.MOUSE_PRESSED -> {
+                        if (ev.isAltDown) {
+                            if (side in setOf(Side.LEFT, Side.RIGHT)) {
+                                isCreatingLoop = true
+                            }
+                        }
+                        val resizeMode = when (ev.modifiers) {
+                            noModifiers -> ScoreObject.ResizeMode.Regular
+                            setOf(Shift) -> ScoreObject.ResizeMode.Stretch
+                            setOf(Ctrl) -> ScoreObject.ResizeMode.DeepStretch
+                            else -> return@addEventHandler
+                        }
+                        obj.beginResize(resizeMode, side)
+                        oldBounds = BoundingBox(layoutX, layoutY, width, height)
+                        dragStart = Point2D(ev.screenX, ev.screenY)
+                    }
+
+                    MouseEvent.MOUSE_DRAGGED -> {
+                        val start = dragStart ?: return@addEventHandler
+                        val dx = ev.screenX - start.x
+                        val dy = ev.screenY - start.y
+                        resize(oldBounds!!, dx, dy, side)
+                    }
+
+                    MouseEvent.MOUSE_RELEASED -> {
+                        if (isCreatingLoop) {
+                            finishLoop()
+                        } else {
+                            obj.finishResize(recordEdit = true)
+                        }
+                    }
+                }
+            }
+            children.add(region)
+        }
     }
 
     private fun setupColorPicker() {
@@ -297,53 +390,16 @@ abstract class ScoreObjectView(
     * Dragging and resizing
     * */
 
-    protected open fun startDrag(ev: MouseEvent, cursor: Cursor): Boolean {
-        if (ev.target is Label) return false
+    private fun startMove(ev: MouseEvent): Boolean {
         val selectionManager = context[ScoreObjectSelectionManager]
         if (!selectionManager.isSelected(this)) {
             selectView(addToSelection = ev.isShiftDown)
         }
-        if (cursor.isResizeCursor) {
-            selectionManager.deselectAll()
-            if (ev.isAltDown) {
-                isCreatingLoop = true
-                return true
-            } else {
-                val direction = cursor.resizeDirection()
-                return obj.beginResize(ev.resizeMode ?: return false, direction)
-            }
-        } else {
-            val selectedInstances = selectionManager.selectedInstances + this.instance
-            for (inst in selectedInstances) {
-                inst.beginMove()
-            }
-            return true
+        val selectedInstances = selectionManager.selectedInstances
+        for (inst in selectedInstances) {
+            inst.beginMove()
         }
-    }
-
-    protected open fun finishedDrag(ev: MouseEvent, cursor: Cursor) {
-        if (isCreatingLoop) return finishLoop()
-        if (cursor.isResizeCursor) {
-            obj.finishResize()
-        } else {
-            context.compoundEdit("Move objects") {
-                val selectedInstances = context[ScoreObjectSelectionManager].selectedInstances + this.instance
-                for (inst in selectedInstances) {
-                    inst.finishMove()
-                }
-            }
-        }
-    }
-
-    private fun finishLoop() {
-        isCreatingLoop = false
-        if (loopedObjects.isEmpty()) return
-        context.compoundEdit("Create loop") {
-            for (inst in loopedObjects) {
-                context[UndoManager].record(ScoreEdit.AddObject(inst, parentPane.score))
-            }
-        }
-        loopedObjects.clear()
+        return true
     }
 
     private fun dragTo(toX: Double, toY: Double) {
@@ -360,6 +416,17 @@ abstract class ScoreObjectView(
             inst.moveTo(inst.start + deltaT, inst.y + deltaY, simpleMove = false)
         }
         parentPane.markT(instance.start + deltaT)
+    }
+
+    private fun finishLoop() {
+        isCreatingLoop = false
+        if (loopedObjects.isEmpty()) return
+        context.compoundEdit("Create loop") {
+            for (inst in loopedObjects) {
+                context[UndoManager].record(ScoreEdit.AddObject(inst, parentPane.score))
+            }
+        }
+        loopedObjects.clear()
     }
 
     open fun getDisplayWidth(): Double = getWidth(obj.duration)
@@ -412,60 +479,58 @@ abstract class ScoreObjectView(
         rescale()
     }
 
-    @Suppress("UNUSED_PARAMETER") //parameter [ev] is needed to be compatible with Node.setupDraggingAndResizing
-    private fun resize(old: Bounds, deltaX: Double, deltaY: Double, cursor: Cursor, ev: MouseEvent) {
+    private fun resize(old: Bounds, deltaX: Double, deltaY: Double, side: Side) {
         check(obj.canResize) { "Attempt to resize object that is not resizable" }
         context[AppLayout].get<ScoreObjectDetailPane>().hidePopup()
         val parentPane = parentPane
-        val direction = cursor.resizeDirection()
-        val oldX = if (direction.left) old.minX else old.maxX
-        val oldY = if (direction.up) old.minY else old.maxY
-        val (t, y) = parentPane.snapToGrid(oldX + deltaX, oldY + deltaY)
-        parentPane.markT(t)
-        val dt = t - parentPane.getTime(oldX)
-        val dy = y - parentPane.getScoreY(oldY)
-        var newDur = getDuration(old.width)
-        if (direction.left) newDur -= dt
-        else if (direction.right) newDur += dt
-        var newHeight = parentPane.getScoreY(old.height)
-        if (direction.up) newHeight -= dy
-        else if (direction.down) newHeight += dy
+        if (side in setOf(Side.LEFT, Side.RIGHT)) {
+            val oldX = if (side == Side.LEFT) old.minX else old.maxX
+            val (t, _) = parentPane.snapToGrid(oldX + deltaX, old.maxY)
+            parentPane.markT(t)
+            val dt = t - parentPane.getTime(oldX)
+            var newDur = getDuration(old.width)
+            if (side == Side.LEFT) newDur -= dt
+            else if (side == Side.RIGHT) newDur += dt
+            newDur = newDur.coerceAtLeast(getDuration(10.0))
+            if (side == Side.LEFT) newDur = newDur.coerceAtMost(instance.end)
+            if (parentPane is SubScorePane && side == Side.RIGHT) newDur =
+                newDur.coerceAtMost(parentPane.score.maxTime.now - instance.start)
 
-        newDur = newDur.coerceAtLeast(getDuration(10.0))
-        newHeight = newHeight.coerceAtLeast(0.01.asY)
-
-        if (direction.left) newDur = newDur.coerceAtMost(instance.end)
-        if (parentPane is SubScorePane && direction.right) newDur =
-            newDur.coerceAtMost(parentPane.score.maxTime.now - instance.start)
-        if (direction.up) newHeight = newHeight.coerceAtMost(instance.y + instance.height)
-        if (direction.down) {
-            val parentHeight = parentPane.associatedObject?.height ?: 1.0.asY
-            newHeight = newHeight.coerceAtMost(parentHeight - instance.y)
-        }
-        if (isCreatingLoop) {
-            if (direction.up || direction.down) return
-            val factor = if (direction.left) -1 else if (direction.right) +1 else return
-            val loopCount = (newDur / obj.duration).roundToInt() - 1
-            if (loopCount < 0) return
-            if (loopCount > loopedObjects.size) {
-                for (i in loopedObjects.size + 1..loopCount) {
-                    val offset = ObjectPosition(time = i * obj.duration * factor, y = zero)
-                    val obj = ScoreObjectInstance(obj, instance.position + offset, instance.muted.copy())
-                    loopedObjects.add(obj)
-                    context.withoutUndo {
-                        parentPane.score.addObject(obj, autoSelect = false)
+            if (isCreatingLoop) {
+                val factor = if (side == Side.LEFT) -1 else if (side == Side.RIGHT) +1 else return
+                val loopCount = (newDur / obj.duration).roundToInt() - 1
+                if (loopCount < 0) return
+                if (loopCount > loopedObjects.size) {
+                    for (i in loopedObjects.size + 1..loopCount) {
+                        val offset = ObjectPosition(time = i * obj.duration * factor, y = zero)
+                        val obj = ScoreObjectInstance(obj, instance.position + offset, instance.muted.copy())
+                        loopedObjects.add(obj)
+                        context.withoutUndo {
+                            parentPane.score.addObject(obj, autoSelect = false)
+                        }
+                    }
+                } else {
+                    for (i in loopedObjects.size - 1 downTo loopCount) {
+                        val inst = loopedObjects.removeAt(i)
+                        context.withoutUndo {
+                            parentPane.score.removeObject(inst, Score.RegistryOption.KEEP_IN_REGISTRY)
+                        }
                     }
                 }
             } else {
-                for (i in loopedObjects.size - 1 downTo loopCount) {
-                    val inst = loopedObjects.removeAt(i)
-                    context.withoutUndo {
-                        parentPane.score.removeObject(inst, Score.RegistryOption.KEEP_IN_REGISTRY)
-                    }
-                }
+                obj.resize(newDur, obj.height)
             }
         } else {
-            obj.resize(newDur, newHeight)
+            var newHeight =
+                if (side == Side.TOP) parentPane.getScoreY(old.height - deltaY)
+                else parentPane.getScoreY(old.height + deltaY)
+            newHeight = newHeight.coerceAtLeast(0.01.asY)
+            if (side == Side.TOP) newHeight = newHeight.coerceAtMost(instance.y + instance.height)
+            if (side == Side.BOTTOM) {
+                val parentHeight = parentPane.associatedObject?.height ?: 1.0.asY
+                newHeight = newHeight.coerceAtMost(parentHeight - instance.y)
+            }
+            obj.resize(obj.duration, newHeight)
         }
     }
 
@@ -489,7 +554,7 @@ abstract class ScoreObjectView(
             val targetDuration = (obj.duration + deltaT).coerceAtMost(parentPane.score.maxTime.now - instance.start)
             obj.resize(
                 targetDuration, obj.height,
-                resizeMode!!, Direction.horizontal(RIGHT)
+                resizeMode!!, Side.RIGHT
             )
             parentPane.markT(instance.end)
         } else {
@@ -512,7 +577,7 @@ abstract class ScoreObjectView(
             val targetHeight = (obj.height + deltaY).coerceAtMost(parentPane.score.maxY.now - instance.y)
             obj.resize(
                 obj.duration, targetHeight,
-                resizeMode, Direction.vertical(VerticalDirection.DOWN)
+                resizeMode, Side.BOTTOM
             )
         } else {
             val y = (instance.y + deltaY).coerceIn(zero, parentPane.score.maxY.now - obj.height)

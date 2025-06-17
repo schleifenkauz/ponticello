@@ -1,13 +1,11 @@
 package ponticello.ui.registry
 
-import fxutils.Direction
 import fxutils.actions.ContextualizedAction
 import fxutils.actions.action
 import fxutils.actions.collectActions
 import fxutils.controls.SliderBar
 import fxutils.undo.UndoManager
 import javafx.event.Event
-import javafx.geometry.HorizontalDirection
 import javafx.scene.Node
 import javafx.scene.Parent
 import javafx.scene.input.DataFormat
@@ -98,8 +96,7 @@ class ScoreObjectRegistryPane(registry: ScoreObjectRegistry) : ObjectRegistryPan
                     .showDialog(ev) ?: return@executes
                 obj.quantizationConfig.update(copy)
                 val newDuration = obj.quantizationConfig.computeDuration()
-                val direction = Direction.horizontal(HorizontalDirection.RIGHT)
-                obj.resize(newDuration, obj.height, ScoreObject.ResizeMode.Regular, direction)
+                obj.resize(newDuration, obj.height, ScoreObject.ResizeMode.Regular, javafx.geometry.Side.RIGHT)
             }
         }
 
