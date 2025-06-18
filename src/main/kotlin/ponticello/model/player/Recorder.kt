@@ -95,7 +95,7 @@ class Recorder(private val context: Context) {
             .resolve("samples").also(File::mkdir)
             .resolve("$name.wav")
         pathOfLastRecording!!.copyTo(samplePath)
-        val obj = SampleObject.create(context.project, name, samplePath)
+        val obj = SampleObject.create(name, samplePath)
         context[BufferRegistry].add(obj)
     }
 

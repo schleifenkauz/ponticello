@@ -13,8 +13,6 @@ import ponticello.ui.launcher.PonticelloApp.Companion.primaryStage
 import java.io.File
 
 class PonticelloFiles(private val context: Context) {
-    private val userHome = File(System.getProperty("user.home"))
-
     private val ponticelloDir = run {
         val defaultHome = userHome.resolve(".ponticello")
         try {
@@ -65,5 +63,7 @@ class PonticelloFiles(private val context: Context) {
         else Settings.createDefault()
     }
 
-    companion object : PublicProperty<PonticelloFiles> by publicProperty("PonticelloFiles")
+    companion object : PublicProperty<PonticelloFiles> by publicProperty("PonticelloFiles") {
+        val userHome = File(System.getProperty("user.home"))
+    }
 }

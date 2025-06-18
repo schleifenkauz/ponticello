@@ -50,7 +50,7 @@ class BufferRegistry(
 
     fun getOrAdd(file: File): SampleObject = getSample(file) ?: run {
         val name = Identifier.truncate(file.nameWithoutExtension)
-        val sample = SampleObject.create(context.project, name, file)
+        val sample = SampleObject.create(name, file)
         add(sample)
         return sample
     }

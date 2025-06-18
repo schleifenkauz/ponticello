@@ -8,11 +8,11 @@ import javafx.scene.image.ImageView
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import ponticello.impl.*
-import ponticello.model.project.PonticelloProject
 import ponticello.model.project.PonticelloProject.Companion.projectDirectory
 import ponticello.model.registry.BufferRegistry
 import ponticello.model.score.ObjectPosition
 import ponticello.sc.client.ScWriter
+import ponticello.ui.launcher.PonticelloFiles
 import reaktive.event.unitEvent
 import reaktive.value.*
 import java.io.File
@@ -90,6 +90,14 @@ class SampleObject(
         updateSpectrogram()
     }
 
+    override fun onLoadedIntoRegistry() {
+        super.onLoadedIntoRegistry()
+        if (audioFile.lastModified() > spectrogramFile.lastModified()) {
+            updateSpectrogram()
+            updateInfos()
+        }
+    }
+
     private fun copyReferencedFileToSamplesDir() {
         val file = referencedFile()
         if (!file.isFile) {
@@ -107,7 +115,7 @@ class SampleObject(
     override fun initialize(context: Context) {
         super.initialize(context)
         resolveAudioFile()
-        if (!(registry.copyAudioFiles.now && !(audioFileInSamplesDir().isFile))) {
+        if (!registry.copyAudioFiles.now || audioFileInSamplesDir().isFile) {
             updateInfos()
         }
     }
@@ -121,15 +129,7 @@ class SampleObject(
 
     private fun audioFileInSamplesDir(): File = samplesDir.resolve("${name.now}.wav")
 
-    private fun referencedFile(): File {
-        val base = context[projectDirectory]
-        val path = referencedFile.now
-        return when {
-            path.startsWith("../") -> base.parentFile.resolve(path.drop(3))
-            path.startsWith("./") -> base.resolve(path.drop(2))
-            else -> File(path)
-        }.canonicalFile
-    }
+    private fun referencedFile(): File = resolvePath(PonticelloFiles.userHome, referencedFile.now)
 
     fun toggleCopyToSamplesDir(copy: Boolean) {
         if (copy) {
@@ -150,8 +150,7 @@ class SampleObject(
     }
 
     fun loadFile(file: File) {
-        val base = context[projectDirectory]
-        referencedFile.now = relativizePath(base, file)
+        referencedFile.now = relativizePath(PonticelloFiles.userHome, file)
         sync()
     }
 
@@ -208,16 +207,21 @@ class SampleObject(
     }
 
     companion object {
-        fun relativizePath(base: File, audioFile: File): String {
-            return when {
-                audioFile.startsWith(base) -> "./" + audioFile.relativeTo(base).invariantSeparatorsPath
-                audioFile.startsWith(base.parentFile) -> "../" + audioFile.relativeTo(base.parentFile).invariantSeparatorsPath
-                else -> audioFile.absoluteFile.invariantSeparatorsPath
-            }
+        private fun relativizePath(base: File, audioFile: File): String {
+            val relativized = audioFile.relativeTo(base)
+            return if (relativized != audioFile) "~/${relativized.invariantSeparatorsPath}"
+            else audioFile.invariantSeparatorsPath
         }
 
-        fun create(project: PonticelloProject, name: String, audioFile: File): SampleObject {
-            val referencedFile = relativizePath(project.projectDirectory, audioFile)
+        private fun resolvePath(base: File, path: String): File {
+            return when {
+                path.startsWith("~/") -> base.resolve(path.drop(2))
+                else -> File(path)
+            }.canonicalFile
+        }
+
+        fun create(name: String, audioFile: File): SampleObject {
+            val referencedFile = relativizePath(PonticelloFiles.userHome, audioFile)
             return SampleObject(reactiveVariable(referencedFile)).withName(name)
         }
     }

@@ -103,7 +103,7 @@ class BufferRegistryPane(private val buffers: BufferRegistry) : ObjectRegistryPa
         ev.dragboard.hasFile("wav") -> {
             val file = ev.dragboard.files[0]
             val name = file.nameWithoutExtension
-            SampleObject.create(buffers.context.project, name, file)
+            SampleObject.create(name, file)
         }
 
         else -> null
@@ -115,7 +115,7 @@ class BufferRegistryPane(private val buffers: BufferRegistry) : ObjectRegistryPa
     private fun loadNewSample(name: (File) -> String): SampleObject? {
         val file = buffers.context[PonticelloFiles].showOpenDialog("*.wav") ?: return null
         if (buffers.getSample(file) != null) return null
-        val sample = SampleObject.create(buffers.context.project, name(file), file)
+        val sample = SampleObject.create(name(file), file)
         return sample
     }
 
