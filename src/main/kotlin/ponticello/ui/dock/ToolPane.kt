@@ -284,7 +284,7 @@ abstract class ToolPane : VBox() {
     abstract class Type(val uid: Int, val title: String) : AbstractContextualObject() {
         abstract val defaultSide: Side
 
-        abstract val icon: Ikon?
+        open val icon: Ikon? get() = null
 
         open val shortcuts: Array<String> get() = emptyArray()
 

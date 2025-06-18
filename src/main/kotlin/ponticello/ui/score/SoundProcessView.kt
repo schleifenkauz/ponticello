@@ -371,6 +371,12 @@ class SoundProcessView(
             node.image.layoutX = x
             node.image.fitWidth = getWidth(node.duration)
             node.image.fitHeight = objectPane.height
+            if (obj.playBufRate!!.now < zero) {
+                node.image.transforms.setAll(
+                    Translate(node.image.fitWidth, 0.0),
+                    Scale(-1.0, 1.0)
+                )
+            }
             node.loopPointIndicator?.startX = x
             node.loopPointIndicator?.endX = x
             node.loopPointIndicator?.endY = objectPane.height

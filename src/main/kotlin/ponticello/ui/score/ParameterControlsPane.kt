@@ -12,12 +12,13 @@ import javafx.scene.input.DragEvent
 import javafx.scene.input.Dragboard
 import javafx.scene.input.TransferMode
 import javafx.scene.input.TransferMode.COPY_OR_MOVE
+import org.kordamp.ikonli.Ikon
 import org.kordamp.ikonli.codicons.Codicons
-import org.kordamp.ikonli.material2.Material2MZ
 import ponticello.impl.json
 import ponticello.model.Settings
 import ponticello.model.obj.ParameterizedObject
 import ponticello.model.obj.withName
+import ponticello.model.project.PonticelloProject
 import ponticello.model.registry.ObjectList
 import ponticello.model.score.ParameterControlList
 import ponticello.model.score.ParameterControlList.NamedParameterControl
@@ -26,6 +27,8 @@ import ponticello.sc.ControlSpec
 import ponticello.ui.controls.ControlAssignmentEditor
 import ponticello.ui.controls.ControlSpecPrompt
 import ponticello.ui.dock.SearchableToolPane
+import ponticello.ui.dock.Side
+import ponticello.ui.dock.ToolPane
 import ponticello.ui.registry.ObjectBox
 import ponticello.ui.registry.ObjectListView.DisplayMode
 import ponticello.ui.registry.SearchableParameterDefListView
@@ -34,9 +37,10 @@ import reaktive.value.now
 
 class ParameterControlsPane(
     private val obj: ParameterizedObject, private val view: ScoreObjectView? = null,
-) : SearchableToolPane<NamedParameterControl>(
-    obj.controls, scrollable = false
-), ParameterControlList.Listener {
+) : SearchableToolPane<NamedParameterControl>(obj.controls, scrollable = false), ParameterControlList.Listener {
+    override val type: Type
+        get() = ParameterControlsPane
+
     private val editors = mutableMapOf<NamedParameterControl, ControlAssignmentEditor>()
 
     override val title: String
@@ -140,15 +144,14 @@ class ParameterControlsPane(
     override fun getActions(box: ObjectBox<NamedParameterControl>): List<ContextualizedAction> =
         actions.withContext(box)
 
-    companion object {
-        private val headerActions = collectActions<ParameterControlsPane> {
-            addAction("Add parameter") {
-                icon(Material2MZ.PLUS)
-                shortcut("Ctrl+PLUS")
-                executes { p, ev ->
+    companion object : Type(uid = -1, "ParameterControlsPane") {
+        override val defaultSide: Side
+            get() = Side.TOP
+        override val icon: Ikon?
+            get() = null
 
-                }
-            }
+        override fun createToolPane(project: PonticelloProject): ToolPane {
+            throw UnsupportedOperationException()
         }
 
         private val actions = collectActions<ObjectBox<NamedParameterControl>> {
