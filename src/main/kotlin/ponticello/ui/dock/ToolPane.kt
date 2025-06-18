@@ -4,10 +4,12 @@ import fxutils.*
 import fxutils.actions.*
 import hextant.fx.initHextantScene
 import javafx.event.Event
+import javafx.scene.Cursor
 import javafx.scene.Node
 import javafx.scene.Parent
 import javafx.scene.Scene
 import javafx.scene.control.ContextMenu
+import javafx.scene.control.Label
 import javafx.scene.input.DataFormat
 import javafx.scene.input.KeyEvent
 import javafx.scene.layout.HBox
@@ -15,6 +17,7 @@ import javafx.scene.layout.Priority.ALWAYS
 import javafx.scene.layout.Region
 import javafx.scene.layout.StackPane
 import javafx.scene.layout.VBox
+import javafx.scene.paint.Color
 import javafx.scene.robot.Robot
 import javafx.stage.Modality
 import javafx.stage.Popup
@@ -22,17 +25,18 @@ import javafx.stage.Stage
 import org.kordamp.ikonli.Ikon
 import org.kordamp.ikonli.javafx.FontIcon
 import org.kordamp.ikonli.material2.Material2AL
+import org.kordamp.ikonli.materialdesign2.MaterialDesignP
 import org.kordamp.ikonli.materialdesign2.MaterialDesignR
+import org.kordamp.ikonli.materialdesign2.MaterialDesignW
 import ponticello.model.obj.AbstractContextualObject
 import ponticello.model.project.PonticelloProject
+import ponticello.ui.dock.Side.*
 import ponticello.ui.dock.ToolPaneMode.*
 import ponticello.ui.impl.DEFAULT_SCENE_FILL
 import ponticello.ui.impl.sceneFill
 import ponticello.ui.launcher.PonticelloApp.Companion.primaryStage
 import reaktive.value.ReactiveBoolean
-import reaktive.value.binding.Binding
-import reaktive.value.binding.equalTo
-import reaktive.value.binding.flatMap
+import reaktive.value.binding.*
 import reaktive.value.fx.asReactiveValue
 import reaktive.value.now
 import reaktive.value.reactiveValue
@@ -56,9 +60,13 @@ abstract class ToolPane : VBox() {
 
     protected abstract val content: Parent
     protected open val headerContent: Node? get() = null
-    protected open val headerActions: List<ContextualizedAction> get() = emptyList()
+    protected open val headerActions: List<ContextualizedAction>
+        get() = actions.withContext(this)
 
     lateinit var header: HBox
+        private set
+
+    lateinit var heading: Label
         private set
 
     lateinit var actionBar: ActionBar
@@ -71,6 +79,8 @@ abstract class ToolPane : VBox() {
         private set
 
     val isShowing: ReactiveBoolean get() = showing
+
+    val side by lazy { reactiveVariable(type.defaultSide) }
 
     init {
         styleClass("tool-pane")
@@ -108,10 +118,12 @@ abstract class ToolPane : VBox() {
 
     private fun createHeader(): HBox {
         actionBar = ActionBar(headerActions, buttonStyle = "medium-icon-button")
-        val label = label(title).styleClass("heading")
-        val box = HBox(label, infiniteSpace(), actionBar).styleClass("tool-pane-header")
+        heading = label(title).styleClass("heading")
+        val space = infiniteSpace()
+        val box = HBox(heading, space, actionBar).styleClass("tool-pane-header")
         if (headerContent != null) box.children.add(1, headerContent)
-        box.setupWindowDragging { scene.window }
+        heading.setupWindowDragging(Cursor.DEFAULT) { scene.window as? Popup }
+        space.setupWindowDragging(Cursor.DEFAULT) { scene.window as? Popup }
         return box
     }
 
@@ -178,7 +190,9 @@ abstract class ToolPane : VBox() {
 
     protected open fun makePopup(): Popup {
         val popup = Popup()
-        popup.content.add(StackPane(this))
+        val root = StackPane(this)
+        root.border = solidBorder(Color.BLACK)
+        popup.content.add(root)
         popup.scene.initHextantScene(context)
         popup.sceneFill(DEFAULT_SCENE_FILL)
         popup.isAutoHide = true
@@ -284,23 +298,43 @@ abstract class ToolPane : VBox() {
     }
 
     companion object {
-        private fun isSceneRoot(node: Node): Binding<Boolean> = node.sceneProperty().asReactiveValue().flatMap { s ->
-            s?.rootProperty()?.asReactiveValue()?.equalTo(node) ?: reactiveValue(false)
+        private fun isSceneRoot(node: Node): ReactiveBoolean {
+            val parent = node.parentProperty().asReactiveValue()
+            return parent.map { p -> p is StackPane } and
+                    node.sceneProperty().asReactiveValue().flatMap { s ->
+                        s?.rootProperty()?.asReactiveValue()?.equalTo(parent) ?: reactiveValue(false)
+                    }
         }
 
-        val fitContentAction = action<Node>("Resize window to fit contents") {
-            shortcut("Ctrl+L")
-            enableWhen { p -> isSceneRoot(p) }
-            ifNotApplicable(Action.IfNotApplicable.Hide)
-            icon(MaterialDesignR.RESIZE)
-            executes { p -> p.scene.window.sizeToScene() }
-        }
-
-        val redockAction = action<ToolPane>("Dock") {
-            enableWhen { p -> isSceneRoot(p) }
-            ifNotApplicable(Action.IfNotApplicable.Hide)
-            //TODO find icon
-            executes { p -> p.setMode(Docked) }
+        private val actions = collectActions<ToolPane> {
+            addAction("Resize window to fit contents") {
+                shortcut("Ctrl+L")
+                enableWhen { p -> isSceneRoot(p) }
+                ifNotApplicable(Action.IfNotApplicable.Hide)
+                icon(MaterialDesignR.RESIZE)
+                executes { p -> p.scene.window.sizeToScene() }
+            }
+            addAction("Dock") {
+                enableWhen { p -> isSceneRoot(p) and p.side.notEqualTo(TOP) }
+                ifNotApplicable(Action.IfNotApplicable.Hide)
+                icon { p ->
+                    p.side.map { side ->
+                        when (side) {
+                            LEFT -> MaterialDesignP.PAGE_LAYOUT_SIDEBAR_LEFT
+                            RIGHT -> MaterialDesignP.PAGE_LAYOUT_SIDEBAR_RIGHT
+                            BOTTOM -> MaterialDesignP.PAGE_LAYOUT_FOOTER
+                            TOP -> MaterialDesignP.PROGRESS_QUESTION //cannot happen
+                        }
+                    }
+                }
+                executes { p -> p.setMode(Docked) }
+            }
+            addAction("Hide") {
+                icon(MaterialDesignW.WINDOW_MINIMIZE)
+                enableWhen { p -> isSceneRoot(p).not() }
+                ifNotApplicable(Action.IfNotApplicable.Hide)
+                executes { p -> p.setShowing(false) }
+            }
         }
     }
 }

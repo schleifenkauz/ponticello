@@ -90,15 +90,16 @@ class EnvelopeEditor(
         line.setupDragging(
             defaultCursor = Cursor.CROSSHAIR, dragCursor = Cursor.V_RESIZE,
             onPressed = { ev: MouseEvent ->
-                if (pane.prefWidth < WIDTH_THRESHOLD) return@setupDragging
+                if (pane.prefWidth < WIDTH_THRESHOLD) return@setupDragging false
                 val t = transformXToTime(ev.x)
                 var segmentIdx = envelope.points.map(EnvelopePoint::time).binarySearch(t)
                 if (segmentIdx < 0) segmentIdx = -(segmentIdx + 1)
-                if (segmentIdx == 0 || segmentIdx == envelope.points.size) return@setupDragging
+                if (segmentIdx == 0 || segmentIdx == envelope.points.size) return@setupDragging false
                 val diff = envelope.points[segmentIdx - 1].value - envelope.points[segmentIdx].value
-                if (diff.abs() >= spec.step.get()) return@setupDragging
+                if (diff.abs() >= spec.step.get()) return@setupDragging false
                 draggingSegment = true
                 envelope.beginSegmentEdit(segmentIdx - 1)
+                true
             },
             onReleased = {
                 if (draggingSegment) {
@@ -297,7 +298,10 @@ class EnvelopeEditor(
         handle.setupDragging(
             startDragEvent = MouseEvent.MOUSE_PRESSED,
             defaultCursor = Cursor.CROSSHAIR, dragCursor = Cursor.MOVE,
-            onPressed = { envelope.beginPointEdit(handles.indexOf(handle)) },
+            onPressed = {
+                envelope.beginPointEdit(handles.indexOf(handle))
+                true
+            },
             onReleased = { envelope.finishEdit() }
         ) { _, _, old, dx, dy ->
             val idx = handles.indexOf(handle)

@@ -111,6 +111,7 @@ class FlowGroupManager(
                 pos = group.yPosition.now
                 line.startYProperty().unbind()
                 line.endYProperty().unbind()
+                true
             },
             onReleased = {
                 group.yPosition.now = pos

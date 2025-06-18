@@ -53,7 +53,8 @@ import java.io.File
 class BufferRegistryPane(private val buffers: BufferRegistry) : ObjectRegistryPane<BufferObject>(buffers) {
     override val type: Type
         get() = BufferRegistryPane
-    override val headerActions: List<ContextualizedAction> = registryActions.withContext(buffers)
+    override val headerActions: List<ContextualizedAction>
+        get() = registryActions.withContext(buffers) + super.headerActions
 
     private var filter = BufferTypeFilter.All
         set(value) {
@@ -151,6 +152,7 @@ class BufferRegistryPane(private val buffers: BufferRegistry) : ObjectRegistryPa
             val xLabel = Label("x")
             listOf(channelsSpinner, xLabel, durationInput)
         }
+
         else -> emptyList()
     }
 

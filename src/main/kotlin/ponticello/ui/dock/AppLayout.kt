@@ -127,13 +127,17 @@ class AppLayout(
 
     private fun setupToolPanes() = context.withoutUndo {
         val uiState = project[UI_STATE]
-        val toolPaneSides = sideBarLists.entries.flatMap { (side, types) -> types.map { t -> t to side } }.toMap()
+        val toolPaneSides = sideBarLists.entries.flatMap { (side, types) ->
+            types.map { t -> t to side }
+        }.toMap(mutableMapOf())
         for ((_, list) in sideBarLists) list.initialize(context)
         for (type in allToolPaneTypes) {
             if (type !in toolPaneSides) {
                 sideBarLists.getOrPut(type.defaultSide) { ToolPaneTypeList.new(context) }.add(type)
+                toolPaneSides[type] = type.defaultSide
             }
             val toolPane = type.createToolPane(project)
+            toolPane.side.set(toolPaneSides.getValue(type))
             toolPanes.add(toolPane)
             val state = uiState.toolPaneStates.find { s -> s.uid == type.uid } ?: toolPane.defaultState()
             toolPane.initialize(this, state)
@@ -276,6 +280,7 @@ class AppLayout(
         if (toolPane.isShowing.now) {
             showDocked(toolPane)
         }
+        toolPane.side.set(getSide(toolPane))
     }
 
     override fun moved(obj: ToolPane.Type, idx: Int) {

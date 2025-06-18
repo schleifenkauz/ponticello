@@ -1,12 +1,9 @@
 package ponticello.ui.misc
 
-import fxutils.Ctrl
-import fxutils.actions.ContextualizedAction
+import fxutils.*
+import fxutils.actions.ActionBar
 import fxutils.actions.collectActions
-import fxutils.modifiers
-import fxutils.noModifiers
 import fxutils.prompt.SimpleTextPrompt
-import fxutils.relocate
 import javafx.beans.binding.Bindings
 import javafx.scene.Node
 import javafx.scene.Parent
@@ -38,14 +35,17 @@ class HelpBrowser : ToolPane() {
     override val content: Parent
         get() = webView
 
-    override val headerActions: List<ContextualizedAction> = browserActions.withContext(this)
-
     override fun defaultState(): ToolPaneState = ToolPaneState.docked
 
     override fun doSetup() {
         webView = WebView()
         webView.setPrefSize(600.0, 800.0)
         webView.engine.load("$URL_ROOT/Help.html")
+    }
+
+    override fun afterSetup() {
+        val actionBar = ActionBar(browserActions.withContext(this), "medium-icon-button")
+        header.children.addAfter(heading, actionBar)
     }
 
     fun showClassDocumentation(target: ScExprEditor<*>, anchor: Node) {

@@ -24,7 +24,7 @@ class ConsoleOutputPane(client: SuperColliderClient) : ToolPane(), ConsoleMonito
     override val content = TextArea() styleClass "console-output"
 
     override val headerActions: List<ContextualizedAction>
-        get() = super.headerActions
+        get() = actions.withContext(this) + super.headerActions
 
     init {
         content.isEditable = false

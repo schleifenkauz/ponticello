@@ -29,7 +29,7 @@ abstract class SearchableToolPane<O : NamedObject>(
         private set
 
     override val headerActions: List<ContextualizedAction>
-        get() = modeChangeActions.withContext(listView) + fitContentAction.withContext(this) + actions.withContext(this)
+        get() = modeChangeActions.withContext(listView) + actions.withContext(this) + super.headerActions
 
     override val content: Parent get() = listView
     override val headerContent: Node get() = searchText

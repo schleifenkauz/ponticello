@@ -65,7 +65,7 @@ class LauncherGridPane(
     override val headerContent: Node = setupHeader()
     override val type: Type get() = LauncherGridPane
 
-    override val headerActions: List<ContextualizedAction> = actions.withContext(grid)
+    override val headerActions: List<ContextualizedAction> = actions.withContext(grid) + super.headerActions
 
     override fun defaultState(): ToolPaneState = ToolPaneState.window
 
