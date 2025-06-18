@@ -3,6 +3,8 @@ package ponticello.ui.score
 import fxutils.centerChildren
 import fxutils.prompt.DetailPane
 import fxutils.styleClass
+import javafx.beans.property.SimpleBooleanProperty
+import javafx.beans.value.ObservableValue
 import javafx.scene.control.Label
 import javafx.scene.control.TextArea
 import javafx.scene.input.KeyCode
@@ -13,9 +15,7 @@ import javafx.scene.text.Text
 import ponticello.model.project.InlineControlsDisplay
 import ponticello.model.score.MemoObject
 import ponticello.model.score.ScoreObjectInstance
-import reaktive.value.ReactiveBoolean
 import reaktive.value.ReactiveVariable
-import reaktive.value.reactiveValue
 
 class MemoObjectView(override val obj: MemoObject, inst: ScoreObjectInstance) : ScoreObjectView(inst) {
     private val edit = TextArea(obj.text) styleClass "memo-area"
@@ -73,5 +73,5 @@ class MemoObjectView(override val obj: MemoObject, inst: ScoreObjectInstance) : 
 
     override fun inlineControlsVisibilityCondition(
         controlsDisplay: ReactiveVariable<InlineControlsDisplay>,
-    ): ReactiveBoolean = reactiveValue(false)
+    ): ObservableValue<Boolean> = SimpleBooleanProperty(false)
 }

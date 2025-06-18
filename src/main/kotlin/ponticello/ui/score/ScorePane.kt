@@ -140,8 +140,6 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
     protected open fun listenForEvents() {
         addEventHandler(MouseEvent.ANY) { ev ->
             if (ev.target != this) return@addEventHandler
-            if (this !is RootScorePane && !ev.isControlDown) return@addEventHandler
-            ev.consume()
             when (ev.eventType) {
                 MouseEvent.MOUSE_PRESSED -> mousePressed(ev)
                 MouseEvent.MOUSE_DRAGGED -> mouseDragged(ev)
@@ -266,9 +264,11 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
                 val time = t.coerceIn(zero, score.maxTime.now - obj.duration)
                 val scoreY = y.coerceIn(zero, score.maxY.now - obj.height)
                 score.addObject(obj, time, scoreY, autoSelect = false)
+                ev.consume()
             }
 
             this is RootScorePane && ev.modifiers.isEmpty() -> {
+                ev.consume()
                 selector.deselectAll()
                 requestFocus()
                 val player = context[ScorePlayer.CURRENT]
@@ -318,6 +318,8 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
     }
 
     private fun mouseDragged(ev: MouseEvent) {
+        if (this is SubScorePane) return
+        ev.consume()
         if (selectedArea != null) {
             val pos = snapToGrid(ev.x, ev.y)
             val selection = selectedArea!!
@@ -327,6 +329,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
     }
 
     private fun doubleClicked(ev: MouseEvent) {
+        ev.consume()
         val (t, y) = snapToGrid(ev.x, ev.y)
         val type = SimpleSearchableListView(listOf("Task", "Memo"), "Choose object type")
             .showPopup(localToScreen(ev.x, ev.y), scene.window) ?: return
@@ -358,6 +361,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
     }
 
     private fun mouseReleased(ev: MouseEvent) {
+        ev.consume()
         val selection = selectedArea
         if (selection == null || selection.isEmpty()) return
         clearRegionSelection()

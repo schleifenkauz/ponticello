@@ -17,9 +17,9 @@ import javafx.geometry.*
 import javafx.geometry.HorizontalDirection.LEFT
 import javafx.geometry.HorizontalDirection.RIGHT
 import javafx.scene.Cursor
+import javafx.scene.Node
 import javafx.scene.control.ColorPicker
 import javafx.scene.control.Label
-import javafx.scene.control.Tooltip
 import javafx.scene.input.MouseButton
 import javafx.scene.input.MouseEvent
 import javafx.scene.layout.Background
@@ -28,6 +28,7 @@ import javafx.scene.layout.Pane
 import javafx.scene.layout.Region
 import javafx.scene.paint.Color
 import javafx.scene.paint.Color.BLACK
+import javafx.scene.robot.Robot
 import ponticello.impl.*
 import ponticello.model.obj.project
 import ponticello.model.project.InlineControlsDisplay
@@ -132,7 +133,9 @@ abstract class ScoreObjectView(
         setupColorPicker()
         instance.addListener(this)
         obj.addListener(this)
-        setupInlineControls()
+        if (!parentPane.isRoot(obj)) {
+            setupInlineControls()
+        }
         isInitialized = true
     }
 
@@ -149,9 +152,7 @@ abstract class ScoreObjectView(
         inlineActionBar = ActionBar(actions, buttonStyle = "small-icon-button")
         inlineActionBar.cursor = Cursor.DEFAULT
         inlineControls.children.add(inlineActionBar)
-        inlineControls.visibleProperty().bind(
-            inlineControlsVisibilityCondition(controlsDisplay).asObservableValue()
-        )
+        inlineControls.visibleProperty().bind(inlineControlsVisibilityCondition(controlsDisplay))
         inlineControls.children.addListener(InvalidationListener { _ ->
             updateInlineControlsVisibility()
         })
@@ -166,9 +167,12 @@ abstract class ScoreObjectView(
 
     protected open fun inlineControlsVisibilityCondition(
         controlsDisplay: ReactiveVariable<InlineControlsDisplay>,
-    ): ReactiveBoolean = controlsDisplay.notEqualTo(InlineControlsDisplay.NONE)
+    ): ObservableValue<Boolean> = controlsDisplay.notEqualTo(InlineControlsDisplay.NONE)
         .and(instance.hideInlineControls.not())
         .and(inlineNameLabel.visibleProperty().asReactiveValue())
+        .asObservableValue()
+
+    protected open fun dragTargets(): List<Node> = listOf(this)
 
     fun initialize(parent: ScorePane) {
         if (isInitialized) return
@@ -181,9 +185,6 @@ abstract class ScoreObjectView(
             }
             setupDragging()
             addMouseActions()
-            val tooltip = Tooltip()
-            tooltip.textProperty().bind(obj.name.asObservableValue())
-            Tooltip.install(this, tooltip)
         }
     }
 
@@ -194,6 +195,41 @@ abstract class ScoreObjectView(
     }
 
     private fun setupDragging() {
+        var dragStart: Point2D? = null
+        var oldBounds: Bounds? = null
+        for (dragTarget in dragTargets()) {
+            dragTarget.addEventHandler(MouseEvent.ANY) { ev ->
+                when (ev.eventType) {
+                    MouseEvent.DRAG_DETECTED -> {
+                        dragStart = Point2D(ev.screenX, ev.screenY)
+                        oldBounds = BoundingBox(layoutX, layoutY, width, height)
+                        dragTarget.startFullDrag()
+                        startMove(ev)
+                        ev.consume()
+                    }
+
+                    MouseEvent.MOUSE_DRAGGED -> {
+                        val start = dragStart
+                        if (start != null) {
+                            val deltaX = ev.screenX - start.x
+                            val deltaY = ev.screenY - start.y
+                            val x = oldBounds!!.minX + deltaX
+                            val y = oldBounds!!.minY + deltaY
+                            dragTo(x, y)
+                            ev.consume()
+                        }
+                    }
+
+                    MouseEvent.MOUSE_RELEASED -> {
+                        if (dragStart != null) {
+                            instance.finishMove()
+                            dragStart = null
+                            ev.consume()
+                        }
+                    }
+                }
+            }
+        }
     }
 
     private fun setupResizingRegions() {
@@ -324,13 +360,14 @@ abstract class ScoreObjectView(
         }
     }
 
-    private fun cutObject(ev: MouseEvent) {
-        if (obj is ScoreObjectGroup && ev.isShiftDown) {
-            val position = getScoreY(ev.y)
+    fun cutObject(orientation: Orientation) {
+        val p = screenToLocal(Robot().mousePosition)
+        if (obj is ScoreObjectGroup && orientation == Orientation.VERTICAL) {
+            val position = getScoreY(p.y)
             val (top, bottom) = (obj as ScoreObjectGroup).cutVertically(position)
             replaceWithCutHalves(top, bottom, relativePosition = ObjectPosition(zero, position))
-        } else if (!ev.isShiftDown) {
-            val position = getDuration(ev.x)
+        } else if (orientation == Orientation.HORIZONTAL) {
+            val position = getDuration(p.x)
             val leftHalf = obj.cut(position, LEFT, "${obj.name.now}_left") ?: return
             val rightHalf = obj.cut(position, RIGHT, "${obj.name.now}_right") ?: return
             replaceWithCutHalves(leftHalf, rightHalf, relativePosition = ObjectPosition(position, zero))
@@ -389,13 +426,11 @@ abstract class ScoreObjectView(
         }
     }
 
-    private fun isDuplicateSelected() = obj in context[ScoreObjectSelectionManager].selectedObjects
-
     /*
     * Dragging and resizing
     * */
 
-    private fun startMove(ev: MouseEvent): Boolean {
+    private fun startMove(ev: MouseEvent) {
         val selectionManager = context[ScoreObjectSelectionManager]
         if (!selectionManager.isSelected(this)) {
             selectView(addToSelection = ev.isShiftDown)
@@ -404,7 +439,6 @@ abstract class ScoreObjectView(
         for (inst in selectedInstances) {
             inst.beginMove()
         }
-        return true
     }
 
     private fun dragTo(toX: Double, toY: Double) {

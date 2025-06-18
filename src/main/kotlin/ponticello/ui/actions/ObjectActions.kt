@@ -1,12 +1,10 @@
 package ponticello.ui.actions
 
-import fxutils.actions.Action
-import fxutils.actions.collectActions
-import fxutils.actions.isAltDown
-import fxutils.actions.isTargetTextInput
+import fxutils.actions.*
 import fxutils.prompt.IntegerPrompt
 import hextant.context.Context
 import hextant.context.compoundEdit
+import javafx.geometry.Orientation
 import javafx.geometry.Side
 import org.kordamp.ikonli.material2.Material2AL
 import org.kordamp.ikonli.materialdesign2.*
@@ -268,6 +266,26 @@ object ObjectActions {
             executeSingle { view, _ ->
                 view as PianoRollObjectView
                 view.showTransposeDialog()
+            }
+        }
+        addObjectAction("Select parent") {
+            shortcut("Alt?+P")
+            applicableOn<ScoreObjectView>()
+            executeSingle { view, ev ->
+                if (ev.isTargetTextInput && !ev.isAltDown()) return@executeSingle
+                val parent = view.parentPane.parent ?: return@executeSingle
+                if (parent is ScoreObjectView) {
+                    view.context[ScoreObjectSelectionManager].select(parent, addToSelection = false)
+                }
+            }
+        }
+        addObjectAction("Slice object") {
+            shortcut("Alt?+Shift+COMMA")
+            icon(MaterialDesignS.SCISSORS_CUTTING)
+            executeSingle { view, ev ->
+                if (ev.isTargetTextInput && !ev.isAltDown()) return@executeSingle
+                val orientation = if (ev.isShiftDown()) Orientation.VERTICAL else Orientation.HORIZONTAL
+                view.cutObject(orientation)
             }
         }
     }

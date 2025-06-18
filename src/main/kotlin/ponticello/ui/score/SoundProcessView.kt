@@ -93,10 +93,13 @@ class SoundProcessView(
 
         sampleObserver = observeSample()
         sampleDisplayObserver = obj.displaySample?.forEach { updateSpectrogram() }
-        val synthDefSelector = ObjectSelectorControl(obj.instrumentSelector)
-        inlineControls.children.add(1, synthDefSelector)
-        val inlineControlsBar = InlineParameterControlsBar(obj.controls, this)
-        inlineControls.children.add(2, inlineControlsBar)
+
+        if (!parentPane.isRoot(obj)) {
+            val synthDefSelector = ObjectSelectorControl(obj.instrumentSelector)
+            inlineControls.children.add(1, synthDefSelector)
+            val inlineControlsBar = InlineParameterControlsBar(obj.controls, this)
+            inlineControls.children.add(2, inlineControlsBar)
+        }
     }
 
     private fun observeSample(): Observer = obj.sample.forEach { s ->

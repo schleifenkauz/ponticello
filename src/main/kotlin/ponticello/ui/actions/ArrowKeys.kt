@@ -52,7 +52,7 @@ object ArrowKeys {
                 val resizeMode = when (ev.modifiers) {
                     noModifiers -> null
                     setOf(Shift) -> ScoreObject.ResizeMode.Stretch
-                    setOf(Ctrl) -> ScoreObject.ResizeMode.Regular
+                    setOf(Ctrl, Shift) -> ScoreObject.ResizeMode.Regular
                     else -> return@addEventFilter
                 }
                 context.compoundEdit("Move objects") {
