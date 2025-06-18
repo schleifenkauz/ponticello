@@ -4,7 +4,10 @@ import fxutils.actions.Action
 import fxutils.actions.action
 import fxutils.actions.isShiftDown
 import org.kordamp.ikonli.evaicons.Evaicons
+import org.kordamp.ikonli.materialdesign2.MaterialDesignF
+import org.kordamp.ikonli.materialdesign2.MaterialDesignG
 import org.kordamp.ikonli.materialdesign2.MaterialDesignR
+import org.kordamp.ikonli.materialdesign2.MaterialDesignW
 import ponticello.impl.Logger
 import ponticello.model.obj.BusReference
 import ponticello.model.project.PonticelloProject
@@ -33,20 +36,23 @@ object ServerActions : Action.Collector<PonticelloProject>({
         shortcut("Ctrl+F5")
         executes { project -> project.syncWithSuperCollider() }
     }
-    addAction("Plot Server Tree") {
+    addAction("Show Server Tree") {
         shortcut("Ctrl+Alt+T")
+        icon(MaterialDesignF.FILE_TREE)
         executes { project -> project.client.run("AppClock.sched(0) { s.plotTree }") }
     }
-    addAction("Monitor output") {
+    addAction("Scope output buses") {
         shortcut("Ctrl+Shift+M")
+        icon(MaterialDesignW.WAVEFORM)
         executes { project -> project.client.run("AppClock.sched(0) { s.scope }") }
     }
     addAction("Show ServerMeter") {
         shortcut("Ctrl+Shift+M")
+        icon(MaterialDesignG.GAUGE)
         executes { project ->
             val numIns = project[SERVER_OPTIONS].numInputChannels
             val numOuts = project[SERVER_OPTIONS].numOutputChannels
-            project.client.run("ServerMeter.new(s, $numIns, $numOuts)")
+            project.client.run("AppClock.sched(0) {ServerMeter.new(s, $numIns, $numOuts)}")
         }
     }
 }) {
