@@ -163,7 +163,7 @@ abstract class ScoreObjectView(
         controlsDisplay: ReactiveVariable<InlineControlsDisplay>,
     ): ObservableValue<Background> = Bindings.`when`(
         Bindings.equal(controlsDisplay, SimpleObjectProperty(InlineControlsDisplay.CONTROLS_BAR))
-    ).then(background(Color.web("#1d1d20"))).otherwise(background(Color.gray(0.3, 0.35)))
+    ).then(background(Color.web("#1d1d20"))).otherwise(background(Color.gray(0.1, 0.5)))
 
     protected open fun inlineControlsVisibilityCondition(
         controlsDisplay: ReactiveVariable<InlineControlsDisplay>,
@@ -483,7 +483,8 @@ abstract class ScoreObjectView(
     private fun updateInlineControlsVisibility(box: HBox, availableWidth: Double) {
         var usedWidth = 0.0
         for (child in box.children) {
-            val width = child.prefWidth(-1.0)
+            var width = child.prefWidth(-1.0)
+            if (child != box.children[0]) width += box.spacing
             if (child is InlineParameterControlsBar) {
                 if (!child.isVisible) continue
                 updateInlineControlsVisibility(child, availableWidth - usedWidth)

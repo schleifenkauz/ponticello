@@ -29,6 +29,7 @@ class InlineParameterControlsBar(
     private val controlMap = mutableMapOf<HBox, NamedParameterControl>()
 
     init {
+        styleClass("parameter-controls-bar")
         controls.addListener(this, initialize = true)
         visibleProperty().bind(view.context[UIState].controlsDisplay.map { mode ->
             mode in setOf(InlineControlsDisplay.EXTENDED_OVERLAY, InlineControlsDisplay.CONTROLS_BAR)
@@ -85,7 +86,7 @@ class InlineParameterControlsBar(
             return
         }
         if (box.children.isEmpty()) {
-            val nameLabel = label(control.name.map { name -> "$name: " }) styleClass "simple-parameter-control-name"
+            val nameLabel = label(control.name.map { name -> "$name:" }) styleClass "simple-parameter-control-name"
             nameLabel.setOnMouseClicked { ev ->
                 when (ev.button) {
                     MouseButton.SECONDARY -> controls.remove(control)

@@ -98,20 +98,18 @@ Label.memo-area {
 
 .score-object-top-bar {
     -fx-border-width: 0px 0px 1px 0px;
-    -fx-border-color: grey;
+    -fx-border-color: white;
     -fx-alignment: center-left;
+    -fx-spacing: 5px;
 }
 
 .parameter-controls-bar {
-    -fx-spacing: 0px;
+    -fx-spacing: 5px;
     -fx-alignment: center-left;
 }
 
 .simple-parameter-control-box {
-    -fx-spacing: 2px;
     -fx-alignment: center-left;
-    -fx-border-width: 0px 0px 0px 1px;
-    -fx-border-color: grey;
 }
 
 .resize-region {
