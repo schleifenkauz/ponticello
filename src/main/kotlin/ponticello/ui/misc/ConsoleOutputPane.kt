@@ -9,6 +9,7 @@ import javafx.scene.control.TextArea
 import org.kordamp.ikonli.Ikon
 import org.kordamp.ikonli.materialdesign2.MaterialDesignA
 import org.kordamp.ikonli.materialdesign2.MaterialDesignC
+import org.kordamp.ikonli.materialdesign2.MaterialDesignD
 import ponticello.model.project.PonticelloProject
 import ponticello.sc.client.ConsoleMonitor
 import ponticello.sc.client.SuperColliderClient
@@ -67,6 +68,13 @@ class ConsoleOutputPane(client: SuperColliderClient) : ToolPane(), ConsoleMonito
                 icon(MaterialDesignA.ARROW_DOWN)
                 executes { pane ->
                     pane.content.scrollTop = Double.MAX_VALUE
+                }
+            }
+            addAction("Clear") {
+                icon(MaterialDesignD.DELETE)
+                executes { pane ->
+                    pane.buffer.clear()
+                    pane.content.text = ""
                 }
             }
         }
