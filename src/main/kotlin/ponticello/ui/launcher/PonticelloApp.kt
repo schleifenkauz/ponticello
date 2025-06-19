@@ -23,12 +23,12 @@ class PonticelloApp : Application() {
         thread(isDaemon = true, name = "Periodic GC") {
             while (true) {
                 val settings = launcher.rootContext[Settings]
+                val period = settings.garbageCollectionPeriod.now.toLong()
+                Thread.sleep(period * 1000)
                 if (settings.periodicGarbageCollection.now) {
                     Logger.info("Performing periodic garbage collection...", Logger.Category.Memory)
                     System.gc()
                 }
-                val period = settings.garbageCollectionPeriod.now.toLong()
-                Thread.sleep(period * 1000)
             }
         }
     }

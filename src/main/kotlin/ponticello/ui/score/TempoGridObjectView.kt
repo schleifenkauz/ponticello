@@ -8,10 +8,9 @@ import hextant.context.Context
 import javafx.scene.canvas.Canvas
 import javafx.scene.control.Button
 import javafx.scene.control.Label
-import javafx.scene.layout.Pane
 import javafx.scene.paint.Color
 import javafx.scene.shape.Line
-import javafx.scene.text.Text
+import javafx.scene.text.Font
 import ponticello.impl.Decimal
 import ponticello.model.obj.MeterObject
 import ponticello.model.obj.project
@@ -20,23 +19,26 @@ import ponticello.model.project.settings
 import ponticello.model.score.ScoreObjectInstance
 import ponticello.model.score.TempoGridObject
 import ponticello.model.score.TimeUnit
+import reaktive.Observer
+import reaktive.and
 import reaktive.value.ReactiveValue
-import reaktive.value.binding.and
 import reaktive.value.binding.`if`
-import reaktive.value.binding.lessThanOrEqualTo
 import reaktive.value.fx.asObservableValue
 import reaktive.value.now
 import reaktive.value.reactiveValue
 import kotlin.math.ceil
 
 class TempoGridObjectView(override val obj: TempoGridObject, inst: ScoreObjectInstance) : ScoreObjectView(inst) {
-    private val area = Pane()
+    private val canvas = Canvas()
     private val marker = Line() styleClass "grid-marker-line"
+    private lateinit var snapObserver: Observer
 
     init {
         styleClass("tempo-grid")
-        children.add(area)
-        area.opacityProperty().bind(
+        children.add(canvas)
+        canvas.heightProperty().bind(prefHeightProperty())
+        canvas.widthProperty().bind(prefWidthProperty())
+        canvas.opacityProperty().bind(
             `if`(obj.context[UIState].snapEnabled, then = { 1.0 }, otherwise = { 0.5 }).asObservableValue()
         )
         marker.endYProperty().bind(heightProperty())
@@ -48,7 +50,10 @@ class TempoGridObjectView(override val obj: TempoGridObject, inst: ScoreObjectIn
     override fun initialize() {
         super.initialize()
         marker.visibleProperty().bind(context.project.settings.snapEnabled.asObservableValue())
+        val settings = context.project.settings
         repaint()
+        snapObserver = settings.snapOption.observe { _ -> repaint() }
+            .and(settings.snapEnabled.observe { _ -> repaint() })
     }
 
     override fun setupDetailPane(pane: DetailPane) {
@@ -90,17 +95,15 @@ class TempoGridObjectView(override val obj: TempoGridObject, inst: ScoreObjectIn
         val meter = obj.meter.get() ?: return
         val duration = obj.duration
         val firstBar = obj.firstBar.now
-        area.children.clear()
-        paintGrid(context, meter, firstBar, duration.value, area, prefWidth, prefHeight)
-        area
+        paintGrid(context, meter, firstBar, duration.value, canvas, prefWidth, prefHeight)
     }
 
     fun unmark() {
-        area.children.remove(marker)
+        children.remove(marker)
     }
 
     fun mark(t: Decimal) {
-        if (marker !in area.children) area.children.add(marker)
+        if (marker !in children) children.add(marker)
         marker.startX = getWidth(t)
         marker.endX = getWidth(t)
     }
@@ -114,67 +117,62 @@ class TempoGridObjectView(override val obj: TempoGridObject, inst: ScoreObjectIn
         private const val TICK_LINE_SPACE = 0.4
         private const val MIN_BAR_NUMBER_DIST = 30.0
 
-        //TODO this must be optimized, maybe use Canvas...
         fun paintGrid(
             context: Context, meter: MeterObject, firstBar: Int, duration: Double,
             area: Canvas, width: Double, height: Double,
-        ) {
+        ) = with(area.graphicsContext2D) {
+            clearRect(0.0, 0.0, canvas.width, canvas.height)
+
             val bpm = meter.beatsPerMinute.now
             val bpb = meter.beatsPerBar.now
             val tpb = meter.ticksPerBeat.now
             val bars = ceil(duration * bpm / 60 / bpb).toInt()
+
             val pixelsPerBeat = (width / duration / bpm * 60)
             val secondsPerBar = (60 * bpb) / bpm.toDouble()
             val barNumberDist = secondsPerBar * (width / duration)
-            val snapOption = context[UIState].snapOption
-            val snapEnabled = context[UIState].snapEnabled
+
+            val snapOption = context[UIState].snapOption.now
+            val snapEnabled = context[UIState].snapEnabled.now
+
             for (bar in 0..bars) {
                 val barX = pixelsPerBeat * bar * bpb
                 if (barX > width) break
+
                 if (barNumberDist > MIN_BAR_NUMBER_DIST) {
-                    val barNumber = Text((barX - 5).coerceAtLeast(0.0), 12.0, (bar + firstBar).toString())
-                        .styleClass("bar-number")
-                    area.children.add(barNumber)
+                    val text = (bar + firstBar).toString()
+                    val x = (barX - 5).coerceAtLeast(0.0)
+                    val y = 12.0
+                    font = Font.font("Monospaced", 12.0)
+                    stroke = if (snapEnabled) Color.GREEN else Color.GRAY
+                    strokeText(text, x, y)
                 }
+
                 for (beat in 0 until bpb) {
                     val beatX = barX + (pixelsPerBeat * beat)
                     if (beatX > width) break
+
+                    stroke = if (snapOption <= TimeUnit.Ticks && snapEnabled) Color.GREEN else Color.GRAY
+                    lineWidth = 1.0
                     for (tick in 0 until tpb) {
                         val tickX = beatX + (pixelsPerBeat * tick) / tpb
                         if (tickX > width) break
-                        val tickLine = Line(tickX, height * (1 - TICK_LINE_SPACE), tickX, height * TICK_LINE_SPACE)
-                            .styleClass("tempo-line", "tick-line")
-                        tickLine.strokeProperty().bind(
-                            `if`(
-                                snapOption.lessThanOrEqualTo(TimeUnit.Ticks) and snapEnabled,
-                                then = { Color.GREEN }, otherwise = { Color.GRAY }
-                            ).asObservableValue()
-                        )
-                        area.children.add(tickLine)
+                        strokeLine(tickX, height * (1 - TICK_LINE_SPACE), tickX, height * TICK_LINE_SPACE)
                     }
-                    val beatLine = Line(beatX, height * (1 - BEAT_LINE_SPACE), beatX, height * BEAT_LINE_SPACE)
-                        .styleClass("tempo-line", "beat-line")
-                    beatLine.strokeProperty().bind(
-                        `if`(
-                            snapOption.lessThanOrEqualTo(TimeUnit.Beats) and snapEnabled,
-                            then = { Color.GREEN }, otherwise = { Color.GRAY }
-                        ).asObservableValue()
-                    )
-                    area.children.add(beatLine)
+
+                    stroke = if (snapOption <= TimeUnit.Beats && snapEnabled) Color.GREEN else Color.GRAY
+                    lineWidth = 2.0
+                    strokeLine(beatX, height * (1 - BEAT_LINE_SPACE), beatX, height * BEAT_LINE_SPACE)
                 }
-                val barLine = Line(barX, BAR_LINE_SPACE, barX, height - BAR_LINE_SPACE)
-                    .styleClass("tempo-line", "bar-line")
-                barLine.strokeProperty().bind(
-                    `if`(
-                        snapOption.lessThanOrEqualTo(TimeUnit.Bars) and snapEnabled,
-                        then = { Color.GREEN }, otherwise = { Color.GRAY }
-                    ).asObservableValue()
-                )
-                area.children.add(barLine)
+
+                lineWidth = 3.0
+                stroke = if (snapOption <= TimeUnit.Bars && snapEnabled) Color.GREEN else Color.GRAY
+                strokeLine(barX, BAR_LINE_SPACE, barX, height - BAR_LINE_SPACE)
             }
-            val horizontalLine = Line(0.0, height / 2, width, height / 2)
-                .styleClass("tempo-line", "horizontal-line")
-            area.children.add(horizontalLine)
+
+            stroke = if (snapEnabled) Color.GREEN else Color.GRAY
+            lineWidth = 2.0
+            strokeLine(0.0, height / 2, width, height / 2)
         }
     }
 }
