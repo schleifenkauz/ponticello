@@ -1,11 +1,11 @@
 package ponticello.model.flow
 
-import hextant.context.Context
-import javafx.scene.input.DataFormat
+import fxutils.drag.TypedDataFormat
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import ponticello.impl.Logger
 import ponticello.model.obj.AbstractRenamableObject
+import ponticello.model.obj.FlowReference
 import ponticello.model.obj.project
 import ponticello.model.project.flows
 import ponticello.sc.client.SuperColliderClient
@@ -87,6 +87,6 @@ sealed class AudioFlow : AbstractRenamableObject() {
     abstract override fun copy(): AudioFlow
 
     companion object {
-        val DATA_FORMAT = DataFormat("ponticello/audio-flow")
+        val DATA_FORMAT = TypedDataFormat<FlowReference>("ponticello/audio-flow")
     }
 }

@@ -16,9 +16,11 @@ import reaktive.value.now
 import reaktive.value.reactiveValue
 
 @Serializable(with = ObjectReference.Serializer::class)
-class ObjectReference<O : NamedObject>(private var _name: String) : ScExpr {
+class ObjectReference<O : NamedObject>(private var _name: String) : ScExpr, java.io.Serializable {
+    @Transient
     private var obj: O? = null
 
+    @Transient
     lateinit var isResolved: ReactiveBoolean
         private set
 

@@ -2,8 +2,8 @@ package ponticello.ui.score
 
 import bundles.PublicProperty
 import bundles.publicProperty
+import fxutils.drag.setupDragging
 import fxutils.setPseudoClassState
-import fxutils.setupDragging
 import javafx.beans.value.ObservableValue
 import javafx.scene.control.Label
 import javafx.scene.input.MouseButton

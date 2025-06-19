@@ -1,10 +1,10 @@
 package ponticello.model.obj
 
+import fxutils.drag.TypedDataFormat
 import fxutils.undo.UndoManager
 import fxutils.undo.VariableEdit
 import hextant.context.Context
 import javafx.application.Platform
-import javafx.scene.input.DataFormat
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
@@ -161,6 +161,6 @@ sealed class BusObject : AbstractSuperColliderObject() {
                 Control -> control(name, channels)
             }
 
-        val DATA_FORMAT = DataFormat("bus")
+        val DATA_FORMAT = TypedDataFormat<BusReference>("ponticello/bus")
     }
 }

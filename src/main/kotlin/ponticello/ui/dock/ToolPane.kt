@@ -2,6 +2,7 @@ package ponticello.ui.dock
 
 import fxutils.*
 import fxutils.actions.*
+import fxutils.drag.setupWindowDragging
 import hextant.fx.initHextantScene
 import javafx.event.Event
 import javafx.scene.Cursor

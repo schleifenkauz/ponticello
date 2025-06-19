@@ -104,7 +104,7 @@ class ObjectListView<O : Any>(
                     if (dragged is ObjectBox<*>) {
                         dropPreviewNode.setPrefSize(dragged.width, dragged.height)
                     } else {
-                        dropPreviewNode.setPrefSize(Region.USE_COMPUTED_SIZE, Region.USE_COMPUTED_SIZE)
+                        dropPreviewNode.setPrefSize(this.width, 20.0)
                     }
                 }
 

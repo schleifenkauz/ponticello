@@ -1,6 +1,6 @@
 package ponticello.model.obj
 
-import javafx.scene.input.DataFormat
+import fxutils.drag.TypedDataFormat
 import ponticello.impl.Decimal
 import ponticello.impl.asY
 import ponticello.model.registry.ScoreObjectRegistry
@@ -39,6 +39,6 @@ sealed class BufferObject : AbstractSuperColliderObject() {
     fun matches(spec: ControlSpec?) = spec is BufferControlSpec && channels() == spec.channels
 
     companion object {
-        val DATA_FORMAT = DataFormat("buffer")
+        val DATA_FORMAT = TypedDataFormat<BufferReference>("buffer")
     }
 }

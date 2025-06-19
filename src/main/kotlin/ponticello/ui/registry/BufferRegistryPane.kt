@@ -4,7 +4,7 @@ import fxutils.actions.ContextualizedAction
 import fxutils.actions.collectActions
 import fxutils.addAfter
 import fxutils.controls.IntSpinner
-import fxutils.hasFile
+import fxutils.drag.hasFile
 import fxutils.prompt.SimpleSearchableListView
 import fxutils.prompt.YesNoPrompt
 import fxutils.prompt.compoundPrompt

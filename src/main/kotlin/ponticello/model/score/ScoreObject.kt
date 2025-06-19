@@ -1,6 +1,7 @@
 package ponticello.model.score
 
 import fxutils.asHorizontalDirection
+import fxutils.drag.TypedDataFormat
 import fxutils.prompt.YesNoPrompt
 import fxutils.undo.AbstractEdit
 import fxutils.undo.Edit
@@ -11,7 +12,6 @@ import hextant.core.editor.ListenerManager
 import javafx.geometry.HorizontalDirection
 import javafx.geometry.HorizontalDirection.LEFT
 import javafx.geometry.Side
-import javafx.scene.input.DataFormat
 import javafx.scene.paint.Color
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -20,10 +20,7 @@ import ponticello.impl.*
 import ponticello.model.flow.NodePlacement
 import ponticello.model.live.LiveConfig
 import ponticello.model.live.QuantizationConfig
-import ponticello.model.obj.AbstractRenamableObject
-import ponticello.model.obj.ParameterDefObject
-import ponticello.model.obj.project
-import ponticello.model.obj.withName
+import ponticello.model.obj.*
 import ponticello.model.player.ScorePlayer
 import ponticello.model.registry.ScoreObjectRegistry
 import ponticello.model.score.Score.Companion.rootScore
@@ -330,7 +327,7 @@ sealed class ScoreObject : AbstractRenamableObject() {
     }
 
     companion object {
-        val DATA_FORMAT = DataFormat("score-object")
+        val DATA_FORMAT = TypedDataFormat<ScoreObjectReference>("score-object")
     }
 
     @Serializable

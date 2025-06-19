@@ -1,11 +1,16 @@
 package ponticello.ui.controls
 
-import fxutils.*
 import fxutils.actions.ActionBar
+import fxutils.alwaysHGrow
+import fxutils.button
+import fxutils.drag.DropHandler
+import fxutils.drag.hasFile
+import fxutils.drag.setupDropArea
+import fxutils.infiniteSpace
 import fxutils.prompt.SimpleSearchableListView
+import fxutils.styleClass
 import javafx.scene.Node
 import javafx.scene.input.DragEvent
-import javafx.scene.input.Dragboard
 import javafx.scene.layout.HBox
 import ponticello.model.obj.BufferObject
 import ponticello.model.registry.BufferRegistry
@@ -16,7 +21,7 @@ import ponticello.model.score.controls.ParameterControl
 import ponticello.ui.score.ScoreObjectView
 import reaktive.value.now
 
-class ControlAssignmentEditor(val control: NamedParameterControl, val view: ScoreObjectView?) : HBox() {
+class ControlAssignmentEditor(val control: NamedParameterControl, val view: ScoreObjectView?) : HBox(), DropHandler {
     private var selectedOption: ControlType<*>? = null
     private val optionButton = button(style = "selector-button")
     private val detailEditors = mutableMapOf<ControlType<*>, Node>()
@@ -27,26 +32,28 @@ class ControlAssignmentEditor(val control: NamedParameterControl, val view: Scor
         optionButton.isFocusTraversable = false
         optionButton.setOnMouseClicked { showOptionPopup() }
         optionButton.prefWidth = 45.0
-        setupDropArea(this::canDrop, ::onDrop)
+        setupDropArea(this)
         styleClass("parameter-control-item")
         alwaysHGrow()
     }
 
-    private fun onDrop(ev: DragEvent) {
-        val db = ev.dragboard
+    override fun drop(event: DragEvent): Boolean {
+        val db = event.dragboard
         val samples = control.context[BufferRegistry]
         val sample =
             when {
                 db.hasFile("wav") -> samples.getOrAdd(db.files[0])
                 db.hasContent(BufferObject.DATA_FORMAT) -> samples.get(db.getContent(BufferObject.DATA_FORMAT) as String)
-                else -> return
+                else -> return false
             }
         val ctrl = control.now as BufferControl
         ctrl.sample.set(sample.reference())
+        return true
     }
 
-    private fun canDrop(db: Dragboard): Boolean {
+    override fun canDrop(event: DragEvent): Boolean {
         if (control.now !is BufferControl) return false
+        val db = event.dragboard
         return db.hasFile("wav") || db.hasContent(BufferObject.DATA_FORMAT)
     }
 

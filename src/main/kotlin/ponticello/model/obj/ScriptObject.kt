@@ -1,13 +1,13 @@
 package ponticello.model.obj
 
 import bundles.set
+import fxutils.drag.TypedDataFormat
 import fxutils.undo.UndoManager
 import hextant.context.Context
 import hextant.context.SelectionDistributor
 import hextant.context.extend
 import hextant.core.editor.defaultState
 import hextant.serial.EditorRoot
-import javafx.scene.input.DataFormat
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
 import ponticello.model.project.scripts
@@ -61,7 +61,7 @@ class ScriptObject private constructor(
     }
 
     companion object {
-        val DATA_FORMAT: DataFormat = DataFormat("ponticello:script")
+        val DATA_FORMAT = TypedDataFormat<ScriptObjectReference>("ponticello:script")
 
         fun create(type: Type, name: String): ScriptObject {
             val root = EditorRoot(CodeBlockEditor().defaultState())

@@ -1,4 +1,4 @@
-@file:Suppress("UsePropertyAccessSyntax")
+@file:Suppress("UsePropertyAccessSyntax", "UNCHECKED_CAST")
 
 package ponticello.ui.impl
 
@@ -20,6 +20,7 @@ import ponticello.impl.asY
 import ponticello.model.obj.project
 import ponticello.model.project.*
 import ponticello.model.registry.NamedObject
+import ponticello.model.registry.ObjectReference
 import ponticello.model.registry.ObjectRegistry
 import ponticello.model.registry.reference
 import ponticello.model.score.ScoreObject
@@ -34,8 +35,9 @@ import reaktive.value.fx.asObservableValue
 import reaktive.value.now
 
 fun <T : NamedObject> Dragboard.getFrom(registry: ObjectRegistry<T>, format: DataFormat): T? {
-    val name = getContent(format) as? String ?: return null
-    return registry.getOrNull(name)
+    val ref = getContent(format) as? ObjectReference<T> ?: return null
+    ref.resolve(registry)
+    return ref.get()
 }
 
 fun ScoreObjectInstance.verticalDist(y: Decimal) = when {

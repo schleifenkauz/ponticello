@@ -2,7 +2,8 @@ package ponticello.sc.view
 
 import bundles.Bundle
 import bundles.createBundle
-import fxutils.setupDropArea
+import fxutils.drag.DropHandler
+import fxutils.drag.setupDropArea
 import hextant.core.view.SimpleChoiceEditorControl
 import javafx.scene.input.DragEvent
 import javafx.scene.input.Dragboard
@@ -17,9 +18,9 @@ import reaktive.value.now
 
 class ObjectSelectorControl<O : NamedObject>(
     private val selector: ObjectSelector<O>, arguments: Bundle = createBundle(),
-) : SimpleChoiceEditorControl<ObjectReference<O>>(selector, arguments) {
+) : SimpleChoiceEditorControl<ObjectReference<O>>(selector, arguments), DropHandler {
     init {
-        root.setupDropArea(::canDrop, ::onDrop)
+        root.setupDropArea(this)
         root.setOnDragDetected(::dragDetected)
     }
 
@@ -36,15 +37,16 @@ class ObjectSelectorControl<O : NamedObject>(
         return selector.getList().getOrNull(name)
     }
 
-    private fun canDrop(dragboard: Dragboard): Boolean {
-        val obj = extractObject(dragboard)
+    override fun canDrop(event: DragEvent): Boolean {
+        val obj = extractObject(event.dragboard)
         return obj != null && obj != selector.result.now.get()
     }
 
-    private fun onDrop(ev: DragEvent) {
-        val db = ev.dragboard
-        val obj = extractObject(db) ?: return
+    override fun drop(event: DragEvent): Boolean {
+        val db = event.dragboard
+        val obj = extractObject(db) ?: return false
         selector.select(obj.reference())
+        return true
     }
 
     public override fun showChoicePopup() {

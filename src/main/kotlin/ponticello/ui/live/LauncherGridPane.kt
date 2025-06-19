@@ -4,12 +4,15 @@ import fxutils.*
 import fxutils.actions.*
 import fxutils.controls.CheckBox
 import fxutils.controls.SliderBar
+import fxutils.drag.setupDropArea
 import fxutils.prompt.SimpleSearchableListView
 import fxutils.undo.UndoManager
 import fxutils.undo.VariableEdit
 import javafx.scene.Node
 import javafx.scene.control.Label
-import javafx.scene.input.*
+import javafx.scene.input.MouseButton
+import javafx.scene.input.MouseEvent
+import javafx.scene.input.TransferMode
 import javafx.scene.layout.GridPane
 import javafx.scene.layout.HBox
 import javafx.scene.layout.Region
@@ -24,20 +27,18 @@ import org.kordamp.ikonli.materialdesign2.MaterialDesignR
 import ponticello.impl.one
 import ponticello.impl.toDecimal
 import ponticello.impl.zero
-import ponticello.model.flow.AudioFlow
 import ponticello.model.live.ItemTarget
 import ponticello.model.live.LauncherGrid
 import ponticello.model.live.LauncherGrid.GridItemReference
-import ponticello.model.live.LiveTaskObject
-import ponticello.model.obj.*
+import ponticello.model.obj.ParameterDefObject
+import ponticello.model.obj.ParameterizedObject
 import ponticello.model.player.ScorePlayer
-import ponticello.model.project.*
-import ponticello.model.registry.BufferRegistry
+import ponticello.model.project.LAUNCHER_GRID
+import ponticello.model.project.PonticelloProject
+import ponticello.model.project.get
 import ponticello.model.registry.ObjectReference
-import ponticello.model.registry.ScoreObjectRegistry
 import ponticello.model.registry.reference
 import ponticello.model.score.ScoreObject
-import ponticello.model.score.ScoreObjectGroup
 import ponticello.sc.NumericalControlSpec
 import ponticello.sc.ParameterType
 import ponticello.sc.Warp
@@ -48,7 +49,6 @@ import ponticello.ui.dock.Side
 import ponticello.ui.dock.ToolPane
 import ponticello.ui.dock.ToolPaneState
 import ponticello.ui.impl.DEFAULT_SCENE_FILL
-import ponticello.ui.impl.getFrom
 import ponticello.ui.registry.ScoreObjectRegistryPane
 import ponticello.ui.registry.ScriptRegistryPane
 import ponticello.ui.registry.SearchableParameterDefListView
@@ -165,90 +165,7 @@ class LauncherGridPane(
             db.setContent(mapOf(GridItemReference.DATA_FORMAT to ref))
             ev.consume()
         }
-        box.setupDropArea(canDropOnItem(item), dropOn(item))
-    }
-
-    private fun dropOn(item: LauncherGrid.GridItem) = drop@{ ev: DragEvent ->
-        val db = ev.dragboard
-        when {
-            db.hasContent(GridItemReference.DATA_FORMAT) -> {
-                val ref = db.getContent(GridItemReference.DATA_FORMAT) as GridItemReference
-                val droppedItem = ref.getItem(grid)
-                grid.swap(item, droppedItem)
-            }
-
-            db.hasContent(PlaybackActions.RECORD_BUTTON) -> {
-                item.target = ItemTarget.ToggleRecording
-            }
-
-            db.hasContent(AudioFlow.DATA_FORMAT) -> {
-                val ref = db.getContent(AudioFlow.DATA_FORMAT) as FlowReference
-                item.target = ItemTarget.Flow(ref)
-            }
-
-            db.hasContent(ScoreObject.DATA_FORMAT) -> {
-                val name = db.getContent(ScoreObject.DATA_FORMAT) as String
-                val obj = grid.context[ScoreObjectRegistry].getOrNull(name)
-                if (obj != null) {
-                    item.target =
-                        if (obj is ScoreObjectGroup) ItemTarget.Player(obj.reference())
-                        else ItemTarget.Object(obj.reference())
-                }
-            }
-
-            db.hasContent(BufferObject.DATA_FORMAT) -> {
-                val buffer = db.getFrom(grid.context[BufferRegistry], BufferObject.DATA_FORMAT) ?: return@drop
-                createPlayBufTarget(ev, buffer, item)
-            }
-
-            db.hasContent(ScriptObject.DATA_FORMAT) -> {
-                val script = db.getFrom(grid.context.project.scripts, ScriptObject.DATA_FORMAT) ?: return@drop
-                item.target = ItemTarget.Script(script.reference())
-            }
-
-            db.hasContent(LiveTaskObject.DATA_FORMAT) -> {
-                val task = db.getFrom(grid.context.project[LIVE_TASKS], LiveTaskObject.DATA_FORMAT) ?: return@drop
-                item.target = ItemTarget.LiveTask(task.reference())
-            }
-
-            db.hasFile("wav") -> {
-                val file = db.files[0]
-                val buffer = grid.context[BufferRegistry].getOrAdd(file)
-                createPlayBufTarget(ev, buffer, item)
-            }
-        }
-    }
-
-    private fun createPlayBufTarget(ev: DragEvent, buffer: BufferObject, item: LauncherGrid.GridItem) {
-        val synthDef = grid.context.project[UI_STATE].getOrSelectInstrument(ev) ?: return
-        val obj = buffer.createSynthObject(synthDef) ?: return
-        grid.context[ScoreObjectRegistry].add(obj)
-        item.target = ItemTarget.Object(obj.reference())
-    }
-
-    private fun canDropOnItem(item: LauncherGrid.GridItem) = { db: Dragboard ->
-        when {
-            item.target.isActive.now -> false
-            db.hasContent(PlaybackActions.RECORD_BUTTON) -> true
-            db.hasContent(GridItemReference.DATA_FORMAT) -> {
-                val ref = db.getContent(GridItemReference.DATA_FORMAT) as GridItemReference
-                ref.getItem(grid) != item
-            }
-
-            db.hasContent(AudioFlow.DATA_FORMAT) -> true
-            db.hasContent(ScoreObject.DATA_FORMAT) -> {
-                val name = db.getContent(ScoreObject.DATA_FORMAT) as String
-                val obj = grid.context[ScoreObjectRegistry].getOrNull(name)
-                obj != null && obj.affectsPlayback
-            }
-
-            db.hasContent(BufferObject.DATA_FORMAT) -> true
-            db.hasContent(ScriptObject.DATA_FORMAT) -> true
-            db.hasContent(LiveTaskObject.DATA_FORMAT) -> true
-            db.hasFile("wav") -> true
-
-            else -> false
-        }
+        box.setupDropArea(LauncherGridItemDropHandler(grid, item))
     }
 
     companion object: Type(0, "Grid") {

@@ -16,6 +16,7 @@ import org.kordamp.ikonli.materialdesign2.MaterialDesignC
 import ponticello.model.obj.ContextualObject
 import ponticello.model.obj.RenamableObject
 import ponticello.model.registry.NamedObject
+import ponticello.model.registry.reference
 import ponticello.ui.controls.NameControl
 import ponticello.ui.impl.makeSubWindow
 import ponticello.ui.launcher.PonticelloApp.Companion.primaryStage
@@ -185,7 +186,7 @@ class ObjectBox<O : Any>(val parent: ObjectListView<O>, val obj: O) : Control() 
             val db = if (ev.isControlDown && config.canCopy(obj)) this.startDragAndDrop(TransferMode.COPY)
             else this.startDragAndDrop(TransferMode.MOVE, TransferMode.LINK)
             if (obj is NamedObject) {
-                db.setContent(mapOf(config.dataFormat to obj.name.now))
+                db.setContent(mapOf(config.dataFormat to obj.reference()))
             }
             config.configureDragboard(obj, db)
             parent.startDrag(obj)

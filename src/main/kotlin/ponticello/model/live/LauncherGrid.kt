@@ -1,6 +1,7 @@
 package ponticello.model.live
 
 import bundles.set
+import fxutils.drag.TypedDataFormat
 import fxutils.runFXWithTimeout
 import fxutils.undo.UndoManager
 import fxutils.undo.VariableEdit
@@ -8,7 +9,6 @@ import hextant.context.Context
 import hextant.context.extend
 import hextant.core.editor.ListenerManager
 import javafx.geometry.HorizontalDirection
-import javafx.scene.input.DataFormat
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
@@ -185,7 +185,7 @@ class LauncherGrid private constructor(
         fun getItem(grid: LauncherGrid) = grid.items[index]
 
         companion object {
-            val DATA_FORMAT = DataFormat("ponticello/grid-item-reference")
+            val DATA_FORMAT = TypedDataFormat<GridItemReference>("ponticello/grid-item-reference")
         }
     }
 

@@ -1,10 +1,10 @@
 package ponticello.model.score
 
+import fxutils.drag.TypedDataFormat
 import fxutils.undo.UndoManager
 import hextant.context.Context
 import hextant.context.compoundEdit
 import hextant.context.withoutUndo
-import javafx.scene.input.DataFormat
 import javafx.scene.paint.Color
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
@@ -172,7 +172,7 @@ class ParameterControlList(
         override fun canRenameTo(newName: String): Boolean = !controls.has(newName)
 
         companion object {
-            val DATA_FORMAT = DataFormat("ponticello:named-parameter-control")
+            val DATA_FORMAT = TypedDataFormat<NamedParameterControl>("ponticello:named-parameter-control")
         }
     }
 

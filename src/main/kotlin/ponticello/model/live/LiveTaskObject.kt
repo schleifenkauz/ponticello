@@ -1,10 +1,11 @@
 package ponticello.model.live
 
+import fxutils.drag.TypedDataFormat
 import hextant.context.Context
 import hextant.serial.EditorRoot
-import javafx.scene.input.DataFormat
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
+import ponticello.model.obj.LiveTaskReference
 import ponticello.model.obj.SuperColliderObject
 import ponticello.sc.client.ScWriter
 import ponticello.sc.client.SuperColliderClient
@@ -81,6 +82,6 @@ class LiveTaskObject(
     }
 
     companion object {
-        val DATA_FORMAT: DataFormat = DataFormat("ponticello/live-task")
+        val DATA_FORMAT = TypedDataFormat<LiveTaskReference>("ponticello/live-task")
     }
 }

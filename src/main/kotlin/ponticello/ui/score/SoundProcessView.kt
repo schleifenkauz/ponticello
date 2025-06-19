@@ -1,18 +1,18 @@
 package ponticello.ui.score
 
 import bundles.createBundle
-import fxutils.*
 import fxutils.actions.button
+import fxutils.centerChildren
+import fxutils.disableIf
+import fxutils.drag.setupDropArea
 import fxutils.prompt.DetailPane
-import fxutils.prompt.SimpleSearchableListView
+import fxutils.styleClass
 import javafx.application.Platform
 import javafx.beans.property.SimpleDoubleProperty
 import javafx.geometry.Point2D
 import javafx.geometry.Rectangle2D
 import javafx.scene.image.Image
 import javafx.scene.image.ImageView
-import javafx.scene.input.DragEvent
-import javafx.scene.input.Dragboard
 import javafx.scene.layout.*
 import javafx.scene.paint.Color
 import javafx.scene.shape.Line
@@ -20,13 +20,9 @@ import javafx.scene.transform.Scale
 import javafx.scene.transform.Translate
 import org.kordamp.ikonli.material2.Material2AL
 import ponticello.impl.*
-import ponticello.model.obj.BufferObject
-import ponticello.model.obj.BusObject
 import ponticello.model.obj.SampleObject
 import ponticello.model.project.InlineControlsDisplay
 import ponticello.model.project.UIState
-import ponticello.model.registry.BufferRegistry
-import ponticello.model.registry.BusRegistry
 import ponticello.model.score.*
 import ponticello.model.score.ParameterControlList.NamedParameterControl
 import ponticello.model.score.controls.*
@@ -36,7 +32,6 @@ import ponticello.sc.ParameterType
 import ponticello.sc.view.ObjectSelectorControl
 import ponticello.ui.controls.InlineParameterControlsBar
 import ponticello.ui.dock.AppLayout
-import ponticello.ui.impl.getFrom
 import ponticello.ui.launcher.PonticelloApp.Companion.primaryStage
 import ponticello.ui.registry.InstrumentRegistryPane
 import ponticello.ui.registry.SearchableParameterDefListView
@@ -73,7 +68,7 @@ class SoundProcessView(
 
     override fun initialize() {
         super.initialize()
-        listenForMouseEvents()
+        setupDropArea(SoundProcessDropHandler(this))
         obj.controls.addListener(this)
         lfosObserver = observeLFOs()
         val controlsDisplay = context[UIState].controlsDisplay
@@ -125,73 +120,6 @@ class SoundProcessView(
         pane.children.add(controlsPane)
     }
 
-    private fun listenForMouseEvents() {
-        var borderBefore: Border? = null
-        setupDropArea(::canDrop, ::drop) { dropPossible ->
-            if (dropPossible) {
-                borderBefore = border
-                border = solidBorder(Color.GREEN, 3.0, BORDER_RADIUS)
-            } else {
-                border = borderBefore
-            }
-        }
-    }
-
-    private fun canDrop(db: Dragboard): Boolean =
-        when {
-            db.hasContent(NamedParameterControl.DATA_FORMAT) -> true
-            db.hasContent(BusObject.DATA_FORMAT) -> true
-            db.hasContent(BufferObject.DATA_FORMAT) -> true
-            else -> false
-        }
-
-    private fun drop(ev: DragEvent) {
-        val db = ev.dragboard
-        when {
-            db.hasContent(NamedParameterControl.DATA_FORMAT) -> {
-                val namedControl = db.getContent(NamedParameterControl.DATA_FORMAT) as NamedParameterControl
-                obj.controls.duplicateControl(namedControl)
-            }
-
-            db.hasContent(BusObject.DATA_FORMAT) -> {
-                val bus = db.getFrom(context[BusRegistry], BusObject.DATA_FORMAT) ?: return
-                droppedBus(bus, ev)
-            }
-
-            db.hasContent(BufferObject.DATA_FORMAT) -> {
-                val buffer = db.getFrom(context[BufferRegistry], BufferObject.DATA_FORMAT) ?: return
-                droppedBuffer(buffer, ev)
-            }
-        }
-    }
-
-    private fun droppedBus(bus: BusObject, ev: DragEvent) {
-        val assignedName = getAssignedName(ev) { spec -> bus.matches(spec) } ?: return
-        val control = BusControl.create(bus)
-        obj.controls.assignControl(assignedName, control)
-    }
-
-    private fun getAssignedName(ev: DragEvent, predicate: (ControlSpec?) -> Boolean): String? {
-        val controlOptions = mutableSetOf<String>()
-        obj.controls
-            .filter { ctrl -> predicate(ctrl.spec.now) }
-            .mapTo(controlOptions) { ctrl -> ctrl.name.now }
-        obj.def.parameters
-            .filter { p -> predicate(p.spec.now) }
-            .mapTo(controlOptions) { p -> p.name.now }
-
-        return when (controlOptions.size) {
-            0 -> null
-            1 -> controlOptions.single()
-            else -> SimpleSearchableListView(controlOptions.toList(), "Select linked parameter").showPopup(ev)
-        }
-    }
-
-    private fun droppedBuffer(buffer: BufferObject, ev: DragEvent) {
-        val assignedName = getAssignedName(ev) { spec -> buffer.matches(spec) } ?: return
-        val control = BufferControl.create(buffer)
-        obj.controls.assignControl(assignedName, control)
-    }
 
     fun showNewEnvelopePopup() {
         val possibleParameters = obj.def.allParameters()

@@ -46,7 +46,9 @@ class BufferRegistry(
         super.initialize(context)
     }
 
-    fun getSample(file: File): SampleObject? = filterIsInstance<SampleObject>().find { o -> o.audioFile == file }
+    fun getSample(file: File): SampleObject? = filterIsInstance<SampleObject>().find { o ->
+        o.audioFile == file || o.referencedFile() == file
+    }
 
     fun getOrAdd(file: File): SampleObject = getSample(file) ?: run {
         val name = Identifier.truncate(file.nameWithoutExtension)

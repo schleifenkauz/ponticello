@@ -1,7 +1,7 @@
 package ponticello.ui.impl
 
-import fxutils.isResizeCursor
-import fxutils.setupDraggingAndResizing
+import fxutils.drag.isResizeCursor
+import fxutils.drag.setupDraggingAndResizing
 import fxutils.undo.UndoManager
 import hextant.context.Context
 import javafx.geometry.Bounds

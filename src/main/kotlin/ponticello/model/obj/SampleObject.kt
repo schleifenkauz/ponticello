@@ -129,7 +129,7 @@ class SampleObject(
 
     private fun audioFileInSamplesDir(): File = samplesDir.resolve("${name.now}.wav")
 
-    private fun referencedFile(): File = resolvePath(PonticelloFiles.userHome, referencedFile.now)
+    fun referencedFile(): File = resolvePath(PonticelloFiles.userHome, referencedFile.now)
 
     fun toggleCopyToSamplesDir(copy: Boolean) {
         if (copy) {

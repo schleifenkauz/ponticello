@@ -1,8 +1,8 @@
 package ponticello.ui.score
 
 import fxutils.dist
+import fxutils.drag.setupDragging
 import fxutils.registerShortcuts
-import fxutils.setupDragging
 import fxutils.styleClass
 import hextant.context.compoundEdit
 import javafx.beans.binding.Bindings
