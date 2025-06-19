@@ -368,6 +368,7 @@ abstract class ScoreObjectView(
             replaceWithCutHalves(top, bottom, relativePosition = ObjectPosition(zero, position))
         } else if (orientation == Orientation.HORIZONTAL) {
             val position = getDuration(p.x)
+            if (position !in zero..obj.duration) return
             val leftHalf = obj.cut(position, LEFT, "${obj.name.now}_left") ?: return
             val rightHalf = obj.cut(position, RIGHT, "${obj.name.now}_right") ?: return
             replaceWithCutHalves(leftHalf, rightHalf, relativePosition = ObjectPosition(position, zero))

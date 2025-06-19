@@ -134,12 +134,15 @@ class SoundProcess(
         position: Decimal,
     ) = controls.transformControls { ctrl ->
         val c = ctrl.now
+        val spec = ctrl.spec.now
         when {
-            c is ValueControl && ctrl.spec.now is BufferPositionControlSpec && whichHalf == RIGHT ->
-                ValueControl(reactiveVariable(c.value.now + position * (playBufRate?.now ?: one(3))))
+            c is ValueControl && spec is NumericalControlSpec && whichHalf == RIGHT -> {
+                if (spec.origin is BufferPositionControlSpec) {
+                    ValueControl(reactiveVariable(c.value.now + position * (playBufRate?.now ?: one(3))))
+                } else c.copy()
+            }
 
-            c is EnvelopeControl -> {
-                val spec = ctrl.spec.now as? NumericalControlSpec ?: return@transformControls c
+            c is EnvelopeControl && spec is NumericalControlSpec -> {
                 val warp = spec.warp
                 EnvelopeControl(c.points.cut(position, whichHalf, warp), c.displayColor, c.display)
             }

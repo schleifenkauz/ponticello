@@ -109,7 +109,7 @@ abstract class RootScorePane(score: Score, context: Context) : ScorePane(score, 
 
     private fun layoutObjects() {
         val repaintTrigger = latestRepaintTrigger
-        val maxTime = 2500L //determines how much time is spent consecutively on the Application Thread
+        val maxTime = 25L //determines how much time is spent consecutively on the Application Thread
         val itr = views.iterator()
         thread {
             while (itr.hasNext()) {

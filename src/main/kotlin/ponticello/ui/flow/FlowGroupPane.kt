@@ -232,7 +232,6 @@ class FlowGroupPane(private val group: AudioFlowGroup, ownWindow: Boolean) : VBo
                         }
                     }
                 }
-                shortcut("Ctrl+T")
                 executes { flow, ev ->
                     if (!flow.isValid.now) {
                         InfoPrompt("Cannot activate flow").showDialog(ev) //TODO better error description

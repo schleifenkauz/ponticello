@@ -280,7 +280,7 @@ object ObjectActions {
             }
         }
         addObjectAction("Slice object") {
-            shortcut("Alt?+Shift+COMMA")
+            shortcut("Alt?+Shift?+COMMA")
             icon(MaterialDesignS.SCISSORS_CUTTING)
             executeSingle { view, ev ->
                 if (ev.isTargetTextInput && !ev.isAltDown()) return@executeSingle

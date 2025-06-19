@@ -248,9 +248,11 @@ class AppLayout(
         when (pane) {
             leftPane -> {
                 savedDividerPositions[LEFT] = horizontalSplitter.dividerPositions[0]
-                val rightDivider = horizontalSplitter.dividerPositions[1]
+                val rightDivider = horizontalSplitter.dividerPositions.getOrNull(1)
                 horizontalSplitter.items.remove(leftPane)
-                horizontalSplitter.setDividerPosition(0, rightDivider)
+                if (rightDivider != null) {
+                    horizontalSplitter.setDividerPosition(0, rightDivider)
+                }
             }
 
             rightPane -> {

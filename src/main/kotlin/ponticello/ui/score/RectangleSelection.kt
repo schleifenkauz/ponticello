@@ -2,7 +2,6 @@ package ponticello.ui.score
 
 import javafx.scene.shape.Rectangle
 import ponticello.impl.abs
-import ponticello.impl.toDecimal
 import ponticello.model.score.ObjectPosition
 import ponticello.model.score.ScoreObject
 import ponticello.model.score.ScoreObjectInstance
@@ -44,9 +43,9 @@ class RectangleSelection(private val pane: ScorePane, val rect: Rectangle, initi
         return ScoreObjectInstance(obj, time, y)
     }
 
-    fun isEmpty(): Boolean = (duration * height) < THRESHOLD
+    fun isEmpty(): Boolean = (rect.width * rect.height) < THRESHOLD
 
     companion object {
-        private val THRESHOLD = 0.001.toDecimal()
+        private const val THRESHOLD = 5.0
     }
 }

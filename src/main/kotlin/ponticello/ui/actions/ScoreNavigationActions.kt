@@ -6,11 +6,12 @@ import fxutils.actions.isShiftDown
 import fxutils.actions.isTargetTextInput
 import fxutils.mouseX
 import org.kordamp.ikonli.material2.Material2MZ
-import reaktive.value.binding.not
-import reaktive.value.now
 import ponticello.impl.asTime
 import ponticello.model.player.ScorePlayer
+import ponticello.ui.controls.DecimalPrompt
 import ponticello.ui.score.NavigableScorePane
+import reaktive.value.binding.not
+import reaktive.value.now
 
 object ScoreNavigationActions : Action.Collector<NavigableScorePane>({
     addAction("Move View To Start") {
@@ -63,6 +64,18 @@ object ScoreNavigationActions : Action.Collector<NavigableScorePane>({
         executes { view, ev ->
             if (ev.isTargetTextInput && !ev.isAltDown()) return@executes
             view.displaySelectedArea()
+        }
+    }
+    addAction("Add time") {
+        shortcut("Alt+INSERT")
+        executes { pane, ev ->
+            if (ev.isTargetTextInput && !ev.isAltDown()) return@executes
+            val cursorPosition = pane.context[ScorePlayer.CURRENT].playHead.currentTime
+            val amount = DecimalPrompt(
+                "How much time to add",
+                precision = 2, initialValue = 10.0, 0.0..1000.0
+            ).showDialog() ?: return@executes
+            pane.addTime(cursorPosition, amount)
         }
     }
 })

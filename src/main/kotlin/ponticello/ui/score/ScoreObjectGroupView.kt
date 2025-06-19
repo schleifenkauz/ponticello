@@ -77,7 +77,7 @@ class ScoreObjectGroupView(
         controlsDisplay: ReactiveVariable<InlineControlsDisplay>,
     ): ObservableValue<Background> = SimpleObjectProperty(Background.EMPTY)
 
-    override fun dragTargets(): List<Node> = listOf(this, inlineNameLabel, moveButton)
+    override fun dragTargets(): List<Node> = listOf(inlineNameLabel, moveButton)
 
     override fun rescale() {
         super.rescale()

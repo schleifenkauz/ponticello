@@ -34,9 +34,7 @@ import ponticello.sc.Identifier
 import ponticello.sc.defaultControl
 import ponticello.sc.editor.CodeBlockEditor
 import ponticello.sc.editor.EventDictionaryEditor
-import ponticello.ui.controls.DecimalPrompt
 import ponticello.ui.controls.NamePrompt
-import ponticello.ui.impl.showDialog
 import ponticello.ui.registry.SearchableBufferListView
 import ponticello.ui.registry.SearchableBusListView
 import ponticello.ui.registry.SimpleSearchableRegistryView
@@ -95,7 +93,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
 
     abstract fun getScreenY(scoreY: Decimal): Double
 
-    protected open fun addTime(location: Decimal, amount: Decimal) {
+    open fun addTime(location: Decimal, amount: Decimal) {
         score.addTime(location, amount)
     }
 
@@ -248,29 +246,6 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
         }
     }
 
-    private fun mouseDragDetected(ev: MouseEvent) {
-        clearRegionSelection()
-        val pos = snapToGrid(ev.x, ev.y)
-        val selectionRect = Rectangle() styleClass "selection-rect"
-        val selection = RectangleSelection(this, selectionRect, pos)
-        if (ev.modifiers == setOf(Alt, Shift)) {
-            selection.useAsTimeSelection()
-        }
-        children.add(selection.rect)
-        selectedArea = selection
-    }
-
-    private fun mouseDragged(ev: MouseEvent) {
-        if (this is SubScorePane) return
-        ev.consume()
-        if (selectedArea != null) {
-            val pos = snapToGrid(ev.x, ev.y)
-            val selection = selectedArea!!
-            selection.setOppositeCorner(pos)
-            markT(pos.time)
-        }
-    }
-
     private fun doubleClicked(ev: MouseEvent) {
         ev.consume()
         val (t, y) = snapToGrid(ev.x, ev.y)
@@ -300,6 +275,29 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
             runFXWithTimeout {
                 view.enterEdit()
             }
+        }
+    }
+
+    private fun mouseDragDetected(ev: MouseEvent) {
+        clearRegionSelection()
+        val pos = snapToGrid(ev.x, ev.y)
+        val selectionRect = Rectangle() styleClass "selection-rect"
+        val selection = RectangleSelection(this, selectionRect, pos)
+        if (ev.modifiers == setOf(Alt, Shift)) {
+            selection.useAsTimeSelection()
+        }
+        children.add(selection.rect)
+        selectedArea = selection
+    }
+
+    private fun mouseDragged(ev: MouseEvent) {
+//        if (this is SubScorePane) return
+        ev.consume()
+        if (selectedArea != null) {
+            val pos = snapToGrid(ev.x, ev.y)
+            val selection = selectedArea!!
+            selection.setOppositeCorner(pos)
+            markT(pos.time)
         }
     }
 
@@ -437,14 +435,6 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
         class TempoGrid(val meter: MeterObject) : NewObjectOption()
         object Group : NewObjectOption()
         object NewTempoGrid : NewObjectOption()
-    }
-
-    private fun showAddTimeDialog(t: Decimal) {
-        val amount = DecimalPrompt(
-            "How much time to add",
-            precision = 2, initialValue = 10.0, 0.0..1000.0
-        ).showDialog(context) ?: return
-        addTime(t, amount)
     }
 
     private fun viewsInside(bounds: Bounds) = views.values.filter { v -> bounds.contains(v.boundsInParent) }

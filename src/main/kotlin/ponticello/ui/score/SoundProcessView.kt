@@ -299,7 +299,8 @@ class SoundProcessView(
             node.image.layoutX = x
             node.image.fitWidth = getWidth(node.duration)
             node.image.fitHeight = objectPane.height
-            if (obj.playBufRate!!.now < zero) {
+            val rate = obj.playBufRate
+            if (rate != null && rate.now < zero) {
                 node.image.transforms.setAll(
                     Translate(node.image.fitWidth, 0.0),
                     Scale(-1.0, 1.0)
