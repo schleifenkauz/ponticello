@@ -59,28 +59,6 @@ Label.memo-area {
     -fx-border-color: white;
 }
 
-.tempo-line {
-    -fx-stroke: green;
-}
-
-.bar-line {
-    -fx-stroke-width: 3px;
-}
-
-.beat-line {
-    -fx-stroke-width: 2px;
-}
-
-.tick-line {
-    -fx-stroke-width: 1px;
-}
-
-.bar-number {
-    -fx-font-size: 10px;
-    -fx-fill: green;
-    -fx-font-weight: 300;
-}
-
 .grid-marker-line {
     -fx-stroke: white;
     -fx-stroke-width: 3px;

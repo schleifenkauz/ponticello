@@ -143,7 +143,7 @@ class TempoGridObjectView(override val obj: TempoGridObject, inst: ScoreObjectIn
                     val text = (bar + firstBar).toString()
                     val x = (barX - 5).coerceAtLeast(0.0)
                     val y = 12.0
-                    font = Font.font("Monospaced", 12.0)
+                    font = Font.font(10.0)
                     stroke = if (snapEnabled) Color.GREEN else Color.GRAY
                     strokeText(text, x, y)
                 }
