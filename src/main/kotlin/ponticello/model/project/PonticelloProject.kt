@@ -9,6 +9,7 @@ import ponticello.model.obj.ContextualObject
 import ponticello.model.score.ScoreObject
 import ponticello.sc.client.SuperColliderClient
 import ponticello.ui.dock.AppLayout
+import ponticello.ui.launcher.PonticelloLauncher.Companion.currentProject
 import ponticello.ui.launcher.ProgressIndicator
 import reaktive.value.now
 import java.io.File
@@ -31,6 +32,7 @@ class PonticelloProject private constructor(val components: Map<Component<out Co
     val dataDir get() = projectDirectory.resolve("data")
 
     fun initialize(context: Context) {
+        context[currentProject] = this
         this.context = context
         client = context[SuperColliderClient]
         for (comp in allComponents) {

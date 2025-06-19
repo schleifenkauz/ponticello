@@ -22,7 +22,7 @@ class InstrumentRegistry(
         get() = SuperColliderObject.LiveCycleType.InterpreterBoot
 
     override val objectType: String
-        get() = "SynthDef"
+        get() = "Instrument"
 
     override fun initialize(context: Context) {
         context[InstrumentRegistry] = this

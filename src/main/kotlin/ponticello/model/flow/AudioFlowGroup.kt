@@ -9,7 +9,6 @@ import ponticello.impl.ColorSerializer
 import ponticello.impl.Decimal
 import ponticello.model.obj.AbstractRenamableObject
 import ponticello.model.obj.withName
-import ponticello.model.player.ScorePlayer
 import ponticello.model.registry.NamedObjectList
 import ponticello.model.registry.ObjectList
 import ponticello.model.registry.ObjectListSerializer
@@ -108,7 +107,7 @@ class AudioFlowGroup(
 
     private fun addToServer(placement: NodePlacement) {
         val groupName = superColliderName.now
-        client.eval {
+        client.eval(description = "creating group $groupName") {
             +"$groupName = Group.new(${placement.target}, ${placement.addAction})"
         }.join()
         for (flow in flows) {
@@ -117,7 +116,7 @@ class AudioFlowGroup(
         }
     }
 
-    fun createFlows() = ScorePlayer.execute {
+    fun createFlows() {
         val placement = nodeTree.addNode(this)
         addToServer(placement)
     }
@@ -133,7 +132,7 @@ class AudioFlowGroup(
         }
     }
 
-    private fun freeGroup() = ScorePlayer.execute {
+    private fun freeGroup() {
         context[NodeTree].removeNode(this)
         client.run("${superColliderName.now}.free")
     }

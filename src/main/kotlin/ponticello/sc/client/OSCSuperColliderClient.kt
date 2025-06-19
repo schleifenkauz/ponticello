@@ -78,7 +78,7 @@ class OSCSuperColliderClient(
         } catch (e: Exception) {
             future.completeExceptionally(e)
         }
-        return future.orTimeout(3, TimeUnit.SECONDS)
+        return future.orTimeout(10, TimeUnit.SECONDS)
     }
 
     override fun run(command: String) {

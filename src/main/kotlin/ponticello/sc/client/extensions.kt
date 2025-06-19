@@ -56,8 +56,8 @@ fun SuperColliderContext.run(writeCode: ScWriter.() -> Unit) {
     if (command.isNotBlank()) run(command)
 }
 
-fun SuperColliderClient.eval(writeCode: ScWriter.() -> Unit): CompletableFuture<String> {
+fun SuperColliderClient.eval(description: String? = null, writeCode: ScWriter.() -> Unit): CompletableFuture<String> {
     val command = ponticello.impl.writeCode(writeCode)
-    if (command.isNotBlank()) return eval(command)
+    if (command.isNotBlank()) return eval(command, description ?: "evaluating $command")
     return CompletableFuture.completedFuture("")
 }

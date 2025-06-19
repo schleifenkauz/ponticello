@@ -14,15 +14,15 @@ import org.kordamp.ikonli.Ikon
 import org.kordamp.ikonli.material2.Material2AL
 import org.kordamp.ikonli.material2.Material2MZ
 import org.kordamp.ikonli.materialdesign2.MaterialDesignE
+import org.kordamp.ikonli.materialdesign2.MaterialDesignF
 import org.kordamp.ikonli.materialdesign2.MaterialDesignS
-import ponticello.impl.canSuperColliderTalkToMe
 import ponticello.model.obj.*
 import ponticello.model.project.PonticelloProject
 import ponticello.model.project.instruments
 import ponticello.model.registry.GlobalDefinitionLibrary
 import ponticello.model.registry.InstrumentRegistry
 import ponticello.model.registry.ObjectList
-import ponticello.sc.Identifier
+import ponticello.ui.controls.NamePrompt
 import ponticello.ui.dock.SearchableToolPaneState
 import ponticello.ui.dock.Side
 import ponticello.ui.dock.ToolPane
@@ -67,70 +67,33 @@ class InstrumentRegistryPane(
     override val dataFormat: DataFormat
         get() = InstrumentObject.DATA_FORMAT
 
-    override fun createNewObject(name: String, ev: Event?): InstrumentObject? {
-        when {
-            canSuperColliderTalkToMe && instruments.synthDescLibContains(name) -> {
-                val reference = YesNoPrompt(
-                    "SynthDef '$name' is already defined in the global SynthDescLib. " +
-                            "Import SynthDef '$name' from SynthDescLib? A new SynthDef will be created otherwise.",
-                    default = true
-                ).showDialog(anchorNode = this) ?: return null
-                return if (reference) ReferencedSynthDefObject.get(name)
-                else CustomizableSynthDefObject.create(name)
-            }
-
-            else -> return CustomizableSynthDefObject.create(name)
-        }
-    }
-
-    override fun getHeaderContent(obj: InstrumentObject): List<Node> = listOf(colorPicker(obj.color).setFixedWidth(30.0))
+    override fun getHeaderContent(obj: InstrumentObject): List<Node> =
+        listOf(colorPicker(obj.color).setFixedWidth(30.0))
 
     override fun createNewObject(ev: Event?, list: ObjectList<InstrumentObject>): InstrumentObject? {
-        val globalLib = registry.context[GlobalDefinitionLibrary.instruments]
-        val synthDefsFromGlobal = globalLib.getNames().map(AddObjectOption::ObjectFromGlobalLib)
-        val searchableList = AddObjectOptionListView(synthDefsFromGlobal)
-        searchableList.enterText(searchText.text)
-        val option = searchableList.showPopup(ev) ?: return null
-        return createObject(option, ev)
-    }
-
-    private fun createObject(option: AddObjectOption, ev: Event?): InstrumentObject? {
-        when (option) {
-            is AddObjectOption.NewObject -> {
-                return createNewObject(option.name, ev)
+        val option = SimpleSearchableListView(InstrumentType.entries, "Instrument type").showPopup(ev) ?: return null
+        val name = NamePrompt(instruments, "$option name", "")
+            .showDialog(ev) ?: return null
+        return when (option) {
+            InstrumentType.SynthDef -> when {
+                instruments.synthDescLibContains(name) -> {
+                    val reference = YesNoPrompt(
+                        "SynthDef '$name' is already defined in the global SynthDescLib. " +
+                                "Import SynthDef '$name' from SynthDescLib? A new SynthDef will be created otherwise.",
+                        default = true
+                    ).showDialog(anchorNode = this) ?: return null
+                    return if (reference) ReferencedSynthDefObject.get(name)
+                    else CustomizableSynthDefObject.create(name)
+                }
+                else -> CustomizableSynthDefObject.create(name)
             }
 
-            is AddObjectOption.ObjectFromGlobalLib -> {
-                val name = option.name
-                val def = registry.context[GlobalDefinitionLibrary.instruments].get(name) ?: return null
-                return def
-            }
+            InstrumentType.ProcessDef -> ProcessDefObject.newEmpty(name)
         }
     }
 
-    private sealed interface AddObjectOption {
-        data class NewObject(val name: String) : AddObjectOption
-
-        data class ObjectFromGlobalLib(val name: String) : AddObjectOption
-    }
-
-    private inner class AddObjectOptionListView(
-        options: List<AddObjectOption>,
-    ) : SimpleSearchableListView<AddObjectOption>(options, "Add ${registry.objectType}") {
-        override fun makeOption(text: String): AddObjectOption? {
-            return if (Identifier.isValid(text) && !registry.has(text)) AddObjectOption.NewObject(text)
-            else null
-        }
-
-        override fun displayText(option: AddObjectOption): String = when (option) {
-            is AddObjectOption.ObjectFromGlobalLib -> "${instruments.objectType}: ${option.name}"
-            else -> "<invalid>"
-        }
-
-        override fun extractText(option: AddObjectOption): String = when (option) {
-            is AddObjectOption.NewObject -> option.name
-            is AddObjectOption.ObjectFromGlobalLib -> option.name
-        }
+    private enum class InstrumentType {
+        SynthDef, ProcessDef;
     }
 
     override fun extraHeaderActions(): List<ContextualizedAction> =
@@ -159,12 +122,32 @@ class InstrumentRegistryPane(
                 }
             }
             addAction("Save to global library") {
-                icon(MaterialDesignE.EXPORT_VARIANT)
+                icon(MaterialDesignF.FILE_UPLOAD_OUTLINE)
                 enableWhen { p -> p.listView.selectedBox().map { box -> box?.obj is ConfigurableInstrumentObject } }
                 executes { p, ev ->
                     val def = p.listView.selectedBox().now?.obj as? ConfigurableInstrumentObject ?: return@executes
                     val library = def.context[GlobalDefinitionLibrary.instruments]
                     library.saveToGlobalLib(def, ev)
+                }
+            }
+            addAction("Load from global library") {
+                icon(MaterialDesignF.FILE_DOWNLOAD_OUTLINE)
+                executes { p, ev ->
+                    val library = p.registry.context[GlobalDefinitionLibrary.instruments]
+                    val names = library.getNames()
+                    val selected =
+                        SimpleSearchableListView(names, "Select instrument to load").showPopup(ev) ?: return@executes
+                    val def = library.get(selected) ?: return@executes
+                    if (p.instruments.has(def.name.now)) {
+                        val overwrite = YesNoPrompt(
+                            "Instrument '${def.name.now}' already exists in project. Overwrite?", default = false
+                        ).showDialog(anchorNode = p) ?: return@executes
+                        if (overwrite) {
+                            p.instruments.overwrite(def)
+                        }
+                    } else {
+                        p.instruments.add(def)
+                    }
                 }
             }
         }

@@ -20,6 +20,7 @@ import ponticello.sc.RawScExpr
 import ponticello.sc.client.ScWriter
 import ponticello.sc.client.SuperColliderClient
 import ponticello.sc.client.run
+import ponticello.sc.code
 import ponticello.sc.editor.CodeBlockEditor
 import ponticello.sc.editor.ScExprExpander
 import ponticello.sc.substitute
@@ -59,7 +60,6 @@ class ProcessDefObject(
     override fun onUpdated() {}
 
     override fun ScWriter.createObject() {
-        //TODO variables set inside the loop aren't updated outside - how to change this?
         val argumentSubstitution = parameters.associate { p ->
             val name = p.name.now
             name to { RawScExpr("$name.value(t)") }
@@ -68,35 +68,32 @@ class ProcessDefObject(
         val loop = loopBlock.editor.result.now
         val delta = deltaExpr.editor.result.now
 
-        val loopFunctionName = "${superColliderName}_loop"
-        val variables = setup.variables.map { v -> v.text }
-        appendBlock("$loopFunctionName = ") {
-            append("arg t, duration")
-            for (param in parameters.map { p -> p.name.now } + variables) {
-                append(", $param")
-            }
-            appendLine(";")
-            loop.writeCode(writer, context)
-            delta.code(writer, context)
-        }
-
         appendBlock("$superColliderName = ") {
             append("arg t = 0, duration")
             for (p in parameters) {
                 val defaultValue = p.spec.now.defaultValueExpr
-                val name = p.name.now
                 append(", ")
+                val name = "${p.name.now}___"
                 if (defaultValue != null) append("$name = $defaultValue")
                 else append(name)
             }
             appendLine(";")
+            if (parameters.isNotEmpty()) {
+                +"var ${parameters.joinToString { p -> p.name.now }}"
+            }
+            for (p in parameters) {
+                val name = p.name.now
+                +"$name = ${name}___.value(0)"
+            }
             setup.writeCode(writer, context)
             appendBlock("while { t <= duration }") {
-                val arguments = parameters.map { p ->
+                +"var delta___"
+                for (p in parameters) {
                     val name = p.name.now
-                    "$name.value(t)"
-                } + variables
-                +"var delta___ = $loopFunctionName.value(t, duration, ${arguments.joinToString()})"
+                    +"$name = ${name}___.value(t)"
+                }
+                loop.writeCode(writer, context)
+                +"delta___ = ${delta.code(context)}"
                 +"delta___.wait"
                 +"t = t + delta___"
             }

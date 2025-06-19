@@ -101,16 +101,17 @@ fun ScWriter.writeProcessCode(
     val superColliderName = "~process_$uniqueName"
     val controlMap = createControlMap(obj, extraArguments)
     appendBlock("$superColliderName = Task", endLine = false) {
+        +"var auxilBuses = (), auxilSynths = (), t0, delta_t"
+        createAuxilMaps(uniqueName)
         for ((param, control) in controlMap) {
             val (spec, ctrl) = control
             with(ctrl) {
                 generatePreparationCode(obj, uniqueName, param, spec, cutoff, ctx = CodegenContext.Process)
             }
         }
-        createAuxilMaps(uniqueName)
         +"$latency.wait"
         val duration = obj.duration()?.now?.toString() ?: "inf"
-        val defName = "proc_${obj.def.name.now}"
+        val defName = "~proc_${obj.def.name.now}"
         append("$defName.value(t: $cutoff, duration: $duration")
         for ((param, control) in controlMap) {
             if (!obj.def.hasParameter(param)) continue
@@ -124,7 +125,7 @@ fun ScWriter.writeProcessCode(
         }
         appendLine(");")
         if (obj is ScoreObject) {
-            +"~ponticello_addr.sendMsg('/stopped', -1, ${uniqueName})"
+            +"~ponticello_addr.sendMsg('/stopped', -1, \"${uniqueName}\")"
         }
         +"auxilBuses.do(_.free)"
         +"auxilSynths.do(_.free)"
