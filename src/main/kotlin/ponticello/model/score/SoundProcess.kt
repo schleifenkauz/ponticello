@@ -52,7 +52,11 @@ class SoundProcess(
     override val type: String
         get() = "synth"
 
-    override val superColliderPrefix: String get() = "~synth_"
+    override val superColliderPrefix: String get() = when (instrument) {
+        is SynthDefObject -> "~synth_"
+        is ProcessDefObject -> "~process_"
+        else -> "~unknown_"
+    }
 
     @Transient
     lateinit var instrumentSelector: InstrumentSelector

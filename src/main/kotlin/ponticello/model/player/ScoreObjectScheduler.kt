@@ -74,7 +74,12 @@ class ScoreObjectScheduler(val context: Context) {
                 client.run("if ($name != nil) { $name.release; } { \"'$name' not found\".postln; }")
             }
 
-            active.obj is TaskObject || active.obj is SoundProcess && active.obj.instrument is ProcessDefObject -> {
+            active.obj is SoundProcess && active.obj.instrument is ProcessDefObject -> {
+                val name = active.superColliderName
+                client.run("$name.stop")
+            }
+
+            active.obj is TaskObject -> {
                 val name = active.superColliderName
                 client.run("$name.stop;")
             }

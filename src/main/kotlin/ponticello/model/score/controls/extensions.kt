@@ -120,7 +120,7 @@ fun ScWriter.writeProcessCode(
                 obj, uniqueName, param, spec, cutoff,
                 context = CodegenContext.Process
             )
-            append(", $param: ")
+            append(", ${param}___: ")
             arg.code(writer, obj.context)
         }
         appendLine(");")
