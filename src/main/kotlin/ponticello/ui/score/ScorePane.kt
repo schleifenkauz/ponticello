@@ -114,7 +114,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
         while (itr.hasNext()) {
             val (inst, view) = itr.next()
             if (inst.start > displayEnd || inst.start + inst.duration < displayStart) {
-                children.remove(view)
+                children.remove(view) //TODO can this be optimized?
                 continue
             }
             val resizeHorizontal = !view.prefWidth.isFinite() || view.getDisplayWidth() != view.prefWidth

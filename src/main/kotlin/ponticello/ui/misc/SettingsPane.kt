@@ -1,6 +1,7 @@
 package ponticello.ui.misc
 
 import fxutils.*
+import fxutils.controls.CheckBox
 import javafx.scene.Parent
 import javafx.scene.control.Label
 import org.kordamp.ikonli.Ikon
@@ -40,13 +41,16 @@ class SettingsPane(private val settings: Settings) : ToolPane() {
                     )
                 }
                 knobItem(
-                    "Garbage collection interval: ", settings.garbageCollectionPeriod,
-                    NumericalControlSpec(60.0, 10.0, 240.0, 10.0.toDecimal())
-                )
-                knobItem(
                     "Knob sensitivity: ", settings.knobSensitivity,
                     NumericalControlSpec(default = 3.0, 1.0, 10.0, 0.1.toDecimal())
                 )
+                hbox {
+                    +CheckBox(settings.periodicGarbageCollection, "Periodic GC: ")
+                    knobItem(
+                        "Garbage collection interval: ", settings.garbageCollectionPeriod,
+                        NumericalControlSpec(60.0, 10.0, 240.0, 10.0.toDecimal())
+                    )
+                }
             }
         }
     }

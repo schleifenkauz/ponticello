@@ -13,6 +13,7 @@ import ponticello.model.registry.MeterRegistry
 import ponticello.model.score.controls.ParameterControl
 import ponticello.ui.score.TempoGridObjectView
 import reaktive.Observer
+import reaktive.and
 import reaktive.value.ReactiveVariable
 import reaktive.value.now
 import reaktive.value.reactiveVariable

@@ -8,6 +8,9 @@ import ponticello.impl.Logger
 import ponticello.model.obj.AbstractContextualObject
 import ponticello.model.obj.ContextualObject
 import reaktive.Observer
+import reaktive.and
+import reaktive.combined
+import java.lang.ref.WeakReference
 
 abstract class ObjectList<O> : List<O>, AbstractContextualObject() {
     protected abstract val objects: MutableList<O>
@@ -127,17 +130,22 @@ abstract class ObjectList<O> : List<O>, AbstractContextualObject() {
             }
         }
         addListener(listener)
-        return Observer {
-            removeListener(listener)
-            observers.values.forEach { obs -> obs.kill() }
-            observers.clear()
-        }
+        return ObjectListObserver(WeakReference(this), listener) and observers.values.combined()
     }
 
     interface Listener<in O> {
         fun added(obj: O, idx: Int)
         fun removed(obj: O)
         fun moved(obj: O, idx: Int) {
+        }
+    }
+
+    private class ObjectListObserver<T>(
+        private val list: WeakReference<ObjectList<T>>,
+        private val action: Listener<T>
+    ): Observer() {
+        override fun doKill() {
+            list.get()?.removeListener(action)
         }
     }
 }

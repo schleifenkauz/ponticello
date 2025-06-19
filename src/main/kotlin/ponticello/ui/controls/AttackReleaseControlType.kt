@@ -19,6 +19,7 @@ import ponticello.sc.ControlSpec
 import ponticello.sc.NumericalControlSpec
 import ponticello.sc.Warp
 import ponticello.ui.score.ScoreObjectView
+import reaktive.and
 import reaktive.value.binding.orElse
 import reaktive.value.forEach
 import reaktive.value.now

@@ -28,8 +28,8 @@ data object ExprControlType : ControlType<ExprControl>() {
         namedControl: NamedParameterControl, control: ExprControl, view: ScoreObjectView?,
     ): Node {
         val actions = actions.withContext(control)
-        val window = makeCodePaneWindow(control.expr, control.context, namedControl, actions)
-        return showWindowAction.withContext(window).makeButton("medium-icon-button")
+        val window by lazy { makeCodePaneWindow(control.expr, control.context, namedControl, actions) }
+        return showWindowAction.withContext { window }.makeButton("medium-icon-button")
     }
 
     override fun createSimpleInput(

@@ -5,6 +5,7 @@ import fxutils.prompt.DetailPane
 import fxutils.styleClass
 import fxutils.undo.UndoManager
 import hextant.context.Context
+import javafx.scene.canvas.Canvas
 import javafx.scene.control.Button
 import javafx.scene.control.Label
 import javafx.scene.layout.Pane
@@ -113,9 +114,10 @@ class TempoGridObjectView(override val obj: TempoGridObject, inst: ScoreObjectIn
         private const val TICK_LINE_SPACE = 0.4
         private const val MIN_BAR_NUMBER_DIST = 30.0
 
+        //TODO this must be optimized, maybe use Canvas...
         fun paintGrid(
             context: Context, meter: MeterObject, firstBar: Int, duration: Double,
-            area: Pane, width: Double, height: Double,
+            area: Canvas, width: Double, height: Double,
         ) {
             val bpm = meter.beatsPerMinute.now
             val bpb = meter.beatsPerBar.now

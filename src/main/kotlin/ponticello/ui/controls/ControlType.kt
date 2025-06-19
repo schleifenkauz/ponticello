@@ -43,9 +43,9 @@ sealed class ControlType<C : ParameterControl> {
             UGenControlType
         )
 
-        val showWindowAction = action<SubWindow>("Edit code") {
+        val showWindowAction = action<() -> SubWindow>("Edit code") {
             icon(Material2AL.CODE)
-            executes { w -> w.showOrBringToFront() }
+            executes { w -> w().showOrBringToFront() }
         }
 
         @Suppress("UNCHECKED_CAST")

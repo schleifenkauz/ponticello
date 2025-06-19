@@ -20,10 +20,14 @@ class PonticelloApp : Application() {
     }
 
     private fun periodicGC() {
-        thread(isDaemon = true) {
+        thread(isDaemon = true, name = "Periodic GC") {
             while (true) {
-                System.gc()
-                val period = launcher.rootContext[Settings].garbageCollectionPeriod.now.toLong()
+                val settings = launcher.rootContext[Settings]
+                if (settings.periodicGarbageCollection.now) {
+                    Logger.info("Performing periodic garbage collection...", Logger.Category.Memory)
+                    System.gc()
+                }
+                val period = settings.garbageCollectionPeriod.now.toLong()
                 Thread.sleep(period * 1000)
             }
         }

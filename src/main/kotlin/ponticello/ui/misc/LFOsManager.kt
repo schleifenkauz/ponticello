@@ -8,6 +8,7 @@ import ponticello.model.score.controls.UGenControl
 import ponticello.model.score.controls.ValueControl
 import ponticello.sc.*
 import reaktive.Observer
+import reaktive.and
 import reaktive.event.event
 import reaktive.event.triEvent
 import reaktive.value.binding.map

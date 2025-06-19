@@ -33,6 +33,7 @@ import ponticello.ui.dock.Side
 import ponticello.ui.dock.ToolPane
 import ponticello.ui.dock.ToolPaneState
 import reaktive.ObserverMap
+import reaktive.and
 import reaktive.value.binding.impl.notNull
 import reaktive.value.binding.map
 import reaktive.value.forEach

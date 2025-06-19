@@ -253,7 +253,7 @@ class EnvelopeEditor(
         }
     }
 
-    private fun removeChildren() {
+    private fun removeChildren() { //TODO optimize this, maybe use own Pane for each Envelope
         pane.children.removeAll(handles)
         pane.children.removeAll(innerCircles)
         pane.children.remove(line)

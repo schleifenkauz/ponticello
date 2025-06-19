@@ -17,6 +17,7 @@ import ponticello.model.score.ScoreObject
 import ponticello.model.score.TimeUnit
 import ponticello.ui.live.QuantizationConfigEdit
 import reaktive.Observer
+import reaktive.and
 import reaktive.event.unitEvent
 import reaktive.value.ReactiveValue
 import reaktive.value.ReactiveVariable

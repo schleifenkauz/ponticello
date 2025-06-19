@@ -9,6 +9,7 @@ import ponticello.impl.toDecimal
 import ponticello.sc.*
 import ponticello.sc.editor.ControlSpecEditor
 import reaktive.Observer
+import reaktive.and
 import reaktive.value.ReactiveVariable
 import reaktive.value.now
 import reaktive.value.reactiveVariable

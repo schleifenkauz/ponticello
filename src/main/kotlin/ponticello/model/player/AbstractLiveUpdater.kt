@@ -19,6 +19,7 @@ import ponticello.sc.client.ScWriter
 import ponticello.sc.client.SuperColliderClient
 import ponticello.sc.client.run
 import reaktive.Observer
+import reaktive.and
 import reaktive.value.now
 import reaktive.value.observe
 

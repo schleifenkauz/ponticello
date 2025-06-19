@@ -6,6 +6,7 @@ import ponticello.model.live.QuantizationUnit
 import ponticello.model.score.TimeUnit
 import reaktive.Observer
 import reaktive.Reactive
+import reaktive.and
 import reaktive.value.ReactiveVariable
 import reaktive.value.now
 import reaktive.value.reactiveVariable

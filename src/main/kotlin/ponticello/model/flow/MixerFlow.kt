@@ -21,6 +21,7 @@ import ponticello.sc.client.SuperColliderClient
 import ponticello.ui.midi.AbstractMidiContext
 import ponticello.ui.midi.MidiContext
 import reaktive.Observer
+import reaktive.and
 import reaktive.value.*
 import reaktive.value.binding.flatMap
 

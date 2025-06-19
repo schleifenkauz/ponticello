@@ -25,6 +25,7 @@ import ponticello.sc.ControlSpec
 import ponticello.sc.NumericalControlSpec
 import ponticello.sc.Warp
 import reaktive.Observer
+import reaktive.and
 import reaktive.value.*
 import reaktive.value.binding.binding
 import reaktive.value.binding.equalTo
@@ -310,9 +311,7 @@ class ParameterControlList(
         }
 
         fun reassignedControl(
-            parameter: NamedParameterControl,
-            oldControl: ParameterControl,
-            newControl: ParameterControl,
+            parameter: NamedParameterControl, oldControl: ParameterControl, newControl: ParameterControl,
         )
 
         fun changedSpec(parameter: NamedParameterControl, oldSpec: ControlSpec?, newSpec: ControlSpec?) {}
