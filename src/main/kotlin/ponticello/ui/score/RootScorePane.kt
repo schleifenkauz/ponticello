@@ -18,7 +18,7 @@ import ponticello.ui.impl.verticalDist
 import reaktive.event.unitEvent
 import reaktive.value.now
 import java.util.concurrent.CompletableFuture
-import kotlin.concurrent.thread
+import java.util.concurrent.Executors
 
 abstract class RootScorePane(score: Score, context: Context) : ScorePane(score, context) {
     private val positionTracker = Line() styleClass "mouse-tracker-line"
@@ -111,7 +111,7 @@ abstract class RootScorePane(score: Score, context: Context) : ScorePane(score, 
         val repaintTrigger = latestRepaintTrigger
         val maxTime = 25L //determines how much time is spent consecutively on the Application Thread
         val itr = views.iterator()
-        thread {
+        layoutExecutor.execute {
             while (itr.hasNext()) {
                 if (repaintTrigger != latestRepaintTrigger) {
                     break
@@ -125,6 +125,7 @@ abstract class RootScorePane(score: Score, context: Context) : ScorePane(score, 
 
     override fun repaint() {
         latestRepaintTrigger = System.currentTimeMillis()
+        removeOutOfRangeChildren()
         layoutObjects()
         repositionEnvelopeMagnifier()
         repaint.fire()
@@ -174,5 +175,9 @@ abstract class RootScorePane(score: Score, context: Context) : ScorePane(score, 
         if (!player.isPlaying.now) {
             context[TimeCodeView].displayTime(t)
         }
+    }
+
+    companion object  {
+        private val layoutExecutor = Executors.newSingleThreadExecutor { r -> Thread(r, "Layout Thread") }
     }
 }

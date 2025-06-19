@@ -10,7 +10,6 @@ import hextant.context.Context
 import hextant.context.compoundEdit
 import hextant.core.editor.defaultState
 import hextant.serial.EditorRoot
-import javafx.application.Platform
 import javafx.collections.FXCollections.observableList
 import javafx.geometry.Bounds
 import javafx.geometry.Point2D
@@ -102,7 +101,18 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
     }
 
     open fun repaint() {
+        removeOutOfRangeChildren()
         layoutObjects(views.iterator(), Long.MAX_VALUE, CompletableFuture())
+    }
+
+    protected fun removeOutOfRangeChildren() {
+        children.removeIf { child ->
+            if (child !is ScoreObjectView) false
+            else {
+                val inst = child.instance
+                inst.start > displayEnd || inst.start + inst.duration < displayStart
+            }
+        }
     }
 
     protected fun layoutObjects(
@@ -114,12 +124,11 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
         while (itr.hasNext()) {
             val (inst, view) = itr.next()
             if (inst.start > displayEnd || inst.start + inst.duration < displayStart) {
-                children.remove(view) //TODO can this be optimized?
                 continue
             }
             val resizeHorizontal = !view.prefWidth.isFinite() || view.getDisplayWidth() != view.prefWidth
             val resizeVertical = !view.prefHeight.isFinite() || view.getDisplayHeight() != view.prefHeight
-            if (resizeHorizontal || resizeVertical) Platform.runLater {
+            if (resizeHorizontal || resizeVertical) {
                 view.setPrefSize(view.getDisplayWidth(), view.getDisplayHeight())
                 view.rescale()
             }
