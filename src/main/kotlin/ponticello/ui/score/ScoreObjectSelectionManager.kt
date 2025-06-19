@@ -43,6 +43,25 @@ class ScoreObjectSelectionManager(val context: Context, private val rootPane: Sc
 
     fun isFocused(view: ScoreObjectView): Boolean = _focusedView.now == view
 
+    fun selectAll(views: Collection<ScoreObjectView>, addToSelection: Boolean) {
+        val selectedBefore = selectedViews.toSet()
+        if (!addToSelection) {
+            _selectedViews.clear()
+            _selectedViews.addAll(views)
+            for (v in selectedBefore - views.toSet()) {
+                updateIsSelected(v, false)
+            }
+            for (v in views - selectedBefore) {
+                updateIsSelected(v, true)
+            }
+        } else {
+            _selectedViews.addAll(views)
+            for (v in views - selectedBefore) {
+                updateIsSelected(v, true)
+            }
+        }
+    }
+
     fun select(view: ScoreObjectView, addToSelection: Boolean) {
         if (!addToSelection) {
             val selectedBefore = selectedViews.toSet()

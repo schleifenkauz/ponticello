@@ -242,7 +242,7 @@ abstract class ScoreObjectView(
                     region.layoutXProperty().bind(
                         this.prefWidthProperty().subtract(region.widthProperty()).divide(2.0)
                     )
-                    region.prefWidthProperty().bind(this.prefWidthProperty().pow(0.66))
+                    region.prefWidthProperty().bind(this.prefWidthProperty().pow(0.75))
                 }
 
                 Side.LEFT, Side.RIGHT -> {
@@ -251,32 +251,32 @@ abstract class ScoreObjectView(
                     region.layoutYProperty().bind(
                         this.prefHeightProperty().subtract(region.heightProperty()).divide(2.0)
                     )
-                    region.prefHeightProperty().bind(this.prefHeightProperty().pow(0.66))
+                    region.prefHeightProperty().bind(this.prefHeightProperty().pow(0.75))
                 }
             }
             when (side) {
                 Side.TOP -> {
                     region.translateYProperty().bind(region.heightProperty().divide(2.0).negate())
-                    region.visibleProperty().bind(region.prefWidthProperty().greaterThan(10.0))
+                    region.visibleProperty().bind(region.prefWidthProperty().greaterThan(8.0))
                 }
 
                 Side.BOTTOM -> {
                     region.layoutYProperty().bind(
                         this.heightProperty().subtract(region.heightProperty().divide(2))
                     )
-                    region.visibleProperty().bind(region.prefWidthProperty().greaterThan(10.0))
+                    region.visibleProperty().bind(region.prefWidthProperty().greaterThan(8.0))
                 }
 
                 Side.LEFT -> {
                     region.translateXProperty().bind(region.widthProperty().divide(2.0).negate())
-                    region.visibleProperty().bind(region.prefHeightProperty().greaterThan(10.0))
+                    region.visibleProperty().bind(region.prefHeightProperty().greaterThan(8.0))
                 }
 
                 Side.RIGHT -> {
                     region.layoutXProperty().bind(
                         this.widthProperty().subtract(region.widthProperty().divide(2))
                     )
-                    region.visibleProperty().bind(region.prefHeightProperty().greaterThan(10.0))
+                    region.visibleProperty().bind(region.prefHeightProperty().greaterThan(8.0))
                 }
             }
             var dragStart: Point2D? = null

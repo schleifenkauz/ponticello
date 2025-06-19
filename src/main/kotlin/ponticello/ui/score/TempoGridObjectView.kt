@@ -5,6 +5,7 @@ import fxutils.prompt.DetailPane
 import fxutils.styleClass
 import fxutils.undo.UndoManager
 import hextant.context.Context
+import javafx.beans.binding.Bindings
 import javafx.scene.canvas.Canvas
 import javafx.scene.control.Button
 import javafx.scene.control.Label
@@ -36,7 +37,7 @@ class TempoGridObjectView(override val obj: TempoGridObject, inst: ScoreObjectIn
     init {
         styleClass("tempo-grid")
         children.add(canvas)
-        canvas.heightProperty().bind(prefHeightProperty())
+        canvas.heightProperty().bind(Bindings.min(prefHeightProperty(), MAX_CANVAS_WIDTH))
         canvas.widthProperty().bind(prefWidthProperty())
         canvas.opacityProperty().bind(
             `if`(obj.context[UIState].snapEnabled, then = { 1.0 }, otherwise = { 0.5 }).asObservableValue()
@@ -174,5 +175,7 @@ class TempoGridObjectView(override val obj: TempoGridObject, inst: ScoreObjectIn
             lineWidth = 2.0
             strokeLine(0.0, height / 2, width, height / 2)
         }
+
+        private const val MAX_CANVAS_WIDTH = 8192
     }
 }

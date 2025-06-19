@@ -31,12 +31,11 @@ object SelectionRelatedActions {
         on("Ctrl+Shift+A") {
             val selected = resolveFocusedObject(selector) ?: return@on
             val pane = selected.parentPane
-            for (inst in pane.score.instancesOf(selected.obj)) {
-                if (inst != selected.instance) {
-                    val view = pane.getObjectView(inst)
-                    context[ScoreObjectSelectionManager].select(view, addToSelection = true)
-                }
-            }
+            val selection = context[ScoreObjectSelectionManager]
+            selection.deselectAll()
+            val instances = pane.score.instancesOf(selected.obj)
+            val views = instances.map { inst -> pane.getObjectView(inst) }.toList()
+            context[ScoreObjectSelectionManager].selectAll(views, addToSelection = false)
         }
 
         on("Shift?+G") { ev ->

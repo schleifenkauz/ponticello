@@ -319,7 +319,9 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
             selection.rect.requestFocus()
             return
         }
+        var t = System.currentTimeMillis()
         val containedViews = viewsInside(selection.rect.boundsInParent)
+        println("Contained Views computed in ${System.currentTimeMillis() - t} ms")
         when (ev.modifiers) {
             setOf(Alt) -> {
                 selector.deselectAll()
@@ -331,10 +333,9 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
             }
 
             noModifiers, setOf(Shift) -> {
-                for ((idx, view) in containedViews.withIndex()) {
-                    val addToSelection = idx != 0 || ev.isShiftDown
-                    selector.select(view, addToSelection)
-                }
+                t = System.currentTimeMillis()
+                selector.selectAll(containedViews, addToSelection = ev.isShiftDown)
+                println("Views selected in ${System.currentTimeMillis() - t} ms")
             }
         }
     }
@@ -390,8 +391,9 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
             for (inst in instances) {
                 score.addObject(inst, autoSelect = true)
                 inst.moveTo(t - leftTop.time, y - leftTop.y, simpleMove = true)
-                selector.select(getObjectView(inst), addToSelection = true)
             }
+            val views = instances.map { inst -> getObjectView(inst) }
+            selector.selectAll(views, addToSelection = false)
         }
     }
 
