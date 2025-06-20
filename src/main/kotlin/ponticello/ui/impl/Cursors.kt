@@ -10,8 +10,8 @@ object Cursors {
     val CLOSED_HAND = createCursor("closed-hand.png")
     val MOVE = createCursor("move.png")
     val CROSS_HAIR = createCursor("cross-hair.png")
-    val RESIZE_HORIZONTAL = createCursor("resize-horizontal2.png")
-    val RESIZE_VERTICAL = createCursor("resize-vertical2.png")
+    val RESIZE_HORIZONTAL = createCursor("resize-horizontal.png")
+    val RESIZE_VERTICAL = createCursor("resize-vertical.png")
 
     private fun createCursor(imageName: String): Cursor {
         val stream = javaClass.getResourceAsStream("/ponticello/ui/cursors/$imageName")
