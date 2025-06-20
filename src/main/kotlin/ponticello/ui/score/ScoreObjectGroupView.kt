@@ -18,11 +18,8 @@ import ponticello.model.score.ScoreObjectGroup
 import ponticello.model.score.ScoreObjectInstance
 import ponticello.sc.view.ObjectSelectorControl
 import reaktive.value.ReactiveVariable
-import reaktive.value.binding.and
 import reaktive.value.binding.map
-import reaktive.value.binding.notEqualTo
 import reaktive.value.fx.asObservableValue
-import reaktive.value.fx.asReactiveValue
 
 class ScoreObjectGroupView(
     override val obj: ScoreObjectGroup,
@@ -63,15 +60,9 @@ class ScoreObjectGroupView(
 
     override fun inlineControlsVisibilityCondition(
         controlsDisplay: ReactiveVariable<InlineControlsDisplay>,
-    ): ObservableValue<Boolean> = (
-            controlsDisplay.notEqualTo(InlineControlsDisplay.NONE)
-                .and(
-                    this.hoverProperty()
-                        .or(inlineNameLabel.pressedProperty())
-                        .or(moveButton.pressedProperty())
-                        .asReactiveValue()
-                )
-            ).asObservableValue()
+    ): ObservableValue<Boolean> = this.hoverProperty()
+        .or(inlineNameLabel.pressedProperty())
+        .or(moveButton.pressedProperty())
 
     override fun inlineControlsBackground(
         controlsDisplay: ReactiveVariable<InlineControlsDisplay>,

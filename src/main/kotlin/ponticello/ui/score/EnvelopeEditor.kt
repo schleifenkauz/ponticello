@@ -238,7 +238,7 @@ class EnvelopeEditor(
     }
 
     fun repaint() {
-        if (innerCircles.size == 0) {
+        if (line.points.isEmpty()) {
             if (mouseInfo !in pane.children) pane.children.add(mouseInfo)
             if (line !in pane.children) pane.children.add(line)
             for ((idx, p) in envelope.points.withIndex()) {
@@ -260,7 +260,7 @@ class EnvelopeEditor(
         }
     }
 
-    private fun removeChildren() { //TODO optimize this, maybe use own Pane for each Envelope
+    private fun removeChildren() {
         pane.children.removeAll(handles)
         pane.children.removeAll(innerCircles)
         pane.children.remove(line)
@@ -268,9 +268,11 @@ class EnvelopeEditor(
     }
 
     private fun addHandle(idx: Int, x: Double, y: Double) {
-        if (pane.prefWidth < WIDTH_THRESHOLD) return
         val handle = Circle(x, y, HANDLE_RADIUS)
+        val interactive = pane.prefWidthProperty().greaterThanOrEqualTo(WIDTH_THRESHOLD)
+        handle.visibleProperty().bind(interactive)
         val innerCircle = Circle(x, y, HANDLE_RADIUS / 3)
+        innerCircle.visibleProperty().bind(interactive)
         innerCircle.centerXProperty().bind(handle.centerXProperty())
         innerCircle.centerYProperty().bind(handle.centerYProperty())
         handle.isFocusTraversable = true

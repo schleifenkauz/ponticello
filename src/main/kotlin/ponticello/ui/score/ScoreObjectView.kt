@@ -215,7 +215,7 @@ abstract class ScoreObjectView(
                             val deltaY = ev.screenY - start.y
                             val x = oldBounds!!.minX + deltaX
                             val y = oldBounds!!.minY + deltaY
-                            dragTo(x, y)
+                            dragTo(x, y, ev)
                             ev.consume()
                         }
                     }
@@ -442,7 +442,7 @@ abstract class ScoreObjectView(
         }
     }
 
-    private fun dragTo(toX: Double, toY: Double) {
+    private fun dragTo(toX: Double, toY: Double, ev: MouseEvent) {
         context[AppLayout].get<ScoreObjectDetailPane>().hidePopup()
         val movedObjects = context[ScoreObjectSelectionManager].selectedInstances + this.instance
         val minDeltaT = -movedObjects.minOf { inst -> inst.start }
@@ -450,8 +450,10 @@ abstract class ScoreObjectView(
         val minDeltaY = -movedObjects.minOf { inst -> inst.y }
         val maxDeltaY = movedObjects.minOf { inst -> inst.score!!.maxY.now - (inst.y + inst.height) }
         val (t, y) = parentPane.snapToGrid(toX, toY)
-        val deltaT = (t - instance.start).coerceIn(minDeltaT..maxDeltaT)
-        val deltaY = (y - instance.y).coerceIn(minDeltaY..maxDeltaY)
+        var deltaT = (t - instance.start).coerceIn(minDeltaT..maxDeltaT)
+        var deltaY = (y - instance.y).coerceIn(minDeltaY..maxDeltaY)
+        if (ev.isShiftDown) deltaT = zero
+        if (ev.isControlDown) deltaY = zero
         for (inst in movedObjects) {
             inst.moveTo(inst.start + deltaT, inst.y + deltaY, simpleMove = false)
         }
