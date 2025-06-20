@@ -81,7 +81,7 @@ class MidiObject(
     }
 
     override fun resize(targetDuration: Decimal, targetHeight: Decimal) {
-        if (resizeMode.isStretch) {
+        if (resizeMode!!.isStretch) {
             val horizontalRatio = targetDuration / this.duration
             super.resize(targetDuration, targetHeight)
             for (note in notes) {
@@ -92,18 +92,17 @@ class MidiObject(
             var minDur = zero(ObjectPosition.TIME_PRECISION)
             var minHeight = zero(ObjectPosition.Y_PRECISION)
             if (notes.isNotEmpty()) {
-                minDur = when {
-                    resizeSide == Side.LEFT -> this.duration - notes.minOf { n -> n.onset }
-                    resizeSide == Side.RIGHT -> notes.maxOf { o -> o.onset + o.duration }
+                minDur = when (resizeSide) {
+                    Side.LEFT -> this.duration - notes.minOf { n -> n.onset }
+                    Side.RIGHT -> notes.maxOf { o -> o.onset + o.duration }
                     else -> minDur
                 }
 
-                minHeight = when {
-                    resizeSide == Side.BOTTOM -> this.height - notes.minOf { n -> pixelsPerPitch * (n.midinote - lowestPitch) }
-                    resizeSide == Side.TOP -> notes.maxOf { n ->
+                minHeight = when (resizeSide) {
+                    Side.BOTTOM -> this.height - notes.minOf { n -> pixelsPerPitch * (n.midinote - lowestPitch) }
+                    Side.TOP -> notes.maxOf { n ->
                         (pixelsPerPitch * (n.midinote - lowestPitch)) + pixelsPerPitch
                     }.asY
-
                     else -> minHeight
                 }
             }

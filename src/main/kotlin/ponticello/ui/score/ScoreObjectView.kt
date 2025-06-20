@@ -285,33 +285,36 @@ abstract class ScoreObjectView(
                 ev.consume()
                 when (ev.eventType) {
                     MouseEvent.MOUSE_PRESSED -> {
+                        oldBounds = BoundingBox(layoutX, layoutY, width, height)
+                        dragStart = Point2D(ev.screenX, ev.screenY)
                         if (ev.isAltDown) {
                             if (side in setOf(Side.LEFT, Side.RIGHT)) {
                                 isCreatingLoop = true
                             }
+                        } else {
+                            val resizeMode = when (ev.modifiers) {
+                                noModifiers -> ScoreObject.ResizeMode.Regular
+                                setOf(Shift) -> ScoreObject.ResizeMode.Stretch
+                                setOf(Ctrl) -> ScoreObject.ResizeMode.DeepStretch
+                                else -> return@addEventHandler
+                            }
+                            obj.beginResize(resizeMode, side)
                         }
-                        val resizeMode = when (ev.modifiers) {
-                            noModifiers -> ScoreObject.ResizeMode.Regular
-                            setOf(Shift) -> ScoreObject.ResizeMode.Stretch
-                            setOf(Ctrl) -> ScoreObject.ResizeMode.DeepStretch
-                            else -> return@addEventHandler
-                        }
-                        obj.beginResize(resizeMode, side)
-                        oldBounds = BoundingBox(layoutX, layoutY, width, height)
-                        dragStart = Point2D(ev.screenX, ev.screenY)
                     }
 
                     MouseEvent.MOUSE_DRAGGED -> {
                         val start = dragStart ?: return@addEventHandler
-                        val dx = ev.screenX - start.x
-                        val dy = ev.screenY - start.y
-                        resize(oldBounds!!, dx, dy, side)
+                        if (obj.isResizing) {
+                            val dx = ev.screenX - start.x
+                            val dy = ev.screenY - start.y
+                            resize(oldBounds!!, dx, dy, side)
+                        }
                     }
 
                     MouseEvent.MOUSE_RELEASED -> {
                         if (isCreatingLoop) {
                             finishLoop()
-                        } else {
+                        } else if (obj.isResizing) {
                             obj.finishResize(recordEdit = true)
                         }
                     }

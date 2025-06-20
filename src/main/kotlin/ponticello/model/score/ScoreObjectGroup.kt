@@ -118,7 +118,8 @@ class ScoreObjectGroup(
         var minDur = zero(ObjectPosition.TIME_PRECISION)
         var minHeight = zero(ObjectPosition.Y_PRECISION)
         val objects = score.objectInstances
-        if (objects.isNotEmpty() && !resizeMode.isStretch) { //todo compute min dimensions when resizeType=Stretch
+        val mode = resizeMode ?: error("resizeMode is not set")
+        if (objects.isNotEmpty() && !mode.isStretch) { //todo compute min dimensions when resizeType=Stretch
             minDur =
                 if (resizeSide == Side.LEFT) this.duration - objects.minOf { o -> o.start }
                 else objects.maxOf { o -> o.start + o.duration }
@@ -131,13 +132,13 @@ class ScoreObjectGroup(
         val deltaHeight = targetHeight.coerceAtLeast(minHeight) - this.height
         super.resize(this.duration + deltaDur, this.height + deltaHeight)
         for (inst in score.objectInstances) {
-            if (resizeMode.isStretch) {
+            if (mode.isStretch) {
                 val factorT = this.duration / durationBeforeResize
                 val factorY = this.height / heightBeforeResize
                 val newTime = inst.positionBeforeMove.time * factorT
                 val newY = inst.positionBeforeMove.y * factorY
                 inst.moveTo(newTime, newY, simpleMove = false)
-                if (resizeMode == ResizeMode.DeepStretch) {
+                if (mode == ResizeMode.DeepStretch) {
                     val obj = inst.obj
                     obj.resize(obj.durationBeforeResize * factorT, obj.heightBeforeResize * factorY)
                 }
@@ -151,12 +152,13 @@ class ScoreObjectGroup(
 
     override fun finishResize(recordEdit: Boolean) {
         super.finishResize(recordEdit)
-        if (resizeMode == ResizeMode.DeepStretch) {
+        val mode = resizeMode ?: error("resizeMode is not set")
+        if (mode == ResizeMode.DeepStretch) {
             for (obj in score.objects) {
                 obj.finishResize(recordEdit = false)
             }
         }
-        if (resizeMode.isStretch || resizeSide == Side.LEFT || resizeSide == Side.TOP) {
+        if (mode.isStretch || resizeSide == Side.LEFT || resizeSide == Side.TOP) {
             for (inst in score.objectInstances) {
                 inst.finishMove(notifyScore = false, recordEdit = false)
             }

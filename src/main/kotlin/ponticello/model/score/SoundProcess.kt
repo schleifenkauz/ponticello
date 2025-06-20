@@ -164,7 +164,7 @@ class SoundProcess(
 
     override fun resize(targetDuration: Decimal, targetHeight: Decimal) {
         var newDuration = targetDuration
-        if (resizeMode.isStretch && playBufRate != null) {
+        if (resizeMode!!.isStretch && playBufRate != null) {
             playBufRate!!.now *= (this.duration / newDuration)
         } else if (playbufStartPos != null) {
             if (resizeSide == Side.LEFT) {
@@ -179,7 +179,7 @@ class SoundProcess(
 
     override fun finishResize(recordEdit: Boolean) {
         super.finishResize(recordEdit)
-        if (resizeMode.isStretch && playBufRate != null) {
+        if (resizeMode!!.isStretch && playBufRate != null) {
             playBufRate!!.now = playBufRateBeforeResize * (durationBeforeResize / duration)
         }
     }

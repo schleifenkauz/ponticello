@@ -84,10 +84,12 @@ sealed class ScoreObject : AbstractRenamableObject() {
         private set
 
     @Transient
-    protected lateinit var resizeSide: Side
+    protected var resizeSide: Side? = null
 
     @Transient
-    protected var resizeMode: ResizeMode = ResizeMode.Regular
+    protected var resizeMode: ResizeMode? = null
+
+    val isResizing get() = resizeMode != null
 
     override val registry: ScoreObjectRegistry
         get() = context[ScoreObjectRegistry]
@@ -144,21 +146,24 @@ sealed class ScoreObject : AbstractRenamableObject() {
     }
 
     open fun resize(targetDuration: Decimal, targetHeight: Decimal) {
-        when (resizeMode) {
+        val mode = resizeMode ?: error("resizeMode not set")
+        val side = resizeSide ?: error("resizeSide not set")
+        when (mode) {
             ResizeMode.Regular -> {
                 for ((parameter, ctrl) in associatedControls) {
                     if (ctrl !is EnvelopeControl) continue
                     val spec = getSpec(parameter) as? NumericalControlSpec
                     if (spec != null && resizeSide in setOf(Side.LEFT, Side.RIGHT)) {
-                        ctrl.points.resize(targetDuration, resizeSide.asHorizontalDirection(), spec)
+                        ctrl.points.resize(targetDuration, side.asHorizontalDirection(), spec)
                     }
                 }
             }
 
             ResizeMode.Stretch, ResizeMode.DeepStretch -> {
                 for ((_, ctrl) in associatedControls) {
-                    if (ctrl !is EnvelopeControl) continue
-                    ctrl.points.rescale(targetDuration)
+                    if (ctrl is EnvelopeControl) {
+                        ctrl.points.rescale(targetDuration)
+                    }
                 }
             }
         }
@@ -175,17 +180,24 @@ sealed class ScoreObject : AbstractRenamableObject() {
     }
 
     open fun finishResize(recordEdit: Boolean = true) {
+        val mode = resizeMode ?: error("resizeMode not set")
+        val side = resizeSide ?: error("resizeSide not set")
         if (duration == durationBeforeResize && height == heightBeforeResize) return
         val deltaDuration = duration - durationBeforeResize
         val deltaHeight = height - heightBeforeResize
         viewManager.notifyListeners {
-            finishedResize(this@ScoreObject, deltaDuration, deltaHeight, resizeSide)
+            finishedResize(this@ScoreObject, deltaDuration, deltaHeight, side)
+        }
+        for (ctrl in associatedControls.values) {
+            if (ctrl is EnvelopeControl) {
+                ctrl.points.finishedResize()
+            }
         }
         if (recordEdit) {
             context[UndoManager].record(
                 ResizeEdit(
                     this, durationBeforeResize, heightBeforeResize, this.duration, this.height,
-                    resizeMode, resizeSide
+                    mode, side
                 )
             )
         }

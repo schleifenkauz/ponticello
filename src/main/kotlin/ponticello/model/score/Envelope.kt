@@ -246,7 +246,6 @@ class Envelope(private val _points: MutableList<EnvelopePoint>) {
                 }
             }
         }
-        viewManager.notifyListeners { editedEnvelope() }
     }
 
     fun rescale(newDur: Decimal) {
@@ -255,7 +254,6 @@ class Envelope(private val _points: MutableList<EnvelopePoint>) {
         for ((i, p) in points.withIndex()) {
             modifyPoint(i, p.copy(time = p.time * factor))
         }
-        viewManager.notifyListeners { editedEnvelope() }
     }
 
     fun reverse() {
@@ -263,6 +261,10 @@ class Envelope(private val _points: MutableList<EnvelopePoint>) {
         for (idx in points.indices) {
             modifyPoint(idx, points[points.size - 1 - idx])
         }
+        viewManager.notifyListeners { editedEnvelope() }
+    }
+
+    fun finishedResize() {
         viewManager.notifyListeners { editedEnvelope() }
     }
 
