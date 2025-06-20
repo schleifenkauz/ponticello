@@ -6,7 +6,6 @@ import hextant.context.compoundEdit
 import javafx.beans.binding.Bindings
 import javafx.geometry.HorizontalDirection
 import javafx.geometry.Point2D
-import javafx.scene.Cursor
 import javafx.scene.control.Label
 import javafx.scene.input.KeyEvent
 import javafx.scene.input.MouseButton.PRIMARY
@@ -27,6 +26,7 @@ import ponticello.sc.NumericalControlSpec
 import ponticello.sc.mapOnto
 import ponticello.ui.controls.ControlSpecPrompt
 import ponticello.ui.controls.DecimalPrompt
+import ponticello.ui.impl.Cursors
 import reaktive.value.binding.map
 import reaktive.value.fx.asObservableValue
 import reaktive.value.now
@@ -86,7 +86,7 @@ class EnvelopeEditor(
     private fun setupLineDragging() {
         var draggingSegment = false
         line.setupDragging(
-            defaultCursor = Cursor.CROSSHAIR, dragCursor = Cursor.V_RESIZE,
+            defaultCursor = Cursors.CROSS_HAIR, dragCursor = Cursors.RESIZE_VERTICAL,
             onPressed = { ev: MouseEvent ->
                 if (ev.modifiers.isNotEmpty()) return@setupDragging false
                 if (pane.prefWidth < WIDTH_THRESHOLD) return@setupDragging false
@@ -303,7 +303,7 @@ class EnvelopeEditor(
         }
         handle.setupDragging(
             startDragEvent = MouseEvent.MOUSE_PRESSED,
-            defaultCursor = Cursor.CROSSHAIR, dragCursor = Cursor.MOVE,
+            defaultCursor = Cursors.CROSS_HAIR, dragCursor = Cursors.CROSS_HAIR,
             onPressed = { ev ->
                 if (ev.modifiers == setOf(Shift) || ev.modifiers == setOf(Ctrl) || ev.modifiers == noModifiers) {
                     envelope.beginPointEdit(handles.indexOf(handle))

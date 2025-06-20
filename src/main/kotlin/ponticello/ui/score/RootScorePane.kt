@@ -14,6 +14,7 @@ import ponticello.model.obj.project
 import ponticello.model.player.ScorePlayer
 import ponticello.model.project.settings
 import ponticello.model.score.*
+import ponticello.ui.impl.Cursors
 import ponticello.ui.impl.verticalDist
 import reaktive.event.unitEvent
 import reaktive.value.now
@@ -41,6 +42,7 @@ abstract class RootScorePane(score: Score, context: Context) : ScorePane(score, 
 
     open fun initialize() {
         listenForEvents()
+        cursor = Cursors.CROSS_HAIR
         this.score.addListener(this)
     }
 

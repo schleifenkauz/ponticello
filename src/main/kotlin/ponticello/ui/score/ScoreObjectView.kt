@@ -42,6 +42,7 @@ import ponticello.ui.actions.ObjectActions
 import ponticello.ui.controls.InlineParameterControlsBar
 import ponticello.ui.controls.NameControl
 import ponticello.ui.dock.AppLayout
+import ponticello.ui.impl.Cursors
 import ponticello.ui.launcher.ScoreObjectDetailPane
 import ponticello.ui.registry.ScoreObjectRegistryPane
 import reaktive.value.*
@@ -198,9 +199,11 @@ abstract class ScoreObjectView(
         var dragStart: Point2D? = null
         var oldBounds: Bounds? = null
         for (dragTarget in dragTargets()) {
+            dragTarget.cursor = Cursors.OPEN_HAND
             dragTarget.addEventHandler(MouseEvent.ANY) { ev ->
                 when (ev.eventType) {
                     MouseEvent.DRAG_DETECTED -> {
+                        dragTarget.cursor = Cursors.CLOSED_HAND
                         dragStart = Point2D(ev.screenX, ev.screenY)
                         oldBounds = BoundingBox(layoutX, layoutY, width, height)
                         dragTarget.startFullDrag()
@@ -222,6 +225,7 @@ abstract class ScoreObjectView(
 
                     MouseEvent.MOUSE_RELEASED -> {
                         if (dragStart != null) {
+                            dragTarget.cursor = Cursors.OPEN_HAND
                             instance.finishMove()
                             dragStart = null
                             ev.consume()
@@ -237,7 +241,7 @@ abstract class ScoreObjectView(
             val region = Region() styleClass "resize-region"
             when (side) {
                 Side.TOP, Side.BOTTOM -> {
-                    region.cursor = Cursor.V_RESIZE
+                    region.cursor = Cursors.RESIZE_VERTICAL
                     region.styleClass("resize-region-vertical")
                     region.layoutXProperty().bind(
                         this.prefWidthProperty().subtract(region.widthProperty()).divide(2.0)
@@ -246,7 +250,7 @@ abstract class ScoreObjectView(
                 }
 
                 Side.LEFT, Side.RIGHT -> {
-                    region.cursor = Cursor.H_RESIZE
+                    region.cursor = Cursors.RESIZE_HORIZONTAL
                     region.styleClass("resize-region-horizontal")
                     region.layoutYProperty().bind(
                         this.prefHeightProperty().subtract(region.heightProperty()).divide(2.0)
