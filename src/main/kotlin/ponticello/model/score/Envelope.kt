@@ -89,7 +89,10 @@ class Envelope(private val _points: MutableList<EnvelopePoint>) {
 
     fun addPoint(idx: Int, point: EnvelopePoint, undoable: Boolean = false) {
         _points.add(idx, point)
-        viewManager.notifyListeners { addedPoint(idx, point) }
+        viewManager.notifyListeners {
+            addedPoint(idx, point)
+            editedEnvelope()
+        }
         if (undoable) context[UndoManager].record(AddPoint(point, idx, this))
     }
 
@@ -155,11 +158,15 @@ class Envelope(private val _points: MutableList<EnvelopePoint>) {
         editedIndex = -1
         pointBeforeEdit = null
         segmentValueBeforeEdit = Decimal.NaN
+        viewManager.notifyListeners { editedEnvelope() }
     }
 
     fun removePoint(idx: Int, undoable: Boolean = true) {
         val p = _points.removeAt(idx)
-        viewManager.notifyListeners { removedPoint(idx, p) }
+        viewManager.notifyListeners {
+            removedPoint(idx, p)
+            editedEnvelope()
+        }
         if (undoable) context[UndoManager].record(RemovePoint(p, idx, this))
     }
 
@@ -239,6 +246,7 @@ class Envelope(private val _points: MutableList<EnvelopePoint>) {
                 }
             }
         }
+        viewManager.notifyListeners { editedEnvelope() }
     }
 
     fun rescale(newDur: Decimal) {
@@ -247,6 +255,7 @@ class Envelope(private val _points: MutableList<EnvelopePoint>) {
         for ((i, p) in points.withIndex()) {
             modifyPoint(i, p.copy(time = p.time * factor))
         }
+        viewManager.notifyListeners { editedEnvelope() }
     }
 
     fun reverse() {
@@ -254,6 +263,7 @@ class Envelope(private val _points: MutableList<EnvelopePoint>) {
         for (idx in points.indices) {
             modifyPoint(idx, points[points.size - 1 - idx])
         }
+        viewManager.notifyListeners { editedEnvelope() }
     }
 
     private class AddPoint(val point: EnvelopePoint, val idx: Int, val envelope: Envelope) : AbstractEdit() {

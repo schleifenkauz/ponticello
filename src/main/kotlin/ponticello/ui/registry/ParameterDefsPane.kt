@@ -21,7 +21,7 @@ class ParameterDefsPane(private val parameters: ParameterDefList, override val t
     override val type: Type
         get() = ParameterDefsPane
 
-    private val objectBoxList = ObjectListView(parameters, config, scrollable = false)
+    private val objectBoxList = ObjectListView(parameters, config, scrollable = true)
 
     override val content: Parent
         get() = objectBoxList

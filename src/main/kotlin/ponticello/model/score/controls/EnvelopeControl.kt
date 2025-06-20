@@ -152,17 +152,7 @@ class EnvelopeControl(
         +"${synthVar}.map(\\$parameter, $auxiliaryVarName)"
     }
 
-    override fun addedPoint(idx: Int, point: Envelope.EnvelopePoint) {
-        updateSynthDef()
-        update.fire()
-    }
-
-    override fun removedPoint(idx: Int, point: Envelope.EnvelopePoint) {
-        updateSynthDef()
-        update.fire()
-    }
-
-    override fun changedPoint(idx: Int, newPoint: Envelope.EnvelopePoint) {
+    override fun editedEnvelope() {
         updateSynthDef()
         update.fire()
     }

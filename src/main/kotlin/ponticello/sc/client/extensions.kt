@@ -2,6 +2,8 @@ package ponticello.sc.client
 
 import com.illposed.osc.OSCMessage
 import ponticello.impl.Logger
+import ponticello.model.Settings
+import reaktive.value.now
 import java.util.concurrent.CompletableFuture
 
 inline fun <reified T : Any> OSCMessage.getArgument(index: Int, name: String): T? {
@@ -48,6 +50,11 @@ fun SuperColliderClient.eval(
 
 fun SuperColliderClient.eval(code: String, description: String = "evaluating $code"): CompletableFuture<String> {
     Logger.fine("eval $code", Logger.Category.SuperCollider, detailMessage = code)
+    if (context[Settings].logScCode.now) {
+        println("################ EVAL #################")
+        println(code)
+        println("################ END #################")
+    }
     return send("eval", listOf(code), description)
 }
 

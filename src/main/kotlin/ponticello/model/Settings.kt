@@ -20,6 +20,7 @@ class Settings(
     val extraLatency: ReactiveVariable<Decimal> = reactiveVariable(0.05.withPrecision(2)),
     val periodicGarbageCollection: ReactiveVariable<Boolean> = reactiveVariable(false),
     val garbageCollectionPeriod: ReactiveVariable<Decimal> = reactiveVariable(60.0.withPrecision(0)),
+    val logScCode: ReactiveVariable<Boolean> = reactiveVariable(false),
     val knobSensitivity: ReactiveVariable<Decimal> = reactiveVariable(3.0.withPrecision(1)),
 ) {
     val lookAhead get() = scLangLatency.now + serverLatency.now

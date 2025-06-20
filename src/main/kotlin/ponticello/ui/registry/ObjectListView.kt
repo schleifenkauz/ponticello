@@ -314,7 +314,7 @@ class ObjectListView<O : Any>(
         itemsLayout.children.remove(box)
         box.subWindow?.hide()
         if (selectedBox.now == box) {
-            val nextToSelect = boxes.getOrNull(idx + 1) ?: boxes.getOrNull(idx - 1)
+            val nextToSelect = boxes.getOrNull(idx) ?: boxes.getOrNull(idx - 1)
             if (nextToSelect != null) {
                 select(nextToSelect)
             } else {

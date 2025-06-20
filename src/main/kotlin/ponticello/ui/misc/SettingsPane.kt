@@ -24,7 +24,9 @@ class SettingsPane(private val settings: Settings) : ToolPane() {
     override val content: Parent by lazy {
         vbox {
             children {
-                +ParameterDefsPane(settings.defaultParametersDefs, title = "Default parameter control specs")
+                +ParameterDefsPane(settings.defaultParametersDefs, title = "Default parameter control specs").apply {
+                    prefHeight = 500.0
+                }
                 +Label("Playback options").styleClass("heading")
                 item("Latency: ") {
                     +Knob(
@@ -44,6 +46,8 @@ class SettingsPane(private val settings: Settings) : ToolPane() {
                     "Knob sensitivity: ", settings.knobSensitivity,
                     NumericalControlSpec(default = 3.0, 1.0, 10.0, 0.1.toDecimal())
                 )
+                +CheckBox(settings.logScCode, "Log code sent to SuperCollider: ")
+                +Label("Garbage collection").styleClass("heading")
                 hbox {
                     +CheckBox(settings.periodicGarbageCollection, "Periodic GC: ")
                     knobItem(

@@ -9,10 +9,12 @@ import com.illposed.osc.transport.OSCPortOut
 import hextant.context.Context
 import ponticello.impl.Logger
 import ponticello.impl.superColliderPath
+import ponticello.model.Settings
 import ponticello.ui.launcher.PonticelloFiles
 import reaktive.Observer
 import reaktive.event.unitEvent
 import reaktive.observe
+import reaktive.value.now
 import java.io.File
 import java.net.InetAddress
 import java.util.concurrent.CompletableFuture
@@ -23,6 +25,7 @@ class OSCSuperColliderClient(
     process: Process,
     private val sender: OSCPortOut,
     private val receiver: OSCPortIn,
+    override val context: Context
 ) : SuperColliderClient, OSCMessageListener {
     private var idCounter = 1
     private val waitingForReply = mutableMapOf<Int, PendingRequest>()
@@ -84,6 +87,11 @@ class OSCSuperColliderClient(
     override fun run(command: String) {
         if (command == "(\n)\n") return
         Logger.fine("run: $command", Logger.Category.SuperCollider)
+        if (context[Settings].logScCode.now) {
+            println("################ RUN #################")
+            println(command)
+            println("################ END #################")
+        }
         try {
             sendAsync("run", listOf(command))
         } catch (e: Exception) {
@@ -184,7 +192,7 @@ class OSCSuperColliderClient(
             val sender = OSCPortOut(localhost, scPort)
             val receiver = OSCPortIn(7775)
             receiver.startListening()
-            return OSCSuperColliderClient(sclang, sender, receiver)
+            return OSCSuperColliderClient(sclang, sender, receiver, context)
         }
 
         private val ALL_MESSAGES = JavaRegexAddressMessageSelector(".*")
