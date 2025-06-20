@@ -116,6 +116,8 @@ class AppLayout(
         center = verticalSplitter
     }
 
+    fun toolPanes(): List<ToolPane> = toolPanes
+
     fun getToolPane(title: String) = toolPanes.find { it.title == title }?.also { p -> p.setup() }
 
     fun getToolPane(clazz: KClass<out ToolPane>, setup: Boolean = true): ToolPane? =

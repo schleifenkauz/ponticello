@@ -92,6 +92,9 @@ class PonticelloMainActivity(val project: PonticelloProject) : Activity() {
             val displayRange = project[UI_STATE].mainScoreDisplayRange
             if (displayRange == null) mainScoreView.displayWholeScore()
             else mainScoreView.display(displayRange.start, displayRange.endInclusive)
+            for (toolPane in appLayout.toolPanes()) {
+                toolPane.restoreShowing()
+            }
         }
     }
 
