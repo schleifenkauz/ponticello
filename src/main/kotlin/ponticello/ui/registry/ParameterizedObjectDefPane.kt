@@ -15,12 +15,15 @@ import reaktive.value.now
 
 abstract class ParameterizedObjectDefPane<T : ConfigurableInstrumentObject>(
     protected val def: T,
-): ScrollPane() {
+) : ScrollPane() {
     private val config: ParameterListConfig = object : ParameterListConfig() {
         override fun createNewObject(ev: Event?, list: ObjectList<ParameterDefObject>): ParameterDefObject? {
             val defaultParameters = def.context[GlobalSettings].defaultParametersDefs
-                .filter { param -> !def.hasParameter(param.name.now) }
-            val listView = SearchableParameterDefListView(defaultParameters, "New parameter")
+                .filter { param -> !def.hasParameter(param.name.now) && def.supports(param.spec.now.type) }
+            val listView = SearchableParameterDefListView(
+                defaultParameters, "New parameter",
+                instrumentObject = def, context = def.context
+            )
             val param = listView.showPopup(ev) ?: return null
             return param.copy().withName(param.name.now)
         }

@@ -58,13 +58,7 @@ class ParameterDefObject(val spec: ReactiveVariable<ControlSpec>) : AbstractRena
     override fun toString(): String = "${name.now}: ${spec.now}"
 
     fun simpleString(): String {
-        val type = when (spec.now) {
-            is NumericalControlSpec -> "num"
-            is BufferPositionControlSpec -> "buf-pos"
-            is BufferControlSpec -> "buf"
-            is BusControlSpec -> "bus"
-            is AttackReleaseControlSpec -> return "attack-release"
-        }
+        val type = spec.now.type.toString()
         return "${name.now} ($type)"
     }
 

@@ -9,6 +9,7 @@ import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import ponticello.impl.Logger
 import ponticello.model.obj.SuperColliderObject
+import ponticello.model.score.ScoreObject
 import ponticello.sc.ScExpr
 import ponticello.sc.client.ScWriter
 import reaktive.value.ReactiveBoolean
@@ -76,7 +77,9 @@ class ObjectReference<O : NamedObject>(private var _name: String) : ScExpr, java
         }
 
     override fun code(writer: ScWriter, context: Context) {
-        writer.append(superColliderName)
+        val obj = get()
+        if (obj is ScoreObject) writer.append("\"${obj.name.now}\"")
+        else writer.append(superColliderName)
     }
 
     override fun equals(other: Any?): Boolean = when {

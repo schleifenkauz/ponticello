@@ -358,7 +358,7 @@ sealed class ScoreObject : AbstractRenamableObject() {
             placement: NodePlacement?,
             cutoff: Decimal,
             latency: Decimal,
-            extraArguments: Map<ParameterDefObject, ParameterControl>
+            extraArguments: Map<ParameterDefObject, ParameterControl>,
         ): String = ""
 
         override fun doClone(): ScoreObject = this

@@ -4,6 +4,7 @@ import bundles.set
 import fxutils.undo.UndoManager
 import hextant.context.Context
 import hextant.context.extend
+import hextant.core.editor.defaultState
 import hextant.serial.EditorRoot
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.SerialName
@@ -48,4 +49,8 @@ class ExprControl(val expr: EditorRoot<@Contextual ScExprExpander>) : ParameterC
         parameter: String, spec: ControlSpec,
         cutoff: Decimal, context: CodegenContext,
     ): ScExpr = expr.editor.result.now
+
+    companion object {
+        fun create() = ExprControl(EditorRoot(ScExprExpander().defaultState()))
+    }
 }

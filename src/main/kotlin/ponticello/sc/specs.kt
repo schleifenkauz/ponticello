@@ -11,10 +11,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import ponticello.impl.*
 import ponticello.model.registry.ObjectReference
-import ponticello.model.score.controls.AttackReleaseControl
-import ponticello.model.score.controls.BufferControl
-import ponticello.model.score.controls.BusControl
-import ponticello.model.score.controls.ValueControl
+import ponticello.model.score.controls.*
 import ponticello.sc.editor.ControlSpecEditor
 import ponticello.sc.editor.SimpleBooleanEditor
 import ponticello.sc.editor.SimpleColorEditor
@@ -24,18 +21,19 @@ import reaktive.value.reactiveVariable
 
 @Serializable
 enum class ParameterType {
-    Bus, Buffer, Numerical, BufferPosition, AttackRelease;
+    Bus, Buffer, Numerical, Object, BufferPosition, AttackRelease;
 
     override fun toString(): String = when (this) {
         Bus -> "bus"
         Buffer -> "buf"
         Numerical -> "num"
+        Object -> "obj"
         BufferPosition -> "buf-pos"
         AttackRelease -> "attack-release"
     }
 
     companion object {
-        val regularTypes = listOf(Numerical, Bus, Buffer, BufferPosition)
+        val regularTypes = listOf(Numerical, Bus, Buffer, Object, BufferPosition)
     }
 }
 
@@ -43,6 +41,7 @@ fun ParameterType.defaultControlSpec(): ControlSpec = when (this) {
     ParameterType.Bus -> BusControlSpec(Rate.Audio, 2)
     ParameterType.Buffer -> BufferControlSpec(channels = 2)
     ParameterType.Numerical -> NumericalControlSpec.DEFAULT
+    ParameterType.Object -> ObjectControlSpec()
     ParameterType.BufferPosition -> BufferPositionControlSpec()
     ParameterType.AttackRelease -> AttackReleaseControlSpec()
 }
@@ -63,6 +62,7 @@ fun ControlSpec.defaultControl() = when (this) {
     is BufferControlSpec -> BufferControl(reactiveVariable(ObjectReference.none()))
     is BusControlSpec -> BusControl(reactiveVariable(ObjectReference.none()))
     is NumericalControlSpec -> ValueControl(reactiveVariable(defaultValue.get()))
+    is ObjectControlSpec -> ExprControl.create()
     is BufferPositionControlSpec -> ValueControl(reactiveVariable(zero))
     is AttackReleaseControlSpec -> AttackReleaseControl.createDefault()
 }
@@ -187,6 +187,21 @@ data class BufferControlSpec(
         get() = "kr"
 
     override fun toString(): String = "buf [$channels]"
+}
+
+@Serializable
+@Compound
+@SerialName("object")
+class ObjectControlSpec : ControlSpec {
+    override val code: String
+        get() = throw UnsupportedOperationException("ObjectControlSpec cannot be used in SynthDefs.")
+
+    override val type: ParameterType
+        get() = ParameterType.Object
+
+    override fun equals(other: Any?): Boolean = other is ObjectControlSpec
+
+    override fun hashCode(): Int = javaClass.hashCode()
 }
 
 @Serializable

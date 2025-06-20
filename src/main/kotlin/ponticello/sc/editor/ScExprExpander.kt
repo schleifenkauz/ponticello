@@ -162,6 +162,7 @@ class ScExprExpander() : ConfiguredExpander<ScExpr, ScExprEditor<*>>(), ScExprEd
             "lambda".expand { _ -> ScFunctionEditor().defaultState() }
             "bus".expand { BusSelector().defaultState() }
             "buf".expand { BufferSelector().defaultState() }
+            "obj".expand { ScoreObjectSelector().defaultState() }
             "pattern".expand { GlobalPatternSelector().defaultState() }
             "control".expand(
                 condition = { exp ->

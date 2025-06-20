@@ -1,13 +1,8 @@
 package ponticello.sc
 
-import hextant.codegen.Component
 import hextant.codegen.Compound
 import hextant.context.Context
-import ponticello.impl.Logger
-import ponticello.model.obj.ScoreObjectReference
 import ponticello.sc.client.ScWriter
-import ponticello.sc.editor.ScoreObjectSelector
-import reaktive.value.now
 
 @Compound(nodeType = ScExpr::class)
 fun IfExpr(condition: ScExpr, then: ScExpr, otherwise: ScExpr): ScExpr =
@@ -41,20 +36,12 @@ fun functionDef(name: Identifier, parameters: List<Identifier>, body: CodeBlock)
     Assignment(Identifier("~${name.text}"), ScFunction(parameters, body))
 
 @Compound(nodeType = ScExpr::class)
-data class PlayObject(
-    @Component(ScoreObjectSelector::class) val reference: ScoreObjectReference
-) : ScExpr {
+data class PlayObject(val scoreObjectNameExpr: ScExpr) : ScExpr {
     override val isValid: Boolean
-        get() = reference.isValid
+        get() = scoreObjectNameExpr.isValid
 
     override fun code(writer: ScWriter, context: Context) {
-        val obj = reference.get()
-        if (obj == null) {
-            Logger.error("PlayObject reference $reference is invalid")
-            return
-        }
-        val name = obj.name.now
         val timestamp = "TempoClock.beats"
-        writer.append("~ponticello_addr.sendMsg(\\play, -1, '$name', $timestamp, player_id)")
+        writer.append("~ponticello_addr.sendMsg(\\play, -1, ${scoreObjectNameExpr.code(context)}, $timestamp, player_id)")
     }
 }

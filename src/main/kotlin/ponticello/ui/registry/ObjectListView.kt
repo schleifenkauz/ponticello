@@ -487,10 +487,10 @@ class ObjectListView<O : Any>(
                     source.remove(selected)
                 }
             }
-            addAction("Deselect all") {
-                shortcut("ESCAPE")
-                executes { list -> list.deselectAll() }
-            }
+//            addAction("Deselect all") {
+//                shortcut("ESCAPE")
+//                executes { list -> list.deselectAll() }
+//            }
             addAction("Rename selected") {
                 shortcut("F2")
                 executes { list -> list.renameSelected() }

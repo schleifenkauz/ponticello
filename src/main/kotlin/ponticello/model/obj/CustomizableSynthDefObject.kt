@@ -35,6 +35,8 @@ class CustomizableSynthDefObject(
     override val canCopy: Boolean
         get() = true
 
+    override fun supports(type: ParameterType): Boolean = type != ParameterType.Object
+
     override fun allParameters(): List<ParameterDefObject> {
         val attackRelease = parameters.any {
             val spec = it.spec.now

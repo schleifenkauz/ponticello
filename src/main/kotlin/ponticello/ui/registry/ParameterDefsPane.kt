@@ -1,45 +1,38 @@
 package ponticello.ui.registry
 
-import fxutils.actions.collectActions
-import fxutils.prompt.PredicateTextPrompt
 import fxutils.prompt.SimpleSearchableListView
-import javafx.scene.Parent
-import org.kordamp.ikonli.material2.Material2MZ
+import javafx.event.Event
 import ponticello.model.GlobalSettings
 import ponticello.model.obj.ParameterDefObject
 import ponticello.model.project.PonticelloProject
-import ponticello.sc.Identifier
+import ponticello.model.registry.ObjectList
 import ponticello.sc.ParameterType
 import ponticello.sc.defaultControlSpec
+import ponticello.ui.dock.SearchableToolPane
 import ponticello.ui.dock.Side
 import ponticello.ui.dock.ToolPane
-import reaktive.value.now
 
-class ParameterDefsPane(private val parameters: ParameterDefList, override val title: String) : ToolPane() {
-    private val config = ParameterListConfig()
-
+class ParameterDefsPane(
+    parameters: ParameterDefList, override val title: String,
+) : SearchableToolPane<ParameterDefObject>(parameters), ListDisplayConfig<ParameterDefObject> by ParameterListConfig() {
     override val type: Type
         get() = ParameterDefsPane
-
-    private val objectBoxList = ObjectListView(parameters, config, scrollable = true)
-
-    override val content: Parent
-        get() = objectBoxList
 
     init {
         setup()
     }
 
-    private fun addParameter() {
-        val name = PredicateTextPrompt("Parameter name", initialText = "", check = { txt ->
-            Identifier.isValid(txt) && parameters.none { p -> p.name.now == txt }
-        }).showDialog(header) ?: return
+    override fun filter(obj: ParameterDefObject): Boolean = super<SearchableToolPane>.filter(obj)
+
+    override fun createNewObject(name: String, ev: Event?): ParameterDefObject? {
         val type = SimpleSearchableListView(ParameterType.regularTypes, "Parameter type")
-            .showPopup(objectBoxList, initialOption = ParameterType.Numerical) ?: return
+            .showPopup(listView, initialOption = ParameterType.Numerical) ?: return null
         val spec = type.defaultControlSpec()
-        val param = ParameterDefObject(name, spec)
-        parameters.add(param)
+        return ParameterDefObject(name, spec)
     }
+
+    override fun createNewObject(ev: Event?, list: ObjectList<ParameterDefObject>): ParameterDefObject? =
+        super<SearchableToolPane>.createNewObject(ev, list)
 
     companion object : Type(-1, "Parameters") {
         override val defaultSide: Side
@@ -47,13 +40,5 @@ class ParameterDefsPane(private val parameters: ParameterDefList, override val t
 
         override fun createToolPane(project: PonticelloProject): ToolPane =
             ParameterDefsPane(project.context[GlobalSettings].defaultParametersDefs, "Parameter definitions")
-
-        private val actions = collectActions<ParameterDefsPane> {
-            addAction("Add parameter") {
-                icon(Material2MZ.PLUS)
-                shortcut("Ctrl+PLUS")
-                executes { pane -> pane.addParameter() }
-            }
-        }
     }
 }

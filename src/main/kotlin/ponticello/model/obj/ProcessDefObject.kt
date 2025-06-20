@@ -15,6 +15,7 @@ import ponticello.impl.copy
 import ponticello.impl.randomColor
 import ponticello.model.registry.InstrumentRegistry
 import ponticello.model.registry.ObjectRegistry
+import ponticello.sc.ParameterType
 import ponticello.sc.client.ScWriter
 import ponticello.sc.client.SuperColliderClient
 import ponticello.sc.client.run
@@ -42,6 +43,8 @@ class ProcessDefObject(
 
     override val canCopy: Boolean
         get() = true
+
+    override fun supports(type: ParameterType): Boolean = true
 
     override fun copy(): ProcessDefObject = ProcessDefObject(
         color.copy(),

@@ -16,6 +16,7 @@ import hextant.core.view.ListEditorControl.Companion.EMPTY_DISPLAY
 import hextant.core.view.ListEditorControl.Companion.ORIENTATION
 import hextant.plugins.PluginBuilder
 import hextant.plugins.registerControlFactory
+import ponticello.sc.editor.*
 
 val MULTILINE = publicProperty("MULTILINE_ARGUMENTS", false)
 
@@ -24,7 +25,7 @@ val HIDE_NEW_KEYWORD = publicProperty("HIDE_NEW_KEYWORD", false)
 val DISPLAY_BRACES = publicProperty("DISPLAY_BRACES", true)
 
 internal fun PluginBuilder.registerControlFactories() {
-    registerControlFactory { editor: ponticello.sc.editor.AccessKeyEditor, arguments ->
+    registerControlFactory { editor: AccessKeyEditor, arguments ->
         CompoundEditorControl(editor, arguments) {
             horizontal {
                 styleClass("access-key")
@@ -37,7 +38,7 @@ internal fun PluginBuilder.registerControlFactories() {
         }
     }
 
-    registerControlFactory { editor: ponticello.sc.editor.AssignmentEditor, arguments ->
+    registerControlFactory { editor: AssignmentEditor, arguments ->
         CompoundEditorControl(editor, arguments) {
             horizontal {
                 styleClass("compound-expr", "assignment")
@@ -49,7 +50,7 @@ internal fun PluginBuilder.registerControlFactories() {
         }
     }
 
-    registerControlFactory { editor: ponticello.sc.editor.OperatorExprEditor, arguments ->
+    registerControlFactory { editor: OperatorExprEditor, arguments ->
         CompoundEditorControl(editor, arguments) {
             horizontal {
                 styleClass("compound-expr", "operator-expr")
@@ -63,7 +64,7 @@ internal fun PluginBuilder.registerControlFactories() {
         }
     }
 
-    registerControlFactory { editor: ponticello.sc.editor.PropertyAccessExprEditor, arguments ->
+    registerControlFactory { editor: PropertyAccessExprEditor, arguments ->
         CompoundEditorControl(editor, arguments) {
             horizontal {
                 view(editor.receiver)
@@ -74,7 +75,7 @@ internal fun PluginBuilder.registerControlFactories() {
         }
     }
 
-    registerControlFactory { editor: ponticello.sc.editor.SpreadArrayEditor, arguments ->
+    registerControlFactory { editor: SpreadArrayEditor, arguments ->
         CompoundEditorControl(editor, arguments) {
             horizontal {
                 styleClass("spread-array")
@@ -84,7 +85,7 @@ internal fun PluginBuilder.registerControlFactories() {
         }
     }
 
-    registerControlFactory { editor: ponticello.sc.editor.NamedExprEditor, arguments ->
+    registerControlFactory { editor: NamedExprEditor, arguments ->
         CompoundEditorControl(editor, arguments) {
             vertical {
                 styleClass("compound-expr", "named-expr")
@@ -97,7 +98,7 @@ internal fun PluginBuilder.registerControlFactories() {
         }
     }
 
-    registerControlFactory { editor: ponticello.sc.editor.IfExprEditor, arguments ->
+    registerControlFactory { editor: IfExprEditor, arguments ->
         CompoundEditorControl(editor, arguments) {
             vertical {
                 styleClass("compound-expr", "if")
@@ -117,7 +118,7 @@ internal fun PluginBuilder.registerControlFactories() {
         }
     }
 
-    registerControlFactory { editor: ponticello.sc.editor.WhileExprEditor, arguments ->
+    registerControlFactory { editor: WhileExprEditor, arguments ->
         CompoundEditorControl(editor, arguments) {
             vertical {
                 styleClass("compound-expr", "while")
@@ -133,7 +134,7 @@ internal fun PluginBuilder.registerControlFactories() {
         }
     }
 
-    registerControlFactory { editor: ponticello.sc.editor.LoopExprEditor, arguments ->
+    registerControlFactory { editor: LoopExprEditor, arguments ->
         CompoundEditorControl(editor, arguments) {
             vertical {
                 styleClass("compound-expr", "loop-expr")
@@ -145,7 +146,7 @@ internal fun PluginBuilder.registerControlFactories() {
         }
     }
 
-    registerControlFactory { editor: ponticello.sc.editor.FunctionDefEditor, args ->
+    registerControlFactory { editor: FunctionDefEditor, args ->
         CompoundEditorControl(editor, args) {
             vertical {
                 horizontal {
@@ -166,21 +167,27 @@ internal fun PluginBuilder.registerControlFactories() {
         }
     }
 
-    registerControlFactory { editor: ponticello.sc.editor.PlayObjectEditor, args ->
+    registerControlFactory { editor: PlayObjectEditor, args ->
         CompoundEditorControl(editor, args) {
             horizontal {
                 keyword("play ")
-                view(editor.reference)
+                view(editor.scoreObjectNameExpr)
                 root.centerChildren()
             }
         }
     }
 
-    registerControlFactory { editor: ponticello.sc.editor.OperatorEditor, arguments: Bundle ->
+    registerControlFactory { editor: OperatorEditor, arguments: Bundle ->
         TokenEditorControl(editor, arguments, completer = NoCompleter, styleClass = "operator")
     }
+    
+    registerControlFactory { editor: ObjectControlSpecEditor, arguments ->
+        CompoundEditorControl(editor, arguments) { 
+            horizontal {  } //empty
+        }
+    }
 
-    registerControlFactory { editor: ponticello.sc.editor.BusControlSpecEditor, arguments ->
+    registerControlFactory { editor: BusControlSpecEditor, arguments ->
         CompoundEditorControl(editor, arguments) {
             horizontal {
                 space()
@@ -197,7 +204,7 @@ internal fun PluginBuilder.registerControlFactories() {
             }
         }
     }
-    registerControlFactory { editor: ponticello.sc.editor.BufferControlSpecEditor, arguments ->
+    registerControlFactory { editor: BufferControlSpecEditor, arguments ->
         CompoundEditorControl(editor, arguments) {
             horizontal {
                 keyword("channels: ")
@@ -211,7 +218,7 @@ internal fun PluginBuilder.registerControlFactories() {
         }
     }
 
-    registerControlFactory { editor: ponticello.sc.editor.BufferPositionControlSpecEditor, arguments ->
+    registerControlFactory { editor: BufferPositionControlSpecEditor, arguments ->
         CompoundEditorControl(editor, arguments) {
             horizontal {
                 root.centerChildren()
@@ -219,7 +226,7 @@ internal fun PluginBuilder.registerControlFactories() {
         }
     }
 
-    registerControlFactory { editor: ponticello.sc.editor.NumericalControlSpecEditor, arguments ->
+    registerControlFactory { editor: NumericalControlSpecEditor, arguments ->
         CompoundEditorControl(editor, arguments) {
             horizontal {
                 operator(" = ")
@@ -250,22 +257,22 @@ internal fun PluginBuilder.registerControlFactories() {
         }
     }
 
-    registerControlFactory { editor: ponticello.sc.editor.ControlSpecEditor, arguments ->
+    registerControlFactory { editor: ControlSpecEditor, arguments ->
         ChoiceEditorControl(editor, arguments).apply {
             styleClass("control-spec")
             isDisable = true // don't allow changing parameter types
         }
     }
 
-    registerControlFactory { editor: ponticello.sc.editor.DecimalLiteralEditor, arguments ->
+    registerControlFactory { editor: DecimalLiteralEditor, arguments ->
         TokenEditorControl(editor, arguments, styleClass = "number")
     }
-    registerControlFactory { editor: ponticello.sc.editor.OptionalExprEditor, arguments ->
+    registerControlFactory { editor: OptionalExprEditor, arguments ->
         arguments[OptionalEditorControl.EMPTY_DISPLAY] = { keyword("nil") }
         OptionalEditorControl(editor, arguments)
     }
 
-    registerControlFactory { editor: ponticello.sc.editor.SymbolLiteralEditor, arguments ->
+    registerControlFactory { editor: SymbolLiteralEditor, arguments ->
         CompoundEditorControl(editor, arguments) {
             horizontal {
                 operator("'")
@@ -274,7 +281,7 @@ internal fun PluginBuilder.registerControlFactories() {
             }
         }
     }
-    registerControlFactory { editor: ponticello.sc.editor.StringLiteralEditor, arguments ->
+    registerControlFactory { editor: StringLiteralEditor, arguments ->
         CompoundEditorControl(editor, arguments) {
             horizontal {
                 operator("\"")
@@ -284,11 +291,11 @@ internal fun PluginBuilder.registerControlFactories() {
         }
     }
 
-    registerControlFactory { editor: ponticello.sc.editor.BusSelector, arguments ->
+    registerControlFactory { editor: BusSelector, arguments ->
         ObjectSelectorControl(editor, arguments)
     }
 
-    registerControlFactory { editor: ponticello.sc.editor.EventDictionaryEditor, arguments ->
+    registerControlFactory { editor: EventDictionaryEditor, arguments ->
         CompoundEditorControl(editor, arguments) {
             vertical {
                 view(editor.entries) {
@@ -300,7 +307,7 @@ internal fun PluginBuilder.registerControlFactories() {
         }
     }
 
-    registerControlFactory { editor: ponticello.sc.editor.InExprEditor, arguments ->
+    registerControlFactory { editor: InExprEditor, arguments ->
         CompoundEditorControl(editor, arguments) {
             horizontal {
                 styleClass("bus-operation", "compound-expr")
@@ -311,7 +318,7 @@ internal fun PluginBuilder.registerControlFactories() {
         }
     }
 
-    registerControlFactory { editor: ponticello.sc.editor.OutExprEditor, arguments ->
+    registerControlFactory { editor: OutExprEditor, arguments ->
         CompoundEditorControl(editor, arguments) {
             horizontal {
                 styleClass("bus-operation", "compound-expr")
@@ -324,7 +331,7 @@ internal fun PluginBuilder.registerControlFactories() {
         }
     }
 
-    registerControlFactory { editor: ponticello.sc.editor.ParameterReferenceEditor, arguments ->
+    registerControlFactory { editor: ParameterReferenceEditor, arguments ->
         CompoundEditorControl(editor, arguments) {
             horizontal {
                 keyword("get ")

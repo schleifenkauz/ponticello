@@ -4,6 +4,7 @@ import fxutils.button
 import fxutils.prompt.ConfirmablePrompt
 import fxutils.prompt.Prompt
 import javafx.beans.binding.BooleanBinding
+import javafx.geometry.Point2D
 import javafx.scene.Node
 import javafx.scene.control.Button
 import ponticello.model.obj.ConfigurableInstrumentObject
@@ -88,20 +89,30 @@ abstract class ControlSpecPrompt<S : ControlSpec, N : Node>(
                     initialSpec, "Maximum attack/release"
                 )
 
-                is BufferPositionControlSpec -> null
+                is BufferPositionControlSpec, is ObjectControlSpec -> null
             }
         }
 
-        fun create(
+        fun createParameter(
             parameterName: String,
             parentObject: ParameterizedObject?,
             parameterType: ParameterType,
-        ): Prompt<out ControlSpec?, *>? = when (parameterType) {
-            ParameterType.Bus -> create(parameterName, parentObject, BusControlSpec(Rate.Audio, 2))
-            ParameterType.Buffer -> create(parameterName, parentObject, BufferControlSpec(2))
-            ParameterType.Numerical -> create(parameterName, parentObject, NumericalControlSpec.DEFAULT)
-            ParameterType.AttackRelease -> create(parameterName, parentObject, AttackReleaseControlSpec())
-            ParameterType.BufferPosition -> null
+            ownerWindow: javafx.stage.Window? = null, anchor: Point2D?,
+        ): ControlSpec? = when (parameterType) {
+            ParameterType.Bus ->
+                create(parameterName, parentObject, BusControlSpec(Rate.Audio, 2))?.showDialog(ownerWindow, anchor)
+
+            ParameterType.Buffer ->
+                create(parameterName, parentObject, BufferControlSpec(2))?.showDialog(ownerWindow, anchor)
+
+            ParameterType.Numerical ->
+                create(parameterName, parentObject, NumericalControlSpec.DEFAULT)?.showDialog(ownerWindow, anchor)
+
+            ParameterType.AttackRelease ->
+                create(parameterName, parentObject, AttackReleaseControlSpec())?.showDialog(ownerWindow, anchor)
+
+            ParameterType.BufferPosition -> BufferPositionControlSpec()
+            ParameterType.Object -> ObjectControlSpec()
         }
     }
 }

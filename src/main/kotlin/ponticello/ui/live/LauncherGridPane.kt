@@ -254,7 +254,7 @@ class LauncherGridPane(
                             val oldVelocityParam = target.velocityParameter.now
                             val newVelocityParam = SearchableParameterDefListView(
                                 obj.def.allParameters(), "Select velocity parameter",
-                                fixedParameterType = ParameterType.Numerical
+                                target.context, fixedParameterType = ParameterType.Numerical
                             ).showPopup(ev, initialOption = oldVelocityParam.get()) ?: return@executes
                             if (newVelocityParam != oldVelocityParam.get()) {
                                 val ref = newVelocityParam.reference()

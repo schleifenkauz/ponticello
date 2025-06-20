@@ -75,7 +75,7 @@ class ParameterControlsPane(
         val unassignedParameters = (synthParameters + defaultParameters)
             .filter { param -> param.name.now !in obj.controls.controlMap }
             .filter { param -> !(param in defaultParameters && synthParameters.any { p -> p.name.now == param.name.now }) }
-        val option = SearchableParameterDefListView(unassignedParameters, "Add parameter", obj)
+        val option = SearchableParameterDefListView(unassignedParameters, "Add parameter", obj.context, obj)
             .showPopup(ev) ?: return null
         val parameter = option.name.now
         val customSpec = option.spec.now.takeIf { !obj.def.hasParameter(parameter) }

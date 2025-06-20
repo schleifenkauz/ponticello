@@ -32,6 +32,7 @@ class ParameterInfoPane(
                         is BusControlSpec -> add(Label("bus"))
                         is BufferPositionControlSpec -> add(Label("bufpos"))
                         is AttackReleaseControlSpec -> add(Label("attack-release"))
+                        is ObjectControlSpec -> add(Label("object"))
                         is NumericalControlSpec -> {
                             add(Label("num, "))
                             add(Label("default = ${spec.defaultValue.text}, ")) {
