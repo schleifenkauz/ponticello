@@ -3,6 +3,7 @@ package ponticello.ui.score
 import bundles.PublicProperty
 import bundles.publicProperty
 import fxutils.drag.setupDragging
+import fxutils.modifiers
 import fxutils.setPseudoClassState
 import javafx.beans.value.ObservableValue
 import javafx.scene.control.Label
@@ -107,11 +108,14 @@ class FlowGroupManager(
         var pos = Decimal.NaN
         line.setupDragging(
             startDragEvent = MouseEvent.MOUSE_PRESSED,
-            onPressed = {
-                pos = group.yPosition.now
-                line.startYProperty().unbind()
-                line.endYProperty().unbind()
-                true
+            onPressed = { ev ->
+                if (ev.modifiers.isNotEmpty()) false
+                else {
+                    pos = group.yPosition.now
+                    line.startYProperty().unbind()
+                    line.endYProperty().unbind()
+                    true
+                }
             },
             onReleased = {
                 group.yPosition.now = pos
@@ -138,5 +142,5 @@ class FlowGroupManager(
 
     fun getFlowLine(group: AudioFlowGroup): Line = lines[group] ?: error("No line found for flow group $group")
 
-    companion object: PublicProperty<FlowGroupManager> by publicProperty("FlowGroupLines")
+    companion object : PublicProperty<FlowGroupManager> by publicProperty("FlowGroupLines")
 }

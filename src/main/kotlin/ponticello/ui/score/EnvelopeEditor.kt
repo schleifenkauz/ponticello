@@ -1,9 +1,7 @@
 package ponticello.ui.score
 
-import fxutils.dist
+import fxutils.*
 import fxutils.drag.setupDragging
-import fxutils.registerShortcuts
-import fxutils.styleClass
 import hextant.context.compoundEdit
 import javafx.beans.binding.Bindings
 import javafx.geometry.HorizontalDirection
@@ -90,6 +88,7 @@ class EnvelopeEditor(
         line.setupDragging(
             defaultCursor = Cursor.CROSSHAIR, dragCursor = Cursor.V_RESIZE,
             onPressed = { ev: MouseEvent ->
+                if (ev.modifiers.isNotEmpty()) return@setupDragging false
                 if (pane.prefWidth < WIDTH_THRESHOLD) return@setupDragging false
                 val t = transformXToTime(ev.x)
                 var segmentIdx = envelope.points.map(EnvelopePoint::time).binarySearch(t)
@@ -269,10 +268,8 @@ class EnvelopeEditor(
 
     private fun addHandle(idx: Int, x: Double, y: Double) {
         val handle = Circle(x, y, HANDLE_RADIUS)
-        val interactive = pane.prefWidthProperty().greaterThanOrEqualTo(WIDTH_THRESHOLD)
-        handle.visibleProperty().bind(interactive)
+        handle.visibleProperty().bind(pane.prefWidthProperty().greaterThanOrEqualTo(WIDTH_THRESHOLD))
         val innerCircle = Circle(x, y, HANDLE_RADIUS / 3)
-        innerCircle.visibleProperty().bind(interactive)
         innerCircle.centerXProperty().bind(handle.centerXProperty())
         innerCircle.centerYProperty().bind(handle.centerYProperty())
         handle.isFocusTraversable = true
@@ -307,21 +304,28 @@ class EnvelopeEditor(
         handle.setupDragging(
             startDragEvent = MouseEvent.MOUSE_PRESSED,
             defaultCursor = Cursor.CROSSHAIR, dragCursor = Cursor.MOVE,
-            onPressed = {
-                envelope.beginPointEdit(handles.indexOf(handle))
-                true
+            onPressed = { ev ->
+                if (ev.modifiers == setOf(Shift) || ev.modifiers == setOf(Ctrl) || ev.modifiers == noModifiers) {
+                    envelope.beginPointEdit(handles.indexOf(handle))
+                    true
+                } else {
+                    false
+                }
             },
             onReleased = { envelope.finishEdit() }
-        ) { _, _, old, dx, dy ->
+        ) { ev, _, old, dx, dy ->
             val idx = handles.indexOf(handle)
-            var t = when (idx) {
-                0 -> 0.0.asTime
-                envelope.points.size - 1 -> associatedObject.duration
+            var t = when {
+                ev.isShiftDown -> envelope.points[idx].time
+                idx == 0 -> 0.0.asTime
+                idx == envelope.points.size - 1 -> associatedObject.duration
                 else -> transformXToTime(old.minX + HANDLE_RADIUS + dx)
             }
             val y = (old.minY + HANDLE_RADIUS + dy).coerceIn(yTransform.targetRange.reverseIfEmpty())
 
-            val v = transformYToValue(y)
+            val v =
+                if (ev.isControlDown) envelope.points[idx].value
+                else transformYToValue(y)
 
             if (idx != 0 && idx != envelope.points.size - 1) {
                 t = t.coerceIn(envelope.points[idx - 1].time..envelope.points[idx + 1].time)
