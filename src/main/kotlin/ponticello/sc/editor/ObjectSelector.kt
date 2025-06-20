@@ -42,7 +42,7 @@ abstract class ObjectSelector<O : NamedObject> :
     }
 
     override fun choices(): List<ObjectReference<O>> =
-        (getList().all() - excluded()).filter(::filter).map { obj -> obj.reference() }
+        (getList().all() - excluded().toSet()).filter(::filter).map { obj -> obj.reference() }
 
     abstract fun createNewObject(name: String): O?
 

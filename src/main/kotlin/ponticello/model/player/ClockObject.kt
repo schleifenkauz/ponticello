@@ -4,7 +4,7 @@ import hextant.context.Context
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import ponticello.impl.*
-import ponticello.model.Settings
+import ponticello.model.GlobalSettings
 import ponticello.model.live.QuantizationConfig
 import ponticello.model.obj.AbstractRenamableObject
 import ponticello.model.obj.MeterObject
@@ -23,7 +23,7 @@ import reaktive.value.reactiveVariable
 class ClockObject(
     val timeWarp: ReactiveVariable<Decimal> = reactiveVariable(1.0.asTime),
 ) : AbstractRenamableObject(), Runnable {
-    private val lookAhead: Decimal get() = context[Settings].lookAhead
+    private val lookAhead: Decimal get() = context[GlobalSettings].lookAhead
     val period get() = PERIOD_S * timeWarp.now
 
     override val registry: ClockRegistry

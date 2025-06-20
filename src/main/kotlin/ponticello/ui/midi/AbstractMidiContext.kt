@@ -3,13 +3,13 @@ package ponticello.ui.midi
 import hextant.context.Context
 import ponticello.impl.Decimal
 import ponticello.impl.times
-import ponticello.model.Settings
+import ponticello.model.GlobalSettings
 import ponticello.sc.NumericalControlSpec
 import reaktive.value.now
 import kotlin.math.pow
 
 abstract class AbstractMidiContext(private val context: Context) : MidiContext {
-    private val knobSensitivity get() = context[Settings].knobSensitivity.now.toDouble()
+    private val knobSensitivity get() = context[GlobalSettings].knobSensitivity.now.toDouble()
 
     protected fun adjustValue(variable: Decimal, spec: NumericalControlSpec, midiValue: Int): Decimal {
         //TODO make sensitivity dependent on ratio of range to step

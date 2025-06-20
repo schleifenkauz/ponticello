@@ -103,10 +103,10 @@ OSCdef('pause_play', { |msg|
 }, '/pause_play');
 OSCdef('schedule', {
 	arg msg;
-	var time = msg[2].asFloat, player_id = msg[3], code = msg[4], info = msg[5], fct, my_play_start, abs_time;
+	var absolute = msg[2], time = msg[3].asFloat, player_id = msg[4], code = msg[5], info = msg[6], fct, my_play_start, abs_time;
 	my_play_start = ~play_start[player_id];
-    abs_time = (my_play_start ?? TempoClock.beats) + time;
-    postf("SCHEDULE %: player_id = %, my_play_start = %, time = %, abs_time = \n", info, player_id, my_play_start, time, abs_time);
+    abs_time = if (absolute) { time } { time + (my_play_start ?? TempoClock.beats) };
+    postf("SCHEDULE %: player_id = %, my_play_start = %, time = %, abs_time = %, current time = %\n", info, player_id, my_play_start, time, abs_time, TempoClock.beats);
 	fct = this.compile(code.asString);
 	if (fct == nil) { "Compilation error".throw };
     TempoClock.schedAbs(abs_time) {
@@ -114,7 +114,7 @@ OSCdef('schedule', {
             fork {
                 postf("EXECUTE %\n", info);
                 //code.postln;
-                try { fct.value } { |error|
+                try { fct.value(player_id) } { |error|
                     ~ponticello_addr.sendMsg('/error', error.what);
                     error.throw;
                 }

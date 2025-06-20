@@ -6,7 +6,7 @@ import javafx.event.Event
 import javafx.scene.Node
 import javafx.scene.control.ScrollPane
 import javafx.scene.layout.VBox
-import ponticello.model.Settings
+import ponticello.model.GlobalSettings
 import ponticello.model.obj.ConfigurableInstrumentObject
 import ponticello.model.obj.ParameterDefObject
 import ponticello.model.obj.withName
@@ -18,7 +18,7 @@ abstract class ParameterizedObjectDefPane<T : ConfigurableInstrumentObject>(
 ): ScrollPane() {
     private val config: ParameterListConfig = object : ParameterListConfig() {
         override fun createNewObject(ev: Event?, list: ObjectList<ParameterDefObject>): ParameterDefObject? {
-            val defaultParameters = def.context[Settings].defaultParametersDefs
+            val defaultParameters = def.context[GlobalSettings].defaultParametersDefs
                 .filter { param -> !def.hasParameter(param.name.now) }
             val listView = SearchableParameterDefListView(defaultParameters, "New parameter")
             val param = listView.showPopup(ev) ?: return null

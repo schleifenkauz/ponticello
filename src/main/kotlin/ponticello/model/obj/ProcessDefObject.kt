@@ -15,15 +15,12 @@ import ponticello.impl.copy
 import ponticello.impl.randomColor
 import ponticello.model.registry.InstrumentRegistry
 import ponticello.model.registry.ObjectRegistry
-import ponticello.sc.CodeBlock
-import ponticello.sc.RawScExpr
 import ponticello.sc.client.ScWriter
 import ponticello.sc.client.SuperColliderClient
 import ponticello.sc.client.run
 import ponticello.sc.code
 import ponticello.sc.editor.CodeBlockEditor
 import ponticello.sc.editor.ScExprExpander
-import ponticello.sc.substitute
 import ponticello.ui.registry.ParameterDefList
 import reaktive.value.ReactiveVariable
 import reaktive.value.now
@@ -60,16 +57,12 @@ class ProcessDefObject(
     override fun onUpdated() {}
 
     override fun ScWriter.createObject() {
-        val argumentSubstitution = parameters.associate { p ->
-            val name = p.name.now
-            name to { RawScExpr("$name.value(t)") }
-        }
-        val setup = setupBlock.editor.result.now.substitute(argumentSubstitution) as CodeBlock
+        val setup = setupBlock.editor.result.now
         val loop = loopBlock.editor.result.now
         val delta = deltaExpr.editor.result.now
 
         appendBlock("$superColliderName = ") {
-            append("arg t = 0, duration")
+            append("arg player_id, t = 0, duration")
             for (p in parameters) {
                 val defaultValue = p.spec.now.defaultValueExpr
                 append(", ")

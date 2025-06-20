@@ -7,7 +7,7 @@ import hextant.context.Context
 import javafx.application.Platform
 import ponticello.impl.superColliderPath
 import ponticello.impl.writeCode
-import ponticello.model.Settings
+import ponticello.model.GlobalSettings
 import ponticello.model.obj.BusObject
 import ponticello.model.obj.SampleObject
 import ponticello.model.obj.project
@@ -104,10 +104,9 @@ class Recorder(private val context: Context) {
         pathOfLastRecording = path
         val bus = getRecordedBus()
         client.run("s.prepareForRecord(${path.superColliderPath}, ${bus.channels.now})")
-        val settings = context[Settings]
+        val settings = context[GlobalSettings]
         val code = writeCode {
-            val serverLatency = settings.serverLatency.now
-            appendBlock("s.makeBundle($serverLatency)") {
+            appendBlock("s.bind") {
                 +"s.record(bus: ${bus.superColliderName})"
             }
         }

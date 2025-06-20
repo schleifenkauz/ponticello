@@ -33,7 +33,7 @@ import ponticello.impl.*
 import ponticello.model.obj.project
 import ponticello.model.project.InlineControlsDisplay
 import ponticello.model.project.UIState
-import ponticello.model.project.settings
+import ponticello.model.project.uiState
 import ponticello.model.registry.reference
 import ponticello.model.score.*
 import ponticello.model.score.Score.Companion.rootScore
@@ -588,7 +588,7 @@ abstract class ScoreObjectView(
         val parentPane = parentPane
         val factor = if (direction == LEFT) -1.0 else 1.0
         val meter = parentPane.getNearestGrid(instance.position)?.second
-        val settings = context.project.settings
+        val settings = context.project.uiState
         val snapOption = if (settings.snapEnabled.now) settings.snapOption.now else null
         val deltaT =
             if (snapOption != null && meter != null) meter.getDuration(snapOption) * factor

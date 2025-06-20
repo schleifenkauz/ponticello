@@ -3,11 +3,11 @@ package ponticello.sc
 import hextant.codegen.Component
 import hextant.codegen.Compound
 import hextant.context.Context
-import reaktive.value.now
 import ponticello.impl.Logger
 import ponticello.model.obj.ScoreObjectReference
 import ponticello.sc.client.ScWriter
 import ponticello.sc.editor.ScoreObjectSelector
+import reaktive.value.now
 
 @Compound(nodeType = ScExpr::class)
 fun IfExpr(condition: ScExpr, then: ScExpr, otherwise: ScExpr): ScExpr =
@@ -54,6 +54,7 @@ data class PlayObject(
             return
         }
         val name = obj.name.now
-        writer.append("~ponticello_addr.sendMsg(\\play, -1, '$name')")
+        val timestamp = "TempoClock.beats"
+        writer.append("~ponticello_addr.sendMsg(\\play, -1, '$name', $timestamp, player_id, ~play_start[player_id])")
     }
 }

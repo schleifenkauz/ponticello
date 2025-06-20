@@ -8,7 +8,7 @@ import org.kordamp.ikonli.Ikon
 import org.kordamp.ikonli.materialdesign2.MaterialDesignC
 import ponticello.impl.Decimal
 import ponticello.impl.toDecimal
-import ponticello.model.Settings
+import ponticello.model.GlobalSettings
 import ponticello.model.project.PonticelloProject
 import ponticello.sc.NumericalControlSpec
 import ponticello.ui.controls.Knob
@@ -18,7 +18,7 @@ import ponticello.ui.dock.ToolPaneState
 import ponticello.ui.registry.ParameterDefsPane
 import reaktive.value.ReactiveVariable
 
-class SettingsPane(private val settings: Settings) : ToolPane() {
+class SettingsPane(private val settings: GlobalSettings) : ToolPane() {
     override val type: Type
         get() = SettingsPane
     override val content: Parent by lazy {
@@ -92,6 +92,6 @@ class SettingsPane(private val settings: Settings) : ToolPane() {
         override val shortcuts: Array<String>
             get() = arrayOf("Ctrl+Alt+S")
 
-        override fun createToolPane(project: PonticelloProject): ToolPane = SettingsPane(project.context[Settings])
+        override fun createToolPane(project: PonticelloProject): ToolPane = SettingsPane(project.context[GlobalSettings])
     }
 }

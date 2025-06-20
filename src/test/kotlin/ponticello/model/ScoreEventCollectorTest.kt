@@ -21,7 +21,7 @@ class ScoreEventCollectorTest {
         val context = Utils.createContext()
         val rootScore = Score()
         rootScore.initialize(context)
-        val collector = ScoreEventCollector(rootScore, context[Settings])
+        val collector = ScoreEventCollector(rootScore, context[GlobalSettings])
         val objects = mutableListOf<ScoreObject>()
         val subScores = mutableListOf<Score>()
         val rnd = Random(100)
@@ -107,7 +107,7 @@ class ScoreEventCollectorTest {
         val context = Utils.createContext()
         val rootScore = Score()
         rootScore.initialize(context)
-        val collector = ScoreEventCollector(rootScore, context[Settings])
+        val collector = ScoreEventCollector(rootScore, context[GlobalSettings])
         val subScore = Score()
         val subObj = ScoreObjectGroup(subScore).withName("sub_score")
         val subInst =

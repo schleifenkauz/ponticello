@@ -2,7 +2,7 @@ package ponticello.model.player
 
 import bundles.publicProperty
 import ponticello.impl.*
-import ponticello.model.Settings
+import ponticello.model.GlobalSettings
 import ponticello.model.live.QuantizationConfig
 import ponticello.model.registry.ClockRegistry
 import ponticello.model.score.ObjectPosition
@@ -15,7 +15,6 @@ import reaktive.value.ReactiveBoolean
 import reaktive.value.ReactiveValue
 import reaktive.value.now
 import reaktive.value.reactiveVariable
-import java.lang.ref.WeakReference
 import java.util.concurrent.Executors
 
 class ScorePlayer private constructor(
@@ -25,26 +24,28 @@ class ScorePlayer private constructor(
 ) {
     private val playing = reactiveVariable(false)
     private val scheduled = reactiveVariable(false)
-    private var loopedTime: Decimal = zero
-    private var lastPlayFrom: Decimal = zero
+    var loopedTime: Decimal = zero
+        private set
+    var lastPlayFrom: Decimal = zero
+        private set
 
     val isPlaying: ReactiveValue<Boolean> = playing
     val isScheduled: ReactiveValue<Boolean> = scheduled
 
     val context get() = pane.context
 
-    private val lookAhead get() = context[Settings].lookAhead
+    private val lookAhead get() = context[GlobalSettings].lookAhead
 
     private val client: SuperColliderClient = context[SuperColliderClient]
     private val activeObjects = context[ActiveObjectsManager]
-    private val events: ScoreEventCollector = ScoreEventCollector(pane.score, pane.context[Settings], this)
+    private val events: ScoreEventCollector = ScoreEventCollector(pane.score, pane.context[GlobalSettings], this)
     val playHead: PlayHead = PlayHead(pane)
 
     private var currentClock: ClockObject? = null
 
     val currentTime get() = if (isScheduled.now) playHead.currentTime + lookAhead else playHead.currentTime
 
-    val loopOffset: Decimal get() = loopedTime - lastPlayFrom
+    val timeOffset: Decimal get() = loopedTime - lastPlayFrom
 
     private val maxTime: Decimal
         get() = pane.score.maxTime.now
@@ -106,7 +107,7 @@ class ScorePlayer private constructor(
         Logger.fine("Starting playback at $time", Logger.Category.Playback)
         lastPlayFrom = time
         loopedTime = zero
-        val activeObjects = scheduler.activeObjects(time, context[Settings].lookAhead, pane.score)
+        val activeObjects = scheduler.activeObjects(time, context[GlobalSettings].lookAhead, pane.score)
         for ((_, position, inst) in activeObjects) {
             scheduleInstantly(inst, position)
         }
@@ -160,25 +161,22 @@ class ScorePlayer private constructor(
             executor.execute(action)
         }
 
-        private var nextId = 0
-
-        private val all = mutableListOf<WeakReference<ScorePlayer>>()
+        private val all = mutableListOf<ScorePlayer>()
 
         fun clearInstances() {
             all.clear()
         }
 
-        fun instances(): List<ScorePlayer> {
-            all.removeIf { it.get() == null }
-            return all.mapNotNull { ref -> ref.get() }
-        }
+        fun instances(): List<ScorePlayer> = all
 
         fun create(pane: ScorePane, loopingActivated: ReactiveBoolean): ScorePlayer {
-            val id = nextId++
+            val id = all.size
             val scheduler = pane.context[ScoreObjectScheduler]
             val player = ScorePlayer(id, pane, scheduler, loopingActivated)
-            all.add(WeakReference(player))
+            all.add(player)
             return player
         }
+
+        fun getById(id: Int): ScorePlayer = all[id]
     }
 }

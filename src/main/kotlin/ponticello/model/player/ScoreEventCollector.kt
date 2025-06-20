@@ -5,14 +5,14 @@ import ponticello.impl.Decimal
 import ponticello.impl.Logger
 import ponticello.impl.unaryMinus
 import ponticello.impl.zero
-import ponticello.model.Settings
+import ponticello.model.GlobalSettings
 import ponticello.model.score.*
 import reaktive.value.now
 import java.util.*
 
 class ScoreEventCollector(
     private val rootScore: Score,
-    private val settings: Settings,
+    private val settings: GlobalSettings,
     private val player: ScorePlayer? = null,
 ) : ScoreListener, ScoreObject.Listener {
     private val events = TreeMap<ObjectPosition, MutableSet<Event>>()

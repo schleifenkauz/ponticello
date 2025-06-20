@@ -7,7 +7,7 @@ import ponticello.impl.Decimal
 import ponticello.impl.Logger
 import ponticello.impl.unaryMinus
 import ponticello.impl.zero
-import ponticello.model.Settings
+import ponticello.model.GlobalSettings
 import ponticello.model.flow.NodeTree
 import ponticello.model.flow.SynthObjectNode
 import ponticello.model.obj.ParameterDefObject
@@ -23,9 +23,9 @@ class ScoreObjectScheduler(val context: Context) {
     private val client = context[SuperColliderClient]
     private val nodeTree = context[NodeTree]
     private val activeObjects = context[ActiveObjectsManager]
-    private val serverLatency get() = context[Settings].serverLatency.now
-    private val sclangLatency get() = context[Settings].scLangLatency.now
-    private val extraLatency get() = context[Settings].extraLatency.now
+    private val serverLatency get() = context[GlobalSettings].serverLatency.now
+    private val sclangLatency get() = context[GlobalSettings].scLangLatency.now
+    private val extraLatency get() = context[GlobalSettings].extraLatency.now
 
     //Only inside on ScorePlayer.execute
     fun scheduleEvents(events: List<Event>, player: ScorePlayer) {
@@ -37,7 +37,6 @@ class ScoreObjectScheduler(val context: Context) {
                 Event.Type.ObjectStart -> {
                     Logger.fine("ObjectStart: $obj at $position", Logger.Category.Playback)
                     scheduleObject(obj, position, cutoff = zero, player)
-//                    Thread.sleep(5) //avoid adding
                 }
 
                 Event.Type.ObjectEnd -> {
@@ -66,7 +65,10 @@ class ScoreObjectScheduler(val context: Context) {
 
     //Only inside on ScorePlayer.execute
     fun stopObjectInstantly(active: ActiveScoreObject) {
-        if (!active.isStillActive) return
+        if (!active.isStillActive) {
+            println("$active is not active anymore")
+            return
+        }
         active.stopped()
         when {
             active.obj is SoundProcess && active.obj.instrument is SynthDefObject -> {
@@ -95,14 +97,27 @@ class ScoreObjectScheduler(val context: Context) {
         scLangLatency: Decimal = this.sclangLatency, serverLatency: Decimal = this.serverLatency,
         extraArguments: Map<ParameterDefObject, ParameterControl> = emptyMap(),
     ): ActiveScoreObject? {
+        val time = absolutePosition.time + player.timeOffset
+        val scheduledTime = (time + scLangLatency - extraLatency)
+        return scheduleObject(
+            obj, player, cutoff, absolutePosition,
+            serverLatency, scheduledTime, absolute = false,
+            extraArguments
+        )
+    }
+
+    fun scheduleObject(
+        obj: ScoreObject, player: ScorePlayer,
+        cutoff: Decimal, absolutePosition: ObjectPosition,
+        serverLatency: Decimal, scheduledTime: Decimal, absolute: Boolean,
+        extraArguments: Map<ParameterDefObject, ParameterControl>,
+    ): ActiveScoreObject? {
         try {
             if (!obj.validate()) return null
         } catch (e: Exception) {
             Logger.error("Failed to validate $obj", e, Logger.Category.Playback)
             return null
         }
-        val time = absolutePosition.time + player.loopOffset
-        val scheduledTime = (time + scLangLatency - extraLatency).toString()
         if (obj is TempoGridObject && obj.meter.isResolved.now) {
             val meter = obj.meter.force()
             player.getClock().attach(player, meter, cutoff)
@@ -131,12 +146,12 @@ class ScoreObjectScheduler(val context: Context) {
         try {
             val info = activeObject.uniqueName
             val description = "Schedule $info"
-            client.send("schedule", listOf(scheduledTime, player.id, code, info), description) //TODO why does sendAsync not work?
+            //TODO why does sendAsync not work?
+            client.send("schedule", listOf(absolute, scheduledTime.toString(), player.id, code, info), description)
         } catch (e: Exception) {
             Logger.error("Failed to schedule $obj", e, Logger.Category.Playback)
         }
         println("Scheduled $activeObject at $scheduledTime ($placement)")
-        Logger.fine("unique name for $obj at $time: ${activeObject.uniqueName}", Logger.Category.Playback)
         Logger.fine("time for execution: ${scheduledTime}s", Logger.Category.Playback)
         return activeObject
     }

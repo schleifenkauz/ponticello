@@ -16,7 +16,7 @@ import ponticello.impl.Decimal
 import ponticello.model.obj.MeterObject
 import ponticello.model.obj.project
 import ponticello.model.project.UIState
-import ponticello.model.project.settings
+import ponticello.model.project.uiState
 import ponticello.model.score.ScoreObjectInstance
 import ponticello.model.score.TempoGridObject
 import ponticello.model.score.TimeUnit
@@ -50,8 +50,8 @@ class TempoGridObjectView(override val obj: TempoGridObject, inst: ScoreObjectIn
 
     override fun initialize() {
         super.initialize()
-        marker.visibleProperty().bind(context.project.settings.snapEnabled.asObservableValue())
-        val settings = context.project.settings
+        marker.visibleProperty().bind(context.project.uiState.snapEnabled.asObservableValue())
+        val settings = context.project.uiState
         repaint()
         snapObserver = settings.snapOption.observe { _ -> repaint() }
             .and(settings.snapEnabled.observe { _ -> repaint() })

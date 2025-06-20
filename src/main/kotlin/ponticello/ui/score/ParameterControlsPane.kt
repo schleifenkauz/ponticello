@@ -15,7 +15,7 @@ import javafx.scene.input.TransferMode.COPY_OR_MOVE
 import org.kordamp.ikonli.Ikon
 import org.kordamp.ikonli.codicons.Codicons
 import ponticello.impl.json
-import ponticello.model.Settings
+import ponticello.model.GlobalSettings
 import ponticello.model.obj.ParameterizedObject
 import ponticello.model.obj.withName
 import ponticello.model.project.PonticelloProject
@@ -70,7 +70,7 @@ class ParameterControlsPane(
 
     private fun createNewControl(ev: Event?): NamedParameterControl? {
         val context = obj.context
-        val defaultParameters = context[Settings].defaultParametersDefs
+        val defaultParameters = context[GlobalSettings].defaultParametersDefs
         val synthParameters = obj.def.allParameters()
         val unassignedParameters = (synthParameters + defaultParameters)
             .filter { param -> param.name.now !in obj.controls.controlMap }

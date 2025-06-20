@@ -46,6 +46,14 @@ class AudioFlows(override val objects: MutableList<AudioFlowGroup>) : ObjectRegi
 
     fun allFlows() = objects.flatMap { grp -> grp.flows }
 
+    fun getFlow(name: String): AudioFlow? {
+        for (grp in objects) {
+            val flow = grp.flows.find { it.name.now == name }
+            if (flow != null) return flow
+        }
+        return null
+    }
+
     fun writeVSTPluginStates() {
         val futures = mutableListOf<CompletableFuture<String>>()
         for (flow in allFlows()) {

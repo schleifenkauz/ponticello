@@ -12,7 +12,7 @@ import ponticello.impl.*
 import ponticello.model.obj.MeterObject
 import ponticello.model.obj.project
 import ponticello.model.player.ScorePlayer
-import ponticello.model.project.settings
+import ponticello.model.project.uiState
 import ponticello.model.score.*
 import ponticello.ui.impl.Cursors
 import ponticello.ui.impl.verticalDist
@@ -147,7 +147,7 @@ abstract class RootScorePane(score: Score, context: Context) : ScorePane(score, 
     }
 
     final override fun snapToGrid(position: ObjectPosition): ObjectPosition {
-        val settings = context.project.settings
+        val settings = context.project.uiState
         val (t, y) = position
         if (!settings.snapEnabled.now) return position
         when (val option = settings.snapOption.now) {

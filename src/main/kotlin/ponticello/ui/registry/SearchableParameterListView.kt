@@ -2,7 +2,7 @@ package ponticello.ui.registry
 
 import fxutils.prompt.SimpleSearchableListView
 import hextant.context.Context
-import ponticello.model.Settings
+import ponticello.model.GlobalSettings
 import ponticello.model.obj.ParameterDefObject
 import ponticello.model.obj.ParameterizedObject
 import ponticello.sc.Identifier
@@ -22,7 +22,7 @@ class SearchableParameterListView(
     override fun makeOption(text: String): ParameterDefObject? {
         if (!Identifier.isValid(text)) return null
         if (text in obj.controls.controlMap) return null
-        val defaultSpec = context[Settings].getDefaultControlSpec(text) ?: NumericalControlSpec.DEFAULT
+        val defaultSpec = context[GlobalSettings].getDefaultControlSpec(text) ?: NumericalControlSpec.DEFAULT
         //return ControlSpecPrompt(obj, text, defaultSpec).showDialog(context) //TODO why is the window unresponsive?
         return ParameterDefObject(text, defaultSpec)
     }

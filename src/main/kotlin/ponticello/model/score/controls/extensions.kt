@@ -94,11 +94,11 @@ fun guardAgainstReplaceNil(placement: NodePlacement) = if (placement.addAction =
 else placement.addAction.toString()
 
 fun ScWriter.writeProcessCode(
-    obj: ParameterizedObject, uniqueName: String,
-    cutoff: Decimal, latency: Decimal,
+    obj: ParameterizedObject, uniqueName: String, cutoff: Decimal,
     extraArguments: Map<ParameterDefObject, ParameterControl> = emptyMap(),
 ) {
-    val superColliderName = "~process_$uniqueName"
+    +"arg player_id"
+    val superColliderName = "~proc_$uniqueName"
     val controlMap = createControlMap(obj, extraArguments)
     appendBlock("$superColliderName = Task", endLine = false) {
         +"var auxilBuses = (), auxilSynths = (), t0, delta_t"
@@ -109,10 +109,8 @@ fun ScWriter.writeProcessCode(
                 generatePreparationCode(obj, uniqueName, param, spec, cutoff, ctx = CodegenContext.Process)
             }
         }
-        +"$latency.wait"
         val duration = obj.duration()?.now?.toString() ?: "inf"
-        val defName = "~proc_${obj.def.name.now}"
-        append("$defName.value(t: $cutoff, duration: $duration")
+        append("${obj.def.superColliderName}.value(player_id, t: $cutoff, duration: $duration")
         for ((param, control) in controlMap) {
             if (!obj.def.hasParameter(param)) continue
             val (spec, ctrl) = control

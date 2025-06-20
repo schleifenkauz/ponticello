@@ -13,7 +13,7 @@ import reaktive.value.now
 import reaktive.value.reactiveVariable
 
 @Serializable
-class Settings(
+class GlobalSettings(
     val defaultParametersDefs: ParameterDefList = ParameterDefList(),
     val scLangLatency: ReactiveVariable<Decimal> = reactiveVariable(0.1.withPrecision(2)),
     val serverLatency: ReactiveVariable<Decimal> = reactiveVariable(0.1.withPrecision(2)),
@@ -31,8 +31,8 @@ class Settings(
         defaultParametersDefs.initialize(context)
     }
 
-    companion object : PublicProperty<Settings> by publicProperty("SETTINGS") {
-        fun createDefault(): Settings = Settings(
+    companion object : PublicProperty<GlobalSettings> by publicProperty("SETTINGS") {
+        fun createDefault(): GlobalSettings = GlobalSettings(
             defaultParametersDefs = ParameterDefList(ParameterDefObject.defaults.toMutableList())
         )
     }

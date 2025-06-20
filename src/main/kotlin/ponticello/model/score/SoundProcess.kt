@@ -12,7 +12,6 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import kotlinx.serialization.json.JsonNames
 import ponticello.impl.*
-import ponticello.model.Settings
 import ponticello.model.flow.NodePlacement
 import ponticello.model.obj.*
 import ponticello.model.player.ActiveObjectsManager
@@ -54,7 +53,7 @@ class SoundProcess(
 
     override val superColliderPrefix: String get() = when (instrument) {
         is SynthDefObject -> "~synth_"
-        is ProcessDefObject -> "~process_"
+        is ProcessDefObject -> "~proc_"
         else -> "~unknown_"
     }
 
@@ -224,8 +223,7 @@ class SoundProcess(
             is ProcessDefObject -> {
                 writeProcessCode(
                     this@SoundProcess, uniqueName,
-                    cutoff, context[Settings].serverLatency.get(),
-                    extraArguments
+                    cutoff, extraArguments
                 )
             }
 

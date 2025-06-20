@@ -2,7 +2,7 @@ package ponticello.sc.client
 
 import com.illposed.osc.OSCMessage
 import ponticello.impl.Logger
-import ponticello.model.Settings
+import ponticello.model.GlobalSettings
 import reaktive.value.now
 import java.util.concurrent.CompletableFuture
 
@@ -50,7 +50,7 @@ fun SuperColliderClient.eval(
 
 fun SuperColliderClient.eval(code: String, description: String = "evaluating $code"): CompletableFuture<String> {
     Logger.fine("eval $code", Logger.Category.SuperCollider, detailMessage = code)
-    if (context[Settings].logScCode.now) {
+    if (context[GlobalSettings].logScCode.now) {
         println("################ EVAL #################")
         println(code)
         println("################ END #################")

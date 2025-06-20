@@ -8,7 +8,7 @@ import hextant.serial.readJson
 import javafx.stage.DirectoryChooser
 import javafx.stage.FileChooser
 import ponticello.impl.Logger
-import ponticello.model.Settings
+import ponticello.model.GlobalSettings
 import ponticello.ui.launcher.PonticelloApp.Companion.primaryStage
 import java.io.File
 
@@ -57,10 +57,10 @@ class PonticelloFiles(private val context: Context) {
         return fc.showOpenDialog(context[primaryStage])
     }
 
-    fun loadSettings(): Settings {
+    fun loadSettings(): GlobalSettings {
         val file = ponticelloDir.resolve("settings.json")
-        return if (file.exists()) context.withoutUndo { file.readJson<Settings>() }
-        else Settings.createDefault()
+        return if (file.exists()) context.withoutUndo { file.readJson<GlobalSettings>() }
+        else GlobalSettings.createDefault()
     }
 
     companion object : PublicProperty<PonticelloFiles> by publicProperty("PonticelloFiles") {

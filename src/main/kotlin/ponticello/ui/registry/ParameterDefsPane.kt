@@ -5,7 +5,7 @@ import fxutils.prompt.PredicateTextPrompt
 import fxutils.prompt.SimpleSearchableListView
 import javafx.scene.Parent
 import org.kordamp.ikonli.material2.Material2MZ
-import ponticello.model.Settings
+import ponticello.model.GlobalSettings
 import ponticello.model.obj.ParameterDefObject
 import ponticello.model.project.PonticelloProject
 import ponticello.sc.Identifier
@@ -46,7 +46,7 @@ class ParameterDefsPane(private val parameters: ParameterDefList, override val t
             get() = Side.RIGHT
 
         override fun createToolPane(project: PonticelloProject): ToolPane =
-            ParameterDefsPane(project.context[Settings].defaultParametersDefs, "Parameter definitions")
+            ParameterDefsPane(project.context[GlobalSettings].defaultParametersDefs, "Parameter definitions")
 
         private val actions = collectActions<ParameterDefsPane> {
             addAction("Add parameter") {

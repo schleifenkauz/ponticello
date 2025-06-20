@@ -9,11 +9,12 @@ import com.illposed.osc.transport.OSCPortOut
 import hextant.context.Context
 import ponticello.impl.Logger
 import ponticello.impl.superColliderPath
-import ponticello.model.Settings
+import ponticello.model.GlobalSettings
 import ponticello.ui.launcher.PonticelloFiles
 import reaktive.Observer
 import reaktive.event.unitEvent
 import reaktive.observe
+import reaktive.value.forEach
 import reaktive.value.now
 import java.io.File
 import java.net.InetAddress
@@ -38,6 +39,8 @@ class OSCSuperColliderClient(
     private val serverBoot = unitEvent()
     private val treeClear = unitEvent()
 
+    private val latencyUpdater: Observer
+
     override fun onServerBooted(action: () -> Unit): Observer {
         val observer = serverBoot.stream.observe(action)
         eventObservers.add(observer)
@@ -58,6 +61,9 @@ class OSCSuperColliderClient(
     init {
         consoleMonitor.start()
         addListener(this)
+        latencyUpdater = context[GlobalSettings].serverLatency.forEach { latency ->
+            run("s.latency = $latency")
+        }
     }
 
     override fun addListener(listener: OSCMessageListener) {
@@ -87,7 +93,7 @@ class OSCSuperColliderClient(
     override fun run(command: String) {
         if (command == "(\n)\n") return
         Logger.fine("run: $command", Logger.Category.SuperCollider)
-        if (context[Settings].logScCode.now) {
+        if (context[GlobalSettings].logScCode.now) {
             println("################ RUN #################")
             println(command)
             println("################ END #################")

@@ -21,8 +21,8 @@ import kotlinx.serialization.serializer
 import ponticello.impl.Logger
 import ponticello.impl.json
 import ponticello.impl.registerImplementationsFromClasspath
+import ponticello.model.GlobalSettings
 import ponticello.model.ServerOptions
-import ponticello.model.Settings
 import ponticello.model.flow.NodeTree
 import ponticello.model.obj.ScriptObject
 import ponticello.model.obj.project
@@ -57,8 +57,8 @@ class PonticelloLauncher {
         set(PonticelloLauncher, this@PonticelloLauncher)
         val files = PonticelloFiles(this)
         set(PonticelloFiles, files)
-        set(Settings, files.loadSettings())
-        get(Settings).initialize(this)
+        set(GlobalSettings, files.loadSettings())
+        get(GlobalSettings).initialize(this)
         set(
             GlobalDefinitionLibrary.instruments, GlobalDefinitionLibrary(
                 files.resolve("global-instruments"),
@@ -311,7 +311,7 @@ class PonticelloLauncher {
             .showDialog(rootContext)
 
     fun quitApplication() {
-        rootContext[PonticelloFiles].resolve("settings.json").writeJson(rootContext[Settings])
+        rootContext[PonticelloFiles].resolve("settings.json").writeJson(rootContext[GlobalSettings])
         exitProcess(0)
     }
 

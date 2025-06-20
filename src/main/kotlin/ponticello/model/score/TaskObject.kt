@@ -7,7 +7,6 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import ponticello.impl.Decimal
 import ponticello.impl.writeCode
-import ponticello.model.Settings
 import ponticello.model.flow.NodePlacement
 import ponticello.model.obj.ParameterDefObject
 import ponticello.model.score.controls.ParameterControl
@@ -43,7 +42,7 @@ class TaskObject(
     ): String = writeCode {
         val name = "~task_$uniqueName"
         appendBlock("$name = Task", endLine = false) {
-            +"${context[Settings].serverLatency.now}.wait"
+//            +"s.latency.wait"
             val block = code.editor.result.now
             block.writeCode(writer, context)
             +"$name = nil"

@@ -12,7 +12,7 @@ import ponticello.model.obj.MeterObject
 import ponticello.model.obj.project
 import ponticello.model.player.ScorePlayer
 import ponticello.model.project.UIState
-import ponticello.model.project.settings
+import ponticello.model.project.uiState
 import ponticello.model.score.ObjectPosition
 import ponticello.model.score.ScoreObject
 import reaktive.Observer
@@ -44,7 +44,7 @@ class SingleObjectScorePane(
         super.initialize()
         durationObserver = rootObj.duration().observe { _ -> repaint() }
         setupGrid()
-        val settings = context.project.settings
+        val settings = context.project.uiState
         snapObserver = settings.snapOption.observe { _ -> repaintGrid() }
             .and(settings.snapEnabled.observe { _ -> repaintGrid() })
         heightProperty().addListener { _ -> repaint() }
@@ -68,7 +68,7 @@ class SingleObjectScorePane(
             ev.consume()
         }
         marker.endY = GRID_HEIGHT
-        marker.visibleProperty().bind(context.project.settings.snapEnabled.asObservableValue())
+        marker.visibleProperty().bind(context.project.uiState.snapEnabled.asObservableValue())
         meterObserver = rootObj.quantizationConfig.meter.forEach { ref ->
             meterChangeObserver?.kill()
             meterChangeObserver = null

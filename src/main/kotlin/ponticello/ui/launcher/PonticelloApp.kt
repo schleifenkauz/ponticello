@@ -4,7 +4,7 @@ import bundles.publicProperty
 import javafx.application.Application
 import javafx.stage.Stage
 import ponticello.impl.Logger
-import ponticello.model.Settings
+import ponticello.model.GlobalSettings
 import ponticello.ui.impl.NotificationView
 import reaktive.value.now
 import kotlin.concurrent.thread
@@ -22,7 +22,7 @@ class PonticelloApp : Application() {
     private fun periodicGC() {
         thread(isDaemon = true, name = "Periodic GC") {
             while (true) {
-                val settings = launcher.rootContext[Settings]
+                val settings = launcher.rootContext[GlobalSettings]
                 val period = settings.garbageCollectionPeriod.now.toLong()
                 Thread.sleep(period * 1000)
                 if (settings.periodicGarbageCollection.now) {
