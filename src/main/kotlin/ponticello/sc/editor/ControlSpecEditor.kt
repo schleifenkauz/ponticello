@@ -53,9 +53,9 @@ class ControlSpecEditor : ChoiceEditor<ParameterType, ControlSpec, Editor<Contro
                 select(ParameterType.BufferPosition, specEditor)
             }
 
-            is ObjectControlSpec -> {
-                val specEditor = ObjectControlSpecEditor()
-                select(ParameterType.Object, specEditor)
+            is ExprControlSpec -> {
+                val specEditor = ExprControlSpecEditor()
+                select(ParameterType.Expr, specEditor)
             }
 
             else -> throw AssertionError("Illegal ControlSpec type: $spec")
@@ -80,7 +80,7 @@ class ControlSpecEditor : ChoiceEditor<ParameterType, ControlSpec, Editor<Contro
             inlineDisplay = SimpleBooleanEditor(false),
             attackRelease = SimpleBooleanEditor(false)
         )
-        ParameterType.Object -> ObjectControlSpecEditor()
+        ParameterType.Expr -> ExprControlSpecEditor()
 
         else -> throw AssertionError("unknown parameter type $choice")
     }

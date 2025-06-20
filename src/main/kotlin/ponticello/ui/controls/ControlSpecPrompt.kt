@@ -89,7 +89,7 @@ abstract class ControlSpecPrompt<S : ControlSpec, N : Node>(
                     initialSpec, "Maximum attack/release"
                 )
 
-                is BufferPositionControlSpec, is ObjectControlSpec -> null
+                is BufferPositionControlSpec, is ExprControlSpec -> null
             }
         }
 
@@ -112,7 +112,7 @@ abstract class ControlSpecPrompt<S : ControlSpec, N : Node>(
                 create(parameterName, parentObject, AttackReleaseControlSpec())?.showDialog(ownerWindow, anchor)
 
             ParameterType.BufferPosition -> BufferPositionControlSpec()
-            ParameterType.Object -> ObjectControlSpec()
+            ParameterType.Expr -> ExprControlSpec()
         }
     }
 }

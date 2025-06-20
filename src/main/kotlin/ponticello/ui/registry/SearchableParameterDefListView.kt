@@ -25,7 +25,7 @@ class SearchableParameterDefListView(
         val availableParameterTypes = when (instrumentObject) {
             null -> ParameterType.regularTypes
             is ProcessDefObject -> ParameterType.regularTypes
-            is SynthDefObject -> ParameterType.regularTypes - ParameterType.Object
+            is SynthDefObject -> ParameterType.regularTypes - ParameterType.Expr
             else -> emptyList()
         }
         Thread.sleep(100)

@@ -21,19 +21,19 @@ import reaktive.value.reactiveVariable
 
 @Serializable
 enum class ParameterType {
-    Bus, Buffer, Numerical, Object, BufferPosition, AttackRelease;
+    Bus, Buffer, Numerical, Expr, BufferPosition, AttackRelease;
 
     override fun toString(): String = when (this) {
         Bus -> "bus"
         Buffer -> "buf"
         Numerical -> "num"
-        Object -> "obj"
+        Expr -> "expr"
         BufferPosition -> "buf-pos"
         AttackRelease -> "attack-release"
     }
 
     companion object {
-        val regularTypes = listOf(Numerical, Bus, Buffer, Object, BufferPosition)
+        val regularTypes = listOf(Numerical, Bus, Buffer, Expr, BufferPosition)
     }
 }
 
@@ -41,7 +41,7 @@ fun ParameterType.defaultControlSpec(): ControlSpec = when (this) {
     ParameterType.Bus -> BusControlSpec(Rate.Audio, 2)
     ParameterType.Buffer -> BufferControlSpec(channels = 2)
     ParameterType.Numerical -> NumericalControlSpec.DEFAULT
-    ParameterType.Object -> ObjectControlSpec()
+    ParameterType.Expr -> ExprControlSpec()
     ParameterType.BufferPosition -> BufferPositionControlSpec()
     ParameterType.AttackRelease -> AttackReleaseControlSpec()
 }
@@ -62,7 +62,7 @@ fun ControlSpec.defaultControl() = when (this) {
     is BufferControlSpec -> BufferControl(reactiveVariable(ObjectReference.none()))
     is BusControlSpec -> BusControl(reactiveVariable(ObjectReference.none()))
     is NumericalControlSpec -> ValueControl(reactiveVariable(defaultValue.get()))
-    is ObjectControlSpec -> ExprControl.create()
+    is ExprControlSpec -> ExprControl.create()
     is BufferPositionControlSpec -> ValueControl(reactiveVariable(zero))
     is AttackReleaseControlSpec -> AttackReleaseControl.createDefault()
 }
@@ -191,15 +191,15 @@ data class BufferControlSpec(
 
 @Serializable
 @Compound
-@SerialName("object")
-class ObjectControlSpec : ControlSpec {
+@SerialName("expr")
+class ExprControlSpec : ControlSpec {
     override val code: String
         get() = throw UnsupportedOperationException("ObjectControlSpec cannot be used in SynthDefs.")
 
     override val type: ParameterType
-        get() = ParameterType.Object
+        get() = ParameterType.Expr
 
-    override fun equals(other: Any?): Boolean = other is ObjectControlSpec
+    override fun equals(other: Any?): Boolean = other is ExprControlSpec
 
     override fun hashCode(): Int = javaClass.hashCode()
 }

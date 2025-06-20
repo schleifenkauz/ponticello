@@ -45,6 +45,7 @@ class SoundProcessView(
     private val objectPane = Pane()
     private val spectrogramPainter = SpectrogramPainter(this, obj, objectPane)
     private val envelopeManager = EnvelopeEditorManager(this, objectPane)
+    private val attackReleaseOverlay = AttackReleaseOverlay(this)
     private val lfoCanvases = mutableMapOf<NamedParameterControl, LFOCanvas>()
     private lateinit var lfosObserver: Observer
 
@@ -59,6 +60,20 @@ class SoundProcessView(
         super.initialize()
         setupDropArea(SoundProcessDropHandler(this))
         lfosObserver = observeLFOs()
+        initializeObjectPane()
+        spectrogramPainter.initialize()
+        envelopeManager.initialize()
+        attackReleaseOverlay.initialize()
+
+        if (!parentPane.isRoot(obj)) {
+            val synthDefSelector = ObjectSelectorControl(obj.instrumentSelector)
+            inlineControls.children.add(1, synthDefSelector)
+            val inlineControlsBar = InlineParameterControlsBar(obj.controls, this)
+            inlineControls.children.add(2, inlineControlsBar)
+        }
+    }
+
+    private fun initializeObjectPane() {
         val controlsDisplay = context[UIState].controlsDisplay
         objectPane.layoutYProperty().bind(
             controlsDisplay.equalTo(InlineControlsDisplay.CONTROLS_BAR)
@@ -73,16 +88,6 @@ class SoundProcessView(
             Background(BackgroundFill(color, CornerRadii.EMPTY, null))
         }.asObservableValue())
         children.add(0, objectPane)
-
-        spectrogramPainter.initialize()
-        envelopeManager.initialize()
-
-        if (!parentPane.isRoot(obj)) {
-            val synthDefSelector = ObjectSelectorControl(obj.instrumentSelector)
-            inlineControls.children.add(1, synthDefSelector)
-            val inlineControlsBar = InlineParameterControlsBar(obj.controls, this)
-            inlineControls.children.add(2, inlineControlsBar)
-        }
     }
 
     override fun setupDetailPane(pane: DetailPane) {
@@ -143,6 +148,7 @@ class SoundProcessView(
         super.rescale()
         envelopeManager.rescaleEnvelopes()
         spectrogramPainter.rescaleSpectrogram()
+        attackReleaseOverlay.updateOverlay()
     }
 
     override fun resizedObject(obj: ScoreObject) {

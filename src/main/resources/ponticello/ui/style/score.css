@@ -118,6 +118,12 @@ Label.memo-area {
     -fx-icon-color: green;
 }
 
-.drag-icon-button:hover FontIcon, .drag-icon-button:pressed FontIcon {
-    -fx-icon-color: red;
+/*.drag-icon-button:hover FontIcon, .drag-icon-button:pressed FontIcon {*/
+/*    -fx-icon-color: red;*/
+/*}*/
+
+.attack-release-overlay {
+    -fx-fill: rgba(0, 0, 0, 0.2);
+    -fx-stroke: black;
+    -fx-stroke-width: 1px;
 }

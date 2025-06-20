@@ -19,7 +19,7 @@ import ponticello.ui.score.ScoreObjectView
 
 data object ExprControlType : ControlType<ExprControl>() {
     override fun applicableOn(obj: ParameterizedObject, spec: ControlSpec): Boolean = obj is ScoreObject &&
-            (spec is NumericalControlSpec || spec is BusControlSpec || spec is BufferControlSpec || spec is ObjectControlSpec)
+            (spec is NumericalControlSpec || spec is BusControlSpec || spec is BufferControlSpec || spec is ExprControlSpec)
 
     override fun createDetailInput(
         namedControl: NamedParameterControl, control: ExprControl, view: ScoreObjectView?,

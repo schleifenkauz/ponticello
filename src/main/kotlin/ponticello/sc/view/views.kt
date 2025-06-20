@@ -181,7 +181,7 @@ internal fun PluginBuilder.registerControlFactories() {
         TokenEditorControl(editor, arguments, completer = NoCompleter, styleClass = "operator")
     }
     
-    registerControlFactory { editor: ObjectControlSpecEditor, arguments ->
+    registerControlFactory { editor: ExprControlSpecEditor, arguments ->
         CompoundEditorControl(editor, arguments) { 
             horizontal {  } //empty
         }
@@ -276,7 +276,7 @@ internal fun PluginBuilder.registerControlFactories() {
         CompoundEditorControl(editor, arguments) {
             horizontal {
                 operator("'")
-                TokenEditorControl(editor, createBundle(), styleClass = "symbol")
+                add(TokenEditorControl(editor, createBundle(), styleClass = "symbol"))
                 operator("'")
             }
         }
@@ -285,7 +285,7 @@ internal fun PluginBuilder.registerControlFactories() {
         CompoundEditorControl(editor, arguments) {
             horizontal {
                 operator("\"")
-                TokenEditorControl(editor, createBundle(), styleClass = "string")
+                add(TokenEditorControl(editor, createBundle(), styleClass = "string"))
                 operator("\"")
             }
         }
