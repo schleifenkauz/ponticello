@@ -33,12 +33,13 @@ class TempoGridObjectView(override val obj: TempoGridObject, inst: ScoreObjectIn
     private val canvas = Canvas()
     private val marker = Line() styleClass "grid-marker-line"
     private lateinit var snapObserver: Observer
+    private var barOffset = 0
 
     init {
         styleClass("tempo-grid")
         children.add(canvas)
-        canvas.heightProperty().bind(Bindings.min(prefHeightProperty(), MAX_CANVAS_WIDTH))
-        canvas.widthProperty().bind(prefWidthProperty())
+        canvas.heightProperty().bind(prefHeightProperty())
+        canvas.widthProperty().bind(Bindings.min(MAX_OBJECT_WIDTH, prefWidthProperty()))
         canvas.opacityProperty().bind(
             `if`(obj.context[UIState].snapEnabled, then = { 1.0 }, otherwise = { 0.5 }).asObservableValue()
         )
@@ -94,9 +95,25 @@ class TempoGridObjectView(override val obj: TempoGridObject, inst: ScoreObjectIn
 
     private fun repaint() {
         val meter = obj.meter.get() ?: return
-        val duration = obj.duration
-        val firstBar = obj.firstBar.now
-        paintGrid(context, meter, firstBar, duration.value, canvas, prefWidth, prefHeight)
+        val duration = parentPane.getDuration(canvas.width)
+        val firstBar = obj.firstBar.now + barOffset
+        paintGrid(context, meter, firstBar, duration.value, canvas)
+    }
+
+    override fun relocate(x: Double, y: Double) {
+        super.relocate(x, y)
+        if (prefWidth > MAX_OBJECT_WIDTH && layoutX < 0.0) {
+            val meter = obj.meter.get() ?: return
+            val barWidth = getWidth(meter.getDuration(TimeUnit.Bars))
+            val offset = -layoutX
+            barOffset = (offset / barWidth).toInt()
+            canvas.translateX = barOffset * barWidth
+            repaint()
+        } else if (canvas.translateX != 0.0) {
+            canvas.translateX = 0.0
+            barOffset = 0
+            repaint()
+        }
     }
 
     fun unmark() {
@@ -119,10 +136,11 @@ class TempoGridObjectView(override val obj: TempoGridObject, inst: ScoreObjectIn
         private const val MIN_BAR_NUMBER_DIST = 30.0
 
         fun paintGrid(
-            context: Context, meter: MeterObject, firstBar: Int, duration: Double,
-            area: Canvas, width: Double, height: Double,
+            context: Context, meter: MeterObject, firstBar: Int, duration: Double, area: Canvas,
         ) = with(area.graphicsContext2D) {
-            clearRect(0.0, 0.0, canvas.width, canvas.height)
+            val height = canvas.height
+            val width = canvas.width
+            clearRect(0.0, 0.0, width, height)
 
             val bpm = meter.beatsPerMinute.now
             val bpb = meter.beatsPerBar.now
@@ -175,7 +193,5 @@ class TempoGridObjectView(override val obj: TempoGridObject, inst: ScoreObjectIn
             lineWidth = 2.0
             strokeLine(0.0, height / 2, width, height / 2)
         }
-
-        private const val MAX_CANVAS_WIDTH = 8192
     }
 }

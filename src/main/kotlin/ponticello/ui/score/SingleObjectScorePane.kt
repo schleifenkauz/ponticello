@@ -92,7 +92,7 @@ class SingleObjectScorePane(
     private fun repaintGrid() {
         val meter = rootObj.quantizationConfig.meter.now.get() ?: return
         val duration = rootObj.duration.value
-        TempoGridObjectView.paintGrid(context, meter, firstBar = 0, duration, gridCanvas, width, GRID_HEIGHT)
+        TempoGridObjectView.paintGrid(context, meter, firstBar = 0, duration, gridCanvas)
     }
 
     override fun mouseExited() {

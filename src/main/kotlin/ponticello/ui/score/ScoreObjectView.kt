@@ -640,5 +640,7 @@ abstract class ScoreObjectView(
     companion object {
         private const val BORDER_WIDTH = 3.0
         const val BORDER_RADIUS = 2.0
+
+        val MAX_OBJECT_WIDTH = 8192
     }
 }
