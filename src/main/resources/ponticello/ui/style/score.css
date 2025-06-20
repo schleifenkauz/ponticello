@@ -75,8 +75,6 @@ Label.memo-area {
 }
 
 .score-object-top-bar {
-    -fx-border-width: 0px 0px 1px 0px;
-    -fx-border-color: white;
     -fx-alignment: center-left;
     -fx-spacing: 5px;
 }

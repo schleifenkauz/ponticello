@@ -23,7 +23,10 @@ class TaskObject(
 
     override val superColliderPrefix: String get() = "~task"
 
-    override val canResize: Boolean
+    override val canResizeHorizontally: Boolean
+        get() = false
+
+    override val canResizeVertically: Boolean
         get() = false
 
     override fun doClone(): ScoreObject = TaskObject(code.clone(context))

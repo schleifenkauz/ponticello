@@ -1,20 +1,25 @@
 package ponticello.ui.score
 
 import fxutils.controls.IntSpinner
+import fxutils.hspace
 import fxutils.prompt.DetailPane
 import fxutils.styleClass
 import fxutils.undo.UndoManager
 import hextant.context.Context
 import javafx.beans.binding.Bindings
+import javafx.beans.property.SimpleObjectProperty
+import javafx.beans.value.ObservableValue
 import javafx.scene.canvas.Canvas
 import javafx.scene.control.Button
 import javafx.scene.control.Label
+import javafx.scene.layout.Background
 import javafx.scene.paint.Color
 import javafx.scene.shape.Line
 import javafx.scene.text.Font
 import ponticello.impl.Decimal
 import ponticello.model.obj.MeterObject
 import ponticello.model.obj.project
+import ponticello.model.project.InlineControlsDisplay
 import ponticello.model.project.UIState
 import ponticello.model.project.uiState
 import ponticello.model.score.ScoreObjectInstance
@@ -23,7 +28,7 @@ import ponticello.model.score.TimeUnit
 import reaktive.Observer
 import reaktive.and
 import reaktive.value.ReactiveValue
-import reaktive.value.binding.`if`
+import reaktive.value.ReactiveVariable
 import reaktive.value.fx.asObservableValue
 import reaktive.value.now
 import reaktive.value.reactiveValue
@@ -38,11 +43,8 @@ class TempoGridObjectView(override val obj: TempoGridObject, inst: ScoreObjectIn
     init {
         styleClass("tempo-grid")
         children.add(canvas)
-        canvas.heightProperty().bind(prefHeightProperty())
+        canvas.height = GRID_HEIGHT
         canvas.widthProperty().bind(Bindings.min(MAX_OBJECT_WIDTH, prefWidthProperty()))
-        canvas.opacityProperty().bind(
-            `if`(obj.context[UIState].snapEnabled, then = { 1.0 }, otherwise = { 0.5 }).asObservableValue()
-        )
         marker.endYProperty().bind(heightProperty())
     }
 
@@ -52,8 +54,9 @@ class TempoGridObjectView(override val obj: TempoGridObject, inst: ScoreObjectIn
     override fun initialize() {
         super.initialize()
         marker.visibleProperty().bind(context.project.uiState.snapEnabled.asObservableValue())
-        val settings = context.project.uiState
+        inlineControls.children.add(0, hspace(20.0)) //to avoid collision of name label with bar number
         repaint()
+        val settings = context.project.uiState
         snapObserver = settings.snapOption.observe { _ -> repaint() }
             .and(settings.snapEnabled.observe { _ -> repaint() })
     }
@@ -93,6 +96,8 @@ class TempoGridObjectView(override val obj: TempoGridObject, inst: ScoreObjectIn
         repaint()
     }
 
+    override fun getDisplayHeight(): Double = GRID_HEIGHT
+
     private fun repaint() {
         val meter = obj.meter.get() ?: return
         val duration = parentPane.getDuration(canvas.width)
@@ -126,21 +131,26 @@ class TempoGridObjectView(override val obj: TempoGridObject, inst: ScoreObjectIn
         marker.endX = getWidth(t)
     }
 
+    override fun inlineControlsBackground(
+        controlsDisplay: ReactiveVariable<InlineControlsDisplay>,
+    ): ObservableValue<Background> = SimpleObjectProperty(Background.EMPTY)
+
     override val defaultBackgroundColor: ReactiveValue<Color>
         get() = reactiveValue(Color.TRANSPARENT)
 
     companion object {
-        private const val BAR_LINE_SPACE = 15.0
-        private const val BEAT_LINE_SPACE = 0.3
-        private const val TICK_LINE_SPACE = 0.4
+        private const val BAR_LINE_HEIGHT = 10.0
+        private const val BEAT_LINE_HEIGHT = 6.0
+        private const val TICK_LINE_HEIGHT = 3.0
         private const val MIN_BAR_NUMBER_DIST = 30.0
+        const val GRID_HEIGHT = 30.0
+        private const val CENTER_Y = 20.0
 
         fun paintGrid(
             context: Context, meter: MeterObject, firstBar: Int, duration: Double, area: Canvas,
         ) = with(area.graphicsContext2D) {
-            val height = canvas.height
             val width = canvas.width
-            clearRect(0.0, 0.0, width, height)
+            clearRect(0.0, 0.0, width, GRID_HEIGHT)
 
             val bpm = meter.beatsPerMinute.now
             val bpb = meter.beatsPerBar.now
@@ -161,8 +171,9 @@ class TempoGridObjectView(override val obj: TempoGridObject, inst: ScoreObjectIn
                 if (barNumberDist > MIN_BAR_NUMBER_DIST) {
                     val text = (bar + firstBar).toString()
                     val x = (barX - 5).coerceAtLeast(0.0)
-                    val y = 12.0
-                    font = Font.font(10.0)
+                    val y = 10.0
+                    font = Font.font("Monospaced", 10.0)
+                    lineWidth = 0.75
                     stroke = if (snapEnabled) Color.GREEN else Color.GRAY
                     strokeText(text, x, y)
                 }
@@ -176,22 +187,22 @@ class TempoGridObjectView(override val obj: TempoGridObject, inst: ScoreObjectIn
                     for (tick in 0 until tpb) {
                         val tickX = beatX + (pixelsPerBeat * tick) / tpb
                         if (tickX > width) break
-                        strokeLine(tickX, height * (1 - TICK_LINE_SPACE), tickX, height * TICK_LINE_SPACE)
+                        strokeLine(tickX, CENTER_Y - TICK_LINE_HEIGHT, tickX, CENTER_Y + TICK_LINE_HEIGHT)
                     }
 
                     stroke = if (snapOption <= TimeUnit.Beats && snapEnabled) Color.GREEN else Color.GRAY
                     lineWidth = 2.0
-                    strokeLine(beatX, height * (1 - BEAT_LINE_SPACE), beatX, height * BEAT_LINE_SPACE)
+                    strokeLine(beatX, CENTER_Y - BEAT_LINE_HEIGHT, beatX, CENTER_Y + BEAT_LINE_HEIGHT)
                 }
 
                 lineWidth = 3.0
                 stroke = if (snapOption <= TimeUnit.Bars && snapEnabled) Color.GREEN else Color.GRAY
-                strokeLine(barX, BAR_LINE_SPACE, barX, height - BAR_LINE_SPACE)
+                strokeLine(barX, CENTER_Y - BAR_LINE_HEIGHT, barX, CENTER_Y + BAR_LINE_HEIGHT)
             }
 
             stroke = if (snapEnabled) Color.GREEN else Color.GRAY
             lineWidth = 2.0
-            strokeLine(0.0, height / 2, width, height / 2)
+            strokeLine(0.0, CENTER_Y, width, CENTER_Y)
         }
     }
 }

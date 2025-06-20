@@ -20,7 +20,10 @@ class MemoObject(
     override val canMute: Boolean
         get() = false
 
-    override val canResize: Boolean
+    override val canResizeHorizontally: Boolean
+        get() = false
+
+    override val canResizeVertically: Boolean
         get() = false
 
     override val affectsPlayback: Boolean

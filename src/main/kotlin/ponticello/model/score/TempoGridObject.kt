@@ -33,6 +33,8 @@ class TempoGridObject(
         get() = false
     override val affectsPlayback: Boolean
         get() = false
+    override val canResizeVertically: Boolean
+        get() = false
 
     val beatsPerMinute: ReactiveVariable<Int> get() = meter.force().beatsPerMinute
     val beatsPerBar: ReactiveVariable<Int> get() = meter.force().beatsPerBar

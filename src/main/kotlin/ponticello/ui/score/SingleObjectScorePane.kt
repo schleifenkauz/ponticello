@@ -15,6 +15,7 @@ import ponticello.model.project.UIState
 import ponticello.model.project.uiState
 import ponticello.model.score.ObjectPosition
 import ponticello.model.score.ScoreObject
+import ponticello.ui.score.TempoGridObjectView.Companion.GRID_HEIGHT
 import reaktive.Observer
 import reaktive.and
 import reaktive.value.binding.`if`
@@ -120,9 +121,5 @@ class SingleObjectScorePane(
         if (marker !in children) children.add(marker)
         marker.startX = getWidth(t)
         marker.endX = getWidth(t)
-    }
-
-    companion object {
-        private const val GRID_HEIGHT = 50.0
     }
 }

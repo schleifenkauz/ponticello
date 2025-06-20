@@ -117,7 +117,7 @@ abstract class ScoreObjectView(
             ).centerChildren().pad(8.0)
             detailPane.children.add(headerBox)
             detailPane.registerShortcuts(ObjectActions.all.withContext(ctx))
-            if (obj.canResize) {
+            if (obj.canResizeHorizontally) {
                 val durationLabel = label(obj.duration().map { dur ->
                     "${dur.round(2).toCanonicalString()} seconds"
                 }).pad(5.0)
@@ -181,9 +181,7 @@ abstract class ScoreObjectView(
         context = parent.context
         initialize()
         if (!parent.isRoot(obj)) {
-            if (obj.canResize) {
-                setupResizingRegions()
-            }
+            setupResizingRegions()
             setupDragging()
             addMouseActions()
         }
@@ -241,6 +239,7 @@ abstract class ScoreObjectView(
             val region = Region() styleClass "resize-region"
             when (side) {
                 Side.TOP, Side.BOTTOM -> {
+                    if (!obj.canResizeVertically) return
                     region.cursor = Cursors.RESIZE_VERTICAL
                     region.styleClass("resize-region-vertical")
                     region.layoutXProperty().bind(
@@ -250,6 +249,7 @@ abstract class ScoreObjectView(
                 }
 
                 Side.LEFT, Side.RIGHT -> {
+                    if (!obj.canResizeHorizontally) return
                     region.cursor = Cursors.RESIZE_HORIZONTAL
                     region.styleClass("resize-region-horizontal")
                     region.layoutYProperty().bind(
@@ -530,7 +530,7 @@ abstract class ScoreObjectView(
     }
 
     private fun resize(old: Bounds, deltaX: Double, deltaY: Double, side: Side) {
-        check(obj.canResize) { "Attempt to resize object that is not resizable" }
+        check(obj.canResizeHorizontally) { "Attempt to resize object that is not resizable" }
         context[AppLayout].get<ScoreObjectDetailPane>().hidePopup()
         val parentPane = parentPane
         if (side in setOf(Side.LEFT, Side.RIGHT)) {
@@ -597,7 +597,7 @@ abstract class ScoreObjectView(
     }
 
     fun adjustHorizontal(direction: HorizontalDirection, resizeMode: ScoreObject.ResizeMode?) {
-        check(obj.canResize) { "Cannot adjust horizontal $this because it has its own sub-window." }
+        check(obj.canResizeHorizontally) { "Cannot adjust horizontal $this because it has its own sub-window." }
         val parentPane = parentPane
         val deltaT = getDeltaT(direction)
         if (resizeMode != null) {

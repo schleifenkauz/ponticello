@@ -42,7 +42,8 @@ sealed class ScoreObject : AbstractRenamableObject() {
 
     open val associatedControls: Map<String, ParameterControl> get() = emptyMap()
 
-    open val canResize: Boolean get() = true
+    open val canResizeHorizontally: Boolean get() = true
+    open val canResizeVertically: Boolean get() = true
 
     open val affectsPlayback: Boolean get() = true
 
