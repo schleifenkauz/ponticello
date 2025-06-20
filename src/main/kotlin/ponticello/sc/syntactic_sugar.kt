@@ -42,7 +42,7 @@ fun functionDef(name: Identifier, parameters: List<Identifier>, body: CodeBlock)
 
 @Compound(nodeType = ScExpr::class)
 data class PlayObject(
-    @Component(ScoreObjectSelector::class) val reference: ScoreObjectReference,
+    @Component(ScoreObjectSelector::class) val reference: ScoreObjectReference
 ) : ScExpr {
     override val isValid: Boolean
         get() = reference.isValid
@@ -55,6 +55,6 @@ data class PlayObject(
         }
         val name = obj.name.now
         val timestamp = "TempoClock.beats"
-        writer.append("~ponticello_addr.sendMsg(\\play, -1, '$name', $timestamp, player_id, ~play_start[player_id])")
+        writer.append("~ponticello_addr.sendMsg(\\play, -1, '$name', $timestamp, player_id)")
     }
 }

@@ -24,9 +24,8 @@ class PlaybackMessageListener(
                 val name = event.message.getArgument<String>(1, "name") ?: return@execute
                 val timestamp = event.message.getArgument<Float>(2, "timestamp") ?: return@execute
                 val playerId = event.message.getArgument<Int>(3, "playerId") ?: return@execute
-                val playerStartTimestamp = event.message.getArgument<Float>(4, "playerStartTimestamp") ?: return@execute
                 val player = ScorePlayer.getById(playerId)
-                playObject(name, timestamp.toDouble().asTime, player, playerStartTimestamp.toDouble().asTime)
+                playObject(name, timestamp.toDouble().asTime, player)
             }
 
             "/pause" -> { //TODO add the corresponding expression types
@@ -43,14 +42,14 @@ class PlaybackMessageListener(
         }
     }
 
-    private fun playObject(name: String, timestamp: Decimal, player: ScorePlayer, playerStartTimestamp: Decimal) {
+    private fun playObject(name: String, timestamp: Decimal, player: ScorePlayer) {
         val obj = objects.getOrNull(name)
         if (obj == null) {
             Logger.warn("Could not find object with name $name", Logger.Category.Playback)
             return
         }
         val y = obj.liveConfig.yPosition.now
-        val scoreTime = timestamp - playerStartTimestamp - player.timeOffset - settings.scLangLatency.now
+        val scoreTime = player.playHead.currentTime
         val serverLatency = settings.serverLatency.now
         val scorePosition = ObjectPosition(scoreTime, y)
         ScorePlayer.execute {
