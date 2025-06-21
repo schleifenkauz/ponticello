@@ -5,7 +5,6 @@ import bundles.publicProperty
 import hextant.context.Context
 import hextant.context.withoutUndo
 import hextant.serial.readJson
-import javafx.stage.DirectoryChooser
 import javafx.stage.FileChooser
 import ponticello.impl.Logger
 import ponticello.model.GlobalSettings
@@ -24,17 +23,6 @@ class PonticelloFiles(private val context: Context) {
         }
     }
 
-    val projectsDir = run {
-        val defaultProjectsDir = userHome.resolve("PonticelloProjects")
-        try {
-            val projectsHome = System.getenv("PONTICELLO_PROJECTS")?.let(::File)
-            projectsHome ?: defaultProjectsDir
-        } catch (e: Exception) {
-            Logger.error("Failed to resolve Projects directory: ${e.message}, using default location", e)
-            defaultProjectsDir
-        }
-    }
-
     fun resolve(vararg path: String): File = ponticelloDir.resolve(path.joinToString("/"))
 
     private val fc = FileChooser().apply {
@@ -45,8 +33,6 @@ class PonticelloFiles(private val context: Context) {
         )
         initialDirectory = projectsDir
     }
-
-    private val dc = DirectoryChooser()
 
     private fun setExtensionFilter(ext: String) {
         fc.selectedExtensionFilter = fc.extensionFilters.find { it.extensions.contains(ext) }
@@ -65,5 +51,15 @@ class PonticelloFiles(private val context: Context) {
 
     companion object : PublicProperty<PonticelloFiles> by publicProperty("PonticelloFiles") {
         val userHome = File(System.getProperty("user.home"))
+        val projectsDir = run {
+            val defaultProjectsDir = userHome.resolve("PonticelloProjects")
+            try {
+                val projectsHome = System.getenv("PONTICELLO_PROJECTS")?.let(::File)
+                projectsHome ?: defaultProjectsDir
+            } catch (e: Exception) {
+                Logger.error("Failed to resolve Projects directory: ${e.message}, using default location", e)
+                defaultProjectsDir
+            }
+        }
     }
 }

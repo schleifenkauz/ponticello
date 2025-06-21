@@ -188,7 +188,7 @@ class PonticelloLauncher {
         saveChanges() ?: return
         val name = PredicateTextPrompt("Project name", "") { name -> name.isNotBlank() }
             .showDialog(rootContext) ?: return
-        val location = rootContext[PonticelloFiles].projectsDir.resolve(name)
+        val location = PonticelloFiles.projectsDir.resolve(name)
         location.mkdir()
         location.resolve("project.pont").writeText(location.name)
         createNewProject(location)
@@ -229,11 +229,17 @@ class PonticelloLauncher {
         return ok
     }
 
-    fun launchPonticello(primaryStage: Stage) {
+    fun launchPonticello(primaryStage: Stage, projectPath: String?) {
         primaryStage.setOnCloseRequest { closeRequest() }
         currentActivity = LoadingScreen(rootContext)
         currentActivity.show(primaryStage)
-        val file = recentProjects.activeProject()
+        val projectFromCLArgs = when {
+            projectPath == null -> null
+            projectPath.startsWith("/") -> File(projectPath)
+            projectPath.startsWith("~/") -> PonticelloFiles.userHome.resolve(projectPath.drop(2))
+            else -> PonticelloFiles.projectsDir.resolve(projectPath)
+        }
+        val file = projectFromCLArgs ?: recentProjects.activeProject()
         if (file != null) {
             openProject(file)
         } else {

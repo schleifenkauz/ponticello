@@ -13,9 +13,10 @@ class PonticelloApp : Application() {
     private lateinit var launcher: PonticelloLauncher
 
     override fun start(stage: Stage) {
+        val projectPath = parameters.raw.getOrNull(0)
         setupLogging()
         launcher = PonticelloLauncher()
-        launcher.launchPonticello(stage)
+        launcher.launchPonticello(stage, projectPath)
         periodicGC()
     }
 
@@ -48,7 +49,7 @@ class PonticelloApp : Application() {
 
         @JvmStatic
         fun main(args: Array<String>) {
-            launch(PonticelloApp::class.java)
+            launch(PonticelloApp::class.java, *args)
         }
     }
 }
