@@ -112,10 +112,10 @@ object ObjectActions {
             }
         }
         addObjectAction("Duplicate object") {
-            shortcut("Alt?+C")
+            shortcut("C")
             icon(MaterialDesignC.CONTENT_DUPLICATE)
             executeSingle { view, ev ->
-                if (ev.isTargetTextInput && !ev.isAltDown()) return@executeSingle
+                if (ev.isTargetTextInput) return@executeSingle
                 view.context[ScoreObjectSelectionManager].deselectAll()
                 val duplicator = view.context[ScoreObjectDuplicator]
                 duplicator.enterDuplicateMode(view.obj, view)

@@ -18,5 +18,9 @@ class BufferControlSpecPrompt(
 
     override fun makeSpec(): BufferControlSpec = BufferControlSpec(channelsSpinner.value(), inlineDisplayBox.isSelected)
 
+    override fun onReceiveFocus() {
+        channelsSpinner.requestFocus()
+    }
+
     private infix fun <N : Node> N.named(name: String): N = also { content.addItem(name, it) }
 }

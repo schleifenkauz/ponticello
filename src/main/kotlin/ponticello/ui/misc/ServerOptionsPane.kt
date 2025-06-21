@@ -12,7 +12,7 @@ import ponticello.sc.client.SuperColliderClient
 class ServerOptionsPane(
     private val context: Context,
     private val options: ServerOptions
-) : CompoundPrompt<Unit>("Server options", labelWidth = 150.0) {
+) : CompoundPrompt<Unit>("Server options", labelWidth = 150.0, confirmText = "_Reboot") {
     private val device = textField(options.device) named "Device"
     private val numInputChannels = IntSpinner(0, 24, options.numInputChannels).minColumns(2) named "Input channels"
     private val numOutputChannels = IntSpinner(1, 24, options.numOutputChannels).minColumns(2) named "Output channels"

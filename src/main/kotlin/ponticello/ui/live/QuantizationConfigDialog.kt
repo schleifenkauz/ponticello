@@ -67,17 +67,16 @@ class QuantizationConfigDialog(
     private val shiftGridToggle = CheckBox(config.shiftGrid)
         .setupUndo(config.context[UndoManager], variableDescription = "Shift grid")
 
+    private val confirmAndStretchButton = Button("_Stretch") styleClass "sleek-button"
+
     private fun row(name: String, vararg items: Node) {
         addItem(name, HBox(5.0, *items).centerChildren())
     }
 
-    override fun extraButtons(): List<Button> = listOf(
-        button("Confirm and stretch") {
-            commit(ResizeMode.Stretch)
-        }
-    )
+    override fun extraButtons(): List<Button> = listOf(confirmAndStretchButton)
 
     init {
+        confirmAndStretchButton.setOnAction { commit(ResizeMode.Stretch) }
         val unresolvedGrid = config.meter.flatMap(ObjectReference<*>::isResolved).not().asObservableValue()
         shiftGridToggle.disableProperty().bind(unresolvedGrid)
         durationUnitInput.disableProperty().bind(unresolvedGrid)

@@ -25,6 +25,10 @@ class BusControlSpecPrompt(
 
     private val inlineDisplayBox = CheckBox(initialSpec.inlineDisplay) named "Inline display"
 
+    override fun onReceiveFocus() {
+        channelsSpinner.requestFocus()
+    }
+
     override fun makeSpec(): BusControlSpec = BusControlSpec(rate, channelsSpinner.value(), inlineDisplayBox.isSelected)
 
     private infix fun <N : Node> N.named(name: String): N = also { content.addItem(name, it) }

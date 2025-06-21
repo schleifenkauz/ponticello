@@ -49,6 +49,10 @@ class NumericalControlSpecPrompt(
         validate(isValid)
     }
 
+    override fun onReceiveFocus() {
+        minTxt.requestFocus()
+    }
+
     private infix fun <N : Node> N.named(name: String): N = also { content.addItem(name, it) }
 
     override fun makeSpec() = NumericalControlSpec(

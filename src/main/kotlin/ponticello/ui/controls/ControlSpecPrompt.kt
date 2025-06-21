@@ -1,8 +1,8 @@
 package ponticello.ui.controls
 
-import fxutils.button
 import fxutils.prompt.ConfirmablePrompt
 import fxutils.prompt.Prompt
+import fxutils.styleClass
 import javafx.beans.binding.BooleanBinding
 import javafx.geometry.Point2D
 import javafx.scene.Node
@@ -18,16 +18,16 @@ abstract class ControlSpecPrompt<S : ControlSpec, N : Node>(
     protected val parentObject: ParameterizedObject?,
     title: String,
 ) : ConfirmablePrompt<S, N>(title) {
-    private val resetBtn = button("Reset") {
-        reset()
-    }
+    private val resetBtn = Button("_Reset") styleClass "sleek-button"
 
-    private val confirmAndSyncBtn = button("Confirm and sync") {
-        confirmAndSync()
-    }
+    private val confirmAndSyncBtn = Button("_Sync") styleClass "sleek-button"
 
-    private val confirmAndAddBtn = button("Confirm and add to SynthDef") {
-        confirmAndAdd()
+    private val confirmAndAddBtn = Button("_Add to SynthDef") styleClass "sleek-button"
+
+    init {
+        resetBtn.setOnAction { reset() }
+        confirmAndSyncBtn.setOnAction { confirmAndSync() }
+        confirmAndAddBtn.setOnAction { confirmAndAdd() }
     }
 
     private fun reset() {
@@ -53,6 +53,7 @@ abstract class ControlSpecPrompt<S : ControlSpec, N : Node>(
     protected fun validate(isValid: BooleanBinding) {
         confirmButton.disableProperty().bind(isValid.not())
         confirmAndSyncBtn.disableProperty().bind(isValid.not())
+        confirmAndAddBtn.disableProperty().bind(isValid.not())
     }
 
     protected abstract fun makeSpec(): S
