@@ -64,6 +64,7 @@ fun Scene.registerGlobalShortcuts(context: Context) {
         registerActions(ServerActions.withContext(context.project))
         registerActions(ProjectActions.withContext(context[PonticelloLauncher]))
         registerActions(ProjectUtilityActions.withContext(context.project))
+        registerActions(UndoRedoActions.withContext(context[UndoManager]))
     }
 }
 

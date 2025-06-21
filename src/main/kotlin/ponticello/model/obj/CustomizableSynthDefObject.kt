@@ -46,6 +46,14 @@ class CustomizableSynthDefObject(
         return parameters + additionalParameters
     }
 
+    override fun hasParameter(name: String): Boolean = when (name) {
+        "attack", "release" -> parameters.any { p ->
+            val spec = p.spec.now
+            spec is NumericalControlSpec && spec.attackRelease
+        }
+        else -> super<ConfigurableInstrumentObject>.hasParameter(name)
+    }
+
     override fun copy(): CustomizableSynthDefObject = CustomizableSynthDefObject(
         ParameterDefList(parameters.mapTo(mutableListOf()) { p -> p.copy().withName(p.name.now) }),
         color.copy(),

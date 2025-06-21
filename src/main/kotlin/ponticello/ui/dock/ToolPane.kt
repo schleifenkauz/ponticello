@@ -30,6 +30,7 @@ import org.kordamp.ikonli.materialdesign2.MaterialDesignR
 import org.kordamp.ikonli.materialdesign2.MaterialDesignW
 import ponticello.model.obj.AbstractContextualObject
 import ponticello.model.project.PonticelloProject
+import ponticello.ui.actions.registerGlobalShortcuts
 import ponticello.ui.dock.Side.*
 import ponticello.ui.dock.ToolPaneMode.*
 import ponticello.ui.impl.DEFAULT_SCENE_FILL
@@ -198,6 +199,7 @@ abstract class ToolPane : VBox() {
         popup.content.add(root)
         popup.scene.initHextantScene(context)
         popup.sceneFill(DEFAULT_SCENE_FILL)
+        popup.scene.registerGlobalShortcuts(context)
         popup.isAutoHide = true
         popup.setOnHidden { ev ->
             showing.set(false)
@@ -213,6 +215,7 @@ abstract class ToolPane : VBox() {
         initialState?.windowBounds?.applyTo(stage) ?: stage.centerOnScreen()
         stage.scene = Scene(StackPane(this))
         stage.scene.initHextantScene(context)
+        stage.scene.registerGlobalShortcuts(context)
         stage.sceneFill(DEFAULT_SCENE_FILL)
         stage.setOnHidden { ev ->
             showing.set(false)

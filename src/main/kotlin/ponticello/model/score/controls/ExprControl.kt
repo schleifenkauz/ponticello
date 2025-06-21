@@ -38,7 +38,7 @@ class ExprControl(val expr: EditorRoot<@Contextual ScExprExpander>) : ParameterC
     override fun initialize(context: Context, namedControl: NamedParameterControl) {
         super.initialize(context, namedControl)
         val myContext = context.extend {
-            set(UndoManager, context[UndoManager].createSubManager())
+            set(UndoManager, context[UndoManager]/*.createSubManager()*/)
             set(PonticelloContext, PonticelloContext(namedControl.parentObject, Scope.createEmpty()))
         }
         expr.initialize(myContext)

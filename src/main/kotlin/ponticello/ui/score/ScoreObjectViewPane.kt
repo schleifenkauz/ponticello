@@ -8,7 +8,6 @@ import fxutils.centerChildren
 import fxutils.hspace
 import fxutils.infiniteSpace
 import fxutils.registerShortcuts
-import fxutils.undo.UndoManager
 import hextant.context.extend
 import javafx.scene.control.SplitPane
 import javafx.scene.layout.HBox
@@ -54,7 +53,6 @@ class ScoreObjectViewPane private constructor(val obj: ScoreObject) : VBox() {
             registerActions(ObjectActions.all.withContext(ctx))
             registerActions(ScoreObjectRegistryPane.actions.withContext(obj))
             registerActions(PlaybackActions.local.withContext(player))
-            registerActions(UndoRedoActions.withContext(obj.context[UndoManager]))
             registerActions(listOf(showDetailPaneAction.withContext(this@ScoreObjectViewPane)))
             context[PonticelloMainActivity].interactionConfig.addGridRelatedShortcuts(this)
         }

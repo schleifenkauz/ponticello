@@ -57,7 +57,7 @@ class LauncherGrid private constructor(
     fun items(): List<GridItem> = items.asList()
 
     override fun initialize(context: Context) {
-        undoManager = context[UndoManager].createSubManager()
+        undoManager = context[UndoManager]/*.createSubManager()*/
         val myContext = context.extend {
             set(UndoManager, undoManager)
         }

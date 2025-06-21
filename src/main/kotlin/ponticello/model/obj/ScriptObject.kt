@@ -27,7 +27,7 @@ class ScriptObject private constructor(
         super.initialize(context)
         root.initialize(context.extend {
             set(SelectionDistributor, SelectionDistributor.newInstance())
-            set(UndoManager, context[UndoManager].createSubManager())
+            set(UndoManager, context[UndoManager]/*.createSubManager()*/)
         })
     }
 

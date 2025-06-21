@@ -7,7 +7,7 @@ import javafx.geometry.Orientation
 import javafx.scene.Parent
 import javafx.scene.input.DataFormat
 import org.kordamp.ikonli.Ikon
-import org.kordamp.ikonli.materialdesign2.MaterialDesignP
+import org.kordamp.ikonli.materialdesign2.MaterialDesignI
 import ponticello.model.live.LiveTaskObject
 import ponticello.model.live.LiveTaskRegistry
 import ponticello.model.obj.withName
@@ -50,7 +50,7 @@ class LiveTaskRegistryPane(registry: LiveTaskRegistry) : LiveObjectRegistryPane<
 
     companion object: Type(10, "LiveTasks") {
         override val icon: Ikon
-            get() = MaterialDesignP.PROGRESS_QUESTION //TODO
+            get() = MaterialDesignI.INFINITY
 
         override val defaultSide: Side
             get() = Side.RIGHT

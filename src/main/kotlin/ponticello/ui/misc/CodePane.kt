@@ -3,7 +3,6 @@ package ponticello.ui.misc
 import fxutils.*
 import fxutils.actions.*
 import fxutils.prompt.InfoPrompt
-import fxutils.undo.UndoManager
 import hextant.context.Context
 import hextant.context.EditorControlGroup
 import hextant.context.SelectionDistributor
@@ -36,7 +35,6 @@ import ponticello.sc.editor.CodeBlockEditor
 import ponticello.sc.editor.ScExprEditor
 import ponticello.sc.editor.ScExprExpander
 import ponticello.sc.editor.ScExprListEditor
-import ponticello.ui.actions.UndoRedoActions
 import ponticello.ui.impl.showDialog
 import reaktive.value.now
 import java.util.concurrent.ExecutionException
@@ -238,7 +236,7 @@ class CodePane(
         }
 
         private val actions = collectActions<CodePane> {
-            addAll(UndoRedoActions) { pane -> pane.context[UndoManager] }
+//            addAll(UndoRedoActions) { pane -> pane.context[UndoManager] }
             add(evaluateSelectedCodeAction)
         }
     }

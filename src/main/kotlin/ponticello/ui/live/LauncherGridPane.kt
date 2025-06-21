@@ -43,7 +43,6 @@ import ponticello.sc.NumericalControlSpec
 import ponticello.sc.ParameterType
 import ponticello.sc.Warp
 import ponticello.ui.actions.PlaybackActions
-import ponticello.ui.actions.UndoRedoActions
 import ponticello.ui.dock.AppLayout
 import ponticello.ui.dock.Side
 import ponticello.ui.dock.ToolPane
@@ -291,7 +290,7 @@ class LauncherGridPane(
         }
 
         private val actions = collectActions {
-            addAll(UndoRedoActions) { grid: LauncherGrid -> grid.context[UndoManager] }
+//            addAll(UndoRedoActions) { grid: LauncherGrid -> grid.context[UndoManager] }
             addAction("Toggle active") {
                 toggles(
                     LauncherGrid::isActive,

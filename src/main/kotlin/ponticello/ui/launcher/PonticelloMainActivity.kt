@@ -6,7 +6,6 @@ import bundles.set
 import fxutils.actions.registerActions
 import fxutils.registerShortcuts
 import fxutils.runFXWithTimeout
-import fxutils.undo.UndoManager
 import javafx.geometry.Dimension2D
 import javafx.scene.input.KeyCombination
 import javafx.stage.Screen
@@ -108,7 +107,6 @@ class PonticelloMainActivity(val project: PonticelloProject) : Activity() {
         val objectCtx = ObjectActionContext.MultiObjectContext(context[ScoreObjectSelectionManager])
         registerActions(ObjectActions.all.withContext(objectCtx))
         SelectionRelatedActions.addShortcuts(this, context)
-        registerActions(UndoRedoActions.withContext(context[UndoManager]))
         registerActions(appLayout.actions())
     }
 
