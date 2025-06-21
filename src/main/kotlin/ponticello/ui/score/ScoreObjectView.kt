@@ -57,6 +57,7 @@ abstract class ScoreObjectView(
 
     var isInitialized: Boolean = false
         private set
+
     lateinit var parentPane: ScorePane
         private set
 
@@ -73,7 +74,10 @@ abstract class ScoreObjectView(
     protected open val borderColorWhenNotSelected: Color get() = Color.TRANSPARENT
     protected open val borderColorWhenSameObjectSelected: Color get() = Color.GRAY
 
-    protected val inlineControls = HBox() styleClass "score-object-top-bar"
+    private var _inlineControls: HBox? = null
+
+    protected val inlineControls: HBox get() = _inlineControls ?: error("Inline controls bar not initialized")
+
     lateinit var inlineNameLabel: Label
         private set
     private lateinit var inlineActionBar: ActionBar
@@ -134,17 +138,16 @@ abstract class ScoreObjectView(
         setupColorPicker()
         instance.addListener(this)
         obj.addListener(this)
-        if (!parentPane.isRoot(obj)) {
-            setupInlineControls()
-        }
+        inlineNameLabel = label(obj.name)
         isInitialized = true
     }
 
     protected open fun configureInlineControls() {
     }
 
-    private fun setupInlineControls() {
-        inlineNameLabel = label(obj.name)
+    protected fun setupInlineControls() {
+        if (_inlineControls != null) return
+        _inlineControls = HBox() styleClass "score-object-top-bar"
         val controlsDisplay = context[UIState].controlsDisplay
         inlineControls.prefWidthProperty().bind(prefWidthProperty())
         inlineControls.backgroundProperty().bind(
@@ -491,8 +494,16 @@ abstract class ScoreObjectView(
     }
 
     fun updateInlineControlsVisibility() {
-        if (scene == null || !inlineControls.isVisible) return
-        updateInlineControlsVisibility(inlineControls, prefWidth)
+        if (scene == null || _inlineControls?.isVisible == false) return
+        if (prefWidth <= 40.0) {
+            if (_inlineControls in children) children.remove(inlineControls)
+        } else {
+            if (_inlineControls == null) {
+                setupInlineControls()
+            }
+            if (inlineControls !in children) children.add(inlineControls)
+            updateInlineControlsVisibility(inlineControls, prefWidth)
+        }
     }
 
     private fun updateInlineControlsVisibility(box: HBox, availableWidth: Double) {

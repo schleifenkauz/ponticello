@@ -19,9 +19,9 @@ class TaskObjectView(override val obj: TaskObject, inst: ScoreObjectInstance) : 
         styleClass("task-object")
     }
 
-    override fun getDisplayWidth(): Double = inlineControls.prefWidth(-1.0)
+    override fun getDisplayWidth(): Double = inlineNameLabel.prefWidth(-1.0)
 
-    override fun getDisplayHeight(): Double = inlineControls.prefHeight(-1.0)
+    override fun getDisplayHeight(): Double = inlineNameLabel.prefHeight(-1.0)
 
     override fun setupDetailPane(pane: DetailPane) {
         pane.addLargeItem("Code: ", this.codeArea)

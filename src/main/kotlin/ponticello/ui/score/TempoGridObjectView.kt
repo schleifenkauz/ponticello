@@ -54,11 +54,14 @@ class TempoGridObjectView(override val obj: TempoGridObject, inst: ScoreObjectIn
     override fun initialize() {
         super.initialize()
         marker.visibleProperty().bind(context.project.uiState.snapEnabled.asObservableValue())
-        inlineControls.children.add(0, hspace(20.0)) //to avoid collision of name label with bar number
         repaint()
         val settings = context.project.uiState
         snapObserver = settings.snapOption.observe { _ -> repaint() }
             .and(settings.snapEnabled.observe { _ -> repaint() })
+    }
+
+    override fun configureInlineControls() {
+        inlineControls.children.add(0, hspace(20.0)) //to avoid collision of name label with bar number
     }
 
     override fun setupDetailPane(pane: DetailPane) {

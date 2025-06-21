@@ -8,6 +8,7 @@ import javafx.scene.input.MouseEvent
 import ponticello.impl.*
 import ponticello.model.flow.AudioFlowGroup
 import ponticello.model.flow.AudioFlows
+import ponticello.model.player.ScorePlayer
 import ponticello.model.score.Score
 import ponticello.ui.controls.NamePrompt
 import kotlin.math.exp
@@ -24,7 +25,9 @@ class NavigableScorePane(score: Score, context: Context) : RootScorePane(score, 
     init {
         styleClass.add("score-view")
         heightProperty().addListener { _ -> repaint() }
-//        widthProperty().addListener { _ -> repaint() }
+        widthProperty().addListener { _ ->
+            context[ScorePlayer.CURRENT].playHead.updatePosition()
+        }
     }
 
     fun displayWholeScore() {

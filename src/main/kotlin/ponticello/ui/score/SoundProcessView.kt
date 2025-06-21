@@ -7,7 +7,6 @@ import fxutils.disableIf
 import fxutils.drag.setupDropArea
 import fxutils.prompt.DetailPane
 import fxutils.styleClass
-import javafx.beans.property.SimpleDoubleProperty
 import javafx.geometry.Point2D
 import javafx.scene.layout.*
 import javafx.scene.paint.Color
@@ -31,13 +30,11 @@ import ponticello.ui.registry.InstrumentRegistryPane
 import ponticello.ui.registry.SearchableParameterDefListView
 import reaktive.Observer
 import reaktive.and
-import reaktive.value.ReactiveValue
-import reaktive.value.binding.*
+import reaktive.value.*
+import reaktive.value.binding.flatMap
+import reaktive.value.binding.map
+import reaktive.value.binding.not
 import reaktive.value.fx.asObservableValue
-import reaktive.value.fx.asReactiveValue
-import reaktive.value.now
-import reaktive.value.reactiveValue
-import reaktive.value.reactiveVariable
 
 class SoundProcessView(
     override val obj: SoundProcess, instance: ScoreObjectInstance,
@@ -48,6 +45,7 @@ class SoundProcessView(
     private val attackReleaseOverlay = AttackReleaseOverlay(this)
     private val lfoCanvases = mutableMapOf<NamedParameterControl, LFOCanvas>()
     private lateinit var lfosObserver: Observer
+    private lateinit var controlsDisplayObserver: Observer
 
     override val defaultBackgroundColor: ReactiveValue<Color>
         get() = obj.instrumentSelector.result.flatMap { ref -> ref.get()?.color ?: reactiveValue(Color.GRAY) }
@@ -74,13 +72,6 @@ class SoundProcessView(
     }
 
     private fun initializeObjectPane() {
-        val controlsDisplay = context[UIState].controlsDisplay
-        objectPane.layoutYProperty().bind(
-            controlsDisplay.equalTo(InlineControlsDisplay.CONTROLS_BAR)
-                .and(inlineControls.visibleProperty().asReactiveValue())
-                .asObservableValue()
-                .flatMap { bar -> if (bar) inlineControls.heightProperty() else SimpleDoubleProperty(0.0) }
-        )
         objectPane.prefWidthProperty().bind(prefWidthProperty())
         objectPane.prefHeightProperty().bind(prefHeightProperty().subtract(objectPane.layoutYProperty()))
         objectPane.heightProperty().addListener { _, _, _ -> rescale() }
@@ -88,6 +79,17 @@ class SoundProcessView(
             Background(BackgroundFill(color, CornerRadii.EMPTY, null))
         }.asObservableValue())
         children.add(0, objectPane)
+
+        val controlsDisplay = context[UIState].controlsDisplay
+        controlsDisplayObserver = controlsDisplay.forEach { display ->
+            if (display == InlineControlsDisplay.CONTROLS_BAR) {
+                setupInlineControls()
+                objectPane.layoutYProperty().bind(inlineControls.heightProperty())
+            } else {
+                objectPane.layoutYProperty().unbind()
+                objectPane.layoutY = 0.0
+            }
+        }
     }
 
     override fun setupDetailPane(pane: DetailPane) {

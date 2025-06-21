@@ -40,11 +40,7 @@ class PlayHead(private val pane: ScorePane) {
 
     fun updatePosition() {
         if (!pane.children.contains(playHead)) pane.children.add(playHead)
-        playHead.layoutX = pane.getX(currentTime) + PLAY_HEAD_WIDTH
-    }
-
-    fun advance(dt: Decimal) {
-        movePlayHead(currentTime + dt)
+        playHead.layoutX = pane.getX(currentTime)
     }
 
     companion object {
