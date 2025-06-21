@@ -7,6 +7,9 @@ import fxutils.controls.CheckBox
 import fxutils.label
 import fxutils.opacity
 import fxutils.undo.UndoManager
+import fxutils.undo.VariableEdit
+import hextant.context.Context
+import hextant.context.compoundEdit
 import javafx.scene.Node
 import javafx.scene.layout.Region
 import org.kordamp.ikonli.evaicons.Evaicons
@@ -45,7 +48,8 @@ data object BufferControlType : ControlType<BufferControl>() {
         namedControl: ParameterControlList.NamedParameterControl,
         control: BufferControl,
     ): Node {
-        val spec = namedControl.spec.now as? BufferControlSpec ?: return label("Invalid spec for ${namedControl.name.now} control")
+        val spec = namedControl.spec.now as? BufferControlSpec
+            ?: return label("Invalid spec for ${namedControl.name.now} control")
         val editor = BufferSelector()
         editor.setFilter(spec.channels)
         editor.syncWith(control.sample)
@@ -68,6 +72,34 @@ data object BufferControlType : ControlType<BufferControl>() {
         val selected = SearchableBufferListView(obj.context[BufferRegistry], title, channels = spec.channels)
             .showPopup(anchorNode, initialOption = null)
         return BufferControl(reactiveVariable(selected?.reference() ?: ObjectReference.none()), display)
+    }
+
+    override fun supportsDialogInput(): Boolean = true
+
+    override fun showDialogInput(
+        parameterName: String, specs: List<ControlSpec>, controls: List<BufferControl>, context: Context,
+    ) {
+        val bufferSpecs = specs.filterIsInstance<BufferControlSpec>()
+        if (bufferSpecs.size != specs.size) {
+            Logger.warn("Some specs are not BufferControlSpec", Logger.Category.Score)
+            return
+        }
+        val channels = bufferSpecs.map { it.channels }.distinct().singleOrNull()
+        if (channels == null) {
+            Logger.warn("Some BufferControlSpec do not have the same number of channels", Logger.Category.Score)
+            return
+        }
+        val initialOption = controls.map { ctrl -> ctrl.sample.now }.distinct().singleOrNull()?.get()
+        val newBuffer = SearchableBufferListView(context[BufferRegistry], "Choose $parameterName", channels)
+            .showPopup(null, initialOption) ?: return
+        context.compoundEdit("Update $parameterName") {
+            for (ctrl in controls) {
+                VariableEdit.updateVariable(
+                    ctrl.sample, newBuffer.reference(),
+                    context[UndoManager], "Update $parameterName"
+                )
+            }
+        }
     }
 
     override fun actions(

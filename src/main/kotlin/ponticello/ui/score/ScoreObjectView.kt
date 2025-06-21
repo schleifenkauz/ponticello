@@ -38,7 +38,7 @@ import ponticello.model.registry.reference
 import ponticello.model.score.*
 import ponticello.model.score.Score.Companion.rootScore
 import ponticello.ui.actions.ObjectActionContext
-import ponticello.ui.actions.ObjectActions
+import ponticello.ui.actions.ScoreObjectActions
 import ponticello.ui.controls.InlineParameterControlsBar
 import ponticello.ui.controls.NameControl
 import ponticello.ui.dock.AppLayout
@@ -111,12 +111,12 @@ abstract class ScoreObjectView(
             val headerBox = HBox(
                 5.0,
                 NameControl(obj).setFixedWidth(150.0),
-                ActionBar(ObjectActions.singleObjectActions.withContext(ctx), buttonStyle = "medium-icon-button"),
+                ActionBar(ScoreObjectActions.singleObjectActions.withContext(ctx), buttonStyle = "medium-icon-button"),
                 infiniteSpace(),
                 ActionBar(extraActions, buttonStyle = "medium-icon-button"),
             ).centerChildren().pad(8.0)
             detailPane.children.add(headerBox)
-            detailPane.registerShortcuts(ObjectActions.all.withContext(ctx))
+            detailPane.registerShortcuts(ScoreObjectActions.all.withContext(ctx))
             if (obj.canResizeHorizontally) {
                 val durationLabel = label(obj.duration().map { dur ->
                     "${dur.round(2).toCanonicalString()} seconds"
@@ -149,7 +149,7 @@ abstract class ScoreObjectView(
         )
         inlineControls.children.add(inlineNameLabel)
         inlineControls.children.add(infiniteSpace())
-        val actions = ObjectActions.multiObjectActions.withContext(ObjectActionContext.SingleObjectContext(this))
+        val actions = ScoreObjectActions.multiObjectActions.withContext(ObjectActionContext.SingleObjectContext(this))
         inlineActionBar = ActionBar(actions, buttonStyle = "small-icon-button")
         inlineActionBar.cursor = Cursor.DEFAULT
         inlineControls.children.add(inlineActionBar)

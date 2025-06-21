@@ -20,7 +20,7 @@ import ponticello.model.project.PonticelloProject
 import ponticello.model.score.ScoreObject
 import ponticello.ui.actions.ArrowKeys
 import ponticello.ui.actions.ObjectActionContext
-import ponticello.ui.actions.ObjectActions
+import ponticello.ui.actions.ScoreObjectActions
 import ponticello.ui.dock.Side
 import ponticello.ui.dock.ToolPane
 import ponticello.ui.dock.ToolPaneState
@@ -31,9 +31,6 @@ import ponticello.ui.score.ScoreObjectSelectionManager
 import ponticello.ui.score.ScoreObjectView
 import reaktive.Observer
 import reaktive.value.binding.map
-import kotlin.collections.firstOrNull
-import kotlin.collections.listOf
-import kotlin.collections.mutableMapOf
 import kotlin.collections.set
 
 class ScoreObjectDetailPane : ToolPane() {
@@ -139,7 +136,7 @@ class ScoreObjectDetailPane : ToolPane() {
 
     private fun addActions(view: ScoreObjectView, pane: StackPane) {
         val ctx = ObjectActionContext.SingleObjectContext(view)
-        val actions = ObjectActions.singleObjectActions.withContext(ctx)
+        val actions = ScoreObjectActions.singleObjectActions.withContext(ctx)
         pane.registerShortcuts(actions)
     }
 

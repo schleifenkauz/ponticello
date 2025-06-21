@@ -105,7 +105,7 @@ class PonticelloMainActivity(val project: PonticelloProject) : Activity() {
         registerActions(ScoreNavigationActions.withContext(mainScoreView))
         interactionConfig.addGridRelatedShortcuts(this)
         val objectCtx = ObjectActionContext.MultiObjectContext(context[ScoreObjectSelectionManager])
-        registerActions(ObjectActions.all.withContext(objectCtx))
+        registerActions(ScoreObjectActions.all.withContext(objectCtx))
         SelectionRelatedActions.addShortcuts(this, context)
         registerActions(appLayout.actions())
     }

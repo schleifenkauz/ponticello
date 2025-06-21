@@ -3,6 +3,7 @@ package ponticello.ui.controls
 import fxutils.SubWindow
 import fxutils.actions.ContextualizedAction
 import fxutils.actions.action
+import hextant.context.Context
 import javafx.scene.Node
 import javafx.scene.layout.Region
 import org.kordamp.ikonli.material2.Material2AL
@@ -25,6 +26,12 @@ sealed class ControlType<C : ParameterControl> {
     open fun onSelected(namedControl: NamedParameterControl, control: C, view: ScoreObjectView?) {}
 
     open fun createSimpleInput(namedControl: NamedParameterControl, control: C): Node? = null
+
+    open fun supportsDialogInput(): Boolean = false
+
+    open fun showDialogInput(parameterName: String, specs: List<ControlSpec>, controls: List<C>, context: Context) {
+        throw AssertionError("Dialog input not supported for control type $this")
+    }
 
     open fun actions(
         namedControl: NamedParameterControl, control: C, view: ScoreObjectView?,

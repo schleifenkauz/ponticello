@@ -17,6 +17,7 @@ import ponticello.model.project.InlineControlsDisplay
 import ponticello.model.project.UIState
 import ponticello.model.registry.ScoreObjectRegistry
 import ponticello.model.score.*
+import ponticello.ui.controls.MultiObjectControlPopup
 import ponticello.ui.controls.RenamePrompt
 import ponticello.ui.dock.AppLayout
 import ponticello.ui.impl.showDialog
@@ -29,7 +30,7 @@ import reaktive.value.binding.*
 import reaktive.value.reactiveValue
 import reaktive.value.toggle
 
-object ObjectActions {
+object ScoreObjectActions {
     val multiObjectActions = collectActions {
         addObjectAction("Remove objects") {
             description("Remove the selected object instances")
@@ -83,6 +84,21 @@ object ObjectActions {
             executes { ctx, _ ->
                 val selector = ctx.context[ScoreObjectSelectionManager]
                 selector.setSystemClipboard(ctx.selectedViews.map { v -> v.instance })
+            }
+        }
+        addObjectAction("Open Multi-Object edit popup") {
+            shortcut("Alt?+O")
+            executes { ctx, _ ->
+                if (ctx.selectedObjects.isEmpty()) {
+                    Logger.info("No object selected", Logger.Category.Score)
+                    return@executes
+                }
+                val soundProcesses = ctx.selectedObjects.filterIsInstance<SoundProcess>()
+                if (soundProcesses.size != ctx.selectedObjects.size) {
+                    Logger.warn("Some selected objects are not sound processes", Logger.Category.Score)
+                    return@executes
+                }
+                MultiObjectControlPopup.show(ctx.context, soundProcesses)
             }
         }
     }

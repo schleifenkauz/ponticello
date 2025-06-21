@@ -2,10 +2,14 @@ package ponticello.ui.controls
 
 import fxutils.actions.ContextualizedAction
 import fxutils.actions.action
+import fxutils.undo.UndoManager
+import fxutils.undo.VariableEdit
+import hextant.context.Context
 import hextant.context.compoundEdit
 import javafx.scene.Node
 import javafx.scene.layout.Region
 import org.kordamp.ikonli.materialdesign2.MaterialDesignS
+import ponticello.impl.Logger
 import ponticello.impl.asY
 import ponticello.model.obj.ParameterizedObject
 import ponticello.model.project.mainScore
@@ -23,6 +27,7 @@ import ponticello.sc.ControlSpec
 import ponticello.sc.NumericalControlSpec
 import ponticello.sc.Rate
 import ponticello.ui.actions.ServerActions
+import ponticello.ui.launcher.PonticelloApp.Companion.primaryStage
 import ponticello.ui.launcher.PonticelloLauncher
 import ponticello.ui.registry.SearchableBusListView
 import ponticello.ui.registry.SimpleSearchableRegistryView
@@ -56,6 +61,30 @@ data object BusValueControlType : ControlType<BusValueControl>() {
         val selected = SearchableBusListView(obj.context[BusRegistry], title, rate = Rate.Control, channels = 1)
             .showPopup(anchorNode, initialOption = initial.get()) ?: initial.force()
         return BusValueControl(reactiveVariable(selected.reference()))
+    }
+
+    override fun supportsDialogInput(): Boolean = true
+
+    override fun showDialogInput(
+        parameterName: String, specs: List<ControlSpec>, controls: List<BusValueControl>, context: Context,
+    ) {
+        for (spec in specs) {
+            if (spec !is NumericalControlSpec) {
+                Logger.warn("Some specs are not NumericalControlSpec", Logger.Category.Score)
+                return
+            }
+        }
+        val initialOption = controls.map { ctrl -> ctrl.bus.now }.distinct().singleOrNull()?.get()
+        val newBus = SearchableBusListView(context[BusRegistry], "Choose $parameterName", Rate.Control, 1)
+            .showPopup(context[primaryStage], null, initialOption) ?: return
+        context.compoundEdit("Update $parameterName") {
+            for (ctrl in controls) {
+                VariableEdit.updateVariable(
+                    ctrl.bus, newBus.reference(),
+                    context[UndoManager], "Update $parameterName"
+                )
+            }
+        }
     }
 
     override fun toString(): String = "Bus"

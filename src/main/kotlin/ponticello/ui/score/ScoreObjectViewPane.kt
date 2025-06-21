@@ -50,7 +50,7 @@ class ScoreObjectViewPane private constructor(val obj: ScoreObject) : VBox() {
         registerShortcuts {
             SelectionRelatedActions.addShortcuts(this, context)
             val ctx = ObjectActionContext.MultiObjectContext(selector)
-            registerActions(ObjectActions.all.withContext(ctx))
+            registerActions(ScoreObjectActions.all.withContext(ctx))
             registerActions(ScoreObjectRegistryPane.actions.withContext(obj))
             registerActions(PlaybackActions.local.withContext(player))
             registerActions(listOf(showDetailPaneAction.withContext(this@ScoreObjectViewPane)))

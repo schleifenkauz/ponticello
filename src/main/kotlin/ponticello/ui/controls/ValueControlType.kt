@@ -9,12 +9,16 @@ import fxutils.label
 import fxutils.opacity
 import fxutils.undo.UndoManager
 import fxutils.undo.VariableEdit
+import hextant.context.Context
+import hextant.context.compoundEdit
 import javafx.scene.Cursor
 import javafx.scene.Node
 import javafx.scene.control.Label
 import javafx.scene.input.MouseButton
 import javafx.scene.layout.Region
 import ponticello.impl.Decimal
+import ponticello.impl.DecimalRange
+import ponticello.impl.Logger
 import ponticello.model.obj.ParameterizedObject
 import ponticello.model.score.ParameterControlList.NamedParameterControl
 import ponticello.model.score.controls.ParameterControl
@@ -25,6 +29,7 @@ import ponticello.sc.NumericalControlSpec
 import ponticello.sc.Transformation
 import ponticello.sc.mapOnto
 import ponticello.ui.impl.DEFAULT_SCENE_FILL
+import ponticello.ui.launcher.PonticelloApp.Companion.primaryStage
 import ponticello.ui.score.ScoreObjectView
 import reaktive.value.binding.map
 import reaktive.value.now
@@ -64,6 +69,33 @@ data object ValueControlType : ControlType<ValueControl>() {
             }
         }
         return valueLabel
+    }
+
+    override fun supportsDialogInput(): Boolean = true
+
+    override fun showDialogInput(
+        parameterName: String, specs: List<ControlSpec>, controls: List<ValueControl>, context: Context
+    ) {
+        val numericalSpecs = specs.filterIsInstance<NumericalControlSpec>()
+        if (numericalSpecs.size != specs.size) {
+            Logger.warn("Some specs are not numerical control specs", Logger.Category.Score)
+            return
+        }
+        val min = numericalSpecs.maxOf { spec -> spec.min.get() }
+        val max = numericalSpecs.minOf { spec -> spec.max.get() }
+        if (min > max) {
+            Logger.warn("Invalid numerical range: $min > $max", Logger.Category.Score)
+            return
+        }
+        val precision = numericalSpecs.maxOf { spec -> spec.precision }
+        val initialValue = controls.map { c -> c.value.now }.distinct().singleOrNull()
+        val newValue = DecimalPrompt(parameterName, precision, initialValue, DecimalRange(min, max))
+            .showDialog(context[primaryStage], null) ?: return
+        context.compoundEdit("Update $parameterName") {
+            for (ctrl in controls) {
+                VariableEdit.updateVariable(ctrl.value, newValue, ctrl.context[UndoManager], "Update $parameterName")
+            }
+        }
     }
 
     private const val DRAG_RANGE = 300.0
