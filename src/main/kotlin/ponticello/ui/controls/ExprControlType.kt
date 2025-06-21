@@ -36,13 +36,13 @@ data object ExprControlType : ControlType<ExprControl>() {
     override fun createInitialControl(
         obj: ParameterizedObject,
         spec: ControlSpec?,
-        oldControl: ParameterControl,
-        namedControl: NamedParameterControl,
-        anchorNode: Region,
+        oldControl: ParameterControl?,
+        parameterName: String,
+        anchorNode: Region?,
     ): ExprControl {
         val editor = ScExprExpander()
         val root = EditorRoot(editor)
-        if (oldControl.getNumericalValue() != null) {
+        if (oldControl?.getNumericalValue() != null) {
             editor.setInitialText(oldControl.getNumericalValue().toString())
         } else editor.setInitialText("")
         return ExprControl(root)

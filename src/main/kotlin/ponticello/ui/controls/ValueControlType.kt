@@ -33,7 +33,6 @@ import ponticello.ui.launcher.PonticelloApp.Companion.primaryStage
 import ponticello.ui.score.ScoreObjectView
 import reaktive.value.binding.map
 import reaktive.value.now
-import reaktive.value.reactiveVariable
 
 data object ValueControlType : ControlType<ValueControl>() {
     override fun applicableOn(obj: ParameterizedObject, spec: ControlSpec): Boolean =
@@ -75,27 +74,28 @@ data object ValueControlType : ControlType<ValueControl>() {
 
     override fun showDialogInput(
         parameterName: String, specs: List<ControlSpec>, controls: List<ValueControl>, context: Context
-    ) {
+    ): Boolean {
         val numericalSpecs = specs.filterIsInstance<NumericalControlSpec>()
         if (numericalSpecs.size != specs.size) {
             Logger.warn("Some specs are not numerical control specs", Logger.Category.Score)
-            return
+            return false
         }
         val min = numericalSpecs.maxOf { spec -> spec.min.get() }
         val max = numericalSpecs.minOf { spec -> spec.max.get() }
         if (min > max) {
             Logger.warn("Invalid numerical range: $min > $max", Logger.Category.Score)
-            return
+            return false
         }
         val precision = numericalSpecs.maxOf { spec -> spec.precision }
         val initialValue = controls.map { c -> c.value.now }.distinct().singleOrNull()
         val newValue = DecimalPrompt(parameterName, precision, initialValue, DecimalRange(min, max))
-            .showDialog(context[primaryStage], null) ?: return
+            .showDialog(context[primaryStage], null) ?: return false
         context.compoundEdit("Update $parameterName") {
             for (ctrl in controls) {
-                VariableEdit.updateVariable(ctrl.value, newValue, ctrl.context[UndoManager], "Update $parameterName")
+                VariableEdit.updateVariable(ctrl.value, newValue, context[UndoManager], "Update $parameterName")
             }
         }
+        return true
     }
 
     private const val DRAG_RANGE = 300.0
@@ -137,12 +137,13 @@ data object ValueControlType : ControlType<ValueControl>() {
     override fun createInitialControl(
         obj: ParameterizedObject,
         spec: ControlSpec?,
-        oldControl: ParameterControl,
-        namedControl: NamedParameterControl,
-        anchorNode: Region,
+        oldControl: ParameterControl?,
+        parameterName: String,
+        anchorNode: Region?,
     ): ValueControl {
         spec as NumericalControlSpec
-        return ValueControl(reactiveVariable(oldControl.getNumericalValue() ?: spec.defaultValue.get()))
+        val value = oldControl?.getNumericalValue() ?: spec.defaultValue.get()
+        return ValueControl.create(value)
     }
 
     override fun actions(

@@ -51,7 +51,8 @@ class InlineParameterControlsBar(
             if (display) {
                 val index = children.binarySearchBy(idx) { b -> controls.indexOf(controlMap[b]) }
                 if (index < 0) children.add(-index - 1, box)
-                else {}
+                else {
+                }
             } else {
                 children.remove(box)
             }
@@ -116,8 +117,11 @@ class InlineParameterControlsBar(
         control: NamedParameterControl, option: ControlType<T>, spec: ControlSpec, anchorNode: Region,
     ) {
         val oldControl = control.now
-        val newControl = option.createInitialControl(controls.associatedObject, spec, oldControl, control, anchorNode)
-        controls.reassignControl(control.name.now, newControl)
+        val parameterName = control.name.now
+        val newControl = option.createInitialControl(
+            controls.associatedObject, spec, oldControl, parameterName, anchorNode
+        )
+        controls.reassignControl(parameterName, newControl)
         option.onSelected(control, newControl, view)
     }
 }

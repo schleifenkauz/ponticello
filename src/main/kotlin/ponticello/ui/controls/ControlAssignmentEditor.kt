@@ -71,7 +71,7 @@ class ControlAssignmentEditor(val control: NamedParameterControl, val view: Scor
         selectedOption = t
         val oldControl = control.now
         val newControl = t.createInitialControl(
-            control.parentObject, control.spec.now, oldControl, control, anchorNode = optionButton
+            control.parentObject, control.spec.now, oldControl, control.name.now, anchorNode = optionButton
         )
         control.reassign(newControl)
         t.onSelected(control, newControl, view)

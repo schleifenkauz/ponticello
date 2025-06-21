@@ -40,12 +40,12 @@ data object EnvelopeControlType : ControlType<EnvelopeControl>() {
     override fun createInitialControl(
         obj: ParameterizedObject,
         spec: ControlSpec?,
-        oldControl: ParameterControl,
-        namedControl: ParameterControlList.NamedParameterControl,
-        anchorNode: Region,
+        oldControl: ParameterControl?,
+        parameterName: String,
+        anchorNode: Region?,
     ): EnvelopeControl {
         spec as NumericalControlSpec
-        val value = oldControl.getNumericalValue() ?: spec.defaultValue.get()
+        val value = oldControl?.getNumericalValue() ?: spec.defaultValue.get()
         val duration = (obj as? ScoreObject)?.duration ?: 1.0.asTime
         val env = ponticello.model.score.Envelope.constant(value, duration)
         val displayColor = reactiveVariable(spec.associatedColor)

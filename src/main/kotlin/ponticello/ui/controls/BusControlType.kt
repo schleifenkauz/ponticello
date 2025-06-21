@@ -40,37 +40,38 @@ data object BusControlType : ControlType<BusControl>() {
     override fun createInitialControl(
         obj: ParameterizedObject,
         spec: ControlSpec?,
-        oldControl: ParameterControl,
-        namedControl: ParameterControlList.NamedParameterControl,
-        anchorNode: Region,
+        oldControl: ParameterControl?,
+        parameterName: String,
+        anchorNode: Region?,
     ): BusControl {
-        val initial = oldControl.getBus() ?: obj.context[BusRegistry].getDefault().reference()
-        return BusControl(reactiveVariable(initial))
+        spec as BusControlSpec
+        val bus = oldControl?.getBus() ?: obj.context[BusRegistry].getDefault().reference()
+        return BusControl(reactiveVariable(bus))
     }
 
     override fun supportsDialogInput(): Boolean = true
 
     override fun showDialogInput(
         parameterName: String, specs: List<ControlSpec>, controls: List<BusControl>, context: Context,
-    ) {
+    ): Boolean {
         val busSpecs = specs.filterIsInstance<BusControlSpec>()
         if (busSpecs.size != specs.size) {
             Logger.warn("Some specs are not BusControlSpec", Logger.Category.Score)
-            return
+            return false
         }
         val channels = busSpecs.map { it.channels }.distinct().singleOrNull()
         if (channels == null) {
             Logger.warn("Some BusControlSpec do not have the same number of channels", Logger.Category.Score)
-            return
+            return false
         }
         val rate = busSpecs.map { it.rate }.distinct().singleOrNull()
         if (rate == null) {
             Logger.warn("Some BusControlSpec do not have the same rate", Logger.Category.Score)
-            return
+            return false
         }
         val initialOption = controls.map { ctrl -> ctrl.bus.now }.distinct().singleOrNull()?.get()
         val newBus = SearchableBusListView(context[BusRegistry], "Choose $parameterName", rate, channels)
-            .showPopup(context[primaryStage], null, initialOption) ?: return
+            .showPopup(context[primaryStage], null, initialOption) ?: return false
         context.compoundEdit("Update $parameterName") {
             for (ctrl in controls) {
                 VariableEdit.updateVariable(
@@ -79,6 +80,7 @@ data object BusControlType : ControlType<BusControl>() {
                 )
             }
         }
+        return true
     }
 
     override fun actions(

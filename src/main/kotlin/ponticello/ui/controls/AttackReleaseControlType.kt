@@ -77,9 +77,9 @@ data object AttackReleaseControlType : ControlType<AttackReleaseControl>() {
     override fun createInitialControl(
         obj: ParameterizedObject,
         spec: ControlSpec?,
-        oldControl: ParameterControl,
-        namedControl: ParameterControlList.NamedParameterControl,
-        anchorNode: Region,
+        oldControl: ParameterControl?,
+        parameterName: String,
+        anchorNode: Region?,
     ): AttackReleaseControl = AttackReleaseControl.createDefault()
 
     override fun toString(): String = "ASR"

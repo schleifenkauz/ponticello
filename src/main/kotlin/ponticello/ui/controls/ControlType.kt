@@ -17,8 +17,8 @@ sealed class ControlType<C : ParameterControl> {
     open fun applicableOn(obj: ParameterizedObject, spec: ControlSpec): Boolean = true
 
     abstract fun createInitialControl(
-        obj: ParameterizedObject, spec: ControlSpec?, oldControl: ParameterControl,
-        namedControl: NamedParameterControl, anchorNode: Region,
+        obj: ParameterizedObject, spec: ControlSpec?, oldControl: ParameterControl?,
+        parameterName: String, anchorNode: Region?,
     ): C
 
     abstract fun createDetailInput(namedControl: NamedParameterControl, control: C, view: ScoreObjectView?): Node
@@ -29,7 +29,9 @@ sealed class ControlType<C : ParameterControl> {
 
     open fun supportsDialogInput(): Boolean = false
 
-    open fun showDialogInput(parameterName: String, specs: List<ControlSpec>, controls: List<C>, context: Context) {
+    open fun showDialogInput(
+        parameterName: String, specs: List<ControlSpec>, controls: List<C>, context: Context,
+    ): Boolean {
         throw AssertionError("Dialog input not supported for control type $this")
     }
 

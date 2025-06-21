@@ -67,7 +67,7 @@ class BusRegistryPane(busses: BusRegistry) : ObjectRegistryPane<BusObject>(busse
 
     override fun afterSetup() {
         super.afterSetup()
-        header.children.addAfter(actionBar, filterSelector)
+        header.children.addAfter(searchText, filterSelector)
     }
 
     override fun saveState(dest: ToolPaneState) {

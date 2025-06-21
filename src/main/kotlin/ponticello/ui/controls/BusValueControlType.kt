@@ -15,6 +15,7 @@ import ponticello.model.obj.ParameterizedObject
 import ponticello.model.project.mainScore
 import ponticello.model.registry.BusRegistry
 import ponticello.model.registry.InstrumentRegistry
+import ponticello.model.registry.ObjectReference
 import ponticello.model.registry.reference
 import ponticello.model.score.ParameterControlList
 import ponticello.model.score.ScoreObject
@@ -52,12 +53,13 @@ data object BusValueControlType : ControlType<BusValueControl>() {
     override fun createInitialControl(
         obj: ParameterizedObject,
         spec: ControlSpec?,
-        oldControl: ParameterControl,
-        namedControl: ParameterControlList.NamedParameterControl,
-        anchorNode: Region,
+        oldControl: ParameterControl?,
+        parameterName: String,
+        anchorNode: Region?,
     ): BusValueControl {
-        val initial = oldControl.getBus() ?: obj.context[BusRegistry].getDefault().reference()
-        val title = "Select '${namedControl.name.now}'"
+        if (anchorNode == null) return BusValueControl(reactiveVariable(ObjectReference.none()))
+        val initial = oldControl?.getBus() ?: obj.context[BusRegistry].getDefault().reference()
+        val title = "Select '${parameterName}'"
         val selected = SearchableBusListView(obj.context[BusRegistry], title, rate = Rate.Control, channels = 1)
             .showPopup(anchorNode, initialOption = initial.get()) ?: initial.force()
         return BusValueControl(reactiveVariable(selected.reference()))
@@ -67,16 +69,16 @@ data object BusValueControlType : ControlType<BusValueControl>() {
 
     override fun showDialogInput(
         parameterName: String, specs: List<ControlSpec>, controls: List<BusValueControl>, context: Context,
-    ) {
+    ): Boolean {
         for (spec in specs) {
             if (spec !is NumericalControlSpec) {
                 Logger.warn("Some specs are not NumericalControlSpec", Logger.Category.Score)
-                return
+                return false
             }
         }
         val initialOption = controls.map { ctrl -> ctrl.bus.now }.distinct().singleOrNull()?.get()
         val newBus = SearchableBusListView(context[BusRegistry], "Choose $parameterName", Rate.Control, 1)
-            .showPopup(context[primaryStage], null, initialOption) ?: return
+            .showPopup(context[primaryStage], null, initialOption) ?: return false
         context.compoundEdit("Update $parameterName") {
             for (ctrl in controls) {
                 VariableEdit.updateVariable(
@@ -85,6 +87,7 @@ data object BusValueControlType : ControlType<BusValueControl>() {
                 )
             }
         }
+        return true
     }
 
     override fun toString(): String = "Bus"

@@ -47,13 +47,13 @@ data object UGenControlType : ControlType<UGenControl>() {
     override fun createInitialControl(
         obj: ParameterizedObject,
         spec: ControlSpec?,
-        oldControl: ParameterControl,
-        namedControl: ParameterControlList.NamedParameterControl,
-        anchorNode: Region,
+        oldControl: ParameterControl?,
+        parameterName: String,
+        anchorNode: Region?,
     ): UGenControl {
         val editor = ScExprExpander()
         val root = EditorRoot(editor)
-        if (oldControl.getNumericalValue() != null) {
+        if (oldControl?.getNumericalValue() != null) {
             editor.setInitialText(oldControl.getNumericalValue().toString())
         } else editor.setInitialText("")
         return UGenControl(root)

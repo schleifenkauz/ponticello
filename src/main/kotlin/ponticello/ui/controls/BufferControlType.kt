@@ -62,13 +62,14 @@ data object BufferControlType : ControlType<BufferControl>() {
     override fun createInitialControl(
         obj: ParameterizedObject,
         spec: ControlSpec?,
-        oldControl: ParameterControl,
-        namedControl: ParameterControlList.NamedParameterControl,
-        anchorNode: Region,
+        oldControl: ParameterControl?,
+        parameterName: String,
+        anchorNode: Region?,
     ): BufferControl {
+        if (anchorNode == null) return BufferControl(reactiveVariable(ObjectReference.none()))
         spec as BufferControlSpec
         val display = reactiveVariable(spec.isPlayBufSource)
-        val title = "Select '${namedControl.name.now}'"
+        val title = "Select '${parameterName}'"
         val selected = SearchableBufferListView(obj.context[BufferRegistry], title, channels = spec.channels)
             .showPopup(anchorNode, initialOption = null)
         return BufferControl(reactiveVariable(selected?.reference() ?: ObjectReference.none()), display)
@@ -78,20 +79,20 @@ data object BufferControlType : ControlType<BufferControl>() {
 
     override fun showDialogInput(
         parameterName: String, specs: List<ControlSpec>, controls: List<BufferControl>, context: Context,
-    ) {
+    ): Boolean {
         val bufferSpecs = specs.filterIsInstance<BufferControlSpec>()
         if (bufferSpecs.size != specs.size) {
             Logger.warn("Some specs are not BufferControlSpec", Logger.Category.Score)
-            return
+            return false
         }
         val channels = bufferSpecs.map { it.channels }.distinct().singleOrNull()
         if (channels == null) {
             Logger.warn("Some BufferControlSpec do not have the same number of channels", Logger.Category.Score)
-            return
+            return false
         }
         val initialOption = controls.map { ctrl -> ctrl.sample.now }.distinct().singleOrNull()?.get()
         val newBuffer = SearchableBufferListView(context[BufferRegistry], "Choose $parameterName", channels)
-            .showPopup(null, initialOption) ?: return
+            .showPopup(null, initialOption) ?: return false
         context.compoundEdit("Update $parameterName") {
             for (ctrl in controls) {
                 VariableEdit.updateVariable(
@@ -100,6 +101,7 @@ data object BufferControlType : ControlType<BufferControl>() {
                 )
             }
         }
+        return true
     }
 
     override fun actions(
