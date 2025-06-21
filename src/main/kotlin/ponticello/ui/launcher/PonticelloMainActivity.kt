@@ -112,6 +112,7 @@ class PonticelloMainActivity(val project: PonticelloProject) : Activity() {
 
     override fun close() {
         context[SuperColliderClient].quit()
+        project[CLOCKS].stopAll()
         //TODO is there more cleanup to do?
     }
 

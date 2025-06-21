@@ -19,6 +19,12 @@ class ClockRegistry(override val objects: MutableList<ClockObject>) : ObjectRegi
 
     override fun getDefault(): ClockObject = get("default")
 
+    fun stopAll() {
+        for (clock in objects) {
+            clock.dispose()
+        }
+    }
+
     companion object: PublicProperty<ClockRegistry> by publicProperty("ClockRegistry") {
         fun createDefault() = ClockRegistry(mutableListOf(ClockObject.withName("default")))
     }

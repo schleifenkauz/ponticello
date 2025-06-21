@@ -76,19 +76,27 @@ class ClockObject(
 
     override fun run() {
         var lastTime = System.currentTimeMillis()
-        while (true) {
+        while (!Thread.interrupted()) {
             val now = System.currentTimeMillis()
             val delta = (now - lastTime).toSeconds()
             lastTime = now
             if (!runClock) {
-                Thread.sleep(PERIOD_MS)
+                trySleep()
                 continue
             }
             synchronized(this) {
                 clockTime += delta * timeWarp.now
                 processEvents()
             }
+            trySleep()
+        }
+    }
+
+    private fun trySleep() {
+        try {
             Thread.sleep(PERIOD_MS)
+        } catch (e: InterruptedException) {
+            return
         }
     }
 
@@ -209,6 +217,10 @@ class ClockObject(
     @Synchronized
     fun detach(player: ScorePlayer, meter: MeterObject) {
         activeMeters.removeIf { active -> active.meter == meter && active.player == player }
+    }
+
+    fun dispose() {
+        thread.interrupt()
     }
 
     private data class ActivePlayer(
