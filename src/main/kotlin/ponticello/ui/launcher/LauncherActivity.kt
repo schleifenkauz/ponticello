@@ -79,7 +79,7 @@ class LauncherActivity(private val launcher: PonticelloLauncher) : Activity() {
             primaryStage.isResizable = false
             primaryStage.centerOnScreen()
         }
-        val actions = launcherActions.withContext(launcher) + WindowActions.quitAction.withContext(launcher)
+        val actions = launcherActions.withContext(launcher)
         primaryStage.scene.root.registerShortcuts(actions)
     }
 

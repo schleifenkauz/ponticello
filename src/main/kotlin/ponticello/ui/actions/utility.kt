@@ -21,7 +21,7 @@ import reaktive.value.now
 
 inline fun Action.Collector<ObjectActionContext>.addObjectAction(
     name: String,
-    body: Action.Builder<ObjectActionContext>.() -> Unit
+    body: Action.Builder<ObjectActionContext>.() -> Unit,
 ) {
     addAction(name) {
         enableWhen { ctx -> ctx.isApplicable(name) }
@@ -62,9 +62,14 @@ fun Scene.registerGlobalShortcuts(context: Context) {
     registerShortcuts {
         registerActions(PlaybackActions.global.withContext(context[ScorePlayer.CURRENT]))
         registerActions(ServerActions.withContext(context.project))
-        registerActions(ProjectActions.withContext(context[PonticelloLauncher]))
         registerActions(ProjectUtilityActions.withContext(context.project))
         registerActions(UndoRedoActions.withContext(context[UndoManager]))
+        registerActions(
+            listOf(
+                WindowActions.quitAction.withContext(context[PonticelloLauncher]),
+                ProjectActions.saveProject.withContext(context[PonticelloLauncher])
+            )
+        )
     }
 }
 

@@ -3,6 +3,7 @@ package ponticello.ui.launcher
 import bundles.set
 import fxutils.prompt.PredicateTextPrompt
 import fxutils.shortcut
+import hextant.command.Command
 import hextant.context.ControlFactory
 import hextant.context.SelectionDistributor
 import hextant.context.compoundEdit
@@ -149,6 +150,18 @@ object PonticelloHextantPlugin : PluginInitializer({
             selector.saveSelectionState()
             parent.replaceWith(editor.snapshot(), editDescription = "Unwrap expression")
             selector.restoreSelectionState()
+        }
+    }
+
+    registerCommand<ScExprEditor<*>, Unit> {
+        shortName = "toggle comment"
+        defaultShortcut = "Alt+D".shortcut
+        type = Command.Type.MultipleReceivers
+        name = "Toggle comment"
+        applicableIf { ed -> ed.expander is ScExprExpander }
+        executing { editor ->
+            val exp = editor.expander as? ScExprExpander ?: return@executing
+            exp.toggleDisabled()
         }
     }
 

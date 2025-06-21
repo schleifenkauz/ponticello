@@ -1,26 +1,30 @@
-.number {
+.simple-sc-expr:number {
     -fx-text-fill: #7d00ff !important;
 }
 
-.variable-ref {
+.simple-sc-expr:variable-ref {
     -fx-text-fill: white !important;
 }
 
-.class-ref {
+.simple-sc-expr:class-ref {
     -fx-text-fill: turquoise !important;
 }
 
-.env-ref {
+.simple-sc-expr:env-ref {
     -fx-text-fill: #ff7300;
 }
 
-.keyword {
+.keyword, .simple-sc-expr:keyword {
     -fx-text-fill: orange !important;
 }
 
-.unrecognized {
+.simple-sc-expr:unrecognized {
     -fx-text-fill: #810000 !important;
     -fx-underline: true;
+}
+
+.sc-expr:disabled {
+    -fx-opacity: 0.5;
 }
 
 .compound-expr {
@@ -85,9 +89,4 @@
 
 .horizontal-choice-editor {
     -fx-alignment: center-left;
-}
-
-.plugin {
-    -fx-border-color: white;
-    -fx-padding: 5px;
 }

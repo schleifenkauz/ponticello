@@ -1,13 +1,21 @@
 package ponticello.sc.editor
 
+import fxutils.undo.UndoManager
+import fxutils.undo.VariableEdit
 import hextant.command.Command
 import hextant.command.meta.ProvideCommand
 import hextant.core.editor.*
+import hextant.serial.parentChain
+import kotlinx.serialization.json.*
 import ponticello.model.ctx.PonticelloContext
 import ponticello.sc.*
+import reaktive.value.ReactiveVariable
 import reaktive.value.now
+import reaktive.value.reactiveVariable
 
 class ScExprExpander() : ConfiguredExpander<ScExpr, ScExprEditor<*>>(), ScExprEditor<ScExpr> {
+    val isDisabled: ReactiveVariable<Boolean> = reactiveVariable(false)
+
     init {
         configure(config)
     }
@@ -81,12 +89,54 @@ class ScExprExpander() : ConfiguredExpander<ScExpr, ScExprEditor<*>>(), ScExprEd
         }
     }
 
+    fun toggleDisabled() {
+        if (isDisabled.now) {
+            enable()
+        } else {
+            val disabledParent = parentChain()
+                .filterIsInstance<ScExprExpander>()
+                .firstOrNull { ed -> ed.isDisabled.now }
+            if (disabledParent != null) {
+                disabledParent.enable()
+            } else {
+                disable()
+            }
+        }
+    }
+
+    private fun enable() {
+        VariableEdit.updateVariable(isDisabled, false, context[UndoManager], "Uncomment expression")
+    }
+
+    private fun disable() {
+        VariableEdit.updateVariable(isDisabled, true, context[UndoManager], "Comment expression")
+    }
+
+    override fun onReset(editor: ScExprEditor<*>) {
+        isDisabled.set(false)
+    }
+
     override fun compile(token: String): ScExpr {
         Literal.compile(token).takeIf { it !is Invalid }?.let { return it }
         if (Identifier.isValid(token)) return Identifier(token)
         return when {
             token == "" -> EmptyExpr
             else -> UnrecognizedToken(token)
+        }
+    }
+
+    override fun serialize(): JsonElement {
+        return when (val element = super.serialize()) {
+            is JsonObject -> JsonObject(element + ("disabled" to JsonPrimitive(isDisabled.now)))
+
+            else -> element
+        }
+    }
+
+    override fun deserialize(element: JsonElement) {
+        super.deserialize(element)
+        if (element is JsonObject) {
+            isDisabled.set(element["disabled"]?.jsonPrimitive?.boolean ?: false)
         }
     }
 

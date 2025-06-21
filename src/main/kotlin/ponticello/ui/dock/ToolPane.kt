@@ -216,6 +216,11 @@ abstract class ToolPane : VBox() {
         stage.scene = Scene(StackPane(this))
         stage.scene.initHextantScene(context)
         stage.scene.registerGlobalShortcuts(context)
+        stage.scene.registerShortcuts {
+            on("Ctrl+W") {
+                setShowing(false)
+            }
+        }
         stage.sceneFill(DEFAULT_SCENE_FILL)
         stage.setOnHidden { ev ->
             showing.set(false)

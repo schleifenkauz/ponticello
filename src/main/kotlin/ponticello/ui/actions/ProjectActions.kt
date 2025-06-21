@@ -22,12 +22,14 @@ object ProjectActions : Action.Collector<PonticelloLauncher>() {
         executes { launcher: PonticelloLauncher -> launcher.createNewProject() }
     }
 
+    val saveProject = action("Save Project") {
+        icon(Material2MZ.SAVE)
+        shortcut("Ctrl+S")
+        executes { launcher: PonticelloLauncher -> launcher.saveProject() }
+    }
+
     init {
-        addAction("Save Project") {
-            icon(Material2MZ.SAVE)
-            shortcut("Ctrl+S")
-            executes { launcher: PonticelloLauncher -> launcher.saveProject() }
-        }
+        add(saveProject)
         add(openProject)
         add(newProject)
         addAction("Close Project") {

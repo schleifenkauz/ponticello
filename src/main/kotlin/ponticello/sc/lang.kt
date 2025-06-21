@@ -494,3 +494,15 @@ data class SpreadArray(val array: ScExpr) : ScExpr {
         array.code(writer, context)
     }
 }
+
+@Serializable
+data class DisabledExpr(val expr: ScExpr) : ScExpr {
+    override val isValid: Boolean
+        get() = true
+
+    override fun code(writer: ScWriter, context: Context) {
+        writer.append("/*")
+        expr.code(writer, context)
+        writer.append("*/")
+    }
+}
