@@ -111,7 +111,7 @@ class CustomizableSynthDefObject(
                         "Env.step([0, \\auto_release.kr(1)], [duration, 1]), " +
                         "index: Sweep.kr(rate: ~time_warp_bus.kr))"
             )
-            extraStatements.add("FreeSelf.kr(gate_env_)")
+            extraStatements.add("FreeSelf.kr(gate_env_ + (1 - \\gate.kr(1)))")
         }
         val statements = ugenGraph?.editor?.result?.now?.statements.orEmpty()
         val block = CodeBlock(

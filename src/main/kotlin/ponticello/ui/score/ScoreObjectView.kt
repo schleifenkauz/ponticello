@@ -140,6 +140,9 @@ abstract class ScoreObjectView(
         isInitialized = true
     }
 
+    protected open fun configureInlineControls() {
+    }
+
     private fun setupInlineControls() {
         inlineNameLabel = label(obj.name)
         val controlsDisplay = context[UIState].controlsDisplay
@@ -154,6 +157,7 @@ abstract class ScoreObjectView(
         inlineActionBar.cursor = Cursor.DEFAULT
         inlineControls.children.add(inlineActionBar)
         inlineControls.visibleProperty().bind(inlineControlsVisibilityCondition(controlsDisplay))
+        configureInlineControls()
         inlineControls.children.addListener(InvalidationListener { _ ->
             updateInlineControlsVisibility()
         })
@@ -487,6 +491,7 @@ abstract class ScoreObjectView(
     }
 
     fun updateInlineControlsVisibility() {
+        if (scene == null || !inlineControls.isVisible) return
         updateInlineControlsVisibility(inlineControls, prefWidth)
     }
 

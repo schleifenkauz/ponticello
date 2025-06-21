@@ -44,7 +44,9 @@ class ScoreObjectGroupView(
         }.asObservableValue())
         children.add(scorePane)
         scorePane.initialize()
+    }
 
+    override fun configureInlineControls() {
         inlineControls.children.addAfter(inlineNameLabel, moveButton)
         inlineControls.translateYProperty().bind(
             Bindings.`when`(layoutYProperty().greaterThan(inlineControls.heightProperty()))
