@@ -107,6 +107,7 @@ class PonticelloMainActivity(val project: PonticelloProject) : Activity() {
         registerActions(ScoreObjectActions.all.withContext(objectCtx))
         SelectionRelatedActions.addShortcuts(this, context)
         registerActions(ProjectActions.withContext(launcher))
+        registerActions(WindowActions.all.withContext(this@PonticelloMainActivity))
         registerActions(appLayout.actions())
     }
 

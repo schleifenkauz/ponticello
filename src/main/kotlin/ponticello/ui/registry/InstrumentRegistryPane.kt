@@ -141,7 +141,7 @@ class InstrumentRegistryPane(
                     if (p.instruments.has(def.name.now)) {
                         val overwrite = YesNoPrompt(
                             "Instrument '${def.name.now}' already exists in project. Overwrite?", default = false
-                        ).showDialog(anchorNode = p) ?: return@executes
+                        ).showDialog(ev) ?: return@executes
                         if (overwrite) {
                             p.instruments.overwrite(def)
                         }

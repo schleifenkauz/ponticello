@@ -79,13 +79,13 @@ class ScExprExpander() : ConfiguredExpander<ScExpr, ScExprEditor<*>>(), ScExprEd
     override fun onExpansion(editor: ScExprEditor<*>) {
         when {
             editor is AssignmentEditor && !editor.assignee.text.now.isNullOrEmpty() ->
-                editor.expression.notifyViews { focus() }
+                editor.expression.notifyViews { receiveFocus() }
 
             editor is MessageSendEditor && editor.receiver.result.now != EmptyExpr ->
-                editor.method.notifyViews { focus() }
+                editor.method.notifyViews { receiveFocus() }
 
             editor is NamedExprEditor && editor.name.text.now != "" ->
-                editor.value.notifyViews { focus() }
+                editor.value.notifyViews { receiveFocus() }
         }
     }
 

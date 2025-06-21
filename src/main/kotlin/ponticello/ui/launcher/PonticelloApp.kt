@@ -13,7 +13,7 @@ class PonticelloApp : Application() {
     private lateinit var launcher: PonticelloLauncher
 
     override fun start(stage: Stage) {
-        val projectPath = parameters.raw.getOrNull(0)
+        val projectPath = parameters.unnamed.getOrNull(0)
         setupLogging()
         launcher = PonticelloLauncher()
         launcher.launchPonticello(stage, projectPath)

@@ -19,20 +19,22 @@ object WindowActions {
         }
     }
 
-    val all = collectActions<PonticelloMainActivity> {
-        addAction("Toggle Full Screen") {
-            shortcut("F11")
-            icon { activity ->
-                `if`(
-                    activity.primaryStage.fullScreenProperty().asReactiveValue(),
-                    then = { MaterialDesignF.FULLSCREEN_EXIT }, otherwise = { MaterialDesignF.FULLSCREEN }
-                )
-            }
-            executes { activity ->
-                val window = activity.primaryStage
-                window.isFullScreen = !window.isFullScreen
-            }
+    val toggleFullScreenAction = action<PonticelloMainActivity>("Toggle Full Screen") {
+        shortcut("F11")
+        icon { activity ->
+            `if`(
+                activity.primaryStage.fullScreenProperty().asReactiveValue(),
+                then = { MaterialDesignF.FULLSCREEN_EXIT }, otherwise = { MaterialDesignF.FULLSCREEN }
+            )
         }
+        executes { activity ->
+            val window = activity.primaryStage
+            window.isFullScreen = !window.isFullScreen
+        }
+    }
+
+    val all = collectActions<PonticelloMainActivity> {
+        add(toggleFullScreenAction)
         add(quitAction) { activity -> activity.launcher }
     }
 }
