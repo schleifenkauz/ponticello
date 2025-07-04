@@ -173,10 +173,14 @@ sealed class ScoreObject : AbstractRenamableObject() {
         val deltaHeight = targetHeight - height
         this.duration = targetDuration
         this.height = targetHeight
-        for (inst in context[rootScore].instancesOf(this)) {
-            val instTime = if (resizeSide == Side.LEFT) inst.start - deltaDur else inst.start
-            val instY = if (resizeSide == Side.TOP) inst.y - deltaHeight else inst.y
-            inst.moveTo(instTime, instY, simpleMove = false)
+        val instances = context[rootScore].instancesOf(this).toSet()
+        for (inst in instances) {
+            if (resizeSide == Side.LEFT) {
+                inst.moveTo(inst.start - deltaDur, inst.y, simpleMove = false)
+            }
+            if (resizeSide == Side.TOP) {
+                inst.moveTo(inst.start, inst.y - deltaHeight, simpleMove = false)
+            }
         }
         viewManager.notifyListeners { resizedObject(this@ScoreObject) }
     }
