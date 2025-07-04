@@ -179,10 +179,10 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
         view.initialize(this)
         view.relocate(getX(inst.start), getScreenY(inst.y))
         view.setPrefSize(view.getDisplayWidth(), view.getDisplayHeight())
-        view.rescale()
         views[inst] = view
         children.add(view)
-        runFXWithTimeout(10) {
+        runAfterLayout {
+            view.rescale()
             if (autoSelect) {
                 view.selectView(addToSelection = false)
             }
