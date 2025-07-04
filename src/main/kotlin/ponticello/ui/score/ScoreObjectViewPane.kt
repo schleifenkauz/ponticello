@@ -7,6 +7,7 @@ import fxutils.actions.makeButton
 import fxutils.actions.registerActions
 import hextant.context.extend
 import javafx.scene.control.SplitPane
+import javafx.scene.layout.BorderPane
 import javafx.scene.layout.HBox
 import javafx.scene.layout.Priority
 import javafx.scene.layout.VBox
@@ -31,7 +32,8 @@ class ScoreObjectViewPane private constructor(val obj: ScoreObject) : VBox() {
     private lateinit var player: ScorePlayer
     private val context = obj.context.extend()
     private val scorePane = SingleObjectScorePane(obj, context)
-    private val splitter = SplitPane(scorePane)
+    private val scorePaneContainer = BorderPane(scorePane)
+    private val splitter = SplitPane(scorePaneContainer)
     private var lastDividerPosition = -1.0
     private val timeCodeView = TimeCodeView()
     private val showDetailsPane = reactiveVariable(false)
@@ -60,8 +62,9 @@ class ScoreObjectViewPane private constructor(val obj: ScoreObject) : VBox() {
         sceneProperty().addListener { _, _, sc ->
             if (sc != null) ArrowKeys.registerArrowKeys(sc, context)
         }
+        scorePaneContainer.setPadding(10.0)
         if (obj is ScoreObjectGroup) {
-            scorePane.backgroundProperty().bind(
+            scorePaneContainer.backgroundProperty().bind(
                 obj.associatedColor.orElse(Color.BLACK).map(::background).asObservableValue()
             )
         }

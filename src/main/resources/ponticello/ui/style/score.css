@@ -127,3 +127,7 @@ Label.memo-area {
     -fx-stroke: black;
     -fx-stroke-width: 1px;
 }
+
+.single-object-score-pane-container {
+    -fx-padding: 10px;
+}
