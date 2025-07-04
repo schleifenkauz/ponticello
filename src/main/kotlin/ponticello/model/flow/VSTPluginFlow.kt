@@ -81,6 +81,9 @@ class VSTPluginFlow private constructor(
         val stateFile = pluginStateFile().superColliderPath
         +"if (PathName(${stateFile}).isFile) { $controllerName.readProgram($stateFile) }"
         +"\"Opened plugin '$pluginName' in flow <${name.now}>\".postln"
+        if (!isActive.now) {
+            +"$superColliderName.set(\\bypass, 1)"
+        }
     }
 
     override fun setRunning(active: Boolean) {
