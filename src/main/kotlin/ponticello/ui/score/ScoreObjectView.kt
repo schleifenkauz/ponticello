@@ -364,8 +364,13 @@ abstract class ScoreObjectView(
                 }
 
                 ev.button == MouseButton.PRIMARY -> {
+                    if (this is ScoreObjectGroupView && this.scorePane.selectedArea?.isEmpty() == false) {
+                        return@addEventHandler
+                    }
                     selectView(addToSelection = ev.isShiftDown)
                 }
+
+                else -> return@addEventHandler
 
             }
             ev.consume()

@@ -45,7 +45,8 @@ import kotlin.collections.component2
 import kotlin.collections.set
 
 abstract class ScorePane(val score: Score, val context: Context) : Pane(), ScoreListener, TimeBlock {
-    protected var selectedArea: RectangleSelection? = null
+    var selectedArea: RectangleSelection? = null
+        private set
     private var lastMousePress: Point2D? = null
 
     protected val views = mutableMapOf<ScoreObjectInstance, ScoreObjectView>()
@@ -314,7 +315,6 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
         ev.consume()
         val selection = selectedArea
         if (selection == null || selection.isEmpty()) return
-        clearRegionSelection()
         if (selection.isTimeSelection) {
             selection.rect.requestFocus()
             return
@@ -333,6 +333,9 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
             noModifiers, setOf(Shift) -> {
                 selector.selectAll(containedViews, addToSelection = ev.isShiftDown)
             }
+        }
+        runAfterLayout {
+            clearRegionSelection()
         }
     }
 
