@@ -364,7 +364,8 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
             val initialName = option.defaultName(context[ScoreObjectRegistry])
             val name = NamePrompt(context[ScoreObjectRegistry], "Name for object", initialName)
                 .showDialog(scene.window, anchor) ?: return
-            createNewObject(option, selection.rect, name) ?: return
+            val obj = createNewObject(option, selection.rect, name) ?: return
+            obj.withName(name)
         }
         addObject(obj, selection)
     }
@@ -399,16 +400,17 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
                 val defaultBus = associatedObject?.defaultBusRef?.now?.get()
                 val anchor = localToScreen(rect.middlePoint)
                 val controls = getInitialControls(option.def, context, defaultBus, anchor) ?: return null
-                SoundProcess.create(name, option.def, controls)
+                val instrument = option.def.reference()
+                SoundProcess(reactiveVariable(instrument), controls)
             }
 
             is NewObjectOption.MIDI -> throw AssertionError("Handled before")
-            is NewObjectOption.TempoGrid -> TempoGridObject(option.meter.reference()).withName(name)
+            is NewObjectOption.TempoGrid -> TempoGridObject(option.meter.reference())
 
             NewObjectOption.NewTempoGrid -> {
                 val newMeter = MeterObject.create(60, 4, 4).withName(name)
                 context[MeterRegistry].add(newMeter)
-                TempoGridObject(newMeter.reference()).withName(name)
+                TempoGridObject(newMeter.reference())
             }
 
             NewObjectOption.Group -> ScoreObjectGroup(Score(mutableListOf()))
