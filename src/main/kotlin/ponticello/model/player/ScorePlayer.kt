@@ -38,7 +38,7 @@ class ScorePlayer private constructor(
 
     private val client: SuperColliderClient = context[SuperColliderClient]
     private val activeObjects = context[ActiveObjectsManager]
-    private val events: ScoreEventCollector = ScoreEventCollector(pane.score, pane.context[GlobalSettings], this)
+    val events: ScoreEventCollector = ScoreEventCollector(pane.score, pane.context[GlobalSettings], this)
     val playHead: PlayHead = PlayHead(pane)
 
     private var currentClock: ClockObject? = null
@@ -98,21 +98,18 @@ class ScorePlayer private constructor(
         ?: getQuantization()?.clock?.now?.get()
         ?: context[ClockRegistry].getDefault()
 
-    fun startPlaying() {
-        events.recomputeEvents()
-        execute {
-            playing.set(true)
-            System.err.println("Start Player [$id]")
-            client.send("start_play", listOf(id))
-            context[Recorder].startingPlayback()
-            val time = playHead.currentTime
-            Logger.fine("Starting playback at $time", Logger.Category.Playback)
-            lastPlayFrom = time
-            loopedTime = zero
-            val activeObjects = scheduler.activeObjects(time, context[GlobalSettings].lookAhead, pane.score)
-            for ((_, position, inst) in activeObjects) {
-                scheduleInstantly(inst, position)
-            }
+    fun startPlaying() = execute {
+        playing.set(true)
+        System.err.println("Start Player [$id]")
+        client.send("start_play", listOf(id))
+        context[Recorder].startingPlayback()
+        val time = playHead.currentTime
+        Logger.fine("Starting playback at $time", Logger.Category.Playback)
+        lastPlayFrom = time
+        loopedTime = zero
+        val activeObjects = scheduler.activeObjects(time, context[GlobalSettings].lookAhead, pane.score)
+        for ((_, position, inst) in activeObjects) {
+            scheduleInstantly(inst, position)
         }
     }
 
@@ -126,7 +123,7 @@ class ScorePlayer private constructor(
         currentClock = null
         client.send("pause_play", listOf(id))
         freeActiveObjects()
-//        events.recomputeEvents()
+        events.recomputeEvents()
     }
 
     private fun freeActiveObjects() = execute {
