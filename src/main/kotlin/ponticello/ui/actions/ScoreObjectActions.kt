@@ -88,7 +88,8 @@ object ScoreObjectActions {
         }
         addObjectAction("Open Multi-Object edit popup") {
             shortcut("Alt?+O")
-            executes { ctx, _ ->
+            executes { ctx, ev ->
+                if (ev.isTargetTextInput && !ev.isAltDown()) return@executes
                 if (ctx.selectedObjects.isEmpty()) {
                     Logger.info("No object selected", Logger.Category.Score)
                     return@executes
