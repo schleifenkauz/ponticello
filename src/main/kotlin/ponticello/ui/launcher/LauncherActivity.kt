@@ -130,6 +130,7 @@ class LauncherActivity(private val launcher: PonticelloLauncher) : Activity() {
         private val launcherActions = collectActions {
             add(ProjectActions.openProject)
             add(ProjectActions.newProject)
+            add(WindowActions.quitAction)
         }
 
         private val projectActions = collectActions<ProjectBox> {
