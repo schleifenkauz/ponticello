@@ -56,6 +56,9 @@ class ScoreObjectViewPane private constructor(val obj: ScoreObject) : VBox() {
             registerActions(listOf(showDetailPaneAction.withContext(this@ScoreObjectViewPane)))
             context[PonticelloMainActivity].interactionConfig.addGridRelatedShortcuts(this)
         }
+        sceneProperty().addListener { _, _, sc ->
+            if (sc != null) ArrowKeys.registerArrowKeys(sc, context)
+        }
     }
 
     private fun toggleDetailsPane() {
