@@ -507,7 +507,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
             is ScoreObjectGroup -> ScoreObjectGroupView(obj, instance)
             is MidiObject -> PianoRollObjectView(obj, instance)
             is TempoGridObject -> TempoGridObjectView(obj, instance)
-            is ScoreObject.Unresolved -> UnresolvedScoreObjectView(instance)
+            is UnresolvedScoreObject -> UnresolvedScoreObjectView(instance)
         }
 
         private const val DRAG_THRESH = 5.0

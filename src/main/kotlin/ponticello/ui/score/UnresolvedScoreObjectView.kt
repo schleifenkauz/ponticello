@@ -3,24 +3,19 @@ package ponticello.ui.score
 import fxutils.button
 import fxutils.prompt.DetailPane
 import hextant.context.compoundEdit
-import javafx.scene.paint.Color
-import reaktive.value.ReactiveValue
-import reaktive.value.now
-import reaktive.value.reactiveValue
 import ponticello.impl.asTime
 import ponticello.impl.asY
 import ponticello.model.registry.ScoreObjectRegistry
 import ponticello.model.score.Score.Companion.rootScore
 import ponticello.model.score.ScoreObject
 import ponticello.model.score.ScoreObjectInstance
+import ponticello.model.score.UnresolvedScoreObject
 import ponticello.ui.registry.SimpleSearchableRegistryView
+import reaktive.value.now
 
 class UnresolvedScoreObjectView(private val inst: ScoreObjectInstance) : ScoreObjectView(inst) {
-    override val defaultBackgroundColor: ReactiveValue<Color>
-        get() = reactiveValue(Color.gray(0.5, 0.5))
-
     override val obj: ScoreObject
-        get() = ScoreObject.Unresolved()
+        get() = UnresolvedScoreObject()
 
     override fun setupDetailPane(pane: DetailPane) {
         val btn = button("Select object reference")

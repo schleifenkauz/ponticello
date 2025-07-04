@@ -27,7 +27,6 @@ import javafx.scene.layout.HBox
 import javafx.scene.layout.Pane
 import javafx.scene.layout.Region
 import javafx.scene.paint.Color
-import javafx.scene.paint.Color.BLACK
 import javafx.scene.robot.Robot
 import ponticello.impl.*
 import ponticello.model.obj.project
@@ -45,10 +44,12 @@ import ponticello.ui.dock.AppLayout
 import ponticello.ui.impl.Cursors
 import ponticello.ui.launcher.ScoreObjectDetailPane
 import ponticello.ui.registry.ScoreObjectRegistryPane
-import reaktive.value.*
+import reaktive.value.ReactiveVariable
 import reaktive.value.binding.*
+import reaktive.value.forEach
 import reaktive.value.fx.asObservableValue
 import reaktive.value.fx.asReactiveValue
+import reaktive.value.now
 
 abstract class ScoreObjectView(
     val instance: ScoreObjectInstance,
@@ -67,9 +68,7 @@ abstract class ScoreObjectView(
     private var isCreatingLoop = false
     private val loopedObjects = mutableListOf<ScoreObjectInstance>()
 
-    protected open val defaultBackgroundColor: ReactiveValue<Color>
-        get() = reactiveVariable(BLACK)
-    val backgroundColor by lazy { obj.associatedColor.orElse(defaultBackgroundColor) }
+    val backgroundColor by lazy { obj.associatedColor.orElse(Color.BLACK) }
     protected open val borderColorWhenSelected: Color get() = Color.web("#2a66ff")
     protected open val borderColorWhenNotSelected: Color get() = Color.TRANSPARENT
     protected open val borderColorWhenSameObjectSelected: Color get() = Color.GRAY
@@ -108,7 +107,7 @@ abstract class ScoreObjectView(
 
     fun getDetailPane(extraActions: List<ContextualizedAction> = emptyList()): DetailPane {
         val detailPane = DetailPane(labelWidth = 100.0)
-        if (obj is ScoreObject.Unresolved) {
+        if (obj is UnresolvedScoreObject) {
             return detailPane
         } else {
             val ctx = ObjectActionContext.SingleObjectContext(this)
@@ -339,9 +338,8 @@ abstract class ScoreObjectView(
         colorPicker.userData = backgroundColor.forEach { color ->
             colorPicker.value = color
         }
-        colorPicker.valueProperty().addListener { _, oldColor, newColor ->
-            obj.associatedColor.now = newColor
-            context[UndoManager].record(ScoreObjectEdit.Recolor(obj, oldColor, newColor))
+        colorPicker.valueProperty().addListener { _, _, newColor ->
+            obj.recolor(newColor)
         }
     }
 

@@ -10,6 +10,7 @@ import javafx.geometry.HorizontalDirection
 import javafx.geometry.HorizontalDirection.LEFT
 import javafx.geometry.HorizontalDirection.RIGHT
 import javafx.geometry.Side
+import javafx.scene.paint.Color
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -23,8 +24,12 @@ import ponticello.model.score.controls.ParameterControl
 import ponticello.sc.code
 import ponticello.sc.editor.*
 import ponticello.ui.score.PianoRollObjectView
+import reaktive.value.ReactiveValue
 import reaktive.value.ReactiveVariable
+import reaktive.value.binding.flatMap
+import reaktive.value.binding.orElse
 import reaktive.value.now
+import reaktive.value.reactiveValue
 
 @Serializable
 class MidiObject(
@@ -32,7 +37,7 @@ class MidiObject(
     @SerialName("lowestPitch") private var mLowestPitch: Int,
     @SerialName("highestPitch") private var mHighestPitch: Int,
     val eventDictionary: EditorRoot<@Contextual EventDictionaryEditor>,
-    private val notes: MutableList<Note>
+    private val notes: MutableList<Note>,
 ) : ScoreObject() {
     override val type: String
         get() = "piano-roll"
@@ -58,6 +63,11 @@ class MidiObject(
         }
 
     val pitchRange get() = lowestPitch..highestPitch
+
+    override val associatedColor: ReactiveValue<Color?>
+        get() = super.associatedColor.orElse(instrumentSelector.result.flatMap { ref ->
+            ref.get()?.color ?: reactiveValue(null)
+        })
 
     @Transient
     private var pixelsPerPitch: Double = -1.0
@@ -103,6 +113,7 @@ class MidiObject(
                     Side.TOP -> notes.maxOf { n ->
                         (pixelsPerPitch * (n.midinote - lowestPitch)) + pixelsPerPitch
                     }.asY
+
                     else -> minHeight
                 }
             }
@@ -212,7 +223,7 @@ class MidiObject(
         placement: NodePlacement?,
         cutoff: Decimal,
         latency: Decimal,
-        extraArguments: Map<ParameterDefObject, ParameterControl>
+        extraArguments: Map<ParameterDefObject, ParameterControl>,
     ): String = writeCode {
         val generalEventDict = eventDictionary.editor.result.now
         for ((idx, n) in notes.withIndex()) {
@@ -276,7 +287,7 @@ class MidiObject(
         }
 
         class AddTime(
-            private val obj: MidiObject, private val position: Decimal, private val amount: Decimal
+            private val obj: MidiObject, private val position: Decimal, private val amount: Decimal,
         ) : AbstractEdit() {
             override val actionDescription: String
                 get() = "Add time"
@@ -291,7 +302,7 @@ class MidiObject(
         }
 
         class DeleteTimeRange(
-            private val obj: MidiObject, private val from: Decimal, private val to: Decimal
+            private val obj: MidiObject, private val from: Decimal, private val to: Decimal,
         ) : AbstractEdit() {
             override val actionDescription: String
                 get() = "Remove time range"
@@ -312,7 +323,7 @@ class MidiObject(
         private var _time: Decimal,
         private var _duration: Decimal,
         private var _midinote: Int,
-        val eventDictionary: EditorRoot<@Contextual EventDictionaryEditor>
+        val eventDictionary: EditorRoot<@Contextual EventDictionaryEditor>,
     ) {
         @Transient
         lateinit var parent: MidiObject

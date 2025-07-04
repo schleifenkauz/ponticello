@@ -6,6 +6,7 @@ import hextant.context.Context
 import javafx.geometry.HorizontalDirection
 import javafx.geometry.HorizontalDirection.RIGHT
 import javafx.geometry.Side
+import javafx.scene.paint.Color
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -27,17 +28,16 @@ import ponticello.sc.client.SuperColliderClient
 import ponticello.sc.client.run
 import ponticello.sc.editor.InstrumentSelector
 import ponticello.ui.misc.LFOsManager
-import reaktive.value.ReactiveValue
-import reaktive.value.ReactiveVariable
-import reaktive.value.now
-import reaktive.value.reactiveVariable
+import reaktive.value.*
+import reaktive.value.binding.flatMap
+import reaktive.value.binding.orElse
 
 @Serializable
 @SerialName("SoundProcess")
 class SoundProcess(
     @JsonNames("synthDef", "processDef", "instrument") private val instrumentRef: ReactiveVariable<InstrumentReference>,
     override val controls: ParameterControlList,
-): ScoreObject(), ParameterizedObject {
+) : ScoreObject(), ParameterizedObject {
     @Transient
     private lateinit var controlListener: LiveSynthUpdater
 
@@ -48,14 +48,20 @@ class SoundProcess(
     override val associatedControls: Map<String, ParameterControl>
         get() = controls.controlMap
 
+    override val associatedColor: ReactiveValue<Color?>
+        get() = super.associatedColor.orElse(instrumentSelector.result.flatMap { ref ->
+            ref.get()?.color ?: reactiveValue(null)
+        })
+
     override val type: String
         get() = "synth"
 
-    override val superColliderPrefix: String get() = when (instrument) {
-        is SynthDefObject -> "~synth_"
-        is ProcessDefObject -> "~proc_"
-        else -> "~unknown_"
-    }
+    override val superColliderPrefix: String
+        get() = when (instrument) {
+            is SynthDefObject -> "~synth_"
+            is ProcessDefObject -> "~proc_"
+            else -> "~unknown_"
+        }
 
     @Transient
     lateinit var instrumentSelector: InstrumentSelector

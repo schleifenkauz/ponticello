@@ -1,6 +1,7 @@
 package ponticello.model.score
 
 import hextant.context.Context
+import javafx.scene.paint.Color
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
@@ -14,9 +15,7 @@ import ponticello.model.score.controls.ParameterControl
 import ponticello.ui.score.TempoGridObjectView
 import reaktive.Observer
 import reaktive.and
-import reaktive.value.ReactiveVariable
-import reaktive.value.now
-import reaktive.value.reactiveVariable
+import reaktive.value.*
 
 @Serializable
 @SerialName("TempoGrid")
@@ -39,6 +38,9 @@ class TempoGridObject(
     val beatsPerMinute: ReactiveVariable<Int> get() = meter.force().beatsPerMinute
     val beatsPerBar: ReactiveVariable<Int> get() = meter.force().beatsPerBar
     val ticksPerBeat: ReactiveVariable<Int> get() = meter.force().ticksPerBeat
+
+    override val associatedColor: ReactiveValue<Color?>
+        get() = reactiveValue(Color.TRANSPARENT)
 
     override fun initialize(context: Context) {
         super.initialize(context)

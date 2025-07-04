@@ -6,6 +6,7 @@ import fxutils.prompt.YesNoPrompt
 import fxutils.undo.AbstractEdit
 import fxutils.undo.Edit
 import fxutils.undo.UndoManager
+import fxutils.undo.VariableEdit
 import hextant.context.Context
 import hextant.context.withoutUndo
 import hextant.core.editor.ListenerManager
@@ -38,7 +39,10 @@ import reaktive.value.reactiveVariable
 sealed class ScoreObject : AbstractRenamableObject() {
     abstract val type: String
     open val canMute: Boolean get() = true
-    val associatedColor: ReactiveVariable<@Serializable(with = ColorSerializer::class) Color?> = reactiveVariable(null)
+    private val _associatedColor: ReactiveVariable<@Serializable(with = ColorSerializer::class) Color?> =
+        reactiveVariable(null)
+
+    open val associatedColor: ReactiveValue<Color?> get() = _associatedColor
 
     open val associatedControls: Map<String, ParameterControl> get() = emptyMap()
 
@@ -101,13 +105,6 @@ sealed class ScoreObject : AbstractRenamableObject() {
 
     fun height(): ReactiveValue<Decimal> = _height
 
-    open fun independentScore(): Score {
-        val inst = ScoreObjectInstance(this, ObjectPosition.ZERO)
-        val score = Score(mutableListOf(inst))
-        score.initialize(context, this)
-        return score
-    }
-
     override fun initialize(context: Context) {
         super.initialize(context)
         quantizationConfig.initialize(context, this)
@@ -115,6 +112,10 @@ sealed class ScoreObject : AbstractRenamableObject() {
 
     open fun validate(): Boolean {
         return true
+    }
+
+    fun recolor(newColor: Color?) {
+        VariableEdit.updateVariable(_associatedColor, newColor, context[UndoManager], "Recolor object")
     }
 
     abstract fun writeCode(
@@ -216,7 +217,7 @@ sealed class ScoreObject : AbstractRenamableObject() {
         val obj = doClone()
         obj.duration = duration
         obj.height = height
-        obj.associatedColor.now = associatedColor.now
+        obj._associatedColor.now = associatedColor.now
         obj.setInitialName(newName)
         return obj
     }
@@ -231,7 +232,7 @@ sealed class ScoreObject : AbstractRenamableObject() {
     fun cut(position: Decimal, whichHalf: HorizontalDirection, newName: String): ScoreObject? {
         val obj = doCut(position, whichHalf) ?: return null
         obj.height = height
-        obj.associatedColor.now = associatedColor.now
+        obj._associatedColor.now = associatedColor.now
         if (whichHalf == LEFT) {
             obj.duration = position
         } else {
@@ -261,7 +262,7 @@ sealed class ScoreObject : AbstractRenamableObject() {
     }
 
     fun addedToScore(registry: ScoreObjectRegistry) {
-        if (this !is Unresolved && !registry.has(this)) {
+        if (this !is UnresolvedScoreObject && !registry.has(this)) {
             registry.context.withoutUndo { registry.add(this) }
         }
         if (this is ScoreObjectGroup) {
@@ -343,24 +344,4 @@ sealed class ScoreObject : AbstractRenamableObject() {
         val DATA_FORMAT = TypedDataFormat<ScoreObjectReference>("score-object")
     }
 
-    @Serializable
-    class Unresolved : ScoreObject() {
-        override val type: String
-            get() = "none"
-
-        override val name: ReactiveValue<String> get() = reactiveVariable("<unresolved>")
-
-        override val affectsPlayback: Boolean
-            get() = false
-
-        override fun writeCode(
-            uniqueName: String,
-            placement: NodePlacement?,
-            cutoff: Decimal,
-            latency: Decimal,
-            extraArguments: Map<ParameterDefObject, ParameterControl>,
-        ): String = ""
-
-        override fun doClone(): ScoreObject = this
-    }
 }

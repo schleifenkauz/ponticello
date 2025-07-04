@@ -33,9 +33,7 @@ class ScoreObjectGroup(
 
     override val affectsPlayback: Boolean
         get() = score.objectInstances.any { inst -> inst.obj.affectsPlayback }
-
-    override fun independentScore(): Score = score
-
+fclone
     @Transient
     lateinit var busSelector: BusSelector
         private set

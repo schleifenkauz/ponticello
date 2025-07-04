@@ -9,7 +9,6 @@ import fxutils.prompt.DetailPane
 import fxutils.styleClass
 import javafx.geometry.Point2D
 import javafx.scene.layout.*
-import javafx.scene.paint.Color
 import org.kordamp.ikonli.material2.Material2AL
 import ponticello.model.project.InlineControlsDisplay
 import ponticello.model.project.UIState
@@ -30,11 +29,12 @@ import ponticello.ui.registry.InstrumentRegistryPane
 import ponticello.ui.registry.SearchableParameterDefListView
 import reaktive.Observer
 import reaktive.and
-import reaktive.value.*
-import reaktive.value.binding.flatMap
 import reaktive.value.binding.map
 import reaktive.value.binding.not
+import reaktive.value.forEach
 import reaktive.value.fx.asObservableValue
+import reaktive.value.now
+import reaktive.value.reactiveVariable
 
 class SoundProcessView(
     override val obj: SoundProcess, instance: ScoreObjectInstance,
@@ -46,9 +46,6 @@ class SoundProcessView(
     private val lfoCanvases = mutableMapOf<NamedParameterControl, LFOCanvas>()
     private lateinit var lfosObserver: Observer
     private lateinit var controlsDisplayObserver: Observer
-
-    override val defaultBackgroundColor: ReactiveValue<Color>
-        get() = obj.instrumentSelector.result.flatMap { ref -> ref.get()?.color ?: reactiveValue(Color.GRAY) }
 
     init {
         styleClass("sound-process")

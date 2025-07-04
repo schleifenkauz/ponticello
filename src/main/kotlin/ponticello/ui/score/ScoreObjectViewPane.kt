@@ -1,18 +1,16 @@
 package ponticello.ui.score
 
 import bundles.set
+import fxutils.*
 import fxutils.actions.action
 import fxutils.actions.makeButton
 import fxutils.actions.registerActions
-import fxutils.centerChildren
-import fxutils.hspace
-import fxutils.infiniteSpace
-import fxutils.registerShortcuts
 import hextant.context.extend
 import javafx.scene.control.SplitPane
 import javafx.scene.layout.HBox
 import javafx.scene.layout.Priority
 import javafx.scene.layout.VBox
+import javafx.scene.paint.Color
 import javafx.stage.Screen
 import org.kordamp.ikonli.materialdesign2.MaterialDesignV
 import ponticello.impl.times
@@ -22,6 +20,9 @@ import ponticello.model.score.ScoreObjectGroup
 import ponticello.ui.actions.*
 import ponticello.ui.launcher.PonticelloMainActivity
 import ponticello.ui.registry.ScoreObjectRegistryPane
+import reaktive.value.binding.map
+import reaktive.value.binding.orElse
+import reaktive.value.fx.asObservableValue
 import reaktive.value.now
 import reaktive.value.reactiveVariable
 
@@ -58,6 +59,11 @@ class ScoreObjectViewPane private constructor(val obj: ScoreObject) : VBox() {
         }
         sceneProperty().addListener { _, _, sc ->
             if (sc != null) ArrowKeys.registerArrowKeys(sc, context)
+        }
+        if (obj is ScoreObjectGroup) {
+            scorePane.backgroundProperty().bind(
+                obj.associatedColor.orElse(Color.BLACK).map(::background).asObservableValue()
+            )
         }
     }
 

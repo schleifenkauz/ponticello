@@ -27,12 +27,9 @@ import ponticello.sc.editor.EventDictionaryEditor
 import ponticello.sc.view.ObjectSelectorControl
 import ponticello.ui.impl.setupDraggingAndResizing
 import ponticello.ui.impl.showDialog
-import reaktive.value.ReactiveValue
 import reaktive.value.binding.binding
-import reaktive.value.binding.flatMap
 import reaktive.value.fx.asObservableValue
 import reaktive.value.now
-import reaktive.value.reactiveValue
 import reaktive.value.reactiveVariable
 import kotlin.math.roundToInt
 
@@ -279,9 +276,6 @@ class PianoRollObjectView(override val obj: MidiObject, inst: ScoreObjectInstanc
         }
         cursor.height = pixelsPerPitch
     }
-
-    override val defaultBackgroundColor: ReactiveValue<Color>
-        get() = obj.instrumentSelector.result.flatMap { ref -> ref.get()?.color ?: reactiveValue(Color.GRAY) }
 
     companion object {
         private const val CURSOR_OPACITY = 0.6

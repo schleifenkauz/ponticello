@@ -7,6 +7,7 @@ import ponticello.impl.Logger
 import ponticello.model.flow.AudioFlows
 import ponticello.model.obj.ContextualObject
 import ponticello.model.score.ScoreObject
+import ponticello.model.score.UnresolvedScoreObject
 import ponticello.sc.client.SuperColliderClient
 import ponticello.ui.dock.AppLayout
 import ponticello.ui.launcher.PonticelloLauncher.Companion.currentProject
@@ -42,7 +43,7 @@ class PonticelloProject private constructor(val components: Map<Component<out Co
 
     fun saveTo(projectDirectory: File): Boolean {
         for (inst in mainScore.allInstances()) {
-            if (inst.obj !is ScoreObject.Unresolved && !objects.has(inst.obj.name.now)) {
+            if (inst.obj !is UnresolvedScoreObject && !objects.has(inst.obj.name.now)) {
                 Logger.warn("Had to add object for $inst", Logger.Category.Project)
                 objects.add(inst.obj)
             }

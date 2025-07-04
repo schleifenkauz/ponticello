@@ -9,7 +9,7 @@ import kotlinx.serialization.Serializable
 import ponticello.impl.Logger
 import ponticello.model.project.UIState
 import ponticello.model.score.ScoreObject
-import ponticello.model.score.ScoreObject.Unresolved
+import ponticello.model.score.UnresolvedScoreObject
 import ponticello.ui.controls.NamePrompt
 import reaktive.value.now
 
@@ -26,7 +26,7 @@ class ScoreObjectRegistry(
     }
 
     override fun add(obj: ScoreObject, idx: Int) {
-        if (obj is Unresolved) {
+        if (obj is UnresolvedScoreObject) {
             Logger.error("Attempted to add unresolved object to ScoreObjectRegistry")
             return
         }

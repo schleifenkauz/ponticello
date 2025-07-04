@@ -172,5 +172,15 @@ class Score(
         val rootScore = publicProperty<Score>("root-score")
 
         const val ROOT_SCORE_NAME = "<root>"
+
+        fun makeScore(obj: ScoreObject) = when (obj) {
+            is ScoreObjectGroup -> obj.score
+            else -> {
+                val inst = ScoreObjectInstance(obj, ObjectPosition.ZERO)
+                val score = Score(mutableListOf(inst))
+                score.initialize(obj.context, parentObject = obj)
+                score
+            }
+        }
     }
 }

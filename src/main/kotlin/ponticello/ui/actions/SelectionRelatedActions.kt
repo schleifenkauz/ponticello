@@ -10,8 +10,8 @@ import ponticello.model.obj.withName
 import ponticello.model.registry.ScoreObjectRegistry
 import ponticello.model.score.ObjectPosition
 import ponticello.model.score.Score
-import ponticello.model.score.ScoreObject
 import ponticello.model.score.ScoreObjectGroup
+import ponticello.model.score.UnresolvedScoreObject
 import ponticello.ui.score.ScoreObjectDuplicator
 import ponticello.ui.score.ScoreObjectSelectionManager
 import ponticello.ui.score.ScoreObjectView
@@ -67,7 +67,7 @@ object SelectionRelatedActions {
     private fun resolveFocusedObject(selector: ScoreObjectSelectionManager): ScoreObjectView? {
         val selected = selector.focusedView.now ?: return null
         val obj = selected.obj
-        if (obj is ScoreObject.Unresolved) {
+        if (obj is UnresolvedScoreObject) {
             Logger.warn("Object is not resolved", Logger.Category.Score)
             return null
         }

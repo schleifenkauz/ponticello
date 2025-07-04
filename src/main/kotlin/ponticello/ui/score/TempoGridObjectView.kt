@@ -27,11 +27,9 @@ import ponticello.model.score.TempoGridObject
 import ponticello.model.score.TimeUnit
 import reaktive.Observer
 import reaktive.and
-import reaktive.value.ReactiveValue
 import reaktive.value.ReactiveVariable
 import reaktive.value.fx.asObservableValue
 import reaktive.value.now
-import reaktive.value.reactiveValue
 import kotlin.math.ceil
 
 class TempoGridObjectView(override val obj: TempoGridObject, inst: ScoreObjectInstance) : ScoreObjectView(inst) {
@@ -137,9 +135,6 @@ class TempoGridObjectView(override val obj: TempoGridObject, inst: ScoreObjectIn
     override fun inlineControlsBackground(
         controlsDisplay: ReactiveVariable<InlineControlsDisplay>,
     ): ObservableValue<Background> = SimpleObjectProperty(Background.EMPTY)
-
-    override val defaultBackgroundColor: ReactiveValue<Color>
-        get() = reactiveValue(Color.TRANSPARENT)
 
     companion object {
         private const val BAR_LINE_HEIGHT = 10.0

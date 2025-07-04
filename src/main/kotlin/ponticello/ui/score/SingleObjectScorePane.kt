@@ -14,6 +14,7 @@ import ponticello.model.player.ScorePlayer
 import ponticello.model.project.UIState
 import ponticello.model.project.uiState
 import ponticello.model.score.ObjectPosition
+import ponticello.model.score.Score
 import ponticello.model.score.ScoreObject
 import ponticello.ui.score.TempoGridObjectView.Companion.GRID_HEIGHT
 import reaktive.Observer
@@ -25,7 +26,7 @@ import reaktive.value.now
 
 class SingleObjectScorePane(
     val rootObj: ScoreObject, context: Context,
-) : RootScorePane(rootObj.independentScore(), context) {
+) : RootScorePane(Score.makeScore(rootObj), context) {
     override val displayStart: Decimal
         get() = zero
     override val displayEnd: Decimal
