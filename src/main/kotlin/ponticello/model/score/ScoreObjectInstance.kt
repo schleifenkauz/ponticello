@@ -144,7 +144,7 @@ class ScoreObjectInstance(
         }
     }
 
-    fun duplicate(time: Decimal, y: Decimal) = ScoreObjectInstance(objectRef, time, y, _muted)
+    fun duplicate(time: Decimal, y: Decimal) = ScoreObjectInstance(objectRef, time, y, _muted.copy())
 
     fun duplicate(position: ObjectPosition) = duplicate(position.time, position.y)
 
