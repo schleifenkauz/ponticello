@@ -33,6 +33,7 @@ class ServerOptionsPane(
         options.sampleRate = sampleRate.value
         options.numWireBufs = numWireBufs.value()
         options.device = device.text
-        options.reboot(context[SuperColliderClient])
+        options.configureOptions(context[SuperColliderClient])
+        context[SuperColliderClient].run("s.reboot")
     }
 }

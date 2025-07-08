@@ -108,7 +108,7 @@ data class NumericalControlSpec(
         get() = ParameterType.Numerical
 
     override val code: String
-        get() = "kr(${defaultValue.text}, lag: ${lag.text}, spec: [${min.text}, ${max.text}, $warp, ${step.text}])"
+        get() = "kr(${defaultValue.text}, lag: ${lag.text}, spec: [${min.text}, ${max.text}, ${warp.code}, ${step.text}])"
 
     override val defaultValueExpr: String
         get() = defaultValue.text

@@ -10,7 +10,7 @@ import ponticello.model.registry.BusRegistry
 import ponticello.model.registry.ObjectReference
 import ponticello.model.registry.reference
 import ponticello.sc.client.SuperColliderClient
-import ponticello.sc.client.run
+import ponticello.sc.client.eval
 import reaktive.value.now
 
 @Serializable
@@ -28,8 +28,8 @@ data class ServerOptions(
         recordedBus.resolve(context[BusRegistry])
     }
 
-    fun reboot(client: SuperColliderClient) {
-        client.run {
+    fun configureOptions(client: SuperColliderClient) {
+        client.eval {
             if (isWindows) {
                 +"s.options.device_(${if (device.isEmpty()) "nil" else "\"$device\""})"
             }
@@ -38,8 +38,7 @@ data class ServerOptions(
             +"s.options.memSize = $memSize"
             +"s.options.numWireBufs = $numWireBufs"
             +"s.options.sampleRate = $sampleRate"
-            +"s.reboot"
-        }
+        }.join()
         if (initialized) configureIOBuses()
     }
 

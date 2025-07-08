@@ -103,7 +103,9 @@ class PonticelloProject private constructor(val components: Map<Component<out Co
     }
 
     fun rebootServer() {
-        get(SERVER_OPTIONS).reboot(context[SuperColliderClient])
+        get(SERVER_OPTIONS).configureOptions(context[SuperColliderClient])
+        get(SCRIPTS).get("before_boot").executeContents(context[SuperColliderClient]).join()
+        client.run("s.reboot")
     }
 
     fun hasInstancesOf(obj: ScoreObject): Boolean = mainScore.hasInstancesOf(obj) ||

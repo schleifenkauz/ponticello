@@ -45,7 +45,7 @@ object ScoreObjectActions {
         addObjectAction("Toggle mute") {
             description("Toggle mute the selected object instances")
             shortcut("Alt?+M")
-            applicableOn { view -> view.instance.obj.affectsPlayback }
+            applicableIf { ctx -> ctx.selectedViews.any { view -> view.instance.obj.affectsPlayback} }
             icon { selector ->
                 selector.focusedView
                     .flatMap { view -> view?.instance?.muted ?: reactiveValue(false) }

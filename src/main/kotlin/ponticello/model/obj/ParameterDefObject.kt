@@ -78,6 +78,11 @@ class ParameterDefObject(val spec: ReactiveVariable<ControlSpec>) : AbstractRena
             NumericalControlSpec(0.0, -1.0, 1.0, 0.1.toDecimal(), 0.02, Warp.Linear, Color.BLUE)
         )
 
+        val BUF = ParameterDefObject("buf", BufferControlSpec(2))
+        val OUT = ParameterDefObject("out", BusControlSpec(Rate.Audio, 2))
+        val IN = ParameterDefObject("in", BusControlSpec(Rate.Audio, 2))
+        val BUS = ParameterDefObject("bus", BusControlSpec(Rate.Control, 2))
+
         val LEVEL = ParameterDefObject("level", NumericalControlSpec.LEVEL).immutable()
 
         val ATTACK_RELEASE = ParameterDefObject("attack-release", AttackReleaseControlSpec()).immutable()

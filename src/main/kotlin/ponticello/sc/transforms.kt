@@ -19,21 +19,28 @@ import kotlin.math.pow
 sealed class Warp : ScExpr {
     abstract fun mappingFunction(min: String, max: String): String
 
-    object Linear : Warp() {
-        override fun toString(): String = "\\lin"
+    abstract override fun toString(): String
 
-        override fun code(writer: ScWriter, context: Context) {
-            writer.append("\\lin")
-        }
+    abstract val code: String
+
+    final override fun code(writer: ScWriter, context: Context) {
+        writer.append(code)
+    }
+
+    object Linear : Warp() {
+        override val code: String
+            get() = "\\lin"
+
+        override fun toString(): String = "lin"
 
         override fun mappingFunction(min: String, max: String): String = "linlin(0, 1, $min, $max)"
     }
 
     object Exponential : Warp() {
-        override fun toString(): String = "\\exp"
-        override fun code(writer: ScWriter, context: Context) {
-            writer.append("\\exp")
-        }
+        override fun toString(): String = "exp"
+
+        override val code: String
+            get() = "\\exp"
 
         override fun mappingFunction(min: String, max: String): String = "linexp(0, 1, $min, $max)"
     }
@@ -41,9 +48,8 @@ sealed class Warp : ScExpr {
     data class Monomial(val exponent: Decimal) : Warp() {
         override fun toString(): String = "$exponent"
 
-        override fun code(writer: ScWriter, context: Context) {
-            writer.append(exponent.toString())
-        }
+        override val code: String
+            get() = exponent.toString()
 
         override fun mappingFunction(min: String, max: String): String =
             "lincurve(0, 0, $min, $max, $exponent)"
@@ -64,8 +70,8 @@ sealed class Warp : ScExpr {
         override fun deserialize(decoder: Decoder): Warp {
             val str = decoder.decodeString()
             return when {
-                str == "\\lin" -> Linear
-                str == "\\exp" -> Exponential
+                str == "lin" || str == "\\lin" -> Linear
+                str == "exp" || str == "\\exp" -> Exponential
                 str.startsWith("x^") -> Monomial(str.drop(2).parseDecimal()!!)
                 else -> throw IllegalArgumentException("Invalid warp string $str")
             }

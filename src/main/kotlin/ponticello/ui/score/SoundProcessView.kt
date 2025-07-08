@@ -111,7 +111,7 @@ class SoundProcessView(
         val listView = SearchableParameterDefListView(
             possibleParameters, "New parameter", obj.context, obj, fixedParameterType = ParameterType.Numerical
         )
-        val relativeY = if (inlineControls.isVisible) inlineControls.height else 0.0
+        val relativeY = if (_inlineControls?.isVisible == true) inlineControls.height else 0.0
         val anchor = localToScreen(Point2D(0.0, relativeY))
         val param = listView.showPopup(anchor, context[primaryStage]) ?: return
         val name = param.name.now

@@ -15,7 +15,6 @@ import ponticello.model.score.ParameterControlList.NamedParameterControl
 import ponticello.sc.*
 import ponticello.sc.client.ScWriter
 import ponticello.sc.client.SuperColliderClient
-import ponticello.sc.client.run
 import ponticello.ui.score.EnvelopeView
 import reaktive.Observer
 import reaktive.event.unitEvent
@@ -39,7 +38,7 @@ class EnvelopeControl(
     @Transient
     private var defaultWarp: Warp? = null
 
-    private val auxilSynthDefName get() = "\\env_$index"
+    private val auxilSynthDefName get() = "env_$index"
 
     @Transient
     val update = unitEvent()
@@ -60,15 +59,11 @@ class EnvelopeControl(
     }
 
     private fun updateSynthDef() {
-        context[SuperColliderClient].run {
-            appendBlock("SynthDef($auxilSynthDefName)", endLine = false) {
-                +"arg out, cutoff = 0"
-                +"var env = ${points.code(defaultWarp ?: Warp.Linear)}, sig"
-                +"sig = IEnvGen.kr(env, index: Sweep.kr(rate: ~time_warp_bus.kr) + cutoff)"
-                +"Out.kr(out, sig)"
-            }
-            appendLine(".add;")
-        }
+        val curve = (defaultWarp ?: Warp.Linear).toString()
+        val arguments = mutableListOf<Any>(index, points.size, curve)
+        arguments.addAll(points.getLevels())
+        arguments.addAll(points.getTimes())
+        context[SuperColliderClient].sendAsync("addEnvDef", arguments)
     }
 
     override fun copy(): ParameterControl =
@@ -122,7 +117,7 @@ class EnvelopeControl(
         paused: Boolean,
     ) = with(writer) {
         val method = if (paused) "newPaused" else "new"
-        +"$auxiliarySynthName = Synth.$method($auxilSynthDefName, [out: $auxiliaryVarName, cutoff: $cutoff], ${placement.code})"
+        +"$auxiliarySynthName = Synth.$method(\\$auxilSynthDefName, [out: $auxiliaryVarName, cutoff: $cutoff], ${placement.code})"
     }
 
     override fun generateArgumentExpr(

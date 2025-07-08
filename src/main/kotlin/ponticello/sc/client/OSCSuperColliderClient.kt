@@ -20,7 +20,6 @@ import java.io.File
 import java.net.InetAddress
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Executors
-import java.util.concurrent.TimeUnit
 
 class OSCSuperColliderClient(
     process: Process,
@@ -87,7 +86,7 @@ class OSCSuperColliderClient(
         } catch (e: Exception) {
             future.completeExceptionally(e)
         }
-        return future.orTimeout(10, TimeUnit.SECONDS)
+        return future//.orTimeout(10, TimeUnit.SECONDS)
     }
 
     override fun run(command: String) {
@@ -141,7 +140,7 @@ class OSCSuperColliderClient(
                 val message = event.message.getArgument<String>(1, "message") ?: "<unknown>"
                 val id = event.message.id
                 Logger.warn(message, Logger.Category.SuperCollider)
-                if (id != null) {
+                if (id != null && id != -1) {
                     val request = waitingForReply.remove(id)
                     if (request == null) {
                         Logger.error("Wasn't waiting for a reply for id $id")

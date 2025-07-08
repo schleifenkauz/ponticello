@@ -12,11 +12,13 @@ import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
 import ponticello.model.project.scripts
 import ponticello.sc.client.SuperColliderClient
+import ponticello.sc.client.eval
 import ponticello.sc.code
 import ponticello.sc.editor.CodeBlockEditor
 import reaktive.value.ReactiveVariable
 import reaktive.value.now
 import reaktive.value.reactiveVariable
+import java.util.concurrent.CompletableFuture
 
 @Serializable
 class ScriptObject private constructor(
@@ -40,9 +42,9 @@ class ScriptObject private constructor(
     override val canDelete: Boolean
         get() = type.now != Type.BEFORE_BOOT
 
-    fun executeContents(client: SuperColliderClient) {
+    fun executeContents(client: SuperColliderClient): CompletableFuture<String> {
         val code = root.editor.result.now.code(context)
-        client.run(code)
+        return client.eval(code)
     }
 
     @Serializable

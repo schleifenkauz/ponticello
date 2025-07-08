@@ -94,7 +94,7 @@ class CustomizableSynthDefObject(
             extraStatements.add("sustain_ = duration - (attack + release)")
             extraStatements.add(
                 "gate_env_ = IEnvGen.kr(" +
-                        "Env.new([1, 1, 1 - \\auto_release.kr(1)], [attack + sustain_, 0]), " +
+                        "Env.new([1, 1, 1 - \\auto_release.kr(1)], [(attack + sustain_).max(0.002), 0]), " +
                         "index: Sweep.kr(rate: ~time_warp_bus.kr))"
             )
             extraStatements.add(

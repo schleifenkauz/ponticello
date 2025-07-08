@@ -133,7 +133,7 @@ class PonticelloLauncher {
                     try {
                         val beforeBoot = beforeBootFile.readJson(ScriptObject.serializer())
                         beforeBoot.initialize(context)
-                        beforeBoot.executeContents(client)
+                        beforeBoot.executeContents(client).join()
                     } catch (e: Exception) {
                         Logger.error("Error while executing setup script: $beforeBootFile", e)
                     }
@@ -141,10 +141,9 @@ class PonticelloLauncher {
                 val serverOptionsFile = folder.resolve("data").resolve("server_options.json")
                 if (serverOptionsFile.exists()) {
                     val serverOptions = serverOptionsFile.readJson<ServerOptions>(json)
-                    serverOptions.reboot(client)
-                } else {
-                    client.run("s.boot")
+                    serverOptions.configureOptions(client)
                 }
+                client.run("s.boot")
             },
             serverReady = {
                 progressBar.displayProgress(0.2, "Booted SuperCollider server, opening project...")

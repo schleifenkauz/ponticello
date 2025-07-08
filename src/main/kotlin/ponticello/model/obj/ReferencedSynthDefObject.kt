@@ -11,6 +11,7 @@ import ponticello.sc.NumericalControlSpec
 import ponticello.sc.Rate
 import ponticello.sc.client.ScWriter
 import ponticello.sc.client.SuperColliderClient
+import ponticello.sc.client.eval
 import ponticello.ui.registry.ParameterDefList
 import reaktive.value.ReactiveValue
 import reaktive.value.ReactiveVariable
@@ -64,11 +65,21 @@ class ReferencedSynthDefObject(
         }
     }
 
-    private fun getSynthDefParameters(name: String): MutableList<ParameterDefObject> =
-        with(context[SuperColliderClient]) {
+    private fun getSynthDefParameters(name: String): List<ParameterDefObject> = when (name) {
+        "send" -> listOf(
+            ParameterDefObject.AMP,
+            ParameterDefObject.IN,
+            ParameterDefObject.OUT
+        )
+        "utility" -> listOf(
+            ParameterDefObject.BUS,
+            ParameterDefObject.AMP,
+            ParameterDefObject.PAN
+        )
+        else -> with(context[SuperColliderClient]) {
             val params = mutableListOf<ParameterDefObject>()
             val nParams = try {
-                send("controls", listOf(name)).get().toInt()
+                eval("${synthDesc(name)}.controls.size").get().toInt()
             } catch (ex: Exception) {
                 Logger.error("Failed to get number of parameters for SynthDef #$name", ex)
                 return@with mutableListOf()
@@ -102,6 +113,9 @@ class ReferencedSynthDefObject(
             }
             return params
         }
+    }
+
+    private fun synthDesc(name: String) = "SynthDescLib.global.synthDescs[\\$name]"
 
     override fun toString(): String = "ReferencedSynthDef #$name"
 

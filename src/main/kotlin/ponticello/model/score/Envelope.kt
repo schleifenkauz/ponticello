@@ -33,6 +33,8 @@ class Envelope(private val _points: MutableList<EnvelopePoint>) {
 
     val duration get() = points.last().time
 
+    val size: Int get() = points.size
+
     @Transient
     private var editedIndex: Int = -1
 
@@ -57,14 +59,18 @@ class Envelope(private val _points: MutableList<EnvelopePoint>) {
     }
 
     fun code(defaultWarp: Warp): String {
-        val levels = points.map { (_, y) -> y.toString() }
-        val times = points.zipWithNext { a, b -> (b.time - a.time).toString() }
+        val levels = getLevels()
+        val times = getTimes()
         val curves = points.drop(1).map { p -> (p.curve ?: defaultWarp) }
         val curve =
             if (curves.all { it == defaultWarp }) defaultWarp.code(context)
             else curves.joinToString(",", "[", "]")
         return "Env.new(levels: $levels, times: $times, curve: $curve)"
     }
+
+    fun getLevels() = points.map { (_, y) -> y.toDouble() }
+
+    fun getTimes() = points.zipWithNext { a, b -> (b.time - a.time).toDouble() }
 
     fun generatorCode(warp: Warp, offset: Decimal): String {
         val envCode = code(warp)

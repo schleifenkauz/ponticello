@@ -107,13 +107,15 @@ data class UGenControl(
         val uniqueName = activeObject.uniqueName
         val busName = auxilBusName(uniqueName, parameter)
         client.run {
-            +"var scope"
-            +"scope = Stethoscope.new(s, 1, $busName.index, rate:'control')"
-            val closeScope = "AppClock.sched(0.05) { scope.window.close; scope.quit; nil  }"
-            if (activeObject.associatedDef is SynthDefObject) {
-                +"${activeObject.superColliderName}.onFree { $closeScope }"
-            } else if (activeObject.associatedDef is ProcessDefObject) {
-                +"${activeObject.superColliderName}.addDependant { |obj, signal| if (signal == 'stopped') { $closeScope } }"
+            appendBlock("AppClock.sched(0)") {
+                +"var scope"
+                +"scope = Stethoscope.new(s, 1, $busName.index, rate:'control')"
+                val closeScope = "AppClock.sched(0.05) { scope.window.close; scope.quit; nil  }"
+                if (activeObject.associatedDef is SynthDefObject) {
+                    +"${activeObject.superColliderName}.onFree { $closeScope }"
+                } else if (activeObject.associatedDef is ProcessDefObject) {
+                    +"${activeObject.superColliderName}.addDependant { |obj, signal| if (signal == 'stopped') { $closeScope } }"
+                }
             }
         }
     }

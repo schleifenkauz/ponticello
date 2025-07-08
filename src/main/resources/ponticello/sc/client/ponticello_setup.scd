@@ -30,7 +30,6 @@ SynthDef(\send, {
     amp: [0, 1, \lin, 0.01, 1],
 ))).add;
 
-
 ServerBoot.add {
     ~ponticello_addr.sendMsg('/booted');
     ~time_warp_bus = Bus.control(s, 1);
@@ -53,7 +52,9 @@ ServerTree.add {
         id = msg[1];
         try {
             answer = handler.(*msg.drop(2));
-            ~ponticello_addr.sendMsg('/reply', id, answer.asString);
+            if (id != -1) {
+                ~ponticello_addr.sendMsg('/reply', id, answer.asString)
+            };
         } { |error|
 			~ponticello_addr.sendMsg('/error', id, error.what);
 			error.throw;
@@ -78,15 +79,14 @@ OSCdef('eval', {
         }
 	}
 }, 'eval');
-OSCdef('run', {
-	arg msg, time, addr, recvPort;
+OSCdef('run', { |msg|
 	var code = msg[2], fct;
 	fct = this.compile(code.asString);
 	if (fct == nil) { ~ponticello_addr.sendMsg('error', "Compilation error") };
 	fork {
 	    //code.postln;
 		try { fct.value } { |error|
-			~ponticello_addr.sendMsg('/error', nil, error.what);
+			~ponticello_addr.sendMsg('/error', -1, error.what);
 			error.throw;
 		}
 	}
@@ -217,6 +217,17 @@ OSCdef(\set_time_warp, { |msg|
 ~setupHandler.('controlStep', { |synthName, controlName|
 	SynthDescLib.global.synthDescs[synthName.asSymbol].specs[controlName][3];
 });
+OSCdef(\addEnvDef, { |msg|
+    var idx = msg[2], size = msg[3], curve = msg[4], levels, times;
+    levels = msg[5..(5 + size - 1)];
+    times = msg[(5 + size)..(5 + size + size - 1)];
+    SynthDef(("env_" ++ idx).asSymbol) {
+            arg out, cutoff = 0;
+            var env = Env.new(levels: levels.asArray, times: times.asArray, curve: 'lin'), sig;
+            sig = IEnvGen.kr(env, index: Sweep.kr(rate: ~time_warp_bus.kr) + cutoff);
+            Out.kr(out, sig);
+      }.add(completionMsg: { postf("Added Env SynthDef %\n", idx) });
+}, \addEnvDef);
 ~ponticello_addr.postln;
 ~ponticello_addr.sendMsg('/ready');
 "Successfully setup OSC!";
