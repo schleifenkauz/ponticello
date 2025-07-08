@@ -10,6 +10,7 @@ import fxutils.styleClass
 import javafx.geometry.Point2D
 import javafx.scene.layout.*
 import org.kordamp.ikonli.material2.Material2AL
+import ponticello.model.obj.ParameterDefObject
 import ponticello.model.project.InlineControlsDisplay
 import ponticello.model.project.UIState
 import ponticello.model.score.Envelope
@@ -107,7 +108,10 @@ class SoundProcessView(
             .filter { p ->
                 val control = obj.controls.controlMap[p.name.now]
                 control !is EnvelopeControl || !control.display.now
-            }
+            } + obj.controls
+            .filter { ctrl -> ctrl.spec.now is NumericalControlSpec && ctrl.now !is EnvelopeControl }
+            .filter { ctrl -> !obj.def.hasParameter(ctrl.name.now) }
+            .map { ctrl -> ParameterDefObject(ctrl.name.now, ctrl.spec.now!!) }
         val listView = SearchableParameterDefListView(
             possibleParameters, "New parameter", obj.context, obj, fixedParameterType = ParameterType.Numerical
         )

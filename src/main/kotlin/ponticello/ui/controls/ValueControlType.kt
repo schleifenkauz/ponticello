@@ -73,7 +73,7 @@ data object ValueControlType : ControlType<ValueControl>() {
     override fun supportsDialogInput(): Boolean = true
 
     override fun showDialogInput(
-        parameterName: String, specs: List<ControlSpec>, controls: List<ValueControl>, context: Context
+        parameterName: String, specs: List<ControlSpec>, controls: List<ValueControl>, context: Context,
     ): Boolean {
         val numericalSpecs = specs.filterIsInstance<NumericalControlSpec>()
         if (numericalSpecs.size != specs.size) {
@@ -161,6 +161,7 @@ data object ValueControlType : ControlType<ValueControl>() {
                 CheckBox(control.allocateBus)
                     .setupUndo(control.context[UndoManager], variableDescription = "Allocate bus")
                     .named("Allocate bus")
-            })
+            }
+        )
     }
 }

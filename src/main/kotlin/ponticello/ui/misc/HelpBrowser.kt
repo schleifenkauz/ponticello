@@ -19,9 +19,7 @@ import ponticello.sc.Identifier
 import ponticello.sc.MessageSend
 import ponticello.sc.editor.IdentifierEditor
 import ponticello.sc.editor.ScExprEditor
-import ponticello.ui.dock.Side
-import ponticello.ui.dock.ToolPane
-import ponticello.ui.dock.ToolPaneState
+import ponticello.ui.dock.*
 import ponticello.ui.impl.showDialog
 import reaktive.value.fx.asReactiveValue
 import reaktive.value.now
@@ -41,6 +39,22 @@ class HelpBrowser : ToolPane() {
         webView = WebView()
         webView.setPrefSize(600.0, 800.0)
         webView.engine.load("$URL_ROOT/Help.html")
+    }
+
+    override fun saveState(dest: ToolPaneState) {
+        super.saveState(dest)
+        if (dest is BrowserPaneState) {
+            dest.url = webView.engine.location ?: DEFAULT_URL
+        }
+    }
+
+    override fun initialize(layout: AppLayout, state: ToolPaneState) {
+        super.initialize(layout, state)
+        if (state is BrowserPaneState) {
+            webView.engine.load(state.url)
+        } else {
+            webView.engine.load(DEFAULT_URL)
+        }
     }
 
     override fun afterSetup() {
@@ -103,6 +117,8 @@ class HelpBrowser : ToolPane() {
         override fun createToolPane(project: PonticelloProject): ToolPane = HelpBrowser()
 
         private const val URL_ROOT = "https://doc.sccode.org/"
+
+        const val DEFAULT_URL = "$URL_ROOT/Help.html"
 
         private val browserActions = collectActions<HelpBrowser> {
             addAction("Back") {

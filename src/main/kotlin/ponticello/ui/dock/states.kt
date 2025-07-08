@@ -3,6 +3,7 @@ package ponticello.ui.dock
 import kotlinx.serialization.Serializable
 import ponticello.model.flow.MixerFlow
 import ponticello.model.registry.ObjectReference
+import ponticello.ui.misc.HelpBrowser
 import ponticello.ui.registry.BufferRegistryPane
 import ponticello.ui.registry.BusRegistryPane
 import ponticello.ui.registry.ObjectListView
@@ -92,6 +93,18 @@ class BufferRegistryPaneState private constructor() : SearchableToolPaneState() 
         fun default() = BufferRegistryPaneState().apply {
             mode = ToolPaneMode.Docked
             filter = BufferRegistryPane.BufferTypeFilter.All
+        }
+    }
+}
+
+@Serializable
+class BrowserPaneState private constructor() : SearchableToolPaneState() {
+    lateinit var url: String
+
+    companion object {
+        fun default() = BrowserPaneState().apply {
+            mode = ToolPaneMode.Docked
+            url = HelpBrowser.DEFAULT_URL
         }
     }
 }

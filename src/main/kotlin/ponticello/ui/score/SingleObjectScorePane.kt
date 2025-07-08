@@ -69,8 +69,10 @@ class SingleObjectScorePane(
             }
             ev.consume()
         }
-        marker.endY = GRID_HEIGHT
+        marker.startYProperty().bind(heightProperty().subtract(GRID_HEIGHT))
+        marker.endYProperty().bind(heightProperty())
         marker.visibleProperty().bind(context.project.uiState.snapEnabled.asObservableValue())
+        marker.isMouseTransparent = true
         meterObserver = rootObj.quantizationConfig.meter.forEach { ref ->
             meterChangeObserver?.kill()
             meterChangeObserver = null

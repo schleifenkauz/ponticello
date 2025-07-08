@@ -57,7 +57,7 @@ class ControlAssignmentEditor(val control: NamedParameterControl, val view: Scor
         return db.hasFile("wav") || db.hasContent(BufferObject.DATA_FORMAT)
     }
 
-    private fun showOptionPopup() {
+    fun showOptionPopup() {
         val spec = control.spec.now ?: return
         val options = ControlType.all.filter { option -> option.applicableOn(control.parentObject, spec) }
         if (options.isEmpty() || options.size == 1) return

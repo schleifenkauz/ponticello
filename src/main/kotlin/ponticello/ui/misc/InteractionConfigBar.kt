@@ -58,6 +58,7 @@ class InteractionConfigBar(private val settings: UIState) : HBox() {
             val shortcut = shortcutFor(option)
             body.on(shortcut) {
                 settings.snapOption.now = option
+                settings.snapEnabled.now = true
             }
         }
         body.registerActions(listOf(snapToggle))

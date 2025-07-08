@@ -50,9 +50,10 @@ object ServerActions : Action.Collector<PonticelloProject>({
         shortcut("Ctrl+Shift+M")
         icon(MaterialDesignG.GAUGE)
         executes { project ->
-            val numIns = project[SERVER_OPTIONS].numInputChannels
-            val numOuts = project[SERVER_OPTIONS].numOutputChannels
-            project.client.run("AppClock.sched(0) {ServerMeter.new(s, $numIns, $numOuts)}")
+//            val numIns = project[SERVER_OPTIONS].numInputChannels
+//            val numOuts = project[SERVER_OPTIONS].numOutputChannels
+//            project.client.run("AppClock.sched(0) {ServerMeter.new(s, $numIns, $numOuts)}")
+            project.client.run("AppClock.sched(0) { s.makeGui }")
         }
     }
 }) {

@@ -110,9 +110,10 @@ class ObjectBox<O : Any>(val parent: ObjectListView<O>, val obj: O) : Control() 
         isFocusTraversable = true
         addEventHandler(MouseEvent.MOUSE_CLICKED) { ev ->
             parent.select(this)
-            if (ev.clickCount == 2) {
-                parent.showSelected()
+            if (ev.clickCount == 2 && currentMode == DisplayMode.Collapsable) {
+                toggleExpanded()
             }
+            ev.consume()
         }
         styleClass(*config.boxStyle)
     }

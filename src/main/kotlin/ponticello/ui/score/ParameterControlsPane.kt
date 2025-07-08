@@ -23,7 +23,9 @@ import ponticello.model.registry.ObjectList
 import ponticello.model.score.ParameterControlList
 import ponticello.model.score.ParameterControlList.NamedParameterControl
 import ponticello.model.score.controls.ParameterControl
+import ponticello.model.score.controls.ValueControl
 import ponticello.sc.ControlSpec
+import ponticello.sc.NumericalControlSpec
 import ponticello.ui.controls.ControlAssignmentEditor
 import ponticello.ui.controls.ControlSpecPrompt
 import ponticello.ui.dock.SearchableToolPane
@@ -158,12 +160,39 @@ class ParameterControlsPane(
             addAction("Edit spec") {
                 enableWhen { box -> box.obj.spec.notNull() }
                 icon(Codicons.SYMBOL_PROPERTY)
+                shortcut("Ctrl+P")
                 executes { box ->
                     val control = box.obj
                     val initialSpec = control.spec.now ?: return@executes
                     ControlSpecPrompt.create(
                         control.name.now, control.parentObject, initialSpec
                     )?.showDialog(box, offset = Point2D(box.width, 0.0))
+                }
+            }
+            addAction("Select control type") {
+                shortcut("Ctrl+T")
+                executes { box ->
+                    val pane = box.config as? ParameterControlsPane ?: return@executes
+                    val editor = pane.editors[box.obj] ?: return@executes
+                    editor.showOptionPopup()
+                }
+            }
+            addAction("Increase value") {
+                //enableWhen { box -> box.obj.value().map { ctrl -> ctrl is ValueControl } and box.obj.spec }
+                shortcut("PLUS")
+                executes { box ->
+                    val ctrl = box.obj.now as? ValueControl ?: return@executes
+                    val spec = box.obj.spec.now as? NumericalControlSpec ?: return@executes
+                    ctrl.value.now = (ctrl.value.now + spec.step.get()).coerceIn(spec.range)
+                }
+            }
+            addAction("Decrease value") {
+                //enableWhen { box -> box.obj.value().map { ctrl -> ctrl is ValueControl } and box.obj.spec }
+                shortcut("MINUS")
+                executes { box ->
+                    val ctrl = box.obj.now as? ValueControl ?: return@executes
+                    val spec = box.obj.spec.now as? NumericalControlSpec ?: return@executes
+                    ctrl.value.now = (ctrl.value.now - spec.step.get()).coerceIn(spec.range)
                 }
             }
         }

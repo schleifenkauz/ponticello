@@ -84,6 +84,8 @@ class ParameterControlList(
 
         val parentObject get() = controls.associatedObject
 
+        fun value(): ReactiveValue<ParameterControl> = value
+
         val now get() = value.now
 
         fun copy(value: ParameterControl = now.copy()): NamedParameterControl =
