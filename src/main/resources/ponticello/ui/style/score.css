@@ -22,9 +22,17 @@
 }
 
 .memo-area {
-    -fx-background-color: transparent;
     -fx-text-fill: white;
     -fx-alignment: center;
+    -fx-font-size: 11px !important;
+    -fx-font-family: "Monospaced" !important;
+}
+
+TextArea.memo-area {
+    -fx-control-inner-background: transparent !important;
+    -fx-focus-color: transparent !important;
+    -fx-background-color: transparent;
+    -fx-padding: 0px;
 }
 
 Label.memo-area {
