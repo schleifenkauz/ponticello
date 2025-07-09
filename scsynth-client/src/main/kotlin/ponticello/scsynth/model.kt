@@ -66,6 +66,8 @@ data class UGenSpec(
             if (outputRates.size > 1) "$rate [$specialIndex..${specialIndex + outputRates.size - 1}]"
             else "$rate [$specialIndex]"
 
+        "BinaryOpUGen" -> "$className #$specialIndex [$rate]: ${inputs.joinToString(", ")} -> $outputRates"
+        "UnaryOpUGen" -> "$className #$specialIndex [$rate]: ${inputs.joinToString(", ")} -> $outputRates"
         else -> "$className[$rate${if (specialIndex != 0) ", $specialIndex" else ""}] ${inputs.joinToString(", ")} -> $outputRates"
     }
 }

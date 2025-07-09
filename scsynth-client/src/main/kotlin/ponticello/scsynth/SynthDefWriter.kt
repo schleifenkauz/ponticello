@@ -19,10 +19,11 @@ class SynthDefWriter(private val output: DataOutputStream) {
         val parameterValues = parameters.flatMap { p -> p.defaultValues }
         output.writeInt(parameterValues.size)
         for (value in parameterValues) output.writeFloat(value)
-        output.writeInt(parameters.size)
 
+        output.writeInt(parameters.size)
         for (param in parameters) {
             writeString(param.name)
+            output.writeInt(param.index)
         }
     }
 

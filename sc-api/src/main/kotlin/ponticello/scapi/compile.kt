@@ -26,11 +26,21 @@ class SynthDefCompiler {
             }
 
             is ControlUGen -> {
-                val param = Parameter(parameterValues, ugen.parameterName)
-                param.defaultValues = ugen.defaultValues
-                parameters.add(param)
-                parameterValues += ugen.defaultValues.size
-                listOf(UGenInputSpec(0, 0)) //TODO
+                val parameterIndex = parameterValues
+                val n = ugen.defaultValues.size
+                val idx = cacheUGen(ugen) {
+                    val param = Parameter(parameterIndex, ugen.parameterName)
+                    param.defaultValues = ugen.defaultValues
+                    parameters.add(param)
+                    parameterValues += ugen.defaultValues.size
+                    UGenSpec(
+                        "Control",
+                        ugen.rate,
+                        parameterIndex,
+                        inputs = emptyList(),
+                        outputRates = List(n) { ugen.rate })
+                }
+                (0 until n).map { outputIndex -> UGenInputSpec(idx, outputIndex) }
             }
 
             is OutputProxy -> {
@@ -91,17 +101,37 @@ class SynthDefCompiler {
 
 fun main() {
     val compiler = SynthDefCompiler()
-    val def = SynthDef("quinte") {
-        val snd = (SinOsc.ar(c(440, 660))).sum
+    val def = SynthDef("quinte2") {
+        val amp = SinOsc.kr(0.5.c).linexp((-1).c, 1.c, 0.01.c, 0.3.c)
+        var snd = (SinOsc.ar(c(440, 660))).sum
+        snd = snd * amp
+        val pan = SinOsc.kr("pan_rate".kr(0.1f))
+        snd = Pan2.ar(snd, pan)
         Out.ar(0, snd)
     }
     println(def.ugenGraph())
     val compiled = compiler.compileSynthDef(def)
     println(compiled)
 
-    val file = File("C:\\Users\\nikok\\AppData\\Local\\SuperCollider\\synthdefs\\quinte.scsyndef")
+    val file = File("C:\\Users\\nikok\\AppData\\Local\\SuperCollider\\synthdefs\\quinte2.scsyndef")
     DataOutputStream(file.outputStream()).use { output ->
         val writer = SynthDefWriter(output)
         writer.write(listOf(compiled))
     }
+
+    readSynthDefs(file.absolutePath).forEach { println(it) }
 }
+
+/*
+    v_0 = SinOsc[Audio] 440.0 [0], 0.0 [1] -> [Audio]
+    v_1 = SinOsc[Audio] 660.0 [2], 0.0 [1] -> [Audio]
+    v_2 = BinaryOpUGen #0 [Audio]: v_0[0], v_1[0] -> [Audio]
+    v_3 = SinOsc[Control] 1.0 [3], 0.0 [1] -> [Control]
+    v_4 = Clip[Control] v_3[0], -1.0 [4], 1.0 [3] -> [Control]
+    v_5 = LinExp[Control] v_4[0], -1.0 [4], 1.0 [3], 0.01 [5], 1.0 [3] -> [Control]
+    v_6 = BinaryOpUGen #2 [Audio]: v_2[0], v_5[0] -> [Audio]
+    v_7 = Control [0]
+    v_8 = SinOsc[Control] v_7[0], 0.0 [1] -> [Control]
+    v_9 = Pan2[Audio] v_6[0], v_8[0], 1.0 [3] -> [Audio, Audio]
+    v_10 = Out[Audio] 0.0 [1], v_9[0], v_9[1] -> []
+* */

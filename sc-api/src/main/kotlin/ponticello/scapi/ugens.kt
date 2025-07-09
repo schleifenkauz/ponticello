@@ -202,9 +202,9 @@ object SinOsc {
 }
 
 object Pan2 {
-    fun kr(input: UGen, pos: UGen = 0f.c, mul: UGen = 1f.c) = kr("Pan2", input, pos, mul)
+    fun kr(input: UGen, pos: UGen = 0f.c, mul: UGen = 1f.c) = kr("Pan2", input, pos, mul, outputs = 2)
 
-    fun ar(input: UGen, pos: UGen = 0f.c, mul: UGen = 1f.c) = ar("Pan2", input, pos, mul)
+    fun ar(input: UGen, pos: UGen = 0f.c, mul: UGen = 1f.c) = ar("Pan2", input, pos, mul, outputs = 2)
 }
 
 object LFSaw {
@@ -227,3 +227,14 @@ object In {
     fun ar(bus: Int = 0, channels: Int) = ar("In", bus.c, outputs = channels)
     fun kr(bus: Int, channels: Int) = kr("In", bus.c, outputs = channels)
 }
+
+fun UGen.clip(min: UGen = 0f.c, max: UGen = 1f.c) =
+    createRegularUgen("Clip", rate, arrayOf(this, min, max), outputs = 1)
+
+fun UGen.linexp(sourceMin: UGen, sourceMax: UGen, targetMin: UGen, targetMax: UGen) =
+    createRegularUgen(
+        "LinExp",
+        rate,
+        arrayOf(this.clip(sourceMin, sourceMax), sourceMin, sourceMax, targetMin, targetMax),
+        outputs = 1
+    )
