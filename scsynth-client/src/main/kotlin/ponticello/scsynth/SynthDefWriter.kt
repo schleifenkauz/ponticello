@@ -4,7 +4,7 @@ import java.io.DataOutputStream
 
 class SynthDefWriter(private val output: DataOutputStream) {
     private fun writeString(str: String) {
-        output.writeByte(str.length.toUByte().toInt())
+        output.writeByte(str.length)
         output.writeBytes(str)
     }
 
@@ -30,10 +30,11 @@ class SynthDefWriter(private val output: DataOutputStream) {
         output.writeInt(ugens.size)
         for (spec in ugens) {
             writeString(spec.className)
-            output.writeInt(spec.rate.ordinal)
+            output.writeByte(spec.rate.ordinal)
+            output.writeInt(spec.inputs.size)
+            output.writeInt(spec.outputRates.size)
             output.writeShort(spec.specialIndex)
 
-            output.writeInt(spec.inputs.size)
             for (input in spec.inputs) {
                 when (input) {
                     is ConstantInputSpec -> {
@@ -48,7 +49,6 @@ class SynthDefWriter(private val output: DataOutputStream) {
                 }
             }
 
-            output.writeInt(spec.outputRates.size)
             spec.outputRates.forEach { rate -> output.writeByte(rate.ordinal) }
         }
     }
@@ -68,7 +68,7 @@ class SynthDefWriter(private val output: DataOutputStream) {
         writeConstants(synthDef.constants)
         writeParameters(synthDef.parameters)
         writeUGenSpecs(synthDef.ugens)
-
+        writeVariants(synthDef.variants)
     }
 
     fun write(defs: List<CompiledSynthDef>) {

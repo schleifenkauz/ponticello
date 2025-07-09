@@ -26,7 +26,16 @@ data class Parameter(val index: Int, val name: String) {
     }
 }
 
-enum class Rate { Scalar, Control, Audio, }
+enum class Rate {
+    Scalar, Control, Audio;
+
+    val code
+        get() = when (this) {
+            Scalar -> "ir"
+            Control -> "kr"
+            Audio -> "ar"
+        }
+}
 
 sealed class InputSpec {
     companion object {
