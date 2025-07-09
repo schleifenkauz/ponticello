@@ -1,8 +1,6 @@
 package ponticello.scapi
 
 import ponticello.scsynth.*
-import java.io.DataOutputStream
-import java.io.File
 import java.util.*
 
 class SynthDefCompiler {
@@ -15,14 +13,27 @@ class SynthDefCompiler {
     private val ugens = mutableListOf<UGenSpec>()
     private val ugenMap = IdentityHashMap<UGen, Int>()
 
-    private fun compile(ugen: UGen): List<InputSpec> {
+    private fun compile(ugen: UGen, outputIndex: Int = -1): InputSpec {
+        val outputIndex = when (ugen.numChannels) {
+            0 -> throw AssertionError("Error compiling $ugen: numChannels = 0")
+            1 -> {
+                require(outputIndex == -1) { "Error compiling $ugen: outputIndex = $outputIndex but not a multi channel UGen" }
+                0
+            }
+
+            else -> {
+                require(outputIndex >= 0) { "Error compiling $ugen: $outputIndex is negative but numChannels = ${ugen.numChannels}" }
+                outputIndex
+            }
+
+        }
         return when (ugen) {
             is ConstantUGen -> {
                 val idx = constantMap.getOrPut(ugen.value) {
                     constants.add(ugen.value)
                     constants.indices.last
                 }
-                listOf(ConstantInputSpec(idx, ugen.value))
+                ConstantInputSpec(idx, ugen.value)
             }
 
             is ControlUGen -> {
@@ -40,46 +51,82 @@ class SynthDefCompiler {
                         inputs = emptyList(),
                         outputRates = List(n) { ugen.rate })
                 }
-                (0 until n).map { outputIndex -> UGenInputSpec(idx, outputIndex) }
+                UGenInputSpec(idx, outputIndex)
             }
 
             is OutputProxy -> {
-                val outputs = compile(ugen.source)
-                listOf(outputs[ugen.index])
+                compile(ugen.source, ugen.index)
+            }
+
+            is EnvGen -> {
+                val idx = cacheUGen(ugen) {
+                    val inputs = buildList {
+                        add(compile(ugen.gate))
+                        add(compile(ugen.levelScale))
+                        add(compile(ugen.levelBias))
+                        add(compile(ugen.timeScale))
+                        add(compile(ugen.doneAction.ordinal.c))
+
+                        val levels = ugen.envelope.levels
+                        val times = ugen.envelope.times
+                        val curve = ugen.envelope.curve
+
+                        require(levels.size == times.size + 1)
+                        require(curve.size == times.size)
+
+                        add(compile(levels[0]))
+                        add(compile(times.size.c))
+                        add(compile(ugen.envelope.releaseNode.c))
+                        add(compile(ugen.envelope.loopNode.c))
+
+                        for (i in times.indices) {
+                            add(compile(levels[i + 1]))
+                            add(compile(times[i]))
+                            add(compile(curve[i].type.c))
+                            add(compile(curve[i].value.c))
+                        }
+                    }
+                    UGenSpec(
+                        "EnvGen", ugen.rate, 0, inputs,
+                        outputRates = listOf(ugen.rate)
+                    )
+                }
+                UGenInputSpec(idx)
             }
 
             is BinaryOpUGen -> {
                 val idx = cacheUGen(ugen) {
+                    val inputs = listOf(compile(ugen.left), compile(ugen.right))
                     UGenSpec(
-                        "BinaryOpUGen", ugen.rate, ugen.operator.ordinal,
-                        inputs = compile(ugen.left) + compile(ugen.right), outputRates = listOf(ugen.rate)
+                        "BinaryOpUGen", ugen.rate, ugen.operator.ordinal, inputs,
+                        outputRates = listOf(ugen.rate)
                     )
                 }
-                listOf(UGenInputSpec(idx, outputIndex = 0))
+                UGenInputSpec(idx)
             }
 
             is UnaryOpUgen -> {
                 val idx = cacheUGen(ugen) {
                     UGenSpec(
                         "UnaryOpUGen", ugen.rate, ugen.operator.ordinal,
-                        inputs = compile(ugen.input), outputRates = listOf(ugen.rate)
+                        inputs = listOf(compile(ugen.input)), outputRates = listOf(ugen.rate)
                     )
                 }
-                listOf(UGenInputSpec(idx, outputIndex = 0))
+                UGenInputSpec(idx)
             }
 
             is RegularUGen -> {
                 val idx = cacheUGen(ugen) {
                     UGenSpec(
                         ugen.className, ugen.rate, 0,
-                        inputs = ugen.inputs.flatMap { compile(it) }, outputRates = ugen.outputRates
+                        inputs = ugen.inputs.map { compile(it) }, outputRates = ugen.outputRates
                     )
                 }
-                ugen.outputRates.indices.map { outputIndex -> UGenInputSpec(idx, outputIndex) }
+                UGenInputSpec(idx, outputIndex)
             }
 
             is MultiChannelUGen -> {
-                ugen.channels.map { compile(it) }.flatten() //TODO is it ok to flatten this?
+                compile(ugen.channels[outputIndex])
             }
         }
     }
@@ -94,44 +141,10 @@ class SynthDefCompiler {
     }
 
     fun compileSynthDef(def: SynthDef): CompiledSynthDef {
-        compile(def.ugenGraph())
+        val ugen = def.ugenGraph()
+        if (ugen.numChannels != 1) compile(ugen, outputIndex = 0)
+        else compile(ugen, outputIndex = -1)
         return CompiledSynthDef(def.name, constants, parameters, ugens, variants = emptyList())
     }
 }
 
-fun main() {
-    val compiler = SynthDefCompiler()
-    val def = SynthDef("quinte2") {
-        val amp = SinOsc.kr(0.5.c).linexp((-1).c, 1.c, 0.01.c, 0.3.c)
-        var snd = (SinOsc.ar(c(440, 660))).sum
-        snd = snd * amp
-        val pan = SinOsc.kr("pan_rate".kr(0.1f))
-        snd = Pan2.ar(snd, pan)
-        Out.ar(0, snd)
-    }
-    println(def.ugenGraph())
-    val compiled = compiler.compileSynthDef(def)
-    println(compiled)
-
-    val file = File("C:\\Users\\nikok\\AppData\\Local\\SuperCollider\\synthdefs\\quinte2.scsyndef")
-    DataOutputStream(file.outputStream()).use { output ->
-        val writer = SynthDefWriter(output)
-        writer.write(listOf(compiled))
-    }
-
-    readSynthDefs(file.absolutePath).forEach { println(it) }
-}
-
-/*
-    v_0 = SinOsc[Audio] 440.0 [0], 0.0 [1] -> [Audio]
-    v_1 = SinOsc[Audio] 660.0 [2], 0.0 [1] -> [Audio]
-    v_2 = BinaryOpUGen #0 [Audio]: v_0[0], v_1[0] -> [Audio]
-    v_3 = SinOsc[Control] 1.0 [3], 0.0 [1] -> [Control]
-    v_4 = Clip[Control] v_3[0], -1.0 [4], 1.0 [3] -> [Control]
-    v_5 = LinExp[Control] v_4[0], -1.0 [4], 1.0 [3], 0.01 [5], 1.0 [3] -> [Control]
-    v_6 = BinaryOpUGen #2 [Audio]: v_2[0], v_5[0] -> [Audio]
-    v_7 = Control [0]
-    v_8 = SinOsc[Control] v_7[0], 0.0 [1] -> [Control]
-    v_9 = Pan2[Audio] v_6[0], v_8[0], 1.0 [3] -> [Audio, Audio]
-    v_10 = Out[Audio] 0.0 [1], v_9[0], v_9[1] -> []
-* */

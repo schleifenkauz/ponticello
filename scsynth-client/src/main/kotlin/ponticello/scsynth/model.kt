@@ -47,10 +47,10 @@ sealed class InputSpec {
 }
 
 data class ConstantInputSpec(val index: Int, val value: Float) : InputSpec() {
-    override fun toString(): String = "$value [$index]"
+    override fun toString(): String = "$value"// + " [$index]"
 }
 
-data class UGenInputSpec(val index: Int, val outputIndex: Int) : InputSpec() {
+data class UGenInputSpec(val index: Int, val outputIndex: Int = 0) : InputSpec() {
     override fun toString(): String = "v_$index[$outputIndex]"
 }
 
