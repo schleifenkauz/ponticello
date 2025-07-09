@@ -1,1 +1,3 @@
 rootProject.name = "ponticello"
+include 'scsynth-client'
+include 'sc-api'

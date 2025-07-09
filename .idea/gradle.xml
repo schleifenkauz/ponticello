@@ -9,6 +9,8 @@
         <option name="modules">
           <set>
             <option value="$PROJECT_DIR$" />
+            <option value="$PROJECT_DIR$/sc-api" />
+            <option value="$PROJECT_DIR$/scsynth-client" />
           </set>
         </option>
       </GradleProjectSettings>
