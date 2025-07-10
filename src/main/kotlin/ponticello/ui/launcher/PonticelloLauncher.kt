@@ -149,9 +149,9 @@ class PonticelloLauncher {
                 progressBar.displayProgress(0.2, "Booted SuperCollider server, opening project...")
                 thread(isDaemon = true) {
                     context[projectDirectory] = folder
-                    val project = PonticelloProject.loadFrom(folder, progressBar, targetProgress = 0.9)
-                    progressBar.displayProgress(0.95, "Loaded project, initializing...")
-                    project.initialize(context)
+                    val project = PonticelloProject.loadFrom(folder, progressBar, targetProgress = 0.5)
+                    progressBar.displayProgress(0.5, "Loaded project, initializing...")
+                    project.initialize(context, progressBar, totalDeltaProgress = 0.45)
                     project[SERVER_OPTIONS].configureIOBuses()
                     openProject(project)
                 }
@@ -203,9 +203,9 @@ class PonticelloLauncher {
             clientReady = { client -> client.run("s.boot") },
             serverReady = {
                 progressBar.displayProgress(0.2, "Booted SuperCollider server, creating new project...")
-                val project = PonticelloProject.create(location, context)
+                val project = PonticelloProject.create(location, context, progressBar, totalDeltaProgress = 0.7)
                 save(project, location)
-                progressBar.displayProgress(0.3, "Created new project...")
+                progressBar.displayProgress(0.95, "Created new project...")
                 openProject(project)
             })
     }

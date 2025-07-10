@@ -63,7 +63,7 @@ class EnvelopeControl(
         val arguments = mutableListOf<Any>(index, points.size, curve)
         arguments.addAll(points.getLevels())
         arguments.addAll(points.getTimes())
-        context[SuperColliderClient].sendAsync("addEnvDef", arguments)
+        context[SuperColliderClient].send("addEnvDef", arguments).join()
     }
 
     override fun copy(): ParameterControl =
@@ -154,5 +154,9 @@ class EnvelopeControl(
 
     companion object {
         private var counter = 0
+
+        fun resetCounter() {
+            counter = 0
+        }
     }
 }

@@ -40,6 +40,7 @@ import ponticello.ui.registry.SimpleSearchableRegistryView
 import reaktive.value.now
 import reaktive.value.reactiveVariable
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.Future
 import kotlin.collections.component1
 import kotlin.collections.component2
 import kotlin.collections.set
@@ -101,9 +102,11 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
         score.deleteTimeRange(start, end)
     }
 
-    open fun repaint() {
+    open fun repaint(): Future<*> {
         removeOutOfRangeChildren()
-        layoutObjects(views.iterator(), Long.MAX_VALUE, CompletableFuture())
+        val future = CompletableFuture<Unit>()
+        layoutObjects(views.iterator(), Long.MAX_VALUE, future)
+        return future
     }
 
     protected fun removeOutOfRangeChildren() {
@@ -118,8 +121,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
 
     protected fun layoutObjects(
         itr: Iterator<Map.Entry<ScoreObjectInstance, ScoreObjectView>>,
-        maxTime: Long,
-        job: CompletableFuture<Unit>,
+        maxTime: Long, job: CompletableFuture<Unit>,
     ) {
         val tStart = System.currentTimeMillis()
         while (itr.hasNext()) {

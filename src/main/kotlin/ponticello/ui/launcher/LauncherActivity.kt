@@ -7,7 +7,7 @@ import fxutils.actions.registerShortcuts
 import fxutils.infiniteSpace
 import fxutils.label
 import fxutils.prompt.YesNoPrompt
-import fxutils.runFXWithTimeout
+import fxutils.runAfterLayout
 import fxutils.styleClass
 import hextant.context.Context
 import javafx.scene.Parent
@@ -74,7 +74,7 @@ class LauncherActivity(private val launcher: PonticelloLauncher) : Activity() {
     }
 
     override fun afterShowing() {
-        runFXWithTimeout(100) {
+        runAfterLayout {
             primaryStage.sizeToScene()
             primaryStage.isResizable = false
             primaryStage.centerOnScreen()

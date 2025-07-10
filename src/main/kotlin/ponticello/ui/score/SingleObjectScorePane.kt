@@ -23,6 +23,7 @@ import reaktive.value.binding.`if`
 import reaktive.value.forEach
 import reaktive.value.fx.asObservableValue
 import reaktive.value.now
+import java.util.concurrent.Future
 
 class SingleObjectScorePane(
     val rootObj: ScoreObject, context: Context,
@@ -88,9 +89,10 @@ class SingleObjectScorePane(
         return getObjectView(inst)
     }
 
-    override fun repaint() {
-        super.repaint()
+    override fun repaint(): Future<Boolean> {
+        val future = super.repaint()
         repaintGrid()
+        return future
     }
 
     private fun repaintGrid() {

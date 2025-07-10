@@ -11,6 +11,8 @@ import ponticello.model.flow.AudioFlows
 import ponticello.model.player.ScorePlayer
 import ponticello.model.score.Score
 import ponticello.ui.controls.NamePrompt
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.Future
 import kotlin.math.exp
 
 class NavigableScorePane(score: Score, context: Context) : RootScorePane(score, context) {
@@ -30,20 +32,20 @@ class NavigableScorePane(score: Score, context: Context) : RootScorePane(score, 
         }
     }
 
-    fun displayWholeScore() {
+    fun displayWholeScore(): Future<Boolean> {
         val totalDuration = score.objectInstances.maxOfOrNull { obj -> obj.start + obj.duration } ?: 60.0.asTime
-        display(zero, totalDuration)
+        return display(zero, totalDuration)
     }
 
-    fun display(start: Decimal, end: Decimal) {
+    fun display(start: Decimal, end: Decimal): Future<Boolean> {
         if (end < start) {
             Logger.severe("Attempt to display empty time range: $start .. $end", Logger.Category.Score)
-            return
+            return CompletableFuture.completedFuture(false)
         }
         displayStart = start
         displayEnd = end
         noNegativeTimes()
-        repaint()
+        return repaint()
     }
 
     private fun noNegativeTimes() {

@@ -20,6 +20,7 @@ import reaktive.event.unitEvent
 import reaktive.value.now
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Executors
+import java.util.concurrent.Future
 
 abstract class RootScorePane(score: Score, context: Context) : ScorePane(score, context) {
     private val positionTracker = Line() styleClass "mouse-tracker-line"
@@ -86,7 +87,7 @@ abstract class RootScorePane(score: Score, context: Context) : ScorePane(score, 
         val semitransparent = editor.objectView.backgroundColor.now.deriveColor(1.0, 1.0, 1.0, 0.3)
         pane.style = "-fx-background-color: ${semitransparent.toString().replacePrefix("0x", "#")};"
         magnifiedEnvelope = EnvelopeEditor(editor.namedControl, editor.envelope, editor.objectView, pane)
-            .also { editor -> editor.singleEnvelopeMode = true }
+            .also { it.singleEnvelopeMode = true }
         val objName = editor.objectView.obj.name.now
         val title = "Envelope for ${editor.parameterName} of $objName"
         magnifierWindow?.hide()
@@ -109,10 +110,11 @@ abstract class RootScorePane(score: Score, context: Context) : ScorePane(score, 
         window.scene.fill = Color.TRANSPARENT
     }
 
-    private fun layoutObjects() {
+    private fun layoutObjects(): Future<Boolean> {
         val repaintTrigger = latestRepaintTrigger
-        val maxTime = 25L //determines how much time is spent consecutively on the Application Thread
+        val maxTime = 50L //determines how much time is spent consecutively on the Application Thread
         val itr = views.iterator()
+        val future = CompletableFuture<Boolean>()
         layoutExecutor.execute {
             while (itr.hasNext()) {
                 if (repaintTrigger != latestRepaintTrigger) {
@@ -121,18 +123,27 @@ abstract class RootScorePane(score: Score, context: Context) : ScorePane(score, 
                 val job = CompletableFuture<Unit>()
                 Platform.runLater { layoutObjects(itr, maxTime, job) }
                 job.join()
+                println("LAYOUT OBJECTS")
             }
+            println("LAYOUT COMPLETED!")
+            future.complete(true)
         }
+        return future
     }
 
-    override fun repaint() {
+    override fun repaint(): Future<Boolean> {
+        if (height == 0.0 || width == 0.0) return CompletableFuture.completedFuture(false)
+        if (displayEnd - displayStart <= zero) return CompletableFuture.completedFuture(false)
+        println("#################################################")
+        println("Displaying from $displayStart to $displayEnd")
         latestRepaintTrigger = System.currentTimeMillis()
         removeOutOfRangeChildren()
-        layoutObjects()
+        val future = layoutObjects()
         repositionEnvelopeMagnifier()
         repaint.fire()
         if (positionTracker !in children) children.add(positionTracker)
         context[ScorePlayer.CURRENT].playHead.updatePosition()
+        return future
     }
 
     override fun getNearestGrid(position: ObjectPosition): Pair<Decimal, MeterObject>? {

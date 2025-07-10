@@ -31,11 +31,10 @@ SynthDef(\send, {
 ))).add;
 
 ServerBoot.add {
-    ~ponticello_addr.sendMsg('/booted');
     ~time_warp_bus = Bus.control(s, 1);
 	Task {
 		1.wait;
-		VSTPlugin.search(verbose: false);
+		VSTPlugin.search(verbose: false, action: { ~ponticello_addr.sendMsg('/booted') });
 	}.play;
 };
 ServerTree.add {
@@ -69,7 +68,6 @@ OSCdef('eval', {
     if (fct == nil) { ~ponticello_addr.sendMsg('error', id, "Compilation error") } {
         fork {
             try {
-	            //code.postln;
                 answer = fct.value;
                 ~ponticello_addr.sendMsg('/reply', id, answer.asString);
             } { |error|
@@ -84,7 +82,6 @@ OSCdef('run', { |msg|
 	fct = this.compile(code.asString);
 	if (fct == nil) { ~ponticello_addr.sendMsg('error', "Compilation error") };
 	fork {
-	    //code.postln;
 		try { fct.value } { |error|
 			~ponticello_addr.sendMsg('/error', -1, error.what);
 			error.throw;
@@ -129,8 +126,13 @@ OSCdef(\save_plugin_state, { |msg|
     var id = msg[1], controller_var = msg[2], path = msg[3], controller;
     controller = currentEnvironment[controller_var.asSymbol];
     if (controller != nil) {
-        controller.writeProgram(path.asString) { |ctrl, ok|
-            ~ponticello_addr.sendMsg('/reply', id, ok.asString)
+        try {
+            controller.writeProgram(path.asString) { |ctrl, ok|
+                ~ponticello_addr.sendMsg('/reply', id, ok.asString)
+            }
+        } { |error|
+            ~ponticello_addr.sendMsg('/error', id, error.what);
+            error.throw;
         }
     } { ~ponticello_addr.sendMsg('/reply', id, "false") }
 }, \save_plugin_state);
@@ -218,15 +220,20 @@ OSCdef(\set_time_warp, { |msg|
 	SynthDescLib.global.synthDescs[synthName.asSymbol].specs[controlName][3];
 });
 OSCdef(\addEnvDef, { |msg|
-    var idx = msg[2], size = msg[3], curve = msg[4], levels, times;
+    var id = msg[1], idx = msg[2], size = msg[3], curve = msg[4], levels, times;
     levels = msg[5..(5 + size - 1)];
     times = msg[(5 + size)..(5 + size + size - 1)];
-    SynthDef(("env_" ++ idx).asSymbol) {
+    try {
+        SynthDef(("env_" ++ idx).asSymbol) {
             arg out, cutoff = 0;
             var env = Env.new(levels: levels.asArray, times: times.asArray, curve: 'lin'), sig;
             sig = IEnvGen.kr(env, index: Sweep.kr(rate: ~time_warp_bus.kr) + cutoff);
             Out.kr(out, sig);
-      }.add(completionMsg: { postf("Added Env SynthDef %\n", idx) });
+        }.add(completionMsg: { ~ponticello_addr.sendMsg('reply', id, "ok") });
+      } { |error|
+          ~ponticello_addr.sendMsg('error', id, error.what);
+          error.throw;
+      }
 }, \addEnvDef);
 ~ponticello_addr.postln;
 ~ponticello_addr.sendMsg('/ready');

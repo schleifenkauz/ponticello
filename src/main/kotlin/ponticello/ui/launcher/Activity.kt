@@ -1,5 +1,6 @@
 package ponticello.ui.launcher
 
+import fxutils.runAfterLayout
 import hextant.context.Context
 import hextant.fx.initHextantScene
 import javafx.scene.Parent
@@ -16,18 +17,27 @@ abstract class Activity {
 
     protected abstract fun getLayout(): Parent
 
-    protected open fun beforeShowing() {}
+    protected open fun beforeShowing(): Unit = Unit
 
-    protected open fun afterShowing() {}
+    protected open fun afterShowing() {
+        setVisible()
+    }
+
+    protected fun setVisible() {
+        primaryStage.scene.root.isVisible = true
+    }
 
     fun show(stage: Stage) {
         this.primaryStage = stage
         stage.scene = Scene(getLayout())
+        stage.scene.root.isVisible = false
         stage.scene.initHextantScene(context)
         stage.icons.setAll(APP_ICON)
         beforeShowing()
         stage.show()
-        afterShowing()
+        runAfterLayout {
+            afterShowing()
+        }
     }
 
     fun hide() {
@@ -40,6 +50,7 @@ abstract class Activity {
     protected open fun close() {}
 
     companion object {
-        val APP_ICON = Image(PonticelloApp::class.java.getResource("/ponticello/ui/icons/appicon.png")!!.toExternalForm())
+        val APP_ICON =
+            Image(PonticelloApp::class.java.getResource("/ponticello/ui/icons/appicon.png")!!.toExternalForm())
     }
 }

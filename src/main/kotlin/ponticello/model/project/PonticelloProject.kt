@@ -8,6 +8,7 @@ import ponticello.model.flow.AudioFlows
 import ponticello.model.obj.ContextualObject
 import ponticello.model.score.ScoreObject
 import ponticello.model.score.UnresolvedScoreObject
+import ponticello.model.score.controls.EnvelopeControl
 import ponticello.sc.client.SuperColliderClient
 import ponticello.ui.dock.AppLayout
 import ponticello.ui.launcher.PonticelloLauncher.Companion.currentProject
@@ -32,11 +33,13 @@ class PonticelloProject private constructor(val components: Map<Component<out Co
 
     val dataDir get() = projectDirectory.resolve("data")
 
-    fun initialize(context: Context) {
+    fun initialize(context: Context, progressBar: ProgressIndicator, totalDeltaProgress: Double) {
+        EnvelopeControl.resetCounter()
         context[currentProject] = this
         this.context = context
         client = context[SuperColliderClient]
         for (comp in allComponents) {
+            progressBar.increaseProgress(totalDeltaProgress / allComponents.size, "Initializing ${comp.name}")
             get(comp).initialize(context)
         }
     }
@@ -117,6 +120,7 @@ class PonticelloProject private constructor(val components: Map<Component<out Co
             os.contains("win") -> Runtime.getRuntime().exec("explorer.exe /select,$projectDirectory")
             os.contains("nix") || os.contains("nux") || os.contains("aix") ->
                 Runtime.getRuntime().exec("xdg-open $projectDirectory")
+
             os.contains("mac") -> Runtime.getRuntime().exec("open $projectDirectory")
         }
     }
@@ -140,12 +144,15 @@ class PonticelloProject private constructor(val components: Map<Component<out Co
             return project
         }
 
-        fun create(location: File, context: Context): PonticelloProject {
+        fun create(
+            location: File, context: Context,
+            progressBar: ProgressIndicator, totalDeltaProgress: Double,
+        ): PonticelloProject {
             val components = allComponents.associateWith { component -> component.default() }
             val project = PonticelloProject(components)
             context[projectDirectory] = location
             project.projectDirectory = location
-            project.initialize(context)
+            project.initialize(context, progressBar, totalDeltaProgress)
             return project
         }
     }

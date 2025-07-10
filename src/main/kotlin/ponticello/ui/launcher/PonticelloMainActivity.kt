@@ -4,8 +4,8 @@ import bundles.PublicProperty
 import bundles.publicProperty
 import bundles.set
 import fxutils.actions.registerActions
+import fxutils.awaitFx
 import fxutils.registerShortcuts
-import fxutils.runFXWithTimeout
 import javafx.geometry.Dimension2D
 import javafx.scene.input.KeyCombination
 import javafx.stage.Screen
@@ -19,6 +19,8 @@ import ponticello.model.project.*
 import ponticello.sc.client.SuperColliderClient
 import ponticello.ui.actions.*
 import ponticello.ui.dock.AppLayout
+import ponticello.ui.impl.DEFAULT_SCENE_FILL
+import ponticello.ui.impl.sceneFill
 import ponticello.ui.midi.ContextualMidiReceiver
 import ponticello.ui.misc.InteractionConfigBar
 import ponticello.ui.score.*
@@ -81,19 +83,24 @@ class PonticelloMainActivity(val project: PonticelloProject) : Activity() {
         ArrowKeys.registerArrowKeys(primaryStage.scene, context)
         primaryStage.title = "Ponticello: ${project.name}"
         primaryStage.isResizable = true
+        primaryStage.sceneFill(DEFAULT_SCENE_FILL)
         val state = project[UI_STATE].getWindowState(WindowState.Reference.ByTitle("MainWindow"), ::RegularWindowState)
         val screenSize = Screen.getPrimary().bounds
         state.applyTo(primaryStage, defaultSize = Dimension2D(screenSize.width, screenSize.height))
     }
 
     override fun afterShowing() {
-        runFXWithTimeout(20) {
-            val displayRange = project[UI_STATE].mainScoreDisplayRange
-            if (displayRange == null) mainScoreView.displayWholeScore()
-            else mainScoreView.display(displayRange.start, displayRange.endInclusive)
-            for (toolPane in appLayout.toolPanes()) {
-                toolPane.restoreShowing()
-            }
+        for (toolPane in appLayout.toolPanes()) {
+            toolPane.restoreShowing()
+        }
+        mainScoreView.isVisible = false
+        setVisible()
+        val displayRange = project[UI_STATE].mainScoreDisplayRange
+        if (displayRange == null) mainScoreView.displayWholeScore().awaitFx {
+            mainScoreView.isVisible = true
+        }
+        else mainScoreView.display(displayRange.start, displayRange.endInclusive).awaitFx {
+            mainScoreView.isVisible = true
         }
     }
 
