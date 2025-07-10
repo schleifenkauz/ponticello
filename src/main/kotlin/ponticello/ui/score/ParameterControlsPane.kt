@@ -97,7 +97,7 @@ class ParameterControlsPane(
             obj
         }
 
-        else -> null
+        else -> super.getDroppedObject(ev)
     }
 
     override fun dropObject(obj: NamedParameterControl, idx: Int, list: ObjectList<NamedParameterControl>) {

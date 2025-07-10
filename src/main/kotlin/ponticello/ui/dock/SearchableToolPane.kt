@@ -7,6 +7,7 @@ import fxutils.styleClass
 import javafx.scene.Cursor
 import javafx.scene.Node
 import javafx.scene.Parent
+import javafx.scene.input.DragEvent
 import javafx.stage.Window
 import org.controlsfx.control.textfield.CustomTextField
 import org.kordamp.ikonli.javafx.FontIcon
@@ -14,6 +15,7 @@ import org.kordamp.ikonli.material2.Material2MZ
 import org.kordamp.ikonli.materialdesign2.MaterialDesignB
 import ponticello.model.registry.NamedObject
 import ponticello.model.registry.NamedObjectList
+import ponticello.ui.impl.getFrom
 import ponticello.ui.registry.ListDisplayConfig
 import ponticello.ui.registry.ObjectListView
 import ponticello.ui.registry.ObjectListView.Companion.modeChangeActions
@@ -65,6 +67,15 @@ abstract class SearchableToolPane<O : NamedObject>(
     }
 
     protected open fun extraHeaderActions(): List<ContextualizedAction> = emptyList()
+
+    override fun getDroppedObject(ev: DragEvent): O? {
+        val format = dataFormat
+        if (format != null && ev.dragboard.hasContent(format)) {
+            val obj = ev.dragboard.getFrom(list, format)
+            return obj
+        }
+        return null
+    }
 
     private fun setupSearchField() {
         searchText.promptText = "Search..."

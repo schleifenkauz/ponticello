@@ -43,7 +43,6 @@ import ponticello.ui.dock.BufferRegistryPaneState
 import ponticello.ui.dock.Side
 import ponticello.ui.dock.ToolPane
 import ponticello.ui.dock.ToolPaneState
-import ponticello.ui.impl.getFrom
 import ponticello.ui.launcher.PonticelloFiles
 import ponticello.ui.score.ScoreObjectDuplicator
 import reaktive.value.fx.asObservableValue
@@ -99,14 +98,13 @@ class BufferRegistryPane(private val buffers: BufferRegistry) : ObjectRegistryPa
     }
 
     override fun getDroppedObject(ev: DragEvent): BufferObject? = when {
-        ev.dragboard.hasContent(dataFormat) -> ev.dragboard.getFrom(buffers, dataFormat)
         ev.dragboard.hasFile("wav") -> {
             val file = ev.dragboard.files[0]
             val name = file.nameWithoutExtension
             SampleObject.create(name, file)
         }
 
-        else -> null
+        else -> super.getDroppedObject(ev)
     }
 
     override fun createNewObject(ev: Event?, list: ObjectList<BufferObject>): BufferObject? =

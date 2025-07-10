@@ -37,10 +37,10 @@ class InteractionConfigBar(private val settings: UIState) : HBox() {
     private val optionButton = optionList.selectorButton(settings.snapOption)
 
     private fun shortcutFor(option: TimeUnit) = when (option) {
-        TimeUnit.Seconds -> "Alt+S"
-        TimeUnit.Bars -> "Alt+B"
-        TimeUnit.Beats -> "Alt+N"
-        TimeUnit.Ticks -> "Alt+T"
+        TimeUnit.Seconds -> "Alt?+S"
+        TimeUnit.Bars -> "Alt?+B"
+        TimeUnit.Beats -> "Alt?+N"
+        TimeUnit.Ticks -> "Alt?+V"
     }
 
     init {

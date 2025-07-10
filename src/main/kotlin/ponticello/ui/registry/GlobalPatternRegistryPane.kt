@@ -88,7 +88,7 @@ class GlobalPatternRegistryPane(
             addAll(SuperColliderObject.actions) { box -> box.obj }
             addAction("Plot") {
                 icon(MaterialDesignC.CHART_BOX_OUTLINE)
-                shortcut("Alt+V")
+                shortcut("Alt+P")
                 applicableIf { box -> box.config is GlobalPatternRegistryPane }
                 executes { box ->
                     val pane = box.config as GlobalPatternRegistryPane

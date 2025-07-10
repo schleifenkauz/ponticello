@@ -13,6 +13,7 @@ import javafx.scene.Parent
 import javafx.scene.control.Control
 import javafx.scene.control.Label
 import javafx.scene.control.Slider
+import javafx.scene.input.DataFormat
 import javafx.scene.input.KeyCode
 import javafx.scene.input.KeyEvent
 import javafx.scene.layout.*
@@ -26,6 +27,7 @@ import ponticello.impl.unaryMinus
 import ponticello.impl.withPrecision
 import ponticello.model.flow.MixerFlow
 import ponticello.model.flow.MixerFlow.Companion.VOLUME_SPEC
+import ponticello.model.obj.BusObject
 import ponticello.model.obj.BusReference
 import ponticello.model.obj.project
 import ponticello.model.project.PonticelloProject
@@ -115,6 +117,9 @@ class MixerPane(
             }
         }
     }
+
+    override val dataFormat: DataFormat
+        get() = BusObject.DATA_FORMAT
 
     private fun setupVolumeChangeWithArrowKeys() {
         addEventFilter(KeyEvent.KEY_PRESSED) { ev ->

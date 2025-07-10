@@ -123,9 +123,7 @@ abstract class RootScorePane(score: Score, context: Context) : ScorePane(score, 
                 val job = CompletableFuture<Unit>()
                 Platform.runLater { layoutObjects(itr, maxTime, job) }
                 job.join()
-                println("LAYOUT OBJECTS")
             }
-            println("LAYOUT COMPLETED!")
             future.complete(true)
         }
         return future
@@ -134,8 +132,6 @@ abstract class RootScorePane(score: Score, context: Context) : ScorePane(score, 
     override fun repaint(): Future<Boolean> {
         if (height == 0.0 || width == 0.0) return CompletableFuture.completedFuture(false)
         if (displayEnd - displayStart <= zero) return CompletableFuture.completedFuture(false)
-        println("#################################################")
-        println("Displaying from $displayStart to $displayEnd")
         latestRepaintTrigger = System.currentTimeMillis()
         removeOutOfRangeChildren()
         val future = layoutObjects()

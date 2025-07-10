@@ -279,7 +279,7 @@ sealed class ScoreObject : AbstractRenamableObject() {
     fun removedFromScore(option: Score.RegistryOption) {
         if (option == Score.RegistryOption.KEEP_IN_REGISTRY) return
         if (!context.project.hasInstancesOf(this) && registry.has(this)) {
-            val remove = option == Score.RegistryOption.REMOVE_WITHOUT_ASKING || YesNoPrompt(
+            val remove = this is MemoObject || option == Score.RegistryOption.REMOVE_WITHOUT_ASKING || YesNoPrompt(
                 "Score has no instances of $this anymore. Remove it from the registry?",
                 cancellable = false,
                 default = true
