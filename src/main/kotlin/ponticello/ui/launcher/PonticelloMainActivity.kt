@@ -6,6 +6,7 @@ import bundles.set
 import fxutils.actions.registerActions
 import fxutils.awaitFx
 import fxutils.registerShortcuts
+import fxutils.runAfterLayout
 import javafx.geometry.Dimension2D
 import javafx.scene.input.KeyCombination
 import javafx.stage.Screen
@@ -96,11 +97,13 @@ class PonticelloMainActivity(val project: PonticelloProject) : Activity() {
         mainScoreView.isVisible = false
         setVisible()
         val displayRange = project[UI_STATE].mainScoreDisplayRange
-        if (displayRange == null) mainScoreView.displayWholeScore().awaitFx {
-            mainScoreView.isVisible = true
-        }
-        else mainScoreView.display(displayRange.start, displayRange.endInclusive).awaitFx {
-            mainScoreView.isVisible = true
+        runAfterLayout {
+            if (displayRange == null) mainScoreView.displayWholeScore().awaitFx {
+                mainScoreView.isVisible = true
+            }
+            else mainScoreView.display(displayRange.start, displayRange.endInclusive).awaitFx {
+                mainScoreView.isVisible = true
+            }
         }
     }
 

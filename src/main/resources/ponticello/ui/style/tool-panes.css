@@ -11,6 +11,23 @@
     -fx-background-color: #501717;
 }
 
+.icon-button.large-icon-button.tool-pane-button {
+    -fx-border-radius: 5px !important;
+    -fx-border-width: 2px !important;
+    -fx-background-radius: 5px !important;
+    -fx-background-insets: 2px;
+    -fx-padding: 3px !important;
+}
+
+.icon-button.large-icon-button.tool-pane-button:selected {
+    -fx-border-color: transparent;
+    -fx-background-color: rgba(128, 128, 128, 0.25) !important;
+}
+
+.icon-button.large-icon-button.tool-pane-button:selected:tool-pane-focused {
+    -fx-border-color: green !important;
+}
+
 .tool-pane-header {
     -fx-padding: 5px;
     -fx-alignment: center-left;

@@ -14,6 +14,7 @@ import fxutils.undo.UndoManager
 import hextant.context.withoutUndo
 import javafx.beans.binding.Bindings
 import javafx.geometry.Orientation
+import javafx.scene.control.Button
 import javafx.scene.control.SplitPane
 import javafx.scene.input.TransferMode
 import javafx.scene.layout.*
@@ -149,6 +150,16 @@ class AppLayout(
         rightBar = ToolPaneActionBar(this, sideBarLists.getValue(RIGHT))
         topRightBar.addActions(sideBarLists.getValue(TOP).map { p -> ToolPaneAction(getToolPane(p)!!) })
         currentlyInSetup = false
+    }
+
+    fun getToolPaneButton(type: ToolPane.Type): Button? {
+        for (bar in listOf(leftTopBar, leftBottomBar, rightBar)) {
+            if (type in bar.layout.source) {
+                val box = bar.layout.getBox(type)
+                return box.content as? Button ?: return null
+            }
+        }
+        return null
     }
 
     private fun recoverSidePaneDividers() {

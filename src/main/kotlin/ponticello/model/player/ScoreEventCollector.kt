@@ -76,10 +76,10 @@ class ScoreEventCollector(
 
     override fun removedObject(score: Score, inst: ScoreObjectInstance) = ScorePlayer.execute {
         if (inst.muted.now) return@execute
-        removed(inst)
         for (position in absolutePositions(inst)) {
             removeFromPlayback(inst, position)
         }
+        removed(inst)
     }
 
     private fun removed(inst: ScoreObjectInstance) {

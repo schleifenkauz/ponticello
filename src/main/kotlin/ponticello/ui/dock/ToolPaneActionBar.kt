@@ -8,7 +8,7 @@ import javafx.scene.input.Dragboard
 class ToolPaneActionBar(
     private val appLayout: AppLayout,
     types: ToolPaneTypeList,
-) : ReorderableActionBar<ToolPane.Type>("large-icon-button", types) {
+) : ReorderableActionBar<ToolPane.Type>(types, "large-icon-button", "tool-pane-button") {
     init {
         setup()
     }

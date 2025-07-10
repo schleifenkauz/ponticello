@@ -4,6 +4,7 @@ import fxutils.*
 import fxutils.actions.*
 import fxutils.drag.setupWindowDragging
 import hextant.fx.initHextantScene
+import javafx.css.PseudoClass
 import javafx.event.Event
 import javafx.scene.Cursor
 import javafx.scene.Node
@@ -28,6 +29,7 @@ import org.kordamp.ikonli.material2.Material2AL
 import org.kordamp.ikonli.materialdesign2.MaterialDesignP
 import org.kordamp.ikonli.materialdesign2.MaterialDesignR
 import org.kordamp.ikonli.materialdesign2.MaterialDesignW
+import ponticello.impl.Logger
 import ponticello.model.obj.AbstractContextualObject
 import ponticello.model.project.PonticelloProject
 import ponticello.ui.actions.registerGlobalShortcuts
@@ -55,9 +57,9 @@ abstract class ToolPane : VBox() {
     var isExclusive: Boolean = false
         private set
 
-    private lateinit var layout: AppLayout
+    private var layout: AppLayout? = null
 
-    val context get() = layout.context
+    val context get() = layout!!.context
 
     protected abstract val content: Parent
     protected open val headerContent: Node? get() = null
@@ -102,6 +104,16 @@ abstract class ToolPane : VBox() {
         registerShortcuts(headerActions)
         afterSetup()
         isSetup = true
+        highlightFocusedToolPaneType()
+    }
+
+    private fun highlightFocusedToolPaneType() {
+        val btn = layout?.getToolPaneButton(type) ?: return
+        val focusWithin = this.focusWithinProperty()
+        val pseudoClass = PseudoClass.getPseudoClass("tool-pane-focused")
+        focusWithin.addListener { _, _, focused ->
+            btn.pseudoClassStateChanged(pseudoClass, focused)
+        }
     }
 
     fun relayout() {
@@ -149,6 +161,13 @@ abstract class ToolPane : VBox() {
     }
 
     fun showToolPaneConfigMenu(ev: Event?) {
+        if (layout == null) {
+            Logger.warn(
+                "Cannot show config menu for $this because it is not attached to any AppLayout",
+                Logger.Category.Layout
+            )
+            return
+        }
         val menu = ContextMenu()
         for (mode in ToolPaneMode.entries) {
             val icon = FontIcon(Material2AL.CHECK) styleClass "check-icon"
@@ -163,16 +182,24 @@ abstract class ToolPane : VBox() {
             setExclusive(!isExclusive)
         }
         menu.items.add(exclusiveItem)
-        val ownerWindow = layout.scene.window
+        val ownerWindow = layout!!.scene.window
         val anchor = ev.popupAnchor()
         menu.show(ownerWindow, anchor.x, anchor.y)
     }
 
     private fun setExclusive(exclusive: Boolean) {
+        if (isExclusive == exclusive) return
+        if (layout == null) {
+            Logger.warn(
+                "Cannot set exclusive for $this because it is not attached to any AppLayout",
+                Logger.Category.Layout
+            )
+            return
+        }
         isExclusive = exclusive
         if (isExclusive) {
             if (currentMode() != Docked) setMode(Docked)
-            layout.setExclusive(this)
+            layout!!.setExclusive(this)
         }
     }
 
@@ -251,7 +278,8 @@ abstract class ToolPane : VBox() {
         else -> throw AssertionError("Invalid ToolPane window $window")
     }
 
-    fun setShowing(value: Boolean, ownerWindow: javafx.stage.Window = layout.context[primaryStage]) {
+    fun setShowing(value: Boolean, ownerWindow: javafx.stage.Window = layout!!.context[primaryStage]) {
+        check(layout != null) { "ToolPane $this is not attached to any AppLayout" }
         if (showing.now == value) return
         if (value) {
             if (!isSetup) setup()
@@ -263,12 +291,12 @@ abstract class ToolPane : VBox() {
                 }
 
                 else -> {
-                    layout.showDocked(this)
+                    layout!!.showDocked(this)
                     showing.now = true
                 }
             }
         } else {
-            window?.hide() ?: layout.hideDocked(this)
+            window?.hide() ?: layout!!.hideDocked(this)
             showing.set(false)
         }
     }

@@ -31,7 +31,7 @@ class NameControl(val obj: RenamableObject) : HBox() {
         styleClass("name-control")
         field.text = obj.name.now
         children.addAll(label, actionBar)
-        field.addEventFilter(KeyEvent.KEY_PRESSED) { ev ->
+        field.addEventFilter(KeyEvent.KEY_TYPED) { ev ->
             if ("ENTER".shortcut.matches(ev)) {
                 commitEdit()
                 ev.consume()

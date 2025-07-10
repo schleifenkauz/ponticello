@@ -28,8 +28,10 @@ class NavigableScorePane(score: Score, context: Context) : RootScorePane(score, 
         styleClass.add("score-view")
         heightProperty().addListener { _ -> repaint() }
         widthProperty().addListener { _, before, after ->
-            val delta = after.toDouble() - before.toDouble()
-            displayEnd += (delta / pixelsPerSecond).asTime
+            if (displayedDuration <= zero) return@addListener
+            val deltaX = after.toDouble() - before.toDouble()
+            val deltaT = (deltaX / pixelsPerSecond).asTime
+            displayEnd += deltaT
             context[ScorePlayer.CURRENT].playHead.updatePosition()
         }
     }

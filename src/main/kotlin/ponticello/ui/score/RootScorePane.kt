@@ -38,6 +38,10 @@ abstract class RootScorePane(score: Score, context: Context) : ScorePane(score, 
         get() = null
     final override var pixelsPerSecond: Double = Double.NaN
         private set
+        get() {
+            if (field.isNaN()) updatePixelsPerSecond()
+            return field
+        }
     override val absolutePosition: ObjectPosition
         get() = ObjectPosition.ZERO
 
@@ -55,7 +59,6 @@ abstract class RootScorePane(score: Score, context: Context) : ScorePane(score, 
 
     protected fun updatePixelsPerSecond() {
         pixelsPerSecond = (this.width / (displayEnd - displayStart)).toDouble()
-        println("Pixels per second: $pixelsPerSecond")
     }
 
     override fun getScoreY(screenY: Double): Decimal = (screenY / height).asY

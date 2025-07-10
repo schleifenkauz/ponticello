@@ -81,6 +81,7 @@ class LauncherActivity(private val launcher: PonticelloLauncher) : Activity() {
         }
         val actions = launcherActions.withContext(launcher)
         primaryStage.scene.root.registerShortcuts(actions)
+        super.afterShowing()
     }
 
     private class ProjectBox(val activity: LauncherActivity, val projectFile: File) : HBox() {

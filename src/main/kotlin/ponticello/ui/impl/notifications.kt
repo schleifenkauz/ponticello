@@ -1,16 +1,33 @@
 package ponticello.ui.impl
 
 import javafx.application.Platform
+import javafx.util.Duration
 import org.controlsfx.control.Notifications
 import ponticello.impl.Logger
 import ponticello.impl.Logger.Level.*
 import java.io.PrintWriter
 import java.io.StringWriter
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 
 object NotificationView : Logger.View {
+    var level = Confirmation
+
+    var maximumSimultaneousNotifications = 5
+
+    private var showingNotifications = 0
+
+    private val executor = Executors.newSingleThreadScheduledExecutor { r ->
+        Thread(r, "NotificationsCounter").apply { isDaemon = true }
+    }
+
     override fun logged(record: Logger.Record) {
         if (record.level < level) return
-        val notification = Notifications.create().text(record.message).darkStyle()
+        val millis = 5000L
+        val notification = Notifications.create()
+            .text(record.message).darkStyle()
+            .hideAfter(Duration.millis(millis.toDouble()))
+        if (showingNotifications + 1 > maximumSimultaneousNotifications) return
         Platform.runLater {
             try {
                 when (record.level) {
@@ -23,12 +40,12 @@ object NotificationView : Logger.View {
                 return@runLater //main window already closed
             }
         }
+        showingNotifications++
+        executor.schedule({ showingNotifications-- }, millis, TimeUnit.MILLISECONDS)
     }
 
     override fun clearedLog() {
     }
-
-    var level = Confirmation
 }
 
 fun <T : Any> tryWithAlert(actionDescription: String, category: Logger.Category? = null, action: () -> T): T? = try {

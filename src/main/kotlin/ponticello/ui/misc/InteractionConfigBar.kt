@@ -2,6 +2,7 @@ package ponticello.ui.misc
 
 import fxutils.*
 import fxutils.actions.action
+import fxutils.actions.isTargetTextInput
 import fxutils.actions.makeButton
 import fxutils.actions.registerActions
 import fxutils.controls.CheckBox
@@ -56,7 +57,8 @@ class InteractionConfigBar(private val settings: UIState) : HBox() {
     fun addGridRelatedShortcuts(body: KeyEventHandlerBody<Unit>) {
         for (option in TimeUnit.entries) {
             val shortcut = shortcutFor(option)
-            body.on(shortcut) {
+            body.on(shortcut) { ev ->
+                if (ev.isTargetTextInput && !ev.isAltDown) return@on
                 settings.snapOption.now = option
                 settings.snapEnabled.now = true
             }
