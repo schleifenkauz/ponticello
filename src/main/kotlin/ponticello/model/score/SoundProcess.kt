@@ -168,18 +168,23 @@ class SoundProcess(
     }
 
     override fun resize(targetDuration: Decimal, targetHeight: Decimal) {
-        var newDuration = targetDuration
         if (resizeMode!!.isStretch && playBufRate != null) {
-            playBufRate!!.now *= (this.duration / newDuration)
+            playBufRate!!.now *= (this.duration / targetDuration)
         } else if (playbufStartPos != null) {
             if (resizeSide == Side.LEFT) {
                 val rate = playBufRate?.now ?: one(precision = 3)
-                newDuration = newDuration.coerceAtMost(this.duration + playbufStartPos!!.now)
-                val deltaStart = this.duration - newDuration
-                playbufStartPos!!.now += deltaStart * rate
+                val deltaStart = this.duration - targetDuration
+                var startPos = playbufStartPos!!.now
+                startPos += deltaStart * rate
+                val buf = sample.now?.get()
+                if (buf != null) {
+                    val dur = buf.duration().now
+                    startPos = ((startPos % dur) + dur) % dur
+                }
+                playbufStartPos!!.now = startPos
             }
         }
-        super.resize(newDuration, targetHeight)
+        super.resize(targetDuration, targetHeight)
     }
 
     override fun finishResize(recordEdit: Boolean) {
