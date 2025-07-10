@@ -51,7 +51,10 @@ class SingleObjectScorePane(
         snapObserver = settings.snapOption.observe { _ -> repaintGrid() }
             .and(settings.snapEnabled.observe { _ -> repaintGrid() })
         heightProperty().addListener { _ -> repaint() }
-        widthProperty().addListener { _ -> repaint() }
+        widthProperty().addListener { _ ->
+            updatePixelsPerSecond()
+            repaint()
+        }
     }
 
     private fun setupGrid() {

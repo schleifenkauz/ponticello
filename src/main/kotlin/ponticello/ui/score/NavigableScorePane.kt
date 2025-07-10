@@ -27,7 +27,9 @@ class NavigableScorePane(score: Score, context: Context) : RootScorePane(score, 
     init {
         styleClass.add("score-view")
         heightProperty().addListener { _ -> repaint() }
-        widthProperty().addListener { _ ->
+        widthProperty().addListener { _, before, after ->
+            val delta = after.toDouble() - before.toDouble()
+            displayEnd += (delta / pixelsPerSecond).asTime
             context[ScorePlayer.CURRENT].playHead.updatePosition()
         }
     }
@@ -44,15 +46,12 @@ class NavigableScorePane(score: Score, context: Context) : RootScorePane(score, 
         }
         displayStart = start
         displayEnd = end
-        noNegativeTimes()
-        return repaint()
-    }
-
-    private fun noNegativeTimes() {
         if (displayStart < zero) {
             displayEnd -= displayStart
-            displayStart -= displayStart
+            displayStart = zero
         }
+        updatePixelsPerSecond()
+        return repaint()
     }
 
     override fun listenForEvents() {
@@ -101,8 +100,6 @@ class NavigableScorePane(score: Score, context: Context) : RootScorePane(score, 
     }
 
     fun scroll(amount: Double) {
-        displayStart += amount
-        displayEnd += amount
         display(displayStart + amount, displayEnd + amount)
         repaint()
     }

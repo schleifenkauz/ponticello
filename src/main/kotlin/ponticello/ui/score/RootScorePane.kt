@@ -36,8 +36,8 @@ abstract class RootScorePane(score: Score, context: Context) : ScorePane(score, 
         get() = this
     final override val associatedObject: ScoreObjectGroup?
         get() = null
-    final override val pixelsPerSecond: Double
-        get() = (this.width / (displayEnd - displayStart)).toDouble()
+    final override var pixelsPerSecond: Double = Double.NaN
+        private set
     override val absolutePosition: ObjectPosition
         get() = ObjectPosition.ZERO
 
@@ -51,6 +51,11 @@ abstract class RootScorePane(score: Score, context: Context) : ScorePane(score, 
         super.listenForEvents()
         isFocusTraversable = true
         setupPositionTracker()
+    }
+
+    protected fun updatePixelsPerSecond() {
+        pixelsPerSecond = (this.width / (displayEnd - displayStart)).toDouble()
+        println("Pixels per second: $pixelsPerSecond")
     }
 
     override fun getScoreY(screenY: Double): Decimal = (screenY / height).asY
