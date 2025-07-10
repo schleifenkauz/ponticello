@@ -21,6 +21,7 @@ import reaktive.value.ReactiveVariable
 class MemoObjectView(override val obj: MemoObject, inst: ScoreObjectInstance) : ScoreObjectView(inst) {
     private val edit = TextArea(obj.text) styleClass "memo-area"
     private val display = Label(obj.text) styleClass "memo-area"
+    private val detailPaneTextArea = TextArea(obj.text) styleClass "memo-area"
     private val computeSize = Text(obj.text)
 
     private var isEditing = false
@@ -28,6 +29,9 @@ class MemoObjectView(override val obj: MemoObject, inst: ScoreObjectInstance) : 
     init {
         children.setAll(HBox(display).centerChildren())
         edit.textProperty().addListener { _, _, text ->
+            if (obj.text != text) obj.text = text
+        }
+        detailPaneTextArea.textProperty().addListener { _, _, text ->
             if (obj.text != text) obj.text = text
         }
         addEventFilter(MouseEvent.MOUSE_CLICKED) { ev ->
@@ -64,7 +68,7 @@ class MemoObjectView(override val obj: MemoObject, inst: ScoreObjectInstance) : 
     }
 
     override fun setupDetailPane(pane: DetailPane) {
-        pane.addItem("Color: ", this.colorPicker)
+        pane.addLargeItem("Text:", detailPaneTextArea)
     }
 
     override fun getDisplayWidth(): Double = computeSize.prefWidth(-1.0) + 20
@@ -77,6 +81,7 @@ class MemoObjectView(override val obj: MemoObject, inst: ScoreObjectInstance) : 
         }
         display.text = value
         computeSize.text = value
+        detailPaneTextArea.text = value
         resizedObject(obj)
     }
 

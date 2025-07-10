@@ -75,7 +75,7 @@ object ScoreObjectActions {
                     .and(ctx.context[UIState].controlsDisplay.notEqualTo(InlineControlsDisplay.CONTROLS_BAR))
             }
             ifNotApplicable(Action.IfNotApplicable.Hide)
-            executeMultiAction { view, ev ->
+            executeMultiAction { view, _ ->
                 view.instance.hideInlineControls.toggle()
             }
         }

@@ -15,9 +15,11 @@ import javafx.geometry.Bounds
 import javafx.geometry.Point2D
 import javafx.scene.control.ComboBox
 import javafx.scene.control.TextField
+import javafx.scene.input.KeyEvent
 import javafx.scene.input.MouseButton
 import javafx.scene.input.MouseEvent
 import javafx.scene.layout.Pane
+import javafx.scene.robot.Robot
 import javafx.scene.shape.Rectangle
 import ponticello.impl.*
 import ponticello.model.obj.*
@@ -258,35 +260,28 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
         }
     }
 
+    private fun createTaskObject(ev: KeyEvent) {
+        val defaultName = context[ScoreObjectRegistry].availableName("task")
+        val name = NamePrompt(context[ScoreObjectRegistry], "Task name", defaultName)
+            .showDialog(ev) ?: return
+        val code = EditorRoot(CodeBlockEditor().defaultState())
+        val obj = TaskObject(code).withName(name)
+        val p = screenToLocal(Robot().mousePosition)
+        if (!boundsInLocal.contains(p)) return
+        val (t, y) = snapToGrid(p.x, p.y)
+        score.addObject(obj, t, y, autoSelect = true)
+    }
+
     private fun doubleClicked(ev: MouseEvent) {
         ev.consume()
+        val defaultName = context[ScoreObjectRegistry].availableName("memo")
+        val obj = MemoObject("").withName(defaultName)
         val (t, y) = snapToGrid(ev.x, ev.y)
-        val type = SimpleSearchableListView(listOf("Task", "Memo"), "Choose object type")
-            .showPopup(localToScreen(ev.x, ev.y), scene.window) ?: return
-        val obj = when (type) {
-            "Task" -> {
-                val defaultName = context[ScoreObjectRegistry].availableName("task")
-                val name = NamePrompt(context[ScoreObjectRegistry], "Task name", defaultName)
-                    .showDialog(ev) ?: return
-                val code = EditorRoot(CodeBlockEditor().defaultState())
-                TaskObject(code).withName(name)
-            }
-
-            "Memo" -> {
-                val defaultName = context[ScoreObjectRegistry].availableName("memo")
-                MemoObject("").withName(defaultName)
-            }
-
-            else -> return
-        }
-
         val inst = ScoreObjectInstance(obj, t, y)
         score.addObject(inst, autoSelect = true)
-        if (obj is MemoObject) {
-            val view = getObjectView(inst) as MemoObjectView
-            runFXWithTimeout {
-                view.enterEdit()
-            }
+        val view = getObjectView(inst) as MemoObjectView
+        runAfterLayout {
+            view.enterEdit()
         }
     }
 

@@ -33,6 +33,7 @@ TextArea.memo-area {
     -fx-focus-color: transparent !important;
     -fx-background-color: transparent;
     -fx-padding: 0px;
+    -fx-background-insets: 0px;
 }
 
 Label.memo-area {
