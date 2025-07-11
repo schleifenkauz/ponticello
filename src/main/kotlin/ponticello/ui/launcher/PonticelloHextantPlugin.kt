@@ -5,6 +5,7 @@ import fxutils.prompt.PredicateTextPrompt
 import fxutils.shortcut
 import hextant.command.Command
 import hextant.context.ControlFactory
+import hextant.context.EditorControlGroup
 import hextant.context.SelectionDistributor
 import hextant.context.compoundEdit
 import hextant.core.editor.*
@@ -146,10 +147,10 @@ object PonticelloHextantPlugin : PluginInitializer({
         applicableIf { editor -> editor.parent?.expander is ScExprExpander }
         executing { editor ->
             val parent = editor.parent ?: return@executing
-            val selector = editor.context[SelectionDistributor]
-            selector.saveSelectionState()
-            parent.replaceWith(editor.snapshot(), editDescription = "Unwrap expression")
-            selector.restoreSelectionState()
+            val newEditor = editor.snapshot()
+            parent.replaceWith(newEditor, editDescription = "Unwrap expression")
+            val view = editor.context[EditorControlGroup].getViewOf(newEditor)
+            view.select()
         }
     }
 

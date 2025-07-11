@@ -5,8 +5,8 @@ import fxutils.prompt.DetailPane
 import hextant.context.compoundEdit
 import ponticello.impl.asTime
 import ponticello.impl.asY
+import ponticello.model.obj.rootScore
 import ponticello.model.registry.ScoreObjectRegistry
-import ponticello.model.score.Score.Companion.rootScore
 import ponticello.model.score.ScoreObject
 import ponticello.model.score.ScoreObjectInstance
 import ponticello.model.score.UnresolvedScoreObject
@@ -22,7 +22,7 @@ class UnresolvedScoreObjectView(private val inst: ScoreObjectInstance) : ScoreOb
         btn.setOnMouseClicked {
             val obj = SimpleSearchableRegistryView(context[ScoreObjectRegistry], "Resolve object")
                 .showPopup(anchorNode = btn) ?: return@setOnMouseClicked
-            val instances = context[rootScore].allInstances().filterTo(mutableSetOf()) { inst ->
+            val instances = context.rootScore.allInstances().filterTo(mutableSetOf()) { inst ->
                 !inst.ref.isResolved.now && inst.ref.getName() == this.inst.ref.getName()
             }
             context.compoundEdit("Select object for unresolved instance") {

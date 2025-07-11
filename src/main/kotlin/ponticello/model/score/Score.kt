@@ -1,7 +1,6 @@
 package ponticello.model.score
 
 import bundles.publicProperty
-import bundles.set
 import fxutils.undo.UndoManager
 import hextant.context.Context
 import hextant.context.compoundEdit
@@ -43,7 +42,6 @@ class Score(
 
     override fun initialize(context: Context) {
         super.initialize(context)
-        context[rootScore] = this
         for (inst in objectInstances) {
             inst.initialize(context)
             inst.addedToScore(this)

@@ -92,7 +92,11 @@ class MixerPane(
         }
 
     override val headerContent: Node
-        get() = MixerListPopup().selectorButton(this::selectedMixer, actionDescription = "Select mixer")
+        get() {
+            val selector = MixerListPopup().selectorButton(this::selectedMixer, actionDescription = "Select mixer")
+            return if (channelsList == null) selector
+            else HBox(selector, ActionBar(channelsList!!.actions, "medium-icon-button"))
+        }
 
     override val supportedModes: Collection<ObjectListView.DisplayMode>
         get() = setOf(ObjectListView.DisplayMode.Inline(collapsable = false))
@@ -109,8 +113,6 @@ class MixerPane(
             selectedMixer = state.flowReference
         }
         setupVolumeChangeWithArrowKeys()
-        val listActionBar = ActionBar(channelsList?.actions.orEmpty(), "medium-icon-button")
-        header.children.addAfter(headerContent, listActionBar)
         registerShortcuts {
             if (channelsList != null) {
                 registerActions(channelsList!!.actions)

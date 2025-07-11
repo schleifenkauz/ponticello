@@ -30,12 +30,12 @@ import javafx.scene.paint.Color
 import javafx.scene.robot.Robot
 import ponticello.impl.*
 import ponticello.model.obj.project
+import ponticello.model.obj.rootScore
 import ponticello.model.project.InlineControlsDisplay
 import ponticello.model.project.UIState
 import ponticello.model.project.uiState
 import ponticello.model.registry.reference
 import ponticello.model.score.*
-import ponticello.model.score.Score.Companion.rootScore
 import ponticello.ui.actions.ObjectActionContext
 import ponticello.ui.actions.ScoreObjectActions
 import ponticello.ui.controls.InlineParameterControlsBar
@@ -410,7 +410,7 @@ abstract class ScoreObjectView(
 
     private fun replaceWithCutHalves(half1: ScoreObject, half2: ScoreObject, relativePosition: ObjectPosition) {
         context.compoundEdit("Cut object") {
-            for (inst in context[rootScore].instancesOf(obj).toList()) {
+            for (inst in context.rootScore.instancesOf(obj).toList()) {
                 val score = inst.score
                 score!!.removeObject(inst, Score.RegistryOption.KEEP_IN_REGISTRY)
                 val inst1 = ScoreObjectInstance(half1, inst.position, inst.muted.copy())

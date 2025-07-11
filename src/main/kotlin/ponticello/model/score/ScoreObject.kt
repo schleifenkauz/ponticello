@@ -24,7 +24,6 @@ import ponticello.model.live.QuantizationConfig
 import ponticello.model.obj.*
 import ponticello.model.player.ScorePlayer
 import ponticello.model.registry.ScoreObjectRegistry
-import ponticello.model.score.Score.Companion.rootScore
 import ponticello.model.score.controls.EnvelopeControl
 import ponticello.model.score.controls.ParameterControl
 import ponticello.sc.ControlSpec
@@ -173,7 +172,7 @@ sealed class ScoreObject : AbstractRenamableObject() {
         val deltaHeight = targetHeight - height
         this.duration = targetDuration
         this.height = targetHeight
-        val instances = context[rootScore].instancesOf(this).toSet()
+        val instances = context.rootScore.instancesOf(this).toSet()
         for (inst in instances) {
             if (resizeSide == Side.LEFT) {
                 inst.moveTo(inst.start - deltaDur, inst.y, simpleMove = false)
