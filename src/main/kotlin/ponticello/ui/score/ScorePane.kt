@@ -2,19 +2,14 @@ package ponticello.ui.score
 
 import bundles.publicProperty
 import fxutils.*
-import fxutils.controls.IntSpinner
 import fxutils.drag.setupDropArea
 import fxutils.prompt.SimpleSearchableListView
-import fxutils.prompt.compoundPrompt
 import hextant.context.Context
 import hextant.context.compoundEdit
 import hextant.core.editor.defaultState
 import hextant.serial.EditorRoot
-import javafx.collections.FXCollections.observableList
 import javafx.geometry.Bounds
 import javafx.geometry.Point2D
-import javafx.scene.control.ComboBox
-import javafx.scene.control.TextField
 import javafx.scene.input.KeyEvent
 import javafx.scene.input.MouseButton
 import javafx.scene.input.MouseEvent
@@ -31,10 +26,8 @@ import ponticello.model.score.controls.BusControl
 import ponticello.model.score.controls.ParameterControl
 import ponticello.sc.BufferControlSpec
 import ponticello.sc.BusControlSpec
-import ponticello.sc.Identifier
 import ponticello.sc.defaultControl
 import ponticello.sc.editor.CodeBlockEditor
-import ponticello.sc.editor.EventDictionaryEditor
 import ponticello.ui.controls.NamePrompt
 import ponticello.ui.registry.SearchableBufferListView
 import ponticello.ui.registry.SearchableBusListView
@@ -359,7 +352,8 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
             localToScreen(selection.rect.boundsInParent.centerX, selection.rect.boundsInParent.minY)
         val option = popup.showPopup(anchor, scene.window) ?: return
         val obj = if (option is NewObjectOption.MIDI) {
-            createMidiObject(option.def, anchor) ?: return
+            MidiObjectView.createNewMidiObjectDialog(option.def, context)
+                .showDialog(scene.window, anchor) ?: return
         } else {
             val initialName = option.defaultName(context[ScoreObjectRegistry])
             val name = NamePrompt(context[ScoreObjectRegistry], "Name for object", initialName)
@@ -446,34 +440,9 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
         object NewTempoGrid : NewObjectOption()
     }
 
-    private fun viewsInside(bounds: Bounds) = views.values.filter { v -> bounds.contains(v.boundsInParent) }
-
-    private fun createMidiObject(instr: InstrumentObject, anchor: Point2D): MidiObject? {
-        return compoundPrompt("Configure new object") {
-            val defaultName = context[ScoreObjectRegistry].availableName("piano_roll")
-            val nameField = TextField(defaultName) named "Object name"
-            val rootPitchSelector =
-                ComboBox(observableList(MidiPitch.allPitchClasses())) named "Root pitch class"
-            rootPitchSelector.value = MidiPitch(0)
-            val registerSpinner = IntSpinner(0, 10, 4).minColumns(2) named "Base register"
-            val octaves = IntSpinner(1, 12, 2).minColumns(2) named "Octaves"
-            onConfirm {
-                val name = nameField.text
-                if (!Identifier.isValid(name) || score.has(name)) return@onConfirm null
-                val lowestPitch = rootPitchSelector.value.step + 12 * registerSpinner.value()
-                val highestPitch = lowestPitch + 12 * octaves.value()
-                val notes = mutableListOf<MidiObject.Note>()
-                val eventDictionary = EditorRoot(EventDictionaryEditor())
-                MidiObject(
-                    reactiveVariable(instr.reference()),
-                    lowestPitch,
-                    highestPitch,
-                    eventDictionary,
-                    notes
-                ).withName(name)
-            }
-        }.showDialog(scene.window, anchor)
-    }
+    private fun viewsInside(bounds: Bounds) = children
+        .filterIsInstance<ScoreObjectView>()
+        .filter { v -> v in children && bounds.contains(v.boundsInParent) }
 
     private fun addObject(obj: ScoreObject, rect: RectangleSelection): ScoreObjectInstance {
         val registry = context[ScoreObjectRegistry]
@@ -505,7 +474,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
             is TaskObject -> TaskObjectView(obj, instance)
             is MemoObject -> MemoObjectView(obj, instance)
             is ScoreObjectGroup -> ScoreObjectGroupView(obj, instance)
-            is MidiObject -> PianoRollObjectView(obj, instance)
+            is MidiObject -> MidiObjectView(obj, instance)
             is TempoGridObject -> TempoGridObjectView(obj, instance)
             is UnresolvedScoreObject -> UnresolvedScoreObjectView(instance)
         }

@@ -97,6 +97,7 @@ class ScoreObjectScheduler(val context: Context) {
         scLangLatency: Decimal = this.sclangLatency, serverLatency: Decimal = this.serverLatency,
         extraArguments: Map<ParameterDefObject, ParameterControl> = emptyMap(),
     ): ActiveScoreObject? {
+        if (!obj.affectsPlayback) return null
         val time = absolutePosition.time + player.timeOffset
         val scheduledTime = (time + scLangLatency - extraLatency)
         return scheduleObject(
@@ -112,6 +113,7 @@ class ScoreObjectScheduler(val context: Context) {
         serverLatency: Decimal, scheduledTime: Decimal, absolute: Boolean,
         extraArguments: Map<ParameterDefObject, ParameterControl>,
     ): ActiveScoreObject? {
+        if (!obj.affectsPlayback) return null
         try {
             if (!obj.validate()) return null
         } catch (e: Exception) {

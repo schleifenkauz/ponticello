@@ -9,12 +9,13 @@ import hextant.serial.parentChain
 import kotlinx.serialization.json.*
 import ponticello.model.ctx.PonticelloContext
 import ponticello.sc.*
-import reaktive.value.ReactiveVariable
-import reaktive.value.now
-import reaktive.value.reactiveVariable
+import reaktive.value.*
+import reaktive.value.binding.map
 
 class ScExprExpander() : ConfiguredExpander<ScExpr, ScExprEditor<*>>(), ScExprEditor<ScExpr> {
-    val isDisabled: ReactiveVariable<Boolean> = reactiveVariable(false)
+    private val disabled: ReactiveVariable<Boolean> = reactiveVariable(false)
+
+    val isDisabled: ReactiveBoolean get() = disabled
 
     init {
         configure(config)
@@ -29,6 +30,9 @@ class ScExprExpander() : ConfiguredExpander<ScExpr, ScExprEditor<*>>(), ScExprEd
     }
 
     override fun defaultResult(): ScExpr = EmptyExpr
+
+    override fun transform(result: ScExpr): ReactiveValue<ScExpr> =
+        isDisabled.map { value -> if (value) DisabledExpr(result) else result }
 
     override fun autoExpand(text: String): Boolean {
         val editor = when {
@@ -105,15 +109,15 @@ class ScExprExpander() : ConfiguredExpander<ScExpr, ScExprEditor<*>>(), ScExprEd
     }
 
     private fun enable() {
-        VariableEdit.updateVariable(isDisabled, false, context[UndoManager], "Uncomment expression")
+        VariableEdit.updateVariable(disabled, false, context[UndoManager], "Uncomment expression")
     }
 
     private fun disable() {
-        VariableEdit.updateVariable(isDisabled, true, context[UndoManager], "Comment expression")
+        VariableEdit.updateVariable(disabled, true, context[UndoManager], "Comment expression")
     }
 
     override fun onReset(editor: ScExprEditor<*>) {
-        isDisabled.set(false)
+        disabled.set(false)
     }
 
     override fun compile(token: String): ScExpr {
@@ -136,7 +140,7 @@ class ScExprExpander() : ConfiguredExpander<ScExpr, ScExprEditor<*>>(), ScExprEd
     override fun deserialize(element: JsonElement) {
         super.deserialize(element)
         if (element is JsonObject) {
-            isDisabled.set(element["disabled"]?.jsonPrimitive?.boolean ?: false)
+            disabled.set(element["disabled"]?.jsonPrimitive?.boolean ?: false)
         }
     }
 

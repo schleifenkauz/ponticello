@@ -32,7 +32,7 @@ class BusValueControl(val bus: ReactiveVariable<BusReference>) : ParameterContro
             Logger.warn("Expected NumericalControlSpec but got $spec", Logger.Category.Playback)
             return false
         }
-        return checkResolution(bus.now, "Bus")
+        return checkResolution(obj, bus.now, "Bus")
     }
 
     override fun ScWriter.generatePreparationCode(

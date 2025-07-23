@@ -76,7 +76,7 @@ class VSTPluginFlow private constructor(
             "$controllerName = nil"
         }
         +"$controllerName = VSTPluginController($superColliderName)"
-        +"$controllerName.open('$pluginName', editor: true)"
+        +"$controllerName.open('$pluginName', editor: true, multiThreading: true)"
         +"s.sync"
         val stateFile = pluginStateFile().superColliderPath
         +"if (PathName(${stateFile}).isFile) { $controllerName.readProgram($stateFile) }"

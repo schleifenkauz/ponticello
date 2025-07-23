@@ -23,7 +23,7 @@ import ponticello.model.obj.ParameterDefObject
 import ponticello.model.score.controls.ParameterControl
 import ponticello.sc.code
 import ponticello.sc.editor.*
-import ponticello.ui.score.PianoRollObjectView
+import ponticello.ui.score.MidiObjectView
 import reaktive.value.ReactiveValue
 import reaktive.value.ReactiveVariable
 import reaktive.value.binding.flatMap
@@ -52,14 +52,14 @@ class MidiObject(
         get() = mLowestPitch
         set(value) {
             mLowestPitch = value
-            notifyListeners<PianoRollObjectView> { updatedPitchRange() }
+            notifyListeners<MidiObjectView> { updatedPitchRange() }
         }
 
     var highestPitch
         get() = mHighestPitch
         set(value) {
             mHighestPitch = value
-            notifyListeners<PianoRollObjectView> { updatedPitchRange() }
+            notifyListeners<MidiObjectView> { updatedPitchRange() }
         }
 
     val pitchRange get() = lowestPitch..highestPitch
@@ -167,13 +167,13 @@ class MidiObject(
         notes.add(note)
         note.parent = this
         context[UndoManager].record(Edit.AddNote(this, note))
-        notifyListeners<PianoRollObjectView> { addedNote(note) }
+        notifyListeners<MidiObjectView> { addedNote(note) }
     }
 
     fun removeNote(note: Note) {
         notes.remove(note)
         context[UndoManager].record(Edit.RemoveNote(this, note))
-        notifyListeners<PianoRollObjectView> { removedNote(note) }
+        notifyListeners<MidiObjectView> { removedNote(note) }
     }
 
     fun transpose(deltaPitch: Int) {
@@ -188,12 +188,12 @@ class MidiObject(
     }
 
     private fun updateNote(note: Note) {
-        notifyListeners<PianoRollObjectView> { updatedNote(note) }
+        notifyListeners<MidiObjectView> { updatedNote(note) }
     }
 
     override fun addListener(view: Listener) {
         super.addListener(view)
-        if (view is PianoRollObjectView) {
+        if (view is MidiObjectView) {
             for (note in notes) {
                 view.addedNote(note)
             }

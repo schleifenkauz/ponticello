@@ -279,9 +279,9 @@ object ScoreObjectActions {
         }
         addObjectAction("Transpose") {
             icon(MaterialDesignP.PROGRESS_QUESTION)
-            applicableOn<PianoRollObjectView>()
+            applicableOn<MidiObjectView>()
             executeSingle { view, _ ->
-                view as PianoRollObjectView
+                view as MidiObjectView
                 view.showTransposeDialog()
             }
         }

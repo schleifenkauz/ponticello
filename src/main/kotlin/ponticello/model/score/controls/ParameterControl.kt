@@ -7,6 +7,7 @@ import ponticello.impl.Logger
 import ponticello.model.obj.AbstractContextualObject
 import ponticello.model.obj.ParameterizedObject
 import ponticello.model.obj.SynthDefObject
+import ponticello.model.registry.NamedObject
 import ponticello.model.registry.ObjectReference
 import ponticello.model.score.ParameterControlList.NamedParameterControl
 import ponticello.sc.ControlSpec
@@ -67,15 +68,15 @@ sealed class ParameterControl : AbstractContextualObject() {
 
     companion object {
         @JvmStatic
-        protected fun checkResolution(reference: ObjectReference<*>, type: String): Boolean = when {
+        protected fun checkResolution(ownerObject: NamedObject, reference: ObjectReference<*>, type: String): Boolean = when {
             reference.isResolved.now -> true
             reference.get() != null -> {
-                Logger.severe("$type '${reference.getName()}' seems to have been removed from its registry.")
+                Logger.severe("$type '${reference.getName()}' (owned by #${ownerObject.name.now}) seems to have been removed from its registry.")
                 false
             }
 
             else -> {
-                Logger.severe("Cannot resolve $type '${reference.getName()}'")
+                Logger.severe("Cannot resolve $type '${reference.getName()}' (owned by #${ownerObject.name.now})")
                 false
             }
         }

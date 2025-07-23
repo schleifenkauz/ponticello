@@ -35,13 +35,13 @@ class InteractionConfigBar(private val settings: UIState) : HBox() {
             Label(shortcutFor(option))
         )
     }
-    private val optionButton = optionList.selectorButton(settings.snapOption)
+    private val optionButton = optionList.selectorButton(settings.snapOption).setFixedWidth(70.0)
 
     private fun shortcutFor(option: TimeUnit) = when (option) {
         TimeUnit.Seconds -> "Alt?+S"
-        TimeUnit.Bars -> "Alt?+B"
-        TimeUnit.Beats -> "Alt?+N"
         TimeUnit.Ticks -> "Alt?+V"
+        TimeUnit.Beats -> "Alt?+B"
+        TimeUnit.Bars -> "Alt?+N"
     }
 
     init {

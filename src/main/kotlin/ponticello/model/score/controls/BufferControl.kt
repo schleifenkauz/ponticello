@@ -39,7 +39,7 @@ data class BufferControl(
             Logger.warn("Expected BufferControlSpec but got $spec", Logger.Category.Playback)
             return false
         }
-        return checkResolution(sample.now, "Sample")
+        return checkResolution(obj, sample.now, "Sample")
     }
 
     override fun ScWriter.generatePreparationCode(

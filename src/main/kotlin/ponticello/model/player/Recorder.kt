@@ -44,6 +44,7 @@ class Recorder(private val context: Context) {
                     startRecording()
                 }
             }
+
             isRecording.now -> stopRecording()
             else -> startRecording()
         }
@@ -110,7 +111,12 @@ class Recorder(private val context: Context) {
                 +"s.record(bus: ${bus.superColliderName})"
             }
         }
-        client.sendAsync("schedule", listOf(settings.scLangLatency.now.toDouble(), -1, code))
+        client.sendAsync(
+            "schedule", listOf(
+                /*absolute: */false, /*time: */ settings.scLangLatency.now.toDouble(),
+                /*player_id: */ -1, /*code: */ code, /*info: */ "Start recording"
+            )
+        )
         recording.set(true)
     }
 
@@ -122,5 +128,5 @@ class Recorder(private val context: Context) {
         return path
     }
 
-    companion object: PublicProperty<Recorder> by publicProperty("Recorder")
+    companion object : PublicProperty<Recorder> by publicProperty("Recorder")
 }

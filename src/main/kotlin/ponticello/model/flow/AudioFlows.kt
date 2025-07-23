@@ -10,6 +10,7 @@ import ponticello.model.registry.ObjectRegistry
 import ponticello.sc.client.SuperColliderClient
 import reaktive.value.now
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
 
 class AudioFlows(override val objects: MutableList<AudioFlowGroup>) : ObjectRegistry<AudioFlowGroup>() {
@@ -61,7 +62,7 @@ class AudioFlows(override val objects: MutableList<AudioFlowGroup>) : ObjectRegi
             futures.add(flow.saveConfiguration())
         }
         try {
-            CompletableFuture.allOf(*futures.toTypedArray()).join()
+            CompletableFuture.allOf(*futures.toTypedArray()).orTimeout(5, TimeUnit.SECONDS).join()
         } catch (e: TimeoutException) {
             Logger.error("Timeout writing VST plugin states", e, Logger.Category.VSTPlugins)
         }

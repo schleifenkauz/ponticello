@@ -2,14 +2,21 @@ package ponticello.ui.score
 
 import bundles.createBundle
 import fxutils.*
+import fxutils.controls.IntSpinner
 import fxutils.prompt.DetailPane
 import fxutils.prompt.IntegerPrompt
+import fxutils.prompt.Prompt
+import fxutils.prompt.compoundPrompt
+import hextant.context.Context
 import hextant.fx.initHextantScene
 import hextant.serial.EditorRoot
 import javafx.beans.binding.Bindings
+import javafx.collections.FXCollections.observableList
 import javafx.geometry.HorizontalDirection
 import javafx.geometry.VerticalDirection
 import javafx.scene.Cursor
+import javafx.scene.control.ComboBox
+import javafx.scene.control.TextField
 import javafx.scene.input.KeyEvent
 import javafx.scene.input.MouseButton
 import javafx.scene.input.MouseEvent
@@ -19,10 +26,15 @@ import javafx.scene.paint.Color
 import javafx.scene.shape.Line
 import javafx.scene.shape.Rectangle
 import ponticello.impl.*
+import ponticello.model.obj.InstrumentObject
+import ponticello.model.obj.withName
+import ponticello.model.registry.ScoreObjectRegistry
+import ponticello.model.registry.reference
 import ponticello.model.score.MidiObject
 import ponticello.model.score.ObjectPosition
 import ponticello.model.score.ScoreObject
 import ponticello.model.score.ScoreObjectInstance
+import ponticello.sc.Identifier
 import ponticello.sc.editor.EventDictionaryEditor
 import ponticello.sc.view.ObjectSelectorControl
 import ponticello.ui.impl.setupDraggingAndResizing
@@ -33,7 +45,7 @@ import reaktive.value.now
 import reaktive.value.reactiveVariable
 import kotlin.math.roundToInt
 
-class PianoRollObjectView(override val obj: MidiObject, inst: ScoreObjectInstance) : ScoreObjectView(inst) {
+class MidiObjectView(override val obj: MidiObject, inst: ScoreObjectInstance) : ScoreObjectView(inst) {
     private val noteRects = mutableMapOf<MidiObject.Note, BorderPane>()
     private val orientationLines = mutableListOf<Line>()
     private val blackKeys = mutableListOf<Rectangle>()
@@ -279,5 +291,29 @@ class PianoRollObjectView(override val obj: MidiObject, inst: ScoreObjectInstanc
 
     companion object {
         private const val CURSOR_OPACITY = 0.6
+
+        fun createNewMidiObjectDialog(instr: InstrumentObject, context: Context): Prompt<MidiObject?, *> =
+            compoundPrompt("Configure new object") {
+                val defaultName = context[ScoreObjectRegistry].availableName("piano_roll")
+                val nameField = TextField(defaultName) named "Object name"
+                val rootPitchSelector =
+                    ComboBox(observableList(MidiPitch.allPitchClasses())) named "Root pitch class"
+                rootPitchSelector.value = MidiPitch(0)
+                val registerSpinner = IntSpinner(0, 10, 4).minColumns(2) named "Base register"
+                val octaves = IntSpinner(1, 12, 2).minColumns(2) named "Octaves"
+                onConfirm {
+                    val name = nameField.text
+                    if (!Identifier.isValid(name) || context[ScoreObjectRegistry].has(name)) return@onConfirm null
+                    val lowestPitch = rootPitchSelector.value.step + 12 * registerSpinner.value()
+                    val highestPitch = lowestPitch + 12 * octaves.value()
+                    val notes = mutableListOf<MidiObject.Note>()
+                    val eventDictionary = EditorRoot(EventDictionaryEditor())
+                    MidiObject(
+                        reactiveVariable(instr.reference()),
+                        lowestPitch, highestPitch,
+                        eventDictionary, notes
+                    ).withName(name)
+                }
+            }
     }
 }
