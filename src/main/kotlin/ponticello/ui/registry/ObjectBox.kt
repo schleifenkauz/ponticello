@@ -39,7 +39,7 @@ class ObjectBox<O : Any>(val parent: ObjectListView<O>, val obj: O) : Control() 
 
     val config get() = parent.config
 
-    val nameControl = if (obj is RenamableObject) NameControl(obj) else null
+    val nameControl = if (obj is RenamableObject && obj.canRename) NameControl(obj) else null
 
     val nameLabel: Label?
 
@@ -61,6 +61,7 @@ class ObjectBox<O : Any>(val parent: ObjectListView<O>, val obj: O) : Control() 
 
         obj is NamedObject -> {
             nameLabel = Label(obj.name.now).styleClass("name-field")
+            nameLabel.setFixedWidth(150.0)
             HBox(nameLabel).styleClass("name")
         }
 

@@ -45,6 +45,10 @@
     -fx-padding: 2px;
 }
 
+.name {
+    -fx-alignment: center-left;
+}
+
 .object-box {
     -fx-background-color: transparent;
     -fx-border-color: black;
@@ -115,4 +119,10 @@
 
 Button.filter-tag-button:selected {
     -fx-background-color: rgba(0, 128, 0, 0.5) !important;
+}
+
+.rate-label {
+    -fx-padding: 1px 3px 1px 3px;
+    -fx-border-color: black;
+    -fx-border-width: 1px;
 }

@@ -97,6 +97,7 @@ class ScoreEventCollector(
         }
     }
 
+    //TODO fix
     override fun finishedResize(obj: ScoreObject, deltaDuration: Decimal, deltaHeight: Decimal, side: Side) =
         ScorePlayer.execute {
             if (obj is ScoreObjectGroup) return@execute

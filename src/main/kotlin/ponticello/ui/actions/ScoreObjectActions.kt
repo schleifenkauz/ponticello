@@ -298,7 +298,7 @@ object ScoreObjectActions {
         }
         addObjectAction("Slice object") {
             shortcut("Alt?+Shift?+COMMA")
-            icon(MaterialDesignS.SCISSORS_CUTTING)
+//            icon(MaterialDesignS.SCISSORS_CUTTING)
             executeSingle { view, ev ->
                 if (ev.isTargetTextInput && !ev.isAltDown()) return@executeSingle
                 val orientation = if (ev.isShiftDown()) Orientation.VERTICAL else Orientation.HORIZONTAL

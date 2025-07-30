@@ -2,8 +2,6 @@ package ponticello.ui.score
 
 import fxutils.*
 import fxutils.actions.ActionBar
-import fxutils.actions.ContextualizedAction
-import fxutils.actions.registerShortcuts
 import fxutils.prompt.DetailPane
 import fxutils.undo.UndoManager
 import hextant.context.Context
@@ -106,21 +104,27 @@ abstract class ScoreObjectView(
 
     fun getScreenY(scoreY: Decimal): Double = parentPane.getScreenY(scoreY)
 
-    fun getDetailPane(extraActions: List<ContextualizedAction> = emptyList()): DetailPane {
+    fun getDetailPane(): DetailPane {
         val detailPane = DetailPane(labelWidth = 100.0)
         if (obj is UnresolvedScoreObject) {
             return detailPane
         } else {
             val ctx = ObjectActionContext.SingleObjectContext(this)
+            val instanceCountLabel = label(obj.numberOfInstances.map { instances ->
+                when (instances) {
+                    0 -> "no instances"
+                    1 -> "1 instance"
+                    else -> "$instances instances"
+                }
+            })
             val headerBox = HBox(
                 5.0,
                 NameControl(obj).setFixedWidth(150.0),
-                ActionBar(ScoreObjectActions.singleObjectActions.withContext(ctx), buttonStyle = "medium-icon-button"),
+                instanceCountLabel,
                 infiniteSpace(),
-                ActionBar(extraActions, buttonStyle = "medium-icon-button"),
+                ActionBar(ScoreObjectActions.singleObjectActions.withContext(ctx), buttonStyle = "medium-icon-button"),
             ).centerChildren().pad(8.0)
             detailPane.children.add(headerBox)
-            detailPane.registerShortcuts(ScoreObjectActions.all.withContext(ctx))
             if (obj.canResizeHorizontally) {
                 val durationLabel = label(obj.duration().map { dur ->
                     "${dur.round(2).toCanonicalString()} seconds"

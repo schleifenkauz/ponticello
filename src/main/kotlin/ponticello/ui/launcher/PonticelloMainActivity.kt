@@ -4,6 +4,7 @@ import bundles.PublicProperty
 import bundles.publicProperty
 import bundles.set
 import fxutils.actions.registerActions
+import fxutils.actions.registerShortcuts
 import fxutils.awaitFx
 import fxutils.registerShortcuts
 import fxutils.runAfterLayout
@@ -79,6 +80,8 @@ class PonticelloMainActivity(val project: PonticelloProject) : Activity() {
     override fun beforeShowing() {
         primaryStage.fullScreenExitKeyCombination = KeyCombination.NO_MATCH
         primaryStage.scene.registerGlobalShortcuts(context)
+        val objectCtx = ObjectActionContext.MultiObjectContext(context[ScoreObjectSelectionManager])
+        mainScoreView.registerShortcuts(ScoreObjectActions.all.withContext(objectCtx))
         registerMainActivityShortcuts()
         primaryStage.initStyle(StageStyle.UNDECORATED)
         ArrowKeys.registerArrowKeys(primaryStage.scene, context)
@@ -113,8 +116,6 @@ class PonticelloMainActivity(val project: PonticelloProject) : Activity() {
         registerActions(ProjectActions.withContext(launcher))
         registerActions(ScoreNavigationActions.withContext(mainScoreView))
         interactionConfig.addGridRelatedShortcuts(this)
-        val objectCtx = ObjectActionContext.MultiObjectContext(context[ScoreObjectSelectionManager])
-        registerActions(ScoreObjectActions.all.withContext(objectCtx))
         SelectionRelatedActions.addShortcuts(this, context)
         registerActions(ProjectActions.withContext(launcher))
         registerActions(WindowActions.all.withContext(this@PonticelloMainActivity))

@@ -51,7 +51,7 @@ class HelpBrowser : ToolPane() {
 
     override fun saveState(dest: ToolPaneState) {
         super.saveState(dest)
-        if (dest is BrowserPaneState) {
+        if (dest is BrowserPaneState && isSetup) {
             dest.url = webView.engine.location ?: DEFAULT_URL
         }
     }

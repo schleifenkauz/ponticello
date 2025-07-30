@@ -31,13 +31,17 @@ class NameControl(val obj: RenamableObject) : HBox() {
         styleClass("name-control")
         field.text = obj.name.now
         children.addAll(label, actionBar)
-        field.addEventFilter(KeyEvent.KEY_TYPED) { ev ->
+        field.addEventFilter(KeyEvent.ANY) { ev ->
             if ("ENTER".shortcut.matches(ev)) {
-                commitEdit()
                 ev.consume()
+                if (ev.eventType == KeyEvent.KEY_RELEASED) {
+                    commitEdit()
+                }
             } else if ("ESCAPE".shortcut.matches(ev)) {
-                abandonEdit()
                 ev.consume()
+                if (ev.eventType == KeyEvent.KEY_RELEASED) {
+                    abandonEdit()
+                }
             }
         }
         field.setOnMouseClicked { ev ->
@@ -63,6 +67,7 @@ class NameControl(val obj: RenamableObject) : HBox() {
         children[0] = field
         isEditing.set(true)
         field.requestFocus()
+        field.selectAll()
     }
 
     private fun commitEdit() {

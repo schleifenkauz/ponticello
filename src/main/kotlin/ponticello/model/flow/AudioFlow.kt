@@ -19,7 +19,7 @@ import java.util.concurrent.CompletableFuture
 
 @Serializable
 sealed class AudioFlow : AbstractRenamableObject() {
-    private val active = reactiveVariable(false)
+    private val active = reactiveVariable(true)
     val isActive: ReactiveValue<Boolean> get() = active
 
     @Transient

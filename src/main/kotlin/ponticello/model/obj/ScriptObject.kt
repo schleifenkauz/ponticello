@@ -43,7 +43,9 @@ class ScriptObject private constructor(
         get() = type.now != Type.BEFORE_BOOT
 
     fun executeContents(client: SuperColliderClient): CompletableFuture<String> {
-        val code = root.editor.result.now.code(context)
+        val content = root.editor.result.now
+        val code = content.code(context)
+        if (content.statements.isEmpty()) return CompletableFuture.completedFuture("Empty script")
         return client.eval(code)
     }
 

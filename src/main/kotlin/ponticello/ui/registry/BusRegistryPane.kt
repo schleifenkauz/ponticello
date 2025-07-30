@@ -6,8 +6,10 @@ import fxutils.actions.collectActions
 import fxutils.addAfter
 import fxutils.controls.IntSpinner
 import fxutils.controls.SliderBar
+import fxutils.label
 import fxutils.prompt.IntegerPrompt
 import fxutils.prompt.SimpleSearchableListView
+import fxutils.styleClass
 import fxutils.undo.UndoManager
 import javafx.event.Event
 import javafx.geometry.Point2D
@@ -97,6 +99,11 @@ class BusRegistryPane(busses: BusRegistry) : ObjectRegistryPane<BusObject>(busse
             .setupUndo("Bus Channels", obj.context[UndoManager])
         channelsSpinner.isDisable = obj.busType != BusObject.Type.Regular
         add(channelsSpinner)
+        val rateString = when (obj.rate) {
+            Rate.Audio -> "ar"
+            Rate.Control -> "kr"
+        }
+        add(label(rateString) styleClass "rate-label")
         if (obj is BusObject.ControlBus) {
             val defaultValue = reactiveVariable(obj.spec.now?.defaultValue?.get() ?: 0.0.toDecimal())
             val name = obj.name.map { n -> "Default value for $n" }

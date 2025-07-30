@@ -29,10 +29,7 @@ import ponticello.model.score.controls.ParameterControl
 import ponticello.sc.ControlSpec
 import ponticello.sc.NumericalControlSpec
 import ponticello.ui.launcher.PonticelloApp.Companion.primaryStage
-import reaktive.value.ReactiveValue
-import reaktive.value.ReactiveVariable
-import reaktive.value.now
-import reaktive.value.reactiveVariable
+import reaktive.value.*
 
 @Serializable
 sealed class ScoreObject : AbstractRenamableObject() {
@@ -92,6 +89,11 @@ sealed class ScoreObject : AbstractRenamableObject() {
 
     @Transient
     protected var resizeMode: ResizeMode? = null
+
+    @Transient
+    private val instances = reactiveVariable(0)
+
+    val numberOfInstances: ReactiveInt get() = instances
 
     val isResizing get() = resizeMode != null
 
@@ -265,9 +267,11 @@ sealed class ScoreObject : AbstractRenamableObject() {
     }
 
     fun addedToScore(registry: ScoreObjectRegistry) {
-        if (this !is UnresolvedScoreObject && !registry.has(this)) {
+        if (this is UnresolvedScoreObject) return
+        if (!registry.has(this)) {
             registry.context.withoutUndo { registry.add(this) }
         }
+        instances.now += 1
         if (this is ScoreObjectGroup) {
             for (inst in score.objectInstances) {
                 inst.obj.addedToScore(registry)
@@ -276,6 +280,8 @@ sealed class ScoreObject : AbstractRenamableObject() {
     }
 
     fun removedFromScore(option: Score.RegistryOption) {
+        if (this is UnresolvedScoreObject) return
+        instances.now -= 1
         if (option == Score.RegistryOption.KEEP_IN_REGISTRY) return
         if (!context.project.hasInstancesOf(this) && registry.has(this)) {
             val remove = this is MemoObject || option == Score.RegistryOption.REMOVE_WITHOUT_ASKING || YesNoPrompt(

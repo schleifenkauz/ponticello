@@ -5,6 +5,7 @@ import fxutils.*
 import fxutils.actions.action
 import fxutils.actions.makeButton
 import fxutils.actions.registerActions
+import fxutils.actions.registerShortcuts
 import hextant.context.extend
 import javafx.scene.control.SplitPane
 import javafx.scene.layout.BorderPane
@@ -50,10 +51,10 @@ class ScoreObjectViewPane private constructor(val obj: ScoreObject) : VBox() {
         children.addAll(createPlaybackBar(), splitter)
         isFocusTraversable = true
         setOnMouseClicked { requestFocus() }
+        val ctx = ObjectActionContext.MultiObjectContext(selector)
+        scorePane.registerShortcuts(ScoreObjectActions.all.withContext(ctx))
         registerShortcuts {
             SelectionRelatedActions.addShortcuts(this, context)
-            val ctx = ObjectActionContext.MultiObjectContext(selector)
-            registerActions(ScoreObjectActions.all.withContext(ctx))
             registerActions(ScoreObjectRegistryPane.actions.withContext(obj))
             registerActions(PlaybackActions.local.withContext(player))
             registerActions(listOf(showDetailPaneAction.withContext(this@ScoreObjectViewPane)))
