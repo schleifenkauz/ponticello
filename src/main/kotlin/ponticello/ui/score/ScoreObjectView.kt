@@ -48,6 +48,7 @@ import reaktive.value.forEach
 import reaktive.value.fx.asObservableValue
 import reaktive.value.fx.asReactiveValue
 import reaktive.value.now
+import kotlin.math.pow
 
 abstract class ScoreObjectView(
     val instance: ScoreObjectInstance,
@@ -246,6 +247,7 @@ abstract class ScoreObjectView(
     }
 
     private fun setupResizingRegions() {
+        val handlesVisible = this.widthProperty().greaterThan(20.0)
         for (side in Side.entries) {
             val region = Region() styleClass "resize-region"
             when (side) {
@@ -256,8 +258,9 @@ abstract class ScoreObjectView(
                     region.layoutXProperty().bind(
                         this.prefWidthProperty().subtract(region.widthProperty()).divide(2.0)
                     )
-                    region.prefWidthProperty().bind(this.prefWidthProperty().pow(0.75))
-                    region.visibleProperty().bind(region.prefWidthProperty().greaterThan(MIN_RESIZE_HANDLE_SIZE))
+                    region.prefWidthProperty()
+                        .bind(this.prefWidthProperty().map { it.toDouble().pow(0.75).coerceAtMost(50.0) })
+                    region.visibleProperty().bind(handlesVisible)
                 }
 
                 Side.LEFT, Side.RIGHT -> {
@@ -267,8 +270,9 @@ abstract class ScoreObjectView(
                     region.layoutYProperty().bind(
                         this.prefHeightProperty().subtract(region.heightProperty()).divide(2.0)
                     )
-                    region.prefHeightProperty().bind(this.prefHeightProperty().pow(0.75))
-                    region.visibleProperty().bind(region.prefHeightProperty().greaterThan(MIN_RESIZE_HANDLE_SIZE))
+                    region.prefHeightProperty()
+                        .bind(this.prefHeightProperty().map { it.toDouble().pow(0.85).coerceAtMost(30.0) })
+                    region.visibleProperty().bind(handlesVisible)
                 }
             }
             when (side) {
