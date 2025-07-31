@@ -140,7 +140,7 @@ class AppLayout(
                 toolPaneSides[type] = type.defaultSide
             }
             val toolPane = type.createToolPane(project)
-            toolPane.side.set(toolPaneSides.getValue(type))
+            toolPane.side!!.set(toolPaneSides.getValue(type))
             toolPanes.add(toolPane)
             val state = uiState.toolPaneStates.find { s -> s.uid == type.uid } ?: toolPane.defaultState()
             toolPane.initialize(this, state)
@@ -295,7 +295,7 @@ class AppLayout(
         if (toolPane.isShowing.now) {
             showDocked(toolPane)
         }
-        toolPane.side.set(getSide(toolPane))
+        toolPane.side!!.set(getSide(toolPane))
     }
 
     override fun moved(obj: ToolPane.Type, idx: Int) {

@@ -10,6 +10,7 @@ import ponticello.impl.writeCode
 import ponticello.model.obj.BusObject
 import ponticello.model.obj.BusReference
 import ponticello.model.project.PonticelloProject.Companion.projectDirectory
+import ponticello.model.registry.ObjectList
 import ponticello.model.registry.reference
 import ponticello.sc.Rate
 import ponticello.sc.client.SuperColliderClient
@@ -30,13 +31,14 @@ import java.util.concurrent.CompletableFuture
 class VSTPluginFlow private constructor(
     private val pluginName: String,
     private val busRef: ReactiveVariable<BusReference>,
-) : AudioFlow() {
+    val parameterMappings: VSTPluginParameterMappingList = VSTPluginParameterMappingList(),
+) : AudioFlow(), ObjectList.Listener<VSTPluginParameterMapping> {
     override lateinit var isValid: ReactiveValue<Boolean>
         private set
 
     private val client get() = context[SuperColliderClient]
 
-    override fun copy(): VSTPluginFlow = VSTPluginFlow(pluginName, busRef.copy())
+    override fun copy(): VSTPluginFlow = VSTPluginFlow(pluginName, busRef.copy(), parameterMappings.copy())
 
     @Transient
     lateinit var busSelector: BusSelector
@@ -44,6 +46,18 @@ class VSTPluginFlow private constructor(
 
     @Transient
     private lateinit var busesSelectionObserver: Observer
+
+    val automatableParameters by lazy {
+        val query = writeCode {
+            +"var parameters = $controllerVar.info.parameters, str = \"\""
+            +"parameters.do { |p| if (p.automatable) { str = str ++ \",\" ++ p.name } }"
+            +"str"
+        }
+        context[SuperColliderClient].eval(
+            query, description = "getting list of automatable parameters"
+        ).get().removeSuffix(",").split(",").filter { it.isNotBlank() }
+
+    }
 
     override fun initialize(context: Context) {
         if (initialized) return
@@ -57,33 +71,49 @@ class VSTPluginFlow private constructor(
         busesSelectionObserver = busRef.observe { _, _, newOutput ->
             val bus = newOutput.get()?.superColliderName
             if (bus != null) {
-                client.run("if (s.serverRunning) { $superColliderName.set(\\bus, $bus) };")
+                client.run("$superColliderName.set(\\bus, $bus)")
             }
         }
+        parameterMappings.initialize(context)
+        parameterMappings.addListener(this, initialize = false)
         super.initialize(context)
+    }
+
+    override fun added(obj: VSTPluginParameterMapping, idx: Int) {
+        context[SuperColliderClient].run {
+            obj.applyTo(writer, this@VSTPluginFlow)
+        }
+    }
+
+    override fun removed(obj: VSTPluginParameterMapping) {
+        obj.dispose()
     }
 
     override fun canRenameTo(newName: String): Boolean = true
 
-    private val controllerName get() = "~plugin_${name.now}"
+    val controllerVar get() = "~plugin_${name.now}"
 
     override fun writeCode(placement: NodePlacement) = writeCode {
         val busName = busRef.now.get()?.superColliderName ?: "nil"
         +"$superColliderName = Synth(\\vst_plugin, [bus: $busName], addAction: ${placement.addAction}, target: ${placement.target})"
         +"s.sync"
         appendBlock("$superColliderName.onFree") {
-            "$superColliderName = nil"
-            "$controllerName = nil"
+            +"$superColliderName = nil"
+            +"$controllerVar = nil"
         }
-        +"$controllerName = VSTPluginController($superColliderName)"
-        +"$controllerName.open('$pluginName', editor: true, multiThreading: true)"
+        +"$controllerVar = VSTPluginController($superColliderName)"
+        +"$controllerVar.open('$pluginName', editor: true, multiThreading: true)"
         +"s.sync"
         val stateFile = pluginStateFile().superColliderPath
-        +"if (PathName(${stateFile}).isFile) { $controllerName.readProgram($stateFile) }"
-        +"\"Opened plugin '$pluginName' in flow <${name.now}>\".postln"
+        +"if (PathName(${stateFile}).isFile) { $controllerVar.readProgram($stateFile) }"
         if (!isActive.now) {
             +"$superColliderName.set(\\bypass, 1)"
         }
+        +"s.sync"
+        for (mapping in parameterMappings) {
+            mapping.applyTo(writer, this@VSTPluginFlow)
+        }
+        +"\"Opened plugin '$pluginName' in flow <${name.now}>\".postln"
     }
 
     override fun setRunning(active: Boolean) {
@@ -92,12 +122,12 @@ class VSTPluginFlow private constructor(
     }
 
     fun showEditor() {
-        client.run("$controllerName.editor;")
+        client.run("$controllerVar.editor;")
     }
 
     fun saveConfiguration(): CompletableFuture<String> {
         val stateFile = pluginStateFile().invariantSeparatorsPath
-        val controllerVar = controllerName.removePrefix("~")
+        val controllerVar = controllerVar.removePrefix("~")
         return client.send("save_plugin_state", listOf(controllerVar, stateFile))
     }
 
@@ -109,19 +139,19 @@ class VSTPluginFlow private constructor(
     }
 
     override fun rename(newName: String) {
-        val oldControllerName = controllerName
+        val oldControllerName = controllerVar
         super.rename(newName)
         val file = pluginStateFile()
         file.renameTo(file.resolveSibling("$newName.fxp"))
         client.run {
-            +"$controllerName = $oldControllerName"
+            +"$controllerVar = $oldControllerName"
             +"$oldControllerName = nil"
         }
     }
 
     companion object {
         fun create(pluginName: String, bus: BusObject): VSTPluginFlow =
-            VSTPluginFlow(pluginName, reactiveVariable(bus.reference()))
+            VSTPluginFlow(pluginName, reactiveVariable(bus.reference()), VSTPluginParameterMappingList())
 
         fun availablePlugins(context: Context) = context[SuperColliderClient]
             .eval(

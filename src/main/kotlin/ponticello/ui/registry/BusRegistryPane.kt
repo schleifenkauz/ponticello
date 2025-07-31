@@ -190,7 +190,7 @@ class BusRegistryPane(busses: BusRegistry) : ObjectRegistryPane<BusObject>(busse
                     val name = bus.name.now
                     val initialSpec = bus.spec.now ?: NumericalControlSpec.DEFAULT
                     val spec = ControlSpecPrompt.create(name, null, initialSpec)!!
-                        .showDialog(box, offset = Point2D(box.width, 0.0))
+                        .showDialog(box, offset = Point2D(box.width, 0.0)) ?: return@executes
                     bus.updateSpec(spec as NumericalControlSpec)
                 }
             }

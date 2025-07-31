@@ -39,7 +39,7 @@
 }
 
 .object-box-header {
-    -fx-spacing: 2px;
+    -fx-spacing: 3px;
     -fx-alignment: center-left;
     -fx-background-color: transparent;
     -fx-padding: 2px;
@@ -125,4 +125,17 @@ Button.filter-tag-button:selected {
     -fx-padding: 1px 3px 1px 3px;
     -fx-border-color: black;
     -fx-border-width: 1px;
+}
+
+.parameter-mapping-arrow {
+    -fx-icon-size: 20;
+    -fx-icon-color: grey;
+}
+
+.parameter-mapping-arrow:hover {
+    -fx-icon-color: #501717 !important;
+}
+
+.parameter-mapping-arrow:active {
+    -fx-icon-color: green;
 }

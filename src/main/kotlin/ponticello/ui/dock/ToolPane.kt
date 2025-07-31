@@ -49,10 +49,10 @@ abstract class ToolPane : VBox() {
     var initialState: ToolPaneState? = null
         private set
 
-    open val type: Type get() = throw UnsupportedOperationException("$this has no type")
-    open val title get() = type.title
-    open val icon get() = type.icon
-    open val shortcuts: Array<String> get() = type.shortcuts
+    open val type: Type? get() = null
+    open val title get() = type?.title ?: throw UnsupportedOperationException("ToolPane ${this.javaClass} has no title")
+    open val icon get() = type?.icon ?: throw UnsupportedOperationException("ToolPane ${this.javaClass} has no icon")
+    open val shortcuts: Array<String> get() = type?.shortcuts ?: emptyArray()
 
     var isExclusive: Boolean = false
         private set
@@ -62,7 +62,7 @@ abstract class ToolPane : VBox() {
     val context get() = layout!!.context
 
     protected abstract val content: Parent
-    protected open val headerContent: Node? get() = null
+    protected open val headerContent: Node = Region()
     protected open val headerActions: List<ContextualizedAction>
         get() = actions.withContext(this)
 
@@ -83,7 +83,7 @@ abstract class ToolPane : VBox() {
 
     val isShowing: ReactiveBoolean get() = showing
 
-    val side by lazy { reactiveVariable(type.defaultSide) }
+    val side by lazy { type?.let { t -> reactiveVariable(t.defaultSide) } }
 
     init {
         styleClass("tool-pane")
@@ -108,6 +108,7 @@ abstract class ToolPane : VBox() {
     }
 
     private fun highlightFocusedToolPaneType() {
+        val type = type ?: return
         val btn = layout?.getToolPaneButton(type) ?: return
         val focusWithin = this.focusWithinProperty()
         val pseudoClass = PseudoClass.getPseudoClass("tool-pane-focused")
@@ -126,7 +127,7 @@ abstract class ToolPane : VBox() {
     }
 
     override fun requestFocus() {
-        headerContent?.requestFocus() ?: content.requestFocus()
+        headerContent.requestFocus()
     }
 
     private fun createHeader(): HBox {
@@ -134,7 +135,7 @@ abstract class ToolPane : VBox() {
         heading = label(title).styleClass("heading")
         val space = infiniteSpace()
         val box = HBox(heading, space, actionBar).styleClass("tool-pane-header")
-        if (headerContent != null) box.children.add(1, headerContent)
+        box.children.add(1, headerContent)
         heading.setupWindowDragging(Cursor.DEFAULT) { scene.window as? Popup }
         space.setupWindowDragging(Cursor.DEFAULT) { scene.window as? Popup }
         return box
@@ -260,7 +261,7 @@ abstract class ToolPane : VBox() {
         throw UnsupportedOperationException("Default state is not supported for $this")
 
     open fun saveState(dest: ToolPaneState) {
-        dest.uid = type.uid
+        dest.uid = type?.uid ?: error("ToolPane ${this.javaClass} has no UID")
         window?.let { w ->
             if (!w.x.isNaN() && !w.y.isNaN() && !w.width.isNaN() && !w.height.isNaN()) {
                 dest.windowBounds = WindowBounds(w.x, w.y, w.width, w.height)
@@ -344,7 +345,7 @@ abstract class ToolPane : VBox() {
                     }
         }
 
-        private val actions = collectActions<ToolPane> {
+        val actions = collectActions<ToolPane> {
             addAction("Resize window to fit contents") {
                 shortcut("Ctrl+L")
                 enableWhen { p -> isSceneRoot(p) }
@@ -353,23 +354,23 @@ abstract class ToolPane : VBox() {
                 executes { p -> p.scene.window.sizeToScene() }
             }
             addAction("Dock") {
-                enableWhen { p -> isSceneRoot(p) and p.side.notEqualTo(TOP) }
+                enableWhen { p -> isSceneRoot(p) and (p.side?.notEqualTo(TOP) ?: reactiveValue(false)) }
                 ifNotApplicable(Action.IfNotApplicable.Hide)
                 icon { p ->
-                    p.side.map { side ->
+                    p.side?.map { side ->
                         when (side) {
                             LEFT -> MaterialDesignP.PAGE_LAYOUT_SIDEBAR_LEFT
                             RIGHT -> MaterialDesignP.PAGE_LAYOUT_SIDEBAR_RIGHT
                             BOTTOM -> MaterialDesignP.PAGE_LAYOUT_FOOTER
                             TOP -> MaterialDesignP.PROGRESS_QUESTION //cannot happen
                         }
-                    }
+                    } ?: reactiveValue(null)
                 }
                 executes { p -> p.setMode(Docked) }
             }
             addAction("Hide") {
                 icon(MaterialDesignW.WINDOW_MINIMIZE)
-                enableWhen { p -> isSceneRoot(p).not() }
+                enableWhen { p -> if (p.layout != null) isSceneRoot(p).not() else reactiveValue(false) }
                 ifNotApplicable(Action.IfNotApplicable.Hide)
                 executes { p -> p.setShowing(false) }
             }

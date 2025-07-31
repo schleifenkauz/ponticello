@@ -1,14 +1,12 @@
 package ponticello.ui.dock
 
-import fxutils.actions.*
-import fxutils.addAfter
-import fxutils.registerShortcuts
+import fxutils.actions.ContextualizedAction
+import fxutils.actions.button
+import fxutils.actions.collectActions
 import fxutils.styleClass
 import javafx.scene.Cursor
 import javafx.scene.Node
-import javafx.scene.Parent
 import javafx.scene.input.DragEvent
-import javafx.stage.Window
 import org.controlsfx.control.textfield.CustomTextField
 import org.kordamp.ikonli.javafx.FontIcon
 import org.kordamp.ikonli.material2.Material2MZ
@@ -16,66 +14,25 @@ import org.kordamp.ikonli.materialdesign2.MaterialDesignB
 import ponticello.model.registry.NamedObject
 import ponticello.model.registry.NamedObjectList
 import ponticello.ui.impl.getFrom
-import ponticello.ui.registry.ListDisplayConfig
-import ponticello.ui.registry.ObjectListView
 import ponticello.ui.registry.ObjectListView.Companion.modeChangeActions
 import reaktive.value.now
 
 abstract class SearchableToolPane<O : NamedObject>(
-    private val list: NamedObjectList<O>,
-    private val scrollable: Boolean = true,
-) : ToolPane(), ListDisplayConfig<O> {
+    private val list: NamedObjectList<O>, scrollable: Boolean = true,
+) : ListToolPane<O>(list, scrollable) {
     protected val searchText = CustomTextField().styleClass("sleek-text-field", "search-field")
 
-    lateinit var listView: ObjectListView<O>
-        private set
-
-    override val headerActions: List<ContextualizedAction>
-        get() = modeChangeActions.withContext(listView) + actions.withContext(this) + super.headerActions
-
-    override val content: Parent get() = listView
     override val headerContent: Node get() = searchText
 
+    override val headerActions: List<ContextualizedAction>
+        get() = modeChangeActions.withContext(listView) + actions.withContext(this) + ToolPane.actions.withContext(this)
+
     override fun doSetup() {
-        var initialMode = supportedModes.first()
-        val state = initialState
-        if (state is SearchableToolPaneState) {
-            if (state.displayMode != null) initialMode = state.displayMode!!
-        }
-        listView = ObjectListView(list, this, scrollable, initialMode)
-        if (state is SearchableToolPaneState) {
-            for (idx in state.expandedBoxes) {
-                listView.getBoxes()[idx].toggleExpanded()
-            }
-        }
+        super.doSetup()
         setupSearchField()
     }
 
-    override fun afterSetup() {
-        val actions = listView.actions + extraHeaderActions()
-        registerShortcuts {
-            registerActions(actions)
-        }
-        header.children.addAfter(headerContent, ActionBar(actions, buttonStyle = "medium-icon-button"))
-    }
-
-    fun showContent(obj: O): Window? {
-        if (listView.mode.now != ObjectListView.DisplayMode.SubWindow) {
-            setShowing(true)
-        }
-        return listView.showContent(obj)
-    }
-
-    protected open fun extraHeaderActions(): List<ContextualizedAction> = emptyList()
-
-    override fun getDroppedObject(ev: DragEvent): O? {
-        val format = dataFormat
-        if (format != null && ev.dragboard.hasContent(format)) {
-            val obj = ev.dragboard.getFrom(list, format)
-            return obj
-        }
-        return null
-    }
+    override fun filter(obj: O): Boolean = obj.name.now.contains(searchText.text, ignoreCase = true)
 
     private fun setupSearchField() {
         searchText.promptText = "Search..."
@@ -91,18 +48,13 @@ abstract class SearchableToolPane<O : NamedObject>(
         }
     }
 
-    override fun filter(obj: O): Boolean = matchesSearch(obj)
-
-    private fun matchesSearch(obj: O) = obj.name.now.contains(searchText.text, ignoreCase = true)
-
-    override fun saveState(dest: ToolPaneState) {
-        super.saveState(dest)
-        if (dest is SearchableToolPaneState && isSetup) {
-            dest.displayMode = listView.mode.now
-            dest.expandedBoxes = listView.getBoxes().withIndex()
-                .filter { (_, box) -> box.isExpanded }
-                .map(IndexedValue<*>::index)
+    override fun getDroppedObject(ev: DragEvent): O? {
+        val format = dataFormat
+        if (format != null && ev.dragboard.hasContent(format)) {
+            val obj = ev.dragboard.getFrom(list, format)
+            return obj
         }
+        return null
     }
 
     companion object {

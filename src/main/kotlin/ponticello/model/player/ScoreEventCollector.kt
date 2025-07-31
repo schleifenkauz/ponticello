@@ -193,9 +193,7 @@ class ScoreEventCollector(
             removeEvent(Event(Event.Type.ObjectEnd, posEnd, inst))
             val player = player
             if (player != null && player.isPlaying.now && player.playHead.currentTime in position.time..posEnd.time) {
-                ScorePlayer.execute {
-                    scheduler.stopPlayBackInstantly(obj, position)
-                }
+                scheduler.stopPlayBackInstantly(obj, position)
             }
         }
     }

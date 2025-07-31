@@ -89,6 +89,9 @@ class MixerPane(
             listConfig.setMixer(mixer)
             channelsList = mixer?.let { m -> ObjectListView(m.components, this, scrollable = true) }
             relayout()
+            runAfterLayout {
+                window?.sizeToScene()
+            }
         }
 
     override val headerContent: Node

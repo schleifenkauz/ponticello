@@ -77,7 +77,8 @@ class ScWriter(private val output: Appendable) : SuperColliderContext {
     }
 
     override fun run(command: String) {
-        appendLine(command)
+        append(command)
+        appendLine(";")
     }
 
     companion object {

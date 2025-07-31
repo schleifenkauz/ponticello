@@ -1,6 +1,9 @@
 package ponticello.ui.registry
 
 import ponticello.model.obj.BusObject
+import ponticello.model.obj.project
+import ponticello.model.project.SERVER_OPTIONS
+import ponticello.model.project.get
 import ponticello.model.registry.BusRegistry
 import ponticello.sc.Rate
 import reaktive.value.now
@@ -19,5 +22,9 @@ class SearchableBusListView(
 
     override fun extractText(option: BusObject): String = option.name.now
 
-    override fun createObject(name: String): BusObject = BusObject.audio(name)
+    override fun createObject(name: String): BusObject {
+        val rate = rate ?: Rate.Audio
+        val channels = channels ?: if (rate == Rate.Audio) registry.context.project[SERVER_OPTIONS].numOutputChannels else 1
+        return BusObject.create(rate, name, channels)
+    }
 }

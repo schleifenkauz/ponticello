@@ -23,7 +23,7 @@ import ponticello.model.registry.GlobalDefinitionLibrary
 import ponticello.model.registry.InstrumentRegistry
 import ponticello.model.registry.ObjectList
 import ponticello.ui.controls.NamePrompt
-import ponticello.ui.dock.SearchableToolPaneState
+import ponticello.ui.dock.ListToolPaneState
 import ponticello.ui.dock.Side
 import ponticello.ui.dock.ToolPane
 import ponticello.ui.dock.ToolPaneState
@@ -43,7 +43,7 @@ class InstrumentRegistryPane(
     override val supportedModes: Set<DisplayMode>
         get() = setOf(DisplayMode.DetailsPane, DisplayMode.SubWindow, DisplayMode.Collapsable)
 
-    override fun defaultState(): ToolPaneState = SearchableToolPaneState.window
+    override fun defaultState(): ToolPaneState = ListToolPaneState.window
 
     override fun detailWindowIcon(obj: InstrumentObject): Ikon =
         if (obj is CustomizableSynthDefObject || obj is ProcessDefObject) Material2AL.CODE

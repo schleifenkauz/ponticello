@@ -36,23 +36,23 @@ sealed class ToolPaneState {
 class RegularToolPaneState : ToolPaneState()
 
 @Serializable
-sealed class SearchableToolPaneState : ToolPaneState() {
+sealed class ListToolPaneState : ToolPaneState() {
     var displayMode: ObjectListView.DisplayMode? = null
 
     var expandedBoxes = emptyList<Int>()
 
     companion object {
-        val docked get() = RegularSearchableToolPaneState().apply { mode = ToolPaneMode.Docked }
-        val window get() = RegularSearchableToolPaneState().apply { mode = ToolPaneMode.Window }
-        val floating get() = RegularSearchableToolPaneState().apply { mode = ToolPaneMode.Floating }
+        val docked get() = RegularListToolPaneState().apply { mode = ToolPaneMode.Docked }
+        val window get() = RegularListToolPaneState().apply { mode = ToolPaneMode.Window }
+        val floating get() = RegularListToolPaneState().apply { mode = ToolPaneMode.Floating }
     }
 }
 
 @Serializable
-class RegularSearchableToolPaneState : SearchableToolPaneState()
+class RegularListToolPaneState : ListToolPaneState()
 
 @Serializable
-class FlowPaneState private constructor(): SearchableToolPaneState() {
+class FlowPaneState private constructor(): ListToolPaneState() {
     var expandedFlows = emptyList<Int>()
 
     companion object {
@@ -74,7 +74,7 @@ class MixerPaneState private constructor(): ToolPaneState() {
 }
 
 @Serializable
-class BusRegistryPaneState private constructor() : SearchableToolPaneState() {
+class BusRegistryPaneState private constructor() : ListToolPaneState() {
     lateinit var filter: BusRegistryPane.BusTypeFilter
 
     companion object {
@@ -86,7 +86,7 @@ class BusRegistryPaneState private constructor() : SearchableToolPaneState() {
 }
 
 @Serializable
-class BufferRegistryPaneState private constructor() : SearchableToolPaneState() {
+class BufferRegistryPaneState private constructor() : ListToolPaneState() {
     lateinit var filter: BufferRegistryPane.BufferTypeFilter
 
     companion object {
@@ -98,7 +98,7 @@ class BufferRegistryPaneState private constructor() : SearchableToolPaneState() 
 }
 
 @Serializable
-class BrowserPaneState private constructor() : SearchableToolPaneState() {
+class BrowserPaneState private constructor() : ListToolPaneState() {
     lateinit var url: String
 
     companion object {

@@ -17,7 +17,7 @@ import ponticello.model.obj.SuperColliderObject
 import ponticello.model.project.PonticelloProject
 import ponticello.model.project.patterns
 import ponticello.model.registry.ObjectRegistry
-import ponticello.ui.dock.SearchableToolPaneState
+import ponticello.ui.dock.ListToolPaneState
 import ponticello.ui.dock.Side
 import ponticello.ui.dock.ToolPane
 import ponticello.ui.dock.ToolPaneState
@@ -37,7 +37,7 @@ class GlobalPatternRegistryPane(
 
     private val plotPaneWindows = mutableMapOf<GlobalPatternObject, SubWindow>()
 
-    override fun defaultState(): ToolPaneState = SearchableToolPaneState.docked
+    override fun defaultState(): ToolPaneState = ListToolPaneState.docked
 
     override fun createNewObject(name: String, ev: Event?): GlobalPatternObject = GlobalPatternObject.create(name)
 

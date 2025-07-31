@@ -121,7 +121,7 @@ class FlowGroupPane(private val group: AudioFlowGroup, ownWindow: Boolean) : VBo
             selector.syncWith(obj.targetBus)
             selector.initialize(context)
             val selectorControl = ObjectSelectorControl(selector, createBundle())
-            listOf(selectorControl)
+            listOf(selectorControl.widthAtLeast(100.0))
         }
 
         is VSTPluginFlow -> {
@@ -133,13 +133,13 @@ class FlowGroupPane(private val group: AudioFlowGroup, ownWindow: Boolean) : VBo
         else -> emptyList()
     }
 
-    override fun getContent(obj: AudioFlow, mode: DisplayMode): Parent? = when (obj) {
+    override fun getContent(obj: AudioFlow, mode: DisplayMode): Parent = when (obj) {
         is CodeFlow -> obj.codeEditor.control
         is SendFlow -> SendFlowView(obj)
         is InstrumentFlow -> ParameterControlsPane(obj)
         is UtilityFlow -> Slider(-60.0, +6.0, 0.0) styleClass "volume-fader"
         is MixerFlow -> MixerFlowView.create(obj)
-        else -> null
+        is VSTPluginFlow -> VSTPluginParameterMappingsPane(obj)
     }
 
     override fun getActions(box: ObjectBox<AudioFlow>): List<ContextualizedAction> {

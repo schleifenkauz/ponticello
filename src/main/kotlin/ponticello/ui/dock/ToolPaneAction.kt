@@ -18,9 +18,9 @@ class ToolPaneAction(private val toolPane: ToolPane) : ContextualizedAction {
     override val shortcuts: List<Shortcut>
         get() = toolPane.shortcuts.map(String::shortcut)
     override val description: ReactiveString
-        get() = reactiveValue(toolPane.type.title)
+        get() = reactiveValue(toolPane.type!!.title)
     override val icon: ReactiveValue<Ikon?>
-        get() = reactiveValue(toolPane.type.icon)
+        get() = reactiveValue(toolPane.type!!.icon)
     override val ifNotApplicable: Action.IfNotApplicable
         get() = Action.IfNotApplicable.Hide
     override val isApplicable: ReactiveBoolean
