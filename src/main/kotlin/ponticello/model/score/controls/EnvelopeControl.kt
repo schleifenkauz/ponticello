@@ -32,6 +32,8 @@ class EnvelopeControl(
 ) : ParameterControl(), EnvelopeView {
     @Transient
     private var index = -1
+    @Transient
+    private var subIndex = 0
 
     @Transient
     private lateinit var specObserver: Observer
@@ -39,7 +41,7 @@ class EnvelopeControl(
     @Transient
     private var defaultWarp: Warp? = null
 
-    private val auxilSynthDefName get() = "env_$index"
+    private val auxilSynthDefName get() = "env_${index}_$subIndex"
 
     @Transient
     val update = unitEvent()
@@ -67,7 +69,7 @@ class EnvelopeControl(
     private fun updateSynthDef() {
         synthDefSynchronizerJob.join()
         val curve = (defaultWarp ?: Warp.Linear).toString()
-        val arguments = mutableListOf<Any>(index, points.size, curve)
+        val arguments = mutableListOf<Any>("${index}_$subIndex", points.size, curve)
         arguments.addAll(points.getLevels())
         arguments.addAll(points.getTimes())
         val job = context[SuperColliderClient].send("addEnvDef", arguments)
@@ -156,6 +158,7 @@ class EnvelopeControl(
     }
 
     override fun editedEnvelope() {
+        subIndex++
         updateSynthDef()
         update.fire()
     }

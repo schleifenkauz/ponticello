@@ -123,6 +123,7 @@ abstract class AbstractLiveUpdater(protected val obj: ParameterizedObject) : Par
         runOnActiveObjects { name, _ ->
             val auxiliarySynthName = ParameterControl.auxilSynthName(name, parameter)
             +"$auxiliarySynthName.free"
+            +"$auxiliarySynthName = nil"
         }
     }
 
@@ -130,6 +131,7 @@ abstract class AbstractLiveUpdater(protected val obj: ParameterizedObject) : Par
         runOnActiveObjects { name, _ ->
             val busName = ParameterControl.auxilBusName(name, parameter)
             +"$busName.free"
+            +"$busName = nil"
         }
     }
 
@@ -247,7 +249,7 @@ abstract class AbstractLiveUpdater(protected val obj: ParameterizedObject) : Par
             freeAuxilSynths(parameter.name.now)
         }
         val replaceAuxilSynth = oldControl.usesAuxilSynth(obj)
-        val remap = oldControl.allocatesBus(obj)
+        val remap = !oldControl.allocatesBus(obj) && newControl.allocatesBus(obj)
         addedControl(parameter.name.now, newControl, replaceAuxilSynth, remap)
     }
 
