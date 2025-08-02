@@ -101,10 +101,10 @@ class ObjectListView<O : Any>(
             when (ev.eventType) {
                 DragEvent.DRAG_ENTERED -> {
                     val dragged = ev.gestureSource
-                    if (dragged is ObjectBox<*>) {
-                        dropPreviewNode.setPrefSize(dragged.width, dragged.height)
-                    } else {
-                        dropPreviewNode.setPrefSize(this.width, 20.0)
+                    when {
+                        dragged is ObjectBox<*> -> dropPreviewNode.setPrefSize(dragged.width, dragged.height)
+                        orientation == Orientation.HORIZONTAL -> dropPreviewNode.setPrefSize(20.0, this.height)
+                        orientation == Orientation.VERTICAL -> dropPreviewNode.setPrefSize(this.width, 20.0)
                     }
                 }
 
@@ -113,7 +113,7 @@ class ObjectListView<O : Any>(
                     if (acceptedTransferModes.isNotEmpty()) {
                         ev.acceptTransferModes(*acceptedTransferModes)
                         ev.consume()
-                        val idx = getBoxIndexFromY(ev.screenY, boxes)
+                        val idx = getBoxIndexFromY(ev.screenX, ev.screenY, boxes)
                         val prevPosition = itemsLayout.children.indexOf(dropPreviewNode)
                         if (idx != prevPosition) {
                             if (prevPosition != -1) {
@@ -133,7 +133,7 @@ class ObjectListView<O : Any>(
                     ev.consume()
                     val obj = config.getDroppedObject(ev) ?: getObjectFromSource(ev)
                     if (obj != null) {
-                        val idx = getBoxIndexFromY(ev.screenY, boxes.filter { b -> b.obj != obj })
+                        val idx = getBoxIndexFromY(ev.screenX, ev.screenY, boxes.filter { b -> b.obj != obj })
                         if (obj in source) {
                             source.move(obj, idx)
                             if (config.hideWhileDragging) {
@@ -166,10 +166,15 @@ class ObjectListView<O : Any>(
         return source.get(name)
     }
 
-    private fun getBoxIndexFromY(screenY: Double, boxes: List<ObjectBox<O>>): Int {
-        val idx = boxes
-            .map { it.localToScreen(it.boundsInLocal).middleY }
-            .binarySearch(screenY)
+    private fun getBoxIndexFromY(screenX: Double, screenY: Double, boxes: List<ObjectBox<O>>): Int {
+        val idx = when (orientation) {
+            Orientation.VERTICAL -> boxes
+                .map { it.localToScreen(it.boundsInLocal).middleY }
+                .binarySearch(screenY)
+            Orientation.HORIZONTAL -> boxes
+                .map { it.localToScreen(it.boundsInLocal).middleX }
+                .binarySearch(screenX)
+        }
         return if (idx < 0) -idx - 1 else idx
     }
 

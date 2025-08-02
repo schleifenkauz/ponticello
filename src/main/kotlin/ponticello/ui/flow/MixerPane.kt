@@ -13,9 +13,7 @@ import javafx.scene.Parent
 import javafx.scene.control.Control
 import javafx.scene.control.Label
 import javafx.scene.control.Slider
-import javafx.scene.input.DataFormat
-import javafx.scene.input.KeyCode
-import javafx.scene.input.KeyEvent
+import javafx.scene.input.*
 import javafx.scene.layout.*
 import javafx.scene.paint.Color
 import javafx.scene.text.Text
@@ -32,6 +30,7 @@ import ponticello.model.obj.BusReference
 import ponticello.model.obj.project
 import ponticello.model.project.PonticelloProject
 import ponticello.model.project.flows
+import ponticello.model.registry.BusRegistry
 import ponticello.model.registry.ObjectReference
 import ponticello.model.registry.reference
 import ponticello.ui.actions.ServerActions
@@ -42,7 +41,9 @@ import ponticello.ui.dock.MixerPaneState
 import ponticello.ui.dock.Side
 import ponticello.ui.dock.ToolPane
 import ponticello.ui.dock.ToolPaneState
+import ponticello.ui.impl.getFrom
 import ponticello.ui.registry.ListDisplayConfig
+import ponticello.ui.registry.ObjectBox
 import ponticello.ui.registry.ObjectListView
 import reaktive.value.ReactiveValue
 import reaktive.value.ReactiveVariable
@@ -123,8 +124,15 @@ class MixerPane(
         }
     }
 
-    override val dataFormat: DataFormat
-        get() = BusObject.DATA_FORMAT
+    override fun acceptedTransferModes(dragboard: Dragboard): Array<TransferMode> = when {
+        dragboard.hasContent(BusObject.DATA_FORMAT) -> arrayOf(TransferMode.LINK)
+        else -> emptyArray()
+    }
+
+    override fun getDroppedObject(ev: DragEvent): MixerFlow.MixerComponent? {
+        val bus = ev.dragboard.getFrom(context[BusRegistry], BusObject.DATA_FORMAT) ?: return null
+        return MixerFlow.MixerComponent.create(bus)
+    }
 
     private fun setupVolumeChangeWithArrowKeys() {
         addEventFilter(KeyEvent.KEY_PRESSED) { ev ->
@@ -212,7 +220,7 @@ class MixerPane(
         return Pair(monoButtonPane, masterMuteButton.centered())
     }
 
-    private fun createPanKnobAndMuteSoloActionsBar(obj: MixerFlow.MixerComponent): Pair<Knob, StackPane> {
+    private fun createPanKnobAndMuteSoloActionsBar(obj: MixerFlow.MixerComponent): Pair<Knob, Node> {
         val panKnob = listConfig.createPanKnob(obj.pan, radius = 20.0)
 
         val muteAndSolo = ActionBar(
@@ -220,7 +228,7 @@ class MixerPane(
             buttonStyle = "mute-solo-button"
         )
 
-        return Pair(panKnob, muteAndSolo.centered())
+        return Pair(panKnob, HBox(infiniteSpace(), muteAndSolo, infiniteSpace()))
     }
 
     private fun createVolumeBox(
@@ -261,6 +269,8 @@ class MixerPane(
     }
 
     override fun getContent(obj: MixerFlow.MixerComponent, mode: ObjectListView.DisplayMode): Parent = Region()
+
+    override fun getDragTarget(box: ObjectBox<MixerFlow.MixerComponent>): Node = box
 
     private fun allMixerFlows() = context.project.flows.allFlows().filterIsInstance<MixerFlow>()
 

@@ -15,6 +15,8 @@ import javafx.event.Event
 import javafx.geometry.Point2D
 import javafx.scene.Node
 import javafx.scene.input.DataFormat
+import javafx.scene.input.Dragboard
+import javafx.scene.input.TransferMode
 import javafx.scene.layout.HBox
 import org.kordamp.ikonli.Ikon
 import org.kordamp.ikonli.codicons.Codicons
@@ -133,6 +135,8 @@ class BusRegistryPane(busses: BusRegistry) : ObjectRegistryPane<BusObject>(busse
 
     override val dataFormat: DataFormat
         get() = BusObject.DATA_FORMAT
+
+    override fun acceptedTransferModes(dragboard: Dragboard): Array<TransferMode> = emptyArray()
 
     override fun getActions(box: ObjectBox<BusObject>): List<ContextualizedAction> {
         return if (box.obj is BusObject.ControlBus) {
