@@ -133,6 +133,13 @@ abstract class AbstractLiveUpdater(protected val obj: ParameterizedObject) : Par
         }
     }
 
+    private fun allocateParameterBuses(parameter: NamedParameterControl) {
+        runOnActiveObjects { name, _ ->
+            val busName = ParameterControl.auxilBusName(name, parameter.name.now)
+            +"$busName = Bus.control(s, 1)"
+        }
+    }
+
     private fun addedControl(parameter: String, ctrl: ParameterControl, replaceAuxilSynth: Boolean, remap: Boolean) {
         observeControl(parameter, ctrl)
         when (ctrl) {
@@ -156,7 +163,7 @@ abstract class AbstractLiveUpdater(protected val obj: ParameterizedObject) : Par
             is AttackReleaseControl -> return //TODO
 
             is EnvelopeControl -> runOnActiveObjects { name, objectTime ->
-                updateEnvelope(writer, objectTime, name, parameter, ctrl, remap)
+                updateEnvelope(writer, objectTime, name, parameter, ctrl, remap, replaceAuxilSynth)
             }
 
             is UGenControl -> runOnActiveObjects { name, objectTime ->
@@ -205,7 +212,7 @@ abstract class AbstractLiveUpdater(protected val obj: ParameterizedObject) : Par
             is AttackReleaseControl -> return //TODO
             is EnvelopeControl -> control.update.stream.observe { _ ->
                 runOnActiveObjects { name, objectTime ->
-                    updateEnvelope(writer, objectTime, name, parameter, control, remap = false)
+                    updateEnvelope(writer, objectTime, name, parameter, control, remap = false, replaceAuxilSynth = true)
                 }
             }
 
@@ -234,10 +241,7 @@ abstract class AbstractLiveUpdater(protected val obj: ParameterizedObject) : Par
             freeParameterBuses(parameter.name.now)
         }
         if (!oldControl.allocatesBus(obj) && newControl.allocatesBus(obj)) {
-            runOnActiveObjects { name, _ ->
-                val busName = ParameterControl.auxilBusName(name, parameter.name.now)
-                +"$busName.free"
-            }
+            allocateParameterBuses(parameter)
         }
         if (oldControl.usesAuxilSynth(obj) && !newControl.usesAuxilSynth(obj)) {
             freeAuxilSynths(parameter.name.now)
@@ -270,6 +274,7 @@ abstract class AbstractLiveUpdater(protected val obj: ParameterizedObject) : Par
         writer: ScWriter, objectTime: Decimal,
         uniqueName: String, parameter: String, envelope: EnvelopeControl,
         remap: Boolean,
+        replaceAuxilSynth: Boolean,
     )
 
     protected open fun updateUGenControl(

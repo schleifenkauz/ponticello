@@ -21,6 +21,7 @@ import reaktive.event.unitEvent
 import reaktive.value.ReactiveVariable
 import reaktive.value.forEach
 import reaktive.value.reactiveVariable
+import java.util.concurrent.CompletableFuture
 
 @Serializable
 @SerialName("Envelope")
@@ -43,10 +44,15 @@ class EnvelopeControl(
     @Transient
     val update = unitEvent()
 
+    @Transient
+    lateinit var synthDefSynchronizerJob: CompletableFuture<String>
+        private set
+
     override fun initialize(context: Context, namedControl: NamedParameterControl) {
         index = counter++
         super.initialize(context, namedControl)
         points.initialize(context)
+        synthDefSynchronizerJob = CompletableFuture.completedFuture("")
         specObserver = namedControl.spec.forEach { spec ->
             if (spec !is NumericalControlSpec) {
                 System.err.println("Expected NumericalControlSpec on $namedControl but got $spec")
@@ -59,11 +65,13 @@ class EnvelopeControl(
     }
 
     private fun updateSynthDef() {
+        synthDefSynchronizerJob.join()
         val curve = (defaultWarp ?: Warp.Linear).toString()
         val arguments = mutableListOf<Any>(index, points.size, curve)
         arguments.addAll(points.getLevels())
         arguments.addAll(points.getTimes())
-        context[SuperColliderClient].send("addEnvDef", arguments).join()
+        val job = context[SuperColliderClient].send("addEnvDef", arguments)
+        synthDefSynchronizerJob = job
     }
 
     override fun copy(): ParameterControl =

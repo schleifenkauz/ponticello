@@ -1,7 +1,6 @@
 package ponticello.model.player
 
 import ponticello.impl.Decimal
-import ponticello.model.flow.NodePlacement
 import ponticello.model.obj.BufferReference
 import ponticello.model.obj.BusReference
 import ponticello.model.obj.ParameterizedObject
@@ -40,7 +39,7 @@ class LiveSynthUpdater(obj: ParameterizedObject) : AbstractLiveUpdater(obj) {
 
     override fun ScWriter.updateValueControlMode(
         uniqueName: String, parameter: String,
-        allocateBus: Boolean, currentValue: Decimal
+        allocateBus: Boolean, currentValue: Decimal,
     ) {
         val busName = ParameterControl.auxilBusName(uniqueName, parameter)
         if (allocateBus) {
@@ -81,7 +80,7 @@ class LiveSynthUpdater(obj: ParameterizedObject) : AbstractLiveUpdater(obj) {
 
     override fun updateUGenControl(
         writer: ScWriter, uniqueName: String, parameter: String,
-        expr: ScExpr, replace: Boolean, remap: Boolean, objectTime: Decimal
+        expr: ScExpr, replace: Boolean, remap: Boolean, objectTime: Decimal,
     ) {
         super.updateUGenControl(writer, uniqueName, parameter, expr, replace, remap, objectTime)
         if (remap) writer.remap(uniqueName, parameter)
@@ -96,12 +95,17 @@ class LiveSynthUpdater(obj: ParameterizedObject) : AbstractLiveUpdater(obj) {
     override fun updateEnvelope(
         writer: ScWriter, objectTime: Decimal,
         uniqueName: String, parameter: String,
-        envelope: EnvelopeControl, remap: Boolean,
+        envelope: EnvelopeControl, remap: Boolean, replaceAuxilSynth: Boolean,
     ) {
+        envelope.synthDefSynchronizerJob.join()
+        Thread.sleep(10)
         val auxilVarName = ParameterControl.auxilBusName(uniqueName, parameter)
         val auxilSynthName = ParameterControl.auxilSynthName(uniqueName, parameter)
-        val placement = NodePlacement.replace(auxilSynthName)
-        envelope.createEnvelopeSynth(writer, auxilVarName, auxilSynthName, placement, cutoff = objectTime, paused = false)
+        val placement = getAuxiliarySynthPlacement(parameter, uniqueName, replaceAuxilSynth)
+        envelope.createEnvelopeSynth(
+            writer, auxilVarName, auxilSynthName, placement,
+            cutoff = objectTime, paused = false
+        )
         if (remap) writer.remap(uniqueName, parameter)
     }
 }

@@ -48,7 +48,8 @@ class LiveProcessUpdater(obj: ParameterizedObject): AbstractLiveUpdater(obj) {
         uniqueName: String,
         parameter: String,
         envelope: EnvelopeControl,
-        remap: Boolean
+        remap: Boolean,
+        replaceAuxilSynth: Boolean
     ) {
         val spec = obj.getSpec(parameter) as? NumericalControlSpec ?: return
         val envelopeCode = envelope.points.code(spec.warp)
