@@ -223,21 +223,22 @@ OSCdef(\addEnvDef, { |msg|
     var id = msg[1], idx = msg[2], size = msg[3], curve = msg[4], levels, times, def_name;
     levels = msg[5..(5 + size - 1)];
     times = msg[(5 + size)..(5 + size + size - 1)];
-    try {
-        def_name = ("env_" ++ idx).asSymbol;
-        SynthDef(def_name) {
-            arg out, cutoff = 0;
-            var env = Env.new(levels: levels.asArray, times: times.asArray, curve: 'lin'), sig;
-            sig = IEnvGen.kr(env, index: Sweep.kr(rate: ~time_warp_bus.kr) + cutoff);
-            Out.kr(out, sig);
-        }.add(completionMsg: {
-            postf("Added SynthDef %\n", def_name);
-            ~ponticello_addr.sendMsg('reply', id, "ok");
-        });
+    fork {
+        try {
+            def_name = ("env_" ++ idx).asSymbol;
+            SynthDef(def_name) {
+                arg out, cutoff = 0;
+                var env = Env.new(levels: levels.asArray, times: times.asArray, curve: 'lin'), sig;
+                sig = IEnvGen.kr(env, index: Sweep.kr(rate: ~time_warp_bus.kr) + cutoff);
+                Out.kr(out, sig);
+            }.add;
+            s.sync;
+            ~ponticello_addr.sendMsg('reply', id, "updated " ++ def_name);
       } { |error|
-          ~ponticello_addr.sendMsg('error', id, error.what);
-          error.throw;
-      }
+            ~ponticello_addr.sendMsg('error', id, error.what);
+            error.throw;
+        }
+    }
 }, \addEnvDef);
 ~ponticello_addr.postln;
 ~ponticello_addr.sendMsg('/ready');

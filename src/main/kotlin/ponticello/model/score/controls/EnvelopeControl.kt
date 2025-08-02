@@ -39,7 +39,7 @@ class EnvelopeControl(
     @Transient
     private var defaultWarp: Warp? = null
 
-    private val auxilSynthDefName get() = "env_$index"
+    private val auxilSynthDefName get() = "env_${index}"
 
     @Transient
     val update = unitEvent()

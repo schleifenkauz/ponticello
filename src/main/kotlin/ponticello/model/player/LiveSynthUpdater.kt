@@ -98,7 +98,6 @@ class LiveSynthUpdater(obj: ParameterizedObject) : AbstractLiveUpdater(obj) {
         envelope: EnvelopeControl, remap: Boolean, replaceAuxilSynth: Boolean,
     ) {
         envelope.synthDefSynchronizerJob.join()
-        Thread.sleep(10)
         val auxilVarName = ParameterControl.auxilBusName(uniqueName, parameter)
         val auxilSynthName = ParameterControl.auxilSynthName(uniqueName, parameter)
         val placement = getAuxiliarySynthPlacement(parameter, uniqueName, replaceAuxilSynth)
