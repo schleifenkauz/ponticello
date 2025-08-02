@@ -3,6 +3,7 @@
 package ponticello.model.score
 
 import hextant.context.Context
+import hextant.context.compoundEdit
 import javafx.geometry.HorizontalDirection
 import javafx.geometry.HorizontalDirection.RIGHT
 import javafx.geometry.Side
@@ -194,7 +195,7 @@ class SoundProcess(
         }
     }
 
-    fun reverse() {
+    fun reverse(reverseEnvelopes: Boolean) = context.compoundEdit("Reverse SoundProcess") {
         for (ctrl in controls.controlMap.values) {
             if (ctrl is EnvelopeControl) {
                 ctrl.points.reverse()

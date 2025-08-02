@@ -263,9 +263,15 @@ class Envelope(private val _points: MutableList<EnvelopePoint>) {
     }
 
     fun reverse() {
+        doReverse()
+        context[UndoManager].record(Reverse(this))
+    }
+
+    private fun doReverse() {
         val points = points.toList()
         for (idx in points.indices) {
-            modifyPoint(idx, points[points.size - 1 - idx])
+            val (t, v) = points[points.size - 1 - idx]
+            modifyPoint(idx, EnvelopePoint(duration - t, v))
         }
         viewManager.notifyListeners { editedEnvelope() }
     }
@@ -284,6 +290,19 @@ class Envelope(private val _points: MutableList<EnvelopePoint>) {
 
         override fun doRedo() {
             envelope.addPoint(idx, point)
+        }
+    }
+
+    private class Reverse(val envelope: Envelope) : AbstractEdit() {
+        override val actionDescription: String
+            get() = "Reverse envelope"
+
+        override fun doRedo() {
+            envelope.doReverse()
+        }
+
+        override fun doUndo() {
+            envelope.doReverse()
         }
     }
 

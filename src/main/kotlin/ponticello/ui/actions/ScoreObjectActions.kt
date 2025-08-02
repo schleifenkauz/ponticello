@@ -174,13 +174,13 @@ object ScoreObjectActions {
             }
         }
         addObjectAction("Reverse object") {
-            shortcut("Alt?+R")
+            shortcut("Alt?+Shift?+R")
             icon(Material2AL.FLIP)
             applicableOn { view -> view is SoundProcessView }
             executeSingle { view, ev ->
                 view as SoundProcessView
                 if (!ev.isTargetTextInput || ev.isAltDown()) {
-                    view.obj.reverse()
+                    view.obj.reverse(reverseEnvelopes = ev.isShiftDown())
                 }
             }
         }

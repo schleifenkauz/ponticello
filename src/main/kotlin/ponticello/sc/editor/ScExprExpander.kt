@@ -148,7 +148,7 @@ class ScExprExpander() : ConfiguredExpander<ScExpr, ScExprEditor<*>>(), ScExprEd
         shortName = "assign", name = "Wrap in assignment",
         type = Command.Type.SingleReceiver
     )
-    fun assignToVariable() {
+    fun wrapInVariableAssignment() {
         val value = snapshot()
         val variable = AssignableExprExpander("")
         val assignment = AssignmentEditor(variable, value)
@@ -160,7 +160,7 @@ class ScExprExpander() : ConfiguredExpander<ScExpr, ScExprEditor<*>>(), ScExprEd
         shortName = "name", name = "Wrap in named value",
         type = Command.Type.SingleReceiver
     )
-    fun nameValue() {
+    fun wrapInNamedValue() {
         val value = snapshot()
         val variable = IdentifierEditor()
         val named = NamedExprEditor(variable, value)
@@ -172,7 +172,7 @@ class ScExprExpander() : ConfiguredExpander<ScExpr, ScExprEditor<*>>(), ScExprEd
         shortName = "send", name = "Wrap in method call",
         type = Command.Type.SingleReceiver
     )
-    fun callMethod() {
+    fun wrapInMethodCall() {
         val receiver = snapshot()
         val send = MessageSendEditor(receiver, IdentifierEditor(""), ScExprListEditor().defaultState())
         expand(send, editDescription = "Wrap in method call")
