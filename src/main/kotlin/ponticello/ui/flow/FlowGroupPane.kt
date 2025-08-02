@@ -54,12 +54,15 @@ import reaktive.value.binding.map
 import reaktive.value.now
 import reaktive.value.reactiveValue
 
-class FlowGroupPane(private val group: AudioFlowGroup, ownWindow: Boolean) : VBox(), ListDisplayConfig<AudioFlow> {
+class FlowGroupPane(
+    private val group: AudioFlowGroup,
+    private val parent: AudioFlowsPane?,
+) : VBox(), ListDisplayConfig<AudioFlow> {
     val flowsView = ObjectListView(group.flows, this, scrollable = true)
 
     init {
         flowsView.itemsScrollPane.neverSquishHorizontally()
-        if (ownWindow) {
+        if (parent == null) {
             val nameControl = NameControl(group).setFixedWidth(150.0)
             val colorPicker = colorPicker(group.associatedColor).setFixedWidth(30.0)
             val actions = flowsView.actions + toggleActiveAction.withContext(group)
@@ -175,10 +178,12 @@ class FlowGroupPane(private val group: AudioFlowGroup, ownWindow: Boolean) : VBo
         val name = FlowNamePrompt(takenFlowNames, "Flow name", "${defaultName}_$idx")
             .showDialog(ev) ?: return null
         val anchor = ev.popupAnchor()
-        val flow = option.createFlow(context, anchor) ?: return  null
+        val flow = option.createFlow(context, anchor) ?: return null
         flow.setInitialName(name)
         return flow
     }
+
+    override fun filter(obj: AudioFlow): Boolean = parent?.filter(obj) ?: true
 
     private class FlowNamePrompt(
         private val takenFlowNames: Set<String>,

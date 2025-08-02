@@ -149,6 +149,8 @@ class VSTPluginFlow private constructor(
         }
     }
 
+    override fun usesBus(bus: BusObject): Boolean = busRef.now.get() == bus.reference()
+
     companion object {
         fun create(pluginName: String, bus: BusObject): VSTPluginFlow =
             VSTPluginFlow(pluginName, reactiveVariable(bus.reference()), VSTPluginParameterMappingList())

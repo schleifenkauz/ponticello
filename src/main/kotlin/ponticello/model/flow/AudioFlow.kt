@@ -5,6 +5,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import ponticello.impl.Logger
 import ponticello.model.obj.AbstractRenamableObject
+import ponticello.model.obj.BusObject
 import ponticello.model.obj.FlowReference
 import ponticello.model.obj.project
 import ponticello.model.project.flows
@@ -85,6 +86,8 @@ sealed class AudioFlow : AbstractRenamableObject() {
         context.project.flows.allFlows().none { f -> f.name.now == newName }
 
     abstract override fun copy(): AudioFlow
+
+    open fun usesBus(bus: BusObject): Boolean = false
 
     companion object {
         val DATA_FORMAT = TypedDataFormat<FlowReference>("ponticello/audio-flow")

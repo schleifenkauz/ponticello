@@ -273,7 +273,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
         val inst = ScoreObjectInstance(obj, t, y)
         score.addObject(inst, autoSelect = true)
         val view = getObjectView(inst) as MemoObjectView
-        runAfterLayout {
+        runFXWithTimeout(20) {
             view.enterEdit()
         }
     }

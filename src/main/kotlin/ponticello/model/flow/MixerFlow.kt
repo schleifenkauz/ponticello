@@ -262,6 +262,9 @@ class MixerFlow(
 
     override fun midiContext(): MidiContext = MixerMidiContext()
 
+    override fun usesBus(bus: BusObject): Boolean =
+        targetBus.now.get() == bus || components.any { it.sourceBus.now.get() == bus }
+
     companion object {
         const val MIN_VOLUME = -60.0
         const val MAX_VOLUME = +24.0

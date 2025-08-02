@@ -237,6 +237,9 @@ class ObjectListView<O : Any>(
             if (prompt.showDialog(ev) != true) return
         }
         source.add(newObj)
+        if (config.enableSelection) {
+            select(newObj)
+        }
     }
 
     private fun emptyDisplay(): VBox {
@@ -293,9 +296,6 @@ class ObjectListView<O : Any>(
         boxes.add(j, box)
         itemsLayout.children.add(j, box)
         updateRoot(mode.now)
-        if (config.enableSelection && config.autoSelectNewObjects) {
-            select(obj)
-        }
         autoResize()
     }
 

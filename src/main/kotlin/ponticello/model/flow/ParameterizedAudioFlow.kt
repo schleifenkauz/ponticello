@@ -4,10 +4,12 @@ import hextant.context.Context
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import ponticello.impl.Decimal
+import ponticello.model.obj.BusObject
 import ponticello.model.obj.ParameterizedObject
 import ponticello.model.player.ActiveAudioFlow
 import ponticello.model.player.ActiveObject
 import ponticello.model.player.LiveSynthUpdater
+import ponticello.model.score.controls.BusControl
 import ponticello.ui.midi.MidiContext
 import ponticello.ui.midi.ParameterControlsMidiContext
 import reaktive.value.ReactiveValue
@@ -42,4 +44,9 @@ sealed class ParameterizedAudioFlow : AudioFlow(), ParameterizedObject {
     }
 
     override fun midiContext(): MidiContext? = ParameterControlsMidiContext(controls)
+
+    override fun usesBus(bus: BusObject): Boolean = controls.any { control ->
+        val c = control.now
+        c is BusControl && c.bus.now.get() == bus
+    }
 }

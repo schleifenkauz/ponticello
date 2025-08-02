@@ -5,32 +5,38 @@ import fxutils.actions.button
 import fxutils.actions.collectActions
 import fxutils.actions.makeButton
 import fxutils.centerChildren
+import fxutils.prompt.SearchableListView
 import fxutils.setFixedWidth
 import fxutils.vspace
+import hextant.context.Context
 import javafx.geometry.Orientation
 import javafx.geometry.Pos
 import javafx.scene.Node
 import javafx.scene.Parent
-import javafx.scene.layout.Priority
-import javafx.scene.layout.Region
-import javafx.scene.layout.StackPane
-import javafx.scene.layout.VBox
+import javafx.scene.control.Label
+import javafx.scene.layout.*
 import javafx.scene.paint.Color
 import javafx.scene.text.Text
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 import org.kordamp.ikonli.Ikon
 import org.kordamp.ikonli.materialdesign2.MaterialDesignC
 import org.kordamp.ikonli.materialdesign2.MaterialDesignT
 import ponticello.impl.Logger
+import ponticello.model.flow.AudioFlow
 import ponticello.model.flow.AudioFlowGroup
 import ponticello.model.flow.AudioFlows
+import ponticello.model.obj.BusObject
 import ponticello.model.project.PonticelloProject
 import ponticello.model.project.flows
+import ponticello.model.registry.BusRegistry
 import ponticello.ui.dock.*
 import ponticello.ui.impl.colorPicker
 import ponticello.ui.registry.ObjectBox
 import ponticello.ui.registry.ObjectListView
 import ponticello.ui.registry.ObjectListView.DisplayMode
 import reaktive.value.fx.asObservableValue
+import reaktive.value.now
 
 class AudioFlowsPane(flows: AudioFlows) : SearchableToolPane<AudioFlowGroup>(flows) {
     override val type: Type
@@ -42,6 +48,22 @@ class AudioFlowsPane(flows: AudioFlows) : SearchableToolPane<AudioFlowGroup>(flo
     override val supportedModes: Set<DisplayMode>
         get() = setOf(DisplayMode.Collapsable, DisplayMode.SubWindow, DisplayMode.DetailsPane)
 
+    private var selectedFilter: FilterOption = FilterOption.All
+        set(value) {
+            if (field == value) return
+            field = value
+            refilterFlows()
+        }
+
+    private val filterSelector by lazy {
+        SearchableFilterOptionPopup(context)
+            .selectorButton(this::selectedFilter)
+            .setFixedWidth(150.0)
+    }
+
+    override val headerContent: Node
+        get() = filterSelector
+
     init {
         styleClass.add("flow-pane")
     }
@@ -51,6 +73,7 @@ class AudioFlowsPane(flows: AudioFlows) : SearchableToolPane<AudioFlowGroup>(flo
     override fun afterSetup() {
         super.afterSetup()
         listView.autoResizeScene = true
+        refilterFlows()
         val state = initialState
         if (state is FlowPaneState) {
             val flowBoxes = allFlowBoxes()
@@ -65,6 +88,13 @@ class AudioFlowsPane(flows: AudioFlows) : SearchableToolPane<AudioFlowGroup>(flo
         }
     }
 
+    private fun refilterFlows() {
+        for (box in listView.getBoxes()) {
+            val content = box.content as? FlowGroupPane ?: continue
+            content.flowsView.refilter()
+        }
+    }
+
     override fun getHeaderContent(obj: AudioFlowGroup): List<Node> {
         val colorPicker = colorPicker(obj.associatedColor).setFixedWidth(30.0)
         return listOf(colorPicker)
@@ -74,7 +104,13 @@ class AudioFlowsPane(flows: AudioFlows) : SearchableToolPane<AudioFlowGroup>(flo
         groupActions.withContext(box)
 
     override fun getContent(obj: AudioFlowGroup, mode: DisplayMode): Parent =
-        FlowGroupPane(obj, ownWindow = mode == DisplayMode.SubWindow)
+        FlowGroupPane(obj, parent = this)
+
+    fun filter(flow: AudioFlow) = when (val filter = selectedFilter) {
+        FilterOption.All -> true
+        FilterOption.Active -> flow.isActive.now
+        is FilterOption.Bus -> flow.usesBus(filter.bus)
+    }
 
     override fun collapsedLayout(box: ObjectBox<AudioFlowGroup>, header: Region, content: Parent?): Node {
         val nameLabel = Text()
@@ -111,6 +147,39 @@ class AudioFlowsPane(flows: AudioFlows) : SearchableToolPane<AudioFlowGroup>(flo
     private fun allFlowBoxes() = listView.getBoxes().flatMap { box ->
         val groupPane = box.content as? FlowGroupPane ?: return@flatMap emptyList()
         groupPane.flowsView.getBoxes()
+    }
+
+    @Serializable
+    private sealed interface FilterOption {
+        @Serializable
+        @SerialName("all")
+        data object All : FilterOption
+
+        @Serializable
+        @SerialName("active")
+        data object Active : FilterOption
+
+        @Serializable
+        @SerialName("bus")
+        data class Bus(val bus: BusObject) : FilterOption
+    }
+
+    private class SearchableFilterOptionPopup(
+        private val context: Context,
+    ) : SearchableListView<FilterOption>("Select filter") {
+        override fun options(): List<FilterOption> =
+            listOf(FilterOption.All, FilterOption.Active) + context[BusRegistry].map { FilterOption.Bus(it) }
+
+        override fun createCell(option: FilterOption): Region {
+            val text = extractText(option)
+            return HBox(Label(text))
+        }
+
+        override fun extractText(option: FilterOption): String = when (option) {
+            FilterOption.All -> "All"
+            FilterOption.Active -> "Active"
+            is FilterOption.Bus -> option.bus.name.now
+        }
     }
 
     companion object : Type(uid = 13, "Flows") {
