@@ -144,7 +144,7 @@ class ScorePlayer private constructor(
         val delta = position.time - playHead.currentTime
         val cutoff = (-delta).coerceAtLeast(zero)
         if (cutoff >= inst.obj.duration) return
-        val pos = ObjectPosition(maxOf(position.time, playHead.currentTime), position.y)
+        val pos = ObjectPosition(position.time, position.y)
         Logger.fine("Scheduling $obj at $pos, delta: $delta", Logger.Category.Playback)
         scheduler.scheduleObject(obj, pos, cutoff = cutoff, this)
     }

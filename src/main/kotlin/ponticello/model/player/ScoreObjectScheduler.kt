@@ -98,7 +98,7 @@ class ScoreObjectScheduler(val context: Context) {
         extraArguments: Map<ParameterDefObject, ParameterControl> = emptyMap(),
     ): ActiveScoreObject? {
         if (!obj.affectsPlayback) return null
-        val time = absolutePosition.time + player.timeOffset
+        val time = absolutePosition.time + cutoff + player.timeOffset
         val scheduledTime = (time + scLangLatency - extraLatency)
         return scheduleObject(
             obj, player, cutoff, absolutePosition,
