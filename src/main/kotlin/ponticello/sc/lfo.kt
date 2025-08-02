@@ -1,12 +1,12 @@
 package ponticello.sc
 
-import reaktive.value.ReactiveValue
-import reaktive.value.now
-import reaktive.value.reactiveValue
 import ponticello.model.registry.ObjectReference
 import ponticello.model.score.Envelope
 import ponticello.model.score.ParameterControlList.NamedParameterControl
 import ponticello.ui.misc.LFOsManager
+import reaktive.value.ReactiveValue
+import reaktive.value.now
+import reaktive.value.reactiveValue
 import java.util.*
 import kotlin.math.exp
 import kotlin.math.ln
@@ -151,10 +151,10 @@ data class ReciprocalLFO(val lfo: LFO) : LFO() {
 }
 
 private inline fun generatePhaseSignal(
-    frequency: LFO, initialPhase: Double, sampleRate: Int,
+    frequency: LFO, initialPhase: Double, duration: Double, sampleRate: Int,
     dest: DoubleArray, f: (Int, Double) -> Double,
 ) {
-    frequency.generateValues(dest.size.toDouble(), dest.size, dest)
+    frequency.generateValues(duration, sampleRate, dest)
     var phase = initialPhase
     val phaseFactor = TWO_PI / sampleRate
     for (i in dest.indices) {
@@ -172,7 +172,7 @@ data class Sawtooth(val frequency: LFO, val initialPhase: Double) : LFO() {
         get() = 1.0
 
     override fun generateValues(duration: Double, sampleRate: Int, dest: DoubleArray) {
-        generatePhaseSignal(frequency, initialPhase, sampleRate, dest) { _, phase -> (phase / Math.PI) - 1.0 }
+        generatePhaseSignal(frequency, initialPhase, duration, sampleRate, dest) { _, phase -> (phase / Math.PI) - 1.0 }
     }
 }
 
@@ -188,7 +188,7 @@ data class Pulse(val frequency: LFO, val width: LFO, val initialPhase: Double) :
     override fun generateValues(duration: Double, sampleRate: Int, dest: DoubleArray) {
         val widths = DoubleArray(dest.size)
         width.generateValues(widths.size.toDouble(), sampleRate, widths)
-        generatePhaseSignal(frequency, initialPhase, sampleRate, dest) { i, phase ->
+        generatePhaseSignal(frequency, initialPhase, duration, sampleRate, dest) { i, phase ->
             if (phase < Math.PI * widths[i]) 1.0 else -1.0
         }
     }
@@ -204,7 +204,7 @@ data class Sine(val frequency: LFO, val initialPhase: Double) : LFO() {
         get() = listOf(frequency)
 
     override fun generateValues(duration: Double, sampleRate: Int, dest: DoubleArray) {
-        generatePhaseSignal(frequency, initialPhase, sampleRate, dest) { _, phase -> sin(phase) }
+        generatePhaseSignal(frequency, initialPhase, duration, sampleRate, dest) { _, phase -> sin(phase) }
     }
 }
 
@@ -224,31 +224,49 @@ data class Line(val start: Double, val end: Double) : LFO() {
     }
 }
 
-data class LinRange(val lfo: LFO, override val min: Double, override val max: Double) : LFO() {
+data class LinRange(val lfo: LFO, val minValue: LFO, val maxValue: LFO) : LFO() {
     override val children: List<LFO>
-        get() = listOf(lfo)
+        get() = listOf(lfo, minValue, maxValue)
+
+    override val min: Double
+        get() = minValue.min
+    override val max: Double
+        get() = maxValue.max
 
     override fun generateValues(duration: Double, sampleRate: Int, dest: DoubleArray) {
         lfo.generateValues(duration, sampleRate, dest)
-        val targetRange = max - min
-        val factor = targetRange / lfo.range
+        val min = DoubleArray(dest.size)
+        minValue.generateValues(duration, sampleRate, min)
+        val max = DoubleArray(dest.size)
+        maxValue.generateValues(duration, sampleRate, max)
         for (i in dest.indices) {
-            dest[i] = dest[i] * factor - lfo.min + min
+            val targetRange = max[i] - min[i]
+            val factor = targetRange / lfo.range
+            dest[i] = (dest[i] - lfo.min) * factor + min[i]
         }
     }
 }
 
-data class ExpRange(val lfo: LFO, override val min: Double, override val max: Double) : LFO() {
+data class ExpRange(val lfo: LFO, val minValue: LFO, val maxValue: LFO) : LFO() {
     override val children: List<LFO>
-        get() = listOf(lfo)
+        get() = listOf(lfo, minValue, maxValue)
+
+    override val min: Double
+        get() = minValue.min
+    override val max: Double
+        get() = maxValue.max
 
     override fun generateValues(duration: Double, sampleRate: Int, dest: DoubleArray) {
         lfo.generateValues(duration, sampleRate, dest)
-        val logMin = ln(min)
-        val logMax = ln(max)
-        val logRange = (logMax - logMin)
-        val factor = logRange / lfo.range
+        val min = DoubleArray(dest.size)
+        minValue.generateValues(duration, sampleRate, min)
+        val max = DoubleArray(dest.size)
+        maxValue.generateValues(duration, sampleRate, max)
         for (i in dest.indices) {
+            val logMin = ln(min[i])
+            val logMax = ln(max[i])
+            val logRange = (logMax - logMin)
+            val factor = logRange / lfo.range
             val v = dest[i] - lfo.min
             dest[i] = exp(logMin + v * factor)
         }
@@ -256,8 +274,8 @@ data class ExpRange(val lfo: LFO, override val min: Double, override val max: Do
 }
 
 data class EnvelopeLFO(val envelope: Envelope) : LFO() {
-    override val min: Double = envelope.points.minOf { p -> p.value.value }
-    override val max: Double = envelope.points.minOf { p -> p.value.value }
+    override val min: Double get() = envelope.points.minOf { p -> p.value.value }
+    override val max: Double get() = envelope.points.minOf { p -> p.value.value }
 
     override fun generateValues(duration: Double, sampleRate: Int, dest: DoubleArray) {
         val points = envelope.points

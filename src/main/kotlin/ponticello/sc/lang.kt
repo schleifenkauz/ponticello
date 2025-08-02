@@ -389,7 +389,7 @@ data class MessageSend(val receiver: ScExpr, val method: Identifier, val argumen
                     if (arguments.size == 2) (arguments[1] as? DecimalLiteral)?.get()?.value ?: return null
                     else 0.0
                 when (receiver.text) {
-                    "SinOsc", "LFSinOsc" -> Sine(freq, phase)
+                    "SinOsc" -> Sine(freq, phase)
                     "Saw", "LFSaw" -> Sawtooth(freq, phase)
                     else -> null
                 }
@@ -397,12 +397,12 @@ data class MessageSend(val receiver: ScExpr, val method: Identifier, val argumen
 
             "range", "exprange" -> {
                 if (receiverLFO == null) return null
-                val min = arguments.getOrNull(0) ?: return null
-                val max = arguments.getOrNull(1) ?: return null
-                if (min !is DecimalLiteral || max !is DecimalLiteral) return null
+                if (arguments.size != 2) return null
+                val min = arguments[0].getLfo() ?: return null
+                val max = arguments[1].getLfo() ?: return null
                 when (method.text) {
-                    "range" -> LinRange(receiverLFO, min.get().value, max.get().value)
-                    "exprange" -> ExpRange(receiverLFO, min.get().value, max.get().value)
+                    "range" -> LinRange(receiverLFO, min, max)
+                    "exprange" -> ExpRange(receiverLFO, min, max)
                     else -> null
                 }
             }
