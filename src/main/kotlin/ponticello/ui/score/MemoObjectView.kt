@@ -15,6 +15,7 @@ import javafx.scene.text.Font
 import javafx.scene.text.Text
 import ponticello.model.project.InlineControlsDisplay
 import ponticello.model.score.MemoObject
+import ponticello.model.score.Score
 import ponticello.model.score.ScoreObjectInstance
 import reaktive.value.ReactiveVariable
 
@@ -65,6 +66,9 @@ class MemoObjectView(override val obj: MemoObject, inst: ScoreObjectInstance) : 
         if (!isEditing) return
         children.setAll(HBox(display).centerChildren())
         isEditing = false
+        if (obj.text.isBlank()) {
+            instance.score!!.removeObject(instance, Score.RegistryOption.REMOVE_WITHOUT_ASKING)
+        }
     }
 
     override fun setupDetailPane(pane: DetailPane) {
