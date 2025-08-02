@@ -180,10 +180,10 @@ internal fun PluginBuilder.registerControlFactories() {
     registerControlFactory { editor: OperatorEditor, arguments: Bundle ->
         TokenEditorControl(editor, arguments, completer = NoCompleter, styleClass = "operator")
     }
-    
+
     registerControlFactory { editor: ExprControlSpecEditor, arguments ->
-        CompoundEditorControl(editor, arguments) { 
-            horizontal {  } //empty
+        CompoundEditorControl(editor, arguments) {
+            horizontal { } //empty
         }
     }
 
@@ -334,9 +334,20 @@ internal fun PluginBuilder.registerControlFactories() {
     registerControlFactory { editor: ParameterReferenceEditor, arguments ->
         CompoundEditorControl(editor, arguments) {
             horizontal {
-                keyword("get ")
+                keyword("control ")
                 view(editor.parameter)
                 root.centerChildren()
+            }
+        }
+    }
+
+    registerControlFactory { editor: TopLevelFunctionCallEditor, arguments ->
+        CompoundEditorControl(editor, arguments) {
+            horizontal {
+                styleClass("compound-expr", "message-send")
+                view(editor.function)
+                space()
+                viewHorizontal(editor.arguments).root.centerChildren()
             }
         }
     }

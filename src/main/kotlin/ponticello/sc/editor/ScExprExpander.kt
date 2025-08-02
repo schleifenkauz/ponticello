@@ -73,6 +73,12 @@ class ScExprExpander() : ConfiguredExpander<ScExpr, ScExprEditor<*>>(), ScExprEd
             text == "\"" -> StringLiteralEditor().defaultState()
             text == "{" -> ScFunctionEditor().defaultState()
             text == "(" -> CodeBlockEditor().defaultState()
+            text.endsWith("(") && Identifier.isValid(text.dropLast(1)) -> {
+                val function = IdentifierEditor(text.dropLast(1))
+                val arguments = ScExprListEditor(ScExprExpander().defaultState())
+                TopLevelFunctionCallEditor(function, arguments)
+            }
+
             else -> null
         }
         return if (editor != null) {
@@ -90,6 +96,10 @@ class ScExprExpander() : ConfiguredExpander<ScExpr, ScExprEditor<*>>(), ScExprEd
 
             editor is NamedExprEditor && editor.name.text.now != "" ->
                 editor.value.notifyViews { receiveFocus() }
+
+            editor is TopLevelFunctionCallEditor && editor.function.text.now != "" -> {
+                editor.arguments.notifyViews { receiveFocus() }
+            }
         }
     }
 
@@ -189,6 +199,12 @@ class ScExprExpander() : ConfiguredExpander<ScExpr, ScExprEditor<*>>(), ScExprEd
             "play".expand { PlayObjectEditor().defaultState() }
             "synth".expand { SynthExprEditor().defaultState() }
             "assign".expand { AssignmentEditor().defaultState() }
+            "call".expand {
+                TopLevelFunctionCallEditor(
+                    function = IdentifierEditor().defaultState(),
+                    arguments = ScExprListEditor(ScExprExpander().defaultState())
+                )
+            }
             "eq".expand {
                 OperatorExprEditor(
                     ScExprExpander().defaultState(),

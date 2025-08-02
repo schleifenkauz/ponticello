@@ -418,10 +418,31 @@ data class PropertyAccessExpr(val receiver: ScExpr, val property: Identifier) : 
     override val isValid: Boolean
         get() = receiver.isValid && property.isValid
 
+
+    override val children: List<ScElement>
+        get() = listOf(receiver, property)
+
     override fun code(writer: ScWriter, context: Context) {
         receiver.code(writer, context)
         writer.append(".")
         property.code(writer, context)
+    }
+}
+
+@Serializable
+@Compound(nodeType = ScExpr::class)
+data class TopLevelFunctionCall(val function: Identifier, val arguments: List<ScExpr>) : ScExpr {
+    override val isValid: Boolean
+        get() = function.isValid && arguments.all { it.isValid }
+
+    override val children: List<ScElement>
+        get() = listOf(function) + arguments
+
+    override fun code(writer: ScWriter, context: Context) = with(writer) {
+        function.code(writer, context)
+        append("(")
+        appendList(arguments, separator = ", ", context)
+        append(")")
     }
 }
 
@@ -451,6 +472,7 @@ data class OperatorExpr(val left: ScExpr, val operator: Operator, val right: ScE
             else -> null
         }
     }
+
     override val children: List<ScElement>
         get() = listOf(left, operator, right)
 

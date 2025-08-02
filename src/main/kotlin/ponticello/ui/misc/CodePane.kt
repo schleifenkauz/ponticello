@@ -63,6 +63,7 @@ class CodePane(
             }
         }
         if (ownWindow) {
+            setPrefSize(250.0, 100.0)
             val actions = actions.withContext(this) + extraActions
             val actionBar = ActionBar(actions, "medium-icon-button").floating(actionBarAlignment)
             val scrollPane = ScrollPane(rootControl)

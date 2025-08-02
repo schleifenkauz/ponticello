@@ -196,7 +196,7 @@ class MixerFlow(
             +"snd = (snd + $mix) * $masterVolume * Linen.kr(\\gate.kr(1), 0.02, 1, 0.02, Done.freeSelf)"
             if (sink.channels.now == 2) {
                 +"mono_mix = \\mono_mix.kr(${if (monoMix.now) "1" else "0"})"
-                +"snd = (snd * (1 - mono_mix)) + (snd.sum ! 2 * mono_mix)"
+                +"snd = (snd * (1 - mono_mix)) + (snd.sum / 2 ! 2 * mono_mix)"
             }
             +"ReplaceOut.ar(${sink.superColliderName}, snd)"
             +"0"
