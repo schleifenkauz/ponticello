@@ -34,7 +34,7 @@ import reaktive.value.binding.impl.notNull
 import reaktive.value.now
 
 class ParameterControlsPane(
-    private val obj: ParameterizedObject, private val view: ScoreObjectView? = null,
+    val obj: ParameterizedObject, private val view: ScoreObjectView? = null,
 ) : ListToolPane<NamedParameterControl>(obj.controls, scrollable = false), ParameterControlList.Listener {
     private val editors = mutableMapOf<NamedParameterControl, ControlAssignmentEditor>()
 

@@ -166,6 +166,7 @@ class PonticelloLauncher {
 
     private fun openProject(project: PonticelloProject) {
         ScorePlayer.clearInstances()
+        rootContext[ContextualMidiReceiver].clearMidiContext()
         rootContext[currentProject] = project
         recentProjects.push(project.projectDirectory)
         getOrLaunchLoadingScreen().displayProgress(0.98, "Almost ready, launching project view...")

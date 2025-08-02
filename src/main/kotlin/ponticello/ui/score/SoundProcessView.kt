@@ -26,6 +26,9 @@ import ponticello.sc.view.ObjectSelectorControl
 import ponticello.ui.controls.InlineParameterControlsBar
 import ponticello.ui.dock.AppLayout
 import ponticello.ui.launcher.PonticelloApp.Companion.primaryStage
+import ponticello.ui.launcher.ScoreObjectDetailPane
+import ponticello.ui.midi.ContextualMidiReceiver
+import ponticello.ui.midi.ParameterControlsMidiContext
 import ponticello.ui.registry.InstrumentRegistryPane
 import ponticello.ui.registry.SearchableParameterDefListView
 import reaktive.Observer
@@ -47,6 +50,7 @@ class SoundProcessView(
     private val lfoCanvases = mutableMapOf<NamedParameterControl, LFOCanvas>()
     private lateinit var lfosObserver: Observer
     private lateinit var controlsDisplayObserver: Observer
+    private val midiContext = ParameterControlsMidiContext(obj.controls)
 
     init {
         styleClass("sound-process")
@@ -60,6 +64,9 @@ class SoundProcessView(
         spectrogramPainter.initialize()
         envelopeManager.initialize()
         attackReleaseOverlay.initialize()
+        context[ContextualMidiReceiver].registerMidiContext(this) {
+            midiContext.takeIf { context[AppLayout].get<ScoreObjectDetailPane>(setup = false).isShowing.now }
+        }
     }
 
     override fun configureInlineControls() {
@@ -100,6 +107,7 @@ class SoundProcessView(
         val controlsPane = ParameterControlsPane(obj, this)
         VBox.setVgrow(controlsPane, Priority.ALWAYS)
         pane.children.add(controlsPane)
+        context[ContextualMidiReceiver].registerMidiContext(pane) { midiContext }
     }
 
     fun showNewEnvelopePopup() {

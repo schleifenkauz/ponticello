@@ -22,13 +22,17 @@ class ContextualMidiReceiver : Receiver {
 
     private fun getActiveMidiContext(): MidiContext? {
         return midiContextMap.entries
-            .filter { (node, _) -> node.isFocusWithin }
-            .mapNotNull { (_, context) -> context.invoke() }
-            .firstOrNull()
+            .filter { (node, _) -> node.isFocusWithin && node.scene.window.isFocused }
+            .firstNotNullOfOrNull { (_, context) -> context.invoke() }
     }
 
     fun registerMidiContext(node: Node, context: () -> MidiContext?) {
         midiContextMap[node] = context
+    }
+
+    fun clearMidiContext() {
+        midiContextMap.clear()
+        launcherGrid = null
     }
 
     override fun send(message: MidiMessage?, timeStamp: Long) {

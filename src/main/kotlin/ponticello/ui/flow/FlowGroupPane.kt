@@ -40,6 +40,7 @@ import ponticello.ui.controls.NameControl
 import ponticello.ui.dock.AppLayout
 import ponticello.ui.impl.colorPicker
 import ponticello.ui.impl.getFrom
+import ponticello.ui.midi.ContextualMidiReceiver
 import ponticello.ui.registry.InstrumentRegistryPane
 import ponticello.ui.registry.ListDisplayConfig
 import ponticello.ui.registry.ObjectBox
@@ -140,6 +141,12 @@ class FlowGroupPane(private val group: AudioFlowGroup, ownWindow: Boolean) : VBo
         is UtilityFlow -> Slider(-60.0, +6.0, 0.0) styleClass "volume-fader"
         is MixerFlow -> MixerFlowView.create(obj)
         is VSTPluginFlow -> VSTPluginParameterMappingsPane(obj)
+    }
+
+    override fun configureBox(box: ObjectBox<AudioFlow>, currentMode: DisplayMode) {
+        context[ContextualMidiReceiver].registerMidiContext(box) {
+            box.obj.midiContext().takeIf { !box.isCollapsed.now }
+        }
     }
 
     override fun getActions(box: ObjectBox<AudioFlow>): List<ContextualizedAction> {
