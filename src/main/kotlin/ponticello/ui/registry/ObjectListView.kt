@@ -238,7 +238,9 @@ class ObjectListView<O : Any>(
         }
         source.add(newObj)
         if (config.enableSelection) {
-            select(newObj)
+            runAfterLayout {
+                select(newObj)
+            }
         }
     }
 

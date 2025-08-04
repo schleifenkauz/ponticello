@@ -19,7 +19,7 @@ import ponticello.ui.score.EnvelopeView
 import reaktive.Observer
 import reaktive.event.unitEvent
 import reaktive.value.ReactiveVariable
-import reaktive.value.forEach
+import reaktive.value.now
 import reaktive.value.reactiveVariable
 import java.util.concurrent.CompletableFuture
 
@@ -52,19 +52,20 @@ class EnvelopeControl(
         index = counter++
         super.initialize(context, namedControl)
         points.initialize(context)
+        specObserver = namedControl.spec.observe { _, _, spec -> updateSynthDef(spec) }
         synthDefSynchronizerJob = CompletableFuture.completedFuture("")
-        specObserver = namedControl.spec.forEach { spec ->
-            if (spec !is NumericalControlSpec) {
-                System.err.println("Expected NumericalControlSpec on $namedControl but got $spec")
-            } else if (defaultWarp != spec.warp) {
-                defaultWarp = spec.warp
-                updateSynthDef()
-            }
-        }
+        updateSynthDef(namedControl.spec.now)
+        synthDefSynchronizerJob.join()
         points.addListener(this)
     }
 
-    private fun updateSynthDef() {
+    private fun updateSynthDef(spec: ControlSpec?) {
+        if (spec != null && spec !is NumericalControlSpec) {
+            System.err.println("Expected NumericalControlSpec but got $spec")
+        }
+        val numericalSpec = spec as? NumericalControlSpec
+        if (defaultWarp == numericalSpec?.warp) return
+        defaultWarp = numericalSpec?.warp
         synthDefSynchronizerJob.join()
         val curve = (defaultWarp ?: Warp.Linear).toString()
         val arguments = mutableListOf<Any>(index, points.size, curve)
@@ -156,7 +157,7 @@ class EnvelopeControl(
     }
 
     override fun editedEnvelope() {
-        updateSynthDef()
+        updateSynthDef(null)
         update.fire()
     }
 
