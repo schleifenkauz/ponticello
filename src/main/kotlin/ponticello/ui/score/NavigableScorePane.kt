@@ -50,7 +50,7 @@ class NavigableScorePane(score: Score, context: Context) : RootScorePane(score, 
         displayEnd = end
         if (displayStart < zero) {
             displayEnd -= displayStart
-            displayStart = zero
+            displayStart = zero(4)
         }
         updatePixelsPerSecond()
         return repaint()
