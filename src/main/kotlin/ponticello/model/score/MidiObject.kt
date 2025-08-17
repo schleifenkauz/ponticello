@@ -225,9 +225,10 @@ class MidiObject(
     ): String = when (val instr = instrument.now) {
         is MidiInstrument.SynthDef -> writeCode {
             val generalEventDict = eventDictionary.editor.result.now
-            val synthMap = "~midi_$uniqueName"
-            +"$synthMap = ()"
-            for ((idx, n) in notes.withIndex()) {
+            val groupVar = "~midi_$uniqueName"
+            +"s.sync"
+            +"$groupVar = Group.new(${placement!!.code})"
+            for (n in notes) {
                 val onset = n.onset - cutoff
                 if (onset + n.duration <= zero) continue
                 val dur = n.duration + n.onset.coerceAtMost(zero)
@@ -242,17 +243,22 @@ class MidiObject(
                 val namedValues = eventMap.entries.joinToString { (name, value) -> "$name: $value" }
                 val synthDefName = instr.reference.get()?.name?.now
                 appendBlock("TempoClock.sched(${onset.coerceAtLeast(zero)})") {
-                    appendBlock("if ($synthMap != nil)") {
-                        appendBlock("s.bind") {
-                            +"var synth = Synth(\\$synthDefName, [${namedValues}])"
-                            +"$synthMap[${idx}] = synth"
-                            +"synth.onFree { $synthMap[${idx}] = nil }"
+                    appendBlock("if ($groupVar != nil)") {
+                        appendBlock("s.makeBundle($latency)") {
+                            +"Synth.tail($groupVar, \\$synthDefName, [${namedValues}])"
                         }
                     }
                 }
             }
-            appendBlock("TempoClock.sched($duration)") {
-                +"$synthMap = nil"
+            appendBlock("TempoClock.sched(${duration - cutoff})") {
+                +"var group = $groupVar"
+                +"$groupVar = nil"
+                appendBlock("s.makeBundle($latency)") {
+                    +"group.release(1)"
+                }
+                appendBlock("TempoClock.sched(1 + $latency)") {
+                    +"group.free"
+                }
             }
         }
 

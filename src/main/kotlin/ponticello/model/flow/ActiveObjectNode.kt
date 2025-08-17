@@ -3,14 +3,14 @@ package ponticello.model.flow
 import ponticello.impl.Decimal
 import ponticello.model.player.ActiveScoreObject
 import ponticello.model.player.ScorePlayer
-import ponticello.model.score.SoundProcess
+import ponticello.model.score.ScoreObject
 import reaktive.value.ReactiveValue
 import reaktive.value.binding.map
 import reaktive.value.now
 import reaktive.value.reactiveValue
 
-data class SynthObjectNode(
-    val obj: SoundProcess,
+data class ActiveObjectNode(
+    val obj: ScoreObject,
     val active: ActiveScoreObject,
 ) : AudioNode {
     override val isStillActive: Boolean
@@ -22,8 +22,7 @@ data class SynthObjectNode(
     override val player: ScorePlayer
         get() = active.player
 
-    override val superColliderName =
-        obj.name.map { _ -> active.superColliderName }
+    override val superColliderName = obj.name.map { _ -> active.superColliderName }
 
     override val yPosition: ReactiveValue<Decimal>
         get() = reactiveValue(active.absolutePosition.y)

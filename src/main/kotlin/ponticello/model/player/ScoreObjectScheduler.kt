@@ -8,8 +8,8 @@ import ponticello.impl.Logger
 import ponticello.impl.unaryMinus
 import ponticello.impl.zero
 import ponticello.model.GlobalSettings
+import ponticello.model.flow.ActiveObjectNode
 import ponticello.model.flow.NodeTree
-import ponticello.model.flow.SynthObjectNode
 import ponticello.model.obj.MidiInstrument
 import ponticello.model.obj.ParameterDefObject
 import ponticello.model.obj.ProcessDefObject
@@ -88,8 +88,9 @@ class ScoreObjectScheduler(val context: Context) {
             }
 
             active.obj is MidiObject && active.obj.instrument.now is MidiInstrument.SynthDef -> {
-                val name = active.superColliderName
-                client.run("$name.do { |synth| synth.release }; $name = nil")
+                val groupName = active.superColliderName
+                client.run("$groupName.release(0.1);")
+                client.run("TempoClock.sched(0.1) { $groupName.free; $groupName = nil; }")
             }
 
             active.obj is MidiObject && active.obj.instrument.now is MidiInstrument.VST -> {
@@ -142,15 +143,20 @@ class ScoreObjectScheduler(val context: Context) {
             Logger.error("Failed to insert $obj into active object manager", e, Logger.Category.Playback)
             return null
         }
-        val placement = if (obj is SoundProcess && obj.instrument is SynthDefObject) {
-            try {
-                val node = SynthObjectNode(obj, activeObject)
-                nodeTree.addNode(node)
-            } catch (e: Exception) {
-                Logger.error("Failed to insert $obj into audio flow graph", e, Logger.Category.Playback)
-                return null
+        val placement = when {
+            (obj is SoundProcess && obj.instrument is SynthDefObject) ||
+                    (obj is MidiObject && obj.instrument.now is MidiInstrument.SynthDef) -> {
+                try {
+                    val node = ActiveObjectNode(obj, activeObject)
+                    nodeTree.addNode(node)
+                } catch (e: Exception) {
+                    Logger.error("Failed to insert $obj into audio flow graph", e, Logger.Category.Playback)
+                    return null
+                }
             }
-        } else null
+
+            else -> null
+        }
         val code = try {
             obj.writeCode(activeObject.uniqueName, placement, cutoff, serverLatency, extraArguments)
         } catch (e: Exception) {
@@ -165,6 +171,7 @@ class ScoreObjectScheduler(val context: Context) {
         } catch (e: Exception) {
             Logger.error("Failed to schedule $obj", e, Logger.Category.Playback)
         }
+        println(code)
         println("Scheduled $activeObject at $scheduledTime ($placement)")
         Logger.fine("time for execution: ${scheduledTime}s", Logger.Category.Playback)
         return activeObject

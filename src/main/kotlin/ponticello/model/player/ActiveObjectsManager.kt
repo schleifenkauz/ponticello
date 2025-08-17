@@ -6,12 +6,14 @@ import com.illposed.osc.OSCMessageEvent
 import com.illposed.osc.OSCMessageListener
 import hextant.context.Context
 import ponticello.impl.Decimal
+import ponticello.model.flow.ActiveObjectNode
 import ponticello.model.flow.AudioFlows
 import ponticello.model.flow.NodeTree
-import ponticello.model.flow.SynthObjectNode
+import ponticello.model.obj.MidiInstrument
 import ponticello.model.obj.ParameterDefObject
 import ponticello.model.obj.SynthDefObject
 import ponticello.model.registry.ScoreObjectRegistry
+import ponticello.model.score.MidiObject
 import ponticello.model.score.ObjectPosition
 import ponticello.model.score.ScoreObject
 import ponticello.model.score.SoundProcess
@@ -27,7 +29,7 @@ class ActiveObjectsManager(private val context: Context) : OSCMessageListener {
     fun insert(
         player: ScorePlayer, obj: ScoreObject, absolutePosition: ObjectPosition,
         cutoff: Decimal,
-        extraArguments: Map<ParameterDefObject, ParameterControl>
+        extraArguments: Map<ParameterDefObject, ParameterControl>,
     ): ActiveScoreObject {
         val suffix = nextSuffix[obj] ?: 0
         nextSuffix[obj] = suffix + 1
@@ -87,8 +89,10 @@ class ActiveObjectsManager(private val context: Context) : OSCMessageListener {
         val obj = active.obj
         bySuffix[obj]?.remove(active.suffix)
         byAbsolutePosition[obj]?.remove(active.absolutePosition)
-        if (obj is SoundProcess && obj.instrument is SynthDefObject) {
-            val node = SynthObjectNode(obj, active)
+        if ((obj is SoundProcess && obj.instrument is SynthDefObject) ||
+            (obj is MidiObject && obj.instrument.now is MidiInstrument.SynthDef)
+        ) {
+            val node = ActiveObjectNode(obj, active)
             context[NodeTree].removeNode(node)
         }
     }
