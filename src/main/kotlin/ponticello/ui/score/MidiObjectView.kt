@@ -43,7 +43,6 @@ import ponticello.ui.impl.makeSubWindow
 import ponticello.ui.impl.setupDraggingAndResizing
 import ponticello.ui.impl.showDialog
 import reaktive.value.binding.and
-import reaktive.value.binding.binding
 import reaktive.value.binding.or
 import reaktive.value.fx.asObservableValue
 import reaktive.value.fx.asReactiveValue
@@ -54,7 +53,7 @@ import kotlin.math.roundToInt
 class MidiObjectView(override val obj: MidiObject, inst: ScoreObjectInstance) : ScoreObjectView(inst) {
     private val noteRects = mutableMapOf<MidiObject.Note, BorderPane>()
     private val orientationLines = mutableListOf<Line>()
-    private val blackKeys = mutableListOf<Rectangle>()
+    private val keys = mutableListOf<Rectangle>()
     private val pixelsPerPitch get() = prefHeight / (obj.highestPitch - obj.lowestPitch + 1)
     private val cursor = Rectangle(10.0, pixelsPerPitch) styleClass "note-cursor"
     private val lowestPitchLabel = Label(MidiPitch(obj.lowestPitch).getNoteName())
@@ -67,10 +66,9 @@ class MidiObjectView(override val obj: MidiObject, inst: ScoreObjectInstance) : 
     fun addedNote(note: MidiObject.Note) {
         val rect = BorderPane() styleClass "note-object"
         rect.backgroundProperty().bind(Bindings.createObjectBinding({
-            val background = backgroundColor.now
-            if (rect.isFocused)
-                background(background.interpolate(background.invert(), 0.8))
-            else background(background.invert())
+            val color = backgroundColor.now
+            if (rect.isFocused) background(color.invert())
+            else background(color)
         }, backgroundColor.asObservableValue(), rect.focusedProperty()))
         rect.borderProperty().bind(Bindings.createObjectBinding({
             if (rect.isHover) {
@@ -196,23 +194,23 @@ class MidiObjectView(override val obj: MidiObject, inst: ScoreObjectInstance) : 
         children.addAll(orientationLines)
     }
 
-    private fun shadeBlackKeys() {
-        children.removeAll(blackKeys)
-        blackKeys.clear()
+    private fun shadeKeys() {
+        children.removeAll(keys)
+        keys.clear()
         for (pitch in obj.pitchRange) {
-            if (MidiPitch(pitch).isBlackKey()) {
-                val shade = Rectangle(0.0, getY(pitch), prefWidth, pixelsPerPitch)
-                shade.fill = Color.rgb(0, 0, 0, 0.3)
-                shade.viewOrder = 100.0
-                blackKeys.add(shade)
-            }
+            val shade = Rectangle(0.0, getY(pitch), prefWidth, pixelsPerPitch)
+            shade.viewOrder = 100.0
+            shade.fill =
+                if (MidiPitch(pitch).isBlackKey()) Color.DARKGRAY
+                else Color.GRAY
+            keys.add(shade)
         }
-        children.addAll(blackKeys)
+        children.addAll(keys)
     }
 
     fun updatedPitchRange() {
         drawOrientationLines()
-        shadeBlackKeys()
+        shadeKeys()
         lowestPitchLabel.text = MidiPitch(obj.lowestPitch).getNoteName()
         highestPitchLabel.text = MidiPitch(obj.highestPitch).getNoteName()
     }
@@ -220,7 +218,7 @@ class MidiObjectView(override val obj: MidiObject, inst: ScoreObjectInstance) : 
     override fun initialize() {
         super.initialize()
         drawOrientationLines()
-        shadeBlackKeys()
+        shadeKeys()
         listenForMouseEvents()
     }
 
@@ -270,7 +268,7 @@ class MidiObjectView(override val obj: MidiObject, inst: ScoreObjectInstance) : 
         adjustVertical(resizeMode, deltaY)
     }
 
-    fun showTransposeDialog() {
+    private fun showTransposeDialog() {
         val semitones = IntegerPrompt("Transpose by semitones", 0, -48..48)
             .showDialog(context) ?: return
         obj.transpose(semitones)
@@ -286,13 +284,7 @@ class MidiObjectView(override val obj: MidiObject, inst: ScoreObjectInstance) : 
         )
         cursor.opacity = CURSOR_OPACITY
         children.add(cursor)
-        cursor.fillProperty().bind(
-            binding(
-                backgroundColor, cursor.opacityProperty().asReactiveValue()
-            ) { background, opacity ->
-                background.invert().deriveColor(0.0, 1.0, 1.0, opacity.toDouble())
-            }.asObservableValue()
-        )
+        cursor.fillProperty().bind(backgroundColor.asObservableValue())
         var mousePressed: Point2D? = null
         addEventHandler(MouseEvent.ANY) { ev ->
             when (ev.eventType) {
@@ -345,7 +337,7 @@ class MidiObjectView(override val obj: MidiObject, inst: ScoreObjectInstance) : 
     override fun rescale() {
         super.rescale()
         drawOrientationLines()
-        shadeBlackKeys()
+        shadeKeys()
         for ((note, rect) in noteRects) {
             updateNoteDisplay(rect, note)
         }
