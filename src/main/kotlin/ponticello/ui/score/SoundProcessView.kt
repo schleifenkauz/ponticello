@@ -50,7 +50,7 @@ class SoundProcessView(
     private val lfoCanvases = mutableMapOf<NamedParameterControl, LFOCanvas>()
     private lateinit var lfosObserver: Observer
     private lateinit var controlsDisplayObserver: Observer
-    private val midiContext = ParameterControlsMidiContext(obj.controls)
+    private val midiContext by lazy { ParameterControlsMidiContext(obj.controls) }
 
     init {
         styleClass("sound-process")
