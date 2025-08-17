@@ -6,8 +6,10 @@ import fxutils.prompt.*
 import fxutils.undo.UndoManager
 import hextant.context.Context
 import hextant.core.editor.defaultState
+import hextant.fx.ModifierKeyTracker
 import hextant.serial.EditorRoot
 import javafx.beans.binding.Bindings
+import javafx.beans.property.SimpleDoubleProperty
 import javafx.collections.FXCollections.observableList
 import javafx.geometry.HorizontalDirection
 import javafx.geometry.Point2D
@@ -40,8 +42,11 @@ import ponticello.sc.editor.EventDictionaryEditor
 import ponticello.ui.impl.makeSubWindow
 import ponticello.ui.impl.setupDraggingAndResizing
 import ponticello.ui.impl.showDialog
+import reaktive.value.binding.and
 import reaktive.value.binding.binding
+import reaktive.value.binding.or
 import reaktive.value.fx.asObservableValue
+import reaktive.value.fx.asReactiveValue
 import reaktive.value.now
 import reaktive.value.reactiveVariable
 import kotlin.math.roundToInt
@@ -52,7 +57,6 @@ class MidiObjectView(override val obj: MidiObject, inst: ScoreObjectInstance) : 
     private val blackKeys = mutableListOf<Rectangle>()
     private val pixelsPerPitch get() = prefHeight / (obj.highestPitch - obj.lowestPitch + 1)
     private val cursor = Rectangle(10.0, pixelsPerPitch) styleClass "note-cursor"
-    private val cursorOpacity = reactiveVariable(CURSOR_OPACITY)
     private val lowestPitchLabel = Label(MidiPitch(obj.lowestPitch).getNoteName())
     private val highestPitchLabel = Label(MidiPitch(obj.highestPitch).getNoteName())
 
@@ -267,43 +271,45 @@ class MidiObjectView(override val obj: MidiObject, inst: ScoreObjectInstance) : 
     }
 
     fun showTransposeDialog() {
-        val semitones = IntegerPrompt("Transpose by semitones", 0, -36..36)
+        val semitones = IntegerPrompt("Transpose by semitones", 0, -48..48)
             .showDialog(context) ?: return
         obj.transpose(semitones)
     }
 
     private fun listenForMouseEvents() {
         cursor.viewOrder = 100.0
-        cursor.fillProperty().bind(binding(backgroundColor, cursorOpacity) { background, opacity ->
-            background.invert().deriveColor(0.0, 1.0, 1.0, opacity)
-        }.asObservableValue())
+        cursor.visibleProperty().bind(
+            hoverProperty().asReactiveValue().and(
+                ModifierKeyTracker.isAltDown or cursor.opacityProperty().isEqualTo(SimpleDoubleProperty(1.0))
+                    .asReactiveValue()
+            ).asObservableValue()
+        )
+        cursor.opacity = CURSOR_OPACITY
+        children.add(cursor)
+        cursor.fillProperty().bind(
+            binding(
+                backgroundColor, cursor.opacityProperty().asReactiveValue()
+            ) { background, opacity ->
+                background.invert().deriveColor(0.0, 1.0, 1.0, opacity.toDouble())
+            }.asObservableValue()
+        )
         var mousePressed: Point2D? = null
         addEventHandler(MouseEvent.ANY) { ev ->
             when (ev.eventType) {
-                MouseEvent.MOUSE_ENTERED -> {
-                    if (cursor !in children && !ev.isPrimaryButtonDown) children.add(cursor)
-                }
-
                 MouseEvent.MOUSE_MOVED -> {
                     cursor.x = getX(snapToGrid(ev.x, ev.y))
                     cursor.y = ev.y.snap(pixelsPerPitch.toDecimal()).toDouble()
-                    if (cursor.y > prefHeight) children.remove(cursor)
-                }
-
-                MouseEvent.MOUSE_EXITED -> {
-                    children.remove(cursor)
-                    ev.consume()
                 }
 
                 MouseEvent.MOUSE_PRESSED -> {
                     if (ev.modifiers == setOf(Alt)) {
                         mousePressed = Point2D(ev.x, ev.y)
-                        cursorOpacity.now = 1.0
+                        cursor.opacity = 1.0
                         ev.consume()
                     }
                 }
 
-                MouseEvent.MOUSE_DRAGGED -> if (cursorOpacity.now == 1.0) {
+                MouseEvent.MOUSE_DRAGGED -> if (cursor.opacity == 1.0) {
                     val noteEnd = snapToGrid(ev.x, ev.y)
                     val noteStart = getTime(cursor.x)
                     cursor.width = getWidth(noteEnd - noteStart)
@@ -312,7 +318,7 @@ class MidiObjectView(override val obj: MidiObject, inst: ScoreObjectInstance) : 
 
                 }
 
-                MouseEvent.MOUSE_RELEASED -> if (cursorOpacity.now == 1.0) {
+                MouseEvent.MOUSE_RELEASED -> if (cursor.opacity == 1.0) {
                     val time = getDuration(cursor.x)
                     val duration =
                         if (mousePressed != null && mousePressed!!.distance(ev.x, ev.y) > 0.1) {
@@ -328,7 +334,7 @@ class MidiObjectView(override val obj: MidiObject, inst: ScoreObjectInstance) : 
                     val midinote = getMidiNote(cursor.y)
                     val note = MidiObject.Note.create(time, duration, midinote)
                     obj.addNote(note)
-                    cursorOpacity.now = CURSOR_OPACITY
+                    cursor.opacity = CURSOR_OPACITY
                     cursor.width = 10.0
                     ev.consume()
                 }
