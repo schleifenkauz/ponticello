@@ -106,7 +106,7 @@ abstract class ScoreObjectView(
     fun getScreenY(scoreY: Decimal): Double = parentPane.getScreenY(scoreY)
 
     fun getDetailPane(): DetailPane {
-        val detailPane = DetailPane(labelWidth = 100.0)
+        val detailPane = DetailPane(labelWidth = 120.0)
         if (obj is UnresolvedScoreObject) {
             return detailPane
         } else {

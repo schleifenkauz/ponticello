@@ -7,7 +7,10 @@ import hextant.context.compoundEdit
 import javafx.geometry.Orientation
 import javafx.geometry.Side
 import org.kordamp.ikonli.material2.Material2AL
-import org.kordamp.ikonli.materialdesign2.*
+import org.kordamp.ikonli.materialdesign2.MaterialDesignC
+import org.kordamp.ikonli.materialdesign2.MaterialDesignL
+import org.kordamp.ikonli.materialdesign2.MaterialDesignM
+import org.kordamp.ikonli.materialdesign2.MaterialDesignV
 import ponticello.impl.Logger
 import ponticello.impl.copy
 import ponticello.impl.times
@@ -275,14 +278,6 @@ object ScoreObjectActions {
                     }
                     view.instance.score!!.removeObject(view.instance, Score.RegistryOption.REMOVE_WITHOUT_ASKING)
                 }
-            }
-        }
-        addObjectAction("Transpose") {
-            icon(MaterialDesignP.PROGRESS_QUESTION)
-            applicableOn<MidiObjectView>()
-            executeSingle { view, _ ->
-                view as MidiObjectView
-                view.showTransposeDialog()
             }
         }
         addObjectAction("Select parent") {

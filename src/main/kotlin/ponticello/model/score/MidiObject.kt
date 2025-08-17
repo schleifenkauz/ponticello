@@ -24,12 +24,9 @@ import ponticello.sc.EventDictionary
 import ponticello.sc.code
 import ponticello.sc.editor.*
 import ponticello.ui.score.MidiObjectView
-import reaktive.value.ReactiveValue
-import reaktive.value.ReactiveVariable
+import reaktive.value.*
 import reaktive.value.binding.flatMap
 import reaktive.value.binding.orElse
-import reaktive.value.now
-import reaktive.value.reactiveValue
 import kotlin.collections.component1
 import kotlin.collections.component2
 import kotlin.collections.set
@@ -41,12 +38,13 @@ class MidiObject(
     @SerialName("highestPitch") private var _highestPitch: Int,
     val eventDictionary: EditorRoot<@Contextual EventDictionaryEditor>,
     private val notes: MutableList<Note>,
+    val latencyMs: ReactiveVariable<Int> = reactiveVariable(0),
 ) : ScoreObject() {
     override val type: String
         get() = "midi"
 
     override val superColliderPrefix: String
-        get() = "~midi"
+        get() = "~midi_"
 
     var lowestPitch
         get() = _lowestPitch
@@ -227,8 +225,6 @@ class MidiObject(
     ): String = when (val instr = instrument.now) {
         is MidiInstrument.SynthDef -> writeCode {
             val generalEventDict = eventDictionary.editor.result.now
-            +"arg player_id"
-            +"var my_play_start = ~play_start[player_id]"
             val synthMap = "~midi_$uniqueName"
             +"$synthMap = ()"
             for ((idx, n) in notes.withIndex()) {
@@ -246,7 +242,7 @@ class MidiObject(
                 val namedValues = eventMap.entries.joinToString { (name, value) -> "$name: $value" }
                 val synthDefName = instr.reference.get()?.name?.now
                 appendBlock("TempoClock.sched(${onset.coerceAtLeast(zero)})") {
-                    appendBlock("if (my_play_start == ~play_start[player_id])") {
+                    appendBlock("if ($synthMap != nil)") {
                         appendBlock("s.bind") {
                             +"var synth = Synth(\\$synthDefName, [${namedValues}])"
                             +"$synthMap[${idx}] = synth"
@@ -255,27 +251,30 @@ class MidiObject(
                     }
                 }
             }
+            appendBlock("TempoClock.sched($duration)") {
+                +"$synthMap = nil"
+            }
         }
 
         is MidiInstrument.VST -> writeCode {
-            +"arg player_id"
-            +"var my_play_start = ~play_start[player_id]"
             val controllerVar = instr.flow.get()?.controllerVar
-            +"$controllerVar.midi.latency = $latency"
+            val helperVariable = "~midi_$uniqueName"
+            +"$helperVariable = ()"
             for (n in notes) {
                 val onset = n.onset - cutoff
                 if (onset + n.duration <= zero) continue
                 val midinote = n.midinote
                 val eventMap = mutableMapOf<String, String>()
                 makeEventMap(n.eventDictionary.editor.result.now, eventMap, eventDictionary.editor.result.now)
-                val velocity = eventMap["velocity"] ?: "60"
-                appendBlock("TempoClock.sched(${onset.coerceAtLeast(zero)})") {
-                    appendBlock("if (my_play_start == ~play_start[player_id])") {
-                        +"$controllerVar.midi.noteOn(0, $midinote, $velocity)" //TODO: maybe configure channel
+                val velocity = eventMap["velocity"] ?: "64"
+                val combinedLatency = latency - (latencyMs.now / 1000.0)
+                appendBlock("TempoClock.sched(${onset.coerceAtLeast(zero) + combinedLatency})") {
+                    appendBlock("if ($helperVariable != nil)") {
+                        +"$controllerVar.midi.noteOn(0, $midinote, $velocity)"
                     }
                 }
-                appendBlock("TempoClock.sched(${onset + n.duration})") {
-                    appendBlock("if (my_play_start == ~play_start[player_id])") {
+                appendBlock("TempoClock.sched(${onset + n.duration + combinedLatency})") {
+                    appendBlock("if ($helperVariable != nil)") {
                         +"$controllerVar.midi.noteOff(0, $midinote)"
                     }
                 }

@@ -53,6 +53,8 @@ class MidiObjectView(override val obj: MidiObject, inst: ScoreObjectInstance) : 
     private val pixelsPerPitch get() = prefHeight / (obj.highestPitch - obj.lowestPitch + 1)
     private val cursor = Rectangle(10.0, pixelsPerPitch) styleClass "note-cursor"
     private val cursorOpacity = reactiveVariable(CURSOR_OPACITY)
+    private val lowestPitchLabel = Label(MidiPitch(obj.lowestPitch).getNoteName())
+    private val highestPitchLabel = Label(MidiPitch(obj.highestPitch).getNoteName())
 
     private fun getY(pitch: Int) = (obj.highestPitch - pitch) * pixelsPerPitch
 
@@ -207,6 +209,8 @@ class MidiObjectView(override val obj: MidiObject, inst: ScoreObjectInstance) : 
     fun updatedPitchRange() {
         drawOrientationLines()
         shadeBlackKeys()
+        lowestPitchLabel.text = MidiPitch(obj.lowestPitch).getNoteName()
+        highestPitchLabel.text = MidiPitch(obj.highestPitch).getNoteName()
     }
 
     override fun initialize() {
@@ -245,7 +249,15 @@ class MidiObjectView(override val obj: MidiObject, inst: ScoreObjectInstance) : 
         )
         pane.addItem("Instrument: ", instrumentSelector)
         pane.addItem("Color:", this.colorPicker)
-        pane.addLargeItem("Event dictionary", this.obj.eventDictionary.control)
+        val transposeButton = button("Transpose") { showTransposeDialog() }
+        pane.addItem(
+            "Pitch range: ", HBox(
+                lowestPitchLabel, Label(" - "), highestPitchLabel,
+                hspace(50.0), transposeButton
+            ).centerChildren()
+        )
+        pane.addItem("Latency (ms): ", IntSpinner(obj.latencyMs, -200..200, 5))
+        pane.addLargeItem("Event dictionary", obj.eventDictionary.control)
     }
 
     override fun adjustVertical(direction: VerticalDirection, resizeMode: ScoreObject.ResizeMode?) {
@@ -338,7 +350,7 @@ class MidiObjectView(override val obj: MidiObject, inst: ScoreObjectInstance) : 
         private const val CURSOR_OPACITY = 0.6
 
         fun createNewMidiObjectDialog(instr: MidiInstrument, context: Context): Prompt<MidiObject?, *> =
-            compoundPrompt("Configure new object") {
+            compoundPrompt("Configure MIDI object", labelWidth = 200.0) {
                 val defaultName = context[ScoreObjectRegistry].availableName("midi")
                 val nameField = TextField(defaultName) named "Object name"
                 val rootPitchSelector =

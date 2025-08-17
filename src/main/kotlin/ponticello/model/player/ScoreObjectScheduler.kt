@@ -89,13 +89,13 @@ class ScoreObjectScheduler(val context: Context) {
 
             active.obj is MidiObject && active.obj.instrument.now is MidiInstrument.SynthDef -> {
                 val name = active.superColliderName
-                client.run("$name.do { |synth| synth.release };")
+                client.run("$name.do { |synth| synth.release }; $name = nil")
             }
 
             active.obj is MidiObject && active.obj.instrument.now is MidiInstrument.VST -> {
                 val instrument = active.obj.instrument.now as MidiInstrument.VST
                 val controllerVar = instrument.flow.get()?.controllerVar ?: return
-                client.run("$controllerVar.midi.allNotesOff(0)")
+                client.run("$controllerVar.midi.allNotesOff(0); ${active.superColliderName} = nil")
             }
 
             else -> {}

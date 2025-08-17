@@ -48,6 +48,7 @@ import reaktive.Observer
 import reaktive.value.now
 import java.io.File
 import kotlin.concurrent.thread
+import kotlin.random.Random
 import kotlin.system.exitProcess
 
 class PonticelloLauncher {
@@ -256,7 +257,7 @@ class PonticelloLauncher {
         val progressBar = getOrLaunchLoadingScreen()
         progressBar.displayProgress(0.0, "Starting SuperCollider...")
         try {
-            val port = OSCPortOut.DEFAULT_SC_LANG_OSC_PORT + 7
+            val port = OSCPortOut.DEFAULT_SC_LANG_OSC_PORT + Random.nextInt(1, 10)
             val client = OSCSuperColliderClient.create(context, port)
             client.consoleMonitor.addListener(ConsoleMonitor.PipeToSystemOut)
             client.onClientReady {
