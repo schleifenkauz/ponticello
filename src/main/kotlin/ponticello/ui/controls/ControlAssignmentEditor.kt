@@ -13,6 +13,7 @@ import javafx.scene.Node
 import javafx.scene.input.DragEvent
 import javafx.scene.layout.HBox
 import ponticello.model.obj.BufferObject
+import ponticello.model.obj.SampleObject
 import ponticello.model.registry.BufferRegistry
 import ponticello.model.registry.reference
 import ponticello.model.score.ParameterControlList.NamedParameterControl
@@ -42,7 +43,7 @@ class ControlAssignmentEditor(val control: NamedParameterControl, val view: Scor
         val samples = control.context[BufferRegistry]
         val sample =
             when {
-                db.hasFile("wav") -> samples.getOrAdd(db.files[0])
+                db.hasFile(*SampleObject.SUPPORTED_AUDIO_FORMATS) -> samples.getOrAdd(db.files[0])
                 db.hasContent(BufferObject.DATA_FORMAT) -> samples.get(db.getContent(BufferObject.DATA_FORMAT) as String)
                 else -> return false
             }
@@ -54,7 +55,7 @@ class ControlAssignmentEditor(val control: NamedParameterControl, val view: Scor
     override fun canDrop(event: DragEvent): Boolean {
         if (control.now !is BufferControl) return false
         val db = event.dragboard
-        return db.hasFile("wav") || db.hasContent(BufferObject.DATA_FORMAT)
+        return db.hasFile(*SampleObject.SUPPORTED_AUDIO_FORMATS) || db.hasContent(BufferObject.DATA_FORMAT)
     }
 
     fun showOptionPopup() {

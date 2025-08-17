@@ -88,17 +88,17 @@ class BufferRegistryPane(private val buffers: BufferRegistry) : ObjectRegistryPa
 
     override fun filter(obj: BufferObject): Boolean = super.filter(obj) && filter.filter(obj)
 
-    override fun acceptedTransferModes(dragboard: Dragboard): Array<TransferMode> {
-        if (dragboard.hasContent(dataFormat)) return arrayOf(TransferMode.MOVE)
-        if (dragboard.hasFile("wav") && !buffers.has(dragboard.files[0].nameWithoutExtension)) {
-            return if (buffers.copyAudioFiles.now) arrayOf(TransferMode.COPY)
-            else arrayOf(TransferMode.MOVE)
+    override fun acceptedTransferModes(dragboard: Dragboard): Array<TransferMode> = when {
+        dragboard.hasContent(dataFormat) -> arrayOf(TransferMode.MOVE)
+        dragboard.hasFile(*SampleObject.SUPPORTED_AUDIO_FORMATS) && !buffers.has(dragboard.files[0].nameWithoutExtension) -> {
+            TransferMode.COPY_OR_MOVE
         }
-        return arrayOf()
+
+        else -> arrayOf()
     }
 
     override fun getDroppedObject(ev: DragEvent): BufferObject? = when {
-        ev.dragboard.hasFile("wav") -> {
+        ev.dragboard.hasFile(*SampleObject.SUPPORTED_AUDIO_FORMATS) -> {
             val file = ev.dragboard.files[0]
             val name = file.nameWithoutExtension
             SampleObject.create(name, file)

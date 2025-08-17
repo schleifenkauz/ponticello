@@ -20,7 +20,10 @@ sealed class BufferObject : AbstractSuperColliderObject() {
 
     abstract fun duration(): ReactiveValue<Decimal>
 
+    protected open fun waitForInfos() {}
+
     fun createSynthObject(synthDef: InstrumentObject): SoundProcess? {
+        waitForInfos()
         val controls = synthDef.getDefaultControls(null)
         val buf = controls.getOrNull("buf") ?: return null
         val control = buf.now as BufferControl

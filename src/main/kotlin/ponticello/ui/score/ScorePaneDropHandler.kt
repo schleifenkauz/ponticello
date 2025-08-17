@@ -4,6 +4,7 @@ import fxutils.drag.ConfiguredDropHandler
 import hextant.context.compoundEdit
 import javafx.event.Event
 import ponticello.model.obj.BufferObject
+import ponticello.model.obj.SampleObject
 import ponticello.model.obj.project
 import ponticello.model.project.UI_STATE
 import ponticello.model.project.get
@@ -15,7 +16,7 @@ import ponticello.model.score.ScoreObjectInstance
 
 class ScorePaneDropHandler(private val scorePane: ScorePane) : ConfiguredDropHandler() {
     init {
-        handleSingleFile("wav") { ev, file ->
+        handleSingleFile(*SampleObject.SUPPORTED_AUDIO_FORMATS) { ev, file ->
             val buffer = scorePane.context[BufferRegistry].getOrAdd(file)
             val pos = scorePane.snapToGrid(ev.x, ev.y)
             createPlayBufObject(buffer, pos, ev, scorePane)

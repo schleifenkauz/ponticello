@@ -25,7 +25,7 @@ class SpectrogramPainter(
     private val associatedView: SoundProcessView,
     private val obj: SoundProcess,
     private val objectPane: Pane,
-): ParameterControlList.Listener {
+) : ParameterControlList.Listener {
     private var spectrogramImage: Image? = null
     private val spectrogramSegments = mutableListOf<SpectrogramSegment>()
 
@@ -46,7 +46,9 @@ class SpectrogramPainter(
         if (s != null) {
             val sample = s.get()
             if (sample is SampleObject) {
-                sampleContentObserver = sample.contentsChanged.observe { _ -> updateSpectrogram() }
+                sampleContentObserver = sample.contentsChanged.observe { _ ->
+                    updateSpectrogram()
+                }
             }
             updateSpectrogram()
         }
@@ -114,7 +116,7 @@ class SpectrogramPainter(
             spectrogramSegments.clear()
             if (obj.displaySample?.now != true) return@runLater
             val sample = obj.sample.now?.get()
-            if (sample !is SampleObject) return@runLater
+            if (sample !is SampleObject || !sample.infosUpdated) return@runLater
             spectrogramImage = sample.spectrogramImage
             displaySpectrogram()
         }
@@ -129,6 +131,7 @@ class SpectrogramPainter(
         val rate = obj.playBufRate?.now ?: one(precision = 3)
         if (rate == zero) return@runLater
         val sampleDuration = sample.duration().now
+        if (sampleDuration <= zero) return@runLater
         val defaultStartPos = if (rate < zero) sampleDuration else zero
         var startPos = obj.playbufStartPos?.now?.wrapAt(sampleDuration) ?: defaultStartPos
         if (rate < zero && startPos == zero) startPos = sampleDuration

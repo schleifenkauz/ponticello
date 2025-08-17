@@ -8,6 +8,7 @@ import ponticello.model.live.LauncherGrid
 import ponticello.model.live.LauncherGrid.GridItemReference
 import ponticello.model.live.LiveTaskObject
 import ponticello.model.obj.BufferObject
+import ponticello.model.obj.SampleObject
 import ponticello.model.obj.ScriptObject
 import ponticello.model.obj.project
 import ponticello.model.project.UI_STATE
@@ -53,7 +54,7 @@ class LauncherGridItemDropHandler(
             item.target = ItemTarget.LiveTask(ref)
             true
         }
-        handleSingleFile("wav") { ev, file ->
+        handleSingleFile(*SampleObject.SUPPORTED_AUDIO_FORMATS) { ev, file ->
             val buffer = grid.context[BufferRegistry].getOrAdd(file)
             createPlayBufTarget(ev, buffer, item)
             true

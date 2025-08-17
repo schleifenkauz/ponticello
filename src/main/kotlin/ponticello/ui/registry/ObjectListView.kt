@@ -62,7 +62,7 @@ class ObjectListView<O : Any>(
         set(value) {
             field = value
             value.children.addAll(boxes)
-            setupDropArea()
+            setupDropArea(value)
             if (scrollable) {
                 itemsScrollPane.content = value
             }
@@ -96,8 +96,8 @@ class ObjectListView<O : Any>(
         registerSelectionShortcuts()
     }
 
-    private fun setupDropArea() {
-        itemsLayout.addEventHandler(DragEvent.ANY) { ev ->
+    private fun setupDropArea(target: Pane) {
+        target.addEventHandler(DragEvent.ANY) { ev ->
             when (ev.eventType) {
                 DragEvent.DRAG_ENTERED -> {
                     val dragged = ev.gestureSource

@@ -3,6 +3,8 @@ package ponticello.model.registry
 import bundles.PublicProperty
 import bundles.publicProperty
 import bundles.set
+import com.illposed.osc.OSCMessageEvent
+import com.illposed.osc.OSCMessageListener
 import hextant.context.Context
 import hextant.serial.string
 import kotlinx.serialization.KSerializer
@@ -13,9 +15,13 @@ import kotlinx.serialization.descriptors.serialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.*
+import ponticello.impl.Logger
 import ponticello.impl.parseDecimal
+import ponticello.impl.toDecimal
 import ponticello.model.obj.*
 import ponticello.sc.Identifier
+import ponticello.sc.client.SuperColliderClient
+import ponticello.sc.client.getArgument
 import reaktive.Observer
 import reaktive.value.ReactiveVariable
 import reaktive.value.now
@@ -26,7 +32,7 @@ import java.io.File
 class BufferRegistry(
     override val objects: MutableList<BufferObject> = mutableListOf(),
     val copyAudioFiles: ReactiveVariable<Boolean>,
-) : SuperColliderObjectRegistry<BufferObject>() {
+) : SuperColliderObjectRegistry<BufferObject>(), OSCMessageListener {
     override val objectType: String
         get() = "Buffer"
     override val liveCycleType: SuperColliderObject.LiveCycleType
@@ -44,6 +50,7 @@ class BufferRegistry(
     override fun initialize(context: Context) {
         context[BufferRegistry] = this
         super.initialize(context)
+        context[SuperColliderClient].addListener(this)
     }
 
     fun getSample(file: File): SampleObject? = filterIsInstance<SampleObject>().find { o ->
@@ -55,6 +62,26 @@ class BufferRegistry(
         val sample = SampleObject.create(name, file)
         add(sample)
         return sample
+    }
+
+    override fun acceptMessage(event: OSCMessageEvent) {
+        if (event.message.address == "/buffer_info") {
+            val name = event.message.getArgument<String>(0, "buffer_name") ?: return
+            val duration = event.message.getArgument<Float>(1, "duration")?.toDouble()?.toDecimal() ?: return
+            val channels = event.message.getArgument<Int>(2, "channels") ?: return
+            val sampleRate = event.message.getArgument<Float>(3, "sampleRate")?.toDouble() ?: return
+            val buf = getOrNull(name)
+            if (buf == null) {
+                Logger.warn("Received buffer_info message: Buffer '$name' not found.", Logger.Category.Buffers)
+                return
+
+            }
+            if (buf !is SampleObject) {
+                Logger.warn("Received buffer_info message: Buffer '$name' is not a sample.", Logger.Category.Buffers)
+                return
+            }
+            buf.updateInfos(duration, channels, sampleRate)
+        }
     }
 
     object Serializer : KSerializer<BufferRegistry> {

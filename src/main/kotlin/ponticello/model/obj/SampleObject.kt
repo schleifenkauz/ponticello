@@ -17,8 +17,6 @@ import reaktive.event.unitEvent
 import reaktive.value.*
 import java.io.File
 import java.util.concurrent.CompletableFuture
-import javax.sound.sampled.AudioInputStream
-import javax.sound.sampled.AudioSystem
 
 @Serializable
 class SampleObject(
@@ -45,13 +43,22 @@ class SampleObject(
     val spectrogramImage by lazy { Image(spectrogramFile.inputStream()) }
 
     @Transient
-    var duration: ReactiveVariable<Decimal> = reactiveVariable(-one(ObjectPosition.TIME_PRECISION))
+    private var _duration: ReactiveVariable<Decimal> = reactiveVariable(-one(ObjectPosition.TIME_PRECISION))
+
+    val duration: ReactiveValue<Decimal> get() = _duration
 
     @Transient
     var channels: Int = 0
+        private set
 
     @Transient
     var sampleRate = 0.0
+        private set
+
+    @Transient
+    private var infoUpdateJob: CompletableFuture<Unit>? = null
+
+    val infosUpdated get() = infoUpdateJob?.isDone ?: false
 
     override fun channels(): Int = channels
 
@@ -59,33 +66,28 @@ class SampleObject(
 
     override fun duration(): ReactiveValue<Decimal> = duration
 
+    override fun waitForInfos() {
+        infoUpdateJob?.join()
+    }
+
     @Transient
     private val contentChange = unitEvent()
 
     val contentsChanged get() = contentChange.stream
 
-    private fun <T> useAudioStream(block: (AudioInputStream) -> T): T? {
-        if (!audioFile.isFile) {
-            Logger.severe("No audio stream found for sample ${name.now}: $referencedFile")
-            return null
-        }
-        val stream = AudioSystem.getAudioInputStream(audioFile)
-        return stream.use(block)
-    }
-
-    private fun updateInfos() {
-        useAudioStream { s ->
-            duration.now = s.duration.asTime
-            channels = s.format.channels
-            sampleRate = s.format.sampleRate.toDouble()
-        }
+    fun updateInfos(duration: Decimal, channels: Int, sampleRate: Double) {
+        this._duration.now = duration
+        this.channels = channels
+        this.sampleRate = sampleRate
+        infoUpdateJob!!.complete(Unit)
+        contentChange.fire()
+        Logger.fine("Updated infos for sample '${name.now}' [$audioFile]", Logger.Category.Buffers)
     }
 
     override fun onAdded() {
         super.onAdded()
         if (registry.copyAudioFiles.now) {
             copyReferencedFileToSamplesDir()
-            updateInfos()
         }
         updateSpectrogram()
     }
@@ -94,7 +96,6 @@ class SampleObject(
         super.onLoadedIntoRegistry()
         if (audioFile.lastModified() > spectrogramFile.lastModified()) {
             updateSpectrogram()
-            updateInfos()
         }
     }
 
@@ -115,9 +116,6 @@ class SampleObject(
     override fun initialize(context: Context) {
         super.initialize(context)
         resolveAudioFile()
-        if (!registry.copyAudioFiles.now || audioFileInSamplesDir().isFile) {
-            updateInfos()
-        }
     }
 
     private fun resolveAudioFile() {
@@ -165,7 +163,14 @@ class SampleObject(
     }
 
     override fun ScWriter.createObject() {
-        +"$superColliderName = Buffer.read(s, ${audioFile.superColliderPath})"
+        infoUpdateJob?.join()
+        infoUpdateJob = CompletableFuture<Unit>()
+        appendBlock("$superColliderName = Buffer.read(s, ${audioFile.superColliderPath}, action: ", endLine = false) {
+            +"arg b"
+            +"~ponticello_addr.sendMsg('/buffer_info', '${name.now}', b.duration, b.numChannels, b.sampleRate)"
+            +"postf(\"Buffer info '${name.now}': % seconds, % channels, sampleRate: %\\n\", b.duration, b.numChannels, b.sampleRate)"
+        }
+        appendLine(");")
     }
 
     private fun createSpectrogram(): CompletableFuture<Unit> {
@@ -187,8 +192,6 @@ class SampleObject(
     override fun ScWriter.sync() {
         updateSpectrogram()
         copyReferencedFileToSamplesDir()
-        updateInfos()
-        contentChange.fire()
         super.sync()
     }
 
@@ -207,6 +210,8 @@ class SampleObject(
     }
 
     companion object {
+        val SUPPORTED_AUDIO_FORMATS = arrayOf("wav", "flac", "aiff", "au", "ogg")
+
         private fun relativizePath(base: File, audioFile: File): String {
             val relativized = audioFile.relativeTo(base)
             return if (relativized != audioFile) "~/${relativized.invariantSeparatorsPath}"
