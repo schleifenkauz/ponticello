@@ -344,7 +344,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
 
     private fun addNewObject(selection: RectangleSelection) {
         val availableOptions = context[InstrumentRegistry].map(NewObjectOption::Process) +
-                context[InstrumentRegistry].map(NewObjectOption::MIDI) +
+                MidiInstrument.getOptions(context.project).map(NewObjectOption::MIDI) +
                 context[MeterRegistry].map(NewObjectOption::TempoGrid) +
                 listOf(NewObjectOption.Group, NewObjectOption.NewTempoGrid)
         val popup = SimpleSearchableListView(availableOptions, "Add score object")
@@ -419,14 +419,14 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
                 else -> throw AssertionError()
             }
 
-            is MIDI -> "MIDI: ${def.name.now}"
+            is MIDI -> "MIDI: ${def.getName()}"
             is Group -> "Group"
             is TempoGrid -> "Tempo grid: ${meter.name.now}"
             is NewTempoGrid -> "New tempo grid"
         }
 
         fun defaultName(registry: ScoreObjectRegistry): String = when (this) {
-            is MIDI -> registry.availableName("${def.name.now}_midi")
+            is MIDI -> registry.availableName("${def.getName()}_midi")
             is Process -> registry.availableName(def.name.now)
             is TempoGrid -> registry.availableName(meter.name.now)
             is NewTempoGrid -> registry.availableName("tempo")
@@ -434,7 +434,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
         }
 
         class Process(val def: InstrumentObject) : NewObjectOption()
-        class MIDI(val def: InstrumentObject) : NewObjectOption()
+        class MIDI(val def: MidiInstrument) : NewObjectOption()
         class TempoGrid(val meter: MeterObject) : NewObjectOption()
         object Group : NewObjectOption()
         object NewTempoGrid : NewObjectOption()

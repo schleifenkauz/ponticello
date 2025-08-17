@@ -10,6 +10,7 @@ import ponticello.impl.zero
 import ponticello.model.GlobalSettings
 import ponticello.model.flow.NodeTree
 import ponticello.model.flow.SynthObjectNode
+import ponticello.model.obj.MidiInstrument
 import ponticello.model.obj.ParameterDefObject
 import ponticello.model.obj.ProcessDefObject
 import ponticello.model.obj.SynthDefObject
@@ -86,9 +87,15 @@ class ScoreObjectScheduler(val context: Context) {
                 client.run("$name.stop;")
             }
 
-            active.obj is MidiObject -> {
+            active.obj is MidiObject && active.obj.instrument.now is MidiInstrument.SynthDef -> {
                 val name = active.superColliderName
                 client.run("$name.do { |synth| synth.release };")
+            }
+
+            active.obj is MidiObject && active.obj.instrument.now is MidiInstrument.VST -> {
+                val instrument = active.obj.instrument.now as MidiInstrument.VST
+                val controllerVar = instrument.flow.get()?.controllerVar ?: return
+                client.run("$controllerVar.midi.allNotesOff(0)")
             }
 
             else -> {}

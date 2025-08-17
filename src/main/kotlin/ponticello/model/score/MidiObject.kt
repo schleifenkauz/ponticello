@@ -17,10 +17,10 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import ponticello.impl.*
 import ponticello.model.flow.NodePlacement
-import ponticello.model.obj.InstrumentReference
-import ponticello.model.obj.NoInstrument
+import ponticello.model.obj.MidiInstrument
 import ponticello.model.obj.ParameterDefObject
 import ponticello.model.score.controls.ParameterControl
+import ponticello.sc.EventDictionary
 import ponticello.sc.code
 import ponticello.sc.editor.*
 import ponticello.ui.score.MidiObjectView
@@ -36,9 +36,9 @@ import kotlin.collections.set
 
 @Serializable
 class MidiObject(
-    @SerialName("instrument") private val mInstrument: ReactiveVariable<InstrumentReference>,
-    @SerialName("lowestPitch") private var mLowestPitch: Int,
-    @SerialName("highestPitch") private var mHighestPitch: Int,
+    val instrument: ReactiveVariable<MidiInstrument>,
+    @SerialName("lowestPitch") private var _lowestPitch: Int,
+    @SerialName("highestPitch") private var _highestPitch: Int,
     val eventDictionary: EditorRoot<@Contextual EventDictionaryEditor>,
     private val notes: MutableList<Note>,
 ) : ScoreObject() {
@@ -48,31 +48,26 @@ class MidiObject(
     override val superColliderPrefix: String
         get() = "~midi"
 
-    @Transient
-    lateinit var instrumentSelector: InstrumentSelector
-        private set
-
-    private val instrument get() = mInstrument.now.get() ?: NoInstrument()
-
     var lowestPitch
-        get() = mLowestPitch
+        get() = _lowestPitch
         set(value) {
-            mLowestPitch = value
+            _lowestPitch = value
             notifyListeners<MidiObjectView> { updatedPitchRange() }
         }
 
     var highestPitch
-        get() = mHighestPitch
+        get() = _highestPitch
         set(value) {
-            mHighestPitch = value
+            _highestPitch = value
             notifyListeners<MidiObjectView> { updatedPitchRange() }
         }
 
     val pitchRange get() = lowestPitch..highestPitch
 
     override val associatedColor: ReactiveValue<Color?>
-        get() = super.associatedColor.orElse(instrumentSelector.result.flatMap { ref ->
-            ref.get()?.color ?: reactiveValue(null)
+        get() = super.associatedColor.orElse(instrument.flatMap { instr ->
+            if (instr is MidiInstrument.SynthDef) instr.reference.get()?.color ?: reactiveValue(null)
+            else reactiveValue(null)
         })
 
     @Transient
@@ -81,9 +76,7 @@ class MidiObject(
     override fun initialize(context: Context) {
         if (initialized) return
         super.initialize(context)
-        instrumentSelector = InstrumentSelector()
-        instrumentSelector.syncWith(mInstrument)
-        instrumentSelector.initialize(context)
+        instrument.now.resolve(context)
         eventDictionary.initialize(context)
         for (note in notes) {
             note.parent = this
@@ -208,7 +201,7 @@ class MidiObject(
     }
 
     override fun doClone(): ScoreObject = MidiObject(
-        mInstrument.copy(), lowestPitch, highestPitch,
+        instrument.copy(), lowestPitch, highestPitch,
         eventDictionary.clone(),
         notes.mapTo(mutableListOf()) { n -> n.copy() }
     )
@@ -219,7 +212,7 @@ class MidiObject(
             RIGHT -> notes.filter { n -> n.onset >= position }
         }.mapTo(mutableListOf()) { n -> n.copy() }
         return MidiObject(
-            mInstrument,
+            instrument,
             lowestPitch, highestPitch,
             eventDictionary.clone(context), notes
         )
@@ -231,36 +224,77 @@ class MidiObject(
         cutoff: Decimal,
         latency: Decimal,
         extraArguments: Map<ParameterDefObject, ParameterControl>,
-    ): String = writeCode {
-        val generalEventDict = eventDictionary.editor.result.now
-        +"arg player_id"
-        +"var my_play_start = ~play_start[player_id]"
-        val synthMap = "~midi_$uniqueName"
-        +"$synthMap = ()"
-        for ((idx, n) in notes.withIndex()) {
-            val t = n.onset
-            if (t < -n.duration) continue
-            val dur = n.duration + t.coerceAtMost(zero)
-            val midinote = n.midinote
-            val eventDict = n.eventDictionary.editor.result.now
-            val eventMap = mutableMapOf<String, String>()
-            eventMap["duration"] = dur.toString()
-            for ((key, value) in eventDict.entries) eventMap[key.text] = value.code(context)
-            for ((key, value) in generalEventDict.entries) eventMap[key.text] = value.code(context)
-            eventMap["freq"] = "$midinote.midicps + ${eventMap["detune"] ?: 0}.midiratio"
-            eventMap["amp"] = "((${eventMap["velocity"] ?: 60}) / 127).pow(2)"
-            eventMap.remove("detune")
-            val namedValues = eventMap.entries.joinToString { (name, value) -> "$name: $value" }
-            appendBlock("TempoClock.sched(${t.coerceAtLeast(zero)})") {
-                appendBlock("if (my_play_start == ~play_start[player_id])") {
-                    appendBlock("s.bind") {
-                        +"var synth = Synth(\\${instrument.name.now}, [${namedValues}])"
-                        +"$synthMap[${idx}] = synth"
-                        +"synth.onFree { $synthMap[${idx}] = nil }"
+    ): String = when (val instr = instrument.now) {
+        is MidiInstrument.SynthDef -> writeCode {
+            val generalEventDict = eventDictionary.editor.result.now
+            +"arg player_id"
+            +"var my_play_start = ~play_start[player_id]"
+            val synthMap = "~midi_$uniqueName"
+            +"$synthMap = ()"
+            for ((idx, n) in notes.withIndex()) {
+                val onset = n.onset - cutoff
+                if (onset + n.duration <= zero) continue
+                val dur = n.duration + n.onset.coerceAtMost(zero)
+                val midinote = n.midinote
+                val eventDict = n.eventDictionary.editor.result.now
+                val eventMap = mutableMapOf<String, String>()
+                eventMap["duration"] = dur.toString()
+                makeEventMap(eventDict, eventMap, generalEventDict)
+                eventMap["freq"] = "$midinote.midicps + ${eventMap["detune"] ?: 0}.midiratio"
+                eventMap["amp"] = "((${eventMap["velocity"] ?: 60}) / 127).pow(2)"
+                eventMap.remove("detune")
+                val namedValues = eventMap.entries.joinToString { (name, value) -> "$name: $value" }
+                val synthDefName = instr.reference.get()?.name?.now
+                appendBlock("TempoClock.sched(${onset.coerceAtLeast(zero)})") {
+                    appendBlock("if (my_play_start == ~play_start[player_id])") {
+                        appendBlock("s.bind") {
+                            +"var synth = Synth(\\$synthDefName, [${namedValues}])"
+                            +"$synthMap[${idx}] = synth"
+                            +"synth.onFree { $synthMap[${idx}] = nil }"
+                        }
                     }
                 }
             }
         }
+
+        is MidiInstrument.VST -> writeCode {
+            +"arg player_id"
+            +"var my_play_start = ~play_start[player_id]"
+            val controllerVar = instr.flow.get()?.controllerVar
+            +"$controllerVar.midi.latency = $latency"
+            for (n in notes) {
+                val onset = n.onset - cutoff
+                if (onset + n.duration <= zero) continue
+                val midinote = n.midinote
+                val eventMap = mutableMapOf<String, String>()
+                makeEventMap(n.eventDictionary.editor.result.now, eventMap, eventDictionary.editor.result.now)
+                val velocity = eventMap["velocity"] ?: "60"
+                appendBlock("TempoClock.sched(${onset.coerceAtLeast(zero)})") {
+                    appendBlock("if (my_play_start == ~play_start[player_id])") {
+                        +"$controllerVar.midi.noteOn(0, $midinote, $velocity)" //TODO: maybe configure channel
+                    }
+                }
+                appendBlock("TempoClock.sched(${onset + n.duration})") {
+                    appendBlock("if (my_play_start == ~play_start[player_id])") {
+                        +"$controllerVar.midi.noteOff(0, $midinote)"
+                    }
+                }
+            }
+        }
+
+        MidiInstrument.None -> {
+            Logger.warn("No instrument selected for ${name.now}", Logger.Category.Playback)
+            ""
+        }
+    }
+
+    private fun makeEventMap(
+        eventDict: EventDictionary,
+        eventMap: MutableMap<String, String>,
+        generalEventDict: EventDictionary,
+    ) {
+        for ((key, value) in eventDict.entries) eventMap[key.text] = value.code(context)
+        for ((key, value) in generalEventDict.entries) eventMap[key.text] = value.code(context)
     }
 
     abstract class Edit(protected val obj: MidiObject, protected val note: Note) : AbstractEdit() {

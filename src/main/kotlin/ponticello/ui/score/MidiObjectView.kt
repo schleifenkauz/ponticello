@@ -1,12 +1,9 @@
 package ponticello.ui.score
 
-import bundles.createBundle
 import fxutils.*
 import fxutils.controls.IntSpinner
-import fxutils.prompt.DetailPane
-import fxutils.prompt.IntegerPrompt
-import fxutils.prompt.Prompt
-import fxutils.prompt.compoundPrompt
+import fxutils.prompt.*
+import fxutils.undo.UndoManager
 import hextant.context.Context
 import hextant.core.editor.defaultState
 import hextant.serial.EditorRoot
@@ -17,29 +14,29 @@ import javafx.geometry.Point2D
 import javafx.geometry.VerticalDirection
 import javafx.scene.Cursor
 import javafx.scene.control.ComboBox
+import javafx.scene.control.Label
 import javafx.scene.control.TextField
 import javafx.scene.input.KeyEvent
 import javafx.scene.input.MouseButton
 import javafx.scene.input.MouseEvent
 import javafx.scene.layout.BorderPane
+import javafx.scene.layout.HBox
 import javafx.scene.layout.Region
 import javafx.scene.paint.Color
 import javafx.scene.shape.Line
 import javafx.scene.shape.Rectangle
 import ponticello.impl.*
-import ponticello.model.obj.InstrumentObject
+import ponticello.model.obj.MidiInstrument
 import ponticello.model.obj.project
 import ponticello.model.obj.withName
 import ponticello.model.project.uiState
 import ponticello.model.registry.ScoreObjectRegistry
-import ponticello.model.registry.reference
 import ponticello.model.score.MidiObject
 import ponticello.model.score.ObjectPosition
 import ponticello.model.score.ScoreObject
 import ponticello.model.score.ScoreObjectInstance
 import ponticello.sc.Identifier
 import ponticello.sc.editor.EventDictionaryEditor
-import ponticello.sc.view.ObjectSelectorControl
 import ponticello.ui.impl.makeSubWindow
 import ponticello.ui.impl.setupDraggingAndResizing
 import ponticello.ui.impl.showDialog
@@ -219,8 +216,33 @@ class MidiObjectView(override val obj: MidiObject, inst: ScoreObjectInstance) : 
         listenForMouseEvents()
     }
 
+    private inner class InstrumentSelectorPopup : SearchableListView<MidiInstrument>("Select instrument") {
+        override fun options(): List<MidiInstrument> = MidiInstrument.getOptions(context.project)
+
+        override fun createCell(option: MidiInstrument): Region {
+            val (type, name) = when (option) {
+                is MidiInstrument.SynthDef -> Pair("SynthDef", option.reference.getName())
+                is MidiInstrument.VST -> {
+                    val flow = option.flow.force()
+                    Pair("VST: ${flow.pluginName}", flow.name.now)
+                }
+
+                MidiInstrument.None -> throw AssertionError()
+            }
+            return HBox(Label(name), infiniteSpace(), Label(type))
+        }
+
+        override fun extractText(option: MidiInstrument): String = when (option) {
+            is MidiInstrument.SynthDef -> option.reference.getName()
+            is MidiInstrument.VST -> option.flow.getName()
+            MidiInstrument.None -> throw AssertionError()
+        }
+    }
+
     override fun setupDetailPane(pane: DetailPane) {
-        val instrumentSelector = ObjectSelectorControl(obj.instrumentSelector, createBundle())
+        val instrumentSelector = InstrumentSelectorPopup().selectorButton(
+            obj.instrument, undoManager = context[UndoManager], actionDescription = "Select MIDI instrument"
+        )
         pane.addItem("Instrument: ", instrumentSelector)
         pane.addItem("Color:", this.colorPicker)
         pane.addLargeItem("Event dictionary", this.obj.eventDictionary.control)
@@ -315,7 +337,7 @@ class MidiObjectView(override val obj: MidiObject, inst: ScoreObjectInstance) : 
     companion object {
         private const val CURSOR_OPACITY = 0.6
 
-        fun createNewMidiObjectDialog(instr: InstrumentObject, context: Context): Prompt<MidiObject?, *> =
+        fun createNewMidiObjectDialog(instr: MidiInstrument, context: Context): Prompt<MidiObject?, *> =
             compoundPrompt("Configure new object") {
                 val defaultName = context[ScoreObjectRegistry].availableName("midi")
                 val nameField = TextField(defaultName) named "Object name"
@@ -332,7 +354,7 @@ class MidiObjectView(override val obj: MidiObject, inst: ScoreObjectInstance) : 
                     val notes = mutableListOf<MidiObject.Note>()
                     val eventDictionary = EditorRoot(EventDictionaryEditor().defaultState())
                     MidiObject(
-                        reactiveVariable(instr.reference()),
+                        reactiveVariable(instr),
                         lowestPitch, highestPitch,
                         eventDictionary, notes
                     ).withName(name)

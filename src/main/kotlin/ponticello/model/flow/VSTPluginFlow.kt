@@ -29,7 +29,7 @@ import java.util.concurrent.CompletableFuture
 @Serializable
 @SerialName("VSTPluginFlow")
 class VSTPluginFlow private constructor(
-    private val pluginName: String,
+    val pluginName: String,
     private val busRef: ReactiveVariable<BusReference>,
     val parameterMappings: VSTPluginParameterMappingList = VSTPluginParameterMappingList(),
 ) : AudioFlow(), ObjectList.Listener<VSTPluginParameterMapping> {
@@ -56,7 +56,10 @@ class VSTPluginFlow private constructor(
         context[SuperColliderClient].eval(
             query, description = "getting list of automatable parameters"
         ).get().removeSuffix(",").split(",").filter { it.isNotBlank() }
+    }
 
+    val supportsMidiInput by lazy {
+        context[SuperColliderClient].eval("$controllerVar.info.midiInput").join().toBooleanStrictOrNull() ?: false
     }
 
     override fun initialize(context: Context) {
@@ -157,7 +160,7 @@ class VSTPluginFlow private constructor(
 
         fun availablePlugins(context: Context) = context[SuperColliderClient]
             .eval(
-                "var str = \"\"; VSTPlugin.pluginList.do { |p| str = str ++ \", \" ++ p.name }; str;",
+                "var str = \"\"; VSTPlugin.pluginList.do { |p| str = str ++ \", \" ++ p.key }; str;",
                 description = "getting list of available plugins"
             ).get()
             .removePrefix(", ")

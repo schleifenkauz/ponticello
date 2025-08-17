@@ -4,6 +4,7 @@ import hextant.context.Context
 import kotlinx.serialization.Contextual
 import ponticello.model.flow.AudioFlow
 import ponticello.model.flow.AudioFlowGroup
+import ponticello.model.flow.VSTPluginFlow
 import ponticello.model.live.LiveObject
 import ponticello.model.live.LiveTaskObject
 import ponticello.model.player.ClockObject
@@ -13,6 +14,7 @@ import ponticello.model.score.ScoreObject
 import reaktive.value.now
 
 typealias InstrumentReference = ObjectReference<@Contextual InstrumentObject>
+typealias SynthDefReference = ObjectReference<@Contextual SynthDefObject>
 typealias BusReference = ObjectReference<@Contextual BusObject>
 typealias BufferReference = ObjectReference<@Contextual BufferObject>
 typealias GlobalPatternReference = ObjectReference<@Contextual GlobalPatternObject>
@@ -24,7 +26,8 @@ typealias FlowGroupReference = ObjectReference<@Contextual AudioFlowGroup>
 typealias ScriptObjectReference = ObjectReference<@Contextual ScriptObject>
 typealias LiveObjectReference = ObjectReference<@Contextual LiveObject>
 typealias LiveTaskReference = ObjectReference<@Contextual LiveTaskObject>
-typealias FlowReference = ObjectReference<AudioFlow>
+typealias FlowReference = ObjectReference<@Contextual AudioFlow>
+typealias VSTPluginReference = ObjectReference<@Contextual VSTPluginFlow>
 
 fun FlowReference.resolve(context: Context) {
     val allFlows = context.project.flows.allFlows()

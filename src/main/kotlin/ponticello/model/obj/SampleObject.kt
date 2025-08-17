@@ -168,7 +168,6 @@ class SampleObject(
         appendBlock("$superColliderName = Buffer.read(s, ${audioFile.superColliderPath}, action: ", endLine = false) {
             +"arg b"
             +"~ponticello_addr.sendMsg('/buffer_info', '${name.now}', b.duration, b.numChannels, b.sampleRate)"
-            +"postf(\"Buffer info '${name.now}': % seconds, % channels, sampleRate: %\\n\", b.duration, b.numChannels, b.sampleRate)"
         }
         appendLine(");")
     }
