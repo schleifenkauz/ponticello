@@ -144,9 +144,11 @@ class InstrumentRegistryPane(
                         ).showDialog(ev) ?: return@executes
                         if (overwrite) {
                             p.instruments.overwrite(def)
+                            def.sync()
                         }
                     } else {
                         p.instruments.add(def)
+                        def.sync()
                     }
                 }
             }
