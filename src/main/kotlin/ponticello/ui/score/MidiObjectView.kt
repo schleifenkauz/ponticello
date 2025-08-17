@@ -356,7 +356,7 @@ class MidiObjectView(override val obj: MidiObject, inst: ScoreObjectInstance) : 
         private const val CURSOR_OPACITY = 0.6
 
         fun createNewMidiObjectDialog(instr: MidiInstrument, context: Context): Prompt<MidiObject?, *> =
-            compoundPrompt("Configure MIDI object", labelWidth = 200.0) {
+            compoundPrompt("Configure MIDI object", labelWidth = 130.0) {
                 val defaultName = context[ScoreObjectRegistry].availableName("midi")
                 val nameField = TextField(defaultName) named "Object name"
                 val rootPitchSelector =

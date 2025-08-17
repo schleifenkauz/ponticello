@@ -43,6 +43,7 @@ sealed interface MidiInstrument {
         fun getOptions(project: PonticelloProject): List<MidiInstrument> {
             val synthDefs = project.instruments
                 .filterIsInstance<SynthDefObject>()
+                .filter { def -> def.hasParameter("freq") }
                 .map { def -> SynthDef(def.reference()) }
             val midiInstruments = project.flows.allFlows()
                 .filterIsInstance<VSTPluginFlow>()
