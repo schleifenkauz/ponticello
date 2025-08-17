@@ -67,12 +67,16 @@ class ScoreObjectInstance(
 
     fun addedToScore(score: Score) {
         this.score = score
-        if (obj !is UnresolvedScoreObject) obj.addedToScore(context[ScoreObjectRegistry])
+        if (obj !is UnresolvedScoreObject && score.scoreName.now == Score.ROOT_SCORE_NAME) {
+            obj.addedToScore(context[ScoreObjectRegistry])
+        }
     }
 
     fun removedFromScore(option: Score.RegistryOption) {
         score = null
-        if (obj !is UnresolvedScoreObject) obj.removedFromScore(option)
+        if (obj !is UnresolvedScoreObject && score?.scoreName?.now == Score.ROOT_SCORE_NAME) {
+            obj.removedFromScore(option)
+        }
     }
 
     fun initialize(context: Context) {
