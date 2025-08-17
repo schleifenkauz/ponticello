@@ -8,7 +8,6 @@ import fxutils.actions.ContextualizedAction
 import fxutils.actions.collectActions
 import fxutils.hspace
 import fxutils.infiniteSpace
-import fxutils.runFXWithTimeout
 import fxutils.styleClass
 import fxutils.undo.UndoManager
 import hextant.context.withoutUndo
@@ -55,10 +54,7 @@ class AppLayout(
         state.side to ToolPaneTypeList(toolPaneTypes)
     }
 
-    private val savedDividerPositions = project[UI_STATE].sideBarStates.associateTo(mutableMapOf()) { state ->
-        state.side to state.dividerPosition
-    }
-
+    private val savedDividerPositions = mutableMapOf<Side, Double>()
     private var currentlyInSetup = true
 
     private val leftPane = SplitPane()
@@ -102,12 +98,6 @@ class AppLayout(
         for (box in toolbar.children) HBox.setHgrow(box, Priority.ALWAYS)
 
         setupToolPanes()
-        recoverSidePaneDividers()
-        runFXWithTimeout(100) {
-            for ((side, size) in savedDividerPositions) {
-                restorePaneSize(side, size)
-            }
-        }
         for ((_, sideBarList) in sideBarLists) {
             sideBarList.addListener(this, initialize = false)
         }
@@ -115,6 +105,16 @@ class AppLayout(
         right = rightBar styleClass "dock-icons-bar"
         top = toolbar
         center = verticalSplitter
+    }
+
+    fun restorePaneSizes() {
+        val sideBarStates = project[UI_STATE].sideBarStates
+        for ((side, size, _, dividerPositions) in sideBarStates) {
+            savedDividerPositions[side] = size
+            restorePaneSize(side, size)
+            val pane = getSidePane(side) ?: continue
+            pane.setDividerPositions(*dividerPositions.toDoubleArray())
+        }
     }
 
     fun toolPanes(): List<ToolPane> = toolPanes
@@ -160,13 +160,6 @@ class AppLayout(
             }
         }
         return null
-    }
-
-    private fun recoverSidePaneDividers() {
-        for (state in project[UI_STATE].sideBarStates) {
-            val pane = getSidePane(state.side) ?: continue
-            pane.setDividerPositions(*state.dividerPositions.toDoubleArray())
-        }
     }
 
     fun showDocked(toolPane: ToolPane) {

@@ -101,11 +101,13 @@ class PonticelloMainActivity(val project: PonticelloProject) : Activity() {
         setVisible()
         val displayRange = project[UI_STATE].mainScoreDisplayRange
         runAfterLayout {
-            if (displayRange == null) mainScoreView.displayWholeScore().awaitFx {
-                mainScoreView.isVisible = true
-            }
-            else mainScoreView.display(displayRange.start, displayRange.endInclusive).awaitFx {
-                mainScoreView.isVisible = true
+            appLayout.restorePaneSizes()
+            runAfterLayout {
+                if (displayRange == null) mainScoreView.displayWholeScore().awaitFx {
+                    mainScoreView.isVisible = true
+                } else mainScoreView.display(displayRange.start, displayRange.endInclusive).awaitFx {
+                    mainScoreView.isVisible = true
+                }
             }
         }
     }
