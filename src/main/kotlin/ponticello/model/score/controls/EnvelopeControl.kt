@@ -36,9 +36,6 @@ class EnvelopeControl(
     @Transient
     private lateinit var specObserver: Observer
 
-    @Transient
-    private var defaultWarp: Warp? = null
-
     private val auxilSynthDefName get() = "env_${index}"
 
     @Transient
@@ -48,26 +45,34 @@ class EnvelopeControl(
     lateinit var synthDefSynchronizerJob: CompletableFuture<String>
         private set
 
+    @Transient
+    private lateinit var associatedControl: NamedParameterControl
+
     override fun initialize(context: Context, namedControl: NamedParameterControl) {
         index = counter++
         super.initialize(context, namedControl)
         points.initialize(context)
-        specObserver = namedControl.spec.observe { _, _, spec -> updateSynthDef(spec) }
+        specObserver = namedControl.spec.observe { _, old, new ->
+            when {
+                old !is NumericalControlSpec && new is NumericalControlSpec -> updateSynthDef()
+                old is NumericalControlSpec && new is NumericalControlSpec && old.warp != new.warp -> updateSynthDef()
+            }
+        }
         synthDefSynchronizerJob = CompletableFuture.completedFuture("")
-        updateSynthDef(namedControl.spec.now)
+        associatedControl = namedControl
+        updateSynthDef()
         synthDefSynchronizerJob.join()
         points.addListener(this)
     }
 
-    private fun updateSynthDef(spec: ControlSpec?) {
-        if (spec != null && spec !is NumericalControlSpec) {
+    private fun updateSynthDef() {
+        val spec = associatedControl.spec.now as? NumericalControlSpec
+        if (spec !is NumericalControlSpec) {
             System.err.println("Expected NumericalControlSpec but got $spec")
         }
-        val numericalSpec = spec as? NumericalControlSpec
-        if (defaultWarp == numericalSpec?.warp) return
-        defaultWarp = numericalSpec?.warp
+        val warp = spec?.warp
         synthDefSynchronizerJob.join()
-        val curve = (defaultWarp ?: Warp.Linear).toString()
+        val curve = (warp ?: Warp.Linear).toString()
         val arguments = mutableListOf<Any>(index, points.size, curve)
         arguments.addAll(points.getLevels())
         arguments.addAll(points.getTimes())
@@ -102,12 +107,8 @@ class EnvelopeControl(
                 val synthName = "${obj.superColliderPrefix}$uniqueName"
                 val placement = NodePlacement.before(synthName)
                 createEnvelopeSynth(
-                    this,
-                    auxiliaryVarName,
-                    auxilSynthName(uniqueName, parameter),
-                    placement,
-                    cutoff,
-                    paused = true
+                    this, auxiliaryVarName, auxilSynthName(uniqueName, parameter),
+                    placement, cutoff, paused = true
                 )
             }
 
@@ -157,7 +158,7 @@ class EnvelopeControl(
     }
 
     override fun editedEnvelope() {
-        updateSynthDef(null)
+        updateSynthDef()
         update.fire()
     }
 
