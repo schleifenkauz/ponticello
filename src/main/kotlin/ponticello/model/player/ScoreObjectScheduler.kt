@@ -86,6 +86,11 @@ class ScoreObjectScheduler(val context: Context) {
                 client.run("$name.stop;")
             }
 
+            active.obj is MidiObject -> {
+                val name = active.superColliderName
+                client.run("$name.do { |synth| synth.release };")
+            }
+
             else -> {}
         }
     }

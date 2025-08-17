@@ -30,6 +30,9 @@ import reaktive.value.binding.flatMap
 import reaktive.value.binding.orElse
 import reaktive.value.now
 import reaktive.value.reactiveValue
+import kotlin.collections.component1
+import kotlin.collections.component2
+import kotlin.collections.set
 
 @Serializable
 class MidiObject(
@@ -40,7 +43,10 @@ class MidiObject(
     private val notes: MutableList<Note>,
 ) : ScoreObject() {
     override val type: String
-        get() = "piano-roll"
+        get() = "midi"
+
+    override val superColliderPrefix: String
+        get() = "~midi"
 
     @Transient
     lateinit var instrumentSelector: InstrumentSelector
@@ -81,7 +87,7 @@ class MidiObject(
         eventDictionary.initialize(context)
         for (note in notes) {
             note.parent = this
-            note.eventDictionary.initialize(context)
+            note.initialize(context)
         }
     }
 
@@ -164,6 +170,7 @@ class MidiObject(
     }
 
     fun addNote(note: Note) {
+        if (!note.isInitialized) note.initialize(context)
         notes.add(note)
         note.parent = this
         context[UndoManager].record(Edit.AddNote(this, note))
@@ -202,7 +209,7 @@ class MidiObject(
 
     override fun doClone(): ScoreObject = MidiObject(
         mInstrument.copy(), lowestPitch, highestPitch,
-        context.withoutUndo { eventDictionary.clone(context) },
+        eventDictionary.clone(),
         notes.mapTo(mutableListOf()) { n -> n.copy() }
     )
 
@@ -226,6 +233,10 @@ class MidiObject(
         extraArguments: Map<ParameterDefObject, ParameterControl>,
     ): String = writeCode {
         val generalEventDict = eventDictionary.editor.result.now
+        +"arg player_id"
+        +"var my_play_start = ~play_start[player_id]"
+        val synthMap = "~midi_$uniqueName"
+        +"$synthMap = ()"
         for ((idx, n) in notes.withIndex()) {
             val t = n.onset
             if (t < -n.duration) continue
@@ -237,11 +248,17 @@ class MidiObject(
             for ((key, value) in eventDict.entries) eventMap[key.text] = value.code(context)
             for ((key, value) in generalEventDict.entries) eventMap[key.text] = value.code(context)
             eventMap["freq"] = "$midinote.midicps + ${eventMap["detune"] ?: 0}.midiratio"
+            eventMap["amp"] = "((${eventMap["velocity"] ?: 60}) / 127).pow(2)"
             eventMap.remove("detune")
             val namedValues = eventMap.entries.joinToString { (name, value) -> "$name: $value" }
-            val synthName = "~synths['${name}_${idx}']"
             appendBlock("TempoClock.sched(${t.coerceAtLeast(zero)})") {
-                +"$synthName = Synth(\\${instrument.name.now}, [${namedValues}])"
+                appendBlock("if (my_play_start == ~play_start[player_id])") {
+                    appendBlock("s.bind") {
+                        +"var synth = Synth(\\${instrument.name.now}, [${namedValues}])"
+                        +"$synthMap[${idx}] = synth"
+                        +"synth.onFree { $synthMap[${idx}] = nil }"
+                    }
+                }
             }
         }
     }
@@ -329,33 +346,38 @@ class MidiObject(
         lateinit var parent: MidiObject
 
         var onset: Decimal by this::_time.reactive { oldValue, newValue ->
-            parent.context[UndoManager].record(PropertyEdit(this::onset, oldValue, newValue, "Edit note time"))
+            parent.context[UndoManager].record(PropertyEdit(this::onset, oldValue, newValue, "Edit note onset"))
             parent.updateNote(this)
         }
         var duration: Decimal by this::_duration.reactive { oldValue, newValue ->
-            parent.context[UndoManager].record(PropertyEdit(this::duration, oldValue, newValue, "Edit note time"))
+            parent.context[UndoManager].record(PropertyEdit(this::duration, oldValue, newValue, "Edit note duration"))
             parent.updateNote(this)
         }
         var midinote: Int by this::_midinote.reactive { oldValue, newValue ->
-            parent.context[UndoManager].record(PropertyEdit(this::midinote, oldValue, newValue, "Edit note time"))
+            parent.context[UndoManager].record(PropertyEdit(this::midinote, oldValue, newValue, "Edit pitch"))
             parent.updateNote(this)
         }
+
+        val isInitialized get() = eventDictionary.editor.isInitialized
 
         override fun toString(): String = "Note(start: $onset, dur: $duration, pitch: $midinote)"
 
         fun copy() = Note(onset, duration, midinote, eventDictionary.clone())
 
+        fun initialize(context: Context) {
+            eventDictionary.initialize(context)
+        }
+
         companion object {
-            fun create(context: Context, time: Decimal, duration: Decimal, midinote: Int): Note {
-                val eventDictionary = EventDictionaryEditor()
-                context.withoutUndo {
-                    eventDictionary.entries.addLast(
+            fun create(time: Decimal, duration: Decimal, midinote: Int): Note {
+                val eventDictionary = EventDictionaryEditor(
+                    NamedExprListEditor(
                         NamedExprEditor(
                             IdentifierEditor("velocity"),
                             ScExprExpander("60")
                         )
                     )
-                }
+                )
                 return Note(time, duration, midinote, EditorRoot(eventDictionary))
             }
         }

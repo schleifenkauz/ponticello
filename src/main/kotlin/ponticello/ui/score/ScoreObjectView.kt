@@ -211,6 +211,7 @@ abstract class ScoreObjectView(
         for (dragTarget in dragTargets()) {
             dragTarget.cursor = Cursors.OPEN_HAND
             dragTarget.addEventHandler(MouseEvent.ANY) { ev ->
+                if (ev.button != MouseButton.PRIMARY || ev.modifiers.isNotEmpty()) return@addEventHandler
                 when (ev.eventType) {
                     MouseEvent.DRAG_DETECTED -> {
                         dragTarget.cursor = Cursors.CLOSED_HAND

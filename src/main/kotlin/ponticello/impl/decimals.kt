@@ -114,7 +114,7 @@ fun Double.snap(grid: Decimal): Decimal {
         val f = 2.0.pow(i)
         if ((v + f * grid).value <= max) v += f * grid
     }
-    return v.round(grid.precision)
+    return v.withPrecision(grid.precision)
 }
 
 fun Decimal.wrapAt(divisor: Decimal): Decimal = when {
@@ -142,7 +142,7 @@ fun accuracy(delta: Double) = ceil(-log10(delta).coerceAtMost(0.0)).toInt()
 
 fun Double.round(accuracy: Int): Double {
     val factor = 10.0.pow(accuracy)
-    return (this * factor).roundToInt() / factor
+    return (this * factor).roundToLong() / factor
 }
 
 val Decimal.sign get() = value.sign

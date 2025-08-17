@@ -2,7 +2,9 @@ package ponticello.impl
 
 import kotlin.math.pow
 
-class MidiPitch(val step: Int) {
+class MidiPitch(step: Int) {
+    val step = if (step < 0) step + 12 else step
+
     fun getNoteName(): String {
         val octave = step / 12
         val pitchClass = step % 12

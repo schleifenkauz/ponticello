@@ -8,11 +8,12 @@ import fxutils.prompt.IntegerPrompt
 import fxutils.prompt.Prompt
 import fxutils.prompt.compoundPrompt
 import hextant.context.Context
-import hextant.fx.initHextantScene
+import hextant.core.editor.defaultState
 import hextant.serial.EditorRoot
 import javafx.beans.binding.Bindings
 import javafx.collections.FXCollections.observableList
 import javafx.geometry.HorizontalDirection
+import javafx.geometry.Point2D
 import javafx.geometry.VerticalDirection
 import javafx.scene.Cursor
 import javafx.scene.control.ComboBox
@@ -27,7 +28,9 @@ import javafx.scene.shape.Line
 import javafx.scene.shape.Rectangle
 import ponticello.impl.*
 import ponticello.model.obj.InstrumentObject
+import ponticello.model.obj.project
 import ponticello.model.obj.withName
+import ponticello.model.project.uiState
 import ponticello.model.registry.ScoreObjectRegistry
 import ponticello.model.registry.reference
 import ponticello.model.score.MidiObject
@@ -37,6 +40,7 @@ import ponticello.model.score.ScoreObjectInstance
 import ponticello.sc.Identifier
 import ponticello.sc.editor.EventDictionaryEditor
 import ponticello.sc.view.ObjectSelectorControl
+import ponticello.ui.impl.makeSubWindow
 import ponticello.ui.impl.setupDraggingAndResizing
 import ponticello.ui.impl.showDialog
 import reaktive.value.binding.binding
@@ -61,12 +65,12 @@ class MidiObjectView(override val obj: MidiObject, inst: ScoreObjectInstance) : 
         val rect = BorderPane() styleClass "note-object"
         rect.backgroundProperty().bind(Bindings.createObjectBinding({
             val background = backgroundColor.now
-            if (rect.isFocused) //TODO selectedTool.now == Tool.PianoRoll
+            if (rect.isFocused)
                 background(background.interpolate(background.invert(), 0.8))
             else background(background.invert())
         }, backgroundColor.asObservableValue(), rect.focusedProperty()))
         rect.borderProperty().bind(Bindings.createObjectBinding({
-            if (rect.isHover) { //TODO selectedTool.now == Tool.PianoRoll
+            if (rect.isHover) {
                 val background = backgroundColor.now.invert()
                 solidBorder(background.darker(), 2.0)
             } else solidBorder(Color.TRANSPARENT, 2.0)
@@ -98,6 +102,7 @@ class MidiObjectView(override val obj: MidiObject, inst: ScoreObjectInstance) : 
                 val t = snapToGrid(toX, toY)
                 note.onset = t.coerceIn(zero, obj.duration - note.duration)
                 note.midinote = getMidiNote(toY).coerceIn(obj.pitchRange)
+                parentPane.markT(instance.start + t)
             },
             resize = { old, dx, dy, cursor, _ ->
                 when (cursor) {
@@ -106,17 +111,18 @@ class MidiObjectView(override val obj: MidiObject, inst: ScoreObjectInstance) : 
                         val oldTime = note.onset
                         note.onset = t.coerceAtLeast(zero)
                         note.duration += (oldTime - note.onset)
+                        parentPane.markT(instance.start + t)
                     }
 
                     Cursor.E_RESIZE -> {
                         val t = snapToGrid(old.maxX + dx - old.minX, old.maxY + dy)
                         note.duration = t.coerceIn(zero, obj.duration - note.onset)
+                        parentPane.markT(instance.start + note.onset + note.duration)
                     }
                 }
             },
         )
         rect.addEventHandler(MouseEvent.ANY) { ev ->
-            //if (selectedTool.now != Tool.PianoRoll) return@addEventHandler //TODO
             when (ev.eventType) {
                 MouseEvent.MOUSE_ENTERED -> children.remove(cursor)
                 MouseEvent.MOUSE_EXITED -> if (cursor !in children && !ev.isPrimaryButtonDown && !ev.isSecondaryButtonDown) {
@@ -158,8 +164,7 @@ class MidiObjectView(override val obj: MidiObject, inst: ScoreObjectInstance) : 
 
     private fun showEventDictionaryEditor(dictionary: EditorRoot<EventDictionaryEditor>) {
         val control = dictionary.control
-        val window = SubWindow(control, "Note properties", type = SubWindow.Type.ToolWindow)
-        window.scene.initHextantScene(context, applyStyle = false)
+        val window = makeSubWindow(control, "Note properties", context)
         window.resize(300.0, 200.0)
         window.show()
     }
@@ -238,6 +243,7 @@ class MidiObjectView(override val obj: MidiObject, inst: ScoreObjectInstance) : 
         cursor.fillProperty().bind(binding(backgroundColor, cursorOpacity) { background, opacity ->
             background.invert().deriveColor(0.0, 1.0, 1.0, opacity)
         }.asObservableValue())
+        var mousePressed: Point2D? = null
         addEventHandler(MouseEvent.ANY) { ev ->
             when (ev.eventType) {
                 MouseEvent.MOUSE_ENTERED -> {
@@ -256,20 +262,37 @@ class MidiObjectView(override val obj: MidiObject, inst: ScoreObjectInstance) : 
                 }
 
                 MouseEvent.MOUSE_PRESSED -> {
-                    cursorOpacity.now = 1.0
-                    ev.consume()
+                    if (ev.modifiers == setOf(Alt)) {
+                        mousePressed = Point2D(ev.x, ev.y)
+                        cursorOpacity.now = 1.0
+                        ev.consume()
+                    }
                 }
 
-                MouseEvent.MOUSE_DRAGGED -> {
-                    cursor.width = getWidth(snapToGrid(ev.x - cursor.x, ev.y))
+                MouseEvent.MOUSE_DRAGGED -> if (cursorOpacity.now == 1.0) {
+                    val noteEnd = snapToGrid(ev.x, ev.y)
+                    val noteStart = getTime(cursor.x)
+                    cursor.width = getWidth(noteEnd - noteStart)
+                    parentPane.markT(instance.start + noteEnd)
                     ev.consume()
+
                 }
 
-                MouseEvent.MOUSE_RELEASED -> {
+                MouseEvent.MOUSE_RELEASED -> if (cursorOpacity.now == 1.0) {
                     val time = getDuration(cursor.x)
-                    val duration = getDuration(cursor.width)
+                    val duration =
+                        if (mousePressed != null && mousePressed!!.distance(ev.x, ev.y) > 0.1) {
+                            getDuration(cursor.width)
+                        } else {
+                            val meter = parentPane.getNearestGrid(instance.position)?.second
+                            val settings = context.project.uiState
+                            val snapOption =
+                                if (settings.snapEnabled.now) settings.snapOption.now
+                                else null
+                            snapOption?.let { meter?.getDuration(it) } ?: getDuration(cursor.width)
+                        }
                     val midinote = getMidiNote(cursor.y)
-                    val note = MidiObject.Note.create(context, time, duration, midinote)
+                    val note = MidiObject.Note.create(time, duration, midinote)
                     obj.addNote(note)
                     cursorOpacity.now = CURSOR_OPACITY
                     cursor.width = 10.0
@@ -294,7 +317,7 @@ class MidiObjectView(override val obj: MidiObject, inst: ScoreObjectInstance) : 
 
         fun createNewMidiObjectDialog(instr: InstrumentObject, context: Context): Prompt<MidiObject?, *> =
             compoundPrompt("Configure new object") {
-                val defaultName = context[ScoreObjectRegistry].availableName("piano_roll")
+                val defaultName = context[ScoreObjectRegistry].availableName("midi")
                 val nameField = TextField(defaultName) named "Object name"
                 val rootPitchSelector =
                     ComboBox(observableList(MidiPitch.allPitchClasses())) named "Root pitch class"
@@ -307,7 +330,7 @@ class MidiObjectView(override val obj: MidiObject, inst: ScoreObjectInstance) : 
                     val lowestPitch = rootPitchSelector.value.step + 12 * registerSpinner.value()
                     val highestPitch = lowestPitch + 12 * octaves.value()
                     val notes = mutableListOf<MidiObject.Note>()
-                    val eventDictionary = EditorRoot(EventDictionaryEditor())
+                    val eventDictionary = EditorRoot(EventDictionaryEditor().defaultState())
                     MidiObject(
                         reactiveVariable(instr.reference()),
                         lowestPitch, highestPitch,
