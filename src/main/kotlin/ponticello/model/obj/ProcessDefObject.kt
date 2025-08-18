@@ -83,12 +83,20 @@ class ProcessDefObject(
             }
             setup.writeCode(writer, context)
             appendBlock("while { t <= duration }") {
-                +"var delta___"
+                append("var delta___")
+                for (variable in loop.variables) {
+                    append(", ")
+                    append(variable.text)
+                }
+                appendLine(";")
                 for (p in parameters) {
                     val name = p.name.now
                     +"$name = ${name}___.value(t)"
                 }
-                loop.writeCode(writer, context)
+                for (statement in loop.statements) {
+                    statement.code(writer, context)
+                    appendLine("; ")
+                }
                 +"delta___ = ${delta.code(context)}"
                 +"delta___.wait"
                 +"t = t + delta___"

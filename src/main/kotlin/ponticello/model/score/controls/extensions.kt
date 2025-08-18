@@ -102,6 +102,7 @@ fun ScWriter.writeProcessCode(
     val controlMap = createControlMap(obj, extraArguments)
     appendBlock("$superColliderName = Task", endLine = false) {
         +"var auxilBuses = (), auxilSynths = (), t0, delta_t"
+        +"~args_$uniqueName = ()"
         createAuxilMaps(uniqueName)
         for ((param, control) in controlMap) {
             val (spec, ctrl) = control
