@@ -48,6 +48,7 @@ import reaktive.value.fx.asObservableValue
 import reaktive.value.fx.asReactiveValue
 import reaktive.value.now
 import reaktive.value.reactiveVariable
+import java.util.*
 import kotlin.math.roundToInt
 
 class MidiObjectView(override val obj: MidiObject, inst: ScoreObjectInstance) : ScoreObjectView(inst) {
@@ -58,6 +59,7 @@ class MidiObjectView(override val obj: MidiObject, inst: ScoreObjectInstance) : 
     private val cursor = Rectangle(10.0, pixelsPerPitch) styleClass "note-cursor"
     private val lowestPitchLabel = Label(MidiPitch(obj.lowestPitch).getNoteName())
     private val highestPitchLabel = Label(MidiPitch(obj.highestPitch).getNoteName())
+    private val noteDetailWindows = WeakHashMap<MidiObject.Note, SubWindow>()
 
     private fun getY(pitch: Int) = (obj.highestPitch - pitch) * pixelsPerPitch
 
@@ -136,7 +138,7 @@ class MidiObjectView(override val obj: MidiObject, inst: ScoreObjectInstance) : 
 
                 MouseEvent.MOUSE_CLICKED -> when {
                     ev.button == MouseButton.SECONDARY -> obj.removeNote(note)
-                    ev.clickCount >= 2 -> showEventDictionaryEditor(note.eventDictionary)
+                    ev.clickCount >= 2 -> showEventDictionaryEditor(note)
                     else -> rect.requestFocus()
                 }
             }
@@ -163,11 +165,12 @@ class MidiObjectView(override val obj: MidiObject, inst: ScoreObjectInstance) : 
         }
     }
 
-    private fun showEventDictionaryEditor(dictionary: EditorRoot<EventDictionaryEditor>) {
-        val control = dictionary.control
-        val window = makeSubWindow(control, "Note properties", context)
+    private fun showEventDictionaryEditor(note: MidiObject.Note) {
+        val control = note.eventDictionary.control
+        val window = noteDetailWindows.getOrPut(note) { makeSubWindow(control, "Note properties", context) }
         window.resize(300.0, 200.0)
-        window.show()
+        window.showAndBringToFront()
+        window.requestFocus()
     }
 
     fun updatedNote(note: MidiObject.Note) {
