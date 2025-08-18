@@ -3,7 +3,6 @@ package ponticello.ui.score
 import fxutils.Ctrl
 import fxutils.modifiers
 import hextant.context.Context
-import javafx.geometry.Point2D
 import javafx.scene.input.MouseEvent
 import ponticello.impl.*
 import ponticello.model.flow.AudioFlowGroup
@@ -69,10 +68,11 @@ class NavigableScorePane(score: Score, context: Context) : RootScorePane(score, 
     }
 
     private fun addFlowGroup(ev: MouseEvent) {
-        val y = getScoreY(ev.y)
+        val anchor = localToScreen(ev.x, ev.y) ?: return
         val name = NamePrompt(context[AudioFlows], "Name for new flow group", "")
-            .showDialog(scene.window, Point2D(ev.x, ev.y)) ?: return
+            .showDialog(scene.window, anchor) ?: return
         val color = randomColor()
+        val y = getScoreY(ev.y)
         val group = AudioFlowGroup.create(name, y, color)
         context[AudioFlows].add(group)
     }
