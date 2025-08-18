@@ -26,6 +26,9 @@ class Score(
     val objects get() = objectInstances.mapTo(mutableSetOf()) { inst -> inst.obj }
 
     @Transient
+    private var parentObject: ScoreObject? = null
+
+    @Transient
     var scoreName: ReactiveString = reactiveValue(ROOT_SCORE_NAME)
         private set
     @Transient
@@ -53,6 +56,7 @@ class Score(
         scoreName = parentObject.name
         maxTime = parentObject.duration()
         maxY = parentObject.height()
+        this.parentObject = parentObject as? ScoreObjectGroup
     }
 
     fun addListener(listener: ScoreListener, notify: Boolean = true) {
@@ -75,6 +79,9 @@ class Score(
     fun clone() = Score(instances.mapTo(mutableListOf()) { inst -> inst.duplicate(inst.position) })
 
     fun addObject(inst: ScoreObjectInstance, autoSelect: Boolean) {
+        if (inst.obj == parentObject) {
+            Logger.error("Cannot add ${inst.obj} as a child to itself", Logger.Category.Score)
+        }
         inst.initialize(context)
         inst.addedToScore(this)
         Logger.info("Adding object ${inst.obj.name.now} at ${inst.position} to ${scoreName.now}", Logger.Category.Score)
@@ -153,6 +160,7 @@ class Score(
     }
 
     fun allInstances(): Sequence<ScoreObjectInstance> = sequence {
+        val set = mutableSetOf<ScoreObject>()
         for (inst in objectInstances) {
             val o = inst.obj
             yield(inst)
