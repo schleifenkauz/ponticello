@@ -3,6 +3,7 @@ package ponticello.ui.registry
 import fxutils.SubWindow
 import fxutils.actions.ContextualizedAction
 import fxutils.actions.collectActions
+import fxutils.showAndBringToFront
 import javafx.event.Event
 import javafx.geometry.Pos
 import javafx.scene.Parent
@@ -69,7 +70,7 @@ class GlobalPatternRegistryPane(
             val title = obj.name.map { n -> "Plot $n" }
             makeSubWindow(pane, title, obj.context)
         }
-        window.showOrBringToFront()
+        window.showAndBringToFront()
     }
 
     companion object : Type(9, "Patterns") {

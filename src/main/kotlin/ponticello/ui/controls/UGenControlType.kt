@@ -40,8 +40,7 @@ data object UGenControlType : ControlType<UGenControl>() {
     ): Node {
         val actions = actions.withContext(Pair(namedControl, view))
         val window by lazy { makeCodePaneWindow(control.expr, control.context, namedControl, actions) }
-        val showWindowButton = showWindowAction.withContext { window }.makeButton("medium-icon-button")
-        return showWindowButton
+        return showWindowAction.withContext { window }.makeButton("medium-icon-button")
     }
 
     override fun createInitialControl(

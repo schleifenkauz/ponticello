@@ -3,6 +3,7 @@ package ponticello.ui.controls
 import fxutils.SubWindow
 import fxutils.actions.ContextualizedAction
 import fxutils.actions.action
+import fxutils.showAndBringToFront
 import hextant.context.Context
 import javafx.scene.Node
 import javafx.scene.layout.Region
@@ -54,7 +55,10 @@ sealed class ControlType<C : ParameterControl> {
 
         val showWindowAction = action<() -> SubWindow>("Edit code") {
             icon(Material2AL.CODE)
-            executes { w -> w().showOrBringToFront() }
+            executes { w ->
+                val window = w()
+                window.showAndBringToFront()
+            }
         }
 
         @Suppress("UNCHECKED_CAST")
