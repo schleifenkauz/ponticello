@@ -1,5 +1,6 @@
 package ponticello.model.score
 
+import hextant.context.Context
 import javafx.scene.paint.Color
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -34,4 +35,8 @@ class UnresolvedScoreObject : ScoreObject() {
     ): String = ""
 
     override fun doClone(): ScoreObject = this
+
+    override fun initialize(context: Context) {
+        setContext(context)
+    }
 }
