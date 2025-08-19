@@ -32,6 +32,9 @@ class ScoreObjectDuplicator {
     }
 
     fun enterDuplicateMode(obj: ScoreObject, view: ScoreObjectView) {
+        if (clipboardObject != null) {
+            exitDuplicateMode()
+        }
         val parameters = SnapshotParameters()
         view.snapshot(parameters, null)
         val image = view.snapshot(parameters, null)

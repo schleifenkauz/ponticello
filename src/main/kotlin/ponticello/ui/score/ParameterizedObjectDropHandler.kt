@@ -5,21 +5,26 @@ import fxutils.prompt.SimpleSearchableListView
 import fxutils.solidBorder
 import javafx.scene.Node
 import javafx.scene.input.DragEvent
+import javafx.scene.layout.Region
 import javafx.scene.paint.Color
+import ponticello.impl.json
 import ponticello.model.obj.BufferObject
 import ponticello.model.obj.BusObject
+import ponticello.model.obj.ParameterizedObject
 import ponticello.model.registry.BufferRegistry
 import ponticello.model.registry.BusRegistry
 import ponticello.model.score.ParameterControlList.NamedParameterControl
 import ponticello.model.score.controls.BufferControl
 import ponticello.model.score.controls.BusControl
 import ponticello.sc.ControlSpec
+import ponticello.ui.score.ParameterControlsPane.Companion.SERIALIZED_CONTROL_FORMAT
 import ponticello.ui.score.ScoreObjectView.Companion.BORDER_RADIUS
 import reaktive.value.now
 
-class SoundProcessDropHandler(private val view: SoundProcessView): ConfiguredDropHandler() {
-    private val obj get() = view.obj
-    private val context get() = view.context
+class ParameterizedObjectDropHandler(
+    private val obj: ParameterizedObject, private val view: Region,
+) : ConfiguredDropHandler() {
+    private val context get() = obj.context
     private var borderBefore: javafx.scene.layout.Border? = null
 
     override fun canDrop(event: DragEvent): Boolean {
@@ -33,6 +38,13 @@ class SoundProcessDropHandler(private val view: SoundProcessView): ConfiguredDro
     }
 
     init {
+        handleFormat(SERIALIZED_CONTROL_FORMAT) { _, db ->
+            val jsonString = db.getContent(SERIALIZED_CONTROL_FORMAT) as String
+            val control = json.decodeFromString<NamedParameterControl>(jsonString)
+            obj.controls.duplicateControl(control)
+            true
+
+        }
         handleTypedFormat(NamedParameterControl.DATA_FORMAT) { _, namedControl ->
             obj.controls.duplicateControl(namedControl)
             true

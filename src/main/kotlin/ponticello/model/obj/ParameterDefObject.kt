@@ -5,6 +5,7 @@ import javafx.scene.paint.Color
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import ponticello.impl.copy
+import ponticello.impl.one
 import ponticello.impl.toDecimal
 import ponticello.sc.*
 import ponticello.sc.editor.ControlSpecEditor
@@ -65,10 +66,16 @@ class ParameterDefObject(val spec: ReactiveVariable<ControlSpec>) : AbstractRena
     override fun copy() = ParameterDefObject(spec.copy())
 
     companion object {
-        private val FREQ = ParameterDefObject(
+        val FREQ = ParameterDefObject(
             "freq",
             NumericalControlSpec(440.0, 20.0, 20000.0, 1.0.toDecimal(), 0.02, Warp.Exponential, Color.BLACK)
         )
+
+        val MIDINOTE = ParameterDefObject(
+            "midinote",
+            NumericalControlSpec(60.0, 0.0, 127.0, step = one, warp = Warp.Linear)
+        )
+
         val AMP = ParameterDefObject(
             "amp",
             NumericalControlSpec(0.1, 0.0, 1.0, 0.01.toDecimal(), 0.02, Warp.Linear, Color.ORANGE)

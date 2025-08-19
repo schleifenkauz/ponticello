@@ -22,6 +22,8 @@ import ponticello.model.flow.NodePlacement
 import ponticello.model.live.LiveConfig
 import ponticello.model.live.QuantizationConfig
 import ponticello.model.obj.*
+import ponticello.model.player.ActiveObjectsManager
+import ponticello.model.player.ActiveScoreObject
 import ponticello.model.player.ScorePlayer
 import ponticello.model.registry.ScoreObjectRegistry
 import ponticello.model.score.controls.EnvelopeControl
@@ -104,7 +106,12 @@ sealed class ScoreObject : AbstractRenamableObject() {
 
     open fun duration(): ReactiveValue<Decimal> = _duration
 
+    open fun activeObjects(): List<ActiveScoreObject> = context[ActiveObjectsManager].activeInstances(this)
+
     fun height(): ReactiveValue<Decimal> = _height
+
+    open val minY: Decimal get() = zero
+    open val maxY: Decimal get() = _height.now
 
     override fun initialize(context: Context) {
         super.initialize(context)
@@ -120,10 +127,8 @@ sealed class ScoreObject : AbstractRenamableObject() {
     }
 
     abstract fun writeCode(
-        uniqueName: String,
-        placement: NodePlacement?,
-        cutoff: Decimal,
-        latency: Decimal,
+        instance: ScoreObjectInstance?, uniqueName: String, placement: NodePlacement?,
+        cutoff: Decimal, latency: Decimal,
         extraArguments: Map<ParameterDefObject, ParameterControl> = emptyMap(),
     ): String
 
@@ -266,15 +271,16 @@ sealed class ScoreObject : AbstractRenamableObject() {
         viewManager.removeListener(listener)
     }
 
-    fun addedToScore(registry: ScoreObjectRegistry) {
+    open fun addedToScore(score: Score, group: AbstractScoreObjectGroup?) {
         if (this is UnresolvedScoreObject) return
+        val registry = score.context[ScoreObjectRegistry]
         if (!registry.has(this)) {
             registry.context.withoutUndo { registry.add(this) }
         }
         instances.now += 1
-        if (this is ScoreObjectGroup) {
-            for (inst in score.objectInstances) {
-                inst.obj.addedToScore(registry)
+        if (this is AbstractScoreObjectGroup) {
+            for (inst in this.score.objectInstances) {
+                inst.obj.addedToScore(score, this)
             }
         }
     }

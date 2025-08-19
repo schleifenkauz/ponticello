@@ -8,13 +8,12 @@ import hextant.context.compoundEdit
 import javafx.scene.control.Label
 import javafx.scene.layout.HBox
 import javafx.scene.layout.Region
-import ponticello.model.score.SoundProcess
+import ponticello.model.obj.ParameterizedObject
 import ponticello.model.score.controls.ParameterControl
 import ponticello.ui.launcher.PonticelloApp.Companion.primaryStage
-import reaktive.value.now
 
 class MultiObjectControlPopup(
-    private val selectedObjects: List<SoundProcess>,
+    private val selectedObjects: List<ParameterizedObject>,
 ) : SearchableListView<MultiObjectControlPopup.Option>("Select control") {
     override fun options(): List<Option> = selectedObjects
         .map { obj -> obj.controls.controlMap.keys }
@@ -40,7 +39,7 @@ class MultiObjectControlPopup(
     override fun makeOption(text: String): Option? {
         val availableTypes = ControlType.all.filter { t ->
             t.supportsDialogInput() && selectedObjects.all { obj ->
-                val spec = obj.def.getSpec(text)?.now ?: return@makeOption null
+                val spec = obj.getSpec(text) ?: return@makeOption null
                 t.applicableOn(obj, spec)
             }
         }
@@ -55,7 +54,7 @@ class MultiObjectControlPopup(
     data class Option(val controlName: String, val controlType: ControlType<*>, val controls: List<ParameterControl>?)
 
     companion object {
-        fun show(context: Context, selectedObjects: List<SoundProcess>) {
+        fun show(context: Context, selectedObjects: List<ParameterizedObject>) {
             val popup = MultiObjectControlPopup(selectedObjects)
             val option = popup.showPopup(context[primaryStage], null) ?: return
 
@@ -63,12 +62,12 @@ class MultiObjectControlPopup(
             val type = option.controlType as ControlType<ParameterControl>
             val name = option.controlName
             val specs = selectedObjects.map { obj ->
-                obj.controls.get(name).spec.now ?: return@show
+                obj.getSpec(name) ?: return@show
             }
             if (option.controls == null) {
                 context.compoundEdit("Update $name") {
                     val controls = selectedObjects.map { obj ->
-                        val spec = obj.def.getSpec(name)?.now ?: return@show
+                        val spec = obj.getSpec(name) ?: return@show
                         type.createInitialControl(obj, spec, null, name, anchorNode = null)
                     }
                     if (type.showDialogInput(name, specs, controls, context)) {
@@ -76,7 +75,8 @@ class MultiObjectControlPopup(
                             if (obj.controls.has(name)) {
                                 obj.controls.reassignControl(name, ctrl)
                             } else {
-                                obj.controls.addControl(name, ctrl)
+                                val customSpec = if (obj.def.hasParameter(name)) null else obj.getSpec(name)
+                                obj.controls.addControl(name, ctrl, customSpec)
                             }
                         }
                     }

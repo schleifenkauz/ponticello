@@ -114,7 +114,7 @@ class LauncherGrid private constructor(
             obj = obj.cut(obj.duration - cutoff, HorizontalDirection.LEFT, name) ?: obj
         }
         runFXWithTimeout(50) { //timeout to avoid double playback (maybe solve this in a cleaner way...)
-            score.addObject(obj, time, y * score.maxY.now, autoSelect = false)
+            score.addObject(obj, time, y * score.maxY, autoSelect = false)
         }
     }
 

@@ -63,6 +63,7 @@ class TempoGridObject(
         TempoGridObject(meter, firstBar.copy())
 
     override fun writeCode(
+        instance: ScoreObjectInstance?,
         uniqueName: String,
         placement: NodePlacement?,
         cutoff: Decimal,

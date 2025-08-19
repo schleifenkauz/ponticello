@@ -372,7 +372,8 @@ abstract class ScoreObjectView(
                 }
 
                 ev.button == MouseButton.PRIMARY -> {
-                    if (this is ScoreObjectGroupView && this.scorePane.selectedArea?.isEmpty() == false) {
+                    if (this is AbstractScoreObjectGroupView && this.scorePane.selectedArea?.isEmpty() == false) {
+                        ev.consume()
                         return@addEventHandler
                     }
                     selectView(addToSelection = ev.isShiftDown)
@@ -471,16 +472,17 @@ abstract class ScoreObjectView(
         context[AppLayout].get<ScoreObjectDetailPane>().hidePopup()
         val movedObjects = context[ScoreObjectSelectionManager].selectedInstances + this.instance
         val minDeltaT = -movedObjects.minOf { inst -> inst.start }
-        val maxDeltaT = movedObjects.minOf { inst -> inst.score!!.maxTime.now - inst.end }
-        val minDeltaY = -movedObjects.minOf { inst -> inst.y }
-        val maxDeltaY = movedObjects.minOf { inst -> inst.score!!.maxY.now - (inst.y + inst.height) }
+        val maxDeltaT = movedObjects.minOf { inst -> parentPane.score.maxTime - inst.end }
+        val minDeltaY = -movedObjects.minOf { inst -> inst.y - parentPane.score.minY }
+        val maxDeltaY = movedObjects.minOf { inst -> parentPane.score.maxY - (inst.y + inst.height) }
         val (t, y) = parentPane.snapToGrid(toX, toY)
         var deltaT = (t - instance.start).coerceIn(minDeltaT..maxDeltaT)
         var deltaY = (y - instance.y).coerceIn(minDeltaY..maxDeltaY)
         if (ev.isShiftDown) deltaT = zero
         if (ev.isControlDown) deltaY = zero
         for (inst in movedObjects) {
-            inst.moveTo(inst.start + deltaT, inst.y + deltaY, simpleMove = false)
+            val transformedY = parentPane.coerceAndTransformScoreY(inst.y + deltaY, obj)
+            inst.moveTo(inst.start + deltaT, transformedY, simpleMove = false)
         }
         parentPane.markT(instance.start + deltaT)
     }
@@ -543,7 +545,7 @@ abstract class ScoreObjectView(
         }
     }
 
-    final override fun moved(start: Decimal, y: Decimal) {
+    override fun moved(start: Decimal, y: Decimal) {
         if (!parentPane.isRoot(obj)) {
             relocate(parentPane.getX(instance.start), parentPane.getScreenY(y))
         }
@@ -571,7 +573,7 @@ abstract class ScoreObjectView(
             newDur = newDur.coerceAtLeast(getDuration(10.0))
             if (side == Side.LEFT) newDur = newDur.coerceAtMost(instance.end)
             if (parentPane is SubScorePane && side == Side.RIGHT) newDur =
-                newDur.coerceAtMost(parentPane.score.maxTime.now - instance.start)
+                newDur.coerceAtMost(parentPane.score.maxTime - instance.start)
 
             if (isCreatingLoop) {
                 val factor = if (side == Side.LEFT) -1 else if (side == Side.RIGHT) +1 else return
@@ -611,7 +613,7 @@ abstract class ScoreObjectView(
         }
     }
 
-    fun getDeltaT(direction: HorizontalDirection): Decimal {
+    fun getDeltaT(direction: HorizontalDirection = RIGHT): Decimal {
         val parentPane = parentPane
         val factor = if (direction == LEFT) -1.0 else 1.0
         val meter = parentPane.getNearestGrid(instance.position)?.second
@@ -623,12 +625,14 @@ abstract class ScoreObjectView(
         return deltaT
     }
 
+    protected open fun getDeltaY() = 0.01.asY
+
     fun adjustHorizontal(direction: HorizontalDirection, resizeMode: ScoreObject.ResizeMode?) {
         check(obj.canResizeHorizontally) { "Cannot adjust horizontal $this because it has its own sub-window." }
         val parentPane = parentPane
         val deltaT = getDeltaT(direction)
         if (resizeMode != null) {
-            val targetDuration = (obj.duration + deltaT).coerceAtMost(parentPane.score.maxTime.now - instance.start)
+            val targetDuration = (obj.duration + deltaT).coerceAtMost(parentPane.score.maxTime - instance.start)
             obj.resize(
                 targetDuration, obj.height,
                 resizeMode, Side.RIGHT
@@ -636,28 +640,28 @@ abstract class ScoreObjectView(
             parentPane.markT(instance.end)
         } else {
             val (t, _) = parentPane.snapToGrid(instance.position.plusTime(deltaT))
-            val start = t.coerceIn(zero, parentPane.score.maxTime.now - obj.duration)
+            val start = t.coerceIn(zero, parentPane.score.maxTime - obj.duration)
             instance.setTime(start)
             parentPane.markT(start)
         }
     }
 
     open fun adjustVertical(direction: VerticalDirection, resizeMode: ScoreObject.ResizeMode?) {
-        var deltaY = 0.01.asTime
+        var deltaY = getDeltaY()
         if (direction == VerticalDirection.UP) deltaY *= -1
         adjustVertical(resizeMode, deltaY)
     }
 
     protected fun adjustVertical(resizeMode: ScoreObject.ResizeMode?, deltaY: Decimal) {
         val parentPane = parentPane
-        if (resizeMode != null) {
-            val targetHeight = (obj.height + deltaY).coerceAtMost(parentPane.score.maxY.now - instance.y)
+        if (resizeMode != null && obj.canResizeVertically) {
+            val targetHeight = (obj.height + deltaY).coerceAtMost(parentPane.score.maxY - instance.y)
             obj.resize(
                 obj.duration, targetHeight,
                 resizeMode, Side.BOTTOM
             )
         } else {
-            val y = (instance.y + deltaY).coerceIn(zero, parentPane.score.maxY.now - obj.height)
+            val y = parentPane.coerceAndTransformScoreY(instance.y + deltaY, obj)
             instance.setY(y)
         }
     }

@@ -37,6 +37,7 @@ class TaskObject(
     }
 
     override fun writeCode(
+        instance: ScoreObjectInstance?,
         uniqueName: String,
         placement: NodePlacement?,
         cutoff: Decimal,

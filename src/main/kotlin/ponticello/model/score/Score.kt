@@ -15,7 +15,7 @@ import reaktive.value.now
 import reaktive.value.reactiveValue
 
 @Serializable
-class Score(
+open class Score(
     private val instances: MutableList<ScoreObjectInstance> = mutableListOf(),
 ) : AbstractContextualObject(), ScoreObject.Listener {
     val objectInstances: List<ScoreObjectInstance> get() = instances
@@ -26,19 +26,14 @@ class Score(
     val objects: Set<ScoreObject> get() = instancesByObject.keys
 
     @Transient
-    private var parentObject: ScoreObject? = null
-
-    @Transient
-    var scoreName: ReactiveString = reactiveValue(ROOT_SCORE_NAME)
+    var parentObject: ScoreObject? = null
         private set
 
-    @Transient
-    var maxTime = reactiveValue(Decimal.INF)
-        private set
+    val scoreName: ReactiveString get() = parentObject?.name ?: reactiveValue(ROOT_SCORE_NAME)
 
-    @Transient
-    var maxY = reactiveValue(one)
-        private set
+    val maxTime get() = parentObject?.duration ?: Decimal.INF
+    val minY get() = parentObject?.minY ?: zero(precision = 4)
+    val maxY get() = parentObject?.maxY ?: one(precision = 4)
 
     @Transient
     private val views = ListenerManager.createWeakListenerManager<ScoreListener>()
@@ -46,13 +41,23 @@ class Score(
     @Transient
     private val intervalTree = IntervalTree<ScoreObjectInstance>()
 
+    @Transient
+    var isAuxiliary = false
+        private set
+
     private val undo get() = context[UndoManager]
 
     override fun initialize(context: Context) {
         super.initialize(context)
-        for (inst in objectInstances) {
+        val itr = instances.listIterator()
+        for (inst in itr) {
             inst.initialize(context)
-            inst.addedToScore(this)
+            if (inst.obj.duration <= zero && (inst.obj !is MemoObject && inst.obj !is TaskObject)) {
+                Logger.warn("Removing zero-duration object $inst from score", Logger.Category.Score)
+                itr.remove()
+                continue
+            }
+            inst.addedToScore(this, parentObject as? AbstractScoreObjectGroup)
             val instances = instancesByObject.getOrPut(inst.obj) { mutableSetOf() }
             instances.add(inst)
             if (instances.size == 1) {
@@ -62,12 +67,10 @@ class Score(
         }
     }
 
-    fun initialize(context: Context, parentObject: ScoreObject) {
+    fun initialize(context: Context, parentObject: ScoreObject, auxiliary: Boolean = false) {
+        this.parentObject = parentObject
         initialize(context)
-        scoreName = parentObject.name
-        maxTime = parentObject.duration()
-        maxY = parentObject.height()
-        this.parentObject = parentObject as? ScoreObjectGroup
+        this.isAuxiliary = auxiliary
     }
 
     fun addListener(listener: ScoreListener, notify: Boolean = true) {
@@ -90,11 +93,15 @@ class Score(
     fun clone() = Score(instances.mapTo(mutableListOf()) { inst -> inst.duplicate(inst.position) })
 
     fun addObject(inst: ScoreObjectInstance, autoSelect: Boolean) {
+        if (inst.obj.duration <= zero && (inst.obj !is MemoObject && inst.obj !is TaskObject)) {
+            Logger.error("Attempt to add zero-duration object $inst to the score")
+            return
+        }
         if (inst.obj == parentObject) {
             Logger.error("Cannot add ${inst.obj} as a child to itself", Logger.Category.Score)
         }
         inst.initialize(context)
-        inst.addedToScore(this)
+        inst.addedToScore(this, parentObject as? AbstractScoreObjectGroup)
         Logger.info("Adding object ${inst.obj.name.now} at ${inst.position} to ${scoreName.now}", Logger.Category.Score)
         instances.add(inst)
         intervalTree.add(inst, inst.start, inst.end)
@@ -146,7 +153,7 @@ class Score(
         if (side !in setOf(Side.LEFT, Side.RIGHT)) return
         for (inst in instancesByObject[obj].orEmpty()) {
             val oldStart = if (side == Side.LEFT) inst.start - deltaDuration else inst.start
-            val oldEnd = if (side == Side.LEFT) inst.start else inst.start + inst.obj.duration
+            val oldEnd = if (side == Side.LEFT) inst.end else inst.end - deltaDuration
             reinsertInterval(inst, oldStart, oldEnd)
         }
     }
@@ -227,7 +234,7 @@ class Score(
             else -> {
                 val inst = ScoreObjectInstance(obj, ObjectPosition.ZERO)
                 val score = Score(mutableListOf(inst))
-                score.initialize(obj.context, parentObject = obj)
+                score.initialize(obj.context, parentObject = obj, auxiliary = true)
                 score
             }
         }

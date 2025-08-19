@@ -22,7 +22,7 @@ import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Executors
 import java.util.concurrent.Future
 
-abstract class RootScorePane(score: Score, context: Context) : ScorePane(score, context) {
+abstract class RootScorePane(score: Score, context: Context) : RegularScorePane(score, context) {
     private val positionTracker = Line() styleClass "mouse-tracker-line"
 
     private var latestRepaintTrigger = 0L
@@ -34,7 +34,7 @@ abstract class RootScorePane(score: Score, context: Context) : ScorePane(score, 
 
     final override val root: ScorePane
         get() = this
-    final override val associatedObject: ScoreObjectGroup?
+    final override val associatedObject: ScoreObject?
         get() = null
     final override var pixelsPerSecond: Double = Double.NaN
         private set
@@ -75,14 +75,14 @@ abstract class RootScorePane(score: Score, context: Context) : ScorePane(score, 
         setOnMouseExited { mouseExited() }
     }
 
-    protected open fun mouseMoved(ev: MouseEvent) {
+    override fun mouseMoved(ev: MouseEvent) {
         val (t, y) = snapToGrid(ev.x, ev.y)
         markT(t)
         context[ScoreObjectDuplicator].movedCursor(this, t, y)
         ev.consume()
     }
 
-    protected open fun mouseExited() {
+    override fun mouseExited() {
         for (gridView in allViews.filterIsInstance<TempoGridObjectView>()) {
             gridView.unmark()
         }

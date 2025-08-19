@@ -16,7 +16,7 @@ class SubScorePane(
     private val obj: ScoreObjectGroup,
     private val parentPane: ScorePane,
     context: Context,
-) : ScorePane(obj.score, context) {
+) : RegularScorePane(obj.score, context) {
     override val root: ScorePane
         get() = parentPane.root
     override val displayStart: Decimal
@@ -30,7 +30,7 @@ class SubScorePane(
     override val absolutePosition: ObjectPosition
         get() = parentPane.absolutePosition + instance.position
 
-    override val associatedObject: ScoreObjectGroup
+    override val associatedObject: ScoreObject
         get() = obj
 
     fun initialize() {

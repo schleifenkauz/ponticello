@@ -54,7 +54,7 @@ class PlaybackMessageListener(
         val scorePosition = ObjectPosition(scoreTime, y)
         ScorePlayer.execute {
             player.scheduler.scheduleObject(
-                obj, player, cutoff =  zero, scorePosition,
+                obj, instance = null, player, cutoff =  zero, scorePosition,
                 serverLatency, timestamp, absolute = true, emptyMap()
             )
         }

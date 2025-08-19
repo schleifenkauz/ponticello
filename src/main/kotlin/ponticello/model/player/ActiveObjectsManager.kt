@@ -13,10 +13,7 @@ import ponticello.model.obj.MidiInstrument
 import ponticello.model.obj.ParameterDefObject
 import ponticello.model.obj.SynthDefObject
 import ponticello.model.registry.ScoreObjectRegistry
-import ponticello.model.score.MidiObject
-import ponticello.model.score.ObjectPosition
-import ponticello.model.score.ScoreObject
-import ponticello.model.score.SoundProcess
+import ponticello.model.score.*
 import ponticello.model.score.controls.ParameterControl
 import ponticello.sc.client.getArgument
 import reaktive.value.now
@@ -27,13 +24,13 @@ class ActiveObjectsManager(private val context: Context) : OSCMessageListener {
     private val byAbsolutePosition = mutableMapOf<ScoreObject, MutableMap<ObjectPosition, ActiveScoreObject>>()
 
     fun insert(
-        player: ScorePlayer, obj: ScoreObject, absolutePosition: ObjectPosition,
+        player: ScorePlayer, obj: ScoreObject, instance: ScoreObjectInstance?, absolutePosition: ObjectPosition,
         cutoff: Decimal,
         extraArguments: Map<ParameterDefObject, ParameterControl>,
     ): ActiveScoreObject {
         val suffix = nextSuffix[obj] ?: 0
         nextSuffix[obj] = suffix + 1
-        val active = ActiveScoreObject(player, obj, absolutePosition, suffix, cutoff, extraArguments)
+        val active = ActiveScoreObject(player, obj, instance, absolutePosition, suffix, cutoff, extraArguments)
         bySuffix.getOrPut(obj, ::mutableMapOf)[suffix] = active
         byAbsolutePosition.getOrPut(obj, ::mutableMapOf)[absolutePosition] = active
         return active
@@ -90,7 +87,7 @@ class ActiveObjectsManager(private val context: Context) : OSCMessageListener {
         bySuffix[obj]?.remove(active.suffix)
         byAbsolutePosition[obj]?.remove(active.absolutePosition)
         if ((obj is SoundProcess && obj.instrument is SynthDefObject) ||
-            (obj is MidiObject && obj.instrument.now is MidiInstrument.SynthDef)
+            (obj is LegacyMidiObject && obj.instrument.now is MidiInstrument.SynthDef)
         ) {
             val node = ActiveObjectNode(obj, active)
             context[NodeTree].removeNode(node)

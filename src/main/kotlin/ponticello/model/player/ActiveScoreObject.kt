@@ -4,12 +4,14 @@ import ponticello.impl.Decimal
 import ponticello.model.obj.ParameterDefObject
 import ponticello.model.score.ObjectPosition
 import ponticello.model.score.ScoreObject
+import ponticello.model.score.ScoreObjectInstance
 import ponticello.model.score.controls.ParameterControl
 import reaktive.value.now
 
 data class ActiveScoreObject(
     val player: ScorePlayer,
     val obj: ScoreObject,
+    val instance: ScoreObjectInstance?,
     val absolutePosition: ObjectPosition,
     val suffix: Int,
     val cutoff: Decimal,

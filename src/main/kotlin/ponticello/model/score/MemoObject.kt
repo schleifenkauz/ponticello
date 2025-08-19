@@ -42,6 +42,7 @@ class MemoObject(
     override fun doClone(): ScoreObject = MemoObject(text)
 
     override fun writeCode(
+        instance: ScoreObjectInstance?,
         uniqueName: String,
         placement: NodePlacement?,
         cutoff: Decimal,

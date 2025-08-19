@@ -69,9 +69,6 @@ class UIState private constructor(
     }
 
     companion object : PublicProperty<UIState> by publicProperty("UIState") {
-        fun default() = UIState(
-            controlsDisplay = reactiveVariable(InlineControlsDisplay.EXTENDED_OVERLAY),
-
-        )
+        fun default() = UIState()
     }
 }

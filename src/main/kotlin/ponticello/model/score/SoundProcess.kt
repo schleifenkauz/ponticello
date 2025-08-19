@@ -17,7 +17,6 @@ import ponticello.impl.*
 import ponticello.model.flow.NodePlacement
 import ponticello.model.obj.*
 import ponticello.model.player.ActiveObjectsManager
-import ponticello.model.player.ActiveScoreObject
 import ponticello.model.player.LiveSynthUpdater
 import ponticello.model.player.ScorePlayer
 import ponticello.model.registry.reference
@@ -89,8 +88,6 @@ class SoundProcess(
 
     val playBufRate: ReactiveVariable<Decimal>?
         get() = (controls.controlMap["rate"] as? ValueControl)?.value?.takeIf { bufferControl != null }
-
-    override fun activeObjects(): List<ActiveScoreObject> = context[ActiveObjectsManager].activeInstances(this)
 
     override fun duration(): ReactiveValue<Decimal> = super<ScoreObject>.duration()
 
@@ -196,11 +193,13 @@ class SoundProcess(
     }
 
     fun reverse(reverseEnvelopes: Boolean) = context.compoundEdit("Reverse SoundProcess") {
-        for (ctrl in controls.controlMap.values) {
-            if (ctrl is EnvelopeControl) {
-                ctrl.points.reverse()
-            }
-        }
+       if (reverseEnvelopes) {
+           for (ctrl in controls.controlMap.values) {
+               if (ctrl is EnvelopeControl) {
+                   ctrl.points.reverse()
+               }
+           }
+       }
         if (sample.now != null && playBufRate != null && playbufStartPos != null) {
             val sampleDur = sample.now!!.get()?.duration()?.now ?: 0.0.asTime
             var startPos = (playbufStartPos!!.now + playBufRate!!.now * duration).wrapAt(sampleDur)
@@ -221,21 +220,25 @@ class SoundProcess(
     }
 
     override fun writeCode(
-        uniqueName: String, placement: NodePlacement?,
-        cutoff: Decimal, latency: Decimal, extraArguments: Map<ParameterDefObject, ParameterControl>,
+        instance: ScoreObjectInstance?,
+        uniqueName: String,
+        placement: NodePlacement?,
+        cutoff: Decimal,
+        latency: Decimal,
+        extraArguments: Map<ParameterDefObject, ParameterControl>,
     ): String = writeCode {
         when (instrument) {
             is SynthDefObject -> {
                 writeSynthCode(
                     this@SoundProcess, uniqueName, cutoff, placement!!,
-                    latency, extraArguments, run = true
+                    latency, controls.toMap() + extraArguments, run = true
                 )
             }
 
             is ProcessDefObject -> {
                 writeProcessCode(
                     this@SoundProcess, uniqueName,
-                    cutoff, extraArguments
+                    cutoff, controls.toMap() + extraArguments
                 )
             }
 

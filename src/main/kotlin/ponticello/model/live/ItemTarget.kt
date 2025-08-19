@@ -156,7 +156,7 @@ sealed class ItemTarget : AbstractContextualObject() {
                 }
                 ScorePlayer.execute {
                     grid.activeObjects[item] = grid.scheduler.scheduleObject(
-                        obj, position, cutoff = zero, player,
+                        obj, instance = null, position, cutoff = zero, player,
                         scLangLatency = totalDelay / 2, serverLatency = totalDelay / 2,
                         extraArguments
                     )

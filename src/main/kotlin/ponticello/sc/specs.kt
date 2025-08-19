@@ -16,6 +16,7 @@ import ponticello.sc.editor.ControlSpecEditor
 import ponticello.sc.editor.SimpleBooleanEditor
 import ponticello.sc.editor.SimpleColorEditor
 import ponticello.sc.editor.SimpleIntegerEditor
+import ponticello.ui.controls.*
 import reaktive.value.ReactiveVariable
 import reaktive.value.reactiveVariable
 
@@ -65,6 +66,15 @@ fun ControlSpec.defaultControl() = when (this) {
     is ExprControlSpec -> ExprControl.create()
     is BufferPositionControlSpec -> ValueControl(reactiveVariable(zero))
     is AttackReleaseControlSpec -> AttackReleaseControl.createDefault()
+}
+
+fun ControlSpec.defaultControlType() = when (this) {
+    is AttackReleaseControlSpec -> AttackReleaseControlType
+    is BufferControlSpec -> BufferControlType
+    is BufferPositionControlSpec -> ValueControlType
+    is BusControlSpec -> BusControlType
+    is ExprControlSpec -> ExprControlType
+    is NumericalControlSpec -> ValueControlType
 }
 
 @Serializable
@@ -151,6 +161,8 @@ data class NumericalControlSpec(
         val BALANCE = NumericalControlSpec(
             0.0, -100.0, 100.0, 1.0.withPrecision(0), 0.02, associatedColor = Color.GREEN
         )
+
+        val VELOCITY = NumericalControlSpec(64.0, 0.0, 127.0, one, warp = Warp.Linear)
     }
 }
 

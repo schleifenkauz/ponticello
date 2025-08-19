@@ -5,10 +5,7 @@ import ponticello.impl.*
 import ponticello.model.GlobalSettings
 import ponticello.model.live.QuantizationConfig
 import ponticello.model.registry.ClockRegistry
-import ponticello.model.score.ObjectPosition
-import ponticello.model.score.Score
-import ponticello.model.score.ScoreObjectGroup
-import ponticello.model.score.ScoreObjectInstance
+import ponticello.model.score.*
 import ponticello.sc.client.SuperColliderClient
 import ponticello.ui.misc.PlayHead
 import ponticello.ui.score.ScorePane
@@ -49,7 +46,7 @@ class ScorePlayer private constructor(
     val timeOffset: Decimal get() = loopedTime - lastPlayFrom
 
     private val maxTime: Decimal
-        get() = pane.score.maxTime.now
+        get() = pane.score.maxTime
 
     fun doCycle(clock: ClockObject, time: Decimal) = execute {
         var scoreTime = time - loopedTime
@@ -87,14 +84,16 @@ class ScorePlayer private constructor(
         dest: MutableList<ScoreEvent>,
     ) {
         for (inst in score.activeInstances(timeRange - position.time)) {
+            if (inst.muted.now) continue
             val obj = inst.obj
-            if (obj is ScoreObjectGroup) {
+            if (obj is AbstractScoreObjectGroup) {
                 collectEvents(obj.score, position + inst.position, timeRange, dest)
             } else {
                 val start = inst.start + position.time
                 val end = inst.end + position.time
-                val y = inst.y + position.y
+                val y = if (obj is MidiNoteObject) position.y else position.y + inst.y
                 if (start in timeRange) {
+                    println(inst)
                     val absolutePosition = ObjectPosition(start, y)
                     dest.add(ScoreEvent(ScoreEvent.Type.ObjectStart, absolutePosition, inst))
                 }
@@ -174,7 +173,7 @@ class ScorePlayer private constructor(
         val cutoff = (-delta).coerceAtLeast(zero)
         if (cutoff >= inst.obj.duration) return
         Logger.fine("Scheduling $obj at $position, delta: $delta", Logger.Category.Playback)
-        scheduler.scheduleObject(obj, position, cutoff = cutoff, this)
+        scheduler.scheduleObject(obj, inst, position, cutoff = cutoff, this)
     }
 
 

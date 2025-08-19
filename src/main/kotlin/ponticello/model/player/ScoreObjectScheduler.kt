@@ -36,7 +36,7 @@ class ScoreObjectScheduler(val context: Context) {
             when (type) {
                 ScoreEvent.Type.ObjectStart -> {
                     Logger.fine("ObjectStart: $obj at $position", Logger.Category.Playback)
-                    scheduleObject(obj, position, cutoff = zero, player)
+                    scheduleObject(obj, inst, position, cutoff = zero, player)
                 }
 
                 ScoreEvent.Type.ObjectEnd -> {
@@ -85,16 +85,28 @@ class ScoreObjectScheduler(val context: Context) {
                 client.run("$name.stop;")
             }
 
-            active.obj is MidiObject && active.obj.instrument.now is MidiInstrument.SynthDef -> {
+            active.obj is LegacyMidiObject && active.obj.instrument.now is MidiInstrument.SynthDef -> {
                 val groupName = active.superColliderName
                 client.run("$groupName.release(0.1);")
                 client.run("TempoClock.sched(0.1) { $groupName.free; $groupName = nil; }")
             }
 
-            active.obj is MidiObject && active.obj.instrument.now is MidiInstrument.VST -> {
+            active.obj is LegacyMidiObject && active.obj.instrument.now is MidiInstrument.VST -> {
                 val instrument = active.obj.instrument.now as MidiInstrument.VST
                 val controllerVar = instrument.flow.get()?.controllerVar ?: return
                 client.run("$controllerVar.midi.allNotesOff(0); ${active.superColliderName} = nil")
+            }
+
+            active.obj is MidiNoteObject && active.obj.parentObject.instrument.now is MidiInstrument.SynthDef -> {
+                val name = active.superColliderName
+                client.run("$name.release")
+            }
+
+            active.obj is MidiNoteObject && active.obj.parentObject.instrument.now is MidiInstrument.VST -> {
+                val instrument = active.obj.parentObject.instrument.now as MidiInstrument.VST
+                val controllerVar = instrument.flow.get()?.controllerVar ?: return
+                val midinote = active.instance?.y ?: return
+                client.run("$controllerVar.midi.noteOff(0, $midinote)")
             }
 
             else -> {}
@@ -103,7 +115,7 @@ class ScoreObjectScheduler(val context: Context) {
 
     //Only inside ScorePlayer.execute
     fun scheduleObject(
-        obj: ScoreObject, absolutePosition: ObjectPosition,
+        obj: ScoreObject, instance: ScoreObjectInstance?, absolutePosition: ObjectPosition,
         cutoff: Decimal, player: ScorePlayer,
         scLangLatency: Decimal = this.sclangLatency, serverLatency: Decimal = this.serverLatency,
         extraArguments: Map<ParameterDefObject, ParameterControl> = emptyMap(),
@@ -112,14 +124,14 @@ class ScoreObjectScheduler(val context: Context) {
         val time = absolutePosition.time + cutoff + player.timeOffset
         val scheduledTime = (time + scLangLatency - extraLatency)
         return scheduleObject(
-            obj, player, cutoff, absolutePosition,
+            obj, instance, player, cutoff, absolutePosition,
             serverLatency, scheduledTime, absolute = false,
             extraArguments
         )
     }
 
     fun scheduleObject(
-        obj: ScoreObject, player: ScorePlayer,
+        obj: ScoreObject, instance: ScoreObjectInstance?, player: ScorePlayer,
         cutoff: Decimal, absolutePosition: ObjectPosition,
         serverLatency: Decimal, scheduledTime: Decimal, absolute: Boolean,
         extraArguments: Map<ParameterDefObject, ParameterControl>,
@@ -136,14 +148,15 @@ class ScoreObjectScheduler(val context: Context) {
             player.getClock().attach(player, meter, cutoff)
         }
         val activeObject = try {
-            activeObjects.insert(player, obj, absolutePosition, cutoff, extraArguments)
+            activeObjects.insert(player, obj, instance, absolutePosition, cutoff, extraArguments)
         } catch (e: Exception) {
             Logger.error("Failed to insert $obj into active object manager", e, Logger.Category.Playback)
             return null
         }
         val placement = when {
             (obj is SoundProcess && obj.instrument is SynthDefObject) ||
-                    (obj is MidiObject && obj.instrument.now is MidiInstrument.SynthDef) -> {
+                    (obj is LegacyMidiObject && obj.instrument.now is MidiInstrument.SynthDef) ||
+                    (obj is MidiNoteObject && obj.parentObject.instrument.now is MidiInstrument.SynthDef) -> {
                 try {
                     val node = ActiveObjectNode(obj, activeObject)
                     nodeTree.addNode(node)
@@ -156,7 +169,7 @@ class ScoreObjectScheduler(val context: Context) {
             else -> null
         }
         val code = try {
-            obj.writeCode(activeObject.uniqueName, placement, cutoff, serverLatency, extraArguments)
+            obj.writeCode(instance, activeObject.uniqueName, placement, cutoff, serverLatency, extraArguments)
         } catch (e: Exception) {
             Logger.error("Failed to write code for $obj", e, Logger.Category.Playback)
         }

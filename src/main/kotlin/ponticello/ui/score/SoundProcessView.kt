@@ -58,7 +58,7 @@ class SoundProcessView(
 
     override fun initialize() {
         super.initialize()
-        setupDropArea(SoundProcessDropHandler(this))
+        setupDropArea(ParameterizedObjectDropHandler(obj, this))
         lfosObserver = observeLFOs()
         initializeObjectPane()
         spectrogramPainter.initialize()

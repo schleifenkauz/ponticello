@@ -58,13 +58,13 @@ class VSTPluginParameterMapping(
     private fun unmap() {
         val bus = controlBus.now.get()
         val value = bus?.let { b -> "${b.superColliderName}.getSynchronous" } ?: "0"
-        context[SuperColliderClient].run("$controllerVar.set(\\$name, $value)")
+        context[SuperColliderClient].run("$controllerVar.set('$name', $value)")
     }
 
     private fun SuperColliderContext.map(controlBus: BusReference) {
         val bus = controlBus.get()
         if (bus != null) {
-            run("$controllerVar.map(\\${name}, ${bus.superColliderName})")
+            run("$controllerVar.map('${name}', ${bus.superColliderName})")
         }
     }
 

@@ -6,6 +6,7 @@ import hextant.context.Context
 import hextant.context.compoundEdit
 import javafx.geometry.Orientation
 import javafx.geometry.Side
+import javafx.scene.robot.Robot
 import org.kordamp.ikonli.material2.Material2AL
 import org.kordamp.ikonli.materialdesign2.MaterialDesignC
 import org.kordamp.ikonli.materialdesign2.MaterialDesignL
@@ -16,6 +17,7 @@ import ponticello.impl.copy
 import ponticello.impl.times
 import ponticello.impl.zero
 import ponticello.model.obj.NoInstrument
+import ponticello.model.obj.ParameterizedObject
 import ponticello.model.project.InlineControlsDisplay
 import ponticello.model.project.UIState
 import ponticello.model.registry.ScoreObjectRegistry
@@ -28,6 +30,7 @@ import ponticello.ui.launcher.PonticelloMainActivity
 import ponticello.ui.launcher.ScoreObjectDetailPane
 import ponticello.ui.registry.InstrumentRegistryPane
 import ponticello.ui.registry.ScoreObjectRegistryPane
+import ponticello.ui.registry.SimpleSearchableRegistryView
 import ponticello.ui.score.*
 import reaktive.value.binding.*
 import reaktive.value.reactiveValue
@@ -89,6 +92,20 @@ object ScoreObjectActions {
                 selector.setSystemClipboard(ctx.selectedViews.map { v -> v.instance })
             }
         }
+        addObjectAction("Replace objects") {
+            shortcut("Alt?+H")
+            executes { ctx, _ ->
+                val popup = SimpleSearchableRegistryView(ctx.context[ScoreObjectRegistry], "Add object instance")
+                val anchor = Robot().mousePosition
+                val obj = popup.showPopup(anchor, owner = null) ?: return@executes
+                val instances = ctx.selectedInstances.toSet()
+                ctx.context.compoundEdit("Replace objects") {
+                    for (instance in instances) {
+                        instance.replaceWith(obj, autoSelect = instances.size == 1)
+                    }
+                }
+            }
+        }
         addObjectAction("Open Multi-Object edit popup") {
             shortcut("Alt?+O")
             executes { ctx, ev ->
@@ -97,12 +114,12 @@ object ScoreObjectActions {
                     Logger.info("No object selected", Logger.Category.Score)
                     return@executes
                 }
-                val soundProcesses = ctx.selectedObjects.filterIsInstance<SoundProcess>()
-                if (soundProcesses.size != ctx.selectedObjects.size) {
+                val objects = ctx.selectedObjects.filterIsInstance<ParameterizedObject>()
+                if (objects.size != ctx.selectedObjects.size) {
                     Logger.warn("Some selected objects are not sound processes", Logger.Category.Score)
                     return@executes
                 }
-                MultiObjectControlPopup.show(ctx.context, soundProcesses)
+                MultiObjectControlPopup.show(ctx.context, objects)
             }
         }
     }
