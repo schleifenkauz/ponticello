@@ -242,16 +242,7 @@ class LegacyMidiObjectView(override val obj: LegacyMidiObject, inst: ScoreObject
         )
         val replaceWithNewVersionBtn = button("Replace with new version") {
             context.compoundEdit("Replace with new MIDI object version") {
-                val score = Score(obj.notes.mapTo(mutableListOf()) { note ->
-                    val name = context[ScoreObjectRegistry].availableName("midinote")
-                    val noteObj = MidiNoteObject(ParameterControlList.create()).withName(name)
-                    noteObj.setInitialSize(note.duration, zero)
-                    context[ScoreObjectRegistry].add(noteObj)
-                    ScoreObjectInstance(
-                        noteObj,
-                        time = note.onset, y = note.midinote.toDecimal()
-                    )
-                })
+                val score = Score()
                 val controls = ParameterControlList()
                 val name = context[ScoreObjectRegistry].availableName(obj.name.now + "_new")
                 val newObj = MidiObject(
@@ -261,6 +252,18 @@ class LegacyMidiObjectView(override val obj: LegacyMidiObject, inst: ScoreObject
                 newObj.setInitialSize(obj.duration, obj.height)
                 for (inst in context.project.mainScore.instancesOf(obj).toSet()) {
                     inst.replaceWith(newObj, autoSelect = false)
+                }
+                for (note in obj.notes) {
+                    if (note.duration <= zero) continue
+                    val noteName = context[ScoreObjectRegistry].availableName("midinote")
+                    val noteObj = MidiNoteObject(ParameterControlList.create()).withName(noteName)
+                    noteObj.setInitialSize(note.duration, zero)
+                    score.addObject(
+                        ScoreObjectInstance(
+                            noteObj,
+                            time = note.onset, y = note.midinote.toDecimal()
+                        ), autoSelect = false
+                    )
                 }
             }
         }

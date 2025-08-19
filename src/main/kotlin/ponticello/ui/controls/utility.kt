@@ -58,14 +58,14 @@ fun makeCodePaneWindow(
 
 fun missingSpecOptionsBar(control: NamedParameterControl): HBox = HBox(
     5.0,
-    Label("Invalid or unresolved spec"),
-    button("Use spec from definition") { ev ->
+    Label("Unresolved spec"),
+    button("Sync") { ev ->
         val success = control.useSpecFromDefinition()
         if (!success) {
             InfoPrompt("No spec found in '${control.parentObject.def.name.now}'").showDialog(ev)
         }
     },
-    button("Provide custom spec") { ev ->
+    button("Custom") { ev ->
         val spec = NumericalControlSpecPrompt(
             control.name.now, control.parentObject, NumericalControlSpec.DEFAULT,
             "Provide custom specification"

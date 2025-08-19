@@ -104,7 +104,7 @@ class MidiNoteObject(
             is MidiInstrument.VST -> {
                 val controllerVar = instr.flow.get()?.controllerVar
                 if (controllerVar == null) {
-                    Logger.warn("VST instrument ${instr.flow} unresolved", Logger.Category.Playback)
+                     Logger.warn("VST instrument ${instr.flow} unresolved", Logger.Category.Playback)
                     return ""
                 }
                 writeCode {

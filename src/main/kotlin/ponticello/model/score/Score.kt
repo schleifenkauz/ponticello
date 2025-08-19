@@ -51,13 +51,14 @@ open class Score(
         super.initialize(context)
         val itr = instances.listIterator()
         for (inst in itr) {
+            inst.resolveObject(context)
+            inst.addedToScore(this, parentObject as? AbstractScoreObjectGroup)
             inst.initialize(context)
             if (inst.obj.duration <= zero && (inst.obj !is MemoObject && inst.obj !is TaskObject)) {
                 Logger.warn("Removing zero-duration object $inst from score", Logger.Category.Score)
                 itr.remove()
                 continue
             }
-            inst.addedToScore(this, parentObject as? AbstractScoreObjectGroup)
             val instances = instancesByObject.getOrPut(inst.obj) { mutableSetOf() }
             instances.add(inst)
             if (instances.size == 1) {
@@ -100,8 +101,8 @@ open class Score(
         if (inst.obj == parentObject) {
             Logger.error("Cannot add ${inst.obj} as a child to itself", Logger.Category.Score)
         }
-        inst.initialize(context)
         inst.addedToScore(this, parentObject as? AbstractScoreObjectGroup)
+        inst.initialize(context)
         Logger.info("Adding object ${inst.obj.name.now} at ${inst.position} to ${scoreName.now}", Logger.Category.Score)
         instances.add(inst)
         intervalTree.add(inst, inst.start, inst.end)

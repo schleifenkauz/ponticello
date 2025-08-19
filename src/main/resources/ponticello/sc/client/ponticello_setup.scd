@@ -12,7 +12,7 @@ SynthDef(\vst_plugin, {
     arg bus = 0;
     var snd = In.ar(bus, 2), mix;
     snd = VSTPlugin.ar(snd, 2, bypass: \bypass.kr(0));
-    mix = Linen.kr(\gate.kr(1), 0.02, 1, 0.02, Done.freeSelf);
+    mix = Linen.kr(\gate.kr(1), 0.02, 1, 0.02, Done.freeSelf) * (1 - \bypass.kr(0));
     XOut.ar(bus, mix, snd);
 }).add;
 SynthDef(\utility, {

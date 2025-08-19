@@ -139,10 +139,10 @@ private fun createControlMap(
     param.name.now to Pair(param.spec.now, control)
 }
 
-fun ParameterControlList.toMap(): Map<ParameterDefObject, ParameterControl> = this.all().associate { ctrl ->
-    val spec = ctrl.spec.now!!
+fun ParameterControlList.toMap(): Map<ParameterDefObject, ParameterControl> = this.all().mapNotNull { ctrl ->
+    val spec = ctrl.spec.now ?: return@mapNotNull null
     ParameterDefObject(ctrl.name.now, spec) to ctrl.now
-}
+}.toMap()
 
 private fun ScWriter.createAuxilMaps(uniqueName: String) {
     val auxilSynthsMap = ParameterControl.auxilSynthsVar(uniqueName)

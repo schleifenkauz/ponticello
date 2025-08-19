@@ -81,10 +81,14 @@ class ScoreObjectInstance(
     }
 
     fun initialize(context: Context) {
+        this.context = context
+        resolveObject(context)
         if (!obj.initialized) {
             obj.initialize(context)
         }
-        this.context = context
+    }
+
+    fun resolveObject(context: Context) {
         objectRef.resolve(context[ScoreObjectRegistry])
     }
 
