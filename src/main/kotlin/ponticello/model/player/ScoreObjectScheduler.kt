@@ -14,7 +14,6 @@ import ponticello.model.obj.MidiInstrument
 import ponticello.model.obj.ParameterDefObject
 import ponticello.model.obj.ProcessDefObject
 import ponticello.model.obj.SynthDefObject
-import ponticello.model.player.ScoreEventCollector.Event
 import ponticello.model.score.*
 import ponticello.model.score.controls.ParameterControl
 import ponticello.sc.client.SuperColliderClient
@@ -29,18 +28,18 @@ class ScoreObjectScheduler(val context: Context) {
     private val extraLatency get() = context[GlobalSettings].extraLatency.now
 
     //Only inside on ScorePlayer.execute
-    fun scheduleEvents(events: List<Event>, player: ScorePlayer) {
+    fun scheduleEvents(events: List<ScoreEvent>, player: ScorePlayer) {
         for (ev in events.sortedBy { ev -> -ev.type.ordinal }) {
             val (type, position, inst) = ev
             if (inst.muted.now) continue
             val obj = inst.obj
             when (type) {
-                Event.Type.ObjectStart -> {
+                ScoreEvent.Type.ObjectStart -> {
                     Logger.fine("ObjectStart: $obj at $position", Logger.Category.Playback)
                     scheduleObject(obj, position, cutoff = zero, player)
                 }
 
-                Event.Type.ObjectEnd -> {
+                ScoreEvent.Type.ObjectEnd -> {
                     Logger.fine("ObjectEnd: $obj at $position", Logger.Category.Playback)
                     val startPos = position + ObjectPosition(-obj.duration, zero)
                     if (obj.duration == zero) continue
@@ -54,7 +53,6 @@ class ScoreObjectScheduler(val context: Context) {
 
                 else -> {}
             }
-            ev.scheduled = true
         }
     }
 
@@ -175,31 +173,6 @@ class ScoreObjectScheduler(val context: Context) {
         println("Scheduled $activeObject at $scheduledTime ($placement)")
         Logger.fine("time for execution: ${scheduledTime}s", Logger.Category.Playback)
         return activeObject
-    }
-
-    //Only inside on ScorePlayer.execute
-    fun activeObjects(time: Decimal, delta: Decimal, score: Score): List<Event> {
-        val dest = mutableListOf<Event>()
-        collectActiveObjects(ObjectPosition.ZERO, score, time, delta, dest)
-        dest.sortWith(compareBy({ it.absolutePosition.time }, { it.absolutePosition.y })) //TODO necessary?
-        return dest
-    }
-
-    private fun collectActiveObjects(
-        position: ObjectPosition, score: Score, time: Decimal, delta: Decimal,
-        dest: MutableList<Event>,
-    ) {
-        if (position.time - delta >= time) return
-        for (inst in score.objectInstances) {
-            if (inst.muted.now) continue
-            val obj = inst.obj
-            val absolutePosition = position + inst.position
-            if (obj is ScoreObjectGroup) {
-                collectActiveObjects(absolutePosition, obj.score, time, delta, dest)
-            } else if (absolutePosition.time - delta <= time && time <= absolutePosition.time + obj.duration) {
-                dest.add(Event(Event.Type.Dummy, absolutePosition, inst))
-            }
-        }
     }
 
     companion object : PublicProperty<ScoreObjectScheduler> by publicProperty("ScoreObjectScheduler")

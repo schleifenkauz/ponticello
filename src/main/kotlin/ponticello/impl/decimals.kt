@@ -27,6 +27,10 @@ infix fun DecimalRange.step(step: Double) = sequence {
     }
 }
 
+operator fun DecimalRange.plus(delta: Decimal) = DecimalRange(start + delta, endInclusive + delta)
+
+operator fun DecimalRange.minus(delta: Decimal) = DecimalRange(start - delta, endInclusive - delta)
+
 fun Double.withPrecision(precision: Int) = Decimal(this, precision)
 
 val Double.asTime get() = withPrecision(ObjectPosition.TIME_PRECISION)

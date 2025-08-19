@@ -1,17 +1,14 @@
 package ponticello.model.score
 
-import bundles.publicProperty
 import fxutils.undo.UndoManager
 import hextant.context.Context
 import hextant.context.compoundEdit
 import hextant.context.withoutUndo
 import hextant.core.editor.ListenerManager
+import javafx.geometry.Side
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
-import ponticello.impl.Decimal
-import ponticello.impl.Logger
-import ponticello.impl.one
-import ponticello.impl.zero
+import ponticello.impl.*
 import ponticello.model.obj.AbstractContextualObject
 import reaktive.value.ReactiveString
 import reaktive.value.now
@@ -20,10 +17,13 @@ import reaktive.value.reactiveValue
 @Serializable
 class Score(
     private val instances: MutableList<ScoreObjectInstance> = mutableListOf(),
-) : AbstractContextualObject() {
+) : AbstractContextualObject(), ScoreObject.Listener {
     val objectInstances: List<ScoreObjectInstance> get() = instances
 
-    val objects get() = objectInstances.mapTo(mutableSetOf()) { inst -> inst.obj }
+    @Transient
+    private val instancesByObject = mutableMapOf<ScoreObject, MutableSet<ScoreObjectInstance>>()
+
+    val objects: Set<ScoreObject> get() = instancesByObject.keys
 
     @Transient
     private var parentObject: ScoreObject? = null
@@ -31,15 +31,20 @@ class Score(
     @Transient
     var scoreName: ReactiveString = reactiveValue(ROOT_SCORE_NAME)
         private set
+
     @Transient
     var maxTime = reactiveValue(Decimal.INF)
         private set
+
     @Transient
     var maxY = reactiveValue(one)
         private set
 
     @Transient
     private val views = ListenerManager.createWeakListenerManager<ScoreListener>()
+
+    @Transient
+    private val intervalTree = IntervalTree<ScoreObjectInstance>()
 
     private val undo get() = context[UndoManager]
 
@@ -48,6 +53,12 @@ class Score(
         for (inst in objectInstances) {
             inst.initialize(context)
             inst.addedToScore(this)
+            val instances = instancesByObject.getOrPut(inst.obj) { mutableSetOf() }
+            instances.add(inst)
+            if (instances.size == 1) {
+                inst.obj.addListener(this)
+            }
+            intervalTree.add(inst, inst.start, inst.end)
         }
     }
 
@@ -86,6 +97,12 @@ class Score(
         inst.addedToScore(this)
         Logger.info("Adding object ${inst.obj.name.now} at ${inst.position} to ${scoreName.now}", Logger.Category.Score)
         instances.add(inst)
+        intervalTree.add(inst, inst.start, inst.end)
+        val instances = instancesByObject.getOrPut(inst.obj) { mutableSetOf() }
+        instances.add(inst)
+        if (instances.size == 1) {
+            inst.obj.addListener(this)
+        }
         views.notifyListeners { addedObject(this@Score, inst, autoSelect) }
         undo.record(ScoreEdit.AddObject(inst, this))
     }
@@ -100,6 +117,12 @@ class Score(
         for (inst in set) {
             Logger.info("Removing ${inst.obj.name.now} from score ${scoreName.now}", Logger.Category.Score)
             instances.remove(inst)
+            intervalTree.remove(inst, inst.start, inst.end)
+            instancesByObject[inst.obj]?.remove(inst)
+            if (instancesByObject[inst.obj]?.isEmpty() == true) {
+                instancesByObject.remove(inst.obj)
+                inst.obj.removeListener(this)
+            }
             views.notifyListeners { removedObject(this@Score, inst) }
             inst.removedFromScore(option)
         }
@@ -113,8 +136,31 @@ class Score(
     fun movedObject(inst: ScoreObjectInstance, oldPosition: ObjectPosition) {
         val dt = inst.start - oldPosition.time
         val dy = inst.y - oldPosition.y
+        val oldStart = oldPosition.time
+        val oldEnd = oldPosition.time + inst.obj.duration
+        reinsertInterval(inst, oldStart, oldEnd)
         views.notifyListeners { movedObject(this@Score, inst, dt, dy) }
     }
+
+    override fun finishedResize(obj: ScoreObject, deltaDuration: Decimal, deltaHeight: Decimal, side: Side) {
+        if (side !in setOf(Side.LEFT, Side.RIGHT)) return
+        for (inst in instancesByObject[obj].orEmpty()) {
+            val oldStart = if (side == Side.LEFT) inst.start - deltaDuration else inst.start
+            val oldEnd = if (side == Side.LEFT) inst.start else inst.start + inst.obj.duration
+            reinsertInterval(inst, oldStart, oldEnd)
+        }
+    }
+
+    private fun reinsertInterval(inst: ScoreObjectInstance, oldStart: Decimal, oldEnd: Decimal) {
+        val removed = intervalTree.remove(inst, oldStart, oldEnd)
+        if (!removed) {
+            Logger.warn("Failed to remove interval for ${inst.obj.name.now} from $oldStart to $oldEnd", Logger.Category.Score)
+        }
+        intervalTree.add(inst, inst.start, inst.end)
+    }
+
+    fun activeInstances(range: DecimalRange): List<ScoreObjectInstance> =
+        intervalTree.queryOverlapping(range.start, range.endInclusive).map { it.value }
 
     fun toggledMute(inst: ScoreObjectInstance, muted: Boolean) {
         views.notifyListeners { toggledMute(this@Score, inst, muted) }
@@ -160,7 +206,6 @@ class Score(
     }
 
     fun allInstances(): Sequence<ScoreObjectInstance> = sequence {
-        val set = mutableSetOf<ScoreObject>()
         for (inst in objectInstances) {
             val o = inst.obj
             yield(inst)
@@ -175,8 +220,6 @@ class Score(
     }
 
     companion object {
-        val rootScore = publicProperty<Score>("root-score")
-
         const val ROOT_SCORE_NAME = "<root>"
 
         fun makeScore(obj: ScoreObject) = when (obj) {

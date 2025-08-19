@@ -6,6 +6,8 @@ import ponticello.model.GlobalSettings
 import ponticello.model.live.QuantizationConfig
 import ponticello.model.registry.ClockRegistry
 import ponticello.model.score.ObjectPosition
+import ponticello.model.score.Score
+import ponticello.model.score.ScoreObjectGroup
 import ponticello.model.score.ScoreObjectInstance
 import ponticello.sc.client.SuperColliderClient
 import ponticello.ui.misc.PlayHead
@@ -38,7 +40,6 @@ class ScorePlayer private constructor(
 
     private val client: SuperColliderClient = context[SuperColliderClient]
     private val activeObjects = context[ActiveObjectsManager]
-    val events: ScoreEventCollector = ScoreEventCollector(pane.score, pane.context[GlobalSettings], this)
     val playHead: PlayHead = PlayHead(pane)
 
     private var currentClock: ClockObject? = null
@@ -72,12 +73,37 @@ class ScorePlayer private constructor(
             } else {
                 loopedTime += maxTime
                 scoreTime -= maxTime
-                events.resetEvents()
             }
         }
 
-        val events = events.eventsAt(scoreTime - clock.period, delta = clock.period * 5)
+        val timeRange = scoreTime..scoreTime + clock.period
+        val events = mutableListOf<ScoreEvent>()
+        collectEvents(pane.score, ObjectPosition.ZERO, timeRange, events)
         scheduler.scheduleEvents(events, this)
+    }
+
+    private fun collectEvents(
+        score: Score, position: ObjectPosition, timeRange: DecimalRange,
+        dest: MutableList<ScoreEvent>,
+    ) {
+        for (inst in score.activeInstances(timeRange - position.time)) {
+            val obj = inst.obj
+            if (obj is ScoreObjectGroup) {
+                collectEvents(obj.score, position + inst.position, timeRange, dest)
+            } else {
+                val start = inst.start + position.time
+                val end = inst.end + position.time
+                val y = inst.y + position.y
+                if (start in timeRange) {
+                    val absolutePosition = ObjectPosition(start, y)
+                    dest.add(ScoreEvent(ScoreEvent.Type.ObjectStart, absolutePosition, inst))
+                }
+                if (end in timeRange) {
+                    val absolutePosition = ObjectPosition(end, y)
+                    dest.add(ScoreEvent(ScoreEvent.Type.ObjectEnd, absolutePosition, inst))
+                }
+            }
+        }
     }
 
     fun play() {
@@ -107,9 +133,13 @@ class ScorePlayer private constructor(
         Logger.fine("Starting playback at $time", Logger.Category.Playback)
         lastPlayFrom = time
         loopedTime = zero
-        val activeObjects = scheduler.activeObjects(time, context[GlobalSettings].lookAhead, pane.score)
-        for ((_, position, inst) in activeObjects) {
-            scheduleInstantly(inst, position)
+        val events = mutableListOf<ScoreEvent>()
+        val timeRange = time..time + lookAhead
+        collectEvents(pane.score, ObjectPosition.ZERO, timeRange, events)
+        for ((type, position, inst) in events) {
+            if (type == ScoreEvent.Type.ObjectStart) {
+                scheduleInstantly(inst, position)
+            }
         }
     }
 
@@ -123,7 +153,6 @@ class ScorePlayer private constructor(
         currentClock = null
         client.send("pause_play", listOf(id))
         freeActiveObjects()
-        events.recomputeEvents()
     }
 
     private fun freeActiveObjects() = execute {

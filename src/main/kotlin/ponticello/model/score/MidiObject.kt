@@ -32,6 +32,7 @@ import kotlin.collections.component2
 import kotlin.collections.set
 
 @Serializable
+@SerialName("ponticello.model.score.MidiObject")
 class MidiObject(
     val instrument: ReactiveVariable<MidiInstrument>,
     @SerialName("lowestPitch") private var _lowestPitch: Int,

@@ -33,13 +33,6 @@ abstract class ScoreEdit(val score: Score) : AbstractEdit() {
         override fun doRedo() {
             score.removeObjects(objects, option)
         }
-
-        override fun mergeWith(other: Edit): Edit? {
-            if (other !is RemoveObjects) return null
-            if (other.score != this.score) return null
-            if (other.option != this.option) return null
-            return RemoveObjects(this.objects + other.objects, other.option, score)
-        }
     }
 
     class AddTime(private val location: Decimal, private val amount: Decimal, score: Score) : ScoreEdit(score) {

@@ -23,14 +23,14 @@ class ScoreObjectInstance(
     @SerialName("object") private var objectRef: ScoreObjectReference,
     @SerialName("time") private var _time: Decimal,
     @SerialName("y") private var _y: Decimal,
-    @SerialName("muted") private var _muted: ReactiveVariable<Boolean> = reactiveVariable(false)
+    @SerialName("muted") private var _muted: ReactiveVariable<Boolean> = reactiveVariable(false),
 ) {
     constructor(
-        obj: ScoreObject, time: Decimal, y: Decimal, muted: ReactiveVariable<Boolean> = reactiveVariable(false)
+        obj: ScoreObject, time: Decimal, y: Decimal, muted: ReactiveVariable<Boolean> = reactiveVariable(false),
     ) : this(obj.reference(), time, y, muted)
 
     constructor(
-        obj: ScoreObject, position: ObjectPosition, muted: ReactiveVariable<Boolean> = reactiveVariable(false)
+        obj: ScoreObject, position: ObjectPosition, muted: ReactiveVariable<Boolean> = reactiveVariable(false),
     ) : this(obj, position.time, position.y, muted)
 
     @Transient
@@ -157,12 +157,12 @@ class ScoreObjectInstance(
 
     fun clone(
         time: Decimal = this.start, y: Decimal = this.y,
-        newName: String = context[ScoreObjectRegistry].nameForClone(obj)
+        newName: String = context[ScoreObjectRegistry].nameForClone(obj),
     ): ScoreObjectInstance = ScoreObjectInstance(obj.clone(newName), time, y, _muted.copy())
 
     fun clone(
         position: ObjectPosition = this.position,
-        newName: String = context[ScoreObjectRegistry].nameForClone(obj)
+        newName: String = context[ScoreObjectRegistry].nameForClone(obj),
     ) = clone(position.time, position.y, newName)
 
     fun cut(position: Decimal, whichHalf: HorizontalDirection): ScoreObjectInstance? {

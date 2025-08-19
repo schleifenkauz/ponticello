@@ -147,12 +147,5 @@ object PlaybackActions {
                 recorder.exportSegment(duration, name)
             }
         }
-        addAction("Recompute playback events") {
-            shortcut("Shift+F5")
-            executes { player, _ ->
-                player.events.recomputeEvents()
-                Logger.confirm("Recomputed playback events", Logger.Category.Playback)
-            }
-        }
     }
 }
