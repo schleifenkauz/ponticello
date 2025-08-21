@@ -5,7 +5,10 @@ import ponticello.impl.*
 import ponticello.model.GlobalSettings
 import ponticello.model.live.QuantizationConfig
 import ponticello.model.registry.ClockRegistry
-import ponticello.model.score.*
+import ponticello.model.score.AbstractScoreObjectGroup
+import ponticello.model.score.ObjectPosition
+import ponticello.model.score.Score
+import ponticello.model.score.ScoreObjectInstance
 import ponticello.sc.client.SuperColliderClient
 import ponticello.ui.misc.PlayHead
 import ponticello.ui.score.ScorePane
@@ -33,10 +36,11 @@ class ScorePlayer private constructor(
 
     val context get() = pane.context
 
-    private val lookAhead get() = context[GlobalSettings].lookAhead
+    val lookAhead get() = context[GlobalSettings].lookAhead
 
     private val client: SuperColliderClient = context[SuperColliderClient]
     private val activeObjects = context[ActiveObjectsManager]
+    private val updater = LiveScoreUpdater(pane.score, this)
     val playHead: PlayHead = PlayHead(pane)
 
     private var currentClock: ClockObject? = null
@@ -47,6 +51,10 @@ class ScorePlayer private constructor(
 
     private val maxTime: Decimal
         get() = pane.score.maxTime
+
+    init {
+        pane.score.addListener(updater)
+    }
 
     fun doCycle(clock: ClockObject, time: Decimal) = execute {
         var scoreTime = time - loopedTime
@@ -74,26 +82,35 @@ class ScorePlayer private constructor(
         }
 
         val timeRange = scoreTime..scoreTime + clock.period
-        val events = mutableListOf<ScoreEvent>()
-        collectEvents(pane.score, ObjectPosition.ZERO, timeRange, events)
+        val events = collectEvents(pane.score, timeRange, withCutoff = false)
         scheduler.scheduleEvents(events, this)
+    }
+
+    private fun collectEvents(score: Score, timeRange: DecimalRange, withCutoff: Boolean): List<ScoreEvent> {
+        val events = mutableListOf<ScoreEvent>()
+        collectEvents(score, ObjectPosition.ZERO, timeRange, events, withCutoff)
+        return events
     }
 
     private fun collectEvents(
         score: Score, position: ObjectPosition, timeRange: DecimalRange,
-        dest: MutableList<ScoreEvent>,
+        dest: MutableList<ScoreEvent>, withCutoff: Boolean
     ) {
         for (inst in score.activeInstances(timeRange - position.time)) {
             if (inst.muted.now) continue
             val obj = inst.obj
             if (obj is AbstractScoreObjectGroup) {
-                collectEvents(obj.score, position + inst.position, timeRange, dest)
+                collectEvents(obj.score, position + inst.position, timeRange, dest, withCutoff)
             } else {
                 val start = inst.start + position.time
                 val end = inst.end + position.time
-                val y = if (obj is MidiNoteObject) position.y else position.y + inst.y
+                val y = /*if (obj is MidiNoteObject) position.y else */position.y + inst.y
+                if (withCutoff) {
+                    val absolutePosition = ObjectPosition(start, y)
+                    dest.add(ScoreEvent(ScoreEvent.Type.ObjectStart, absolutePosition, inst))
+                    continue
+                }
                 if (start in timeRange) {
-                    println(inst)
                     val absolutePosition = ObjectPosition(start, y)
                     dest.add(ScoreEvent(ScoreEvent.Type.ObjectStart, absolutePosition, inst))
                 }
@@ -132,9 +149,8 @@ class ScorePlayer private constructor(
         Logger.fine("Starting playback at $time", Logger.Category.Playback)
         lastPlayFrom = time
         loopedTime = zero
-        val events = mutableListOf<ScoreEvent>()
         val timeRange = time..time + lookAhead
-        collectEvents(pane.score, ObjectPosition.ZERO, timeRange, events)
+        val events = collectEvents(pane.score, timeRange, withCutoff = true)
         for ((type, position, inst) in events) {
             if (type == ScoreEvent.Type.ObjectStart) {
                 scheduleInstantly(inst, position)
