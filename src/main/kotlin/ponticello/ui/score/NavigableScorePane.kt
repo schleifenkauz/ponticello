@@ -79,11 +79,16 @@ class NavigableScorePane(score: Score, context: Context) : RootScorePane(score, 
 
     private fun setupNavigation() {
         setOnScroll { ev ->
+            val delta = when {
+                ev.deltaX != 0.0 -> ev.deltaX
+                ev.deltaY != 0.0 -> ev.deltaY
+                else -> return@setOnScroll
+            }
             if (ev.isControlDown) {
-                val factor = exp(-ev.deltaY * 0.01)
+                val factor = exp(-delta * 0.01)
                 zoom(factor, ev.x)
             } else {
-                scroll(-ev.deltaY / pixelsPerSecond)
+                scroll(-delta / pixelsPerSecond)
             }
         }
     }
