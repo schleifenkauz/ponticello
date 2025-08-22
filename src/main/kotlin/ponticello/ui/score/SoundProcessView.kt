@@ -1,15 +1,13 @@
 package ponticello.ui.score
 
 import bundles.createBundle
-import fxutils.actions.button
+import fxutils.actions.makeButton
 import fxutils.centerChildren
-import fxutils.disableIf
 import fxutils.drag.setupDropArea
 import fxutils.prompt.DetailPane
 import fxutils.styleClass
 import javafx.geometry.Point2D
 import javafx.scene.layout.*
-import org.kordamp.ikonli.material2.Material2AL
 import ponticello.model.obj.ParameterDefObject
 import ponticello.model.project.InlineControlsDisplay
 import ponticello.model.project.UIState
@@ -23,18 +21,17 @@ import ponticello.model.score.controls.getNumericalValue
 import ponticello.sc.NumericalControlSpec
 import ponticello.sc.ParameterType
 import ponticello.sc.view.ObjectSelectorControl
+import ponticello.ui.actions.ScoreObjectActions
 import ponticello.ui.controls.InlineParameterControlsBar
 import ponticello.ui.dock.AppLayout
 import ponticello.ui.launcher.PonticelloApp.Companion.primaryStage
 import ponticello.ui.launcher.ScoreObjectDetailPane
 import ponticello.ui.midi.ContextualMidiReceiver
 import ponticello.ui.midi.ParameterControlsMidiContext
-import ponticello.ui.registry.InstrumentRegistryPane
 import ponticello.ui.registry.SearchableParameterDefListView
 import reaktive.Observer
 import reaktive.and
 import reaktive.value.binding.map
-import reaktive.value.binding.not
 import reaktive.value.forEach
 import reaktive.value.fx.asObservableValue
 import reaktive.value.now
@@ -99,11 +96,11 @@ class SoundProcessView(
 
     override fun setupDetailPane(pane: DetailPane) {
         pane.addItem("Color:", this.colorPicker)
-        val viewBtn = Material2AL.CODE.button("View SynthDef", "medium-icon-button") {
-            context[AppLayout].get<InstrumentRegistryPane>().showContent(obj.instrument)
-        }.disableIf(obj.instrumentSelector.isResolved.not())
+        val viewInstrumentBtn = ScoreObjectActions.singleObjectActions.getAction("View definition")
+            .withContext(actionContext)
+            .makeButton("medium-icon-button")
         val box = ObjectSelectorControl(obj.instrumentSelector, createBundle())
-        pane.addItem("SynthDef: ", HBox(5.0, box, viewBtn).centerChildren())
+        pane.addItem("Instrument: ", HBox(5.0, box, viewInstrumentBtn).centerChildren())
         val controlsPane = ParameterControlsPane(obj, this)
         VBox.setVgrow(controlsPane, Priority.ALWAYS)
         pane.children.add(controlsPane)

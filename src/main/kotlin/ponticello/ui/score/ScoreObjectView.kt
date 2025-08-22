@@ -86,6 +86,8 @@ abstract class ScoreObjectView(
     override val absolutePosition
         get() = instance.position + parentPane.absolutePosition
 
+    val actionContext = ObjectActionContext.SingleObjectContext(this)
+
     init {
         styleClass("score-object")
         isFocusTraversable = true
@@ -110,7 +112,6 @@ abstract class ScoreObjectView(
         if (obj is UnresolvedScoreObject) {
             return detailPane
         } else {
-            val ctx = ObjectActionContext.SingleObjectContext(this)
             val instanceCountLabel = label(obj.numberOfInstances.map { instances ->
                 when (instances) {
                     0 -> "no instances"
@@ -123,7 +124,10 @@ abstract class ScoreObjectView(
                 NameControl(obj).setFixedWidth(200.0),
                 instanceCountLabel,
                 infiniteSpace(),
-                ActionBar(ScoreObjectActions.singleObjectActions.withContext(ctx), buttonStyle = "medium-icon-button"),
+                ActionBar(
+                    ScoreObjectActions.singleObjectActions.withContext(actionContext),
+                    buttonStyle = "medium-icon-button"
+                ),
             ).centerChildren().pad(8.0)
             detailPane.children.add(headerBox)
             if (obj.canResizeHorizontally) {

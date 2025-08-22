@@ -1,15 +1,16 @@
 package ponticello.ui.score
 
+import fxutils.actions.makeButton
+import fxutils.centerChildren
 import fxutils.prompt.DetailPane
-import javafx.scene.layout.Background
-import javafx.scene.layout.BackgroundFill
-import javafx.scene.layout.BorderPane
-import javafx.scene.layout.CornerRadii
+import fxutils.undo.UndoManager
+import javafx.scene.layout.*
 import javafx.scene.paint.Color
 import javafx.scene.text.Text
 import ponticello.impl.*
 import ponticello.model.score.MidiNoteObject
 import ponticello.model.score.ScoreObjectInstance
+import ponticello.ui.actions.ScoreObjectActions
 import reaktive.value.binding.map
 import reaktive.value.fx.asObservableValue
 
@@ -17,6 +18,15 @@ class MidiNoteObjectView(override val obj: MidiNoteObject, instance: ScoreObject
     private val pitchLabel = Text(pitchToText(instance.y))
 
     override fun setupDetailPane(pane: DetailPane) {
+        val instrumentSelector = MidiInstrumentSelectorPopup(context).selectorButton(
+            obj.parentObject.instrument,
+            undoManager = context[UndoManager],
+            actionDescription = "Select MIDI instrument"
+        )
+        val viewInstrumentBtn = ScoreObjectActions.singleObjectActions.getAction("View definition")
+            .withContext(actionContext)
+            .makeButton("medium-icon-button")
+        pane.addItem("Instrument: ", HBox(5.0, instrumentSelector, viewInstrumentBtn).centerChildren())
         pane.children.add(ParameterControlsPane(obj, this))
     }
 

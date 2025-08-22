@@ -7,15 +7,15 @@ import hextant.context.compoundEdit
 import javafx.geometry.Orientation
 import javafx.geometry.Side
 import javafx.scene.robot.Robot
+import org.kordamp.ikonli.codicons.Codicons
 import org.kordamp.ikonli.material2.Material2AL
-import org.kordamp.ikonli.materialdesign2.MaterialDesignC
-import org.kordamp.ikonli.materialdesign2.MaterialDesignL
-import org.kordamp.ikonli.materialdesign2.MaterialDesignM
-import org.kordamp.ikonli.materialdesign2.MaterialDesignV
+import org.kordamp.ikonli.materialdesign2.*
 import ponticello.impl.Logger
 import ponticello.impl.copy
 import ponticello.impl.times
 import ponticello.impl.zero
+import ponticello.model.obj.InstrumentObject
+import ponticello.model.obj.MidiInstrument
 import ponticello.model.obj.NoInstrument
 import ponticello.model.obj.ParameterizedObject
 import ponticello.model.project.InlineControlsDisplay
@@ -33,6 +33,7 @@ import ponticello.ui.registry.ScoreObjectRegistryPane
 import ponticello.ui.registry.SimpleSearchableRegistryView
 import ponticello.ui.score.*
 import reaktive.value.binding.*
+import reaktive.value.now
 import reaktive.value.reactiveValue
 import reaktive.value.toggle
 
@@ -206,17 +207,21 @@ object ScoreObjectActions {
         }
         addObjectAction("View definition") {
             shortcut("Alt?+I")
-            applicableOn { v -> v is SoundProcessView }
+            icon { ctx ->
+                ctx.focusedView.map { v -> if (v is SoundProcessView) Codicons.CODE else MaterialDesignE.EYE }
+            }
+            applicableOn { v -> v is SoundProcessView || v is MidiObjectView || v is MidiNoteObjectView }
+            ifNotApplicable(Action.IfNotApplicable.Disable)
             executeSingle { view, ev ->
-                if (!ev.isTargetTextInput || ev.isAltDown()) {
-                    view as SoundProcessView
-                    val def = view.obj.instrument
-                    if (def is NoInstrument) {
-                        Logger.warn("Instrument is not resolved", Logger.Category.Score)
-                        return@executeSingle
-                    }
-                    view.context[AppLayout].get<InstrumentRegistryPane>().showContent(def)
+                if (ev.isTargetTextInput && !ev.isAltDown()) {
+                    return@executeSingle
                 }
+                when (view) {
+                    is SoundProcessView -> showInstrumentDef(view.obj.instrument, view.context)
+                    is MidiObjectView -> showInstrument(view.obj.instrument.now, view.context)
+                    is MidiNoteObjectView -> showInstrument(view.obj.parentObject.instrument.now, view.context)
+                }
+
             }
         }
         addObjectAction("Rename object") {
@@ -316,6 +321,22 @@ object ScoreObjectActions {
                 val orientation = if (ev.isShiftDown()) Orientation.VERTICAL else Orientation.HORIZONTAL
                 view.cutObject(orientation)
             }
+        }
+    }
+
+    private fun showInstrument(instrument: MidiInstrument, context: Context) {
+        when (instrument) {
+            MidiInstrument.None -> Logger.warn("No instrument", Logger.Category.Score)
+            is MidiInstrument.SynthDef -> showInstrumentDef(instrument.reference.force(), context)
+            is MidiInstrument.VST -> instrument.flow.force().showEditor()
+        }
+    }
+
+    private fun showInstrumentDef(def: InstrumentObject, context: Context) {
+        if (def is NoInstrument) {
+            Logger.warn("Instrument is not resolved", Logger.Category.Score)
+        } else {
+            context[AppLayout].get<InstrumentRegistryPane>().showContent(def)
         }
     }
 

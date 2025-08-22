@@ -1,5 +1,6 @@
 package ponticello.ui.score
 
+import fxutils.actions.makeButton
 import fxutils.button
 import fxutils.centerChildren
 import fxutils.controls.IntSpinner
@@ -25,6 +26,7 @@ import ponticello.model.score.ParameterControlList
 import ponticello.model.score.Score
 import ponticello.model.score.ScoreObjectInstance
 import ponticello.sc.Identifier
+import ponticello.ui.actions.ScoreObjectActions
 import ponticello.ui.impl.showDialog
 import reaktive.value.reactiveVariable
 
@@ -62,7 +64,10 @@ class MidiObjectView(
         val instrumentSelector = MidiInstrumentSelectorPopup(context).selectorButton(
             obj.instrument, undoManager = context[UndoManager], actionDescription = "Select MIDI instrument"
         )
-        pane.addItem("Instrument: ", instrumentSelector)
+        val viewInstrumentBtn = ScoreObjectActions.singleObjectActions.getAction("View definition")
+            .withContext(actionContext)
+            .makeButton("medium-icon-button")
+        pane.addItem("Instrument: ", HBox(5.0, instrumentSelector, viewInstrumentBtn).centerChildren())
         pane.addItem("Color:", this.colorPicker)
         val transposeButton = button("Transpose") { showTransposeDialog() }
         pane.addItem(
