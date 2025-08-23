@@ -269,7 +269,9 @@ class ParameterControlList(
                 if (spec != null && spec != get(name).spec.now) {
                     get(name).setCustomSpec(spec)
                 }
-                move(get(name), idx)
+                if (idx != objects.size) {
+                    move(get(name), idx)
+                }
             } else {
                 val customSpec = spec.takeIf { it != associatedObject.def.getSpec(name)?.now }
                 addControl(name, control, customSpec, idx)
