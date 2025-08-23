@@ -135,7 +135,6 @@ OSCdef(\set_time_warp, { |msg|
     TempoClock.tempo = tempo;
     ~time_warp_bus.set(tempo);
     ~time_warp = tempo;
-    postf("Time warp: %\n", tempo);
     "ok"
 }, '/set_time_warp');
 

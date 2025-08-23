@@ -3,19 +3,20 @@ package ponticello.ui.flow
 import fxutils.actions.button
 import fxutils.button
 import fxutils.centerChildren
-import fxutils.prompt.DetailPane
+import fxutils.pad
 import fxutils.prompt.SimpleSearchableListView
 import fxutils.prompt.SimpleTextPrompt
 import javafx.scene.layout.HBox
+import javafx.scene.layout.VBox
 import org.kordamp.ikonli.codicons.Codicons
 import org.kordamp.ikonli.material2.Material2MZ
 import ponticello.model.flow.VSTPluginFlow
 import ponticello.model.flow.VSTPlugins
 import reaktive.value.now
 
-class VSTPluginFlowView(private val flow: VSTPluginFlow) : DetailPane(labelWidth = 120.0) {
+class VSTPluginFlowView(private val flow: VSTPluginFlow) : VBox() {
     init {
-        val pluginSelectorBtn = button(flow.pluginName) { ev ->
+        val pluginSelectorBtn = button(flow.pluginName, style = "selector-button") { ev ->
             val options = VSTPlugins.availablePlugins(flow.context).toList()
             val newPluginName = SimpleSearchableListView(options, "Select VST Plugin").showPopup(ev) ?: return@button
             flow.loadPlugin(newPluginName)
@@ -30,7 +31,11 @@ class VSTPluginFlowView(private val flow: VSTPluginFlow) : DetailPane(labelWidth
                 .showPopup(ev) ?: return@button
             flow.loadGlobalPreset(presetName)
         }
-        addItem("Plugin", HBox(5.0, pluginSelectorBtn, saveGlobalPresetBtn, loadGlobalPresetBtn).centerChildren())
+        children.add(
+            HBox(
+                5.0, pluginSelectorBtn, saveGlobalPresetBtn, loadGlobalPresetBtn
+            ).centerChildren().pad(3.0)
+        )
         children.add(VSTPluginParameterMappingsPane(flow))
     }
 }
