@@ -1,18 +1,12 @@
 (
 ~ponticello_addr = NetAddr("localhost", 7775);
 
-SynthDef(\vst_instrument, {
-	arg out = 0;
-	var snd;
-	snd = VSTPlugin.ar(nil, 2);
-	snd = snd * Linen.kr(\gate.kr(1), 0.02, 1, 0.02, Done.freeSelf);
-	Out.ar(out, snd);
-}).add;
 SynthDef(\vst_plugin, {
     arg bus = 0;
-    var snd = In.ar(bus, 2), mix;
-    snd = VSTPlugin.ar(snd, 2, bypass: \bypass.kr(0));
-    mix = Linen.kr(\gate.kr(1), 0.02, 1, 0.02, Done.freeSelf) * (1 - \bypass.kr(0));
+    var dry = In.ar(bus, 2), snd, mix, dry_mix = \dry.kr(0), bypass = \bypass.kr(0);
+    snd = VSTPlugin.ar(dry, 2, bypass: bypass);
+    snd = snd + (dry * dry_mix);
+    mix = Linen.kr(\gate.kr(1), 0.02, 1, 0.02, Done.freeSelf) * (1 - bypass);
     XOut.ar(bus, mix, snd);
 }).add;
 SynthDef(\utility, {

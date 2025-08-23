@@ -126,14 +126,16 @@ class VSTPluginFlow private constructor(
 
     override fun writeCode(placement: NodePlacement) = writeCode {
         val busName = busRef.now.get()?.superColliderName ?: "nil"
-        +"$superColliderName = Synth(\\vst_plugin, [bus: $busName], addAction: ${placement.addAction}, target: ${placement.target})"
+        val pluginName = pluginName.now
+        val drySignal = if (VSTPlugins.hasInputs(pluginName, context)) 1 else 0
+        +"$superColliderName = Synth(\\vst_plugin, [bus: $busName, dry: $drySignal], ${placement.code})"
         +"s.sync"
         appendBlock("$superColliderName.onFree") {
             +"$superColliderName = nil"
             +"$controllerVar = nil"
         }
         +"$controllerVar = VSTPluginController($superColliderName)"
-        +"$controllerVar.open('${pluginName.now}', editor: true, multiThreading: true)"
+        +"$controllerVar.open('$pluginName', editor: true, multiThreading: true)"
         +"s.sync"
         if (preset != null) {
             doLoadPreset(preset!!)
@@ -148,7 +150,7 @@ class VSTPluginFlow private constructor(
         for (mapping in parameterMappings) {
             mapping.applyTo(writer, this@VSTPluginFlow)
         }
-        +"\"Opened plugin '${pluginName.now}' in flow <${name.now}>\".postln"
+        +"\"Opened plugin '$pluginName' in flow <${name.now}>\".postln"
     }
 
     override fun setRunning(active: Boolean) {
