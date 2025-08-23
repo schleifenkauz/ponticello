@@ -153,7 +153,7 @@ open class Score(
     override fun finishedResize(obj: ScoreObject, deltaDuration: Decimal, deltaHeight: Decimal, side: Side) {
         if (side !in setOf(Side.LEFT, Side.RIGHT)) return
         for (inst in instancesByObject[obj].orEmpty()) {
-            val oldStart = if (side == Side.LEFT) inst.start - deltaDuration else inst.start
+            val oldStart = if (side == Side.LEFT) inst.start + deltaDuration else inst.start
             val oldEnd = if (side == Side.LEFT) inst.end else inst.end - deltaDuration
             reinsertInterval(inst, oldStart, oldEnd)
         }
