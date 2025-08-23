@@ -64,11 +64,11 @@ data object AttackReleaseControlType : ControlType<AttackReleaseControl>() {
             box.children.setAll(attack, release) //TODO would be awesome to merge them into one slider
         } and control.attack.observe { _, _, attack ->
             if (objectDuration != null) {
-                control.release.now = control.release.now.coerceAtMost(duration.now - attack)
+                control.release.now = control.release.now.coerceAtMost(duration.now - attack).coerceAtLeast(zero)
             }
         } and control.release.observe { _, _, release ->
             if (objectDuration != null) {
-                control.attack.now = control.attack.now.coerceAtMost(duration.now - release)
+                control.attack.now = control.attack.now.coerceAtMost(duration.now - release).coerceAtLeast(zero)
             }
         }
         return box.centerChildren()
