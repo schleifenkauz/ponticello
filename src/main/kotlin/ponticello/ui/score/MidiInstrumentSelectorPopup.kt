@@ -20,7 +20,7 @@ class MidiInstrumentSelectorPopup(
             is MidiInstrument.SynthDef -> Pair("SynthDef", option.reference.getName())
             is MidiInstrument.VST -> {
                 val flow = option.flow.force()
-                Pair("VST: ${flow.pluginName}", flow.name.now)
+                Pair("VST: ${flow.pluginName.now}", flow.name.now)
             }
 
             MidiInstrument.None -> throw AssertionError()

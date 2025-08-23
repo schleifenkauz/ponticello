@@ -1,5 +1,6 @@
 package ponticello.ui.flow
 
+import fxutils.prompt.SimpleSearchableListView
 import hextant.context.Context
 import javafx.geometry.Point2D
 import ponticello.model.flow.*
@@ -59,9 +60,15 @@ sealed interface FlowOption {
 
     data class VSTPlugin(val pluginName: String) : FlowOption {
         override fun createFlow(context: Context, anchor: Point2D): AudioFlow? {
+            val presets = VSTPlugins.globalPresetList(context, pluginName)
+            val preset = if (presets.isNotEmpty()) {
+                SimpleSearchableListView(listOf("<no preset>") + presets, "Select preset")
+                    .showPopup(anchor)
+                    .takeIf { it != "<no preset>" }
+            } else null
             val bus = SearchableBusListView(context[BusRegistry], "Target bus")
                 .showPopup(anchor) ?: return null
-            return VSTPluginFlow.create(pluginName, bus)
+            return VSTPluginFlow.create(pluginName, preset, bus)
         }
 
         override fun toString(): String = "VST: $pluginName"
@@ -88,7 +95,7 @@ sealed interface FlowOption {
         private val simpleOptions = listOf(Code, Send, Utility, Mixer)
 
         fun getOptions(context: Context): List<FlowOption> {
-            val vstOptions = VSTPluginFlow.availablePlugins(context).map(::VSTPlugin)
+            val vstOptions = VSTPlugins.availablePlugins(context).map(::VSTPlugin)
             val synthOptions = context[InstrumentRegistry].map(::Instrument)
             return simpleOptions + synthOptions + vstOptions
         }

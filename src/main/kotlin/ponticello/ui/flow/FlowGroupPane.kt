@@ -11,6 +11,7 @@ import javafx.geometry.Point2D
 import javafx.scene.Node
 import javafx.scene.Parent
 import javafx.scene.control.Slider
+import javafx.scene.control.Tooltip
 import javafx.scene.input.DataFormat
 import javafx.scene.input.DragEvent
 import javafx.scene.input.Dragboard
@@ -51,6 +52,7 @@ import ponticello.ui.score.ScorePane
 import reaktive.value.binding.binding
 import reaktive.value.binding.`if`
 import reaktive.value.binding.map
+import reaktive.value.fx.asObservableValue
 import reaktive.value.now
 import reaktive.value.reactiveValue
 
@@ -143,12 +145,17 @@ class FlowGroupPane(
         is InstrumentFlow -> ParameterControlsPane(obj)
         is UtilityFlow -> Slider(-60.0, +6.0, 0.0) styleClass "volume-fader"
         is MixerFlow -> MixerFlowView.create(obj)
-        is VSTPluginFlow -> VSTPluginParameterMappingsPane(obj)
+        is VSTPluginFlow -> VSTPluginFlowView(obj)
     }
 
     override fun configureBox(box: ObjectBox<AudioFlow>, currentMode: DisplayMode) {
         context[ContextualMidiReceiver].registerMidiContext(box) {
             box.obj.midiContext().takeIf { !box.isCollapsed.now }
+        }
+        if (box.obj is VSTPluginFlow) {
+            val tooltip = Tooltip()
+            tooltip.textProperty().bind(box.obj.pluginName.asObservableValue())
+            Tooltip.install(box.header, tooltip)
         }
     }
 
@@ -208,10 +215,6 @@ class FlowGroupPane(
                 }
             }
             executes { grp -> grp.toggleActive() }
-        }
-
-        val groupActions = collectActions {
-            add(toggleActiveAction)
         }
 
         private val flowActions = collectActions<AudioFlow> {

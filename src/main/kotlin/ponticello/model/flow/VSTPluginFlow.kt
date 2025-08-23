@@ -1,5 +1,7 @@
 package ponticello.model.flow
 
+import fxutils.undo.AbstractEdit
+import fxutils.undo.UndoManager
 import hextant.context.Context
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -13,23 +15,21 @@ import ponticello.model.project.PonticelloProject.Companion.projectDirectory
 import ponticello.model.registry.ObjectList
 import ponticello.model.registry.reference
 import ponticello.sc.Rate
+import ponticello.sc.client.ScWriter
 import ponticello.sc.client.SuperColliderClient
 import ponticello.sc.client.eval
 import ponticello.sc.client.run
 import ponticello.sc.editor.BusSelector
 import reaktive.Observer
-import reaktive.value.ReactiveValue
-import reaktive.value.ReactiveVariable
+import reaktive.value.*
 import reaktive.value.binding.flatMap
-import reaktive.value.now
-import reaktive.value.reactiveVariable
 import java.io.File
 import java.util.concurrent.CompletableFuture
 
 @Serializable
 @SerialName("VSTPluginFlow")
 class VSTPluginFlow private constructor(
-    val pluginName: String,
+    @SerialName("pluginName") private val _pluginName: ReactiveVariable<String>,
     private val busRef: ReactiveVariable<BusReference>,
     val parameterMappings: VSTPluginParameterMappingList = VSTPluginParameterMappingList(),
 ) : AudioFlow(), ObjectList.Listener<VSTPluginParameterMapping> {
@@ -38,7 +38,12 @@ class VSTPluginFlow private constructor(
 
     private val client get() = context[SuperColliderClient]
 
-    override fun copy(): VSTPluginFlow = VSTPluginFlow(pluginName, busRef.copy(), parameterMappings.copy())
+    private var preset: String? = null
+
+    val pluginName: ReactiveString get() = _pluginName
+
+    override fun copy(): VSTPluginFlow =
+        VSTPluginFlow(_pluginName.copy(), busRef.copy(), parameterMappings.copy())
 
     @Transient
     lateinit var busSelector: BusSelector
@@ -82,6 +87,29 @@ class VSTPluginFlow private constructor(
         super.initialize(context)
     }
 
+    fun loadPlugin(plugin: String) {
+        val oldPluginName = pluginName.now
+        _pluginName.now = plugin
+        client.run("$controllerVar.open('${pluginName.now}', editor: true, multiThreading: true)")
+        context[UndoManager].record(LoadPlugin(this, plugin, oldPluginName))
+    }
+
+    fun loadGlobalPreset(presetName: String) {
+        saveConfiguration().join()
+        client.run {
+            doLoadPreset(presetName)
+        }
+        context[UndoManager].record(LoadGlobalPreset(this, presetName))
+    }
+
+    private fun ScWriter.doLoadPreset(presetName: String) {
+        +"$controllerVar.loadPreset('$presetName')"
+    }
+
+    fun saveGlobalPreset(presetName: String) {
+        client.run("$controllerVar.savePreset('$presetName')")
+    }
+
     override fun added(obj: VSTPluginParameterMapping, idx: Int) {
         context[SuperColliderClient].run {
             obj.applyTo(writer, this@VSTPluginFlow)
@@ -105,10 +133,14 @@ class VSTPluginFlow private constructor(
             +"$controllerVar = nil"
         }
         +"$controllerVar = VSTPluginController($superColliderName)"
-        +"$controllerVar.open('$pluginName', editor: true, multiThreading: true)"
+        +"$controllerVar.open('${pluginName.now}', editor: true, multiThreading: true)"
         +"s.sync"
-        val stateFile = pluginStateFile().superColliderPath
-        +"if (PathName(${stateFile}).isFile) { $controllerVar.readProgram($stateFile) }"
+        if (preset != null) {
+            doLoadPreset(preset!!)
+        } else {
+            val stateFile = pluginStateFile().superColliderPath
+            +"if (PathName(${stateFile}).isFile) { $controllerVar.readProgram($stateFile) }"
+        }
         if (!isActive.now) {
             +"$superColliderName.set(\\bypass, 1)"
         }
@@ -116,7 +148,7 @@ class VSTPluginFlow private constructor(
         for (mapping in parameterMappings) {
             mapping.applyTo(writer, this@VSTPluginFlow)
         }
-        +"\"Opened plugin '$pluginName' in flow <${name.now}>\".postln"
+        +"\"Opened plugin '${pluginName.now}' in flow <${name.now}>\".postln"
     }
 
     override fun setRunning(active: Boolean) {
@@ -129,9 +161,15 @@ class VSTPluginFlow private constructor(
     }
 
     fun saveConfiguration(): CompletableFuture<String> {
+        preset = null
         val stateFile = pluginStateFile().invariantSeparatorsPath
         val controllerVar = controllerVar.removePrefix("~")
         return client.send("save_plugin_state", listOf(controllerVar, stateFile))
+    }
+
+    fun loadConfiguration() {
+        val stateFile = pluginStateFile().superColliderPath
+        client.run("if (PathName(${stateFile}).isFile) { $controllerVar.readProgram($stateFile) }")
     }
 
     private fun pluginStateFile(): File {
@@ -154,17 +192,42 @@ class VSTPluginFlow private constructor(
 
     override fun usesBus(bus: BusObject): Boolean = busRef.now.get() == bus.reference()
 
-    companion object {
-        fun create(pluginName: String, bus: BusObject): VSTPluginFlow =
-            VSTPluginFlow(pluginName, reactiveVariable(bus.reference()), VSTPluginParameterMappingList())
+    private class LoadPlugin(
+        private val flow: VSTPluginFlow,
+        private val newPluginName: String,
+        private val oldPluginName: String
+    ) : AbstractEdit() {
+        override val actionDescription: String
+            get() = "Load VST Plugin"
 
-        fun availablePlugins(context: Context) = context[SuperColliderClient]
-            .eval(
-                "var str = \"\"; VSTPlugin.pluginList.do { |p| str = str ++ \", \" ++ p.key }; str;",
-                description = "getting list of available plugins"
-            ).get()
-            .removePrefix(", ")
-            .split(", ")
-            .toSet()
+        override fun doRedo() {
+            flow.loadPlugin(newPluginName)
+        }
+
+        override fun doUndo() {
+            flow.loadPlugin(oldPluginName)
+        }
+    }
+
+    private class LoadGlobalPreset(
+        private val flow: VSTPluginFlow,
+        private val preset: String,
+    ) : AbstractEdit() {
+        override val actionDescription: String
+            get() = "Load global preset"
+
+        override fun doRedo() {
+            flow.loadGlobalPreset(preset)
+        }
+
+        override fun doUndo() {
+            flow.loadConfiguration()
+        }
+    }
+
+    companion object {
+        fun create(pluginName: String, preset: String?, bus: BusObject): VSTPluginFlow = VSTPluginFlow(
+            reactiveVariable(pluginName), reactiveVariable(bus.reference()), VSTPluginParameterMappingList()
+        ).also { it.preset = preset }
     }
 }
