@@ -2,6 +2,8 @@ package ponticello.ui.flow
 
 import fxutils.*
 import fxutils.actions.*
+import fxutils.drag.ConfiguredDropHandler
+import fxutils.drag.setupDropArea
 import fxutils.prompt.SearchableListView
 import fxutils.undo.UndoManager
 import fxutils.undo.VariableEdit
@@ -21,8 +23,10 @@ import org.kordamp.ikonli.Ikon
 import org.kordamp.ikonli.materialdesign2.MaterialDesignT
 import org.kordamp.ikonli.materialdesign2.MaterialDesignV
 import ponticello.impl.Decimal
+import ponticello.impl.Logger
 import ponticello.impl.unaryMinus
 import ponticello.impl.withPrecision
+import ponticello.model.flow.AudioFlow
 import ponticello.model.flow.MixerFlow
 import ponticello.model.flow.MixerFlow.Companion.VOLUME_SPEC
 import ponticello.model.obj.BusObject
@@ -122,6 +126,7 @@ class MixerPane(
                 registerActions(channelsList!!.actions)
             }
         }
+        setupDropArea(MixerPaneDropHandler())
     }
 
     override fun acceptedTransferModes(dragboard: Dragboard): Array<TransferMode> = when {
@@ -282,6 +287,20 @@ class MixerPane(
             HBox(label(option.name) styleClass "option-label")
 
         override fun extractText(option: ObjectReference<MixerFlow>): String = option.name.now
+    }
+
+    private inner class MixerPaneDropHandler : ConfiguredDropHandler() {
+        init {
+            handleTypedFormat(AudioFlow.DATA_FORMAT) { event, ref ->
+                val flow = ref.get() ?: return@handleTypedFormat false
+                if (flow !is MixerFlow) {
+                    Logger.warn("Dropped flow is not a MixerFlow", Logger.Category.AudioFlow)
+                    return@handleTypedFormat false
+                }
+                selectedMixer = flow.reference()
+                true
+            }
+        }
     }
 
     companion object : Type(15, "Mixer") {
