@@ -78,15 +78,15 @@ class ClockObject(
         var lastTime = System.currentTimeMillis()
         while (!Thread.interrupted()) {
             val now = System.currentTimeMillis()
-            val delta = (now - lastTime).toSeconds()
+            val delta = (now - lastTime).toSeconds() * timeWarp.now
             lastTime = now
             if (!runClock) {
                 trySleep()
                 continue
             }
             synchronized(this) {
-                clockTime += delta * timeWarp.now
-                processEvents()
+                processEvents(clockTime, delta)
+                clockTime += delta
             }
             trySleep()
         }
@@ -100,20 +100,20 @@ class ClockObject(
         }
     }
 
-    private fun processEvents() {
+    private fun processEvents(time: Decimal, delta: Decimal) {
         for ((player, startTime, offset) in activePlayers.toList()) { //copy to avoid concurrent modification
-            if (startTime <= clockTime && player.isScheduled.now && !player.isPlaying.now) {
+            if (startTime <= time && player.isScheduled.now && !player.isPlaying.now) {
                 player.startPlaying()
             }
             if (!player.isPlaying.now) continue
-            if (startTime + lookAhead <= clockTime) {
-                player.doCycle(this, clockTime - startTime + offset)
+            if (startTime + lookAhead <= time) {
+                player.doCycle(time - startTime + offset, delta)
             }
         }
         val itr = scheduledActions.iterator()
         while (itr.hasNext()) {
             val (action, scheduledTime) = itr.next()
-            if (clockTime >= scheduledTime) {
+            if (time >= scheduledTime) {
                 action.invoke(scheduledTime)
                 itr.remove()
             }

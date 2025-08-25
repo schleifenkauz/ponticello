@@ -5,10 +5,7 @@ import ponticello.impl.*
 import ponticello.model.GlobalSettings
 import ponticello.model.live.QuantizationConfig
 import ponticello.model.registry.ClockRegistry
-import ponticello.model.score.AbstractScoreObjectGroup
-import ponticello.model.score.ObjectPosition
-import ponticello.model.score.Score
-import ponticello.model.score.ScoreObjectInstance
+import ponticello.model.score.*
 import ponticello.sc.client.SuperColliderClient
 import ponticello.ui.misc.PlayHead
 import ponticello.ui.score.ScorePane
@@ -56,7 +53,7 @@ class ScorePlayer private constructor(
         pane.score.addListener(updater)
     }
 
-    fun doCycle(clock: ClockObject, time: Decimal) = execute {
+    fun doCycle(time: Decimal, delta: Decimal) = execute {
         var scoreTime = time - loopedTime
 
         var playHeadPos = scoreTime - lookAhead
@@ -81,7 +78,7 @@ class ScorePlayer private constructor(
             }
         }
 
-        val timeRange = scoreTime..scoreTime + clock.period
+        val timeRange = scoreTime..scoreTime + delta
         val events = collectEvents(pane.score, timeRange, withCutoff = false)
         scheduler.scheduleEvents(events, this)
     }
@@ -104,7 +101,7 @@ class ScorePlayer private constructor(
             } else {
                 val start = inst.start + position.time
                 val end = inst.end + position.time
-                val y = /*if (obj is MidiNoteObject) position.y else */position.y + inst.y
+                val y = if (obj is MidiNoteObject) position.y else position.y + inst.y
                 if (withCutoff) {
                     val absolutePosition = ObjectPosition(start, y)
                     dest.add(ScoreEvent(ScoreEvent.Type.ObjectStart, absolutePosition, inst))
