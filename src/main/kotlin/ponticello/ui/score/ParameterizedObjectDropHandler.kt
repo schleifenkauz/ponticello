@@ -3,6 +3,7 @@ package ponticello.ui.score
 import fxutils.drag.ConfiguredDropHandler
 import fxutils.prompt.SimpleSearchableListView
 import fxutils.solidBorder
+import hextant.serial.EditorRoot
 import javafx.scene.Node
 import javafx.scene.input.DragEvent
 import javafx.scene.layout.Region
@@ -10,13 +11,19 @@ import javafx.scene.paint.Color
 import ponticello.impl.json
 import ponticello.model.obj.BufferObject
 import ponticello.model.obj.BusObject
+import ponticello.model.obj.GlobalPatternObject
 import ponticello.model.obj.ParameterizedObject
 import ponticello.model.registry.BufferRegistry
 import ponticello.model.registry.BusRegistry
+import ponticello.model.registry.GlobalPatternRegistry
 import ponticello.model.score.ParameterControlList.NamedParameterControl
 import ponticello.model.score.controls.BufferControl
 import ponticello.model.score.controls.BusControl
+import ponticello.model.score.controls.ExprControl
 import ponticello.sc.ControlSpec
+import ponticello.sc.editor.GlobalPatternSelector
+import ponticello.sc.editor.MessageSendEditor
+import ponticello.sc.editor.ScExprExpander
 import ponticello.ui.score.ParameterControlsPane.Companion.SERIALIZED_CONTROL_FORMAT
 import ponticello.ui.score.ScoreObjectView.Companion.BORDER_RADIUS
 import reaktive.value.now
@@ -43,7 +50,6 @@ class ParameterizedObjectDropHandler(
             val control = json.decodeFromString<NamedParameterControl>(jsonString)
             obj.controls.duplicateControl(control)
             true
-
         }
         handleTypedFormat(NamedParameterControl.DATA_FORMAT) { _, namedControl ->
             obj.controls.duplicateControl(namedControl)
@@ -57,6 +63,20 @@ class ParameterizedObjectDropHandler(
         handleTypedFormat(BufferObject.DATA_FORMAT) { event, ref ->
             val buffer = ref.resolve(context[BufferRegistry]) ?: return@handleTypedFormat false
             droppedBuffer(buffer, event)
+            true
+        }
+        handleTypedFormat(GlobalPatternObject.DATA_FORMAT) { event, ref ->
+            val pattern = ref.resolve(context[GlobalPatternRegistry]) ?: return@handleTypedFormat false
+            val expr = ScExprExpander(
+                MessageSendEditor(
+                    ScExprExpander(
+                        GlobalPatternSelector().also { it.selectInitial(pattern) }
+                    )
+                )
+            )
+            val control = ExprControl(EditorRoot(expr))
+            val controlName = getAssignedName(event) { _ -> true } ?: return@handleTypedFormat false
+            obj.controls.assignControl(controlName, control)
             true
         }
     }

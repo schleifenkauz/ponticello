@@ -1,9 +1,9 @@
 package ponticello.model.obj
 
+import fxutils.drag.TypedDataFormat
 import hextant.context.Context
 import hextant.core.editor.defaultState
 import hextant.serial.EditorRoot
-import javafx.scene.input.DataFormat
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
 import ponticello.model.project.busses
@@ -56,6 +56,6 @@ class GlobalPatternObject(
         fun create(name: String): GlobalPatternObject =
             GlobalPatternObject(EditorRoot(ScExprExpander().defaultState())).withName(name)
 
-        val DATA_FORMAT = DataFormat("GlobalPatternObject")
+        val DATA_FORMAT = TypedDataFormat<GlobalPatternReference>("GlobalPatternObject")
     }
 }

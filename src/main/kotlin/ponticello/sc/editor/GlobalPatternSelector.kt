@@ -10,5 +10,5 @@ class GlobalPatternSelector : ObjectSelector<GlobalPatternObject>() {
 
     override fun createNewObject(name: String): GlobalPatternObject = GlobalPatternObject.create(name)
 
-    override fun dataFormat(): DataFormat? = GlobalPatternObject.DATA_FORMAT
+    override fun dataFormat(): DataFormat = GlobalPatternObject.DATA_FORMAT
 }
