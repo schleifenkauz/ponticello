@@ -10,6 +10,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import ponticello.impl.*
 import ponticello.model.obj.AbstractContextualObject
+import ponticello.model.registry.ScoreObjectRegistry
 import reaktive.value.ReactiveString
 import reaktive.value.now
 import reaktive.value.reactiveValue
@@ -89,7 +90,17 @@ open class Score(
 
     fun has(name: String) = objects.any { obj -> obj.name.now == name }
 
-    fun deepClone() = Score(instances.mapTo(mutableListOf()) { inst -> inst.clone() })
+    fun deepClone(): Score {
+        val clonedObjects = objects.associateWith { obj ->
+            val newName = context[ScoreObjectRegistry].nameForClone(obj)
+            obj.clone(newName)
+        }
+        val instances = instances.mapTo(mutableListOf()) { inst ->
+            val obj = clonedObjects.getValue(inst.obj)
+            ScoreObjectInstance(obj, inst.position, inst.muted.copy())
+        }
+        return Score(instances)
+    }
 
     fun clone() = Score(instances.mapTo(mutableListOf()) { inst -> inst.duplicate(inst.position) })
 
@@ -162,7 +173,10 @@ open class Score(
     private fun reinsertInterval(inst: ScoreObjectInstance, oldStart: Decimal, oldEnd: Decimal) {
         val removed = intervalTree.remove(inst, oldStart, oldEnd)
         if (!removed) {
-            Logger.warn("Failed to remove interval for ${inst.obj.name.now} from $oldStart to $oldEnd", Logger.Category.Score)
+            Logger.warn(
+                "Failed to remove interval for ${inst.obj.name.now} from $oldStart to $oldEnd",
+                Logger.Category.Score
+            )
         }
         intervalTree.add(inst, inst.start, inst.end)
     }

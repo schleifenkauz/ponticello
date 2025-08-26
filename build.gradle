@@ -127,7 +127,7 @@ task distributeZip(type: Zip) {
 task release(type: Exec) {
     dependsOn(distributeZip)
     group = 'distribution'
-    description = "Published the distribution zip on schleifenkauz.de"
+    description = "Publish the distribution zip on schleifenkauz.de"
 
     workingDir websiteRepo
     commandLine 'bash', '-c', """
