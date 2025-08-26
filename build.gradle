@@ -1,3 +1,7 @@
+import java.nio.file.Files
+import java.nio.file.Paths
+import java.nio.file.StandardCopyOption
+
 plugins {
     id 'java'
     id 'application'
@@ -9,7 +13,7 @@ plugins {
 }
 
 group 'com.github.nkb03'
-version '0.2.1'
+version '0.2.2'
 
 repositories {
     mavenCentral()
@@ -78,4 +82,58 @@ test {
 
 shadowJar {
     mergeServiceFiles()
+    archiveFileName = "ponticello.jar"
+    doLast {
+        def jarFile = buildDir.toPath().resolve("libs/ponticello.jar")
+        def dest = Paths.get(System.getProperty("user.home"), "cloud", "ponticello", "ponticello-v${version}.jar")
+        Files.copy(jarFile, dest, StandardCopyOption.REPLACE_EXISTING)
+    }
+}
+
+def websiteRepo = file("${System.getProperty("user.home")}/dev/schleifenkauz.github.io")
+def zipFileName = "ponticello-v${version}.zip"
+
+task distributeZip(type: Zip) {
+    group = 'distribution'
+    description = 'Zips the Fat JAR and scripts into a distribution archive'
+
+    dependsOn(shadowJar)
+
+    from(shadowJar.archiveFile) {
+        into('lib')
+    }
+
+    from(file("${System.getProperty("user.home")}/cloud/ponticello/global-instruments")) {
+        include(
+                'play_sample.json', 'play_mono_sample.json',
+                'percussive.json', 'percussive_mono.json',
+                'hpf.json', 'lpf.json', 'reverb.json',
+                'lfnoise.json', 'fsin.json',
+                'feedback.json', 'flanger.json', 'granulator.json',
+                'limiter.json', 'pan.json', 'amp.json',
+        )
+        into("global-instruments")
+    }
+
+    from('src/scripts') {
+        into('scripts')
+    }
+
+
+    destinationDirectory.set(file("$websiteRepo/software"))
+    archiveFileName.set(zipFileName)
+}
+
+task release(type: Exec) {
+    dependsOn(distributeZip)
+    group = 'distribution'
+    description = "Published the distribution zip on schleifenkauz.de"
+
+    workingDir websiteRepo
+    commandLine 'bash', '-c', """
+        git add software/$zipFileName &&
+        git commit -m "Release Ponticello version $version" &&
+        git pull &&
+        git push
+    """
 }
