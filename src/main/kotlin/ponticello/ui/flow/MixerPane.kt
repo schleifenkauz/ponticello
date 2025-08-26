@@ -27,6 +27,7 @@ import ponticello.impl.Logger
 import ponticello.impl.unaryMinus
 import ponticello.impl.withPrecision
 import ponticello.model.flow.AudioFlow
+import ponticello.model.flow.AudioFlows
 import ponticello.model.flow.MixerFlow
 import ponticello.model.flow.MixerFlow.Companion.VOLUME_SPEC
 import ponticello.model.obj.BusObject
@@ -291,8 +292,8 @@ class MixerPane(
 
     private inner class MixerPaneDropHandler : ConfiguredDropHandler() {
         init {
-            handleTypedFormat(AudioFlow.DATA_FORMAT) { event, ref ->
-                val flow = ref.get() ?: return@handleTypedFormat false
+            handleTypedFormat(AudioFlow.DATA_FORMAT) { _, ref ->
+                val flow = ref.resolve(context[AudioFlows].allFlows()) ?: return@handleTypedFormat false
                 if (flow !is MixerFlow) {
                     Logger.warn("Dropped flow is not a MixerFlow", Logger.Category.AudioFlow)
                     return@handleTypedFormat false

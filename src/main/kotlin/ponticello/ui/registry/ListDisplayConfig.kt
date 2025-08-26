@@ -37,6 +37,8 @@ interface ListDisplayConfig<O : Any> {
 
     val centerAddObjectButton: Boolean get() = false
 
+    val canCreateNewObject: Boolean get() = true
+
     val buttonStyle: String get() = "medium-icon-button"
 
     val inlineOrientation: Orientation get() = Orientation.VERTICAL

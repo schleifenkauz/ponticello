@@ -504,6 +504,7 @@ class ObjectListView<O : Any>(
             }
             addAction("Create object") {
                 description { list -> reactiveValue("Create new ${list.source.objectType}") }
+                applicableIf { list -> list.config.canCreateNewObject }
                 shortcut("Ctrl+PLUS")
                 icon(MaterialDesignP.PLUS)
                 executes { p, ev -> p.addObject(ev) }
