@@ -1,13 +1,9 @@
 package ponticello.ui.controls
 
-import fxutils.SubWindow
 import fxutils.actions.ContextualizedAction
-import fxutils.actions.action
-import fxutils.showAndBringToFront
 import hextant.context.Context
 import javafx.scene.Node
 import javafx.scene.layout.Region
-import org.kordamp.ikonli.material2.Material2AL
 import ponticello.model.obj.ParameterizedObject
 import ponticello.model.score.ParameterControlList.NamedParameterControl
 import ponticello.model.score.controls.*
@@ -52,14 +48,6 @@ sealed class ControlType<C : ParameterControl> {
             ExprControlType,
             UGenControlType
         )
-
-        val showWindowAction = action<() -> SubWindow>("Edit code") {
-            icon(Material2AL.CODE)
-            executes { w ->
-                val window = w()
-                window.showAndBringToFront()
-            }
-        }
 
         @Suppress("UNCHECKED_CAST")
         fun <O : ParameterControl> getType(option: O) = when (option) {

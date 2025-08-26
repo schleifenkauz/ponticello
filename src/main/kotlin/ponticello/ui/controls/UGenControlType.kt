@@ -3,7 +3,6 @@ package ponticello.ui.controls
 import fxutils.actions.ContextualizedAction
 import fxutils.actions.collectActions
 import fxutils.actions.detailsAction
-import fxutils.actions.makeButton
 import fxutils.controls.CheckBox
 import fxutils.opacity
 import fxutils.prompt.InfoPrompt
@@ -37,11 +36,7 @@ data object UGenControlType : ControlType<UGenControl>() {
         namedControl: ParameterControlList.NamedParameterControl,
         control: UGenControl,
         view: ScoreObjectView?,
-    ): Node {
-        val actions = actions.withContext(Pair(namedControl, view))
-        val window by lazy { makeCodePaneWindow(control.expr, control.context, namedControl, actions) }
-        return showWindowAction.withContext { window }.makeButton("medium-icon-button")
-    }
+    ): Node = Region()
 
     override fun createInitialControl(
         obj: ParameterizedObject,

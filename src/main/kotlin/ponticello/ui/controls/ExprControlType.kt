@@ -2,7 +2,6 @@ package ponticello.ui.controls
 
 import fxutils.actions.ContextualizedAction
 import fxutils.actions.collectActions
-import fxutils.actions.makeButton
 import hextant.serial.EditorRoot
 import javafx.scene.Node
 import javafx.scene.layout.Region
@@ -23,11 +22,7 @@ data object ExprControlType : ControlType<ExprControl>() {
 
     override fun createDetailInput(
         namedControl: NamedParameterControl, control: ExprControl, view: ScoreObjectView?,
-    ): Node {
-        val actions = actions.withContext(control)
-        val window by lazy { makeCodePaneWindow(control.expr, control.context, namedControl, actions) }
-        return showWindowAction.withContext { window }.makeButton("medium-icon-button")
-    }
+    ): Node = Region()
 
     override fun createSimpleInput(
         namedControl: NamedParameterControl, control: ExprControl,

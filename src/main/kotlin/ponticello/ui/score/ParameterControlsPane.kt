@@ -7,6 +7,7 @@ import fxutils.styleClass
 import javafx.event.Event
 import javafx.geometry.Point2D
 import javafx.scene.Node
+import javafx.scene.Parent
 import javafx.scene.input.DataFormat
 import javafx.scene.input.DragEvent
 import javafx.scene.input.Dragboard
@@ -20,7 +21,9 @@ import ponticello.model.obj.withName
 import ponticello.model.registry.ObjectList
 import ponticello.model.score.ParameterControlList
 import ponticello.model.score.ParameterControlList.NamedParameterControl
+import ponticello.model.score.controls.ExprControl
 import ponticello.model.score.controls.ParameterControl
+import ponticello.model.score.controls.UGenControl
 import ponticello.model.score.controls.ValueControl
 import ponticello.sc.ControlSpec
 import ponticello.sc.NumericalControlSpec
@@ -43,7 +46,9 @@ class ParameterControlsPane(
         get() = "Parameter controls"
 
     override val supportedModes: Set<DisplayMode>
-        get() = setOf(DisplayMode.Inline(collapsable = false))
+        get() = setOf(DisplayMode.Inline(collapsable = true))
+
+    override val addSpaceBeforeActionBar: Boolean get() = false
 
     init {
         styleClass("parameter-controls")
@@ -140,7 +145,11 @@ class ParameterControlsPane(
         return listOf(editor)
     }
 
-    override val addSpaceBeforeActionBar: Boolean get() = false
+    override fun getContent(obj: NamedParameterControl, mode: DisplayMode): Parent? = when (val ctrl = obj.now) {
+        is ExprControl -> ctrl.expr.control
+        is UGenControl -> ctrl.expr.control
+        else -> null
+    }
 
     override fun getActions(box: ObjectBox<NamedParameterControl>): List<ContextualizedAction> =
         actions.withContext(box)

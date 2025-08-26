@@ -8,7 +8,9 @@ import fxutils.mouseX
 import javafx.scene.robot.Robot
 import org.kordamp.ikonli.material2.Material2MZ
 import ponticello.impl.asTime
+import ponticello.impl.one
 import ponticello.impl.randomColor
+import ponticello.impl.zero
 import ponticello.model.flow.AudioFlowGroup
 import ponticello.model.flow.AudioFlows
 import ponticello.model.player.ScorePlayer
@@ -88,6 +90,7 @@ object ScoreNavigationActions : Action.Collector<NavigableScorePane>({
         executes { pane ->
             val anchor = Robot().mousePosition
             val y = pane.getScoreY(pane.screenToLocal(anchor).y)
+            if (y !in zero..one) return@executes
             val flows = pane.context[AudioFlows]
             val name = NamePrompt(flows, "Name for new flow group", "")
                 .showDialog(pane.scene.window, anchor) ?: return@executes

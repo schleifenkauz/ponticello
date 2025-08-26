@@ -19,7 +19,6 @@ import ponticello.model.score.ObjectPosition
 import ponticello.model.score.ScoreObject
 import ponticello.ui.score.NavigableScorePane
 import ponticello.ui.score.ScoreObjectSelectionManager
-import ponticello.ui.score.ScoreObjectView
 
 object ArrowKeys {
     fun registerArrowKeys(scene: Scene, context: Context) {
@@ -33,7 +32,6 @@ object ArrowKeys {
                 }
             }
             if (ev.isTargetTextInput) return@addEventFilter
-            if (ev.target !is ScoreObjectView) return@addEventFilter
             if (ev.code !in setOf(KeyCode.LEFT, KeyCode.RIGHT, KeyCode.UP, KeyCode.DOWN)) return@addEventFilter
             if (ev.isAltDown) {
                 val inst = selector.focusedInstance ?: return@addEventFilter
