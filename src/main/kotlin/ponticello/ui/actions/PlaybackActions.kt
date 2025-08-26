@@ -99,7 +99,7 @@ object PlaybackActions {
         if (bus != null) project[SERVER_OPTIONS].recordedBus = bus.reference()
     }
 
-    val global = collectActions<ScorePlayer> {
+    val global = collectActions {
         add(goToStartAction("Alt?+DIGIT0"))
         add(playAction("Alt?+SPACE"))
         addAction("Stop") {
@@ -118,6 +118,12 @@ object PlaybackActions {
             }
         }
         add(toggleRecording)
+        addAction("Recompute score object intervals") {
+            shortcut("Shift+F5")
+            executes { p ->
+                p.score.recomputeIntervals()
+            }
+        }
         addAction("Start recording to circular buffer") {
             shortcut("Ctrl+Shift+R")
             executes { player, _ ->

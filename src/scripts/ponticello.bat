@@ -1,0 +1,1 @@
+%PONTICELLO_HOME%\lib\jdk\bin\java.exe -jar --module-path %PONTICELLO_HOME%\lib\javafx\lib --add-modules javafx.graphics --add-modules javafx.web %PONTICELLO_HOME%\lib\ponticello.jar %1

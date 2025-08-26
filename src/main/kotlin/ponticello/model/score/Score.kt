@@ -167,6 +167,18 @@ open class Score(
         intervalTree.add(inst, inst.start, inst.end)
     }
 
+    fun recomputeIntervals() {
+        intervalTree.clear()
+        for (inst in instances) {
+            intervalTree.add(inst, inst.start, inst.end)
+        }
+        for (obj in objects) {
+            if (obj is AbstractScoreObjectGroup) {
+                obj.score.recomputeIntervals()
+            }
+        }
+    }
+
     fun activeInstances(range: DecimalRange): List<ScoreObjectInstance> =
         intervalTree.queryOverlapping(range.start, range.endInclusive).map { it.value }
 

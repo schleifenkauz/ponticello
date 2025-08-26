@@ -88,6 +88,10 @@ class IntervalTree<V> {
         return out
     }
 
+    fun clear() {
+        root = null
+    }
+
     // ------------------------ Internal helpers ------------------------
 
     private fun endAtLeast(endKey: Decimal?, point: Decimal): Boolean {

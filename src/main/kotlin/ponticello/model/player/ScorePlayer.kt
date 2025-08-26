@@ -32,12 +32,13 @@ class ScorePlayer private constructor(
     val isScheduled: ReactiveValue<Boolean> = scheduled
 
     val context get() = pane.context
+    val score get() = pane.score
 
     val lookAhead get() = context[GlobalSettings].lookAhead
 
     private val client: SuperColliderClient = context[SuperColliderClient]
     private val activeObjects = context[ActiveObjectsManager]
-    private val updater = LiveScoreUpdater(pane.score, this)
+    private val updater = LiveScoreUpdater(score, this)
     val playHead: PlayHead = PlayHead(pane)
 
     private var currentClock: ClockObject? = null
@@ -47,10 +48,10 @@ class ScorePlayer private constructor(
     val timeOffset: Decimal get() = loopedTime - lastPlayFrom
 
     private val maxTime: Decimal
-        get() = pane.score.maxTime
+        get() = score.maxTime
 
     init {
-        pane.score.addListener(updater)
+        score.addListener(updater)
     }
 
     fun doCycle(time: Decimal, delta: Decimal) = execute {
@@ -79,7 +80,7 @@ class ScorePlayer private constructor(
         }
 
         val timeRange = scoreTime..scoreTime + delta
-        val events = collectEvents(pane.score, timeRange, withCutoff = false)
+        val events = collectEvents(score, timeRange, withCutoff = false)
         scheduler.scheduleEvents(events, this)
     }
 
@@ -147,7 +148,7 @@ class ScorePlayer private constructor(
         lastPlayFrom = time
         loopedTime = zero
         val timeRange = time..time + lookAhead
-        val events = collectEvents(pane.score, timeRange, withCutoff = true)
+        val events = collectEvents(score, timeRange, withCutoff = true)
         for ((type, position, inst) in events) {
             if (type == ScoreEvent.Type.ObjectStart) {
                 scheduleInstantly(inst, position)
