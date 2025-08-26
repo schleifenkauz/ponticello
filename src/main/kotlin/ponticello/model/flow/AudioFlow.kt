@@ -28,11 +28,17 @@ sealed class AudioFlow : AbstractRenamableObject() {
 
     val superColliderName get() = "~flow_${name.now}"
 
+    override val canCopy: Boolean
+        get() = true
+
     abstract val isValid: ReactiveValue<Boolean>
 
     @Transient
     lateinit var parentGroup: AudioFlowGroup
         private set
+
+    override val registry: AudioFlowGroup.AudioFlowList
+        get() = parentGroup.flows
 
     fun setParentGroup(parent: AudioFlowGroup) {
         parentGroup = parent

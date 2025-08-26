@@ -48,6 +48,9 @@ class AudioFlowsPane(flows: AudioFlows) : SearchableToolPane<AudioFlowGroup>(flo
     override val supportedModes: Set<DisplayMode>
         get() = setOf(DisplayMode.Collapsable, DisplayMode.SubWindow, DisplayMode.DetailsPane)
 
+    override val canCreateNewObject: Boolean
+        get() = false
+
     private var selectedFilter: FilterOption = FilterOption.All
         set(value) {
             if (field == value) return

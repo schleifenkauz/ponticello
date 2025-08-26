@@ -29,7 +29,6 @@ import ponticello.model.obj.withName
 import ponticello.model.registry.NamedObject
 import ponticello.model.registry.NamedObjectList
 import ponticello.model.registry.ObjectList
-import ponticello.model.registry.ObjectRegistry
 import ponticello.ui.controls.NamePrompt
 import ponticello.ui.dock.ToolPane
 import reaktive.value.*
@@ -574,7 +573,7 @@ class ObjectListView<O : Any>(
                     val obj = list.selectedObject() as? RenamableObject ?: return@executes
 
                     @Suppress("UNCHECKED_CAST")
-                    val source = list.source as ObjectRegistry<RenamableObject>
+                    val source = list.source as NamedObjectList<RenamableObject>
                     val initialName = obj.name.now + "_copy"
                     val name = NamePrompt(source, "Name for new duplicate instrument", initialName)
                         .showDialog(ev) ?: return@executes

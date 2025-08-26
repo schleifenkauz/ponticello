@@ -34,7 +34,6 @@ import reaktive.value.binding.impl.notNull
 import reaktive.value.binding.map
 import reaktive.value.now
 import reaktive.value.reactiveVariable
-import kotlin.collections.set
 
 class ScoreObjectDetailPane : ToolPane() {
     private val detached = mutableMapOf<ScoreObject, SubWindow>()
@@ -64,7 +63,7 @@ class ScoreObjectDetailPane : ToolPane() {
 
     override fun defaultState(): ToolPaneState = ToolPaneState.docked
 
-    private fun noSelectedObject() = BorderPane(label("No object selected"))
+    private fun noSelectedObject() = BorderPane(label("No object focused"))
 
     fun updateContent(focusedView: ScoreObjectView?) {
         displayedObject.now = focusedView
