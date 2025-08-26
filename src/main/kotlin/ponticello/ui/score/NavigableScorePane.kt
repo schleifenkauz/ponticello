@@ -1,15 +1,9 @@
 package ponticello.ui.score
 
-import fxutils.Ctrl
-import fxutils.modifiers
 import hextant.context.Context
-import javafx.scene.input.MouseEvent
 import ponticello.impl.*
-import ponticello.model.flow.AudioFlowGroup
-import ponticello.model.flow.AudioFlows
 import ponticello.model.player.ScorePlayer
 import ponticello.model.score.Score
-import ponticello.ui.controls.NamePrompt
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Future
 import kotlin.math.exp
@@ -58,23 +52,6 @@ class NavigableScorePane(score: Score, context: Context) : RootScorePane(score, 
     override fun listenForEvents() {
         super.listenForEvents()
         setupNavigation()
-    }
-
-    override fun rightClicked(ev: MouseEvent) {
-        super.rightClicked(ev)
-        if (ev.modifiers == setOf(Ctrl)) {
-            addFlowGroup(ev)
-        }
-    }
-
-    private fun addFlowGroup(ev: MouseEvent) {
-        val anchor = localToScreen(ev.x, ev.y) ?: return
-        val name = NamePrompt(context[AudioFlows], "Name for new flow group", "")
-            .showDialog(scene.window, anchor) ?: return
-        val color = randomColor()
-        val y = getScoreY(ev.y)
-        val group = AudioFlowGroup.create(name, y, color)
-        context[AudioFlows].add(group)
     }
 
     private fun setupNavigation() {

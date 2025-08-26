@@ -5,10 +5,15 @@ import fxutils.actions.isAltDown
 import fxutils.actions.isShiftDown
 import fxutils.actions.isTargetTextInput
 import fxutils.mouseX
+import javafx.scene.robot.Robot
 import org.kordamp.ikonli.material2.Material2MZ
 import ponticello.impl.asTime
+import ponticello.impl.randomColor
+import ponticello.model.flow.AudioFlowGroup
+import ponticello.model.flow.AudioFlows
 import ponticello.model.player.ScorePlayer
 import ponticello.ui.controls.DecimalPrompt
+import ponticello.ui.controls.NamePrompt
 import ponticello.ui.score.NavigableScorePane
 import reaktive.value.binding.not
 import reaktive.value.now
@@ -76,6 +81,19 @@ object ScoreNavigationActions : Action.Collector<NavigableScorePane>({
                 precision = 2, initialValue = 10.0, 0.0..1000.0
             ).showDialog() ?: return@executes
             pane.addTime(cursorPosition, amount)
+        }
+    }
+    addAction("Add flow group") {
+        shortcut("Ctrl+Shift+F")
+        executes { pane ->
+            val anchor = Robot().mousePosition
+            val y = pane.getScoreY(pane.screenToLocal(anchor).y)
+            val flows = pane.context[AudioFlows]
+            val name = NamePrompt(flows, "Name for new flow group", "")
+                .showDialog(pane.scene.window, anchor) ?: return@executes
+            val color = randomColor()
+            val group = AudioFlowGroup.create(name, y, color)
+            flows.add(group)
         }
     }
 })
