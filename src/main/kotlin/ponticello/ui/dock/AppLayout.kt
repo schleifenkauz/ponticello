@@ -37,9 +37,6 @@ import ponticello.ui.registry.*
 import ponticello.ui.score.NavigableScorePane
 import ponticello.ui.score.TimeCodeView
 import reaktive.value.now
-import kotlin.collections.component1
-import kotlin.collections.component2
-import kotlin.collections.set
 import kotlin.reflect.KClass
 
 class AppLayout(
@@ -113,7 +110,7 @@ class AppLayout(
             savedDividerPositions[side] = size
             restorePaneSize(side, size)
             val pane = getSidePane(side) ?: continue
-            pane.setDividerPositions(*dividerPositions.toDoubleArray())
+            pane.dividerPositions = dividerPositions.toDoubleArray()
         }
     }
 
@@ -156,7 +153,7 @@ class AppLayout(
         for (bar in listOf(leftTopBar, leftBottomBar, rightBar)) {
             if (type in bar.layout.source) {
                 val box = bar.layout.getBox(type)
-                return box.content as? Button ?: return null
+                return box.content as? Button
             }
         }
         return null
@@ -374,7 +371,7 @@ class AppLayout(
         state.toolPaneStates = allToolPaneTypes.map { type ->
             val toolPane = getToolPane(type) ?: error("$type not found")
             val s = toolPane.initialState ?: toolPane.defaultState()
-            toolPane.saveState(s)
+            if (toolPane.isSetup) toolPane.saveState(s)
             s
         }
     }
