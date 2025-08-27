@@ -25,6 +25,7 @@ import ponticello.ui.dock.ToolPaneState
 import ponticello.ui.impl.makeSubWindow
 import ponticello.ui.misc.CodePane
 import ponticello.ui.misc.PatternPlotPane
+import ponticello.ui.registry.ObjectListView.DisplayMode
 import reaktive.value.binding.map
 
 class GlobalPatternRegistryPane(
@@ -33,8 +34,11 @@ class GlobalPatternRegistryPane(
     override val type: Type
         get() = GlobalPatternRegistryPane
 
-    override val supportedModes: Set<ObjectListView.DisplayMode>
-        get() = ObjectListView.DisplayMode.all
+    override val canDuplicate: Boolean
+        get() = true
+
+    override val supportedModes: Set<DisplayMode>
+        get() = setOf(DisplayMode.Collapsable, DisplayMode.Inline(false), DisplayMode.DetailsPane)
 
     private val plotPaneWindows = mutableMapOf<GlobalPatternObject, SubWindow>()
 
@@ -42,8 +46,8 @@ class GlobalPatternRegistryPane(
 
     override fun createNewObject(name: String, ev: Event?): GlobalPatternObject = GlobalPatternObject.create(name)
 
-    override fun getContent(obj: GlobalPatternObject, mode: ObjectListView.DisplayMode): Parent = when (mode) {
-        ObjectListView.DisplayMode.SubWindow -> {
+    override fun getContent(obj: GlobalPatternObject, mode: DisplayMode): Parent = when (mode) {
+        DisplayMode.SubWindow -> {
             val actions = actions.withContext(listView.getBox(obj))
             CodePane(obj.patternCode, extraActions = actions, ownWindow = true, actionBarAlignment = Pos.BOTTOM_RIGHT)
         }
@@ -77,8 +81,8 @@ class GlobalPatternRegistryPane(
         override val icon: Ikon
             get() = MaterialDesignL.LARAVEL
 
-        override val shortcuts: Array<String>
-            get() = arrayOf("F7")
+        override val shortcut: String
+            get() = "F7"
 
         override val defaultSide: Side
             get() = Side.RIGHT

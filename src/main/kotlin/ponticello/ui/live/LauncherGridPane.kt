@@ -174,8 +174,8 @@ class LauncherGridPane(
         override val icon: Ikon
             get() = MaterialDesignG.GRID
 
-        override val shortcuts: Array<String>
-            get() = arrayOf("Ctrl+G")
+        override val shortcut: String
+            get() = "Ctrl+G"
 
         override fun createToolPane(project: PonticelloProject): ToolPane = LauncherGridPane(project[LAUNCHER_GRID])
 

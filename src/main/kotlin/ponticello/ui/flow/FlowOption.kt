@@ -4,15 +4,11 @@ import fxutils.prompt.SimpleSearchableListView
 import hextant.context.Context
 import javafx.geometry.Point2D
 import ponticello.model.flow.*
-import ponticello.model.obj.InstrumentObject
-import ponticello.model.obj.NoInstrument
-import ponticello.model.obj.ProcessDefObject
-import ponticello.model.obj.SynthDefObject
+import ponticello.model.obj.*
 import ponticello.model.registry.BusRegistry
 import ponticello.model.registry.InstrumentRegistry
 import ponticello.sc.Identifier
 import ponticello.ui.registry.SearchableBusListView
-import ponticello.ui.score.ScorePane
 import ponticello.ui.score.SoundProcessView
 import reaktive.value.now
 
@@ -86,6 +82,7 @@ sealed interface FlowOption {
         override fun toString(): String = when (def) {
             is SynthDefObject -> "SynthDef ${def.name.now}"
             is ProcessDefObject -> "Process ${def.name.now}"
+            is VSTInstrumentObject -> "VST: ${def.name.now}"
             is NoInstrument -> throw AssertionError("NoInstrument should not be here")
         }
 

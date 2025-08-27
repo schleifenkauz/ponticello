@@ -56,12 +56,12 @@ class ObjectBox<O : Any>(val parent: ObjectListView<O>, val obj: O) : Control() 
     private val nameDisplay: Region? = when {
         nameControl != null -> {
             nameLabel = nameControl.label
-            nameControl.setFixedWidth(150.0)
+            nameControl.setFixedWidth(config.nameDisplayWidth)
         }
 
         obj is NamedObject -> {
             nameLabel = Label(obj.name.now).styleClass("name-field")
-            nameLabel.setFixedWidth(150.0)
+            nameLabel.setFixedWidth(config.nameDisplayWidth)
             HBox(nameLabel).styleClass("name")
         }
 
@@ -185,7 +185,7 @@ class ObjectBox<O : Any>(val parent: ObjectListView<O>, val obj: O) : Control() 
         if (dragTarget == prevDragTarget) return
         prevDragTarget = dragTarget
         dragTarget.setOnDragDetected { ev ->
-            val db = if (ev.isControlDown && config.canCopy(obj)) this.startDragAndDrop(TransferMode.COPY)
+            val db = if (ev.isControlDown && obj is NamedObject && config.canDuplicate) this.startDragAndDrop(TransferMode.COPY)
             else this.startDragAndDrop(TransferMode.MOVE, TransferMode.LINK)
             if (obj is NamedObject) {
                 db.setContent(mapOf(config.dataFormat to obj.reference()))

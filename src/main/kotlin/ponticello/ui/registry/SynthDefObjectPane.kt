@@ -6,7 +6,7 @@ import ponticello.model.obj.CustomizableSynthDefObject
 import ponticello.ui.misc.CodePane
 
 class SynthDefObjectPane(
-    def: CustomizableSynthDefObject, enableActions: Boolean,
+    def: CustomizableSynthDefObject
 ) : ParameterizedObjectDefPane<CustomizableSynthDefObject>(def) {
     private lateinit var ugenGraphPane: EditorControl<*>
 

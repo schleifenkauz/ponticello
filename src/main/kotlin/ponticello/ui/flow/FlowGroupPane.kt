@@ -1,6 +1,5 @@
 package ponticello.ui.flow
 
-import bundles.createBundle
 import fxutils.*
 import fxutils.actions.*
 import fxutils.prompt.InfoPrompt
@@ -8,7 +7,6 @@ import fxutils.prompt.SimpleSearchableListView
 import fxutils.prompt.TextPrompt
 import javafx.event.Event
 import javafx.geometry.Point2D
-import javafx.scene.Node
 import javafx.scene.Parent
 import javafx.scene.control.Slider
 import javafx.scene.control.Tooltip
@@ -16,7 +14,6 @@ import javafx.scene.input.DataFormat
 import javafx.scene.input.DragEvent
 import javafx.scene.input.Dragboard
 import javafx.scene.input.TransferMode
-import javafx.scene.input.TransferMode.COPY_OR_MOVE
 import javafx.scene.layout.HBox
 import javafx.scene.layout.VBox
 import org.kordamp.ikonli.material2.Material2AL
@@ -33,9 +30,6 @@ import ponticello.model.registry.InstrumentRegistry
 import ponticello.model.registry.ObjectList
 import ponticello.model.registry.reference
 import ponticello.sc.Identifier
-import ponticello.sc.Rate
-import ponticello.sc.editor.BusSelector
-import ponticello.sc.view.ObjectSelectorControl
 import ponticello.ui.actions.ServerActions
 import ponticello.ui.controls.NameControl
 import ponticello.ui.dock.AppLayout
@@ -48,7 +42,6 @@ import ponticello.ui.registry.ObjectBox
 import ponticello.ui.registry.ObjectListView
 import ponticello.ui.registry.ObjectListView.DisplayMode
 import ponticello.ui.score.ParameterControlsPane
-import ponticello.ui.score.ScorePane
 import ponticello.ui.score.SoundProcessView
 import reaktive.value.binding.binding
 import reaktive.value.binding.`if`
@@ -80,6 +73,12 @@ class FlowGroupPane(
 
     private val context get() = group.context
 
+    override val nameDisplayWidth: Double
+        get() = 160.0
+
+    override val canDuplicate: Boolean
+        get() = true
+
     override val buttonStyle: String
         get() = "small-icon-button"
 
@@ -90,20 +89,24 @@ class FlowGroupPane(
         get() = AudioFlow.DATA_FORMAT
 
     override fun acceptedTransferModes(dragboard: Dragboard): Array<TransferMode> = when {
-        dragboard.hasContent(AudioFlow.DATA_FORMAT) -> COPY_OR_MOVE
         dragboard.hasContent(InstrumentObject.DATA_FORMAT) -> arrayOf(TransferMode.LINK)
-        else -> emptyArray()
+        else -> super.acceptedTransferModes(dragboard)
     }
 
     override fun getDroppedObject(ev: DragEvent): AudioFlow? {
         return when {
             ev.dragboard.hasContent(AudioFlow.DATA_FORMAT) -> {
+                @Suppress("UNCHECKED_CAST")
                 val reference = ev.dragboard.getContent(AudioFlow.DATA_FORMAT) as FlowReference
                 reference.resolve(context)
                 val flow = reference.get() ?: return null
                 if (TransferMode.COPY != ev.acceptedTransferMode) flow
                 else {
-                    val copy = flow.copy().withName("${flow.name.now}_copy")
+                    val takenFlowNames = context[AudioFlows].allFlows().mapTo(mutableSetOf()) { f -> f.name.now }
+                    val defaultName = flow.name.now + "_copy"
+                    val name = FlowNamePrompt(takenFlowNames, "Name for duplicate", defaultName)
+                        .showDialog(ev) ?: return null
+                    val copy = flow.copy().withName(name)
                     copy.setActive(flow.isActive.now)
                     copy
                 }
@@ -123,29 +126,10 @@ class FlowGroupPane(
         }
     }
 
-    override fun getHeaderContent(obj: AudioFlow): List<Node> = when (obj) {
-        is MixerFlow -> {
-            val selector = BusSelector()
-            selector.setFilter(rate = Rate.Audio, channels = null)
-            selector.syncWith(obj.targetBus)
-            selector.initialize(context)
-            val selectorControl = ObjectSelectorControl(selector, createBundle())
-            listOf(selectorControl.widthAtLeast(100.0))
-        }
-
-        is VSTPluginFlow -> {
-            val busSelector = ObjectSelectorControl(obj.busSelector, createBundle())
-                .widthAtLeast(100.0)
-            listOf(busSelector)
-        }
-
-        else -> emptyList()
-    }
-
     override fun getContent(obj: AudioFlow, mode: DisplayMode): Parent = when (obj) {
         is CodeFlow -> obj.codeEditor.control
         is SendFlow -> SendFlowView(obj)
-        is InstrumentFlow -> ParameterControlsPane(obj)
+        is InstrumentFlow -> ParameterControlsPane(obj).pad(5.0)
         is UtilityFlow -> Slider(-60.0, +6.0, 0.0) styleClass "volume-fader"
         is MixerFlow -> MixerFlowView.create(obj)
         is VSTPluginFlow -> VSTPluginFlowView(obj)
@@ -194,6 +178,11 @@ class FlowGroupPane(
     }
 
     override fun filter(obj: AudioFlow): Boolean = parent?.filter(obj) ?: true
+
+    override fun dropObject(obj: AudioFlow, idx: Int, list: ObjectList<AudioFlow>, from: ObjectList<AudioFlow>?) {
+        obj.parentGroup = group
+        super.dropObject(obj, idx, list, from)
+    }
 
     private class FlowNamePrompt(
         private val takenFlowNames: Set<String>,

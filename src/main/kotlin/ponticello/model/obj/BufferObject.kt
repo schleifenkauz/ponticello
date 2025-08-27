@@ -29,7 +29,8 @@ sealed class BufferObject : AbstractSuperColliderObject() {
         val control = buf.now as BufferControl
         control.sample.now = reference()
         val name = context[ScoreObjectRegistry].availableName(name.now)
-        val obj = SoundProcess.create(name, synthDef, controls)
+        val instrument = InstrumentReference.UserDefined(synthDef.reference())
+        val obj = SoundProcess.create(name, instrument, controls)
         obj.setInitialSize(duration().now, 0.02.asY)
         return obj
     }

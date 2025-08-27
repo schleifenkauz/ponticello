@@ -5,23 +5,20 @@ import hextant.core.HextantCore
 import io.mockk.mockk
 import ponticello.impl.asTime
 import ponticello.impl.toDecimal
-import ponticello.model.obj.withName
+import ponticello.model.obj.InstrumentReference
 import ponticello.model.registry.BusRegistry
 import ponticello.model.registry.InstrumentRegistry
 import ponticello.model.registry.ObjectReference
 import ponticello.model.registry.ScoreObjectRegistry
-import ponticello.model.score.ParameterControlList
 import ponticello.model.score.ScoreObject
 import ponticello.model.score.SoundProcess
 import ponticello.sc.client.SuperColliderClient
-import reaktive.value.reactiveVariable
 
 object Utils {
     fun createDummyObject(name: String): ScoreObject {
-        val dummy1 = SoundProcess(
-            instrumentRef = reactiveVariable(ObjectReference("default")),
-            controls = ParameterControlList.create()
-        ).withName(name)
+        val dummy1 = SoundProcess.create(
+            name, InstrumentReference.UserDefined(ObjectReference("default"))
+        )
         dummy1.setInitialSize(10.0.asTime, 100.0.toDecimal())
         return dummy1
     }

@@ -71,6 +71,9 @@ sealed class BusObject : AbstractSuperColliderObject() {
         override val channels: ReactiveVariable<Int>,
         override val busType: Type = Type.Regular,
     ) : BusObject() {
+        @SerialName("name")
+        override var _name: ReactiveVariable<String>? = null
+
         override val rate: Rate get() = Audio
 
         override fun ScWriter.createObject() {
@@ -90,6 +93,9 @@ sealed class BusObject : AbstractSuperColliderObject() {
         override val channels: ReactiveVariable<Int>,
         private val _spec: ReactiveVariable<NumericalControlSpec?> = reactiveVariable(null),
     ) : BusObject() {
+        @SerialName("name")
+        override var _name: ReactiveVariable<String>? = null
+
         override val rate: Rate get() = Control
         override val busType: Type
             get() = Type.Regular

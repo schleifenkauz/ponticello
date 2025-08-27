@@ -3,7 +3,6 @@ package ponticello.model.flow
 import hextant.context.Context
 import ponticello.sc.client.SuperColliderClient
 import ponticello.sc.client.eval
-import java.io.File
 
 object VSTPlugins {
     fun availablePlugins(context: Context) = context[SuperColliderClient]
@@ -22,11 +21,6 @@ object VSTPlugins {
             .ifEmpty { return emptyList() }
             .split(",")
         return presets
-    }
-
-    fun getPresetsFolder(context: Context, pluginName: String): File? {
-        val path = context[SuperColliderClient].eval("VSTPlugin.plugins['$pluginName'].presetsFolder").get()
-        return if (path == "nil") null else File(path)
     }
 
     fun hasInputs(pluginName: String, context: Context): Boolean =

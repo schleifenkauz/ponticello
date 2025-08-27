@@ -6,6 +6,14 @@ data class NodePlacement(
 ) {
     val code get() = "addAction: $addAction, target: $target"
 
+    val moveMethod get() = when (addAction) {
+        AddAction.AddAfter -> "moveAfter"
+        AddAction.AddBefore -> "moveBefore"
+        AddAction.AddToTail -> "moveToTail"
+        AddAction.AddToHead -> "moveToHead"
+        AddAction.AddReplace -> throw AssertionError("AddReplace is not a valid move method")
+    }
+
     enum class AddAction {
         AddAfter, AddBefore, AddToTail, AddToHead, AddReplace;
 

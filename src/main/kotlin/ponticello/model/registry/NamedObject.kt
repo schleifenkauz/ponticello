@@ -11,8 +11,6 @@ interface NamedObject : ContextualObject {
 
     val canDelete: Boolean get() = true
 
-    val canCopy: Boolean get() = false
-
     val registry: NamedObjectList<*>? get() = null
 
     fun copy(): NamedObject = throw UnsupportedOperationException("Cannot copy $this")

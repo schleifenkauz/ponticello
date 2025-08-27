@@ -56,7 +56,7 @@ class ConsoleOutputPane(client: SuperColliderClient) : ToolPane(), ConsoleMonito
     companion object : Type(14, "Console Output") {
         override val icon: Ikon get() = MaterialDesignC.CONSOLE
 
-        override val shortcuts get() = arrayOf("F12")
+        override val shortcut: String get() = "F12"
 
         override val defaultSide: Side
             get() = Side.BOTTOM

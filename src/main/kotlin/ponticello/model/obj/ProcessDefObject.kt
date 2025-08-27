@@ -8,6 +8,7 @@ import hextant.core.editor.defaultState
 import hextant.serial.EditorRoot
 import javafx.scene.paint.Color
 import kotlinx.serialization.Contextual
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import ponticello.impl.ColorSerializer
 import ponticello.impl.Logger
@@ -15,6 +16,7 @@ import ponticello.impl.copy
 import ponticello.impl.randomColor
 import ponticello.model.registry.InstrumentRegistry
 import ponticello.model.registry.ObjectRegistry
+import ponticello.model.registry.reference
 import ponticello.sc.ParameterType
 import ponticello.sc.client.ScWriter
 import ponticello.sc.client.SuperColliderClient
@@ -35,14 +37,14 @@ class ProcessDefObject(
     val loopBlock: EditorRoot<@Contextual CodeBlockEditor> = EditorRoot(CodeBlockEditor().defaultState()),
     val deltaExpr: EditorRoot<@Contextual ScExprExpander> = EditorRoot(ScExprExpander().defaultState()),
 ) : ConfigurableInstrumentObject, AbstractSuperColliderObject() {
+    @SerialName("name")
+    override var _name: ReactiveVariable<String>? = null
+
     override val superColliderName: String
         get() = "~proc_${name.now}"
 
     override val registry: ObjectRegistry<*>
         get() = context[InstrumentRegistry]
-
-    override val canCopy: Boolean
-        get() = true
 
     override fun supports(type: ParameterType): Boolean = true
 
@@ -56,8 +58,6 @@ class ProcessDefObject(
     override fun ScWriter.sync() {
         createObject()
     }
-
-    override fun onUpdated() {}
 
     override fun ScWriter.createObject() {
         val setup = setupBlock.editor.result.now
@@ -129,6 +129,8 @@ class ProcessDefObject(
         super.rename(newName)
         sync()
     }
+
+    override fun instrumentReference() = InstrumentReference.UserDefined(this.reference())
 
     companion object {
         fun newEmpty(name: String) = ProcessDefObject(

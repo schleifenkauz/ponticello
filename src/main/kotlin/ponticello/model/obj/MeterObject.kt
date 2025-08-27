@@ -1,5 +1,6 @@
 package ponticello.model.obj
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import ponticello.impl.*
 import ponticello.model.live.QuantizationUnit
@@ -17,8 +18,8 @@ class MeterObject(
     val beatsPerBar: ReactiveVariable<Int>,
     val ticksPerBeat: ReactiveVariable<Int>,
 ) : AbstractRenamableObject() {
-    override val canCopy: Boolean
-        get() = true
+    @SerialName("name")
+    override var _name: ReactiveVariable<String>? = null
 
     private fun getBeatDur() = (60.0.asTime / beatsPerMinute.now)
 

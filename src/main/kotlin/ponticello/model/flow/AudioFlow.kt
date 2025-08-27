@@ -28,26 +28,18 @@ sealed class AudioFlow : AbstractRenamableObject() {
 
     val superColliderName get() = "~flow_${name.now}"
 
-    override val canCopy: Boolean
-        get() = true
-
     abstract val isValid: ReactiveValue<Boolean>
 
     @Transient
-    lateinit var parentGroup: AudioFlowGroup
-        private set
+    var parentGroup: AudioFlowGroup? = null
 
     override val registry: AudioFlowGroup.AudioFlowList
-        get() = parentGroup.flows
-
-    fun setParentGroup(parent: AudioFlowGroup) {
-        parentGroup = parent
-    }
+        get() = parentGroup!!.flows
 
     abstract fun writeCode(placement: NodePlacement): String
 
     fun setActive(value: Boolean) {
-        if (value) {
+        if (value && initialized) {
             if (!isValid.now) {
                 Logger.warn("Attempted to activate invalid AudioFlow $this", Logger.Category.Playback)
                 return
@@ -79,9 +71,9 @@ sealed class AudioFlow : AbstractRenamableObject() {
     }
 
     fun sync() {
-        if (!isActive.now || !parentGroup.isActive.now) return
+        if (!isActive.now || parentGroup?.isActive?.now != true) return
         context[SuperColliderClient].run("$superColliderName.free")
-        val placement = parentGroup.getPlacement(this)
+        val placement = parentGroup!!.getPlacement(this)
         val code = writeCode(placement)
         context[SuperColliderClient].run(code)
     }

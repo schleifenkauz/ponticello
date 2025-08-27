@@ -5,7 +5,6 @@ import fxutils.*
 import fxutils.actions.button
 import fxutils.controls.SliderBar
 import fxutils.undo.UndoManager
-import javafx.geometry.Pos
 import javafx.scene.Node
 import javafx.scene.Parent
 import javafx.scene.layout.HBox
@@ -30,6 +29,12 @@ class MixerFlowView private constructor(
     val componentsView = ObjectListView(flow.components, this, scrollable = false)
 
     init {
+        val targetSelector = BusSelector()
+        targetSelector.setFilter(rate = Rate.Audio, channels = null)
+        targetSelector.syncWith(flow.targetBus)
+        targetSelector.initialize(flow.context)
+        val selectorControl = ObjectSelectorControl(targetSelector).widthAtLeast(100.0)
+
         val totalVolumeSlider = SliderBar(
             flow.masterVolume, reactiveValue("Master volume"),
             MixerFlow.VOLUME_SPEC.converter(unit = "db"),
@@ -40,8 +45,8 @@ class MixerFlowView private constructor(
             "Add source bus", "medium-icon-button", listConfig::addSourceBus
         )
         children.addAll(
-            HBox(5.0, addSourceBusBtn, label("Volume: "), totalVolumeSlider)
-                .pad(10.0).also { it.alignment = Pos.CENTER },
+            HBox(5.0, label("Volume: "), totalVolumeSlider).centerChildren().pad(10.0),
+            HBox(5.0, label("Target: "), selectorControl, addSourceBusBtn).centerChildren().pad(10.0),
             componentsView
         )
         styleClass("mixer-flow")

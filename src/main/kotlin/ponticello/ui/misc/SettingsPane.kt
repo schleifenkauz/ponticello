@@ -89,8 +89,8 @@ class SettingsPane(private val settings: GlobalSettings) : ToolPane() {
         override val defaultSide: Side
             get() = Side.TOP
 
-        override val shortcuts: Array<String>
-            get() = arrayOf("Ctrl+Alt+S")
+        override val shortcut: String
+            get() = "Ctrl+Alt+S"
 
         override fun createToolPane(project: PonticelloProject): ToolPane = SettingsPane(project.context[GlobalSettings])
     }

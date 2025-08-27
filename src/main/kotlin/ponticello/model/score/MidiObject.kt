@@ -10,7 +10,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import ponticello.impl.*
 import ponticello.model.obj.InstrumentObject
-import ponticello.model.obj.MidiInstrument
+import ponticello.model.obj.InstrumentReference
 import ponticello.model.obj.NoInstrument
 import ponticello.model.obj.ParameterizedObject
 import ponticello.sc.ControlSpec
@@ -21,13 +21,16 @@ import reaktive.value.binding.orElse
 @Serializable
 @SerialName("MidiObject")
 class MidiObject(
-    val instrument: ReactiveVariable<MidiInstrument>,
+    val instrument: ReactiveVariable<InstrumentReference>,
     @SerialName("lowestPitch") private var _lowestPitch: Int,
     @SerialName("highestPitch") private var _highestPitch: Int,
     override val score: Score,
     override val controls: ParameterControlList,
     val latencyMs: ReactiveVariable<Int> = reactiveVariable(0),
 ) : AbstractScoreObjectGroup(), ParameterizedObject {
+    @SerialName("name")
+    override var _name: ReactiveVariable<String>? = null
+
     override val type: String
         get() = "midi"
 
@@ -57,7 +60,7 @@ class MidiObject(
 
     override val associatedColor: ReactiveValue<Color?>
         get() = super.associatedColor.orElse(instrument.flatMap { instr ->
-            if (instr is MidiInstrument.SynthDef) instr.reference.get()?.color ?: reactiveValue(null)
+            if (instr is InstrumentReference.UserDefined) instr.reference.get()?.color ?: reactiveValue(null)
             else reactiveValue(null)
         })
 
@@ -128,8 +131,8 @@ class MidiObject(
 
     override val def: InstrumentObject
         get() = when (val instr = instrument.now) {
-            is MidiInstrument.SynthDef -> instr.reference.get() ?: NoInstrument()
-            is MidiInstrument.VST, MidiInstrument.None -> NoInstrument()
+            is InstrumentReference.UserDefined -> instr.reference.get() ?: NoInstrument()
+            is InstrumentReference.VST, InstrumentReference.None -> NoInstrument()
         }
 
     class TransposeEdit(private val obj: MidiObject, private val deltaPitch: Int) : AbstractEdit() {

@@ -8,6 +8,7 @@ import fxutils.setFixedWidth
 import javafx.event.Event
 import javafx.scene.Node
 import javafx.scene.Parent
+import javafx.scene.control.ColorPicker
 import javafx.scene.control.ScrollPane
 import javafx.scene.input.DataFormat
 import org.kordamp.ikonli.Ikon
@@ -43,6 +44,9 @@ class InstrumentRegistryPane(
     override val supportedModes: Set<DisplayMode>
         get() = setOf(DisplayMode.DetailsPane, DisplayMode.SubWindow, DisplayMode.Collapsable)
 
+    override val canDuplicate: Boolean
+        get() = true
+
     override fun defaultState(): ToolPaneState = ListToolPaneState.window
 
     override fun detailWindowIcon(obj: InstrumentObject): Ikon =
@@ -51,8 +55,8 @@ class InstrumentRegistryPane(
 
     override fun getContent(obj: InstrumentObject, mode: DisplayMode): Parent? = when (obj) {
         is CustomizableSynthDefObject -> {
-            val enableActions = mode == DisplayMode.SubWindow
-            SynthDefObjectPane(obj, enableActions)
+            mode == DisplayMode.SubWindow
+            SynthDefObjectPane(obj)
         }
 
         is ProcessDefObject -> {
@@ -61,14 +65,19 @@ class InstrumentRegistryPane(
         }
 
         is ReferencedSynthDefObject -> ScrollPane(ParameterInfoPane(obj.parameters.toReactiveList()))
+        is VSTInstrumentObject -> null
         is NoInstrument -> null
     }
 
     override val dataFormat: DataFormat
         get() = InstrumentObject.DATA_FORMAT
 
-    override fun getHeaderContent(obj: InstrumentObject): List<Node> =
-        listOf(colorPicker(obj.color).setFixedWidth(30.0))
+    override fun getHeaderContent(obj: InstrumentObject): List<Node> {
+        val picker =
+            if (obj is ConfigurableInstrumentObject) colorPicker(obj.color).setFixedWidth(30.0)
+            else ColorPicker(obj.color.now).also { it.isDisable = true }
+        return listOf(picker)
+    }
 
     override fun createNewObject(ev: Event?, list: ObjectList<InstrumentObject>): InstrumentObject? {
         val option = SimpleSearchableListView(InstrumentType.entries, "Instrument type").showPopup(ev) ?: return null
@@ -85,6 +94,7 @@ class InstrumentRegistryPane(
                     return if (reference) ReferencedSynthDefObject.get(name)
                     else CustomizableSynthDefObject.create(name)
                 }
+
                 else -> CustomizableSynthDefObject.create(name)
             }
 
@@ -103,8 +113,8 @@ class InstrumentRegistryPane(
         override val icon: Ikon
             get() = MaterialDesignS.SINE_WAVE
 
-        override val shortcuts: Array<String>
-            get() = arrayOf("F3")
+        override val shortcut: String
+            get() = "F3"
 
         override val defaultSide: Side
             get() = Side.RIGHT

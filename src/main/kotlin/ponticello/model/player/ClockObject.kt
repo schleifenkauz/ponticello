@@ -1,6 +1,7 @@
 package ponticello.model.player
 
 import hextant.context.Context
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import ponticello.impl.*
@@ -23,6 +24,9 @@ import reaktive.value.reactiveVariable
 class ClockObject(
     val timeWarp: ReactiveVariable<Decimal> = reactiveVariable(1.0.asTime),
 ) : AbstractRenamableObject(), Runnable {
+    @SerialName("name")
+    override var _name: ReactiveVariable<String>? = null
+
     private val lookAhead: Decimal get() = context[GlobalSettings].lookAhead
     val period get() = PERIOD_S * timeWarp.now
 

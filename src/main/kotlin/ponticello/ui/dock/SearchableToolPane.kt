@@ -7,12 +7,14 @@ import fxutils.styleClass
 import javafx.scene.Cursor
 import javafx.scene.Node
 import javafx.scene.input.DragEvent
+import javafx.scene.input.TransferMode
 import org.controlsfx.control.textfield.CustomTextField
 import org.kordamp.ikonli.javafx.FontIcon
 import org.kordamp.ikonli.material2.Material2MZ
 import org.kordamp.ikonli.materialdesign2.MaterialDesignB
 import ponticello.model.registry.NamedObject
 import ponticello.model.registry.NamedObjectList
+import ponticello.ui.controls.NamePrompt
 import ponticello.ui.impl.getFrom
 import ponticello.ui.registry.ObjectListView.Companion.modeChangeActions
 import reaktive.value.now
@@ -51,8 +53,12 @@ abstract class SearchableToolPane<O : NamedObject>(
     override fun getDroppedObject(ev: DragEvent): O? {
         val format = dataFormat
         if (format != null && ev.dragboard.hasContent(format)) {
-            val obj = ev.dragboard.getFrom(list, format)
-            return obj
+            val obj = ev.dragboard.getFrom(list, format) ?: return null
+            return if (ev.acceptedTransferMode == TransferMode.COPY) {
+                val newName = NamePrompt(list, "Name for copy", obj.name.now + "_copy")
+                    .showDialog(ev) ?: return null
+                duplicate(obj, newName)
+            } else obj
         }
         return null
     }

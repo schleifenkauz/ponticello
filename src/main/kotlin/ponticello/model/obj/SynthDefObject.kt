@@ -9,6 +9,7 @@ import ponticello.model.player.ActiveScoreObject
 import ponticello.model.player.ScorePlayer
 import ponticello.model.registry.InstrumentRegistry
 import ponticello.model.registry.ObjectRegistry
+import ponticello.model.registry.reference
 import ponticello.sc.client.SuperColliderClient
 import reaktive.value.now
 
@@ -44,4 +45,6 @@ sealed interface SynthDefObject : InstrumentObject, SuperColliderObject {
             }
         }
     }
+
+    override fun instrumentReference(): InstrumentReference = InstrumentReference.UserDefined(this.reference())
 }

@@ -32,7 +32,7 @@ import javafx.scene.paint.Color
 import javafx.scene.shape.Line
 import javafx.scene.shape.Rectangle
 import ponticello.impl.*
-import ponticello.model.obj.MidiInstrument
+import ponticello.model.obj.InstrumentReference
 import ponticello.model.obj.project
 import ponticello.model.obj.withName
 import ponticello.model.project.mainScore
@@ -228,7 +228,7 @@ class LegacyMidiObjectView(override val obj: LegacyMidiObject, inst: ScoreObject
     }
 
     override fun setupDetailPane(pane: DetailPane) {
-        val instrumentSelector = MidiInstrumentSelectorPopup(context).selectorButton(
+        val instrumentSelector = InstrumentSelectorPopup(context).selectorButton(
             obj.instrument, undoManager = context[UndoManager], actionDescription = "Select MIDI instrument"
         )
         pane.addItem("Instrument: ", instrumentSelector)
@@ -357,7 +357,7 @@ class LegacyMidiObjectView(override val obj: LegacyMidiObject, inst: ScoreObject
     companion object {
         private const val CURSOR_OPACITY = 0.6
 
-        fun createNewMidiObjectDialog(instr: MidiInstrument, context: Context): Prompt<LegacyMidiObject?, *> =
+        fun createNewMidiObjectDialog(instr: InstrumentReference, context: Context): Prompt<LegacyMidiObject?, *> =
             compoundPrompt("Configure MIDI object", labelWidth = 130.0) {
                 val defaultName = context[ScoreObjectRegistry].availableName("midi")
                 val nameField = TextField(defaultName) named "Object name"

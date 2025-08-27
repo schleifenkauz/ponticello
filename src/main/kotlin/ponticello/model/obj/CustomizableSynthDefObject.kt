@@ -9,6 +9,7 @@ import hextant.core.editor.defaultState
 import hextant.serial.EditorRoot
 import javafx.scene.paint.Color
 import kotlinx.serialization.Contextual
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import ponticello.impl.ColorSerializer
 import ponticello.impl.Logger
@@ -32,8 +33,8 @@ class CustomizableSynthDefObject(
     override val color: ReactiveVariable<@Serializable(with = ColorSerializer::class) Color> = reactiveVariable(Color.WHITE),
     val ugenGraph: EditorRoot<@Contextual CodeBlockEditor>? = null,
 ) : SynthDefObject, AbstractRenamableObject(), ConfigurableInstrumentObject {
-    override val canCopy: Boolean
-        get() = true
+    @SerialName("name")
+    override var _name: ReactiveVariable<String>? = null
 
     override fun supports(type: ParameterType): Boolean = type != ParameterType.Expr
 

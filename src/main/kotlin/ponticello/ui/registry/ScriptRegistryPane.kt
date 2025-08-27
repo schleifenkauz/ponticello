@@ -33,6 +33,9 @@ class ScriptRegistryPane(registry: ScriptRegistry) : ObjectRegistryPane<ScriptOb
     override val supportedModes: Set<DisplayMode>
         get() = setOf(DisplayMode.SubWindow, DisplayMode.DetailsPane)
 
+    override val canDuplicate: Boolean
+        get() = true
+
     override fun defaultState(): ToolPaneState = ListToolPaneState.docked
 
     override fun createNewObject(name: String, ev: Event?): ScriptObject? {
@@ -63,8 +66,8 @@ class ScriptRegistryPane(registry: ScriptRegistry) : ObjectRegistryPane<ScriptOb
         override val icon: Ikon
             get() = MaterialDesignF.FILE_COG
 
-        override val shortcuts: Array<String>
-            get() = arrayOf("F6")
+        override val shortcut: String
+            get() = "F6"
 
         override val defaultSide: Side
             get() = Side.RIGHT

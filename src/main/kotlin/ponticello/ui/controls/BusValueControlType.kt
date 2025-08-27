@@ -11,6 +11,7 @@ import javafx.scene.layout.Region
 import org.kordamp.ikonli.materialdesign2.MaterialDesignS
 import ponticello.impl.Logger
 import ponticello.impl.asY
+import ponticello.model.obj.InstrumentReference
 import ponticello.model.obj.ParameterizedObject
 import ponticello.model.project.mainScore
 import ponticello.model.registry.BusRegistry
@@ -107,15 +108,16 @@ data object BusValueControlType : ControlType<BusValueControl>() {
         executes { ctrl, ev ->
             val obj = ctrl.parentObject as ScoreObject
             val context = ctrl.context
-            val instrument = SimpleSearchableRegistryView(context[InstrumentRegistry], "Choose Instrument")
+            val instrumentDef = SimpleSearchableRegistryView(context[InstrumentRegistry], "Choose Instrument")
                 .showPopup(ev, initialOption = null) ?: return@executes
             val parameter = ctrl.name.now
             val name = "${obj.name.now}_$parameter"
-            val controls = instrument.getDefaultControls(null)
+            val controls = instrumentDef.getDefaultControls(null)
             val outBus = controls.getOrNull("out")?.now
             if (outBus is BusControl) {
                 outBus.bus.now = (ctrl.now as BusValueControl).bus.now
             }
+            val instrument = InstrumentReference.UserDefined(instrumentDef.reference())
             val synthObj = SoundProcess.create(name, instrument, controls)
             synthObj.setInitialSize(obj.duration, height = 0.05.asY)
             context.compoundEdit("Add automation synth") {

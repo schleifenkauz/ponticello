@@ -10,6 +10,7 @@ import reaktive.value.now
 
 interface ParameterizedObject : NamedObject {
     val def: InstrumentObject
+
     val controls: ParameterControlList
 
     val superColliderPrefix: String

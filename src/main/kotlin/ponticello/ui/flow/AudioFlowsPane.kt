@@ -51,6 +51,12 @@ class AudioFlowsPane(flows: AudioFlows) : SearchableToolPane<AudioFlowGroup>(flo
     override val canCreateNewObject: Boolean
         get() = false
 
+    override val nameDisplayWidth: Double
+        get() = 100.0
+
+    override val canDuplicate: Boolean
+        get() = true
+
     private var selectedFilter: FilterOption = FilterOption.All
         set(value) {
             if (field == value) return
@@ -191,7 +197,7 @@ class AudioFlowsPane(flows: AudioFlows) : SearchableToolPane<AudioFlowGroup>(flo
         override val defaultSide: Side
             get() = Side.BOTTOM
 
-        override val shortcuts: Array<String> get() = arrayOf("F9")
+        override val shortcut: String get() = "F9"
 
         override fun createToolPane(project: PonticelloProject): ToolPane = AudioFlowsPane(project.flows)
 

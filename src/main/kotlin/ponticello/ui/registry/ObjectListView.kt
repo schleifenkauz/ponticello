@@ -4,7 +4,11 @@ import fxutils.*
 import fxutils.actions.Action
 import fxutils.actions.collectActions
 import fxutils.actions.registerActions
+import fxutils.drag.DropHandler
+import fxutils.drag.setupDropArea
 import fxutils.prompt.YesNoPrompt
+import fxutils.undo.UndoManager
+import hextant.context.withoutUndo
 import javafx.application.Platform
 import javafx.event.Event
 import javafx.geometry.Dimension2D
@@ -20,16 +24,13 @@ import javafx.scene.layout.*
 import javafx.stage.Window
 import kotlinx.serialization.Serializable
 import org.kordamp.ikonli.material2.Material2MZ
-import org.kordamp.ikonli.materialdesign2.MaterialDesignC
 import org.kordamp.ikonli.materialdesign2.MaterialDesignD
 import org.kordamp.ikonli.materialdesign2.MaterialDesignP
 import org.kordamp.ikonli.materialdesign2.MaterialDesignV
-import ponticello.model.obj.RenamableObject
-import ponticello.model.obj.withName
+import ponticello.model.registry.ListEdit
 import ponticello.model.registry.NamedObject
 import ponticello.model.registry.NamedObjectList
 import ponticello.model.registry.ObjectList
-import ponticello.ui.controls.NamePrompt
 import ponticello.ui.dock.ToolPane
 import reaktive.value.*
 import reaktive.value.binding.map
@@ -67,7 +68,7 @@ class ObjectListView<O : Any>(
             }
         }
 
-    val itemsScrollPane = ScrollPane(Pane()).styleClass("items-scroll-bar")
+    val itemsScrollPane = ScrollPane(itemsLayout).styleClass("items-scroll-bar")
 
     private var displayedContent: Parent? = null
 
@@ -141,18 +142,29 @@ class ObjectListView<O : Any>(
                                 box.isManaged = true
                             }
                         } else {
-                            val gestureSource = ev.gestureSource
-                            if (ev.transferMode == TransferMode.MOVE && gestureSource is ObjectBox<*>) {
-                                @Suppress("UNCHECKED_CAST")
-                                val source = gestureSource.parent.source as ObjectList<O>
-                                source.remove(obj)
-                            }
-                            config.dropObject(obj, idx, source)
+                            dropObject(ev, obj, idx)
                         }
                     }
                     ev.isDropCompleted = true
                 }
             }
+        }
+    }
+
+    private fun dropObject(ev: DragEvent, obj: O, idx: Int) {
+        val gestureSource = ev.gestureSource
+        if (ev.transferMode == TransferMode.MOVE && gestureSource is ObjectBox<*>) {
+            @Suppress("UNCHECKED_CAST")
+            val moveSource = gestureSource.parent.source as ObjectList<O>
+            val sourceIdx = moveSource.indexOf(gestureSource.obj)
+            source.context.withoutUndo {
+                config.dropObject(obj, idx, source, from = moveSource)
+            }
+            source.context[UndoManager].record(
+                ListEdit.DropObject(source, moveSource, sourceIdx, idx, config, obj)
+            )
+        } else {
+            config.dropObject(obj, idx, source, from = null)
         }
     }
 
@@ -170,6 +182,7 @@ class ObjectListView<O : Any>(
             Orientation.VERTICAL -> boxes
                 .map { it.localToScreen(it.boundsInLocal).middleY }
                 .binarySearch(screenY)
+
             Orientation.HORIZONTAL -> boxes
                 .map { it.localToScreen(it.boundsInLocal).middleX }
                 .binarySearch(screenX)
@@ -245,9 +258,10 @@ class ObjectListView<O : Any>(
 
     private fun emptyDisplay(): VBox {
         val objectType = plural(source.objectType)
-        val emptyDisplay = VBox(Label("No $objectType to display"))
+        val emptyDisplay = VBox(Label("No $objectType to display")) styleClass "empty-display"
         emptyDisplay.centerChildren()
         emptyDisplay.setPadding(10.0)
+        emptyDisplay.setupDropArea(EmptyListDropHandler())
         return emptyDisplay
     }
 
@@ -455,6 +469,21 @@ class ObjectListView<O : Any>(
         box.content()
     }
 
+    private inner class EmptyListDropHandler : DropHandler {
+        override fun canDrop(event: DragEvent): Boolean {
+            val acceptedTransferModes = config.acceptedTransferModes(event.dragboard)
+            return acceptedTransferModes.isNotEmpty()
+        }
+
+        override fun drop(event: DragEvent): Boolean {
+            val obj = config.getDroppedObject(event)
+            return if (obj != null) {
+                dropObject(event, obj, 0)
+                true
+            } else false
+        }
+    }
+
     @Serializable
     sealed class DisplayMode {
         companion object {
@@ -559,27 +588,6 @@ class ObjectListView<O : Any>(
             addAction("Copy item") {
                 shortcut("Ctrl+C")
                 executes { list -> list.copySelected() }
-            }
-            addAction("Duplicate object") {
-                enableWhen { list ->
-                    list.selectedBox.map { box ->
-                        box != null && box.obj is RenamableObject && box.obj.canCopy && box.obj.registry != null
-                    }
-                }
-                ifNotApplicable(Action.IfNotApplicable.Hide)
-                icon(MaterialDesignC.CONTENT_DUPLICATE)
-                description { list -> reactiveValue("Duplicate ${list.source.objectType}") }
-                executes { list, ev ->
-                    val obj = list.selectedObject() as? RenamableObject ?: return@executes
-
-                    @Suppress("UNCHECKED_CAST")
-                    val source = list.source as NamedObjectList<RenamableObject>
-                    val initialName = obj.name.now + "_copy"
-                    val name = NamePrompt(source, "Name for new duplicate instrument", initialName)
-                        .showDialog(ev) ?: return@executes
-                    val copy = obj.copy().withName(name)
-                    source.add(copy, source.indexOf(obj) + 1)
-                }
             }
             addAction("Focus selected object") {
                 shortcut("Enter")

@@ -8,12 +8,16 @@ import kotlinx.serialization.Serializable
 import ponticello.impl.writeCode
 import ponticello.sc.editor.CodeBlockEditor
 import reaktive.value.ReactiveValue
+import reaktive.value.ReactiveVariable
 import reaktive.value.binding.map
 import reaktive.value.now
 
 @Serializable
 @SerialName("CodeFlow")
 class CodeFlow(val codeEditor: EditorRoot<@Contextual CodeBlockEditor>) : AudioFlow() {
+    @SerialName("name")
+    override var _name: ReactiveVariable<String>? = null
+
     override fun initialize(context: Context) {
         super.initialize(context)
         codeEditor.initialize(context)

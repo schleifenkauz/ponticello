@@ -8,8 +8,8 @@ import ponticello.impl.copy
 import ponticello.impl.writeCode
 import ponticello.impl.zero
 import ponticello.model.obj.InstrumentObject
-import ponticello.model.obj.InstrumentReference
 import ponticello.model.obj.NoInstrument
+import ponticello.model.registry.ObjectReference
 import ponticello.model.registry.reference
 import ponticello.model.score.ParameterControlList
 import ponticello.model.score.controls.writeSynthCode
@@ -24,9 +24,12 @@ import reaktive.value.reactiveVariable
 @Serializable
 @SerialName("InstrumentFlow")
 class InstrumentFlow(
-    private var defRef: ReactiveVariable<InstrumentReference>,
+    private var defRef: ReactiveVariable<ObjectReference<InstrumentObject>>,
     override val controls: ParameterControlList,
 ) : ParameterizedAudioFlow() {
+    @SerialName("name")
+    override var _name: ReactiveVariable<String>? = null
+
     @Transient
     lateinit var instrumentSelector: InstrumentSelector
         private set
@@ -44,7 +47,7 @@ class InstrumentFlow(
         instrumentSelector.syncWith(defRef)
         instrumentSelector.initialize(context)
         controls.initialize(context, this)
-        isValid = controls.isValid and defRef.flatMap(InstrumentReference::isResolved)
+        isValid = controls.isValid and defRef.flatMap { it.isResolved }
     }
 
     override fun copy(): AudioFlow = InstrumentFlow(defRef.copy(), controls.copy())

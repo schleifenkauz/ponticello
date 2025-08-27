@@ -8,12 +8,16 @@ import ponticello.model.flow.NodePlacement
 import ponticello.model.obj.ParameterDefObject
 import ponticello.model.score.controls.ParameterControl
 import ponticello.ui.score.MemoObjectView
+import reaktive.value.ReactiveVariable
 
 @Serializable
 @SerialName("Memo")
 class MemoObject(
     @SerialName("text") private var _text: String,
 ) : ScoreObject() {
+    @SerialName("name")
+    override var _name: ReactiveVariable<String>? = null
+
     override val type: String
         get() = "memo"
 

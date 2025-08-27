@@ -1,10 +1,14 @@
 package ponticello.model.obj
 
+import javafx.scene.paint.Color
 import ponticello.sc.ParameterType
 import ponticello.ui.registry.ParameterDefList
+import reaktive.value.ReactiveVariable
 
 sealed interface ConfigurableInstrumentObject : InstrumentObject {
-    fun supports(type: ParameterType): Boolean
-
     override val parameters: ParameterDefList
+
+    override val color: ReactiveVariable<Color>
+
+    fun supports(type: ParameterType): Boolean
 }

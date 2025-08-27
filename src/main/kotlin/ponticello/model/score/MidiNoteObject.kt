@@ -13,6 +13,7 @@ import ponticello.sc.ControlSpec
 import ponticello.sc.NumericalControlSpec
 import ponticello.sc.code
 import reaktive.value.ReactiveValue
+import reaktive.value.ReactiveVariable
 import reaktive.value.now
 import kotlin.math.pow
 
@@ -21,6 +22,9 @@ import kotlin.math.pow
 class MidiNoteObject(
     override val controls: ParameterControlList,
 ) : ScoreObject(), ParameterizedObject {
+    @SerialName("name")
+    override var _name: ReactiveVariable<String>? = null
+
     override val type: String
         get() = "midi-note"
 
@@ -60,36 +64,24 @@ class MidiNoteObject(
         instance: ScoreObjectInstance?, uniqueName: String, placement: NodePlacement?,
         cutoff: Decimal, latency: Decimal, extraArguments: Map<ParameterDefObject, ParameterControl>,
     ): String {
-        if (instance == null) {
-            Logger.warn("Cannot write code for $this without an instance", Logger.Category.Playback)
+        val parentObject = instance?.score?.parentObject as? MidiObject
+        if (parentObject == null) {
+            Logger.warn("$this is not the child of a MidiObject", Logger.Category.Playback)
             return ""
         }
 
-        val combinedLatency = latency - (parentObject.latencyMs.now / 1000.0.toDecimal())
+        val midiLatency = parentObject.latencyMs.now
+        val parentControls = parentObject.controls
+        val combinedLatency = latency - (midiLatency / 1000.0.toDecimal())
         val midinote = instance.y
-        val controlMap = parentObject.controls.toMap() + controls.toMap() + extraArguments
-        val velocityCtrl =
-            extraArguments.entries.find { (k, _) -> k.name.now == "velocity" }?.value
-                ?: controls.getOrNull("velocity")?.now
-                ?: parentObject.controls.getControl("velocity")
-
-        val velocity = when (velocityCtrl) {
-            is BusValueControl -> "${velocityCtrl.bus.get().superColliderName}.getSynchronous"
-            is ExprControl -> velocityCtrl.expr.editor.result.now.code(context)
-            is ValueControl -> velocityCtrl.value.now.toString()
-            null -> "64"
-            else -> {
-                Logger.warn("Invalid velocity control: $velocityCtrl", Logger.Category.Playback)
-                "64"
-            }
-        }
+        val controlMap = parentControls.toMap() + controls.toMap() + extraArguments
         return when (val instr = parentObject.instrument.now) {
-            MidiInstrument.None -> {
+            InstrumentReference.None -> {
                 Logger.warn("No instrument selected for $this", Logger.Category.Playback)
                 ""
             }
 
-            is MidiInstrument.SynthDef -> writeCode {
+            is InstrumentReference.UserDefined -> writeCode {
                 val freq = (440 * 2.0.pow((midinote.value - 69) / 12)).toDecimal()
                 val pitchControls = mapOf(
                     ParameterDefObject.MIDINOTE to ValueControl.create(midinote),
@@ -101,11 +93,26 @@ class MidiNoteObject(
                 )
             }
 
-            is MidiInstrument.VST -> {
+            is InstrumentReference.VST -> {
                 val controllerVar = instr.flow.get()?.controllerVar
                 if (controllerVar == null) {
                      Logger.warn("VST instrument ${instr.flow} unresolved", Logger.Category.Playback)
                     return ""
+                }
+                val velocityCtrl =
+                    extraArguments.entries.find { (k, _) -> k.name.now == "velocity" }?.value
+                        ?: controls.getOrNull("velocity")?.now
+                        ?: parentControls.getControl("velocity")
+
+                val velocity = when (velocityCtrl) {
+                    is BusValueControl -> "${velocityCtrl.bus.get().superColliderName}.getSynchronous"
+                    is ExprControl -> velocityCtrl.expr.editor.result.now.code(context)
+                    is ValueControl -> velocityCtrl.value.now.toString()
+                    null -> "64"
+                    else -> {
+                        Logger.warn("Invalid velocity control: $velocityCtrl", Logger.Category.Playback)
+                        "64"
+                    }
                 }
                 writeCode {
                     +"TempoClock.sched($combinedLatency) { $controllerVar.midi.noteOn(0, $midinote, $velocity) }"
@@ -120,7 +127,7 @@ class MidiNoteObject(
     companion object {
         fun create(context: Context, duration: Decimal): MidiNoteObject {
             val obj = MidiNoteObject(ParameterControlList())
-            obj.duration = duration
+            obj.setInitialSize(duration, height = zero)
             val name = context[ScoreObjectRegistry].availableName("midinote")
             return obj.withName(name)
         }

@@ -25,6 +25,9 @@ class AudioFlowGroup(
     val associatedColor: ReactiveVariable<@Serializable(with = ColorSerializer::class) Color>,
     val flows: AudioFlowList,
 ) : AudioNode, AbstractRenamableObject(), ObjectList.Listener<AudioFlow> {
+    @SerialName("name")
+    override var _name: ReactiveVariable<String>? = null
+
     override lateinit var superColliderName: ReactiveString
         private set
 
@@ -51,9 +54,12 @@ class AudioFlowGroup(
         super.initialize(context)
         superColliderName = name.map { name -> "~flows_$name" }
         client = context[SuperColliderClient]
-        flows.initialize(context, this)
+        flows.initialize(context)
         flows.addListener(this, initialize = false)
-        for (flow in flows) observeFlow(flow)
+        for (flow in flows) {
+            flow.parentGroup = this
+            observeFlow(flow)
+        }
     }
 
     fun toggleActive() {
@@ -67,8 +73,13 @@ class AudioFlowGroup(
             idx == 0 -> NodePlacement.head(superColliderName.now)
             else -> NodePlacement.after(flows[idx - 1].superColliderName)
         }
-        obj.addToServer(placement)
-        observeFlow(obj)
+        if (obj.parentGroup == this) {
+            client.run("${obj.superColliderName}.${placement.moveMethod}(${placement.target})")
+        } else {
+            obj.addToServer(placement)
+            observeFlow(obj)
+        }
+        obj.parentGroup = this
     }
 
     private fun observeFlow(obj: AudioFlow) {
@@ -79,7 +90,7 @@ class AudioFlowGroup(
     }
 
     override fun removed(obj: AudioFlow) {
-        if (isActive.now && obj.isActive.now) obj.removeFromServer()
+        if (isActive.now && obj.isActive.now && obj.parentGroup == this) obj.removeFromServer()
         observers.remove(obj)?.kill()
     }
 
@@ -151,21 +162,6 @@ class AudioFlowGroup(
     ) : NamedObjectList<AudioFlow>() {
         override val objectType: String
             get() = "Flow"
-
-        @Transient
-        private lateinit var parentGroup: AudioFlowGroup
-
-        fun initialize(context: Context, parent: AudioFlowGroup) {
-            this.parentGroup = parent
-            super.initialize(context)
-        }
-
-        override fun initializeObject(obj: AudioFlow) {
-            obj.setParentGroup(parentGroup)
-            if (!obj.initialized) {
-                obj.initialize(context)
-            }
-        }
 
         object Serializer : ObjectListSerializer<AudioFlow, AudioFlowList>(AudioFlow.serializer(), ::AudioFlowList)
     }

@@ -261,13 +261,13 @@ sealed class ItemTarget : AbstractContextualObject() {
             val flow = ref.get()
             isActive =
                 if (flow == null) reactiveValue(false)
-                else flow.isActive and flow.parentGroup.isActive
+                else flow.isActive and flow.parentGroup!!.isActive
         }
 
         override fun pressed(velocity: Int, item: LauncherGrid.GridItem) {
             val flow = ref.get() ?: return
-            if (!flow.parentGroup.isActive.now) {
-                flow.parentGroup.toggleActive()
+            if (!flow.parentGroup!!.isActive.now) {
+                flow.parentGroup!!.toggleActive()
             }
             if (!flow.isActive.now) flow.setActive(true)
             else if (!item.stopOnRelease.now) {

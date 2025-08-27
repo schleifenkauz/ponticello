@@ -16,7 +16,14 @@ import reaktive.value.reactiveValue
 
 class ToolPaneAction(private val toolPane: ToolPane) : ContextualizedAction {
     override val shortcuts: List<Shortcut>
-        get() = toolPane.shortcuts.map(String::shortcut)
+        get() {
+            val str = toolPane.shortcut
+            return when {
+                str == null -> emptyList()
+                str.startsWith("F") -> listOf("Ctrl?+$str".shortcut)
+                else -> listOf(str.shortcut)
+            }
+        }
     override val description: ReactiveString
         get() = reactiveValue(toolPane.type!!.title)
     override val icon: ReactiveValue<Ikon?>
@@ -30,7 +37,8 @@ class ToolPaneAction(private val toolPane: ToolPane) : ContextualizedAction {
 
     override fun execute(ev: Event?) {
         when {
-            ev is MouseEvent && ev.button == MouseButton.PRIMARY -> toolPane.toggleShowing()
+            ev is MouseEvent && ev.button == MouseButton.PRIMARY ->
+                toolPane.toggleShowing(toggleExclusive = ev.isControlDown)
             ev is MouseEvent && ev.button == MouseButton.SECONDARY -> toolPane.showToolPaneConfigMenu(ev)
             ev is KeyEvent -> toolPane.handleShortcut(ev)
         }

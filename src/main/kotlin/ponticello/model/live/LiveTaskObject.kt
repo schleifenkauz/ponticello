@@ -4,6 +4,7 @@ import fxutils.drag.TypedDataFormat
 import hextant.context.Context
 import hextant.serial.EditorRoot
 import kotlinx.serialization.Contextual
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import ponticello.model.obj.LiveTaskReference
 import ponticello.model.obj.SuperColliderObject
@@ -11,17 +12,19 @@ import ponticello.sc.client.ScWriter
 import ponticello.sc.client.SuperColliderClient
 import ponticello.sc.client.run
 import ponticello.sc.editor.CodeBlockEditor
+import reaktive.value.ReactiveVariable
 import reaktive.value.now
 
 @Serializable
 class LiveTaskObject(
     val code: EditorRoot<@Contextual CodeBlockEditor>,
 ) : LiveObject(), SuperColliderObject {
+    @SerialName("name")
+    override var _name: ReactiveVariable<String>? = null
+
     private val client get() = context[SuperColliderClient]
 
     override val superColliderName get() = "Tdef(\\${name.now})"
-
-    override val canCopy: Boolean get() = true
 
     override val registry: LiveTaskRegistry
         get() = context[LiveTaskRegistry]

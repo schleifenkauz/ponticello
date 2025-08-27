@@ -3,17 +3,13 @@ package ponticello.model.obj
 import fxutils.undo.AbstractEdit
 import fxutils.undo.UndoManager
 import hextant.context.Context
-import kotlinx.serialization.SerialName
-import kotlinx.serialization.Serializable
 import reaktive.value.ReactiveValue
 import reaktive.value.ReactiveVariable
 import reaktive.value.now
 import reaktive.value.reactiveVariable
 
-@Serializable
 abstract class AbstractRenamableObject : RenamableObject, AbstractNamedObject() {
-    @SerialName("name")
-    private var _name: ReactiveVariable<String>? = null
+    protected abstract var _name: ReactiveVariable<String>?
 
     override val name: ReactiveValue<String>
         get() = _name ?: error("Object of type ${this::class.simpleName} has no name.")

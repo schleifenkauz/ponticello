@@ -1,9 +1,8 @@
 package ponticello.ui.flow
 
+import bundles.createBundle
+import fxutils.*
 import fxutils.actions.button
-import fxutils.button
-import fxutils.centerChildren
-import fxutils.pad
 import fxutils.prompt.SimpleSearchableListView
 import fxutils.prompt.SimpleTextPrompt
 import javafx.scene.layout.HBox
@@ -12,10 +11,14 @@ import org.kordamp.ikonli.codicons.Codicons
 import org.kordamp.ikonli.material2.Material2MZ
 import ponticello.model.flow.VSTPluginFlow
 import ponticello.model.flow.VSTPlugins
+import ponticello.sc.view.ObjectSelectorControl
 import reaktive.value.now
 
 class VSTPluginFlowView(private val flow: VSTPluginFlow) : VBox() {
     init {
+        val busSelector = ObjectSelectorControl(flow.busSelector, createBundle())
+            .widthAtLeast(100.0)
+
         val pluginSelectorBtn = button(flow.pluginName, style = "selector-button") { ev ->
             val options = VSTPlugins.availablePlugins(flow.context).toList()
             val newPluginName = SimpleSearchableListView(options, "Select VST Plugin").showPopup(ev) ?: return@button
@@ -31,7 +34,8 @@ class VSTPluginFlowView(private val flow: VSTPluginFlow) : VBox() {
                 .showPopup(ev) ?: return@button
             flow.loadGlobalPreset(presetName)
         }
-        children.add(
+        children.addAll(
+            HBox(5.0, label("Target bus: "), busSelector).centerChildren().pad(3.0),
             HBox(
                 5.0, pluginSelectorBtn, saveGlobalPresetBtn, loadGlobalPresetBtn
             ).centerChildren().pad(3.0)

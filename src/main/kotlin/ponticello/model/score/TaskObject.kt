@@ -11,6 +11,7 @@ import ponticello.model.flow.NodePlacement
 import ponticello.model.obj.ParameterDefObject
 import ponticello.model.score.controls.ParameterControl
 import ponticello.sc.editor.CodeBlockEditor
+import reaktive.value.ReactiveVariable
 import reaktive.value.now
 
 @Serializable
@@ -18,6 +19,9 @@ import reaktive.value.now
 class TaskObject(
     val code: EditorRoot<@Contextual CodeBlockEditor>,
 ) : ScoreObject() {
+    @SerialName("name")
+    override var _name: ReactiveVariable<String>? = null
+
     override val type: String
         get() = "task"
 

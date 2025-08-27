@@ -34,6 +34,9 @@ class MixerFlow(
     val masterMute: ReactiveVariable<Boolean> = reactiveVariable(false),
     val monoMix: ReactiveVariable<Boolean> = reactiveVariable(false),
 ) : AudioFlow(), ObjectList.Listener<MixerFlow.MixerComponent> {
+    @SerialName("name")
+    override var _name: ReactiveVariable<String>? = null
+
     @Transient
     private val componentObservers = mutableMapOf<MixerComponent, Observer>()
 

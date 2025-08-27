@@ -13,8 +13,8 @@ import ponticello.model.registry.ObjectReference
 import ponticello.model.score.ScoreObject
 import reaktive.value.now
 
-typealias InstrumentReference = ObjectReference<@Contextual InstrumentObject>
 typealias SynthDefReference = ObjectReference<@Contextual SynthDefObject>
+typealias ProcessDefReference = ObjectReference<@Contextual ProcessDefObject>
 typealias BusReference = ObjectReference<@Contextual BusObject>
 typealias BufferReference = ObjectReference<@Contextual BufferObject>
 typealias GlobalPatternReference = ObjectReference<@Contextual GlobalPatternObject>

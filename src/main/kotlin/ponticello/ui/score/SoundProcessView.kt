@@ -1,11 +1,11 @@
 package ponticello.ui.score
 
-import bundles.createBundle
 import fxutils.actions.makeButton
 import fxutils.centerChildren
 import fxutils.drag.setupDropArea
 import fxutils.prompt.DetailPane
 import fxutils.styleClass
+import fxutils.undo.UndoManager
 import hextant.context.Context
 import javafx.geometry.Point2D
 import javafx.scene.layout.*
@@ -16,23 +16,10 @@ import ponticello.model.project.InlineControlsDisplay
 import ponticello.model.project.UIState
 import ponticello.model.registry.BufferRegistry
 import ponticello.model.registry.BusRegistry
-import ponticello.model.score.Envelope
-import ponticello.model.score.ParameterControlList
+import ponticello.model.score.*
 import ponticello.model.score.ParameterControlList.NamedParameterControl
-import ponticello.model.score.ScoreObject
-import ponticello.model.score.ScoreObjectInstance
-import ponticello.model.score.SoundProcess
-import ponticello.model.score.controls.BufferControl
-import ponticello.model.score.controls.BusControl
-import ponticello.model.score.controls.EnvelopeControl
-import ponticello.model.score.controls.ParameterControl
-import ponticello.model.score.controls.getNumericalValue
-import ponticello.sc.BufferControlSpec
-import ponticello.sc.BusControlSpec
-import ponticello.sc.NumericalControlSpec
-import ponticello.sc.ParameterType
-import ponticello.sc.defaultControl
-import ponticello.sc.view.ObjectSelectorControl
+import ponticello.model.score.controls.*
+import ponticello.sc.*
 import ponticello.ui.actions.ScoreObjectActions
 import ponticello.ui.controls.InlineParameterControlsBar
 import ponticello.ui.dock.AppLayout
@@ -81,7 +68,10 @@ class SoundProcessView(
     }
 
     override fun configureInlineControls() {
-        val synthDefSelector = ObjectSelectorControl(obj.instrumentSelector)
+        val synthDefSelector = InstrumentSelectorPopup(context).selectorButton(
+            obj.instrumentRef,
+            undoManager = context[UndoManager], actionDescription = "Select instrument"
+        )
         inlineControls.children.add(1, synthDefSelector)
         val inlineControlsBar = InlineParameterControlsBar(obj.controls, this)
         inlineControls.children.add(2, inlineControlsBar)
@@ -113,7 +103,9 @@ class SoundProcessView(
         val viewInstrumentBtn = ScoreObjectActions.singleObjectActions.getAction("View definition")
             .withContext(actionContext)
             .makeButton("medium-icon-button")
-        val box = ObjectSelectorControl(obj.instrumentSelector, createBundle())
+        val box = InstrumentSelectorPopup(context).selectorButton(
+            obj.instrumentRef, undoManager = context[UndoManager], actionDescription = "Select instrument"
+        )
         pane.addItem("Instrument: ", HBox(5.0, box, viewInstrumentBtn).centerChildren())
         val controlsPane = ParameterControlsPane(obj, this)
         VBox.setVgrow(controlsPane, Priority.ALWAYS)

@@ -15,7 +15,7 @@ import ponticello.impl.copy
 import ponticello.impl.times
 import ponticello.impl.zero
 import ponticello.model.obj.InstrumentObject
-import ponticello.model.obj.MidiInstrument
+import ponticello.model.obj.InstrumentReference
 import ponticello.model.obj.NoInstrument
 import ponticello.model.obj.ParameterizedObject
 import ponticello.model.project.InlineControlsDisplay
@@ -48,8 +48,9 @@ object ScoreObjectActions {
                 if (selection != null) {
                     RectangleSelection.clear()
                     val pane = selection.pane
-                    val containedInstances = pane.viewsInside(selection.bounds, mustBeContainedEntirely = ev.isAltDown())
-                        .mapTo(mutableSetOf()) { it.instance }
+                    val containedInstances =
+                        pane.viewsInside(selection.bounds, mustBeContainedEntirely = ev.isAltDown())
+                            .mapTo(mutableSetOf()) { it.instance }
                     pane.score.removeObjects(containedInstances, Score.RegistryOption.ASK_IF_NEEDED)
                 } else {
                     for (view in ctx.selectedViews) {
@@ -136,7 +137,7 @@ object ScoreObjectActions {
         }
     }
 
-    val singleObjectActions = collectActions {
+    val singleObjectActions: Action.Collector<ObjectActionContext> = collectActions {
         addAction("Show detail pane") {
             shortcut("Ctrl+D")
             applicableOn { view -> !view.parentPane.isRoot(view.obj) }
@@ -240,7 +241,7 @@ object ScoreObjectActions {
                     return@executeSingle
                 }
                 when (view) {
-                    is SoundProcessView -> showInstrumentDef(view.obj.instrument, view.context)
+                    is SoundProcessView -> showInstrumentDef(view.obj.def, view.context)
                     is MidiObjectView -> showInstrument(view.obj.instrument.now, view.context)
                     is MidiNoteObjectView -> showInstrument(view.obj.parentObject.instrument.now, view.context)
                 }
@@ -248,11 +249,22 @@ object ScoreObjectActions {
         }
         addObjectAction("Choose instrument") {
             shortcut("Shift+I")
-            applicableOn { v -> v is SoundProcessView || v is MidiObjectView || v is MidiNoteObjectView }
-            executeMultiAction { view, ev ->
-                //TODO
+            applicableIf { ctx -> ctx.selectedObjects.all { obj -> obj is ParameterizedObject } }
+            executes { ctx, ev ->
+                val commonInstrument = ctx.selectedObjects
+                    .map { obj -> (obj as ParameterizedObject).def }
+                    .singleOrNull()?.instrumentReference()
+                val newInstrument = InstrumentSelectorPopup(ctx.context)
+                    .showPopup(ev, initialOption = commonInstrument) ?: return@executes
+                for (obj in ctx.selectedObjects) {
+                    when (obj) {
+                        is SoundProcess -> obj.instrumentRef.set(newInstrument)
+                        is MidiObject -> obj.instrument.set(newInstrument)
+                        is MidiNoteObject -> obj.parentObject.instrument.set(newInstrument)
+                        else -> Logger.warn("Cannot set instrument for $obj", Logger.Category.Score)
+                    }
+                }
             }
-
         }
         addObjectAction("Rename object") {
             shortcut("F2")
@@ -354,11 +366,11 @@ object ScoreObjectActions {
         }
     }
 
-    private fun showInstrument(instrument: MidiInstrument, context: Context) {
+    private fun showInstrument(instrument: InstrumentReference, context: Context) {
         when (instrument) {
-            MidiInstrument.None -> Logger.warn("No instrument", Logger.Category.Score)
-            is MidiInstrument.SynthDef -> showInstrumentDef(instrument.reference.force(), context)
-            is MidiInstrument.VST -> instrument.flow.force().showEditor()
+            InstrumentReference.None -> Logger.warn("No instrument", Logger.Category.Score)
+            is InstrumentReference.UserDefined -> showInstrumentDef(instrument.reference.force(), context)
+            is InstrumentReference.VST -> instrument.flow.force().showEditor()
         }
     }
 

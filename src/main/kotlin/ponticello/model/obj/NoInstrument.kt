@@ -15,9 +15,6 @@ class NoInstrument : InstrumentObject, AbstractContextualObject() {
 
     override fun copy(): InstrumentObject = NoInstrument()
 
-    override fun onUpdated() {
-    }
-
     override val superColliderName: String
         get() = "<none>"
 
@@ -38,4 +35,6 @@ class NoInstrument : InstrumentObject, AbstractContextualObject() {
 
     override fun sync() {
     }
+
+    override fun instrumentReference(): InstrumentReference = InstrumentReference.None
 }

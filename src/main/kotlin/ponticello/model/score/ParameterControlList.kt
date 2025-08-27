@@ -6,6 +6,7 @@ import hextant.context.Context
 import hextant.context.compoundEdit
 import hextant.context.withoutUndo
 import javafx.scene.paint.Color
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import ponticello.impl.Logger
@@ -62,6 +63,9 @@ class ParameterControlList(
         private val value: ReactiveVariable<ParameterControl>,
         private var customSpec: ControlSpec? = null,
     ) : AbstractRenamableObject(), java.io.Serializable {
+        @SerialName("name")
+        override var _name: ReactiveVariable<String>? = null
+
         constructor(value: ParameterControl, customSpec: ControlSpec? = null) : this(
             reactiveVariable(value), customSpec
         )
@@ -92,8 +96,6 @@ class ParameterControlList(
             NamedParameterControl(value, customSpec).withName(name.now)
 
         override fun copy(): NamedParameterControl = copy(now.copy())
-
-        override val canCopy: Boolean get() = true
 
         fun initialize(controls: ParameterControlList) {
             this.controls = controls
@@ -183,7 +185,10 @@ class ParameterControlList(
         super.initialize(context)
         this.associatedObject = associatedObject
         for (ctrl in this.toList()) ctrl.initialize(this)
-        def.parameters.addListener(this)
+        val parameters = def.parameters
+        if (parameters is ObjectList) {
+            parameters.addListener(this)
+        }
         setupValidation()
     }
 

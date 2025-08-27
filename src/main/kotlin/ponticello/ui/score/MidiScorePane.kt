@@ -5,7 +5,6 @@ import fxutils.modifiers
 import fxutils.styleClass
 import hextant.context.Context
 import hextant.fx.ModifierKeyTracker
-import javafx.geometry.Side
 import javafx.scene.Cursor
 import javafx.scene.input.MouseEvent
 import javafx.scene.paint.Color
@@ -49,7 +48,7 @@ class MidiScorePane(
     override val absolutePosition: ObjectPosition
         get() = parentPane.absolutePosition + instance.position
 
-    override val associatedObject: ScoreObject get() = obj
+    override val associatedObject get() = obj
 
     fun initialize() {
         listenForEvents()
@@ -74,11 +73,18 @@ class MidiScorePane(
         children.add(cursorNode)
     }
 
-    override fun acceptObject(obj: ScoreObject): ScoreObject? {
-        if (obj !is MidiNoteObject) return null
-        if (!obj.initialized || obj.parentObject == this.obj) return obj
-        val name = context[ScoreObjectRegistry].availableName("midinote")
-        return obj.clone(name)
+    override fun acceptObject(obj: ScoreObject): ScoreObject? = when (obj) {
+        is MidiNoteObject -> {
+            if (!obj.initialized || obj.parentObject == this.obj) obj
+            else {
+                val name = context[ScoreObjectRegistry].availableName("midinote")
+                obj.clone(name)
+            }
+        }
+
+        is SoundProcess -> obj
+
+        else -> null
     }
 
     private fun getMidiNote(y: Double): Int = ((height - y) / pixelsPerPitch).roundToInt() + obj.lowestPitch - 1
@@ -201,7 +207,9 @@ class MidiScorePane(
                 }
             if (duration <= zero) return
             val midinote = getMidiNote(cursorNode.y)
-            val note = MidiNoteObject.create(context, duration)
+            val name = context[ScoreObjectRegistry].availableName("midinote")
+            val note = SoundProcess.create(name, obj.instrument.now)
+            note.setInitialSize(duration, height = zero)
             val inst = ScoreObjectInstance(note, time, y = midinote.toDecimal())
             obj.score.addObject(inst, autoSelect = true)
             cursorNode.opacity = CURSOR_OPACITY

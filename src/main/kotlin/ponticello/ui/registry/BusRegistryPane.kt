@@ -140,6 +140,7 @@ class BusRegistryPane(busses: BusRegistry) : ObjectRegistryPane<BusObject>(busse
 
     override fun getActions(box: ObjectBox<BusObject>): List<ContextualizedAction> {
         return if (box.obj is BusObject.ControlBus) {
+            @Suppress("UNCHECKED_CAST")
             val cast = box as ObjectBox<BusObject.ControlBus>
             controlBusActions.withContext(cast) + actions.withContext(box)
         } else actions.withContext(box)
@@ -162,8 +163,8 @@ class BusRegistryPane(busses: BusRegistry) : ObjectRegistryPane<BusObject>(busse
         override val icon: Ikon
             get() = Material2AL.GRAPHIC_EQ //MaterialDesignT.TUNE_VARIANT
 
-        override val shortcuts: Array<String>
-            get() = arrayOf("F4")
+        override val shortcut: String
+            get() = "F4"
 
         override fun createToolPane(project: PonticelloProject): ToolPane = BusRegistryPane(project.busses)
 

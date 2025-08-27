@@ -5,6 +5,7 @@ import hextant.context.Context
 import javafx.scene.control.ScrollPane
 import javafx.scene.image.Image
 import javafx.scene.image.ImageView
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import ponticello.impl.*
@@ -22,6 +23,9 @@ import java.util.concurrent.CompletableFuture
 class SampleObject(
     private val referencedFile: ReactiveVariable<String>,
 ) : BufferObject() {
+    @SerialName("name")
+    override var _name: ReactiveVariable<String>? = null
+
     override val superColliderName: String
         get() = "~sample_${name.now}"
 

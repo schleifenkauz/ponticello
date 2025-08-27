@@ -50,6 +50,9 @@ class ParameterControlsPane(
 
     override val addSpaceBeforeActionBar: Boolean get() = false
 
+    override val canDuplicate: Boolean
+        get() = true
+
     init {
         styleClass("parameter-controls")
         setup()
@@ -104,11 +107,14 @@ class ParameterControlsPane(
         else -> super.getDroppedObject(ev)
     }
 
-    override fun dropObject(obj: NamedParameterControl, idx: Int, list: ObjectList<NamedParameterControl>) {
+    override fun dropObject(
+        obj: NamedParameterControl, idx: Int,
+        list: ObjectList<NamedParameterControl>, from: ObjectList<NamedParameterControl>?
+    ) {
         if (list is ParameterControlList) {
             list.duplicateControl(obj, idx)
         } else {
-            super.dropObject(obj, idx, list)
+            super.dropObject(obj, idx, list, from)
         }
     }
 

@@ -1,6 +1,7 @@
 package ponticello.model.registry
 
 import fxutils.undo.AbstractEdit
+import ponticello.ui.registry.ListDisplayConfig
 
 sealed class ListEdit<O>(protected val registry: ObjectList<O>) : AbstractEdit() {
     class AddObject<O>(
@@ -52,6 +53,26 @@ sealed class ListEdit<O>(protected val registry: ObjectList<O>) : AbstractEdit()
 
         override fun doUndo() {
             registry.move(obj, fromIdx)
+        }
+    }
+
+    class DropObject<O: Any>(
+        private val target: ObjectList<O>,
+        private val source: ObjectList<O>,
+        private val sourceIdx: Int,
+        private val targetIdx: Int,
+        private val config: ListDisplayConfig<O>,
+        private val obj: O,
+    ) : ListEdit<O>(target) {
+        override val actionDescription: String
+            get() = "Move ${registry.objectType}"
+
+        override fun doRedo() {
+            config.dropObject(obj, targetIdx, target, source)
+        }
+
+        override fun doUndo() {
+            config.dropObject(obj, sourceIdx, source, target)
         }
     }
 }
