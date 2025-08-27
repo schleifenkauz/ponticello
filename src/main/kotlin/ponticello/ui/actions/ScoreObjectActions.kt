@@ -41,18 +41,29 @@ object ScoreObjectActions {
     val multiObjectActions = collectActions {
         addObjectAction("Remove objects") {
             description("Remove the selected object instances")
-            shortcut("DELETE")
+            shortcut("Alt?+DELETE")
             icon(Material2AL.DELETE)
-            executeMultiAction { view, _ ->
-                val instance = view.instance
-                val score = instance.score ?: return@executeMultiAction
-                score.removeObject(instance, option = Score.RegistryOption.ASK_IF_NEEDED)
+            executes { ctx, ev ->
+                val selection = RectangleSelection.get()
+                if (selection != null) {
+                    RectangleSelection.clear()
+                    val pane = selection.pane
+                    val containedInstances = pane.viewsInside(selection.bounds, mustBeContainedEntirely = ev.isAltDown())
+                        .mapTo(mutableSetOf()) { it.instance }
+                    pane.score.removeObjects(containedInstances, Score.RegistryOption.ASK_IF_NEEDED)
+                } else {
+                    for (view in ctx.selectedViews) {
+                        val instance = view.instance
+                        val score = instance.score ?: continue
+                        score.removeObject(instance, option = Score.RegistryOption.ASK_IF_NEEDED)
+                    }
+                }
             }
         }
         addObjectAction("Toggle mute") {
             description("Toggle mute the selected object instances")
             shortcut("Alt?+M")
-            applicableIf { ctx -> ctx.selectedViews.any { view -> view.instance.obj.affectsPlayback} }
+            applicableIf { ctx -> ctx.selectedViews.any { view -> view.instance.obj.affectsPlayback } }
             icon { selector ->
                 selector.focusedView
                     .flatMap { view -> view?.instance?.muted ?: reactiveValue(false) }
@@ -127,7 +138,7 @@ object ScoreObjectActions {
 
     val singleObjectActions = collectActions {
         addAction("Show detail pane") {
-            shortcut("Alt?+D")
+            shortcut("Ctrl+D")
             applicableOn { view -> !view.parentPane.isRoot(view.obj) }
             executeSingle { view, ev ->
                 if (ev.isTargetTextInput && !ev.isAltDown()) return@executeSingle
@@ -150,13 +161,25 @@ object ScoreObjectActions {
             }
         }
         addObjectAction("Duplicate object") {
-            shortcut("C")
+            shortcut("Alt?+D")
             icon(MaterialDesignC.CONTENT_DUPLICATE)
             executeSingle { view, ev ->
-                if (ev.isTargetTextInput) return@executeSingle
+                if (ev.isTargetTextInput && !ev.isAltDown()) return@executeSingle
                 view.context[ScoreObjectSelectionManager].deselectAll()
                 val duplicator = view.context[ScoreObjectDuplicator]
-                duplicator.enterDuplicateMode(view.obj, view)
+                duplicator.enterDuplicateMode(view.obj, view, clone = false)
+            }
+        }
+        addObjectAction("Clone object") {
+            shortcut("Alt?+Shift?+C")
+            icon(MaterialDesignC.CONTENT_DUPLICATE)
+            executeSingle { view, ev ->
+                if (ev.isTargetTextInput && !ev.isAltDown()) return@executeSingle
+                view.context[ScoreObjectSelectionManager].deselectAll()
+                val duplicator = view.context[ScoreObjectDuplicator]
+                val newName = view.context[ScoreObjectRegistry].nameForClone(view.obj, ev) ?: return@executeSingle
+                val clone = view.obj.clone(newName)
+                duplicator.enterDuplicateMode(clone, view, clone = ev.isShiftDown())
             }
         }
         addObjectAction("Unlink from original") {
@@ -183,7 +206,7 @@ object ScoreObjectActions {
             }
         }
         addObjectAction("Cut object") {
-            shortcut("Alt?+X")
+            shortcut("Alt?+Shift?+X")
             applicableOn { view -> !view.parentPane.isRoot(view.obj) }
             executeSingle { view, ev ->
                 if (ev.isTargetTextInput && !ev.isAltDown()) return@executeSingle
@@ -191,7 +214,7 @@ object ScoreObjectActions {
                 inst.score?.removeObject(inst, Score.RegistryOption.KEEP_IN_REGISTRY)
                 val duplicator = view.context[ScoreObjectDuplicator]
                 view.context[ScoreObjectSelectionManager].deselectAll()
-                duplicator.enterDuplicateMode(inst.obj, view)
+                duplicator.enterDuplicateMode(inst.obj, view, clone = ev.isShiftDown())
             }
         }
         addObjectAction("Reverse object") {
@@ -221,8 +244,15 @@ object ScoreObjectActions {
                     is MidiObjectView -> showInstrument(view.obj.instrument.now, view.context)
                     is MidiNoteObjectView -> showInstrument(view.obj.parentObject.instrument.now, view.context)
                 }
-
             }
+        }
+        addObjectAction("Choose instrument") {
+            shortcut("Shift+I")
+            applicableOn { v -> v is SoundProcessView || v is MidiObjectView || v is MidiNoteObjectView }
+            executeMultiAction { view, ev ->
+                //TODO
+            }
+
         }
         addObjectAction("Rename object") {
             shortcut("F2")
@@ -303,7 +333,7 @@ object ScoreObjectActions {
             }
         }
         addObjectAction("Select parent") {
-            shortcut("Alt?+P")
+            shortcut("Alt+P")
             applicableOn<ScoreObjectView>()
             executeSingle { view, ev ->
                 if (ev.isTargetTextInput && !ev.isAltDown()) return@executeSingle

@@ -1,12 +1,17 @@
 package ponticello.ui.score
 
-import javafx.scene.shape.Rectangle
+import fxutils.drag.setupDraggingAndResizing
+import fxutils.runAfterLayout
+import fxutils.styleClass
+import javafx.scene.layout.Region
 import ponticello.impl.abs
 import ponticello.model.score.ObjectPosition
 import ponticello.model.score.ScoreObject
 import ponticello.model.score.ScoreObjectInstance
 
-class RectangleSelection(private val pane: ScorePane, val rect: Rectangle, initialPosition: ObjectPosition) {
+class RectangleSelection(val pane: ScorePane, initialPosition: ObjectPosition) {
+    private val rect = Region() styleClass "selection-rect"
+
     private var corner1 = initialPosition
     private var corner2 = initialPosition
 
@@ -15,29 +20,38 @@ class RectangleSelection(private val pane: ScorePane, val rect: Rectangle, initi
     val height get() = (corner1.y - corner2.y).abs()
     val duration get() = (corner1.time - corner2.time).abs()
 
-    var isTimeSelection = false
-        private set
+    val bounds get() = rect.boundsInParent
+
 
     init {
+        rect.viewOrder = -1000.0
         setOppositeCorner(corner2)
-    }
-
-    fun useAsTimeSelection() {
-        isTimeSelection = true
-        rect.y = 0.0
-        rect.heightProperty().bind(pane.heightProperty().subtract(30))
+        rect.setOnMouseClicked { _ -> rect.requestFocus() }
+        rect.setupDraggingAndResizing(
+            canUserChangeWidth = true, canUserChangeHeight = true,
+            threshold = 5.0,
+            drag = { x, y ->
+                val dx = x - rect.layoutX
+                val dy = y - rect.layoutY
+                val deltaPos = ObjectPosition(pane.getDuration(dx), pane.getScoreY(dy))
+                corner1 += deltaPos
+                corner2 += deltaPos
+                reposition()
+            },
+            resize = { old, dx, dy, cursor, ev ->
+                //TODO
+            }
+        )
     }
 
     fun setOppositeCorner(position: ObjectPosition) {
         corner2 = position
-        rect.x = pane.getX(time)
-        rect.width = pane.getWidth(duration)
-        if (!isTimeSelection) {
-            val y1 = pane.getScreenY(corner1.y)
-            val y2 = pane.getScreenY(corner2.y)
-            rect.y = minOf(y1, y2)
-            rect.height = maxOf(y1, y2) - minOf(y1, y2)
-        }
+        rect.layoutX = pane.getX(time)
+        rect.prefWidth = pane.getWidth(duration)
+        val y1 = pane.getScreenY(corner1.y)
+        val y2 = pane.getScreenY(corner2.y)
+        rect.layoutY = minOf(y1, y2)
+        rect.prefHeight = maxOf(y1, y2) - minOf(y1, y2)
     }
 
     fun createInstance(obj: ScoreObject): ScoreObjectInstance {
@@ -47,7 +61,39 @@ class RectangleSelection(private val pane: ScorePane, val rect: Rectangle, initi
 
     fun isEmpty(): Boolean = (rect.width * rect.height) < THRESHOLD
 
+    fun rescale() {
+        setOppositeCorner(corner2)
+    }
+
     companion object {
         private const val THRESHOLD = 5.0
+
+        private var instance: RectangleSelection? = null
+        private var currentPane: ScorePane? = null
+
+        fun get() = instance
+
+        fun get(pane: ScorePane) = instance?.takeIf { currentPane == pane }
+
+        fun clear() {
+            val pane = currentPane ?: return
+            val inst = instance ?: return
+            pane.children.remove(inst.rect)
+            currentPane = null
+            instance = null
+        }
+
+        fun create(pane: ScorePane, position: ObjectPosition) {
+            clear()
+            val selection = RectangleSelection(pane, position)
+            instance = selection
+            currentPane = pane
+            pane.children.add(instance!!.rect)
+            runAfterLayout { selection.rect.requestFocus() }
+        }
+
+        fun reposition() {
+            instance?.rescale()
+        }
     }
 }

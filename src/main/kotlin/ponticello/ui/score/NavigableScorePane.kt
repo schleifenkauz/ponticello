@@ -46,6 +46,7 @@ class NavigableScorePane(score: Score, context: Context) : RootScorePane(score, 
             displayStart = zero(4)
         }
         updatePixelsPerSecond()
+        RectangleSelection.reposition()
         return repaint()
     }
 
@@ -78,8 +79,8 @@ class NavigableScorePane(score: Score, context: Context) : RootScorePane(score, 
     }
 
     fun displaySelectedArea() {
-        val area = selectedArea ?: return
-        clearRegionSelection()
+        val area = RectangleSelection.get(this) ?: return
+        RectangleSelection.clear()
         display(area.time, area.time + area.duration)
     }
 

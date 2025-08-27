@@ -12,13 +12,15 @@ import ponticello.model.score.ObjectPosition
 import ponticello.model.score.Score
 import ponticello.model.score.ScoreObjectGroup
 import ponticello.model.score.UnresolvedScoreObject
+import ponticello.ui.score.RectangleSelection
+import ponticello.ui.score.RegularScorePane
 import ponticello.ui.score.ScoreObjectDuplicator
 import ponticello.ui.score.ScoreObjectSelectionManager
 import ponticello.ui.score.ScoreObjectView
 import reaktive.value.now
 
 object SelectionRelatedActions {
-    fun addShortcuts(handler: KeyEventHandlerBody<*>, context: Context) = with(handler){
+    fun addShortcuts(handler: KeyEventHandlerBody<*>, context: Context) = with(handler) {
         val selector = context[ScoreObjectSelectionManager]
         on("ESCAPE") {
             context[ScoreObjectDuplicator].exitDuplicateMode()
@@ -40,25 +42,31 @@ object SelectionRelatedActions {
 
         on("Shift?+G") { ev ->
             if (ev.isTargetTextInput) return@on
-            val views = selector.selectedViews
-            //import to get a single ScorePane (not a single Score)
-            // because we want the instances to be from one ScorePane (or the root score)
-            val parentPane = views.mapTo(mutableSetOf()) { v -> v.parentPane }.singleOrNull() ?: return@on
-            val instances = views.map { v -> v.instance }
-            val minT = instances.minOf { inst -> inst.start }
-            val minY = instances.minOf { inst -> inst.y }
-            val maxT = instances.maxOf { inst -> inst.start + inst.duration }
-            val maxY = instances.maxOf { inst -> inst.y + inst.height } //TODO maybe add extra height for the top bar
-            val relativePosition = ObjectPosition(-minT, -minY)
-            val recurse = ev.isShiftDown
-            val newScore = Score()
-            val name = context[ScoreObjectRegistry].availableName("group")
-            val subScore = ScoreObjectGroup(newScore).withName(name)
-            subScore.setInitialSize(maxT - minT, maxY - minY)
-            context.compoundEdit("Create group from objects") {
-                parentPane.score.addObject(subScore, minT, minY, autoSelect = true)
-                for (inst in instances) {
-                    inst.moveInto(newScore, relativePosition, recurse)
+            val selection = RectangleSelection.get()
+            if (selection != null && selection.pane is RegularScorePane) {
+                selection.pane.addNewGroup(ev, selection)
+                RectangleSelection.clear()
+            } else {
+                val views = selector.selectedViews
+                //important to get a single ScorePane (not a single Score)
+                // because we want the instances to be from one ScorePane (or the root score)
+                val parentPane = views.mapTo(mutableSetOf()) { v -> v.parentPane }.singleOrNull() ?: return@on
+                val instances = views.map { v -> v.instance }
+                val minT = instances.minOf { inst -> inst.start }
+                val minY = instances.minOf { inst -> inst.y }
+                val maxT = instances.maxOf { inst -> inst.start + inst.duration }
+                val maxY = instances.maxOf { inst -> inst.y + inst.height }
+                val relativePosition = ObjectPosition(-minT, -minY)
+                val recurse = ev.isShiftDown
+                val newScore = Score()
+                val name = context[ScoreObjectRegistry].availableName("group")
+                val subScore = ScoreObjectGroup(newScore).withName(name)
+                subScore.setInitialSize(maxT - minT, maxY - minY)
+                context.compoundEdit("Create group from objects") {
+                    parentPane.score.addObject(subScore, minT, minY, autoSelect = true)
+                    for (inst in instances) {
+                        inst.moveInto(newScore, relativePosition, recurse)
+                    }
                 }
             }
         }

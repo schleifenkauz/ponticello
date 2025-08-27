@@ -13,6 +13,7 @@ import ponticello.model.registry.InstrumentRegistry
 import ponticello.sc.Identifier
 import ponticello.ui.registry.SearchableBusListView
 import ponticello.ui.score.ScorePane
+import ponticello.ui.score.SoundProcessView
 import reaktive.value.now
 
 sealed interface FlowOption {
@@ -78,7 +79,7 @@ sealed interface FlowOption {
 
     data class Instrument(val def: InstrumentObject) : FlowOption {
         override fun createFlow(context: Context, anchor: Point2D): InstrumentFlow? {
-            val controls = ScorePane.getInitialControls(def, context, defaultBus = null, anchor) ?: return null
+            val controls = SoundProcessView.getInitialControls(def, context, defaultBus = null, anchor) ?: return null
             return InstrumentFlow.create(def, controls)
         }
 

@@ -49,6 +49,7 @@ import ponticello.ui.registry.ObjectListView
 import ponticello.ui.registry.ObjectListView.DisplayMode
 import ponticello.ui.score.ParameterControlsPane
 import ponticello.ui.score.ScorePane
+import ponticello.ui.score.SoundProcessView
 import reaktive.value.binding.binding
 import reaktive.value.binding.`if`
 import reaktive.value.binding.map
@@ -112,7 +113,9 @@ class FlowGroupPane(
                 val registry = context[InstrumentRegistry]
                 val def = ev.dragboard.getFrom(registry, InstrumentObject.DATA_FORMAT) ?: return null
                 val anchor = Point2D(ev.screenX, ev.screenY)
-                val controls = ScorePane.getInitialControls(def, context, defaultBus = null, anchor) ?: return null
+                val controls = SoundProcessView.getInitialControls(
+                    def, context, defaultBus = null, anchor
+                ) ?: return null
                 return InstrumentFlow.create(def, controls)
             }
 

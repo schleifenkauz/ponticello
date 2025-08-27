@@ -10,35 +10,17 @@ import javafx.geometry.Point2D
 import javafx.scene.input.MouseButton
 import javafx.scene.input.MouseEvent
 import javafx.scene.layout.Pane
-import javafx.scene.shape.Rectangle
 import ponticello.impl.*
-import ponticello.model.obj.BusObject
-import ponticello.model.obj.InstrumentObject
 import ponticello.model.obj.MeterObject
 import ponticello.model.player.ScorePlayer
-import ponticello.model.registry.BufferRegistry
-import ponticello.model.registry.BusRegistry
 import ponticello.model.registry.ScoreObjectRegistry
 import ponticello.model.score.*
-import ponticello.model.score.controls.BufferControl
-import ponticello.model.score.controls.BusControl
-import ponticello.model.score.controls.ParameterControl
-import ponticello.sc.BufferControlSpec
-import ponticello.sc.BusControlSpec
-import ponticello.sc.defaultControl
-import ponticello.ui.registry.SearchableBufferListView
-import ponticello.ui.registry.SearchableBusListView
 import reaktive.value.now
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Future
-import kotlin.collections.component1
-import kotlin.collections.component2
-import kotlin.collections.set
 
 abstract class ScorePane(val score: Score, val context: Context) : Pane(), ScoreListener, TimeBlock {
     protected var lastMousePress: Point2D? = null
-        private set
-    var selectedArea: RectangleSelection? = null
         private set
 
     protected val views = mutableMapOf<ScoreObjectInstance, ScoreObjectView>()
@@ -53,9 +35,6 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
     abstract val associatedObject: ScoreObject?
 
     abstract val pixelsPerSecond: Double
-
-    open val minScoreY get() = zero(precision = 4)
-    open val maxScoreY get() = associatedObject?.height
 
     init {
         styleClass("score-pane")
@@ -89,10 +68,6 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
     abstract fun getScreenY(scoreY: Decimal): Double
 
     open fun coerceAndTransformScoreY(y: Decimal, obj: ScoreObject) = y.coerceIn(score.minY, score.maxY - obj.height)
-
-    open fun addTime(location: Decimal, amount: Decimal) {
-        score.addTime(location, amount)
-    }
 
     protected open fun deleteTimeRange(start: Decimal, end: Decimal) {
         score.deleteTimeRange(start, end)
@@ -206,7 +181,6 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
 
     }
 
-
     protected open fun mouseExited() {
 
     }
@@ -219,7 +193,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
                 var obj = duplicator.clipboardObject!!
                 obj = acceptObject(obj) ?: return
                 if (obj.height > score.maxY || obj.duration > score.maxTime) return
-                if (ev.isShiftDown) {
+                if (duplicator.isCloneMode) {
                     val name = context[ScoreObjectRegistry].nameForClone(obj, ev) ?: return
                     obj = obj.clone(name)
                 }
@@ -256,47 +230,29 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
     }
 
     protected open fun mouseDragDetected(ev: MouseEvent) {
-        clearRegionSelection()
         val pos = snapToGrid(ev.x, ev.y)
-        val selectionRect = Rectangle() styleClass "selection-rect"
-        selectionRect.viewOrder = -1000.0
-        val selection = RectangleSelection(this, selectionRect, pos)
-        if (ev.modifiers == setOf(Alt, Shift)) {
-            selection.useAsTimeSelection()
-        }
-        children.add(selection.rect)
-        selectedArea = selection
+        RectangleSelection.create(this, pos)
     }
 
     protected open fun mouseDragged(ev: MouseEvent) {
         ev.consume()
+        val selectedArea = RectangleSelection.get(this)
         if (selectedArea != null) {
             val pos = snapToGrid(ev.x, ev.y)
-            val selection = selectedArea!!
-            selection.setOppositeCorner(pos)
+            selectedArea.setOppositeCorner(pos)
             markT(pos.time)
         }
     }
 
     protected open fun mouseReleased(ev: MouseEvent) {
-        val selection = selectedArea
+        val selection = RectangleSelection.get(this)
         if (selection == null || selection.isEmpty()) return
-        when (ev.modifiers) {
-            noModifiers, setOf(Shift) -> {
-                val containedViews = viewsInside(selection.rect.boundsInParent)
-                selector.selectAll(containedViews, addToSelection = ev.isShiftDown)
-                requestFocus()
-            }
+        if (ev.isControlDown || ev.isShiftDown || ev.isAltDown) {
+            RectangleSelection.clear()
+            val containedViews = viewsInside(selection.bounds, mustBeContainedEntirely = ev.isAltDown)
+            selector.selectAll(containedViews, addToSelection = ev.isShiftDown)
+            requestFocus()
         }
-        runAfterLayout {
-            clearRegionSelection()
-        }
-    }
-
-    fun clearRegionSelection() {
-        val selection = selectedArea ?: return
-        children.remove(selection.rect)
-        selectedArea = null
     }
 
     private fun pasteFromSystemClipboard(ev: MouseEvent) {
@@ -317,22 +273,13 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
         }
     }
 
-    protected fun viewsInside(bounds: Bounds) = children
+    fun viewsInside(bounds: Bounds, mustBeContainedEntirely: Boolean) = children
         .filterIsInstance<ScoreObjectView>()
-        .filter { v -> v in children && bounds.contains(v.boundsInParent) }
-
-    fun removeSelected() {
-        val selection = selectedArea
-        if (selection != null && selection.isTimeSelection) {
-            val start = selection.time
-            val end = selection.time + selection.duration
-            deleteTimeRange(start, end)
-            clearRegionSelection()
-        } else {
-            selector.removeSelected()
+        .filter { v ->
+            v in children &&
+                    if (mustBeContainedEntirely) bounds.contains(v.boundsInParent)
+                    else bounds.intersects(v.boundsInParent)
         }
-        selector.deselectAll()
-    }
 
     companion object {
         val CURRENT_ROOT = publicProperty<ScorePane>("CurrentRootScorePane")
@@ -350,35 +297,5 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
         }
 
         private const val DRAG_THRESH = 5.0
-
-        fun getInitialControls(
-            def: InstrumentObject, context: Context, defaultBus: BusObject?, anchor: Point2D?,
-        ): ParameterControlList? {
-            val map = mutableMapOf<String, ParameterControl>()
-            for (param in def.parameters) {
-                val name = param.name.now
-                val control = when (val spec = param.spec.now) {
-                    is BufferControlSpec -> {
-                        val buffer = SearchableBufferListView(context[BufferRegistry], "Select $name", spec.channels)
-                            .showPopup(anchor) ?: return null
-                        BufferControl.create(buffer)
-                    }
-
-                    is BusControlSpec -> {
-                        if (defaultBus != null && defaultBus.matches(spec)) BusControl.create(defaultBus)
-                        else {
-                            val bus =
-                                SearchableBusListView(context[BusRegistry], "Select $name", spec.rate, spec.channels)
-                                    .showPopup(anchor) ?: return null
-                            BusControl.create(bus)
-                        }
-                    }
-
-                    else -> spec.defaultControl()
-                }
-                map[name] = control
-            }
-            return ParameterControlList.from(map)
-        }
     }
 }

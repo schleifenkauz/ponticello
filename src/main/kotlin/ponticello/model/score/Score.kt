@@ -209,13 +209,15 @@ open class Score(
                     inst.setTime(newStart)
                 }
             }
+            val obj = parentObject
+            obj?.resize(obj.duration + amount, obj.height, ScoreObject.ResizeMode.Regular, Side.RIGHT)
         }
     }
 
     fun deleteTimeRange(start: Decimal, end: Decimal) {
         context.compoundEdit("Delete time range") {
             val removedDuration = end - start
-            for (inst in objectInstances) {
+            for (inst in objectInstances.toList()) {
                 if (inst.start > start) {
                     if (inst.start + inst.obj.duration < end) {
                         removeObject(inst, option = RegistryOption.REMOVE_WITHOUT_ASKING)
@@ -225,6 +227,8 @@ open class Score(
                     }
                 }
             }
+            val obj = parentObject
+            obj?.resize(obj.duration - removedDuration, obj.height, ScoreObject.ResizeMode.Regular, Side.RIGHT)
         }
     }
 

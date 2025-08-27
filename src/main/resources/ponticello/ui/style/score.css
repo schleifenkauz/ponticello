@@ -3,13 +3,9 @@
 }
 
 .selection-rect {
-    -fx-stroke: gray;
-    -fx-fill: rgba(0, 0, 0, 0.2);
-}
-
-.selection-rect:focused {
-    -fx-fill: rgba(0, 0, 0, 0.3);
-    -fx-stroke: green;
+    -fx-border-color: green;
+    -fx-border-width: 1px;
+    -fx-background-color: rgba(0, 0, 0, 0.2);
 }
 
 .mouse-tracker-line {

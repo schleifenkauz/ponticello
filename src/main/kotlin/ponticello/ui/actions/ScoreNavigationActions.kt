@@ -73,18 +73,6 @@ object ScoreNavigationActions : Action.Collector<NavigableScorePane>({
             view.displaySelectedArea()
         }
     }
-    addAction("Add time") {
-        shortcut("Alt+INSERT")
-        executes { pane, ev ->
-            if (ev.isTargetTextInput && !ev.isAltDown()) return@executes
-            val cursorPosition = pane.context[ScorePlayer.CURRENT].playHead.currentTime
-            val amount = DecimalPrompt(
-                "How much time to add",
-                precision = 2, initialValue = 10.0, 0.0..1000.0
-            ).showDialog() ?: return@executes
-            pane.addTime(cursorPosition, amount)
-        }
-    }
     addAction("Add flow group") {
         shortcut("Ctrl+Shift+F")
         executes { pane ->

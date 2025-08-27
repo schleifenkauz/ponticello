@@ -6,20 +6,32 @@ import fxutils.centerChildren
 import fxutils.drag.setupDropArea
 import fxutils.prompt.DetailPane
 import fxutils.styleClass
+import hextant.context.Context
 import javafx.geometry.Point2D
 import javafx.scene.layout.*
+import ponticello.model.obj.BusObject
+import ponticello.model.obj.InstrumentObject
 import ponticello.model.obj.ParameterDefObject
 import ponticello.model.project.InlineControlsDisplay
 import ponticello.model.project.UIState
+import ponticello.model.registry.BufferRegistry
+import ponticello.model.registry.BusRegistry
 import ponticello.model.score.Envelope
+import ponticello.model.score.ParameterControlList
 import ponticello.model.score.ParameterControlList.NamedParameterControl
 import ponticello.model.score.ScoreObject
 import ponticello.model.score.ScoreObjectInstance
 import ponticello.model.score.SoundProcess
+import ponticello.model.score.controls.BufferControl
+import ponticello.model.score.controls.BusControl
 import ponticello.model.score.controls.EnvelopeControl
+import ponticello.model.score.controls.ParameterControl
 import ponticello.model.score.controls.getNumericalValue
+import ponticello.sc.BufferControlSpec
+import ponticello.sc.BusControlSpec
 import ponticello.sc.NumericalControlSpec
 import ponticello.sc.ParameterType
+import ponticello.sc.defaultControl
 import ponticello.sc.view.ObjectSelectorControl
 import ponticello.ui.actions.ScoreObjectActions
 import ponticello.ui.controls.InlineParameterControlsBar
@@ -28,6 +40,8 @@ import ponticello.ui.launcher.PonticelloApp.Companion.primaryStage
 import ponticello.ui.launcher.ScoreObjectDetailPane
 import ponticello.ui.midi.ContextualMidiReceiver
 import ponticello.ui.midi.ParameterControlsMidiContext
+import ponticello.ui.registry.SearchableBufferListView
+import ponticello.ui.registry.SearchableBusListView
 import ponticello.ui.registry.SearchableParameterDefListView
 import reaktive.Observer
 import reaktive.and
@@ -162,5 +176,37 @@ class SoundProcessView(
     override fun resizedObject(obj: ScoreObject) {
         super.resizedObject(obj)
         spectrogramPainter.displaySpectrogram()
+    }
+
+    companion object {
+        fun getInitialControls(
+            def: InstrumentObject, context: Context, defaultBus: BusObject?, anchor: Point2D?,
+        ): ParameterControlList? {
+            val map = mutableMapOf<String, ParameterControl>()
+            for (param in def.parameters) {
+                val name = param.name.now
+                val control = when (val spec = param.spec.now) {
+                    is BufferControlSpec -> {
+                        val buffer = SearchableBufferListView(context[BufferRegistry], "Select $name", spec.channels)
+                            .showPopup(anchor) ?: return null
+                        BufferControl.create(buffer)
+                    }
+
+                    is BusControlSpec -> {
+                        if (defaultBus != null && defaultBus.matches(spec)) BusControl.create(defaultBus)
+                        else {
+                            val bus =
+                                SearchableBusListView(context[BusRegistry], "Select $name", spec.rate, spec.channels)
+                                    .showPopup(anchor) ?: return null
+                            BusControl.create(bus)
+                        }
+                    }
+
+                    else -> spec.defaultControl()
+                }
+                map[name] = control
+            }
+            return ParameterControlList.from(map)
+        }
     }
 }

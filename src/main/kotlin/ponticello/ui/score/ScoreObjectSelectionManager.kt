@@ -126,7 +126,7 @@ class ScoreObjectSelectionManager(val context: Context, private val rootPane: Sc
         for (v in previouslySelected) {
             v.updateIsSelected(false)
         }
-        focusedScorePane.clearRegionSelection()
+        RectangleSelection.clear()
     }
 
     fun selectAll() {

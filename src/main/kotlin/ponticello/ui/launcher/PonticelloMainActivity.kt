@@ -81,7 +81,10 @@ class PonticelloMainActivity(val project: PonticelloProject) : Activity() {
         primaryStage.fullScreenExitKeyCombination = KeyCombination.NO_MATCH
         primaryStage.scene.registerGlobalShortcuts(context)
         val objectCtx = ObjectActionContext.MultiObjectContext(context[ScoreObjectSelectionManager])
-        mainScoreView.registerShortcuts(ScoreObjectActions.all.withContext(objectCtx))
+        primaryStage.scene.registerShortcuts {
+            registerActions(ScoreObjectActions.all.withContext(objectCtx))
+            registerActions(ScoreActions.withContext(mainScoreView))
+        }
         registerMainActivityShortcuts()
         primaryStage.initStyle(StageStyle.UNDECORATED)
         ArrowKeys.registerArrowKeys(primaryStage.scene, context)

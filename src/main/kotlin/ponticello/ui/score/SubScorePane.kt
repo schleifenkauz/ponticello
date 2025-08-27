@@ -41,15 +41,4 @@ class SubScorePane(
     override fun getScreenY(scoreY: Decimal): Double = scoreY.value * (this.prefHeight / obj.height.value)
 
     override fun getScoreY(screenY: Double): Decimal = screenY * (obj.height / this.prefHeight)
-
-    override fun addTime(location: Decimal, amount: Decimal) {
-        super.addTime(location, amount)
-        obj.resize(obj.duration + amount, obj.height, ScoreObject.ResizeMode.Regular, Side.RIGHT)
-    }
-
-    override fun deleteTimeRange(start: Decimal, end: Decimal) {
-        super.deleteTimeRange(start, end)
-        val amount = end - start
-        obj.resize(obj.duration - amount, obj.height, ScoreObject.ResizeMode.Regular, Side.RIGHT)
-    }
 }

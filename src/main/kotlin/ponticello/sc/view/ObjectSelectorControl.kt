@@ -4,6 +4,7 @@ import bundles.Bundle
 import bundles.createBundle
 import fxutils.drag.DropHandler
 import fxutils.drag.setupDropArea
+import hextant.context.compoundEdit
 import hextant.core.view.SimpleChoiceEditorControl
 import javafx.scene.input.DragEvent
 import javafx.scene.input.Dragboard
@@ -57,7 +58,9 @@ class ObjectSelectorControl<O : NamedObject>(
             override fun displayText(option: O): String = selector.toString(option).now
         }
         view.setFilter { obj -> selector.filter(obj) }
-        val option = view.showPopup(anchorNode = this, initialOption = selector.result.now.get())
-        if (option != null) selector.select(option.reference())
+        context.compoundEdit("Select ${registry.objectType}") {
+            val option = view.showPopup(anchorNode = this, initialOption = selector.result.now.get())
+            if (option != null) selector.select(option.reference())
+        }
     }
 }

@@ -56,6 +56,7 @@ class ScoreObjectInstance(
 
     val end get() = start + duration
     val timeRange get() = start..end
+    val yRange get() = y..y + height
 
     @Transient
     var positionBeforeMove = ObjectPosition.ZERO

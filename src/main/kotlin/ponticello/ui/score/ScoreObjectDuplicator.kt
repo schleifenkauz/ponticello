@@ -22,6 +22,9 @@ class ScoreObjectDuplicator {
     var clipboardObject: ScoreObject? = null
         private set
 
+    var isCloneMode: Boolean = false
+        private set
+
     private val panes = mutableListOf<ScorePane>()
     private val imageViews = mutableMapOf<ScorePane, ImageView>()
 
@@ -31,18 +34,19 @@ class ScoreObjectDuplicator {
         repaintObservers.add(observer)
     }
 
-    fun enterDuplicateMode(obj: ScoreObject, view: ScoreObjectView) {
+    fun enterDuplicateMode(obj: ScoreObject, view: ScoreObjectView, clone: Boolean) {
         if (clipboardObject != null) {
             exitDuplicateMode()
         }
         val parameters = SnapshotParameters()
         view.snapshot(parameters, null)
         val image = view.snapshot(parameters, null)
-        enterDuplicateMode(obj, image, view)
+        enterDuplicateMode(obj, image, view, clone)
     }
 
-    private fun enterDuplicateMode(obj: ScoreObject, image: Image, view: ScoreObjectView?) {
+    private fun enterDuplicateMode(obj: ScoreObject, image: Image, view: ScoreObjectView?, clone: Boolean) {
         clipboardObject = obj
+        isCloneMode = clone
         for (pane in panes) {
             val imageView = ImageView(image)
             imageView.opacity = 0.3
@@ -67,7 +71,7 @@ class ScoreObjectDuplicator {
         val image = Image(sample.spectrogramFile.inputStream())
         val instrument = sample.context.project[UI_STATE].getOrSelectInstrument(ev) ?: return
         val obj = sample.createSynthObject(instrument) ?: return
-        enterDuplicateMode(obj, image, null)
+        enterDuplicateMode(obj, image, null, clone = false)
     }
 
     private fun resizeImageView(view: ImageView, pane: ScorePane) {
