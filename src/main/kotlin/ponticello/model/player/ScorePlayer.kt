@@ -102,7 +102,7 @@ class ScorePlayer private constructor(
             } else {
                 val start = inst.start + position.time
                 val end = inst.end + position.time
-                val y = if (obj is MidiNoteObject) position.y else position.y + inst.y
+                val y = if (score.parentObject is MidiObject) position.y else position.y + inst.y
                 if (withCutoff) {
                     val absolutePosition = ObjectPosition(start, y)
                     dest.add(ScoreEvent(ScoreEvent.Type.ObjectStart, absolutePosition, inst))

@@ -9,12 +9,16 @@ import ponticello.model.flow.NodePlacement
 import ponticello.model.obj.ParameterDefObject
 import ponticello.model.score.controls.ParameterControl
 import reaktive.value.ReactiveValue
+import reaktive.value.ReactiveVariable
 import reaktive.value.reactiveValue
 import reaktive.value.reactiveVariable
 
 @Serializable
 @SerialName("Unresolved")
 class UnresolvedScoreObject : ScoreObject() {
+    @SerialName("name")
+    override var _name: ReactiveVariable<String>? = null
+
     override val type: String
         get() = "none"
 

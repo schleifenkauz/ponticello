@@ -18,7 +18,7 @@ class MidiNoteObjectView(override val obj: MidiNoteObject, instance: ScoreObject
     private val pitchLabel = Text(pitchToText(instance.y))
 
     override fun setupDetailPane(pane: DetailPane) {
-        val instrumentSelector = MidiInstrumentSelectorPopup(context).selectorButton(
+        val instrumentSelector = InstrumentSelectorPopup(context).selectorButton(
             obj.parentObject.instrument,
             undoManager = context[UndoManager],
             actionDescription = "Select MIDI instrument"

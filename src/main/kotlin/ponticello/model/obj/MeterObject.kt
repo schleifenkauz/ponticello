@@ -1,5 +1,6 @@
 package ponticello.model.obj
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import ponticello.impl.*
 import ponticello.model.live.QuantizationUnit
@@ -17,6 +18,9 @@ class MeterObject(
     val beatsPerBar: ReactiveVariable<Int>,
     val ticksPerBeat: ReactiveVariable<Int>,
 ) : AbstractRenamableObject() {
+    @SerialName("name")
+    override var _name: ReactiveVariable<String>? = null
+
     override val canCopy: Boolean
         get() = true
 

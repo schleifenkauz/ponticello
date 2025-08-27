@@ -48,7 +48,6 @@ import ponticello.ui.registry.ObjectBox
 import ponticello.ui.registry.ObjectListView
 import ponticello.ui.registry.ObjectListView.DisplayMode
 import ponticello.ui.score.ParameterControlsPane
-import ponticello.ui.score.ScorePane
 import ponticello.ui.score.SoundProcessView
 import reaktive.value.binding.binding
 import reaktive.value.binding.`if`
@@ -98,6 +97,7 @@ class FlowGroupPane(
     override fun getDroppedObject(ev: DragEvent): AudioFlow? {
         return when {
             ev.dragboard.hasContent(AudioFlow.DATA_FORMAT) -> {
+                @Suppress("UNCHECKED_CAST")
                 val reference = ev.dragboard.getContent(AudioFlow.DATA_FORMAT) as FlowReference
                 reference.resolve(context)
                 val flow = reference.get() ?: return null

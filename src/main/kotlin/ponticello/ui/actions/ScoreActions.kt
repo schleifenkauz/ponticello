@@ -3,36 +3,32 @@ package ponticello.ui.actions
 import fxutils.actions.Action
 import fxutils.actions.isAltDown
 import fxutils.actions.isShiftDown
-import fxutils.prompt.SimpleSearchableListView
 import hextant.core.editor.defaultState
 import hextant.serial.EditorRoot
 import javafx.geometry.Point2D
 import javafx.scene.robot.Robot
-import ponticello.model.obj.*
+import ponticello.model.obj.project
+import ponticello.model.obj.withName
 import ponticello.model.project.METERS
 import ponticello.model.project.get
-import ponticello.model.registry.InstrumentRegistry
 import ponticello.model.registry.ScoreObjectRegistry
-import ponticello.model.registry.reference
 import ponticello.model.score.*
 import ponticello.sc.editor.CodeBlockEditor
 import ponticello.ui.actions.ScoreActions.createSoundObject
 import ponticello.ui.actions.ScoreActions.getScorePaneAtCursor
 import ponticello.ui.controls.DecimalPrompt
 import ponticello.ui.controls.NamePrompt
-import ponticello.ui.registry.SimpleSearchableRegistryView
 import ponticello.ui.score.*
 import reaktive.value.now
 import reaktive.value.reactiveVariable
-import kotlin.reflect.KClass
 
 object ScoreActions : Action.Collector<NavigableScorePane>({
     addAction("Add tempo grid") {
         shortcut("L")
         executes { pane ->
             if (RectangleSelection.get() != null) return@executes
-            val (pane, pos) = pane.getScorePaneAtCursor() ?: return@executes
-            val options = listOf(null) + pane.context.project[METERS]
+            val (pane, _) = pane.getScorePaneAtCursor() ?: return@executes
+            listOf(null) + pane.context.project[METERS]
             //TODO
         }
     }
@@ -101,7 +97,7 @@ object ScoreActions : Action.Collector<NavigableScorePane>({
             val pane = selection.pane as? RegularScorePane ?: return@executes
             val context = pane.context
             val anchor = Robot().mousePosition
-            val midiInstrument = MidiInstrumentSelectorPopup(context)
+            val midiInstrument = InstrumentSelectorPopup(context)
                 .showPopup(anchor, pane.scene.window) ?: return@executes
             val midiObj = MidiObjectView.createNewMidiObjectDialog(midiInstrument, context)
                 .showDialog(pane.scene.window, anchor) ?: return@executes
@@ -130,16 +126,14 @@ object ScoreActions : Action.Collector<NavigableScorePane>({
     }
 
     private fun RegularScorePane.createSoundObject(anchor: Point2D): SoundProcess? {
-        val options = context[InstrumentRegistry]
-        val instrument = SimpleSearchableRegistryView(options, "Select instrument")
-            .showPopup(anchor, scene.window) ?: return null
+        val instrument = InstrumentSelectorPopup(context).showPopup(anchor, scene.window) ?: return null
         val defaultBus = (associatedObject as? ScoreObjectGroup)?.defaultBusRef?.now?.get()
         val controls = SoundProcessView.getInitialControls(
-            instrument, context, defaultBus, anchor
+            instrument.get()!!, context, defaultBus, anchor
         ) ?: return null
-        val initialName = context[ScoreObjectRegistry].availableName(prefix = instrument.name.now)
+        val initialName = context[ScoreObjectRegistry].availableName(prefix = instrument.getName())
         val name = NamePrompt(context[ScoreObjectRegistry], "Name for object", initialName)
             .showDialog(scene.window, anchor) ?: return null
-        return SoundProcess(reactiveVariable(instrument.reference()), controls).withName(name)
+        return SoundProcess(reactiveVariable(instrument), controls).withName(name)
     }
 }

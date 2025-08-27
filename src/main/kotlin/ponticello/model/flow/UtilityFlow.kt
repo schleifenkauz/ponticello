@@ -25,6 +25,9 @@ class UtilityFlow(
     private val volumeDb: ReactiveVariable<Decimal> = reactiveVariable(zero),
     private val muted: ReactiveVariable<Boolean> = reactiveVariable(false),
 ) : ParameterizedAudioFlow() {
+    @SerialName("name")
+    override var _name: ReactiveVariable<String>? = null
+
     @Transient
     override val def: InstrumentObject = ReferencedSynthDefObject.get("utility")
 

@@ -191,7 +191,7 @@ class AudioFlowsPane(flows: AudioFlows) : SearchableToolPane<AudioFlowGroup>(flo
         override val defaultSide: Side
             get() = Side.BOTTOM
 
-        override val shortcuts: Array<String> get() = arrayOf("F9")
+        override val shortcut: String get() = "F9"
 
         override fun createToolPane(project: PonticelloProject): ToolPane = AudioFlowsPane(project.flows)
 

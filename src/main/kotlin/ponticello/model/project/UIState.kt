@@ -9,8 +9,8 @@ import kotlinx.serialization.Serializable
 import ponticello.impl.DecimalRange
 import ponticello.model.obj.AbstractContextualObject
 import ponticello.model.obj.InstrumentObject
-import ponticello.model.obj.InstrumentReference
 import ponticello.model.registry.InstrumentRegistry
+import ponticello.model.registry.ObjectReference
 import ponticello.model.registry.reference
 import ponticello.model.score.TimeUnit
 import ponticello.ui.dock.Side
@@ -26,7 +26,7 @@ import reaktive.value.reactiveVariable
 class UIState private constructor(
     val snapEnabled: ReactiveVariable<Boolean> = reactiveVariable(false),
     val snapOption: ReactiveVariable<TimeUnit> = reactiveVariable(TimeUnit.Seconds),
-    val selectedInstrument: ReactiveVariable<InstrumentReference?> = reactiveVariable(null),
+    val selectedInstrument: ReactiveVariable<ObjectReference<InstrumentObject>?> = reactiveVariable(null),
     val askForCloneNames: ReactiveVariable<Boolean> = reactiveVariable(false),
     val askForGroupNames: ReactiveVariable<Boolean> = reactiveVariable(false),
     val controlsDisplay: ReactiveVariable<InlineControlsDisplay> = reactiveVariable(InlineControlsDisplay.NONE),

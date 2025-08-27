@@ -2,6 +2,7 @@ package ponticello.ui.registry
 
 import fxutils.prompt.SimpleSearchableListView
 import javafx.event.Event
+import javafx.scene.input.DragEvent
 import ponticello.model.GlobalSettings
 import ponticello.model.obj.ParameterDefObject
 import ponticello.model.project.PonticelloProject
@@ -33,6 +34,10 @@ class ParameterDefsPane(
 
     override fun createNewObject(ev: Event?, list: ObjectList<ParameterDefObject>): ParameterDefObject? =
         super<SearchableToolPane>.createNewObject(ev, list)
+
+    override fun getDroppedObject(ev: DragEvent): ParameterDefObject? {
+        return super<SearchableToolPane>.getDroppedObject(ev)
+    }
 
     companion object : Type(-1, "Parameters") {
         override val defaultSide: Side

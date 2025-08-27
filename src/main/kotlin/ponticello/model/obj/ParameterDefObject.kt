@@ -2,6 +2,7 @@ package ponticello.model.obj
 
 import hextant.context.Context
 import javafx.scene.paint.Color
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import ponticello.impl.copy
@@ -17,6 +18,9 @@ import reaktive.value.reactiveVariable
 
 @Serializable
 class ParameterDefObject(val spec: ReactiveVariable<ControlSpec>) : AbstractRenamableObject() {
+    @SerialName("name")
+    override var _name: ReactiveVariable<String>? = null
+
     @Transient
     private lateinit var observer: Observer
 

@@ -30,6 +30,9 @@ class SendFlow(
     val targetRef: ReactiveVariable<BusReference>,
     val amountPercent: ReactiveVariable<Decimal>,
 ) : ParameterizedAudioFlow() {
+    @SerialName("name")
+    override var _name: ReactiveVariable<String>? = null
+
     @Transient
     lateinit var sourceBus: ReactiveValue<BusObject?>
         private set

@@ -23,6 +23,9 @@ class TempoGridObject(
     val meter: MeterReference,
     val firstBar: ReactiveVariable<Int> = reactiveVariable(0),
 ) : ScoreObject() {
+    @SerialName("name")
+    override var _name: ReactiveVariable<String>? = null
+
     @Transient
     private lateinit var configObserver: Observer
 

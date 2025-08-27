@@ -59,7 +59,6 @@ sealed class ControlType<C : ParameterControl> {
             is BufferControl -> BufferControlType
             is ExprControl -> ExprControlType
             is AttackReleaseControl -> AttackReleaseControlType
-            else -> throw AssertionError()
         } as ControlType<O>
     }
 }

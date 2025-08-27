@@ -52,7 +52,7 @@ abstract class ToolPane : VBox() {
     open val type: Type? get() = null
     open val title get() = type?.title ?: throw UnsupportedOperationException("ToolPane ${this.javaClass} has no title")
     open val icon get() = type?.icon ?: throw UnsupportedOperationException("ToolPane ${this.javaClass} has no icon")
-    open val shortcuts: Array<String> get() = type?.shortcuts ?: emptyArray()
+    open val shortcut: String? get() = type?.shortcut
 
     var isExclusive: Boolean = false
         private set
@@ -142,8 +142,18 @@ abstract class ToolPane : VBox() {
     }
 
     open fun handleShortcut(ev: KeyEvent) {
-        if (shortcuts.isNotEmpty() && shortcuts.first().shortcut.matches(ev)) {
-            toggleShowing()
+        val str = shortcut
+        when {
+            str == null -> return
+            str.startsWith("F") -> {
+                if (ev.code.name == str && !ev.isAltDown && !ev.isShiftDown) {
+                    toggleShowing(toggleExclusive = ev.isControlDown)
+                }
+            }
+
+            str.shortcut.matches(ev) -> {
+                toggleShowing(toggleExclusive = false)
+            }
         }
     }
 
@@ -308,12 +318,15 @@ abstract class ToolPane : VBox() {
         return true
     }
 
-    fun toggleShowing() {
+    fun toggleShowing(toggleExclusive: Boolean = false) {
         val w = window
         if (showing.now && w != null && w is Stage) {
             if (!isSetup) setup()
             w.show()
         } else {
+            if (toggleExclusive && currentMode() == Docked) {
+                isExclusive = !isExclusive
+            }
             setShowing(!showing.now)
         }
     }
@@ -325,7 +338,7 @@ abstract class ToolPane : VBox() {
 
         open val icon: Ikon? get() = null
 
-        open val shortcuts: Array<String> get() = emptyArray()
+        open val shortcut: String? get() = null
 
         abstract fun createToolPane(project: PonticelloProject): ToolPane
 

@@ -9,6 +9,7 @@ import hextant.context.extend
 import hextant.core.editor.defaultState
 import hextant.serial.EditorRoot
 import kotlinx.serialization.Contextual
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import ponticello.model.project.scripts
 import ponticello.sc.client.SuperColliderClient
@@ -25,6 +26,9 @@ class ScriptObject private constructor(
     val root: EditorRoot<@Contextual CodeBlockEditor>,
     val type: ReactiveVariable<Type>,
 ) : AbstractRenamableObject() {
+    @SerialName("name")
+    override var _name: ReactiveVariable<String>? = null
+
     override fun initialize(context: Context) {
         super.initialize(context)
         root.initialize(context.extend {

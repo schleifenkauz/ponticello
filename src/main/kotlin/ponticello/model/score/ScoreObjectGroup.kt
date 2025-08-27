@@ -17,6 +17,9 @@ class ScoreObjectGroup(
     override val score: Score,
     @SerialName("defaultBus") val defaultBusRef: ReactiveVariable<BusReference> = reactiveVariable(ObjectReference.none()),
 ) : AbstractScoreObjectGroup() {
+    @SerialName("name")
+    override var _name: ReactiveVariable<String>? = null
+
     @Transient
     lateinit var busSelector: BusSelector
         private set

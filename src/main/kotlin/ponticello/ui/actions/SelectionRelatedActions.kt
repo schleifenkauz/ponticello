@@ -12,17 +12,15 @@ import ponticello.model.score.ObjectPosition
 import ponticello.model.score.Score
 import ponticello.model.score.ScoreObjectGroup
 import ponticello.model.score.UnresolvedScoreObject
-import ponticello.ui.score.RectangleSelection
-import ponticello.ui.score.RegularScorePane
-import ponticello.ui.score.ScoreObjectDuplicator
-import ponticello.ui.score.ScoreObjectSelectionManager
-import ponticello.ui.score.ScoreObjectView
+import ponticello.ui.score.*
 import reaktive.value.now
 
 object SelectionRelatedActions {
     fun addShortcuts(handler: KeyEventHandlerBody<*>, context: Context) = with(handler) {
         val selector = context[ScoreObjectSelectionManager]
-        on("ESCAPE") {
+        on("ESCAPE", consume = false) { ev ->
+            if (!ev.isAltDown) return@on
+            ev.consume()
             context[ScoreObjectDuplicator].exitDuplicateMode()
             context[ScoreObjectSelectionManager].deselectAll()
         }

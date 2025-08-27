@@ -96,7 +96,7 @@ class HelpBrowser : ToolPane() {
     override fun handleShortcut(ev: KeyEvent) {
         when (ev.modifiers) {
             noModifiers -> super.handleShortcut(ev)
-            setOf(Ctrl) -> {
+            setOf(Shift) -> {
                 val searchText = SimpleTextPrompt("Look up documentation", "")
                     .showDialog(context) ?: return
                 searchDocumentation(searchText)
@@ -108,7 +108,7 @@ class HelpBrowser : ToolPane() {
         override val icon: Ikon
             get() = MaterialDesignW.WEB
 
-        override val shortcuts: Array<String> = arrayOf("F1")
+        override val shortcut: String = "F1"
 
         override val defaultSide: Side
             get() = Side.RIGHT

@@ -17,7 +17,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import ponticello.impl.*
 import ponticello.model.flow.NodePlacement
-import ponticello.model.obj.MidiInstrument
+import ponticello.model.obj.InstrumentReference
 import ponticello.model.obj.ParameterDefObject
 import ponticello.model.score.controls.ParameterControl
 import ponticello.sc.EventDictionary
@@ -27,20 +27,20 @@ import ponticello.ui.score.LegacyMidiObjectView
 import reaktive.value.*
 import reaktive.value.binding.flatMap
 import reaktive.value.binding.orElse
-import kotlin.collections.component1
-import kotlin.collections.component2
-import kotlin.collections.set
 
 @Serializable
 @SerialName("ponticello.model.score.MidiObject")
 class LegacyMidiObject(
-    val instrument: ReactiveVariable<MidiInstrument>,
+    val instrument: ReactiveVariable<InstrumentReference>,
     @SerialName("lowestPitch") private var _lowestPitch: Int,
     @SerialName("highestPitch") private var _highestPitch: Int,
     val eventDictionary: EditorRoot<@Contextual EventDictionaryEditor>,
     val notes: MutableList<Note>,
     val latencyMs: ReactiveVariable<Int> = reactiveVariable(0),
 ) : ScoreObject() {
+    @SerialName("name")
+    override var _name: ReactiveVariable<String>? = null
+
     override val type: String
         get() = "midi"
 
@@ -65,7 +65,7 @@ class LegacyMidiObject(
 
     override val associatedColor: ReactiveValue<Color?>
         get() = super.associatedColor.orElse(instrument.flatMap { instr ->
-            if (instr is MidiInstrument.SynthDef) instr.reference.get()?.color ?: reactiveValue(null)
+            if (instr is InstrumentReference.UserDefined) instr.reference.get()?.color ?: reactiveValue(null)
             else reactiveValue(null)
         })
 
@@ -225,7 +225,7 @@ class LegacyMidiObject(
         latency: Decimal,
         extraArguments: Map<ParameterDefObject, ParameterControl>,
     ): String = when (val instr = instrument.now) {
-        is MidiInstrument.SynthDef -> writeCode {
+        is InstrumentReference.UserDefined -> writeCode {
             val generalEventDict = eventDictionary.editor.result.now
             val groupVar = "~midi_$uniqueName"
             +"s.sync"
@@ -264,7 +264,7 @@ class LegacyMidiObject(
             }
         }
 
-        is MidiInstrument.VST -> writeCode {
+        is InstrumentReference.VST -> writeCode {
             val controllerVar = instr.flow.get()?.controllerVar
             val helperVariable = "~midi_$uniqueName"
             +"$helperVariable = ()"
@@ -289,7 +289,7 @@ class LegacyMidiObject(
             }
         }
 
-        MidiInstrument.None -> {
+        InstrumentReference.None -> {
             Logger.warn("No instrument selected for ${name.now}", Logger.Category.Playback)
             ""
         }

@@ -310,8 +310,8 @@ class MixerPane(
         override val icon: Ikon
             get() = MaterialDesignT.TUNE_VERTICAL
 
-        override val shortcuts: Array<String>
-            get() = arrayOf("F10")
+        override val shortcut: String
+            get() = "F10"
 
         override fun createToolPane(project: PonticelloProject): ToolPane = MixerPane(MixerComponentListConfig())
 

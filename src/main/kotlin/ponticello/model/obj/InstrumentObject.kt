@@ -13,16 +13,16 @@ import ponticello.model.score.controls.ParameterControl
 import ponticello.sc.BusControlSpec
 import ponticello.sc.ControlSpec
 import ponticello.sc.defaultControl
-import ponticello.ui.registry.ParameterDefList
+import reaktive.value.ReactiveValue
 import reaktive.value.ReactiveVariable
 import reaktive.value.now
 import reaktive.value.reactiveVariable
 
 @Serializable
 sealed interface InstrumentObject : SuperColliderObject {
-    val parameters: ParameterDefList
+    val color: ReactiveValue<Color>
 
-    val color: ReactiveVariable<Color>
+    val parameters: List<ParameterDefObject>
 
     fun allParameters(): List<ParameterDefObject> = parameters
 
@@ -52,9 +52,9 @@ sealed interface InstrumentObject : SuperColliderObject {
         return ParameterControlList.from(controls)
     }
 
-    override fun sync()
+    fun onUpdated() {}
 
-    fun onUpdated()
+    fun instrumentReference(): InstrumentReference
 
     companion object {
         val DATA_FORMAT = DataFormat("ponticello:instrument")

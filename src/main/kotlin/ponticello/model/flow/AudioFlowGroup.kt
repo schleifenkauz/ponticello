@@ -25,6 +25,9 @@ class AudioFlowGroup(
     val associatedColor: ReactiveVariable<@Serializable(with = ColorSerializer::class) Color>,
     val flows: AudioFlowList,
 ) : AudioNode, AbstractRenamableObject(), ObjectList.Listener<AudioFlow> {
+    @SerialName("name")
+    override var _name: ReactiveVariable<String>? = null
+
     override lateinit var superColliderName: ReactiveString
         private set
 

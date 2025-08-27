@@ -1,5 +1,6 @@
 package ponticello.model.obj
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import ponticello.impl.Decimal
 import ponticello.impl.copy
@@ -16,6 +17,8 @@ import reaktive.value.reactiveVariable
 class AllocatedBufferObject(
     val channels: ReactiveVariable<Int>, val duration: ReactiveVariable<Decimal>
 ) : BufferObject() {
+    @SerialName("name")
+    override var _name: ReactiveVariable<String>? = null
 
     override val superColliderName get() = "~buf_${name.now}"
 

@@ -188,8 +188,8 @@ class BufferRegistryPane(private val buffers: BufferRegistry) : ObjectRegistryPa
         override val icon: Ikon
             get() = Material2AL.LIBRARY_MUSIC
 
-        override val shortcuts: Array<String>
-            get() = arrayOf("F5")
+        override val shortcut: String
+            get() = "F5"
 
         override val defaultSide: Side
             get() = Side.RIGHT

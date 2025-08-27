@@ -6,10 +6,7 @@ import fxutils.centerChildren
 import fxutils.controls.IntSpinner
 import fxutils.drag.setupDropArea
 import fxutils.hspace
-import fxutils.prompt.DetailPane
-import fxutils.prompt.IntegerPrompt
-import fxutils.prompt.Prompt
-import fxutils.prompt.compoundPrompt
+import fxutils.prompt.*
 import fxutils.undo.UndoManager
 import hextant.context.Context
 import javafx.collections.FXCollections.observableList
@@ -18,16 +15,14 @@ import javafx.scene.control.Label
 import javafx.scene.control.TextField
 import javafx.scene.layout.HBox
 import ponticello.impl.MidiPitch
-import ponticello.model.obj.MidiInstrument
+import ponticello.model.obj.InstrumentReference
 import ponticello.model.obj.withName
 import ponticello.model.registry.ScoreObjectRegistry
-import ponticello.model.score.MidiObject
-import ponticello.model.score.ParameterControlList
-import ponticello.model.score.Score
-import ponticello.model.score.ScoreObjectInstance
+import ponticello.model.score.*
 import ponticello.sc.Identifier
 import ponticello.ui.actions.ScoreObjectActions
 import ponticello.ui.impl.showDialog
+import reaktive.value.now
 import reaktive.value.reactiveVariable
 
 class MidiObjectView(
@@ -61,8 +56,10 @@ class MidiObjectView(
     }
 
     override fun setupDetailPane(pane: DetailPane) {
-        val instrumentSelector = MidiInstrumentSelectorPopup(context).selectorButton(
-            obj.instrument, undoManager = context[UndoManager], actionDescription = "Select MIDI instrument"
+        val instrumentSelector = InstrumentSelectorPopup(context).selectorButton(
+            obj.instrument,
+            undoManager = context[UndoManager], actionDescription = "Select MIDI instrument",
+            onUpdate = ::updatedInstrument
         )
         val viewInstrumentBtn = ScoreObjectActions.singleObjectActions.getAction("View definition")
             .withContext(actionContext)
@@ -80,15 +77,41 @@ class MidiObjectView(
         pane.children.add(ParameterControlsPane(obj, this))
     }
 
+    private fun updatedInstrument(oldInstr: InstrumentReference, newInstr: InstrumentReference) {
+        val options = listOf("No", "Yes", "Yes but only where instrument='${oldInstr.getName()}'")
+        val selectedOption = OptionsPrompt(
+            "Update instrument of child MIDI notes",
+            options = options,
+            defaultOption = "Yes"
+        ).showDialog(context)
+        when (selectedOption) {
+            options[0] -> {}
+            options[1] -> {
+                for (child in obj.score.objects) {
+                    if (child is SoundProcess) {
+                        child.instrumentRef.set(newInstr)
+                    }
+                }
+            }
+
+            options[2] -> {
+                for (child in obj.score.objects) {
+                    if (child is SoundProcess && child.instrumentRef.now == oldInstr) {
+                        child.instrumentRef.set(newInstr)
+                    }
+                }
+            }
+        }
+    }
+
     private fun showTransposeDialog() {
         val semitones = IntegerPrompt("Transpose by semitones", 0, -48..48)
             .showDialog(context) ?: return
         obj.transpose(semitones)
     }
 
-
     companion object {
-        fun createNewMidiObjectDialog(instr: MidiInstrument, context: Context): Prompt<MidiObject?, *> =
+        fun createNewMidiObjectDialog(instr: InstrumentReference, context: Context): Prompt<MidiObject?, *> =
             compoundPrompt("Configure MIDI object", labelWidth = 130.0) {
                 val defaultName = context[ScoreObjectRegistry].availableName("midi")
                 val nameField = TextField(defaultName) named "Object name"

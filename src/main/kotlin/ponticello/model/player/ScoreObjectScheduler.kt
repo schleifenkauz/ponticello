@@ -10,10 +10,7 @@ import ponticello.impl.zero
 import ponticello.model.GlobalSettings
 import ponticello.model.flow.ActiveObjectNode
 import ponticello.model.flow.NodeTree
-import ponticello.model.obj.MidiInstrument
-import ponticello.model.obj.ParameterDefObject
-import ponticello.model.obj.ProcessDefObject
-import ponticello.model.obj.SynthDefObject
+import ponticello.model.obj.*
 import ponticello.model.score.*
 import ponticello.model.score.controls.ParameterControl
 import ponticello.sc.client.SuperColliderClient
@@ -70,14 +67,21 @@ class ScoreObjectScheduler(val context: Context) {
         }
         active.stopped()
         when {
-            active.obj is SoundProcess && active.obj.instrument is SynthDefObject -> {
+            active.obj is SoundProcess && active.obj.def is SynthDefObject -> {
                 val name = active.superColliderName
                 client.run("if ($name != nil) { $name.release; } { \"'$name' not found\".postln; }")
             }
 
-            active.obj is SoundProcess && active.obj.instrument is ProcessDefObject -> {
+            active.obj is SoundProcess && active.obj.def is ProcessDefObject -> {
                 val name = active.superColliderName
                 client.run("$name.stop")
+            }
+
+            active.obj is SoundProcess && active.obj.def is VSTInstrumentObject -> {
+                val instrument = active.obj.def as VSTInstrumentObject
+                val controllerVar = instrument.flow.controllerVar
+                val midinote = active.instance?.y ?: return
+                client.run("$controllerVar.midi.noteOff(0, $midinote)")
             }
 
             active.obj is TaskObject -> {
@@ -85,25 +89,25 @@ class ScoreObjectScheduler(val context: Context) {
                 client.run("$name.stop;")
             }
 
-            active.obj is LegacyMidiObject && active.obj.instrument.now is MidiInstrument.SynthDef -> {
+            active.obj is LegacyMidiObject && active.obj.instrument.now is InstrumentReference.UserDefined -> {
                 val groupName = active.superColliderName
                 client.run("$groupName.release(0.1);")
                 client.run("TempoClock.sched(0.1) { $groupName.free; $groupName = nil; }")
             }
 
-            active.obj is LegacyMidiObject && active.obj.instrument.now is MidiInstrument.VST -> {
-                val instrument = active.obj.instrument.now as MidiInstrument.VST
+            active.obj is LegacyMidiObject && active.obj.instrument.now is InstrumentReference.VST -> {
+                val instrument = active.obj.instrument.now as InstrumentReference.VST
                 val controllerVar = instrument.flow.get()?.controllerVar ?: return
                 client.run("$controllerVar.midi.allNotesOff(0); ${active.superColliderName} = nil")
             }
 
-            active.obj is MidiNoteObject && active.obj.parentObject.instrument.now is MidiInstrument.SynthDef -> {
+            active.obj is MidiNoteObject && active.obj.parentObject.instrument.now is InstrumentReference.UserDefined -> {
                 val name = active.superColliderName
                 client.run("$name.release")
             }
 
-            active.obj is MidiNoteObject && active.obj.parentObject.instrument.now is MidiInstrument.VST -> {
-                val instrument = active.obj.parentObject.instrument.now as MidiInstrument.VST
+            active.obj is MidiNoteObject && active.obj.parentObject.instrument.now is InstrumentReference.VST -> {
+                val instrument = active.obj.parentObject.instrument.now as InstrumentReference.VST
                 val controllerVar = instrument.flow.get()?.controllerVar ?: return
                 val midinote = active.instance?.y ?: return
                 client.run("$controllerVar.midi.noteOff(0, $midinote)")
@@ -154,9 +158,9 @@ class ScoreObjectScheduler(val context: Context) {
             return null
         }
         val placement = when {
-            (obj is SoundProcess && obj.instrument is SynthDefObject) ||
-                    (obj is LegacyMidiObject && obj.instrument.now is MidiInstrument.SynthDef) ||
-                    (obj is MidiNoteObject && obj.parentObject.instrument.now is MidiInstrument.SynthDef) -> {
+            (obj is SoundProcess && obj.def is SynthDefObject) ||
+                    (obj is LegacyMidiObject && obj.instrument.now is InstrumentReference.UserDefined) ||
+                    (obj is MidiNoteObject && obj.parentObject.instrument.now is InstrumentReference.UserDefined) -> {
                 try {
                     val node = ActiveObjectNode(obj, activeObject)
                     nodeTree.addNode(node)

@@ -5,6 +5,7 @@ import hextant.context.Context
 import hextant.core.editor.defaultState
 import hextant.serial.EditorRoot
 import kotlinx.serialization.Contextual
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import ponticello.model.project.busses
 import ponticello.model.registry.GlobalPatternRegistry
@@ -12,12 +13,16 @@ import ponticello.sc.EmptyExpr
 import ponticello.sc.client.ScWriter
 import ponticello.sc.editor.ScExprExpander
 import ponticello.ui.launcher.PonticelloLauncher
+import reaktive.value.ReactiveVariable
 import reaktive.value.now
 
 @Serializable
 class GlobalPatternObject(
     val patternCode: EditorRoot<@Contextual ScExprExpander>,
 ) : AbstractSuperColliderObject() {
+    @SerialName("name")
+    override var _name: ReactiveVariable<String>? = null
+
     override fun canRenameTo(newName: String): Boolean = !context[PonticelloLauncher.currentProject].busses.has(newName)
 
     override val superColliderName: String
