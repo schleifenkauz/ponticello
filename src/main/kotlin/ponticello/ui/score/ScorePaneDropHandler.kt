@@ -3,6 +3,7 @@ package ponticello.ui.score
 import fxutils.drag.ConfiguredDropHandler
 import hextant.context.compoundEdit
 import javafx.event.Event
+import javafx.scene.input.TransferMode
 import ponticello.model.obj.BufferObject
 import ponticello.model.obj.SampleObject
 import ponticello.model.obj.project
@@ -22,13 +23,13 @@ class ScorePaneDropHandler(private val scorePane: ScorePane) : ConfiguredDropHan
             createPlayBufObject(buffer, pos, ev, scorePane)
             true
         }
-        handleTypedFormat(BufferObject.DATA_FORMAT) { ev, ref ->
+        handleTypedFormat(BufferObject.DATA_FORMAT, TransferMode.COPY) { ev, ref ->
             val buffer = ref.resolve(scorePane.context[BufferRegistry]) ?: return@handleTypedFormat false
             val pos = scorePane.snapToGrid(ev.x, ev.y)
             createPlayBufObject(buffer, pos, ev, scorePane)
             true
         }
-        handleTypedFormat(ScoreObject.DATA_FORMAT) { ev, ref ->
+        handleTypedFormat(ScoreObject.DATA_FORMAT, TransferMode.COPY) { ev, ref ->
             val obj = ref.resolve(scorePane.context[ScoreObjectRegistry]) ?: return@handleTypedFormat false
             val pos = scorePane.snapToGrid(ev.x, ev.y)
             val inst = ScoreObjectInstance(obj, pos)

@@ -68,11 +68,12 @@ class SoundProcessView(
     }
 
     override fun configureInlineControls() {
-        val synthDefSelector = InstrumentSelectorPopup(context).selectorButton(
+        val instrumentSelector = InstrumentSelectorPopup(context).selectorButton(
             obj.instrumentRef,
             undoManager = context[UndoManager], actionDescription = "Select instrument"
         )
-        inlineControls.children.add(1, synthDefSelector)
+        instrumentSelector.setupDropArea(InstrumentDropHandler(obj.instrumentRef, context))
+        inlineControls.children.add(1, instrumentSelector)
         val inlineControlsBar = InlineParameterControlsBar(obj.controls, this)
         inlineControls.children.add(2, inlineControlsBar)
     }
@@ -103,10 +104,11 @@ class SoundProcessView(
         val viewInstrumentBtn = ScoreObjectActions.singleObjectActions.getAction("View definition")
             .withContext(actionContext)
             .makeButton("medium-icon-button")
-        val box = InstrumentSelectorPopup(context).selectorButton(
+        val selectorBtn = InstrumentSelectorPopup(context).selectorButton(
             obj.instrumentRef, undoManager = context[UndoManager], actionDescription = "Select instrument"
         )
-        pane.addItem("Instrument: ", HBox(5.0, box, viewInstrumentBtn).centerChildren())
+        selectorBtn.setupDropArea(InstrumentDropHandler(obj.instrumentRef, context))
+        pane.addItem("Instrument: ", HBox(5.0, selectorBtn, viewInstrumentBtn).centerChildren())
         val controlsPane = ParameterControlsPane(obj, this)
         VBox.setVgrow(controlsPane, Priority.ALWAYS)
         pane.children.add(controlsPane)

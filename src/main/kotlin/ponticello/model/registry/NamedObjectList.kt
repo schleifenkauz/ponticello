@@ -44,4 +44,12 @@ abstract class NamedObjectList<O : NamedObject> : ObjectList<O>() {
         val control = getOrNull(name) ?: error("$objectType with name '$name' not found in $this")
         super.remove(control)
     }
+
+    fun availableName(prefix: String): String {
+        for (n in 1..Int.MAX_VALUE) {
+            val name = "${prefix}_$n"
+            if (!has(name)) return name
+        }
+        throw AssertionError()
+    }
 }

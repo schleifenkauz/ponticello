@@ -11,8 +11,15 @@ import fxutils.showBelow
 import hextant.context.createControl
 import hextant.core.view.ChoiceEditorControl
 import javafx.scene.Node
+import javafx.scene.input.DataFormat
+import javafx.scene.input.DragEvent
+import javafx.scene.input.Dragboard
+import javafx.scene.input.TransferMode
+import javafx.scene.input.TransferMode.COPY_OR_MOVE
 import org.kordamp.ikonli.materialdesign2.MaterialDesignD
+import ponticello.impl.json
 import ponticello.model.obj.ParameterDefObject
+import ponticello.model.obj.withName
 import ponticello.sc.ParameterType
 import ponticello.sc.editor.BufferControlSpecEditor
 import ponticello.sc.editor.BufferPositionControlSpecEditor
@@ -32,6 +39,42 @@ open class ParameterListConfig : ListDisplayConfig<ParameterDefObject> {
         return listOf(specControl)
     }
 
+    override val dataFormat: DataFormat
+        get() = ParameterDefObject.DATA_FORMAT
+
+    override val canDuplicate: Boolean
+        get() = true
+
+    override fun acceptedTransferModes(dragboard: Dragboard): Array<TransferMode> =
+        if (dragboard.hasContent(SERIALIZED_DATA_FORMAT)) COPY_OR_MOVE
+        else if (dragboard.hasContent(dataFormat)) arrayOf(TransferMode.MOVE)
+        else emptyArray()
+
+    override fun getDroppedObject(ev: DragEvent, targetView: ObjectListView<ParameterDefObject>): ParameterDefObject? =
+        when {
+            ev.gestureSource !in targetView.getBoxes() || ev.acceptedTransferMode == TransferMode.COPY -> {
+                val jsonString = ev.dragboard.getContent(SERIALIZED_DATA_FORMAT) as? String
+                var obj = jsonString?.let { json.decodeFromString<ParameterDefObject>(it) }
+                if (obj != null && ev.transferMode == TransferMode.COPY && ev.gestureSource in targetView.getBoxes()) {
+                    val name = (targetView.source as ParameterDefList).availableName(obj.name.now)
+                    obj = obj.copy().withName(name)
+                }
+                obj
+            }
+
+            else -> super.getDroppedObject(ev, targetView)
+        }
+
+    override fun configureDragboard(obj: ParameterDefObject, dragboard: Dragboard) {
+        val jsonString = json.encodeToString(ParameterDefObject.serializer(), obj)
+        dragboard.setContent(
+            mapOf(
+                ParameterDefObject.DATA_FORMAT to obj.name.now,
+                SERIALIZED_DATA_FORMAT to jsonString
+            )
+        )
+    }
+
     override fun getActions(box: ObjectBox<ParameterDefObject>): List<ContextualizedAction> =
         actions.withContext(box)
 
@@ -40,6 +83,8 @@ open class ParameterListConfig : ListDisplayConfig<ParameterDefObject> {
     }
 
     companion object {
+        private val SERIALIZED_DATA_FORMAT = DataFormat("ponticello/parameter-def-serialized")
+
         private val actions = collectActions<ObjectBox<ParameterDefObject>> {
             addAction("Details") {
                 icon(MaterialDesignD.DOTS_VERTICAL)

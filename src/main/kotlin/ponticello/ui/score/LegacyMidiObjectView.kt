@@ -2,6 +2,7 @@ package ponticello.ui.score
 
 import fxutils.*
 import fxutils.controls.IntSpinner
+import fxutils.drag.setupDropArea
 import fxutils.prompt.DetailPane
 import fxutils.prompt.IntegerPrompt
 import fxutils.prompt.Prompt
@@ -231,6 +232,7 @@ class LegacyMidiObjectView(override val obj: LegacyMidiObject, inst: ScoreObject
         val instrumentSelector = InstrumentSelectorPopup(context).selectorButton(
             obj.instrument, undoManager = context[UndoManager], actionDescription = "Select MIDI instrument"
         )
+        instrumentSelector.setupDropArea(InstrumentDropHandler(obj.instrument, context))
         pane.addItem("Instrument: ", instrumentSelector)
         pane.addItem("Color:", this.colorPicker)
         val transposeButton = button("Transpose") { showTransposeDialog() }

@@ -32,6 +32,7 @@ import ponticello.ui.controls.ControlAssignmentEditor
 import ponticello.ui.controls.ControlSpecPrompt
 import ponticello.ui.dock.ListToolPane
 import ponticello.ui.registry.ObjectBox
+import ponticello.ui.registry.ObjectListView
 import ponticello.ui.registry.ObjectListView.DisplayMode
 import ponticello.ui.registry.SearchableParameterDefListView
 import reaktive.value.binding.impl.notNull
@@ -93,23 +94,25 @@ class ParameterControlsPane(
     }
 
     override fun acceptedTransferModes(dragboard: Dragboard): Array<TransferMode> =
-        if (dragboard.hasContent(dataFormat)) COPY_OR_MOVE
-        else if (dragboard.hasContent(SERIALIZED_CONTROL_FORMAT)) COPY_OR_MOVE
+        if (dragboard.hasContent(SERIALIZED_CONTROL_FORMAT)) COPY_OR_MOVE
+        else if (dragboard.hasContent(dataFormat)) arrayOf(TransferMode.MOVE)
         else emptyArray()
 
-    override fun getDroppedObject(ev: DragEvent): NamedParameterControl? = when {
-        ev.gestureSource !in listView.getBoxes() && ev.dragboard.hasContent(SERIALIZED_CONTROL_FORMAT) -> {
+    override fun getDroppedObject(
+        ev: DragEvent,
+        targetView: ObjectListView<NamedParameterControl>,
+    ): NamedParameterControl? = when {
+        ev.gestureSource !in targetView.getBoxes() && ev.dragboard.hasContent(SERIALIZED_CONTROL_FORMAT) -> {
             val jsonString = ev.dragboard.getContent(SERIALIZED_CONTROL_FORMAT) as String
-            val obj = json.decodeFromString<NamedParameterControl>(jsonString)
-            obj
+            json.decodeFromString<NamedParameterControl>(jsonString)
         }
 
-        else -> super.getDroppedObject(ev)
+        else -> super.getDroppedObject(ev, targetView)
     }
 
     override fun dropObject(
         obj: NamedParameterControl, idx: Int,
-        list: ObjectList<NamedParameterControl>, from: ObjectList<NamedParameterControl>?
+        list: ObjectList<NamedParameterControl>, from: ObjectList<NamedParameterControl>?,
     ) {
         if (list is ParameterControlList) {
             list.duplicateControl(obj, idx)
@@ -128,7 +131,12 @@ class ParameterControlsPane(
             copy.setCustomSpec(defaultSpec)
         }
         val jsonString = json.encodeToString(NamedParameterControl.serializer(), obj)
-        dragboard.setContent(mapOf(SERIALIZED_CONTROL_FORMAT to jsonString))
+        dragboard.setContent(
+            mapOf(
+                NamedParameterControl.DATA_FORMAT to obj.name.now,
+                SERIALIZED_CONTROL_FORMAT to jsonString
+            )
+        )
     }
 
     override fun reassignedControl(
@@ -202,6 +210,6 @@ class ParameterControlsPane(
             }
         }
 
-        val SERIALIZED_CONTROL_FORMAT = DataFormat("ponticello/parameter-control-reference")
+        val SERIALIZED_CONTROL_FORMAT = DataFormat("ponticello/parameter-control-serialized")
     }
 }

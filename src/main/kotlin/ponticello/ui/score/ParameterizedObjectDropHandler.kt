@@ -6,6 +6,7 @@ import fxutils.solidBorder
 import hextant.serial.EditorRoot
 import javafx.scene.Node
 import javafx.scene.input.DragEvent
+import javafx.scene.input.TransferMode
 import javafx.scene.layout.Region
 import javafx.scene.paint.Color
 import ponticello.impl.json
@@ -34,13 +35,13 @@ class ParameterizedObjectDropHandler(
     private val context get() = obj.context
     private var borderBefore: javafx.scene.layout.Border? = null
 
-    override fun canDrop(event: DragEvent): Boolean {
+    override fun acceptedTransferModes(event: DragEvent): Array<out TransferMode> {
         val db = event.dragboard
         return when {
-            db.hasContent(NamedParameterControl.DATA_FORMAT) -> true
-            db.hasContent(BusObject.DATA_FORMAT) -> true
-            db.hasContent(BufferObject.DATA_FORMAT) -> true
-            else -> false
+            db.hasContent(NamedParameterControl.DATA_FORMAT) -> arrayOf(TransferMode.COPY)
+            db.hasContent(BusObject.DATA_FORMAT) -> arrayOf(TransferMode.LINK)
+            db.hasContent(BufferObject.DATA_FORMAT) -> arrayOf(TransferMode.COPY)
+            else -> emptyArray()
         }
     }
 

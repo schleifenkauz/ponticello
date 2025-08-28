@@ -1,10 +1,11 @@
 package ponticello.model.obj
 
+import fxutils.drag.TypedDataFormat
 import hextant.context.Context
-import javafx.scene.input.DataFormat
 import javafx.scene.paint.Color
 import kotlinx.serialization.Serializable
 import ponticello.model.registry.BusRegistry
+import ponticello.model.registry.ObjectReference
 import ponticello.model.registry.reference
 import ponticello.model.score.ParameterControlList
 import ponticello.model.score.ScoreObjectGroup
@@ -57,6 +58,6 @@ sealed interface InstrumentObject : SuperColliderObject {
     fun instrumentReference(): InstrumentReference
 
     companion object {
-        val DATA_FORMAT = DataFormat("ponticello:instrument")
+        val DATA_FORMAT = TypedDataFormat<ObjectReference<InstrumentObject>>("ponticello:instrument")
     }
 }

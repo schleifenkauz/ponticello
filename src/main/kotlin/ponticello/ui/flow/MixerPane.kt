@@ -135,7 +135,10 @@ class MixerPane(
         else -> emptyArray()
     }
 
-    override fun getDroppedObject(ev: DragEvent): MixerFlow.MixerComponent? {
+    override fun getDroppedObject(
+        ev: DragEvent,
+        targetView: ObjectListView<MixerFlow.MixerComponent>,
+    ): MixerFlow.MixerComponent? {
         val bus = ev.dragboard.getFrom(context[BusRegistry], BusObject.DATA_FORMAT) ?: return null
         return MixerFlow.MixerComponent.create(bus)
     }
@@ -290,19 +293,17 @@ class MixerPane(
         override fun extractText(option: ObjectReference<MixerFlow>): String = option.name.now
     }
 
-    private inner class MixerPaneDropHandler : ConfiguredDropHandler() {
-        init {
-            handleTypedFormat(AudioFlow.DATA_FORMAT) { _, ref ->
-                val flow = ref.resolve(context[AudioFlows].allFlows()) ?: return@handleTypedFormat false
-                if (flow !is MixerFlow) {
-                    Logger.warn("Dropped flow is not a MixerFlow", Logger.Category.AudioFlow)
-                    return@handleTypedFormat false
-                }
-                selectedMixer = flow.reference()
-                true
+    private inner class MixerPaneDropHandler : ConfiguredDropHandler({
+        handleTypedFormat(AudioFlow.DATA_FORMAT, TransferMode.LINK) { _, ref ->
+            val flow = ref.resolve(context[AudioFlows].allFlows()) ?: return@handleTypedFormat false
+            if (flow !is MixerFlow) {
+                Logger.warn("Dropped flow is not a MixerFlow", Logger.Category.AudioFlow)
+                return@handleTypedFormat false
             }
+            selectedMixer = flow.reference()
+            true
         }
-    }
+    })
 
     companion object : Type(15, "Mixer") {
         override val defaultSide: Side

@@ -93,7 +93,7 @@ class FlowGroupPane(
         else -> super.acceptedTransferModes(dragboard)
     }
 
-    override fun getDroppedObject(ev: DragEvent): AudioFlow? {
+    override fun getDroppedObject(ev: DragEvent, targetView: ObjectListView<AudioFlow>): AudioFlow? {
         return when {
             ev.dragboard.hasContent(AudioFlow.DATA_FORMAT) -> {
                 @Suppress("UNCHECKED_CAST")

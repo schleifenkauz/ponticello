@@ -61,6 +61,7 @@ class MidiObjectView(
             undoManager = context[UndoManager], actionDescription = "Select MIDI instrument",
             onUpdate = ::updatedInstrument
         )
+        instrumentSelector.setupDropArea(InstrumentDropHandler(obj.instrument, context))
         val viewInstrumentBtn = ScoreObjectActions.singleObjectActions.getAction("View definition")
             .withContext(actionContext)
             .makeButton("medium-icon-button")

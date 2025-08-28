@@ -16,6 +16,7 @@ import ponticello.model.registry.NamedObject
 import ponticello.model.registry.NamedObjectList
 import ponticello.ui.controls.NamePrompt
 import ponticello.ui.impl.getFrom
+import ponticello.ui.registry.ObjectListView
 import ponticello.ui.registry.ObjectListView.Companion.modeChangeActions
 import reaktive.value.now
 
@@ -50,7 +51,7 @@ abstract class SearchableToolPane<O : NamedObject>(
         }
     }
 
-    override fun getDroppedObject(ev: DragEvent): O? {
+    override fun getDroppedObject(ev: DragEvent, targetView: ObjectListView<O>): O? {
         val format = dataFormat
         if (format != null && ev.dragboard.hasContent(format)) {
             val obj = ev.dragboard.getFrom(list, format) ?: return null

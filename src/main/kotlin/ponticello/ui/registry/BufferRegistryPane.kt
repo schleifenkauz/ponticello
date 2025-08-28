@@ -97,14 +97,14 @@ class BufferRegistryPane(private val buffers: BufferRegistry) : ObjectRegistryPa
         else -> arrayOf()
     }
 
-    override fun getDroppedObject(ev: DragEvent): BufferObject? = when {
+    override fun getDroppedObject(ev: DragEvent, targetView: ObjectListView<BufferObject>): BufferObject? = when {
         ev.dragboard.hasFile(*SampleObject.SUPPORTED_AUDIO_FORMATS) -> {
             val file = ev.dragboard.files[0]
             val name = file.nameWithoutExtension
             SampleObject.create(name, file)
         }
 
-        else -> super.getDroppedObject(ev)
+        else -> super.getDroppedObject(ev, targetView)
     }
 
     override fun createNewObject(ev: Event?, list: ObjectList<BufferObject>): BufferObject? =

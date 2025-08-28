@@ -1,7 +1,6 @@
 package ponticello.ui.actions
 
 import fxutils.actions.Action
-import fxutils.actions.isAltDown
 import fxutils.actions.isShiftDown
 import fxutils.actions.isTargetTextInput
 import fxutils.mouseX
@@ -14,9 +13,10 @@ import ponticello.impl.zero
 import ponticello.model.flow.AudioFlowGroup
 import ponticello.model.flow.AudioFlows
 import ponticello.model.player.ScorePlayer
-import ponticello.ui.controls.DecimalPrompt
 import ponticello.ui.controls.NamePrompt
 import ponticello.ui.score.NavigableScorePane
+import ponticello.ui.score.RectangleSelection
+import ponticello.ui.score.ScoreObjectSelectionManager
 import reaktive.value.binding.not
 import reaktive.value.now
 
@@ -24,11 +24,11 @@ object ScoreNavigationActions : Action.Collector<NavigableScorePane>({
     addAction("Move View To Start") {
         description("Moves the displayed portion of the score to the start")
         shortcut("HOME")
-        executes { view -> view.display(0.0.asTime, view.displayedDuration) }
+        executes { pane -> pane.display(0.0.asTime, pane.displayedDuration) }
     }
     addAction("Display Whole Score") {
         shortcut("Ctrl+HOME")
-        executes { view -> view.displayWholeScore() }
+        executes { pane -> pane.displayWholeScore() }
     }
     addAction("Move to Cursor") {
         description("Move displayed portion of the score to playback cursor")
@@ -43,11 +43,11 @@ object ScoreNavigationActions : Action.Collector<NavigableScorePane>({
         shortcut("Ctrl+Shift?+DIGIT0")
         icon(Material2MZ.SKIP_PREVIOUS)
         enableWhen { view -> view.context[ScorePlayer.CURRENT].isScheduled.not() }
-        executes { view, ev ->
-            val player = view.context[ScorePlayer.CURRENT]
+        executes { pane, ev ->
+            val player = pane.context[ScorePlayer.CURRENT]
             if (player.isScheduled.now) return@executes
             if (ev.isShiftDown()) {
-                view.display(0.0.asTime, view.displayedDuration)
+                pane.display(0.0.asTime, pane.displayedDuration)
             }
             player.playHead.movePlayHeadToStart()
         }
@@ -62,15 +62,26 @@ object ScoreNavigationActions : Action.Collector<NavigableScorePane>({
     addAction("Zoom out") {
         shortcut("Ctrl+MINUS")
         icon(Material2MZ.ZOOM_OUT)
-        executes { view ->
-            view.zoom(1.2, view.mouseX)
+        executes { pane ->
+            pane.zoom(1.2, pane.mouseX)
         }
     }
     addAction("Display selected region") {
-        shortcut("Alt?+Z")
-        executes { view, ev ->
-            if (ev.isTargetTextInput && !ev.isAltDown()) return@executes
-            view.displaySelectedArea()
+        shortcut("Z")
+        executes { pane, ev ->
+            if (ev.isTargetTextInput) return@executes
+            val selectedArea = RectangleSelection.get()
+            if (selectedArea != null) {
+                RectangleSelection.clear()
+                val offset = selectedArea.pane.absolutePosition
+                val t = offset.time + selectedArea.time
+                pane.display(t, t + selectedArea.duration)
+            } else {
+                val focusedView = pane.context[ScoreObjectSelectionManager].focusedView.now ?: return@executes
+                val start = focusedView.absolutePosition.time
+                val end = start + focusedView.instance.duration
+                pane.display(start, end)
+            }
         }
     }
     addAction("Add flow group") {

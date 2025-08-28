@@ -14,7 +14,7 @@ object UndoRedoActions: Action.Collector<UndoManager>({
         executes { manager -> manager.undo() }
     }
     addAction("Undo") {
-        shortcut("Ctrl+Shift+Z")
+        shortcut("Ctrl+Y")
         description(UndoManager::redoText)
         icon(MaterialDesignR.REDO)
         enableWhen { manager -> manager.canRedo }

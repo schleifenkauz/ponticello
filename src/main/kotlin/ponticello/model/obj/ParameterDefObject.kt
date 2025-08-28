@@ -1,6 +1,7 @@
 package ponticello.model.obj
 
 import hextant.context.Context
+import javafx.scene.input.DataFormat
 import javafx.scene.paint.Color
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -70,6 +71,8 @@ class ParameterDefObject(val spec: ReactiveVariable<ControlSpec>) : AbstractRena
     override fun copy() = ParameterDefObject(spec.copy())
 
     companion object {
+        val DATA_FORMAT: DataFormat = DataFormat("ponticello/parameter-def")
+
         val FREQ = ParameterDefObject(
             "freq",
             NumericalControlSpec(440.0, 20.0, 20000.0, 1.0.toDecimal(), 0.02, Warp.Exponential, Color.BLACK)

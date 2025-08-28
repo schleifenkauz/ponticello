@@ -24,6 +24,7 @@ import ponticello.ui.controls.Knob
 import ponticello.ui.impl.getFrom
 import ponticello.ui.registry.ListDisplayConfig
 import ponticello.ui.registry.ObjectBox
+import ponticello.ui.registry.ObjectListView
 import ponticello.ui.registry.SearchableBusListView
 import reaktive.value.ReactiveVariable
 import reaktive.value.binding.equalTo
@@ -61,7 +62,7 @@ class MixerComponentListConfig : ListDisplayConfig<MixerFlow.MixerComponent> {
         else emptyArray()
     }
 
-    override fun getDroppedObject(ev: DragEvent): MixerFlow.MixerComponent? {
+    override fun getDroppedObject(ev: DragEvent, targetView: ObjectListView<MixerFlow.MixerComponent>): MixerFlow.MixerComponent? {
         val bus = ev.dragboard.getFrom(mixer.context[BusRegistry], BusObject.DATA_FORMAT) ?: return null
         return MixerFlow.MixerComponent.create(bus)
     }

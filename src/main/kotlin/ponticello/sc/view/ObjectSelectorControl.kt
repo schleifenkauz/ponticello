@@ -14,6 +14,7 @@ import ponticello.model.registry.NamedObject
 import ponticello.model.registry.ObjectReference
 import ponticello.model.registry.reference
 import ponticello.sc.editor.ObjectSelector
+import ponticello.ui.impl.getFrom
 import ponticello.ui.registry.SearchableRegistryView
 import reaktive.value.now
 
@@ -30,17 +31,17 @@ class ObjectSelectorControl<O : NamedObject>(
         if (!selector.result.now.isResolved.now) return
         val format = selector.dataFormat() ?: return
         val db = startDragAndDrop(TransferMode.MOVE)
-        db.setContent(mapOf(format to selector.result.now.name.now))
+        db.setContent(mapOf(format to selector.result.now))
     }
 
     private fun extractObject(dragboard: Dragboard): O? {
-        val name = dragboard.getContent(selector.dataFormat()) as? String ?: return null
-        return selector.getList().getOrNull(name)
+        val format = selector.dataFormat() ?: return null
+        return dragboard.getFrom(selector.getList(), format)
     }
 
-    override fun canDrop(event: DragEvent): Boolean {
+    override fun acceptedTransferModes(event: DragEvent): Array<out TransferMode> {
         val obj = extractObject(event.dragboard)
-        return obj != null && obj != selector.result.now.get()
+        return if (obj != null && obj != selector.result.now.get()) arrayOf(TransferMode.LINK) else emptyArray()
     }
 
     override fun drop(event: DragEvent): Boolean {

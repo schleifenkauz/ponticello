@@ -78,12 +78,6 @@ class NavigableScorePane(score: Score, context: Context) : RootScorePane(score, 
         display(newIntervalCenter - (newIntervalSize / 2), newIntervalCenter + (newIntervalSize / 2))
     }
 
-    fun displaySelectedArea() {
-        val area = RectangleSelection.get(this) ?: return
-        RectangleSelection.clear()
-        display(area.time, area.time + area.duration)
-    }
-
     fun scroll(amount: Double) {
         display(displayStart + amount, displayEnd + amount)
         repaint()

@@ -35,8 +35,8 @@ class ParameterDefsPane(
     override fun createNewObject(ev: Event?, list: ObjectList<ParameterDefObject>): ParameterDefObject? =
         super<SearchableToolPane>.createNewObject(ev, list)
 
-    override fun getDroppedObject(ev: DragEvent): ParameterDefObject? {
-        return super<SearchableToolPane>.getDroppedObject(ev)
+    override fun getDroppedObject(ev: DragEvent, targetView: ObjectListView<ParameterDefObject>): ParameterDefObject? {
+        return super<ListDisplayConfig>.getDroppedObject(ev, targetView)
     }
 
     companion object : Type(-1, "Parameters") {

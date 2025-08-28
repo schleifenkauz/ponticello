@@ -2,6 +2,7 @@ package ponticello.ui.live
 
 import fxutils.drag.ConfiguredDropHandler
 import javafx.scene.input.DragEvent
+import javafx.scene.input.TransferMode
 import ponticello.model.flow.AudioFlow
 import ponticello.model.live.ItemTarget
 import ponticello.model.live.LauncherGrid
@@ -23,34 +24,34 @@ class LauncherGridItemDropHandler(
     private val grid: LauncherGrid, private val item: LauncherGrid.GridItem,
 ) : ConfiguredDropHandler() {
     init {
-        handleTypedFormat(GridItemReference.DATA_FORMAT) { _, ref ->
+        handleTypedFormat(GridItemReference.DATA_FORMAT, TransferMode.MOVE) { _, ref ->
             val droppedItem = ref.getItem(grid)
             grid.swap(item, droppedItem)
             true
         }
-        handleFormat(PlaybackActions.RECORD_BUTTON) { _, _ ->
+        handleFormat(PlaybackActions.RECORD_BUTTON, TransferMode.LINK) { _, _ ->
             item.target = ItemTarget.ToggleRecording
             true
         }
-        handleTypedFormat(AudioFlow.DATA_FORMAT) { _, ref ->
+        handleTypedFormat(AudioFlow.DATA_FORMAT, TransferMode.LINK) { _, ref ->
             item.target = ItemTarget.Flow(ref)
             true
         }
-        handleTypedFormat(ScoreObject.DATA_FORMAT) { _, ref ->
+        handleTypedFormat(ScoreObject.DATA_FORMAT, TransferMode.LINK) { _, ref ->
             item.target = ItemTarget.Object(ref)
             true
         }
-        handleTypedFormat(BufferObject.DATA_FORMAT) { ev, ref ->
+        handleTypedFormat(BufferObject.DATA_FORMAT, TransferMode.LINK) { ev, ref ->
             ref.resolve(grid.context[BufferRegistry])
             val buffer = ref.get() ?: return@handleTypedFormat false
             createPlayBufTarget(ev, buffer, item)
             true
         }
-        handleTypedFormat(ScriptObject.DATA_FORMAT) { _, ref ->
+        handleTypedFormat(ScriptObject.DATA_FORMAT, TransferMode.LINK) { _, ref ->
             item.target = ItemTarget.Script(ref)
             true
         }
-        handleTypedFormat(LiveTaskObject.DATA_FORMAT) { _, ref ->
+        handleTypedFormat(LiveTaskObject.DATA_FORMAT, TransferMode.LINK) { _, ref ->
             item.target = ItemTarget.LiveTask(ref)
             true
         }
