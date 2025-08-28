@@ -24,7 +24,6 @@ import ponticello.ui.actions.ScoreObjectActions
 import ponticello.ui.controls.InlineParameterControlsBar
 import ponticello.ui.dock.AppLayout
 import ponticello.ui.launcher.PonticelloApp.Companion.primaryStage
-import ponticello.ui.launcher.ScoreObjectDetailPane
 import ponticello.ui.midi.ContextualMidiReceiver
 import ponticello.ui.midi.ParameterControlsMidiContext
 import ponticello.ui.registry.SearchableBufferListView

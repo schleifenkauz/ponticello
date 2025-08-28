@@ -27,7 +27,6 @@ import ponticello.ui.controls.RenamePrompt
 import ponticello.ui.dock.AppLayout
 import ponticello.ui.impl.showDialog
 import ponticello.ui.launcher.PonticelloMainActivity
-import ponticello.ui.launcher.ScoreObjectDetailPane
 import ponticello.ui.registry.InstrumentRegistryPane
 import ponticello.ui.registry.ScoreObjectRegistryPane
 import ponticello.ui.registry.SimpleSearchableRegistryView

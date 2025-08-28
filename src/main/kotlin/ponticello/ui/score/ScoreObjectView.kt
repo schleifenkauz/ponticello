@@ -20,6 +20,7 @@ import javafx.scene.control.ColorPicker
 import javafx.scene.control.Label
 import javafx.scene.input.MouseButton
 import javafx.scene.input.MouseEvent
+import javafx.scene.input.TransferMode
 import javafx.scene.layout.Background
 import javafx.scene.layout.HBox
 import javafx.scene.layout.Pane
@@ -40,7 +41,6 @@ import ponticello.ui.controls.InlineParameterControlsBar
 import ponticello.ui.controls.NameControl
 import ponticello.ui.dock.AppLayout
 import ponticello.ui.impl.Cursors
-import ponticello.ui.launcher.ScoreObjectDetailPane
 import ponticello.ui.registry.ScoreObjectRegistryPane
 import reaktive.value.ReactiveVariable
 import reaktive.value.binding.*
@@ -218,12 +218,17 @@ abstract class ScoreObjectView(
                 if (ev.button != MouseButton.PRIMARY || ev.isAltDown) return@addEventHandler
                 when (ev.eventType) {
                     MouseEvent.DRAG_DETECTED -> {
-                        dragTarget.cursor = Cursors.CLOSED_HAND
-                        dragStart = Point2D(ev.screenX, ev.screenY)
-                        oldBounds = BoundingBox(layoutX, layoutY, width, height)
-                        dragTarget.startFullDrag()
-                        startMove(ev)
                         ev.consume()
+                        if (ev.modifiers == setOf(Shift, Ctrl)) {
+                            val db = startDragAndDrop(TransferMode.LINK)
+                            db.setContent(mapOf(ScoreObject.DATA_FORMAT to obj.reference()))
+                        } else {
+                            dragTarget.cursor = Cursors.CLOSED_HAND
+                            dragStart = Point2D(ev.screenX, ev.screenY)
+                            oldBounds = BoundingBox(layoutX, layoutY, width, height)
+                            dragTarget.startFullDrag()
+                            startMove(ev)
+                        }
                     }
 
                     MouseEvent.MOUSE_DRAGGED -> {
@@ -373,6 +378,13 @@ abstract class ScoreObjectView(
                     if (!parentPane.isRoot(obj)) {
                         context[AppLayout].get<ScoreObjectRegistryPane>().showContent(obj)
                     }
+                }
+
+                ev.button == MouseButton.PRIMARY && ev.clickCount == 2 -> {
+                    selectView(addToSelection = false)
+                    val toolPane = context[AppLayout].get<ScoreObjectViewPane>()
+                    toolPane.showContent(this)
+                    toolPane.setShowing(true)
                 }
 
                 ev.button == MouseButton.PRIMARY -> {

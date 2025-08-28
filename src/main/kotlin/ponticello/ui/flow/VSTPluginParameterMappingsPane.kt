@@ -16,13 +16,15 @@ import ponticello.sc.view.ObjectSelectorControl
 import ponticello.ui.dock.ListToolPane
 import ponticello.ui.registry.ObjectBox
 import ponticello.ui.registry.SearchableBusListView
+import reaktive.value.ReactiveValue
+import reaktive.value.reactiveValue
 import reaktive.value.toggle
 
 class VSTPluginParameterMappingsPane(
     private val flow: VSTPluginFlow,
 ) : ListToolPane<VSTPluginParameterMapping>(flow.parameterMappings) {
-    override val title: String
-        get() = "Parameter mappings"
+    override val title: ReactiveValue<String>
+        get() = reactiveValue("Parameter mappings")
 
     init {
         setup()

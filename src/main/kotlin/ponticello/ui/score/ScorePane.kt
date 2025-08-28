@@ -289,7 +289,6 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
             is TaskObject -> TaskObjectView(obj, instance)
             is MemoObject -> MemoObjectView(obj, instance)
             is ScoreObjectGroup -> ScoreObjectGroupView(obj, instance)
-            is LegacyMidiObject -> LegacyMidiObjectView(obj, instance)
             is TempoGridObject -> TempoGridObjectView(obj, instance)
             is MidiObject -> MidiObjectView(obj, instance)
             is MidiNoteObject -> MidiNoteObjectView(obj, instance)

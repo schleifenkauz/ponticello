@@ -1,6 +1,7 @@
 package ponticello.ui.score
 
 import fxutils.SubWindow
+import fxutils.runFXWithTimeout
 import fxutils.styleClass
 import hextant.context.Context
 import javafx.application.Platform
@@ -11,8 +12,10 @@ import javafx.scene.shape.Line
 import ponticello.impl.*
 import ponticello.model.obj.MeterObject
 import ponticello.model.obj.project
+import ponticello.model.obj.withName
 import ponticello.model.player.ScorePlayer
 import ponticello.model.project.uiState
+import ponticello.model.registry.ScoreObjectRegistry
 import ponticello.model.score.*
 import ponticello.ui.impl.Cursors
 import ponticello.ui.impl.verticalDist
@@ -191,6 +194,19 @@ abstract class RootScorePane(score: Score, context: Context) : RegularScorePane(
         val player = context[ScorePlayer.CURRENT]
         if (!player.isPlaying.now) {
             context[TimeCodeView].displayTime(t)
+        }
+    }
+
+    override fun doubleClicked(ev: MouseEvent) {
+        ev.consume()
+        val defaultName = context[ScoreObjectRegistry].availableName("memo")
+        val obj = MemoObject("").withName(defaultName)
+        val (t, y) = snapToGrid(ev.x, ev.y)
+        val inst = ScoreObjectInstance(obj, t, y)
+        score.addObject(inst, autoSelect = true)
+        val view = getObjectView(inst) as MemoObjectView
+        runFXWithTimeout(20) {
+            view.enterEdit()
         }
     }
 

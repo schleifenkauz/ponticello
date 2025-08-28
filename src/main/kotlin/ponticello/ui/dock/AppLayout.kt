@@ -29,12 +29,13 @@ import ponticello.ui.dock.Side.*
 import ponticello.ui.flow.AudioFlowsPane
 import ponticello.ui.flow.MixerPane
 import ponticello.ui.launcher.PonticelloMainActivity
-import ponticello.ui.launcher.ScoreObjectDetailPane
 import ponticello.ui.live.LauncherGridPane
 import ponticello.ui.live.LiveTaskRegistryPane
 import ponticello.ui.misc.*
 import ponticello.ui.registry.*
 import ponticello.ui.score.NavigableScorePane
+import ponticello.ui.score.ScoreObjectDetailPane
+import ponticello.ui.score.ScoreObjectViewPane
 import ponticello.ui.score.TimeCodeView
 import reaktive.value.now
 import kotlin.reflect.KClass
@@ -47,7 +48,7 @@ class AppLayout(
     private val timeCodeView: TimeCodeView,
 ) : BorderPane(), ObjectList.Listener<ToolPane.Type> {
     private val sideBarLists = project[UI_STATE].sideBarStates.associateTo(mutableMapOf()) { state ->
-        val toolPaneTypes = state.toolPanes.map { t -> toolPaneType(t) }.toMutableList()
+        val toolPaneTypes = state.toolPanes.map { t -> toolPaneType(t) }.distinct().toMutableList()
         state.side to ToolPaneTypeList(toolPaneTypes)
     }
 
@@ -115,8 +116,6 @@ class AppLayout(
     }
 
     fun toolPanes(): List<ToolPane> = toolPanes
-
-    fun getToolPane(title: String) = toolPanes.find { it.title == title }?.also { p -> p.setup() }
 
     fun getToolPane(clazz: KClass<out ToolPane>, setup: Boolean = true): ToolPane? =
         toolPanes.find { it::class == clazz }?.also { p -> if (setup) p.setup() }
@@ -437,6 +436,7 @@ class AppLayout(
             //default bottom
             add(AudioFlowsPane)
             add(MixerPane)
+            add(ScoreObjectViewPane)
             add(ConsoleOutputPane)
         }.toMutableList()
 

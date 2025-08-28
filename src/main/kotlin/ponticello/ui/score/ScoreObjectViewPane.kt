@@ -1,130 +1,109 @@
 package ponticello.ui.score
 
-import bundles.set
-import fxutils.*
-import fxutils.actions.action
-import fxutils.actions.makeButton
-import fxutils.actions.registerActions
-import fxutils.actions.registerShortcuts
-import hextant.context.extend
-import javafx.scene.control.SplitPane
-import javafx.scene.layout.BorderPane
-import javafx.scene.layout.HBox
+import fxutils.SubWindow
+import fxutils.actions.Action
+import fxutils.actions.ContextualizedAction
+import fxutils.actions.collectActions
+import fxutils.replace
+import javafx.scene.Parent
 import javafx.scene.layout.Priority
-import javafx.scene.layout.VBox
-import javafx.scene.paint.Color
-import javafx.stage.Screen
-import org.kordamp.ikonli.materialdesign2.MaterialDesignV
-import ponticello.impl.times
-import ponticello.model.player.ScorePlayer
+import javafx.scene.layout.Region
+import org.kordamp.ikonli.Ikon
+import org.kordamp.ikonli.materialdesign2.MaterialDesignM
+import org.kordamp.ikonli.materialdesign2.MaterialDesignP
+import ponticello.model.project.PonticelloProject
 import ponticello.model.score.ScoreObject
-import ponticello.model.score.ScoreObjectGroup
-import ponticello.ui.actions.*
-import ponticello.ui.launcher.PonticelloMainActivity
-import ponticello.ui.registry.ScoreObjectRegistryPane
+import ponticello.ui.dock.Side
+import ponticello.ui.dock.ToolPane
+import ponticello.ui.dock.ToolPaneMode
+import ponticello.ui.dock.ToolPaneState
+import ponticello.ui.impl.makeSubWindow
+import reaktive.value.*
+import reaktive.value.binding.flatMap
+import reaktive.value.binding.impl.notNull
 import reaktive.value.binding.map
-import reaktive.value.binding.orElse
-import reaktive.value.fx.asObservableValue
-import reaktive.value.now
-import reaktive.value.reactiveVariable
 
-//TODO bad name
-class ScoreObjectViewPane private constructor(val obj: ScoreObject) : VBox() {
-    private lateinit var player: ScorePlayer
-    private val context = obj.context.extend()
-    private val scorePane = SingleObjectScorePane(obj, context)
-    private val scorePaneContainer = BorderPane(scorePane)
-    private val splitter = SplitPane(scorePaneContainer)
-    private var lastDividerPosition = -1.0
-    private val timeCodeView = TimeCodeView()
-    private val showDetailsPane = reactiveVariable(false)
-    private val selector = ScoreObjectSelectionManager(context, scorePane)
+class ScoreObjectViewPane : ToolPane() {
+    private val detached = mutableMapOf<ScoreObject, SubWindow>()
+    private val displayedObject: ReactiveVariable<ScoreObjectView?> = reactiveVariable(null)
 
-    fun isShowingDetailsPane() = showDetailsPane.now
+    override val type: Type
+        get() = ScoreObjectViewPane
 
-    init {
-        setDefaultSize()
-        context[ScoreObjectSelectionManager] = selector
-        scorePane.initialize()
-        setupPlayback()
-        setVgrow(splitter, Priority.ALWAYS)
-        children.addAll(createPlaybackBar(), splitter)
-        isFocusTraversable = true
-        setOnMouseClicked { requestFocus() }
-        val ctx = ObjectActionContext.MultiObjectContext(selector)
-        scorePane.registerShortcuts(ScoreObjectActions.all.withContext(ctx))
-        registerShortcuts {
-            SelectionRelatedActions.addShortcuts(this, context)
-            registerActions(ScoreObjectRegistryPane.actions.withContext(obj))
-            registerActions(PlaybackActions.local.withContext(player))
-            registerActions(listOf(showDetailPaneAction.withContext(this@ScoreObjectViewPane)))
-            context[PonticelloMainActivity].interactionConfig.addGridRelatedShortcuts(this)
+    override val title: ReactiveValue<String> = displayedObject.flatMap { v -> v?.obj?.name ?: reactiveValue("No object selected") }
+
+    override var content: Parent = noSelectedObject()
+        set(value) {
+            children.replace(field, value)
+            field = value
+            setVgrow(value, Priority.ALWAYS)
         }
-        sceneProperty().addListener { _, _, sc ->
-            if (sc != null) ArrowKeys.registerArrowKeys(sc, context)
-        }
-        scorePaneContainer.setPadding(10.0)
-        if (obj is ScoreObjectGroup) {
-            scorePaneContainer.backgroundProperty().bind(
-                obj.associatedColor.orElse(Color.BLACK).map(::background).asObservableValue()
-            )
-        }
+
+    override fun doSetup() {
     }
 
-    private fun toggleDetailsPane() {
-        if (!showDetailsPane.now) {
-            val view = scorePane.getSingleObjectView() ?: return
-            showDetailsPane.now = true
-            val detailPane = view.getDetailPane()
-            splitter.items.setAll(scorePane, detailPane)
-            val dividerPosition = lastDividerPosition.takeIf { it != -1.0 } ?: 0.66
-            splitter.setDividerPositions(dividerPosition)
-        } else {
-            lastDividerPosition = splitter.dividerPositions[0]
-            splitter.items.setAll(scorePane)
-            showDetailsPane.now = false
-        }
+    override val headerActions: List<ContextualizedAction>
+        get() = actions.withContext(this) + super.headerActions
+
+    override fun defaultState(): ToolPaneState = ToolPaneState.docked
+
+    private fun noSelectedObject() = Region()
+
+    fun showContent(focusedView: ScoreObjectView) {
+        displayedObject.now = focusedView
+        showObject(focusedView)
     }
 
-    fun setDefaultSize() {
-        val screenBounds = Screen.getPrimary().visualBounds
-        val width = (obj.duration * 40).value.coerceIn(500.0, screenBounds.width)
-        val height = (obj.height * 500).value.coerceIn(500.0, screenBounds.height)
-        scorePane.setPrefSize(width, height)
+    private fun showObject(view: ScoreObjectView) {
+        val pane = ScoreObjectPlayerPane.getPane(view.obj)
+        content = pane
     }
 
-    private fun setupPlayback() {
-        context[TimeCodeView] = timeCodeView
-        context[ScorePane.CURRENT_ROOT] = scorePane
-        context[ScoreObjectDuplicator].registerRootPane(scorePane)
-        player = ScorePlayer.create(scorePane, loopingActivated = obj.liveConfig.loop)
-        obj.player = player
-        context[ScorePlayer.CURRENT] = player
+    override fun onShowing() {
+        val focused = context[ScoreObjectSelectionManager].focusedView.now ?: return
+        showContent(focused)
     }
 
-    private fun createPlaybackBar() = HBox(
-        infiniteSpace(),
-        toolbarPart(ScoreObjectRegistryPane.actions.withContext(obj)),
-        hspace(20.0),
-        toolbarPart(PlaybackActions.local.withContext(player)),
-        hspace(20.0),
-        timeCodeView,
-        infiniteSpace(),
-        showDetailPaneAction.withContext(this).makeButton("medium-icon-button"),
-        hspace(10.0)
-    ).centerChildren()
+    private fun detach(view: ScoreObjectView) {
+        setShowing(false)
+        displayedObject.now = null
+        content = noSelectedObject()
+        val title = windowTitle(view)
+        lateinit var newWindow: SubWindow
+        val pane = ScoreObjectPlayerPane.getPane(view.obj)
+        newWindow = makeSubWindow(pane, title, context)
+        newWindow.show()
+        detached[view.obj] = newWindow
+    }
 
-    companion object {
-        private val panes = mutableMapOf<ScoreObject, ScoreObjectViewPane>()
+    private fun windowTitle(view: ScoreObjectView) = view.obj.name.map { name -> "Object $name" }
 
-        private val showDetailPaneAction = action<ScoreObjectViewPane>("Show detail pane") {
-            icon(MaterialDesignV.VIEW_LIST_OUTLINE)
-            shortcut("Ctrl+D")
-            applicableIf { pane -> pane.obj !is ScoreObjectGroup }
-            toggleState { pane -> pane.showDetailsPane }
-            executes { pane -> pane.toggleDetailsPane() }
+    companion object : Type(uid = 16, "Object view") {
+        private val actions = collectActions<ScoreObjectViewPane> {
+            addAction("Detach") {
+                icon(MaterialDesignP.PIN_OUTLINE)
+                shortcuts("Ctrl+D")
+                enableWhen { pane -> pane.displayedObject.notNull() }
+                ifNotApplicable(Action.IfNotApplicable.Hide)
+                executes { pane ->
+                    val view = pane.displayedObject.now ?: return@executes
+                    pane.detach(view)
+                }
+            }
         }
 
-        fun getPane(obj: ScoreObject): ScoreObjectViewPane = panes.getOrPut(obj) { ScoreObjectViewPane(obj) }
+        override val icon: Ikon
+            get() = MaterialDesignM.MAGNIFY
+
+        override val shortcut: String
+            get() = "F7"
+
+        override val defaultSide: Side
+            get() = Side.BOTTOM
+
+        override val supportedModes: List<ToolPaneMode>
+            get() = listOf(ToolPaneMode.Docked, ToolPaneMode.Window)
+
+        override fun createToolPane(project: PonticelloProject): ToolPane = ScoreObjectViewPane()
     }
 }

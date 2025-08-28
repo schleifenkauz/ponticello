@@ -1,4 +1,4 @@
-package ponticello.ui.launcher
+package ponticello.ui.score
 
 import fxutils.SubWindow
 import fxutils.actions.Action
@@ -26,8 +26,6 @@ import ponticello.ui.dock.ToolPaneState
 import ponticello.ui.impl.DEFAULT_SCENE_FILL
 import ponticello.ui.impl.makeSubWindow
 import ponticello.ui.impl.sceneFill
-import ponticello.ui.score.ScoreObjectSelectionManager
-import ponticello.ui.score.ScoreObjectView
 import reaktive.Observer
 import reaktive.value.ReactiveVariable
 import reaktive.value.binding.impl.notNull
@@ -37,7 +35,7 @@ import reaktive.value.reactiveVariable
 
 class ScoreObjectDetailPane : ToolPane() {
     private val detached = mutableMapOf<ScoreObject, SubWindow>()
-    private var displayedObject: ReactiveVariable<ScoreObjectView?> = reactiveVariable(null)
+    private val displayedObject: ReactiveVariable<ScoreObjectView?> = reactiveVariable(null)
     private lateinit var focusedViewObserver: Observer
 
     override val type: Type
@@ -131,8 +129,7 @@ class ScoreObjectDetailPane : ToolPane() {
 
     private fun windowTitle(view: ScoreObjectView) = view.obj.name.map { name -> "Object $name" }
 
-    companion object: Type(5, "Score Object Details") {
-
+    companion object: Type(uid = 5, "Score Object Details") {
         private val actions = collectActions<ScoreObjectDetailPane> {
             addAction("Detach") {
                 icon(MaterialDesignP.PIN_OUTLINE)

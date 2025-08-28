@@ -14,7 +14,7 @@ import ponticello.ui.registry.ObjectBox
 import ponticello.ui.registry.ObjectListView
 
 abstract class ReorderableActionBar<O : Any>(
-    private val paneTypes: ObjectList<O>, private val style: List<String>,
+    private val objects: ObjectList<O>, private val style: List<String>,
 ) : ListDisplayConfig<O>, Control() {
     constructor(actions: ObjectList<O>, style: String) : this(actions, listOf(style))
     constructor(actions: ObjectList<O>, vararg style: String) : this(actions, style.asList())
@@ -23,7 +23,7 @@ abstract class ReorderableActionBar<O : Any>(
         private set
 
     protected fun setup() {
-        layout = ObjectListView(paneTypes, this, scrollable = false)
+        layout = ObjectListView(objects, this, scrollable = false)
         setRoot(layout)
     }
 

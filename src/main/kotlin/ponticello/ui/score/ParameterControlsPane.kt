@@ -35,16 +35,18 @@ import ponticello.ui.registry.ObjectBox
 import ponticello.ui.registry.ObjectListView
 import ponticello.ui.registry.ObjectListView.DisplayMode
 import ponticello.ui.registry.SearchableParameterDefListView
+import reaktive.value.ReactiveValue
 import reaktive.value.binding.impl.notNull
 import reaktive.value.now
+import reaktive.value.reactiveValue
 
 class ParameterControlsPane(
     val obj: ParameterizedObject, private val view: ScoreObjectView? = null,
 ) : ListToolPane<NamedParameterControl>(obj.controls, scrollable = false), ParameterControlList.Listener {
     private val editors = mutableMapOf<NamedParameterControl, ControlAssignmentEditor>()
 
-    override val title: String
-        get() = "Parameter controls"
+    override val title: ReactiveValue<String>
+        get() = reactiveValue("Parameter controls")
 
     override val supportedModes: Set<DisplayMode>
         get() = setOf(DisplayMode.Inline(collapsable = true))

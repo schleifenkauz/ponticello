@@ -81,9 +81,6 @@ class GlobalPatternRegistryPane(
         override val icon: Ikon
             get() = MaterialDesignL.LARAVEL
 
-        override val shortcut: String
-            get() = "F7"
-
         override val defaultSide: Side
             get() = Side.RIGHT
 

@@ -17,12 +17,14 @@ import ponticello.sc.client.SuperColliderClient
 import ponticello.sc.client.eval
 import ponticello.ui.dock.ToolPane
 import reaktive.Observer
+import reaktive.value.ReactiveValue
 import reaktive.value.forEach
 import reaktive.value.now
+import reaktive.value.reactiveValue
 
 class PatternPlotPane(private val pattern: GlobalPatternObject) : ToolPane() {
-    override val title: String
-        get() = "Pattern Plot"
+    override val title: ReactiveValue<String>
+        get() = reactiveValue("Pattern Plot")
 
     private val plot = PatternPlot()
     private val warpSelector = SimpleSearchableListView(Warp.entries, "Select warp")

@@ -12,12 +12,16 @@ import ponticello.sc.defaultControlSpec
 import ponticello.ui.dock.SearchableToolPane
 import ponticello.ui.dock.Side
 import ponticello.ui.dock.ToolPane
+import reaktive.value.ReactiveValue
+import reaktive.value.reactiveValue
 
 class ParameterDefsPane(
-    parameters: ParameterDefList, override val title: String,
+    parameters: ParameterDefList, title: String,
 ) : SearchableToolPane<ParameterDefObject>(parameters), ListDisplayConfig<ParameterDefObject> by ParameterListConfig() {
     override val type: Type
         get() = ParameterDefsPane
+
+    override val title: ReactiveValue<String> = reactiveValue(title)
 
     init {
         setup()

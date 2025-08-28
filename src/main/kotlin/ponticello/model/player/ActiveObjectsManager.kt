@@ -9,11 +9,13 @@ import ponticello.impl.Decimal
 import ponticello.model.flow.ActiveObjectNode
 import ponticello.model.flow.AudioFlows
 import ponticello.model.flow.NodeTree
-import ponticello.model.obj.InstrumentReference
 import ponticello.model.obj.ParameterDefObject
 import ponticello.model.obj.SynthDefObject
 import ponticello.model.registry.ScoreObjectRegistry
-import ponticello.model.score.*
+import ponticello.model.score.ObjectPosition
+import ponticello.model.score.ScoreObject
+import ponticello.model.score.ScoreObjectInstance
+import ponticello.model.score.SoundProcess
 import ponticello.model.score.controls.ParameterControl
 import ponticello.sc.client.getArgument
 import reaktive.value.now
@@ -86,9 +88,7 @@ class ActiveObjectsManager(private val context: Context) : OSCMessageListener {
         val obj = active.obj
         bySuffix[obj]?.remove(active.suffix)
         byAbsolutePosition[obj]?.remove(active.absolutePosition)
-        if ((obj is SoundProcess && obj.def is SynthDefObject) ||
-            (obj is LegacyMidiObject && obj.instrument.now is InstrumentReference.UserDefined)
-        ) {
+        if ((obj is SoundProcess && obj.def is SynthDefObject)) {
             val node = ActiveObjectNode(obj, active)
             context[NodeTree].removeNode(node)
         }

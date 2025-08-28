@@ -1,25 +1,18 @@
 package ponticello.ui.score
 
-import fxutils.*
+import fxutils.Alt
+import fxutils.Shift
 import fxutils.actions.isShiftDown
-import fxutils.prompt.SimpleSearchableListView
+import fxutils.modifiers
 import hextant.context.Context
 import hextant.context.compoundEdit
-import hextant.core.editor.defaultState
-import hextant.serial.EditorRoot
 import javafx.event.Event
-import javafx.geometry.Point2D
 import javafx.scene.input.MouseEvent
-import javafx.scene.robot.Robot
-import ponticello.model.obj.*
-import ponticello.model.registry.*
+import ponticello.model.obj.withName
+import ponticello.model.registry.BufferRegistry
+import ponticello.model.registry.ScoreObjectRegistry
 import ponticello.model.score.*
-import ponticello.sc.editor.CodeBlockEditor
-import ponticello.ui.controls.NamePrompt
 import ponticello.ui.registry.SimpleSearchableRegistryView
-import reaktive.value.now
-import reaktive.value.reactiveVariable
-import kotlin.reflect.KClass
 
 abstract class RegularScorePane(score: Score, context: Context) : ScorePane(score, context) {
     override fun acceptObject(obj: ScoreObject): ScoreObject? = obj.takeIf { it !is MidiNoteObject }
@@ -47,19 +40,6 @@ abstract class RegularScorePane(score: Score, context: Context) : ScorePane(scor
         }
     }
 
-    override fun doubleClicked(ev: MouseEvent) {
-        ev.consume()
-        val defaultName = context[ScoreObjectRegistry].availableName("memo")
-        val obj = MemoObject("").withName(defaultName)
-        val (t, y) = snapToGrid(ev.x, ev.y)
-        val inst = ScoreObjectInstance(obj, t, y)
-        score.addObject(inst, autoSelect = true)
-        val view = getObjectView(inst) as MemoObjectView
-        runFXWithTimeout(20) {
-            view.enterEdit()
-        }
-    }
-
     fun addNewGroup(ev: Event?, selection: RectangleSelection) {
         val containedViews = viewsInside(selection.bounds, mustBeContainedEntirely = true)
         val name = context[ScoreObjectRegistry].nameForGroup(ev) ?: return
@@ -78,7 +58,7 @@ abstract class RegularScorePane(score: Score, context: Context) : ScorePane(scor
         val registry = context[ScoreObjectRegistry]
         if (obj in registry) registry.add(obj)
         val inst = rect.createInstance(obj)
-        obj.liveConfig.yPosition.set(this.absolutePosition.y + inst.y)
+        obj.liveConfig.yPosition.set(this.absolutePosition.y + inst.y) //TODO really?
         score.addObject(inst, autoSelect = true)
         return inst
     }

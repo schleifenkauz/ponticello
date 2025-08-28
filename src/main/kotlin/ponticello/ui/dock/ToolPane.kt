@@ -38,19 +38,19 @@ import ponticello.ui.dock.ToolPaneMode.*
 import ponticello.ui.impl.DEFAULT_SCENE_FILL
 import ponticello.ui.impl.sceneFill
 import ponticello.ui.launcher.PonticelloApp.Companion.primaryStage
-import reaktive.value.ReactiveBoolean
+import reaktive.value.*
 import reaktive.value.binding.*
+import reaktive.value.fx.asObservableValue
 import reaktive.value.fx.asReactiveValue
-import reaktive.value.now
-import reaktive.value.reactiveValue
-import reaktive.value.reactiveVariable
 
 abstract class ToolPane : VBox() {
     var initialState: ToolPaneState? = null
         private set
 
     open val type: Type? get() = null
-    open val title get() = type?.title ?: throw UnsupportedOperationException("ToolPane ${this.javaClass} has no title")
+    open val title: ReactiveValue<String>
+        get() = type?.title?.let(::reactiveValue)
+            ?: throw UnsupportedOperationException("ToolPane ${this.javaClass} has no title")
     open val icon get() = type?.icon ?: throw UnsupportedOperationException("ToolPane ${this.javaClass} has no icon")
     open val shortcut: String? get() = type?.shortcut
 
@@ -180,7 +180,7 @@ abstract class ToolPane : VBox() {
             return
         }
         val menu = ContextMenu()
-        for (mode in ToolPaneMode.entries) {
+        for (mode in type?.supportedModes ?: ToolPaneMode.entries) {
             val icon = FontIcon(Material2AL.CHECK) styleClass "check-icon"
             icon.isVisible = currentMode() == mode
             menu.items.add(menuItem(mode.name, icon) {
@@ -249,7 +249,7 @@ abstract class ToolPane : VBox() {
     protected open fun makeToolWindow(): Stage {
         val stage = Stage()
         stage.initOwner(context[primaryStage])
-        stage.title = title
+        stage.titleProperty().bind(title.asObservableValue())
         initialState?.windowBounds?.applyTo(stage) ?: stage.centerOnScreen()
         stage.scene = Scene(StackPane(this))
         stage.scene.initHextantScene(context)
@@ -306,11 +306,18 @@ abstract class ToolPane : VBox() {
                     showing.now = true
                 }
             }
+            if (showing.now) {
+                onShowing()
+            }
         } else {
             window?.hide() ?: layout!!.hideDocked(this)
             showing.set(false)
+            onHidden()
         }
     }
+
+    protected open fun onShowing() {}
+    protected open fun onHidden() {}
 
     protected open fun showPopup(popup: Popup, ownerWindow: javafx.stage.Window): Boolean {
         val robot = Robot()
@@ -335,6 +342,8 @@ abstract class ToolPane : VBox() {
 
     abstract class Type(val uid: Int, val title: String) : AbstractContextualObject() {
         abstract val defaultSide: Side
+
+        open val supportedModes: List<ToolPaneMode> = ToolPaneMode.entries
 
         open val icon: Ikon? get() = null
 

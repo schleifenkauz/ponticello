@@ -33,7 +33,7 @@ import ponticello.ui.dock.ToolPaneState
 import ponticello.ui.live.QuantizationConfigDialog
 import ponticello.ui.live.ScoreObjectResizeDialog
 import ponticello.ui.registry.ObjectListView.DisplayMode
-import ponticello.ui.score.ScoreObjectViewPane
+import ponticello.ui.score.ScoreObjectPlayerPane
 import reaktive.value.binding.not
 import reaktive.value.now
 import reaktive.value.reactiveValue
@@ -57,7 +57,7 @@ class ScoreObjectRegistryPane(registry: ScoreObjectRegistry) : ObjectRegistryPan
         return listOf(scoreYSlider)
     }
 
-    override fun getContent(obj: ScoreObject, mode: DisplayMode): Parent = ScoreObjectViewPane.getPane(obj)
+    override fun getContent(obj: ScoreObject, mode: DisplayMode): Parent = ScoreObjectPlayerPane.getPane(obj)
 
     override fun getActions(box: ObjectBox<ScoreObject>): List<ContextualizedAction> {
         return actions.withContext(box.obj)
