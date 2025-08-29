@@ -59,6 +59,7 @@ class MeterObject(
     }
 
     fun represent(duration: Decimal): Pair<TimeUnit, Decimal> {
+        if (duration == zero) return Pair(TimeUnit.Ticks, zero)
         val beatDur = getBeatDur()
         val durInBars = duration / (beatDur * beatsPerBar.now)
         if (durInBars.isInteger) return Pair(TimeUnit.Bars, durInBars)

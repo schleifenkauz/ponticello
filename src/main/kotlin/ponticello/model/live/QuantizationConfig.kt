@@ -73,14 +73,6 @@ class QuantizationConfig(
         value.now = value.now.round(3)
     }
 
-    fun getQuantization(): Quantization =
-        if (!enableQuantization.now) Quantization.None
-        else Quantization.RelativeTo(
-            meter.now,
-            quantizationUnit.now, quantizationValue.now,
-            offsetUnit.now, offsetValue.now
-        )
-
     fun computeQuant(): Decimal {
         val grid = meter.now.force()
         val unit = grid.getDuration(quantizationUnit.now)
