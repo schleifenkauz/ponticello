@@ -2,6 +2,7 @@ package ponticello.ui.live
 
 import fxutils.*
 import fxutils.controls.CheckBox
+import fxutils.controls.OptionSpinner
 import fxutils.prompt.CompoundPrompt
 import fxutils.prompt.SimpleSearchableListView
 import fxutils.undo.UndoManager
@@ -37,16 +38,14 @@ class QuantizationConfigDialog(
         .selectorButton(config.clock)
         .setFixedWidth(SELECTOR_WIDTH)
 
-    private val quantizationUnitInput = SimpleSearchableListView(QuantizationUnit.entries, "Choose quantization unit")
-        .selectorButton(config.quantizationUnit)
+    private val quantizationUnitInput = OptionSpinner(config.quantizationUnit, QuantizationUnit.entries)
         .setFixedWidth(SELECTOR_WIDTH)
 
     private val quantizationValueInput = Spinner<Double>(0.0, Double.MAX_VALUE, config.quantizationValue.now.value)
         .sync(config.quantizationValue)
         .setFixedWidth(SPINNER_WIDTH)
 
-    private val offsetUnitInput = SimpleSearchableListView(TimeUnit.entries, "Choose offset unit")
-        .selectorButton(config.offsetUnit)
+    private val offsetUnitInput = OptionSpinner(config.offsetUnit, TimeUnit.entries)
         .setFixedWidth(SELECTOR_WIDTH)
 
     private val offsetValueInput = Spinner<Double>(0.0, Double.MAX_VALUE, config.offsetValue.now.value)
@@ -73,12 +72,14 @@ class QuantizationConfigDialog(
         shiftGridToggle.disableProperty().bind(unresolvedGrid)
         quantizationUnitInput.disableProperty().bind(unresolvedGrid)
         offsetUnitInput.disableProperty().bind(unresolvedGrid)
-        row("Meter: ", meterSelector)
-        row("Clock: ", clockSelector)
-        row("Quantization: ", quantizationUnitInput, quantizationValueInput)
-        row("Offset: ", offsetUnitInput, offsetValueInput)
-        addItem("Enable quantization: ", enableQuantizationToggle)
-        addItem("Shift grid: ", shiftGridToggle)
+        quantizationUnitInput.label.minWidth = 40.0
+        offsetUnitInput.label.minWidth = 60.0
+        row("Meter", meterSelector)
+        row("Clock", clockSelector)
+        addItem("Enable quantization", enableQuantizationToggle)
+        row("Quantization", quantizationUnitInput, quantizationValueInput)
+        row("Offset", offsetUnitInput, offsetValueInput)
+        addItem("Shift grid", shiftGridToggle)
     }
 
     override fun confirm(): ResizeMode = ResizeMode.Regular

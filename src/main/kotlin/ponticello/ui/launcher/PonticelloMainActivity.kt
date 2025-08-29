@@ -24,7 +24,10 @@ import ponticello.ui.impl.DEFAULT_SCENE_FILL
 import ponticello.ui.impl.sceneFill
 import ponticello.ui.midi.ContextualMidiReceiver
 import ponticello.ui.misc.InteractionConfigBar
-import ponticello.ui.score.*
+import ponticello.ui.score.FlowGroupManager
+import ponticello.ui.score.NavigableScorePane
+import ponticello.ui.score.ScoreObjectDuplicator
+import ponticello.ui.score.ScoreObjectSelectionManager
 import reaktive.value.reactiveValue
 
 class PonticelloMainActivity(val project: PonticelloProject) : Activity() {
@@ -33,8 +36,6 @@ class PonticelloMainActivity(val project: PonticelloProject) : Activity() {
     }
 
     val mainScoreView: NavigableScorePane = NavigableScorePane(project.mainScore, project.context)
-
-    private val timeCodeView: TimeCodeView = TimeCodeView()
 
     val interactionConfig = InteractionConfigBar(project.uiState)
 
@@ -54,11 +55,10 @@ class PonticelloMainActivity(val project: PonticelloProject) : Activity() {
         context[ContextualMidiReceiver].attachGrid(project[LAUNCHER_GRID])
     }
 
-    private val appLayout by lazy { AppLayout(this, project, mainScoreView, interactionConfig, timeCodeView) }
+    private val appLayout by lazy { AppLayout(this, project, mainScoreView, interactionConfig) }
 
     private fun setupMainScoreView() {
         mainScoreView.initialize()
-        context[TimeCodeView] = timeCodeView
         context[ScoreObjectDuplicator].registerRootPane(mainScoreView)
         project.context[ScoreObjectSelectionManager] = ScoreObjectSelectionManager(project.context, mainScoreView)
     }
@@ -68,7 +68,6 @@ class PonticelloMainActivity(val project: PonticelloProject) : Activity() {
             project.mainScore, mainScoreView.playHead,
             loopingActivated = reactiveValue(false), quantization = null
         )
-        mainScoreView.playHead.attachTo(mainScoreView, timeCodeView)
         context[ScorePlayer.MAIN] = player
         playbackMessageListener = PlaybackMessageListener(
             context[GlobalSettings], project.objects, project.flows

@@ -26,7 +26,9 @@ import java.util.concurrent.Executors
 import java.util.concurrent.Future
 
 abstract class RootScorePane(
-    score: Score, context: Context, val playHead: PlayHead = PlayHead(),
+    score: Score, context: Context,
+    val playHead: PlayHead = PlayHead(),
+    val timeCodeView: TimeCodeView = TimeCodeView()
 ) : RegularScorePane(score, context) {
     private val positionTracker = Line() styleClass "mouse-tracker-line"
 
@@ -53,6 +55,7 @@ abstract class RootScorePane(
     open fun initialize() {
         listenForEvents()
         cursor = Cursors.CROSS_HAIR
+        playHead.attachTo(this)
         this.score.addListener(this)
     }
 
@@ -91,7 +94,7 @@ abstract class RootScorePane(
         for (gridView in allViews.filterIsInstance<TempoGridObjectView>()) {
             gridView.unmark()
         }
-        context[TimeCodeView].displayTime(playHead.currentTime)
+        timeCodeView.displayTime(playHead.currentTime)
     }
 
     fun magnifyEnvelope(editor: EnvelopeEditor) {
@@ -165,7 +168,7 @@ abstract class RootScorePane(
         return nearestGrid.start to gridObj.meter.force()
     }
 
-    final override fun snapToGrid(position: ObjectPosition): ObjectPosition {
+    override fun snapToGrid(position: ObjectPosition): ObjectPosition {
         val settings = context.project.uiState
         val (t, y) = position
         if (!settings.snapEnabled.now) return position
@@ -194,7 +197,7 @@ abstract class RootScorePane(
         positionTracker.layoutX = getX(t)
         val player = playHead.player.now
         if (player?.isPlaying?.now != true) {
-            context[TimeCodeView].displayTime(t)
+            timeCodeView.displayTime(t)
         }
     }
 

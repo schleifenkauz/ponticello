@@ -32,8 +32,6 @@
     -fx-padding: 3px;
     -fx-alignment: center-left;
     -fx-spacing: 5px;
-    -fx-border-width: 0px 0px 1px 0px;
-    -fx-border-color: black; /*TODO maybe not*/
 }
 
 .heading {

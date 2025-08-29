@@ -8,6 +8,7 @@ import org.kordamp.ikonli.materialdesign2.MaterialDesignM
 import ponticello.impl.Logger
 import ponticello.model.flow.AudioFlows
 import ponticello.model.flow.NodeTree
+import ponticello.model.live.LiveObjectRegistry
 import ponticello.model.obj.project
 import ponticello.model.player.ActiveObjectsManager
 import ponticello.model.player.CircularBufferRecorder
@@ -110,8 +111,8 @@ object PlaybackActions {
             executes { p ->
                 p.context[AudioFlows].writeVSTPluginStates()
                 p.context[Recorder].stopRecording()
-                for (player in ScorePlayer.instances()) {
-                    player.pause()
+                for (liveObject in p.context[LiveObjectRegistry]) {
+                    liveObject.pause()
                 }
                 p.context[ActiveObjectsManager].clear()
                 p.context[NodeTree].clear()

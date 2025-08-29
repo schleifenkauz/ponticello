@@ -26,17 +26,24 @@ import reaktive.value.now
 import java.util.concurrent.Future
 
 class SingleObjectScorePane(
-    val rootObj: ScoreObject, context: Context, playHead: PlayHead
+    val rootObj: ScoreObject, context: Context, playHead: PlayHead,
 ) : RootScorePane(Score.makeScore(rootObj), context, playHead) {
     override val displayStart: Decimal
-        get() = zero
+        get() = zero(ObjectPosition.TIME_PRECISION)
     override val displayEnd: Decimal
         get() = rootObj.duration
 
     var positionInMainScore: () -> ObjectPosition? = { null }
+        set(value) {
+            field = value
+            repaintGrid()
+        }
 
     override val absolutePosition: ObjectPosition
-        get() = ObjectPosition(zero, positionInMainScore()?.y ?: zero)
+        get() = ObjectPosition(
+            zero(ObjectPosition.TIME_PRECISION),
+            positionInMainScore()?.y ?: zero(ObjectPosition.TIME_PRECISION)
+        )
     private lateinit var durationObserver: Observer
     private lateinit var snapObserver: Observer
 
@@ -90,7 +97,8 @@ class SingleObjectScorePane(
     }
 
     fun repaintGrid() {
-        val (_, meter) = getGridFromMainScore(ObjectPosition.ZERO) ?: return
+        val mainScorePosition = positionInMainScore() ?: return
+        val (_, meter) = context[PonticelloMainActivity].mainScoreView.getNearestGrid(mainScorePosition) ?: return
         val duration = rootObj.duration.value
         TempoGridObjectView.paintGrid(context, meter, firstBar = 0, duration, gridCanvas)
     }
@@ -106,15 +114,16 @@ class SingleObjectScorePane(
 
     override fun isRoot(obj: ScoreObject): Boolean = obj == rootObj
 
+    override fun snapToGrid(position: ObjectPosition): ObjectPosition {
+        val positionInMainScore = positionInMainScore() ?: return super.snapToGrid(position)
+        return super.snapToGrid(position + positionInMainScore) - positionInMainScore
+    }
+
     override fun getNearestGrid(position: ObjectPosition): Pair<Decimal, MeterObject>? {
         val fromScore = super.getNearestGrid(position)
         if (fromScore != null) return fromScore
-        return getGridFromMainScore(position)
-    }
-
-    private fun getGridFromMainScore(position: ObjectPosition): Pair<Decimal, MeterObject>? {
-        val mainScorePos = positionInMainScore() ?: return null
-        return context[PonticelloMainActivity].mainScoreView.getNearestGrid(mainScorePos + position)
+        if (positionInMainScore() == null) return null
+        return context[PonticelloMainActivity].mainScoreView.getNearestGrid(position)
     }
 
     override fun markT(t: Decimal) {

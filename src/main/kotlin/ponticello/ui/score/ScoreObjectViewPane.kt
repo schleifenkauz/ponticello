@@ -4,14 +4,11 @@ import fxutils.SubWindow
 import fxutils.actions.Action
 import fxutils.actions.ContextualizedAction
 import fxutils.actions.collectActions
-import fxutils.alwaysVGrow
 import fxutils.replace
 import javafx.scene.Node
 import javafx.scene.Parent
-import javafx.scene.layout.BorderPane
 import javafx.scene.layout.Region
 import org.kordamp.ikonli.Ikon
-import org.kordamp.ikonli.materialdesign2.MaterialDesignM
 import org.kordamp.ikonli.materialdesign2.MaterialDesignP
 import ponticello.model.live.QuantizationConfig
 import ponticello.model.project.PonticelloProject
@@ -39,7 +36,10 @@ class ScoreObjectViewPane : ToolPane() {
     private var scorePane: SingleObjectScorePane? = null
         set(value) {
             field = value
-            content = value?.let { BorderPane(value.alwaysVGrow()) } ?: Region()
+            content = if (value == null) Region() else {
+                value.prefHeightProperty().bind(heightProperty().subtract(header.heightProperty()))
+                value
+            }
         }
 
     override var content: Parent = Region()
@@ -65,13 +65,13 @@ class ScoreObjectViewPane : ToolPane() {
     fun showContent(focusedView: ScoreObjectView) {
         val obj = focusedView.obj
         showContent(obj)
-
+        scorePane!!.positionInMainScore = focusedView::absolutePosition
     }
 
     fun showContent(obj: ScoreObject, quantization: QuantizationConfig? = null) {
         displayedObject.now = obj
         val pane = ScoreObjectPlayerPane.getPane(obj)
-        content = pane.scorePane
+        scorePane = pane.scorePane
         headerContent = pane.createToolbar()
         setShowing(true)
     }
@@ -111,7 +111,7 @@ class ScoreObjectViewPane : ToolPane() {
         }
 
         override val icon: Ikon
-            get() = MaterialDesignM.MAGNIFY
+            get() = MaterialDesignP.PLAY_BOX_OUTLINE
 
         override val shortcut: String
             get() = "F7"

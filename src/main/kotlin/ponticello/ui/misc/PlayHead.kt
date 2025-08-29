@@ -8,6 +8,7 @@ import ponticello.impl.asTime
 import ponticello.impl.withPrecision
 import ponticello.model.player.ScorePlayer
 import ponticello.model.score.ObjectPosition
+import ponticello.ui.score.RootScorePane
 import ponticello.ui.score.ScorePane
 import ponticello.ui.score.TimeCodeView
 import reaktive.value.*
@@ -31,14 +32,14 @@ class PlayHead {
 
     val canMoveManually = _player.flatMap { p -> p?.isScheduled?.not() ?: reactiveValue(true) }
 
-    fun attachTo(pane: ScorePane, timeCodeView: TimeCodeView) {
+    fun attachTo(pane: RootScorePane) {
         val playHead = Line() styleClass "play-head"
         playHead.viewOrder = -500.0
         playHead.strokeWidth = PLAY_HEAD_WIDTH
         playHead.isMouseTransparent = true
-        playHead.endYProperty().bind(pane.heightProperty().subtract(20))
-        playHead.startY = 10.0
-        attached.add(AttachedScorePane(pane, timeCodeView, playHead))
+        playHead.endYProperty().bind(pane.heightProperty())
+        playHead.startY = 0.0
+        attached.add(AttachedScorePane(pane, pane.timeCodeView, playHead))
     }
 
     fun movePlayHead(pos: Decimal) {

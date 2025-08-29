@@ -120,9 +120,8 @@ abstract class ToolPane : VBox() {
     fun relayout() {
         children.clear()
         header = createHeader()
-        children.add(header)
         val content = content
-        children.add(content)
+        children.addAll(header, content)
         setVgrow(content, ALWAYS)
     }
 
@@ -338,7 +337,7 @@ abstract class ToolPane : VBox() {
         }
     }
 
-    override fun toString(): String = "ToolPane [$title]"
+    override fun toString(): String = "ToolPane [${title.now}]"
 
     abstract class Type(val uid: Int, val title: String) : AbstractContextualObject() {
         abstract val defaultSide: Side

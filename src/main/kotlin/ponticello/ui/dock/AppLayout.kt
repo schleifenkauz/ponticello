@@ -3,12 +3,10 @@ package ponticello.ui.dock
 import bundles.PublicProperty
 import bundles.publicProperty
 import bundles.set
+import fxutils.*
 import fxutils.actions.ActionBar
 import fxutils.actions.ContextualizedAction
 import fxutils.actions.collectActions
-import fxutils.hspace
-import fxutils.infiniteSpace
-import fxutils.styleClass
 import fxutils.undo.UndoManager
 import hextant.context.withoutUndo
 import javafx.beans.binding.Bindings
@@ -36,7 +34,6 @@ import ponticello.ui.registry.*
 import ponticello.ui.score.NavigableScorePane
 import ponticello.ui.score.ScoreObjectDetailPane
 import ponticello.ui.score.ScoreObjectViewPane
-import ponticello.ui.score.TimeCodeView
 import reaktive.value.now
 import kotlin.reflect.KClass
 
@@ -45,7 +42,6 @@ class AppLayout(
     private val project: PonticelloProject,
     private val scoreView: NavigableScorePane,
     private val interactionConfigBar: InteractionConfigBar,
-    private val timeCodeView: TimeCodeView,
 ) : BorderPane(), ObjectList.Listener<ToolPane.Type> {
     private val sideBarLists = project[UI_STATE].sideBarStates.associateTo(mutableMapOf()) { state ->
         val toolPaneTypes = state.toolPanes.mapNotNull { t -> toolPaneType(t) }.distinct().toMutableList()
@@ -305,15 +301,17 @@ class AppLayout(
             db.setContent(mapOf(PlaybackActions.RECORD_BUTTON to "<record>"))
             ev.consume()
         }
-        center = HBox(
-            infiniteSpace(),
-            interactionConfigBar styleClass "toolbar-part-segment",
-            hspace(20.0),
-            playerBar styleClass "toolbar-part-segment",
-            hspace(20.0),
-            timeCodeView,
-            infiniteSpace()
-        )
+        center = VBox(
+            HBox(
+                infiniteSpace(),
+                interactionConfigBar styleClass "toolbar-part-segment",
+                hspace(20.0),
+                playerBar styleClass "toolbar-part-segment",
+                hspace(20.0),
+                scoreView.timeCodeView styleClass "toolbar-part-segment",
+                infiniteSpace()
+            ).centerChildren().neverVGrow()
+        ).centerChildren().pad(2.0)
         val serverActions = ServerActions.withContext(project) + ProjectUtilityActions.menuAction.withContext(project)
         topRightBar = toolbarPart(serverActions)
         right = HBox(

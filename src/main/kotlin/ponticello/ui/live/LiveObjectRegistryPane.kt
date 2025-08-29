@@ -7,10 +7,8 @@ import hextant.core.editor.defaultState
 import hextant.serial.EditorRoot
 import javafx.event.Event
 import javafx.scene.Parent
-import javafx.scene.input.DataFormat
-import javafx.scene.input.Dragboard
-import javafx.scene.input.MouseEvent
-import javafx.scene.input.TransferMode
+import javafx.scene.control.Button
+import javafx.scene.input.*
 import org.kordamp.ikonli.Ikon
 import org.kordamp.ikonli.materialdesign2.MaterialDesignM
 import org.kordamp.ikonli.materialdesign2.MaterialDesignP
@@ -26,16 +24,20 @@ import ponticello.model.project.LIVE_TASKS
 import ponticello.model.project.PonticelloProject
 import ponticello.model.project.get
 import ponticello.model.registry.MeterRegistry
+import ponticello.model.registry.ScoreObjectRegistry
 import ponticello.model.registry.reference
 import ponticello.model.score.ScoreObject
 import ponticello.sc.editor.CodeBlockEditor
 import ponticello.ui.actions.undoable
 import ponticello.ui.dock.*
+import ponticello.ui.impl.getFrom
 import ponticello.ui.misc.CodePane
 import ponticello.ui.registry.ObjectBox
+import ponticello.ui.registry.ObjectListView
 import ponticello.ui.registry.ObjectListView.DisplayMode
 import ponticello.ui.registry.ObjectRegistryPane
 import ponticello.ui.registry.SimpleSearchableRegistryView
+import ponticello.ui.score.ScoreObjectView
 import ponticello.ui.score.ScoreObjectViewPane
 import reaktive.value.binding.map
 import reaktive.value.binding.not
@@ -72,8 +74,27 @@ class LiveObjectRegistryPane(registry: LiveObjectRegistry) : ObjectRegistryPane<
         else -> super.acceptedTransferModes(dragboard)
     }
 
+    override fun getDroppedObject(ev: DragEvent, targetView: ObjectListView<LiveObject>): LiveObject? {
+        return when {
+            ev.dragboard.hasContent(ScoreObject.DATA_FORMAT) -> {
+                val obj = ev.dragboard.getFrom(context[ScoreObjectRegistry], ScoreObject.DATA_FORMAT) ?: return null
+                val view = ev.gestureSource as? ScoreObjectView
+                val liveObject = LiveScoreObject(obj.reference())
+                if (view != null) {
+                    liveObject.absoluteScoreY.now = view.absolutePosition.y
+                    liveObject.inferQuantizationFrom(view.absolutePosition, view.context)
+                }
+                liveObject
+            }
+
+            else -> super.getDroppedObject(ev, targetView)
+        }
+    }
+
     override fun configureBox(box: ObjectBox<LiveObject>, currentMode: DisplayMode) {
-        box.header.children.add(0, playPauseAction.withContext(box.obj).makeButton("medium-icon-button"))
+        if (box.header.children.firstOrNull() !is Button) {
+            box.header.children.add(0, playPauseAction.withContext(box.obj).makeButton("medium-icon-button"))
+        }
         box.addEventHandler(MouseEvent.MOUSE_CLICKED) { ev ->
             if (ev.clickCount == 2 && box.obj is LiveScoreObject) {
                 val pane = context[AppLayout].get<ScoreObjectViewPane>()

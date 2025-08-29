@@ -72,7 +72,8 @@ fun Scene.registerGlobalShortcuts(context: Context) {
     }
 }
 
-fun toolbarPart(actions: List<ContextualizedAction>): ActionBar = ActionBar(actions, buttonStyle = "large-icon-button")
+fun toolbarPart(actions: List<ContextualizedAction>): ActionBar =
+    ActionBar(actions, buttonStyle = "large-icon-button", layoutStyle = "toolbar-part")
 
 fun Action.Builder<out ContextualObject>.undoable() {
     undoable { obj -> obj.context[UndoManager] }

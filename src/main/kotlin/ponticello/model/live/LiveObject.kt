@@ -8,7 +8,8 @@ import reaktive.value.ReactiveValue
 import reaktive.value.now
 
 @Serializable
-sealed interface LiveObject: NamedObject {
+sealed interface LiveObject : NamedObject {
+    //TODO distinguish between scheduled and active
     val isActive: ReactiveValue<Boolean>
     val quantization: QuantizationConfig
 

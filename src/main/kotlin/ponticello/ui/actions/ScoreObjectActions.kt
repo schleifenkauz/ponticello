@@ -275,7 +275,7 @@ object ScoreObjectActions {
                 val registry = view.context[LiveObjectRegistry]
                 val liveObject = registry.getOrCreateLiveScoreObject(obj)
                 if (!liveObject.initialized) {
-                    liveObject.inferQuantizationFrom(view.absolutePosition)
+                    liveObject.inferQuantizationFrom(view.absolutePosition, view.context)
                     liveObject.absoluteScoreY.now = view.absolutePosition.y
                     if (ScoreObjectPlayerPane.hasPane(obj)) {
                         liveObject.playHead = ScoreObjectPlayerPane.getPane(obj).playHead
