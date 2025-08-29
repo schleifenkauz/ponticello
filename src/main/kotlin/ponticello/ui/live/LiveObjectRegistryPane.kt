@@ -39,6 +39,7 @@ import ponticello.ui.registry.ObjectRegistryPane
 import ponticello.ui.registry.SimpleSearchableRegistryView
 import ponticello.ui.score.ScoreObjectView
 import ponticello.ui.score.ScoreObjectViewPane
+import reaktive.value.binding.and
 import reaktive.value.binding.map
 import reaktive.value.binding.not
 import reaktive.value.now
@@ -101,6 +102,7 @@ class LiveObjectRegistryPane(registry: LiveObjectRegistry) : ObjectRegistryPane<
                 pane.showContent(box.obj.scoreObject, box.obj.quantization)
             }
         }
+        box.registerShortcuts(listOf(playPauseAction.withContext(box.obj)))
     }
 
     override fun createNewObject(name: String, ev: Event?): LiveTaskObject =
@@ -116,7 +118,7 @@ class LiveObjectRegistryPane(registry: LiveObjectRegistry) : ObjectRegistryPane<
         override fun createToolPane(project: PonticelloProject): ToolPane = LiveObjectRegistryPane(project[LIVE_TASKS])
 
         val configureQuantizationAction = action<LiveObject>("Configure quantization") {
-            enableWhen { item -> item.isActive.not() }
+            enableWhen { item -> item.isScheduled.not() }
             description("Quantization (hold shift to configure)")
             icon(MaterialDesignM.METRONOME)
             toggleState { item -> item.quantization.enableQuantization }
@@ -152,11 +154,12 @@ class LiveObjectRegistryPane(registry: LiveObjectRegistry) : ObjectRegistryPane<
 
         val playPauseAction = action<LiveObject>("Play/pause") {
             icon { obj ->
-                obj.isActive.map { active ->
-                    if (active) MaterialDesignP.PAUSE
+                obj.isScheduled.map { scheduled ->
+                    if (scheduled) MaterialDesignP.PAUSE
                     else MaterialDesignP.PLAY
                 }
             }
+            toggleState { obj -> obj.isScheduled and obj.isPlaying.not() }
             shortcut("Ctrl+SPACE")
             executes { obj -> obj.toggle() }
         }

@@ -173,9 +173,6 @@ class ScoreObjectScheduler(val context: Context) {
         } catch (e: Exception) {
             Logger.error("Failed to schedule $obj", e, Logger.Category.Playback)
         }
-        println(code)
-        println("Scheduled $activeObject at $scheduledTime ($placement)")
-        Logger.fine("time for execution: ${scheduledTime}s", Logger.Category.Playback)
         return activeObject
     }
 

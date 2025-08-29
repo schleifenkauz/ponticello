@@ -204,7 +204,7 @@ class ObjectListView<O : Any>(
         registerShortcuts {
             if (!config.enableSelection) return@registerShortcuts
             val selected = selectedBox.now ?: return@registerShortcuts
-            registerActions(selected.actionBar.actions())
+            registerActions(config.getActions(selected))
             val selectedContent = selected.content()
             if (displayMode.now == DisplayMode.DetailsPane && selectedContent is ToolPane) {
                 val actionBar = selectedContent.actionBar

@@ -48,7 +48,7 @@ class ScorePlayer private constructor(
 
     init {
         score.addListener(updater)
-        playHead.setPlayer(this)
+        playHead.player = this
     }
 
     fun doCycle(time: Decimal, delta: Decimal) = execute {
@@ -107,11 +107,11 @@ class ScorePlayer private constructor(
                     add(ScoreEvent(ScoreEvent.Type.ObjectStart, absolutePosition, inst))
                     continue
                 }
-                if (start in timeRange) {
+                if (start in timeRange && start != timeRange.endInclusive) {
                     val absolutePosition = ObjectPosition(start + timeOffset, y)
                     add(ScoreEvent(ScoreEvent.Type.ObjectStart, absolutePosition, inst))
                 }
-                if (end in timeRange) {
+                if (end in timeRange && end != timeRange.endInclusive) {
                     val absolutePosition = ObjectPosition(end + timeOffset, y)
                     add(ScoreEvent(ScoreEvent.Type.ObjectEnd, absolutePosition, inst))
                 }

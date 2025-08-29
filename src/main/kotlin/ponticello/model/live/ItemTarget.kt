@@ -194,7 +194,7 @@ sealed class ItemTarget : AbstractContextualObject() {
         override val canStop: Boolean get() = true
 
         override val isActive: ReactiveBoolean
-            get() = liveObject?.isActive ?: reactiveValue(false)
+            get() = liveObject?.isScheduled ?: reactiveValue(false)
 
         override fun initialize(context: Context) {
             super.initialize(context)
@@ -204,7 +204,7 @@ sealed class ItemTarget : AbstractContextualObject() {
         override fun pressed(velocity: Int, item: LauncherGrid.GridItem) {
             Platform.runLater {
                 val obj = ref.get() ?: return@runLater
-                if (!obj.isActive.now) {
+                if (!obj.isScheduled.now) {
                     obj.play()
                     if (obj is LiveScoreObject) {
                         context[AppLayout].get<ScoreObjectViewPane>().showContent(
@@ -220,7 +220,7 @@ sealed class ItemTarget : AbstractContextualObject() {
 
         override fun released(item: LauncherGrid.GridItem) {
             val obj = ref.get() ?: return
-            if (obj.isActive.now && item.stopOnRelease.now) {
+            if (obj.isScheduled.now && item.stopOnRelease.now) {
                 obj.pause()
             }
         }

@@ -35,7 +35,7 @@ object PlaybackActions {
         description("Move the playback cursor to the start of the score")
         shortcut(shortcut)
         icon(Material2MZ.SKIP_PREVIOUS)
-        enableWhen { player -> player.canMoveManually }
+        enableWhen { playHead -> playHead.canMoveManually }
         executes { playHead, ev ->
             if (ev.isTargetTextInput && !ev.isAltDown() && !ev.isControlDown()) return@executes
             if (playHead.canMoveManually.now) {
@@ -44,7 +44,7 @@ object PlaybackActions {
         }
     }
 
-    private fun playAction(shortcut: String) = action<ScorePlayer>("Toggle Playback") {
+    fun playAction(shortcut: String) = action<ScorePlayer>("Toggle Playback") {
         shortcut(shortcut)
         icon { player ->
             player.isPlaying.map { playing ->

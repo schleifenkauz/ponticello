@@ -73,6 +73,10 @@ Label.memo-area {
     -fx-text-fill: white;
 }
 
+.time-code {
+    -fx-padding: 0px 3px 0px 3px;
+}
+
 .time-code-label {
     -fx-font-size: 15px;
     -fx-text-fill: green;

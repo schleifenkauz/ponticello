@@ -5,6 +5,8 @@ import hextant.serial.EditorRoot
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import ponticello.impl.Decimal
+import ponticello.impl.zero
 import ponticello.sc.client.SuperColliderClient
 import ponticello.sc.client.run
 import ponticello.sc.editor.CodeBlockEditor
@@ -21,11 +23,6 @@ class LiveTaskObject(
     private val client get() = context[SuperColliderClient]
 
     private val superColliderName get() = "Tdef(\\${name.now})"
-
-    override val registry: LiveObjectRegistry
-        get() = context[LiveObjectRegistry]
-
-    override val quantization: QuantizationConfig = QuantizationConfig.createDefault()
 
     override fun initialize(context: Context) {
         super.initialize(context)
@@ -44,7 +41,7 @@ class LiveTaskObject(
                 body.writeCode(writer, context)
             }
         }
-        if (isActive.now) doActivate()
+        if (isScheduled.now) doActivate(delay = zero)
     }
 
     fun sync() {
@@ -70,7 +67,7 @@ class LiveTaskObject(
         }
     }
 
-    override fun doActivate() {
+    override fun doActivate(delay: Decimal) {
         client.run("$superColliderName.resume; $superColliderName.play")
     }
 

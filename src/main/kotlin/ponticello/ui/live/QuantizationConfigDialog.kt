@@ -72,7 +72,7 @@ class QuantizationConfigDialog(
         shiftGridToggle.disableProperty().bind(unresolvedGrid)
         quantizationUnitInput.disableProperty().bind(unresolvedGrid)
         offsetUnitInput.disableProperty().bind(unresolvedGrid)
-        quantizationUnitInput.label.minWidth = 40.0
+        quantizationUnitInput.label.minWidth = 60.0
         offsetUnitInput.label.minWidth = 60.0
         row("Meter", meterSelector)
         row("Clock", clockSelector)

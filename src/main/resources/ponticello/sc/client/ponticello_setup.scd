@@ -103,7 +103,7 @@ OSCdef('schedule', {
     TempoClock.schedAbs(abs_time) {
         if (my_play_start.isNil || (my_play_start == ~play_start[player_id])) {
             fork {
-                postf("EXECUTE %\n", info);
+                //postf("EXECUTE %\n", info);
                 //code.postln;
                 try { fct.value(player_id) } { |error|
                     ~ponticello_addr.sendMsg('/error', error.what);

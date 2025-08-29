@@ -11,26 +11,31 @@ import ponticello.model.score.ObjectPosition
 import ponticello.ui.score.RootScorePane
 import ponticello.ui.score.ScorePane
 import ponticello.ui.score.TimeCodeView
-import reaktive.value.*
-import reaktive.value.binding.flatMap
+import reaktive.Observer
+import reaktive.value.ReactiveValue
 import reaktive.value.binding.not
+import reaktive.value.reactiveVariable
 
 class PlayHead {
     private val attached = mutableListOf<AttachedScorePane>()
-    private val _player: ReactiveVariable<ScorePlayer?> = reactiveVariable(null)
+    private var _player: ScorePlayer? = null
+    private var _canMoveManually = reactiveVariable(true)
+    private lateinit var playerObserver: Observer
+
     var currentTime = 0.0.asTime
         private set(value) {
             field = value.withPrecision(ObjectPosition.TIME_PRECISION)
         }
 
-    val player: ReactiveValue<ScorePlayer?> get() = _player
+    var player: ScorePlayer
+        get() = checkNotNull(_player) { "No player attached to the play head" }
+        set(p) {
+            check(_player == null) { "A player is already attached to the play head" }
+            _player = p
+            playerObserver = _canMoveManually.bind(p.isScheduled.not())
+        }
 
-    fun setPlayer(player: ScorePlayer) {
-        check(_player.now == null) { "A player is already attached to the play head" }
-        _player.now = player
-    }
-
-    val canMoveManually = _player.flatMap { p -> p?.isScheduled?.not() ?: reactiveValue(true) }
+    val canMoveManually: ReactiveValue<Boolean> get() = _canMoveManually
 
     fun attachTo(pane: RootScorePane) {
         val playHead = Line() styleClass "play-head"

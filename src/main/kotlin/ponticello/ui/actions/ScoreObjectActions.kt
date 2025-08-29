@@ -268,9 +268,9 @@ object ScoreObjectActions {
             }
         }
         addObjectAction("Play object") {
-            shortcut("Ctrl+SPACE")
+            shortcut("Ctrl+Shift?+SPACE")
             applicableOn { view -> view.obj.affectsPlayback }
-            executeSingle { view, _ ->
+            executeSingle { view, ev ->
                 val obj = view.obj
                 val registry = view.context[LiveObjectRegistry]
                 val liveObject = registry.getOrCreateLiveScoreObject(obj)
@@ -280,10 +280,13 @@ object ScoreObjectActions {
                     if (ScoreObjectPlayerPane.hasPane(obj)) {
                         liveObject.playHead = ScoreObjectPlayerPane.getPane(obj).playHead
                     }
+                    registry.add(liveObject)
                 }
-                registry.add(liveObject)
+                if (ev.isShiftDown()) {
+                    liveObject.loopingActivated.set(true)
+                }
                 liveObject.toggle()
-                if (liveObject.isActive.now) {
+                if (liveObject.isScheduled.now) {
                     view.context[AppLayout].get<ScoreObjectViewPane>().showContent(view)
                 }
             }

@@ -5,8 +5,10 @@ import fxutils.actions.Action.IfNotApplicable
 import fxutils.actions.ContextualizedAction
 import fxutils.actions.collectActions
 import fxutils.asPopup
+import fxutils.button
 import fxutils.opacity
 import fxutils.prompt.DetailPane
+import fxutils.prompt.YesNoPrompt
 import fxutils.showBelow
 import hextant.context.createControl
 import hextant.core.view.ChoiceEditorControl
@@ -18,6 +20,7 @@ import javafx.scene.input.TransferMode
 import javafx.scene.input.TransferMode.COPY_OR_MOVE
 import org.kordamp.ikonli.materialdesign2.MaterialDesignD
 import ponticello.impl.json
+import ponticello.model.GlobalSettings
 import ponticello.model.obj.ParameterDefObject
 import ponticello.model.obj.withName
 import ponticello.sc.ParameterType
@@ -115,6 +118,18 @@ open class ParameterListConfig : ListDisplayConfig<ParameterDefObject> {
                         }
                     }
                     val popup = detailsPane.asPopup()
+                    detailsPane.children.add(button("Add to parameters list") { ev ->
+                        val param = box.obj
+                        val list = param.context[GlobalSettings].defaultParametersDefs
+                        if (list.has(param.name.now)) {
+                            val overwrite = YesNoPrompt(
+                                "Parameter ${param.name.now} already exists in the list. Overwrite?"
+                            ).showDialog(ev) ?: return@button
+                            if (!overwrite) return@button
+                        }
+                        list.add(param.copy().withName(param.name.now))
+                        popup.hide()
+                    })
                     popup.scene.fill = DEFAULT_SCENE_FILL.opacity(0.5)
                     popup.showBelow(box.actionBar)
                 }

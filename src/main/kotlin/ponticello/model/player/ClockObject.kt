@@ -140,7 +140,7 @@ class ClockObject(
      }
 
     @Synchronized
-    fun scheduleAction(quantization: QuantizationConfig, action: (Decimal) -> Unit) {
+    fun scheduleAction(quantization: QuantizationConfig, action: (delay: Decimal) -> Unit) {
         val meterRef = quantization.meter.now
         if (quantization.enableQuantization.now && meterRef.isResolved.now) {
             val offset = quantization.computeOffset()

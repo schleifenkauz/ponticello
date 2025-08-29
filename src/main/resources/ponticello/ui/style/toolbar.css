@@ -1,6 +1,5 @@
 .toolbar-part {
     -fx-spacing: 4px !important;
-    -fx-padding: 2px;
     -fx-alignment: center;
 }
 
@@ -16,7 +15,7 @@
 }
 
 .toolbar {
-    -fx-padding: 0px 2px 0px 2px;
+    -fx-padding: 2px;
     -fx-border-width: 0px 0px 1px 0px;
     -fx-border-color: black;
 }

@@ -4,21 +4,26 @@ import fxutils.drag.TypedDataFormat
 import kotlinx.serialization.Serializable
 import ponticello.model.obj.LiveObjectReference
 import ponticello.model.registry.NamedObject
+import reaktive.value.ReactiveBoolean
 import reaktive.value.ReactiveValue
 import reaktive.value.now
 
 @Serializable
 sealed interface LiveObject : NamedObject {
-    //TODO distinguish between scheduled and active
-    val isActive: ReactiveValue<Boolean>
+    val isScheduled: ReactiveValue<Boolean>
+    val isPlaying: ReactiveBoolean
     val quantization: QuantizationConfig
+
+
+    override val registry: LiveObjectRegistry
+        get() = context[LiveObjectRegistry]
 
     fun play()
 
     fun pause()
 
     fun toggle() {
-        if (!isActive.now) play()
+        if (!isScheduled.now) play()
         else pause()
     }
 

@@ -16,6 +16,7 @@ import ponticello.model.score.UnresolvedScoreObject
 import ponticello.ui.launcher.PonticelloMainActivity
 import ponticello.ui.misc.PlayHead
 import reaktive.Observer
+import reaktive.and
 import reaktive.value.ReactiveBoolean
 import reaktive.value.ReactiveValue
 import reaktive.value.ReactiveVariable
@@ -44,11 +45,14 @@ class LiveScoreObject(
         get() = scoreObject.isAdded
 
     @Transient
-    private var _isActive = reactiveVariable(false)
+    private var scheduled = reactiveVariable(false)
+    @Transient
+    private var playing = reactiveVariable(false)
     @Transient
     private lateinit var playerObserver: Observer
 
-    override val isActive: ReactiveValue<Boolean> get() = _isActive
+    override val isScheduled: ReactiveValue<Boolean> get() = scheduled
+    override val isPlaying: ReactiveBoolean get() = playing
 
     override fun initialize(context: Context) {
         super.initialize(context)
@@ -57,7 +61,7 @@ class LiveScoreObject(
         val score = Score.makeScore(scoreObject)
         playHead = playHead ?: PlayHead()
         player = ScorePlayer.create(score, playHead!!, loopingActivated, quantization)
-        playerObserver = _isActive.bind(player.isScheduled)
+        playerObserver = scheduled.bind(player.isScheduled) and playing.bind(player.isPlaying)
     }
 
     override fun play() {
@@ -87,6 +91,7 @@ class LiveScoreObject(
         val (offsetUnit, offsetValue) = meter.represent(delta)
         quantization.offsetUnit.set(offsetUnit)
         quantization.offsetValue.set(offsetValue)
+        quantization.enableQuantization.set(true)
         return true
     }
 
