@@ -77,7 +77,7 @@ class SingleObjectScorePane(
         marker.endYProperty().bind(heightProperty())
         marker.visibleProperty().bind(context.project.uiState.snapEnabled.asObservableValue())
         marker.isMouseTransparent = true
-        meterObserver = rootObj.quantizationConfig.meter.forEach { ref ->
+        meterObserver = rootObj.quantization.meter.forEach { ref ->
             meterChangeObserver?.kill()
             meterChangeObserver = null
             val meter = ref.get() ?: return@forEach
@@ -99,7 +99,7 @@ class SingleObjectScorePane(
     }
 
     private fun repaintGrid() {
-        val meter = rootObj.quantizationConfig.meter.now.get() ?: return
+        val meter = rootObj.quantization.meter.now.get() ?: return
         val duration = rootObj.duration.value
         TempoGridObjectView.paintGrid(context, meter, firstBar = 0, duration, gridCanvas)
     }
@@ -118,7 +118,7 @@ class SingleObjectScorePane(
     override fun getNearestGrid(position: ObjectPosition): Pair<Decimal, MeterObject>? {
         val fromScore = super.getNearestGrid(position)
         if (fromScore != null) return fromScore
-        val config = rootObj.quantizationConfig
+        val config = rootObj.quantization
         val referenceGrid = config.meter.now.get()
         return if (referenceGrid != null) Pair(zero, referenceGrid)
         else null

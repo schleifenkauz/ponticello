@@ -131,7 +131,7 @@ class ScorePlayer private constructor(
 
     private fun getQuantization(): QuantizationConfig? {
         val rootObj = (pane as? SingleObjectScorePane)?.rootObj
-        return rootObj?.quantizationConfig
+        return rootObj?.quantization
     }
 
     fun getClock(): ClockObject = currentClock

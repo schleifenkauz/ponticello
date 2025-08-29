@@ -22,7 +22,7 @@ class ScoreObjectResizeDialog(private val obj: ScoreObject) : CompoundPrompt<Res
     confirmText = "Resize"
 ) {
     private val meters = obj.context[MeterRegistry].map { obj -> obj.reference() }
-    private val config = obj.quantizationConfig.copy()
+    private val config = obj.quantization.copy()
 
     private val meterSelector = SimpleSearchableListView(meters, "Choose meter")
         .selectorButton(config.meter)
@@ -56,7 +56,7 @@ class ScoreObjectResizeDialog(private val obj: ScoreObject) : CompoundPrompt<Res
         fun show(obj: ScoreObject, ev: Event?) {
             val dialog = ScoreObjectResizeDialog(obj)
             val resizeMode = dialog.showDialog(ev) ?: return
-            obj.quantizationConfig.update(dialog.config)
+            obj.quantization.update(dialog.config)
             obj.resize(dialog.config.computeDuration(), obj.height, resizeMode, Side.RIGHT)
         }
     }

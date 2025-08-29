@@ -12,10 +12,10 @@ class QuantizationConfigEdit(
         get() = "Update quantization configuration"
 
     override fun doRedo() {
-        obj.quantizationConfig.update(after)
+        obj.quantization.update(after)
     }
 
     override fun doUndo() {
-        obj.quantizationConfig.update(before)
+        obj.quantization.update(before)
     }
 }

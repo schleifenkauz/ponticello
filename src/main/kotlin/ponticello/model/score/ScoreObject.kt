@@ -19,7 +19,6 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import ponticello.impl.*
 import ponticello.model.flow.NodePlacement
-import ponticello.model.live.LiveConfig
 import ponticello.model.live.QuantizationConfig
 import ponticello.model.obj.*
 import ponticello.model.player.ActiveObjectsManager
@@ -62,7 +61,7 @@ sealed class ScoreObject : AbstractRenamableObject() {
         get() = _duration.now
         protected set(value) {
             _duration.now = value
-            quantizationConfig.setDuration(value)
+            quantization.setDuration(value)
         }
 
     var height: Decimal
@@ -71,9 +70,7 @@ sealed class ScoreObject : AbstractRenamableObject() {
             _height.now = value
         }
 
-    val quantizationConfig: QuantizationConfig = QuantizationConfig.createDefault()
-
-    val liveConfig = LiveConfig.createDefault()
+    val quantization: QuantizationConfig = QuantizationConfig.createDefault()
 
     @Transient
     private val viewManager: ListenerManager<Listener> = ListenerManager.createWeakListenerManager()
@@ -115,7 +112,7 @@ sealed class ScoreObject : AbstractRenamableObject() {
 
     override fun initialize(context: Context) {
         super.initialize(context)
-        quantizationConfig.initialize(context, this)
+        quantization.initialize(context, this)
     }
 
     open fun validate(): Boolean {
