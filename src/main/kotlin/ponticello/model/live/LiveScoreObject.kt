@@ -29,9 +29,7 @@ class LiveScoreObject(
     val absoluteScoreY = reactiveVariable(zero(ObjectPosition.Y_PRECISION))
     val loopingActivated: ReactiveVariable<Boolean> = reactiveVariable(false)
 
-    @Transient
-    lateinit var scoreObject: ScoreObject
-        private set
+    val scoreObject: ScoreObject get() = objReference.get() ?: UnresolvedScoreObject()
 
     @Transient
     lateinit var player: ScorePlayer
@@ -54,7 +52,7 @@ class LiveScoreObject(
 
     override fun initialize(context: Context) {
         super.initialize(context)
-        scoreObject = objReference.resolve(context[ScoreObjectRegistry]) ?: UnresolvedScoreObject()
+        objReference.resolve(context[ScoreObjectRegistry]) ?: UnresolvedScoreObject()
         quantization.initialize(context)
         val score = Score.makeScore(scoreObject)
         playHead = playHead ?: PlayHead()
@@ -93,10 +91,6 @@ class LiveScoreObject(
     }
 
     companion object {
-        fun create(obj: ScoreObject): LiveScoreObject {
-            val liveObject = LiveScoreObject(obj.reference())
-            liveObject.scoreObject = obj
-            return liveObject
-        }
+        fun create(obj: ScoreObject): LiveScoreObject = LiveScoreObject(obj.reference())
     }
 }
