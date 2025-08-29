@@ -76,42 +76,44 @@ class ScorePlayer private constructor(
             }
         }
 
-        val timeRange = scoreTime..scoreTime + delta
-        val events = collectEvents(score, timeRange, withCutoff = false)
+        val events = mutableListOf<ScoreEvent>()
+        val rangeEnd = (scoreTime + delta).coerceAtMost(maxTime)
+        val timeRange = scoreTime..rangeEnd
+        events.collectEvents(score, timeRange, withCutoff = false)
+
+        if (scoreTime + delta > maxTime && loopingActivated.now) {
+            val extraRange = zero..(scoreTime + delta - maxTime)
+            events.collectEvents(score, extraRange, withCutoff = false, timeOffset = maxTime)
+        }
+
         scheduler.scheduleEvents(events, this)
     }
 
-    private fun collectEvents(score: Score, timeRange: DecimalRange, withCutoff: Boolean): List<ScoreEvent> {
-        val events = mutableListOf<ScoreEvent>()
-        collectEvents(score, ObjectPosition.ZERO, timeRange, events, withCutoff)
-        return events
-    }
-
-    private fun collectEvents(
-        score: Score, position: ObjectPosition, timeRange: DecimalRange,
-        dest: MutableList<ScoreEvent>, withCutoff: Boolean,
+    private fun MutableList<ScoreEvent>.collectEvents(
+        score: Score, timeRange: DecimalRange, withCutoff: Boolean,
+        timeOffset: Decimal = zero, position: ObjectPosition = ObjectPosition.ZERO,
     ) {
         for (inst in score.activeInstances(timeRange - position.time)) {
             if (inst.muted.now) continue
             val obj = inst.obj
             if (obj is AbstractScoreObjectGroup) {
-                collectEvents(obj.score, position + inst.position, timeRange, dest, withCutoff)
+                collectEvents(obj.score, timeRange, withCutoff, timeOffset, position + inst.position)
             } else {
                 val start = inst.start + position.time
                 val end = inst.end + position.time
                 val y = if (score.parentObject is MidiObject) position.y else position.y + inst.y
                 if (withCutoff) {
-                    val absolutePosition = ObjectPosition(start, y)
-                    dest.add(ScoreEvent(ScoreEvent.Type.ObjectStart, absolutePosition, inst))
+                    val absolutePosition = ObjectPosition(start + timeOffset, y)
+                    add(ScoreEvent(ScoreEvent.Type.ObjectStart, absolutePosition, inst))
                     continue
                 }
                 if (start in timeRange) {
-                    val absolutePosition = ObjectPosition(start, y)
-                    dest.add(ScoreEvent(ScoreEvent.Type.ObjectStart, absolutePosition, inst))
+                    val absolutePosition = ObjectPosition(start + timeOffset, y)
+                    add(ScoreEvent(ScoreEvent.Type.ObjectStart, absolutePosition, inst))
                 }
                 if (end in timeRange) {
-                    val absolutePosition = ObjectPosition(end, y)
-                    dest.add(ScoreEvent(ScoreEvent.Type.ObjectEnd, absolutePosition, inst))
+                    val absolutePosition = ObjectPosition(end + timeOffset, y)
+                    add(ScoreEvent(ScoreEvent.Type.ObjectEnd, absolutePosition, inst))
                 }
             }
         }
@@ -140,7 +142,8 @@ class ScorePlayer private constructor(
         lastPlayFrom = time
         loopedTime = zero
         val timeRange = time..time + lookAhead
-        val events = collectEvents(score, timeRange, withCutoff = true)
+        val events = mutableListOf<ScoreEvent>()
+        events.collectEvents(score, timeRange, withCutoff = true)
         for ((type, position, inst) in events) {
             if (type == ScoreEvent.Type.ObjectStart) {
                 scheduleInstantly(inst, position)
