@@ -41,7 +41,6 @@ import ponticello.ui.controls.InlineParameterControlsBar
 import ponticello.ui.controls.NameControl
 import ponticello.ui.dock.AppLayout
 import ponticello.ui.impl.Cursors
-import ponticello.ui.registry.ScoreObjectRegistryPane
 import reaktive.value.ReactiveVariable
 import reaktive.value.binding.*
 import reaktive.value.forEach
@@ -221,7 +220,12 @@ abstract class ScoreObjectView(
                         ev.consume()
                         if (ev.modifiers == setOf(Shift, Ctrl)) {
                             val db = startDragAndDrop(TransferMode.LINK)
-                            db.setContent(mapOf(ScoreObject.DATA_FORMAT to obj.reference()))
+                            db.setContent(
+                                mapOf(
+                                    ScoreObject.DATA_FORMAT to obj.reference(),
+                                    ScoreObject.ABSOLUTE_SCORE_Y to absolutePosition.y
+                                )
+                            )
                         } else {
                             dragTarget.cursor = Cursors.CLOSED_HAND
                             dragStart = Point2D(ev.screenX, ev.screenY)
@@ -374,12 +378,6 @@ abstract class ScoreObjectView(
                     toolPane.setShowing(true)
                 }
 
-                ev.button == MouseButton.SECONDARY && ev.modifiers == setOf(Shift) -> {
-                    if (!parentPane.isRoot(obj)) {
-                        context[AppLayout].get<ScoreObjectRegistryPane>().showContent(obj)
-                    }
-                }
-
                 ev.button == MouseButton.PRIMARY && ev.clickCount == 2 -> {
                     selectView(addToSelection = false)
                     val toolPane = context[AppLayout].get<ScoreObjectViewPane>()
@@ -418,23 +416,6 @@ abstract class ScoreObjectView(
             val rightHalf = obj.cut(position, RIGHT, "${obj.name.now}_right") ?: return
             replaceWithCutHalves(leftHalf, rightHalf, relativePosition = ObjectPosition(position, zero))
         }
-    }
-
-    fun inferQuantization(): Boolean {
-        val position = instance.position
-        val (gridStart, meter) = parentPane.getNearestGrid(position) ?: return false
-        obj.liveConfig.yPosition.set(absolutePosition.y)
-        obj.quantizationConfig.meter.set(meter.reference())
-        val (durUnit, durValue) = meter.represent(obj.duration)
-        obj.quantizationConfig.durationUnit.set(durUnit)
-        obj.quantizationConfig.durationValue.set(durValue)
-        var delta = absolutePosition.time - gridStart
-        while (delta < zero) delta += obj.duration
-        while (delta > obj.duration) delta -= obj.duration
-        val (offsetUnit, offsetValue) = meter.represent(delta)
-        obj.quantizationConfig.offsetUnit.set(offsetUnit)
-        obj.quantizationConfig.offsetValue.set(offsetValue)
-        return true
     }
 
     private fun replaceWithCutHalves(half1: ScoreObject, half2: ScoreObject, relativePosition: ObjectPosition) {

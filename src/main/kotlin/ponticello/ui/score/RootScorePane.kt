@@ -13,19 +13,23 @@ import ponticello.impl.*
 import ponticello.model.obj.MeterObject
 import ponticello.model.obj.project
 import ponticello.model.obj.withName
-import ponticello.model.player.ScorePlayer
 import ponticello.model.project.uiState
 import ponticello.model.registry.ScoreObjectRegistry
 import ponticello.model.score.*
 import ponticello.ui.impl.Cursors
 import ponticello.ui.impl.verticalDist
+import ponticello.ui.misc.PlayHead
 import reaktive.event.unitEvent
 import reaktive.value.now
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Executors
 import java.util.concurrent.Future
 
-abstract class RootScorePane(score: Score, context: Context) : RegularScorePane(score, context) {
+abstract class RootScorePane(
+    score: Score, context: Context,
+    val playHead: PlayHead = PlayHead(),
+    val timeCodeView: TimeCodeView = TimeCodeView()
+) : RegularScorePane(score, context) {
     private val positionTracker = Line() styleClass "mouse-tracker-line"
 
     private var latestRepaintTrigger = 0L
@@ -51,6 +55,7 @@ abstract class RootScorePane(score: Score, context: Context) : RegularScorePane(
     open fun initialize() {
         listenForEvents()
         cursor = Cursors.CROSS_HAIR
+        playHead.attachTo(this)
         this.score.addListener(this)
     }
 
@@ -89,8 +94,7 @@ abstract class RootScorePane(score: Score, context: Context) : RegularScorePane(
         for (gridView in allViews.filterIsInstance<TempoGridObjectView>()) {
             gridView.unmark()
         }
-        val player = context[ScorePlayer.CURRENT]
-        context[TimeCodeView].displayTime(player.playHead.currentTime)
+        timeCodeView.displayTime(playHead.currentTime)
     }
 
     fun magnifyEnvelope(editor: EnvelopeEditor) {
@@ -149,7 +153,7 @@ abstract class RootScorePane(score: Score, context: Context) : RegularScorePane(
         repositionEnvelopeMagnifier()
         repaint.fire()
         if (positionTracker !in children) children.add(positionTracker)
-        context[ScorePlayer.CURRENT].playHead.updatePosition()
+        playHead.updatePosition()
         return future
     }
 
@@ -164,7 +168,7 @@ abstract class RootScorePane(score: Score, context: Context) : RegularScorePane(
         return nearestGrid.start to gridObj.meter.force()
     }
 
-    final override fun snapToGrid(position: ObjectPosition): ObjectPosition {
+    override fun snapToGrid(position: ObjectPosition): ObjectPosition {
         val settings = context.project.uiState
         val (t, y) = position
         if (!settings.snapEnabled.now) return position
@@ -191,9 +195,9 @@ abstract class RootScorePane(score: Score, context: Context) : RegularScorePane(
             else g.unmark()
         }
         positionTracker.layoutX = getX(t)
-        val player = context[ScorePlayer.CURRENT]
-        if (!player.isPlaying.now) {
-            context[TimeCodeView].displayTime(t)
+        val player = playHead.player.now
+        if (player?.isPlaying?.now != true) {
+            timeCodeView.displayTime(t)
         }
     }
 
@@ -210,7 +214,7 @@ abstract class RootScorePane(score: Score, context: Context) : RegularScorePane(
         }
     }
 
-    companion object  {
+    companion object {
         private val layoutExecutor = Executors.newSingleThreadExecutor { r -> Thread(r, "Layout Thread") }
     }
 }

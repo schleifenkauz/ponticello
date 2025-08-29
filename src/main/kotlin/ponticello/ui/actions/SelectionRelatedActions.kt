@@ -19,9 +19,9 @@ object SelectionRelatedActions {
     fun addShortcuts(handler: KeyEventHandlerBody<*>, context: Context) = with(handler) {
         val selector = context[ScoreObjectSelectionManager]
         on("ESCAPE", consume = false) { ev ->
-            if (!ev.isAltDown) return@on
             ev.consume()
             context[ScoreObjectDuplicator].exitDuplicateMode()
+            if (!ev.isAltDown) return@on
             context[ScoreObjectSelectionManager].deselectAll()
         }
         on("Ctrl+A") { ev ->

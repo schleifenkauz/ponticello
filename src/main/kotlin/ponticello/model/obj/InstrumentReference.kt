@@ -66,7 +66,7 @@ sealed interface InstrumentReference {
             val str = decoder.decodeString()
             return when {
                 str == "<none>" -> None
-                str.startsWith("VST: ") -> {
+                str.startsWith("VST:") -> {
                     val flowName = str.removePrefix("VST:")
                     VST(VSTPluginReference(flowName))
                 }
@@ -86,7 +86,7 @@ sealed interface InstrumentReference {
             }
             val vstInstruments = project.flows.allFlows()
                 .filterIsInstance<VSTPluginFlow>()
-                .filter { flow -> flow.supportsMidiInput }
+                //.filter { flow -> flow.supportsMidiInput }
                 .map { flow -> VST(flow.reference()) }
             return userInstruments.map { def -> UserDefined(def.reference()) } + vstInstruments
         }

@@ -6,6 +6,7 @@ import hextant.context.Context
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
+import ponticello.impl.Logger
 import ponticello.impl.copy
 import ponticello.impl.superColliderPath
 import ponticello.impl.writeCode
@@ -15,10 +16,7 @@ import ponticello.model.project.PonticelloProject.Companion.projectDirectory
 import ponticello.model.registry.ObjectList
 import ponticello.model.registry.reference
 import ponticello.sc.Rate
-import ponticello.sc.client.ScWriter
-import ponticello.sc.client.SuperColliderClient
-import ponticello.sc.client.eval
-import ponticello.sc.client.run
+import ponticello.sc.client.*
 import ponticello.sc.editor.BusSelector
 import reaktive.Observer
 import reaktive.value.*
@@ -67,7 +65,12 @@ class VSTPluginFlow private constructor(
     }
 
     val supportsMidiInput by lazy {
-        context[SuperColliderClient].eval("$controllerVar.info.midiInput").join().toBooleanStrictOrNull() ?: false
+        try {
+            context[SuperColliderClient].eval("$controllerVar.info.midiInput").join().toBooleanStrictOrNull() ?: false
+        } catch (e: SuperColliderException) {
+            Logger.error("Error getting VST info", e)
+            false
+        }
     }
 
     override fun initialize(context: Context) {

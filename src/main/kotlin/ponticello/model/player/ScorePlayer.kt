@@ -8,8 +8,6 @@ import ponticello.model.registry.ClockRegistry
 import ponticello.model.score.*
 import ponticello.sc.client.SuperColliderClient
 import ponticello.ui.misc.PlayHead
-import ponticello.ui.score.ScorePane
-import ponticello.ui.score.SingleObjectScorePane
 import reaktive.value.ReactiveBoolean
 import reaktive.value.ReactiveValue
 import reaktive.value.now
@@ -17,9 +15,9 @@ import reaktive.value.reactiveVariable
 import java.util.concurrent.Executors
 
 class ScorePlayer private constructor(
-    val id: Int, val pane: ScorePane,
+    val id: Int, val score: Score, val playHead: PlayHead,
     val scheduler: ScoreObjectScheduler,
-    private val loopingActivated: ReactiveBoolean,
+    val quantization: QuantizationConfig?, private val loopingActivated: ReactiveBoolean,
 ) {
     private val playing = reactiveVariable(false)
     private val scheduled = reactiveVariable(false)
@@ -31,15 +29,13 @@ class ScorePlayer private constructor(
     val isPlaying: ReactiveValue<Boolean> = playing
     val isScheduled: ReactiveValue<Boolean> = scheduled
 
-    val context get() = pane.context
-    val score get() = pane.score
+    val context get() = score.context
 
     val lookAhead get() = context[GlobalSettings].lookAhead
 
     private val client: SuperColliderClient = context[SuperColliderClient]
     private val activeObjects = context[ActiveObjectsManager]
     private val updater = LiveScoreUpdater(score, this)
-    val playHead: PlayHead = PlayHead(pane)
 
     private var currentClock: ClockObject? = null
 
@@ -52,6 +48,7 @@ class ScorePlayer private constructor(
 
     init {
         score.addListener(updater)
+        playHead.setPlayer(this)
     }
 
     fun doCycle(time: Decimal, delta: Decimal) = execute {
@@ -79,42 +76,44 @@ class ScorePlayer private constructor(
             }
         }
 
-        val timeRange = scoreTime..scoreTime + delta
-        val events = collectEvents(score, timeRange, withCutoff = false)
+        val events = mutableListOf<ScoreEvent>()
+        val rangeEnd = (scoreTime + delta).coerceAtMost(maxTime)
+        val timeRange = scoreTime..rangeEnd
+        events.collectEvents(score, timeRange, withCutoff = false)
+
+        if (scoreTime + delta > maxTime && loopingActivated.now) {
+            val extraRange = zero..(scoreTime + delta - maxTime)
+            events.collectEvents(score, extraRange, withCutoff = false, timeOffset = maxTime)
+        }
+
         scheduler.scheduleEvents(events, this)
     }
 
-    private fun collectEvents(score: Score, timeRange: DecimalRange, withCutoff: Boolean): List<ScoreEvent> {
-        val events = mutableListOf<ScoreEvent>()
-        collectEvents(score, ObjectPosition.ZERO, timeRange, events, withCutoff)
-        return events
-    }
-
-    private fun collectEvents(
-        score: Score, position: ObjectPosition, timeRange: DecimalRange,
-        dest: MutableList<ScoreEvent>, withCutoff: Boolean
+    private fun MutableList<ScoreEvent>.collectEvents(
+        score: Score, timeRange: DecimalRange, withCutoff: Boolean,
+        timeOffset: Decimal = zero, position: ObjectPosition = ObjectPosition.ZERO,
     ) {
         for (inst in score.activeInstances(timeRange - position.time)) {
             if (inst.muted.now) continue
             val obj = inst.obj
             if (obj is AbstractScoreObjectGroup) {
-                collectEvents(obj.score, position + inst.position, timeRange, dest, withCutoff)
+                collectEvents(obj.score, timeRange, withCutoff, timeOffset, position + inst.position)
             } else {
                 val start = inst.start + position.time
                 val end = inst.end + position.time
                 val y = if (score.parentObject is MidiObject) position.y else position.y + inst.y
                 if (withCutoff) {
-                    val absolutePosition = ObjectPosition(start, y)
-                    dest.add(ScoreEvent(ScoreEvent.Type.ObjectStart, absolutePosition, inst))
+                    val absolutePosition = ObjectPosition(start + timeOffset, y)
+                    add(ScoreEvent(ScoreEvent.Type.ObjectStart, absolutePosition, inst))
                     continue
                 }
                 if (start in timeRange) {
-                    val absolutePosition = ObjectPosition(start, y)
-                    dest.add(ScoreEvent(ScoreEvent.Type.ObjectStart, absolutePosition, inst))
+                    val absolutePosition = ObjectPosition(start + timeOffset, y)
+                    add(ScoreEvent(ScoreEvent.Type.ObjectStart, absolutePosition, inst))
                 }
                 if (end in timeRange) {
-                    val absolutePosition = ObjectPosition(end, y)
-                    dest.add(ScoreEvent(ScoreEvent.Type.ObjectEnd, absolutePosition, inst))
+                    val absolutePosition = ObjectPosition(end + timeOffset, y)
+                    add(ScoreEvent(ScoreEvent.Type.ObjectEnd, absolutePosition, inst))
                 }
             }
         }
@@ -123,19 +122,14 @@ class ScorePlayer private constructor(
     fun play() {
         if (isScheduled.now) return
         scheduled.set(true)
-        val quantization = getQuantization()
+        val quantization = quantization
         val clock = getClock()
         currentClock = clock
         clock.scheduleStart(this, quantization)
     }
 
-    private fun getQuantization(): QuantizationConfig? {
-        val rootObj = (pane as? SingleObjectScorePane)?.rootObj
-        return rootObj?.quantizationConfig
-    }
-
     fun getClock(): ClockObject = currentClock
-        ?: getQuantization()?.clock?.now?.get()
+        ?: quantization?.clock?.now?.get()
         ?: context[ClockRegistry].getDefault()
 
     fun startPlaying() = execute {
@@ -148,7 +142,8 @@ class ScorePlayer private constructor(
         lastPlayFrom = time
         loopedTime = zero
         val timeRange = time..time + lookAhead
-        val events = collectEvents(score, timeRange, withCutoff = true)
+        val events = mutableListOf<ScoreEvent>()
+        events.collectEvents(score, timeRange, withCutoff = true)
         for ((type, position, inst) in events) {
             if (type == ScoreEvent.Type.ObjectStart) {
                 scheduleInstantly(inst, position)
@@ -192,8 +187,6 @@ class ScorePlayer private constructor(
 
 
     companion object {
-        val CURRENT = publicProperty<ScorePlayer>("ScorePlayer")
-
         val MAIN = publicProperty<ScorePlayer>("MainScorePlayer")
 
         private val executor = Executors.newSingleThreadExecutor()
@@ -210,10 +203,13 @@ class ScorePlayer private constructor(
 
         fun instances(): List<ScorePlayer> = all
 
-        fun create(pane: ScorePane, loopingActivated: ReactiveBoolean): ScorePlayer {
+        fun create(
+            score: Score, playHead: PlayHead,
+            loopingActivated: ReactiveBoolean, quantization: QuantizationConfig?,
+        ): ScorePlayer {
             val id = all.size
-            val scheduler = pane.context[ScoreObjectScheduler]
-            val player = ScorePlayer(id, pane, scheduler, loopingActivated)
+            val scheduler = score.context[ScoreObjectScheduler]
+            val player = ScorePlayer(id, score, playHead, scheduler, quantization, loopingActivated)
             all.add(player)
             return player
         }

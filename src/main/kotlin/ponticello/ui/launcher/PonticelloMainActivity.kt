@@ -4,7 +4,6 @@ import bundles.PublicProperty
 import bundles.publicProperty
 import bundles.set
 import fxutils.actions.registerActions
-import fxutils.actions.registerShortcuts
 import fxutils.awaitFx
 import fxutils.registerShortcuts
 import fxutils.runAfterLayout
@@ -25,7 +24,10 @@ import ponticello.ui.impl.DEFAULT_SCENE_FILL
 import ponticello.ui.impl.sceneFill
 import ponticello.ui.midi.ContextualMidiReceiver
 import ponticello.ui.misc.InteractionConfigBar
-import ponticello.ui.score.*
+import ponticello.ui.score.FlowGroupManager
+import ponticello.ui.score.NavigableScorePane
+import ponticello.ui.score.ScoreObjectDuplicator
+import ponticello.ui.score.ScoreObjectSelectionManager
 import reaktive.value.reactiveValue
 
 class PonticelloMainActivity(val project: PonticelloProject) : Activity() {
@@ -34,8 +36,6 @@ class PonticelloMainActivity(val project: PonticelloProject) : Activity() {
     }
 
     val mainScoreView: NavigableScorePane = NavigableScorePane(project.mainScore, project.context)
-
-    private val timeCodeView: TimeCodeView = TimeCodeView()
 
     val interactionConfig = InteractionConfigBar(project.uiState)
 
@@ -55,19 +55,19 @@ class PonticelloMainActivity(val project: PonticelloProject) : Activity() {
         context[ContextualMidiReceiver].attachGrid(project[LAUNCHER_GRID])
     }
 
-    private val appLayout by lazy { AppLayout(this, project, mainScoreView, interactionConfig, timeCodeView) }
+    private val appLayout by lazy { AppLayout(this, project, mainScoreView, interactionConfig) }
 
     private fun setupMainScoreView() {
         mainScoreView.initialize()
-        context[TimeCodeView] = timeCodeView
-        context[ScorePane.CURRENT_ROOT] = mainScoreView
         context[ScoreObjectDuplicator].registerRootPane(mainScoreView)
         project.context[ScoreObjectSelectionManager] = ScoreObjectSelectionManager(project.context, mainScoreView)
     }
 
     private fun setupPlayback() {
-        player = ScorePlayer.create(mainScoreView, loopingActivated = reactiveValue(false))
-        context[ScorePlayer.CURRENT] = player
+        player = ScorePlayer.create(
+            project.mainScore, mainScoreView.playHead,
+            loopingActivated = reactiveValue(false), quantization = null
+        )
         context[ScorePlayer.MAIN] = player
         playbackMessageListener = PlaybackMessageListener(
             context[GlobalSettings], project.objects, project.flows
@@ -102,7 +102,7 @@ class PonticelloMainActivity(val project: PonticelloProject) : Activity() {
         }
         mainScoreView.isVisible = false
         setVisible()
-        val displayRange = project[UI_STATE].mainScoreDisplayRange
+        val displayRange = project[UI_STATE].mainScoreDisplayRange?.takeIf { !it.isEmpty() }
         runAfterLayout {
             appLayout.restorePaneSizes()
             runAfterLayout {

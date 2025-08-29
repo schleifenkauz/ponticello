@@ -9,11 +9,15 @@ import javafx.geometry.Side
 import javafx.scene.robot.Robot
 import org.kordamp.ikonli.codicons.Codicons
 import org.kordamp.ikonli.material2.Material2AL
-import org.kordamp.ikonli.materialdesign2.*
+import org.kordamp.ikonli.materialdesign2.MaterialDesignC
+import org.kordamp.ikonli.materialdesign2.MaterialDesignE
+import org.kordamp.ikonli.materialdesign2.MaterialDesignL
+import org.kordamp.ikonli.materialdesign2.MaterialDesignV
 import ponticello.impl.Logger
 import ponticello.impl.copy
 import ponticello.impl.times
 import ponticello.impl.zero
+import ponticello.model.live.LiveObjectRegistry
 import ponticello.model.obj.InstrumentObject
 import ponticello.model.obj.InstrumentReference
 import ponticello.model.obj.NoInstrument
@@ -26,9 +30,7 @@ import ponticello.ui.controls.MultiObjectControlPopup
 import ponticello.ui.controls.RenamePrompt
 import ponticello.ui.dock.AppLayout
 import ponticello.ui.impl.showDialog
-import ponticello.ui.launcher.PonticelloMainActivity
 import ponticello.ui.registry.InstrumentRegistryPane
-import ponticello.ui.registry.ScoreObjectRegistryPane
 import ponticello.ui.registry.SimpleSearchableRegistryView
 import ponticello.ui.score.*
 import reaktive.value.binding.*
@@ -145,19 +147,6 @@ object ScoreObjectActions {
                 val pane = view.context[AppLayout].get<ScoreObjectDetailPane>()
                 pane.updateContent(view)
                 pane.setShowing(true)
-            }
-        }
-        addObjectAction("Show as sub window") {
-            shortcut("Alt?+W")
-            icon(MaterialDesignL.LAUNCH)
-            applicableOn { view -> !view.parentPane.isRoot(view.obj) }
-            executeSingle { view, ev ->
-                if (ev.isTargetTextInput && !ev.isAltDown()) return@executeSingle
-                val scoreObjectsPane = view.context[AppLayout].get<ScoreObjectRegistryPane>()
-                val w = scoreObjectsPane.showContent(view.obj) ?: return@executeSingle
-                val coords = view.localToScreen(view.width, 0.0)
-                w.x = coords.x
-                w.y = coords.y
             }
         }
         addObjectAction("Duplicate object") {
@@ -278,16 +267,27 @@ object ScoreObjectActions {
                 view.showNewEnvelopePopup()
             }
         }
-        addObjectAction("Infer quantization config from score") {
-            icon(MaterialDesignM.METRONOME)
-            applicableOn { view ->
-                view.obj.affectsPlayback && view.scene?.window == view.context[PonticelloMainActivity].primaryStage
-            }
+        addObjectAction("Play object") {
+            shortcut("Ctrl+SPACE")
+            applicableOn { view -> view.obj.affectsPlayback }
             executeSingle { view, _ ->
-                view.inferQuantization()
+                val obj = view.obj
+                val registry = view.context[LiveObjectRegistry]
+                val liveObject = registry.getOrCreateLiveScoreObject(obj)
+                if (!liveObject.initialized) {
+                    liveObject.inferQuantizationFrom(view.absolutePosition, view.context)
+                    liveObject.absoluteScoreY.now = view.absolutePosition.y
+                    if (ScoreObjectPlayerPane.hasPane(obj)) {
+                        liveObject.playHead = ScoreObjectPlayerPane.getPane(obj).playHead
+                    }
+                }
+                registry.add(liveObject)
+                liveObject.toggle()
+                if (liveObject.isActive.now) {
+                    view.context[AppLayout].get<ScoreObjectViewPane>().showContent(view)
+                }
             }
         }
-
         addObjectAction("Extend object group") {
             shortcut("E")
             applicableOn<ScoreObjectGroupView>()

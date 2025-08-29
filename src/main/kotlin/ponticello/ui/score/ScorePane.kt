@@ -1,6 +1,5 @@
 package ponticello.ui.score
 
-import bundles.publicProperty
 import fxutils.*
 import fxutils.drag.setupDropArea
 import hextant.context.Context
@@ -12,7 +11,6 @@ import javafx.scene.input.MouseEvent
 import javafx.scene.layout.Pane
 import ponticello.impl.*
 import ponticello.model.obj.MeterObject
-import ponticello.model.player.ScorePlayer
 import ponticello.model.registry.ScoreObjectRegistry
 import ponticello.model.score.*
 import reaktive.value.now
@@ -207,9 +205,8 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
                 ev.consume()
                 selector.deselectAll()
                 requestFocus()
-                val player = context[ScorePlayer.CURRENT]
-                if (!player.isScheduled.now) { //TODO pause and replay if currently playing
-                    player.playHead.movePlayHead(t)
+                if (playHead.canMoveManually.now) { //TODO pause and replay if currently playing
+                    playHead.movePlayHead(t)
                 }
             }
 
@@ -282,8 +279,6 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
         }
 
     companion object {
-        val CURRENT_ROOT = publicProperty<ScorePane>("CurrentRootScorePane")
-
         fun createObjectView(obj: ScoreObject, instance: ScoreObjectInstance): ScoreObjectView = when (obj) {
             is SoundProcess -> SoundProcessView(obj, instance)
             is TaskObject -> TaskObjectView(obj, instance)

@@ -17,7 +17,6 @@ import javafx.scene.layout.GridPane
 import javafx.scene.layout.HBox
 import javafx.scene.layout.Region
 import javafx.scene.layout.VBox
-import kotlinx.serialization.Contextual
 import org.kordamp.ikonli.Ikon
 import org.kordamp.ikonli.codicons.Codicons
 import org.kordamp.ikonli.materialdesign2.MaterialDesignA
@@ -30,6 +29,8 @@ import ponticello.impl.zero
 import ponticello.model.live.ItemTarget
 import ponticello.model.live.LauncherGrid
 import ponticello.model.live.LauncherGrid.GridItemReference
+import ponticello.model.live.LiveScoreObject
+import ponticello.model.live.LiveTaskObject
 import ponticello.model.obj.ParameterDefObject
 import ponticello.model.obj.ParameterizedObject
 import ponticello.model.player.ScorePlayer
@@ -38,7 +39,6 @@ import ponticello.model.project.PonticelloProject
 import ponticello.model.project.get
 import ponticello.model.registry.ObjectReference
 import ponticello.model.registry.reference
-import ponticello.model.score.ScoreObject
 import ponticello.sc.NumericalControlSpec
 import ponticello.sc.ParameterType
 import ponticello.sc.Warp
@@ -48,10 +48,10 @@ import ponticello.ui.dock.Side
 import ponticello.ui.dock.ToolPane
 import ponticello.ui.dock.ToolPaneState
 import ponticello.ui.impl.DEFAULT_SCENE_FILL
-import ponticello.ui.registry.ScoreObjectRegistryPane
 import ponticello.ui.registry.ScriptRegistryPane
 import ponticello.ui.registry.SearchableParameterDefListView
 import ponticello.ui.score.FlowGroupManager
+import ponticello.ui.score.ScoreObjectViewPane
 import reaktive.value.binding.*
 import reaktive.value.now
 import reaktive.value.reactiveValue
@@ -69,18 +69,8 @@ class LauncherGridPane(
     override fun defaultState(): ToolPaneState = ToolPaneState.window
 
     override fun afterSetup() {
-        preparePlayers()
         setupGridPane()
         grid.addView(this)
-    }
-
-    private fun preparePlayers() {
-        for (item in grid.items()) {
-            val target = item.target
-            if (target is ItemTarget.Player) {
-                target.preparePlayer()
-            }
-        }
     }
 
     private fun setupHeader(): HBox {
@@ -126,7 +116,7 @@ class LauncherGridPane(
             if (obj != null) {
                 val spec = NumericalControlSpec(zero, zero, one, 0.01.toDecimal(), zero, Warp.Linear)
                 val scoreYSlider = SliderBar(
-                    obj.liveConfig.yPosition, "Score Y", spec.converter(),
+                    target.yPosition, "Score Y", spec.converter(),
                     undoManager = grid.context[UndoManager],
                 ).setFixedWidth(120.0)
                 box.children.add(scoreYSlider)
@@ -167,7 +157,7 @@ class LauncherGridPane(
         box.setupDropArea(LauncherGridItemDropHandler(grid, item))
     }
 
-    companion object: Type(0, "Grid") {
+    companion object : Type(0, "Grid") {
         override val defaultSide: Side
             get() = Side.TOP
 
@@ -199,24 +189,27 @@ class LauncherGridPane(
                             target.context[FlowGroupManager].showFlowGroup(group)
                         }
 
-                        is ItemTarget.Player -> {
-                            val obj = target.ref.get() ?: return@executes
-                            showObject(obj)
+                        is ItemTarget.LiveObjectRef -> {
+                            val liveObject = target.liveObject ?: return@executes
+                            when (liveObject) {
+                                is LiveTaskObject ->
+                                    target.context[AppLayout].get<LiveObjectRegistryPane>().showContent(liveObject)
+                                is LiveScoreObject -> {
+                                    val objectsPane = target.context[AppLayout].get<ScoreObjectViewPane>()
+                                    objectsPane.showContent(liveObject.scoreObject, liveObject.quantization)
+                                }
+                            }
                         }
 
                         is ItemTarget.Object -> {
                             val obj = target.ref.get() ?: return@executes
-                            showObject(obj)
+                            val objectsPane = obj.context[AppLayout].get<ScoreObjectViewPane>()
+                            objectsPane.showContent(obj) //TODO choose quantization
                         }
 
                         is ItemTarget.Script -> {
                             val obj = target.ref.get() ?: return@executes
                             target.context[AppLayout].get<ScriptRegistryPane>().showContent(obj)
-                        }
-
-                        is ItemTarget.LiveTask -> {
-                            val obj = target.ref.get() ?: return@executes
-                            target.context[AppLayout].get<LiveTaskRegistryPane>().showContent(obj)
                         }
 
                         else -> {}
@@ -277,16 +270,12 @@ class LauncherGridPane(
                     PlaybackActions.selectRecordedBus(target.context[ScorePlayer.MAIN], ev)
                 }
             }
-            add(ScoreObjectRegistryPane.configureQuantizationAction) { target -> target.targetObject }
-            add(ScoreObjectRegistryPane.quantizeStartAction) { target -> target.targetObject }
-            add(ScoreObjectRegistryPane.toggleLoopingAction) { target ->
-                target.targetObject.takeIf { target is ItemTarget.Player }
+            add(LiveObjectRegistryPane.configureQuantizationAction) { target ->
+                (target as? ItemTarget.LiveObjectRef)?.liveObject as? LiveScoreObject
             }
-        }
-
-        private fun showObject(obj: @Contextual ScoreObject) {
-            val objectsPane = obj.context[AppLayout].get<ScoreObjectRegistryPane>()
-            objectsPane.showContent(obj)
+            add(LiveObjectRegistryPane.toggleLoopingAction) { target ->
+                (target as? ItemTarget.LiveObjectRef)?.liveObject as? LiveScoreObject
+            }
         }
 
         private val actions = collectActions {

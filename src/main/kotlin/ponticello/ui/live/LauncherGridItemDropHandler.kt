@@ -3,11 +3,13 @@ package ponticello.ui.live
 import fxutils.drag.ConfiguredDropHandler
 import javafx.scene.input.DragEvent
 import javafx.scene.input.TransferMode
+import ponticello.impl.Decimal
+import ponticello.impl.zero
 import ponticello.model.flow.AudioFlow
 import ponticello.model.live.ItemTarget
 import ponticello.model.live.LauncherGrid
 import ponticello.model.live.LauncherGrid.GridItemReference
-import ponticello.model.live.LiveTaskObject
+import ponticello.model.live.LiveObject
 import ponticello.model.obj.BufferObject
 import ponticello.model.obj.SampleObject
 import ponticello.model.obj.ScriptObject
@@ -19,6 +21,7 @@ import ponticello.model.registry.ScoreObjectRegistry
 import ponticello.model.registry.reference
 import ponticello.model.score.ScoreObject
 import ponticello.ui.actions.PlaybackActions
+import reaktive.value.reactiveVariable
 
 class LauncherGridItemDropHandler(
     private val grid: LauncherGrid, private val item: LauncherGrid.GridItem,
@@ -37,8 +40,9 @@ class LauncherGridItemDropHandler(
             item.target = ItemTarget.Flow(ref)
             true
         }
-        handleTypedFormat(ScoreObject.DATA_FORMAT, TransferMode.LINK) { _, ref ->
-            item.target = ItemTarget.Object(ref)
+        handleTypedFormat(ScoreObject.DATA_FORMAT, TransferMode.LINK) { ev, ref ->
+            val scoreY = ev.dragboard.getContent(ScoreObject.ABSOLUTE_SCORE_Y) as? Decimal ?: zero
+            item.target = ItemTarget.Object(ref, reactiveVariable(scoreY))
             true
         }
         handleTypedFormat(BufferObject.DATA_FORMAT, TransferMode.LINK) { ev, ref ->
@@ -51,8 +55,8 @@ class LauncherGridItemDropHandler(
             item.target = ItemTarget.Script(ref)
             true
         }
-        handleTypedFormat(LiveTaskObject.DATA_FORMAT, TransferMode.LINK) { _, ref ->
-            item.target = ItemTarget.LiveTask(ref)
+        handleTypedFormat(LiveObject.DATA_FORMAT, TransferMode.LINK) { _, ref ->
+            item.target = ItemTarget.LiveObjectRef(ref)
             true
         }
         handleSingleFile(*SampleObject.SUPPORTED_AUDIO_FORMATS) { ev, file ->
@@ -66,6 +70,6 @@ class LauncherGridItemDropHandler(
         val synthDef = grid.context.project[UI_STATE].getOrSelectInstrument(ev) ?: return
         val obj = buffer.createSynthObject(synthDef) ?: return
         grid.context[ScoreObjectRegistry].add(obj)
-        item.target = ItemTarget.Object(obj.reference())
+        item.target = ItemTarget.Object(obj.reference(), yPosition = reactiveVariable(zero))
     }
 }

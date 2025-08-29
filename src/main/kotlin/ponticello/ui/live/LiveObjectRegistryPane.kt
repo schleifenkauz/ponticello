@@ -1,34 +1,178 @@
 package ponticello.ui.live
 
-import fxutils.actions.ContextualizedAction
-import fxutils.actions.collectActions
-import javafx.geometry.Orientation
+import fxutils.actions.*
+import fxutils.undo.ToggleEdit
+import fxutils.undo.UndoManager
+import hextant.core.editor.defaultState
+import hextant.serial.EditorRoot
+import javafx.event.Event
+import javafx.scene.Parent
+import javafx.scene.control.Button
+import javafx.scene.input.*
+import org.kordamp.ikonli.Ikon
+import org.kordamp.ikonli.materialdesign2.MaterialDesignM
 import org.kordamp.ikonli.materialdesign2.MaterialDesignP
+import org.kordamp.ikonli.materialdesign2.MaterialDesignR
 import org.kordamp.ikonli.materialdesign2.MaterialDesignS
 import ponticello.model.live.LiveObject
-import ponticello.model.registry.ObjectRegistry
+import ponticello.model.live.LiveObjectRegistry
+import ponticello.model.live.LiveScoreObject
+import ponticello.model.live.LiveTaskObject
+import ponticello.model.obj.SuperColliderObject
+import ponticello.model.obj.withName
+import ponticello.model.project.LIVE_TASKS
+import ponticello.model.project.PonticelloProject
+import ponticello.model.project.get
+import ponticello.model.registry.MeterRegistry
+import ponticello.model.registry.ScoreObjectRegistry
+import ponticello.model.registry.reference
+import ponticello.model.score.ScoreObject
+import ponticello.sc.editor.CodeBlockEditor
+import ponticello.ui.actions.undoable
+import ponticello.ui.dock.*
+import ponticello.ui.impl.getFrom
+import ponticello.ui.misc.CodePane
 import ponticello.ui.registry.ObjectBox
+import ponticello.ui.registry.ObjectListView
+import ponticello.ui.registry.ObjectListView.DisplayMode
 import ponticello.ui.registry.ObjectRegistryPane
+import ponticello.ui.registry.SimpleSearchableRegistryView
+import ponticello.ui.score.ScoreObjectView
+import ponticello.ui.score.ScoreObjectViewPane
 import reaktive.value.binding.map
+import reaktive.value.binding.not
+import reaktive.value.now
+import reaktive.value.toggle
 
-abstract class LiveObjectRegistryPane<O : LiveObject>(registry: ObjectRegistry<O>) : ObjectRegistryPane<O>(registry) {
-    override val inlineOrientation: Orientation
-        get() = Orientation.HORIZONTAL
+class LiveObjectRegistryPane(registry: LiveObjectRegistry) : ObjectRegistryPane<LiveObject>(registry) {
+    override val type: Type
+        get() = LiveObjectRegistryPane
 
-    override fun getActions(box: ObjectBox<O>): List<ContextualizedAction> = actions.withContext(box.obj)
+    override val dataFormat: DataFormat
+        get() = LiveObject.DATA_FORMAT
 
-    companion object {
-        @JvmStatic
-        protected val actions = collectActions<LiveObject> {
+    override val supportedModes: Collection<DisplayMode>
+        get() = setOf(DisplayMode.Collapsable)
+
+    override fun defaultState(): ToolPaneState = ListToolPaneState.docked
+
+    override fun getActions(box: ObjectBox<LiveObject>): List<ContextualizedAction> = actions.withContext(box.obj)
+
+    override fun getContent(obj: LiveObject, mode: DisplayMode): Parent? = when (obj) {
+        is LiveTaskObject -> {
+            val actions =
+                if (mode == DisplayMode.SubWindow) actions.withContext(obj)
+                else emptyList()
+            CodePane(obj.code, actions, ownWindow = mode == DisplayMode.SubWindow)
+        }
+
+        is LiveScoreObject -> null
+    }
+
+    override fun acceptedTransferModes(dragboard: Dragboard): Array<TransferMode> = when {
+        dragboard.hasContent(ScoreObject.DATA_FORMAT) -> arrayOf(TransferMode.LINK)
+        else -> super.acceptedTransferModes(dragboard)
+    }
+
+    override fun getDroppedObject(ev: DragEvent, targetView: ObjectListView<LiveObject>): LiveObject? {
+        return when {
+            ev.dragboard.hasContent(ScoreObject.DATA_FORMAT) -> {
+                val obj = ev.dragboard.getFrom(context[ScoreObjectRegistry], ScoreObject.DATA_FORMAT) ?: return null
+                val view = ev.gestureSource as? ScoreObjectView
+                val liveObject = LiveScoreObject(obj.reference())
+                if (view != null) {
+                    liveObject.absoluteScoreY.now = view.absolutePosition.y
+                    liveObject.inferQuantizationFrom(view.absolutePosition, view.context)
+                }
+                liveObject
+            }
+
+            else -> super.getDroppedObject(ev, targetView)
+        }
+    }
+
+    override fun configureBox(box: ObjectBox<LiveObject>, currentMode: DisplayMode) {
+        if (box.header.children.firstOrNull() !is Button) {
+            box.header.children.add(0, playPauseAction.withContext(box.obj).makeButton("medium-icon-button"))
+        }
+        box.addEventHandler(MouseEvent.MOUSE_CLICKED) { ev ->
+            if (ev.clickCount == 2 && box.obj is LiveScoreObject) {
+                val pane = context[AppLayout].get<ScoreObjectViewPane>()
+                pane.showContent(box.obj.scoreObject, box.obj.quantization)
+            }
+        }
+    }
+
+    override fun createNewObject(name: String, ev: Event?): LiveTaskObject =
+        LiveTaskObject(EditorRoot(CodeBlockEditor().defaultState())).withName(name)
+
+    companion object : Type(uid = 10, "Live Objects") {
+        override val icon: Ikon
+            get() = MaterialDesignP.PLAYLIST_PLAY
+
+        override val defaultSide: Side
+            get() = Side.LEFT
+
+        override fun createToolPane(project: PonticelloProject): ToolPane = LiveObjectRegistryPane(project[LIVE_TASKS])
+
+        val configureQuantizationAction = action<LiveObject>("Configure quantization") {
+            enableWhen { item -> item.isActive.not() }
+            description("Quantization (hold shift to configure)")
+            icon(MaterialDesignM.METRONOME)
+            toggleState { item -> item.quantization.enableQuantization }
+            executes { item, ev ->
+                if (ev.isShiftDown()) {
+                    if (item.quantization.meter.now.isResolved.now.not()) {
+                        val meter = SimpleSearchableRegistryView(item.context[MeterRegistry], "Select meter")
+                            .showPopup(ev) ?: return@executes
+                        item.quantization.meter.set(meter.reference())
+                    }
+                    val copy = item.quantization.copy()
+                    copy.initialize(item.context)
+                    QuantizationConfigDialog(copy, "Configure live loop '${item.name.now}")
+                        .showDialog(ev) ?: return@executes
+                    item.quantization.update(copy)
+                } else {
+                    item.quantization.enableQuantization.toggle()
+                    item.context[UndoManager].record(
+                        ToggleEdit("Toggle quantization", item.quantization.enableQuantization)
+                    )
+                }
+            }
+        }
+
+        val toggleLoopingAction = action<LiveScoreObject>("Toggle looping") {
+            toggles(
+                { item -> item.loopingActivated },
+                whenFalse = MaterialDesignR.REPEAT_OFF,
+                whenTrue = MaterialDesignR.REPEAT,
+            )
+            undoable()
+        }
+
+        val playPauseAction = action<LiveObject>("Play/pause") {
+            icon { obj ->
+                obj.isActive.map { active ->
+                    if (active) MaterialDesignP.PAUSE
+                    else MaterialDesignP.PLAY
+                }
+            }
+            shortcut("Ctrl+SPACE")
+            executes { obj -> obj.toggle() }
+        }
+
+        val actions = collectActions<LiveObject> {
+            add(configureQuantizationAction)
+            add(toggleLoopingAction) { obj -> obj as? LiveScoreObject }
             addAction("Sync") {
                 icon(MaterialDesignS.SYNC)
                 shortcut("Ctrl+U")
-                executes { obj -> obj.sync() }
-            }
-            addAction("Play/pause") {
-                icon { obj -> obj.isActive.map { active -> if (active) MaterialDesignP.PAUSE else MaterialDesignP.PLAY } }
-                shortcut("Ctrl+SPACE")
-                executes { obj -> obj.toggleActive() }
+                applicableIf { obj -> obj is SuperColliderObject }
+                executes { obj ->
+                    if (obj is SuperColliderObject) {
+                        obj.sync()
+                    }
+                }
             }
             addAction("Reset") {
                 icon(MaterialDesignS.STOP)

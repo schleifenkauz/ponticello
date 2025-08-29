@@ -5,12 +5,12 @@ import fxutils.actions.Action
 import fxutils.actions.ContextualizedAction
 import fxutils.actions.collectActions
 import fxutils.replace
+import javafx.scene.Node
 import javafx.scene.Parent
-import javafx.scene.layout.Priority
 import javafx.scene.layout.Region
 import org.kordamp.ikonli.Ikon
-import org.kordamp.ikonli.materialdesign2.MaterialDesignM
 import org.kordamp.ikonli.materialdesign2.MaterialDesignP
+import ponticello.model.live.QuantizationConfig
 import ponticello.model.project.PonticelloProject
 import ponticello.model.score.ScoreObject
 import ponticello.ui.dock.Side
@@ -24,19 +24,34 @@ import reaktive.value.binding.impl.notNull
 import reaktive.value.binding.map
 
 class ScoreObjectViewPane : ToolPane() {
-    private val detached = mutableMapOf<ScoreObject, SubWindow>()
-    private val displayedObject: ReactiveVariable<ScoreObjectView?> = reactiveVariable(null)
-
     override val type: Type
         get() = ScoreObjectViewPane
 
-    override val title: ReactiveValue<String> = displayedObject.flatMap { v -> v?.obj?.name ?: reactiveValue("No object selected") }
+    private val detached = mutableMapOf<ScoreObject, SubWindow>()
+    private val displayedObject: ReactiveVariable<ScoreObject?> = reactiveVariable(null)
 
-    override var content: Parent = noSelectedObject()
+    override val title: ReactiveValue<String> =
+        displayedObject.flatMap { obj -> obj?.name ?: reactiveValue("No object selected") }
+
+    private var scorePane: SingleObjectScorePane? = null
+        set(value) {
+            field = value
+            content = if (value == null) Region() else {
+                value.prefHeightProperty().bind(heightProperty().subtract(header.heightProperty()))
+                value
+            }
+        }
+
+    override var content: Parent = Region()
         set(value) {
             children.replace(field, value)
             field = value
-            setVgrow(value, Priority.ALWAYS)
+        }
+
+    override var headerContent: Node = Region()
+        set(value) {
+            header.children.replace(field, value)
+            field = value
         }
 
     override fun doSetup() {
@@ -47,16 +62,18 @@ class ScoreObjectViewPane : ToolPane() {
 
     override fun defaultState(): ToolPaneState = ToolPaneState.docked
 
-    private fun noSelectedObject() = Region()
-
     fun showContent(focusedView: ScoreObjectView) {
-        displayedObject.now = focusedView
-        showObject(focusedView)
+        val obj = focusedView.obj
+        showContent(obj)
+        scorePane!!.positionInMainScore = focusedView::absolutePosition
     }
 
-    private fun showObject(view: ScoreObjectView) {
-        val pane = ScoreObjectPlayerPane.getPane(view.obj)
-        content = pane
+    fun showContent(obj: ScoreObject, quantization: QuantizationConfig? = null) {
+        displayedObject.now = obj
+        val pane = ScoreObjectPlayerPane.getPane(obj)
+        scorePane = pane.scorePane
+        headerContent = pane.createToolbar()
+        setShowing(true)
     }
 
     override fun onShowing() {
@@ -64,19 +81,20 @@ class ScoreObjectViewPane : ToolPane() {
         showContent(focused)
     }
 
-    private fun detach(view: ScoreObjectView) {
+    private fun detach(obj: ScoreObject) {
         setShowing(false)
         displayedObject.now = null
-        content = noSelectedObject()
-        val title = windowTitle(view)
+        scorePane = null
+        val title = windowTitle(obj)
         lateinit var newWindow: SubWindow
-        val pane = ScoreObjectPlayerPane.getPane(view.obj)
-        newWindow = makeSubWindow(pane, title, context)
+        val detachedToolPane = ScoreObjectViewPane()
+        detachedToolPane.showContent(obj)
+        newWindow = makeSubWindow(detachedToolPane, title, context)
         newWindow.show()
-        detached[view.obj] = newWindow
+        detached[obj] = newWindow
     }
 
-    private fun windowTitle(view: ScoreObjectView) = view.obj.name.map { name -> "Object $name" }
+    private fun windowTitle(obj: ScoreObject) = obj.name.map { name -> "Object $name" }
 
     companion object : Type(uid = 16, "Object view") {
         private val actions = collectActions<ScoreObjectViewPane> {
@@ -93,7 +111,7 @@ class ScoreObjectViewPane : ToolPane() {
         }
 
         override val icon: Ikon
-            get() = MaterialDesignM.MAGNIFY
+            get() = MaterialDesignP.PLAY_BOX_OUTLINE
 
         override val shortcut: String
             get() = "F7"

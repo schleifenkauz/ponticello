@@ -1,14 +1,10 @@
 package ponticello.model.live
 
-import fxutils.drag.TypedDataFormat
 import hextant.context.Context
 import hextant.serial.EditorRoot
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import ponticello.model.obj.LiveTaskReference
-import ponticello.model.obj.SuperColliderObject
-import ponticello.sc.client.ScWriter
 import ponticello.sc.client.SuperColliderClient
 import ponticello.sc.client.run
 import ponticello.sc.editor.CodeBlockEditor
@@ -18,19 +14,18 @@ import reaktive.value.now
 @Serializable
 class LiveTaskObject(
     val code: EditorRoot<@Contextual CodeBlockEditor>,
-) : LiveObject(), SuperColliderObject {
+) : AbstractLiveObject() {
     @SerialName("name")
     override var _name: ReactiveVariable<String>? = null
 
     private val client get() = context[SuperColliderClient]
 
-    override val superColliderName get() = "Tdef(\\${name.now})"
+    private val superColliderName get() = "Tdef(\\${name.now})"
 
-    override val registry: LiveTaskRegistry
-        get() = context[LiveTaskRegistry]
+    override val registry: LiveObjectRegistry
+        get() = context[LiveObjectRegistry]
 
-    override val quantization: Quantization
-        get() = Quantization.None //TODO
+    override val quantization: QuantizationConfig = QuantizationConfig.createDefault()
 
     override fun initialize(context: Context) {
         super.initialize(context)
@@ -39,37 +34,40 @@ class LiveTaskObject(
 
     override fun rename(newName: String) {
         //TODO could this be done without killing the task?
-        client.run { freeObject() }
+        client.run {
+            +"$superColliderName.clear"
+        }
         super.rename(newName)
-        client.run { createObject() }
-        if (isActive.now) doActivate()
-    }
-
-    override fun ScWriter.freeObject() {
-        +"$superColliderName.clear"
-    }
-
-    override fun sync() {
-        client.run { createObject() }
-    }
-
-    override fun copy() = LiveTaskObject(code.clone())
-
-    override fun ScWriter.createObject() {
+        client.run {
             appendBlock(superColliderName) {
                 val body = code.editor.result.now
                 body.writeCode(writer, context)
             }
+        }
+        if (isActive.now) doActivate()
+    }
+
+    fun sync() {
+        client.run {
+            appendBlock(superColliderName) {
+                val body = code.editor.result.now
+                body.writeCode(writer, context)
+            }
+        }
+    }
+
+    override fun copy() = LiveTaskObject(code.clone())
+
+    override fun onLoadedIntoRegistry() {
+        super.onLoadedIntoRegistry()
+        sync()
     }
 
     override fun onRemoved() {
-        super<LiveObject>.onRemoved()
-        client.run { freeObject() }
-    }
-
-    override fun onLoadedIntoRegistry() {
-        super<LiveObject>.onLoadedIntoRegistry()
-        client.run { createObject() }
+        super.onRemoved()
+        client.run {
+            +"$superColliderName.clear"
+        }
     }
 
     override fun doActivate() {
@@ -82,9 +80,5 @@ class LiveTaskObject(
 
     override fun doReset() {
         client.run("$superColliderName.stop")
-    }
-
-    companion object {
-        val DATA_FORMAT = TypedDataFormat<LiveTaskReference>("ponticello/live-task")
     }
 }

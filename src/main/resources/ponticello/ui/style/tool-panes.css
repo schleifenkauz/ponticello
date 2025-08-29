@@ -29,7 +29,7 @@
 }
 
 .tool-pane-header {
-    -fx-padding: 5px;
+    -fx-padding: 3px;
     -fx-alignment: center-left;
     -fx-spacing: 5px;
 }

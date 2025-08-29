@@ -18,7 +18,7 @@ inline fun <reified T> JsonObjectBuilder.putSerializableValue(name: String, valu
 }
 
 val json = Json {
-    prettyPrint = true
+    prettyPrint = false
     ignoreUnknownKeys = true
     allowStructuredMapKeys = true
     encodeDefaults = false

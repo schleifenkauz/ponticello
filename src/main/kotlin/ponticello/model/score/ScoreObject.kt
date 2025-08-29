@@ -7,24 +7,21 @@ import fxutils.undo.AbstractEdit
 import fxutils.undo.Edit
 import fxutils.undo.UndoManager
 import fxutils.undo.VariableEdit
-import hextant.context.Context
 import hextant.context.withoutUndo
 import hextant.core.editor.ListenerManager
 import javafx.geometry.HorizontalDirection
 import javafx.geometry.HorizontalDirection.LEFT
 import javafx.geometry.Side
+import javafx.scene.input.DataFormat
 import javafx.scene.paint.Color
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import ponticello.impl.*
 import ponticello.model.flow.NodePlacement
-import ponticello.model.live.LiveConfig
-import ponticello.model.live.QuantizationConfig
 import ponticello.model.obj.*
 import ponticello.model.player.ActiveObjectsManager
 import ponticello.model.player.ActiveScoreObject
-import ponticello.model.player.ScorePlayer
 import ponticello.model.registry.ScoreObjectRegistry
 import ponticello.model.score.controls.EnvelopeControl
 import ponticello.model.score.controls.ParameterControl
@@ -49,9 +46,6 @@ sealed class ScoreObject : AbstractRenamableObject() {
 
     open val affectsPlayback: Boolean get() = true
 
-    @Transient
-    var player: ScorePlayer? = null
-
     @SerialName("duration")
     private var _duration = reactiveVariable(0.0.asTime)
 
@@ -62,7 +56,6 @@ sealed class ScoreObject : AbstractRenamableObject() {
         get() = _duration.now
         protected set(value) {
             _duration.now = value
-            quantizationConfig.setDuration(value)
         }
 
     var height: Decimal
@@ -70,10 +63,6 @@ sealed class ScoreObject : AbstractRenamableObject() {
         protected set(value) {
             _height.now = value
         }
-
-    val quantizationConfig: QuantizationConfig = QuantizationConfig.createDefault()
-
-    val liveConfig = LiveConfig.createDefault()
 
     @Transient
     private val viewManager: ListenerManager<Listener> = ListenerManager.createWeakListenerManager()
@@ -112,11 +101,6 @@ sealed class ScoreObject : AbstractRenamableObject() {
 
     open val minY: Decimal get() = zero
     open val maxY: Decimal get() = _height.now
-
-    override fun initialize(context: Context) {
-        super.initialize(context)
-        quantizationConfig.initialize(context, this)
-    }
 
     open fun validate(): Boolean {
         return true
@@ -357,6 +341,8 @@ sealed class ScoreObject : AbstractRenamableObject() {
 
     companion object {
         val DATA_FORMAT = TypedDataFormat<ScoreObjectReference>("score-object")
+
+        val ABSOLUTE_SCORE_Y = DataFormat("ponticello:absolute-score-y")
     }
 
 }

@@ -2,7 +2,6 @@ package ponticello.ui.score
 
 import hextant.context.Context
 import ponticello.impl.*
-import ponticello.model.player.ScorePlayer
 import ponticello.model.score.Score
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Future
@@ -25,12 +24,12 @@ class NavigableScorePane(score: Score, context: Context) : RootScorePane(score, 
             val deltaX = after.toDouble() - before.toDouble()
             val deltaT = (deltaX / pixelsPerSecond).asTime
             displayEnd += deltaT
-            context[ScorePlayer.CURRENT].playHead.updatePosition()
+            playHead.updatePosition()
         }
     }
 
     fun displayWholeScore(): Future<Boolean> {
-        val totalDuration = score.objectInstances.maxOfOrNull { obj -> obj.start + obj.duration } ?: 60.0.asTime
+        val totalDuration = score.objectInstances.maxOfOrNull { obj -> obj.end } ?: 60.0.asTime
         return display(zero, totalDuration)
     }
 

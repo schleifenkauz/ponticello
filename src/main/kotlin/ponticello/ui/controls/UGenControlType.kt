@@ -116,7 +116,7 @@ data object UGenControlType : ControlType<UGenControl>() {
             activeObjects
                 .filterIsInstance<ActiveScoreObject>()
                 .find { obj ->
-                    val absolutePosition = view.absolutePosition + obj.player.pane.absolutePosition
+                    val absolutePosition = view.absolutePosition// + obj.player.pane.absolutePosition TODO
                     obj.absolutePosition == absolutePosition
                 }
         } else activeObjects.singleOrNull()

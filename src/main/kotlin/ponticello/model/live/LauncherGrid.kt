@@ -125,7 +125,7 @@ class LauncherGrid private constructor(
     }
 
     fun getPlayer() = when (val t = target.now) {
-        is Target.SubScore -> t.ref.get()?.player ?: context[ScorePlayer.MAIN]
+        is Target.SubScore -> context[ScorePlayer.MAIN] //TODO select player
         Target.MainScore, Target.None -> context[ScorePlayer.MAIN]
     }
 

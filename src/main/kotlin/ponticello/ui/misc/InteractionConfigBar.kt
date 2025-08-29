@@ -6,6 +6,7 @@ import fxutils.actions.isTargetTextInput
 import fxutils.actions.makeButton
 import fxutils.actions.registerActions
 import fxutils.controls.CheckBox
+import fxutils.controls.OptionSpinner
 import fxutils.prompt.DetailPane
 import fxutils.prompt.SimpleSearchableListView
 import fxutils.undo.UndoManager
@@ -27,7 +28,7 @@ import reaktive.value.now
 class InteractionConfigBar(private val settings: UIState) : HBox() {
     private val snapToggle = toggleSnap.withContext(settings)
 
-    private val optionList = object : SimpleSearchableListView<TimeUnit>(TimeUnit.entries, "Select snap option") {
+    private val optionsPopup = object : SimpleSearchableListView<TimeUnit>(TimeUnit.entries, "Select snap option") {
         override fun createCell(option: TimeUnit): Region = HBox(
             5.0,
             Label(option.name.lowercase()),
@@ -35,7 +36,10 @@ class InteractionConfigBar(private val settings: UIState) : HBox() {
             Label(shortcutFor(option))
         )
     }
-    private val optionButton = optionList.selectorButton(settings.snapOption).setFixedWidth(70.0)
+    private val optionSelector = OptionSpinner(
+        settings.snapOption, TimeUnit.entries,
+        selectorPopup = optionsPopup
+    )
 
     private fun shortcutFor(option: TimeUnit) = when (option) {
         TimeUnit.Seconds -> "Alt+S"
@@ -46,10 +50,11 @@ class InteractionConfigBar(private val settings: UIState) : HBox() {
 
     init {
         styleClass("toolbar-part")
-        optionButton.disableProperty().bind(settings.snapEnabled.not().asObservableValue())
+        optionSelector.disableProperty().bind(settings.snapEnabled.not().asObservableValue())
+        optionSelector.label.minWidth = 60.0
         children.addAll(
             snapToggle.makeButton("large-icon-button"),
-            optionButton,
+            optionSelector,
             showExtraSettings.withContext(settings).makeButton("medium-icon-button")
         )
     }
