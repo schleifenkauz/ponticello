@@ -20,13 +20,13 @@ import ponticello.ui.score.TempoGridObjectView.Companion.GRID_HEIGHT
 import reaktive.Observer
 import reaktive.and
 import reaktive.value.binding.`if`
-import reaktive.value.forEach
 import reaktive.value.fx.asObservableValue
 import reaktive.value.now
 import java.util.concurrent.Future
 
 class SingleObjectScorePane(
     val rootObj: ScoreObject, context: Context,
+    val absoluteScoreY: () -> Decimal
 ) : RootScorePane(Score.makeScore(rootObj), context) {
     override val displayStart: Decimal
         get() = zero

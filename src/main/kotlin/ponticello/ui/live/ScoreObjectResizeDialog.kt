@@ -8,32 +8,38 @@ import javafx.event.Event
 import javafx.geometry.Side
 import javafx.scene.control.Button
 import javafx.scene.control.Spinner
+import ponticello.impl.one
 import ponticello.impl.sync
+import ponticello.model.obj.MeterObject
+import ponticello.model.obj.MeterReference
 import ponticello.model.registry.MeterRegistry
 import ponticello.model.registry.reference
 import ponticello.model.score.ScoreObject
 import ponticello.model.score.ScoreObject.ResizeMode
 import ponticello.model.score.TimeUnit
 import reaktive.value.now
+import reaktive.value.reactiveVariable
 
-class ScoreObjectResizeDialog(private val obj: ScoreObject) : CompoundPrompt<ResizeMode>(
-    "Resize ${obj.name.now}",
-    labelWidth = 150.0,
-    confirmText = "Resize"
+class ScoreObjectResizeDialog(
+    private val obj: ScoreObject,
+    private var meter: MeterReference,
+    private var durationUnit: TimeUnit,
+) : CompoundPrompt<ResizeMode>(
+    "Resize ${obj.name.now}", labelWidth = 150.0, confirmText = "Resize"
 ) {
-    private val meters = obj.context[MeterRegistry].map { obj -> obj.reference() }
-    private val config = obj.quantizationConfig.copy()
+    private val durationValue = reactiveVariable(obj.duration / (meter.get()?.getDuration(durationUnit) ?: one))
 
-    private val meterSelector = SimpleSearchableListView(meters, "Choose meter")
-        .selectorButton(config.meter)
+    val meterSelector = SimpleSearchableListView(
+        obj.context[MeterRegistry].map(MeterObject::reference), "Choose meter"
+    ).selectorButton(this::meter)
         .setFixedWidth(SELECTOR_WIDTH)
 
     private val durationUnitSelector = SimpleSearchableListView(TimeUnit.entries, "Choose duration unit")
-        .selectorButton(config.durationUnit)
+        .selectorButton(this::durationUnit)
         .setFixedWidth(SELECTOR_WIDTH)
 
-    private val durationValueInput = Spinner<Double>(0.0, Double.MAX_VALUE, config.durationValue.now.value)
-        .sync(config.durationValue)
+    private val durationValueInput = Spinner<Double>(0.0, Double.MAX_VALUE, durationValue.now.value)
+        .sync(durationValue)
         .setFixedWidth(120.0)
 
     override fun extraButtons(): List<Button> = listOf(

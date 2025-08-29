@@ -4,7 +4,6 @@ import bundles.PublicProperty
 import bundles.publicProperty
 import bundles.set
 import fxutils.actions.registerActions
-import fxutils.actions.registerShortcuts
 import fxutils.awaitFx
 import fxutils.registerShortcuts
 import fxutils.runAfterLayout
@@ -66,7 +65,10 @@ class PonticelloMainActivity(val project: PonticelloProject) : Activity() {
     }
 
     private fun setupPlayback() {
-        player = ScorePlayer.create(mainScoreView, loopingActivated = reactiveValue(false))
+        player = ScorePlayer.create(
+            mainScoreView,
+            loopingActivated = reactiveValue(false), quantization = null
+        )
         context[ScorePlayer.CURRENT] = player
         context[ScorePlayer.MAIN] = player
         playbackMessageListener = PlaybackMessageListener(

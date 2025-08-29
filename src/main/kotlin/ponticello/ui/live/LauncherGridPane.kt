@@ -126,7 +126,7 @@ class LauncherGridPane(
             if (obj != null) {
                 val spec = NumericalControlSpec(zero, zero, one, 0.01.toDecimal(), zero, Warp.Linear)
                 val scoreYSlider = SliderBar(
-                    obj.liveConfig.yPosition, "Score Y", spec.converter(),
+                    target.yPosition, "Score Y", spec.converter(),
                     undoManager = grid.context[UndoManager],
                 ).setFixedWidth(120.0)
                 box.children.add(scoreYSlider)

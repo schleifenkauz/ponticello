@@ -3,10 +3,7 @@ package ponticello.ui.registry
 import fxutils.actions.ContextualizedAction
 import fxutils.actions.action
 import fxutils.actions.collectActions
-import fxutils.controls.SliderBar
-import fxutils.undo.UndoManager
 import javafx.event.Event
-import javafx.scene.Node
 import javafx.scene.Parent
 import javafx.scene.input.DataFormat
 import org.kordamp.ikonli.Ikon
@@ -15,17 +12,12 @@ import org.kordamp.ikonli.materialdesign2.MaterialDesignA
 import org.kordamp.ikonli.materialdesign2.MaterialDesignM
 import org.kordamp.ikonli.materialdesign2.MaterialDesignP
 import org.kordamp.ikonli.materialdesign2.MaterialDesignR
-import ponticello.impl.one
-import ponticello.impl.toDecimal
-import ponticello.impl.zero
 import ponticello.model.project.PonticelloProject
 import ponticello.model.project.objects
 import ponticello.model.registry.MeterRegistry
 import ponticello.model.registry.ScoreObjectRegistry
 import ponticello.model.registry.reference
 import ponticello.model.score.ScoreObject
-import ponticello.sc.NumericalControlSpec
-import ponticello.sc.Warp
 import ponticello.ui.actions.undoable
 import ponticello.ui.dock.Side
 import ponticello.ui.dock.ToolPane
@@ -46,16 +38,6 @@ class ScoreObjectRegistryPane(registry: ScoreObjectRegistry) : ObjectRegistryPan
         get() = setOf(DisplayMode.SubWindow)
 
     override fun defaultState(): ToolPaneState = ToolPaneState.docked
-
-    override fun getHeaderContent(obj: ScoreObject): List<Node> {
-        val spec = NumericalControlSpec(zero, zero, one, 0.01.toDecimal(), zero, Warp.Linear)
-        val scoreYSlider = SliderBar(
-            obj.liveConfig.yPosition, "Score Y", spec.converter(),
-            undoManager = obj.context[UndoManager]
-        )
-        scoreYSlider.prefWidth = 150.0
-        return listOf(scoreYSlider)
-    }
 
     override fun getContent(obj: ScoreObject, mode: DisplayMode): Parent = ScoreObjectPlayerPane.getPane(obj)
 

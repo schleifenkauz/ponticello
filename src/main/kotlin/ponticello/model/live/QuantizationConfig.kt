@@ -139,7 +139,7 @@ class QuantizationConfig(
         enableQuantization.set(source.enableQuantization.now)
         shiftGrid.set(source.shiftGrid.now)
         update.fire()
-        context[UndoManager].record(QuantizationConfigEdit(associatedObject, before, source))
+        context[UndoManager].record(QuantizationConfigEdit(this, before, source))
     }
 
     fun setDuration(value: Decimal) {

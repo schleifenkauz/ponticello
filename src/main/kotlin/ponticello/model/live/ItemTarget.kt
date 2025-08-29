@@ -107,7 +107,10 @@ sealed class ItemTarget : AbstractContextualObject() {
 
     @Serializable
     @SerialName("Object")
-    data class Object(val ref: ScoreObjectReference) : ItemTarget() {
+    data class Object(
+        val ref: ScoreObjectReference,
+        val yPosition: ReactiveVariable<Decimal>
+    ) : ItemTarget() {
         var velocityParameter: ReactiveVariable<ParameterDefReference> = reactiveVariable(ObjectReference.none())
 
         override val canView: Boolean
@@ -143,8 +146,7 @@ sealed class ItemTarget : AbstractContextualObject() {
             val player = grid.getPlayer()
             player.getClock().scheduleAction(obj.quantizationConfig) { quantizationDelay ->
                 val time = if (player.isPlaying.now) player.playHead.currentTime else zero
-                val y = obj.liveConfig.yPosition.now
-                val position = ObjectPosition(time, y)
+                val position = ObjectPosition(time, yPosition.now)
                 val totalDelay = quantizationDelay.coerceAtMost(context[GlobalSettings].lookAhead)
                 val extraArguments = mutableMapOf<ParameterDefObject, ParameterControl>()
                 val velocityParameter = velocityParameter.now.get()

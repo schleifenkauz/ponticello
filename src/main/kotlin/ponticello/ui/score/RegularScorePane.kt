@@ -58,7 +58,6 @@ abstract class RegularScorePane(score: Score, context: Context) : ScorePane(scor
         val registry = context[ScoreObjectRegistry]
         if (obj in registry) registry.add(obj)
         val inst = rect.createInstance(obj)
-        obj.liveConfig.yPosition.set(this.absolutePosition.y + inst.y) //TODO really?
         score.addObject(inst, autoSelect = true)
         return inst
     }

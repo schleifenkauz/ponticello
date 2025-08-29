@@ -420,23 +420,6 @@ abstract class ScoreObjectView(
         }
     }
 
-    fun inferQuantization(): Boolean {
-        val position = instance.position
-        val (gridStart, meter) = parentPane.getNearestGrid(position) ?: return false
-        obj.liveConfig.yPosition.set(absolutePosition.y)
-        obj.quantizationConfig.meter.set(meter.reference())
-        val (durUnit, durValue) = meter.represent(obj.duration)
-        obj.quantizationConfig.durationUnit.set(durUnit)
-        obj.quantizationConfig.durationValue.set(durValue)
-        var delta = absolutePosition.time - gridStart
-        while (delta < zero) delta += obj.duration
-        while (delta > obj.duration) delta -= obj.duration
-        val (offsetUnit, offsetValue) = meter.represent(delta)
-        obj.quantizationConfig.offsetUnit.set(offsetUnit)
-        obj.quantizationConfig.offsetValue.set(offsetValue)
-        return true
-    }
-
     private fun replaceWithCutHalves(half1: ScoreObject, half2: ScoreObject, relativePosition: ObjectPosition) {
         context.compoundEdit("Cut object") {
             for (inst in context.rootScore.instancesOf(obj).toList()) {

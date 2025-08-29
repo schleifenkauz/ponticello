@@ -9,7 +9,6 @@ import ponticello.model.score.*
 import ponticello.sc.client.SuperColliderClient
 import ponticello.ui.misc.PlayHead
 import ponticello.ui.score.ScorePane
-import ponticello.ui.score.SingleObjectScorePane
 import reaktive.value.ReactiveBoolean
 import reaktive.value.ReactiveValue
 import reaktive.value.now
@@ -19,6 +18,7 @@ import java.util.concurrent.Executors
 class ScorePlayer private constructor(
     val id: Int, val pane: ScorePane,
     val scheduler: ScoreObjectScheduler,
+    val quantization: QuantizationConfig?,
     private val loopingActivated: ReactiveBoolean,
 ) {
     private val playing = reactiveVariable(false)
@@ -123,19 +123,14 @@ class ScorePlayer private constructor(
     fun play() {
         if (isScheduled.now) return
         scheduled.set(true)
-        val quantization = getQuantization()
+        val quantization = quantization
         val clock = getClock()
         currentClock = clock
         clock.scheduleStart(this, quantization)
     }
 
-    private fun getQuantization(): QuantizationConfig? {
-        val rootObj = (pane as? SingleObjectScorePane)?.rootObj
-        return rootObj?.quantizationConfig
-    }
-
     fun getClock(): ClockObject = currentClock
-        ?: getQuantization()?.clock?.now?.get()
+        ?: quantization?.clock?.now?.get()
         ?: context[ClockRegistry].getDefault()
 
     fun startPlaying() = execute {
@@ -210,10 +205,10 @@ class ScorePlayer private constructor(
 
         fun instances(): List<ScorePlayer> = all
 
-        fun create(pane: ScorePane, loopingActivated: ReactiveBoolean): ScorePlayer {
+        fun create(pane: ScorePane, loopingActivated: ReactiveBoolean, quantization: QuantizationConfig?): ScorePlayer {
             val id = all.size
             val scheduler = pane.context[ScoreObjectScheduler]
-            val player = ScorePlayer(id, pane, scheduler, loopingActivated)
+            val player = ScorePlayer(id, pane, scheduler, quantization, loopingActivated)
             all.add(player)
             return player
         }
