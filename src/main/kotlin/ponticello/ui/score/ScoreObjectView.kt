@@ -424,16 +424,16 @@ abstract class ScoreObjectView(
         val position = instance.position
         val (gridStart, meter) = parentPane.getNearestGrid(position) ?: return false
         obj.liveConfig.yPosition.set(absolutePosition.y)
-        obj.quantization.meter.set(meter.reference())
+        obj.quantizationConfig.meter.set(meter.reference())
         val (durUnit, durValue) = meter.represent(obj.duration)
-        obj.quantization.durationUnit.set(durUnit)
-        obj.quantization.durationValue.set(durValue)
+        obj.quantizationConfig.durationUnit.set(durUnit)
+        obj.quantizationConfig.durationValue.set(durValue)
         var delta = absolutePosition.time - gridStart
         while (delta < zero) delta += obj.duration
         while (delta > obj.duration) delta -= obj.duration
         val (offsetUnit, offsetValue) = meter.represent(delta)
-        obj.quantization.offsetUnit.set(offsetUnit)
-        obj.quantization.offsetValue.set(offsetValue)
+        obj.quantizationConfig.offsetUnit.set(offsetUnit)
+        obj.quantizationConfig.offsetValue.set(offsetValue)
         return true
     }
 

@@ -85,17 +85,17 @@ class ScoreObjectRegistryPane(registry: ScoreObjectRegistry) : ObjectRegistryPan
             }
             icon(Codicons.SYMBOL_PROPERTY)
             executes { obj, ev ->
-                if (obj.quantization.meter.now.isResolved.now.not()) {
+                if (obj.quantizationConfig.meter.now.isResolved.now.not()) {
                     val meter = SimpleSearchableRegistryView(obj.context[MeterRegistry], "Select meter")
                         .showPopup(ev) ?: return@executes
-                    obj.quantization.meter.set(meter.reference())
+                    obj.quantizationConfig.meter.set(meter.reference())
                 }
-                val copy = obj.quantization.copy()
+                val copy = obj.quantizationConfig.copy()
                 copy.initialize(obj.context)
                 QuantizationConfigDialog(copy, "Configure live loop '${obj.name.now}")
                     .showDialog(ev) ?: return@executes
-                obj.quantization.update(copy)
-                val newDuration = obj.quantization.computeDuration()
+                obj.quantizationConfig.update(copy)
+                val newDuration = obj.quantizationConfig.computeDuration()
                 obj.resize(newDuration, obj.height, ScoreObject.ResizeMode.Regular, javafx.geometry.Side.RIGHT)
             }
         }
@@ -114,7 +114,7 @@ class ScoreObjectRegistryPane(registry: ScoreObjectRegistry) : ObjectRegistryPan
             applicableIf { obj -> obj.affectsPlayback }
             icon(MaterialDesignM.METRONOME)
             undoable()
-            toggles({ obj -> obj.quantization.enableQuantization })
+            toggles({ obj -> obj.quantizationConfig.enableQuantization })
         }
 
         val resizeObjectAction = action("Resize object") {

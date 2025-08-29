@@ -141,7 +141,7 @@ sealed class ItemTarget : AbstractContextualObject() {
             active.set(true)
             val obj = ref.get() ?: return
             val player = grid.getPlayer()
-            player.getClock().scheduleAction(obj.quantization) { quantizationDelay ->
+            player.getClock().scheduleAction(obj.quantizationConfig) { quantizationDelay ->
                 val time = if (player.isPlaying.now) player.playHead.currentTime else zero
                 val y = obj.liveConfig.yPosition.now
                 val position = ObjectPosition(time, y)

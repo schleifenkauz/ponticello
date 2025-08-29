@@ -1,13 +1,13 @@
 package ponticello.model.live
 
 import kotlinx.serialization.Serializable
-import ponticello.model.obj.AbstractNamedObject
+import ponticello.model.obj.AbstractRenamableObject
 import reaktive.value.ReactiveValue
 import reaktive.value.now
 import reaktive.value.reactiveVariable
 
 @Serializable
-sealed class LiveObject: AbstractNamedObject() {
+sealed class LiveObject: AbstractRenamableObject() {
     private var _isActive = reactiveVariable(false)
 
     val isActive: ReactiveValue<Boolean> get() = _isActive
