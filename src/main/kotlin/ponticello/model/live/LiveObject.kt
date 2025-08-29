@@ -1,46 +1,29 @@
 package ponticello.model.live
 
+import fxutils.drag.TypedDataFormat
 import kotlinx.serialization.Serializable
-import ponticello.model.obj.AbstractRenamableObject
+import ponticello.model.obj.LiveObjectReference
+import ponticello.model.registry.NamedObject
 import reaktive.value.ReactiveValue
 import reaktive.value.now
-import reaktive.value.reactiveVariable
 
 @Serializable
-sealed class LiveObject: AbstractRenamableObject() {
-    private var _isActive = reactiveVariable(false)
+sealed interface LiveObject: NamedObject {
+    val isActive: ReactiveValue<Boolean>
+    val quantization: QuantizationConfig
 
-    val isActive: ReactiveValue<Boolean> get() = _isActive
+    fun play()
 
-    abstract val quantization: Quantization
+    fun pause()
 
-    fun activate() {
-        if (isActive.now) error("$this is Already Active")
-        _isActive.now = true
-        doActivate()
+    fun toggle() {
+        if (!isActive.now) play()
+        else pause()
     }
 
-    fun deactivate() {
-        if (!isActive.now) error("$this is not Active")
-        _isActive.now = false
-        doDeactivate()
+    fun reset()
+
+    companion object {
+        val DATA_FORMAT = TypedDataFormat<LiveObjectReference>("ponticello/live-task")
     }
-
-    fun toggleActive() {
-        if (isActive.now) deactivate()
-        else activate()
-    }
-
-    fun reset() {
-        if (isActive.now) deactivate()
-        doReset()
-    }
-
-    abstract fun sync()
-
-    protected abstract fun doActivate()
-
-    protected abstract fun doDeactivate()
-
-    protected abstract fun doReset()
 }

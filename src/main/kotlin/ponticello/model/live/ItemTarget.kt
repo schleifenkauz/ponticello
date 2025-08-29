@@ -11,8 +11,6 @@ import ponticello.model.flow.AudioFlows
 import ponticello.model.obj.*
 import ponticello.model.player.Recorder
 import ponticello.model.player.ScorePlayer
-import ponticello.model.project.LIVE_TASKS
-import ponticello.model.project.get
 import ponticello.model.project.scripts
 import ponticello.model.registry.ObjectReference
 import ponticello.model.registry.ScoreObjectRegistry
@@ -26,10 +24,10 @@ import ponticello.sc.NumericalControlSpec
 import ponticello.sc.client.SuperColliderClient
 import ponticello.sc.mapOnto
 import ponticello.ui.dock.AppLayout
-import ponticello.ui.launcher.PonticelloMainActivity
-import ponticello.ui.registry.ScoreObjectRegistryPane
+import ponticello.ui.score.ScoreObjectViewPane
 import reaktive.value.*
 import reaktive.value.binding.and
+import kotlin.collections.set
 
 @Serializable
 sealed class ItemTarget : AbstractContextualObject() {
@@ -109,7 +107,7 @@ sealed class ItemTarget : AbstractContextualObject() {
     @SerialName("Object")
     data class Object(
         val ref: ScoreObjectReference,
-        val yPosition: ReactiveVariable<Decimal>
+        val yPosition: ReactiveVariable<Decimal>,
     ) : ItemTarget() {
         var velocityParameter: ReactiveVariable<ParameterDefReference> = reactiveVariable(ObjectReference.none())
 
@@ -144,7 +142,8 @@ sealed class ItemTarget : AbstractContextualObject() {
             active.set(true)
             val obj = ref.get() ?: return
             val player = grid.getPlayer()
-            player.getClock().scheduleAction(obj.quantizationConfig) { quantizationDelay ->
+            val quantization = QuantizationConfig.createDefault() //TODO where to get the quantization???
+            player.getClock().scheduleAction(quantization) { quantizationDelay ->
                 val time = if (player.isPlaying.now) player.playHead.currentTime else zero
                 val position = ObjectPosition(time, yPosition.now)
                 val totalDelay = quantizationDelay.coerceAtMost(context[GlobalSettings].lookAhead)
@@ -182,67 +181,51 @@ sealed class ItemTarget : AbstractContextualObject() {
     }
 
     @Serializable
-    @SerialName("Player")
-    data class Player(val ref: ScoreObjectReference) : ItemTarget() {
+    @SerialName("LiveObject")
+    data class LiveObjectRef(private val ref: ObjectReference<LiveObject>) : ItemTarget() {
         override val canView: Boolean
             get() = ref.isResolved.now
 
+        val liveObject get() = ref.get()
+
         override val targetObject: ScoreObject?
-            get() = ref.get()
+            get() = (ref.get() as? LiveScoreObject)?.scoreObject
 
         override val canStop: Boolean get() = true
 
-        @Transient
-        override lateinit var isActive: ReactiveBoolean
+        override val isActive: ReactiveBoolean
+            get() = liveObject?.isActive ?: reactiveValue(false)
 
         override fun initialize(context: Context) {
             super.initialize(context)
-            ref.resolve(context[ScoreObjectRegistry])
-            if (context.hasProperty(PonticelloMainActivity)) {
-                preparePlayer()
-            }
+            ref.resolve(context[LiveObjectRegistry])
         }
 
         override fun pressed(velocity: Int, item: LauncherGrid.GridItem) {
             Platform.runLater {
                 val obj = ref.get() ?: return@runLater
-                if (obj.player == null) {
-                    context[AppLayout].get<ScoreObjectRegistryPane>().showContent(obj)
-                }
-                val player = obj.player
-                if (player == null) {
-                    Logger.warn("Player is null for ScoreObject ${obj.name.now}", Logger.Category.Playback)
-                    return@runLater
-                }
-                if (!player.isScheduled.now) {
-                    player.play()
-                    context[AppLayout].get<ScoreObjectRegistryPane>().showContent(obj)
+                if (!obj.isActive.now) {
+                    obj.play()
+                    if (obj is LiveScoreObject) {
+                        context[AppLayout].get<ScoreObjectViewPane>().showContent(
+                            obj.scoreObject, quantization = obj.quantization
+                        )
+                    }
                 } else if (!item.stopOnRelease.now) {
-                    player.pause()
+                    obj.pause()
                 }
             }
 
         }
 
         override fun released(item: LauncherGrid.GridItem) {
-            val player = ref.get()?.player ?: return
-            if (player.isScheduled.now && item.stopOnRelease.now) {
-                player.pause()
+            val obj = ref.get() ?: return
+            if (obj.isActive.now && item.stopOnRelease.now) {
+                obj.pause()
             }
         }
 
-        fun preparePlayer() {
-            val obj = targetObject
-            if (obj == null) {
-                isActive = reactiveValue(false)
-                return
-            }
-            val scoreObjectsPane = context[AppLayout].get<ScoreObjectRegistryPane>()
-            scoreObjectsPane.listView.initializeContent(obj)
-            isActive = obj.player?.isScheduled ?: reactiveValue(false)
-        }
-
-        override fun toString() = "Player ${ref.getName()}"
+        override fun toString() = "LiveObject: ${ref.getName()}"
     }
 
     @Serializable
@@ -307,48 +290,20 @@ sealed class ItemTarget : AbstractContextualObject() {
         override fun toString(): String = "Script ${ref.getName()}"
     }
 
-    @Serializable
-    data class LiveTask(val ref: LiveTaskReference) : ItemTarget() {
-        override val canView: Boolean
-            get() = true
-
-        override val isActive: ReactiveBoolean
-            get() = ref.get()?.isActive ?: reactiveValue(false)
-
-        override val canStop: Boolean get() = true
-
-        override fun pressed(velocity: Int, item: LauncherGrid.GridItem) {
-            val obj = ref.get() ?: return
-            if (!obj.isActive.now) obj.toggleActive()
-            else if (!item.stopOnRelease.now) {
-                obj.toggleActive()
-            }
-        }
-
-        override fun released(item: LauncherGrid.GridItem) {
-            val obj = ref.get() ?: return
-            if (obj.isActive.now && item.stopOnRelease.now) {
-                obj.toggleActive()
-            }
-        }
-
-        override fun toString(): String = "Task: ${ref.getName()}"
-    }
-
     companion object {
         fun options(context: Context): List<ItemTarget> {
             val objects = context[ScoreObjectRegistry].filter { obj -> obj.affectsPlayback }
             val objectTargets = objects
                 .filter { obj -> obj !is ScoreObjectGroup }
-                .map { obj -> Object(obj.reference()) }
-            val playerTargets = objects.map { obj -> Player(obj.reference()) }
+                .map { obj -> Object(obj.reference(), reactiveVariable(zero(ObjectPosition.TIME_PRECISION))) }
+            val liveObjects = context[LiveObjectRegistry]
+            val liveObjectTargets = liveObjects.map { obj -> LiveObjectRef(obj.reference()) }
             val flowTargets = context[AudioFlows].all().flatMap { group ->
                 group.flows.all().map { flow -> Flow(flow.reference()) }
             }
             val scriptTargets = context.project.scripts.map { script -> Script(script.reference()) }
-            val taskTargets = context.project[LIVE_TASKS].map { task -> LiveTask(task.reference()) }
             val defaultOptions = listOf(None(), ToggleRecording)
-            return defaultOptions + objectTargets + playerTargets + flowTargets + scriptTargets + taskTargets
+            return defaultOptions + objectTargets + liveObjectTargets + flowTargets + scriptTargets
         }
     }
 }

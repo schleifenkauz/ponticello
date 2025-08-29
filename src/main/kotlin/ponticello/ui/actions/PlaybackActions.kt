@@ -22,6 +22,7 @@ import ponticello.sc.Rate
 import ponticello.sc.client.SuperColliderClient
 import ponticello.ui.controls.DecimalPrompt
 import ponticello.ui.controls.NamePrompt
+import ponticello.ui.misc.PlayHead
 import ponticello.ui.registry.SearchableBusListView
 import reaktive.value.binding.and
 import reaktive.value.binding.map
@@ -29,15 +30,15 @@ import reaktive.value.binding.not
 import reaktive.value.now
 
 object PlaybackActions {
-    private fun goToStartAction(shortcut: String) = action<ScorePlayer>("Go to start") {
+    fun goToStartAction(shortcut: String) = action<PlayHead>("Go to start") {
         description("Move the playback cursor to the start of the score")
         shortcut(shortcut)
         icon(Material2MZ.SKIP_PREVIOUS)
-        enableWhen { player -> player.isScheduled.not() }
-        executes { player, ev ->
+        enableWhen { player -> player.canMoveManually }
+        executes { playHead, ev ->
             if (ev.isTargetTextInput && !ev.isAltDown() && !ev.isControlDown()) return@executes
-            if (!player.isScheduled.now) {
-                player.playHead.movePlayHeadToStart()
+            if (playHead.canMoveManually.now) {
+                playHead.movePlayHeadToStart()
             }
         }
     }
@@ -99,8 +100,8 @@ object PlaybackActions {
         if (bus != null) project[SERVER_OPTIONS].recordedBus = bus.reference()
     }
 
-    val global = collectActions {
-        add(goToStartAction("Alt?+DIGIT0"))
+    val global = collectActions<ScorePlayer> {
+        add(goToStartAction("Alt?+DIGIT0")) { player -> player.playHead }
         add(playAction("Alt?+SPACE"))
         addAction("Stop") {
             description("Stop playback and free all Synths")

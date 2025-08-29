@@ -12,12 +12,10 @@ import ponticello.impl.randomColor
 import ponticello.impl.zero
 import ponticello.model.flow.AudioFlowGroup
 import ponticello.model.flow.AudioFlows
-import ponticello.model.player.ScorePlayer
 import ponticello.ui.controls.NamePrompt
 import ponticello.ui.score.NavigableScorePane
 import ponticello.ui.score.RectangleSelection
 import ponticello.ui.score.ScoreObjectSelectionManager
-import reaktive.value.binding.not
 import reaktive.value.now
 
 object ScoreNavigationActions : Action.Collector<NavigableScorePane>({
@@ -33,23 +31,21 @@ object ScoreNavigationActions : Action.Collector<NavigableScorePane>({
     addAction("Move to Cursor") {
         description("Move displayed portion of the score to playback cursor")
         shortcut("Shift+SPACE")
-        executes { view ->
-            val player = view.context[ScorePlayer.CURRENT]
-            val t = player.playHead.currentTime
-            view.display(t, view.displayedDuration + t)
+        executes { pane ->
+            val t = pane.playHead.currentTime
+            pane.display(t, pane.displayedDuration + t)
         }
     }
     addAction("Move playback cursor to start") {
         shortcut("Ctrl+Shift?+DIGIT0")
         icon(Material2MZ.SKIP_PREVIOUS)
-        enableWhen { view -> view.context[ScorePlayer.CURRENT].isScheduled.not() }
+        enableWhen { pane -> pane.playHead.canMoveManually }
         executes { pane, ev ->
-            val player = pane.context[ScorePlayer.CURRENT]
-            if (player.isScheduled.now) return@executes
+            if (!pane.playHead.canMoveManually.now) return@executes
             if (ev.isShiftDown()) {
                 pane.display(0.0.asTime, pane.displayedDuration)
             }
-            player.playHead.movePlayHeadToStart()
+            pane.playHead.movePlayHeadToStart()
         }
     }
     addAction("Zoom in") {

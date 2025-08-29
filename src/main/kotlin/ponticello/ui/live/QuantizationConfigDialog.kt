@@ -37,14 +37,6 @@ class QuantizationConfigDialog(
         .selectorButton(config.clock)
         .setFixedWidth(SELECTOR_WIDTH)
 
-    private val durationUnitInput = SimpleSearchableListView(TimeUnit.entries, "Choose duration unit")
-        .selectorButton(config.durationUnit)
-        .setFixedWidth(SELECTOR_WIDTH)
-
-    private val durationValueInput = Spinner<Double>(0.0, Double.MAX_VALUE, config.durationValue.now.value)
-        .sync(config.durationValue)
-        .setFixedWidth(SPINNER_WIDTH)
-
     private val quantizationUnitInput = SimpleSearchableListView(QuantizationUnit.entries, "Choose quantization unit")
         .selectorButton(config.quantizationUnit)
         .setFixedWidth(SELECTOR_WIDTH)
@@ -79,12 +71,10 @@ class QuantizationConfigDialog(
         confirmAndStretchButton.setOnAction { commit(ResizeMode.Stretch) }
         val unresolvedGrid = config.meter.flatMap(ObjectReference<*>::isResolved).not().asObservableValue()
         shiftGridToggle.disableProperty().bind(unresolvedGrid)
-        durationUnitInput.disableProperty().bind(unresolvedGrid)
         quantizationUnitInput.disableProperty().bind(unresolvedGrid)
         offsetUnitInput.disableProperty().bind(unresolvedGrid)
         row("Meter: ", meterSelector)
         row("Clock: ", clockSelector)
-        row("Duration: ", durationUnitInput, durationValueInput)
         row("Quantization: ", quantizationUnitInput, quantizationValueInput)
         row("Offset: ", offsetUnitInput, offsetValueInput)
         addItem("Enable quantization: ", enableQuantizationToggle)

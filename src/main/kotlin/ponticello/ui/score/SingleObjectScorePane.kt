@@ -10,12 +10,13 @@ import ponticello.impl.times
 import ponticello.impl.zero
 import ponticello.model.obj.MeterObject
 import ponticello.model.obj.project
-import ponticello.model.player.ScorePlayer
 import ponticello.model.project.UIState
 import ponticello.model.project.uiState
 import ponticello.model.score.ObjectPosition
 import ponticello.model.score.Score
 import ponticello.model.score.ScoreObject
+import ponticello.ui.launcher.PonticelloMainActivity
+import ponticello.ui.misc.PlayHead
 import ponticello.ui.score.TempoGridObjectView.Companion.GRID_HEIGHT
 import reaktive.Observer
 import reaktive.and
@@ -25,20 +26,19 @@ import reaktive.value.now
 import java.util.concurrent.Future
 
 class SingleObjectScorePane(
-    val rootObj: ScoreObject, context: Context,
-    val absoluteScoreY: () -> Decimal
-) : RootScorePane(Score.makeScore(rootObj), context) {
+    val rootObj: ScoreObject, context: Context, playHead: PlayHead
+) : RootScorePane(Score.makeScore(rootObj), context, playHead) {
     override val displayStart: Decimal
         get() = zero
     override val displayEnd: Decimal
         get() = rootObj.duration
 
+    var positionInMainScore: () -> ObjectPosition? = { null }
+
     override val absolutePosition: ObjectPosition
-        get() = ObjectPosition(zero, rootObj.liveConfig.yPosition.now)
+        get() = ObjectPosition(zero, positionInMainScore()?.y ?: zero)
     private lateinit var durationObserver: Observer
     private lateinit var snapObserver: Observer
-    private lateinit var meterObserver: Observer
-    private var meterChangeObserver: Observer? = null
 
     private val gridCanvas = Canvas()
     private val marker = Line() styleClass "grid-marker-line"
@@ -67,9 +67,8 @@ class SingleObjectScorePane(
         gridCanvas.height = GRID_HEIGHT
         gridCanvas.setOnMouseClicked { ev ->
             val (t, _) = snapToGrid(ev.x, ev.y)
-            val player = context[ScorePlayer.CURRENT]
-            if (!player.isScheduled.now) {
-                player.playHead.movePlayHead(t)
+            if (playHead.canMoveManually.now) {
+                playHead.movePlayHead(t)
             }
             ev.consume()
         }
@@ -77,14 +76,6 @@ class SingleObjectScorePane(
         marker.endYProperty().bind(heightProperty())
         marker.visibleProperty().bind(context.project.uiState.snapEnabled.asObservableValue())
         marker.isMouseTransparent = true
-        meterObserver = rootObj.quantizationConfig.meter.forEach { ref ->
-            meterChangeObserver?.kill()
-            meterChangeObserver = null
-            val meter = ref.get() ?: return@forEach
-            meterChangeObserver = meter.observe { repaintGrid() }
-            repaintGrid()
-        }
-
     }
 
     fun getSingleObjectView(): ScoreObjectView? {
@@ -98,8 +89,8 @@ class SingleObjectScorePane(
         return future
     }
 
-    private fun repaintGrid() {
-        val meter = rootObj.quantizationConfig.meter.now.get() ?: return
+    fun repaintGrid() {
+        val (_, meter) = getGridFromMainScore(ObjectPosition.ZERO) ?: return
         val duration = rootObj.duration.value
         TempoGridObjectView.paintGrid(context, meter, firstBar = 0, duration, gridCanvas)
     }
@@ -118,10 +109,12 @@ class SingleObjectScorePane(
     override fun getNearestGrid(position: ObjectPosition): Pair<Decimal, MeterObject>? {
         val fromScore = super.getNearestGrid(position)
         if (fromScore != null) return fromScore
-        val config = rootObj.quantizationConfig
-        val referenceGrid = config.meter.now.get()
-        return if (referenceGrid != null) Pair(zero, referenceGrid)
-        else null
+        return getGridFromMainScore(position)
+    }
+
+    private fun getGridFromMainScore(position: ObjectPosition): Pair<Decimal, MeterObject>? {
+        val mainScorePos = positionInMainScore() ?: return null
+        return context[PonticelloMainActivity].mainScoreView.getNearestGrid(mainScorePos + position)
     }
 
     override fun markT(t: Decimal) {

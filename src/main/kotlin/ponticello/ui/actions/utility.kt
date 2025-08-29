@@ -5,7 +5,6 @@ import fxutils.actions.ActionBar
 import fxutils.actions.ContextualizedAction
 import fxutils.actions.registerActions
 import fxutils.registerShortcuts
-import fxutils.styleClass
 import fxutils.undo.UndoManager
 import hextant.context.Context
 import hextant.context.compoundEdit
@@ -60,7 +59,7 @@ fun Action.Builder<ObjectActionContext>.executeSingle(action: (ScoreObjectView, 
 
 fun Scene.registerGlobalShortcuts(context: Context) {
     registerShortcuts {
-        registerActions(PlaybackActions.global.withContext(context[ScorePlayer.CURRENT]))
+        registerActions(PlaybackActions.global.withContext(context[ScorePlayer.MAIN]))
         registerActions(ServerActions.withContext(context.project))
         registerActions(ProjectUtilityActions.withContext(context.project))
         registerActions(UndoRedoActions.withContext(context[UndoManager]))
@@ -73,11 +72,7 @@ fun Scene.registerGlobalShortcuts(context: Context) {
     }
 }
 
-fun toolbarPart(actions: List<ContextualizedAction>): ActionBar {
-    val bar = ActionBar(actions, buttonStyle = "large-icon-button")
-    bar.styleClass("tool-bar")
-    return bar
-}
+fun toolbarPart(actions: List<ContextualizedAction>): ActionBar = ActionBar(actions, buttonStyle = "large-icon-button")
 
 fun Action.Builder<out ContextualObject>.undoable() {
     undoable { obj -> obj.context[UndoManager] }

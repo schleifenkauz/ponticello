@@ -41,7 +41,6 @@ import ponticello.ui.controls.InlineParameterControlsBar
 import ponticello.ui.controls.NameControl
 import ponticello.ui.dock.AppLayout
 import ponticello.ui.impl.Cursors
-import ponticello.ui.registry.ScoreObjectRegistryPane
 import reaktive.value.ReactiveVariable
 import reaktive.value.binding.*
 import reaktive.value.forEach
@@ -221,7 +220,12 @@ abstract class ScoreObjectView(
                         ev.consume()
                         if (ev.modifiers == setOf(Shift, Ctrl)) {
                             val db = startDragAndDrop(TransferMode.LINK)
-                            db.setContent(mapOf(ScoreObject.DATA_FORMAT to obj.reference()))
+                            db.setContent(
+                                mapOf(
+                                    ScoreObject.DATA_FORMAT to obj.reference(),
+                                    ScoreObject.ABSOLUTE_SCORE_Y to absolutePosition.y
+                                )
+                            )
                         } else {
                             dragTarget.cursor = Cursors.CLOSED_HAND
                             dragStart = Point2D(ev.screenX, ev.screenY)
@@ -372,12 +376,6 @@ abstract class ScoreObjectView(
                     val toolPane = context[AppLayout].get<ScoreObjectDetailPane>()
                     toolPane.updateContent(this)
                     toolPane.setShowing(true)
-                }
-
-                ev.button == MouseButton.SECONDARY && ev.modifiers == setOf(Shift) -> {
-                    if (!parentPane.isRoot(obj)) {
-                        context[AppLayout].get<ScoreObjectRegistryPane>().showContent(obj)
-                    }
                 }
 
                 ev.button == MouseButton.PRIMARY && ev.clickCount == 2 -> {

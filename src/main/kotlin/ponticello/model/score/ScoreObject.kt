@@ -12,6 +12,7 @@ import hextant.core.editor.ListenerManager
 import javafx.geometry.HorizontalDirection
 import javafx.geometry.HorizontalDirection.LEFT
 import javafx.geometry.Side
+import javafx.scene.input.DataFormat
 import javafx.scene.paint.Color
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -340,6 +341,8 @@ sealed class ScoreObject : AbstractRenamableObject() {
 
     companion object {
         val DATA_FORMAT = TypedDataFormat<ScoreObjectReference>("score-object")
+
+        val ABSOLUTE_SCORE_Y = DataFormat("ponticello:absolute-score-y")
     }
 
 }

@@ -8,7 +8,6 @@ import ponticello.model.registry.ClockRegistry
 import ponticello.model.score.*
 import ponticello.sc.client.SuperColliderClient
 import ponticello.ui.misc.PlayHead
-import ponticello.ui.score.ScorePane
 import reaktive.value.ReactiveBoolean
 import reaktive.value.ReactiveValue
 import reaktive.value.now
@@ -16,10 +15,9 @@ import reaktive.value.reactiveVariable
 import java.util.concurrent.Executors
 
 class ScorePlayer private constructor(
-    val id: Int, val pane: ScorePane,
+    val id: Int, val score: Score, val playHead: PlayHead,
     val scheduler: ScoreObjectScheduler,
-    val quantization: QuantizationConfig?,
-    private val loopingActivated: ReactiveBoolean,
+    val quantization: QuantizationConfig?, private val loopingActivated: ReactiveBoolean,
 ) {
     private val playing = reactiveVariable(false)
     private val scheduled = reactiveVariable(false)
@@ -31,15 +29,13 @@ class ScorePlayer private constructor(
     val isPlaying: ReactiveValue<Boolean> = playing
     val isScheduled: ReactiveValue<Boolean> = scheduled
 
-    val context get() = pane.context
-    val score get() = pane.score
+    val context get() = score.context
 
     val lookAhead get() = context[GlobalSettings].lookAhead
 
     private val client: SuperColliderClient = context[SuperColliderClient]
     private val activeObjects = context[ActiveObjectsManager]
     private val updater = LiveScoreUpdater(score, this)
-    val playHead: PlayHead = PlayHead(pane)
 
     private var currentClock: ClockObject? = null
 
@@ -52,6 +48,7 @@ class ScorePlayer private constructor(
 
     init {
         score.addListener(updater)
+        playHead.setPlayer(this)
     }
 
     fun doCycle(time: Decimal, delta: Decimal) = execute {
@@ -92,7 +89,7 @@ class ScorePlayer private constructor(
 
     private fun collectEvents(
         score: Score, position: ObjectPosition, timeRange: DecimalRange,
-        dest: MutableList<ScoreEvent>, withCutoff: Boolean
+        dest: MutableList<ScoreEvent>, withCutoff: Boolean,
     ) {
         for (inst in score.activeInstances(timeRange - position.time)) {
             if (inst.muted.now) continue
@@ -187,8 +184,6 @@ class ScorePlayer private constructor(
 
 
     companion object {
-        val CURRENT = publicProperty<ScorePlayer>("ScorePlayer")
-
         val MAIN = publicProperty<ScorePlayer>("MainScorePlayer")
 
         private val executor = Executors.newSingleThreadExecutor()
@@ -205,10 +200,13 @@ class ScorePlayer private constructor(
 
         fun instances(): List<ScorePlayer> = all
 
-        fun create(pane: ScorePane, loopingActivated: ReactiveBoolean, quantization: QuantizationConfig?): ScorePlayer {
+        fun create(
+            score: Score, playHead: PlayHead,
+            loopingActivated: ReactiveBoolean, quantization: QuantizationConfig?,
+        ): ScorePlayer {
             val id = all.size
-            val scheduler = pane.context[ScoreObjectScheduler]
-            val player = ScorePlayer(id, pane, scheduler, quantization, loopingActivated)
+            val scheduler = score.context[ScoreObjectScheduler]
+            val player = ScorePlayer(id, score, playHead, scheduler, quantization, loopingActivated)
             all.add(player)
             return player
         }

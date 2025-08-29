@@ -44,13 +44,12 @@ class MeterObject(
         }
     }
 
-    fun getDuration(unit: QuantizationUnit, objDuration: Decimal): Decimal {
+    fun getDuration(unit: QuantizationUnit): Decimal {
         val beatDur = getBeatDur()
         return when (unit) {
             QuantizationUnit.Bars -> beatsPerBar.now * beatDur
             QuantizationUnit.Beats -> beatDur
             QuantizationUnit.Ticks -> beatDur / ticksPerBeat.now
-            QuantizationUnit.ObjectDuration -> objDuration
         }
     }
 

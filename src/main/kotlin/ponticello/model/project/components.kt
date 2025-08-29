@@ -4,7 +4,7 @@ import kotlinx.serialization.serializer
 import ponticello.model.ServerOptions
 import ponticello.model.flow.AudioFlows
 import ponticello.model.live.LauncherGrid
-import ponticello.model.live.LiveTaskRegistry
+import ponticello.model.live.LiveObjectRegistry
 import ponticello.model.obj.ContextualObject
 import ponticello.model.obj.ScriptRegistry
 import ponticello.model.registry.*
@@ -40,8 +40,8 @@ val OBJECTS = Component(
 )
 
 val LIVE_TASKS = Component(
-    "live_tasks", LiveTaskRegistry::createDefault,
-    MultiFileComponentSerializer(::LiveTaskRegistry, listSerializer = LiveTaskRegistry.Serializer)
+    "live_tasks", LiveObjectRegistry::createDefault,
+    MultiFileComponentSerializer(::LiveObjectRegistry, listSerializer = LiveObjectRegistry.Serializer)
 )
 
 val SCRIPTS = Component(

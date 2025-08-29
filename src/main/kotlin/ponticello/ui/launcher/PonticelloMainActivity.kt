@@ -59,17 +59,16 @@ class PonticelloMainActivity(val project: PonticelloProject) : Activity() {
     private fun setupMainScoreView() {
         mainScoreView.initialize()
         context[TimeCodeView] = timeCodeView
-        context[ScorePane.CURRENT_ROOT] = mainScoreView
         context[ScoreObjectDuplicator].registerRootPane(mainScoreView)
         project.context[ScoreObjectSelectionManager] = ScoreObjectSelectionManager(project.context, mainScoreView)
     }
 
     private fun setupPlayback() {
         player = ScorePlayer.create(
-            mainScoreView,
+            project.mainScore, mainScoreView.playHead,
             loopingActivated = reactiveValue(false), quantization = null
         )
-        context[ScorePlayer.CURRENT] = player
+        mainScoreView.playHead.attachTo(mainScoreView, timeCodeView)
         context[ScorePlayer.MAIN] = player
         playbackMessageListener = PlaybackMessageListener(
             context[GlobalSettings], project.objects, project.flows
@@ -104,7 +103,7 @@ class PonticelloMainActivity(val project: PonticelloProject) : Activity() {
         }
         mainScoreView.isVisible = false
         setVisible()
-        val displayRange = project[UI_STATE].mainScoreDisplayRange
+        val displayRange = project[UI_STATE].mainScoreDisplayRange?.takeIf { !it.isEmpty() }
         runAfterLayout {
             appLayout.restorePaneSizes()
             runAfterLayout {

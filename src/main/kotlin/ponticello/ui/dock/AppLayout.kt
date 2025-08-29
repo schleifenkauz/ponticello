@@ -30,7 +30,7 @@ import ponticello.ui.flow.AudioFlowsPane
 import ponticello.ui.flow.MixerPane
 import ponticello.ui.launcher.PonticelloMainActivity
 import ponticello.ui.live.LauncherGridPane
-import ponticello.ui.live.LiveTaskRegistryPane
+import ponticello.ui.live.LiveObjectRegistryPane
 import ponticello.ui.misc.*
 import ponticello.ui.registry.*
 import ponticello.ui.score.NavigableScorePane
@@ -48,7 +48,7 @@ class AppLayout(
     private val timeCodeView: TimeCodeView,
 ) : BorderPane(), ObjectList.Listener<ToolPane.Type> {
     private val sideBarLists = project[UI_STATE].sideBarStates.associateTo(mutableMapOf()) { state ->
-        val toolPaneTypes = state.toolPanes.map { t -> toolPaneType(t) }.distinct().toMutableList()
+        val toolPaneTypes = state.toolPanes.mapNotNull { t -> toolPaneType(t) }.distinct().toMutableList()
         state.side to ToolPaneTypeList(toolPaneTypes)
     }
 
@@ -302,7 +302,7 @@ class AppLayout(
         val recordBtn = playerBar.getButton(PlaybackActions.toggleRecording)
         recordBtn.setOnDragDetected { ev ->
             val db = recordBtn.startDragAndDrop(TransferMode.COPY)
-            db.setContent(mapOf(PlaybackActions.RECORD_BUTTON to "<>"))
+            db.setContent(mapOf(PlaybackActions.RECORD_BUTTON to "<record>"))
             ev.consume()
         }
         center = HBox(
@@ -419,7 +419,6 @@ class AppLayout(
             //default left side-pane
             add(ClockRegistryPane)
             add(BusRegistryPane)
-            add(ScoreObjectRegistryPane)
             add(ScoreObjectDetailPane)
 
             //default right side-pane
@@ -428,7 +427,7 @@ class AppLayout(
             add(InstrumentRegistryPane)
 
             add(GlobalPatternRegistryPane)
-            add(LiveTaskRegistryPane)
+            add(LiveObjectRegistryPane)
             add(ScriptRegistryPane)
 
             add(HelpBrowser)
@@ -440,8 +439,7 @@ class AppLayout(
             add(ConsoleOutputPane)
         }.toMutableList()
 
-        fun toolPaneType(uid: Int) =
-            allToolPaneTypes.find { it.uid == uid } ?: error("ToolPane with UID $uid not found")
+        fun toolPaneType(uid: Int) = allToolPaneTypes.find { it.uid == uid }
 
         fun registerToolPane(type: ToolPane.Type) {
             allToolPaneTypes.add(type)

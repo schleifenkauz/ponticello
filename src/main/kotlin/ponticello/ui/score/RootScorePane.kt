@@ -13,19 +13,21 @@ import ponticello.impl.*
 import ponticello.model.obj.MeterObject
 import ponticello.model.obj.project
 import ponticello.model.obj.withName
-import ponticello.model.player.ScorePlayer
 import ponticello.model.project.uiState
 import ponticello.model.registry.ScoreObjectRegistry
 import ponticello.model.score.*
 import ponticello.ui.impl.Cursors
 import ponticello.ui.impl.verticalDist
+import ponticello.ui.misc.PlayHead
 import reaktive.event.unitEvent
 import reaktive.value.now
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Executors
 import java.util.concurrent.Future
 
-abstract class RootScorePane(score: Score, context: Context) : RegularScorePane(score, context) {
+abstract class RootScorePane(
+    score: Score, context: Context, val playHead: PlayHead = PlayHead(),
+) : RegularScorePane(score, context) {
     private val positionTracker = Line() styleClass "mouse-tracker-line"
 
     private var latestRepaintTrigger = 0L
@@ -89,8 +91,7 @@ abstract class RootScorePane(score: Score, context: Context) : RegularScorePane(
         for (gridView in allViews.filterIsInstance<TempoGridObjectView>()) {
             gridView.unmark()
         }
-        val player = context[ScorePlayer.CURRENT]
-        context[TimeCodeView].displayTime(player.playHead.currentTime)
+        context[TimeCodeView].displayTime(playHead.currentTime)
     }
 
     fun magnifyEnvelope(editor: EnvelopeEditor) {
@@ -149,7 +150,7 @@ abstract class RootScorePane(score: Score, context: Context) : RegularScorePane(
         repositionEnvelopeMagnifier()
         repaint.fire()
         if (positionTracker !in children) children.add(positionTracker)
-        context[ScorePlayer.CURRENT].playHead.updatePosition()
+        playHead.updatePosition()
         return future
     }
 
@@ -191,8 +192,8 @@ abstract class RootScorePane(score: Score, context: Context) : RegularScorePane(
             else g.unmark()
         }
         positionTracker.layoutX = getX(t)
-        val player = context[ScorePlayer.CURRENT]
-        if (!player.isPlaying.now) {
+        val player = playHead.player.now
+        if (player?.isPlaying?.now != true) {
             context[TimeCodeView].displayTime(t)
         }
     }
@@ -210,7 +211,7 @@ abstract class RootScorePane(score: Score, context: Context) : RegularScorePane(
         }
     }
 
-    companion object  {
+    companion object {
         private val layoutExecutor = Executors.newSingleThreadExecutor { r -> Thread(r, "Layout Thread") }
     }
 }
