@@ -4,6 +4,7 @@ import hextant.context.Context
 import javafx.scene.paint.Color
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 import ponticello.impl.*
 import ponticello.model.flow.NodePlacement
 import ponticello.model.obj.*
@@ -28,16 +29,23 @@ class MidiNoteObject(
     override val type: String
         get() = "midi-note"
 
-    lateinit var parentObject: MidiObject
+    @Transient
+    var _parentObject: MidiObject? = null
+
+    var parentObject: MidiObject
+        get() = _parentObject ?: error("Parent not initialized")
+        private set(value) {
+            _parentObject = value
+        }
 
     override val associatedColor: ReactiveValue<Color?>
         get() = parentObject.associatedColor
 
     override val def: InstrumentObject
-        get() = parentObject.def
+        get() = _parentObject?.def ?: NoInstrument()
 
     override val superColliderPrefix: String
-        get() = "~midi_note"
+        get() = "~midi_note_"
 
     override val canResizeVertically: Boolean
         get() = false

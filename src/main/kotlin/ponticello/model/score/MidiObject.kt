@@ -9,10 +9,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import ponticello.impl.*
-import ponticello.model.obj.InstrumentObject
-import ponticello.model.obj.InstrumentReference
-import ponticello.model.obj.NoInstrument
-import ponticello.model.obj.ParameterizedObject
+import ponticello.model.obj.*
 import ponticello.sc.ControlSpec
 import reaktive.value.*
 import reaktive.value.binding.flatMap
@@ -132,7 +129,8 @@ class MidiObject(
     override val def: InstrumentObject
         get() = when (val instr = instrument.now) {
             is InstrumentReference.UserDefined -> instr.reference.get() ?: NoInstrument()
-            is InstrumentReference.VST, InstrumentReference.None -> NoInstrument()
+            is InstrumentReference.VST -> instr.flow.get()?.let { f -> VSTInstrumentObject(f) } ?: NoInstrument()
+            InstrumentReference.None -> NoInstrument()
         }
 
     class TransposeEdit(private val obj: MidiObject, private val deltaPitch: Int) : AbstractEdit() {
