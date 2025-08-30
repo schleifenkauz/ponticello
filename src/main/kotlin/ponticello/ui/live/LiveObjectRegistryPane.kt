@@ -64,6 +64,9 @@ class LiveObjectRegistryPane(registry: LiveObjectRegistry) : ObjectRegistryPane<
 
     override fun getActions(box: ObjectBox<LiveObject>): List<ContextualizedAction> = actions.withContext(box.obj)
 
+    override val headerActions: List<ContextualizedAction>
+        get() = LiveObjectRegistryPane.headerActions.withContext(this)
+
     override fun getContent(obj: LiveObject, mode: DisplayMode): Parent = when (obj) {
         is LiveTaskObject -> {
             val actions =
@@ -199,6 +202,19 @@ class LiveObjectRegistryPane(registry: LiveObjectRegistry) : ObjectRegistryPane<
             addAction("Reset") {
                 icon(MaterialDesignS.STOP)
                 executes { obj -> obj.reset() }
+            }
+        }
+
+        val headerActions = collectActions<LiveObjectRegistryPane> {
+            addAction("Stop all") {
+                icon(MaterialDesignS.STOP)
+                executes { pane ->
+                    pane.registry.forEach { obj ->
+                        if (obj.isScheduled.now) {
+                            obj.reset()
+                        }
+                    }
+                }
             }
         }
     }
