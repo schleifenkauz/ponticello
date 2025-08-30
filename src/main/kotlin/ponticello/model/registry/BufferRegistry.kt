@@ -16,9 +16,12 @@ import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.*
 import ponticello.impl.Logger
-import ponticello.impl.parseDecimal
+import ponticello.impl.json
 import ponticello.impl.toDecimal
-import ponticello.model.obj.*
+import ponticello.model.obj.BufferObject
+import ponticello.model.obj.SampleObject
+import ponticello.model.obj.SuperColliderObject
+import ponticello.model.obj.withName
 import ponticello.sc.Identifier
 import ponticello.sc.client.SuperColliderClient
 import ponticello.sc.client.getArgument
@@ -92,13 +95,7 @@ class BufferRegistry(
             val obj = buildJsonObject {
                 put("copyAudioFiles", JsonPrimitive(value.copyAudioFiles.now))
                 for (buf in value.objects) {
-                    val content = when (buf) {
-                        is SampleObject -> JsonPrimitive(buf.filePath().now)
-                        is AllocatedBufferObject -> buildJsonObject {
-                            put("channels", JsonPrimitive(buf.channels.now))
-                            put("duration", JsonPrimitive(buf.duration.now))
-                        }
-                    }
+                    val content = json.encodeToJsonElement(buf)
                     put(buf.name.now, content)
                 }
             }
@@ -112,28 +109,18 @@ class BufferRegistry(
             val objects = mutableListOf<BufferObject>()
             for ((name, content) in obj) {
                 if (name == "copyAudioFiles") continue
-                val buf = when (content) {
-                    is JsonPrimitive -> SampleObject(reactiveVariable(content.string)).withName(name)
-                    is JsonObject -> {
-                        val channels = content["channels"]?.jsonPrimitive?.int
-                            ?: error("Missing 'channels' in object: $content")
-                        val duration = content["duration"]?.jsonPrimitive?.content?.parseDecimal()
-                            ?: error("Missing 'duration' in object: $content")
-                        AllocatedBufferObject(
-                            reactiveVariable(channels),
-                            reactiveVariable(duration)
-                        ).withName(name)
-                    }
-
-                    else -> error("Unknown buffer content type: $content")
+                val buf = when {
+                    content is JsonPrimitive -> //for compatibility with older projects
+                        SampleObject(reactiveVariable(content.string))
+                    else -> json.decodeFromJsonElement(content)
                 }
-                objects.add(buf)
+                objects.add(buf.withName(name))
             }
             return BufferRegistry(objects, reactiveVariable(copyAudioFiles))
         }
     }
 
     companion object : PublicProperty<BufferRegistry> by publicProperty("SampleRegistry") {
-        fun createDefault() = BufferRegistry(copyAudioFiles = reactiveVariable(true))
+        fun createDefault() = BufferRegistry(copyAudioFiles = reactiveVariable(false))
     }
 }

@@ -1,15 +1,20 @@
 package ponticello.ui.registry
 
 import fxutils.actions.ContextualizedAction
+import fxutils.actions.button
 import fxutils.actions.collectActions
 import fxutils.addAfter
 import fxutils.controls.IntSpinner
 import fxutils.drag.hasFile
+import fxutils.hspace
+import fxutils.label
+import fxutils.prompt.CompoundPrompt
 import fxutils.prompt.SimpleSelectorPrompt
 import fxutils.prompt.YesNoPrompt
 import fxutils.prompt.compoundPrompt
 import fxutils.registerShortcuts
 import fxutils.undo.UndoManager
+import hextant.context.Context
 import hextant.fx.HextantTextField
 import javafx.event.Event
 import javafx.scene.Node
@@ -20,19 +25,19 @@ import javafx.scene.input.DataFormat
 import javafx.scene.input.DragEvent
 import javafx.scene.input.Dragboard
 import javafx.scene.input.TransferMode
+import javafx.scene.layout.HBox
 import org.kordamp.ikonli.Ikon
+import org.kordamp.ikonli.codicons.Codicons
 import org.kordamp.ikonli.evaicons.Evaicons
 import org.kordamp.ikonli.material2.Material2AL
 import org.kordamp.ikonli.material2.Material2MZ
 import org.kordamp.ikonli.materialdesign2.MaterialDesignC
 import org.kordamp.ikonli.materialdesign2.MaterialDesignF
+import org.kordamp.ikonli.materialdesign2.MaterialDesignM
 import org.kordamp.ikonli.materialdesign2.MaterialDesignP
 import ponticello.impl.Logger
 import ponticello.impl.parseDecimal
-import ponticello.model.obj.AllocatedBufferObject
-import ponticello.model.obj.BufferObject
-import ponticello.model.obj.SampleObject
-import ponticello.model.obj.project
+import ponticello.model.obj.*
 import ponticello.model.project.PonticelloProject
 import ponticello.model.project.buffers
 import ponticello.model.registry.BufferRegistry
@@ -45,6 +50,8 @@ import ponticello.ui.dock.ToolPane
 import ponticello.ui.dock.ToolPaneState
 import ponticello.ui.launcher.PonticelloFiles
 import ponticello.ui.score.ScoreObjectDuplicator
+import ponticello.ui.score.TempoGridObjectView
+import reaktive.value.binding.binding
 import reaktive.value.fx.asObservableValue
 import reaktive.value.now
 import java.io.File
@@ -151,7 +158,22 @@ class BufferRegistryPane(private val buffers: BufferRegistry) : ObjectRegistryPa
             listOf(channelsSpinner, xLabel, durationInput)
         }
 
-        else -> emptyList()
+        is SampleObject -> buildList {
+            val meter = obj.meter
+            if (meter != null) {
+                add(label(binding(meter.beatsPerMinute, meter.beatsPerBar, meter.ticksPerBeat) { bpm, bpb, tpb ->
+                    "$bpm bpm ($bpb x $tpb)"
+                }))
+                add(hspace(5.0))
+                add(Codicons.SYMBOL_PROPERTY.button("Configure meter", "medium-icon-button") { ev ->
+                    MeterConfigPrompt(obj, obj.context, "Edit meter").showDialog(ev)
+                })
+            } else {
+                add(MaterialDesignM.METRONOME.button("Configure meter", "medium-icon-button") { ev ->
+                    MeterConfigPrompt(obj, obj.context, "Add meter").showDialog(ev)
+                })
+            }
+        }
     }
 
     override fun configureBox(box: ObjectBox<BufferObject>, currentMode: ObjectListView.DisplayMode) {
@@ -181,6 +203,40 @@ class BufferRegistryPane(private val buffers: BufferRegistry) : ObjectRegistryPa
             All -> true
             Allocated -> obj is AllocatedBufferObject
             Samples -> obj is SampleObject
+        }
+    }
+
+    private class MeterConfigPrompt(
+        private val sample: SampleObject,
+        private val context: Context,
+        title: String,
+    ) : CompoundPrompt<Unit>(title) {
+        private val meter = sample.meter?.copy() ?: MeterObject.createDefault()
+        private val firstBeatField = TextField(sample.firstBeat.now.toString())
+
+        init {
+            TempoGridObjectView.setupMeterConfig(meter, content, undoManager = null)
+            addItem("First beat", firstBeatField)
+            confirmButton.disableProperty().bind(
+                firstBeatField.textProperty().map { t -> t.parseDecimal() == null }
+            )
+        }
+
+        override fun onReceiveFocus() {
+            val firstItem = content.children.first() as HBox
+            val spinner = firstItem.children.first { it is IntSpinner }
+            spinner.requestFocus()
+        }
+
+        override fun confirm(): Unit? {
+            val firstBeat = firstBeatField.text.parseDecimal() ?: return null
+            sample.firstBeat.now = firstBeat
+            if (sample.meter != null) {
+                sample.meter!!.update(meter, context[UndoManager])
+            } else {
+                sample.setMeter(meter)
+            }
+            return Unit
         }
     }
 

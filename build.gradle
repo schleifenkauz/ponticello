@@ -62,6 +62,7 @@ dependencies {
     kapt 'de.schleifenkauz:hextant-codegen:1.0-SNAPSHOT'
 
     implementation 'com.illposed.osc:javaosc-core:0.9'
+    implementation 'net.jthink:jaudiotagger:3.0.1'
 
     implementation 'org.slf4j:log4j-over-slf4j:2.0.17'
 

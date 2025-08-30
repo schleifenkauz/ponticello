@@ -1,6 +1,7 @@
 package ponticello.model.obj
 
 import fxutils.drag.TypedDataFormat
+import kotlinx.serialization.Serializable
 import ponticello.impl.Decimal
 import ponticello.impl.asY
 import ponticello.model.registry.ScoreObjectRegistry
@@ -13,6 +14,7 @@ import ponticello.sc.client.SuperColliderClient
 import reaktive.value.ReactiveValue
 import reaktive.value.now
 
+@Serializable
 sealed class BufferObject : AbstractSuperColliderObject() {
     abstract fun channels(): Int
 

@@ -1,5 +1,7 @@
 package ponticello.model.obj
 
+import fxutils.undo.AbstractEdit
+import fxutils.undo.UndoManager
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import ponticello.impl.*
@@ -70,6 +72,30 @@ class MeterObject(
         return Pair(TimeUnit.Seconds, duration)
     }
 
+    fun update(source: MeterObject, undoManager: UndoManager) {
+        if (source === this) return
+        val bpmBefore = beatsPerMinute.now
+        val bpbBefore = beatsPerBar.now
+        val tpbBefore = ticksPerBeat.now
+
+        val bpmAfter = source.beatsPerMinute.now
+        val bpbAfter = source.beatsPerBar.now
+        val tpbAfter = source.ticksPerBeat.now
+
+        if (bpmBefore == bpmAfter && bpbBefore == bpbAfter && tpbBefore == tpbAfter) return
+
+        beatsPerMinute.now = bpmAfter
+        beatsPerBar.now = bpbAfter
+        ticksPerBeat.now = tpbAfter
+        undoManager.record(
+            UpdateMeterEdit(
+                this,
+                bpmBefore, bpbBefore, tpbBefore,
+                bpmAfter, bpbAfter, source.ticksPerBeat.now,
+            )
+        )
+    }
+
     override fun copy() = MeterObject(
         beatsPerMinute.copy(), beatsPerBar.copy(), ticksPerBeat.copy()
     )
@@ -77,12 +103,39 @@ class MeterObject(
     fun observe(handler: (Reactive) -> Unit): Observer =
         beatsPerMinute.observe(handler) and beatsPerBar.observe(handler) and ticksPerBeat.observe(handler)
 
+    private class UpdateMeterEdit(
+        private val meter: MeterObject,
+        private val bpmBefore: Int,
+        private val bpbBefore: Int,
+        private val tpbBefore: Int,
+        private val bpmAfter: Int,
+        private val bpbAfter: Int,
+        private val tpbAfter: Int,
+    ) : AbstractEdit() {
+        override val actionDescription: String
+            get() = "Update meter"
+
+        override fun doRedo() {
+            meter.beatsPerMinute.now = bpmAfter
+            meter.beatsPerBar.now = bpbAfter
+            meter.ticksPerBeat.now = tpbAfter
+        }
+
+        override fun doUndo() {
+            meter.beatsPerMinute.now = bpmBefore
+            meter.beatsPerBar.now = bpbBefore
+            meter.ticksPerBeat.now = tpbBefore
+        }
+    }
+
     companion object {
         fun create(bpm: Int, bpb: Int, tpb: Int) = MeterObject(
             reactiveVariable(bpm),
             reactiveVariable(bpb),
             reactiveVariable(tpb)
         )
+
+        fun createDefault(bpm: Int) = create(bpm, 4, 4)
 
         fun createDefault() = create(60, 4, 4)
     }
