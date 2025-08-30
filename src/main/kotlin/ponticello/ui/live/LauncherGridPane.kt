@@ -196,7 +196,7 @@ class LauncherGridPane(
                                     target.context[AppLayout].get<LiveObjectRegistryPane>().showContent(liveObject)
                                 is LiveScoreObject -> {
                                     val objectsPane = target.context[AppLayout].get<ScoreObjectViewPane>()
-                                    objectsPane.showContent(liveObject.scoreObject, liveObject.quantization)
+                                    objectsPane.showContent(liveObject)
                                 }
                             }
                         }

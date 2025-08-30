@@ -6,10 +6,8 @@ import hextant.context.Context
 import javafx.scene.canvas.Canvas
 import javafx.scene.paint.Color
 import javafx.scene.shape.Line
-import ponticello.impl.Decimal
-import ponticello.impl.asY
-import ponticello.impl.times
-import ponticello.impl.zero
+import ponticello.impl.*
+import ponticello.model.live.QuantizationConfig
 import ponticello.model.obj.MeterObject
 import ponticello.model.obj.project
 import ponticello.model.project.UIState
@@ -32,7 +30,7 @@ import java.util.concurrent.Future
 
 class SingleObjectScorePane(
     val rootObj: ScoreObject, context: Context, playHead: PlayHead,
-    private val paintGrid: Boolean, playHeadStyle: String? = null
+    private val paintGrid: Boolean, playHeadStyle: String? = null,
 ) : RootScorePane(Score.makeScore(rootObj), context, playHead, playHeadStyle = playHeadStyle) {
     override val displayStart: Decimal
         get() = zero(ObjectPosition.TIME_PRECISION)
@@ -44,6 +42,14 @@ class SingleObjectScorePane(
     var positionInMainScore: () -> ObjectPosition? = { null }
         set(value) {
             field = value
+            if (quantization != null) quantization = null
+            repaintGrid()
+        }
+
+    var quantization: QuantizationConfig? = null
+        set(value) {
+            field = value
+            if (positionInMainScore() != null) positionInMainScore = { null }
             repaintGrid()
         }
 
@@ -113,10 +119,27 @@ class SingleObjectScorePane(
 
     fun repaintGrid() {
         if (!paintGrid) return
-        val mainScorePosition = positionInMainScore() ?: return
-        val (_, meter) = context[PonticelloMainActivity].mainScoreView.getNearestGrid(mainScorePosition) ?: return
+        val mainScorePosition = positionInMainScore()
+        val quant = quantization
+        val (meter, firstBar, offset) = when {
+            quant != null && quant.meter.now.isResolved.now -> {
+                val meter = quant.meter.now.force()
+                val offset =
+                    if (!quant.shiftGrid.now) zero
+                    else quant.computeOffset()
+                Triple(meter, 0, offset)
+            }
+
+            mainScorePosition != null -> {
+                val mainScoreView = context[PonticelloMainActivity].mainScoreView
+                val (start, meter, firstBar) = mainScoreView.getNearestGrid(mainScorePosition) ?: return
+                val offset = mainScorePosition.time - start
+                Triple(meter, firstBar, offset)
+            }
+            else -> return
+        }
         val duration = rootObj.duration.value
-        TempoGridObjectView.paintGrid(context, meter, firstBar = 0, duration, gridCanvas)
+        TempoGridObjectView.paintGrid(context, meter, firstBar, duration, gridCanvas, offset)
     }
 
     override fun mouseExited() {
@@ -135,11 +158,23 @@ class SingleObjectScorePane(
         return super.snapToGrid(position + positionInMainScore) - positionInMainScore
     }
 
-    override fun getNearestGrid(position: ObjectPosition): Pair<Decimal, MeterObject>? {
+    override fun getNearestGrid(position: ObjectPosition): Triple<Decimal, MeterObject, Int>? {
         val fromScore = super.getNearestGrid(position)
         if (fromScore != null) return fromScore
-        if (positionInMainScore() == null) return null
-        return context[PonticelloMainActivity].mainScoreView.getNearestGrid(position)
+        val mainScorePosition = positionInMainScore()
+        val quant = quantization
+        return when {
+            quant != null && quant.meter.now.isResolved.now -> {
+                val meterStart = -quant.computeOffset()
+                val firstBar = 0
+                Triple(meterStart, quant.meter.now.force(), firstBar)
+            }
+            mainScorePosition != null -> {
+                val mainScoreView = context[PonticelloMainActivity].mainScoreView
+                mainScoreView.getNearestGrid(position)
+            }
+            else -> null
+        }
     }
 
     override fun markT(t: Decimal) {

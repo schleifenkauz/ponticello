@@ -158,7 +158,7 @@ abstract class RootScorePane(
         return future
     }
 
-    override fun getNearestGrid(position: ObjectPosition): Pair<Decimal, MeterObject>? {
+    override fun getNearestGrid(position: ObjectPosition): Triple<Decimal, MeterObject, Int>? {
         val grids = score.objectInstances.filter { inst ->
             val obj = inst.obj
             obj is TempoGridObject && obj.meter.isResolved.now
@@ -166,7 +166,7 @@ abstract class RootScorePane(
         val relevantGrids = grids.filter { g -> position.time in g.timeRange }
         val nearestGrid = relevantGrids.minByOrNull { g -> g.verticalDist(position.y) } ?: return null
         val gridObj = nearestGrid.obj as TempoGridObject
-        return nearestGrid.start to gridObj.meter.force()
+        return Triple(nearestGrid.start, gridObj.meter.force(), gridObj.firstBar.now)
     }
 
     override fun snapToGrid(position: ObjectPosition): ObjectPosition {

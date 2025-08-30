@@ -10,7 +10,7 @@ import javafx.scene.Parent
 import javafx.scene.layout.Region
 import org.kordamp.ikonli.Ikon
 import org.kordamp.ikonli.materialdesign2.MaterialDesignP
-import ponticello.model.live.QuantizationConfig
+import ponticello.model.live.LiveScoreObject
 import ponticello.model.project.PonticelloProject
 import ponticello.model.score.ScoreObject
 import ponticello.ui.dock.Side
@@ -44,7 +44,8 @@ class ScoreObjectViewPane : ToolPane() {
 
     override var content: Parent = Region()
         set(value) {
-            children.replace(field, value)
+            if (children.size < 2) children.add(value)
+            else children[1] = value
             field = value
         }
 
@@ -62,18 +63,23 @@ class ScoreObjectViewPane : ToolPane() {
 
     override fun defaultState(): ToolPaneState = ToolPaneState.docked
 
+    fun showContent(obj: ScoreObject) {
+        displayedObject.now = obj
+        val pane = ScoreObjectPlayerPane.getPane(obj)
+        scorePane = pane.scorePane
+        headerContent = pane.createToolbar()
+        setShowing(true)
+    }
+
     fun showContent(focusedView: ScoreObjectView) {
         val obj = focusedView.obj
         showContent(obj)
         scorePane!!.positionInMainScore = focusedView::absolutePosition
     }
 
-    fun showContent(obj: ScoreObject, quantization: QuantizationConfig? = null) {
-        displayedObject.now = obj
-        val pane = ScoreObjectPlayerPane.getPane(obj)
-        scorePane = pane.scorePane
-        headerContent = pane.createToolbar()
-        setShowing(true)
+    fun showContent(liveObject: LiveScoreObject) {
+        showContent(liveObject.scoreObject)
+        scorePane!!.quantization = liveObject.quantization
     }
 
     override fun onShowing() {

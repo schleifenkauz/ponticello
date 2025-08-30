@@ -43,7 +43,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
     open fun snapToGrid(position: ObjectPosition): ObjectPosition =
         root.snapToGrid(position + absolutePosition) - absolutePosition
 
-    open fun getNearestGrid(position: ObjectPosition): Pair<Decimal, MeterObject>? =
+    open fun getNearestGrid(position: ObjectPosition): Triple<Decimal, MeterObject, Int>? =
         root.getNearestGrid(position + absolutePosition)
 
     open fun snapToGrid(x: Double, y: Double): ObjectPosition = snapToGrid(ObjectPosition(getTime(x), getScoreY(y)))

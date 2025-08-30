@@ -142,6 +142,7 @@ class LiveObjectRegistryPane(registry: LiveObjectRegistry) : ObjectRegistryPane<
                     }
                     val copy = item.quantization.copy()
                     copy.initialize(item.context)
+                    copy.enableQuantization.set(true)
                     QuantizationConfigDialog(copy, "Configure live loop '${item.name.now}")
                         .showDialog(ev) ?: return@executes
                     item.quantization.update(copy)
@@ -180,7 +181,7 @@ class LiveObjectRegistryPane(registry: LiveObjectRegistry) : ObjectRegistryPane<
                 icon(MaterialDesignE.EYE)
                 executesOn<LiveScoreObject> { obj ->
                     val pane = context[AppLayout].get<ScoreObjectViewPane>()
-                    pane.showContent(obj.scoreObject, obj.quantization)
+                    pane.showContent(obj)
                 }
             }
             add(configureQuantizationAction)

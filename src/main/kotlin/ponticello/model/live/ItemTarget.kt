@@ -207,9 +207,7 @@ sealed class ItemTarget : AbstractContextualObject() {
                 if (!obj.isScheduled.now) {
                     obj.play()
                     if (obj is LiveScoreObject) {
-                        context[AppLayout].get<ScoreObjectViewPane>().showContent(
-                            obj.scoreObject, quantization = obj.quantization
-                        )
+                        context[AppLayout].get<ScoreObjectViewPane>().showContent(obj)
                     }
                 } else if (!item.stopOnRelease.now) {
                     obj.pause()

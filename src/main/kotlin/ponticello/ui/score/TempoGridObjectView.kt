@@ -17,6 +17,7 @@ import javafx.scene.paint.Color
 import javafx.scene.shape.Line
 import javafx.scene.text.Font
 import ponticello.impl.Decimal
+import ponticello.impl.zero
 import ponticello.model.obj.MeterObject
 import ponticello.model.obj.project
 import ponticello.model.project.InlineControlsDisplay
@@ -94,7 +95,7 @@ class TempoGridObjectView(override val obj: TempoGridObject, inst: ScoreObjectIn
         val meter = obj.meter.get() ?: return
         val duration = parentPane.getDuration(canvas.width)
         val firstBar = obj.firstBar.now + barOffset
-        paintGrid(context, meter, firstBar, duration.value, canvas)
+        paintGrid(context, meter, firstBar, duration.value, canvas, offset = zero)
     }
 
     override fun relocate(x: Double, y: Double) {
@@ -136,7 +137,8 @@ class TempoGridObjectView(override val obj: TempoGridObject, inst: ScoreObjectIn
         private const val CENTER_Y = 20.0
 
         fun paintGrid(
-            context: Context, meter: MeterObject, firstBar: Int, duration: Double, area: Canvas,
+            context: Context, meter: MeterObject, firstBar: Int,
+            duration: Double, area: Canvas, offset: Decimal
         ) = with(area.graphicsContext2D) {
             val width = canvas.width
             clearRect(0.0, 0.0, width, GRID_HEIGHT)
@@ -144,49 +146,51 @@ class TempoGridObjectView(override val obj: TempoGridObject, inst: ScoreObjectIn
             val bpm = meter.beatsPerMinute.now
             val bpb = meter.beatsPerBar.now
             val tpb = meter.ticksPerBeat.now
-            val bars = ceil(duration * bpm / 60 / bpb).toInt()
 
+            val tickDur = 60.0 / (bpm * tpb)
+            val offsetTicks = (offset.value / tickDur).toInt()
+            val offsetX = (offset.value / tickDur) - offsetTicks
+            val ticks = ceil(duration / tickDur).toInt()
+            val ticksPerBar = tpb * bpb
             val pixelsPerBeat = (width / duration / bpm * 60)
+            val pixelsPerTick = pixelsPerBeat / tpb
             val secondsPerBar = (60 * bpb) / bpm.toDouble()
             val barNumberDist = secondsPerBar * (width / duration)
 
             val snapOption = context[UIState].snapOption.now
             val snapEnabled = context[UIState].snapEnabled.now
 
-            for (bar in 0..bars) {
-                val barX = pixelsPerBeat * bar * bpb
-                if (barX > width) break
+            for (tick in offsetTicks .. ticks + offsetTicks) {
+                val x = (tick - offsetTicks) * pixelsPerTick - offsetX
+                if (x > width) break
+                when {
+                    tick % ticksPerBar == 0 -> {
+                        lineWidth = 3.0
+                        stroke = if (snapOption <= TimeUnit.Bars && snapEnabled) Color.GREEN else Color.GRAY
+                        strokeLine(x, CENTER_Y - BAR_LINE_HEIGHT, x, CENTER_Y + BAR_LINE_HEIGHT)
 
-                if (barNumberDist > MIN_BAR_NUMBER_DIST) {
-                    val text = (bar + firstBar).toString()
-                    val x = (barX - 5).coerceAtLeast(0.0)
-                    val y = 10.0
-                    font = Font.font("Monospaced", 10.0)
-                    lineWidth = 0.75
-                    stroke = if (snapEnabled) Color.GREEN else Color.GRAY
-                    strokeText(text, x, y)
-                }
-
-                for (beat in 0 until bpb) {
-                    val beatX = barX + (pixelsPerBeat * beat)
-                    if (beatX > width) break
-
-                    stroke = if (snapOption <= TimeUnit.Ticks && snapEnabled) Color.GREEN else Color.GRAY
-                    lineWidth = 1.0
-                    for (tick in 0 until tpb) {
-                        val tickX = beatX + (pixelsPerBeat * tick) / tpb
-                        if (tickX > width) break
-                        strokeLine(tickX, CENTER_Y - TICK_LINE_HEIGHT, tickX, CENTER_Y + TICK_LINE_HEIGHT)
+                        if (barNumberDist >= MIN_BAR_NUMBER_DIST) {
+                            val bar = tick / ticksPerBar + firstBar
+                            val text = (bar + firstBar).toString()
+                            val textX = (x - 5).coerceAtLeast(0.0)
+                            val y = 10.0
+                            font = Font.font("Monospaced", 10.0)
+                            lineWidth = 0.75
+                            stroke = if (snapEnabled) Color.GREEN else Color.GRAY
+                            strokeText(text, textX, y)
+                        }
                     }
 
-                    stroke = if (snapOption <= TimeUnit.Beats && snapEnabled) Color.GREEN else Color.GRAY
-                    lineWidth = 2.0
-                    strokeLine(beatX, CENTER_Y - BEAT_LINE_HEIGHT, beatX, CENTER_Y + BEAT_LINE_HEIGHT)
-                }
+                    tick % tpb == 0 -> {
+                        stroke = if (snapOption <= TimeUnit.Beats && snapEnabled) Color.GREEN else Color.GRAY
+                        lineWidth = 2.0
+                        strokeLine(x, CENTER_Y - BEAT_LINE_HEIGHT, x, CENTER_Y + BEAT_LINE_HEIGHT)
+                    }
 
-                lineWidth = 3.0
-                stroke = if (snapOption <= TimeUnit.Bars && snapEnabled) Color.GREEN else Color.GRAY
-                strokeLine(barX, CENTER_Y - BAR_LINE_HEIGHT, barX, CENTER_Y + BAR_LINE_HEIGHT)
+                    else -> {
+                        strokeLine(x, CENTER_Y - TICK_LINE_HEIGHT, x, CENTER_Y + TICK_LINE_HEIGHT)
+                    }
+                }
             }
 
             stroke = if (snapEnabled) Color.GREEN else Color.GRAY
