@@ -1,9 +1,11 @@
 package ponticello.ui.actions
 
 import fxutils.actions.*
+import fxutils.sourceWindow
 import javafx.event.Event
 import javafx.scene.input.DataFormat
 import org.kordamp.ikonli.material2.Material2MZ
+import org.kordamp.ikonli.materialdesign2.MaterialDesignD
 import org.kordamp.ikonli.materialdesign2.MaterialDesignM
 import ponticello.impl.Logger
 import ponticello.model.flow.AudioFlows
@@ -14,6 +16,7 @@ import ponticello.model.player.ActiveObjectsManager
 import ponticello.model.player.CircularBufferRecorder
 import ponticello.model.player.Recorder
 import ponticello.model.player.ScorePlayer
+import ponticello.model.project.PLAYBACK_SETTINGS
 import ponticello.model.project.SERVER_OPTIONS
 import ponticello.model.project.get
 import ponticello.model.registry.BufferRegistry
@@ -24,6 +27,7 @@ import ponticello.sc.client.SuperColliderClient
 import ponticello.ui.controls.DecimalPrompt
 import ponticello.ui.controls.NamePrompt
 import ponticello.ui.misc.PlayHead
+import ponticello.ui.misc.PlaybackSettingsPrompt
 import ponticello.ui.registry.BusSelectorPrompt
 import reaktive.value.binding.and
 import reaktive.value.binding.map
@@ -153,6 +157,15 @@ object PlaybackActions {
                 val name = NamePrompt(player.context[BufferRegistry], "Sample Name", "")
                     .showDialog() ?: return@executes
                 recorder.exportSegment(duration, name)
+            }
+        }
+        addAction("Open playback settings") {
+            shortcut("Ctrl+Shift+P")
+            icon(MaterialDesignD.DOTS_VERTICAL) //COG_PLAY_OUTLINE is given in the cheat sheet
+            executes { player, ev ->
+                val settings = player.context.project[PLAYBACK_SETTINGS]
+                val pane = PlaybackSettingsPrompt(settings)
+                pane.showDialog(ev.sourceWindow)
             }
         }
     }

@@ -1,22 +1,24 @@
 package ponticello.ui.misc
 
-import fxutils.*
+import fxutils.children
 import fxutils.controls.CheckBox
+import fxutils.hbox
+import fxutils.styleClass
+import fxutils.vbox
 import javafx.scene.Parent
 import javafx.scene.control.Label
+import javafx.scene.layout.BorderPane
 import org.kordamp.ikonli.Ikon
 import org.kordamp.ikonli.materialdesign2.MaterialDesignC
-import ponticello.impl.Decimal
 import ponticello.impl.toDecimal
 import ponticello.model.GlobalSettings
 import ponticello.model.project.PonticelloProject
 import ponticello.sc.NumericalControlSpec
-import ponticello.ui.controls.Knob
 import ponticello.ui.dock.Side
 import ponticello.ui.dock.ToolPane
 import ponticello.ui.dock.ToolPaneState
+import ponticello.ui.misc.PlaybackSettingsPrompt.Companion.latencyKnobsPane
 import ponticello.ui.registry.ParameterDefsPane
-import reaktive.value.ReactiveVariable
 
 class SettingsPane(private val settings: GlobalSettings) : ToolPane() {
     override val type: Type
@@ -28,26 +30,15 @@ class SettingsPane(private val settings: GlobalSettings) : ToolPane() {
                     prefHeight = 500.0
                 }
                 +Label("Playback options").styleClass("heading")
-                item("Latency: ") {
-                    +Knob(
-                        "Latency (sclang) in ms", settings.scLangLatency,
-                        NumericalControlSpec(0.1, 0.01, 1.0, 0.01.toDecimal())
-                    )
-                    +Knob(
-                        "Latency (scsynth) in ms", settings.serverLatency,
-                        NumericalControlSpec(0.1, 0.01, 1.0, 0.01.toDecimal())
-                    )
-                    +Knob(
-                        "Extra latency (ms)", settings.extraLatency,
-                        NumericalControlSpec(0.05, 0.0, 1.0, 0.01.toDecimal())
-                    )
-                }
+                +BorderPane(Label("Latency").styleClass("sub-heading"))
+                +latencyKnobsPane(settings.scLangLatency, settings.serverLatency, settings.extraLatency)
+
+                +CheckBox(settings.logScCode, "Log SuperCollider code: ")
                 knobItem(
                     "Knob sensitivity: ", settings.knobSensitivity,
                     NumericalControlSpec(default = 3.0, 1.0, 10.0, 0.1.toDecimal())
                 )
-                +CheckBox(settings.logScCode, "Log code sent to SuperCollider: ")
-                +Label("Garbage collection").styleClass("heading")
+                +Label("Garbage collection").styleClass("sub-heading")
                 hbox {
                     +CheckBox(settings.periodicGarbageCollection, "Periodic GC: ")
                     knobItem(
@@ -65,23 +56,6 @@ class SettingsPane(private val settings: GlobalSettings) : ToolPane() {
 
     override fun defaultState(): ToolPaneState = ToolPaneState.window
 
-    private fun ChildrenAdder.item(name: String, children: ChildrenAdder.() -> Unit) {
-        +hbox {
-            spacing = 10.0
-            centerChildren()
-            children {
-                +Label(name)
-                children()
-            }
-        }
-    }
-
-    private fun ChildrenAdder.knobItem(name: String, variable: ReactiveVariable<Decimal>, spec: NumericalControlSpec) {
-        item(name) {
-            +Knob(name, variable, spec)
-        }
-    }
-
     companion object : Type(1, "Settings") {
         override val icon: Ikon
             get() = MaterialDesignC.COG
@@ -92,6 +66,8 @@ class SettingsPane(private val settings: GlobalSettings) : ToolPane() {
         override val shortcut: String
             get() = "Ctrl+Alt+S"
 
-        override fun createToolPane(project: PonticelloProject): ToolPane = SettingsPane(project.context[GlobalSettings])
+        override fun createToolPane(project: PonticelloProject): ToolPane =
+            SettingsPane(project.context[GlobalSettings])
     }
 }
+

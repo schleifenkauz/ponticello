@@ -35,7 +35,11 @@
 }
 
 .heading {
-    -fx-font-size: 14px;
+    -fx-font-size: 15px;
+}
+
+.sub-heading {
+    -fx-font-size: 13px;
 }
 
 .object-box-header {

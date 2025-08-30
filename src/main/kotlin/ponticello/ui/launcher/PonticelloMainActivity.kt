@@ -11,7 +11,6 @@ import javafx.geometry.Dimension2D
 import javafx.scene.input.KeyCombination
 import javafx.stage.Screen
 import javafx.stage.StageStyle
-import ponticello.model.GlobalSettings
 import ponticello.model.flow.AudioFlows
 import ponticello.model.player.CircularBufferRecorder
 import ponticello.model.player.PlaybackMessageListener
@@ -70,7 +69,7 @@ class PonticelloMainActivity(val project: PonticelloProject) : Activity() {
         )
         context[ScorePlayer.MAIN] = player
         playbackMessageListener = PlaybackMessageListener(
-            context[GlobalSettings], project.objects, project.flows
+            project[PLAYBACK_SETTINGS], project.objects, project.flows
         )
         context[SuperColliderClient].addListener(playbackMessageListener)
         context[AudioFlows].createAllFlows()

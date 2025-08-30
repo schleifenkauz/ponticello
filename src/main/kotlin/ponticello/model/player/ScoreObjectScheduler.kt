@@ -7,10 +7,11 @@ import ponticello.impl.Decimal
 import ponticello.impl.Logger
 import ponticello.impl.unaryMinus
 import ponticello.impl.zero
-import ponticello.model.GlobalSettings
 import ponticello.model.flow.ActiveObjectNode
 import ponticello.model.flow.NodeTree
 import ponticello.model.obj.*
+import ponticello.model.project.PLAYBACK_SETTINGS
+import ponticello.model.project.get
 import ponticello.model.score.*
 import ponticello.model.score.controls.ParameterControl
 import ponticello.sc.client.SuperColliderClient
@@ -20,9 +21,10 @@ class ScoreObjectScheduler(val context: Context) {
     private val client = context[SuperColliderClient]
     private val nodeTree = context[NodeTree]
     private val activeObjects = context[ActiveObjectsManager]
-    private val serverLatency get() = context[GlobalSettings].serverLatency.now
-    private val sclangLatency get() = context[GlobalSettings].scLangLatency.now
-    private val extraLatency get() = context[GlobalSettings].extraLatency.now
+    private val playbackSettings by lazy { context.project[PLAYBACK_SETTINGS] }
+    private val serverLatency get() = playbackSettings.serverLatency.now
+    private val sclangLatency get() = playbackSettings.scLangLatency.now
+    private val extraLatency get() = playbackSettings.extraLatency.now
 
     //Only inside on ScorePlayer.execute
     fun scheduleEvents(events: List<ScoreEvent>, player: ScorePlayer) {

@@ -6,7 +6,6 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import ponticello.impl.*
-import ponticello.model.GlobalSettings
 import ponticello.model.flow.AudioFlows
 import ponticello.model.obj.*
 import ponticello.model.player.Recorder
@@ -146,7 +145,7 @@ sealed class ItemTarget : AbstractContextualObject() {
             player.getClock().scheduleAction(quantization) { quantizationDelay ->
                 val time = if (player.isPlaying.now) player.playHead.currentTime else zero
                 val position = ObjectPosition(time, yPosition.now)
-                val totalDelay = quantizationDelay.coerceAtMost(context[GlobalSettings].lookAhead)
+                val totalDelay = quantizationDelay.coerceAtMost(context.playbackSettings.lookAhead)
                 val extraArguments = mutableMapOf<ParameterDefObject, ParameterControl>()
                 val velocityParameter = velocityParameter.now.get()
                 val spec = velocityParameter?.spec?.now as? NumericalControlSpec

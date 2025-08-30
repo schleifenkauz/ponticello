@@ -1,6 +1,8 @@
 package ponticello.model.project
 
 import kotlinx.serialization.serializer
+import ponticello.model.GlobalSettings
+import ponticello.model.PlaybackSettings
 import ponticello.model.ServerOptions
 import ponticello.model.flow.AudioFlows
 import ponticello.model.live.LauncherGrid
@@ -9,6 +11,7 @@ import ponticello.model.obj.ContextualObject
 import ponticello.model.obj.ScriptRegistry
 import ponticello.model.registry.*
 import ponticello.model.score.Score
+import ponticello.ui.launcher.PonticelloLauncher
 
 val UI_STATE = Component<UIState>("ui-state", UIState::default)
 
@@ -53,11 +56,17 @@ val SCORE = Component<Score>("score", ::Score)
 
 val LAUNCHER_GRID = Component<LauncherGrid>("launcher_grid", { LauncherGrid.createNByN(4) })
 
+val PLAYBACK_SETTINGS = Component<PlaybackSettings>("playback_settings", {
+    PlaybackSettings.createDefault(
+        PonticelloLauncher.rootContext[GlobalSettings]
+    )
+})
+
 val allComponents = listOf<Component<out ContextualObject>>(
     METERS, CLOCKS,
     BUSSES, BUFFERS,
     PATTERNS, INSTRUMENTS,
-    UI_STATE, FLOWS, SERVER_OPTIONS,
+    UI_STATE, FLOWS, SERVER_OPTIONS, PLAYBACK_SETTINGS,
     OBJECTS, LIVE_TASKS, SCORE, SCRIPTS, LAUNCHER_GRID
 )
 

@@ -2,8 +2,8 @@ package ponticello.model.player
 
 import bundles.publicProperty
 import ponticello.impl.*
-import ponticello.model.GlobalSettings
 import ponticello.model.live.QuantizationConfig
+import ponticello.model.obj.playbackSettings
 import ponticello.model.registry.ClockRegistry
 import ponticello.model.score.*
 import ponticello.sc.client.SuperColliderClient
@@ -31,7 +31,7 @@ class ScorePlayer private constructor(
 
     val context get() = score.context
 
-    val lookAhead get() = context[GlobalSettings].lookAhead
+    val lookAhead get() = context.playbackSettings.lookAhead
 
     private val client: SuperColliderClient = context[SuperColliderClient]
     private val activeObjects = context[ActiveObjectsManager]

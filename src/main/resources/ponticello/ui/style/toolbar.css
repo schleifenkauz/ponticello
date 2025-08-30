@@ -30,3 +30,10 @@
     -fx-border-color: black;
     -fx-border-width: 0px 1px 0px 1px;
 }
+
+.latency-knob-box {
+    -fx-alignment: center;
+    -fx-border-width: 0px 1px;
+    -fx-border-color: black;
+    -fx-padding: 0px 8px;
+}

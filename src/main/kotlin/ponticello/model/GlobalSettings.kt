@@ -23,8 +23,6 @@ class GlobalSettings(
     val logScCode: ReactiveVariable<Boolean> = reactiveVariable(false),
     val knobSensitivity: ReactiveVariable<Decimal> = reactiveVariable(3.0.withPrecision(1)),
 ) {
-    val lookAhead get() = scLangLatency.now + serverLatency.now
-
     fun getDefaultControlSpec(name: String) = defaultParametersDefs.find { p -> p.name.now == name }?.spec?.now
 
     fun initialize(context: Context) {

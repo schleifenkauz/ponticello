@@ -5,10 +5,10 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import ponticello.impl.*
-import ponticello.model.GlobalSettings
 import ponticello.model.live.QuantizationConfig
 import ponticello.model.obj.AbstractRenamableObject
 import ponticello.model.obj.MeterObject
+import ponticello.model.obj.playbackSettings
 import ponticello.model.obj.withName
 import ponticello.model.registry.ClockRegistry
 import ponticello.sc.NumericalControlSpec
@@ -27,7 +27,7 @@ class ClockObject(
     @SerialName("name")
     override var _name: ReactiveVariable<String>? = null
 
-    private val lookAhead: Decimal get() = context[GlobalSettings].lookAhead
+    private val lookAhead: Decimal get() = context.playbackSettings.lookAhead
     val period get() = PERIOD_S * timeWarp.now
 
     override val registry: ClockRegistry

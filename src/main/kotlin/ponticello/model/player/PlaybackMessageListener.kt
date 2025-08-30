@@ -3,7 +3,7 @@ package ponticello.model.player
 import com.illposed.osc.OSCMessageEvent
 import com.illposed.osc.OSCMessageListener
 import ponticello.impl.*
-import ponticello.model.GlobalSettings
+import ponticello.model.PlaybackSettings
 import ponticello.model.flow.AudioFlows
 import ponticello.model.registry.ScoreObjectRegistry
 import ponticello.model.score.ObjectPosition
@@ -11,7 +11,7 @@ import ponticello.sc.client.getArgument
 import reaktive.value.now
 
 class PlaybackMessageListener(
-    private val settings: GlobalSettings,
+    private val settings: PlaybackSettings,
     private val objects: ScoreObjectRegistry,
     private val flows: AudioFlows,
 ) : OSCMessageListener {

@@ -53,26 +53,10 @@ import kotlin.system.exitProcess
 
 class PonticelloLauncher {
     val recentProjects = RecentProjects()
+    val rootContext get() = PonticelloLauncher.rootContext
 
-    val rootContext: Context = HextantCore.defaultContext().apply {
-        set(PonticelloLauncher, this@PonticelloLauncher)
-        val files = PonticelloFiles(this)
-        set(PonticelloFiles, files)
-        set(GlobalSettings, files.loadSettings())
-        get(GlobalSettings).initialize(this)
-        set(
-            GlobalDefinitionLibrary.instruments, GlobalDefinitionLibrary(
-                files.resolve("global-instruments"),
-                serializer(), objectType = "Instrument"
-            )
-        )
-        registerImplementationsFromClasspath()
-        HextantCore.apply(this, PluginBuilder.Phase.Initialize, null)
-        PonticelloHextantPlugin.apply(this, PluginBuilder.Phase.Initialize, null)
-        SubWindow.globalStylesheets.addAll(get(Stylesheets).all())
-        val midiReceiver = ContextualMidiReceiver()
-        midiReceiver.initialize("Xjam")
-        set(ContextualMidiReceiver, midiReceiver)
+    init {
+        rootContext[PonticelloLauncher] = this
     }
 
     private lateinit var currentActivity: Activity
@@ -324,5 +308,25 @@ class PonticelloLauncher {
 
     companion object : PublicProperty<PonticelloLauncher> by publicProperty("ponticello-launcher") {
         val currentProject = publicProperty<PonticelloProject>("current-project")
+
+        val rootContext: Context = HextantCore.defaultContext().apply {
+            val files = PonticelloFiles(this)
+            set(PonticelloFiles, files)
+            set(GlobalSettings, files.loadSettings())
+            get(GlobalSettings).initialize(this)
+            set(
+                GlobalDefinitionLibrary.instruments, GlobalDefinitionLibrary(
+                    files.resolve("global-instruments"),
+                    serializer(), objectType = "Instrument"
+                )
+            )
+            registerImplementationsFromClasspath()
+            HextantCore.apply(this, PluginBuilder.Phase.Initialize, null)
+            PonticelloHextantPlugin.apply(this, PluginBuilder.Phase.Initialize, null)
+            SubWindow.globalStylesheets.addAll(get(Stylesheets).all())
+            val midiReceiver = ContextualMidiReceiver()
+            midiReceiver.initialize("Xjam")
+            set(ContextualMidiReceiver, midiReceiver)
+        }
     }
 }

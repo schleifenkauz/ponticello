@@ -9,17 +9,18 @@ import com.illposed.osc.transport.OSCPortOut
 import hextant.context.Context
 import ponticello.impl.Logger
 import ponticello.impl.superColliderPath
-import ponticello.model.GlobalSettings
+import ponticello.model.obj.playbackSettings
 import ponticello.ui.launcher.PonticelloFiles
+import ponticello.ui.launcher.PonticelloLauncher.Companion.currentProject
 import reaktive.Observer
 import reaktive.event.unitEvent
 import reaktive.observe
-import reaktive.value.forEach
 import reaktive.value.now
 import java.io.File
 import java.net.InetAddress
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Executors
+import kotlin.collections.set
 
 class OSCSuperColliderClient(
     process: Process,
@@ -37,8 +38,6 @@ class OSCSuperColliderClient(
     private val ready = unitEvent()
     private val serverBoot = unitEvent()
     private val treeClear = unitEvent()
-
-    private val latencyUpdater: Observer
 
     override fun onServerBooted(action: () -> Unit): Observer {
         val observer = serverBoot.stream.observe(action)
@@ -60,9 +59,6 @@ class OSCSuperColliderClient(
     init {
         consoleMonitor.start()
         addListener(this)
-        latencyUpdater = context[GlobalSettings].serverLatency.forEach { latency ->
-            run("s.latency = $latency")
-        }
     }
 
     override fun addListener(listener: OSCMessageListener) {
@@ -92,7 +88,7 @@ class OSCSuperColliderClient(
     override fun run(command: String) {
         if (command == "(\n)\n") return
         Logger.fine("run: $command", Logger.Category.SuperCollider)
-        if (context[GlobalSettings].logScCode.now) {
+        if (!context.hasProperty(currentProject) || context.playbackSettings.logScCode.now) {
             println("################ RUN #################")
             println(command)
             println("################ END #################")
